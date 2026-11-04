@@ -39,6 +39,7 @@ public class OverlayUserIcon extends Div {
   private UserStatus userStatus;
   private Select<UserStatus> statusSelection;
   private String name = "";
+  private String identityTooltipEmail;
   private transient Registration languageRegistration;
 
   public OverlayUserIcon(
@@ -104,6 +105,13 @@ public class OverlayUserIcon extends Div {
   public void setIdentity(UserEntity user) {
     userId = user == null ? null : user.getId();
     setName(user == null ? null : user.getFirstName(), user == null ? null : user.getLastName());
+  }
+
+  public void showIdentityTooltip(String email) {
+    identityTooltipEmail = Objects.requireNonNull(email);
+    tooltip.withPosition(Tooltip.TooltipPosition.TOP);
+    getElement().setAttribute("tabindex", "0");
+    refreshTexts();
   }
 
   public void setName(String firstName, String lastName) {
@@ -226,7 +234,11 @@ public class OverlayUserIcon extends Div {
     tooltip.setManual(statusSelection != null);
     String tooltipText = "";
     if (statusSelection == null) {
-      tooltipText = showStatus ? statusLabel : label;
+      if (identityTooltipEmail != null) {
+        tooltipText = name.isEmpty() ? identityTooltipEmail : name + " · " + identityTooltipEmail;
+      } else {
+        tooltipText = showStatus ? statusLabel : label;
+      }
     }
     tooltip.setText(tooltipText);
     if (statusSelection != null) {

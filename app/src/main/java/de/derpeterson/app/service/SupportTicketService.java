@@ -47,8 +47,24 @@ public class SupportTicketService {
       boolean instructionSent)
       implements java.io.Serializable {}
 
-  public record Reply(String body, boolean internal, Instant createdAt)
+  public enum ReplyAuthor {
+    REQUESTER,
+    SUPPORT,
+    UNKNOWN
+  }
+
+  public record Reply(String body, boolean internal, Instant createdAt, ReplyAuthor author)
       implements java.io.Serializable {}
+
+  public record RequesterIdentity(String firstName, String lastName, String email) {}
+
+  @Transactional(readOnly = true)
+  public RequesterIdentity requesterIdentity(HttpServletRequest request) {
+    Long id = authorization.owner(request).id();
+    UserEntity user =
+        users.findById(id).orElseThrow(() -> new AccessDeniedException("Account unavailable"));
+    return new RequesterIdentity(user.getFirstName(), user.getLastName(), user.getEmail());
+  }
 
   @Transactional(readOnly = true)
   public List<Ticket> list(HttpServletRequest request, boolean administration) {
@@ -95,9 +111,20 @@ public class SupportTicketService {
 
   @Transactional(readOnly = true)
   public List<Reply> conversation(HttpServletRequest request, Long id, boolean administration) {
-    accessible(request, id, administration);
+    Long ownerId = accessible(request, id, administration).getOwner().getId();
     return replies.visible(id, administration).stream()
-        .map(reply -> new Reply(reply.getBody(), reply.isInternal(), reply.getCreatedAt()))
+        .map(
+            reply -> {
+              UserEntity author = reply.getAuthor();
+              ReplyAuthor role = ReplyAuthor.UNKNOWN;
+              if (author != null) {
+                role =
+                    Objects.equals(author.getId(), ownerId)
+                        ? ReplyAuthor.REQUESTER
+                        : ReplyAuthor.SUPPORT;
+              }
+              return new Reply(reply.getBody(), reply.isInternal(), reply.getCreatedAt(), role);
+            })
         .toList();
   }
 

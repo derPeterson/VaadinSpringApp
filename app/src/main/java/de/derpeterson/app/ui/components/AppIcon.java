@@ -42,6 +42,7 @@ public enum AppIcon {
   LANGUAGES("languages"),
   LIST("list"),
   LOCK("lock-keyhole"),
+  LOCK_QUESTION(Library.TABLER, "lock-question"),
   LOCK_RESET(Library.MATERIAL_SYMBOLS, "lock-reset"),
   MENU("menu"),
   MESSAGE("message-square"),

@@ -24,6 +24,8 @@ import de.derpeterson.app.service.AccountSecurityMail;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailQueueService;
 import de.derpeterson.app.service.SupportTicketService;
+import de.derpeterson.app.service.SupportTicketService.Reply;
+import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.UserNotificationService;
 import jakarta.persistence.EntityManager;
@@ -97,6 +99,12 @@ class SupportTicketServiceTest {
     assertThrows(
         AccessDeniedException.class,
         () -> service.reply(owner, changed.id(), changed.version(), "Verbergen", true, false));
+    service.reply(
+        administrator, changed.id(), changed.version(), "Öffentliche Antwort", false, true);
+    List<Reply> visible = service.conversation(owner, ticket.id(), false);
+    assertEquals(
+        List.of(ReplyAuthor.REQUESTER, ReplyAuthor.SUPPORT),
+        visible.stream().map(Reply::author).toList());
     assertFalse(authorization.state(authorization.owner(owner)).enrolled());
   }
 

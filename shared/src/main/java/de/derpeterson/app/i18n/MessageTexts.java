@@ -48,6 +48,14 @@ public class MessageTexts {
     return getTranslation("support.sensitiveWarning");
   }
 
+  public String getSupportSecurityNoticeLabel() {
+    return getTranslation("support.securityNoticeLabel");
+  }
+
+  public String getSupportSecurityNotice() {
+    return getTranslation("support.securityNotice");
+  }
+
   public String getSupportDescription() {
     return getTranslation("support.description");
   }
@@ -110,6 +118,24 @@ public class MessageTexts {
 
   public String getSupportEmpty() {
     return getTranslation("support.empty");
+  }
+
+  public String getSupportConversation() {
+    return getTranslation("support.conversation");
+  }
+
+  public String getSupportExistingRequests() {
+    return getTranslation("support.existingRequests");
+  }
+
+  public String getSupportMessageCount(int count) {
+    return count == 1
+        ? getTranslation("support.oneMessage")
+        : getFormattedTranslation("support.messageCount", count);
+  }
+
+  public String getSupportMessageSupport() {
+    return getTranslation("support.messageSupport");
   }
 
   public String getSupportRecoveryInstructions() {

@@ -147,24 +147,28 @@
     root.querySelector('[data-mfa-download-demo]').addEventListener('click', () => notify(english ? 'Design preview: The PDF download is available in the Vaadin application.' : 'Gestaltungsvorschau: Der PDF-Download ist in der Vaadin-Anwendung verfügbar.'));
   };
   const helpMessages = [];
-  const renderConfirmationFlow = (root, phase, english) => {
-    const text = english ? {
+  const confirmationText = english => english ? {
       confirm:'Confirm sign-in',confirmSubtitle:'Use your authenticator app or an unused recovery code.',authenticator:'Authenticator code',recovery:'Recovery code',
       authHint:'Enter the six-digit code from your authenticator app:',recoveryHint:'Enter an unused recovery code to confirm your sign-in:',
       restore:'Restore authenticator',restorePrompt:'Use a recovery code to set up a new app?',restoreSubtitle:'Use a recovery code to set up a new app.',restoreHint:'Use an unused recovery code to set up a new authenticator. Your current app remains valid until you confirm the new one.',
       consumption:'The recovery code is only used up after the replacement succeeds.',
-      helpTitle:'Recovery help',helpSubtitle:'No access to your authenticator or recovery codes?',noUnlock:'A request is not proof of identity. Without an authenticator or valid recovery code we cannot unlock the account.',
-      empty:'No requests.',request:'Your request',placeholder:'Briefly describe what you need help with.',warning:'Do not include passwords, authenticator secrets or recovery codes in this request.',
-      signIn:'Sign in',loginBack:'Sign in',continue:'Continue',create:'Create request',reply:'Add reply',back:'Back to sign-in',refresh:'Refresh'
+      helpTitle:'Recovery help',helpSubtitle:'No access to your authenticator or recovery codes?',helpPageHint:'Send a request to the administration.',noUnlock:'A request is not proof of identity. Without an authenticator or valid recovery code we cannot unlock the account.',
+      empty:'No requests.',request:'Your request',placeholder:'Briefly describe what you need help with.',warningLabel:'Security notice:',warning:'Never enter passwords, authenticator secrets or recovery codes in messages.',
+      existing:'Existing requests',ticketSubject:'Help accessing your authenticator',open:'Open',conversation:'Conversation',message:'message',messages:'messages',
+      signIn:'Sign in',loginBack:'Sign in',continue:'Continue',create:'Create request',reply:'Add reply',refresh:'Refresh'
     } : {
       confirm:'Anmeldung bestätigen',confirmSubtitle:'Verwenden Sie Ihre Authenticator-App oder einen unbenutzten Ersatzcode.',authenticator:'Authenticator-Code',recovery:'Ersatzcode',
       authHint:'Geben Sie den sechsstelligen Code Ihrer Authenticator-App ein:',recoveryHint:'Geben Sie einen noch unbenutzten Ersatzcode ein, um Ihre Anmeldung zu bestätigen:',
       restore:'Authenticator wiederherstellen',restorePrompt:'Mit einem Ersatzcode eine neue App einrichten?',restoreSubtitle:'Mit einem Ersatzcode eine neue App einrichten.',restoreHint:'Verwenden Sie einen unbenutzten Ersatzcode, um einen neuen Authenticator einzurichten. Ihre bisherige App bleibt gültig, bis Sie die neue bestätigt haben.',
       consumption:'Der Ersatzcode wird erst nach dem erfolgreichen Wechsel verbraucht.',
-      helpTitle:'Hilfe zur Wiederherstellung',helpSubtitle:'Kein Zugriff auf Authenticator und Ersatzcodes?',noUnlock:'Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode können wir das Konto nicht entsperren.',
-      empty:'Keine Anfragen vorhanden.',request:'Ihre Anfrage',placeholder:'Beschreiben Sie Ihr Anliegen kurz.',warning:'Schreiben Sie keine Passwörter, Authenticator-Schlüssel oder Ersatzcodes in diese Anfrage.',
-      signIn:'Anmelden',loginBack:'Anmeldung',continue:'Weiter',create:'Anfrage erstellen',reply:'Antwort hinzufügen',back:'Zur Anmeldung',refresh:'Aktualisieren'
+      helpTitle:'Hilfe zur Wiederherstellung',helpSubtitle:'Kein Zugriff auf Authenticator und Ersatzcodes?',helpPageHint:'Stellen Sie eine Anfrage an die Administration.',noUnlock:'Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode können wir das Konto nicht entsperren.',
+      empty:'Keine Anfragen vorhanden.',request:'Ihre Anfrage',placeholder:'Beschreiben Sie Ihr Anliegen kurz.',warningLabel:'Sicherheitshinweis:',warning:'Geben Sie niemals Passwörter, Authenticator-Geheimschlüssel oder Ersatzcodes in Nachrichten ein.',
+      existing:'Bestehende Anfragen',ticketSubject:'Hilfe beim Authenticator-Zugriff',open:'Offen',conversation:'Nachrichtenverlauf',message:'Nachricht',messages:'Nachrichten',
+      signIn:'Anmelden',loginBack:'Anmeldung',continue:'Weiter',create:'Anfrage erstellen',reply:'Antwort hinzufügen',refresh:'Aktualisieren'
     };
+  const renderConfirmationFlow = (root, phase, english) => {
+    const text = confirmationText(english);
+    const infoIcon = document.querySelector('#vp-symbols').content.querySelector('[data-symbol="info"]').innerHTML;
     const key = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="16" cy="8" r="5"/><path d="m12.5 11.5-9 9H2v-4l3-3h3v-3h3"/></svg>';
     const device = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M11 18h2"/></svg>';
     const escape = value => String(value).replace(/[&<>"']/g, character => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[character]));
@@ -217,22 +221,43 @@
         ['focus','click','keyup'].forEach(event=>input.addEventListener(event,refresh));refresh();
       }
     } else if (phase === 'recover') {
-      const infoIcon = document.querySelector('#vp-symbols').content.querySelector('[data-symbol="info"]').innerHTML;
       root.innerHTML = `<p class="portal-copy">${text.restoreHint}</p>${recoveryField('mfa-restore-recovery-code')}<div class="mfa-flow-notice">${infoIcon}<span>${text.consumption}</span></div>`;
     } else {
-      const conversation = helpMessages.map((message, index) => `
-        <div class="mfa-flow-ticket">
-          <strong>${index === 0 ? text.request : text.reply}</strong>
-          <p class="portal-copy">${escape(message)}</p>
-        </div>`).join('');
+      const date = new Intl.DateTimeFormat(english ? 'en-GB' : 'de-DE', {dateStyle:'short',timeStyle:'short'});
+      const conversation = helpMessages.length ? `
+        <section class="mfa-help-conversation">
+          <div class="mfa-help-conversation-heading"><h3>${text.conversation} #1</h3>
+            <span>${helpMessages.length} ${helpMessages.length === 1 ? text.message : text.messages}</span></div>
+          <div class="mfa-help-thread" tabindex="0" aria-label="${text.conversation} #1">
+            ${helpMessages.map(message => `<div class="mfa-help-message">
+              <div class="mfa-help-message-metadata">
+                <span class="mfa-help-message-avatar" role="img" tabindex="0" aria-label="John Doe"
+                  data-tooltip="John Doe · john.doe@example.test">JD</span>
+                <time datetime="${message.time.toISOString()}">${date.format(message.time)}</time>
+              </div>
+              <p class="mfa-flow-ticket">${escape(message.body)}</p>
+            </div>`).join('')}
+          </div>
+        </section>` : '';
+      const requestSummary = helpMessages.length ? `
+        <div class="mfa-help-ticket-list">
+          <div><div class="mfa-help-ticket-title"><span>#1</span> ${text.ticketSubject}</div>
+            <time>${date.format(helpMessages.at(-1).time)}</time></div>
+          <span class="mfa-help-ticket-status">${text.open}</span>
+        </div>` : `<div class="mfa-help-empty"><span class="mfa-help-empty-icon" aria-hidden="true"></span>${text.empty}</div>`;
       const formLabel = helpMessages.length ? text.reply : text.request;
+      const warningIcon = document.querySelector('#vp-symbols').content.querySelector('[data-symbol="error"]').innerHTML;
       root.innerHTML = `
-        <p class="portal-copy">${text.noUnlock}</p>
-        ${conversation || `<div class="mfa-help-empty">${text.empty}</div>`}
-        <label>${formLabel} <span class="mfa-required-dot">•</span>
-          <textarea id="mfa-help-request" rows="4" maxlength="2000" placeholder="${text.placeholder}"></textarea>
-        </label>
-        <div class="mfa-flow-notice">${symbol}<span>${text.warning}</span></div>`;
+        <div class="mfa-flow-notice">${infoIcon}<span>${text.noUnlock}</span></div>
+        <section class="mfa-help-requests"><h3>${text.existing}</h3>${requestSummary}</section>
+        ${conversation}
+        <div class="mfa-help-editor">
+          <div class="mfa-flow-notice mfa-help-security-notice">${warningIcon}<span><strong>${text.warningLabel}</strong> ${text.warning}</span></div>
+          <div class="mfa-recovery-field">
+            <label class="mfa-code-label" for="mfa-help-request">${formLabel}<span class="mfa-required" aria-hidden="true">•</span></label>
+            <textarea id="mfa-help-request" rows="4" maxlength="2000" aria-required="true" placeholder="${text.placeholder}"></textarea>
+          </div>
+        </div>`;
       const draft = root.querySelector('textarea');draft.value=root.dataset.helpDraft||'';draft.addEventListener('input',()=>{root.dataset.helpDraft=draft.value;});
     }
     const card = root.closest('.vp-card');
@@ -242,7 +267,7 @@
       const headingIcons = {
         confirm: shieldKeyhole,
         recover: '<span class="mfa-restore-heading-icon" aria-hidden="true"></span>',
-        help: symbol
+        help: '<span class="mfa-help-heading-icon" aria-hidden="true"></span>'
       };
       heading.querySelector('.portal-reference-icon').innerHTML = headingIcons[phase];
       heading.querySelector('h2').textContent = phase==='confirm'?text.confirm:phase==='recover'?text.restore:text.helpTitle;
@@ -255,17 +280,22 @@
       if (phase!=='confirm') {
         const back = document.createElement('button');
         back.type = 'button';
-        back.className = phase === 'recover' ? 'portal-button' : 'portal-button mfa-quiet-action';
+        back.className = 'portal-button';
         back.dataset.mfaFlowBack = phase;
-        back.textContent = phase === 'recover' ? text.loginBack : '‹ ' + text.back;
-        if (phase === 'recover') {
-          back.insertAdjacentHTML('afterbegin', signInIcon);
-        }
+        back.textContent = text.loginBack;
+        back.insertAdjacentHTML('afterbegin', signInIcon);
         back.addEventListener('click', () => renderPhase(root, 'confirm'));
         footer.prepend(back);
       }
       if (phase==='help') {
-        const reload=document.createElement('button');reload.type='button';reload.className='portal-button';reload.dataset.mfaRefresh='';reload.textContent=text.refresh;reload.addEventListener('click',()=>notify(english?'Design preview: Requests refreshed.':'Gestaltungsvorschau: Anfragen aktualisiert.'));footer.insertBefore(reload,footer.querySelector('[data-mfa-continue]'));
+        const reload = document.createElement('button');
+        reload.type = 'button';
+        reload.className = 'portal-button';
+        reload.dataset.mfaRefresh = '';
+        reload.textContent = text.refresh;
+        reload.prepend(document.querySelector('#vp-symbols').content.querySelector('[data-symbol="refresh"] svg').cloneNode(true));
+        reload.addEventListener('click', () => notify(english ? 'Design preview: Requests refreshed.' : 'Gestaltungsvorschau: Anfragen aktualisiert.'));
+        footer.insertBefore(reload, footer.querySelector('[data-mfa-continue]'));
       }
       const actionLabels = {
         confirm: text.signIn,
@@ -278,10 +308,18 @@
         submit.insertAdjacentHTML('afterbegin', signInIcon);
       } else if (phase === 'recover') {
         submit.insertAdjacentHTML('afterbegin', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>');
+      } else if (phase === 'help') {
+        const icon = document.createElement('span');
+        icon.className = helpMessages.length ? 'mfa-help-reply-icon' : 'mfa-help-create-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        submit.prepend(icon);
       }
     }
     root.dataset.phase=phase;
   };
+  const publicTwoFactor = document.querySelector('#public-two-factor');
+  const publicTwoFactorTitle = publicTwoFactor?.dataset.title;
+  const publicTwoFactorDescription = publicTwoFactor?.dataset.description;
   const renderPhase = (root, phase) => {
     const isPublic = root.hasAttribute('data-mfa-phase-content');
     if (isPublic) {
@@ -290,6 +328,16 @@
       root.closest('.vp-card').classList.toggle('mfa-recovery', phase === 'codes');
       root.closest('.vp-card').classList.toggle('mfa-confirmation-flow', ['confirm','recover','help'].includes(phase));
       const english = document.querySelector('[data-menu-language="en"][aria-pressed="true"]');
+      if (phase === 'help' || root.dataset.phase === 'help') {
+        const text = confirmationText(Boolean(english));
+        publicTwoFactor.dataset.title = phase === 'help' ? text.helpTitle : publicTwoFactorTitle;
+        publicTwoFactor.dataset.description = phase === 'help' ? text.helpPageHint : publicTwoFactorDescription;
+        if (!publicTwoFactor.hidden) {
+          const title = document.querySelector('#portalTitle');
+          title.firstChild.textContent = publicTwoFactor.dataset.title;
+          document.querySelector('#portalDescription').textContent = publicTwoFactor.dataset.description;
+        }
+      }
       const action = document.querySelector('#public-two-factor [data-mfa-continue]');
       action.disabled = phase === 'codes';
       action.innerHTML = phase === 'intro'
@@ -370,7 +418,7 @@
           publicPhase.querySelector('textarea').setAttribute('aria-invalid', 'true');
           return;
         }
-        helpMessages.push(draft);
+        helpMessages.push({body:draft,time:new Date()});
         publicPhase.dataset.helpDraft = '';
         renderPhase(publicPhase, 'help');
         notify(english ? 'Design preview: No request was sent.' : 'Gestaltungsvorschau: Es wurde keine Anfrage gesendet.');

@@ -17,6 +17,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.details.Details;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.Tabs;
@@ -28,6 +29,7 @@ import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.SupportTicketEntity.Status;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.ExternalLoginFlow;
@@ -37,6 +39,7 @@ import de.derpeterson.app.security.mfa.TwoFactorEnrollment;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.SupportTicketService;
+import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import jakarta.servlet.http.HttpServletRequest;
@@ -177,6 +180,30 @@ class TwoFactorFlowViewTest {
     assertInstanceOf(HorizontalLayout.class, find(help, "support-back").getParent().orElseThrow());
     assertTrue(find(help, "support-create") instanceof Button);
     assertTrue(find(help, "support-reply").getElement().getProperty("required", false));
+    assertEquals(
+        language.equals("de") ? "1 Nachricht" : "1 message", texts.getSupportMessageCount(1));
+    assertEquals(
+        language.equals("de") ? "2 Nachrichten" : "2 messages", texts.getSupportMessageCount(2));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void helpSelectsTheOpenRequestWhenAnOlderRequestIsListedFirst(String language) {
+    open(language, false);
+    SupportTicketService tickets = mock(SupportTicketService.class);
+    Ticket closed =
+        new Ticket(1L, 0L, "Earlier request", Status.CLOSED, Instant.EPOCH, null, false);
+    Ticket active = new Ticket(2L, 0L, "Current request", Status.OPEN, Instant.EPOCH, null, false);
+    when(tickets.list(request, false)).thenReturn(List.of(closed, active));
+
+    RecoveryHelpView help = new RecoveryHelpView(config, texts, tickets, request);
+
+    assertEquals(
+        List.of(active),
+        List.copyOf(((Grid<?>) find(help, "support-ticket-grid")).getSelectedItems()));
+    assertTrue(find(help, "support-add-reply").isVisible());
+    assertFalse(find(help, "support-create").isVisible());
+    verify(tickets, never()).conversation(request, closed.id(), false);
   }
 
   private Component find(Component root, String id) {

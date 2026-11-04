@@ -1173,10 +1173,18 @@ Beide zeigen Lucides `square-arrow-right-enter` mit 8 px Abstand hinter dem
 Aktionstext, wie bei den App-Links mit Icon links.
 Rückwege stehen als native Buttons links im Footer.
 Der Faktorwechsel bleibt ein eigener Ablauf mit Ersatzcodefeld und Verbrauchshinweis.
-Die Benutzerhilfe verwendet native Layouts, `TextArea`, den vorhandenen `Grid` für
-eigene Anfragen und einen ruhigen Leerzustand. Rückweg, Aktualisieren und die
-jeweilige Hauptaktion stehen im gemeinsamen Panel-Footer. Die Adminbearbeitung
-behält ihren bisherigen Aufbau. `cosmos-mfa-confirmation.css` begrenzt die Gestaltung
+Die Benutzerhilfe verwendet den vorhandenen Panelkopf mit Tablers `lock-question`.
+„Bestehende Anfragen“ zeigt ein natives Grid mit kompakten Zeilen für Nummer,
+Betreff, Aktualisierungszeit und Status. Der Nachrichtenverlauf mit Vorgangsnummer
+und Anzahl nutzt einen nativen `Scroller`. Eigene Nachrichten stehen rechts
+mit dem vorhandenen Initialenavatar und einem Tooltip für Name und E-Mail.
+Support-Antworten stehen links. Der Hinweis zum Identitätsnachweis nutzt
+den gerahmten Infostil mit blauem Icon aus dem Faktorwechsel. Direkt vor der nativen `TextArea` steht
+der Sicherheitshinweis mit gelbem Lucide-Warndreieck und gelber Beschriftung.
+Der Button „Anmeldung“ verwendet dasselbe Icon wie
+beim Faktorwechsel und steht links im Footer. Auf schmalen Bildschirmen
+steht die jeweilige Hauptaktion in einer eigenen Zeile über die verfügbare Breite.
+`cosmos-mfa-confirmation.css` begrenzt die Gestaltung
 auf `.two-factor-confirmation`, `.two-factor-restore` und `.support-recovery-help`;
 Panels, Buttonzustände und Eingaben folgen weiterhin den vorhandenen Standards.
 Die Public-HTML-Referenz bildet die drei Ansichten samt DE/EN und Methodenauswahl ab.

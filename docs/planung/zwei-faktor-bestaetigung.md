@@ -134,6 +134,11 @@ am Ersatzcodefeld ergänzt werden soll. Der Entwurf verändert den Portalrahmen 
 zeigt einen Platzhalter mit uneinheitlichen Gruppenlängen. Maßgeblich bleiben die
 bestehenden Cosmos-Bausteine und das Format mit vier Gruppen zu je acht Zeichen.
 
+Für „Hilfe zur Wiederherstellung“ steht die gemeinsame Sichtprüfung der
+Übernahme nach [Stitch-Runde 3](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=10858692231921999861)
+aus. Zu prüfen sind das kompakte Anfrage-Grid mit zugeordnetem Verlauf und der
+zweizeilige mobile Footer mit „Anmeldung“ links und der Hauptaktion darunter.
+
 ## Gestaltung der verpflichtenden Ersteinrichtung
 
 ### Ersatzcodeausgabe: Variante B mit kompakter Codeübersicht

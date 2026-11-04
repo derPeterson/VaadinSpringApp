@@ -155,6 +155,7 @@ dialog.mfa-reference .portal-modal-body { padding:24px; }
 .mfa-confirmation-flow .mfa-login-tabs { width:100%; }
 .mfa-restore-heading-icon { display:block; width:20px; height:20px; background:currentColor; mask:url('material-symbols/lock-reset.svg') center / contain no-repeat; }
 .mfa-shield-keyhole-icon { display:block; width:20px; height:20px; background:currentColor; mask:url('lucide/shield-keyhole.svg') center / contain no-repeat; }
+.mfa-help-heading-icon { display:block; width:20px; height:20px; background:currentColor; mask:url('tabler/lock-question.svg') center / contain no-repeat; }
 #public-two-factor .mfa-confirmation-flow > .vp-card-body > .mfa-phase-buttons { display:none; }
 .mfa-confirmation-flow .mfa-form > label { display:block; }
 .mfa-confirmation-flow .mfa-form > label > :is(input,textarea) { display:block; margin-top:8px; }
@@ -181,5 +182,39 @@ dialog.mfa-reference .portal-modal-body { padding:24px; }
 .mfa-confirmation-flow .mfa-flow-ticket { padding:16px; border:1px solid var(--cosmos-reference-border,#ffffff14); border-radius:8px; background:var(--cosmos-reference-input,#091120); overflow-wrap:anywhere; }
 .mfa-confirmation-flow .vp-card-foot { flex-wrap:wrap; justify-content:flex-end; gap:8px; }
 .mfa-confirmation-flow .vp-card-foot > [data-mfa-flow-back] { margin-right:auto; }
-.mfa-confirmation-flow .vp-card-foot > [data-mfa-flow-back="recover"] { margin-inline-start:0; }
+.mfa-confirmation-flow .vp-card-foot > [data-mfa-flow-back] { margin-inline-start:0; }
+.mfa-help-ticket-list { display:flex; flex-wrap:wrap; align-items:center; gap:6px 12px; padding:10px 16px; border:1px solid var(--border-subtle); border-inline-start:2px solid var(--accent); border-radius:8px; background:#1b2b42; color:var(--text-primary); font:400 12px/20px Inter,sans-serif; }
+.mfa-help-ticket-list > div { flex:1 1 150px; min-width:0; }
+.mfa-help-ticket-list time,.mfa-help-conversation-heading > span,.mfa-help-message > div { color:var(--text-secondary); font:400 11px/16px Inter,sans-serif; }
+.mfa-help-ticket-title { display:flex; flex-wrap:wrap; gap:0 8px; font-weight:500; overflow-wrap:anywhere; }
+.mfa-help-ticket-title > span { color:var(--accent); }
+.mfa-help-ticket-status { display:inline-block; padding:1px 5px; border-radius:4px; background:var(--state-selected); color:var(--accent); font:500 10px/15px Inter,sans-serif; }
+.mfa-help-requests,.mfa-help-conversation { display:grid; gap:10px; min-width:0; }
+.mfa-help-conversation-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.mfa-help-requests h3,.mfa-help-conversation h3 { margin:0; color:var(--text-primary); font:600 12px/20px Inter,sans-serif; }
+.mfa-help-thread { display:grid; gap:14px; max-height:300px; overflow-y:auto; padding:14px; border:1px solid var(--border-subtle); border-radius:8px; background:var(--surface-input); }
+.mfa-help-message { display:grid; justify-items:end; justify-self:end; gap:4px; max-width:94%; }
+.mfa-help-message-metadata { display:flex; align-items:center; gap:6px; }
+.mfa-help-message-avatar { display:inline-grid; place-items:center; width:24px; height:24px; border:1px solid var(--border-subtle); border-radius:50%; background:var(--surface-input); color:var(--text-primary); font:600 10px/1 Inter,sans-serif; }
+.mfa-confirmation-flow .mfa-help-message .mfa-flow-ticket { margin:0; padding:8px 12px; border-start-end-radius:0; background:#1b2b42; color:var(--text-primary); font:400 12px/20px Inter,sans-serif; white-space:pre-wrap; }
+.mfa-help-editor { display:grid; gap:12px; }
+.mfa-confirmation-flow .mfa-help-security-notice { gap:10px; padding:10px 14px; border-color:#3f485066; background:#181c20b3; color:#bfc7d2; }
+.mfa-confirmation-flow .mfa-help-security-notice > svg { width:18px; height:18px; color:#ffb77a; }
+.mfa-help-security-notice strong { color:#ffb77a; font-weight:500; }
+.mfa-confirmation-flow .mfa-help-empty { display:flex; align-items:center; justify-content:center; gap:12px; }
+.mfa-help-empty-icon,.mfa-help-create-icon,.mfa-help-reply-icon { flex:none; width:16px; height:16px; background:currentColor; }
+.mfa-help-empty-icon { width:20px; height:20px; mask:url('lucide/archive.svg') center / contain no-repeat; }
+.mfa-help-create-icon { mask:url('lucide/plus.svg') center / contain no-repeat; }
+.mfa-help-reply-icon { mask:url('lucide/send.svg') center / contain no-repeat; }
+.mfa-confirmation-flow:has([data-phase=help]) .vp-card-foot { padding:16px 24px; }
+@media (max-width:639px) {
+  .mfa-confirmation-flow:has([data-phase=help]) :is(.vp-card-body,.vp-card-foot) { padding-inline:20px; }
+}
+@media (max-width:480px) {
+  .mfa-confirmation-flow:has([data-phase=help]) .vp-card-foot { display:grid; grid-template-columns:auto auto; justify-content:stretch; gap:8px; }
+  .mfa-confirmation-flow .vp-card-foot > [data-mfa-flow-back=help] { grid-area:1 / 1; justify-self:start; margin:0; }
+  .mfa-confirmation-flow .vp-card-foot > [data-mfa-refresh] { grid-area:1 / 2; justify-self:end; }
+  .mfa-confirmation-flow:has([data-phase=help]) .vp-card-foot > [data-mfa-continue] { grid-column:1 / -1; justify-content:center; }
+}
 .mfa-reference textarea { width:100%; box-sizing:border-box; padding:12px; border:1px solid #1e293b; border-radius:8px; background:#09111f; color:#e2e8f0; font:400 14px/1.5 Inter,sans-serif; resize:vertical; }
+.mfa-help-editor #mfa-help-request { display:block; min-height:100px; resize:none; }

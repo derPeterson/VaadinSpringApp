@@ -35,23 +35,58 @@
 .two-factor-footer-navigation { flex:none; min-width:0; }
 .two-factor-footer-navigation:empty { display:none; }
 .two-factor-footer > .cosmos-dialog-actions { flex-wrap:wrap; justify-content:flex-end; width:auto; max-width:100%; margin-inline-start:auto; gap:8px; }
-.two-factor-restore-notice,
-.support-sensitive-notice { box-sizing:border-box; width:100%; gap:12px; padding:16px; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-input); color:var(--cosmos-reference-secondary); font:400 12px/20px Inter,sans-serif; }
-.two-factor-restore-notice > vaadin-icon,
-.support-sensitive-notice > vaadin-icon { width:16px; height:16px; flex:none; color:var(--cosmos-reference-accent); }
+:is(.two-factor-restore-notice,.support-help-notice) { box-sizing:border-box; width:100%; gap:12px; padding:16px; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-input); color:var(--cosmos-reference-secondary); font:400 12px/20px Inter,sans-serif; }
+:is(.two-factor-restore-notice,.support-help-notice) > vaadin-icon { width:16px; height:16px; flex:none; color:var(--cosmos-reference-accent); }
+.support-sensitive-notice { box-sizing:border-box; width:100%; gap:10px; padding:10px 14px; border:1px solid #3f485066; border-radius:var(--cosmos-control-radius); background:#181c20b3; color:#bfc7d2; font:400 12px/20px Inter,sans-serif; }
+.support-sensitive-notice > vaadin-icon { width:18px; height:18px; flex:none; color:#ffb77a; }
+.support-sensitive-notice-label { color:#ffb77a; font-weight:500; }
 .support-recovery-help { max-width:640px; margin-inline:auto; }
 .support-recovery-help .account-panel-body { padding:24px; }
 .support-user-form { gap:20px; }
+.support-user-editor { gap:12px; }
 .support-recovery-help .support-empty-state { box-sizing:border-box; gap:12px; padding:20px; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-input); color:var(--cosmos-reference-secondary); font:400 13px/20px Inter,sans-serif; }
 .support-empty-state > vaadin-icon { width:20px; height:20px; flex:none; color:var(--cosmos-reference-secondary); }
-.support-user-form .account-entry { padding:16px; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-input); color:var(--cosmos-reference-text); font:400 12px/20px Inter,sans-serif; overflow-wrap:anywhere; }
+.support-user-requests,.support-user-conversation { gap:10px; min-width:0; }
+.support-conversation-heading { margin:0; color:var(--cosmos-reference-text); font:600 12px/20px Inter,sans-serif; }
+.support-conversation-count,.support-ticket-updated,.support-message-metadata { color:var(--cosmos-reference-secondary); font:400 11px/16px Inter,sans-serif; }
+.support-message-scroll { box-sizing:border-box; width:100%; max-height:300px; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-input); }
+.support-message-thread { gap:14px; padding:14px; }
+.support-message { gap:4px; max-width:94%; }
+.support-message[data-author=REQUESTER] { align-self:end; align-items:end; }
+.support-message-metadata { gap:6px; flex-wrap:wrap; }
+.support-message-metadata > vaadin-icon { width:14px; height:14px; color:var(--cosmos-reference-accent); }
+.support-message-copy { box-sizing:border-box; padding:8px 12px; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-panel); color:var(--cosmos-reference-text); font:400 12px/20px Inter,sans-serif; white-space:pre-wrap; overflow-wrap:anywhere; }
+.support-message[data-author=REQUESTER] .support-message-copy { border-start-end-radius:0; background:var(--cosmos-table-highlight-background); }
+.support-message[data-author=SUPPORT] .support-message-copy { border-start-start-radius:0; }
 .support-recovery-help .support-user-footer { flex-wrap:wrap; justify-content:space-between; gap:12px; }
-.support-recovery-help .support-user-footer > .cosmos-dialog-actions { width:auto; max-width:100%; margin-inline-start:auto; }
+.support-recovery-help #support-panel > .cosmos-panel-footer { padding:16px 24px; }
+.support-recovery-help #support-panel > .cosmos-panel-footer > .cosmos-panel-actions { width:100%; }
+.support-recovery-help .support-user-footer > .cosmos-dialog-actions { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; width:auto; max-width:100%; margin-inline-start:auto; }
 .support-back-actions { flex:none; }
 .support-user-form vaadin-grid { min-width:0; font:400 12px/20px Inter,sans-serif; }
+.support-user-requests vaadin-grid::part(body-cell) { border-inline-start:2px solid transparent; }
+.support-user-requests vaadin-grid::part(selected-row-cell) { border-inline-start-color:var(--cosmos-reference-accent); }
+.support-ticket-row { gap:6px 12px; flex-wrap:wrap; padding-block:10px; }
+.support-ticket-row > vaadin-vertical-layout { flex:1 1 150px; min-width:0; }
+.support-ticket-title { gap:0 8px; flex-wrap:wrap; white-space:normal; overflow-wrap:anywhere; font-weight:500; }
+.support-ticket-number { color:var(--cosmos-reference-accent); }
+.support-ticket-status { margin-inline-start:auto; }
+.support-ticket-status[data-closed=true] { color:var(--cosmos-reference-secondary); background:var(--cosmos-reference-border); }
+@media (max-width:639px) {
+  .support-recovery-help .account-panel-body { padding:20px; }
+  .support-recovery-help #support-panel > .cosmos-panel-footer { padding-inline:20px; }
+}
 @media (max-width:480px) {
- .two-factor-footer-navigation,
- .support-recovery-help .support-back-actions { width:100%; }
- .two-factor-footer > .cosmos-dialog-actions,
- .support-recovery-help .support-user-footer > .cosmos-dialog-actions { margin-inline-start:auto; }
+  .support-recovery-help .support-user-footer {
+    display:grid;
+    grid-template-columns:auto auto;
+    gap:8px;
+  }
+  .support-recovery-help .support-user-footer > .cosmos-dialog-actions { display:contents; }
+  .support-recovery-help .support-back-actions { grid-area:1 / 1; }
+  .support-recovery-help #support-reload { grid-area:1 / 2; justify-self:end; }
+  .support-recovery-help .support-user-footer vaadin-button[theme~=primary] { grid-column:1 / -1; }
+  .support-recovery-help .support-user-footer vaadin-button { width:auto; min-width:0; }
+  .two-factor-footer-navigation { width:100%; }
+  .two-factor-footer > .cosmos-dialog-actions { margin-inline-start:auto; }
 }
