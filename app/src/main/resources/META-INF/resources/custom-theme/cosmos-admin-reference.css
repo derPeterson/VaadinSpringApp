@@ -139,7 +139,7 @@ vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-
 .admin-reference-drawer.admin-user-filter-drawer .admin-reference-drawer-heading .cosmos-panel-icon { box-sizing:border-box; width:40px; height:40px; flex:0 0 40px; border-radius:12px; }
 .admin-reference-drawer.admin-user-filter-drawer .cosmos-overlay-close { box-sizing:border-box; width:36px; min-width:36px; height:36px; padding:0; border-radius:9px; }
 .admin-reference-drawer.admin-user-filter-drawer .cosmos-overlay-close vaadin-icon { width:18px; height:18px; }
-vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-drawer::part(content) { padding:20px!important; background:var(--cosmos-reference-page); scrollbar-width:thin; scrollbar-color:#334155 #050811; }
+vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-drawer::part(content) { padding:20px!important; background:var(--cosmos-reference-page); }
 .admin-reference-drawer.admin-user-filter-drawer .admin-filter-tools { gap:8px; margin:0 0 20px; }
 .admin-reference-drawer.admin-user-filter-drawer .admin-user-active-filter-count { box-sizing:border-box; display:inline-flex; align-items:center; justify-content:center; height:36px; min-height:36px; padding:0 12px; background:var(--cosmos-reference-selection); color:var(--cosmos-reference-accent); border:1px solid #38bdf840; border-radius:9px; font:600 12px/1 Inter,sans-serif; white-space:nowrap; }
 .admin-reference-drawer.admin-user-filter-drawer .admin-user-filter-reset { height:36px; padding:0 13px; white-space:nowrap; }

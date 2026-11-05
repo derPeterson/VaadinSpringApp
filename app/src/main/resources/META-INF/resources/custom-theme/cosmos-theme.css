@@ -3,6 +3,20 @@
  * Die Reihenfolge der Regeln ist Absicht: spätere/spezifischere Zustände dürfen frühere ergänzen.
  * ::part(name) erreicht die von Vaadin freigegebene Fläche innerhalb einer Komponente. */
 
+:root {
+    scrollbar-color: var(--cosmos-reference-dot) transparent;
+}
+
+:where(*),
+:where(vaadin-app-layout)::part(content),
+:where(vaadin-app-layout)::part(drawer),
+:where(vaadin-dialog)::part(content),
+:where(vaadin-popover)::part(content),
+:where(vaadin-list-box, vaadin-select-list-box)::part(items),
+:where(vaadin-text-area)::part(input-field) {
+    scrollbar-width: thin;
+}
+
 .cosmos-security-warning {
     box-sizing: border-box;
     width: 100%;

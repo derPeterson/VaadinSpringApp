@@ -2,6 +2,11 @@
 
 ## Browser-Tests
 
+- **Globale Scrollleisten: offen.** Dokument, Wiederherstellungsverlauf und
+  Admin-Filterdialog mit ausreichend Inhalt prüfen. Schmale Scrollleisten und
+  transparente Bahn sollen sichtbar bleiben und sich per Maus, Touch und
+  Tastatur bedienen lassen.
+
 - **2FA-Adminnavigation und Kopftexte: offen.** Nach der Textkürzung den vorhandenen
   CONFIG-05A-/MFA-03-Ablauf gezielt in DE/EN nachprüfen: „2FA“ nur für Superadmins
   sichtbar, vollständiger übersetzter Name im Tooltip und unterschiedliche

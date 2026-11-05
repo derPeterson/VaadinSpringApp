@@ -9,6 +9,13 @@ Portal und Administration. Für Stitch kann die betroffene Ansicht in einer
 isolierten Instanz mit synthetischen Daten als temporärer HTML-Abzug erfasst werden.
 Der frühere Bestand statischer Referenzen liegt im Git-Tag `archiv/html-referenzen`.
 
+Scrollleisten verwenden anwendungsweit den gedeckten Griff aus
+`--cosmos-reference-dot` auf transparenter Bahn. `cosmos-theme.css` setzt die
+schmale native Breite auf Dokument und Scrollflächen sowie auf die öffentlich
+adressierbaren Scrollbereiche von Vaadin. Komponenten mit interner Scrollfläche
+ohne passenden öffentlichen Part, etwa Grid, erben die Farbe und behalten die
+native Breite.
+
 Textbuttons zusammengehöriger Dialogaktionen verwenden `EqualButtonWidths.configure`
 am vorhandenen nativen Layoutcontainer. `equal-button-widths.js` lädt über den
 Anwendungskontext und misst nur sichtbare Beschriftungen einschließlich Präfix,
@@ -1116,8 +1123,7 @@ Beide Abschnittsüberschriften stehen in Versalien. Ein graues natives Badge zei
 rechts über der Anfragenliste die Zahl der Vorgänge und am Verlauf die Zahl seiner
 Nachrichten. Vorgangsnummern, Zeitstempel und der Zeichenzähler stehen in Space Mono.
 Ein Mittelpunkt trennt Datum und Uhrzeit und steht im Verlauf auch vor dem Zeitstempel.
-Die schmale Scrollbar
-nutzt einen gedeckten Griff auf transparentem Grund. Der rahmenlose Button
+Der rahmenlose Button
 „Aktualisieren“ steht am Verlauf oder an der Anfragenübersicht. „Anfrage schließen“
 zeigt Lucides grünes `circle-check`-Icon.
 Der Hinweis zum Identitätsnachweis nutzt
