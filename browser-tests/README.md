@@ -72,14 +72,14 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 56 |
 | `external-login-flow` | Externe Anmeldungen, Superadmin-Anbietereinrichtung mit 2FA, Verknüpfungen, geschützte Google-Ersteinrichtung und frische Microsoft-Bestätigung, Browserneustart, E-Mail-Änderung, optionale Adminprofilfelder und kontextbezogene Kontobestätigung, vollständig deaktivierte Anbieter sowie Standardmeldungen nach Rücksprüngen | 29 |
 | `external-login-settings` | Bestehende Anbieterfälle gezielt: Superadmin-Einrichtung mit 2FA, verschlüsselte Zugangsdaten nach Speichern/Neustart und Kontozugriff bei deaktivierten Anbietern, jeweils Desktop/Smartphone | 6 |
-| `two-factor` | Einrichtung, erneute Anmeldung, aktionsgebundene Bestätigung, geschützter Faktorwechsel/Entfernen, Wiederherstellung mit dem letzten Ersatzcode nach Portal-/Google-/Microsoft-Anmeldung, Ersatzcodes/PDF, eingeschränkte Hilfe und Adminbearbeitung, Superadminrechte, Regelwechsel einer offenen Sitzung, echte Browser-/Anwendungsneustarts, Inaktivität auch bei Push und HTML-Momentaufnahmen auf Desktop/Smartphone | 34 |
-| `two-factor-confirmation` | Nur Bestätigung mit nativer OTP-/Ersatzcodeumschaltung, geschützter Faktorwechsel und Hilfeanfrage samt HTML-Referenz auf Desktop/Smartphone | 2 |
+| `two-factor` | Einrichtung, erneute Anmeldung, aktionsgebundene Bestätigung, geschützter Faktorwechsel/Entfernen, Wiederherstellung mit dem letzten Ersatzcode nach Portal-/Google-/Microsoft-Anmeldung, Ersatzcodes/PDF, eingeschränkte Hilfe und Adminbearbeitung, Superadminrechte, Regelwechsel einer offenen Sitzung, echte Browser-/Anwendungsneustarts und Inaktivität auch bei Push | 32 |
+| `two-factor-confirmation` | Nur Bestätigung mit nativer OTP-/Ersatzcodeumschaltung, geschützter Faktorwechsel und Hilfeanfrage auf Desktop/Smartphone | 2 |
 | `two-factor-configuration` | Superadmin-Konfiguration mit Rollenwechsel, Erklärspalte, Feldhilfe und Rechteprüfung auf Desktop/Smartphone | 2 |
 | `two-factor-push` | Echte einminütige Inaktivitätsfrist, native Benutzereingabe gegenüber Hintergrundabrufen und gesperrte serverseitige Vorschauupdates nach Ablauf | 2 |
-| `two-factor-setup` | Verpflichtender Einstieg, QR/manueller Schlüssel, native OTP-Eingabe mit Einfügen und Tastatur, Kopierfehler sowie sichtbare Einrichtungsschritte der HTML-Referenz auf Desktop/Smartphone; ohne vollständigen Wiederherstellungs- oder Richtlinienlauf | 4 |
+| `two-factor-setup` | Verpflichtender Einstieg, QR/manueller Schlüssel, native OTP-Eingabe mit Einfügen und Tastatur sowie Kopierfehler auf Desktop/Smartphone | 2 |
 | `two-factor-recovery-output` | Gezielter Ersatzcode-/PDF-Nachtest auf Desktop und Smartphone: fehlgeschlagener Abruf ohne Fehlerdatei, echter Download ohne Navigation und ausdrückliche Sicherungsbestätigung; auf Desktop zusätzlich echter Ablauf der fünfminütigen Sicherheitsfrist bei weiterhin verfügbaren Codes und PDF | 2 |
 | `two-factor-lifecycle` | Sprachwechsel während Mailcode/QR/Codeausgabe/Hilfe, Entzug der Superadminrolle bei zwei offenen Konfigurationen sowie Startfreigabe und Neustart mit gespeicherten Entwicklungsausnahmen | 5 |
-| `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbieter- und Kontosicherheitstabs in Vaadin und HTML, Desktop/schmal, Tastaturbedienung, Footerumbrüche, Erhalt ungespeicherter Eingaben und Kontobestätigungsdialoge. Ohne Registrierung, Speicherung oder Versand | 8 |
+| `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbieter- und Kontosicherheitstabs, Desktop/schmal, Tastaturbedienung, Footerumbrüche, Erhalt ungespeicherter Eingaben und Kontobestätigungsdialoge. Ohne Registrierung, Speicherung oder Versand | 8 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |
@@ -106,7 +106,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 24 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 22 |
-| `cosmos-design` | Kontoansichten, mobiler Mailablauf, Copyright, Theme, Navigation, Infoicon-Ausrichtung und gemeinsamer Seitenrahmen mit Feldhilfe/Benutzerfilter in Vaadin und HTML bei breitem Desktop, Desktop und Smartphone | 16 |
+| `cosmos-design` | Kontoansichten, mobiler Mailablauf, Copyright, Theme, Navigation, Infoicon-Ausrichtung und gemeinsamer Seitenrahmen mit Feldhilfe/Benutzerfilter bei breitem Desktop, Desktop und Smartphone | 16 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |

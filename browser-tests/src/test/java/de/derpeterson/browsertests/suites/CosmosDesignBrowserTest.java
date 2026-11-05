@@ -35,7 +35,6 @@ import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
 import io.qameta.allure.playwright.AllurePlaywright;
-import java.nio.file.Path;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -444,34 +443,13 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     }
     page.keyboard().press("Escape");
     AllurePlaywright.attachScreenshot("Gemeinsamer scrollender Seitenrahmen", page);
-    page.navigate(
-        Path.of("docs/design/frontend-referenzen/admin.html").toAbsolutePath().toUri().toString());
-    Locator mobileNavigation = page.locator("#mobileMenuBtn");
-    if (mobileNavigation.isVisible()) {
-      mobileNavigation.click();
-    }
-    page.locator("[data-admin-route=settings]").click();
-    page.keyboard().press("Escape");
-    page.locator(".hc-trigger").first().click();
-    assertDrawerAtContentEdge(page.locator("#configurationHelp"), width);
-    AllurePlaywright.attachScreenshot("HTML-Feldhilfe am Inhaltsrand", page);
-    page.keyboard().press("Escape");
-    if (mobileNavigation.isVisible()) {
-      mobileNavigation.click();
-    }
-    page.locator("[data-admin-route=users]").click();
-    page.keyboard().press("Escape");
-    page.locator("#filterToggle").click();
-    assertDrawerAtContentEdge(page.locator("#filterPanel"), width);
-    AllurePlaywright.attachScreenshot("HTML-Benutzerfilter am Inhaltsrand", page);
-    page.keyboard().press("Escape");
   }
 
   private void assertDrawerAtContentEdge(Locator overlay, int width) {
     page.waitForCondition(
         () -> {
           com.microsoft.playwright.options.BoundingBox content =
-              page.locator(".cosmos-admin-sections, main .au-layout").boundingBox();
+              page.locator(".cosmos-admin-sections").boundingBox();
           com.microsoft.playwright.options.BoundingBox drawer = overlay.boundingBox();
           double right =
               width >= 1024

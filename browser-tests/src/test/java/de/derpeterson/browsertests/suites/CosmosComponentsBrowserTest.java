@@ -27,9 +27,6 @@ import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -245,10 +242,10 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   }
 
   @Test
-  @DisplayName("COMPONENT-04: Tooltip A gilt für Aktionen, Feldinfos und HTML-Referenzen")
+  @DisplayName("COMPONENT-04: Tooltip A gilt für Aktionen und Feldinfos")
   @Description(
-      "Kurze Aktionshinweise per Hover und Tastatur öffnen, lange Mailinfos per Klick prüfen. Auf Desktop und Smartphone gleiche deckende Fläche, Schrift und Rahmen ohne Überlauf. Die drei bedienbaren HTML-Referenzen verwenden denselben Tooltipstil und erhalten ihre zugänglichen Beschriftungen.")
-  void tooltipDesignCoversActionsFieldHintsAndReferences() {
+      "Kurze Aktionshinweise per Hover und Tastatur öffnen, lange Mailinfos per Klick prüfen. Auf Desktop und Smartphone gleiche deckende Fläche, Schrift und Rahmen ohne Überlauf.")
+  void tooltipDesignCoversActionsAndFieldHints() {
     signIn();
     for (int width : new int[] {1280, 390}) {
       page.setViewportSize(width, 900);
@@ -282,39 +279,6 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
           .click();
       assertThat(page.getByRole(AriaRole.TOOLTIP)).hasCount(0);
     }
-    Path references = references();
-    List<String> referenceErrors = new ArrayList<>();
-    page.onPageError(referenceErrors::add);
-    for (int width : new int[] {1280, 390}) {
-      page.setViewportSize(width, 900);
-      for (String name : List.of("public.html", "portal.html", "admin.html")) {
-        page.navigate(
-            references.resolve(name).toUri().toString()
-                + (name.equals("public.html") ? "#public-login" : ""));
-        page.evaluate("() => document.fonts.ready");
-        Locator trigger =
-            page.locator("button[aria-label]:visible").all().stream()
-                .filter(
-                    button ->
-                        !button.getAttribute("aria-label").equals(button.textContent().trim()))
-                .findFirst()
-                .orElseThrow();
-        String label = trigger.getAttribute("aria-label");
-        String hint =
-            (String)
-                trigger.evaluate(
-                    "el => el.dataset.refTooltip || el.dataset.tooltip || el.getAttribute('aria-label')");
-        trigger.focus();
-        Locator tooltip = page.locator("#reference-tooltip:visible");
-        assertThat(tooltip).hasText(hint);
-        assertTooltip(tooltip);
-        page.keyboard().press("Escape");
-        assertThat(tooltip).hasCount(0);
-        assertThat(trigger).hasAttribute("aria-label", label);
-        AllurePlaywright.attachScreenshot("Referenz " + name + " bei " + width + "px", page);
-      }
-    }
-    assertEquals(List.of(), referenceErrors, "Die ausgelagerten Referenzcontroller müssen laufen");
   }
 
   @Test
@@ -429,18 +393,6 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     BoundingBox bounds = tooltip.boundingBox();
     assertTrue(bounds.width <= 221);
     assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= page.viewportSize().width + 1);
-  }
-
-  private Path references() {
-    Path directory = Path.of("").toAbsolutePath();
-    while (directory != null) {
-      Path references = directory.resolve("docs/design/frontend-referenzen");
-      if (Files.exists(references.resolve("public.html"))) {
-        return references;
-      }
-      directory = directory.getParent();
-    }
-    throw new IllegalStateException("Die freigegebenen HTML-Referenzen fehlen.");
   }
 
   private void signIn() {

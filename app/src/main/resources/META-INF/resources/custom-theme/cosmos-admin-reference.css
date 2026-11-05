@@ -130,7 +130,7 @@ vaadin-app-layout.cosmos-reference-admin .portal-pagination-size input { font:60
 .admin-reference-drawer .admin-drawer-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; width:100%; }
 .admin-reference-drawer .admin-filter-hint { display:flex; align-items:center; gap:10px; margin-top:20px; padding:14px; border:1px solid var(--cosmos-reference-icon-border); background:var(--cosmos-reference-input); border-radius:9px; color:var(--cosmos-reference-secondary); font:400 11px/18px Inter,sans-serif; }
 .admin-reference-drawer .admin-filter-hint>vaadin-icon { width:16px; height:16px; flex-shrink:0; }
-/* Benutzerfilter: Maße der festen HTML-Referenz, ohne Änderung am Filterentwurf. */
+/* Benutzerfilter: Maße des Seitenpanels. */
 vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-drawer::part(overlay) { width:380px!important; }
 vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-drawer::part(header) { padding:0!important; border-bottom:1px solid var(--cosmos-reference-border); background:var(--cosmos-reference-panel); }
 .admin-reference-drawer.admin-user-filter-drawer .admin-reference-drawer-heading { padding:20px; }
@@ -471,7 +471,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card vaadin-text-area::par
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card vaadin-text-area::part(helper-text) { margin:0; padding:6px 0 0; color:var(--cosmos-reference-secondary); background:transparent; font:400 11px/18.7px Inter,sans-serif; transition:none; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card vaadin-text-area::part(helper-text)::before { display:none; }
 
-/* Feldhilfe folgt der kompakten HTML-Referenz, ohne zusätzliche Karten um Regeln. */
+/* Kompakte Feldhilfe mit direkt sichtbaren Eingaberegeln. */
 vaadin-dialog.admin-reference-drawer.admin-config-help::part(overlay) { width:min(380px,100vw)!important; }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-reference-drawer-heading { padding:20px; background:var(--cosmos-reference-panel); }
 vaadin-dialog.admin-reference-drawer.admin-config-help .cosmos-panel-heading { flex:1; min-width:0; }

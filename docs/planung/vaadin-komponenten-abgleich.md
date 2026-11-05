@@ -121,7 +121,7 @@ Anweisung, alle 27 Anzeigen ungeprüft gleich aussehen zu lassen.
   Bedienung nicht. Kein Anlass, die Felder neu zu bauen.
 - Lucide-Icons wurden ausdrücklich anstelle der gesetzten Vaadin-Icons gewählt.
   `AppIcon` liefert native `SvgIcon`. Diese Entscheidung bleibt bestehen.
-- HTML-Referenzen und E-Mailvorlagen benötigen HTML. Dort wären Flow-Komponenten
+- E-Mailvorlagen benötigen HTML. Dort wären Flow-Komponenten
   kein sachgerechter Ersatz. Hintergründe, Servicezeichen, normale Überschriften,
   Fließtexte und Layoutcontainer sind ebenfalls kein Komponenten-Nachbau.
 - Vaadins kommerzielles [Dashboard](https://vaadin.com/docs/latest/components/dashboard)
@@ -152,7 +152,7 @@ lassen sich belastbare Stundenangaben nicht aus der Fundstellenzahl ableiten.
 ## Abnahme- und Prüfkriterien des späteren Pakets
 
 - Kein sichtbares Redesign: DE/EN, Desktop/Smartphone, schmale Header und lange
-  Texte neben der freigegebenen Referenz vergleichen. Fokus, Tooltip, Disabled,
+  Texte mit dem bisherigen Vaadin-Stand vergleichen. Fokus, Tooltip, Disabled,
   Statusfarben, Null/99+/hohe Zähler und Live-Aktualisierung prüfen.
 - Bestehende Browserfälle erweitern statt neue parallele Journeys anlegen:
   `AccountSettingsBrowserTest`, `SessionManagementBrowserTest`,
@@ -161,7 +161,7 @@ lassen sich belastbare Stundenangaben nicht aus der Fundstellenzahl ableiten.
   Designfälle anhand der tatsächlich betroffenen Klassen auswählen.
 - Fach-/Rechteprüfung, serverseitige Zuordnung, Sessionwiderruf und Bildrevision
   nicht in Renderern verschieben oder für DOM-Umstellungen abschwächen.
-- Nach jeder freigegebenen Teilumsetzung HTML-Referenz, Theme-Anleitung und
+- Nach jeder freigegebenen Teilumsetzung Theme-Anleitung und
   betroffene Tests gemeinsam nachziehen. Bei API- oder Selektoränderungen die
   tatsächlichen Aufrufer prüfen; keinen kompletten Umbau auf einmal durchführen.
 

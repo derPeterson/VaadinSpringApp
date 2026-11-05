@@ -52,9 +52,7 @@ class BrowserExecutionPlanTest {
     Set<String> expected =
         switch (suite) {
           case "two-factor-setup" ->
-              Set.of(
-                  "requiredIntroductionReusesFreshPasswordWithoutGrantingPortalAccess",
-                  "referenceStatesAndKeyboardNavigation");
+              Set.of("requiredIntroductionReusesFreshPasswordWithoutGrantingPortalAccess");
           case "two-factor-confirmation" -> Set.of("confirmationRecoveryAndHelpUseNativeControls");
           case "two-factor-configuration" -> Set.of("superadminOnlyConfiguration");
           default ->

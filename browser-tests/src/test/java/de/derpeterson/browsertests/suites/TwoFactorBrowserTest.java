@@ -476,83 +476,6 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
-  @Tag("setup-screen")
-  @DisplayName(
-      "MFA-06: HTML-Momentaufnahmen zeigen Einrichtung, Codeausgabe, Rollenregeln und Kontakt")
-  void referenceStatesAndKeyboardNavigation(int width) {
-    page.setViewportSize(width, 900);
-    page.navigate(
-        Path.of("docs/design/frontend-referenzen/public.html").toAbsolutePath().toUri()
-            + "#public-two-factor");
-    assertThat(page.locator("#public-two-factor")).isVisible();
-    assertThat(page.locator(".mfa-introduction")).isVisible();
-    assertThat(page.locator(".two-factor-introduction-title"))
-        .hasText(new UiTexts("de").getTwoFactorRequiredTitle());
-    AllurePlaywright.attachScreenshot("HTML: verpflichtende Ersteinrichtung Variante A", page);
-    page.locator("[data-menu-language=" + texts.language() + "]").click();
-    assertThat(page.locator(".two-factor-introduction-title"))
-        .hasText(texts.getTwoFactorRequiredTitle());
-    page.locator("[data-mfa-continue]").click();
-    assertThat(page.locator(".mfa-qr-placeholder")).isVisible();
-    assertThat(page.locator(".mfa-setup-tabs")).hasCSS("height", "42px");
-    page.locator("#mfa-manual-tab").click();
-    Locator referenceKey = page.locator("#mfa-manual-key");
-    assertThat(referenceKey).hasAttribute("readonly", "");
-    String exampleKey = referenceKey.inputValue();
-    UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
-    page.locator("[data-menu-language=" + other.language() + "]").click();
-    assertThat(page.locator("#mfa-manual-tab")).hasAttribute("aria-selected", "true");
-    assertThat(page.locator(".mfa-manual-hint")).hasText(other.getTwoFactorManualHint());
-    assertThat(referenceKey).hasValue(exampleKey);
-    page.locator("[data-menu-language=" + texts.language() + "]").click();
-    assertThat(page.locator(".mfa-manual-hint")).hasText(texts.getTwoFactorManualHint());
-    AllurePlaywright.attachScreenshot("HTML: manueller Schlüssel nach Sprachwechsel", page);
-    page.locator("#mfa-qr-tab").click();
-    assertThat(page.locator(".mfa-qr-placeholder")).isVisible();
-    AllurePlaywright.attachScreenshot("HTML: QR-Einrichtung in der Testsprache", page);
-    page.locator("#mfa-setup-code").fill("123456");
-    page.locator("[data-mfa-continue]").click();
-    page.locator("[data-mfa-saved]").check();
-    page.locator("[data-mfa-continue]").click();
-    page.locator(".mfa-login-alternatives > summary").click();
-    page.locator("[data-mfa-go=recover]").click();
-    assertThat(page.locator("[data-mfa-phase-content]")).hasAttribute("data-phase", "recover");
-    assertThat(page.locator(".mfa-confirmation-flow .vp-card-head"))
-        .containsText(texts.getTwoFactorRecoverSubtitle());
-    page.locator("[data-mfa-continue]").click();
-    assertThat(page.locator(".mfa-qr-placeholder")).isVisible();
-    page.locator("[data-mfa-continue]").click();
-    assertThat(page.locator(".mfa-recovery-code-field input")).hasCount(10);
-    assertThat(page.locator(".mfa-recovery-code-field input").first()).isVisible();
-    assertThat(page.locator(".mfa-recovery-code-field input").first())
-        .hasValue(Pattern.compile(".*ABCDEF01.*"));
-    AllurePlaywright.attachScreenshot("HTML: synthetische Zwei-Faktor-Ausgabe", page);
-    page.navigate(
-        Path.of("docs/design/frontend-referenzen/portal.html").toAbsolutePath().toUri()
-            + "#security");
-    page.locator("[data-mfa-manage=codes]").click();
-    assertThat(page.locator("dialog.mfa-reference")).isVisible();
-    page.locator("[data-mfa-close]").click();
-    page.navigate(
-        Path.of("docs/design/frontend-referenzen/admin.html").toAbsolutePath().toUri().toString());
-    if (width == 390) {
-      page.locator("#mobileMenuBtn").click();
-    }
-    page.locator("[data-admin-route=settings]:visible").first().click();
-    if (!page.locator("[data-ad-group=TWO_FACTOR]:visible").first().isVisible()) {
-      page.locator("#mobileMenuBtn").click();
-    }
-    page.locator("[data-ad-group=TWO_FACTOR]:visible").first().click();
-    assertThat(page.locator("[data-mfa-role]")).hasCount(4);
-    page.locator("[data-mfa-role='0']").focus();
-    page.keyboard().press("End");
-    assertThat(page.locator("[data-mfa-role='3']")).hasAttribute("aria-selected", "true");
-    assertThat(page.locator("[data-mfa-rules='3'] select")).hasCount(9);
-    AllurePlaywright.attachScreenshot("HTML: rollenbezogene Zwei-Faktor-Regeln", page);
-  }
-
-  @ParameterizedTest
-  @ValueSource(ints = {1280, 390})
   @DisplayName(
       "MFA-07: Admin übernimmt eine eingeschränkte Hilfsanfrage und sendet die geprüfte Anleitung")
   void recoverySupportRemainsContactInsteadOfFactorReset(int width) {
@@ -973,38 +896,6 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         (Boolean) page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
     page.locator("#support-back").click();
     assertThat(page.locator("#two-factor-code")).isVisible();
-    page.navigate(
-        Path.of("docs/design/frontend-referenzen/public.html").toAbsolutePath().toUri()
-            + "#public-two-factor");
-    page.locator("[data-menu-language=" + texts.language() + "]").click();
-    page.locator("[data-mfa-continue]").click();
-    page.locator("[data-mfa-continue]").click();
-    page.locator("[data-mfa-saved]").check();
-    page.locator("[data-mfa-continue]").click();
-    assertThat(page.locator("#public-two-factor .vp-card-head h2"))
-        .hasText(texts.getTwoFactorConfirmTitle());
-    assertThat(page.locator("#mfa-login-code")).isVisible();
-    assertThat(page.locator("#public-two-factor .mfa-otp-slots > span")).hasCount(6);
-    page.locator("[data-mfa-login-method=recovery]").click();
-    page.locator("#mfa-login-recovery-code").fill(recoveryCode);
-    assertThat(page.locator("#mfa-login-recovery-code")).hasValue(recoveryCode);
-    AllurePlaywright.attachScreenshot("HTML: Anmeldung mit getrennten Codemethoden", page);
-    assertThat(page.locator("[data-mfa-go=recover]")).isHidden();
-    page.locator(".mfa-login-alternatives > summary").click();
-    page.locator("[data-mfa-go=recover]").click();
-    assertThat(page.locator("#public-two-factor .vp-card-head h2"))
-        .hasText(texts.getTwoFactorRecoverAction());
-    assertThat(page.locator(".vp-card-foot [data-mfa-flow-back]")).isVisible();
-    AllurePlaywright.attachScreenshot("HTML: geschützter Authenticatorwechsel", page);
-    page.locator("[data-mfa-go=help]").click();
-    assertThat(page.locator("#public-two-factor .vp-card-head h2"))
-        .hasText(texts.getSupportHelpTitle());
-    page.locator("#mfa-help-request").fill(draft);
-    page.locator("[data-menu-language=" + other.language() + "]").click();
-    assertThat(page.locator("#mfa-help-request")).hasValue(draft);
-    page.locator("[data-menu-language=" + texts.language() + "]").click();
-    assertThat(page.locator("#public-two-factor .mfa-help-empty")).hasText(texts.getSupportEmpty());
-    AllurePlaywright.attachScreenshot("HTML: Hilfeanfrage ohne Kontofreigabe", page);
   }
 
   @ParameterizedTest

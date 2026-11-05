@@ -24,7 +24,6 @@ import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Feature;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
-import java.nio.file.Path;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -38,7 +37,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
   @CsvSource({"1280", "390"})
   @DisplayName(
       "OIDC-12: Anbieterzeilen und Kontobestätigung verwenden die bestehenden Dialogflächen")
-  void contextualAccountDialogMatchesReference(int width) {
+  void contextualAccountDialogUsesCosmosLayout(int width) {
     page.setViewportSize(width, 900);
     LoginPage login = new LoginPage(page);
     login.open();
@@ -104,8 +103,6 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     AdminUserDialog editor = new AdminUsersPage(page).openCreate();
     assertDynamicTextWidths(editor.root().locator(".cosmos-dialog-actions"));
     editor.cancel();
-
-    assertReferenceAccountDialog(width);
   }
 
   private void assertAccountProviderRows(Locator portalTab, Locator providersTab) {
@@ -147,45 +144,6 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     page.waitForCondition(
         () -> Math.abs(google.boundingBox().width - microsoft.boundingBox().width) < 1);
     assertTrue((Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"));
-  }
-
-  private void assertReferenceAccountDialog(int width) {
-    page.navigate(
-        Path.of("docs/design/frontend-referenzen/portal.html").toAbsolutePath().toUri()
-            + "#security");
-    page.locator("[data-portal-page=security]").evaluate("element => element.blur()");
-    assertThat(page.locator("#security-portal")).isVisible();
-    assertThat(page.locator("#security-providers")).isHidden();
-    attachPanels("HTML-Referenz: Portalzugang bei " + width + " px");
-    page.locator("#security-tab-portal").focus();
-    page.locator("#security-tab-portal").press("End");
-    assertThat(page.locator("#security-tab-providers")).isFocused();
-    page.locator("#security-tab-providers").press("Space");
-    assertThat(page.locator("#security-portal")).isHidden();
-    assertThat(page.locator("#security-providers")).isVisible();
-    Locator referenceBadge = page.locator(".external-connection-state").first();
-    assertThat(referenceBadge).hasCSS("border-radius", "4px");
-    assertThat(referenceBadge).hasCSS("border-top-width", "1px");
-    assertThat(referenceBadge).hasCSS("font-size", "10px");
-    assertThat(referenceBadge).hasCSS("font-weight", "500");
-    assertThat(referenceBadge).hasCSS("color", "rgb(52, 211, 153)");
-    assertThat(page.locator(".external-connection-row").first())
-        .hasCSS("background-color", "rgb(9, 17, 32)");
-    attachPanels("HTML-Referenz: Anbieterübersicht bei " + width + " px");
-    page.locator("[data-external-provider=google]").click();
-    Locator reference = page.locator("#externalIdentityDialog");
-    assertThat(reference.locator(".portal-modal-body")).hasCSS("background-color", "rgb(5, 8, 17)");
-    assertThat(page.locator("#externalProofPassword")).hasCSS("font-size", "12px");
-    assertDynamicTextWidths(reference.locator(".portal-modal-foot"));
-    assertThat(reference.locator(".external-proof-separator"))
-        .hasCSS("text-transform", "uppercase");
-    assertThat(reference.locator(".portal-hint > svg")).hasCSS("color", "rgb(56, 189, 248)");
-    page.locator("#externalProofPassword").focus();
-    page.mouse().move(1, 1);
-    attachPanels("HTML-Referenz: Bestätigungsdialog bei " + width + " px");
-    assertTrue((Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"));
-    page.keyboard().press("Escape");
-    assertThat(reference).isHidden();
   }
 
   private void assertDynamicTextWidths(Locator group) {
@@ -286,75 +244,6 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
         (Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"),
         "Anbietertabs erzeugen keinen horizontalen Seitenüberlauf");
 
-    assertReferenceProviderTabsAndSmtpLinks(width);
-  }
-
-  private void assertReferenceProviderTabsAndSmtpLinks(int width) {
-    page.navigate(
-        Path.of("docs/design/frontend-referenzen/admin.html").toAbsolutePath().toUri().toString());
-    if (width == 390) {
-      page.locator("#mobileMenuBtn").click();
-    }
-    page.locator("[data-admin-route=settings]:visible").first().click();
-    if (!page.locator("[data-ad-group=EXTERNAL_LOGIN]:visible").first().isVisible()) {
-      page.locator("#mobileMenuBtn").click();
-    }
-    page.locator("[data-ad-group=EXTERNAL_LOGIN]:visible").first().click();
-    Locator referenceTabs = page.locator(".ad-provider-tabs");
-    assertThat(referenceTabs.getByRole(AriaRole.TAB)).hasCount(2);
-    assertThat(page.locator(".ad-provider-panel-header .ad-tabler-icon")).isVisible();
-    assertThat(page.locator("[data-ad-group=EXTERNAL_LOGIN] .ad-tabler-icon")).hasCount(1);
-    assertThat(referenceTabs).hasCSS("border-bottom-width", "0px");
-    assertThat(page.locator(".ad-provider-panel-header")).hasCSS("border-bottom-width", "0px");
-    assertThat(page.locator(".ad-provider-panel-header h2")).hasText("Anmeldeanbieter");
-    assertThat(page.locator(".ad-provider-panel-header p br")).hasCount(1);
-    assertThat(page.locator(".ad-provider-status")).hasCount(2);
-    for (String provider : new String[] {"google", "microsoft"}) {
-      assertReferenceProviderSetup(provider);
-    }
-    page.locator("#ad-provider-tab-google").click();
-    BoundingBox referenceClient = page.locator("#ad-provider-google-client").boundingBox();
-    BoundingBox referenceSecret = page.locator("#ad-provider-google-secret").boundingBox();
-    if (width >= 600) {
-      assertEquals(
-          referenceClient.y,
-          referenceSecret.y,
-          1,
-          "Die Eingaben stehen auch mit Feldhilfe auf gleicher Höhe");
-    } else {
-      assertTrue(
-          referenceSecret.y > referenceClient.y + referenceClient.height,
-          "Mobil stehen die Eingaben untereinander");
-    }
-    assertProviderTabAppearance(page.locator("#ad-provider-tab-google"));
-    assertThat(page.locator("#ad-provider-google")).isVisible();
-    assertThat(page.locator("#ad-provider-microsoft")).isHidden();
-    attachPanels("Anmeldeanbieter: Google-Tab HTML-Referenz bei " + width + " px");
-    page.locator("#ad-provider-google-client").fill("unsaved-reference-example");
-    page.locator("#ad-provider-tab-microsoft").click();
-    assertProviderTabAppearance(page.locator("#ad-provider-tab-microsoft"));
-    assertThat(page.locator("#ad-provider-microsoft")).isVisible();
-    referenceTabs
-        .getByRole(AriaRole.TAB, new Locator.GetByRoleOptions().setName("Microsoft"))
-        .press("Home");
-    assertThat(page.locator("#ad-provider-tab-google")).isFocused();
-    assertThat(page.locator("#ad-provider-google-client")).hasValue("unsaved-reference-example");
-    assertTrue(
-        (Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"),
-        "HTML-Anbietertabs erzeugen keinen horizontalen Seitenüberlauf");
-
-    Locator referenceMail = page.locator("[data-admin-route=mail]").first();
-    if (!referenceMail.isVisible()) {
-      page.locator("#mobileMenuBtn").click();
-    }
-    referenceMail.click();
-    Locator referenceSmtp = page.locator(".ad-mail-settings-link");
-    assertThat(referenceSmtp).hasText("SMTP Einstellungen");
-    assertLinkAlignmentAndStableHover(referenceSmtp);
-    attachPanels("SMTP-Direktzugang HTML bei " + width + " px");
-    referenceSmtp.click();
-    assertThat(page.locator("#admin-proposal .ad-config")).isVisible();
-
     page.navigate("/admin?section=mail_test");
     Locator smtp = page.locator("a.admin-smtp-link");
     assertThat(smtp).hasText(texts.getAdminConfigGroupSmtp());
@@ -419,80 +308,6 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
         assistant.locator(".provider-credentials > div").first());
     assertLinkAlignmentAndStableHover(consoleLink);
     assertProviderFieldHelp(provider);
-  }
-
-  private void assertReferenceProviderSetup(String provider) {
-    Locator badge =
-        page.locator(
-            ".ad-provider-status[data-state="
-                + (provider.equals("google") ? "active" : "inactive")
-                + "]");
-    assertThat(badge).hasCSS("height", "30px");
-    badge.scrollIntoViewIfNeeded();
-    badge.evaluate(
-        "e => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)))");
-    badge.evaluate("e => e.focus({preventScroll:true})");
-    assertThat(page.locator("#reference-tooltip")).isVisible();
-    assertThat(page.locator("#reference-tooltip"))
-        .containsText(
-            provider.equals("google")
-                ? "Google ist für neue Anmeldungen freigegeben."
-                : "Microsoft ist für neue Anmeldungen deaktiviert.");
-    page.keyboard().press("Escape");
-    page.locator("#ad-provider-tab-" + provider).click();
-    assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-assistant-kicker"))
-        .hasText("Einrichtungsassistent");
-    assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label")).hasCount(3);
-    assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label"))
-        .hasText(
-            new String[] {
-              "Anbieter einrichten", "Zugangsdaten hinterlegen", "Anmeldung aktivieren"
-            });
-    assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-step-label svg"))
-        .hasCount(3);
-    assertThat(page.locator("#ad-provider-" + provider + " label .ad-required")).hasCount(2);
-    Locator referenceConsoleLink =
-        page.locator("#ad-provider-" + provider + " a.ad-provider-console-link");
-    assertThat(referenceConsoleLink).hasCSS("border-top-width", "0px");
-    assertThat(referenceConsoleLink).hasCSS("font-weight", "600");
-    assertThat(referenceConsoleLink).hasCSS("color", "rgb(226, 232, 240)");
-    assertThat(referenceConsoleLink.locator("svg")).hasCSS("color", "rgb(56, 189, 248)");
-    assertThat(page.locator("#ad-provider-" + provider + " .ad-provider-console-guide"))
-        .hasCSS("row-gap", "4px");
-    Locator assistant = page.locator("#ad-provider-" + provider);
-    assertThat(assistant.locator(".ad-provider-redirect label")).hasText("Rücksprungadresse");
-    assertThat(assistant.locator(".ad-provider-copy svg")).hasCount(1);
-    assertThat(assistant.getByRole(AriaRole.SWITCH)).hasCount(1);
-    assertProviderControlGeometry(
-        assistant.locator(".ad-provider-redirect input"),
-        assistant.locator(".ad-provider-copy"),
-        assistant.locator(".ad-provider-activation"),
-        assistant.locator(".hc-toggle-control"),
-        assistant.locator(".ad-provider-credentials > div").first());
-    assertLinkAlignmentAndStableHover(referenceConsoleLink);
-    for (String field : new String[] {"client", "secret", "enabled"}) {
-      Locator wrapper =
-          page.locator("#ad-provider-" + provider + "-" + field)
-              .locator(
-                  "xpath=ancestor::div[contains(concat(' ',normalize-space(@class),' '),' hc-field ')][1]");
-      wrapper.locator(".hc-trigger").click();
-      Locator help = page.locator("#configurationHelp");
-      assertThat(help).isVisible();
-      assertThat(help.locator(".hc-group"))
-          .hasText(provider.equals("google") ? "Google" : "Microsoft");
-      assertThat(help.locator(".hc-rules li")).hasCount(1);
-      help.locator("[data-hc-close]").click();
-    }
-    Locator referenceEnabled = page.locator("#ad-provider-" + provider + "-enabled");
-    Locator referenceClientInput = page.locator("#ad-provider-" + provider + "-client");
-    String initialClient = referenceClientInput.inputValue();
-    boolean initialEnabled = referenceEnabled.isChecked();
-    referenceEnabled.uncheck();
-    referenceClientInput.fill("");
-    assertThat(referenceEnabled).isDisabled();
-    referenceClientInput.fill(initialClient);
-    assertThat(referenceEnabled).isEnabled();
-    referenceEnabled.setChecked(initialEnabled);
   }
 
   private void assertProviderControlGeometry(
@@ -695,29 +510,6 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     if (width == 390) {
       assertResponsiveActions(local, registration);
     }
-
-    page.setViewportSize(width, 1000);
-    page.navigate(
-        Path.of("docs/design/frontend-referenzen/public.html").toAbsolutePath().toUri()
-            + "#public-"
-            + route);
-    Locator referencePage = page.locator("#public-" + route);
-    Locator referenceLocal = referencePage.locator(".vp-auth-panels > .vp-card");
-    Locator referenceExternal = referencePage.locator(".vp-auth-panels > .external-login-panel");
-    assertThat(referenceLocal.locator("[data-external-preview]")).hasCount(0);
-    assertThat(referenceLocal.locator(".vp-card-foot")).isVisible();
-    assertThat(referenceExternal.locator("[data-external-preview]")).hasCount(2);
-    assertPlacement(referenceLocal, referenceExternal, width, registration);
-    assertProviderButtonsFlow(referenceExternal, false);
-    if (registration) {
-      assertRegistrationFields(referenceLocal, width);
-    } else {
-      assertRememberSwitch(referenceLocal);
-    }
-    attachPanels(route + ": Zwei Panels in der HTML-Referenz");
-    if (width == 390) {
-      assertResponsiveActions(referenceLocal, registration);
-    }
   }
 
   private void assertRememberSwitch(Locator panel) {
@@ -743,7 +535,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
               return Math.abs(r.width - 34) < 1 && Math.abs(r.height - 20) < 1;
             }
             """),
-        "Schalterbahn hat in Anwendung und Referenz dieselben kompakten Abmessungen");
+        "Schalterbahn hat die vereinbarten kompakten Abmessungen");
   }
 
   private void attachPanels(String title) {

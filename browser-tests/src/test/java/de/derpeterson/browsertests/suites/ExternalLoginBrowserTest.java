@@ -234,22 +234,6 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     page.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
     page.locator("#external-confirm-local").click();
     assertThat(page).hasURL(Pattern.compile(".*/login$"));
-    page.navigate(
-        Path.of("docs/design/frontend-referenzen/portal.html").toAbsolutePath().toUri()
-            + "#security");
-    assertThat(page.locator(".external-connection-row")).hasCount(2);
-    page.locator("#security-tab-providers").click();
-    AllurePlaywright.attachScreenshot("HTML-Referenz: verbundene Anmeldungen als Zeilen", page);
-    page.locator("[data-external-provider=google]").click();
-    assertThat(page.locator("#externalIdentityDialog")).isVisible();
-    assertThat(page.locator("#externalIdentityTitle")).hasText("Google trennen");
-    page.locator("#externalProofPassword").fill("Discarded-example");
-    page.locator("#externalIdentityDialog [data-close-dialog]").last().click();
-    page.locator("[data-external-provider=google]").click();
-    assertThat(page.locator("#externalProofPassword")).hasValue("");
-    AllurePlaywright.attachScreenshot("HTML-Referenz: kontextbezogener Bestätigungsdialog", page);
-    assertTrue((Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"));
-    page.locator("#externalIdentityDialog [data-close-dialog]").last().click();
   }
 
   @ParameterizedTest

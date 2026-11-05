@@ -53,7 +53,7 @@ Inaktivitätsschalter mit Dauer bleiben fachlich unverändert. Eine globale
 „Sitzungssperre“ ist keine passende Bezeichnung für die erneute Faktorbestätigung.
 Die in C zusätzlich gezeigten Bereichsbezeichnungen sind reine Gliederungsvorschläge,
 keine neuen Konfigurationswerte. Entwickleroptionen bleiben im Normalbetrieb verborgen.
-Vaadin und die Admin-HTML-Referenz kombinieren die drei Regelgruppen aus A mit
+Vaadin kombiniert die drei Regelgruppen aus A mit
 der Erklärspalte aus B. Der Seitenkopf bleibt bestehen und die Rollentabs nutzen
 die Gestaltung der Anmeldeanbieter. Die gemeinsame Sichtabnahme steht aus.
 
@@ -86,8 +86,8 @@ Beauftragt sind drei zusammenhängende Stitch-Varianten, jeweils als Übersicht 
 diesen drei Ansichten: Anmeldung bestätigen, Authenticator mit Ersatzcode
 wiederherstellen und Wiederherstellungsanfragen ohne App/Ersatzcodes. Die Entwürfe
 bleiben im bestehenden 2FA-Projekt. Ausgewählt und zur Übernahme freigegeben ist A.
-Die drei Ansichten sind mit den bestehenden Cosmos-Bausteinen in Vaadin und der
-Public-HTML-Referenz umgesetzt. Die gemeinsame Sichtabnahme und spätere Verfeinerung
+Die drei Ansichten sind mit den bestehenden Cosmos-Bausteinen in Vaadin umgesetzt.
+Die gemeinsame Sichtabnahme und spätere Verfeinerung
 bleiben offen.
 
 Der bestehende Cosmos-Seitenrahmen, Panelkopf, Inhaltsfläche, Footer, Inter,
@@ -125,7 +125,7 @@ Ersatzcodefeld, umschaltbar mit nativen Tabs. Der Wiederherstellungsweg bleibt v
 der Sitzungsbestätigung getrennt; Rückweg und Hauptaktionen stehen im Panel-Footer.
 Die Hilfe behält eigene Anfragen und Konversationen sowie die serverseitigen
 Zugriffsgrenzen, zeigt bei leerer Liste einen Leerzustand und verwendet native
-Footerbuttons. Alle drei HTML-Momentaufnahmen sind in DE/EN angeglichen.
+Footerbuttons.
 Der gezielte Bediennachweis wird zentral im [Testbedarf](../testbedarf.md) geführt.
 
 Für den Wiederherstellungsdialog liegt eine [Stitch-Verfeinerung zur Sichtung](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=12469882513791176942)
@@ -140,7 +140,7 @@ aus. Zu prüfen sind das kompakte Anfrage-Grid mit zugeordnetem Verlauf und der
 zweizeilige mobile Footer mit „Zurück“ links und der Hauptaktion darunter.
 
 Variante A ist für die Aktionsanordnung übernommen. „Aktualisieren“ steht am
-Verlauf oder bei der leeren Anfragenübersicht. Vaadin und HTML-Referenz verwenden
+Verlauf oder bei der leeren Anfragenübersicht. Die Vaadin-Ansicht verwendet
 primärblaue Sprechblasen für den Antragsteller und dunklere Sprechblasen für die
 Systemadministration, jeweils mit Spitze zur Absenderseite, sowie
 eine schmale Scrollbar. Die gemeinsame Sichtprüfung bleibt offen. Die
@@ -194,7 +194,7 @@ Kontrastaussage war keine Messung.
 Auf weiteren Auftrag liegt eine einzelne
 [Überarbeitung nach der Kritik](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=2934366688844334879)
 im Projekt. Sie wurde über die CLI erzeugt, exportiert und gesichtet. Die
-ausgewählten Elemente sind in Vaadin und der festen HTML-Referenz übernommen:
+ausgewählten Elemente sind in Vaadin übernommen:
 Trennlinie zwischen den Schritten, Punkt-Platzhalter mit wandernder Codemarkierung,
 Tabicons und überarbeitete Hinweise. Die Gestaltung dieses Einrichtungsschritts ist
 gemeinsam abgenommen. Zusätzliche Codegruppierung, Footeränderungen und erfundene
@@ -211,7 +211,7 @@ angeordnet werden. Ausgewählt ist B mit Umschaltung QR/manueller Schlüssel aus
 den drei App-Empfehlungen und den blauen Tabler-Schrittüberschriften wie in der
 Anbietereinrichtung. Die erste Codeeingabe verwendet das freigegebene OTP-Add-on
 mit sechs sichtbaren Kästchen und gemeinsamem Einfügen. Der Content verwendet
-die Standardfarbe. Vaadin und HTML sind angepasst; die gemeinsame Sichtabnahme
+die Standardfarbe. Die gemeinsame Sichtabnahme
 dieses Screens ist erfolgt. Die automatisierten Einrichtungs- und
 Wiederherstellungsabläufe sind geprüft; der manuelle Durchlauf mit echter App
 bleibt Teil von [HUM-09](../manual-tests/README.md#hum-09).
@@ -223,7 +223,7 @@ bleibt Teil von [HUM-09](../manual-tests/README.md#hum-09).
 Die Entwürfe enthalten ausschließlich synthetische QR-/Schlüsselbeispiele.
 Zusätzliche von Stitch erfundene Seitenstatus und technische Erklärungen sind
 keine abgenommenen Anforderungen. Die Windows-App 2fast ist bereits als weitere
-frei wählbare App-Empfehlung in Vaadin und der HTML-Referenz ergänzt.
+frei wählbare App-Empfehlung in Vaadin ergänzt.
 
 ### Bereits ausgewählter Einstieg
 
@@ -235,7 +235,7 @@ liegen die drei gesichteten Entwürfe:
 - [B: Geteiltes Panel mit Schildmotiv](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=c3bcc6e662e34ccba6f0abca4a51b89f)
 - [C: Sachliches Panel mit Kosmos-Motiv](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=c0fce938cba44dfb9fee508cb71f340b)
 
-Variante A ist ausgewählt und in Vaadin sowie der Public-Referenz übernommen.
+Variante A ist ausgewählt und in Vaadin übernommen.
 Die gemeinsame Sichtprüfung der Übernahme steht aus. Zusätzliche von Stitch
 erfundene Statusangaben und Schrittzahlen werden nicht übernommen.
 

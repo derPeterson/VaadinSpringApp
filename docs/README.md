@@ -13,7 +13,6 @@ lokal mit Testdaten; eine neue Testdatenbank wird aus dem aktuellen Schema angel
 | [Arbeiten mit Codex](codex-skills.md) | Projekt-Skills, Aufträge, Grenzen und Ergebnisse |
 | [Docker](docker/README.md) | Lokale Testanwendung und Mailpit |
 | [Theme](theme.md) | Verbindliche Gestaltung, CSS-Zuständigkeiten und Themewechsel |
-| [Frontend-Referenzen](design/frontend-referenzen/README.md) | Lokale HTML-Gestaltung für Besucher, angemeldetes Portal und Administration mit drei bedienbaren Momentaufnahmen |
 | [Mailqueue](mailqueue.md) | Versand, Wiederholungen und unklare Versandausgänge |
 | [Logging](logging.md) | Logpegel, zulässige Inhalte und Diagnose |
 | [Entscheidungen](entscheidungen.md) | Wesentliche technische Entscheidungen, Vorteile und Grenzen |
@@ -30,8 +29,9 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 ## Offene Arbeiten
 
 Die Designübernahme für Besucher, angemeldetes Portal und Administration ist
-umgesetzt und abgenommen. Die freigegebenen Bausteine stehen im [Theme-Standard](theme.md),
-die drei schlanken HTML-Referenzen bleiben in `docs/design/frontend-referenzen`.
+umgesetzt und abgenommen. Die freigegebenen Bausteine stehen im [Theme-Standard](theme.md).
+Für neue Designaufgaben dient die laufende Vaadin-Oberfläche als Ausgangspunkt.
+Die früheren HTML-Referenzen sind über den Git-Tag `archiv/html-referenzen` abrufbar.
 Der Stand ist lokal nach `main` integriert. Die Sonar-Bereinigung und die vollständige
 große Testrunde in Deutsch und Englisch sind bestanden. Aktuelle Ergebnisse und
 verbleibende Grenzen stehen im [Prüfstand](status.md).

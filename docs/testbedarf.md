@@ -5,7 +5,7 @@
 - **2FA-Adminnavigation und Kopftexte: offen.** Nach der Textkürzung den vorhandenen
   CONFIG-05A-/MFA-03-Ablauf gezielt in DE/EN nachprüfen: „2FA“ nur für Superadmins
   sichtbar, vollständiger übersetzter Name im Tooltip und unterschiedliche
-  Seiten-/Panelhinweise, einschließlich der angepassten HTML-Referenz.
+  Seiten-/Panelhinweise.
   Die JUnit-Navigation und Sprachkataloge sind geprüft; ein neuer Browserlauf für
   diese nachträgliche UI-Anpassung ist noch nicht beauftragt.
 

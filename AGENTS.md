@@ -223,8 +223,8 @@
   Native Buttons verwenden die gemeinsamen Theme-Regeln. Keine lokalen Nachbauten
   ihrer Grund-, Hover-, Fokus- oder Disabled-Gestaltung anlegen. Vor einer technisch
   notwendigen Ausnahme die konkrete Lücke erläutern und die Zustimmung abwarten.
-  Die separat beauftragten HTML-Referenzen bleiben reine Gestaltungsvorlagen und
-  rechtfertigen keine HTML-Nachbauten in der Vaadin-Anwendung.
+  Designaufgaben gehen von der laufenden Vaadin-Ansicht aus. Für Stitch können
+  daraus temporäre HTML-Abzüge mit synthetischen Daten erstellt werden.
 - Abgestimmtes gemeinsames Design nur mit Zustimmung des Benutzers ändern. Eine lokale
   Anpassung erlaubt keine globalen Änderungen oder unbeabsichtigte Änderungen an Icons,
   Größen und anderen Ansichten.
