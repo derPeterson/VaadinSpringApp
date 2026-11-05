@@ -7,20 +7,10 @@
   transparente Bahn sollen sichtbar bleiben und sich per Maus, Touch und
   Tastatur bedienen lassen.
 
-- **2FA-Adminnavigation und Kopftexte: offen.** Nach der Textkürzung den vorhandenen
-  CONFIG-05A-/MFA-03-Ablauf gezielt in DE/EN nachprüfen: „2FA“ nur für Superadmins
-  sichtbar, vollständiger übersetzter Name im Tooltip und unterschiedliche
-  Seiten-/Panelhinweise.
-  Die JUnit-Navigation und Sprachkataloge sind geprüft; ein neuer Browserlauf für
-  diese nachträgliche UI-Anpassung ist noch nicht beauftragt.
-
-- **2FA-Bestätigung und Faktorwechsel: offen.** Die bestehenden vollständigen
-  Anmelde- und Wiederherstellungsfälle nach der Umstellung auf getrennte Eingaben
-  in DE/EN erneut ausführen. MFA-12 prüft dabei den Wechsel mit dem letzten
-  Ersatzcode bis zur Freigabe nach Bestätigung der neuen App. Die fokussierte
-  Suite MFA-18 deckt den Wechsel der Eingabemethode und die Ansichten ab. Nach
-  der Umstellung auf „Zugangsprobleme und Alternativen“ außerdem prüfen, dass
-  beide Aktionen erst nach Öffnen der Details sichtbar und erreichbar sind.
+- **2FA-Adminnavigation und Kopftexte: offen.** Im Browser in DE/EN den vollständigen
+  übersetzten Namen im Tooltip und die unterschiedlichen Seiten-/Panelhinweise prüfen.
+  Die Sichtbarkeit nach Rolle und die Navigation über das gekürzte Label „2FA“
+  sind bereits abgedeckt.
 
 - **2FA-Wiederherstellungsanfragen: offen.** In DE/EN mit getrennten Konten
   prüfen, dass Nutzer ihre Anfrage schließen können, der Status in beiden
@@ -34,6 +24,20 @@
   einer anderen Sitzung darf der alte Antwortentwurf nicht im Formular für eine
   neue Anfrage erscheinen. Abos für zugewiesene Admins und beobachtende Superadmins in
   DE/EN prüfen. Interne Vermerke dürfen Nutzeransicht und Nutzerzähler nicht ändern.
+  MFA-07 deckt bereits Live-Antworten in beide Richtungen, den Erhalt des
+  Admin-Entwurfs, die Sichtbarkeit interner Vermerke, die Admin-Tabs und den
+  Sicherheitshinweis auf Desktop und Smartphone ab.
+  Nach der Bearbeitertext-Anpassung außerdem „Von Ihnen übernommen“ und den
+  Namen eines anderen Bearbeiters in der Adminliste und im Detail prüfen.
+  Die Nutzeransicht darf keine Bearbeiternamen erhalten. Im Benachrichtigungsdialog
+  entfällt bei Ticketmeldungen die Kontosicherheitsaktion, bei Kontoänderungen bleibt
+  sie verfügbar. JUnit deckt die Text- und Datenverträge ab, der Browsernachtest ist offen.
+
+- **Ticketzugang aus Benachrichtigungen: offen.** In DE/EN auf Desktop und
+  Smartphone die kontextabhängige Zielaktion für Ticket- und Kontoänderungsmeldungen
+  prüfen. Die Zielaktion belegt mobil eine volle Zeile. „Zum Ticket“ wählt genau den
+  benachrichtigten Vorgang aus und verändert weder Lesestatus noch Zuständigkeit.
+  Normale Nutzer erhalten den administrativen Ticketzugang nicht.
 
 - **Öffentliche Sprachwahl: offen.** In DE/EN nach der Sprachauswahl die
   Browsersitzung ohne Löschung der Cookies neu öffnen. Die öffentliche Ansicht

@@ -120,9 +120,11 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       assertThat(inbox.row(inbox.inbox(), subject)).hasCount(0);
       assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("2");
       assertThat(inbox.button(inbox.inbox(), texts.getNotificationsDismissRead())).isDisabled();
-      inbox
-          .row(inbox.inbox(), prefix + " first")
-          .locator(".cosmos-notification-preview-dismiss")
+      inbox.openDetail(inbox.inbox(), prefix + " first", "First body", false);
+      inbox.button(inbox.dialog(), texts.getNotificationsMoreActions()).click();
+      actor
+          .page
+          .locator(".cosmos-notification-detail-tools:visible .cosmos-notification-detail-delete")
           .click();
       inbox.confirm();
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);

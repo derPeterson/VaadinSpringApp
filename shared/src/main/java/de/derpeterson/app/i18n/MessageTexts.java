@@ -20,6 +20,26 @@ public class MessageTexts {
     return getTranslation("support.title");
   }
 
+  public String getSupportInboxDescription() {
+    return getTranslation("support.inboxDescription");
+  }
+
+  public String getSupportAllTickets() {
+    return getTranslation("support.allTickets");
+  }
+
+  public String getSupportRecoveryCategory() {
+    return getTranslation("support.recoveryCategory");
+  }
+
+  public String getSupportSelectTicket() {
+    return getTranslation("support.selectTicket");
+  }
+
+  public String getSupportRequester() {
+    return getTranslation("support.requester");
+  }
+
   public String getSupportSubjectColumn() {
     return getTranslation("support.subjectColumn");
   }
@@ -89,6 +109,22 @@ public class MessageTexts {
 
   public String getSupportInternal() {
     return getTranslation("support.internal");
+  }
+
+  public String getSupportSaveInternal() {
+    return getTranslation("support.saveInternal");
+  }
+
+  public String getSupportReplyPlaceholder() {
+    return getTranslation("support.replyPlaceholder");
+  }
+
+  public String getSupportInternalPlaceholder() {
+    return getTranslation("support.internalPlaceholder");
+  }
+
+  public String getSupportInternalSaved() {
+    return getTranslation("support.internalSaved");
   }
 
   public String getSupportClaim() {
@@ -163,8 +199,12 @@ public class MessageTexts {
     return getTranslation("support.unassigned");
   }
 
-  public String getSupportAssigned() {
-    return getTranslation("support.assigned");
+  public String getSupportAssigned(String name) {
+    return getFormattedTranslation("support.assigned", name);
+  }
+
+  public String getSupportAssignedToYou() {
+    return getTranslation("support.assignedToYou");
   }
 
   public String getSupportEmpty() {
@@ -3025,6 +3065,18 @@ public class MessageTexts {
 
   public String getNotificationsOpenAccount() {
     return getTranslation("notifications.openAccount");
+  }
+
+  public String getNotificationsMoreActions() {
+    return getTranslation("notifications.moreActions");
+  }
+
+  public String getNotificationsOpenTicket() {
+    return getTranslation("notifications.openTicket");
+  }
+
+  public String getSupportTicketUnavailable() {
+    return getTranslation("support.ticketUnavailable");
   }
 
   public String getAdminConfigUnlimited() {

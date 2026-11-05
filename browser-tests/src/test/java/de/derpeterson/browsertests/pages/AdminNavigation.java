@@ -48,13 +48,7 @@ public final class AdminNavigation {
       configuration().getByRole(AriaRole.BUTTON).click();
     }
     assertThat(configuration()).hasJSProperty("expanded", true);
-    Locator link =
-        configuration()
-            .getByRole(
-                AriaRole.LINK,
-                new Locator.GetByRoleOptions()
-                    .setName(texts.getAdminConfigGroupLabel(group))
-                    .setExact(true));
+    Locator link = groupLink(group);
     UiActions.complete(page, link::click);
     closeOverlayDrawer();
     assertThat(
@@ -65,6 +59,15 @@ public final class AdminNavigation {
                     .setExact(true)
                     .setLevel(2)))
         .isVisible();
+  }
+
+  public Locator groupLink(AdminConfigGroup group) {
+    String label =
+        group == AdminConfigGroup.TWO_FACTOR
+            ? texts.getTwoFactorNavigationLabel()
+            : texts.getAdminConfigGroupLabel(group);
+    return configuration()
+        .getByRole(AriaRole.LINK, new Locator.GetByRoleOptions().setName(label).setExact(true));
   }
 
   @Step("Adminbereich über seinen SideNav-Link auswählen")

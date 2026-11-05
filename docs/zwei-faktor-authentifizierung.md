@@ -203,12 +203,25 @@ desselben Kontos aktualisiert. Sie wird pro
 Konto, Ticket und Ansicht geführt und berücksichtigt nur Nachrichten, die in
 der jeweiligen Ansicht sichtbar sind.
 
+Die Administration bündelt die Bearbeitung unter „Tickets“. Die Tabs „Alle
+Tickets“ und „Wiederherstellung“ verwenden die vorhandene Ticketart. Weitere
+Ticketarten sind noch nicht eingerichtet. Auf breiten Fenstern bleiben Liste
+und Nachrichtenverlauf nebeneinander sichtbar. Schmale Fenster ordnen sie
+untereinander an. Der Verlauf nutzt dieselben Sprechblasen wie die Benutzerhilfe
+und kennzeichnet interne Vermerke separat.
+Die Zuständigkeit erscheint nur in der Administration mit dem Namen des
+Bearbeiters. Bei eigenen Zuweisungen lautet der Hinweis „Von Ihnen übernommen“.
+In der Benutzeransicht werden keine Bearbeiternamen ausgegeben.
+
 Administratoren können an eigenen zugewiesenen, offenen Tickets „Bei neuen
 Nachrichten benachrichtigen“ aktivieren. Superadmins können auch andere offene
 Tickets abonnieren. Neue öffentliche Nachrichten lösen für berechtigte Abonnenten
 außer dem Absender eine interne Benachrichtigung mit der Vorgangsnummer aus.
 Sie verweist auf den Nachrichtenverlauf in der Administration. Interne Vermerke
 sind nur in der Administration lesbar und lösen keine Abo-Benachrichtigung aus.
+Ticketbezogene Benachrichtigungen speichern die öffentliche Vorgangsnummer.
+„Zum Ticket“ öffnet für berechtigte Administratoren den zugehörigen Eintrag
+in der bestehenden Ticketliste; Lesen und Übernehmen bleiben eigene Aktionen.
 
 „Anleitung senden“ zeigt den konkreten Text in der gespeicherten Kontosprache vorab,
 legt ihn als öffentliche Antwort ab und nimmt eine E-Mail an die bestehende

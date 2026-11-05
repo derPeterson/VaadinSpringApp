@@ -11,6 +11,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
+import io.qameta.allure.playwright.AllurePlaywright;
 
 /** Echte UI-Aktionen für persönliche Inbox und Header-Vorschau, ohne Backendzugriff. */
 public final class NotificationInboxPage {
@@ -103,11 +104,31 @@ public final class NotificationInboxPage {
     assertThat(dialog().locator(".cosmos-notification-detail-body")).hasText(body);
     assertThat(dialog().locator(".cosmos-notification-detail-state"))
         .hasText(texts.getNotificationsUnread());
+    assertThat(
+            dialog()
+                .locator(
+                    ".cosmos-notification-detail-message .cosmos-notification-detail-mark-read"))
+        .isVisible();
+    assertTrue(
+        (Boolean)
+            dialog()
+                .locator(".cosmos-notification-detail-actions")
+                .evaluate("el => el.scrollWidth <= el.clientWidth + 1"),
+        "Die beschrifteten Footeraktionen dürfen nicht horizontal überlaufen");
+    AllurePlaywright.attachScreenshot("Benachrichtigungsdetail mit beschrifteten Aktionen", page);
+    button(dialog(), texts.getNotificationsMoreActions()).click();
+    Locator menu = page.locator(".cosmos-notification-detail-tools:visible");
+    assertThat(menu).isVisible();
     if (fromPreview) {
-      assertThat(dialog().locator(".cosmos-notification-detail-history")).isVisible();
+      assertThat(menu.locator(".cosmos-notification-detail-history")).isVisible();
     } else {
-      assertThat(dialog().locator(".cosmos-notification-detail-history")).hasCount(0);
+      assertThat(menu.locator(".cosmos-notification-detail-history")).hasCount(0);
     }
+    assertThat(menu.locator(".cosmos-notification-detail-delete")).isVisible();
+    page.keyboard().press("Escape");
+    assertThat(menu).hasCount(0);
+    // Vaadin zeigt den Dialoginhalt im Overlay; der Flow-Host selbst hat keine sichtbare Fläche.
+    assertThat(dialog().locator(".cosmos-notification-detail-title")).isVisible();
   }
 
   @Step("Die ausdrücklich ausgewählte Nachrichtenaktion bestätigen")

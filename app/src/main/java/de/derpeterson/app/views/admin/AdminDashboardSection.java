@@ -71,7 +71,7 @@ public class AdminDashboardSection extends VerticalLayout {
             texts::getAdminMailDescription,
             "mail_test"),
         shortcut(
-            AppIcon.QUESTION_CIRCLE,
+            AppIcon.MESSAGE,
             texts::getSupportTitle,
             texts::getSupportShortcutDescription,
             "support"));

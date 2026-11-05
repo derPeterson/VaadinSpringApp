@@ -171,6 +171,15 @@ public class UserNotificationService {
   }
 
   @Transactional(readOnly = true)
+  public boolean canOpenTickets(HttpSession session) {
+    try {
+      return owner(session).hasAdministrativeRole();
+    } catch (AccessDeniedException _) {
+      return false;
+    }
+  }
+
+  @Transactional(readOnly = true)
   public Long ownerId(HttpSession session) {
     return owner(session).getId();
   }
@@ -414,7 +423,7 @@ public class UserNotificationService {
   }
 
   @Transactional(propagation = Propagation.MANDATORY)
-  public void recordRecoveryRequest() {
+  public void recordRecoveryRequest(String ticketNumber) {
     List<UserEntity> administrators = users.findEnabledAdministrators();
     if (administrators.isEmpty()) {
       return;
@@ -422,6 +431,7 @@ public class UserNotificationService {
     UserNotificationEntity event = new UserNotificationEntity();
     event.setRequestKey("recovery:" + UUID.randomUUID());
     event.setType(UserNotificationType.RECOVERY_REQUEST);
+    event.setSupportTicketNumber(ticketNumber);
     create(event, administrators);
   }
 

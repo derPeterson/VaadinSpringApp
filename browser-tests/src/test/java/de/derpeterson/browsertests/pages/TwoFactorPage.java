@@ -4,6 +4,7 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import de.derpeterson.browsertests.i18n.UiTexts;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.security.GeneralSecurityException;
@@ -31,7 +32,7 @@ public final class TwoFactorPage {
     if (!URI.create(page.url()).getPath().equals("/two-factor")) {
       return;
     }
-    new UserMenu(page).selectTestLanguage();
+    selectTestLanguageIfNeeded(page);
     page.waitForCondition(
         () ->
             page.locator("#two-factor-introduction-title").isVisible()
@@ -58,6 +59,16 @@ public final class TwoFactorPage {
     page.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
   }
 
+  public static void selectTestLanguageIfNeeded(Page page) {
+    String language = UiTexts.selected().language();
+    Locator button = page.locator(".public-languages vaadin-button[lang='" + language + "']");
+    assertThat(button).isVisible();
+    // Ein erneuter Klick auf die aktive Sprache baut die 2FA-Ansicht erneut auf.
+    if (!"true".equals(button.getAttribute("aria-pressed"))) {
+      new UserMenu(page).selectTestLanguage();
+    }
+  }
+
   /** Die sichtbare Methode wählen; Ersatzcodes werden nicht in das sechsstellige Feld gekürzt. */
   public static void enterCode(Page page, String value) {
     Locator recovery = page.locator("#two-factor-recovery-tab");
@@ -81,7 +92,7 @@ public final class TwoFactorPage {
 
   public static void openLoginHelp(Page page) {
     Locator details = page.locator("#two-factor-login-help");
-    page.locator("#two-factor-login-help-toggle").click();
+    UiActions.complete(page, () -> page.locator("#two-factor-login-help-toggle").click());
     assertThat(details).hasAttribute("opened", "");
   }
 

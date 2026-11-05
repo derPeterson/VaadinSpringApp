@@ -75,7 +75,7 @@
 .support-message-scroll { box-sizing:border-box; width:100%; max-height:300px; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-input); }
 .support-message-thread { gap:14px; padding:14px; }
 .support-message { gap:4px; max-width:94%; }
-.support-message[data-author=REQUESTER] { align-self:end; align-items:end; }
+.support-message[data-side=own] { align-self:end; align-items:end; }
 .support-message-metadata { gap:6px; flex-wrap:wrap; }
 .support-message-metadata .cosmos-user-avatar { cursor:default; }
 .support-message-metadata > vaadin-icon { width:14px; height:14px; color:var(--cosmos-reference-accent); }
@@ -116,18 +116,18 @@
   block-size:10px;
   background:var(--support-bubble-background);
 }
-.support-message[data-author=REQUESTER] .support-message-copy {
+.support-message[data-side=own] .support-message-copy {
   --support-bubble-background:var(--cosmos-reference-primary);
   --support-bubble-tip:polygon(0 0, 100% 0, 0 100%);
   border-start-end-radius:0;
   color:var(--cosmos-reference-white);
 }
-.support-message[data-author=REQUESTER] .support-message-copy::before,
-.support-message[data-author=REQUESTER] .support-message-copy::after {
+.support-message[data-side=own] .support-message-copy::before,
+.support-message[data-side=own] .support-message-copy::after {
   inset-inline-start:calc(100% - 1px);
   inset-inline-end:auto;
 }
-.support-message[data-author=SUPPORT] .support-message-copy { border-start-start-radius:0; }
+.support-message[data-side=other] .support-message-copy { border-start-start-radius:0; }
 .support-recovery-help .support-user-footer { flex-wrap:wrap; justify-content:space-between; gap:12px; }
 .support-recovery-help #support-panel > .cosmos-panel-footer { padding:16px 24px; }
 .support-recovery-help #support-panel > .cosmos-panel-footer > .cosmos-panel-actions { width:100%; }
@@ -153,7 +153,7 @@
 .support-ticket-row .support-ticket-number {
   color:var(--support-ticket-number-color,var(--cosmos-reference-text));
 }
-.support-ticket-row vaadin-badge.support-ticket-status {
+:is(.support-ticket-row,.support-admin-subject-row) vaadin-badge.support-ticket-status {
   margin-inline-start:auto;
   padding:10px;
   border:1px solid #0ea5e966;
@@ -162,15 +162,105 @@
   color:#7dd3fc;
   font:500 11px/16px Inter,sans-serif;
 }
-.support-ticket-row vaadin-badge.support-ticket-status[data-status=CLOSED] {
+:is(.support-ticket-row,.support-admin-subject-row) vaadin-badge.support-ticket-status[data-status=CLOSED] {
   border-color:#33415599;
   background:#1e293bcc;
   color:var(--cosmos-reference-label);
 }
-.support-ticket-row vaadin-badge.support-ticket-status[data-status=CLOSED_BY_REQUESTER] {
+:is(.support-ticket-row,.support-admin-subject-row) vaadin-badge.support-ticket-status[data-status=CLOSED_BY_REQUESTER] {
   border-color:#10b9814d;
   background:#022c2299;
   color:#6ee7b7;
+}
+.support-admin-workspace #support-panel > .account-panel-body { padding:0; }
+.support-admin-workspace #support-panel .cosmos-panel-meta:empty { display:none; }
+.support-admin-workspace #support-ticket-categories {
+  padding-inline:24px;
+  border-bottom:1px solid var(--cosmos-reference-border);
+  background:var(--cosmos-reference-panel);
+}
+.support-admin-columns {
+  display:grid;
+  grid-template-columns:minmax(245px, 1fr) minmax(0, 1.7fr);
+  align-items:stretch;
+}
+.support-admin-queue,.support-admin-detail-column {
+  box-sizing:border-box;
+  min-width:0;
+  padding:20px;
+}
+.support-admin-queue { border-inline-end:1px solid var(--cosmos-reference-border); }
+.support-admin-workspace :is(.support-empty-state,.support-admin-no-selection) {
+  box-sizing:border-box;
+  width:100%;
+  min-height:76px;
+  gap:10px;
+  padding:16px;
+  border:1px solid var(--cosmos-reference-border);
+  border-radius:var(--cosmos-control-radius);
+  background:var(--cosmos-reference-input);
+  color:var(--cosmos-reference-secondary);
+  font:400 12px/20px Inter,sans-serif;
+}
+.support-admin-no-selection > vaadin-icon { width:16px; height:16px; flex:none; color:var(--cosmos-reference-accent); }
+.support-admin-ticket-list {
+  --support-ticket-list-max-height:min(44vh, 460px);
+  height:clamp(112px, calc(112px * var(--support-ticket-list-count, 1) + 2px), var(--support-ticket-list-max-height));
+  --cosmos-table-row-background:var(--cosmos-reference-input);
+  --cosmos-table-alternate-row-background:var(--cosmos-reference-input);
+}
+.support-admin-ticket-list::part(body-cell) { border-inline-start:2px solid transparent; }
+.support-admin-ticket-list::part(selected-row-cell) {
+  --support-ticket-number-color:var(--cosmos-reference-primary);
+  border-inline-start-color:var(--cosmos-reference-accent);
+}
+.support-admin-ticket-list .support-ticket-row { gap:4px 10px; }
+.support-admin-ticket-list .support-ticket-details { gap:8px; }
+.support-admin-ticket-list .support-ticket-status,.support-admin-subject-row .support-ticket-status { padding:2px 6px; }
+.support-ticket-assignment { color:var(--cosmos-reference-secondary); font:400 11px/16px Inter,sans-serif; }
+.support-admin-subject-row { flex-wrap:wrap; gap:8px; }
+.support-admin-subject { margin:0; color:var(--cosmos-reference-text); font:600 15px/22px Inter,sans-serif; }
+.support-admin-context { gap:4px; }
+.support-admin-ticket-header { flex-wrap:wrap; gap:8px 16px; }
+.support-admin-ticket-header > .support-admin-context { flex:1 1 210px; min-width:0; width:auto; }
+.support-admin-detail,.support-admin-detail > vaadin-vertical-layout { min-width:0; }
+.support-admin-detail .support-section-header { margin-bottom:8px; }
+.support-admin-detail .support-message-scroll { max-height:clamp(240px, 38vh, 420px); }
+.support-admin-detail .support-message[data-side=own] .support-message-copy {
+  --support-bubble-background:var(--cosmos-table-highlight-background);
+  color:var(--cosmos-reference-text);
+}
+.support-admin-detail .support-message[data-side=other] .support-message-copy {
+  --support-bubble-background:var(--cosmos-reference-primary);
+  color:var(--cosmos-reference-white);
+}
+.support-admin-detail .support-message.support-internal-message .support-message-copy {
+  --support-bubble-background:var(--cosmos-reference-panel);
+  border-style:dashed;
+}
+.support-admin-internal { color:var(--cosmos-reference-secondary); }
+.support-admin-editor {
+  padding-block-start:12px;
+  border-block-start:1px solid var(--cosmos-reference-border);
+}
+.support-admin-actions,.support-admin-secondary-actions { flex-wrap:wrap; gap:8px; }
+.support-admin-actions { justify-content:space-between; }
+.support-admin-actions > #support-add-reply { margin-inline-start:auto; }
+.support-admin-actions vaadin-button { max-width:100%; }
+.support-admin-workspace .cosmos-notification-compose-counter {
+  font-family:'Space Mono',ui-monospace,Consolas,monospace;
+}
+@media (max-width:920px) {
+  .support-admin-columns { grid-template-columns:minmax(0, 1fr); }
+  .support-admin-queue { border-inline-end:0; border-bottom:1px solid var(--cosmos-reference-border); }
+  .support-admin-ticket-list { --support-ticket-list-max-height:min(32vh, 300px); }
+}
+@media (max-width:480px) {
+  .support-admin-workspace #support-ticket-categories { padding-inline:12px; }
+  .support-admin-queue,.support-admin-detail-column { padding:16px; }
+  .support-admin-secondary-actions { width:100%; }
+  .support-admin-secondary-actions > vaadin-button { flex:1 1 auto; }
+  .support-admin-actions vaadin-button[theme~=primary] { width:100%; }
 }
 @media (max-width:639px) {
   .support-recovery-help .account-panel-body { padding:20px; }

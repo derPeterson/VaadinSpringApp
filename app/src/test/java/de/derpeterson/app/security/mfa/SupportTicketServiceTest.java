@@ -2,6 +2,7 @@ package de.derpeterson.app.security.mfa;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -95,7 +96,7 @@ class SupportTicketServiceTest {
   @Test
   void ownRequestDoesNotGrantPortalAccessAndNeverExposesInternalNotes() {
     Ticket ticket = service.createRecovery(owner, "Ich benötige Hilfe.");
-    verify(notifications).recordRecoveryRequest();
+    verify(notifications).recordRecoveryRequest(SupportTicketService.ticketNumber(ticket.id()));
     assertThrows(IllegalStateException.class, () -> service.createRecovery(owner, "Doppelt"));
     MockHttpServletRequest foreign =
         TwoFactorAuthorizationTest.requestFor(create(RoleType.ROLE_USER).getEmail());
@@ -104,6 +105,12 @@ class SupportTicketServiceTest {
         AccessDeniedException.class, () -> service.conversation(foreign, ticket.id(), false));
     assertThrows(AccessDeniedException.class, () -> service.list(owner, true));
     Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
+    assertEquals("Support Fixture", claimed.assigneeName());
+    assertEquals(
+        "Support Fixture", ticketFor(otherAdministrator, ticket.id(), true).assigneeName());
+    assertNull(ticketFor(owner, ticket.id(), false).assigneeName());
+    assertNull(
+        service.liveView(bindLiveSession(owner), false, ticket.id()).selected().assigneeName());
     Ticket changed =
         service.reply(
             administrator, claimed.id(), claimed.version(), "Interne Prüfung", true, true);

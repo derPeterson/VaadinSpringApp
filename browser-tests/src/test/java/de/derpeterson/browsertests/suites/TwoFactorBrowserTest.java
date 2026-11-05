@@ -296,7 +296,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       providerIdentity(email);
     }
     assertThat(page).hasURL(Pattern.compile(".*/two-factor.*"));
-    new UserMenu(page).selectTestLanguage();
+    TwoFactorPage.selectTestLanguageIfNeeded(page);
   }
 
   @ParameterizedTest
@@ -514,11 +514,40 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       new UserMenu(admin).selectTestLanguage();
       admin.setViewportSize(width, 900);
       admin.navigate("/admin?section=support");
-      admin
-          .locator("#support-ticket-grid")
-          .getByText(ticketNumber, new Locator.GetByTextOptions().setExact(true))
-          .click();
+      Locator ticketCategories = admin.locator("#support-ticket-categories");
+      assertThat(ticketCategories).containsText(texts.getSupportAllTickets());
+      UiActions.complete(
+          admin, () -> ticketCategories.getByText(texts.getSupportRecoveryCategory()).click());
+      Locator ticket =
+          admin
+              .locator("#support-ticket-grid")
+              .getByText(ticketNumber, new Locator.GetByTextOptions().setExact(true));
+      UiActions.complete(admin, ticket::click);
+      assertThat(admin.locator("#admin-support .support-message[data-side=other]"))
+          .containsText("Synthetische Bitte um Hilfe mit meinen Ersatzcodes.");
       UiActions.complete(admin, () -> admin.locator("#support-claim").click());
+      assertThat(page.locator("#support-ticket-grid")).containsText(texts.getSupportInProgress());
+      assertThat(admin.locator("#admin-support .cosmos-security-warning")).isVisible();
+      assertThat(admin.locator("#support-add-reply")).isVisible();
+      String draft = "Eine Antwort bleibt beim Aktualisieren erhalten.";
+      String followUp = "Eine synthetische Ergänzung zur Anfrage.";
+      String privateNote = "Synthetischer interner Vermerk.";
+      String publicReply = "Eine sichtbare Rückmeldung aus der Administration.";
+      Locator adminComposer = admin.locator("#support-reply textarea");
+      adminComposer.fill(draft);
+      page.locator("#support-reply textarea").fill(followUp);
+      UiActions.complete(page, () -> page.locator("#support-add-reply").click());
+      assertThat(admin.locator(".support-message-thread")).containsText(followUp);
+      assertThat(adminComposer).hasValue(draft);
+      adminComposer.fill(privateNote);
+      admin.locator("#support-internal-note").click();
+      UiActions.complete(admin, () -> admin.locator("#support-add-reply").click());
+      assertThat(admin.locator(".support-internal-message")).containsText(privateNote);
+      adminComposer.fill(publicReply);
+      UiActions.complete(admin, () -> admin.locator("#support-add-reply").click());
+      assertThat(page.locator(".support-message-thread")).containsText(publicReply);
+      assertThat(page.locator(".support-message-thread")).not().containsText(privateNote);
+      AllurePlaywright.attachScreenshot("Admin-Tickets mit ausgewählter Anfrage", admin);
       admin.locator("#support-instructions").click();
       assertThat(admin.locator("#support-instruction-preview")).hasJSProperty("opened", true);
       assertThat(admin.locator("#support-instruction-preview"))

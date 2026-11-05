@@ -19,11 +19,16 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.popover.Popover;
+import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.QueryParameters;
-import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.i18n.UserNotificationTexts;
@@ -32,12 +37,14 @@ import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserNotificationService.Item;
 import de.derpeterson.app.service.UserNotificationService.ReadFilter;
 import de.derpeterson.app.views.AccountView;
+import de.derpeterson.app.views.AdminView;
 import de.derpeterson.app.views.UserNotificationsView;
 import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.function.Consumer;
 import org.slf4j.LoggerFactory;
@@ -93,6 +100,7 @@ public class UserNotificationsPanel extends Div {
   private List<Long> unreadIds = List.of();
   private int page;
   private Dialog detail;
+  private Popover detailActionsMenu;
   private Item openedItem;
   private final PortalConfirmationDialog confirmation;
 
@@ -680,7 +688,13 @@ public class UserNotificationsPanel extends Div {
     }
     openedItem = item;
     detail = new Dialog();
-    detail.addOpenedChangeListener(e -> notifyOverlayState());
+    detail.addOpenedChangeListener(
+        e -> {
+          if (!e.isOpened() && detailActionsMenu != null) {
+            detailActionsMenu.close();
+          }
+          notifyOverlayState();
+        });
     detail.addClassNames("cosmos-theme", REFERENCE_OVERLAY, "cosmos-notification-dialog");
     detail.setModality(com.vaadin.flow.component.ModalityMode.STRICT);
     detail.getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
@@ -839,6 +853,9 @@ public class UserNotificationsPanel extends Div {
   }
 
   private void renderDetail() {
+    if (detailActionsMenu != null) {
+      detailActionsMenu.close();
+    }
     detail.removeAll();
     detail.getHeader().removeAll();
     detail.getFooter().removeAll();
@@ -883,13 +900,14 @@ public class UserNotificationsPanel extends Div {
 
     Button detailHistory =
         new Button(
+            texts.getNotificationsHistory(),
             AppIcon.BELL.create(),
             e -> {
+              detailActionsMenu.close();
               detail.close();
               closeAction.run();
               UI.getCurrent().navigate(UserNotificationsView.class);
             });
-    detailHistory.addThemeVariants(ButtonVariant.LUMO_ICON);
     detailHistory.setAriaLabel(texts.getNotificationsHistory());
     detailHistory.setTooltipText(texts.getNotificationsHistory());
     detailHistory.addClassName("cosmos-notification-detail-history");
@@ -900,15 +918,50 @@ public class UserNotificationsPanel extends Div {
             AppIcon.CHECK.create(),
             e -> confirmMarkRead(openedItem));
     markRead.addClassName("cosmos-notification-detail-mark-read");
+    markRead.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     markRead.setVisible(!openedItem.read());
+    HorizontalLayout readActions = new HorizontalLayout(markRead);
+    readActions.setPadding(false);
+    readActions.setSpacing(false);
+    readActions.setWidthFull();
+    readActions.setJustifyContentMode(JustifyContentMode.END);
+    readActions.addClassName("cosmos-notification-detail-read-actions");
+    readActions.setVisible(!openedItem.read());
+    message.add(readActions);
     Button detailClose =
         new Button(texts.getNotificationsClose(), AppIcon.CLOSE.create(), e -> detail.close());
-    detailClose.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    Div tools = new Div(detailHistory);
-    tools.addClassName("cosmos-notification-detail-tools");
-    if (openedItem.type() != UserNotificationType.ADMIN_ANNOUNCEMENT) {
-      Button account =
+    detailClose.addClassName("cosmos-notification-detail-close");
+    Button destination = null;
+    if (Set.of(UserNotificationType.RECOVERY_REQUEST, UserNotificationType.SUPPORT_REPLY)
+            .contains(openedItem.type())
+        && openedItem.supportTicketNumber() != null
+        && service.canOpenTickets(session)) {
+      destination =
           new Button(
+              texts.getNotificationsOpenTicket(),
+              AppIcon.MESSAGE.create(),
+              event -> {
+                service.ownerId(session);
+                detail.close();
+                closeAction.run();
+                UI.getCurrent()
+                    .navigate(
+                        AdminView.class,
+                        QueryParameters.simple(
+                            Map.of(
+                                "section", "support", "ticket", openedItem.supportTicketNumber())));
+              });
+      destination.addClassName("cosmos-notification-detail-ticket");
+    }
+    if (Set.of(
+            UserNotificationType.PASSWORD_CHANGED,
+            UserNotificationType.PASSWORD_RESET,
+            UserNotificationType.EMAIL_CHANGED,
+            UserNotificationType.ROLES_CHANGED)
+        .contains(openedItem.type())) {
+      destination =
+          new Button(
+              texts.getNotificationsOpenAccount(),
               AppIcon.LOCK.create(),
               e -> {
                 detail.close();
@@ -916,23 +969,55 @@ public class UserNotificationsPanel extends Div {
                 UI.getCurrent()
                     .navigate(AccountView.class, QueryParameters.simple(Map.of("tab", "security")));
               });
-      account.addThemeVariants(ButtonVariant.LUMO_ICON);
-      account.addClassName("cosmos-notification-detail-account");
-      account.setAriaLabel(texts.getNotificationsOpenAccount());
-      account.setTooltipText(texts.getNotificationsOpenAccount());
-      tools.add(account);
+      destination.addClassName("cosmos-notification-detail-account");
     }
-    Button delete = new Button(AppIcon.TRASH.create(), event -> confirmDismiss(openedItem));
-    delete.addThemeVariants(ButtonVariant.LUMO_ICON);
+    Button delete =
+        new Button(
+            texts.getNotificationsDismiss(),
+            AppIcon.TRASH.create(),
+            event -> {
+              detailActionsMenu.close();
+              confirmDismiss(openedItem);
+            });
     delete.addClassNames("cosmos-notification-detail-delete", DELETE_BUTTON);
     delete.setAriaLabel(texts.getNotificationsDismiss());
     delete.setTooltipText(texts.getNotificationsDismiss());
-    tools.add(delete);
-    Div primary = new Div(markRead, detailClose);
+    Button more = new Button(texts.getNotificationsMoreActions(), AppIcon.ANGLE_DOWN.create());
+    more.setIconAfterText(true);
+    more.addClassName("cosmos-notification-detail-more");
+    detailActionsMenu = new Popover();
+    detailActionsMenu.setTarget(more);
+    detailActionsMenu.setPosition(PopoverPosition.TOP_START);
+    detailActionsMenu.setModal(true);
+    detailActionsMenu.setCloseOnEsc(true);
+    detailActionsMenu.setCloseOnOutsideClick(true);
+    detailActionsMenu.addClassName("cosmos-notification-actions-popover");
+    detailActionsMenu.setAriaLabel(texts.getNotificationsMoreActions());
+    VerticalLayout tools = new VerticalLayout(detailHistory, delete);
+    tools.setPadding(false);
+    tools.setSpacing(false);
+    tools.addClassNames("cosmos-notification-detail-tools", "cosmos-theme", REFERENCE_OVERLAY);
+    detailActionsMenu.add(tools);
+    detail.add(detailActionsMenu);
+    HorizontalLayout primary = new HorizontalLayout(detailClose);
+    primary.setPadding(false);
+    primary.setSpacing(false);
+    primary.setAlignItems(Alignment.CENTER);
+    if (destination != null) {
+      destination.setAriaLabel(destination.getText());
+      destination.setTooltipText(destination.getText());
+      destination.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      destination.addClassName("cosmos-notification-detail-destination");
+      primary.add(destination);
+    }
     primary.addClassName("cosmos-notification-detail-primary");
-    Div actions = new Div(tools, primary);
+    HorizontalLayout actions = new HorizontalLayout(more, primary);
+    actions.setPadding(false);
+    actions.setSpacing(false);
+    actions.setAlignItems(Alignment.CENTER);
+    actions.setJustifyContentMode(JustifyContentMode.BETWEEN);
+    actions.setWidthFull();
     actions.addClassNames("cosmos-dialog-actions", "cosmos-notification-detail-actions");
-    EqualButtonWidths.configure(actions);
     detail.getFooter().add(actions);
   }
 }

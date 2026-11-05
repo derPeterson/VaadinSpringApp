@@ -99,7 +99,7 @@ public class AdminView extends IsAuthenticatedBaseView {
 
   @org.springframework.beans.factory.annotation.Autowired
   void configureSupport(SupportTicketService support) {
-    supportNavItem = createNavigationItem(AppIcon.QUESTION_CIRCLE, AdminSection.SUPPORT, null);
+    supportNavItem = createNavigationItem(AppIcon.MESSAGE, AdminSection.SUPPORT, null);
     supportNavItem.setLabel(messageProperties.getSupportTitle());
     sideNavigation.addItem(supportNavItem);
     supportSection = new SupportTicketsComponent(messageProperties, support, request, true);
@@ -229,6 +229,12 @@ public class AdminView extends IsAuthenticatedBaseView {
             ? parameter(parameters, "group", AdminConfigGroup.class, AdminConfigGroup.GENERAL)
             : null;
     selectSection(section, group);
+    List<String> ticketNumbers = parameters.getParameters().get("ticket");
+    if (activeSection == AdminSection.SUPPORT
+        && ticketNumbers != null
+        && ticketNumbers.size() == 1) {
+      supportSection.openTicket(ticketNumbers.getFirst());
+    }
   }
 
   private static <E extends Enum<E>> E parameter(

@@ -35,12 +35,9 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
 
 ## Administrative 2FA-Konfiguration und Ticketbearbeitung
 
-Für beide neuen Adminbereiche sind jeweils drei Stitch-Varianten zur gemeinsamen
-Sichtung beauftragt und über die CLI erstellt worden. Grundlage sind aktuelle
-Vaadin-Seitenaufnahmen mit eigenen isolierten Testdaten. Die Bilder und das
-unveränderte exportierte HTML wurden gesichtet; die Entwürfe liegen im bestehenden
-2FA-Projekt auf der Projektfläche. Für die 2FA-Konfiguration sind Variante A
-und die Erklärspalte aus Variante B ausgewählt. Die Ticketgestaltung bleibt offen.
+Für die 2FA-Konfiguration sind Variante A und die Erklärspalte aus Variante B
+ausgewählt. Die administrative Ticketansicht wurde anhand separater
+Vaadin-Aufnahmen mit synthetischen Anfragen weiterentwickelt.
 
 2FA-Konfiguration:
 
@@ -57,11 +54,11 @@ Vaadin kombiniert die drei Regelgruppen aus A mit
 der Erklärspalte aus B. Der Seitenkopf bleibt bestehen und die Rollentabs nutzen
 die Gestaltung der Anmeldeanbieter. Die gemeinsame Sichtabnahme steht aus.
 
-Administrative Wiederherstellungsanfragen/Tickets:
+Administrative Tickets:
 
-- [A: Liste oben, Verlauf und Antwort darunter](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=8811681643467681946)
-- [B: Anfragenliste links und ausgewählter Vorgang rechts](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=14836410918965297816)
-- [C: ausgewählter Vorgang mit Ticketumschaltung](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=2814354832496990714)
+- [A: Durchgehende Ticketliste mit großem Arbeitsbereich](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=d4098cd0685d4835b377011c531f1db7)
+- [B: Kompakte Ticketliste neben einer ruhigen Detailfläche](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=952fff07c2a74590ad35ae098434dc51)
+- [C: Tabelle und Detailfläche untereinander](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=74f2a6d1e3e944f892d88fe989bc52ab)
 
 Die Entwürfe sind Gestaltungsideen, keine fachlichen Vorlagen: Trotz ausdrücklichem
 Ausschluss hat Stitch zusätzliche SLA-/Online-/Versionsangaben, Filter, Prioritäten,
@@ -70,17 +67,39 @@ Personalnummernprüfung erfunden. Auch die Aufforderung, Ersatzcodes vorzulegen,
 ist falsch. Diese Inhalte und Funktionen gehören nicht zur Anwendung und dürfen
 nicht übernommen werden. Eine Anfrage entsperrt kein Konto; Passwörter,
 Authenticator-Schlüssel und Ersatzcodes gehören nicht in den Schriftverkehr.
-Die Anfragenliste mit Status/Bearbeiter, der Verlauf, interne Vermerke, Übernehmen,
-Antwort, Anleitung mit Vorschau, Abschließen und Aktualisieren bleiben Grundlage.
-Empfehlung zur Sichtung ist A als einfachste Anordnung nahe am vorhandenen Panel.
+Vaadin übernimmt B als Grundlage mit dem klar gegliederten Ticketkopf aus
+[der ersten Verfeinerung](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=e680bc51c74644e384f116243d18b6dc).
+Aus [der mobilen Runde](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=766275d05e004d3997f72fa43e0daee3)
+bleiben die gestapelte Ansicht und die breite Antwortaktion. Die Ticketliste
+scrollt auch dort vertikal. [Die dritte Runde](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=f1553756865643e598532ed5ab488927)
+bestätigt die Trennung von Nebenaktionen und Hauptaktion. Der Verlauf und das
+Antwortfeld haben getrennte Flächen, damit der Text beim Scrollen lesbar bleibt.
+Die Adminnavigation bündelt den Einstieg unter „Tickets“. Die Kategorien „Alle
+Tickets“ und „Wiederherstellung“ verwenden die vorhandene Ticketart. Die
+Anfragenliste mit Status und Bearbeiter, der Verlauf, interne Vermerke, Übernehmen,
+Antwort, Anleitung mit Vorschau, Abschließen und Aktualisieren bleiben erhalten.
 
-Für beide Bereiche gelten bei einer späteren Übernahme weiterhin die bestehenden
+Für beide Bereiche gelten weiterhin die bestehenden
 Cosmos-Maße, Farben, Kopficons, nativen Vaadin-Komponenten und Footerregeln.
 Geänderte Navigation, zusätzliche Statusboxen, kräftige Warnkästen, fremde Schriften
 und umgebrochene oder übergroße Buttons sind nicht automatisch freigegeben.
-Die Auswahl und die gemeinsame Desktop-/Smartphone-Abnahme bleiben offen.
+Die gemeinsame Desktop-/Smartphone-Abnahme bleibt offen.
 
 ## Wiederkehrende Anmeldung und Wiederherstellung: Variante A zur Abnahme
+
+Für den mobilen Benachrichtigungsdialog liegt ein
+[Stitch-Vorschlag zur Aktionsanordnung](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=4def0463625e42369d398c2a1db4691e)
+als Gestaltungsgrundlage vor. Die freigegebene Übernahme setzt die Leseaktion an
+die Nachricht, „Weitere Aktionen“ mit beschrifteten Buttons im nativen Popover,
+neutrales „Schließen“ und den direkten Ticketzugang um. Mobil liegt die Zielaktion
+in einer eigenen vollen Zeile. Die langen und verkürzten Beschriftungen des
+Entwurfs werden durch „Zum Ticket“ beziehungsweise die vollständigen vorhandenen
+Aktionstexte ersetzt. Bei Ticketmeldungen entfällt der Kontosicherheitsbutton.
+Die [Desktop-Ergänzung](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=4697a53cb3e8412a989832f7310738db)
+zeigt die Leseaktion innerhalb der Karte und eine beschriftete Footerzeile mit
+„Alle Benachrichtigungen“, „Löschen“, neutralem „Schließen“ und blauem „Zum Ticket“.
+Die vier sichtbaren Footerbuttons wurden zugunsten der beschriebenen Menüanordnung
+zusammengefasst. Die gemeinsame Sichtabnahme der Vaadin-Übernahme ist offen.
 
 Beauftragt sind drei zusammenhängende Stitch-Varianten, jeweils als Übersicht mit
 diesen drei Ansichten: Anmeldung bestätigen, Authenticator mit Ersatzcode

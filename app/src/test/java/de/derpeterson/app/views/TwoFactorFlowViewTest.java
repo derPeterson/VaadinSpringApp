@@ -32,6 +32,7 @@ import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
+import de.derpeterson.app.model.SupportTicketEntity.Type;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.ExternalLoginFlow;
@@ -44,6 +45,7 @@ import de.derpeterson.app.service.SupportTicketService;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
+import de.derpeterson.app.ui.components.SupportTicketsComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.List;
@@ -196,10 +198,32 @@ class TwoFactorFlowViewTest {
     SupportTicketService tickets = mock(SupportTicketService.class);
     Ticket closed =
         new Ticket(
-            1L, 0L, "Earlier request", Status.CLOSED, Instant.EPOCH, null, false, 0, false, false);
+            1L,
+            0L,
+            "Earlier request",
+            Type.RECOVERY,
+            Status.CLOSED,
+            Instant.EPOCH,
+            null,
+            null,
+            false,
+            0,
+            false,
+            false);
     Ticket active =
         new Ticket(
-            2L, 0L, "Current request", Status.OPEN, Instant.EPOCH, null, false, 0, false, false);
+            2L,
+            0L,
+            "Current request",
+            Type.RECOVERY,
+            Status.OPEN,
+            Instant.EPOCH,
+            null,
+            null,
+            false,
+            0,
+            false,
+            false);
     when(tickets.list(request, false)).thenReturn(List.of(closed, active));
 
     RecoveryHelpView help = new RecoveryHelpView(config, texts, tickets, request);
@@ -228,9 +252,33 @@ class TwoFactorFlowViewTest {
     open("de", false);
     SupportTicketService tickets = mock(SupportTicketService.class);
     Ticket active =
-        new Ticket(1L, 0L, "Request", Status.OPEN, Instant.EPOCH, null, false, 0, false, false);
+        new Ticket(
+            1L,
+            0L,
+            "Request",
+            Type.RECOVERY,
+            Status.OPEN,
+            Instant.EPOCH,
+            null,
+            null,
+            false,
+            0,
+            false,
+            false);
     Ticket closed =
-        new Ticket(1L, 1L, "Request", Status.CLOSED, Instant.EPOCH, null, false, 0, false, false);
+        new Ticket(
+            1L,
+            1L,
+            "Request",
+            Type.RECOVERY,
+            Status.CLOSED,
+            Instant.EPOCH,
+            null,
+            null,
+            false,
+            0,
+            false,
+            false);
     when(tickets.list(request, false)).thenReturn(List.of(active));
     RecoveryHelpView help = new RecoveryHelpView(config, texts, tickets, request);
     TextArea draft = (TextArea) find(help, "support-reply");
@@ -244,6 +292,59 @@ class TwoFactorFlowViewTest {
     refresh.click();
     assertTrue(find(help, "support-create").isVisible());
     assertTrue(draft.isEmpty());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void administrationShowsOwnAssignmentOrTheAssignedAdministratorsName(String language) {
+    open(language, false);
+    SupportTicketService tickets = mock(SupportTicketService.class);
+    Ticket assigned =
+        new Ticket(
+            1L,
+            0L,
+            "Request",
+            Type.RECOVERY,
+            Status.IN_PROGRESS,
+            Instant.EPOCH,
+            9L,
+            "Alex Beispiel",
+            false,
+            0,
+            false,
+            false);
+    when(tickets.list(request, true)).thenReturn(List.of(assigned));
+    when(tickets.administratorId(request)).thenReturn(9L);
+    SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
+    @SuppressWarnings("unchecked")
+    Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
+    grid.asSingleSelect().setValue(assigned);
+    component.refresh();
+    @SuppressWarnings("unchecked")
+    ComponentRenderer<Component, Ticket> renderer =
+        (ComponentRenderer<Component, Ticket>) grid.getColumns().getFirst().getRenderer();
+    assertTrue(
+        renderer
+            .createComponent(assigned)
+            .getElement()
+            .getTextRecursively()
+            .contains(texts.getSupportAssignedToYou()));
+    assertTrue(
+        component.getElement().getTextRecursively().contains(texts.getSupportAssignedToYou()));
+
+    when(tickets.administratorId(request)).thenReturn(10L);
+    component.refresh();
+    assertTrue(
+        renderer
+            .createComponent(assigned)
+            .getElement()
+            .getTextRecursively()
+            .contains(texts.getSupportAssigned("Alex Beispiel")));
+    assertTrue(
+        component
+            .getElement()
+            .getTextRecursively()
+            .contains(texts.getSupportAssigned("Alex Beispiel")));
   }
 
   private Component find(Component root, String id) {

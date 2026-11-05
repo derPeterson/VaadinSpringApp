@@ -61,6 +61,8 @@ class MessageCatalogueTest {
       }
     }
 
+    // Der Titel einer Ticketbenachrichtigung hat eine allgemeine Variante ohne Ticketnummer.
+    assertFalse(texts.getSupportReplyNotificationTitle(null).isBlank());
     Set<String> orphaned = new HashSet<>(messages.keySet());
     orphaned.removeAll(requested);
     assertEquals(

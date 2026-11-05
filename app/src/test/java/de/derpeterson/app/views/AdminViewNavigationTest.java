@@ -19,6 +19,7 @@ import static org.mockito.Mockito.when;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.function.DeploymentConfiguration;
@@ -37,6 +38,8 @@ import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.SupportTicketEntity.Status;
+import de.derpeterson.app.model.SupportTicketEntity.Type;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.ExternalProviderSettings;
@@ -45,6 +48,8 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.RoleService;
+import de.derpeterson.app.service.SupportTicketService;
+import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserService;
@@ -54,6 +59,7 @@ import de.derpeterson.app.ui.components.PortalPageComponent;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -167,6 +173,35 @@ class AdminViewNavigationTest {
     when(event.getLocation()).thenReturn(new Location(AppRouteConstants.ADMIN_ROUTE + query));
     view.beforeEnter(event);
     return event;
+  }
+
+  @Test
+  void ticketLinkSelectsOnlyItsMatchingVisibleTicket() {
+    SupportTicketService tickets = mock(SupportTicketService.class);
+    Ticket ticket =
+        new Ticket(
+            1L,
+            0L,
+            "Request",
+            Type.RECOVERY,
+            Status.OPEN,
+            Instant.EPOCH,
+            null,
+            null,
+            false,
+            0L,
+            false,
+            false);
+    when(tickets.list(request, true)).thenReturn(List.of(ticket));
+    view.configureSupport(tickets);
+    enter("?section=support&ticket=%2310001");
+    Component support = (Component) ReflectionTestUtils.getField(view, "supportSection");
+    Grid<?> grid = (Grid<?>) ReflectionTestUtils.getField(support, "grid");
+    assertEquals(List.of(ticket), List.copyOf(grid.getSelectedItems()));
+
+    enter("?section=support&ticket=%2399999");
+    assertTrue(grid.getSelectedItems().isEmpty());
+    assertEquals("SUPPORT", ReflectionTestUtils.getField(view, "activeSection").toString());
   }
 
   @Test

@@ -1052,6 +1052,18 @@ class UserNotificationServicePersistenceTest {
   }
 
   @Test
+  void recoveryNotificationKeepsTheTicketDestinationRestrictedToAdministrators() {
+    tx.executeWithoutResult(status -> service.recordRecoveryRequest("#10001"));
+    Item item = service.inbox(adminSession, ReadFilter.UNREAD, 0, 20).getContent().getFirst();
+    assertEquals(UserNotificationType.RECOVERY_REQUEST, item.type());
+    assertEquals("#10001", item.supportTicketNumber());
+    assertTrue(service.canOpenTickets(adminSession));
+    assertFalse(service.canOpenTickets(userSession));
+    assertFalse(service.canOpenTickets(new MockHttpSession()));
+    assertTrue(service.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
+  }
+
+  @Test
   void supportReplyNotificationShowsOnlyTheTicketNumberToItsRecipient() {
     String ticketNumber = "#10003";
     tx.executeWithoutResult(status -> service.recordSupportReply(ticketNumber, List.of(sender)));

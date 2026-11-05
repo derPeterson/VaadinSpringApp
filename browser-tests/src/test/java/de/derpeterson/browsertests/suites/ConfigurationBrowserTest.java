@@ -189,15 +189,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     page.keyboard().press("Enter");
     assertThat(parent).hasJSProperty("expanded", true);
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
-      Locator groupLink =
-          parent.getByRole(
-              AriaRole.LINK,
-              new Locator.GetByRoleOptions()
-                  .setName(
-                      group == AdminConfigGroup.TWO_FACTOR
-                          ? texts.getTwoFactorNavigationLabel()
-                          : texts.getAdminConfigGroupLabel(group))
-                  .setExact(true));
+      Locator groupLink = navigation.groupLink(group);
       if (group.isSuperadminOnly()) {
         assertThat(groupLink).hasCount(0);
       } else {

@@ -105,6 +105,16 @@ Interne Mitteilungen werden innerhalb der Anwendung versendet, nicht automatisch
 Passwortwechsel, Passwortreset, Rollenänderung und bestätigte E-Mail-Änderung können
 persönliche Systemhinweise erzeugen. Die Inhalte enthalten keine Kennwörter,
 Tokenlinks, Adressen oder Sitzungskennungen. Systemtexte werden beim Anzeigen übersetzt.
+Der Detaildialog bietet den Sprung zur Kontosicherheit für diese
+Kontosicherheitsmeldungen. Bei Ticketmeldungen und administrativen Mitteilungen
+erscheint dieser Button nicht.
+„Als gelesen markieren“ steht direkt an der Nachricht. Im Footer öffnet
+„Weitere Aktionen“ eine native Popover-Buttonliste für die vollständige Übersicht
+und das persönliche Löschen. „Schließen“ ist neutral. Ticketmeldungen mit einer
+Vorgangsnummer bieten berechtigten Administratoren „Zum Ticket“ als Hauptaktion,
+die das passende Ticket in der Administration auswählt. Eine nicht verfügbare
+Nummer führt zu einem Hinweis und wählt kein anderes Ticket aus. Auf schmalen
+Displays liegt die Zielaktion in einer eigenen vollen Zeile.
 
 Inbox- und Historienaufbewahrung sind getrennt konfiguriert: standardmäßig 180 und
 365 Tage. Ein leeres Feld bedeutet unbegrenzt; sonst sind positive Tageswerte nötig.

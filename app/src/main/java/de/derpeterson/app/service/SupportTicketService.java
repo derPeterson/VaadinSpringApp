@@ -5,6 +5,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.SupportReplyEntity;
 import de.derpeterson.app.model.SupportTicketEntity;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
+import de.derpeterson.app.model.SupportTicketEntity.Type;
 import de.derpeterson.app.model.SupportTicketViewerEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
@@ -58,9 +59,11 @@ public class SupportTicketService {
       Long id,
       Long version,
       String subject,
+      Type type,
       Status status,
       Instant updatedAt,
       Long assignee,
+      String assigneeName,
       boolean instructionSent,
       long unreadMessages,
       boolean subscribed,
@@ -131,7 +134,8 @@ public class SupportTicketService {
                     administration ? ticket.getUpdatedAt() : ticket.getPublicUpdatedAt(),
                     unread.getOrDefault(ticket.getId(), 0L),
                     subscribed.contains(ticket.getId()),
-                    administration && canSubscribe(owner, ticket)))
+                    administration && canSubscribe(owner, ticket),
+                    administration))
         .toList();
   }
 
@@ -260,13 +264,13 @@ public class SupportTicketService {
     ticket.setPublicUpdatedAt(ticket.getCreatedAt());
     tickets.saveAndFlush(ticket);
     append(ticket, user, body, ReplyAuthor.REQUESTER, false);
-    notifications.recordRecoveryRequest();
+    notifications.recordRecoveryRequest(ticketNumber(ticket.getId()));
     AfterCommitLog.info(
         log,
         "Recovery support request created: ticketId={}, accountId={}",
         ticket.getId(),
         owner.id());
-    return view(ticket);
+    return view(ticket, false);
   }
 
   @Transactional(readOnly = true)
@@ -304,7 +308,7 @@ public class SupportTicketService {
     ticket.setPublicUpdatedAt(ticket.getUpdatedAt());
     tickets.saveAndFlush(ticket);
     events.ticketChanged(ticket.getOwner().getId());
-    return view(ticket);
+    return view(ticket, true);
   }
 
   @Transactional
@@ -330,7 +334,7 @@ public class SupportTicketService {
         bounded(text, MESSAGE_LIMIT),
         administration ? ReplyAuthor.SUPPORT : ReplyAuthor.REQUESTER,
         internal);
-    return view(ticket);
+    return view(ticket, administration);
   }
 
   @Transactional
@@ -345,7 +349,7 @@ public class SupportTicketService {
     } else {
       requireAssignee(ticket, actor);
     }
-    return updateStatus(ticket, Status.CLOSED);
+    return updateStatus(ticket, Status.CLOSED, true);
   }
 
   @Transactional
@@ -355,16 +359,16 @@ public class SupportTicketService {
     if (!ticket.getStatus().acceptsMessages()) {
       throw new AccessDeniedException("Ticket already closed");
     }
-    return updateStatus(ticket, Status.CLOSED_BY_REQUESTER);
+    return updateStatus(ticket, Status.CLOSED_BY_REQUESTER, false);
   }
 
-  private Ticket updateStatus(SupportTicketEntity ticket, Status status) {
+  private Ticket updateStatus(SupportTicketEntity ticket, Status status, boolean administration) {
     ticket.setStatus(status);
     ticket.setUpdatedAt(Instant.now());
     ticket.setPublicUpdatedAt(ticket.getUpdatedAt());
     tickets.saveAndFlush(ticket);
     events.ticketChanged(ticket.getOwner().getId());
-    return view(ticket);
+    return view(ticket, administration);
   }
 
   @Transactional(readOnly = true)
@@ -411,7 +415,7 @@ public class SupportTicketService {
     ticket.setInstructionSentAt(Instant.now());
     tickets.saveAndFlush(ticket);
     AfterCommitLog.info(log, "Recovery instructions queued: ticketId={}", id);
-    return view(ticket);
+    return view(ticket, true);
   }
 
   private SupportTicketEntity accessible(
@@ -495,8 +499,8 @@ public class SupportTicketService {
     }
   }
 
-  private Ticket view(SupportTicketEntity ticket) {
-    return view(ticket, ticket.getUpdatedAt(), 0L, false, false);
+  private Ticket view(SupportTicketEntity ticket, boolean administration) {
+    return view(ticket, ticket.getUpdatedAt(), 0L, false, false, administration);
   }
 
   private Ticket view(
@@ -504,14 +508,26 @@ public class SupportTicketService {
       Instant updatedAt,
       long unread,
       boolean subscribed,
-      boolean allowed) {
+      boolean allowed,
+      boolean administration) {
+    UserEntity assignee = ticket.getAssignee();
+    String assigneeName = null;
+    if (administration && assignee != null) {
+      assigneeName =
+          (Objects.toString(assignee.getFirstName(), "")
+                  + " "
+                  + Objects.toString(assignee.getLastName(), ""))
+              .strip();
+    }
     return new Ticket(
         ticket.getId(),
         ticket.getVersion(),
         ticket.getSubject(),
+        ticket.getType(),
         ticket.getStatus(),
         updatedAt,
         ticket.getAssignee() == null ? null : ticket.getAssignee().getId(),
+        assigneeName,
         ticket.getInstructionSentAt() != null,
         unread,
         subscribed && allowed,

@@ -11,6 +11,7 @@ import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.PersistentBrowserActor;
+import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
@@ -379,11 +380,23 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   }
 
   private void begin(Page target, String provider, String email, String mode, boolean remember) {
+    begin(target, provider, email, mode, remember, texts);
+  }
+
+  private void begin(
+      Page target,
+      String provider,
+      String email,
+      String mode,
+      boolean remember,
+      UiTexts loginTexts) {
     target.navigate("/login");
     target
         .getByRole(
             AriaRole.SWITCH,
-            new Page.GetByRoleOptions().setName(texts.getLoginRememberMeCheckbox()).setExact(true))
+            new Page.GetByRoleOptions()
+                .setName(loginTexts.getLoginRememberMeCheckbox())
+                .setExact(true))
         .setChecked(remember);
     assertThat(target.locator("#external-login-" + provider + " img")).isVisible();
     target.waitForCondition(
@@ -491,7 +504,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     assertThat(page.locator("#account-external-connections")).isVisible();
     AllurePlaywright.attachScreenshot("Externes Konto ohne erfundene Profilwerte", page);
     new UserMenu(page).requestSignOut();
-    begin("google", email, "valid");
+    begin(page, "google", email, "valid", false, new UiTexts(registrationLanguage));
     assertThat(page).hasURL(Pattern.compile(".*/home$"));
     assertTrue((Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"));
   }

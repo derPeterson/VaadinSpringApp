@@ -25,6 +25,17 @@ Bei Sprachwechsel, geändertem Text, Sichtbarkeit oder verfügbarer Breite wird 
 gemessen. Öffnungsanimationen verfälschen die Layoutmessung nicht. Die Aktionsleisten
 brechen bei Platzmangel um.
 
+Der Benachrichtigungsdetaildialog trennt Leseaktion, Nebenaktionen und Zielaktion.
+Die Leseaktion steht in der Nachrichtenkarte. Ein nativer `Button` öffnet
+`Popover` mit beschrifteten Standardbuttons unter „Weitere Aktionen“.
+Der Footer nutzt native `HorizontalLayout`-Komponenten und ordnet die Zielaktion
+mobil über CSS Grid in einer eigenen vollen Zeile an. Die unabhängig angeordneten
+Aktionen erhalten deshalb keine gemeinsame Breitenmessung.
+Lokale Anordnungsregeln stehen unter `.cosmos-notification-detail-*` in
+`cosmos-notifications.css`; die Menüfläche unter
+`.cosmos-notification-actions-popover` nutzt die vorhandenen Cosmos-Farben und
+Standardbuttons einschließlich des gemeinsamen Löschstils.
+
 Anbieterlogos in der Identitätsbestätigung haben eigene Klassen direkt am Bild:
 `external-proof-provider-mark` für die Aktionsbuttons und
 `external-proof-heading-mark` für den Dialogkopf. Die Regeln liegen in
@@ -1146,6 +1157,15 @@ Zeichenzähler rechts neben der Beschriftung nutzen sie die vorhandenen
 `cosmos-notification-compose-*`-Klassen. `.support-message-input` in
 `cosmos-mfa.css` gleicht die Eingabefläche an die Benachrichtigungen an und
 erlaubt das vertikale Ziehen bei fester Breite.
+
+Die Adminansicht „Tickets“ übernimmt denselben Nachrichtenverlauf und den
+gelben Sicherheitshinweis. In der Administration stehen Anfragen links und
+Antworten rechts. Interne Vermerke haben eine eigene Kennzeichnung. Unter
+`.support-admin-workspace` gliedern native Tabs die Kategorien, ein natives Grid
+zeigt die Anfragen und ein Scroller begrenzt den Verlauf. Die Spalten stapeln sich
+auf schmalen Geräten. In `cosmos-mfa-confirmation.css` sind diese Regeln auf den
+Ticketarbeitsbereich begrenzt. Die Sprechblasen nutzen die gemeinsamen
+Nachrichtenklassen und orientieren sich am jeweiligen Absender.
 
 `cosmos-mfa.css` begrenzt die neue Gestaltung auf `.two-factor-view`,
 `.cosmos-mfa-settings` und `.two-factor-account-entry`. Panel-, Button- und

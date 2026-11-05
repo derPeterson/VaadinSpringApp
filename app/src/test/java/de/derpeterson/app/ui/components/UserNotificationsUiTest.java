@@ -876,17 +876,19 @@ class UserNotificationsUiTest {
     assertEquals("icons/lucide/check.svg", ((SvgIcon) mark.getIcon()).getSrc());
     Button history = detailButton(dialog, "cosmos-notification-detail-history");
     assertEquals(compact, history.isVisible());
-    assertEquals("", history.getText());
+    assertEquals(texts.getNotificationsHistory(), history.getText());
     assertEquals(texts.getNotificationsHistory(), history.getAriaLabel().orElseThrow());
     assertEquals(texts.getNotificationsHistory(), history.getTooltip().getText());
     assertEquals("icons/lucide/bell.svg", ((SvgIcon) history.getIcon()).getSrc());
     Button account = detailButton(dialog, "cosmos-notification-detail-account");
-    assertEquals("", account.getText());
+    assertEquals(texts.getNotificationsOpenAccount(), account.getText());
     assertEquals(texts.getNotificationsOpenAccount(), account.getAriaLabel().orElseThrow());
     assertEquals(texts.getNotificationsOpenAccount(), account.getTooltip().getText());
     assertEquals("icons/lucide/lock-keyhole.svg", ((SvgIcon) account.getIcon()).getSrc());
-    assertTrue(account.getParent().orElseThrow().hasClassName("cosmos-notification-detail-tools"));
-    assertTrue(mark.getParent().orElseThrow().hasClassName("cosmos-notification-detail-primary"));
+    assertTrue(
+        account.getParent().orElseThrow().hasClassName("cosmos-notification-detail-primary"));
+    assertTrue(
+        mark.getParent().orElseThrow().hasClassName("cosmos-notification-detail-read-actions"));
     assertTrue(
         tree(dialog)
             .filter(Button.class::isInstance)
@@ -894,7 +896,7 @@ class UserNotificationsUiTest {
             .anyMatch(
                 button ->
                     button.getText().equals(texts.getNotificationsClose())
-                        && button.getThemeNames().contains("primary")
+                        && !button.getThemeNames().contains("primary")
                         && button.getIcon() instanceof SvgIcon icon
                         && "icons/lucide/x.svg".equals(icon.getSrc())));
     if (!read) {
@@ -938,7 +940,7 @@ class UserNotificationsUiTest {
     UserNotificationsPanel panel = fixture.panel();
     Dialog dialog = fixture.dialog();
     Button delete = detailButton(dialog, "cosmos-notification-detail-delete");
-    assertEquals("", delete.getText());
+    assertEquals(texts.getNotificationsDismiss(), delete.getText());
     assertEquals(texts.getNotificationsDismiss(), delete.getAriaLabel().orElseThrow());
     assertEquals(texts.getNotificationsDismiss(), delete.getTooltip().getText());
     assertEquals("icons/lucide/trash-2.svg", ((SvgIcon) delete.getIcon()).getSrc());
@@ -967,7 +969,15 @@ class UserNotificationsUiTest {
       String language, boolean compact, boolean read) {
 
     locale.set(Locale.forLanguageTag(language));
-    item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), read);
+    item =
+        new Item(
+            item.id(),
+            item.type(),
+            item.title(),
+            item.body(),
+            item.createdAt(),
+            read,
+            item.supportTicketNumber());
     when(service.unreadSnapshot(http)).thenReturn(read ? List.of() : List.of(7L));
     UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, compact);
     ui.add(panel);
@@ -975,6 +985,56 @@ class UserNotificationsUiTest {
     rowTitle(panel).click();
     Dialog dialog = field(panel, "detail");
     return new NotificationDetailFixture(panel, dialog);
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = UserNotificationType.class,
+      names = {"RECOVERY_REQUEST", "SUPPORT_REPLY"})
+  void ticketNotificationsDoNotOfferUnrelatedAccountSecurityNavigation(UserNotificationType type) {
+    item = new Item(7L, type, null, null, Instant.EPOCH, false);
+    NotificationDetailFixture fixture = openNotificationDetail("de", true, false);
+    assertFalse(
+        tree(fixture.dialog())
+            .filter(Button.class::isInstance)
+            .anyMatch(button -> button.hasClassName("cosmos-notification-detail-account")));
+    assertTrue(detailButton(fixture.dialog(), "cosmos-notification-detail-mark-read").isVisible());
+    assertTrue(detailButton(fixture.dialog(), "cosmos-notification-detail-delete").isVisible());
+    assertTrue(detailButton(fixture.dialog(), "cosmos-notification-detail-history").isVisible());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void ticketDetailsOfferADestinationOnlyForAnAuthorizedAdministrator(String language) {
+    item =
+        new Item(
+            7L, UserNotificationType.SUPPORT_REPLY, null, null, Instant.EPOCH, false, "#10001");
+    when(service.canOpenTickets(http)).thenReturn(true);
+    NotificationDetailFixture fixture = openNotificationDetail(language, true, false);
+    Button ticket = detailButton(fixture.dialog(), "cosmos-notification-detail-ticket");
+    assertEquals(texts.getNotificationsOpenTicket(), ticket.getText());
+    assertTrue(ticket.getThemeNames().contains("primary"));
+    Button more = detailButton(fixture.dialog(), "cosmos-notification-detail-more");
+    Popover menu =
+        tree(fixture.dialog())
+            .filter(Popover.class::isInstance)
+            .map(Popover.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals(more, menu.getTarget());
+    menu.open();
+    detailButton(fixture.dialog(), "cosmos-notification-detail-delete").click();
+    assertFalse(menu.isOpened());
+    assertTrue(((PortalConfirmationDialog) field(fixture.panel(), "confirmation")).isOpened());
+    when(service.canOpenTickets(http)).thenReturn(false);
+    fixture.panel().refreshTexts();
+    assertTrue(
+        tree(fixture.dialog())
+            .noneMatch(button -> button.hasClassName("cosmos-notification-detail-ticket")));
+    assertFalse(
+        detailButton(fixture.dialog(), "cosmos-notification-detail-close")
+            .getThemeNames()
+            .contains("primary"));
   }
 
   @ParameterizedTest
