@@ -28,6 +28,12 @@
   geschlossenen Zuständen muss der Verlauf lesbar bleiben und die Antwortaktion
   fehlen. Beim Aktualisieren nach einer konkurrierenden Änderung den neuen
   Status und die passende Rückmeldung prüfen.
+  In getrennten Sitzungen zusätzlich Live-Aktualisierung ohne Klick, Erhalt eines
+  Entwurfs, die Zähler für andere Tickets und das Löschen des Zählers beim
+  Öffnen auch in einem zweiten Tab desselben Kontos prüfen. Beim Schließen in
+  einer anderen Sitzung darf der alte Antwortentwurf nicht im Formular für eine
+  neue Anfrage erscheinen. Abos für zugewiesene Admins und beobachtende Superadmins in
+  DE/EN prüfen. Interne Vermerke dürfen Nutzeransicht und Nutzerzähler nicht ändern.
 
 - **Öffentliche Sprachwahl: offen.** In DE/EN nach der Sprachauswahl die
   Browsersitzung ohne Löschung der Cookies neu öffnen. Die öffentliche Ansicht

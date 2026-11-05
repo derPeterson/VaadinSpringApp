@@ -806,7 +806,8 @@ public class UserNotificationsPanel extends Div {
             openedItem.title(),
             openedItem.body(),
             openedItem.createdAt(),
-            true);
+            true,
+            openedItem.supportTicketNumber());
     if (detail != null && detail.isOpened()) {
       renderDetail();
     }

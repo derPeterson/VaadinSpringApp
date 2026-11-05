@@ -40,6 +40,25 @@ public class MessageTexts {
     return getTranslation("support.recoveryNotification");
   }
 
+  public String getSupportReplyNotificationTitle(String ticketNumber) {
+    return ticketNumber == null
+        ? getTranslation("support.replyNotificationTitle")
+        : getFormattedTranslation("support.replyNotificationTicketTitle", ticketNumber);
+  }
+
+  public String getSupportReplyNotificationBody() {
+    return getTranslation("support.replyNotificationBody");
+  }
+
+  public String getSupportSubscription() {
+    return getTranslation("support.subscription");
+  }
+
+  public String getSupportUnreadMessages(long count) {
+    return getFormattedTranslation(
+        count == 1 ? "support.unreadMessage" : "support.unreadMessages", count);
+  }
+
   public String getSupportNoUnlock() {
     return getTranslation("support.noUnlock");
   }

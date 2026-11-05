@@ -105,6 +105,17 @@ public class TwoFactorAuthorization {
     return owner(identity);
   }
 
+  /** Authentifiziert Push-Aktualisierungen aus der gebundenen Sitzung ohne Aktivität zu buchen. */
+  public Owner owner(HttpSession session) {
+    String identity =
+        security
+            .getObject()
+            .refreshSessionAuthentication(session)
+            .orElseThrow(() -> new AccessDeniedException("Sign in required"))
+            .getName();
+    return owner(identity);
+  }
+
   private Owner owner(String identity) {
     List<TwoFactorAccessRow> rows = users.findTwoFactorAccess(identity);
     if (rows.isEmpty() || !rows.getFirst().getEnabled()) {
@@ -182,6 +193,11 @@ public class TwoFactorAuthorization {
 
   public boolean administrationConfirmed(HttpServletRequest request) {
     return sessionConfirmed(request) && sessionConfirmed(request, TwoFactorAction.ADMINISTRATION);
+  }
+
+  public boolean administrationConfirmed(Owner owner, HttpSession session) {
+    return sessionConfirmed(owner, session, TwoFactorAction.LOGIN)
+        && sessionConfirmed(owner, session, TwoFactorAction.ADMINISTRATION);
   }
 
   private boolean sessionConfirmed(HttpServletRequest request, TwoFactorAction action) {

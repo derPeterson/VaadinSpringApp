@@ -21,6 +21,7 @@ public final class UserNotificationTexts {
       case EMAIL_CHANGED -> texts.getNotificationsEmailChangedTitle();
       case ROLES_CHANGED -> texts.getNotificationsRolesChangedTitle();
       case RECOVERY_REQUEST -> texts.getSupportRecoverySubject();
+      case SUPPORT_REPLY -> texts.getSupportReplyNotificationTitle(item.supportTicketNumber());
     };
   }
 
@@ -32,6 +33,7 @@ public final class UserNotificationTexts {
       case EMAIL_CHANGED -> texts.getNotificationsEmailChangedBody();
       case ROLES_CHANGED -> texts.getNotificationsRolesChangedBody();
       case RECOVERY_REQUEST -> texts.getSupportRecoveryNotification();
+      case SUPPORT_REPLY -> texts.getSupportReplyNotificationBody();
     };
   }
 

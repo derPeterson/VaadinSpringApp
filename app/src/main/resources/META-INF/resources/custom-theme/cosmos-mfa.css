@@ -126,3 +126,19 @@
 :is(.two-factor-details-toggle, .two-factor-login-help-row > vaadin-button[theme~=tertiary-inline])::before,
 :is(.two-factor-details-toggle, .two-factor-login-help-row > vaadin-button[theme~=tertiary-inline])::after { display:none; }
 .cosmos-reference-portal vaadin-button.two-factor-details-toggle:focus:not([focus-ring]) { outline:none; }
+.support-ticket-indicators {
+    gap: 8px;
+}
+
+.support-ticket-row .support-ticket-indicators {
+    margin-inline-start: auto;
+}
+
+vaadin-badge.support-ticket-unread {
+    min-width: 22px;
+    border: 1px solid var(--cosmos-reference-badge-border);
+    border-radius: 999px;
+    background: var(--cosmos-reference-badge);
+    color: var(--cosmos-reference-white);
+    font: 700 11px/1 Inter, sans-serif;
+}

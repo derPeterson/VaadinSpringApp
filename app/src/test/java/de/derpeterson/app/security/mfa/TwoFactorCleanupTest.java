@@ -181,6 +181,7 @@ class TwoFactorCleanupTest {
     row.setStatus(status);
     row.setCreatedAt(updated);
     row.setUpdatedAt(updated);
+    row.setPublicUpdatedAt(updated);
     return tickets.saveAndFlush(row);
   }
 }

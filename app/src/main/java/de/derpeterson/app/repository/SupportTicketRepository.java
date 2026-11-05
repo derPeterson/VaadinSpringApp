@@ -17,7 +17,7 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicketEnti
   Optional<SupportTicketEntity> lock(Long id);
 
   @Query(
-      "select t from SupportTicketEntity t where t.owner.id = :owner order by t.updatedAt desc, t.id desc")
+      "select t from SupportTicketEntity t where t.owner.id = :owner order by t.publicUpdatedAt desc, t.id desc")
   List<SupportTicketEntity> own(Long owner, Pageable page);
 
   @Query("select t from SupportTicketEntity t order by t.updatedAt desc, t.id desc")

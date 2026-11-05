@@ -74,5 +74,8 @@ public class SupportTicketEntity {
   @Column(nullable = false)
   private Instant updatedAt;
 
+  @Column(nullable = false)
+  private Instant publicUpdatedAt;
+
   private Instant instructionSentAt;
 }

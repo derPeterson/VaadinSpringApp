@@ -150,6 +150,11 @@ Stitch-Entwürfe zeigen den Desktopstand mit synthetischen Nachrichten.
 - [B: Kompakter Footer mit grünem Abschluss](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=11932244678383587741)
 - [C: Menü für Nebenaktionen](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=8154288544097916227)
 
+Bei der gemeinsamen Abnahme die Live-Aktualisierung, rote Ungelesen-Zähler und
+ticketbezogene Abos mit getrennten Nutzer-, Admin- und Superadmin-Sitzungen prüfen.
+Anschließend die Standardnachricht sichten und entscheiden, ob ein Direktlink
+oder eine Textvorschau im Postfach hilfreich ist.
+
 ## Gestaltung der verpflichtenden Ersteinrichtung
 
 ### Ersatzcodeausgabe: Variante B mit kompakter Codeübersicht

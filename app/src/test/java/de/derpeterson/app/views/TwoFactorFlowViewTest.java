@@ -21,6 +21,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.function.DeploymentConfiguration;
@@ -50,6 +51,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.core.userdetails.User;
@@ -193,8 +195,11 @@ class TwoFactorFlowViewTest {
     open(language, false);
     SupportTicketService tickets = mock(SupportTicketService.class);
     Ticket closed =
-        new Ticket(1L, 0L, "Earlier request", Status.CLOSED, Instant.EPOCH, null, false);
-    Ticket active = new Ticket(2L, 0L, "Current request", Status.OPEN, Instant.EPOCH, null, false);
+        new Ticket(
+            1L, 0L, "Earlier request", Status.CLOSED, Instant.EPOCH, null, false, 0, false, false);
+    Ticket active =
+        new Ticket(
+            2L, 0L, "Current request", Status.OPEN, Instant.EPOCH, null, false, 0, false, false);
     when(tickets.list(request, false)).thenReturn(List.of(closed, active));
 
     RecoveryHelpView help = new RecoveryHelpView(config, texts, tickets, request);
@@ -216,6 +221,29 @@ class TwoFactorFlowViewTest {
     assertTrue(find(help, "support-add-reply").isVisible());
     assertFalse(find(help, "support-create").isVisible());
     verify(tickets, never()).conversation(request, closed.id(), false);
+  }
+
+  @Test
+  void closingAnOpenRequestElsewhereDoesNotTurnItsReplyDraftIntoANewRequest() {
+    open("de", false);
+    SupportTicketService tickets = mock(SupportTicketService.class);
+    Ticket active =
+        new Ticket(1L, 0L, "Request", Status.OPEN, Instant.EPOCH, null, false, 0, false, false);
+    Ticket closed =
+        new Ticket(1L, 1L, "Request", Status.CLOSED, Instant.EPOCH, null, false, 0, false, false);
+    when(tickets.list(request, false)).thenReturn(List.of(active));
+    RecoveryHelpView help = new RecoveryHelpView(config, texts, tickets, request);
+    TextArea draft = (TextArea) find(help, "support-reply");
+    draft.setValue("Entwurf für die offene Anfrage.");
+
+    Button refresh = (Button) find(help, "support-reload");
+    refresh.click();
+    assertEquals("Entwurf für die offene Anfrage.", draft.getValue());
+
+    when(tickets.list(request, false)).thenReturn(List.of(closed));
+    refresh.click();
+    assertTrue(find(help, "support-create").isVisible());
+    assertTrue(draft.isEmpty());
   }
 
   private Component find(Component root, String id) {

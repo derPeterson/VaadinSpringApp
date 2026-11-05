@@ -1052,6 +1052,22 @@ class UserNotificationServicePersistenceTest {
   }
 
   @Test
+  void supportReplyNotificationShowsOnlyTheTicketNumberToItsRecipient() {
+    String ticketNumber = "#10003";
+    tx.executeWithoutResult(status -> service.recordSupportReply(ticketNumber, List.of(sender)));
+    Item item =
+        service
+            .searchInbox(adminSession, ReadFilter.UNREAD, ticketNumber, Set.of(), 0, 20)
+            .getContent()
+            .getFirst();
+    assertEquals(UserNotificationType.SUPPORT_REPLY, item.type());
+    assertEquals(ticketNumber, item.supportTicketNumber());
+    assertNull(item.title());
+    assertNull(item.body());
+    assertTrue(service.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
+  }
+
+  @Test
   void rolledBackSecurityEventDoesNotClaimSuccess() {
     tx.executeWithoutResult(
         s -> {

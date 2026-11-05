@@ -109,8 +109,19 @@ public class UserNotificationService {
       String title,
       String body,
       Instant createdAt,
-      boolean read)
-      implements Serializable {}
+      boolean read,
+      String supportTicketNumber)
+      implements Serializable {
+    public Item(
+        Long id,
+        UserNotificationType type,
+        String title,
+        String body,
+        Instant createdAt,
+        boolean read) {
+      this(id, type, title, body, createdAt, read, null);
+    }
+  }
 
   public record Sent(Long id, String title, String body, Instant createdAt, int recipientCount) {}
 
@@ -222,7 +233,8 @@ public class UserNotificationService {
         recipient.getTitle(),
         recipient.getBody(),
         recipient.getCreatedAt(),
-        recipient.getReadAt() != null);
+        recipient.getReadAt() != null,
+        recipient.getSupportTicketNumber());
   }
 
   @Transactional(readOnly = true)
@@ -413,6 +425,15 @@ public class UserNotificationService {
     create(event, administrators);
   }
 
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void recordSupportReply(String ticketNumber, List<UserEntity> viewers) {
+    UserNotificationEntity event = new UserNotificationEntity();
+    event.setRequestKey("support-reply:" + UUID.randomUUID());
+    event.setType(UserNotificationType.SUPPORT_REPLY);
+    event.setSupportTicketNumber(ticketNumber);
+    create(event, viewers);
+  }
+
   private void create(UserNotificationEntity m, List<UserEntity> selected) {
     m.setCreatedAt(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS));
     m.setRecipientCount(selected.size());
@@ -434,7 +455,7 @@ public class UserNotificationService {
           m.getId(),
           m.getSender().getId(),
           selected.size());
-    } else {
+    } else if (m.getType() != UserNotificationType.SUPPORT_REPLY) {
       AfterCommitLog.info(
           log,
           "Account security event recorded: userId={}, type={}",

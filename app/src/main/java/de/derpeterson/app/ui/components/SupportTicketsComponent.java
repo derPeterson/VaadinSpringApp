@@ -1,6 +1,11 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
+
+import com.vaadin.flow.component.AttachEvent;
+import com.vaadin.flow.component.DetachEvent;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
@@ -17,6 +22,8 @@ import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.server.WrappedHttpSession;
+import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
@@ -24,24 +31,37 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
 import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.service.SupportTicketService;
+import de.derpeterson.app.service.SupportTicketService.LiveView;
 import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.RequesterIdentity;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import java.io.Serializable;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 
 /**
  * Native gemeinsame Vorgangsansicht; die Dienstgrenzen unterscheiden Eigenzugang und Bearbeitung.
  */
 @StyleSheet("custom-theme/cosmos-mfa.css")
+@Slf4j
 public final class SupportTicketsComponent extends VerticalLayout {
-  private static final long TICKET_NUMBER_OFFSET = 10_000L;
+  private record DraftTarget(Long ticketId) implements Serializable {}
+
+  private record Draft(String text, boolean internal) implements Serializable {}
+
+  private static final DraftTarget NEW_REQUEST_DRAFT = new DraftTarget(null);
 
   private final transient MessageProperties texts;
   private final transient SupportTicketService service;
@@ -54,6 +74,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final VerticalLayout conversation = new VerticalLayout();
   private final TextArea body = new TextArea();
   private final Switch internal = new Switch();
+  private final Switch subscription = new Switch();
   private final Button create = new Button();
   private final Button claim = new Button();
   private final Button reply = new Button();
@@ -83,8 +104,13 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final VerticalLayout userEditor = new VerticalLayout();
   private final Div messageField = new Div();
   private Ticket selected;
+  private final Map<DraftTarget, Draft> drafts = new HashMap<>();
+  private DraftTarget draftTarget;
   private boolean openRequest;
   private Long administratorId;
+  private transient Registration liveRegistration;
+  private transient HttpSession liveSession;
+  private transient volatile Long liveViewerId;
 
   public SupportTicketsComponent(
       MessageProperties texts,
@@ -115,7 +141,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
           .setFlexGrow(0);
       subjectColumn =
           grid.addColumn(ticket -> texts.getSupportRecoverySubject()).setAutoWidth(true);
-      statusColumn = grid.addComponentColumn(ticket -> new Badge(status(ticket.status())));
+      statusColumn =
+          grid.addComponentColumn(
+              ticket -> ticketIndicators(ticket, new Badge(status(ticket.status()))));
       statusColumn.setAutoWidth(true);
       assigneeColumn = grid.addColumn(this::assignee).setAutoWidth(true);
     } else {
@@ -155,6 +183,20 @@ public final class SupportTicketsComponent extends VerticalLayout {
     messageField.add(body, messageCount);
     messageField.addClassName("cosmos-notification-compose-field");
     internal.setVisible(administration);
+    subscription.setId("support-subscription");
+    subscription.setVisible(false);
+    subscription.addValueChangeListener(
+        event -> {
+          if (event.isFromClient() && selected != null) {
+            try {
+              service.setSubscription(request, selected.id(), event.getValue());
+              refresh();
+            } catch (RuntimeException failure) {
+              subscription.setValue(selected.subscribed());
+              handleActionFailure(failure);
+            }
+          }
+        });
     create.setId("support-create");
     create.setPrefixComponent(AppIcon.PLUS.create());
     create.addClickListener(
@@ -215,7 +257,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
       Div actions = new Div(create, claim, reply, instructions, close, reload);
       actions.addClassName("cosmos-dialog-actions");
       EqualButtonWidths.configure(actions);
-      panel.getBody().add(grid, conversation, warning, messageField, internal);
+      panel.getBody().add(grid, subscription, conversation, warning, messageField, internal);
       panel.addActionFooter(actions);
     } else {
       addClassName("support-recovery-help");
@@ -318,6 +360,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     }
     body.setLabel(administration ? texts.getSupportReply() : texts.getSupportDescription());
     internal.setLabel(texts.getSupportInternal());
+    subscription.setLabel(texts.getSupportSubscription());
     create.setText(texts.getSupportCreate());
     claim.setText(texts.getSupportClaim());
     reply.setText(texts.getSupportReply());
@@ -332,30 +375,67 @@ public final class SupportTicketsComponent extends VerticalLayout {
     refresh(false);
   }
 
+  @Override
+  protected void onAttach(AttachEvent event) {
+    super.onAttach(event);
+    UI ui = event.getUI();
+    if (!(event.getSession().getSession() instanceof WrappedHttpSession wrapped)) {
+      return;
+    }
+    HttpSession session = wrapped.getHttpSession();
+    liveSession = session;
+    liveRegistration =
+        service
+            .events()
+            .register(
+                change -> {
+                  Long viewer = liveViewerId;
+                  if (change.affects(viewer, administration)) {
+                    ui.access(
+                        () -> {
+                          if (isAttached() && liveSession == session) {
+                            refreshLive(session);
+                          }
+                        });
+                  }
+                });
+    refreshLive(session);
+  }
+
+  @Override
+  protected void onDetach(DetachEvent event) {
+    if (liveRegistration != null) {
+      liveRegistration.remove();
+      liveRegistration = null;
+    }
+    liveSession = null;
+    liveViewerId = null;
+    super.onDetach(event);
+  }
+
+  private void refreshLive(HttpSession session) {
+    try {
+      LiveView state = service.liveView(session, administration, selectedId());
+      liveViewerId = state.viewerId();
+      if (administration) {
+        administratorId = state.viewerId();
+      }
+      applyTickets(state.tickets(), state.selected());
+      showConversation(state.messages(), state.requester());
+    } catch (AccessDeniedException _) {
+      // Die Sitzungs-/Rollenprüfung hat Vorrang vor dem Nachladen per Push.
+    } catch (RuntimeException failure) {
+      log.warn("Ticket refresh failed", safeFailure(failure));
+    }
+  }
+
   private void refresh(boolean notifySuccess) {
     try {
-      Long id = selected == null ? null : selected.id();
       List<Ticket> values = service.list(request, administration);
       if (administration) {
         administratorId = service.administratorId(request);
-      } else {
-        userRequestCount.setText(texts.getSupportMessageCount(values.size()));
       }
-      grid.setVisible(administration || !values.isEmpty());
-      emptyState.setVisible(!administration && values.isEmpty());
-      openRequest = values.stream().anyMatch(ticket -> ticket.status().acceptsMessages());
-      grid.setItems(values);
-      selected = values.stream().filter(ticket -> ticket.id().equals(id)).findFirst().orElse(null);
-      if (selected == null && !administration && !values.isEmpty()) {
-        selected =
-            values.stream()
-                .filter(ticket -> ticket.status().acceptsMessages())
-                .findFirst()
-                .orElse(values.getFirst());
-      }
-      if (selected != null) {
-        grid.asSingleSelect().setValue(selected);
-      }
+      applyTickets(values, SupportTicketService.selectTicket(values, selectedId(), administration));
       refreshConversation();
       if (notifySuccess) {
         succeeded(texts::getSupportRefreshed);
@@ -363,6 +443,22 @@ public final class SupportTicketsComponent extends VerticalLayout {
     } catch (RuntimeException failure) {
       failed(texts::getSupportRefreshFailed);
     }
+  }
+
+  private Long selectedId() {
+    return selected == null ? null : selected.id();
+  }
+
+  private void applyTickets(List<Ticket> values, Ticket selection) {
+    if (!administration) {
+      userRequestCount.setText(texts.getSupportMessageCount(values.size()));
+    }
+    grid.setVisible(administration || !values.isEmpty());
+    emptyState.setVisible(!administration && values.isEmpty());
+    openRequest = values.stream().anyMatch(ticket -> ticket.status().acceptsMessages());
+    grid.setItems(values).setIdentifierProvider(Ticket::id);
+    grid.asSingleSelect().setValue(selection);
+    selected = selection;
   }
 
   public void addBackAction(Button action) {
@@ -390,12 +486,29 @@ public final class SupportTicketsComponent extends VerticalLayout {
     if (ticket.status() == Status.CLOSED_BY_REQUESTER) {
       badge.addThemeVariants(BadgeVariant.SUCCESS);
     }
-    HorizontalLayout row = new HorizontalLayout(details, badge);
+    HorizontalLayout row = new HorizontalLayout(details, ticketIndicators(ticket, badge));
     row.setSpacing(false);
     row.setWidthFull();
     row.setAlignItems(Alignment.CENTER);
     row.addClassName("support-ticket-row");
     return row;
+  }
+
+  private HorizontalLayout ticketIndicators(Ticket ticket, Badge statusBadge) {
+    HorizontalLayout indicators = new HorizontalLayout(statusBadge);
+    indicators.setSpacing(false);
+    indicators.setAlignItems(Alignment.CENTER);
+    indicators.addClassName("support-ticket-indicators");
+    if (ticket.unreadMessages() > 0) {
+      Badge unread = new Badge(Long.toString(ticket.unreadMessages()));
+      unread.addThemeVariants(BadgeVariant.ERROR);
+      unread.addClassName("support-ticket-unread");
+      unread
+          .getElement()
+          .setAttribute("aria-label", texts.getSupportUnreadMessages(ticket.unreadMessages()));
+      indicators.add(unread);
+    }
+    return indicators;
   }
 
   private String assignee(Ticket ticket) {
@@ -405,6 +518,14 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private void refreshConversation() {
+    List<Reply> messages =
+        selected == null ? List.of() : service.conversation(request, selected.id(), administration);
+    RequesterIdentity requester =
+        !administration && !messages.isEmpty() ? service.requesterIdentity(request) : null;
+    showConversation(messages, requester);
+  }
+
+  private void showConversation(List<Reply> messages, RequesterIdentity requester) {
     if (administration) {
       conversation.removeAll();
     }
@@ -414,12 +535,21 @@ public final class SupportTicketsComponent extends VerticalLayout {
         selected != null && administratorId != null && administratorId.equals(selected.assignee());
     boolean canReply = active && (!administration || assignedToMe);
     boolean requesterClosed = selected != null && selected.status() == Status.CLOSED_BY_REQUESTER;
+    DraftTarget target = null;
+    if (canReply) {
+      target = new DraftTarget(selected.id());
+    } else if (!administration && !openRequest) {
+      target = NEW_REQUEST_DRAFT;
+    }
+    switchDraft(target);
     if (!administration) {
       body.setLabel(openRequest ? texts.getSupportReply() : texts.getSupportDescription());
       userEditor.setVisible(!openRequest || canReply);
     } else {
       messageField.setVisible(canReply);
       internal.setVisible(canReply);
+      subscription.setVisible(selected != null && selected.subscriptionAllowed());
+      subscription.setValue(selected != null && selected.subscribed());
     }
     create.setVisible(!administration && !openRequest);
     claim.setVisible(administration && active && unassigned);
@@ -428,10 +558,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
         administration ? canReply || requesterClosed && (unassigned || assignedToMe) : active);
     instructions.setVisible(administration && canReply);
     instructions.setEnabled(selected != null && !selected.instructionSent());
-    List<Reply> messages =
-        selected == null ? List.of() : service.conversation(request, selected.id(), administration);
     if (!administration) {
-      refreshUserConversation(messages);
+      refreshUserConversation(messages, requester);
     } else {
       for (Reply message : messages) {
         Div card = new Div();
@@ -445,9 +573,72 @@ public final class SupportTicketsComponent extends VerticalLayout {
         conversation.add(card);
       }
     }
+    acknowledgeVisibleMessages(messages);
   }
 
-  private void refreshUserConversation(List<Reply> messages) {
+  private void acknowledgeVisibleMessages(List<Reply> messages) {
+    HttpSession session = liveSession;
+    Ticket ticket = selected;
+    if (session == null || ticket == null || ticket.unreadMessages() == 0 || messages.isEmpty()) {
+      return;
+    }
+    Long lastReplyId = messages.stream().map(Reply::id).max(Long::compareTo).orElseThrow();
+    // Im Hintergrund geöffnete Tabs quittieren erst, sobald der Verlauf sichtbar wird.
+    conversation
+        .getElement()
+        .executeJs(
+            """
+        this.__finishSupportRead?.(false);
+        const displayed = () => this.isConnected && this.getClientRects().length > 0;
+        if (document.visibilityState === 'visible') return displayed();
+        return new Promise(resolve => {
+          const shown = () => finish(displayed() && document.visibilityState === 'visible');
+          const finish = value => {
+            document.removeEventListener('visibilitychange', shown);
+            delete this.__finishSupportRead;
+            resolve(value);
+          };
+          this.__finishSupportRead = finish;
+          document.addEventListener('visibilitychange', shown, {once: true});
+        });
+        """)
+        .then(
+            Boolean.class,
+            visible -> {
+              if (!Boolean.TRUE.equals(visible)
+                  || liveSession != session
+                  || !Objects.equals(selectedId(), ticket.id())) {
+                return;
+              }
+              try {
+                service.markSeen(session, administration, ticket.id(), lastReplyId);
+              } catch (AccessDeniedException _) {
+                // Eine inzwischen abgelaufene Sitzung darf keine Lesegrenze schreiben.
+              } catch (RuntimeException failure) {
+                log.warn("Ticket read status could not be saved", safeFailure(failure));
+              }
+            });
+  }
+
+  private void switchDraft(DraftTarget target) {
+    if (Objects.equals(draftTarget, target)) {
+      return;
+    }
+    if (draftTarget != null) {
+      if (body.isEmpty()) {
+        drafts.remove(draftTarget);
+      } else {
+        drafts.put(draftTarget, new Draft(body.getValue(), internal.getValue()));
+      }
+    }
+    draftTarget = target;
+    Draft draft = drafts.remove(target);
+    body.setValue(draft == null ? "" : draft.text());
+    body.setInvalid(false);
+    internal.setValue(draft != null && draft.internal());
+  }
+
+  private void refreshUserConversation(List<Reply> messages, RequesterIdentity requester) {
     boolean showConversation = !messages.isEmpty();
     HorizontalLayout refreshHeader = showConversation ? userConversationHeader : userRequestsHeader;
     if (reload.getParent().filter(refreshHeader::equals).isEmpty()) {
@@ -463,7 +654,6 @@ public final class SupportTicketsComponent extends VerticalLayout {
     userConversationHeading.add(new Text(heading), ticketNumberLabel(selected));
     userConversationCount.setText(texts.getSupportMessageCount(messages.size()));
     userMessageScroll.getElement().setAttribute("aria-label", heading + ticketNumber(selected));
-    RequesterIdentity requester = service.requesterIdentity(request);
     for (Reply message : messages) {
       Span timestamp = new Span("· " + formatTime(message.createdAt()));
       timestamp.addClassName("support-message-time");
@@ -503,7 +693,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private static String ticketNumber(Ticket ticket) {
-    return "#" + (TICKET_NUMBER_OFFSET + ticket.id());
+    return SupportTicketService.ticketNumber(ticket.id());
   }
 
   private String formatTime(Instant time) {

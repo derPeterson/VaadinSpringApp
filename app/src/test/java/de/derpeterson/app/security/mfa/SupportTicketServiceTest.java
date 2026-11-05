@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
@@ -20,7 +22,10 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.SupportReplyRepository;
 import de.derpeterson.app.repository.SupportTicketRepository;
+import de.derpeterson.app.repository.SupportTicketViewerRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.MaintenanceService;
+import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.AccountSecurityMail;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailQueueService;
@@ -29,11 +34,16 @@ import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.UserNotificationService;
+import de.derpeterson.app.websocket.SupportTicketBroadcaster;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
+import jakarta.servlet.http.HttpSession;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +54,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.orm.jpa.SharedEntityManagerCreator;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -60,6 +71,7 @@ class SupportTicketServiceTest {
   @Autowired TransactionTemplate transaction;
   @Autowired EmailQueueService queue;
   @Autowired UserNotificationService notifications;
+  @Autowired SecurityService security;
   @Autowired TwoFactorStoreTest.TestClock clock;
   @PersistenceContext EntityManager entityManager;
   private UserEntity user;
@@ -124,6 +136,118 @@ class SupportTicketServiceTest {
         service.conversation(administrator, ticket.id(), false).stream()
             .map(Reply::author)
             .toList());
+  }
+
+  @Test
+  void assignedAdminsAndWatchingSuperadminsReceiveOnlyTheirSubscribedPublicMessages() {
+    Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
+    Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
+    MockHttpServletRequest superadmin = confirmedAdmin(RoleType.ROLE_SUPERADMIN);
+    Long assignedId = service.administratorId(administrator);
+    Long watcherId = service.administratorId(superadmin);
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.setSubscription(otherAdministrator, ticket.id(), true));
+    service.setSubscription(administrator, ticket.id(), true);
+    service.setSubscription(superadmin, ticket.id(), true);
+    Ticket noted =
+        service.reply(administrator, claimed.id(), claimed.version(), "Intern.", true, true);
+    verify(notifications, org.mockito.Mockito.never()).recordSupportReply(any(), any());
+
+    Ticket updated =
+        service.reply(owner, noted.id(), noted.version(), "Noch eine Frage.", false, false);
+    verify(notifications)
+        .recordSupportReply(
+            eq(SupportTicketService.ticketNumber(ticket.id())),
+            argThat(
+                recipients ->
+                    recipients.size() == 2
+                        && recipients.stream()
+                            .map(UserEntity::getId)
+                            .toList()
+                            .containsAll(List.of(assignedId, watcherId))));
+    service.setSubscription(superadmin, ticket.id(), false);
+    assertFalse(ticketFor(superadmin, ticket.id(), true).subscribed());
+    service.closeOwn(owner, updated.id(), updated.version());
+    assertThrows(
+        AccessDeniedException.class, () -> service.setSubscription(superadmin, ticket.id(), true));
+  }
+
+  @Test
+  void unreadCursorOnlyAcknowledgesDisplayedRepliesInTheCurrentPerspective() {
+    Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
+    Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
+    Ticket answered =
+        service.reply(
+            administrator, claimed.id(), claimed.version(), "Erste Antwort.", false, true);
+    Reply first = service.conversation(owner, ticket.id(), false).getLast();
+    Instant publicUpdate = ticketFor(owner, ticket.id(), false).updatedAt();
+    Ticket noted =
+        service.reply(
+            administrator, answered.id(), answered.version(), "Interner Vermerk.", true, true);
+    Reply internal = service.conversation(administrator, ticket.id(), true).getLast();
+    assertEquals(publicUpdate, ticketFor(owner, ticket.id(), false).updatedAt());
+    service.reply(administrator, noted.id(), noted.version(), "Zweite Antwort.", false, true);
+    HttpSession requesterSession = bindLiveSession(owner);
+    HttpSession administratorSession = bindLiveSession(administrator);
+    assertEquals(2, ticketFor(owner, ticket.id(), false).unreadMessages());
+    assertEquals(1, ticketFor(administrator, ticket.id(), true).unreadMessages());
+    assertFalse(service.markSeen(requesterSession, false, ticket.id(), internal.id()));
+    assertTrue(service.markSeen(requesterSession, false, ticket.id(), first.id()));
+    assertFalse(service.markSeen(requesterSession, false, ticket.id(), first.id()));
+    assertEquals(
+        1, service.liveView(requesterSession, false, ticket.id()).selected().unreadMessages());
+    Reply latest = service.liveView(requesterSession, false, ticket.id()).messages().getLast();
+    assertTrue(service.markSeen(requesterSession, false, ticket.id(), latest.id()));
+    assertEquals(0, ticketFor(owner, ticket.id(), false).unreadMessages());
+    assertEquals(1, ticketFor(administrator, ticket.id(), true).unreadMessages());
+    assertTrue(service.markSeen(administratorSession, true, ticket.id(), latest.id()));
+    assertEquals(0, ticketFor(administrator, ticket.id(), true).unreadMessages());
+    assertThrows(
+        AccessDeniedException.class, () -> service.liveView(requesterSession, true, ticket.id()));
+  }
+
+  @Test
+  void liveRefreshOnlyPublishesCommittedChanges() {
+    Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
+    List<SupportTicketBroadcaster.Change> changes = new ArrayList<>();
+    Registration listener = service.events().register(changes::add);
+    try {
+      transaction.executeWithoutResult(
+          status -> {
+            service.reply(owner, ticket.id(), ticket.version(), "Zurückgerollt.", false, false);
+            assertTrue(changes.isEmpty());
+            status.setRollbackOnly();
+          });
+      assertTrue(changes.isEmpty());
+      service.reply(owner, ticket.id(), ticket.version(), "Gespeichert.", false, false);
+      assertEquals(List.of(new SupportTicketBroadcaster.Change(user.getId(), null)), changes);
+
+      Reply latest = service.conversation(owner, ticket.id(), false).getLast();
+      assertTrue(service.markSeen(bindLiveSession(owner), false, ticket.id(), latest.id()));
+      assertEquals(2, changes.size());
+      SupportTicketBroadcaster.Change read = changes.getLast();
+      assertTrue(read.affects(user.getId(), false));
+      assertFalse(read.affects(service.administratorId(administrator), true));
+    } finally {
+      listener.remove();
+    }
+  }
+
+  private Ticket ticketFor(MockHttpServletRequest request, Long id, boolean administration) {
+    return service.list(request, administration).stream()
+        .filter(ticket -> ticket.id().equals(id))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private HttpSession bindLiveSession(MockHttpServletRequest request) {
+    HttpSession session = request.getSession();
+    String email = (String) request.getAttribute("fixture.identity");
+    when(security.refreshSessionAuthentication(session))
+        .thenReturn(
+            Optional.of(UsernamePasswordAuthenticationToken.authenticated(email, null, List.of())));
+    return session;
   }
 
   @Test
@@ -269,7 +393,11 @@ class SupportTicketServiceTest {
   }
 
   private MockHttpServletRequest confirmedAdmin() {
-    UserEntity admin = create(RoleType.ROLE_ADMIN);
+    return confirmedAdmin(RoleType.ROLE_ADMIN);
+  }
+
+  private MockHttpServletRequest confirmedAdmin(RoleType role) {
+    UserEntity admin = create(role);
     MockHttpServletRequest request = TwoFactorAuthorizationTest.requestFor(admin.getEmail());
     byte[] seed = Totp.newSecret();
     UUID revision = factors.initialize(admin.getId(), admin.getAccessVersion());
@@ -316,6 +444,20 @@ class SupportTicketServiceTest {
   @Configuration
   static class Config {
     @Bean
+    SupportTicketBroadcaster ticketEvents() {
+      return new SupportTicketBroadcaster();
+    }
+
+    @Bean
+    ConfigService config() {
+      ConfigService config = mock(ConfigService.class);
+      when(config.getString(any()))
+          .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
+      when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://fixture.invalid/");
+      return config;
+    }
+
+    @Bean
     EmailQueueService queue() {
       return mock(EmailQueueService.class);
     }
@@ -326,11 +468,7 @@ class SupportTicketServiceTest {
     }
 
     @Bean
-    AccountSecurityMail templates() {
-      ConfigService config = mock(ConfigService.class);
-      when(config.getString(any()))
-          .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-      when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://fixture.invalid/");
+    AccountSecurityMail templates(ConfigService config) {
       return new AccountSecurityMail(config, new CustomI18NProvider());
     }
 
@@ -339,20 +477,26 @@ class SupportTicketServiceTest {
         TwoFactorAuthorization authorization,
         SupportTicketRepository tickets,
         SupportReplyRepository replies,
+        SupportTicketViewerRepository viewers,
         UserRepository users,
         EntityManagerFactory factory,
         UserNotificationService notifications,
         AccountSecurityMail templates,
-        EmailQueueService queue) {
+        EmailQueueService queue,
+        ConfigService config,
+        SupportTicketBroadcaster events) {
       return new SupportTicketService(
           authorization,
           tickets,
           replies,
+          viewers,
           users,
           SharedEntityManagerCreator.createSharedEntityManager(factory),
           notifications,
           templates,
-          queue);
+          queue,
+          new MaintenanceService(config),
+          events);
     }
   }
 }
