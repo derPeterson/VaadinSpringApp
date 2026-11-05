@@ -70,6 +70,12 @@ Das Cookie ist hostgebunden, HttpOnly und SameSite=Lax sowie bei HTTPS Secure.
 Das Umschalten allein meldet niemanden an und erzeugt keinen Remember-me-Token.
 Eine vom Browser vorgeschlagene E-Mail-Adresse bleibt dessen Autovervollständigung.
 
+Die öffentliche Sprachwahl speichert `de` oder `en` für ein Jahr im gleich
+geschützten Cookie `public-language`. Eine neue Vaadin-Sitzung übernimmt die
+gespeicherte Sprache vor der Anmeldung. Ohne gültiges Cookie greift die bisherige
+Spracherkennung anhand der Browsereinstellungen. Bei der Anmeldung hat die
+Kontosprache Vorrang.
+
 Eine zugelassene HTTP-Sitzung belegt einen Platz. Zusätzliche Tabs teilen diesen Platz.
 Gespeicherte Remember-me-Zugänge ohne aktive Sitzung belegen keinen Platz. Logout,
 Widerruf und Inaktivitätsablauf geben Plätze frei. Browserfenster schließen ist kein Logout.

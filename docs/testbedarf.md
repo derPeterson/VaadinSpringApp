@@ -17,6 +17,17 @@
   der Umstellung auf „Zugangsprobleme und Alternativen“ außerdem prüfen, dass
   beide Aktionen erst nach Öffnen der Details sichtbar und erreichbar sind.
 
+- **2FA-Wiederherstellungsanfragen: offen.** In DE/EN mit getrennten Konten
+  prüfen, dass Nutzer ihre Anfrage schließen können, der Status in beiden
+  Ansichten erscheint und die Administration sie abschließen kann. In beiden
+  geschlossenen Zuständen muss der Verlauf lesbar bleiben und die Antwortaktion
+  fehlen. Beim Aktualisieren nach einer konkurrierenden Änderung den neuen
+  Status und die passende Rückmeldung prüfen.
+
+- **Öffentliche Sprachwahl: offen.** In DE/EN nach der Sprachauswahl die
+  Browsersitzung ohne Löschung der Cookies neu öffnen. Die öffentliche Ansicht
+  übernimmt die Auswahl, nach dem Anmelden hat die Kontosprache Vorrang.
+
 ## JUnit-Tests
 
 Aktuell keine offenen Ergänzungen.

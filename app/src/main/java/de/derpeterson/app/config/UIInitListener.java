@@ -5,6 +5,7 @@ import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.VaadinServiceInitListener;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.helper.ui.NotificationHelper;
+import de.derpeterson.app.i18n.PublicLanguagePreference;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.UserService;
@@ -26,6 +27,10 @@ public class UIInitListener implements VaadinServiceInitListener {
 
   @Override
   public void serviceInit(ServiceInitEvent event) {
+    event
+        .getSource()
+        .addSessionInitListener(
+            init -> PublicLanguagePreference.restore(init.getRequest(), init.getSession()));
     event
         .getSource()
         .addUIInitListener(

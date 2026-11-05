@@ -40,6 +40,7 @@ public class TwoFactorCleanup {
     challenges.clearExpiredSecrets(now);
     // Metadaten kurz für das kontoweite Mail-Versuchslimit erhalten, niemals Ausgabewerte.
     challenges.deleteExpired(now.minusSeconds(3600));
-    tickets.deleteClosedBefore(now.minusSeconds(180L * 86400), Status.CLOSED);
+    tickets.deleteClosedBefore(
+        now.minusSeconds(180L * 86400), List.of(Status.CLOSED, Status.CLOSED_BY_REQUESTER));
   }
 }

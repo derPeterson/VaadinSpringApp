@@ -1394,11 +1394,6 @@ vaadin-dialog.cosmos-notification-dialog::part(overlay) {
     margin-top: var(--cosmos-space-l);
 }
 
-.cosmos-notification-sent-empty {
-    color: var(--lumo-secondary-text-color);
-    font-size: var(--cosmos-font-size-xs);
-}
-
 .cosmos-notification-sent-pagination .admin-user-pagination-summary {
     color: var(--lumo-secondary-text-color);
     font-size: var(--cosmos-font-size-xs);

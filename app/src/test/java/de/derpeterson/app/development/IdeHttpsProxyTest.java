@@ -219,6 +219,20 @@ class IdeHttpsProxyTest {
     }
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"10.0.0.5", "172.16.0.5", "192.168.178.88"})
+  void acceptsOnlyLiteralPrivateIpv4ForLan(String host) {
+    assertEquals(host, HttpsDevelopmentApplication.privateIpv4(host).getHostAddress());
+  }
+
+  @ParameterizedTest
+  @ValueSource(
+      strings = {"localhost", "127.0.0.1", "0.0.0.0", "8.8.8.8", "192.168.1.4:8443", "fe80::1", ""})
+  void rejectsAddressesOutsideThePrivateIpv4Lan(String host) {
+    assertThrows(
+        IllegalArgumentException.class, () -> HttpsDevelopmentApplication.privateIpv4(host));
+  }
+
   @Test
   void absentCaddyIsRejectedBeforeApplicationStartup() {
     assertThrows(

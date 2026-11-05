@@ -44,7 +44,6 @@
 .cosmos-reference-public .public-panel-footer > .cosmos-intro > span { color:var(--cosmos-reference-secondary);font:inherit; }
 .cosmos-reference-public .public-panel-footer > .cosmos-intro > a { font:inherit;font-weight:600; }
 .cosmos-reference-public .public-panel-footer a { color:var(--cosmos-reference-accent);text-decoration:none;white-space:nowrap; }
-.cosmos-reference-public .public-panel-footer a:hover { text-decoration:underline; }
 .cosmos-reference-public .public-panel-body .cosmos-options { justify-content:space-between;margin:0;gap:12px; }
 .cosmos-reference-public .public-panel-body .cosmos-remember,.cosmos-reference-public .public-panel-body .cosmos-forgot { margin:0;padding:0; }
 .cosmos-reference-public .public-panel-body .cosmos-forgot a { color:var(--cosmos-reference-accent);font:400 12px/1.6 Inter,sans-serif;text-decoration:none; }
@@ -83,9 +82,9 @@
 @media(max-width:639px) {
  .cosmos-reference-public .public-panel-actions { grid-auto-flow:row;grid-template-columns:minmax(0,1fr);width:100%; }
  .cosmos-reference-public .public-panel-actions > vaadin-button { min-width:0; }
- .cosmos-reference-public .public-home .portal-home-layout { grid-template-columns:minmax(0,1fr);padding:24px; }
+ .cosmos-reference-public .public-home .portal-home-layout { grid-template-columns:minmax(0,1fr);gap:12px;padding:24px; }
  .cosmos-reference-public .public-home .portal-home-copy h2 { font-size:28px; }
- .cosmos-reference-public .public-home .portal-home-art { max-width:260px; }
+ .cosmos-reference-public .public-home .portal-home-art { grid-row:1;max-width:260px; }
  .cosmos-reference-public .public-header-inner { padding:0 16px; }
  .cosmos-reference-public .public-header .public-brand { min-width:0; }
  .cosmos-reference-public .public-header .public-navigation { flex:0 0 auto;gap:4px;justify-content:flex-end; }

@@ -281,8 +281,29 @@ Für Nachweise ausschließlich frische isolierte Daten verwenden.
 JSESSIONID und Remember-me werden bei HTTPS als Secure und HttpOnly ausgegeben,
 beide verwenden SameSite=Lax. Caddy überschreibt fremde Forwarded-Header und prüft
 den äußeren Host einschließlich Port. Für die wechselnden lokalen Zugänge wird
-kein HSTS ausgeliefert. Es erfolgt keine LAN-/Firewallfreigabe; ein Laptopzugriff
-und spätere öffentliche Domains benötigen eine eigene Zugangsplanung.
+kein HSTS ausgeliefert. Der normale IDE-Start ist nur lokal erreichbar.
+
+### LAN-Test auf Handy und Tablet
+
+Den lokalen IDE-Server stoppen und in IntelliJ **Application HTTPS – LAN-Test**
+starten. Der Startdialog fragt die private IPv4 des PCs ab, die `ipconfig`
+am aktiven Netzwerkadapter zeigt. Die Adresse muss diesem Rechner zugewiesen
+sein. Die Konfiguration verwendet diese IP als einzige HTTPS-Origin auf Port
+8443. Caddy lauscht auf dieser Adresse, Spring Boot bleibt auf `127.0.0.1:8080`.
+Der separate BAT-Starter ist für den lokalen Zugang vorgesehen.
+
+Handy oder Tablet müssen im selben privaten Netzwerk sein. Wenn die
+Windows-Firewall den Zugriff blockiert, eine eingehende Regel für Caddy auf TCP
+8443 einrichten und sie auf das Profil **Privat** und **Lokales Subnetz**
+begrenzen. Die Startkonfiguration legt selbst keine Firewallregel an.
+
+Auf dem Testgerät einmalig dem öffentlichen Stammzertifikat
+`data/https/ide/pki/authorities/local/root.crt` vertrauen. Die Adresse im
+Browser hat dann die Form `https://<LAN-IP>:8443/`. Der LAN-Modus eignet sich
+für Layout, Portal-Anmeldung und 2FA mit Testkonten. Für Google oder Microsoft
+muss eine vom Anbieter akzeptierte Rücksprungadresse gesondert eingerichtet
+werden. Nach dem Stoppen des LAN-Profils ist die App wieder über den normalen
+IDE-Start unter `https://localhost:8443/` erreichbar.
 
 Technische Grundlagen: [Caddy Local HTTPS](https://caddyserver.com/docs/automatic-https#local-https),
 [Tomcat RemoteIpValve](https://tomcat.apache.org/tomcat-11.0-doc/config/valve.html#Remote_IP_Valve),

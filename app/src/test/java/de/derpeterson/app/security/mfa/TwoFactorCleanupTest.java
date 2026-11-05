@@ -55,8 +55,12 @@ class TwoFactorCleanupTest {
     TwoFactorChallengeEntity old = challenge(user, now.minusSeconds(7200));
     TwoFactorChallengeEntity active = challenge(user, now.plusSeconds(300));
     SupportTicketEntity oldClosed = ticket(user, now.minus(181, ChronoUnit.DAYS), Status.CLOSED);
+    SupportTicketEntity oldRequesterClosed =
+        ticket(user, now.minus(181, ChronoUnit.DAYS), Status.CLOSED_BY_REQUESTER);
     SupportTicketEntity oldOpen = ticket(user, now.minus(181, ChronoUnit.DAYS), Status.OPEN);
     SupportTicketEntity recentClosed = ticket(user, now.minus(1, ChronoUnit.DAYS), Status.CLOSED);
+    SupportTicketEntity recentRequesterClosed =
+        ticket(user, now.minus(1, ChronoUnit.DAYS), Status.CLOSED_BY_REQUESTER);
     SupportReplyEntity reply = new SupportReplyEntity();
     reply.setTicket(oldClosed);
     reply.setAuthor(user);
@@ -78,9 +82,11 @@ class TwoFactorCleanupTest {
         "synthetic encrypted payload",
         challenges.findById(active.getId()).orElseThrow().getEncryptedPayload());
     assertFalse(tickets.existsById(oldClosed.getId()));
+    assertFalse(tickets.existsById(oldRequesterClosed.getId()));
     assertFalse(replies.existsById(reply.getId()));
     assertTrue(tickets.existsById(oldOpen.getId()));
     assertTrue(tickets.existsById(recentClosed.getId()));
+    assertTrue(tickets.existsById(recentRequesterClosed.getId()));
   }
 
   @Test

@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
@@ -14,11 +16,16 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.internal.CurrentInstance;
+import com.vaadin.flow.server.VaadinRequest;
+import com.vaadin.flow.server.VaadinResponse;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.i18n.PublicLanguagePreference;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import jakarta.servlet.http.Cookie;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -26,6 +33,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 
 class PublicPageComponentTest {
   private UI ui;
@@ -53,8 +62,64 @@ class PublicPageComponentTest {
 
   @AfterEach
   void cleanup() {
+    CurrentInstance.set(VaadinRequest.class, null);
+    CurrentInstance.set(VaadinResponse.class, null);
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void publicLanguageChoiceIsRestoredInANewSession(String language) {
+    VaadinRequest request = mock(VaadinRequest.class);
+    VaadinResponse response = mock(VaadinResponse.class);
+    when(request.getContextPath()).thenReturn("");
+    when(request.isSecure()).thenReturn(true);
+    CurrentInstance.set(VaadinRequest.class, request);
+    CurrentInstance.set(VaadinResponse.class, response);
+    ConfigService config = mock(ConfigService.class);
+    when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Review Service");
+    when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
+    PublicPageComponent page =
+        new PublicPageComponent(config, texts, PublicPageComponent.Page.LOGIN);
+    verifyNoInteractions(response);
+
+    tree(page)
+        .filter(Button.class::isInstance)
+        .map(Button.class::cast)
+        .filter(button -> language.equals(button.getElement().getAttribute("lang")))
+        .findFirst()
+        .orElseThrow()
+        .click();
+
+    ArgumentCaptor<Cookie> cookies = ArgumentCaptor.forClass(Cookie.class);
+    verify(response).addCookie(cookies.capture());
+    Cookie saved = cookies.getValue();
+    assertEquals("public-language", saved.getName());
+    assertEquals(language, saved.getValue());
+    assertEquals("/", saved.getPath());
+    assertEquals(365 * 24 * 60 * 60, saved.getMaxAge());
+    assertEquals("Lax", saved.getAttribute("SameSite"));
+    assertTrue(saved.isHttpOnly());
+    assertTrue(saved.getSecure());
+
+    VaadinRequest nextRequest = mock(VaadinRequest.class);
+    VaadinSession nextSession = mock(VaadinSession.class);
+    when(nextRequest.getCookies()).thenReturn(new Cookie[] {saved});
+    PublicLanguagePreference.restore(nextRequest, nextSession);
+    verify(nextSession).setLocale(Locale.forLanguageTag(language));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"", "fr"})
+  void unsupportedLanguageCookieLeavesTheBrowserDefaultInPlace(String language) {
+    VaadinRequest request = mock(VaadinRequest.class);
+    VaadinSession nextSession = mock(VaadinSession.class);
+    when(request.getCookies()).thenReturn(new Cookie[] {new Cookie("public-language", language)});
+
+    PublicLanguagePreference.restore(request, nextSession);
+
+    verifyNoInteractions(nextSession);
   }
 
   @ParameterizedTest
@@ -107,14 +172,19 @@ class PublicPageComponentTest {
               .map(Span.class::cast)
               .anyMatch(span -> span.getText().equals(texts.getPublicHomeKicker())));
     }
-    assertEquals(
-        texts.getBaseLoginButton(),
+    Button login =
         tree(page)
             .filter(c -> c.getId().orElse("").equals("public-nav-login"))
             .map(Button.class::cast)
             .findFirst()
-            .orElseThrow()
-            .getText());
+            .orElseThrow();
+    assertEquals(texts.getBaseLoginButton(), login.getText());
+    boolean loginFlow =
+        switch (scene) {
+          case LOGIN, TWO_FACTOR, RECOVERY_HELP -> true;
+          default -> false;
+        };
+    assertEquals(loginFlow, login.hasClassName("public-nav-active"));
     assertTrue(
         tree(page)
             .filter(Span.class::isInstance)

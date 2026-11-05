@@ -40,6 +40,9 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --lumo-warning-text-color: #efcb8a;
     --lumo-warning-color-10pct: rgba(201, 153, 80, .13);
     --lumo-warning-contrast-color: #0b1220;
+    --cosmos-security-warning-accent: #f59e0b;
+    --cosmos-security-warning-surface: #1f1a14;
+    --cosmos-security-warning-border: #f59e0b40;
     --lumo-success-color: #468c69;
     --lumo-success-text-color: #a3d5b8;
     --lumo-success-color-10pct: rgba(70, 140, 105, .13);

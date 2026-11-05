@@ -147,24 +147,28 @@
     root.querySelector('[data-mfa-download-demo]').addEventListener('click', () => notify(english ? 'Design preview: The PDF download is available in the Vaadin application.' : 'Gestaltungsvorschau: Der PDF-Download ist in der Vaadin-Anwendung verfügbar.'));
   };
   const helpMessages = [];
+  let helpClosed = false;
+  let helpTicketNumber = 10001;
   const confirmationText = english => english ? {
-      confirm:'Confirm sign-in',confirmSubtitle:'Use your authenticator app or an unused recovery code.',authenticator:'Authenticator code',recovery:'Recovery code',
+      confirm:'Confirm sign-in',confirmSubtitle:'Use your authenticator app or an unused recovery code.',authenticatorTab:'App code',authenticator:'Authenticator code',recovery:'Recovery code',
       authHint:'Enter the six-digit code from your authenticator app:',recoveryHint:'Enter an unused recovery code to confirm your sign-in:',
-      restore:'Restore authenticator',restorePrompt:'Use a recovery code to set up a new app?',restoreSubtitle:'Use a recovery code to set up a new app.',restoreHint:'Use an unused recovery code to set up a new authenticator. Your current app remains valid until you confirm the new one.',
+      restore:'Restore authenticator',restorePrompt:'Use a recovery code to set up a new app?',restoreSubtitle:'Set up a new authenticator app using an unused recovery code.',previousApp:'Your current app remains valid until you confirm the new one.',
       consumption:'The recovery code is only used up after the replacement succeeds.',
       helpTitle:'Recovery help',helpSubtitle:'No access to your authenticator or recovery codes?',helpPageHint:'Send a request to the administration.',noUnlock:'A request is not proof of identity. Without an authenticator or valid recovery code we cannot unlock the account.',
-      empty:'No requests.',request:'Your request',placeholder:'Briefly describe what you need help with.',warningLabel:'Security notice:',warning:'Never enter passwords, authenticator secrets or recovery codes in messages.',
-      existing:'Existing requests',ticketSubject:'Help accessing your authenticator',open:'Open',conversation:'Conversation',message:'message',messages:'messages',
-      signIn:'Sign in',loginBack:'Sign in',continue:'Continue',create:'Create request',reply:'Add reply',refresh:'Refresh'
+      empty:'No requests.',request:'Your request',placeholder:'Please briefly describe what you need help with.',warningLabel:'Security notice:',warning:'Never enter passwords, authenticator secrets or recovery codes in messages.',
+      existing:'Existing requests',ticketSubject:'Help accessing your authenticator',open:'Open',inProgress:'In progress',conversation:'Conversation',message:'message',messages:'messages',
+      support:'System administration',sampleSupportReply:'Have you checked whether you still have an unused recovery code?',
+      signIn:'Sign in',loginBack:'Back',continue:'Continue',create:'Create request',reply:'Add reply',refresh:'Refresh',closeOwn:'Close my request',closedByRequester:'Closed by requester'
     } : {
-      confirm:'Anmeldung bestätigen',confirmSubtitle:'Verwenden Sie Ihre Authenticator-App oder einen unbenutzten Ersatzcode.',authenticator:'Authenticator-Code',recovery:'Ersatzcode',
+      confirm:'Anmeldung bestätigen',confirmSubtitle:'Verwenden Sie Ihre Authenticator-App oder einen unbenutzten Ersatzcode.',authenticatorTab:'App-Code',authenticator:'Authenticator-Code',recovery:'Ersatzcode',
       authHint:'Geben Sie den sechsstelligen Code Ihrer Authenticator-App ein:',recoveryHint:'Geben Sie einen noch unbenutzten Ersatzcode ein, um Ihre Anmeldung zu bestätigen:',
-      restore:'Authenticator wiederherstellen',restorePrompt:'Mit einem Ersatzcode eine neue App einrichten?',restoreSubtitle:'Mit einem Ersatzcode eine neue App einrichten.',restoreHint:'Verwenden Sie einen unbenutzten Ersatzcode, um einen neuen Authenticator einzurichten. Ihre bisherige App bleibt gültig, bis Sie die neue bestätigt haben.',
+      restore:'Authenticator wiederherstellen',restorePrompt:'Mit einem Ersatzcode eine neue App einrichten?',restoreSubtitle:'Richten Sie mit einem unbenutzten Ersatzcode eine neue Authenticator-App ein.',previousApp:'Ihre bisherige App bleibt gültig, bis Sie die neue bestätigt haben.',
       consumption:'Der Ersatzcode wird erst nach dem erfolgreichen Wechsel verbraucht.',
       helpTitle:'Hilfe zur Wiederherstellung',helpSubtitle:'Kein Zugriff auf Authenticator und Ersatzcodes?',helpPageHint:'Stellen Sie eine Anfrage an die Administration.',noUnlock:'Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode können wir das Konto nicht entsperren.',
-      empty:'Keine Anfragen vorhanden.',request:'Ihre Anfrage',placeholder:'Beschreiben Sie Ihr Anliegen kurz.',warningLabel:'Sicherheitshinweis:',warning:'Geben Sie niemals Passwörter, Authenticator-Geheimschlüssel oder Ersatzcodes in Nachrichten ein.',
-      existing:'Bestehende Anfragen',ticketSubject:'Hilfe beim Authenticator-Zugriff',open:'Offen',conversation:'Nachrichtenverlauf',message:'Nachricht',messages:'Nachrichten',
-      signIn:'Anmelden',loginBack:'Anmeldung',continue:'Weiter',create:'Anfrage erstellen',reply:'Antwort hinzufügen',refresh:'Aktualisieren'
+      empty:'Keine Anfragen vorhanden.',request:'Ihre Anfrage',placeholder:'Bitte beschreiben Sie Ihr Anliegen kurz.',warningLabel:'Sicherheitshinweis:',warning:'Geben Sie niemals Passwörter, Authenticator-Geheimschlüssel oder Ersatzcodes in Nachrichten ein.',
+      existing:'Bestehende Anfragen',ticketSubject:'Hilfe beim Authenticator-Zugriff',open:'Offen',inProgress:'In Bearbeitung',conversation:'Nachrichtenverlauf',message:'Nachricht',messages:'Nachrichten',
+      support:'Systemadministration',sampleSupportReply:'Haben Sie geprüft, ob Sie noch einen unbenutzten Ersatzcode haben?',
+      signIn:'Anmelden',loginBack:'Zurück',continue:'Weiter',create:'Anfrage erstellen',reply:'Antwort hinzufügen',refresh:'Aktualisieren',closeOwn:'Anfrage schließen',closedByRequester:'Vom Nutzer geschlossen'
     };
   const renderConfirmationFlow = (root, phase, english) => {
     const text = confirmationText(english);
@@ -192,7 +196,7 @@
           <div class="mfa-login-help-row"><span>${text.helpSubtitle}</span><button class="mfa-quiet-action" type="button" data-mfa-go="help">${text.helpTitle}<span class="mfa-login-open-icon" aria-hidden="true"></span></button></div>
         </div>
       </details>`;
-      root.innerHTML = `<div class="mfa-setup-tabs mfa-login-tabs" role="tablist" aria-label="${text.confirm}"><button type="button" role="tab" data-mfa-login-method="authenticator" aria-selected="${!recoveryMode}" tabindex="${recoveryMode?-1:0}">${device}<span>${text.authenticator}</span></button><button type="button" role="tab" data-mfa-login-method="recovery" aria-selected="${recoveryMode}" tabindex="${recoveryMode?0:-1}">${key}<span>${text.recovery}</span></button></div><p class="portal-copy">${recoveryMode?text.recoveryHint:text.authHint}</p>${recoveryMode?recoveryField('mfa-login-recovery-code'):`<div class="mfa-otp-field"><label class="mfa-otp-label" for="mfa-login-code">${text.authenticator} <span class="mfa-required">•</span></label><div class="mfa-otp"><div class="mfa-otp-slots" aria-hidden="true">${'<span>•</span>'.repeat(6)}</div><input id="mfa-login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-required="true"></div></div>`}<div class="mfa-login-help">${alternatives}</div>`;
+      root.innerHTML = `<div class="mfa-setup-tabs mfa-login-tabs" role="tablist" aria-label="${text.confirm}"><button type="button" role="tab" data-mfa-login-method="authenticator" aria-selected="${!recoveryMode}" tabindex="${recoveryMode?-1:0}">${device}<span>${text.authenticatorTab}</span></button><button type="button" role="tab" data-mfa-login-method="recovery" aria-selected="${recoveryMode}" tabindex="${recoveryMode?0:-1}">${key}<span>${text.recovery}</span></button></div><p class="portal-copy">${recoveryMode?text.recoveryHint:text.authHint}</p>${recoveryMode?recoveryField('mfa-login-recovery-code'):`<div class="mfa-otp-field"><label class="mfa-otp-label" for="mfa-login-code">${text.authenticator} <span class="mfa-required">•</span></label><div class="mfa-otp"><div class="mfa-otp-slots" aria-hidden="true">${'<span>•</span>'.repeat(6)}</div><input id="mfa-login-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" aria-required="true"></div></div>`}<div class="mfa-login-help">${alternatives}</div>`;
       const tabs = [...root.querySelectorAll('[data-mfa-login-method]')];
       tabs.forEach((tab, index) => {
         const select = () => { root.dataset.loginMethod = tab.dataset.mfaLoginMethod; renderPhase(root, 'confirm'); };
@@ -221,44 +225,71 @@
         ['focus','click','keyup'].forEach(event=>input.addEventListener(event,refresh));refresh();
       }
     } else if (phase === 'recover') {
-      root.innerHTML = `<p class="portal-copy">${text.restoreHint}</p>${recoveryField('mfa-restore-recovery-code')}<div class="mfa-flow-notice">${infoIcon}<span>${text.consumption}</span></div>`;
+      root.innerHTML = `${recoveryField('mfa-restore-recovery-code')}<div class="mfa-flow-notice">${infoIcon}<div><p>${text.previousApp}</p><p>${text.consumption}</p></div></div>`;
     } else {
-      const date = new Intl.DateTimeFormat(english ? 'en-GB' : 'de-DE', {dateStyle:'short',timeStyle:'short'});
+      const locale = english ? 'en-GB' : 'de-DE';
+      const date = new Intl.DateTimeFormat(locale, {dateStyle:'short'});
+      const time = new Intl.DateTimeFormat(locale, {timeStyle:'short'});
+      const formatTimestamp = instant => `${date.format(instant)} · ${time.format(instant)}`;
+      const conversationTitle = `${text.conversation} #${helpTicketNumber}`;
       const conversation = helpMessages.length ? `
         <section class="mfa-help-conversation">
-          <div class="mfa-help-conversation-heading"><h3>${text.conversation} #1</h3>
-            <span>${helpMessages.length} ${helpMessages.length === 1 ? text.message : text.messages}</span></div>
-          <div class="mfa-help-thread" tabindex="0" aria-label="${text.conversation} #1">
-            ${helpMessages.map(message => `<div class="mfa-help-message">
+          <div class="mfa-help-conversation-heading"><h3>${text.conversation} <span class="mfa-help-ticket-number">#${helpTicketNumber}</span></h3>
+            <span class="mfa-help-section-count">${helpMessages.length} ${helpMessages.length === 1 ? text.message : text.messages}</span></div>
+          <div class="mfa-help-thread" tabindex="0" aria-label="${conversationTitle}">
+            ${helpMessages.map(message => `<div class="mfa-help-message" data-author="${message.support ? 'SUPPORT' : 'REQUESTER'}">
               <div class="mfa-help-message-metadata">
-                <span class="mfa-help-message-avatar" role="img" tabindex="0" aria-label="John Doe"
-                  data-tooltip="John Doe · john.doe@example.test">JD</span>
-                <time datetime="${message.time.toISOString()}">${date.format(message.time)}</time>
+                ${message.support
+                  ? `<span class="mfa-help-support-icon" aria-hidden="true"></span><span class="mfa-help-support-sender">${text.support}</span>`
+                  : '<span class="mfa-help-message-avatar" role="img" tabindex="0" aria-label="John Doe" data-tooltip="John Doe · john.doe@example.test">JD</span>'}
+                <time datetime="${message.time.toISOString()}">· ${formatTimestamp(message.time)}</time>
               </div>
-              <p class="mfa-flow-ticket">${escape(message.body)}</p>
+              <p class="mfa-flow-ticket">${escape(message.support ? text.sampleSupportReply : message.body)}</p>
             </div>`).join('')}
           </div>
         </section>` : '';
-      const requestSummary = helpMessages.length ? `
-        <div class="mfa-help-ticket-list">
-          <div><div class="mfa-help-ticket-title"><span>#1</span> ${text.ticketSubject}</div>
-            <time>${date.format(helpMessages.at(-1).time)}</time></div>
-          <span class="mfa-help-ticket-status">${text.open}</span>
+      const requestCount = helpMessages.length > 0 ? 1 : 0;
+      const requestStatus = helpClosed
+        ? text.closedByRequester
+        : helpMessages.some(message => message.support) ? text.inProgress : text.open;
+      const requestSummary = requestCount ? `
+        <div class="mfa-help-ticket-list" data-selected>
+          <div class="mfa-help-ticket-details">
+            <span class="mfa-help-ticket-number">#${helpTicketNumber}</span>
+            <div>
+              <div class="mfa-help-ticket-title">${text.ticketSubject}</div>
+              <time datetime="${helpMessages.at(-1).time.toISOString()}">${formatTimestamp(helpMessages.at(-1).time)}</time>
+            </div>
+          </div>
+          <span class="mfa-help-ticket-status"${helpClosed ? ' data-requester-closed' : ''}>${requestStatus}</span>
         </div>` : `<div class="mfa-help-empty"><span class="mfa-help-empty-icon" aria-hidden="true"></span>${text.empty}</div>`;
-      const formLabel = helpMessages.length ? text.reply : text.request;
+      const formLabel = helpMessages.length && !helpClosed ? text.reply : text.request;
       const warningIcon = document.querySelector('#vp-symbols').content.querySelector('[data-symbol="error"]').innerHTML;
       root.innerHTML = `
         <div class="mfa-flow-notice">${infoIcon}<span>${text.noUnlock}</span></div>
-        <section class="mfa-help-requests"><h3>${text.existing}</h3>${requestSummary}</section>
+        <section class="mfa-help-requests">
+          <div class="mfa-help-conversation-heading"><h3>${text.existing}</h3>
+            <span class="mfa-help-section-count mfa-help-request-count">${requestCount} ${requestCount === 1 ? text.message : text.messages}</span></div>
+          ${requestSummary}
+        </section>
         ${conversation}
         <div class="mfa-help-editor">
           <div class="mfa-flow-notice mfa-help-security-notice">${warningIcon}<span><strong>${text.warningLabel}</strong> ${text.warning}</span></div>
-          <div class="mfa-recovery-field">
+          <div class="mfa-recovery-field mfa-ticket-editor">
             <label class="mfa-code-label" for="mfa-help-request">${formLabel}<span class="mfa-required" aria-hidden="true">•</span></label>
+            <span class="mfa-ticket-count" aria-hidden="true"></span>
             <textarea id="mfa-help-request" rows="4" maxlength="2000" aria-required="true" placeholder="${text.placeholder}"></textarea>
           </div>
         </div>`;
-      const draft = root.querySelector('textarea');draft.value=root.dataset.helpDraft||'';draft.addEventListener('input',()=>{root.dataset.helpDraft=draft.value;});
+      const draft = root.querySelector('#mfa-help-request');
+      const count = root.querySelector('.mfa-ticket-count');
+      draft.value = root.dataset.helpDraft || '';
+      const updateDraft = () => {
+        root.dataset.helpDraft = draft.value;
+        count.textContent = `${draft.value.length} / ${draft.maxLength}`;
+      };
+      draft.addEventListener('input', updateDraft);
+      updateDraft();
     }
     const card = root.closest('.vp-card');
     if (card) {
@@ -274,7 +305,7 @@
       heading.querySelector('p').textContent = phase==='confirm'?text.confirmSubtitle:phase==='recover'?text.restoreSubtitle:text.helpSubtitle;
       const footer = card.querySelector('.vp-card-foot');
       footer.querySelector('[data-mfa-flow-back]')?.remove();
-      footer.querySelector('[data-mfa-refresh]')?.remove();
+      footer.querySelector('[data-mfa-close-own]')?.remove();
       const cancel = footer.querySelector('a');cancel.hidden=phase==='help';
       const signInIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m10 17 5-5-5-5M15 12H3M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/></svg>';
       if (phase!=='confirm') {
@@ -283,24 +314,48 @@
         back.className = 'portal-button';
         back.dataset.mfaFlowBack = phase;
         back.textContent = text.loginBack;
-        back.insertAdjacentHTML('afterbegin', signInIcon);
+        back.insertAdjacentHTML('afterbegin', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>');
         back.addEventListener('click', () => renderPhase(root, 'confirm'));
         footer.prepend(back);
       }
       if (phase==='help') {
         const reload = document.createElement('button');
         reload.type = 'button';
-        reload.className = 'portal-button';
+        reload.className = 'portal-button mfa-quiet-action';
         reload.dataset.mfaRefresh = '';
         reload.textContent = text.refresh;
         reload.prepend(document.querySelector('#vp-symbols').content.querySelector('[data-symbol="refresh"] svg').cloneNode(true));
-        reload.addEventListener('click', () => notify(english ? 'Design preview: Requests refreshed.' : 'Gestaltungsvorschau: Anfragen aktualisiert.'));
-        footer.insertBefore(reload, footer.querySelector('[data-mfa-continue]'));
+        reload.addEventListener('click', () => {
+          if (helpMessages.length && !helpClosed && !helpMessages.some(message => message.support)) {
+            helpMessages.push({support:true,time:new Date()});
+            renderPhase(root, 'help');
+            root.querySelector('[data-mfa-refresh]').focus();
+          }
+          notify(english ? 'Design preview: Requests refreshed.' : 'Gestaltungsvorschau: Anfragen aktualisiert.');
+        });
+        const refreshHeader = root.querySelector('.mfa-help-conversation .mfa-help-conversation-heading')
+          ?? root.querySelector('.mfa-help-requests .mfa-help-conversation-heading');
+        refreshHeader.append(reload);
+        if (helpMessages.length && !helpClosed) {
+          const close = document.createElement('button');
+          close.type = 'button';
+          close.className = 'portal-button';
+          close.dataset.mfaCloseOwn = '';
+          close.textContent = text.closeOwn;
+          close.insertAdjacentHTML('afterbegin', '<span class="mfa-help-close-icon" aria-hidden="true"></span>');
+          close.addEventListener('click', () => {
+            helpClosed = true;
+            root.dataset.helpDraft = '';
+            renderPhase(root, 'help');
+            notify(english ? 'Design preview: Request closed.' : 'Gestaltungsvorschau: Anfrage geschlossen.');
+          });
+          footer.insertBefore(close, footer.querySelector('[data-mfa-continue]'));
+        }
       }
       const actionLabels = {
         confirm: text.signIn,
         recover: text.continue,
-        help: helpMessages.length ? text.reply : text.create
+        help: helpMessages.length && !helpClosed ? text.reply : text.create
       };
       const submit = footer.querySelector('[data-mfa-continue]');
       submit.textContent = actionLabels[phase];
@@ -310,7 +365,7 @@
         submit.insertAdjacentHTML('afterbegin', '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg>');
       } else if (phase === 'help') {
         const icon = document.createElement('span');
-        icon.className = helpMessages.length ? 'mfa-help-reply-icon' : 'mfa-help-create-icon';
+        icon.className = helpMessages.length && !helpClosed ? 'mfa-help-reply-icon' : 'mfa-help-create-icon';
         icon.setAttribute('aria-hidden', 'true');
         submit.prepend(icon);
       }
@@ -328,15 +383,13 @@
       root.closest('.vp-card').classList.toggle('mfa-recovery', phase === 'codes');
       root.closest('.vp-card').classList.toggle('mfa-confirmation-flow', ['confirm','recover','help'].includes(phase));
       const english = document.querySelector('[data-menu-language="en"][aria-pressed="true"]');
-      if (phase === 'help' || root.dataset.phase === 'help') {
-        const text = confirmationText(Boolean(english));
-        publicTwoFactor.dataset.title = phase === 'help' ? text.helpTitle : publicTwoFactorTitle;
-        publicTwoFactor.dataset.description = phase === 'help' ? text.helpPageHint : publicTwoFactorDescription;
-        if (!publicTwoFactor.hidden) {
-          const title = document.querySelector('#portalTitle');
-          title.firstChild.textContent = publicTwoFactor.dataset.title;
-          document.querySelector('#portalDescription').textContent = publicTwoFactor.dataset.description;
-        }
+      const text = confirmationText(Boolean(english));
+      publicTwoFactor.dataset.title = phase === 'help' ? text.helpTitle : (english ? 'Secure your sign-in' : publicTwoFactorTitle);
+      publicTwoFactor.dataset.description = phase === 'help' ? text.helpPageHint : (english ? 'An extra code helps protect your account when you sign in.' : publicTwoFactorDescription);
+      if (!publicTwoFactor.hidden) {
+        const title = document.querySelector('#portalTitle');
+        title.firstChild.textContent = publicTwoFactor.dataset.title;
+        document.querySelector('#portalDescription').textContent = publicTwoFactor.dataset.description;
       }
       const action = document.querySelector('#public-two-factor [data-mfa-continue]');
       action.disabled = phase === 'codes';
@@ -349,7 +402,7 @@
       const cancel = document.querySelector('#public-two-factor .vp-card-foot a');
       cancel.hidden=false;
       root.closest('.vp-card').querySelector('[data-mfa-flow-back]')?.remove();
-      root.closest('.vp-card').querySelector('[data-mfa-refresh]')?.remove();
+      root.closest('.vp-card').querySelector('[data-mfa-close-own]')?.remove();
       cancel.href = '#public-login';
       cancel.hidden = phase === 'codes';
       const isSignInFlow = phase === 'confirm' || phase === 'recover';
@@ -357,7 +410,7 @@
       cancel.classList.toggle('danger', isSignInFlow || phase === 'intro' || phase === 'qr');
       cancel.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14 5-5-5-5m5 5H9"/></svg><span>' + (english ? 'Sign out' : 'Abmelden') + '</span>';
       if (phase === 'qr') {
-        root.closest('.vp-card').querySelector('.vp-card-head').innerHTML = '<span class="portal-reference-icon">' + shieldKeyhole + '</span><div class="portal-reference-heading"><h2>' + (english ? 'Set up an authenticator app' : 'Authenticator-App einrichten') + '</h2><p>' + (english ? 'Protect your account with an authenticator app.' : 'Schützen Sie Ihr Konto mit einer Authenticator-App.') + '</p></div>';
+        root.closest('.vp-card').querySelector('.vp-card-head').innerHTML = '<span class="portal-reference-icon">' + shieldKeyhole + '</span><div class="portal-reference-heading"><h2>' + (english ? 'Set up an authenticator app' : 'Authenticator-App einrichten') + '</h2><p>' + (english ? 'Connect your app using a QR code or a setup key.' : 'Verbinden Sie Ihre App per QR-Code oder mit einem Schlüssel.') + '</p></div>';
         renderEnrollment(root, Boolean(english)); root.dataset.phase = phase; return;
       }
       const setupIcon = root.closest('.vp-card').querySelector('.mfa-shield-keyhole-icon');
@@ -416,12 +469,21 @@
         const draft = publicPhase.dataset.helpDraft?.trim();
         if (!draft) {
           publicPhase.querySelector('textarea').setAttribute('aria-invalid', 'true');
+          notify(english ? 'Enter a message first.' : 'Geben Sie zuerst eine Nachricht ein.');
           return;
+        }
+        const isReply = helpMessages.length && !helpClosed;
+        if (helpClosed) {
+          helpMessages.length = 0;
+          helpClosed = false;
+          helpTicketNumber++;
         }
         helpMessages.push({body:draft,time:new Date()});
         publicPhase.dataset.helpDraft = '';
         renderPhase(publicPhase, 'help');
-        notify(english ? 'Design preview: No request was sent.' : 'Gestaltungsvorschau: Es wurde keine Anfrage gesendet.');
+        notify(english
+          ? (isReply ? 'Design preview: Reply saved.' : 'Design preview: Request created.')
+          : (isReply ? 'Gestaltungsvorschau: Antwort gespeichert.' : 'Gestaltungsvorschau: Anfrage erstellt.'));
         return;
       }
       const next={intro:'qr',setup:'qr',recover:'qr',email:'qr',qr:'codes',codes:'confirm',confirm:'confirm'};

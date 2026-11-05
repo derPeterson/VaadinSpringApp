@@ -24,14 +24,15 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicketEnti
   List<SupportTicketEntity> inbox(Pageable page);
 
   @Query(
-      "select count(t) from SupportTicketEntity t where t.owner.id = :owner and t.status <> :closed")
-  long openFor(Long owner, SupportTicketEntity.Status closed);
+      "select count(t) from SupportTicketEntity t where t.owner.id = :owner and t.status in :activeStatuses")
+  long openFor(Long owner, List<SupportTicketEntity.Status> activeStatuses);
 
   @Query(
       "select count(t) from SupportTicketEntity t where t.owner.id = :owner and t.createdAt > :after")
   long createdSince(Long owner, Instant after);
 
   @Modifying
-  @Query("delete from SupportTicketEntity t where t.status = :closed and t.updatedAt < :before")
-  int deleteClosedBefore(Instant before, SupportTicketEntity.Status closed);
+  @Query(
+      "delete from SupportTicketEntity t where t.status in :closedStatuses and t.updatedAt < :before")
+  int deleteClosedBefore(Instant before, List<SupportTicketEntity.Status> closedStatuses);
 }

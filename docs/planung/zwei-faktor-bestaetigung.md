@@ -137,7 +137,18 @@ bestehenden Cosmos-Bausteine und das Format mit vier Gruppen zu je acht Zeichen.
 Für „Hilfe zur Wiederherstellung“ steht die gemeinsame Sichtprüfung der
 Übernahme nach [Stitch-Runde 3](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=10858692231921999861)
 aus. Zu prüfen sind das kompakte Anfrage-Grid mit zugeordnetem Verlauf und der
-zweizeilige mobile Footer mit „Anmeldung“ links und der Hauptaktion darunter.
+zweizeilige mobile Footer mit „Zurück“ links und der Hauptaktion darunter.
+
+Variante A ist für die Aktionsanordnung übernommen. „Aktualisieren“ steht am
+Verlauf oder bei der leeren Anfragenübersicht. Vaadin und HTML-Referenz verwenden
+primärblaue Sprechblasen für den Antragsteller und dunklere Sprechblasen für die
+Systemadministration, jeweils mit Spitze zur Absenderseite, sowie
+eine schmale Scrollbar. Die gemeinsame Sichtprüfung bleibt offen. Die
+Stitch-Entwürfe zeigen den Desktopstand mit synthetischen Nachrichten.
+
+- [A: Aktualisieren am Verlauf](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=110782652643208336)
+- [B: Kompakter Footer mit grünem Abschluss](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=11932244678383587741)
+- [C: Menü für Nebenaktionen](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=8154288544097916227)
 
 ## Gestaltung der verpflichtenden Ersteinrichtung
 

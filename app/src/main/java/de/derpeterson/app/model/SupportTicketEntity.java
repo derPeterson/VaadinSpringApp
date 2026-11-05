@@ -31,7 +31,12 @@ public class SupportTicketEntity {
   public enum Status {
     OPEN,
     IN_PROGRESS,
-    CLOSED
+    CLOSED,
+    CLOSED_BY_REQUESTER;
+
+    public boolean acceptsMessages() {
+      return this == OPEN || this == IN_PROGRESS;
+    }
   }
 
   @Id

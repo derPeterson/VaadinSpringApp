@@ -99,7 +99,8 @@
       ['go-users',labels.users,descriptions.users,'users'],
       ['go-settings',labels.settings,descriptions.settings,'settings'],
       ['go-mail',labels.mail,descriptions.mail,'mail'],
-      ['go-send',labels.send,descriptions.send,'bell']
+      ['go-send',labels.send,descriptions.send,'bell'],
+      ['go-support',labels.support,'Anfragen zum verlorenen Zugang prüfen und beantworten.','info']
     ].map(([action,title,description,symbol]) => `
       <article class="ad-dashboard-shortcut" aria-label="${escape(title)}">
         <span class="portal-reference-icon" aria-hidden="true">${icon(symbol)}</span>
@@ -236,14 +237,71 @@
     root.querySelector('[data-mfa-reload]').addEventListener('click', renderTwoFactor);
   }
 
-  function renderSupport() {
-    const content=`<p class="portal-copy">Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode kann der Kontozugang nicht freigegeben werden.</p><div class="mfa-ticket-list"><button class="portal-button" type="button" data-mfa-ticket>#42 · Hilfe beim Authenticator-Zugriff · Offen</button></div><div data-mfa-conversation><p class="portal-copy">Bitte wählen Sie eine Anfrage aus.</p></div><label class="ad-field">Antwort<textarea rows="4" maxlength="2000" placeholder="Keine Passwörter oder Ersatzcodes eintragen"></textarea></label><label class="ad-switch"><span>Interner Vermerk</span><input type="checkbox" role="switch"></label>`;
-    const footer=`<div class="ad-config-actions">${button('support-claim','Übernehmen','check')}${button('support-instruction','Anleitung senden','mail')}${button('support-reply','Antworten','check',true)}${button('support-close','Anfrage schließen','close')}</div>`;
+  const supportSamples = [
+    {id: 10042, status: 'Offen', message: 'Ich finde meine gesicherten Ersatzcodes nicht mehr.'},
+    {id: 10043, status: 'Vom Nutzer geschlossen', message: 'Ich habe meine Ersatzcodes wiedergefunden.'}
+  ];
+
+  function renderSupport(selected) {
+    const canReply = selected?.status === 'In Bearbeitung';
+    const canClose = canReply || selected?.status === 'Vom Nutzer geschlossen';
+    const requests = supportSamples.map(ticket => `<button class="portal-button" type="button" data-mfa-ticket="${ticket.id}">#${ticket.id} · Hilfe beim Authenticator-Zugriff · ${escape(ticket.status)}</button>`).join('');
+    const conversation = selected?.message ?? 'Bitte wählen Sie eine Anfrage aus.';
+    const editor = canReply ? `<div class="mfa-recovery-field mfa-ticket-editor">
+      <label class="mfa-code-label" for="mfa-support-reply">Antwort hinzufügen<span class="mfa-required" aria-hidden="true">•</span></label>
+      <span class="mfa-ticket-count" aria-hidden="true"></span>
+      <textarea id="mfa-support-reply" rows="4" maxlength="2000" aria-required="true" placeholder="Bitte beschreiben Sie Ihr Anliegen kurz."></textarea>
+    </div><label class="ad-switch"><span>Interner Vermerk</span><input type="checkbox" role="switch"></label>` : '';
+    const content = `<p class="portal-copy">Eine Anfrage ersetzt keinen Identitätsnachweis. Ohne Authenticator oder gültigen Ersatzcode kann der Kontozugang nicht freigegeben werden.</p><div class="mfa-ticket-list">${requests}</div><div data-mfa-conversation><p class="portal-copy">${escape(conversation)}</p></div>${editor}`;
+    const footer = `<div class="ad-config-actions">
+      ${selected?.status === 'Offen' ? button('support-claim','Übernehmen','check') : ''}
+      ${canReply ? button('support-instruction','Anleitung senden','mail') + button('support-reply','Antwort hinzufügen','check',true) : ''}
+      ${canClose ? button('support-close','Vorgang abschließen','check') : ''}
+      ${button('support-refresh','Aktualisieren','refresh')}
+    </div>`;
     root.innerHTML=`<div class="mfa-reference">${panel(labels.support,'Kontakt und Unterstützung. Ticketaktionen setzen keinen Faktor zurück.','info',content,footer)}</div>`;
-    root.querySelector('[data-mfa-ticket]').addEventListener('click',()=>{root.querySelector('[data-mfa-conversation]').innerHTML='<p class="portal-copy">Alex Berger: Ich finde meine gesicherten Ersatzcodes nicht mehr.</p>';});
+    const reply = root.querySelector('#mfa-support-reply');
+    const count = root.querySelector('.mfa-ticket-count');
+    const updateCount = () => { count.textContent = `${reply.value.length} / ${reply.maxLength}`; };
+    if (reply) {
+      reply.addEventListener('input', updateCount);
+      updateCount();
+    }
+    root.querySelectorAll('[data-mfa-ticket]').forEach(ticket => ticket.addEventListener('click', () => {
+      renderSupport(supportSamples.find(sample => sample.id === Number(ticket.dataset.mfaTicket)));
+    }));
     root.querySelectorAll('[data-ad-action]').forEach(action=>action.addEventListener('click',()=>{
-      if(action.dataset.adAction==='support-instruction'){root.querySelector('[data-mfa-conversation]').innerHTML='<p class="portal-copy">Suchen Sie nach dem bei der Einrichtung gespeicherten Notfalldokument oder in Ihrem Passwortmanager. Melden Sie sich regulär an und verwenden Sie selbst einen unbenutzten Ersatzcode. Senden Sie keine Codes an den Support. Ohne gültigen Nachweis können wir die Sperre nicht aufheben.</p>';}
-      toast('Gestaltungsvorschau: Keine Nachricht versendet und kein Kontozugang geändert.');
+      switch (action.dataset.adAction) {
+        case 'support-claim':
+          selected.status = 'In Bearbeitung';
+          renderSupport(selected);
+          toast('Gestaltungsvorschau: Vorgang übernommen.');
+          break;
+        case 'support-close':
+          selected.status = 'Abgeschlossen';
+          renderSupport(selected);
+          toast('Gestaltungsvorschau: Vorgang abgeschlossen.');
+          break;
+        case 'support-reply': {
+          if (!reply.value.trim()) {
+            reply.setAttribute('aria-invalid', 'true');
+            toast('Geben Sie zuerst eine Antwort ein.');
+            break;
+          }
+          reply.value = '';
+          updateCount();
+          reply.removeAttribute('aria-invalid');
+          toast('Gestaltungsvorschau: Antwort gespeichert.');
+          break;
+        }
+        case 'support-instruction':
+          root.querySelector('[data-mfa-conversation]').innerHTML='<p class="portal-copy">Suchen Sie nach dem bei der Einrichtung gespeicherten Notfalldokument oder in Ihrem Passwortmanager. Melden Sie sich regulär an und verwenden Sie selbst einen unbenutzten Ersatzcode. Senden Sie keine Codes an den Support. Ohne gültigen Nachweis können wir die Sperre nicht aufheben.</p>';
+          toast('Gestaltungsvorschau: Anleitung zur Ansicht geöffnet.');
+          break;
+        case 'support-refresh':
+          toast('Gestaltungsvorschau: Anfragen aktualisiert.');
+          break;
+      }
     }));
   }
   function renderProviders() {
@@ -563,7 +621,7 @@
     byId('ad-history').innerHTML=visible.length?visible.slice(historyPage*historyPageSize,(historyPage+1)*historyPageSize).map(entry=>{
       const metadata=entry.time+' · '+notificationFormat(notificationText.historyRecipients,entry.recipients.length);
       return `<details class="ad-sent-entry" data-ad-history-entry><summary><span class="ad-sent-icon" aria-hidden="true">${icon('bell')}</span><span class="ad-sent-heading"><strong>${escape(entry.title)}</strong><small>${escape(metadata)}</small></span><span class="ad-sent-status">${icon('check')}${escape(notificationText.sentStatus)}</span><span class="portal-button ad-sent-detail-toggle"><span>Details</span>${icon('chevron')}</span></summary><div class="ad-history-body"><div class="ad-history-message"><div class="ad-history-label">${icon('history-message')}<span>Nachrichteninhalt</span></div><p>${escape(entry.body)}</p><div class="ad-history-note" data-ad-visual-example><span>Zustellung: Internes Postfach</span><span>Unveränderliche Versandprotokollierung</span></div></div></div></details>`;
-    }).join(''):`<div class="ad-empty">${escape(notificationText.empty)}</div>`;
+    }).join(''):`<div class="ad-history-empty">${icon('bell')}<h3>${escape(notificationText.empty)}</h3></div>`;
     byId('ad-history-pages').innerHTML=visible.length?pagination(visible.length,historyPage):'';
   }
   root.addEventListener('click',event=>{
@@ -627,7 +685,8 @@
     if(action==='go-send'){navigate('send');}
     if(action==='go-settings'){navigate('settings');}
     if(action==='go-mail'){navigate('mail');}
-    if(['go-users','go-send','go-settings','go-mail'].includes(action)){
+    if(action==='go-support'){navigate('support');}
+    if(['go-users','go-send','go-settings','go-mail','go-support'].includes(action)){
       byId('portalTitle').setAttribute('tabindex','-1');byId('portalTitle').focus();return;
     }
     if(action==='go-smtp'){group='SMTP';navigate('settings');}

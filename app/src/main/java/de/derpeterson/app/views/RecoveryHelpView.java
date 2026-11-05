@@ -39,11 +39,11 @@ public final class RecoveryHelpView extends VerticalLayout {
     SupportTicketsComponent support = new SupportTicketsComponent(texts, tickets, request, false);
     Button back =
         new Button(
-            texts.getTwoFactorRecoverySignIn(),
+            texts.getTwoFactorReturnToCode(),
             event ->
                 UI.getCurrent().getPage().setLocation(request.getContextPath() + "/two-factor"));
     back.setId("support-back");
-    back.setPrefixComponent(AppIcon.SIGN_IN.create());
+    back.setPrefixComponent(AppIcon.ANGLE_LEFT.create());
     back.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     support.addBackAction(back);
     page.getCardContainer().add(support);
@@ -53,7 +53,7 @@ public final class RecoveryHelpView extends VerticalLayout {
         LanguageChangeEvent.class,
         event -> {
           support.refreshTexts();
-          back.setText(texts.getTwoFactorRecoverySignIn());
+          back.setText(texts.getTwoFactorReturnToCode());
         });
   }
 }

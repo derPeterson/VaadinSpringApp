@@ -22,6 +22,7 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.Location;
@@ -198,9 +199,20 @@ class TwoFactorFlowViewTest {
 
     RecoveryHelpView help = new RecoveryHelpView(config, texts, tickets, request);
 
-    assertEquals(
-        List.of(active),
-        List.copyOf(((Grid<?>) find(help, "support-ticket-grid")).getSelectedItems()));
+    Grid<?> grid = (Grid<?>) find(help, "support-ticket-grid");
+    assertEquals(List.of(active), List.copyOf(grid.getSelectedItems()));
+    @SuppressWarnings("unchecked")
+    ComponentRenderer<Component, Ticket> renderer =
+        (ComponentRenderer<Component, Ticket>) grid.getColumns().getFirst().getRenderer();
+    assertTrue(
+        renderer
+            .createComponent(active)
+            .getElement()
+            .getTextRecursively()
+            .contains(
+                language.equals("de")
+                    ? "Hilfe beim Authenticator-Zugriff"
+                    : "Help accessing your authenticator"));
     assertTrue(find(help, "support-add-reply").isVisible());
     assertFalse(find(help, "support-create").isVisible());
     verify(tickets, never()).conversation(request, closed.id(), false);

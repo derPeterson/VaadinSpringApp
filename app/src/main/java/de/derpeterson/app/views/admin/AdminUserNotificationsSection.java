@@ -44,6 +44,7 @@ import de.derpeterson.app.service.UserNotificationService.Target;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.NotificationEmptyState;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashSet;
 import java.util.List;
@@ -674,9 +675,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     }
     history.removeAll();
     if (result.isEmpty()) {
-      Span empty = new Span(texts.getNotificationsEmpty());
-      empty.addClassName("cosmos-notification-sent-empty");
-      history.add(empty);
+      history.add(new NotificationEmptyState(texts.getNotificationsSentEmpty()));
     }
     for (Sent item : result) {
       history.add(sentRow(item));

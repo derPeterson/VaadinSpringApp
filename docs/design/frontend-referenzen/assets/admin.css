@@ -1264,6 +1264,17 @@ body .portal-security-input.ref-no-prefix>input{padding-left:14px!important}
 .ad-preview-meta { display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0; }
 .ad-preview-source { display:inline-flex;padding:2px 6px;border:1px solid #0088cc44;border-radius:4px;background:var(--state-selected,#122342);color:#7dd3fc;font:400 10px/14px Inter,sans-serif;white-space:nowrap; }
 .ad-notifications .ad-notification-history .ad-body { padding:0; }
+.ad-history-empty {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  padding:48px 24px;
+  text-align:center;
+}
+.ad-history-empty > svg { width:32px; height:32px; color:var(--accent,#38bdf8); }
+.ad-history-empty > h3 { margin:0; color:var(--text-primary,#e2e8f0); font:600 14px/20px Inter,sans-serif; }
 .ad-notifications .ad-history .ad-sent-entry { padding:0; }
 .ad-notifications .ad-sent-entry>summary { display:grid;grid-template-columns:30px minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:18px 22px;list-style:none; }
 .ad-sent-icon>svg { width:18px;height:18px;color:#00c4ff; }

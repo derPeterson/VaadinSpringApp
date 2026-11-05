@@ -177,13 +177,22 @@ Nach dem ersten Anmeldenachweis ist an der 2FA-Abfrage die eigene Hilfsanfrage
 erreichbar. Dieser eingeschränkte Zugang öffnet keine anderen Kontobereiche.
 Pro Konto ist eine offene Anfrage möglich, höchstens drei neue pro Tag. Beschreibung
 und Antworten sind auf 2.000 Zeichen, der Verlauf auf 50 Einträge begrenzt.
+Die sichtbare Vorgangsnummer beginnt bei `#10001` und wird in beiden Ansichten
+aus der internen ID gebildet.
 Geschlossene Anfragen werden nach 180 Tagen entfernt.
 
 Admins und Superadmins sehen die gemeinsame Liste, erhalten eine interne
 Benachrichtigung und können einen Vorgang übernehmen. Veraltete oder konkurrierende
-Änderungen überschreiben keine Zuständigkeit. Nur der Bearbeiter antwortet, sendet
-die vorbereitete Anleitung oder schließt den Vorgang. Antragsteller sehen eigene
-öffentliche Antworten. Interne Vermerke bleiben intern.
+Änderungen überschreiben keine Zuständigkeit. Der zuständige Bearbeiter kann
+antworten, die vorbereitete Anleitung senden und den Vorgang abschließen.
+Antragsteller sehen ihre öffentlichen Antworten und können ihre eigene Anfrage
+schließen. Öffentliche Antworten aus der Administration erscheinen als
+„Systemadministration“. Die Herkunft wird beim Schreiben gespeichert und bleibt
+auch bei einem Rollenwechsel oder gelöschtem Bearbeiterkonto erhalten.
+„Vom Nutzer geschlossen“ und „Abgeschlossen“ sperren Antworten und
+den Versand der Anleitung. Ein Admin kann einen vom Nutzer geschlossenen Vorgang
+abschließen, wenn er ihm zugewiesen oder noch unzugewiesen ist. Bei Bedarf kann
+der Antragsteller im Rahmen des Tageslimits eine neue Anfrage eröffnen.
 
 „Anleitung senden“ zeigt den konkreten Text in der gespeicherten Kontosprache vorab,
 legt ihn als öffentliche Antwort ab und nimmt eine E-Mail an die bestehende

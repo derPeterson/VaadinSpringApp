@@ -69,7 +69,12 @@ public class AdminDashboardSection extends VerticalLayout {
             AppIcon.ENVELOPE,
             texts::getAdminMailTitle,
             texts::getAdminMailDescription,
-            "mail_test"));
+            "mail_test"),
+        shortcut(
+            AppIcon.QUESTION_CIRCLE,
+            texts::getSupportTitle,
+            texts::getSupportShortcutDescription,
+            "support"));
     boolean canSend =
         authenticatedUser != null
             && authenticatedUser.getAuthorities().stream()

@@ -2,8 +2,10 @@ package de.derpeterson.app.development;
 
 import de.derpeterson.app.Application;
 import java.io.IOException;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -36,6 +38,20 @@ public final class HttpsDevelopmentApplication {
             .normalize();
     verifyCaddy(caddy);
     requireFreePorts(8080, 8081, 8443);
+    String host = "localhost";
+    Path caddyfile = repo.resolve("scripts/https/Caddyfile.ide");
+    String lanHost = System.getProperty("https.dev.lan-host");
+    if (lanHost != null) {
+      InetAddress address = privateIpv4(lanHost);
+      if (NetworkInterface.getByInetAddress(address) == null) {
+        throw new IOException("The LAN IPv4 address is not assigned to this computer");
+      }
+      requireFreePort(address, 8443);
+      host = address.getHostAddress();
+      caddyfile = repo.resolve("scripts/https/Caddyfile.ide-lan");
+      System.setProperty("app.https.origin", "https://" + host + ":8443");
+      System.setProperty("server.address", "127.0.0.1");
+    }
     // Ein DevTools-Neustart des Main würde einen zweiten Proxy starten. Java-Debugging bleibt
     // aktiv.
     System.setProperty("spring.devtools.restart.enabled", "false");
@@ -46,18 +62,21 @@ public final class HttpsDevelopmentApplication {
                 caddy.toString(),
                 "run",
                 "--config",
-                repo.resolve("scripts/https/Caddyfile.ide").toString(),
+                caddyfile.toString(),
                 "--adapter",
                 "caddyfile"),
             Map.of(
-                "APP_HTTPS_CA_DIR", repo.resolve("data/https/ide").toString().replace('\\', '/')));
+                "APP_HTTPS_CA_DIR",
+                repo.resolve("data/https/ide").toString().replace('\\', '/'),
+                "APP_HTTPS_IDE_LAN_HOST",
+                host));
     Runtime.getRuntime().addShutdownHook(new Thread(proxy::close, "ide-https-cleanup"));
     proxy.failApplicationOnUnexpectedExit();
     try {
       SpringApplication application = new SpringApplication(Application.class);
       application.setAdditionalProfiles("https");
       application.run(args);
-      log.info("HTTPS development access: https://localhost:8443");
+      log.info("HTTPS development access: https://{}:8443", host);
     } catch (Throwable failure) {
       // Auch Linkage-/VM-Startfehler beenden nur den eigenen Proxy; kein Wiederherstellungsversuch.
       try {
@@ -102,16 +121,30 @@ public final class HttpsDevelopmentApplication {
 
   static void requireFreePorts(int... ports) throws IOException {
     for (int port : ports) {
-      try (ServerSocket socket = new ServerSocket()) {
-        socket.setReuseAddress(false);
-        socket.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), port));
-      } catch (IOException failure) {
-        throw new IOException(
-            "HTTPS IDE port "
-                + port
-                + " is occupied. Stop the previous application or BAT-started Caddy first; no existing process was stopped.",
-            failure);
-      }
+      requireFreePort(InetAddress.ofLiteral("127.0.0.1"), port);
+    }
+  }
+
+  static InetAddress privateIpv4(String value) {
+    InetAddress address = InetAddress.ofLiteral(value.strip());
+    if (!(address instanceof Inet4Address) || !address.isSiteLocalAddress()) {
+      throw new IllegalArgumentException("The HTTPS LAN launcher requires a private IPv4 address");
+    }
+    return address;
+  }
+
+  private static void requireFreePort(InetAddress address, int port) throws IOException {
+    try (ServerSocket socket = new ServerSocket()) {
+      socket.setReuseAddress(false);
+      socket.bind(new InetSocketAddress(address, port));
+    } catch (IOException failure) {
+      throw new IOException(
+          "HTTPS IDE address "
+              + address.getHostAddress()
+              + ":"
+              + port
+              + " is unavailable. Stop the previous application or BAT-started Caddy first.",
+          failure);
     }
   }
 }

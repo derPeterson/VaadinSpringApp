@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.SupportTicketEntity.Status;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.RoleType;
@@ -106,6 +107,66 @@ class SupportTicketServiceTest {
         List.of(ReplyAuthor.REQUESTER, ReplyAuthor.SUPPORT),
         visible.stream().map(Reply::author).toList());
     assertFalse(authorization.state(authorization.owner(owner)).enrolled());
+  }
+
+  @Test
+  void adminReplyToOwnTicketRetainsSupportRole() {
+    Ticket ticket = service.createRecovery(administrator, "Ich benötige Hilfe.");
+    Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
+    Ticket answered =
+        service.reply(
+            administrator, claimed.id(), claimed.version(), "Ich prüfe die Anfrage.", false, true);
+    service.reply(
+        administrator, answered.id(), answered.version(), "Danke für die Antwort.", false, false);
+
+    assertEquals(
+        List.of(ReplyAuthor.REQUESTER, ReplyAuthor.SUPPORT, ReplyAuthor.REQUESTER),
+        service.conversation(administrator, ticket.id(), false).stream()
+            .map(Reply::author)
+            .toList());
+  }
+
+  @Test
+  void blankRequestAndBlankReplyDoNotChangeTheTicketVersion() {
+    assertThrows(IllegalArgumentException.class, () -> service.createRecovery(owner, " "));
+    assertTrue(service.list(owner, false).isEmpty());
+
+    Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
+    Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> service.reply(administrator, claimed.id(), claimed.version(), " ", false, true));
+    service.reply(administrator, claimed.id(), claimed.version(), "Ich prüfe das.", false, true);
+    assertEquals(2, service.conversation(owner, ticket.id(), false).size());
+  }
+
+  @Test
+  void requesterCanCloseOwnTicketAndAdministratorCanFinalizeItWithoutReopening() {
+    Ticket open = service.createRecovery(owner, "Hilfe bitte.");
+    MockHttpServletRequest foreign =
+        TwoFactorAuthorizationTest.requestFor(create(RoleType.ROLE_USER).getEmail());
+    assertThrows(
+        AccessDeniedException.class, () -> service.closeOwn(foreign, open.id(), open.version()));
+    Ticket resolved = service.closeOwn(owner, open.id(), open.version());
+    assertEquals(Status.CLOSED_BY_REQUESTER, resolved.status());
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.reply(owner, resolved.id(), resolved.version(), "Nachtrag", false, false));
+    assertThrows(
+        AccessDeniedException.class,
+        () ->
+            service.reply(
+                administrator, resolved.id(), resolved.version(), "Nachtrag", false, true));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.sendInstructions(administrator, resolved.id(), resolved.version()));
+    assertEquals(Status.OPEN, service.createRecovery(owner, "Ein neues Anliegen.").status());
+    Ticket closed = service.close(administrator, resolved.id(), resolved.version());
+    assertEquals(Status.CLOSED, closed.status());
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.reply(administrator, closed.id(), closed.version(), "Nachtrag", false, true));
+    assertEquals(1, service.conversation(owner, closed.id(), false).size());
   }
 
   @Test

@@ -17,6 +17,7 @@ import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.i18n.MessageTexts;
+import de.derpeterson.app.i18n.PublicLanguagePreference;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
@@ -83,7 +84,9 @@ public class PublicPageComponent extends PageFrameComponent {
     login.setId("public-nav-login");
     register.setId("public-nav-register");
     home.setClassName(ACTIVE_NAVIGATION_CLASS, page == Page.HOME);
-    login.setClassName(ACTIVE_NAVIGATION_CLASS, page == Page.LOGIN);
+    login.setClassName(
+        ACTIVE_NAVIGATION_CLASS,
+        page == Page.LOGIN || page == Page.TWO_FACTOR || page == Page.RECOVERY_HELP);
     register.setClassName(ACTIVE_NAVIGATION_CLASS, page == Page.REGISTER);
     Button german = language("DE", Locale.GERMAN);
     Button english = language("EN", Locale.ENGLISH);
@@ -154,6 +157,7 @@ public class PublicPageComponent extends PageFrameComponent {
             label,
             event -> {
               VaadinSession.getCurrent().setLocale(locale);
+              PublicLanguagePreference.save(locale);
               LanguageChangeEvent.fire(UI.getCurrent(), locale);
             });
     button.getElement().setAttribute("lang", locale.getLanguage());

@@ -15,6 +15,7 @@ import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -375,7 +376,7 @@ public final class TwoFactorView extends VerticalLayout
     panel.setIcon(AppIcon.SHIELD_KEYHOLE.create());
     panel.setHeading(texts.getTwoFactorConfirmTitle(), texts.getTwoFactorConfirmSubtitle(), "");
     Tab authenticator =
-        new Tab(AppIcon.DEVICES.create(), new Span(texts.getTwoFactorSetupCodeLabel()));
+        new Tab(AppIcon.DEVICES.create(), new Span(texts.getTwoFactorConfirmationAppTab()));
     Tab recovery = new Tab(AppIcon.KEY.create(), new Span(texts.getTwoFactorRecoveryCodeLabel()));
     authenticator.setId("two-factor-authenticator-tab");
     recovery.setId("two-factor-recovery-tab");
@@ -435,7 +436,6 @@ public final class TwoFactorView extends VerticalLayout
   private void showRecovery() {
     panel.addClassName("two-factor-restore");
     panel.setHeading(texts.getTwoFactorRecoverAction(), texts.getTwoFactorRecoverSubtitle(), "");
-    addHint(texts.getTwoFactorRecoverHint());
     if (!enrollment.available()) {
       addHint(texts.getTwoFactorUnavailable());
     }
@@ -446,13 +446,16 @@ public final class TwoFactorView extends VerticalLayout
     submit.setText(texts.getTwoFactorRecoveryContinue());
     HorizontalLayout notice =
         new HorizontalLayout(
-            AppIcon.INFO_CIRCLE.create(), new Span(texts.getTwoFactorRecoveryConsumptionHint()));
+            AppIcon.INFO_CIRCLE.create(),
+            new Div(
+                new Paragraph(texts.getTwoFactorRecoveryPreviousAppHint()),
+                new Paragraph(texts.getTwoFactorRecoveryConsumptionHint())));
     notice.setPadding(false);
     notice.setSpacing(false);
     notice.setAlignItems(Alignment.CENTER);
     notice.addClassName("two-factor-restore-notice");
     content.add(notice);
-    Button back = new Button(texts.getTwoFactorRecoverySignIn(), AppIcon.SIGN_IN.create());
+    Button back = new Button(texts.getTwoFactorReturnToCode(), AppIcon.ANGLE_LEFT.create());
     back.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     back.setId("two-factor-recovery-back");
     back.addClickListener(
@@ -561,7 +564,7 @@ public final class TwoFactorView extends VerticalLayout
   private void showEnrollment() {
     panel.addClassName("two-factor-setup");
     panel.setIcon(AppIcon.SHIELD_KEYHOLE.create());
-    panel.setHeading(texts.getTwoFactorSetupTitle(), texts.getTwoFactorPageHint(), "");
+    panel.setHeading(texts.getTwoFactorSetupTitle(), texts.getTwoFactorSetupSubtitle(), "");
     Image qr =
         new Image(documentPath("setup/" + pending.id() + "/qr.png"), texts.getTwoFactorQrAlt());
     qr.setId("two-factor-qr");

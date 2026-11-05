@@ -809,11 +809,10 @@ body.portal-reference #profileGenderDropdown [role=option][aria-selected=true] s
 .vp-card-foot{font:400 12px/1.6 Inter,system-ui;color:var(--text-secondary)}
 .vp-card-foot>.portal-button{margin-left:auto}
 .vp-card-foot>.portal-button+.portal-button{margin-left:0}
-.vp-card-foot a:not(.portal-button),.vp-options a{color:var(--accent)}
+.vp-card-foot a:not(.portal-button),.vp-options a{color:var(--accent);text-decoration:none}
 .vp-card-foot .vp-actions{margin:0 0 0 auto}
 .vp-account-switch{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0}
-.vp-account-switch>a{font-weight:600;white-space:nowrap;text-decoration:none}
-.vp-account-switch>a:hover{text-decoration:underline}
+.vp-account-switch>a{font-weight:600;white-space:nowrap}
 .vp-card-foot .vp-actions-paired{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:8px;max-width:100%}
 .vp-actions-paired>.portal-button{width:100%;min-width:156px}
 .vp-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:22px}
@@ -881,7 +880,7 @@ body.portal-reference #profileGenderDropdown [role=option][aria-selected=true] s
 .public-reference #genderDropdown [role=option]>div>span:first-child{background:#64748b}
 .public-reference #genderDropdown [role=option][aria-selected=true]>div>span:first-child{background:var(--accent)}
 .public-reference #genderTrigger[data-empty=true]>span>span:first-child{background:#64748b}
-@media(max-width:639px){.vp-header nav{gap:4px}.vp-nav-link{width:36px;padding:0}.vp-nav-link>span{display:none}.vp-form-grid{grid-template-columns:1fr}.vp-welcome{grid-template-columns:1fr;padding:24px}.vp-welcome-note{margin:0 -24px -24px}.vp-welcome h2{font-size:28px}.vp-art{max-width:260px}.vp-device{grid-template-columns:24px minmax(0,1fr);padding:14px}.vp-device .vp-button{grid-column:2;justify-self:end}.vp-limit{flex-wrap:wrap}.vp-recovery-note{margin:20px -20px 0;padding:16px 20px}.vp-recovery-actions{margin:0 -20px -20px;padding:16px 20px}.public-reference .vp-language-trigger{width:65px;padding:0 8px}.vp-card-foot{gap:12px}}
+@media(max-width:639px){.vp-header nav{gap:4px}.vp-nav-link{width:36px;padding:0}.vp-nav-link>span{display:none}.vp-form-grid{grid-template-columns:1fr}.vp-welcome{grid-template-columns:1fr;row-gap:12px;padding:24px}.vp-welcome-note{margin:0 -24px -24px}.vp-welcome h2{font-size:28px}.vp-art{grid-row:1;max-width:260px}.vp-device{grid-template-columns:24px minmax(0,1fr);padding:14px}.vp-device .vp-button{grid-column:2;justify-self:end}.vp-limit{flex-wrap:wrap}.vp-recovery-note{margin:20px -20px 0;padding:16px 20px}.vp-recovery-actions{margin:0 -20px -20px;padding:16px 20px}.public-reference .vp-language-trigger{width:65px;padding:0 8px}.vp-card-foot{gap:12px}}
 @media(max-width:440px){.public-reference .vp-header-inner{gap:8px}}
 @media(max-width:380px){.vp-brand>.brand-name{display:none}}
 @media(max-width:639px){.vp-card-foot .vp-actions-paired{grid-auto-flow:row;grid-template-columns:minmax(0,1fr);width:100%}.vp-actions-paired>.portal-button{min-width:0}}

@@ -262,12 +262,14 @@ mit tatsächlichen Zählern, Suche, Pagination und getrennte Metadaten/Aktionen.
 Suchlupe und Eingabetext haben einen eigenen Abstand. Die Pagination verwendet
 kompakte Seitengrößen- und Zahlencontrols; ihr Hinweis steht mit Infoicon zentriert.
 Die Zähler übernehmen auch die blaue Ungelesen-Beschriftung der Referenz.
-Leere Benachrichtigungslisten verwenden in Postfach und Glockenvorschau denselben
+Leere Benachrichtigungslisten verwenden im Postfach, in der Glockenvorschau und
+im Admin-Versandverlauf denselben
 Baustein `.cosmos-notification-empty`: zentriertes blaues Glocken-Icon (32 px),
 darunter eine kurze Überschrift mit 14 px und Gewicht 600, ohne Zusatztext.
 Die Anordnung übernimmt den Leerzustand der Benutzerverwaltung mit 48 px vertikalem
 und 24 px seitlichem Padding. Bei erfolgloser Suche bleibt der passende Suchtitel
-erhalten; ein Ladefehler wird weiterhin als Fehler und nicht als leere Liste gezeigt.
+erhalten. Der Versandverlauf verwendet die Überschrift „Noch keine Benachrichtigungen gesendet“.
+Ein Ladefehler wird weiterhin als Fehler und nicht als leere Liste gezeigt.
 Titel und Text einer Inboxkarte haben einen einzigen Absatzabstand; ein zusätzlicher
 Gridabstand entfällt. Kompakte Seitengrößenfelder reservieren keinen Leerraum für
 nicht vorhandene Feldlabels.
@@ -427,8 +429,9 @@ Abschluss innerhalb des vorhandenen Grids.
 
 Die öffentliche Startseitenkarte grenzt ihre Anordnung in `cosmos-public.css`
 über `.cosmos-reference-public .public-home` vom angemeldeten Startseitenstil ab:
-zweispaltig ab 640 px, darunter gestapelt; breite Textspalte ohne die 13-ch-Grenze,
-32-px-Überschrift (mobil 28 px), dezente Paneloberfläche ohne zusätzlichen Verlauf.
+zweispaltig ab 640 px. Darunter steht das zentrierte, maximal 260 px breite Motiv
+12 px über dem Willkommenstext. Die breite Textspalte hat keine 13-ch-Grenze.
+Die Überschrift ist 32 px groß (mobil 28 px), die Paneloberfläche hat keinen zusätzlichen Verlauf.
 Der öffentliche Rahmen verwendet dort dieselbe 1240-px-Begrenzung und die
 Abstände der festen Besucherreferenz. Der angemeldete Startseitenstil bleibt separat.
 Der Button „Link anfordern“ verwendet das Lucide-Mail-Icon für den bestehenden
@@ -1171,23 +1174,58 @@ Wie der Details-Schalter bleiben beide Aktionen bei Hover und Mausklick neutral
 und zeigen den Tastaturfokus.
 Beide zeigen Lucides `square-arrow-right-enter` mit 8 px Abstand hinter dem
 Aktionstext, wie bei den App-Links mit Icon links.
-Rückwege stehen als native Buttons links im Footer.
+„Zurück“ steht mit einem Linkspfeil als nativer Button links im Footer und führt
+vom Faktorwechsel und von der Benutzerhilfe zur Codeabfrage.
 Der Faktorwechsel bleibt ein eigener Ablauf mit Ersatzcodefeld und Verbrauchshinweis.
 Die Benutzerhilfe verwendet den vorhandenen Panelkopf mit Tablers `lock-question`.
 „Bestehende Anfragen“ zeigt ein natives Grid mit kompakten Zeilen für Nummer,
-Betreff, Aktualisierungszeit und Status. Der Nachrichtenverlauf mit Vorgangsnummer
-und Anzahl nutzt einen nativen `Scroller`. Eigene Nachrichten stehen rechts
+Betreff in der aktuellen Oberflächensprache, Aktualisierungszeit und gerahmtem
+Statusbadge. In der Liste steht die Vorgangsnummer links, vertikal mittig neben
+Betreff und Zeitstempel. Die ausgewählte Vorgangsnummer und die Nummer im
+Verlaufskopf sind primärblau. Die übrigen Nummern nutzen die Standardtextfarbe.
+Offene Vorgänge und Vorgänge in Bearbeitung haben blaue Badges, abgeschlossene
+graue und vom Nutzer geschlossene grüne. Die Liste nutzt denselben Grundton
+wie der Nachrichtenverlauf und die gemeinsame Tabellenfarbe für Hover und Auswahl.
+Der Nachrichtenverlauf mit Vorgangsnummer und Anzahl nutzt einen nativen
+`Scroller`. Eigene Nachrichten stehen rechts
 mit dem vorhandenen Initialenavatar und einem Tooltip für Name und E-Mail.
-Support-Antworten stehen links. Der Hinweis zum Identitätsnachweis nutzt
-den gerahmten Infostil mit blauem Icon aus dem Faktorwechsel. Direkt vor der nativen `TextArea` steht
-der Sicherheitshinweis mit gelbem Lucide-Warndreieck und gelber Beschriftung.
-Der Button „Anmeldung“ verwendet dasselbe Icon wie
-beim Faktorwechsel und steht links im Footer. Auf schmalen Bildschirmen
+Antworten aus der Administration stehen links mit dem Lucide-Icon `shield-cog`
+und der neutralen Beschriftung „Systemadministration“. Der Verlauf richtet die
+Nachricht nach ihrem Schreibkontext aus, auch wenn beide Seiten dasselbe Konto
+verwenden. Der Avatar behält beim Überfahren den normalen Mauszeiger.
+Eigene Nachrichten nutzen Primärblau mit weißer Schrift. Antworten der
+Systemadministration nutzen die blaue Hervorhebungsfläche mit akzentblauem
+Absender. Die Spitze zur Absenderseite übernimmt die Kontur der Sprechblase.
+Beide Abschnittsüberschriften stehen in Versalien. Ein graues natives Badge zeigt
+rechts über der Anfragenliste die Zahl der Vorgänge und am Verlauf die Zahl seiner
+Nachrichten. Vorgangsnummern, Zeitstempel und der Zeichenzähler stehen in Space Mono.
+Ein Mittelpunkt trennt Datum und Uhrzeit und steht im Verlauf auch vor dem Zeitstempel.
+Die schmale Scrollbar
+nutzt einen gedeckten Griff auf transparentem Grund. Der rahmenlose Button
+„Aktualisieren“ steht am Verlauf oder an der Anfragenübersicht. „Anfrage schließen“
+zeigt Lucides grünes `circle-check`-Icon.
+Der Hinweis zum Identitätsnachweis nutzt
+den gerahmten Infostil mit blauem Icon aus dem Faktorwechsel. Mit demselben Abstand
+wie die übrigen Inhaltsabschnitte steht vor der nativen `TextArea`
+der Sicherheitshinweis im gemeinsamen Stil `.cosmos-security-warning` aus
+`cosmos-theme.css`. Variante B setzt auf eine dunkle bernsteinfarbene Fläche,
+einen dezenten Rahmen und eine 4 px starke bernsteinfarbene Kante links.
+Das Lucide-Warndreieck und die fett gesetzte Beschriftung verwenden dieselbe
+Akzentfarbe. Der Text verwendet die helle Standardtextfarbe. Die Farben stehen
+unter `--cosmos-security-warning-*` in `cosmos-tokens.css`. Die Public-HTML-Referenz
+bildet den Hinweis in `mfa-reference.css` nach.
+Auf schmalen Bildschirmen
 steht die jeweilige Hauptaktion in einer eigenen Zeile über die verfügbare Breite.
 `cosmos-mfa-confirmation.css` begrenzt die Gestaltung
 auf `.two-factor-confirmation`, `.two-factor-restore` und `.support-recovery-help`;
 Panels, Buttonzustände und Eingaben folgen weiterhin den vorhandenen Standards.
 Die Public-HTML-Referenz bildet die drei Ansichten samt DE/EN und Methodenauswahl ab.
+
+Anfragen und Antworten verwenden dieselbe native Vaadin-`TextArea`. Für den
+Zeichenzähler rechts neben der Beschriftung nutzen sie die vorhandenen
+`cosmos-notification-compose-*`-Klassen. `.support-message-input` in
+`cosmos-mfa.css` gleicht die Eingabefläche an die Benachrichtigungen an und
+erlaubt das vertikale Ziehen bei fester Breite.
 
 `cosmos-mfa.css` begrenzt die neue Gestaltung auf `.two-factor-view`,
 `.cosmos-mfa-settings` und `.two-factor-account-entry`. Panel-, Button- und

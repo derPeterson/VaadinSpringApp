@@ -90,7 +90,8 @@
   const navigate = (next, focus=true) => {
     page=allowed.includes(next)?next:'home';
     document.querySelectorAll('[data-public-page]').forEach(section=>{section.hidden=section.dataset.publicPage!==page;});
-    document.querySelectorAll('.vp-header nav>a').forEach(link=>{if(link.hash===`#public-${page}`){link.setAttribute('aria-current','page');}else{link.removeAttribute('aria-current');}});
+    const navigationPage = page === 'two-factor' ? 'login' : page;
+    document.querySelectorAll('.vp-header nav>a').forEach(link=>{if(link.hash===`#public-${navigationPage}`){link.setAttribute('aria-current','page');}else{link.removeAttribute('aria-current');}});
     const section=byId(`public-${page}`);
     byId('portalTitle').replaceChildren(document.createTextNode(section.dataset.title));
     const dot=document.createElement('span');dot.className='text-sky-400';dot.textContent='.';byId('portalTitle').append(dot);

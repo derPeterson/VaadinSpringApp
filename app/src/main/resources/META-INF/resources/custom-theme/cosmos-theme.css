@@ -3,6 +3,32 @@
  * Die Reihenfolge der Regeln ist Absicht: spätere/spezifischere Zustände dürfen frühere ergänzen.
  * ::part(name) erreicht die von Vaadin freigegebene Fläche innerhalb einer Komponente. */
 
+.cosmos-security-warning {
+    box-sizing: border-box;
+    width: 100%;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 1px solid var(--cosmos-security-warning-border);
+    border-inline-start: 4px solid var(--cosmos-security-warning-accent);
+    border-radius: var(--cosmos-control-radius);
+    background: var(--cosmos-security-warning-surface);
+    color: var(--cosmos-reference-text, var(--lumo-body-text-color));
+    font: 400 12px/20px Inter, sans-serif;
+}
+
+.cosmos-security-warning > vaadin-icon {
+    flex: none;
+    width: 18px;
+    height: 18px;
+    margin-top: 1px;
+    color: var(--cosmos-security-warning-accent);
+}
+
+.cosmos-security-warning-label {
+    color: var(--cosmos-security-warning-accent);
+    font-weight: 700;
+}
+
 /* Aktions- und Feldhinweise teilen Variante A. Positionierung und Bedienung bleiben nativ. */
 vaadin-tooltip {
     --vaadin-tooltip-max-width: var(--cosmos-tooltip-max-width);

@@ -507,18 +507,11 @@ public class UserNotificationsPanel extends Div {
   private void renderRows(Page<Item> result) {
     rows.removeAll();
     if (result.isEmpty()) {
-      Span empty =
-          new Span(
+      rows.add(
+          new NotificationEmptyState(
               !compact && !search.isEmpty()
                   ? texts.getNotificationsSearchEmpty()
-                  : texts.getNotificationsEmpty());
-      empty.addClassName("cosmos-notification-empty-title");
-      empty.getElement().setAttribute("role", "heading");
-      empty.getElement().setAttribute("aria-level", "3");
-      SvgIcon icon = AppIcon.BELL.create();
-      Div notice = new Div(icon, empty);
-      notice.addClassName("cosmos-notification-empty");
-      rows.add(notice);
+                  : texts.getNotificationsEmpty()));
     }
     for (Item item : result) {
       rows.add(row(item));

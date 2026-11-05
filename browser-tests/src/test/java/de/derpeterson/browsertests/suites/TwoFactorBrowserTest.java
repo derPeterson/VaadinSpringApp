@@ -257,7 +257,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     signInUntilSecondFactor(email, provider);
     TwoFactorPage.openLoginHelp(page);
     page.locator("#two-factor-recover").click();
-    assertThat(page.locator("#two-factor-panel")).containsText(texts.getTwoFactorRecoverHint());
+    assertThat(page.locator("#two-factor-panel .cosmos-panel-header"))
+        .containsText(texts.getTwoFactorRecoverSubtitle());
     TwoFactorPage.enterCode(page, last);
     page.locator("#two-factor-submit").click();
     assertThat(page.locator("#two-factor-qr")).isVisible();
@@ -516,8 +517,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.locator(".mfa-login-alternatives > summary").click();
     page.locator("[data-mfa-go=recover]").click();
     assertThat(page.locator("[data-mfa-phase-content]")).hasAttribute("data-phase", "recover");
-    assertThat(page.locator("[data-mfa-phase-content]"))
-        .containsText(texts.getTwoFactorRecoverHint());
+    assertThat(page.locator(".mfa-confirmation-flow .vp-card-head"))
+        .containsText(texts.getTwoFactorRecoverSubtitle());
     page.locator("[data-mfa-continue]").click();
     assertThat(page.locator(".mfa-qr-placeholder")).isVisible();
     page.locator("[data-mfa-continue]").click();
@@ -942,7 +943,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(page.locator("vaadin-text-field#two-factor-code input"))
         .hasAttribute("maxlength", "35");
     assertThat(page.locator(".cosmos-panel-footer #two-factor-recovery-back"))
-        .hasText(texts.getTwoFactorRecoverySignIn());
+        .hasText(texts.getTwoFactorReturnToCode());
     assertThat(page.locator("#two-factor-help")).isHidden();
     assertThat(page.locator("#two-factor-panel"))
         .containsText(texts.getTwoFactorRecoveryConsumptionHint());

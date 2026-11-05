@@ -34,6 +34,9 @@ public class SupportReplyEntity {
   @OnDelete(action = OnDeleteAction.SET_NULL)
   private UserEntity author;
 
+  @Column(nullable = false)
+  private boolean supportAuthor;
+
   @Column(nullable = false, length = 2000)
   private String body;
 

@@ -28,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Slf4j
 public class SupportTicketService {
+  public static final int MESSAGE_LIMIT = 2000;
+
   private final TwoFactorAuthorization authorization;
   private final SupportTicketRepository tickets;
   private final SupportReplyRepository replies;
@@ -49,8 +51,7 @@ public class SupportTicketService {
 
   public enum ReplyAuthor {
     REQUESTER,
-    SUPPORT,
-    UNKNOWN
+    SUPPORT
   }
 
   public record Reply(String body, boolean internal, Instant createdAt, ReplyAuthor author)
@@ -78,6 +79,10 @@ public class SupportTicketService {
         .stream().map(this::view).toList();
   }
 
+  public Long administratorId(HttpServletRequest request) {
+    return requireAdministrator(request).id();
+  }
+
   @Transactional
   public Ticket createRecovery(HttpServletRequest request, String description) {
     TwoFactorAuthorization.Owner owner = authorization.owner(request);
@@ -88,18 +93,18 @@ public class SupportTicketService {
         || !owner.verifiedContact()) {
       throw new AccessDeniedException("Verified current account required");
     }
-    if (tickets.openFor(owner.id(), Status.CLOSED) != 0
+    if (tickets.openFor(owner.id(), List.of(Status.OPEN, Status.IN_PROGRESS)) != 0
         || tickets.createdSince(owner.id(), Instant.now().minusSeconds(86400)) >= 3) {
       throw new IllegalStateException("Recovery request already open or rate limited");
     }
-    String body = bounded(description, 2000);
+    String body = bounded(description, MESSAGE_LIMIT);
     SupportTicketEntity ticket = new SupportTicketEntity();
     ticket.setOwner(user);
     ticket.setSubject(templates.texts(user).getSupportRecoverySubject());
     ticket.setCreatedAt(Instant.now());
     ticket.setUpdatedAt(ticket.getCreatedAt());
     tickets.saveAndFlush(ticket);
-    append(ticket, user, body, false);
+    append(ticket, user, body, ReplyAuthor.REQUESTER, false);
     notifications.recordRecoveryRequest();
     AfterCommitLog.info(
         log,
@@ -111,20 +116,15 @@ public class SupportTicketService {
 
   @Transactional(readOnly = true)
   public List<Reply> conversation(HttpServletRequest request, Long id, boolean administration) {
-    Long ownerId = accessible(request, id, administration).getOwner().getId();
+    accessible(request, id, administration);
     return replies.visible(id, administration).stream()
         .map(
-            reply -> {
-              UserEntity author = reply.getAuthor();
-              ReplyAuthor role = ReplyAuthor.UNKNOWN;
-              if (author != null) {
-                role =
-                    Objects.equals(author.getId(), ownerId)
-                        ? ReplyAuthor.REQUESTER
-                        : ReplyAuthor.SUPPORT;
-              }
-              return new Reply(reply.getBody(), reply.isInternal(), reply.getCreatedAt(), role);
-            })
+            reply ->
+                new Reply(
+                    reply.getBody(),
+                    reply.isInternal(),
+                    reply.getCreatedAt(),
+                    reply.isSupportAuthor() ? ReplyAuthor.SUPPORT : ReplyAuthor.REQUESTER))
         .toList();
   }
 
@@ -132,7 +132,7 @@ public class SupportTicketService {
   public Ticket claim(HttpServletRequest request, Long id, Long version) {
     TwoFactorAuthorization.Owner administrator = requireAdministrator(request);
     SupportTicketEntity ticket = locked(id, version);
-    if (ticket.getStatus() == Status.CLOSED) {
+    if (!ticket.getStatus().acceptsMessages()) {
       throw new AccessDeniedException("Closed ticket cannot be claimed");
     }
     if (ticket.getAssignee() != null && !ticket.getAssignee().getId().equals(administrator.id())) {
@@ -156,13 +156,18 @@ public class SupportTicketService {
     TwoFactorAuthorization.Owner actor = authorization.owner(request);
     accessible(request, id, administration);
     SupportTicketEntity ticket = locked(id, version);
-    if (ticket.getStatus() == Status.CLOSED || !administration && internal) {
+    if (!ticket.getStatus().acceptsMessages() || !administration && internal) {
       throw new AccessDeniedException("Reply is not permitted");
     }
     if (administration) {
       requireAssignee(ticket, actor);
     }
-    append(ticket, users.getReferenceById(actor.id()), bounded(text, 2000), internal);
+    append(
+        ticket,
+        users.getReferenceById(actor.id()),
+        bounded(text, MESSAGE_LIMIT),
+        administration ? ReplyAuthor.SUPPORT : ReplyAuthor.REQUESTER,
+        internal);
     return view(ticket);
   }
 
@@ -170,8 +175,29 @@ public class SupportTicketService {
   public Ticket close(HttpServletRequest request, Long id, Long version) {
     TwoFactorAuthorization.Owner actor = requireAdministrator(request);
     SupportTicketEntity ticket = locked(id, version);
-    requireAssignee(ticket, actor);
-    ticket.setStatus(Status.CLOSED);
+    if (ticket.getStatus() == Status.CLOSED) {
+      throw new AccessDeniedException("Ticket already closed");
+    }
+    if (ticket.getStatus() == Status.CLOSED_BY_REQUESTER && ticket.getAssignee() == null) {
+      ticket.setAssignee(users.getReferenceById(actor.id()));
+    } else {
+      requireAssignee(ticket, actor);
+    }
+    return updateStatus(ticket, Status.CLOSED);
+  }
+
+  @Transactional
+  public Ticket closeOwn(HttpServletRequest request, Long id, Long version) {
+    accessible(request, id, false);
+    SupportTicketEntity ticket = locked(id, version);
+    if (!ticket.getStatus().acceptsMessages()) {
+      throw new AccessDeniedException("Ticket already closed");
+    }
+    return updateStatus(ticket, Status.CLOSED_BY_REQUESTER);
+  }
+
+  private Ticket updateStatus(SupportTicketEntity ticket, Status status) {
+    ticket.setStatus(status);
     ticket.setUpdatedAt(Instant.now());
     tickets.saveAndFlush(ticket);
     return view(ticket);
@@ -179,9 +205,11 @@ public class SupportTicketService {
 
   @Transactional(readOnly = true)
   public String instructionPreview(HttpServletRequest request, Long id) {
-    return templates
-        .texts(accessible(request, id, true).getOwner())
-        .getSupportRecoveryInstructions();
+    SupportTicketEntity ticket = accessible(request, id, true);
+    if (!ticket.getStatus().acceptsMessages()) {
+      throw new AccessDeniedException("Instruction delivery unavailable");
+    }
+    return templates.texts(ticket.getOwner()).getSupportRecoveryInstructions();
   }
 
   @Transactional
@@ -192,7 +220,7 @@ public class SupportTicketService {
     UserEntity recipient = ticket.getOwner();
     entityManager.refresh(recipient);
     if (ticket.getInstructionSentAt() != null
-        || ticket.getStatus() == Status.CLOSED
+        || !ticket.getStatus().acceptsMessages()
         || !recipient.isEnabled()
         || recipient.isVerificationPending()) {
       throw new AccessDeniedException("Instruction delivery unavailable or already queued");
@@ -215,7 +243,7 @@ public class SupportTicketService {
                 "",
                 "NOTICE",
                 texts.getSupportNoUnlock())));
-    append(ticket, users.getReferenceById(actor.id()), body, false);
+    append(ticket, users.getReferenceById(actor.id()), body, ReplyAuthor.SUPPORT, false);
     ticket.setInstructionSentAt(Instant.now());
     tickets.saveAndFlush(ticket);
     AfterCommitLog.info(log, "Recovery instructions queued: ticketId={}", id);
@@ -262,13 +290,18 @@ public class SupportTicketService {
   }
 
   private void append(
-      SupportTicketEntity ticket, UserEntity author, String body, boolean internal) {
+      SupportTicketEntity ticket,
+      UserEntity author,
+      String body,
+      ReplyAuthor role,
+      boolean internal) {
     if (replies.countFor(ticket.getId()) >= 50) {
       throw new IllegalStateException("Ticket conversation limit reached");
     }
     SupportReplyEntity reply = new SupportReplyEntity();
     reply.setTicket(ticket);
     reply.setAuthor(author);
+    reply.setSupportAuthor(role == ReplyAuthor.SUPPORT);
     reply.setBody(body);
     reply.setInternal(internal);
     reply.setCreatedAt(Instant.now());

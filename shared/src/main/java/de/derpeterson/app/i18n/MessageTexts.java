@@ -108,6 +108,38 @@ public class MessageTexts {
     return getTranslation("support.closed");
   }
 
+  public String getSupportClosedByRequester() {
+    return getTranslation("support.closedByRequester");
+  }
+
+  public String getSupportCloseOwn() {
+    return getTranslation("support.closeOwn");
+  }
+
+  public String getSupportCreated() {
+    return getTranslation("support.created");
+  }
+
+  public String getSupportReplySaved() {
+    return getTranslation("support.replySaved");
+  }
+
+  public String getSupportRefreshed() {
+    return getTranslation("support.refreshed");
+  }
+
+  public String getSupportRefreshFailed() {
+    return getTranslation("support.refreshFailed");
+  }
+
+  public String getSupportConflict() {
+    return getTranslation("support.conflict");
+  }
+
+  public String getSupportShortcutDescription() {
+    return getTranslation("support.shortcutDescription");
+  }
+
   public String getSupportUnassigned() {
     return getTranslation("support.unassigned");
   }
@@ -188,6 +220,10 @@ public class MessageTexts {
     return getTranslation("mfa.recover.subtitle");
   }
 
+  public String getTwoFactorRecoveryPreviousAppHint() {
+    return getTranslation("mfa.recover.previousAppHint");
+  }
+
   public String getTwoFactorRecoveryConsumptionHint() {
     return getTranslation("mfa.recover.consumptionHint");
   }
@@ -236,10 +272,6 @@ public class MessageTexts {
     return getTranslation("mfa.recover.action");
   }
 
-  public String getTwoFactorRecoverHint() {
-    return getTranslation("mfa.recover.hint");
-  }
-
   public String getTwoFactorRecoveryCodeLabel() {
     return getTranslation("mfa.recover.code");
   }
@@ -248,12 +280,12 @@ public class MessageTexts {
     return getTranslation("mfa.recover.back");
   }
 
-  public String getTwoFactorRecoverySignIn() {
-    return getTranslation("mfa.recover.sign-in");
-  }
-
   public String getTwoFactorSetupHint() {
     return getTranslation("mfa.setup.hint");
+  }
+
+  public String getTwoFactorSetupSubtitle() {
+    return getTranslation("mfa.setup.subtitle");
   }
 
   public String getTwoFactorStartSetup() {
@@ -290,6 +322,10 @@ public class MessageTexts {
 
   public String getTwoFactorSetupCodeLabel() {
     return getTranslation("mfa.setup.codeLabel");
+  }
+
+  public String getTwoFactorConfirmationAppTab() {
+    return getTranslation("mfa.confirm.appTab");
   }
 
   public String getTwoFactorAppCompatibility() {
@@ -3156,6 +3192,10 @@ public class MessageTexts {
 
   public String getNotificationsSentHistory() {
     return getTranslation("notifications.sentHistory");
+  }
+
+  public String getNotificationsSentEmpty() {
+    return getTranslation("notifications.sentEmpty");
   }
 
   public String getNotificationsInvalidSubject() {
