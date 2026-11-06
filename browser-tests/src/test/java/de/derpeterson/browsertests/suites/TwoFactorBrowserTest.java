@@ -57,6 +57,10 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(hint).containsText(texts.getSupportSelectTicket());
     assertThat(hint.locator("[data-lucide=list]")).isVisible();
     UiActions.complete(page, () -> categories.locator("vaadin-tab").nth(1).click());
+    assertTicketLocation("recovery", null);
+    page.reload();
+    assertThat(categories.locator("vaadin-tab[selected]"))
+        .hasText(texts.getSupportRecoveryCategory());
     assertThat(hint.locator("[data-lucide=list]")).isVisible();
     assertThat(page.locator(".support-admin-ticket-card")).hasCount(2);
     for (int width : new int[] {1600, 1280, 1024, 390}) {
@@ -79,7 +83,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                               return rect.top >= tabs.top - 1 && rect.bottom <= tabs.bottom + 1;
                             });
                         const columnsFit = body.width >= 820
-                            ? queue.width >= 370 && detail.left >= queue.right - 1
+                            ? queue.width >= 330 && detail.left >= queue.right + 15
                             : detail.top >= queue.bottom - 1 && Math.abs(detail.width - queue.width) < 2;
                         const centered = Math.abs(hint.left + hint.width / 2 - detail.left - detail.width / 2) < 2
                             && Math.abs(hint.top + hint.height / 2 - detail.top - detail.height / 2) < 2;
@@ -91,10 +95,40 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           "Ticketübersicht und Auswahlhinweis bei " + width + "px", page);
     }
     page.setViewportSize(1280, 1000);
+    String openNumber =
+        page.locator(".support-admin-ticket-card .support-ticket-number")
+            .first()
+            .innerText()
+            .substring(1);
     UiActions.complete(page, () -> page.locator(".support-admin-ticket-card").first().click());
+    assertTicketLocation("recovery", openNumber);
+    page.reload();
     Locator ticketPanel = page.locator("#support-ticket-panel");
     Locator tools = ticketPanel.locator("#support-ticket-tools");
     Locator footer = ticketPanel.locator("#support-ticket-footer");
+    assertThat(ticketPanel.locator(".support-ticket-number"))
+        .hasText(texts.getSupportTicketNumber("#" + openNumber));
+    assertThat(categories.locator("vaadin-tab[selected]"))
+        .hasText(texts.getSupportRecoveryCategory());
+    UiActions.complete(page, () -> categories.locator("vaadin-tab").first().click());
+    assertTicketLocation("all", openNumber);
+    page.reload();
+    assertThat(categories.locator("vaadin-tab[selected]")).hasText(texts.getSupportAllTickets());
+    assertThat(ticketPanel.locator(".support-ticket-number"))
+        .hasText(texts.getSupportTicketNumber("#" + openNumber));
+    String closedNumber =
+        page.locator(".support-admin-ticket-card .support-ticket-number")
+            .nth(1)
+            .innerText()
+            .substring(1);
+    UiActions.complete(page, () -> page.locator(".support-admin-ticket-card").nth(1).click());
+    assertTicketLocation("all", closedNumber);
+    page.reload();
+    assertThat(ticketPanel.locator(".support-ticket-number"))
+        .hasText(texts.getSupportTicketNumber("#" + closedNumber));
+    UiActions.complete(page, () -> page.locator(".support-admin-ticket-card").first().click());
+    assertTicketLocation("all", openNumber);
+    AllurePlaywright.attachScreenshot("Offenes Ticket mit wiederherstellbarer URL", page);
     assertThat(ticketPanel.locator("#support-ticket-header"))
         .containsText(texts.getSupportRecoverySubject());
     assertThat(tools.locator("#support-claim")).isVisible();
@@ -102,12 +136,74 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(ticketPanel.locator(".support-admin-ticket-metadata > .support-ticket-status"))
         .hasCSS("margin-inline-start", "0px");
     assertThat(footer).not().isVisible();
+    assertThat(ticketPanel.locator("#support-unassigned-note")).isVisible();
+    assertThat(ticketPanel.locator(".support-admin-policy-label"))
+        .hasText(texts.getSupportSecurityPolicy());
+    assertThat(tools.locator("vaadin-switch.cosmos-config-switch")).isVisible();
+    for (int width : new int[] {1280, 390}) {
+      page.setViewportSize(width, 500);
+      Locator queueScroll = page.locator(".support-admin-ticket-scroll");
+      queueScroll.evaluate("scroller => scroller.scrollTop = scroller.scrollHeight");
+      page.waitForCondition(
+          () ->
+              ((Number) queueScroll.evaluate("scroller => scroller.scrollTop")).doubleValue() > 0);
+      double scrollPosition =
+          ((Number) queueScroll.evaluate("scroller => scroller.scrollTop")).doubleValue();
+      Locator focus = ticketPanel.locator("#support-focus-toggle");
+      UiActions.complete(page, focus::click);
+      UiActions.complete(page, focus::click);
+      page.waitForCondition(
+          () ->
+              Math.abs(
+                      ((Number) queueScroll.evaluate("scroller => scroller.scrollTop"))
+                              .doubleValue()
+                          - scrollPosition)
+                  < 2);
+      page.setViewportSize(width, 1000);
+      UiActions.complete(page, focus::click);
+      assertThat(page.locator(".support-admin-queue")).not().isVisible();
+      assertThat(focus).hasAttribute("aria-label", texts.getSupportRestoreSplitView());
+      assertThat(focus.locator("[data-lucide=minimize]")).isVisible();
+      assertTicketLocation("all", openNumber);
+      page.waitForCondition(
+          () ->
+              (Boolean)
+                  ticketPanel.evaluate(
+                      """
+          panel => {
+            const detail = panel.getBoundingClientRect();
+            const workspace = document.querySelector('.support-admin-columns');
+            const bounds = workspace.getBoundingClientRect();
+            const style = getComputedStyle(workspace);
+            return Math.abs(detail.width - bounds.width + parseFloat(style.paddingLeft)
+                + parseFloat(style.paddingRight)) < 2;
+          }
+          """));
+      ticketPanel.scrollIntoViewIfNeeded();
+      AllurePlaywright.attachScreenshot("Ticket-Fokusansicht bei " + width + "px", page);
+      UiActions.complete(page, focus::click);
+      assertThat(page.locator(".support-admin-queue")).isVisible();
+      assertThat(focus.locator("[data-lucide=expand]")).isVisible();
+      assertThat(
+              page.locator(
+                      ".support-admin-ticket-list vaadin-grid-cell-content .support-ticket-number")
+                  .first())
+          .hasText("#" + openNumber);
+    }
     UiActions.complete(page, () -> tools.locator("#support-claim").click());
     assertThat(ticketPanel.locator("#support-ticket-header"))
         .containsText(texts.getSupportInProgress());
     assertThat(tools.locator("#support-instructions")).isVisible();
     assertThat(footer.locator("#support-add-reply")).isVisible();
     assertThat(footer.locator("#support-close")).isVisible();
+    assertThat(ticketPanel.locator("#support-unassigned-note")).not().isVisible();
+    ticketPanel
+        .locator("#support-reply textarea")
+        .fill("Dieser Entwurf bleibt beim Vergrößern erhalten.");
+    UiActions.complete(page, () -> ticketPanel.locator("#support-focus-toggle").click());
+    UiActions.complete(page, () -> ticketPanel.locator("#support-focus-toggle").click());
+    assertThat(ticketPanel.locator("#support-reply textarea"))
+        .hasValue("Dieser Entwurf bleibt beim Vergrößern erhalten.");
     Locator requesterAvatar = ticketPanel.locator("#support-detail-requester .cosmos-user-avatar");
     assertThat(requesterAvatar.locator(".cosmos-avatar-initials")).hasCSS("cursor", "default");
     requesterAvatar.hover();
@@ -147,6 +243,22 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       footer.scrollIntoViewIfNeeded();
       AllurePlaywright.attachScreenshot("Ticket-Aktionsfooter bei " + width + "px", page);
     }
+  }
+
+  private void assertTicketLocation(String tab, String number) {
+    page.waitForCondition(
+        () ->
+            (Boolean)
+                page.evaluate(
+                    """
+                    expected => {
+                      const parameters = new URL(window.location.href).searchParams;
+                      return parameters.get('section') === 'support'
+                          && parameters.get('tab') === expected.tab
+                          && (parameters.get('ticket') ?? '') === expected.number;
+                    }
+                    """,
+                    Map.of("tab", tab, "number", number == null ? "" : number)));
   }
 
   @ParameterizedTest

@@ -39,6 +39,17 @@ Für die 2FA-Konfiguration sind Variante A und die Erklärspalte aus Variante B
 ausgewählt. Die administrative Ticketansicht wurde anhand separater
 Vaadin-Aufnahmen mit synthetischen Anfragen weiterentwickelt.
 
+Für den Inhalt offener Tickets liegt ein
+[Stitch-Vorschlag mit geteilter Ansicht und Fokusansicht](https://stitch.google.com/projects/1332538028618138858?node-id=17845443557095059631)
+als freigegebene Grundlage vor: mittlere Trennlinie entfernen, vorhandenen Hinweis
+als Infobox mit weißer, fetter Einleitung gliedern, Benachrichtigungsschalter im
+gemeinsamen Stil in die Werkzeugleiste setzen und „Nachrichtenverlauf“ blau hervorheben.
+Ein nativer Iconbutton blendet die Vorgangsliste aus und stellt die geteilte Ansicht
+wieder her, auch mobil. Die Symbole sind Lucide `expand` und `minimize`.
+Der Ticketkopf und die bestehenden Sprechblasen bleiben verbindlich; ihre
+Abweichungen im Entwurf werden nicht übernommen. Die gemeinsame Sichtprüfung
+der Übernahme steht noch aus.
+
 2FA-Konfiguration:
 
 - [A: nach Funktionen gegliedertes Formular](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=17680211258750069028)

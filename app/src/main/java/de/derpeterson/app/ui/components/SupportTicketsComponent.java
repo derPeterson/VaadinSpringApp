@@ -25,6 +25,7 @@ import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.data.value.ValueChangeMode;
+import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.server.WrappedHttpSession;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -66,6 +67,13 @@ import org.springframework.security.access.AccessDeniedException;
 @StyleSheet("custom-theme/cosmos-provider-settings.css")
 @Slf4j
 public final class SupportTicketsComponent extends VerticalLayout {
+  public enum Category {
+    ALL,
+    RECOVERY
+  }
+
+  public record NavigationState(Category category, String ticketNumber) implements Serializable {}
+
   private record DraftTarget(Long ticketId) implements Serializable {}
 
   private record Draft(String text, boolean internal) implements Serializable {}
@@ -91,6 +99,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final Span selectTicket = new Span();
   private final VerticalLayout noSelection = new VerticalLayout();
   private final CosmosCardComponent adminDetail = new CosmosCardComponent();
+  private final Div adminWorkspace = new Div();
+  private final VerticalLayout adminQueue = new VerticalLayout();
+  private final Button focusToggle = new Button();
   private final HorizontalLayout adminTicketTools = new HorizontalLayout();
   private final HorizontalLayout adminActionFooter = new HorizontalLayout();
   private final VerticalLayout adminEditor = new VerticalLayout();
@@ -101,6 +112,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final VerticalLayout adminRequester = new VerticalLayout();
   private final VerticalLayout adminAssignment = new VerticalLayout();
   private final Span adminRecoveryHint = new Span();
+  private final Span adminPolicyLabel = new Span();
+  private final HorizontalLayout adminRecoveryInfo = new HorizontalLayout();
+  private final Span adminUnassignedNote = new Span();
   private final VerticalLayout conversation = new VerticalLayout();
   private final TextArea body = new TextArea();
   private final Switch internal = new Switch();
@@ -143,6 +157,10 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private DraftTarget draftTarget;
   private boolean openRequest;
   private Long administratorId;
+  private SerializableConsumer<NavigationState> navigationListener = state -> {};
+  private NavigationState reportedNavigation;
+  private boolean restoringNavigation;
+  private boolean ticketFocused;
   private transient Registration liveRegistration;
   private transient HttpSession liveSession;
   private transient volatile Long liveViewerId;
@@ -180,6 +198,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
                 } catch (RuntimeException failure) {
                   failed(texts::getSupportRefreshFailed);
                 }
+                publishNavigation();
               }
             });
     body.setId("support-reply");
@@ -423,9 +442,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
         new CosmosCardComponent(queueHeader, queueTools, emptyState, adminTicketScroll);
     queuePanel.setId("support-queue-panel");
     queuePanel.addClassNames(CosmosClasses.PANEL_CARD, "support-admin-list-panel");
-    VerticalLayout queue = new VerticalLayout(queuePanel);
-    queue.setPadding(false);
-    queue.addClassName("support-admin-queue");
+    adminQueue.add(queuePanel);
+    adminQueue.setPadding(false);
+    adminQueue.addClassName("support-admin-queue");
 
     adminSubject.addClassNames(CosmosClasses.PANEL_TITLE, "support-admin-subject");
     adminTicketNumber.addClassName("support-ticket-number");
@@ -450,7 +469,14 @@ public final class SupportTicketsComponent extends VerticalLayout {
     ticketIcon.setPadding(false);
     ticketIcon.setSpacing(false);
     ticketIcon.addClassName(CosmosClasses.PANEL_ICON);
-    HorizontalLayout orientation = new HorizontalLayout(ticketIcon, metadata, adminUpdated);
+    focusToggle.setId("support-focus-toggle");
+    focusToggle.addThemeVariants(ButtonVariant.LUMO_ICON);
+    focusToggle
+        .getElement()
+        .setAttribute("aria-controls", "support-queue-panel support-ticket-panel");
+    focusToggle.addClickListener(event -> setTicketFocused(!ticketFocused));
+    HorizontalLayout orientation =
+        new HorizontalLayout(ticketIcon, metadata, adminUpdated, focusToggle);
     orientation.setPadding(false);
     orientation.setSpacing(false);
     orientation.setWidthFull();
@@ -477,8 +503,18 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminTicketTools.setWidthFull();
     adminTicketTools.setAlignItems(Alignment.CENTER);
     adminTicketTools.addClassName("support-admin-ticket-tools");
-    adminTicketTools.add(claim, instructions);
-    adminRecoveryHint.addClassName("cosmos-panel-description");
+    subscription.addClassName("cosmos-config-switch");
+    adminTicketTools.add(subscription, claim, instructions);
+    adminPolicyLabel.addClassName("support-admin-policy-label");
+    Span policy = new Span(adminPolicyLabel, new Text(" "), adminRecoveryHint);
+    adminRecoveryInfo.add(AppIcon.INFO_CIRCLE.create(), policy);
+    adminRecoveryInfo.setId("support-ticket-policy");
+    adminRecoveryInfo.setPadding(false);
+    adminRecoveryInfo.setSpacing(false);
+    adminRecoveryInfo.setAlignItems(Alignment.CENTER);
+    adminRecoveryInfo.addClassName("support-help-notice");
+    adminUnassignedNote.setId("support-unassigned-note");
+    adminUnassignedNote.addClassName("support-admin-unassigned-note");
 
     userMessageThread.setSpacing(false);
     userMessageThread.addClassName("support-message-thread");
@@ -488,7 +524,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     userConversationHeader.setAlignItems(Alignment.CENTER);
     userConversationHeader.setSpacing(false);
     userConversationHeader.addClassName("support-section-header");
-    conversation.add(userConversationHeader, userMessageScroll);
+    conversation.add(userConversationHeader, userMessageScroll, adminUnassignedNote);
     reply.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     HorizontalLayout actions = new HorizontalLayout(close, reply);
     actions.setPadding(false);
@@ -504,8 +540,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminEditor.setPadding(false);
     adminEditor.addClassName("support-admin-editor");
     adminEditor.add(internal, sensitiveNotice, messageField);
-    VerticalLayout content =
-        new VerticalLayout(adminRecoveryHint, subscription, conversation, adminEditor);
+    VerticalLayout content = new VerticalLayout(adminRecoveryInfo, conversation, adminEditor);
     content.setPadding(false);
     content.setWidthFull();
     content.addClassName("support-admin-detail-content");
@@ -532,9 +567,30 @@ public final class SupportTicketsComponent extends VerticalLayout {
     detail.setSpacing(false);
     detail.setFlexGrow(1, noSelection);
     detail.addClassName("support-admin-detail-column");
-    Div workspace = new Div(queue, detail);
-    workspace.addClassName("support-admin-columns");
-    panel.getBody().add(ticketCategories, workspace);
+    adminWorkspace.add(adminQueue, detail);
+    adminWorkspace.addClassName("support-admin-columns");
+    panel.getBody().add(ticketCategories, adminWorkspace);
+  }
+
+  private void setTicketFocused(boolean focused) {
+    ticketFocused = focused && selected != null;
+    adminQueue.setVisible(!ticketFocused);
+    adminWorkspace.setClassName("support-focused", ticketFocused);
+    updateFocusControl();
+  }
+
+  private void updateFocusControl() {
+    focusToggle.setPrefixComponent((ticketFocused ? AppIcon.MINIMIZE : AppIcon.EXPAND).create());
+    focusToggle.getElement().setAttribute("aria-pressed", Boolean.toString(ticketFocused));
+    String label =
+        ticketFocused ? texts.getSupportRestoreSplitView() : texts.getSupportFocusTicket();
+    focusToggle.setAriaLabel(label);
+    focusToggle.setTooltipText(label);
+    if (ticketFocused) {
+      focusToggle.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    } else {
+      focusToggle.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    }
   }
 
   public void refreshTexts() {
@@ -567,6 +623,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     body.setLabel(administration ? texts.getSupportReply() : texts.getSupportDescription());
     internal.setLabel(texts.getSupportInternal());
     subscription.setLabel(texts.getSupportSubscription());
+    subscription.setTooltipText(texts.getSupportSubscriptionHint());
     create.setText(texts.getSupportCreate());
     claim.setText(texts.getSupportClaim());
     reply.setText(texts.getSupportReply());
@@ -576,6 +633,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
     reload.setTooltipText(texts.getSessionRefresh());
     if (administration) {
       updateAdminComposerLabels();
+      updateFocusControl();
+      adminPolicyLabel.setText(texts.getSupportSecurityPolicy());
+      adminUnassignedNote.setText(texts.getSupportUnassignedHint());
     }
     instructionDialog.refreshTexts();
     refresh();
@@ -608,6 +668,45 @@ public final class SupportTicketsComponent extends VerticalLayout {
     refreshConversation();
     if (matching == null) {
       failed(texts::getSupportTicketUnavailable);
+    }
+  }
+
+  public void setNavigationListener(SerializableConsumer<NavigationState> listener) {
+    navigationListener = Objects.requireNonNull(listener);
+  }
+
+  /** URL-Zustand einlesen, ohne beim Wiederherstellen neue Browserhistorie zu schreiben. */
+  public void restoreNavigation(Category category, String number) {
+    restoringNavigation = true;
+    try {
+      ticketCategories.setSelectedTab(category == Category.RECOVERY ? recoveryTickets : allTickets);
+      selected = null;
+      if (number == null) {
+        refresh();
+      } else {
+        openTicket(number);
+      }
+    } finally {
+      restoringNavigation = false;
+      reportedNavigation = navigationState();
+    }
+  }
+
+  private NavigationState navigationState() {
+    Category category =
+        ticketCategories.getSelectedTab() == recoveryTickets ? Category.RECOVERY : Category.ALL;
+    return new NavigationState(
+        category, selected == null ? null : ticketNumber(selected).substring(1));
+  }
+
+  private void publishNavigation() {
+    if (!administration || restoringNavigation) {
+      return;
+    }
+    NavigationState state = navigationState();
+    if (!state.equals(reportedNavigation)) {
+      reportedNavigation = state;
+      navigationListener.accept(state);
     }
   }
 
@@ -724,6 +823,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     }
     grid.asSingleSelect().setValue(selection);
     selected = selection;
+    publishNavigation();
   }
 
   public void addBackAction(Button action) {
@@ -888,7 +988,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
     instructions.setVisible(administration && canReply);
     instructions.setEnabled(selected != null && !selected.instructionSent());
     if (administration) {
-      adminTicketTools.setVisible(claim.isVisible() || instructions.isVisible());
+      adminTicketTools.setVisible(
+          subscription.isVisible() || claim.isVisible() || instructions.isVisible());
       adminActionFooter.setVisible(close.isVisible() || reply.isVisible());
     }
     if (!administration) {
@@ -903,6 +1004,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminDetail.setVisible(selected != null);
     noSelection.setVisible(selected == null);
     if (selected == null) {
+      setTicketFocused(false);
       userMessageThread.removeAll();
       return;
     }
@@ -926,7 +1028,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminAssignment.add(assignmentLabel, assignee);
     updateAdminRequester(selected.requesterIdentity());
     adminRecoveryHint.setText(texts.getSupportNoUnlock());
-    adminRecoveryHint.setVisible(selected.type() == Type.RECOVERY);
+    adminRecoveryInfo.setVisible(selected.type() == Type.RECOVERY);
+    adminUnassignedNote.setVisible(selected.status() == Status.OPEN && selected.assignee() == null);
     String heading = texts.getSupportConversation();
     userConversationHeading.setText(heading);
     userConversationCount.setText(texts.getSupportMessageCount(messages.size()));

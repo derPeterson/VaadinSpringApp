@@ -22,6 +22,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.Location;
@@ -177,7 +178,13 @@ class AdminViewNavigationTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"?section=support&ticket=10001", "?ticket=10001&section=support"})
+  @ValueSource(
+      strings = {
+        "?section=support&ticket=10001",
+        "?ticket=10001&section=support",
+        "?section=support&tab=recovery&ticket=10001",
+        "?ticket=10001&tab=recovery&section=support"
+      })
   void ticketLinkSelectsOnlyItsMatchingVisibleTicketRegardlessOfParameterOrder(String query) {
     SupportTicketService tickets = mock(SupportTicketService.class);
     Ticket ticket =
@@ -201,6 +208,16 @@ class AdminViewNavigationTest {
     Component support = (Component) ReflectionTestUtils.getField(view, "supportSection");
     Grid<?> grid = (Grid<?>) ReflectionTestUtils.getField(support, "grid");
     assertEquals(List.of(ticket), List.copyOf(grid.getSelectedItems()));
+    Tabs categories = (Tabs) ReflectionTestUtils.getField(support, "ticketCategories");
+    assertEquals(query.contains("tab=recovery") ? 1 : 0, categories.getSelectedIndex());
+
+    enter("?section=support&tab=recovery");
+    assertTrue(grid.getSelectedItems().isEmpty());
+    assertEquals(1, categories.getSelectedIndex());
+
+    enter("?section=support&tab=unknown&ticket=10001");
+    assertEquals(List.of(ticket), List.copyOf(grid.getSelectedItems()));
+    assertEquals(0, categories.getSelectedIndex());
 
     enter("?section=support&ticket=99999");
     assertTrue(grid.getSelectedItems().isEmpty());

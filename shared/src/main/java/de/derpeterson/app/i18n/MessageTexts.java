@@ -90,6 +90,26 @@ public class MessageTexts {
     return getTranslation("support.subscription");
   }
 
+  public String getSupportSubscriptionHint() {
+    return getTranslation("support.subscriptionHint");
+  }
+
+  public String getSupportFocusTicket() {
+    return getTranslation("support.focusTicket");
+  }
+
+  public String getSupportRestoreSplitView() {
+    return getTranslation("support.restoreSplitView");
+  }
+
+  public String getSupportSecurityPolicy() {
+    return getTranslation("support.securityPolicy");
+  }
+
+  public String getSupportUnassignedHint() {
+    return getTranslation("support.unassignedHint");
+  }
+
   public String getSupportUnreadMessages(long count) {
     return getFormattedTranslation(
         count == 1 ? "support.unreadMessage" : "support.unreadMessages", count);

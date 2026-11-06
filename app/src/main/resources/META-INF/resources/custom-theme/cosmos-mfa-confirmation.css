@@ -48,14 +48,14 @@
 .support-empty-state > vaadin-icon { width:20px; height:20px; flex:none; color:var(--cosmos-reference-secondary); }
 .support-user-requests,.support-user-conversation { gap:10px; min-width:0; }
 .support-section-header { flex-wrap:wrap; gap:4px 8px; }
-.support-section-header #support-reload {
-  margin-inline-start:auto;
+.support-section-header #support-reload { margin-inline-start:auto; }
+.support-section-header #support-reload,#support-focus-toggle {
   width:var(--cosmos-control-height);
   min-width:var(--cosmos-control-height);
   height:var(--cosmos-control-height);
   padding:0;
 }
-.support-section-header #support-reload::part(prefix) { margin:0; }
+.support-section-header #support-reload::part(prefix),#support-focus-toggle::part(prefix) { margin:0; }
 .support-conversation-heading {
   margin:0;
   color:var(--cosmos-reference-text);
@@ -188,23 +188,38 @@
 .support-admin-workspace #support-panel > .cosmos-panel-header { border-bottom:0; }
 .support-admin-workspace #support-panel .cosmos-panel-meta:empty { display:none; }
 .support-admin-columns {
+  box-sizing:border-box;
   display:grid;
-  grid-template-columns:minmax(370px, 1fr) minmax(0, 1.7fr);
+  grid-template-columns:minmax(330px, 1fr) minmax(0, 1.7fr);
   align-items:stretch;
+  gap:16px;
+  padding:20px;
 }
+.support-admin-columns.support-focused { grid-template-columns:minmax(0, 1fr); }
 .support-admin-queue,.support-admin-detail-column {
   box-sizing:border-box;
   min-width:0;
-  padding:20px;
+  padding:0;
 }
-.support-admin-queue { border-inline-end:1px solid var(--cosmos-reference-border); }
 .support-admin-list-panel .support-admin-ticket-list { border:0; border-radius:0; }
 #support-queue-panel #support-queue-header { padding:12px; }
 #support-queue-header .cosmos-panel-icon { width:32px; height:32px; flex:0 0 32px; }
 #support-queue-header .cosmos-panel-icon > vaadin-icon { width:16px; height:16px; }
 .support-admin-list-tools,.support-admin-ticket-tools { box-sizing:border-box; padding:12px 16px; border-bottom:1px solid var(--cosmos-reference-border); }
 .support-admin-ticket-tools { padding-inline:24px; }
+.support-admin-ticket-tools > #support-subscription {
+  flex:0 1 auto;
+  width:auto;
+  min-width:0;
+  max-width:100%;
+}
+#support-subscription::part(switch) { grid-column:1; justify-self:start; }
+#support-subscription::part(label) { grid-column:2; justify-self:start; padding-inline-start:8px; text-align:start; }
+#support-subscription > input[slot=input] { grid-column:1; }
 .support-admin-ticket-tools > #support-claim { margin-inline-start:auto; }
+.support-admin-policy-label { color:var(--cosmos-reference-text); font-weight:600; }
+.support-admin-unassigned-note { margin-block-start:8px; color:var(--cosmos-reference-secondary); font:italic 400 11px/18px Inter,sans-serif; text-align:center; }
+.support-admin-detail .support-conversation-heading { color:var(--cosmos-reference-accent); }
 .support-admin-workspace .support-empty-state {
   box-sizing:border-box;
   width:100%;
@@ -333,11 +348,10 @@ vaadin-badge.support-instruction-number {
 .support-instruction-details::part(content) { padding:8px 0 0; }
 @container (max-width:819px) {
   .support-admin-columns { grid-template-columns:minmax(0, 1fr); }
-  .support-admin-queue { border-inline-end:0; border-bottom:1px solid var(--cosmos-reference-border); }
   .support-admin-ticket-scroll { max-height:min(32vh, 300px); }
 }
 @media (max-width:480px) {
-  .support-admin-queue,.support-admin-detail-column { padding:16px; }
+  .support-admin-columns { padding:16px; }
   .support-admin-actions vaadin-button[theme~=primary] { width:100%; }
 }
 @media (max-width:639px) {

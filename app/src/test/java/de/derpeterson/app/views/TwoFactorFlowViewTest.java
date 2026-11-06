@@ -61,8 +61,11 @@ import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import de.derpeterson.app.ui.components.SupportTicketFilterPanel;
 import de.derpeterson.app.ui.components.SupportTicketFilterPanel.Assignment;
 import de.derpeterson.app.ui.components.SupportTicketsComponent;
+import de.derpeterson.app.ui.components.SupportTicketsComponent.Category;
+import de.derpeterson.app.ui.components.SupportTicketsComponent.NavigationState;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -520,12 +523,28 @@ class TwoFactorFlowViewTest {
     component.refresh();
     TextArea draft = (TextArea) find(component, "support-reply");
     draft.setValue("Diese Antwort ist noch ein Entwurf.");
+    Button focus = (Button) find(component, "support-focus-toggle");
+    Component queue = find(component, "support-queue-panel").getParent().orElseThrow();
+    focus.click();
+    assertFalse(queue.isVisible());
+    assertEquals("true", focus.getElement().getAttribute("aria-pressed"));
+    assertEquals(texts.getSupportRestoreSplitView(), focus.getAriaLabel().orElseThrow());
+    component.refreshTexts();
+    assertFalse(queue.isVisible());
+    assertEquals(mine, grid.asSingleSelect().getValue());
+    assertEquals("Diese Antwort ist noch ein Entwurf.", draft.getValue());
+    focus.click();
+    assertTrue(queue.isVisible());
+    assertEquals(texts.getSupportFocusTicket(), focus.getAriaLabel().orElseThrow());
+    focus.click();
     SupportTicketFilterPanel filters =
         (SupportTicketFilterPanel) find(component, "support-filter-panel");
     ((Button) find(component, "support-filter")).click();
     ((CheckboxGroup<Status>) find(filters, "support-filter-status")).setValue(Set.of(Status.OPEN));
     filterAction(filters, "support-filter-apply").click();
     assertTrue(find(component, "support-select-ticket").isVisible());
+    assertTrue(queue.isVisible());
+    assertEquals("false", focus.getElement().getAttribute("aria-pressed"));
     component.openTicket("10001");
     assertEquals("Diese Antwort ist noch ein Entwurf.", draft.getValue());
   }
@@ -547,6 +566,55 @@ class TwoFactorFlowViewTest {
         false,
         false,
         null);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  @SuppressWarnings("unchecked")
+  void restoredTicketNavigationDoesNotEchoAndSelectionChangesAreReportedOnce(String language) {
+    open(language, false);
+    SupportTicketService tickets = mock(SupportTicketService.class);
+    Ticket ticket = filterTicket(1L, Status.OPEN, null);
+    when(tickets.list(request, true)).thenReturn(List.of(ticket));
+    when(tickets.administratorId(request)).thenReturn(9L);
+    SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
+    List<NavigationState> changes = new ArrayList<>();
+    component.setNavigationListener(changes::add);
+
+    component.restoreNavigation(Category.RECOVERY, "10001");
+    Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
+    Tabs categories = (Tabs) find(component, "support-ticket-categories");
+    assertEquals(1, categories.getSelectedIndex());
+    assertEquals(ticket, grid.asSingleSelect().getValue());
+    assertTrue(changes.isEmpty());
+    assertTrue(find(component, "support-unassigned-note").isVisible());
+    assertEquals(
+        texts.getSupportUnassignedHint(),
+        find(component, "support-unassigned-note").getElement().getText());
+    assertTrue(
+        find(component, "support-ticket-policy")
+            .getElement()
+            .getTextRecursively()
+            .contains(texts.getSupportSecurityPolicy()));
+
+    categories.setSelectedIndex(0);
+    component.refresh();
+    assertEquals(List.of(new NavigationState(Category.ALL, "10001")), changes);
+
+    SupportTicketFilterPanel filters =
+        (SupportTicketFilterPanel) find(component, "support-filter-panel");
+    ((Button) find(component, "support-filter")).click();
+    ((CheckboxGroup<Status>) find(filters, "support-filter-status"))
+        .setValue(Set.of(Status.CLOSED));
+    filterAction(filters, "support-filter-apply").click();
+    assertEquals(new NavigationState(Category.ALL, null), changes.getLast());
+    assertEquals(2, changes.size());
+    assertTrue(grid.getSelectedItems().isEmpty());
+
+    component.restoreNavigation(Category.RECOVERY, null);
+    assertEquals(1, categories.getSelectedIndex());
+    assertEquals(2, changes.size());
+    assertTrue(grid.getSelectedItems().isEmpty());
   }
 
   private Button filterAction(SupportTicketFilterPanel panel, String id) {

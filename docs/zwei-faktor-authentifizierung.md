@@ -229,6 +229,12 @@ den Bereich und die sichtbare Ticketnummer ohne Raute. Die Reihenfolge der Param
 ist beliebig. Dieselbe URL lässt sich direkt eingeben. Die Ticketansicht wählt
 ausschließlich einen für den angemeldeten Administrator zugänglichen Vorgang aus;
 eine unbekannte Nummer hebt keine Rechte auf.
+Beim Wechsel des Ticket-Tabs oder der Auswahl aktualisiert die Ansicht die URL
+ohne Seitennavigation: `tab=all` beziehungsweise `tab=recovery` und, bei Auswahl,
+`ticket=10003`. Ein Browser-Refresh stellt diesen Zustand wieder her. Ohne oder
+mit ungültigem Tabparameter gilt „Alle Tickets“; ohne Ticketnummer bleibt die
+Detailauswahl leer. Die native History-API ersetzt den aktuellen Eintrag, statt
+für jeden Auswahlwechsel einen zusätzlichen Zurück-Schritt anzulegen.
 „Zum Ticket“ öffnet für berechtigte Administratoren den zugehörigen Eintrag
 in der bestehenden Ticketliste; Lesen und Übernehmen bleiben eigene Aktionen.
 

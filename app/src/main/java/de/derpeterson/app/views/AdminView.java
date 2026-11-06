@@ -13,6 +13,7 @@ import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
@@ -39,6 +40,8 @@ import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.PageNavigationComponent;
 import de.derpeterson.app.ui.components.PortalPageComponent;
 import de.derpeterson.app.ui.components.SupportTicketsComponent;
+import de.derpeterson.app.ui.components.SupportTicketsComponent.Category;
+import de.derpeterson.app.ui.components.SupportTicketsComponent.NavigationState;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.admin.AdminConfigurationSection;
 import de.derpeterson.app.views.admin.AdminDashboardSection;
@@ -65,6 +68,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @RolesAllowed(AppRouteConstants.ADMIN_ROUTE_ROLES)
 public class AdminView extends IsAuthenticatedBaseView {
   private static final String ARIA_CURRENT = "aria-current";
+  private boolean restoringTicketNavigation;
 
   private enum AdminSection {
     DASHBOARD,
@@ -103,6 +107,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     supportNavItem.setLabel(messageProperties.getSupportTitle());
     sideNavigation.addItem(supportNavItem);
     supportSection = new SupportTicketsComponent(messageProperties, support, request, true);
+    supportSection.setNavigationListener(this::updateTicketLocation);
   }
 
   @org.springframework.beans.factory.annotation.Autowired
@@ -228,13 +233,39 @@ public class AdminView extends IsAuthenticatedBaseView {
         section == AdminSection.CONFIGURATION
             ? parameter(parameters, "group", AdminConfigGroup.class, AdminConfigGroup.GENERAL)
             : null;
-    selectSection(section, group);
-    List<String> ticketNumbers = parameters.getParameters().get("ticket");
-    if (activeSection == AdminSection.SUPPORT
-        && ticketNumbers != null
-        && ticketNumbers.size() == 1) {
-      supportSection.openTicket(ticketNumbers.getFirst());
+    restoringTicketNavigation = true;
+    try {
+      selectSection(section, group);
+      if (activeSection == AdminSection.SUPPORT) {
+        Category category = parameter(parameters, "tab", Category.class, Category.ALL);
+        List<String> numbers = parameters.getParameters().get("ticket");
+        String number = numbers != null && numbers.size() == 1 ? numbers.getFirst() : null;
+        supportSection.restoreNavigation(category, number);
+      }
+    } finally {
+      restoringTicketNavigation = false;
     }
+  }
+
+  private void updateTicketLocation(NavigationState state) {
+    if (restoringTicketNavigation || activeSection != AdminSection.SUPPORT) {
+      return;
+    }
+    Map<String, String> parameters = new LinkedHashMap<>();
+    parameters.put("section", "support");
+    parameters.put("tab", state.category().name().toLowerCase(Locale.ROOT));
+    if (state.ticketNumber() != null) {
+      parameters.put("ticket", state.ticketNumber());
+    }
+    getUI()
+        .ifPresent(
+            ui ->
+                ui.getPage()
+                    .getHistory()
+                    .replaceState(
+                        null,
+                        new Location(
+                            AppRouteConstants.ADMIN_ROUTE, QueryParameters.simple(parameters))));
   }
 
   private static <E extends Enum<E>> E parameter(

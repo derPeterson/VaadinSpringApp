@@ -1213,9 +1213,23 @@ zeigen Antragstellernachrichten denselben Avatar und den Namen; der gemeinsame
 Avatar-Tooltip zeigt Name und E-Mail zweizeilig. Die Nutzeransicht bleibt unverändert.
 Eine separate native Werkzeugleiste darunter enthält die vorhandenen Aktionen
 „Übernehmen“ rechtsbündig, bei offenen Tickets als primäre Aktion, und
-„Anleitung senden“ mit der unveränderten Vorschaufunktion.
-Der Inhaltsbereich fasst Hinweis, Benachrichtigungsschalter, Verlauf und Editor
-in ihrer bisherigen Reihenfolge zusammen. Die vorhandenen Abschluss- und
+„Anleitung senden“ mit der unveränderten Vorschaufunktion. Links steht der native
+Benachrichtigungsschalter mit der gemeinsamen Klasse `cosmos-config-switch`.
+Die lokale Stitch-Anordnung setzt die Bahn links vor „Beobachten“ mit 8 px Abstand
+am öffentlichen Label-Part. Schriftfarbe, Größe und Gewicht übernimmt der Schalter
+aus der Konfiguration (12 px / 500). Ein nativer Tooltip erklärt die internen
+Benachrichtigungen für neue Ticketnachrichten und die unveränderte Zuständigkeit.
+Öffentliche Parts und der native Eingabeslot halten Label und
+Schalter in derselben Zeile; bei Platzmangel kann die Beschriftung umbrechen.
+Die Leiste bricht bei Platzmangel um.
+Der Inhaltsbereich gliedert die Sicherheitsleitlinie als bestehende Infobox:
+Infoicon in Cyan, „Sicherheitsleitlinie:“ weiß und fett, direkt anschließend die
+Erklärung in Sekundärfarbe ohne erzwungenen Zeilenumbruch.
+Die Verlaufsüberschrift ist blau, der Nachrichten-Zähler bleibt grau. Unter dem
+Verlauf steht nur bei offenen, unzugewiesenen Tickets ein zentrierter kursiver
+Hinweis mit 8 px Abstand zum Verlauf, dass Antworten und Abschließen erst nach
+Übernahme möglich sind.
+Die vorhandenen Abschluss- und
 Antwortbuttons liegen im gemeinsamen Panel-Footer. Werkzeugleiste und Footer
 sind ohne sichtbare Aktionen ausgeblendet; Berechtigungen bleiben unverändert.
 Die lokalen Anordnungsregeln stehen unter `.support-admin-ticket-*` und
@@ -1248,6 +1262,10 @@ Zurücksetzen ändert den Entwurf, Abbrechen und Escape lassen den aktiven Stand
 Ein natives graues Badge am Button zählt aktive Filtergruppen. Aktualisieren und
 Live-Antworten behalten diese Auswahl und vorhandene Antwortentwürfe bei.
 Ein ausdrücklich geöffneter Ticketlink hebt entgegenstehende Listenfilter auf.
+Die native Tab-/Ticketauswahl meldet ihren Zustand an die Adminansicht. Diese hält
+`tab=all`/`tab=recovery` und die öffentliche Ticketnummer ohne Raute in der URL,
+ohne neu zu navigieren. Beim Browser-Refresh werden Tab und Auswahl daraus
+wiederhergestellt; unveränderte Live-Updates schreiben die Adresse nicht erneut.
 Die Filter grenzen ausschließlich bereits berechtigte Admin-Daten ein und verändern
 weder Zuständigkeit noch Status oder die fachliche Zugriffskontrolle.
 Titelschrift und Rahmenstil übernimmt er vom Ticketsystem-Panelkopf;
@@ -1258,9 +1276,16 @@ Eintragsinhalte, Zustandsfarben und Auswahl bleiben unverändert.
 Native Tabs gliedern die Kategorien, ein natives Grid
 zeigt die Anfragen in ihrer tatsächlichen Inhaltshöhe. Ein nativer Scroller begrenzt
 die Listenhöhe ohne geschätzten Leerraum unter den Einträgen; ein weiterer Scroller
-begrenzt den Verlauf. Die linke Spalte erhält mindestens 370 px einschließlich
-Innenabstand. Unter 820 px tatsächlicher Panelbreite stapeln sich beide Bereiche;
+begrenzt den Verlauf. Die Vorgangsliste erhält mindestens 330 px tatsächliche
+Panelbreite. Zwischen Liste und Details liegen 16 px ohne zusätzliche Trennlinie;
+der gemeinsame Arbeitsbereich hat 20 px Innenabstand, auf Smartphones 16 px.
+Unter 820 px tatsächlicher Panelbreite stapeln sich beide Bereiche;
 die Containerabfrage berücksichtigt auch den Platzbedarf der Seitennavigation.
+Ein nativer Iconbutton neben dem Zeitpunkt maximiert das ausgewählte Ticket mit
+Lucide `expand`. Dabei wird nur die Vorgangsliste ausgeblendet; Auswahl, Filter und
+Antwortentwurf bleiben erhalten. `minimize` stellt die geteilte Ansicht wieder her.
+Tooltips und `aria-pressed` erklären den Zustand auch bei Tastaturbedienung. Wird
+die Auswahl aufgehoben, erscheint die Vorgangsliste automatisch wieder.
 Die native Tableiste verwendet `border-box`, reserviert ihre volle Höhe und schließt
 ohne zusätzlichen Inhaltsabstand am Panel ab. Der Auswahlhinweis verwendet ein natives
 `VerticalLayout` mit dem bestehenden `.cosmos-notification-empty`-Stil: mittig,
