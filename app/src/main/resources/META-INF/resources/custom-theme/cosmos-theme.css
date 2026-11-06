@@ -3,19 +3,9 @@
  * Die Reihenfolge der Regeln ist Absicht: spätere/spezifischere Zustände dürfen frühere ergänzen.
  * ::part(name) erreicht die von Vaadin freigegebene Fläche innerhalb einer Komponente. */
 
-:root {
-    scrollbar-color: var(--cosmos-reference-dot) transparent;
-}
-
-:where(*),
-:where(vaadin-app-layout)::part(content),
-:where(vaadin-app-layout)::part(drawer),
-:where(vaadin-dialog)::part(content),
-:where(vaadin-popover)::part(content),
-:where(vaadin-list-box, vaadin-select-list-box)::part(items),
-:where(vaadin-text-area)::part(input-field) {
-    scrollbar-width: thin;
-}
+/* Dieselbe Quelle gestaltet Dokument/öffentliche Parts und den vorhandenen Grid-Einschub. */
+@import url("./cosmos-scrollbars.css");
+@import url("./cosmos-scrollbars.css") lumo_cosmos_scrollbars;
 
 .cosmos-security-warning {
     box-sizing: border-box;
@@ -350,7 +340,7 @@ vaadin-tooltip::part(content) {
  * Ihre Namen und die --_lumo-...-Zuordnung gehören zusammen und bleiben unverändert. */
 
 .cosmos-theme vaadin-grid {
-    --_lumo-vaadin-grid-inject-modules: lumo_mixins_sr-only, lumo_components_grid, lumo_cosmos_grid_colors, lumo_cosmos_grid_hover;
+    --_lumo-vaadin-grid-inject-modules: lumo_mixins_sr-only, lumo_components_grid, lumo_cosmos_grid_colors, lumo_cosmos_grid_hover, lumo_cosmos_scrollbars;
     --_lumo-grid-selected-row-color: var(--cosmos-table-highlight-background);
     --vaadin-grid-cell-background: var(--cosmos-table-row-background);
     background: var(--cosmos-table-row-background);

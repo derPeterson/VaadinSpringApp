@@ -45,10 +45,11 @@
   nur Avatar und grünes „Sie“-/„You“-Badge, sonst „Nicht Zugewiesen“. Der gesamte
   Bearbeiterblock ist rechtsbündig; beide Rollenüberschriften haben keinen Doppelpunkt.
 
-- **Globale Scrollleisten: offen.** Dokument, Wiederherstellungsverlauf und
-  Admin-Filterdialog mit ausreichend Inhalt prüfen. Schmale Scrollleisten und
-  transparente Bahn sollen sichtbar bleiben und sich per Maus, Touch und
-  Tastatur bedienen lassen.
+- **Globale Scrollleisten – verbleibende Bedienfälle: offen.** Dokument,
+  Wiederherstellungsverlauf und Admin-Filterdialog mit ausreichend Inhalt in einem
+  touchfähigen Browserkontext prüfen. Scrollen per Touch muss erhalten bleiben;
+  die systemabhängige Einblendung darf keine Inhalte verdecken. Zusätzlich reale
+  Auswahlmenüs und deren Scrollflächen im Systemkontrast prüfen.
 
 - **2FA-Adminnavigation und Kopftexte: offen.** Im Browser in DE/EN den vollständigen
   übersetzten Namen im Tooltip und die unterschiedlichen Seiten-/Panelhinweise prüfen.

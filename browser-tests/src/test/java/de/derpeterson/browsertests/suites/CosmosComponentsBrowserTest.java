@@ -13,6 +13,7 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.BoundingBox;
+import com.microsoft.playwright.options.ForcedColors;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
@@ -37,6 +38,145 @@ import org.junit.jupiter.api.Test;
 @Tag("browser")
 @Feature("Gemeinsame Cosmos-Komponenten")
 public class CosmosComponentsBrowserTest extends BrowserFixture {
+  @Test
+  @Tag("scrollbar-style")
+  @DisplayName("COMPONENT-06: Globale Scrollleisten teilen Stil und erhalten die native Bedienung")
+  @Description(
+      "Synthetische native Komponenten in der isolierten Anwendung prüfen: Dokument, Chat-Scroller, Grid, TextArea und Dialog erhalten dieselbe Scrollgestaltung. Chatabstände bleiben lokal; horizontales und vertikales Scrollen sowie Systemkontrast bleiben bedienbar.")
+  void globalScrollbarsPreserveNativeScrollingAndLocalChatSpacing() {
+    signIn();
+    page.navigate("/admin?section=support");
+    assertThat(page.locator("#support-ticket-categories")).isVisible();
+    page.evaluate(
+        """
+        async () => {
+          await Promise.all(['vaadin-scroller', 'vaadin-grid', 'vaadin-grid-column',
+            'vaadin-text-area', 'vaadin-dialog'].map(tag => customElements.whenDefined(tag)));
+          const fixture = document.createElement('vaadin-vertical-layout');
+          fixture.id = 'scrollbar-test';
+          fixture.className = 'cosmos-theme cosmos-reference-portal';
+          fixture.style.cssText = 'position:fixed;inset:80px 16px 16px;z-index:100;background:#091120;padding:16px;gap:16px;overflow:auto';
+          const chat = document.createElement('vaadin-scroller');
+          chat.id = 'scrollbar-test-chat';
+          chat.className = 'support-message-scroll';
+          chat.style.cssText = 'height:130px;min-height:130px;width:100%';
+          const thread = document.createElement('vaadin-vertical-layout');
+          thread.className = 'support-message-thread';
+          for (let index = 0; index < 12; index++) {
+            const line = document.createElement('span');
+            line.textContent = `Synthetic message ${index + 1}`;
+            thread.append(line);
+          }
+          chat.append(thread);
+          const grid = document.createElement('vaadin-grid');
+          grid.id = 'scrollbar-test-grid';
+          grid.style.cssText = 'height:130px;min-height:130px;width:100%';
+          const column = document.createElement('vaadin-grid-column');
+          column.header = 'Synthetic rows';
+          column.width = '2000px';
+          column.flexGrow = 0;
+          column.renderer = (root, _column, data) => root.textContent = data.item.label;
+          grid.append(column);
+          grid.items = Array.from({length:30}, (_, index) => ({label:`Row ${index + 1}`}));
+          const field = document.createElement('vaadin-text-area');
+          field.id = 'scrollbar-test-field';
+          field.label = 'Synthetic text';
+          field.style.cssText = 'width:100%;max-height:130px;min-height:130px';
+          field.value = Array.from({length:30}, (_, index) => `Line ${index + 1}`).join('\\n');
+          fixture.append(chat, grid, field);
+          const spacer = document.createElement('div');
+          spacer.id = 'scrollbar-test-spacer';
+          spacer.style.height = '200vh';
+          document.body.append(fixture, spacer);
+        }
+        """);
+    try {
+      for (int width : new int[] {1280, 390}) {
+        page.setViewportSize(width, 900);
+        Locator chat = page.locator("#scrollbar-test-chat");
+        Locator grid = page.locator("#scrollbar-test-grid #table");
+        Locator field = page.locator("#scrollbar-test-field [part=input-field]");
+        for (Locator area : List.of(chat, grid, field)) {
+          assertScrollbarStyleAndMovement(area);
+        }
+        page.waitForCondition(
+            () ->
+                (Boolean)
+                    page.evaluate(
+                        """
+                    () => {
+                      const thread = document.querySelector('#scrollbar-test-chat .support-message-thread');
+                      const grid = document.querySelector('#scrollbar-test-grid');
+                      return getComputedStyle(thread).paddingRight === '23px'
+                        && getComputedStyle(grid).paddingRight === '0px'
+                        && getComputedStyle(document.documentElement, '::-webkit-scrollbar').width
+                          === getComputedStyle(document.documentElement).getPropertyValue('--cosmos-scrollbar-size').trim();
+                    }
+                    """));
+        grid.evaluate("element => element.scrollLeft = 40");
+        assertTrue((Boolean) grid.evaluate("element => element.scrollLeft > 0"));
+        chat.evaluate("element => { element.scrollTop = 0; element.focus(); }");
+        page.keyboard().press("PageDown");
+        page.waitForCondition(() -> (Boolean) chat.evaluate("element => element.scrollTop > 0"));
+        AllurePlaywright.attachScreenshot(
+            "Gemeinsame native Scrollleisten bei " + width + "px", page);
+        page.evaluate(
+            """
+            () => {
+              const dialog = document.createElement('vaadin-dialog');
+              dialog.id = 'scrollbar-test-dialog';
+              dialog.className = 'cosmos-reference-overlay';
+              dialog.setAttribute('theme', 'cosmos');
+              dialog.height = '180px';
+              dialog.width = '280px';
+              dialog.renderer = root => {
+                const content = document.createElement('vaadin-vertical-layout');
+                content.style.minHeight = '600px';
+                content.textContent = 'Synthetic dialog content';
+                root.replaceChildren(content);
+              };
+              document.body.append(dialog);
+              dialog.opened = true;
+            }
+            """);
+        Locator content = page.locator("#scrollbar-test-dialog [part=content]").first();
+        assertScrollbarStyleAndMovement(content);
+        AllurePlaywright.attachScreenshot("Native Dialogscrollleiste bei " + width + "px", page);
+        page.evaluate("document.querySelector('#scrollbar-test-dialog').remove()");
+      }
+      page.evaluate("window.scrollTo(0, 50)");
+      assertTrue((Boolean) page.evaluate("window.scrollY > 0"));
+      page.emulateMedia(new Page.EmulateMediaOptions().setForcedColors(ForcedColors.ACTIVE));
+      assertThat(page.locator("#scrollbar-test-chat")).hasCSS("scrollbar-color", "auto");
+      assertThat(page.locator("#scrollbar-test-chat")).hasCSS("scrollbar-width", "auto");
+    } finally {
+      page.emulateMedia(new Page.EmulateMediaOptions().setForcedColors(ForcedColors.NONE));
+      page.evaluate(
+          "document.querySelectorAll('[id^=scrollbar-test]').forEach(element => element.remove())");
+    }
+  }
+
+  private void assertScrollbarStyleAndMovement(Locator area) {
+    assertThat(area).isVisible();
+    page.waitForCondition(
+        () ->
+            (Boolean)
+                area.evaluate(
+                    """
+                    element => {
+                      const size = getComputedStyle(element).getPropertyValue('--cosmos-scrollbar-size').trim();
+                      return element.scrollHeight > element.clientHeight
+                        && getComputedStyle(element, '::-webkit-scrollbar').width === size
+                        && getComputedStyle(element, '::-webkit-scrollbar-thumb').backgroundColor
+                          === getComputedStyle(document.documentElement, '::-webkit-scrollbar-thumb').backgroundColor;
+                    }
+                    """));
+    area.evaluate("element => element.scrollTop = 0");
+    area.hover();
+    page.mouse().wheel(0, 80);
+    page.waitForCondition(() -> (Boolean) area.evaluate("element => element.scrollTop > 0"));
+  }
+
   @Test
   @DisplayName("COMPONENT-01: Rollenfilter erhält Auswahl und Anzahl in Anlage und Bearbeitung")
   @Description(

@@ -96,6 +96,8 @@ final class BrowserExecutionPlan {
       builder.filters(TagFilter.includeTags("ticket-layout"));
     } else if (suite.equals("two-factor-ticket-panel")) {
       builder.filters(TagFilter.includeTags("ticket-panel-style"));
+    } else if (suite.equals("cosmos-scrollbars")) {
+      builder.filters(TagFilter.includeTags("scrollbar-style"));
     } else if (suite.equals("external-login-settings")) {
       builder.filters(TagFilter.includeTags("provider-settings"));
     }

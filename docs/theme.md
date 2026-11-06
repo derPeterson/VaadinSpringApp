@@ -9,12 +9,18 @@ Portal und Administration. Für Stitch kann die betroffene Ansicht in einer
 isolierten Instanz mit synthetischen Daten als temporärer HTML-Abzug erfasst werden.
 Der frühere Bestand statischer Referenzen liegt im Git-Tag `archiv/html-referenzen`.
 
-Scrollleisten verwenden anwendungsweit den gedeckten Griff aus
-`--cosmos-reference-dot` auf transparenter Bahn. `cosmos-theme.css` setzt die
-schmale native Breite auf Dokument und Scrollflächen sowie auf die öffentlich
-adressierbaren Scrollbereiche von Vaadin. Komponenten mit interner Scrollfläche
-ohne passenden öffentlichen Part, etwa Grid, erben die Farbe und behalten die
-native Breite.
+Scrollleisten verwenden anwendungsweit `cosmos-scrollbars.css`: transparente Bahn,
+gedeckter runder Griff, bei Hover und Ziehen Cyan, ohne Richtungspfeile. Die zentralen
+`--cosmos-scrollbar-*`-Tokens in `cosmos-tokens.css` gelten auch am Dokument:
+Breite/Höhe 6 px, Griff `#475569`, Hover `#38bdf8`, Bahn transparent. Browser ohne
+WebKit-Scrollselektoren verwenden die native schmale Breite und dieselben Farben.
+Im erzwungenen Systemkontrast bleiben native Farben und Breite erhalten.
+`cosmos-theme.css` importiert die gemeinsame Quelle für Dokument, normale
+Scrollcontainer und öffentliche Vaadin-Parts. Grid verwendet dieselbe unveränderte
+Quelle über seinen bereits vorhandenen Lumo-Einschub; private Element-IDs sind
+nicht Teil der Gestaltung. Scrollfunktionen und Innenabstände werden nicht geändert.
+Nur Chatverläufe reservieren zusätzlich Platz für die Scrollbahn und Abstand zu den
+Sprechblasenspitzen; diese lokalen Regeln bleiben in `cosmos-mfa-confirmation.css`.
 
 Systemkennzeichnungen verwenden die gemeinsamen Tokens `--cosmos-system-*` aus
 `cosmos-tokens.css`: Akzent `#a855f7`, Fläche `#241638`, Rahmen `#a855f759`
@@ -727,6 +733,7 @@ Basis: `app/src/main/resources/META-INF/resources/custom-theme/`.
 | typography.css | Lokale Inter-Schrift und Schriftfamilie |
 | cosmos-tokens.css | Palette, Schrift-/Abstandsskalen, Maße, Rahmen, Flächen, Verläufe und Schatten |
 | cosmos-theme.css | Gemeinsame Cards, Formulare, Buttons, Grids und Systemmeldungen |
+| cosmos-scrollbars.css | Gemeinsame native Scrollleisten für Dokument, Container und Vaadin-Scrollflächen |
 | cosmos-shell.css | Appkopf, Inhaltsrahmen, Benutzermenü und Overlays |
 | cosmos-admin.css | Adminnavigation, Panels, Konfiguration und Dialogstandards |
 | cosmos-notifications.css | Inbox, Vorschau, Detail, Versand und Archiv |
@@ -1529,8 +1536,8 @@ Erstellung verwendet Lucides `message-square-plus`, Statuswechsel Tablers
 `status-change`. Beide lokalen SVGs werden als native `SvgIcon` mit 16 × 16 px
 und dem vorhandenen blauen Akzent unter `.support-history-event-icon` angezeigt.
 Panelkopf, Werkzeugleiste und Aktionsfooter bleiben davon unabhängig.
-Der native Verlaufsscroller verwendet lokal eine transparente Bahn mit gedecktem
-Griff, in Chromium/WebKit 6 px breit und bei Hover/Ziehen akzentblau. Andere Browser
-verwenden die native schmale Breite. Die reservierte Scrollbahn verhindert einen
+Der native Verlaufsscroller auf Antragseite und in der Administration verwendet
+die globale Scrollgestaltung. Lokal bleiben `.support-message-scroll` und
+`.support-message-thread` für die Geometrie zuständig. Die reservierte Scrollbahn verhindert einen
 Breitensprung. Rechts bleiben einschließlich der 11-px-Sprechblasenspitze 12 px
 Abstand zur Bahn; Form und Rahmen der Sprechblasen bleiben erhalten.

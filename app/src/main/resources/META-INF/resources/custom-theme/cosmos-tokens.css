@@ -3,9 +3,17 @@
  * --lumo-* sind Vaadins Farbnamen; --cosmos-* benennen unsere konkreten Bausteine.
  * var(--name) übernimmt einen anderen Wert. So folgt z.B. der Dialogheader zunächst
  * dem Tabellenheader, kann hier aber auch eine eigene Farbe bekommen.
- * Die Werte entsprechen dem freigegebenen Design. Kein :root: andere Themes bleiben unabhängig.
+ * Nur Scrollleistenwerte gelten auch am Dokument; die übrigen Theme-Werte bleiben unabhängig.
  * Popups werden in eigene DOM-Bereiche verschoben und erhalten deshalb dieselben Werte
  * über ihr ausdrücklich gesetztes theme=cosmos. Anleitung: docs/theme.md. */
+
+/* Die Dokument-Scrollleiste liegt außerhalb der Cosmos-Komponenten. */
+:root {
+    --cosmos-scrollbar-size: 6px;
+    --cosmos-scrollbar-thumb: #475569;
+    --cosmos-scrollbar-thumb-hover: #38bdf8;
+    --cosmos-scrollbar-track: transparent;
+}
 
 .cosmos-theme,
 vaadin-notification-card[theme~="cosmos"],
