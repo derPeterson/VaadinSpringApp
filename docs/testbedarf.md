@@ -2,6 +2,44 @@
 
 ## Browser-Tests
 
+- **Vorgangsfilter: offen, wartend auf Browserfreigabe.** In DE/EN auf Desktop und
+  Smartphone den Filterbutton in der separaten Werkzeugleiste prüfen: native Status-
+  Mehrfachwahl, Zuständigkeit, Anwenden, Entwurf zurücksetzen und Abbruch über Button,
+  Escape oder Außenklick. Aktive Gruppen zählen, keine Treffer korrekt anzeigen,
+  Filter beim Aktualisieren und Live-Update erhalten. Antwortentwürfe beim Ausblenden
+  des ausgewählten Vorgangs erhalten und Ticketlinks trotz entgegenstehender Filter öffnen.
+
+- **Automatische OTP-Bestätigung: offen, wartend auf Browserfreigabe.** Beide
+  sechsstelligen Felder (Einrichtung und Anmeldung) in DE/EN durch Tippen,
+  Einfügen und Autofill vervollständigen: Nach der sechsten Ziffer genau eine
+  Prüfung, bei Teilcodes keine. Gruppierte und durch das Add-on gekürzte eingefügte
+  Codes berücksichtigen. Nach Ablehnung muss erneute Eingabe möglich sein;
+  Bestätigungsbutton bleibt bedienbar. JUnit prüft die serverseitige Ereignisbehandlung.
+
+- **Ticketzähler, Listenabschluss und Anwesenheitsauswahl: wartend auf Browserfreigabe.**
+  In DE/EN auf Desktop und Smartphone „1 Anfrage“/„mehrere Anfragen“ von den
+  Nachrichtenzählern unterscheiden. Die Adminliste soll unter einem Eintrag bündig
+  abschließen und bei vielen Einträgen im begrenzten Scroller bedienbar bleiben.
+  Den rechten Anwesenheitspfeil mit Maus und Tastatur auf-/zuklappen, den Erhalt des
+  Zustands beim Sprachwechsel und die unveränderte Statuswahl prüfen.
+  Die Ticket-Tabs außerdem mit der Anbieterleiste vergleichen: gemeinsame Höhe,
+  Schrift, aktive Oberkante und unterbrochene untere Trennlinie, auch bei schmaler Breite.
+  Der große Ticketsystem-Seitenkopf muss beim Bereichswechsel und Sprachwechsel
+  im gemeinsamen Seitenrahmen erhalten bleiben; Panel- und Seitenbeschreibung sind unterschiedlich.
+  Die Admin-Ticketkarten mit langem Betreff/Bearbeiternamen prüfen: Metadaten oben,
+  Betreff auf voller Breite, Bearbeiter und Zeit in der Fußzeile; Status- und
+  Ungelesen-Badges bleiben sichtbar. Die Nutzerkarten behalten ihre bisherige Anordnung.
+  Den quadratischen Aktualisieren-Iconbutton samt übersetztem Tooltip prüfen.
+  Den Bearbeiteravatar mit Name/E-Mail per Hover und Tastatur prüfen; grünes
+  „Sie“/„You“-Badge mit Rahmen
+  darf nur beim eigenen Bearbeiterkonto erscheinen. Unzugewiesene Tickets zeigen ihren Text kursiv.
+  Der gezielte Lauf `two-factor-ticket-layout` prüft Mindestbreite und Umbruch nach
+  Panelbreite, vollständige Tabs sowie den mittigen Auswahlhinweis mit `list`.
+  Der Nachtest des neu gewählten Icons und des Adminlistentitels „Vorgänge“ / „Cases“ ist offen.
+  Dabei den gemeinsamen Panelrahmen um Kopf und Liste prüfen: List-Icon
+  und Titel im Kopf, Aktualisieren rechts in der separaten Werkzeugleiste darunter,
+  Einträge ohne doppelten äußeren Rahmen.
+
 - **Globale Scrollleisten: offen.** Dokument, Wiederherstellungsverlauf und
   Admin-Filterdialog mit ausreichend Inhalt prüfen. Schmale Scrollleisten und
   transparente Bahn sollen sichtbar bleiben und sich per Maus, Touch und
@@ -27,9 +65,9 @@
   MFA-07 deckt bereits Live-Antworten in beide Richtungen, den Erhalt des
   Admin-Entwurfs, die Sichtbarkeit interner Vermerke, die Admin-Tabs und den
   Sicherheitshinweis auf Desktop und Smartphone ab.
-  Nach der Bearbeitertext-Anpassung außerdem „Von Ihnen übernommen“ und den
-  Namen eines anderen Bearbeiters in der Adminliste und im Detail prüfen.
-  Die Nutzeransicht darf keine Bearbeiternamen erhalten. Im Benachrichtigungsdialog
+  Die Bearbeiteravatare in Adminliste und Detail mit „Sie“/„You“ nur beim eigenen
+  Konto prüfen. Namens-/E-Mail-Tooltips müssen in beiden Ticketansichten zweizeilig sein.
+  Die Nutzeransicht darf keine Bearbeiternamen oder -adressen erhalten. Im Benachrichtigungsdialog
   entfällt bei Ticketmeldungen die Kontosicherheitsaktion, bei Kontoänderungen bleibt
   sie verfügbar. JUnit deckt die Text- und Datenverträge ab, der Browsernachtest ist offen.
 

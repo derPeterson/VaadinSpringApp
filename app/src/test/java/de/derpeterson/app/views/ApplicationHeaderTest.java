@@ -20,6 +20,7 @@ import static org.mockito.Mockito.when;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -162,6 +163,22 @@ class ApplicationHeaderTest {
     UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
     assertNotNull(menu);
     assertTrue(menu.getPopover().getThemeNames().contains("cosmos"));
+    Details presence =
+        (Details)
+            tree(menu.getPopover())
+                .filter(c -> c.getId().orElse("").equals("portal-menu-presence-details"))
+                .findFirst()
+                .orElseThrow();
+    Button presenceToggle =
+        (Button)
+            tree(menu.getPopover())
+                .filter(c -> c.getId().orElse("").equals("portal-menu-presence-toggle"))
+                .findFirst()
+                .orElseThrow();
+    assertTrue(presence.isOpened());
+    assertTrue(presenceToggle.getText().isEmpty());
+    presenceToggle.click();
+    assertFalse(presence.isOpened());
     assertTrue(
         tree(menu.getPopover())
             .noneMatch(
@@ -176,6 +193,10 @@ class ApplicationHeaderTest {
             .orElseThrow();
     LanguageChangeEvent.fire(
         ui, initialLocale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
+    assertFalse(presence.isOpened());
+    assertEquals(texts.getPortalPresenceHeading(), presenceToggle.getAriaLabel().orElseThrow());
+    presenceToggle.click();
+    assertTrue(presence.isOpened());
     assertEquals(texts.getBaseManageAccountButton(), settings.getAriaLabel().orElseThrow());
     Button admin = menuButton(menu, "manageApplicationButton");
     assertEquals(role != null && role.isAdministrative(), admin != null);

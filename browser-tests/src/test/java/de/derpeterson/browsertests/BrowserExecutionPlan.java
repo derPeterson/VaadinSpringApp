@@ -90,6 +90,10 @@ final class BrowserExecutionPlan {
       builder.filters(TagFilter.includeTags("confirmation-screens"));
     } else if (suite.equals("two-factor-configuration")) {
       builder.filters(TagFilter.includeTags("two-factor-configuration"));
+    } else if (suite.equals("two-factor-instructions")) {
+      builder.filters(TagFilter.includeTags("recovery-instructions"));
+    } else if (suite.equals("two-factor-ticket-layout")) {
+      builder.filters(TagFilter.includeTags("ticket-layout"));
     } else if (suite.equals("external-login-settings")) {
       builder.filters(TagFilter.includeTags("provider-settings"));
     }

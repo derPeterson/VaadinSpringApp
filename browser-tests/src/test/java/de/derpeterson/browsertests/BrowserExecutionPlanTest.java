@@ -34,6 +34,8 @@ class BrowserExecutionPlanTest {
         "two-factor-setup",
         "two-factor-confirmation",
         "two-factor-configuration",
+        "two-factor-instructions",
+        "two-factor-ticket-layout",
         "external-login-settings"
       })
   void focusedSuitesSelectOnlyTheirExistingJourneys(String suite) {
@@ -55,6 +57,10 @@ class BrowserExecutionPlanTest {
               Set.of("requiredIntroductionReusesFreshPasswordWithoutGrantingPortalAccess");
           case "two-factor-confirmation" -> Set.of("confirmationRecoveryAndHelpUseNativeControls");
           case "two-factor-configuration" -> Set.of("superadminOnlyConfiguration");
+          case "two-factor-instructions" ->
+              Set.of("recoverySupportRemainsContactInsteadOfFactorReset");
+          case "two-factor-ticket-layout" ->
+              Set.of("administrativeTicketLayoutKeepsTabsAndCardsUnclipped");
           default ->
               Set.of(
                   "administrativeProviderSettings",

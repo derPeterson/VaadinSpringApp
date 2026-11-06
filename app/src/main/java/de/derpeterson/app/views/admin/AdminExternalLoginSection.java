@@ -8,6 +8,7 @@ import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TABS;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
 
 import com.vaadin.flow.component.Component;
@@ -121,6 +122,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
     Div header = new Div(symbol, heading, statuses);
     header.addClassNames(PANEL_HEADER, "provider-panel-header");
     providers.setId("admin-provider-tabs");
+    providers.addClassName(PANEL_TABS);
     providers.setWidthFull();
     providers.addThemeVariants(TabSheetVariant.NO_PADDING);
     for (String provider : ExternalProviderSettings.PROVIDERS) {

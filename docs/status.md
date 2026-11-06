@@ -26,6 +26,16 @@ Alle isolierten Testumgebungen wurden vollständig abgebaut. Dieser Nachtest ers
 die Gesamtrunde nicht; die ticketbezogenen Browserprüfungen und die gemeinsame
 Sichtabnahme bleiben offen.
 
+Die gegliederte Wiederherstellungsanleitung mit eigener Nachrichtenart und
+aufklappbarer Sprechblase bestand 32 gezielte Anwendungs-JUnit-Fälle sowie
+15 Prüfungen der Browser-Testauswahl. Die Suite `two-factor-instructions`
+bestand mit je zwei Fällen in DE/EN am unveränderten Image
+`sha256:c9d2c36ed5325c835b528d6351b3c113f09caf3199ba2d37d076c4ef935ef82a`.
+Sie prüft Vorschau, vier Schritte, Sicherheitshinweise, Empfängerkontakt,
+aufklappbaren Verlauf und Erhalt des Öffnungszustands beim Aktualisieren auf
+Desktop und Smartphone. Die isolierten Testumgebungen sind abgebaut.
+Die Anleitung ist noch nicht gemeinsam gestalterisch abgenommen.
+
 ## Ausgeführte Prüfungen
 
 | Prüfung | Beobachtetes Ergebnis |

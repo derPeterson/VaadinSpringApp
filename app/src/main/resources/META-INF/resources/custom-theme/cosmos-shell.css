@@ -644,7 +644,7 @@ vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var
     .account-avatar-dialog.cosmos-reference-overlay .cosmos-dialog-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* Referenzmenü: Statusoptionen direkt sichtbar, Sprache und Fußaktionen kompakt. */
+/* Benutzermenü: aufklappbare Statusoptionen, Sprache und Fußaktionen kompakt. */
 .cosmos-reference-overlay.user-popover-content,
 .cosmos-reference-overlay .portal-user-menu-body {
     display: block;
@@ -690,9 +690,12 @@ vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var
     border-top: 1px solid var(--cosmos-reference-border);
 }
 
-.portal-menu-status-options .portal-menu-section {
-    margin: 0 8px 8px;
-}
+.portal-menu-presence-header { box-sizing: border-box; padding: 0 8px; }
+.portal-menu-presence-header .portal-menu-section { margin: 0; }
+.portal-menu-presence-details { margin: 0; padding: 0; border: 0; }
+.portal-menu-presence-details > vaadin-details-summary,
+.portal-menu-presence-details:not([opened]) { display: none; }
+.portal-menu-presence-details::part(content) { padding: 8px 0 0; }
 
 .cosmos-reference-overlay .portal-status-option {
     display: flex;
@@ -982,7 +985,8 @@ vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item 
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub::part(link) { height:30.5px; padding:7px 9px; font:400 11px/16.5px Inter,sans-serif; color:var(--cosmos-reference-secondary); }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub::part(content) { height:30.5px; min-height:30.5px; margin-inline-start:0; border:0; border-radius:7px; }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(content)::before { display:none; }
-.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(toggle-button) { width:24px; height:32px; color:var(--cosmos-reference-accent); }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(toggle-button) { width:24px; height:32px; --vaadin-icon-size:16px; color:var(--cosmos-reference-accent); }
+.cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item::part(toggle-button)::before { font-size:16px; }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub>vaadin-icon { width:14px; height:14px; }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub.cosmos-nav-item--active::part(content) { background:#008ecc1a; }
 .cosmos-reference-portal .cosmos-side-navigation vaadin-side-nav-item.cosmos-nav-item--sub.cosmos-nav-item--active::part(link) { color:var(--cosmos-reference-accent); font-weight:500; }

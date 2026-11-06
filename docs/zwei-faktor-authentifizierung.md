@@ -35,7 +35,11 @@ die Eingabe. Der Flow-Hostwert bleibt leer; der Schlüssel gelangt dadurch nicht
 in den dauerhaften Vaadin-UI-Zustand.
 Die erste Bestätigung zeigt sechs Kästchen für einen gemeinsamen sechsstelligen
 Code. Ein vollständiger Code kann auf einmal eingefügt werden, auch mit
-trennenden Leerzeichen. Die Aktivierung erfolgt über den Bestätigungsbutton.
+trennenden Leerzeichen. Sobald alle sechs Ziffern eingegeben, eingefügt oder per
+Autofill übernommen sind, wird automatisch geprüft. Das gilt bei Einrichtung und
+Anmeldebestätigung; der Bestätigungsbutton bleibt zusätzlich verfügbar. Unvollständige
+Codes werden nicht automatisch abgesendet. Nach einem falschen Code kann erneut
+eingegeben und bestätigt werden.
 
 Unter **Mein Konto → Sicherheit → Portalzugang** stehen Einrichtung,
 Authenticatorwechsel, neue Ersatzcodes und Entfernen zur Verfügung. Eine
@@ -230,6 +234,15 @@ Zustellung. Ein fehlgeschlagener Queueauftrag bleibt wiederholbar. Die Anleitung
 enthält keine neuen Codes. Freier Tickettext, Name, Geburtsdatum und ein E-Mail-Link
 sind keine Wiederherstellungsnachweise. Ohne Authenticator und gültigen Ersatzcode
 wird die Sperre nicht über das Ticketsystem aufgehoben.
+
+Die Vorschau gliedert die Anleitung in vier nummerierte Schritte, den gelben
+Sicherheitshinweis und eine separate Information zu den Grenzen der Hilfe.
+Im Nachrichtenverlauf erscheint sie als kompakte Sprechblase mit aufklappbaren
+Details. Der Öffnungszustand bleibt beim Aktualisieren erhalten. Vorschau und
+Verlauf zeigen denselben gespeicherten Text in der Kontosprache des Empfängers.
+Die Nachrichtenart `RECOVERY_INSTRUCTIONS` kennzeichnet ausschließlich die vom
+Dienst versendete Anleitung; kopierter Text in einer normalen Antwort bleibt
+eine normale Nachricht. Das aktuelle Schema enthält dafür `support_replies.kind`.
 
 Der [Betreiber-Notfallweg](betrieb/2fa-notfall.md) betrifft ausschließlich den
 Betreiber mit Server-/Datenbankzugriff. Er ist keine Supportantwort und wird nicht

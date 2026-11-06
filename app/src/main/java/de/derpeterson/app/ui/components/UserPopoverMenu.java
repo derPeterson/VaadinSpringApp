@@ -8,6 +8,7 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
@@ -53,6 +54,7 @@ public class UserPopoverMenu {
   private final Span languageHeading = new Span();
   private final Map<UserStatus, Button> statusButtons = new EnumMap<>(UserStatus.class);
   private Span presenceHeading;
+  private DetailsToggleButton presenceToggle;
   private final Actions actions;
   private final Consumer<UserStatus> statusIconConsumer;
   private final Popover userPopover;
@@ -147,11 +149,13 @@ public class UserPopoverMenu {
     return header;
   }
 
-  private Div createStatusOptions() {
+  private VerticalLayout createStatusOptions() {
     presenceHeading = new Span();
     presenceHeading.addClassName("portal-menu-section");
-    Div choices = new Div(presenceHeading);
-    choices.addClassName("portal-menu-status-options");
+    presenceHeading.setId("portal-menu-presence-heading");
+    VerticalLayout choices = new VerticalLayout();
+    choices.setPadding(false);
+    choices.setSpacing(false);
     for (UserStatus status : UserStatus.values()) {
       Button option = new Button();
       option.addClickListener(event -> handleUserStatusChange(status));
@@ -161,7 +165,30 @@ public class UserPopoverMenu {
       statusButtons.put(status, option);
       choices.add(option);
     }
-    return choices;
+    Details details = new Details("", choices);
+    details.setId("portal-menu-presence-details");
+    details.setOpened(true);
+    details.setWidthFull();
+    details.addClassName("portal-menu-presence-details");
+    details.getElement().setAttribute("aria-labelledby", presenceHeading.getId().orElseThrow());
+    presenceToggle =
+        new DetailsToggleButton(
+            messageProperties, details, messageProperties.getPortalPresenceHeading());
+    presenceToggle.setId("portal-menu-presence-toggle");
+    presenceToggle.setText("");
+    HorizontalLayout header = new HorizontalLayout(presenceHeading, presenceToggle);
+    header.setWidthFull();
+    header.setPadding(false);
+    header.setSpacing(false);
+    header.setAlignItems(FlexComponent.Alignment.CENTER);
+    header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+    header.addClassName("portal-menu-presence-header");
+    VerticalLayout section = new VerticalLayout(header, details);
+    section.setPadding(false);
+    section.setSpacing(false);
+    section.setWidthFull();
+    section.addClassName("portal-menu-status-options");
+    return section;
   }
 
   private Div createLanguageChoice() {
@@ -389,6 +416,7 @@ public class UserPopoverMenu {
   private void refreshTexts() {
     languageHeading.setText(messageProperties.getPortalLanguageHeading());
     presenceHeading.setText(messageProperties.getPortalPresenceHeading());
+    presenceToggle.setAriaLabel(messageProperties.getPortalPresenceHeading());
     refreshStatusButtons();
     menuPresence.setText(messageProperties.getUserStatusLabel(currentStatus));
     menuPresence.getStyle().set("--account-presence-color", currentStatus.getColor());

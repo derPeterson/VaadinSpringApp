@@ -235,7 +235,7 @@ public class OverlayUserIcon extends Div {
     String tooltipText = "";
     if (statusSelection == null) {
       if (identityTooltipEmail != null) {
-        tooltipText = name.isEmpty() ? identityTooltipEmail : name + " · " + identityTooltipEmail;
+        tooltipText = name.isEmpty() ? identityTooltipEmail : name + "\n" + identityTooltipEmail;
       } else {
         tooltipText = showStatus ? statusLabel : label;
       }

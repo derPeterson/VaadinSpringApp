@@ -53,8 +53,11 @@ public final class TwoFactorPage {
       page.locator("#two-factor-submit").click();
       enrollCurrent(page, email);
     } else {
-      enterCode(page, nextCode(page, email));
-      page.locator("#two-factor-submit").click();
+      String value = nextCode(page, email);
+      enterCode(page, value);
+      if (value.length() > 6) {
+        page.locator("#two-factor-submit").click();
+      }
     }
     page.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
   }
@@ -110,7 +113,6 @@ public final class TwoFactorPage {
                 href);
     SEEDS.put(email, key);
     page.locator("#two-factor-enrollment-code input").fill(totp(page, email));
-    page.locator("#two-factor-submit").click();
     captureCodes(page, email);
   }
 

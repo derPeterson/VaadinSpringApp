@@ -285,7 +285,7 @@ kein HSTS ausgeliefert. Der normale IDE-Start ist nur lokal erreichbar.
 
 ### LAN-Test auf Handy und Tablet
 
-Den lokalen IDE-Server stoppen und in IntelliJ **Application HTTPS – LAN-Test**
+Den lokalen IDE-Server stoppen und in IntelliJ **Application HTTPS – LAN**
 starten. Der Startdialog fragt die private IPv4 des PCs ab, die `ipconfig`
 am aktiven Netzwerkadapter zeigt. Die Adresse muss diesem Rechner zugewiesen
 sein. Die Konfiguration verwendet diese IP als einzige HTTPS-Origin auf Port

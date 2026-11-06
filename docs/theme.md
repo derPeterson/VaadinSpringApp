@@ -187,7 +187,9 @@ Die Seitennavigation bleibt linksbündig. Hauptzeilen verwenden 12 px bei Gewich
 500 (aktiv 600), 34 px Höhe und 8 px Iconabstand. Unterpunkte verwenden 11 px bei
 Gewicht 400 (aktiv 500), 30,5 px Höhe und 28 px Einrückung. Gemeinsame Regeln
 verwenden `.cosmos-side-navigation`, nicht globale Buttonzentrierung.
-Klickbare Einträge und Unterpunkt-Toggles verwenden den Handzeiger. Die Hoverfläche
+Klickbare Einträge und Unterpunkt-Toggles verwenden den Handzeiger.
+Der Navigationspfeil ist 16 × 16 px groß, seine Klickfläche bleibt 24 × 32 px.
+Die Hoverfläche
 ist `--cosmos-reference-button-hover` (#152238). Die aktive blaue Fläche bleibt
 bei Hover erhalten; Hauptpunkte tragen die freigegebene seitliche Akzentmarkierung.
 
@@ -250,8 +252,12 @@ Ein alter Erstaufbau, eine ausgeblendete Schließen-Kopfzeile und eine anschlie�
 entfernte Menü-Statusauswahl entfallen. Besucher verwenden `PublicPageComponent`;
 Anmeldung und Registrierung gehören nicht in dieses Benutzermenü.
 Die gemeinsame Statusauswahl am Kontobild und die Speicher-/Fehlerlogik bleiben erhalten.
-Das Benutzermenü zeigt die vier Statusoptionen direkt und eine kompakte Sprachwahl;
-sein Popover richtet sich unter dem rechten Rand des Avatar-Auslösers aus
+Das Benutzermenü zeigt die vier Statusoptionen zunächst aufgeklappt und eine kompakte Sprachwahl.
+Rechts neben „Anwesenheitsstatus“ schaltet der gemeinsame native `DetailsToggleButton`
+ohne Beschriftung die nativen `Details` auf und zu. Sein zugänglicher Name benennt
+den Bereich; der blaue Pfeil und `aria-expanded` folgen dem Öffnungszustand.
+Sprachwechsel erhalten den Klappzustand. Die Auswahl- und Speicherlogik bleibt erhalten.
+Das Popover richtet sich unter dem rechten Rand des Avatar-Auslösers aus
 (`BOTTOM_END`). Mobil reserviert ein zusätzlicher Abstand von 16 px Platz für die
 innere AppLayout-Scrollbar; die Breite berücksichtigt diesen Abstand auch auf schmalen Displays.
 Die separate Avatar-Statusauswahl bleibt ein natives Select mit Referenzmaßen.
@@ -1072,6 +1078,23 @@ Vaadin den bereits ausgewählten Feldwert ebenso aktualisiert wie die Auswahllis
 
 ## Zwei-Faktor-Bereiche
 
+Die gemeinsame Klasse `cosmos-panel-tabs` (`CosmosClasses.PANEL_TABS`) gestaltet
+die nativen Ticket-`Tabs` und die `TabSheet`-Leisten der Anmeldeanbieter sowie der
+2FA-Rollen. Die gemeinsamen Regeln stehen in `cosmos-provider-settings.css`:
+48 px Höhe, mindestens 168 px Breite auf Desktop, abgerundete obere Ecken und
+eine blaue Oberkante am aktiven Tab. Die untere Trennlinie bleibt außerhalb des
+aktiven Tabs sichtbar. Unter 600 px teilen sich die Tabs den verfügbaren Platz.
+Der Ticketfilter behält seine bestehenden Kategorien und seine Auswahlfunktion.
+Im „Ticketsystem“ entfällt die Linie zwischen Panelkopf und Tableiste.
+Der vorhandene `CosmosSectionHeaderComponent` liefert wie in den anderen
+Adminbereichen den großen Seitenkopf mit „Administration / Ticketsystem“,
+Titel und allgemeinem Erklärungstext. `AdminView` ordnet ihn im gemeinsamen
+Seitenrahmen an. Der separate Panel-Untertitel erklärt die Auswahl und Bearbeitung
+eines Tickets, ohne einen Nachrichtenverlauf für jede Ticketart vorauszusetzen.
+Lucides `messages-square` steht am Panelkopf, in der Navigation, am Dashboardzugang
+und vor „Alle Tickets“. Der Tab „Wiederherstellung“ nutzt wie die Benutzerhilfe
+Tablers `lock-question`. Die nativen Tabicons sind 16 px groß und akzentblau.
+
 Die administrative 2FA-Konfiguration gruppiert die neun Regeln je Rolle in
 Zugang und Administration, Konto- und Sicherheitsdaten sowie Authenticator und
 Anmeldeanbieter. Das native `TabSheet` verwendet die Tableiste der Anmeldeanbieter
@@ -1092,9 +1115,10 @@ Benutzerhilfe folgen der ausgewählten Stitch-Variante A. Die Bestätigung verwe
 native `Tabs` im vorhandenen 42-px-Methodenstil: Authenticator-Code mit demselben
 sechsstelligen `OtpField`-Add-on wie bei der Einrichtung oder ein normales natives
 `TextField` für den vollständigen Ersatzcode. Ersatzcode-Eingaben verwenden Space
-Mono und zeigen vier Gruppen mit je acht Zeichen als Platzhalter. Ein vollständig
-eingefügter sechsstelliger Authenticator-Code löst in beiden OTP-Feldern dieselbe
-Prüfung wie der Footerbutton aus. Die gewählte Methode bleibt beim Sprachwechsel
+Mono und zeigen vier Gruppen mit je acht Zeichen als Platzhalter. Ein vollständiger
+sechsstelliger Authenticator-Code löst in beiden OTP-Feldern über das native
+`OtpField.addCompleteListener`-Ereignis dieselbe Prüfung wie der Footerbutton aus,
+auch beim Tippen und Autofill. Der Button bleibt verfügbar. Die gewählte Methode bleibt beim Sprachwechsel
 erhalten; sensible Eingaben werden dabei geleert. Die beiden
 Hilfsaktionen liegen in „Zugangsprobleme und Alternativen“ unter der Trennlinie.
 Vaadin `Details` ist anfangs geschlossen. Die Anmeldung und die Ersatzcode-Ausgabe
@@ -1117,8 +1141,10 @@ Betreff in der aktuellen Oberflächensprache, Aktualisierungszeit und gerahmtem
 Statusbadge. In der Liste steht die Vorgangsnummer links, vertikal mittig neben
 Betreff und Zeitstempel. Die ausgewählte Vorgangsnummer und die Nummer im
 Verlaufskopf sind primärblau. Die übrigen Nummern nutzen die Standardtextfarbe.
-Offene Vorgänge und Vorgänge in Bearbeitung haben blaue Badges, abgeschlossene
-graue und vom Nutzer geschlossene grüne. Die Liste nutzt denselben Grundton
+Offene Vorgänge verwenden in Nutzer- und Adminansicht die Bernsteinfarben des
+Sicherheitshinweises (`--cosmos-security-warning-*`). Vorgänge in Bearbeitung
+haben blaue Badges, abgeschlossene graue und vom Nutzer geschlossene grüne.
+Die Liste nutzt denselben Grundton
 wie der Nachrichtenverlauf und die gemeinsame Tabellenfarbe für Hover und Auswahl.
 Der Nachrichtenverlauf mit Vorgangsnummer und Anzahl nutzt einen nativen
 `Scroller`. Eigene Nachrichten stehen rechts
@@ -1134,8 +1160,10 @@ Beide Abschnittsüberschriften stehen in Versalien. Ein graues natives Badge zei
 rechts über der Anfragenliste die Zahl der Vorgänge und am Verlauf die Zahl seiner
 Nachrichten. Vorgangsnummern, Zeitstempel und der Zeichenzähler stehen in Space Mono.
 Ein Mittelpunkt trennt Datum und Uhrzeit und steht im Verlauf auch vor dem Zeitstempel.
-Der rahmenlose Button
-„Aktualisieren“ steht am Verlauf oder an der Anfragenübersicht. „Anfrage schließen“
+Der quadratische native Iconbutton „Aktualisieren“ mit Rahmen und übersetztem Tooltip
+steht am Verlauf oder an der Anfragenübersicht. Seine Höhe und Breite folgen wie
+in der Benutzerverwaltung `--cosmos-control-height`; Zustände übernehmen die
+gemeinsamen Buttonregeln. „Anfrage schließen“
 zeigt Lucides grünes `circle-check`-Icon.
 Der Hinweis zum Identitätsnachweis nutzt
 den gerahmten Infostil mit blauem Icon aus dem Faktorwechsel. Mit demselben Abstand
@@ -1158,14 +1186,72 @@ Zeichenzähler rechts neben der Beschriftung nutzen sie die vorhandenen
 `cosmos-mfa.css` gleicht die Eingabefläche an die Benachrichtigungen an und
 erlaubt das vertikale Ziehen bei fester Breite.
 
-Die Adminansicht „Tickets“ übernimmt denselben Nachrichtenverlauf und den
+Die Adminansicht „Ticketsystem“ übernimmt denselben Nachrichtenverlauf und den
 gelben Sicherheitshinweis. In der Administration stehen Anfragen links und
-Antworten rechts. Interne Vermerke haben eine eigene Kennzeichnung. Unter
-`.support-admin-workspace` gliedern native Tabs die Kategorien, ein natives Grid
-zeigt die Anfragen und ein Scroller begrenzt den Verlauf. Die Spalten stapeln sich
-auf schmalen Geräten. In `cosmos-mfa-confirmation.css` sind diese Regeln auf den
+Antworten rechts. Interne Vermerke haben eine eigene Kennzeichnung.
+Die Ticketkarten verwenden native `VerticalLayout`- und
+`HorizontalLayout`-Komponenten: Nummer und Status mit Ungelesen-Zähler oben,
+Betreff über die volle Breite, darunter Bearbeiter links und Zeitpunkt rechts.
+Eine dezente Linie trennt diese Fußzeile. Die Texte können bei Platzmangel umbrechen;
+die bisherige zweispaltige Anordnung der Nutzertickets bleibt erhalten.
+Die Bearbeiterinfo der Admin-Karten und Ticketdetails verwendet denselben `OverlayUserIcon`
+mit 24 px wie die Anfrageansicht. Der gemeinsame Identitätstooltip zeigt oben den
+Namen und darunter die E-Mail-Adresse. Beim eigenen Bearbeiterkonto
+steht daneben ein grünes natives „Sie“-/„You“-Badge mit Rahmen und den bestehenden
+`--cosmos-reference-success-*`-Farben (`.support-assignee-self`).
+Unzugewiesene Tickets zeigen „Nicht Zugewiesen“ / „Unassigned“ kursiv.
+Die Identitätsdaten des Bearbeiters
+liefert der Dienst ausschließlich im Adminzugang, niemals in der Nutzeransicht.
+Unter `.support-admin-workspace` heißt die administrative Liste „Vorgänge“ / „Cases“.
+Die Liste und ihr Kopf stehen gemeinsam in einem nativen `CosmosCardComponent`
+mit den vorhandenen Panelklassen. Der Kopf verwendet `HorizontalLayout`,
+links `list` im gemeinsamen `cosmos-panel-icon`-Rahmen und den Titel
+mit `cosmos-panel-title`. Darunter steht eine eigene native `HorizontalLayout`-
+Werkzeugleiste mit dem vorhandenen Aktualisieren-Button rechts, vor dem ersten Eintrag.
+Links öffnet ein nativer Filterbutton den bestehenden `AdminSidePanel`-Baustein.
+`SupportTicketFilterPanel` verwendet eine native vertikale `CheckboxGroup` für die
+Statusmehrfachwahl und eine `RadioButtonGroup` für alle, eigene oder nicht zugewiesene
+Vorgänge. Leere Statuswahl bedeutet alle Status. Innerhalb der Statuswahl gilt Oder,
+zwischen Status und Zuständigkeit Und. Erst Anwenden übernimmt den Filter;
+Zurücksetzen ändert den Entwurf, Abbrechen und Escape lassen den aktiven Stand bestehen.
+Ein natives graues Badge am Button zählt aktive Filtergruppen. Aktualisieren und
+Live-Antworten behalten diese Auswahl und vorhandene Antwortentwürfe bei.
+Ein ausdrücklich geöffneter Ticketlink hebt entgegenstehende Listenfilter auf.
+Die Filter grenzen ausschließlich bereits berechtigte Admin-Daten ein und verändern
+weder Zuständigkeit noch Status oder die fachliche Zugriffskontrolle.
+Titelschrift und Rahmenstil übernimmt er vom Ticketsystem-Panelkopf;
+der kompakte Vorgänge-Kopf verwendet lokal 12 px umlaufenden Innenabstand.
+Der Iconrahmen ist lokal auf 32 × 32 px begrenzt, das List-Symbol darin auf 16 × 16 px.
+Der äußere Panelrahmen umschließt die Liste ohne zusätzlichen Gridrahmen;
+Eintragsinhalte, Zustandsfarben und Auswahl bleiben unverändert.
+Native Tabs gliedern die Kategorien, ein natives Grid
+zeigt die Anfragen in ihrer tatsächlichen Inhaltshöhe. Ein nativer Scroller begrenzt
+die Listenhöhe ohne geschätzten Leerraum unter den Einträgen; ein weiterer Scroller
+begrenzt den Verlauf. Die linke Spalte erhält mindestens 340 px einschließlich
+Innenabstand. Unter 820 px tatsächlicher Panelbreite stapeln sich beide Bereiche;
+die Containerabfrage berücksichtigt auch den Platzbedarf der Seitennavigation.
+Die native Tableiste verwendet `border-box`, reserviert ihre volle Höhe und schließt
+ohne zusätzlichen Inhaltsabstand am Panel ab. Der Auswahlhinweis verwendet ein natives
+`VerticalLayout` mit dem bestehenden `.cosmos-notification-empty`-Stil: mittig,
+32-px-Lucide-Icon `list` und kurzer Ticketauswahl-Überschrift.
+In `cosmos-mfa-confirmation.css` sind diese Regeln auf den
 Ticketarbeitsbereich begrenzt. Die Sprechblasen nutzen die gemeinsamen
 Nachrichtenklassen und orientieren sich am jeweiligen Absender.
+
+`RecoveryInstructionsComponent` stellt die feste Anleitung mit nativen
+`HorizontalLayout`-/`VerticalLayout`-Komponenten und vier nummerierten `Badge`-
+Komponenten dar. Warnung und Information nutzen die vorhandenen Hinweisbausteine.
+Die lokale Gestaltung liegt unter `.support-instruction-*` in
+`cosmos-mfa-confirmation.css`. Die kompakte Anleitung im Verlauf verwendet ein
+natives `Details` und den gemeinsamen `DetailsToggleButton`. Auch die bestehenden
+2FA-Details verwenden diesen Button mit der unveränderten Klasse
+`.two-factor-details-toggle`. Deren gemeinsame Gestaltung liegt in `cosmos-theme.css`,
+damit der Anwesenheitsschalter denselben Stil im Benutzermenü nutzt.
+Pfeil und Zugänglichkeitszustand werden gemeinsam
+aktualisiert. Die feste Textvorlage enthält sieben durch Leerzeilen getrennte
+Abschnitte: Kopf, vier Schritte, Warnung und Grenze. Kopf und Schritte enthalten
+jeweils eine Überschrift und einen Zeilenumbruch vor der Beschreibung. Der Text
+wird ausschließlich als Text gerendert, niemals als Nachrichten-HTML.
 
 `cosmos-mfa.css` begrenzt die neue Gestaltung auf `.two-factor-view`,
 `.cosmos-mfa-settings` und `.two-factor-account-entry`. Panel-, Button- und
@@ -1228,8 +1314,9 @@ in beiden Tabs nur zur App-Codeeingabe auf.
 
 Die erste Codebestätigung verwendet das freigegebene Flowing-Code-Add-on `OtpField`
 mit sechs sichtbaren Kästchen und einem gemeinsamen Eingabefeld. Einfügen,
-Auswählen, Rücktaste, Pfeiltasten und Autofill übernimmt der Baustein; bestätigt
-wird weiterhin ausdrücklich über den vorhandenen Button. Längere Ersatzcode-
+Auswählen, Rücktaste, Pfeiltasten und Autofill übernimmt der Baustein. Die sechste
+Ziffer löst automatisch die Bestätigung aus; der vorhandene Button bleibt zusätzlich
+bedienbar. Längere Ersatzcode-
 und E-Mail-Code-Felder bleiben unverändert. Die Gestaltung ist auf
 `.two-factor-otp` in `cosmos-mfa.css` begrenzt und nutzt die öffentlichen Parts
 und `--fc-otp-field-*`-Variablen.

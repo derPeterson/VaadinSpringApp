@@ -1,8 +1,7 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Application HTTPS – LAN-Test" type="Application" factoryName="Application" singleton="true">
+  <configuration default="false" name="Application HTTPS – LAN" type="Application" factoryName="Application" singleton="true">
     <option name="MAIN_CLASS_NAME" value="de.derpeterson.app.development.HttpsDevelopmentApplication" />
     <module name="app" />
-    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
     <option name="PROGRAM_PARAMETERS" value="--spring.profiles.active=https --server.port=8080" />
     <shortenClasspath name="ARGS_FILE" />
     <option name="VM_PARAMETERS" value="&quot;-Dvaadin.project.basedir=$PROJECT_DIR$/app&quot; &quot;-Dhttps.dev.lan-host=$Prompt:Private IPv4-Adresse des Rechners$&quot;" />

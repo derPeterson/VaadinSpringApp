@@ -35,6 +35,63 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class TwoFactorBrowserTest extends BrowserFixture {
   @TempDir Path profile;
 
+  @Test
+  @Tag("ticket-layout")
+  @DisplayName("MFA-19: Ticketliste, Panel-Tabs und Auswahlhinweis passen zur verfügbaren Breite")
+  void administrativeTicketLayoutKeepsTabsAndCardsUnclipped() {
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    page.navigate("/recovery-help");
+    page.locator("#support-reply textarea")
+        .fill("Synthetische erste Anfrage für die Layoutprüfung.");
+    UiActions.complete(page, () -> page.locator("#support-create").click());
+    UiActions.complete(page, () -> page.locator("#support-close").click());
+    page.locator("#support-reply textarea")
+        .fill("Synthetische offene Anfrage für die Layoutprüfung.");
+    UiActions.complete(page, () -> page.locator("#support-create").click());
+    page.navigate("/admin?section=support");
+    Locator categories = page.locator("#support-ticket-categories");
+    Locator hint = page.locator("#support-select-ticket");
+    assertThat(hint).containsText(texts.getSupportSelectTicket());
+    assertThat(hint.locator("[data-lucide=list]")).isVisible();
+    UiActions.complete(page, () -> categories.locator("vaadin-tab").nth(1).click());
+    assertThat(hint.locator("[data-lucide=list]")).isVisible();
+    assertThat(page.locator(".support-admin-ticket-card")).hasCount(2);
+    for (int width : new int[] {1600, 1280, 1024, 390}) {
+      page.setViewportSize(width, 1000);
+      page.waitForCondition(
+          () ->
+              (Boolean)
+                  page.evaluate(
+                      """
+                      () => {
+                        const body = document.querySelector('#support-panel > .account-panel-body').getBoundingClientRect();
+                        const tabs = document.querySelector('#support-ticket-categories').getBoundingClientRect();
+                        const queue = document.querySelector('.support-admin-queue').getBoundingClientRect();
+                        const detail = document.querySelector('.support-admin-detail-column').getBoundingClientRect();
+                        const hint = document.querySelector('#support-select-ticket').getBoundingClientRect();
+                        const tabItems = [...document.querySelectorAll('#support-ticket-categories vaadin-tab')];
+                        const tabsFit = tabs.left >= body.left - 1 && tabs.right <= body.right + 1
+                            && tabs.height >= 48 && tabItems.every(item => {
+                              const rect = item.getBoundingClientRect();
+                              return rect.top >= tabs.top - 1 && rect.bottom <= tabs.bottom + 1;
+                            });
+                        const columnsFit = body.width >= 820
+                            ? queue.width >= 340 && detail.left >= queue.right - 1
+                            : detail.top >= queue.bottom - 1 && Math.abs(detail.width - queue.width) < 2;
+                        const centered = Math.abs(hint.left + hint.width / 2 - detail.left - detail.width / 2) < 2
+                            && Math.abs(hint.top + hint.height / 2 - detail.top - detail.height / 2) < 2;
+                        return tabsFit && columnsFit && centered
+                            && document.documentElement.scrollWidth <= window.innerWidth;
+                      }
+                      """));
+      AllurePlaywright.attachScreenshot(
+          "Ticketübersicht und Auswahlhinweis bei " + width + "px", page);
+    }
+  }
+
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @Tag("setup-screen")
@@ -172,13 +229,18 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(slots.first()).hasAttribute("active", "");
     input.press("ArrowRight");
     assertThat(slots.nth(1)).hasAttribute("active", "");
-    // Überlange Inhalte werden begrenzt, lösen aber keine automatische Bestätigung aus.
+    // Auch eingefügte, vom Add-on auf sechs Ziffern begrenzte Codes werden sofort geprüft.
     for (String copiedCode : new String[] {"1234567", "123 456 7"}) {
       enrollment.evaluate("value => navigator.clipboard.writeText(value)", copiedCode);
       input.press("ControlOrMeta+A");
       input.press("ControlOrMeta+V");
-      assertThat(input).hasValue("123456");
-      assertThat(slots).hasText(new String[] {"1", "2", "3", "4", "5", "6"});
+      assertThat(otp).hasAttribute("invalid", "");
+      assertThat(input).hasValue("");
+      assertThat(
+              enrollment
+                  .locator("vaadin-notification-card:not([closing])")
+                  .filter(new Locator.FilterOptions().setHasText(texts.getTwoFactorInvalidCode())))
+          .isVisible();
       assertThat(input).hasCSS("color", "rgba(0, 0, 0, 0)");
       assertTrue(
           (Boolean)
@@ -281,8 +343,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(page.locator("#two-factor-code")).hasAttribute("invalid", "");
     assertThat(page.locator("vaadin-notification-card:not([closing])"))
         .containsText(texts.getTwoFactorInvalidCode());
-    TwoFactorPage.enterCode(page, TwoFactorPage.nextCode(page, email));
-    page.locator("#two-factor-submit").click();
+    String nextCode = TwoFactorPage.nextCode(page, email);
+    TwoFactorPage.enterCode(page, nextCode);
+    if (nextCode.length() > 6) {
+      page.locator("#two-factor-submit").click();
+    }
     assertThat(page).hasURL(Pattern.compile(".*/home$"));
   }
 
@@ -478,6 +543,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @ValueSource(ints = {1280, 390})
   @DisplayName(
       "MFA-07: Admin übernimmt eine eingeschränkte Hilfsanfrage und sendet die geprüfte Anleitung")
+  @Tag("recovery-instructions")
   void recoverySupportRemainsContactInsteadOfFactorReset(int width) {
     page.setViewportSize(width, 900);
     LoginPage login = new LoginPage(page);
@@ -551,15 +617,36 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       admin.locator("#support-instructions").click();
       assertThat(admin.locator("#support-instruction-preview")).hasJSProperty("opened", true);
       assertThat(admin.locator("#support-instruction-preview"))
-          .containsText(texts.getSupportRecoveryInstructions());
+          .containsText(texts.getSupportRecoveryInstructions().lines().findFirst().orElseThrow());
+      assertThat(admin.locator("#support-instruction-preview .support-instruction-step"))
+          .hasCount(4);
+      assertThat(admin.locator("#support-instruction-preview .cosmos-security-warning"))
+          .isVisible();
       admin.evaluate(
           "async () => { await Promise.all(document.getAnimations().filter(animation => animation.effect?.getTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => {}))); }");
+      if (width == 390) {
+        admin.setViewportSize(width, 1200);
+      }
       AllurePlaywright.attachScreenshot("Geprüfte Hilfeantwort ohne neue Zugangscodes", admin);
+      admin.setViewportSize(width, 900);
       admin.locator("#support-instruction-preview-submit").click();
       assertThat(admin.locator("vaadin-notification-card:not([closing])"))
           .containsText(texts.getSupportQueued());
       new MailpitInbox(administrator.context)
           .awaitSecurityMail(email, texts.getSupportRecoverySubject());
+      Locator guide = page.locator(".support-instruction-message");
+      assertThat(guide).containsText(texts.getSupportInstructionMessageTitle());
+      assertThat(guide.locator(".support-instruction-details")).not().hasAttribute("opened", "");
+      guide.scrollIntoViewIfNeeded();
+      AllurePlaywright.attachScreenshot("Anleitung kompakt im Nachrichtenverlauf", page);
+      UiActions.complete(page, () -> guide.locator(".support-instruction-toggle").click());
+      assertThat(guide.locator(".support-instruction-details")).hasAttribute("opened", "");
+      assertThat(guide.locator(".support-instruction-step")).hasCount(4);
+      assertThat(guide.locator(".cosmos-security-warning")).isVisible();
+      UiActions.complete(page, () -> page.locator("#support-reload").click());
+      assertThat(guide.locator(".support-instruction-details")).hasAttribute("opened", "");
+      guide.scrollIntoViewIfNeeded();
+      AllurePlaywright.attachScreenshot("Anleitung aufgeklappt im Nachrichtenverlauf", page);
       UiActions.complete(admin, () -> admin.locator("#support-close").click());
       new UserMenu(admin).signOut();
     }
@@ -871,9 +958,9 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     new UserMenu(page).selectTestLanguage();
     assertThat(page.locator("#two-factor-code")).hasJSProperty("length", 6);
     assertThat(page.locator("#two-factor-code [part=slot]")).hasCount(6);
-    page.locator("#two-factor-code input").fill("123456");
+    page.locator("#two-factor-code input").fill("12345");
     assertThat(page.locator("#two-factor-code [part=slot]"))
-        .hasText(new String[] {"1", "2", "3", "4", "5", "6"});
+        .hasText(new String[] {"1", "2", "3", "4", "5", "•"});
     page.locator("#two-factor-recovery-tab").click();
     String recoveryCode = "12345678-12345678-12345678-12345678";
     TwoFactorPage.enterCode(page, recoveryCode);

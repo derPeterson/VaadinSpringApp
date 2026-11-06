@@ -2,6 +2,8 @@ package de.derpeterson.app.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -20,6 +22,11 @@ import org.hibernate.annotations.OnDeleteAction;
 @Getter
 @Setter
 public class SupportReplyEntity {
+  public enum Kind {
+    MESSAGE,
+    RECOVERY_INSTRUCTIONS
+  }
+
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
@@ -36,6 +43,10 @@ public class SupportReplyEntity {
 
   @Column(nullable = false)
   private boolean supportAuthor;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private Kind kind = Kind.MESSAGE;
 
   @Column(nullable = false, length = 2000)
   private String body;

@@ -3,6 +3,7 @@ package de.derpeterson.app.service;
 import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.SupportReplyEntity;
+import de.derpeterson.app.model.SupportReplyEntity.Kind;
 import de.derpeterson.app.model.SupportTicketEntity;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
 import de.derpeterson.app.model.SupportTicketEntity.Type;
@@ -63,7 +64,7 @@ public class SupportTicketService {
       Status status,
       Instant updatedAt,
       Long assignee,
-      String assigneeName,
+      UserIdentity assigneeIdentity,
       boolean instructionSent,
       long unreadMessages,
       boolean subscribed,
@@ -75,17 +76,19 @@ public class SupportTicketService {
     SUPPORT
   }
 
-  public record Reply(Long id, String body, boolean internal, Instant createdAt, ReplyAuthor author)
+  public record Reply(
+      Long id, String body, boolean internal, Instant createdAt, ReplyAuthor author, Kind kind)
       implements java.io.Serializable {}
 
-  public record RequesterIdentity(String firstName, String lastName, String email) {}
+  public record UserIdentity(String firstName, String lastName, String email)
+      implements java.io.Serializable {}
 
   public record LiveView(
       Long viewerId,
       List<Ticket> tickets,
       Ticket selected,
       List<Reply> messages,
-      RequesterIdentity requester) {}
+      UserIdentity requester) {}
 
   public SupportTicketBroadcaster events() {
     return events;
@@ -96,14 +99,14 @@ public class SupportTicketService {
   }
 
   @Transactional(readOnly = true)
-  public RequesterIdentity requesterIdentity(HttpServletRequest request) {
+  public UserIdentity requesterIdentity(HttpServletRequest request) {
     return requesterIdentity(authorization.owner(request).id());
   }
 
-  private RequesterIdentity requesterIdentity(Long id) {
+  private UserIdentity requesterIdentity(Long id) {
     UserEntity user =
         users.findById(id).orElseThrow(() -> new AccessDeniedException("Account unavailable"));
-    return new RequesterIdentity(user.getFirstName(), user.getLastName(), user.getEmail());
+    return new UserIdentity(user.getFirstName(), user.getLastName(), user.getEmail());
   }
 
   @Transactional(readOnly = true)
@@ -150,7 +153,7 @@ public class SupportTicketService {
     Ticket selected = selectTicket(values, selectedId, administration);
     List<Reply> messages =
         selected == null ? List.of() : conversation(selected.id(), administration);
-    RequesterIdentity requester =
+    UserIdentity requester =
         !administration && !messages.isEmpty() ? requesterIdentity(owner.id()) : null;
     return new LiveView(owner.id(), values, selected, messages, requester);
   }
@@ -263,7 +266,7 @@ public class SupportTicketService {
     ticket.setUpdatedAt(ticket.getCreatedAt());
     ticket.setPublicUpdatedAt(ticket.getCreatedAt());
     tickets.saveAndFlush(ticket);
-    append(ticket, user, body, ReplyAuthor.REQUESTER, false);
+    append(ticket, user, body, ReplyAuthor.REQUESTER, false, Kind.MESSAGE);
     notifications.recordRecoveryRequest(ticketNumber(ticket.getId()));
     AfterCommitLog.info(
         log,
@@ -288,7 +291,8 @@ public class SupportTicketService {
                     reply.getBody(),
                     reply.isInternal(),
                     reply.getCreatedAt(),
-                    reply.isSupportAuthor() ? ReplyAuthor.SUPPORT : ReplyAuthor.REQUESTER))
+                    reply.isSupportAuthor() ? ReplyAuthor.SUPPORT : ReplyAuthor.REQUESTER,
+                    reply.getKind()))
         .toList();
   }
 
@@ -333,7 +337,8 @@ public class SupportTicketService {
         users.getReferenceById(actor.id()),
         bounded(text, MESSAGE_LIMIT),
         administration ? ReplyAuthor.SUPPORT : ReplyAuthor.REQUESTER,
-        internal);
+        internal,
+        Kind.MESSAGE);
     return view(ticket, administration);
   }
 
@@ -411,7 +416,13 @@ public class SupportTicketService {
                 "",
                 "NOTICE",
                 texts.getSupportNoUnlock())));
-    append(ticket, users.getReferenceById(actor.id()), body, ReplyAuthor.SUPPORT, false);
+    append(
+        ticket,
+        users.getReferenceById(actor.id()),
+        body,
+        ReplyAuthor.SUPPORT,
+        false,
+        Kind.RECOVERY_INSTRUCTIONS);
     ticket.setInstructionSentAt(Instant.now());
     tickets.saveAndFlush(ticket);
     AfterCommitLog.info(log, "Recovery instructions queued: ticketId={}", id);
@@ -472,7 +483,8 @@ public class SupportTicketService {
       UserEntity author,
       String body,
       ReplyAuthor role,
-      boolean internal) {
+      boolean internal,
+      Kind kind) {
     if (replies.countFor(ticket.getId()) >= 50) {
       throw new IllegalStateException("Ticket conversation limit reached");
     }
@@ -480,6 +492,7 @@ public class SupportTicketService {
     reply.setTicket(ticket);
     reply.setAuthor(author);
     reply.setSupportAuthor(role == ReplyAuthor.SUPPORT);
+    reply.setKind(kind);
     reply.setBody(body);
     reply.setInternal(internal);
     reply.setCreatedAt(Instant.now());
@@ -511,13 +524,10 @@ public class SupportTicketService {
       boolean allowed,
       boolean administration) {
     UserEntity assignee = ticket.getAssignee();
-    String assigneeName = null;
+    UserIdentity assigneeIdentity = null;
     if (administration && assignee != null) {
-      assigneeName =
-          (Objects.toString(assignee.getFirstName(), "")
-                  + " "
-                  + Objects.toString(assignee.getLastName(), ""))
-              .strip();
+      assigneeIdentity =
+          new UserIdentity(assignee.getFirstName(), assignee.getLastName(), assignee.getEmail());
     }
     return new Ticket(
         ticket.getId(),
@@ -527,7 +537,7 @@ public class SupportTicketService {
         ticket.getStatus(),
         updatedAt,
         ticket.getAssignee() == null ? null : ticket.getAssignee().getId(),
-        assigneeName,
+        assigneeIdentity,
         ticket.getInstructionSentAt() != null,
         unread,
         subscribed && allowed,

@@ -110,6 +110,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     header.addClassNames(CosmosClasses.PANEL_HEADER, "mfa-settings-header");
     TabSheet tabs = new TabSheet();
     tabs.setId("two-factor-role-tabs");
+    tabs.addClassName(CosmosClasses.PANEL_TABS);
     tabs.setWidthFull();
     tabs.addThemeVariants(TabSheetVariant.NO_PADDING);
     for (RoleType role : RoleType.values()) {

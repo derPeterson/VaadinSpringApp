@@ -99,7 +99,7 @@ public class AdminView extends IsAuthenticatedBaseView {
 
   @org.springframework.beans.factory.annotation.Autowired
   void configureSupport(SupportTicketService support) {
-    supportNavItem = createNavigationItem(AppIcon.MESSAGE, AdminSection.SUPPORT, null);
+    supportNavItem = createNavigationItem(AppIcon.MESSAGES, AdminSection.SUPPORT, null);
     supportNavItem.setLabel(messageProperties.getSupportTitle());
     sideNavigation.addItem(supportNavItem);
     supportSection = new SupportTicketsComponent(messageProperties, support, request, true);

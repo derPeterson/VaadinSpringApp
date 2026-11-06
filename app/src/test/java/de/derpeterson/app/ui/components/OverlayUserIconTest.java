@@ -16,6 +16,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.server.StreamResourceRegistry;
 import com.vaadin.flow.server.VaadinSession;
@@ -91,6 +92,18 @@ class OverlayUserIconTest {
   @MethodSource("names")
   void initialsUseOneUnicodeCharacterPerName(String first, String last, String expected) {
     assertEquals(expected, OverlayUserIcon.initialsFor(first, last));
+  }
+
+  @Test
+  void identityTooltipKeepsNameAndEmailOnSeparateLines() {
+    OverlayUserIcon avatar = new OverlayUserIcon(messages, null, null, IconSize.PIXEL_24);
+    avatar.setName("Alex", "Beispiel");
+    avatar.showIdentityTooltip("alex@example.test");
+    Tooltip tooltip = (Tooltip) ReflectionTestUtils.getField(avatar, "tooltip");
+    assertNotNull(tooltip);
+    assertEquals("Alex Beispiel\nalex@example.test", tooltip.getText());
+    avatar.setName(null, null);
+    assertEquals("alex@example.test", tooltip.getText());
   }
 
   @ParameterizedTest

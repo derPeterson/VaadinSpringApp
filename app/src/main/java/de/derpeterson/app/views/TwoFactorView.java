@@ -53,6 +53,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.ui.components.AccountPanelComponent;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.DetailsToggleButton;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import jakarta.annotation.security.PermitAll;
@@ -149,6 +150,7 @@ public final class TwoFactorView extends VerticalLayout
     code.getElement().setAttribute("autocomplete", "one-time-code");
     configureOtp(enrollmentCode, "two-factor-enrollment-code");
     configureOtp(confirmationCode, "two-factor-code");
+    confirmationCode.setAutofocus(true);
     recoverySaved.setId("two-factor-codes-saved");
     recoverySaved.addValueChangeListener(event -> updateRecoveryActions());
     cancel.setId("two-factor-cancel");
@@ -186,22 +188,20 @@ public final class TwoFactorView extends VerticalLayout
     field.setRequiredIndicatorVisible(true);
     field.setValueChangeMode(ValueChangeMode.ON_CHANGE);
     field.addClassName("two-factor-otp");
-    field
-        .getElement()
-        .addEventListener(
-            "paste",
-            event -> {
-              // Sechs ASCII-Ziffern, die das Add-on bereits in den Feldwert übernommen hat.
-              if (field.isAttached()
-                  && submit.isEnabled()
-                  && field.getValue().matches("[0-9]{6}")) {
-                submit();
-              }
-            })
-        .setFilter(
-            // Leerraum und Bindestriche sind Gruppierungszeichen aus Authenticator-Apps.
-            "event.defaultPrevented && /^[0-9]{6}$/.test(element.value)"
-                + " && event.clipboardData?.getData('text').replace(/[\\s-]/g, '') === element.value");
+    field.addCompleteListener(
+        event -> {
+          // Genau sechs ASCII-Ziffern; veraltete Ereignisse nach Leeren oder Methodenwechsel
+          // ignorieren.
+          if (event.isFromClient()
+              && field.isAttached()
+              && field.isVisible()
+              && submit.isVisible()
+              && submit.isEnabled()
+              && field.getValue().matches("[0-9]{6}")
+              && field.getValue().equals(event.getValue())) {
+            submit();
+          }
+        });
     String otpStylesheetPath = request.getContextPath() + "/custom-theme/cosmos-mfa-otp.css";
     field.addAttachListener(
         event ->
@@ -350,24 +350,8 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private Button detailsToggle(Details details, String id, String topic) {
-    Button toggle =
-        new Button(
-            texts.getBaseDetailsButton(),
-            details.isOpened() ? AppIcon.ANGLE_DOWN.create() : AppIcon.ANGLE_RIGHT.create());
+    Button toggle = new DetailsToggleButton(texts, details, topic);
     toggle.setId(id);
-    toggle.setIconAfterText(true);
-    toggle.addClassName("two-factor-details-toggle");
-    toggle.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    toggle.getElement().setAttribute("aria-controls", details.getId().orElseThrow());
-    toggle.getElement().setAttribute("aria-expanded", Boolean.toString(details.isOpened()));
-    toggle.setAriaLabel(topic + ": " + texts.getBaseDetailsButton());
-    toggle.addClickListener(event -> details.setOpened(!details.isOpened()));
-    details.addOpenedChangeListener(
-        event -> {
-          toggle.setIcon(
-              event.isOpened() ? AppIcon.ANGLE_DOWN.create() : AppIcon.ANGLE_RIGHT.create());
-          toggle.getElement().setAttribute("aria-expanded", Boolean.toString(event.isOpened()));
-        });
     return toggle;
   }
 

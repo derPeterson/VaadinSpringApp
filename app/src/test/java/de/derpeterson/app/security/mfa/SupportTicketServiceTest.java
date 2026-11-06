@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.model.RoleEntity;
+import de.derpeterson.app.model.SupportReplyEntity.Kind;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -34,6 +35,7 @@ import de.derpeterson.app.service.SupportTicketService;
 import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
+import de.derpeterson.app.service.SupportTicketService.UserIdentity;
 import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.websocket.SupportTicketBroadcaster;
 import jakarta.persistence.EntityManager;
@@ -105,12 +107,14 @@ class SupportTicketServiceTest {
         AccessDeniedException.class, () -> service.conversation(foreign, ticket.id(), false));
     assertThrows(AccessDeniedException.class, () -> service.list(owner, true));
     Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
-    assertEquals("Support Fixture", claimed.assigneeName());
+    UserIdentity expectedAssignee =
+        new UserIdentity("Support", "Fixture", authorization.owner(administrator).email());
+    assertEquals(expectedAssignee, claimed.assigneeIdentity());
     assertEquals(
-        "Support Fixture", ticketFor(otherAdministrator, ticket.id(), true).assigneeName());
-    assertNull(ticketFor(owner, ticket.id(), false).assigneeName());
+        expectedAssignee, ticketFor(otherAdministrator, ticket.id(), true).assigneeIdentity());
+    assertNull(ticketFor(owner, ticket.id(), false).assigneeIdentity());
     assertNull(
-        service.liveView(bindLiveSession(owner), false, ticket.id()).selected().assigneeName());
+        service.liveView(bindLiveSession(owner), false, ticket.id()).selected().assigneeIdentity());
     Ticket changed =
         service.reply(
             administrator, claimed.id(), claimed.version(), "Interne Prüfung", true, true);
@@ -376,12 +380,19 @@ class SupportTicketServiceTest {
     String preview = service.instructionPreview(administrator, claimed.id());
     assertTrue(preview.contains("Ersatzcode"));
     Ticket sent = service.sendInstructions(administrator, claimed.id(), claimed.version());
+    List<Reply> messages = service.conversation(owner, claimed.id(), false);
+    assertEquals(Kind.RECOVERY_INSTRUCTIONS, messages.getLast().kind());
+    assertEquals(preview, messages.getLast().body());
+    assertTrue(preview.length() <= SupportTicketService.MESSAGE_LIMIT);
+    Ticket copiedText =
+        service.reply(administrator, sent.id(), sent.version(), preview, false, true);
+    assertEquals(Kind.MESSAGE, service.conversation(owner, claimed.id(), false).getLast().kind());
     verify(queue).addAddressedNotification(any(), eq(user.getEmail()), any(), any());
     assertTrue(sent.instructionSent());
     assertThrows(
         AccessDeniedException.class,
-        () -> service.sendInstructions(administrator, sent.id(), sent.version()));
-    service.close(administrator, sent.id(), sent.version());
+        () -> service.sendInstructions(administrator, copiedText.id(), copiedText.version()));
+    service.close(administrator, copiedText.id(), copiedText.version());
     assertFalse(authorization.state(authorization.owner(owner)).enrolled());
   }
 

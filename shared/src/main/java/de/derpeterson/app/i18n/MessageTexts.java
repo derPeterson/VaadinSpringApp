@@ -24,6 +24,14 @@ public class MessageTexts {
     return getTranslation("support.inboxDescription");
   }
 
+  public String getSupportPageDescription() {
+    return getTranslation("support.pageDescription");
+  }
+
+  public String getSupportYou() {
+    return getTranslation("support.you");
+  }
+
   public String getSupportAllTickets() {
     return getTranslation("support.allTickets");
   }
@@ -199,14 +207,6 @@ public class MessageTexts {
     return getTranslation("support.unassigned");
   }
 
-  public String getSupportAssigned(String name) {
-    return getFormattedTranslation("support.assigned", name);
-  }
-
-  public String getSupportAssignedToYou() {
-    return getTranslation("support.assignedToYou");
-  }
-
   public String getSupportEmpty() {
     return getTranslation("support.empty");
   }
@@ -219,10 +219,44 @@ public class MessageTexts {
     return getTranslation("support.existingRequests");
   }
 
+  public String getSupportCases() {
+    return getTranslation("support.cases");
+  }
+
+  public String getSupportFilterDescription() {
+    return getTranslation("support.filter.description");
+  }
+
+  public String getSupportFilterStatus() {
+    return getTranslation("support.filter.status");
+  }
+
+  public String getSupportFilterStatusHint() {
+    return getTranslation("support.filter.statusHint");
+  }
+
+  public String getSupportFilterAssignment() {
+    return getTranslation("support.filter.assignment");
+  }
+
+  public String getSupportFilterMine() {
+    return getTranslation("support.filter.mine");
+  }
+
+  public String getSupportFilterEmpty() {
+    return getTranslation("support.filter.empty");
+  }
+
   public String getSupportMessageCount(int count) {
     return count == 1
         ? getTranslation("support.oneMessage")
         : getFormattedTranslation("support.messageCount", count);
+  }
+
+  public String getSupportRequestCount(int count) {
+    return count == 1
+        ? getTranslation("support.oneRequest")
+        : getFormattedTranslation("support.requestCount", count);
   }
 
   public String getSupportMessageSupport() {
@@ -231,6 +265,10 @@ public class MessageTexts {
 
   public String getSupportRecoveryInstructions() {
     return getTranslation("support.recoveryInstructions");
+  }
+
+  public String getSupportInstructionMessageTitle() {
+    return getTranslation("support.instructionMessageTitle");
   }
 
   private final UnaryOperator<String> lookup;

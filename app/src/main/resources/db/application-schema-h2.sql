@@ -273,6 +273,7 @@ create table if not exists support_replies (
  ticket_id bigint not null references support_tickets(id) on delete cascade,
  author_id bigint references users(id) on delete set null,
  support_author boolean not null,
+ kind enum ('MESSAGE','RECOVERY_INSTRUCTIONS') not null,
  body varchar(2000) not null,
  internal boolean not null,
  created_at timestamp(6) with time zone not null
