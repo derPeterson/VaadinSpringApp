@@ -406,15 +406,18 @@ class TwoFactorFlowViewTest {
         assertInstanceOf(VerticalLayout.class, find(component, "support-select-ticket"));
     assertTrue(hint.hasClassName("cosmos-notification-empty"));
     assertTrue(hint.isVisible());
-    assertEquals(texts.getSupportSelectTicket(), hint.getElement().getTextRecursively());
-    SvgIcon icon = assertInstanceOf(SvgIcon.class, hint.getComponentAt(0));
+    assertEquals(
+        texts.getSupportNoTicketSelected() + texts.getSupportSelectTicket(),
+        hint.getElement().getTextRecursively());
+    HorizontalLayout iconFrame = assertInstanceOf(HorizontalLayout.class, hint.getComponentAt(0));
+    SvgIcon icon = assertInstanceOf(SvgIcon.class, iconFrame.getComponentAt(0));
     assertEquals(AppIcon.LIST.getSource(), icon.getSrc());
     assertEquals(
         texts.getSupportCases(),
         find(component, "support-ticket-grid").getElement().getAttribute("aria-label"));
     Tabs categories = (Tabs) find(component, "support-ticket-categories");
     categories.setSelectedIndex(1);
-    icon = assertInstanceOf(SvgIcon.class, hint.getComponentAt(0));
+    icon = assertInstanceOf(SvgIcon.class, iconFrame.getComponentAt(0));
     assertEquals(AppIcon.LIST.getSource(), icon.getSrc());
   }
 

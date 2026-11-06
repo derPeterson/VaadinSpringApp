@@ -39,6 +39,8 @@
   Dabei den gemeinsamen Panelrahmen um Kopf und Liste prüfen: List-Icon
   und Titel im Kopf, Aktualisieren rechts in der separaten Werkzeugleiste darunter,
   Einträge ohne doppelten äußeren Rahmen.
+  Nach der Stitch-Übernahme die 370-px-Mindestbreite und den mittigen Leerzustand
+  mit gerahmtem List-Icon, eigener Überschrift und sekundärem Hinweis nachprüfen.
 
 - **Globale Scrollleisten: offen.** Dokument, Wiederherstellungsverlauf und
   Admin-Filterdialog mit ausreichend Inhalt prüfen. Schmale Scrollleisten und

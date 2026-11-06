@@ -190,7 +190,7 @@
 .support-admin-workspace #support-panel .cosmos-panel-meta:empty { display:none; }
 .support-admin-columns {
   display:grid;
-  grid-template-columns:minmax(340px, 1fr) minmax(0, 1.7fr);
+  grid-template-columns:minmax(370px, 1fr) minmax(0, 1.7fr);
   align-items:stretch;
 }
 .support-admin-queue,.support-admin-detail-column {
@@ -216,7 +216,11 @@
   color:var(--cosmos-reference-secondary);
   font:400 12px/20px Inter,sans-serif;
 }
-.support-admin-no-selection { min-height:280px; }
+.support-admin-no-selection { min-height:280px; gap:8px; }
+#support-select-ticket > .cosmos-panel-icon { width:56px; height:56px; flex:none; margin-bottom:8px; }
+#support-select-ticket > .cosmos-panel-icon > vaadin-icon { width:24px; height:24px; }
+.support-admin-no-selection > .cosmos-notification-empty-title { font:600 18px/26px Inter,sans-serif; }
+.support-admin-no-selection > .cosmos-panel-description { max-width:420px; }
 .support-admin-ticket-scroll { max-height:min(44vh, 460px); }
 .support-admin-ticket-list {
   --cosmos-table-row-background:var(--cosmos-reference-input);

@@ -87,9 +87,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final Span adminBreadcrumb = new Span();
   private final Span adminPageTitle = new Span();
   private final Span adminPageDescription = new Span();
+  private final H3 noSelectionTitle = new H3();
   private final Span selectTicket = new Span();
-  private final VerticalLayout noSelection =
-      new VerticalLayout(AppIcon.LIST.create(), selectTicket);
+  private final VerticalLayout noSelection = new VerticalLayout();
   private final VerticalLayout adminDetail = new VerticalLayout();
   private final VerticalLayout adminEditor = new VerticalLayout();
   private final Badge adminStatus = new Badge();
@@ -466,6 +466,13 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminDetail.addClassName("support-admin-detail");
     adminDetail.add(
         ticketHeader, adminRecoveryHint, subscription, conversation, adminEditor, actions);
+    HorizontalLayout selectionIcon = new HorizontalLayout(AppIcon.LIST.create());
+    selectionIcon.setPadding(false);
+    selectionIcon.setSpacing(false);
+    selectionIcon.addClassName(CosmosClasses.PANEL_ICON);
+    noSelectionTitle.addClassName("cosmos-notification-empty-title");
+    selectTicket.addClassName(CosmosClasses.PANEL_DESCRIPTION);
+    noSelection.add(selectionIcon, noSelectionTitle, selectTicket);
     noSelection.setAlignItems(Alignment.CENTER);
     noSelection.setJustifyContentMode(JustifyContentMode.CENTER);
     noSelection.setSpacing(false);
@@ -473,7 +480,6 @@ public final class SupportTicketsComponent extends VerticalLayout {
     noSelection.setWidthFull();
     noSelection.setId("support-select-ticket");
     noSelection.addClassNames("support-admin-no-selection", "cosmos-notification-empty");
-    selectTicket.addClassName("cosmos-notification-empty-title");
     selectTicket.getElement().setAttribute("role", "status");
     VerticalLayout detail = new VerticalLayout(noSelection, adminDetail);
     detail.setPadding(false);
@@ -503,6 +509,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
       allTicketsLabel.setText(texts.getSupportAllTickets());
       recoveryTicketsLabel.setText(texts.getSupportRecoveryCategory());
       ticketCategories.getElement().setAttribute("aria-label", texts.getSupportTitle());
+      noSelectionTitle.setText(texts.getSupportNoTicketSelected());
       selectTicket.setText(texts.getSupportSelectTicket());
       grid.getElement().setAttribute("aria-label", texts.getSupportCases());
     } else {

@@ -1227,13 +1227,17 @@ Eintragsinhalte, Zustandsfarben und Auswahl bleiben unverändert.
 Native Tabs gliedern die Kategorien, ein natives Grid
 zeigt die Anfragen in ihrer tatsächlichen Inhaltshöhe. Ein nativer Scroller begrenzt
 die Listenhöhe ohne geschätzten Leerraum unter den Einträgen; ein weiterer Scroller
-begrenzt den Verlauf. Die linke Spalte erhält mindestens 340 px einschließlich
+begrenzt den Verlauf. Die linke Spalte erhält mindestens 370 px einschließlich
 Innenabstand. Unter 820 px tatsächlicher Panelbreite stapeln sich beide Bereiche;
 die Containerabfrage berücksichtigt auch den Platzbedarf der Seitennavigation.
 Die native Tableiste verwendet `border-box`, reserviert ihre volle Höhe und schließt
 ohne zusätzlichen Inhaltsabstand am Panel ab. Der Auswahlhinweis verwendet ein natives
 `VerticalLayout` mit dem bestehenden `.cosmos-notification-empty`-Stil: mittig,
-32-px-Lucide-Icon `list` und kurzer Ticketauswahl-Überschrift.
+24-px-Lucide-Icon `list` im 56-px-Cosmos-Iconrahmen, die Überschrift
+„Kein Ticket ausgewählt“ mit 18 px / 600 und darunter ein kurzer Hinweis in
+Sekundärfarbe. Der Titel und der Hinweis wechseln zwischen DE und EN.
+Diese lokale Übernahme aus Stitch lässt die zusammenhängenden Ticketzeilen
+ohne zusätzliche Kartenrahmen und den mobilen Umbruch unverändert.
 In `cosmos-mfa-confirmation.css` sind diese Regeln auf den
 Ticketarbeitsbereich begrenzt. Die Sprechblasen nutzen die gemeinsamen
 Nachrichtenklassen und orientieren sich am jeweiligen Absender.

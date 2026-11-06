@@ -79,7 +79,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                               return rect.top >= tabs.top - 1 && rect.bottom <= tabs.bottom + 1;
                             });
                         const columnsFit = body.width >= 820
-                            ? queue.width >= 340 && detail.left >= queue.right - 1
+                            ? queue.width >= 370 && detail.left >= queue.right - 1
                             : detail.top >= queue.bottom - 1 && Math.abs(detail.width - queue.width) < 2;
                         const centered = Math.abs(hint.left + hint.width / 2 - detail.left - detail.width / 2) < 2
                             && Math.abs(hint.top + hint.height / 2 - detail.top - detail.height / 2) < 2;

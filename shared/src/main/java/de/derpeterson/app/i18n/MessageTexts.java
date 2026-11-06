@@ -44,6 +44,10 @@ public class MessageTexts {
     return getTranslation("support.selectTicket");
   }
 
+  public String getSupportNoTicketSelected() {
+    return getTranslation("support.noTicketSelected");
+  }
+
   public String getSupportRequester() {
     return getTranslation("support.requester");
   }
