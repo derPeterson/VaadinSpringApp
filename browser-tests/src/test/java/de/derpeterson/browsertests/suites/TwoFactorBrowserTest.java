@@ -235,6 +235,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
   @Test
   @Tag("ticket-layout")
+  @Tag("ticket-panel-style")
   @DisplayName("MFA-19: Ticketliste, Panel-Tabs und Auswahlhinweis passen zur verfügbaren Breite")
   void administrativeTicketLayoutKeepsTabsAndCardsUnclipped() {
     LoginPage login = new LoginPage(page);
@@ -402,6 +403,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                   .first())
           .hasText("#" + openNumber);
     }
+    String openStatusBackground =
+        (String)
+            ticketPanel
+                .locator(".support-admin-ticket-metadata > .support-ticket-status")
+                .evaluate("badge => getComputedStyle(badge).backgroundColor");
     UiActions.complete(page, () -> tools.locator("#support-claim").click());
     assertThat(ticketPanel.locator("#support-ticket-header"))
         .containsText(texts.getSupportInProgress());
@@ -438,6 +444,16 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                         const bounds = panel.getBoundingClientRect();
                         const sections = ['#support-ticket-header', '#support-ticket-tools', '#support-ticket-footer']
                             .map(selector => panel.querySelector(selector));
+                        const policy = panel.querySelector('#support-ticket-policy');
+                        const policyIcon = policy.querySelector('vaadin-icon').getBoundingClientRect();
+                        const policyText = policy.querySelector(':scope > span').getBoundingClientRect();
+                        const warning = panel.querySelector('.cosmos-security-warning');
+                        const warningIcon = warning.querySelector('vaadin-icon').getBoundingClientRect();
+                        const warningText = warning.querySelector(':scope > span').getBoundingClientRect();
+                        const tools = panel.querySelector('#support-ticket-tools');
+                        const toolsRight = tools.getBoundingClientRect().right
+                            - parseFloat(getComputedStyle(tools).paddingRight);
+                        const instructions = tools.querySelector('#support-instructions').getBoundingClientRect();
                         return sections.every(section => {
                           const rect = section.getBoundingClientRect();
                           return rect.width > 0 && rect.left >= bounds.left && rect.right <= bounds.right
@@ -446,7 +462,10 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                                 const action = button.getBoundingClientRect();
                                 return action.left >= rect.left && action.right <= rect.right;
                               });
-                        }) && document.documentElement.scrollWidth <= window.innerWidth;
+                        }) && Math.abs(policyIcon.top - policyText.top - 2) < 1
+                            && Math.abs(warningIcon.top - warningText.top - 1) < 1
+                            && Math.abs(instructions.right - toolsRight) < 1
+                            && document.documentElement.scrollWidth <= window.innerWidth;
                       }
                       """));
       ticketPanel.locator("#support-ticket-header").scrollIntoViewIfNeeded();
@@ -454,7 +473,89 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           "Ticket-Panelkopf und Werkzeugleiste bei " + width + "px", page);
       footer.scrollIntoViewIfNeeded();
       AllurePlaywright.attachScreenshot("Ticket-Aktionsfooter bei " + width + "px", page);
+      page.locator("#support-instructions").click();
+      Locator preview = page.locator("#support-instruction-preview");
+      assertThat(preview).hasJSProperty("opened", true);
+      page.waitForCondition(
+          () ->
+              (Boolean)
+                  preview.evaluate(
+                      """
+                      dialog => {
+                        const notice = dialog.querySelector('.support-help-notice');
+                        const icon = notice.querySelector('vaadin-icon').getBoundingClientRect();
+                        const copy = notice.querySelector(':scope > span').getBoundingClientRect();
+                        return Math.abs(icon.top + icon.height / 2 - copy.top - copy.height / 2) < 1;
+                      }
+                      """));
+      page.locator("#support-instruction-preview-cancel").click();
+      assertThat(preview).hasJSProperty("opened", false);
     }
+    assertThat(ticketPanel.locator(".support-history-event")).hasCount(2);
+    assertThat(ticketPanel.locator(".support-history-event [data-status=OPEN]"))
+        .hasCSS("background-color", openStatusBackground);
+    assertThat(ticketPanel.locator(".support-history-event[data-event=STATUS_CHANGED]"))
+        .containsText(texts.getSupportOpen());
+    assertThat(ticketPanel.locator(".support-history-event[data-event=STATUS_CHANGED]"))
+        .containsText(texts.getSupportInProgress());
+    assertThat(ticketPanel.locator(".support-section-header vaadin-badge"))
+        .hasText(texts.getSupportMessageCount(1));
+    String createdTime =
+        ticketPanel.locator("#support-ticket-header .support-ticket-updated").innerText();
+    Locator editor = ticketPanel.locator(".support-admin-editor");
+    for (int width : new int[] {1280, 390}) {
+      page.setViewportSize(width, 1000);
+      assertThat(editor.locator("#support-public-reply")).hasAttribute("selected", "");
+      assertThat(ticketPanel.locator("#support-reply"))
+          .hasJSProperty("label", texts.getSupportReply());
+      UiActions.complete(page, () -> editor.locator("#support-internal-note").click());
+      assertThat(editor).hasAttribute("data-internal", "true");
+      assertThat(editor.locator(".cosmos-security-warning"))
+          .containsText(texts.getSupportInternalSecurityNotice());
+      assertThat(editor.locator(".support-help-notice")).hasCount(0);
+      assertThat(ticketPanel.locator("#support-reply"))
+          .hasJSProperty("label", texts.getSupportInternal());
+      assertThat(ticketPanel.locator("#support-add-reply")).hasText(texts.getSupportSaveInternal());
+      assertThat(ticketPanel.locator("#support-reply textarea"))
+          .hasValue("Dieser Entwurf bleibt beim Vergrößern erhalten.");
+      editor.scrollIntoViewIfNeeded();
+      assertTrue(
+          (Boolean) page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
+      AllurePlaywright.attachScreenshot("Interner Editor und History bei " + width + "px", page);
+      UiActions.complete(page, () -> editor.locator("#support-public-reply").click());
+      assertThat(editor.locator(".cosmos-security-warning"))
+          .containsText(texts.getSupportSecurityNotice());
+    }
+    UiActions.complete(page, () -> editor.locator("#support-internal-note").click());
+    ticketPanel.locator("#support-reply textarea").fill("Nur intern: synthetischer Vermerk.");
+    UiActions.complete(page, () -> ticketPanel.locator("#support-add-reply").click());
+    assertThat(ticketPanel.locator(".support-internal-message .support-message-copy"))
+        .hasText("Nur intern: synthetischer Vermerk.");
+    assertThat(ticketPanel.locator(".support-section-header vaadin-badge"))
+        .hasText(texts.getSupportMessageCount(2));
+    assertThat(ticketPanel.locator(".support-history-event")).hasCount(2);
+    assertThat(ticketPanel.locator("#support-ticket-header .support-ticket-updated"))
+        .hasText(createdTime);
+    Locator messageScroll = ticketPanel.locator(".support-message-scroll");
+    for (int width : new int[] {1280, 390}) {
+      page.setViewportSize(width, 1000);
+      messageScroll.scrollIntoViewIfNeeded();
+      messageScroll.evaluate("element => element.scrollTop = element.scrollHeight");
+      assertTrue(
+          (Boolean)
+              messageScroll.evaluate("element => element.scrollWidth <= element.clientWidth"));
+      assertThat(ticketPanel.locator(".support-internal-message .support-message-copy"))
+          .isVisible();
+      AllurePlaywright.attachScreenshot(
+          "Vermerk und native Scrollleiste bei " + width + "px", page);
+    }
+    page.navigate("/recovery-help");
+    assertThat(page.locator(".support-history-event")).hasCount(0);
+    assertThat(page.locator(".support-internal-message")).hasCount(0);
+    assertThat(page.locator(".support-message-copy")).not().containsText("Nur intern:");
+    page.navigate("/notifications");
+    assertThat(page.locator(".portal-notification-source-system").first()).isVisible();
+    AllurePlaywright.attachScreenshot("Gemeinsame Systemfarbe im Benachrichtigungsbadge", page);
   }
 
   private void assertTicketLocation(String tab, String number) {

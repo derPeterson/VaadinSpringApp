@@ -43,6 +43,11 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-security-warning-accent: #f59e0b;
     --cosmos-security-warning-surface: #1f1a14;
     --cosmos-security-warning-border: #f59e0b40;
+    /* Systemkennzeichnung und interne Vermerke; fachliche Statusfarben bleiben separat. */
+    --cosmos-system-accent: #a855f7;
+    --cosmos-system-surface: #241638;
+    --cosmos-system-border: #a855f759;
+    --cosmos-system-text: #d8b4fe;
     --lumo-success-color: #468c69;
     --lumo-success-text-color: #a3d5b8;
     --lumo-success-color-10pct: rgba(70, 140, 105, .13);

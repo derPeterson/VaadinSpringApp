@@ -165,6 +165,26 @@ public class MessageTexts {
     return getTranslation("support.reply");
   }
 
+  public String getSupportPublicReply() {
+    return getTranslation("support.publicReply");
+  }
+
+  public String getSupportEditorMode() {
+    return getTranslation("support.editorMode");
+  }
+
+  public String getSupportInternalSecurityNotice() {
+    return getTranslation("support.internalSecurityNotice");
+  }
+
+  public String getSupportTicketCreated() {
+    return getTranslation("support.ticketCreated");
+  }
+
+  public String getSupportStatusChanged() {
+    return getTranslation("support.statusChanged");
+  }
+
   public String getSupportInternal() {
     return getTranslation("support.internal");
   }

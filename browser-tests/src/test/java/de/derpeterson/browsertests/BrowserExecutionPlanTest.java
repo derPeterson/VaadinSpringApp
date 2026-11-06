@@ -36,6 +36,7 @@ class BrowserExecutionPlanTest {
         "two-factor-configuration",
         "two-factor-instructions",
         "two-factor-ticket-layout",
+        "two-factor-ticket-panel",
         "external-login-settings"
       })
   void focusedSuitesSelectOnlyTheirExistingJourneys(String suite) {
@@ -59,6 +60,8 @@ class BrowserExecutionPlanTest {
           case "two-factor-configuration" -> Set.of("superadminOnlyConfiguration");
           case "two-factor-instructions" ->
               Set.of("recoverySupportRemainsContactInsteadOfFactorReset");
+          case "two-factor-ticket-panel" ->
+              Set.of("administrativeTicketLayoutKeepsTabsAndCardsUnclipped");
           case "two-factor-ticket-layout" ->
               Set.of(
                   "administrativeTicketLayoutKeepsTabsAndCardsUnclipped",

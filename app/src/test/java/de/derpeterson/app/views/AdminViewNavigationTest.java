@@ -195,6 +195,7 @@ class AdminViewNavigationTest {
             Type.RECOVERY,
             Status.OPEN,
             Instant.EPOCH,
+            Instant.EPOCH,
             null,
             null,
             false,

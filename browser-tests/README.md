@@ -59,6 +59,8 @@ Reactor aus; der Klassenpfadaufbau für Journeys verwendet `package` und das
 Dependency-Ziel mit übersprungenen Tests. Ein separates Shared-Install entfällt.
 Keine zwei Starter
 gleichzeitig gegen dieselben Ausgabeordner ausführen.
+Die Browserfixture lässt native Scrollleisten auch ohne sichtbares Browserfenster
+eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 
 ## Suites
 
@@ -75,6 +77,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `two-factor` | Einrichtung, erneute Anmeldung, aktionsgebundene Bestätigung, geschützter Faktorwechsel/Entfernen, Wiederherstellung mit dem letzten Ersatzcode nach Portal-/Google-/Microsoft-Anmeldung, Ersatzcodes/PDF, eingeschränkte Hilfe und Adminbearbeitung, Superadminrechte, Regelwechsel einer offenen Sitzung, echte Browser-/Anwendungsneustarts und Inaktivität auch bei Push | 35 |
 | `two-factor-confirmation` | Nur Bestätigung mit nativer OTP-/Ersatzcodeumschaltung, geschützter Faktorwechsel und Hilfeanfrage auf Desktop/Smartphone | 2 |
 | `two-factor-instructions` | Anleitungsvorschau und aufklappbare Anleitung im gemeinsamen Ticketverlauf, mit isoliertem Mailversand und unveränderten Zugriffsgrenzen auf Desktop/Smartphone | 2 |
+| `two-factor-ticket-panel` | Nur Ticketpanel-Darstellung aus MFA-19: Info-/Warnicons an der ersten Textzeile, zentriertes Icon bei Fließtext in der Anleitungsvorschau und rechtsbündige Werkzeugaktion, einschließlich Desktop-/Smartphone-Darstellung; zusätzlich Status-History ohne Nachrichtenzählung, öffentliche/interne Editorumschaltung, gespeicherter Vermerk und Ausschluss aus der Nutzeransicht; ohne Versand oder vollständige Glockenregression | 1 |
 | `two-factor-ticket-layout` | Nur administrative Ticketansicht: Übersicht mit Mindestbreite, responsivem Umbruch, vollständigen Tabs und Auswahlhinweis bei 1600/1280/1024/390 px; Tab-/Ticketauswahl in der URL und Wiederherstellung nach Browser-Refresh; ausgewähltes Ticketpanel mit Kopf, Werkzeugleiste und Footer vor/nach Übernahme; Fokusansicht und Wiederherstellen mit erhaltenem Entwurf auf Desktop/Smartphone; Tooltip-Mauszeiger an Avatar, Button und Texteingabe; zuständigkeitsabhängige Ticketzähler, Beobachten ein/aus, Nutzerabschluss mit/ohne Bearbeiter und live erledigte Glockenhinweise auf Desktop/Smartphone | 3 |
 | `two-factor-configuration` | Superadmin-Konfiguration mit Rollenwechsel, Erklärspalte, Feldhilfe und Rechteprüfung auf Desktop/Smartphone | 2 |
 | `two-factor-push` | Echte einminütige Inaktivitätsfrist, native Benutzereingabe gegenüber Hintergrundabrufen und gesperrte serverseitige Vorschauupdates nach Ablauf | 2 |

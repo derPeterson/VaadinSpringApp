@@ -104,7 +104,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     hint.addClassName(CosmosClasses.PANEL_DESCRIPTION);
     Div heading = new Div(title, hint);
     heading.addClassName(CosmosClasses.PANEL_HEADING);
-    Div icon = new Div(AppIcon.LOCK.create());
+    Div icon = new Div(AppIcon.SHIELD_KEYHOLE.create());
     icon.addClassName(CosmosClasses.PANEL_ICON);
     Div header = new Div(icon, heading);
     header.addClassNames(CosmosClasses.PANEL_HEADER, "mfa-settings-header");

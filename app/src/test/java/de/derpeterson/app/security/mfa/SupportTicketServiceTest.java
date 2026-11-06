@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.i18n.CustomI18NProvider;
+import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.SupportReplyEntity.Kind;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
@@ -72,6 +73,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 })
 class SupportTicketServiceTest {
   @Autowired SupportTicketService service;
+  @Autowired SupportReplyRepository replies;
   @Autowired TwoFactorAuthorization authorization;
   @Autowired TwoFactorStore factors;
   @Autowired UserRepository users;
@@ -142,7 +144,7 @@ class SupportTicketServiceTest {
         service.reply(
             administrator, claimed.id(), claimed.version(), "Interne Prüfung", true, true);
     assertEquals(1, service.conversation(owner, ticket.id(), false).size());
-    assertEquals(2, service.conversation(administrator, ticket.id(), true).size());
+    assertEquals(4, service.conversation(administrator, ticket.id(), true).size());
     assertThrows(
         AccessDeniedException.class,
         () -> service.reply(owner, changed.id(), changed.version(), "Verbergen", true, false));
@@ -152,7 +154,67 @@ class SupportTicketServiceTest {
     assertEquals(
         List.of(ReplyAuthor.REQUESTER, ReplyAuthor.SUPPORT),
         visible.stream().map(Reply::author).toList());
+    assertTrue(visible.stream().allMatch(reply -> reply.actor() == null));
+    List<Reply> administrativeMessages = service.conversation(administrator, ticket.id(), true);
+    assertEquals(expectedAssignee, administrativeMessages.getLast().actor());
+    assertEquals(
+        expectedAssignee,
+        administrativeMessages.stream()
+            .filter(Reply::internal)
+            .filter(reply -> reply.kind() == Kind.MESSAGE)
+            .findFirst()
+            .orElseThrow()
+            .actor());
     assertFalse(authorization.state(authorization.owner(owner)).enrolled());
+  }
+
+  @Test
+  void historyRecordsActualTransitionsWithoutCountingMessagesOrExposingAdministrativeEvents() {
+    Ticket created = service.createRecovery(owner, "Bitte helfen.");
+    List<Reply> first = service.conversation(administrator, created.id(), true);
+    assertEquals(
+        List.of(Kind.TICKET_CREATED, Kind.MESSAGE), first.stream().map(Reply::kind).toList());
+    Instant createdAt = ticketFor(owner, created.id(), false).createdAt();
+    assertEquals(createdAt, first.getFirst().createdAt());
+    assertEquals(user.getEmail(), first.getFirst().actor().email());
+    assertNull(first.getFirst().previousStatus());
+    assertEquals(Status.OPEN, first.getFirst().nextStatus());
+    assertEquals(1L, ticketFor(otherAdministrator, created.id(), true).unreadMessages());
+
+    Ticket claimed = service.claim(administrator, created.id(), created.version());
+    Ticket repeated = service.claim(administrator, claimed.id(), claimed.version());
+    assertEquals(3, service.conversation(administrator, created.id(), true).size());
+    assertEquals(createdAt, repeated.createdAt());
+    assertEquals(createdAt, ticketFor(owner, created.id(), false).createdAt());
+    assertEquals(0L, ticketFor(owner, created.id(), false).unreadMessages());
+    assertEquals(1, service.conversation(owner, created.id(), false).size());
+    assertEquals(1L, replies.countFor(created.id()));
+
+    Ticket requesterClosed = service.closeOwn(owner, repeated.id(), repeated.version());
+    Ticket closed = service.close(administrator, requesterClosed.id(), requesterClosed.version());
+    List<Reply> history =
+        service.conversation(administrator, created.id(), true).stream()
+            .filter(reply -> reply.kind().isHistory())
+            .toList();
+    assertEquals(
+        List.of(Status.OPEN, Status.IN_PROGRESS, Status.CLOSED_BY_REQUESTER, Status.CLOSED),
+        history.stream().map(Reply::nextStatus).toList());
+    assertEquals(
+        List.of(Status.OPEN, Status.IN_PROGRESS, Status.CLOSED_BY_REQUESTER),
+        history.stream().skip(1).map(Reply::previousStatus).toList());
+    assertEquals(user.getEmail(), history.get(2).actor().email());
+    assertEquals(authorization.owner(administrator).email(), history.getLast().actor().email());
+    assertEquals(createdAt, closed.createdAt());
+    assertEquals(1, service.conversation(owner, created.id(), false).size());
+    assertEquals(0L, ticketFor(otherAdministrator, created.id(), true).unreadMessages());
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.close(administrator, closed.id(), closed.version()));
+    assertEquals(
+        4,
+        service.conversation(administrator, created.id(), true).stream()
+            .filter(reply -> reply.kind().isHistory())
+            .count());
   }
 
   @Test
@@ -502,6 +564,9 @@ class SupportTicketServiceTest {
           status.setRollbackOnly();
         });
     assertEquals(Status.OPEN, ticketFor(administrator, ticket.id(), true).status());
+    assertEquals(
+        List.of(Kind.TICKET_CREATED, Kind.MESSAGE),
+        service.conversation(administrator, ticket.id(), true).stream().map(Reply::kind).toList());
     assertEquals(1, notificationRecipients.countUnread(adminId, null));
     service.claim(administrator, ticket.id(), ticket.version());
     assertEquals(0, notificationRecipients.countUnread(adminId, null));
@@ -573,7 +638,10 @@ class SupportTicketServiceTest {
     Ticket ticket =
         service.createRecovery(owner, "Bitte schicken Sie Hilfe an fremd@example.test.");
     Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
-    String preview = service.instructionPreview(administrator, claimed.id());
+    service.validateInstructionPreview(administrator, claimed.id());
+    String preview =
+        MessageProperties.forLocale(new CustomI18NProvider(), Locale.GERMAN)
+            .getSupportRecoveryInstructions();
     assertTrue(preview.contains("Ersatzcode"));
     Ticket sent = service.sendInstructions(administrator, claimed.id(), claimed.version());
     List<Reply> messages = service.conversation(owner, claimed.id(), false);
@@ -589,6 +657,9 @@ class SupportTicketServiceTest {
         AccessDeniedException.class,
         () -> service.sendInstructions(administrator, copiedText.id(), copiedText.version()));
     service.close(administrator, copiedText.id(), copiedText.version());
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.validateInstructionPreview(administrator, copiedText.id()));
     assertFalse(authorization.state(authorization.owner(owner)).enrolled());
   }
 

@@ -16,14 +16,15 @@ public interface SupportReplyRepository extends JpaRepository<SupportReplyEntity
       "select r from SupportReplyEntity r where r.ticket.id = :ticket and (:internal = true or r.internal = false) order by r.createdAt, r.id")
   List<SupportReplyEntity> visible(Long ticket, boolean internal);
 
-  @Query("select count(r) from SupportReplyEntity r where r.ticket.id = :ticket")
+  @Query(
+      "select count(r) from SupportReplyEntity r where r.ticket.id = :ticket and r.kind in (MESSAGE, RECOVERY_INSTRUCTIONS)")
   long countFor(Long ticket);
 
   @Query(
       """
       select r.ticket.id as ticketId, count(r) as amount from SupportReplyEntity r
       left join SupportTicketViewerEntity v on v.ticketId = r.ticket.id and v.userId = :user
-      where r.ticket.id in :tickets
+      where r.ticket.id in :tickets and r.kind in (MESSAGE, RECOVERY_INSTRUCTIONS)
         and ((:administration = false and r.supportAuthor = true and r.internal = false
               and r.id > coalesce(v.requesterReadThrough, 0))
           or (:administration = true and

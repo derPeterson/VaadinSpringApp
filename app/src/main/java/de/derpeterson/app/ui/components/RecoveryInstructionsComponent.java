@@ -9,19 +9,25 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
  * Zeigt die gespeicherte Anleitung als native Schritte, ohne Nachrichtentexte als HTML auszuwerten.
  */
 public final class RecoveryInstructionsComponent extends VerticalLayout {
-  private final String heading;
-  private final String description;
+  private String heading;
+  private String description;
 
   public RecoveryInstructionsComponent(String instructions) {
     setPadding(false);
     setSpacing(false);
     setWidthFull();
     addClassName("support-instruction-guide");
+    setInstructions(instructions);
+  }
+
+  /** Aktualisiert die Vorschau beim Sprachwechsel; gespeicherte Nachrichten bleiben unverändert. */
+  public void setInstructions(String instructions) {
     // Doppelte Zeilenumbrüche trennen Kopf, vier Schritte, Warnung und Grenze der festen Vorlage.
     String[] sections = instructions.split("\n\n", -1);
     if (sections.length != 7) {
       throw new IllegalArgumentException("Recovery instructions require seven sections");
     }
+    removeAll();
     String[] lead = lines(sections[0]);
     heading = lead[0];
     description = lead[1];
@@ -54,7 +60,7 @@ public final class RecoveryInstructionsComponent extends VerticalLayout {
         new HorizontalLayout(AppIcon.INFO_CIRCLE.create(), new Span(sections[6]));
     limitation.setSpacing(false);
     limitation.setPadding(false);
-    limitation.setAlignItems(Alignment.START);
+    limitation.setAlignItems(Alignment.CENTER);
     limitation.addClassName("support-help-notice");
     add(notice, limitation);
   }

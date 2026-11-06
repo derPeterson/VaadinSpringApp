@@ -18,6 +18,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -64,6 +65,7 @@ import org.springframework.security.access.AccessDeniedException;
  */
 @StyleSheet("custom-theme/cosmos-mfa.css")
 @StyleSheet("custom-theme/cosmos-mfa-confirmation.css")
+@StyleSheet("custom-theme/cosmos-mfa-methods.css")
 @StyleSheet("custom-theme/cosmos-provider-settings.css")
 @Slf4j
 public final class SupportTicketsComponent extends VerticalLayout {
@@ -117,7 +119,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final Span adminStatusNote = new Span();
   private final VerticalLayout conversation = new VerticalLayout();
   private final TextArea body = new TextArea();
-  private final Switch internal = new Switch();
+  private final Span publicReplyLabel = new Span();
+  private final Span internalNoteLabel = new Span();
+  private final Tab publicReplyMode = new Tab(AppIcon.MESSAGE.create(), publicReplyLabel);
+  private final Tab internalNoteMode = new Tab(AppIcon.LOCK.create(), internalNoteLabel);
+  private final Tabs replyMode = new Tabs(publicReplyMode, internalNoteMode);
   private final Switch subscription = new Switch();
   private final Button create = new Button();
   private final Button claim = new Button();
@@ -129,6 +135,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final Badge activeFilterCount = new Badge();
   private SupportTicketFilterPanel filters;
   private final PortalConfirmationDialog instructionDialog;
+  private RecoveryInstructionsComponent instructionPreview;
   private final AccountPanelComponent panel =
       new AccountPanelComponent("support-panel", AppIcon.INFO_CIRCLE);
   private final Span warning = new Span();
@@ -219,10 +226,13 @@ public final class SupportTicketsComponent extends VerticalLayout {
         });
     messageField.add(body, messageCount);
     messageField.addClassName("cosmos-notification-compose-field");
-    internal.setId("support-internal-note");
-    internal.setVisible(administration);
+    internalNoteMode.setId("support-internal-note");
+    publicReplyMode.setId("support-public-reply");
+    replyMode.setId("support-reply-mode");
+    replyMode.addClassName("two-factor-method-tabs");
+    replyMode.setVisible(administration);
     if (administration) {
-      internal.addValueChangeListener(event -> updateAdminComposerLabels());
+      replyMode.addSelectedChangeListener(event -> updateAdminComposerLabels());
     }
     subscription.setId("support-subscription");
     subscription.setVisible(false);
@@ -262,7 +272,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     reply.addClickListener(
         event -> {
           if (ValidationHelper.validateRequiredInputs(List.of(body), texts)) {
-            boolean privateNote = administration && internal.getValue();
+            boolean privateNote = administration && isInternalNote();
             perform(
                 () ->
                     service.reply(
@@ -277,8 +287,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
           }
         });
     close.setId("support-close");
-    close.setPrefixComponent(
-        (administration ? AppIcon.CHECK_CHECK : AppIcon.CHECK_CIRCLE).create());
+    close.setPrefixComponent(AppIcon.CHECK_CIRCLE.create());
     close.addClickListener(
         event ->
             perform(
@@ -511,7 +520,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminRecoveryInfo.setId("support-ticket-policy");
     adminRecoveryInfo.setPadding(false);
     adminRecoveryInfo.setSpacing(false);
-    adminRecoveryInfo.setAlignItems(Alignment.CENTER);
+    adminRecoveryInfo.setAlignItems(Alignment.START);
     adminRecoveryInfo.addClassName("support-help-notice");
     adminStatusNote.setId("support-ticket-status-note");
     adminStatusNote.addClassName("support-admin-status-note");
@@ -539,7 +548,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminActionFooter.add(actions);
     adminEditor.setPadding(false);
     adminEditor.addClassName("support-admin-editor");
-    adminEditor.add(internal, sensitiveNotice, messageField);
+    adminEditor.add(replyMode, sensitiveNotice, messageField);
     VerticalLayout content = new VerticalLayout(adminRecoveryInfo, conversation, adminEditor);
     content.setPadding(false);
     content.setWidthFull();
@@ -621,7 +630,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
     userWarningLabel.setText(texts.getSupportSecurityNoticeLabel() + " ");
     warning.setText(texts.getSupportSecurityNotice());
     body.setLabel(administration ? texts.getSupportReply() : texts.getSupportDescription());
-    internal.setLabel(texts.getSupportInternal());
+    publicReplyLabel.setText(texts.getSupportPublicReply());
+    internalNoteLabel.setText(texts.getSupportInternal());
+    replyMode.getElement().setAttribute("aria-label", texts.getSupportEditorMode());
     subscription.setLabel(texts.getSupportSubscription());
     subscription.setTooltipText(texts.getSupportSubscriptionHint());
     create.setText(texts.getSupportCreate());
@@ -636,13 +647,23 @@ public final class SupportTicketsComponent extends VerticalLayout {
       updateFocusControl();
       adminPolicyLabel.setText(texts.getSupportSecurityPolicy());
     }
+    if (instructionDialog.isOpened() && instructionPreview != null) {
+      instructionPreview.setInstructions(texts.getSupportRecoveryInstructions());
+    }
     instructionDialog.refreshTexts();
     refresh();
     grid.getDataProvider().refreshAll();
   }
 
+  private boolean isInternalNote() {
+    return replyMode.getSelectedTab() == internalNoteMode;
+  }
+
   private void updateAdminComposerLabels() {
-    boolean privateNote = internal.getValue();
+    boolean privateNote = isInternalNote();
+    adminEditor.getElement().setAttribute("data-internal", Boolean.toString(privateNote));
+    warning.setText(
+        privateNote ? texts.getSupportInternalSecurityNotice() : texts.getSupportSecurityNotice());
     body.setLabel(privateNote ? texts.getSupportInternal() : texts.getSupportReply());
     body.setPlaceholder(
         privateNote ? texts.getSupportInternalPlaceholder() : texts.getSupportReplyPlaceholder());
@@ -835,7 +856,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private Component ticketRow(Ticket ticket) {
     Span title = new Span(ticketSubject(ticket));
     title.addClassName("support-ticket-title");
-    Span updated = new Span(formatTime(ticket.updatedAt()));
+    Span updated = new Span(formatTime(ticket.createdAt()));
     updated.addClassName("support-ticket-updated");
     Badge badge = new Badge(status(ticket.status()));
     setStatusBadge(badge, ticket.status());
@@ -1010,7 +1031,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminTicketNumber.setText(texts.getSupportTicketNumber(ticketNumber(selected)));
     adminSubject.setText(ticketSubject(selected));
     setStatusBadge(adminStatus, selected.status());
-    adminUpdated.setText(formatTime(selected.updatedAt()));
+    adminUpdated.setText(formatTime(selected.createdAt()));
     adminAssignment.removeAll();
     Span assignmentLabel = new Span(texts.getSupportAssigneeColumn());
     assignmentLabel.addClassName("support-admin-person-label");
@@ -1039,7 +1060,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminStatusNote.setVisible(!statusHint.isEmpty());
     String heading = texts.getSupportConversation();
     userConversationHeading.setText(heading);
-    userConversationCount.setText(texts.getSupportMessageCount(messages.size()));
+    userConversationCount.setText(
+        texts.getSupportMessageCount(
+            (int) messages.stream().filter(message -> !message.kind().isHistory()).count()));
     userMessageScroll
         .getElement()
         .setAttribute("aria-label", heading + " " + ticketNumber(selected));
@@ -1142,14 +1165,15 @@ public final class SupportTicketsComponent extends VerticalLayout {
       if (body.isEmpty()) {
         drafts.remove(draftTarget);
       } else {
-        drafts.put(draftTarget, new Draft(body.getValue(), internal.getValue()));
+        drafts.put(draftTarget, new Draft(body.getValue(), isInternalNote()));
       }
     }
     draftTarget = target;
     Draft draft = drafts.remove(target);
     body.setValue(draft == null ? "" : draft.text());
     body.setInvalid(false);
-    internal.setValue(draft != null && draft.internal());
+    replyMode.setSelectedTab(
+        draft != null && draft.internal() ? internalNoteMode : publicReplyMode);
   }
 
   private void refreshUserConversation(List<Reply> messages, UserIdentity requester) {
@@ -1166,7 +1190,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
     String heading = texts.getSupportConversation() + " ";
     userConversationHeading.removeAll();
     userConversationHeading.add(new Text(heading), ticketNumberLabel(selected));
-    userConversationCount.setText(texts.getSupportMessageCount(messages.size()));
+    userConversationCount.setText(
+        texts.getSupportMessageCount(
+            (int) messages.stream().filter(message -> !message.kind().isHistory()).count()));
     userMessageScroll.getElement().setAttribute("aria-label", heading + ticketNumber(selected));
     renderMessages(messages, requester);
   }
@@ -1174,6 +1200,10 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private void renderMessages(List<Reply> messages, UserIdentity requester) {
     userMessageThread.removeAll();
     for (Reply message : messages) {
+      if (message.kind().isHistory()) {
+        userMessageThread.add(historyEntry(message));
+        continue;
+      }
       Span timestamp = new Span("· " + formatTime(message.createdAt()));
       timestamp.addClassName("support-message-time");
       HorizontalLayout metadata = new HorizontalLayout();
@@ -1192,14 +1222,24 @@ public final class SupportTicketsComponent extends VerticalLayout {
           }
         }
         case SUPPORT -> {
-          Span sender = new Span(texts.getSupportMessageSupport());
+          UserIdentity administrator = administration ? message.actor() : null;
+          Span sender =
+              new Span(
+                  administrator == null
+                      ? texts.getSupportMessageSupport()
+                      : identityName(administrator));
           sender.addClassName("support-message-sender");
-          metadata.add(AppIcon.SHIELD_COG.create(), sender);
+          Component symbol =
+              administrator == null
+                  ? AppIcon.SHIELD_COG.create()
+                  : identityAvatar(administrator, IconSize.PIXEL_24);
+          metadata.add(symbol, sender);
         }
       }
       metadata.add(timestamp);
       if (message.internal()) {
         Badge note = new Badge(texts.getSupportInternal());
+        note.setIcon(AppIcon.LOCK.create());
         note.addClassName("support-admin-internal");
         metadata.add(note);
       }
@@ -1222,6 +1262,42 @@ public final class SupportTicketsComponent extends VerticalLayout {
       }
       userMessageThread.add(entry);
     }
+  }
+
+  private Component historyEntry(Reply event) {
+    HorizontalLayout summary = new HorizontalLayout();
+    summary.setPadding(false);
+    summary.setSpacing(false);
+    summary.setAlignItems(Alignment.CENTER);
+    SvgIcon eventIcon =
+        (event.kind() == Kind.TICKET_CREATED ? AppIcon.MESSAGE_SQUARE_PLUS : AppIcon.STATUS_CHANGE)
+            .create();
+    eventIcon.addClassName("support-history-event-icon");
+    summary.add(eventIcon);
+    if (event.kind() == Kind.TICKET_CREATED) {
+      summary.add(new Span(texts.getSupportTicketCreated()));
+    } else {
+      summary.add(new Span(texts.getSupportStatusChanged()));
+      Badge previous = new Badge();
+      setStatusBadge(previous, event.previousStatus());
+      Badge next = new Badge();
+      setStatusBadge(next, event.nextStatus());
+      summary.add(previous, AppIcon.ARROW_FORWARD.create(), next);
+    }
+    Span time = new Span(formatTime(event.createdAt()));
+    time.addClassName("support-message-time");
+    String actor =
+        event.actor() == null ? texts.getSupportMessageSupport() : identityName(event.actor());
+    HorizontalLayout metadata = new HorizontalLayout(time, new Span("·"), new Span(actor));
+    metadata.setPadding(false);
+    metadata.setSpacing(false);
+    metadata.addClassName("support-history-metadata");
+    VerticalLayout entry = new VerticalLayout(summary, metadata);
+    entry.setPadding(false);
+    entry.setSpacing(false);
+    entry.addClassName("support-history-event");
+    entry.getElement().setAttribute("data-event", event.kind().name());
+    return entry;
   }
 
   private Component instructionMessage(Reply message) {
@@ -1283,8 +1359,10 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   private void previewInstructions() {
     try {
-      String preview = service.instructionPreview(request, selected.id());
-      RecoveryInstructionsComponent guide = new RecoveryInstructionsComponent(preview);
+      service.validateInstructionPreview(request, selected.id());
+      RecoveryInstructionsComponent guide =
+          new RecoveryInstructionsComponent(texts.getSupportRecoveryInstructions());
+      instructionPreview = guide;
       Ticket target = selected;
       instructionDialog.open(
           new PortalConfirmationDialog.Prompt(
@@ -1319,7 +1397,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
       if (clearDraft) {
         body.clear();
         body.setInvalid(false);
-        internal.setValue(false);
+        replyMode.setSelectedTab(publicReplyMode);
       }
       succeeded(success);
       refresh();

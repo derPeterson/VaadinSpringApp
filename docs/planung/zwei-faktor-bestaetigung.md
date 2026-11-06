@@ -76,6 +76,27 @@ die Gestaltung der Anmeldeanbieter. Die gemeinsame Sichtabnahme steht aus.
 
 Administrative Tickets:
 
+Der freigegebene [Stitch-Vorschlag zu Vermerken, Editorumschaltung und Status-History](https://stitch.google.com/projects/1332538028618138858?node-id=16005963741703421288)
+ist mit nativen Tabs direkt am Editor, violett gekennzeichneten internen
+Vermerken und kompakten administrativen Statusereignissen im Verlauf umgesetzt.
+Die fachlichen Regeln stehen in der [2FA-Dokumentation](../zwei-faktor-authentifizierung.md#ticketzustände-zähler-und-glocke).
+Header und Footer bleiben bestehen. Die gemeinsame Sichtabnahme steht aus.
+Die zusätzliche [Stitch-Kritik zu Scrollbereich und Vermerkfarbe](https://stitch.google.com/projects/1332538028618138858?node-id=1618580295561432737)
+ist übernommen: schmale dezente Scrollbahn, Abstand zur Bahn und wärmeres
+Violett für interne Vermerke, weiterhin mit Schloss-Badge und ausdrücklicher Kennzeichnung.
+Die Palette ist zugleich für vorhandene System-Badges zentral festgelegt und setzt
+sich deutlicher von öffentlichen blaugrauen Adminantworten ab.
+Zusätzliche Navigation, Footer, Sicherheitsbehauptungen, andere Icons und abweichende
+Sprechblasenformen aus dem Entwurf sind keine freigegebenen Vorgaben.
+Die gemeinsame Sichtabnahme bleibt offen.
+Für die 2FA-Konfiguration liegt ein [Stitch-Feinschliff zur Sichtung](https://stitch.google.com/projects/1332538028618138858?node-id=11013469201324753713)
+vor. Er empfiehlt gemeinsame Label-/Feldfluchten, mittige Info-Icons, eine oben
+bündige Erklärspalte und eine ruhig ausgerichtete Inaktivitätszeile. Aufbau,
+Rollentabs und Fachfunktionen sollen erhalten bleiben. Außer dem bereits angeglichenen
+`shield-keyhole`-Icon ist daraus noch keine Formularänderung übernommen. Die
+Entwurfsschrift, Tabdetails und Navigationsabweichungen sind keine neue Themevorgabe;
+größere Änderungen benötigen die gemeinsame Sichtung.
+
 - [A: Durchgehende Ticketliste mit großem Arbeitsbereich](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=d4098cd0685d4835b377011c531f1db7)
 - [B: Kompakte Ticketliste neben einer ruhigen Detailfläche](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=952fff07c2a74590ad35ae098434dc51)
 - [C: Tabelle und Detailfläche untereinander](https://stitch.withgoogle.com/projects/1332538028618138858?node-id=74f2a6d1e3e944f892d88fe989bc52ab)

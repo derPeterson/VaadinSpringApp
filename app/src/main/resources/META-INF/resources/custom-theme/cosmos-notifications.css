@@ -1644,9 +1644,9 @@ vaadin-dialog.cosmos-notification-dialog::part(overlay) {
 }
 
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-meta .portal-notification-source-system {
-    background: #6366f11a;
-    border-color: #818cf84d;
-    color: #a5b4fc;
+    background: var(--cosmos-system-surface);
+    border-color: var(--cosmos-system-border);
+    color: var(--cosmos-system-text);
 }
 
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) .cosmos-notification-message-meta .cosmos-notification-preview-state {

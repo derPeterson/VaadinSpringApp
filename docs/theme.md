@@ -16,6 +16,12 @@ adressierbaren Scrollbereiche von Vaadin. Komponenten mit interner Scrollfläche
 ohne passenden öffentlichen Part, etwa Grid, erben die Farbe und behalten die
 native Breite.
 
+Systemkennzeichnungen verwenden die gemeinsamen Tokens `--cosmos-system-*` aus
+`cosmos-tokens.css`: Akzent `#a855f7`, Fläche `#241638`, Rahmen `#a855f759`
+und Text `#d8b4fe`. System-Badges in Benachrichtigungen und interne Ticketvermerke
+teilen diese warme Violett-Palette. Die Kennzeichnung ergänzt Text und Icons;
+fachliche Statusfarben, blaue Adminantworten und Statusereignis-Icons bleiben erhalten.
+
 Textbuttons zusammengehöriger Dialogaktionen verwenden `EqualButtonWidths.configure`
 am vorhandenen nativen Layoutcontainer. `equal-button-widths.js` lädt über den
 Anwendungskontext und misst nur sichtbare Beschriftungen einschließlich Präfix,
@@ -87,7 +93,14 @@ Die Symbolkarten in Profilbild-, Benachrichtigungs- und Gerätebestätigungen
 verwenden den bestehenden rechteckigen `cosmos-panel-icon`-Rahmen mit abgerundeten
 Ecken. Die Kontextkarte enthält dafür einen Rahmen um das unveränderte Lucide-Icon,
 keine Kreisfläche direkt am SVG. Echte Benutzeravatare bleiben rund.
-Infoicons in Bestätigungen sind zur gesamten Texthöhe vertikal zentriert.
+Fest eingebundene Info- und Warnboxen mit **fetter Einleitung und Doppelpunkt**
+richten das Icon an der ersten Textzeile aus. Die Erklärung läuft direkt nach
+der Einleitung weiter. Native `HorizontalLayout`-Container verwenden dafür
+`Alignment.START`; vorhandene kleine Iconabstände gleichen die Iconhöhe an die
+erste Zeilenhöhe an. Bei reinem Fließtext ohne solche Einleitung bleibt das
+Icon mit `Alignment.CENTER` zur gesamten Texthöhe vertikal zentriert. Das gilt
+auch für Hinweise in Bestätigungen. Tooltip- und Notification-Gestaltung bleiben
+unverändert.
 Die Auswahl „Initialen / Eigenes Bild“ bleibt eine native Radiogruppe, deren
 Label die ganze Auswahlfläche abdeckt. Der native Vaadin-Upload unterstützt
 Dateiauswahl und Drag-and-drop im selben Bereich mit derselben Validierung.
@@ -238,7 +251,7 @@ nicht vorhandene Feldlabels.
 Die native ComboBox behält ihre Bedienung und Platzierungslogik. Ihr Menü verwendet
 kompakte Optionen ohne zusätzliche blaue Auswahlumrandung.
 Nachrichtenmetadaten werden in Liste, Detail und Bestätigung gemeinsam aufgebaut:
-Administration blau, System indigo, Ungelesen mit Punkt und abgerundetem Rahmen.
+Administration blau, System violett, Ungelesen mit Punkt und abgerundetem Rahmen.
 Die Glockenvorschau verwendet kompakte Karten mit Aktionen rechts, gemeinsamem
 Metadatenbaustein, eigenem Scrollbereich sowie festem Kopf und Footer.
 Gelesene Karten nutzen die Panelfläche, ungelesene die Eingabefläche mit blauer
@@ -1215,8 +1228,11 @@ Bearbeiterblock einschließlich Überschrift und „Nicht Zugewiesen“ steht re
 Native `HorizontalLayout`-/`VerticalLayout`-Komponenten halten die Rollen getrennt;
 lange Namen und Adressen können umbrechen. Der Dienst liefert diese Identität
 ausschließlich für die berechtigte Adminansicht. Im administrativen Verlauf
-zeigen Antragstellernachrichten denselben Avatar und den Namen; der gemeinsame
-Avatar-Tooltip zeigt Name und E-Mail zweizeilig. Die Nutzeransicht bleibt unverändert.
+zeigen Antragstellernachrichten denselben Avatar und den Namen. Öffentliche
+Adminantworten und interne Vermerke zeigen dort ebenfalls den tatsächlichen Autor
+mit 24-px-Initialenavatar und Namen. Der gemeinsame Avatar-Tooltip zeigt Name und
+E-Mail zweizeilig. Für Antragsteller bleiben Adminantworten als „Systemadministration“
+anonymisiert, ebenso bei gelöschtem Autorenkonto in der Administration.
 Eine separate native Werkzeugleiste darunter enthält die vorhandenen Aktionen
 „Übernehmen“ rechtsbündig, bei offenen Tickets als primäre Aktion, und
 „Anleitung senden“ mit der unveränderten Vorschaufunktion. Links steht der native
@@ -1230,7 +1246,9 @@ Schalter in derselben Zeile; bei Platzmangel kann die Beschriftung umbrechen.
 Die Leiste bricht bei Platzmangel um.
 Der Inhaltsbereich gliedert die Sicherheitsleitlinie als bestehende Infobox:
 Infoicon in Cyan, „Sicherheitsleitlinie:“ weiß und fett, direkt anschließend die
-Erklärung in Sekundärfarbe ohne erzwungenen Zeilenumbruch.
+Erklärung in Sekundärfarbe ohne erzwungenen Zeilenumbruch. Das Icon steht oben zur
+ersten Textzeile. In der Werkzeugleiste bleibt „Beobachten“ links; die sichtbare
+Aktion „Übernehmen“ beziehungsweise „Anleitung senden“ steht rechtsbündig.
 Die Verlaufsüberschrift ist blau, der Nachrichten-Zähler bleibt grau. Unter dem
 Verlauf steht ein statusabhängiger zentrierter, kursiver Hinweis mit 8 px Abstand
 (`.support-admin-status-note`): Bei offenen, unzugewiesenen Tickets erklärt er die
@@ -1492,3 +1510,27 @@ Der öffentliche Seitenrahmen bleibt erhalten. Die Illustration liegt lokal als
 
 Die druckbare PDF verwendet eine eigene Classpath-HTML-/CSS-
 Vorlage unter `pdf/`, das vorhandene Service-Logo und einen hellen Druckhintergrund.
+
+Die administrative Ticketbearbeitung verwendet für die Editorumschaltung native
+`Tabs` mit der vorhandenen Gestaltung `.two-factor-method-tabs`. Die lokalen
+Ergänzungen in `cosmos-mfa-confirmation.css` kennzeichnen interne
+Vermerke und deren Editor mit der gemeinsamen Systempalette (`.support-internal-message`,
+`.support-admin-internal`). Im internen Modus verwendet die Speicheraktion die
+Systemfarbe mit dem unveränderten nativen Primary-Buttonstil. Auch der
+Pflichtfeldpunkt am Vermerkfeld verwendet den Systemakzent.
+Die lokale Regel bindet nur dessen bestehende Farbvariablen an den Systemakzent,
+für lesbare weiße Beschriftung etwas abgedunkelt. Beim Wechsel zur öffentlichen
+Antwort gelten wieder die normalen blauen Farben. Im internen Modus bündelt die bestehende
+Sicherheitswarnung das Verbot sensibler Inhalte und den Hinweis auf die ausschließlich
+administrative Sichtbarkeit; eine zusätzliche Infobox entfällt. Öffentliche Nachrichten behalten
+ihre Sprechblasenfarben. `.support-history-event` zentriert kompakte Systemereignisse
+zwischen Nachrichten; Zustandsfarben verwenden die vorhandenen Ticket-Badges.
+Erstellung verwendet Lucides `message-square-plus`, Statuswechsel Tablers
+`status-change`. Beide lokalen SVGs werden als native `SvgIcon` mit 16 × 16 px
+und dem vorhandenen blauen Akzent unter `.support-history-event-icon` angezeigt.
+Panelkopf, Werkzeugleiste und Aktionsfooter bleiben davon unabhängig.
+Der native Verlaufsscroller verwendet lokal eine transparente Bahn mit gedecktem
+Griff, in Chromium/WebKit 6 px breit und bei Hover/Ziehen akzentblau. Andere Browser
+verwenden die native schmale Breite. Die reservierte Scrollbahn verhindert einen
+Breitensprung. Rechts bleiben einschließlich der 11-px-Sprechblasenspitze 12 px
+Abstand zur Bahn; Form und Rahmen der Sprechblasen bleiben erhalten.

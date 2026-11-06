@@ -64,6 +64,7 @@ public class SupportTicketService {
       Type type,
       Status status,
       Instant updatedAt,
+      Instant createdAt,
       Long assignee,
       UserIdentity assigneeIdentity,
       boolean instructionSent,
@@ -79,7 +80,15 @@ public class SupportTicketService {
   }
 
   public record Reply(
-      Long id, String body, boolean internal, Instant createdAt, ReplyAuthor author, Kind kind)
+      Long id,
+      String body,
+      boolean internal,
+      Instant createdAt,
+      ReplyAuthor author,
+      Kind kind,
+      Status previousStatus,
+      Status nextStatus,
+      UserIdentity actor)
       implements java.io.Serializable {}
 
   public record UserIdentity(String firstName, String lastName, String email)
@@ -292,6 +301,7 @@ public class SupportTicketService {
     ticket.setUpdatedAt(ticket.getCreatedAt());
     ticket.setPublicUpdatedAt(ticket.getCreatedAt());
     tickets.saveAndFlush(ticket);
+    appendHistory(ticket, user, Kind.TICKET_CREATED, null, Status.OPEN);
     SupportReplyEntity firstReply =
         append(ticket, user, body, ReplyAuthor.REQUESTER, false, Kind.MESSAGE);
     notifications.recordRecoveryRequest(ticketNumber(ticket.getId()), firstReply.getId());
@@ -319,7 +329,15 @@ public class SupportTicketService {
                     reply.isInternal(),
                     reply.getCreatedAt(),
                     reply.isSupportAuthor() ? ReplyAuthor.SUPPORT : ReplyAuthor.REQUESTER,
-                    reply.getKind()))
+                    reply.getKind(),
+                    reply.getPreviousStatus(),
+                    reply.getNextStatus(),
+                    administration && reply.getAuthor() != null
+                        ? new UserIdentity(
+                            reply.getAuthor().getFirstName(),
+                            reply.getAuthor().getLastName(),
+                            reply.getAuthor().getEmail())
+                        : null))
         .toList();
   }
 
@@ -333,11 +351,16 @@ public class SupportTicketService {
     if (ticket.getAssignee() != null && !ticket.getAssignee().getId().equals(administrator.id())) {
       throw new IllegalStateException("Ticket already assigned");
     }
+    Status previousStatus = ticket.getStatus();
     ticket.setAssignee(users.getReferenceById(administrator.id()));
     ticket.setStatus(Status.IN_PROGRESS);
     ticket.setUpdatedAt(Instant.now());
     ticket.setPublicUpdatedAt(ticket.getUpdatedAt());
     tickets.saveAndFlush(ticket);
+    if (previousStatus != ticket.getStatus()) {
+      appendHistory(
+          ticket, ticket.getAssignee(), Kind.STATUS_CHANGED, previousStatus, ticket.getStatus());
+    }
     notifications.retireTicketNotifications(
         ticketNumber(ticket.getId()), UserNotificationRelevance.TICKET_ASSIGNED);
     events.ticketChanged(ticket.getOwner().getId());
@@ -383,7 +406,7 @@ public class SupportTicketService {
     } else {
       requireAssignee(ticket, actor);
     }
-    return updateStatus(ticket, Status.CLOSED, true);
+    return updateStatus(ticket, Status.CLOSED, true, actor.id());
   }
 
   @Transactional
@@ -393,7 +416,8 @@ public class SupportTicketService {
     if (!ticket.getStatus().acceptsMessages()) {
       throw new AccessDeniedException("Ticket already closed");
     }
-    Ticket result = updateStatus(ticket, Status.CLOSED_BY_REQUESTER, false);
+    Ticket result =
+        updateStatus(ticket, Status.CLOSED_BY_REQUESTER, false, ticket.getOwner().getId());
     Long assignee = ticket.getAssignee() == null ? null : ticket.getAssignee().getId();
     notifications.recordRequesterClosed(
         ticketNumber(id),
@@ -402,11 +426,15 @@ public class SupportTicketService {
     return result;
   }
 
-  private Ticket updateStatus(SupportTicketEntity ticket, Status status, boolean administration) {
+  private Ticket updateStatus(
+      SupportTicketEntity ticket, Status status, boolean administration, Long actorId) {
+    Status previousStatus = ticket.getStatus();
     ticket.setStatus(status);
     ticket.setUpdatedAt(Instant.now());
     ticket.setPublicUpdatedAt(ticket.getUpdatedAt());
     tickets.saveAndFlush(ticket);
+    appendHistory(
+        ticket, users.getReferenceById(actorId), Kind.STATUS_CHANGED, previousStatus, status);
     notifications.retireTicketNotifications(
         ticketNumber(ticket.getId()),
         status == Status.CLOSED
@@ -417,12 +445,11 @@ public class SupportTicketService {
   }
 
   @Transactional(readOnly = true)
-  public String instructionPreview(HttpServletRequest request, Long id) {
+  public void validateInstructionPreview(HttpServletRequest request, Long id) {
     SupportTicketEntity ticket = accessible(request, id, true);
     if (!ticket.getStatus().acceptsMessages()) {
       throw new AccessDeniedException("Instruction delivery unavailable");
     }
-    return templates.texts(ticket.getOwner()).getSupportRecoveryInstructions();
   }
 
   @Transactional
@@ -553,6 +580,28 @@ public class SupportTicketService {
     return reply;
   }
 
+  /** Statusereignisse bleiben administrativ und lösen keine Nachrichtenzähler oder Hinweise aus. */
+  private void appendHistory(
+      SupportTicketEntity ticket,
+      UserEntity actor,
+      Kind kind,
+      Status previousStatus,
+      Status nextStatus) {
+    SupportReplyEntity event = new SupportReplyEntity();
+    event.setTicket(ticket);
+    event.setAuthor(actor);
+    event.setSupportAuthor(!actor.getId().equals(ticket.getOwner().getId()));
+    event.setKind(kind);
+    event.setPreviousStatus(previousStatus);
+    event.setNextStatus(nextStatus);
+    // Der sichtbare Text entsteht beim Lesen aus den typisierten Zuständen in der aktuellen
+    // Sprache.
+    event.setBody("");
+    event.setInternal(true);
+    event.setCreatedAt(kind == Kind.TICKET_CREATED ? ticket.getCreatedAt() : ticket.getUpdatedAt());
+    replies.saveAndFlush(event);
+  }
+
   private Ticket view(SupportTicketEntity ticket, boolean administration) {
     return view(ticket, ticket.getUpdatedAt(), 0L, false, false, administration);
   }
@@ -583,6 +632,7 @@ public class SupportTicketService {
         ticket.getType(),
         ticket.getStatus(),
         updatedAt,
+        ticket.getCreatedAt(),
         ticket.getAssignee() == null ? null : ticket.getAssignee().getId(),
         assigneeIdentity,
         ticket.getInstructionSentAt() != null,

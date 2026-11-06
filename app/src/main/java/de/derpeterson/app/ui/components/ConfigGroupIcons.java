@@ -9,7 +9,8 @@ public final class ConfigGroupIcons {
   public static AppIcon forGroup(AdminConfigGroup group) {
     return switch (group) {
       case GENERAL, SMTP -> AppIcon.COG;
-      case SECURITY, TWO_FACTOR -> AppIcon.LOCK;
+      case SECURITY -> AppIcon.LOCK;
+      case TWO_FACTOR -> AppIcon.SHIELD_KEYHOLE;
       case EXTERNAL_LOGIN -> AppIcon.CLOUD_LOCK;
       case TOKENS -> AppIcon.KEY;
       case USER_STATUS -> AppIcon.USER;

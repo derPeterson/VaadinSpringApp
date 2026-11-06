@@ -13,6 +13,7 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.playwright.AllurePlaywright;
 import io.qameta.allure.playwright.TraceSession;
+import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -38,6 +39,8 @@ public abstract class BrowserFixture {
             .chromium()
             .launch(
                 new BrowserType.LaunchOptions()
+                    // Native Scrollleisten müssen auch auf Headless-Screenshots sichtbar bleiben.
+                    .setIgnoreDefaultArgs(List.of("--hide-scrollbars"))
                     .setHeadless(!Boolean.getBoolean("browser.tests.headed")));
     System.setProperty("browser.tests.browserVersion", browser.version());
   }

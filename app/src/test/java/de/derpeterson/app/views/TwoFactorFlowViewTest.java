@@ -58,6 +58,7 @@ import de.derpeterson.app.service.SupportTicketService.UserIdentity;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
+import de.derpeterson.app.ui.components.RecoveryInstructionsComponent;
 import de.derpeterson.app.ui.components.SupportTicketFilterPanel;
 import de.derpeterson.app.ui.components.SupportTicketFilterPanel.Assignment;
 import de.derpeterson.app.ui.components.SupportTicketsComponent;
@@ -308,6 +309,7 @@ class TwoFactorFlowViewTest {
             Type.RECOVERY,
             Status.CLOSED,
             Instant.EPOCH,
+            Instant.EPOCH,
             null,
             null,
             false,
@@ -322,6 +324,7 @@ class TwoFactorFlowViewTest {
             "Current request",
             Type.RECOVERY,
             Status.OPEN,
+            Instant.EPOCH,
             Instant.EPOCH,
             null,
             null,
@@ -368,6 +371,7 @@ class TwoFactorFlowViewTest {
             Type.RECOVERY,
             Status.OPEN,
             Instant.EPOCH,
+            Instant.EPOCH,
             null,
             null,
             false,
@@ -382,6 +386,7 @@ class TwoFactorFlowViewTest {
             "Request",
             Type.RECOVERY,
             Status.CLOSED,
+            Instant.EPOCH,
             Instant.EPOCH,
             null,
             null,
@@ -559,6 +564,7 @@ class TwoFactorFlowViewTest {
         Type.RECOVERY,
         status,
         Instant.EPOCH,
+        Instant.EPOCH,
         assignee,
         identity,
         false,
@@ -670,6 +676,7 @@ class TwoFactorFlowViewTest {
             Type.RECOVERY,
             Status.IN_PROGRESS,
             Instant.EPOCH,
+            Instant.EPOCH,
             9L,
             new UserIdentity("Alex", "Beispiel", "alex@example.test"),
             false,
@@ -687,7 +694,10 @@ class TwoFactorFlowViewTest {
                     false,
                     Instant.EPOCH,
                     ReplyAuthor.REQUESTER,
-                    SupportReplyEntity.Kind.MESSAGE)));
+                    SupportReplyEntity.Kind.MESSAGE,
+                    null,
+                    null,
+                    null)));
     when(tickets.administratorId(request)).thenReturn(9L);
     SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
     Component pageHeader = find(component, "support-page-header");
@@ -727,6 +737,38 @@ class TwoFactorFlowViewTest {
     assertTrue(find(component, "support-ticket-footer").isVisible());
     assertTrue(find(component, "support-add-reply").isVisible());
 
+    Component editor =
+        tree(component)
+            .filter(part -> part.hasClassName("support-admin-editor"))
+            .findFirst()
+            .orElseThrow();
+    List<Component> notices =
+        tree(editor).filter(part -> part.hasClassName("cosmos-security-warning")).toList();
+    assertEquals(1, notices.size());
+    assertEquals(0, tree(editor).filter(part -> part.hasClassName("support-help-notice")).count());
+    Component notice = notices.getFirst();
+    assertTrue(notice.getElement().getTextRecursively().contains(texts.getSupportSecurityNotice()));
+    Tabs replyModes = (Tabs) find(component, "support-reply-mode");
+    replyModes.setSelectedIndex(1);
+    assertTrue(
+        notice
+            .getElement()
+            .getTextRecursively()
+            .contains(texts.getSupportInternalSecurityNotice()));
+    component.refreshTexts();
+    assertTrue(
+        notice
+            .getElement()
+            .getTextRecursively()
+            .contains(texts.getSupportInternalSecurityNotice()));
+    replyModes.setSelectedIndex(0);
+    assertTrue(notice.getElement().getTextRecursively().contains(texts.getSupportSecurityNotice()));
+    assertFalse(
+        notice
+            .getElement()
+            .getTextRecursively()
+            .contains(texts.getSupportInternalSecurityNotice()));
+
     when(tickets.administratorId(request)).thenReturn(10L);
     component.refresh();
     Component otherAssignee = renderer.createComponent(assigned);
@@ -749,6 +791,126 @@ class TwoFactorFlowViewTest {
             .filter(OverlayUserIcon.class::isInstance)
             .filter(part -> "Alex Beispiel".equals(part.getElement().getAttribute("aria-label")))
             .count());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void instructionPreviewUsesCurrentInterfaceLanguageAndUpdatesWhileOpen(String language) {
+    open(language, false);
+    MessageProperties liveTexts = new MessageProperties(new CustomI18NProvider());
+    SupportTicketService tickets = mock(SupportTicketService.class);
+    Ticket assigned = filterTicket(1L, Status.IN_PROGRESS, 9L);
+    when(tickets.list(request, true)).thenReturn(List.of(assigned));
+    when(tickets.administratorId(request)).thenReturn(9L);
+    SupportTicketsComponent component =
+        new SupportTicketsComponent(liveTexts, tickets, request, true);
+    @SuppressWarnings("unchecked")
+    Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
+    grid.asSingleSelect().setValue(assigned);
+    component.refresh();
+    ((Button) find(component, "support-instructions")).click();
+    verify(tickets).validateInstructionPreview(request, assigned.id());
+    Component dialog = find(component, "support-instruction-preview");
+    for (String current : List.of(language, "de".equals(language) ? "en" : "de")) {
+      Locale locale = Locale.forLanguageTag(current);
+      when(session.getLocale()).thenReturn(locale);
+      component.refreshTexts();
+      String expected =
+          MessageProperties.forLocale(new CustomI18NProvider(), locale)
+              .getSupportRecoveryInstructions();
+      RecoveryInstructionsComponent guide =
+          tree(dialog)
+              .filter(RecoveryInstructionsComponent.class::isInstance)
+              .map(RecoveryInstructionsComponent.class::cast)
+              .findFirst()
+              .orElseThrow();
+      assertEquals(expected.substring(0, expected.indexOf('\n')), guide.getHeading());
+      assertTrue(dialog.getElement().getTextRecursively().contains(guide.getHeading()));
+      String content = guide.getElement().getTextRecursively();
+      for (String section : expected.split("\n\n")) {
+        for (String line : section.split("\n")) {
+          assertTrue(dialog.getElement().getTextRecursively().contains(line), line);
+        }
+      }
+      assertTrue(content.contains(expected.split("\n\n")[6]));
+      assertEquals(6, guide.getChildren().count());
+    }
+    verify(tickets, never()).sendInstructions(any(), any(), any());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void supportSenderIdentityIsVisibleOnlyInAdministration(String language) {
+    open(language, false);
+    SupportTicketService tickets = mock(SupportTicketService.class);
+    Ticket assigned = filterTicket(1L, Status.IN_PROGRESS, 9L);
+    UserIdentity author = new UserIdentity("Morgan", "Autor", "morgan@example.test");
+    Reply publicReply =
+        new Reply(
+            41L,
+            "Public reply",
+            false,
+            Instant.EPOCH,
+            ReplyAuthor.SUPPORT,
+            SupportReplyEntity.Kind.MESSAGE,
+            null,
+            null,
+            author);
+    Reply internalNote =
+        new Reply(
+            42L,
+            "Internal note",
+            true,
+            Instant.EPOCH,
+            ReplyAuthor.SUPPORT,
+            SupportReplyEntity.Kind.MESSAGE,
+            null,
+            null,
+            author);
+    Reply deletedAuthor =
+        new Reply(
+            43L,
+            "Former administrator",
+            false,
+            Instant.EPOCH,
+            ReplyAuthor.SUPPORT,
+            SupportReplyEntity.Kind.MESSAGE,
+            null,
+            null,
+            null);
+    when(tickets.administratorId(request)).thenReturn(9L);
+    for (boolean administration : List.of(true, false)) {
+      List<Reply> messages =
+          administration
+              ? List.of(publicReply, internalNote, deletedAuthor)
+              : List.of(publicReply, deletedAuthor);
+      when(tickets.list(request, administration)).thenReturn(List.of(assigned));
+      when(tickets.conversation(request, assigned.id(), administration)).thenReturn(messages);
+      SupportTicketsComponent component =
+          new SupportTicketsComponent(texts, tickets, request, administration);
+      component.openTicket("10001");
+      List<Component> entries =
+          tree(component).filter(part -> part.hasClassName("support-message")).toList();
+      assertEquals(messages.size(), entries.size());
+      for (int index = 0; index < entries.size(); index++) {
+        Component entry = entries.get(index);
+        boolean identified = administration && messages.get(index).actor() != null;
+        Component sender =
+            tree(entry)
+                .filter(part -> part.hasClassName("support-message-sender"))
+                .findFirst()
+                .orElseThrow();
+        assertEquals(
+            identified ? "Morgan Autor" : texts.getSupportMessageSupport(),
+            sender.getElement().getText());
+        assertEquals(
+            identified ? 1 : 0, tree(entry).filter(OverlayUserIcon.class::isInstance).count());
+        if (!administration) {
+          assertFalse(entry.getElement().getTextRecursively().contains("Morgan"));
+          assertFalse(entry.getElement().getTextRecursively().contains(author.email()));
+        }
+      }
+    }
   }
 
   private Component find(Component root, String id) {

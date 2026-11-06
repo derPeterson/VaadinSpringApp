@@ -24,7 +24,13 @@ import org.hibernate.annotations.OnDeleteAction;
 public class SupportReplyEntity {
   public enum Kind {
     MESSAGE,
-    RECOVERY_INSTRUCTIONS
+    RECOVERY_INSTRUCTIONS,
+    TICKET_CREATED,
+    STATUS_CHANGED;
+
+    public boolean isHistory() {
+      return this == TICKET_CREATED || this == STATUS_CHANGED;
+    }
   }
 
   @Id
@@ -47,6 +53,12 @@ public class SupportReplyEntity {
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private Kind kind = Kind.MESSAGE;
+
+  @Enumerated(EnumType.STRING)
+  private SupportTicketEntity.Status previousStatus;
+
+  @Enumerated(EnumType.STRING)
+  private SupportTicketEntity.Status nextStatus;
 
   @Column(nullable = false, length = 2000)
   private String body;

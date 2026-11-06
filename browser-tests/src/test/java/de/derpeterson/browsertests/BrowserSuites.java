@@ -87,6 +87,7 @@ final class BrowserSuites {
       case "two-factor-confirmation",
           "two-factor-configuration",
           "two-factor-instructions",
+          "two-factor-ticket-panel",
           "two-factor-ticket-layout" ->
           List.of(TwoFactorBrowserTest.class);
       case "two-factor-lifecycle" -> List.of(TwoFactorLifecycleBrowserTest.class);

@@ -191,7 +191,11 @@ Benachrichtigung und können einen Vorgang übernehmen. Veraltete oder konkurrie
 antworten, die vorbereitete Anleitung senden und den Vorgang abschließen.
 Antragsteller sehen ihre öffentlichen Antworten und können ihre eigene Anfrage
 schließen. Öffentliche Antworten aus der Administration erscheinen als
-„Systemadministration“. Die Herkunft wird beim Schreiben gespeichert und bleibt
+„Systemadministration“. In der Administration zeigen öffentliche Antworten und
+interne Vermerke stattdessen Avatar und Namen des tatsächlichen Autors mit Name
+und E-Mail im bestehenden Tooltip. Die Identitätsdaten werden ausschließlich für
+die berechtigte Adminansicht ausgegeben. Bei gelöschtem Autorenkonto bleibt die
+neutrale Beschriftung erhalten. Die Herkunft wird beim Schreiben gespeichert und bleibt
 auch bei einem Rollenwechsel oder gelöschtem Bearbeiterkonto erhalten.
 „Vom Nutzer geschlossen“ und „Abgeschlossen“ sperren Antworten und
 den Versand der Anleitung. Ein Admin kann einen vom Nutzer geschlossenen Vorgang
@@ -272,6 +276,25 @@ Ticketarten sind noch nicht eingerichtet. Auf breiten Fenstern bleiben Liste
 und Nachrichtenverlauf nebeneinander sichtbar. Schmale Fenster ordnen sie
 untereinander an. Der Verlauf nutzt dieselben Sprechblasen wie die Benutzerhilfe
 und kennzeichnet interne Vermerke separat.
+Erstellung und tatsächliche Statuswechsel werden in derselben Transaktion als
+administrative Systemereignisse im Verlauf gespeichert: vorheriger/neuer Zustand,
+Zeitpunkt und handelnde Person. Wiederholtes Übernehmen desselben Tickets erzeugt
+keinen weiteren Statuswechsel; ein zurückgerollter Vorgang hinterlässt kein Ereignis.
+Die Texte entstehen aus typisierten Zuständen in der aktuellen Oberflächensprache.
+Diese Ereignisse sind nur administrativ sichtbar, zählen weder als Nachrichten noch
+als ungelesen und lösen keine zusätzlichen Glockenhinweise aus. Die Grenze von
+50 Nachrichten pro Ticket gilt weiterhin für Nachrichten und Anleitungen, ohne History.
+Liste und Detailkopf zeigen das unveränderte Erstelldatum; die Sortierung berücksichtigt
+weiterhin die letzte relevante Aktivität.
+
+Am administrativen Editor wählen native Tabs zwischen öffentlicher Antwort und
+internem Vermerk. Entwurfstext und Modus bleiben beim Wechsel zwischen Tickets sowie
+bei Live-Aktualisierung erhalten. Interne Vermerke erhalten die violette Systemfläche
+und eine ausdrückliche Kennzeichnung. Der Sicherheitshinweis im internen Editor
+verbindet das Verbot sensibler Inhalte mit der Information, dass nur Administratoren
+diese Vermerke lesen können und die anfragende Person keinen Zugriff darauf hat. Die Nutzeransicht erhält weder diese Vermerke
+noch die administrativen Systemereignisse oder deren Personenangaben.
+
 Die Zuständigkeit erscheint nur in der Administration als Bearbeiteravatar mit
 Name und E-Mail im Tooltip. Im Detailkopf stehen diese Angaben bei fremden
 Bearbeitern auch sichtbar daneben. Eigene Zuweisungen tragen das grüne „Sie“-/
@@ -299,9 +322,11 @@ für jeden Auswahlwechsel einen zusätzlichen Zurück-Schritt anzulegen.
 „Zum Ticket“ öffnet für berechtigte Administratoren den zugehörigen Eintrag
 in der bestehenden Ticketliste; Lesen und Übernehmen bleiben eigene Aktionen.
 
-„Anleitung senden“ zeigt den konkreten Text in der gespeicherten Kontosprache vorab,
-legt ihn als öffentliche Antwort ab und nimmt eine E-Mail an die bestehende
-bestätigte Kontaktadresse in die Mailqueue auf. Queueaufnahme ist keine bestätigte
+„Anleitung senden“ zeigt die Anleitung in der aktuellen Oberflächensprache vorab.
+Ein Sprachwechsel aktualisiert auch die bereits geöffnete Vorschau. Beim Senden
+wird die Anleitung in der gespeicherten Kontosprache des Empfängers als öffentliche
+Antwort abgelegt und eine E-Mail an die bestehende
+bestätigte Kontaktadresse in die Mailqueue aufgenommen. Queueaufnahme ist keine bestätigte
 Zustellung. Ein fehlgeschlagener Queueauftrag bleibt wiederholbar. Die Anleitung
 enthält keine neuen Codes. Freier Tickettext, Name, Geburtsdatum und ein E-Mail-Link
 sind keine Wiederherstellungsnachweise. Ohne Authenticator und gültigen Ersatzcode
@@ -310,8 +335,9 @@ wird die Sperre nicht über das Ticketsystem aufgehoben.
 Die Vorschau gliedert die Anleitung in vier nummerierte Schritte, den gelben
 Sicherheitshinweis und eine separate Information zu den Grenzen der Hilfe.
 Im Nachrichtenverlauf erscheint sie als kompakte Sprechblase mit aufklappbaren
-Details. Der Öffnungszustand bleibt beim Aktualisieren erhalten. Vorschau und
-Verlauf zeigen denselben gespeicherten Text in der Kontosprache des Empfängers.
+Details. Der Öffnungszustand bleibt beim Aktualisieren erhalten. Der Verlauf zeigt
+den tatsächlich versendeten und gespeicherten Text in der Kontosprache des Empfängers;
+die Vorschau folgt unabhängig davon der aktuellen Sprache des bearbeitenden Admins.
 Die Nachrichtenart `RECOVERY_INSTRUCTIONS` kennzeichnet ausschließlich die vom
 Dienst versendete Anleitung; kopierter Text in einer normalen Antwort bleibt
 eine normale Nachricht. Das aktuelle Schema enthält dafür `support_replies.kind`.
