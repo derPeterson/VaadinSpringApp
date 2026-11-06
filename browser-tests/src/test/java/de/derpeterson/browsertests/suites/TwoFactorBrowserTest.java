@@ -90,6 +90,63 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       AllurePlaywright.attachScreenshot(
           "Ticketübersicht und Auswahlhinweis bei " + width + "px", page);
     }
+    page.setViewportSize(1280, 1000);
+    UiActions.complete(page, () -> page.locator(".support-admin-ticket-card").first().click());
+    Locator ticketPanel = page.locator("#support-ticket-panel");
+    Locator tools = ticketPanel.locator("#support-ticket-tools");
+    Locator footer = ticketPanel.locator("#support-ticket-footer");
+    assertThat(ticketPanel.locator("#support-ticket-header"))
+        .containsText(texts.getSupportRecoverySubject());
+    assertThat(tools.locator("#support-claim")).isVisible();
+    assertThat(tools.locator("#support-claim")).hasAttribute("theme", "primary");
+    assertThat(ticketPanel.locator(".support-admin-ticket-metadata > .support-ticket-status"))
+        .hasCSS("margin-inline-start", "0px");
+    assertThat(footer).not().isVisible();
+    UiActions.complete(page, () -> tools.locator("#support-claim").click());
+    assertThat(ticketPanel.locator("#support-ticket-header"))
+        .containsText(texts.getSupportInProgress());
+    assertThat(tools.locator("#support-instructions")).isVisible();
+    assertThat(footer.locator("#support-add-reply")).isVisible();
+    assertThat(footer.locator("#support-close")).isVisible();
+    Locator requesterAvatar = ticketPanel.locator("#support-detail-requester .cosmos-user-avatar");
+    assertThat(requesterAvatar.locator(".cosmos-avatar-initials")).hasCSS("cursor", "default");
+    requesterAvatar.hover();
+    assertThat(page.locator("vaadin-tooltip-overlay[opened] [part=overlay]"))
+        .hasCSS("pointer-events", "none");
+    assertThat(requesterAvatar.locator(".cosmos-avatar-initials")).hasCSS("cursor", "default");
+    Locator reload = page.locator("#support-reload");
+    assertThat(reload).hasCSS("cursor", "pointer");
+    reload.hover();
+    assertThat(reload).hasCSS("cursor", "pointer");
+    assertThat(ticketPanel.locator("#support-reply textarea")).hasCSS("cursor", "text");
+    for (int width : new int[] {1280, 390}) {
+      page.setViewportSize(width, 1000);
+      page.waitForCondition(
+          () ->
+              (Boolean)
+                  ticketPanel.evaluate(
+                      """
+                      panel => {
+                        const bounds = panel.getBoundingClientRect();
+                        const sections = ['#support-ticket-header', '#support-ticket-tools', '#support-ticket-footer']
+                            .map(selector => panel.querySelector(selector));
+                        return sections.every(section => {
+                          const rect = section.getBoundingClientRect();
+                          return rect.width > 0 && rect.left >= bounds.left && rect.right <= bounds.right
+                              && [...section.querySelectorAll('vaadin-button')].every(button => {
+                                if (button.hidden) return true;
+                                const action = button.getBoundingClientRect();
+                                return action.left >= rect.left && action.right <= rect.right;
+                              });
+                        }) && document.documentElement.scrollWidth <= window.innerWidth;
+                      }
+                      """));
+      ticketPanel.locator("#support-ticket-header").scrollIntoViewIfNeeded();
+      AllurePlaywright.attachScreenshot(
+          "Ticket-Panelkopf und Werkzeugleiste bei " + width + "px", page);
+      footer.scrollIntoViewIfNeeded();
+      AllurePlaywright.attachScreenshot("Ticket-Aktionsfooter bei " + width + "px", page);
+    }
   }
 
   @ParameterizedTest

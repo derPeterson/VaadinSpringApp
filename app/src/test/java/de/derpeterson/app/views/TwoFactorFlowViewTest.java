@@ -37,6 +37,7 @@ import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.SupportReplyEntity;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
 import de.derpeterson.app.model.SupportTicketEntity.Type;
 import de.derpeterson.app.model.TwoFactorChallengeEntity.Kind;
@@ -50,6 +51,8 @@ import de.derpeterson.app.security.mfa.TwoFactorEnrollment;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.SupportTicketService;
+import de.derpeterson.app.service.SupportTicketService.Reply;
+import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.SupportTicketService.UserIdentity;
 import de.derpeterson.app.ui.components.AppIcon;
@@ -307,7 +310,8 @@ class TwoFactorFlowViewTest {
             false,
             0,
             false,
-            false);
+            false,
+            null);
     Ticket active =
         new Ticket(
             2L,
@@ -321,7 +325,8 @@ class TwoFactorFlowViewTest {
             false,
             0,
             false,
-            false);
+            false,
+            null);
     when(tickets.list(request, false)).thenReturn(List.of(closed, active));
 
     RecoveryHelpView help = new RecoveryHelpView(config, texts, tickets, request);
@@ -365,7 +370,8 @@ class TwoFactorFlowViewTest {
             false,
             0,
             false,
-            false);
+            false,
+            null);
     Ticket closed =
         new Ticket(
             1L,
@@ -379,7 +385,8 @@ class TwoFactorFlowViewTest {
             false,
             0,
             false,
-            false);
+            false,
+            null);
     when(tickets.list(request, false)).thenReturn(List.of(active));
     RecoveryHelpView help = new RecoveryHelpView(config, texts, tickets, request);
     TextArea draft = (TextArea) find(help, "support-reply");
@@ -491,7 +498,7 @@ class TwoFactorFlowViewTest {
     component.refresh();
     assertEquals(0, grid.getListDataView().getItemCount());
     assertTrue(component.getElement().getTextRecursively().contains(texts.getSupportFilterEmpty()));
-    component.openTicket(SupportTicketService.ticketNumber(mine.id()));
+    component.openTicket("10001");
     assertEquals(mine, grid.asSingleSelect().getValue());
     assertEquals(2, grid.getListDataView().getItemCount());
     assertFalse(find(component, "support-active-filter-count").isVisible());
@@ -519,7 +526,7 @@ class TwoFactorFlowViewTest {
     ((CheckboxGroup<Status>) find(filters, "support-filter-status")).setValue(Set.of(Status.OPEN));
     filterAction(filters, "support-filter-apply").click();
     assertTrue(find(component, "support-select-ticket").isVisible());
-    component.openTicket(SupportTicketService.ticketNumber(mine.id()));
+    component.openTicket("10001");
     assertEquals("Diese Antwort ist noch ein Entwurf.", draft.getValue());
   }
 
@@ -538,7 +545,8 @@ class TwoFactorFlowViewTest {
         false,
         0,
         false,
-        false);
+        false,
+        null);
   }
 
   private Button filterAction(SupportTicketFilterPanel panel, String id) {
@@ -564,8 +572,19 @@ class TwoFactorFlowViewTest {
             false,
             0,
             false,
-            false);
+            false,
+            new UserIdentity("Riley", "Antrag", "riley@example.test"));
     when(tickets.list(request, true)).thenReturn(List.of(assigned));
+    when(tickets.conversation(request, assigned.id(), true))
+        .thenReturn(
+            List.of(
+                new Reply(
+                    42L,
+                    "Testanfrage",
+                    false,
+                    Instant.EPOCH,
+                    ReplyAuthor.REQUESTER,
+                    SupportReplyEntity.Kind.MESSAGE)));
     when(tickets.administratorId(request)).thenReturn(9L);
     SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
     Component pageHeader = find(component, "support-page-header");
@@ -588,11 +607,28 @@ class TwoFactorFlowViewTest {
             .getTextRecursively()
             .contains(texts.getSupportYou()));
     Component detailAssignee = find(component, "support-detail-assignee");
+    Component detailRequester = find(component, "support-detail-requester");
+    assertTrue(detailRequester.getElement().getTextRecursively().contains("Riley Antrag"));
+    assertTrue(detailRequester.getElement().getTextRecursively().contains("riley@example.test"));
+    Component requesterMessage =
+        tree(component)
+            .filter(part -> part.hasClassName("support-message"))
+            .findFirst()
+            .orElseThrow();
+    assertTrue(requesterMessage.getElement().getTextRecursively().contains("Riley Antrag"));
+    assertEquals(1, tree(requesterMessage).filter(OverlayUserIcon.class::isInstance).count());
     assertTrue(detailAssignee.getElement().getTextRecursively().contains(texts.getSupportYou()));
+    assertFalse(detailAssignee.getElement().getTextRecursively().contains("alex@example.test"));
+    assertTrue(find(component, "support-ticket-tools").isVisible());
+    assertTrue(find(component, "support-instructions").isVisible());
+    assertTrue(find(component, "support-ticket-footer").isVisible());
+    assertTrue(find(component, "support-add-reply").isVisible());
 
     when(tickets.administratorId(request)).thenReturn(10L);
     component.refresh();
     Component otherAssignee = renderer.createComponent(assigned);
+    assertFalse(find(component, "support-ticket-tools").isVisible());
+    assertFalse(find(component, "support-ticket-footer").isVisible());
     assertFalse(otherAssignee.getElement().getTextRecursively().contains(texts.getSupportYou()));
     OverlayUserIcon avatar =
         tree(otherAssignee)
@@ -602,6 +638,8 @@ class TwoFactorFlowViewTest {
             .orElseThrow();
     assertEquals("Alex Beispiel", avatar.getElement().getAttribute("aria-label"));
     assertFalse(detailAssignee.getElement().getTextRecursively().contains(texts.getSupportYou()));
+    assertTrue(detailAssignee.getElement().getTextRecursively().contains("Alex Beispiel"));
+    assertTrue(detailAssignee.getElement().getTextRecursively().contains("alex@example.test"));
     assertEquals(
         1,
         tree(detailAssignee)

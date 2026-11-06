@@ -8,6 +8,9 @@
   Escape oder Außenklick. Aktive Gruppen zählen, keine Treffer korrekt anzeigen,
   Filter beim Aktualisieren und Live-Update erhalten. Antwortentwürfe beim Ausblenden
   des ausgewählten Vorgangs erhalten und Ticketlinks trotz entgegenstehender Filter öffnen.
+  Benachrichtigungslinks müssen beispielsweise `section=support&ticket=10003`
+  ohne kodierte Raute öffnen; direkt eingegebene sichtbare Ticketnummern wählen
+  denselben berechtigten Vorgang aus.
 
 - **Automatische OTP-Bestätigung: offen, wartend auf Browserfreigabe.** Beide
   sechsstelligen Felder (Einrichtung und Anmeldung) in DE/EN durch Tippen,
@@ -33,14 +36,14 @@
   Den Bearbeiteravatar mit Name/E-Mail per Hover und Tastatur prüfen; grünes
   „Sie“/„You“-Badge mit Rahmen
   darf nur beim eigenen Bearbeiterkonto erscheinen. Unzugewiesene Tickets zeigen ihren Text kursiv.
-  Der gezielte Lauf `two-factor-ticket-layout` prüft Mindestbreite und Umbruch nach
-  Panelbreite, vollständige Tabs sowie den mittigen Auswahlhinweis mit `list`.
-  Der Nachtest des neu gewählten Icons und des Adminlistentitels „Vorgänge“ / „Cases“ ist offen.
-  Dabei den gemeinsamen Panelrahmen um Kopf und Liste prüfen: List-Icon
-  und Titel im Kopf, Aktualisieren rechts in der separaten Werkzeugleiste darunter,
-  Einträge ohne doppelten äußeren Rahmen.
-  Nach der Stitch-Übernahme die 370-px-Mindestbreite und den mittigen Leerzustand
-  mit gerahmtem List-Icon, eigener Überschrift und sekundärem Hinweis nachprüfen.
+  Den Antragsteller im Admin-Ticketkopf mit eigenem Avatar, Name und sichtbarer
+  E-Mail sowie im Verlauf mit Avatar/Name prüfen; lange Werte dürfen auf Smartphone
+  umbrechen. Name und E-Mail im Avatar-Tooltip müssen zweizeilig bleiben und bei
+  Ticketwechsel/Live-Antwort dem richtigen Antragsteller folgen.
+  Im Detailkopf die zwei Rollenspalten mit blauen Großbuchstaben prüfen: Name/E-Mail
+  neben 32-px-Avatar beim Antragsteller und fremden Bearbeiter, beim eigenen Bearbeiter
+  nur Avatar und grünes „Sie“-/„You“-Badge, sonst „Nicht Zugewiesen“. Der gesamte
+  Bearbeiterblock ist rechtsbündig; beide Rollenüberschriften haben keinen Doppelpunkt.
 
 - **Globale Scrollleisten: offen.** Dokument, Wiederherstellungsverlauf und
   Admin-Filterdialog mit ausreichend Inhalt prüfen. Schmale Scrollleisten und

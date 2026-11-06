@@ -20,6 +20,10 @@ public class MessageTexts {
     return getTranslation("support.title");
   }
 
+  public String getSupportTicketNumber(String number) {
+    return getFormattedTranslation("support.ticketNumber", number);
+  }
+
   public String getSupportInboxDescription() {
     return getTranslation("support.inboxDescription");
   }

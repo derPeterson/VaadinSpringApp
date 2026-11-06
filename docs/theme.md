@@ -98,6 +98,10 @@ Padding 7 px 11 px, maximale Breite 220 px und Abstand 8 px. Der Schatten ist
 `0 4px 14px rgba(0,0,0,.65)`. Schmale Viewports behalten seitlich Platz.
 `cosmos-theme.css` gestaltet die nativen Vaadin-Tooltip-Parts `overlay` und
 `content`. Bestehende Hinweise, Tastaturbedienung und Sprachwechsel bleiben erhalten.
+Tooltips fangen keine Mausereignisse ab und ändern den Mauszeiger des auslösenden
+Elements nicht. Reine Identitätsavatare und Anbieterstatus behalten den normalen
+Zeiger; Avatare innerhalb nativer Buttons erben dessen Mauszeiger. Eingabefelder
+behalten ihren Textzeiger.
 Die rechte Feldhilfe ist ein eigener Baustein und bleibt von Tooltips getrennt.
 
 ## Native Vaadin-Bausteine zuerst
@@ -1189,14 +1193,41 @@ erlaubt das vertikale Ziehen bei fester Breite.
 Die Adminansicht „Ticketsystem“ übernimmt denselben Nachrichtenverlauf und den
 gelben Sicherheitshinweis. In der Administration stehen Anfragen links und
 Antworten rechts. Interne Vermerke haben eine eigene Kennzeichnung.
+Die ausgewählten Ticketdetails stehen in einem eigenen `CosmosCardComponent`
+mit dem bestehenden Panelrahmen. Der native `VerticalLayout`-Panelkopf gruppiert
+`lock-question` im Cosmos-Iconrahmen, „Ticket #…“ in Primärblau und Status in einer
+Orientierungszeile mit rechtsbündiger Aktualisierungszeit. Darunter steht der Betreff.
+Eine dezente Trennlinie setzt Antragsteller und Bearbeiter als eigene Rollen ab;
+auf schmalen Panelbreiten stehen die Rollen untereinander. Die Titelgestaltung übernimmt
+`cosmos-panel-title`; Statusfarben und Identitätstooltips bleiben gemeinsam.
+Im Kopf stehen Antragsteller und Bearbeiter in zwei gleich breiten Spalten mit
+kleinen blauen Rollenüberschriften in Großbuchstaben ohne Doppelpunkt. Unter der
+Rolle stehen ein 32-px-`OverlayUserIcon` und daneben Name sowie E-Mail in zwei
+Zeilen. E-Mail-Adressen bleiben in Inter. Beim eigenen Bearbeiterkonto erscheinen
+statt Name und E-Mail der Avatar und das grüne „Sie“-/„You“-Badge. Der gesamte
+Bearbeiterblock einschließlich Überschrift und „Nicht Zugewiesen“ steht rechtsbündig.
+Native `HorizontalLayout`-/`VerticalLayout`-Komponenten halten die Rollen getrennt;
+lange Namen und Adressen können umbrechen. Der Dienst liefert diese Identität
+ausschließlich für die berechtigte Adminansicht. Im administrativen Verlauf
+zeigen Antragstellernachrichten denselben Avatar und den Namen; der gemeinsame
+Avatar-Tooltip zeigt Name und E-Mail zweizeilig. Die Nutzeransicht bleibt unverändert.
+Eine separate native Werkzeugleiste darunter enthält die vorhandenen Aktionen
+„Übernehmen“ rechtsbündig, bei offenen Tickets als primäre Aktion, und
+„Anleitung senden“ mit der unveränderten Vorschaufunktion.
+Der Inhaltsbereich fasst Hinweis, Benachrichtigungsschalter, Verlauf und Editor
+in ihrer bisherigen Reihenfolge zusammen. Die vorhandenen Abschluss- und
+Antwortbuttons liegen im gemeinsamen Panel-Footer. Werkzeugleiste und Footer
+sind ohne sichtbare Aktionen ausgeblendet; Berechtigungen bleiben unverändert.
+Die lokalen Anordnungsregeln stehen unter `.support-admin-ticket-*` und
+`.support-admin-detail-*` in `cosmos-mfa-confirmation.css`.
 Die Ticketkarten verwenden native `VerticalLayout`- und
 `HorizontalLayout`-Komponenten: Nummer und Status mit Ungelesen-Zähler oben,
 Betreff über die volle Breite, darunter Bearbeiter links und Zeitpunkt rechts.
 Eine dezente Linie trennt diese Fußzeile. Die Texte können bei Platzmangel umbrechen;
 die bisherige zweispaltige Anordnung der Nutzertickets bleibt erhalten.
-Die Bearbeiterinfo der Admin-Karten und Ticketdetails verwendet denselben `OverlayUserIcon`
-mit 24 px wie die Anfrageansicht. Der gemeinsame Identitätstooltip zeigt oben den
-Namen und darunter die E-Mail-Adresse. Beim eigenen Bearbeiterkonto
+Die Bearbeiterinfo der Admin-Karten verwendet denselben `OverlayUserIcon`
+mit 24 px wie die Anfrageansicht; der Detailkopf verwendet 32 px. Der gemeinsame
+Identitätstooltip zeigt oben den Namen und darunter die E-Mail-Adresse. Beim eigenen Bearbeiterkonto
 steht daneben ein grünes natives „Sie“-/„You“-Badge mit Rahmen und den bestehenden
 `--cosmos-reference-success-*`-Farben (`.support-assignee-self`).
 Unzugewiesene Tickets zeigen „Nicht Zugewiesen“ / „Unassigned“ kursiv.

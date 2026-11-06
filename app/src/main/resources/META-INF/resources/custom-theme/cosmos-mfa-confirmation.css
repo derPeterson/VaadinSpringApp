@@ -84,7 +84,6 @@
 .support-message { gap:4px; max-width:94%; }
 .support-message[data-side=own] { align-self:end; align-items:end; }
 .support-message-metadata { gap:6px; flex-wrap:wrap; }
-.support-message-metadata .cosmos-user-avatar { cursor:default; }
 .support-message-metadata > vaadin-icon { width:14px; height:14px; color:var(--cosmos-reference-accent); }
 .support-message-sender { color:var(--cosmos-reference-accent); }
 .support-message-copy {
@@ -160,7 +159,7 @@
 .support-ticket-row .support-ticket-number {
   color:var(--support-ticket-number-color,var(--cosmos-reference-text));
 }
-:is(.support-ticket-row,.support-admin-subject-row) vaadin-badge.support-ticket-status {
+:is(.support-ticket-row,.support-admin-ticket-header) vaadin-badge.support-ticket-status {
   margin-inline-start:auto;
   padding:10px;
   border:1px solid #0ea5e966;
@@ -169,17 +168,17 @@
   color:#7dd3fc;
   font:500 11px/16px Inter,sans-serif;
 }
-:is(.support-ticket-row,.support-admin-subject-row) vaadin-badge.support-ticket-status[data-status=OPEN] {
+:is(.support-ticket-row,.support-admin-ticket-header) vaadin-badge.support-ticket-status[data-status=OPEN] {
   border-color:var(--cosmos-security-warning-border);
   background:var(--cosmos-security-warning-surface);
   color:var(--cosmos-security-warning-accent);
 }
-:is(.support-ticket-row,.support-admin-subject-row) vaadin-badge.support-ticket-status[data-status=CLOSED] {
+:is(.support-ticket-row,.support-admin-ticket-header) vaadin-badge.support-ticket-status[data-status=CLOSED] {
   border-color:#33415599;
   background:#1e293bcc;
   color:var(--cosmos-reference-label);
 }
-:is(.support-ticket-row,.support-admin-subject-row) vaadin-badge.support-ticket-status[data-status=CLOSED_BY_REQUESTER] {
+:is(.support-ticket-row,.support-admin-ticket-header) vaadin-badge.support-ticket-status[data-status=CLOSED_BY_REQUESTER] {
   border-color:#10b9814d;
   background:#022c2299;
   color:#6ee7b7;
@@ -203,7 +202,9 @@
 #support-queue-panel #support-queue-header { padding:12px; }
 #support-queue-header .cosmos-panel-icon { width:32px; height:32px; flex:0 0 32px; }
 #support-queue-header .cosmos-panel-icon > vaadin-icon { width:16px; height:16px; }
-.support-admin-list-tools { box-sizing:border-box; padding:12px 16px; border-bottom:1px solid var(--cosmos-reference-border); }
+.support-admin-list-tools,.support-admin-ticket-tools { box-sizing:border-box; padding:12px 16px; border-bottom:1px solid var(--cosmos-reference-border); }
+.support-admin-ticket-tools { padding-inline:24px; }
+.support-admin-ticket-tools > #support-claim { margin-inline-start:auto; }
 .support-admin-workspace .support-empty-state {
   box-sizing:border-box;
   width:100%;
@@ -237,7 +238,7 @@
 .support-admin-ticket-footer { padding-block-start:8px; border-block-start:1px solid var(--cosmos-reference-border); }
 .support-admin-ticket-footer > .support-ticket-assignment { flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
 .support-admin-ticket-footer > .support-ticket-updated { margin-inline-start:auto; white-space:nowrap; }
-.support-admin-ticket-list .support-ticket-status,.support-admin-subject-row .support-ticket-status { padding:2px 6px; }
+.support-admin-ticket-list .support-ticket-status,.support-admin-ticket-header .support-ticket-status { padding:2px 6px; }
 .support-ticket-assignment { color:var(--cosmos-reference-secondary); font:400 11px/16px Inter,sans-serif; }
 .support-ticket-unassigned { font-style:italic; }
 .support-ticket-assignee { gap:6px; }
@@ -251,14 +252,31 @@
   --vaadin-badge-background:var(--cosmos-reference-success-surface);
   --vaadin-badge-border-color:var(--cosmos-reference-success-border);
 }
-.support-admin-assignment { gap:6px; flex-wrap:wrap; }
-.support-ticket-assignee .cosmos-user-avatar { cursor:default; }
-.support-admin-subject-row { flex-wrap:wrap; gap:8px; }
-.support-admin-subject { margin:0; color:var(--cosmos-reference-text); font:600 15px/22px Inter,sans-serif; }
-.support-admin-context { gap:4px; }
-.support-admin-ticket-header { flex-wrap:wrap; gap:8px 16px; }
-.support-admin-ticket-header > .support-admin-context { flex:1 1 210px; min-width:0; width:auto; }
+.support-admin-requester,.support-admin-assignment { flex:1 1 0; min-width:0; gap:8px; }
+#support-ticket-header > .support-admin-subject { margin-inline-start:52px; overflow-wrap:anywhere; }
+.support-admin-ticket-header { container:support-ticket-header / inline-size; }
+.support-admin-ticket-orientation { gap:12px; flex-wrap:wrap; }
+.support-admin-ticket-orientation > .support-admin-ticket-metadata { min-width:0; }
+#support-ticket-header .support-admin-ticket-metadata > .support-ticket-status { margin-inline-start:0; }
+.support-admin-ticket-orientation > .support-ticket-updated { margin-inline-start:auto; }
+.support-admin-ticket-people { gap:16px; padding-top:16px; border-top:1px solid var(--cosmos-reference-border); }
+.support-admin-person-label { color:var(--cosmos-reference-accent); font:600 10px/16px Inter,sans-serif; text-transform:uppercase; letter-spacing:1.2px; }
+.support-admin-person-identity { gap:8px; min-width:0; }
+.support-admin-person-identity > vaadin-vertical-layout { min-width:0; }
+.support-admin-person-email { color:var(--cosmos-reference-secondary); font:400 11px/16px Inter,sans-serif; }
+.support-admin-person-name { color:var(--cosmos-reference-text); font:600 12px/18px Inter,sans-serif; }
+.support-admin-person-name,.support-admin-person-email { overflow-wrap:anywhere; }
+.support-admin-assignee-identity { min-height:34px; max-width:100%; }
+.support-admin-assignment .support-admin-person-identity > vaadin-vertical-layout { align-items:flex-end; text-align:end; }
+.support-admin-assignment > .support-ticket-unassigned { display:flex; align-items:center; justify-content:flex-end; }
+@container support-ticket-header (max-width:420px) {
+  #support-ticket-header > .support-admin-subject { margin-inline-start:0; }
+  .support-admin-ticket-people { flex-direction:column; align-items:stretch; }
+  .support-admin-requester,.support-admin-assignment { flex:auto; width:100%; }
+}
 .support-admin-detail,.support-admin-detail > vaadin-vertical-layout { min-width:0; }
+.support-admin-detail-content { box-sizing:border-box; padding:24px; }
+#support-ticket-footer > .cosmos-panel-actions { box-sizing:border-box; border-top:0; }
 .support-admin-detail .support-section-header { margin-bottom:8px; }
 .support-admin-detail .support-message-scroll { max-height:clamp(240px, 38vh, 420px); }
 .support-admin-detail .support-message[data-side=own] .support-message-copy {
@@ -278,7 +296,7 @@
   padding-block-start:12px;
   border-block-start:1px solid var(--cosmos-reference-border);
 }
-.support-admin-actions,.support-admin-secondary-actions { flex-wrap:wrap; gap:8px; }
+.support-admin-actions,.support-admin-ticket-tools { flex-wrap:wrap; gap:8px; }
 .support-admin-actions { justify-content:space-between; }
 .support-admin-actions > #support-add-reply { margin-inline-start:auto; }
 .support-admin-actions vaadin-button { max-width:100%; }
@@ -320,8 +338,6 @@ vaadin-badge.support-instruction-number {
 }
 @media (max-width:480px) {
   .support-admin-queue,.support-admin-detail-column { padding:16px; }
-  .support-admin-secondary-actions { width:100%; }
-  .support-admin-secondary-actions > vaadin-button { flex:1 1 auto; }
   .support-admin-actions vaadin-button[theme~=primary] { width:100%; }
 }
 @media (max-width:639px) {

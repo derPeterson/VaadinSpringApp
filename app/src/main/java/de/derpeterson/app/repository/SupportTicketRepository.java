@@ -21,7 +21,7 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicketEnti
   List<SupportTicketEntity> own(Long owner, Pageable page);
 
   @Query(
-      "select t from SupportTicketEntity t left join fetch t.assignee order by t.updatedAt desc, t.id desc")
+      "select t from SupportTicketEntity t join fetch t.owner left join fetch t.assignee order by t.updatedAt desc, t.id desc")
   List<SupportTicketEntity> inbox(Pageable page);
 
   @Query(

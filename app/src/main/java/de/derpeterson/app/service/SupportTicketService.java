@@ -68,7 +68,8 @@ public class SupportTicketService {
       boolean instructionSent,
       long unreadMessages,
       boolean subscribed,
-      boolean subscriptionAllowed)
+      boolean subscriptionAllowed,
+      UserIdentity requesterIdentity)
       implements java.io.Serializable {}
 
   public enum ReplyAuthor {
@@ -529,6 +530,12 @@ public class SupportTicketService {
       assigneeIdentity =
           new UserIdentity(assignee.getFirstName(), assignee.getLastName(), assignee.getEmail());
     }
+    UserIdentity requesterIdentity = null;
+    if (administration) {
+      UserEntity requester = ticket.getOwner();
+      requesterIdentity =
+          new UserIdentity(requester.getFirstName(), requester.getLastName(), requester.getEmail());
+    }
     return new Ticket(
         ticket.getId(),
         ticket.getVersion(),
@@ -541,7 +548,8 @@ public class SupportTicketService {
         ticket.getInstructionSentAt() != null,
         unread,
         subscribed && allowed,
-        allowed);
+        allowed,
+        requesterIdentity);
   }
 
   private static String bounded(String text, int maximum) {

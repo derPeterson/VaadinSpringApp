@@ -224,6 +224,11 @@ außer dem Absender eine interne Benachrichtigung mit der Vorgangsnummer aus.
 Sie verweist auf den Nachrichtenverlauf in der Administration. Interne Vermerke
 sind nur in der Administration lesbar und lösen keine Abo-Benachrichtigung aus.
 Ticketbezogene Benachrichtigungen speichern die öffentliche Vorgangsnummer.
+Ihre Sprungziele verwenden beispielsweise `/admin?section=support&ticket=10003`:
+den Bereich und die sichtbare Ticketnummer ohne Raute. Die Reihenfolge der Parameter
+ist beliebig. Dieselbe URL lässt sich direkt eingeben. Die Ticketansicht wählt
+ausschließlich einen für den angemeldeten Administrator zugänglichen Vorgang aus;
+eine unbekannte Nummer hebt keine Rechte auf.
 „Zum Ticket“ öffnet für berechtigte Administratoren den zugehörigen Eintrag
 in der bestehenden Ticketliste; Lesen und Übernehmen bleiben eigene Aktionen.
 

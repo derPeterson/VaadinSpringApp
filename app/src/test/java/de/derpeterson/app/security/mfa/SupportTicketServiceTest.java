@@ -110,6 +110,23 @@ class SupportTicketServiceTest {
     UserIdentity expectedAssignee =
         new UserIdentity("Support", "Fixture", authorization.owner(administrator).email());
     assertEquals(expectedAssignee, claimed.assigneeIdentity());
+    UserIdentity expectedRequester =
+        new UserIdentity(user.getFirstName(), user.getLastName(), user.getEmail());
+    assertEquals(expectedRequester, claimed.requesterIdentity());
+    assertEquals(
+        expectedRequester, ticketFor(otherAdministrator, ticket.id(), true).requesterIdentity());
+    assertEquals(
+        expectedRequester,
+        service
+            .liveView(bindLiveSession(administrator), true, ticket.id())
+            .selected()
+            .requesterIdentity());
+    assertNull(ticketFor(owner, ticket.id(), false).requesterIdentity());
+    assertNull(
+        service
+            .liveView(bindLiveSession(owner), false, ticket.id())
+            .selected()
+            .requesterIdentity());
     assertEquals(
         expectedAssignee, ticketFor(otherAdministrator, ticket.id(), true).assigneeIdentity());
     assertNull(ticketFor(owner, ticket.id(), false).assigneeIdentity());

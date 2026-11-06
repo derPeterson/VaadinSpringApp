@@ -949,7 +949,10 @@ public class UserNotificationsPanel extends Div {
                         AdminView.class,
                         QueryParameters.simple(
                             Map.of(
-                                "section", "support", "ticket", openedItem.supportTicketNumber())));
+                                "section",
+                                "support",
+                                "ticket",
+                                openedItem.supportTicketNumber().substring(1))));
               });
       destination.addClassName("cosmos-notification-detail-ticket");
     }

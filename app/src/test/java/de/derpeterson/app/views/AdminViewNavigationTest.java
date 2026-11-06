@@ -70,6 +70,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -175,8 +176,9 @@ class AdminViewNavigationTest {
     return event;
   }
 
-  @Test
-  void ticketLinkSelectsOnlyItsMatchingVisibleTicket() {
+  @ParameterizedTest
+  @ValueSource(strings = {"?section=support&ticket=10001", "?ticket=10001&section=support"})
+  void ticketLinkSelectsOnlyItsMatchingVisibleTicketRegardlessOfParameterOrder(String query) {
     SupportTicketService tickets = mock(SupportTicketService.class);
     Ticket ticket =
         new Ticket(
@@ -191,15 +193,16 @@ class AdminViewNavigationTest {
             false,
             0L,
             false,
-            false);
+            false,
+            null);
     when(tickets.list(request, true)).thenReturn(List.of(ticket));
     view.configureSupport(tickets);
-    enter("?section=support&ticket=%2310001");
+    enter(query);
     Component support = (Component) ReflectionTestUtils.getField(view, "supportSection");
     Grid<?> grid = (Grid<?>) ReflectionTestUtils.getField(support, "grid");
     assertEquals(List.of(ticket), List.copyOf(grid.getSelectedItems()));
 
-    enter("?section=support&ticket=%2399999");
+    enter("?section=support&ticket=99999");
     assertTrue(grid.getSelectedItems().isEmpty());
     assertEquals("SUPPORT", ReflectionTestUtils.getField(view, "activeSection").toString());
   }

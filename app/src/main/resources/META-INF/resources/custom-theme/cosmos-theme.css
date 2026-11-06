@@ -45,6 +45,7 @@
 
 /* Aktions- und Feldhinweise teilen Variante A. Positionierung und Bedienung bleiben nativ. */
 vaadin-tooltip {
+    pointer-events: none;
     --vaadin-tooltip-max-width: var(--cosmos-tooltip-max-width);
     --vaadin-tooltip-offset-top: var(--cosmos-tooltip-offset);
     --vaadin-tooltip-offset-bottom: var(--cosmos-tooltip-offset);
@@ -54,6 +55,7 @@ vaadin-tooltip {
 
 /* Lumo gestaltet die Parts direkt; deshalb reichen geerbte Variablen allein nicht. */
 vaadin-tooltip::part(overlay) {
+    pointer-events: none;
     box-sizing: border-box;
     width: auto;
     max-width: var(--cosmos-tooltip-max-width);
@@ -69,6 +71,7 @@ vaadin-tooltip::part(overlay) {
 }
 
 vaadin-tooltip::part(content) {
+    pointer-events: none;
     padding: var(--cosmos-tooltip-padding);
     color: var(--cosmos-tooltip-text);
     font: inherit;

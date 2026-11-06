@@ -45,6 +45,7 @@ import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.internal.nodefeature.ElementListenerMap;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.shared.Registration;
@@ -68,6 +69,7 @@ import de.derpeterson.app.service.UserNotificationService.Selection;
 import de.derpeterson.app.service.UserNotificationService.Sent;
 import de.derpeterson.app.service.UserNotificationService.Target;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.views.AdminView;
 import de.derpeterson.app.views.admin.AdminUserNotificationsSection;
 import de.derpeterson.app.websocket.UserNotificationBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
@@ -88,6 +90,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -1035,6 +1038,28 @@ class UserNotificationsUiTest {
         detailButton(fixture.dialog(), "cosmos-notification-detail-close")
             .getThemeNames()
             .contains("primary"));
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = UserNotificationType.class,
+      names = {"RECOVERY_REQUEST", "SUPPORT_REPLY"})
+  void ticketDestinationUsesThePublicNumberWithoutHash(UserNotificationType type) {
+    item = new Item(7L, type, null, null, Instant.EPOCH, false, "#10003");
+    when(service.canOpenTickets(http)).thenReturn(true);
+    NotificationDetailFixture fixture = openNotificationDetail("de", true, false);
+    UI navigator = mock(UI.class);
+    UI.setCurrent(navigator);
+    try {
+      detailButton(fixture.dialog(), "cosmos-notification-detail-ticket").click();
+    } finally {
+      UI.setCurrent(ui);
+    }
+    ArgumentCaptor<QueryParameters> parameters = ArgumentCaptor.forClass(QueryParameters.class);
+    verify(navigator).navigate(eq(AdminView.class), parameters.capture());
+    assertEquals(List.of("support"), parameters.getValue().getParameters().get("section"));
+    assertEquals(List.of("10003"), parameters.getValue().getParameters().get("ticket"));
+    assertFalse(fixture.dialog().isOpened());
   }
 
   @ParameterizedTest

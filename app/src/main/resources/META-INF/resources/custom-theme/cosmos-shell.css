@@ -139,6 +139,7 @@ vaadin-app-layout.cosmos-app-shell {
  * Nur die Größe wird je Einsatzstelle gesetzt; Farben bleiben zentral in den Tokens. */
 
 .cosmos-user-avatar {
+    cursor: default;
     position: relative;
     display: inline-flex;
     width: var(--cosmos-avatar-size);
@@ -146,6 +147,10 @@ vaadin-app-layout.cosmos-app-shell {
     flex-shrink: 0;
     vertical-align: middle;
     line-height: 1;
+}
+
+vaadin-button .cosmos-user-avatar {
+    cursor: inherit;
 }
 
 .cosmos-avatar-circle {
