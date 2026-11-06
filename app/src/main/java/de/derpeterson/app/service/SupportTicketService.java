@@ -10,6 +10,7 @@ import de.derpeterson.app.model.SupportTicketEntity.Type;
 import de.derpeterson.app.model.SupportTicketViewerEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.model.enums.UserNotificationRelevance;
 import de.derpeterson.app.repository.SupportReplyRepository;
 import de.derpeterson.app.repository.SupportReplyRepository.UnreadCount;
 import de.derpeterson.app.repository.SupportTicketRepository;
@@ -136,11 +137,27 @@ public class SupportTicketService {
                 view(
                     ticket,
                     administration ? ticket.getUpdatedAt() : ticket.getPublicUpdatedAt(),
-                    unread.getOrDefault(ticket.getId(), 0L),
+                    unreadVisible(owner, ticket, administration, subscribed)
+                        ? unread.getOrDefault(ticket.getId(), 0L)
+                        : 0L,
                     subscribed.contains(ticket.getId()),
                     administration && canSubscribe(owner, ticket),
                     administration))
         .toList();
+  }
+
+  private boolean unreadVisible(
+      Owner owner, SupportTicketEntity ticket, boolean administration, Set<Long> subscribed) {
+    if (ticket.getStatus() == Status.CLOSED) {
+      return false;
+    }
+    if (!administration
+        || ticket.getStatus() == Status.OPEN
+        || ticket.getStatus() == Status.CLOSED_BY_REQUESTER && ticket.getAssignee() == null) {
+      return true;
+    }
+    return ticket.getAssignee() != null && owner.id().equals(ticket.getAssignee().getId())
+        || subscribed.contains(ticket.getId()) && owner.roles().contains(RoleType.ROLE_SUPERADMIN);
   }
 
   public Long administratorId(HttpServletRequest request) {
@@ -187,7 +204,8 @@ public class SupportTicketService {
   }
 
   @Transactional
-  public boolean markSeen(HttpSession session, boolean administration, Long id, Long replyId) {
+  public boolean markSeen(
+      HttpSession session, boolean administration, Long id, Long replyId, Long displayedVersion) {
     Owner owner = liveViewer(session, administration);
     SupportTicketEntity ticket = lock(id);
     requireTicketAccess(owner, ticket, administration);
@@ -200,17 +218,24 @@ public class SupportTicketService {
     SupportTicketViewerEntity viewer = viewer(id, owner.id());
     long previous =
         administration ? viewer.getAdminReadThrough() : viewer.getRequesterReadThrough();
-    if (replyId <= previous) {
-      return false;
+    boolean changed = replyId > previous;
+    if (changed) {
+      if (administration) {
+        viewer.setAdminReadThrough(replyId);
+      } else {
+        viewer.setRequesterReadThrough(replyId);
+      }
+      viewers.save(viewer);
+      events.viewerChanged(owner.id());
     }
-    if (administration) {
-      viewer.setAdminReadThrough(replyId);
-    } else {
-      viewer.setRequesterReadThrough(replyId);
-    }
-    viewers.save(viewer);
-    events.viewerChanged(owner.id());
-    return true;
+    boolean notificationRead =
+        administration
+            && notifications.markTicketSeen(
+                owner.id(),
+                ticketNumber(id),
+                replyId,
+                Math.min(ticket.getVersion(), displayedVersion));
+    return changed || notificationRead;
   }
 
   private SupportTicketViewerEntity viewer(Long ticketId, Long userId) {
@@ -267,8 +292,9 @@ public class SupportTicketService {
     ticket.setUpdatedAt(ticket.getCreatedAt());
     ticket.setPublicUpdatedAt(ticket.getCreatedAt());
     tickets.saveAndFlush(ticket);
-    append(ticket, user, body, ReplyAuthor.REQUESTER, false, Kind.MESSAGE);
-    notifications.recordRecoveryRequest(ticketNumber(ticket.getId()));
+    SupportReplyEntity firstReply =
+        append(ticket, user, body, ReplyAuthor.REQUESTER, false, Kind.MESSAGE);
+    notifications.recordRecoveryRequest(ticketNumber(ticket.getId()), firstReply.getId());
     AfterCommitLog.info(
         log,
         "Recovery support request created: ticketId={}, accountId={}",
@@ -312,6 +338,8 @@ public class SupportTicketService {
     ticket.setUpdatedAt(Instant.now());
     ticket.setPublicUpdatedAt(ticket.getUpdatedAt());
     tickets.saveAndFlush(ticket);
+    notifications.retireTicketNotifications(
+        ticketNumber(ticket.getId()), UserNotificationRelevance.TICKET_ASSIGNED);
     events.ticketChanged(ticket.getOwner().getId());
     return view(ticket, true);
   }
@@ -365,7 +393,13 @@ public class SupportTicketService {
     if (!ticket.getStatus().acceptsMessages()) {
       throw new AccessDeniedException("Ticket already closed");
     }
-    return updateStatus(ticket, Status.CLOSED_BY_REQUESTER, false);
+    Ticket result = updateStatus(ticket, Status.CLOSED_BY_REQUESTER, false);
+    Long assignee = ticket.getAssignee() == null ? null : ticket.getAssignee().getId();
+    notifications.recordRequesterClosed(
+        ticketNumber(id),
+        ticket.getVersion(),
+        viewers.requesterClosedRecipients(id, assignee, ticket.getOwner().getId()));
+    return result;
   }
 
   private Ticket updateStatus(SupportTicketEntity ticket, Status status, boolean administration) {
@@ -373,6 +407,11 @@ public class SupportTicketService {
     ticket.setUpdatedAt(Instant.now());
     ticket.setPublicUpdatedAt(ticket.getUpdatedAt());
     tickets.saveAndFlush(ticket);
+    notifications.retireTicketNotifications(
+        ticketNumber(ticket.getId()),
+        status == Status.CLOSED
+            ? UserNotificationRelevance.TICKET_CLOSED
+            : UserNotificationRelevance.REQUESTER_CLOSED);
     events.ticketChanged(ticket.getOwner().getId());
     return view(ticket, administration);
   }
@@ -479,7 +518,7 @@ public class SupportTicketService {
     }
   }
 
-  private void append(
+  private SupportReplyEntity append(
       SupportTicketEntity ticket,
       UserEntity author,
       String body,
@@ -508,9 +547,10 @@ public class SupportTicketService {
       Long assignee = ticket.getAssignee() == null ? null : ticket.getAssignee().getId();
       List<UserEntity> recipients = viewers.recipients(ticket.getId(), assignee, author.getId());
       if (!recipients.isEmpty()) {
-        notifications.recordSupportReply(ticketNumber(ticket.getId()), recipients);
+        notifications.recordSupportReply(ticketNumber(ticket.getId()), reply.getId(), recipients);
       }
     }
+    return reply;
   }
 
   private Ticket view(SupportTicketEntity ticket, boolean administration) {

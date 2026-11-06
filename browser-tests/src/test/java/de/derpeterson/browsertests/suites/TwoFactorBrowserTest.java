@@ -15,6 +15,7 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.NotificationInboxPage;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -35,6 +36,203 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class TwoFactorBrowserTest extends BrowserFixture {
   @TempDir Path profile;
 
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("ticket-layout")
+  @DisplayName("MFA-20: Ticketzähler und Glocke folgen Zuständigkeit, Beobachtung und Abschluss")
+  void ticketUnreadAndNotificationsFollowAssignmentAndClosure(int width) {
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    String suffix = UUID.randomUUID().toString();
+    String requesterEmail = "ticket-requester-" + suffix + "@example.test";
+    String assigneeEmail = "ticket-assignee-" + suffix + "@example.test";
+    AdminUsersPage users = new AdminUsersPage(page);
+    users.createActiveUser(requesterEmail, BrowserTestAccounts.USER_PASSWORD);
+    users.createUser(assigneeEmail, BrowserTestAccounts.USER_PASSWORD, true, true);
+    page.setViewportSize(width, 1000);
+    page.navigate("/home");
+    assertThat(page.locator("#account-header-notifications")).isVisible();
+    int previousNotifications = notificationCount(page);
+    try (BrowserActor assignee = new BrowserActor(browser);
+        BrowserActor requester = new BrowserActor(browser)) {
+      assignee.login(assigneeEmail, BrowserTestAccounts.USER_PASSWORD);
+      requester.login(requesterEmail, BrowserTestAccounts.USER_PASSWORD);
+      Page admin = assignee.page;
+      Page user = requester.page;
+      new UserMenu(admin).selectTestLanguage();
+      new UserMenu(user).selectTestLanguage();
+      admin.setViewportSize(width, 1000);
+      user.setViewportSize(width, 1000);
+      user.navigate("/recovery-help");
+      user.locator("#support-reply textarea")
+          .fill("Eigene isolierte Anfrage für die Glockenregeln.");
+      UiActions.complete(user, () -> user.locator("#support-create").click());
+      String number =
+          user.locator("#support-ticket-grid")
+              .getByText(Pattern.compile("^#[0-9]+$"))
+              .first()
+              .innerText();
+      assertNotificationCount(page, previousNotifications + 1);
+      assertNotificationCount(admin, 1);
+      NotificationInboxPage inbox = new NotificationInboxPage(page);
+      inbox.open();
+      UiActions.completeValueChange(
+          page, () -> inbox.filter(inbox.inbox(), texts.getNotificationsUnread()));
+      inbox
+          .row(inbox.inbox(), texts.getSupportRecoverySubject())
+          .locator(".cosmos-notification-row-open")
+          .first()
+          .click();
+      assertThat(inbox.dialog().locator(".cosmos-notification-detail-state"))
+          .hasText(texts.getNotificationsUnread());
+      admin.navigate("/admin?section=support");
+      assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasText("1");
+      UiActions.complete(admin, () -> ticketCard(admin, number).click());
+      assertNotificationCount(admin, 0);
+      assertThat(admin.locator("#support-ticket-status-note"))
+          .hasText(texts.getSupportUnassignedHint());
+      UiActions.complete(admin, () -> admin.locator("#support-claim").click());
+      assertThat(admin.locator("#support-ticket-status-note")).not().isVisible();
+      assertThat(inbox.dialog().locator("[data-relevance=TICKET_ASSIGNED]"))
+          .hasText(texts.getNotificationsTicketAssigned());
+      assertNotificationCount(page, previousNotifications);
+      AllurePlaywright.attachScreenshot("Übernommener Hinweis im geöffneten Glockendialog", page);
+      inbox.closeDetail();
+      page.navigate("/admin?section=support");
+      assertThat(ticketCard(page, number).locator(".support-ticket-unread")).hasCount(0);
+      UiActions.complete(page, () -> ticketCard(page, number).click());
+      setTicketWatch(page, true);
+      page.navigate("/home");
+      admin.navigate("/home");
+      user.locator("#support-reply textarea")
+          .fill("Neue Nachricht für den beobachtenden Superadmin.");
+      UiActions.complete(user, () -> user.locator("#support-add-reply").click());
+      assertNotificationCount(page, previousNotifications + 1);
+      assertNotificationCount(admin, 0);
+      page.navigate("/admin?section=support");
+      admin.navigate("/admin?section=support");
+      assertThat(ticketCard(page, number).locator(".support-ticket-unread")).hasText("1");
+      assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasText("1");
+      UiActions.complete(page, () -> ticketCard(page, number).click());
+      assertNotificationCount(page, previousNotifications);
+      setTicketWatch(page, false);
+      page.navigate("/home");
+      user.locator("#support-reply textarea").fill("Ohne Beobachtung bleibt die Glocke ruhig.");
+      UiActions.complete(user, () -> user.locator("#support-add-reply").click());
+      // Erst die tatsächlich eingetroffene Live-Aktualisierung prüfen, dann das Ausbleiben des
+      // Zählers.
+      assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasText("2");
+      page.navigate("/admin?section=support");
+      assertThat(ticketCard(page, number).locator(".support-ticket-unread")).hasCount(0);
+      assertNotificationCount(page, previousNotifications);
+      assertNotificationCount(admin, 0);
+      UiActions.complete(page, () -> ticketCard(page, number).click());
+      setTicketWatch(page, true);
+      page.navigate("/home");
+      admin.navigate("/home");
+      UiActions.complete(user, () -> user.locator("#support-close").click());
+      assertNotificationCount(page, previousNotifications + 1);
+      // Der Bearbeiter erhält den Nutzerabschluss ausdrücklich auch ohne aktiviertes Beobachten.
+      assertNotificationCount(admin, 1);
+      assertThat(user.locator("#support-add-reply")).not().isVisible();
+      inbox.open();
+      inbox.search(texts.getSupportTicketNumber("").strip());
+      inbox
+          .row(inbox.inbox(), texts.getSupportRequesterClosedNotificationTitle(number))
+          .locator(".cosmos-notification-row-open")
+          .click();
+      admin.navigate("/admin?section=support");
+      UiActions.complete(admin, () -> ticketCard(admin, number).click());
+      assertNotificationCount(admin, 0);
+      assertThat(admin.locator("#support-ticket-status-note"))
+          .hasText(texts.getSupportRequesterClosedHint());
+      assertThat(admin.locator("#support-ticket-status-note")).hasCSS("text-align", "center");
+      assertThat(admin.locator("#support-ticket-status-note")).hasCSS("font-style", "italic");
+      assertThat(admin.locator("#support-add-reply")).not().isVisible();
+      AllurePlaywright.attachScreenshot("Nutzerabschluss mit prüfbarem Statushinweis", admin);
+      UiActions.complete(admin, () -> admin.locator("#support-close").click());
+      assertThat(admin.locator("#support-ticket-status-note"))
+          .hasText(texts.getSupportClosedHint());
+      assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasCount(0);
+      assertThat(inbox.dialog().locator("[data-relevance=TICKET_CLOSED]"))
+          .hasText(texts.getSupportClosed());
+      assertNotificationCount(page, previousNotifications);
+      AllurePlaywright.attachScreenshot(
+          "Erledigter Glockenhinweis bleibt als Historie sichtbar", page);
+      inbox.closeDetail();
+
+      user.locator("#support-reply textarea").fill("Zweite Anfrage ohne Bearbeiter.");
+      UiActions.complete(user, () -> user.locator("#support-create").click());
+      assertThat(
+              user.locator("#support-ticket-grid").getByText(Pattern.compile("^#[0-9]+$")).first())
+          .not()
+          .hasText(number);
+      String unassignedNumber =
+          user.locator("#support-ticket-grid")
+              .getByText(Pattern.compile("^#[0-9]+$"))
+              .first()
+              .innerText();
+      UiActions.complete(user, () -> user.locator("#support-close").click());
+      assertNotificationCount(page, previousNotifications + 1);
+      assertNotificationCount(admin, 1);
+      assertThat(ticketCard(admin, unassignedNumber).locator(".support-ticket-unread"))
+          .hasText("1");
+      UiActions.complete(admin, () -> ticketCard(admin, unassignedNumber).click());
+      assertNotificationCount(admin, 0);
+      UiActions.complete(admin, () -> admin.locator("#support-close").click());
+      assertNotificationCount(page, previousNotifications);
+      assertThat(admin.locator("#support-ticket-status-note"))
+          .hasText(texts.getSupportClosedHint());
+      AllurePlaywright.attachScreenshot("Abgeschlossener Vorgang ohne Ungelesen-Zähler", admin);
+    }
+  }
+
+  private Locator ticketCard(Page target, String number) {
+    return target
+        .locator(".support-admin-ticket-card")
+        .filter(
+            new Locator.FilterOptions()
+                .setHas(target.getByText(number, new Page.GetByTextOptions().setExact(true))));
+  }
+
+  private int notificationCount(Page target) {
+    return ((Number)
+            target.evaluate(
+                """
+                () => {
+                  const badge = document.querySelector('.cosmos-notification-count');
+                  return badge?.getClientRects().length ? Number(badge.textContent) : 0;
+                }
+                """))
+        .intValue();
+  }
+
+  private void assertNotificationCount(Page target, int expected) {
+    assertThat(target.locator("#account-header-notifications")).isVisible();
+    target.waitForCondition(() -> notificationCount(target) == expected);
+  }
+
+  private void setTicketWatch(Page target, boolean checked) {
+    Locator control = target.locator("#support-subscription");
+    // Eine noch laufende Lesequittierung ist keine Bestätigung der Switch-Änderung.
+    target
+        .waitForResponse(
+            response ->
+                response.request().method().equals("POST")
+                    && response.url().contains("v-r=uidl")
+                    && response.request().postData() != null
+                    && response.request().postData().contains("\"checked\""),
+            () -> control.getByRole(AriaRole.SWITCH).setChecked(checked))
+        .finished();
+    if (checked) {
+      assertThat(control).hasAttribute("checked", "");
+    } else {
+      assertThat(control).not().hasAttribute("checked", "");
+    }
+  }
+
   @Test
   @Tag("ticket-layout")
   @DisplayName("MFA-19: Ticketliste, Panel-Tabs und Auswahlhinweis passen zur verfügbaren Breite")
@@ -47,10 +245,23 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.locator("#support-reply textarea")
         .fill("Synthetische erste Anfrage für die Layoutprüfung.");
     UiActions.complete(page, () -> page.locator("#support-create").click());
+    String ownClosedNumber =
+        page.locator("#support-ticket-grid")
+            .getByText(Pattern.compile("^#[0-9]+$"))
+            .first()
+            .innerText();
     UiActions.complete(page, () -> page.locator("#support-close").click());
     page.locator("#support-reply textarea")
         .fill("Synthetische offene Anfrage für die Layoutprüfung.");
     UiActions.complete(page, () -> page.locator("#support-create").click());
+    assertThat(page.locator("#support-ticket-grid").getByText(Pattern.compile("^#[0-9]+$")).first())
+        .not()
+        .hasText(ownClosedNumber);
+    String ownOpenNumber =
+        page.locator("#support-ticket-grid")
+            .getByText(Pattern.compile("^#[0-9]+$"))
+            .first()
+            .innerText();
     page.navigate("/admin?section=support");
     Locator categories = page.locator("#support-ticket-categories");
     Locator hint = page.locator("#support-select-ticket");
@@ -62,7 +273,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(categories.locator("vaadin-tab[selected]"))
         .hasText(texts.getSupportRecoveryCategory());
     assertThat(hint.locator("[data-lucide=list]")).isVisible();
-    assertThat(page.locator(".support-admin-ticket-card")).hasCount(2);
+    assertThat(ticketCard(page, ownClosedNumber)).hasCount(1);
+    assertThat(ticketCard(page, ownOpenNumber)).hasCount(1);
     for (int width : new int[] {1600, 1280, 1024, 390}) {
       page.setViewportSize(width, 1000);
       page.waitForCondition(
@@ -136,7 +348,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(ticketPanel.locator(".support-admin-ticket-metadata > .support-ticket-status"))
         .hasCSS("margin-inline-start", "0px");
     assertThat(footer).not().isVisible();
-    assertThat(ticketPanel.locator("#support-unassigned-note")).isVisible();
+    assertThat(ticketPanel.locator("#support-ticket-status-note")).isVisible();
     assertThat(ticketPanel.locator(".support-admin-policy-label"))
         .hasText(texts.getSupportSecurityPolicy());
     assertThat(tools.locator("vaadin-switch.cosmos-config-switch")).isVisible();
@@ -196,7 +408,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(tools.locator("#support-instructions")).isVisible();
     assertThat(footer.locator("#support-add-reply")).isVisible();
     assertThat(footer.locator("#support-close")).isVisible();
-    assertThat(ticketPanel.locator("#support-unassigned-note")).not().isVisible();
+    assertThat(ticketPanel.locator("#support-ticket-status-note")).not().isVisible();
     ticketPanel
         .locator("#support-reply textarea")
         .fill("Dieser Entwurf bleibt beim Vergrößern erhalten.");

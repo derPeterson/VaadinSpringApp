@@ -55,18 +55,17 @@
   Die Sichtbarkeit nach Rolle und die Navigation über das gekürzte Label „2FA“
   sind bereits abgedeckt.
 
-- **2FA-Wiederherstellungsanfragen: offen.** In DE/EN mit getrennten Konten
-  prüfen, dass Nutzer ihre Anfrage schließen können, der Status in beiden
-  Ansichten erscheint und die Administration sie abschließen kann. In beiden
-  geschlossenen Zuständen muss der Verlauf lesbar bleiben und die Antwortaktion
-  fehlen. Beim Aktualisieren nach einer konkurrierenden Änderung den neuen
-  Status und die passende Rückmeldung prüfen.
+- **2FA-Wiederherstellungsanfragen: offen.** Beim Aktualisieren nach einer
+  konkurrierenden Änderung den neuen Status und die passende Rückmeldung prüfen.
   In getrennten Sitzungen zusätzlich Live-Aktualisierung ohne Klick, Erhalt eines
   Entwurfs, die Zähler für andere Tickets und das Löschen des Zählers beim
   Öffnen auch in einem zweiten Tab desselben Kontos prüfen. Beim Schließen in
   einer anderen Sitzung darf der alte Antwortentwurf nicht im Formular für eine
-  neue Anfrage erscheinen. Abos für zugewiesene Admins und beobachtende Superadmins in
-  DE/EN prüfen. Interne Vermerke dürfen Nutzeransicht und Nutzerzähler nicht ändern.
+  neue Anfrage erscheinen. Bei parallel eintreffenden Nachrichten oder
+  Nutzerabschlüssen darf eine ältere Lesequittierung spätere Hinweise nicht
+  quittieren. Zusätzlich zu den geprüften Beobachtungs- und
+  Abschlussregeln das eingeschaltete Abo eines normalen Bearbeiters bei neuen
+  Nachrichten prüfen. Interne Vermerke dürfen Nutzeransicht und Nutzerzähler nicht ändern.
   MFA-07 deckt bereits Live-Antworten in beide Richtungen, den Erhalt des
   Admin-Entwurfs, die Sichtbarkeit interner Vermerke, die Admin-Tabs und den
   Sicherheitshinweis auf Desktop und Smartphone ab.

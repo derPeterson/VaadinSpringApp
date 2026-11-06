@@ -114,7 +114,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final Span adminRecoveryHint = new Span();
   private final Span adminPolicyLabel = new Span();
   private final HorizontalLayout adminRecoveryInfo = new HorizontalLayout();
-  private final Span adminUnassignedNote = new Span();
+  private final Span adminStatusNote = new Span();
   private final VerticalLayout conversation = new VerticalLayout();
   private final TextArea body = new TextArea();
   private final Switch internal = new Switch();
@@ -513,8 +513,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminRecoveryInfo.setSpacing(false);
     adminRecoveryInfo.setAlignItems(Alignment.CENTER);
     adminRecoveryInfo.addClassName("support-help-notice");
-    adminUnassignedNote.setId("support-unassigned-note");
-    adminUnassignedNote.addClassName("support-admin-unassigned-note");
+    adminStatusNote.setId("support-ticket-status-note");
+    adminStatusNote.addClassName("support-admin-status-note");
 
     userMessageThread.setSpacing(false);
     userMessageThread.addClassName("support-message-thread");
@@ -524,7 +524,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     userConversationHeader.setAlignItems(Alignment.CENTER);
     userConversationHeader.setSpacing(false);
     userConversationHeader.addClassName("support-section-header");
-    conversation.add(userConversationHeader, userMessageScroll, adminUnassignedNote);
+    conversation.add(userConversationHeader, userMessageScroll, adminStatusNote);
     reply.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     HorizontalLayout actions = new HorizontalLayout(close, reply);
     actions.setPadding(false);
@@ -635,7 +635,6 @@ public final class SupportTicketsComponent extends VerticalLayout {
       updateAdminComposerLabels();
       updateFocusControl();
       adminPolicyLabel.setText(texts.getSupportSecurityPolicy());
-      adminUnassignedNote.setText(texts.getSupportUnassignedHint());
     }
     instructionDialog.refreshTexts();
     refresh();
@@ -1029,7 +1028,15 @@ public final class SupportTicketsComponent extends VerticalLayout {
     updateAdminRequester(selected.requesterIdentity());
     adminRecoveryHint.setText(texts.getSupportNoUnlock());
     adminRecoveryInfo.setVisible(selected.type() == Type.RECOVERY);
-    adminUnassignedNote.setVisible(selected.status() == Status.OPEN && selected.assignee() == null);
+    String statusHint =
+        switch (selected.status()) {
+          case OPEN -> selected.assignee() == null ? texts.getSupportUnassignedHint() : "";
+          case IN_PROGRESS -> "";
+          case CLOSED -> texts.getSupportClosedHint();
+          case CLOSED_BY_REQUESTER -> texts.getSupportRequesterClosedHint();
+        };
+    adminStatusNote.setText(statusHint);
+    adminStatusNote.setVisible(!statusHint.isEmpty());
     String heading = texts.getSupportConversation();
     userConversationHeading.setText(heading);
     userConversationCount.setText(texts.getSupportMessageCount(messages.size()));
@@ -1082,7 +1089,10 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private void acknowledgeVisibleMessages(List<Reply> messages) {
     HttpSession session = liveSession;
     Ticket ticket = selected;
-    if (session == null || ticket == null || ticket.unreadMessages() == 0 || messages.isEmpty()) {
+    if (session == null
+        || ticket == null
+        || !administration && ticket.unreadMessages() == 0
+        || messages.isEmpty()) {
       return;
     }
     Long lastReplyId = messages.stream().map(Reply::id).max(Long::compareTo).orElseThrow();
@@ -1114,7 +1124,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
                 return;
               }
               try {
-                service.markSeen(session, administration, ticket.id(), lastReplyId);
+                service.markSeen(
+                    session, administration, ticket.id(), lastReplyId, ticket.version());
               } catch (AccessDeniedException _) {
                 // Eine inzwischen abgelaufene Sitzung darf keine Lesegrenze schreiben.
               } catch (RuntimeException failure) {

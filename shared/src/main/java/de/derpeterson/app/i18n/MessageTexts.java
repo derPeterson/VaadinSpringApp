@@ -86,6 +86,20 @@ public class MessageTexts {
     return getTranslation("support.replyNotificationBody");
   }
 
+  public String getSupportRequesterClosedNotificationTitle(String number) {
+    return number == null
+        ? getSupportClosedByRequester()
+        : getFormattedTranslation("support.requesterClosedNotificationTicketTitle", number);
+  }
+
+  public String getSupportRequesterClosedNotificationBody() {
+    return getTranslation("support.requesterClosedNotificationBody");
+  }
+
+  public String getNotificationsTicketAssigned() {
+    return getTranslation("notifications.ticketAssigned");
+  }
+
   public String getSupportSubscription() {
     return getTranslation("support.subscription");
   }
@@ -108,6 +122,14 @@ public class MessageTexts {
 
   public String getSupportUnassignedHint() {
     return getTranslation("support.unassignedHint");
+  }
+
+  public String getSupportClosedHint() {
+    return getTranslation("support.closedHint");
+  }
+
+  public String getSupportRequesterClosedHint() {
+    return getTranslation("support.requesterClosedHint");
   }
 
   public String getSupportUnreadMessages(long count) {

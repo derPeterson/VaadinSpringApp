@@ -60,7 +60,9 @@ class BrowserExecutionPlanTest {
           case "two-factor-instructions" ->
               Set.of("recoverySupportRemainsContactInsteadOfFactorReset");
           case "two-factor-ticket-layout" ->
-              Set.of("administrativeTicketLayoutKeepsTabsAndCardsUnclipped");
+              Set.of(
+                  "administrativeTicketLayoutKeepsTabsAndCardsUnclipped",
+                  "ticketUnreadAndNotificationsFollowAssignmentAndClosure");
           default ->
               Set.of(
                   "administrativeProviderSettings",

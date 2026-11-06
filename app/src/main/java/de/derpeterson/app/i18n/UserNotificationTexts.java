@@ -1,5 +1,6 @@
 package de.derpeterson.app.i18n;
 
+import de.derpeterson.app.model.enums.UserNotificationRelevance;
 import de.derpeterson.app.model.enums.UserNotificationType;
 import de.derpeterson.app.service.UserNotificationService.Item;
 import java.time.ZoneId;
@@ -22,6 +23,8 @@ public final class UserNotificationTexts {
       case ROLES_CHANGED -> texts.getNotificationsRolesChangedTitle();
       case RECOVERY_REQUEST -> texts.getSupportRecoverySubject();
       case SUPPORT_REPLY -> texts.getSupportReplyNotificationTitle(item.supportTicketNumber());
+      case SUPPORT_REQUESTER_CLOSED ->
+          texts.getSupportRequesterClosedNotificationTitle(item.supportTicketNumber());
     };
   }
 
@@ -34,6 +37,16 @@ public final class UserNotificationTexts {
       case ROLES_CHANGED -> texts.getNotificationsRolesChangedBody();
       case RECOVERY_REQUEST -> texts.getSupportRecoveryNotification();
       case SUPPORT_REPLY -> texts.getSupportReplyNotificationBody();
+      case SUPPORT_REQUESTER_CLOSED -> texts.getSupportRequesterClosedNotificationBody();
+    };
+  }
+
+  public static String relevance(MessageProperties texts, Item item) {
+    return switch (item.relevance()) {
+      case ACTIVE -> item.read() ? texts.getNotificationsRead() : texts.getNotificationsUnread();
+      case TICKET_ASSIGNED -> texts.getNotificationsTicketAssigned();
+      case REQUESTER_CLOSED -> texts.getSupportClosedByRequester();
+      case TICKET_CLOSED -> texts.getSupportClosed();
     };
   }
 
@@ -49,7 +62,17 @@ public final class UserNotificationTexts {
       if (type == UserNotificationType.ADMIN_ANNOUNCEMENT) {
         visible = texts.getNotificationsSourceAdministration();
       } else {
-        Item item = new Item(0L, type, null, null, java.time.Instant.EPOCH, false);
+        // Sichtbare Titelvorlage ohne Nummer; konkrete Nummern durchsucht das Repository.
+        Item item =
+            new Item(
+                0L,
+                type,
+                null,
+                null,
+                java.time.Instant.EPOCH,
+                false,
+                "",
+                UserNotificationRelevance.ACTIVE);
         visible =
             title(texts, item)
                 + " "

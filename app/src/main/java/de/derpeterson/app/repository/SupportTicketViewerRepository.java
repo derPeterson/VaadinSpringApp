@@ -25,4 +25,17 @@ public interface SupportTicketViewerRepository
           or (u.id = :assignee and role.name = de.derpeterson.app.model.enums.RoleType.ROLE_ADMIN))
       """)
   List<UserEntity> recipients(Long ticket, Long assignee, Long sender);
+
+  @Query(
+      """
+      select distinct u from UserEntity u join u.roleEntities role
+      where u.enabled = true and u.verificationPending = false and u.id <> :sender
+        and role.name in (de.derpeterson.app.model.enums.RoleType.ROLE_ADMIN,
+          de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN)
+        and (:assignee is null or u.id = :assignee
+          or (role.name = de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN
+            and exists (select v.id from SupportTicketViewerEntity v
+              where v.ticketId = :ticket and v.userId = u.id and v.subscribed = true)))
+      """)
+  List<UserEntity> requesterClosedRecipients(Long ticket, Long assignee, Long sender);
 }

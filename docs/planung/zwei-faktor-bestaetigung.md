@@ -35,6 +35,15 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
 
 ## Administrative 2FA-Konfiguration und Ticketbearbeitung
 
+Für die laufende Umsetzung sind zusätzlich die abgestimmten status- und
+zuständigkeitsabhängigen Zähler, getrennte Relevanz-/Lesestände der
+Glockenhinweise, Hinweise beim Nutzerabschluss und die Quittierung bereits
+sichtbarer Nachrichten freigegeben. Die Regeln stehen gesammelt unter
+[Ticketzustände, Zähler und Glocke](../zwei-faktor-authentifizierung.md#ticketzustände-zähler-und-glocke).
+Offen bleibt die gemeinsame Sichtprüfung der Regeln; eine Übergabe an andere
+Bearbeiter ist nicht beauftragt. Weiterer automatisierter Prüfbedarf steht
+zentral im [Testbedarf](../testbedarf.md).
+
 Für die 2FA-Konfiguration sind Variante A und die Erklärspalte aus Variante B
 ausgewählt. Die administrative Ticketansicht wurde anhand separater
 Vaadin-Aufnahmen mit synthetischen Anfragen weiterentwickelt.

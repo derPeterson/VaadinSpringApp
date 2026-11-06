@@ -218,7 +218,7 @@
 #support-subscription > input[slot=input] { grid-column:1; }
 .support-admin-ticket-tools > #support-claim { margin-inline-start:auto; }
 .support-admin-policy-label { color:var(--cosmos-reference-text); font-weight:600; }
-.support-admin-unassigned-note { margin-block-start:8px; color:var(--cosmos-reference-secondary); font:italic 400 11px/18px Inter,sans-serif; text-align:center; }
+.support-admin-status-note { margin-block-start:8px; color:var(--cosmos-reference-secondary); font:italic 400 11px/18px Inter,sans-serif; text-align:center; }
 .support-admin-detail .support-conversation-heading { color:var(--cosmos-reference-accent); }
 .support-admin-workspace .support-empty-state {
   box-sizing:border-box;

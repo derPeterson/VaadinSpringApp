@@ -72,10 +72,10 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 56 |
 | `external-login-flow` | Externe Anmeldungen, Superadmin-Anbietereinrichtung mit 2FA, Verknüpfungen, geschützte Google-Ersteinrichtung und frische Microsoft-Bestätigung, Browserneustart, E-Mail-Änderung, optionale Adminprofilfelder und kontextbezogene Kontobestätigung, vollständig deaktivierte Anbieter sowie Standardmeldungen nach Rücksprüngen | 29 |
 | `external-login-settings` | Bestehende Anbieterfälle gezielt: Superadmin-Einrichtung mit 2FA, verschlüsselte Zugangsdaten nach Speichern/Neustart und Kontozugriff bei deaktivierten Anbietern, jeweils Desktop/Smartphone | 6 |
-| `two-factor` | Einrichtung, erneute Anmeldung, aktionsgebundene Bestätigung, geschützter Faktorwechsel/Entfernen, Wiederherstellung mit dem letzten Ersatzcode nach Portal-/Google-/Microsoft-Anmeldung, Ersatzcodes/PDF, eingeschränkte Hilfe und Adminbearbeitung, Superadminrechte, Regelwechsel einer offenen Sitzung, echte Browser-/Anwendungsneustarts und Inaktivität auch bei Push | 33 |
+| `two-factor` | Einrichtung, erneute Anmeldung, aktionsgebundene Bestätigung, geschützter Faktorwechsel/Entfernen, Wiederherstellung mit dem letzten Ersatzcode nach Portal-/Google-/Microsoft-Anmeldung, Ersatzcodes/PDF, eingeschränkte Hilfe und Adminbearbeitung, Superadminrechte, Regelwechsel einer offenen Sitzung, echte Browser-/Anwendungsneustarts und Inaktivität auch bei Push | 35 |
 | `two-factor-confirmation` | Nur Bestätigung mit nativer OTP-/Ersatzcodeumschaltung, geschützter Faktorwechsel und Hilfeanfrage auf Desktop/Smartphone | 2 |
 | `two-factor-instructions` | Anleitungsvorschau und aufklappbare Anleitung im gemeinsamen Ticketverlauf, mit isoliertem Mailversand und unveränderten Zugriffsgrenzen auf Desktop/Smartphone | 2 |
-| `two-factor-ticket-layout` | Nur administrative Ticketansicht: Übersicht mit Mindestbreite, responsivem Umbruch, vollständigen Tabs und Auswahlhinweis bei 1600/1280/1024/390 px; Tab-/Ticketauswahl in der URL und Wiederherstellung nach Browser-Refresh; ausgewähltes Ticketpanel mit Kopf, Werkzeugleiste und Footer vor/nach Übernahme; Fokusansicht und Wiederherstellen mit erhaltenem Entwurf auf Desktop/Smartphone; Tooltip-Mauszeiger an Avatar, Button und Texteingabe | 1 |
+| `two-factor-ticket-layout` | Nur administrative Ticketansicht: Übersicht mit Mindestbreite, responsivem Umbruch, vollständigen Tabs und Auswahlhinweis bei 1600/1280/1024/390 px; Tab-/Ticketauswahl in der URL und Wiederherstellung nach Browser-Refresh; ausgewähltes Ticketpanel mit Kopf, Werkzeugleiste und Footer vor/nach Übernahme; Fokusansicht und Wiederherstellen mit erhaltenem Entwurf auf Desktop/Smartphone; Tooltip-Mauszeiger an Avatar, Button und Texteingabe; zuständigkeitsabhängige Ticketzähler, Beobachten ein/aus, Nutzerabschluss mit/ohne Bearbeiter und live erledigte Glockenhinweise auf Desktop/Smartphone | 3 |
 | `two-factor-configuration` | Superadmin-Konfiguration mit Rollenwechsel, Erklärspalte, Feldhilfe und Rechteprüfung auf Desktop/Smartphone | 2 |
 | `two-factor-push` | Echte einminütige Inaktivitätsfrist, native Benutzereingabe gegenüber Hintergrundabrufen und gesperrte serverseitige Vorschauupdates nach Ablauf | 2 |
 | `two-factor-setup` | Verpflichtender Einstieg, QR/manueller Schlüssel, native OTP-Eingabe mit Einfügen und Tastatur sowie Kopierfehler auf Desktop/Smartphone | 2 |
@@ -113,7 +113,7 @@ gleichzeitig gegen dieselben Ausgabeordner ausführen.
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
 | `cosmos-components` | Rollensuche, Konfigurations-Switches, SideNav-Zustände, Tooltips und Benutzermenü | 5 |
-| `all` | Alle 35 Testklassen einschließlich der Fast-Fälle | 247 |
+| `all` | Alle 35 Testklassen einschließlich der Fast-Fälle | 249 |
 
 IDs, Schritte und erwartetes Ergebnis stehen pro Fall in `@DisplayName` und
 `@Description`; diese Angaben übernimmt der Bericht. AVATAR-01 enthält zwei

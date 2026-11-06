@@ -587,10 +587,10 @@ class TwoFactorFlowViewTest {
     assertEquals(1, categories.getSelectedIndex());
     assertEquals(ticket, grid.asSingleSelect().getValue());
     assertTrue(changes.isEmpty());
-    assertTrue(find(component, "support-unassigned-note").isVisible());
+    assertTrue(find(component, "support-ticket-status-note").isVisible());
     assertEquals(
         texts.getSupportUnassignedHint(),
-        find(component, "support-unassigned-note").getElement().getText());
+        find(component, "support-ticket-status-note").getElement().getText());
     assertTrue(
         find(component, "support-ticket-policy")
             .getElement()
@@ -615,6 +615,41 @@ class TwoFactorFlowViewTest {
     assertEquals(1, categories.getSelectedIndex());
     assertEquals(2, changes.size());
     assertTrue(grid.getSelectedItems().isEmpty());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void administrativeStatusHintFollowsTicketTransitionsWithoutEnablingClosedReplies(
+      String language) {
+    open(language, false);
+    SupportTicketService tickets = mock(SupportTicketService.class);
+    when(tickets.administratorId(request)).thenReturn(9L);
+    when(tickets.list(request, true)).thenReturn(List.of(filterTicket(1L, Status.OPEN, null)));
+    SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
+    component.openTicket("10001");
+    Component hint = find(component, "support-ticket-status-note");
+    assertTrue(hint.isVisible());
+    assertEquals(texts.getSupportUnassignedHint(), hint.getElement().getText());
+
+    when(tickets.list(request, true)).thenReturn(List.of(filterTicket(1L, Status.IN_PROGRESS, 9L)));
+    component.refresh();
+    assertFalse(hint.isVisible());
+    assertTrue(find(component, "support-add-reply").isVisible());
+
+    when(tickets.list(request, true))
+        .thenReturn(List.of(filterTicket(1L, Status.CLOSED_BY_REQUESTER, 9L)));
+    component.refresh();
+    assertTrue(hint.isVisible());
+    assertEquals(texts.getSupportRequesterClosedHint(), hint.getElement().getText());
+    assertFalse(find(component, "support-add-reply").isVisible());
+    assertTrue(find(component, "support-close").isVisible());
+
+    when(tickets.list(request, true)).thenReturn(List.of(filterTicket(1L, Status.CLOSED, 9L)));
+    component.refreshTexts();
+    assertTrue(hint.isVisible());
+    assertEquals(texts.getSupportClosedHint(), hint.getElement().getText());
+    assertFalse(find(component, "support-add-reply").isVisible());
+    assertFalse(find(component, "support-close").isVisible());
   }
 
   private Button filterAction(SupportTicketFilterPanel panel, String id) {

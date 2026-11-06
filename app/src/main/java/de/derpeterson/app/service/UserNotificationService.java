@@ -7,6 +7,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.UserNotificationEntity;
 import de.derpeterson.app.model.UserNotificationRecipientEntity;
 import de.derpeterson.app.model.enums.RoleType;
+import de.derpeterson.app.model.enums.UserNotificationRelevance;
 import de.derpeterson.app.model.enums.UserNotificationType;
 import de.derpeterson.app.repository.UserNotificationRecipientRepository;
 import de.derpeterson.app.repository.UserNotificationRecipientRepository.InboxRow;
@@ -110,7 +111,8 @@ public class UserNotificationService {
       String body,
       Instant createdAt,
       boolean read,
-      String supportTicketNumber)
+      String supportTicketNumber,
+      UserNotificationRelevance relevance)
       implements Serializable {
     public Item(
         Long id,
@@ -119,7 +121,11 @@ public class UserNotificationService {
         String body,
         Instant createdAt,
         boolean read) {
-      this(id, type, title, body, createdAt, read, null);
+      this(id, type, title, body, createdAt, read, null, UserNotificationRelevance.ACTIVE);
+    }
+
+    public boolean unread() {
+      return !read && relevance == UserNotificationRelevance.ACTIVE;
     }
   }
 
@@ -243,7 +249,15 @@ public class UserNotificationService {
         recipient.getBody(),
         recipient.getCreatedAt(),
         recipient.getReadAt() != null,
-        recipient.getSupportTicketNumber());
+        recipient.getSupportTicketNumber(),
+        recipient.getRelevance());
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<Item> inboxItem(HttpSession session, Long id) {
+    return recipients
+        .visibleItem(owner(session).getId(), id, policy.inboxCutoff(Instant.now()))
+        .map(UserNotificationService::toInboxItem);
   }
 
   @Transactional(readOnly = true)
@@ -423,25 +437,68 @@ public class UserNotificationService {
   }
 
   @Transactional(propagation = Propagation.MANDATORY)
-  public void recordRecoveryRequest(String ticketNumber) {
+  public void recordRecoveryRequest(String ticketNumber, Long replyId) {
     List<UserEntity> administrators = users.findEnabledAdministrators();
     if (administrators.isEmpty()) {
       return;
     }
     UserNotificationEntity event = new UserNotificationEntity();
-    event.setRequestKey("recovery:" + UUID.randomUUID());
+    event.setRequestKey("recovery:" + ticketNumber);
     event.setType(UserNotificationType.RECOVERY_REQUEST);
     event.setSupportTicketNumber(ticketNumber);
+    event.setSupportReplyId(replyId);
     create(event, administrators);
   }
 
   @Transactional(propagation = Propagation.MANDATORY)
-  public void recordSupportReply(String ticketNumber, List<UserEntity> viewers) {
+  public void recordSupportReply(String ticketNumber, Long replyId, List<UserEntity> viewers) {
     UserNotificationEntity event = new UserNotificationEntity();
-    event.setRequestKey("support-reply:" + UUID.randomUUID());
+    event.setRequestKey("support-reply:" + replyId);
     event.setType(UserNotificationType.SUPPORT_REPLY);
     event.setSupportTicketNumber(ticketNumber);
+    event.setSupportReplyId(replyId);
     create(event, viewers);
+  }
+
+  /** Der Ticketdienst hält die Vorgangssperre; Zustandswechsel und Hinweise committen gemeinsam. */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void retireTicketNotifications(String number, UserNotificationRelevance relevance) {
+    Set<UserNotificationType> types =
+        relevance == UserNotificationRelevance.TICKET_ASSIGNED
+            ? Set.of(UserNotificationType.RECOVERY_REQUEST)
+            : Set.of(
+                UserNotificationType.RECOVERY_REQUEST,
+                UserNotificationType.SUPPORT_REPLY,
+                UserNotificationType.SUPPORT_REQUESTER_CLOSED);
+    List<Long> owners = recipients.ticketRecipients(number, types, relevance);
+    if (!owners.isEmpty() && recipients.retireTicket(number, types, relevance) > 0) {
+      afterCommit(Set.copyOf(owners));
+    }
+  }
+
+  @Transactional(propagation = Propagation.MANDATORY)
+  public void recordRequesterClosed(String number, Long version, List<UserEntity> viewers) {
+    if (viewers.isEmpty()) {
+      return;
+    }
+    UserNotificationEntity event = new UserNotificationEntity();
+    event.setRequestKey("support-closed:" + number);
+    event.setType(UserNotificationType.SUPPORT_REQUESTER_CLOSED);
+    event.setSupportTicketNumber(number);
+    event.setSupportTicketVersion(version);
+    create(event, viewers);
+  }
+
+  /**
+   * Quittiert nur Nachrichten und Status, die in genau dieser Ticketansicht bereits sichtbar waren.
+   */
+  @Transactional(propagation = Propagation.MANDATORY)
+  public boolean markTicketSeen(Long owner, String number, Long replyId, Long version) {
+    if (recipients.markTicketRead(owner, number, replyId, version, Instant.now()) == 0) {
+      return false;
+    }
+    afterCommit(Set.of(owner));
+    return true;
   }
 
   private void create(UserNotificationEntity m, List<UserEntity> selected) {
@@ -465,7 +522,8 @@ public class UserNotificationService {
           m.getId(),
           m.getSender().getId(),
           selected.size());
-    } else if (m.getType() != UserNotificationType.SUPPORT_REPLY) {
+    } else if (m.getType() != UserNotificationType.SUPPORT_REPLY
+        && m.getType() != UserNotificationType.SUPPORT_REQUESTER_CLOSED) {
       AfterCommitLog.info(
           log,
           "Account security event recorded: userId={}, type={}",

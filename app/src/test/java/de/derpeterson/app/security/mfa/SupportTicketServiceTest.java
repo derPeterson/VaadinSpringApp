@@ -25,6 +25,8 @@ import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.SupportReplyRepository;
 import de.derpeterson.app.repository.SupportTicketRepository;
 import de.derpeterson.app.repository.SupportTicketViewerRepository;
+import de.derpeterson.app.repository.UserNotificationRecipientRepository;
+import de.derpeterson.app.repository.UserNotificationRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
@@ -36,8 +38,10 @@ import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.SupportTicketService.UserIdentity;
+import de.derpeterson.app.service.UserNotificationPolicy;
 import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.websocket.SupportTicketBroadcaster;
+import de.derpeterson.app.websocket.UserNotificationBroadcaster;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 import jakarta.persistence.PersistenceContext;
@@ -74,6 +78,7 @@ class SupportTicketServiceTest {
   @Autowired TransactionTemplate transaction;
   @Autowired EmailQueueService queue;
   @Autowired UserNotificationService notifications;
+  @Autowired UserNotificationRecipientRepository notificationRecipients;
   @Autowired SecurityService security;
   @Autowired TwoFactorStoreTest.TestClock clock;
   @PersistenceContext EntityManager entityManager;
@@ -98,7 +103,8 @@ class SupportTicketServiceTest {
   @Test
   void ownRequestDoesNotGrantPortalAccessAndNeverExposesInternalNotes() {
     Ticket ticket = service.createRecovery(owner, "Ich benötige Hilfe.");
-    verify(notifications).recordRecoveryRequest(SupportTicketService.ticketNumber(ticket.id()));
+    verify(notifications)
+        .recordRecoveryRequest(eq(SupportTicketService.ticketNumber(ticket.id())), any());
     assertThrows(IllegalStateException.class, () -> service.createRecovery(owner, "Doppelt"));
     MockHttpServletRequest foreign =
         TwoFactorAuthorizationTest.requestFor(create(RoleType.ROLE_USER).getEmail());
@@ -180,13 +186,14 @@ class SupportTicketServiceTest {
     service.setSubscription(superadmin, ticket.id(), true);
     Ticket noted =
         service.reply(administrator, claimed.id(), claimed.version(), "Intern.", true, true);
-    verify(notifications, org.mockito.Mockito.never()).recordSupportReply(any(), any());
+    verify(notifications, org.mockito.Mockito.never()).recordSupportReply(any(), any(), any());
 
     Ticket updated =
         service.reply(owner, noted.id(), noted.version(), "Noch eine Frage.", false, false);
     verify(notifications)
         .recordSupportReply(
             eq(SupportTicketService.ticketNumber(ticket.id())),
+            any(),
             argThat(
                 recipients ->
                     recipients.size() == 2
@@ -220,19 +227,162 @@ class SupportTicketServiceTest {
     HttpSession administratorSession = bindLiveSession(administrator);
     assertEquals(2, ticketFor(owner, ticket.id(), false).unreadMessages());
     assertEquals(1, ticketFor(administrator, ticket.id(), true).unreadMessages());
-    assertFalse(service.markSeen(requesterSession, false, ticket.id(), internal.id()));
-    assertTrue(service.markSeen(requesterSession, false, ticket.id(), first.id()));
-    assertFalse(service.markSeen(requesterSession, false, ticket.id(), first.id()));
+    assertFalse(
+        service.markSeen(requesterSession, false, ticket.id(), internal.id(), ticket.version()));
+    assertTrue(
+        service.markSeen(requesterSession, false, ticket.id(), first.id(), ticket.version()));
+    assertFalse(
+        service.markSeen(requesterSession, false, ticket.id(), first.id(), ticket.version()));
     assertEquals(
         1, service.liveView(requesterSession, false, ticket.id()).selected().unreadMessages());
     Reply latest = service.liveView(requesterSession, false, ticket.id()).messages().getLast();
-    assertTrue(service.markSeen(requesterSession, false, ticket.id(), latest.id()));
+    assertTrue(
+        service.markSeen(
+            requesterSession,
+            false,
+            ticket.id(),
+            latest.id(),
+            ticketFor(administrator, ticket.id(), true).version()));
     assertEquals(0, ticketFor(owner, ticket.id(), false).unreadMessages());
     assertEquals(1, ticketFor(administrator, ticket.id(), true).unreadMessages());
-    assertTrue(service.markSeen(administratorSession, true, ticket.id(), latest.id()));
+    assertTrue(
+        service.markSeen(
+            administratorSession,
+            true,
+            ticket.id(),
+            latest.id(),
+            ticketFor(administrator, ticket.id(), true).version()));
     assertEquals(0, ticketFor(administrator, ticket.id(), true).unreadMessages());
     assertThrows(
         AccessDeniedException.class, () -> service.liveView(requesterSession, true, ticket.id()));
+  }
+
+  @Test
+  void countersFollowStatusAssignmentAndWatchWithoutDiscardingUnreadMessages() {
+    Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
+    MockHttpServletRequest superadmin = confirmedAdmin(RoleType.ROLE_SUPERADMIN);
+    assertEquals(1, ticketFor(otherAdministrator, ticket.id(), true).unreadMessages());
+    Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
+    assertEquals(0, ticketFor(otherAdministrator, ticket.id(), true).unreadMessages());
+    assertEquals(1, ticketFor(administrator, ticket.id(), true).unreadMessages());
+    assertEquals(0, ticketFor(superadmin, ticket.id(), true).unreadMessages());
+    service.setSubscription(superadmin, ticket.id(), true);
+    assertEquals(1, ticketFor(superadmin, ticket.id(), true).unreadMessages());
+    service.setSubscription(superadmin, ticket.id(), false);
+    assertEquals(0, ticketFor(superadmin, ticket.id(), true).unreadMessages());
+    service.setSubscription(superadmin, ticket.id(), true);
+    assertEquals(1, ticketFor(superadmin, ticket.id(), true).unreadMessages());
+    Ticket resolved = service.closeOwn(owner, claimed.id(), claimed.version());
+    assertEquals(1, ticketFor(administrator, ticket.id(), true).unreadMessages());
+    assertEquals(1, ticketFor(superadmin, ticket.id(), true).unreadMessages());
+    assertEquals(0, ticketFor(otherAdministrator, ticket.id(), true).unreadMessages());
+    service.close(administrator, resolved.id(), resolved.version());
+    assertEquals(0, ticketFor(administrator, ticket.id(), true).unreadMessages());
+    assertEquals(0, ticketFor(superadmin, ticket.id(), true).unreadMessages());
+  }
+
+  @Test
+  void claimAndClosingRetireNotificationsAndRequesterClosureReachesAssigneeWithoutWatch() {
+    Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
+    Long adminId = service.administratorId(administrator);
+    Long otherId = service.administratorId(otherAdministrator);
+    assertEquals(1, notificationRecipients.countUnread(adminId, null));
+    Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
+    assertEquals(0, notificationRecipients.countUnread(adminId, null));
+    assertEquals(0, notificationRecipients.countUnread(otherId, null));
+    MockHttpServletRequest superadmin = confirmedAdmin(RoleType.ROLE_SUPERADMIN);
+    Long watcherId = service.administratorId(superadmin);
+    service.setSubscription(superadmin, ticket.id(), true);
+    Ticket resolved = service.closeOwn(owner, ticket.id(), claimed.version());
+    assertEquals(1, notificationRecipients.countUnread(adminId, null));
+    assertEquals(1, notificationRecipients.countUnread(watcherId, null));
+    assertEquals(0, notificationRecipients.countUnread(otherId, null));
+    Reply last = service.conversation(administrator, ticket.id(), true).getLast();
+    HttpSession adminSession = bindLiveSession(administrator);
+    service.markSeen(adminSession, true, ticket.id(), last.id(), claimed.version());
+    assertEquals(1, notificationRecipients.countUnread(adminId, null));
+    assertTrue(service.markSeen(adminSession, true, ticket.id(), last.id(), resolved.version()));
+    assertEquals(0, notificationRecipients.countUnread(adminId, null));
+    assertFalse(service.markSeen(adminSession, true, ticket.id(), last.id(), resolved.version()));
+    assertEquals(1, notificationRecipients.countUnread(watcherId, null));
+    service.close(administrator, resolved.id(), resolved.version());
+    assertEquals(0, notificationRecipients.countUnread(watcherId, null));
+    assertEquals(
+        2,
+        notificationRecipients
+            .inbox(adminId, null, null, org.springframework.data.domain.PageRequest.of(0, 20))
+            .getTotalElements());
+  }
+
+  @Test
+  void requesterClosureBeforeClaimRemainsActionableForAllActiveAdministrators() {
+    Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
+    Ticket resolved = service.closeOwn(owner, ticket.id(), ticket.version());
+    assertEquals(
+        1, notificationRecipients.countUnread(service.administratorId(administrator), null));
+    assertEquals(
+        1, notificationRecipients.countUnread(service.administratorId(otherAdministrator), null));
+    assertEquals(1, ticketFor(otherAdministrator, ticket.id(), true).unreadMessages());
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.closeOwn(owner, ticket.id(), resolved.version()));
+    assertEquals(
+        1, notificationRecipients.countUnread(service.administratorId(administrator), null));
+    service.close(administrator, ticket.id(), resolved.version());
+    assertEquals(
+        0, notificationRecipients.countUnread(service.administratorId(otherAdministrator), null));
+  }
+
+  @Test
+  void readingTheDisplayedMessageDoesNotAcknowledgeAnArrivingMessageAndUnwatchStopsNotifications() {
+    Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
+    Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
+    Long adminId = service.administratorId(administrator);
+    service.setSubscription(administrator, ticket.id(), true);
+    Ticket first =
+        service.reply(owner, ticket.id(), claimed.version(), "Erste Frage.", false, false);
+    Reply displayed = service.conversation(administrator, ticket.id(), true).getLast();
+    Ticket second =
+        service.reply(owner, ticket.id(), first.version(), "Später eingetroffen.", false, false);
+    assertEquals(2, notificationRecipients.countUnread(adminId, null));
+    HttpSession session = bindLiveSession(administrator);
+    assertTrue(service.markSeen(session, true, ticket.id(), displayed.id(), first.version()));
+    assertEquals(1, notificationRecipients.countUnread(adminId, null));
+    assertFalse(service.markSeen(session, true, ticket.id(), displayed.id(), first.version()));
+    assertEquals(1, notificationRecipients.countUnread(adminId, null));
+    Reply latest = service.conversation(administrator, ticket.id(), true).getLast();
+    service.markSeen(session, true, ticket.id(), latest.id(), second.version());
+    service.setSubscription(administrator, ticket.id(), false);
+    Ticket third =
+        service.reply(owner, ticket.id(), second.version(), "Ohne Beobachtung.", false, false);
+    assertEquals(0, notificationRecipients.countUnread(adminId, null));
+    assertEquals(1, ticketFor(administrator, ticket.id(), true).unreadMessages());
+    service.closeOwn(owner, ticket.id(), third.version());
+    assertEquals(1, notificationRecipients.countUnread(adminId, null));
+  }
+
+  @Test
+  void revokedAndDisabledWatchersReceiveNeitherMessagesNorRequesterClosure() {
+    Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
+    Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
+    MockHttpServletRequest revoked = confirmedAdmin(RoleType.ROLE_SUPERADMIN);
+    MockHttpServletRequest disabled = confirmedAdmin(RoleType.ROLE_SUPERADMIN);
+    Long revokedId = service.administratorId(revoked);
+    Long disabledId = service.administratorId(disabled);
+    service.setSubscription(revoked, ticket.id(), true);
+    service.setSubscription(disabled, ticket.id(), true);
+    transaction.executeWithoutResult(
+        status -> {
+          UserEntity formerAdmin = users.findById(revokedId).orElseThrow();
+          formerAdmin.setRoleEntities(List.of());
+          UserEntity disabledAdmin = users.findById(disabledId).orElseThrow();
+          disabledAdmin.setEnabled(false);
+        });
+    Ticket updated =
+        service.reply(owner, ticket.id(), claimed.version(), "Neue Frage.", false, false);
+    service.closeOwn(owner, ticket.id(), updated.version());
+    assertEquals(0, notificationRecipients.countUnread(revokedId, null));
+    assertEquals(0, notificationRecipients.countUnread(disabledId, null));
   }
 
   @Test
@@ -252,7 +402,13 @@ class SupportTicketServiceTest {
       assertEquals(List.of(new SupportTicketBroadcaster.Change(user.getId(), null)), changes);
 
       Reply latest = service.conversation(owner, ticket.id(), false).getLast();
-      assertTrue(service.markSeen(bindLiveSession(owner), false, ticket.id(), latest.id()));
+      assertTrue(
+          service.markSeen(
+              bindLiveSession(owner),
+              false,
+              ticket.id(),
+              latest.id(),
+              ticketFor(administrator, ticket.id(), true).version()));
       assertEquals(2, changes.size());
       SupportTicketBroadcaster.Change read = changes.getLast();
       assertTrue(read.affects(user.getId(), false));
@@ -337,6 +493,21 @@ class SupportTicketServiceTest {
   }
 
   @Test
+  void rolledBackClaimKeepsOriginalNotificationAndTicketOpen() {
+    Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
+    Long adminId = service.administratorId(administrator);
+    transaction.executeWithoutResult(
+        status -> {
+          service.claim(administrator, ticket.id(), ticket.version());
+          status.setRollbackOnly();
+        });
+    assertEquals(Status.OPEN, ticketFor(administrator, ticket.id(), true).status());
+    assertEquals(1, notificationRecipients.countUnread(adminId, null));
+    service.claim(administrator, ticket.id(), ticket.version());
+    assertEquals(0, notificationRecipients.countUnread(adminId, null));
+  }
+
+  @Test
   void parallelClaimSucceedsForExactlyOneAdministrator() throws Exception {
     Ticket ticket = service.createRecovery(owner, "Gemeinsame Anfrage.");
     java.util.concurrent.CountDownLatch ready = new java.util.concurrent.CountDownLatch(2);
@@ -365,6 +536,14 @@ class SupportTicketServiceTest {
           first.get(10, java.util.concurrent.TimeUnit.SECONDS),
           second.get(10, java.util.concurrent.TimeUnit.SECONDS));
     }
+    verify(notifications, org.mockito.Mockito.times(1))
+        .retireTicketNotifications(
+            SupportTicketService.ticketNumber(ticket.id()),
+            de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED);
+    assertEquals(
+        0, notificationRecipients.countUnread(service.administratorId(administrator), null));
+    assertEquals(
+        0, notificationRecipients.countUnread(service.administratorId(otherAdministrator), null));
   }
 
   @Test
@@ -498,8 +677,23 @@ class SupportTicketServiceTest {
     }
 
     @Bean
-    UserNotificationService notifications() {
-      return mock(UserNotificationService.class);
+    UserNotificationService notifications(
+        UserNotificationRepository notificationRepository,
+        UserNotificationRecipientRepository recipients,
+        UserRepository users,
+        SecurityService security,
+        ConfigService config,
+        TwoFactorAuthorization authorization) {
+      return org.mockito.Mockito.spy(
+          new UserNotificationService(
+              new UserNotificationPolicy(config),
+              notificationRepository,
+              recipients,
+              users,
+              security,
+              config,
+              new UserNotificationBroadcaster(),
+              authorization));
     }
 
     @Bean

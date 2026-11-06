@@ -980,7 +980,8 @@ class UserNotificationsUiTest {
             item.body(),
             item.createdAt(),
             read,
-            item.supportTicketNumber());
+            item.supportTicketNumber(),
+            item.relevance());
     when(service.unreadSnapshot(http)).thenReturn(read ? List.of() : List.of(7L));
     UserNotificationsPanel panel = new UserNotificationsPanel(texts, service, http, compact);
     ui.add(panel);
@@ -991,9 +992,73 @@ class UserNotificationsUiTest {
   }
 
   @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void retiredTicketStatusUpdatesOpenDetailWithoutReadingOrLosingItsHistory(String language) {
+    item =
+        new Item(
+            7L,
+            UserNotificationType.RECOVERY_REQUEST,
+            null,
+            null,
+            Instant.EPOCH,
+            false,
+            "#10001",
+            de.derpeterson.app.model.enums.UserNotificationRelevance.ACTIVE);
+    NotificationDetailFixture fixture = openNotificationDetail(language, true, false);
+    item =
+        new Item(
+            7L,
+            item.type(),
+            null,
+            null,
+            Instant.EPOCH,
+            false,
+            "#10001",
+            de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED);
+    fixture.panel().refresh();
+    assertTrue(fixture.dialog().isOpened());
+    assertEquals(
+        1,
+        tree(fixture.dialog())
+            .filter(com.vaadin.flow.component.badge.Badge.class::isInstance)
+            .filter(
+                part ->
+                    part.getElement()
+                        .getTextRecursively()
+                        .equals(texts.getNotificationsTicketAssigned()))
+            .count());
+    Item shown = field(fixture.panel(), "openedItem");
+    assertFalse(shown.read());
+    assertFalse(shown.unread());
+    assertFalse(detailButton(fixture.dialog(), "cosmos-notification-detail-mark-read").isVisible());
+    verify(service, never()).markRead(any(), any());
+
+    item =
+        new Item(
+            7L,
+            item.type(),
+            null,
+            null,
+            Instant.EPOCH,
+            false,
+            "#10001",
+            de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_CLOSED);
+    when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
+        .thenReturn(Page.empty());
+    when(service.inboxItem(http, 7L)).thenReturn(Optional.of(item));
+    fixture.panel().refresh();
+    assertTrue(fixture.dialog().isOpened());
+    assertTrue(
+        tree(fixture.dialog())
+            .filter(com.vaadin.flow.component.badge.Badge.class::isInstance)
+            .anyMatch(
+                part -> part.getElement().getTextRecursively().equals(texts.getSupportClosed())));
+  }
+
+  @ParameterizedTest
   @EnumSource(
       value = UserNotificationType.class,
-      names = {"RECOVERY_REQUEST", "SUPPORT_REPLY"})
+      names = {"RECOVERY_REQUEST", "SUPPORT_REPLY", "SUPPORT_REQUESTER_CLOSED"})
   void ticketNotificationsDoNotOfferUnrelatedAccountSecurityNavigation(UserNotificationType type) {
     item = new Item(7L, type, null, null, Instant.EPOCH, false);
     NotificationDetailFixture fixture = openNotificationDetail("de", true, false);
@@ -1011,7 +1076,14 @@ class UserNotificationsUiTest {
   void ticketDetailsOfferADestinationOnlyForAnAuthorizedAdministrator(String language) {
     item =
         new Item(
-            7L, UserNotificationType.SUPPORT_REPLY, null, null, Instant.EPOCH, false, "#10001");
+            7L,
+            UserNotificationType.SUPPORT_REPLY,
+            null,
+            null,
+            Instant.EPOCH,
+            false,
+            "#10001",
+            de.derpeterson.app.model.enums.UserNotificationRelevance.ACTIVE);
     when(service.canOpenTickets(http)).thenReturn(true);
     NotificationDetailFixture fixture = openNotificationDetail(language, true, false);
     Button ticket = detailButton(fixture.dialog(), "cosmos-notification-detail-ticket");
@@ -1043,9 +1115,18 @@ class UserNotificationsUiTest {
   @ParameterizedTest
   @EnumSource(
       value = UserNotificationType.class,
-      names = {"RECOVERY_REQUEST", "SUPPORT_REPLY"})
+      names = {"RECOVERY_REQUEST", "SUPPORT_REPLY", "SUPPORT_REQUESTER_CLOSED"})
   void ticketDestinationUsesThePublicNumberWithoutHash(UserNotificationType type) {
-    item = new Item(7L, type, null, null, Instant.EPOCH, false, "#10003");
+    item =
+        new Item(
+            7L,
+            type,
+            null,
+            null,
+            Instant.EPOCH,
+            false,
+            "#10003",
+            de.derpeterson.app.model.enums.UserNotificationRelevance.ACTIVE);
     when(service.canOpenTickets(http)).thenReturn(true);
     NotificationDetailFixture fixture = openNotificationDetail("de", true, false);
     UI navigator = mock(UI.class);

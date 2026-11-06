@@ -9,7 +9,9 @@ import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
 import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -32,6 +34,7 @@ import com.vaadin.flow.router.QueryParameters;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.i18n.UserNotificationTexts;
+import de.derpeterson.app.model.enums.UserNotificationRelevance;
 import de.derpeterson.app.model.enums.UserNotificationType;
 import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserNotificationService.Item;
@@ -499,16 +502,17 @@ public class UserNotificationsPanel extends Div {
 
   private void refreshOpenedDetail(Page<Item> result) {
     if (detail != null && detail.isOpened() && openedItem != null) {
-      result.stream()
-          .filter(item -> item.id().equals(openedItem.id()))
-          .findFirst()
-          .ifPresent(
-              item -> {
-                if (item.read() != openedItem.read()) {
-                  openedItem = item;
-                  renderDetail();
-                }
-              });
+      Item current =
+          result.stream()
+              .filter(item -> item.id().equals(openedItem.id()))
+              .findFirst()
+              .orElseGet(() -> service.inboxItem(session, openedItem.id()).orElse(null));
+      if (current == null) {
+        detail.close();
+      } else if (!current.equals(openedItem)) {
+        openedItem = current;
+        renderDetail();
+      }
     }
   }
 
@@ -598,7 +602,7 @@ public class UserNotificationsPanel extends Div {
     open.setAriaLabel(
         texts.getNotificationsOpen() + ": " + UserNotificationTexts.title(texts, item));
     Button mark = new Button(AppIcon.CHECK.create(), e -> confirmMarkRead(item));
-    mark.setVisible(!item.read());
+    mark.setVisible(item.unread());
     mark.addClassNames("cosmos-notification-inbox-mark-read", COSMOS_NOTIFICATION_ROW_ACTION_CLASS);
     mark.setTooltipText(texts.getNotificationsMarkRead());
     mark.setAriaLabel(
@@ -615,7 +619,7 @@ public class UserNotificationsPanel extends Div {
     Div row = new Div(top, content);
     row.addClassNames("cosmos-notification-row", "cosmos-notification-inbox-row");
     row.getElement().setAttribute("data-notification-id", item.id().toString());
-    row.setClassName("cosmos-notification-row--unread", !item.read());
+    row.setClassName("cosmos-notification-row--unread", item.unread());
     // Buttons behalten ihre eigene Aktion; die restliche Karte öffnet per einfachem Klick.
     row.getElement()
         .addEventListener("click", e -> action(() -> open(item)))
@@ -648,7 +652,7 @@ public class UserNotificationsPanel extends Div {
     markRead.addClassNames(
         "cosmos-notification-preview-mark-read", COSMOS_NOTIFICATION_ROW_ACTION_CLASS);
     markRead.setTooltipText(texts.getNotificationsMarkRead());
-    markRead.setVisible(!item.read());
+    markRead.setVisible(item.unread());
     markRead.setAriaLabel(
         texts.getNotificationsMarkRead() + ": " + UserNotificationTexts.title(texts, item));
     Div actions = new Div(open, markRead, dismissButton(item));
@@ -656,7 +660,7 @@ public class UserNotificationsPanel extends Div {
     Div row = new Div(title, body, meta, actions);
     row.addClassNames("cosmos-notification-row", "cosmos-notification-preview-row");
     row.getElement().setAttribute("data-notification-id", item.id().toString());
-    if (!item.read()) {
+    if (item.unread()) {
       row.addClassName("cosmos-notification-row--unread");
     }
     // Buttons behalten ihre eigene Aktion; die restliche Karte öffnet per einfachem Klick.
@@ -821,7 +825,8 @@ public class UserNotificationsPanel extends Div {
             openedItem.body(),
             openedItem.createdAt(),
             true,
-            openedItem.supportTicketNumber());
+            openedItem.supportTicketNumber(),
+            openedItem.relevance());
     if (detail != null && detail.isOpened()) {
       renderDetail();
     }
@@ -835,13 +840,20 @@ public class UserNotificationsPanel extends Div {
         administration ? "portal-notification-source-admin" : "portal-notification-source-system");
     Span time = new Span(UserNotificationTexts.time(item.createdAt(), UI.getCurrent().getLocale()));
     time.addClassName("cosmos-notification-message-time");
-    Span state =
-        new Span(item.read() ? texts.getNotificationsRead() : texts.getNotificationsUnread());
+    Span state = new Span(UserNotificationTexts.relevance(texts, item));
     state.getElement().setAttribute(THEME_ATTRIBUTE, BADGE_THEME);
     state.getElement().setAttribute("data-read", Boolean.toString(item.read()));
     state.addClassName("cosmos-notification-preview-state");
     state.addClassNames(stateClasses);
-    Div metadata = new Div(origin, time, state);
+    Component status = state;
+    if (item.relevance() != UserNotificationRelevance.ACTIVE) {
+      Badge retired = new Badge(UserNotificationTexts.relevance(texts, item));
+      retired.addClassNames("cosmos-notification-preview-state");
+      retired.addClassNames(stateClasses);
+      retired.getElement().setAttribute("data-relevance", item.relevance().name());
+      status = retired;
+    }
+    Div metadata = new Div(origin, time, status);
     metadata.addClassName("cosmos-notification-message-meta");
     return metadata;
   }
@@ -891,7 +903,7 @@ public class UserNotificationsPanel extends Div {
     body.addClassNames(COSMOS_NOTIFICATION_BODY_CLASS, "cosmos-notification-detail-body");
     Div message = new Div(titleRow, contentMeta, body);
     message.addClassName("cosmos-notification-detail-message");
-    if (!openedItem.read()) {
+    if (openedItem.unread()) {
       message.addClassName("cosmos-notification-detail-message--unread");
     }
     Div detailContent = new Div(message);
@@ -919,20 +931,23 @@ public class UserNotificationsPanel extends Div {
             e -> confirmMarkRead(openedItem));
     markRead.addClassName("cosmos-notification-detail-mark-read");
     markRead.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    markRead.setVisible(!openedItem.read());
+    markRead.setVisible(openedItem.unread());
     HorizontalLayout readActions = new HorizontalLayout(markRead);
     readActions.setPadding(false);
     readActions.setSpacing(false);
     readActions.setWidthFull();
     readActions.setJustifyContentMode(JustifyContentMode.END);
     readActions.addClassName("cosmos-notification-detail-read-actions");
-    readActions.setVisible(!openedItem.read());
+    readActions.setVisible(openedItem.unread());
     message.add(readActions);
     Button detailClose =
         new Button(texts.getNotificationsClose(), AppIcon.CLOSE.create(), e -> detail.close());
     detailClose.addClassName("cosmos-notification-detail-close");
     Button destination = null;
-    if (Set.of(UserNotificationType.RECOVERY_REQUEST, UserNotificationType.SUPPORT_REPLY)
+    if (Set.of(
+                UserNotificationType.RECOVERY_REQUEST,
+                UserNotificationType.SUPPORT_REPLY,
+                UserNotificationType.SUPPORT_REQUESTER_CLOSED)
             .contains(openedItem.type())
         && openedItem.supportTicketNumber() != null
         && service.canOpenTickets(session)) {

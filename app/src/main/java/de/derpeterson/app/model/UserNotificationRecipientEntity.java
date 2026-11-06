@@ -1,7 +1,10 @@
 package de.derpeterson.app.model;
 
+import de.derpeterson.app.model.enums.UserNotificationRelevance;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -47,4 +50,8 @@ public class UserNotificationRecipientEntity {
 
   @Column(name = "dismissed_at")
   private Instant dismissedAt;
+
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private UserNotificationRelevance relevance = UserNotificationRelevance.ACTIVE;
 }

@@ -50,6 +50,12 @@ public class UserNotificationEntity {
   @Column(length = 24, updatable = false)
   private String supportTicketNumber;
 
+  @Column(updatable = false)
+  private Long supportReplyId;
+
+  @Column(updatable = false)
+  private Long supportTicketVersion;
+
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;
 

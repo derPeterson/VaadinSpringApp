@@ -198,6 +198,65 @@ den Versand der Anleitung. Ein Admin kann einen vom Nutzer geschlossenen Vorgang
 abschließen, wenn er ihm zugewiesen oder noch unzugewiesen ist. Bei Bedarf kann
 der Antragsteller im Rahmen des Tageslimits eine neue Anfrage eröffnen.
 
+### Ticketzustände, Zähler und Glocke
+
+Die roten Zahlen an Vorgängen zählen ungelesene einzelne Nachrichten für das
+jeweilige Konto. Die Glocke zählt dagegen ungelesene, fachlich noch relevante
+Benachrichtigungen. Beides ist unabhängig voneinander; ein historischer Hinweis
+wird durch die Übernahme nicht automatisch als gelesen markiert.
+
+| Ticketstatus | Ungelesen-Zähler in der Administration | Was noch zu tun ist |
+| --- | --- | --- |
+| Offen | Für alle berechtigten Admins | Übernehmen und prüfen |
+| In Bearbeitung | Für den Bearbeiter und berechtigte Beobachter | Antworten und bearbeiten |
+| Vom Nutzer geschlossen, zugewiesen | Für den Bearbeiter und berechtigte Beobachter | Verlauf prüfen und endgültig abschließen |
+| Vom Nutzer geschlossen, unzugewiesen | Für alle berechtigten Admins | Prüfen und endgültig abschließen; dabei wird der ausführende Admin zugewiesen |
+| Abgeschlossen | Kein Zähler, auch nicht in der Nutzeransicht | Verlauf bleibt lesbar; keine weiteren Nachrichten oder Ticketänderungen |
+
+Eine Beobachtung fremder Vorgänge ist Superadmins vorbehalten. Der Bearbeiter
+sieht den Zähler auch ohne aktiviertes „Beobachten“. Ein neuer Admin kann ältere
+Nachrichten als ungelesen sehen, sofern der aktuelle Ticketstatus und seine
+Zuständigkeit beziehungsweise Beobachtung das vorsehen.
+
+| Ereignis | Glockenhinweis und Empfänger |
+| --- | --- |
+| Neues Ticket | Alle aktivierten, bestätigten Admins und Superadmins erhalten einen Hinweis mit „Zum Ticket“ |
+| Übernahme | Der ursprüngliche Hinweis „Neues Ticket“ erhält „Bereits übernommen“ / „Already assigned“ und entfällt im Glockenzähler |
+| Neue öffentliche Nachricht | Aktiv beobachtende, berechtigte Bearbeiter und Superadmins erhalten einen Hinweis; der Absender erhält keinen eigenen Hinweis |
+| Interner Vermerk | Keine zusätzliche Glockenbenachrichtigung; bleibt ausschließlich administrativ sichtbar |
+| Nutzer schließt ein zugewiesenes Ticket | Bearbeiter auch ohne Beobachtung sowie berechtigte Beobachter erhalten einen eigenen Hinweis zur Prüfung und zum abschließenden Schließen |
+| Nutzer schließt ein unzugewiesenes Ticket | Alle aktivierten, bestätigten Admins und Superadmins werden zur abschließenden Prüfung informiert |
+| Endgültiger Abschluss | Zugehörige Hinweise erhalten „Abgeschlossen“ / „Closed“ und entfallen im Glockenzähler |
+
+Beim Nutzerabschluss werden ältere Ticket-Hinweise mit „Vom Nutzer geschlossen“
+gekennzeichnet und nicht mehr gezählt; der neue Abschlussprüfhinweis bleibt relevant.
+Damit zählen frühere Nachrichten und derselbe anschließende Prüfauftrag nicht
+nebeneinander als mehrere offene Aufgaben. Eigene Nutzerabschlüsse lösen keinen
+zusätzlichen Hinweis an das ausführende Konto aus.
+
+Historische Benachrichtigungen bleiben im Postfach sichtbar. Fachlich erledigt,
+persönlich gelesen und persönlich entfernt sind getrennte Zustände. Der Filter
+„Ungelesen“ und „Alle als gelesen markieren“ berücksichtigen nur weiterhin relevante
+Hinweise; die Gesamtansicht enthält auch erledigte Hinweise.
+
+Beim sichtbaren Lesen eines Ticketverlaufs werden nur bereits dargestellte
+Nachrichtenbenachrichtigungen und bereits dargestellte Abschlusszustände quittiert.
+Eine danach eintreffende Nachricht oder ein späterer Nutzerabschluss bleibt ungelesen.
+Ein Hintergrundtab quittiert erst nach dem Sichtbarwerden. Andere geöffnete Tabs
+desselben Kontos erhalten den aktualisierten Stand ebenfalls.
+
+„Beobachten“ auszuschalten verhindert weitere normale Nachrichtenhinweise. Es
+ändert weder Zuständigkeit noch Lesestatus und unterdrückt für den Bearbeiter
+nicht die nötige Abschlussprüfung. Nach Rollenentzug, Kontosperre oder ausstehender
+Kontobestätigung werden keine neuen administrativen Ticket-Hinweise zugestellt.
+Die Übergabe zwischen Bearbeitern ist vorerst nicht vorgesehen.
+
+Vorgangsänderung, ursprüngliche Hinweise erledigen und neue Hinweise anlegen
+gehören zur gleichen Transaktion unter der bestehenden Ticketsperre. Erst nach
+Commit werden offene Ansichten und Glocken aktualisiert. Wiederholte Lese- und
+Statusmeldungen verändern den Zähler nicht mehrfach; ein zurückgerollter Vorgang
+löst keine erfolgreiche Live-Aktualisierung aus.
+
 Geöffnete Anfrageansichten in Wiederherstellung und Administration laden
 Änderungen nach erfolgreicher Speicherung per Vaadin-Push nach. „Aktualisieren“
 lädt weiterhin auf Wunsch neu. Ticketauswahl und Entwurf bleiben beim Nachladen
@@ -213,12 +272,14 @@ Ticketarten sind noch nicht eingerichtet. Auf breiten Fenstern bleiben Liste
 und Nachrichtenverlauf nebeneinander sichtbar. Schmale Fenster ordnen sie
 untereinander an. Der Verlauf nutzt dieselben Sprechblasen wie die Benutzerhilfe
 und kennzeichnet interne Vermerke separat.
-Die Zuständigkeit erscheint nur in der Administration mit dem Namen des
-Bearbeiters. Bei eigenen Zuweisungen lautet der Hinweis „Von Ihnen übernommen“.
-In der Benutzeransicht werden keine Bearbeiternamen ausgegeben.
+Die Zuständigkeit erscheint nur in der Administration als Bearbeiteravatar mit
+Name und E-Mail im Tooltip. Im Detailkopf stehen diese Angaben bei fremden
+Bearbeitern auch sichtbar daneben. Eigene Zuweisungen tragen das grüne „Sie“-/
+„You“-Badge; unzugewiesene Vorgänge zeigen „Nicht Zugewiesen“ kursiv.
+In der Benutzeransicht werden keine Bearbeiternamen oder -adressen ausgegeben.
 
-Administratoren können an eigenen zugewiesenen, offenen Tickets „Bei neuen
-Nachrichten benachrichtigen“ aktivieren. Superadmins können auch andere offene
+Administratoren können an eigenen zugewiesenen, offenen Tickets „Beobachten“
+aktivieren. Superadmins können auch andere offene
 Tickets abonnieren. Neue öffentliche Nachrichten lösen für berechtigte Abonnenten
 außer dem Absender eine interne Benachrichtigung mit der Vorgangsnummer aus.
 Sie verweist auf den Nachrichtenverlauf in der Administration. Interne Vermerke

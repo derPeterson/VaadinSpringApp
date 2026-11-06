@@ -26,6 +26,12 @@ gemessen. Öffnungsanimationen verfälschen die Layoutmessung nicht. Die Aktions
 brechen bei Platzmangel um.
 
 Der Benachrichtigungsdetaildialog trennt Leseaktion, Nebenaktionen und Zielaktion.
+Erledigte Tickethinweise zeigen ihren fachlichen Zustand („Bereits übernommen“,
+„Vom Nutzer geschlossen“, „Abgeschlossen“) als neutrales natives `Badge` mit der
+vorhandenen Klasse `cosmos-notification-preview-state`. Sie erhalten keine blaue
+Ungelesen-Markierung oder Leseaktion. Der persönliche Lesestatus bleibt separat
+gespeichert; ein geöffneter Dialog übernimmt Statusänderungen auch dann, wenn der
+Eintrag aus dem aktiven Ungelesen-Filter fällt.
 Die Leseaktion steht in der Nachrichtenkarte. Ein nativer `Button` öffnet
 `Popover` mit beschrifteten Standardbuttons unter „Weitere Aktionen“.
 Der Footer nutzt native `HorizontalLayout`-Komponenten und ordnet die Zielaktion
@@ -1226,9 +1232,11 @@ Der Inhaltsbereich gliedert die Sicherheitsleitlinie als bestehende Infobox:
 Infoicon in Cyan, „Sicherheitsleitlinie:“ weiß und fett, direkt anschließend die
 Erklärung in Sekundärfarbe ohne erzwungenen Zeilenumbruch.
 Die Verlaufsüberschrift ist blau, der Nachrichten-Zähler bleibt grau. Unter dem
-Verlauf steht nur bei offenen, unzugewiesenen Tickets ein zentrierter kursiver
-Hinweis mit 8 px Abstand zum Verlauf, dass Antworten und Abschließen erst nach
-Übernahme möglich sind.
+Verlauf steht ein statusabhängiger zentrierter, kursiver Hinweis mit 8 px Abstand
+(`.support-admin-status-note`): Bei offenen, unzugewiesenen Tickets erklärt er die
+nötige Übernahme. Abgeschlossene Tickets weisen auf die gesperrten Nachrichten
+und Änderungen hin. Bei vom Antragsteller geschlossenen Tickets fordert er zum
+Prüfen des Verlaufs und abschließenden Schließen auf. In Bearbeitung entfällt er.
 Die vorhandenen Abschluss- und
 Antwortbuttons liegen im gemeinsamen Panel-Footer. Werkzeugleiste und Footer
 sind ohne sichtbare Aktionen ausgeblendet; Berechtigungen bleiben unverändert.

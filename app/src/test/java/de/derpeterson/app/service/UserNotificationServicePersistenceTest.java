@@ -990,6 +990,21 @@ class UserNotificationServicePersistenceTest {
     assertTrue(de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, "   ").isEmpty());
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void requesterClosureCanBeFoundByItsVisibleTicketTitlePrefix(String language) {
+    MessageProperties texts =
+        MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
+    tx.executeWithoutResult(status -> service.recordRequesterClosed("#10001", 1L, List.of(sender)));
+    String query = texts.getSupportTicketNumber("").strip();
+    Set<UserNotificationType> types =
+        de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, query);
+    assertTrue(types.contains(UserNotificationType.SUPPORT_REQUESTER_CLOSED));
+    assertEquals(
+        1,
+        service.searchInbox(adminSession, ReadFilter.ALL, query, types, 0, 20).getTotalElements());
+  }
+
   @Test
   void paginationBoundsAreChecked() {
     assertThrows(
@@ -1053,7 +1068,7 @@ class UserNotificationServicePersistenceTest {
 
   @Test
   void recoveryNotificationKeepsTheTicketDestinationRestrictedToAdministrators() {
-    tx.executeWithoutResult(status -> service.recordRecoveryRequest("#10001"));
+    tx.executeWithoutResult(status -> service.recordRecoveryRequest("#10001", 1L));
     Item item = service.inbox(adminSession, ReadFilter.UNREAD, 0, 20).getContent().getFirst();
     assertEquals(UserNotificationType.RECOVERY_REQUEST, item.type());
     assertEquals("#10001", item.supportTicketNumber());
@@ -1066,7 +1081,8 @@ class UserNotificationServicePersistenceTest {
   @Test
   void supportReplyNotificationShowsOnlyTheTicketNumberToItsRecipient() {
     String ticketNumber = "#10003";
-    tx.executeWithoutResult(status -> service.recordSupportReply(ticketNumber, List.of(sender)));
+    tx.executeWithoutResult(
+        status -> service.recordSupportReply(ticketNumber, 1L, List.of(sender)));
     Item item =
         service
             .searchInbox(adminSession, ReadFilter.UNREAD, ticketNumber, Set.of(), 0, 20)
@@ -1077,6 +1093,54 @@ class UserNotificationServicePersistenceTest {
     assertNull(item.title());
     assertNull(item.body());
     assertTrue(service.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
+  }
+
+  @Test
+  void retiredTicketHintsStayInHistoryWithoutChangingReadStateOrCountingAsUnread() {
+    tx.executeWithoutResult(status -> service.recordRecoveryRequest("#10001", 1L));
+    tx.executeWithoutResult(
+        status ->
+            service.retireTicketNotifications(
+                "#10001",
+                de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED));
+    assertEquals(0, service.unreadCount(adminSession));
+    assertTrue(service.unreadSnapshot(adminSession).isEmpty());
+    assertTrue(service.inbox(adminSession, ReadFilter.UNREAD, 0, 20).isEmpty());
+    Item assigned = service.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    assertFalse(assigned.read());
+    assertFalse(assigned.unread());
+    assertEquals(
+        de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED,
+        assigned.relevance());
+    tx.executeWithoutResult(
+        status ->
+            service.retireTicketNotifications(
+                "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_CLOSED));
+    tx.executeWithoutResult(
+        status ->
+            service.retireTicketNotifications(
+                "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_CLOSED));
+    Item closed = service.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    assertFalse(closed.read());
+    assertEquals(
+        de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_CLOSED, closed.relevance());
+    assertEquals(0, service.unreadCount(adminSession));
+    assertEquals(1, service.inboxCount(adminSession));
+  }
+
+  @Test
+  void rolledBackTicketRetirementKeepsTheHintActionableAndDoesNotPublish() {
+    tx.executeWithoutResult(status -> service.recordRecoveryRequest("#10001", 1L));
+    List<Set<Long>> changes = new ArrayList<>();
+    subscriptions.add(events.register(changes::add));
+    tx.executeWithoutResult(
+        status -> {
+          service.retireTicketNotifications(
+              "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED);
+          status.setRollbackOnly();
+        });
+    assertTrue(changes.isEmpty());
+    assertEquals(1, service.unreadCount(adminSession));
   }
 
   @Test
@@ -1291,7 +1355,7 @@ class UserNotificationServicePersistenceTest {
               .setParameter("sender", sender.getId())
               .executeUpdate();
           em.createNativeQuery(
-                  "insert into user_notification_recipients (id, notification_id, user_id, read_at) values (900002, 900001, :owner, :read)")
+                  "insert into user_notification_recipients (id, notification_id, user_id, read_at, relevance) values (900002, 900001, :owner, :read, 'ACTIVE')")
               .setParameter("owner", ordinary.getId())
               .setParameter("read", created)
               .executeUpdate();
