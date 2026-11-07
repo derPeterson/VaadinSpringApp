@@ -61,6 +61,35 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     assertThat(page.locator("#two-factor-qr")).hasAttribute("alt", texts.getTwoFactorQrAlt());
     TwoFactorPage.confirmEnrollment(page, email);
     java.util.List<String> codes = TwoFactorPage.recoveryCodeValues(page);
+    verifyLanguageChangeDuringRecoveryOutput(other, codes);
+    new UserMenu(page).signOut();
+    page.locator("#external-login-google").click();
+    providerIdentity(email);
+    TwoFactorPage.openLoginHelp(page);
+    page.locator("#two-factor-help").click();
+    assertThat(page.locator("#account-support")).isVisible();
+    String draft = "Own recovery request " + UUID.randomUUID();
+    page.locator("#support-reply textarea").fill(draft);
+    new UserMenu(page).selectLanguage(other.language());
+    assertThat(page.locator("#support-reply"))
+        .hasJSProperty("label", other.getSupportDescription());
+    assertThat(page.locator("#support-reply textarea")).hasValue(draft);
+    page.locator("#support-create").click();
+    Locator ticket = page.locator("#support-ticket-grid").getByText(Pattern.compile("^#[0-9]+$"));
+    assertThat(ticket).hasCount(1);
+    String number = ticket.innerText();
+    new UserMenu(page).selectTestLanguage();
+    assertThat(ticket).hasText(number);
+    assertThat(page.locator("#account-support")).containsText(draft);
+    AllurePlaywright.attachScreenshot("Sprachwechsel im eingeschränkten Hilfszugang", page);
+    page.navigate("/home");
+    assertThat(page).hasURL(Pattern.compile(".*/two-factor.*"));
+    page.locator("#two-factor-cancel").click();
+    new LoginPage(page).assertFormVisible();
+  }
+
+  private void verifyLanguageChangeDuringRecoveryOutput(
+      UiTexts other, java.util.List<String> codes) {
     assertThat(page.locator("#two-factor-recovery-details")).hasAttribute("opened", "");
     Locator firstCode = page.locator("#two-factor-recovery-code-1");
     firstCode.locator("input").focus();
@@ -96,30 +125,6 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     org.junit.jupiter.api.Assertions.assertEquals(codes, TwoFactorPage.recoveryCodeValues(page));
     page.locator("#two-factor-submit").click();
     assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
-    new UserMenu(page).signOut();
-    page.locator("#external-login-google").click();
-    providerIdentity(email);
-    TwoFactorPage.openLoginHelp(page);
-    page.locator("#two-factor-help").click();
-    assertThat(page.locator("#account-support")).isVisible();
-    String draft = "Own recovery request " + UUID.randomUUID();
-    page.locator("#support-reply textarea").fill(draft);
-    new UserMenu(page).selectLanguage(other.language());
-    assertThat(page.locator("#support-reply"))
-        .hasJSProperty("label", other.getSupportDescription());
-    assertThat(page.locator("#support-reply textarea")).hasValue(draft);
-    page.locator("#support-create").click();
-    Locator ticket = page.locator("#support-ticket-grid").getByText(Pattern.compile("^#[0-9]+$"));
-    assertThat(ticket).hasCount(1);
-    String number = ticket.innerText();
-    new UserMenu(page).selectTestLanguage();
-    assertThat(ticket).hasText(number);
-    assertThat(page.locator("#account-support")).containsText(draft);
-    AllurePlaywright.attachScreenshot("Sprachwechsel im eingeschränkten Hilfszugang", page);
-    page.navigate("/home");
-    assertThat(page).hasURL(Pattern.compile(".*/two-factor.*"));
-    page.locator("#two-factor-cancel").click();
-    new LoginPage(page).assertFormVisible();
   }
 
   @ParameterizedTest

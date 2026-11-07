@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -101,9 +102,7 @@ class RecoveryCodeDownloadTest {
   void transportFailureReportsErrorWithoutDismissingCodes() throws IOException {
     byte[] bytes = "%PDF-synthetic".getBytes(StandardCharsets.US_ASCII);
     OutputStream output = mock(OutputStream.class);
-    org.mockito.Mockito.doThrow(new IOException("Synthetic disconnected client"))
-        .when(output)
-        .write(bytes);
+    doThrow(new IOException("Synthetic disconnected client")).when(output).write(bytes);
     when(event.getOutputStream()).thenReturn(output);
     when(pdf.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any())).thenReturn(bytes);
 

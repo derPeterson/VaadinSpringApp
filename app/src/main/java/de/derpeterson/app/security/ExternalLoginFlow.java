@@ -381,35 +381,39 @@ public class ExternalLoginFlow {
     }
     if (attempt.mode() == Mode.LINK) {
       completeLink(request, attempt, evidence);
-    } else {
-      if (!identities.belongsTo(user.getId(), evidence)) {
-        throw new ProofRejected(ProofProblem.IDENTITY_MISMATCH);
-      }
-      if (!attempt.provider().equals(GOOGLE)) {
-        Instant authenticated = evidence.authenticatedAt();
-        if (authenticated == null
-            || authenticated.isBefore(attempt.started().minusSeconds(5))
-            || authenticated.isAfter(clock.instant().plusSeconds(30))) {
-          throw new ProofRejected(ProofProblem.FRESH_AUTHENTICATION_REQUIRED);
-        }
-      }
-      if (attempt.purpose() == Purpose.ENROLL_FACTOR) {
-        enrollment.afterProviderConfirmation(
-            request,
-            new EnrollmentConfirmation(
-                user, session, attempt.provider(), clock.instant().plusSeconds(60)));
-        return;
-      }
-      if (!canUseProviderProof(request, attempt.provider(), attempt.purpose())) {
-        throw new ProofRejected(ProofProblem.FRESH_AUTHENTICATION_REQUIRED);
-      }
-      storeGrant(
+      return;
+    }
+    validateAccountProof(attempt, evidence, user);
+    if (attempt.purpose() == Purpose.ENROLL_FACTOR) {
+      enrollment.afterProviderConfirmation(
           request,
-          user,
-          attempt.purpose(),
-          attempt.provider().equals(GOOGLE)
-              ? ProofMethod.GOOGLE_DEVELOPMENT
-              : ProofMethod.MICROSOFT);
+          new EnrollmentConfirmation(
+              user, session, attempt.provider(), clock.instant().plusSeconds(60)));
+      return;
+    }
+    if (!canUseProviderProof(request, attempt.provider(), attempt.purpose())) {
+      throw new ProofRejected(ProofProblem.FRESH_AUTHENTICATION_REQUIRED);
+    }
+    storeGrant(
+        request,
+        user,
+        attempt.purpose(),
+        attempt.provider().equals(GOOGLE) ? ProofMethod.GOOGLE_DEVELOPMENT : ProofMethod.MICROSOFT);
+  }
+
+  private void validateAccountProof(
+      Attempt attempt, ExternalIdentityEvidence evidence, UserEntity user) {
+    if (!identities.belongsTo(user.getId(), evidence)) {
+      throw new ProofRejected(ProofProblem.IDENTITY_MISMATCH);
+    }
+    if (attempt.provider().equals(GOOGLE)) {
+      return;
+    }
+    Instant authenticated = evidence.authenticatedAt();
+    if (authenticated == null
+        || authenticated.isBefore(attempt.started().minusSeconds(5))
+        || authenticated.isAfter(clock.instant().plusSeconds(30))) {
+      throw new ProofRejected(ProofProblem.FRESH_AUTHENTICATION_REQUIRED);
     }
   }
 

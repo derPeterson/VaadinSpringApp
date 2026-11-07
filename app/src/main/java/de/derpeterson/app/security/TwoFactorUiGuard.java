@@ -1,6 +1,8 @@
 package de.derpeterson.app.security;
 
+import com.vaadin.flow.component.UI;
 import com.vaadin.flow.internal.CurrentInstance;
+import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.VaadinRequest;
@@ -37,46 +39,48 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
         .getSource()
         .addUIInitListener(
             init -> {
-              // Echte Eingaben zählen. Heartbeat, Push, Polling und reine Serverupdates erzeugen
-              // diese nativen DOM-Ereignisse nicht. Der abgelaufene Zugriff wird bereits vor RPC
-              // gestoppt.
-              for (String type : List.of("pointerdown", "keydown", "wheel")) {
-                init.getUI()
-                    .getElement()
-                    .addEventListener(
-                        type,
-                        interaction -> {
-                          if (VaadinRequest.getCurrent() instanceof VaadinServletRequest servlet
-                              && security
-                                  .get()
-                                  .getAuthenticatedUser(servlet.getHttpServletRequest())
-                                  .isPresent()) {
-                            authorization.get().recordActivity(servlet.getHttpServletRequest());
-                          }
-                        })
-                    .setFilter("event.isTrusted")
-                    .throttle(30_000);
-              }
-              init.getUI()
-                  .addBeforeEnterListener(
-                      navigation -> {
-                        if (VaadinRequest.getCurrent() instanceof VaadinServletRequest servlet
-                            && navigation.getNavigationTarget() != TwoFactorView.class
-                            && navigation.getNavigationTarget() != RecoveryHelpView.class) {
-                          HttpServletRequest request = servlet.getHttpServletRequest();
-                          if (security.get().getAuthenticatedUser(request).isPresent()
-                              && (!authorization.get().sessionConfirmed(request)
-                                  || navigation.getNavigationTarget() == AdminView.class
-                                      && !authorization.get().administrationConfirmed(request))) {
-                            navigation.forwardTo(
-                                TwoFactorView.class,
-                                navigation.getNavigationTarget() == AdminView.class
-                                    ? QueryParameters.of("administration", "true")
-                                    : QueryParameters.empty());
-                          }
-                        }
-                      });
+              UI ui = init.getUI();
+              registerActivity(ui);
+              ui.addBeforeEnterListener(this::guardNavigation);
             });
+  }
+
+  private void registerActivity(UI ui) {
+    // Echte Eingaben zählen. Heartbeat, Push und reine Serverupdates erzeugen diese Ereignisse
+    // nicht.
+    for (String type : List.of("pointerdown", "keydown", "wheel")) {
+      ui.getElement()
+          .addEventListener(type, event -> recordActivity())
+          .setFilter("event.isTrusted")
+          .throttle(30_000);
+    }
+  }
+
+  private void recordActivity() {
+    if (VaadinRequest.getCurrent() instanceof VaadinServletRequest servlet) {
+      HttpServletRequest request = servlet.getHttpServletRequest();
+      if (security.get().getAuthenticatedUser(request).isPresent()) {
+        authorization.get().recordActivity(request);
+      }
+    }
+  }
+
+  private void guardNavigation(BeforeEnterEvent navigation) {
+    Class<?> target = navigation.getNavigationTarget();
+    if (!(VaadinRequest.getCurrent() instanceof VaadinServletRequest servlet)
+        || target == TwoFactorView.class
+        || target == RecoveryHelpView.class) {
+      return;
+    }
+    HttpServletRequest request = servlet.getHttpServletRequest();
+    boolean administration = target == AdminView.class;
+    if (security.get().getAuthenticatedUser(request).isPresent()
+        && (!authorization.get().sessionConfirmed(request)
+            || administration && !authorization.get().administrationConfirmed(request))) {
+      navigation.forwardTo(
+          TwoFactorView.class,
+          administration ? QueryParameters.of("administration", "true") : QueryParameters.empty());
+    }
   }
 
   @Override
@@ -98,8 +102,12 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
 
   @Override
   public void handleException(
-      VaadinRequest request, VaadinResponse response, VaadinSession session, Exception exception) {}
+      VaadinRequest request, VaadinResponse response, VaadinSession session, Exception exception) {
+    // Die Anwendung verarbeitet Ausnahmen über die reguläre Vaadin-Fehlerbehandlung.
+  }
 
   @Override
-  public void requestEnd(VaadinRequest request, VaadinResponse response, VaadinSession session) {}
+  public void requestEnd(VaadinRequest request, VaadinResponse response, VaadinSession session) {
+    // Der Wächter hält keinen Zustand, der am Ende des Requests freigegeben werden muss.
+  }
 }

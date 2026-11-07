@@ -37,6 +37,7 @@ import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
 
@@ -259,36 +260,9 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
       return;
     }
     try {
-      if (flow.confirmedPurpose(request).filter(purpose::equals).isEmpty()) {
-        if (factor.isVisible()) {
-          if (!ValidationHelper.validateRequiredInputs(List.of(factor), texts)) {
-            return;
-          }
-          try {
-            flow.confirmFactor(request, factor.getValue(), purpose);
-          } catch (RuntimeException failure) {
-            factor.setInvalid(true);
-            NotificationHelper.getInstance()
-                .showNotification(
-                    texts::getBaseFailedTitle,
-                    failure instanceof LockedException
-                        ? texts::getTwoFactorThrottled
-                        : failure instanceof BadCredentialsException
-                            ? texts::getTwoFactorInvalidCode
-                            : texts::getTwoFactorFailed,
-                    NotificationHelper.NotificationType.ERROR);
-            return;
-          }
-        } else {
-          if (!password.isVisible()) {
-            showExternalFailure();
-            refreshTexts();
-            return;
-          }
-          if (!confirmPassword()) {
-            return;
-          }
-        }
+      if (flow.confirmedPurpose(request).filter(purpose::equals).isEmpty()
+          && !confirmLocalProof()) {
+        return;
       }
       action.run();
       close();
@@ -298,6 +272,40 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     } finally {
       password.clear();
       factor.clear();
+    }
+  }
+
+  private boolean confirmLocalProof() {
+    if (factor.isVisible()) {
+      return confirmFactor();
+    }
+    if (password.isVisible()) {
+      return confirmPassword();
+    }
+    showExternalFailure();
+    refreshTexts();
+    return false;
+  }
+
+  private boolean confirmFactor() {
+    if (!ValidationHelper.validateRequiredInputs(List.of(factor), texts)) {
+      return false;
+    }
+    try {
+      flow.confirmFactor(request, factor.getValue(), purpose);
+      return true;
+    } catch (RuntimeException failure) {
+      factor.setInvalid(true);
+      Supplier<String> message = texts::getTwoFactorFailed;
+      if (failure instanceof LockedException) {
+        message = texts::getTwoFactorThrottled;
+      } else if (failure instanceof BadCredentialsException) {
+        message = texts::getTwoFactorInvalidCode;
+      }
+      NotificationHelper.getInstance()
+          .showNotification(
+              texts::getBaseFailedTitle, message, NotificationHelper.NotificationType.ERROR);
+      return false;
     }
   }
 

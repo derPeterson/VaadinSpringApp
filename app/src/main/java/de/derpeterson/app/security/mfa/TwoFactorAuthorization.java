@@ -29,6 +29,7 @@ import tools.jackson.databind.json.JsonMapper;
 /** Aktuelle Rollen, Regeln, Faktorversion und Sitzungsbindung werden an jeder Grenze geprüft. */
 @Service
 public class TwoFactorAuthorization {
+  private static final String SIGN_IN_REQUIRED = "Sign in required";
   public static final String SESSION_PROOF = TwoFactorAuthorization.class.getName() + ".proof";
   private final ObjectProvider<SecurityService> security;
   private final UserRepository users;
@@ -100,7 +101,7 @@ public class TwoFactorAuthorization {
         security
             .getObject()
             .getAuthenticatedUser(request)
-            .orElseThrow(() -> new AccessDeniedException("Sign in required"))
+            .orElseThrow(() -> new AccessDeniedException(SIGN_IN_REQUIRED))
             .getUsername();
     return owner(identity);
   }
@@ -111,7 +112,7 @@ public class TwoFactorAuthorization {
         security
             .getObject()
             .refreshSessionAuthentication(session)
-            .orElseThrow(() -> new AccessDeniedException("Sign in required"))
+            .orElseThrow(() -> new AccessDeniedException(SIGN_IN_REQUIRED))
             .getName();
     return owner(identity);
   }
@@ -257,7 +258,7 @@ public class TwoFactorAuthorization {
         security
             .getObject()
             .getSessionUser(session)
-            .orElseThrow(() -> new AccessDeniedException("Sign in required"))
+            .orElseThrow(() -> new AccessDeniedException(SIGN_IN_REQUIRED))
             .getEmail();
     if (!sessionConfirmed(owner(identity), session, TwoFactorAction.LOGIN)) {
       throw new AccessDeniedException("Two-factor sign-in required");
@@ -481,7 +482,7 @@ public class TwoFactorAuthorization {
     }
     try {
       return mapper.readValue(json, SessionProof.class);
-    } catch (RuntimeException invalid) {
+    } catch (RuntimeException _) {
       session.removeAttribute(SESSION_PROOF);
       return null;
     }

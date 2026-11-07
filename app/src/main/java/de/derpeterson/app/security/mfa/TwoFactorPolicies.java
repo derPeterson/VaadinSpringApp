@@ -9,6 +9,7 @@ import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.AdminRolePolicy;
 import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Objects;
@@ -33,7 +34,7 @@ public class TwoFactorPolicies {
   private final boolean developmentOptions;
   private final JsonMapper mapper = JsonMapper.builder().build();
 
-  public record Snapshot(long revision, TwoFactorPolicy policy) {}
+  public record Snapshot(long revision, TwoFactorPolicy policy) implements Serializable {}
 
   // Sekunden bleiben das Speicherformat; die Oberfläche verwendet Zahl und Zeiteinheit.
   private record Stored(

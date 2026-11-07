@@ -28,7 +28,7 @@ public final class ExternalProviderSecrets {
     }
     try {
       key = Base64.getDecoder().decode(configured);
-    } catch (IllegalArgumentException failure) {
+    } catch (IllegalArgumentException _) {
       throw new IllegalStateException("Invalid provider encryption key encoding");
     }
     if (key.length != 32) {
@@ -50,7 +50,7 @@ public final class ExternalProviderSecrets {
       System.arraycopy(nonce, 0, envelope, 1, nonce.length);
       System.arraycopy(ciphertext, 0, envelope, 13, ciphertext.length);
       return Base64.getUrlEncoder().withoutPadding().encodeToString(envelope);
-    } catch (GeneralSecurityException failure) {
+    } catch (GeneralSecurityException _) {
       throw new IllegalStateException("Provider secret encryption failed");
     } finally {
       Arrays.fill(plaintext, (byte) 0);
@@ -72,7 +72,7 @@ public final class ExternalProviderSecrets {
           cipher(Cipher.DECRYPT_MODE, provider, Arrays.copyOfRange(envelope, 1, 13))
               .doFinal(envelope, 13, envelope.length - 13);
       return new String(plaintext, StandardCharsets.UTF_8);
-    } catch (GeneralSecurityException | IllegalArgumentException failure) {
+    } catch (GeneralSecurityException | IllegalArgumentException _) {
       // Keine Zugangsdaten oder verschlüsselten Werte in Fehlermeldungen aufnehmen.
       throw new IllegalStateException("Provider secret cannot be decrypted");
     } finally {

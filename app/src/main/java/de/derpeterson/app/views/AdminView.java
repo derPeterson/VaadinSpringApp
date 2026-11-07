@@ -68,6 +68,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @PageTitle(AppRouteConstants.ADMIN_PAGE_TITLE)
 @RolesAllowed(AppRouteConstants.ADMIN_ROUTE_ROLES)
 public class AdminView extends IsAuthenticatedBaseView {
+  private static final String SECTION_PARAMETER = "section";
   private static final String ARIA_CURRENT = "aria-current";
   private boolean restoringTicketNavigation;
 
@@ -232,7 +233,7 @@ public class AdminView extends IsAuthenticatedBaseView {
 
     QueryParameters parameters = event.getLocation().getQueryParameters();
     AdminSection section =
-        parameter(parameters, "section", AdminSection.class, AdminSection.DASHBOARD);
+        parameter(parameters, SECTION_PARAMETER, AdminSection.class, AdminSection.DASHBOARD);
     AdminConfigGroup group =
         section == AdminSection.CONFIGURATION
             ? parameter(parameters, "group", AdminConfigGroup.class, AdminConfigGroup.GENERAL)
@@ -256,7 +257,7 @@ public class AdminView extends IsAuthenticatedBaseView {
       return;
     }
     Map<String, String> parameters = new LinkedHashMap<>();
-    parameters.put("section", "support");
+    parameters.put(SECTION_PARAMETER, "support");
     parameters.put("tab", state.category().name().toLowerCase(Locale.ROOT));
     if (state.ticketNumber() != null) {
       parameters.put("ticket", state.ticketNumber());
@@ -361,7 +362,7 @@ public class AdminView extends IsAuthenticatedBaseView {
   private SideNavItem createNavigationItem(
       AppIcon iconType, AdminSection section, AdminConfigGroup group) {
     Map<String, String> parameters = new LinkedHashMap<>();
-    parameters.put("section", section.name().toLowerCase(Locale.ROOT));
+    parameters.put(SECTION_PARAMETER, section.name().toLowerCase(Locale.ROOT));
     if (group != null) {
       parameters.put("group", group.name().toLowerCase(Locale.ROOT));
     }

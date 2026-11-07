@@ -35,15 +35,8 @@ public final class TwoFactorHttpFilter implements Filter {
     }
     String path = http.getServletPath();
     String type = http.getParameter("v-r");
-    boolean protocol =
-        "uidl".equals(type)
-            || "push".equals(type)
-            || "/VAADIN/uidl".equals(path)
-            || "/VAADIN/push".equals(path);
-    boolean confirmed =
-        authorization.sessionConfirmed(http)
-            && (!("/admin".equals(path) || protocol && TwoFactorTransport.administrativeUi(http))
-                || authorization.administrationConfirmed(http));
+    boolean protocol = isProtocol(path, type);
+    boolean confirmed = confirmed(http, path, protocol);
     if (protocol) {
       if (serviceEndpoint(path) && (confirmed || TwoFactorTransport.allowedUi(http))) {
         chain.doFilter(request, response);
@@ -68,6 +61,19 @@ public final class TwoFactorHttpFilter implements Filter {
     } else {
       reply.sendError(HttpServletResponse.SC_FORBIDDEN);
     }
+  }
+
+  private boolean isProtocol(String path, String type) {
+    return "uidl".equals(type)
+        || "push".equals(type)
+        || "/VAADIN/uidl".equals(path)
+        || "/VAADIN/push".equals(path);
+  }
+
+  private boolean confirmed(HttpServletRequest request, String path, boolean protocol) {
+    return authorization.sessionConfirmed(request)
+        && (!("/admin".equals(path) || protocol && TwoFactorTransport.administrativeUi(request))
+            || authorization.administrationConfirmed(request));
   }
 
   private boolean permitted(HttpServletRequest request, String path, String type) {

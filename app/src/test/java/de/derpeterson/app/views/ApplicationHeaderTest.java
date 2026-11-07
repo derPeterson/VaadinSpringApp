@@ -198,6 +198,27 @@ class ApplicationHeaderTest {
     presenceToggle.click();
     assertTrue(presence.isOpened());
     assertEquals(texts.getBaseManageAccountButton(), settings.getAriaLabel().orElseThrow());
+    assertAccountMenuNavigation(page, role, texts, menu);
+    doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
+    settings.click();
+    verify(ui).navigate(AccountView.class);
+    assertNotNull(menuButton(menu, "logoutButton"));
+    assertTrue(
+        tree(menu.getPopover())
+            .noneMatch(
+                component -> component instanceof com.vaadin.flow.component.select.Select<?>));
+    assertTrue(
+        tree(menu.getPopover())
+            .noneMatch(component -> component.hasClassName("user-popover-header")));
+    assertEquals(
+        4,
+        tree(menu.getPopover())
+            .filter(component -> component.hasClassName("portal-status-option"))
+            .count());
+  }
+
+  private void assertAccountMenuNavigation(
+      String page, RoleType role, MessageProperties texts, UserPopoverMenu menu) {
     Button admin = menuButton(menu, "manageApplicationButton");
     assertEquals(role != null && role.isAdministrative(), admin != null);
     if (admin != null) {
@@ -218,22 +239,6 @@ class ApplicationHeaderTest {
       home.click();
       verify(ui).navigate(HomeView.class);
     }
-    doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
-    settings.click();
-    verify(ui).navigate(AccountView.class);
-    assertNotNull(menuButton(menu, "logoutButton"));
-    assertTrue(
-        tree(menu.getPopover())
-            .noneMatch(
-                component -> component instanceof com.vaadin.flow.component.select.Select<?>));
-    assertTrue(
-        tree(menu.getPopover())
-            .noneMatch(component -> component.hasClassName("user-popover-header")));
-    assertEquals(
-        4,
-        tree(menu.getPopover())
-            .filter(component -> component.hasClassName("portal-status-option"))
-            .count());
   }
 
   @ParameterizedTest

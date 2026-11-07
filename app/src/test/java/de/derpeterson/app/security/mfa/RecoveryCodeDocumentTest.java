@@ -55,8 +55,7 @@ class RecoveryCodeDocumentTest {
                 Instant.parse("2026-11-02T12:00:00Z"),
                 locale,
                 texts);
-    PdfReader reader = new PdfReader(bytes);
-    try {
+    try (PdfReader reader = new PdfReader(bytes)) {
       assertEquals(1, reader.getNumberOfPages());
       assertEquals(595, Math.round(reader.getPageSize(1).getWidth()));
       assertEquals(842, Math.round(reader.getPageSize(1).getHeight()));
@@ -94,8 +93,6 @@ class RecoveryCodeDocumentTest {
                   .size()
               > 0,
           "Embedded service logo required");
-    } finally {
-      reader.close();
     }
     // Ausschließlich synthetische Sichtprüfbelege im ignorierten Buildverzeichnis.
     Path directory = Path.of("target", "mfa-preview");

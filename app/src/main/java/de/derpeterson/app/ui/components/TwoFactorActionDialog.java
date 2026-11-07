@@ -19,6 +19,7 @@ import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
 
@@ -118,15 +119,15 @@ public final class TwoFactorActionDialog extends Dialog {
       close();
     } catch (RuntimeException failure) {
       code.setInvalid(true);
+      Supplier<String> message = texts::getTwoFactorFailed;
+      if (failure instanceof LockedException) {
+        message = texts::getTwoFactorThrottled;
+      } else if (failure instanceof BadCredentialsException) {
+        message = texts::getTwoFactorInvalidCode;
+      }
       NotificationHelper.getInstance()
           .showNotification(
-              texts::getBaseFailedTitle,
-              failure instanceof LockedException
-                  ? texts::getTwoFactorThrottled
-                  : failure instanceof BadCredentialsException
-                      ? texts::getTwoFactorInvalidCode
-                      : texts::getTwoFactorFailed,
-              NotificationHelper.NotificationType.ERROR);
+              texts::getBaseFailedTitle, message, NotificationHelper.NotificationType.ERROR);
     } finally {
       code.clear();
     }

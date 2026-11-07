@@ -9,6 +9,7 @@ import de.derpeterson.app.repository.TwoFactorChallengeRepository;
 import de.derpeterson.app.security.ExternalLoginFlow.EnrollmentConfirmation;
 import de.derpeterson.app.security.SessionManagementService;
 import jakarta.servlet.http.HttpServletRequest;
+import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
@@ -35,6 +36,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 @Slf4j
 public class TwoFactorEnrollment {
+  private static final String ENROLLMENT_PREFIX = "enrollment:";
   // Die Codeausgabe endet mit der Sitzung oder Bestätigung, nicht mit einer Bestätigungsfrist.
   private static final Instant SESSION_BOUND_OUTPUT = Instant.parse("9999-12-31T23:59:59Z");
   private final TwoFactorAuthorization authorization;
@@ -49,7 +51,7 @@ public class TwoFactorEnrollment {
   private final Clock clock;
   private final SecureRandom random = new SecureRandom();
 
-  public record Pending(UUID id, Kind kind, SetupProof proof) {}
+  public record Pending(UUID id, Kind kind, SetupProof proof) implements Serializable {}
 
   private record CompletedEnrollment(UUID outputId, UUID factorRevision) {}
 
@@ -291,7 +293,7 @@ public class TwoFactorEnrollment {
               // Acht ASCII-Ziffern. Kein E-Mail-Nachweis für ein früher schon geschütztes Konto.
               boolean valid =
                   code != null
-                      && code.matches("[0-9]{8}")
+                      && code.matches("\\d{8}")
                       && !account.isPreviouslyEnrolled()
                       && !account.isOperatorEnrollment()
                       && !account.getUser().isVerificationPending()
@@ -338,7 +340,8 @@ public class TwoFactorEnrollment {
                 throw new AccessDeniedException("Recovery code was already used or changed");
               }
               byte[] secret =
-                  secrets.decrypt(owner.id(), "enrollment:" + id, challenge.getEncryptedPayload());
+                  secrets.decrypt(
+                      owner.id(), ENROLLMENT_PREFIX + id, challenge.getEncryptedPayload());
               TwoFactorStore.Enrollment result;
               try {
                 if (account.enrolled()
@@ -385,7 +388,8 @@ public class TwoFactorEnrollment {
     return transaction.execute(
         status -> {
           TwoFactorChallengeEntity challenge = locked(request, owner, id, Kind.ENROLLMENT);
-          return secrets.decrypt(owner.id(), "enrollment:" + id, challenge.getEncryptedPayload());
+          return secrets.decrypt(
+              owner.id(), ENROLLMENT_PREFIX + id, challenge.getEncryptedPayload());
         });
   }
 
@@ -459,7 +463,7 @@ public class TwoFactorEnrollment {
               try {
                 TwoFactorChallengeEntity challenge = locked(request, owner, ids.getFirst(), kind);
                 return new Pending(challenge.getId(), kind, challenge.getSetupProof());
-              } catch (AccessDeniedException expired) {
+              } catch (AccessDeniedException _) {
                 /* Ein veralteter Ablauf wird nicht wiederaufgenommen. */
               }
             }
@@ -518,7 +522,8 @@ public class TwoFactorEnrollment {
     byte[] secret = Totp.newSecret();
     try {
       challenge.setEncryptedPayload(
-          secrets.encrypt(challenge.getUser().getId(), "enrollment:" + challenge.getId(), secret));
+          secrets.encrypt(
+              challenge.getUser().getId(), ENROLLMENT_PREFIX + challenge.getId(), secret));
     } finally {
       Arrays.fill(secret, (byte) 0);
     }

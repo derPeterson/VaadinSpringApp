@@ -256,7 +256,7 @@ class TwoFactorEnrollmentTest {
     clock.now.updateAndGet(now -> now.plusSeconds(1));
     assertFalse(enrollment.canBeginFromPasswordLogin(request));
     assertThrows(AccessDeniedException.class, () -> enrollment.beginFromPasswordLogin(request));
-    assertTrue(enrollment.pending(request) == null);
+    assertNull(enrollment.pending(request));
     assertEquals(Kind.ENROLLMENT, enrollment.beginPassword(request, "correct").kind());
   }
 
@@ -442,8 +442,7 @@ class TwoFactorEnrollmentTest {
     TwoFactorEnrollment.Pending second =
         enrollment.afterProviderConfirmation(request, confirmation);
     ArgumentCaptor<String> codes = ArgumentCaptor.forClass(String.class);
-    org.mockito.Mockito.verify(mail, org.mockito.Mockito.times(2))
-        .setupCode(any(), codes.capture());
+    verify(mail, times(2)).setupCode(any(), codes.capture());
     UUID firstId = first.id();
     String firstEmailCode = codes.getAllValues().getFirst();
     assertThrows(
@@ -688,7 +687,7 @@ class TwoFactorEnrollmentTest {
     assertTrue(start.await(10, TimeUnit.SECONDS));
     try {
       return enrollment.complete(recovery, pending, code);
-    } catch (AccessDeniedException expected) {
+    } catch (AccessDeniedException _) {
       return null;
     }
   }

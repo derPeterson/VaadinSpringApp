@@ -68,7 +68,7 @@ public final class Totp {
    */
   public static long verify(byte[] secret, String input, Instant now, long lastAcceptedStep) {
     // Genau sechs ASCII-Ziffern. Leerzeichen, Unicode-Ziffern und variable Längen sind unzulässig.
-    if (input == null || !input.matches("[0-9]{6}")) {
+    if (input == null || !input.matches("\\d{6}")) {
       return -1;
     }
     long current = now.getEpochSecond() / PERIOD_SECONDS;

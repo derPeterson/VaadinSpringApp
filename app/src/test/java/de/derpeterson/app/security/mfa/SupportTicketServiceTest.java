@@ -10,7 +10,10 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -401,7 +404,7 @@ class SupportTicketServiceTest {
     service.setSubscription(superadmin, ticket.id(), true);
     Ticket noted =
         service.reply(administrator, claimed.id(), claimed.version(), "Intern.", true, true);
-    verify(notifications, org.mockito.Mockito.never()).recordSupportReply(any(), any(), any());
+    verify(notifications, never()).recordSupportReply(any(), any(), any());
 
     Ticket updated =
         service.reply(owner, noted.id(), noted.version(), "Noch eine Frage.", false, false);
@@ -754,7 +757,7 @@ class SupportTicketServiceTest {
               assertTrue(start.await(10, java.util.concurrent.TimeUnit.SECONDS));
               service.claim(actor, ticket.id(), ticket.version());
               return true;
-            } catch (OptimisticLockingFailureException | IllegalStateException expected) {
+            } catch (OptimisticLockingFailureException | IllegalStateException _) {
               return false;
             } catch (InterruptedException interrupted) {
               Thread.currentThread().interrupt();
@@ -769,7 +772,7 @@ class SupportTicketServiceTest {
           first.get(10, java.util.concurrent.TimeUnit.SECONDS),
           second.get(10, java.util.concurrent.TimeUnit.SECONDS));
     }
-    verify(notifications, org.mockito.Mockito.times(1))
+    verify(notifications, times(1))
         .retireTicketNotifications(
             SupportTicketService.ticketNumber(ticket.id()),
             de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED);
@@ -928,7 +931,7 @@ class SupportTicketServiceTest {
         SecurityService security,
         ConfigService config,
         TwoFactorAuthorization authorization) {
-      return org.mockito.Mockito.spy(
+      return spy(
           new UserNotificationService(
               new UserNotificationPolicy(config),
               notificationRepository,

@@ -37,7 +37,7 @@ public final class TwoFactorSecrets {
     }
     try {
       key = Base64.getDecoder().decode(configured);
-    } catch (IllegalArgumentException failure) {
+    } catch (IllegalArgumentException _) {
       throw new IllegalStateException("Invalid TOTP encryption key encoding");
     }
     if (key.length != 32) {

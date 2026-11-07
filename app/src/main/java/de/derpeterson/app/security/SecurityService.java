@@ -220,7 +220,9 @@ public class SecurityService {
     if (factor != null) {
       authorities.add(factor);
     }
-    UserDetails principal = (UserDetails) current.getPrincipal();
+    if (!(current.getPrincipal() instanceof UserDetails principal)) {
+      throw new AuthenticationServiceException("Session principal unavailable");
+    }
     Authentication updated;
     if (current instanceof ExternalAuthenticationToken external) {
       updated = new ExternalAuthenticationToken(principal, external.provider(), authorities);

@@ -18,6 +18,9 @@ import org.springframework.data.jpa.domain.Specification;
 
 /** Gleiche Datenbankbedingungen für Seiten, Gesamtzahl und relevante ungelesene Aktivitäten. */
 public final class SupportTicketSpecifications {
+  private static final String STATUS = "status";
+  private static final String ASSIGNEE = "assignee";
+
   private SupportTicketSpecifications() {}
 
   public static Specification<SupportTicketEntity> matching(
@@ -25,15 +28,17 @@ public final class SupportTicketSpecifications {
     return (ticket, query, cb) -> {
       List<Predicate> conditions = new ArrayList<>();
       if (!filter.statuses().isEmpty()) {
-        conditions.add(ticket.get("status").in(filter.statuses()));
+        conditions.add(ticket.get(STATUS).in(filter.statuses()));
       }
       if (filter.type() != null) {
         conditions.add(cb.equal(ticket.get("type"), filter.type()));
       }
       switch (filter.assignment()) {
-        case ALL -> {}
-        case MINE -> conditions.add(cb.equal(ticket.get("assignee").get("id"), viewer));
-        case UNASSIGNED -> conditions.add(cb.isNull(ticket.get("assignee")));
+        case ALL -> {
+          // Ohne Zuständigkeitsfilter bleibt die Auswahl unverändert.
+        }
+        case MINE -> conditions.add(cb.equal(ticket.get(ASSIGNEE).get("id"), viewer));
+        case UNASSIGNED -> conditions.add(cb.isNull(ticket.get(ASSIGNEE)));
       }
       if (filter.reading() == Reading.UNREAD) {
         conditions.add(unread(ticket, query, cb, viewer, superadmin));
@@ -58,11 +63,11 @@ public final class SupportTicketSpecifications {
             cb.isTrue(watcher.get("subscribed")));
     Predicate relevant =
         cb.or(
-            cb.equal(ticket.get("status"), Status.OPEN),
+            cb.equal(ticket.get(STATUS), Status.OPEN),
             cb.and(
-                cb.equal(ticket.get("status"), Status.CLOSED_BY_REQUESTER),
-                cb.isNull(ticket.get("assignee"))),
-            cb.equal(ticket.get("assignee").get("id"), viewer),
+                cb.equal(ticket.get(STATUS), Status.CLOSED_BY_REQUESTER),
+                cb.isNull(ticket.get(ASSIGNEE))),
+            cb.equal(ticket.get(ASSIGNEE).get("id"), viewer),
             superadmin ? cb.exists(subscription) : cb.disjunction());
 
     Subquery<Long> readThrough = query.subquery(Long.class);
@@ -84,6 +89,6 @@ public final class SupportTicketSpecifications {
                 cb.isNull(message.get("author")),
                 cb.notEqual(message.get("author").get("id"), viewer)),
             cb.greaterThan(message.get("id"), cb.coalesce(readThrough, 0L)));
-    return cb.and(cb.notEqual(ticket.get("status"), Status.CLOSED), relevant, cb.exists(messages));
+    return cb.and(cb.notEqual(ticket.get(STATUS), Status.CLOSED), relevant, cb.exists(messages));
   }
 }

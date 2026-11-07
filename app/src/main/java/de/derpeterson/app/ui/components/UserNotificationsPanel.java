@@ -55,6 +55,7 @@ import org.springframework.data.domain.Page;
 
 /** Gemeinsame kompakte Vorschau und paginierter eigener Posteingang. */
 public class UserNotificationsPanel extends Div {
+  private static final String COSMOS_THEME = "cosmos-theme";
   private static final String ARIA_HIDDEN = "aria-hidden";
   private static final String COSMOS_NOTIFICATION_INBOX_TOOL_CLASS =
       "cosmos-notification-inbox-tool";
@@ -122,7 +123,7 @@ public class UserNotificationsPanel extends Div {
             compact ? "notifications-preview-confirmation" : "notifications-inbox-confirmation");
     confirmation.addClassName("portal-notification-confirmation");
     confirmation.addOpenedChangeListener(event -> notifyOverlayState());
-    addClassNames("cosmos-theme", "cosmos-notifications-panel");
+    addClassNames(COSMOS_THEME, "cosmos-notifications-panel");
     setId(compact ? "notifications-preview" : "notifications-inbox");
     heading.addClassName(PANEL_TITLE);
     configureReadFilter();
@@ -699,7 +700,7 @@ public class UserNotificationsPanel extends Div {
           }
           notifyOverlayState();
         });
-    detail.addClassNames("cosmos-theme", REFERENCE_OVERLAY, "cosmos-notification-dialog");
+    detail.addClassNames(COSMOS_THEME, REFERENCE_OVERLAY, "cosmos-notification-dialog");
     detail.setModality(com.vaadin.flow.component.ModalityMode.STRICT);
     detail.getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
     detail.setCloseOnOutsideClick(true);
@@ -1014,7 +1015,7 @@ public class UserNotificationsPanel extends Div {
     VerticalLayout tools = new VerticalLayout(detailHistory, delete);
     tools.setPadding(false);
     tools.setSpacing(false);
-    tools.addClassNames("cosmos-notification-detail-tools", "cosmos-theme", REFERENCE_OVERLAY);
+    tools.addClassNames("cosmos-notification-detail-tools", COSMOS_THEME, REFERENCE_OVERLAY);
     detailActionsMenu.add(tools);
     detail.add(detailActionsMenu);
     HorizontalLayout primary = new HorizontalLayout(detailClose);

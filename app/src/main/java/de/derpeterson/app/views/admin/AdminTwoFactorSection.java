@@ -54,6 +54,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 @StyleSheet("custom-theme/cosmos-mfa-confirmation.css")
 @StyleSheet("custom-theme/cosmos-provider-settings.css")
 public final class AdminTwoFactorSection extends VerticalLayout {
+  private static final String CONFIG_SWITCH_CLASS = "cosmos-config-switch";
   private static final TwoFactorPolicy DEFAULT_POLICY = TwoFactorPolicy.defaults();
   private static final String DEFAULT_INACTIVITY_SECONDS =
       Long.toString(DEFAULT_POLICY.inactivity().toSeconds());
@@ -97,7 +98,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   private final Button closeHelp = new Button();
   private final TwoFactorActionDialog confirmation;
   private TwoFactorPolicies.Snapshot snapshot;
-  private Runnable refreshHelp = () -> {};
+  private transient Runnable refreshHelp;
 
   public AdminTwoFactorSection(
       MessageProperties texts,
@@ -175,7 +176,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       tabs.add(tab, content);
     }
     inactivity.setId("two-factor-inactivity-enabled");
-    inactivity.addClassName("cosmos-config-switch");
+    inactivity.addClassName(CONFIG_SWITCH_CLASS);
     inactivity.setWidthFull();
     duration = new AdminDurationField(texts);
     duration.setAvailableUnits(
@@ -224,9 +225,9 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     inactivitySection.setPadding(false);
     inactivitySection.addClassName("mfa-inactivity-section");
     inactivity.addValueChangeListener(event -> duration.setControlsEnabled(event.getValue()));
-    developmentPause.addClassName("cosmos-config-switch");
+    developmentPause.addClassName(CONFIG_SWITCH_CLASS);
     developmentPause.setWidthFull();
-    developmentGoogle.addClassName("cosmos-config-switch");
+    developmentGoogle.addClassName(CONFIG_SWITCH_CLASS);
     developmentGoogle.setWidthFull();
     developmentPause.setId("two-factor-development-pause");
     developmentGoogle.setId("two-factor-development-google");
@@ -412,7 +413,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
             desiredRules.put(role, modes);
           });
       Duration period =
-          duration.getStoredValue().isBlank() && !inactivity.getValue()
+          duration.getStoredValue().isBlank() && !Boolean.TRUE.equals(inactivity.getValue())
               ? snapshot.policy().inactivity()
               : Duration.ofSeconds(Long.parseLong(duration.getStoredValue()));
       TwoFactorPolicy desired =
@@ -529,7 +530,9 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     save.setText(texts.getAdminConfigSave());
     closeHelp.setText(texts.getAdminUsersCloseDialog());
     help.refreshCloseText(texts);
-    refreshHelp.run();
+    if (refreshHelp != null) {
+      refreshHelp.run();
+    }
     confirmation.refreshTexts();
   }
 

@@ -3,6 +3,7 @@ package de.derpeterson.app.security.mfa;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -359,7 +360,7 @@ class TwoFactorAuthorizationTest {
         new TwoFactorAuthorization(
             security, users, accounts, challenges, development, factors, manager, clock);
     assertTrue(relaxed.sessionConfirmed(newSession));
-    assertTrue(newSession.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF) == null);
+    assertNull(newSession.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF));
     assertThrows(
         AccessDeniedException.class,
         () -> relaxed.authorizeFactorGrant(newSession, TwoFactorAction.MANAGE_FACTOR, true));
@@ -374,8 +375,9 @@ class TwoFactorAuthorizationTest {
       when(security.getAuthenticatedUser(any()))
           .thenAnswer(
               invocation -> {
-                jakarta.servlet.http.HttpServletRequest request = invocation.getArgument(0);
-                Object identity = request.getAttribute("fixture.identity");
+                jakarta.servlet.http.HttpServletRequest invocationRequest =
+                    invocation.getArgument(0);
+                Object identity = invocationRequest.getAttribute("fixture.identity");
                 if (!(identity instanceof String email)) {
                   return Optional.empty();
                 }

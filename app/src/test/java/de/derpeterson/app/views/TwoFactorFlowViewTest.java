@@ -854,6 +854,33 @@ class TwoFactorFlowViewTest {
     assertTrue(find(component, "support-ticket-footer").isVisible());
     assertTrue(find(component, "support-add-reply").isVisible());
 
+    assertSupportEditorWarnings(component);
+
+    when(tickets.administratorId(request)).thenReturn(10L);
+    component.refresh();
+    Component otherAssignee = renderer.createComponent(assigned);
+    assertFalse(find(component, "support-ticket-tools").isVisible());
+    assertFalse(find(component, "support-ticket-footer").isVisible());
+    assertFalse(otherAssignee.getElement().getTextRecursively().contains(texts.getSupportYou()));
+    OverlayUserIcon avatar =
+        tree(otherAssignee)
+            .filter(OverlayUserIcon.class::isInstance)
+            .map(OverlayUserIcon.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals("Alex Beispiel", avatar.getElement().getAttribute("aria-label"));
+    assertFalse(detailAssignee.getElement().getTextRecursively().contains(texts.getSupportYou()));
+    assertTrue(detailAssignee.getElement().getTextRecursively().contains("Alex Beispiel"));
+    assertTrue(detailAssignee.getElement().getTextRecursively().contains("alex@example.test"));
+    assertEquals(
+        1,
+        tree(detailAssignee)
+            .filter(OverlayUserIcon.class::isInstance)
+            .filter(part -> "Alex Beispiel".equals(part.getElement().getAttribute("aria-label")))
+            .count());
+  }
+
+  private void assertSupportEditorWarnings(SupportTicketsComponent component) {
     Component editor =
         tree(component)
             .filter(part -> part.hasClassName("support-admin-editor"))
@@ -885,29 +912,6 @@ class TwoFactorFlowViewTest {
             .getElement()
             .getTextRecursively()
             .contains(texts.getSupportInternalSecurityNotice()));
-
-    when(tickets.administratorId(request)).thenReturn(10L);
-    component.refresh();
-    Component otherAssignee = renderer.createComponent(assigned);
-    assertFalse(find(component, "support-ticket-tools").isVisible());
-    assertFalse(find(component, "support-ticket-footer").isVisible());
-    assertFalse(otherAssignee.getElement().getTextRecursively().contains(texts.getSupportYou()));
-    OverlayUserIcon avatar =
-        tree(otherAssignee)
-            .filter(OverlayUserIcon.class::isInstance)
-            .map(OverlayUserIcon.class::cast)
-            .findFirst()
-            .orElseThrow();
-    assertEquals("Alex Beispiel", avatar.getElement().getAttribute("aria-label"));
-    assertFalse(detailAssignee.getElement().getTextRecursively().contains(texts.getSupportYou()));
-    assertTrue(detailAssignee.getElement().getTextRecursively().contains("Alex Beispiel"));
-    assertTrue(detailAssignee.getElement().getTextRecursively().contains("alex@example.test"));
-    assertEquals(
-        1,
-        tree(detailAssignee)
-            .filter(OverlayUserIcon.class::isInstance)
-            .filter(part -> "Alex Beispiel".equals(part.getElement().getAttribute("aria-label")))
-            .count());
   }
 
   @ParameterizedTest

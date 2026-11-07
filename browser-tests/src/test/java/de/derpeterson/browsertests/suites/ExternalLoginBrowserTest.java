@@ -294,27 +294,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
           .hasText(texts.getProviderSettingsActive());
     }
     if (width == 1280) {
-      for (String provider : new String[] {"google", "microsoft"}) {
-        page.locator("#provider-tab-" + provider).click();
-        page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH).uncheck();
-        saveProviderSettings(page, provider);
-        assertThat(page.locator("#provider-" + provider + "-status"))
-            .hasText(texts.getProviderSettingsInactive());
-      }
-      // Auch mit zwei deaktivierten Anbietern muss der Server ohne OAuth-Neukonfiguration starten.
-      page.navigate("about:blank");
-      de.derpeterson.browsertests.BrowserTestRunner.restartTestApplication();
-      page.navigate("/admin?section=configuration&group=external_login");
-      for (String provider : new String[] {"google", "microsoft"}) {
-        page.locator("#provider-tab-" + provider).click();
-        assertThat(page.locator("#provider-" + provider + "-status"))
-            .hasText(texts.getProviderSettingsInactive());
-        assertThat(page.locator("#provider-" + provider + "-secret input")).hasValue("");
-        page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH).check();
-        saveProviderSettings(page, provider);
-        assertThat(page.locator("#provider-" + provider + "-status"))
-            .hasText(texts.getProviderSettingsActive());
-      }
+      verifyRestartWithBothProvidersDisabled();
     }
     AllurePlaywright.attachScreenshot("Anmeldeanbieter im bestehenden Referenzstyle", page);
     // Der anschließende echte Code-/Tokenaustausch mit dem eigenen Anbieter prüft die Übernahme.
@@ -342,6 +322,30 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       // muss nach der echten Abmeldung wieder zur Anmeldung führen.
       page.navigate("/account");
       new LoginPage(page).assertFormVisible();
+    }
+  }
+
+  private void verifyRestartWithBothProvidersDisabled() throws Exception {
+    for (String provider : new String[] {"google", "microsoft"}) {
+      page.locator("#provider-tab-" + provider).click();
+      page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH).uncheck();
+      saveProviderSettings(page, provider);
+      assertThat(page.locator("#provider-" + provider + "-status"))
+          .hasText(texts.getProviderSettingsInactive());
+    }
+    // Auch mit zwei deaktivierten Anbietern muss der Server ohne OAuth-Neukonfiguration starten.
+    page.navigate("about:blank");
+    de.derpeterson.browsertests.BrowserTestRunner.restartTestApplication();
+    page.navigate("/admin?section=configuration&group=external_login");
+    for (String provider : new String[] {"google", "microsoft"}) {
+      page.locator("#provider-tab-" + provider).click();
+      assertThat(page.locator("#provider-" + provider + "-status"))
+          .hasText(texts.getProviderSettingsInactive());
+      assertThat(page.locator("#provider-" + provider + "-secret input")).hasValue("");
+      page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH).check();
+      saveProviderSettings(page, provider);
+      assertThat(page.locator("#provider-" + provider + "-status"))
+          .hasText(texts.getProviderSettingsActive());
     }
   }
 

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 
 import de.derpeterson.app.model.ExternalProviderEntity;
@@ -47,7 +48,7 @@ class ExternalProviderSettingsPersistenceTest {
 
     @Bean
     de.derpeterson.app.security.mfa.TwoFactorAuthorization twoFactor() {
-      return org.mockito.Mockito.mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class);
+      return mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class);
     }
 
     @Bean
@@ -215,7 +216,7 @@ class ExternalProviderSettingsPersistenceTest {
             properties,
             new ExternalProviderSecrets(new MockEnvironment()),
             policy,
-            org.mockito.Mockito.mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class),
+            mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class),
             new org.springframework.mock.web.MockHttpServletRequest());
     properties.getGoogle().setClientId("own-client");
     properties.getGoogle().setClientSecret("own-secret");

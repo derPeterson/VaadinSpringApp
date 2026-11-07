@@ -70,6 +70,11 @@ import org.springframework.security.access.AccessDeniedException;
 @StyleSheet("custom-theme/cosmos-provider-settings.css")
 @Slf4j
 public final class SupportTicketsComponent extends VerticalLayout {
+  private static final String CONVERSATION_HEADING_CLASS = "support-conversation-heading";
+  private static final String SECTION_COUNT_CLASS = "support-section-count";
+  private static final String SECTION_HEADER_CLASS = "support-section-header";
+  private static final String ARIA_LABEL = "aria-label";
+
   public enum Category {
     ALL,
     RECOVERY
@@ -198,6 +203,94 @@ public final class SupportTicketsComponent extends VerticalLayout {
     conversation.setPadding(false);
     conversation.setSpacing(false);
     conversation.setAlignItems(Alignment.STRETCH);
+    configureGrid();
+    configureEditor();
+    configureActions();
+    HorizontalLayout sensitiveNotice = sensitiveNotice();
+    if (administration) {
+      buildAdminWorkspace(sensitiveNotice);
+    } else {
+      addClassName("support-recovery-help");
+      panel.setIcon(AppIcon.LOCK_QUESTION.create());
+      conversation.addClassName("support-user-conversation");
+      userExplanation.setId("support-no-unlock");
+      HorizontalLayout helpNotice =
+          new HorizontalLayout(AppIcon.INFO_CIRCLE.create(), userExplanation);
+      helpNotice.setPadding(false);
+      helpNotice.setSpacing(false);
+      helpNotice.setAlignItems(Alignment.CENTER);
+      helpNotice.addClassName("support-help-notice");
+      emptyState.add(AppIcon.ARCHIVE.create(), emptyText);
+      emptyState.setPadding(false);
+      emptyState.setSpacing(false);
+      emptyState.setWidthFull();
+      emptyState.setAlignItems(Alignment.CENTER);
+      emptyState.setJustifyContentMode(JustifyContentMode.CENTER);
+      emptyState.addClassName("support-empty-state");
+      userEditor.setPadding(false);
+      userEditor.setSpacing(false);
+      userEditor.setWidthFull();
+      userEditor.addClassName("support-user-editor");
+      userEditor.add(sensitiveNotice, messageField);
+      userRequestsHeading.addClassName(CONVERSATION_HEADING_CLASS);
+      userConversationHeading.addClassName(CONVERSATION_HEADING_CLASS);
+      userRequestCount.setId("support-request-count");
+      userRequestCount.addClassNames(SECTION_COUNT_CLASS, "support-request-count");
+      userConversationCount.addClassName(SECTION_COUNT_CLASS);
+      for (HorizontalLayout header : List.of(userRequestsHeader, userConversationHeader)) {
+        header.setWidthFull();
+        header.setSpacing(false);
+        header.setAlignItems(Alignment.CENTER);
+        header.addClassName(SECTION_HEADER_CLASS);
+      }
+      userRequestsHeader.add(reload);
+      userMessageThread.setSpacing(false);
+      userMessageThread.addClassName("support-message-thread");
+      userMessageScroll.addClassName("support-message-scroll");
+      conversation.add(userConversationHeader, userMessageScroll);
+      VerticalLayout requests = new VerticalLayout(userRequestsHeader, emptyState, grid);
+      requests.setPadding(false);
+      requests.setSpacing(false);
+      requests.addClassName("support-user-requests");
+      VerticalLayout form = new VerticalLayout(helpNotice, requests, conversation, userEditor);
+      form.setPadding(false);
+      form.setSpacing(false);
+      form.setWidthFull();
+      form.addClassName("support-user-form");
+      panel.getBody().add(form);
+      create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      reply.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      HorizontalLayout actions = new HorizontalLayout(close, reply, create);
+      actions.setPadding(false);
+      actions.setSpacing(false);
+      actions.addClassName("cosmos-dialog-actions");
+      backActions.setPadding(false);
+      backActions.setSpacing(false);
+      backActions.addClassName("support-back-actions");
+      HorizontalLayout footer = new HorizontalLayout(backActions, actions);
+      footer.setPadding(false);
+      footer.setSpacing(false);
+      footer.setWidthFull();
+      footer.setAlignItems(Alignment.CENTER);
+      footer.addClassName("support-user-footer");
+      panel.addActionFooter(footer);
+    }
+    add(panel, instructionDialog);
+    refreshTexts();
+  }
+
+  private HorizontalLayout sensitiveNotice() {
+    userWarningLabel.addClassName("cosmos-security-warning-label");
+    HorizontalLayout notice =
+        new HorizontalLayout(AppIcon.ERROR.create(), new Span(userWarningLabel, warning));
+    notice.setPadding(false);
+    notice.setSpacing(false);
+    notice.setAlignItems(Alignment.START);
+    notice.addClassName("cosmos-security-warning");
+    return notice;
+  }
+
+  private void configureGrid() {
     grid.setId("support-ticket-grid");
     grid.setWidthFull();
     grid.setAllRowsVisible(true);
@@ -209,12 +302,15 @@ public final class SupportTicketsComponent extends VerticalLayout {
               if (event.isFromClient()) {
                 try {
                   refreshConversation();
-                } catch (RuntimeException failure) {
+                } catch (RuntimeException _) {
                   failed(texts::getSupportRefreshFailed);
                 }
                 publishNavigation();
               }
             });
+  }
+
+  private void configureEditor() {
     body.setId("support-reply");
     body.setWidthFull();
     body.setMinRows(4);
@@ -255,6 +351,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
             }
           }
         });
+  }
+
+  private void configureActions() {
     create.setId("support-create");
     create.setPrefixComponent(AppIcon.PLUS.create());
     create.addClickListener(
@@ -311,88 +410,6 @@ public final class SupportTicketsComponent extends VerticalLayout {
     reload.addThemeVariants(ButtonVariant.LUMO_ICON);
     reload.setId("support-reload");
     reload.addClickListener(event -> refresh(true));
-    HorizontalLayout sensitiveNotice = sensitiveNotice();
-    if (administration) {
-      buildAdminWorkspace(sensitiveNotice);
-    } else {
-      addClassName("support-recovery-help");
-      panel.setIcon(AppIcon.LOCK_QUESTION.create());
-      conversation.addClassName("support-user-conversation");
-      userExplanation.setId("support-no-unlock");
-      HorizontalLayout helpNotice =
-          new HorizontalLayout(AppIcon.INFO_CIRCLE.create(), userExplanation);
-      helpNotice.setPadding(false);
-      helpNotice.setSpacing(false);
-      helpNotice.setAlignItems(Alignment.CENTER);
-      helpNotice.addClassName("support-help-notice");
-      emptyState.add(AppIcon.ARCHIVE.create(), emptyText);
-      emptyState.setPadding(false);
-      emptyState.setSpacing(false);
-      emptyState.setWidthFull();
-      emptyState.setAlignItems(Alignment.CENTER);
-      emptyState.setJustifyContentMode(JustifyContentMode.CENTER);
-      emptyState.addClassName("support-empty-state");
-      userEditor.setPadding(false);
-      userEditor.setSpacing(false);
-      userEditor.setWidthFull();
-      userEditor.addClassName("support-user-editor");
-      userEditor.add(sensitiveNotice, messageField);
-      userRequestsHeading.addClassName("support-conversation-heading");
-      userConversationHeading.addClassName("support-conversation-heading");
-      userRequestCount.setId("support-request-count");
-      userRequestCount.addClassNames("support-section-count", "support-request-count");
-      userConversationCount.addClassName("support-section-count");
-      for (HorizontalLayout header : List.of(userRequestsHeader, userConversationHeader)) {
-        header.setWidthFull();
-        header.setSpacing(false);
-        header.setAlignItems(Alignment.CENTER);
-        header.addClassName("support-section-header");
-      }
-      userRequestsHeader.add(reload);
-      userMessageThread.setSpacing(false);
-      userMessageThread.addClassName("support-message-thread");
-      userMessageScroll.addClassName("support-message-scroll");
-      conversation.add(userConversationHeader, userMessageScroll);
-      VerticalLayout requests = new VerticalLayout(userRequestsHeader, emptyState, grid);
-      requests.setPadding(false);
-      requests.setSpacing(false);
-      requests.addClassName("support-user-requests");
-      VerticalLayout form = new VerticalLayout(helpNotice, requests, conversation, userEditor);
-      form.setPadding(false);
-      form.setSpacing(false);
-      form.setWidthFull();
-      form.addClassName("support-user-form");
-      panel.getBody().add(form);
-      create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-      reply.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-      HorizontalLayout actions = new HorizontalLayout(close, reply, create);
-      actions.setPadding(false);
-      actions.setSpacing(false);
-      actions.addClassName("cosmos-dialog-actions");
-      backActions.setPadding(false);
-      backActions.setSpacing(false);
-      backActions.addClassName("support-back-actions");
-      HorizontalLayout footer = new HorizontalLayout(backActions, actions);
-      footer.setPadding(false);
-      footer.setSpacing(false);
-      footer.setWidthFull();
-      footer.setAlignItems(Alignment.CENTER);
-      footer.addClassName("support-user-footer");
-      panel.addActionFooter(footer);
-    }
-    add(panel, instructionDialog);
-    refreshTexts();
-  }
-
-  private HorizontalLayout sensitiveNotice() {
-    userWarningLabel.addClassName("cosmos-security-warning-label");
-    HorizontalLayout notice =
-        new HorizontalLayout(AppIcon.ERROR.create(), new Span(userWarningLabel, warning));
-    notice.setPadding(false);
-    notice.setSpacing(false);
-    notice.setAlignItems(Alignment.START);
-    notice.addClassName("cosmos-security-warning");
-    return notice;
   }
 
   private void buildAdminWorkspace(HorizontalLayout sensitiveNotice) {
@@ -445,7 +462,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
                 .getElement()
                 .setAttribute("aria-expanded", Boolean.toString(event.isOpened())));
     filterButton.setPrefixComponent(AppIcon.FILTER.create());
-    activeFilterCount.addClassName("support-section-count");
+    activeFilterCount.addClassName(SECTION_COUNT_CLASS);
     activeFilterCount.setId("support-active-filter-count");
     activeFilterCount.setVisible(false);
     filterButton.setSuffixComponent(activeFilterCount);
@@ -457,7 +474,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     queueTools.setWidthFull();
     queueTools.setAlignItems(Alignment.CENTER);
     queueTools.setJustifyContentMode(JustifyContentMode.END);
-    queueTools.addClassNames("support-section-header", "support-admin-list-tools");
+    queueTools.addClassNames(SECTION_HEADER_CLASS, "support-admin-list-tools");
     queueEmptyTitle.addClassName("admin-grid-empty-title");
     queueEmptyState.add(AppIcon.LIST.create(), queueEmptyTitle, queueEmptyHint);
     queueEmptyState.addClassName("admin-grid-empty");
@@ -570,11 +587,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
     userMessageThread.setSpacing(false);
     userMessageThread.addClassName("support-message-thread");
     userMessageScroll.addClassName("support-message-scroll");
-    userConversationHeading.addClassName("support-conversation-heading");
-    userConversationCount.addClassName("support-section-count");
+    userConversationHeading.addClassName(CONVERSATION_HEADING_CLASS);
+    userConversationCount.addClassName(SECTION_COUNT_CLASS);
     userConversationHeader.setAlignItems(Alignment.CENTER);
     userConversationHeader.setSpacing(false);
-    userConversationHeader.addClassName("support-section-header");
+    userConversationHeader.addClassName(SECTION_HEADER_CLASS);
     conversation.add(userConversationHeader, userMessageScroll, adminStatusNote);
     reply.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     HorizontalLayout actions = new HorizontalLayout(close, reply);
@@ -659,20 +676,20 @@ public final class SupportTicketsComponent extends VerticalLayout {
       pagination.refreshTexts();
       allTicketsLabel.setText(texts.getSupportAllTickets());
       recoveryTicketsLabel.setText(texts.getSupportRecoveryCategory());
-      ticketCategories.getElement().setAttribute("aria-label", texts.getSupportTitle());
+      ticketCategories.getElement().setAttribute(ARIA_LABEL, texts.getSupportTitle());
       noSelectionTitle.setText(texts.getSupportNoTicketSelected());
       selectTicket.setText(texts.getSupportSelectTicket());
-      grid.getElement().setAttribute("aria-label", texts.getSupportCases());
+      grid.getElement().setAttribute(ARIA_LABEL, texts.getSupportCases());
     } else {
       userRequestsHeading.setText(texts.getSupportExistingRequests());
-      grid.getElement().setAttribute("aria-label", texts.getSupportExistingRequests());
+      grid.getElement().setAttribute(ARIA_LABEL, texts.getSupportExistingRequests());
     }
     userWarningLabel.setText(texts.getSupportSecurityNoticeLabel() + " ");
     warning.setText(texts.getSupportSecurityNotice());
     body.setLabel(administration ? texts.getSupportReply() : texts.getSupportDescription());
     publicReplyLabel.setText(texts.getSupportPublicReply());
     internalNoteLabel.setText(texts.getSupportInternal());
-    replyMode.getElement().setAttribute("aria-label", texts.getSupportEditorMode());
+    replyMode.getElement().setAttribute(ARIA_LABEL, texts.getSupportEditorMode());
     subscription.setLabel(texts.getSupportSubscription());
     subscription.setTooltipText(texts.getSupportSubscriptionHint());
     create.setText(texts.getSupportCreate());
@@ -891,7 +908,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
       if (notifySuccess) {
         succeeded(texts::getSupportRefreshed);
       }
-    } catch (RuntimeException failure) {
+    } catch (RuntimeException _) {
       failed(texts::getSupportRefreshFailed);
     }
   }
@@ -1050,7 +1067,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
       unread.addClassName("support-ticket-unread");
       unread
           .getElement()
-          .setAttribute("aria-label", texts.getSupportUnreadMessages(ticket.unreadMessages()));
+          .setAttribute(ARIA_LABEL, texts.getSupportUnreadMessages(ticket.unreadMessages()));
       indicators.add(unread);
     }
     return indicators;
@@ -1071,13 +1088,22 @@ public final class SupportTicketsComponent extends VerticalLayout {
         selected != null && administratorId != null && administratorId.equals(selected.assignee());
     boolean canReply = active && (!administration || assignedToMe);
     boolean requesterClosed = selected != null && selected.status() == Status.CLOSED_BY_REQUESTER;
-    DraftTarget target = null;
-    if (canReply) {
-      target = new DraftTarget(selected.id());
-    } else if (!administration && !openRequest) {
-      target = NEW_REQUEST_DRAFT;
+    updateEditor(canReply);
+    updateConversationActions(active, unassigned, assignedToMe, canReply, requesterClosed);
+    if (!administration) {
+      refreshUserConversation(messages, requester);
+    } else {
+      refreshAdminConversation(messages);
     }
-    switchDraft(target);
+    acknowledgeVisibleMessages(messages);
+  }
+
+  private void updateEditor(boolean canReply) {
+    if (canReply) {
+      switchDraft(new DraftTarget(selected.id()));
+    } else {
+      switchDraft(!administration && !openRequest ? NEW_REQUEST_DRAFT : null);
+    }
     if (!administration) {
       body.setLabel(openRequest ? texts.getSupportReply() : texts.getSupportDescription());
       userEditor.setVisible(!openRequest || canReply);
@@ -1086,6 +1112,14 @@ public final class SupportTicketsComponent extends VerticalLayout {
       subscription.setVisible(selected != null && selected.subscriptionAllowed());
       subscription.setValue(selected != null && selected.subscribed());
     }
+  }
+
+  private void updateConversationActions(
+      boolean active,
+      boolean unassigned,
+      boolean assignedToMe,
+      boolean canReply,
+      boolean requesterClosed) {
     create.setVisible(!administration && !openRequest);
     claim.setVisible(administration && active && unassigned);
     if (selected != null && selected.status() == Status.OPEN) {
@@ -1103,12 +1137,6 @@ public final class SupportTicketsComponent extends VerticalLayout {
           subscription.isVisible() || claim.isVisible() || instructions.isVisible());
       adminActionFooter.setVisible(close.isVisible() || reply.isVisible());
     }
-    if (!administration) {
-      refreshUserConversation(messages, requester);
-    } else {
-      refreshAdminConversation(messages);
-    }
-    acknowledgeVisibleMessages(messages);
   }
 
   private void refreshAdminConversation(List<Reply> messages) {
@@ -1154,9 +1182,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     userConversationCount.setText(
         texts.getSupportMessageCount(
             (int) messages.stream().filter(message -> !message.kind().isHistory()).count()));
-    userMessageScroll
-        .getElement()
-        .setAttribute("aria-label", heading + " " + ticketNumber(selected));
+    userMessageScroll.getElement().setAttribute(ARIA_LABEL, heading + " " + ticketNumber(selected));
     renderMessages(messages, selected.requesterIdentity());
   }
 
@@ -1284,7 +1310,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     userConversationCount.setText(
         texts.getSupportMessageCount(
             (int) messages.stream().filter(message -> !message.kind().isHistory()).count()));
-    userMessageScroll.getElement().setAttribute("aria-label", heading + ticketNumber(selected));
+    userMessageScroll.getElement().setAttribute(ARIA_LABEL, heading + ticketNumber(selected));
     renderMessages(messages, requester);
   }
 
@@ -1295,45 +1321,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
         userMessageThread.add(historyEntry(message));
         continue;
       }
-      Span timestamp = new Span("· " + formatTime(message.createdAt()));
-      timestamp.addClassName("support-message-time");
-      HorizontalLayout metadata = new HorizontalLayout();
-      metadata.setAlignItems(Alignment.CENTER);
-      metadata.setSpacing(false);
-      metadata.addClassName("support-message-metadata");
-      switch (message.author()) {
-        case REQUESTER -> {
-          if (requester == null) {
-            metadata.add(AppIcon.USER.create(), new Span(texts.getSupportRequester()));
-          } else {
-            metadata.add(identityAvatar(requester, IconSize.PIXEL_24));
-            if (administration) {
-              metadata.add(new Span(identityName(requester)));
-            }
-          }
-        }
-        case SUPPORT -> {
-          UserIdentity administrator = administration ? message.actor() : null;
-          Span sender =
-              new Span(
-                  administrator == null
-                      ? texts.getSupportMessageSupport()
-                      : identityName(administrator));
-          sender.addClassName("support-message-sender");
-          Component symbol =
-              administrator == null
-                  ? AppIcon.SHIELD_COG.create()
-                  : identityAvatar(administrator, IconSize.PIXEL_24);
-          metadata.add(symbol, sender);
-        }
-      }
-      metadata.add(timestamp);
-      if (message.internal()) {
-        Badge note = new Badge(texts.getSupportInternal());
-        note.setIcon(AppIcon.LOCK.create());
-        note.addClassName("support-admin-internal");
-        metadata.add(note);
-      }
+      HorizontalLayout metadata = messageMetadata(message, requester);
       Component copy;
       if (message.kind() == Kind.RECOVERY_INSTRUCTIONS) {
         copy = instructionMessage(message);
@@ -1352,6 +1340,53 @@ public final class SupportTicketsComponent extends VerticalLayout {
         entry.addClassName("support-internal-message");
       }
       userMessageThread.add(entry);
+    }
+  }
+
+  private HorizontalLayout messageMetadata(Reply message, UserIdentity requester) {
+    Span timestamp = new Span("· " + formatTime(message.createdAt()));
+    timestamp.addClassName("support-message-time");
+    HorizontalLayout metadata = new HorizontalLayout();
+    metadata.setAlignItems(Alignment.CENTER);
+    metadata.setSpacing(false);
+    metadata.addClassName("support-message-metadata");
+    addMessageSender(metadata, message, requester);
+    metadata.add(timestamp);
+    if (message.internal()) {
+      Badge note = new Badge(texts.getSupportInternal());
+      note.setIcon(AppIcon.LOCK.create());
+      note.addClassName("support-admin-internal");
+      metadata.add(note);
+    }
+    return metadata;
+  }
+
+  private void addMessageSender(HorizontalLayout metadata, Reply message, UserIdentity requester) {
+    switch (message.author()) {
+      case REQUESTER -> {
+        if (requester == null) {
+          metadata.add(AppIcon.USER.create(), new Span(texts.getSupportRequester()));
+        } else {
+          metadata.add(identityAvatar(requester, IconSize.PIXEL_24));
+          if (administration) {
+            metadata.add(new Span(identityName(requester)));
+          }
+        }
+      }
+      case SUPPORT -> {
+        UserIdentity administrator = administration ? message.actor() : null;
+        Span sender =
+            new Span(
+                administrator == null
+                    ? texts.getSupportMessageSupport()
+                    : identityName(administrator));
+        sender.addClassName("support-message-sender");
+        Component symbol =
+            administrator == null
+                ? AppIcon.SHIELD_COG.create()
+                : identityAvatar(administrator, IconSize.PIXEL_24);
+        metadata.add(symbol, sender);
+      }
     }
   }
 

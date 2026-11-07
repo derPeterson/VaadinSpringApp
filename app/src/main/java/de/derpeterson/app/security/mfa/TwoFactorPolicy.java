@@ -1,6 +1,7 @@
 package de.derpeterson.app.security.mfa;
 
 import de.derpeterson.app.model.enums.RoleType;
+import java.io.Serializable;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.EnumMap;
@@ -15,7 +16,8 @@ public record TwoFactorPolicy(
     boolean inactivityEnabled,
     Duration inactivity,
     boolean developmentPause,
-    boolean developmentGoogleConfirmation) {
+    boolean developmentGoogleConfirmation)
+    implements Serializable {
   public TwoFactorPolicy {
     Objects.requireNonNull(rules, "Rules required");
     Objects.requireNonNull(inactivity, "Inactivity interval required");

@@ -5,6 +5,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.security.mfa.TwoFactorAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.function.Function;
@@ -79,6 +80,12 @@ public final class ConfigurationCatalog {
         case SECRET -> texts.getProviderSettingsSecretRule();
         case ENABLED -> texts.getProviderSettingsEnableRule();
       };
+    }
+
+    private static void requireProvider(String provider) {
+      if (!ExternalProviderSettings.PROVIDERS.contains(provider)) {
+        throw new IllegalArgumentException("Unsupported sign-in provider");
+      }
     }
   }
 
@@ -189,18 +196,19 @@ public final class ConfigurationCatalog {
 
   private static List<Entry> createEntries() {
     List<Entry> entries = new ArrayList<>();
-    for (ConfigEntry entry : ConfigEntry.values()) {
-      entries.add(
-          new Entry(
-              entry.getKey(),
-              group(entry),
-              Storage.GENERAL_SETTINGS,
-              secret(entry),
-              property(entry),
-              environmentVariable(entry),
-              texts -> texts.getAdminConfigEntryLabel(entry),
-              texts -> texts.getAdminConfigEntryTooltip(entry)));
-    }
+    Arrays.stream(ConfigEntry.values())
+        .map(
+            entry ->
+                new Entry(
+                    entry.getKey(),
+                    group(entry),
+                    Storage.GENERAL_SETTINGS,
+                    secret(entry),
+                    property(entry),
+                    environmentVariable(entry),
+                    texts -> texts.getAdminConfigEntryLabel(entry),
+                    texts -> texts.getAdminConfigEntryTooltip(entry)))
+        .forEachOrdered(entries::add);
     for (String provider : ExternalProviderSettings.PROVIDERS) {
       for (ProviderField field : ProviderField.values()) {
         String property = field.property(provider);
@@ -271,11 +279,5 @@ public final class ConfigurationCatalog {
         null,
         label,
         description);
-  }
-
-  private static void requireProvider(String provider) {
-    if (!ExternalProviderSettings.PROVIDERS.contains(provider)) {
-      throw new IllegalArgumentException("Unsupported sign-in provider");
-    }
   }
 }

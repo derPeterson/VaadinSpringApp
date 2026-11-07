@@ -46,6 +46,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Slf4j
 public class SupportTicketService {
+  private static final String UPDATED_AT = "updatedAt";
+  private static final String TICKET_UNAVAILABLE = "Ticket unavailable";
   public static final int MESSAGE_LIMIT = 2000;
   private static final long TICKET_NUMBER_OFFSET = 10_000L;
 
@@ -159,7 +161,7 @@ public class SupportTicketService {
   public Ticket findForAdministration(HttpServletRequest request, String number) {
     Owner owner = requireAdministrator(request);
     // Nur die sichtbare Dezimalnummer ohne Raute, Leerzeichen oder weitere URL-Anteile zulassen.
-    if (number == null || !number.matches("[0-9]{1,19}")) {
+    if (number == null || !number.matches("\\d{1,19}")) {
       return null;
     }
     long id;
@@ -265,9 +267,9 @@ public class SupportTicketService {
 
   private LiveView inboxView(Owner owner, Long selectedId, InboxQuery query) {
     Specification<SupportTicketEntity> filter = matching(owner, query.filter());
-    Sort order = Sort.by(Sort.Direction.DESC, "updatedAt", "id");
+    Sort order = Sort.by(Sort.Direction.DESC, UPDATED_AT, "id");
     long total = tickets.count(filter);
-    int page = (int) Math.min(query.page(), Math.max(0, (total - 1) / query.size()));
+    int page = (int) Math.clamp(query.page(), 0, Math.max(0, (total - 1) / query.size()));
     Page<SupportTicketEntity> result =
         tickets.findAll(filter, PageRequest.of(page, query.size(), order));
     List<Ticket> values = views(owner, result.getContent(), true);
@@ -299,13 +301,13 @@ public class SupportTicketService {
     Owner owner = requireAdministrator(request);
     new InboxQuery(filter, 0, size);
     SupportTicketEntity selected =
-        tickets.findById(id).orElseThrow(() -> new AccessDeniedException("Ticket unavailable"));
+        tickets.findById(id).orElseThrow(() -> new AccessDeniedException(TICKET_UNAVAILABLE));
     Specification<SupportTicketEntity> preceding =
         (ticket, query, cb) ->
             cb.or(
-                cb.greaterThan(ticket.get("updatedAt"), selected.getUpdatedAt()),
+                cb.greaterThan(ticket.get(UPDATED_AT), selected.getUpdatedAt()),
                 cb.and(
-                    cb.equal(ticket.get("updatedAt"), selected.getUpdatedAt()),
+                    cb.equal(ticket.get(UPDATED_AT), selected.getUpdatedAt()),
                     cb.greaterThan(ticket.get("id"), id)));
     return Math.toIntExact(tickets.count(matching(owner, filter).and(preceding)) / size);
   }
@@ -637,7 +639,7 @@ public class SupportTicketService {
       requireAdministrator(request);
     }
     SupportTicketEntity ticket =
-        tickets.findById(id).orElseThrow(() -> new AccessDeniedException("Ticket unavailable"));
+        tickets.findById(id).orElseThrow(() -> new AccessDeniedException(TICKET_UNAVAILABLE));
     requireTicketAccess(actor, ticket, administration);
     return ticket;
   }
@@ -668,7 +670,7 @@ public class SupportTicketService {
 
   private SupportTicketEntity lock(Long id) {
     SupportTicketEntity ticket =
-        tickets.lock(id).orElseThrow(() -> new AccessDeniedException("Ticket unavailable"));
+        tickets.lock(id).orElseThrow(() -> new AccessDeniedException(TICKET_UNAVAILABLE));
     entityManager.refresh(ticket);
     return ticket;
   }

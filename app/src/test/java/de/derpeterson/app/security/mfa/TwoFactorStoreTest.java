@@ -140,7 +140,7 @@ class TwoFactorStoreTest {
                   recovery,
                   store.verify(user.getId(), user.getAccessVersion(), code).recoveryCode());
               return true;
-            } catch (BadCredentialsException expected) {
+            } catch (BadCredentialsException _) {
               return false;
             }
           };
@@ -198,7 +198,7 @@ class TwoFactorStoreTest {
           seed,
           Totp.code(seed, clock.instant().getEpochSecond() / 30),
           false);
-    } catch (BadCredentialsException expected) {
+    } catch (BadCredentialsException _) {
       return null;
     }
   }

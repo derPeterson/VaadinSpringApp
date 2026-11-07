@@ -8,6 +8,8 @@ import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
@@ -84,7 +86,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     tools.setPadding(false);
     tools.setSpacing(false);
     tools.setWidthFull();
-    tools.setJustifyContentMode(HorizontalLayout.JustifyContentMode.BETWEEN);
+    tools.setJustifyContentMode(JustifyContentMode.BETWEEN);
     tools.addClassName("admin-filter-tools");
     statuses.addValueChangeListener(event -> refreshDraftCount());
     assignment.addValueChangeListener(event -> refreshDraftCount());
@@ -116,7 +118,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     jumpRow.setPadding(false);
     jumpRow.setSpacing(false);
     jumpRow.setWidthFull();
-    jumpRow.setAlignItems(HorizontalLayout.Alignment.END);
+    jumpRow.setAlignItems(Alignment.END);
     jumpRow.setFlexGrow(1, ticketNumber);
     jumpRow.addClassName("support-filter-jump");
     Div jumpInfo = new Div(AppIcon.INFO_CIRCLE.create(), jumpHint);

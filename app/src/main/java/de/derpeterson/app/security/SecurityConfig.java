@@ -376,10 +376,11 @@ public class SecurityConfig {
     boolean admin =
         authentication.getAuthorities().stream()
             .anyMatch(authority -> RoleType.ROLE_ADMIN.name().equals(authority.getAuthority()));
-    response.sendRedirect(
-        twoFactor.sessionConfirmed(request)
-            ? (admin ? AppRoute.ADMIN : AppRoute.HOME).getSecurityRoute()
-            : AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE);
+    if (!twoFactor.sessionConfirmed(request)) {
+      response.sendRedirect(AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE);
+      return;
+    }
+    response.sendRedirect((admin ? AppRoute.ADMIN : AppRoute.HOME).getSecurityRoute());
   }
 
   private AuthenticationException recoverSessionLimit(
