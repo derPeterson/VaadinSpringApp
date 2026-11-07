@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
@@ -127,6 +128,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @Tag("ticket-filters")
   @DisplayName("MFA-22: Vorgangsfilter und Ticketsprung verwenden die gemeinsamen Filterbausteine")
   void ticketFiltersAndDirectJumpUseNativeControls() {
+    context.grantPermissions(List.of("clipboard-read", "clipboard-write"));
     LoginPage login = new LoginPage(page);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
@@ -174,6 +176,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
             .click();
         assertThat(panel.locator("#support-filter-draft-count"))
             .hasText(texts.getAdminUsersActiveFilterCount(3));
+        assertThat(panel.locator("#support-jump-info"))
+            .hasText(texts.getSupportJumpTicketNumberHint());
         AllurePlaywright.attachScreenshot("Vorgangsfilter mit Testwerten " + width, page);
         panel.locator("#support-filter-cancel").click();
         page.locator("#support-filter").click();
@@ -191,13 +195,29 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         assertThat(ticketCard(page, number)).not().isVisible();
         assertThat(page.locator("#support-ticket-panel")).isVisible();
         page.locator("#support-filter").click();
-        panel.locator("#support-jump-number input").fill(number.substring(1));
-        panel.locator("#support-jump").click();
+        Locator numberInput = panel.locator("#support-jump-number input");
+        numberInput.fill("0");
+        UiActions.complete(page, () -> panel.locator("#support-jump").click());
+        assertThat(panel).hasAttribute("opened", "");
+        assertThat(page.locator("#support-active-filter-count")).hasText("1");
+        numberInput.clear();
+        numberInput.pressSequentially(number.substring(1));
+        UiActions.complete(page, () -> panel.locator("#support-jump").click());
         assertThat(panel).not().hasAttribute("opened", "");
         assertThat(page.locator("#support-ticket-panel")).isVisible();
         assertThat(page)
             .hasURL(Pattern.compile(".*[?&]ticket=" + number.substring(1) + "(?:&.*)?$"));
         assertThat(page.locator("#support-active-filter-count")).not().isVisible();
+        page.locator("#support-filter").click();
+        numberInput.click();
+        assertThat(numberInput).isFocused();
+        page.evaluate("value => navigator.clipboard.writeText(value)", number);
+        numberInput.press("ControlOrMeta+V");
+        assertThat(numberInput).hasValue(number);
+        UiActions.complete(page, () -> panel.locator("#support-jump").click());
+        assertThat(panel).not().hasAttribute("opened", "");
+        assertThat(page.locator("#support-ticket-panel .support-ticket-number"))
+            .hasText(texts.getSupportTicketNumber(number));
       }
     }
   }
@@ -565,13 +585,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator categories = page.locator("#support-ticket-categories");
     Locator hint = page.locator("#support-select-ticket");
     assertThat(hint).containsText(texts.getSupportSelectTicket());
-    assertThat(hint.locator("[data-lucide=list]")).isVisible();
+    assertThat(hint.locator("[data-lucide=mouse-pointer-click]")).isVisible();
     UiActions.complete(page, () -> categories.locator("vaadin-tab").nth(1).click());
     assertTicketLocation("recovery", null);
     page.reload();
     assertThat(categories.locator("vaadin-tab[selected]"))
         .hasText(texts.getSupportRecoveryCategory());
-    assertThat(hint.locator("[data-lucide=list]")).isVisible();
+    assertThat(hint.locator("[data-lucide=mouse-pointer-click]")).isVisible();
     assertThat(ticketCard(page, ownClosedNumber)).hasCount(1);
     assertThat(ticketCard(page, ownOpenNumber)).hasCount(1);
     for (int width : new int[] {1600, 1280, 1024, 390}) {
@@ -1673,7 +1693,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator tabs = page.locator("#two-factor-role-tabs vaadin-tab");
     assertThat(tabs).hasCount(4);
     Locator roleContent = page.locator(".mfa-role-content:visible");
-    assertThat(roleContent.locator("vaadin-select")).hasCount(9);
+    assertThat(roleContent.locator("vaadin-combo-box")).hasCount(9);
     assertThat(roleContent.locator(".mfa-config-heading").first())
         .hasText(texts.getTwoFactorAccessGroup());
     Locator guide = roleContent.locator(".mfa-role-guide");
@@ -1689,11 +1709,28 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                 }
                 """,
                 width == 1280));
-    page.locator("#two-factor-rule-role_superadmin-administration + .cosmos-config-info").click();
+    Locator administration = page.locator("#two-factor-rule-role_superadmin-administration");
+    verifyRuleChoice(administration);
+    page.getByRole(
+            AriaRole.BUTTON,
+            new Page.GetByRoleOptions()
+                .setName(
+                    texts.getAdminConfigHelpTitle()
+                        + " – "
+                        + texts.getTwoFactorRuleAdministration())
+                .setExact(true))
+        .click();
     Locator help = page.locator("#two-factor-field-help");
     Locator helpOverlay = help.locator("vaadin-dialog-overlay > [part~=overlay]");
     assertThat(helpOverlay).isVisible();
     assertThat(help).containsText(texts.getTwoFactorAdminAccessHelp());
+    assertThat(help.locator(".admin-help-field-title"))
+        .hasText(texts.getTwoFactorRuleAdministration());
+    assertThat(help.locator(".admin-help-default span").last())
+        .hasText(texts.getTwoFactorModeOff());
+    List<String> helpItems = texts.twoFactorRuleHelpItems();
+    assertThat(help.locator(".admin-help-rules li")).hasText(helpItems.toArray(String[]::new));
+    AllurePlaywright.attachScreenshot("2FA-Feldhilfe " + width, page);
     page.keyboard().press("Escape");
     assertThat(helpOverlay).isHidden();
     tabs.nth(2).click();
@@ -1716,6 +1753,35 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       assertThat(administrator.page.locator("#admin-provider-settings")).hasCount(0);
       new UserMenu(administrator.page).signOut();
     }
+  }
+
+  private void verifyRuleChoice(Locator field) {
+    Locator input = field.locator("input");
+    Locator menu = field.locator("vaadin-combo-box-overlay [part~=overlay]");
+    field.locator("[part~=toggle-button]").click();
+    assertThat(menu).isVisible();
+    BoundingBox control = field.locator("[part~=input-field]").boundingBox();
+    BoundingBox overlay = menu.boundingBox();
+    assertTrue(
+        overlay.y >= control.y + control.height - 1 || overlay.y + overlay.height <= control.y + 1);
+    Locator off =
+        page.getByRole(
+            AriaRole.OPTION,
+            new Page.GetByRoleOptions().setName(texts.getTwoFactorModeOff()).setExact(true));
+    assertThat(off).hasAttribute("aria-selected", "true");
+    page.keyboard().press("Escape");
+    assertThat(menu).isHidden();
+    input.press("ArrowDown");
+    assertThat(menu).isVisible();
+    Locator required =
+        page.getByRole(
+            AriaRole.OPTION,
+            new Page.GetByRoleOptions().setName(texts.getTwoFactorModeRequired()).setExact(true));
+    UiActions.completeValueChange(page, required::click);
+    assertThat(input).hasValue(texts.getTwoFactorModeRequired());
+    input.clear();
+    input.press("Tab");
+    assertThat(input).hasValue(texts.getTwoFactorModeRequired());
   }
 
   @ParameterizedTest

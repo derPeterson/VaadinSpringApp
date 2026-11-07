@@ -801,10 +801,10 @@ public class MessageTexts {
   }
 
   public String getTwoFactorRuleHelp() {
-    return String.join(" ", getTwoFactorRuleHelpItems());
+    return String.join(" ", twoFactorRuleHelpItems());
   }
 
-  public List<String> getTwoFactorRuleHelpItems() {
+  public List<String> twoFactorRuleHelpItems() {
     return List.of(
         getTranslation("mfa.rule.help.off"),
         getTranslation("mfa.rule.help.enrolled"),

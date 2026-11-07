@@ -292,7 +292,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
                   () -> actionLabel(action),
                   () -> ruleDescription(action),
                   () -> modeLabel(DEFAULT_POLICY.rules().get(role).get(action)),
-                  texts::getTwoFactorRuleHelpItems)));
+                  texts::twoFactorRuleHelpItems)));
     }
     VerticalLayout group = new VerticalLayout(sectionHeading(icon, heading), fields);
     group.setPadding(false);

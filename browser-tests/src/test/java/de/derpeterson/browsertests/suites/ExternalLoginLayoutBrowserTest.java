@@ -496,8 +496,9 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertPlacement(local, external, width, registration);
     assertProviderButtonsFlow(external, false);
     assertThat(page.locator(".cosmos-footer")).hasCSS("text-align", "center");
+    Number contentWidth = (Number) page.evaluate("document.documentElement.clientWidth");
     assertEquals(
-        width,
+        contentWidth.doubleValue(),
         page.locator(".cosmos-footer").boundingBox().width,
         1,
         "Copyrightzeile erstreckt sich über den gemeinsamen Seitenrahmen");

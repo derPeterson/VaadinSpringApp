@@ -3,6 +3,7 @@ package de.derpeterson.app.views;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -422,7 +423,7 @@ class TwoFactorFlowViewTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void ticketSelectionHintUsesTheListIconAndTheSharedEmptyStyle(String language) {
+  void ticketSelectionHintUsesThePointerIconAndTheSharedEmptyStyle(String language) {
     open(language, false);
     SupportTicketService tickets = mock(SupportTicketService.class);
     stubInbox(tickets, List.of());
@@ -434,16 +435,14 @@ class TwoFactorFlowViewTest {
     assertEquals(
         texts.getSupportNoTicketSelected() + texts.getSupportSelectTicket(),
         hint.getElement().getTextRecursively());
-    HorizontalLayout iconFrame = assertInstanceOf(HorizontalLayout.class, hint.getComponentAt(0));
-    SvgIcon icon = assertInstanceOf(SvgIcon.class, iconFrame.getComponentAt(0));
-    assertEquals(AppIcon.LIST.getSource(), icon.getSrc());
+    SvgIcon icon = assertInstanceOf(SvgIcon.class, hint.getComponentAt(0));
+    assertEquals(AppIcon.MOUSE_POINTER_CLICK.getSource(), icon.getSrc());
     assertEquals(
         texts.getSupportCases(),
         find(component, "support-ticket-grid").getElement().getAttribute("aria-label"));
     Tabs categories = (Tabs) find(component, "support-ticket-categories");
     categories.setSelectedIndex(1);
-    icon = assertInstanceOf(SvgIcon.class, iconFrame.getComponentAt(0));
-    assertEquals(AppIcon.LIST.getSource(), icon.getSrc());
+    assertSame(icon, hint.getComponentAt(0));
   }
 
   @ParameterizedTest

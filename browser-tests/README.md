@@ -119,7 +119,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
 | `cosmos-components` | Rollensuche, Konfigurations-Switches, SideNav-Zustände, Tooltips, Benutzermenü und native Scrollleisten | 6 |
 | `cosmos-scrollbars` | Nur globale Scrollleisten: Dokument, Chat, Grid, TextArea und Dialog auf Desktop/Smartphone, Scrollbedienung und Systemkontrast | 1 |
-| `all` | Alle 35 Testklassen einschließlich der Fast-Fälle | 254 |
+| `all` | Alle 35 Testklassen einschließlich der Fast-Fälle | 253 |
 
 IDs, Schritte und erwartetes Ergebnis stehen pro Fall in `@DisplayName` und
 `@Description`; diese Angaben übernimmt der Bericht. AVATAR-01 enthält zwei

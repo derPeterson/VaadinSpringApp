@@ -1,95 +1,68 @@
-# Große Testrunde vom 05.11.2026
+# Große Testrunde vom 07.11.2026
 
 ## Prüfstand
 
-Geprüft wurde der lokale Stand auf `codex/zwei-faktor-authentifizierung` mit Basis
-`0f1dd8160b15e3fecfb38cb1ac4b3631bd4ac118` und den uncommitteten Änderungen.
-Die letzte vollständig belegte Main-Baseline ist `623feb67`. Seit der vorherigen
-Feature-Runde sind insbesondere die Vaadin-Ansichten für 2FA, die öffentliche
-Sprachwahl, die gemeinsamen Scrollleisten sowie Live-Verlauf, Lesestände,
-Ticket-Abos und die administrative Ticketansicht hinzugekommen.
+Geprüft wurde der Feature-Branch `codex/zwei-faktor-authentifizierung` auf Basis von
+`13fc8a57d139b1ac07d6d481a8478978b4a1c2d5` mit den lokalen Korrekturen dieser Runde.
+Der vorherige Feature-Prüfstand lag auf Basis von `0f1dd816`. Seitdem änderten sich
+vor allem Ticketzustände und Benachrichtigungen, Ticketverlauf, Filter und Pagination,
+OTP-Bedienung, Scrollleisten und die administrative 2FA-Konfiguration.
 
-**Die automatisierte Testrunde ist bestanden.** Für den Featurestand bleiben
-der aktuelle Sonar-Nachweis und die gemeinsame Abnahme offen. Die konkreten
-Quellfingerabdrücke und Laufbelege stehen im lokalen QA-Zustand.
+**Die automatisierten Prüfungen sind bestanden.** Der Prüfstand bleibt wegen des
+fehlenden Sonar-Nachweises für den Feature-Stand unvollständig. Die letzte
+vollständig belegte Main-Baseline `623feb67` bleibt erhalten.
 
-Die danach angepasste Bearbeiteranzeige und die neue Benachrichtigungsanordnung
-mit Popover-Aktionsliste und direktem Ticketzugang sind mit 276 gezielten
-JUnit-Fällen geprüft. Die Suite `notifications` bestand anschließend mit je acht
-Browserfällen in Deutsch und Englisch am selben Anwendungsimage
-`sha256:ce25b0177cb2be87da9f6164c4d842453146d17b794e09f54e428bea125b0229`.
-Geprüft sind unter anderem die Leseaktion in der Karte, die beschrifteten
-Menüaktionen, Escape ohne Schließen des Dialogs und bestätigtes Löschen auf
-Desktop und Smartphone. Eine falsche Sichtbarkeitsprüfung des unsichtbaren
-Vaadin-Hosts wurde auf den tatsächlich sichtbaren Overlayinhalt korrigiert.
-Alle isolierten Testumgebungen wurden vollständig abgebaut. Dieser Nachtest ersetzt
-die Gesamtrunde nicht; die ticketbezogenen Browserprüfungen und die gemeinsame
-Sichtabnahme bleiben offen.
+## Ergebnisse
 
-Die gegliederte Wiederherstellungsanleitung mit eigener Nachrichtenart und
-aufklappbarer Sprechblase bestand 32 gezielte Anwendungs-JUnit-Fälle sowie
-15 Prüfungen der Browser-Testauswahl. Die Suite `two-factor-instructions`
-bestand mit je zwei Fällen in DE/EN am unveränderten Image
-`sha256:c9d2c36ed5325c835b528d6351b3c113f09caf3199ba2d37d076c4ef935ef82a`.
-Sie prüft Vorschau, vier Schritte, Sicherheitshinweise, Empfängerkontakt,
-aufklappbaren Verlauf und Erhalt des Öffnungszustands beim Aktualisieren auf
-Desktop und Smartphone. Die isolierten Testumgebungen sind abgebaut.
-Die Anleitung ist noch nicht gemeinsam gestalterisch abgenommen.
-
-## Ausgeführte Prüfungen
-
-| Prüfung | Beobachtetes Ergebnis |
+| Prüfung | Ergebnis |
 | --- | --- |
-| Root-Reactor `clean verify` mit Production und Coverage | Bestanden unter JDK 25 |
-| Anwendungs-JUnit | 2.660 bestanden, zwei vorgesehene opt-in HTTPS-Prüfungen übersprungen |
-| Browser-Helfertests | 90 bestanden |
+| Root-Reactor `clean verify` mit Production und Coverage | Bestanden unter JDK 25 in einer separaten Quellkopie |
+| Anwendungstests | 2.734 bestanden, zwei vorgesehene Opt-in-HTTPS-Prüfungen übersprungen |
+| Browser-Helfertests | 96 bestanden |
 | Frontend-JavaScript | 20 bestanden |
-| Sonar-Offlineprüfungen | 47 bestanden |
 | Coverage-Offlineprüfungen | 18 bestanden |
-| Spotless und Checkstyle | Bestanden, keine Checkstyle-Verstöße |
-| Effektives Maven-Modell und Coverage-Zuordnung | Bestanden, 85,17 % Zeilenabdeckung App und 100 % Shared |
-| Browser Deutsch | 245 von 245 eindeutigen Fällen nach den gezielten Nachtests bestanden |
-| Browser Englisch | Gesamtlauf bestanden, 245 von 245 |
+| Sonar-Offlineprüfungen | 47 bestanden |
+| Spotless und Checkstyle | Bestanden |
+| Effektives Maven-Modell und Coverage-Zuordnung | Bestanden, 86,57 % Zeilenabdeckung der Anwendung und 100 % in Shared |
+| Gezielter Browsernachtest für Ticketfilter und 2FA-Konfiguration | Je vier Fälle in DE und EN bestanden |
+| Browser-Gesamtrunde DE | 251 von 253 im ersten Lauf bestanden. Die beiden betroffenen Fälle bestanden nach Korrektur in gezielten Nachtests. |
+| Browser-Gesamtrunde EN | 253 von 253 im Gesamtlauf bestanden |
 
-Die vollständigen Browserläufe verwenden je vier getrennte Worker mit eigener
-JVM, Anwendung, H2-Datenbank und Mailpit. Das aktuelle Anwendungsimage für beide
-Sprachen ist
-`sha256:00ffac55a7a38216b8e068dcb75b52f2c4b5161c7e42f4d25c1ac1f3e1e3ceb1`.
-Der deutsche Gesamtlauf bestand 239 von 245 Fällen. Die Nachtests am selben
-Image bestanden in den Suiten `operations` (3), `cosmos-design` (16),
-`external-login-flow` (29) und `two-factor` (32). Der neueste Status je
-Allure-Fallkennung ergibt 245 bestandene Fälle. Alle eigenen Testumgebungen
-wurden abgebaut.
+Die Browserläufe verwendeten dasselbe Anwendungsimage
+`sha256:379d8878dcbf43115092cabe2ddfd66ec395a2bb8745bdf0c2704168660adb6e`.
+Die Gesamtrunden liefen mit je vier getrennten Workern. Jede Testumgebung hatte
+eine eigene Anwendung, H2-Datenbank und Mailpit-Instanz. Der Abbau war erfolgreich.
+Der lokale QA-Zustand enthält die Quellfingerabdrücke und Belegpfade.
 
-## Korrekturen und Prüfungen
+## Korrekturen und Nachtests
 
-- **Admin-Tickets:** Die Auswahl nach dem Kategorie-Tabwechsel konnte auf schmalen
-  Ansichten verloren gehen, wenn beim Laden derselbe Datenbestand erneut in das
-  Grid gesetzt wurde. Die Liste wird bei gleichen Daten weiterverwendet. Der
-  korrigierte Stand bestand MFA-07 in Deutsch und Englisch bei 1.280 und 390 px.
-  Der Fall prüft Kategorien, Auswahl, Übernahme, den Live-Verlauf in beide Richtungen,
-  den Erhalt des Entwurfs, die Sichtbarkeit interner Vermerke nur in der
-  Administration und die abgeschickte Standardanleitung im Testpostfach.
-- **JUnit:** Der Sprachkatalogtest deckt auch den Titel für eine Ticketbenachrichtigung
-  ohne Nummer ab. Der SVG-Test berücksichtigt die eigenen Kontur-Icons und das
-  vorhandene ausgefüllte Material Symbol mit seiner lokalen Lizenz.
-- **Browser-Nachtests:** OIDC-01 berücksichtigt nach dem Abmelden die zuvor gewählte
-  öffentliche Sprache. MFA-12 und der SMTP-Ausfalltest vermeiden das erneute
-  Auslösen der bereits aktiven Sprache beim 2FA-Schritt. COSMOS-06 nutzt den
-  gekürzten Linknamen „2FA“ und erwartet den vollständigen Titel im Panel.
-  Diese Anpassungen am Testcode sind in beiden Sprachen am selben Anwendungsimage geprüft.
+- **Ticketsprung und Pagination:** MFA-22 und MFA-23 prüften bei 1.280 und 390 px
+  die Eingabe der Ticketnummer und das Einfügen mit Raute, erhaltene Filter bei
+  einem Fehlsprung, die Auswahl bei einem Treffer und das Blättern mit 10, 20
+  und 50 Einträgen. Der Einfügetest fokussiert das Feld nach dem Öffnen des Dialogs.
+- **2FA-Konfiguration:** MFA-03 prüfte bei beiden Breiten das Auswahlmenü am Feld,
+  Bedienung per Maus und Tastatur, Auswahlmarkierung und Werterhalt beim Leeren.
+  Die Feldhilfe zeigte den zugänglichen Feldnamen, den Standardwert und die
+  übersetzten Eingaberegeln.
+- **Testimage:** Der Test für die leere Ticketdetailansicht erwartet das rahmenlose
+  Mauszeiger-Icon. Die Textliste der Feldhilfe wird auch über den vorhandenen
+  String-Getter abgerufen, damit der Katalogtest alle Schlüssel prüft.
+- **Gesamtrunde:** MFA-19 erwartete noch das alte List-Icon. OIDC-09 maß den
+  Copyrightbereich gegen die Fensterbreite einschließlich Scrollleiste.
+  Beide Erwartungen wurden korrigiert. Die englische Gesamtrunde und die
+  deutschen Nachtests `two-factor-ticket-layout` (3 Fälle) und
+  `external-login-layout` (8 Fälle) sind bestanden.
 
 ## Sonar und verbleibende Abnahme
 
-Für den aktuellen Featurestand fehlt ein Sonar-Nachweis. Die konfigurierte
-Anbindung war beim Abruf nicht erreichbar, und der vorhandene Export gehört zu
-einem älteren Main-Stand. Der neue Scan erfolgt nach Projektregel auf sauberem
-`main`. Die letzte vollständig belegte QA-Baseline bleibt erhalten.
+Die lesende Sonar-Abfrage für `vaadin-spring-app` ergab ein grünes Gate für die
+Main-Analyse von `623feb67`. Sie gehört weder zum aktuellen lokalen Main-Stand noch
+zum geprüften Feature-Stand. Ein neuer Scan erfolgt nach Projektregel auf sauberem
+`main`.
 
-Die gemeinsamen Sichtabnahmen für [2FA und Admin-Tickets](planung/zwei-faktor-bestaetigung.md)
-sind offen. Der [manuelle Katalog](manual-tests/README.md) führt die Prüfung mit
-echten Authenticator-Apps, realen Anbieter-Sonderfällen, Mobilgeräten,
-Bildschirmtastatur, Zoom, Screenreader und PDF-Druck. Die vereinbarten Grenzen
-der Google-Ersteinrichtung sind in der
-[Fachdokumentation](externe-anmeldung.md#google-bestätigung-und-geschützte-ersteinrichtung)
-beschrieben. Offene automatisierte Szenarien stehen im [Testbedarf](testbedarf.md).
+Die gemeinsame Sichtabnahme für [2FA und Admin-Tickets](planung/zwei-faktor-bestaetigung.md)
+bleibt offen. Der [manuelle Katalog](manual-tests/README.md) führt die Abnahme mit
+echten Authenticator-Apps, Anbieter-Sonderfällen, Mobilgeräten, Bildschirmtastatur,
+Zoom, Screenreader und PDF-Druck. Die Grenzen der Google-Ersteinrichtung stehen
+in der [Fachdokumentation](externe-anmeldung.md#google-bestätigung-und-geschützte-ersteinrichtung).
+Weitere offene automatisierte Szenarien stehen im [Testbedarf](testbedarf.md).

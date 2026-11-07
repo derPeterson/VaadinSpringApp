@@ -2,11 +2,9 @@
 
 ## Browser-Tests
 
-- **Vorgangsseiten: teilweise geprüft.** Die deutschen Fälle MFA-22 und MFA-23
-  für Filter, Ticketsprung und Navigation mit 10/20/50 Einträgen sind auf Desktop
-  und Smartphone bestanden. Der englische Lauf steht aus. In beiden Sprachen
-  zusätzlich prüfen, dass Live-Updates die aktuelle Seite erhalten oder bei
-  einer leeren letzten Seite auf die letzte verfügbare Seite zurückgehen.
+- **Vorgangsseiten bei Live-Updates: offen.** In DE/EN auf Desktop und Smartphone
+  prüfen, dass Live-Updates die aktuelle Seite erhalten oder bei einer leeren
+  letzten Seite auf die letzte verfügbare Seite zurückgehen.
 
 - **Ticketnavigation: offen.** Den roten Aktivitätspunkt in der administrativen
   SideNav und seinen Tooltip in DE/EN prüfen, auch im mobilen Menü. Ohne Öffnen
@@ -19,9 +17,7 @@
   Antwortentwürfe beim Ausblenden des ausgewählten Vorgangs erhalten und
   Ticketlinks trotz entgegenstehender Filter öffnen.
   Benachrichtigungslinks müssen beispielsweise `section=support&ticket=10003`
-  ohne kodierte Raute öffnen. Der Ticketsprung muss `10003` und `#10003` per Eingabe
-  und Einfügen annehmen, dieselbe Seite mit ausgewähltem Vorgang öffnen und die
-  Filter erst bei einem Treffer zurücksetzen.
+  ohne kodierte Raute öffnen.
 
 - **OTP-Autofill und gekürzte Einfügewerte: offen.** Beide sechsstelligen Felder
   (Einrichtung und Anmeldung) in DE/EN durch Browser-/Passwortmanager-Autofill
@@ -66,12 +62,6 @@
   übersetzten Namen im Tooltip und die unterschiedlichen Seiten-/Panelhinweise prüfen.
   Die Sichtbarkeit nach Rolle und die Navigation über das gekürzte Label „2FA“
   sind bereits abgedeckt.
-
-- **2FA-Regelauswahl und Feldhilfe: offen.** In DE/EN auf Desktop und Smartphone
-  die ComboBox per Maus und Tastatur öffnen. Das Auswahlmenü soll am Feld aufgehen,
-  die Auswahl im Menü markieren und beim Leeren den bisherigen Wert erhalten.
-  Die Feldhilfe soll einen zugänglichen Feldnamen, den zur Rolle passenden
-  Standardwert und die übersetzten Eingaberegeln zeigen.
 
 - **2FA-Wiederherstellungsanfragen: offen.** Beim Aktualisieren nach einer
   konkurrierenden Änderung den neuen Status und die passende Rückmeldung prüfen.
