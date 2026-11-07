@@ -1231,7 +1231,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.locator("#two-factor-role-tabs vaadin-tab")
         .getByText(texts.getRoleUser(), new Locator.GetByTextOptions().setExact(true))
         .click();
-    page.locator("#two-factor-rule-role_user-login").click();
+    page.locator("#two-factor-rule-role_user-login [part~='toggle-button']").click();
     page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(label).setExact(true))
         .click();
     page.locator("#two-factor-save").click();

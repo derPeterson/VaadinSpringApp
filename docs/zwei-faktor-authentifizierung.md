@@ -224,7 +224,7 @@ Gesamtzahl der Treffer. Die persönliche Liste lädt weiterhin bis zu 20 Anfrage
 Eine Änderung der Kategorie, Filter oder Seitengröße beginnt auf Seite eins.
 Aktualisieren und Live-Updates behalten die aktuelle Seite bei, solange sie
 vorhanden ist. Beim Blättern bleiben geöffnete Details und Antwortentwurf erhalten.
-Der Ticketsprung nimmt die sichtbare Ticketnummer ohne Raute entgegen, hebt
+Der Ticketsprung nimmt die sichtbare Ticketnummer mit oder ohne Raute entgegen, hebt
 Listenfilter auf und öffnet die passende Seite. Ein unbekannter Vorgang lässt
 die bisherige Auswahl bestehen. Der Zugriff erfordert dieselben Adminrechte
 wie die Liste.

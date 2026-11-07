@@ -6,11 +6,14 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.checkbox.CheckboxGroupVariant;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.radiobutton.RadioGroupVariant;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.function.SerializablePredicate;
 import com.vaadin.flow.function.SerializableRunnable;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -30,6 +33,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
   private final RadioButtonGroup<Reading> reading = new RadioButtonGroup<>();
   private final Badge draftCount = new Badge();
   private final TextField ticketNumber = new TextField();
+  private final Span jumpHint = new Span();
   private final Button jump = new Button(AppIcon.OPEN_SECTION.create());
   private final Button reset = new Button(AppIcon.ROTATE_LEFT.create());
   private final Button cancel = new Button(AppIcon.CLOSE.create());
@@ -61,7 +65,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     reading.setValue(Reading.ALL);
     reading.addClassNames("admin-filter-enabled", "support-filter-reading");
     reading.setWidthFull();
-    VerticalLayout fields = new VerticalLayout(statuses, assignment, reading);
+    VerticalLayout fields = new VerticalLayout(reading, statuses, assignment);
     fields.setPadding(false);
     fields.setSpacing(false);
     fields.setWidthFull();
@@ -87,9 +91,8 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     reading.addValueChangeListener(event -> refreshDraftCount());
     ticketNumber.setId("support-jump-number");
     ticketNumber.setWidthFull();
-    ticketNumber.setAllowedCharPattern("[0-9]");
-    ticketNumber.getElement().setAttribute("inputmode", "numeric");
-    ticketNumber.setMaxLength(19);
+    ticketNumber.setAllowedCharPattern("[0-9#]");
+    ticketNumber.setMaxLength(20);
     ticketNumber.setManualValidation(true);
     jump.setId("support-jump");
     jump.addClickListener(
@@ -116,7 +119,10 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     jumpRow.setAlignItems(HorizontalLayout.Alignment.END);
     jumpRow.setFlexGrow(1, ticketNumber);
     jumpRow.addClassName("support-filter-jump");
-    add(tools, fields, jumpRow);
+    Div jumpInfo = new Div(AppIcon.INFO_CIRCLE.create(), jumpHint);
+    jumpInfo.setId("support-jump-info");
+    jumpInfo.addClassName("admin-filter-hint");
+    add(tools, fields, jumpRow, jumpInfo);
     cancel.setId("support-filter-cancel");
     cancel.addClickListener(event -> close());
     apply.setId("support-filter-apply");
@@ -180,6 +186,13 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     refreshCloseText(texts);
     statuses.setLabel(texts.getSupportFilterStatus());
     statuses.setItemLabelGenerator(statusLabels);
+    statuses.setRenderer(
+        new ComponentRenderer<>(
+            status -> {
+              Span label = new Span(statusLabels.apply(status));
+              label.getElement().setAttribute("data-status", status.name());
+              return label;
+            }));
     assignment.setLabel(texts.getSupportFilterAssignment());
     assignment.setItemLabelGenerator(
         value ->
@@ -193,6 +206,8 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
         value ->
             value == Reading.ALL ? texts.getAdminUsersFilterAll() : texts.getNotificationsUnread());
     ticketNumber.setLabel(texts.getSupportJumpTicketNumber());
+    ticketNumber.setPlaceholder(texts.getSupportJumpTicketNumberPlaceholder());
+    jumpHint.setText(texts.getSupportJumpTicketNumberHint());
     jump.setText(texts.getSupportJumpOpen());
     refreshDraftCount();
     reset.setText(texts.getAdminUsersClearFilters());

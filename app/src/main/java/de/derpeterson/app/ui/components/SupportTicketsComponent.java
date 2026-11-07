@@ -145,6 +145,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final Span warning = new Span();
   private final Span userWarningLabel = new Span();
   private final Span emptyText = new Span();
+  private final Span queueEmptyTitle = new Span();
+  private final Span queueEmptyHint = new Span();
   private final Span userExplanation = new Span();
   private final H3 userRequestsHeading = new H3();
   private final Badge userRequestCount = new Badge();
@@ -158,6 +160,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final Scroller userMessageScroll =
       new Scroller(userMessageThread, Scroller.ScrollDirection.VERTICAL);
   private final HorizontalLayout emptyState = new HorizontalLayout();
+  private final Div queueEmptyState = new Div();
   private final HorizontalLayout backActions = new HorizontalLayout();
   private final VerticalLayout userEditor = new VerticalLayout();
   private final Div messageField = new Div();
@@ -455,9 +458,10 @@ public final class SupportTicketsComponent extends VerticalLayout {
     queueTools.setAlignItems(Alignment.CENTER);
     queueTools.setJustifyContentMode(JustifyContentMode.END);
     queueTools.addClassNames("support-section-header", "support-admin-list-tools");
-    emptyState.add(AppIcon.ARCHIVE.create(), emptyText);
-    emptyState.setAlignItems(Alignment.CENTER);
-    emptyState.addClassName("support-empty-state");
+    queueEmptyTitle.addClassName("admin-grid-empty-title");
+    queueEmptyState.add(AppIcon.LIST.create(), queueEmptyTitle, queueEmptyHint);
+    queueEmptyState.addClassName("admin-grid-empty");
+    queueEmptyState.setId("support-queue-empty");
     grid.addClassName("support-admin-ticket-list");
     adminTicketScroll.setContent(grid);
     adminTicketScroll.setScrollDirection(Scroller.ScrollDirection.VERTICAL);
@@ -478,7 +482,6 @@ public final class SupportTicketsComponent extends VerticalLayout {
             List.of(10, 20, 50),
             CosmosPagination.Mode.PREVIOUS_NEXT);
     pagination.setId("support-pagination");
-    pagination.addClassName("support-pagination");
     HorizontalLayout queueFooter = new HorizontalLayout(pagination);
     queueFooter.setId("support-queue-footer");
     queueFooter.setPadding(false);
@@ -487,7 +490,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     queueFooter.addClassName("cosmos-panel-footer");
     CosmosCardComponent queuePanel =
         new CosmosCardComponent(
-            queueHeader, queueTools, emptyState, adminTicketScroll, queueFooter);
+            queueHeader, queueTools, queueEmptyState, adminTicketScroll, queueFooter);
     queuePanel.setId("support-queue-panel");
     queuePanel.addClassNames(CosmosClasses.PANEL_CARD, "support-admin-list-panel");
     adminQueue.add(queuePanel);
@@ -595,13 +598,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminDetail.setId("support-ticket-panel");
     adminDetail.addClassNames(CosmosClasses.PANEL_CARD, "support-admin-detail");
     adminDetail.add(ticketHeader, adminTicketTools, content, adminActionFooter);
-    HorizontalLayout selectionIcon = new HorizontalLayout(AppIcon.LIST.create());
-    selectionIcon.setPadding(false);
-    selectionIcon.setSpacing(false);
-    selectionIcon.addClassName(CosmosClasses.PANEL_ICON);
     noSelectionTitle.addClassName("cosmos-notification-empty-title");
     selectTicket.addClassName(CosmosClasses.PANEL_DESCRIPTION);
-    noSelection.add(selectionIcon, noSelectionTitle, selectTicket);
+    noSelection.add(AppIcon.MOUSE_POINTER_CLICK.create(), noSelectionTitle, selectTicket);
     noSelection.setAlignItems(Alignment.CENTER);
     noSelection.setJustifyContentMode(JustifyContentMode.CENTER);
     noSelection.setSpacing(false);
@@ -654,6 +653,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
       adminPageTitle.setText(texts.getSupportTitle());
       adminPageDescription.setText(texts.getSupportPageDescription());
       queueHeading.setText(texts.getSupportCases());
+      queueEmptyTitle.setText(texts.getSupportQueueEmptyTitle());
       filterButton.setText(texts.getAdminUsersAddFilter());
       filters.refreshTexts();
       pagination.refreshTexts();
@@ -719,7 +719,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private boolean jumpToTicket(String number) {
-    return openTicket(number, true);
+    return openTicket(number.startsWith("#") ? number.substring(1) : number, true);
   }
 
   private boolean openTicket(String number, boolean directJump) {
@@ -903,8 +903,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private void applyTickets(List<Ticket> values, Ticket selection) {
     if (!administration) {
       userRequestCount.setText(texts.getSupportRequestCount(values.size()));
-    }
-    if (administration) {
+      emptyState.setVisible(values.isEmpty());
+    } else {
       int count = filters.activeCount();
       activeFilterCount.setText(Integer.toString(count));
       activeFilterCount.setVisible(count > 0);
@@ -914,11 +914,12 @@ public final class SupportTicketsComponent extends VerticalLayout {
               : texts.getAdminUsersAddFilter()
                   + ", "
                   + texts.getAdminUsersActiveFilterCount(count));
-      emptyText.setText(count > 0 ? texts.getSupportFilterEmpty() : texts.getSupportEmpty());
+      queueEmptyHint.setText(
+          count > 0 ? texts.getSupportFilterEmpty() : texts.getSupportQueueEmptyHint());
+      queueEmptyState.setVisible(values.isEmpty());
     }
     grid.setVisible(!values.isEmpty());
     adminTicketScroll.setVisible(!values.isEmpty());
-    emptyState.setVisible(values.isEmpty());
     openRequest = values.stream().anyMatch(ticket -> ticket.status().acceptsMessages());
     // Gleiche Daten beim Kategorienwechsel sollen Fokus und Scrollposition im Grid behalten.
     if (!visibleTickets.equals(values)) {

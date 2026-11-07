@@ -514,10 +514,16 @@ class TwoFactorFlowViewTest {
     stubInbox(tickets, List.of(mine, filterTicket(2L, Status.IN_PROGRESS, 10L)));
     component.refresh();
     assertEquals(0, grid.getListDataView().getItemCount());
-    assertTrue(component.getElement().getTextRecursively().contains(texts.getSupportFilterEmpty()));
+    Component emptyQueue = find(component, "support-queue-empty");
+    assertTrue(emptyQueue.isVisible());
+    assertTrue(
+        emptyQueue.getElement().getTextRecursively().contains(texts.getSupportQueueEmptyTitle()));
+    assertTrue(
+        emptyQueue.getElement().getTextRecursively().contains(texts.getSupportFilterEmpty()));
     component.openTicket("10001");
     assertEquals(mine, grid.asSingleSelect().getValue());
     assertEquals(2, grid.getListDataView().getItemCount());
+    assertFalse(emptyQueue.isVisible());
     assertFalse(find(component, "support-active-filter-count").isVisible());
   }
 
@@ -664,13 +670,17 @@ class TwoFactorFlowViewTest {
     assertTrue(find(component, "support-ticket-panel").isVisible());
     ((Button) find(component, "support-filter")).click();
     TextField number = (TextField) find(filters, "support-jump-number");
+    assertEquals(texts.getSupportJumpTicketNumberPlaceholder(), number.getPlaceholder());
+    assertEquals(
+        texts.getSupportJumpTicketNumberHint(),
+        find(filters, "support-jump-info").getElement().getTextRecursively());
     number.setValue("10002");
     ((Button) find(filters, "support-jump")).click();
     assertEquals(read, grid.asSingleSelect().getValue());
     assertEquals(0, filters.activeCount());
     ((Button) find(component, "support-filter")).click();
     stubInbox(tickets, List.of(older));
-    number.setValue("10003");
+    number.setValue("#10003");
     ((Button) find(filters, "support-jump")).click();
     assertEquals(older, grid.asSingleSelect().getValue());
     component.refresh();

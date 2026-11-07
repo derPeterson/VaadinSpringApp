@@ -99,6 +99,10 @@ Die Symbolkarten in Profilbild-, Benachrichtigungs- und Gerätebestätigungen
 verwenden den bestehenden rechteckigen `cosmos-panel-icon`-Rahmen mit abgerundeten
 Ecken. Die Kontextkarte enthält dafür einen Rahmen um das unveränderte Lucide-Icon,
 keine Kreisfläche direkt am SVG. Echte Benutzeravatare bleiben rund.
+Gerahmte Info-Boxen verwenden 14 px umlaufenden Innenabstand und 10 px zwischen
+Icon und Text. Die gemeinsamen Tokens `--cosmos-info-box-padding` und
+`--cosmos-info-box-gap` stehen in `cosmos-tokens.css`. Hinweise ohne eigene Box,
+etwa im Panel-Footer, folgen den Abständen ihres Layouts.
 Fest eingebundene Info- und Warnboxen mit **fetter Einleitung und Doppelpunkt**
 richten das Icon an der ersten Textzeile aus. Die Erklärung läuft direkt nach
 der Einleitung weiter. Native `HorizontalLayout`-Container verwenden dafür
@@ -246,7 +250,8 @@ Die Zähler übernehmen auch die blaue Ungelesen-Beschriftung der Referenz.
 Leere Benachrichtigungslisten verwenden im Postfach, in der Glockenvorschau und
 im Admin-Versandverlauf denselben
 Baustein `.cosmos-notification-empty`: zentriertes blaues Glocken-Icon (32 px),
-darunter eine kurze Überschrift mit 14 px und Gewicht 600, ohne Zusatztext.
+darunter mit 8 px Abstand eine kurze Überschrift mit 14 px und Gewicht 600,
+ohne Zusatztext.
 Die Anordnung übernimmt den Leerzustand der Benutzerverwaltung mit 48 px vertikalem
 und 24 px seitlichem Padding. Bei erfolgloser Suche bleibt der passende Suchtitel
 erhalten. Der Versandverlauf verwendet die Überschrift „Noch keine Benachrichtigungen gesendet“.
@@ -1135,11 +1140,21 @@ Zugang und Administration, Konto- und Sicherheitsdaten sowie Authenticator und
 Anmeldeanbieter. Das native `TabSheet` verwendet die Tableiste der Anmeldeanbieter
 aus `cosmos-provider-settings.css`. Die Erklärspalte steht auf breiten Inhaltsflächen
 neben den Gruppen und rückt auf schmalen darunter. Die rollenübergreifende
-Inaktivitätsregel folgt außerhalb der Tabs. `cosmos-mfa.css` enthält das lokale
-Layout. Die Feldhilfe nutzt weiterhin `ConfigInfoButton` und `AdminSidePanel`.
+Inaktivitätsregel folgt außerhalb der Tabs und trägt das vierte Tabler-Zahlenicon.
+`cosmos-mfa.css` enthält das lokale Layout. Die Erklärspalte trennt die blaue
+Info-Box mit einer horizontalen Linie von den Hinweisen darüber und hebt den Namen
+der gerade bearbeiteten Rolle fett hervor.
+`.mfa-role-scope` steht in `cosmos-mfa-confirmation.css`. Regelauswahl und
+Inaktivitätsdauer verwenden die 40 px hohen Eingabeflächen
+der Konfiguration mit externen Feldlabels und 6 px Abstand. Die Regelauswahl
+verwendet eine native `ComboBox` mit dem gemeinsamen Optionsstil der Pagination
+und der nativen Platzierung des Auswahlmenüs am Feld.
+Die Feldhilfe nutzt `ConfigInfoButton` und `AdminSidePanel` mit demselben Aufbau
+wie die allgemeine Konfiguration. Sie zeigt Gruppe, Feldtitel, Beschreibung,
+Standardwert aus der 2FA-Standardrichtlinie und die Eingaberegeln als Liste.
 
 Die neue 2FA-Oberfläche verwendet `AccountPanelComponent`, native Vaadin-Eingaben,
-Buttons, `Badge`, `TabSheet`, `Select`, `Switch`, `Grid` und die bestehenden Cosmos-
+Buttons, `Badge`, `TabSheet`, `ComboBox`, `Switch`, `Grid` und die bestehenden Cosmos-
 Bestätigungsdialoge. Die Kontoverwaltung liegt im Tab „Portalzugang“. Einrichtung
 und eingeschränkte Anmeldung verwenden den öffentlichen Seitenrahmen. Kurzlebige
 QR-/Code-Dokumente werden geschützt eingebettet, Geheimnisse nicht als Flow-Komponenten-
@@ -1294,9 +1309,10 @@ Werkzeugleiste mit dem vorhandenen Aktualisieren-Button rechts, vor dem ersten E
 Links öffnet ein nativer Filterbutton den bestehenden `AdminSidePanel`-Baustein.
 `SupportTicketFilterPanel` übernimmt die vorhandenen Klassen des Benutzerfilters:
 `admin-user-filter-drawer`, `admin-filter-tools`, `admin-user-filters` und
-`admin-filter-choices`. Native Checkboxen zeigen die Statusmehrfachwahl in zwei
-Spalten mit einheitlichen dezenten Rahmen. Eine native `RadioButtonGroup` wählt alle,
-eigene oder nicht zugewiesene Vorgänge; eine zweite „Alle / Ungelesen“.
+`admin-filter-choices`. Oben steht die native `RadioButtonGroup` „Alle / Ungelesen“.
+Darunter zeigen native Checkboxen die Statusmehrfachwahl in zwei Spalten. Bei
+Auswahl übernehmen Rahmen, Fläche und Haken die Farben des jeweiligen Ticket-Badges.
+Die Zuständigkeit unterscheidet alle, eigene und nicht zugewiesene Vorgänge.
 Leere Statuswahl bedeutet alle Status. Innerhalb der Statuswahl gilt Oder,
 zwischen Status, Zuständigkeit und Lesestand Und. Erst Anwenden übernimmt den Filter;
 Zurücksetzen ändert den Entwurf, Abbrechen und Escape lassen den aktiven Stand bestehen.
@@ -1304,8 +1320,10 @@ Ein natives graues Badge am Button zählt aktive Filtergruppen. Aktualisieren un
 Live-Antworten behalten diese Auswahl und vorhandene Antwortentwürfe bei.
 Ein ausdrücklich geöffneter Ticketlink hebt entgegenstehende Listenfilter auf.
 Dasselbe gilt für den Ticketsprung im Filterpanel. Ein natives `TextField` nimmt
-die sichtbare Nummer ohne Raute auf; ein nativer Button öffnet das Ticket. Die
-lokale Anordnung steht in `cosmos-mfa.css` unter `.support-filter-jump`.
+die sichtbare Nummer mit oder ohne Raute auf. Ein nativer Button öffnet das Ticket.
+Darunter erklärt die Info-Box `admin-filter-hint` aus der Benutzerverwaltung den
+Suchumfang und das Zurücksetzen der Filter bei einem Treffer. Die lokale Anordnung
+der Eingabezeile steht in `cosmos-mfa.css` unter `.support-filter-jump`.
 Die Ticketnummer zählt nicht als Filtergruppe. Ein erfolgloser Sprung behält die
 bisherige Auswahl bei und meldet den Fehler über die Standardnotification.
 Beim direkten Sprung werden Listenfilter aufgehoben, damit auch ein gerade als
@@ -1324,18 +1342,22 @@ wiederhergestellt; unveränderte Live-Updates schreiben die Adresse nicht erneut
 Die Filter grenzen ausschließlich bereits berechtigte Admin-Daten ein und verändern
 weder Zuständigkeit noch Status oder die fachliche Zugriffskontrolle.
 Titelschrift und Rahmenstil übernimmt er vom Ticketsystem-Panelkopf;
-der kompakte Vorgänge-Kopf verwendet lokal 12 px umlaufenden Innenabstand.
-Der Iconrahmen ist lokal auf 32 × 32 px begrenzt, das List-Symbol darin auf 16 × 16 px.
+der kompakte Vorgänge-Kopf und der Pagination-Footer verwenden lokal 12 px
+umlaufenden Innenabstand.
+Der Vorgänge-Kopf verwendet den 32 × 32 px großen Cosmos-Iconrahmen mit dem
+16 × 16 px großen Lucide-Icon `list`.
 Der äußere Panelrahmen umschließt die Liste ohne zusätzlichen Gridrahmen;
 Eintragsinhalte, Zustandsfarben und Auswahl bleiben unverändert.
+Eine leere Vorgangsliste übernimmt den zentrierten Leerzustand der Benutzerverwaltung
+mit blauem 24-px-`list`-Icon ohne Rahmen und einem Hinweis passend zu den aktiven Filtern.
 Native Tabs gliedern die Kategorien, ein natives Grid
 zeigt die Anfragen in ihrer tatsächlichen Inhaltshöhe. Ein nativer Scroller begrenzt
 die Listenhöhe ohne geschätzten Leerraum unter den Einträgen; ein weiterer Scroller
 begrenzt den Verlauf. Unter der Liste liegt der gemeinsame `cosmos-panel-footer`.
-`CosmosPagination` zeigt links den Trefferbereich und rechts die native Auswahl
-der Seitengröße und die beiden vorhandenen Pfeilbuttons. Der Modus `PREVIOUS_NEXT`
+`CosmosPagination` zeigt links die native Auswahl der Seitengröße, mittig den
+Trefferbereich und rechts die beiden Pfeilbuttons. Der Modus `PREVIOUS_NEXT`
 ist auf die Vorgangsliste begrenzt. Die lokale Anordnung steht in
-`cosmos-mfa-confirmation.css` unter `#support-queue-footer` und `.support-pagination`.
+`cosmos-mfa-confirmation.css` unter `#support-queue-footer` und `#support-pagination`.
 Die Vorgangsliste erhält mindestens 330 px tatsächliche
 Panelbreite. Zwischen Liste und Details liegen 16 px ohne zusätzliche Trennlinie;
 der gemeinsame Arbeitsbereich hat 20 px Innenabstand, auf Smartphones 16 px.
@@ -1349,9 +1371,10 @@ die Auswahl aufgehoben, erscheint die Vorgangsliste automatisch wieder.
 Die native Tableiste verwendet `border-box`, reserviert ihre volle Höhe und schließt
 ohne zusätzlichen Inhaltsabstand am Panel ab. Der Auswahlhinweis verwendet ein natives
 `VerticalLayout` mit dem bestehenden `.cosmos-notification-empty`-Stil: mittig,
-24-px-Lucide-Icon `list` im 56-px-Cosmos-Iconrahmen, die Überschrift
+blaues 36-px-Lucide-Icon `mouse-pointer-click` ohne Rahmen, die Überschrift
 „Kein Ticket ausgewählt“ mit 18 px / 600 und darunter ein kurzer Hinweis in
-Sekundärfarbe. Der Titel und der Hinweis wechseln zwischen DE und EN.
+Sekundärfarbe. Zwischen Icon, Überschrift und Hinweis liegen jeweils 8 px.
+Der Titel und der Hinweis wechseln zwischen DE und EN.
 Diese lokale Übernahme aus Stitch lässt die zusammenhängenden Ticketzeilen
 ohne zusätzliche Kartenrahmen und den mobilen Umbruch unverändert.
 In `cosmos-mfa-confirmation.css` sind diese Regeln auf den

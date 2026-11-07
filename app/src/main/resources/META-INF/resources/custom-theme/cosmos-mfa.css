@@ -49,6 +49,9 @@
 @media (max-width:760px) { .two-factor-setup-layout { grid-template-columns:minmax(0,1fr); } .two-factor-setup-instructions { padding:24px 0 0; border-left:0; border-top:1px solid var(--cosmos-reference-border); } }
 .cosmos-mfa-settings .mfa-policy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--cosmos-space-2xl, 24px); width: 100%; }
 .cosmos-mfa-settings .cosmos-config-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--cosmos-space-m, 12px); align-items: center; }
+.cosmos-mfa-settings .cosmos-config-input-row > vaadin-combo-box { min-width:0; margin:0; padding:0; }
+.cosmos-mfa-settings .cosmos-config-input-row > vaadin-combo-box::part(label) { display:none; margin:0; padding:0; }
+.cosmos-mfa-settings .cosmos-config-input-row > vaadin-combo-box::part(input-field) { box-sizing:border-box; height:40px; min-height:40px; }
 .cosmos-reference-admin .cosmos-mfa-settings .mfa-settings-header { border-bottom:0; }
 .cosmos-mfa-settings .mfa-settings-body { container-type:inline-size; }
 .cosmos-mfa-settings .mfa-role-content { display:grid; grid-template-columns:minmax(0,2fr) minmax(0,1fr); align-items:start; gap:24px; padding:24px; }
@@ -56,12 +59,13 @@
 .cosmos-mfa-settings .mfa-config-heading { display:flex; align-items:center; gap:8px; width:100%; box-sizing:border-box; margin:0 0 16px; padding-bottom:8px; border-bottom:1px solid var(--cosmos-reference-border); color:var(--cosmos-reference-text); font:600 12px/20px Inter,sans-serif; }
 .cosmos-mfa-settings .mfa-config-heading > vaadin-icon,
 .cosmos-mfa-settings .mfa-guide-item > vaadin-icon { flex:none; width:16px; height:16px; color:var(--cosmos-reference-accent); }
-.cosmos-mfa-settings .mfa-role-guide { box-sizing:border-box; min-width:0; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); padding:16px; gap:16px; background:var(--cosmos-reference-panel); }
-.cosmos-mfa-settings .mfa-role-guide .mfa-config-heading { margin-bottom:0; }
+.cosmos-mfa-settings .mfa-role-guide { box-sizing:border-box; min-width:0; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); padding:16px; gap:var(--cosmos-space-l); background:var(--cosmos-reference-panel); }
+.cosmos-mfa-settings .mfa-role-guide .mfa-config-heading { margin-bottom:0; padding-bottom:var(--cosmos-space-l); font-size:14px; }
 .cosmos-mfa-settings .mfa-guide-item { align-items:flex-start; gap:8px; }
 .cosmos-mfa-settings .mfa-guide-item-title { color:var(--cosmos-reference-text); font:600 12px/20px Inter,sans-serif; }
-.cosmos-mfa-settings .mfa-role-scope { width:100%; box-sizing:border-box; border-top:1px solid var(--cosmos-reference-border); padding-top:12px; }
-.cosmos-mfa-settings .mfa-inactivity-section { box-sizing:border-box; padding:24px; border-top:1px solid var(--cosmos-reference-border); }
+.cosmos-mfa-settings .mfa-role-guide > hr { width:100%; height:1px; margin:0; border:0; background:var(--cosmos-reference-border); }
+.cosmos-mfa-settings .mfa-role-scope-name { font-weight:var(--cosmos-font-weight-bold); }
+.cosmos-mfa-settings .mfa-inactivity-section { box-sizing:border-box; padding:0 24px 24px; }
 .cosmos-mfa-settings .mfa-inactivity-section .mfa-policy-grid { align-items:end; }
 .cosmos-mfa-settings .mfa-development-options { display: flex; flex-direction: column; gap: var(--cosmos-space-l, 16px); margin: var(--cosmos-space-2xl, 24px); padding: var(--cosmos-space-l, 16px); border: var(--cosmos-border-width) solid var(--lumo-warning-color); border-radius: var(--cosmos-control-radius); }
 @container (max-width:760px) {
@@ -69,7 +73,8 @@
 }
 @container (max-width:480px) {
   .cosmos-mfa-settings .mfa-policy-grid { grid-template-columns:minmax(0,1fr); gap:16px; }
-  .cosmos-mfa-settings :is(.mfa-role-content,.mfa-inactivity-section) { padding:16px; }
+  .cosmos-mfa-settings .mfa-role-content { padding:16px; }
+  .cosmos-mfa-settings .mfa-inactivity-section { padding:0 16px 16px; }
 }
 @media (max-width:600px) {
   .cosmos-provider-settings #two-factor-role-tabs vaadin-tab { padding-inline:6px; }

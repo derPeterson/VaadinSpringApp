@@ -5,6 +5,7 @@ import de.derpeterson.app.config.TokenDurationPolicy;
 import java.math.BigDecimal;
 import java.text.MessageFormat;
 import java.text.NumberFormat;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
@@ -313,6 +314,14 @@ public class MessageTexts {
     return getTranslation("support.jump.ticketNumber");
   }
 
+  public String getSupportJumpTicketNumberPlaceholder() {
+    return getTranslation("support.jump.ticketNumber.placeholder");
+  }
+
+  public String getSupportJumpTicketNumberHint() {
+    return getTranslation("support.jump.ticketNumber.hint");
+  }
+
   public String getSupportJumpOpen() {
     return getTranslation("support.jump.open");
   }
@@ -327,6 +336,14 @@ public class MessageTexts {
 
   public String getSupportFilterEmpty() {
     return getTranslation("support.filter.empty");
+  }
+
+  public String getSupportQueueEmptyTitle() {
+    return getTranslation("support.queue.empty.title");
+  }
+
+  public String getSupportQueueEmptyHint() {
+    return getTranslation("support.queue.empty.hint");
   }
 
   public String getSupportMessageCount(int count) {
@@ -784,7 +801,15 @@ public class MessageTexts {
   }
 
   public String getTwoFactorRuleHelp() {
-    return getTranslation("mfa.rule.help");
+    return String.join(" ", getTwoFactorRuleHelpItems());
+  }
+
+  public List<String> getTwoFactorRuleHelpItems() {
+    return List.of(
+        getTranslation("mfa.rule.help.off"),
+        getTranslation("mfa.rule.help.enrolled"),
+        getTranslation("mfa.rule.help.required"),
+        getTranslation("mfa.rule.help.confirmation"));
   }
 
   public String getTwoFactorInactivityEnabled() {
@@ -796,7 +821,15 @@ public class MessageTexts {
   }
 
   public String getTwoFactorInactivityHelp() {
+    return getTwoFactorInactivityDescription() + " " + getTwoFactorInactivityRange();
+  }
+
+  public String getTwoFactorInactivityDescription() {
     return getTranslation("mfa.inactivity.help");
+  }
+
+  public String getTwoFactorInactivityRange() {
+    return getTranslation("mfa.inactivity.range");
   }
 
   public String getTwoFactorDevelopmentTitle() {

@@ -37,8 +37,8 @@
 .two-factor-footer-navigation { flex:none; min-width:0; }
 .two-factor-footer-navigation:empty { display:none; }
 .two-factor-footer > .cosmos-dialog-actions { flex-wrap:wrap; justify-content:flex-end; width:auto; max-width:100%; margin-inline-start:auto; gap:8px; }
-:is(.two-factor-restore-notice,.support-help-notice) { box-sizing:border-box; width:100%; gap:12px; padding:16px; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-input); color:var(--cosmos-reference-secondary); font:400 12px/20px Inter,sans-serif; }
-:is(.two-factor-restore-notice,.support-help-notice) > vaadin-icon { width:16px; height:16px; flex:none; color:var(--cosmos-reference-accent); }
+:is(.two-factor-restore-notice,.support-help-notice,.mfa-role-scope) { box-sizing:border-box; width:100%; gap:var(--cosmos-info-box-gap); padding:var(--cosmos-info-box-padding); border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-input); color:var(--cosmos-reference-secondary); font:400 12px/20px Inter,sans-serif; }
+:is(.two-factor-restore-notice,.support-help-notice,.mfa-role-scope) > vaadin-icon { width:16px; height:16px; flex:none; color:var(--cosmos-reference-accent); }
 .two-factor-restore-notice p { margin:0; }
 .two-factor-restore-notice p + p { margin-top:8px; }
 .support-recovery-help { max-width:640px; margin-inline:auto; }
@@ -168,29 +168,39 @@
 .support-ticket-row .support-ticket-number {
   color:var(--support-ticket-number-color,var(--cosmos-reference-text));
 }
+:is(vaadin-badge.support-ticket-status,#support-filter-status vaadin-checkbox) {
+  --support-status-border:#0ea5e966;
+  --support-status-surface:#082f49cc;
+  --support-status-accent:#7dd3fc;
+}
+:is(vaadin-badge.support-ticket-status[data-status=OPEN],#support-filter-status vaadin-checkbox:has([data-status=OPEN])) {
+  --support-status-border:var(--cosmos-security-warning-border);
+  --support-status-surface:var(--cosmos-security-warning-surface);
+  --support-status-accent:var(--cosmos-security-warning-accent);
+}
+:is(vaadin-badge.support-ticket-status[data-status=CLOSED],#support-filter-status vaadin-checkbox:has([data-status=CLOSED])) {
+  --support-status-border:#33415599;
+  --support-status-surface:#1e293bcc;
+  --support-status-accent:var(--cosmos-reference-label);
+}
+:is(vaadin-badge.support-ticket-status[data-status=CLOSED_BY_REQUESTER],#support-filter-status vaadin-checkbox:has([data-status=CLOSED_BY_REQUESTER])) {
+  --support-status-border:#10b9814d;
+  --support-status-surface:#022c2299;
+  --support-status-accent:#6ee7b7;
+}
 :is(.support-ticket-row,.support-admin-ticket-header,.support-history-event) vaadin-badge.support-ticket-status {
   margin-inline-start:auto;
   padding:10px;
-  border:1px solid #0ea5e966;
+  border:1px solid var(--support-status-border);
   border-radius:4px;
-  background:#082f49cc;
-  color:#7dd3fc;
+  background:var(--support-status-surface);
+  color:var(--support-status-accent);
   font:500 11px/16px Inter,sans-serif;
 }
-:is(.support-ticket-row,.support-admin-ticket-header,.support-history-event) vaadin-badge.support-ticket-status[data-status=OPEN] {
-  border-color:var(--cosmos-security-warning-border);
-  background:var(--cosmos-security-warning-surface);
-  color:var(--cosmos-security-warning-accent);
-}
-:is(.support-ticket-row,.support-admin-ticket-header,.support-history-event) vaadin-badge.support-ticket-status[data-status=CLOSED] {
-  border-color:#33415599;
-  background:#1e293bcc;
-  color:var(--cosmos-reference-label);
-}
-:is(.support-ticket-row,.support-admin-ticket-header,.support-history-event) vaadin-badge.support-ticket-status[data-status=CLOSED_BY_REQUESTER] {
-  border-color:#10b9814d;
-  background:#022c2299;
-  color:#6ee7b7;
+#support-filter-status vaadin-checkbox {
+  --filter-choice-color:var(--support-status-accent);
+  --filter-choice-border:var(--support-status-border);
+  --filter-choice-background:var(--support-status-surface);
 }
 .support-admin-workspace #support-panel > .account-panel-body { padding:0; gap:0; container-type:inline-size; }
 .support-admin-workspace #support-ticket-categories { box-sizing:border-box; flex:none; min-width:0; }
@@ -211,7 +221,7 @@
   padding:0;
 }
 .support-admin-list-panel .support-admin-ticket-list { border:0; border-radius:0; }
-#support-queue-panel #support-queue-header { padding:12px; }
+#support-queue-panel > :is(#support-queue-header,#support-queue-footer) { padding:12px; }
 #support-queue-header .cosmos-panel-icon { width:32px; height:32px; flex:0 0 32px; }
 #support-queue-header .cosmos-panel-icon > vaadin-icon { width:16px; height:16px; }
 .support-admin-list-tools,.support-admin-ticket-tools { box-sizing:border-box; padding:12px 16px; border-bottom:1px solid var(--cosmos-reference-border); }
@@ -230,28 +240,33 @@
 .support-admin-policy-label { color:var(--cosmos-reference-text); font-weight:600; }
 .support-admin-status-note { margin-block-start:8px; color:var(--cosmos-reference-secondary); font:italic 400 11px/18px Inter,sans-serif; text-align:center; }
 .support-admin-detail .support-conversation-heading { color:var(--cosmos-reference-accent); }
-.support-admin-workspace .support-empty-state {
+#support-queue-empty {
   box-sizing:border-box;
   width:100%;
-  min-height:76px;
-  gap:10px;
-  padding:16px;
-  border:1px solid var(--cosmos-reference-border);
-  border-radius:var(--cosmos-control-radius);
-  background:var(--cosmos-reference-input);
-  color:var(--cosmos-reference-secondary);
+  min-height:112px;
+  gap:4px;
+  padding:12px;
   font:400 12px/20px Inter,sans-serif;
 }
-.support-admin-no-selection { min-height:280px; gap:8px; }
-#support-select-ticket > .cosmos-panel-icon { width:56px; height:56px; flex:none; margin-bottom:8px; }
-#support-select-ticket > .cosmos-panel-icon > vaadin-icon { width:24px; height:24px; }
+#support-queue-empty > vaadin-icon { width:24px; height:24px; margin-bottom:0; }
+#support-select-ticket { min-height:280px; gap:8px; }
+#support-select-ticket > vaadin-icon { width:36px; height:36px; }
 .support-admin-no-selection > .cosmos-notification-empty-title { font:600 18px/26px Inter,sans-serif; }
-.support-admin-no-selection > .cosmos-panel-description { max-width:420px; }
+#support-select-ticket > .cosmos-panel-description { max-width:420px; margin:0; }
 .support-admin-ticket-scroll { max-height:min(44vh, 460px); }
-#support-queue-footer { padding:12px; border-top:1px solid var(--cosmos-reference-border); }
-.support-pagination.admin-user-pagination { flex-wrap:nowrap; gap:8px; font-size:11px; }
-.support-pagination .admin-user-pagination-summary { margin-inline-start:auto; flex-wrap:nowrap; gap:0; }
-.support-pagination .admin-user-pagination-nav { margin-inline-start:0; flex-wrap:nowrap; gap:4px; }
+#support-queue-footer { border-top:1px solid var(--cosmos-reference-border); }
+#support-pagination {
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-areas:"size range navigation";
+  align-items:center;
+  gap:8px;
+  padding:0;
+  font-size:11px;
+}
+#support-pagination > .admin-user-pagination-summary { grid-area:size; justify-self:start; gap:0; }
+#support-pagination > .admin-user-pagination-total { grid-area:range; text-align:center; }
+#support-pagination > .admin-user-pagination-nav { grid-area:navigation; justify-self:end; flex-wrap:nowrap; gap:4px; }
 .support-admin-ticket-list {
   --cosmos-table-row-background:var(--cosmos-reference-input);
   --cosmos-table-alternate-row-background:var(--cosmos-reference-input);

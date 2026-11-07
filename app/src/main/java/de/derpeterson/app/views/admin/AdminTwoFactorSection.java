@@ -1,17 +1,22 @@
 package de.derpeterson.app.views.admin;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Switch;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.Hr;
+import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.UnorderedList;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabSheetVariant;
@@ -32,6 +37,7 @@ import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosClasses;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.PortalFields;
 import de.derpeterson.app.ui.components.TwoFactorActionDialog;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
@@ -45,13 +51,29 @@ import org.springframework.dao.OptimisticLockingFailureException;
 
 /** Eine zusammen gespeicherte, rollenbezogene MFA-Konfiguration ausschließlich für Superadmins. */
 @StyleSheet("custom-theme/cosmos-mfa.css")
+@StyleSheet("custom-theme/cosmos-mfa-confirmation.css")
 @StyleSheet("custom-theme/cosmos-provider-settings.css")
 public final class AdminTwoFactorSection extends VerticalLayout {
+  private static final TwoFactorPolicy DEFAULT_POLICY = TwoFactorPolicy.defaults();
+  private static final String DEFAULT_INACTIVITY_SECONDS =
+      Long.toString(DEFAULT_POLICY.inactivity().toSeconds());
+
+  private record FieldHelp(
+      Supplier<String> group,
+      Supplier<String> title,
+      Supplier<String> description,
+      Supplier<String> defaultValue,
+      Supplier<List<String>> rules) {
+    String tooltip() {
+      return description.get() + " " + String.join(" ", rules.get());
+    }
+  }
+
   private final transient MessageProperties texts;
   private final transient TwoFactorPolicies policies;
   private final transient TwoFactorAuthorization authorization;
   private final transient HttpServletRequest request;
-  private final Map<RoleType, Map<TwoFactorAction, Select<TwoFactorMode>>> rules =
+  private final Map<RoleType, Map<TwoFactorAction, ComboBox<TwoFactorMode>>> rules =
       new EnumMap<>(RoleType.class);
   private final Map<RoleType, Tab> roleTabs = new EnumMap<>(RoleType.class);
   private final List<Runnable> fieldTextUpdates = new ArrayList<>();
@@ -114,7 +136,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     tabs.setWidthFull();
     tabs.addThemeVariants(TabSheetVariant.NO_PADDING);
     for (RoleType role : RoleType.values()) {
-      Map<TwoFactorAction, Select<TwoFactorMode>> selections = new EnumMap<>(TwoFactorAction.class);
+      Map<TwoFactorAction, ComboBox<TwoFactorMode>> selections =
+          new EnumMap<>(TwoFactorAction.class);
       VerticalLayout groups = new VerticalLayout();
       groups.setPadding(false);
       groups.addClassName("mfa-rule-groups");
@@ -160,7 +183,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
         AdminDurationField.Unit.HOURS,
         AdminDurationField.Unit.DAYS);
     duration.setId("two-factor-inactivity-duration");
-    duration.setDefaultValue("43200");
+    duration.setDefaultValue(DEFAULT_INACTIVITY_SECONDS);
     durationLabel.setId("two-factor-inactivity-label");
     durationLabel.addClassName("provider-field-label");
     duration.setAriaLabelledBy("two-factor-inactivity-label");
@@ -169,19 +192,34 @@ public final class AdminTwoFactorSection extends VerticalLayout {
             durationLabel,
             withHelp(
                 duration,
-                texts::getTwoFactorInactivityDuration,
-                texts::getTwoFactorInactivityHelp));
+                new FieldHelp(
+                    texts::getTwoFactorInactivityGroup,
+                    texts::getTwoFactorInactivityDuration,
+                    texts::getTwoFactorInactivityDescription,
+                    () -> duration.displayStoredValue(DEFAULT_INACTIVITY_SECONDS),
+                    () ->
+                        List.of(
+                            texts.getAdminConfigDurationNumberRule(),
+                            texts.getTwoFactorInactivityRange()))));
+    durationField.addClassName("provider-help-field");
     Div common =
         new Div(
             withHelp(
                 inactivity,
-                texts::getTwoFactorInactivityEnabled,
-                texts::getTwoFactorInactivityHelp),
+                new FieldHelp(
+                    texts::getTwoFactorInactivityGroup,
+                    texts::getTwoFactorInactivityEnabled,
+                    texts::getTwoFactorInactivityDescription,
+                    () ->
+                        DEFAULT_POLICY.inactivityEnabled()
+                            ? texts.getAdminUsersYes()
+                            : texts.getAdminUsersNo(),
+                    () -> List.of(texts.getTwoFactorInactivityRange()))),
             durationField);
     common.addClassName("mfa-policy-grid");
     VerticalLayout inactivitySection =
         new VerticalLayout(
-            sectionHeading(AppIcon.CLOCK, texts::getTwoFactorInactivityGroup), common);
+            sectionHeading(AppIcon.NUMBER_FOUR, texts::getTwoFactorInactivityGroup), common);
     inactivitySection.setSpacing(false);
     inactivitySection.setPadding(false);
     inactivitySection.addClassName("mfa-inactivity-section");
@@ -222,25 +260,39 @@ public final class AdminTwoFactorSection extends VerticalLayout {
 
   private VerticalLayout ruleGroup(
       RoleType role,
-      Map<TwoFactorAction, Select<TwoFactorMode>> selections,
+      Map<TwoFactorAction, ComboBox<TwoFactorMode>> selections,
       AppIcon icon,
       Supplier<String> heading,
       List<TwoFactorAction> actions) {
     Div fields = new Div();
     fields.addClassName("mfa-policy-grid");
     for (TwoFactorAction action : actions) {
-      Select<TwoFactorMode> select = new Select<>();
-      select.setId(
+      ComboBox<TwoFactorMode> modeField = new ComboBox<>();
+      modeField.setId(
           "two-factor-rule-"
               + role.name().toLowerCase(Locale.ROOT)
               + "-"
               + action.name().toLowerCase(Locale.ROOT));
-      select.setWidthFull();
-      select.setItems(TwoFactorMode.values());
-      select.setEmptySelectionAllowed(false);
-      select.setItemLabelGenerator(this::modeLabel);
-      selections.put(action, select);
-      fields.add(withHelp(select, () -> actionLabel(action), () -> ruleHelp(action)));
+      modeField.setWidthFull();
+      modeField.setItems(TwoFactorMode.values());
+      modeField.setAllowCustomValue(false);
+      PortalFields.styleChoice(modeField, this::modeLabel, false);
+      modeField.addValueChangeListener(
+          event -> {
+            if (event.getValue() == null && event.getOldValue() != null) {
+              modeField.setValue(event.getOldValue());
+            }
+          });
+      selections.put(action, modeField);
+      fields.add(
+          withHelp(
+              modeField,
+              new FieldHelp(
+                  heading,
+                  () -> actionLabel(action),
+                  () -> ruleDescription(action),
+                  () -> modeLabel(DEFAULT_POLICY.rules().get(role).get(action)),
+                  texts::getTwoFactorRuleHelpItems)));
     }
     VerticalLayout group = new VerticalLayout(sectionHeading(icon, heading), fields);
     group.setPadding(false);
@@ -259,8 +311,12 @@ public final class AdminTwoFactorSection extends VerticalLayout {
 
   private VerticalLayout roleGuide(RoleType role) {
     Span scope = new Span();
-    scope.addClassNames(CosmosClasses.PANEL_DESCRIPTION, "mfa-role-scope");
-    fieldTextUpdates.add(() -> scope.setText(texts.getTwoFactorRoleScope(roleLabel(role))));
+    fieldTextUpdates.add(() -> refreshRoleScope(scope, role));
+    HorizontalLayout scopeInfo = new HorizontalLayout(AppIcon.INFO_CIRCLE.create(), scope);
+    scopeInfo.setPadding(false);
+    scopeInfo.setSpacing(false);
+    scopeInfo.setAlignItems(Alignment.CENTER);
+    scopeInfo.addClassName("mfa-role-scope");
     VerticalLayout guide =
         new VerticalLayout(
             sectionHeading(AppIcon.INFO_CIRCLE, texts::getTwoFactorRoleGuide),
@@ -274,9 +330,27 @@ public final class AdminTwoFactorSection extends VerticalLayout {
                 texts::getTwoFactorExistingFactorsHint),
             guideItem(
                 AppIcon.NUMBER_THREE, texts::getTwoFactorRuleTiming, texts::getTwoFactorSaveHint),
-            scope);
+            new Hr(),
+            scopeInfo);
     guide.addClassName("mfa-role-guide");
     return guide;
+  }
+
+  private void refreshRoleScope(Span scope, RoleType role) {
+    String placeholder = "{role}";
+    String message = texts.getTwoFactorRoleScope(placeholder);
+    int rolePosition = message.indexOf(placeholder);
+    if (rolePosition < 0) {
+      scope.setText(texts.getTwoFactorRoleScope(roleLabel(role)));
+      return;
+    }
+    Span roleName = new Span(roleLabel(role));
+    roleName.addClassName("mfa-role-scope-name");
+    scope.removeAll();
+    scope.add(
+        new Text(message.substring(0, rolePosition)),
+        roleName,
+        new Text(message.substring(rolePosition + placeholder.length())));
   }
 
   private HorizontalLayout guideItem(
@@ -334,7 +408,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       rules.forEach(
           (role, actions) -> {
             Map<TwoFactorAction, TwoFactorMode> modes = new EnumMap<>(TwoFactorAction.class);
-            actions.forEach((action, select) -> modes.put(action, select.getValue()));
+            actions.forEach((action, modeField) -> modes.put(action, modeField.getValue()));
             desiredRules.put(role, modes);
           });
       Duration period =
@@ -379,37 +453,51 @@ public final class AdminTwoFactorSection extends VerticalLayout {
             NotificationHelper.NotificationType.ERROR);
   }
 
-  private Div withHelp(Component field, Supplier<String> label, Supplier<String> explanation) {
+  private Div withHelp(Component field, FieldHelp details) {
     ConfigInfoButton button =
         new ConfigInfoButton(
-            explanation,
+            details::tooltip,
             () -> {
-              refreshHelp =
-                  () -> {
-                    help.setHeading(texts.getAdminConfigHelpTitle());
-                    help.setDescription(label.get());
-                    help.removeAll();
-                    Span copy = new Span(explanation.get());
-                    copy.addClassName(CosmosClasses.PANEL_DESCRIPTION);
-                    help.add(copy);
-                  };
+              refreshHelp = () -> renderHelp(details);
               refreshHelp.run();
               help.open();
             });
     Div row = new Div(field, button);
     row.addClassName("cosmos-config-input-row");
     infoButtons.add(button);
-    if (field instanceof Select<?> select) {
+    fieldTextUpdates.add(
+        () -> button.setAriaLabel(texts.getAdminConfigHelpTitle() + " – " + details.title().get()));
+    if (field instanceof ComboBox<?> modeField) {
       Span caption = new Span();
       caption.setId(field.getId().orElseThrow() + "-label");
       caption.addClassName("provider-field-label");
-      select.setAriaLabelledBy(caption.getId().orElseThrow());
-      fieldTextUpdates.add(() -> caption.setText(label.get()));
+      modeField.setAriaLabelledBy(caption.getId().orElseThrow());
+      fieldTextUpdates.add(() -> caption.setText(details.title().get()));
       Div wrapper = new Div(caption, row);
       wrapper.addClassName("provider-help-field");
       return wrapper;
     }
     return row;
+  }
+
+  private void renderHelp(FieldHelp details) {
+    help.setHeading(texts.getAdminConfigHelpTitle());
+    help.setDescription(texts.getAdminConfigHelpDescription());
+    Span group = new Span(details.group().get());
+    group.addClassName("admin-help-group");
+    H3 fieldTitle = new H3(details.title().get());
+    fieldTitle.addClassName("admin-help-field-title");
+    Span description = new Span(details.description().get());
+    description.addClassName("admin-help-description");
+    Div defaultValue =
+        new Div(new Span(texts.getAdminConfigDefault()), new Span(details.defaultValue().get()));
+    defaultValue.addClassName("admin-help-default");
+    UnorderedList rulesList = new UnorderedList();
+    details.rules().get().forEach(rule -> rulesList.add(new ListItem(rule)));
+    Div rulesSection = new Div(new H4(texts.getAdminConfigInputRules()), rulesList);
+    rulesSection.addClassName("admin-help-rules");
+    help.removeAll();
+    help.add(group, fieldTitle, description, defaultValue, rulesSection);
   }
 
   public void refreshTexts() {
@@ -425,7 +513,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
         });
     rules.forEach(
         (role, actions) ->
-            actions.forEach((action, select) -> select.setItemLabelGenerator(this::modeLabel)));
+            actions.forEach(
+                (action, modeField) -> modeField.setItemLabelGenerator(this::modeLabel)));
     fieldTextUpdates.forEach(Runnable::run);
     infoButtons.forEach(ConfigInfoButton::refreshText);
     inactivity.setLabel(texts.getTwoFactorInactivityEnabled());
@@ -465,12 +554,11 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     return ConfigurationCatalog.actionLabel(action, texts);
   }
 
-  private String ruleHelp(TwoFactorAction action) {
-    String common = texts.getTwoFactorRuleHelp();
+  private String ruleDescription(TwoFactorAction action) {
     return switch (action) {
-      case ADMINISTRATION -> texts.getTwoFactorAdminAccessHelp() + " " + common;
-      case SECURITY_CONFIGURATION -> common + " " + texts.getTwoFactorSaveHint();
-      default -> common;
+      case ADMINISTRATION -> texts.getTwoFactorAdminAccessHelp();
+      case SECURITY_CONFIGURATION -> texts.getTwoFactorSaveHint();
+      default -> texts.getTwoFactorRulesHint();
     };
   }
 }

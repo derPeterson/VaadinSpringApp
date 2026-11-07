@@ -19,8 +19,9 @@
   Antwortentwürfe beim Ausblenden des ausgewählten Vorgangs erhalten und
   Ticketlinks trotz entgegenstehender Filter öffnen.
   Benachrichtigungslinks müssen beispielsweise `section=support&ticket=10003`
-  ohne kodierte Raute öffnen; direkt eingegebene sichtbare Ticketnummern wählen
-  denselben berechtigten Vorgang aus.
+  ohne kodierte Raute öffnen. Der Ticketsprung muss `10003` und `#10003` per Eingabe
+  und Einfügen annehmen, dieselbe Seite mit ausgewähltem Vorgang öffnen und die
+  Filter erst bei einem Treffer zurücksetzen.
 
 - **OTP-Autofill und gekürzte Einfügewerte: offen.** Beide sechsstelligen Felder
   (Einrichtung und Anmeldung) in DE/EN durch Browser-/Passwortmanager-Autofill
@@ -65,6 +66,12 @@
   übersetzten Namen im Tooltip und die unterschiedlichen Seiten-/Panelhinweise prüfen.
   Die Sichtbarkeit nach Rolle und die Navigation über das gekürzte Label „2FA“
   sind bereits abgedeckt.
+
+- **2FA-Regelauswahl und Feldhilfe: offen.** In DE/EN auf Desktop und Smartphone
+  die ComboBox per Maus und Tastatur öffnen. Das Auswahlmenü soll am Feld aufgehen,
+  die Auswahl im Menü markieren und beim Leeren den bisherigen Wert erhalten.
+  Die Feldhilfe soll einen zugänglichen Feldnamen, den zur Rolle passenden
+  Standardwert und die übersetzten Eingaberegeln zeigen.
 
 - **2FA-Wiederherstellungsanfragen: offen.** Beim Aktualisieren nach einer
   konkurrierenden Änderung den neuen Status und die passende Rückmeldung prüfen.

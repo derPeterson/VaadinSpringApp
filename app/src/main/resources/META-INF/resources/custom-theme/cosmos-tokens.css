@@ -92,6 +92,8 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-segment-radius: 999px;
     --cosmos-control-height: var(--lumo-size-m);
     --cosmos-control-font-size: var(--cosmos-font-size-m);
+    --cosmos-info-box-padding: 14px;
+    --cosmos-info-box-gap: 10px;
 
     /* Die 14px-Schriftbasis der em-Icons separat erhalten. */
     --cosmos-control-icon-font-size: var(--cosmos-font-size-l);
