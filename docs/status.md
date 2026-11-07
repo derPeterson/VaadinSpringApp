@@ -1,68 +1,53 @@
 # Große Testrunde vom 07.11.2026
 
-## Prüfstand
-
-Geprüft wurde der Feature-Branch `codex/zwei-faktor-authentifizierung` auf Basis von
-`13fc8a57d139b1ac07d6d481a8478978b4a1c2d5` mit den lokalen Korrekturen dieser Runde.
-Der vorherige Feature-Prüfstand lag auf Basis von `0f1dd816`. Seitdem änderten sich
-vor allem Ticketzustände und Benachrichtigungen, Ticketverlauf, Filter und Pagination,
-OTP-Bedienung, Scrollleisten und die administrative 2FA-Konfiguration.
-
-**Die automatisierten Prüfungen sind bestanden.** Der Prüfstand bleibt wegen des
-fehlenden Sonar-Nachweises für den Feature-Stand unvollständig. Die letzte
-vollständig belegte Main-Baseline `623feb67` bleibt erhalten.
+Geprüft wurde `main` auf `3afa7366881e21b34dc488c6ae053ff49d8abc4a`.
+Der vorherige vollständig belegte Stand war `623feb67`. Dazwischen liegen die
+2FA- und Ticket-Erweiterung, ihre Integration und die Sonar-Korrekturen.
 
 ## Ergebnisse
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| Root-Reactor `clean verify` mit Production und Coverage | Bestanden unter JDK 25 in einer separaten Quellkopie |
-| Anwendungstests | 2.734 bestanden, zwei vorgesehene Opt-in-HTTPS-Prüfungen übersprungen |
+| Optimierter Maven-Reactor unter JDK 25 | Bestanden mit gemeinsamer Java-Coverage und geprüftem Maven-Modell |
+| Spotless und Checkstyle | Bestanden |
+| Anwendungstests | 2.734 bestanden, zwei vorgesehene HTTPS-Opt-in-Fälle übersprungen |
 | Browser-Helfertests | 96 bestanden |
 | Frontend-JavaScript | 20 bestanden |
-| Coverage-Offlineprüfungen | 18 bestanden |
-| Sonar-Offlineprüfungen | 47 bestanden |
-| Spotless und Checkstyle | Bestanden |
-| Effektives Maven-Modell und Coverage-Zuordnung | Bestanden, 86,57 % Zeilenabdeckung der Anwendung und 100 % in Shared |
-| Gezielter Browsernachtest für Ticketfilter und 2FA-Konfiguration | Je vier Fälle in DE und EN bestanden |
-| Browser-Gesamtrunde DE | 251 von 253 im ersten Lauf bestanden. Die beiden betroffenen Fälle bestanden nach Korrektur in gezielten Nachtests. |
-| Browser-Gesamtrunde EN | 253 von 253 im Gesamtlauf bestanden |
+| Coverage- und Sonar-Offlineprüfungen | 18 und 47 bestanden |
+| JaCoCo-Zeilenabdeckung | Anwendung 86,59 %, Shared 100 % |
+| Browser DE | 253 von 253 bestanden |
+| Browser EN | 253 von 253 bestanden |
+| SonarQube | 0 offene Findings, 0 Hotspots, grünes Quality Gate |
 
-Die Browserläufe verwendeten dasselbe Anwendungsimage
-`sha256:379d8878dcbf43115092cabe2ddfd66ec395a2bb8745bdf0c2704168660adb6e`.
-Die Gesamtrunden liefen mit je vier getrennten Workern. Jede Testumgebung hatte
-eine eigene Anwendung, H2-Datenbank und Mailpit-Instanz. Der Abbau war erfolgreich.
-Der lokale QA-Zustand enthält die Quellfingerabdrücke und Belegpfade.
+Die beiden Browser-Gesamtläufe prüften dasselbe Image
+`sha256:0d14953a0980095b9363f345061cff9ab76718e23c89887c3c6cc237bf9f0cf4`.
+Je vier Worker nutzten getrennte Anwendungs-, H2- und Mailpit-Umgebungen.
+Aufbau und Abbau waren in beiden Sprachen erfolgreich. Das JAR des Merge-Stands
+startete zusätzlich mit einer eigenen In-Memory-H2-Datenbank bis HTTP 200.
 
-## Korrekturen und Nachtests
+Beim ersten vollständigen Build scheiterten lokale HTTP- und SMTP-Testverbindungen.
+Die betroffenen Klassen bestanden im gezielten Nachlauf mit 17 von 17 Fällen.
+Die anschließenden vollständigen Builds und der final geprüfte Stand waren grün.
 
-- **Ticketsprung und Pagination:** MFA-22 und MFA-23 prüften bei 1.280 und 390 px
-  die Eingabe der Ticketnummer und das Einfügen mit Raute, erhaltene Filter bei
-  einem Fehlsprung, die Auswahl bei einem Treffer und das Blättern mit 10, 20
-  und 50 Einträgen. Der Einfügetest fokussiert das Feld nach dem Öffnen des Dialogs.
-- **2FA-Konfiguration:** MFA-03 prüfte bei beiden Breiten das Auswahlmenü am Feld,
-  Bedienung per Maus und Tastatur, Auswahlmarkierung und Werterhalt beim Leeren.
-  Die Feldhilfe zeigte den zugänglichen Feldnamen, den Standardwert und die
-  übersetzten Eingaberegeln.
-- **Testimage:** Der Test für die leere Ticketdetailansicht erwartet das rahmenlose
-  Mauszeiger-Icon. Die Textliste der Feldhilfe wird auch über den vorhandenen
-  String-Getter abgerufen, damit der Katalogtest alle Schlüssel prüft.
-- **Gesamtrunde:** MFA-19 erwartete noch das alte List-Icon. OIDC-09 maß den
-  Copyrightbereich gegen die Fensterbreite einschließlich Scrollleiste.
-  Beide Erwartungen wurden korrigiert. Die englische Gesamtrunde und die
-  deutschen Nachtests `two-factor-ticket-layout` (3 Fälle) und
-  `external-login-layout` (8 Fälle) sind bestanden.
+## Sonar und geprüfte Korrekturen
 
-## Sonar und verbleibende Abnahme
+Sonar-Analyse `d7d9b331-4e0d-402c-9df2-de1b39ac0a28` bestätigt den geprüften
+`main`-Stand. Von 173 offenen Ausgangsbefunden wurden 172 durch Korrekturen
+geschlossen. Der einzelne Hinweis zu HMAC-SHA-1 wurde für das bestehende
+[TOTP-Format](zwei-faktor-authentifizierung.md) am Befund begründet akzeptiert.
+Die 51 früheren Ausnahmen bleiben bestehen.
 
-Die lesende Sonar-Abfrage für `vaadin-spring-app` ergab ein grünes Gate für die
-Main-Analyse von `623feb67`. Sie gehört weder zum aktuellen lokalen Main-Stand noch
-zum geprüften Feature-Stand. Ein neuer Scan erfolgt nach Projektregel auf sauberem
-`main`.
+Die Korrekturen betreffen die Transaktionseinstiege für Ticket-Livezugriffe,
+PDF-Dateinamen für Ersatzcodes, die Struktur der Anmelde- und 2FA-Prüfungen
+sowie Ticketansichten. Fehlertests prüfen die vorgesehene Ausnahmeoperation
+getrennt von ihrer Vorbereitung. Die Browserläufe decken unter anderem
+Ticketsprung, Filter, Pagination, Ticketverlauf, OTP-Bedienung,
+2FA-Regelauswahl und Feldhilfe ab.
+
+## Offene Abnahme
 
 Die gemeinsame Sichtabnahme für [2FA und Admin-Tickets](planung/zwei-faktor-bestaetigung.md)
-bleibt offen. Der [manuelle Katalog](manual-tests/README.md) führt die Abnahme mit
-echten Authenticator-Apps, Anbieter-Sonderfällen, Mobilgeräten, Bildschirmtastatur,
-Zoom, Screenreader und PDF-Druck. Die Grenzen der Google-Ersteinrichtung stehen
-in der [Fachdokumentation](externe-anmeldung.md#google-bestätigung-und-geschützte-ersteinrichtung).
-Weitere offene automatisierte Szenarien stehen im [Testbedarf](testbedarf.md).
+bleibt offen. Echte Authenticator-Apps, Anbieter-Sonderfälle, Mobilgeräte,
+Bildschirmtastatur, Zoom, Screenreader und PDF-Druck stehen im
+[manuellen Katalog](manual-tests/README.md). Weitere offene automatisierte
+Szenarien stehen im [Testbedarf](testbedarf.md).
