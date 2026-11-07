@@ -511,6 +511,11 @@ bei Gewicht 400 (aktiv 500), 30,5 px Zeilenhöhe, 2 px Abstand und insgesamt 28 
 Einrückung. Ihre aktive Fläche ist dezent blau (#008ecc1a).
 Die seitliche 3-px-Akzentmarkierung gilt für den aktiven Hauptpunkt im Portal und
 in der Administration.
+Der Ticketsystem-Eintrag zeigt relevante ungelesene Aktivitäten als roten Punkt
+rechts am nativen `SideNavItem`. Ein natives `Badge` mit der lokalen Klasse
+`.admin-nav-support-activity` in `cosmos-admin-reference.css` verwendet 8 px
+Durchmesser und die bestehende rote Zählerfarbe `--cosmos-reference-badge`.
+Der native Tooltip erscheint nur bei aktivem Punkt und folgt dem Sprachwechsel.
 Mobil verwendet die Seitenleiste denselben Innenabstand von 20 px wie das Frontend.
 
 Das Dashboard verwendet das lokal mitgelieferte freigegebene Bildmotiv und echte
@@ -1287,14 +1292,31 @@ links `list` im gemeinsamen `cosmos-panel-icon`-Rahmen und den Titel
 mit `cosmos-panel-title`. Darunter steht eine eigene native `HorizontalLayout`-
 Werkzeugleiste mit dem vorhandenen Aktualisieren-Button rechts, vor dem ersten Eintrag.
 Links öffnet ein nativer Filterbutton den bestehenden `AdminSidePanel`-Baustein.
-`SupportTicketFilterPanel` verwendet eine native vertikale `CheckboxGroup` für die
-Statusmehrfachwahl und eine `RadioButtonGroup` für alle, eigene oder nicht zugewiesene
-Vorgänge. Leere Statuswahl bedeutet alle Status. Innerhalb der Statuswahl gilt Oder,
-zwischen Status und Zuständigkeit Und. Erst Anwenden übernimmt den Filter;
+`SupportTicketFilterPanel` übernimmt die vorhandenen Klassen des Benutzerfilters:
+`admin-user-filter-drawer`, `admin-filter-tools`, `admin-user-filters` und
+`admin-filter-choices`. Native Checkboxen zeigen die Statusmehrfachwahl in zwei
+Spalten mit einheitlichen dezenten Rahmen. Eine native `RadioButtonGroup` wählt alle,
+eigene oder nicht zugewiesene Vorgänge; eine zweite „Alle / Ungelesen“.
+Leere Statuswahl bedeutet alle Status. Innerhalb der Statuswahl gilt Oder,
+zwischen Status, Zuständigkeit und Lesestand Und. Erst Anwenden übernimmt den Filter;
 Zurücksetzen ändert den Entwurf, Abbrechen und Escape lassen den aktiven Stand bestehen.
 Ein natives graues Badge am Button zählt aktive Filtergruppen. Aktualisieren und
 Live-Antworten behalten diese Auswahl und vorhandene Antwortentwürfe bei.
 Ein ausdrücklich geöffneter Ticketlink hebt entgegenstehende Listenfilter auf.
+Dasselbe gilt für den Ticketsprung im Filterpanel. Ein natives `TextField` nimmt
+die sichtbare Nummer ohne Raute auf; ein nativer Button öffnet das Ticket. Die
+lokale Anordnung steht in `cosmos-mfa.css` unter `.support-filter-jump`.
+Die Ticketnummer zählt nicht als Filtergruppe. Ein erfolgloser Sprung behält die
+bisherige Auswahl bei und meldet den Fehler über die Standardnotification.
+Beim direkten Sprung werden Listenfilter aufgehoben, damit auch ein gerade als
+gelesen quittiertes Ticket ausgewählt bleibt. Ein aus dem Ungelesen-Filter gelesener
+Vorgang verschwindet nur aus der Liste, seine geöffnete Detailansicht bleibt erhalten;
+das native Grid enthält dann keine ausgewählte Zeile außerhalb seiner Daten.
+Status- und Zuständigkeitsfilter bleiben für die Detailauswahl maßgeblich.
+Die Zuständigkeitsoptionen verwenden
+12 px / 18 px, Gewicht 400 (ausgewählt 500) und die gemeinsamen Textfarben.
+Der Footer übernimmt allein `admin-drawer-actions` aus der Benutzerverwaltung;
+zusätzliche Dialogaktionsklassen würden dessen Raster überschreiben.
 Die native Tab-/Ticketauswahl meldet ihren Zustand an die Adminansicht. Diese hält
 `tab=all`/`tab=recovery` und die öffentliche Ticketnummer ohne Raute in der URL,
 ohne neu zu navigieren. Beim Browser-Refresh werden Tab und Auswahl daraus
@@ -1425,8 +1447,10 @@ Einzelne Punkt-Platzhalter setzt die native Add-on-API. Das nächste leere Käst
 bleibt auch ohne echten Tastaturfokus blau markiert; Eingabe und Positionswechsel
 steuert weiterhin das Add-on. `cosmos-mfa-otp.css` wird gezielt in dessen Shadowroot
 geladen und gestaltet ausschließlich die dokumentierten `slot`-Parts und deren
-`active`-/`filled`-Zustände. Es wird kein automatischer Smartphone-Tastaturfokus gesetzt;
-Fehler-, Disabled- und Read-only-Zustände behalten Vorrang.
+`active`-/`filled`-Zustände. Beide OTP-Felder verwenden den nativen Autofokus, damit
+die Eingabe beim Öffnen mit dem ersten Kästchen beginnen kann. Ob dabei die virtuelle
+Tastatur erscheint, entscheidet der mobile Browser. Fehler-, Disabled- und
+Read-only-Zustände behalten Vorrang.
 Die vorhandene Vaadin-Frontendversion bleibt auch für `field-base` maßgeblich;
 die ältere Paketdeklaration des Add-ons darf die gemeinsamen Felder nicht herunterstufen.
 

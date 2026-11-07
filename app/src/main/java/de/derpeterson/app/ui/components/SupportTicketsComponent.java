@@ -414,7 +414,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     queueHeader.setJustifyContentMode(JustifyContentMode.BETWEEN);
     queueHeader.setFlexGrow(1, queueHeading);
     queueHeader.addClassName(CosmosClasses.PANEL_HEADER);
-    filters = new SupportTicketFilterPanel(texts, this::status, this::refresh);
+    filters = new SupportTicketFilterPanel(texts, this::status, this::refresh, this::jumpToTicket);
     add(filters);
     filterButton.setId("support-filter");
     filterButton.getElement().setAttribute("aria-controls", "support-filter-panel");
@@ -675,20 +675,53 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   public void openTicket(String number) {
-    List<Ticket> values = service.list(request, administration);
+    openTicket(number, false);
+  }
+
+  private boolean jumpToTicket(String number) {
+    return openTicket(number, true);
+  }
+
+  private boolean openTicket(String number, boolean directJump) {
+    List<Ticket> values = ticketsIncluding(number);
     Ticket matching =
         values.stream()
             .filter(ticket -> ticketNumber(ticket).equals("#" + number))
             .findFirst()
             .orElse(null);
-    if (administration && matching != null && !filters.matches(matching, administratorId)) {
+    if (matching == null && directJump) {
+      failed(texts::getSupportTicketUnavailable);
+      return false;
+    }
+    if (administration
+        && matching != null
+        && (directJump || !filters.matches(matching, administratorId))) {
       filters.resetApplied();
+    }
+    if (administration && matching != null && matching.type() != Type.RECOVERY) {
+      ticketCategories.setSelectedTab(allTickets);
     }
     applyTickets(values, matching);
     refreshConversation();
     if (matching == null) {
       failed(texts::getSupportTicketUnavailable);
     }
+    return matching != null;
+  }
+
+  private List<Ticket> ticketsIncluding(String number) {
+    List<Ticket> values = service.list(request, administration);
+    if (administration
+        && number != null
+        && values.stream().noneMatch(ticket -> ticketNumber(ticket).equals("#" + number))) {
+      Ticket found = service.findForAdministration(request, number);
+      if (found != null) {
+        List<Ticket> extended = new java.util.ArrayList<>(values);
+        extended.add(found);
+        return extended;
+      }
+    }
+    return values;
   }
 
   public void setNavigationListener(SerializableConsumer<NavigationState> listener) {
@@ -786,7 +819,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   private void refresh(boolean notifySuccess) {
     try {
-      List<Ticket> values = service.list(request, administration);
+      List<Ticket> values =
+          ticketsIncluding(selected == null ? null : ticketNumber(selected).substring(1));
       if (administration) {
         administratorId = service.administratorId(request);
       }
@@ -817,7 +851,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
       values = values.stream().filter(ticket -> filters.matches(ticket, administratorId)).toList();
       if (selection != null) {
         Long selectionId = selection.id();
-        if (values.stream().noneMatch(ticket -> ticket.id().equals(selectionId))) {
+        if (values.stream().noneMatch(ticket -> ticket.id().equals(selectionId))
+            && !filters.matchesMetadata(selection, administratorId)) {
           selection = null;
         }
       }
@@ -841,7 +876,13 @@ public final class SupportTicketsComponent extends VerticalLayout {
       visibleTickets = List.copyOf(values);
       grid.setItems(visibleTickets).setIdentifierProvider(Ticket::id);
     }
-    grid.asSingleSelect().setValue(selection);
+    Ticket detailSelection = selection;
+    Ticket rowSelection =
+        values.stream()
+            .filter(ticket -> detailSelection != null && ticket.id().equals(detailSelection.id()))
+            .findFirst()
+            .orElse(null);
+    grid.asSingleSelect().setValue(rowSelection);
     selected = selection;
     publishNavigation();
   }

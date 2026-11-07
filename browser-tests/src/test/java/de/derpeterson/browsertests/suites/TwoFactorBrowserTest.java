@@ -20,7 +20,9 @@ import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.net.URI;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
@@ -34,6 +36,215 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("browser")
 public class TwoFactorBrowserTest extends BrowserFixture {
+  @Test
+  @Tag("ticket-filters")
+  @DisplayName("MFA-22: Vorgangsfilter und Ticketsprung verwenden die gemeinsamen Filterbausteine")
+  void ticketFiltersAndDirectJumpUseNativeControls() {
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    String email = "ticket-filter-" + UUID.randomUUID() + "@example.test";
+    new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    try (BrowserActor requester = new BrowserActor(browser)) {
+      requester.login(email, BrowserTestAccounts.USER_PASSWORD);
+      requester.page.navigate("/recovery-help");
+      requester
+          .page
+          .locator("#support-reply textarea")
+          .fill("Synthetic request for ticket filters.");
+      UiActions.complete(requester.page, () -> requester.page.locator("#support-create").click());
+      String number =
+          requester
+              .page
+              .locator("#support-ticket-grid")
+              .getByText(Pattern.compile("^#[0-9]+$"))
+              .first()
+              .innerText();
+      for (int width : new int[] {1280, 390}) {
+        page.setViewportSize(width, 900);
+        page.navigate("/admin?section=support");
+        assertThat(page.locator("#support-select-ticket")).isVisible();
+        requester.page.locator("#support-reply textarea").fill("Unread activity at width " + width);
+        UiActions.complete(
+            requester.page, () -> requester.page.locator("#support-add-reply").click());
+        page.locator("#support-filter").click();
+        Locator panel = page.locator("#support-filter-panel");
+        assertThat(page.locator("#support-filter-panel"))
+            .hasClass(Pattern.compile(".*admin-user-filter-drawer.*"));
+        panel
+            .locator("#support-filter-status")
+            .getByText(texts.getSupportOpen(), new Locator.GetByTextOptions().setExact(true))
+            .click();
+        panel
+            .locator("#support-filter-assignment")
+            .getByText(texts.getSupportFilterMine(), new Locator.GetByTextOptions().setExact(true))
+            .click();
+        panel
+            .locator("#support-filter-reading")
+            .getByText(
+                texts.getNotificationsUnread(), new Locator.GetByTextOptions().setExact(true))
+            .click();
+        assertThat(panel.locator("#support-filter-draft-count"))
+            .hasText(texts.getAdminUsersActiveFilterCount(3));
+        AllurePlaywright.attachScreenshot("Vorgangsfilter mit Testwerten " + width, page);
+        panel.locator("#support-filter-cancel").click();
+        page.locator("#support-filter").click();
+        assertThat(panel.locator("#support-filter-status input:checked")).hasCount(0);
+        panel
+            .locator("#support-filter-reading")
+            .getByText(
+                texts.getNotificationsUnread(), new Locator.GetByTextOptions().setExact(true))
+            .click();
+        panel.locator("#support-filter-apply").click();
+        assertThat(page.locator("#support-active-filter-count")).hasText("1");
+        assertThat(ticketCard(page, number)).isVisible();
+        UiActions.complete(page, () -> ticketCard(page, number).click());
+        assertThat(page.locator("#support-ticket-panel")).isVisible();
+        assertThat(ticketCard(page, number)).not().isVisible();
+        assertThat(page.locator("#support-ticket-panel")).isVisible();
+        page.locator("#support-filter").click();
+        panel.locator("#support-jump-number input").fill(number.substring(1));
+        panel.locator("#support-jump").click();
+        assertThat(panel).not().hasAttribute("opened", "");
+        assertThat(page.locator("#support-ticket-panel")).isVisible();
+        assertThat(page)
+            .hasURL(Pattern.compile(".*[?&]ticket=" + number.substring(1) + "(?:&.*)?$"));
+        assertThat(page.locator("#support-active-filter-count")).not().isVisible();
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("otp-behavior")
+  @DisplayName("MFA-21: Alle sechsstelligen OTP-Ansichten fokussieren und bestätigen automatisch")
+  void otpFocusAndAutomaticConfirmationCoverSetupLoginReplacementAndRecovery(int width) {
+    LoginPage administrator = new LoginPage(page);
+    administrator.open();
+    administrator.signIn(
+        BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    String email = "otp-behavior-" + UUID.randomUUID() + "@example.test";
+    String adminEmail = "otp-admin-" + UUID.randomUUID() + "@example.test";
+    AdminUsersPage users = new AdminUsersPage(page);
+    users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    users.createUser(adminEmail, BrowserTestAccounts.USER_PASSWORD, true, true);
+    try (BrowserActor actor = new BrowserActor(browser)) {
+      actor.page.setViewportSize(width, 900);
+      actor.login(email, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(actor.page).selectTestLanguage();
+      actor.page.navigate("/account?tab=security");
+      actor.page.locator("#account-two-factor-setup").click();
+      actor.page.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
+      actor.page.locator("#two-factor-submit").click();
+      checkEnrollmentOtp(actor.page, email, false);
+
+      actor.page.locator("#account-two-factor-replace").click();
+      actor
+          .page
+          .locator("#two-factor-action-code input")
+          .fill(TwoFactorPage.nextCode(actor.page, email));
+      actor.page.locator("#two-factor-action-confirm").click();
+      checkEnrollmentOtp(actor.page, email, true);
+      signOutToLogin(actor.page);
+
+      LoginPage login = new LoginPage(actor.page);
+      login.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
+      assertOtpFocus(actor.page, "two-factor-code");
+      TwoFactorPage.selectTestLanguageIfNeeded(actor.page);
+      actor.page.locator("#two-factor-recovery-tab").click();
+      actor.page.locator("#two-factor-authenticator-tab").click();
+      checkOtpInputAndConfirm(actor.page, email, "two-factor-code", false);
+      actor.page.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
+      signOutToLogin(actor.page);
+
+      login.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
+      TwoFactorPage.selectTestLanguageIfNeeded(actor.page);
+      TwoFactorPage.openLoginHelp(actor.page);
+      UiActions.complete(actor.page, () -> actor.page.locator("#two-factor-recover").click());
+      Locator recoveryInput = actor.page.locator("vaadin-text-field#two-factor-code input");
+      assertThat(recoveryInput).isVisible();
+      recoveryInput.fill(TwoFactorPage.nextCode(actor.page, email));
+      actor.page.locator("#two-factor-submit").click();
+      checkEnrollmentOtp(actor.page, email, true);
+      signOutToLogin(actor.page);
+
+      login.signInFirstFactor(adminEmail, BrowserTestAccounts.USER_PASSWORD);
+      TwoFactorPage.selectTestLanguageIfNeeded(actor.page);
+      assertThat(actor.page.locator("#two-factor-introduction-title")).isVisible();
+      actor.page.locator("#two-factor-submit").click();
+      checkEnrollmentOtp(actor.page, adminEmail, true);
+      signOutToLogin(actor.page);
+      login.signInFirstFactor(adminEmail, BrowserTestAccounts.USER_PASSWORD);
+      actor.page.navigate("/two-factor?administration");
+      assertOtpFocus(actor.page, "two-factor-code");
+      TwoFactorPage.selectTestLanguageIfNeeded(actor.page);
+      checkOtpInputAndConfirm(actor.page, adminEmail, "two-factor-code", true);
+      actor.page.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
+      signOutToLogin(actor.page);
+    }
+  }
+
+  private void signOutToLogin(Page actor) {
+    new UserMenu(actor).requestSignOut();
+    assertThat(actor.locator(".public-header")).isVisible();
+    new LoginPage(actor).open();
+  }
+
+  private void checkEnrollmentOtp(Page actor, String email, boolean pasteValidCode) {
+    assertThat(actor.locator("#two-factor-qr")).isVisible();
+    TwoFactorPage.rememberEnrollment(actor, email);
+    checkOtpInputAndConfirm(actor, email, "two-factor-enrollment-code", pasteValidCode);
+    TwoFactorPage.captureCodes(actor, email);
+    actor.locator("#two-factor-codes-saved input").setChecked(true);
+    actor.locator("#two-factor-submit").click();
+    actor.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
+  }
+
+  private void assertOtpFocus(Page actor, String id) {
+    Locator otp = actor.locator("#" + id);
+    assertThat(otp.locator("input")).isFocused();
+    assertThat(otp.locator("[part=slot]").first()).hasAttribute("active", "");
+    assertTrue((Boolean) otp.locator("input").evaluate("input => input.selectionStart === 0"));
+  }
+
+  private void checkOtpInputAndConfirm(
+      Page actor, String email, String id, boolean pasteValidCode) {
+    assertOtpFocus(actor, id);
+    Locator otp = actor.locator("#" + id);
+    Locator input = otp.locator("input");
+    String invalid = TwoFactorPage.invalidCode(email);
+    actor.keyboard().type(invalid.substring(0, 5));
+    assertThat(input).hasValue(invalid.substring(0, 5));
+    assertThat(otp.locator("[part=slot][filled]")).hasCount(5);
+    actor.keyboard().type(invalid.substring(5));
+    assertThat(otp).hasAttribute("invalid", "");
+    assertThat(input).hasValue("");
+    assertThat(input).isFocused();
+
+    actor.context().grantPermissions(List.of("clipboard-read", "clipboard-write"));
+    pasteOtp(actor, invalid.substring(0, 5));
+    assertThat(input).hasValue(invalid.substring(0, 5));
+    actor.keyboard().press("ControlOrMeta+A");
+    pasteOtp(actor, invalid.substring(0, 3) + " " + invalid.substring(3));
+    assertThat(input).hasValue("");
+    assertThat(input).isFocused();
+    assertThat(actor.locator("#two-factor-submit")).isEnabled();
+    AllurePlaywright.attachScreenshot("OTP nach Tippen und Einfügen: " + id, actor);
+    String valid = TwoFactorPage.totp(actor, email);
+    if (pasteValidCode) {
+      pasteOtp(actor, valid);
+    } else {
+      actor.keyboard().type(valid);
+    }
+  }
+
+  private void pasteOtp(Page actor, String value) {
+    actor.evaluate("value => navigator.clipboard.writeText(value)", value);
+    actor.keyboard().press("ControlOrMeta+V");
+  }
+
   @TempDir Path profile;
 
   @ParameterizedTest

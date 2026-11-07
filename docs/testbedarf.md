@@ -2,22 +2,26 @@
 
 ## Browser-Tests
 
-- **Vorgangsfilter: offen, wartend auf Browserfreigabe.** In DE/EN auf Desktop und
-  Smartphone den Filterbutton in der separaten Werkzeugleiste prüfen: native Status-
-  Mehrfachwahl, Zuständigkeit, Anwenden, Entwurf zurücksetzen und Abbruch über Button,
-  Escape oder Außenklick. Aktive Gruppen zählen, keine Treffer korrekt anzeigen,
-  Filter beim Aktualisieren und Live-Update erhalten. Antwortentwürfe beim Ausblenden
-  des ausgewählten Vorgangs erhalten und Ticketlinks trotz entgegenstehender Filter öffnen.
+- **Ticketnavigation: offen.** Den roten Aktivitätspunkt in der administrativen
+  SideNav und seinen Tooltip in DE/EN prüfen, auch im mobilen Menü. Ohne Öffnen
+  des Ticketsystems muss er Änderungen der relevanten Ticketzähler übernehmen.
+  Ohne relevante ungelesene Nachrichten verschwinden Punkt und Tooltip.
+
+- **Vorgangsfilter – verbleibende Bedienfälle: offen.** In DE/EN auf Desktop und
+  Smartphone das Zurücksetzen des Filterentwurfs sowie Abbruch über Escape und
+  Außenklick prüfen. Filter beim Aktualisieren und Live-Update erhalten.
+  Antwortentwürfe beim Ausblenden des ausgewählten Vorgangs erhalten und
+  Ticketlinks trotz entgegenstehender Filter öffnen.
   Benachrichtigungslinks müssen beispielsweise `section=support&ticket=10003`
   ohne kodierte Raute öffnen; direkt eingegebene sichtbare Ticketnummern wählen
   denselben berechtigten Vorgang aus.
 
-- **Automatische OTP-Bestätigung: offen, wartend auf Browserfreigabe.** Beide
-  sechsstelligen Felder (Einrichtung und Anmeldung) in DE/EN durch Tippen,
-  Einfügen und Autofill vervollständigen: Nach der sechsten Ziffer genau eine
-  Prüfung, bei Teilcodes keine. Gruppierte und durch das Add-on gekürzte eingefügte
-  Codes berücksichtigen. Nach Ablehnung muss erneute Eingabe möglich sein;
-  Bestätigungsbutton bleibt bedienbar. JUnit prüft die serverseitige Ereignisbehandlung.
+- **OTP-Autofill und gekürzte Einfügewerte: offen.** Beide sechsstelligen Felder
+  (Einrichtung und Anmeldung) in DE/EN durch Browser-/Passwortmanager-Autofill
+  und durch das Add-on gekürzte überlange Einfügewerte vervollständigen:
+  Ein vollständiger Code löst genau eine Prüfung aus, ein Teilcode keine.
+  Nach Ablehnung muss die erneute Eingabe möglich sein und der Bestätigungsbutton
+  bedienbar bleiben.
 
 - **Ticketzähler, Listenabschluss und Anwesenheitsauswahl: wartend auf Browserfreigabe.**
   In DE/EN auf Desktop und Smartphone „1 Anfrage“/„mehrere Anfragen“ von den

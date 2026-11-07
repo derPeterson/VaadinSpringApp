@@ -209,6 +209,25 @@ jeweilige Konto. Die Glocke zählt dagegen ungelesene, fachlich noch relevante
 Benachrichtigungen. Beides ist unabhängig voneinander; ein historischer Hinweis
 wird durch die Übernahme nicht automatisch als gelesen markiert.
 
+Der rote Punkt am SideNav-Eintrag „Ticketsystem“ fasst die relevanten ungelesenen
+Nachrichten ohne weitere Zahl zusammen. Er folgt denselben Regeln wie die
+Ticketzähler und aktualisiert sich auch in anderen Administrationsbereichen.
+Der Tooltip lautet „Neue Aktivitäten im Ticketsystem“. Das bloße Öffnen des
+Ticketsystems entfernt den Punkt nicht, erst das Lesen oder der Wegfall aller
+relevanten ungelesenen Nachrichten.
+
+Die Adminliste lädt derzeit bis zu 100 Vorgänge, die persönliche Liste bis zu 20.
+Status, Zuständigkeit und „Alle / Ungelesen“ filtern diese geladene Auswahl.
+Der Ticketsprung im administrativen Filter nimmt die sichtbare Ticketnummer ohne
+Raute entgegen und kann auch einen älteren Vorgang außerhalb der Liste öffnen.
+Die Listenfilter werden für den Sprung aufgehoben. Ein unbekannter Vorgang ändert
+die bisherige Auswahl nicht. Der direkte Zugriff prüft dieselben Adminrechte wie
+die Liste; auch Aktualisieren und Live-Updates erhalten den älteren ausgewählten
+Vorgang. Eine datenbankseitige Filterung mit Seitennavigation ist noch nicht umgesetzt.
+Im Filter „Ungelesen“ verschwindet ein gelesener Vorgang aus der Liste. Seine bereits
+geöffnete Detailansicht und der Antwortentwurf bleiben zur Bearbeitung erhalten.
+Ein geänderter Status- oder Zuständigkeitsfilter kann ihn weiterhin ausblenden.
+
 | Ticketstatus | Ungelesen-Zähler in der Administration | Was noch zu tun ist |
 | --- | --- | --- |
 | Offen | Für alle berechtigten Admins | Übernehmen und prüfen |

@@ -24,6 +24,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -127,10 +128,44 @@ public class SupportTicketService {
   }
 
   private List<Ticket> list(Owner owner, boolean administration) {
+    return list(owner, administration, null);
+  }
+
+  /** Direkter Zugriff bleibt auf berechtigte Admins beschränkt, auch außerhalb der letzten 100. */
+  @Transactional(readOnly = true)
+  public Ticket findForAdministration(HttpServletRequest request, String number) {
+    Owner owner = requireAdministrator(request);
+    // Nur die sichtbare Dezimalnummer ohne Raute, Leerzeichen oder weitere URL-Anteile zulassen.
+    if (number == null || !number.matches("[0-9]{1,19}")) {
+      return null;
+    }
+    long id;
+    try {
+      long visibleNumber = Long.parseLong(number);
+      if (visibleNumber <= TICKET_NUMBER_OFFSET) {
+        return null;
+      }
+      id = visibleNumber - TICKET_NUMBER_OFFSET;
+    } catch (NumberFormatException _) {
+      return null;
+    }
+    return list(owner, true, id).stream()
+        .filter(ticket -> ticket.id().equals(id))
+        .findFirst()
+        .orElse(null);
+  }
+
+  private List<Ticket> list(Owner owner, boolean administration, Long selectedId) {
     List<SupportTicketEntity> visible =
         administration
             ? tickets.inbox(PageRequest.of(0, 100))
             : tickets.own(owner.id(), PageRequest.of(0, 20));
+    if (administration
+        && selectedId != null
+        && visible.stream().noneMatch(ticket -> ticket.getId().equals(selectedId))) {
+      visible = new ArrayList<>(visible);
+      tickets.findById(selectedId).ifPresent(visible::add);
+    }
     if (visible.isEmpty()) {
       return List.of();
     }
@@ -176,7 +211,7 @@ public class SupportTicketService {
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
   public LiveView liveView(HttpSession session, boolean administration, Long selectedId) {
     Owner owner = liveViewer(session, administration);
-    List<Ticket> values = list(owner, administration);
+    List<Ticket> values = list(owner, administration, selectedId);
     Ticket selected = selectTicket(values, selectedId, administration);
     List<Reply> messages =
         selected == null ? List.of() : conversation(selected.id(), administration);

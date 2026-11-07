@@ -137,6 +137,10 @@ public class MessageTexts {
         count == 1 ? "support.unreadMessage" : "support.unreadMessages", count);
   }
 
+  public String getSupportNewActivity() {
+    return getTranslation("support.newActivity");
+  }
+
   public String getSupportNoUnlock() {
     return getTranslation("support.noUnlock");
   }
@@ -301,8 +305,16 @@ public class MessageTexts {
     return getTranslation("support.filter.status");
   }
 
-  public String getSupportFilterStatusHint() {
-    return getTranslation("support.filter.statusHint");
+  public String getSupportFilterMessages() {
+    return getTranslation("support.filter.messages");
+  }
+
+  public String getSupportJumpTicketNumber() {
+    return getTranslation("support.jump.ticketNumber");
+  }
+
+  public String getSupportJumpOpen() {
+    return getTranslation("support.jump.open");
   }
 
   public String getSupportFilterAssignment() {

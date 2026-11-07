@@ -39,6 +39,7 @@ import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.PageNavigationComponent;
 import de.derpeterson.app.ui.components.PortalPageComponent;
+import de.derpeterson.app.ui.components.SupportTicketActivityIndicator;
 import de.derpeterson.app.ui.components.SupportTicketsComponent;
 import de.derpeterson.app.ui.components.SupportTicketsComponent.Category;
 import de.derpeterson.app.ui.components.SupportTicketsComponent.NavigationState;
@@ -99,12 +100,15 @@ public class AdminView extends IsAuthenticatedBaseView {
   private transient de.derpeterson.app.service.UserNotificationService notificationsService;
   private SupportTicketsComponent supportSection;
   private SideNavItem supportNavItem;
+  private SupportTicketActivityIndicator supportActivity;
   private Tooltip twoFactorNavigationTooltip;
 
   @org.springframework.beans.factory.annotation.Autowired
   void configureSupport(SupportTicketService support) {
     supportNavItem = createNavigationItem(AppIcon.MESSAGES, AdminSection.SUPPORT, null);
     supportNavItem.setLabel(messageProperties.getSupportTitle());
+    supportActivity =
+        new SupportTicketActivityIndicator(messageProperties, support, request, supportNavItem);
     sideNavigation.addItem(supportNavItem);
     supportSection = new SupportTicketsComponent(messageProperties, support, request, true);
     supportSection.setNavigationListener(this::updateTicketLocation);
@@ -514,6 +518,7 @@ public class AdminView extends IsAuthenticatedBaseView {
   private void refreshTexts() {
     if (supportNavItem != null) {
       supportNavItem.setLabel(messageProperties.getSupportTitle());
+      supportActivity.refreshTexts();
       supportSection.refreshTexts();
     }
     administrationHeading.setText(messageProperties.getAdminHeaderTitle());

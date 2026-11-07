@@ -19,6 +19,7 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.SupportReplyEntity.Kind;
+import de.derpeterson.app.model.SupportTicketEntity;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -100,6 +101,48 @@ class SupportTicketServiceTest {
     owner = TwoFactorAuthorizationTest.requestFor(user.getEmail());
     administrator = confirmedAdmin();
     otherAdministrator = confirmedAdmin();
+  }
+
+  @Test
+  void directTicketNumberFindsOlderTicketsAndKeepsThemInLiveUpdates() {
+    Ticket older = service.createRecovery(owner, "Older request");
+    List<Long> fixtureIds = new ArrayList<>();
+    transaction.executeWithoutResult(
+        status -> {
+          entityManager.find(SupportTicketEntity.class, older.id()).setStatus(Status.CLOSED);
+          UserEntity requester = entityManager.find(UserEntity.class, user.getId());
+          for (int index = 0; index < 101; index++) {
+            SupportTicketEntity ticket = new SupportTicketEntity();
+            ticket.setOwner(requester);
+            ticket.setStatus(Status.CLOSED);
+            ticket.setSubject("Synthetic archived request");
+            ticket.setCreatedAt(older.createdAt().plusSeconds(index + 1));
+            ticket.setUpdatedAt(older.updatedAt().plusSeconds(index + 1));
+            ticket.setPublicUpdatedAt(older.updatedAt().plusSeconds(index + 1));
+            entityManager.persist(ticket);
+            fixtureIds.add(ticket.getId());
+          }
+        });
+    try {
+      assertFalse(
+          service.list(administrator, true).stream()
+              .anyMatch(ticket -> ticket.id().equals(older.id())));
+      String number = SupportTicketService.ticketNumber(older.id()).substring(1);
+      assertEquals(older.id(), service.findForAdministration(administrator, number).id());
+      assertEquals(
+          older.id(),
+          service.liveView(bindLiveSession(administrator), true, older.id()).selected().id());
+      assertNull(service.findForAdministration(administrator, "#" + number));
+      assertNull(service.findForAdministration(administrator, "9999999999999999999"));
+      assertThrows(AccessDeniedException.class, () -> service.findForAdministration(owner, number));
+    } finally {
+      transaction.executeWithoutResult(
+          status -> {
+            for (Long id : fixtureIds) {
+              entityManager.remove(entityManager.find(SupportTicketEntity.class, id));
+            }
+          });
+    }
   }
 
   @Test

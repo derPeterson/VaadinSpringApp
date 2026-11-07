@@ -150,7 +150,6 @@ public final class TwoFactorView extends VerticalLayout
     code.getElement().setAttribute("autocomplete", "one-time-code");
     configureOtp(enrollmentCode, "two-factor-enrollment-code");
     configureOtp(confirmationCode, "two-factor-code");
-    confirmationCode.setAutofocus(true);
     recoverySaved.setId("two-factor-codes-saved");
     recoverySaved.addValueChangeListener(event -> updateRecoveryActions());
     cancel.setId("two-factor-cancel");
@@ -183,6 +182,7 @@ public final class TwoFactorView extends VerticalLayout
   private void configureOtp(OtpField field, String id) {
     field.setId(id);
     field.setLength(6);
+    field.setAutofocus(true);
     field.setPlaceholder("•");
     field.setManualValidation(true);
     field.setRequiredIndicatorVisible(true);

@@ -140,3 +140,8 @@ vaadin-badge.support-ticket-unread {
     color: var(--cosmos-reference-white);
     font: 700 11px/1 Inter, sans-serif;
 }
+.admin-reference-drawer.admin-user-filter-drawer.support-filter-drawer .support-filter-reading::part(group-field) { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.support-filter-drawer .support-filter-jump { gap:8px; margin-top:24px; padding-top:20px; border-top:1px solid var(--cosmos-reference-border); }
+.support-filter-drawer .support-filter-jump>vaadin-button { flex:none; height:40px; margin-bottom:0; }
+.support-filter-drawer #support-filter-assignment vaadin-radio-button>label[slot=label] { font:400 12px/18px Inter,sans-serif; color:var(--cosmos-reference-secondary); }
+.support-filter-drawer #support-filter-assignment vaadin-radio-button[checked]>label[slot=label] { color:var(--cosmos-reference-text); font-weight:500; }

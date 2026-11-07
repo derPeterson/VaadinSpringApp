@@ -35,6 +35,15 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
 
 ## Administrative 2FA-Konfiguration und Ticketbearbeitung
 
+Der Vorgangsfilter wird im Stil der Benutzerverwaltung ergänzt: Statusmehrfachwahl,
+Zuständigkeit, „Alle / Ungelesen“, aktiver Gruppenzähler und direkter Ticketsprung.
+Für die Zuständigkeitsauswahl und eine zukünftige Seitennavigation der Vorgangsliste
+liegt ein [Stitch-Vorschlag zur gemeinsamen Sichtung](https://stitch.google.com/projects/1332538028618138858?node-id=11681483480554492553)
+vor: vertikale Zuständigkeitsoptionen und ein kompakter Listenfooter mit Bereich,
+Einträgen pro Seite und zwei Pfeilbuttons. Seine zusätzlichen Kartenrahmen und
+abweichenden Header-/Tabgestaltungen sind keine Übernahmevorgabe. Die technische
+Seitennavigation und datenbankseitige Filterung sind damit noch nicht beauftragt.
+
 Für die laufende Umsetzung sind zusätzlich die abgestimmten status- und
 zuständigkeitsabhängigen Zähler, getrennte Relevanz-/Lesestände der
 Glockenhinweise, Hinweise beim Nutzerabschluss und die Quittierung bereits

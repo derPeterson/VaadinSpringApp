@@ -61,6 +61,7 @@ import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import de.derpeterson.app.ui.components.RecoveryInstructionsComponent;
 import de.derpeterson.app.ui.components.SupportTicketFilterPanel;
 import de.derpeterson.app.ui.components.SupportTicketFilterPanel.Assignment;
+import de.derpeterson.app.ui.components.SupportTicketFilterPanel.Reading;
 import de.derpeterson.app.ui.components.SupportTicketsComponent;
 import de.derpeterson.app.ui.components.SupportTicketsComponent.Category;
 import de.derpeterson.app.ui.components.SupportTicketsComponent.NavigationState;
@@ -76,6 +77,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.User;
@@ -206,15 +208,23 @@ class TwoFactorFlowViewTest {
   }
 
   @ParameterizedTest
-  @ValueSource(strings = {"de", "en"})
-  void completedEnrollmentCodeActivatesOnceWithoutClickingTheButton(String language) {
+  @CsvSource({
+    "de,PASSWORD", "en,PASSWORD",
+    "de,FACTOR", "en,FACTOR",
+    "de,RECOVERY_CODE", "en,RECOVERY_CODE",
+    "de,MICROSOFT", "en,MICROSOFT",
+    "de,GOOGLE_EMAIL", "en,GOOGLE_EMAIL",
+    "de,OPERATOR", "en,OPERATOR"
+  })
+  void completedEnrollmentCodeActivatesOnceWithoutClickingTheButton(
+      String language, SetupProof proof) {
     UUID enrollmentId = UUID.randomUUID();
     when(enrollment.pending(request))
-        .thenReturn(
-            new TwoFactorEnrollment.Pending(enrollmentId, Kind.ENROLLMENT, SetupProof.PASSWORD));
+        .thenReturn(new TwoFactorEnrollment.Pending(enrollmentId, Kind.ENROLLMENT, proof));
     TwoFactorView view = open(language, false);
     ui.add(view);
     OtpField otp = (OtpField) find(view, "two-factor-enrollment-code");
+    assertTrue(otp.isAutofocus());
     otp.setValue("12345");
     verify(enrollment, never()).complete(eq(request), eq(enrollmentId), anyString());
     otp.setValue("123456");
@@ -555,6 +565,10 @@ class TwoFactorFlowViewTest {
   }
 
   private Ticket filterTicket(Long id, Status status, Long assignee) {
+    return filterTicket(id, status, assignee, 0);
+  }
+
+  private Ticket filterTicket(Long id, Status status, Long assignee, long unread) {
     UserIdentity identity =
         assignee == null ? null : new UserIdentity("Alex", "Beispiel", "alex@example.test");
     return new Ticket(
@@ -568,10 +582,60 @@ class TwoFactorFlowViewTest {
         assignee,
         identity,
         false,
-        0,
+        unread,
         false,
         false,
         null);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  @SuppressWarnings("unchecked")
+  void unreadFilterAndDirectJumpKeepAppliedStateAndExistingDrafts(String language) {
+    open(language, false);
+    SupportTicketService tickets = mock(SupportTicketService.class);
+    Ticket unread = filterTicket(1L, Status.IN_PROGRESS, 9L, 2);
+    Ticket read = filterTicket(2L, Status.OPEN, null);
+    Ticket older = filterTicket(3L, Status.CLOSED, null);
+    when(tickets.list(request, true)).thenReturn(List.of(unread, read));
+    when(tickets.findForAdministration(request, "10003")).thenReturn(older);
+    when(tickets.administratorId(request)).thenReturn(9L);
+    SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
+    Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
+    SupportTicketFilterPanel filters =
+        (SupportTicketFilterPanel) find(component, "support-filter-panel");
+    ((Button) find(component, "support-filter")).click();
+    RadioButtonGroup<Reading> reading =
+        (RadioButtonGroup<Reading>) find(filters, "support-filter-reading");
+    reading.setValue(Reading.UNREAD);
+    filterAction(filters, "support-filter-apply").click();
+    assertEquals(List.of(unread), grid.getListDataView().getItems().toList());
+    assertEquals(1, filters.activeCount());
+    grid.asSingleSelect().setValue(unread);
+    component.refresh();
+    when(tickets.list(request, true))
+        .thenReturn(List.of(filterTicket(1L, Status.IN_PROGRESS, 9L), read));
+    component.refresh();
+    assertEquals(0, grid.getListDataView().getItemCount());
+    assertTrue(find(component, "support-ticket-panel").isVisible());
+    ((Button) find(component, "support-filter")).click();
+    TextField number = (TextField) find(filters, "support-jump-number");
+    number.setValue("10002");
+    ((Button) find(filters, "support-jump")).click();
+    assertEquals(read, grid.asSingleSelect().getValue());
+    assertEquals(0, filters.activeCount());
+    ((Button) find(component, "support-filter")).click();
+    number.setValue("10003");
+    ((Button) find(filters, "support-jump")).click();
+    assertEquals(older, grid.asSingleSelect().getValue());
+    component.refresh();
+    assertEquals(older, grid.asSingleSelect().getValue());
+    ((Button) find(component, "support-filter")).click();
+    number.setValue("99999");
+    ((Button) find(filters, "support-jump")).click();
+    assertEquals(older, grid.asSingleSelect().getValue());
+    assertTrue(filters.isOpened());
+    filterAction(filters, "support-filter-cancel").click();
   }
 
   @ParameterizedTest

@@ -12,9 +12,11 @@ import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
@@ -104,6 +106,13 @@ public final class TwoFactorPage {
    * lassen.
    */
   public static void confirmEnrollment(Page page, String email) {
+    rememberEnrollment(page, email);
+    page.locator("#two-factor-enrollment-code input").fill(totp(page, email));
+    captureCodes(page, email);
+  }
+
+  /** Liest nur den regulär freigegebenen Schlüssel der eigenen laufenden Testeinrichtung. */
+  public static void rememberEnrollment(Page page, String email) {
     assertThat(page.locator("#two-factor-qr")).isVisible();
     String href = page.locator("#two-factor-qr").getAttribute("src").replace("/qr.png", "/key");
     String key =
@@ -111,9 +120,10 @@ public final class TwoFactorPage {
             page.evaluate(
                 "async url => { const response = await fetch(url, {cache:'no-store'}); if (!response.ok) throw new Error('Protected setup key unavailable'); return response.text(); }",
                 href);
-    SEEDS.put(email, key);
-    page.locator("#two-factor-enrollment-code input").fill(totp(page, email));
-    captureCodes(page, email);
+    String previous = SEEDS.put(email, key);
+    if (!key.equals(previous)) {
+      LAST_STEP.remove(email);
+    }
   }
 
   public static void captureCodes(Page page, String email) {
@@ -186,6 +196,30 @@ public final class TwoFactorPage {
         new Page.WaitForConditionOptions().setTimeout(35_000));
     long step = Instant.now().getEpochSecond() / 30;
     LAST_STEP.put(email, step);
+    return totpAt(base32, step);
+  }
+
+  /** Schließt gültige Codes auch um einen möglichen Zeitfensterwechsel herum aus. */
+  public static String invalidCode(String email) {
+    String base32 = SEEDS.get(email);
+    if (base32 == null) {
+      throw new AssertionError("Test authenticator seed required");
+    }
+    long step = Instant.now().getEpochSecond() / 30;
+    Set<String> valid = new HashSet<>();
+    for (int offset = -2; offset <= 2; offset++) {
+      valid.add(totpAt(base32, step + offset));
+    }
+    for (int candidate = 0; candidate < 10; candidate++) {
+      String value = String.format(Locale.ROOT, "%06d", candidate);
+      if (!valid.contains(value)) {
+        return value;
+      }
+    }
+    throw new AssertionError("Invalid synthetic code unavailable");
+  }
+
+  private static String totpAt(String base32, long step) {
     byte[] seed = new byte[base32.length() * 5 / 8];
     int buffer = 0;
     int bits = 0;

@@ -33,6 +33,8 @@ class BrowserExecutionPlanTest {
       strings = {
         "two-factor-setup",
         "two-factor-confirmation",
+        "two-factor-otp",
+        "two-factor-ticket-filters",
         "two-factor-configuration",
         "two-factor-instructions",
         "two-factor-ticket-layout",
@@ -58,6 +60,9 @@ class BrowserExecutionPlanTest {
           case "two-factor-setup" ->
               Set.of("requiredIntroductionReusesFreshPasswordWithoutGrantingPortalAccess");
           case "two-factor-confirmation" -> Set.of("confirmationRecoveryAndHelpUseNativeControls");
+          case "two-factor-otp" ->
+              Set.of("otpFocusAndAutomaticConfirmationCoverSetupLoginReplacementAndRecovery");
+          case "two-factor-ticket-filters" -> Set.of("ticketFiltersAndDirectJumpUseNativeControls");
           case "two-factor-configuration" -> Set.of("superadminOnlyConfiguration");
           case "two-factor-instructions" ->
               Set.of("recoverySupportRemainsContactInsteadOfFactorReset");

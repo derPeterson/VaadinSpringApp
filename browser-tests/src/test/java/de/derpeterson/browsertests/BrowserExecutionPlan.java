@@ -88,6 +88,10 @@ final class BrowserExecutionPlan {
       builder.filters(TagFilter.includeTags("setup-screen"));
     } else if (suite.equals("two-factor-confirmation")) {
       builder.filters(TagFilter.includeTags("confirmation-screens"));
+    } else if (suite.equals("two-factor-otp")) {
+      builder.filters(TagFilter.includeTags("otp-behavior"));
+    } else if (suite.equals("two-factor-ticket-filters")) {
+      builder.filters(TagFilter.includeTags("ticket-filters"));
     } else if (suite.equals("two-factor-configuration")) {
       builder.filters(TagFilter.includeTags("two-factor-configuration"));
     } else if (suite.equals("two-factor-instructions")) {

@@ -1,4 +1,5 @@
 /* Lokale Übernahme der freigegebenen Adminreferenz; Portal und Besucher bleiben getrennt. */
+.cosmos-reference-admin vaadin-badge.admin-nav-support-activity { box-sizing:border-box; width:8px; min-width:8px; height:8px; padding:0; border:0; border-radius:50%; background:var(--cosmos-reference-badge); flex:0 0 8px; }
 vaadin-app-layout.cosmos-reference-admin { --admin-reference-sidebar-width:208px; --admin-reference-sidebar-gap:24px; --admin-reference-gutter:32px; --admin-reference-max-width:1240px; padding-inline-start:0!important; background:var(--cosmos-reference-page); color:var(--cosmos-reference-text); font:400 13px/1.6 Inter,sans-serif; }
 
 vaadin-app-layout.cosmos-reference-admin .cosmos-topbar { width:100%; max-width:var(--admin-reference-max-width); margin-inline:auto; padding:0 var(--admin-reference-gutter); box-sizing:border-box; }

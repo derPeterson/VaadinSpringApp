@@ -41,6 +41,8 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.dom.Element;
@@ -58,6 +60,9 @@ import de.derpeterson.app.model.enums.UserNotificationType;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.SupportTicketService;
+import de.derpeterson.app.service.SupportTicketService.LiveView;
+import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserNotificationService.Item;
@@ -71,6 +76,7 @@ import de.derpeterson.app.service.UserNotificationService.Target;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.views.AdminView;
 import de.derpeterson.app.views.admin.AdminUserNotificationsSection;
+import de.derpeterson.app.websocket.SupportTicketBroadcaster;
 import de.derpeterson.app.websocket.UserNotificationBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import java.time.Instant;
@@ -83,6 +89,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -161,6 +168,56 @@ class UserNotificationsUiTest {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void ticketNavigationActivityFollowsUnreadChangesAndLanguageWithoutOpeningTickets(
+      String language) {
+    locale.set(Locale.forLanguageTag(language));
+    SupportTicketService support = mock(SupportTicketService.class);
+    SupportTicketBroadcaster changes = mock(SupportTicketBroadcaster.class);
+    when(support.events()).thenReturn(changes);
+    AtomicReference<Consumer<SupportTicketBroadcaster.Change>> listener = new AtomicReference<>();
+    when(changes.register(any()))
+        .thenAnswer(
+            call -> {
+              listener.set(call.getArgument(0));
+              return (Registration) () -> listener.set(null);
+            });
+    Ticket ticket = mock(Ticket.class);
+    when(ticket.unreadMessages()).thenReturn(3L);
+    when(support.liveView(http, true, null))
+        .thenReturn(new LiveView(5L, List.of(ticket), null, List.of(), null));
+    SideNavItem navigation = new SideNavItem("Tickets");
+    SupportTicketActivityIndicator indicator =
+        new SupportTicketActivityIndicator(texts, support, request, navigation);
+    ui.add(navigation);
+    assertTrue(indicator.isVisible());
+    assertNull(indicator.getText());
+    assertEquals(texts.getSupportNewActivity(), Tooltip.forComponent(navigation).getText());
+
+    listener.get().accept(new SupportTicketBroadcaster.Change(null, 77L));
+    verify(support, times(1)).liveView(http, true, null);
+
+    when(ticket.unreadMessages()).thenReturn(0L);
+    listener.get().accept(new SupportTicketBroadcaster.Change(null, 5L));
+    assertFalse(indicator.isVisible());
+    assertEquals("", Tooltip.forComponent(navigation).getText());
+
+    when(ticket.unreadMessages()).thenReturn(1L);
+    listener.get().accept(new SupportTicketBroadcaster.Change(8L, null));
+    assertTrue(indicator.isVisible());
+    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    indicator.refreshTexts();
+    assertEquals(texts.getSupportNewActivity(), Tooltip.forComponent(navigation).getText());
+
+    when(support.liveView(http, true, null)).thenThrow(new AccessDeniedException("Access revoked"));
+    listener.get().accept(new SupportTicketBroadcaster.Change(null, 5L));
+    assertFalse(indicator.isVisible());
+    assertEquals("", Tooltip.forComponent(navigation).getText());
+    ui.remove(navigation);
+    assertNull(listener.get());
   }
 
   @ParameterizedTest
