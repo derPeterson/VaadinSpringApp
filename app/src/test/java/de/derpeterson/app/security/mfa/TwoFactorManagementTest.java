@@ -124,9 +124,11 @@ class TwoFactorManagementTest {
     verify(security, never())
         .recordSecondFactor(any(), org.mockito.ArgumentMatchers.anyBoolean(), any());
     assertEquals(10, enrollment.recoveryOutput(request, output).size());
+    Long userId = user.getId();
+    String accessVersion = user.getAccessVersion();
+    String recoveryCode = codes.get(2);
     assertThrows(
-        BadCredentialsException.class,
-        () -> factors.verify(user.getId(), user.getAccessVersion(), codes.get(2)));
+        BadCredentialsException.class, () -> factors.verify(userId, accessVersion, recoveryCode));
     assertThrows(AccessDeniedException.class, () -> management.regenerate(request));
   }
 

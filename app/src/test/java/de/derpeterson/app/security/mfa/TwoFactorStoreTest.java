@@ -108,15 +108,15 @@ class TwoFactorStoreTest {
     assertEquals(10, digests.size());
     assertTrue(digests.stream().noneMatch(result.recoveryCodes()::contains));
     String firstCode = Totp.code(secret, clock.instant().getEpochSecond() / 30);
+    Long userId = user.getId();
+    String accessVersion = user.getAccessVersion();
     assertThrows(
-        BadCredentialsException.class,
-        () -> store.verify(user.getId(), user.getAccessVersion(), firstCode));
+        BadCredentialsException.class, () -> store.verify(userId, accessVersion, firstCode));
     clock.now.updateAndGet(now -> now.plusSeconds(30));
     String nextCode = Totp.code(secret, clock.instant().getEpochSecond() / 30);
     assertFalse(store.verify(user.getId(), user.getAccessVersion(), nextCode).recoveryCode());
     assertThrows(
-        BadCredentialsException.class,
-        () -> store.verify(user.getId(), user.getAccessVersion(), nextCode));
+        BadCredentialsException.class, () -> store.verify(userId, accessVersion, nextCode));
   }
 
   @ParameterizedTest
@@ -206,18 +206,16 @@ class TwoFactorStoreTest {
   @Test
   void failedChecksRemainCommittedAndThrottleAcrossCalls() {
     enroll();
+    Long userId = user.getId();
+    String accessVersion = user.getAccessVersion();
     for (int attempt = 0; attempt < 4; attempt++) {
       assertThrows(
-          BadCredentialsException.class,
-          () -> store.verify(user.getId(), user.getAccessVersion(), "invalid"));
+          BadCredentialsException.class, () -> store.verify(userId, accessVersion, "invalid"));
     }
-    assertThrows(
-        LockedException.class,
-        () -> store.verify(user.getId(), user.getAccessVersion(), "invalid"));
+    assertThrows(LockedException.class, () -> store.verify(userId, accessVersion, "invalid"));
     clock.now.updateAndGet(now -> now.plusSeconds(30));
     String valid = Totp.code(secret, clock.instant().getEpochSecond() / 30);
-    assertThrows(
-        LockedException.class, () -> store.verify(user.getId(), user.getAccessVersion(), valid));
+    assertThrows(LockedException.class, () -> store.verify(userId, accessVersion, valid));
     clock.now.updateAndGet(now -> now.plusSeconds(901));
     store.verify(
         user.getId(),
@@ -232,11 +230,12 @@ class TwoFactorStoreTest {
     List<String> renewed =
         store.renewRecoveryCodes(user.getId(), user.getAccessVersion(), enrolled.revision());
     assertNotEquals(enrolled.revision(), accounts.state(user.getId()).orElseThrow().getRevision());
+    Long userId = user.getId();
+    String accessVersion = user.getAccessVersion();
+    String firstRecoveryCode = enrolled.recoveryCodes().getFirst();
     assertThrows(
         BadCredentialsException.class,
-        () ->
-            store.verify(
-                user.getId(), user.getAccessVersion(), enrolled.recoveryCodes().getFirst()));
+        () -> store.verify(userId, accessVersion, firstRecoveryCode));
     assertTrue(
         store.verify(user.getId(), user.getAccessVersion(), renewed.getFirst()).recoveryCode());
     assertEquals(9, codes.remaining(user.getId()));
@@ -245,34 +244,26 @@ class TwoFactorStoreTest {
   @Test
   void staleCredentialsOrEnrollmentCannotReplaceAFactor() {
     TwoFactorStore.Enrollment enrolled = enroll();
+    Long userId = user.getId();
+    String accessVersion = user.getAccessVersion();
+    byte[] replacementSecret = Totp.newSecret();
     assertThrows(
         BadCredentialsException.class,
         () ->
             store.enroll(
-                user.getId(),
-                user.getAccessVersion(),
-                initialRevision,
-                Totp.newSecret(),
-                "123456",
-                false));
+                userId, accessVersion, initialRevision, replacementSecret, "123456", false));
+    String recoveryCode = enrolled.recoveryCodes().getFirst();
     assertThrows(
-        BadCredentialsException.class,
-        () -> store.verify(user.getId(), "changed", enrolled.recoveryCodes().getFirst()));
+        BadCredentialsException.class, () -> store.verify(userId, "changed", recoveryCode));
     store.disable(user.getId(), user.getAccessVersion(), enrolled.revision());
     assertFalse(accounts.state(user.getId()).orElseThrow().getEnrolled());
     assertTrue(accounts.state(user.getId()).orElseThrow().getPreviouslyEnrolled());
     assertEquals(0, codes.remaining(user.getId()));
     UUID revision = accounts.state(user.getId()).orElseThrow().getRevision();
+    String replacementCode = Totp.code(secret, clock.instant().getEpochSecond() / 30);
     assertThrows(
         BadCredentialsException.class,
-        () ->
-            store.enroll(
-                user.getId(),
-                user.getAccessVersion(),
-                revision,
-                secret,
-                Totp.code(secret, clock.instant().getEpochSecond() / 30),
-                false));
+        () -> store.enroll(userId, accessVersion, revision, secret, replacementCode, false));
   }
 
   static class TestClock extends Clock {

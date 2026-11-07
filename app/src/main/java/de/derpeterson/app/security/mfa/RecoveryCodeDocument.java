@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import org.apache.commons.lang3.StringUtils;
 import org.openpdf.pdf.ITextRenderer;
 import org.openpdf.pdf.ITextUserAgent;
 import org.openpdf.text.DocumentException;
@@ -38,7 +39,7 @@ public final class RecoveryCodeDocument {
     if (prefix.length() > 64) {
       prefix = prefix.substring(0, 64);
     }
-    prefix = prefix.replaceAll("^-+|-+$", "");
+    prefix = StringUtils.strip(prefix, "-");
     return prefix.isEmpty() ? "recovery-codes.pdf" : prefix + "-recovery-codes.pdf";
   }
 

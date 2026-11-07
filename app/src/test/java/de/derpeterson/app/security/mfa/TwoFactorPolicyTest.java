@@ -59,18 +59,19 @@ class TwoFactorPolicyTest {
 
   @Test
   void rejectsIncompleteOrAmbiguousRules() {
+    Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> missingRules = Map.of();
+    Duration validTimeout = Duration.ofHours(1);
     assertThrows(
         IllegalArgumentException.class,
-        () -> new TwoFactorPolicy(Map.of(), false, Duration.ofHours(1), false, false));
+        () -> new TwoFactorPolicy(missingRules, false, validTimeout, false, false));
+    Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> defaultRules =
+        TwoFactorPolicy.defaults().rules();
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            new TwoFactorPolicy(
-                TwoFactorPolicy.defaults().rules(), true, Duration.ZERO, false, false));
+        () -> new TwoFactorPolicy(defaultRules, true, Duration.ZERO, false, false));
+    Duration subsecondTimeout = Duration.ofNanos(1);
     assertThrows(
         IllegalArgumentException.class,
-        () ->
-            new TwoFactorPolicy(
-                TwoFactorPolicy.defaults().rules(), true, Duration.ofNanos(1), false, false));
+        () -> new TwoFactorPolicy(defaultRules, true, subsecondTimeout, false, false));
   }
 }

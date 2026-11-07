@@ -134,9 +134,11 @@ class OperatorRecoveryTest {
     UserEntity repaired = users.findById(user.getId()).orElseThrow();
     assertNotEquals(user.getAccessVersion(), repaired.getAccessVersion());
     assertFalse(authorization.sessionConfirmed(request));
+    Long userId = user.getId();
+    String accessVersion = user.getAccessVersion();
+    String recoveryCode = codes.get(1);
     assertThrows(
-        BadCredentialsException.class,
-        () -> factors.verify(user.getId(), user.getAccessVersion(), codes.get(1)));
+        BadCredentialsException.class, () -> factors.verify(userId, accessVersion, recoveryCode));
     assertThrows(
         org.springframework.security.access.AccessDeniedException.class,
         () -> enrollment.recoveryOutput(request, output));
@@ -175,8 +177,9 @@ class OperatorRecoveryTest {
     enrollment.complete(next, setup.id(), Totp.code(seed, clock.instant().getEpochSecond() / 30));
     assertTrue(authorization.sessionConfirmed(next));
     assertFalse(authorization.state(authorization.owner(next)).operatorEnrollment());
+    String repairedAccessVersion = repaired.getAccessVersion();
     assertThrows(
         BadCredentialsException.class,
-        () -> factors.verify(user.getId(), repaired.getAccessVersion(), codes.get(1)));
+        () -> factors.verify(userId, repairedAccessVersion, recoveryCode));
   }
 }

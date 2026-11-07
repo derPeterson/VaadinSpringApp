@@ -231,22 +231,25 @@ public class SupportTicketService {
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
   public LiveView liveView(HttpSession session, boolean administration, Long selectedId) {
-    return liveView(session, administration, selectedId, InboxQuery.all());
+    return liveView(
+        liveViewer(session, administration), administration, selectedId, InboxQuery.all());
   }
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
   public LiveView liveView(
       HttpSession session, boolean administration, Long selectedId, InboxQuery query) {
-    Owner owner = liveViewer(session, administration);
+    return liveView(liveViewer(session, administration), administration, selectedId, query);
+  }
+
+  private LiveView liveView(
+      Owner owner, boolean administration, Long selectedId, InboxQuery query) {
     if (administration) {
       return inboxView(owner, selectedId, query);
     }
     List<Ticket> values = list(owner, false);
-    Ticket selected = selectTicket(values, selectedId, administration);
-    List<Reply> messages =
-        selected == null ? List.of() : conversation(selected.id(), administration);
-    UserIdentity requester =
-        !administration && !messages.isEmpty() ? requesterIdentity(owner.id()) : null;
+    Ticket selected = selectTicket(values, selectedId, false);
+    List<Reply> messages = selected == null ? List.of() : conversation(selected.id(), false);
+    UserIdentity requester = messages.isEmpty() ? null : requesterIdentity(owner.id());
     return new LiveView(owner.id(), values, selected, messages, requester, values.size(), 0, 20);
   }
 

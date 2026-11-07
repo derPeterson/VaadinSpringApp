@@ -185,12 +185,9 @@ class ExternalProviderSettingsPersistenceTest {
     assertEquals(
         expected.substring(0, expected.length() - 5),
         repository.findById("google").orElseThrow().getEncryptedClientSecret());
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            new ExternalLoginConfiguration()
-                .managedExternalRegistrations(properties, settings)
-                .providers());
+    ExternalLoginConfiguration.Registrations registrations =
+        new ExternalLoginConfiguration().managedExternalRegistrations(properties, settings);
+    assertThrows(IllegalStateException.class, () -> registrations.providers());
   }
 
   @ParameterizedTest

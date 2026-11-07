@@ -30,33 +30,26 @@ class TwoFactorSecretsTest {
     assertFalse(encrypted.contains(Totp.base32(plaintext)));
     assertThrows(IllegalStateException.class, () -> cipher.decrypt(2L, "factor", encrypted));
     assertThrows(IllegalStateException.class, () -> cipher.decrypt(1L, "enrollment", encrypted));
-    assertThrows(
-        IllegalStateException.class, () -> secrets((byte) 2).decrypt(1L, "factor", encrypted));
+    TwoFactorSecrets otherCipher = secrets((byte) 2);
+    assertThrows(IllegalStateException.class, () -> otherCipher.decrypt(1L, "factor", encrypted));
     byte[] tampered = Base64.getUrlDecoder().decode(encrypted);
     tampered[tampered.length - 1] ^= 1;
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            cipher.decrypt(
-                1L, "factor", Base64.getUrlEncoder().withoutPadding().encodeToString(tampered)));
+    String tamperedEncoded = Base64.getUrlEncoder().withoutPadding().encodeToString(tampered);
+    assertThrows(IllegalStateException.class, () -> cipher.decrypt(1L, "factor", tamperedEncoded));
   }
 
   @Test
   void neverGeneratesAnEphemeralFallbackKey() {
     TwoFactorSecrets missing = new TwoFactorSecrets(new MockEnvironment());
     assertFalse(missing.available());
-    assertThrows(
-        IllegalStateException.class, () -> missing.encrypt(1L, "factor", Totp.newSecret()));
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            new TwoFactorSecrets(
-                new MockEnvironment().withProperty(TwoFactorSecrets.KEY_PROPERTY, "not-base64")));
-    assertThrows(
-        IllegalStateException.class,
-        () ->
-            new TwoFactorSecrets(
-                new MockEnvironment().withProperty(TwoFactorSecrets.KEY_PROPERTY, "AAAA")));
+    byte[] secret = Totp.newSecret();
+    assertThrows(IllegalStateException.class, () -> missing.encrypt(1L, "factor", secret));
+    MockEnvironment malformedKeyEnvironment =
+        new MockEnvironment().withProperty(TwoFactorSecrets.KEY_PROPERTY, "not-base64");
+    assertThrows(IllegalStateException.class, () -> new TwoFactorSecrets(malformedKeyEnvironment));
+    MockEnvironment shortKeyEnvironment =
+        new MockEnvironment().withProperty(TwoFactorSecrets.KEY_PROPERTY, "AAAA");
+    assertThrows(IllegalStateException.class, () -> new TwoFactorSecrets(shortKeyEnvironment));
   }
 
   @Test

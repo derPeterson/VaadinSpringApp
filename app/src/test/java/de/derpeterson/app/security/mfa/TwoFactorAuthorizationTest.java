@@ -137,9 +137,10 @@ class TwoFactorAuthorizationTest {
   @Test
   void firstFactorOrRememberedSessionDoesNotSatisfyTheCurrentLoginRule() {
     assertFalse(authorization.sessionConfirmed(request));
+    String recoveryCode = codes.get(0);
     assertThrows(
         AccessDeniedException.class,
-        () -> authorization.confirmAction(request, TwoFactorAction.PASSWORD, codes.get(0)));
+        () -> authorization.confirmAction(request, TwoFactorAction.PASSWORD, recoveryCode));
     authorization.confirmSession(request, codes.get(0));
     assertTrue(authorization.sessionConfirmed(request));
     assertFalse(authorization.sessionConfirmed(requestFor(user.getEmail())));
@@ -265,8 +266,8 @@ class TwoFactorAuthorizationTest {
     clock.now.updateAndGet(now -> now.plusSeconds(60));
     assertThrows(AccessDeniedException.class, () -> authorization.requireSession(session));
     assertEquals(proof, session.getAttribute(TwoFactorAuthorization.SESSION_PROOF));
-    assertThrows(
-        AccessDeniedException.class, () -> authorization.requireSession(new MockHttpSession()));
+    MockHttpSession unboundSession = new MockHttpSession();
+    assertThrows(AccessDeniedException.class, () -> authorization.requireSession(unboundSession));
     authorization.confirmSession(request, codes.get(3));
     assertDoesNotThrow(() -> authorization.requireSession(session));
   }

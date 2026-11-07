@@ -174,9 +174,9 @@ class ExternalLoginFlowTest {
                       true, true, false, UUID.randomUUID(), Instant.now()));
       default -> when(twoFactor.requires(any(), any())).thenReturn(true);
     }
+    OAuth2AuthenticationToken microsoftLogin = oidc("microsoft", "new-subject", Instant.now());
     assertThrows(
-        AccessDeniedException.class,
-        () -> flow.complete(request, response, oidc("microsoft", "new-subject", Instant.now())));
+        AccessDeniedException.class, () -> flow.complete(request, response, microsoftLogin));
     verify(identities, never()).link(any(), any(), any());
     verify(transactions).rollback(any());
   }
@@ -194,9 +194,9 @@ class ExternalLoginFlowTest {
     request.setParameter("state", "link-state");
     ReflectionTestUtils.setField(
         flow, "clock", Clock.fixed(start.plusSeconds(301), ZoneOffset.UTC));
+    OAuth2AuthenticationToken microsoftLogin = oidc("microsoft", "new-subject", start);
     assertThrows(
-        AccessDeniedException.class,
-        () -> flow.complete(request, response, oidc("microsoft", "new-subject", start)));
+        AccessDeniedException.class, () -> flow.complete(request, response, microsoftLogin));
     verify(identities, never()).link(any(), any(), any());
   }
 
@@ -210,9 +210,9 @@ class ExternalLoginFlowTest {
     doThrow(new AccessDeniedException("fixture changed grant"))
         .when(twoFactor)
         .authorizeFactorGrant(request, TwoFactorAction.LINK_PROVIDER, true);
+    OAuth2AuthenticationToken microsoftLogin = oidc("microsoft", "new-subject", Instant.now());
     assertThrows(
-        AccessDeniedException.class,
-        () -> flow.complete(request, response, oidc("microsoft", "new-subject", Instant.now())));
+        AccessDeniedException.class, () -> flow.complete(request, response, microsoftLogin));
     verify(identities, never()).link(any(), any(), any());
   }
 

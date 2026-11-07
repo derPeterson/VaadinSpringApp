@@ -185,7 +185,8 @@ class UserNotificationServicePersistenceTest {
     assertThrows(
         AccessDeniedException.class, () -> service.inbox(userSession, ReadFilter.ALL, 0, 5));
     assertThrows(AccessDeniedException.class, () -> service.ownerId(userSession));
-    assertThrows(AccessDeniedException.class, () -> service.markRead(userSession, List.of(1L)));
+    List<Long> notificationIds = List.of(1L);
+    assertThrows(AccessDeniedException.class, () -> service.markRead(userSession, notificationIds));
     assertThrows(AccessDeniedException.class, () -> service.dismiss(userSession, 1L));
     doNothing().when(twoFactor).requireSession(userSession);
     assertDoesNotThrow(() -> service.unreadCount(userSession));

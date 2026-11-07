@@ -35,11 +35,9 @@ class ExternalProviderSecretsTest {
     assertThrows(IllegalStateException.class, () -> missing.decrypt("google", encrypted));
     for (String value :
         new String[] {"not-base64!", Base64.getEncoder().encodeToString(new byte[16])}) {
-      assertThrows(
-          IllegalStateException.class,
-          () ->
-              new ExternalProviderSecrets(
-                  new MockEnvironment().withProperty(ExternalProviderSecrets.KEY_PROPERTY, value)));
+      MockEnvironment environment =
+          new MockEnvironment().withProperty(ExternalProviderSecrets.KEY_PROPERTY, value);
+      assertThrows(IllegalStateException.class, () -> new ExternalProviderSecrets(environment));
     }
   }
 
@@ -48,8 +46,8 @@ class ExternalProviderSecretsTest {
     ExternalProviderSecrets secrets = configured((byte) 1);
     String encrypted = secrets.encrypt("google", "own-secret");
     assertThrows(IllegalStateException.class, () -> secrets.decrypt("microsoft", encrypted));
-    assertThrows(
-        IllegalStateException.class, () -> configured((byte) 2).decrypt("google", encrypted));
+    ExternalProviderSecrets otherCipher = configured((byte) 2);
+    assertThrows(IllegalStateException.class, () -> otherCipher.decrypt("google", encrypted));
     byte[] damaged = Base64.getUrlDecoder().decode(encrypted);
     damaged[damaged.length - 1] ^= 1;
     String tampered = Base64.getUrlEncoder().withoutPadding().encodeToString(damaged);
