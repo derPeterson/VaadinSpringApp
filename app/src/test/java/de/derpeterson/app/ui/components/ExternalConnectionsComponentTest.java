@@ -10,13 +10,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.flowingcode.vaadin.addons.otpfield.OtpCompleteEvent;
+import com.flowingcode.vaadin.addons.otpfield.OtpField;
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -268,13 +274,12 @@ class ExternalConnectionsComponentTest {
           case "invalid" -> new BadCredentialsException("fixture");
           default -> new IllegalStateException("fixture service unavailable");
         };
-    doThrow(failure).when(flow).confirmFactor(request, "invalid", Purpose.PASSWORD);
+    doThrow(failure).when(flow).confirmFactor(request, "123", Purpose.PASSWORD);
     ExternalIdentityConfirmationDialog dialog =
         new ExternalIdentityConfirmationDialog(flow, identities, request, texts);
     dialog.open(Purpose.PASSWORD, actions::incrementAndGet);
-    com.vaadin.flow.component.textfield.TextField code =
-        (com.vaadin.flow.component.textfield.TextField) find(dialog, "external-confirm-factor");
-    code.setValue("invalid");
+    OtpField code = (OtpField) find(dialog, "external-confirm-factor");
+    code.setValue("123");
     ((Button) find(dialog, "external-confirm-local")).click();
     assertEquals(0, actions.get());
     assertTrue(dialog.isOpened());
@@ -291,6 +296,47 @@ class ExternalConnectionsComponentTest {
           default -> texts.getTwoFactorFailed();
         },
         message.get());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void googleLinkConfirmsACompleteAppCodeOrAnExplicitRecoveryCode(boolean useRecoveryCode) {
+    when(flow.requiresFactor(request, Purpose.LINK_GOOGLE)).thenReturn(true);
+    ExternalIdentityConfirmationDialog dialog =
+        new ExternalIdentityConfirmationDialog(flow, identities, request, texts);
+    ui.add(dialog);
+    dialog.open(Purpose.LINK_GOOGLE, actions::incrementAndGet);
+
+    OtpField appCode = (OtpField) find(dialog, "external-confirm-factor");
+    TextField recoveryCode = (TextField) find(dialog, "external-confirm-recovery-code");
+    assertTrue(appCode.isAutofocus());
+    assertEquals(6, appCode.getLength());
+    assertTrue(appCode.isVisible());
+    assertFalse(recoveryCode.isVisible());
+    String value = "123456";
+    appCode.setValue(value);
+    if (useRecoveryCode) {
+      Tab recoveryTab = (Tab) find(dialog, "external-proof-recovery-code-tab");
+      Tabs methods = (Tabs) recoveryTab.getParent().orElseThrow();
+      methods.setSelectedTab(recoveryTab);
+      assertTrue(appCode.isEmpty());
+      assertFalse(appCode.isVisible());
+      assertTrue(recoveryCode.isVisible());
+      value = "ABCD1234-ABCD1234-ABCD1234-ABCD1234";
+      recoveryCode.setValue(value);
+      ComponentUtil.fireEvent(appCode, new OtpCompleteEvent(appCode, true, "123456"));
+    }
+    verify(flow, never()).confirmFactor(request, value, Purpose.LINK_GOOGLE);
+    assertEquals(0, actions.get());
+    if (useRecoveryCode) {
+      ((Button) find(dialog, "external-confirm-local")).click();
+    } else {
+      ComponentUtil.fireEvent(appCode, new OtpCompleteEvent(appCode, true, "123456"));
+      ComponentUtil.fireEvent(appCode, new OtpCompleteEvent(appCode, true, "123456"));
+    }
+    verify(flow).confirmFactor(request, value, Purpose.LINK_GOOGLE);
+    assertEquals(1, actions.get());
+    assertFalse(dialog.isOpened());
   }
 
   @Test

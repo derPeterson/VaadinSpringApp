@@ -62,4 +62,5 @@
 @media(max-width:1199px){.cosmos-reference-public .public-auth-panels--register.public-auth-panels--external{grid-template-columns:minmax(0,1fr);max-width:880px;}.public-auth-panels--register .external-login-divider{flex-direction:row;padding:0;}.public-auth-panels--register .external-login-divider::before,.public-auth-panels--register .external-login-divider::after{border-left:0;border-top:1px solid var(--cosmos-reference-border);}}
 
 .external-proof-separator { text-transform:uppercase;letter-spacing:.06em; }
+.external-proof-codes { gap:var(--cosmos-space-l); min-width:0; }
 .external-identity-dialog .cosmos-panel-icon img { width:20px;height:20px;object-fit:contain; }

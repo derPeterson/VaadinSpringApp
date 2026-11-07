@@ -2,6 +2,11 @@
 
 ## Browser-Tests
 
+- **2FA im Dialog für Kontoaktionen: offen.** In DE/EN auf Desktop und Smartphone
+  den Anbieterschritt mit App-Code auch für Microsoft prüfen. Zusätzlich prüfen,
+  dass beim Verbinden mit Ersatzcode und bei anderen Kontoaktionen der
+  Aktionsbutton die Bestätigung auslöst.
+
 - **Vorgangsseiten bei Live-Updates: offen.** In DE/EN auf Desktop und Smartphone
   prüfen, dass Live-Updates die aktuelle Seite erhalten oder bei einer leeren
   letzten Seite auf die letzte verfügbare Seite zurückgehen.

@@ -1126,8 +1126,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     if (!provider.equals("password")) {
       page.locator("#account-security-tab-providers").click();
       page.locator("#external-connect-" + provider).click();
-      page.locator("#external-confirm-factor input").fill(TwoFactorPage.nextCode(page, email));
-      page.locator("#external-confirm-local").click();
+      page.locator("#external-confirm-factor input")
+          .pressSequentially(TwoFactorPage.totp(page, email));
       providerIdentity(email);
       assertThat(page.locator("#external-connect-" + provider))
           .hasText(texts.getExternalDisconnect(provider.equals("google") ? "Google" : "Microsoft"));
@@ -1141,7 +1141,9 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       // Freigabe.
       String action = index % 2 == 0 ? "password" : "email";
       page.locator("#account-" + action + "-edit-security").click();
-      page.locator("#external-confirm-factor input").fill(TwoFactorPage.nextCode(page, email));
+      page.locator("#external-proof-recovery-code-tab").click();
+      page.locator("#external-confirm-recovery-code input")
+          .fill(TwoFactorPage.nextCode(page, email));
       page.locator("#external-confirm-local").click();
       assertThat(page.locator("#account-" + action + "-new")).isVisible();
       page.locator("#account-" + action + "-cancel").click();
@@ -1536,7 +1538,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.locator("#account-password-edit-security").click();
     assertThat(page.locator("#external-confirm-password")).isHidden();
     assertThat(page.locator("#external-confirm-" + provider)).hasCount(0);
-    page.locator("#external-confirm-factor input").fill("invalid");
+    page.locator("#external-confirm-factor input").fill("123");
     page.locator("#external-confirm-local").click();
     assertThat(page.locator("#external-confirm-factor")).hasJSProperty("invalid", true);
     assertThat(page.locator("vaadin-notification-card:not([closing])"))
@@ -1544,7 +1546,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(page.locator("vaadin-notification-card:not([closing])"))
         .hasAttribute("theme", Pattern.compile(".*cosmos-reference-error.*"));
     page.locator("vaadin-notification-card:not([closing])").getByRole(AriaRole.BUTTON).click();
-    page.locator("#external-confirm-factor input").fill(TwoFactorPage.nextCode(page, identity));
+    page.locator("#external-confirm-factor input").fill(TwoFactorPage.totp(page, identity));
     page.locator("#external-confirm-local").click();
     page.locator("#account-password-new input").fill("OwnOptionalPortal1!");
     page.locator("#account-password-confirm input").fill("OwnOptionalPortal1!");
@@ -1554,8 +1556,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.locator("#account-security-tab-providers").click();
     String second = provider.equals("google") ? "microsoft" : "google";
     page.locator("#external-connect-" + second).click();
-    page.locator("#external-confirm-factor input").fill(TwoFactorPage.nextCode(page, identity));
-    page.locator("#external-confirm-local").click();
+    assertThat(page.locator("#external-confirm-factor input")).isFocused();
+    pasteOtp(page, TwoFactorPage.totp(page, identity));
     providerIdentity("linked-" + UUID.randomUUID() + "@gmail.com");
     assertThat(page.locator("#external-connect-" + second))
         .hasText(texts.getExternalDisconnect(second.equals("google") ? "Google" : "Microsoft"));

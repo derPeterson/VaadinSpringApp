@@ -18,6 +18,8 @@ import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.TwoFactorPage;
+import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
@@ -25,6 +27,7 @@ import io.qameta.allure.Feature;
 import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.util.List;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -88,7 +91,19 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     Locator dialog = page.locator("#external-identity-dialog");
     Locator content = dialog.locator("vaadin-dialog-overlay [part=content]");
     assertThat(content).hasCSS("background-color", "rgb(5, 8, 17)");
-    assertThat(page.locator("#external-confirm-factor input")).hasCSS("font-size", "12px");
+    Locator appCode = page.locator("fc-otp-field#external-confirm-factor");
+    assertThat(appCode.locator("[part=slot]")).hasCount(6);
+    assertThat(appCode.locator("[part=slot]").first())
+        .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
+    assertThat(appCode.locator("input[slot=input]")).isFocused();
+    Locator recoveryTab = page.locator("#external-proof-recovery-code-tab");
+    UiActions.complete(page, recoveryTab::click);
+    assertThat(page.locator("#external-confirm-recovery-code")).isVisible();
+    assertThat(page.locator("#external-confirm-recovery-code input"))
+        .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
+    assertThat(appCode).isHidden();
+    UiActions.complete(page, page.locator("#external-proof-app-code-tab")::click);
+    assertThat(appCode).isVisible();
     assertThat(dialog.locator(".account-change-dialog-header .cosmos-panel-icon img"))
         .hasAttribute("src", "icons/external-login/google.png");
     assertDynamicTextWidths(dialog.locator(".cosmos-dialog-actions"));
@@ -103,6 +118,21 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     AdminUserDialog editor = new AdminUsersPage(page).openCreate();
     assertDynamicTextWidths(editor.root().locator(".cosmos-dialog-actions"));
     editor.cancel();
+
+    page.navigate("/account?tab=security");
+    page.locator("#account-security-tab-providers").click();
+    page.locator("#external-connect-google").click();
+    Locator otpInput = page.locator("#external-confirm-factor input");
+    assertThat(otpInput).isFocused();
+    String code = TwoFactorPage.totp(page, BrowserTestAccounts.ADMIN_EMAIL);
+    if (width == 390) {
+      context.grantPermissions(List.of("clipboard-read", "clipboard-write"));
+      page.evaluate("code => navigator.clipboard.writeText(code)", code);
+      page.keyboard().press("ControlOrMeta+V");
+    } else {
+      otpInput.pressSequentially(code);
+    }
+    assertThat(page.locator("#fixture-email")).isVisible();
   }
 
   private void assertAccountProviderRows(Locator portalTab, Locator providersTab) {

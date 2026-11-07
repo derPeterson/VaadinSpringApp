@@ -26,7 +26,6 @@ import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.HasDynamicTitle;
@@ -57,6 +56,7 @@ import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.DetailsToggleButton;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
+import de.derpeterson.app.ui.components.TwoFactorCodeFields;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -87,20 +87,6 @@ public final class TwoFactorView extends VerticalLayout
       return value && navigator.clipboard
         ? navigator.clipboard.writeText(value.replaceAll(' ', '').replaceAll('\\n', '')).then(() => true, () => false)
         : false;
-      """;
-  private static final String OTP_STYLESHEET_SCRIPT =
-      """
-      const field = this;
-      customElements.whenDefined(field.localName).then(async () => {
-        await field.updateComplete;
-        const root = field.shadowRoot;
-        if (!root || root.querySelector('link[data-cosmos-otp]')) { return; }
-        const sheet = document.createElement('link');
-        sheet.rel = 'stylesheet';
-        sheet.href = $0;
-        sheet.dataset.cosmosOtp = '';
-        root.append(sheet);
-      });
       """;
   private static final String AUTOCOMPLETE_ATTRIBUTE = "autocomplete";
   private static final String CONFIRMATION_INPUT_ID = "two-factor-confirmation-input";
@@ -211,30 +197,15 @@ public final class TwoFactorView extends VerticalLayout
 
   private void configureOtp(OtpField field, String id) {
     field.setId(id);
-    field.setLength(6);
-    field.setAutofocus(true);
-    field.setPlaceholder("•");
-    field.setManualValidation(true);
-    field.setRequiredIndicatorVisible(true);
-    field.setValueChangeMode(ValueChangeMode.ON_CHANGE);
-    field.addClassName("two-factor-otp");
+    TwoFactorCodeFields.configureOtp(field, request.getContextPath());
     field.addCompleteListener(
         event -> {
-          // Genau sechs ASCII-Ziffern; veraltete Ereignisse nach Leeren oder Methodenwechsel
-          // ignorieren.
-          if (event.isFromClient()
-              && field.isAttached()
-              && field.isVisible()
-              && submit.isVisible()
+          if (submit.isVisible()
               && submit.isEnabled()
-              && field.getValue().matches("\\d{6}")
-              && field.getValue().equals(event.getValue())) {
+              && TwoFactorCodeFields.isCurrentCompleteOtp(field, event)) {
             submit();
           }
         });
-    String otpStylesheetPath = request.getContextPath() + "/custom-theme/cosmos-mfa-otp.css";
-    field.addAttachListener(
-        event -> field.getElement().executeJs(OTP_STYLESHEET_SCRIPT, otpStylesheetPath));
   }
 
   @Override
@@ -423,7 +394,6 @@ public final class TwoFactorView extends VerticalLayout
     input.add(hint);
     if (recoveryLoginSelected) {
       input.add(prepareRecoveryCode());
-      code.getElement().setAttribute(AUTOCOMPLETE_ATTRIBUTE, "off");
     } else {
       confirmationCode.setLabel(texts.getTwoFactorSetupCodeLabel());
       input.add(confirmationCode);
@@ -437,7 +407,6 @@ public final class TwoFactorView extends VerticalLayout
       addHint(texts.getTwoFactorUnavailable());
     }
     content.add(prepareRecoveryCode());
-    code.getElement().setAttribute(AUTOCOMPLETE_ATTRIBUTE, "off");
     submit.setVisible(true);
     submit.setEnabled(enrollment.available());
     submit.setText(texts.getTwoFactorRecoveryContinue());
@@ -988,11 +957,10 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private TextField prepareRecoveryCode() {
-    String example = "XXXXXXXX-XXXXXXXX-XXXXXXXX-XXXXXXXX";
-    TextField field = prepareCode(texts.getTwoFactorRecoveryCodeLabel(), example.length());
-    field.setPlaceholder(example);
-    field.addClassName("two-factor-recovery-input");
-    return field;
+    code.setLabel(texts.getTwoFactorRecoveryCodeLabel());
+    code.getElement().removeAttribute("inputmode");
+    TwoFactorCodeFields.configureRecoveryCode(code);
+    return code;
   }
 
   private TextField prepareCode(String label, int maximumLength) {

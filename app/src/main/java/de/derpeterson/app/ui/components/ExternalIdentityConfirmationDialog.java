@@ -10,15 +10,22 @@ import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
 import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
 
+import com.flowingcode.vaadin.addons.otpfield.OtpField;
 import com.vaadin.flow.component.ModalityMode;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.shared.HasValidationProperties;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.component.tabs.TabsVariant;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -42,9 +49,13 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
 
 /** Bestätigt genau die angeforderte Kontoaktion; die Fachaktion prüft den Nachweis erneut. */
+@StyleSheet("custom-theme/cosmos-mfa.css")
+@StyleSheet("custom-theme/cosmos-mfa-methods.css")
+@StyleSheet("custom-theme/cosmos-mfa-confirmation.css")
 public final class ExternalIdentityConfirmationDialog extends Dialog {
   private static final String RETURN_ACTION =
       ExternalIdentityConfirmationDialog.class.getName() + ".returnAction";
+  private static final String CODE_INPUT_ID = "external-proof-code-input";
   private final transient ExternalLoginFlow flow;
   private final transient ExternalIdentityService identities;
   private final transient HttpServletRequest request;
@@ -55,7 +66,16 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
   private final Span explanation = new Span();
   private final Span ready = new Span();
   private final PasswordField password = new PasswordField();
-  private final TextField factor = new TextField();
+  private final OtpField factor = new OtpField();
+  private final TextField recoveryCode = new TextField();
+  private final Span appCodeLabel = new Span();
+  private final Span recoveryTabLabel = new Span();
+  private final Tab appCodeTab = new Tab(AppIcon.DEVICES.create(), appCodeLabel);
+  private final Tab recoveryTab = new Tab(AppIcon.KEY.create(), recoveryTabLabel);
+  private final Tabs codeMethods = new Tabs(appCodeTab, recoveryTab);
+  private final Span codeHint = new Span();
+  private final VerticalLayout codeInput = new VerticalLayout(codeHint, factor, recoveryCode);
+  private final VerticalLayout codePanel = new VerticalLayout(codeMethods, codeInput);
   private final Span separator = new Span();
   private final Div alternatives = new Div();
   private final Div note = new Div();
@@ -99,12 +119,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     password.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
     password.setManualValidation(true);
     password.setValueChangeMode(ValueChangeMode.EAGER);
-    factor.setId("external-confirm-factor");
-    factor.setWidthFull();
-    factor.setMaxLength(35);
-    factor.setManualValidation(true);
-    factor.setValueChangeMode(ValueChangeMode.EAGER);
-    factor.getElement().setAttribute("autocomplete", "one-time-code");
+    configureCodePanel();
     separator.addClassName("external-proof-separator");
     alternatives.addClassName("external-proof-alternatives");
     explanation.addClassName(PANEL_DESCRIPTION);
@@ -118,7 +133,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
             explanation,
             ready,
             password,
-            factor,
+            codePanel,
             separator,
             alternatives,
             note,
@@ -139,8 +154,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
           if (!event.isOpened()) {
             password.clear();
             password.setInvalid(false);
-            factor.clear();
-            factor.setInvalid(false);
+            resetCodes();
             purpose = null;
             action = null;
           }
@@ -152,8 +166,73 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     this.action = Objects.requireNonNull(action);
     password.clear();
     password.setInvalid(false);
+    resetCodes();
+    codeMethods.setSelectedTab(appCodeTab);
     refreshTexts();
     super.open();
+    if (codePanel.isVisible()) {
+      factor.focus();
+    }
+  }
+
+  private void configureCodePanel() {
+    factor.setId("external-confirm-factor");
+    TwoFactorCodeFields.configureOtp(factor, request.getContextPath());
+    factor.addCompleteListener(
+        event -> {
+          if ((purpose == Purpose.LINK_GOOGLE || purpose == Purpose.LINK_MICROSOFT)
+              && isOpened()
+              && codePanel.isVisible()
+              && confirm.isEnabled()
+              && TwoFactorCodeFields.isCurrentCompleteOtp(factor, event)) {
+            submit();
+          }
+        });
+    recoveryCode.setId("external-confirm-recovery-code");
+    recoveryCode.setWidthFull();
+    recoveryCode.setManualValidation(true);
+    recoveryCode.setRequiredIndicatorVisible(true);
+    recoveryCode.setValueChangeMode(ValueChangeMode.EAGER);
+    TwoFactorCodeFields.configureRecoveryCode(recoveryCode);
+    appCodeTab.setId("external-proof-app-code-tab");
+    recoveryTab.setId("external-proof-recovery-code-tab");
+    for (Tab tab : List.of(appCodeTab, recoveryTab)) {
+      tab.getElement().setAttribute("aria-controls", CODE_INPUT_ID);
+    }
+    codeMethods.setWidthFull();
+    codeMethods.addClassName("two-factor-method-tabs");
+    codeMethods.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
+    codeMethods.addSelectedChangeListener(
+        event -> {
+          resetCodes();
+          refreshCodeMethod();
+        });
+    codeHint.addClassName(PANEL_DESCRIPTION);
+    codeInput.setId(CODE_INPUT_ID);
+    codeInput.addClassName("two-factor-confirmation-input");
+    codeInput.getElement().setAttribute("role", "tabpanel");
+    codeInput.setPadding(false);
+    codeInput.setSpacing(false);
+    codePanel.setPadding(false);
+    codePanel.setSpacing(false);
+    codePanel.addClassName("external-proof-codes");
+  }
+
+  private void refreshCodeMethod() {
+    boolean recovery = codeMethods.getSelectedTab() == recoveryTab;
+    factor.setVisible(!recovery);
+    recoveryCode.setVisible(recovery);
+    Tab selected = recovery ? recoveryTab : appCodeTab;
+    codeInput.getElement().setAttribute("aria-labelledby", selected.getId().orElseThrow());
+    codeHint.setText(
+        recovery ? texts.getTwoFactorActionRecoveryHint() : texts.getTwoFactorLoginHint());
+  }
+
+  private void resetCodes() {
+    factor.clear();
+    factor.setInvalid(false);
+    recoveryCode.clear();
+    recoveryCode.setInvalid(false);
   }
 
   public void refreshTexts() {
@@ -168,16 +247,19 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     refreshHeader();
     explanation.setText(
         needsFactor ? texts.getTwoFactorActionHint() : texts.getExternalProofHint());
+    explanation.setVisible(!needsFactor || confirmed);
     ready.setText(texts.getExternalProofReady());
     ready.setVisible(confirmed);
     password.setLabel(texts.getAccountPasswordDialogCurrentPassword());
     password.setPlaceholder(texts.getAccountPasswordPlaceholder());
     password.setVisible(hasPassword && !confirmed && !needsFactor);
     password.setRequiredIndicatorVisible(password.isVisible());
-    factor.setLabel(texts.getTwoFactorCodeLabel());
-    factor.setPlaceholder(texts.getTwoFactorCodePlaceholder());
-    factor.setVisible(needsFactor && !confirmed);
-    factor.setRequiredIndicatorVisible(factor.isVisible());
+    appCodeLabel.setText(texts.getTwoFactorConfirmationAppTab());
+    recoveryTabLabel.setText(texts.getTwoFactorRecoveryCodeLabel());
+    factor.setLabel(texts.getTwoFactorSetupCodeLabel());
+    recoveryCode.setLabel(texts.getTwoFactorRecoveryCodeLabel());
+    codePanel.setVisible(needsFactor && !confirmed);
+    refreshCodeMethod();
     refreshAlternatives(confirmed);
     if (!confirmed && !hasPassword && !alternatives.isVisible() && !needsFactor) {
       explanation.setText(texts.getExternalProofUnavailable());
@@ -272,11 +354,12 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     } finally {
       password.clear();
       factor.clear();
+      recoveryCode.clear();
     }
   }
 
   private boolean confirmLocalProof() {
-    if (factor.isVisible()) {
+    if (codePanel.isVisible()) {
       return confirmFactor();
     }
     if (password.isVisible()) {
@@ -288,14 +371,21 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
   }
 
   private boolean confirmFactor() {
-    if (!ValidationHelper.validateRequiredInputs(List.of(factor), texts)) {
+    boolean recovery = codeMethods.getSelectedTab() == recoveryTab;
+    boolean valid =
+        recovery
+            ? ValidationHelper.validateRequiredInputs(List.of(recoveryCode), texts)
+            : ValidationHelper.validateRequiredInputs(List.of(factor), texts);
+    if (!valid) {
       return false;
     }
     try {
-      flow.confirmFactor(request, factor.getValue(), purpose);
+      String code = recovery ? recoveryCode.getValue() : factor.getValue();
+      flow.confirmFactor(request, code, purpose);
       return true;
     } catch (RuntimeException failure) {
-      factor.setInvalid(true);
+      HasValidationProperties field = recovery ? recoveryCode : factor;
+      field.setInvalid(true);
       Supplier<String> message = texts::getTwoFactorFailed;
       if (failure instanceof LockedException) {
         message = texts::getTwoFactorThrottled;

@@ -167,7 +167,13 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   }
 
   private void confirmFactor(String email) {
-    page.locator("#external-confirm-factor input").fill(TwoFactorPage.nextCode(page, email));
+    String code = TwoFactorPage.nextCode(page, email);
+    if (code.length() > 6) {
+      page.locator("#external-proof-recovery-code-tab").click();
+      page.locator("#external-confirm-recovery-code input").fill(code);
+    } else {
+      page.locator("#external-confirm-factor input").fill(code);
+    }
     page.locator("#external-confirm-local").click();
   }
 

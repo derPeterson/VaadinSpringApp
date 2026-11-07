@@ -949,6 +949,10 @@ public class MessageTexts {
     return getTranslation("mfa.action.hint");
   }
 
+  public String getTwoFactorActionRecoveryHint() {
+    return getTranslation("mfa.action.recoveryHint");
+  }
+
   public String getTwoFactorCodeLabel() {
     return getTranslation("mfa.code.label");
   }

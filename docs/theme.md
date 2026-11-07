@@ -989,11 +989,17 @@ schlankeren Motive gegenüber den gefüllten Markenlogos auszugleichen.
 Kontodialogstil. Er liegt außerhalb der Tabinhalte, damit ein inaktiver Tab seine
 Bedienung nicht sperrt. Er bestätigt die konkret gewählte Aktion mit Portalpasswort oder
 einem bereits verbundenen, verfügbaren Anbieter. Nach externer Bestätigung werden
-Passwort-/E-Mail-Dialoge wieder geöffnet; beim Verbinden/Trennen bleibt die letzte
-Aktion ausdrücklich zu bestätigen. Die letzte nutzbare Anmeldung bleibt geschützt.
-Verbinden/Trennen zeigt das Dienstlogo im Dialogkopf. Fehler verwenden die vorhandene
-Pflichtfeld-/Kontosicherheitsmeldung als Notification und markieren nur das betroffene
-Feld rot. Ein zusätzlicher Fehlertext unter dem Passwortfeld entfällt. Der Trenner
+Passwort-/E-Mail-Dialoge wieder geöffnet. Nach einem Nachweis über einen bereits
+verbundenen Anbieter folgt beim Verbinden/Trennen die ausdrückliche Bestätigung.
+Die letzte nutzbare Anmeldung bleibt geschützt.
+Verbinden/Trennen zeigt das Dienstlogo im Dialogkopf.
+Bei erforderlicher 2FA verwendet der Dialog die Tabs „App-Code“ und „Ersatzcode“
+und die Codefelder der Anmeldebestätigung mit Space Mono. Die erste Ziffer erhält
+beim Öffnen den Fokus. Beim Verbinden eines Anbieters startet ein vollständiger
+App-Code nach erfolgreicher Prüfung den Anbieterschritt automatisch. Der Aktionsbutton
+bestätigt beide Codearten. Fehler verwenden die vorhandene Pflichtfeld- oder
+Kontosicherheitsmeldung als Notification und markieren das betroffene Feld rot.
+Ein zusätzlicher Fehlertext unter dem Passwortfeld entfällt. Der Trenner
 „ODER“ verwendet Großbuchstaben, Gewicht 600 und die Secondary-Textfarbe.
 Nur die Anordnung von Zeilen, Anbieterlogos und Bestätigungsalternativen wird lokal
 gestaltet.
