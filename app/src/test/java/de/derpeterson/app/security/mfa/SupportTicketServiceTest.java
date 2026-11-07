@@ -35,7 +35,11 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.AccountSecurityMail;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailQueueService;
+import de.derpeterson.app.service.SupportTicketFilter;
+import de.derpeterson.app.service.SupportTicketFilter.Assignment;
+import de.derpeterson.app.service.SupportTicketFilter.Reading;
 import de.derpeterson.app.service.SupportTicketService;
+import de.derpeterson.app.service.SupportTicketService.InboxQuery;
 import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
@@ -53,6 +57,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -104,16 +109,22 @@ class SupportTicketServiceTest {
   }
 
   @Test
-  void directTicketNumberFindsOlderTicketsAndKeepsThemInLiveUpdates() {
+  void databasePagingFiltersAndDirectJumpIncludeOlderTickets() {
     Ticket older = service.createRecovery(owner, "Older request");
+    Long administratorId = service.administratorId(administrator);
+    SupportTicketFilter filter =
+        new SupportTicketFilter(Set.of(Status.CLOSED), Assignment.MINE, Reading.ALL, null);
     List<Long> fixtureIds = new ArrayList<>();
     transaction.executeWithoutResult(
         status -> {
           entityManager.find(SupportTicketEntity.class, older.id()).setStatus(Status.CLOSED);
+          UserEntity assignee = entityManager.find(UserEntity.class, administratorId);
+          entityManager.find(SupportTicketEntity.class, older.id()).setAssignee(assignee);
           UserEntity requester = entityManager.find(UserEntity.class, user.getId());
           for (int index = 0; index < 101; index++) {
             SupportTicketEntity ticket = new SupportTicketEntity();
             ticket.setOwner(requester);
+            ticket.setAssignee(assignee);
             ticket.setStatus(Status.CLOSED);
             ticket.setSubject("Synthetic archived request");
             ticket.setCreatedAt(older.createdAt().plusSeconds(index + 1));
@@ -128,6 +139,30 @@ class SupportTicketServiceTest {
           service.list(administrator, true).stream()
               .anyMatch(ticket -> ticket.id().equals(older.id())));
       String number = SupportTicketService.ticketNumber(older.id()).substring(1);
+      SupportTicketService.LiveView first =
+          service.inbox(administrator, null, new InboxQuery(filter, 0, 10));
+      assertEquals(102, first.totalTickets());
+      assertEquals(10, first.tickets().size());
+      assertEquals(10, service.pageFor(administrator, older.id(), filter, 10));
+      for (int size : List.of(10, 20, 50)) {
+        int lastPage = 101 / size;
+        SupportTicketService.LiveView last =
+            service.inbox(
+                administrator, older.id(), new InboxQuery(filter, Integer.MAX_VALUE, size));
+        assertEquals(lastPage, last.page());
+        assertEquals(102 % size, last.tickets().size());
+        assertEquals(older.id(), last.selected().id());
+        assertEquals(older.id(), last.tickets().getLast().id());
+      }
+      SupportTicketService.LiveView detail =
+          service.inbox(administrator, older.id(), new InboxQuery(filter, 0, 10));
+      assertEquals(older.id(), detail.selected().id());
+      assertFalse(detail.tickets().stream().anyMatch(ticket -> ticket.id().equals(older.id())));
+      SupportTicketFilter open =
+          new SupportTicketFilter(Set.of(Status.OPEN), Assignment.MINE, Reading.ALL, null);
+      assertEquals(
+          0, service.inbox(administrator, older.id(), new InboxQuery(open, 0, 10)).totalTickets());
+      assertNull(service.inbox(administrator, older.id(), new InboxQuery(open, 0, 10)).selected());
       assertEquals(older.id(), service.findForAdministration(administrator, number).id());
       assertEquals(
           older.id(),
@@ -135,6 +170,9 @@ class SupportTicketServiceTest {
       assertNull(service.findForAdministration(administrator, "#" + number));
       assertNull(service.findForAdministration(administrator, "9999999999999999999"));
       assertThrows(AccessDeniedException.class, () -> service.findForAdministration(owner, number));
+      assertThrows(
+          AccessDeniedException.class, () -> service.inbox(owner, older.id(), InboxQuery.all()));
+      assertThrows(IllegalArgumentException.class, () -> new InboxQuery(filter, 0, 7));
     } finally {
       transaction.executeWithoutResult(
           status -> {
@@ -142,6 +180,73 @@ class SupportTicketServiceTest {
               entityManager.remove(entityManager.find(SupportTicketEntity.class, id));
             }
           });
+    }
+  }
+
+  @Test
+  void databaseUnreadFilterRespectsAssignmentSubscriptionAndReadDetails() {
+    Ticket ticket = service.createRecovery(owner, "Filtered unread request");
+    service.claim(administrator, ticket.id(), ticket.version());
+    SupportTicketFilter mine =
+        new SupportTicketFilter(Set.of(Status.IN_PROGRESS), Assignment.MINE, Reading.UNREAD, null);
+    InboxQuery query = new InboxQuery(mine, 0, 10);
+    SupportTicketService.LiveView unread = service.inbox(administrator, ticket.id(), query);
+    assertEquals(1, unread.totalTickets());
+    assertEquals(ticket.id(), unread.tickets().getFirst().id());
+    SupportTicketFilter any =
+        new SupportTicketFilter(Set.of(Status.IN_PROGRESS), Assignment.ALL, Reading.UNREAD, null);
+    assertEquals(
+        0, service.inbox(otherAdministrator, null, new InboxQuery(any, 0, 10)).totalTickets());
+    MockHttpServletRequest watcher = confirmedAdmin(RoleType.ROLE_SUPERADMIN);
+    assertEquals(0, service.inbox(watcher, null, new InboxQuery(any, 0, 10)).totalTickets());
+    service.setSubscription(watcher, ticket.id(), true);
+    assertEquals(1, service.inbox(watcher, null, new InboxQuery(any, 0, 10)).totalTickets());
+    Reply latest = unread.messages().getLast();
+    service.markSeen(
+        bindLiveSession(administrator),
+        true,
+        ticket.id(),
+        latest.id(),
+        unread.selected().version());
+    SupportTicketService.LiveView read = service.inbox(administrator, ticket.id(), query);
+    assertEquals(0, read.totalTickets());
+    assertTrue(read.tickets().isEmpty());
+    assertEquals(ticket.id(), read.selected().id());
+  }
+
+  @Test
+  void unreadDatabasePredicateMatchesEstablishedRelevanceForEveryStatusAndAssignee() {
+    Ticket ticket = service.createRecovery(owner, "Unread predicate comparison");
+    MockHttpServletRequest watcher = confirmedAdmin(RoleType.ROLE_SUPERADMIN);
+    service.setSubscription(watcher, ticket.id(), true);
+    for (Status status : Status.values()) {
+      for (Long assignee :
+          new Long[] {
+            null,
+            service.administratorId(administrator),
+            service.administratorId(otherAdministrator)
+          }) {
+        transaction.executeWithoutResult(
+            transactionStatus -> {
+              SupportTicketEntity entity =
+                  entityManager.find(SupportTicketEntity.class, ticket.id());
+              entity.setStatus(status);
+              entity.setAssignee(
+                  assignee == null ? null : entityManager.find(UserEntity.class, assignee));
+            });
+        SupportTicketFilter unread =
+            new SupportTicketFilter(Set.of(status), Assignment.ALL, Reading.UNREAD, null);
+        for (MockHttpServletRequest viewer : List.of(administrator, otherAdministrator, watcher)) {
+          Ticket expected =
+              service.findForAdministration(
+                  viewer, SupportTicketService.ticketNumber(ticket.id()).substring(1));
+          int page = service.pageFor(viewer, ticket.id(), unread, 10);
+          boolean listed =
+              service.inbox(viewer, null, new InboxQuery(unread, page, 10)).tickets().stream()
+                  .anyMatch(value -> value.id().equals(ticket.id()));
+          assertEquals(expected.unreadMessages() > 0, listed, status + " / " + assignee);
+        }
+      }
     }
   }
 
@@ -524,6 +629,10 @@ class SupportTicketServiceTest {
   }
 
   private Ticket ticketFor(MockHttpServletRequest request, Long id, boolean administration) {
+    if (administration) {
+      return service.findForAdministration(
+          request, SupportTicketService.ticketNumber(id).substring(1));
+    }
     return service.list(request, administration).stream()
         .filter(ticket -> ticket.id().equals(id))
         .findFirst()

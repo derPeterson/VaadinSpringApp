@@ -16,34 +16,13 @@ import com.vaadin.flow.function.SerializableRunnable;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.SupportTicketEntity.Status;
+import de.derpeterson.app.service.SupportTicketFilter;
+import de.derpeterson.app.service.SupportTicketFilter.Assignment;
+import de.derpeterson.app.service.SupportTicketFilter.Reading;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
-import java.io.Serializable;
-import java.util.Objects;
-import java.util.Set;
 
-/** Filtert ausschließlich die bereits für den Adminzugang freigegebene Ticketliste. */
+/** Nativer Filterentwurf; erst Anwenden übernimmt ihn in die berechtigte Datenbankabfrage. */
 public final class SupportTicketFilterPanel extends AdminSidePanel {
-  public enum Assignment {
-    ALL,
-    MINE,
-    UNASSIGNED
-  }
-
-  public enum Reading {
-    ALL,
-    UNREAD
-  }
-
-  private record Selection(Set<Status> statuses, Assignment assignment, Reading reading)
-      implements Serializable {
-    private Selection {
-      statuses = Set.copyOf(statuses);
-      Objects.requireNonNull(assignment);
-      Objects.requireNonNull(reading);
-    }
-  }
-
-  private static final Selection ALL = new Selection(Set.of(), Assignment.ALL, Reading.ALL);
   private final transient MessageProperties texts;
   private final ItemLabelGenerator<Status> statusLabels;
   private final CheckboxGroup<Status> statuses = new CheckboxGroup<>();
@@ -55,7 +34,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
   private final Button reset = new Button(AppIcon.ROTATE_LEFT.create());
   private final Button cancel = new Button(AppIcon.CLOSE.create());
   private final Button apply = new Button(AppIcon.CHECK.create());
-  private Selection applied = ALL;
+  private SupportTicketFilter applied = SupportTicketFilter.ALL;
 
   public SupportTicketFilterPanel(
       MessageProperties texts,
@@ -144,7 +123,9 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     apply.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     apply.addClickListener(
         event -> {
-          applied = new Selection(statuses.getValue(), assignment.getValue(), reading.getValue());
+          applied =
+              new SupportTicketFilter(
+                  statuses.getValue(), assignment.getValue(), reading.getValue(), null);
           onApply.run();
           close();
         });
@@ -168,7 +149,11 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
 
   /** Eine ausdrücklich geöffnete Benachrichtigung darf nicht am Listenfilter scheitern. */
   public void resetApplied() {
-    applied = ALL;
+    applied = SupportTicketFilter.ALL;
+  }
+
+  public SupportTicketFilter appliedFilter() {
+    return applied;
   }
 
   public int activeCount() {
@@ -186,14 +171,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
 
   /** Ein bereits geöffneter Vorgang bleibt nach dem Lesen im Detailbereich erreichbar. */
   public boolean matchesMetadata(Ticket ticket, Long administratorId) {
-    if (!applied.statuses().isEmpty() && !applied.statuses().contains(ticket.status())) {
-      return false;
-    }
-    return switch (applied.assignment()) {
-      case ALL -> true;
-      case MINE -> administratorId != null && administratorId.equals(ticket.assignee());
-      case UNASSIGNED -> ticket.assignee() == null;
-    };
+    return applied.matchesMetadata(ticket, administratorId);
   }
 
   public void refreshTexts() {

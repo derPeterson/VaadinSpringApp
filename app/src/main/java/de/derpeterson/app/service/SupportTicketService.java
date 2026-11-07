@@ -14,6 +14,7 @@ import de.derpeterson.app.model.enums.UserNotificationRelevance;
 import de.derpeterson.app.repository.SupportReplyRepository;
 import de.derpeterson.app.repository.SupportReplyRepository.UnreadCount;
 import de.derpeterson.app.repository.SupportTicketRepository;
+import de.derpeterson.app.repository.SupportTicketSpecifications;
 import de.derpeterson.app.repository.SupportTicketViewerRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.MaintenanceService;
@@ -24,7 +25,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -32,7 +32,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -100,7 +103,25 @@ public class SupportTicketService {
       List<Ticket> tickets,
       Ticket selected,
       List<Reply> messages,
-      UserIdentity requester) {}
+      UserIdentity requester,
+      long totalTickets,
+      int page,
+      int pageSize) {}
+
+  public record InboxQuery(SupportTicketFilter filter, int page, int size) {
+    public InboxQuery {
+      Objects.requireNonNull(filter);
+      if (page < 0 || !List.of(10, 20, 50).contains(size)) {
+        throw new IllegalArgumentException("Unsupported ticket page");
+      }
+    }
+
+    public static InboxQuery all() {
+      return new InboxQuery(SupportTicketFilter.ALL, 0, 10);
+    }
+  }
+
+  public record Activity(Long viewerId, boolean unread) {}
 
   public SupportTicketBroadcaster events() {
     return events;
@@ -128,7 +149,9 @@ public class SupportTicketService {
   }
 
   private List<Ticket> list(Owner owner, boolean administration) {
-    return list(owner, administration, null);
+    return administration
+        ? inboxView(owner, null, InboxQuery.all()).tickets()
+        : views(owner, tickets.own(owner.id(), PageRequest.of(0, 20)), false);
   }
 
   /** Direkter Zugriff bleibt auf berechtigte Admins beschränkt, auch außerhalb der letzten 100. */
@@ -149,23 +172,21 @@ public class SupportTicketService {
     } catch (NumberFormatException _) {
       return null;
     }
-    return list(owner, true, id).stream()
-        .filter(ticket -> ticket.id().equals(id))
-        .findFirst()
+    return findTicket(owner, id, true);
+  }
+
+  private Ticket findTicket(Owner owner, Long id, boolean administration) {
+    if (id == null) {
+      return null;
+    }
+    return tickets
+        .findById(id)
+        .map(ticket -> views(owner, List.of(ticket), administration).getFirst())
         .orElse(null);
   }
 
-  private List<Ticket> list(Owner owner, boolean administration, Long selectedId) {
-    List<SupportTicketEntity> visible =
-        administration
-            ? tickets.inbox(PageRequest.of(0, 100))
-            : tickets.own(owner.id(), PageRequest.of(0, 20));
-    if (administration
-        && selectedId != null
-        && visible.stream().noneMatch(ticket -> ticket.getId().equals(selectedId))) {
-      visible = new ArrayList<>(visible);
-      tickets.findById(selectedId).ifPresent(visible::add);
-    }
+  private List<Ticket> views(
+      Owner owner, List<SupportTicketEntity> visible, boolean administration) {
     if (visible.isEmpty()) {
       return List.of();
     }
@@ -210,14 +231,89 @@ public class SupportTicketService {
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
   public LiveView liveView(HttpSession session, boolean administration, Long selectedId) {
+    return liveView(session, administration, selectedId, InboxQuery.all());
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+  public LiveView liveView(
+      HttpSession session, boolean administration, Long selectedId, InboxQuery query) {
     Owner owner = liveViewer(session, administration);
-    List<Ticket> values = list(owner, administration, selectedId);
+    if (administration) {
+      return inboxView(owner, selectedId, query);
+    }
+    List<Ticket> values = list(owner, false);
     Ticket selected = selectTicket(values, selectedId, administration);
     List<Reply> messages =
         selected == null ? List.of() : conversation(selected.id(), administration);
     UserIdentity requester =
         !administration && !messages.isEmpty() ? requesterIdentity(owner.id()) : null;
-    return new LiveView(owner.id(), values, selected, messages, requester);
+    return new LiveView(owner.id(), values, selected, messages, requester, values.size(), 0, 20);
+  }
+
+  @Transactional(readOnly = true)
+  public LiveView inbox(HttpServletRequest request, Long selectedId, InboxQuery query) {
+    return inboxView(requireAdministrator(request), selectedId, query);
+  }
+
+  private Specification<SupportTicketEntity> matching(Owner owner, SupportTicketFilter filter) {
+    return SupportTicketSpecifications.matching(
+        filter, owner.id(), owner.roles().contains(RoleType.ROLE_SUPERADMIN));
+  }
+
+  private LiveView inboxView(Owner owner, Long selectedId, InboxQuery query) {
+    Specification<SupportTicketEntity> filter = matching(owner, query.filter());
+    Sort order = Sort.by(Sort.Direction.DESC, "updatedAt", "id");
+    long total = tickets.count(filter);
+    int page = (int) Math.min(query.page(), Math.max(0, (total - 1) / query.size()));
+    Page<SupportTicketEntity> result =
+        tickets.findAll(filter, PageRequest.of(page, query.size(), order));
+    List<Ticket> values = views(owner, result.getContent(), true);
+    Ticket selected =
+        values.stream().filter(ticket -> ticket.id().equals(selectedId)).findFirst().orElse(null);
+    if (selected == null) {
+      selected = findTicket(owner, selectedId, true);
+    }
+    if (selected != null && !query.filter().matchesMetadata(selected, owner.id())) {
+      selected = null;
+    }
+    List<Reply> messages = selected == null ? List.of() : conversation(selected.id(), true);
+    return new LiveView(
+        owner.id(),
+        values,
+        selected,
+        messages,
+        null,
+        result.getTotalElements(),
+        page,
+        query.size());
+  }
+
+  /**
+   * Ermittelt die Listenseite eines berechtigten Vorgangs unter denselben Filter-/Sortierregeln.
+   */
+  @Transactional(readOnly = true)
+  public int pageFor(HttpServletRequest request, Long id, SupportTicketFilter filter, int size) {
+    Owner owner = requireAdministrator(request);
+    new InboxQuery(filter, 0, size);
+    SupportTicketEntity selected =
+        tickets.findById(id).orElseThrow(() -> new AccessDeniedException("Ticket unavailable"));
+    Specification<SupportTicketEntity> preceding =
+        (ticket, query, cb) ->
+            cb.or(
+                cb.greaterThan(ticket.get("updatedAt"), selected.getUpdatedAt()),
+                cb.and(
+                    cb.equal(ticket.get("updatedAt"), selected.getUpdatedAt()),
+                    cb.greaterThan(ticket.get("id"), id)));
+    return Math.toIntExact(tickets.count(matching(owner, filter).and(preceding)) / size);
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+  public Activity activity(HttpSession session) {
+    Owner owner = liveViewer(session, true);
+    SupportTicketFilter unread =
+        new SupportTicketFilter(
+            Set.of(), SupportTicketFilter.Assignment.ALL, SupportTicketFilter.Reading.UNREAD, null);
+    return new Activity(owner.id(), tickets.exists(matching(owner, unread)));
   }
 
   public static Ticket selectTicket(List<Ticket> values, Long selectedId, boolean administration) {

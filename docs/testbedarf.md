@@ -2,6 +2,12 @@
 
 ## Browser-Tests
 
+- **Vorgangsseiten: teilweise geprüft.** Die deutschen Fälle MFA-22 und MFA-23
+  für Filter, Ticketsprung und Navigation mit 10/20/50 Einträgen sind auf Desktop
+  und Smartphone bestanden. Der englische Lauf steht aus. In beiden Sprachen
+  zusätzlich prüfen, dass Live-Updates die aktuelle Seite erhalten oder bei
+  einer leeren letzten Seite auf die letzte verfügbare Seite zurückgehen.
+
 - **Ticketnavigation: offen.** Den roten Aktivitätspunkt in der administrativen
   SideNav und seinen Tooltip in DE/EN prüfen, auch im mobilen Menü. Ohne Öffnen
   des Ticketsystems muss er Änderungen der relevanten Ticketzähler übernehmen.

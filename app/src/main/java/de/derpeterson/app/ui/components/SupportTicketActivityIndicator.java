@@ -7,7 +7,7 @@ import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.service.SupportTicketService;
-import de.derpeterson.app.service.SupportTicketService.LiveView;
+import de.derpeterson.app.service.SupportTicketService.Activity;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
@@ -17,7 +17,7 @@ public final class SupportTicketActivityIndicator extends Badge {
   private final transient SupportTicketService service;
   private final Tooltip tooltip;
   private transient HttpSession session;
-  private transient Long viewerId;
+  private transient volatile Long viewerId;
   private transient Registration registration;
 
   public SupportTicketActivityIndicator(
@@ -70,9 +70,9 @@ public final class SupportTicketActivityIndicator extends Badge {
 
   private void refresh() {
     try {
-      LiveView state = service.liveView(session, true, null);
+      Activity state = service.activity(session);
       viewerId = state.viewerId();
-      setVisible(state.tickets().stream().anyMatch(ticket -> ticket.unreadMessages() > 0));
+      setVisible(state.unread());
     } catch (RuntimeException _) {
       // Ohne gültigen aktuellen Zugriff keinen Aktivitätshinweis anzeigen.
       setVisible(false);

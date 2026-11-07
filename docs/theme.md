@@ -1331,7 +1331,12 @@ Eintragsinhalte, Zustandsfarben und Auswahl bleiben unverändert.
 Native Tabs gliedern die Kategorien, ein natives Grid
 zeigt die Anfragen in ihrer tatsächlichen Inhaltshöhe. Ein nativer Scroller begrenzt
 die Listenhöhe ohne geschätzten Leerraum unter den Einträgen; ein weiterer Scroller
-begrenzt den Verlauf. Die Vorgangsliste erhält mindestens 330 px tatsächliche
+begrenzt den Verlauf. Unter der Liste liegt der gemeinsame `cosmos-panel-footer`.
+`CosmosPagination` zeigt links den Trefferbereich und rechts die native Auswahl
+der Seitengröße und die beiden vorhandenen Pfeilbuttons. Der Modus `PREVIOUS_NEXT`
+ist auf die Vorgangsliste begrenzt. Die lokale Anordnung steht in
+`cosmos-mfa-confirmation.css` unter `#support-queue-footer` und `.support-pagination`.
+Die Vorgangsliste erhält mindestens 330 px tatsächliche
 Panelbreite. Zwischen Liste und Details liegen 16 px ohne zusätzliche Trennlinie;
 der gemeinsame Arbeitsbereich hat 20 px Innenabstand, auf Smartphones 16 px.
 Unter 820 px tatsächlicher Panelbreite stapeln sich beide Bereiche;

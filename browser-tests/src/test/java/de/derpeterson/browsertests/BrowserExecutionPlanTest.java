@@ -62,7 +62,10 @@ class BrowserExecutionPlanTest {
           case "two-factor-confirmation" -> Set.of("confirmationRecoveryAndHelpUseNativeControls");
           case "two-factor-otp" ->
               Set.of("otpFocusAndAutomaticConfirmationCoverSetupLoginReplacementAndRecovery");
-          case "two-factor-ticket-filters" -> Set.of("ticketFiltersAndDirectJumpUseNativeControls");
+          case "two-factor-ticket-filters" ->
+              Set.of(
+                  "ticketFiltersAndDirectJumpUseNativeControls",
+                  "ticketPagesPreserveDetailsAndDrafts");
           case "two-factor-configuration" -> Set.of("superadminOnlyConfiguration");
           case "two-factor-instructions" ->
               Set.of("recoverySupportRemainsContactInsteadOfFactorReset");

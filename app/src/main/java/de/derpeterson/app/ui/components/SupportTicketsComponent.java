@@ -37,6 +37,7 @@ import de.derpeterson.app.model.SupportTicketEntity.Status;
 import de.derpeterson.app.model.SupportTicketEntity.Type;
 import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.service.SupportTicketService;
+import de.derpeterson.app.service.SupportTicketService.InboxQuery;
 import de.derpeterson.app.service.SupportTicketService.LiveView;
 import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
@@ -134,6 +135,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final Button filterButton = new Button();
   private final Badge activeFilterCount = new Badge();
   private SupportTicketFilterPanel filters;
+  private CosmosPagination pagination;
+  private int currentPage;
+  private int pageSize = 10;
   private final PortalConfirmationDialog instructionDialog;
   private RecoveryInstructionsComponent instructionPreview;
   private final AccountPanelComponent panel =
@@ -399,7 +403,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
     ticketCategories.setId("support-ticket-categories");
     ticketCategories.addClassName(CosmosClasses.PANEL_TABS);
     ticketCategories.setWidthFull();
-    ticketCategories.addSelectedChangeListener(event -> refresh());
+    ticketCategories.addSelectedChangeListener(
+        event -> {
+          currentPage = 0;
+          refresh();
+        });
     queueHeading.addClassName(CosmosClasses.PANEL_TITLE);
     HorizontalLayout queueIcon = new HorizontalLayout(AppIcon.LIST.create());
     queueIcon.setPadding(false);
@@ -414,7 +422,15 @@ public final class SupportTicketsComponent extends VerticalLayout {
     queueHeader.setJustifyContentMode(JustifyContentMode.BETWEEN);
     queueHeader.setFlexGrow(1, queueHeading);
     queueHeader.addClassName(CosmosClasses.PANEL_HEADER);
-    filters = new SupportTicketFilterPanel(texts, this::status, this::refresh, this::jumpToTicket);
+    filters =
+        new SupportTicketFilterPanel(
+            texts,
+            this::status,
+            () -> {
+              currentPage = 0;
+              refresh();
+            },
+            this::jumpToTicket);
     add(filters);
     filterButton.setId("support-filter");
     filterButton.getElement().setAttribute("aria-controls", "support-filter-panel");
@@ -447,8 +463,31 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminTicketScroll.setScrollDirection(Scroller.ScrollDirection.VERTICAL);
     adminTicketScroll.setWidthFull();
     adminTicketScroll.addClassName("support-admin-ticket-scroll");
+    pagination =
+        new CosmosPagination(
+            texts,
+            page -> {
+              currentPage = page;
+              refresh();
+            },
+            size -> {
+              pageSize = size;
+              currentPage = 0;
+              refresh();
+            },
+            List.of(10, 20, 50),
+            CosmosPagination.Mode.PREVIOUS_NEXT);
+    pagination.setId("support-pagination");
+    pagination.addClassName("support-pagination");
+    HorizontalLayout queueFooter = new HorizontalLayout(pagination);
+    queueFooter.setId("support-queue-footer");
+    queueFooter.setPadding(false);
+    queueFooter.setSpacing(false);
+    queueFooter.setWidthFull();
+    queueFooter.addClassName("cosmos-panel-footer");
     CosmosCardComponent queuePanel =
-        new CosmosCardComponent(queueHeader, queueTools, emptyState, adminTicketScroll);
+        new CosmosCardComponent(
+            queueHeader, queueTools, emptyState, adminTicketScroll, queueFooter);
     queuePanel.setId("support-queue-panel");
     queuePanel.addClassNames(CosmosClasses.PANEL_CARD, "support-admin-list-panel");
     adminQueue.add(queuePanel);
@@ -617,6 +656,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
       queueHeading.setText(texts.getSupportCases());
       filterButton.setText(texts.getAdminUsersAddFilter());
       filters.refreshTexts();
+      pagination.refreshTexts();
       allTicketsLabel.setText(texts.getSupportAllTickets());
       recoveryTicketsLabel.setText(texts.getSupportRecoveryCategory());
       ticketCategories.getElement().setAttribute("aria-label", texts.getSupportTitle());
@@ -683,12 +723,14 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private boolean openTicket(String number, boolean directJump) {
-    List<Ticket> values = ticketsIncluding(number);
+    List<Ticket> values = administration ? List.of() : service.list(request, false);
     Ticket matching =
-        values.stream()
-            .filter(ticket -> ticketNumber(ticket).equals("#" + number))
-            .findFirst()
-            .orElse(null);
+        administration
+            ? service.findForAdministration(request, number)
+            : values.stream()
+                .filter(ticket -> ticketNumber(ticket).equals("#" + number))
+                .findFirst()
+                .orElse(null);
     if (matching == null && directJump) {
       failed(texts::getSupportTicketUnavailable);
       return false;
@@ -701,6 +743,17 @@ public final class SupportTicketsComponent extends VerticalLayout {
     if (administration && matching != null && matching.type() != Type.RECOVERY) {
       ticketCategories.setSelectedTab(allTickets);
     }
+    if (administration) {
+      if (matching != null) {
+        currentPage = service.pageFor(request, matching.id(), inboxQuery().filter(), pageSize);
+      }
+      selected = matching;
+      applyInbox(service.inbox(request, selectedId(), inboxQuery()));
+      if (matching == null) {
+        failed(texts::getSupportTicketUnavailable);
+      }
+      return matching != null;
+    }
     applyTickets(values, matching);
     refreshConversation();
     if (matching == null) {
@@ -709,19 +762,22 @@ public final class SupportTicketsComponent extends VerticalLayout {
     return matching != null;
   }
 
-  private List<Ticket> ticketsIncluding(String number) {
-    List<Ticket> values = service.list(request, administration);
-    if (administration
-        && number != null
-        && values.stream().noneMatch(ticket -> ticketNumber(ticket).equals("#" + number))) {
-      Ticket found = service.findForAdministration(request, number);
-      if (found != null) {
-        List<Ticket> extended = new java.util.ArrayList<>(values);
-        extended.add(found);
-        return extended;
-      }
-    }
-    return values;
+  private InboxQuery inboxQuery() {
+    return new InboxQuery(
+        filters
+            .appliedFilter()
+            .withType(ticketCategories.getSelectedTab() == recoveryTickets ? Type.RECOVERY : null),
+        currentPage,
+        pageSize);
+  }
+
+  private void applyInbox(LiveView state) {
+    administratorId = state.viewerId();
+    liveViewerId = state.viewerId();
+    currentPage = state.page();
+    pagination.showPage(state.page(), state.totalTickets(), state.pageSize());
+    applyTickets(state.tickets(), state.selected());
+    showConversation(state.messages(), null);
   }
 
   public void setNavigationListener(SerializableConsumer<NavigationState> listener) {
@@ -803,10 +859,16 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   private void refreshLive(HttpSession session) {
     try {
-      LiveView state = service.liveView(session, administration, selectedId());
+      LiveView state =
+          service.liveView(
+              session,
+              administration,
+              selectedId(),
+              administration ? inboxQuery() : InboxQuery.all());
       liveViewerId = state.viewerId();
       if (administration) {
-        administratorId = state.viewerId();
+        applyInbox(state);
+        return;
       }
       applyTickets(state.tickets(), state.selected());
       showConversation(state.messages(), state.requester());
@@ -819,13 +881,13 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   private void refresh(boolean notifySuccess) {
     try {
-      List<Ticket> values =
-          ticketsIncluding(selected == null ? null : ticketNumber(selected).substring(1));
       if (administration) {
-        administratorId = service.administratorId(request);
+        applyInbox(service.inbox(request, selectedId(), inboxQuery()));
+      } else {
+        List<Ticket> values = service.list(request, false);
+        applyTickets(values, SupportTicketService.selectTicket(values, selectedId(), false));
+        refreshConversation();
       }
-      applyTickets(values, SupportTicketService.selectTicket(values, selectedId(), administration));
-      refreshConversation();
       if (notifySuccess) {
         succeeded(texts::getSupportRefreshed);
       }
@@ -839,23 +901,10 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private void applyTickets(List<Ticket> values, Ticket selection) {
-    if (administration && ticketCategories.getSelectedTab() == recoveryTickets) {
-      values = values.stream().filter(ticket -> ticket.type() == Type.RECOVERY).toList();
-      if (selection != null && selection.type() != Type.RECOVERY) {
-        selection = null;
-      }
-    } else if (!administration) {
+    if (!administration) {
       userRequestCount.setText(texts.getSupportRequestCount(values.size()));
     }
     if (administration) {
-      values = values.stream().filter(ticket -> filters.matches(ticket, administratorId)).toList();
-      if (selection != null) {
-        Long selectionId = selection.id();
-        if (values.stream().noneMatch(ticket -> ticket.id().equals(selectionId))
-            && !filters.matchesMetadata(selection, administratorId)) {
-          selection = null;
-        }
-      }
       int count = filters.activeCount();
       activeFilterCount.setText(Integer.toString(count));
       activeFilterCount.setVisible(count > 0);

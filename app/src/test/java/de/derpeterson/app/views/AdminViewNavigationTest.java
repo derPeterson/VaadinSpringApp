@@ -203,7 +203,22 @@ class AdminViewNavigationTest {
             false,
             false,
             null);
-    when(tickets.list(request, true)).thenReturn(List.of(ticket));
+    when(tickets.findForAdministration(eq(request), any()))
+        .thenAnswer(call -> "10001".equals(call.getArgument(1)) ? ticket : null);
+    when(tickets.inbox(eq(request), any(), any()))
+        .thenAnswer(
+            call -> {
+              Long selected = call.getArgument(1);
+              return new SupportTicketService.LiveView(
+                  1L,
+                  List.of(ticket),
+                  ticket.id().equals(selected) ? ticket : null,
+                  List.of(),
+                  null,
+                  1,
+                  0,
+                  10);
+            });
     view.configureSupport(tickets);
     enter(query);
     Component support = (Component) ReflectionTestUtils.getField(view, "supportSection");

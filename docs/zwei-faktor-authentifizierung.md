@@ -216,15 +216,19 @@ Der Tooltip lautet „Neue Aktivitäten im Ticketsystem“. Das bloße Öffnen d
 Ticketsystems entfernt den Punkt nicht, erst das Lesen oder der Wegfall aller
 relevanten ungelesenen Nachrichten.
 
-Die Adminliste lädt derzeit bis zu 100 Vorgänge, die persönliche Liste bis zu 20.
-Status, Zuständigkeit und „Alle / Ungelesen“ filtern diese geladene Auswahl.
-Der Ticketsprung im administrativen Filter nimmt die sichtbare Ticketnummer ohne
-Raute entgegen und kann auch einen älteren Vorgang außerhalb der Liste öffnen.
-Die Listenfilter werden für den Sprung aufgehoben. Ein unbekannter Vorgang ändert
-die bisherige Auswahl nicht. Der direkte Zugriff prüft dieselben Adminrechte wie
-die Liste; auch Aktualisieren und Live-Updates erhalten den älteren ausgewählten
-Vorgang. Eine datenbankseitige Filterung mit Seitennavigation ist noch nicht umgesetzt.
-Im Filter „Ungelesen“ verschwindet ein gelesener Vorgang aus der Liste. Seine bereits
+Die Adminliste zeigt standardmäßig 10 Vorgänge pro Seite. Im Footer lassen sich
+20 oder 50 Einträge wählen. Die Pfeile wechseln jeweils zur vorherigen oder
+nächsten Seite. Kategorie, Status, Zuständigkeit und „Alle / Ungelesen“ filtern
+den berechtigten Bestand in der Datenbank. Der Footer zeigt den Bereich und die
+Gesamtzahl der Treffer. Die persönliche Liste lädt weiterhin bis zu 20 Anfragen.
+Eine Änderung der Kategorie, Filter oder Seitengröße beginnt auf Seite eins.
+Aktualisieren und Live-Updates behalten die aktuelle Seite bei, solange sie
+vorhanden ist. Beim Blättern bleiben geöffnete Details und Antwortentwurf erhalten.
+Der Ticketsprung nimmt die sichtbare Ticketnummer ohne Raute entgegen, hebt
+Listenfilter auf und öffnet die passende Seite. Ein unbekannter Vorgang lässt
+die bisherige Auswahl bestehen. Der Zugriff erfordert dieselben Adminrechte
+wie die Liste.
+Im Filter „Ungelesen“ verschwindet ein gelesener Vorgang aus der Liste. Seine
 geöffnete Detailansicht und der Antwortentwurf bleiben zur Bearbeitung erhalten.
 Ein geänderter Status- oder Zuständigkeitsfilter kann ihn weiterhin ausblenden.
 

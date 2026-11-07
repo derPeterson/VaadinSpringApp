@@ -248,6 +248,10 @@
 .support-admin-no-selection > .cosmos-notification-empty-title { font:600 18px/26px Inter,sans-serif; }
 .support-admin-no-selection > .cosmos-panel-description { max-width:420px; }
 .support-admin-ticket-scroll { max-height:min(44vh, 460px); }
+#support-queue-footer { padding:12px; border-top:1px solid var(--cosmos-reference-border); }
+.support-pagination.admin-user-pagination { flex-wrap:nowrap; gap:8px; font-size:11px; }
+.support-pagination .admin-user-pagination-summary { margin-inline-start:auto; flex-wrap:nowrap; gap:0; }
+.support-pagination .admin-user-pagination-nav { margin-inline-start:0; flex-wrap:nowrap; gap:4px; }
 .support-admin-ticket-list {
   --cosmos-table-row-background:var(--cosmos-reference-input);
   --cosmos-table-alternate-row-background:var(--cosmos-reference-input);

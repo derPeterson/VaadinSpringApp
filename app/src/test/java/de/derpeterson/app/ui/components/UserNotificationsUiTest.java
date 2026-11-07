@@ -61,7 +61,6 @@ import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.SupportTicketService;
-import de.derpeterson.app.service.SupportTicketService.LiveView;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserNotificationService;
@@ -187,8 +186,8 @@ class UserNotificationsUiTest {
             });
     Ticket ticket = mock(Ticket.class);
     when(ticket.unreadMessages()).thenReturn(3L);
-    when(support.liveView(http, true, null))
-        .thenReturn(new LiveView(5L, List.of(ticket), null, List.of(), null));
+    when(support.activity(http))
+        .thenAnswer(call -> new SupportTicketService.Activity(5L, ticket.unreadMessages() > 0));
     SideNavItem navigation = new SideNavItem("Tickets");
     SupportTicketActivityIndicator indicator =
         new SupportTicketActivityIndicator(texts, support, request, navigation);
@@ -198,7 +197,7 @@ class UserNotificationsUiTest {
     assertEquals(texts.getSupportNewActivity(), Tooltip.forComponent(navigation).getText());
 
     listener.get().accept(new SupportTicketBroadcaster.Change(null, 77L));
-    verify(support, times(1)).liveView(http, true, null);
+    verify(support, times(1)).activity(http);
 
     when(ticket.unreadMessages()).thenReturn(0L);
     listener.get().accept(new SupportTicketBroadcaster.Change(null, 5L));
@@ -212,7 +211,7 @@ class UserNotificationsUiTest {
     indicator.refreshTexts();
     assertEquals(texts.getSupportNewActivity(), Tooltip.forComponent(navigation).getText());
 
-    when(support.liveView(http, true, null)).thenThrow(new AccessDeniedException("Access revoked"));
+    when(support.activity(http)).thenThrow(new AccessDeniedException("Access revoked"));
     listener.get().accept(new SupportTicketBroadcaster.Change(null, 5L));
     assertFalse(indicator.isVisible());
     assertEquals("", Tooltip.forComponent(navigation).getText());

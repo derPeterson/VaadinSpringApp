@@ -50,6 +50,8 @@ import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorEnrollment;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.ExternalIdentityService;
+import de.derpeterson.app.service.SupportTicketFilter.Assignment;
+import de.derpeterson.app.service.SupportTicketFilter.Reading;
 import de.derpeterson.app.service.SupportTicketService;
 import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
@@ -60,8 +62,6 @@ import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import de.derpeterson.app.ui.components.RecoveryInstructionsComponent;
 import de.derpeterson.app.ui.components.SupportTicketFilterPanel;
-import de.derpeterson.app.ui.components.SupportTicketFilterPanel.Assignment;
-import de.derpeterson.app.ui.components.SupportTicketFilterPanel.Reading;
 import de.derpeterson.app.ui.components.SupportTicketsComponent;
 import de.derpeterson.app.ui.components.SupportTicketsComponent.Category;
 import de.derpeterson.app.ui.components.SupportTicketsComponent.NavigationState;
@@ -425,7 +425,7 @@ class TwoFactorFlowViewTest {
   void ticketSelectionHintUsesTheListIconAndTheSharedEmptyStyle(String language) {
     open(language, false);
     SupportTicketService tickets = mock(SupportTicketService.class);
-    when(tickets.list(request, true)).thenReturn(List.of());
+    stubInbox(tickets, List.of());
     SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
     VerticalLayout hint =
         assertInstanceOf(VerticalLayout.class, find(component, "support-select-ticket"));
@@ -457,7 +457,7 @@ class TwoFactorFlowViewTest {
             filterTicket(1L, Status.IN_PROGRESS, 9L),
             filterTicket(2L, Status.OPEN, null),
             filterTicket(3L, Status.CLOSED, 10L));
-    when(tickets.list(request, true)).thenReturn(values);
+    stubInbox(tickets, values);
     when(tickets.administratorId(request)).thenReturn(9L);
     SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
     Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
@@ -499,7 +499,7 @@ class TwoFactorFlowViewTest {
     SupportTicketService tickets = mock(SupportTicketService.class);
     Ticket mine = filterTicket(1L, Status.IN_PROGRESS, 9L);
     Ticket unassigned = filterTicket(2L, Status.OPEN, null);
-    when(tickets.list(request, true)).thenReturn(List.of(mine, unassigned));
+    stubInbox(tickets, List.of(mine, unassigned));
     when(tickets.administratorId(request)).thenReturn(9L);
     SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
     Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
@@ -511,8 +511,7 @@ class TwoFactorFlowViewTest {
         .setValue(Assignment.UNASSIGNED);
     filterAction(filters, "support-filter-apply").click();
     assertEquals(List.of(2L), grid.getListDataView().getItems().map(Ticket::id).toList());
-    when(tickets.list(request, true))
-        .thenReturn(List.of(mine, filterTicket(2L, Status.IN_PROGRESS, 10L)));
+    stubInbox(tickets, List.of(mine, filterTicket(2L, Status.IN_PROGRESS, 10L)));
     component.refresh();
     assertEquals(0, grid.getListDataView().getItemCount());
     assertTrue(component.getElement().getTextRecursively().contains(texts.getSupportFilterEmpty()));
@@ -529,8 +528,7 @@ class TwoFactorFlowViewTest {
     open(language, false);
     SupportTicketService tickets = mock(SupportTicketService.class);
     Ticket mine = filterTicket(1L, Status.IN_PROGRESS, 9L);
-    when(tickets.list(request, true))
-        .thenReturn(List.of(mine, filterTicket(2L, Status.OPEN, null)));
+    stubInbox(tickets, List.of(mine, filterTicket(2L, Status.OPEN, null)));
     when(tickets.administratorId(request)).thenReturn(9L);
     SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
     Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
@@ -568,6 +566,53 @@ class TwoFactorFlowViewTest {
     return filterTicket(id, status, assignee, 0);
   }
 
+  /** UI-Antworten des Dienstes; die echten Datenbankfilter werden im H2-Diensttest geprüft. */
+  private void stubInbox(SupportTicketService tickets, List<Ticket> values) {
+    when(tickets.findForAdministration(eq(request), anyString()))
+        .thenAnswer(
+            call -> {
+              String number = call.getArgument(1);
+              return values.stream()
+                  .filter(
+                      ticket -> SupportTicketService.ticketNumber(ticket.id()).equals("#" + number))
+                  .findFirst()
+                  .orElse(null);
+            });
+    when(tickets.inbox(eq(request), any(), any()))
+        .thenAnswer(
+            call -> {
+              Long selectedId = call.getArgument(1);
+              SupportTicketService.InboxQuery query = call.getArgument(2);
+              Long viewer = tickets.administratorId(request);
+              List<Ticket> matches =
+                  values.stream()
+                      .filter(ticket -> query.filter().matchesMetadata(ticket, viewer))
+                      .filter(
+                          ticket ->
+                              query.filter().reading() == Reading.ALL
+                                  || ticket.unreadMessages() > 0)
+                      .toList();
+              int page = Math.min(query.page(), Math.max(0, (matches.size() - 1) / query.size()));
+              List<Ticket> rows =
+                  matches.stream().skip((long) page * query.size()).limit(query.size()).toList();
+              Ticket selected =
+                  values.stream()
+                      .filter(ticket -> ticket.id().equals(selectedId))
+                      .filter(ticket -> query.filter().matchesMetadata(ticket, viewer))
+                      .findFirst()
+                      .orElse(null);
+              return new SupportTicketService.LiveView(
+                  viewer,
+                  rows,
+                  selected,
+                  selected == null ? List.of() : tickets.conversation(request, selectedId, true),
+                  null,
+                  matches.size(),
+                  page,
+                  query.size());
+            });
+  }
+
   private Ticket filterTicket(Long id, Status status, Long assignee, long unread) {
     UserIdentity identity =
         assignee == null ? null : new UserIdentity("Alex", "Beispiel", "alex@example.test");
@@ -597,7 +642,7 @@ class TwoFactorFlowViewTest {
     Ticket unread = filterTicket(1L, Status.IN_PROGRESS, 9L, 2);
     Ticket read = filterTicket(2L, Status.OPEN, null);
     Ticket older = filterTicket(3L, Status.CLOSED, null);
-    when(tickets.list(request, true)).thenReturn(List.of(unread, read));
+    stubInbox(tickets, List.of(unread, read));
     when(tickets.findForAdministration(request, "10003")).thenReturn(older);
     when(tickets.administratorId(request)).thenReturn(9L);
     SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
@@ -613,8 +658,7 @@ class TwoFactorFlowViewTest {
     assertEquals(1, filters.activeCount());
     grid.asSingleSelect().setValue(unread);
     component.refresh();
-    when(tickets.list(request, true))
-        .thenReturn(List.of(filterTicket(1L, Status.IN_PROGRESS, 9L), read));
+    stubInbox(tickets, List.of(filterTicket(1L, Status.IN_PROGRESS, 9L), read));
     component.refresh();
     assertEquals(0, grid.getListDataView().getItemCount());
     assertTrue(find(component, "support-ticket-panel").isVisible());
@@ -625,6 +669,7 @@ class TwoFactorFlowViewTest {
     assertEquals(read, grid.asSingleSelect().getValue());
     assertEquals(0, filters.activeCount());
     ((Button) find(component, "support-filter")).click();
+    stubInbox(tickets, List.of(older));
     number.setValue("10003");
     ((Button) find(filters, "support-jump")).click();
     assertEquals(older, grid.asSingleSelect().getValue());
@@ -645,7 +690,7 @@ class TwoFactorFlowViewTest {
     open(language, false);
     SupportTicketService tickets = mock(SupportTicketService.class);
     Ticket ticket = filterTicket(1L, Status.OPEN, null);
-    when(tickets.list(request, true)).thenReturn(List.of(ticket));
+    stubInbox(tickets, List.of(ticket));
     when(tickets.administratorId(request)).thenReturn(9L);
     SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
     List<NavigationState> changes = new ArrayList<>();
@@ -694,27 +739,26 @@ class TwoFactorFlowViewTest {
     open(language, false);
     SupportTicketService tickets = mock(SupportTicketService.class);
     when(tickets.administratorId(request)).thenReturn(9L);
-    when(tickets.list(request, true)).thenReturn(List.of(filterTicket(1L, Status.OPEN, null)));
+    stubInbox(tickets, List.of(filterTicket(1L, Status.OPEN, null)));
     SupportTicketsComponent component = new SupportTicketsComponent(texts, tickets, request, true);
     component.openTicket("10001");
     Component hint = find(component, "support-ticket-status-note");
     assertTrue(hint.isVisible());
     assertEquals(texts.getSupportUnassignedHint(), hint.getElement().getText());
 
-    when(tickets.list(request, true)).thenReturn(List.of(filterTicket(1L, Status.IN_PROGRESS, 9L)));
+    stubInbox(tickets, List.of(filterTicket(1L, Status.IN_PROGRESS, 9L)));
     component.refresh();
     assertFalse(hint.isVisible());
     assertTrue(find(component, "support-add-reply").isVisible());
 
-    when(tickets.list(request, true))
-        .thenReturn(List.of(filterTicket(1L, Status.CLOSED_BY_REQUESTER, 9L)));
+    stubInbox(tickets, List.of(filterTicket(1L, Status.CLOSED_BY_REQUESTER, 9L)));
     component.refresh();
     assertTrue(hint.isVisible());
     assertEquals(texts.getSupportRequesterClosedHint(), hint.getElement().getText());
     assertFalse(find(component, "support-add-reply").isVisible());
     assertTrue(find(component, "support-close").isVisible());
 
-    when(tickets.list(request, true)).thenReturn(List.of(filterTicket(1L, Status.CLOSED, 9L)));
+    stubInbox(tickets, List.of(filterTicket(1L, Status.CLOSED, 9L)));
     component.refreshTexts();
     assertTrue(hint.isVisible());
     assertEquals(texts.getSupportClosedHint(), hint.getElement().getText());
@@ -748,7 +792,7 @@ class TwoFactorFlowViewTest {
             false,
             false,
             new UserIdentity("Riley", "Antrag", "riley@example.test"));
-    when(tickets.list(request, true)).thenReturn(List.of(assigned));
+    stubInbox(tickets, List.of(assigned));
     when(tickets.conversation(request, assigned.id(), true))
         .thenReturn(
             List.of(
@@ -864,7 +908,7 @@ class TwoFactorFlowViewTest {
     MessageProperties liveTexts = new MessageProperties(new CustomI18NProvider());
     SupportTicketService tickets = mock(SupportTicketService.class);
     Ticket assigned = filterTicket(1L, Status.IN_PROGRESS, 9L);
-    when(tickets.list(request, true)).thenReturn(List.of(assigned));
+    stubInbox(tickets, List.of(assigned));
     when(tickets.administratorId(request)).thenReturn(9L);
     SupportTicketsComponent component =
         new SupportTicketsComponent(liveTexts, tickets, request, true);
@@ -948,7 +992,11 @@ class TwoFactorFlowViewTest {
           administration
               ? List.of(publicReply, internalNote, deletedAuthor)
               : List.of(publicReply, deletedAuthor);
-      when(tickets.list(request, administration)).thenReturn(List.of(assigned));
+      if (administration) {
+        stubInbox(tickets, List.of(assigned));
+      } else {
+        when(tickets.list(request, false)).thenReturn(List.of(assigned));
+      }
       when(tickets.conversation(request, assigned.id(), administration)).thenReturn(messages);
       SupportTicketsComponent component =
           new SupportTicketsComponent(texts, tickets, request, administration);

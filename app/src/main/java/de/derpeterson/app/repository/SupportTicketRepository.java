@@ -5,13 +5,24 @@ import jakarta.persistence.LockModeType;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
-public interface SupportTicketRepository extends JpaRepository<SupportTicketEntity, Long> {
+public interface SupportTicketRepository
+    extends JpaRepository<SupportTicketEntity, Long>,
+        JpaSpecificationExecutor<SupportTicketEntity> {
+  @Override
+  @EntityGraph(attributePaths = {"owner", "assignee"})
+  Page<SupportTicketEntity> findAll(
+      Specification<SupportTicketEntity> specification, Pageable page);
+
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select t from SupportTicketEntity t where t.id = :id")
   Optional<SupportTicketEntity> lock(Long id);
@@ -19,10 +30,6 @@ public interface SupportTicketRepository extends JpaRepository<SupportTicketEnti
   @Query(
       "select t from SupportTicketEntity t where t.owner.id = :owner order by t.publicUpdatedAt desc, t.id desc")
   List<SupportTicketEntity> own(Long owner, Pageable page);
-
-  @Query(
-      "select t from SupportTicketEntity t join fetch t.owner left join fetch t.assignee order by t.updatedAt desc, t.id desc")
-  List<SupportTicketEntity> inbox(Pageable page);
 
   @Query(
       "select count(t) from SupportTicketEntity t where t.owner.id = :owner and t.status in :activeStatuses")

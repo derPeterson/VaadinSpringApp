@@ -22,6 +22,7 @@ import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,6 +37,92 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("browser")
 public class TwoFactorBrowserTest extends BrowserFixture {
+  @Test
+  @Tag("ticket-filters")
+  @DisplayName("MFA-23: Vorgangsseiten erhalten Details und Entwurf bei 10, 20 und 50 Einträgen")
+  void ticketPagesPreserveDetailsAndDrafts() {
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    AdminUsersPage users = new AdminUsersPage(page);
+    List<String> numbers = new ArrayList<>();
+    for (int index = 0; index < 12; index++) {
+      String email = "ticket-pages-" + UUID.randomUUID() + "@example.test";
+      users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+      try (BrowserActor requester = new BrowserActor(browser)) {
+        requester.login(email, BrowserTestAccounts.USER_PASSWORD);
+        requester.page.navigate("/recovery-help");
+        requester
+            .page
+            .locator("#support-reply textarea")
+            .fill("Synthetic request for pagination " + index);
+        UiActions.complete(requester.page, () -> requester.page.locator("#support-create").click());
+        numbers.add(
+            requester
+                .page
+                .locator("#support-ticket-grid")
+                .getByText(Pattern.compile("^#[0-9]+$"))
+                .first()
+                .innerText()
+                .substring(1));
+      }
+    }
+    for (int width : new int[] {1280, 390}) {
+      page.setViewportSize(width, 1000);
+      page.navigate("/admin?section=support&ticket=" + numbers.getFirst());
+      assertThat(page.locator("#support-ticket-panel")).isVisible();
+      if (page.locator("#support-claim").isVisible()) {
+        UiActions.complete(page, () -> page.locator("#support-claim").click());
+        jumpToTicket(numbers.getFirst());
+      }
+      Locator paging = page.locator("#support-pagination");
+      Locator next = paging.locator(".cosmos-pagination-next");
+      Locator previous = paging.locator(".cosmos-pagination-previous");
+      Locator rows = page.locator("#support-ticket-grid .support-admin-ticket-card:visible");
+      Locator input = page.locator("#support-reply textarea");
+      assertThat(rows).hasCount(10);
+      assertThat(previous).isDisabled();
+      assertThat(next).isEnabled();
+      assertThat(paging.locator(".admin-user-pagination-arrow:visible")).hasCount(2);
+      input.fill("This unsent reply survives changing ticket pages.");
+      UiActions.complete(page, next::click);
+      assertThat(previous).isEnabled();
+      assertThat(page.locator("#support-ticket-panel .support-ticket-number"))
+          .hasText(texts.getSupportTicketNumber("#" + numbers.getFirst()));
+      assertThat(input).hasValue("This unsent reply survives changing ticket pages.");
+      UiActions.complete(page, previous::click);
+      assertThat(previous).isDisabled();
+      for (int size : new int[] {20, 50, 10}) {
+        paging.locator("vaadin-combo-box").click();
+        UiActions.completeValueChange(
+            page,
+            () ->
+                page.getByRole(
+                        AriaRole.OPTION,
+                        new Page.GetByRoleOptions().setName(Integer.toString(size)).setExact(true))
+                    .click());
+        assertThat(paging.locator("vaadin-combo-box input")).hasValue(Integer.toString(size));
+        assertThat(previous).isDisabled();
+        String range = paging.locator(".admin-user-pagination-total").innerText();
+        java.util.regex.Matcher total = Pattern.compile("([0-9]+)$").matcher(range);
+        assertTrue(total.find());
+        assertThat(rows).hasCount(Math.min(size, Integer.parseInt(total.group(1))));
+        assertThat(input).hasValue("This unsent reply survives changing ticket pages.");
+      }
+      AllurePlaywright.attachScreenshot("Vorgänge mit gekürzter Pagination " + width, page);
+      input.clear();
+    }
+  }
+
+  private void jumpToTicket(String number) {
+    page.locator("#support-filter").click();
+    Locator filter = page.locator("#support-filter-panel");
+    filter.locator("#support-jump-number input").fill(number);
+    UiActions.complete(page, () -> filter.locator("#support-jump").click());
+    assertThat(filter).not().hasAttribute("opened", "");
+  }
+
   @Test
   @Tag("ticket-filters")
   @DisplayName("MFA-22: Vorgangsfilter und Ticketsprung verwenden die gemeinsamen Filterbausteine")

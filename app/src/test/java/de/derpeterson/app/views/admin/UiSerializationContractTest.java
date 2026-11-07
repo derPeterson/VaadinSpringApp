@@ -36,6 +36,7 @@ import de.derpeterson.app.service.UserNotificationService.Selection;
 import de.derpeterson.app.service.UserNotificationService.Target;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountAvatarDialog;
+import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.PageNavigationComponent;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -166,7 +167,7 @@ class UiSerializationContractTest {
     }
   }
 
-  private record Paging(AdminUserPagination component, Probe probe) implements Serializable {}
+  private record Paging(CosmosPagination component, Probe probe) implements Serializable {}
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
@@ -175,7 +176,7 @@ class UiSerializationContractTest {
     Probe probe = new Probe();
     MessageProperties messages =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
-    AdminUserPagination pagination = new AdminUserPagination(messages, probe::page, probe::size);
+    CosmosPagination pagination = new CosmosPagination(messages, probe::page, probe::size);
     pagination.showPage(2, 100, 10);
     Paging restored = copy(new Paging(pagination, probe));
     restored.component().refreshTexts();

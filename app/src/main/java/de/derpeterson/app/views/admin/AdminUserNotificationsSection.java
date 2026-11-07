@@ -43,6 +43,7 @@ import de.derpeterson.app.service.UserNotificationService.Sent;
 import de.derpeterson.app.service.UserNotificationService.Target;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.NotificationEmptyState;
 import jakarta.servlet.http.HttpServletRequest;
@@ -103,7 +104,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final Span historyDescription = new Span();
   private final Span historyCount = new Span();
   private final Div history = new Div();
-  private final AdminUserPagination historyPagination;
+  private final CosmosPagination historyPagination;
   private int historyPageSize = 5;
   private Preview preview;
   private UUID requestId = UUID.randomUUID();
@@ -280,9 +281,9 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     return form;
   }
 
-  private AdminUserPagination createHistoryPagination() {
-    AdminUserPagination pagination =
-        new AdminUserPagination(
+  private CosmosPagination createHistoryPagination() {
+    CosmosPagination pagination =
+        new CosmosPagination(
             texts,
             selectedPage -> {
               page = selectedPage;

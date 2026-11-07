@@ -60,6 +60,7 @@ import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.ui.components.PortalFields;
@@ -138,7 +139,7 @@ public class AdminUserManagementSection extends VerticalLayout {
   private final CheckboxGroup<UserStatus> statusFilter = new CheckboxGroup<>();
   private final CheckboxGroup<RoleType> roleFilter = new CheckboxGroup<>();
   private final AdminUserActivityFilter lastActivityFilter;
-  private final AdminUserPagination pagination;
+  private final CosmosPagination pagination;
   private final AdminUserFilterBar filterBar;
 
   private Grid.Column<UserEntity> nameColumn;
@@ -215,7 +216,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     refreshButton.addClassName("admin-user-refresh");
 
     pagination =
-        new AdminUserPagination(
+        new CosmosPagination(
             messageProperties,
             page -> {
               currentPage = page;

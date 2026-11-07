@@ -25,6 +25,7 @@ import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.components.CosmosPagination;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -222,17 +223,16 @@ class AdminUserManagementFilterTest {
 
   @Test
   void manyPagesUseBoundedNumberedNavigationWithFirstAndLast() {
-    assertEquals(List.of(0, 1, 2, 3, 19), AdminUserPagination.pageIndices(0, 20));
-    assertEquals(List.of(0, 8, 9, 10, 19), AdminUserPagination.pageIndices(9, 20));
-    assertEquals(List.of(0, 16, 17, 18, 19), AdminUserPagination.pageIndices(19, 20));
-    assertEquals(List.of(0), AdminUserPagination.pageIndices(0, 1));
+    assertEquals(List.of(0, 1, 2, 3, 19), CosmosPagination.pageIndices(0, 20));
+    assertEquals(List.of(0, 8, 9, 10, 19), CosmosPagination.pageIndices(9, 20));
+    assertEquals(List.of(0, 16, 17, 18, 19), CosmosPagination.pageIndices(19, 20));
+    assertEquals(List.of(0), CosmosPagination.pageIndices(0, 1));
   }
 
   @Test
   void pageNavigationClampsExtremeIndicesWithoutIntegerOverflow() {
-    assertEquals(
-        List.of(0, 16, 17, 18, 19), AdminUserPagination.pageIndices(Integer.MAX_VALUE, 20));
-    assertEquals(List.of(0, 1, 2, 3, 19), AdminUserPagination.pageIndices(Integer.MIN_VALUE, 20));
+    assertEquals(List.of(0, 16, 17, 18, 19), CosmosPagination.pageIndices(Integer.MAX_VALUE, 20));
+    assertEquals(List.of(0, 1, 2, 3, 19), CosmosPagination.pageIndices(Integer.MIN_VALUE, 20));
     assertEquals(
         List.of(
             0,
@@ -240,7 +240,7 @@ class AdminUserManagementFilterTest {
             Integer.MAX_VALUE - 3,
             Integer.MAX_VALUE - 2,
             Integer.MAX_VALUE - 1),
-        AdminUserPagination.pageIndices(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        CosmosPagination.pageIndices(Integer.MAX_VALUE, Integer.MAX_VALUE));
   }
 
   @Test

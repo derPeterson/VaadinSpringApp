@@ -1,18 +1,24 @@
-package de.derpeterson.app.views.admin;
+package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.function.SerializableConsumer;
 import de.derpeterson.app.i18n.MessageProperties;
-import de.derpeterson.app.ui.components.AppIcon;
 import java.util.List;
 import java.util.TreeSet;
 
-/** Rows-per-page summary and compact numbered navigation, separate from CRUD. */
-final class AdminUserPagination extends HorizontalLayout {
+/** Gemeinsame native Pagination mit vollständiger oder auf zwei Pfeile verkürzter Navigation. */
+@StyleSheet("custom-theme/admin-users.css")
+public final class CosmosPagination extends HorizontalLayout {
+  public enum Mode {
+    NUMBERED,
+    PREVIOUS_NEXT
+  }
+
   private final MessageProperties texts;
   private final SerializableConsumer<Integer> selectPage;
   private final ComboBox<Integer> pageSize = new ComboBox<>();
@@ -25,22 +31,33 @@ final class AdminUserPagination extends HorizontalLayout {
   private final Button last = new Button(AppIcon.ANGLE_DOUBLE_RIGHT.create());
   private int currentPage;
   private int totalPages = 1;
-  private int totalItems;
+  private long totalItems;
+  private final Mode mode;
 
-  AdminUserPagination(
+  public CosmosPagination(
       MessageProperties texts,
       SerializableConsumer<Integer> selectPage,
       SerializableConsumer<Integer> selectPageSize) {
     this(texts, selectPage, selectPageSize, List.of(10, 20, 50));
   }
 
-  AdminUserPagination(
+  public CosmosPagination(
       MessageProperties texts,
       SerializableConsumer<Integer> selectPage,
       SerializableConsumer<Integer> selectPageSize,
       List<Integer> pageSizes) {
+    this(texts, selectPage, selectPageSize, pageSizes, Mode.NUMBERED);
+  }
+
+  public CosmosPagination(
+      MessageProperties texts,
+      SerializableConsumer<Integer> selectPage,
+      SerializableConsumer<Integer> selectPageSize,
+      List<Integer> pageSizes,
+      Mode mode) {
     this.texts = texts;
     this.selectPage = selectPage;
+    this.mode = mode;
     addClassName("admin-user-pagination");
     setWidthFull();
     setAlignItems(Alignment.CENTER);
@@ -48,7 +65,7 @@ final class AdminUserPagination extends HorizontalLayout {
     pageSize.setItems(pageSizes);
     pageSize.setValue(pageSizes.getFirst());
     pageSize.setAllowCustomValue(false);
-    de.derpeterson.app.ui.components.PortalFields.styleChoice(pageSize, Object::toString, false);
+    PortalFields.styleChoice(pageSize, Object::toString, false);
     pageSize.addClassName("portal-pagination-size");
     pageSize.setWidth("56px");
     pageSize.addValueChangeListener(
@@ -67,32 +84,46 @@ final class AdminUserPagination extends HorizontalLayout {
     navigation.addClassName("admin-user-pagination-nav");
     navigation.setSpacing(false);
     navigation.setAlignItems(Alignment.CENTER);
+    first.setVisible(mode == Mode.NUMBERED);
+    last.setVisible(mode == Mode.NUMBERED);
+    numbers.setVisible(mode == Mode.NUMBERED);
     for (Button button : List.of(first, previous, next, last)) {
       button.addClassName("admin-user-pagination-arrow");
     }
     first.addClickListener(event -> selectPage.accept(0));
     previous.addClickListener(event -> selectPage.accept(Math.max(0, currentPage - 1)));
+    previous.addClassName("cosmos-pagination-previous");
+    next.addClassName("cosmos-pagination-next");
     next.addClickListener(event -> selectPage.accept(Math.min(totalPages - 1, currentPage + 1)));
     last.addClickListener(event -> selectPage.accept(totalPages - 1));
     summary.remove(totalLabel);
-    add(summary, totalLabel, navigation);
+    if (mode == Mode.PREVIOUS_NEXT) {
+      summary.remove(rowsLabel);
+      add(totalLabel, summary, navigation);
+    } else {
+      add(summary, totalLabel, navigation);
+    }
     refreshTexts();
   }
 
-  void showPage(int page, int totalItems, int size) {
+  public void showPage(int page, long totalItems, int size) {
     this.totalItems = totalItems;
-    totalPages = Math.max(1, (int) Math.ceil((double) totalItems / size));
+    totalPages = Math.clamp(Math.ceilDiv(totalItems, (long) size), 1, Integer.MAX_VALUE);
     currentPage = Math.clamp(page, 0, totalPages - 1);
     refreshTexts();
   }
 
-  void refreshTexts() {
+  public void refreshTexts() {
     rowsLabel.setText(texts.getAdminUsersPaginationPerPage());
     pageSize.setAriaLabel(texts.getAdminUsersPaginationPerPage());
+    if (mode == Mode.PREVIOUS_NEXT) {
+      pageSize.setTooltipText(texts.getAdminUsersPaginationPerPage());
+    }
     int size = pageSize.getValue();
-    int from = totalItems == 0 ? 0 : currentPage * size + 1;
-    int to = Math.min((currentPage + 1) * size, totalItems);
+    long from = totalItems == 0 ? 0 : (long) currentPage * size + 1;
+    long to = Math.min(((long) currentPage + 1) * size, totalItems);
     totalLabel.setText(texts.getPortalPaginationRange(from, to, totalItems));
+    totalLabel.addClassName("admin-user-pagination-total");
     label(first, texts.getAdminUsersPaginationFirstPage());
     label(previous, texts.getAdminUsersPaginationPreviousPage());
     label(next, texts.getAdminUsersPaginationNextPage());
@@ -102,6 +133,9 @@ final class AdminUserPagination extends HorizontalLayout {
     next.setEnabled(currentPage < totalPages - 1);
     last.setEnabled(currentPage < totalPages - 1);
     numbers.removeAll();
+    if (mode == Mode.PREVIOUS_NEXT) {
+      return;
+    }
     int preceding = -1;
     for (int page : pageIndices(currentPage, totalPages)) {
       if (preceding >= 0 && page - preceding > 1) {
@@ -127,7 +161,7 @@ final class AdminUserPagination extends HorizontalLayout {
     button.setTooltipText(text);
   }
 
-  static List<Integer> pageIndices(int current, int total) {
+  public static List<Integer> pageIndices(int current, int total) {
     TreeSet<Integer> pages = new TreeSet<>();
     pages.add(0);
     pages.add(total - 1);
