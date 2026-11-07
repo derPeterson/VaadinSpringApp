@@ -482,35 +482,39 @@ public final class TwoFactorView extends VerticalLayout
       if (!availableEnrollmentProvider(provider)) {
         continue;
       }
-      boolean google = ExternalProviderSettings.GOOGLE.equals(provider);
-      String brand =
-          google ? ExternalProviderSettings.GOOGLE_NAME : ExternalProviderSettings.MICROSOFT_NAME;
-      Button proof = new Button(texts.getExternalProofWith(brand));
-      proof.setId("two-factor-confirm-" + provider);
-      Image mark = new Image("icons/external-login/" + provider + (google ? ".png" : ".svg"), "");
-      mark.addClassName("external-proof-provider-mark");
-      proof.setPrefixComponent(mark);
-      proof.setEnabled(enrollment.available());
-      proof.addClickListener(
-          event -> {
-            try {
-              UI.getCurrent()
-                  .getPage()
-                  .setLocation(
-                      external.beginProof(
-                          request,
-                          provider,
-                          ExternalLoginFlow.Purpose.ENROLL_FACTOR,
-                          VaadinSession.getCurrent().getLocale()));
-            } catch (RuntimeException failure) {
-              failure(failure);
-            }
-          });
-      extraActions.add(proof);
+      extraActions.add(enrollmentProofButton(provider));
     }
     if (!local && extraActions.getComponentCount() == 0) {
       addHint(texts.getExternalProofUnavailable());
     }
+  }
+
+  private Button enrollmentProofButton(String provider) {
+    boolean google = ExternalProviderSettings.GOOGLE.equals(provider);
+    String brand =
+        google ? ExternalProviderSettings.GOOGLE_NAME : ExternalProviderSettings.MICROSOFT_NAME;
+    Button proof = new Button(texts.getExternalProofWith(brand));
+    proof.setId("two-factor-confirm-" + provider);
+    Image mark = new Image("icons/external-login/" + provider + (google ? ".png" : ".svg"), "");
+    mark.addClassName("external-proof-provider-mark");
+    proof.setPrefixComponent(mark);
+    proof.setEnabled(enrollment.available());
+    proof.addClickListener(
+        event -> {
+          try {
+            UI.getCurrent()
+                .getPage()
+                .setLocation(
+                    external.beginProof(
+                        request,
+                        provider,
+                        ExternalLoginFlow.Purpose.ENROLL_FACTOR,
+                        VaadinSession.getCurrent().getLocale()));
+          } catch (RuntimeException failure) {
+            failure(failure);
+          }
+        });
+    return proof;
   }
 
   private boolean availableEnrollmentProvider(String provider) {
@@ -1029,18 +1033,8 @@ public final class TwoFactorView extends VerticalLayout
       return;
     }
     switch (pending.kind()) {
-      case RECOVERY_OUTPUT -> {
-        if (Boolean.TRUE.equals(recoverySaved.getValue())) {
-          enrollment.dismissOutput(request, pending.id());
-          finish();
-        }
-      }
-      case ENROLLMENT -> {
-        if (ValidationHelper.validateRequiredInputs(List.of(enrollmentCode), texts)) {
-          enrollment.complete(request, pending.id(), enrollmentCode.getValue());
-          render();
-        }
-      }
+      case RECOVERY_OUTPUT -> submitRecoveryOutput();
+      case ENROLLMENT -> submitEnrollmentCode();
       case GOOGLE_EMAIL, ACTION -> {
         if (!ValidationHelper.validateRequiredInputs(List.of(code), texts)) {
           return;
@@ -1052,6 +1046,20 @@ public final class TwoFactorView extends VerticalLayout
         }
         render();
       }
+    }
+  }
+
+  private void submitRecoveryOutput() {
+    if (Boolean.TRUE.equals(recoverySaved.getValue())) {
+      enrollment.dismissOutput(request, pending.id());
+      finish();
+    }
+  }
+
+  private void submitEnrollmentCode() {
+    if (ValidationHelper.validateRequiredInputs(List.of(enrollmentCode), texts)) {
+      enrollment.complete(request, pending.id(), enrollmentCode.getValue());
+      render();
     }
   }
 

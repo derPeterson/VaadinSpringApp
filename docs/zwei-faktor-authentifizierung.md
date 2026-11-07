@@ -1,7 +1,8 @@
 # Zwei-Faktor-Authentifizierung
 
-Die Anwendung verwendet TOTP nach RFC 6238: sechs Ziffern, SHA-1 und
-30-Sekunden-Schritte. Kompatible Apps sind frei wählbar. Google Authenticator
+Die Anwendung verwendet TOTP nach RFC 6238 mit sechs Ziffern, HMAC-SHA-1 und
+30-Sekunden-Schritten. HMAC-SHA-1 ist Teil des gemeinsamen Formats von QR-Code,
+manueller Einrichtung und Codeprüfung. Kompatible Apps sind frei wählbar. Google Authenticator
 und Microsoft Authenticator sowie 2fast für Windows werden als Beispiele verlinkt.
 Die Wahl der App ist unabhängig davon, ob das Portalpasswort, Google oder Microsoft
 zur Anmeldung dient.

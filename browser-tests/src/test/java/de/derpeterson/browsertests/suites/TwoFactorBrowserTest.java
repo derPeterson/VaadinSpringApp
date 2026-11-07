@@ -400,31 +400,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       page.navigate("/admin?section=support");
       assertThat(ticketCard(page, number).locator(".support-ticket-unread")).hasCount(0);
       UiActions.complete(page, () -> ticketCard(page, number).click());
-      setTicketWatch(page, true);
-      page.navigate("/home");
-      admin.navigate("/home");
-      user.locator("#support-reply textarea")
-          .fill("Neue Nachricht für den beobachtenden Superadmin.");
-      UiActions.complete(user, () -> user.locator("#support-add-reply").click());
-      assertNotificationCount(page, previousNotifications + 1);
-      assertNotificationCount(admin, 0);
-      page.navigate("/admin?section=support");
-      admin.navigate("/admin?section=support");
-      assertThat(ticketCard(page, number).locator(".support-ticket-unread")).hasText("1");
-      assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasText("1");
-      UiActions.complete(page, () -> ticketCard(page, number).click());
-      assertNotificationCount(page, previousNotifications);
-      setTicketWatch(page, false);
-      page.navigate("/home");
-      user.locator("#support-reply textarea").fill("Ohne Beobachtung bleibt die Glocke ruhig.");
-      UiActions.complete(user, () -> user.locator("#support-add-reply").click());
-      // Erst die tatsächlich eingetroffene Live-Aktualisierung prüfen, dann das Ausbleiben des
-      // Zählers.
-      assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasText("2");
-      page.navigate("/admin?section=support");
-      assertThat(ticketCard(page, number).locator(".support-ticket-unread")).hasCount(0);
-      assertNotificationCount(page, previousNotifications);
-      assertNotificationCount(admin, 0);
+      verifyWatchedAndUnwatchedReplies(admin, user, number, previousNotifications);
       UiActions.complete(page, () -> ticketCard(page, number).click());
       setTicketWatch(page, true);
       page.navigate("/home");
@@ -460,6 +436,35 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           .hasText(texts.getSupportClosedHint());
       AllurePlaywright.attachScreenshot("Abgeschlossener Vorgang ohne Ungelesen-Zähler", admin);
     }
+  }
+
+  private void verifyWatchedAndUnwatchedReplies(
+      Page admin, Page user, String number, int previousNotifications) {
+    setTicketWatch(page, true);
+    page.navigate("/home");
+    admin.navigate("/home");
+    user.locator("#support-reply textarea")
+        .fill("Neue Nachricht für den beobachtenden Superadmin.");
+    UiActions.complete(user, () -> user.locator("#support-add-reply").click());
+    assertNotificationCount(page, previousNotifications + 1);
+    assertNotificationCount(admin, 0);
+    page.navigate("/admin?section=support");
+    admin.navigate("/admin?section=support");
+    assertThat(ticketCard(page, number).locator(".support-ticket-unread")).hasText("1");
+    assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasText("1");
+    UiActions.complete(page, () -> ticketCard(page, number).click());
+    assertNotificationCount(page, previousNotifications);
+    setTicketWatch(page, false);
+    page.navigate("/home");
+    user.locator("#support-reply textarea").fill("Ohne Beobachtung bleibt die Glocke ruhig.");
+    UiActions.complete(user, () -> user.locator("#support-add-reply").click());
+    // Erst die tatsächlich eingetroffene Live-Aktualisierung prüfen, dann das Ausbleiben des
+    // Zählers.
+    assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasText("2");
+    page.navigate("/admin?section=support");
+    assertThat(ticketCard(page, number).locator(".support-ticket-unread")).hasCount(0);
+    assertNotificationCount(page, previousNotifications);
+    assertNotificationCount(admin, 0);
   }
 
   private void verifyClaimNotification(
