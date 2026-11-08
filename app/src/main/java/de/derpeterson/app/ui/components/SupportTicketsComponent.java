@@ -161,12 +161,14 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private final Badge userConversationCount = new Badge();
   private final HorizontalLayout userConversationHeader =
       new HorizontalLayout(userConversationHeading, userConversationCount);
+  private final HorizontalLayout userConversationActions = new HorizontalLayout();
   private final VerticalLayout userMessageThread = new VerticalLayout();
   private final Scroller userMessageScroll =
       new Scroller(userMessageThread, Scroller.ScrollDirection.VERTICAL);
   private final HorizontalLayout emptyState = new HorizontalLayout();
   private final Div queueEmptyState = new Div();
   private final HorizontalLayout backActions = new HorizontalLayout();
+  private final HorizontalLayout userFooterActions = new HorizontalLayout();
   private final VerticalLayout userEditor = new VerticalLayout();
   private final Div messageField = new Div();
   private Ticket selected;
@@ -244,6 +246,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
         header.addClassName(SECTION_HEADER_CLASS);
       }
       userRequestsHeader.add(reload);
+      userConversationActions.setSpacing(false);
+      userConversationActions.setAlignItems(Alignment.CENTER);
+      userConversationActions.addClassName("support-conversation-actions");
+      userConversationActions.add(close);
+      userConversationHeader.add(userConversationActions);
       userMessageThread.setSpacing(false);
       userMessageThread.addClassName("support-message-thread");
       userMessageScroll.addClassName("support-message-scroll");
@@ -260,14 +267,14 @@ public final class SupportTicketsComponent extends VerticalLayout {
       panel.getBody().add(form);
       create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
       reply.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-      HorizontalLayout actions = new HorizontalLayout(close, reply, create);
-      actions.setPadding(false);
-      actions.setSpacing(false);
-      actions.addClassName("cosmos-dialog-actions");
+      userFooterActions.add(reply, create);
+      userFooterActions.setPadding(false);
+      userFooterActions.setSpacing(false);
+      userFooterActions.addClassName("cosmos-dialog-actions");
       backActions.setPadding(false);
       backActions.setSpacing(false);
       backActions.addClassName("support-back-actions");
-      HorizontalLayout footer = new HorizontalLayout(backActions, actions);
+      HorizontalLayout footer = new HorizontalLayout(backActions, userFooterActions);
       footer.setPadding(false);
       footer.setSpacing(false);
       footer.setWidthFull();
@@ -694,7 +701,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     subscription.setTooltipText(texts.getSupportSubscriptionHint());
     create.setText(texts.getSupportCreate());
     claim.setText(texts.getSupportClaim());
-    reply.setText(texts.getSupportReply());
+    reply.setText(administration ? texts.getSupportReply() : texts.getSupportSendReply());
     close.setText(administration ? texts.getSupportClose() : texts.getSupportCloseOwn());
     instructions.setText(texts.getSupportInstructions());
     reload.setAriaLabel(texts.getSessionRefresh());
@@ -921,6 +928,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     if (!administration) {
       userRequestCount.setText(texts.getSupportRequestCount(values.size()));
       emptyState.setVisible(values.isEmpty());
+      reload.setVisible(!values.isEmpty());
     } else {
       int count = filters.activeCount();
       activeFilterCount.setText(Integer.toString(count));
@@ -959,6 +967,13 @@ public final class SupportTicketsComponent extends VerticalLayout {
       throw new IllegalStateException("Recovery navigation belongs to the user's request form");
     }
     backActions.add(action);
+  }
+
+  public void addUserFooterAction(Button action) {
+    if (administration) {
+      throw new IllegalStateException("Recovery actions belong to the user's request form");
+    }
+    userFooterActions.addComponentAtIndex(0, action);
   }
 
   private Component ticketRow(Ticket ticket) {
@@ -1295,9 +1310,10 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   private void refreshUserConversation(List<Reply> messages, UserIdentity requester) {
     boolean showConversation = !messages.isEmpty();
-    HorizontalLayout refreshHeader = showConversation ? userConversationHeader : userRequestsHeader;
-    if (reload.getParent().filter(refreshHeader::equals).isEmpty()) {
-      refreshHeader.add(reload);
+    HorizontalLayout refreshActions =
+        showConversation ? userConversationActions : userRequestsHeader;
+    if (reload.getParent().filter(refreshActions::equals).isEmpty()) {
+      refreshActions.add(reload);
     }
     conversation.setVisible(showConversation);
     if (!showConversation) {

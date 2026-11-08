@@ -2,6 +2,12 @@
 
 ## Browser-Tests
 
+- **Reduzierter 2FA-Header und Wiederherstellungshilfe: offen.** In DE/EN auf
+  Desktop und Smartphone prüfen, dass der Header nach dem ersten Anmeldenachweis
+  das richtige Konto neben der Sprachwahl zeigt und lange Namen und Adressen
+  die Sprachwahl nicht verdrängen. In der Hilfe bei leerer Liste, offener Anfrage
+  und nach dem Schließen die Position und Sichtbarkeit der Aktionen prüfen.
+
 - **Ersatzcode im Dialog für Kontoaktionen: offen.** In DE/EN auf Desktop und
   Smartphone eine Standard-Kontoaktion und eine Anbieterverbindung ausdrücklich
   mit einem gültigen Ersatzcode prüfen. Erst der Aktionsbutton darf bestätigen.

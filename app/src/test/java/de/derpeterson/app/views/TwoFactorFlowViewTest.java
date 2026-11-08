@@ -43,10 +43,12 @@ import de.derpeterson.app.model.SupportTicketEntity.Status;
 import de.derpeterson.app.model.SupportTicketEntity.Type;
 import de.derpeterson.app.model.TwoFactorChallengeEntity.Kind;
 import de.derpeterson.app.model.TwoFactorChallengeEntity.SetupProof;
+import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.TwoFactorFlow;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorEnrollment;
 import de.derpeterson.app.service.ConfigService;
@@ -150,6 +152,39 @@ class TwoFactorFlowViewTest {
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
     VaadinService.setCurrent(null);
+  }
+
+  @Test
+  void restrictedHeaderShowsTheSessionAccountBeforeSecondFactorConfirmation() {
+    UserEntity account =
+        UserEntity.builder()
+            .id(1L)
+            .firstName("Portal")
+            .lastName("User")
+            .email("flow@example.test")
+            .build();
+    when(security.getCurrentUser(request)).thenReturn(Optional.of(account));
+    TwoFactorView confirmation = open("de", false);
+    Component identity = find(confirmation, "public-security-identity");
+    assertTrue(identity.isVisible());
+    assertTrue(identity.getElement().getTextRecursively().contains("Portal User"));
+    assertTrue(identity.getElement().getTextRecursively().contains("flow@example.test"));
+    assertFalse(tree(identity).anyMatch(Button.class::isInstance));
+
+    TwoFactorFlow.LOGIN_HELP.enter(request);
+    RecoveryHelpView help =
+        new RecoveryHelpView(
+            config, texts, mock(SupportTicketService.class), security, authorization, request);
+    help.beforeEnter(mock(BeforeEnterEvent.class));
+    Component helpIdentity = find(help, "public-security-identity");
+    assertTrue(helpIdentity.isVisible());
+    assertEquals(
+        identity.getElement().getTextRecursively(), helpIdentity.getElement().getTextRecursively());
+
+    when(security.getCurrentUser(request)).thenReturn(Optional.empty());
+    help.beforeEnter(mock(BeforeEnterEvent.class));
+    assertFalse(helpIdentity.isVisible());
+    assertEquals("", helpIdentity.getElement().getTextRecursively());
   }
 
   @ParameterizedTest

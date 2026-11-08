@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
@@ -33,6 +34,7 @@ final class TwoFactorCodeInput extends VerticalLayout {
   private final Tab recoveryTab = new Tab(AppIcon.KEY.create(), recoveryTabLabel);
   private final Tabs methods = new Tabs(appCodeTab, recoveryTab);
   private final Span hint = new Span();
+  private final Span helpPrompt = new Span();
   private final Button help = new Button();
   private final VerticalLayout input = new VerticalLayout(hint, appCode, recoveryCode);
 
@@ -76,7 +78,8 @@ final class TwoFactorCodeInput extends VerticalLayout {
     setSpacing(false);
     addClassName("two-factor-dialog-codes");
     help.setId(methodPrefix + "-help");
-    help.setPrefixComponent(AppIcon.INFO_CIRCLE.create());
+    help.setIcon(AppIcon.OPEN_SECTION.create());
+    help.setIconAfterText(true);
     help.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     help.addClickListener(
         event -> {
@@ -86,7 +89,10 @@ final class TwoFactorCodeInput extends VerticalLayout {
               .getPage()
               .setLocation(request.getContextPath() + TwoFactorFlow.ACCOUNT_HELP.location());
         });
-    add(methods, input, help);
+    HorizontalLayout helpRow = new HorizontalLayout(helpPrompt, help);
+    helpRow.setAlignItems(Alignment.CENTER);
+    helpRow.addClassName("two-factor-help-row");
+    add(methods, input, helpRow);
     refreshTexts();
   }
 
@@ -95,7 +101,8 @@ final class TwoFactorCodeInput extends VerticalLayout {
     recoveryTabLabel.setText(texts.getTwoFactorRecoveryCodeLabel());
     appCode.setLabel(texts.getTwoFactorSetupCodeLabel());
     recoveryCode.setLabel(texts.getTwoFactorRecoveryCodeLabel());
-    help.setText(texts.getSupportHelpSubtitle());
+    helpPrompt.setText(texts.getSupportHelpSubtitle());
+    help.setText(texts.getSupportHelpTitle());
     refreshMethod();
   }
 

@@ -1163,8 +1163,10 @@ Die neue 2FA-Oberfläche verwendet `AccountPanelComponent`, native Vaadin-Eingab
 Buttons, `Badge`, `TabSheet`, `ComboBox`, `Switch`, `Grid` und die bestehenden Cosmos-
 Bestätigungsdialoge. Die Kontoverwaltung liegt im Tab „Portalzugang“. Einrichtung
 und eingeschränkte Anmeldung sowie 2FA-Hilfe verwenden den Seitenrahmen mit
-reduziertem Kopf. Die Marke ist statisch, die Sprachwahl bleibt im Kopf. Die
-Kontextzeile unterscheidet Anmeldung und Kontosicherheit. Rückweg, Abmelden
+reduziertem Kopf. Die Marke ist statisch. Rechts stehen Sprachwahl, Trennlinie
+und ab dem ersten erfolgreichen Anmeldenachweis der Initialenavatar mit Name
+und E-Mail als reine Anzeige. Die Kontextzeile unterscheidet Anmeldung und
+Kontosicherheit. Rückweg, Abmelden
 und Abschluss liegen im jeweiligen Panel-Footer. Kurzlebige
 QR-/Code-Dokumente werden geschützt eingebettet, Geheimnisse nicht als Flow-Komponenten-
 Werte im dauerhaften Sitzungszustand gehalten.
@@ -1199,6 +1201,8 @@ Wie der Details-Schalter bleiben beide Aktionen bei Hover und Mausklick neutral
 und zeigen den Tastaturfokus.
 Beide zeigen Lucides `square-arrow-right-enter` mit 8 px Abstand hinter dem
 Aktionstext, wie bei den App-Links mit Icon links.
+Die Bestätigungsdialoge im angemeldeten Bereich verwenden für „Hilfe zur
+Wiederherstellung“ dieselbe Zeile mit Frage, rahmenloser Aktion und Icon rechts.
 „Zurück“ steht mit einem Linkspfeil als nativer Button links im Footer und führt
 vom Faktorwechsel und von der Benutzerhilfe zur Codeabfrage.
 Der Faktorwechsel bleibt ein eigener Ablauf mit Ersatzcodefeld und Verbrauchshinweis.
@@ -1228,10 +1232,10 @@ rechts über der Anfragenliste die Zahl der Vorgänge und am Verlauf die Zahl se
 Nachrichten. Vorgangsnummern, Zeitstempel und der Zeichenzähler stehen in Space Mono.
 Ein Mittelpunkt trennt Datum und Uhrzeit und steht im Verlauf auch vor dem Zeitstempel.
 Der quadratische native Iconbutton „Aktualisieren“ mit Rahmen und übersetztem Tooltip
-steht am Verlauf oder an der Anfragenübersicht. Seine Höhe und Breite folgen wie
-in der Benutzerverwaltung `--cosmos-control-height`; Zustände übernehmen die
-gemeinsamen Buttonregeln. „Anfrage schließen“
-zeigt Lucides grünes `circle-check`-Icon.
+steht bei vorhandenen Anfragen am Verlauf oder an der Anfragenübersicht. Seine Höhe
+und Breite folgen wie in der Benutzerverwaltung `--cosmos-control-height`. Die
+Zustände übernehmen die gemeinsamen Buttonregeln. „Anfrage schließen“ steht im Verlauf links neben
+„Aktualisieren“ und zeigt Lucides grünes `circle-check`-Icon.
 Der Hinweis zum Identitätsnachweis nutzt
 den gerahmten Infostil mit blauem Icon aus dem Faktorwechsel. Mit demselben Abstand
 wie die übrigen Inhaltsabschnitte steht vor der nativen `TextArea`
@@ -1241,8 +1245,8 @@ einen dezenten Rahmen und eine 4 px starke bernsteinfarbene Kante links.
 Das Lucide-Warndreieck und die fett gesetzte Beschriftung verwenden dieselbe
 Akzentfarbe. Der Text verwendet die helle Standardtextfarbe. Die Farben stehen
 unter `--cosmos-security-warning-*` in `cosmos-tokens.css`.
-Auf schmalen Bildschirmen
-steht die jeweilige Hauptaktion in einer eigenen Zeile über die verfügbare Breite.
+Im Footer steht „Zurück“ links. Rechts stehen „Abmelden“ und die jeweilige
+Hauptaktion gleich breit, auf sehr schmalen Bildschirmen untereinander.
 `cosmos-mfa-confirmation.css` begrenzt die Gestaltung
 auf `.two-factor-confirmation`, `.two-factor-restore` und `.support-recovery-help`;
 Panels, Buttonzustände und Eingaben folgen weiterhin den vorhandenen Standards.
@@ -1435,7 +1439,8 @@ Der Inhalt verwendet die normale dunkle
 Contentfläche, Kopf und Footer die bestehende Panelfläche.
 Die Panelköpfe der Authenticator-Einrichtung und der Anmeldebestätigung sowie die
 2FA-Zeile unter „Sicherheit & Zugang“ zeigen das Lucide-Icon `shield-keyhole`.
-Der Badge „Eingerichtet“ verwendet den grünen Statuspunkt der Kontokarte.
+Das native Badge „Eingerichtet“ verwendet den kompakten grünen Kontostil mit Rahmen
+und ohne Statuspunkt.
 Die Tabs schalten normale Inhaltscontainer um; ein zusätzliches `TabSheet` und
 ein eigener Scrollbereich entfallen. `cosmos-mfa-methods.css` gestaltet Form,
 Innenabstände, Schrift und Auswahlfarbe.

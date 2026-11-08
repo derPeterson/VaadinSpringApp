@@ -7,6 +7,12 @@
 .cosmos-reference-public .public-brand > span { min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
 .cosmos-reference-public .public-brand img { display:block;width:40px;height:40px;margin:-6px;flex-shrink:0; }
 .cosmos-reference-public .public-navigation { display:flex;align-items:center;gap:8px; }
+.cosmos-reference-public .public-header .public-navigation.public-security-navigation { flex:0 1 auto; min-width:0; gap:12px; }
+.public-security-navigation > .public-languages { flex:none; }
+.public-security-identity { min-width:0; gap:12px; padding-inline-start:12px; border-inline-start:1px solid var(--cosmos-reference-border); }
+.public-security-identity > .cosmos-user-avatar { flex:none; pointer-events:none; }
+.cosmos-reference-public .public-security-identity .cosmos-header-identity { display:grid; min-width:0; }
+.public-security-identity .cosmos-header-identity > span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cosmos-reference-public .public-navigation > vaadin-button { height:36px;margin:0;padding:0 12px;border-color:transparent;background:transparent;font:600 12px/1.4 Inter,sans-serif; }
 .cosmos-reference-public .public-navigation > vaadin-button::part(prefix) { margin-inline-start:0; }
 .cosmos-reference-public .public-navigation > vaadin-button > vaadin-icon { width:16px;height:16px; }

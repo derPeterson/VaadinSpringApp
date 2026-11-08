@@ -6,6 +6,7 @@
 .support-recovery-help .account-panel-body { background:var(--cosmos-reference-page); }
 .two-factor-dialog-codes { gap:var(--cosmos-space-l); min-width:0; }
 .two-factor-confirmation-input { gap:16px; min-width:0; }
+.two-factor-dialog-codes .two-factor-confirmation-input > .cosmos-panel-description { font:400 12px/20px Inter,sans-serif; }
 .two-factor-confirmation-input .two-factor-otp { align-self:center; }
 :is(.two-factor-view, .two-factor-dialog-codes) vaadin-text-field.two-factor-recovery-input > input[slot=input] { font-family:'Space Mono',ui-monospace,Consolas,monospace; }
 .two-factor-confirmation .two-factor-extra-actions { flex-direction:column; align-items:flex-start; gap:8px; border-top:1px solid var(--cosmos-reference-border); margin-top:24px; padding-top:16px; }
@@ -19,16 +20,17 @@
 .two-factor-login-help-topic { display:flex; align-items:center; gap:8px; }
 .two-factor-login-help-topic > vaadin-icon { flex:none; width:16px; height:16px; color:var(--cosmos-reference-accent); }
 .two-factor-login-help-links { gap:0; }
-.two-factor-login-help-row { flex-wrap:wrap; column-gap:8px; row-gap:0; color:var(--cosmos-reference-secondary); font:400 12px/20px Inter,sans-serif; }
-.two-factor-login-help-row > vaadin-button[theme~=tertiary-inline] {
+.two-factor-help-row { flex-wrap:wrap; column-gap:8px; row-gap:0; color:var(--cosmos-reference-secondary); font:400 12px/20px Inter,sans-serif; }
+.two-factor-help-row > vaadin-button[theme~=tertiary-inline] {
+  margin:0;
   padding:0;
   border:0;
   background:transparent;
 }
-.two-factor-login-help-row > vaadin-button[theme~=tertiary-inline]:focus:not([focus-ring], :focus-visible) {
+.two-factor-help-row > vaadin-button[theme~=tertiary-inline]:focus:not([focus-ring], :focus-visible) {
   outline:none;
 }
-.two-factor-login-help-row > vaadin-button::part(suffix) {
+.two-factor-help-row > vaadin-button::part(suffix) {
   display:inline-flex;
   align-items:center;
   margin-inline:var(--cosmos-space-s) 0;
@@ -73,7 +75,8 @@
   font:500 10px/15px Inter,sans-serif;
 }
 .support-request-count { margin-inline-start:auto; }
-.support-user-requests .support-section-header #support-reload { margin-inline-start:0; }
+.support-conversation-actions { margin-inline-start:auto; gap:8px; }
+:is(.support-user-requests .support-section-header,.support-conversation-actions) #support-reload { margin-inline-start:0; }
 .support-ticket-updated,.support-message-metadata { color:var(--cosmos-reference-secondary); font:400 11px/16px Inter,sans-serif; }
 .support-ticket-updated,.support-message-time,.support-ticket-number,
 .support-user-editor .cosmos-notification-compose-counter {
@@ -149,7 +152,7 @@
 .support-recovery-help #support-panel > .cosmos-panel-footer > .cosmos-panel-actions { width:100%; }
 .support-recovery-help .support-user-footer > .cosmos-dialog-actions { display:grid; grid-auto-flow:column; grid-auto-columns:1fr; width:auto; max-width:100%; margin-inline-start:auto; }
 .support-back-actions { flex:none; }
-:is(.support-user-footer,.support-admin-actions) #support-close > vaadin-icon { color:var(--cosmos-reference-success); }
+:is(.support-conversation-actions,.support-admin-actions) #support-close > vaadin-icon { color:var(--cosmos-reference-success); }
 .support-user-form vaadin-grid { min-width:0; font:400 12px/20px Inter,sans-serif; }
 .support-user-requests vaadin-grid {
   --cosmos-table-row-background:var(--cosmos-reference-input);
@@ -394,18 +397,16 @@ vaadin-badge.support-instruction-number {
   .support-recovery-help #support-panel > .cosmos-panel-footer { padding-inline:20px; }
 }
 @media (max-width:480px) {
-  .support-recovery-help .support-user-footer {
-    display:grid;
-    grid-template-columns:auto auto;
-    gap:8px;
+  .support-recovery-help .support-user-footer { gap:8px; }
+  .support-recovery-help .support-back-actions { width:100%; }
+  .support-recovery-help .support-user-footer > .cosmos-dialog-actions:has(vaadin-button[theme~=primary]:not([hidden])):not(:has(#support-sign-out:not([hidden]))) {
+    width:100%;
   }
-  .support-recovery-help .support-user-footer > .cosmos-dialog-actions { display:contents; }
-  .support-recovery-help .support-back-actions { grid-area:1 / 1; }
-  .support-recovery-help .support-user-footer #support-close { grid-area:1 / 2; justify-self:end; }
-  .support-recovery-help .support-user-footer vaadin-button[theme~=primary] { grid-column:1 / -1; }
-  .support-recovery-help .support-user-footer vaadin-button { width:auto; min-width:0; }
   .two-factor-footer-navigation { width:100%; }
   .two-factor-footer > .cosmos-dialog-actions { margin-inline-start:auto; }
+}
+@media (max-width:400px) {
+  .support-recovery-help .support-user-footer > .cosmos-dialog-actions { grid-auto-flow:row; }
 }
 
 /* Statusereignisse stehen zwischen Nachrichten, ohne selbst Nachrichten zu sein. */

@@ -32,6 +32,7 @@ import jakarta.servlet.http.HttpServletRequest;
 public final class RecoveryHelpView extends VerticalLayout implements BeforeEnterObserver {
   public static final String ROUTE = "recovery-help";
   private final transient HttpServletRequest request;
+  private final transient SecurityService security;
   private final transient TwoFactorAuthorization authorization;
   private final PublicPageComponent page;
   private final Button back;
@@ -47,6 +48,7 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
       TwoFactorAuthorization authorization,
       HttpServletRequest request) {
     this.request = request;
+    this.security = security;
     this.authorization = authorization;
     this.texts = texts;
     setPadding(false);
@@ -69,7 +71,7 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
     logout.setId("support-sign-out");
     logout.setPrefixComponent(AppIcon.SIGN_OUT.create());
     logout.addClassName(de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON);
-    support.addBackAction(logout);
+    support.addUserFooterAction(logout);
     page.getCardContainer().add(support);
     add(page);
     ComponentUtil.addListener(
@@ -95,7 +97,7 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
       event.forwardTo(TwoFactorView.class);
       return;
     }
-    page.setAccountSecurity(flow.account());
+    page.setAccountSecurity(flow.account(), security.getCurrentUser(request).orElse(null));
     refreshNavigation();
   }
 

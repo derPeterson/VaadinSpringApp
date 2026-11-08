@@ -170,6 +170,10 @@ public class MessageTexts {
     return getTranslation("support.reply");
   }
 
+  public String getSupportSendReply() {
+    return getTranslation("support.sendReply");
+  }
+
   public String getSupportPublicReply() {
     return getTranslation("support.publicReply");
   }

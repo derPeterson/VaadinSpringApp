@@ -12,6 +12,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.server.VaadinSession;
@@ -19,8 +20,10 @@ import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.i18n.MessageTexts;
 import de.derpeterson.app.i18n.PublicLanguagePreference;
+import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.views.HomeView;
 import de.derpeterson.app.views.LoginView;
@@ -61,10 +64,13 @@ public class PublicPageComponent extends PageFrameComponent {
   private Page page;
   private boolean accountSecurity;
   private SerializableRunnable refreshTexts;
+  private final transient MessageProperties texts;
   private final VerticalLayout cards = new VerticalLayout();
+  private final HorizontalLayout securityIdentity = new HorizontalLayout();
 
   public PublicPageComponent(ConfigService config, MessageProperties texts, Page page) {
     this.page = page;
+    this.texts = texts;
     addClassNames("cosmos-theme", REFERENCE_PORTAL, "cosmos-reference-public");
     getElement().setAttribute("data-public-page", page.name().toLowerCase(Locale.ROOT));
     String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
@@ -102,6 +108,15 @@ public class PublicPageComponent extends PageFrameComponent {
     Div navigation = restricted ? new Div(languages) : new Div(home, login, register, languages);
     navigation.addClassName("public-navigation");
     navigation.getElement().setAttribute("role", "navigation");
+    if (restricted) {
+      navigation.addClassName("public-security-navigation");
+      securityIdentity.setId("public-security-identity");
+      securityIdentity.setSpacing(false);
+      securityIdentity.setAlignItems(HorizontalLayout.Alignment.CENTER);
+      securityIdentity.addClassName("public-security-identity");
+      securityIdentity.setVisible(false);
+      navigation.add(securityIdentity);
+    }
     Div headerInner = new Div(brand, navigation);
     headerInner.addClassName("public-header-inner");
     Div header = new Div(headerInner);
@@ -184,8 +199,18 @@ public class PublicPageComponent extends PageFrameComponent {
     return cards;
   }
 
-  public void setAccountSecurity(boolean accountSecurity) {
+  public void setAccountSecurity(boolean accountSecurity, UserEntity account) {
     this.accountSecurity = accountSecurity;
+    securityIdentity.removeAll();
+    securityIdentity.setVisible(account != null);
+    if (account != null) {
+      OverlayUserIcon avatar = new OverlayUserIcon(texts, account, null, IconSize.PIXEL_32);
+      avatar.getElement().setAttribute("aria-hidden", "true");
+      Span name = new Span((account.getFirstName() + " " + account.getLastName()).strip());
+      Div details = new Div(name, new Span(account.getEmail()));
+      details.addClassName("cosmos-header-identity");
+      securityIdentity.add(avatar, details);
+    }
     refreshTexts.run();
   }
 }

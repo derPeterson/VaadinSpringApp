@@ -232,7 +232,7 @@ public final class TwoFactorView extends VerticalLayout
       event.forwardTo(RecoveryHelpView.class);
       return;
     }
-    page.setAccountSecurity(flow.account());
+    page.setAccountSecurity(flow.account(), security.getCurrentUser(request).orElse(null));
     recovering = flow.recovery();
     render();
   }
@@ -356,7 +356,7 @@ public final class TwoFactorView extends VerticalLayout
   private HorizontalLayout loginHelpRow(String question, Button action) {
     HorizontalLayout row = new HorizontalLayout(new Span(question), action);
     row.setAlignItems(Alignment.CENTER);
-    row.addClassName("two-factor-login-help-row");
+    row.addClassName("two-factor-help-row");
     return row;
   }
 
