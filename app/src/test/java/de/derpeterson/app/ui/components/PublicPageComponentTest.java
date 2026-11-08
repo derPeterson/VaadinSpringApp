@@ -26,6 +26,7 @@ import de.derpeterson.app.i18n.PublicLanguagePreference;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import jakarta.servlet.http.Cookie;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
@@ -124,7 +125,8 @@ class PublicPageComponentTest {
 
   @ParameterizedTest
   @EnumSource(PublicPageComponent.Page.class)
-  void everyPublicPageKeepsNavigationAndLiveLanguageWithoutAvatar(PublicPageComponent.Page scene) {
+  void publicHeaderKeepsLiveLanguageAndOnlyOffersNavigationOutsideSecurity(
+      PublicPageComponent.Page scene) {
     ConfigService config = mock(ConfigService.class);
     when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Review Service");
     when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
@@ -141,14 +143,22 @@ class PublicPageComponentTest {
                 texts::getPublicLoginSubtitle,
                 new Component[] {new Span("Example")},
                 nativeAction));
-    assertEquals(
-        "/home",
+    boolean restricted =
+        scene == PublicPageComponent.Page.TWO_FACTOR
+            || scene == PublicPageComponent.Page.RECOVERY_HELP;
+    List<String> brandLinks =
         tree(page)
+            .filter(component -> component.hasClassName("public-brand"))
             .filter(Anchor.class::isInstance)
             .map(Anchor.class::cast)
-            .findFirst()
-            .orElseThrow()
-            .getHref());
+            .map(Anchor::getHref)
+            .toList();
+    assertEquals(restricted ? List.of() : List.of("/home"), brandLinks);
+    assertEquals(
+        restricted ? 0 : 3,
+        tree(page)
+            .filter(component -> component.getId().orElse("").startsWith("public-nav-"))
+            .count());
     assertFalse(tree(page).anyMatch(c -> c.hasClassName("tracked-user-button")));
     assertTrue(
         tree(page)
@@ -172,19 +182,17 @@ class PublicPageComponentTest {
               .map(Span.class::cast)
               .anyMatch(span -> span.getText().equals(texts.getPublicHomeKicker())));
     }
-    Button login =
-        tree(page)
-            .filter(c -> c.getId().orElse("").equals("public-nav-login"))
-            .map(Button.class::cast)
-            .findFirst()
-            .orElseThrow();
-    assertEquals(texts.getBaseLoginButton(), login.getText());
-    boolean loginFlow =
-        switch (scene) {
-          case LOGIN, TWO_FACTOR, RECOVERY_HELP -> true;
-          default -> false;
-        };
-    assertEquals(loginFlow, login.hasClassName("public-nav-active"));
+    if (!restricted) {
+      Button login =
+          tree(page)
+              .filter(c -> c.getId().orElse("").equals("public-nav-login"))
+              .map(Button.class::cast)
+              .findFirst()
+              .orElseThrow();
+      assertEquals(texts.getBaseLoginButton(), login.getText());
+      assertEquals(
+          scene == PublicPageComponent.Page.LOGIN, login.hasClassName("public-nav-active"));
+    }
     assertTrue(
         tree(page)
             .filter(Span.class::isInstance)
