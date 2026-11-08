@@ -90,6 +90,8 @@ final class BrowserSuites {
               AccountSecurityBrowserTest.class);
       case "two-factor" -> List.of(TwoFactorBrowserTest.class, TwoFactorPushBrowserTest.class);
       case "two-factor-push" -> List.of(TwoFactorPushBrowserTest.class);
+      case "ticket-browser-details" ->
+          List.of(TwoFactorBrowserTest.class, TwoFactorPushBrowserTest.class);
       case "two-factor-recovery-output" -> List.of(TwoFactorBrowserTest.class);
       case "two-factor-setup" -> List.of(TwoFactorBrowserTest.class);
       case "two-factor-confirmation",

@@ -289,6 +289,12 @@ ihre eigene Bestätigung. Authenticatorwechsel mit vorhandenem Nachweis durchfü
 neue Codes sichern und verlorenen Zugriff über die eingeschränkte Hilfsanfrage
 durchgehen. Ein Ticket oder die versandte Anleitung darf die Sperre nicht aufheben.
 
+In Einrichtung und Anmeldebestätigung die Autofill-Funktion des verwendeten
+Browsers oder Passwortmanagers in DE/EN auf Desktop und Smartphone prüfen.
+Ein vollständiger Code löst genau eine Prüfung aus. Bei einem Teilcode bleibt
+das Formular geöffnet. Nach einem abgelehnten Code lässt sich ein neuer Code
+eingeben und der Bestätigungsbutton bleibt bedienbar.
+
 Zusätzlich vor der normalen Codeeingabe **Authenticator wiederherstellen** wählen
 und einen unbenutzten Ersatzcode für genau diesen Wechsel verwenden. Bis zum ersten
 Code der neuen App darf die Sitzung keinen anderen Kontobereich öffnen. Abbruch
@@ -300,3 +306,14 @@ Mit Superadmin die Rollenregeln, Feldhilfen und Fristeneinheiten beurteilen. Ein
 Admin darf weder 2FA-Regeln noch Anmeldeanbieter verwalten. Bedienung und Texte in DE/EN
 auf Desktop und Smartphone gemeinsam abnehmen. Die Startfreigabe für Entwicklungs-
 Ausnahmen bleibt bei dieser regulären Abnahme ausgeschaltet.
+
+<a id="hum-10"></a>
+
+### HUM-10 · Systemscrollleisten und Kontrastmodus
+
+In einer eigenen Testumgebung die systemseitig dauerhafte Anzeige von Scrollleisten
+aktivieren. Auf Desktop und Smartphone in DE/EN in Ticketverlauf, Dialog und
+langer Auswahlliste bis zum Ende scrollen. Text, Auswahl und Aktionen müssen
+vollständig sichtbar und bedienbar bleiben. Anschließend im tatsächlichen
+Kontrastmodus des Geräts ein langes Auswahlmenü öffnen. Die Scrollleiste, der
+Tastaturfokus und der ausgewählte Eintrag müssen erkennbar bleiben.

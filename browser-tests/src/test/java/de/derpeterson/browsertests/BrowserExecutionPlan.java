@@ -106,6 +106,8 @@ final class BrowserExecutionPlan {
       builder.filters(TagFilter.includeTags("provider-settings"));
     } else if (suite.equals("follow-up-regressions")) {
       builder.filters(TagFilter.includeTags("follow-up-regression"));
+    } else if (suite.equals("ticket-browser-details")) {
+      builder.filters(TagFilter.includeTags("ticket-browser-detail"));
     }
     return builder.build();
   }

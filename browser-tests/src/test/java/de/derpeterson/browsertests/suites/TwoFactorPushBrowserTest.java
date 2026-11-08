@@ -1,6 +1,7 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
@@ -32,6 +33,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class TwoFactorPushBrowserTest extends BrowserFixture {
   @Test
   @Tag("follow-up-regression")
+  @Tag("ticket-browser-detail")
   @DisplayName("MFA-24: Ticketpunkt erscheint und verschwindet außerhalb des Ticketsystems")
   void ticketActivityChangesWhileTheDashboardStaysOpen() {
     LoginPage login = new LoginPage(page);
@@ -76,18 +78,30 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
         for (Page view : List.of(observer.page, mobile)) {
           assertThat(view.locator("#admin-nav-support-activity")).isVisible();
           view.locator("#admin-nav-support").hover();
-          assertThat(view.getByRole(AriaRole.TOOLTIP)).hasText(texts.getSupportNewActivity());
+          assertThat(ticketActivityTooltip(view)).hasText(texts.getSupportNewActivity());
         }
         page.navigate("/admin?section=support&ticket=" + number.substring(1));
         UiActions.complete(page, () -> page.locator("#support-claim").click());
         for (Page view : List.of(observer.page, mobile)) {
           assertThat(view.locator("#admin-nav-support-activity")).isHidden();
           assertThat(view.locator("#support-ticket-categories")).hasCount(0);
+          Locator activityTooltip = ticketActivityTooltip(view);
+          assertThat(activityTooltip).isHidden();
+          view.mouse().move(0, 0);
+          view.locator("#admin-nav-support").hover();
+          // Der Mauszeiger bleibt länger als die normale Öffnungsverzögerung auf dem Link.
+          view.waitForTimeout(700);
+          assertFalse(activityTooltip.isVisible());
         }
         UiActions.complete(page, () -> page.locator("#support-close").click());
       }
       new UserMenu(observer.page).signOut();
     }
+  }
+
+  private Locator ticketActivityTooltip(Page view) {
+    return view.getByRole(AriaRole.TOOLTIP)
+        .filter(new Locator.FilterOptions().setHasText(texts.getSupportNewActivity()));
   }
 
   private void clearObserverUnreadTickets(Page observer) {

@@ -8,6 +8,7 @@ import com.google.gson.JsonObject;
 import com.microsoft.playwright.CDPSession;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.Request;
 import com.microsoft.playwright.Response;
 import com.microsoft.playwright.options.BoundingBox;
 
@@ -115,6 +116,29 @@ public final class UiActions {
     return response.request().method().equals("POST")
         && response.url().startsWith(System.getProperty("browser.tests.baseUrl"))
         && response.url().contains("v-r=uidl");
+  }
+
+  /** Erkennt einen positiven Rückgabewert einer serverseitig gestarteten JavaScript-Abfrage. */
+  public static boolean carriesSuccessfulReturn(Request request) {
+    String body = request.postData();
+    if (!request.method().equals("POST") || body == null) {
+      return false;
+    }
+    try {
+      for (JsonNode call : JSON.readTree(body).path("rpc")) {
+        JsonNode arguments = call.path("args");
+        if (call.path("type").asText().equals("channel")
+            && arguments.isArray()
+            && arguments.size() == 1
+            && arguments.get(0).isBoolean()
+            && arguments.get(0).booleanValue()) {
+          return true;
+        }
+      }
+      return false;
+    } catch (JsonProcessingException failure) {
+      throw new AssertionError("Vaadin-Rückmeldung konnte nicht gelesen werden", failure);
+    }
   }
 
   private static boolean carriesValueChange(Response response) {
