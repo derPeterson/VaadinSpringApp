@@ -13,12 +13,14 @@ import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.PersistentBrowserActor;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
+import de.derpeterson.browsertests.pages.AccountSessionsPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.net.URI;
@@ -37,6 +39,104 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Feature("Externe Anmeldung")
 public class ExternalLoginBrowserTest extends BrowserFixture {
   @TempDir Path profile;
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("follow-up-regression")
+  @DisplayName("OIDC-14: Benutzerdetails und aktive Sitzungen unterscheiden Anmeldewege")
+  @Description(
+      "Ein administrativ angelegtes Konto verbindet Google. Zwei aktive Sitzungen zeigen jeweils ihren tatsächlichen Anmeldeweg. Der Bearbeitungsdialog zeigt Herkunft und verfügbare Wege schreibgeschützt.")
+  void signInDetailsDistinguishAccountAndSessionMethods(int width) {
+    page.setViewportSize(width, 1000);
+    String email = "session-example-" + UUID.randomUUID() + "@example.test";
+    String google = "session-provider-" + UUID.randomUUID() + "@gmail.com";
+    try (BrowserActor administrator = new BrowserActor(browser);
+        BrowserActor providerSession = new BrowserActor(browser)) {
+      administrator.page.setViewportSize(width, 1000);
+      AdminUsersPage users =
+          administrator.loginAdmin(
+              BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+      users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+      LoginPage login = new LoginPage(page);
+      login.open();
+      login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(page).selectTestLanguage();
+      page.navigate("/account?section=security&tab=providers");
+      page.locator("#external-connect-google").click();
+      page.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
+      page.locator("#external-confirm-local").click();
+      providerIdentity(google, "valid");
+      assertThat(page.locator("#external-connect-google"))
+          .hasText(texts.getExternalDisconnect("Google"));
+
+      begin(providerSession.page, "google", google, "valid", true);
+      assertThat(providerSession.page).hasURL(Pattern.compile(".*/home$"));
+      AccountSessionsPage sessions = new AccountSessionsPage(page);
+      sessions.open();
+      sessions.assertCounts(2, 1, 0);
+      assertThat(sessions.rows("current").locator(".account-session-sign-in-method"))
+          .hasText(texts.getSessionSignedInVia(texts.getSignInPortalPassword()));
+      assertThat(sessions.rows("active").locator(".account-session-sign-in-method"))
+          .hasText(texts.getSessionSignedInVia(texts.getExternalGoogle()));
+      AllurePlaywright.attachScreenshot("Sitzungen über Portalpasswort und Google", page);
+
+      AdminUserDialog user = users.openEdit(email);
+      Locator registration = user.root().locator("#admin-user-registered-via");
+      Locator methods = user.root().locator("#admin-user-sign-in-methods");
+      assertThat(registration).hasJSProperty("label", texts.getSignInRegisteredVia());
+      assertThat(registration.locator("input")).hasValue(texts.getSignInAccountCreated());
+      assertThat(methods).hasJSProperty("label", texts.getSignInAvailableMethods());
+      assertThat(methods.locator("input"))
+          .hasValue(texts.getSignInPortalPassword() + ", " + texts.getExternalGoogle());
+      assertThat(registration).hasAttribute("readonly", "");
+      assertThat(methods).hasAttribute("readonly", "");
+      methods.scrollIntoViewIfNeeded();
+      AllurePlaywright.attachScreenshot("Schreibgeschützte Anmeldeangaben", administrator.page);
+      user.cancel();
+      new UserMenu(administrator.page).signOut();
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("follow-up-regression")
+  @DisplayName("OIDC-15: Ersatzcode verbindet einen Anbieter erst nach der Bestätigung")
+  @Description(
+      "Der eigene Authenticator stellt einen gültigen Ersatzcode aus. Das Eingeben des Codes lässt den Dialog offen. Erst der Aktionsbutton führt zum Testanbieter und verbindet das Konto.")
+  void recoveryCodeConnectsProviderOnlyAfterExplicitConfirmation(int width) {
+    page.setViewportSize(width, 900);
+    String email = "recovery-link-" + UUID.randomUUID() + "@example.test";
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    new UserMenu(page).signOut();
+    login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    page.navigate("/account?section=security&tab=portal");
+    page.locator("#account-two-factor-setup").click();
+    page.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
+    page.locator("#two-factor-submit").click();
+    TwoFactorPage.enrollCurrent(page, email);
+    page.locator("#account-security-tab-providers").click();
+
+    page.locator("#external-connect-google").click();
+    String accountLocation = page.url();
+    page.locator("#external-proof-recovery-code-tab").click();
+    String recoveryCode = TwoFactorPage.nextCode(page, email);
+    Locator input = page.locator("#external-confirm-recovery-code input");
+    input.fill(recoveryCode);
+    input.press("Tab");
+    Locator confirm = page.locator("#external-confirm-local");
+    assertThat(confirm).isVisible();
+    assertThat(input).hasValue(recoveryCode);
+    assertThat(page).hasURL(accountLocation);
+    confirm.click();
+    providerIdentity("recovery-link-" + UUID.randomUUID() + "@gmail.com", "valid");
+    assertThat(page.locator("#external-connect-google"))
+        .hasText(texts.getExternalDisconnect("Google"));
+  }
 
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})

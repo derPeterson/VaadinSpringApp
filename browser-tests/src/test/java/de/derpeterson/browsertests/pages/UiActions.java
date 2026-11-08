@@ -3,6 +3,9 @@ package de.derpeterson.browsertests.pages;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.microsoft.playwright.CDPSession;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Response;
@@ -10,6 +13,49 @@ import com.microsoft.playwright.options.BoundingBox;
 
 /** Wartet nach echten UI-Aktionen auf die Vaadin-Serverantwort vor Navigation/Gegenaktionen. */
 public final class UiActions {
+  /** Führt eine Chromium-Touchgeste aus; der Inhalt muss tatsächlich scrollen. */
+  public static void swipeUp(Page page, Locator scroller) {
+    page.bringToFront();
+    BoundingBox bounds = scroller.boundingBox();
+    double top = Math.max(bounds.y, 0);
+    double bottom = Math.min(bounds.y + bounds.height, page.viewportSize().height);
+    double distance = (bottom - top) * 0.55;
+    boolean document =
+        (Boolean) scroller.evaluate("element => element === document.scrollingElement");
+    // Am Seitenrand übernimmt kein verschachtelter Scroller die Dokumentgeste.
+    double x = bounds.x + (document ? 8 : bounds.width / 2);
+    double y = bottom - 12;
+    CDPSession session = page.context().newCDPSession(page);
+    JsonObject touch = new JsonObject();
+    touch.addProperty("enabled", true);
+    try {
+      session.send("Emulation.setTouchEmulationEnabled", touch);
+      sendTouch(session, "touchStart", x, y);
+      for (int step = 1; step <= 6; step++) {
+        sendTouch(session, "touchMove", x, y - step * distance / 6);
+      }
+      sendTouch(session, "touchEnd", x, y - distance);
+    } finally {
+      touch.addProperty("enabled", false);
+      session.send("Emulation.setTouchEmulationEnabled", touch);
+      session.detach();
+    }
+  }
+
+  private static void sendTouch(CDPSession session, String type, double x, double y) {
+    JsonObject event = new JsonObject();
+    event.addProperty("type", type);
+    JsonArray points = new JsonArray();
+    if (!type.equals("touchEnd")) {
+      JsonObject point = new JsonObject();
+      point.addProperty("x", x);
+      point.addProperty("y", y);
+      points.add(point);
+    }
+    event.add("touchPoints", points);
+    session.send("Input.dispatchTouchEvent", event);
+  }
+
   private static final ObjectMapper JSON = new ObjectMapper();
 
   private UiActions() {}

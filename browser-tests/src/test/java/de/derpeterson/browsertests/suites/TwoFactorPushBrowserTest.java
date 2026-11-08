@@ -16,16 +16,110 @@ import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /** Echte Inaktivitätsgrenze auch für serverseitige Updates ohne Browser-RPC. */
 @Tag("browser")
 public class TwoFactorPushBrowserTest extends BrowserFixture {
+  @Test
+  @Tag("follow-up-regression")
+  @DisplayName("MFA-24: Ticketpunkt erscheint und verschwindet außerhalb des Ticketsystems")
+  void ticketActivityChangesWhileTheDashboardStaysOpen() {
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    String suffix = UUID.randomUUID() + "@example.test";
+    String observerEmail = "ticket-activity-admin-" + suffix;
+    String requesterEmail = "ticket-activity-user-" + suffix;
+    AdminUsersPage users = new AdminUsersPage(page);
+    users.createUser(observerEmail, BrowserTestAccounts.USER_PASSWORD, true, true);
+    users.createActiveUser(requesterEmail, BrowserTestAccounts.USER_PASSWORD);
+    try (BrowserActor observer = new BrowserActor(browser);
+        BrowserActor requester = new BrowserActor(browser)) {
+      observer.login(observerEmail, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(observer.page).selectTestLanguage();
+      observer.page.navigate("/admin");
+      assertThat(observer.page.locator("#admin-nav-support")).isVisible();
+      if (observer.page.locator("#admin-nav-support-activity").isVisible()) {
+        clearObserverUnreadTickets(observer.page);
+      }
+      try (Page mobile = observer.context.newPage()) {
+        mobile.setViewportSize(390, 900);
+        observer.page.navigate("/admin");
+        mobile.navigate("/admin");
+        UiActions.complete(mobile, () -> mobile.locator("#account-navigation-toggle").click());
+        for (Page view : List.of(observer.page, mobile)) {
+          assertThat(view.locator("#admin-nav-support")).isVisible();
+          assertThat(view.locator("#admin-nav-support-activity")).isHidden();
+        }
+        requester.login(requesterEmail, BrowserTestAccounts.USER_PASSWORD);
+        requester.page.navigate("/recovery-help");
+        requester.page.locator("#support-reply textarea").fill("Fresh dashboard ticket activity.");
+        UiActions.complete(requester.page, () -> requester.page.locator("#support-create").click());
+        String number =
+            requester
+                .page
+                .locator("#support-ticket-grid")
+                .getByText(Pattern.compile("^#[0-9]+$"))
+                .first()
+                .innerText();
+        for (Page view : List.of(observer.page, mobile)) {
+          assertThat(view.locator("#admin-nav-support-activity")).isVisible();
+          view.locator("#admin-nav-support").hover();
+          assertThat(view.getByRole(AriaRole.TOOLTIP)).hasText(texts.getSupportNewActivity());
+        }
+        page.navigate("/admin?section=support&ticket=" + number.substring(1));
+        UiActions.complete(page, () -> page.locator("#support-claim").click());
+        for (Page view : List.of(observer.page, mobile)) {
+          assertThat(view.locator("#admin-nav-support-activity")).isHidden();
+          assertThat(view.locator("#support-ticket-categories")).hasCount(0);
+        }
+        UiActions.complete(page, () -> page.locator("#support-close").click());
+      }
+      new UserMenu(observer.page).signOut();
+    }
+  }
+
+  private void clearObserverUnreadTickets(Page observer) {
+    String route = "/admin?section=support";
+    Locator cards = observer.locator("#support-ticket-grid .support-admin-ticket-card:visible");
+    Set<String> seen = new HashSet<>();
+    while (true) {
+      observer.navigate(route);
+      observer.locator("#support-filter").click();
+      Locator panel = observer.locator("#support-filter-panel");
+      panel
+          .locator("#support-filter-reading")
+          .getByText(texts.getNotificationsUnread(), new Locator.GetByTextOptions().setExact(true))
+          .click();
+      UiActions.complete(observer, () -> panel.locator("#support-filter-apply").click());
+      if (cards.count() == 0) {
+        return;
+      }
+      String number = cards.first().getByText(Pattern.compile("^#[0-9]+$")).innerText().strip();
+      org.junit.jupiter.api.Assertions.assertTrue(
+          seen.add(number), "Ticket bleibt ungelesen: " + number);
+      observer.navigate(route + "&ticket=" + number.substring(1));
+      assertThat(observer.locator("#support-ticket-panel .support-ticket-number"))
+          .hasText(texts.getSupportTicketNumber(number));
+      assertThat(
+              cards
+                  .filter(new Locator.FilterOptions().setHasText(number))
+                  .locator(".support-ticket-unread"))
+          .hasCount(0);
+    }
+  }
+
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @DisplayName(

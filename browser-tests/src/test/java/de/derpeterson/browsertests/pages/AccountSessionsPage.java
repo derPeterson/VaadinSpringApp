@@ -28,8 +28,7 @@ public final class AccountSessionsPage {
 
   @Step("Aktive Anzahl, andere Sitzungen und gespeicherte Zugänge prüfen")
   public void assertCounts(int active, int other, int saved) {
-    assertThat(
-            page.locator("#account-panel-sessions .account-session-heading .account-entry-title"))
+    assertThat(page.locator("#account-panel-sessions vaadin-badge.account-session-count"))
         .hasText(texts.getPortalSessionActiveCount(active));
     assertThat(rows("current")).hasCount(1);
     assertThat(page.locator("#account-current-session")).isDisabled();

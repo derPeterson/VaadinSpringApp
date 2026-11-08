@@ -7,6 +7,7 @@ import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_PAGE_TITE
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.BrowserActor;
@@ -17,6 +18,7 @@ import de.derpeterson.browsertests.mail.MailpitInbox.CapturedMail;
 import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.AccountSecurityPage;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.NotificationInboxPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -102,6 +104,7 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
   }
 
   @Test
+  @Tag("follow-up-regression")
   @DisplayName(
       "ACCOUNT-SEC-02: Passwort speichern, Sicherheitsmail empfangen und andere Sitzung widerrufen")
   @Description(
@@ -144,6 +147,28 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
       login.signIn(email, changed);
       assertThat(other.page).hasURL(urlPattern(HOME_ROUTE));
       new UserMenu(other.page).selectTestLanguage();
+    }
+    verifyAccountNotificationDestination();
+  }
+
+  private void verifyAccountNotificationDestination() {
+    NotificationInboxPage inbox = new NotificationInboxPage(page);
+    for (int width : new int[] {1280, 390}) {
+      page.setViewportSize(width, 900);
+      inbox.open();
+      inbox
+          .row(inbox.inbox(), texts.getNotificationsPasswordChangedTitle())
+          .locator(".cosmos-notification-row-open")
+          .click();
+      Locator destination = inbox.dialog().locator(".cosmos-notification-detail-account");
+      assertThat(destination).hasAccessibleName(texts.getNotificationsOpenAccount());
+      assertThat(inbox.dialog().locator(".cosmos-notification-detail-ticket")).hasCount(0);
+      if (width == 390) {
+        assertThat(destination).hasCSS("grid-column-start", "1");
+        assertThat(destination).hasCSS("grid-column-end", "-1");
+      }
+      destination.click();
+      assertThat(page.locator("#account-security-tab-portal")).isVisible();
     }
   }
 

@@ -283,7 +283,7 @@ class BrowserExecutionPlanTest {
             .filter(method -> method.isAnnotationPresent(Test.class))
             .count());
     assertEquals(
-        6,
+        7,
         Arrays.stream(SessionManagementBrowserTest.class.getDeclaredMethods())
             .filter(method -> method.isAnnotationPresent(Test.class))
             .count());

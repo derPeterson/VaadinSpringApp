@@ -5,15 +5,18 @@ import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 
 import com.microsoft.playwright.BrowserContext;
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.TokenConfigurationPage;
+import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import de.derpeterson.browsertests.pages.UserStatusMenu;
 import io.qameta.allure.Description;
@@ -27,6 +30,7 @@ import org.junit.jupiter.api.Test;
 @Feature("Manueller und automatischer Benutzerstatus")
 public class UserStatusBrowserTest extends BrowserFixture {
   @Test
+  @Tag("follow-up-regression")
   @DisplayName("STATUS-01: Manuelle Statuswahl wird gespeichert und in zweitem Tab live angezeigt")
   @Description(
       """
@@ -58,9 +62,31 @@ public class UserStatusBrowserTest extends BrowserFixture {
       }
       firstMenu.select(texts.getUserStatusEmployed());
       secondMenu.expect(texts.getUserStatusEmployed());
+      assertPresenceTogglePreservesChoice(actor.page, firstMenu);
       actor.page.reload();
       firstMenu.expect(texts.getUserStatusEmployed());
       second.close();
+    }
+  }
+
+  private void assertPresenceTogglePreservesChoice(Page target, UserStatusMenu status) {
+    UserMenu menu = new UserMenu(target);
+    UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
+    for (int width : new int[] {1280, 390}) {
+      target.setViewportSize(width, 900);
+      status.expect(texts.getUserStatusEmployed());
+      Locator toggle = target.locator("#portal-menu-presence-toggle");
+      assertThat(toggle).hasAttribute("aria-expanded", "true");
+      UiActions.complete(target, toggle::click);
+      assertThat(toggle).hasAttribute("aria-expanded", "false");
+      assertThat(status.current()).isHidden();
+      menu.selectLanguage(other.language());
+      menu.open();
+      assertThat(toggle).hasAttribute("aria-expanded", "false");
+      UiActions.complete(target, () -> toggle.press("Enter"));
+      assertThat(toggle).hasAttribute("aria-expanded", "true");
+      assertThat(status.current()).containsText(other.getUserStatusEmployed());
+      menu.selectTestLanguage();
     }
   }
 

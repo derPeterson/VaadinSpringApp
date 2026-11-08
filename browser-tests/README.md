@@ -70,11 +70,12 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `https-night` | Infrastruktur und Remember-me: normale Profile, echter Chromium-/Serverneustart; mit zwei Workern gezielter Nachtlaufnachweis | 8 |
 | `authentication` | Admin-/Benutzerlogin, Fehler, Gastzugriff und Logout | 7 |
 | `login-attempts` | Drei Sperr-/Resetfälle plus sieben Anmelde- und vier Remember-me-Regressionsfälle | 14 |
-| `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 37 |
-| `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 56 |
-| `external-login-flow` | Externe Anmeldungen, Superadmin-Anbietereinrichtung mit 2FA, Verknüpfungen, geschützte Google-Ersteinrichtung und frische Microsoft-Bestätigung, Browserneustart, E-Mail-Änderung, optionale Adminprofilfelder und kontextbezogene Kontobestätigung, vollständig deaktivierte Anbieter sowie Standardmeldungen nach Rücksprüngen | 29 |
+| `session-limits` | Sitzungslimit, eigene Sitzungsverwaltung einschließlich Serverneustart und Login-/Remember-me-/Rechte-/Sitzungsregressionen | 38 |
+| `external-login` | Google/Microsoft mit eigenem OIDC-Anbieter, Admin-Anbietereinrichtung, freiwillige Profilfelder sowie bestehende Registrierungs-/Konto-/Sicherheitsfälle und Formularpanels | 60 |
+| `external-login-flow` | Externe Anmeldungen, Superadmin-Anbietereinrichtung mit 2FA, Verknüpfungen, geschützte Google-Ersteinrichtung und frische Microsoft-Bestätigung, Browserneustart, E-Mail-Änderung, Anmeldewege, optionale Adminprofilfelder, Kontobestätigung per Ersatzcode, vollständig deaktivierte Anbieter sowie Standardmeldungen nach Rücksprüngen | 33 |
 | `external-login-settings` | Bestehende Anbieterfälle gezielt: Superadmin-Einrichtung mit 2FA, verschlüsselte Zugangsdaten nach Speichern/Neustart und Kontozugriff bei deaktivierten Anbietern, jeweils Desktop/Smartphone | 6 |
-| `two-factor` | Einrichtung, erneute Anmeldung, aktionsgebundene Bestätigung, geschützter Faktorwechsel/Entfernen, Wiederherstellung mit dem letzten Ersatzcode nach Portal-/Google-/Microsoft-Anmeldung, Ersatzcodes/PDF, eingeschränkte Hilfe und Adminbearbeitung, Superadminrechte, Regelwechsel einer offenen Sitzung, echte Browser-/Anwendungsneustarts und Inaktivität auch bei Push | 39 |
+| `follow-up-regressions` | Anmeldewege, aktive und gespeicherte Sitzungen, 2FA-Hilfe und Ersatzcodes, Ticketliste und Live-Updates, Benachrichtigungsziele und Anwesenheitsauswahl | 20 |
+| `two-factor` | Einrichtung, erneute Anmeldung, aktionsgebundene Bestätigung, geschützter Faktorwechsel/Entfernen, Wiederherstellung mit dem letzten Ersatzcode nach Portal-/Google-/Microsoft-Anmeldung, Ersatzcodes/PDF, eingeschränkte Hilfe und Adminbearbeitung, Superadminrechte, Regelwechsel einer offenen Sitzung, echte Browser-/Anwendungsneustarts, Ticketaktivität und Inaktivität auch bei Push | 40 |
 | `two-factor-confirmation` | Nur Bestätigung mit nativer OTP-/Ersatzcodeumschaltung, geschützter Faktorwechsel und Hilfeanfrage auf Desktop/Smartphone | 2 |
 | `two-factor-otp` | Nur sechsstellige OTP-Eingaben: echter Anfangsfokus, Teilcodes, automatische Bestätigung nach Tippen und Einfügen, erneute Eingabe nach Fehler sowie freiwillige/verpflichtende Einrichtung, Anmeldung, Adminbestätigung, App-Wechsel und Wiederherstellung auf Desktop/Smartphone | 2 |
 | `two-factor-ticket-filters` | Vorgangsfilter und Ticketsprung sowie kompakte Pagination mit 10, 20 und 50 Einträgen, erhaltenen Details und Antwortentwurf auf Desktop/Smartphone | 2 |
@@ -82,7 +83,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `two-factor-ticket-panel` | Nur Ticketpanel-Darstellung aus MFA-19: Info-/Warnicons an der ersten Textzeile, zentriertes Icon bei Fließtext in der Anleitungsvorschau und rechtsbündige Werkzeugaktion, einschließlich Desktop-/Smartphone-Darstellung; zusätzlich Status-History ohne Nachrichtenzählung, öffentliche/interne Editorumschaltung, gespeicherter Vermerk und Ausschluss aus der Nutzeransicht; ohne Versand oder vollständige Glockenregression | 1 |
 | `two-factor-ticket-layout` | Nur administrative Ticketansicht: Übersicht mit Mindestbreite, responsivem Umbruch, vollständigen Tabs und Auswahlhinweis bei 1600/1280/1024/390 px; Tab-/Ticketauswahl in der URL und Wiederherstellung nach Browser-Refresh; ausgewähltes Ticketpanel mit Kopf, Werkzeugleiste und Footer vor/nach Übernahme; Fokusansicht und Wiederherstellen mit erhaltenem Entwurf auf Desktop/Smartphone; Tooltip-Mauszeiger an Avatar, Button und Texteingabe; zuständigkeitsabhängige Ticketzähler, Beobachten ein/aus, Nutzerabschluss mit/ohne Bearbeiter und live erledigte Glockenhinweise auf Desktop/Smartphone | 3 |
 | `two-factor-configuration` | Superadmin-Konfiguration mit Rollenwechsel, Erklärspalte, Feldhilfe und Rechteprüfung auf Desktop/Smartphone | 2 |
-| `two-factor-push` | Echte einminütige Inaktivitätsfrist, native Benutzereingabe gegenüber Hintergrundabrufen und gesperrte serverseitige Vorschauupdates nach Ablauf | 2 |
+| `two-factor-push` | Echte einminütige Inaktivitätsfrist, native Benutzereingabe gegenüber Hintergrundabrufen, gesperrte Vorschauupdates nach Ablauf und Live-Ticketpunkt außerhalb des Ticketsystems | 3 |
 | `two-factor-setup` | Verpflichtender Einstieg, QR/manueller Schlüssel, native OTP-Eingabe mit Einfügen und Tastatur sowie Kopierfehler auf Desktop/Smartphone | 2 |
 | `two-factor-recovery-output` | Gezielter Ersatzcode-/PDF-Nachtest auf Desktop und Smartphone: fehlgeschlagener Abruf ohne Fehlerdatei, echter Download ohne Navigation und ausdrückliche Sicherungsbestätigung; auf Desktop zusätzlich echter Ablauf der fünfminütigen Sicherheitsfrist bei weiterhin verfügbaren Codes und PDF | 2 |
 | `two-factor-lifecycle` | Sprachwechsel während Mailcode/QR/Codeausgabe/Hilfe, Entzug der Superadminrolle bei zwei offenen Konfigurationen sowie Startfreigabe und Neustart mit gespeicherten Entwicklungsausnahmen | 5 |
@@ -91,8 +92,8 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |
 | `account-security` | Passwortvalidierung/-wechsel mit SMTP-Mail und verifizierte E-Mail-Änderung mit beiden Sicherheitsmails | 4 |
-| `session-persistence` | Gezielte Neustartabnahme: Sitzungs-/Loginfälle, Wartung und eigene Kontosicherheit | 50 |
-| `session-management` | Eigene Sitzungen, Einzel-/Sammelwiderruf, dauerhafte Anmeldung, UI-Neuaufbau und eingeschränkter Login | 6 |
+| `session-persistence` | Gezielte Neustartabnahme: Sitzungs-/Loginfälle, Wartung und eigene Kontosicherheit | 51 |
+| `session-management` | Eigene Sitzungen, Einzel-/Sammelwiderruf, dauerhafte Anmeldung, UI-Neuaufbau, abgelaufene Sitzung mit gespeichertem Zugang und eingeschränkter Login | 7 |
 | `account-settings` | Profil/Sprachen/E-Mail-Dialog, persistente Profilbilder Desktop/schmal, kompakte Geburtstage und Status am Kontobild | 12 |
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
@@ -119,7 +120,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
 | `cosmos-components` | Rollensuche, Konfigurations-Switches, SideNav-Zustände, Tooltips, Benutzermenü und native Scrollleisten | 6 |
 | `cosmos-scrollbars` | Nur globale Scrollleisten: Dokument, Chat, Grid, TextArea und Dialog auf Desktop/Smartphone, Scrollbedienung und Systemkontrast | 1 |
-| `all` | Alle 35 Testklassen einschließlich der Fast-Fälle | 253 |
+| `all` | Alle Browserfälle einschließlich der Fast-Fälle | alle |
 
 IDs, Schritte und erwartetes Ergebnis stehen pro Fall in `@DisplayName` und
 `@Description`; diese Angaben übernimmt der Bericht. AVATAR-01 enthält zwei

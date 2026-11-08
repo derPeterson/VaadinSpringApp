@@ -229,6 +229,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
   }
 
   @Test
+  @Tag("follow-up-regression")
   @DisplayName(
       "SESSIONS-04: Aktive Sitzung samt gespeichertem Zugang nach echtem Neustart widerrufen")
   @Description(
@@ -286,6 +287,50 @@ public class SessionManagementBrowserTest extends BrowserFixture {
     page.navigate(path(ADMIN_ROUTE));
     new UserMenu(page).selectTestLanguage();
     new LoginPage(page).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
+  }
+
+  @Test
+  @Tag("follow-up-regression")
+  @DisplayName("SESSIONS-07: Gespeicherte Anmeldung nach Sitzungsablauf zeigt keinen Anmeldeweg")
+  @Description(
+      "Ein Browser speichert seine Anmeldung, seine kurze Sitzung läuft ab. Zwei aktive Browserkontexte werden getrennt angezeigt. Der gespeicherte Zugang bleibt ohne Angabe eines aktuellen Anmeldewegs widerrufbar.")
+  void expiredSessionLeavesOnlyItsSavedLogin() throws Exception {
+    String email = user();
+    try (BrowserActor owner = new BrowserActor(browser);
+        BrowserActor other = new BrowserActor(browser)) {
+      login(owner, email, false);
+      login(other, email, true);
+      owner.page.navigate("about:blank");
+      other.page.navigate("about:blank");
+      try {
+        BrowserTestRunner.restartWithSessionTimeout(12);
+        try (BrowserActor expiring = new BrowserActor(browser)) {
+          login(expiring, email, true);
+        }
+        owner.page.navigate(path(HOME_ROUTE));
+        AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
+        sessions.open();
+        owner.page.waitForCondition(
+            () -> {
+              sessions.refresh();
+              return sessions.rows("saved").count() == 1;
+            },
+            new Page.WaitForConditionOptions().setTimeout(30_000));
+        for (int width : new int[] {1280, 390}) {
+          owner.page.setViewportSize(width, 900);
+          sessions.assertCounts(2, 1, 1);
+          String deviceLabel = sessions.rows("current").locator(".account-entry-title").innerText();
+          assertThat(sessions.rows("active").locator(".account-entry-title")).hasText(deviceLabel);
+          assertThat(sessions.rows("saved").locator(".account-entry-title")).hasText(deviceLabel);
+          assertThat(sessions.rows("saved").locator(".account-session-sign-in-method")).hasCount(0);
+          assertThat(sessions.rows("saved")).containsText(texts.getPortalSessionRemembered());
+          assertThat(sessions.rows("saved").locator("vaadin-button")).isEnabled();
+        }
+      } finally {
+        owner.page.navigate("about:blank");
+        BrowserTestRunner.restartWithSessionTimeout(1800);
+      }
+    }
   }
 
   @Test

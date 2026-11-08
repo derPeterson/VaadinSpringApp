@@ -87,6 +87,7 @@ public final class BrowserTestRunner {
     environment.put(
         "BROWSER_TEST_PROVIDER_KEY", java.util.Base64.getEncoder().encodeToString(providerKey));
     environment.put("BROWSER_TEST_DEVELOPMENT_OPTIONS_ENABLED", "false");
+    environment.put("BROWSER_TEST_SESSION_TIMEOUT_SECONDS", "1800");
     if (worker && !run.startsWith(this.module.resolve("runs"))) {
       throw new IllegalArgumentException("Worker output must be within runs/.");
     }
@@ -763,6 +764,13 @@ public final class BrowserTestRunner {
   public static void restartWithDevelopmentOptions(boolean enabled) throws Exception {
     BrowserTestRunner runner = ownedRunner();
     runner.environment.put("BROWSER_TEST_DEVELOPMENT_OPTIONS_ENABLED", Boolean.toString(enabled));
+    restartTestApplication();
+  }
+
+  /** Die Frist gilt nur für neue Sitzungen in der eigenen Browser-Testanwendung. */
+  public static void restartWithSessionTimeout(int seconds) throws Exception {
+    BrowserTestRunner runner = ownedRunner();
+    runner.environment.put("BROWSER_TEST_SESSION_TIMEOUT_SECONDS", Integer.toString(seconds));
     restartTestApplication();
   }
 

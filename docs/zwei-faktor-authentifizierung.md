@@ -355,7 +355,9 @@ mit ungültigem Tabparameter gilt „Alle Tickets“; ohne Ticketnummer bleibt d
 Detailauswahl leer. Die native History-API ersetzt den aktuellen Eintrag, statt
 für jeden Auswahlwechsel einen zusätzlichen Zurück-Schritt anzulegen.
 „Zum Ticket“ öffnet für berechtigte Administratoren den zugehörigen Eintrag
-in der bestehenden Ticketliste; Lesen und Übernehmen bleiben eigene Aktionen.
+in der bestehenden Ticketliste. Der Sprung übernimmt das Ticket nicht und markiert
+die Benachrichtigung nicht direkt als gelesen. Sobald der Verlauf sichtbar ist,
+greift die beschriebene Lesequittierung für die dargestellten Nachrichten.
 
 „Anleitung senden“ zeigt die Anleitung in der aktuellen Oberflächensprache vorab.
 Ein Sprachwechsel aktualisiert auch die bereits geöffnete Vorschau. Beim Senden

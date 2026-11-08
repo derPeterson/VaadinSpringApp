@@ -2,38 +2,13 @@
 
 ## Browser-Tests
 
-- **Anmeldewege in Benutzerdetails und Sitzungen: offen.** In DE/EN auf Desktop
-  und Smartphone die beiden schreibgeschützten Kontoangaben und unterschiedliche
-  Anmeldewege pro aktiver Sitzung prüfen. Gespeicherte Zugänge ohne aktive
-  Sitzung zeigen keine Angabe „Angemeldet über“.
+- **Tooltip der Ticketnavigation nach letzter Aktivität: offen.** In DE/EN auf
+  Desktop und Smartphone zusätzlich zum Verschwinden des Punkts prüfen, dass
+  „Neue Aktivitäten im Ticketsystem“ auch nach erneutem Hover nicht mehr erscheint.
 
-- **Reduzierter 2FA-Header und Wiederherstellungshilfe: offen.** In DE/EN auf
-  Desktop und Smartphone prüfen, dass der Header nach dem ersten Anmeldenachweis
-  das richtige Konto neben der Sprachwahl zeigt und lange Namen und Adressen
-  die Sprachwahl nicht verdrängen. In der Hilfe bei leerer Liste, offener Anfrage
-  und nach dem Schließen die Position und Sichtbarkeit der Aktionen prüfen.
-
-- **Ersatzcode im Dialog für Kontoaktionen: offen.** In DE/EN auf Desktop und
-  Smartphone eine Standard-Kontoaktion und eine Anbieterverbindung ausdrücklich
-  mit einem gültigen Ersatzcode prüfen. Erst der Aktionsbutton darf bestätigen.
-
-- **Vorgangsseiten bei Live-Updates: offen.** In DE/EN auf Desktop und Smartphone
-  prüfen, dass Live-Updates die aktuelle Seite erhalten oder bei einer leeren
-  letzten Seite auf die letzte verfügbare Seite zurückgehen.
-
-- **Ticketnavigation ohne ungelesene Vorgänge: offen.** In DE/EN auf Desktop
-  und Smartphone den Wechsel vom Zustand ohne ungelesene Vorgänge zur ersten
-  relevanten Nachricht und wieder zurück prüfen. Punkt und Tooltip müssen ohne
-  Öffnen des Ticketsystems erscheinen und beim Wegfall der letzten relevanten
-  ungelesenen Nachricht verschwinden.
-
-- **Vorgangsfilter – verbleibende Bedienfälle: offen.** In DE/EN auf Desktop und
-  Smartphone Filter bei Live-Updates erhalten und Antwortentwürfe beim Ausblenden
-  des ausgewählten Vorgangs erhalten. Den Außenklick auch auf schmalen Displays
-  mit einer sichtbaren Fläche neben dem Dialog prüfen. Ticketlinks trotz
-  entgegenstehender Filter öffnen.
-  Benachrichtigungslinks müssen beispielsweise `section=support&ticket=10003`
-  ohne kodierte Raute öffnen.
+- **Ticketlink bei aktivem Vorgangsfilter: offen.** In DE/EN auf Desktop und
+  Smartphone einen Ticketlink aus der Glockenvorschau bei entgegenstehendem
+  aktivem Filter öffnen.
 
 - **OTP-Autofill: offen.** Beide sechsstelligen Felder (Einrichtung und Anmeldung)
   in DE/EN durch echtes Browser- oder Passwortmanager-Autofill vervollständigen:
@@ -41,12 +16,10 @@
   Nach Ablehnung muss die erneute Eingabe möglich sein und der Bestätigungsbutton
   bedienbar bleiben.
 
-- **Ticketzähler, Listenabschluss und Anwesenheitsauswahl: wartend auf Browserfreigabe.**
-  In DE/EN auf Desktop und Smartphone „1 Anfrage“/„mehrere Anfragen“ von den
-  Nachrichtenzählern unterscheiden. Die Adminliste soll unter einem Eintrag bündig
-  abschließen und bei vielen Einträgen im begrenzten Scroller bedienbar bleiben.
-  Den rechten Anwesenheitspfeil mit Maus und Tastatur auf-/zuklappen, den Erhalt des
-  Zustands beim Sprachwechsel und die unveränderte Statuswahl prüfen.
+- **Ticketdarstellung – verbleibende Detailprüfungen: offen.**
+  In DE/EN auf Desktop und Smartphone prüfen, dass die Adminliste unter einem
+  Eintrag bündig abschließt und bei vielen Einträgen im begrenzten Scroller
+  bedienbar bleibt.
   Die Ticket-Tabs außerdem mit der Anbieterleiste vergleichen: gemeinsame Höhe,
   Schrift, aktive Oberkante und unterbrochene untere Trennlinie, auch bei schmaler Breite.
   Der große Ticketsystem-Seitenkopf muss beim Bereichswechsel und Sprachwechsel
@@ -67,37 +40,18 @@
   nur Avatar und grünes „Sie“-/„You“-Badge, sonst „Nicht Zugewiesen“. Der gesamte
   Bearbeiterblock ist rechtsbündig; beide Rollenüberschriften haben keinen Doppelpunkt.
 
-- **Globale Scrollleisten – verbleibende Bedienfälle: offen.** Dokument,
-  Wiederherstellungsverlauf und Admin-Filterdialog mit ausreichend Inhalt in einem
-  touchfähigen Browserkontext prüfen. Scrollen per Touch muss erhalten bleiben;
-  die systemabhängige Einblendung darf keine Inhalte verdecken. Zusätzlich reale
-  Auswahlmenüs und deren Scrollflächen im Systemkontrast prüfen.
+- **Globale Scrollleisten – plattformabhängige Darstellung: offen.** Prüfen, dass
+  systemseitig eingeblendete Scrollleisten auf dem Gerät keine Inhalte verdecken.
+  Lange Auswahlmenüs mit eigener Scrollfläche im tatsächlichen Systemkontrast prüfen.
 
-- **2FA-Wiederherstellungsanfragen: offen.** Beim Aktualisieren nach einer
-  konkurrierenden Änderung den neuen Status und die passende Rückmeldung prüfen.
-  In getrennten Sitzungen zusätzlich Live-Aktualisierung ohne Klick, Erhalt eines
-  Entwurfs, die Zähler für andere Tickets und das Löschen des Zählers beim
-  Öffnen auch in einem zweiten Tab desselben Kontos prüfen. Beim Schließen in
-  einer anderen Sitzung darf der alte Antwortentwurf nicht im Formular für eine
-  neue Anfrage erscheinen. Bei parallel eintreffenden Nachrichten oder
+- **2FA-Wiederherstellungsanfragen – verbleibende Konkurrenzfälle: offen.** Die
+  Zähler für andere Tickets bei Live-Aktualisierungen prüfen. Bei parallel
+  eintreffenden Nachrichten oder
   Nutzerabschlüssen darf eine ältere Lesequittierung spätere Hinweise nicht
-  quittieren. Zusätzlich zu den geprüften Beobachtungs- und
-  Abschlussregeln das eingeschaltete Abo eines normalen Bearbeiters bei neuen
-  Nachrichten prüfen. Interne Vermerke dürfen Nutzeransicht und Nutzerzähler nicht ändern.
-  MFA-07 deckt bereits Live-Antworten in beide Richtungen, den Erhalt des
-  Admin-Entwurfs, die Sichtbarkeit interner Vermerke, die Admin-Tabs und den
-  Sicherheitshinweis auf Desktop und Smartphone ab.
+  quittieren. Interne Vermerke dürfen die Nutzerzähler nicht ändern.
   Die Bearbeiteravatare in Adminliste und Detail mit „Sie“/„You“ nur beim eigenen
   Konto prüfen. Namens-/E-Mail-Tooltips müssen in beiden Ticketansichten zweizeilig sein.
-  Die Nutzeransicht darf keine Bearbeiternamen oder -adressen erhalten. Im Benachrichtigungsdialog
-  entfällt bei Ticketmeldungen die Kontosicherheitsaktion, bei Kontoänderungen bleibt
-  sie verfügbar. JUnit deckt die Text- und Datenverträge ab, der Browsernachtest ist offen.
-
-- **Ticketzugang aus Benachrichtigungen: offen.** In DE/EN auf Desktop und
-  Smartphone die kontextabhängige Zielaktion für Ticket- und Kontoänderungsmeldungen
-  prüfen. Die Zielaktion belegt mobil eine volle Zeile. „Zum Ticket“ wählt genau den
-  benachrichtigten Vorgang aus und verändert weder Lesestatus noch Zuständigkeit.
-  Normale Nutzer erhalten den administrativen Ticketzugang nicht.
+  Die Nutzeransicht darf keine Bearbeiternamen oder -adressen erhalten.
 
 ## JUnit-Tests
 
