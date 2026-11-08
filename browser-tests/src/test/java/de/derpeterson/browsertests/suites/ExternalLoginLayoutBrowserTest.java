@@ -152,6 +152,13 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     page.keyboard().press("Escape");
     assertThat(dialog).hasJSProperty("opened", false);
 
+    page.locator("#external-connect-google").click();
+    page.locator("#external-proof-help").click();
+    assertThat(page.locator("#account-support")).isVisible();
+    page.locator("#support-back").click();
+    assertThat(page.locator("#account-security-portal")).isVisible();
+    assertThat(dialog.locator("vaadin-dialog-overlay")).isHidden();
+
     page.navigate("/admin");
     new AdminUsersPage(page).open();
     AdminUserDialog editor = new AdminUsersPage(page).openCreate();

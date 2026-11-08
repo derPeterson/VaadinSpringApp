@@ -156,7 +156,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         requester.page.locator("#support-reply textarea").fill("Unread activity at width " + width);
         UiActions.complete(
             requester.page, () -> requester.page.locator("#support-add-reply").click());
-        assertSupportNavigationActivity();
+        assertSupportNavigationActivity(width);
         page.navigate("/admin?section=support");
         assertThat(page.locator("#support-select-ticket")).isVisible();
         page.locator("#support-filter").click();
@@ -245,17 +245,18 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     }
   }
 
-  private void assertSupportNavigationActivity() {
-    Locator toggle = page.locator("#account-navigation-toggle");
-    if (toggle.isVisible()) {
+  private void assertSupportNavigationActivity(int width) {
+    if (width == 390) {
+      Locator toggle = page.locator("#account-navigation-toggle");
+      assertThat(toggle).isVisible();
       UiActions.complete(page, toggle::click);
+      assertThat(toggle).hasAttribute("aria-expanded", "true");
     }
     assertThat(page.locator("#admin-nav-support-activity"))
         .hasAttribute("aria-label", texts.getSupportNewActivity());
     Locator item = page.locator("#admin-nav-support");
     item.hover();
-    assertThat(page.locator("vaadin-tooltip-overlay[opened] [part=overlay]"))
-        .containsText(texts.getSupportNewActivity());
+    assertThat(page.getByRole(AriaRole.TOOLTIP)).hasText(texts.getSupportNewActivity());
   }
 
   @ParameterizedTest
@@ -374,7 +375,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("OTP nach Tippen und Einfügen: " + id, actor);
     String valid = TwoFactorPage.totp(actor, email);
     if (pasteValidCode) {
-      pasteOtp(actor, valid);
+      pasteOtp(actor, valid + "99");
     } else {
       actor.keyboard().type(valid);
     }
@@ -1582,7 +1583,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.locator("#external-confirm-local").click();
     assertThat(page.locator("#external-confirm-factor")).hasJSProperty("invalid", true);
     assertThat(page.locator("vaadin-notification-card:not([closing])"))
-        .containsText(texts.getTwoFactorInvalidCode());
+        .containsText(texts.getBaseValidationRequiredMessage());
     assertThat(page.locator("vaadin-notification-card:not([closing])"))
         .hasAttribute("theme", Pattern.compile(".*cosmos-reference-error.*"));
     page.locator("vaadin-notification-card:not([closing])").getByRole(AriaRole.BUTTON).click();
@@ -1597,6 +1598,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     String second = provider.equals("google") ? "microsoft" : "google";
     page.locator("#external-connect-" + second).click();
     assertThat(page.locator("#external-confirm-factor input")).isFocused();
+    context.grantPermissions(List.of("clipboard-read", "clipboard-write"));
     pasteOtp(page, TwoFactorPage.totp(page, identity));
     providerIdentity("linked-" + UUID.randomUUID() + "@gmail.com");
     assertThat(page.locator("#external-connect-" + second))
@@ -1658,6 +1660,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     page.navigate("/account?section=security&tab=portal");
     page.locator("#account-two-factor-renew").click();
+    assertAccountActionCodeLayout();
     page.locator("#two-factor-action-help").click();
     assertThat(page.locator("#account-support")).isVisible();
     page.locator("#support-back").click();
@@ -1754,6 +1757,24 @@ public class TwoFactorBrowserTest extends BrowserFixture {
             >= 400);
   }
 
+  private void assertAccountActionCodeLayout() {
+    Locator dialog = page.locator("#two-factor-action-dialog");
+    Locator appCode = page.locator("#two-factor-action-factor");
+    assertThat(appCode.locator("input[slot=input]")).isFocused();
+    assertThat(appCode.locator("[part=slot]").first())
+        .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
+    Locator header = dialog.locator(".account-change-dialog-header");
+    Locator close = header.locator(".cosmos-overlay-close");
+    assertThat(close).isVisible();
+    BoundingBox headerBounds = header.boundingBox();
+    assertTrue(close.boundingBox().x > headerBounds.x + headerBounds.width / 2);
+    assertThat(dialog.locator(".two-factor-method-tabs")).hasCSS("height", "42px");
+    UiActions.complete(page, page.locator("#two-factor-action-recovery-code-tab")::click);
+    assertThat(page.locator("#two-factor-action-recovery-code input"))
+        .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
+    assertThat(appCode).isHidden();
+  }
+
   private void verifyUnavailableRecoveryDownload(
       String url, String outputPage, List<String> originalCodes) {
     // Ein tatsächlich nicht verfügbarer Codesatz wird vom geschützten Serverendpunkt
@@ -1796,8 +1817,10 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     new UserMenu(page).selectTestLanguage();
     page.navigate("/admin?section=configuration&group=two_factor");
     assertThat(page.locator("#two-factor-save")).isVisible();
-    assertThat(page.locator("#admin-two-factor-settings .cosmos-dashboard-description"))
-        .hasText(texts.getTwoFactorSettingsPageHint());
+    assertThat(
+            page.getByText(
+                texts.getTwoFactorSettingsPageHint(), new Page.GetByTextOptions().setExact(true)))
+        .isVisible();
     assertThat(page.locator(".mfa-settings-header").getByText(texts.getTwoFactorSettingsHint()))
         .isVisible();
     Locator toggle = page.locator("#account-navigation-toggle");
@@ -1806,8 +1829,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     }
     Locator configuration = page.locator("#admin-nav-configuration-two_factor");
     configuration.hover();
-    assertThat(page.locator("vaadin-tooltip-overlay[opened] [part=overlay]"))
-        .containsText(texts.getTwoFactorSettingsTitle());
+    assertThat(page.getByRole(AriaRole.TOOLTIP)).hasText(texts.getTwoFactorSettingsTitle());
     if (toggle.isVisible()) {
       UiActions.complete(page, toggle::click);
     }

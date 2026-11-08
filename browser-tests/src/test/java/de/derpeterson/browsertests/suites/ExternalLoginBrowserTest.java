@@ -115,6 +115,9 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
           assertThat(page.locator("#two-factor-password")).isHidden();
           assertThat(page.locator("#two-factor-submit")).isHidden();
           page.navigate("/account?section=security&tab=portal");
+          assertThat(page).hasURL(Pattern.compile(".*/two-factor\\?setup$"));
+          page.locator("#two-factor-cancel").click();
+          assertThat(page.locator("#account-password-edit-security")).isVisible();
         }
         page.locator("#account-email-edit-security").click();
         if (hasPassword) {
@@ -124,6 +127,8 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
         } else {
           assertThat(page).hasURL(Pattern.compile(".*/two-factor\\?setup$"));
           assertThat(page.locator("#two-factor-confirm-google")).hasCount(0);
+          page.locator("#two-factor-cancel").click();
+          assertThat(page.locator("#account-email-edit-security")).isVisible();
         }
         AllurePlaywright.attachScreenshot("Kontoführung ohne verfügbare Anmeldeanbieter", page);
       } finally {
@@ -139,6 +144,8 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       page.locator("#external-proof-cancel").click();
     } else {
       assertThat(page.locator("#two-factor-confirm-google")).isVisible();
+      page.locator("#two-factor-cancel").click();
+      assertThat(page.locator("#account-password-edit-security")).isVisible();
     }
   }
 

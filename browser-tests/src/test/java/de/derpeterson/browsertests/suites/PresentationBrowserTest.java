@@ -12,6 +12,7 @@ import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.Cookie;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
@@ -27,6 +28,7 @@ import io.qameta.allure.Story;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.net.URI;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -59,12 +61,16 @@ public class PresentationBrowserTest extends BrowserFixture {
                           .setExact(true)))
           .isVisible();
       assertThat(page).hasURL(urlPattern(HOME_ROUTE));
+      List<Cookie> durableCookies =
+          context.cookies().stream()
+              .filter(cookie -> cookie.expires != null && cookie.expires > 0)
+              .toList();
       try (BrowserContext reopened =
           browser.newContext(
               new Browser.NewContextOptions()
                   .setBaseURL(System.getProperty("browser.tests.baseUrl"))
-                  .setStorageState(context.storageState())
                   .setLocale(texts.browserLocale()))) {
+        reopened.addCookies(durableCookies);
         Page visitor = reopened.newPage();
         visitor.navigate(path(HOME_ROUTE));
         assertThat(visitor.locator(".public-languages vaadin-button[aria-pressed=true]"))

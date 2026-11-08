@@ -83,7 +83,9 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     assertThat(page.locator("#account-support")).containsText(draft);
     AllurePlaywright.attachScreenshot("Sprachwechsel im eingeschränkten Hilfszugang", page);
     page.navigate("/home");
-    assertThat(page).hasURL(Pattern.compile(".*/two-factor.*"));
+    assertThat(page).hasURL(Pattern.compile(".*/recovery-help$"));
+    page.locator("#support-back").click();
+    assertThat(page).hasURL(Pattern.compile(".*/two-factor$"));
     page.locator("#two-factor-cancel").click();
     new LoginPage(page).assertFormVisible();
   }
