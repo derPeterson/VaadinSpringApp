@@ -1,0 +1,16 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Caddy – HTTPS-Integrationstests" type="JUnit" factoryName="JUnit">
+    <module name="app" />
+    <option name="TEST_OBJECT" value="pattern" />
+    <option name="VM_PARAMETERS" value="&quot;-Dhttps.test.caddy=$PROJECT_DIR$/data/https/tools/caddy.exe&quot;" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/app" />
+    <patterns>
+      <pattern testClass="de.derpeterson.app.development.IdeHttpsProxyTest,realCaddyUsesIsolatedCaAndFullHttpsCertificateValidation" />
+      <pattern testClass="de.derpeterson.app.development.IdeHttpsProxyTest,fullIdeApplicationStartsWithoutTestConfigurationsAndCleansUpAfterStop" />
+    </patterns>
+    <shortenClasspath name="ARGS_FILE" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
