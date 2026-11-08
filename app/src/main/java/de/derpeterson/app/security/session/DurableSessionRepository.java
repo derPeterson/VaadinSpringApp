@@ -5,6 +5,7 @@ import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.WrappedHttpSession;
 import de.derpeterson.app.security.DeviceRememberMeServices;
+import de.derpeterson.app.security.SignInMethod;
 import de.derpeterson.app.security.TwoFactorFlow;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import jakarta.servlet.http.HttpSessionBindingEvent;
@@ -157,6 +158,42 @@ public final class DurableSessionRepository<S extends Session>
         session.setAttribute(CONTEXT, authentication.withCurrentCredentials(users));
         backend.save(session);
       }
+    }
+  }
+
+  boolean retainAfterProviderUnlink(
+      String id,
+      String identity,
+      String previousVersion,
+      String newVersion,
+      Set<SignInMethod> remainingMethods) {
+    RuntimeState state = runtime.computeIfAbsent(id, RuntimeState::new);
+    synchronized (state) {
+      S session = backend.findById(state.id);
+      if (session == null || Boolean.TRUE.equals(session.getAttribute(EXPIRED))) {
+        return false;
+      }
+      Object value = session.getAttribute(CONTEXT);
+      if (!(value instanceof DurableAuthentication authentication)
+          || !identity.equals(authentication.username())
+          || !previousVersion.equals(authentication.credentialVersion())
+          || !remainingMethods.contains(authentication.signInMethod())
+          || authentication.signInMethod() == SignInMethod.PORTAL
+              && !authentication.hasPasswordProof()) {
+        return false;
+      }
+      DurableAuthentication retained;
+      try {
+        retained = authentication.withCurrentCredentials(users);
+      } catch (AuthenticationException _) {
+        return false;
+      }
+      if (!newVersion.equals(retained.credentialVersion())) {
+        return false;
+      }
+      session.setAttribute(CONTEXT, retained);
+      backend.save(session);
+      return true;
     }
   }
 

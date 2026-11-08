@@ -10,6 +10,21 @@ import java.util.function.Supplier;
 final class ExternalProofNotice {
   private ExternalProofNotice() {}
 
+  static void showDisconnected(
+      AfterNavigationEvent event, MessageProperties texts, boolean signIn) {
+    if (event
+        .getLocation()
+        .getQueryParameters()
+        .getParameters()
+        .containsKey(ExternalLoginFlow.DISCONNECTED_PARAMETER)) {
+      NotificationHelper.getInstance()
+          .showNotification(
+              texts::getExternalDisconnected,
+              signIn ? texts::getExternalDisconnectedSignIn : texts::getExternalDisconnectedHint,
+              NotificationHelper.NotificationType.SUCCESS);
+    }
+  }
+
   static void show(AfterNavigationEvent event, MessageProperties messageProperties) {
     // Erst der angehängte Zielrahmen liefert die Palette für ausgelagerte Meldungen.
     List<String> values =

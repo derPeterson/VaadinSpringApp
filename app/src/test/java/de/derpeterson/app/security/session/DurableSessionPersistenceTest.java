@@ -26,10 +26,13 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.CustomUserDetailsService;
 import de.derpeterson.app.security.DeviceDescription;
+import de.derpeterson.app.security.ExternalAuthenticationToken;
+import de.derpeterson.app.security.PortalUserDetails;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionAdmissionService;
 import de.derpeterson.app.security.SessionAdmissionService.Active;
 import de.derpeterson.app.security.SessionLimitException;
+import de.derpeterson.app.security.SignInMethod;
 import de.derpeterson.app.security.VaadinSecurityFilter;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
@@ -38,6 +41,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -53,6 +57,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -573,6 +578,46 @@ class DurableSessionPersistenceTest {
     Session rejected = fresh.findById(other.getId());
     assertNull(rejected.getAttribute(CONTEXT));
     assertEquals(Boolean.TRUE, rejected.getAttribute(DurableSessionRepository.EXPIRED));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"PORTAL,true", "GOOGLE,false", "MICROSOFT,true", "SAVED_LOGIN,false"})
+  void disconnectRetainsOnlyAStillUsableSignIn(SignInMethod source, boolean survives) {
+    UserDetails user = account.get();
+    Session current = repository.createSession();
+    current.setAttribute(
+        FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, user.getUsername());
+    SecurityContext signIn =
+        switch (source) {
+          case PORTAL -> context(false);
+          case SAVED_LOGIN -> context(true);
+          case GOOGLE, MICROSOFT ->
+              new SecurityContextImpl(
+                  new ExternalAuthenticationToken(
+                      user, source.name().toLowerCase(java.util.Locale.ROOT)));
+        };
+    current.setAttribute(CONTEXT, signIn);
+    account.set(
+        User.withUsername(user.getUsername()).password("new-version").roles("USER").build());
+    DurableSessionRegistry<?> registry = new DurableSessionRegistry<>(repository);
+
+    assertEquals(
+        survives,
+        registry.retainAfterProviderUnlink(
+            current.getId(),
+            user.getUsername(),
+            PortalUserDetails.version(user),
+            PortalUserDetails.version(account.get()),
+            Set.of(SignInMethod.PORTAL, SignInMethod.MICROSOFT)));
+    SecurityContext restored = restart().findById(current.getId()).getAttribute(CONTEXT);
+    if (survives) {
+      assertEquals(
+          source,
+          DurableAuthentication.capture(restored.getAuthentication(), ignored -> account.get())
+              .signInMethod());
+    } else {
+      assertNull(restored);
+    }
   }
 
   @Test

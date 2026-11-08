@@ -13,6 +13,7 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -225,9 +226,14 @@ public final class ExternalConnectionsComponent extends Div {
   }
 
   private void unlink(String provider) {
-    UserEntity user = flow.owner(request);
-    flow.authorize(request, user, ExternalLoginFlow.unlinkPurpose(provider), true);
-    identities.unlink(user.getId(), user.getAccessVersion(), provider);
-    UI.getCurrent().getPage().setLocation("/login");
+    boolean retained = flow.disconnect(request, provider);
+    String destination =
+        retained
+            ? AppRouteConstants.ACCOUNT_PROVIDERS_LOCATION + "&"
+            : AppRouteConstants.LOGIN_SECURITY_ROUTE + "?";
+    UI.getCurrent()
+        .getPage()
+        .setLocation(
+            request.getContextPath() + destination + ExternalLoginFlow.DISCONNECTED_PARAMETER);
   }
 }

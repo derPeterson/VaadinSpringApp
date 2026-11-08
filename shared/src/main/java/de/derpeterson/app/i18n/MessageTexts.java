@@ -1053,6 +1053,18 @@ public class MessageTexts {
     return getTranslation("external.disconnect.hint");
   }
 
+  public String getExternalDisconnected() {
+    return getTranslation("external.disconnected");
+  }
+
+  public String getExternalDisconnectedHint() {
+    return getTranslation("external.disconnected.hint");
+  }
+
+  public String getExternalDisconnectedSignIn() {
+    return getTranslation("external.disconnected.signIn");
+  }
+
   public String getAccountSecurityPortalAccess() {
     return getTranslation("account.security.portalAccess");
   }

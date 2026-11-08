@@ -1,9 +1,11 @@
 package de.derpeterson.app.security.session;
 
 import de.derpeterson.app.security.SessionAdmissionService.Active;
+import de.derpeterson.app.security.SignInMethod;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
@@ -78,6 +80,17 @@ public final class DurableSessionRegistry<S extends Session> implements SessionR
     if (repository instanceof DurableSessionRepository<?> durable) {
       durable.retainAfterPasswordChange(id, identity);
     }
+  }
+
+  public boolean retainAfterProviderUnlink(
+      String id,
+      String identity,
+      String previousVersion,
+      String newVersion,
+      Set<SignInMethod> remainingMethods) {
+    return repository instanceof DurableSessionRepository<?> durable
+        && durable.retainAfterProviderUnlink(
+            id, identity, previousVersion, newVersion, remainingMethods);
   }
 
   public Active metadata(String id) {

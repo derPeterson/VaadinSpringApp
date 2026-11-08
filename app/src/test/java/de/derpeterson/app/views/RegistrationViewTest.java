@@ -330,6 +330,8 @@ public class RegistrationViewTest {
     order.verifyNoMoreInteractions();
     assertEquals(42L, user.getId());
     assertEquals("hash", user.getPassword());
+    assertEquals(
+        de.derpeterson.app.model.enums.RegistrationChannel.PORTAL, user.getRegistrationChannel());
     assertFalse(user.isEnabled());
     assertEquals("test@example.com", user.getEmail());
     assertEquals(1, user.getRoleEntities().size());

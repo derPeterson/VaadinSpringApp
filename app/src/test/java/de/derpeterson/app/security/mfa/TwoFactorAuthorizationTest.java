@@ -201,7 +201,7 @@ class TwoFactorAuthorizationTest {
         });
     String current = users.findById(user.getId()).orElseThrow().getAccessVersion();
     assertFalse(authorization.sessionConfirmed(request));
-    authorization.retainAfterPasswordChange(request, previous);
+    authorization.retainAfterAccessVersionChange(request, previous);
     assertTrue(authorization.sessionConfirmed(request));
     org.junit.jupiter.api.Assertions.assertEquals(
         before.replace(previous, current),
@@ -211,7 +211,7 @@ class TwoFactorAuthorizationTest {
         AccessDeniedException.class,
         () -> authorization.authorizeCurrent(request, TwoFactorAction.EMAIL, true));
     MockHttpServletRequest unconfirmed = requestFor(user.getEmail());
-    authorization.retainAfterPasswordChange(unconfirmed, previous);
+    authorization.retainAfterAccessVersionChange(unconfirmed, previous);
     assertFalse(authorization.sessionConfirmed(unconfirmed));
   }
 

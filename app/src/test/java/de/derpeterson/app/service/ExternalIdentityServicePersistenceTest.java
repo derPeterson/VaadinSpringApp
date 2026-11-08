@@ -15,6 +15,7 @@ import static org.mockito.Mockito.when;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.ExternalIdentityRepository;
 import de.derpeterson.app.repository.UserRepository;
@@ -25,6 +26,7 @@ import de.derpeterson.app.security.ExternalIdentityEvidence;
 import de.derpeterson.app.security.ExternalLoginConfiguration;
 import de.derpeterson.app.security.ExternalLoginProperties;
 import de.derpeterson.app.security.MaintenanceAccessException;
+import de.derpeterson.app.security.SignInMethod;
 import de.derpeterson.app.security.session.DurableAuthentication;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -33,6 +35,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -45,6 +48,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.DisabledException;
@@ -52,6 +56,7 @@ import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /** Eigene H2-Transaktionen prüfen Identitätszuordnung und echte persistierte Kontozustände. */
@@ -99,6 +104,7 @@ class ExternalIdentityServicePersistenceTest {
   @Autowired private ConfigService config;
   @Autowired private VerificationService verification;
   @Autowired private TransactionTemplate transaction;
+  @Autowired private PlatformTransactionManager transactions;
   @Autowired private SessionRegistry sessions;
   @Autowired private DeviceTokenRepository remembered;
   @PersistenceContext private EntityManager em;
@@ -145,6 +151,8 @@ class ExternalIdentityServicePersistenceTest {
     assertTrue(stored.isEnabled());
     assertFalse(stored.isVerificationPending());
     assertNull(stored.getPassword());
+    assertEquals(RegistrationChannel.GOOGLE, stored.getRegistrationChannel());
+    assertEquals(Set.of(SignInMethod.GOOGLE), service.availableSignInMethods(stored.getId()));
     assertNull(stored.getGender());
     assertNull(stored.getBirthDate());
     assertEquals(List.of("google"), service.connected(user.getId()));
@@ -200,7 +208,9 @@ class ExternalIdentityServicePersistenceTest {
     UserEntity user = register(evidence("google", "one", true));
     Long userId = user.getId();
     String version = user.getAccessVersion();
-    assertThrows(AccessDeniedException.class, () -> service.unlink(userId, version, "google"));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> service.unlink(new MockHttpServletRequest(), userId, version, "google"));
     service.link(user.getId(), user.getAccessVersion(), evidence("microsoft", "two", false));
     sessions.registerNewSession("own-active-session", user.getEmail());
     sessions.registerNewSession("other-active-session", user.getEmail());
@@ -213,7 +223,7 @@ class ExternalIdentityServicePersistenceTest {
         durable.restore(details, "test-key").getAuthentication()
             instanceof ExternalAuthenticationToken);
     assertTrue(durable.factors().isEmpty());
-    service.unlink(user.getId(), user.getAccessVersion(), "google");
+    service.unlink(new MockHttpServletRequest(), user.getId(), user.getAccessVersion(), "google");
     assertTrue(sessions.getSessionInformation("own-active-session").isExpired());
     assertTrue(sessions.getSessionInformation("other-active-session").isExpired());
     verify(remembered).removeUserTokens(user.getEmail());
@@ -221,6 +231,9 @@ class ExternalIdentityServicePersistenceTest {
         user.getAccessVersion(), users.findById(user.getId()).orElseThrow().getAccessVersion());
     assertThrows(AuthenticationServiceException.class, () -> durable.restore(details, "test-key"));
     assertEquals(List.of("microsoft"), service.connected(user.getId()));
+    assertEquals(Set.of(SignInMethod.MICROSOFT), service.availableSignInMethods(user.getId()));
+    assertEquals(
+        RegistrationChannel.GOOGLE, users.findById(userId).orElseThrow().getRegistrationChannel());
     ExternalIdentityEvidence additionalIdentity = evidence("google", "three", true);
     assertThrows(
         AccessDeniedException.class, () -> service.link(userId, version, additionalIdentity));
@@ -305,7 +318,11 @@ class ExternalIdentityServicePersistenceTest {
                   ready.countDown();
                   assertTrue(start.await(10, TimeUnit.SECONDS));
                   try {
-                    service.unlink(user.getId(), user.getAccessVersion(), provider);
+                    service.unlink(
+                        new MockHttpServletRequest(),
+                        user.getId(),
+                        user.getAccessVersion(),
+                        provider);
                     return true;
                   } catch (AccessDeniedException _) {
                     return false;
@@ -393,12 +410,18 @@ class ExternalIdentityServicePersistenceTest {
             config,
             sessions,
             remembered,
-            new ExternalLoginConfiguration().externalRegistrations(properties));
+            new ExternalLoginConfiguration().externalRegistrations(properties),
+            transactions);
     assertThrows(
         AccessDeniedException.class,
         () ->
             transaction.executeWithoutResult(
-                status -> restricted.unlink(user.getId(), user.getAccessVersion(), "google")));
+                status ->
+                    restricted.unlink(
+                        new MockHttpServletRequest(),
+                        user.getId(),
+                        user.getAccessVersion(),
+                        "google")));
     assertEquals(2, service.connected(user.getId()).size());
   }
 }

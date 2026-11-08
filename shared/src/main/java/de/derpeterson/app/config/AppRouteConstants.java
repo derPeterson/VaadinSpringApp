@@ -33,6 +33,16 @@ public final class AppRouteConstants {
           + ACCOUNT_TAB_PARAMETER
           + "="
           + ACCOUNT_PORTAL_TAB;
+  public static final String ACCOUNT_PROVIDERS_LOCATION =
+      ACCOUNT_SECURITY_ROUTE
+          + "?"
+          + ACCOUNT_SECTION_PARAMETER
+          + "="
+          + ACCOUNT_SECURITY_SECTION
+          + "&"
+          + ACCOUNT_TAB_PARAMETER
+          + "="
+          + ACCOUNT_PROVIDERS_TAB;
 
   public static final String TWO_FACTOR_ROUTE = "two-factor";
   public static final String TWO_FACTOR_SECURITY_ROUTE = "/two-factor";

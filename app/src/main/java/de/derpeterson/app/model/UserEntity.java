@@ -1,6 +1,7 @@
 package de.derpeterson.app.model;
 
 import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import jakarta.persistence.CheckConstraint;
@@ -75,6 +76,10 @@ public class UserEntity {
   private String lastName;
 
   @Column private String password;
+
+  @Enumerated(EnumType.STRING)
+  @Column(updatable = false)
+  private RegistrationChannel registrationChannel;
 
   @Column(nullable = false, length = 36)
   @Builder.Default

@@ -3,6 +3,7 @@ package de.derpeterson.app.service;
 import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.ExternalIdentityEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.ExternalIdentityRepository;
 import de.derpeterson.app.repository.UserRepository;
@@ -10,21 +11,29 @@ import de.derpeterson.app.security.DeviceTokenRepository;
 import de.derpeterson.app.security.ExternalIdentityEvidence;
 import de.derpeterson.app.security.ExternalLoginConfiguration;
 import de.derpeterson.app.security.MaintenanceService;
+import de.derpeterson.app.security.PortalUserDetails;
+import de.derpeterson.app.security.SignInMethod;
+import de.derpeterson.app.security.session.DurableSessionRegistry;
 import de.derpeterson.app.validation.UserInputRules;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 
 /** Anbieteridentität und lokale Kontorechte bleiben getrennt; E-Mail verbindet niemals Konten. */
@@ -38,6 +47,10 @@ public class ExternalIdentityService {
   private final SessionRegistry sessions;
   private final DeviceTokenRepository remembered;
   private final ExternalLoginConfiguration.Registrations clients;
+  private final PlatformTransactionManager transactions;
+
+  private record Unlinked(
+      String identity, String previousVersion, String newVersion, Set<SignInMethod> remaining) {}
 
   @Transactional(readOnly = true)
   public Optional<UserEntity> resolve(ExternalIdentityEvidence evidence) {
@@ -86,6 +99,8 @@ public class ExternalIdentityService {
     UserEntity user =
         UserEntity.builder()
             .email(canonical)
+            .registrationChannel(
+                RegistrationChannel.valueOf(evidence.provider().toUpperCase(Locale.ROOT)))
             .firstName(firstName.trim())
             .lastName(lastName.trim())
             .preferredLocale(locale)
@@ -115,36 +130,77 @@ public class ExternalIdentityService {
     add(user, evidence);
   }
 
-  @Transactional
-  public void unlink(Long userId, String expectedVersion, String provider) {
+  /** Behält nur die aktuelle Sitzung mit nachweislich weiter nutzbarem Anmeldeweg. */
+  public boolean unlink(
+      HttpServletRequest request, Long userId, String expectedVersion, String provider) {
+    HttpSession current = request.getSession(false);
+    String sessionId = current == null ? null : current.getId();
+    TransactionTemplate transaction = new TransactionTemplate(transactions);
+    transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    Unlinked unlinked =
+        Objects.requireNonNull(
+            transaction.execute(status -> removeProvider(userId, expectedVersion, provider)));
+    boolean kept =
+        sessionId != null
+            && sessions instanceof DurableSessionRegistry<?> durable
+            && durable.retainAfterProviderUnlink(
+                sessionId,
+                unlinked.identity(),
+                unlinked.previousVersion(),
+                unlinked.newVersion(),
+                unlinked.remaining());
+    sessions.getAllSessions(unlinked.identity(), true).stream()
+        .filter(session -> !kept || !sessionId.equals(session.getSessionId()))
+        .forEach(SessionInformation::expireNow);
+    return kept;
+  }
+
+  private Unlinked removeProvider(Long userId, String expectedVersion, String provider) {
     MaintenanceService.requirePublicAccess(config);
     UserEntity user = locked(userId, expectedVersion);
     ExternalIdentityEntity identity =
         identities
             .findByUserIdAndProvider(userId, provider)
             .orElseThrow(() -> new AccessDeniedException("Provider unavailable"));
-    boolean anotherUsableProvider =
-        identities.findByUserIdOrderByProvider(userId).stream()
-            .map(ExternalIdentityEntity::getProvider)
-            .anyMatch(
-                connected ->
-                    !connected.equals(provider) && clients.providers().contains(connected));
-    if (user.getPassword() == null && !anotherUsableProvider) {
+    Set<SignInMethod> remaining = availableMethods(user);
+    remaining.remove(SignInMethod.provider(provider));
+    if (remaining.isEmpty()) {
       throw new AccessDeniedException("Last sign-in method must remain");
     }
     identities.delete(identity);
     identities.flush();
-    // Auch ein bestehender externer Zugang darf nach dem Trennen nicht weiterbestehen.
+    String previousVersion =
+        PortalUserDetails.credentialVersion(user.getAccessVersion(), user.getPassword());
+    // Alte Sitzungen und Nachweise verlieren mit dem Commit ihre Zugangsversion.
     user.rotateAccessVersion();
     users.saveAndFlush(user);
     remembered.removeUserTokens(user.getEmail());
-    TransactionSynchronizationManager.registerSynchronization(
-        new TransactionSynchronization() {
-          @Override
-          public void afterCommit() {
-            sessions.getAllSessions(user.getEmail(), true).forEach(SessionInformation::expireNow);
-          }
-        });
+    return new Unlinked(
+        user.getEmail(),
+        previousVersion,
+        PortalUserDetails.credentialVersion(user.getAccessVersion(), user.getPassword()),
+        remaining);
+  }
+
+  @Transactional(readOnly = true)
+  public Set<SignInMethod> availableSignInMethods(Long userId) {
+    UserEntity user =
+        users.findById(userId).orElseThrow(() -> new AccessDeniedException("Account unavailable"));
+    return Set.copyOf(availableMethods(user));
+  }
+
+  private Set<SignInMethod> availableMethods(UserEntity user) {
+    Set<SignInMethod> available = EnumSet.noneOf(SignInMethod.class);
+    if (user.getPassword() != null) {
+      available.add(SignInMethod.PORTAL);
+    }
+    List<String> enabledProviders = clients.providers();
+    for (String provider : connected(user.getId())) {
+      if (enabledProviders.contains(provider)) {
+        available.add(SignInMethod.provider(provider));
+      }
+    }
+    return available;
   }
 
   @Transactional(readOnly = true)

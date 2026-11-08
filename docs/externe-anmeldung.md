@@ -226,7 +226,12 @@ Die folgende Übersicht ergänzt die jeweils geltende 2FA-Regel. Ein eingerichte
 und dessen erforderliche Aktionsbestätigung werden durch keinen anderen Anmeldeweg umgangen.
 
 Die ursprüngliche Registrierung bestimmt die Anmeldewege nicht dauerhaft.
-Maßgeblich sind die aktuell gespeicherten und freigegebenen Zugänge.
+Maßgeblich sind die aktuell gespeicherten und freigegebenen Zugänge. Das Konto
+speichert den Kanal seiner Selbstregistrierung (Portal, Google oder Microsoft).
+Bei administrativ oder beim Start angelegten Konten bleibt dieses Feld leer.
+Der tatsächliche Anmeldeweg der Sitzung ist separat in ihrer dauerhaften
+Authentifizierung hinterlegt. Die heute nutzbaren Wege ergeben sich aus
+Portalpasswort, Verknüpfungen und freigegebenen Anbietern.
 
 | Aktueller Zugang | Portalpasswort | Weitere Anbieter | Anbieter trennen |
 | --- | --- | --- | --- |
@@ -238,14 +243,18 @@ Maßgeblich sind die aktuell gespeicherten und freigegebenen Zugänge.
 Die Portal-E-Mail-Adresse kann in allen Fällen nach Identitätsbestätigung geändert
 werden. Erst der Link an die neue Adresse übernimmt die Änderung. Das ändert weder
 die E-Mail-Adresse beim Anbieter noch dessen gespeicherte Identitätszuordnung.
-Nach bestätigter E-Mail-Änderung oder Anbietertrennung werden Portalsitzungen und
-gespeicherte Anmeldungen widerrufen. Ein Passwortwechsel behält die aktuelle Sitzung
-und widerruft die übrigen Zugänge sowie gespeicherte Anmeldungen.
+Nach bestätigter E-Mail-Änderung werden Portalsitzungen und gespeicherte
+Anmeldungen widerrufen. Ein Passwortwechsel behält die aktuelle Sitzung und
+widerruft die übrigen Zugänge sowie gespeicherte Anmeldungen.
 Eine Anbieteridentität darf nur einem Portalkonto zugeordnet sein. Gleiche
 E-Mail-Adressen führen weder zur Zusammenführung noch zu zusätzlichen Rechten.
 
-Die letzte Anmeldemöglichkeit kann nicht getrennt werden. Trennen eines Anbieters
-widerruft bestehende Portalsitzungen und gespeicherte Anmeldungen. Kontosperre, lokale
+Die letzte Anmeldemöglichkeit kann nicht getrennt werden. Beim Trennen eines
+Anbieters werden andere Portalsitzungen und gespeicherte Anmeldungen widerrufen.
+Die aktuelle Sitzung bleibt bei bestätigtem Portalpasswort oder einem weiterhin
+nutzbaren anderen Anbieter bestehen. Eine Sitzung des getrennten Anbieters oder
+eine per gespeichertem Login wiederaufgenommene Sitzung endet mit einem Hinweis
+zur erneuten Anmeldung. Kontosperre, lokale
 Rollen, Wartung, Sitzungslimit und Gerätewiderruf gelten auch für externe Anmeldungen.
 „Login speichern“ muss weiterhin ausdrücklich beim betreffenden Login gewählt werden.
 

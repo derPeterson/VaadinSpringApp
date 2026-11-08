@@ -24,11 +24,15 @@ public final class PortalUserDetails extends User {
       throw new IllegalArgumentException("Account access version required");
     }
     super(email, password == null ? "" : password, enabled, true, true, true, authorities);
-    credentialVersion = digest(accessVersion + ":" + (password == null ? "" : password));
+    credentialVersion = credentialVersion(accessVersion, password);
   }
 
   public String credentialVersion() {
     return credentialVersion;
+  }
+
+  public static String credentialVersion(String accessVersion, String password) {
+    return digest(accessVersion + ":" + (password == null ? "" : password));
   }
 
   public static String version(UserDetails user) {

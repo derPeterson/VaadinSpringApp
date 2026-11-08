@@ -231,7 +231,8 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     page.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
     AllurePlaywright.attachScreenshot("Kontextbezogene Bestätigung für Google verbinden", page);
     page.locator("#external-confirm-local").click();
-    providerIdentity("context-" + UUID.randomUUID() + "@gmail.com", "valid");
+    String google = "context-" + UUID.randomUUID() + "@gmail.com";
+    providerIdentity(google, "valid");
     assertThat(page.locator("#external-connect-google"))
         .hasText(texts.getExternalDisconnect("Google"));
     page.locator("#external-connect-google").click();
@@ -239,7 +240,23 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     assertThat(page.locator("#external-confirm-google")).hasCount(0);
     page.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
     page.locator("#external-confirm-local").click();
-    assertThat(page).hasURL(Pattern.compile(".*/login$"));
+    assertThat(page.locator("#external-connect-google"))
+        .hasText(texts.getExternalConnect("Google"));
+    assertStandardNotification(page, texts.getExternalDisconnectedHint(), "success");
+    page.locator("#external-connect-google").click();
+    page.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
+    page.locator("#external-confirm-local").click();
+    providerIdentity(google, "valid");
+    assertThat(page.locator("#external-connect-google"))
+        .hasText(texts.getExternalDisconnect("Google"));
+    new UserMenu(page).signOut();
+    begin("google", google, "valid");
+    page.navigate("/account?section=security&tab=providers");
+    page.locator("#external-connect-google").click();
+    page.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
+    page.locator("#external-confirm-local").click();
+    assertThat(page).hasURL(Pattern.compile(".*/login\\?provider_disconnected$"));
+    assertStandardNotification(page, texts.getExternalDisconnectedSignIn(), "success");
   }
 
   @ParameterizedTest
@@ -465,11 +482,9 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     page.locator("#external-confirm-microsoft").click();
     providerIdentity(microsoft, "valid");
     page.locator("#external-confirm-local").click();
-    assertThat(page).hasURL(Pattern.compile(".*/login$"));
-    begin("microsoft", microsoft, "valid");
-    assertThat(page).hasURL(Pattern.compile(".*/home$"));
-    page.navigate("/account?section=security&tab=portal");
-    page.locator("#account-security-tab-providers").click();
+    assertThat(page.locator("#external-connect-google"))
+        .hasText(texts.getExternalConnect("Google"));
+    assertStandardNotification(page, texts.getExternalDisconnectedHint(), "success");
     assertThat(page.locator("#external-connect-microsoft")).isDisabled();
     page.locator("#account-security-tab-portal").click();
     page.locator("#account-password-edit-security").click();

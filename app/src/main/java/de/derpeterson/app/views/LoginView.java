@@ -432,6 +432,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     if (recoveryArea.isVisible()) {
       return;
     }
+    ExternalProofNotice.showDisconnected(event, messageProperties, true);
     List<String> errors = event.getLocation().getQueryParameters().getParameters().get("error");
     if (errors != null
         && errors.size() == 1

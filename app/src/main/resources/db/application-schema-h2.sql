@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS users (
     password varchar(255),
     access_version varchar(36) default random_uuid() not null,
     preferred_locale varchar(255) not null,
+    registration_channel enum ('GOOGLE','MICROSOFT','PORTAL'),
     gender enum ('FEMALE','MALE','OTHER'),
     status enum ('ABSENT','AVAILABLE','EMPLOYED','OFFLINE') not null,
     primary key (id),

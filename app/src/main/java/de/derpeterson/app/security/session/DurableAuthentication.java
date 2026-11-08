@@ -5,6 +5,7 @@ import static de.derpeterson.app.security.mfa.SecondFactorAuthorities.TOTP;
 
 import de.derpeterson.app.security.ExternalAuthenticationToken;
 import de.derpeterson.app.security.PortalUserDetails;
+import de.derpeterson.app.security.SignInMethod;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -41,6 +42,18 @@ public record DurableAuthentication(
   }
 
   public record Factor(String authority, Instant issuedAt) {}
+
+  public SignInMethod signInMethod() {
+    if (externalProvider != null) {
+      return SignInMethod.provider(externalProvider);
+    }
+    return remembered ? SignInMethod.SAVED_LOGIN : SignInMethod.PORTAL;
+  }
+
+  boolean hasPasswordProof() {
+    return factors.stream()
+        .anyMatch(factor -> FactorGrantedAuthority.PASSWORD_AUTHORITY.equals(factor.authority()));
+  }
 
   public DurableAuthentication {
     if (username == null

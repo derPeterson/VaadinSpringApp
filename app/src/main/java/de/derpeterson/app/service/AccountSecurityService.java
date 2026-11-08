@@ -163,7 +163,7 @@ public class AccountSecurityService {
               new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                  twoFactor.retainAfterPasswordChange(request, previousAccessVersion);
+                  twoFactor.retainAfterAccessVersionChange(request, previousAccessVersion);
                 }
               });
           return new PasswordChanged(previous, user.getVersion());

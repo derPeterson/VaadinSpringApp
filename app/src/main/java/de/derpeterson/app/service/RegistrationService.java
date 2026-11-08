@@ -1,6 +1,7 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.security.MaintenanceService;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ public class RegistrationService {
   @Transactional(rollbackFor = IOException.class)
   public boolean register(UserEntity user) throws IOException {
     MaintenanceService.requirePublicAccess(config);
+    user.setRegistrationChannel(RegistrationChannel.PORTAL);
     users.saveUser(user);
     return verification.sendVerificationEmailByUser(user);
   }

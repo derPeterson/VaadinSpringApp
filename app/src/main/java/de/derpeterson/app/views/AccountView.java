@@ -156,6 +156,7 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
   @Override
   public void afterNavigation(AfterNavigationEvent event) {
     ExternalProofNotice.show(event, messageProperties);
+    ExternalProofNotice.showDisconnected(event, messageProperties, false);
   }
 
   @Override

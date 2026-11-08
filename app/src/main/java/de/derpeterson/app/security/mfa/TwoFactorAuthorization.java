@@ -274,8 +274,12 @@ public class TwoFactorAuthorization {
     security.getObject().clearSecondFactor(request);
   }
 
-  /** Nur nach dem bestätigten eigenen Passwortwechsel, ohne den Nachweiszeitpunkt zu erneuern. */
-  public void retainAfterPasswordChange(HttpServletRequest request, String previousAccessVersion) {
+  /**
+   * Nur für eine nach bestätigter Zugangsänderung beibehaltene Sitzung. Der Nachweiszeitpunkt
+   * bleibt erhalten.
+   */
+  public void retainAfterAccessVersionChange(
+      HttpServletRequest request, String previousAccessVersion) {
     Owner current = owner(request);
     HttpSession session = request.getSession(false);
     SessionProof proof = sessionProof(session);

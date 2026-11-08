@@ -76,6 +76,7 @@ public class ExternalLoginFlow {
   }
 
   public static final String ERROR_PARAMETER = "external_error";
+  public static final String DISCONNECTED_PARAMETER = "provider_disconnected";
 
   public record Attempt(
       String provider,
@@ -257,6 +258,20 @@ public class ExternalLoginFlow {
     // Verbindung prüft und verbraucht sie nach dem Rücksprung unter dem Kontolock.
     authorize(request, user, purpose, false);
     return begin(request, provider, Mode.LINK, user, purpose, false, locale);
+  }
+
+  public boolean disconnect(HttpServletRequest request, String provider) {
+    UserEntity user = owner(request);
+    authorize(request, user, unlinkPurpose(provider), true);
+    String previousAccessVersion = user.getAccessVersion();
+    boolean retained = identities.unlink(request, user.getId(), previousAccessVersion, provider);
+    cancel(request);
+    if (retained) {
+      twoFactor.retainAfterAccessVersionChange(request, previousAccessVersion);
+    } else {
+      security.logout();
+    }
+    return retained;
   }
 
   private String begin(
