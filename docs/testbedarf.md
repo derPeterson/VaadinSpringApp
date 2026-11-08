@@ -2,43 +2,30 @@
 
 ## Browser-Tests
 
-- **Sitzungssperre im 2FA-Ablauf: offen.** In DE/EN Einrichtung, Wiederherstellung
-  und Hilfe gegen Direktlinks und Aktionen in älteren Tabs prüfen. Sprachwahl,
-  Download, bewusster Abbruch und Wiederaufnahme der Ausgabe nach Neuladen prüfen.
-
-- **URL-Zustand unter Mein Konto: wartend auf Browserfreigabe.** In DE/EN prüfen,
-  dass alle drei Menüpunkte und beide Sicherheitsreiter beim Neuladen erhalten
-  bleiben. Der Anbieterreiter muss auch per Direktlink mit umgekehrter
-  Parameterreihenfolge erreichbar sein.
-
-- **2FA im Dialog für Kontoaktionen: offen.** In DE/EN auf Desktop und Smartphone
-  prüfen, dass beim Verbinden mit Ersatzcode und bei anderen Kontoaktionen der
-  Aktionsbutton die Bestätigung auslöst. Im Standarddialog zusätzlich den
-  Anfangsfokus, Monospace in beiden Feldern und die Bestätigung per Ersatzcode prüfen.
-  Unter „Portalzugang“ sollen das Schließen-Symbol rechts und beide Codearten als
-  kompakter Umschalter erscheinen. Hilfe aus dem Dialog öffnen, dabei die
-  Sicherheitsaktion abbrechen und nach der Hilfe ins Konto zurückkehren.
+- **Ersatzcode im Dialog für Kontoaktionen: offen.** In DE/EN auf Desktop und
+  Smartphone eine Standard-Kontoaktion und eine Anbieterverbindung ausdrücklich
+  mit einem gültigen Ersatzcode prüfen. Erst der Aktionsbutton darf bestätigen.
 
 - **Vorgangsseiten bei Live-Updates: offen.** In DE/EN auf Desktop und Smartphone
   prüfen, dass Live-Updates die aktuelle Seite erhalten oder bei einer leeren
   letzten Seite auf die letzte verfügbare Seite zurückgehen.
 
-- **Ticketnavigation: offen.** Den roten Aktivitätspunkt in der administrativen
-  SideNav und seinen Tooltip in DE/EN prüfen, auch im mobilen Menü. Ohne Öffnen
-  des Ticketsystems muss er Änderungen der relevanten Ticketzähler übernehmen.
-  Ohne relevante ungelesene Nachrichten verschwinden Punkt und Tooltip.
+- **Ticketnavigation ohne ungelesene Vorgänge: offen.** In DE/EN auf Desktop
+  und Smartphone den Wechsel vom Zustand ohne ungelesene Vorgänge zur ersten
+  relevanten Nachricht und wieder zurück prüfen. Punkt und Tooltip müssen ohne
+  Öffnen des Ticketsystems erscheinen und beim Wegfall der letzten relevanten
+  ungelesenen Nachricht verschwinden.
 
 - **Vorgangsfilter – verbleibende Bedienfälle: offen.** In DE/EN auf Desktop und
-  Smartphone das Zurücksetzen des Filterentwurfs sowie Abbruch über Escape und
-  Außenklick prüfen. Filter beim Aktualisieren und Live-Update erhalten.
-  Antwortentwürfe beim Ausblenden des ausgewählten Vorgangs erhalten und
-  Ticketlinks trotz entgegenstehender Filter öffnen.
+  Smartphone Filter bei Live-Updates erhalten und Antwortentwürfe beim Ausblenden
+  des ausgewählten Vorgangs erhalten. Den Außenklick auch auf schmalen Displays
+  mit einer sichtbaren Fläche neben dem Dialog prüfen. Ticketlinks trotz
+  entgegenstehender Filter öffnen.
   Benachrichtigungslinks müssen beispielsweise `section=support&ticket=10003`
   ohne kodierte Raute öffnen.
 
-- **OTP-Autofill und gekürzte Einfügewerte: offen.** Beide sechsstelligen Felder
-  (Einrichtung und Anmeldung) in DE/EN durch Browser-/Passwortmanager-Autofill
-  und durch das Add-on gekürzte überlange Einfügewerte vervollständigen:
+- **OTP-Autofill: offen.** Beide sechsstelligen Felder (Einrichtung und Anmeldung)
+  in DE/EN durch echtes Browser- oder Passwortmanager-Autofill vervollständigen:
   Ein vollständiger Code löst genau eine Prüfung aus, ein Teilcode keine.
   Nach Ablehnung muss die erneute Eingabe möglich sein und der Bestätigungsbutton
   bedienbar bleiben.
@@ -75,11 +62,6 @@
   die systemabhängige Einblendung darf keine Inhalte verdecken. Zusätzlich reale
   Auswahlmenüs und deren Scrollflächen im Systemkontrast prüfen.
 
-- **2FA-Adminnavigation und Kopftexte: offen.** Im Browser in DE/EN den vollständigen
-  übersetzten Namen im Tooltip und die unterschiedlichen Seiten-/Panelhinweise prüfen.
-  Die Sichtbarkeit nach Rolle und die Navigation über das gekürzte Label „2FA“
-  sind bereits abgedeckt.
-
 - **2FA-Wiederherstellungsanfragen: offen.** Beim Aktualisieren nach einer
   konkurrierenden Änderung den neuen Status und die passende Rückmeldung prüfen.
   In getrennten Sitzungen zusätzlich Live-Aktualisierung ohne Klick, Erhalt eines
@@ -105,10 +87,6 @@
   prüfen. Die Zielaktion belegt mobil eine volle Zeile. „Zum Ticket“ wählt genau den
   benachrichtigten Vorgang aus und verändert weder Lesestatus noch Zuständigkeit.
   Normale Nutzer erhalten den administrativen Ticketzugang nicht.
-
-- **Öffentliche Sprachwahl: offen.** In DE/EN nach der Sprachauswahl die
-  Browsersitzung ohne Löschung der Cookies neu öffnen. Die öffentliche Ansicht
-  übernimmt die Auswahl, nach dem Anmelden hat die Kontosprache Vorrang.
 
 ## JUnit-Tests
 

@@ -20,7 +20,7 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
 
 ### Folgearbeiten auf `codex/2fa-folgearbeiten`
 
-- Offenen automatisierten Testbedarf abarbeiten und große Testrunde durchführen.
+- Verbleibende gezielte Sonderfälle im [Testbedarf](../testbedarf.md) prüfen.
 
 1. Einrichtung, Bestätigung und Verwaltung im bestehenden Cosmos-Stil gemeinsam
    durchsehen: Mein Konto → Sicherheit → Portalzugang, eingeschränkte Anmeldung,

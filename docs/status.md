@@ -1,53 +1,61 @@
-# Große Testrunde vom 07.11.2026
+# Große Testrunde vom 08.11.2026
 
-Geprüft wurde `main` auf `3afa7366881e21b34dc488c6ae053ff49d8abc4a`.
-Der vorherige vollständig belegte Stand war `623feb67`. Dazwischen liegen die
-2FA- und Ticket-Erweiterung, ihre Integration und die Sonar-Korrekturen.
+Geprüft wurden die Folgearbeiten auf `codex/2fa-folgearbeiten`, ausgehend vom
+letzten vollständig belegten Stand `3afa7366` auf `main`.
+Der Anwendungsstand ist `606e6955`, der Browser-Teststand einschließlich
+des Nachtests für die Benachrichtigungsvorschau `df4e1938`.
 
 ## Ergebnisse
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| Optimierter Maven-Reactor unter JDK 25 | Bestanden mit gemeinsamer Java-Coverage und geprüftem Maven-Modell |
-| Spotless und Checkstyle | Bestanden |
-| Anwendungstests | 2.734 bestanden, zwei vorgesehene HTTPS-Opt-in-Fälle übersprungen |
-| Browser-Helfertests | 96 bestanden |
-| Frontend-JavaScript | 20 bestanden |
+| Optimierter Maven-Reactor unter JDK 25 | Am aktuellen Stand bestanden, einschließlich geprüftem Maven-Modell |
+| Spotless und Checkstyle | Am aktuellen Stand bestanden |
+| Anwendungstests | 2.772 bestanden, zwei vorgesehene HTTPS-Opt-in-Fälle übersprungen |
+| Gezielter Java-Nachtest der frühen Sperre | 38 bestanden, einschließlich Passwort- und E-Mail-Aktion |
+| Browser-Helfertests und Frontend | 96 und 20 bestanden |
 | Coverage- und Sonar-Offlineprüfungen | 18 und 47 bestanden |
-| JaCoCo-Zeilenabdeckung | Anwendung 86,59 %, Shared 100 % |
-| Browser DE | 253 von 253 bestanden |
-| Browser EN | 253 von 253 bestanden |
-| SonarQube | 0 offene Findings, 0 Hotspots, grünes Quality Gate |
+| JaCoCo-Zeilenabdeckung | Anwendung 86,28 %, Shared 100 % |
+| Browser DE | 255 verschiedene Fälle nachgewiesen: 254 im Gesamtlauf, der Desktop-Vorschautest im gezielten Nachlauf |
+| Browser EN | 255 von 255 im Gesamtlauf bestanden |
+| Früher Sperrbeginn im korrigierten Image | Schneller Direktlink ohne Portalpasswort auf Desktop und Smartphone in DE und EN bestanden |
+| SonarQube | Quality Gate auf `main` grün; keine Analyse des Feature-Branches |
 
-Die beiden Browser-Gesamtläufe prüften dasselbe Image
-`sha256:0d14953a0980095b9363f345061cff9ab76718e23c89887c3c6cc237bf9f0cf4`.
-Je vier Worker nutzten getrennte Anwendungs-, H2- und Mailpit-Umgebungen.
-Aufbau und Abbau waren in beiden Sprachen erfolgreich. Das JAR des Merge-Stands
-startete zusätzlich mit einer eigenen In-Memory-H2-Datenbank bis HTTP 200.
+Beide endgültigen Browserläufe und der deutsche Vorschau-Nachlauf nutzten das
+Image
+`sha256:81c49883af4c0db852d0014b5ffb13702ac5f511c7932df28cf65767324e233a`.
+Je vier Worker prüften die Gesamtsuite mit getrennten Anwendungs-, H2- und
+Mailpit-Umgebungen. Aufbau und Abbau waren erfolgreich. Die frühere
+Sonar-Analyse `d7d9b331-4e0d-402c-9df2-de1b39ac0a28` bezieht sich auf
+`main`, nicht auf diese Folgearbeiten.
 
-Beim ersten vollständigen Build scheiterten lokale HTTP- und SMTP-Testverbindungen.
-Die betroffenen Klassen bestanden im gezielten Nachlauf mit 17 von 17 Fällen.
-Die anschließenden vollständigen Builds und der final geprüfte Stand waren grün.
+## Befunde und Nachtests
 
-## Sonar und geprüfte Korrekturen
-
-Sonar-Analyse `d7d9b331-4e0d-402c-9df2-de1b39ac0a28` bestätigt den geprüften
-`main`-Stand. Von 173 offenen Ausgangsbefunden wurden 172 durch Korrekturen
-geschlossen. Der einzelne Hinweis zu HMAC-SHA-1 wurde für das bestehende
-[TOTP-Format](zwei-faktor-authentifizierung.md) am Befund begründet akzeptiert.
-Die 51 früheren Ausnahmen bleiben bestehen.
-
-Die Korrekturen betreffen die Transaktionseinstiege für Ticket-Livezugriffe,
-PDF-Dateinamen für Ersatzcodes, die Struktur der Anmelde- und 2FA-Prüfungen
-sowie Ticketansichten. Fehlertests prüfen die vorgesehene Ausnahmeoperation
-getrennt von ihrer Vorbereitung. Die Browserläufe decken unter anderem
-Ticketsprung, Filter, Pagination, Ticketverlauf, OTP-Bedienung,
-2FA-Regelauswahl und Feldhilfe ab.
+- Die auf den früheren Ablauf ausgerichteten Tests wurden auf den ausdrücklichen
+  Rückweg aus der Hilfe, unvollständige OTP-Eingaben und die nativen Tooltips
+  angepasst. Kontonavigation nach Refresh, der Hilfeeinstieg aus Konto- und
+  Anbieterdialogen, die 2FA-Konfiguration und Ticketfilter sind in DE und EN
+  nachgewiesen.
+- Der englische Lauf hat einen zu späten Sperrbeginn reproduziert: Führte eine
+  Passwort- oder E-Mail-Änderung zur Einrichtung, konnte ein Direktlink vor dem
+  Laden der Ansicht noch ins Konto führen. Die Kontoaktion speichert die Sperre
+  jetzt vor der Weiterleitung. Die Reihenfolge ist für beide Aktionen mit JUnit
+  geprüft. Der Browsernachweis am korrigierten Image ist auf Desktop und
+  Smartphone in DE und EN bestanden.
+- Der Schutz der einmaligen Ersatzcode-Ausgabe, der Rücksprung aus alten Tabs
+  und der PDF-Abruf nach der kurzen Sicherheitsfrist bestanden in DE und EN
+  auch am korrigierten Image.
+- Im deutschen Gesamtlauf am korrigierten Image brach der Desktop-Vorschautest
+  beim erneuten Öffnen der Admin-Konfiguration wegen einer konkurrierenden
+  Weiterleitung ab. Der Smartphone-Fall bestand. Der Nachtest öffnet die
+  Konfiguration in einem neuen Tab derselben Admin-Sitzung. Die ältere
+  Benachrichtigungsvorschau in der Nutzersitzung bleibt Teil der Prüfung.
+  Beide Bildschirmgrößen bestanden im Nachlauf auf demselben Image.
 
 ## Offene Abnahme
 
 Die gemeinsame Sichtabnahme für [2FA und Admin-Tickets](planung/zwei-faktor-bestaetigung.md)
 bleibt offen. Echte Authenticator-Apps, Anbieter-Sonderfälle, Mobilgeräte,
 Bildschirmtastatur, Zoom, Screenreader und PDF-Druck stehen im
-[manuellen Katalog](manual-tests/README.md). Weitere offene automatisierte
-Szenarien stehen im [Testbedarf](testbedarf.md).
+[manuellen Katalog](manual-tests/README.md). Weitere automatisierte Szenarien
+stehen im [Testbedarf](testbedarf.md).
