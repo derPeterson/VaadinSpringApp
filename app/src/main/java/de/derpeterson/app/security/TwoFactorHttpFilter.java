@@ -4,6 +4,7 @@ import com.vaadin.flow.server.VaadinService;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorDocuments;
+import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -13,9 +14,16 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /** Schützt auch alte Ansichten und Remember-me-Sitzungen vor dem Servlet-/RPC-Aufruf. */
 public final class TwoFactorHttpFilter implements Filter {
+  // Flow registriert Downloads mit UI-Nummer, Ressourcen-UUID und genau diesem Namen.
+  private static final Pattern RECOVERY_DOWNLOAD =
+      Pattern.compile(
+          "/VAADIN/dynamic/resource/[0-9]+/[0-9a-f-]{36}/"
+              + Pattern.quote(RecoveryCodeDownload.RESOURCE_NAME));
+
   private final SecurityService security;
   private final TwoFactorAuthorization authorization;
 
@@ -86,7 +94,9 @@ public final class TwoFactorHttpFilter implements Filter {
       return type == null
           && ("GET".equals(request.getMethod()) || "HEAD".equals(request.getMethod()))
           && (flow.path().equals(path)
-              || !flow.help() && path.startsWith(TwoFactorDocuments.PATH + "/")
+              || !flow.help()
+                  && (path.startsWith(TwoFactorDocuments.PATH + "/")
+                      || RECOVERY_DOWNLOAD.matcher(path).matches())
               || resource(path));
     }
     return type == null

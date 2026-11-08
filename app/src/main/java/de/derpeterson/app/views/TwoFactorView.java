@@ -33,7 +33,6 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.HasDynamicTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
-import com.vaadin.flow.server.streams.DownloadHandler;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
@@ -879,9 +878,7 @@ public final class TwoFactorView extends VerticalLayout
     Button download = new Button(texts.getTwoFactorDownloadPdf(), AppIcon.DOWNLOAD.create());
     download
         .getElement()
-        .setAttribute(
-            "data-download-url",
-            (DownloadHandler) event -> recoveryDownloads.write(event, outputId, locale));
+        .setAttribute("data-download-url", recoveryDownloads.handler(outputId, locale));
     recoveryDownloads.configure(
         download,
         () ->

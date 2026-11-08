@@ -58,6 +58,25 @@ class TwoFactorHttpFilterTest {
     assertEquals(request, chain.getRequest());
   }
 
+  @ParameterizedTest
+  @CsvSource({
+    "SETUP,two-factor-recovery-codes.pdf,true",
+    "SETUP,avatar.png,false",
+    "ACCOUNT_HELP,two-factor-recovery-codes.pdf,false"
+  })
+  void activeFlowOnlyPassesTheNamedRecoveryDownloadToItsAuthorizationHandler(
+      TwoFactorFlow flow, String name, boolean permitted) throws IOException, ServletException {
+    MockHttpServletRequest request =
+        authenticatedRequest(
+            "/VAADIN/dynamic/resource/0/c72f14a9-5489-45fe-b4cc-100312a972b1/" + name);
+    flow.enter(request);
+    MockFilterChain chain = new MockFilterChain();
+
+    filter.doFilter(request, new MockHttpServletResponse(), chain);
+
+    assertEquals(permitted ? request : null, chain.getRequest());
+  }
+
   private MockHttpServletRequest authenticatedRequest(String path) {
     MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
     request.setServletPath(path);

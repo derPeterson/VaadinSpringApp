@@ -2,6 +2,7 @@ package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.server.streams.DownloadEvent;
+import com.vaadin.flow.server.streams.DownloadHandler;
 import de.derpeterson.app.helper.logging.LogSafety;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -27,6 +28,8 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public final class RecoveryCodeDownload {
+  public static final String RESOURCE_NAME = "two-factor-recovery-codes.pdf";
+
   private final TwoFactorEnrollment enrollment;
   private final TwoFactorAuthorization authorization;
   private final ConfigService config;
@@ -55,7 +58,21 @@ public final class RecoveryCodeDownload {
                     }));
   }
 
-  public void write(DownloadEvent event, UUID outputId, Locale locale) {
+  public DownloadHandler handler(UUID outputId, Locale locale) {
+    return new DownloadHandler() {
+      @Override
+      public String getUrlPostfix() {
+        return RESOURCE_NAME;
+      }
+
+      @Override
+      public void handleDownloadRequest(DownloadEvent event) {
+        write(event, outputId, locale);
+      }
+    };
+  }
+
+  void write(DownloadEvent event, UUID outputId, Locale locale) {
     event.getResponse().setHeader("Cache-Control", "no-store");
     event.getResponse().setHeader("Pragma", "no-cache");
     event.getResponse().setHeader("X-Content-Type-Options", "nosniff");
