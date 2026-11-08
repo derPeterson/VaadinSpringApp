@@ -59,6 +59,17 @@ public class PresentationBrowserTest extends BrowserFixture {
                           .setExact(true)))
           .isVisible();
       assertThat(page).hasURL(urlPattern(HOME_ROUTE));
+      try (BrowserContext reopened =
+          browser.newContext(
+              new Browser.NewContextOptions()
+                  .setBaseURL(System.getProperty("browser.tests.baseUrl"))
+                  .setStorageState(context.storageState())
+                  .setLocale(texts.browserLocale()))) {
+        Page visitor = reopened.newPage();
+        visitor.navigate(path(HOME_ROUTE));
+        assertThat(visitor.locator(".public-languages vaadin-button[aria-pressed=true]"))
+            .hasAttribute("lang", expected.language());
+      }
     }
   }
 

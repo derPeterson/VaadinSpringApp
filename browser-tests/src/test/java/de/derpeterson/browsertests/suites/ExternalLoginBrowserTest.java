@@ -614,6 +614,8 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     assertThat(page.locator("#two-factor-qr")).hasCount(0);
     assertThat(page.locator("#two-factor-recovery-codes")).hasCount(0);
     assertThat(page.locator("#two-factor-confirm-google")).isVisible();
+    page.locator("#two-factor-cancel").click();
+    assertThat(page.locator("#account-two-factor-setup")).isVisible();
   }
 
   private void rejectedPasswordProof(String provider, String email, String mode, String message) {

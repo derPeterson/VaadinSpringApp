@@ -152,11 +152,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
               .innerText();
       for (int width : new int[] {1280, 390}) {
         page.setViewportSize(width, 900);
-        page.navigate("/admin?section=support");
-        assertThat(page.locator("#support-select-ticket")).isVisible();
+        page.navigate("/admin");
         requester.page.locator("#support-reply textarea").fill("Unread activity at width " + width);
         UiActions.complete(
             requester.page, () -> requester.page.locator("#support-add-reply").click());
+        assertSupportNavigationActivity();
+        page.navigate("/admin?section=support");
+        assertThat(page.locator("#support-select-ticket")).isVisible();
         page.locator("#support-filter").click();
         Locator panel = page.locator("#support-filter-panel");
         assertThat(page.locator("#support-filter-panel"))
@@ -182,12 +184,33 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         panel.locator("#support-filter-cancel").click();
         page.locator("#support-filter").click();
         assertThat(panel.locator("#support-filter-status input:checked")).hasCount(0);
+        Locator openStatus =
+            panel
+                .locator("#support-filter-status")
+                .getByText(texts.getSupportOpen(), new Locator.GetByTextOptions().setExact(true));
+        openStatus.click();
+        panel.locator("#support-filter-reset").click();
+        assertThat(panel.locator("#support-filter-status input:checked")).hasCount(0);
+        openStatus.click();
+        page.keyboard().press("Escape");
+        assertThat(panel).not().hasAttribute("opened", "");
+        page.locator("#support-filter").click();
+        assertThat(panel.locator("#support-filter-status input:checked")).hasCount(0);
+        if (width == 1280) {
+          openStatus.click();
+          page.mouse().click(8, 450);
+          assertThat(panel).not().hasAttribute("opened", "");
+          page.locator("#support-filter").click();
+          assertThat(panel.locator("#support-filter-status input:checked")).hasCount(0);
+        }
         panel
             .locator("#support-filter-reading")
             .getByText(
                 texts.getNotificationsUnread(), new Locator.GetByTextOptions().setExact(true))
             .click();
         panel.locator("#support-filter-apply").click();
+        assertThat(page.locator("#support-active-filter-count")).hasText("1");
+        UiActions.complete(page, () -> page.locator("#support-reload").click());
         assertThat(page.locator("#support-active-filter-count")).hasText("1");
         assertThat(ticketCard(page, number)).isVisible();
         UiActions.complete(page, () -> ticketCard(page, number).click());
@@ -220,6 +243,19 @@ public class TwoFactorBrowserTest extends BrowserFixture {
             .hasText(texts.getSupportTicketNumber(number));
       }
     }
+  }
+
+  private void assertSupportNavigationActivity() {
+    Locator toggle = page.locator("#account-navigation-toggle");
+    if (toggle.isVisible()) {
+      UiActions.complete(page, toggle::click);
+    }
+    assertThat(page.locator("#admin-nav-support-activity"))
+        .hasAttribute("aria-label", texts.getSupportNewActivity());
+    Locator item = page.locator("#admin-nav-support");
+    item.hover();
+    assertThat(page.locator("vaadin-tooltip-overlay[opened] [part=overlay]"))
+        .containsText(texts.getSupportNewActivity());
   }
 
   @ParameterizedTest
@@ -1630,8 +1666,16 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.locator("#account-two-factor-renew").click();
     TwoFactorPage.enterActionCode(
         page, TwoFactorPage.nextCode(page, BrowserTestAccounts.ADMIN_EMAIL));
-    page.locator("#two-factor-action-confirm").click();
-    assertThat(page.locator("#two-factor-recovery-toggle")).isVisible();
+    try (Page previous = context.newPage()) {
+      previous.navigate("/account?section=security&tab=portal");
+      Locator oldRenew = previous.locator("#account-two-factor-renew");
+      assertThat(oldRenew).isVisible();
+      page.locator("#two-factor-action-confirm").click();
+      assertThat(page.locator("#two-factor-recovery-toggle")).isVisible();
+      oldRenew.click();
+      assertThat(previous).hasURL(page.url());
+      assertThat(previous.locator("#two-factor-recovery-toggle")).isVisible();
+    }
     java.time.Instant shortProofExpired = java.time.Instant.now().plusSeconds(301);
     assertThat(page.locator("#two-factor-recovery-codes")).isVisible();
     page.locator("#two-factor-recovery-toggle").click();
@@ -1752,6 +1796,21 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     new UserMenu(page).selectTestLanguage();
     page.navigate("/admin?section=configuration&group=two_factor");
     assertThat(page.locator("#two-factor-save")).isVisible();
+    assertThat(page.locator("#admin-two-factor-settings .cosmos-dashboard-description"))
+        .hasText(texts.getTwoFactorSettingsPageHint());
+    assertThat(page.locator(".mfa-settings-header").getByText(texts.getTwoFactorSettingsHint()))
+        .isVisible();
+    Locator toggle = page.locator("#account-navigation-toggle");
+    if (toggle.isVisible()) {
+      UiActions.complete(page, toggle::click);
+    }
+    Locator configuration = page.locator("#admin-nav-configuration-two_factor");
+    configuration.hover();
+    assertThat(page.locator("vaadin-tooltip-overlay[opened] [part=overlay]"))
+        .containsText(texts.getTwoFactorSettingsTitle());
+    if (toggle.isVisible()) {
+      UiActions.complete(page, toggle::click);
+    }
     Locator tabs = page.locator("#two-factor-role-tabs vaadin-tab");
     assertThat(tabs).hasCount(4);
     Locator roleContent = page.locator(".mfa-role-content:visible");
