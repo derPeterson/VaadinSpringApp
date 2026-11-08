@@ -1622,6 +1622,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     page.navigate("/account?section=security&tab=portal");
     page.locator("#account-two-factor-renew").click();
+    page.locator("#two-factor-action-help").click();
+    assertThat(page.locator("#account-support")).isVisible();
+    page.locator("#support-back").click();
+    assertThat(page.locator("#account-two-factor-renew")).isVisible();
+    assertThat(page.locator("#two-factor-action-confirm")).isHidden();
+    page.locator("#account-two-factor-renew").click();
     TwoFactorPage.enterActionCode(
         page, TwoFactorPage.nextCode(page, BrowserTestAccounts.ADMIN_EMAIL));
     page.locator("#two-factor-action-confirm").click();

@@ -16,7 +16,8 @@
   Aktionsbutton die Bestätigung auslöst. Im Standarddialog zusätzlich den
   Anfangsfokus, Monospace in beiden Feldern und die Bestätigung per Ersatzcode prüfen.
   Unter „Portalzugang“ sollen das Schließen-Symbol rechts und beide Codearten als
-  kompakter Umschalter erscheinen.
+  kompakter Umschalter erscheinen. Hilfe aus dem Dialog öffnen, dabei die
+  Sicherheitsaktion abbrechen und nach der Hilfe ins Konto zurückkehren.
 
 - **Vorgangsseiten bei Live-Updates: offen.** In DE/EN auf Desktop und Smartphone
   prüfen, dass Live-Updates die aktuelle Seite erhalten oder bei einer leeren

@@ -17,10 +17,13 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.function.DeploymentConfiguration;
+import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.security.TwoFactorFlow;
 import de.derpeterson.app.security.mfa.TwoFactorAction;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,9 +31,11 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.LockedException;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -133,10 +138,33 @@ class TwoFactorActionDialogTest {
     ui = new UI();
     UI.setCurrent(ui);
     session = mock(VaadinSession.class);
+    VaadinService service = mock(VaadinService.class);
+    DeploymentConfiguration configuration = mock(DeploymentConfiguration.class);
+    when(configuration.getUrlSafeSchemes()).thenCallRealMethod();
+    when(service.getDeploymentConfiguration()).thenReturn(configuration);
+    when(session.getService()).thenReturn(service);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenReturn(Locale.forLanguageTag(language));
     VaadinSession.setCurrent(session);
     ui.getInternals().setSession(session);
     return new MessageProperties(new CustomI18NProvider());
+  }
+
+  @Test
+  void recoveryHelpClosesThePendingActionWithoutConfirmingIt() {
+    MessageProperties texts = useLanguage("de");
+    TwoFactorAuthorization authorization = mock(TwoFactorAuthorization.class);
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    TwoFactorActionDialog dialog = new TwoFactorActionDialog(texts, authorization, request);
+    ui.add(dialog);
+    AtomicInteger actions = new AtomicInteger();
+    dialog.open(TwoFactorAction.MANAGE_FACTOR, actions::incrementAndGet);
+    TwoFactorCodeInput input = (TwoFactorCodeInput) ReflectionTestUtils.getField(dialog, "code");
+    ((Button) ReflectionTestUtils.getField(input, "help")).click();
+
+    assertFalse(dialog.isOpened());
+    assertEquals(TwoFactorFlow.ACCOUNT_HELP, TwoFactorFlow.current(request));
+    assertEquals(0, actions.get());
+    verifyNoInteractions(authorization);
   }
 }

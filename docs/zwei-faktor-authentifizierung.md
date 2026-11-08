@@ -185,6 +185,10 @@ Versuche sperren die Bestätigung 15 Minuten, unabhängig von Dialog oder Sitzun
 
 ## Verlust und Kontakt
 
+In den Bestätigungsdialogen für Sicherheitsaktionen führt die Hilfe unter der
+Codeeingabe zur eigenen Wiederherstellungsanfrage. Der Dialog schließt dabei und
+die begonnene Aktion endet. Nach Verlassen der Hilfe kann sie neu gestartet werden.
+
 Nach dem ersten Anmeldenachweis ist an der 2FA-Abfrage die eigene Hilfsanfrage
 erreichbar. Dieser eingeschränkte Zugang öffnet keine anderen Kontobereiche.
 Pro Konto ist eine offene Anfrage möglich, höchstens drei neue pro Tag. Beschreibung

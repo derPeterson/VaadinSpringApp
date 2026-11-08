@@ -100,7 +100,14 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     password.setValueChangeMode(ValueChangeMode.EAGER);
     codePanel =
         new TwoFactorCodeInput(
-            texts, request.getContextPath(), "external-confirm", "external-proof");
+            texts,
+            request,
+            "external-confirm",
+            "external-proof",
+            () -> {
+              flow.cancel(request);
+              close();
+            });
     codePanel.addAppCodeCompleteListener(
         () -> {
           if ((purpose == Purpose.LINK_GOOGLE || purpose == Purpose.LINK_MICROSOFT)

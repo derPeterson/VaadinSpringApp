@@ -1,6 +1,9 @@
 package de.derpeterson.app.ui.components;
 
 import com.flowingcode.vaadin.addons.otpfield.OtpField;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -12,6 +15,8 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.function.SerializableRunnable;
 import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.security.TwoFactorFlow;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /** App- und Ersatzcode für Bestätigungsdialoge. Die Fachaktion bleibt beim Dialog. */
@@ -28,13 +33,18 @@ final class TwoFactorCodeInput extends VerticalLayout {
   private final Tab recoveryTab = new Tab(AppIcon.KEY.create(), recoveryTabLabel);
   private final Tabs methods = new Tabs(appCodeTab, recoveryTab);
   private final Span hint = new Span();
+  private final Button help = new Button();
   private final VerticalLayout input = new VerticalLayout(hint, appCode, recoveryCode);
 
   TwoFactorCodeInput(
-      MessageProperties texts, String contextPath, String fieldPrefix, String methodPrefix) {
+      MessageProperties texts,
+      HttpServletRequest request,
+      String fieldPrefix,
+      String methodPrefix,
+      SerializableRunnable closeAction) {
     this.texts = texts;
     appCode.setId(fieldPrefix + "-factor");
-    TwoFactorCodeFields.configureOtp(appCode, contextPath);
+    TwoFactorCodeFields.configureOtp(appCode, request.getContextPath());
     recoveryCode.setId(fieldPrefix + "-recovery-code");
     recoveryCode.setWidthFull();
     recoveryCode.setManualValidation(true);
@@ -65,7 +75,18 @@ final class TwoFactorCodeInput extends VerticalLayout {
     setPadding(false);
     setSpacing(false);
     addClassName("two-factor-dialog-codes");
-    add(methods, input);
+    help.setId(methodPrefix + "-help");
+    help.setPrefixComponent(AppIcon.INFO_CIRCLE.create());
+    help.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    help.addClickListener(
+        event -> {
+          closeAction.run();
+          TwoFactorFlow.ACCOUNT_HELP.enter(request);
+          UI.getCurrent()
+              .getPage()
+              .setLocation(request.getContextPath() + TwoFactorFlow.ACCOUNT_HELP.location());
+        });
+    add(methods, input, help);
     refreshTexts();
   }
 
@@ -74,6 +95,7 @@ final class TwoFactorCodeInput extends VerticalLayout {
     recoveryTabLabel.setText(texts.getTwoFactorRecoveryCodeLabel());
     appCode.setLabel(texts.getTwoFactorSetupCodeLabel());
     recoveryCode.setLabel(texts.getTwoFactorRecoveryCodeLabel());
+    help.setText(texts.getSupportHelpSubtitle());
     refreshMethod();
   }
 

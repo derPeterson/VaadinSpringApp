@@ -20,7 +20,6 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
 
 ### Folgearbeiten auf `codex/2fa-folgearbeiten`
 
-- Einstieg in die geschützte Hilfe aus den Bestätigungsdialogen.
 - Registrierungskanal, Sitzungsanmeldeweg und Regeln beim Trennen eines Anbieters.
 - Offenen automatisierten Testbedarf abarbeiten und große Testrunde durchführen.
 
