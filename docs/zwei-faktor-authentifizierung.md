@@ -103,6 +103,13 @@ Nach „Codes gesichert“ oder dem Ende der Sitzung werden sie nicht erneut ang
 Die Anwendung speichert die PDF nicht als Datei. Der Ablauf der Sitzungsausgabe
 ändert die Gültigkeit bereits gesicherter Ersatzcodes nicht.
 
+Einrichtung, Wiederherstellung und 2FA-Hilfe begrenzen den Zugriff der gesamten
+aktuellen Sitzung auf den jeweiligen Ablauf. Direktlinks und alte Tabs führen zum
+laufenden Schritt zurück. Der reduzierte Seitenkopf zeigt den Kontext der Anmeldung
+oder des Kontos und bietet weiterhin die Sprachwahl. Die Aktion im Ablauf führt
+bewusst zurück, meldet ab oder bestätigt die Sicherung der Ersatzcodes. Während der
+Ersatzcode-Ausgabe öffnet ein Neuladen in derselben gültigen Sitzung die Ausgabe erneut.
+
 ## Konfiguration und Standardwerte
 
 **Administration → Konfiguration → Zwei-Faktor-Authentifizierung** ist ausschließlich

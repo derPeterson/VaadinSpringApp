@@ -36,7 +36,8 @@ public final class TwoFactorHttpFilter implements Filter {
     String path = http.getServletPath();
     String type = http.getParameter("v-r");
     boolean protocol = isProtocol(path, type);
-    boolean confirmed = confirmed(http, path, protocol);
+    TwoFactorFlow flow = TwoFactorFlow.current(http);
+    boolean confirmed = flow == null && confirmed(http, path, protocol);
     if (protocol) {
       if (serviceEndpoint(path) && (confirmed || TwoFactorTransport.allowedUi(http))) {
         chain.doFilter(request, response);
@@ -51,7 +52,7 @@ public final class TwoFactorHttpFilter implements Filter {
       }
       return;
     }
-    if (confirmed || permitted(http, path, type)) {
+    if (confirmed || permitted(http, path, type, flow)) {
       chain.doFilter(request, response);
       return;
     }
@@ -76,9 +77,17 @@ public final class TwoFactorHttpFilter implements Filter {
             || authorization.administrationConfirmed(request));
   }
 
-  private boolean permitted(HttpServletRequest request, String path, String type) {
+  private boolean permitted(
+      HttpServletRequest request, String path, String type, TwoFactorFlow flow) {
     if (serviceEndpoint(path) && ("init".equals(type) || "heartbeat".equals(type))) {
       return true;
+    }
+    if (flow != null) {
+      return type == null
+          && ("GET".equals(request.getMethod()) || "HEAD".equals(request.getMethod()))
+          && (flow.path().equals(path)
+              || !flow.help() && path.startsWith(TwoFactorDocuments.PATH + "/")
+              || resource(path));
     }
     return type == null
         && (AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE.equals(path)

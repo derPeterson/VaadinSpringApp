@@ -26,6 +26,8 @@ import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.router.AfterNavigationEvent;
+import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.HasDynamicTitle;
@@ -45,6 +47,7 @@ import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.security.LoginThrottledException;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.TwoFactorFlow;
 import de.derpeterson.app.security.mfa.TwoFactorAction;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorDocuments;
@@ -62,6 +65,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,7 +84,7 @@ import org.springframework.security.authentication.LockedException;
 @StyleSheet("custom-theme/cosmos-mfa-recovery.css")
 @StyleSheet("custom-theme/cosmos-mfa-confirmation.css")
 public final class TwoFactorView extends VerticalLayout
-    implements BeforeEnterObserver, HasDynamicTitle {
+    implements BeforeEnterObserver, AfterNavigationObserver, HasDynamicTitle {
   private static final String COPY_MANUAL_KEY_SCRIPT =
       """
       const value = $0.inputElement?.value;
@@ -102,6 +106,7 @@ public final class TwoFactorView extends VerticalLayout
   private final transient ExternalIdentityService identities;
   private final transient HttpServletRequest request;
   private final transient RecoveryCodeDownload recoveryDownloads;
+  private final PublicPageComponent page;
   private final AccountPanelComponent panel =
       new AccountPanelComponent("two-factor-panel", AppIcon.LOCK);
   private final Div content = new Div();
@@ -116,12 +121,10 @@ public final class TwoFactorView extends VerticalLayout
   private final Switch recoverySaved = new Switch();
   private UUID recoveryOutputId;
   private TwoFactorEnrollment.Pending pending;
-  private boolean setup;
-  private boolean administration;
+  private TwoFactorFlow flow;
   private boolean recovering;
   private boolean initializing;
   private boolean introduction;
-  private boolean setupStarted;
   private boolean manualSetupSelected;
   private boolean recoveryCodesVisible;
   private boolean recoveryLoginSelected;
@@ -149,8 +152,7 @@ public final class TwoFactorView extends VerticalLayout
     setSpacing(false);
     setWidthFull();
     addClassName("two-factor-view");
-    PublicPageComponent page =
-        new PublicPageComponent(config, texts, PublicPageComponent.Page.TWO_FACTOR);
+    page = new PublicPageComponent(config, texts, PublicPageComponent.Page.TWO_FACTOR);
     content.addClassName("two-factor-content");
     extraActions.addClassName("two-factor-extra-actions");
     panel.getBody().add(content, extraActions);
@@ -214,11 +216,35 @@ public final class TwoFactorView extends VerticalLayout
       event.forwardTo(LoginView.class);
       return;
     }
-    setup = event.getLocation().getQueryParameters().getParameters().containsKey("setup");
-    administration =
-        event.getLocation().getQueryParameters().getParameters().containsKey("administration");
-    recovering = event.getLocation().getQueryParameters().getParameters().containsKey("recover");
+    flow = TwoFactorFlow.current(request);
+    if (flow == null) {
+      Map<String, List<String>> query = event.getLocation().getQueryParameters().getParameters();
+      boolean confirmed = authorization.sessionConfirmed(request);
+      if (query.containsKey("recover")) {
+        flow = confirmed ? TwoFactorFlow.ACCOUNT_RECOVERY : TwoFactorFlow.RECOVERY;
+      } else if (query.containsKey("administration")) {
+        flow = TwoFactorFlow.ADMINISTRATION;
+      } else {
+        flow = confirmed && query.containsKey("setup") ? TwoFactorFlow.SETUP : TwoFactorFlow.LOGIN;
+      }
+      flow.enter(request);
+    }
+    if (flow.help()) {
+      event.forwardTo(RecoveryHelpView.class);
+      return;
+    }
+    page.setAccountSecurity(flow.account());
+    recovering = flow.recovery();
     render();
+  }
+
+  public boolean isCurrent(TwoFactorFlow active) {
+    return flow == active;
+  }
+
+  @Override
+  public void afterNavigation(AfterNavigationEvent event) {
+    ExternalProofNotice.show(event, texts);
   }
 
   private void render() {
@@ -256,10 +282,10 @@ public final class TwoFactorView extends VerticalLayout
         texts.getTwoFactorPageHint(),
         "");
     cancel.setText(
-        authorization.sessionConfirmed(request)
+        flow.account() && authorization.sessionConfirmed(request)
             ? texts.getTwoFactorBack()
             : texts.getBaseLogoutButton());
-    if (!authorization.sessionConfirmed(request)) {
+    if (!flow.account() || !authorization.sessionConfirmed(request)) {
       cancel.addClassName(DELETE_BUTTON);
       cancel.setPrefixComponent(AppIcon.SIGN_OUT.create());
     }
@@ -278,7 +304,7 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void showExistingFactor() {
-    if (administration
+    if (flow.administration()
         ? authorization.administrationConfirmed(request)
         : authorization.sessionConfirmed(request)) {
       finish();
@@ -291,14 +317,13 @@ public final class TwoFactorView extends VerticalLayout
     recover.setId("two-factor-recover");
     recover.addClickListener(
         event ->
-            UI.getCurrent()
-                .getPage()
-                .setLocation(request.getContextPath() + "/two-factor?recover"));
+            moveTo(flow.administration() ? TwoFactorFlow.ADMIN_RECOVERY : TwoFactorFlow.RECOVERY));
     Button help =
         new Button(
             texts.getSupportHelpTitle(),
             event ->
-                UI.getCurrent().getPage().setLocation(request.getContextPath() + "/recovery-help"));
+                moveTo(
+                    flow.administration() ? TwoFactorFlow.ADMIN_HELP : TwoFactorFlow.LOGIN_HELP));
     help.setId("two-factor-help");
     help.setIcon(AppIcon.OPEN_SECTION.create());
     help.setIconAfterText(true);
@@ -322,8 +347,9 @@ public final class TwoFactorView extends VerticalLayout
     toggle.setPrefixComponent(topic);
     toggle.addClassName("two-factor-login-help-toggle");
     extraActions.add(toggle, alternatives);
-    submit.setText(administration ? texts.getTwoFactorConfirm() : texts.getBaseLoginButton());
-    if (!administration) {
+    submit.setText(
+        flow.administration() ? texts.getTwoFactorConfirm() : texts.getBaseLoginButton());
+    if (!flow.administration()) {
       submit.setPrefixComponent(AppIcon.SIGN_IN.create());
     }
   }
@@ -389,7 +415,7 @@ public final class TwoFactorView extends VerticalLayout
         recoveryLoginSelected
             ? texts.getTwoFactorLoginRecoveryHint()
             : texts.getTwoFactorLoginHint();
-    Span hint = new Span(administration ? texts.getTwoFactorActionHint() : hintText);
+    Span hint = new Span(flow.administration() ? texts.getTwoFactorActionHint() : hintText);
     hint.addClassName(PANEL_DESCRIPTION_CLASS);
     input.add(hint);
     if (recoveryLoginSelected) {
@@ -425,12 +451,14 @@ public final class TwoFactorView extends VerticalLayout
     back.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     back.setId("two-factor-recovery-back");
     back.addClickListener(
-        event -> UI.getCurrent().getPage().setLocation(request.getContextPath() + "/two-factor"));
+        event ->
+            moveTo(flow.administration() ? TwoFactorFlow.ADMINISTRATION : TwoFactorFlow.LOGIN));
     footerNavigation.add(back);
   }
 
   private void showSetup() {
-    if (!setupStarted
+    if (!flow.account()
+        && !Boolean.TRUE.equals(request.getSession().getAttribute(TwoFactorFlow.INTRO_ACCEPTED))
         && (authorization.requires(request, TwoFactorAction.LOGIN)
             || authorization.requires(request, TwoFactorAction.ADMINISTRATION))) {
       showIntroduction();
@@ -992,7 +1020,7 @@ public final class TwoFactorView extends VerticalLayout
       if (enrollment.canBeginFromPasswordLogin(request)) {
         enrollment.beginFromPasswordLogin(request);
       }
-      setupStarted = true;
+      request.getSession().setAttribute(TwoFactorFlow.INTRO_ACCEPTED, true);
       render();
       return;
     }
@@ -1095,13 +1123,13 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void cancel() {
-    if (pending != null && pending.kind() == Kind.RECOVERY_OUTPUT) {
-      if (!Boolean.TRUE.equals(recoverySaved.getValue())) {
-        return;
-      }
-      enrollment.dismissOutput(request, pending.id());
+    if (!enrollment.cancelPreparation(request)) {
+      render();
+      return;
     }
-    if (!introduction && authorization.sessionConfirmed(request)) {
+    external.cancel(request);
+    TwoFactorFlow.finish(request);
+    if (flow.account() && authorization.sessionConfirmed(request)) {
       UI.getCurrent()
           .getPage()
           .setLocation(request.getContextPath() + AppRouteConstants.ACCOUNT_PORTAL_LOCATION);
@@ -1113,13 +1141,19 @@ public final class TwoFactorView extends VerticalLayout
 
   private void finish() {
     authorization.requireSession(request);
+    TwoFactorFlow.finish(request);
     String target = AppRouteConstants.ACCOUNT_PORTAL_LOCATION;
-    if (!setup && !recovering) {
+    if (!flow.account() && !recovering) {
       boolean administrative =
           authorization.owner(request).roles().stream().anyMatch(RoleType::isAdministrative);
       target = administrative ? "/admin" : "/home";
     }
     UI.getCurrent().getPage().setLocation(request.getContextPath() + target);
+  }
+
+  private void moveTo(TwoFactorFlow next) {
+    next.enter(request);
+    UI.getCurrent().getPage().setLocation(request.getContextPath() + next.location());
   }
 
   @Override

@@ -592,6 +592,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
             .getByText(Pattern.compile("^#[0-9]+$"))
             .first()
             .innerText();
+    page.locator("#support-back").click();
+    assertThat(page.locator("#account-panel-security")).isVisible();
     page.navigate("/admin?section=support");
     Locator categories = page.locator("#support-ticket-categories");
     Locator hint = page.locator("#support-select-ticket");
@@ -647,6 +649,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(page.locator(".support-history-event")).hasCount(0);
     assertThat(page.locator(".support-internal-message")).hasCount(0);
     assertThat(page.locator(".support-message-copy")).not().containsText("Nur intern:");
+    page.locator("#support-back").click();
+    assertThat(page.locator("#account-panel-security")).isVisible();
     page.navigate("/notifications");
     assertThat(page.locator(".portal-notification-source-system").first()).isVisible();
     AllurePlaywright.attachScreenshot("Gemeinsame Systemfarbe im Benachrichtigungsbadge", page);
@@ -1398,7 +1402,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     new UserMenu(page).selectTestLanguage();
     new UserMenu(page).signOut();
     login.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
-    page.navigate("/recovery-help");
+    TwoFactorPage.openLoginHelp(page);
+    page.locator("#two-factor-help").click();
     assertThat(page.locator("#account-support")).isVisible();
     page.locator("#support-reply textarea")
         .fill("Synthetische Bitte um Hilfe mit meinen Ersatzcodes.");
@@ -1486,8 +1491,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       new UserMenu(admin).signOut();
     }
     page.navigate("/admin");
-    assertThat(page).hasURL(Pattern.compile(".*/two-factor.*"));
-    page.locator("#two-factor-cancel").click();
+    assertThat(page).hasURL(Pattern.compile(".*/recovery-help$"));
+    page.locator("#support-sign-out").click();
     new LoginPage(page).assertFormVisible();
   }
 
@@ -1628,6 +1633,17 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(page.locator("#two-factor-submit")).isDisabled();
     assertThat(page.locator("#two-factor-cancel")).isHidden();
     String outputPage = page.url();
+    assertThat(page.locator(".public-header a.public-brand")).hasCount(0);
+    assertThat(page.locator("#public-nav-home, #public-nav-login, #public-nav-register"))
+        .hasCount(0);
+    assertThat(page.locator(".public-languages vaadin-button")).hasCount(2);
+    try (Page second = context.newPage()) {
+      for (String path : List.of("/home", "/admin", "/account", "/recovery-help")) {
+        second.navigate(path);
+        assertThat(second).hasURL(outputPage);
+        assertThat(second.locator("#two-factor-recovery-toggle")).isVisible();
+      }
+    }
     assertThat(
             page.getByRole(
                 AriaRole.BUTTON,
@@ -1921,7 +1937,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Zwei-Faktor-Hilfe ohne überbreiten Button", page);
     // Der erste Fall hat dieses feste Testkonto eingerichtet. Im getrennten Hilfszugang
     // bleiben Authenticator und Backupcodes absichtlich unbenutzt.
-    page.navigate("/recovery-help");
+    help.click();
     assertThat(page.locator("#account-support")).isVisible();
     page.locator("#support-reply textarea")
         .fill("Synthetische Anfrage: Ich finde meine gesicherten Ersatzcodes nicht.");
@@ -1932,8 +1948,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     }
     AllurePlaywright.attachScreenshot("Eingeschränkte eigene Wiederherstellungsanfrage", page);
     page.navigate("/admin");
-    assertThat(page).hasURL(Pattern.compile(".*/two-factor.*"));
-    page.locator("#two-factor-cancel").click();
+    assertThat(page).hasURL(Pattern.compile(".*/recovery-help$"));
+    page.locator("#support-sign-out").click();
     assertThat(page).hasURL(Pattern.compile(".*/login$"));
   }
 }

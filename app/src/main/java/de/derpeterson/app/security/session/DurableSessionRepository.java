@@ -5,6 +5,7 @@ import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.WrappedHttpSession;
 import de.derpeterson.app.security.DeviceRememberMeServices;
+import de.derpeterson.app.security.TwoFactorFlow;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import jakarta.servlet.http.HttpSessionBindingEvent;
 import java.time.Duration;
@@ -45,6 +46,8 @@ public final class DurableSessionRepository<S extends Session>
           ACTIVE,
           EXPIRED,
           TwoFactorAuthorization.SESSION_PROOF,
+          TwoFactorFlow.SESSION_ATTRIBUTE,
+          TwoFactorFlow.INTRO_ACCEPTED,
           PRINCIPAL_NAME_INDEX_NAME,
           DeviceRememberMeServices.SERIES);
   private static final Logger logger = LoggerFactory.getLogger(DurableSessionRepository.class);

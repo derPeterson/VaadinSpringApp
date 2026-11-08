@@ -1162,7 +1162,10 @@ Standardwert aus der 2FA-Standardrichtlinie und die Eingaberegeln als Liste.
 Die neue 2FA-Oberfläche verwendet `AccountPanelComponent`, native Vaadin-Eingaben,
 Buttons, `Badge`, `TabSheet`, `ComboBox`, `Switch`, `Grid` und die bestehenden Cosmos-
 Bestätigungsdialoge. Die Kontoverwaltung liegt im Tab „Portalzugang“. Einrichtung
-und eingeschränkte Anmeldung verwenden den öffentlichen Seitenrahmen. Kurzlebige
+und eingeschränkte Anmeldung sowie 2FA-Hilfe verwenden den Seitenrahmen mit
+reduziertem Kopf. Die Marke ist statisch, die Sprachwahl bleibt im Kopf. Die
+Kontextzeile unterscheidet Anmeldung und Kontosicherheit. Rückweg, Abmelden
+und Abschluss liegen im jeweiligen Panel-Footer. Kurzlebige
 QR-/Code-Dokumente werden geschützt eingebettet, Geheimnisse nicht als Flow-Komponenten-
 Werte im dauerhaften Sitzungszustand gehalten.
 

@@ -267,6 +267,7 @@ public class ExternalLoginFlow {
       Purpose purpose,
       boolean remember,
       Locale locale) {
+    requireCompatibleFlow(request, purpose);
     if (clients.findByRegistrationId(provider) == null) {
       throw new AccessDeniedException("Provider unavailable");
     }
@@ -307,6 +308,7 @@ public class ExternalLoginFlow {
         || started.plusSeconds(300).isBefore(clock.instant())) {
       throw new AccessDeniedException("Start sign-in from the portal");
     }
+    requireCompatibleFlow(request, purpose);
     Attempt attempt =
         new Attempt(
             previousProvider,
@@ -338,15 +340,17 @@ public class ExternalLoginFlow {
         || !(oauth.getPrincipal() instanceof OidcUser oidc)) {
       throw new AccessDeniedException("External sign-in no longer valid");
     }
+    requireCompatibleFlow(request, attempt.purpose());
     requireProvider(attempt.provider());
     ExternalIdentityEvidence evidence = evidence(attempt.provider(), oidc);
     // Das Framework-OIDC-Token ist kein lokaler Portalzugang und wird nicht gespeichert.
     SecurityContextHolder.clearContext();
     if (attempt.mode() != Mode.LOGIN) {
       completeAccountAction(request, session, attempt, evidence);
+      TwoFactorFlow active = TwoFactorFlow.current(request);
       response.sendRedirect(
           attempt.purpose() == Purpose.ENROLL_FACTOR
-              ? "/two-factor?setup"
+              ? active == null ? "/two-factor?setup" : active.location()
               : AppRouteConstants.ACCOUNT_PORTAL_LOCATION);
       return;
     }
@@ -360,6 +364,14 @@ public class ExternalLoginFlow {
         new Registration(
             evidence, attempt.locale(), attempt.remember(), clock.instant().plusSeconds(600)));
     response.sendRedirect("/external-registration");
+  }
+
+  private void requireCompatibleFlow(HttpServletRequest request, Purpose purpose) {
+    TwoFactorFlow active = TwoFactorFlow.current(request);
+    if (active != null
+        && (purpose != Purpose.ENROLL_FACTOR || active.help() || active.recovery())) {
+      throw new AccessDeniedException("Finish the active two-factor flow first");
+    }
   }
 
   private void completeAccountAction(

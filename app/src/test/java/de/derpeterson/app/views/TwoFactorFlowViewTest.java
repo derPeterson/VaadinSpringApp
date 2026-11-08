@@ -111,6 +111,10 @@ class TwoFactorFlowViewTest {
     texts = MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     when(config.getString(any(ConfigEntry.class))).thenReturn("Testportal");
     when(request.getContextPath()).thenReturn("");
+    org.springframework.mock.web.MockHttpSession httpSession =
+        new org.springframework.mock.web.MockHttpSession();
+    when(request.getSession()).thenReturn(httpSession);
+    when(request.getSession(false)).thenReturn(httpSession);
     when(security.getAuthenticatedUser(request))
         .thenReturn(
             Optional.of(
@@ -292,7 +296,8 @@ class TwoFactorFlowViewTest {
     open(language, false);
     SupportTicketService tickets = mock(SupportTicketService.class);
     when(tickets.list(request, false)).thenReturn(List.of());
-    RecoveryHelpView help = new RecoveryHelpView(config, texts, tickets, request);
+    RecoveryHelpView help =
+        new RecoveryHelpView(config, texts, tickets, security, authorization, request);
     assertTrue(find(help, "support-no-unlock").isVisible());
     assertInstanceOf(HorizontalLayout.class, find(help, "support-back").getParent().orElseThrow());
     assertTrue(find(help, "support-create") instanceof Button);
@@ -346,7 +351,8 @@ class TwoFactorFlowViewTest {
             null);
     when(tickets.list(request, false)).thenReturn(List.of(closed, active));
 
-    RecoveryHelpView help = new RecoveryHelpView(config, texts, tickets, request);
+    RecoveryHelpView help =
+        new RecoveryHelpView(config, texts, tickets, security, authorization, request);
 
     Grid<?> grid = (Grid<?>) find(help, "support-ticket-grid");
     assertEquals(
@@ -407,7 +413,8 @@ class TwoFactorFlowViewTest {
             false,
             null);
     when(tickets.list(request, false)).thenReturn(List.of(active));
-    RecoveryHelpView help = new RecoveryHelpView(config, texts, tickets, request);
+    RecoveryHelpView help =
+        new RecoveryHelpView(config, texts, tickets, security, authorization, request);
     TextArea draft = (TextArea) find(help, "support-reply");
     draft.setValue("Entwurf für die offene Anfrage.");
 

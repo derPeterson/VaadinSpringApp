@@ -388,6 +388,10 @@ public class MessageTexts {
     return getTranslation("mfa.page.title");
   }
 
+  public String getTwoFactorAreaLabel(boolean account) {
+    return account ? getTranslation("mfa.area.account") : getTranslation("mfa.area.login");
+  }
+
   public String getTwoFactorPageHint() {
     return getTranslation("mfa.page.hint");
   }

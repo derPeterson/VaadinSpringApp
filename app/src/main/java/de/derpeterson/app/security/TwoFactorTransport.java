@@ -11,6 +11,10 @@ public final class TwoFactorTransport {
   private TwoFactorTransport() {}
 
   public static String destination(HttpServletRequest request) {
+    TwoFactorFlow flow = TwoFactorFlow.current(request);
+    if (flow != null) {
+      return request.getContextPath() + flow.location();
+    }
     boolean administration = "/admin".equals(request.getServletPath()) || administrativeUi(request);
     return request.getContextPath()
         + AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE
@@ -24,7 +28,15 @@ public final class TwoFactorTransport {
             ui.getInternals().getActiveRouterTargetsChain().isEmpty()
                 || ui.getInternals().getActiveRouterTargetsChain().stream()
                     .anyMatch(
-                        view -> view instanceof TwoFactorView || view instanceof RecoveryHelpView),
+                        view -> {
+                          TwoFactorFlow flow = TwoFactorFlow.current(request);
+                          if (flow == null) {
+                            return view instanceof TwoFactorView
+                                || view instanceof RecoveryHelpView;
+                          }
+                          return view instanceof TwoFactorView factor && factor.isCurrent(flow)
+                              || view instanceof RecoveryHelpView help && help.isCurrent(flow);
+                        }),
         false);
   }
 

@@ -95,15 +95,19 @@ public class ExternalLoginHttp {
       HttpServletRequest request, HttpServletResponse response, RuntimeException failure)
       throws IOException {
     boolean localAccount = security.getAuthenticatedUser(request).isPresent();
+    TwoFactorFlow active = localAccount ? TwoFactorFlow.current(request) : null;
     flow.cancel(request);
+    if (!localAccount) {
+      response.sendRedirect("/external-registration?error=external");
+      return;
+    }
+    String target = active == null ? AppRouteConstants.ACCOUNT_PORTAL_LOCATION : active.location();
     response.sendRedirect(
-        localAccount
-            ? AppRouteConstants.ACCOUNT_PORTAL_LOCATION
-                + "&"
-                + ExternalLoginFlow.ERROR_PARAMETER
-                + "="
-                + proofProblem(failure).name()
-            : "/external-registration?error=external");
+        target
+            + (target.contains("?") ? "&" : "?")
+            + ExternalLoginFlow.ERROR_PARAMETER
+            + "="
+            + proofProblem(failure).name());
   }
 
   private ExternalLoginFlow.ProofProblem proofProblem(RuntimeException failure) {

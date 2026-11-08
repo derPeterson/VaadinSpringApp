@@ -2,6 +2,7 @@ package de.derpeterson.app.ui.components;
 
 import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
@@ -58,6 +59,7 @@ public class PublicPageComponent extends PageFrameComponent {
   }
 
   private Page page;
+  private boolean accountSecurity;
   private SerializableRunnable refreshTexts;
   private final VerticalLayout cards = new VerticalLayout();
 
@@ -67,8 +69,12 @@ public class PublicPageComponent extends PageFrameComponent {
     getElement().setAttribute("data-public-page", page.name().toLowerCase(Locale.ROOT));
     String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
     Image logo = new Image("icons/service-logo.svg", "");
-    Anchor brand = new Anchor(AppRoute.HOME.getSecurityRoute(), logo, new Span(serviceName));
-    brand.addClassName("public-brand");
+    boolean restricted = page == Page.TWO_FACTOR || page == Page.RECOVERY_HELP;
+    Component brand =
+        restricted
+            ? new Div(logo, new Span(serviceName))
+            : new Anchor(AppRoute.HOME.getSecurityRoute(), logo, new Span(serviceName));
+    brand.getElement().getClassList().add("public-brand");
     brand.getElement().setAttribute("aria-label", serviceName);
     Button home =
         new Button("", AppIcon.HOME.create(), event -> UI.getCurrent().navigate(HomeView.class));
@@ -93,7 +99,7 @@ public class PublicPageComponent extends PageFrameComponent {
     Div languages = new Div(german, english);
     languages.addClassName("public-languages");
     languages.getElement().setAttribute("role", "group");
-    Div navigation = new Div(home, login, register, languages);
+    Div navigation = restricted ? new Div(languages) : new Div(home, login, register, languages);
     navigation.addClassName("public-navigation");
     navigation.getElement().setAttribute("role", "navigation");
     Div headerInner = new Div(brand, navigation);
@@ -130,7 +136,10 @@ public class PublicPageComponent extends PageFrameComponent {
           register.setAriaLabel(texts.getBaseRegistrationButton());
           login.setText(texts.getBaseLoginButton());
           register.setText(texts.getBaseRegistrationButton());
-          kicker.setText(texts.getPublicAreaLabel());
+          kicker.setText(
+              restricted
+                  ? texts.getTwoFactorAreaLabel(accountSecurity)
+                  : texts.getPublicAreaLabel());
           title.setText(this.page.title.apply(texts));
           description.setText(this.page.description.apply(texts));
           german
@@ -173,5 +182,10 @@ public class PublicPageComponent extends PageFrameComponent {
 
   public VerticalLayout getCardContainer() {
     return cards;
+  }
+
+  public void setAccountSecurity(boolean accountSecurity) {
+    this.accountSecurity = accountSecurity;
+    refreshTexts.run();
   }
 }

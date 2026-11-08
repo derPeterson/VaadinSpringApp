@@ -18,6 +18,12 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
 
 ## Noch offen
 
+### Folgearbeiten auf `codex/2fa-folgearbeiten`
+
+- Einstieg in die geschützte Hilfe aus den Bestätigungsdialogen.
+- Registrierungskanal, Sitzungsanmeldeweg und Regeln beim Trennen eines Anbieters.
+- Offenen automatisierten Testbedarf abarbeiten und große Testrunde durchführen.
+
 1. Einrichtung, Bestätigung und Verwaltung im bestehenden Cosmos-Stil gemeinsam
    durchsehen: Mein Konto → Sicherheit → Portalzugang, eingeschränkte Anmeldung,
    Ersatzcodeausgabe, Hilfeanfrage und deren Adminbearbeitung. DE/EN und

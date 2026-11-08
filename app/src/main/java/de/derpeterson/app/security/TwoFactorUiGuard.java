@@ -3,6 +3,7 @@ package de.derpeterson.app.security;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.internal.CurrentInstance;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.ServiceInitEvent;
 import com.vaadin.flow.server.VaadinRequest;
@@ -67,12 +68,23 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
 
   private void guardNavigation(BeforeEnterEvent navigation) {
     Class<?> target = navigation.getNavigationTarget();
-    if (!(VaadinRequest.getCurrent() instanceof VaadinServletRequest servlet)
-        || target == TwoFactorView.class
-        || target == RecoveryHelpView.class) {
+    if (!(VaadinRequest.getCurrent() instanceof VaadinServletRequest servlet)) {
       return;
     }
     HttpServletRequest request = servlet.getHttpServletRequest();
+    TwoFactorFlow flow = TwoFactorFlow.current(request);
+    if (flow != null && security.get().getAuthenticatedUser(request).isPresent()) {
+      if (flow.help() && target != RecoveryHelpView.class) {
+        navigation.forwardTo(RecoveryHelpView.class);
+      } else if (!flow.help() && target != TwoFactorView.class) {
+        navigation.forwardTo(
+            TwoFactorView.class, new Location(flow.location().substring(1)).getQueryParameters());
+      }
+      return;
+    }
+    if (target == TwoFactorView.class || target == RecoveryHelpView.class) {
+      return;
+    }
     boolean administration = target == AdminView.class;
     if (security.get().getAuthenticatedUser(request).isPresent()
         && (!authorization.get().sessionConfirmed(request)
@@ -88,7 +100,8 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
     if (response == null && request instanceof VaadinServletRequest servlet) {
       HttpServletRequest http = servlet.getHttpServletRequest();
       if (security.get().getAuthenticatedUser(http).isPresent()
-          && (!authorization.get().sessionConfirmed(http)
+          && (TwoFactorFlow.current(http) != null
+              || !authorization.get().sessionConfirmed(http)
               || TwoFactorTransport.administrativeUi(http)
                   && !authorization.get().administrationConfirmed(http))
           && !TwoFactorTransport.allowedUi(http)) {

@@ -10,6 +10,7 @@ import com.vaadin.flow.component.html.Span;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.security.TwoFactorFlow;
 import de.derpeterson.app.security.mfa.TwoFactorAction;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorManagement;
@@ -116,6 +117,9 @@ public final class TwoFactorAccountComponent extends Div {
   }
 
   private void openSetup() {
-    UI.getCurrent().getPage().setLocation(request.getContextPath() + "/two-factor?setup");
+    TwoFactorFlow.SETUP.enter(request);
+    UI.getCurrent()
+        .getPage()
+        .setLocation(request.getContextPath() + TwoFactorFlow.SETUP.location());
   }
 }

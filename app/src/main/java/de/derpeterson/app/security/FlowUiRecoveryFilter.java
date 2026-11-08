@@ -37,19 +37,32 @@ public final class FlowUiRecoveryFilter implements Filter {
   public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
       throws IOException, ServletException {
     HttpServletRequest http = (HttpServletRequest) request;
+    HttpServletResponse target = (HttpServletResponse) response;
+    TwoFactorFlow flow = TwoFactorFlow.current(http);
+    if (flow != null
+        && !admissions.isExpired(http)
+        && (AppRoute.LOGOUT.getSecurityRoute().equals(http.getServletPath())
+            || AppRoute.LOGIN.getSecurityRoute().equals(http.getServletPath())
+                && "POST".equals(http.getMethod()))) {
+      target.setHeader("Cache-Control", "no-store");
+      target.sendRedirect(http.getContextPath() + flow.location());
+      return;
+    }
     if (!staleTransport(http) || !restoredAuthentication(http)) {
       chain.doFilter(request, response);
       return;
     }
-    HttpServletResponse target = (HttpServletResponse) response;
     target.setContentType("application/json;charset=UTF-8");
     target.setHeader("Cache-Control", "no-store");
-    AppRoute route = maintenance.blocks(http) ? AppRoute.MAINTENANCE : AppRoute.HOME;
+    String route =
+        maintenance.blocks(http)
+            ? AppRoute.MAINTENANCE.getSecurityRoute()
+            : flow == null ? AppRoute.HOME.getSecurityRoute() : flow.location();
     target
         .getWriter()
         .write(
             VaadinService.createCriticalNotificationJSON(
-                null, null, null, http.getContextPath() + route.getSecurityRoute()));
+                null, null, null, http.getContextPath() + route));
   }
 
   private boolean staleTransport(HttpServletRequest request) {

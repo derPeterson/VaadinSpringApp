@@ -2,6 +2,10 @@
 
 ## Browser-Tests
 
+- **Sitzungssperre im 2FA-Ablauf: offen.** In DE/EN Einrichtung, Wiederherstellung
+  und Hilfe gegen Direktlinks und Aktionen in älteren Tabs prüfen. Sprachwahl,
+  Download, bewusster Abbruch und Wiederaufnahme der Ausgabe nach Neuladen prüfen.
+
 - **URL-Zustand unter Mein Konto: wartend auf Browserfreigabe.** In DE/EN prüfen,
   dass alle drei Menüpunkte und beide Sicherheitsreiter beim Neuladen erhalten
   bleiben. Der Anbieterreiter muss auch per Direktlink mit umgekehrter

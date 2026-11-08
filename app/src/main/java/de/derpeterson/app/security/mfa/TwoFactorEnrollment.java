@@ -451,7 +451,7 @@ public class TwoFactorEnrollment {
     TwoFactorAuthorization.Owner owner = authorization.owner(request);
     return transaction.execute(
         status -> {
-          for (Kind kind : List.of(Kind.GOOGLE_EMAIL, Kind.ENROLLMENT, Kind.RECOVERY_OUTPUT)) {
+          for (Kind kind : List.of(Kind.RECOVERY_OUTPUT, Kind.GOOGLE_EMAIL, Kind.ENROLLMENT)) {
             List<UUID> ids =
                 challenges.active(
                     owner.id(),
@@ -470,6 +470,28 @@ public class TwoFactorEnrollment {
           }
           return null;
         });
+  }
+
+  /** Ein Abbruch verwirft nur vorbereitete Schritte, niemals bereits ausgegebene Codes. */
+  public boolean cancelPreparation(HttpServletRequest request) {
+    return Boolean.TRUE.equals(
+        transaction.execute(
+            status -> {
+              Pending current = pending(request);
+              if (current == null) {
+                return true;
+              }
+              if (current.kind() == Kind.RECOVERY_OUTPUT) {
+                return false;
+              }
+              TwoFactorChallengeEntity draft =
+                  locked(request, authorization.owner(request), current.id(), current.kind());
+              draft.setConsumed(true);
+              draft.setEncryptedPayload(null);
+              draft.setVerificationDigest(null);
+              challenges.saveAndFlush(draft);
+              return true;
+            }));
   }
 
   private TwoFactorChallengeEntity create(
