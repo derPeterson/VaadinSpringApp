@@ -2,6 +2,11 @@
 
 ## Browser-Tests
 
+- **Anmeldewege in Benutzerdetails und Sitzungen: offen.** In DE/EN auf Desktop
+  und Smartphone die beiden schreibgeschützten Kontoangaben und unterschiedliche
+  Anmeldewege pro aktiver Sitzung prüfen. Gespeicherte Zugänge ohne aktive
+  Sitzung zeigen keine Angabe „Angemeldet über“.
+
 - **Reduzierter 2FA-Header und Wiederherstellungshilfe: offen.** In DE/EN auf
   Desktop und Smartphone prüfen, dass der Header nach dem ersten Anmeldenachweis
   das richtige Konto neben der Sprachwahl zeigt und lange Namen und Adressen

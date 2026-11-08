@@ -232,6 +232,9 @@ Bei administrativ oder beim Start angelegten Konten bleibt dieses Feld leer.
 Der tatsächliche Anmeldeweg der Sitzung ist separat in ihrer dauerhaften
 Authentifizierung hinterlegt. Die heute nutzbaren Wege ergeben sich aus
 Portalpasswort, Verknüpfungen und freigegebenen Anbietern.
+In der Benutzerverwaltung stehen „Registriert über“ und „Verfügbare Anmeldewege“
+im Abschnitt „Anmeldung“ der Benutzerdetails. „Geräte & Sitzungen“ nennt bei
+jeder aktiven Sitzung ihren eigenen Anmeldeweg.
 
 | Aktueller Zugang | Portalpasswort | Weitere Anbieter | Anbieter trennen |
 | --- | --- | --- | --- |

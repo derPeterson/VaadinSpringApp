@@ -174,12 +174,24 @@ class DurableSessionPersistenceTest {
     before.setAttribute(
         FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, external.getUsername());
     before.setAttribute(
+        DurableSessionRepository.ACTIVE,
+        new Active(
+            before.getId(),
+            "external-handle",
+            external.getUsername(),
+            new DeviceDescription("Linux", "Firefox", false),
+            Instant.now(),
+            null));
+    before.setAttribute(
         CONTEXT,
         new SecurityContextImpl(
             new de.derpeterson.app.security.ExternalAuthenticationToken(external, "microsoft")));
     DurableSessionRepository<?> restarted = restart();
     Session restored = restarted.findById(before.getId());
     assertNotNull(restored);
+    assertEquals(
+        SignInMethod.MICROSOFT,
+        new DurableSessionRegistry<>(restarted).metadata(before.getId()).signInMethod());
     SecurityContext security = restored.getAttribute(CONTEXT);
     assertTrue(
         security.getAuthentication()
@@ -215,6 +227,9 @@ class DurableSessionPersistenceTest {
     assertNotNull(restoredContext);
     assertEquals(identity, restoredContext.getAuthentication().getName());
     assertTrue(restoredContext.getAuthentication().isAuthenticated());
+    assertEquals(
+        remembered ? SignInMethod.SAVED_LOGIN : SignInMethod.PORTAL,
+        new DurableSessionRegistry<>(restarted).metadata(session.getId()).signInMethod());
     assertEquals(1, restarted.findByPrincipalName(identity).size());
   }
 

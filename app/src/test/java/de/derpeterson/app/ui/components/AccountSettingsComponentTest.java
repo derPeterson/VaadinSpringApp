@@ -13,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
@@ -145,7 +146,7 @@ class AccountSettingsComponentTest {
     MessageProperties texts = MessageProperties.forLocale(provider, locale.get());
     assertEquals(
         texts.getAccountSettingsSessionsLimit(7),
-        ((Span) byId("account-sessions-limit")).getText());
+        ((Badge) byId("account-sessions-limit")).getText());
     String panel = byId("account-panel-sessions").getElement().getTextRecursively();
     assertTrue(panel.contains(texts.getPortalSessionActiveCount(0)));
     assertTrue(panel.contains(texts.getAccountSettingsSessionsActivity()));

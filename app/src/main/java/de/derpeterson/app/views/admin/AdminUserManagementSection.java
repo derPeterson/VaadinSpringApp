@@ -25,6 +25,7 @@ import com.vaadin.flow.component.grid.GridSortOrder;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -55,6 +56,8 @@ import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.ExternalIdentityService;
+import de.derpeterson.app.service.ExternalIdentityService.SignInSummary;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
@@ -129,11 +132,16 @@ public class AdminUserManagementSection extends VerticalLayout {
 
   private final RadioButtonGroup<AdminUserFilters.Enabled> enabledFilter = new RadioButtonGroup<>();
   private transient UserAvatarService avatars;
+  private transient ExternalIdentityService identities;
   private Map<Long, UserAvatarService.State> avatarStates = Map.of();
 
   public void configureAvatars(UserAvatarService avatars) {
     this.avatars = avatars;
     updateGridPage();
+  }
+
+  public void configureSignInDetails(ExternalIdentityService identities) {
+    this.identities = identities;
   }
 
   private final CheckboxGroup<UserStatus> statusFilter = new CheckboxGroup<>();
@@ -746,6 +754,10 @@ public class AdminUserManagementSection extends VerticalLayout {
     private Binding<AdminUserFormData, String> confirmPasswordBinding;
     private Button saveButton;
     private Button cancelButton;
+    private SignInSummary signInSummary;
+    private final H3 signInTitle = new H3();
+    private final TextField registeredVia = new TextField();
+    private final TextField availableMethods = new TextField();
 
     private UserEditor(UserEntity user) {
       this.user = user;
@@ -1130,6 +1142,15 @@ public class AdminUserManagementSection extends VerticalLayout {
       permissionsRow.addClassName("admin-user-permissions");
       VerticalLayout dialogLayout =
           new VerticalLayout(nameRow, emailField, passwordFields, masterDataRow, permissionsRow);
+      if (editMode && identities != null) {
+        identities
+            .adminSignInSummary(user.getId())
+            .ifPresent(
+                summary -> {
+                  signInSummary = summary;
+                  dialogLayout.add(signInDetails());
+                });
+      }
       Div footerSection = new Div(securityNote, footer);
       footerSection.addClassName("admin-user-editor-footer");
       dialog.getFooter().add(footerSection);
@@ -1138,6 +1159,42 @@ public class AdminUserManagementSection extends VerticalLayout {
       dialogLayout.addClassName("cosmos-dialog-form");
 
       dialog.add(dialogLayout);
+    }
+
+    private VerticalLayout signInDetails() {
+      signInTitle.addClassName(COSMOS_PANEL_TITLE_CLASS);
+      registeredVia.setId("admin-user-registered-via");
+      availableMethods.setId("admin-user-sign-in-methods");
+      for (TextField field : List.of(registeredVia, availableMethods)) {
+        field.setReadOnly(true);
+        field.setWidthFull();
+      }
+      HorizontalLayout fields = new HorizontalLayout(registeredVia, availableMethods);
+      fields.setWidthFull();
+      fields.addClassName(COSMOS_FORM_ROW_CLASS);
+      fields.expand(registeredVia, availableMethods);
+      VerticalLayout section = new VerticalLayout(signInTitle, fields);
+      section.setPadding(false);
+      refreshSignInDetails();
+      return section;
+    }
+
+    private void refreshSignInDetails() {
+      if (signInSummary == null) {
+        return;
+      }
+      signInTitle.setText(messageProperties.getSignInDetailsTitle());
+      registeredVia.setLabel(messageProperties.getSignInRegisteredVia());
+      registeredVia.setValue(
+          messageProperties.getRegistrationChannelLabel(signInSummary.registration()));
+      availableMethods.setLabel(messageProperties.getSignInAvailableMethods());
+      availableMethods.setValue(
+          signInSummary.available().isEmpty()
+              ? messageProperties.getSignInNone()
+              : signInSummary.available().stream()
+                  .sorted()
+                  .map(messageProperties::getSignInMethodLabel)
+                  .collect(Collectors.joining(", ")));
     }
 
     private void refreshRolesSummary() {
@@ -1167,6 +1224,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             rolesField.setHelperText(messageProperties.getAdminUsersRolesHelper());
             rolesField.getDataProvider().refreshAll();
             refreshRolesSummary();
+            refreshSignInDetails();
             enabledCaption.setText(messageProperties.getAdminUsersFieldEnabled());
             enabledHint.setText(messageProperties.getAdminUsersEnabledHint());
             passwordField.setPlaceholder(

@@ -48,8 +48,19 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
       String identity,
       DeviceDescription device,
       Instant created,
-      String series)
-      implements Serializable {}
+      String series,
+      SignInMethod signInMethod)
+      implements Serializable {
+    public Active(
+        String sessionId,
+        String handle,
+        String identity,
+        DeviceDescription device,
+        Instant created,
+        String series) {
+      this(sessionId, handle, identity, device, created, series, null);
+    }
+  }
 
   private final Map<String, Active> metadata = new ConcurrentHashMap<>();
   private DeviceTokenRepository tokens;
@@ -141,7 +152,13 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
       metadata.put(
           current,
           new Active(
-              current, old.handle(), old.identity(), old.device(), old.created(), old.series()));
+              current,
+              old.handle(),
+              old.identity(),
+              old.device(),
+              old.created(),
+              old.series(),
+              old.signInMethod()));
     }
   }
 
@@ -193,7 +210,14 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
     metadata.computeIfPresent(
         session.getId(),
         (id, old) ->
-            new Active(id, old.handle(), old.identity(), old.device(), old.created(), series));
+            new Active(
+                id,
+                old.handle(),
+                old.identity(),
+                old.device(),
+                old.created(),
+                series,
+                old.signInMethod()));
   }
 
   public boolean isExpired(HttpServletRequest request) {
@@ -359,7 +383,16 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
     if (registry instanceof DurableSessionRegistry<?>) {
       session.setAttribute(DurableSessionRepository.ACTIVE, active);
     } else {
-      metadata.put(session.getId(), active);
+      metadata.put(
+          session.getId(),
+          new Active(
+              active.sessionId(),
+              active.handle(),
+              active.identity(),
+              active.device(),
+              active.created(),
+              active.series(),
+              SignInMethod.fromAuthentication(authentication)));
     }
     session.setAttribute(REGISTRATION, new Registration(registry, metadata));
   }

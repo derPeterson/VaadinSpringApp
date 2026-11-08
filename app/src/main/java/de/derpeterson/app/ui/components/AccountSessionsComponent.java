@@ -4,6 +4,8 @@ import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
 
+import com.vaadin.flow.component.badge.Badge;
+import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -28,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AccountSessionsComponent extends AccountPanelComponent {
   private static final String ENTRY_DESCRIPTION_CLASS = "account-entry-description";
+  private static final String SESSION_BADGE_CLASS = "account-session-badge";
 
   private final transient MessageProperties messages;
   private SerializableSupplier<Snapshot> loader;
@@ -37,9 +40,9 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   private Snapshot snapshot;
   private boolean restricted;
   private final Div rows = new Div();
-  private final Span count = new Span();
+  private final Badge count = new Badge();
   private final Span activity = new Span();
-  private final Span limit = new Span();
+  private final Badge limit = new Badge();
   private final Span hint = new Span();
   private final Button logout = new Button();
   private final Button refresh = new Button();
@@ -56,9 +59,10 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     devices.addClassName("account-devices-icon");
     devices.getElement().setAttribute("aria-hidden", "true");
     setIcon(devices);
-    count.addClassNames("account-entry-title", "account-session-count");
+    count.addClassName("account-session-count");
     activity.addClassName(ENTRY_DESCRIPTION_CLASS);
-    limit.addClassName("cosmos-admin-role-chip");
+    limit.addClassName(SESSION_BADGE_CLASS);
+    limit.addThemeVariants(BadgeVariant.WARNING);
     limit.setId("account-sessions-limit");
     Div heading = new Div(new Div(count, activity), limit);
     heading.addClassName("account-session-heading");
@@ -134,7 +138,6 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     String activeCountText = messages.getPortalSessionActiveCount(snapshot.active());
     // Die DE-/EN-Texte beginnen mit der formatierten Anzahl; der Wortlaut bleibt erhalten.
     int labelStart = activeCountText.indexOf(' ');
-    count.removeAll();
     if (labelStart > 0) {
       Span value = new Span(activeCountText.substring(0, labelStart));
       value.addClassName("account-session-count-value");
@@ -142,8 +145,9 @@ public class AccountSessionsComponent extends AccountPanelComponent {
       divider.addClassName("account-session-count-divider");
       divider.getElement().setAttribute("aria-hidden", "true");
       Span label = new Span(activeCountText.substring(labelStart));
-      label.addClassName("account-session-count-label");
-      count.add(value, divider, label);
+      Span content = new Span(value, divider, label);
+      content.addClassName("account-session-count-content");
+      count.setContent(content);
     } else {
       count.setText(activeCountText);
     }
@@ -193,6 +197,14 @@ public class AccountSessionsComponent extends AccountPanelComponent {
                 + formatter.format(entry.created()));
     since.addClassName(ENTRY_DESCRIPTION_CLASS);
     copy.add(since);
+    if (entry.active() && !restricted) {
+      Span method =
+          new Span(
+              messages.getSessionSignedInVia(messages.getSignInMethodLabel(entry.signInMethod())));
+      method.addClassName(ENTRY_DESCRIPTION_CLASS);
+      method.addClassName("account-session-sign-in-method");
+      copy.add(method);
+    }
     copy.add(sessionBadges(entry));
     Button action = sessionAction(entry);
     Div row = new Div(symbol, copy, action);
@@ -205,22 +217,22 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     Div badges = new Div();
     badges.addClassName("account-session-badges");
     if (entry.current()) {
-      Span badge = new Span(messages.getAccountSettingsCurrentDevice());
-      badge.getElement().getThemeList().addAll(List.of("badge", "success"));
-      badge.addClassName("account-current-device");
+      Badge badge = new Badge(messages.getAccountSettingsCurrentDevice());
+      badge.addClassNames(SESSION_BADGE_CLASS, "account-current-device");
+      badge.addThemeVariants(BadgeVariant.SUCCESS);
       badges.add(badge);
     } else {
-      Span state =
-          new Span(
+      Badge state =
+          new Badge(
               entry.active()
                   ? messages.getPortalSessionActive()
                   : messages.getPortalSessionInactive());
-      state.addClassName("account-session-state");
+      state.addClassNames(SESSION_BADGE_CLASS, "account-session-state");
       state.getElement().setAttribute("data-active", Boolean.toString(entry.active()));
       badges.add(state);
       if (entry.remembered()) {
-        Span remembered = new Span(messages.getPortalSessionRemembered());
-        remembered.addClassName("account-session-remembered");
+        Badge remembered = new Badge(messages.getPortalSessionRemembered());
+        remembered.addClassName(SESSION_BADGE_CLASS);
         badges.add(remembered);
       }
     }

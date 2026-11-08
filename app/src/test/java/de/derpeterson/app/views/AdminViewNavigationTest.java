@@ -48,6 +48,7 @@ import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
+import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.SupportTicketService;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
@@ -142,7 +143,8 @@ class AdminViewNavigationTest {
             mock(RoleService.class),
             request,
             new UserStatusBroadcaster(),
-            avatars);
+            avatars,
+            mock(ExternalIdentityService.class));
     providers = mock(ExternalProviderSettings.class);
     when(providers.load(any()))
         .thenAnswer(

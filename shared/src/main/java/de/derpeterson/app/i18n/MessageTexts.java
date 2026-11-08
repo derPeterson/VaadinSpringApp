@@ -2955,6 +2955,46 @@ public class MessageTexts {
     return getTranslation("sessions.unknown.device");
   }
 
+  public String getSessionSignedInVia(String method) {
+    return getFormattedTranslation("signIn.sessionVia", method);
+  }
+
+  public String getSignInDetailsTitle() {
+    return getTranslation("signIn.detailsTitle");
+  }
+
+  public String getSignInRegisteredVia() {
+    return getTranslation("signIn.registeredVia");
+  }
+
+  public String getSignInAvailableMethods() {
+    return getTranslation("signIn.availableMethods");
+  }
+
+  public String getSignInPortal() {
+    return getTranslation("signIn.portal");
+  }
+
+  public String getSignInPortalPassword() {
+    return getTranslation("signIn.portalPassword");
+  }
+
+  public String getSignInAccountCreated() {
+    return getTranslation("signIn.accountCreated");
+  }
+
+  public String getSignInSavedLogin() {
+    return getTranslation("signIn.savedLogin");
+  }
+
+  public String getSignInUnknown() {
+    return getTranslation("signIn.unknown");
+  }
+
+  public String getSignInNone() {
+    return getTranslation("signIn.none");
+  }
+
   public String getSessionLastActivity() {
     return getTranslation("sessions.last.activity");
   }

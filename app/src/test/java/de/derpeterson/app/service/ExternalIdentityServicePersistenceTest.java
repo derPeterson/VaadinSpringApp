@@ -19,6 +19,7 @@ import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.ExternalIdentityRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.AdminRolePolicy;
 import de.derpeterson.app.security.CustomUserDetailsService;
 import de.derpeterson.app.security.DeviceTokenRepository;
 import de.derpeterson.app.security.ExternalAuthenticationToken;
@@ -411,7 +412,8 @@ class ExternalIdentityServicePersistenceTest {
             sessions,
             remembered,
             new ExternalLoginConfiguration().externalRegistrations(properties),
-            transactions);
+            transactions,
+            new AdminRolePolicy(users));
     assertThrows(
         AccessDeniedException.class,
         () ->

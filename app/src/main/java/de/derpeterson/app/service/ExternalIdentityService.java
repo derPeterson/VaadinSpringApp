@@ -7,6 +7,7 @@ import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.ExternalIdentityRepository;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.AdminRolePolicy;
 import de.derpeterson.app.security.DeviceTokenRepository;
 import de.derpeterson.app.security.ExternalIdentityEvidence;
 import de.derpeterson.app.security.ExternalLoginConfiguration;
@@ -48,6 +49,9 @@ public class ExternalIdentityService {
   private final DeviceTokenRepository remembered;
   private final ExternalLoginConfiguration.Registrations clients;
   private final PlatformTransactionManager transactions;
+  private final AdminRolePolicy rolePolicy;
+
+  public record SignInSummary(RegistrationChannel registration, Set<SignInMethod> available) {}
 
   private record Unlinked(
       String identity, String previousVersion, String newVersion, Set<SignInMethod> remaining) {}
@@ -187,6 +191,17 @@ public class ExternalIdentityService {
     UserEntity user =
         users.findById(userId).orElseThrow(() -> new AccessDeniedException("Account unavailable"));
     return Set.copyOf(availableMethods(user));
+  }
+
+  @Transactional(readOnly = true)
+  public Optional<SignInSummary> adminSignInSummary(Long userId) {
+    rolePolicy.authorizeMutation(userId, Set.of());
+    return users
+        .findById(userId)
+        .map(
+            user ->
+                new SignInSummary(
+                    user.getRegistrationChannel(), Set.copyOf(availableMethods(user))));
   }
 
   private Set<SignInMethod> availableMethods(UserEntity user) {

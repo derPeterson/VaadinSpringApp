@@ -21,6 +21,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.textfield.PasswordField;
+import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -28,8 +29,12 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
+import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.security.SignInMethod;
+import de.derpeterson.app.service.ExternalIdentityService;
+import de.derpeterson.app.service.ExternalIdentityService.SignInSummary;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import java.time.LocalDate;
@@ -87,6 +92,39 @@ class AdminUserDialogValidationTest {
     section = null;
     session = null;
     ui = null;
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void accountDetailsDistinguishRegistrationFromTheAvailableMethods(String language) {
+    ExternalIdentityService identities = mock(ExternalIdentityService.class);
+    when(identities.adminSignInSummary(2L))
+        .thenReturn(
+            Optional.of(
+                new SignInSummary(
+                    RegistrationChannel.GOOGLE,
+                    Set.of(SignInMethod.PORTAL, SignInMethod.MICROSOFT))));
+    section.configureSignInDetails(identities);
+    open(language, false);
+
+    TextField registration = signInField("admin-user-registered-via");
+    TextField available = signInField("admin-user-sign-in-methods");
+    assertEquals(texts.getSignInRegisteredVia(), registration.getLabel());
+    assertEquals(texts.getExternalGoogle(), registration.getValue());
+    assertEquals(texts.getSignInAvailableMethods(), available.getLabel());
+    assertEquals(
+        texts.getSignInPortalPassword() + ", " + texts.getExternalMicrosoft(),
+        available.getValue());
+    assertTrue(registration.isReadOnly());
+    assertTrue(available.isReadOnly());
+  }
+
+  private TextField signInField(String id) {
+    return descendants(dialog)
+        .filter(item -> item.getId().filter(id::equals).isPresent())
+        .map(TextField.class::cast)
+        .findFirst()
+        .orElseThrow();
   }
 
   @ParameterizedTest

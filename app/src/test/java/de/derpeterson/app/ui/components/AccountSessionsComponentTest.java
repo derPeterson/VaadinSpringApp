@@ -20,6 +20,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.DeviceDescription;
 import de.derpeterson.app.security.SessionManagementService.Entry;
 import de.derpeterson.app.security.SessionManagementService.Snapshot;
+import de.derpeterson.app.security.SignInMethod;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +52,9 @@ class AccountSessionsComponentTest {
           when,
           true,
           true,
-          true);
+          true,
+          null,
+          SignInMethod.GOOGLE);
   private final Entry other =
       new Entry(
           "other-handle",
@@ -60,7 +63,9 @@ class AccountSessionsComponentTest {
           when,
           false,
           true,
-          true);
+          true,
+          null,
+          SignInMethod.PORTAL);
   private final Entry saved =
       new Entry("saved-handle", DeviceDescription.from(null), when, when, false, false, true);
   private final AtomicReference<Snapshot> snapshot = new AtomicReference<>();
@@ -153,6 +158,15 @@ class AccountSessionsComponentTest {
     assertTrue(content.contains(expected.getAccountSettingsSessionsLimit(7)));
     assertTrue(content.contains(expected.getPortalSessionRemembered()));
     assertTrue(content.contains(expected.getSessionUnknownDevice()));
+    assertEquals(
+        List.of(
+            expected.getSessionSignedInVia(expected.getExternalGoogle()),
+            expected.getSessionSignedInVia(expected.getSignInPortalPassword())),
+        tree(component)
+            .filter(
+                item -> item.getElement().getClassList().contains("account-session-sign-in-method"))
+            .map(item -> item.getElement().getText())
+            .toList());
     assertFalse(button("account-current-session").isEnabled());
     assertTrue(button("session-revoke-other-handle").isEnabled());
     assertFalse(button("account-current-session").hasClassName("cosmos-delete-button"));

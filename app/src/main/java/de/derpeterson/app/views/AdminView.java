@@ -31,6 +31,7 @@ import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorPolicies;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
+import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.SupportTicketService;
 import de.derpeterson.app.service.UserAvatarService;
@@ -178,7 +179,8 @@ public class AdminView extends IsAuthenticatedBaseView {
       RoleService roleService,
       HttpServletRequest request,
       UserStatusBroadcaster userStatusBroadcaster,
-      UserAvatarService avatars) {
+      UserAvatarService avatars,
+      ExternalIdentityService identities) {
     super(messageProperties, securityService, userService, userStatusBroadcaster, request, avatars);
 
     this.configService = configService;
@@ -213,6 +215,7 @@ public class AdminView extends IsAuthenticatedBaseView {
         new AdminUserManagementSection(
             messageProperties, userService, roleService, securityService);
     userManagementSection.configureAvatars(avatars);
+    userManagementSection.configureSignInDetails(identities);
 
     page = new PortalPageComponent(pageHeading, sidebar, sectionLayout);
     page.addClassName("admin-reference-frame");

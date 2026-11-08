@@ -50,7 +50,8 @@ public class SessionManagementService {
       boolean current,
       boolean active,
       boolean remembered,
-      String savedHandle)
+      String savedHandle,
+      SignInMethod signInMethod)
       implements Serializable {
     public Entry(
         String handle,
@@ -60,7 +61,7 @@ public class SessionManagementService {
         boolean current,
         boolean active,
         boolean remembered) {
-      this(handle, device, created, lastActivity, current, active, remembered, null);
+      this(handle, device, created, lastActivity, current, active, remembered, null, null);
     }
   }
 
@@ -165,7 +166,8 @@ public class SessionManagementService {
                       item.sessionId().equals(current),
                       true,
                       hasSavedLogin,
-                      savedLogin.map(DeviceTokenRepository.Saved::handle).orElse(null)));
+                      savedLogin.map(DeviceTokenRepository.Saved::handle).orElse(null),
+                      item.signInMethod()));
             });
     saved.stream()
         .filter(item -> !activeSeries.contains(item.series()))

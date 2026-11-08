@@ -306,14 +306,21 @@ Der Menüpunkt Administration wird nur mit der vorhandenen Adminberechtigung ang
 die Zugriffsprüfung des Adminbereichs bleibt maßgeblich.
 Einzelbestätigungen enthalten dieselben tatsächlichen Metadaten, Sammelbestätigungen
 die betroffene Anzahl. Der abweichende echte Lesebestätigungsablauf bleibt erhalten.
-Die Sitzungsliste unterscheidet aktuelle/andere aktive Sitzungen und gespeicherte
-Anmeldungen; ihre Dienste und Widerrufsprüfungen bleiben unverändert.
-Die Sitzungsübersicht übernimmt Stitch-Variante B: `.account-session-count`
-verbindet Zahl und übersetzte Einheit in einem dunklen Chip mit Cyanrahmen.
+Die Sitzungsliste unterscheidet die aktuelle Sitzung, andere aktive Sitzungen
+und gespeicherte Anmeldungen.
+Aktive Sitzungen zeigen „Angemeldet über“ bei den Geräte- und Zeitangaben im
+vorhandenen Metadatenstil. Der Abschnitt „Anmeldung“ in den Benutzerdetails
+zeigt Registrierungsweg und verfügbare Zugänge in schreibgeschützten Vaadin-Feldern.
+Die Sitzungsübersicht verwendet native Vaadin-Badges für Anzahl, Limit und
+Sitzungsstatus. Statusbadges haben einen kompakten Rahmen und keinen Punkt.
+Das Badge `.account-session-count` verbindet Zahl und übersetzte Einheit
+auf dunkler Fläche mit Cyanrahmen.
 `.account-session-count-value` zeigt die Zahl mit 15 px und Schriftstärke 700;
 `.account-session-count-divider` trennt sie mit einer 12-px-Linie von der Einheit
-(13 px, Schriftstärke 600). Das Limit bleibt rechts. Der Erklärungstext steht
-am Desktop daneben, mobil darunter; auf sehr schmalen Displays wird gestapelt.
+(13 px, Schriftstärke 600). Das Limit steht rechts mit gelbem Rahmen und
+dezenter gelber Fläche. Der Erklärungstext steht mit 12 px und Schriftgewicht
+400 unter den beiden Badges.
+Auf sehr schmalen Displays stehen auch die Badges untereinander.
 Der ausführliche DE-/EN-Hinweis einschließlich des Widerrufs zugehöriger
 gespeicherter Anmeldungen bleibt erhalten.
 

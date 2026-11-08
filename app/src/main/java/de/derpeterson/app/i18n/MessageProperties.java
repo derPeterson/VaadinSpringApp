@@ -1,7 +1,9 @@
 package de.derpeterson.app.i18n;
 
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.UserStatus;
+import de.derpeterson.app.security.SignInMethod;
 import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
@@ -66,6 +68,25 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case EMPLOYED -> getUserStatusEmployed();
       case ABSENT -> getUserStatusAbsent();
       case OFFLINE -> getUserStatusOffline();
+    };
+  }
+
+  public String getRegistrationChannelLabel(RegistrationChannel channel) {
+    return switch (channel) {
+      case null -> getSignInAccountCreated();
+      case PORTAL -> getSignInPortal();
+      case GOOGLE -> getExternalGoogle();
+      case MICROSOFT -> getExternalMicrosoft();
+    };
+  }
+
+  public String getSignInMethodLabel(SignInMethod method) {
+    return switch (method) {
+      case null -> getSignInUnknown();
+      case PORTAL -> getSignInPortalPassword();
+      case GOOGLE -> getExternalGoogle();
+      case MICROSOFT -> getExternalMicrosoft();
+      case SAVED_LOGIN -> getSignInSavedLogin();
     };
   }
 

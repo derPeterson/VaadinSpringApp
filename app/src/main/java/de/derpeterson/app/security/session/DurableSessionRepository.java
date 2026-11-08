@@ -5,6 +5,7 @@ import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.WrappedHttpSession;
 import de.derpeterson.app.security.DeviceRememberMeServices;
+import de.derpeterson.app.security.SessionAdmissionService.Active;
 import de.derpeterson.app.security.SignInMethod;
 import de.derpeterson.app.security.TwoFactorFlow;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
@@ -280,6 +281,30 @@ public final class DurableSessionRepository<S extends Session>
       }
       stored = latest;
       return true;
+    }
+
+    Active activeMetadata() {
+      synchronized (state) {
+        if (!refreshIfPresent() || Boolean.TRUE.equals(stored.getAttribute(EXPIRED))) {
+          return null;
+        }
+        Active active = stored.getAttribute(ACTIVE);
+        if (active == null) {
+          return null;
+        }
+        SignInMethod method =
+            stored.getAttribute(CONTEXT) instanceof DurableAuthentication authentication
+                ? authentication.signInMethod()
+                : null;
+        return new Active(
+            state.id,
+            active.handle(),
+            active.identity(),
+            active.device(),
+            active.created(),
+            active.series(),
+            method);
+      }
     }
 
     @Override

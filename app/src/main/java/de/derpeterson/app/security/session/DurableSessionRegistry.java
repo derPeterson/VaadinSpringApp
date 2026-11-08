@@ -95,6 +95,9 @@ public final class DurableSessionRegistry<S extends Session> implements SessionR
 
   public Active metadata(String id) {
     S session = repository.findById(id);
+    if (session instanceof DurableSessionRepository<?>.LiveSession live) {
+      return live.activeMetadata();
+    }
     Active active = session == null ? null : session.getAttribute(DurableSessionRepository.ACTIVE);
     return active == null
         ? null
