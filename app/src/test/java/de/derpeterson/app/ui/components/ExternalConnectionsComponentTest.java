@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -19,6 +20,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.page.Page;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -30,6 +32,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.ExternalLoginFlow.Purpose;
+import de.derpeterson.app.security.TwoFactorFlow;
 import de.derpeterson.app.service.ExternalIdentityService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -48,6 +51,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.InOrder;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -144,6 +148,37 @@ class ExternalConnectionsComponentTest {
       locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
       assertEquals(texts.getExternalProofUnavailable(), message.get());
     }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void missingProofStartsTheSessionLockBeforeTheSetupPageLoads(boolean passwordChange) {
+    HttpSession session = mock(HttpSession.class);
+    when(request.getSession()).thenReturn(session);
+    when(request.getContextPath()).thenReturn("");
+    when(flow.factorEnrolled(request)).thenReturn(false);
+    when(flow.providers()).thenReturn(List.of());
+    ExternalConnectionsComponent component =
+        new ExternalConnectionsComponent(flow, identities, request, texts);
+    component.configureAccountActions(actions::incrementAndGet, actions::incrementAndGet, () -> {});
+    Page page = mock(Page.class);
+    UI redirectingUi = mock(UI.class);
+    when(redirectingUi.getPage()).thenReturn(page);
+    UI.setCurrent(redirectingUi);
+
+    if (passwordChange) {
+      component.requestPasswordChange();
+    } else {
+      component.requestEmailChange();
+    }
+
+    InOrder effects = inOrder(session, page);
+    effects
+        .verify(session)
+        .setAttribute(TwoFactorFlow.SESSION_ATTRIBUTE, TwoFactorFlow.SETUP.name());
+    effects.verify(page).setLocation(TwoFactorFlow.SETUP.location());
+    assertEquals(0, actions.get());
+    assertFalse(component.getConfirmationDialog().isOpened());
   }
 
   @Test

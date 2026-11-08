@@ -22,6 +22,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.ExternalLoginFlow.Purpose;
 import de.derpeterson.app.security.ExternalProviderSettings;
+import de.derpeterson.app.security.TwoFactorFlow;
 import de.derpeterson.app.service.ExternalIdentityService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -194,7 +195,10 @@ public final class ExternalConnectionsComponent extends Div {
         && !flow.factorEnrolled(request)
         && (flow.requiresFactor(request, purpose)
             || user.getPassword() == null && !providerProofAvailable)) {
-      UI.getCurrent().getPage().setLocation(request.getContextPath() + "/two-factor?setup");
+      TwoFactorFlow.SETUP.enter(request);
+      UI.getCurrent()
+          .getPage()
+          .setLocation(request.getContextPath() + TwoFactorFlow.SETUP.location());
       return;
     }
     if (!confirmed
