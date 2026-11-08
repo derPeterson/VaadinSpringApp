@@ -13,6 +13,7 @@ import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.service.UserAvatarService;
+import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import de.derpeterson.app.views.AccountView;
 import de.derpeterson.app.views.HomeView;
 import de.derpeterson.app.views.UserNotificationsView;
@@ -105,13 +106,14 @@ public class PortalSidebarComponent extends Div {
     navigation.setId("account-navigation");
     navigation.getElement().setAttribute("aria-label", texts.getAccountSettingsOverview());
     List<AppIcon> icons = List.of(AppIcon.USER, AppIcon.LOCK, AppIcon.DEVICES);
-    List<String> sections = List.of("profile", "security", "sessions");
+    List<AccountSection> sections =
+        List.of(AccountSection.PROFILE, AccountSection.SECURITY, AccountSection.SESSIONS);
     for (int index = 0; index < sections.size(); index++) {
-      String section = sections.get(index);
+      AccountSection section = sections.get(index);
       SideNavItem item =
           new SideNavItem("", AppRoute.ACCOUNT.getSecurityRoute(), icons.get(index).create());
-      item.setId("account-nav-" + section);
-      QueryParameters query = QueryParameters.of("tab", section);
+      item.setId("account-nav-" + section.urlValue());
+      QueryParameters query = section.queryParameters();
       item.setQueryParameters(query);
       navigation.registerAction(item, () -> UI.getCurrent().navigate(AccountView.class, query));
       navigation.addItem(item);

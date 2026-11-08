@@ -39,6 +39,7 @@ import de.derpeterson.app.model.enums.UserNotificationType;
 import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserNotificationService.Item;
 import de.derpeterson.app.service.UserNotificationService.ReadFilter;
+import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import de.derpeterson.app.views.AccountView;
 import de.derpeterson.app.views.AdminView;
 import de.derpeterson.app.views.UserNotificationsView;
@@ -986,7 +987,7 @@ public class UserNotificationsPanel extends Div {
                 detail.close();
                 closeAction.run();
                 UI.getCurrent()
-                    .navigate(AccountView.class, QueryParameters.simple(Map.of("tab", "security")));
+                    .navigate(AccountView.class, AccountSection.SECURITY.queryParameters());
               });
       destination.addClassName("cosmos-notification-detail-account");
     }

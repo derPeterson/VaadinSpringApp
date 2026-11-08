@@ -17,15 +17,20 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.internal.PendingJavaScriptInvocation;
+import com.vaadin.flow.component.internal.UIInternals.JavaScriptInvocation;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.shared.Tooltip;
+import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.router.AfterNavigationEvent;
@@ -351,11 +356,22 @@ class AccountViewTest {
 
   @ParameterizedTest
   @CsvSource({
-    "'', PROFILE", "?tab=profile, PROFILE", "?tab=security, SECURITY",
-    "?tab=sessions, SESSIONS", "?tab=SECURITY, SECURITY", "?tab=unknown, PROFILE",
-    "?tab=, PROFILE", "?tab=sessions&tab=security, PROFILE", "?tab=%3Cscript%3E, PROFILE"
+    "'', PROFILE",
+    "?section=profile, PROFILE",
+    "?section=security, SECURITY",
+    "?section=sessions, SESSIONS",
+    "?section=unknown&tab=security, PROFILE",
+    "?section=profile&section=security, PROFILE",
+    "?tab=profile, PROFILE",
+    "?tab=security, SECURITY",
+    "?tab=sessions, SESSIONS",
+    "?tab=SECURITY, SECURITY",
+    "?tab=unknown, PROFILE",
+    "?tab=, PROFILE",
+    "?tab=sessions&tab=security, PROFILE",
+    "?tab=%3Cscript%3E, PROFILE"
   })
-  void accountUrlsRestoreTheTabAndExactlyOneVisiblePanel(String query, AccountSection expected) {
+  void accountUrlsRestoreExactlyOneVisibleSection(String query, AccountSection expected) {
     enter(query);
     assertEquals(expected, settings().getSelectedSection());
     for (AccountSection section : AccountSection.values()) {
@@ -365,6 +381,57 @@ class AccountViewTest {
       assertEquals(section == expected, panel.isVisible());
     }
     verify(ui, never()).navigate(eq(AccountView.class), any(QueryParameters.class));
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "?section=security&tab=providers, providers",
+    "?tab=providers&section=security, providers",
+    "?section=security&tab=portal, portal",
+    "?section=security&tab=unknown, portal",
+    "?section=security&tab=providers&tab=portal, portal",
+    "?section=security, portal",
+    "?tab=security, portal"
+  })
+  void securityUrlsRestoreTheRequestedTab(String query, String expectedTab) {
+    enter("?section=security&tab=providers");
+    enter(query);
+    assertEquals(
+        "account-security-tab-" + expectedTab,
+        securityTabs().getSelectedTab().getId().orElseThrow());
+  }
+
+  @Test
+  void aClientTabChangeReplacesTheCurrentAccountLocation() {
+    UI attachedUi = new UI();
+    attachedUi.getInternals().setSession(ui.getSession());
+    UI.setCurrent(attachedUi);
+    attachedUi.add(view);
+    enter("?section=security&tab=portal");
+    TabSheet tabs = securityTabs();
+    tabs.setSelectedIndex(1);
+    Tab portalTab = tabs.getTabAt(0);
+    Tabs tabBar = (Tabs) portalTab.getParent().orElseThrow();
+    ComponentUtil.fireEvent(tabBar, new Tabs.SelectedChangeEvent(tabBar, portalTab, true));
+    JavaScriptInvocation update =
+        attachedUi.getInternals().dumpPendingJavaScriptInvocations().stream()
+            .map(PendingJavaScriptInvocation::getInvocation)
+            .filter(invocation -> invocation.getExpression().contains("history.replaceState"))
+            .findFirst()
+            .orElseThrow();
+    Location location = new Location((String) update.getParameters().get(1));
+    assertEquals("account", location.getPath());
+    assertEquals(
+        Map.of("section", List.of("security"), "tab", List.of("providers")),
+        location.getQueryParameters().getParameters());
+  }
+
+  private TabSheet securityTabs() {
+    return tree(settings())
+        .filter(TabSheet.class::isInstance)
+        .map(TabSheet.class::cast)
+        .findFirst()
+        .orElseThrow();
   }
 
   @Test
@@ -386,10 +453,10 @@ class AccountViewTest {
                 .findFirst()
                 .orElseThrow();
     navigation.activate(navigation.getItems().get(2));
-    verify(ui).navigate(AccountView.class, QueryParameters.simple(Map.of("tab", "sessions")));
-    enter("?tab=security");
+    verify(ui).navigate(AccountView.class, QueryParameters.of("section", "sessions"));
+    enter("?section=security&tab=portal");
     assertEquals(AccountSection.SECURITY, settings().getSelectedSection());
-    enter("?tab=sessions");
+    enter("?section=sessions");
     assertEquals(AccountSection.SESSIONS, settings().getSelectedSection());
     assertEquals("Unsaved draft", first.getValue());
     verify(ui, times(1)).navigate(eq(AccountView.class), any(QueryParameters.class));

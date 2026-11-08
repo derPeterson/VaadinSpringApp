@@ -299,13 +299,14 @@ class ExternalConnectionsComponentTest {
   }
 
   @ParameterizedTest
-  @ValueSource(booleans = {false, true})
-  void googleLinkConfirmsACompleteAppCodeOrAnExplicitRecoveryCode(boolean useRecoveryCode) {
-    when(flow.requiresFactor(request, Purpose.LINK_GOOGLE)).thenReturn(true);
+  @CsvSource({"LINK_GOOGLE,false", "LINK_GOOGLE,true", "LINK_MICROSOFT,false"})
+  void linkingConfirmsACompleteAppCodeOrAnExplicitRecoveryCode(
+      Purpose purpose, boolean useRecoveryCode) {
+    when(flow.requiresFactor(request, purpose)).thenReturn(true);
     ExternalIdentityConfirmationDialog dialog =
         new ExternalIdentityConfirmationDialog(flow, identities, request, texts);
     ui.add(dialog);
-    dialog.open(Purpose.LINK_GOOGLE, actions::incrementAndGet);
+    dialog.open(purpose, actions::incrementAndGet);
 
     OtpField appCode = (OtpField) find(dialog, "external-confirm-factor");
     TextField recoveryCode = (TextField) find(dialog, "external-confirm-recovery-code");
@@ -326,7 +327,7 @@ class ExternalConnectionsComponentTest {
       recoveryCode.setValue(value);
       ComponentUtil.fireEvent(appCode, new OtpCompleteEvent(appCode, true, "123456"));
     }
-    verify(flow, never()).confirmFactor(request, value, Purpose.LINK_GOOGLE);
+    verify(flow, never()).confirmFactor(request, value, purpose);
     assertEquals(0, actions.get());
     if (useRecoveryCode) {
       ((Button) find(dialog, "external-confirm-local")).click();
@@ -334,9 +335,27 @@ class ExternalConnectionsComponentTest {
       ComponentUtil.fireEvent(appCode, new OtpCompleteEvent(appCode, true, "123456"));
       ComponentUtil.fireEvent(appCode, new OtpCompleteEvent(appCode, true, "123456"));
     }
-    verify(flow).confirmFactor(request, value, Purpose.LINK_GOOGLE);
+    verify(flow).confirmFactor(request, value, purpose);
     assertEquals(1, actions.get());
     assertFalse(dialog.isOpened());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"UNLINK_GOOGLE", "UNLINK_MICROSOFT"})
+  void unlinkingWaitsForExplicitConfirmation(Purpose purpose) {
+    when(flow.requiresFactor(request, purpose)).thenReturn(true);
+    ExternalIdentityConfirmationDialog dialog =
+        new ExternalIdentityConfirmationDialog(flow, identities, request, texts);
+    ui.add(dialog);
+    dialog.open(purpose, actions::incrementAndGet);
+    OtpField appCode = (OtpField) find(dialog, "external-confirm-factor");
+    appCode.setValue("123456");
+    ComponentUtil.fireEvent(appCode, new OtpCompleteEvent(appCode, true, "123456"));
+    verify(flow, never()).confirmFactor(request, "123456", purpose);
+    assertEquals(0, actions.get());
+    ((Button) find(dialog, "external-confirm-local")).click();
+    verify(flow).confirmFactor(request, "123456", purpose);
+    assertEquals(1, actions.get());
   }
 
   @Test

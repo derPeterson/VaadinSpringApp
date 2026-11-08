@@ -42,7 +42,7 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     page.locator("#external-register-submit").click();
     assertThat(page).hasURL(Pattern.compile(".*/home$"));
     new UserMenu(page).selectTestLanguage();
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-two-factor-setup").click();
     page.locator("#two-factor-confirm-google").click();
     providerIdentity(email);
@@ -124,7 +124,7 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     new UserMenu(page).selectTestLanguage();
     org.junit.jupiter.api.Assertions.assertEquals(codes, TwoFactorPage.recoveryCodeValues(page));
     page.locator("#two-factor-submit").click();
-    assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+    assertThat(page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
   }
 
   @ParameterizedTest
@@ -252,8 +252,8 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
 
   private void saveConfiguration() {
     page.locator("#two-factor-save").click();
-    page.locator("#two-factor-action-code input")
-        .fill(TwoFactorPage.nextCode(page, BrowserTestAccounts.SUPERADMIN_EMAIL));
+    TwoFactorPage.enterActionCode(
+        page, TwoFactorPage.nextCode(page, BrowserTestAccounts.SUPERADMIN_EMAIL));
     UiActions.complete(page, () -> page.locator("#two-factor-action-confirm").click());
     assertThat(page.locator("#two-factor-action-confirm")).isHidden();
     page.waitForCondition(

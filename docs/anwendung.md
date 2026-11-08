@@ -25,8 +25,11 @@ Schnellzugriffen und ungelesener Nachrichtenanzahl, ohne erfundene Statistiken.
 
 `/account` bietet persönliche Daten, Sicherheit sowie Geräte und Sitzungen über eine
 seitliche Kontonavigation. Auf Smartphones öffnet sie als Overlay.
-`?tab=profile`, `?tab=security` und `?tab=sessions` halten den ausgewählten Bereich
-in der URL; unbekannte oder mehrdeutige Werte öffnen das Profil.
+`section=profile`, `section=security` und `section=sessions` halten den ausgewählten
+Bereich in der URL. Unter Sicherheit merkt sich `tab=portal` oder `tab=providers`
+zusätzlich den Reiter, auch nach dem Neuladen. Ohne eindeutige Auswahl öffnen sich
+das Profil beziehungsweise der Portalzugang. Alte Links mit `tab=security` und
+den anderen bisherigen Bereichswerten bleiben nutzbar.
 
 Im Profil lassen sich Namen, Geschlecht, Geburtstag und Sprache speichern.
 Geschlecht und Geburtstag dürfen leer bleiben oder wieder geleert werden. Die E-Mail-Adresse

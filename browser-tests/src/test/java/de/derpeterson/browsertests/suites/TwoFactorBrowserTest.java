@@ -241,17 +241,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       actor.page.setViewportSize(width, 900);
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);
       new UserMenu(actor.page).selectTestLanguage();
-      actor.page.navigate("/account?tab=security");
+      actor.page.navigate("/account?section=security&tab=portal");
       actor.page.locator("#account-two-factor-setup").click();
       actor.page.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
       actor.page.locator("#two-factor-submit").click();
       checkEnrollmentOtp(actor.page, email, false);
 
       actor.page.locator("#account-two-factor-replace").click();
-      actor
-          .page
-          .locator("#two-factor-action-code input")
-          .fill(TwoFactorPage.nextCode(actor.page, email));
+      TwoFactorPage.enterActionCode(actor.page, TwoFactorPage.nextCode(actor.page, email));
       actor.page.locator("#two-factor-action-confirm").click();
       checkEnrollmentOtp(actor.page, email, true);
       signOutToLogin(actor.page);
@@ -1116,12 +1113,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.setViewportSize(width, 900);
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
     new UserMenu(page).selectTestLanguage();
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-two-factor-setup").click();
     page.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
     page.locator("#two-factor-submit").click();
     TwoFactorPage.enrollCurrent(page, email);
-    assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+    assertThat(page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     new UserMenu(page).selectTestLanguage();
     if (!provider.equals("password")) {
       page.locator("#account-security-tab-providers").click();
@@ -1131,7 +1128,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       providerIdentity(email);
       assertThat(page.locator("#external-connect-" + provider))
           .hasText(texts.getExternalDisconnect(provider.equals("google") ? "Google" : "Microsoft"));
-      page.navigate("/account?tab=security");
+      page.navigate("/account?section=security&tab=portal");
     }
     // Echte Bestätigungen ohne Kontoänderung verbrauchen alle bis auf den letzten ausgegebenen
     // Code.
@@ -1168,7 +1165,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     }
     page.reload();
     TwoFactorPage.enrollCurrent(page, email);
-    assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+    assertThat(page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     assertThat(page.locator("#account-two-factor")).containsText(texts.getTwoFactorEnrolled());
     AllurePlaywright.attachScreenshot("Wiederhergestellter Authenticator mit neuem Codesatz", page);
     new UserMenu(page).requestSignOut();
@@ -1214,24 +1211,26 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     try (BrowserActor user = new BrowserActor(browser)) {
       user.page.setViewportSize(width, 900);
       user.login(email, BrowserTestAccounts.USER_PASSWORD);
-      user.page.navigate("/account?tab=security");
+      user.page.navigate("/account?section=security&tab=portal");
       user.page.locator("#account-two-factor-setup").click();
       user.page.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
       user.page.locator("#two-factor-submit").click();
       TwoFactorPage.enrollCurrent(user.page, email);
-      assertThat(user.page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+      assertThat(user.page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       new UserMenu(user.page).selectTestLanguage();
       user.page.locator("#account-two-factor-replace").click();
-      user.page
-          .locator("#two-factor-action-code input")
-          .fill(TwoFactorPage.nextCode(user.page, email));
+      Locator actionOtp = user.page.locator("#two-factor-action-factor");
+      assertThat(actionOtp.locator("input[slot=input]")).isFocused();
+      assertThat(actionOtp.locator("[part=slot]").first())
+          .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
+      TwoFactorPage.enterActionCode(user.page, TwoFactorPage.nextCode(user.page, email));
+      assertThat(user.page.locator("#two-factor-action-recovery-code input"))
+          .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
       user.page.locator("#two-factor-action-confirm").click();
       TwoFactorPage.enrollCurrent(user.page, email);
-      assertThat(user.page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+      assertThat(user.page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       user.page.locator("#account-two-factor-remove").click();
-      user.page
-          .locator("#two-factor-action-code input")
-          .fill(TwoFactorPage.nextCode(user.page, email));
+      TwoFactorPage.enterActionCode(user.page, TwoFactorPage.nextCode(user.page, email));
       user.page.locator("#two-factor-action-confirm").click();
       assertThat(user.page.locator("#account-two-factor-setup")).isVisible();
       assertThat(user.page.locator("#account-two-factor vaadin-badge"))
@@ -1264,7 +1263,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         assertThat(user.page).hasURL(Pattern.compile(".*/two-factor.*"));
         assertThat(user.page.locator("#account-first-name")).hasCount(0);
         TwoFactorPage.completeIfRequired(user.page, email, BrowserTestAccounts.USER_PASSWORD);
-        user.page.navigate("/account?tab=security");
+        user.page.navigate("/account?section=security&tab=portal");
         assertThat(user.page.locator("#account-two-factor")).isVisible();
         AllurePlaywright.attachScreenshot(
             "Bestehende Sitzung nach neu vorgeschriebener Einrichtung", user.page);
@@ -1291,8 +1290,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(label).setExact(true))
         .click();
     page.locator("#two-factor-save").click();
-    page.locator("#two-factor-action-code input")
-        .fill(TwoFactorPage.nextCode(page, BrowserTestAccounts.SUPERADMIN_EMAIL));
+    TwoFactorPage.enterActionCode(
+        page, TwoFactorPage.nextCode(page, BrowserTestAccounts.SUPERADMIN_EMAIL));
     UiActions.complete(page, () -> page.locator("#two-factor-action-confirm").click());
     page.waitForCondition(
         () ->
@@ -1318,15 +1317,15 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(page);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     try (Page second = context.newPage()) {
-      second.navigate("/account?tab=security");
+      second.navigate("/account?section=security&tab=portal");
       assertThat(second.locator("#account-two-factor")).isVisible();
       BrowserTestRunner.restartTestApplication();
       page.reload();
       second.reload();
-      assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
-      assertThat(second).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+      assertThat(page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
+      assertThat(second).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       assertThat(page.locator("#account-two-factor")).isVisible();
       assertThat(second.locator("#account-two-factor")).isVisible();
       assertThat(page.locator("#two-factor-code")).hasCount(0);
@@ -1355,12 +1354,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                   .setExact(true))
           .setChecked(true);
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-      actor.page.navigate("/account?tab=security");
+      actor.page.navigate("/account?section=security&tab=portal");
       actor.page.locator("#account-two-factor-setup").click();
       actor.page.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
       actor.page.locator("#two-factor-submit").click();
       TwoFactorPage.enrollCurrent(actor.page, email);
-      assertThat(actor.page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+      assertThat(actor.page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       new UserMenu(actor.page).selectTestLanguage();
     }
     try (PersistentBrowserActor actor =
@@ -1390,12 +1389,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     new UserMenu(page).signOut();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-two-factor-setup").click();
     page.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
     page.locator("#two-factor-submit").click();
     TwoFactorPage.enrollCurrent(page, email);
-    assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+    assertThat(page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     new UserMenu(page).selectTestLanguage();
     new UserMenu(page).signOut();
     login.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
@@ -1515,7 +1514,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       providerIdentity(identity);
     }
     assertThat(page).hasURL(Pattern.compile(".*/home$"));
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-two-factor-setup").click();
     page.locator("#two-factor-confirm-" + provider).click();
     providerIdentity(identity);
@@ -1526,14 +1525,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       page.locator("#two-factor-submit").click();
     }
     TwoFactorPage.enrollCurrent(page, identity);
-    assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+    assertThat(page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     new UserMenu(page).signOut();
     page.locator("#external-login-" + provider).click();
     providerIdentity(identity);
     assertThat(page).hasURL(Pattern.compile(".*/two-factor$"));
     TwoFactorPage.completeIfRequired(page, identity, null);
     assertThat(page).hasURL(Pattern.compile(".*/home$"));
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     new UserMenu(page).selectTestLanguage();
     page.locator("#account-password-edit-security").click();
     assertThat(page.locator("#external-confirm-password")).isHidden();
@@ -1596,12 +1595,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     page.reload();
     assertThat(page.locator("#admin-sidebar")).isAttached();
     try (Page tab = context.newPage()) {
-      tab.navigate("/account?tab=security");
+      tab.navigate("/account?section=security&tab=portal");
       new UserMenu(tab).selectTestLanguage();
       assertThat(tab.locator("#account-two-factor")).containsText(texts.getTwoFactorEnrolled());
-      assertThat(tab).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+      assertThat(tab).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     }
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     new UserMenu(page).selectTestLanguage();
     assertThat(page.locator("#account-two-factor")).containsText(texts.getTwoFactorEnrolled());
     AllurePlaywright.attachScreenshot("Eigene Zwei-Faktor-Verwaltung", page);
@@ -1616,10 +1615,10 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(page);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-two-factor-renew").click();
-    page.locator("#two-factor-action-code input")
-        .fill(TwoFactorPage.nextCode(page, BrowserTestAccounts.ADMIN_EMAIL));
+    TwoFactorPage.enterActionCode(
+        page, TwoFactorPage.nextCode(page, BrowserTestAccounts.ADMIN_EMAIL));
     page.locator("#two-factor-action-confirm").click();
     assertThat(page.locator("#two-factor-recovery-toggle")).isVisible();
     java.time.Instant shortProofExpired = java.time.Instant.now().plusSeconds(301);
@@ -1682,7 +1681,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Einmalige Ausgabe synthetischer Ersatzcodes", page);
     page.locator("#two-factor-codes-saved input").setChecked(true);
     page.locator("#two-factor-submit").click();
-    assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+    assertThat(page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     org.junit.jupiter.api.Assertions.assertTrue(
         ((Number) page.evaluate("async url => (await fetch(url, {cache:'no-store'})).status", url))
                 .intValue()

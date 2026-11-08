@@ -347,7 +347,7 @@ public class ExternalLoginFlow {
       response.sendRedirect(
           attempt.purpose() == Purpose.ENROLL_FACTOR
               ? "/two-factor?setup"
-              : "/account?tab=security");
+              : AppRouteConstants.ACCOUNT_PORTAL_LOCATION);
       return;
     }
     Optional<UserEntity> user = identities.resolve(evidence);

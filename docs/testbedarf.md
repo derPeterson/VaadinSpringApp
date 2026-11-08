@@ -2,10 +2,17 @@
 
 ## Browser-Tests
 
+- **URL-Zustand unter Mein Konto: wartend auf Browserfreigabe.** In DE/EN prüfen,
+  dass alle drei Menüpunkte und beide Sicherheitsreiter beim Neuladen erhalten
+  bleiben. Der Anbieterreiter muss auch per Direktlink mit umgekehrter
+  Parameterreihenfolge erreichbar sein.
+
 - **2FA im Dialog für Kontoaktionen: offen.** In DE/EN auf Desktop und Smartphone
-  den Anbieterschritt mit App-Code auch für Microsoft prüfen. Zusätzlich prüfen,
-  dass beim Verbinden mit Ersatzcode und bei anderen Kontoaktionen der
-  Aktionsbutton die Bestätigung auslöst.
+  prüfen, dass beim Verbinden mit Ersatzcode und bei anderen Kontoaktionen der
+  Aktionsbutton die Bestätigung auslöst. Im Standarddialog zusätzlich den
+  Anfangsfokus, Monospace in beiden Feldern und die Bestätigung per Ersatzcode prüfen.
+  Unter „Portalzugang“ sollen das Schließen-Symbol rechts und beide Codearten als
+  kompakter Umschalter erscheinen.
 
 - **Vorgangsseiten bei Live-Updates: offen.** In DE/EN auf Desktop und Smartphone
   prüfen, dass Live-Updates die aktuelle Seite erhalten oder bei einer leeren

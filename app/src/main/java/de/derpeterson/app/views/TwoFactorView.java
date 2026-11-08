@@ -1102,7 +1102,9 @@ public final class TwoFactorView extends VerticalLayout
       enrollment.dismissOutput(request, pending.id());
     }
     if (!introduction && authorization.sessionConfirmed(request)) {
-      UI.getCurrent().getPage().setLocation(request.getContextPath() + "/account?tab=security");
+      UI.getCurrent()
+          .getPage()
+          .setLocation(request.getContextPath() + AppRouteConstants.ACCOUNT_PORTAL_LOCATION);
     } else {
       security.logout();
       UI.getCurrent().getPage().setLocation(request.getContextPath() + "/login");
@@ -1111,7 +1113,7 @@ public final class TwoFactorView extends VerticalLayout
 
   private void finish() {
     authorization.requireSession(request);
-    String target = "/account?tab=security";
+    String target = AppRouteConstants.ACCOUNT_PORTAL_LOCATION;
     if (!setup && !recovering) {
       boolean administrative =
           authorization.owner(request).roles().stream().anyMatch(RoleType::isAdministrative);

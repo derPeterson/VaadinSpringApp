@@ -762,18 +762,20 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 #account-security-tabs { border:0;border-radius:0;--vaadin-tabsheet-border-width:0px; }
 #account-security-tabs::part(content) { flex:none;height:auto;max-height:none;padding:0;contain:none;background:var(--cosmos-reference-page);--vaadin-scroller-overflow-indicator-top-opacity:0; }
 #account-security-tabs::part(tabs-container) { padding:0 24px;background:var(--cosmos-reference-panel);border-bottom:0;box-shadow:none;background-image:linear-gradient(var(--cosmos-reference-border),var(--cosmos-reference-border));background-position:bottom;background-size:100% 1px;background-repeat:no-repeat; }
-#account-security-tabs vaadin-tabs { margin:0;border:0;box-shadow:none;--vaadin-tabs-border-width:0px; }
-#account-security-tabs vaadin-tabs::part(tabs) { gap:0;margin:0; }
-#account-security-tabs vaadin-tab { box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;min-width:168px;min-height:48px;padding:12px 20px;margin:0;border:1px solid transparent;border-top-width:2px;border-bottom:0;border-radius:10px 10px 0 0;background:transparent;color:var(--cosmos-reference-secondary);font:500 12px/20px Inter,sans-serif;cursor:pointer; }
-#account-security-tabs vaadin-tab[selected] { z-index:1;border-color:var(--cosmos-reference-border);border-top-color:var(--cosmos-reference-accent);background:var(--cosmos-reference-page);color:var(--cosmos-reference-text);font-weight:600; }
-#account-security-tabs vaadin-tab::before,#account-security-tabs vaadin-tab::after { display:none; }
-#account-security-tabs vaadin-tab :is(img,vaadin-icon) { width:20px;height:20px;flex-shrink:0;object-fit:contain; }
-#account-security-tabs vaadin-tab vaadin-icon { color:var(--cosmos-reference-accent); }
+#account-security-tabs > vaadin-tabs[slot=tabs] { margin:0;border:0;box-shadow:none;--vaadin-tabs-border-width:0px; }
+#account-security-tabs > vaadin-tabs[slot=tabs]::part(tabs) { gap:0;margin:0; }
+/* Nur die Reiter im Kopf gestalten. Dialoge im Tab-Inhalt haben eigene Umschalter. */
+#account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab { box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;min-width:168px;min-height:48px;padding:12px 20px;margin:0;border:1px solid transparent;border-top-width:2px;border-bottom:0;border-radius:10px 10px 0 0;background:transparent;color:var(--cosmos-reference-secondary);font:500 12px/20px Inter,sans-serif;cursor:pointer; }
+#account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab[selected] { z-index:1;border-color:var(--cosmos-reference-border);border-top-color:var(--cosmos-reference-accent);background:var(--cosmos-reference-page);color:var(--cosmos-reference-text);font-weight:600; }
+#account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab::before,
+#account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab::after { display:none; }
+#account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab :is(img,vaadin-icon) { width:20px;height:20px;flex-shrink:0;object-fit:contain; }
+#account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab vaadin-icon { color:var(--cosmos-reference-accent); }
 .account-security-cards { display:grid;gap:16px;padding:24px; }
 .account-security-empty { display:block;padding:24px; }
 #account-panel-security .account-security-hint { margin:0;border-top:1px solid var(--cosmos-reference-border);background:var(--cosmos-reference-panel); }
 @media(max-width:600px) {
   #account-security-tabs::part(tabs-container) { padding:0 16px; }
-  #account-security-tabs vaadin-tab { flex:1;min-width:0;padding-inline:10px; }
+  #account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab { flex:1;min-width:0;padding-inline:10px; }
   .account-security-cards,.account-security-empty { padding:20px; }
 }

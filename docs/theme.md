@@ -1177,6 +1177,14 @@ sechsstelliger Authenticator-Code löst in beiden OTP-Feldern über das native
 auch beim Tippen und Autofill. Der Button bleibt verfügbar. Die gewählte Methode bleibt beim Sprachwechsel
 erhalten; sensible Eingaben werden dabei geleert. Die beiden
 Hilfsaktionen liegen in „Zugangsprobleme und Alternativen“ unter der Trennlinie.
+
+Die Bestätigungsdialoge für Anmeldeanbieter und 2FA-Aktionen verwenden für
+App-Code und Ersatzcode gemeinsam `TwoFactorCodeInput` mit
+`.two-factor-dialog-codes`. Beim Öffnen beginnt die Eingabe auf der ersten
+App-Code-Stelle. Beide Felder verwenden Space Mono. Ein vollständiger App-Code
+bestätigt nur beim Verbinden eines Anmeldeanbieters automatisch. Ersatzcodes und
+alle übrigen Dialogaktionen erfordern den jeweiligen Bestätigungsbutton.
+
 Vaadin `Details` ist anfangs geschlossen. Die Anmeldung und die Ersatzcode-Ausgabe
 verwenden denselben nativen Vaadin-Button und dieselbe Gestaltung in `cosmos-mfa.css`.
 Die Schalter bleiben bei Hover und Mausklick neutral. Der Tastaturfokus ist sichtbar.

@@ -953,10 +953,6 @@ public class MessageTexts {
     return getTranslation("mfa.action.recoveryHint");
   }
 
-  public String getTwoFactorCodeLabel() {
-    return getTranslation("mfa.code.label");
-  }
-
   public String getTwoFactorCodePlaceholder() {
     return getTranslation("mfa.code.placeholder");
   }

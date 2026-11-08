@@ -18,6 +18,21 @@ public final class AppRouteConstants {
   public static final String ACCOUNT_ROUTE = "account";
   public static final String ACCOUNT_SECURITY_ROUTE = "/account";
   public static final String ACCOUNT_PAGE_TITLE = "My Account";
+  public static final String ACCOUNT_SECTION_PARAMETER = "section";
+  public static final String ACCOUNT_TAB_PARAMETER = "tab";
+  public static final String ACCOUNT_SECURITY_SECTION = "security";
+  public static final String ACCOUNT_PORTAL_TAB = "portal";
+  public static final String ACCOUNT_PROVIDERS_TAB = "providers";
+  public static final String ACCOUNT_PORTAL_LOCATION =
+      ACCOUNT_SECURITY_ROUTE
+          + "?"
+          + ACCOUNT_SECTION_PARAMETER
+          + "="
+          + ACCOUNT_SECURITY_SECTION
+          + "&"
+          + ACCOUNT_TAB_PARAMETER
+          + "="
+          + ACCOUNT_PORTAL_TAB;
 
   public static final String TWO_FACTOR_ROUTE = "two-factor";
   public static final String TWO_FACTOR_SECURITY_ROUTE = "/two-factor";

@@ -181,6 +181,19 @@ public final class TwoFactorPage {
     return codes != null && !codes.isEmpty() ? codes.removeFirst() : totp(page, email);
   }
 
+  public static void enterActionCode(Page page, String value) {
+    boolean recovery = value.length() > 6;
+    Locator method =
+        page.locator(
+            recovery ? "#two-factor-action-recovery-code-tab" : "#two-factor-action-app-code-tab");
+    if (method.getAttribute("selected") == null) {
+      UiActions.complete(page, method::click);
+    }
+    page.locator(
+            recovery ? "#two-factor-action-recovery-code input" : "#two-factor-action-factor input")
+        .fill(value);
+  }
+
   public static int remainingRecoveryCodes(String email) {
     ArrayDeque<String> codes = CODES.get(email);
     return codes == null ? 0 : codes.size();

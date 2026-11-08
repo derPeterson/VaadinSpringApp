@@ -62,7 +62,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     assertThat(page).hasURL(Pattern.compile(".*/home$"));
     if (hasPassword) {
       enrollGoogle(email, "valid");
-      page.navigate("/account?tab=security");
+      page.navigate("/account?section=security&tab=portal");
       page.locator("#account-password-edit-security").click();
       confirmFactor(email);
       page.locator("#account-password-new input").fill("OptionalPortal1!");
@@ -83,7 +83,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       try {
         setProviderAvailability(admin, false);
         // Ein direkter Seitenaufruf muss die bestehenden Zuordnungen weiter anzeigen.
-        page.navigate("/account?tab=security");
+        page.navigate("/account?section=security&tab=portal");
         page.locator("#account-security-tab-providers").click();
         assertThat(page.locator(".external-connection-row")).hasCount(1);
         assertThat(page.locator(".external-connection-heading vaadin-badge"))
@@ -114,7 +114,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
           assertThat(page.locator("#two-factor-confirm-google")).hasCount(0);
           assertThat(page.locator("#two-factor-password")).isHidden();
           assertThat(page.locator("#two-factor-submit")).isHidden();
-          page.navigate("/account?tab=security");
+          page.navigate("/account?section=security&tab=portal");
         }
         page.locator("#account-email-edit-security").click();
         if (hasPassword) {
@@ -132,7 +132,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
         new UserMenu(admin).signOut();
       }
     }
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-password-edit-security").click();
     if (hasPassword) {
       assertThat(page.locator("#external-confirm-factor")).isVisible();
@@ -158,10 +158,9 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
 
   private void saveProviderSettings(Page admin, String provider) {
     UiActions.complete(admin, () -> admin.locator("#provider-" + provider + "-save").click());
-    assertThat(admin.locator("#two-factor-action-code")).isVisible();
-    admin
-        .locator("#two-factor-action-code input")
-        .fill(TwoFactorPage.nextCode(admin, BrowserTestAccounts.SUPERADMIN_EMAIL));
+    assertThat(admin.locator("#two-factor-action-factor")).isVisible();
+    TwoFactorPage.enterActionCode(
+        admin, TwoFactorPage.nextCode(admin, BrowserTestAccounts.SUPERADMIN_EMAIL));
     UiActions.complete(admin, () -> admin.locator("#two-factor-action-confirm").click());
     assertThat(admin.locator("#two-factor-action-confirm")).isHidden();
   }
@@ -178,7 +177,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   }
 
   private void enrollGoogle(String email, String mode) {
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-two-factor-setup").click();
     page.locator("#two-factor-confirm-google").click();
     assertThat(page.locator("#fixture-authorize-parameters"))
@@ -190,7 +189,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
         .fill(new MailpitInbox(context).awaitAuthenticatorSetupCode(email));
     page.locator("#two-factor-submit").click();
     TwoFactorPage.enrollCurrent(page, email);
-    assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+    assertThat(page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
   }
 
   @ParameterizedTest
@@ -208,7 +207,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     new UserMenu(page).signOut();
     login.signIn(localEmail, BrowserTestAccounts.USER_PASSWORD);
     new UserMenu(page).selectTestLanguage();
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-security-tab-providers").click();
     assertThat(page.locator("#external-security-action")).hasCount(0);
     assertThat(page.locator(".external-connection-row")).hasCount(2);
@@ -452,7 +451,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     }
     begin("microsoft", microsoft, "valid");
     assertThat(page).hasURL(Pattern.compile(".*/home$"));
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-security-tab-providers").click();
     page.locator("#external-connect-google").click();
     page.locator("#external-confirm-microsoft").click();
@@ -469,7 +468,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     assertThat(page).hasURL(Pattern.compile(".*/login$"));
     begin("microsoft", microsoft, "valid");
     assertThat(page).hasURL(Pattern.compile(".*/home$"));
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-security-tab-providers").click();
     assertThat(page.locator("#external-connect-microsoft")).isDisabled();
     page.locator("#account-security-tab-portal").click();
@@ -508,7 +507,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     new UserMenu(page).selectTestLanguage();
     assertThat(page.locator("#account-birth-date input")).hasValue("");
     assertThat(page.locator("#account-gender input")).hasValue("");
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-security-tab-providers").click();
     assertThat(page.locator("#external-connect-google")).isDisabled();
     assertThat(page.locator("#account-external-connections")).isVisible();
@@ -591,11 +590,12 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   }
 
   private void rejectedEnrollment(String email, String mode, String message) {
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-two-factor-setup").click();
     page.locator("#two-factor-confirm-google").click();
     providerIdentity(email, mode);
-    assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security&external_error=.*"));
+    assertThat(page)
+        .hasURL(Pattern.compile(".*/account\\?section=security&tab=portal&external_error=.*"));
     assertStandardNotification(page, message, "error");
     assertThat(page.locator("#two-factor-qr")).hasCount(0);
     assertThat(page.locator("#two-factor-recovery-codes")).hasCount(0);
@@ -612,7 +612,8 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
           .hasAttribute("data-claims", "{\"id_token\":{\"auth_time\":{\"essential\":true}}}");
     }
     providerIdentity(email, mode);
-    assertThat(page).hasURL(Pattern.compile(".*/account\\?tab=security&external_error=.*"));
+    assertThat(page)
+        .hasURL(Pattern.compile(".*/account\\?section=security&tab=portal&external_error=.*"));
     assertStandardNotification(page, message, "error");
     AllurePlaywright.attachScreenshot(
         "Abgelehnter Anbieternachweis im Standarddesign: " + mode, page);
@@ -703,7 +704,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     page.locator("#external-register-submit").click();
     assertThat(page).hasURL(Pattern.compile(".*/home$"));
     enrollGoogle(providerEmail, "valid");
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-email-edit-security").click();
     confirmFactor(providerEmail);
     assertThat(page.locator("#account-email-password")).isHidden();

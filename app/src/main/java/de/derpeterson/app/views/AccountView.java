@@ -1,5 +1,7 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_SECTION_PARAMETER;
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_TAB_PARAMETER;
 import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
 
 import com.vaadin.flow.component.UI;
@@ -9,7 +11,6 @@ import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.spring.annotation.UIScope;
@@ -103,12 +104,7 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
         handle -> sessions.revoke(request, handle),
         () -> sessions.revokeOthers(request));
     accountSettings.addSectionChangeListener(
-        section ->
-            UI.getCurrent()
-                .navigate(
-                    AccountView.class,
-                    QueryParameters.simple(
-                        Map.of("tab", section.name().toLowerCase(Locale.ROOT)))));
+        section -> UI.getCurrent().navigate(AccountView.class, section.queryParameters()));
     // Erst nach bestätigtem Commit den sichtbaren UI-Zustand und die Sitzungssprache ändern.
     accountSettings.addProfileSavedListener(
         saved -> {
@@ -134,17 +130,29 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
     if (event.hasForwardTarget()) {
       return;
     }
-    List<String> values = event.getLocation().getQueryParameters().getParameters().get("tab");
-    AccountSection section = AccountSection.PROFILE;
-    // Fehlende, unbekannte und mehrdeutige Tabwerte öffnen immer das Profil.
-    if (values != null && values.size() == 1) {
+    Map<String, List<String>> query = event.getLocation().getQueryParameters().getParameters();
+    List<String> tabValues = query.getOrDefault(ACCOUNT_TAB_PARAMETER, List.of());
+    // Alte Direktlinks verwenden „tab“ noch für den Seitenbereich.
+    AccountSection section =
+        accountSection(query.getOrDefault(ACCOUNT_SECTION_PARAMETER, tabValues));
+    accountSettings.selectSection(section);
+    accountSettings.selectSecurityTab(
+        section == AccountSection.SECURITY
+                && query.containsKey(ACCOUNT_SECTION_PARAMETER)
+                && tabValues.size() == 1
+            ? tabValues.getFirst()
+            : AppRouteConstants.ACCOUNT_PORTAL_TAB);
+  }
+
+  private AccountSection accountSection(List<String> values) {
+    if (values.size() == 1) {
       try {
-        section = AccountSection.valueOf(values.getFirst().toUpperCase(Locale.ROOT));
+        return AccountSection.valueOf(values.getFirst().toUpperCase(Locale.ROOT));
       } catch (IllegalArgumentException _) {
-        section = AccountSection.PROFILE;
+        // Unbekannte Bereiche wie eine fehlende Auswahl behandeln.
       }
     }
-    accountSettings.selectSection(section);
+    return AccountSection.PROFILE;
   }
 
   @Override

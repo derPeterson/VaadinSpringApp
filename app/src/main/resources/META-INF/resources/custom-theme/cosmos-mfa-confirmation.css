@@ -4,9 +4,10 @@
 .two-factor-confirmation > .account-panel-body,
 .two-factor-restore > .account-panel-body,
 .support-recovery-help .account-panel-body { background:var(--cosmos-reference-page); }
+.two-factor-dialog-codes { gap:var(--cosmos-space-l); min-width:0; }
 .two-factor-confirmation-input { gap:16px; min-width:0; }
 .two-factor-confirmation-input .two-factor-otp { align-self:center; }
-:is(.two-factor-view, .external-proof-codes) vaadin-text-field.two-factor-recovery-input > input[slot=input] { font-family:'Space Mono',ui-monospace,Consolas,monospace; }
+:is(.two-factor-view, .two-factor-dialog-codes) vaadin-text-field.two-factor-recovery-input > input[slot=input] { font-family:'Space Mono',ui-monospace,Consolas,monospace; }
 .two-factor-confirmation .two-factor-extra-actions { flex-direction:column; align-items:flex-start; gap:8px; border-top:1px solid var(--cosmos-reference-border); margin-top:24px; padding-top:16px; }
 .two-factor-extra-actions vaadin-button[theme~=tertiary-inline] { margin:0; }
 #two-factor-login-help { margin:0; padding:0; border:0; }

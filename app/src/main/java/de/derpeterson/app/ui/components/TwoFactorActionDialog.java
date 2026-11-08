@@ -7,12 +7,9 @@ import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Span;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.SerializableRunnable;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
-import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.security.mfa.TwoFactorAction;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
@@ -29,9 +26,8 @@ public final class TwoFactorActionDialog extends Dialog {
   private final transient MessageProperties texts;
   private final transient TwoFactorAuthorization authorization;
   private final transient HttpServletRequest request;
-  private final TextField code = new TextField();
+  private final TwoFactorCodeInput code;
   private final H2 title = new H2();
-  private final Span explanation = new Span();
   private final Button cancel = new Button();
   private final Button confirm = new Button();
   private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create());
@@ -48,21 +44,19 @@ public final class TwoFactorActionDialog extends Dialog {
     getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
     setModality(ModalityMode.STRICT);
     title.addClassName(CosmosClasses.PANEL_TITLE);
+    Div heading = new Div(title);
+    heading.addClassName(CosmosClasses.PANEL_HEADING);
     Div icon = new Div(AppIcon.LOCK.create());
     icon.addClassName(CosmosClasses.PANEL_ICON);
     close.addClassName("cosmos-overlay-close");
     close.addClickListener(event -> close());
-    Div header = new Div(icon, title, close);
+    Div header = new Div(icon, heading, close);
     header.addClassName("account-change-dialog-header");
     getHeader().add(header);
-    code.setId("two-factor-action-code");
-    code.setWidthFull();
-    code.setMaxLength(35);
-    code.setManualValidation(true);
-    code.setRequiredIndicatorVisible(true);
-    code.getElement().setAttribute("autocomplete", "one-time-code");
-    explanation.addClassName(CosmosClasses.PANEL_DESCRIPTION);
-    Div body = new Div(explanation, code);
+    code =
+        new TwoFactorCodeInput(
+            texts, request.getContextPath(), "two-factor-action", "two-factor-action");
+    Div body = new Div(code);
     body.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
     add(body);
     cancel.setPrefixComponent(AppIcon.CLOSE.create());
@@ -78,8 +72,7 @@ public final class TwoFactorActionDialog extends Dialog {
     addOpenedChangeListener(
         event -> {
           if (!event.isOpened()) {
-            code.clear();
-            code.setInvalid(false);
+            code.reset();
             purpose = null;
             action = null;
           }
@@ -90,26 +83,22 @@ public final class TwoFactorActionDialog extends Dialog {
   public void open(TwoFactorAction purpose, SerializableRunnable action) {
     this.purpose = Objects.requireNonNull(purpose);
     this.action = Objects.requireNonNull(action);
-    code.clear();
-    code.setInvalid(false);
+    code.reset();
     refreshTexts();
     super.open();
+    code.focusAppCode();
   }
 
   public void refreshTexts() {
     title.setText(texts.getExternalProof());
-    explanation.setText(texts.getTwoFactorActionHint());
-    code.setLabel(texts.getTwoFactorCodeLabel());
-    code.setPlaceholder(texts.getTwoFactorCodePlaceholder());
+    code.refreshTexts();
     cancel.setText(texts.getAdminUsersCancel());
     confirm.setText(texts.getTwoFactorConfirm());
     close.setAriaLabel(texts.getNotificationsClose());
   }
 
   private void submit() {
-    if (purpose == null
-        || action == null
-        || !ValidationHelper.validateRequiredInputs(List.of(code), texts)) {
+    if (purpose == null || action == null || !code.validate()) {
       return;
     }
     try {
@@ -118,7 +107,7 @@ public final class TwoFactorActionDialog extends Dialog {
       confirmedAction.run();
       close();
     } catch (RuntimeException failure) {
-      code.setInvalid(true);
+      code.markInvalid();
       Supplier<String> message = texts::getTwoFactorFailed;
       if (failure instanceof LockedException) {
         message = texts::getTwoFactorThrottled;

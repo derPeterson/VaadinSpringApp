@@ -145,7 +145,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       assertThat(owner.page.locator("#account-sessions-limit"))
           .hasText(texts.getAccountSettingsSessionsLimit(7));
       owner.page.reload();
-      assertThat(owner.page).hasURL(urlPattern(ACCOUNT_ROUTE, "\\?tab=sessions"));
+      assertThat(owner.page).hasURL(urlPattern(ACCOUNT_ROUTE, "\\?section=sessions"));
       assertThat(owner.page.locator("#account-tab-sessions")).hasAttribute("aria-current", "page");
       sessions.assertCounts(2, 1, 0);
     }

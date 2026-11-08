@@ -434,7 +434,7 @@ class ExternalLoginFlowTest {
     request.setParameter("state", "state");
     flow.complete(
         request, response, oidc("subject", missing ? null : Instant.now().minusSeconds(86400)));
-    assertEquals("/account?tab=security", response.getRedirectedUrl());
+    assertEquals("/account?section=security&tab=portal", response.getRedirectedUrl());
     flow.authorize(request, owner, Purpose.PASSWORD, true);
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.PASSWORD, true));

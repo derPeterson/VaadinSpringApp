@@ -320,7 +320,9 @@ class ApplicationHeaderTest {
       org.mockito.ArgumentCaptor<com.vaadin.flow.router.QueryParameters> query =
           org.mockito.ArgumentCaptor.forClass(com.vaadin.flow.router.QueryParameters.class);
       verify(ui).navigate(eq(AccountView.class), query.capture());
-      assertEquals(java.util.Map.of("tab", List.of("security")), query.getValue().getParameters());
+      assertEquals(
+          java.util.Map.of("section", List.of("security"), "tab", List.of("portal")),
+          query.getValue().getParameters());
       ui.remove(navigation);
       org.mockito.Mockito.clearInvocations(ui);
       ui.add(navigation);

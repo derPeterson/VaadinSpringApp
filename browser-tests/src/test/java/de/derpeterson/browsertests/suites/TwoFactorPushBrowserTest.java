@@ -40,12 +40,12 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
     try (BrowserActor user = new BrowserActor(browser)) {
       user.page.setViewportSize(width, 900);
       user.login(email, BrowserTestAccounts.USER_PASSWORD);
-      user.page.navigate("/account?tab=security");
+      user.page.navigate("/account?section=security&tab=portal");
       user.page.locator("#account-two-factor-setup").click();
       user.page.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
       user.page.locator("#two-factor-submit").click();
       TwoFactorPage.enrollCurrent(user.page, email);
-      assertThat(user.page).hasURL(Pattern.compile(".*/account\\?tab=security$"));
+      assertThat(user.page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       try {
         configureInactivity(true);
         user.page.navigate("/home");
@@ -116,8 +116,8 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
                 .setExact(true))
         .setChecked(enabled);
     page.locator("#two-factor-save").click();
-    page.locator("#two-factor-action-code input")
-        .fill(TwoFactorPage.nextCode(page, BrowserTestAccounts.SUPERADMIN_EMAIL));
+    TwoFactorPage.enterActionCode(
+        page, TwoFactorPage.nextCode(page, BrowserTestAccounts.SUPERADMIN_EMAIL));
     UiActions.complete(page, () -> page.locator("#two-factor-action-confirm").click());
     page.waitForCondition(
         () ->

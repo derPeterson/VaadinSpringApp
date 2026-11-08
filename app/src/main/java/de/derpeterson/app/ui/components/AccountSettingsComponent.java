@@ -1,5 +1,10 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_PORTAL_TAB;
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_PROVIDERS_TAB;
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_SECTION_PARAMETER;
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_SECURITY_SECTION;
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_TAB_PARAMETER;
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
 
@@ -24,7 +29,9 @@ import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.function.SerializableSupplier;
+import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.QueryParameters;
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.helper.ui.CompactDateInput;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
@@ -62,7 +69,16 @@ public class AccountSettingsComponent extends PortalPageComponent {
   public enum AccountSection {
     PROFILE,
     SECURITY,
-    SESSIONS
+    SESSIONS;
+
+    public String urlValue() {
+      return this == SECURITY ? ACCOUNT_SECURITY_SECTION : name().toLowerCase(Locale.ROOT);
+    }
+
+    public QueryParameters queryParameters() {
+      QueryParameters query = QueryParameters.of(ACCOUNT_SECTION_PARAMETER, urlValue());
+      return this == SECURITY ? query.merging(ACCOUNT_TAB_PARAMETER, ACCOUNT_PORTAL_TAB) : query;
+    }
   }
 
   private final transient MessageProperties messages;
@@ -91,6 +107,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
   private final Div providerAccess = new Div();
   private Div portalCards;
   private TwoFactorAccountComponent twoFactor;
+  private Tab portalTab;
   private Tab providersTab;
   private final AccountAvatarDialog avatarDialog;
   private final DatePicker birthDate = new DatePicker();
@@ -204,11 +221,11 @@ public class AccountSettingsComponent extends PortalPageComponent {
       Component symbol,
       Supplier<String> label,
       AccountPanelComponent panel) {
-    String id = section.name().toLowerCase(Locale.ROOT);
+    String id = section.urlValue();
     symbol.getElement().setAttribute(ARIA_HIDDEN, "true");
     SideNavItem item = new SideNavItem("", AppRoute.ACCOUNT.getSecurityRoute(), symbol);
     item.setId("account-tab-" + id);
-    item.setQueryParameters(QueryParameters.of("tab", id));
+    item.setQueryParameters(section.queryParameters());
     textUpdates.add(() -> item.setLabel(label.get()));
     item.getElement().setAttribute("aria-controls", "account-panel-" + id);
     panel.getElement().setAttribute("role", "region");
@@ -218,6 +235,12 @@ public class AccountSettingsComponent extends PortalPageComponent {
     navigation.registerAction(
         item,
         () -> {
+          if (section == AccountSection.SECURITY && selectedSection == section) {
+            selectSecurityTab(ACCOUNT_PORTAL_TAB);
+            updateSecurityTabLocation();
+            closeNavigation();
+            return;
+          }
           selectSection(section);
           closeNavigation();
           sectionChangeListeners.forEach(listener -> listener.accept(section));
@@ -240,6 +263,33 @@ public class AccountSettingsComponent extends PortalPageComponent {
         (value, item) -> PageNavigationComponent.setItemActive(item, value == section));
     showSelectedPanel();
     refreshSectionHeading();
+  }
+
+  public void selectSecurityTab(String tab) {
+    securityTabs.setSelectedTab(ACCOUNT_PROVIDERS_TAB.equals(tab) ? providersTab : portalTab);
+  }
+
+  private void updateSecurityTabLocation() {
+    if (selectedSection != AccountSection.SECURITY) {
+      return;
+    }
+    String tab =
+        securityTabs.getSelectedTab() == providersTab ? ACCOUNT_PROVIDERS_TAB : ACCOUNT_PORTAL_TAB;
+    QueryParameters query =
+        AccountSection.SECURITY.queryParameters().merging(ACCOUNT_TAB_PARAMETER, tab);
+    getUI()
+        .ifPresent(
+            ui ->
+                ui.getPage()
+                    .getHistory()
+                    .replaceState(null, new Location(AppRouteConstants.ACCOUNT_ROUTE, query)));
+  }
+
+  private void showProviders() {
+    if (securityTabs.getSelectedTab() != providersTab) {
+      selectSecurityTab(ACCOUNT_PROVIDERS_TAB);
+      updateSecurityTabLocation();
+    }
   }
 
   private void showSelectedPanel() {
@@ -456,7 +506,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
     providerAccess.add(unavailable);
     Image logo = new Image("icons/service-logo.svg", "");
     logo.getElement().setAttribute(ARIA_HIDDEN, "true");
-    Tab portalTab = new Tab(logo, text(new Span(), messages::getAccountSecurityPortalAccess));
+    portalTab = new Tab(logo, text(new Span(), messages::getAccountSecurityPortalAccess));
     portalTab.setId("account-security-tab-portal");
     providersTab =
         new Tab(
@@ -467,6 +517,12 @@ public class AccountSettingsComponent extends PortalPageComponent {
     securityTabs.addThemeVariants(TabSheetVariant.NO_PADDING);
     securityTabs.add(portalTab, portalAccess);
     securityTabs.add(providersTab, providerAccess);
+    securityTabs.addSelectedChangeListener(
+        event -> {
+          if (event.isFromClient()) {
+            updateSecurityTabLocation();
+          }
+        });
     panel.getBody().add(securityTabs);
     return panel;
   }
@@ -576,9 +632,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
     // Der Bestätigungsdialog muss auch vom Portal-Tab aus bedienbar bleiben.
     add(connections.getConfirmationDialog());
     connections.configureAccountActions(
-        passwordChangeDialog::open,
-        emailChangeDialog::open,
-        () -> securityTabs.setSelectedTab(providersTab));
+        passwordChangeDialog::open, emailChangeDialog::open, this::showProviders);
     providerAccess.removeAll();
     providerAccess.add(connections);
   }

@@ -15,6 +15,7 @@ import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.ScreenshotAnimations;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
@@ -38,6 +39,44 @@ import org.junit.jupiter.params.provider.CsvSource;
 public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @CsvSource({"1280", "390"})
+  @DisplayName("Kontomenü und Sicherheitsreiter bleiben nach dem Neuladen ausgewählt")
+  void accountNavigationSurvivesReload(int width) {
+    page.setViewportSize(width, 900);
+    LoginPage login = new LoginPage(page);
+    login.open();
+    login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+    new UserMenu(page).selectTestLanguage();
+    AccountPage account = new AccountPage(page);
+    account.open();
+    for (String section : List.of("sessions", "profile")) {
+      account.section("account-tab-" + section);
+      assertThat(page).hasURL(Pattern.compile(".*/account\\?section=" + section + "$"));
+      page.reload();
+      assertThat(account.host("account-panel-" + section)).isVisible();
+    }
+
+    account.section("account-tab-security");
+    for (String tab : List.of("providers", "portal")) {
+      Locator tabItem = account.host("account-security-tab-" + tab);
+      tabItem.click();
+      assertThat(page)
+          .hasURL(
+              Pattern.compile(
+                  ".*/account\\?(section=security&tab="
+                      + tab
+                      + "|tab="
+                      + tab
+                      + "&section=security)$"));
+      page.reload();
+      assertThat(tabItem).hasAttribute("selected", "");
+      assertThat(account.host("account-security-" + tab)).isVisible();
+    }
+    page.navigate("/account?tab=providers&section=security");
+    assertThat(account.host("account-security-providers")).isVisible();
+  }
+
+  @ParameterizedTest
+  @CsvSource({"1280", "390"})
   @DisplayName(
       "OIDC-12: Anbieterzeilen und Kontobestätigung verwenden die bestehenden Dialogflächen")
   void contextualAccountDialogUsesCosmosLayout(int width) {
@@ -46,7 +85,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(page).selectTestLanguage();
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     Locator securityTabs = page.locator("#account-security-tabs");
     assertThat(securityTabs.getByRole(AriaRole.TAB)).hasCount(2);
     Locator portalTab = page.locator("#account-security-tab-portal");
@@ -119,7 +158,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     assertDynamicTextWidths(editor.root().locator(".cosmos-dialog-actions"));
     editor.cancel();
 
-    page.navigate("/account?tab=security");
+    page.navigate("/account?section=security&tab=portal");
     page.locator("#account-security-tab-providers").click();
     page.locator("#external-connect-google").click();
     Locator otpInput = page.locator("#external-confirm-factor input");

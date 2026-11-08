@@ -1,5 +1,6 @@
 package de.derpeterson.app.security;
 
+import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.helper.logging.LogSafety;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -97,7 +98,8 @@ public class ExternalLoginHttp {
     flow.cancel(request);
     response.sendRedirect(
         localAccount
-            ? "/account?tab=security&"
+            ? AppRouteConstants.ACCOUNT_PORTAL_LOCATION
+                + "&"
                 + ExternalLoginFlow.ERROR_PARAMETER
                 + "="
                 + proofProblem(failure).name()
