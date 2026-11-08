@@ -1,7 +1,6 @@
 # Offene Fehler
 
-- Lange E-Mail-Adressen können den Bearbeiter-Tooltip in der Ticketliste auf
-  mehr als zwei Zeilen umbrechen. [Reproduktion und Nachtest](docs/testbedarf.md#avatar-tooltip).
+Derzeit sind keine offenen Anwendungsfehler bestätigt.
 
 Die bewussten Grenzen der Google-Ersteinrichtung stehen in der
 [Sicherheitsdokumentation](docs/externe-anmeldung.md#google-bestätigung-und-geschützte-ersteinrichtung).

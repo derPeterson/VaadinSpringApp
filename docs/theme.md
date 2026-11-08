@@ -1285,8 +1285,10 @@ lange Namen und Adressen können umbrechen. Der Dienst liefert diese Identität
 ausschließlich für die berechtigte Adminansicht. Im administrativen Verlauf
 zeigen Antragstellernachrichten denselben Avatar und den Namen. Öffentliche
 Adminantworten und interne Vermerke zeigen dort ebenfalls den tatsächlichen Autor
-mit 24-px-Initialenavatar und Namen. Der gemeinsame Avatar-Tooltip zeigt Name und
-E-Mail zweizeilig. Für Antragsteller bleiben Adminantworten als „Systemadministration“
+mit 24-px-Initialenavatar und Namen. Im Avatar-Tooltip belegen Name und E-Mail je
+eine Zeile. Der lokale Stil in `cosmos-mfa-confirmation.css` lässt den Tooltip bis
+zum verfügbaren Platz wachsen. Text, der dann noch zu lang ist, endet mit einer
+Ellipse. Für Antragsteller bleiben Adminantworten als „Systemadministration“
 anonymisiert, ebenso bei gelöschtem Autorenkonto in der Administration.
 Eine separate native Werkzeugleiste darunter enthält die vorhandenen Aktionen
 „Übernehmen“ rechtsbündig, bei offenen Tickets als primäre Aktion, und

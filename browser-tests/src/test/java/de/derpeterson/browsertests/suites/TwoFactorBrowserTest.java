@@ -853,6 +853,20 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         view.getByRole(AriaRole.TOOLTIP).filter(new Locator.FilterOptions().setHasText(email));
     assertThat(tooltip).isVisible();
     assertTrue(tooltip.textContent().contains("Browser Testuser\n" + email));
+    assertTrue(
+        (Boolean)
+            tooltip.evaluate(
+                """
+                text => {
+                  const bounds = text.getBoundingClientRect();
+                  const lineHeight = parseFloat(getComputedStyle(text).lineHeight);
+                  const width = document.documentElement.clientWidth;
+                  return Math.abs(bounds.height - 2 * lineHeight) < 1
+                      && bounds.left >= 0 && bounds.right <= width
+                      && (width < 1000 || text.scrollWidth <= text.clientWidth);
+                }
+                """),
+        "Name und E-Mail müssen innerhalb des Fensters je eine Zeile belegen.");
   }
 
   private int notificationCount(Page target) {

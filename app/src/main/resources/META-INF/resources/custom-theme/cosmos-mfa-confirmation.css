@@ -1,6 +1,15 @@
 /* Gemeinsame Bestätigung, geschützter Faktorwechsel und Benutzerhilfe, Variante A. */
 @font-face { font-family:'Space Mono'; src:url('fonts/SpaceMono-Regular.ttf') format('truetype'); font-style:normal; font-weight:400; font-display:swap; }
 
+vaadin-tooltip.support-identity-tooltip {
+  --cosmos-tooltip-max-width:calc(100vw - 32px);
+}
+vaadin-tooltip.support-identity-tooltip > [slot=overlay] {
+  white-space:pre;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
 .two-factor-confirmation > .account-panel-body,
 .two-factor-restore > .account-panel-body,
 .support-recovery-help .account-panel-body { background:var(--cosmos-reference-page); }

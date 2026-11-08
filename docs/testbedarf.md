@@ -9,13 +9,8 @@
   Nach Ablehnung muss die erneute Eingabe möglich sein und der Bestätigungsbutton
   bedienbar bleiben. Die Geräteprüfung steht im [manuellen Katalog](manual-tests/README.md#hum-09).
 
-<a id="avatar-tooltip"></a>
-
-- **Ticketdarstellung – lange Werte und Avatar-Tooltips: offen.** Bei der isolierten
-  Desktopprüfung mit einer langen Testadresse brach die E-Mail im Bearbeiter-Tooltip
-  der Ticketliste auf mehrere Zeilen um. Erwartet werden insgesamt zwei Zeilen für
-  Name und E-Mail. Nach der Korrektur in Liste und Detail in DE/EN bei 1280 und 390 px
-  prüfen. Den Antragsteller-Tooltip nach Ticketwechsel und Live-Antwort prüfen.
+- **Ticketdarstellung – lange Werte und Live-Aktualisierung: offen.** Den
+  Antragsteller-Tooltip nach Ticketwechsel und Live-Antwort prüfen.
   Lange Betreffe und Bearbeiternamen dürfen Status und Ungelesen-Badge nicht
   verdrängen. Auf Smartphone müssen lange Werte im Detailkopf umbrechen können.
   Die Nutzerkarten behalten ihre bisherige Anordnung. Bei der Detailabnahme

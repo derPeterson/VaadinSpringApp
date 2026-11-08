@@ -84,6 +84,16 @@ public class OverlayUserIcon extends Div {
     addAttachListener(
         event -> {
           refreshTexts();
+          if (identityTooltipEmail != null) {
+            // Flow hängt freie Tooltips an die UI. Über das native Ziel bleibt der Stil lokal.
+            getElement()
+                .executeJs(
+                    """
+                    const tooltip = Array.from(this.ownerDocument.querySelectorAll('vaadin-tooltip'))
+                        .find(candidate => candidate.target === this);
+                    tooltip?.classList.add('support-identity-tooltip');
+                    """);
+          }
           listenProfiles();
           languageRegistration =
               ComponentUtil.addListener(
