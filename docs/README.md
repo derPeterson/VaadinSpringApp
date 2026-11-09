@@ -42,7 +42,7 @@ Konfiguration in den obigen Fachdokumenten.
 Die [Google-/Microsoft-Anmeldung](externe-anmeldung.md) und freiwillige Angaben zu
 Geschlecht/Geburtsdatum sind umgesetzt und vom Benutzer abschließend abgenommen.
 Die gewählten Designkorrekturen stehen im [Theme-Standard](theme.md).
-Die technisch umgesetzte [2FA-Erweiterung](planung/zwei-faktor-bestaetigung.md) umfasst konfigurierbare
+Die [2FA-Erweiterung](zwei-faktor-authentifizierung.md) umfasst konfigurierbare
 Rollen-/Funktionsregeln, eine Superadmin-Konfiguration, TOTP und Wiederherstellung.
 Sie ersetzt die frühere Google-Zwischenlösung für sensible Aktionen durch einen
 Faktornachweis. Der geschützte Ersteinrichtungsweg und seine Grenzen stehen in der
@@ -52,10 +52,8 @@ Entwicklungs-Ausnahme ist vom sicheren Betrieb getrennt. Die
 Anbieterverwaltung ausschließlich für Superadmins gehört verbindlich zum Paket.
 Für die erste Google-2FA-Einrichtung sind erneute Anbieterbestätigung, E-Mail-Code
 und erster TOTP mit ausdrücklich akzeptiertem Restrisiko abgestimmt. Bestehende
-2FA kann dadurch nicht ersetzt werden. Die Umsetzung und ihre gezielten isolierten
-Nachprüfungen sind abgeschlossen. Die gemeinsame fachliche und gestalterische
-Abnahme auf dem Feature-Branch steht noch aus.
-Bedienung und Grenzen stehen in der [2FA-Dokumentation](zwei-faktor-authentifizierung.md).
+2FA kann dadurch nicht ersetzt werden. Die Umsetzung ist fachlich und gestalterisch
+abgenommen. Die automatisierten Ergebnisse stehen im [Prüfstand](status.md).
 Weitere bewertete Möglichkeiten stehen in der
 [Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).
 Die [Vaadin-Komponentenprüfung](planung/vaadin-komponenten-abgleich.md) enthält die

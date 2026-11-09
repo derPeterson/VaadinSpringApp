@@ -216,8 +216,7 @@ auch gespeicherte Ausnahmen wirkungslos. Alle Konto-, Sitzungs-, Zweck-, Version
 Signatur-, State-, Nonce- und PKCE-Prüfungen bleiben erhalten.
 
 Details zu Einrichtung, Regeln, Wiederherstellung und Grenzen stehen unter
-[Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md). Die laufende
-Umsetzung und gemeinsame Abnahme stehen im [Plan](planung/zwei-faktor-bestaetigung.md).
+[Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md).
 Fehlgeschlagene Bestätigungen kehren zur Kontosicherheit mit passender Meldung zurück,
 sie beginnen keine neue Registrierung.
 ### Welche Kontoaktionen möglich sind

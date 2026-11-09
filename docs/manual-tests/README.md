@@ -272,8 +272,8 @@ und nicht ausgeführte Varianten ausdrücklich dokumentieren. Keine Geheimnisse 
 
 ### HUM-09 · Eigener Authenticator und Ersatzcode-Dokument
 
-**Einordnung:** Menschliche Geräte-, Bedienungs- und Designabnahme der laufenden
-2FA-Umsetzung. Die automatisierten RFC-/Zeit-/Replayprüfungen ersetzen sie nicht.
+**Einordnung:** Manuelle Prüfung der 2FA-Bedienung mit echter Hardware und einer
+Authenticator-App. Die automatisierten RFC-, Zeit- und Replayprüfungen ergänzen sie.
 
 Auf einer eigenen isolierten Testinstanz einen neuen Authenticator mit einer frei
 gewählten TOTP-App am echten Smartphone einrichten. QR und alternativ den manuellen
@@ -289,7 +289,7 @@ ihre eigene Bestätigung. Authenticatorwechsel mit vorhandenem Nachweis durchfü
 neue Codes sichern und verlorenen Zugriff über die eingeschränkte Hilfsanfrage
 durchgehen. Ein Ticket oder die versandte Anleitung darf die Sperre nicht aufheben.
 
-**Offene Geräteprüfung.** In Einrichtung und Anmeldebestätigung die
+**Autofill auf echten Geräten.** In Einrichtung und Anmeldebestätigung die
 Autofill-Funktion des verwendeten Browsers oder Passwortmanagers in DE/EN
 auf Desktop und Smartphone prüfen. Ein vollständiger Code löst genau eine
 Prüfung aus. Ein Teilcode löst keine aus und lässt das Formular geöffnet.
