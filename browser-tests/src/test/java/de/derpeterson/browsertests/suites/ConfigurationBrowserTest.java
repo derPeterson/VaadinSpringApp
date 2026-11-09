@@ -352,14 +352,14 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   }
 
   @Test
-  @DisplayName("CONFIG-05D: Normale Admins erreichen alle 30 Feldinfos ihrer acht Gruppen")
+  @DisplayName("CONFIG-05D: Normale Admins erreichen alle Feldinfos ihrer acht Gruppen")
   @Description(
       """
         1. Alle acht für normale Admins freigegebenen Konfigurationsgruppen über die native SideNav öffnen.
         2. Jede Feldinfo per Klick öffnen: übersetzter Standardwert und nicht leere Eingaberegeln.
         3. Nur eine Info gleichzeitig sichtbar; per Info-Button wieder schließen.
         4. Ein gesetzter Standard-Geheimschlüssel bleibt vertraulich; das leere SMTP-Passwort zeigt ausdrücklich den Leerhinweis.
-        5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder; insgesamt sind 30 Infos erreichbar.
+        5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder, einschließlich Sitzungs-Timeout.
         **Erwartet:** Keine Gruppe verliert ihre Bedienung; alle bisherigen Felder erhalten die gemeinsame Info-Funktion.
         """)
   void everyConfigurationFieldHasAnAccessibleLocalizedInfo() {
@@ -402,7 +402,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       }
       total += count;
     }
-    assertEquals(30, total);
+    assertEquals(31, total);
   }
 
   @Tag("fast")
