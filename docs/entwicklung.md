@@ -72,7 +72,10 @@ Der Servicename wird mit `APP_CFG_SERVICE_NAME=derPeter` in der `.env` vorgegebe
 Ohne diese Variable gilt `{ServiceName}`. Änderungen benötigen einen Neustart und
 überschreiben keinen bereits gespeicherten Servicenamen.
 `ConfigService` bewahrt Strings unverändert; typisierte Getter lehnen ungültige
-Zahlen/Booleans ab. SMTP, Remember-me und Workerzahl werden beim Start gebunden.
+Zahlen und Booleans ab. Die Admin-Konfiguration gilt ab der nächsten betroffenen
+Aktion. SMTP-Einstellungen werden gemeinsam gespeichert und bei Verbindungsaufbau
+gelesen. Die Workerzahl gilt ab dem nächsten Durchlauf der E-Mail-Queue. Der
+Schlüssel für gespeicherte Anmeldungen benötigt einen Neustart.
 
 ### Zentraler Konfigurationskatalog
 
@@ -105,6 +108,13 @@ für TOTP und Anmeldeanbieter bleiben außerhalb der Datenbank. Anbieter-Secrets
 liegen ausschließlich als authentifiziert verschlüsselter Inhalt in
 `external_providers.encrypted_client_secret`. Einrichtung und Grenzen stehen in
 der [Anbieteranleitung](externe-anmeldung.md).
+
+Das Anmeldeversuchsfenster und die Wartezeit für erneute E-Mail-Zustellungen
+sind fachliche Werte und deshalb in der Admin-Oberfläche einstellbar.
+Die Dauer einer bereits verhängten Anmeldesperre, technische Takte für
+Hintergrundprüfungen und die Grenzen des 2FA-Protokolls bleiben im Code.
+Die Bootstrap-Kontolisten und die Netz- und Datenbankparameter bleiben in der
+Startkonfiguration, da sie den Aufbau der Anwendung steuern.
 
 Bootstrap ist standardmäßig aus. Die optionalen Listen `app.bootstrap.superadmins`,
 `admins`, `users` und `guests` legen explizite lokale Testkonten mit genau ihrer

@@ -17,7 +17,10 @@ public class ThreadPoolConfig {
 
   @Bean(name = "emailTaskExecutor", destroyMethod = "shutdown")
   public ThreadPoolExecutor taskExecutor() {
-    int poolSize = configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE);
+    return newExecutor(configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE));
+  }
+
+  public static ThreadPoolExecutor newExecutor(int poolSize) {
     if (poolSize < 1) {
       throw new IllegalArgumentException("Email worker pool size must be positive.");
     }

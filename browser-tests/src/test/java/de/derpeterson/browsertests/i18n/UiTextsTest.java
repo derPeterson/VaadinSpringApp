@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.time.LocalDate;
+import java.util.Locale;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -64,7 +65,7 @@ class UiTextsTest {
         }) {
       assertFalse(value.contains("{0}"));
       assertFalse(value.contains("\uFFFD"));
-      assertTrue(value.contains("min"));
+      assertTrue(value.toLowerCase(Locale.ROOT).contains("min"), value);
     }
   }
 

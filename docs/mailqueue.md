@@ -35,8 +35,13 @@ Eine komfortable Recovery-Oberfläche ist derzeit nicht vorhanden.
 
 ## Konfiguration und Bereinigung
 
-- Workerzahl wird beim Start gebunden; Kapazität und Retrylimit pro Lauf gelesen.
-- Kapazität muss positiv, Retrylimit nichtnegativ sein.
+- Workerzahl, Auswahlgrenze, Retrylimit und Wartezeit gelten ab dem nächsten
+  Durchlauf. Laufende Durchläufe behalten ihre Werte.
+- Die Wartezeit beträgt standardmäßig eine Minute. Sie gilt auch für bereits
+  wartende Wiederholungen. Auswahlgrenze und Wartezeit müssen positiv sein,
+  das Retrylimit muss mindestens null sein.
+- Neue SMTP-Verbindungen verwenden den zuletzt vollständig gespeicherten Stand
+  der SMTP-Einstellungen. Bereits verbundene Transporte behalten ihre Einstellungen.
 - SENT-Aufbewahrung folgt createdAt und einer positiven Dauer; die Löschgrenze ist strikt.
 - FAILED-Einträge werden nach mehr als 30 Tagen seit lastRetryAt bereinigt.
 - PENDING und IN_PROGRESS werden durch diese Aufbewahrungsjobs nicht gelöscht.

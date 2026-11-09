@@ -115,6 +115,7 @@ class LoginSingleConnectionTest {
     ConfigService config() {
       ConfigService config = mock(ConfigService.class);
       when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(2);
+      when(config.getInteger(ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS)).thenReturn(900);
       return config;
     }
 

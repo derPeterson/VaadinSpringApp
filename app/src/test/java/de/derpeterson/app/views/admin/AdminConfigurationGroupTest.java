@@ -23,6 +23,7 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.config.AdminConfigGroup;
+import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -279,6 +281,55 @@ class AdminConfigurationGroupTest {
   }
 
   @Test
+  void restartWarningNamesOnlyTheChangedStartupSetting() {
+    section.showGroup(AdminConfigGroup.SECURITY);
+    Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    AdminDurationField timeout =
+        (AdminDurationField) inputs.get(ConfigEntry.SESSION_TIMEOUT_SECONDS);
+    PasswordField key = (PasswordField) inputs.get(ConfigEntry.REMEMBER_ME_SECRET_KEY);
+    MessageProperties messages = new MessageProperties(provider);
+    NotificationHelper notification = NotificationHelper.getInstance();
+    try {
+      timeout.setSecondsValue(120);
+      ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
+      Supplier<?> ordinary =
+          (Supplier<?>) ReflectionTestUtils.getField(notification, "messageSupplier");
+      assertEquals(messages.getAdminConfigSaveSuccess(), ordinary.get());
+
+      timeout.setSecondsValue(120);
+      key.setValue("fixture-new-key");
+      ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
+      Supplier<?> warning =
+          (Supplier<?>) ReflectionTestUtils.getField(notification, "messageSupplier");
+      assertEquals(
+          messages.getAdminConfigRestartSaved()
+              + " "
+              + messages.getAdminConfigEntryRememberMeSecretKey(),
+          warning.get());
+    } finally {
+      notification.closeAndClearAllNotifications();
+    }
+  }
+
+  @Test
+  void fieldHelpSeparatesLiveTimingFromTheRestartWarning() {
+    section.showGroup(AdminConfigGroup.SECURITY);
+    MessageProperties messages = new MessageProperties(provider);
+    AdminSidePanel help = (AdminSidePanel) ReflectionTestUtils.getField(section, "helpPanel");
+
+    ReflectionTestUtils.invokeMethod(section, "openHelp", ConfigEntry.SESSION_TIMEOUT_SECONDS);
+    String timeoutCopy = help.getElement().getTextRecursively();
+    assertTrue(timeoutCopy.contains(messages.getAdminConfigEffectiveTitle()));
+    assertTrue(timeoutCopy.contains(messages.getAdminConfigEffectiveSessionNew()));
+    assertTrue(timeoutCopy.contains(messages.getAdminConfigEffectiveSessionExisting()));
+    assertFalse(timeoutCopy.contains(messages.getAdminConfigRestartRequired()));
+
+    ReflectionTestUtils.invokeMethod(section, "openHelp", ConfigEntry.REMEMBER_ME_SECRET_KEY);
+    assertTrue(
+        help.getElement().getTextRecursively().contains(messages.getAdminConfigRestartRequired()));
+  }
+
+  @Test
   void durationConvertsExactlyAndRejectsOverflowWithoutSaving() {
     section.showGroup(AdminConfigGroup.SECURITY);
     Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
@@ -380,6 +431,7 @@ class AdminConfigurationGroupTest {
             ConfigEntry.REMEMBER_ME_DURATION,
             ConfigEntry.REMEMBER_ME_SECRET_KEY,
             ConfigEntry.LOGIN_ATTEMPTS_LIMIT,
+            ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS,
             ConfigEntry.MAX_SESSIONS_PER_USER,
             ConfigEntry.SESSION_TIMEOUT_SECONDS,
             ConfigEntry.MAINTENANCE_MODE);

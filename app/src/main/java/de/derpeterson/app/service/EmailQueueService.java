@@ -44,7 +44,6 @@ public class EmailQueueService {
   private static final Logger logger = LoggerFactory.getLogger(EmailQueueService.class);
   private static final List<EmailStatus> OPEN_STATUSES =
       List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS);
-  private static final Duration RETRY_INTERVAL = Duration.ofMinutes(1);
 
   private final ConfigService configService;
 
@@ -195,7 +194,12 @@ public class EmailQueueService {
     if (maxRetry < 0) {
       throw new IllegalArgumentException("Email queue retry limit must not be negative.");
     }
-    LocalDateTime retryCutoff = LocalDateTime.now(clock).minus(RETRY_INTERVAL);
+    int retryDelaySeconds = configService.getInteger(ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS);
+    if (retryDelaySeconds < 1) {
+      throw new IllegalArgumentException("Email queue retry delay must be positive.");
+    }
+    Duration retryDelay = Duration.ofSeconds(retryDelaySeconds);
+    LocalDateTime retryCutoff = LocalDateTime.now(clock).minus(retryDelay);
     List<Long> pendingIds =
         transaction.execute(
             status ->
@@ -204,10 +208,10 @@ public class EmailQueueService {
                     .stream()
                     .map(EmailQueueEntity::getId)
                     .toList());
-    workers.process(pendingIds, id -> processCandidate(id, maxRetry));
+    workers.process(pendingIds, id -> processCandidate(id, maxRetry, retryDelay));
   }
 
-  private void processCandidate(long id, int maxRetry) {
+  private void processCandidate(long id, int maxRetry, Duration retryDelay) {
     TransactionTemplate transaction = new TransactionTemplate(transactionManager);
     transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     try {
@@ -219,9 +223,7 @@ public class EmailQueueService {
                   return null;
                 }
                 if (email.getLastRetryAt() != null
-                    && email
-                        .getLastRetryAt()
-                        .isAfter(LocalDateTime.now(clock).minus(RETRY_INTERVAL))) {
+                    && email.getLastRetryAt().isAfter(LocalDateTime.now(clock).minus(retryDelay))) {
                   return null;
                 }
                 // Empfänger im frischen Worker-Claim initialisieren, SMTP außerhalb der

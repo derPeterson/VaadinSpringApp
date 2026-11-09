@@ -626,6 +626,7 @@ class AccountSecurityServicePersistenceTest {
   @Test
   void currentPasswordChecksUseTheConfiguredPersistentAttemptLimit() {
     when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(1);
+    when(config.getInteger(ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS)).thenReturn(900);
     try {
       PasswordChange wrongPasswordChange =
           new PasswordChange("Wrong!", "New-secret!", "New-secret!");

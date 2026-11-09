@@ -103,6 +103,7 @@ class EmailQueueServiceTest {
               lenient().when(adminAttempts.lockById(1L)).thenReturn(Optional.of(audit));
               return audit;
             });
+    lenient().when(config.getInteger(ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS)).thenReturn(60);
     lenient().when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(3);
     user =
         UserEntity.builder()
@@ -220,6 +221,20 @@ class EmailQueueServiceTest {
     service.processQueue();
     verifyNoInteractions(mail, users);
     verify(emails, never()).save(any());
+  }
+
+  @Test
+  void nextBatchUsesTheChangedRetryDelay() {
+    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(7);
+    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS)).thenReturn(60, 180);
+    PageRequest page = PageRequest.of(0, 7);
+    when(emails.findPendingEmails(any(), eq(page))).thenReturn(List.of());
+
+    service.processQueue();
+    service.processQueue();
+
+    verify(emails).findPendingEmails(LocalDateTime.now(clock).minusSeconds(60), page);
+    verify(emails).findPendingEmails(LocalDateTime.now(clock).minusSeconds(180), page);
   }
 
   @ParameterizedTest

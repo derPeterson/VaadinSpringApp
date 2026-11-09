@@ -125,8 +125,12 @@ class SessionManagementTest {
     admissions = new SessionAdmissionService(config, registry);
     admissions.setDeviceTokens(tokens);
     remembered =
-        new DeviceRememberMeServices("isolated-remember-me-key", users, tokens, admissions);
-    remembered.setTokenValiditySeconds(config.getInteger(ConfigEntry.REMEMBER_ME_DURATION));
+        new DeviceRememberMeServices(
+            "isolated-remember-me-key",
+            users,
+            tokens,
+            admissions,
+            () -> config.getInteger(ConfigEntry.REMEMBER_ME_DURATION));
     remembered.afterPropertiesSet();
     security =
         new SecurityService(
@@ -154,20 +158,19 @@ class SessionManagementTest {
   }
 
   @Test
-  void changingSavedLoginDurationOnlyTakesEffectAfterRestart() {
+  void changingSavedLoginDurationTakesEffectWithoutRestart() {
     Login owner = login(true);
+    assertEquals(3600, cookie(owner).getMaxAge());
     String series = tokens.saved(IDENTITY, 3600).getFirst().series();
     jdbc.update(
         "update persistent_logins set last_used=? where series=?",
         Timestamp.from(Instant.now().minusSeconds(120)),
         series);
-    when(config.getInteger(ConfigEntry.REMEMBER_ME_DURATION)).thenReturn(1);
-    management.list(owner.request());
     management.deleteExpiredSavedLogins();
-    assertNotNull(
-        tokens.getTokenForSeries(series),
-        "Eine nur gespeicherte startgebundene Konfiguration darf keinen gültigen Zugang löschen");
-    restart();
+    assertNotNull(tokens.getTokenForSeries(series));
+    when(config.getInteger(ConfigEntry.REMEMBER_ME_DURATION)).thenReturn(1);
+    assertNull(returnWith(cookie(owner), new MockHttpServletRequest()));
+    management.list(owner.request());
     management.deleteExpiredSavedLogins();
     assertNull(tokens.getTokenForSeries(series));
     assertEquals(0, jdbc.queryForObject("select count(*) from remembered_device", Integer.class));

@@ -866,6 +866,7 @@ class SecurityChainRegressionTest {
       when(config.getInteger(ConfigEntry.REMEMBER_ME_DURATION)).thenReturn(3600);
       when(config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(1800);
       when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(10);
+      when(config.getInteger(ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS)).thenReturn(900);
       when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3);
       return config;
     }

@@ -56,6 +56,7 @@ public final class DurableSessionRepository<S extends Session>
   private final FindByIndexNameSessionRepository<S> backend;
   private final UserDetailsService users;
   private final Supplier<String> rememberKey;
+  private final Supplier<Duration> timeout;
   private final Map<String, RuntimeState> runtime = new ConcurrentHashMap<>();
 
   /** Ein bereits geladener Request darf nach paralleler Abmeldung keine Rechte mehr erhalten. */
@@ -78,15 +79,18 @@ public final class DurableSessionRepository<S extends Session>
   public DurableSessionRepository(
       FindByIndexNameSessionRepository<S> backend,
       UserDetailsService users,
-      Supplier<String> rememberKey) {
+      Supplier<String> rememberKey,
+      Supplier<Duration> timeout) {
     this.backend = backend;
     this.users = users;
     this.rememberKey = rememberKey;
+    this.timeout = timeout;
   }
 
   @Override
   public LiveSession createSession() {
     S stored = backend.createSession();
+    stored.setMaxInactiveInterval(timeout.get());
     backend.save(stored);
     return wrap(stored);
   }

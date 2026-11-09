@@ -4,14 +4,34 @@ import jakarta.mail.AuthenticationFailedException;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.MimeMessage;
+import java.util.function.Supplier;
 import org.springframework.mail.MailSendException;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 /** Records failure at the connection boundary, not from exception text or cause type. */
 public class ConnectionAwareJavaMailSender extends JavaMailSenderImpl {
 
+  private final Supplier<ConnectionAwareJavaMailSender> connectionSettings;
+
+  public ConnectionAwareJavaMailSender() {
+    connectionSettings = null;
+  }
+
+  ConnectionAwareJavaMailSender(Supplier<ConnectionAwareJavaMailSender> connectionSettings) {
+    this.connectionSettings = connectionSettings;
+  }
+
   @Override
   protected Transport connectTransport() throws MessagingException {
+    if (connectionSettings != null) {
+      try {
+        ConnectionAwareJavaMailSender sender = connectionSettings.get();
+        sender.getJavaMailProperties().putAll(getJavaMailProperties());
+        return sender.connectTransport();
+      } catch (RuntimeException failure) {
+        throw new ConnectionFailure(new MessagingException("SMTP settings unavailable", failure));
+      }
+    }
     try {
       return super.connectTransport();
     } catch (AuthenticationFailedException e) {

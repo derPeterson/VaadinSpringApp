@@ -142,21 +142,30 @@ class DurableSessionPersistenceTest {
           }
           return current;
         },
-        key::get);
+        key::get,
+        () -> SessionPersistenceConfiguration.sessionTimeout(config));
   }
 
   @Test
-  void changedTimeoutAppliesOnlyToSessionsCreatedAfterRestart() {
+  void changedTimeoutAppliesImmediatelyOnlyToNewSessions() {
     Session existing = repository.createSession();
     assertEquals(Duration.ofMinutes(30), existing.getMaxInactiveInterval());
 
     when(config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(10);
-    assertEquals(Duration.ofMinutes(30), repository.createSession().getMaxInactiveInterval());
+    assertEquals(
+        Duration.ofMinutes(30), repository.findById(existing.getId()).getMaxInactiveInterval());
+    assertEquals(Duration.ofSeconds(10), repository.createSession().getMaxInactiveInterval());
 
     DurableSessionRepository<?> restarted = restart();
     assertEquals(
         Duration.ofMinutes(30), restarted.findById(existing.getId()).getMaxInactiveInterval());
     assertEquals(Duration.ofSeconds(10), restarted.createSession().getMaxInactiveInterval());
+  }
+
+  @Test
+  void invalidTimeoutIsRejectedAtStartup() {
+    when(config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(0);
+    assertThrows(IllegalArgumentException.class, this::restart);
   }
 
   private SecurityContext context(boolean remembered) {

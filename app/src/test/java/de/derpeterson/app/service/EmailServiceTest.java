@@ -213,11 +213,6 @@ class EmailServiceTest {
   }
 
   private JavaMailSenderImpl configuredSender() {
-    when(config.getString(ConfigEntry.MAIL_HOST)).thenReturn("smtp.invalid");
-    when(config.getString(ConfigEntry.MAIL_USERNAME)).thenReturn("fixture-user");
-    when(config.getString(ConfigEntry.MAIL_PASSWORD)).thenReturn("fixture-only-not-a-secret");
-    when(config.getString(ConfigEntry.MAIL_SMTP_SSL_TRUST)).thenReturn("smtp.invalid");
-    when(config.getString(ConfigEntry.MAIL_DEBUG)).thenReturn("false");
     return (JavaMailSenderImpl) new MailConfig(config).javaMailSender();
   }
 

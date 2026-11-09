@@ -13,7 +13,10 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailQueueWorkerPool;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -61,6 +64,36 @@ class ThreadPoolConfigTest {
     } finally {
       inherited.remove();
       executor.shutdownNow();
+    }
+  }
+
+  @Test
+  void nextBatchUsesTheSavedWorkerCount() {
+    ConfigService config = mock(ConfigService.class);
+    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(1);
+    ThreadPoolExecutor initial = new ThreadPoolConfig(config).taskExecutor();
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(initial, config);
+    try {
+      pool.process(List.of(1L), ignored -> {});
+      when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(2);
+      CountDownLatch started = new CountDownLatch(2);
+      AtomicInteger concurrentlyStarted = new AtomicInteger();
+      pool.process(
+          List.of(2L, 3L),
+          ignored -> {
+            started.countDown();
+            try {
+              if (started.await(5, TimeUnit.SECONDS)) {
+                concurrentlyStarted.incrementAndGet();
+              }
+            } catch (InterruptedException _) {
+              Thread.currentThread().interrupt();
+            }
+          });
+      assertTrue(initial.isShutdown());
+      assertEquals(2, concurrentlyStarted.get());
+    } finally {
+      pool.shutdown();
     }
   }
 

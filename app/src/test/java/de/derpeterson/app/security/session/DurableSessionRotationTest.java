@@ -69,7 +69,11 @@ class DurableSessionRotationTest {
         .when(backend)
         .save(any(MapSession.class));
     DurableSessionRepository<MapSession> repository =
-        new DurableSessionRepository<>(backend, mock(UserDetailsService.class), () -> "fixture");
+        new DurableSessionRepository<>(
+            backend,
+            mock(UserDetailsService.class),
+            () -> "fixture",
+            () -> java.time.Duration.ofMinutes(30));
     Session session = repository.createSession();
     oldId.set(session.getId());
     VaadinSession ui = mock(VaadinSession.class);

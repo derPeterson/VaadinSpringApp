@@ -155,13 +155,17 @@ public class SecurityConfig {
       CustomUserDetailsService userDetailsService,
       SessionAdmissionService admissions) {
     String secretKey = configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY);
-    int duration = configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION);
 
-    DeviceRememberMeServices tempRememberMeServices =
-        new DeviceRememberMeServices(secretKey, userDetailsService, tokenRepository, admissions);
-    tempRememberMeServices.setTokenValiditySeconds(duration);
-    tempRememberMeServices.setCookieCustomizer(cookie -> cookie.setAttribute("SameSite", "Lax"));
-    return tempRememberMeServices;
+    DeviceRememberMeServices remembered =
+        new DeviceRememberMeServices(
+            secretKey,
+            userDetailsService,
+            tokenRepository,
+            admissions,
+            () -> configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION));
+    remembered.validitySeconds();
+    remembered.setCookieCustomizer(cookie -> cookie.setAttribute("SameSite", "Lax"));
+    return remembered;
   }
 
   @Bean

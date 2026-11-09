@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
@@ -102,6 +103,7 @@ class EmailQueueWorkerIntegrationTest {
     reset(config, mail, probes.emails(), probes.users(), probes.adminAttempts());
     clock.set(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(2);
+    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS)).thenReturn(60);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(50);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
     when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.test");
@@ -175,10 +177,7 @@ class EmailQueueWorkerIntegrationTest {
   void realSmtpUsesTwoConcurrentTransportsAndRefillsWithoutMimeMixups() throws Exception {
     try (SmtpFixture smtp = new SmtpFixture(2);
         ExecutorService caller = Executors.newSingleThreadExecutor()) {
-      when(config.getString(ConfigEntry.MAIL_HOST)).thenReturn("127.0.0.1");
-      when(config.getInteger(ConfigEntry.MAIL_PORT)).thenReturn(smtp.port());
-      when(config.getString(ConfigEntry.MAIL_SMTP_SSL_TRUST)).thenReturn("127.0.0.1");
-      when(config.getString(ConfigEntry.MAIL_DEBUG)).thenReturn("false");
+      when(config.snapshot(anyList())).thenReturn(smtpSettings(smtp));
       when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.test");
       when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(3);
       JavaMailSender sender = new MailConfig(config).javaMailSender();
@@ -211,6 +210,38 @@ class EmailQueueWorkerIntegrationTest {
           (subject, body) -> assertEquals("<p>body:" + subject + "</p>\r\n", body));
       assertTrue(smtp.failures.isEmpty(), smtp.failures::toString);
     }
+  }
+
+  @Test
+  void savedSmtpSettingsApplyAtTheNextConnectionWithoutRecreatingTheSender() throws Exception {
+    try (SmtpFixture first = new SmtpFixture(1);
+        SmtpFixture second = new SmtpFixture(1)) {
+      first.release.countDown();
+      second.release.countDown();
+      when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.test");
+      when(config.snapshot(anyList())).thenReturn(smtpSettings(first));
+      EmailService mail = new EmailService(config, new MailConfig(config).javaMailSender());
+
+      mail.sendAdminEmail("recipient@example.test", "first transport", "fixture");
+      when(config.snapshot(anyList())).thenReturn(smtpSettings(second));
+      mail.sendAdminEmail("recipient@example.test", "second transport", "fixture");
+
+      assertEquals(Set.of("first transport"), first.messages.keySet());
+      assertEquals(Set.of("second transport"), second.messages.keySet());
+    }
+  }
+
+  private static Map<ConfigEntry, String> smtpSettings(SmtpFixture smtp) {
+    return Map.of(
+        ConfigEntry.MAIL_HOST, "127.0.0.1",
+        ConfigEntry.MAIL_PORT, Integer.toString(smtp.port()),
+        ConfigEntry.MAIL_USERNAME, "",
+        ConfigEntry.MAIL_PASSWORD, "",
+        ConfigEntry.MAIL_SMTP_AUTH, "false",
+        ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE, "false",
+        ConfigEntry.MAIL_SMTP_SSL_ENABLE, "false",
+        ConfigEntry.MAIL_SMTP_SSL_TRUST, "*",
+        ConfigEntry.MAIL_DEBUG, "false");
   }
 
   @Test

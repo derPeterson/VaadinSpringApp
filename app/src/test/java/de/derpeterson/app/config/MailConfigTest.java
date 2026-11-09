@@ -2,11 +2,13 @@ package de.derpeterson.app.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import java.util.Map;
 import java.util.Properties;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -18,20 +20,24 @@ class MailConfigTest {
   @ValueSource(booleans = {false, true})
   void productionSenderSetsUtf8AndPreservesConnectionProperties(boolean enabled) {
     ConfigService config = mock(ConfigService.class);
-    when(config.getString(ConfigEntry.MAIL_HOST)).thenReturn("smtp.invalid");
-    when(config.getInteger(ConfigEntry.MAIL_PORT)).thenReturn(2525);
-    when(config.getString(ConfigEntry.MAIL_USERNAME)).thenReturn("fixture-user");
-    when(config.getString(ConfigEntry.MAIL_PASSWORD)).thenReturn("fixture-only-not-a-secret");
-    when(config.getString(ConfigEntry.MAIL_SMTP_SSL_TRUST)).thenReturn("smtp.invalid");
-    when(config.getString(ConfigEntry.MAIL_DEBUG)).thenReturn("false");
-    when(config.getBoolean(ConfigEntry.MAIL_SMTP_AUTH)).thenReturn(enabled);
-    when(config.getBoolean(ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE)).thenReturn(enabled);
-    when(config.getBoolean(ConfigEntry.MAIL_SMTP_SSL_ENABLE)).thenReturn(enabled);
+    when(config.snapshot(anyList()))
+        .thenReturn(
+            Map.of(
+                ConfigEntry.MAIL_HOST, "smtp.invalid",
+                ConfigEntry.MAIL_PORT, "2525",
+                ConfigEntry.MAIL_USERNAME, "fixture-user",
+                ConfigEntry.MAIL_PASSWORD, "fixture-only-not-a-secret",
+                ConfigEntry.MAIL_SMTP_SSL_TRUST, "smtp.invalid,backup.invalid",
+                ConfigEntry.MAIL_DEBUG, "false",
+                ConfigEntry.MAIL_SMTP_AUTH, Boolean.toString(enabled),
+                ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE, Boolean.toString(enabled),
+                ConfigEntry.MAIL_SMTP_SSL_ENABLE, Boolean.toString(enabled)));
 
-    ConnectionAwareJavaMailSender sender =
-        assertInstanceOf(
-            ConnectionAwareJavaMailSender.class, new MailConfig(config).javaMailSender());
-
+    MailConfig mail = new MailConfig(config);
+    ConnectionAwareJavaMailSender live =
+        assertInstanceOf(ConnectionAwareJavaMailSender.class, mail.javaMailSender());
+    ConnectionAwareJavaMailSender sender = mail.configuredSender();
+    assertEquals("UTF-8", new MimeMessageHelper(live.createMimeMessage()).getEncoding());
     assertEquals("UTF-8", sender.getDefaultEncoding());
     assertEquals("UTF-8", new MimeMessageHelper(sender.createMimeMessage()).getEncoding());
     assertEquals("smtp.invalid", sender.getHost());
@@ -42,7 +48,8 @@ class MailConfigTest {
     assertEquals(enabled, properties.get(ConfigEntry.MAIL_SMTP_AUTH.getKey()));
     assertEquals(enabled, properties.get(ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE.getKey()));
     assertEquals(enabled, properties.get(ConfigEntry.MAIL_SMTP_SSL_ENABLE.getKey()));
-    assertEquals("smtp.invalid", properties.get(ConfigEntry.MAIL_SMTP_SSL_TRUST.getKey()));
+    assertEquals(
+        "smtp.invalid backup.invalid", properties.get(ConfigEntry.MAIL_SMTP_SSL_TRUST.getKey()));
     assertEquals("false", properties.get(ConfigEntry.MAIL_DEBUG.getKey()));
     assertEquals(5, properties.size());
   }

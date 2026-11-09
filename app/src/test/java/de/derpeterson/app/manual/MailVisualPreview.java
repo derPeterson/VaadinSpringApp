@@ -1,5 +1,6 @@
 package de.derpeterson.app.manual;
 
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -65,16 +66,29 @@ final class MailVisualPreview {
     when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("© {year} {serviceName}");
     when(config.getString(ConfigEntry.BASE_URL)).thenReturn(BASE_URL);
     when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(from);
-    when(config.getString(ConfigEntry.MAIL_HOST)).thenReturn(host);
-    when(config.getInteger(ConfigEntry.MAIL_PORT)).thenReturn(port);
-    when(config.getString(ConfigEntry.MAIL_USERNAME)).thenReturn(username);
-    when(config.getString(ConfigEntry.MAIL_PASSWORD)).thenReturn(password);
-    when(config.getBoolean(ConfigEntry.MAIL_SMTP_AUTH)).thenReturn(auth);
     when(config.getBoolean(ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE))
         .thenReturn("starttls".equals(security));
-    when(config.getBoolean(ConfigEntry.MAIL_SMTP_SSL_ENABLE)).thenReturn("ssl".equals(security));
-    when(config.getString(ConfigEntry.MAIL_SMTP_SSL_TRUST)).thenReturn(host);
-    when(config.getString(ConfigEntry.MAIL_DEBUG)).thenReturn("false");
+    when(config.snapshot(anyList()))
+        .thenReturn(
+            Map.of(
+                ConfigEntry.MAIL_HOST,
+                host,
+                ConfigEntry.MAIL_PORT,
+                Integer.toString(port),
+                ConfigEntry.MAIL_USERNAME,
+                username,
+                ConfigEntry.MAIL_PASSWORD,
+                password,
+                ConfigEntry.MAIL_SMTP_AUTH,
+                Boolean.toString(auth),
+                ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE,
+                Boolean.toString("starttls".equals(security)),
+                ConfigEntry.MAIL_SMTP_SSL_ENABLE,
+                Boolean.toString("ssl".equals(security)),
+                ConfigEntry.MAIL_SMTP_SSL_TRUST,
+                host,
+                ConfigEntry.MAIL_DEBUG,
+                "false"));
     return new MailVisualPreview(config, recipient, examples(config, languages));
   }
 
@@ -199,7 +213,7 @@ final class MailVisualPreview {
   }
 
   JavaMailSenderImpl createSender() {
-    JavaMailSenderImpl sender = (JavaMailSenderImpl) new MailConfig(configuration).javaMailSender();
+    JavaMailSenderImpl sender = new MailConfig(configuration).configuredSender();
     sender.getJavaMailProperties().remove(ConfigEntry.MAIL_SMTP_SSL_TRUST.getKey());
     sender.getJavaMailProperties().setProperty("mail.smtp.connectiontimeout", "10000");
     sender.getJavaMailProperties().setProperty("mail.smtp.timeout", "10000");

@@ -19,6 +19,7 @@ public enum ConfigEntry {
   REMEMBER_ME_SECRET_KEY("rememberMe.secret.key", "change-me-remember-me-secret"),
   USER_AUTO_ABSENT_TIMEOUT("user.auto.absent.timeout", Duration.ofMinutes(10).toString()),
   LOGIN_ATTEMPTS_LIMIT("login.attempts.limit", 10),
+  LOGIN_ATTEMPT_WINDOW_SECONDS("login.attempt.window.seconds", 900),
   MAX_SESSIONS_PER_USER("max.sessions.per.user", 3),
   SESSION_TIMEOUT_SECONDS("session.timeout.seconds", 1800),
   MAINTENANCE_MODE("maintenance.mode", false),
@@ -51,6 +52,7 @@ public enum ConfigEntry {
   EMAIL_QUEUE_POOL_SIZE("email.queue.pool.size", 5),
   EMAIL_QUEUE_CAPACITY("email.queue.capacity", 50),
   EMAIL_QUEUE_MAX_RETRY("email.queue.max_retry", 3),
+  EMAIL_QUEUE_RETRY_DELAY_SECONDS("email.queue.retry.delay.seconds", 60),
   EMAIL_QUEUE_SENT_LIVE_DURATION("email.queue.sent.live.duration", Duration.ofDays(7).toString());
 
   private final String key;

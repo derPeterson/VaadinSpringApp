@@ -180,7 +180,7 @@ Mailpit-Instanz und Ports. Innerhalb eines Workers läuft JUnit sequenziell;
 Threadparallelität mit gemeinsamem Fixture nicht als Ersatz aktivieren.
 
 Die Suite `operations` verwendet zusätzlich ein zweites eigenes Mailpit ohne
-Hostports. Sie prüft die beim Start gebundene SMTP-Konfiguration sowie echte
+Hostports. Sie prüft den Wechsel der SMTP-Konfiguration ohne Neustart sowie echte
 Verbindungsfehler mit Retry und terminalem Ende. Anwendungsneustarts verwenden
 dieselbe eigene Datenbank und deaktivieren Bootstrap ausdrücklich.
 

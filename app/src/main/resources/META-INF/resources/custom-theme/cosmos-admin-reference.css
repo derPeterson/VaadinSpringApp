@@ -490,6 +490,7 @@ vaadin-dialog.admin-reference-drawer.admin-config-help :is(.admin-help-rules,.ad
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-rules ul { list-style:disc; margin:0; padding-left:16px; }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-rules li { margin-top:6px; padding-left:2px; }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-rules li::marker { color:var(--cosmos-reference-accent); }
+vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-restart-warning { margin-top:20px; }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-placeholders>div { display:grid; grid-template-columns:minmax(0,115px) minmax(0,1fr); gap:10px; align-items:baseline; padding:8px 0; border-bottom:1px solid #ffffff0d; }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-placeholders>div>span:last-child { text-align:right; font-size:11px; }
 vaadin-dialog.admin-reference-drawer.admin-config-help .admin-help-token { justify-self:start; display:inline-block; padding:2px 6px; border:1px solid #38bdf826; border-radius:5px; background:#008ecc0d; color:var(--cosmos-reference-accent); font:400 11px/17.6px ui-monospace,Consolas,monospace; }

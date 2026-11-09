@@ -141,9 +141,11 @@ Weitere Filter sind Entwürfe bis zum Anwenden; Badges zeigen angewandte Kriteri
 Reset leert Entwürfe und aktive Kriterien. Datum und Uhrzeit bilden einen gemeinsamen
 Aktivitätsfilter; Uhrzeit ist ohne gültiges Datum deaktiviert.
 
-Konfigurationsfelder zeigen Standardwert und Regeln im Info-Tooltip. Gespeicherte
-Werte haben Vorrang vor Startvorgaben. SMTP, Remember-me und Workerzahl sind
-startgebunden; andere fachliche Einstellungen wirken beim nächsten relevanten Zugriff.
+Konfigurationsfelder zeigen Standardwert und Regeln in der Feldhilfe. Unter
+„Wann gilt die Änderung?“ stehen der Zeitpunkt und Folgen für bestehende Zugänge
+oder laufende Vorgänge. Der Schlüssel für gespeicherte Anmeldungen braucht einen
+Neustart. Die gelbe Feldhilfe erklärt das. Nach einer Änderung nennt die
+Speichermeldung die betroffenen Felder.
 Der Mailtest sendet eine echte SMTP-Testmail; in der lokalen Docker-Umgebung fängt
 Mailpit sie ab. [Mailqueue](mailqueue.md) und [Docker](docker/README.md).
 

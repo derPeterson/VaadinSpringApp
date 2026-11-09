@@ -4,7 +4,11 @@ import de.derpeterson.app.config.ConfigurationCatalog;
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
@@ -38,6 +42,35 @@ public class ConfigService {
         .findByKey(configEntry.getKey())
         .map(ConfigEntity::getValue)
         .orElseGet(() -> getDefaultValue(configEntry));
+  }
+
+  /** Liest zusammengehörige Einstellungen mit einer einzigen Datenbankabfrage. */
+  public Map<ConfigEntry, String> snapshot(List<ConfigEntry> entries) {
+    Map<String, String> stored =
+        configRepository.findByKeyIn(entries.stream().map(ConfigEntry::getKey).toList()).stream()
+            .collect(Collectors.toMap(ConfigEntity::getKey, ConfigEntity::getValue));
+    Map<ConfigEntry, String> result = new EnumMap<>(ConfigEntry.class);
+    for (ConfigEntry entry : entries) {
+      String value = stored.get(entry.getKey());
+      result.put(entry, value == null ? getDefaultValue(entry) : value);
+    }
+    return result;
+  }
+
+  /** SMTP darf neue Zugangsdaten und Transportoptionen nur als vollständigen Stand sehen. */
+  public void saveSmtpSettings(Map<ConfigEntry, String> values) {
+    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
+    transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    transaction.executeWithoutResult(
+        status -> {
+          for (Map.Entry<ConfigEntry, String> setting : values.entrySet()) {
+            String key = setting.getKey().getKey();
+            String value = setting.getValue();
+            ConfigEntity entity =
+                configRepository.findByKey(key).orElseGet(() -> new ConfigEntity(null, key, value));
+            update(entity, value);
+          }
+        });
   }
 
   /** Backend-Standard aus app.config.defaults.*, unabhängig vom gespeicherten Wert. */

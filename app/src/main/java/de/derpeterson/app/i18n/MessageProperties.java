@@ -8,6 +8,7 @@ import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
@@ -99,6 +100,42 @@ public class MessageProperties extends MessageTexts implements Serializable {
     };
   }
 
+  public List<String> getAdminConfigEffectiveUse(ConfigEntry entry) {
+    return switch (entry) {
+      case SESSION_TIMEOUT_SECONDS ->
+          List.of(getAdminConfigEffectiveSessionNew(), getAdminConfigEffectiveSessionExisting());
+      case LOGIN_ATTEMPTS_LIMIT, LOGIN_ATTEMPT_WINDOW_SECONDS ->
+          List.of(getAdminConfigEffectiveLoginAttempt(), getAdminConfigEffectiveLoginBlock());
+      case MAX_SESSIONS_PER_USER ->
+          List.of(
+              getAdminConfigEffectiveSessionLimit(), getAdminConfigEffectiveSessionLimitExisting());
+      case VERIFICATION_TOKEN_VALID_DURATION, PASSWORD_RESET_TOKEN_VALID_DURATION ->
+          List.of(getAdminConfigEffectiveTokenNew(), getAdminConfigEffectiveTokenExisting());
+      case EMAIL_QUEUE_POOL_SIZE ->
+          List.of(getAdminConfigEffectiveNextQueueRun(), getAdminConfigEffectiveQueueInFlight());
+      case EMAIL_QUEUE_CAPACITY, EMAIL_QUEUE_MAX_RETRY ->
+          List.of(getAdminConfigEffectiveNextQueueRun());
+      case EMAIL_QUEUE_RETRY_DELAY_SECONDS ->
+          List.of(getAdminConfigEffectiveNextQueueRun(), getAdminConfigEffectiveWaitingRetries());
+      case REMEMBER_ME_DURATION ->
+          List.of(
+              getAdminConfigEffectiveRememberNew(),
+              getAdminConfigEffectiveRememberShortened(),
+              getAdminConfigEffectiveRememberExisting());
+      case MAIL_HOST,
+          MAIL_PORT,
+          MAIL_USERNAME,
+          MAIL_PASSWORD,
+          MAIL_SMTP_AUTH,
+          MAIL_SMTP_STARTTLS_ENABLE,
+          MAIL_SMTP_SSL_ENABLE,
+          MAIL_SMTP_SSL_TRUST,
+          MAIL_DEBUG ->
+          List.of(getAdminConfigEffectiveMailTransport(), getAdminConfigEffectiveQueueInFlight());
+      default -> List.of();
+    };
+  }
+
   public String getAdminConfigEntryLabel(ConfigEntry configEntry) {
     return switch (configEntry) {
       case USER_NOTIFICATIONS_INBOX_RETENTION_DAYS ->
@@ -113,6 +150,7 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case REMEMBER_ME_SECRET_KEY -> getAdminConfigEntryRememberMeSecretKey();
       case USER_AUTO_ABSENT_TIMEOUT -> getAdminConfigEntryUserAutoAbsentTimeout();
       case LOGIN_ATTEMPTS_LIMIT -> getAdminConfigEntryLoginAttemptsLimit();
+      case LOGIN_ATTEMPT_WINDOW_SECONDS -> getAdminConfigEntryLoginAttemptWindow();
       case MAX_SESSIONS_PER_USER -> getAdminConfigEntryMaxSessionsPerUser();
       case SESSION_TIMEOUT_SECONDS -> getAdminConfigEntrySessionTimeout();
       case MAINTENANCE_MODE -> getAdminConfigEntryMaintenanceMode();
@@ -140,6 +178,7 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case EMAIL_QUEUE_POOL_SIZE -> getAdminConfigEntryEmailQueuePoolSize();
       case EMAIL_QUEUE_CAPACITY -> getAdminConfigEntryEmailQueueCapacity();
       case EMAIL_QUEUE_MAX_RETRY -> getAdminConfigEntryEmailQueueMaxRetry();
+      case EMAIL_QUEUE_RETRY_DELAY_SECONDS -> getAdminConfigEntryEmailQueueRetryDelay();
       case EMAIL_QUEUE_SENT_LIVE_DURATION -> getAdminConfigEntryEmailQueueSentLiveDuration();
     };
   }
@@ -158,6 +197,7 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case REMEMBER_ME_SECRET_KEY -> getAdminConfigEntryRememberMeSecretKeyTooltip();
       case USER_AUTO_ABSENT_TIMEOUT -> getAdminConfigEntryUserAutoAbsentTimeoutTooltip();
       case LOGIN_ATTEMPTS_LIMIT -> getAdminConfigEntryLoginAttemptsLimitTooltip();
+      case LOGIN_ATTEMPT_WINDOW_SECONDS -> getAdminConfigEntryLoginAttemptWindowTooltip();
       case MAX_SESSIONS_PER_USER -> getAdminConfigEntryMaxSessionsPerUserTooltip();
       case SESSION_TIMEOUT_SECONDS -> getAdminConfigEntrySessionTimeoutTooltip();
       case MAINTENANCE_MODE -> getAdminConfigEntryMaintenanceModeTooltip();
@@ -187,6 +227,7 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case EMAIL_QUEUE_POOL_SIZE -> getAdminConfigEntryEmailQueuePoolSizeTooltip();
       case EMAIL_QUEUE_CAPACITY -> getAdminConfigEntryEmailQueueCapacityTooltip();
       case EMAIL_QUEUE_MAX_RETRY -> getAdminConfigEntryEmailQueueMaxRetryTooltip();
+      case EMAIL_QUEUE_RETRY_DELAY_SECONDS -> getAdminConfigEntryEmailQueueRetryDelayTooltip();
       case EMAIL_QUEUE_SENT_LIVE_DURATION -> getAdminConfigEntryEmailQueueSentLiveDurationTooltip();
     };
   }

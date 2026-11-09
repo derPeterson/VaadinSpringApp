@@ -13,8 +13,10 @@ Löschung, Rollenänderung und Sessionwiderruf werden auch bei bereits geöffnet
 Ansichten wirksam. Der letzte aktive Superadmin ist durch eine gemeinsame
 Datenbanksperre geschützt, auch bei konkurrierenden Änderungen verschiedener Konten.
 
-Fehlversuche werden je kanonisierter Identität unter einem Hash gespeichert. Das
-Zeitfenster und eine Sperre dauern jeweils 15 Minuten; das Versuchslimit ist konfigurierbar.
+Fehlversuche werden je kanonisierter Identität unter einem Hash gespeichert.
+Versuchslimit und Zeitfenster sind konfigurierbar und gelten ab dem nächsten
+Versuch. Das Fenster beträgt standardmäßig 15 Minuten und kann bis zu 24 Stunden
+betragen. Die Sperre dauert 15 Minuten. Bereits verhängte Sperren behalten ihr Ende.
 Ein erfolgreicher Passwortreset setzt den zugehörigen Schutz kontrolliert zurück.
 
 ## Externe Identitäten
@@ -85,6 +87,10 @@ Remember-me verwendet rotierende Tokenserien und gespeicherte Gerätemetadaten.
 Neue Serie und Metadaten werden atomar erzeugt. Eine neue geprüfte Anmeldung ersetzt die gespeicherte
 Anmeldung dieses Browsers. Logout widerruft dessen Serie; eigene Verwaltung erlaubt
 Einzel- und Sammelwiderruf. Ablaufräumung ergänzt keine erfundenen Geräteinformationen.
+Die Gültigkeit wird beim Speichern und beim Wiederverwenden einer Anmeldung gelesen.
+Bei kürzerer Gültigkeit kann ein vorhandener Zugang früher abgelehnt werden. Der
+Browser behält das Ablaufdatum eines bereits ausgestellten Cookies bis zur Erneuerung.
+Der Schlüssel für gespeicherte Anmeldungen wird beim Anwendungsstart geladen.
 
 Bei vollem Limit ermöglicht ein kurzlebiger, nach Passwort- oder externer Identitätsprüfung erworbener Nachweis
 nur die eigene Sitzungsverwaltung. Er ist keine vollständige Anmeldung und gewährt
@@ -97,10 +103,10 @@ Authentifizierungsfaktoren und Inaktivitätsfrist in derselben Datenbank. Kontos
 Rollen und Zugangsversion werden beim Wiederherstellen frisch geprüft. Ein Neustart
 verlängert keine Gültigkeit. Logout und Widerruf bleiben wirksam.
 Unter **Konfiguration → Sicherheit → Sitzungs-Timeout** lässt sich die Inaktivitätsfrist
-einstellen. Standard sind 30 Minuten. Die Anwendung liest den gespeicherten Wert beim
-Start ein und verwendet ihn für neu angelegte HTTP-Sitzungen. Bestehende Sitzungen
-behalten ihre bisherige Frist. Dazu zählen auch Sitzungen, die der Aufruf der
-Anmeldeseite bereits vor dem Neustart angelegt hat. `APP_CFG_SESSION_TIMEOUT_SECONDS`
+einstellen. Standard sind 30 Minuten. Nach dem Speichern gilt der neue Wert für
+neu angelegte HTTP-Sitzungen. Bestehende Sitzungen behalten ihre bisherige Frist.
+Dazu zählen auch Sitzungen, die der Aufruf der Anmeldeseite bereits vor dem
+Speichern angelegt hat. `APP_CFG_SESSION_TIMEOUT_SECONDS`
 setzt den Standard in Sekunden.
 Ohne diese Variable kann `app.sessions.timeout-seconds` weiterhin den Standard vorgeben.
 

@@ -28,10 +28,7 @@ public class SessionPersistenceConfiguration {
   @Bean
   public JdbcIndexedSessionRepository durableJdbcSessions(
       DataSource source, PlatformTransactionManager manager, ConfigService config) {
-    int timeoutSeconds = config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS);
-    if (timeoutSeconds < 1) {
-      throw new IllegalArgumentException("Session timeout must be positive");
-    }
+    Duration startupTimeout = sessionTimeout(config);
     // Projektvertrag: H2; feste idempotente DDL, keine fremden Tabellen oder Inhalte verändern.
     new ResourceDatabasePopulator(new ClassPathResource("db/durable-sessions-h2.sql"))
         .execute(source);
@@ -39,7 +36,7 @@ public class SessionPersistenceConfiguration {
     transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     JdbcIndexedSessionRepository backend =
         new JdbcIndexedSessionRepository(new JdbcTemplate(source), transaction);
-    backend.setDefaultMaxInactiveInterval(Duration.ofSeconds(timeoutSeconds));
+    backend.setDefaultMaxInactiveInterval(startupTimeout);
     SessionAttributeCodec codec = new SessionAttributeCodec();
     GenericConversionService conversions = new GenericConversionService();
     conversions.addConverter(Object.class, byte[].class, codec::encode);
@@ -54,8 +51,18 @@ public class SessionPersistenceConfiguration {
   public DurableSessionRepository<?> sessionRepository(
       @Qualifier("durableJdbcSessions") JdbcIndexedSessionRepository backend,
       CustomUserDetailsService users,
-      ObjectProvider<DeviceRememberMeServices> remembered) {
-    return new DurableSessionRepository<>(backend, users, () -> remembered.getObject().getKey());
+      ObjectProvider<DeviceRememberMeServices> remembered,
+      ConfigService config) {
+    return new DurableSessionRepository<>(
+        backend, users, () -> remembered.getObject().getKey(), () -> sessionTimeout(config));
+  }
+
+  static Duration sessionTimeout(ConfigService config) {
+    int seconds = config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS);
+    if (seconds < 1) {
+      throw new IllegalArgumentException("Session timeout must be positive");
+    }
+    return Duration.ofSeconds(seconds);
   }
 
   @Bean

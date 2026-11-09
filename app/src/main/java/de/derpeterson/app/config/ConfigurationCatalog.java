@@ -144,12 +144,17 @@ public final class ConfigurationCatalog {
     return entry == ConfigEntry.MAIL_PASSWORD || entry == ConfigEntry.REMEMBER_ME_SECRET_KEY;
   }
 
+  public static boolean requiresRestart(ConfigEntry entry) {
+    return entry == ConfigEntry.REMEMBER_ME_SECRET_KEY;
+  }
+
   public static AdminConfigGroup group(ConfigEntry entry) {
     return switch (entry) {
       case SERVICE_NAME, COPYRIGHT_TEXT, BASE_URL -> AdminConfigGroup.GENERAL;
       case REMEMBER_ME_DURATION,
           REMEMBER_ME_SECRET_KEY,
           LOGIN_ATTEMPTS_LIMIT,
+          LOGIN_ATTEMPT_WINDOW_SECONDS,
           MAX_SESSIONS_PER_USER,
           SESSION_TIMEOUT_SECONDS,
           MAINTENANCE_MODE ->
@@ -176,6 +181,7 @@ public final class ConfigurationCatalog {
       case EMAIL_QUEUE_POOL_SIZE,
           EMAIL_QUEUE_CAPACITY,
           EMAIL_QUEUE_MAX_RETRY,
+          EMAIL_QUEUE_RETRY_DELAY_SECONDS,
           EMAIL_QUEUE_SENT_LIVE_DURATION ->
           AdminConfigGroup.QUEUE;
     };

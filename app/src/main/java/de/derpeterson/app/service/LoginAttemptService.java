@@ -39,7 +39,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Service
 @Slf4j
 public class LoginAttemptService {
-  public static final Duration WINDOW = Duration.ofMinutes(15);
   public static final Duration BLOCK_DURATION = Duration.ofMinutes(15);
   public static final Duration RETENTION = Duration.ofHours(24);
   public static final int MAX_IDENTITIES = 10_000;
@@ -117,7 +116,12 @@ public class LoginAttemptService {
     if (row.getBlockedUntil() != null && now.isBefore(row.getBlockedUntil())) {
       return new Outcome(null, new LoginThrottledException());
     }
-    if (row.getBlockedUntil() != null || !now.isBefore(row.getWindowStartedAt().plus(WINDOW))) {
+    int windowSeconds = config.getInteger(ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS);
+    if (windowSeconds < 1 || windowSeconds > RETENTION.toSeconds()) {
+      throw new AuthenticationServiceException("Invalid login attempt window");
+    }
+    if (row.getBlockedUntil() != null
+        || !now.isBefore(row.getWindowStartedAt().plusSeconds(windowSeconds))) {
       reset(row, now);
     }
     if (row.getFailures() >= limit) {

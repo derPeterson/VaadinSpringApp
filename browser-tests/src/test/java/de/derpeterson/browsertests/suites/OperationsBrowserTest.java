@@ -40,15 +40,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class OperationsBrowserTest extends BrowserFixture {
   @Order(1)
   @Test
-  @DisplayName("OPS-01: Gespeicherte Daten ohne Bootstrap und startgebundenes SMTP-Ziel")
+  @DisplayName("OPS-01: SMTP-Wechsel ohne Neustart und gespeicherte Daten ohne Bootstrap")
   @Description(
       """
       1. Über UI eigenes Konto anlegen; Testmail erreicht das eigene Default-SMTP-Ziel A.
-      2. SMTP-Ziel B und Dienstname speichern: ohne Neustart geht eine weitere Mail noch an A.
+      2. SMTP-Ziel B und Dienstname speichern. Die nächste Mail erreicht B ohne Neustart.
       3. Nur eigene Anwendung mit gleicher Datenbank und ohne Bootstrap neu starten.
       4. Adminrolle, Kontoanmeldung und gespeicherte Werte bleiben erhalten; neue Mail erreicht B.
-      5. Originalwerte speichern und Anwendung nochmals ohne Bootstrap starten.
-      **Erwartet:** Persistenz ohne erneute Anlage und SMTP-Bindung erst beim Start.
+      5. Originalwerte speichern.
+      **Erwartet:** Neue SMTP-Verbindungen greifen auf den gespeicherten Stand zu. Konten und Einstellungen bleiben nach einem Neustart erhalten.
       """)
   void persistedConfigurationAndAccountsSurviveRestartWithoutBootstrap() throws Exception {
     ConfigurationPage settings = admin();
@@ -67,7 +67,7 @@ public class OperationsBrowserTest extends BrowserFixture {
       settings.open(AdminConfigGroup.SMTP);
       settings.enter(hostLabel, "mailpit-secondary");
       settings.save();
-      sendAndAssertTarget(false);
+      sendAndAssertTarget(true);
       settings.open(AdminConfigGroup.GENERAL);
       settings.enter(nameLabel, "Restart proof");
       settings.save();
@@ -92,8 +92,6 @@ public class OperationsBrowserTest extends BrowserFixture {
       settings.open(AdminConfigGroup.SMTP);
       settings.enter(hostLabel, originalHost);
       settings.save();
-      BrowserTestRunner.restartTestApplication();
-      page.reload();
     }
   }
 

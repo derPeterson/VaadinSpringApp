@@ -297,8 +297,8 @@ public class SessionManagementBrowserTest extends BrowserFixture {
   @Tag("sign-in-session-layout")
   @DisplayName("SESSIONS-07: Gespeicherte Anmeldung nach Sitzungsablauf zeigt keinen Anmeldeweg")
   @Description(
-      "Der Admin speichert einen kurzen Sitzungs-Timeout und startet die Anwendung neu. Eine neu angelegte Sitzung läuft ab, zwei bestehende Sitzungen bleiben aktiv. Der gespeicherte Zugang bleibt ohne aktuellen Anmeldeweg widerrufbar.")
-  void expiredSessionLeavesOnlyItsSavedLogin() throws Exception {
+      "Der Admin speichert einen kurzen Sitzungs-Timeout. Eine danach ohne Neustart angelegte Sitzung läuft ab, zwei bestehende Sitzungen bleiben aktiv. Der gespeicherte Zugang bleibt ohne aktuellen Anmeldeweg widerrufbar.")
+  void expiredSessionLeavesOnlyItsSavedLogin() {
     String email = user();
     try (BrowserActor owner = new BrowserActor(browser);
         BrowserActor other = new BrowserActor(browser)) {
@@ -312,8 +312,6 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       try {
         configuration.enterSeconds(timeoutLabel, BigDecimal.valueOf(12));
         configuration.save();
-        page.navigate("about:blank");
-        BrowserTestRunner.restartTestApplication();
         try (BrowserActor expiring = new BrowserActor(browser)) {
           login(expiring, email, true);
         }
@@ -359,8 +357,6 @@ public class SessionManagementBrowserTest extends BrowserFixture {
         configuration.open(AdminConfigGroup.SECURITY);
         configuration.enterSeconds(timeoutLabel, originalTimeout);
         configuration.save();
-        page.navigate("about:blank");
-        BrowserTestRunner.restartTestApplication();
       }
     }
   }

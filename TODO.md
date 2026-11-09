@@ -9,11 +9,8 @@
 
 ## Anwendungskonfiguration
 
-- [ ] Einstellungen prüfen, die erst beim Anwendungsstart eingelesen werden, und
-  soweit technisch möglich direkt nach dem Speichern wirksam machen. Beim
-  Sitzungs-Timeout sollen neue Sitzungen sofort den gespeicherten Wert übernehmen.
-  Bestehende Sitzungen behalten ihre bisherige Frist. Für Einstellungen, die
-  weiterhin einen Neustart erfordern, den Grund in der Feldhilfe erklären.
+- [ ] [Wirksamkeit der Anwendungskonfiguration](docs/planung/anwendungskonfiguration.md)
+  im Browser nachprüfen und gemeinsam ansehen.
 
 ## Entwicklungsablauf
 

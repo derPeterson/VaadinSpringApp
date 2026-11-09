@@ -402,7 +402,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       }
       total += count;
     }
-    assertEquals(31, total);
+    assertEquals(33, total);
   }
 
   @Tag("fast")

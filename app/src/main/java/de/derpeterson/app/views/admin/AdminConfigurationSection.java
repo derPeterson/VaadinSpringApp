@@ -40,6 +40,7 @@ import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
@@ -50,6 +51,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -485,7 +487,9 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private static boolean usesSecondsDuration(ConfigEntry entry) {
     return entry == ConfigEntry.REMEMBER_ME_DURATION
-        || entry == ConfigEntry.SESSION_TIMEOUT_SECONDS;
+        || entry == ConfigEntry.SESSION_TIMEOUT_SECONDS
+        || entry == ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS
+        || entry == ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS;
   }
 
   private AdminDurationField.Storage durationStorage(ConfigEntry entry) {
@@ -598,6 +602,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       helpPanel.add(current, equivalent);
     }
     helpPanel.add(defaultValue, rulesCard);
+    addEffectiveUseHelp(entry);
     Button closeHelp =
         new Button(
             messageProperties.getNotificationsClose(),
@@ -606,6 +611,30 @@ public class AdminConfigurationSection extends VerticalLayout {
     closeHelp.setWidthFull();
     helpPanel.getFooter().add(closeHelp);
     helpPanel.open();
+  }
+
+  private void addEffectiveUseHelp(ConfigEntry entry) {
+    List<String> notes = messageProperties.getAdminConfigEffectiveUse(entry);
+    if (!notes.isEmpty()) {
+      UnorderedList list = new UnorderedList();
+      notes.forEach(note -> list.add(new ListItem(note)));
+      Div section = new Div(new H4(messageProperties.getAdminConfigEffectiveTitle()), list);
+      section.addClassNames("admin-help-rules", "admin-help-effective-use");
+      helpPanel.add(section);
+    }
+    if (ConfigurationCatalog.requiresRestart(entry)) {
+      Span heading = new Span(messageProperties.getAdminConfigRestartRequired() + " ");
+      heading.addClassName("cosmos-security-warning-label");
+      HorizontalLayout warning =
+          new HorizontalLayout(
+              AppIcon.ERROR.create(),
+              new Span(heading, new Span(messageProperties.getAdminConfigRestartDetail())));
+      warning.setSpacing(false);
+      warning.setPadding(false);
+      warning.setAlignItems(FlexComponent.Alignment.START);
+      warning.addClassNames("cosmos-security-warning", "admin-help-restart-warning");
+      helpPanel.add(warning);
+    }
   }
 
   private Div placeholderRow(String token, String meaning) {
@@ -635,7 +664,12 @@ public class AdminConfigurationSection extends VerticalLayout {
       case BASE_URL -> List.of(messageProperties.getAdminConfigValidationUrl());
       case REMEMBER_ME_SECRET_KEY ->
           List.of(messageProperties.getAdminConfigValidationSecretKey(SECRET_KEY_MIN_LENGTH));
-      case REMEMBER_ME_DURATION, SESSION_TIMEOUT_SECONDS ->
+      case LOGIN_ATTEMPT_WINDOW_SECONDS ->
+          List.of(
+              messageProperties.getAdminConfigDurationRule(86_400),
+              messageProperties.getAdminConfigDurationUnitHint(),
+              messageProperties.getAdminConfigRuleEmptyUsesDefault());
+      case REMEMBER_ME_DURATION, SESSION_TIMEOUT_SECONDS, EMAIL_QUEUE_RETRY_DELAY_SECONDS ->
           List.of(
               messageProperties.getAdminConfigDurationRule(Integer.MAX_VALUE),
               messageProperties.getAdminConfigDurationUnitHint(),
@@ -703,6 +737,8 @@ public class AdminConfigurationSection extends VerticalLayout {
     try {
       boolean configurationChanged = false;
       int changedEntries = 0;
+      List<ConfigEntry> restartEntries = new ArrayList<>();
+      Map<ConfigEntry, String> smtpSettings = new LinkedHashMap<>();
 
       for (ConfigEntry configEntry : getVisibleConfigEntries()) {
         String newValue = normalizeValue(configEntry, extractInputValue(configEntry));
@@ -713,12 +749,22 @@ public class AdminConfigurationSection extends VerticalLayout {
           configurationChanged = true;
         }
 
-        configService.set(configEntry, newValue);
+        if (selectedGroup == AdminConfigGroup.SMTP) {
+          smtpSettings.put(configEntry, newValue);
+        } else {
+          configService.set(configEntry, newValue);
+        }
         if (!Objects.equals(oldValue, newValue)) {
           changedEntries++;
+          if (ConfigurationCatalog.requiresRestart(configEntry)) {
+            restartEntries.add(configEntry);
+          }
         }
       }
 
+      if (!smtpSettings.isEmpty()) {
+        configService.saveSmtpSettings(smtpSettings);
+      }
       loadConfigValues();
       if (changedEntries > 0) {
         logger.info(
@@ -731,11 +777,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         configurationChangedAction.run();
       }
 
-      NotificationHelper.getInstance()
-          .showNotification(
-              messageProperties::getBaseSuccessTitle,
-              messageProperties::getAdminConfigSaveSuccess,
-              NotificationHelper.NotificationType.SUCCESS);
+      notifyConfigurationSaved(restartEntries);
     } catch (Exception ex) {
       logger.error(
           "Configuration group update interrupted: group={}, individual entries may already be committed",
@@ -748,6 +790,27 @@ public class AdminConfigurationSection extends VerticalLayout {
               -1,
               NotificationHelper.NotificationType.ERROR);
     }
+  }
+
+  private void notifyConfigurationSaved(List<ConfigEntry> restartEntries) {
+    NotificationHelper notification = NotificationHelper.getInstance();
+    if (restartEntries.isEmpty()) {
+      notification.showNotification(
+          messageProperties::getBaseSuccessTitle,
+          messageProperties::getAdminConfigSaveSuccess,
+          NotificationHelper.NotificationType.SUCCESS);
+      return;
+    }
+    notification.showNotification(
+        messageProperties::getAdminConfigSaveSuccess,
+        () ->
+            messageProperties.getAdminConfigRestartSaved()
+                + " "
+                + restartEntries.stream()
+                    .map(messageProperties::getAdminConfigEntryLabel)
+                    .collect(Collectors.joining(", ")),
+        0,
+        NotificationHelper.NotificationType.WARNING);
   }
 
   private boolean validateVisibleInputs() {
@@ -815,7 +878,11 @@ public class AdminConfigurationSection extends VerticalLayout {
       case SERVICE_NAME -> validateServiceName(trimmed);
       case BASE_URL ->
           !isValidHttpUrl(trimmed) ? messageProperties.getAdminConfigValidationUrl() : null;
-      case REMEMBER_ME_DURATION, SESSION_TIMEOUT_SECONDS ->
+      case LOGIN_ATTEMPT_WINDOW_SECONDS ->
+          isInvalidPositiveInteger(trimmed) || Integer.parseInt(trimmed) > 86_400
+              ? messageProperties.getAdminConfigDurationRule(86_400)
+              : null;
+      case REMEMBER_ME_DURATION, SESSION_TIMEOUT_SECONDS, EMAIL_QUEUE_RETRY_DELAY_SECONDS ->
           isInvalidPositiveInteger(trimmed)
               ? messageProperties.getAdminConfigDurationInvalid()
               : null;

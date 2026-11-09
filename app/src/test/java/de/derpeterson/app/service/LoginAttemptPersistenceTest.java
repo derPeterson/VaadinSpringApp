@@ -73,6 +73,7 @@ class LoginAttemptPersistenceTest {
   @Autowired TransactionTemplate transaction;
   @Autowired MutableQueueClock clock;
   @Autowired AtomicInteger limit;
+  @Autowired AtomicInteger loginWindow;
   @Autowired UserRepository users;
   @Autowired PasswordEncoder encoder;
   @Autowired PasswordResetTokenRepository tokens;
@@ -84,6 +85,7 @@ class LoginAttemptPersistenceTest {
     attempts.deleteAll();
     guard.deleteAll();
     limit.set(3);
+    loginWindow.set(900);
     clock.set(Instant.parse("2026-10-15T12:00:00Z"));
     transaction.executeWithoutResult(
         tx -> {
@@ -146,7 +148,7 @@ class LoginAttemptPersistenceTest {
   @Test
   void exactWindowBoundaryAndSuccessfulPasswordStartFreshCounters() {
     bad(EMAIL);
-    clock.advance(LoginAttemptService.WINDOW.minusMillis(1));
+    clock.advance(Duration.ofSeconds(loginWindow.get()).minusMillis(1));
     bad(EMAIL);
     assertEquals(2, state(EMAIL).getFailures());
     clock.advance(Duration.ofMillis(1));
@@ -177,8 +179,18 @@ class LoginAttemptPersistenceTest {
     assertThrows(LoginThrottledException.class, () -> service.authenticate(EMAIL, this::accepted));
     Instant until = state(EMAIL).getBlockedUntil();
     limit.set(100);
+    loginWindow.set(1);
     assertThrows(LoginThrottledException.class, () -> service.authenticate(EMAIL, this::accepted));
     assertEquals(until, state(EMAIL).getBlockedUntil());
+  }
+
+  @Test
+  void shorteningTheWindowResetsAnExpiredCounterOnTheNextAttempt() {
+    bad(EMAIL);
+    clock.advance(Duration.ofMinutes(2));
+    loginWindow.set(60);
+    bad(EMAIL);
+    assertEquals(1, state(EMAIL).getFailures());
   }
 
   @Test
@@ -513,9 +525,16 @@ class LoginAttemptPersistenceTest {
     }
 
     @Bean
-    ConfigService configService(AtomicInteger limit) {
+    AtomicInteger loginWindow() {
+      return new AtomicInteger(900);
+    }
+
+    @Bean
+    ConfigService configService(AtomicInteger limit, AtomicInteger loginWindow) {
       ConfigService config = mock(ConfigService.class);
       when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenAnswer(call -> limit.get());
+      when(config.getInteger(ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS))
+          .thenAnswer(call -> loginWindow.get());
       return config;
     }
 

@@ -1,7 +1,6 @@
 package de.derpeterson.app.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,9 +47,7 @@ class ConfigServiceConfiguredDefaultsTest {
     configure(ConfigEntry.MAIL_SMTP_SSL_ENABLE, "false");
     configure(ConfigEntry.REMEMBER_ME_SECRET_KEY, "fixture-only-key");
 
-    ConnectionAwareJavaMailSender sender =
-        assertInstanceOf(
-            ConnectionAwareJavaMailSender.class, new MailConfig(service).javaMailSender());
+    ConnectionAwareJavaMailSender sender = new MailConfig(service).configuredSender();
 
     assertEquals("mailpit", sender.getHost());
     assertEquals(1025, sender.getPort());

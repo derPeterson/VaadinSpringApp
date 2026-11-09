@@ -874,15 +874,18 @@ auf `.ad-config` begrenzt. Der Mailtest bleibt mit natürlicher Buttonbreite
 rechtsbündig, einschließlich Smartphone.
 
 `AdminDurationField` wird in den Zeitfeldern der Konfiguration verwendet. Dazu gehören
-Login speichern, der Sitzungs-Timeout, vier Tokenfristen, automatische Abwesenheit,
-zwei Benachrichtigungs-Aufbewahrungen und gesendete E-Mails. Zahl und Einheit stehen
+die Gültigkeit gespeicherter Anmeldungen, der Sitzungs-Timeout, das Zeitfenster für
+Fehlversuche, vier Tokenfristen, automatische Abwesenheit, zwei
+Benachrichtigungs-Aufbewahrungen sowie Wartezeit und Aufbewahrung der E-Mail-Queue.
+Zahl und Einheit stehen
 nebeneinander. Aktueller Wert, Umrechnung und Standardwert stehen nur in der Feldhilfe.
 Sekunden, ISO-Zeitspanne und ganze Tage behalten ihr jeweiliges Speicherformat.
 Die bestehenden Mindestdauern und Bereichsgrenzen bleiben erhalten. Beim Laden
 wird die größte ganzzahlig passende Einheit gewählt. Einheitenwechsel erhält
 die Zahl, die Schaltflächen ändern sie um eins. Bestehende Nachkommastellen einer
 Zeitspanne werden ohne Rundung erhalten, bis zur Nanosekundenpräzision von Duration.
-Login speichern und der Sitzungs-Timeout verwenden bei leerer Eingabe den Standardwert.
+Gültigkeit gespeicherter Anmeldungen, Sitzungs-Timeout, Fehlversuchsfenster und
+Wartezeit für erneuten Versand verwenden bei leerer Eingabe den Standardwert.
 Leere Benachrichtigungs-Aufbewahrung bedeutet weiterhin unbegrenzt. Die beiden
 Benachrichtigungsfelder haben die feste Einheit Tage. Andere Zeitspannen bleiben Pflichtfelder.
 
@@ -893,6 +896,9 @@ markiert die Auswahl.
 `admin-duration-step` gestaltet die Schaltflächen an der präzisen Vaadin-Zahleneingabe.
 Konfigurationsfelder mit externem Label blenden die leere interne Labelzeile aus,
 damit beide Spalten dieselbe Ober- und Unterkante haben.
+Die Feldhilfe setzt Besonderheiten zur Wirksamkeit als kurze Liste unter
+„Wann gilt die Änderung?“. Neustarthinweise nutzen die gelbe gemeinsame Warnbox
+im Abschnitt der Feldhilfe.
 
 Alle booleschen Konfigurationsfelder verwenden native Vaadin-Switches mit der
 Klasse `cosmos-config-switch`, auch in der Anbietereinrichtung. Der Text steht

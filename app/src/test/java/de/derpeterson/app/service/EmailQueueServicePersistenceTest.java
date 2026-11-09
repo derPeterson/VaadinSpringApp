@@ -103,6 +103,7 @@ class EmailQueueServicePersistenceTest {
   void seed() {
     reset(probes.emails(), probes.users(), probes.adminAttempts(), config, mail);
     clock.set(java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS)).thenReturn(60);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(50);
     lenient().when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(3);
     lenient().when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.com");

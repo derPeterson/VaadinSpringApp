@@ -2,6 +2,8 @@ package de.derpeterson.app.service;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 
+import de.derpeterson.app.config.ThreadPoolConfig;
+import de.derpeterson.app.model.enums.ConfigEntry;
 import jakarta.annotation.PreDestroy;
 import java.time.Duration;
 import java.util.Iterator;
@@ -18,6 +20,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.IntSupplier;
 import java.util.function.LongConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,8 +35,8 @@ import org.springframework.stereotype.Component;
 public class EmailQueueWorkerPool {
   private static final Logger logger = LoggerFactory.getLogger(EmailQueueWorkerPool.class);
   private static final Duration SHUTDOWN_GRACE = Duration.ofSeconds(30);
-  private final ThreadPoolExecutor executor;
-  private final int parallelism;
+  private ThreadPoolExecutor executor;
+  private final IntSupplier configuredSize;
   private final Duration shutdownGrace;
   private final ReentrantLock batch = new ReentrantLock();
   private final Set<FutureTask<Void>> inFlight = ConcurrentHashMap.newKeySet();
@@ -41,13 +44,23 @@ public class EmailQueueWorkerPool {
   private volatile boolean stopping;
 
   @Autowired
-  public EmailQueueWorkerPool(@Qualifier("emailTaskExecutor") ThreadPoolExecutor executor) {
+  public EmailQueueWorkerPool(
+      @Qualifier("emailTaskExecutor") ThreadPoolExecutor executor, ConfigService config) {
+    this(executor, SHUTDOWN_GRACE, () -> config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE));
+  }
+
+  public EmailQueueWorkerPool(ThreadPoolExecutor executor) {
     this(executor, SHUTDOWN_GRACE);
   }
 
   EmailQueueWorkerPool(ThreadPoolExecutor executor, Duration shutdownGrace) {
+    this(executor, shutdownGrace, executor::getMaximumPoolSize);
+  }
+
+  private EmailQueueWorkerPool(
+      ThreadPoolExecutor executor, Duration shutdownGrace, IntSupplier configuredSize) {
     this.executor = java.util.Objects.requireNonNull(executor, "executor");
-    this.parallelism = executor.getMaximumPoolSize();
+    this.configuredSize = configuredSize;
     this.shutdownGrace = java.util.Objects.requireNonNull(shutdownGrace, "shutdownGrace");
     if (shutdownGrace.isNegative()) {
       throw new IllegalArgumentException("Negative shutdown grace.");
@@ -59,23 +72,45 @@ public class EmailQueueWorkerPool {
     if (stopping || !batch.tryLock()) {
       return;
     }
-    BatchExecution execution = new BatchExecution();
+    BatchExecution execution = null;
     try {
+      execution = new BatchExecution(executorForBatch());
       execution.run(ids.iterator(), dispatch);
     } finally {
       batch.unlock();
-      if (execution.interrupted) {
+      if (execution != null && execution.interrupted) {
         Thread.currentThread().interrupt();
       }
     }
   }
 
+  private synchronized ThreadPoolExecutor executorForBatch() {
+    if (!stopping) {
+      int size = configuredSize.getAsInt();
+      if (executor.getMaximumPoolSize() != size) {
+        // Erst der nächste Batch nutzt die neue Größe. Die bisherige Queue war auf den alten
+        // Pool ausgelegt und wird mit ihm beendet.
+        ThreadPoolExecutor previous = executor;
+        executor = ThreadPoolConfig.newExecutor(size);
+        previous.shutdown();
+      }
+    }
+    return executor;
+  }
+
   /** Annahme und Abschluss gehören zu genau diesem Lauf; kein geteilter Koordinatorzustand. */
   private final class BatchExecution {
+    private final ThreadPoolExecutor executor;
+    private final int parallelism;
     private final BlockingQueue<FutureTask<Void>> completed = new LinkedBlockingQueue<>();
     private int active;
     private boolean refill = true;
     private boolean interrupted;
+
+    private BatchExecution(ThreadPoolExecutor executor) {
+      this.executor = executor;
+      this.parallelism = executor.getMaximumPoolSize();
+    }
 
     private void run(Iterator<Long> candidates, LongConsumer dispatch) {
       while ((refill && !stopping && candidates.hasNext()) || active > 0) {
@@ -160,16 +195,17 @@ public class EmailQueueWorkerPool {
     if (!shutdownStarted.compareAndSet(false, true)) {
       return;
     }
-    executor.shutdown();
+    ThreadPoolExecutor closing = executorForBatch();
+    closing.shutdown();
     try {
-      if (executor.awaitTermination(shutdownGrace.toMillis(), TimeUnit.MILLISECONDS)) {
+      if (closing.awaitTermination(shutdownGrace.toMillis(), TimeUnit.MILLISECONDS)) {
         return;
       }
     } catch (InterruptedException _) {
       Thread.currentThread().interrupt();
     }
     // Auch nie gestartete FutureTasks abschließen, damit der Koordinator nicht endlos wartet.
-    executor.shutdownNow();
+    closing.shutdownNow();
     inFlight.forEach(task -> task.cancel(true));
     logger.warn(
         "Queue shutdown grace expired or interrupted; unresolved claims require investigation.");

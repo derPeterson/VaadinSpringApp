@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import java.time.Instant;
 import java.util.Date;
+import java.util.function.IntSupplier;
 import org.jspecify.annotations.Nullable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -20,15 +21,19 @@ public class DeviceRememberMeServices extends PersistentTokenBasedRememberMeServ
   public static final String SERIES = DeviceRememberMeServices.class.getName() + ".series";
   private final DeviceTokenRepository tokens;
   private final SessionAdmissionService admissions;
+  private final IntSupplier configuredValidity;
+  private final ScopedValue<Integer> requestValidity = ScopedValue.newInstance();
 
   public DeviceRememberMeServices(
       String key,
       UserDetailsService users,
       DeviceTokenRepository tokens,
-      SessionAdmissionService admissions) {
+      SessionAdmissionService admissions,
+      IntSupplier configuredValidity) {
     super(key, users, tokens);
     this.tokens = tokens;
     this.admissions = admissions;
+    this.configuredValidity = configuredValidity;
   }
 
   @Override
@@ -88,7 +93,9 @@ public class DeviceRememberMeServices extends PersistentTokenBasedRememberMeServ
     return admissions.withIdentity(
         token.getUsername(),
         () -> {
-          UserDetails user = super.processAutoLoginCookie(cookie, request, response);
+          UserDetails user =
+              ScopedValue.where(requestValidity, validitySeconds())
+                  .call(() -> super.processAutoLoginCookie(cookie, request, response));
           request.setAttribute(SERIES, cookie[0]);
           admissions.bindSeries(request, cookie[0]);
           return user;
@@ -134,9 +141,18 @@ public class DeviceRememberMeServices extends PersistentTokenBasedRememberMeServ
     cancelCookie(request, response);
   }
 
-  /** Die beim Start geladene Dauer gilt auch für Anzeige und Bereinigung gespeicherter Zugänge. */
   public int validitySeconds() {
-    return getTokenValiditySeconds();
+    int seconds = configuredValidity.getAsInt();
+    if (seconds < 1) {
+      throw new IllegalArgumentException("Saved sign-in validity must be positive");
+    }
+    return seconds;
+  }
+
+  @Override
+  protected int getTokenValiditySeconds() {
+    // Prüfung und Erneuerung desselben Cookies verwenden eine gemeinsame Gültigkeitsdauer.
+    return requestValidity.isBound() ? requestValidity.get() : validitySeconds();
   }
 
   public boolean requested(HttpServletRequest request) {
