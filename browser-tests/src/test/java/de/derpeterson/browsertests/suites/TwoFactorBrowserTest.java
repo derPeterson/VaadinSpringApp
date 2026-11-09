@@ -530,10 +530,18 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     new UserMenu(page).selectTestLanguage();
     String suffix = UUID.randomUUID().toString();
     String requesterEmail = "ticket-requester-" + suffix + "@example.test";
+    String otherRequesterEmail = "ticket-other-" + suffix + "@example.test";
     String assigneeEmail = "ticket-assignee-" + suffix + "@example.test";
+    String firstName = "AlexandervonWiederherstellungsanfragen";
+    String lastName = "MusterbearbeiterMitBesondersLangemNamen";
     AdminUsersPage users = new AdminUsersPage(page);
     users.createActiveUser(requesterEmail, BrowserTestAccounts.USER_PASSWORD);
-    users.createUser(assigneeEmail, BrowserTestAccounts.USER_PASSWORD, true, true);
+    users.createActiveUser(otherRequesterEmail, BrowserTestAccounts.USER_PASSWORD);
+    AdminUserDialog assigneeForm = users.openCreate();
+    assigneeForm.fillNewUser(assigneeEmail, BrowserTestAccounts.USER_PASSWORD, true, true);
+    assigneeForm.firstName().fill(firstName);
+    assigneeForm.lastName().fill(lastName);
+    assigneeForm.save();
     page.setViewportSize(width, 1000);
     page.navigate("/home");
     assertThat(page.locator("#account-header-notifications")).isVisible();
@@ -565,7 +573,9 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       page.navigate("/admin?section=support");
       assertThat(ticketCard(page, number).locator(".support-ticket-unread")).hasCount(0);
       UiActions.complete(page, () -> ticketCard(page, number).click());
-      verifyAssignedIdentities(admin, number, requesterEmail, assigneeEmail);
+      verifyAssignedIdentities(
+          admin, number, requesterEmail, assigneeEmail, firstName + " " + lastName);
+      assertRequesterCardLayout(user, number);
       verifyWatchedAndUnwatchedReplies(admin, user, number, previousNotifications);
       UiActions.complete(admin, () -> ticketCard(admin, number).click());
       setTicketWatch(admin, true);
@@ -580,9 +590,9 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       setTicketWatch(admin, false);
       UiActions.complete(page, () -> ticketCard(page, number).click());
       setTicketWatch(page, true);
-      page.navigate("/home");
+      page.navigate("/admin?section=support");
       admin.navigate("/home");
-      UiActions.complete(user, () -> user.locator("#support-close").click());
+      verifyRequesterClosureSurvivesOlderRead(user, number, previousNotifications);
       assertNotificationCount(page, previousNotifications + 1);
       // Der Bearbeiter erhält den Nutzerabschluss ausdrücklich auch ohne aktiviertes Beobachten.
       assertNotificationCount(admin, 1);
@@ -612,6 +622,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       assertThat(admin.locator("#support-ticket-status-note"))
           .hasText(texts.getSupportClosedHint());
       verifyOtherTicketCounterSurvivesReading(admin, user, number);
+      verifyLiveRequesterSwitch(number, otherRequesterEmail);
       AllurePlaywright.attachScreenshot("Abgeschlossener Vorgang ohne Ungelesen-Zähler", admin);
     }
   }
@@ -634,7 +645,18 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       second.setViewportSize(page.viewportSize().width, 900);
       second.navigate("/admin?section=support");
       assertThat(ticketCard(second, number).locator(".support-ticket-unread")).hasText("1");
-      verifyOlderReadOnlyAcknowledgesDisplayedMessage(second, user, number);
+      Locator unread = ticketCard(second, number).locator(".support-ticket-unread");
+      withDelayedTicketRead(
+          page,
+          number,
+          acknowledge -> {
+            assertLongTicketCardFits(ticketCard(second, number));
+            user.locator("#support-reply textarea").fill("Nachricht während der Lesequittierung.");
+            UiActions.complete(user, () -> user.locator("#support-add-reply").click());
+            assertThat(unread).hasText("2");
+            acknowledge.run();
+            assertThat(unread).hasText("1");
+          });
       assertThat(ticketCard(second, number).locator(".support-ticket-unread")).hasCount(0);
       assertNotificationCount(second, previousNotifications);
     }
@@ -652,10 +674,34 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertNotificationCount(admin, 0);
   }
 
-  private void verifyOlderReadOnlyAcknowledgesDisplayedMessage(
-      Page list, Page requester, String number) {
-    // Nur die echte Vaadin-Rückmeldung dieses Tabs anhalten, damit die neuere Nachricht
-    // vor der Quittierung des bereits angezeigten Verlaufs gespeichert wird.
+  private void verifyRequesterClosureSurvivesOlderRead(
+      Page requester, String number, int previousNotifications) {
+    requester.locator("#support-reply textarea").fill("Letzte Nachricht vor dem Nutzerabschluss.");
+    UiActions.complete(requester, () -> requester.locator("#support-add-reply").click());
+    assertNotificationCount(page, previousNotifications + 1);
+    try (Page reader = page.context().newPage()) {
+      reader.setViewportSize(page.viewportSize().width, 900);
+      reader.navigate("/admin?section=support");
+      withDelayedTicketRead(
+          reader,
+          number,
+          acknowledge -> {
+            UiActions.complete(requester, () -> requester.locator("#support-close").click());
+            assertNotificationCount(page, previousNotifications + 1);
+            assertThat(ticketCard(page, number).locator(".support-ticket-status"))
+                .hasText(texts.getSupportClosedByRequester());
+            Locator unread = ticketCard(page, number).locator(".support-ticket-unread");
+            assertThat(unread).hasText("1");
+            UiActions.complete(reader, acknowledge);
+            assertThat(unread).hasCount(0);
+            assertNotificationCount(page, previousNotifications + 1);
+            reader.navigate("/home");
+          });
+    }
+  }
+
+  private void withDelayedTicketRead(Page reader, String number, Consumer<Runnable> whileHeld) {
+    // Die echte Vaadin-Rückmeldung anhalten, bis die neuere Änderung gespeichert ist.
     Pattern uidl = Pattern.compile(".*[?&]v-r=uidl(?:&.*)?$");
     Deque<Route> acknowledgements = new ArrayDeque<>();
     Consumer<Route> hold =
@@ -666,20 +712,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
             route.resume();
           }
         };
-    page.route(uidl, hold);
+    reader.route(uidl, hold);
     try {
-      page.bringToFront();
-      UiActions.complete(page, () -> ticketCard(page, number).click());
-      page.waitForCondition(() -> !acknowledgements.isEmpty());
-      Locator unread = ticketCard(list, number).locator(".support-ticket-unread");
-      assertThat(unread).hasText("1");
-      requester.locator("#support-reply textarea").fill("Nachricht während der Lesequittierung.");
-      UiActions.complete(requester, () -> requester.locator("#support-add-reply").click());
-      assertThat(unread).hasText("2");
-      acknowledgements.removeFirst().resume();
-      assertThat(unread).hasText("1");
+      reader.bringToFront();
+      UiActions.complete(reader, () -> ticketCard(reader, number).click());
+      reader.waitForCondition(() -> !acknowledgements.isEmpty());
+      whileHeld.accept(() -> acknowledgements.removeFirst().resume());
     } finally {
-      page.unroute(uidl, hold);
+      reader.unroute(uidl, hold);
       while (!acknowledgements.isEmpty()) {
         acknowledgements.removeFirst().resume();
       }
@@ -805,11 +845,128 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     UiActions.complete(admin, () -> ticketCard(admin, other).click());
     assertNotificationCount(admin, 0);
     UiActions.complete(admin, () -> admin.locator("#support-claim").click());
+    verifyInternalNoteLeavesHiddenConversationUnread(admin, requester, closed, other);
     UiActions.complete(admin, () -> admin.locator("#support-close").click());
   }
 
+  private Locator requesterCard(Page requester, String number) {
+    return requester
+        .locator(".support-user-requests .support-ticket-row")
+        .filter(
+            new Locator.FilterOptions()
+                .setHas(requester.getByText(number, new Page.GetByTextOptions().setExact(true))));
+  }
+
+  private void verifyInternalNoteLeavesHiddenConversationUnread(
+      Page admin, Page requester, String closed, String other) {
+    Locator activeCard = requesterCard(requester, other);
+    assertThat(activeCard.locator(".support-ticket-status")).hasText(texts.getSupportInProgress());
+    requester.bringToFront();
+    UiActions.complete(
+        requester,
+        () -> requesterCard(requester, closed).locator(".support-ticket-number").click());
+    Locator displayedNumber =
+        requester.locator(".support-conversation-heading .support-ticket-number");
+    assertThat(displayedNumber).hasText(closed);
+    Locator composer = admin.locator("#support-reply textarea");
+    String reply = "Öffentliche Antwort für den Ungelesen-Zähler.";
+    composer.fill(reply);
+    UiActions.complete(admin, () -> admin.locator("#support-add-reply").click());
+    Locator unread = activeCard.locator(".support-ticket-unread");
+    assertThat(unread).hasText("1");
+    assertThat(requester.locator(".support-message-thread")).not().containsText(reply);
+
+    String note = "Interner Vermerk während ein anderer Verlauf geöffnet ist.";
+    composer.fill(note);
+    admin.locator("#support-internal-note").click();
+    UiActions.complete(admin, () -> admin.locator("#support-add-reply").click());
+    assertThat(admin.locator(".support-internal-message")).containsText(note);
+    UiActions.complete(requester, () -> requester.locator("#support-reload").click());
+    assertThat(unread).hasText("1");
+    assertThat(displayedNumber).hasText(closed);
+    assertThat(requester.locator(".support-message-thread")).not().containsText(reply);
+    UiActions.complete(requester, () -> activeCard.locator(".support-ticket-number").click());
+    assertThat(displayedNumber).hasText(other);
+    assertThat(requester.locator(".support-message-thread")).containsText(reply);
+    assertThat(requester.locator(".support-message-thread")).not().containsText(note);
+    assertThat(unread).hasCount(0);
+  }
+
+  private void verifyLiveRequesterSwitch(String firstTicket, String otherEmail) {
+    page.navigate("/admin?section=support&ticket=" + firstTicket.substring(1));
+    Locator avatar = page.locator("#support-detail-requester .cosmos-user-avatar");
+    assertThat(avatar).isVisible();
+    String firstEmail =
+        page.locator("#support-detail-requester .support-admin-person-email").innerText();
+    assertIdentityTooltip(page, avatar, "Browser Testuser", firstEmail, false);
+    try (BrowserActor other = new BrowserActor(browser)) {
+      other.login(otherEmail, BrowserTestAccounts.USER_PASSWORD);
+      other.page.setViewportSize(page.viewportSize().width, 1000);
+      other.page.navigate("/recovery-help");
+      other.page.locator("#support-reply textarea").fill("Anfrage eines anderen Testkontos.");
+      UiActions.complete(other.page, () -> other.page.locator("#support-create").click());
+      String number =
+          other.page.locator("#support-ticket-grid .support-ticket-number").first().innerText();
+      UiActions.complete(page, () -> ticketCard(page, number).click());
+      assertIdentityTooltip(page, avatar, "Browser Testuser", otherEmail, false);
+      String followUp = "Ergänzung des zweiten Testkontos im Live-Verlauf.";
+      other.page.locator("#support-reply textarea").fill(followUp);
+      UiActions.complete(other.page, () -> other.page.locator("#support-add-reply").click());
+      Locator message =
+          page.locator("#admin-support .support-message")
+              .filter(new Locator.FilterOptions().setHasText(followUp));
+      assertThat(message).isVisible();
+      assertIdentityTooltip(
+          page, message.locator(".cosmos-user-avatar"), "Browser Testuser", otherEmail, false);
+      assertIdentityTooltip(page, avatar, "Browser Testuser", otherEmail, false);
+    }
+  }
+
+  private void assertRequesterCardLayout(Page requester, String number) {
+    Locator card = requesterCard(requester, number);
+    assertThat(card.locator(".support-ticket-details .support-ticket-number")).hasText(number);
+    assertThat(card.locator(".support-ticket-details .support-ticket-title")).isVisible();
+    assertThat(card.locator(".support-ticket-details .support-ticket-updated")).isVisible();
+    assertThat(card.locator(".support-ticket-indicators .support-ticket-status")).isVisible();
+    assertThat(card.locator(".support-admin-ticket-footer")).hasCount(0);
+  }
+
+  private void assertLongTicketCardFits(Locator card) {
+    assertThat(card.locator(".support-ticket-status")).isVisible();
+    assertThat(card.locator(".support-ticket-unread")).hasText("1");
+    assertTrue(
+        (Boolean)
+            card.evaluate(
+                """
+        card => {
+          const title = card.querySelector('.support-ticket-title');
+          const original = title.textContent;
+          // Wiederherstellungsanfragen haben einen festen Betreff. Für das Layout verlängern
+          // wir den gerenderten Text, ohne die Ticketdaten oder den Serverzustand zu ändern.
+          try {
+            title.textContent = (original + ' ').repeat(8);
+            const bounds = card.getBoundingClientRect();
+            const subject = title.getBoundingClientRect();
+            const badges = ['.support-ticket-status', '.support-ticket-unread']
+                .map(selector => card.querySelector(selector).getBoundingClientRect());
+            return title.scrollWidth <= title.clientWidth
+                && subject.height > parseFloat(getComputedStyle(title).lineHeight)
+                && badges.every(badge => badge.width > 0 && badge.left >= bounds.left - 1
+                    && badge.right <= bounds.right + 1 && badge.bottom <= subject.top + 1);
+          } finally {
+            title.textContent = original;
+          }
+        }
+        """),
+        "Ein langer Betreff muss umbrechen und Platz für beide Badges lassen.");
+  }
+
   private void verifyAssignedIdentities(
-      Page assignee, String number, String requesterEmail, String assigneeEmail) {
+      Page assignee,
+      String number,
+      String requesterEmail,
+      String assigneeEmail,
+      String assigneeName) {
     Locator foreign = page.locator("#support-detail-assignee");
     Locator own = assignee.locator("#support-detail-assignee");
     Locator requester = page.locator("#support-detail-requester");
@@ -820,27 +977,49 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     for (Locator person : List.of(requester, foreign)) {
       assertThat(person.locator(".support-admin-person-label"))
           .hasCSS("text-transform", "uppercase");
+      assertThat(person.locator(".support-admin-person-label"))
+          .hasCSS("color", "rgb(56, 189, 248)");
     }
     assertThat(foreign).hasCSS("align-items", "flex-end");
     assertThat(foreign.locator(".support-admin-person-email")).hasText(assigneeEmail);
-    assertThat(foreign.locator(".support-admin-person-name")).hasText("Browser Testuser");
+    Locator name = foreign.locator(".support-admin-person-name");
+    assertThat(name).hasText(assigneeName);
+    if (page.viewportSize().width == 390) {
+      assertTrue(
+          (Boolean)
+              name.evaluate(
+                  """
+          name => name.getBoundingClientRect().height > parseFloat(getComputedStyle(name).lineHeight)
+              && name.scrollWidth <= name.clientWidth
+          """));
+    }
     assertThat(foreign.locator(".support-assignee-self")).hasCount(0);
     assertThat(ticketCard(page, number).locator(".support-assignee-self")).hasCount(0);
     assertThat(own.locator(".support-assignee-self")).hasText(texts.getSupportYou());
+    assertThat(own.locator(".support-assignee-self"))
+        .hasCSS("border-top-color", "rgba(16, 185, 129, 0.2)");
+    assertThat(own.locator(".support-assignee-self")).hasCSS("border-top-width", "1px");
     assertThat(ticketCard(assignee, number).locator(".support-assignee-self"))
         .hasText(texts.getSupportYou());
     assertThat(foreign.locator(".cosmos-user-avatar")).hasCSS("width", "32px");
     assertThat(own.locator(".cosmos-user-avatar")).hasCSS("width", "32px");
     assertIdentityTooltip(
-        page, ticketCard(page, number).locator(".cosmos-user-avatar"), assigneeEmail, false);
-    assertIdentityTooltip(page, foreign.locator(".cosmos-user-avatar"), assigneeEmail, true);
+        page,
+        ticketCard(page, number).locator(".cosmos-user-avatar"),
+        assigneeName,
+        assigneeEmail,
+        false);
+    assertIdentityTooltip(
+        page, foreign.locator(".cosmos-user-avatar"), assigneeName, assigneeEmail, true);
     assertThat(requester.locator(".support-admin-person-email")).hasText(requesterEmail);
     assertThat(requester.locator(".support-admin-person-name")).hasText("Browser Testuser");
     assertThat(requester.locator(".cosmos-user-avatar")).hasCSS("width", "32px");
-    assertIdentityTooltip(page, requester.locator(".cosmos-user-avatar"), requesterEmail, false);
+    assertIdentityTooltip(
+        page, requester.locator(".cosmos-user-avatar"), "Browser Testuser", requesterEmail, false);
   }
 
-  private void assertIdentityTooltip(Page view, Locator avatar, String email, boolean keyboard) {
+  private void assertIdentityTooltip(
+      Page view, Locator avatar, String name, String email, boolean keyboard) {
     if (keyboard) {
       view.mouse().move(0, 0);
       view.keyboard().press("Tab");
@@ -852,7 +1031,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator tooltip =
         view.getByRole(AriaRole.TOOLTIP).filter(new Locator.FilterOptions().setHasText(email));
     assertThat(tooltip).isVisible();
-    assertTrue(tooltip.textContent().contains("Browser Testuser\n" + email));
+    assertEquals(name + "\n" + email, tooltip.textContent());
     assertTrue(
         (Boolean)
             tooltip.evaluate(
