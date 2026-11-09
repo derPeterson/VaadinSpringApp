@@ -375,19 +375,17 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private void refreshInputLabels() {
-    configLabelSpans.forEach(
-        (configEntry, labelSpan) ->
-            labelSpan.setText(messageProperties.getAdminConfigEntryLabel(configEntry)));
+    configLabelSpans.forEach((configEntry, labelSpan) ->
+        labelSpan.setText(messageProperties.getAdminConfigEntryLabel(configEntry)));
   }
 
   private void refreshInputHelp() {
-    configInputs.forEach(
-        (configEntry, input) ->
-            updatePlaceholder(
-                input,
-                input instanceof AdminDurationField
-                    ? configuredDefault(configEntry)
-                    : buildPlaceholder(configEntry)));
+    configInputs.forEach((configEntry, input) ->
+        updatePlaceholder(
+            input,
+            input instanceof AdminDurationField
+                ? configuredDefault(configEntry)
+                : buildPlaceholder(configEntry)));
     configInfoButtons.values().forEach(ConfigInfoButton::refreshText);
   }
 
@@ -728,49 +726,23 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     try {
-      boolean configurationChanged = false;
-      int changedEntries = 0;
-      List<ConfigEntry> restartEntries = new ArrayList<>();
-      Map<ConfigEntry, String> smtpSettings = new LinkedHashMap<>();
-
-      for (ConfigEntry configEntry : getVisibleConfigEntries()) {
-        String newValue = normalizeValue(configEntry, extractInputValue(configEntry));
-        String oldValue = configService.getString(configEntry);
-
-        if ((configEntry == ConfigEntry.SERVICE_NAME || configEntry == ConfigEntry.MAINTENANCE_MODE)
-            && !Objects.equals(oldValue, newValue)) {
-          configurationChanged = true;
-        }
-
-        if (selectedGroup == AdminConfigGroup.SMTP) {
-          smtpSettings.put(configEntry, newValue);
-        } else {
-          configService.set(configEntry, newValue);
-        }
-        if (!Objects.equals(oldValue, newValue)) {
-          changedEntries++;
-          if (ConfigurationCatalog.requiresRestart(configEntry)) {
-            restartEntries.add(configEntry);
-          }
-        }
-      }
-
-      if (!smtpSettings.isEmpty()) {
-        configService.saveSmtpSettings(smtpSettings);
-      }
+      List<ConfigEntry> changedEntries = persistVisibleConfigValues();
       loadConfigValues();
-      if (changedEntries > 0) {
+      if (!changedEntries.isEmpty()) {
         logger.info(
             "Configuration group stored: group={}, changedEntries={}",
             selectedGroup,
-            changedEntries);
+            changedEntries.size());
       }
 
-      if (configurationChanged && configurationChangedAction != null) {
+      if (configurationChangedAction != null
+          && (changedEntries.contains(ConfigEntry.SERVICE_NAME)
+              || changedEntries.contains(ConfigEntry.MAINTENANCE_MODE))) {
         configurationChangedAction.run();
       }
 
-      notifyConfigurationSaved(restartEntries);
+      notifyConfigurationSaved(
+          changedEntries.stream().filter(ConfigurationCatalog::requiresRestart).toList());
     } catch (Exception ex) {
       logger.error(
           "Configuration group update interrupted: group={}, individual entries may already be committed",
@@ -783,6 +755,28 @@ public class AdminConfigurationSection extends VerticalLayout {
               -1,
               NotificationHelper.NotificationType.ERROR);
     }
+  }
+
+  private List<ConfigEntry> persistVisibleConfigValues() {
+    List<ConfigEntry> changedEntries = new ArrayList<>();
+    Map<ConfigEntry, String> smtpSettings = new LinkedHashMap<>();
+    for (ConfigEntry configEntry : getVisibleConfigEntries()) {
+      String newValue = normalizeValue(configEntry, extractInputValue(configEntry));
+      String oldValue = configService.getString(configEntry);
+
+      if (selectedGroup == AdminConfigGroup.SMTP) {
+        smtpSettings.put(configEntry, newValue);
+      } else {
+        configService.set(configEntry, newValue);
+      }
+      if (!Objects.equals(oldValue, newValue)) {
+        changedEntries.add(configEntry);
+      }
+    }
+    if (!smtpSettings.isEmpty()) {
+      configService.saveSmtpSettings(smtpSettings);
+    }
+    return changedEntries;
   }
 
   private void notifyConfigurationSaved(List<ConfigEntry> restartEntries) {

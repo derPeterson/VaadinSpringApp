@@ -22,6 +22,8 @@ import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.dom.Element;
+import com.vaadin.flow.dom.Node;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -114,11 +116,10 @@ class AdminConfigurationGroupTest {
     EnumMap<ConfigEntry, String> stored =
         new java.util.EnumMap<ConfigEntry, String>(ConfigEntry.class);
     when(config.getString(any()))
-        .thenAnswer(
-            call -> {
-              ConfigEntry entry = call.getArgument(0);
-              return stored.getOrDefault(entry, entry.getDefaultValueString());
-            });
+        .thenAnswer(call -> {
+          ConfigEntry entry = call.getArgument(0);
+          return stored.getOrDefault(entry, entry.getDefaultValueString());
+        });
     doAnswer(
             call -> {
               stored.put(call.getArgument(0), call.getArgument(1));
@@ -310,8 +311,8 @@ class AdminConfigurationGroupTest {
               .getElement()
               .getChildren()
               .filter(element -> "ul".equals(element.getTag()))
-              .flatMap(element -> element.getChildren())
-              .map(element -> element.getTextRecursively())
+              .flatMap(Node::getChildren)
+              .map(Element::getTextRecursively)
               .toList());
     } finally {
       notification.closeAndClearAllNotifications();
@@ -354,8 +355,8 @@ class AdminConfigurationGroupTest {
               .getElement()
               .getChildren()
               .filter(element -> "ul".equals(element.getTag()))
-              .flatMap(element -> element.getChildren())
-              .map(element -> element.getTextRecursively())
+              .flatMap(Node::getChildren)
+              .map(Element::getTextRecursively)
               .toList();
       assertFalse(notes.isEmpty(), entry.name());
       assertTrue(
