@@ -1,7 +1,5 @@
 # Offene Aufgaben
 
-- [ ] [Abhängigkeiten aktualisieren](docs/planung/abhaengigkeitsupdates.md)
-
 ## Separate spätere Umsetzung: Vaadin-Komponenten
 
 - [ ] [Vaadin-Badges und weitere Komponenten](docs/planung/vaadin-komponenten-abgleich.md)
