@@ -25,6 +25,7 @@ import de.derpeterson.browsertests.pages.UserStatusMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.math.BigDecimal;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -352,6 +353,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   }
 
   @Test
+  @Tag("configuration-follow-up")
   @DisplayName("CONFIG-05D: Normale Admins erreichen alle Feldinfos ihrer acht Gruppen")
   @Description(
       """
@@ -505,28 +507,34 @@ public class ConfigurationBrowserTest extends BrowserFixture {
 
   @org.junit.jupiter.params.ParameterizedTest(name = "CONFIG-06: Weitere Zeitfelder bei {0}px")
   @org.junit.jupiter.params.provider.ValueSource(ints = {1280, 390})
+  @Tag("configuration-follow-up")
   @Description(
-      "Login-speichern-Dauer, automatische Abwesenheit und beide Benachrichtigungsaufbewahrungen über Zahl und Einheit speichern und neu laden. Umrechnung bleibt in der Feldhilfe. Leere Aufbewahrung bleibt unbegrenzt. Originalwerte werden über die UI wiederhergestellt.")
+      "Zeitfelder in Sicherheit, E-Mail-Queue, Benutzerstatus und Benachrichtigungen speichern und neu laden. Sitzungs-Feldhilfe und Neustartwarnung bei unverändertem und geändertem Anmeldeschlüssel prüfen. Originalwerte werden über die UI wiederhergestellt.")
   void remainingDurationFieldsPersistWithoutExposingTheCalculationBelowTheInput(int width) {
     ConfigurationPage settings = admin();
     page.setViewportSize(width, 844);
     assertSessionTimeoutUnitFits(settings);
+    assertRestartHelpAndNotice(settings);
     AdminConfigGroup[] groups = {
       AdminConfigGroup.SECURITY,
       AdminConfigGroup.USER_STATUS,
+      AdminConfigGroup.SECURITY,
+      AdminConfigGroup.QUEUE,
       AdminConfigGroup.NOTIFICATIONS,
       AdminConfigGroup.NOTIFICATIONS
     };
     String[] labels = {
       texts.getAdminConfigEntryRememberMeDuration(),
       texts.getAdminConfigEntryUserAutoAbsentTimeout(),
+      texts.getAdminConfigEntryLoginAttemptWindow(),
+      texts.getAdminConfigEntryEmailQueueRetryDelay(),
       texts.getAdminConfigEntryNotificationInboxRetention(),
       texts.getAdminConfigEntryNotificationHistoryRetention()
     };
     for (int index = 0; index < labels.length; index++) {
       settings.open(groups[index]);
       String label = labels[index];
-      boolean daysOnly = index >= 2;
+      boolean daysOnly = groups[index] == AdminConfigGroup.NOTIFICATIONS;
       String original = settings.value(label);
       java.math.BigDecimal originalSeconds = daysOnly ? null : settings.seconds(label);
       try {
@@ -570,6 +578,64 @@ public class ConfigurationBrowserTest extends BrowserFixture {
           assertEquals(0, originalSeconds.compareTo(settings.seconds(label)));
         }
       }
+    }
+  }
+
+  private void assertRestartHelpAndNotice(ConfigurationPage settings) {
+    settings.open(AdminConfigGroup.SECURITY);
+    String timeout = texts.getAdminConfigEntrySessionTimeout();
+    settings.info(timeout).click();
+    Locator timing = settings.helpPanel().locator(".admin-help-effective-use");
+    assertThat(timing.getByRole(AriaRole.HEADING)).hasText(texts.getAdminConfigEffectiveTitle());
+    assertThat(timing.locator("li"))
+        .hasText(
+            new String[] {
+              texts.getAdminConfigEffectiveSessionNew(),
+              texts.getAdminConfigEffectiveSessionExisting()
+            });
+    assertThat(settings.helpPanel().locator(".admin-help-restart-warning")).hasCount(0);
+    settings.closeHelp();
+
+    String key = texts.getAdminConfigEntryRememberMeSecretKey();
+    settings.info(key).click();
+    Locator warning =
+        settings.helpPanel().locator(".admin-help-restart-warning.cosmos-security-warning");
+    assertThat(warning).isVisible();
+    assertThat(warning).hasCSS("border-inline-start-width", "4px");
+    assertThat(warning).containsText(texts.getAdminConfigRestartRequired());
+    assertThat(warning).containsText(texts.getAdminConfigRestartDetail());
+    settings.closeHelp();
+
+    BigDecimal originalTimeout = settings.seconds(timeout);
+    String originalKey = settings.value(key);
+    Locator notice =
+        page.locator("vaadin-notification-card:not([closing])")
+            .filter(new Locator.FilterOptions().setHasText(texts.getAdminConfigSaveSuccess()));
+    Locator restartNotice =
+        notice.filter(new Locator.FilterOptions().setHasText(texts.getAdminConfigRestartSaved()));
+    try {
+      settings.enterSeconds(timeout, originalTimeout.add(BigDecimal.ONE));
+      settings.submit();
+      assertThat(notice).isVisible();
+      assertThat(restartNotice).hasCount(0);
+      notice.getByRole(AriaRole.BUTTON).click();
+      assertThat(notice).hasCount(0);
+
+      settings.enter(key, "browser-restart-probe-" + UUID.randomUUID());
+      settings.enterSeconds(timeout, originalTimeout);
+      settings.submit();
+      assertThat(restartNotice).isVisible();
+      assertThat(restartNotice).containsText(key);
+      assertThat(restartNotice).not().containsText(timeout);
+      restartNotice.getByRole(AriaRole.BUTTON).click();
+      assertThat(notice).hasCount(0);
+    } finally {
+      if (notice.count() > 0) {
+        notice.getByRole(AriaRole.BUTTON).click();
+      }
+      settings.enter(key, originalKey);
+      settings.enterSeconds(timeout, originalTimeout);
+      settings.save();
     }
   }
 

@@ -295,6 +295,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
   @Test
   @Tag("follow-up-regression")
   @Tag("sign-in-session-layout")
+  @Tag("configuration-follow-up")
   @DisplayName("SESSIONS-07: Gespeicherte Anmeldung nach Sitzungsablauf zeigt keinen Anmeldeweg")
   @Description(
       "Der Admin speichert einen kurzen Sitzungs-Timeout. Eine danach ohne Neustart angelegte Sitzung läuft ab, zwei bestehende Sitzungen bleiben aktiv. Der gespeicherte Zugang bleibt ohne aktuellen Anmeldeweg widerrufbar.")

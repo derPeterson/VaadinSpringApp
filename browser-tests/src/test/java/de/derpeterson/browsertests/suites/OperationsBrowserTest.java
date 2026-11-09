@@ -40,6 +40,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class OperationsBrowserTest extends BrowserFixture {
   @Order(1)
   @Test
+  @Tag("configuration-follow-up")
   @DisplayName("OPS-01: SMTP-Wechsel ohne Neustart und gespeicherte Daten ohne Bootstrap")
   @Description(
       """

@@ -40,6 +40,7 @@ class BrowserExecutionPlanTest {
         "two-factor-ticket-layout",
         "two-factor-ticket-panel",
         "cosmos-scrollbars",
+        "configuration-follow-up",
         "external-login-settings"
       })
   void focusedSuitesSelectOnlyTheirExistingJourneys(String suite) {
@@ -73,6 +74,12 @@ class BrowserExecutionPlanTest {
               Set.of("administrativeTicketLayoutKeepsTabsAndCardsUnclipped");
           case "cosmos-scrollbars" ->
               Set.of("globalScrollbarsPreserveNativeScrollingAndLocalChatSpacing");
+          case "configuration-follow-up" ->
+              Set.of(
+                  "everyConfigurationFieldHasAnAccessibleLocalizedInfo",
+                  "remainingDurationFieldsPersistWithoutExposingTheCalculationBelowTheInput",
+                  "expiredSessionLeavesOnlyItsSavedLogin",
+                  "persistedConfigurationAndAccountsSurviveRestartWithoutBootstrap");
           case "two-factor-ticket-layout" ->
               Set.of(
                   "administrativeTicketLayoutKeepsTabsAndCardsUnclipped",

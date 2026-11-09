@@ -131,6 +131,11 @@ final class BrowserSuites {
       case "infrastructure" -> List.of(InfrastructureBrowserTest.class);
       case "https-night" -> List.of(InfrastructureBrowserTest.class, RememberMeBrowserTest.class);
       case "operations" -> List.of(OperationsBrowserTest.class);
+      case "configuration-follow-up" ->
+          List.of(
+              ConfigurationBrowserTest.class,
+              SessionManagementBrowserTest.class,
+              OperationsBrowserTest.class);
       case "session-persistence" ->
           List.of(
               SessionLimitBrowserTest.class,

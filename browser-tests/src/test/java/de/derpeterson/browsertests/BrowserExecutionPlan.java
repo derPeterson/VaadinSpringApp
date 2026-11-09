@@ -110,6 +110,8 @@ final class BrowserExecutionPlan {
       builder.filters(TagFilter.includeTags("ticket-browser-detail"));
     } else if (suite.equals("sign-in-session-layout")) {
       builder.filters(TagFilter.includeTags("sign-in-session-layout"));
+    } else if (suite.equals("configuration-follow-up")) {
+      builder.filters(TagFilter.includeTags("configuration-follow-up"));
     }
     return builder.build();
   }

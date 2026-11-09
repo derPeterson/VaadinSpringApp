@@ -10,7 +10,7 @@
 ## Anwendungskonfiguration
 
 - [ ] [Wirksamkeit der Anwendungskonfiguration](docs/planung/anwendungskonfiguration.md)
-  im Browser nachprüfen und gemeinsam ansehen.
+  gemeinsam ansehen.
 
 ## Entwicklungsablauf
 

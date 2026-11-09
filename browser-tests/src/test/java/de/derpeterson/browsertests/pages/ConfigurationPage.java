@@ -112,8 +112,12 @@ public final class ConfigurationPage {
 
   @Step("Konfiguration speichern und Erfolgshinweis schließen")
   public void save() {
-    button(texts.getAdminConfigSave()).click();
+    submit();
     notice(texts.getAdminConfigSaveSuccess());
+  }
+
+  public void submit() {
+    button(texts.getAdminConfigSave()).click();
   }
 
   @Step("Gespeicherte Konfiguration erneut laden")
