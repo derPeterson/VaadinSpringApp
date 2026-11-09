@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -706,8 +707,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
   private void withDelayedTicketRead(Page reader, String number, Consumer<Runnable> whileHeld) {
     // Die echte Vaadin-Rückmeldung anhalten, bis die neuere Änderung gespeichert ist.
-    // Vor dem ersten Fragezeichen liegt der Pfad, danach folgen durch & getrennte Parameter.
-    Pattern uidl = Pattern.compile("^[^?]*\\?(?:[^&]*+&)*v-r=uidl(?:&.*)?$");
+    Predicate<String> uidl =
+        url -> {
+          String query = URI.create(url).getRawQuery();
+          return query != null && List.of(query.split("&")).contains("v-r=uidl");
+        };
     Deque<Route> acknowledgements = new ArrayDeque<>();
     Consumer<Route> hold =
         route -> {
@@ -2563,20 +2567,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertReducedSecurityHeader(firstName + " " + lastName, email);
     UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
     assertNativeConfirmationFields(other);
-    TwoFactorPage.openLoginHelp(page);
-    page.locator("#two-factor-recover").click();
-    assertThat(page.locator("vaadin-text-field#two-factor-code input"))
-        .hasAttribute("maxlength", "35");
-    assertThat(page.locator(".cosmos-panel-footer #two-factor-recovery-back"))
-        .hasText(texts.getTwoFactorReturnToCode());
-    assertThat(page.locator("#two-factor-help")).isHidden();
-    assertThat(page.locator("#two-factor-panel"))
-        .containsText(texts.getTwoFactorRecoveryConsumptionHint());
-    AllurePlaywright.attachScreenshot(
-        "Authenticator mit Ersatzcode geschützt wiederherstellen", page);
-    page.locator("#two-factor-recovery-back").click();
-    assertThat(page).hasURL(Pattern.compile(".*/two-factor$"));
-    assertThat(page.locator("#two-factor-authenticator-tab")).isVisible();
+    assertNativeRecoveryFields();
     TwoFactorPage.openLoginHelp(page);
     page.locator("#two-factor-help").click();
     assertThat(page.locator("#account-support")).containsText(texts.getSupportEmpty());
@@ -2635,6 +2626,23 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         (Boolean) page.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
     AllurePlaywright.attachScreenshot("Anmeldung bestätigen mit nativer Methodenauswahl", page);
     assertThat(page.locator("#two-factor-recover, #two-factor-help").first()).isHidden();
+  }
+
+  private void assertNativeRecoveryFields() {
+    TwoFactorPage.openLoginHelp(page);
+    page.locator("#two-factor-recover").click();
+    assertThat(page.locator("vaadin-text-field#two-factor-code input"))
+        .hasAttribute("maxlength", "35");
+    assertThat(page.locator(".cosmos-panel-footer #two-factor-recovery-back"))
+        .hasText(texts.getTwoFactorReturnToCode());
+    assertThat(page.locator("#two-factor-help")).isHidden();
+    assertThat(page.locator("#two-factor-panel"))
+        .containsText(texts.getTwoFactorRecoveryConsumptionHint());
+    AllurePlaywright.attachScreenshot(
+        "Authenticator mit Ersatzcode geschützt wiederherstellen", page);
+    page.locator("#two-factor-recovery-back").click();
+    assertThat(page).hasURL(Pattern.compile(".*/two-factor$"));
+    assertThat(page.locator("#two-factor-authenticator-tab")).isVisible();
   }
 
   private void assertReducedSecurityHeader(String name, String email) {
