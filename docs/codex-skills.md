@@ -11,6 +11,7 @@ oder diese Anleitung zu lesen startet keinen Ablauf.
 | Sonar bewerten oder bereinigen | „Sonar analysieren und planen“, „Sonar-Paket X umsetzen“ oder „Sonar komplett bereinigen“ | [sonar-bereinigen](../.agents/skills/sonar-bereinigen/SKILL.md) |
 | ein Feature planen und schrittweise umsetzen | „Umsetzung starten: FEATURE“ | [umsetzung-starten](../.agents/skills/umsetzung-starten/SKILL.md) |
 | den Zwischenstand prüfen und eine Commit-Message erhalten | „Gib mir bitte eine Commit-Message“ | [aenderungen-pruefen](../.agents/skills/aenderungen-pruefen/SKILL.md) |
+| Java-Code auf Lesbarkeit prüfen oder überarbeiten | „Prüfe die Lesbarkeit von KLASSE“ oder „Überarbeite die Java-Lesbarkeit projektweit“ | [java-lesbarkeit](../.agents/skills/java-lesbarkeit/SKILL.md) |
 | einen fertigen Branch lokal integrieren | „Merge BRANCH nach ZIEL“ | [branch-lokal-mergen](../.agents/skills/branch-lokal-mergen/SKILL.md) |
 | einen Entwurf mit Stitch aus der laufenden Vaadin-Oberfläche entwickeln | „Lass Stitch für SEITE zwei Varianten mit ANREGUNGEN erstellen“ | [stitch-entwurf](../.agents/skills/stitch-entwurf/SKILL.md) |
 
@@ -24,6 +25,13 @@ Stilprüfungen laufen zentral mit `-N`. Gesamt-Java-Prüfungen bei großer Testr
 und Merge nutzen das Profil `coverage` samt technischem Berichtsmodul und gemeinsamem
 Offline-Prüfer; die Befehle stehen in der Entwicklungsanleitung. Einzelaufträge
 behalten ihren begrenzten Umfang. Eine Skill-Anpassung startet keine QA oder Scans.
+
+## Java-Lesbarkeit
+
+Der [Codestil](entwicklung.md#codestil) gilt bei jeder Java-Änderung und jedem
+Java-Review. Der Skill führt durch gezielte Prüfungen ganzer Klassen oder Pakete
+und durch die projektweite Sichtung. Ein Prüfauftrag liefert Fundstellen und
+Vorschläge. Ein Auftrag zur Überarbeitung umfasst Änderungen im benannten Umfang.
 
 ## Große Testrunde
 

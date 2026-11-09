@@ -482,29 +482,69 @@ Testbefehle stehen in der [Testanleitung](tests.md).
 
 ## Codestil
 
-Bei Codearbeiten diesen Abschnitt lesen und die Regeln bei Umsetzung und Review
-anwenden. Die Beispiele illustrieren Schreibweise und Lesbarkeit; sie sind keine
-fertigen Implementierungen oder zusätzlichen fachlichen Anforderungen.
+Diese Regeln gelten beim Schreiben, Ändern und Prüfen von Java-Code. Die Beispiele
+illustrieren Schreibweise und Lesbarkeit, ohne neue fachliche Anforderungen einzuführen.
 
 ### Namen und Methodenaufgaben
 
-Für Menschen lesbare Namen beschreiben die fachliche Bedeutung. Listen heißen im
-Plural, einzelne Objekte im Singular; Booleans benennen eine erkennbare Bedingung.
-Übliche kleine Schleifenindizes sind in ihrem unmittelbaren Kontext in Ordnung.
-Keine kryptischen Kürzel, unnötigen Typpräfixe oder künstlich langen Namen.
+Klassennamen benennen die fachliche Zuständigkeit, zum Beispiel `ResetPasswordView`
+oder `AccountSessionsComponent`. Methodennamen benennen die Aktion und ihr Ziel.
+Felder, Parameter und lokale Variablen benennen ihre Rolle so, dass sie am Aufruf
+oder bei der Verwendung verständlich sind. Bei mehreren gleichartigen Elementen
+auch das Ziel im Namen nennen. Listen heißen im Plural, einzelne Objekte im Singular.
+Booleans benennen eine erkennbare Bedingung. Ein kurzer Schleifenindex ist im
+unmittelbaren Kontext verständlich. Bei einem zentralen Objekt wie `MessageProperties`
+ist der ausgeschriebene Typname als Variablenname sinnvoll, wenn er die Rolle erklärt.
+Kryptische Kürzel, unnötige Typpräfixe und künstlich lange Namen vermeiden.
 
 | Wenig aussagekräftig | Verständlicher im passenden Kontext |
 | --- | --- |
 | `list`, `data` | `unreadNotifications` |
 | `u` in einer längeren Verarbeitung | `account` |
 | `flag` | `hasUnreadNotifications` |
+| `texts` für den Textkatalog | `messageProperties` |
+| `close` für ein UI-Element | `closeDialogButton`, `closeDialogIcon` oder `closeDialogLabel` |
+| `refresh()` für die Sitzungsliste | `refreshSessionList()` |
 | `process()` | `markNotificationsAsRead()` |
 
-Eine Methode hat eine klar erkennbare Aufgabe; ihr Name passt zu Ergebnis und
-Seiteneffekten. Laden, Validieren und Speichern nicht hinter einem vagen Namen
-verstecken. Sinnvoll benannte Teilaufgaben auslagern, ohne Transaktions-, Sperr-
-oder Fehlergrenzen zu verschieben. Keine starren Zeilenlimits und keine neue
-Hilfsmethode für jede einzelne Anweisung.
+Eine Methode hat eine klar erkennbare Aufgabe. Ihr Name passt zum Ergebnis und zu
+wichtigen Seiteneffekten. Beim Wechsel der Aufgabe eine fachlich benannte Teilmethode
+erwägen. Der Aufbau eines Buttons kann beispielsweise direkt auf
+`submitPasswordReset(token)` verweisen, wo Eingabeprüfung, Speichern und Rückmeldung
+als zusammenhängender Ablauf zu lesen sind. Umfangreiche Verzweigungen auslagern,
+wenn die Namen der Teilmethoden die fachlichen Fälle beim Lesen sichtbar machen.
+Aufrufer, Fallunterscheidungen, Ausführungsreihenfolge sowie Transaktions-, Sperr-
+und Fehlergrenzen bei reinen Lesbarkeitsänderungen erhalten. Zeilenzahl und
+Sonar-Hinweise sind Anhaltspunkte. Entscheidend ist, ob die Aufteilung den Ablauf
+verständlicher macht.
+
+Hilfsmethoden nur so weit sichtbar machen, wie es ihre Aufrufer erfordern. Innerhalb
+der eigenen Klasse genügt `private`. Zugriff aus demselben Paket kann ohne Modifier
+auskommen. `protected` ist für benötigte Erweiterungspunkte in Unterklassen gedacht.
+Vor einer Änderung der Sichtbarkeit auch Overrides und Framework-Einstiege prüfen.
+
+### Gliederung in Blöcke
+
+Felder nach fachlichem Zusammenhang gruppieren. In einer View können etwa das
+E-Mail-Feld, sein Fehlerhinweis und die zugehörige Listener-Registrierung einen Block
+bilden. Navigation und ihre Felder stehen in einem eigenen Block. Die Methoden in
+einer nachvollziehbaren Reihenfolge anordnen und Hilfsmethoden in der Nähe des
+zugehörigen Ablaufs halten. Die Initialisierungsreihenfolge von Feldern erhalten,
+wenn sie das Verhalten beeinflusst.
+
+Auch innerhalb einer Methode zusammengehörige Anweisungen beieinander lassen. Beim
+Vaadin-Formular steht die Konfiguration eines Felds direkt bei seiner Deklaration
+oder Initialisierung. Eine Leerzeile macht den nächsten Arbeitsschritt sichtbar.
+Bei einem größeren Themenwechsel können es zwei sein, sofern der Projektformatter
+sie erhält. Bei größeren Feld- oder Methodenblöcken hilft ein kurzer Kommentar wie
+`// E-Mail ändern` als Orientierung beim Überfliegen. Der Aufbau der Passwortfelder
+in [ResetPasswordView](../app/src/main/java/de/derpeterson/app/views/ResetPasswordView.java)
+zeigt diese Gliederung im Projekt.
+
+Grundlagen dazu stehen im [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html),
+in Fowlers Beispielen zu [Extract Function](https://refactoring.com/catalog/extractFunction.html)
+und [Decompose Conditional](https://refactoring.com/catalog/decomposeConditional.html)
+sowie in Oracles [Leitfaden zur Sichtbarkeit](https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html).
 
 ### Klammern und Kontrollfluss
 
@@ -560,6 +600,8 @@ Rückgabe wie `service.load(...)` den Typ ausschreiben.
 
 Verträge, notwendige Voraussetzungen, wichtige Seiteneffekte und ungewöhnliche
 Fehlerfälle erklären, soweit sie aus Namen und Code nicht klar hervorgehen.
+Wenn eine Methode mehrere eng zusammengehörige Schritte koordiniert, kann ein
+kurzer Kommentar darüber ihren Zweck oder eine notwendige Reihenfolge erklären.
 Selbsterklärende Getter oder offensichtliche Schritte brauchen keinen Kommentar.
 
 ```java
