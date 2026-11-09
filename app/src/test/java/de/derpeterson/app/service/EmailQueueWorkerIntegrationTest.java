@@ -107,27 +107,26 @@ class EmailQueueWorkerIntegrationTest {
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(50);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
     when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.test");
-    tx.executeWithoutResult(
-        status -> {
-          attempts.deleteAll();
-          emails.deleteAll();
-          users.deleteAll();
-          users.flush();
-          userId =
-              users
-                  .saveAndFlush(
-                      UserEntity.builder()
-                          .firstName("Worker")
-                          .lastName("Fixture")
-                          .email("recipient@example.test")
-                          .password("isolated-hash")
-                          .gender(Gender.OTHER)
-                          .birthDate(LocalDate.of(1990, 1, 1))
-                          .preferredLocale(Locale.ENGLISH)
-                          .roleEntities(new ArrayList<>())
-                          .build())
-                  .getId();
-        });
+    tx.executeWithoutResult(status -> {
+      attempts.deleteAll();
+      emails.deleteAll();
+      users.deleteAll();
+      users.flush();
+      userId =
+          users
+              .saveAndFlush(
+                  UserEntity.builder()
+                      .firstName("Worker")
+                      .lastName("Fixture")
+                      .email("recipient@example.test")
+                      .password("isolated-hash")
+                      .gender(Gender.OTHER)
+                      .birthDate(LocalDate.of(1990, 1, 1))
+                      .preferredLocale(Locale.ENGLISH)
+                      .roleEntities(new ArrayList<>())
+                      .build())
+              .getId();
+    });
   }
 
   @AfterEach
@@ -155,18 +154,17 @@ class EmailQueueWorkerIntegrationTest {
   }
 
   Long insert(String subject, LocalDateTime retry) {
-    return tx.execute(
-        status -> {
-          EmailQueueEntity item = new EmailQueueEntity();
-          item.setUserEntity(users.findById(userId).orElseThrow());
-          item.setSubject(subject);
-          item.setBody("<p>body:" + subject + "</p>");
-          item.setStatus(EmailStatus.PENDING);
-          item.setEmailType(EmailType.NOTIFICATION);
-          item.setCreatedAt(LocalDateTime.now(clock).minusMinutes(2));
-          item.setLastRetryAt(retry);
-          return emails.saveAndFlush(item).getId();
-        });
+    return tx.execute(status -> {
+      EmailQueueEntity item = new EmailQueueEntity();
+      item.setUserEntity(users.findById(userId).orElseThrow());
+      item.setSubject(subject);
+      item.setBody("<p>body:" + subject + "</p>");
+      item.setStatus(EmailStatus.PENDING);
+      item.setEmailType(EmailType.NOTIFICATION);
+      item.setCreatedAt(LocalDateTime.now(clock).minusMinutes(2));
+      item.setLastRetryAt(retry);
+      return emails.saveAndFlush(item).getId();
+    });
   }
 
   private long statusCount(EmailStatus status) {
@@ -220,11 +218,11 @@ class EmailQueueWorkerIntegrationTest {
       second.release.countDown();
       when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.test");
       when(config.snapshot(anyList())).thenReturn(smtpSettings(first));
-      EmailService mail = new EmailService(config, new MailConfig(config).javaMailSender());
+      EmailService smtpSender = new EmailService(config, new MailConfig(config).javaMailSender());
 
-      mail.sendAdminEmail("recipient@example.test", "first transport", "fixture");
+      smtpSender.sendAdminEmail("recipient@example.test", "first transport", "fixture");
       when(config.snapshot(anyList())).thenReturn(smtpSettings(second));
-      mail.sendAdminEmail("recipient@example.test", "second transport", "fixture");
+      smtpSender.sendAdminEmail("recipient@example.test", "second transport", "fixture");
 
       assertEquals(Set.of("first transport"), first.messages.keySet());
       assertEquals(Set.of("second transport"), second.messages.keySet());
@@ -405,20 +403,19 @@ class EmailQueueWorkerIntegrationTest {
     SmtpFixture(int parallel) throws IOException {
       firstWave = new CountDownLatch(parallel);
       server = new ServerSocket(0, 10, InetAddress.getByName("127.0.0.1"));
-      handlers.submit(
-          () -> {
-            while (!server.isClosed()) {
-              try {
-                Socket socket = server.accept();
-                sockets.add(socket);
-                handlers.submit(() -> handle(socket));
-              } catch (IOException failure) {
-                if (!server.isClosed()) {
-                  failures.add(failure);
-                }
-              }
+      handlers.submit(() -> {
+        while (!server.isClosed()) {
+          try {
+            Socket socket = server.accept();
+            sockets.add(socket);
+            handlers.submit(() -> handle(socket));
+          } catch (IOException failure) {
+            if (!server.isClosed()) {
+              failures.add(failure);
             }
-          });
+          }
+        }
+      });
     }
 
     int port() {

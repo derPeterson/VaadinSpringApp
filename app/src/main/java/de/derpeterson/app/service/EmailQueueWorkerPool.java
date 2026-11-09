@@ -100,16 +100,16 @@ public class EmailQueueWorkerPool {
 
   /** Annahme und Abschluss gehören zu genau diesem Lauf; kein geteilter Koordinatorzustand. */
   private final class BatchExecution {
-    private final ThreadPoolExecutor executor;
+    private final ThreadPoolExecutor batchExecutor;
     private final int parallelism;
     private final BlockingQueue<FutureTask<Void>> completed = new LinkedBlockingQueue<>();
     private int active;
     private boolean refill = true;
     private boolean interrupted;
 
-    private BatchExecution(ThreadPoolExecutor executor) {
-      this.executor = executor;
-      this.parallelism = executor.getMaximumPoolSize();
+    private BatchExecution(ThreadPoolExecutor batchExecutor) {
+      this.batchExecutor = batchExecutor;
+      this.parallelism = batchExecutor.getMaximumPoolSize();
     }
 
     private void run(Iterator<Long> candidates, LongConsumer dispatch) {
@@ -152,7 +152,7 @@ public class EmailQueueWorkerPool {
           };
       inFlight.add(task);
       try {
-        executor.execute(task);
+        batchExecutor.execute(task);
         active++;
       } catch (RejectedExecutionException failure) {
         inFlight.remove(task);
