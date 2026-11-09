@@ -145,9 +145,8 @@ final class TwoFactorCodeInput extends VerticalLayout {
   }
 
   boolean validate() {
-    return methods.getSelectedTab() == recoveryTab
-        ? ValidationHelper.validateRequiredInputs(List.of(recoveryCode), texts)
-        : ValidationHelper.validateRequiredInputs(List.of(appCode), texts);
+    return ValidationHelper.validateRequiredInputs(
+        List.of(methods.getSelectedTab() == recoveryTab ? recoveryCode : appCode), texts);
   }
 
   String getValue() {

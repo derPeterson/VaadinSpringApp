@@ -74,12 +74,7 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
     HttpServletRequest request = servlet.getHttpServletRequest();
     TwoFactorFlow flow = TwoFactorFlow.current(request);
     if (flow != null && security.get().getAuthenticatedUser(request).isPresent()) {
-      if (flow.help() && target != RecoveryHelpView.class) {
-        navigation.forwardTo(RecoveryHelpView.class);
-      } else if (!flow.help() && target != TwoFactorView.class) {
-        navigation.forwardTo(
-            TwoFactorView.class, new Location(flow.location().substring(1)).getQueryParameters());
-      }
+      forwardToActiveFlow(navigation, target, flow);
       return;
     }
     if (target == TwoFactorView.class || target == RecoveryHelpView.class) {
@@ -92,6 +87,16 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
       navigation.forwardTo(
           TwoFactorView.class,
           administration ? QueryParameters.of("administration", "true") : QueryParameters.empty());
+    }
+  }
+
+  private void forwardToActiveFlow(
+      BeforeEnterEvent navigation, Class<?> target, TwoFactorFlow flow) {
+    if (flow.help() && target != RecoveryHelpView.class) {
+      navigation.forwardTo(RecoveryHelpView.class);
+    } else if (!flow.help() && target != TwoFactorView.class) {
+      navigation.forwardTo(
+          TwoFactorView.class, new Location(flow.location().substring(1)).getQueryParameters());
     }
   }
 

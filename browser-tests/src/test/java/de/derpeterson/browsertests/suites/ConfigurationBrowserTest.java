@@ -510,6 +510,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   void remainingDurationFieldsPersistWithoutExposingTheCalculationBelowTheInput(int width) {
     ConfigurationPage settings = admin();
     page.setViewportSize(width, 844);
+    assertSessionTimeoutUnitFits(settings);
     AdminConfigGroup[] groups = {
       AdminConfigGroup.SECURITY,
       AdminConfigGroup.USER_STATUS,
@@ -570,6 +571,33 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         }
       }
     }
+  }
+
+  private void assertSessionTimeoutUnitFits(ConfigurationPage settings) {
+    settings.open(AdminConfigGroup.SECURITY);
+    String label = texts.getAdminConfigEntrySessionTimeout();
+    settings.enterSeconds(label, java.math.BigDecimal.valueOf(119));
+    Locator select = settings.duration(label).locator("vaadin-select");
+    Locator selectedUnit = select.locator("vaadin-select-value-button");
+    assertThat(selectedUnit).hasText(texts.getAdminConfigDurationUnitSeconds());
+    assertTrue(
+        (Boolean)
+            select.evaluate(
+                """
+                select => {
+                  const value = select.querySelector('vaadin-select-value-button');
+                  const item = value.querySelector('vaadin-select-item');
+                  const toggle = select.shadowRoot.querySelector('[part~="toggle-button"]');
+                  const range = document.createRange();
+                  range.selectNodeContents(item);
+                  const text = range.getBoundingClientRect();
+                  return text.width > 0
+                    && text.right <= value.getBoundingClientRect().right + 1
+                    && text.right <= toggle.getBoundingClientRect().left;
+                }
+                """),
+        "Die ausgeschriebene Zeiteinheit muss vollständig vor dem Auswahlpfeil stehen");
+    settings.reload();
   }
 
   private ConfigurationPage admin() {

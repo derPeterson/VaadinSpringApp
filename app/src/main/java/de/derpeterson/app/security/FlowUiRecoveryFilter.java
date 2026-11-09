@@ -54,10 +54,8 @@ public final class FlowUiRecoveryFilter implements Filter {
     }
     target.setContentType("application/json;charset=UTF-8");
     target.setHeader("Cache-Control", "no-store");
-    String route =
-        maintenance.blocks(http)
-            ? AppRoute.MAINTENANCE.getSecurityRoute()
-            : flow == null ? AppRoute.HOME.getSecurityRoute() : flow.location();
+    String destination = flow == null ? AppRoute.HOME.getSecurityRoute() : flow.location();
+    String route = maintenance.blocks(http) ? AppRoute.MAINTENANCE.getSecurityRoute() : destination;
     target
         .getWriter()
         .write(

@@ -363,9 +363,10 @@ public class ExternalLoginFlow {
     if (attempt.mode() != Mode.LOGIN) {
       completeAccountAction(request, session, attempt, evidence);
       TwoFactorFlow active = TwoFactorFlow.current(request);
+      String setupLocation = active == null ? TwoFactorFlow.SETUP.location() : active.location();
       response.sendRedirect(
           attempt.purpose() == Purpose.ENROLL_FACTOR
-              ? active == null ? "/two-factor?setup" : active.location()
+              ? setupLocation
               : AppRouteConstants.ACCOUNT_PORTAL_LOCATION);
       return;
     }

@@ -104,8 +104,44 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       methods.scrollIntoViewIfNeeded();
       AllurePlaywright.attachScreenshot("Schreibgeschützte Anmeldeangaben", administrator.page);
       user.cancel();
+      assertSelfRegisteredSignInDetails(users);
       new UserMenu(administrator.page).signOut();
     }
+  }
+
+  private void assertSelfRegisteredSignInDetails(AdminUsersPage users) {
+    new UserMenu(page).signOut();
+    String email = "self-registered-" + UUID.randomUUID() + "@gmail.com";
+    begin("google", email, "valid");
+    page.locator("#external-register-first input").fill("Browser");
+    page.locator("#external-register-last input").fill("Testuser");
+    page.locator("#external-register-submit").click();
+    assertThat(page).hasURL(Pattern.compile(".*/home$"));
+
+    AdminUserDialog user = users.openEdit(email);
+    Locator panel = user.root().locator(".admin-user-sign-in");
+    Locator title = panel.locator(".admin-user-sign-in-title");
+    Locator badge = panel.locator("vaadin-badge#admin-user-registered-via");
+    assertThat(title).hasCSS("font-size", "13px");
+    assertThat(badge).hasText(texts.getExternalGoogle());
+    assertThat(badge).hasCSS("color", "rgb(56, 189, 248)");
+    assertTrue(
+        (Boolean)
+            panel.evaluate(
+                """
+                panel => {
+                  const [icon, content] = panel.children;
+                  const title = content.firstElementChild.getBoundingClientRect();
+                  const marker = icon.getBoundingClientRect();
+                  const innerBottom = panel.getBoundingClientRect().bottom
+                    - parseFloat(getComputedStyle(panel).paddingBottom)
+                    - parseFloat(getComputedStyle(panel).borderBottomWidth);
+                  return Math.abs((marker.top + marker.bottom - title.top - title.bottom) / 2) <= 2
+                    && Math.abs(innerBottom - content.getBoundingClientRect().bottom) <= 2;
+                }
+                """),
+        "Die Infobox muss ohne zusätzlichen Leerraum mit Icon auf Höhe des Titels erscheinen");
+    user.cancel();
   }
 
   @ParameterizedTest
@@ -193,27 +229,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       admin.navigate("/admin?section=configuration&group=external_login");
       try {
         setProviderAvailability(admin, false);
-        // Ein direkter Seitenaufruf muss die bestehenden Zuordnungen weiter anzeigen.
-        page.navigate("/account?section=security&tab=portal");
-        page.locator("#account-security-tab-providers").click();
-        assertThat(page.locator(".external-connection-row")).hasCount(1);
-        assertThat(page.locator(".external-connection-heading vaadin-badge"))
-            .hasText(texts.getExternalConnected());
-        assertThat(page.locator(".external-connection-row"))
-            .containsText(texts.getExternalProviderUnavailable());
-        Locator disconnect = page.locator("#external-connect-google");
-        if (hasPassword) {
-          assertThat(disconnect).isEnabled();
-          disconnect.click();
-          assertThat(page.locator("#external-confirm-factor")).isVisible();
-          assertThat(page.locator("#external-confirm-password")).isHidden();
-          assertThat(page.locator("#external-confirm-google")).hasCount(0);
-          page.locator("#external-proof-cancel").click();
-        } else {
-          assertThat(disconnect).isDisabled();
-        }
-        AllurePlaywright.attachScreenshot(
-            "Deaktivierter Anbieter bleibt mit seinem Konto verbunden", page);
+        verifyDisabledConnection(hasPassword);
         page.locator("#account-security-tab-portal").click();
         page.locator("#account-password-edit-security").click();
         if (hasPassword) {
@@ -517,6 +533,30 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     assertThat(form.root().locator("vaadin-combo-box input")).hasValue("");
     assertThat(form.root().locator("vaadin-date-picker input")).hasValue("");
     form.cancel();
+  }
+
+  private void verifyDisabledConnection(boolean hasPassword) {
+    // Ein direkter Seitenaufruf muss die bestehenden Zuordnungen weiter anzeigen.
+    page.navigate("/account?section=security&tab=portal");
+    page.locator("#account-security-tab-providers").click();
+    assertThat(page.locator(".external-connection-row")).hasCount(1);
+    assertThat(page.locator(".external-connection-heading vaadin-badge"))
+        .hasText(texts.getExternalConnected());
+    assertThat(page.locator(".external-connection-row"))
+        .containsText(texts.getExternalProviderUnavailable());
+    Locator disconnect = page.locator("#external-connect-google");
+    if (hasPassword) {
+      assertThat(disconnect).isEnabled();
+      disconnect.click();
+      assertThat(page.locator("#external-confirm-factor")).isVisible();
+      assertThat(page.locator("#external-confirm-password")).isHidden();
+      assertThat(page.locator("#external-confirm-google")).hasCount(0);
+      page.locator("#external-proof-cancel").click();
+    } else {
+      assertThat(disconnect).isDisabled();
+    }
+    AllurePlaywright.attachScreenshot(
+        "Deaktivierter Anbieter bleibt mit seinem Konto verbunden", page);
   }
 
   private void begin(String provider, String email, String mode) {

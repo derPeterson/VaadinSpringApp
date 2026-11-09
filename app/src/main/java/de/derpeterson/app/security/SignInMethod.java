@@ -14,8 +14,8 @@ public enum SignInMethod {
   static SignInMethod fromAuthentication(Authentication authentication) {
     return switch (authentication) {
       case ExternalAuthenticationToken external -> provider(external.provider());
-      case RememberMeAuthenticationToken ignored -> SAVED_LOGIN;
-      case UsernamePasswordAuthenticationToken ignored -> PORTAL;
+      case RememberMeAuthenticationToken _ -> SAVED_LOGIN;
+      case UsernamePasswordAuthenticationToken _ -> PORTAL;
       case null, default -> null;
     };
   }

@@ -196,9 +196,9 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
     String location = "/admin?section=configuration&group=two_factor";
     // Eine vom alten Prüftab bereits ausgelöste Weiterleitung darf den neuen Abruf nicht abbrechen.
     // Die getrennte Nutzersitzung mit der alten Benachrichtigungsvorschau bleibt geöffnet.
-    try (Page previous = page) {
-      page = context.newPage();
-    }
+    Page next = context.newPage();
+    page.close();
+    page = next;
     page.navigate(location);
     TwoFactorPage.completeIfRequired(
         page, BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);

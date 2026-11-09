@@ -209,9 +209,9 @@ class ExternalIdentityServicePersistenceTest {
     UserEntity user = register(evidence("google", "one", true));
     Long userId = user.getId();
     String version = user.getAccessVersion();
+    MockHttpServletRequest request = new MockHttpServletRequest();
     assertThrows(
-        AccessDeniedException.class,
-        () -> service.unlink(new MockHttpServletRequest(), userId, version, "google"));
+        AccessDeniedException.class, () -> service.unlink(request, userId, version, "google"));
     service.link(user.getId(), user.getAccessVersion(), evidence("microsoft", "two", false));
     sessions.registerNewSession("own-active-session", user.getEmail());
     sessions.registerNewSession("other-active-session", user.getEmail());

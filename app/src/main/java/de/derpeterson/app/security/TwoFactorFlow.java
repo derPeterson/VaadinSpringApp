@@ -9,9 +9,9 @@ public enum TwoFactorFlow {
   LOGIN("", false),
   ADMINISTRATION("?administration", false),
   SETUP("?setup", true),
-  RECOVERY("?recover", false),
-  ADMIN_RECOVERY("?recover", false),
-  ACCOUNT_RECOVERY("?recover", true),
+  RECOVERY(Query.RECOVER, false),
+  ADMIN_RECOVERY(Query.RECOVER, false),
+  ACCOUNT_RECOVERY(Query.RECOVER, true),
   LOGIN_HELP(null, false),
   ADMIN_HELP(null, false),
   ACCOUNT_HELP(null, true);
@@ -21,6 +21,10 @@ public enum TwoFactorFlow {
   public static final String HELP_PATH = "/recovery-help";
   private final String query;
   private final boolean account;
+
+  private static final class Query {
+    private static final String RECOVER = "?recover";
+  }
 
   TwoFactorFlow(String query, boolean account) {
     this.query = query;

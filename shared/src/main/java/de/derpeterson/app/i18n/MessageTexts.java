@@ -393,7 +393,7 @@ public class MessageTexts {
   }
 
   public String getTwoFactorAreaLabel(boolean account) {
-    return account ? getTranslation("mfa.area.account") : getTranslation("mfa.area.login");
+    return getTranslation(account ? "mfa.area.account" : "mfa.area.login");
   }
 
   public String getTwoFactorPageHint() {

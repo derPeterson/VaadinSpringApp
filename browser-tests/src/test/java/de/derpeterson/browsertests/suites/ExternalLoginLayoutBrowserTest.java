@@ -128,29 +128,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     attachPanels("Kontosicherheit: Anbieterübersicht bei " + width + " px");
     page.locator("#external-connect-google").click();
     Locator dialog = page.locator("#external-identity-dialog");
-    Locator content = dialog.locator("vaadin-dialog-overlay [part=content]");
-    assertThat(content).hasCSS("background-color", "rgb(5, 8, 17)");
-    Locator appCode = page.locator("fc-otp-field#external-confirm-factor");
-    assertThat(appCode.locator("[part=slot]")).hasCount(6);
-    assertThat(appCode.locator("[part=slot]").first())
-        .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
-    assertThat(appCode.locator("input[slot=input]")).isFocused();
-    Locator recoveryTab = page.locator("#external-proof-recovery-code-tab");
-    UiActions.complete(page, recoveryTab::click);
-    assertThat(page.locator("#external-confirm-recovery-code")).isVisible();
-    assertThat(page.locator("#external-confirm-recovery-code input"))
-        .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
-    assertThat(appCode).isHidden();
-    UiActions.complete(page, page.locator("#external-proof-app-code-tab")::click);
-    assertThat(appCode).isVisible();
-    assertThat(dialog.locator(".account-change-dialog-header .cosmos-panel-icon img"))
-        .hasAttribute("src", "icons/external-login/google.png");
-    assertDynamicTextWidths(dialog.locator(".cosmos-dialog-actions"));
-    attachPanels("Kontosicherheit: stabiler Bestätigungsdialog bei " + width + " px");
-    BoundingBox bounds = dialog.locator("vaadin-dialog-overlay > [part~=overlay]").boundingBox();
-    assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= width);
-    page.keyboard().press("Escape");
-    assertThat(dialog).hasJSProperty("opened", false);
+    assertProviderConfirmationDialog(dialog, width);
 
     page.locator("#external-connect-google").click();
     page.locator("#external-proof-help").click();
@@ -179,6 +157,32 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
       otpInput.pressSequentially(code);
     }
     assertThat(page.locator("#fixture-email")).isVisible();
+  }
+
+  private void assertProviderConfirmationDialog(Locator dialog, int width) {
+    Locator content = dialog.locator("vaadin-dialog-overlay [part=content]");
+    assertThat(content).hasCSS("background-color", "rgb(5, 8, 17)");
+    Locator appCode = page.locator("fc-otp-field#external-confirm-factor");
+    assertThat(appCode.locator("[part=slot]")).hasCount(6);
+    assertThat(appCode.locator("[part=slot]").first())
+        .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
+    assertThat(appCode.locator("input[slot=input]")).isFocused();
+    Locator recoveryTab = page.locator("#external-proof-recovery-code-tab");
+    UiActions.complete(page, recoveryTab::click);
+    assertThat(page.locator("#external-confirm-recovery-code")).isVisible();
+    assertThat(page.locator("#external-confirm-recovery-code input"))
+        .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
+    assertThat(appCode).isHidden();
+    UiActions.complete(page, page.locator("#external-proof-app-code-tab")::click);
+    assertThat(appCode).isVisible();
+    assertThat(dialog.locator(".account-change-dialog-header .cosmos-panel-icon img"))
+        .hasAttribute("src", "icons/external-login/google.png");
+    assertDynamicTextWidths(dialog.locator(".cosmos-dialog-actions"));
+    attachPanels("Kontosicherheit: stabiler Bestätigungsdialog bei " + width + " px");
+    BoundingBox bounds = dialog.locator("vaadin-dialog-overlay > [part~=overlay]").boundingBox();
+    assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= width);
+    page.keyboard().press("Escape");
+    assertThat(dialog).hasJSProperty("opened", false);
   }
 
   private void assertAccountProviderRows(Locator portalTab, Locator providersTab) {

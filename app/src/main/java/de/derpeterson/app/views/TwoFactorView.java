@@ -91,6 +91,7 @@ public final class TwoFactorView extends VerticalLayout
         ? navigator.clipboard.writeText(value.replaceAll(' ', '').replaceAll('\\n', '')).then(() => true, () => false)
         : false;
       """;
+  private static final String INPUT_MODE_ATTRIBUTE = "inputmode";
   private static final String AUTOCOMPLETE_ATTRIBUTE = "autocomplete";
   private static final String CONFIRMATION_INPUT_ID = "two-factor-confirmation-input";
   private static final String TABPANEL_ROLE = "tabpanel";
@@ -552,7 +553,7 @@ public final class TwoFactorView extends VerticalLayout
       case GOOGLE_EMAIL -> {
         addHint(texts.getTwoFactorEmailCodeHint());
         content.add(prepareCode(texts.getTwoFactorEmailCodeLabel(), 8));
-        code.getElement().setAttribute("inputmode", "numeric");
+        code.getElement().setAttribute(INPUT_MODE_ATTRIBUTE, "numeric");
         submit.setText(texts.getTwoFactorConfirm());
       }
       case ENROLLMENT -> showEnrollment();
@@ -983,7 +984,7 @@ public final class TwoFactorView extends VerticalLayout
 
   private TextField prepareRecoveryCode() {
     code.setLabel(texts.getTwoFactorRecoveryCodeLabel());
-    code.getElement().removeAttribute("inputmode");
+    code.getElement().removeAttribute(INPUT_MODE_ATTRIBUTE);
     TwoFactorCodeFields.configureRecoveryCode(code);
     return code;
   }
@@ -994,7 +995,7 @@ public final class TwoFactorView extends VerticalLayout
     code.setPlaceholder(texts.getTwoFactorCodePlaceholder());
     code.setMaxLength(maximumLength);
     code.getElement().setAttribute(AUTOCOMPLETE_ATTRIBUTE, "one-time-code");
-    code.getElement().removeAttribute("inputmode");
+    code.getElement().removeAttribute(INPUT_MODE_ATTRIBUTE);
     return code;
   }
 

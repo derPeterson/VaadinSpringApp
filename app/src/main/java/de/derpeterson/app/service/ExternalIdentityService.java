@@ -210,7 +210,7 @@ public class ExternalIdentityService {
       available.add(SignInMethod.PORTAL);
     }
     List<String> enabledProviders = clients.providers();
-    for (String provider : connected(user.getId())) {
+    for (String provider : connectedProviders(user.getId())) {
       if (enabledProviders.contains(provider)) {
         available.add(SignInMethod.provider(provider));
       }
@@ -220,6 +220,10 @@ public class ExternalIdentityService {
 
   @Transactional(readOnly = true)
   public List<String> connected(Long userId) {
+    return connectedProviders(userId);
+  }
+
+  private List<String> connectedProviders(Long userId) {
     return identities.findByUserIdOrderByProvider(userId).stream()
         .map(ExternalIdentityEntity::getProvider)
         .toList();

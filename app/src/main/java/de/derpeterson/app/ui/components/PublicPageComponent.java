@@ -12,6 +12,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.function.SerializableRunnable;
@@ -112,7 +113,7 @@ public class PublicPageComponent extends PageFrameComponent {
       navigation.addClassName("public-security-navigation");
       securityIdentity.setId("public-security-identity");
       securityIdentity.setSpacing(false);
-      securityIdentity.setAlignItems(HorizontalLayout.Alignment.CENTER);
+      securityIdentity.setAlignItems(Alignment.CENTER);
       securityIdentity.addClassName("public-security-identity");
       securityIdentity.setVisible(false);
       navigation.add(securityIdentity);
