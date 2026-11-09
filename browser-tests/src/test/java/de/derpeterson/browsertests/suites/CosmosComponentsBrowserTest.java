@@ -99,11 +99,10 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
         for (Locator area : List.of(chat, grid, field)) {
           assertScrollbarStyleAndMovement(area);
         }
-        page.waitForCondition(
-            () ->
-                (Boolean)
-                    page.evaluate(
-                        """
+        page.waitForCondition(() ->
+            (Boolean)
+                page.evaluate(
+                    """
                     () => {
                       const thread = document.querySelector('#scrollbar-test-chat .support-message-thread');
                       const grid = document.querySelector('#scrollbar-test-grid');
@@ -158,19 +157,18 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
   private void assertScrollbarStyleAndMovement(Locator area) {
     assertThat(area).isVisible();
-    page.waitForCondition(
-        () ->
-            (Boolean)
-                area.evaluate(
-                    """
-                    element => {
-                      const size = getComputedStyle(element).getPropertyValue('--cosmos-scrollbar-size').trim();
-                      return element.scrollHeight > element.clientHeight
-                        && getComputedStyle(element, '::-webkit-scrollbar').width === size
-                        && getComputedStyle(element, '::-webkit-scrollbar-thumb').backgroundColor
-                          === getComputedStyle(document.documentElement, '::-webkit-scrollbar-thumb').backgroundColor;
-                    }
-                    """));
+    page.waitForCondition(() ->
+        (Boolean)
+            area.evaluate(
+                """
+                element => {
+                  const size = getComputedStyle(element).getPropertyValue('--cosmos-scrollbar-size').trim();
+                  return element.scrollHeight > element.clientHeight
+                    && getComputedStyle(element, '::-webkit-scrollbar').width === size
+                    && getComputedStyle(element, '::-webkit-scrollbar-thumb').backgroundColor
+                      === getComputedStyle(document.documentElement, '::-webkit-scrollbar-thumb').backgroundColor;
+                }
+                """));
     area.evaluate("element => element.scrollTop = 0");
     area.hover();
     page.mouse().wheel(0, 80);
@@ -368,24 +366,24 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
         (List<?>)
             item.evaluate(
                 """
-        el => {
-          const node = el.shadowRoot.querySelector('slot:not([name])').assignedNodes({flatten:true})
-            .find(node => node.textContent.trim());
-          const range = document.createRange(); range.selectNodeContents(node);
-          const box = range.getBoundingClientRect();
-          return [box.x, box.y + box.height / 2];
-        }
-        """);
+                el => {
+                  const node = el.shadowRoot.querySelector('slot:not([name])').assignedNodes({flatten:true})
+                    .find(node => node.textContent.trim());
+                  const range = document.createRange(); range.selectNodeContents(node);
+                  const box = range.getBoundingClientRect();
+                  return [box.x, box.y + box.height / 2];
+                }
+                """);
     assertEquals(8, ((Number) label.get(0)).doubleValue() - icon.x - icon.width, 2);
     assertEquals(icon.y + icon.height / 2, ((Number) label.get(1)).doubleValue(), 2);
     page.mouse().move(1, 1);
   }
 
   @Test
-  @DisplayName("COMPONENT-04: Tooltip A gilt für Aktionen und Feldinfos")
+  @DisplayName("COMPONENT-04: Aktions-Tooltips und seitliche Feldhilfe bleiben unterscheidbar")
   @Description(
-      "Kurze Aktionshinweise per Hover und Tastatur öffnen, lange Mailinfos per Klick prüfen. Auf Desktop und Smartphone gleiche deckende Fläche, Schrift und Rahmen ohne Überlauf.")
-  void tooltipDesignCoversActionsAndFieldHints() {
+      "Auf Desktop und Smartphone die Gestaltung der Aktions-Tooltips bei Hover und Fokus prüfen. Die Mail-Feldhilfe öffnet als eigener Dialog und schließt per Escape.")
+  void actionTooltipsAndFieldHelpUseDistinctOverlays() {
     signIn();
     for (int width : new int[] {1280, 390}) {
       page.setViewportSize(width, 900);
@@ -407,17 +405,14 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
               AriaRole.BUTTON,
               new Page.GetByRoleOptions().setName(texts.getAdminMailRecipient()).setExact(true))
           .click();
-      assertThat(page.getByRole(AriaRole.TOOLTIP)).containsText(texts.getAdminMailRecipientHint());
-      assertTooltip(page.locator("vaadin-tooltip-overlay[opened] [part=overlay]"));
-      AllurePlaywright.attachScreenshot("Feldtooltip A bei " + width + "px", page);
-      page.getByRole(
-              AriaRole.HEADING,
-              new Page.GetByRoleOptions()
-                  .setName(texts.getAdminMailTitle())
-                  .setLevel(1)
-                  .setExact(true))
-          .click();
+      Locator fieldHelp = page.locator("#admin-mail-field-help[opened]");
+      assertThat(fieldHelp.locator("vaadin-dialog-overlay > [part~=overlay]")).isVisible();
+      assertThat(fieldHelp.locator(".admin-help-description"))
+          .hasText(texts.getAdminMailRecipientHint());
       assertThat(page.getByRole(AriaRole.TOOLTIP)).hasCount(0);
+      AllurePlaywright.attachScreenshot("Seitliche Mail-Feldhilfe bei " + width + "px", page);
+      page.keyboard().press("Escape");
+      assertThat(fieldHelp).hasCount(0);
     }
   }
 
