@@ -38,6 +38,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserService;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -113,9 +114,10 @@ class DurableSessionPersistenceTest {
             .password("fixture-encoded-password")
             .roles("USER")
             .build());
-    repository = restart();
     config = mock(ConfigService.class);
     when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+    when(config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(1800);
+    repository = restart();
   }
 
   @AfterEach
@@ -129,7 +131,7 @@ class DurableSessionPersistenceTest {
   private DurableSessionRepository<?> restart() {
     JdbcIndexedSessionRepository backend =
         new SessionPersistenceConfiguration()
-            .durableJdbcSessions(source, new DataSourceTransactionManager(source), 1800);
+            .durableJdbcSessions(source, new DataSourceTransactionManager(source), config);
     backends.add(backend);
     return new DurableSessionRepository<>(
         backend,
@@ -141,6 +143,20 @@ class DurableSessionPersistenceTest {
           return current;
         },
         key::get);
+  }
+
+  @Test
+  void changedTimeoutAppliesOnlyToSessionsCreatedAfterRestart() {
+    Session existing = repository.createSession();
+    assertEquals(Duration.ofMinutes(30), existing.getMaxInactiveInterval());
+
+    when(config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(10);
+    assertEquals(Duration.ofMinutes(30), repository.createSession().getMaxInactiveInterval());
+
+    DurableSessionRepository<?> restarted = restart();
+    assertEquals(
+        Duration.ofMinutes(30), restarted.findById(existing.getId()).getMaxInactiveInterval());
+    assertEquals(Duration.ofSeconds(10), restarted.createSession().getMaxInactiveInterval());
   }
 
   private SecurityContext context(boolean remembered) {

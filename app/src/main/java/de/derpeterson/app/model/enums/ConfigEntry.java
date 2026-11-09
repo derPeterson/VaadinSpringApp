@@ -20,6 +20,7 @@ public enum ConfigEntry {
   USER_AUTO_ABSENT_TIMEOUT("user.auto.absent.timeout", Duration.ofMinutes(10).toString()),
   LOGIN_ATTEMPTS_LIMIT("login.attempts.limit", 10),
   MAX_SESSIONS_PER_USER("max.sessions.per.user", 3),
+  SESSION_TIMEOUT_SECONDS("session.timeout.seconds", 1800),
   MAINTENANCE_MODE("maintenance.mode", false),
   EMAIL_FROM("email.from", "no-reply@example.com"),
   EMAIL_ADMIN("email.admin", "admin@example.com"),

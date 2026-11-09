@@ -17,11 +17,11 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.FocusNotifier;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.textfield.PasswordField;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -107,22 +107,17 @@ class AdminUserDialogValidationTest {
     section.configureSignInDetails(identities);
     open(language, false);
 
-    TextField registration = signInField("admin-user-registered-via");
-    TextField available = signInField("admin-user-sign-in-methods");
-    assertEquals(texts.getSignInRegisteredVia(), registration.getLabel());
-    assertEquals(texts.getExternalGoogle(), registration.getValue());
-    assertEquals(texts.getSignInAvailableMethods(), available.getLabel());
+    Badge registration = (Badge) signInDetail("admin-user-registered-via");
+    Component available = signInDetail("admin-user-sign-in-methods");
+    assertEquals(texts.getExternalGoogle(), registration.getText());
     assertEquals(
-        texts.getSignInPortalPassword() + ", " + texts.getExternalMicrosoft(),
-        available.getValue());
-    assertTrue(registration.isReadOnly());
-    assertTrue(available.isReadOnly());
+        List.of(texts.getSignInPortalPassword(), texts.getExternalMicrosoft()),
+        available.getChildren().map(Badge.class::cast).map(Badge::getText).toList());
   }
 
-  private TextField signInField(String id) {
+  private Component signInDetail(String id) {
     return descendants(dialog)
         .filter(item -> item.getId().filter(id::equals).isPresent())
-        .map(TextField.class::cast)
         .findFirst()
         .orElseThrow();
   }

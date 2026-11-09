@@ -1953,6 +1953,10 @@ public class MessageTexts {
     return getTranslation("adminView.config.entry.max_sessions_per_user");
   }
 
+  public String getAdminConfigEntrySessionTimeout() {
+    return getTranslation("adminView.config.entry.session_timeout_seconds");
+  }
+
   public String getAdminConfigEntryMaintenanceMode() {
     return getTranslation("adminView.config.entry.maintenance_mode");
   }
@@ -2059,6 +2063,10 @@ public class MessageTexts {
 
   public String getAdminConfigEntryMaxSessionsPerUserTooltip() {
     return getTranslation("adminView.config.entry.max_sessions_per_user.tooltip");
+  }
+
+  public String getAdminConfigEntrySessionTimeoutTooltip() {
+    return getTranslation("adminView.config.entry.session_timeout_seconds.tooltip");
   }
 
   public String getAdminConfigEntryMaintenanceModeTooltip() {
@@ -2956,7 +2964,11 @@ public class MessageTexts {
   }
 
   public String getSessionSignedInVia(String method) {
-    return getFormattedTranslation("signIn.sessionVia", method);
+    return getSessionSignedInViaLabel() + ": " + method;
+  }
+
+  public String getSessionSignedInViaLabel() {
+    return getTranslation("signIn.sessionVia");
   }
 
   public String getSignInDetailsTitle() {
@@ -3632,6 +3644,14 @@ public class MessageTexts {
 
   public String getPortalSessionInactive() {
     return getTranslation("portal.session.inactive");
+  }
+
+  public String getPortalSessionActiveGroup(int count) {
+    return getFormattedTranslation("portal.session.group.active", count);
+  }
+
+  public String getPortalSessionSavedGroup(int count) {
+    return getFormattedTranslation("portal.session.group.saved", count);
   }
 
   public String getPortalSessionActiveCount(int count) {

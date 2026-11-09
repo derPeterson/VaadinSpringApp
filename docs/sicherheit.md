@@ -95,8 +95,14 @@ keinen Zugriff auf Profil, Administration oder Inbox.
 Spring Session JDBC erhält gültige Anmeldung, Sitzungsplatz, ursprüngliche
 Authentifizierungsfaktoren und Inaktivitätsfrist in derselben Datenbank. Kontostatus,
 Rollen und Zugangsversion werden beim Wiederherstellen frisch geprüft. Ein Neustart
-verlängert keine Gültigkeit; Logout und Widerruf bleiben wirksam. Standardtimeout:
-1800 Sekunden, über `app.sessions.timeout-seconds` für neue Sitzungen einstellbar.
+verlängert keine Gültigkeit. Logout und Widerruf bleiben wirksam.
+Unter **Konfiguration → Sicherheit → Sitzungs-Timeout** lässt sich die Inaktivitätsfrist
+einstellen. Standard sind 30 Minuten. Die Anwendung liest den gespeicherten Wert beim
+Start ein und verwendet ihn für neu angelegte HTTP-Sitzungen. Bestehende Sitzungen
+behalten ihre bisherige Frist. Dazu zählen auch Sitzungen, die der Aufruf der
+Anmeldeseite bereits vor dem Neustart angelegt hat. `APP_CFG_SESSION_TIMEOUT_SECONDS`
+setzt den Standard in Sekunden.
+Ohne diese Variable kann `app.sessions.timeout-seconds` weiterhin den Standard vorgeben.
 
 Ein abschließender HTTP-Commit einer inzwischen gelöschten Sitzung schreibt nichts
 mehr zurück. Sicherheitsattribute einer gelöschten Sitzung bleiben unzugänglich.

@@ -21,6 +21,9 @@ Die Google-/Microsoft-Verwaltung ist im selben Paket auf Superadmins beschränkt
 ### Folgearbeiten auf `codex/2fa-folgearbeiten`
 
 - Verbleibende gezielte Sonderfälle im [Testbedarf](../testbedarf.md) prüfen.
+- Die überarbeitete Darstellung der Anmeldewege in den Benutzerdetails, der
+  Sitzungsgruppen im Konto und beim Anmeldelimit sowie der Abmeldebestätigungen
+  gemeinsam ansehen.
 
 1. Einrichtung, Bestätigung und Verwaltung im bestehenden Cosmos-Stil gemeinsam
    durchsehen: Mein Konto → Sicherheit → Portalzugang, eingeschränkte Anmeldung,

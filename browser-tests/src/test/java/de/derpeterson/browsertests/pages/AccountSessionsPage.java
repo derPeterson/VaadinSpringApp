@@ -1,6 +1,7 @@
 package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
@@ -34,6 +35,51 @@ public final class AccountSessionsPage {
     assertThat(page.locator("#account-current-session")).isDisabled();
     assertThat(rows("active")).hasCount(other);
     assertThat(rows("saved")).hasCount(saved);
+    assertGroups(active, saved);
+  }
+
+  public void assertGroups(int active, int saved) {
+    Locator activeGroup = page.locator("#account-session-group-active");
+    Locator savedGroup = page.locator("#account-session-group-saved");
+    assertThat(activeGroup).hasText(texts.getPortalSessionActiveGroup(active));
+    assertThat(activeGroup).hasCSS("text-transform", "uppercase");
+    assertThat(activeGroup).hasCSS("color", "rgb(56, 189, 248)");
+    if (saved > 0) {
+      assertThat(savedGroup).hasText(texts.getPortalSessionSavedGroup(saved));
+      assertThat(savedGroup).hasCSS("text-transform", "uppercase");
+      assertThat(savedGroup).hasCSS("color", "rgb(148, 163, 184)");
+    } else {
+      assertThat(savedGroup).hasCount(0);
+    }
+  }
+
+  public void assertSummaryAlignment() {
+    Locator heading = page.locator(".account-session-heading");
+    assertThat(heading.locator(".account-session-summary")).hasCSS("row-gap", "6px");
+    assertTrue(
+        (Boolean)
+            heading.evaluate(
+                """
+                heading => {
+                  const summary = heading.querySelector('.account-session-summary').getBoundingClientRect();
+                  const limit = heading.querySelector('#account-sessions-limit').getBoundingClientRect();
+                  return Math.abs(summary.top + summary.height / 2 - limit.top - limit.height / 2) < 1
+                      && limit.left >= summary.right;
+                }
+                """));
+  }
+
+  public void assertConfirmationDetails() {
+    Locator card = page.locator("#sessions-confirmation .portal-context-card");
+    Locator method = card.locator(".account-session-sign-in-method .account-session-detail-value");
+    assertThat(method).hasText(texts.getSignInPortalPassword());
+    assertThat(method).hasCSS("font-weight", "700");
+    assertThat(method).hasCSS("color", "rgb(255, 255, 255)");
+    assertThat(card.locator(".portal-context-detail > .account-session-detail-value")).hasCount(3);
+    assertThat(card.locator("vaadin-badge.account-session-state"))
+        .hasText(texts.getPortalSessionActive());
+    assertThat(card.locator("vaadin-badge.account-session-state"))
+        .hasCSS("border-top-width", "1px");
   }
 
   @Step("Andere Sitzung gezielt abmelden")

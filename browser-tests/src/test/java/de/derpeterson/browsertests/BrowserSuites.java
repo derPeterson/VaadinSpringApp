@@ -115,6 +115,8 @@ final class BrowserSuites {
           List.of(UserNotificationsBrowserTest.class, NotificationInboxBrowserTest.class);
       case "account-security" -> List.of(AccountSecurityBrowserTest.class);
       case "session-management" -> List.of(SessionManagementBrowserTest.class);
+      case "sign-in-session-layout" ->
+          List.of(ExternalLoginBrowserTest.class, SessionManagementBrowserTest.class);
       case "account-settings" -> List.of(AccountSettingsBrowserTest.class);
       case "maintenance" -> List.of(MaintenanceBrowserTest.class);
       case "cosmos-design" -> List.of(CosmosDesignBrowserTest.class);

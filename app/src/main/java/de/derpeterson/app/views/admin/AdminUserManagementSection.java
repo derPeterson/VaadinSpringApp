@@ -11,6 +11,8 @@ import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
 import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.badge.Badge;
+import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -756,8 +758,10 @@ public class AdminUserManagementSection extends VerticalLayout {
     private Button cancelButton;
     private SignInSummary signInSummary;
     private final H3 signInTitle = new H3();
-    private final TextField registeredVia = new TextField();
-    private final TextField availableMethods = new TextField();
+    private final Span registrationLabel = new Span();
+    private final Badge registeredVia = new Badge();
+    private final Span methodsLabel = new Span();
+    private final Div availableMethods = new Div();
 
     private UserEditor(UserEntity user) {
       this.user = user;
@@ -1161,20 +1165,32 @@ public class AdminUserManagementSection extends VerticalLayout {
       dialog.add(dialogLayout);
     }
 
-    private VerticalLayout signInDetails() {
-      signInTitle.addClassName(COSMOS_PANEL_TITLE_CLASS);
+    private HorizontalLayout signInDetails() {
+      signInTitle.addClassNames(COSMOS_PANEL_TITLE_CLASS, "admin-user-sign-in-title");
       registeredVia.setId("admin-user-registered-via");
       availableMethods.setId("admin-user-sign-in-methods");
-      for (TextField field : List.of(registeredVia, availableMethods)) {
-        field.setReadOnly(true);
-        field.setWidthFull();
-      }
-      HorizontalLayout fields = new HorizontalLayout(registeredVia, availableMethods);
+      registrationLabel.addClassName("admin-user-registration-label");
+      methodsLabel.addClassName("admin-user-methods-label");
+      Div registration = new Div(registrationLabel, registeredVia);
+      Div methods = new Div(methodsLabel, availableMethods);
+      registration.addClassName("admin-user-sign-in-detail");
+      methods.addClassName("admin-user-sign-in-detail");
+      HorizontalLayout fields = new HorizontalLayout(registration, methods);
       fields.setWidthFull();
       fields.addClassName(COSMOS_FORM_ROW_CLASS);
-      fields.expand(registeredVia, availableMethods);
-      VerticalLayout section = new VerticalLayout(signInTitle, fields);
+      fields.expand(registration, methods);
+      VerticalLayout content = new VerticalLayout(signInTitle, fields);
+      content.setPadding(false);
+      content.setMinWidth("0");
+      SvgIcon infoIcon = AppIcon.INFO_CIRCLE.create();
+      infoIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
+      HorizontalLayout section = new HorizontalLayout(infoIcon, content);
+      section.setWidthFull();
       section.setPadding(false);
+      section.setSpacing(false);
+      section.setAlignItems(Alignment.START);
+      section.expand(content);
+      section.addClassNames("cosmos-panel-hint", "admin-user-sign-in");
       refreshSignInDetails();
       return section;
     }
@@ -1184,17 +1200,28 @@ public class AdminUserManagementSection extends VerticalLayout {
         return;
       }
       signInTitle.setText(messageProperties.getSignInDetailsTitle());
-      registeredVia.setLabel(messageProperties.getSignInRegisteredVia());
-      registeredVia.setValue(
+      registrationLabel.setText(messageProperties.getSignInRegisteredVia());
+      registeredVia.setText(
           messageProperties.getRegistrationChannelLabel(signInSummary.registration()));
-      availableMethods.setLabel(messageProperties.getSignInAvailableMethods());
-      availableMethods.setValue(
-          signInSummary.available().isEmpty()
-              ? messageProperties.getSignInNone()
-              : signInSummary.available().stream()
-                  .sorted()
-                  .map(messageProperties::getSignInMethodLabel)
-                  .collect(Collectors.joining(", ")));
+      registeredVia
+          .getElement()
+          .setAttribute(
+              "data-self-registered", Boolean.toString(signInSummary.registration() != null));
+      methodsLabel.setText(messageProperties.getSignInAvailableMethods());
+      availableMethods.removeAll();
+      if (signInSummary.available().isEmpty()) {
+        availableMethods.add(new Span(messageProperties.getSignInNone()));
+      } else {
+        signInSummary.available().stream()
+            .sorted()
+            .map(messageProperties::getSignInMethodLabel)
+            .forEach(
+                label -> {
+                  Badge badge = new Badge(label);
+                  badge.addThemeVariants(BadgeVariant.SUCCESS);
+                  availableMethods.add(badge);
+                });
+      }
     }
 
     private void refreshRolesSummary() {

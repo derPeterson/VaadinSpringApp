@@ -518,7 +518,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card .cosmos-mail-body-fie
 @media(max-width:760px) { vaadin-app-layout.cosmos-reference-admin .admin-dashboard-intro { grid-template-columns:1fr; gap:20px; padding:20px; } vaadin-app-layout.cosmos-reference-admin .admin-dashboard-image { grid-row:1; } }
 
 /* Dauer: Umrechnung bleibt in der Feldhilfe, im Formular nur Zahl und Einheit. */
-.cosmos-reference-admin .admin-duration-field { display:grid; grid-template-columns:minmax(0,1fr) 116px; gap:8px; align-items:start; min-width:0; }
+.cosmos-reference-admin .admin-duration-field { display:grid; grid-template-columns:minmax(0,1fr) 132px; gap:8px; align-items:start; min-width:0; }
 .cosmos-reference-admin .admin-duration-field > :is(vaadin-integer-field,vaadin-big-decimal-field,vaadin-select) { width:100%; min-width:0; padding:0; margin:0; }
 .cosmos-reference-admin .admin-duration-field > :is(vaadin-integer-field,vaadin-big-decimal-field,vaadin-select)::part(label) { display:none; margin:0; padding:0; }
 .cosmos-reference-admin .admin-duration-field > :is(vaadin-integer-field,vaadin-big-decimal-field,vaadin-select)::part(input-field) { box-sizing:border-box; height:40px; min-height:40px; }

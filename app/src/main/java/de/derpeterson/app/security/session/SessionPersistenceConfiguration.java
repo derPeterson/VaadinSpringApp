@@ -1,12 +1,13 @@
 package de.derpeterson.app.security.session;
 
+import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.CustomUserDetailsService;
 import de.derpeterson.app.security.DeviceRememberMeServices;
+import de.derpeterson.app.service.ConfigService;
 import java.time.Duration;
 import javax.sql.DataSource;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -26,9 +27,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class SessionPersistenceConfiguration {
   @Bean
   public JdbcIndexedSessionRepository durableJdbcSessions(
-      DataSource source,
-      PlatformTransactionManager manager,
-      @Value("${app.sessions.timeout-seconds:1800}") int timeoutSeconds) {
+      DataSource source, PlatformTransactionManager manager, ConfigService config) {
+    int timeoutSeconds = config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS);
     if (timeoutSeconds < 1) {
       throw new IllegalArgumentException("Session timeout must be positive");
     }

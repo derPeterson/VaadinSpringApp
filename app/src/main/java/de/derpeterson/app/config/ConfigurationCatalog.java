@@ -151,6 +151,7 @@ public final class ConfigurationCatalog {
           REMEMBER_ME_SECRET_KEY,
           LOGIN_ATTEMPTS_LIMIT,
           MAX_SESSIONS_PER_USER,
+          SESSION_TIMEOUT_SECONDS,
           MAINTENANCE_MODE ->
           AdminConfigGroup.SECURITY;
       case VERIFICATION_TOKEN_VALID_DURATION,

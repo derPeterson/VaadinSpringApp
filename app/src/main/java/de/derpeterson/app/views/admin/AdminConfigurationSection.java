@@ -457,7 +457,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       emailField.setClearButtonVisible(true);
       emailField.setWidthFull();
       input = emailField;
-    } else if (configEntry == ConfigEntry.REMEMBER_ME_DURATION
+    } else if (usesSecondsDuration(configEntry)
         || DURATION_ENTRIES.contains(configEntry)
         || isNotificationRetention(configEntry)) {
       input = new AdminDurationField(messageProperties, durationStorage(configEntry));
@@ -481,6 +481,11 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     return input;
+  }
+
+  private static boolean usesSecondsDuration(ConfigEntry entry) {
+    return entry == ConfigEntry.REMEMBER_ME_DURATION
+        || entry == ConfigEntry.SESSION_TIMEOUT_SECONDS;
   }
 
   private AdminDurationField.Storage durationStorage(ConfigEntry entry) {
@@ -630,7 +635,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       case BASE_URL -> List.of(messageProperties.getAdminConfigValidationUrl());
       case REMEMBER_ME_SECRET_KEY ->
           List.of(messageProperties.getAdminConfigValidationSecretKey(SECRET_KEY_MIN_LENGTH));
-      case REMEMBER_ME_DURATION ->
+      case REMEMBER_ME_DURATION, SESSION_TIMEOUT_SECONDS ->
           List.of(
               messageProperties.getAdminConfigDurationRule(Integer.MAX_VALUE),
               messageProperties.getAdminConfigDurationUnitHint(),
@@ -810,7 +815,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       case SERVICE_NAME -> validateServiceName(trimmed);
       case BASE_URL ->
           !isValidHttpUrl(trimmed) ? messageProperties.getAdminConfigValidationUrl() : null;
-      case REMEMBER_ME_DURATION ->
+      case REMEMBER_ME_DURATION, SESSION_TIMEOUT_SECONDS ->
           isInvalidPositiveInteger(trimmed)
               ? messageProperties.getAdminConfigDurationInvalid()
               : null;
@@ -902,7 +907,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     if (input instanceof AdminDurationField field) {
       String value = field.getStoredValue();
-      return value.isEmpty() && configEntry == ConfigEntry.REMEMBER_ME_DURATION
+      return value.isEmpty() && usesSecondsDuration(configEntry)
           ? configuredDefault(configEntry)
           : value;
     }

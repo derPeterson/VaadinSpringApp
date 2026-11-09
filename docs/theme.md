@@ -306,11 +306,19 @@ Der Menüpunkt Administration wird nur mit der vorhandenen Adminberechtigung ang
 die Zugriffsprüfung des Adminbereichs bleibt maßgeblich.
 Einzelbestätigungen enthalten dieselben tatsächlichen Metadaten, Sammelbestätigungen
 die betroffene Anzahl. Der abweichende echte Lesebestätigungsablauf bleibt erhalten.
-Die Sitzungsliste unterscheidet die aktuelle Sitzung, andere aktive Sitzungen
-und gespeicherte Anmeldungen.
-Aktive Sitzungen zeigen „Angemeldet über“ bei den Geräte- und Zeitangaben im
-vorhandenen Metadatenstil. Der Abschnitt „Anmeldung“ in den Benutzerdetails
-zeigt Registrierungsweg und verfügbare Zugänge in schreibgeschützten Vaadin-Feldern.
+Im Konto und beim Erreichen des Anmeldelimits gruppiert die Sitzungsliste aktive
+Sitzungen und gespeicherte Anmeldungen ohne aktive Sitzung. Jede sichtbare Gruppe
+trägt ihre Anzahl in Klammern. Die Überschriften stehen in Großbuchstaben, bei
+aktiven Sitzungen in Cyan und bei gespeicherten Anmeldungen in Grau.
+Zeitangaben und der bekannte Anmeldeweg aktiver Sitzungen stehen in den Karten
+und Abmeldebestätigungen in weißer Fettschrift bei gleicher Schriftgröße wie ihre
+Beschriftung. In den Benutzerdetails fasst eine Info-Box den Abschnitt „Anmeldung“
+zusammen und passt ihre Höhe dem Inhalt an. Das cyanfarbene Info-Icon steht links
+auf Höhe der ebenfalls cyanfarbenen Überschrift in Großbuchstaben mit 13 px.
+Unter der normalen Feldbeschriftung steht der Registrierungsweg als kompaktes
+Vaadin-Badge. Ohne Selbstregistrierung ist es grau, bei Selbstregistrierung cyan.
+Die verfügbaren Anmeldewege stehen nebeneinander als kompakte grüne Vaadin-Badges
+mit jeweils eigenem Rahmen im Stil der Sitzungsstatus-Badges.
 Die Sitzungsübersicht verwendet native Vaadin-Badges für Anzahl, Limit und
 Sitzungsstatus. Statusbadges haben einen kompakten Rahmen und keinen Punkt.
 Das Badge `.account-session-count` verbindet Zahl und übersetzte Einheit
@@ -318,8 +326,9 @@ auf dunkler Fläche mit Cyanrahmen.
 `.account-session-count-value` zeigt die Zahl mit 15 px und Schriftstärke 700;
 `.account-session-count-divider` trennt sie mit einer 12-px-Linie von der Einheit
 (13 px, Schriftstärke 600). Das Limit steht rechts mit gelbem Rahmen und
-dezenter gelber Fläche. Der Erklärungstext steht mit 12 px und Schriftgewicht
-400 unter den beiden Badges.
+dezenter gelber Fläche, vertikal mittig neben dem Block aus Sitzungsanzahl und
+Erklärungstext. Der Erklärungstext steht mit 12 px und Schriftgewicht 400
+in 6 px Abstand unter der Sitzungsanzahl.
 Auf sehr schmalen Displays stehen auch die Badges untereinander.
 Der ausführliche DE-/EN-Hinweis einschließlich des Widerrufs zugehöriger
 gespeicherter Anmeldungen bleibt erhalten.
@@ -864,22 +873,23 @@ und Lücke sowie Bild vor dem Text. Die gleich breiten HTML-Aktionsbuttons sind
 auf `.ad-config` begrenzt. Der Mailtest bleibt mit natürlicher Buttonbreite
 rechtsbündig, einschließlich Smartphone.
 
-`AdminDurationField` wird in allen neun Zeitfeldern der Konfiguration verwendet:
-Login speichern, vier Tokenfristen, automatische Abwesenheit, zwei
-Benachrichtigungs-Aufbewahrungen und gesendete E-Mails. Zahl und Einheit stehen
+`AdminDurationField` wird in den Zeitfeldern der Konfiguration verwendet. Dazu gehören
+Login speichern, der Sitzungs-Timeout, vier Tokenfristen, automatische Abwesenheit,
+zwei Benachrichtigungs-Aufbewahrungen und gesendete E-Mails. Zahl und Einheit stehen
 nebeneinander. Aktueller Wert, Umrechnung und Standardwert stehen nur in der Feldhilfe.
 Sekunden, ISO-Zeitspanne und ganze Tage behalten ihr jeweiliges Speicherformat.
 Die bestehenden Mindestdauern und Bereichsgrenzen bleiben erhalten. Beim Laden
 wird die größte ganzzahlig passende Einheit gewählt. Einheitenwechsel erhält
 die Zahl, die Schaltflächen ändern sie um eins. Bestehende Nachkommastellen einer
 Zeitspanne werden ohne Rundung erhalten, bis zur Nanosekundenpräzision von Duration.
-Nur Login speichern verwendet bei leerer Eingabe den Standardwert. Leere
-Benachrichtigungs-Aufbewahrung bedeutet weiterhin unbegrenzt. Diese beiden Felder
-haben deshalb eine feste Einheit Tage. Andere Zeitspannen bleiben Pflichtfelder.
+Login speichern und der Sitzungs-Timeout verwenden bei leerer Eingabe den Standardwert.
+Leere Benachrichtigungs-Aufbewahrung bedeutet weiterhin unbegrenzt. Die beiden
+Benachrichtigungsfelder haben die feste Einheit Tage. Andere Zeitspannen bleiben Pflichtfelder.
 
 Die Regeln bleiben lokal in `cosmos-admin-reference.css`: `admin-duration-field`
-hält Eingaben und Einheiten in einer Zeile mit 40 px hohen Flächen. Der geschlossene
-Einheitenwert ist normaler Feldtext. Nur das Menü markiert die Auswahl.
+hält Eingaben und Einheiten in einer Zeile mit 40 px hohen Flächen. Die Einheitenauswahl
+ist 132 px breit. Der geschlossene Einheitenwert ist normaler Feldtext. Nur das Menü
+markiert die Auswahl.
 `admin-duration-step` gestaltet die Schaltflächen an der präzisen Vaadin-Zahleneingabe.
 Konfigurationsfelder mit externem Label blenden die leere interne Labelzeile aus,
 damit beide Spalten dieselbe Ober- und Unterkante haben.

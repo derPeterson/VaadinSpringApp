@@ -15,6 +15,14 @@
   Die Analyse und Einschätzung sind abgenommen; der Bausteinumbau ist noch nicht beauftragt.
   Er ist vom abgeschlossenen Google-/Microsoft-Login und der 2FA-Umsetzung getrennt.
 
+## Anwendungskonfiguration
+
+- [ ] Einstellungen prüfen, die erst beim Anwendungsstart eingelesen werden, und
+  soweit technisch möglich direkt nach dem Speichern wirksam machen. Beim
+  Sitzungs-Timeout sollen neue Sitzungen sofort den gespeicherten Wert übernehmen.
+  Bestehende Sitzungen behalten ihre bisherige Frist. Für Einstellungen, die
+  weiterhin einen Neustart erfordern, den Grund in der Feldhilfe erklären.
+
 ## Entwicklungsablauf
 
 - [ ] Codex später gemeinsam in IntelliJ über JetBrains Air ausprobieren.

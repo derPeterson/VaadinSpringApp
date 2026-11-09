@@ -8,6 +8,8 @@ import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Section;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.function.SerializableConsumer;
@@ -21,6 +23,7 @@ import de.derpeterson.app.security.SessionManagementService.Snapshot;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -64,7 +67,9 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     limit.addClassName(SESSION_BADGE_CLASS);
     limit.addThemeVariants(BadgeVariant.WARNING);
     limit.setId("account-sessions-limit");
-    Div heading = new Div(new Div(count, activity), limit);
+    Div summary = new Div(count, activity);
+    summary.addClassName("account-session-summary");
+    Div heading = new Div(summary, limit);
     heading.addClassName("account-session-heading");
     rows.setId("account-session-entries");
     getBody().add(heading, rows);
@@ -161,20 +166,45 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     logout.setEnabled(
         revokeOthers != null && snapshot.entries().stream().anyMatch(entry -> !entry.current()));
     rows.removeAll();
-    snapshot.entries().forEach(entry -> rows.add(row(entry)));
+    List<Entry> active = snapshot.entries().stream().filter(Entry::active).toList();
+    List<Entry> saved = snapshot.entries().stream().filter(entry -> !entry.active()).toList();
+    if (!active.isEmpty()) {
+      rows.add(sessionGroup("active", messages.getPortalSessionActiveGroup(active.size()), active));
+    }
+    if (!saved.isEmpty()) {
+      rows.add(sessionGroup("saved", messages.getPortalSessionSavedGroup(saved.size()), saved));
+    }
+  }
+
+  private Section sessionGroup(String state, String label, List<Entry> entries) {
+    H3 heading = new H3(label);
+    heading.setId("account-session-group-" + state);
+    Section group = new Section();
+    group.addClassName("account-session-group");
+    group.getElement().setAttribute("data-session-group", state);
+    group.getElement().setAttribute("aria-labelledby", heading.getId().orElseThrow());
+    group.add(heading);
+    entries.forEach(entry -> group.add(row(entry)));
+    return group;
   }
 
   private Div row(Entry entry) {
     Div symbol = new Div((entry.device().mobile() ? AppIcon.MOBILE : AppIcon.DESKTOP).create());
     symbol.addClassName(PANEL_ICON);
-    String device =
-        String.join(
-            " · ",
-            Stream.of(entry.device().system(), entry.device().browser())
-                .filter(value -> !value.isBlank())
-                .toList());
-    Span title = new Span(device.isBlank() ? messages.getSessionUnknownDevice() : device);
+    Span title = new Span(deviceName(entry));
     title.addClassName("account-entry-title");
+    Div copy = new Div(title);
+    copy.addClassName("account-entry-copy");
+    sessionDetails(entry, ENTRY_DESCRIPTION_CLASS).forEach(copy::add);
+    copy.add(sessionBadges(entry));
+    Button action = sessionAction(entry);
+    Div row = new Div(symbol, copy, action);
+    row.addClassName("account-entry");
+    row.getElement().setAttribute("data-session-state", sessionState(entry));
+    return row;
+  }
+
+  private List<Span> sessionDetails(Entry entry, String detailClass) {
     DateTimeFormatter formatter =
         DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
             .withLocale(
@@ -182,35 +212,38 @@ public class AccountSessionsComponent extends AccountPanelComponent {
                     ? getLocale()
                     : VaadinSession.getCurrent().getLocale())
             .withZone(ZoneId.systemDefault());
-    String description =
-        (entry.active() ? messages.getSessionLastActivity() : messages.getPortalSessionLastUsed())
-            + ": "
-            + formatter.format(entry.lastActivity());
-    Span detail = new Span(description);
-    detail.addClassName(ENTRY_DESCRIPTION_CLASS);
-    Div copy = new Div(title, detail);
-    copy.addClassName("account-entry-copy");
-    Span since =
-        new Span(
-            (entry.active() ? messages.getSessionStarted() : messages.getSessionSavedSince())
-                + ": "
-                + formatter.format(entry.created()));
-    since.addClassName(ENTRY_DESCRIPTION_CLASS);
-    copy.add(since);
-    if (entry.active() && !restricted) {
+    List<Span> details = new ArrayList<>();
+    details.add(
+        sessionDetail(
+            entry.active()
+                ? messages.getSessionLastActivity()
+                : messages.getPortalSessionLastUsed(),
+            formatter.format(entry.lastActivity()),
+            detailClass));
+    details.add(
+        sessionDetail(
+            entry.active() ? messages.getSessionStarted() : messages.getSessionSavedSince(),
+            formatter.format(entry.created()),
+            detailClass));
+    if (entry.active() && entry.signInMethod() != null) {
       Span method =
-          new Span(
-              messages.getSessionSignedInVia(messages.getSignInMethodLabel(entry.signInMethod())));
-      method.addClassName(ENTRY_DESCRIPTION_CLASS);
+          sessionDetail(
+              messages.getSessionSignedInViaLabel(),
+              messages.getSignInMethodLabel(entry.signInMethod()),
+              detailClass);
       method.addClassName("account-session-sign-in-method");
-      copy.add(method);
+      details.add(method);
     }
-    copy.add(sessionBadges(entry));
-    Button action = sessionAction(entry);
-    Div row = new Div(symbol, copy, action);
-    row.addClassName("account-entry");
-    row.getElement().setAttribute("data-session-state", sessionState(entry));
-    return row;
+    return details;
+  }
+
+  private Span sessionDetail(String label, String value, String detailClass) {
+    Span detail = new Span(label + ": ");
+    detail.addClassName(detailClass);
+    Span emphasis = new Span(value);
+    emphasis.addClassName("account-session-detail-value");
+    detail.add(emphasis);
+    return detail;
   }
 
   private Div sessionBadges(Entry entry) {
@@ -276,25 +309,11 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   }
 
   private PortalContextCard context(Entry entry) {
-    DateTimeFormatter formatter =
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-            .withLocale(
-                VaadinSession.getCurrent() == null
-                    ? getLocale()
-                    : VaadinSession.getCurrent().getLocale())
-            .withZone(ZoneId.systemDefault());
     PortalContextCard card =
         new PortalContextCard(
             (entry.device().mobile() ? AppIcon.MOBILE : AppIcon.DESKTOP).create(),
-            deviceName(entry),
-            (entry.active()
-                    ? messages.getSessionLastActivity()
-                    : messages.getPortalSessionLastUsed())
-                + ": "
-                + formatter.format(entry.lastActivity()),
-            (entry.active() ? messages.getSessionStarted() : messages.getSessionSavedSince())
-                + ": "
-                + formatter.format(entry.created()));
+            deviceName(entry));
+    sessionDetails(entry, "portal-context-detail").forEach(card::addMetadata);
     card.addMetadata(sessionBadges(entry));
     return card;
   }

@@ -43,6 +43,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @Tag("follow-up-regression")
+  @Tag("sign-in-session-layout")
   @DisplayName("OIDC-14: Benutzerdetails und aktive Sitzungen unterscheiden Anmeldewege")
   @Description(
       "Ein administrativ angelegtes Konto verbindet Google. Zwei aktive Sitzungen zeigen jeweils ihren tatsächlichen Anmeldeweg. Der Bearbeitungsdialog zeigt Herkunft und verfügbare Wege schreibgeschützt.")
@@ -81,15 +82,25 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       AllurePlaywright.attachScreenshot("Sitzungen über Portalpasswort und Google", page);
 
       AdminUserDialog user = users.openEdit(email);
-      Locator registration = user.root().locator("#admin-user-registered-via");
+      Locator title = user.root().locator(".admin-user-sign-in-title");
+      Locator registration = user.root().locator("vaadin-badge#admin-user-registered-via");
       Locator methods = user.root().locator("#admin-user-sign-in-methods");
-      assertThat(registration).hasJSProperty("label", texts.getSignInRegisteredVia());
-      assertThat(registration.locator("input")).hasValue(texts.getSignInAccountCreated());
-      assertThat(methods).hasJSProperty("label", texts.getSignInAvailableMethods());
-      assertThat(methods.locator("input"))
-          .hasValue(texts.getSignInPortalPassword() + ", " + texts.getExternalGoogle());
-      assertThat(registration).hasAttribute("readonly", "");
-      assertThat(methods).hasAttribute("readonly", "");
+      assertThat(title).hasText(texts.getSignInDetailsTitle());
+      assertThat(title).hasCSS("text-transform", "uppercase");
+      assertThat(title).hasCSS("color", "rgb(56, 189, 248)");
+      assertThat(registration).hasText(texts.getSignInAccountCreated());
+      Locator registrationLabel = user.root().locator(".admin-user-registration-label");
+      assertThat(registrationLabel).hasText(texts.getSignInRegisteredVia());
+      assertThat(registrationLabel).hasCSS("text-transform", "none");
+      assertThat(registrationLabel).hasCSS("color", "rgb(203, 213, 225)");
+      assertThat(registration).hasCSS("color", "rgb(203, 213, 225)");
+      assertThat(user.root().locator(".admin-user-methods-label"))
+          .hasText(texts.getSignInAvailableMethods());
+      assertThat(methods.locator("vaadin-badge[theme~=success]"))
+          .hasText(new String[] {texts.getSignInPortalPassword(), texts.getExternalGoogle()});
+      assertThat(methods).hasCSS("border-top-width", "0px");
+      assertThat(methods.locator("vaadin-badge").first()).hasCSS("border-top-width", "1px");
+      assertThat(methods.locator("vaadin-badge").first()).hasCSS("border-top-left-radius", "4px");
       methods.scrollIntoViewIfNeeded();
       AllurePlaywright.attachScreenshot("Schreibgeschützte Anmeldeangaben", administrator.page);
       user.cancel();

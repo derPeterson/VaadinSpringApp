@@ -76,8 +76,6 @@
 .cosmos-reference-public .public-cards:has(#session-recovery:not([hidden])) { margin-inline:auto; }
 .cosmos-reference-public #session-recovery { width:100%;max-width:880px;margin:0 auto; }
 .cosmos-reference-public #session-recovery .account-panel { margin:0; }
-.cosmos-reference-public #session-recovery .account-session-heading { grid-template-columns:minmax(0,1fr) auto; }
-.cosmos-reference-public #session-recovery .account-session-heading > div:first-child { display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0; }
 .cosmos-reference-public #session-recovery #account-panel-sessions > .cosmos-panel-footer:last-child > .cosmos-panel-actions { border-top:0;justify-content:flex-end; }
 .cosmos-reference-public vaadin-button:focus-visible { outline:2px solid var(--cosmos-reference-accent);outline-offset:2px; }
 .cosmos-reference-public .public-navigation vaadin-button::part(label) { white-space:nowrap; }
@@ -107,9 +105,6 @@
  .cosmos-reference-public .cosmos-form-row { grid-template-columns:1fr; }
  .cosmos-reference-public .public-panel-footer > .cosmos-intro { flex-basis:100%; }
  .cosmos-reference-public .public-panel-footer > vaadin-button { min-width:0; }
-}
-@media(max-width:359px) {
- .cosmos-reference-public #session-recovery .account-session-heading { grid-template-columns:minmax(0,1fr); }
 }
 
 .cosmos-reference-public .public-page-heading h1::after{content:".";color:var(--cosmos-reference-accent)}

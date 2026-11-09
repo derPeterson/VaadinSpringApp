@@ -267,6 +267,18 @@ class AdminConfigurationGroupTest {
   }
 
   @Test
+  void sessionTimeoutSavesInSeconds() {
+    section.showGroup(AdminConfigGroup.SECURITY);
+    Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    AdminDurationField field = (AdminDurationField) inputs.get(ConfigEntry.SESSION_TIMEOUT_SECONDS);
+    assertEquals("1800", field.getStoredValue());
+    field.setSecondsValue(10);
+    ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
+    verify(config).set(ConfigEntry.SESSION_TIMEOUT_SECONDS, "10");
+    de.derpeterson.app.helper.ui.NotificationHelper.getInstance().closeAndClearAllNotifications();
+  }
+
+  @Test
   void durationConvertsExactlyAndRejectsOverflowWithoutSaving() {
     section.showGroup(AdminConfigGroup.SECURITY);
     Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
@@ -369,6 +381,7 @@ class AdminConfigurationGroupTest {
             ConfigEntry.REMEMBER_ME_SECRET_KEY,
             ConfigEntry.LOGIN_ATTEMPTS_LIMIT,
             ConfigEntry.MAX_SESSIONS_PER_USER,
+            ConfigEntry.SESSION_TIMEOUT_SECONDS,
             ConfigEntry.MAINTENANCE_MODE);
     assertEquals(securityEntries, visibleEntries());
     Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
@@ -478,7 +491,7 @@ class AdminConfigurationGroupTest {
         checkedFields++;
       }
     }
-    assertEquals(30, checkedFields);
+    assertEquals(ConfigEntry.values().length, checkedFields);
     verify(config, never()).set(any(ConfigEntry.class), anyString());
   }
 

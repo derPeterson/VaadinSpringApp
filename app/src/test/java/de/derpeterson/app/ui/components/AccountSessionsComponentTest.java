@@ -165,7 +165,7 @@ class AccountSessionsComponentTest {
         tree(component)
             .filter(
                 item -> item.getElement().getClassList().contains("account-session-sign-in-method"))
-            .map(item -> item.getElement().getText())
+            .map(item -> item.getElement().getTextRecursively())
             .toList());
     assertFalse(button("account-current-session").isEnabled());
     assertTrue(button("session-revoke-other-handle").isEnabled());

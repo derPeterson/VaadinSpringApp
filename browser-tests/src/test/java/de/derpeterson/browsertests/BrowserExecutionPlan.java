@@ -108,6 +108,8 @@ final class BrowserExecutionPlan {
       builder.filters(TagFilter.includeTags("follow-up-regression"));
     } else if (suite.equals("ticket-browser-details")) {
       builder.filters(TagFilter.includeTags("ticket-browser-detail"));
+    } else if (suite.equals("sign-in-session-layout")) {
+      builder.filters(TagFilter.includeTags("sign-in-session-layout"));
     }
     return builder.build();
   }

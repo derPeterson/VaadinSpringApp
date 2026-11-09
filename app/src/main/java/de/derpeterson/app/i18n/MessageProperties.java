@@ -114,6 +114,7 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case USER_AUTO_ABSENT_TIMEOUT -> getAdminConfigEntryUserAutoAbsentTimeout();
       case LOGIN_ATTEMPTS_LIMIT -> getAdminConfigEntryLoginAttemptsLimit();
       case MAX_SESSIONS_PER_USER -> getAdminConfigEntryMaxSessionsPerUser();
+      case SESSION_TIMEOUT_SECONDS -> getAdminConfigEntrySessionTimeout();
       case MAINTENANCE_MODE -> getAdminConfigEntryMaintenanceMode();
 
       case EMAIL_FROM -> getAdminConfigEntryEmailFrom();
@@ -158,6 +159,7 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case USER_AUTO_ABSENT_TIMEOUT -> getAdminConfigEntryUserAutoAbsentTimeoutTooltip();
       case LOGIN_ATTEMPTS_LIMIT -> getAdminConfigEntryLoginAttemptsLimitTooltip();
       case MAX_SESSIONS_PER_USER -> getAdminConfigEntryMaxSessionsPerUserTooltip();
+      case SESSION_TIMEOUT_SECONDS -> getAdminConfigEntrySessionTimeoutTooltip();
       case MAINTENANCE_MODE -> getAdminConfigEntryMaintenanceModeTooltip();
 
       case EMAIL_FROM -> getAdminConfigEntryEmailFromTooltip();

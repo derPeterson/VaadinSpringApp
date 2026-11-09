@@ -239,6 +239,79 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     color: var(--vaadin-input-field-value-color, var(--lumo-body-text-color));
 }
 
+.admin-user-dialog .cosmos-panel-hint.admin-user-sign-in {
+    box-sizing: border-box;
+    flex: none;
+    margin: 0;
+    border-color: var(--cosmos-reference-border);
+}
+
+.admin-user-dialog .admin-user-sign-in > vaadin-icon {
+    margin-block-start: 1px;
+}
+
+.admin-user-dialog .admin-user-sign-in-detail {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    min-width: 0;
+    color: var(--cosmos-reference-text);
+    font: 400 13px/20px Inter, sans-serif;
+    overflow-wrap: anywhere;
+}
+
+.admin-user-dialog .cosmos-panel-title.admin-user-sign-in-title {
+    color: var(--cosmos-reference-accent);
+    font-size: 13px;
+    line-height: 18px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.admin-user-dialog .admin-user-registration-label,
+.admin-user-dialog .admin-user-methods-label {
+    color: var(--cosmos-reference-label);
+    font: 500 12px/16px Inter, sans-serif;
+}
+
+.admin-user-dialog #admin-user-sign-in-methods {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.admin-user-dialog #admin-user-registered-via,
+.admin-user-dialog #admin-user-sign-in-methods > vaadin-badge {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 2px 6px;
+    border: 1px solid var(--vaadin-badge-border-color);
+    border-radius: 4px;
+    font: 500 10px/15px Inter, sans-serif;
+}
+
+.admin-user-dialog #admin-user-registered-via {
+    justify-self: start;
+    max-width: 100%;
+    white-space: normal;
+    --vaadin-badge-text-color: var(--cosmos-reference-label);
+    --vaadin-badge-background: var(--cosmos-reference-hover);
+    --vaadin-badge-border-color: var(--cosmos-reference-control-border);
+}
+
+.admin-user-dialog #admin-user-registered-via[data-self-registered=true] {
+    --vaadin-badge-text-color: var(--cosmos-reference-accent);
+    --vaadin-badge-background: var(--cosmos-reference-selection);
+    --vaadin-badge-border-color: var(--cosmos-reference-icon-border);
+}
+
+.admin-user-dialog #admin-user-sign-in-methods > vaadin-badge {
+    --vaadin-badge-text-color: var(--cosmos-reference-success);
+    --vaadin-badge-background: var(--cosmos-reference-success-surface);
+    --vaadin-badge-border-color: var(--cosmos-reference-success-border);
+}
+
 .admin-user-enabled-label > span {
     display: block;
 }

@@ -11,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Response;
 import com.microsoft.playwright.options.AriaRole;
@@ -30,6 +31,8 @@ import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
+import io.qameta.allure.playwright.AllurePlaywright;
+import java.math.BigDecimal;
 import java.nio.file.Path;
 import java.util.UUID;
 import org.junit.jupiter.api.AfterEach;
@@ -291,9 +294,10 @@ public class SessionManagementBrowserTest extends BrowserFixture {
 
   @Test
   @Tag("follow-up-regression")
+  @Tag("sign-in-session-layout")
   @DisplayName("SESSIONS-07: Gespeicherte Anmeldung nach Sitzungsablauf zeigt keinen Anmeldeweg")
   @Description(
-      "Ein Browser speichert seine Anmeldung, seine kurze Sitzung läuft ab. Zwei aktive Browserkontexte werden getrennt angezeigt. Der gespeicherte Zugang bleibt ohne Angabe eines aktuellen Anmeldewegs widerrufbar.")
+      "Der Admin speichert einen kurzen Sitzungs-Timeout und startet die Anwendung neu. Eine neu angelegte Sitzung läuft ab, zwei bestehende Sitzungen bleiben aktiv. Der gespeicherte Zugang bleibt ohne aktuellen Anmeldeweg widerrufbar.")
   void expiredSessionLeavesOnlyItsSavedLogin() throws Exception {
     String email = user();
     try (BrowserActor owner = new BrowserActor(browser);
@@ -302,8 +306,14 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       login(other, email, true);
       owner.page.navigate("about:blank");
       other.page.navigate("about:blank");
+      configuration.open(AdminConfigGroup.SECURITY);
+      String timeoutLabel = texts.getAdminConfigEntrySessionTimeout();
+      BigDecimal originalTimeout = configuration.seconds(timeoutLabel);
       try {
-        BrowserTestRunner.restartWithSessionTimeout(12);
+        configuration.enterSeconds(timeoutLabel, BigDecimal.valueOf(12));
+        configuration.save();
+        page.navigate("about:blank");
+        BrowserTestRunner.restartTestApplication();
         try (BrowserActor expiring = new BrowserActor(browser)) {
           login(expiring, email, true);
         }
@@ -319,16 +329,38 @@ public class SessionManagementBrowserTest extends BrowserFixture {
         for (int width : new int[] {1280, 390}) {
           owner.page.setViewportSize(width, 900);
           sessions.assertCounts(2, 1, 1);
+          sessions.assertSummaryAlignment();
           String deviceLabel = sessions.rows("current").locator(".account-entry-title").innerText();
           assertThat(sessions.rows("active").locator(".account-entry-title")).hasText(deviceLabel);
           assertThat(sessions.rows("saved").locator(".account-entry-title")).hasText(deviceLabel);
           assertThat(sessions.rows("saved").locator(".account-session-sign-in-method")).hasCount(0);
           assertThat(sessions.rows("saved")).containsText(texts.getPortalSessionRemembered());
           assertThat(sessions.rows("saved").locator("vaadin-button")).isEnabled();
+          Locator method =
+              sessions
+                  .rows("active")
+                  .locator(".account-session-sign-in-method .account-session-detail-value");
+          assertThat(method).hasText(texts.getSignInPortalPassword());
+          assertThat(method).hasCSS("font-weight", "700");
+          assertThat(method).hasCSS("color", "rgb(255, 255, 255)");
+          AllurePlaywright.attachScreenshot(
+              "Geräte und Sitzungen bei " + width + " px", owner.page);
+          UiActions.complete(
+              owner.page, () -> sessions.rows("active").locator("vaadin-button").click());
+          sessions.assertConfirmationDetails();
+          AllurePlaywright.attachScreenshot(
+              "Abmeldedialog im Konto bei " + width + " px", owner.page);
+          UiActions.complete(
+              owner.page, () -> owner.page.locator("#sessions-confirmation-cancel").click());
         }
       } finally {
         owner.page.navigate("about:blank");
-        BrowserTestRunner.restartWithSessionTimeout(1800);
+        page.navigate(path(ADMIN_ROUTE));
+        configuration.open(AdminConfigGroup.SECURITY);
+        configuration.enterSeconds(timeoutLabel, originalTimeout);
+        configuration.save();
+        page.navigate("about:blank");
+        BrowserTestRunner.restartTestApplication();
       }
     }
   }
@@ -375,6 +407,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
   }
 
   @Test
+  @Tag("sign-in-session-layout")
   @DisplayName(
       "SESSIONS-05: Bei erreichtem Limit nur eigene Sitzungen verwalten und Anmeldung fortsetzen")
   @Description(
@@ -402,7 +435,28 @@ public class SessionManagementBrowserTest extends BrowserFixture {
           .hasCount(1);
       assertThat(next.page.locator("#account-session-entries [data-session-state='current']"))
           .hasCount(0);
-      login.revokeRecoverySession(0);
+      AccountSessionsPage recovery = new AccountSessionsPage(next.page);
+      for (int width : new int[] {1280, 390}) {
+        next.page.setViewportSize(width, 900);
+        recovery.assertGroups(1, 0);
+        recovery.assertSummaryAlignment();
+        Locator method =
+            recovery
+                .rows("active")
+                .locator(".account-session-sign-in-method .account-session-detail-value");
+        assertThat(method).hasText(texts.getSignInPortalPassword());
+        assertThat(method).hasCSS("font-weight", "700");
+        AllurePlaywright.attachScreenshot("Sitzungslimit bei " + width + " px", next.page);
+        UiActions.complete(
+            next.page, () -> recovery.rows("active").locator("vaadin-button").click());
+        recovery.assertConfirmationDetails();
+        AllurePlaywright.attachScreenshot("Abmeldedialog am Limit bei " + width + " px", next.page);
+        if (width == 1280) {
+          UiActions.complete(
+              next.page, () -> next.page.locator("#sessions-confirmation-cancel").click());
+        }
+      }
+      recovery.confirm();
       assertThat(next.page.locator("#account-session-entries [data-session-state='active']"))
           .hasCount(0);
       UiActions.complete(next.page, () -> next.page.locator("#session-recovery-continue").click());
