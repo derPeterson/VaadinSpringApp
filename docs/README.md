@@ -57,7 +57,6 @@ abgenommen. Die automatisierten Ergebnisse stehen im [Prüfstand](status.md).
 Weitere bewertete Möglichkeiten stehen in der
 [Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).
 Die [Vaadin-Komponentenprüfung](planung/vaadin-komponenten-abgleich.md) enthält die
-abgenommene Bestandsaufnahme und Einschätzung zu Badges und weiteren möglichen nativen
-Bausteinen. Der Umbau ist als separate spätere Umsetzung vorgesehen und gehört nicht
-zur abgeschlossenen Google-/Microsoft- oder zur 2FA-Umsetzung. Start, Paketumfang und
-Reihenfolge sind noch freizugeben.
+aktuelle Bestandsaufnahme der Flow-Oberfläche, geprüfte Standardkomponenten und
+Vorschläge für separate Umbaupakete. Start, Paketumfang und Reihenfolge sind noch
+freizugeben.

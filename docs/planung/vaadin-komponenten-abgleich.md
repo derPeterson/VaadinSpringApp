@@ -1,170 +1,242 @@
-# Native Vaadin-Bausteine: Bestandsaufnahme und offene Planung
+# Vaadin Flow und Cosmos
 
-## Auftrag und Grenze
+## Entscheidung und Ausgangspunkt
 
-Die projektweite Bestandsaufnahme und Einschätzung sind vom Benutzer abgenommen.
-Der Umbau von Badges und weiteren ausgewählten Bausteinen wird als separate spätere
-Umsetzung behandelt. Er ist vom abgeschlossenen Google-/Microsoft-Login und der
-2FA-Umsetzung getrennt. Ein Bausteinumbau ist
-ausdrücklich noch nicht beauftragt. Dieser Plan bleibt als Grundlage für den separaten
-Start und die gemeinsame Auswahl der Arbeitspakete offen.
+Die Anwendung bleibt bei **Vaadin Flow in Java**. Standardbedienung kommt aus
+spezialisierten Flow-Komponenten. Cosmos bleibt die gemeinsame Gestaltung.
+Anwendungsbausteine dürfen mehrere native Komponenten zu einer fachlichen Einheit
+zusammenfassen, etwa eine Sitzungskarte, einen Ticketfilter oder die Pagination.
+Ein eigener Ersatz für eine Vaadin-Komponente braucht einen konkreten Grund und
+die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#native-vaadin-bausteine-zuerst).
 
-Arbeitsbasis ist `feature/google-microsoft-anmeldung`, nach der Profilbild-
-Löschbestätigung. Bestehendes Aussehen, Fachregeln und Sicherheitsprüfungen sind
-weiter verbindlich. Es wird keine neue Theme- oder Abhängigkeitsversion benötigt.
+**Einstieg nach Freigabe:** Zwei noch selbst gestaltete Badges auf native
+Basis bringen. Der rote Zähler an der Glocke und die Statusanzeige für aktive
+Benachrichtigungen sind geeignete Gegenstücke. Danach lässt sich entscheiden, welche
+weiteren Anzeigen dieselben Varianten verwenden. Seitenrahmen, Anmeldemasken und
+Ticketverlauf sind deutlich größere Eingriffe und bleiben bei diesem Paket außen vor.
 
-Untersucht wurden die 221 Java-Anwendungsdateien, insbesondere Views,
-UI-Komponenten, UI-Basisklassen und UI-Helfer, die beiden eigenen Frontendmodule,
-die zugehörigen Themequellen sowie relevante Shared-Texte, Aufrufer und Tests.
-Die HTML-Referenzen wurden als Gestaltungsvorgabe berücksichtigt. Abhängigkeiten,
-generierte Quellen, Datenbanken, private Konfiguration und Logs wurden nicht
-pauschal durchsucht. Verfügbarkeit wurde zusätzlich an den lokalen JAR-APIs von
-Vaadin 25.3.2 geprüft, nicht allein aus der neuesten Online-Dokumentation abgeleitet.
+Die Bestandsaufnahme bezieht sich auf main, Stand `1f427fba`. Maßgeblich für
+Vaadin 25.3.5 ist die [Anwendungs-POM](../../app/pom.xml). Erfasst wurden alle 283
+Java-Quelldateien im Anwendungsmodul, darunter 15 Klassen mit `@Route`, außerdem
+die versionierten Frontendquellen und relevante Theme-Regeln und Testaufrufer.
+Die Zahlen in der Komponentenliste zählen Dateien mit einem direkten Import.
+Vererbung, vollqualifizierte Namen und wiederverwendete Instanzen machen die Zahl
+der sichtbaren Komponenten größer. Die Eignung möglicher Alternativen wurde mit
+der offiziellen Dokumentation und den öffentlichen Java-APIs der lokalen JARs
+für 25.3.5 abgeglichen. Die Analyse ist statisch. Für die Kandidaten stehen
+Darstellungsvergleich und Bedienprüfung im Browser noch aus.
 
-## Warum die aktuellen Badges anders gebaut sind
+## Wie unsere Seiten aufgebaut sind
 
-Der Hinweis ist berechtigt: `com.vaadin.flow.component.badge.Badge` und
-`BadgeVariant` sind bereits vorhanden. Die Anwendung importiert derzeit keine
-dieser Klassen. Vaadin unterstützt Beschriftung, Icon, Zahl und Varianten wie
-`SUCCESS`, `WARNING`, `ERROR` und `NUMBER_ONLY` über eigene APIs.
-Quelle: [Vaadin Badge](https://vaadin.com/docs/latest/components/badge).
-
-Im Code stehen stattdessen zwei Muster: `Span` mit dem älteren Lumo-Thema
-`badge` sowie `Span`/`Div` mit lokalen Cosmos-Klassen. Damit wurde die
-HTML-Gestaltung nachgebildet, ohne diese Anzeigen auf die inzwischen vorhandene
-Badge-Komponente umzustellen. Das erklärt den technischen Istzustand. Es ist
-kein Beleg, dass die native Komponente unser Design nicht abbilden könnte.
-
-Die vorhandenen Spans sind zwar selbst Vaadin-Flow-HTML-Komponenten. Sie sind
-aber nicht die spezialisierte Badge-Komponente. Das ist die entscheidende
-Unterscheidung. Ein reines Suchen nach Variablennamen wie `iconBadge` würde
-zusätzlich viele bloße Iconrahmen fälschlich als Badge mitzählen.
-
-## Badge-Inventar: 27 Anzeigearten in zwölf Dateien
-
-Gezählt werden unterschiedliche wiederverwendete Erzeugungs-/Darstellungsstellen,
-nicht die Zahl der zur Laufzeit sichtbaren Benutzer, Rollen oder Nachrichten.
-Ein Renderer kann viele Badges erzeugen. Eine gemeinsame Stelle kann in Inbox,
-Overlay und Dialog erscheinen. Sechs der 27 Stellen verwenden noch das ältere
-`theme="badge"`-Muster, die übrigen 21 nur lokale Gestaltung.
-
-| Quelldatei / Bereich | Anzahl | Konkrete Anzeigen und aktueller Aufbau |
-| --- | ---: | --- |
-| [PortalSidebarComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PortalSidebarComponent.java) | 3 | Kontostatus (`active`, älteres Lumo-Badge), Anwesenheit (`presence`), Ungelesen-Zähler (`unread`) |
-| [UserPopoverMenu](../../app/src/main/java/de/derpeterson/app/ui/components/UserPopoverMenu.java) | 2 | `accountStateText` und `menuPresence`, beide lokale Spans |
-| [UserNotificationBell](../../app/src/main/java/de/derpeterson/app/ui/components/UserNotificationBell.java) | 1 | Header-Zähler `cosmos-notification-count` |
-| [PortalHomeComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PortalHomeComponent.java) | 1 | Roter Ungelesen-Zähler am Startseitenbutton |
-| [UserNotificationsPanel](../../app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java) | 4 | Filterzähler, Overlay-Kopfzähler, Quelle Administration/System und Gelesen/Ungelesen in `messageMetadata`; letzteres älteres Lumo-Badge |
-| [AccountSessionsComponent](../../app/src/main/java/de/derpeterson/app/ui/components/AccountSessionsComponent.java) | 4 | Sitzungsanzahl, Sitzungslimit, aktuelles Gerät (älteres Lumo-Badge), aktive/gespeicherte Sitzung. Auch in „Anmeldung fortsetzen“ verwendet |
-| [AdminConfigurationSection](../../app/src/main/java/de/derpeterson/app/views/admin/AdminConfigurationSection.java) | 1 | Einstellungssumme im Panelkopf |
-| [AdminExternalLoginSection](../../app/src/main/java/de/derpeterson/app/views/admin/AdminExternalLoginSection.java) | 1 | Nicht eingerichtet/Inaktiv/Aktiv; ein gemeinsamer Erzeugungspfad für Google und Microsoft |
-| [AdminMailTestSection](../../app/src/main/java/de/derpeterson/app/views/admin/AdminMailTestSection.java) | 1 | SMTP-Test mit Statuspunkt, Tooltip und zugänglicher Statusinformation |
-| [AdminUserFilterBar](../../app/src/main/java/de/derpeterson/app/views/admin/AdminUserFilterBar.java) | 1 | Anzahl aktiver Filterkategorien |
-| [AdminUserManagementSection](../../app/src/main/java/de/derpeterson/app/views/admin/AdminUserManagementSection.java) | 4 | Aktiv und Anwesenheit (zwei ältere Lumo-Badges), Rollen, „Dein Benutzer“ |
-| [AdminUserNotificationsSection](../../app/src/main/java/de/derpeterson/app/views/admin/AdminUserNotificationsSection.java) | 4 | Intern-/Versandstatus, Administration in der Vorschau, Gesendet in der Historie (älteres Lumo-Badge), Anzahl gesendeter Benachrichtigungen |
-| **Summe** | **27** | **Sechs ältere Lumo-Badge-Stellen, 21 lokale Anzeigen; null native `Badge`-Verwendungen** |
-
-Nicht mitgezählt sind Panel-Iconrahmen, Avatar-Statuspunkte, normale Zeit-/Hilfstexte,
-Zeichenzähler und die großen Kennzahlkarten im Benutzer-/Benachrichtigungskopf.
-Der runde Empfängerüberlauf „+N“ ist Teil einer Avatargruppe und wird separat
-betrachtet. „Vorschau geprüft“ ist aktuell eine Statuszeile mit Icon, kein
-automatisch zu ersetzender Badgekasten.
-
-Die Statusspalte der Benutzertabelle ist ausdrücklich ohne sichtbaren Badgekasten
-gestaltet. Hier vor einem Umbau klären, ob nur das alte Theme entfernt oder
-`Badge` bewusst ohne Kasten gestaltet werden soll. Die Bestandszahl ist keine
-Anweisung, alle 27 Anzeigen ungeprüft gleich aussehen zu lassen.
-
-## Weitere Bausteine mit nativen Alternativen
-
-| Bereich und Fundstellen | Native Möglichkeit | Einschätzung und Grenze |
+| Ebene | Aktueller Aufbau | Bewertung |
 | --- | --- | --- |
-| `OverlayUserIcon`: fünf Erzeugungsstellen in vier Dateien (`TrackedUserAppLayout`, `PortalSidebarComponent`, `UserPopoverMenu`, zwei Stellen in `AdminUserManagementSection`) | [Avatar](https://vaadin.com/docs/latest/components/avatar) | Sinnvoller Kandidat für das eigentliche Bild/Initialen. Anwesenheitspunkt und Statusauswahl bleiben eine fachliche Ergänzung. Bildrevision, Cache, Initialen, lange Namen und geschützte Bildressourcen müssen erhalten bleiben. Mittlerer bis höherer Aufwand wegen gemeinsamer Nutzung. |
-| Empfänger-Vorschau in `AdminUserNotificationsSection.refreshRecipientSummary` | `AvatarGroup` | Einzelne Avatare sind bereits native `Avatar`; nur Anordnung, sichtbare Begrenzung und „+N“ sind selbst zusammengesetzt. Standard-Überlauf öffnet eine eigene Liste. Diese Bedienung erst mit der vereinbarten separaten Detailsliste vergleichen. Kleiner bis mittlerer Aufwand, nicht bloß andere CSS-Klasse. |
-| `CosmosCardComponent`, `PublicPanelComponent`, `AccountPanelComponent`, `PortalContextCard`: 26 Konstruktorstellen in 19 Dateien | [Card](https://vaadin.com/docs/latest/components/card) | Die aktuelle Hauptkarte ist bereits ein natives `VerticalLayout`, hat aber selbst gebaute Kopf-/Inhalts-/Footerstruktur. Native `Card` ist ein sinnvoller Pilot. Erst eine öffentliche Formularseite und eine Adminkarte vergleichen, dann zentrale Wrapper ändern. Höherer visueller Wirkungsbereich. Die 26 Stellen zählen nur explizite Konstruktoraufrufe, nicht alle dynamischen Panels. |
-| Gemeinsame Bestätigungen in Sitzungen, Profilbild und Benachrichtigungen; eigener Benutzer-Löschdialog | [ConfirmDialog](https://vaadin.com/docs/latest/components/confirm-dialog) | Vier Einstiegspunkte. Schon heute echte Vaadin-`Dialog`-Komponenten mit nativer Modalität. `ConfirmDialog` unterstützt auch Component-Inhalt und eigene Buttons. Deshalb als Vereinfachung prüfen; Kontextkarten, Footer, Icons, Fokus, Abbrechen, doppelte Bestätigung und Sprachwechsel erhalten. Mittlerer Aufwand, kein aktueller Sicherheitsfehler. |
-| Formularraster in `RegistrationView`, `AccountSettingsComponent`, `AdminConfigurationSection`, Benutzerformular in `AdminUserManagementSection`, Anbieter-Zugangsdaten in `AdminExternalLoginSection` | [FormLayout](https://vaadin.com/docs/latest/components/form-layout) | Fünf Quellbereiche, teilweise mehrere Formulare pro Datei. Bereits native Eingaben, aber eigene horizontale Layouts/CSS-Raster. Responsive Regeln, Außen-Infoicons und Feldlabelzuordnung müssen vor einer Umstellung nachgebaut werden. Optionaler Pilot, kein pauschaler Austausch aller Divs. |
-| Vier manuelle Anwesenheitsbuttons in `UserPopoverMenu.createStatusOptions` | Native Auswahlkomponente mit Renderer, etwa `RadioButtonGroup` | Eine Stelle. Kann Auswahlsemantik und Tastatursteuerung vereinfachen. Renderer mit Statusicon und Beschreibung prüfen. SideNav-/Avatar-Statusauswahl verwendet bereits `Select`; dort kein zweiter Umbau nötig. |
-| Sprachwahl in öffentlichem Kopf und Benutzermenü | Native Einzelauswahl oder bestehende Buttons | Kleine DE-/EN-Button-Gruppen bestehen bereits aus nativen `Button`. Eine `RadioButtonGroup` wäre eine mögliche zusätzliche Standardisierung, nicht zwingend ein Fehler. Bedienung und Platzbedarf zuerst bewerten. |
-| `PageFrameComponent`, `PortalPageComponent`, `TrackedUserAppLayout`, `PublicPageComponent` | [AppLayout](https://vaadin.com/docs/latest/components/app-layout) und normale Layouts | Die angemeldete View-Hierarchie basiert bereits auf `AppLayout`; innen liegt der ausdrücklich vereinheitlichte eigene Seitenrahmen. Kein fehlender nativer Seitennavigationsbaustein: `PageNavigationComponent` verwendet `SideNav`. Eine erneute Rahmenumstellung hätte hohen Seiteneffekt und ist kein empfohlenes erstes Paket. |
-| `AdminSidePanel` als rechter Hilfe-/Filterdrawer | `Dialog`; gegebenenfalls [MasterDetailLayout](https://vaadin.com/docs/latest/components/master-detail-layout) | Schon nativ modal. MasterDetailLayout ist für Master/Detail-Inhalte gedacht und hat andere Platz-/Overlayregeln. Kein automatischer Ersatz nur wegen ähnlicher Position. Das bestehende Verhältnis zu Header und Copyright muss erhalten bleiben. |
+| Angemeldeter Rahmen | [UserActivityAwareView](../../app/src/main/java/de/derpeterson/app/ui/base/UserActivityAwareView.java) erbt von `AppLayout`. [TrackedUserAppLayout](../../app/src/main/java/de/derpeterson/app/ui/base/TrackedUserAppLayout.java) setzt über `setContent` einen [PageFrameComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PageFrameComponent.java) ein. Der Kopf verwendet unter anderem `HorizontalLayout`, der innere Rahmen Divs für Kopf, Hauptinhalt und Hintergrund. | Der äußere Rahmen ist nativ. Der Cosmos-Rahmen innen ist selbst zusammengesetzt. Ein späterer Wechsel zu den Navbar-/Drawer-Bereichen von `AppLayout` wäre eine Änderung am responsiven Seitenverhalten. Erst bei einem konkreten Gewinn prüfen. |
+| Öffentlich und geschützte Zwischenschritte | [PublicPageComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PublicPageComponent.java) verwendet denselben Rahmen, native Zeilen und Spalten sowie einen eigenen Kopf. Die Gast-Views nutzen unter anderem [IsNotAuthenticatedBaseView](../../app/src/main/java/de/derpeterson/app/security/IsNotAuthenticatedBaseView.java) mit `Composite` und Flow-Layouts. Die 2FA-Views verwenden `VerticalLayout` und je nach Zustand den reduzierten Kopf. | Gemeinsame Hülle erhalten. Visuelle Ausrichtung und serverseitige Ablauf- und Zugriffssperren getrennt betrachten. |
+| Seitennavigation und Inhalt | [PageNavigationComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PageNavigationComponent.java) erweitert `SideNav` und arbeitet mit `SideNavItem`. Ein Browser-Listener verbindet interne Einträge mit Java-Aktionen. [PortalPageComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PortalPageComponent.java) gruppiert Sidebar und Inhalt in einem responsiven CSS-Raster und steuert die mobile Navigation. `AdminView` verwendet ebenfalls diese Seitennavigation. | Die Menüpunkte und Navigationselemente sind nativ. Der responsive Rahmen und die Anbindung an die abschnittsbasierte Navigation sind eigene Ergänzungen. |
+| Zeilen, Spalten und Formulare | `HorizontalLayout` und `VerticalLayout` kommen durchgängig vor, etwa bei Registrierung, Profilaktionen, Ticketköpfen und Pagination. Das Profilformular nutzt CSS Grid. Die Registrierung und das Admin-Benutzerformular bauen Feldpaare mit `HorizontalLayout`. | Für gewöhnliche Zeilen und Spalten ist die Vaadin-Basis bereits da. `FormLayout` ist eine passende Standardoption für wiederkehrende responsive Feldpaare. In den Anwendungsquellen gibt es aktuell keinen direkten Einsatz. |
+| Karten und Panels | [CosmosCardComponent](../../app/src/main/java/de/derpeterson/app/ui/components/CosmosCardComponent.java) erbt von `VerticalLayout`. [PublicPanelComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PublicPanelComponent.java) und [AccountPanelComponent](../../app/src/main/java/de/derpeterson/app/ui/components/AccountPanelComponent.java) setzen Kopf, Inhalt und Aktionen daraus zusammen. [PortalContextCard](../../app/src/main/java/de/derpeterson/app/ui/components/PortalContextCard.java) basiert auf `Div`. Admin-Panels verwenden zusätzlich die gemeinsamen Panelklassen. | Gemeinsame Gestaltung ist vorhanden. Die HTML-Struktur der Karten ist unsere. `Card` ist ein konkreter Pilotkandidat, weil Vaadin dafür eine eigene Komponente anbietet. |
+| Dialoge, Feldhilfe und Filter | Formdialoge basieren auf `Dialog`. [AdminSidePanel](../../app/src/main/java/de/derpeterson/app/ui/components/AdminSidePanel.java) ist ein `Dialog` mit seitlicher Platzierung und eigener Größenanpassung. `Popover` wird etwa für Glocke, Profilmenü und Nachrichtenaktionen verwendet. | Overlay, Modalität und grundlegende Interaktion kommen von Vaadin. Header, Footer und Inhalte sind fachliche Zusammensetzungen. Ein `ConfirmDialog`-Pilot ist für einfache Bestätigungen sinnvoll. |
 
-## Bereits native oder bewusst benötigte Ergänzungen
+`Div`, `Span` und Überschriften sind Java-Klassen aus Flow. Ein `Span` für
+eine E-Mail-Adresse oder ein `Div` als Container für ein responsives Raster
+ist ein regulärer Einsatz. Ein `Span`, der mit mehreren eigenen CSS-Regeln
+einen Badge nachbildet, ist ein Kandidat für die spezialisierte Komponente.
+Dieser Unterschied ist aussagekräftiger als die Zahl der Divs.
+[Vaadin-Layouts](https://vaadin.com/docs/latest/building-apps/ui-basics/layouts),
+[Flow-HTML-Elemente](https://vaadin.com/docs/latest/components/html-elements).
 
-- Eingaben: `TextField`, `EmailField`, `PasswordField`, `TextArea`, `DatePicker`,
-  `IntegerField`, `BigDecimalField`, `ComboBox`, `MultiSelectComboBox`, `Select`,
-  `Checkbox`, `CheckboxGroup`, `RadioButtonGroup` und der neue `Switch`.
-- Benutzertabelle: `Grid` mit nativer Sortierung und Komponentenrenderern.
-  Pagination im Admin sowie im Postfach ist aus nativen Buttons/ComboBox und
-  Layouts aufgebaut. Für die hier verwendete Flow-Version ist kein gleichwertiger
-  Standard-Paginationbaustein als direkter Ersatz nachgewiesen. Keine neue
-  Drittanbieter-Abhängigkeit allein für die Nummernleiste einführen.
-- Postfachfilter: bereits `RadioButtonGroup`, keine selbst gebauten Tabs.
-  Aktiv-/Status-/Rollenfilter und Rollen-/Empfängerauswahl verwenden ebenfalls
-  native Auswahlkomponenten. Die `Div`-Renderer sind deren Inhalt, keine
-  parallel implementierten Auswahloverlays.
-- Aufklappbare Empfänger-/Versanddetails: bereits native `Details`. Kein
-  `Accordion`-Umbau allein wegen eines Aufklappsymbols erforderlich.
-- Header-Menüs und Benachrichtigungsvorschau: native `Popover`; globale Meldungen:
-  native `Notification`; Hinweise: native `Tooltip`; Profilbildupload: native `Upload`.
-- `CompactTimePicker` erweitert `TimePicker` nur um die vereinbarte kompakte
-  Eingabe. `AdminUserActivityFilter` ist schon `CustomField<LocalDateTime>`.
-  `AdminDurationField` setzt `IntegerField` und `Select<Unit>` zusammen.
-  Eine spätere `CustomField`-Kapselung wäre eine fachliche Verbesserung, keine
-  fehlende native Dauer-Komponente und nicht Teil eines Badge-Pakets.
-- `account-avatar-editor.js` ergänzt Bildausschnitt, Zoom und Vorschau; Upload
-  und Buttons sind nativ. Kein gleichwertiger eigener Flow-Bildausschnitt ist in
-  der verwendeten Standard-API nachgewiesen. Diesen beauftragten Eigenanteil erhalten.
-  Gleiches gilt für den kompakten Zeitparser in `compact-time-input.js`.
-- Textareas sind echte `TextArea`. Die vertikale Größenänderung ergänzt die
-  Browser-CSS-Eigenschaft `resize`; `setMinRows`/`setMaxRows` ersetzen diese
-  Bedienung nicht. Kein Anlass, die Felder neu zu bauen.
-- Lucide-Icons wurden ausdrücklich anstelle der gesetzten Vaadin-Icons gewählt.
-  `AppIcon` liefert native `SvgIcon`. Diese Entscheidung bleibt bestehen.
-- E-Mailvorlagen benötigen HTML. Dort wären Flow-Komponenten
-  kein sachgerechter Ersatz. Hintergründe, Servicezeichen, normale Überschriften,
-  Fließtexte und Layoutcontainer sind ebenfalls kein Komponenten-Nachbau.
-- Vaadins kommerzielles [Dashboard](https://vaadin.com/docs/latest/components/dashboard)
-  löst andere Aufgaben (Widgets, Verschieben, Größenänderung) als unsere statischen
-  Schnellzugriffe. Es ist kein sinnvoller Pflichtumbau der Startseite.
+## Vollständige Komponentenübersicht
 
-## Empfohlene Reihenfolge nach Freigabe
+Die Liste umfasst die direkt verwendeten Flow-Oberflächenklassen. Typvarianten,
+Events, Datenquellen und Anwendungsdienste sind dabei ausgeklammert. Eigene
+Unterklassen wie `CosmosPagination` werden in den Fachbereichen eingeordnet.
 
-1. **Badge-Pilot:** Ein einfacher Text-/Statusbadge und ein roter Zahlbadge mit
-   nativer `Badge`-Komponente. Bisherige Farben, Größen, Abstände und sichtbare
-   Texte erhalten. Nur passende Theme-Varianten aus der tatsächlichen Version
-   verwenden. Zugängliche Bezeichnung auch bei reinen Zahlen erhalten.
-2. **Badge-Paket:** Nach visueller Abnahme die freigegebenen Inventarstellen über
-   einen kleinen gemeinsamen Cosmos-Baustein auf `Badge` umstellen. Variablen wie
-   Quelle, Rolle, Anzahl und Versandzustand bleiben fachlich unverändert. Nicht
-   mehr benötigte lokale/alte Lumo-Regeln erst danach entfernen.
-3. **Avatar-/AvatarGroup-Pilot:** Gemeinsames Profilbild und Empfängerüberlauf
-   getrennt testen; Statuspunkt, geschützte Bilder und Detailsliste erhalten.
-4. **Card-Pilot, danach Bestätigungsdialoge:** Jeweils gesonderte Abnahme vor dem
-   Umbau zentraler Wrapper. Eingaben und Speicherung bleiben unangetastet.
-5. **Optionale Strukturpakete:** FormLayout und Anwesenheitsauswahl nur nach
-   Entscheidung über Nutzen und gewünschte Bedienung. Seitenrahmen aktuell behalten.
+| Familie | Im Anwendungscode verwendete Klassen, mit Zahl direkter Importstellen |
+| --- | --- |
+| Layout und Scrollen | `AppLayout` (1), `HorizontalLayout` (26), `VerticalLayout` (29), `Scroller` (1). `Composite` dient als Java-Hülle, unter anderem für die Gast-Views. |
+| Seitennavigation und Umschaltung | `SideNav` (2), `SideNavItem` (5), `Tabs` (3), `Tab` (6), `TabSheet` (3), `Details` (5). |
+| Aktionen und Eingabefelder | `Button` (50), `TextField` (14), `EmailField` (12), `PasswordField` (12), `TextArea` (4), `IntegerField` (2), `BigDecimalField` (1), `DatePicker` (7), `TimePicker` (2), `Upload` (1), `CustomField` (1). |
+| Auswahl | `Checkbox` (3), `CheckboxGroup` (3), `Switch` (6), `ComboBox` (7), `MultiSelectComboBox` (2), `Select` (5), `RadioButtonGroup` (5). |
+| Tabellen, Identität und Anzeige | `Grid` (2), `Badge` (10), `Avatar` (1), `SvgIcon` (22). |
+| Dialoge und Feedback | `Dialog` (9), `Popover` (4), `Tooltip` (7), `Notification` (1). |
+| HTML-Elemente über Java | `Anchor` (5), `Div` (52), `Span` (55), `H1` (9), `H2` (21), `H3` (10), `H4` (5), `Hr` (2), `Image` (13), `Input` (1), `Paragraph` (4), `Section` (1), `ListItem` (6), `UnorderedList` (6). `Html` wird im `NotificationHelper` für Meldungstext verwendet. |
+| Text über Java | `Text` (2) für Textknoten ohne eigenen Container. |
+| Flow-Erweiterung | `OtpField` des FlowingCode-Add-ons (3 direkte Importe). Dazu kommt der eigene `AccountAvatarEditor` als Flow-Wrapper für die Bildausschnitt-Bedienung. |
 
-Aufwand relativ zum Risiko: Badges klein bis mittel, Avatar mittel, Card mittel
-bis groß wegen der zentralen CSS-/DOM-Verträge, Seitenrahmen groß. Ohne den Pilot
-lassen sich belastbare Stundenangaben nicht aus der Fundstellenzahl ableiten.
+`Grid` steht sowohl hinter der Benutzertabelle als auch hinter der Ticketliste.
+Bei den Tickets ist die Darstellung der einzelnen Zeile eine Java-Komposition
+aus nativen Komponenten. Gleiches gilt für Auswahloptionen mit Symbol und Text
+in der Benutzerverwaltung und in der Konfiguration. Ein eigener Renderer ist
+hier Teil der vorgesehenen Flow-API.
+[Vaadin Grid](https://vaadin.com/docs/latest/components/grid),
+[FlowingCode OTP Field](https://vaadin.com/directory/component/otp-field-add-on).
 
-## Abnahme- und Prüfkriterien des späteren Pakets
+## Wo ein Umbau tatsächlich etwas bringt
 
-- Kein sichtbares Redesign: DE/EN, Desktop/Smartphone, schmale Header und lange
-  Texte mit dem bisherigen Vaadin-Stand vergleichen. Fokus, Tooltip, Disabled,
-  Statusfarben, Null/99+/hohe Zähler und Live-Aktualisierung prüfen.
-- Bestehende Browserfälle erweitern statt neue parallele Journeys anlegen:
-  `AccountSettingsBrowserTest`, `SessionManagementBrowserTest`,
+### Badges, Zahlen und Status
+
+**Schon nativ.** Die zehn Dateien sind `AccountSessionsComponent`,
+`AdminExternalLoginSection`, `AdminUserManagementSection`,
+`ExternalConnectionsComponent`, `RecoveryInstructionsComponent`,
+`SupportTicketActivityIndicator`, `SupportTicketFilterPanel`,
+`SupportTicketsComponent`, `TwoFactorAccountComponent` und
+`UserNotificationsPanel`. Damit laufen unter anderem Sitzungsstatus, Angaben
+zur Anmeldung im Benutzerformular, Anbieterstatus, 2FA-Status und fast die
+gesamte Ticketkennzeichnung bereits über `Badge`. Der rote Aktivitätspunkt in
+der Admin-Navigation ist ebenfalls ein `Badge` mit `Tooltip`. Die CSS-Variante
+stellt ihn bewusst als Punkt dar.
+
+**Noch lokal.** Diese Liste gruppiert die verbleibenden Anzeigemuster nach
+Verwendung. Eine Stelle kann mehrere Zustände oder Oberflächen bedienen.
+
+| Stelle | Heute | Empfehlung |
+| --- | --- | --- |
+| [UserNotificationBell](../../app/src/main/java/de/derpeterson/app/ui/components/UserNotificationBell.java), `PortalHomeComponent`, `PortalSidebarComponent` | Drei lokale rote Zahl-Spans für denselben Benachrichtigungszähler. Bei der Glocke steht die Anzahl im zugänglichen Namen des Buttons. In der Sidebar ist der Zähler als dekorativer Zusatz ausgeblendet. | Glocke zuerst. Danach dieselbe visuelle Badge-Variante in Startseite und Sidebar. Sichtbarkeit bei null, Text `99+` und die bestehende zugängliche Beschriftung prüfen. Der Punkt beim Ticketsystem ist ein anderer Fachzustand. |
+| [UserNotificationsPanel](../../app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java) | Quelle, Filterzähler und Overlay-Kopfzähler als lokale Spans. Gelesen/Ungelesen als alter Lumo-Badge-Span, nicht mehr relevante Nachricht schon als `Badge`. | Den aktiven Nachrichtenstatus zuerst angleichen. Quelle und Zähler nach ihrer Gestaltung einzeln zuordnen. Die Kennzahlen der Inbox bleiben ein eigener Anzeigetyp. |
+| `PortalSidebarComponent` und `UserPopoverMenu` | Konto- und Präsenzangaben im Identitätsblock verwenden Spans mit Lumo- oder lokalen Styles. | Jeweils dieselbe Cosmos-Variante für denselben Kontostatus und dieselbe Präsenz. Die Auswahl der Anwesenheit und der Punkt am Avatar sind getrennte Bedienelemente. |
+| `AdminUserManagementSection` | Rollen und „Dein Benutzer“ sind lokale Chips. Aktiv/Anwesenheit in der Tabelle nutzen alte Badge-Muster und lokale Regeln. Registrierung und Anmeldewege im Formular sind bereits nativ. | Rollen und „Dein Benutzer“ angleichen. Den bewusst flachen Tabellenstatus in seiner Darstellung erhalten. Ob `Badge` ohne sichtbaren Kasten hier einfacher ist, hängt vom Pilot ab. |
+| `AdminUserFilterBar` und `AdminConfigurationSection` | Aktive Filter bzw. Anzahl der Einstellungen als lokale Spans. | Filterzähler mit dem bereits nativen Ticketfilter abgleichen. Einstellungssumme nur übernehmen, wenn dieselbe kleine Anzeigevariante passt. |
+| `AdminMailTestSection` und `AdminUserNotificationsSection` | SMTP-Status mit Punkt, Text, Tooltip und zugänglicher Statusinfo. Versandansicht mit Versandmodus, Quelle der Vorschau, Gesendet-Status und Historienanzahl in eigenen Mustern. | Gesendet und Vorschauquelle als nächste Kandidaten. Beim SMTP-Status sichtbaren Punkt, dynamischen Text und Tooltip beibehalten. Kennzahlen und die Prüfanzeige der Vorschau getrennt beurteilen. |
+
+`Badge` bietet in 25.3.5 unter anderem Text, Zahl, Icon, Komponenteninhalt
+sowie `SUCCESS`, `WARNING`, `ERROR`, `NUMBER_ONLY` und `SMALL`. Für einen
+Zähler, der exakt `99+` zeigen soll, zuerst die Textvariante prüfen. Die Palette
+für System, neutrale Status und Akzent bleibt im Cosmos-Theme. Farbe, Größe und
+Dichte können als zentrale Varianten sichtbar verschieden sein. Wo eine
+Theme-Klasse reicht, ist kein neuer Java-Wrapper erforderlich.
+[Vaadin Badge](https://vaadin.com/docs/latest/components/badge).
+
+### Avatare und Identität
+
+[OverlayUserIcon](../../app/src/main/java/de/derpeterson/app/ui/components/OverlayUserIcon.java)
+baut den sichtbaren Avatar aus Bild und Initialen. Derselbe Baustein erscheint
+im angemeldeten Kopf, im reduzierten Sicherheitskopf, im Profilmenü, in der
+Sidebar, der Benutzerverwaltung und bei Ticketidentitäten. Er behandelt auch
+Bildrevisionen, Bildfehler, Tooltips und je nach Aufrufer den Präsenzpunkt
+oder die Präsenzsteuerung. In der Empfängervorschau der Admin-Benachrichtigungen
+werden dagegen schon native `Avatar`-Instanzen eingesetzt.
+
+`Avatar` bietet Name, Kürzel, Bild und `setImageHandler`. **Den Bildkern
+probeweise ersetzen, die Identitätshülle erhalten.** Als Pilot eignet sich
+ein Avatar ohne Statussteuerung, etwa im reduzierten Kopf oder in einer
+Benutzerzeile. Zugriffsschutz des Bildhandlers, Aktualisierung bei Bildwechsel,
+Fallback, Größen und der Tickettooltip mit Name und E-Mail sind eigene
+Abnahmepunkte. `AvatarGroup` ist ein unabhängiger Kandidat für die
+Empfängervorschau. Die vorhandene, separate Empfängerliste darf dabei ihre
+Funktion behalten. Der native Überlauf öffnet eine eigene Liste und muss
+deshalb als Bedienentscheidung betrachtet werden.
+[Vaadin Avatar und Avatar Group](https://vaadin.com/docs/latest/components/avatar).
+
+### Formulare, Karten und Dialoge
+
+| Baustein | Konkreter Startpunkt | Umfang und Grenze |
+| --- | --- | --- |
+| `FormLayout` | Profilformular in `AccountSettingsComponent`, danach die Feldpaare in `RegistrationView` und im Admin-Benutzerformular. | Responsive Spalten, Reihen und Feldbreiten in einer öffentlichen API. Feldlabels, DOM-Reihenfolge, Fehlermeldungen und Autofill bleiben erhalten. Die Konfiguration mit Info-Buttons neben Feldern, Dauereingaben und variablen Zeilen separat prüfen. |
+| `Card` | Ein öffentlicher Paneltyp wie „Passwort vergessen“. Danach eine Konto- oder Adminkarte mit Kopf-Metadaten und Aktionen vergleichen. | `Card` bietet unter anderem Header, Präfix, Suffix und Footer. Ein kleines Beispiel zeigt, welche bestehenden CSS- und Testselektoren an der aktuellen Wrapperstruktur hängen. Erst danach eine Entscheidung über `CosmosCardComponent` treffen. Die fachlichen Panel-APIs bleiben nützlich. |
+| `ConfirmDialog` | Ein einfacher Bestätigungsfall im Bereich Benachrichtigungen über [PortalConfirmationDialog](../../app/src/main/java/de/derpeterson/app/ui/components/PortalConfirmationDialog.java). | Komponenten für Header, Text und Aktionen werden unterstützt. Schließen oben rechts, Escape, Anfangsfokus, Warnfarbe und der vereinbarte Footer müssen passen. Benutzerlöschung, Geräteabmeldung, Profilbildlöschung und Anleitungsvorschau haben zusätzlichen Kontext. An die erst nach erfolgreichem Pilot herangehen. |
+| Info-/Warnboxen und Leerzustände | Statische Hinweise in Kontodialogen, Konfiguration und Ticketeditor, außerdem `NotificationEmptyState`. | Native `Notification` ist für vorübergehende Meldungen. Fest eingebettete Hinweise dürfen als gemeinsame Flow-Komposition aus Icon und Text bestehen. Abstände, Hervorhebung und Icon-Ausrichtung zentral halten. Einen bestehenden Baustein erweitern, sobald eine zweite Stelle denselben Aufbau benötigt. |
+| Seitliche Feldhilfe und Filter | `AdminSidePanel` und `ConfigInfoButton` in der Konfiguration, im Mailtest und in den Ticketfiltern. | `Dialog` bleibt die Basis für die seitliche Feldhilfe. Vor einem Wechsel zu `Popover` oder einer anderen Hülle zuerst Anker, Modalität, Fokus, Scrollgrenzen und mobile Bedienung vergleichen. Ein `Tooltip` deckt kurze Zusatztexte ab. |
+
+[Vaadin Form Layout](https://vaadin.com/docs/latest/components/form-layout),
+[Card](https://vaadin.com/docs/latest/components/card),
+[Confirm Dialog](https://vaadin.com/docs/latest/components/confirm-dialog),
+[Dialog](https://vaadin.com/docs/latest/components/dialog).
+
+### Anmeldung, Wiederherstellung und Administration
+
+| Fläche | Aktueller Standard und eigener Anteil | Entscheidung |
+| --- | --- | --- |
+| Startseite, Anmeldung, Registrierung und Bestätigungen | `MainView` leitet weiter. `HomeView` nutzt den angemeldeten Rahmen. `LoginView` setzt echte `EmailField`, `PasswordField`, `Switch` und `Button` mit eigenen Anmeldeschritten zusammen. Registrierung, Passwort vergessen/zurücksetzen, Verifikation, E-Mail-Bestätigung, externe Registrierung und Wartung nutzen Flow-Eingaben, Panels und Texte. | `LoginForm` und `LoginOverlay` sind verfügbar. Das Standardformular hat eigene Felder und ein begrenztes Set an Aktionen. Unser Layout bindet „Anmeldung speichern“, externe Anbieter, Wiederherstellung und Fortsetzung ein. Die bestehende Flow-Komposition bietet dafür die passenden APIs. Ein Kartentausch ist unabhängig davon möglich. |
+| Mein Konto und Geräte | `AccountView` verwendet native Seitennavigation und `AccountSettingsComponent` ein `TabSheet`. Sitzungen, Anmeldewege und Schutzaktionen sind Java-Kompositionen aus nativen Buttons, Badges und Dialogen. | Karten/Avatar/Bestätigung jeweils als eigenes Paket prüfen. Die Gruppierung aktiver und gespeicherter Anmeldungen, der Anmeldeweg und die Sitzungsaktionen bleiben fachlich in ihren Bausteinen. |
+| Anmeldeanbieter und Identitätsbestätigung | `ExternalLoginButtons` und `ExternalConnectionsComponent` verwenden native Buttons, Logos und Status-Badges. `ExternalIdentityConfirmationDialog` und `TwoFactorActionDialog` verwenden `Dialog` und [TwoFactorCodeInput](../../app/src/main/java/de/derpeterson/app/ui/components/TwoFactorCodeInput.java). | Gemeinsamen Code-Eingabebaustein weiterverwenden. Auto-Bestätigung beim Verbinden und Klick beim Trennen oder bei sicherheitsrelevanten Änderungen bleiben pro Aufrufer bewusst verschieden. |
+| 2FA-Einrichtung und Wiederherstellung | `TwoFactorView` verwendet `Tabs`, das Flow-Add-on `OtpField` und native `TextField` für Ersatzcodes. `RecoveryHelpView` verwendet den öffentlichen Rahmen und den Ticketbaustein für die anfragende Person. | In den geprüften offiziellen APIs für 25.3.5 wurde kein gleichwertiges segmentiertes OTP-Feld festgestellt. Add-on mit Fokus, Einfügen, AutoFill und Completion-Ereignis erhalten. Prüfen lässt sich separat, ob der Style ohne manuelles Einfügen eines Stylesheets in den Shadow DOM auskommt. |
+| Admin-Übersicht, Benutzer und Konfiguration | `AdminView` und die Admin-Sektionen verwenden native Layouts. Das Benutzer-Grid rendert Identität, Status, Rollen und Aktionen. Konfiguration, 2FA, Anmeldeanbieter und Mailtest verwenden native Felder, `TabSheet`, `Switch` und die gemeinsame Feldhilfe. `AdminDurationField` und `AdminUserActivityFilter` kombinieren native Eingaben. | Badge- und Formularpiloten hier gezielt übertragen. Den Dauerwert als `CustomField` erst kapseln, wenn ein gemeinsamer Wert-/Validierungsvertrag mehrere Aufrufer vereinfacht. `AdminUserActivityFilter` ist bereits ein `CustomField`. Statische Kennzahlkarten brauchen kein Dashboard-Widget-System. |
+| Benachrichtigungen | `UserNotificationsView`, `UserNotificationsPanel` und `AdminUserNotificationsSection` verwenden native Buttons, Auswahl, `Popover`, `Dialog` und Empfänger-Avatare. Listen-, Vorschau- und Detaildarstellung sind eigene Kompositionen. | Badges und gegebenenfalls den Pager vereinheitlichen. Eine News-/Inbox-Zeile mit Lesen/Archivieren und Quellenstatus erfüllt einen anderen Vertrag als ein Chat-Eintrag. |
+| Ticketliste und Detail | [SupportTicketsComponent](../../app/src/main/java/de/derpeterson/app/ui/components/SupportTicketsComponent.java) enthält `Grid`, `Scroller`, `Tabs`, `Switch`, `TextArea` und native Buttons. Das Admin-Arbeitsraster liegt über CSS. Die eigene Ticketzeile ist ein Grid-Renderer. | `MasterDetailLayout` ist ein späterer Vergleichskandidat. Es bietet ein responsives Detail-Overlay. Das muss mit Fokusansicht, leerem Detail, mobilem Ablauf, URL-Zustand und Rückkehr zur Liste verglichen werden. `SplitLayout` ist interessant, wenn eine verschiebbare Trennung gewünscht ist. Der aktuelle Bedarf ist eine stabile Zweiteilung mit Fokusumschaltung. |
+| Ticketverlauf und Editor | Der Verlauf setzt öffentliche Nachrichten, Vermerke und Statusereignisse unterschiedlich zusammen. Der Editor koppelt `TextArea` und native Aktionen mit dem Modus für interne Vermerke, Warnhinweisen und der jeweils erlaubten Aktion. | Die Java-API von `MessageListItem` unterstützt Autor, Zeit, Text, Avatar, Varianten und Anhänge. Ein allgemeiner Komponenteninhalt für Statuszeilen mit zwei nativen Badges war in der geprüften API nicht ersichtlich. `MessageInput` hat ein Submit-Ereignis, bildet unseren Editorvertrag aber nicht vollständig ab. Die bestehende Komposition ist dafür passend. |
+| Pagination | [CosmosPagination](../../app/src/main/java/de/derpeterson/app/ui/components/CosmosPagination.java) kombiniert `HorizontalLayout`, `ComboBox` und `Button`. Benutzerverwaltung, Versandhistorie und Ticketliste verwenden ihn. Die persönliche Inbox hat eigene Seitennavigation in `UserNotificationsPanel`. | Vaadin Grid hat keine eingebaute Leiste für manuelle Seitennavigation. Den vorhandenen Baustein beibehalten. Inbox später angleichen, wenn die gemeinsame API ihre vorhandene Bedienung trägt. Datenabfrage, Ticket-Sprung und Filterzustand gehören weiterhin in den jeweiligen Fachbereich. |
+
+[Vaadin Login](https://vaadin.com/docs/latest/components/login),
+[Master-Detail Layout](https://vaadin.com/docs/latest/components/master-detail-layout),
+[Message List](https://vaadin.com/docs/latest/components/message-list),
+[Message Input](https://vaadin.com/docs/latest/components/message-input),
+[Grid-Pagination](https://vaadin.com/docs/latest/components/grid#pagination).
+
+## Wo Browsercode und CSS beteiligt sind
+
+Die Anwendung lädt Lumo und darüber das eigene Silent-Cosmos-Theme.
+`cosmos-tokens.css` liefert gemeinsame Werte. Gemeinsame Controls und
+Overlays liegen im Theme, fachbezogene Selektoren unter anderem in
+`cosmos-account.css`, `cosmos-admin.css`, `cosmos-notifications.css` und
+`admin-users.css`. Der Wechsel auf eine native Komponente soll ihre
+öffentlichen Eigenschaften, Varianten und CSS-Parts nutzen. Die genehmigten
+Farben, Abstände und Lucide-Icons über `AppIcon`/`SvgIcon` bleiben Teil des
+Designsystems. [Theme-Quellen](../theme.md#dateien-und-ladereihenfolge),
+[Vaadin Styling](https://vaadin.com/docs/latest/styling).
+
+| Vorhandener Eigenanteil | Einordnung |
+| --- | --- |
+| `account-avatar-editor.js`, `AccountAvatarEditor` mit Canvas und HTML-`Input` für Zoom | Gezielte Ausnahme für Bildausschnitt und Vorschau. Dateiübernahme erfolgt über natives `Upload`. Für den Bildausschnitt wurde keine gleichwertige Standardkomponente nachgewiesen. |
+| `compact-time-input.js` und `CompactTimePicker` | Ergänzt den nativen `TimePicker` für kompakte Eingabe. Der Aktivitätsfilter scrollt zusätzlich gezielt in dessen Auswahl, ohne einen Wert zu übernehmen. Dieser Zugriff auf die Komponente ist bei Updates prüfenswert. |
+| `equal-button-widths.js` | Synchronisiert Buttonbreiten. Wenn ein betroffener Footer umgebaut wird, prüfen, ob gleiche CSS-Spalten die gewünschte Anordnung bereits vollständig liefern. |
+| `recovery-code-download.js` und Skripte in `TwoFactorView` | Browserfunktionen für PDF-Download, Kopieren, Auswahl und Fokus bei Schlüsseln oder Codes. Auch die Anbieter-Konfiguration verwendet die Clipboard-API. Ein nativer Button bleibt der Auslöser. |
+| `PageNavigationComponent`, `PortalPageComponent`, `AdminSidePanel` | Brücken für Seitennavigationsaktionen, Fokus der mobilen Navigation und Begrenzung der seitlichen Overlays. Bei einem Layout-Pilot anhand öffentlicher Flow-APIs überprüfen. |
+| `UserActivityAwareView`, `ConfirmEmailChangeView` und `SupportTicketsComponent` | Browseraktivität, Navigation nach Sitzungswiderruf sowie Erkennung, wann der Ticketverlauf sichtbar gelesen werden kann. Vor einer Änderung den fachlichen Grund und die Folgeprüfung erfassen. |
+| `ConfigInfoButton`, `OverlayUserIcon`, `TwoFactorCodeFields` | Sonderverhalten für Tooltips und gezielte Styling-/DOM-Anbindung. Kandidaten für weniger direkte DOM-Zugriffe, sobald eine gleichwertige öffentliche API verfügbar ist. |
+| `NotificationHelper` | Verwendet natives `Notification`. Eine Meldungsvariante erzeugt `Html` für den Nachrichtentext. Bei Arbeiten an diesem Baustein Aufrufer und erlaubte Formatierungen prüfen und reine Textmeldungen gegebenenfalls als `Paragraph` ausgeben. |
+| HTML für E-Mails und Ersatzcode-PDF | Vorlagen für separate Ausgabeformate. In der versionierten Anwendungsoberfläche wurde kein React-/Hilla-Quellbestand gefunden. |
+
+## Vorgeschlagene Arbeitspakete
+
+Für neue Ansichten gilt eine feste Reihenfolge. Zuerst den vorhandenen
+Cosmos-Baustein und die spezialisierte Flow-Komponente prüfen. Dann die
+passenden Java-Layouts und semantischen Elemente zur Fachansicht
+zusammensetzen. Gemeinsame Maße und Varianten im Theme halten, lokale
+Anordnung an der Ansicht. Eine eigene Bedienkomponente wird erst erwogen,
+wenn eine konkrete Funktion fehlt. In dem Fall die geprüfte Alternative,
+den nötigen Eigenanteil und die zu erhaltende Bedienung zur Entscheidung
+vorlegen.
+
+1. **Badge-Pilot.** Glockenzähler und Gelesen/Ungelesen in der
+   Benachrichtigungsansicht wählen. Bestehende native Badges als Referenz
+   verwenden. Die Statusanzeige entsteht an einer gemeinsamen Stelle für Inbox,
+   Glockenvorschau, Detailansicht und Bestätigungskarten. Deshalb alle vier
+   Darstellungen prüfen, einschließlich der Hervorhebung ungelesener Nachrichten
+   und der Kennzeichnung nicht mehr relevanter Nachrichten. Beim Glockenzähler
+   dynamische Aktualisierung, Zahlenbreite und zugängliche Beschriftung prüfen.
+2. **Badge-Varianten vereinheitlichen.** Freigegebene Varianten an die weiteren
+   Fundstellen übertragen. Status, Rolle, Zahl und Punkt nach fachlicher Bedeutung
+   auseinanderhalten. Lokale Selektoren erst entfernen, wenn die letzten
+   Aufrufer umgestellt sind. Bereits passende native Badges direkt weiterverwenden.
+3. **Avatar-Kern und kleine Formulare.** In getrennten Piloten einen Avatar und
+   ein einfaches responsives Formular umstellen. Danach getrennt entscheiden,
+   ob der Nutzen eine Übernahme in die gemeinsamen Bausteine rechtfertigt.
+4. **Karten und einfache Bestätigungen.** Je eine Oberfläche mit `Card` bzw.
+   `ConfirmDialog` vergleichen. Bestehende Kopf-, Fuß- und Fokusverträge
+   sind Abnahmekriterien. Der gemeinsame Kartenrahmen hat viele Verbraucher
+   und ist deshalb erst nach einem lokalen Vergleich dran.
+5. **Weiterführende Struktur.** `MasterDetailLayout`, mobile Navigation,
+   Anwesenheitsauswahl und Inbox-Pagination nur einzeln betrachten, wenn
+   die Änderung Bedienelemente, Code oder Wartung konkret vereinfacht.
+   Bereits passende Bausteine wie native Switches, Tabs, Eingaben, Grids,
+   Popovers und die Ticket-Status-Badges werden weiterverwendet.
+
+### Abnahme nach einem beauftragten Paket
+
+- Layout und Bedienung in DE/EN auf Desktop und Smartphone vergleichen.
+  Dazu lange Übersetzungen, kleine Breiten, Tastaturfokus, zugängliche Namen,
+  Tooltips, Hover, Disabled und Live-Updates prüfen.
+- Beim Badge-Paket `0`, `1`, `99` und `99+` sowie Lesen, Archivieren und obsolet
+  gewordene Benachrichtigungen abdecken. Bei Avataren Bild vorhanden, Initialen,
+  fehlerhaftes Bild, Bildwechsel und ein langer Name mit E-Mail prüfen.
+- Bei Layout und Dialogen auf echte Fachabläufe prüfen. Beispiele sind Fehler
+  beim Speichern, Escape und Rückfokus, Sitzungswiderruf, geschützte Navigation,
+  Ticketfilter, direkter Ticketsprung, Refresh und interner Vermerk.
+- Bestehende Suiten passend zum Paket erweitern. Ausgangspunkte sind
+  `CosmosComponentsBrowserTest`, `CosmosDesignBrowserTest`,
   `NotificationInboxBrowserTest`, `UserNotificationsBrowserTest`,
-  `UserManagementBrowserTest`, `CosmosComponentsBrowserTest` und zugehörige
-  Designfälle anhand der tatsächlich betroffenen Klassen auswählen.
-- Fach-/Rechteprüfung, serverseitige Zuordnung, Sessionwiderruf und Bildrevision
-  nicht in Renderern verschieben oder für DOM-Umstellungen abschwächen.
-- Nach jeder freigegebenen Teilumsetzung Theme-Anleitung und
-  betroffene Tests gemeinsam nachziehen. Bei API- oder Selektoränderungen die
-  tatsächlichen Aufrufer prüfen; keinen kompletten Umbau auf einmal durchführen.
-
-Diese Abnahmekriterien sind noch kein aktuell fehlender automatisierter Nachweis
-einer implementierten Änderung. Sobald ein Paket beauftragt ist, konkreten offenen
-Testbedarf zentral in `docs/testbedarf.md` führen.
+  `UserManagementBrowserTest`, `AccountSettingsBrowserTest`,
+  `SessionManagementBrowserTest` und die passenden `TwoFactor*BrowserTest`-Fälle.
+  Konkrete offene Prüfungen nach einer Umsetzung zentral im
+  [Testbedarf](../testbedarf.md) führen. Die Regeln für Browserläufe stehen in
+  der [Testanleitung](../tests.md).

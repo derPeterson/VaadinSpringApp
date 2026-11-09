@@ -4,8 +4,6 @@
 
 - [ ] [Vaadin-Badges und weitere Komponenten](docs/planung/vaadin-komponenten-abgleich.md)
   als eigene Umsetzung starten, Pakete priorisieren und deren Umfang freigeben.
-  Die Analyse und Einschätzung sind abgenommen; der Bausteinumbau ist noch nicht beauftragt.
-  Er ist vom abgeschlossenen Google-/Microsoft-Login und der 2FA-Umsetzung getrennt.
 
 ## Entwicklungsablauf
 

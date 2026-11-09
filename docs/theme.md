@@ -152,11 +152,11 @@ und dieselben Bereiche untereinander auf schmalen Displays. Die Unterstützung
 mehrerer Bildschirmgrößen allein rechtfertigt keinen Ersatz der Vaadin-Layouts.
 Diese Regel ist kein Auftrag, bestehende Ansichten nachträglich umzubauen.
 
-`Badge` ist in der aktuell verwendeten Vaadin-Version bereits vorhanden. Die
-Anwendung verwendet überwiegend noch ältere Lumo-Badge-Spans und lokale CSS-Anzeigen.
-Die neuen Anbieterstatusanzeigen verwenden bereits native `Badge`-Komponenten.
-Die [Bestandsaufnahme und offene Planung](planung/vaadin-komponenten-abgleich.md)
-beschreibt die betroffenen Stellen. Die Planung ist kein Auftrag zur Migration.
+Für neue Status- und Zähler-Badges die native `Badge`-Komponente verwenden.
+Sie ist unter anderem bei Sitzungen, Anmeldeanbietern, 2FA und Tickets bereits
+im Einsatz. Die [Bestandsaufnahme und offene Planung](planung/vaadin-komponenten-abgleich.md)
+ordnet die noch lokalen Anzeigen ein und schlägt die Reihenfolge für eine spätere
+Umstellung vor.
 
 ## Übernahme des angemeldeten Benutzerportals
 
