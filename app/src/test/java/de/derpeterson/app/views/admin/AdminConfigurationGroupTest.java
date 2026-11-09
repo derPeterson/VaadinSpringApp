@@ -14,6 +14,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.select.Select;
@@ -327,6 +328,34 @@ class AdminConfigurationGroupTest {
     ReflectionTestUtils.invokeMethod(section, "openHelp", ConfigEntry.REMEMBER_ME_SECRET_KEY);
     assertTrue(
         help.getElement().getTextRecursively().contains(messages.getAdminConfigRestartRequired()));
+  }
+
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
+  void allConfigurationFieldsRenderLocalizedTimingNotes(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    AdminSidePanel help = (AdminSidePanel) ReflectionTestUtils.getField(section, "helpPanel");
+    for (ConfigEntry entry : ConfigEntry.values()) {
+      ReflectionTestUtils.invokeMethod(section, "openHelp", entry);
+      Component timing =
+          help.getChildren()
+              .filter(
+                  child -> child.getElement().getClassList().contains("admin-help-effective-use"))
+              .findFirst()
+              .orElseThrow(() -> new AssertionError("Feldhilfe ohne Wirksamkeit: " + entry));
+      List<String> notes =
+          timing
+              .getElement()
+              .getChildren()
+              .filter(element -> "ul".equals(element.getTag()))
+              .flatMap(element -> element.getChildren())
+              .map(element -> element.getTextRecursively())
+              .toList();
+      assertFalse(notes.isEmpty(), entry.name());
+      assertTrue(
+          notes.stream().noneMatch(note -> note.isBlank() || note.contains("effective_")),
+          entry.name());
+    }
   }
 
   @Test

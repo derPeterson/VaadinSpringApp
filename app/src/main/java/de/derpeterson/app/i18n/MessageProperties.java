@@ -102,6 +102,9 @@ public class MessageProperties extends MessageTexts implements Serializable {
 
   public List<String> getAdminConfigEffectiveUse(ConfigEntry entry) {
     return switch (entry) {
+      case SERVICE_NAME -> List.of(getAdminConfigEffectiveServiceName());
+      case COPYRIGHT_TEXT -> List.of(getAdminConfigEffectiveCopyright());
+      case BASE_URL -> List.of(getAdminConfigEffectiveBaseUrl());
       case SESSION_TIMEOUT_SECONDS ->
           List.of(getAdminConfigEffectiveSessionNew(), getAdminConfigEffectiveSessionExisting());
       case LOGIN_ATTEMPTS_LIMIT, LOGIN_ATTEMPT_WINDOW_SECONDS ->
@@ -111,17 +114,30 @@ public class MessageProperties extends MessageTexts implements Serializable {
               getAdminConfigEffectiveSessionLimit(), getAdminConfigEffectiveSessionLimitExisting());
       case VERIFICATION_TOKEN_VALID_DURATION, PASSWORD_RESET_TOKEN_VALID_DURATION ->
           List.of(getAdminConfigEffectiveTokenNew(), getAdminConfigEffectiveTokenExisting());
-      case EMAIL_QUEUE_POOL_SIZE ->
-          List.of(getAdminConfigEffectiveNextQueueRun(), getAdminConfigEffectiveQueueInFlight());
-      case EMAIL_QUEUE_CAPACITY, EMAIL_QUEUE_MAX_RETRY ->
-          List.of(getAdminConfigEffectiveNextQueueRun());
+      case VERIFICATION_TOKEN_LIVE_DURATION, PASSWORD_RESET_TOKEN_LIVE_DURATION ->
+          List.of(getAdminConfigEffectiveTokenRetention());
+      case EMAIL_QUEUE_POOL_SIZE, EMAIL_QUEUE_CAPACITY, EMAIL_QUEUE_MAX_RETRY ->
+          List.of(
+              getAdminConfigEffectiveNextQueueRun(), getAdminConfigEffectiveQueueCurrentBatch());
       case EMAIL_QUEUE_RETRY_DELAY_SECONDS ->
           List.of(getAdminConfigEffectiveNextQueueRun(), getAdminConfigEffectiveWaitingRetries());
+      case EMAIL_QUEUE_SENT_LIVE_DURATION -> List.of(getAdminConfigEffectiveCleanupExisting());
       case REMEMBER_ME_DURATION ->
           List.of(
               getAdminConfigEffectiveRememberNew(),
               getAdminConfigEffectiveRememberShortened(),
               getAdminConfigEffectiveRememberExisting());
+      case REMEMBER_ME_SECRET_KEY -> List.of(getAdminConfigEffectiveRestartRemembered());
+      case MAINTENANCE_MODE -> List.of(getAdminConfigEffectiveMaintenance());
+      case USER_AUTO_ABSENT_TIMEOUT -> List.of(getAdminConfigEffectiveAutoAway());
+      case USER_NOTIFICATIONS_INBOX_RETENTION_DAYS ->
+          List.of(
+              getAdminConfigEffectiveInboxRetention(), getAdminConfigEffectiveCleanupExisting());
+      case USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS ->
+          List.of(
+              getAdminConfigEffectiveHistoryRetention(), getAdminConfigEffectiveCleanupExisting());
+      case EMAIL_FROM -> List.of(getAdminConfigEffectiveMailFrom());
+      case EMAIL_ADMIN -> List.of(getAdminConfigEffectiveMailAdmin());
       case MAIL_HOST,
           MAIL_PORT,
           MAIL_USERNAME,
@@ -132,7 +148,6 @@ public class MessageProperties extends MessageTexts implements Serializable {
           MAIL_SMTP_SSL_TRUST,
           MAIL_DEBUG ->
           List.of(getAdminConfigEffectiveMailTransport(), getAdminConfigEffectiveQueueInFlight());
-      default -> List.of();
     };
   }
 

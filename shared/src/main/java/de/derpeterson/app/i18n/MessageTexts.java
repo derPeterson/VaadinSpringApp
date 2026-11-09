@@ -1957,6 +1957,90 @@ public class MessageTexts {
     return getTranslation("adminView.config.entry.email_queue_retry_delay_seconds.tooltip");
   }
 
+  public String getAdminConfigEffectiveServiceName() {
+    return getTranslation("adminView.config.effective_service_name");
+  }
+
+  public String getAdminConfigEffectiveCopyright() {
+    return getTranslation("adminView.config.effective_copyright");
+  }
+
+  public String getAdminConfigEffectiveBaseUrl() {
+    return getTranslation("adminView.config.effective_base_url");
+  }
+
+  public String getAdminConfigEffectiveRestartRemembered() {
+    return getTranslation("adminView.config.effective_restart_remembered");
+  }
+
+  public String getAdminConfigEffectiveMaintenance() {
+    return getTranslation("adminView.config.effective_maintenance");
+  }
+
+  public String getAdminConfigEffectiveAutoAway() {
+    return getTranslation("adminView.config.effective_auto_away");
+  }
+
+  public String getAdminConfigEffectiveInboxRetention() {
+    return getTranslation("adminView.config.effective_inbox_retention");
+  }
+
+  public String getAdminConfigEffectiveHistoryRetention() {
+    return getTranslation("adminView.config.effective_history_retention");
+  }
+
+  public String getAdminConfigEffectiveCleanupExisting() {
+    return getTranslation("adminView.config.effective_cleanup_existing");
+  }
+
+  public String getAdminConfigEffectiveTokenRetention() {
+    return getTranslation("adminView.config.effective_token_retention");
+  }
+
+  public String getAdminConfigEffectiveMailFrom() {
+    return getTranslation("adminView.config.effective_mail_from");
+  }
+
+  public String getAdminConfigEffectiveMailAdmin() {
+    return getTranslation("adminView.config.effective_mail_admin");
+  }
+
+  public String getAdminConfigEffectiveQueueCurrentBatch() {
+    return getTranslation("adminView.config.effective_queue_current_batch");
+  }
+
+  public String getAdminConfigEffectiveProviderClient() {
+    return getTranslation("adminView.config.effective_provider_client");
+  }
+
+  public String getAdminConfigEffectiveProviderSecret() {
+    return getTranslation("adminView.config.effective_provider_secret");
+  }
+
+  public String getAdminConfigEffectiveProviderEnabled() {
+    return getTranslation("adminView.config.effective_provider_enabled");
+  }
+
+  public String getAdminConfigEffectiveProviderExisting() {
+    return getTranslation("adminView.config.effective_provider_existing");
+  }
+
+  public String getAdminConfigEffectiveTwoFactorRule() {
+    return getTranslation("adminView.config.effective_two_factor_rule");
+  }
+
+  public String getAdminConfigEffectiveTwoFactorInactivitySwitch() {
+    return getTranslation("adminView.config.effective_two_factor_inactivity_switch");
+  }
+
+  public String getAdminConfigEffectiveTwoFactorInactivityDuration() {
+    return getTranslation("adminView.config.effective_two_factor_inactivity_duration");
+  }
+
+  public String getAdminConfigEffectiveTwoFactorExisting() {
+    return getTranslation("adminView.config.effective_two_factor_existing");
+  }
+
   public String getAdminConfigEffectiveSessionNew() {
     return getTranslation("adminView.config.effective_session_new");
   }

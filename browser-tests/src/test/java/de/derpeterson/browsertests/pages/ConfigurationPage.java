@@ -8,6 +8,7 @@ import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
+import java.util.regex.Pattern;
 
 /** Configuration through visible groups and inputs; no application API access. */
 public final class ConfigurationPage {
@@ -36,6 +37,18 @@ public final class ConfigurationPage {
 
   public Locator helpPanel() {
     return page.locator("#admin-config-help[opened]");
+  }
+
+  public static void assertEffectiveUse(Locator help, UiTexts texts, String... notes) {
+    Locator section = help.locator(".admin-help-effective-use");
+    assertThat(section.getByRole(AriaRole.HEADING)).hasText(texts.getAdminConfigEffectiveTitle());
+    Locator items = section.locator("li");
+    if (notes.length == 0) {
+      assertThat(items.first()).hasText(Pattern.compile("\\S"));
+      assertThat(section).not().containsText("adminView.config.effective_");
+    } else {
+      assertThat(items).hasText(notes);
+    }
   }
 
   @Step("Feldinformation per Klick öffnen und die tatsächlichen Regeln prüfen")

@@ -18,6 +18,7 @@ import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
@@ -281,6 +282,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
 
   @ParameterizedTest
   @CsvSource({"1280", "390"})
+  @Tag("configuration-field-help")
   @DisplayName("OIDC-10: Native Anbietertabs erhalten ungespeicherte Eingaben")
   void providerTabsKeepIndependentDrafts(int width) {
     page.setViewportSize(width, 1000);
@@ -526,6 +528,14 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
             default -> texts.getProviderSettingsEnableHelp();
           };
       assertThat(help.locator(".admin-help-description")).hasText(explanation);
+      String timing =
+          switch (field) {
+            case "client_id" -> texts.getAdminConfigEffectiveProviderClient();
+            case "secret" -> texts.getAdminConfigEffectiveProviderSecret();
+            default -> texts.getAdminConfigEffectiveProviderEnabled();
+          };
+      ConfigurationPage.assertEffectiveUse(
+          help, texts, timing, texts.getAdminConfigEffectiveProviderExisting());
       help.locator("[slot=footer] vaadin-button").click();
     }
     Locator enabled = page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH);

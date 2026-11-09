@@ -141,11 +141,11 @@ Weitere Filter sind Entwürfe bis zum Anwenden; Badges zeigen angewandte Kriteri
 Reset leert Entwürfe und aktive Kriterien. Datum und Uhrzeit bilden einen gemeinsamen
 Aktivitätsfilter; Uhrzeit ist ohne gültiges Datum deaktiviert.
 
-Konfigurationsfelder zeigen Standardwert und Regeln in der Feldhilfe. Unter
-„Wann gilt die Änderung?“ stehen der Zeitpunkt und Folgen für bestehende Zugänge
-oder laufende Vorgänge. Der Schlüssel für gespeicherte Anmeldungen braucht einen
-Neustart. Die gelbe Feldhilfe erklärt das. Nach einer Änderung nennt die
-Speichermeldung die betroffenen Felder.
+Unter „Wann gilt die Änderung?“ erklärt jede Feldhilfe in der Konfiguration den
+Zeitpunkt und relevante Folgen für bestehende Sitzungen, Einträge oder laufende
+Vorgänge. Das gilt auch für Anmeldeanbieter und Zwei-Faktor-Regeln. Der Schlüssel
+für gespeicherte Anmeldungen braucht einen Neustart. Die gelbe Feldhilfe erklärt
+das. Nach einer Änderung nennt die Speichermeldung die betroffenen Felder.
 Der Mailtest sendet eine echte SMTP-Testmail; in der lokalen Docker-Umgebung fängt
 Mailpit sie ab. [Mailqueue](mailqueue.md) und [Docker](docker/README.md).
 

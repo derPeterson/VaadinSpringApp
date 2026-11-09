@@ -108,13 +108,14 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `security-journeys` | Sitzungs- und Maillinkfälle gemeinsam | 10 |
 | `remember-me` | Echter Chromium- und Anwendungsneustart mit/ohne Remember-me und nach Logout | 4 |
 | `user-status` | Manuelle Wahl, Live-Anzeige in zweitem Tab, Abwesenheit/Rückkehr | 2 |
-| `configuration` | String-, Boolean- und Dauerwerte, Sprachwechsel mit Feldfehlern, Offline-Speichern, native SideNav, Klick-Infos und Enter-Bedienung | 12 |
-| `configuration-follow-up` | Feldhilfen, Zeitfelder und Neustartwarnung auf Desktop und Smartphone, bestehende und neue Sitzungsfristen sowie SMTP-Wechsel | 5 |
+| `configuration` | String-, Boolean- und Dauerwerte, Sprachwechsel mit Feldfehlern, Offline-Speichern, native SideNav, Klick-Infos und Enter-Bedienung | 13 |
+| `configuration-follow-up` | Feldhilfen, Zeitfelder und Neustartwarnung auf Desktop und Smartphone, bestehende und neue Sitzungsfristen sowie SMTP-Wechsel | 6 |
+| `configuration-field-help` | Wirksamkeit in den allgemeinen Feldhilfen, bei beiden Anmeldeanbietern und in den 2FA-Regeln auf Desktop und Smartphone | 6 |
 | `operations` | Persistenz ohne Bootstrap, zwei eigene SMTP-Ziele und echte begrenzte Transportausfälle mit Wiederanlauf | 3 |
 | `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
-| `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 18 |
-| `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 24 |
+| `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 19 |
+| `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 25 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 22 |
 | `cosmos-design` | Kontoansichten, mobiler Mailablauf, Copyright, Theme, Navigation, Infoicon-Ausrichtung und gemeinsamer Seitenrahmen mit Feldhilfe/Benutzerfilter bei breitem Desktop, Desktop und Smartphone | 16 |

@@ -319,6 +319,14 @@ public class AdminExternalLoginSection extends VerticalLayout {
       Div rulesSection = new Div(new H4(texts.getAdminConfigInputRules()), rules);
       rulesSection.addClassName("admin-help-rules");
       helpPanel.add(group, fieldTitle, explanation, rulesSection);
+      String timing =
+          switch (helpField) {
+            case CLIENT_ID -> texts.getAdminConfigEffectiveProviderClient();
+            case SECRET -> texts.getAdminConfigEffectiveProviderSecret();
+            case ENABLED -> texts.getAdminConfigEffectiveProviderEnabled();
+          };
+      helpPanel.addEffectiveUse(
+          texts, List.of(timing, texts.getAdminConfigEffectiveProviderExisting()));
     }
 
     private Div step(Component body) {

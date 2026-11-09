@@ -64,7 +64,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       Supplier<String> title,
       Supplier<String> description,
       Supplier<String> defaultValue,
-      Supplier<List<String>> rules) {
+      Supplier<List<String>> rules,
+      Supplier<String> effectiveUse) {
     String tooltip() {
       return description.get() + " " + String.join(" ", rules.get());
     }
@@ -201,7 +202,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
                     () ->
                         List.of(
                             texts.getAdminConfigDurationNumberRule(),
-                            texts.getTwoFactorInactivityRange()))));
+                            texts.getTwoFactorInactivityRange()),
+                    texts::getAdminConfigEffectiveTwoFactorInactivityDuration)));
     durationField.addClassName("provider-help-field");
     Div common =
         new Div(
@@ -215,7 +217,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
                         DEFAULT_POLICY.inactivityEnabled()
                             ? texts.getAdminUsersYes()
                             : texts.getAdminUsersNo(),
-                    () -> List.of(texts.getTwoFactorInactivityRange()))),
+                    () -> List.of(texts.getTwoFactorInactivityRange()),
+                    texts::getAdminConfigEffectiveTwoFactorInactivitySwitch)),
             durationField);
     common.addClassName("mfa-policy-grid");
     VerticalLayout inactivitySection =
@@ -293,7 +296,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
                   () -> actionLabel(action),
                   () -> ruleDescription(action),
                   () -> modeLabel(DEFAULT_POLICY.rules().get(role).get(action)),
-                  texts::twoFactorRuleHelpItems)));
+                  texts::twoFactorRuleHelpItems,
+                  texts::getAdminConfigEffectiveTwoFactorRule)));
     }
     VerticalLayout group = new VerticalLayout(sectionHeading(icon, heading), fields);
     group.setPadding(false);
@@ -499,6 +503,9 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     rulesSection.addClassName("admin-help-rules");
     help.removeAll();
     help.add(group, fieldTitle, description, defaultValue, rulesSection);
+    help.addEffectiveUse(
+        texts,
+        List.of(details.effectiveUse().get(), texts.getAdminConfigEffectiveTwoFactorExisting()));
   }
 
   public void refreshTexts() {

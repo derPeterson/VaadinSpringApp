@@ -41,6 +41,7 @@ class BrowserExecutionPlanTest {
         "two-factor-ticket-panel",
         "cosmos-scrollbars",
         "configuration-follow-up",
+        "configuration-field-help",
         "external-login-settings"
       })
   void focusedSuitesSelectOnlyTheirExistingJourneys(String suite) {
@@ -80,6 +81,11 @@ class BrowserExecutionPlanTest {
                   "remainingDurationFieldsPersistWithoutExposingTheCalculationBelowTheInput",
                   "expiredSessionLeavesOnlyItsSavedLogin",
                   "persistedConfigurationAndAccountsSurviveRestartWithoutBootstrap");
+          case "configuration-field-help" ->
+              Set.of(
+                  "everyConfigurationFieldHasAnAccessibleLocalizedInfo",
+                  "providerTabsKeepIndependentDrafts",
+                  "superadminOnlyConfiguration");
           case "two-factor-ticket-layout" ->
               Set.of(
                   "administrativeTicketLayoutKeepsTabsAndCardsUnclipped",

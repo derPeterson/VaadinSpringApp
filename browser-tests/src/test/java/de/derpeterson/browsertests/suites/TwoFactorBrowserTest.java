@@ -19,6 +19,7 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationInboxPage;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
@@ -2419,6 +2420,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @DisplayName(
       "MFA-03: Sicherheitskonfiguration nur für Superadmins mit nativen Rollenregeln und Feldhilfe")
   @Tag("two-factor-configuration")
+  @Tag("configuration-field-help")
   void superadminOnlyConfiguration(int width) {
     page.setViewportSize(width, 900);
     LoginPage login = new LoginPage(page);
@@ -2482,10 +2484,17 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(help.locator(".admin-help-default span").last())
         .hasText(texts.getTwoFactorModeOff());
     List<String> helpItems = texts.twoFactorRuleHelpItems();
-    assertThat(help.locator(".admin-help-rules li")).hasText(helpItems.toArray(String[]::new));
+    assertThat(help.locator(".admin-help-rules:not(.admin-help-effective-use) li"))
+        .hasText(helpItems.toArray(String[]::new));
+    ConfigurationPage.assertEffectiveUse(
+        help,
+        texts,
+        texts.getAdminConfigEffectiveTwoFactorRule(),
+        texts.getAdminConfigEffectiveTwoFactorExisting());
     AllurePlaywright.attachScreenshot("2FA-Feldhilfe " + width, page);
     page.keyboard().press("Escape");
     assertThat(helpOverlay).isHidden();
+    assertTwoFactorFieldTiming(tabs, help);
     tabs.nth(2).click();
     assertThat(guide).containsText(texts.getTwoFactorRoleScope(texts.getRoleUser()));
     assertThat(page.locator("#two-factor-inactivity-enabled")).isVisible();
@@ -2506,6 +2515,29 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       assertThat(administrator.page.locator("#admin-provider-settings")).hasCount(0);
       new UserMenu(administrator.page).signOut();
     }
+  }
+
+  private void assertTwoFactorFieldTiming(Locator tabs, Locator help) {
+    for (Locator tab : tabs.all()) {
+      tab.click();
+      Locator fields = page.locator(".mfa-role-content:visible .cosmos-config-info");
+      assertThat(fields).hasCount(9);
+      for (Locator info : fields.all()) {
+        info.click();
+        assertTwoFactorTimingAndClose(help, texts.getAdminConfigEffectiveTwoFactorRule());
+      }
+    }
+    page.locator("#two-factor-inactivity-enabled + vaadin-button").click();
+    assertTwoFactorTimingAndClose(help, texts.getAdminConfigEffectiveTwoFactorInactivitySwitch());
+    page.locator("#two-factor-inactivity-duration + vaadin-button").click();
+    assertTwoFactorTimingAndClose(help, texts.getAdminConfigEffectiveTwoFactorInactivityDuration());
+  }
+
+  private void assertTwoFactorTimingAndClose(Locator help, String timing) {
+    ConfigurationPage.assertEffectiveUse(
+        help, texts, timing, texts.getAdminConfigEffectiveTwoFactorExisting());
+    page.keyboard().press("Escape");
+    assertThat(help.locator("vaadin-dialog-overlay > [part~=overlay]")).isHidden();
   }
 
   private void verifyRuleChoice(Locator field) {

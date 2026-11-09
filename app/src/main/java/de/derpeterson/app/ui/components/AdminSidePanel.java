@@ -10,8 +10,12 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.UnorderedList;
 import de.derpeterson.app.i18n.MessageProperties;
+import java.util.List;
 
 /** Rechte, modal überlagerte Seitenleiste; native Fokus- und Escape-Bedienung bleibt erhalten. */
 public class AdminSidePanel extends Dialog {
@@ -47,6 +51,14 @@ public class AdminSidePanel extends Dialog {
   public void setDescription(String text) {
     description.setText(text);
     description.setVisible(!text.isBlank());
+  }
+
+  public void addEffectiveUse(MessageProperties texts, List<String> notes) {
+    UnorderedList list = new UnorderedList();
+    notes.forEach(note -> list.add(new ListItem(note)));
+    Div section = new Div(new H4(texts.getAdminConfigEffectiveTitle()), list);
+    section.addClassNames("admin-help-rules", "admin-help-effective-use");
+    add(section);
   }
 
   /** Bindet die Leiste an den Seiteninhalt und hält sichtbaren Kopf/Copyrightbereich frei. */

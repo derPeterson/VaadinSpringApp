@@ -112,6 +112,8 @@ final class BrowserExecutionPlan {
       builder.filters(TagFilter.includeTags("sign-in-session-layout"));
     } else if (suite.equals("configuration-follow-up")) {
       builder.filters(TagFilter.includeTags("configuration-follow-up"));
+    } else if (suite.equals("configuration-field-help")) {
+      builder.filters(TagFilter.includeTags("configuration-field-help"));
     }
     return builder.build();
   }

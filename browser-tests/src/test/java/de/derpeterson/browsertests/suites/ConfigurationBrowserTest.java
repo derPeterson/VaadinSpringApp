@@ -352,20 +352,23 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     }
   }
 
-  @Test
+  @org.junit.jupiter.params.ParameterizedTest(name = "CONFIG-05D: Feldhilfen bei {0} px")
+  @org.junit.jupiter.params.provider.ValueSource(ints = {1280, 390})
   @Tag("configuration-follow-up")
+  @Tag("configuration-field-help")
   @DisplayName("CONFIG-05D: Normale Admins erreichen alle Feldinfos ihrer acht Gruppen")
   @Description(
       """
         1. Alle acht für normale Admins freigegebenen Konfigurationsgruppen über die native SideNav öffnen.
-        2. Jede Feldinfo per Klick öffnen: übersetzter Standardwert und nicht leere Eingaberegeln.
+        2. Jede Feldinfo per Klick öffnen: übersetzter Standardwert, Eingaberegeln und Wirksamkeit.
         3. Nur eine Info gleichzeitig sichtbar; per Info-Button wieder schließen.
         4. Ein gesetzter Standard-Geheimschlüssel bleibt vertraulich; das leere SMTP-Passwort zeigt ausdrücklich den Leerhinweis.
         5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder, einschließlich Sitzungs-Timeout.
         **Erwartet:** Keine Gruppe verliert ihre Bedienung; alle bisherigen Felder erhalten die gemeinsame Info-Funktion.
         """)
-  void everyConfigurationFieldHasAnAccessibleLocalizedInfo() {
+  void everyConfigurationFieldHasAnAccessibleLocalizedInfo(int width) {
     ConfigurationPage settings = admin();
+    page.setViewportSize(width, 900);
     int total = 0;
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
       if (group.isSuperadminOnly()) {
@@ -392,8 +395,13 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         }
         assertThat(settings.helpPanel()).containsText(texts.getAdminConfigInputRules());
         assertTrue(
-            settings.helpPanel().locator(".admin-help-rules li").count() > 0,
+            settings
+                    .helpPanel()
+                    .locator(".admin-help-rules:not(.admin-help-effective-use) li")
+                    .count()
+                > 0,
             "Feldinfo hat keine Eingaberegel: " + info.getAttribute("aria-labelledby"));
+        ConfigurationPage.assertEffectiveUse(settings.helpPanel(), texts);
         if (info.getAttribute("aria-labelledby").equals("config-label-remember_me_secret_key")) {
           assertThat(settings.helpPanel()).containsText(texts.getAdminConfigDefaultConfidential());
         } else if (info.getAttribute("aria-labelledby").equals("config-label-mail_password")) {
@@ -405,6 +413,21 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       total += count;
     }
     assertEquals(33, total);
+    settings.open(AdminConfigGroup.SECURITY);
+    UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
+    UserMenu menu = new UserMenu(page);
+    try {
+      menu.selectLanguage(other.language());
+      settings.info(other.getAdminConfigEntrySessionTimeout()).click();
+      ConfigurationPage.assertEffectiveUse(
+          settings.helpPanel(),
+          other,
+          other.getAdminConfigEffectiveSessionNew(),
+          other.getAdminConfigEffectiveSessionExisting());
+      settings.closeHelp(other.getNotificationsClose());
+    } finally {
+      menu.selectTestLanguage();
+    }
   }
 
   @Tag("fast")

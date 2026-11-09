@@ -136,6 +136,11 @@ final class BrowserSuites {
               ConfigurationBrowserTest.class,
               SessionManagementBrowserTest.class,
               OperationsBrowserTest.class);
+      case "configuration-field-help" ->
+          List.of(
+              ConfigurationBrowserTest.class,
+              ExternalLoginLayoutBrowserTest.class,
+              TwoFactorBrowserTest.class);
       case "session-persistence" ->
           List.of(
               SessionLimitBrowserTest.class,

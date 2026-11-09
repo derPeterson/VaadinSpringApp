@@ -896,9 +896,9 @@ markiert die Auswahl.
 `admin-duration-step` gestaltet die Schaltflächen an der präzisen Vaadin-Zahleneingabe.
 Konfigurationsfelder mit externem Label blenden die leere interne Labelzeile aus,
 damit beide Spalten dieselbe Ober- und Unterkante haben.
-Die Feldhilfe setzt Besonderheiten zur Wirksamkeit als kurze Liste unter
-„Wann gilt die Änderung?“. Neustarthinweise nutzen die gelbe gemeinsame Warnbox
-im Abschnitt der Feldhilfe.
+Jede Feldhilfe in der Konfiguration verwendet `AdminSidePanel.addEffectiveUse`
+für die kurze Liste unter „Wann gilt die Änderung?“. Neustarthinweise nutzen die
+gelbe gemeinsame Warnbox in der Feldhilfe.
 
 Alle booleschen Konfigurationsfelder verwenden native Vaadin-Switches mit der
 Klasse `cosmos-config-switch`, auch in der Anbietereinrichtung. Der Text steht

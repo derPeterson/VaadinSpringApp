@@ -602,7 +602,11 @@ public class AdminConfigurationSection extends VerticalLayout {
       helpPanel.add(current, equivalent);
     }
     helpPanel.add(defaultValue, rulesCard);
-    addEffectiveUseHelp(entry);
+    helpPanel.addEffectiveUse(
+        messageProperties, messageProperties.getAdminConfigEffectiveUse(entry));
+    if (ConfigurationCatalog.requiresRestart(entry)) {
+      addRestartHelp();
+    }
     Button closeHelp =
         new Button(
             messageProperties.getNotificationsClose(),
@@ -613,28 +617,18 @@ public class AdminConfigurationSection extends VerticalLayout {
     helpPanel.open();
   }
 
-  private void addEffectiveUseHelp(ConfigEntry entry) {
-    List<String> notes = messageProperties.getAdminConfigEffectiveUse(entry);
-    if (!notes.isEmpty()) {
-      UnorderedList list = new UnorderedList();
-      notes.forEach(note -> list.add(new ListItem(note)));
-      Div section = new Div(new H4(messageProperties.getAdminConfigEffectiveTitle()), list);
-      section.addClassNames("admin-help-rules", "admin-help-effective-use");
-      helpPanel.add(section);
-    }
-    if (ConfigurationCatalog.requiresRestart(entry)) {
-      Span heading = new Span(messageProperties.getAdminConfigRestartRequired() + " ");
-      heading.addClassName("cosmos-security-warning-label");
-      HorizontalLayout warning =
-          new HorizontalLayout(
-              AppIcon.ERROR.create(),
-              new Span(heading, new Span(messageProperties.getAdminConfigRestartDetail())));
-      warning.setSpacing(false);
-      warning.setPadding(false);
-      warning.setAlignItems(FlexComponent.Alignment.START);
-      warning.addClassNames("cosmos-security-warning", "admin-help-restart-warning");
-      helpPanel.add(warning);
-    }
+  private void addRestartHelp() {
+    Span heading = new Span(messageProperties.getAdminConfigRestartRequired() + " ");
+    heading.addClassName("cosmos-security-warning-label");
+    HorizontalLayout warning =
+        new HorizontalLayout(
+            AppIcon.ERROR.create(),
+            new Span(heading, new Span(messageProperties.getAdminConfigRestartDetail())));
+    warning.setSpacing(false);
+    warning.setPadding(false);
+    warning.setAlignItems(FlexComponent.Alignment.START);
+    warning.addClassNames("cosmos-security-warning", "admin-help-restart-warning");
+    helpPanel.add(warning);
   }
 
   private Div placeholderRow(String token, String meaning) {
