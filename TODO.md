@@ -7,11 +7,6 @@
   Die Analyse und Einschätzung sind abgenommen; der Bausteinumbau ist noch nicht beauftragt.
   Er ist vom abgeschlossenen Google-/Microsoft-Login und der 2FA-Umsetzung getrennt.
 
-## Anwendungskonfiguration
-
-- [ ] [Wirksamkeit der Anwendungskonfiguration](docs/planung/anwendungskonfiguration.md)
-  gemeinsam ansehen.
-
 ## Entwicklungsablauf
 
 - [ ] Codex später gemeinsam in IntelliJ über JetBrains Air ausprobieren.
