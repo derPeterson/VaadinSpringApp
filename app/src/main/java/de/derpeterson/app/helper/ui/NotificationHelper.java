@@ -8,7 +8,9 @@ import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.UnorderedList;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -19,6 +21,7 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.ui.components.AppIcon;
 import java.io.Serializable;
+import java.util.List;
 import java.util.Locale;
 import java.util.function.Supplier;
 import lombok.NoArgsConstructor;
@@ -35,6 +38,7 @@ public class NotificationHelper implements Serializable {
   private transient Supplier<String> titleSupplier = null;
   private Html messageText = null;
   private transient Supplier<String> messageSupplier = null;
+  private transient Supplier<List<String>> detailsSupplier;
   private VerticalLayout textLayout = null;
   private Button closeButton;
 
@@ -86,10 +90,20 @@ public class NotificationHelper implements Serializable {
       Supplier<String> messageSupplier,
       Integer duration,
       NotificationType notificationType) {
+    showNotificationWithDetails(titleSupplier, messageSupplier, null, duration, notificationType);
+  }
+
+  public void showNotificationWithDetails(
+      Supplier<String> titleSupplier,
+      Supplier<String> messageSupplier,
+      Supplier<List<String>> detailsSupplier,
+      Integer duration,
+      NotificationType notificationType) {
     closeAndClearAllNotifications();
 
     this.titleSupplier = titleSupplier;
     this.messageSupplier = messageSupplier;
+    this.detailsSupplier = detailsSupplier;
 
     String title = null;
     if (titleSupplier != null) {
@@ -224,6 +238,12 @@ public class NotificationHelper implements Serializable {
       messageText.getStyle().set("max-width", "520px");
       textLayout.add(messageText);
     }
+    if (detailsSupplier != null) {
+      UnorderedList details = new UnorderedList();
+      details.addClassNames("cosmos-notification-message", "cosmos-notification-details");
+      detailsSupplier.get().forEach(detail -> details.add(new ListItem(detail)));
+      textLayout.add(details);
+    }
   }
 
   public void closeAndClearAllNotifications() {
@@ -235,6 +255,7 @@ public class NotificationHelper implements Serializable {
     this.titleSupplier = null;
     this.messageText = null;
     this.messageSupplier = null;
+    this.detailsSupplier = null;
     this.closeButton = null;
 
     currentNotification = new Notification();
@@ -247,8 +268,8 @@ public class NotificationHelper implements Serializable {
     if (titleText != null && titleSupplier != null) {
       titleText.setText(titleSupplier.get());
     }
-    if (messageSupplier != null) {
-      createTextLayoutContent(messageSupplier.get());
+    if (messageSupplier != null || detailsSupplier != null) {
+      createTextLayoutContent(messageSupplier == null ? null : messageSupplier.get());
     }
   }
 }

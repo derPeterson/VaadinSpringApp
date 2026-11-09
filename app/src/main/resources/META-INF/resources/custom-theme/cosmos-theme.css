@@ -613,6 +613,14 @@ vaadin-notification-card[theme~="cosmos-reference"] vaadin-vertical-layout { pad
 vaadin-notification-card[theme~="cosmos-reference"] .cosmos-notification-icon { width: 28px; height: 28px; flex-shrink: 0; color: var(--account-notification-color); }
 vaadin-notification-card[theme~="cosmos-reference"] .cosmos-toast-title { display: block; min-height: 0; height: auto; margin: 0 0 3px; padding: 0; color: var(--cosmos-reference-text); font: 600 12px/1.6 Inter, sans-serif; }
 vaadin-notification-card[theme~="cosmos-reference"] .cosmos-notification-message { margin: 0; color: var(--cosmos-reference-secondary); font: 400 12px/1.7 Inter, sans-serif; }
+vaadin-notification-card .cosmos-notification-message.cosmos-notification-details {
+    margin-block: var(--lumo-space-xs) 0;
+    padding-inline-start: var(--lumo-space-m);
+    list-style: disc;
+    color: var(--cosmos-reference-text, var(--lumo-body-text-color));
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
 vaadin-notification-card[theme~="cosmos-reference"] vaadin-button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; min-width: 36px; height: 36px; margin: 0; padding: 0; border: 1px solid var(--cosmos-reference-border); border-radius: 9px; background: var(--cosmos-reference-input); color: var(--cosmos-reference-accent); }
 vaadin-notification-card[theme~="cosmos-reference"] vaadin-button::part(label) { display: flex; align-items: center; justify-content: center; }
 vaadin-notification-card[theme~="cosmos-reference"] vaadin-button vaadin-icon { width: 18px; height: 18px; padding: 0; }

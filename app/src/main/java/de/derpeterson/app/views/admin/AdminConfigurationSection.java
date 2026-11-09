@@ -51,7 +51,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -795,14 +794,10 @@ public class AdminConfigurationSection extends VerticalLayout {
           NotificationHelper.NotificationType.SUCCESS);
       return;
     }
-    notification.showNotification(
+    notification.showNotificationWithDetails(
         messageProperties::getAdminConfigSaveSuccess,
-        () ->
-            messageProperties.getAdminConfigRestartSaved()
-                + " "
-                + restartEntries.stream()
-                    .map(messageProperties::getAdminConfigEntryLabel)
-                    .collect(Collectors.joining(", ")),
+        messageProperties::getAdminConfigRestartSaved,
+        () -> restartEntries.stream().map(messageProperties::getAdminConfigEntryLabel).toList(),
         0,
         NotificationHelper.NotificationType.WARNING);
   }

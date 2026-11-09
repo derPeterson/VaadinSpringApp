@@ -648,7 +648,12 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       settings.enterSeconds(timeout, originalTimeout);
       settings.submit();
       assertThat(restartNotice).isVisible();
-      assertThat(restartNotice).containsText(key);
+      assertThat(restartNotice.locator("p.cosmos-notification-message"))
+          .hasText(texts.getAdminConfigRestartSaved());
+      Locator affectedFields = restartNotice.locator("ul.cosmos-notification-details > li");
+      assertThat(affectedFields).hasCount(1);
+      assertThat(affectedFields).hasText(key);
+      assertThat(affectedFields).hasCSS("font-weight", "700");
       assertThat(restartNotice).not().containsText(timeout);
       restartNotice.getByRole(AriaRole.BUTTON).click();
       assertThat(notice).hasCount(0);

@@ -302,11 +302,17 @@ class AdminConfigurationGroupTest {
       ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
       Supplier<?> warning =
           (Supplier<?>) ReflectionTestUtils.getField(notification, "messageSupplier");
+      assertEquals(messages.getAdminConfigRestartSaved(), warning.get());
+      Component layout = (Component) ReflectionTestUtils.getField(notification, "textLayout");
       assertEquals(
-          messages.getAdminConfigRestartSaved()
-              + " "
-              + messages.getAdminConfigEntryRememberMeSecretKey(),
-          warning.get());
+          List.of(messages.getAdminConfigEntryRememberMeSecretKey()),
+          layout
+              .getElement()
+              .getChildren()
+              .filter(element -> "ul".equals(element.getTag()))
+              .flatMap(element -> element.getChildren())
+              .map(element -> element.getTextRecursively())
+              .toList());
     } finally {
       notification.closeAndClearAllNotifications();
     }

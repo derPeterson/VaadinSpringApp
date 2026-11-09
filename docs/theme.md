@@ -373,6 +373,8 @@ Seitenrahmen, einschließlich verschachtelter Inhalte. Zuständig ist
 die gesicherte Symbolzuordnung und eine eigene `.cosmos-toast-title` ohne Kollision
 mit Nachrichtenbuttons. Supplier-Sprachwechsel, Anzeigedauer und Fensterisolation
 bleiben erhalten.
+Die Neustartwarnung nach dem Speichern einer Konfiguration zeigt betroffene
+Felder als fette Aufzählung unter dem Hinweistext.
 Rückmeldungen aus URL-Parametern werden nach abgeschlossener Navigation geöffnet,
 damit bei direkten Aufrufen und Anbieter-Rücksprüngen bereits der Zielrahmen die
 Palette bestimmt. Das gilt für Sicherheitsbestätigungen und Anmeldefehler.
