@@ -22,6 +22,7 @@ import org.springframework.boot.SpringApplication;
  */
 public final class HttpsDevelopmentApplication {
   private static final Logger log = LoggerFactory.getLogger(HttpsDevelopmentApplication.class);
+  private static final String CADDY_VERSION = "v2.11.9";
 
   private HttpsDevelopmentApplication() {}
 
@@ -102,7 +103,9 @@ public final class HttpsDevelopmentApplication {
   static void verifyCaddy(Path executable) throws IOException, InterruptedException {
     if (!Files.isRegularFile(executable)) {
       throw new IOException(
-          "Caddy is missing. Place v2.10.2 in data/https/tools/caddy.exe or set -Dhttps.dev.caddy=<path>");
+          "Caddy is missing. Place "
+              + CADDY_VERSION
+              + " in data/https/tools/caddy.exe or set -Dhttps.dev.caddy=<path>");
     }
     Process version =
         new ProcessBuilder(executable.toString(), "version").redirectErrorStream(true).start();
@@ -111,8 +114,8 @@ public final class HttpsDevelopmentApplication {
         throw new IOException("Caddy version check timed out");
       }
       String output = new String(version.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-      if (version.exitValue() != 0 || !output.startsWith("v2.10.2 ")) {
-        throw new IOException("Caddy v2.10.2 is required");
+      if (version.exitValue() != 0 || !output.startsWith(CADDY_VERSION + " ")) {
+        throw new IOException("Caddy " + CADDY_VERSION + " is required");
       }
     } finally {
       IdeHttpsProxy.stopOwnedProcess(version);

@@ -178,7 +178,7 @@ Bindadresse und Proxyhost ausdrücklich durch Compose gesetzt. Die nativen
 Tomcat-Forwarded-Header vertrauen ausschließlich den beim Appstart aufgelösten
 Proxyadressen. Nach einem Wechsel der Proxy-IP die App neu starten.
 
-Für die IDE Caddy **v2.10.2** aus der offiziellen Distribution unter
+Für die IDE Caddy **v2.11.9** aus der offiziellen Distribution unter
 `data/https/tools/caddy.exe` bereitstellen. Dieser ignorierte lokale Werkzeugpfad
 bleibt bei Maven-Clean erhalten.
 
@@ -362,7 +362,7 @@ gleichzusetzen. Dieser lokale Nachweis ist keine Serveranalyse.
 
 Grundlagen: [Sonar-Maven-Analyseumfang](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/scanners/sonarscanner-for-maven),
 [Java-Coverage und Berichtsaggregation](https://docs.sonarsource.com/sonarqube-server/analyzing-source-code/test-coverage/java-test-coverage),
-[JaCoCo-Aggregation der verwendeten Version](https://github.com/jacoco/jacoco/blob/v0.8.15/jacoco-maven-plugin/src/org/jacoco/maven/ReportAggregateMojo.java).
+[JaCoCo-Aggregation der verwendeten Version](https://github.com/jacoco/jacoco/blob/v0.8.16/jacoco-maven-plugin/src/org/jacoco/maven/ReportAggregateMojo.java).
 
 ## SonarQube und Codex
 

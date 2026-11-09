@@ -2,7 +2,7 @@ param([Parameter(Mandatory)][string]$CaddyPath)
 $ErrorActionPreference = 'Stop'
 $executable = (Resolve-Path -LiteralPath $CaddyPath).Path
 $version = & $executable version
-if ($LASTEXITCODE -ne 0 -or $version -notlike 'v2.10.2 *') { throw 'Caddy v2.10.2 is required' }
+if ($LASTEXITCODE -ne 0 -or $version -notlike 'v2.11.9 *') { throw 'Caddy v2.11.9 is required' }
 $repoRoot = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $previousDirectory = $env:APP_HTTPS_CA_DIR
 try {

@@ -53,6 +53,7 @@ class CsrfAdmissionTest {
     CsrfToken before = csrf.generateToken(request);
     csrf.saveToken(before, request, response);
     String oldId = request.getSession().getId();
+    request.setRequestedSessionId(oldId);
     Authentication authentication = authentication(path.equals("remember"));
     if (path.equals("flow")) {
       admissions.completeLogin(
@@ -73,6 +74,7 @@ class CsrfAdmissionTest {
     String admittedId = request.getSession().getId();
     MockHttpServletRequest next = new MockHttpServletRequest();
     next.setSession(request.getSession());
+    next.setRequestedSessionId(admittedId);
     admissions.complete(authentication, next, response, () -> {});
     assertEquals(current, csrf.loadToken(next).getToken());
     assertEquals(admittedId, next.getSession().getId());

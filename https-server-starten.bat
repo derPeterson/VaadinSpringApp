@@ -5,7 +5,7 @@ pushd "%~dp0" || exit /b 1
 
 if not exist "data\https\tools\caddy.exe" (
     echo Caddy fehlt: data\https\tools\caddy.exe
-    echo Bitte Caddy v2.10.2 dort ablegen. Siehe docs\entwicklung.md.
+    echo Bitte Caddy v2.11.9 dort ablegen. Siehe docs\entwicklung.md.
     set "result=1"
     goto :finish
 )

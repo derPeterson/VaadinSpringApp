@@ -94,10 +94,8 @@ class ValidationHelperTest {
     assertTrue(ValidationHelper.isEmailValid("user123@test-domain.org"));
     assertTrue(ValidationHelper.isEmailValid("a@b.co"));
 
-    // Vaadin's current pattern permits consecutive dots in the local part.
-    assertTrue(ValidationHelper.isEmailValid("test..test@example.com"));
-
     // Invalid emails
+    assertFalse(ValidationHelper.isEmailValid("test..test@example.com"));
     assertFalse(ValidationHelper.isEmailValid(null));
     assertFalse(ValidationHelper.isEmailValid(""));
     assertFalse(ValidationHelper.isEmailValid("   "));

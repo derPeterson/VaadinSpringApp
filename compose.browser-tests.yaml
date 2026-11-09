@@ -60,7 +60,7 @@ services:
 
   # Zweites eigenes SMTP-Ziel ohne zusätzliche Hostports für den Neustartvertrag.
   mailpit-secondary:
-    image: axllent/mailpit:v1.31.4
+    image: axllent/mailpit:v1.33.1
     healthcheck:
       test: ["CMD", "/mailpit", "readyz"]
       interval: 2s

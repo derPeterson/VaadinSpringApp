@@ -120,12 +120,14 @@ class SessionAdmissionTest {
     MockHttpServletRequest first = new MockHttpServletRequest();
     first.getSession().setAttribute("vaadin-ui", "preserved");
     String old = first.getSession().getId();
+    first.setRequestedSessionId(old);
     admissions.onAuthentication(
         authentication(" Session@Example.Test ", RoleType.ROLE_ADMIN), first, response);
     String current = first.getSession().getId();
     assertNotEquals(old, current);
     MockHttpServletRequest tab = new MockHttpServletRequest();
     tab.setSession(first.getSession());
+    tab.setRequestedSessionId(current);
     admissions.onAuthentication(authentication(), tab, response);
     assertEquals(current, tab.getSession().getId());
     assertEquals("preserved", tab.getSession().getAttribute("vaadin-ui"));
@@ -252,18 +254,17 @@ class SessionAdmissionTest {
       ArrayList<Future<?>> futures = new ArrayList<Future<?>>();
       for (int i = 0; i < total; i++) {
         futures.add(
-            pool.submit(
-                () -> {
-                  ready.countDown();
-                  assertTrue(start.await(5, TimeUnit.SECONDS));
-                  try {
-                    admit();
-                    allowed.incrementAndGet();
-                  } catch (SessionLimitException _) {
-                    rejected.incrementAndGet();
-                  }
-                  return null;
-                }));
+            pool.submit(() -> {
+              ready.countDown();
+              assertTrue(start.await(5, TimeUnit.SECONDS));
+              try {
+                admit();
+                allowed.incrementAndGet();
+              } catch (SessionLimitException _) {
+                rejected.incrementAndGet();
+              }
+              return null;
+            }));
       }
       assertTrue(ready.await(5, TimeUnit.SECONDS));
       start.countDown();
@@ -282,41 +283,37 @@ class SessionAdmissionTest {
     CountDownLatch competitor = new CountDownLatch(1);
     try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
       Future<?> first =
-          pool.submit(
-              () -> {
-                MockHttpServletRequest request = new MockHttpServletRequest();
-                request.setSession(shared);
-                admissions.complete(
-                    authentication(),
-                    request,
-                    new MockHttpServletResponse(),
-                    () -> {
-                      reserved.countDown();
-                      try {
-                        assertTrue(competitor.await(5, TimeUnit.SECONDS));
-                      } catch (InterruptedException interrupted) {
-                        Thread.currentThread().interrupt();
-                        throw new IllegalStateException(interrupted);
-                      }
-                    });
-              });
+          pool.submit(() -> {
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            request.setSession(shared);
+            admissions.complete(
+                authentication(),
+                request,
+                new MockHttpServletResponse(),
+                () -> {
+                  reserved.countDown();
+                  try {
+                    assertTrue(competitor.await(5, TimeUnit.SECONDS));
+                  } catch (InterruptedException interrupted) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException(interrupted);
+                  }
+                });
+          });
       Future<Object> second =
-          pool.submit(
-              () -> {
-                assertTrue(reserved.await(5, TimeUnit.SECONDS));
-                MockHttpServletRequest request = new MockHttpServletRequest();
-                request.setSession(shared);
-                competitor.countDown();
-                Authentication attemptAuthentication =
-                    authentication("other@example.test", RoleType.ROLE_USER);
-                MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
-                assertThrows(
-                    AuthenticationServiceException.class,
-                    () ->
-                        admissions.onAuthentication(
-                            attemptAuthentication, request, attemptResponse));
-                return null;
-              });
+          pool.submit(() -> {
+            assertTrue(reserved.await(5, TimeUnit.SECONDS));
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            request.setSession(shared);
+            competitor.countDown();
+            Authentication attemptAuthentication =
+                authentication("other@example.test", RoleType.ROLE_USER);
+            MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
+            assertThrows(
+                AuthenticationServiceException.class,
+                () -> admissions.onAuthentication(attemptAuthentication, request, attemptResponse));
+            return null;
+          });
       first.get(10, TimeUnit.SECONDS);
       second.get(10, TimeUnit.SECONDS);
     }

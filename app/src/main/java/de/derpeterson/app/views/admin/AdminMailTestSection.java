@@ -28,7 +28,6 @@ import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -369,10 +368,7 @@ public class AdminMailTestSection extends VerticalLayout {
     String subject = Optional.ofNullable(testSubjectField.getValue()).orElse("").trim();
     String body = Optional.ofNullable(testBodyField.getValue()).orElse("").trim();
 
-    // Flow-E-Mail-Regel: lokale ASCII-Buchstaben/Ziffern/_.-+, @ und Domain mit Punkt und
-    // mindestens zweistelligem Endteil.
-    // Dieselbe bestehende Pattern-Regel liegt der Benutzerprüfung in UserInputRules zugrunde.
-    if (recipient.isBlank() || !recipient.matches(EmailValidator.PATTERN)) {
+    if (!UserInputRules.isEmailValid(recipient)) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,

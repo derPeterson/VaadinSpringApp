@@ -297,6 +297,9 @@ class CsrfSecurityChainTest {
     MockHttpServletRequest request = new MockHttpServletRequest(method, path);
     request.setServletPath(path);
     request.setSession(session);
+    if (session != null) {
+      request.setRequestedSessionId(session.getId());
+    }
     return request;
   }
 
@@ -325,31 +328,30 @@ class CsrfSecurityChainTest {
 
   private String user() {
     String email = "csrf-" + UUID.randomUUID() + "@example.test";
-    transaction.executeWithoutResult(
-        tx -> {
-          RoleEntity role =
-              entityManager
-                  .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
-                  .setParameter("role", RoleType.ROLE_USER)
-                  .getResultStream()
-                  .findFirst()
-                  .orElse(null);
-          if (role == null) {
-            role = RoleEntity.builder().name(RoleType.ROLE_USER).build();
-            entityManager.persist(role);
-          }
-          entityManager.persist(
-              UserEntity.builder()
-                  .email(email)
-                  .password(encoder.encode("SecretPassword!"))
-                  .firstName("CSRF")
-                  .lastName("Test")
-                  .enabled(true)
-                  .gender(Gender.OTHER)
-                  .birthDate(LocalDate.of(1990, 1, 1))
-                  .roleEntities(new ArrayList<>(List.of(role)))
-                  .build());
-        });
+    transaction.executeWithoutResult(tx -> {
+      RoleEntity role =
+          entityManager
+              .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
+              .setParameter("role", RoleType.ROLE_USER)
+              .getResultStream()
+              .findFirst()
+              .orElse(null);
+      if (role == null) {
+        role = RoleEntity.builder().name(RoleType.ROLE_USER).build();
+        entityManager.persist(role);
+      }
+      entityManager.persist(
+          UserEntity.builder()
+              .email(email)
+              .password(encoder.encode("SecretPassword!"))
+              .firstName("CSRF")
+              .lastName("Test")
+              .enabled(true)
+              .gender(Gender.OTHER)
+              .birthDate(LocalDate.of(1990, 1, 1))
+              .roleEntities(new ArrayList<>(List.of(role)))
+              .build());
+    });
     return email;
   }
 

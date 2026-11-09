@@ -35,12 +35,12 @@ public class UserManagementBrowserTest extends BrowserFixture {
   @DisplayName("USER-05A: Neue Konten bleiben über Suche und nummerierte Seiten erreichbar")
   @Description(
       """
-        1. Als Admin anmelden und zwölf eigene normale Benutzer über das Formular anlegen.
-        2. Jedes neue Konto anhand seiner eigenen E-Mail finden, ohne erste-Seite-Annahme.
-        3. Eigene Treffer auf zwei Seiten prüfen: zehn und zwei unterschiedliche Konten.
-        4. Seitengröße 20 wählen, alle zwölf sehen; erfolglose Suche zeigt Leerzustand.
-        **Erwartet:** Kein Konto wird ausgelassen oder doppelt gezählt; Suche setzt die Seite zurück.
-        """)
+      1. Als Admin anmelden und zwölf eigene normale Benutzer über das Formular anlegen.
+      2. Jedes neue Konto anhand seiner eigenen E-Mail finden, ohne erste-Seite-Annahme.
+      3. Eigene Treffer auf zwei Seiten prüfen: zehn und zwei unterschiedliche Konten.
+      4. Seitengröße 20 wählen, alle zwölf sehen; erfolglose Suche zeigt Leerzustand.
+      **Erwartet:** Kein Konto wird ausgelassen oder doppelt gezählt; Suche setzt die Seite zurück.
+      """)
   void searchAndPaginationFindAccountsBeyondTheFirstPage() {
     AdminUsersPage users = login();
     String prefix = unique("pages");
@@ -96,13 +96,13 @@ public class UserManagementBrowserTest extends BrowserFixture {
       "USER-06A: Anlage blockiert ungültige Eingaben und verwendet die gemeinsame Passwortregel")
   @Description(
       """
-        1. Eigenes bestehendes Konto vorbereiten, dann neues Formular öffnen.
-        2. Leeres Formular und schwaches Passwort blockieren Speichern; lokalisierte Regelbeschreibung prüfen.
-        3. Blanken Vornamen, ungültige E-Mail und Dublette korrigieren; jeweils Speichern gesperrt.
-        4. Mit ABCDEFG! speichern: acht Zeichen, Großbuchstaben/Sonderzeichen, ohne Zahl/Kleinbuchstaben.
-        5. Mit dem neu angelegten normalen Konto tatsächlich anmelden.
-        **Erwartet:** Gemeinsame UserInputRules greifen; erfolgreicher UI-Ablauf nach Korrektur.
-        """)
+      1. Eigenes bestehendes Konto vorbereiten, dann neues Formular öffnen.
+      2. Leeres Formular und schwaches Passwort blockieren Speichern; lokalisierte Regelbeschreibung prüfen.
+      3. Blanken Vornamen, ungültige E-Mail und Dublette korrigieren; jeweils Speichern gesperrt.
+      4. Mit ABCDEFG! speichern: acht Zeichen, Großbuchstaben/Sonderzeichen, ohne Zahl/Kleinbuchstaben.
+      5. Mit dem neu angelegten normalen Konto tatsächlich anmelden.
+      **Erwartet:** Gemeinsame UserInputRules greifen; erfolgreicher UI-Ablauf nach Korrektur.
+      """)
   void createValidationUsesTheSharedRuleAndAllowsCorrection() {
     AdminUsersPage users = login();
     String existing = unique("existing") + "@example.test";
@@ -143,12 +143,12 @@ public class UserManagementBrowserTest extends BrowserFixture {
       "USER-06B: Bearbeitung bleibt nach erneutem Öffnen gespeichert; leeres Passwort erhält die Anmeldung")
   @Description(
       """
-        1. Eigenes Konto anlegen, per E-Mail suchen und genau dessen Editierdialog öffnen.
-        2. Namen und E-Mail ändern, Passwort leer lassen, speichern.
-        3. Alte Adresse liefert keinen Treffer; neue Adresse findet das Konto und gespeicherte Angaben.
-        4. Dialog abbrechen und mit neuer Adresse plus ursprünglichem Passwort anmelden.
-        **Erwartet:** Stammdaten dauerhaft gespeichert; leeres Passwort setzt es nicht zurück.
-        """)
+      1. Eigenes Konto anlegen, per E-Mail suchen und genau dessen Editierdialog öffnen.
+      2. Namen und E-Mail ändern, Passwort leer lassen, speichern.
+      3. Alte Adresse liefert keinen Treffer; neue Adresse findet das Konto und gespeicherte Angaben.
+      4. Dialog abbrechen und mit neuer Adresse plus ursprünglichem Passwort anmelden.
+      **Erwartet:** Stammdaten dauerhaft gespeichert; leeres Passwort setzt es nicht zurück.
+      """)
   void editAndReopenKeepsNamesEmailAndUnchangedPassword() {
     AdminUsersPage users = login();
     String original = unique("edit") + "@example.test",
@@ -179,12 +179,12 @@ public class UserManagementBrowserTest extends BrowserFixture {
       "USER-06C: Löschabbruch erhält das Konto; Bestätigung entfernt genau das ausgewählte Konto")
   @Description(
       """
-        1. Eigenes wegwerfbares Konto anlegen und über exakte E-Mail zur Bearbeitung öffnen.
-        2. Löschbestätigung mit Name/E-Mail öffnen und abbrechen; Editierdialog bleibt offen.
-        3. Nochmals öffnen und die Löschung dieses Kontos bestätigen.
-        4. Beide Dialoge sind geschlossen; Suche findet keinen Treffer, Neuladen ebenfalls nicht.
-        **Erwartet:** Öffnen/Abbrechen löscht nicht; nur bestätigte Löschung wird dauerhaft wirksam.
-        """)
+      1. Eigenes wegwerfbares Konto anlegen und über exakte E-Mail zur Bearbeitung öffnen.
+      2. Löschbestätigung mit Name/E-Mail öffnen und abbrechen; Editierdialog bleibt offen.
+      3. Nochmals öffnen und die Löschung dieses Kontos bestätigen.
+      4. Beide Dialoge sind geschlossen; Suche findet keinen Treffer, Neuladen ebenfalls nicht.
+      **Erwartet:** Öffnen/Abbrechen löscht nicht; nur bestätigte Löschung wird dauerhaft wirksam.
+      """)
   void cancelAndConfirmDeletionHaveDifferentVisibleOutcomes() {
     AdminUsersPage users = login();
     String email = unique("delete") + "@example.test";
@@ -215,11 +215,11 @@ public class UserManagementBrowserTest extends BrowserFixture {
   @DisplayName("USER-06D: Das eigene Administratorkonto bietet keine ausführbare Selbstlöschung")
   @Description(
       """
-        1. Als Bootstrap-Admin anmelden und das eigene Konto über seine genaue Adresse suchen.
-        2. Editierdialog öffnen; Löschbutton ist sichtbar, aber deaktiviert.
-        3. Abbrechen und Konto weiterhin in der Liste finden.
-        **Erwartet:** Keine Löschbestätigung und kein Verlust des laufenden Administratorkontos.
-        """)
+      1. Als Bootstrap-Admin anmelden und das eigene Konto über seine genaue Adresse suchen.
+      2. Editierdialog öffnen; Löschbutton ist sichtbar, aber deaktiviert.
+      3. Abbrechen und Konto weiterhin in der Liste finden.
+      **Erwartet:** Keine Löschbestätigung und kein Verlust des laufenden Administratorkontos.
+      """)
   void selfDeletionIsDisabledInTheEditDialog() {
     AdminUsersPage users = login();
     users.open();
@@ -236,12 +236,12 @@ public class UserManagementBrowserTest extends BrowserFixture {
   @DisplayName("USER-06E: Sprachwechsel erhält Suche, Freigabefilter und dessen ausgewählten Wert")
   @Description(
       """
-        1. Zwei eigene Konten anlegen, eines freigegeben und eines deaktiviert.
-        2. Eigene Suche und Filter Nein setzen; genau deaktiviertes Konto sichtbar.
-        3. Sprache über den echten Avatar wechseln; neue Labels/übersetzter Nein-Wert, gleicher Treffer.
-        4. Ausgangssprache wieder wählen; Suche und Filter bleiben erhalten.
-        **Erwartet:** Auswahl ist typisiert, unabhängig von übersetzten Strings und ohne Neuladen erhalten.
-        """)
+      1. Zwei eigene Konten anlegen, eines freigegeben und eines deaktiviert.
+      2. Eigene Suche und Filter Nein setzen; genau deaktiviertes Konto sichtbar.
+      3. Sprache über den echten Avatar wechseln; neue Labels/übersetzter Nein-Wert, gleicher Treffer.
+      4. Ausgangssprache wieder wählen; Suche und Filter bleiben erhalten.
+      **Erwartet:** Auswahl ist typisiert, unabhängig von übersetzten Strings und ohne Neuladen erhalten.
+      """)
   void languageChangesRetainSelectedFilterAndSearch() {
     AdminUsersPage users = login();
     String prefix = unique("locale"), disabled = prefix + "-disabled@example.test";
@@ -285,11 +285,11 @@ public class UserManagementBrowserTest extends BrowserFixture {
   @DisplayName("USER-06F: Passwortänderung im Adminformular lehnt das alte Passwort danach ab")
   @Description(
       """
-        1. Eigenes Konto anlegen und bearbeiten; schwaches neues Passwort sperrt Speichern.
-        2. Gültiges neues Passwort speichern, Dialog schließen und als Admin abmelden.
-        3. Alte Zugangsdaten werden abgelehnt; neue Zugangsdaten melden dasselbe Konto an.
-        **Erwartet:** Dieselbe Passwortregel gilt beim Editieren; Änderung ist tatsächlich wirksam.
-        """)
+      1. Eigenes Konto anlegen und bearbeiten; schwaches neues Passwort sperrt Speichern.
+      2. Gültiges neues Passwort speichern, Dialog schließen und als Admin abmelden.
+      3. Alte Zugangsdaten werden abgelehnt; neue Zugangsdaten melden dasselbe Konto an.
+      **Erwartet:** Dieselbe Passwortregel gilt beim Editieren; Änderung ist tatsächlich wirksam.
+      """)
   void changedPasswordWorksAndThePreviousPasswordIsRejected() {
     AdminUsersPage users = login();
     String email = unique("password") + "@example.test", changed = "ChangedBrowser2!";
@@ -319,13 +319,13 @@ public class UserManagementBrowserTest extends BrowserFixture {
       "USER-10: Gesamtzahl der Konten folgt Anlage/Löschung, nicht Filterung, und wechselt die Sprache")
   @Description(
       """
-        1. Benutzerverwaltung öffnen und die aktuelle Gesamtanzahl merken.
-        2. Eigenes aktives Konto über das Formular anlegen: Gesamtzahl steigt um eins.
-        3. Suche ohne Treffer eingeben: Liste leer, Gesamtzahl bleibt unverändert.
-        4. Sprache wechseln und zurück: lokalisierter Zähler, keine doppelte Zahl, Filter bleibt erhalten.
-        5. Eigenes Konto über den Dialog löschen: Gesamtzahl kehrt zum Ausgangswert zurück.
-        **Erwartet:** Der Card-Zähler zeigt die echten gesamten Konten unabhängig von den sichtbaren Treffern.
-        """)
+      1. Benutzerverwaltung öffnen und die aktuelle Gesamtanzahl merken.
+      2. Eigenes aktives Konto über das Formular anlegen: Gesamtzahl steigt um eins.
+      3. Suche ohne Treffer eingeben: Liste leer, Gesamtzahl bleibt unverändert.
+      4. Sprache wechseln und zurück: lokalisierter Zähler, keine doppelte Zahl, Filter bleibt erhalten.
+      5. Eigenes Konto über den Dialog löschen: Gesamtzahl kehrt zum Ausgangswert zurück.
+      **Erwartet:** Der Card-Zähler zeigt die echten gesamten Konten unabhängig von den sichtbaren Treffern.
+      """)
   void accountTotalTracksMutationsButNotFiltersAndFollowsLanguage() {
     AdminUsersPage users = login();
     users.open();
@@ -363,13 +363,13 @@ public class UserManagementBrowserTest extends BrowserFixture {
       "USER-12A: Passwortbestätigung bleibt optional, zeigt Fehler erst nach Blur und wird beim Leeren zurückgesetzt")
   @Description(
       """
-        1. Eigenes Konto anlegen und bearbeiten: leeres Passwort, deaktivierte Bestätigung und erlaubtes Speichern.
-        2. Einen Buchstaben eingeben: Bestätigung aktiv, keine roten Fehler während des Tippens, Speichern gesperrt.
-        3. Passwort verlassen: Passwortregel sichtbar, unberührte Bestätigung ohne Fehler.
-        4. Gültiges Passwort und abweichende Bestätigung eingeben: Fehler erst beim Verlassen der Bestätigung.
-        5. Erstes Passwort leeren: Bestätigung leer/deaktiviert, Speichern wieder erlaubt. Abbrechen erhält das Konto.
-        **Erwartet:** Keine frühe Fehlermeldung; kein versehentlicher Passwortwechsel und exakter Vergleich.
-        """)
+      1. Eigenes Konto anlegen und bearbeiten: leeres Passwort, deaktivierte Bestätigung und erlaubtes Speichern.
+      2. Einen Buchstaben eingeben: Bestätigung aktiv, keine roten Fehler während des Tippens, Speichern gesperrt.
+      3. Passwort verlassen: Passwortregel sichtbar, unberührte Bestätigung ohne Fehler.
+      4. Gültiges Passwort und abweichende Bestätigung eingeben: Fehler erst beim Verlassen der Bestätigung.
+      5. Erstes Passwort leeren: Bestätigung leer/deaktiviert, Speichern wieder erlaubt. Abbrechen erhält das Konto.
+      **Erwartet:** Keine frühe Fehlermeldung; kein versehentlicher Passwortwechsel und exakter Vergleich.
+      """)
   void optionalConfirmationDefersErrorsAndClearsWithThePassword() {
     AdminUsersPage users = login();
     String email = unique("confirmation") + "@example.test";
@@ -408,12 +408,12 @@ public class UserManagementBrowserTest extends BrowserFixture {
       "USER-12B: Schließen im neuen Löschdialog erhält Benutzer und offenes Bearbeitungsformular")
   @Description(
       """
-        1. Eigenes Konto anlegen und Bearbeitungsformular öffnen.
-        2. Löschdialog öffnen: Untertitel, Löschfrage, Warntext, Name und E-Mail prüfen.
-        3. Schließen-Button verwenden: Löschdialog weg, Bearbeitung bleibt mit unveränderten Daten offen.
-        4. Auch Bearbeitung über Schließen beenden, Konto erneut finden.
-        **Erwartet:** Beide Schließen-Buttons sind erreichbar und führen keine Mutation aus.
-        """)
+      1. Eigenes Konto anlegen und Bearbeitungsformular öffnen.
+      2. Löschdialog öffnen: Untertitel, Löschfrage, Warntext, Name und E-Mail prüfen.
+      3. Schließen-Button verwenden: Löschdialog weg, Bearbeitung bleibt mit unveränderten Daten offen.
+      4. Auch Bearbeitung über Schließen beenden, Konto erneut finden.
+      **Erwartet:** Beide Schließen-Buttons sind erreichbar und führen keine Mutation aus.
+      """)
   void newDialogCloseActionsPreserveTheSelectedUser() {
     AdminUsersPage users = login();
     String email = unique("close-dialog") + "@example.test";
@@ -432,7 +432,15 @@ public class UserManagementBrowserTest extends BrowserFixture {
         .click();
     assertThat(confirmation.root()).hasCount(0);
     assertThat(form.email()).hasValue(email);
+    Locator editHeading =
+        page.getByRole(
+            AriaRole.HEADING,
+            new Page.GetByRoleOptions()
+                .setName(texts.getAdminUsersEditDialogTitle())
+                .setExact(true));
     form.root()
+        .locator(".admin-user-dialog-header")
+        .filter(new Locator.FilterOptions().setHas(editHeading))
         .getByRole(
             AriaRole.BUTTON,
             new Locator.GetByRoleOptions().setName(texts.getAdminUsersCloseDialog()).setExact(true))

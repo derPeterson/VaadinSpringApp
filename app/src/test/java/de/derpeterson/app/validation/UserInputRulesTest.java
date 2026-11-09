@@ -57,7 +57,9 @@ class UserInputRulesTest {
 
   @Test
   void shortEmailAddressesKeepTheExistingFlowPolicy() {
-    String[] localParts = {"a", "A_1.+-", ".a.", "a..b", "ümlaut", "a b", "a@b", "a!b", "a\tb", ""};
+    String[] localParts = {
+      "a", "A_1.+-", "a.b", ".a", "a.", ".a.", "a..b", "ümlaut", "a b", "a@b", "a!b", "a\tb", ""
+    };
     String[] domains = {
       "example.test",
       "EXAMPLE.TEST",

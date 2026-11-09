@@ -20,16 +20,15 @@ public final class UserInputRules {
    */
   public static final String PASSWORD_REGEX = "^(?=.*[A-Z])(?=.*[^A-Za-z0-9]).{8,}$";
 
-  // Dieselbe Adressregel wie Flow 25.3 EmailValidator, ohne rekursive Wiederholungsgruppen:
-  // vor @ ASCII-Buchstaben/Ziffern, _, Punkt, Minus oder Plus; danach Domainteile aus
-  // Buchstaben/Ziffern/Minus mit Punkten dazwischen, letzter Teil mindestens zwei Zeichen.
-  // ^/$ begrenzen die Adresse. Die beiden negativen Vorschauen schließen einen führenden
-  // Domainpunkt und doppelte Domainpunkte aus. Der letzte Teil enthält selbst keinen Punkt;
-  // dadurch werden die flachen Wiederholungen nur linear durchlaufen, ohne verschachtelte Gruppen.
+  // Dieselbe Adressregel wie Flow EmailValidator, ohne rekursive Wiederholungsgruppen:
+  // Vor @ sind ASCII-Buchstaben, Ziffern, _, Minus und Plus erlaubt, Punkte nur dazwischen.
+  // Die negativen Vorschauen schließen einen Punkt am Anfang, vor @ und neben einem weiteren
+  // Punkt aus. In der Domain trennen Punkte Teile aus Buchstaben, Ziffern und Minus, der letzte
+  // Teil hat mindestens zwei Zeichen. ^/$ begrenzen die Adresse; die Wiederholungen sind flach.
   // Die Regel ist auch als HTML-/JavaScript-Pattern verwendbar und schützt deshalb ebenfalls
   // EmailFields automatische serverseitige Validierung, bevor unsere Formularprüfung läuft.
   public static final String EMAIL_REGEX =
-      "^[a-zA-Z0-9_.+\\-]+@(?!\\.)(?![a-zA-Z0-9.\\-]*\\.\\.)[a-zA-Z0-9.\\-]+\\.[a-zA-Z0-9\\-]{2,}$";
+      "^(?!\\.)(?![a-zA-Z0-9_.+\\-]*\\.[.@])[a-zA-Z0-9_.+\\-]+@(?!\\.)(?![a-zA-Z0-9.\\-]*\\.\\.)[a-zA-Z0-9.\\-]+\\.[a-zA-Z0-9\\-]{2,}$";
 
   private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
 

@@ -50,7 +50,7 @@ services:
     stop_grace_period: 30s
 
   proxy:
-    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    image: caddy:2.11.9-alpine@sha256:0bbb055bda6793c999bde78b1b5ce3e89f829fb031af2cf50056ea1246559fee
     ports:
       - "127.0.0.1:18443:443"
       - "127.0.0.1:18080:80"
@@ -68,7 +68,7 @@ services:
       retries: 30
 
   mailpit:
-    image: axllent/mailpit:v1.31.4
+    image: axllent/mailpit:v1.33.1
     ports:
       - "127.0.0.1:18025:8025"
     environment:

@@ -2,6 +2,7 @@ package de.derpeterson.browsertests;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.microsoft.playwright.Playwright;
 import de.derpeterson.browsertests.BrowserParallelWorkers.Worker;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -387,7 +388,9 @@ public final class BrowserTestRunner {
             run.resolve("allure-results/environment.properties"),
             "Java="
                 + Runtime.version()
-                + "\nPlaywright=1.63.0\nGit="
+                + "\nPlaywright="
+                + Playwright.class.getPackage().getImplementationVersion()
+                + "\nGit="
                 + metadata.get("commit")
                 + "\nUI-Language="
                 + metadata.get("uiLanguage")
@@ -636,7 +639,9 @@ public final class BrowserTestRunner {
         run.resolve("allure-results/environment.properties"),
         "Java="
             + Runtime.version()
-            + "\nPlaywright=1.63.0\nGit="
+            + "\nPlaywright="
+            + Playwright.class.getPackage().getImplementationVersion()
+            + "\nGit="
             + metadata.get("commit")
             + "\nUI-Language="
             + metadata.get("uiLanguage")
@@ -858,15 +863,15 @@ public final class BrowserTestRunner {
   static void writeReportLauncher(Path html) throws IOException {
     String launcher =
         """
-                @echo off
-                setlocal
-                pushd "%~dp0..\\..\\..\\.." || exit /b 1
-                powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\\..\\..\\run.ps1" -Report -ReportPath "%~dp0."
-                set "reportExit=%errorlevel%"
-                popd
-                if not "%reportExit%"=="0" pause
-                exit /b %reportExit%
-                """;
+        @echo off
+        setlocal
+        pushd "%~dp0..\\..\\..\\.." || exit /b 1
+        powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\\..\\..\\run.ps1" -Report -ReportPath "%~dp0."
+        set "reportExit=%errorlevel%"
+        popd
+        if not "%reportExit%"=="0" pause
+        exit /b %reportExit%
+        """;
     Files.writeString(
         html.resolve("open-report.bat"),
         launcher.replace("\n", "\r\n"),
