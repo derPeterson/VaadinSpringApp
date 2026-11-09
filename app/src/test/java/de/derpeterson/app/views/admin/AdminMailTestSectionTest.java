@@ -32,6 +32,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
+import de.derpeterson.app.ui.components.AdminSidePanel;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import java.util.Locale;
 import java.util.Set;
@@ -118,6 +119,26 @@ class AdminMailTestSectionTest {
     assertEquals(texts.getAdminConfigGroupSmtp(), link.getElement().getTextRecursively());
     assertEquals(texts.getAdminMailBodyHint(), bodyHint.getText());
     assertEquals(body.getHelperText(), bodyHint.getText());
+    verifyNoInteractions(email);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void openFieldHelpFollowsLanguageChangesWithoutSending(String language) {
+    locale.set(Locale.forLanguageTag(language));
+    AdminMailTestSection section = section();
+    ConfigInfoButton info = field(section, "bodyInfoButton");
+    AdminSidePanel help = field(section, "helpPanel");
+    TextArea body = field(section, "testBodyField");
+    body.setValue("Draft body");
+    info.click();
+    assertTrue(help.isOpened());
+    assertTrue(help.getElement().getTextRecursively().contains(texts.getAdminMailValidationBody()));
+    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    section.refreshTexts();
+    assertTrue(help.isOpened());
+    assertTrue(help.getElement().getTextRecursively().contains(texts.getAdminMailValidationBody()));
+    assertEquals("Draft body", body.getValue());
     verifyNoInteractions(email);
   }
 

@@ -16,7 +16,11 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.html.UnorderedList;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -33,6 +37,7 @@ import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.MaintenanceService.State;
 import de.derpeterson.app.service.EmailService;
+import de.derpeterson.app.ui.components.AdminSidePanel;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
@@ -40,6 +45,7 @@ import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.validation.UserInputRules;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.mail.MailException;
@@ -50,6 +56,9 @@ public class AdminMailTestSection extends VerticalLayout {
   private static final String ARIA_LABEL = "aria-label";
 
   private static final Logger logger = LoggerFactory.getLogger(AdminMailTestSection.class);
+
+  private record FieldHelp(
+      Supplier<String> title, Supplier<String> description, Supplier<String> rule) {}
 
   private final transient MessageProperties messageProperties;
   private final transient EmailService emailService;
@@ -79,6 +88,9 @@ public class AdminMailTestSection extends VerticalLayout {
   private final ConfigInfoButton recipientInfoButton;
   private final ConfigInfoButton subjectInfoButton;
   private final ConfigInfoButton bodyInfoButton;
+  private final AdminSidePanel helpPanel;
+  private final Button closeHelpButton = new Button(AppIcon.CLOSE.create());
+  private transient FieldHelp selectedHelp;
 
   public AdminMailTestSection(
       MessageProperties messageProperties,
@@ -132,24 +144,31 @@ public class AdminMailTestSection extends VerticalLayout {
     testBodyField.setRequiredIndicatorVisible(true);
     testBodyField.addClassName("cosmos-mail-body-field");
 
+    helpPanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
+    helpPanel.addClassName("admin-config-help");
+    helpPanel.setId("admin-mail-field-help");
+    closeHelpButton.setWidthFull();
+    closeHelpButton.addClickListener(event -> helpPanel.close());
+    helpPanel.getFooter().add(closeHelpButton);
+
     recipientInfoButton =
-        new ConfigInfoButton(
-            () ->
-                buildMailTooltip(
-                    messageProperties.getAdminMailRecipientHint(),
-                    messageProperties.getAdminMailValidationRecipient()));
+        createFieldInfo(
+            new FieldHelp(
+                messageProperties::getAdminMailRecipient,
+                messageProperties::getAdminMailRecipientHint,
+                messageProperties::getAdminMailValidationRecipient));
     subjectInfoButton =
-        new ConfigInfoButton(
-            () ->
-                buildMailTooltip(
-                    messageProperties.getAdminMailSubjectHint(),
-                    messageProperties.getAdminMailValidationSubject()));
+        createFieldInfo(
+            new FieldHelp(
+                messageProperties::getAdminMailSubject,
+                messageProperties::getAdminMailSubjectHint,
+                messageProperties::getAdminMailValidationSubject));
     bodyInfoButton =
-        new ConfigInfoButton(
-            () ->
-                buildMailTooltip(
-                    messageProperties.getAdminMailBodyHint(),
-                    messageProperties.getAdminMailValidationBody()));
+        createFieldInfo(
+            new FieldHelp(
+                messageProperties::getAdminMailBody,
+                messageProperties::getAdminMailBodyHint,
+                messageProperties::getAdminMailValidationBody));
 
     sendTestMailButton = new Button();
     sendTestMailButton.setPrefixComponent(AppIcon.PAPERPLANE.create());
@@ -167,7 +186,8 @@ public class AdminMailTestSection extends VerticalLayout {
     mailCard.addClassNames("cosmos-admin-form-card", PANEL_CARD, "cosmos-mail-card");
     add(
         new CosmosSectionHeaderComponent(mailTestBreadcrumb, mailTestTitle, mailTestDescription),
-        mailCard);
+        mailCard,
+        helpPanel);
     refreshDeliveryState();
     addAttachListener(e -> startMaintenancePolling(e.getUI()));
     addDetachListener(e -> stopMaintenancePolling(e.getUI()));
@@ -266,12 +286,34 @@ public class AdminMailTestSection extends VerticalLayout {
     return row;
   }
 
-  private String buildMailTooltip(String description, String validation) {
-    return description
-        + "\n\n"
-        + messageProperties.getAdminConfigInputRules()
-        + ":\n• "
-        + validation;
+  private ConfigInfoButton createFieldInfo(FieldHelp details) {
+    return new ConfigInfoButton(
+        details.description(),
+        () -> {
+          selectedHelp = details;
+          renderHelp(details);
+          helpPanel.open();
+        });
+  }
+
+  private void renderHelp(FieldHelp details) {
+    helpPanel.removeAll();
+    helpPanel.setHeading(messageProperties.getAdminConfigHelpTitle());
+    helpPanel.setDescription(messageProperties.getAdminConfigHelpDescription());
+    helpPanel.refreshCloseText(messageProperties);
+    closeHelpButton.setText(messageProperties.getNotificationsClose());
+    Span group = new Span(messageProperties.getAdminMailTitle());
+    group.addClassName("admin-help-group");
+    H3 title = new H3(details.title().get());
+    title.addClassName("admin-help-field-title");
+    Span description = new Span(details.description().get());
+    description.addClassName("admin-help-description");
+    Div rules =
+        new Div(
+            new H4(messageProperties.getAdminConfigInputRules()),
+            new UnorderedList(new ListItem(details.rule().get())));
+    rules.addClassName("admin-help-rules");
+    helpPanel.add(group, title, description, rules);
   }
 
   public void refreshTexts() {
@@ -298,6 +340,9 @@ public class AdminMailTestSection extends VerticalLayout {
         .getElement()
         .setAttribute(ARIA_LABEL, messageProperties.getAdminMailSubject());
     bodyInfoButton.getElement().setAttribute(ARIA_LABEL, messageProperties.getAdminMailBody());
+    if (selectedHelp != null && helpPanel.isOpened()) {
+      renderHelp(selectedHelp);
+    }
     mailTestTitle.setText(messageProperties.getAdminMailTitle());
     mailTestDescription.setText(messageProperties.getAdminMailDescription());
     sendTestMailButton.setText(messageProperties.getAdminMailSend());

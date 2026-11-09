@@ -613,6 +613,8 @@ Standardwert-/Unbegrenzt-Vertrag bleiben optional. Infoaktionen stehen außerhal
 der Checkbox-/Eingabefläche; Zahlenaktionen bleiben native Vaadin-Komponenten.
 
 Der Mailtest verwendet ein kompaktes Panel, Klartexthinweis und SMTP-Direktzugang.
+Die Info-Buttons neben Empfänger, Betreff und Nachricht öffnen dieselbe seitliche
+Feldhilfe wie die Konfiguration und zeigen Beschreibung und Eingaberegeln.
 Das Infoicon steht mittig zum gesamten Block aus Hinweistext und SMTP-Zugang.
 Der SMTP-Zugang ist ein echter Navigationslink in einer neuen Zeile. Er übernimmt
 den rahmenlosen Avatar-Menüstil des Anbieter-Links, mit weißer Beschriftung und

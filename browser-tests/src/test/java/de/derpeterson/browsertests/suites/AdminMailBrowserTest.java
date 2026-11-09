@@ -82,15 +82,14 @@ public class AdminMailBrowserTest extends BrowserFixture {
   }
 
   @Test
-  @DisplayName(
-      "MAIL-02: Drei manuelle Feldinfos und Sprachwechsel erhalten die ungesendete Nachricht")
+  @DisplayName("MAIL-02: Seitliche Feldhilfen und Sprachwechsel erhalten die ungesendete Nachricht")
   @Description(
       """
         1. Mail Test öffnen und einen eigenen Empfänger, Betreff und Text eingeben, ohne zu senden.
-        2. Alle drei Info-Buttons öffnen: passende Beschreibung und Eingaberegel; per Außenklick schließen.
-        3. Sprache wechseln: Beschriftungen und Tooltip übersetzen sich, alle Eingaben bleiben erhalten.
+        2. Auf Desktop und Smartphone alle drei Feldhilfen per Tastatur öffnen und per Schließen-Button schließen.
+        3. Sprache wechseln und die Feldhilfe erneut öffnen. Die Übersetzung und alle Eingaben prüfen.
         4. Sprache wiederherstellen und die weiterhin ungesendete Eingabe prüfen.
-        **Erwartet:** Tooltip-Bedienung und Sprachwechsel verändern keine Nachrichteneingaben und lösen keinen Versand aus.
+        **Erwartet:** Feldhilfen und Sprachwechsel verändern keine Nachrichteneingaben und lösen keinen Versand aus.
         """)
   void fieldInfosAndLanguagePreserveUnsentMessage() {
     LoginPage login = new LoginPage(page);
@@ -126,23 +125,16 @@ public class AdminMailBrowserTest extends BrowserFixture {
       },
       {texts.getAdminMailBody(), texts.getAdminMailBodyHint(), texts.getAdminMailValidationBody()}
     };
-    for (String[] info : infos) {
-      Locator button =
-          page.getByRole(
-              AriaRole.BUTTON, new Page.GetByRoleOptions().setName(info[0]).setExact(true));
-      button.focus();
-      UiActions.complete(page, () -> page.keyboard().press("Enter"));
-      Locator tooltip = page.getByRole(AriaRole.TOOLTIP);
-      assertThat(tooltip).containsText(info[1]);
-      assertThat(tooltip).containsText(info[2]);
-      page.getByRole(
-              AriaRole.HEADING,
-              new Page.GetByRoleOptions()
-                  .setName(texts.getAdminMailTitle())
-                  .setLevel(1)
-                  .setExact(true))
-          .click();
-      assertThat(tooltip).hasCount(0);
+    for (int width : new int[] {1280, 390}) {
+      page.setViewportSize(width, 900);
+      for (String[] info : infos) {
+        Locator help = openFieldHelp(info[0]);
+        assertThat(help.locator(".admin-help-description")).hasText(info[1]);
+        assertThat(help.locator(".admin-help-rules h4")).hasText(texts.getAdminConfigInputRules());
+        assertThat(help.locator(".admin-help-rules li")).hasText(info[2]);
+        help.locator("[slot=footer] vaadin-button").click();
+        assertThat(help).hasCount(0);
+      }
     }
     UiTexts other =
         new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
@@ -151,22 +143,29 @@ public class AdminMailBrowserTest extends BrowserFixture {
       assertThat(mail.input(other.getAdminMailRecipient())).hasValue(email);
       assertThat(mail.input(other.getAdminMailSubject())).hasValue(subject);
       assertThat(mail.input(other.getAdminMailBody())).hasValue(body);
-      page.getByRole(
-              AriaRole.BUTTON,
-              new Page.GetByRoleOptions().setName(other.getAdminMailBody()).setExact(true))
-          .click();
-      assertThat(page.getByRole(AriaRole.TOOLTIP)).containsText(other.getAdminMailBodyHint());
+      Locator help = openFieldHelp(other.getAdminMailBody());
+      assertThat(help.locator(".admin-help-description")).hasText(other.getAdminMailBodyHint());
+      assertThat(help.locator(".admin-help-rules li")).hasText(other.getAdminMailValidationBody());
       AllurePlaywright.attachScreenshot(
-          "Mail-Info und erhaltene Nachricht nach Sprachwechsel", page);
-      page.getByRole(
-              AriaRole.BUTTON,
-              new Page.GetByRoleOptions().setName(other.getAdminMailBody()).setExact(true))
-          .click();
+          "Mail-Feldhilfe und erhaltene Nachricht nach Sprachwechsel", page);
+      page.keyboard().press("Escape");
+      assertThat(help).hasCount(0);
     } finally {
       new UserMenu(page).selectTestLanguage();
     }
     assertThat(mail.input(texts.getAdminMailBody())).hasValue(body);
     assertThat(page.locator("vaadin-notification-card:not([closing])")).hasCount(0);
+  }
+
+  private Locator openFieldHelp(String field) {
+    Locator button =
+        page.getByRole(AriaRole.BUTTON, new Page.GetByRoleOptions().setName(field).setExact(true));
+    button.focus();
+    UiActions.complete(page, () -> page.keyboard().press("Enter"));
+    Locator help = page.locator("#admin-mail-field-help[opened]");
+    assertThat(help.locator("vaadin-dialog-overlay > [part~=overlay]")).isVisible();
+    assertThat(help.locator(".admin-help-field-title")).hasText(field);
+    return help;
   }
 
   private void assertInfoIconsCentered() {
