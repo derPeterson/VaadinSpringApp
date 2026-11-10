@@ -23,28 +23,31 @@ public class UserNotificationPolicy {
   }
 
   /** Null ist eine ausdrücklich unbegrenzte Frist, niemals eine Ersatzfrist bei Fehlern. */
-  public @Nullable Instant inboxCutoff(Instant now) {
-    return cutoff(now, retentionDays());
+  public @Nullable Instant inboxCutoff(Instant referenceTime) {
+    return cutoff(referenceTime, retentionDays());
   }
 
-  public @Nullable Instant historyCutoff(Instant now) {
-    return cutoff(now, historyRetentionDays());
+  public @Nullable Instant historyCutoff(Instant referenceTime) {
+    return cutoff(referenceTime, historyRetentionDays());
   }
 
-  private @Nullable Instant cutoff(Instant now, OptionalInt days) {
-    return days.isPresent() ? now.minus(days.getAsInt(), ChronoUnit.DAYS) : null;
+  private @Nullable Instant cutoff(Instant referenceTime, OptionalInt days) {
+    return days.isPresent() ? referenceTime.minus(days.getAsInt(), ChronoUnit.DAYS) : null;
   }
 
-  private OptionalInt days(ConfigEntry entry) {
-    String value = configService.getString(entry);
-    if (value.isBlank()) {
+  private OptionalInt days(ConfigEntry retentionConfigEntry) {
+    String configuredRetentionText = configService.getString(retentionConfigEntry);
+
+    if (configuredRetentionText.isBlank()) {
       return OptionalInt.empty();
     }
-    int days = Integer.parseInt(value.trim());
-    if (days < 1) {
+
+    int retentionDaysCount = Integer.parseInt(configuredRetentionText.trim());
+    if (retentionDaysCount < 1) {
       throw new IllegalArgumentException(
-          "Positive notification retention required: " + entry.getKey());
+          "Positive notification retention required: " + retentionConfigEntry.getKey());
     }
-    return OptionalInt.of(days);
+
+    return OptionalInt.of(retentionDaysCount);
   }
 }

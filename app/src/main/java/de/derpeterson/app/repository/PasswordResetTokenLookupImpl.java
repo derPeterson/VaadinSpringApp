@@ -34,14 +34,17 @@ class PasswordResetTokenLookupImpl implements PasswordResetTokenLookup {
                 PasswordResetTokenEntity.class)
             .setParameter("token", passwordResetToken)
             .getResultList();
+
     if (matchingTokenEntities.isEmpty()) {
       return Optional.empty();
     }
+
     PasswordResetTokenEntity resetTokenEntity = matchingTokenEntities.getFirst();
     // The caller may have loaded ACTIVE before another transaction consumed it.
     // Flush our own pending changes before refreshing, never undo them.
     entityManager.flush();
     entityManager.refresh(resetTokenEntity);
+
     return Optional.of(resetTokenEntity);
   }
 }

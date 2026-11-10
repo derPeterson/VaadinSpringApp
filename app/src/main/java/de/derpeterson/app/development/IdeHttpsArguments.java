@@ -21,6 +21,7 @@ record IdeHttpsArguments(Path argumentDirectory, Path argumentFilePath) implemen
             projectDirectory.resolve("data/https/ide-launcher"), directoryPermissions);
     Path argumentDirectory =
         Files.createTempDirectory(launcherParentDirectory, "start-", directoryPermissions);
+
     try {
       Path argumentFilePath =
           Files.createFile(
@@ -45,12 +46,14 @@ record IdeHttpsArguments(Path argumentDirectory, Path argumentFilePath) implemen
               .getFileSystem()
               .getUserPrincipalLookupService()
               .lookupPrincipalByName(System.getProperty("user.name"));
+
       AclEntry ownerAclEntry =
           AclEntry.newBuilder()
               .setType(AclEntryType.ALLOW)
               .setPrincipal(ownerPrincipal)
               .setPermissions(EnumSet.allOf(AclEntryPermission.class))
               .build();
+
       return new FileAttribute<List<AclEntry>>() {
         @Override
         public String name() {

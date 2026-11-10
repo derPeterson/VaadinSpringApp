@@ -29,47 +29,57 @@ public record TwoFactorPolicy(
         || inactivity.getNano() != 0) {
       throw new IllegalArgumentException("Invalid two-factor policy");
     }
-    Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> checked = new EnumMap<>(RoleType.class);
-    for (RoleType role : RoleType.values()) {
-      Map<TwoFactorAction, TwoFactorMode> actions = rules.get(role);
-      if (actions == null || actions.size() != TwoFactorAction.values().length) {
+
+    Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> validatedRulesByRole =
+        new EnumMap<>(RoleType.class);
+    for (RoleType roleType : RoleType.values()) {
+      Map<TwoFactorAction, TwoFactorMode> modesByAction = rules.get(roleType);
+      if (modesByAction == null || modesByAction.size() != TwoFactorAction.values().length) {
         throw new IllegalArgumentException("Incomplete two-factor policy");
       }
-      for (TwoFactorAction action : TwoFactorAction.values()) {
-        Objects.requireNonNull(actions.get(action), "Missing two-factor action");
+      for (TwoFactorAction twoFactorAction : TwoFactorAction.values()) {
+        Objects.requireNonNull(modesByAction.get(twoFactorAction), "Missing two-factor action");
       }
-      checked.put(role, Map.copyOf(actions));
+      validatedRulesByRole.put(roleType, Map.copyOf(modesByAction));
     }
-    rules = Map.copyOf(checked);
+
+    rules = Map.copyOf(validatedRulesByRole);
   }
 
-  public TwoFactorMode mode(Collection<RoleType> roles, TwoFactorAction action) {
-    Objects.requireNonNull(action);
+  public TwoFactorMode mode(Collection<RoleType> accountRoles, TwoFactorAction twoFactorAction) {
+    Objects.requireNonNull(twoFactorAction);
     // Ein Konto ohne aktuelle Rolle erhält durch eine leere Rollenmenge keinen Freibrief.
-    if (roles.isEmpty()) {
+    if (accountRoles.isEmpty()) {
       return TwoFactorMode.REQUIRED;
     }
-    TwoFactorMode strictest = TwoFactorMode.OFF;
-    for (RoleType role : roles) {
-      TwoFactorMode candidate = rules.get(role).get(action);
-      if (candidate.ordinal() > strictest.ordinal()) {
-        strictest = candidate;
+
+    TwoFactorMode strictestMode = TwoFactorMode.OFF;
+    for (RoleType roleType : accountRoles) {
+      TwoFactorMode candidateMode = rules.get(roleType).get(twoFactorAction);
+      if (candidateMode.ordinal() > strictestMode.ordinal()) {
+        strictestMode = candidateMode;
       }
     }
-    return strictest;
+
+    return strictestMode;
   }
 
   public static TwoFactorPolicy defaults() {
-    Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> rules = new EnumMap<>(RoleType.class);
-    for (RoleType role : RoleType.values()) {
-      Map<TwoFactorAction, TwoFactorMode> actions = new EnumMap<>(TwoFactorAction.class);
-      for (TwoFactorAction action : TwoFactorAction.values()) {
-        TwoFactorMode mode =
-            role.isAdministrative() ? TwoFactorMode.REQUIRED : TwoFactorMode.IF_ENROLLED;
-        actions.put(action, action == TwoFactorAction.ADMINISTRATION ? TwoFactorMode.OFF : mode);
+    Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> defaultRulesByRole =
+        new EnumMap<>(RoleType.class);
+    for (RoleType roleType : RoleType.values()) {
+      Map<TwoFactorAction, TwoFactorMode> defaultModesByAction =
+          new EnumMap<>(TwoFactorAction.class);
+      for (TwoFactorAction twoFactorAction : TwoFactorAction.values()) {
+        TwoFactorMode defaultMode =
+            roleType.isAdministrative() ? TwoFactorMode.REQUIRED : TwoFactorMode.IF_ENROLLED;
+        defaultModesByAction.put(
+            twoFactorAction,
+            twoFactorAction == TwoFactorAction.ADMINISTRATION ? TwoFactorMode.OFF : defaultMode);
       }
-      rules.put(role, actions);
+      defaultRulesByRole.put(roleType, defaultModesByAction);
     }
-    return new TwoFactorPolicy(rules, false, Duration.ofHours(12), false, false);
+
+    return new TwoFactorPolicy(defaultRulesByRole, false, Duration.ofHours(12), false, false);
   }
 }

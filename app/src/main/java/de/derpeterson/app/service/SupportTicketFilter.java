@@ -31,17 +31,17 @@ public record SupportTicketFilter(
     Objects.requireNonNull(reading);
   }
 
-  public SupportTicketFilter withType(Type type) {
-    return new SupportTicketFilter(statuses, assignment, reading, type);
+  public SupportTicketFilter withType(Type requestedTicketType) {
+    return new SupportTicketFilter(statuses, assignment, reading, requestedTicketType);
   }
 
   /** Der Lesestand darf eine bereits geöffnete Detailansicht nicht schließen. */
-  public boolean matchesMetadata(Ticket ticket, Long viewer) {
+  public boolean matchesMetadata(Ticket ticket, Long viewerUserId) {
     return (statuses.isEmpty() || statuses.contains(ticket.status()))
         && (type == null || ticket.type() == type)
         && switch (assignment) {
           case ALL -> true;
-          case MINE -> viewer != null && viewer.equals(ticket.assignee());
+          case MINE -> viewerUserId != null && viewerUserId.equals(ticket.assignee());
           case UNASSIGNED -> ticket.assignee() == null;
         };
   }

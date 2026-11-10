@@ -21,6 +21,7 @@ public final class CopyrightTextFormatter {
                 && configuredTemplate.equals(ConfigEntry.COPYRIGHT_TEXT.getDefaultValueString())
             ? localizedDefaultTemplate.get()
             : configuredTemplate;
+
     return displayTemplate
         .replace("{year}", String.valueOf(Year.now(copyrightClock).getValue()))
         .replace("{serviceName}", serviceName);

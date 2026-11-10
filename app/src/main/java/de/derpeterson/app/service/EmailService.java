@@ -53,30 +53,31 @@ public class EmailService {
     sendEmailResolved(() -> recipient, subject, htmlContent);
   }
 
-  private void sendEmailResolved(Supplier<String> recipient, String subject, String htmlContent)
+  private void sendEmailResolved(
+      Supplier<String> recipientAddressSupplier, String emailSubject, String htmlContent)
       throws MailException, MessagingException {
-    MimeMessage message = mailSender.createMimeMessage();
+    MimeMessage mimeMessage = mailSender.createMimeMessage();
     boolean includeLogo =
         htmlContent != null && htmlContent.contains("cid:" + EmailLogo.CONTENT_ID);
-    MimeMessageHelper helper =
+    MimeMessageHelper mimeMessageHelper =
         new MimeMessageHelper(
-            message,
+            mimeMessage,
             includeLogo
                 ? MimeMessageHelper.MULTIPART_MODE_RELATED
                 : MimeMessageHelper.MULTIPART_MODE_NO,
             "UTF-8");
 
-    helper.setTo(recipient.get());
-    helper.setSubject(subject);
+    mimeMessageHelper.setTo(recipientAddressSupplier.get());
+    mimeMessageHelper.setSubject(emailSubject);
     Assert.notNull(htmlContent, "Text must not be null");
-    helper.setText(htmlContent, true);
-    helper.setFrom(configService.getString(ConfigEntry.EMAIL_FROM));
+    mimeMessageHelper.setText(htmlContent, true);
+    mimeMessageHelper.setFrom(configService.getString(ConfigEntry.EMAIL_FROM));
 
     if (includeLogo) {
       try {
         // Bytes vor dem Transport lesen; jeder MIME-Lesezugriff erhält einen neuen Stream.
         // Inline erst nach setText hinzufügen, damit Mailprogramme die CID auflösen können.
-        helper.addInline(
+        mimeMessageHelper.addInline(
             EmailLogo.CONTENT_ID,
             "service-logo.png",
             new ByteArrayResource(EmailLogo.readBytes()),
@@ -87,9 +88,9 @@ public class EmailService {
     }
 
     try {
-      mailSender.send(message);
+      mailSender.send(mimeMessage);
     } catch (MailSendException e) {
-      if (ConnectionAwareJavaMailSender.failedBeforeSending(e, message)) {
+      if (ConnectionAwareJavaMailSender.failedBeforeSending(e, mimeMessage)) {
         throw new MailPreparationException("Connection failed before this message was sent", e);
       }
       throw e;
@@ -103,13 +104,14 @@ public class EmailService {
    * during conversion/dispatch with a MailException. Config/sender runtime failures propagate
    * unchanged; no retry.
    */
-  public void sendAdminEmail(String adminEmail, String subject, String body) throws MailException {
-    SimpleMailMessage message = new SimpleMailMessage();
-    message.setTo(adminEmail);
-    message.setSubject(subject);
-    message.setText(body);
-    message.setFrom(configService.getString(ConfigEntry.EMAIL_FROM));
+  public void sendAdminEmail(String adminEmail, String emailSubject, String plainTextBody)
+      throws MailException {
+    SimpleMailMessage adminMailMessage = new SimpleMailMessage();
+    adminMailMessage.setTo(adminEmail);
+    adminMailMessage.setSubject(emailSubject);
+    adminMailMessage.setText(plainTextBody);
+    adminMailMessage.setFrom(configService.getString(ConfigEntry.EMAIL_FROM));
 
-    mailSender.send(message);
+    mailSender.send(adminMailMessage);
   }
 }

@@ -29,10 +29,12 @@ public final class AfterCommitLog {
       logAction.run();
       return;
     }
+
     if (!TransactionSynchronizationManager.isSynchronizationActive()) {
       // Ohne beobachtbaren Commit keinen möglicherweise falschen Erfolg behaupten.
       return;
     }
+
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override

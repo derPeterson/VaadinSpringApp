@@ -10,25 +10,28 @@ import jakarta.servlet.http.HttpServletRequest;
 public final class TwoFactorTransport {
   private TwoFactorTransport() {}
 
-  public static String destination(HttpServletRequest request) {
-    TwoFactorFlow flow = TwoFactorFlow.current(request);
-    if (flow != null) {
-      return request.getContextPath() + flow.location();
+  public static String destination(HttpServletRequest httpRequest) {
+    TwoFactorFlow activeTwoFactorFlow = TwoFactorFlow.current(httpRequest);
+    if (activeTwoFactorFlow != null) {
+      return httpRequest.getContextPath() + activeTwoFactorFlow.location();
     }
-    boolean administration = "/admin".equals(request.getServletPath()) || administrativeUi(request);
-    return request.getContextPath()
+
+    boolean administrationRequested =
+        "/admin".equals(httpRequest.getServletPath()) || administrativeUi(httpRequest);
+
+    return httpRequest.getContextPath()
         + AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE
-        + (administration ? "?administration" : "");
+        + (administrationRequested ? "?administration" : "");
   }
 
-  public static boolean allowedUi(HttpServletRequest request) {
+  public static boolean allowedUi(HttpServletRequest httpRequest) {
     return MaintenanceTransport.withUi(
-        request,
+        httpRequest,
         ui ->
             ui.getInternals().getActiveRouterTargetsChain().isEmpty()
                 || ui.getInternals().getActiveRouterTargetsChain().stream()
                     .anyMatch(activeRouteComponent -> {
-                      TwoFactorFlow activeTwoFactorFlow = TwoFactorFlow.current(request);
+                      TwoFactorFlow activeTwoFactorFlow = TwoFactorFlow.current(httpRequest);
                       if (activeTwoFactorFlow == null) {
                         return activeRouteComponent instanceof TwoFactorView
                             || activeRouteComponent instanceof RecoveryHelpView;
@@ -42,24 +45,26 @@ public final class TwoFactorTransport {
         false);
   }
 
-  public static void redirectUi(HttpServletRequest request) {
+  public static void redirectUi(HttpServletRequest httpRequest) {
     MaintenanceTransport.withUi(
-        request,
+        httpRequest,
         ui -> {
           ui.access(() -> {
-            ui.getPage().setLocation(destination(request));
+            ui.getPage().setLocation(destination(httpRequest));
+
             if (ui.getPushConfiguration().getPushMode().isEnabled()) {
               ui.push();
             }
           });
+
           return true;
         },
         false);
   }
 
-  public static boolean administrativeUi(HttpServletRequest request) {
+  public static boolean administrativeUi(HttpServletRequest httpRequest) {
     return MaintenanceTransport.withUi(
-        request,
+        httpRequest,
         ui ->
             ui.getInternals().getActiveRouterTargetsChain().stream()
                 .anyMatch(AdminView.class::isInstance),

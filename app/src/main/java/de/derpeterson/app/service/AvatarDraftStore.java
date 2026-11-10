@@ -109,30 +109,34 @@ public class AvatarDraftStore {
     return draft;
   }
 
-  public UUID upload(UUID token, Long owner, InputStream input) throws IOException {
-    Draft draft = require(token, owner);
+  public UUID upload(UUID avatarDraftId, Long ownerUserId, InputStream uploadInputStream)
+      throws IOException {
+    Draft avatarDraft = require(avatarDraftId, ownerUserId);
+
     synchronized (this) {
-      if (draft.uploading || !uploadTransferPermits.tryAcquire()) {
+      if (avatarDraft.uploading || !uploadTransferPermits.tryAcquire()) {
         throw new InvalidImage(BUSY);
       }
-      draft.uploading = true;
+      avatarDraft.uploading = true;
     }
+
     try {
-      byte[] bytes = AvatarImageProcessor.readLimited(input);
-      SourceMetadata metadata = avatarImageProcessor.validate(bytes);
+      byte[] uploadedImageBytes = AvatarImageProcessor.readLimited(uploadInputStream);
+      SourceMetadata uploadedImageMetadata = avatarImageProcessor.validate(uploadedImageBytes);
+
       synchronized (this) {
-        if (require(token, owner) != draft) {
+        if (require(avatarDraftId, ownerUserId) != avatarDraft) {
           throw new InvalidImage(EXPIRED);
         }
-        draft.bytes = bytes;
-        draft.imageId = UUID.randomUUID();
-        draft.uploadedAt = avatarDraftClock.instant();
-        draft.metadata = metadata;
-        return draft.imageId;
+        avatarDraft.bytes = uploadedImageBytes;
+        avatarDraft.imageId = UUID.randomUUID();
+        avatarDraft.uploadedAt = avatarDraftClock.instant();
+        avatarDraft.metadata = uploadedImageMetadata;
+        return avatarDraft.imageId;
       }
     } finally {
       synchronized (this) {
-        draft.uploading = false;
+        avatarDraft.uploading = false;
       }
       uploadTransferPermits.release();
     }

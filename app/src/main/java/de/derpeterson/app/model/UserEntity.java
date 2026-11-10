@@ -85,11 +85,12 @@ public class UserEntity {
   @Builder.Default
   private String accessVersion = UUID.randomUUID().toString();
 
-  public void setPassword(String password) {
-    if (!Objects.equals(this.password, password)) {
+  public void setPassword(String encodedPassword) {
+    if (!Objects.equals(this.password, encodedPassword)) {
       accessVersion = UUID.randomUUID().toString();
     }
-    this.password = password;
+
+    this.password = encodedPassword;
   }
 
   public void rotateAccessVersion() {

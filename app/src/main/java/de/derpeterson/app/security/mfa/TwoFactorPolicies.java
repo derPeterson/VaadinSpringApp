@@ -89,42 +89,52 @@ public class TwoFactorPolicies {
   }
 
   @Transactional
-  public Snapshot save(HttpServletRequest request, long expectedRevision, TwoFactorPolicy desired) {
-    Objects.requireNonNull(desired);
+  public Snapshot save(
+      HttpServletRequest httpRequest, long expectedRevision, TwoFactorPolicy requestedPolicy) {
+    Objects.requireNonNull(requestedPolicy);
+
     // Derselbe Rollenlock schützt auch konkurrierenden Superadmin-Entzug.
     userRepository
         .lockRole(RoleType.ROLE_SUPERADMIN)
         .orElseThrow(() -> new AccessDeniedException("Superadmin role unavailable"));
     adminRolePolicy.requireSuperadmin();
-    Snapshot previous = current();
-    if (previous.revision() != expectedRevision) {
+
+    Snapshot currentPolicySnapshot = current();
+    if (currentPolicySnapshot.revision() != expectedRevision) {
       throw new OptimisticLockingFailureException("Two-factor configuration changed");
     }
+
     if (!developmentOptions
-        && (desired.developmentPause() || desired.developmentGoogleConfirmation())) {
+        && (requestedPolicy.developmentPause()
+            || requestedPolicy.developmentGoogleConfirmation())) {
       throw new AccessDeniedException("Development security options are disabled at startup");
     }
+
     // Die alte Regel entscheidet über ihre eigene Abschwächung, niemals die Formularwerte.
     twoFactorAuthorizationProvider
         .getObject()
-        .authorizeCurrent(request, TwoFactorAction.SECURITY_CONFIGURATION, true);
-    TwoFactorPolicyEntity row =
+        .authorizeCurrent(httpRequest, TwoFactorAction.SECURITY_CONFIGURATION, true);
+
+    TwoFactorPolicyEntity policyEntity =
         twoFactorPolicyRepository.findById(1).orElseGet(TwoFactorPolicyEntity::new);
-    if (row.getVersion() != null) {
-      entityManager.refresh(row);
-      if (row.getVersion() != expectedRevision) {
+    if (policyEntity.getVersion() != null) {
+      entityManager.refresh(policyEntity);
+      if (policyEntity.getVersion() != expectedRevision) {
         throw new OptimisticLockingFailureException("Two-factor configuration changed");
       }
     }
-    row.setRules(encode(desired));
-    TwoFactorPolicyEntity saved = twoFactorPolicyRepository.saveAndFlush(row);
+
+    policyEntity.setRules(encode(requestedPolicy));
+    TwoFactorPolicyEntity savedPolicyEntity = twoFactorPolicyRepository.saveAndFlush(policyEntity);
+
     AfterCommitLog.info(
         log,
         "Two-factor policy updated: revision={}, developmentPause={}, developmentGoogle={}",
-        saved.getVersion(),
-        desired.developmentPause(),
-        desired.developmentGoogleConfirmation());
-    return new Snapshot(saved.getVersion(), desired);
+        savedPolicyEntity.getVersion(),
+        requestedPolicy.developmentPause(),
+        requestedPolicy.developmentGoogleConfirmation());
+
+    return new Snapshot(savedPolicyEntity.getVersion(), requestedPolicy);
   }
 
   private String encode(TwoFactorPolicy policy) {

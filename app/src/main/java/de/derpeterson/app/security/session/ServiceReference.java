@@ -18,18 +18,21 @@ public final class ServiceReference<T> implements Serializable {
   }
 
   public T get() {
-    T available = liveService;
-    if (available != null) {
-      return available;
+    T resolvedService = liveService;
+    if (resolvedService != null) {
+      return resolvedService;
     }
-    if (!(VaadinService.getCurrent() instanceof VaadinServletService service)) {
+
+    if (!(VaadinService.getCurrent() instanceof VaadinServletService vaadinServletService)) {
       throw new IllegalStateException("Current Vaadin Spring context required");
     }
-    available =
+
+    resolvedService =
         WebApplicationContextUtils.getRequiredWebApplicationContext(
-                service.getServlet().getServletContext())
+                vaadinServletService.getServlet().getServletContext())
             .getBean(serviceType);
-    liveService = available;
-    return available;
+    liveService = resolvedService;
+
+    return resolvedService;
   }
 }

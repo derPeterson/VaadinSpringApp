@@ -41,14 +41,16 @@ public final class PortalUserDetails extends User {
         : digest(user.getPassword());
   }
 
-  private static String digest(String value) {
-    if (value == null || value.isBlank()) {
+  private static String digest(String credentialVersionInput) {
+    if (credentialVersionInput == null || credentialVersionInput.isBlank()) {
       throw new AuthenticationServiceException("Account credential version unavailable");
     }
+
     try {
       return HexFormat.of()
           .formatHex(
-              MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
+              MessageDigest.getInstance("SHA-256")
+                  .digest(credentialVersionInput.getBytes(StandardCharsets.UTF_8)));
     } catch (NoSuchAlgorithmException impossible) {
       throw new IllegalStateException(impossible);
     }

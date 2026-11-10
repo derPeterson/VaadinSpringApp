@@ -21,15 +21,18 @@ class UserLockRepositoryImpl implements UserLockRepository {
             .setFlushMode(FlushModeType.COMMIT)
             .setLockMode(LockModeType.PESSIMISTIC_WRITE)
             .getResultList();
+
     if (lockedUserIds.isEmpty()) {
       return Optional.empty();
     }
+
     UserEntity lockedUserEntity = entityManager.find(UserEntity.class, verificationUserId);
     // Acquire the database lock before flushing. Preserve this transaction's
     // own pending changes before refresh; flush is not a commit, and stale
     // dirty entities must still pass their optimistic version checks.
     entityManager.flush();
     entityManager.refresh(lockedUserEntity);
+
     return Optional.of(lockedUserEntity);
   }
 }

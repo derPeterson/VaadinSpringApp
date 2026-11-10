@@ -29,38 +29,43 @@ final class ProviderAuthorizationRequests
 
   @Override
   public void saveAuthorizationRequest(
-      @Nullable OAuth2AuthorizationRequest authorization,
-      HttpServletRequest request,
-      HttpServletResponse response) {
-    if (authorization == null) {
-      authorizationRequestRepository.removeAuthorizationRequest(request, response);
+      @Nullable OAuth2AuthorizationRequest authorizationRequest,
+      HttpServletRequest httpRequest,
+      HttpServletResponse httpResponse) {
+    if (authorizationRequest == null) {
+      authorizationRequestRepository.removeAuthorizationRequest(httpRequest, httpResponse);
       return;
     }
-    String provider = authorization.getAttribute("registration_id");
-    authorization =
-        OAuth2AuthorizationRequest.from(authorization)
+
+    String providerRegistrationId = authorizationRequest.getAttribute("registration_id");
+    authorizationRequest =
+        OAuth2AuthorizationRequest.from(authorizationRequest)
             .attributes(attributes ->
                 attributes.put(
                     REVISION,
                     ExternalProviderSettings.revision(
-                        externalProviderSettings.credentials(provider))))
+                        externalProviderSettings.credentials(providerRegistrationId))))
             .build();
-    authorizationRequestRepository.saveAuthorizationRequest(authorization, request, response);
+
+    authorizationRequestRepository.saveAuthorizationRequest(
+        authorizationRequest, httpRequest, httpResponse);
   }
 
   @Override
   public OAuth2AuthorizationRequest removeAuthorizationRequest(
-      HttpServletRequest request, HttpServletResponse response) {
-    OAuth2AuthorizationRequest authorization =
-        authorizationRequestRepository.removeAuthorizationRequest(request, response);
-    if (authorization == null) {
+      HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+    OAuth2AuthorizationRequest authorizationRequest =
+        authorizationRequestRepository.removeAuthorizationRequest(httpRequest, httpResponse);
+    if (authorizationRequest == null) {
       return null;
     }
-    String provider = authorization.getAttribute("registration_id");
-    String revision = authorization.getAttribute(REVISION);
-    return ExternalProviderSettings.revision(externalProviderSettings.credentials(provider))
-            .equals(revision)
-        ? authorization
+    String providerRegistrationId = authorizationRequest.getAttribute("registration_id");
+    String storedProviderRevision = authorizationRequest.getAttribute(REVISION);
+
+    return ExternalProviderSettings.revision(
+                externalProviderSettings.credentials(providerRegistrationId))
+            .equals(storedProviderRevision)
+        ? authorizationRequest
         : null;
   }
 }

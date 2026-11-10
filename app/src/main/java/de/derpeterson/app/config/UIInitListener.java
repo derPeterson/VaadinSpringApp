@@ -32,6 +32,7 @@ public class UIInitListener implements VaadinServiceInitListener {
         .addSessionInitListener(sessionInitEvent ->
             PublicLanguagePreference.restore(
                 sessionInitEvent.getRequest(), sessionInitEvent.getSession()));
+
     serviceInitEvent
         .getSource()
         .addUIInitListener(uiInitEvent -> {
@@ -39,21 +40,21 @@ public class UIInitListener implements VaadinServiceInitListener {
 
           if (VaadinSession.getCurrent() != null
               && VaadinSession.getCurrent().getAttribute("locale-set") == null) {
-            Optional<UserDetails> authenticatedUserDetailsOption =
+            Optional<UserDetails> authenticatedUserDetailsOptional =
                 securityService.getAuthenticatedUser(httpRequest);
-            authenticatedUserDetailsOption.ifPresent(authenticatedUserDetails -> {
-              Optional<UserEntity> userEntityOption =
+            authenticatedUserDetailsOptional.ifPresent(authenticatedUserDetails -> {
+              Optional<UserEntity> accountUserOptional =
                   userService.findByEmail(authenticatedUserDetails.getUsername());
-              if (userEntityOption.isPresent()) {
-                Locale userLocale = userEntityOption.get().getPreferredLocale();
-                VaadinSession.getCurrent().setLocale(userLocale);
+              if (accountUserOptional.isPresent()) {
+                Locale preferredUserLocale = accountUserOptional.get().getPreferredLocale();
+                VaadinSession.getCurrent().setLocale(preferredUserLocale);
                 VaadinSession.getCurrent().setAttribute("locale-set", true);
               }
             });
           }
 
           initializedUi.addBeforeEnterListener(
-              e -> NotificationHelper.getInstance().closeAndClearAllNotifications());
+              beforeEnterEvent -> NotificationHelper.getInstance().closeAndClearAllNotifications());
         });
   }
 }

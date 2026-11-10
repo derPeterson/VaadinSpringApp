@@ -26,7 +26,7 @@ public class TwoFactorCleanup {
     Instant cleanupTime = Instant.now();
     // Derselbe Sessionbestand wie bei der Anmeldung; Klartext oder rohe IDs werden nicht
     // gespeichert.
-    List<String> activeSessions =
+    List<String> activeSessionDigests =
         sessionJdbcOperations
             .queryForList(
                 "select s.SESSION_ID from SPRING_SESSION s where s.EXPIRY_TIME > ? and not exists (select 1 from SPRING_SESSION_ATTRIBUTES a where a.SESSION_PRIMARY_ID = s.PRIMARY_ID and a.ATTRIBUTE_NAME = ?)",
@@ -36,10 +36,12 @@ public class TwoFactorCleanup {
             .stream()
             .map(TwoFactorAuthorization::sessionDigest)
             .toList();
-    twoFactorChallengeRepository.deleteClosedRecoveryOutputs(activeSessions, cleanupTime);
+
+    twoFactorChallengeRepository.deleteClosedRecoveryOutputs(activeSessionDigests, cleanupTime);
     twoFactorChallengeRepository.clearExpiredSecrets(cleanupTime);
     // Metadaten kurz für das kontoweite Mail-Versuchslimit erhalten, niemals Ausgabewerte.
     twoFactorChallengeRepository.deleteExpired(cleanupTime.minusSeconds(3600));
+
     supportTicketRepository.deleteClosedBefore(
         cleanupTime.minusSeconds(180L * 86400), List.of(Status.CLOSED, Status.CLOSED_BY_REQUESTER));
   }

@@ -38,51 +38,61 @@ public final class ExternalIdTokenDecoders implements JwtDecoderFactory<ClientRe
     return token -> decodeMicrosoft(registration, token);
   }
 
-  private Jwt decodeMicrosoft(ClientRegistration registration, String token) {
-    String tenant;
+  private Jwt decodeMicrosoft(ClientRegistration clientRegistration, String serializedIdToken) {
+    String tenantId;
     try {
       // Ungeprüfte Daten wählen ausschließlich einen UUID-Pfad am festen Microsoft-Host.
       // Vertrauen entsteht erst anschließend durch Signatur- und vollständige OIDC-Prüfung.
-      tenant = JWTParser.parse(token).getJWTClaimsSet().getStringClaim("tid");
-      if (tenant == null || !UUID.fromString(tenant).toString().equals(tenant)) {
+      tenantId = JWTParser.parse(serializedIdToken).getJWTClaimsSet().getStringClaim("tid");
+      if (tenantId == null || !UUID.fromString(tenantId).toString().equals(tenantId)) {
         throw new IllegalArgumentException("Invalid tenant");
       }
-    } catch (java.text.ParseException | IllegalArgumentException failure) {
-      throw new JwtException("Invalid Microsoft tenant", failure);
+    } catch (java.text.ParseException | IllegalArgumentException tenantParseFailure) {
+      throw new JwtException("Invalid Microsoft tenant", tenantParseFailure);
     }
-    JwtDecoder decoder;
+
+    JwtDecoder tenantJwtDecoder;
     synchronized (tenantTokenDecoders) {
-      String cacheKey = registration.getClientId() + ":" + tenant;
-      decoder = tenantTokenDecoders.get(cacheKey);
-      if (decoder == null) {
-        String base = "https://login.microsoftonline.com/" + tenant;
-        String keys = externalLoginProperties.getMicrosoft().getJwkSetUri();
-        ClientRegistration scoped =
-            ClientRegistration.withClientRegistration(registration)
-                .issuerUri(base + "/v2.0")
-                .jwkSetUri(keys == null || keys.isBlank() ? base + "/discovery/v2.0/keys" : keys)
-                .registrationId("microsoft-" + tenant)
+      String tenantDecoderCacheKey = clientRegistration.getClientId() + ":" + tenantId;
+      tenantJwtDecoder = tenantTokenDecoders.get(tenantDecoderCacheKey);
+      if (tenantJwtDecoder == null) {
+        String tenantIssuerBaseUri = "https://login.microsoftonline.com/" + tenantId;
+        String configuredJwkSetUri = externalLoginProperties.getMicrosoft().getJwkSetUri();
+        ClientRegistration tenantClientRegistration =
+            ClientRegistration.withClientRegistration(clientRegistration)
+                .issuerUri(tenantIssuerBaseUri + "/v2.0")
+                .jwkSetUri(
+                    configuredJwkSetUri == null || configuredJwkSetUri.isBlank()
+                        ? tenantIssuerBaseUri + "/discovery/v2.0/keys"
+                        : configuredJwkSetUri)
+                .registrationId("microsoft-" + tenantId)
                 .build();
-        NimbusJwtDecoder microsoft =
+
+        NimbusJwtDecoder microsoftJwtDecoder =
             NimbusJwtDecoder.withJwkSetUri(
-                    Objects.requireNonNull(scoped.getProviderDetails().getJwkSetUri()))
+                    Objects.requireNonNull(
+                        tenantClientRegistration.getProviderDetails().getJwkSetUri()))
                 .restOperations(
-                    MicrosoftSigningKeys.client(scoped.getProviderDetails().getIssuerUri()))
+                    MicrosoftSigningKeys.client(
+                        tenantClientRegistration.getProviderDetails().getIssuerUri()))
                 .build();
-        microsoft.setClaimSetConverter(OidcIdTokenDecoderFactory.createDefaultClaimTypeConverter());
-        microsoft.setJwtValidator(new OidcIdTokenValidator(scoped));
-        decoder = microsoft;
+        microsoftJwtDecoder.setClaimSetConverter(
+            OidcIdTokenDecoderFactory.createDefaultClaimTypeConverter());
+        microsoftJwtDecoder.setJwtValidator(new OidcIdTokenValidator(tenantClientRegistration));
+        tenantJwtDecoder = microsoftJwtDecoder;
         // Auch der Frameworkcache bleibt begrenzt: je Eintrag eine eigene Decoderfactory.
         if (tenantTokenDecoders.size() >= 32) {
           tenantTokenDecoders.remove(tenantTokenDecoders.keySet().iterator().next());
         }
-        tenantTokenDecoders.put(cacheKey, decoder);
+        tenantTokenDecoders.put(tenantDecoderCacheKey, tenantJwtDecoder);
       }
     }
-    Jwt jwt = decoder.decode(token);
-    if (!tenant.equals(jwt.getClaimAsString("tid"))) {
+
+    Jwt validatedJwt = tenantJwtDecoder.decode(serializedIdToken);
+    if (!tenantId.equals(validatedJwt.getClaimAsString("tid"))) {
       throw new JwtException("Microsoft tenant changed");
     }
-    return jwt;
+
+    return validatedJwt;
   }
 }

@@ -52,81 +52,92 @@ public class ExternalLoginConfiguration {
 
   @Bean
   public Registrations managedExternalRegistrations(
-      ExternalLoginProperties properties, ExternalProviderSettings settings) {
+      ExternalLoginProperties externalLoginProperties,
+      ExternalProviderSettings externalProviderSettings) {
     return new Registrations(() -> {
-      ExternalLoginProperties current = new ExternalLoginProperties();
-      for (String provider : ExternalProviderSettings.PROVIDERS) {
-        Credentials stored = settings.credentials(provider);
-        ExternalLoginProperties.Provider target =
-            provider.equals(GOOGLE) ? current.getGoogle() : current.getMicrosoft();
-        ExternalLoginProperties.Provider defaults =
-            provider.equals(GOOGLE) ? properties.getGoogle() : properties.getMicrosoft();
-        if (stored.enabled()) {
-          target.setClientId(stored.clientId());
-          target.setClientSecret(stored.clientSecret());
-          target.setEnabled(true);
+      ExternalLoginProperties currentProviderProperties = new ExternalLoginProperties();
+      for (String providerId : ExternalProviderSettings.PROVIDERS) {
+        Credentials storedCredentials = externalProviderSettings.credentials(providerId);
+        ExternalLoginProperties.Provider targetProviderProperties =
+            providerId.equals(GOOGLE)
+                ? currentProviderProperties.getGoogle()
+                : currentProviderProperties.getMicrosoft();
+        ExternalLoginProperties.Provider defaultProviderProperties =
+            providerId.equals(GOOGLE)
+                ? externalLoginProperties.getGoogle()
+                : externalLoginProperties.getMicrosoft();
+        if (storedCredentials.enabled()) {
+          targetProviderProperties.setClientId(storedCredentials.clientId());
+          targetProviderProperties.setClientSecret(storedCredentials.clientSecret());
+          targetProviderProperties.setEnabled(true);
         }
         // Endpunkte stammen ausschließlich aus der Serverkonfiguration, nie aus Admin-Eingaben.
-        target.setAuthorizationUri(defaults.getAuthorizationUri());
-        target.setTokenUri(defaults.getTokenUri());
-        target.setJwkSetUri(defaults.getJwkSetUri());
+        targetProviderProperties.setAuthorizationUri(
+            defaultProviderProperties.getAuthorizationUri());
+        targetProviderProperties.setTokenUri(defaultProviderProperties.getTokenUri());
+        targetProviderProperties.setJwkSetUri(defaultProviderProperties.getJwkSetUri());
       }
-      List<ClientRegistration> result = new ArrayList<>();
-      externalRegistrations(current).forEach(result::add);
-      return List.copyOf(result);
+
+      List<ClientRegistration> configuredClientRegistrations = new ArrayList<>();
+      externalRegistrations(currentProviderProperties).forEach(configuredClientRegistrations::add);
+      return List.copyOf(configuredClientRegistrations);
     });
   }
 
   /** Unveränderliche Registrierungen für isolierte Protokolltests. */
-  public Registrations externalRegistrations(ExternalLoginProperties properties) {
-    List<ClientRegistration> clientRegistrationsSupplier = new ArrayList<>();
-    if (properties.getGoogle().configured()) {
-      clientRegistrationsSupplier.add(
-          registration(
+  public Registrations externalRegistrations(ExternalLoginProperties externalLoginProperties) {
+    List<ClientRegistration> configuredClientRegistrations = new ArrayList<>();
+    if (externalLoginProperties.getGoogle().configured()) {
+      configuredClientRegistrations.add(
+          createClientRegistration(
               GOOGLE,
-              properties.getGoogle(),
+              externalLoginProperties.getGoogle(),
               "https://accounts.google.com",
               "https://accounts.google.com/o/oauth2/v2/auth",
               "https://oauth2.googleapis.com/token",
               "https://www.googleapis.com/oauth2/v3/certs"));
     }
-    if (properties.getMicrosoft().configured()) {
-      clientRegistrationsSupplier.add(
-          registration(
+
+    if (externalLoginProperties.getMicrosoft().configured()) {
+      configuredClientRegistrations.add(
+          createClientRegistration(
               "microsoft",
-              properties.getMicrosoft(),
+              externalLoginProperties.getMicrosoft(),
               "https://login.microsoftonline.com/common/v2.0",
               "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
               "https://login.microsoftonline.com/common/oauth2/v2.0/token",
               "https://login.microsoftonline.com/common/discovery/v2.0/keys"));
     }
-    return new Registrations(clientRegistrationsSupplier);
+
+    return new Registrations(configuredClientRegistrations);
   }
 
-  private ClientRegistration registration(
-      String id,
-      ExternalLoginProperties.Provider properties,
-      String issuer,
-      String authorization,
-      String token,
-      String keys) {
-    return ClientRegistration.withRegistrationId(id)
-        .clientId(properties.getClientId())
-        .clientSecret(properties.getClientSecret())
+  private ClientRegistration createClientRegistration(
+      String providerId,
+      ExternalLoginProperties.Provider providerProperties,
+      String defaultIssuerUri,
+      String defaultAuthorizationUri,
+      String defaultTokenUri,
+      String defaultJwkSetUri) {
+    return ClientRegistration.withRegistrationId(providerId)
+        .clientId(providerProperties.getClientId())
+        .clientSecret(providerProperties.getClientSecret())
         .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_POST)
         .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
         .redirectUri("{baseUrl}/login/oauth2/code/{registrationId}")
         .scope("openid", "profile", "email")
-        .issuerUri(issuer)
-        .authorizationUri(value(properties.getAuthorizationUri(), authorization))
-        .tokenUri(value(properties.getTokenUri(), token))
-        .jwkSetUri(value(properties.getJwkSetUri(), keys))
+        .issuerUri(defaultIssuerUri)
+        .authorizationUri(
+            configuredUriOrDefault(
+                providerProperties.getAuthorizationUri(), defaultAuthorizationUri))
+        .tokenUri(configuredUriOrDefault(providerProperties.getTokenUri(), defaultTokenUri))
+        .jwkSetUri(configuredUriOrDefault(providerProperties.getJwkSetUri(), defaultJwkSetUri))
         .userNameAttributeName("sub")
-        .clientName(id.equals(GOOGLE) ? "Google" : "Microsoft")
+        .clientName(providerId.equals(GOOGLE) ? "Google" : "Microsoft")
         .build();
   }
 
-  private String value(String configured, String fallback) {
-    return configured == null || configured.isBlank() ? fallback : configured;
+  private String configuredUriOrDefault(String configuredUri, String defaultUri) {
+    return configuredUri == null || configuredUri.isBlank() ? defaultUri : configuredUri;
   }
 }

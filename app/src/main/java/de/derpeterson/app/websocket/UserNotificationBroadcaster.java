@@ -17,6 +17,7 @@ public class UserNotificationBroadcaster {
 
   public Registration register(Consumer<Set<Long>> notificationChangeListener) {
     notificationChangeListeners.add(notificationChangeListener);
+
     return () -> notificationChangeListeners.remove(notificationChangeListener);
   }
 

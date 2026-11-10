@@ -60,29 +60,38 @@ public class ExternalProviderSettings {
       String provider, String clientId, String newSecret, boolean enabled, String revision) {
     adminRolePolicy.requireSuperadmin();
     requireProvider(provider);
-    ExternalProviderEntity entity = externalProviderRepository.findById(provider).orElse(null);
-    Credentials current = entity == null ? defaultCredentials(provider) : decrypted(entity);
-    if (!Objects.equals(revision, revision(current))) {
+    ExternalProviderEntity providerEntity =
+        externalProviderRepository.findById(provider).orElse(null);
+    Credentials currentCredentials =
+        providerEntity == null ? defaultCredentials(provider) : decrypted(providerEntity);
+
+    if (!Objects.equals(revision, revision(currentCredentials))) {
       throw new OptimisticLockingFailureException("Provider configuration changed");
     }
-    String id = Objects.requireNonNull(clientId).trim();
-    String secret =
-        Objects.requireNonNull(newSecret).isBlank() ? current.clientSecret() : newSecret;
-    validateCredentials(id, secret, enabled);
+
+    String trimmedClientId = Objects.requireNonNull(clientId).trim();
+    String effectiveClientSecret =
+        Objects.requireNonNull(newSecret).isBlank() ? currentCredentials.clientSecret() : newSecret;
+    validateCredentials(trimmedClientId, effectiveClientSecret, enabled);
+
     twoFactor.authorizeCurrent(httpRequest, TwoFactorAction.SECURITY_CONFIGURATION, true);
-    if (entity == null) {
-      entity = new ExternalProviderEntity();
+    if (providerEntity == null) {
+      providerEntity = new ExternalProviderEntity();
     }
-    entity.setProvider(provider);
-    entity.setClientId(id);
-    if (entity.getEncryptedClientSecret() == null || !newSecret.isBlank()) {
-      entity.setEncryptedClientSecret(externalProviderSecrets.encrypt(provider, secret));
+    providerEntity.setProvider(provider);
+    providerEntity.setClientId(trimmedClientId);
+    if (providerEntity.getEncryptedClientSecret() == null || !newSecret.isBlank()) {
+      providerEntity.setEncryptedClientSecret(
+          externalProviderSecrets.encrypt(provider, effectiveClientSecret));
     }
-    entity.setEnabled(enabled);
-    ExternalProviderEntity saved = externalProviderRepository.saveAndFlush(entity);
+    providerEntity.setEnabled(enabled);
+
+    ExternalProviderEntity savedProviderEntity =
+        externalProviderRepository.saveAndFlush(providerEntity);
     AfterCommitLog.info(
         log, "Sign-in provider configuration updated: provider={}, enabled={}", provider, enabled);
-    return describe(decrypted(saved));
+
+    return describe(decrypted(savedProviderEntity));
   }
 
   /** Nur der Startinitialisierer: fehlende Anbieter gemeinsam anlegen, bestehende nie ändern. */

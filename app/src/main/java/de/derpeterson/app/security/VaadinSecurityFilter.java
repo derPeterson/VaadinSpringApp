@@ -59,6 +59,7 @@ public class VaadinSecurityFilter implements Filter {
         return;
       }
     }
+
     chain.doFilter(request, response);
   }
 

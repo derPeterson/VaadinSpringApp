@@ -24,6 +24,7 @@ final class LoginCsrfTokenFilter implements Filter {
       outgoing.setHeader(token.getHeaderName(), token.getToken());
       outgoing.setHeader("Cache-Control", "no-store");
     }
+
     chain.doFilter(request, response);
   }
 }

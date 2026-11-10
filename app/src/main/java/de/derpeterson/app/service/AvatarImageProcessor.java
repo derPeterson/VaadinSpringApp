@@ -83,12 +83,14 @@ public class AvatarImageProcessor {
     }
   }
 
-  public static byte[] readLimited(InputStream input) throws IOException {
-    byte[] bytes = input.readNBytes(MAX_UPLOAD + 1);
-    if (bytes.length > MAX_UPLOAD) {
+  public static byte[] readLimited(InputStream imageInputStream) throws IOException {
+    byte[] uploadedImageBytes = imageInputStream.readNBytes(MAX_UPLOAD + 1);
+
+    if (uploadedImageBytes.length > MAX_UPLOAD) {
       throw new InvalidImage(Problem.SIZE);
     }
-    return bytes;
+
+    return uploadedImageBytes;
   }
 
   public SourceMetadata validate(byte[] data) {

@@ -88,11 +88,13 @@ public class SessionAdmissionService implements SessionAuthenticationStrategy {
   }
 
   public <T> T withIdentity(String identity, Supplier<T> action) {
-    String key = EmailIdentity.canonicalize(identity);
-    if (key == null || key.isBlank()) {
+    String canonicalIdentity = EmailIdentity.canonicalize(identity);
+    if (canonicalIdentity == null || canonicalIdentity.isBlank()) {
       throw new AuthenticationServiceException("Identity required");
     }
-    synchronized (identityLocks[(key.hashCode() & Integer.MAX_VALUE) % identityLocks.length]) {
+
+    synchronized (
+        identityLocks[(canonicalIdentity.hashCode() & Integer.MAX_VALUE) % identityLocks.length]) {
       return action.get();
     }
   }

@@ -40,8 +40,9 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
     event.addVaadinRequestInterceptor(this);
     event
         .getSource()
-        .addUIInitListener(init -> {
-          UI ui = init.getUI();
+        .addUIInitListener(uiInitEvent -> {
+          UI ui = uiInitEvent.getUI();
+
           registerActivity(ui);
           ui.addBeforeEnterListener(this::guardNavigation);
         });
@@ -50,68 +51,79 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
   private void registerActivity(UI ui) {
     // Echte Eingaben zählen. Heartbeat, Push und reine Serverupdates erzeugen diese Ereignisse
     // nicht.
-    for (String type : List.of("pointerdown", "keydown", "wheel")) {
+    for (String eventType : List.of("pointerdown", "keydown", "wheel")) {
       ui.getElement()
-          .addEventListener(type, event -> recordActivity())
+          .addEventListener(eventType, event -> recordActivity())
           .setFilter("event.isTrusted")
           .throttle(30_000);
     }
   }
 
   private void recordActivity() {
-    if (VaadinRequest.getCurrent() instanceof VaadinServletRequest servlet) {
-      HttpServletRequest request = servlet.getHttpServletRequest();
-      if (securityService.get().getAuthenticatedUser(request).isPresent()) {
-        twoFactorAuthorization.get().recordActivity(request);
+    if (VaadinRequest.getCurrent() instanceof VaadinServletRequest vaadinServletRequest) {
+      HttpServletRequest httpRequest = vaadinServletRequest.getHttpServletRequest();
+      if (securityService.get().getAuthenticatedUser(httpRequest).isPresent()) {
+        twoFactorAuthorization.get().recordActivity(httpRequest);
       }
     }
   }
 
-  private void guardNavigation(BeforeEnterEvent navigation) {
-    Class<?> target = navigation.getNavigationTarget();
-    if (!(VaadinRequest.getCurrent() instanceof VaadinServletRequest servlet)) {
+  private void guardNavigation(BeforeEnterEvent beforeEnterEvent) {
+    Class<?> navigationTarget = beforeEnterEvent.getNavigationTarget();
+    if (!(VaadinRequest.getCurrent() instanceof VaadinServletRequest vaadinServletRequest)) {
       return;
     }
-    HttpServletRequest request = servlet.getHttpServletRequest();
-    TwoFactorFlow flow = TwoFactorFlow.current(request);
-    if (flow != null && securityService.get().getAuthenticatedUser(request).isPresent()) {
-      forwardToActiveFlow(navigation, target, flow);
+
+    HttpServletRequest httpRequest = vaadinServletRequest.getHttpServletRequest();
+    TwoFactorFlow activeTwoFactorFlow = TwoFactorFlow.current(httpRequest);
+
+    if (activeTwoFactorFlow != null
+        && securityService.get().getAuthenticatedUser(httpRequest).isPresent()) {
+      forwardToActiveFlow(beforeEnterEvent, navigationTarget, activeTwoFactorFlow);
       return;
     }
-    if (target == TwoFactorView.class || target == RecoveryHelpView.class) {
+
+    if (navigationTarget == TwoFactorView.class || navigationTarget == RecoveryHelpView.class) {
       return;
     }
-    boolean administration = target == AdminView.class;
-    if (securityService.get().getAuthenticatedUser(request).isPresent()
-        && (!twoFactorAuthorization.get().sessionConfirmed(request)
-            || administration && !twoFactorAuthorization.get().administrationConfirmed(request))) {
-      navigation.forwardTo(
+
+    boolean administrationRequested = navigationTarget == AdminView.class;
+    if (securityService.get().getAuthenticatedUser(httpRequest).isPresent()
+        && (!twoFactorAuthorization.get().sessionConfirmed(httpRequest)
+            || administrationRequested
+                && !twoFactorAuthorization.get().administrationConfirmed(httpRequest))) {
+      beforeEnterEvent.forwardTo(
           TwoFactorView.class,
-          administration ? QueryParameters.of("administration", "true") : QueryParameters.empty());
+          administrationRequested
+              ? QueryParameters.of("administration", "true")
+              : QueryParameters.empty());
     }
   }
 
   private void forwardToActiveFlow(
-      BeforeEnterEvent navigation, Class<?> target, TwoFactorFlow flow) {
-    if (flow.help() && target != RecoveryHelpView.class) {
-      navigation.forwardTo(RecoveryHelpView.class);
-    } else if (!flow.help() && target != TwoFactorView.class) {
-      navigation.forwardTo(
-          TwoFactorView.class, new Location(flow.location().substring(1)).getQueryParameters());
+      BeforeEnterEvent beforeEnterEvent,
+      Class<?> navigationTarget,
+      TwoFactorFlow activeTwoFactorFlow) {
+    if (activeTwoFactorFlow.help() && navigationTarget != RecoveryHelpView.class) {
+      beforeEnterEvent.forwardTo(RecoveryHelpView.class);
+    } else if (!activeTwoFactorFlow.help() && navigationTarget != TwoFactorView.class) {
+      beforeEnterEvent.forwardTo(
+          TwoFactorView.class,
+          new Location(activeTwoFactorFlow.location().substring(1)).getQueryParameters());
     }
   }
 
   @Override
   public void requestStart(VaadinRequest request, VaadinResponse response) {
-    if (response == null && request instanceof VaadinServletRequest servlet) {
-      HttpServletRequest http = servlet.getHttpServletRequest();
-      if (securityService.get().getAuthenticatedUser(http).isPresent()
-          && (TwoFactorFlow.current(http) != null
-              || !twoFactorAuthorization.get().sessionConfirmed(http)
-              || TwoFactorTransport.administrativeUi(http)
-                  && !twoFactorAuthorization.get().administrationConfirmed(http))
-          && !TwoFactorTransport.allowedUi(http)) {
-        TwoFactorTransport.redirectUi(http);
+    if (response == null && request instanceof VaadinServletRequest vaadinServletRequest) {
+      HttpServletRequest httpRequest = vaadinServletRequest.getHttpServletRequest();
+      if (securityService.get().getAuthenticatedUser(httpRequest).isPresent()
+          && (TwoFactorFlow.current(httpRequest) != null
+              || !twoFactorAuthorization.get().sessionConfirmed(httpRequest)
+              || TwoFactorTransport.administrativeUi(httpRequest)
+                  && !twoFactorAuthorization.get().administrationConfirmed(httpRequest))
+          && !TwoFactorTransport.allowedUi(httpRequest)) {
+        TwoFactorTransport.redirectUi(httpRequest);
         CurrentInstance.clearAll();
         SecurityContextHolder.clearContext();
         throw new AccessDeniedException("Second factor required before UI action");

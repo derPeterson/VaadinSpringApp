@@ -21,78 +21,87 @@ public final class ExternalProviderSecrets {
   private final SecureRandom secureRandom = new SecureRandom();
 
   public ExternalProviderSecrets(Environment environment) {
-    String configured = environment.getProperty(KEY_PROPERTY, "").trim();
-    if (configured.isEmpty()) {
+    String encodedEncryptionKey = environment.getProperty(KEY_PROPERTY, "").trim();
+    if (encodedEncryptionKey.isEmpty()) {
       encryptionKeyBytes = null;
       return;
     }
+
     try {
-      encryptionKeyBytes = Base64.getDecoder().decode(configured);
+      encryptionKeyBytes = Base64.getDecoder().decode(encodedEncryptionKey);
     } catch (IllegalArgumentException _) {
       throw new IllegalStateException("Invalid provider encryption key encoding");
     }
+
     if (encryptionKeyBytes.length != 32) {
       throw new IllegalStateException("Provider encryption key must contain 32 random bytes");
     }
   }
 
-  public String encrypt(String provider, String secret) {
-    if (secret.isEmpty()) {
+  public String encrypt(String providerId, String clientSecret) {
+    if (clientSecret.isEmpty()) {
       return "";
     }
-    byte[] plaintext = secret.getBytes(StandardCharsets.UTF_8);
-    byte[] nonce = new byte[12];
-    secureRandom.nextBytes(nonce);
+
+    byte[] secretBytes = clientSecret.getBytes(StandardCharsets.UTF_8);
+    byte[] nonceBytes = new byte[12];
+    secureRandom.nextBytes(nonceBytes);
     try {
-      byte[] ciphertext = cipher(Cipher.ENCRYPT_MODE, provider, nonce).doFinal(plaintext);
-      byte[] envelope = new byte[13 + ciphertext.length];
-      envelope[0] = 1;
-      System.arraycopy(nonce, 0, envelope, 1, nonce.length);
-      System.arraycopy(ciphertext, 0, envelope, 13, ciphertext.length);
-      return Base64.getUrlEncoder().withoutPadding().encodeToString(envelope);
+      byte[] encryptedSecretBytes =
+          secretCipher(Cipher.ENCRYPT_MODE, providerId, nonceBytes).doFinal(secretBytes);
+      byte[] envelopeBytes = new byte[13 + encryptedSecretBytes.length];
+      envelopeBytes[0] = 1;
+      System.arraycopy(nonceBytes, 0, envelopeBytes, 1, nonceBytes.length);
+      System.arraycopy(encryptedSecretBytes, 0, envelopeBytes, 13, encryptedSecretBytes.length);
+      return Base64.getUrlEncoder().withoutPadding().encodeToString(envelopeBytes);
     } catch (GeneralSecurityException _) {
       throw new IllegalStateException("Provider secret encryption failed");
     } finally {
-      Arrays.fill(plaintext, (byte) 0);
+      Arrays.fill(secretBytes, (byte) 0);
     }
   }
 
-  public String decrypt(String provider, String encrypted) {
-    if (encrypted.isEmpty()) {
+  public String decrypt(String providerId, String encryptedEnvelope) {
+    if (encryptedEnvelope.isEmpty()) {
       return "";
     }
-    byte[] plaintext = null;
+    byte[] secretBytes = null;
     try {
-      byte[] envelope = Base64.getUrlDecoder().decode(encrypted);
+      byte[] envelopeBytes = Base64.getUrlDecoder().decode(encryptedEnvelope);
       // Format: Versionsbyte, 12-Byte-Nonce, UTF-8-Inhalt (höchstens 2048 Zeichen), 16-Byte-Tag.
-      if (envelope.length < 30 || envelope.length > 8221 || envelope[0] != 1) {
+      if (envelopeBytes.length < 30 || envelopeBytes.length > 8221 || envelopeBytes[0] != 1) {
         throw new IllegalArgumentException("Invalid encrypted provider envelope");
       }
-      plaintext =
-          cipher(Cipher.DECRYPT_MODE, provider, Arrays.copyOfRange(envelope, 1, 13))
-              .doFinal(envelope, 13, envelope.length - 13);
-      return new String(plaintext, StandardCharsets.UTF_8);
+      secretBytes =
+          secretCipher(Cipher.DECRYPT_MODE, providerId, Arrays.copyOfRange(envelopeBytes, 1, 13))
+              .doFinal(envelopeBytes, 13, envelopeBytes.length - 13);
+      return new String(secretBytes, StandardCharsets.UTF_8);
     } catch (GeneralSecurityException | IllegalArgumentException _) {
       // Keine Zugangsdaten oder verschlüsselten Werte in Fehlermeldungen aufnehmen.
       throw new IllegalStateException("Provider secret cannot be decrypted");
     } finally {
-      if (plaintext != null) {
-        Arrays.fill(plaintext, (byte) 0);
+      if (secretBytes != null) {
+        Arrays.fill(secretBytes, (byte) 0);
       }
     }
   }
 
-  private Cipher cipher(int mode, String provider, byte[] nonce) throws GeneralSecurityException {
+  private Cipher secretCipher(int cipherMode, String providerId, byte[] nonceBytes)
+      throws GeneralSecurityException {
     if (encryptionKeyBytes == null) {
       throw new IllegalStateException("Provider secrets encryption key is not configured");
     }
-    if (!ExternalProviderSettings.PROVIDERS.contains(provider)) {
+
+    if (!ExternalProviderSettings.PROVIDERS.contains(providerId)) {
       throw new IllegalArgumentException("Unsupported sign-in provider");
     }
-    Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-    cipher.init(
-        mode, new SecretKeySpec(encryptionKeyBytes, "AES"), new GCMParameterSpec(128, nonce));
-    cipher.updateAAD(("external-provider:1:" + provider).getBytes(StandardCharsets.UTF_8));
-    return cipher;
+
+    Cipher secretCipher = Cipher.getInstance("AES/GCM/NoPadding");
+    secretCipher.init(
+        cipherMode,
+        new SecretKeySpec(encryptionKeyBytes, "AES"),
+        new GCMParameterSpec(128, nonceBytes));
+    secretCipher.updateAAD(("external-provider:1:" + providerId).getBytes(StandardCharsets.UTF_8));
+    return secretCipher;
   }
 }

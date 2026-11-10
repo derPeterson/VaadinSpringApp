@@ -252,28 +252,35 @@ public class ExternalLoginFlow {
     return begin(request, provider, Mode.PROOF, user, purpose, false, locale);
   }
 
-  public String beginLink(HttpServletRequest request, String provider, Locale locale) {
-    UserEntity user = owner(request);
-    Purpose purpose = linkPurpose(provider);
+  public String beginLink(
+      HttpServletRequest httpRequest, String providerId, Locale preferredLocale) {
+    UserEntity accountOwner = owner(httpRequest);
+    Purpose linkPurpose = linkPurpose(providerId);
+
     // Der ausgehende OIDC-Aufruf verbraucht die Freigabe noch nicht. Die eigentliche
     // Verbindung prüft und verbraucht sie nach dem Rücksprung unter dem Kontolock.
-    authorize(request, user, purpose, false);
-    return begin(request, provider, Mode.LINK, user, purpose, false, locale);
+    authorize(httpRequest, accountOwner, linkPurpose, false);
+    return begin(
+        httpRequest, providerId, Mode.LINK, accountOwner, linkPurpose, false, preferredLocale);
   }
 
-  public boolean disconnect(HttpServletRequest request, String provider) {
-    UserEntity user = owner(request);
-    authorize(request, user, unlinkPurpose(provider), true);
-    String previousAccessVersion = user.getAccessVersion();
-    boolean retained =
-        externalIdentityService.unlink(request, user.getId(), previousAccessVersion, provider);
-    cancel(request);
-    if (retained) {
-      twoFactor.retainAfterAccessVersionChange(request, previousAccessVersion);
+  public boolean disconnect(HttpServletRequest httpRequest, String providerId) {
+    UserEntity accountOwner = owner(httpRequest);
+    authorize(httpRequest, accountOwner, unlinkPurpose(providerId), true);
+
+    String previousAccessVersion = accountOwner.getAccessVersion();
+    boolean currentSessionRetained =
+        externalIdentityService.unlink(
+            httpRequest, accountOwner.getId(), previousAccessVersion, providerId);
+
+    cancel(httpRequest);
+    if (currentSessionRetained) {
+      twoFactor.retainAfterAccessVersionChange(httpRequest, previousAccessVersion);
     } else {
       securityService.logout();
     }
-    return retained;
+
+    return currentSessionRetained;
   }
 
   private String begin(

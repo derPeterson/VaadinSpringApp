@@ -146,38 +146,50 @@ public class UserAvatarService {
     });
   }
 
-  public UUID upload(HttpServletRequest request, UUID token, InputStream input) throws IOException {
-    Long owner = transactionTemplate.execute(status -> requireUser(request, false).getId());
-    return avatarDraftStore.upload(token, owner, input);
+  public UUID upload(
+      HttpServletRequest httpRequest, UUID avatarDraftId, InputStream uploadInputStream)
+      throws IOException {
+    Long avatarOwnerUserId =
+        transactionTemplate.execute(status -> requireUser(httpRequest, false).getId());
+
+    return avatarDraftStore.upload(avatarDraftId, avatarOwnerUserId, uploadInputStream);
   }
 
-  public State save(HttpServletRequest request, Change change) {
-    if (change == null || change.mode() == null) {
+  public State save(HttpServletRequest httpRequest, Change avatarChange) {
+    if (avatarChange == null || avatarChange.mode() == null) {
       throw new InvalidImage(Problem.MISSING);
     }
-    Long owner = transactionTemplate.execute(status -> requireUser(request, false).getId());
+
+    Long avatarOwnerUserId =
+        transactionTemplate.execute(status -> requireUser(httpRequest, false).getId());
     // Original/Decode niemals unter der späteren Kontosperre halten.
-    ImageReplacement replacement = prepareReplacement(owner, change);
-    State saved =
-        transactionTemplate.execute(
-            status -> saveLockedAvatar(request, owner, change, replacement));
+    ImageReplacement imageReplacement = prepareReplacement(avatarOwnerUserId, avatarChange);
+
+    State savedAvatarState =
+        transactionTemplate.execute(status ->
+            saveLockedAvatar(httpRequest, avatarOwnerUserId, avatarChange, imageReplacement));
+
     log.debug(
         "Account avatar updated: userId={}, mode={}, hasImage={}",
-        owner,
-        saved.mode(),
-        saved.hasImage());
-    avatarDraftStore.release(change.draft());
-    return saved;
+        avatarOwnerUserId,
+        savedAvatarState.mode(),
+        savedAvatarState.hasImage());
+
+    avatarDraftStore.release(avatarChange.draft());
+    return savedAvatarState;
   }
 
-  private ImageReplacement prepareReplacement(Long owner, Change change) {
-    if (change.imageId() == null) {
+  private ImageReplacement prepareReplacement(Long avatarOwnerUserId, Change avatarChange) {
+    if (avatarChange.imageId() == null) {
       return null;
     }
-    AvatarDraftStore.Image original =
-        avatarDraftStore.image(change.draft(), owner, change.imageId());
-    byte[] normalized = avatarImageProcessor.normalize(original.bytes(), change.crop());
-    return new ImageReplacement(normalized, original.uploadedAt(), original.metadata());
+
+    AvatarDraftStore.Image originalAvatarImage =
+        avatarDraftStore.image(avatarChange.draft(), avatarOwnerUserId, avatarChange.imageId());
+    byte[] normalizedAvatarBytes =
+        avatarImageProcessor.normalize(originalAvatarImage.bytes(), avatarChange.crop());
+    return new ImageReplacement(
+        normalizedAvatarBytes, originalAvatarImage.uploadedAt(), originalAvatarImage.metadata());
   }
 
   // Ausschließlich innerhalb der bestehenden Schreibtransaktion und Kontosperre aufrufen.

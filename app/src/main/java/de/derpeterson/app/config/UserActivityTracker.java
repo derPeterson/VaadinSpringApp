@@ -21,17 +21,18 @@ public class UserActivityTracker implements VaadinServiceInitListener {
   public void serviceInit(ServiceInitEvent serviceInitEvent) {
     serviceInitEvent
         .getSource()
-        .addUIInitListener(uiEvent -> {
-          uiEvent.getUI().addBeforeEnterListener(beforeEnterEvent -> updateLastActivity());
-          uiEvent.getUI().addBeforeLeaveListener(beforeLeaveEvent -> updateLastActivity());
+        .addUIInitListener(uiInitEvent -> {
+          uiInitEvent.getUI().addBeforeEnterListener(beforeEnterEvent -> updateLastActivity());
+          uiInitEvent.getUI().addBeforeLeaveListener(beforeLeaveEvent -> updateLastActivity());
         });
   }
 
   private void updateLastActivity() {
     VaadinSession vaadinSession = VaadinSession.getCurrent();
+
     if (vaadinSession != null) {
-      Optional<UserEntity> currentUserOption = securityService.getCurrentUser();
-      currentUserOption.ifPresent(currentUserEntity -> {
+      Optional<UserEntity> currentUserOptional = securityService.getCurrentUser();
+      currentUserOptional.ifPresent(currentUserEntity -> {
         userService.updateLastActivity(currentUserEntity.getId());
       });
     }

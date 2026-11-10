@@ -90,22 +90,30 @@ public class ExternalLoginHttp {
   }
 
   private void fail(
-      HttpServletRequest request, HttpServletResponse response, RuntimeException failure)
+      HttpServletRequest httpRequest,
+      HttpServletResponse httpResponse,
+      RuntimeException externalLoginFailure)
       throws IOException {
-    boolean localAccount = securityService.getAuthenticatedUser(request).isPresent();
-    TwoFactorFlow active = localAccount ? TwoFactorFlow.current(request) : null;
-    externalLoginFlow.cancel(request);
-    if (!localAccount) {
-      response.sendRedirect("/external-registration?error=external");
+    boolean hasAuthenticatedAccount = securityService.getAuthenticatedUser(httpRequest).isPresent();
+    TwoFactorFlow activeTwoFactorFlow =
+        hasAuthenticatedAccount ? TwoFactorFlow.current(httpRequest) : null;
+
+    externalLoginFlow.cancel(httpRequest);
+    if (!hasAuthenticatedAccount) {
+      httpResponse.sendRedirect("/external-registration?error=external");
       return;
     }
-    String target = active == null ? AppRouteConstants.ACCOUNT_PORTAL_LOCATION : active.location();
-    response.sendRedirect(
-        target
-            + (target.contains("?") ? "&" : "?")
+
+    String failureRedirectLocation =
+        activeTwoFactorFlow == null
+            ? AppRouteConstants.ACCOUNT_PORTAL_LOCATION
+            : activeTwoFactorFlow.location();
+    httpResponse.sendRedirect(
+        failureRedirectLocation
+            + (failureRedirectLocation.contains("?") ? "&" : "?")
             + ExternalLoginFlow.ERROR_PARAMETER
             + "="
-            + proofProblem(failure).name());
+            + proofProblem(externalLoginFailure).name());
   }
 
   private ExternalLoginFlow.ProofProblem proofProblem(RuntimeException failure) {

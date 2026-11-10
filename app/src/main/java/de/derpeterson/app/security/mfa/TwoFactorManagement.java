@@ -42,85 +42,98 @@ public class TwoFactorManagement {
   private final ExternalIdentityService externalIdentityService;
   private final ExternalLoginConfiguration.Registrations providerRegistrations;
 
-  public boolean canDisable(HttpServletRequest request) {
-    return disableProblem(request) == DisableProblem.NONE;
+  public boolean canDisable(HttpServletRequest httpRequest) {
+    return disableProblem(httpRequest) == DisableProblem.NONE;
   }
 
-  public void beginReplacement(HttpServletRequest request) {
-    twoFactorEnrollment.beginReplacement(request);
+  public void beginReplacement(HttpServletRequest httpRequest) {
+    twoFactorEnrollment.beginReplacement(httpRequest);
   }
 
-  public DisableProblem disableProblem(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
-    TwoFactorPolicy policy = twoFactorPolicies.current().policy();
+  public DisableProblem disableProblem(HttpServletRequest httpRequest) {
+    TwoFactorAuthorization.Owner factorOwner = twoFactorAuthorization.owner(httpRequest);
+    TwoFactorPolicy twoFactorPolicy = twoFactorPolicies.current().policy();
+
     if (Arrays.stream(TwoFactorAction.values())
-        .anyMatch(action -> policy.mode(owner.roles(), action) == TwoFactorMode.REQUIRED)) {
+        .anyMatch(twoFactorAction ->
+            twoFactorPolicy.mode(factorOwner.roles(), twoFactorAction) == TwoFactorMode.REQUIRED)) {
       return DisableProblem.REQUIRED;
     }
-    if (!owner.hasPassword()
+
+    if (!factorOwner.hasPassword()
         && !(providerRegistrations.providers().contains("microsoft")
-            && externalIdentityService.connected(owner.id()).contains("microsoft"))) {
+            && externalIdentityService.connected(factorOwner.id()).contains("microsoft"))) {
       return DisableProblem.NO_INDEPENDENT_ACCESS;
     }
+
     return DisableProblem.NONE;
   }
 
-  public long remainingCodes(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
-    twoFactorAuthorization.requireSession(request);
-    return recoveryCodeRepository.remaining(owner.id());
+  public long remainingCodes(HttpServletRequest httpRequest) {
+    TwoFactorAuthorization.Owner factorOwner = twoFactorAuthorization.owner(httpRequest);
+    twoFactorAuthorization.requireSession(httpRequest);
+    return recoveryCodeRepository.remaining(factorOwner.id());
   }
 
-  public UUID regenerate(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
-    UUID revision = twoFactorAuthorization.state(owner).revision();
+  public UUID regenerate(HttpServletRequest httpRequest) {
+    TwoFactorAuthorization.Owner factorOwner = twoFactorAuthorization.owner(httpRequest);
+    UUID originalFactorRevision = twoFactorAuthorization.state(factorOwner).revision();
     twoFactorAuthorization.authorizeFactorGrant(
-        request, TwoFactorAction.MANAGE_RECOVERY_CODES, true);
-    UUID renewedRevision = UUID.randomUUID();
-    UUID output =
+        httpRequest, TwoFactorAction.MANAGE_RECOVERY_CODES, true);
+
+    UUID renewedFactorRevision = UUID.randomUUID();
+    UUID recoveryOutputId =
         twoFactorStore.locked(
-            owner.id(),
-            owner.accessVersion(),
-            account -> {
-              if (!account.enrolled() || !Objects.equals(revision, account.getRevision())) {
+            factorOwner.id(),
+            factorOwner.accessVersion(),
+            factorAccountEntity -> {
+              if (!factorAccountEntity.enrolled()
+                  || !Objects.equals(originalFactorRevision, factorAccountEntity.getRevision())) {
                 throw new AccessDeniedException("Two-factor account changed");
               }
-              account.setRevision(renewedRevision);
-              List<String> codes = twoFactorStore.replaceRecoveryCodes(account);
-              TwoFactorChallengeEntity document =
-                  twoFactorEnrollment.recoveryOutput(request, account, codes);
-              twoFactorMail.securityChange(account.getUser(), TwoFactorMail.Event.RECOVERY_CODES);
-              AfterCommitLog.info(log, "Recovery codes renewed: accountId={}", owner.id());
-              return document.getId();
+              factorAccountEntity.setRevision(renewedFactorRevision);
+              List<String> recoveryCodes = twoFactorStore.replaceRecoveryCodes(factorAccountEntity);
+              TwoFactorChallengeEntity recoveryOutputEntity =
+                  twoFactorEnrollment.recoveryOutput(
+                      httpRequest, factorAccountEntity, recoveryCodes);
+              twoFactorMail.securityChange(
+                  factorAccountEntity.getUser(), TwoFactorMail.Event.RECOVERY_CODES);
+              AfterCommitLog.info(log, "Recovery codes renewed: accountId={}", factorOwner.id());
+              return recoveryOutputEntity.getId();
             });
-    twoFactorAuthorization.retainAfterFactorChange(request, revision, renewedRevision);
-    sessionManagementServiceProvider.getObject().revokeOthers(request);
-    return output;
+
+    twoFactorAuthorization.retainAfterFactorChange(
+        httpRequest, originalFactorRevision, renewedFactorRevision);
+    sessionManagementServiceProvider.getObject().revokeOthers(httpRequest);
+
+    return recoveryOutputId;
   }
 
-  public void disable(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
-    UUID revision = twoFactorAuthorization.state(owner).revision();
-    twoFactorAuthorization.authorizeFactorGrant(request, TwoFactorAction.MANAGE_FACTOR, true);
+  public void disable(HttpServletRequest httpRequest) {
+    TwoFactorAuthorization.Owner factorOwner = twoFactorAuthorization.owner(httpRequest);
+    UUID originalFactorRevision = twoFactorAuthorization.state(factorOwner).revision();
+    twoFactorAuthorization.authorizeFactorGrant(httpRequest, TwoFactorAction.MANAGE_FACTOR, true);
+
     twoFactorStore.locked(
-        owner.id(),
-        owner.accessVersion(),
-        account -> {
-          if (!canDisable(request)
-              || !account.enrolled()
-              || !Objects.equals(revision, account.getRevision())) {
+        factorOwner.id(),
+        factorOwner.accessVersion(),
+        factorAccountEntity -> {
+          if (!canDisable(httpRequest)
+              || !factorAccountEntity.enrolled()
+              || !Objects.equals(originalFactorRevision, factorAccountEntity.getRevision())) {
             throw new AccessDeniedException("Required or changed authenticator cannot be removed");
           }
-          account.setEncryptedSecret(null);
-          account.setAcceptedStep(-1);
-          account.setRevision(UUID.randomUUID());
-          recoveryCodeRepository.deleteForUser(owner.id());
-          twoFactorChallengeRepository.invalidateOwner(owner.id());
-          twoFactorMail.securityChange(account.getUser(), TwoFactorMail.Event.DISABLED);
-          AfterCommitLog.info(log, "Authenticator removed: accountId={}", owner.id());
+          factorAccountEntity.setEncryptedSecret(null);
+          factorAccountEntity.setAcceptedStep(-1);
+          factorAccountEntity.setRevision(UUID.randomUUID());
+          recoveryCodeRepository.deleteForUser(factorOwner.id());
+          twoFactorChallengeRepository.invalidateOwner(factorOwner.id());
+          twoFactorMail.securityChange(factorAccountEntity.getUser(), TwoFactorMail.Event.DISABLED);
+          AfterCommitLog.info(log, "Authenticator removed: accountId={}", factorOwner.id());
           return null;
         });
-    twoFactorAuthorization.clearSessionProof(request);
-    sessionManagementServiceProvider.getObject().revokeOthers(request);
+
+    twoFactorAuthorization.clearSessionProof(httpRequest);
+    sessionManagementServiceProvider.getObject().revokeOthers(httpRequest);
   }
 }

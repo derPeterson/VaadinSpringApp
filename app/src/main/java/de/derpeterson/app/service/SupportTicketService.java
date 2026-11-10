@@ -164,57 +164,65 @@ public class SupportTicketService {
 
   /** Direkter Zugriff bleibt auf berechtigte Admins beschränkt, auch außerhalb der letzten 100. */
   @Transactional(readOnly = true)
-  public Ticket findForAdministration(HttpServletRequest httpRequest, String number) {
+  public Ticket findForAdministration(
+      HttpServletRequest httpRequest, String requestedTicketNumber) {
     Owner owner = requireAdministrator(httpRequest);
     // Nur die sichtbare Dezimalnummer ohne Raute, Leerzeichen oder weitere URL-Anteile zulassen.
-    if (number == null || !number.matches("\\d{1,19}")) {
+    if (requestedTicketNumber == null || !requestedTicketNumber.matches("\\d{1,19}")) {
       return null;
     }
-    long id;
+    long ticketId;
     try {
-      long visibleNumber = Long.parseLong(number);
-      if (visibleNumber <= TICKET_NUMBER_OFFSET) {
+      long publicTicketNumber = Long.parseLong(requestedTicketNumber);
+      if (publicTicketNumber <= TICKET_NUMBER_OFFSET) {
         return null;
       }
-      id = visibleNumber - TICKET_NUMBER_OFFSET;
+      ticketId = publicTicketNumber - TICKET_NUMBER_OFFSET;
     } catch (NumberFormatException _) {
       return null;
     }
-    return findTicket(owner, id, true);
+
+    return findTicket(owner, ticketId, true);
   }
 
-  private Ticket findTicket(Owner owner, Long id, boolean administration) {
-    if (id == null) {
+  private Ticket findTicket(Owner owner, Long ticketId, boolean administration) {
+    if (ticketId == null) {
       return null;
     }
+
     return supportTicketRepository
-        .findById(id)
-        .map(ticket -> buildTicketViews(owner, List.of(ticket), administration).getFirst())
+        .findById(ticketId)
+        .map(ticketEntity ->
+            buildTicketViews(owner, List.of(ticketEntity), administration).getFirst())
         .orElse(null);
   }
 
   private List<Ticket> buildTicketViews(
-      Owner owner, List<SupportTicketEntity> visible, boolean administration) {
-    if (visible.isEmpty()) {
+      Owner owner, List<SupportTicketEntity> visibleTicketEntities, boolean administration) {
+    if (visibleTicketEntities.isEmpty()) {
       return List.of();
     }
-    List<Long> ids = visible.stream().map(SupportTicketEntity::getId).toList();
-    Map<Long, Long> unread =
-        supportReplyRepository.unreadCounts(ids, owner.id(), administration).stream()
+
+    List<Long> visibleTicketIds =
+        visibleTicketEntities.stream().map(SupportTicketEntity::getId).toList();
+    Map<Long, Long> unreadReplyCountsByTicketId =
+        supportReplyRepository.unreadCounts(visibleTicketIds, owner.id(), administration).stream()
             .collect(Collectors.toMap(UnreadCount::getTicketId, UnreadCount::getAmount));
-    Set<Long> subscribed =
+    Set<Long> subscribedTicketIds =
         administration
-            ? Set.copyOf(supportTicketViewerRepository.subscribedTickets(owner.id(), ids))
+            ? Set.copyOf(
+                supportTicketViewerRepository.subscribedTickets(owner.id(), visibleTicketIds))
             : Set.of();
-    return visible.stream()
+
+    return visibleTicketEntities.stream()
         .map(ticket ->
             buildTicketView(
                 ticket,
                 administration ? ticket.getUpdatedAt() : ticket.getPublicUpdatedAt(),
-                unreadVisible(owner, ticket, administration, subscribed)
-                    ? unread.getOrDefault(ticket.getId(), 0L)
+                unreadVisible(owner, ticket, administration, subscribedTicketIds)
+                    ? unreadReplyCountsByTicketId.getOrDefault(ticket.getId(), 0L)
                     : 0L,
-                subscribed.contains(ticket.getId()),
+                subscribedTicketIds.contains(ticket.getId()),
                 administration && canSubscribe(owner, ticket),
                 administration))
         .toList();

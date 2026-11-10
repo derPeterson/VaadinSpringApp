@@ -39,7 +39,7 @@ public class DatabaseInitializer {
   private final PasswordEncoder passwordEncoder;
   private final Environment springEnvironment;
   private final BootstrapAccountsProperties bootstrapAccountsProperties;
-  private final PlatformTransactionManager transactionManager;
+  private final PlatformTransactionManager platformTransactionManager;
   private final ExternalProviderSettings externalProviderSettings;
 
   @Bean
@@ -54,9 +54,11 @@ public class DatabaseInitializer {
   private void createDefaultRolesAndAccounts() {
     // Vor irgendeiner Benutzeranlage alle Gruppen prüfen; Fehler nennen keine Zugangsdaten.
     List<Entry> validatedBootstrapEntries = bootstrapAccountsProperties.validatedEntries();
-    new TransactionTemplate(transactionManager)
+
+    new TransactionTemplate(platformTransactionManager)
         .executeWithoutResult(_ -> {
           EnumMap<RoleType, RoleEntity> roleEntitiesByType = createMissingRoleEntities();
+
           if (!bootstrapAccountsProperties.isEnabled()) {
             logger.info("Bootstrap account creation is disabled.");
             return;
@@ -68,6 +70,7 @@ public class DatabaseInitializer {
   private EnumMap<RoleType, RoleEntity> createMissingRoleEntities() {
     EnumMap<RoleType, RoleEntity> roleEntitiesByType =
         new EnumMap<RoleType, RoleEntity>(RoleType.class);
+
     for (RoleType roleType : RoleType.values()) {
       roleEntitiesByType.put(
           roleType,
@@ -75,6 +78,7 @@ public class DatabaseInitializer {
               .findByName(roleType)
               .orElseGet(() -> roleRepository.save(RoleEntity.builder().name(roleType).build())));
     }
+
     return roleEntitiesByType;
   }
 
@@ -85,6 +89,7 @@ public class DatabaseInitializer {
       if (userRepository.findByEmail(bootstrapAccount.getEmail()).isPresent()) {
         continue;
       }
+
       UserEntity newUserEntity =
           UserEntity.builder()
               .firstName(bootstrapAccount.getFirstName().strip())
@@ -97,9 +102,11 @@ public class DatabaseInitializer {
               .roleEntities(Set.of(roleEntitiesByType.get(bootstrapEntry.role())))
               .enabled(true)
               .build();
+
       userRepository.save(newUserEntity);
       AfterCommitLog.info(logger, "Bootstrap account created with role {}", bootstrapEntry.role());
     }
+
     userRepository.flush();
   }
 
@@ -111,6 +118,7 @@ public class DatabaseInitializer {
         createdSettingCount++;
       }
     }
+
     logger.info(
         "Configuration initialized: entries={}, created={}",
         ConfigEntry.values().length,

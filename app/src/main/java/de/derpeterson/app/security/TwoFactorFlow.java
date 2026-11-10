@@ -31,22 +31,24 @@ public enum TwoFactorFlow {
     this.account = account;
   }
 
-  public static TwoFactorFlow current(HttpServletRequest request) {
-    HttpSession session = request.getSession(false);
-    return session != null && session.getAttribute(SESSION_ATTRIBUTE) instanceof String name
-        ? valueOf(name)
+  public static TwoFactorFlow current(HttpServletRequest httpRequest) {
+    HttpSession httpSession = httpRequest.getSession(false);
+
+    return httpSession != null
+            && httpSession.getAttribute(SESSION_ATTRIBUTE) instanceof String storedFlowName
+        ? valueOf(storedFlowName)
         : null;
   }
 
-  public void enter(HttpServletRequest request) {
-    request.getSession().setAttribute(SESSION_ATTRIBUTE, name());
+  public void enter(HttpServletRequest httpRequest) {
+    httpRequest.getSession().setAttribute(SESSION_ATTRIBUTE, name());
   }
 
-  public static void finish(HttpServletRequest request) {
-    HttpSession session = request.getSession(false);
-    if (session != null) {
-      session.removeAttribute(SESSION_ATTRIBUTE);
-      session.removeAttribute(INTRO_ACCEPTED);
+  public static void finish(HttpServletRequest httpRequest) {
+    HttpSession httpSession = httpRequest.getSession(false);
+    if (httpSession != null) {
+      httpSession.removeAttribute(SESSION_ATTRIBUTE);
+      httpSession.removeAttribute(INTRO_ACCEPTED);
     }
   }
 

@@ -86,29 +86,34 @@ public class VerificationService {
     return createTokenLocked(stored);
   }
 
-  private String createTokenLocked(UserEntity user) {
-    LocalDateTime expiryDate =
+  private String createTokenLocked(UserEntity lockedUserEntity) {
+    LocalDateTime tokenExpiryDate =
         LocalDateTime.now(verificationTokenClock)
             .plus(positiveDuration(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION));
-    invalidateTokensLocked(user);
+    invalidateTokensLocked(lockedUserEntity);
 
-    String token = UUID.randomUUID().toString();
-    VerificationTokenEntity verificationToken = new VerificationTokenEntity();
-    verificationToken.setToken(token);
-    verificationToken.setUserEntity(user);
-    verificationToken.setExpiryDate(expiryDate);
-    verificationToken.setStatus(TokenStatus.ACTIVE);
-    tokenRepository.save(verificationToken);
-    return token;
+    String verificationTokenValue = UUID.randomUUID().toString();
+    VerificationTokenEntity verificationTokenEntity = new VerificationTokenEntity();
+    verificationTokenEntity.setToken(verificationTokenValue);
+    verificationTokenEntity.setUserEntity(lockedUserEntity);
+    verificationTokenEntity.setExpiryDate(tokenExpiryDate);
+    verificationTokenEntity.setStatus(TokenStatus.ACTIVE);
+    tokenRepository.save(verificationTokenEntity);
+
+    return verificationTokenValue;
   }
 
-  private Duration positiveDuration(ConfigEntry entry) {
-    Duration duration = Duration.parse(configService.getString(entry));
-    Duration minimum = entry.getMinimumTokenDuration();
-    if (!TokenDurationPolicy.meetsMinimumDuration(duration, minimum)) {
-      throw new IllegalArgumentException(entry + " muss mindestens " + minimum + " betragen.");
+  private Duration positiveDuration(ConfigEntry tokenDurationConfigEntry) {
+    Duration configuredTokenDuration =
+        Duration.parse(configService.getString(tokenDurationConfigEntry));
+    Duration minimumTokenDuration = tokenDurationConfigEntry.getMinimumTokenDuration();
+
+    if (!TokenDurationPolicy.meetsMinimumDuration(configuredTokenDuration, minimumTokenDuration)) {
+      throw new IllegalArgumentException(
+          tokenDurationConfigEntry + " muss mindestens " + minimumTokenDuration + " betragen.");
     }
-    return duration;
+
+    return configuredTokenDuration;
   }
 
   @Transactional

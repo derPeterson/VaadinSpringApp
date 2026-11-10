@@ -20,43 +20,49 @@ public final class Totp {
   private Totp() {}
 
   public static byte[] newSecret() {
-    byte[] secret = new byte[20];
-    RANDOM.nextBytes(secret);
-    return secret;
+    byte[] secretBytes = new byte[20];
+    RANDOM.nextBytes(secretBytes);
+    return secretBytes;
   }
 
-  public static String base32(byte[] secret) {
-    requireSecret(secret);
-    StringBuilder encoded = new StringBuilder((secret.length * 8 + 4) / 5);
-    int bits = 0;
-    int buffer = 0;
-    for (byte value : secret) {
-      buffer = (buffer << 8) | (value & 255);
-      bits += 8;
-      while (bits >= 5) {
-        bits -= 5;
-        encoded.append(BASE32[(buffer >>> bits) & 31]);
+  public static String base32(byte[] secretBytes) {
+    requireSecret(secretBytes);
+    StringBuilder base32TextBuilder = new StringBuilder((secretBytes.length * 8 + 4) / 5);
+    int pendingBitCount = 0;
+    int bitBuffer = 0;
+    for (byte secretByte : secretBytes) {
+      bitBuffer = (bitBuffer << 8) | (secretByte & 255);
+      pendingBitCount += 8;
+      while (pendingBitCount >= 5) {
+        pendingBitCount -= 5;
+        base32TextBuilder.append(BASE32[(bitBuffer >>> pendingBitCount) & 31]);
       }
     }
-    if (bits > 0) {
-      encoded.append(BASE32[(buffer << (5 - bits)) & 31]);
+
+    if (pendingBitCount > 0) {
+      base32TextBuilder.append(BASE32[(bitBuffer << (5 - pendingBitCount)) & 31]);
     }
-    return encoded.toString();
+
+    return base32TextBuilder.toString();
   }
 
-  public static String code(byte[] secret, long step) {
-    requireSecret(secret);
-    if (step < 0) {
+  public static String code(byte[] secretBytes, long timeStep) {
+    requireSecret(secretBytes);
+    if (timeStep < 0) {
       throw new IllegalArgumentException("Negative TOTP step");
     }
+
     try {
-      Mac mac = Mac.getInstance("HmacSHA1");
-      mac.init(new SecretKeySpec(secret, "HmacSHA1"));
-      byte[] digest = mac.doFinal(ByteBuffer.allocate(Long.BYTES).putLong(step).array());
-      int offset = digest[digest.length - 1] & 15;
-      int binary = ByteBuffer.wrap(digest, offset, Integer.BYTES).getInt() & Integer.MAX_VALUE;
-      Arrays.fill(digest, (byte) 0);
-      return String.format(Locale.ROOT, "%06d", binary % 1_000_000);
+      Mac hmac = Mac.getInstance("HmacSHA1");
+      hmac.init(new SecretKeySpec(secretBytes, "HmacSHA1"));
+      byte[] hmacBytes = hmac.doFinal(ByteBuffer.allocate(Long.BYTES).putLong(timeStep).array());
+
+      int truncationOffset = hmacBytes[hmacBytes.length - 1] & 15;
+      int truncatedCodeValue =
+          ByteBuffer.wrap(hmacBytes, truncationOffset, Integer.BYTES).getInt() & Integer.MAX_VALUE;
+
+      Arrays.fill(hmacBytes, (byte) 0);
+      return String.format(Locale.ROOT, "%06d", truncatedCodeValue % 1_000_000);
     } catch (GeneralSecurityException failure) {
       throw new IllegalStateException("TOTP algorithm unavailable", failure);
     }
@@ -66,26 +72,33 @@ public final class Totp {
    * Liefert nur einen noch nicht verbrauchten Zeitschritt. Der Aufrufer speichert ihn unter
    * Kontolock.
    */
-  public static long verify(byte[] secret, String input, Instant now, long lastAcceptedStep) {
+  public static long verify(
+      byte[] secretBytes, String submittedCode, Instant verificationTime, long lastAcceptedStep) {
     // Genau sechs ASCII-Ziffern. Leerzeichen, Unicode-Ziffern und variable Längen sind unzulässig.
-    if (input == null || !input.matches("\\d{6}")) {
+    if (submittedCode == null || !submittedCode.matches("\\d{6}")) {
       return -1;
     }
-    long current = now.getEpochSecond() / PERIOD_SECONDS;
-    byte[] candidate = input.getBytes(StandardCharsets.US_ASCII);
-    long matched = -1;
-    for (long step = Math.max(0, current - 1); step <= current + 1; step++) {
-      boolean equal =
-          MessageDigest.isEqual(candidate, code(secret, step).getBytes(StandardCharsets.US_ASCII));
-      if (equal && step > lastAcceptedStep) {
-        matched = step;
+
+    long currentTimeStep = verificationTime.getEpochSecond() / PERIOD_SECONDS;
+    byte[] submittedCodeBytes = submittedCode.getBytes(StandardCharsets.US_ASCII);
+    long matchedTimeStep = -1;
+
+    for (long timeStep = Math.max(0, currentTimeStep - 1);
+        timeStep <= currentTimeStep + 1;
+        timeStep++) {
+      boolean codeMatches =
+          MessageDigest.isEqual(
+              submittedCodeBytes, code(secretBytes, timeStep).getBytes(StandardCharsets.US_ASCII));
+      if (codeMatches && timeStep > lastAcceptedStep) {
+        matchedTimeStep = timeStep;
       }
     }
-    return matched;
+
+    return matchedTimeStep;
   }
 
-  private static void requireSecret(byte[] secret) {
-    if (secret == null || secret.length < 20 || secret.length > 64) {
+  private static void requireSecret(byte[] secretBytes) {
+    if (secretBytes == null || secretBytes.length < 20 || secretBytes.length > 64) {
       throw new IllegalArgumentException("Invalid TOTP secret size");
     }
   }

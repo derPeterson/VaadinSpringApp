@@ -19,6 +19,7 @@ public class SupportTicketBroadcaster {
       if (viewerId != null) {
         return viewerId.equals(currentViewerId);
       }
+
       return hasAdministrativeAccess || requesterId != null && requesterId.equals(currentViewerId);
     }
   }
@@ -28,6 +29,7 @@ public class SupportTicketBroadcaster {
 
   public Registration register(Consumer<SupportTicketChangeMessage> ticketChangeListener) {
     ticketChangeListeners.add(ticketChangeListener);
+
     return () -> ticketChangeListeners.remove(ticketChangeListener);
   }
 

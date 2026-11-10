@@ -160,32 +160,35 @@ public class LoginAttemptService {
   }
 
   private int positiveLimit() {
-    int value = configService.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT);
-    if (value < 1) {
+    int configuredAttemptLimit = configService.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT);
+    if (configuredAttemptLimit < 1) {
       throw new AuthenticationServiceException("Invalid login attempt configuration");
     }
-    return value;
+
+    return configuredAttemptLimit;
   }
 
-  private void ensureIdentity(String key) {
-    if (loginAttemptRepository.existsById(key)) {
+  private void ensureIdentity(String loginIdentityHash) {
+    if (loginAttemptRepository.existsById(loginIdentityHash)) {
       return;
     }
+
     ensureGuard();
     independentTransactionTemplate.executeWithoutResult(status -> {
       loginAttemptGuardRepository
           .lockCreation()
           .orElseThrow(() -> new IllegalStateException("Missing login creation guard"));
-      if (loginAttemptRepository.existsById(key)) {
+      if (loginAttemptRepository.existsById(loginIdentityHash)) {
         return;
       }
       if (loginAttemptRepository.count() >= loginAttemptCapacity) {
         throw new AuthenticationServiceException("Sign-in temporarily unavailable");
       }
-      LoginAttemptEntity row = new LoginAttemptEntity();
-      row.setIdentityHash(key);
-      reset(row, loginAttemptClock.instant());
-      loginAttemptRepository.saveAndFlush(row);
+
+      LoginAttemptEntity loginAttemptEntity = new LoginAttemptEntity();
+      loginAttemptEntity.setIdentityHash(loginIdentityHash);
+      reset(loginAttemptEntity, loginAttemptClock.instant());
+      loginAttemptRepository.saveAndFlush(loginAttemptEntity);
     });
   }
 

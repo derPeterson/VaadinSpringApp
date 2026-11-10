@@ -44,27 +44,38 @@ public final class RecoveryCodeDocument {
   }
 
   public byte[] render(
-      String service,
-      String account,
-      List<String> codes,
+      String serviceName,
+      String accountEmailAddress,
+      List<String> recoveryCodes,
       Instant createdAt,
       Locale locale,
       MessageProperties messageProperties) {
-    if (codes.size() != 10
-        || codes.stream().anyMatch(code -> TwoFactorSecrets.recoveryDigest(1L, code) == null)) {
+    if (recoveryCodes.size() != 10
+        || recoveryCodes.stream()
+            .anyMatch(recoveryCode -> TwoFactorSecrets.recoveryDigest(1L, recoveryCode) == null)) {
       throw new IllegalArgumentException("Complete recovery code set required");
     }
-    try (InputStream input = new ClassPathResource("pdf/recovery-codes.html").getInputStream();
-        ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-      String htmlTemplate = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+
+    try (InputStream templateInputStream =
+            new ClassPathResource("pdf/recovery-codes.html").getInputStream();
+        ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream()) {
+      String htmlTemplate = new String(templateInputStream.readAllBytes(), StandardCharsets.UTF_8);
       String documentHtml =
           fillRecoveryCodeTemplate(
-              htmlTemplate, service, account, codes, createdAt, locale, messageProperties);
-      ITextRenderer renderer = createLocalPdfRenderer();
-      renderer.setDocumentFromString(documentHtml);
-      renderer.layout();
-      renderer.createPDF(output);
-      return output.toByteArray();
+              htmlTemplate,
+              serviceName,
+              accountEmailAddress,
+              recoveryCodes,
+              createdAt,
+              locale,
+              messageProperties);
+
+      ITextRenderer pdfRenderer = createLocalPdfRenderer();
+      pdfRenderer.setDocumentFromString(documentHtml);
+      pdfRenderer.layout();
+      pdfRenderer.createPDF(pdfOutputStream);
+
+      return pdfOutputStream.toByteArray();
     } catch (IOException failure) {
       throw new UncheckedIOException("Cannot read recovery document resources", failure);
     } catch (DocumentException failure) {
@@ -75,49 +86,55 @@ public final class RecoveryCodeDocument {
   private String fillRecoveryCodeTemplate(
       String htmlTemplate,
       String serviceName,
-      String account,
+      String accountEmailAddress,
       List<String> recoveryCodes,
       Instant createdAt,
       Locale locale,
       MessageProperties messageProperties)
       throws IOException {
-    Map<String, String> values = new LinkedHashMap<>();
-    values.put("LANG", locale.getLanguage());
-    values.put("TITLE", messageProperties.getTwoFactorRecoveryTitle());
-    values.put("SERVICE", serviceName);
-    values.put("ACCOUNT", account);
-    values.put("ACCOUNT_LABEL", messageProperties.getTwoFactorDocumentAccount());
-    values.put("DATE_LABEL", messageProperties.getTwoFactorDocumentDate());
-    values.put(
+    Map<String, String> templateValues = new LinkedHashMap<>();
+    templateValues.put("LANG", locale.getLanguage());
+    templateValues.put("TITLE", messageProperties.getTwoFactorRecoveryTitle());
+    templateValues.put("SERVICE", serviceName);
+    templateValues.put("ACCOUNT", accountEmailAddress);
+    templateValues.put("ACCOUNT_LABEL", messageProperties.getTwoFactorDocumentAccount());
+    templateValues.put("DATE_LABEL", messageProperties.getTwoFactorDocumentDate());
+    templateValues.put(
         "DATE",
         DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'")
             .withZone(ZoneOffset.UTC)
             .format(createdAt));
-    values.put("EXPLANATION", messageProperties.getTwoFactorRecoveryExplanation());
-    values.put("STORAGE_NOTICE", messageProperties.getTwoFactorRecoveryStorage());
-    values.put("REPLACEMENT_NOTICE", messageProperties.getTwoFactorRecoveryReplacement());
-    values.put("SUPPORT_NOTICE", messageProperties.getTwoFactorRecoverySupport());
-    values.put(
+    templateValues.put("EXPLANATION", messageProperties.getTwoFactorRecoveryExplanation());
+    templateValues.put("STORAGE_NOTICE", messageProperties.getTwoFactorRecoveryStorage());
+    templateValues.put("REPLACEMENT_NOTICE", messageProperties.getTwoFactorRecoveryReplacement());
+    templateValues.put("SUPPORT_NOTICE", messageProperties.getTwoFactorRecoverySupport());
+    templateValues.put(
         "LOGO",
         "data:image/png;base64," + Base64.getEncoder().encodeToString(EmailLogo.readBytes()));
-    for (Map.Entry<String, String> value : values.entrySet()) {
+
+    for (Map.Entry<String, String> templateEntry : templateValues.entrySet()) {
       htmlTemplate =
           htmlTemplate.replace(
-              "{{" + value.getKey() + "}}", HtmlUtils.htmlEscape(value.getValue()));
+              "{{" + templateEntry.getKey() + "}}", HtmlUtils.htmlEscape(templateEntry.getValue()));
     }
+
     return htmlTemplate.replace("{{CODE_ROWS}}", formatRecoveryCodeRows(recoveryCodes));
   }
 
   private String formatRecoveryCodeRows(List<String> recoveryCodes) {
-    StringBuilder rows = new StringBuilder();
-    for (int index = 0; index < recoveryCodes.size(); index += 2) {
-      rows.append("<tr><td>")
-          .append(HtmlUtils.htmlEscape(recoveryCodes.get(index)))
+    StringBuilder htmlRowsBuilder = new StringBuilder();
+    for (int recoveryCodeIndex = 0;
+        recoveryCodeIndex < recoveryCodes.size();
+        recoveryCodeIndex += 2) {
+      htmlRowsBuilder
+          .append("<tr><td>")
+          .append(HtmlUtils.htmlEscape(recoveryCodes.get(recoveryCodeIndex)))
           .append("</td><td>")
-          .append(HtmlUtils.htmlEscape(recoveryCodes.get(index + 1)))
+          .append(HtmlUtils.htmlEscape(recoveryCodes.get(recoveryCodeIndex + 1)))
           .append("</td></tr>");
     }
-    return rows.toString();
+
+    return htmlRowsBuilder.toString();
   }
 
   private ITextRenderer createLocalPdfRenderer() throws IOException, DocumentException {

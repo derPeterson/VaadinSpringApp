@@ -15,21 +15,25 @@ public class LoginAuthenticationService implements AuthenticationProvider {
   private final LoginAttemptService loginAttemptService;
 
   @Override
-  public boolean supports(Class<?> type) {
-    return UsernamePasswordAuthenticationToken.class.isAssignableFrom(type);
+  public boolean supports(Class<?> authenticationType) {
+    return UsernamePasswordAuthenticationToken.class.isAssignableFrom(authenticationType);
   }
 
   @Override
-  public Authentication authenticate(Authentication request) {
-    if (!(request instanceof UsernamePasswordAuthenticationToken)) {
+  public Authentication authenticate(Authentication passwordAuthenticationRequest) {
+    if (!(passwordAuthenticationRequest instanceof UsernamePasswordAuthenticationToken)) {
       throw new AuthenticationServiceException("Unsupported password sign-in request");
     }
-    Authentication result =
+
+    Authentication authenticatedPasswordLogin =
         loginAttemptService.authenticate(
-            request.getName(), () -> authenticationProvider.authenticate(request));
-    if (result instanceof CredentialsContainer credentials) {
+            passwordAuthenticationRequest.getName(),
+            () -> authenticationProvider.authenticate(passwordAuthenticationRequest));
+
+    if (authenticatedPasswordLogin instanceof CredentialsContainer credentials) {
       credentials.eraseCredentials();
     }
-    return result;
+
+    return authenticatedPasswordLogin;
   }
 }

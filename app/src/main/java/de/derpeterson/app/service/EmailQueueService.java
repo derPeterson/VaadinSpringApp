@@ -212,49 +212,63 @@ public class EmailQueueService {
         pendingIds, id -> processCandidate(id, maxRetry, retryDelay));
   }
 
-  private void processCandidate(long id, int maxRetry, Duration retryDelay) {
-    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
-    transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+  private void processCandidate(long queueEntryId, int maxRetry, Duration retryDelay) {
+    TransactionTemplate dispatchTransactionTemplate = new TransactionTemplate(transactionManager);
+    dispatchTransactionTemplate.setPropagationBehavior(
+        TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
     try {
-      EmailQueueEntity claimed =
-          transaction.execute(status -> {
-            EmailQueueEntity email = emailQueueRepository.lockById(id).orElse(null);
-            if (email == null || email.getStatus() != EmailStatus.PENDING) {
+      EmailQueueEntity claimedEmailEntity =
+          dispatchTransactionTemplate.execute(status -> {
+            EmailQueueEntity pendingEmailEntity =
+                emailQueueRepository.lockById(queueEntryId).orElse(null);
+            if (pendingEmailEntity == null
+                || pendingEmailEntity.getStatus() != EmailStatus.PENDING) {
               return null;
             }
-            if (email.getLastRetryAt() != null
-                && email
+
+            if (pendingEmailEntity.getLastRetryAt() != null
+                && pendingEmailEntity
                     .getLastRetryAt()
                     .isAfter(LocalDateTime.now(emailQueueClock).minus(retryDelay))) {
               return null;
             }
             // Empfänger im frischen Worker-Claim initialisieren, SMTP außerhalb der
             // Transaktion.
-            email.getUserEntity().getEmail();
-            email.setStatus(EmailStatus.IN_PROGRESS);
-            emailQueueRepository.save(email);
-            return email;
+            pendingEmailEntity.getUserEntity().getEmail();
+            pendingEmailEntity.setStatus(EmailStatus.IN_PROGRESS);
+            emailQueueRepository.save(pendingEmailEntity);
+            return pendingEmailEntity;
           });
-      if (claimed != null) {
-        dispatchClaimed(transaction, claimed, maxRetry);
+
+      if (claimedEmailEntity != null) {
+        dispatchClaimed(dispatchTransactionTemplate, claimedEmailEntity, maxRetry);
       }
-    } catch (RuntimeException failure) {
+    } catch (RuntimeException dispatchFailure) {
       logger.error(
           "Queue entry {} could not be completed; no automatic release of IN_PROGRESS.",
-          id,
-          safeFailure(failure));
+          queueEntryId,
+          safeFailure(dispatchFailure));
     }
   }
 
   private void dispatchClaimed(
-      TransactionTemplate transaction, EmailQueueEntity claimed, int maxRetry) {
-    long attempt = (long) claimed.getRetryCount() + 1;
+      TransactionTemplate dispatchTransactionTemplate,
+      EmailQueueEntity claimedEmailEntity,
+      int maxRetry) {
+    long sendAttemptNumber = (long) claimedEmailEntity.getRetryCount() + 1;
     Exception sendFailure = null;
     try {
-      if (claimed.getRecipient() == null) {
-        emailService.sendEmail(claimed.getUserEntity(), claimed.getSubject(), claimed.getBody());
+      if (claimedEmailEntity.getRecipient() == null) {
+        emailService.sendEmail(
+            claimedEmailEntity.getUserEntity(),
+            claimedEmailEntity.getSubject(),
+            claimedEmailEntity.getBody());
       } else {
-        emailService.sendEmailTo(claimed.getRecipient(), claimed.getSubject(), claimed.getBody());
+        emailService.sendEmailTo(
+            claimedEmailEntity.getRecipient(),
+            claimedEmailEntity.getSubject(),
+            claimedEmailEntity.getBody());
       }
     } catch (MailException | MessagingException e) {
       // Transport errors may follow SMTP acceptance (for example a lost reply).
@@ -265,7 +279,7 @@ public class EmailQueueService {
           || e instanceof MailParseException)) {
         logger.error(
             "❌ Transport outcome for queue entry {} is unknown; IN_PROGRESS retained.",
-            claimed.getId(),
+            claimedEmailEntity.getId(),
             safeFailure(e));
         return;
       }
@@ -273,27 +287,28 @@ public class EmailQueueService {
     }
     final Exception failure = sendFailure;
     EmailQueueEntity completed =
-        transaction.execute(status -> completeClaimed(claimed, failure, maxRetry));
+        dispatchTransactionTemplate.execute(
+            status -> completeClaimed(claimedEmailEntity, failure, maxRetry));
     if (failure == null) {
       logger.info(
           "Email accepted by transport: queueId={}, type={}, attempt={}",
           completed.getId(),
           completed.getEmailType(),
-          attempt);
+          sendAttemptNumber);
     } else if (completed.getStatus() == EmailStatus.PENDING) {
       logger.warn(
           "Email retry scheduled: queueId={}, attempt={} of {}, failureType={}",
           completed.getId(),
-          attempt,
+          sendAttemptNumber,
           (long) maxRetry + 1,
           failure.getClass().getName());
     } else {
       logger.error(
           "Email permanently failed: queueId={}, attempts={}",
           completed.getId(),
-          attempt,
+          sendAttemptNumber,
           safeFailure(failure));
-      sendAdminNotification(transaction, completed, failure, attempt);
+      sendAdminNotification(dispatchTransactionTemplate, completed, failure, sendAttemptNumber);
     }
   }
 

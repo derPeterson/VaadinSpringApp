@@ -203,18 +203,20 @@ public class ExternalIdentityService {
             new SignInSummary(user.getRegistrationChannel(), Set.copyOf(availableMethods(user))));
   }
 
-  private Set<SignInMethod> availableMethods(UserEntity user) {
-    Set<SignInMethod> available = EnumSet.noneOf(SignInMethod.class);
-    if (user.getPassword() != null) {
-      available.add(SignInMethod.PORTAL);
+  private Set<SignInMethod> availableMethods(UserEntity accountUserEntity) {
+    Set<SignInMethod> availableSignInMethods = EnumSet.noneOf(SignInMethod.class);
+    if (accountUserEntity.getPassword() != null) {
+      availableSignInMethods.add(SignInMethod.PORTAL);
     }
-    List<String> enabledProviders = providerRegistrations.providers();
-    for (String provider : connectedProviders(user.getId())) {
-      if (enabledProviders.contains(provider)) {
-        available.add(SignInMethod.provider(provider));
+
+    List<String> enabledProviderIds = providerRegistrations.providers();
+    for (String connectedProviderId : connectedProviders(accountUserEntity.getId())) {
+      if (enabledProviderIds.contains(connectedProviderId)) {
+        availableSignInMethods.add(SignInMethod.provider(connectedProviderId));
       }
     }
-    return available;
+
+    return availableSignInMethods;
   }
 
   @Transactional(readOnly = true)

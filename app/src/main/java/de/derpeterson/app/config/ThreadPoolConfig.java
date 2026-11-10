@@ -20,10 +20,11 @@ public class ThreadPoolConfig {
     return newExecutor(configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE));
   }
 
-  public static ThreadPoolExecutor newExecutor(int poolSize) {
-    if (poolSize < 1) {
+  public static ThreadPoolExecutor newExecutor(int emailWorkerPoolSize) {
+    if (emailWorkerPoolSize < 1) {
       throw new IllegalArgumentException("Email worker pool size must be positive.");
     }
+
     // Keine vererbten Aufruferkontexte; blockierende Fremdbibliotheken dürfen das JVM-Ende nicht
     // verhindern.
     ThreadFactory workerThreadFactory =
@@ -32,13 +33,14 @@ public class ThreadPoolConfig {
             .daemon(true)
             .inheritInheritableThreadLocals(false)
             .factory();
+
     // Nur begrenzte Übergabe; die dauerhafte Warteschlange bleibt in der Datenbank.
     return new ThreadPoolExecutor(
-        poolSize,
-        poolSize,
+        emailWorkerPoolSize,
+        emailWorkerPoolSize,
         0,
         TimeUnit.MILLISECONDS,
-        new LinkedBlockingQueue<>(poolSize),
+        new LinkedBlockingQueue<>(emailWorkerPoolSize),
         workerThreadFactory,
         new ThreadPoolExecutor.AbortPolicy());
   }

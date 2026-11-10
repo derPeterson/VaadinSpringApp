@@ -21,39 +21,65 @@ public class TwoFactorMail {
   private final AccountSecurityMail accountSecurityMail;
   private final EmailQueueService emailQueueService;
 
-  public void setupCode(UserEntity user, String code) {
-    MessageProperties messageProperties = accountSecurityMail.messagePropertiesForRecipient(user);
-    enqueue(
-        user,
+  public void setupCode(UserEntity recipientUserEntity, String setupCodeText) {
+    MessageProperties messageProperties =
+        accountSecurityMail.messagePropertiesForRecipient(recipientUserEntity);
+
+    enqueueTwoFactorMail(
+        recipientUserEntity,
         messageProperties.getTwoFactorEmailSubject(),
         messageProperties.getTwoFactorEmailExplanation(),
-        code,
+        setupCodeText,
         messageProperties.getTwoFactorEmailNotice());
   }
 
-  public void securityChange(UserEntity user, Event event) {
-    MessageProperties messageProperties = accountSecurityMail.messagePropertiesForRecipient(user);
-    String title =
-        switch (event) {
+  public void securityChange(UserEntity recipientUserEntity, Event securityChangeEvent) {
+    MessageProperties messageProperties =
+        accountSecurityMail.messagePropertiesForRecipient(recipientUserEntity);
+
+    String mailSubject =
+        switch (securityChangeEvent) {
           case ENABLED -> messageProperties.getTwoFactorEnabledSubject();
           case DISABLED -> messageProperties.getTwoFactorDisabledSubject();
           case RECOVERY_CODES -> messageProperties.getTwoFactorRenewedSubject();
         };
-    String message =
-        switch (event) {
+
+    String mailExplanation =
+        switch (securityChangeEvent) {
           case ENABLED -> messageProperties.getTwoFactorEnabledExplanation();
           case DISABLED -> messageProperties.getTwoFactorDisabledExplanation();
           case RECOVERY_CODES -> messageProperties.getTwoFactorRenewedExplanation();
         };
-    enqueue(user, title, message, "", messageProperties.getTwoFactorSecurityNotice());
+
+    enqueueTwoFactorMail(
+        recipientUserEntity,
+        mailSubject,
+        mailExplanation,
+        "",
+        messageProperties.getTwoFactorSecurityNotice());
   }
 
-  private void enqueue(UserEntity user, String title, String message, String code, String notice) {
-    String body =
+  private void enqueueTwoFactorMail(
+      UserEntity recipientUserEntity,
+      String mailSubject,
+      String mailExplanation,
+      String setupCodeText,
+      String mailNotice) {
+    String mailBodyHtml =
         accountSecurityMail.render(
             "two_factor",
-            user,
-            Map.of("TITLE", title, "MESSAGE", message, "CODE", code, "NOTICE", notice));
-    emailQueueService.addAddressedNotification(user, user.getEmail(), title, body);
+            recipientUserEntity,
+            Map.of(
+                "TITLE",
+                mailSubject,
+                "MESSAGE",
+                mailExplanation,
+                "CODE",
+                setupCodeText,
+                "NOTICE",
+                mailNotice));
+
+    emailQueueService.addAddressedNotification(
+        recipientUserEntity, recipientUserEntity.getEmail(), mailSubject, mailBodyHtml);
   }
 }

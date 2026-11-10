@@ -20,79 +20,86 @@ import org.springframework.web.client.RestTemplate;
 final class MicrosoftSigningKeys {
   private MicrosoftSigningKeys() {}
 
-  static RestTemplate client(String issuer) {
-    JdkClientHttpRequestFactory factory =
+  static RestTemplate client(String issuerUrl) {
+    JdkClientHttpRequestFactory requestFactory =
         new JdkClientHttpRequestFactory(
             HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build());
-    factory.setReadTimeout(Duration.ofSeconds(10));
-    RestTemplate client = new RestTemplate(factory);
-    client
+    requestFactory.setReadTimeout(Duration.ofSeconds(10));
+
+    RestTemplate restTemplate = new RestTemplate(requestFactory);
+    restTemplate
         .getInterceptors()
-        .add(
-            (request, body, execution) -> {
-              ClientHttpResponse original = execution.execute(request, body);
-              try {
-                byte[] raw = original.getBody().readNBytes(1024 * 1024 + 1);
-                if (raw.length > 1024 * 1024) {
-                  throw new IOException("Signing key response too large");
-                }
-                byte[] filtered =
-                    filter(new String(raw, StandardCharsets.UTF_8), issuer)
-                        .getBytes(StandardCharsets.UTF_8);
-                HttpHeaders headers = new HttpHeaders();
-                headers.putAll(original.getHeaders());
-                headers.setContentLength(filtered.length);
-                return new ClientHttpResponse() {
-                  @Override
-                  public HttpStatusCode getStatusCode() throws IOException {
-                    return original.getStatusCode();
-                  }
+        .add((clientRequest, requestBodyBytes, requestExecution) -> {
+          ClientHttpResponse originalResponse =
+              requestExecution.execute(clientRequest, requestBodyBytes);
 
-                  @Override
-                  public String getStatusText() throws IOException {
-                    return original.getStatusText();
-                  }
+          try {
+            byte[] originalResponseBytes = originalResponse.getBody().readNBytes(1024 * 1024 + 1);
+            if (originalResponseBytes.length > 1024 * 1024) {
+              throw new IOException("Signing key response too large");
+            }
 
-                  @Override
-                  public HttpHeaders getHeaders() {
-                    return headers;
-                  }
+            byte[] filteredResponseBytes =
+                filter(new String(originalResponseBytes, StandardCharsets.UTF_8), issuerUrl)
+                    .getBytes(StandardCharsets.UTF_8);
 
-                  @Override
-                  public InputStream getBody() {
-                    return new ByteArrayInputStream(filtered);
-                  }
+            HttpHeaders filteredResponseHeaders = new HttpHeaders();
+            filteredResponseHeaders.putAll(originalResponse.getHeaders());
+            filteredResponseHeaders.setContentLength(filteredResponseBytes.length);
 
-                  @Override
-                  public void close() {
-                    original.close();
-                  }
-                };
-              } catch (IOException | RuntimeException failure) {
-                original.close();
-                throw failure;
+            return new ClientHttpResponse() {
+              @Override
+              public HttpStatusCode getStatusCode() throws IOException {
+                return originalResponse.getStatusCode();
               }
-            });
-    return client;
+
+              @Override
+              public String getStatusText() throws IOException {
+                return originalResponse.getStatusText();
+              }
+
+              @Override
+              public HttpHeaders getHeaders() {
+                return filteredResponseHeaders;
+              }
+
+              @Override
+              public InputStream getBody() {
+                return new ByteArrayInputStream(filteredResponseBytes);
+              }
+
+              @Override
+              public void close() {
+                originalResponse.close();
+              }
+            };
+          } catch (IOException | RuntimeException failure) {
+            originalResponse.close();
+            throw failure;
+          }
+        });
+    return restTemplate;
   }
 
-  static String filter(String json, String issuer) throws IOException {
+  static String filter(String responseJson, String issuerUrl) throws IOException {
     try {
-      Map<String, Object> document = JSONObjectUtils.parse(json);
-      List<Object> keys = JSONObjectUtils.getJSONArray(document, "keys");
-      List<Object> allowed =
-          keys.stream()
-              .filter(
-                  value -> {
-                    if (!(value instanceof Map<?, ?> key)
-                        || !(key.get("issuer") instanceof String keyIssuer)) {
-                      return false;
-                    }
-                    return keyIssuer.equals(issuer)
-                        || keyIssuer.equals("https://login.microsoftonline.com/{tenantid}/v2.0");
-                  })
+      Map<String, Object> responseDocument = JSONObjectUtils.parse(responseJson);
+      List<Object> signingKeyEntries = JSONObjectUtils.getJSONArray(responseDocument, "keys");
+      List<Object> allowedSigningKeys =
+          signingKeyEntries.stream()
+              .filter(signingKeyEntry -> {
+                if (!(signingKeyEntry instanceof Map<?, ?> signingKeyMap)
+                    || !(signingKeyMap.get("issuer") instanceof String signingKeyIssuerUrl)) {
+                  return false;
+                }
+
+                return signingKeyIssuerUrl.equals(issuerUrl)
+                    || signingKeyIssuerUrl.equals(
+                        "https://login.microsoftonline.com/{tenantid}/v2.0");
+              })
               .toList();
-      return JSONObjectUtils.toJSONString(Map.of("keys", allowed));
+
+      return JSONObjectUtils.toJSONString(Map.of("keys", allowedSigningKeys));
     } catch (ParseException failure) {
       throw new IOException("Invalid signing key response", failure);
     }

@@ -34,6 +34,7 @@ public class ConnectionAwareJavaMailSender extends JavaMailSenderImpl {
             new MessagingException("SMTP settings unavailable", mailConnectionFailure));
       }
     }
+
     try {
       return super.connectTransport();
     } catch (AuthenticationFailedException authenticationFailure) {

@@ -35,9 +35,11 @@ public class CustomI18NProvider implements I18NProvider {
     ResourceBundle messageBundle =
         messageBundlesByLocale.getOrDefault(
             translationLocale, messageBundlesByLocale.get(DEFAULT_LOCALE));
+
     if (messageBundle.containsKey(translationKey)) {
       return MessageFormat.format(messageBundle.getString(translationKey), formatArguments);
     }
+
     return translationKey;
   }
 

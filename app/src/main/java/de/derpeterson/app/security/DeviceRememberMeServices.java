@@ -83,23 +83,32 @@ public class DeviceRememberMeServices extends PersistentTokenBasedRememberMeServ
 
   @Override
   protected UserDetails processAutoLoginCookie(
-      String[] cookie, HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-    if (cookie.length != 2) {
+      String[] rememberMeCookieParts,
+      HttpServletRequest httpRequest,
+      HttpServletResponse httpResponse) {
+    if (rememberMeCookieParts.length != 2) {
       throw new InvalidCookieException("Invalid persistent login");
     }
-    PersistentRememberMeToken token = deviceTokenRepository.getTokenForSeries(cookie[0]);
-    if (token == null) {
+
+    PersistentRememberMeToken persistedRememberMeToken =
+        deviceTokenRepository.getTokenForSeries(rememberMeCookieParts[0]);
+    if (persistedRememberMeToken == null) {
       throw new RememberMeAuthenticationException("Saved login no longer valid");
     }
+
     return sessionAdmissionService.withIdentity(
-        token.getUsername(),
+        persistedRememberMeToken.getUsername(),
         () -> {
-          UserDetails user =
+          UserDetails rememberedUserDetails =
               ScopedValue.where(requestValidity, validitySeconds())
-                  .call(() -> super.processAutoLoginCookie(cookie, httpRequest, httpResponse));
-          httpRequest.setAttribute(SERIES, cookie[0]);
-          sessionAdmissionService.bindSeries(httpRequest, cookie[0]);
-          return user;
+                  .call(() ->
+                      super.processAutoLoginCookie(
+                          rememberMeCookieParts, httpRequest, httpResponse));
+
+          httpRequest.setAttribute(SERIES, rememberMeCookieParts[0]);
+          sessionAdmissionService.bindSeries(httpRequest, rememberMeCookieParts[0]);
+
+          return rememberedUserDetails;
         });
   }
 

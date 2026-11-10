@@ -17,18 +17,20 @@ public record RoleUiState(Set<String> authorities) implements Serializable {
 
   public static Set<String> extractRoleAuthorities(Authentication authentication) {
     return authentication.getAuthorities().stream()
-        .filter(a -> !(a instanceof FactorGrantedAuthority))
-        .map(a -> a.getAuthority())
+        .filter(grantedAuthority -> !(grantedAuthority instanceof FactorGrantedAuthority))
+        .map(grantedAuthority -> grantedAuthority.getAuthority())
         .collect(Collectors.toUnmodifiableSet());
   }
 
   public static boolean hasUiRoleStateChanged(UI vaadinUi, Authentication authentication) {
     RoleUiState roleUiState = ComponentUtil.getData(vaadinUi, RoleUiState.class);
+
     if (roleUiState == null) {
       ComponentUtil.setData(
           vaadinUi, RoleUiState.class, new RoleUiState(extractRoleAuthorities(authentication)));
       return false;
     }
+
     return !roleUiState.authorities().equals(extractRoleAuthorities(authentication));
   }
 
@@ -38,14 +40,17 @@ public record RoleUiState(Set<String> authorities) implements Serializable {
     if (activeViewLocation == null) {
       return contextPath + HOME_PATH;
     }
+
     String routePath = activeViewLocation.getPath();
     if (routePath.equals(AppRoute.ADMIN.getRoute())
         && !extractRoleAuthorities(authentication).contains("ROLE_ADMIN")) {
       return contextPath + HOME_PATH;
     }
+
     if (!Set.of("home", "account", "notifications", "admin").contains(routePath)) {
       return contextPath + HOME_PATH;
     }
+
     return contextPath + "/" + activeViewLocation.getPathWithQueryParameters();
   }
 
@@ -54,9 +59,11 @@ public record RoleUiState(Set<String> authorities) implements Serializable {
     if (!hasUiRoleStateChanged(vaadinUi, authentication)) {
       return false;
     }
+
     vaadinUi
         .getPage()
         .setLocation(resolveRoleRefreshLocation(vaadinUi, authentication, contextPath));
+
     return true;
   }
 }

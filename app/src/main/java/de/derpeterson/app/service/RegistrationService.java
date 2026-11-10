@@ -17,10 +17,12 @@ public class RegistrationService {
   private final ConfigService configService;
 
   @Transactional(rollbackFor = IOException.class)
-  public boolean register(UserEntity user) throws IOException {
+  public boolean register(UserEntity registeredUserEntity) throws IOException {
     MaintenanceService.requirePublicAccess(configService);
-    user.setRegistrationChannel(RegistrationChannel.PORTAL);
-    userService.saveUser(user);
-    return verificationService.sendVerificationEmailByUser(user);
+
+    registeredUserEntity.setRegistrationChannel(RegistrationChannel.PORTAL);
+    userService.saveUser(registeredUserEntity);
+
+    return verificationService.sendVerificationEmailByUser(registeredUserEntity);
   }
 }

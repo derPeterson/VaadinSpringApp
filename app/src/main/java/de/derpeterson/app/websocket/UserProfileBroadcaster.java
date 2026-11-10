@@ -22,6 +22,7 @@ public class UserProfileBroadcaster {
 
   public Registration register(Consumer<UserProfileChangeMessage> profileChangeListener) {
     profileChangeListeners.add(profileChangeListener);
+
     return () -> profileChangeListeners.remove(profileChangeListener);
   }
 

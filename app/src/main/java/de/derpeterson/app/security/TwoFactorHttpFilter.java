@@ -35,95 +35,111 @@ public final class TwoFactorHttpFilter implements Filter {
 
   @Override
   public void doFilter(
-      ServletRequest httpRequest, ServletResponse httpResponse, FilterChain filterChain)
+      ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
       throws IOException, ServletException {
-    HttpServletRequest http = (HttpServletRequest) httpRequest;
-    HttpServletResponse reply = (HttpServletResponse) httpResponse;
-    if (securityService.getAuthenticatedUser(http).isEmpty()) {
-      filterChain.doFilter(httpRequest, httpResponse);
+    HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
+    HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
+    if (securityService.getAuthenticatedUser(httpRequest).isEmpty()) {
+      filterChain.doFilter(servletRequest, servletResponse);
       return;
     }
-    String path = http.getServletPath();
-    String type = http.getParameter("v-r");
-    boolean protocol = isProtocol(path, type);
-    TwoFactorFlow flow = TwoFactorFlow.current(http);
-    boolean confirmed = flow == null && confirmed(http, path, protocol);
-    if (protocol) {
-      if (serviceEndpoint(path) && (confirmed || TwoFactorTransport.allowedUi(http))) {
-        filterChain.doFilter(httpRequest, httpResponse);
+
+    String servletPath = httpRequest.getServletPath();
+    String vaadinRequestType = httpRequest.getParameter("v-r");
+    boolean protocolRequest = isVaadinProtocolRequest(servletPath, vaadinRequestType);
+    TwoFactorFlow twoFactorFlow = TwoFactorFlow.current(httpRequest);
+    boolean accessConfirmed =
+        twoFactorFlow == null && isAccessConfirmed(httpRequest, servletPath, protocolRequest);
+
+    if (protocolRequest) {
+      if (isVaadinServiceEndpoint(servletPath)
+          && (accessConfirmed || TwoFactorTransport.allowedUi(httpRequest))) {
+        filterChain.doFilter(servletRequest, servletResponse);
       } else {
-        reply.setContentType("application/json;charset=UTF-8");
-        reply.setHeader("Cache-Control", "no-store");
-        reply
+        httpResponse.setContentType("application/json;charset=UTF-8");
+        httpResponse.setHeader("Cache-Control", "no-store");
+        httpResponse
             .getWriter()
             .write(
                 VaadinService.createCriticalNotificationJSON(
-                    null, null, null, TwoFactorTransport.destination(http)));
+                    null, null, null, TwoFactorTransport.destination(httpRequest)));
       }
       return;
     }
-    if (confirmed || permitted(http, path, type, flow)) {
-      filterChain.doFilter(httpRequest, httpResponse);
+
+    if (accessConfirmed
+        || isPermittedRequest(httpRequest, servletPath, vaadinRequestType, twoFactorFlow)) {
+      filterChain.doFilter(servletRequest, servletResponse);
       return;
     }
-    reply.setHeader("Cache-Control", "no-store");
-    if (type == null && "GET".equals(http.getMethod())) {
-      reply.sendRedirect(TwoFactorTransport.destination(http));
+
+    httpResponse.setHeader("Cache-Control", "no-store");
+    if (vaadinRequestType == null && "GET".equals(httpRequest.getMethod())) {
+      httpResponse.sendRedirect(TwoFactorTransport.destination(httpRequest));
     } else {
-      reply.sendError(HttpServletResponse.SC_FORBIDDEN);
+      httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN);
     }
   }
 
-  private boolean isProtocol(String path, String type) {
-    return "uidl".equals(type)
-        || "push".equals(type)
-        || "/VAADIN/uidl".equals(path)
-        || "/VAADIN/push".equals(path);
+  private boolean isVaadinProtocolRequest(String servletPath, String vaadinRequestType) {
+    return "uidl".equals(vaadinRequestType)
+        || "push".equals(vaadinRequestType)
+        || "/VAADIN/uidl".equals(servletPath)
+        || "/VAADIN/push".equals(servletPath);
   }
 
-  private boolean confirmed(HttpServletRequest httpRequest, String path, boolean protocol) {
+  private boolean isAccessConfirmed(
+      HttpServletRequest httpRequest, String servletPath, boolean protocolRequest) {
     return twoFactorAuthorization.sessionConfirmed(httpRequest)
-        && (!("/admin".equals(path) || protocol && TwoFactorTransport.administrativeUi(httpRequest))
+        && (!("/admin".equals(servletPath)
+                || protocolRequest && TwoFactorTransport.administrativeUi(httpRequest))
             || twoFactorAuthorization.administrationConfirmed(httpRequest));
   }
 
-  private boolean permitted(
-      HttpServletRequest httpRequest, String path, String type, TwoFactorFlow flow) {
-    if (serviceEndpoint(path) && ("init".equals(type) || "heartbeat".equals(type))) {
+  private boolean isPermittedRequest(
+      HttpServletRequest httpRequest,
+      String servletPath,
+      String vaadinRequestType,
+      TwoFactorFlow twoFactorFlow) {
+    if (isVaadinServiceEndpoint(servletPath)
+        && ("init".equals(vaadinRequestType) || "heartbeat".equals(vaadinRequestType))) {
       return true;
     }
-    if (flow != null) {
-      return type == null
+
+    if (twoFactorFlow != null) {
+      return vaadinRequestType == null
           && ("GET".equals(httpRequest.getMethod()) || "HEAD".equals(httpRequest.getMethod()))
-          && (flow.path().equals(path)
-              || !flow.help()
-                  && (path.startsWith(TwoFactorDocuments.PATH + "/")
-                      || RECOVERY_DOWNLOAD.matcher(path).matches())
-              || resource(path));
+          && (twoFactorFlow.path().equals(servletPath)
+              || !twoFactorFlow.help()
+                  && (servletPath.startsWith(TwoFactorDocuments.PATH + "/")
+                      || RECOVERY_DOWNLOAD.matcher(servletPath).matches())
+              || isPublicResourcePath(servletPath));
     }
-    return type == null
-        && (AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE.equals(path)
-            || "/recovery-help".equals(path)
-            || "/logout".equals(path)
-            || "/login".equals(path)
-            || path.startsWith("/oauth2/authorization/")
-            || path.startsWith("/login/oauth2/code/")
-            || path.startsWith(TwoFactorDocuments.PATH + "/")
+
+    return vaadinRequestType == null
+        && (AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE.equals(servletPath)
+            || "/recovery-help".equals(servletPath)
+            || "/logout".equals(servletPath)
+            || "/login".equals(servletPath)
+            || servletPath.startsWith("/oauth2/authorization/")
+            || servletPath.startsWith("/login/oauth2/code/")
+            || servletPath.startsWith(TwoFactorDocuments.PATH + "/")
             || ("GET".equals(httpRequest.getMethod()) || "HEAD".equals(httpRequest.getMethod()))
-                && resource(path));
+                && isPublicResourcePath(servletPath));
   }
 
-  private boolean serviceEndpoint(String path) {
-    return path.isEmpty()
-        || "/".equals(path)
-        || "/VAADIN/uidl".equals(path)
-        || "/VAADIN/push".equals(path);
+  private boolean isVaadinServiceEndpoint(String servletPath) {
+    return servletPath.isEmpty()
+        || "/".equals(servletPath)
+        || "/VAADIN/uidl".equals(servletPath)
+        || "/VAADIN/push".equals(servletPath);
   }
 
-  private boolean resource(String path) {
-    if (path.startsWith("/VAADIN/dynamic/")) {
+  private boolean isPublicResourcePath(String servletPath) {
+    if (servletPath.startsWith("/VAADIN/dynamic/")) {
       return false;
     }
+
     return Set.of(
                 "/VAADIN/",
                 "/themes/",
@@ -134,7 +150,7 @@ public final class TwoFactorHttpFilter implements Filter {
                 "/images/",
                 "/webjars/")
             .stream()
-            .anyMatch(path::startsWith)
+            .anyMatch(servletPath::startsWith)
         || Set.of(
                 "/favicon.ico",
                 "/manifest.webmanifest",
@@ -142,6 +158,6 @@ public final class TwoFactorHttpFilter implements Filter {
                 "/sw-runtime-resources-precache.js",
                 "/offline.html",
                 "/error")
-            .contains(path);
+            .contains(servletPath);
   }
 }

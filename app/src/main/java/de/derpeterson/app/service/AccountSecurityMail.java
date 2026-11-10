@@ -30,49 +30,63 @@ public class AccountSecurityMail {
   private final ConfigService configService;
   private final CustomI18NProvider i18nProvider;
 
-  public MessageProperties messagePropertiesForRecipient(UserEntity user) {
-    return MessageProperties.forLocale(i18nProvider, recipientLocale(user));
+  public MessageProperties messagePropertiesForRecipient(UserEntity recipientUserEntity) {
+    return MessageProperties.forLocale(i18nProvider, recipientLocale(recipientUserEntity));
   }
 
-  private Locale recipientLocale(UserEntity user) {
-    return user.getPreferredLocale() != null && "en".equals(user.getPreferredLocale().getLanguage())
+  private Locale recipientLocale(UserEntity recipientUserEntity) {
+    return recipientUserEntity.getPreferredLocale() != null
+            && "en".equals(recipientUserEntity.getPreferredLocale().getLanguage())
         ? Locale.ENGLISH
         : Locale.GERMAN;
   }
 
-  public String render(String template, UserEntity user, Map<String, String> values) {
-    String service = configService.getString(ConfigEntry.SERVICE_NAME);
-    HashMap<String, String> replacements = new HashMap<>(values);
+  public String render(
+      String mailTemplateName, UserEntity recipientUserEntity, Map<String, String> templateValues) {
+    String serviceName = configService.getString(ConfigEntry.SERVICE_NAME);
+    HashMap<String, String> templateReplacements = new HashMap<>(templateValues);
+
     try {
-      replacements.put("SERVICE_LOGO", EmailLogo.validatedContentId());
+      templateReplacements.put("SERVICE_LOGO", EmailLogo.validatedContentId());
     } catch (IOException failure) {
       throw new UncheckedIOException("Cannot read account security mail logo", failure);
     }
-    replacements.put("SERVICE_NAME", service);
-    replacements.put(
+
+    templateReplacements.put("SERVICE_NAME", serviceName);
+    templateReplacements.put(
         "INTER_FONT_STYLESHEET",
         EmailFonts.styleSheetUrl(configService.getString(ConfigEntry.BASE_URL)));
-    replacements.put(
+    templateReplacements.put(
         "LOGIN_LINK",
         UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
             .pathSegment(AppRoute.LOGIN.getRoute())
             .toUriString());
-    replacements.put(
+    templateReplacements.put(
         "COPYRIGHT_TEXT",
         CopyrightTextFormatter.format(
             configService.getString(ConfigEntry.COPYRIGHT_TEXT),
-            service,
+            serviceName,
             Clock.systemDefaultZone(),
-            messagePropertiesForRecipient(user)::getAccountCopyrightTemplate));
-    try (InputStream input =
+            messagePropertiesForRecipient(recipientUserEntity)::getAccountCopyrightTemplate));
+
+    try (InputStream templateInputStream =
         new ClassPathResource(
-                "email/" + template + "_" + recipientLocale(user).getLanguage() + ".html")
+                "email/"
+                    + mailTemplateName
+                    + "_"
+                    + recipientLocale(recipientUserEntity).getLanguage()
+                    + ".html")
             .getInputStream()) {
-      String html = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-      for (Entry<String, String> entry : replacements.entrySet()) {
-        html = html.replace("{{" + entry.getKey() + "}}", HtmlUtils.htmlEscape(entry.getValue()));
+      String mailBodyHtml = new String(templateInputStream.readAllBytes(), StandardCharsets.UTF_8);
+
+      for (Entry<String, String> templateReplacement : templateReplacements.entrySet()) {
+        mailBodyHtml =
+            mailBodyHtml.replace(
+                "{{" + templateReplacement.getKey() + "}}",
+                HtmlUtils.htmlEscape(templateReplacement.getValue()));
       }
-      return html;
+
+      return mailBodyHtml;
     } catch (IOException failure) {
       throw new UncheckedIOException("Cannot read account security mail template", failure);
     }

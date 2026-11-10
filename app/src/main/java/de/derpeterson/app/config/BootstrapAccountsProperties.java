@@ -48,6 +48,7 @@ public class BootstrapAccountsProperties {
     if (!enabled) {
       return List.of();
     }
+
     ArrayList<Entry> validatedBootstrapEntries = new ArrayList<Entry>();
     HashSet<String> seenEmailAddresses = new HashSet<String>();
     appendValidatedAccountsForRole(
@@ -58,6 +59,7 @@ public class BootstrapAccountsProperties {
         validatedBootstrapEntries, seenEmailAddresses, RoleType.ROLE_USER, users);
     appendValidatedAccountsForRole(
         validatedBootstrapEntries, seenEmailAddresses, RoleType.ROLE_GUEST, guests);
+
     return List.copyOf(validatedBootstrapEntries);
   }
 
@@ -69,6 +71,7 @@ public class BootstrapAccountsProperties {
     if (accountsForRole == null) {
       throw new IllegalArgumentException("Bootstrap list required: " + roleType);
     }
+
     for (int bootstrapAccountIndex = 0;
         bootstrapAccountIndex < accountsForRole.size();
         bootstrapAccountIndex++) {
@@ -84,11 +87,13 @@ public class BootstrapAccountsProperties {
         throw new IllegalArgumentException(
             "Invalid bootstrap account in " + roleType + " at index " + bootstrapAccountIndex);
       }
+
       String canonicalEmailAddress = EmailIdentity.canonicalize(bootstrapAccount.email);
       if (!seenEmailAddresses.add(canonicalEmailAddress)) {
         throw new IllegalArgumentException(
             "Duplicate bootstrap account in " + roleType + " at index " + bootstrapAccountIndex);
       }
+
       validatedBootstrapEntries.add(new Entry(roleType, bootstrapAccount));
     }
   }

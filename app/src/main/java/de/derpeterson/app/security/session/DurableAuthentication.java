@@ -47,6 +47,7 @@ public record DurableAuthentication(
     if (externalProvider != null) {
       return SignInMethod.provider(externalProvider);
     }
+
     return remembered ? SignInMethod.SAVED_LOGIN : SignInMethod.PORTAL;
   }
 
@@ -66,10 +67,9 @@ public record DurableAuthentication(
         || externalProvider != null
             && (remembered
                 || factors.stream()
-                    .anyMatch(
-                        factor ->
-                            !(TOTP.equals(factor.authority())
-                                || RECOVERY_CODE.equals(factor.authority())))
+                    .anyMatch(factor ->
+                        !(TOTP.equals(factor.authority())
+                            || RECOVERY_CODE.equals(factor.authority())))
                 || !(externalProvider.equals("google") || externalProvider.equals("microsoft")))) {
       throw new IllegalArgumentException("Invalid durable authentication");
     }
@@ -77,98 +77,120 @@ public record DurableAuthentication(
   }
 
   public static DurableAuthentication capture(
-      Authentication authentication, UserDetailsService users) {
+      Authentication authentication, UserDetailsService userDetailsService) {
     if (!authentication.isAuthenticated()
-        || !(authentication.getPrincipal() instanceof UserDetails authenticated)
+        || !(authentication.getPrincipal() instanceof UserDetails authenticatedUserDetails)
         || !(authentication instanceof UsernamePasswordAuthenticationToken
             || authentication instanceof RememberMeAuthenticationToken
             || authentication instanceof ExternalAuthenticationToken)) {
       throw new AuthenticationServiceException("Unsupported durable authentication");
     }
-    UserDetails current = users.loadUserByUsername(authenticated.getUsername());
-    String authenticatedPassword = authenticated.getPassword();
-    String currentVersion = fingerprint(current);
-    if (!current.isEnabled()
-        || !current.isAccountNonLocked()
-        || !current.isAccountNonExpired()
-        || !current.isCredentialsNonExpired()
+
+    UserDetails currentUserDetails =
+        userDetailsService.loadUserByUsername(authenticatedUserDetails.getUsername());
+    String authenticatedPassword = authenticatedUserDetails.getPassword();
+    String currentCredentialVersion = fingerprint(currentUserDetails);
+    if (!currentUserDetails.isEnabled()
+        || !currentUserDetails.isAccountNonLocked()
+        || !currentUserDetails.isAccountNonExpired()
+        || !currentUserDetails.isCredentialsNonExpired()
         // Spring/Flow entfernen Credentials nach erfolgreicher Passwortprüfung.
-        || authenticated instanceof PortalUserDetails
-            && !currentVersion.equals(fingerprint(authenticated))
-        || !(authenticated instanceof PortalUserDetails)
+        || authenticatedUserDetails instanceof PortalUserDetails
+            && !currentCredentialVersion.equals(fingerprint(authenticatedUserDetails))
+        || !(authenticatedUserDetails instanceof PortalUserDetails)
             && authenticatedPassword != null
             && !authenticatedPassword.isEmpty()
-            && !currentVersion.equals(fingerprint(authenticatedPassword))) {
+            && !currentCredentialVersion.equals(fingerprint(authenticatedPassword))) {
       throw new AuthenticationServiceException("Account unavailable");
     }
-    List<Factor> factors =
+
+    List<Factor> capturedFactors =
         authentication.getAuthorities().stream()
             .filter(FactorGrantedAuthority.class::isInstance)
             .map(FactorGrantedAuthority.class::cast)
             .map(factor -> new Factor(factor.getAuthority(), factor.getIssuedAt()))
             .toList();
-    boolean remembered = authentication instanceof RememberMeAuthenticationToken;
-    int keyHash = remembered ? ((RememberMeAuthenticationToken) authentication).getKeyHash() : 0;
+
+    boolean rememberMeAuthentication = authentication instanceof RememberMeAuthenticationToken;
+    int rememberMeKeyHash =
+        rememberMeAuthentication
+            ? ((RememberMeAuthenticationToken) authentication).getKeyHash()
+            : 0;
+
     return new DurableAuthentication(
-        current.getUsername(),
-        currentVersion,
-        remembered,
-        keyHash,
-        factors,
-        authentication instanceof ExternalAuthenticationToken external
-            ? external.provider()
+        currentUserDetails.getUsername(),
+        currentCredentialVersion,
+        rememberMeAuthentication,
+        rememberMeKeyHash,
+        capturedFactors,
+        authentication instanceof ExternalAuthenticationToken externalAuthenticationToken
+            ? externalAuthenticationToken.provider()
             : null);
   }
 
-  public SecurityContext restore(UserDetailsService users, String rememberKey) {
-    UserDetails current = users.loadUserByUsername(username);
-    if (!current.isEnabled()
-        || !current.isAccountNonLocked()
-        || !current.isAccountNonExpired()
-        || !current.isCredentialsNonExpired()
+  public SecurityContext restore(
+      UserDetailsService userDetailsService, String configuredRememberMeKey) {
+    UserDetails currentUserDetails = userDetailsService.loadUserByUsername(username);
+    if (!currentUserDetails.isEnabled()
+        || !currentUserDetails.isAccountNonLocked()
+        || !currentUserDetails.isAccountNonExpired()
+        || !currentUserDetails.isCredentialsNonExpired()
         || !MessageDigest.isEqual(
             credentialVersion.getBytes(StandardCharsets.US_ASCII),
-            fingerprint(current).getBytes(StandardCharsets.US_ASCII))) {
+            fingerprint(currentUserDetails).getBytes(StandardCharsets.US_ASCII))) {
       throw new AuthenticationServiceException("Persisted account access is no longer valid");
     }
-    List<GrantedAuthority> authorities = new ArrayList<>(current.getAuthorities());
+
+    List<GrantedAuthority> restoredAuthorities =
+        new ArrayList<>(currentUserDetails.getAuthorities());
     for (Factor factor : factors) {
       if (factor.authority() == null || factor.issuedAt() == null) {
         throw new AuthenticationServiceException("Invalid persisted authentication factor");
       }
-      authorities.add(
+      restoredAuthorities.add(
           FactorGrantedAuthority.withAuthority(factor.authority())
               .issuedAt(factor.issuedAt())
               .build());
     }
-    Authentication authentication;
+
+    Authentication restoredAuthentication;
     if (remembered) {
-      RememberMeAuthenticationToken token =
-          new RememberMeAuthenticationToken(rememberKey, current, authorities);
-      if (token.getKeyHash() != rememberKeyHash) {
+      RememberMeAuthenticationToken rememberMeToken =
+          new RememberMeAuthenticationToken(
+              configuredRememberMeKey, currentUserDetails, restoredAuthorities);
+      if (rememberMeToken.getKeyHash() != rememberKeyHash) {
         throw new AuthenticationServiceException("Saved login configuration changed");
       }
-      authentication = token;
+      restoredAuthentication = rememberMeToken;
     } else if (externalProvider != null) {
-      authentication = new ExternalAuthenticationToken(current, externalProvider, authorities);
+      restoredAuthentication =
+          new ExternalAuthenticationToken(
+              currentUserDetails, externalProvider, restoredAuthorities);
     } else {
-      authentication =
-          UsernamePasswordAuthenticationToken.authenticated(current, null, authorities);
+      restoredAuthentication =
+          UsernamePasswordAuthenticationToken.authenticated(
+              currentUserDetails, null, restoredAuthorities);
     }
-    return new SecurityContextImpl(authentication);
+
+    return new SecurityContextImpl(restoredAuthentication);
   }
 
-  DurableAuthentication withCurrentCredentials(UserDetailsService users) {
-    UserDetails current = users.loadUserByUsername(username);
-    if (!current.isEnabled()) {
+  DurableAuthentication withCurrentCredentials(UserDetailsService userDetailsService) {
+    UserDetails currentUserDetails = userDetailsService.loadUserByUsername(username);
+    if (!currentUserDetails.isEnabled()) {
       throw new AuthenticationServiceException("Account unavailable");
     }
     return new DurableAuthentication(
-        username, fingerprint(current), remembered, rememberKeyHash, factors, externalProvider);
+        username,
+        fingerprint(currentUserDetails),
+        remembered,
+        rememberKeyHash,
+        factors,
+        externalProvider);
   }
 
-  private static String fingerprint(UserDetails user) {
-    return PortalUserDetails.version(user);
+  private static String fingerprint(UserDetails userDetails) {
+    return PortalUserDetails.version(userDetails);
   }
 
   private static String fingerprint(String password) {
@@ -176,6 +198,7 @@ public record DurableAuthentication(
     if (password == null || password.isEmpty()) {
       throw new AuthenticationServiceException("Account credential version unavailable");
     }
+
     try {
       return HexFormat.of()
           .formatHex(

@@ -97,27 +97,32 @@ public class DeviceTokenRepository extends JdbcTokenRepositoryImpl {
     });
   }
 
-  public List<Saved> saved(String identity, int duration) {
-    Instant cutoff = Instant.now().minusSeconds(duration);
+  public List<Saved> saved(String accountIdentity, int rememberedLoginDurationSeconds) {
+    Instant lastUseCutoff = Instant.now().minusSeconds(rememberedLoginDurationSeconds);
+
     return atomic(() -> {
       jdbcTemplate.update(
           "delete from persistent_logins where username=? and last_used<?",
-          identity,
-          Timestamp.from(cutoff));
+          accountIdentity,
+          Timestamp.from(lastUseCutoff));
       jdbcTemplate.update(
           "delete from remembered_device where username=? and not exists (select 1 from persistent_logins p where p.series=remembered_device.series and p.username=remembered_device.username)",
-          identity);
+          accountIdentity);
+
       return jdbcTemplate.query(
           "select d.handle,d.series,d.username,d.device_system,d.browser,d.mobile,d.created_at,p.last_used from remembered_device d join persistent_logins p on p.series=d.series and p.username=d.username where d.username=? order by p.last_used desc",
-          (rs, row) ->
+          (deviceTokenRow, deviceTokenRowNumber) ->
               new Saved(
-                  rs.getString(1),
-                  rs.getString(2),
-                  rs.getString(3),
-                  new DeviceDescription(rs.getString(4), rs.getString(5), rs.getBoolean(6)),
-                  rs.getTimestamp(7).toInstant(),
-                  rs.getTimestamp(8).toInstant()),
-          identity);
+                  deviceTokenRow.getString(1),
+                  deviceTokenRow.getString(2),
+                  deviceTokenRow.getString(3),
+                  new DeviceDescription(
+                      deviceTokenRow.getString(4),
+                      deviceTokenRow.getString(5),
+                      deviceTokenRow.getBoolean(6)),
+                  deviceTokenRow.getTimestamp(7).toInstant(),
+                  deviceTokenRow.getTimestamp(8).toInstant()),
+          accountIdentity);
     });
   }
 }

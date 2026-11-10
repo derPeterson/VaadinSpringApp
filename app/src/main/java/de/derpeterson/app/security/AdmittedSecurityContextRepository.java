@@ -17,15 +17,22 @@ public class AdmittedSecurityContextRepository extends HttpSessionSecurityContex
 
   @Override
   public void saveContext(
-      SecurityContext context, HttpServletRequest request, HttpServletResponse response) {
-    Authentication authentication = context.getAuthentication();
+      SecurityContext securityContext,
+      HttpServletRequest httpRequest,
+      HttpServletResponse httpResponse) {
+    Authentication authentication = securityContext.getAuthentication();
+
     if (authentication == null
         || !authentication.isAuthenticated()
         || authentication instanceof AnonymousAuthenticationToken) {
-      super.saveContext(context, request, response);
+      super.saveContext(securityContext, httpRequest, httpResponse);
       return;
     }
+
     sessionAdmissionService.complete(
-        authentication, request, response, () -> super.saveContext(context, request, response));
+        authentication,
+        httpRequest,
+        httpResponse,
+        () -> super.saveContext(securityContext, httpRequest, httpResponse));
   }
 }

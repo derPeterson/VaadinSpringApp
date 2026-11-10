@@ -22,28 +22,31 @@ public class CustomUserDetailsService implements UserDetailsService {
   private final UserRepository userRepository;
 
   @Override
-  public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-    return toUserDetails(userRepository.findSecurityUser(email));
+  public UserDetails loadUserByUsername(String emailAddress) throws UsernameNotFoundException {
+    return toUserDetails(userRepository.findSecurityUser(emailAddress));
   }
 
-  public UserDetails loadPasswordUserByUsername(String email) {
-    List<SecurityUserRow> rows =
-        userRepository.findPasswordSecurityUser(EmailIdentity.canonicalize(email));
-    if (rows.isEmpty()
-        || rows.getFirst().getPassword() == null
-        || rows.getFirst().getPassword().isBlank()) {
+  public UserDetails loadPasswordUserByUsername(String emailAddress) {
+    List<SecurityUserRow> securityUserRows =
+        userRepository.findPasswordSecurityUser(EmailIdentity.canonicalize(emailAddress));
+
+    if (securityUserRows.isEmpty()
+        || securityUserRows.getFirst().getPassword() == null
+        || securityUserRows.getFirst().getPassword().isBlank()) {
       throw new UsernameNotFoundException("Password sign-in unavailable");
     }
-    return toUserDetails(rows);
+
+    return toUserDetails(securityUserRows);
   }
 
-  private UserDetails toUserDetails(List<UserRepository.SecurityUserRow> rows) {
-    if (rows.isEmpty()) {
+  private UserDetails toUserDetails(List<UserRepository.SecurityUserRow> securityUserRows) {
+    if (securityUserRows.isEmpty()) {
       throw new UsernameNotFoundException("User not found");
     }
-    SecurityUserRow user = rows.getFirst();
-    List<GrantedAuthority> authorities =
-        rows.stream()
+
+    SecurityUserRow accountSecurityRow = securityUserRows.getFirst();
+    List<GrantedAuthority> grantedAuthorities =
+        securityUserRows.stream()
             .map(UserRepository.SecurityUserRow::getRole)
             .filter(Objects::nonNull)
             .flatMap(role -> role.getGrantedRoles().stream())
@@ -53,10 +56,10 @@ public class CustomUserDetailsService implements UserDetailsService {
             .collect(Collectors.toList());
 
     return new PortalUserDetails(
-        user.getEmail(),
-        user.getPassword(),
-        user.getAccessVersion(),
-        user.isEnabled(),
-        authorities);
+        accountSecurityRow.getEmail(),
+        accountSecurityRow.getPassword(),
+        accountSecurityRow.getAccessVersion(),
+        accountSecurityRow.isEnabled(),
+        grantedAuthorities);
   }
 }

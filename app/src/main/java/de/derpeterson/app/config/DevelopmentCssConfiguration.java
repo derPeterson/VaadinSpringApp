@@ -15,21 +15,24 @@ public class DevelopmentCssConfiguration {
   @Bean
   public StaticFileHandlerFactory staticFileHandlerFactory() {
     return vaadinService -> {
-      StaticFileServer fileServer = new StaticFileServer(vaadinService);
+      StaticFileServer staticFileServer = new StaticFileServer(vaadinService);
+
       if (vaadinService.getDeploymentConfiguration().isProductionMode()) {
-        return fileServer;
+        return staticFileServer;
       }
 
       return (httpRequest, httpResponse) -> {
         String resourcePath =
             httpRequest.getRequestURI().substring(httpRequest.getContextPath().length());
+
         if (resourcePath.startsWith("/custom-theme/") && resourcePath.endsWith(".css")) {
           // Die IDE aktualisiert die CSS-Datei, aber keine gepackten Kopien
           // aus früheren Produktionsbuilds. Vaadin soll hier die CSS-Datei lesen.
-          return fileServer.serveStaticResource(
+          return staticFileServer.serveStaticResource(
               new UncompressedCssRequest(httpRequest), httpResponse);
         }
-        return fileServer.serveStaticResource(httpRequest, httpResponse);
+
+        return staticFileServer.serveStaticResource(httpRequest, httpResponse);
       };
     };
   }

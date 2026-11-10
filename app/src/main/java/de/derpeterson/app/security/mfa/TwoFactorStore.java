@@ -131,35 +131,40 @@ public class TwoFactorStore {
     return failed(account, now);
   }
 
-  boolean blocked(TwoFactorAccountEntity account, Instant now) {
-    if (account.getBlockedUntil() != null && now.isBefore(account.getBlockedUntil())) {
+  boolean blocked(TwoFactorAccountEntity factorAccountEntity, Instant attemptTime) {
+    if (factorAccountEntity.getBlockedUntil() != null
+        && attemptTime.isBefore(factorAccountEntity.getBlockedUntil())) {
       return true;
     }
-    if (account.getAttemptWindow() == null
-        || !now.isBefore(account.getAttemptWindow().plus(ATTEMPT_WINDOW))) {
-      resetAttempts(account);
-      account.setAttemptWindow(now);
+
+    if (factorAccountEntity.getAttemptWindow() == null
+        || !attemptTime.isBefore(factorAccountEntity.getAttemptWindow().plus(ATTEMPT_WINDOW))) {
+      resetAttempts(factorAccountEntity);
+      factorAccountEntity.setAttemptWindow(attemptTime);
     }
     return false;
   }
 
-  private Verification failed(TwoFactorAccountEntity account, Instant now) {
-    account.setFailedAttempts(account.getFailedAttempts() + 1);
-    if (account.getFailedAttempts() >= ATTEMPT_LIMIT) {
-      account.setBlockedUntil(now.plus(ATTEMPT_WINDOW));
+  private Verification failed(TwoFactorAccountEntity factorAccountEntity, Instant attemptTime) {
+    factorAccountEntity.setFailedAttempts(factorAccountEntity.getFailedAttempts() + 1);
+    if (factorAccountEntity.getFailedAttempts() >= ATTEMPT_LIMIT) {
+      factorAccountEntity.setBlockedUntil(attemptTime.plus(ATTEMPT_WINDOW));
     }
-    return new Verification(null, account.getFailedAttempts() >= ATTEMPT_LIMIT);
+
+    return new Verification(null, factorAccountEntity.getFailedAttempts() >= ATTEMPT_LIMIT);
   }
 
-  boolean checkAdditionalProof(TwoFactorAccountEntity account, boolean valid) {
-    Instant now = twoFactorClock.instant();
-    if (blocked(account, now)) {
+  boolean checkAdditionalProof(TwoFactorAccountEntity factorAccountEntity, boolean proofValid) {
+    Instant attemptTime = twoFactorClock.instant();
+    if (blocked(factorAccountEntity, attemptTime)) {
       return false;
     }
-    if (!valid) {
-      failed(account, now);
+
+    if (!proofValid) {
+      failed(factorAccountEntity, attemptTime);
     }
-    return valid;
+
+    return proofValid;
   }
 
   /** Ausschließlich unter demselben Kontolock wie Einrichtung bzw. Abschluss aufrufen. */

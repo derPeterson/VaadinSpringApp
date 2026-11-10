@@ -24,65 +24,73 @@ public class AdminRolePolicy {
   private final UserRepository userRepository;
 
   public void requireSuperadmin() {
-    if (!currentRoles().contains(RoleType.ROLE_SUPERADMIN)) {
-      throw denied();
+    if (!loadCurrentRoleTypes().contains(RoleType.ROLE_SUPERADMIN)) {
+      throw roleAssignmentDeniedException();
     }
   }
 
-  public void authorizeMutation(Long targetId, Set<RoleType> desired) {
-    Set<RoleType> current = currentRoles();
-    if (!current.contains(RoleType.ROLE_ADMIN) && !current.contains(RoleType.ROLE_SUPERADMIN)) {
-      throw denied();
+  public void authorizeMutation(Long targetUserId, Set<RoleType> requestedRoleTypes) {
+    Set<RoleType> currentRoleTypes = loadCurrentRoleTypes();
+    if (!currentRoleTypes.contains(RoleType.ROLE_ADMIN)
+        && !currentRoleTypes.contains(RoleType.ROLE_SUPERADMIN)) {
+      throw roleAssignmentDeniedException();
     }
-    if (protectedTarget(targetId, desired) && !current.contains(RoleType.ROLE_SUPERADMIN)) {
-      throw denied();
+
+    if (targetsSuperadmin(targetUserId, requestedRoleTypes)
+        && !currentRoleTypes.contains(RoleType.ROLE_SUPERADMIN)) {
+      throw roleAssignmentDeniedException();
     }
   }
 
-  public void authorizeProtectedMutation(Long targetId, Set<RoleType> desired) {
-    if (protectedTarget(targetId, desired) && !currentRoles().contains(RoleType.ROLE_SUPERADMIN)) {
-      throw denied();
+  public void authorizeProtectedMutation(Long targetUserId, Set<RoleType> requestedRoleTypes) {
+    if (targetsSuperadmin(targetUserId, requestedRoleTypes)
+        && !loadCurrentRoleTypes().contains(RoleType.ROLE_SUPERADMIN)) {
+      throw roleAssignmentDeniedException();
     }
   }
 
   public boolean canManageSuperadmins() {
+
     try {
-      return currentRoles().contains(RoleType.ROLE_SUPERADMIN);
+      return loadCurrentRoleTypes().contains(RoleType.ROLE_SUPERADMIN);
     } catch (AccessDeniedException _) {
       return false;
     }
   }
 
-  private boolean protectedTarget(Long targetId, Set<RoleType> desired) {
-    return desired.contains(RoleType.ROLE_SUPERADMIN)
-        || targetId != null
-            && userRepository.findExplicitRoles(targetId).contains(RoleType.ROLE_SUPERADMIN);
+  private boolean targetsSuperadmin(Long targetUserId, Set<RoleType> requestedRoleTypes) {
+    return requestedRoleTypes.contains(RoleType.ROLE_SUPERADMIN)
+        || targetUserId != null
+            && userRepository.findExplicitRoles(targetUserId).contains(RoleType.ROLE_SUPERADMIN);
   }
 
-  private Set<RoleType> currentRoles() {
-    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-    if (auth == null
-        || !auth.isAuthenticated()
-        || !(auth.getPrincipal() instanceof UserDetails principal)) {
-      throw denied();
+  private Set<RoleType> loadCurrentRoleTypes() {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null
+        || !authentication.isAuthenticated()
+        || !(authentication.getPrincipal() instanceof UserDetails authenticatedUserDetails)) {
+      throw roleAssignmentDeniedException();
     }
     try {
-      List<SecurityUserRow> rows = userRepository.findSecurityUser(principal.getUsername());
-      if (rows.isEmpty() || !rows.getFirst().isEnabled()) {
-        throw denied();
+      List<SecurityUserRow> securityUserRows =
+          userRepository.findSecurityUser(authenticatedUserDetails.getUsername());
+      if (securityUserRows.isEmpty() || !securityUserRows.getFirst().isEnabled()) {
+        throw roleAssignmentDeniedException();
       }
-      EnumSet<RoleType> result = EnumSet.noneOf(RoleType.class);
-      rows.stream()
+
+      EnumSet<RoleType> currentRoleTypes = EnumSet.noneOf(RoleType.class);
+      securityUserRows.stream()
           .map(UserRepository.SecurityUserRow::getRole)
           .filter(Objects::nonNull)
-          .forEach(result::add);
-      return result;
+          .forEach(currentRoleTypes::add);
+
+      return currentRoleTypes;
     } catch (UsernameNotFoundException _) {
       throw new AccessDeniedException("Account unavailable");
     }
   }
 
-  private static AccessDeniedException denied() {
+  private static AccessDeniedException roleAssignmentDeniedException() {
     return new AccessDeniedException("Administrative role assignment denied");
   }
 }

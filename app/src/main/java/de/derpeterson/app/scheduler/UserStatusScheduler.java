@@ -57,27 +57,27 @@ public class UserStatusScheduler {
 
     if (!inactiveAvailableUsers.isEmpty()) {
       for (UserEntity candidateUserEntity : inactiveAvailableUsers) {
-        updateCandidate(candidateUserEntity, UserStatus.ABSENT, inactivityCutoff);
+        updateCandidateStatus(candidateUserEntity, UserStatus.ABSENT, inactivityCutoff);
       }
     }
   }
 
   @Scheduled(fixedRate = 1000)
   public void checkRecentlyActiveAbsentUsers() {
-    Instant recentActivity = statusUpdateClock.instant().minusSeconds(5);
+    Instant recentActivityCutoff = statusUpdateClock.instant().minusSeconds(5);
 
     List<UserEntity> activeAbsentUsers =
         userRepository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
-            recentActivity, UserStatus.ABSENT);
+            recentActivityCutoff, UserStatus.ABSENT);
 
     if (!activeAbsentUsers.isEmpty()) {
       for (UserEntity candidateUserEntity : activeAbsentUsers) {
-        updateCandidate(candidateUserEntity, UserStatus.AVAILABLE, recentActivity);
+        updateCandidateStatus(candidateUserEntity, UserStatus.AVAILABLE, recentActivityCutoff);
       }
     }
   }
 
-  private void updateCandidate(
+  private void updateCandidateStatus(
       UserEntity candidateUserEntity, UserStatus targetUserStatus, Instant activityCutoff) {
     try {
       userService.updateScheduledStatus(

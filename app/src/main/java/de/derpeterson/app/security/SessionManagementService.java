@@ -139,53 +139,62 @@ public class SessionManagementService {
     return user.getUsername();
   }
 
-  private Snapshot snapshot(String identity, String current) {
-    int duration = savedLoginDuration();
-    List<DeviceTokenRepository.Saved> saved = deviceTokenRepository.saved(identity, duration);
-    List<SessionAdmissionService.Active> active = sessionAdmissionService.active(identity);
-    Set<String> activeSeries = new HashSet<>();
-    List<Entry> entries = new ArrayList<>();
-    active.stream()
+  private Snapshot snapshot(String accountIdentity, String currentSessionId) {
+    int savedLoginDurationSeconds = savedLoginDuration();
+    List<DeviceTokenRepository.Saved> savedDeviceTokens =
+        deviceTokenRepository.saved(accountIdentity, savedLoginDurationSeconds);
+    List<SessionAdmissionService.Active> activeSessions =
+        sessionAdmissionService.active(accountIdentity);
+    Set<String> activeTokenSeries = new HashSet<>();
+    List<Entry> sessionEntries = new ArrayList<>();
+
+    activeSessions.stream()
         .sorted(
-            Comparator.comparing(
-                    (SessionAdmissionService.Active item) -> !item.sessionId().equals(current))
+            Comparator.comparing((SessionAdmissionService.Active activeSession) ->
+                    !activeSession.sessionId().equals(currentSessionId))
                 .thenComparing(SessionAdmissionService.Active::created))
-        .forEach(item -> {
+        .forEach(activeSession -> {
           Optional<Saved> savedLogin =
-              saved.stream().filter(grant -> grant.series().equals(item.series())).findFirst();
+              savedDeviceTokens.stream()
+                  .filter(
+                      savedDeviceToken -> savedDeviceToken.series().equals(activeSession.series()))
+                  .findFirst();
           boolean hasSavedLogin = savedLogin.isPresent();
           if (hasSavedLogin) {
-            activeSeries.add(item.series());
+            activeTokenSeries.add(activeSession.series());
           }
-          entries.add(
+          sessionEntries.add(
               new Entry(
-                  item.handle(),
-                  item.device(),
-                  item.created(),
-                  sessionAdmissionService.lastActivity(item.sessionId()),
-                  item.sessionId().equals(current),
+                  activeSession.handle(),
+                  activeSession.device(),
+                  activeSession.created(),
+                  sessionAdmissionService.lastActivity(activeSession.sessionId()),
+                  activeSession.sessionId().equals(currentSessionId),
                   true,
                   hasSavedLogin,
                   savedLogin.map(DeviceTokenRepository.Saved::handle).orElse(null),
-                  item.signInMethod()));
+                  activeSession.signInMethod()));
         });
-    saved.stream()
-        .filter(item -> !activeSeries.contains(item.series()))
-        .forEach(item ->
-            entries.add(
+
+    savedDeviceTokens.stream()
+        .filter(savedDeviceToken -> !activeTokenSeries.contains(savedDeviceToken.series()))
+        .forEach(savedDeviceToken ->
+            sessionEntries.add(
                 new Entry(
-                    item.handle(),
-                    item.device(),
-                    item.created(),
-                    item.lastUsed(),
+                    savedDeviceToken.handle(),
+                    savedDeviceToken.device(),
+                    savedDeviceToken.created(),
+                    savedDeviceToken.lastUsed(),
                     false,
                     false,
                     true)));
-    int limit = configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER);
-    if (limit < 1) {
+
+    int sessionLimit = configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER);
+    if (sessionLimit < 1) {
       throw new AuthenticationServiceException("Invalid session limit");
     }
-    return new Snapshot(List.copyOf(entries), active.size(), limit);
+
+    return new Snapshot(List.copyOf(sessionEntries), activeSessions.size(), sessionLimit);
   }
 
   private void revokeOwned(String identity, String current, String handle) {

@@ -141,12 +141,12 @@ public class EmailQueueWorkerPool {
       }
     }
 
-    private void submitEmailDispatchTask(long id, LongConsumer dispatch) {
+    private void submitEmailDispatchTask(long queueEntryId, LongConsumer dispatchEmailEntry) {
       FutureTask<Void> dispatchTask =
           new FutureTask<Void>(
               () -> {
                 if (!workerShutdownInProgress) {
-                  dispatch.accept(id);
+                  dispatchEmailEntry.accept(queueEntryId);
                 }
                 return null;
               }) {
@@ -156,17 +156,18 @@ public class EmailQueueWorkerPool {
               completedDispatchTasks.add(this);
             }
           };
+
       inFlight.add(dispatchTask);
       try {
         batchExecutor.execute(dispatchTask);
         activeDispatchCount++;
-      } catch (RejectedExecutionException failure) {
+      } catch (RejectedExecutionException dispatchRejected) {
         inFlight.remove(dispatchTask);
         acceptMoreDispatchTasks = false;
         logger.warn(
             "Queue worker rejected entry {}; remaining entries stay pending.",
-            id,
-            safeFailure(failure));
+            queueEntryId,
+            safeFailure(dispatchRejected));
       }
     }
 

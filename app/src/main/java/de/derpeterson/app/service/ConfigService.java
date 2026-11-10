@@ -185,6 +185,7 @@ public class ConfigService {
 
   private void persistConfigEntity(ConfigEntity configEntity, String configValue) {
     configEntity.setValue(configValue);
+
     configRepository.saveAndFlush(configEntity);
   }
 }

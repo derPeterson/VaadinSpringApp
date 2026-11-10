@@ -35,50 +35,51 @@ public final class MaintenanceTransport {
     withUi(
         request,
         ui -> {
-          ui.access(
-              () -> {
-                ui.getPage()
-                    .setLocation(
-                        request.getContextPath() + AppRoute.MAINTENANCE.getSecurityRoute());
-                if (ui.getPushConfiguration().getPushMode().isEnabled()) {
-                  ui.push();
-                }
-              });
+          ui.access(() -> {
+            ui.getPage()
+                .setLocation(request.getContextPath() + AppRoute.MAINTENANCE.getSecurityRoute());
+            if (ui.getPushConfiguration().getPushMode().isEnabled()) {
+              ui.push();
+            }
+          });
           return true;
         },
         false);
   }
 
-  static <T> T withUi(HttpServletRequest request, Function<UI, T> action, T fallback) {
-    HttpSession http = request.getSession(false);
-    if (http == null) {
-      return fallback;
+  static <T> T withUi(HttpServletRequest httpRequest, Function<UI, T> uiAction, T fallbackResult) {
+    HttpSession httpSession = httpRequest.getSession(false);
+    if (httpSession == null) {
+      return fallbackResult;
     }
-    int id;
+
+    int requestedUiId;
     try {
-      id = Integer.parseInt(request.getParameter("v-uiId"));
+      requestedUiId = Integer.parseInt(httpRequest.getParameter("v-uiId"));
     } catch (NumberFormatException _) {
-      return fallback;
+      return fallbackResult;
     }
-    for (String key : Collections.list(http.getAttributeNames())) {
-      if (http.getAttribute(key) instanceof VaadinSession session) {
+
+    for (String sessionAttributeName : Collections.list(httpSession.getAttributeNames())) {
+      if (httpSession.getAttribute(sessionAttributeName) instanceof VaadinSession vaadinSession) {
         // Nach einem Serverneustart kann die Sitzung bereits deserialisiert sein,
         // bevor Vaadin ihre transienten Felder wiederherstellt. Ohne den echten
         // Sitzungslock keine UI freigeben; die Framework-Initialisierung nicht vorwegnehmen.
-        if (session.getLockInstance() == null) {
+        if (vaadinSession.getLockInstance() == null) {
           continue;
         }
-        session.lock();
+        vaadinSession.lock();
         try {
-          UI ui = session.getUIById(id);
-          if (ui != null) {
-            return action.apply(ui);
+          UI requestedUi = vaadinSession.getUIById(requestedUiId);
+          if (requestedUi != null) {
+            return uiAction.apply(requestedUi);
           }
         } finally {
-          session.unlock();
+          vaadinSession.unlock();
         }
       }
     }
-    return fallback;
+
+    return fallbackResult;
   }
 }

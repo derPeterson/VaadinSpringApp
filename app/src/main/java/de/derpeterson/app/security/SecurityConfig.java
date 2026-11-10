@@ -107,10 +107,11 @@ public class SecurityConfig {
 
   @Bean
   public SessionRegistry sessionRegistry(ObjectProvider<DurableSessionRepository<?>> sessions) {
-    DurableSessionRepository<?> persistent = sessions.getIfAvailable();
-    return persistent == null
+    DurableSessionRepository<?> durableSessionRepository = sessions.getIfAvailable();
+
+    return durableSessionRepository == null
         ? new SessionRegistryImpl()
-        : new DurableSessionRegistry<>(persistent);
+        : new DurableSessionRegistry<>(durableSessionRepository);
   }
 
   @Bean
@@ -131,6 +132,7 @@ public class SecurityConfig {
     SessionAdmissionService sessionAdmissionService =
         new SessionAdmissionService(configService, registry);
     sessionAdmissionService.setDeviceTokens(tokens);
+
     return sessionAdmissionService;
   }
 
@@ -139,6 +141,7 @@ public class SecurityConfig {
     FilterRegistrationBean<VaadinSecurityFilter> registration =
         new FilterRegistrationBean<>(vaadinSecurityFilter);
     registration.setEnabled(false);
+
     return registration;
   }
 
@@ -158,18 +161,20 @@ public class SecurityConfig {
       DeviceTokenRepository tokenRepository,
       CustomUserDetailsService userDetailsService,
       SessionAdmissionService sessionAdmissionService) {
-    String secretKey = configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY);
+    String rememberMeSecretKey = configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY);
 
-    DeviceRememberMeServices remembered =
+    DeviceRememberMeServices deviceRememberMeServices =
         new DeviceRememberMeServices(
-            secretKey,
+            rememberMeSecretKey,
             userDetailsService,
             tokenRepository,
             sessionAdmissionService,
             () -> configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION));
-    remembered.validitySeconds();
-    remembered.setCookieCustomizer(cookie -> cookie.setAttribute("SameSite", "Lax"));
-    return remembered;
+
+    deviceRememberMeServices.validitySeconds();
+    deviceRememberMeServices.setCookieCustomizer(cookie -> cookie.setAttribute("SameSite", "Lax"));
+
+    return deviceRememberMeServices;
   }
 
   @Bean
@@ -187,23 +192,25 @@ public class SecurityConfig {
       TwoFactorAuthorization twoFactorAuthorization) {
     logger.debug("🔥 SecurityConfig is loading!");
 
-    H2ConsoleOriginFilter consoleProtection =
+    H2ConsoleOriginFilter h2ConsoleOriginFilter =
         new H2ConsoleOriginFilter(exposeH2Console, h2Console::getIfAvailable);
-    FlowCsrfRequestMatcher flowProtection = new FlowCsrfRequestMatcher(vaadinServletMapping);
+    FlowCsrfRequestMatcher flowCsrfRequestMatcher =
+        new FlowCsrfRequestMatcher(vaadinServletMapping);
+
     httpSecurity
         .authenticationManager(authenticationManager)
         .csrf(csrf ->
             csrf.requireCsrfProtectionMatcher(request ->
-                flowProtection.matches(request)
-                    && !consoleProtection.allowsConsoleRequest(request)))
+                flowCsrfRequestMatcher.matches(request)
+                    && !h2ConsoleOriginFilter.allowsConsoleRequest(request)))
         .headers(headers -> headers.frameOptions(FrameOptionsConfig::sameOrigin))
-        .addFilterBefore(consoleProtection, CsrfFilter.class)
+        .addFilterBefore(h2ConsoleOriginFilter, CsrfFilter.class)
         .addFilterBefore(
             new FlowUiRecoveryFilter(
                 vaadinServletMapping, sessionAdmissionService, maintenanceService),
             CsrfFilter.class)
         .authorizeHttpRequests(
-            requests -> configureRequestAuthorization(requests, consoleProtection))
+            requests -> configureRequestAuthorization(requests, h2ConsoleOriginFilter))
         .exceptionHandling(exceptionHandling ->
             exceptionHandling
                 .authenticationEntryPoint(
@@ -271,10 +278,11 @@ public class SecurityConfig {
 
     logger.debug("🔧 SecurityConfig loaded!");
 
-    ExternalLoginHttp external = externalLoginHttpProvider.getIfAvailable();
-    if (external != null) {
-      external.configure(httpSecurity);
+    ExternalLoginHttp externalLoginHttp = externalLoginHttpProvider.getIfAvailable();
+    if (externalLoginHttp != null) {
+      externalLoginHttp.configure(httpSecurity);
     }
+
     return httpSecurity.build();
   }
 

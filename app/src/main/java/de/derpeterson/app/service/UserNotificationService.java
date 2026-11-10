@@ -442,18 +442,20 @@ public class UserNotificationService {
     return new Sent(m.getId(), m.getTitle(), m.getBody(), m.getCreatedAt(), m.getRecipientCount());
   }
 
-  private static String normalizeDraftText(String value, int max) {
-    if (value == null || value.isBlank() || value.length() > max) {
+  private static String normalizeDraftText(String draftText, int maximumTextLength) {
+    if (draftText == null || draftText.isBlank() || draftText.length() > maximumTextLength) {
       throw new Rejected(Problem.INVALID_DRAFT);
     }
-    return value.strip();
+
+    return draftText.strip();
   }
 
-  private Pageable buildNotificationPageRequest(int number, int size) {
-    if (number < 0 || size < 1 || size > 100) {
+  private Pageable buildNotificationPageRequest(int pageIndex, int pageSize) {
+    if (pageIndex < 0 || pageSize < 1 || pageSize > 100) {
       throw new IllegalArgumentException("Invalid page");
     }
-    return PageRequest.of(number, size);
+
+    return PageRequest.of(pageIndex, pageSize);
   }
 
   /**

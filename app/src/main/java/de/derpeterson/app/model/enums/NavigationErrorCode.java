@@ -23,7 +23,9 @@ public enum NavigationErrorCode {
     return messageResolver.apply(messageProperties);
   }
 
-  public static Optional<NavigationErrorCode> fromCode(String code) {
-    return Arrays.stream(values()).filter(value -> value.code.equals(code)).findFirst();
+  public static Optional<NavigationErrorCode> fromCode(String requestedErrorCode) {
+    return Arrays.stream(values())
+        .filter(value -> value.code.equals(requestedErrorCode))
+        .findFirst();
   }
 }

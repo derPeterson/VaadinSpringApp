@@ -107,27 +107,32 @@ public class TwoFactorEnrollment {
   }
 
   /** Ein Ersatzcode bereitet nur den Wechsel vor. Verbraucht wird er atomar beim Abschluss. */
-  public Pending beginRecovery(HttpServletRequest httpRequest, String code) {
+  public Pending beginRecovery(HttpServletRequest httpRequest, String submittedRecoveryCode) {
     if (!available()) {
       throw new IllegalStateException("TOTP encryption key is not configured");
     }
-    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(httpRequest);
-    String digest = TwoFactorSecrets.recoveryDigest(owner.id(), code);
-    Pending pending =
+
+    TwoFactorAuthorization.Owner factorOwner = twoFactorAuthorization.owner(httpRequest);
+    String recoveryCodeDigest =
+        TwoFactorSecrets.recoveryDigest(factorOwner.id(), submittedRecoveryCode);
+
+    Pending pendingEnrollment =
         twoFactorStore.locked(
-            owner.id(),
-            owner.accessVersion(),
+            factorOwner.id(),
+            factorOwner.accessVersion(),
             twoFactorAccountEntity -> {
               if (!twoFactorStore.checkAdditionalProof(
                   twoFactorAccountEntity,
-                  twoFactorStore.hasUnusedRecoveryCode(twoFactorAccountEntity, digest))) {
+                  twoFactorStore.hasUnusedRecoveryCode(
+                      twoFactorAccountEntity, recoveryCodeDigest))) {
                 return null;
               }
+
               TwoFactorChallengeEntity twoFactorChallengeEntity =
                   createTwoFactorChallengeEntity(
                       httpRequest, twoFactorAccountEntity, Kind.ENROLLMENT);
               twoFactorChallengeEntity.setSetupProof(SetupProof.RECOVERY_CODE);
-              twoFactorChallengeEntity.setVerificationDigest(digest);
+              twoFactorChallengeEntity.setVerificationDigest(recoveryCodeDigest);
               prepareSecret(twoFactorChallengeEntity);
               twoFactorChallengeRepository.saveAndFlush(twoFactorChallengeEntity);
               return new Pending(
@@ -135,11 +140,13 @@ public class TwoFactorEnrollment {
                   twoFactorChallengeEntity.getKind(),
                   twoFactorChallengeEntity.getSetupProof());
             });
-    if (pending == null) {
-      throw twoFactorStore.invalidConfirmation(owner.id());
+
+    if (pendingEnrollment == null) {
+      throw twoFactorStore.invalidConfirmation(factorOwner.id());
     }
+
     twoFactorAuthorization.clearSessionProof(httpRequest);
-    return pending;
+    return pendingEnrollment;
   }
 
   Pending beginReplacement(HttpServletRequest httpRequest) {

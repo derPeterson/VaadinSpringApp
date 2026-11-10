@@ -30,21 +30,24 @@ public final class HttpsDevelopmentApplication {
     if (Runtime.version().feature() != 25 || !System.getProperty("os.name").startsWith("Windows")) {
       throw new IllegalStateException("The HTTPS IDE launcher requires Windows and Java 25");
     }
+
     Path repositoryPath = Path.of("").toAbsolutePath().normalize();
     Path applicationModulePath = requireApplicationModule(repositoryPath);
     // Laufzeitdaten bleiben im Root; Vaadin muss die Quellen im app-Modul finden.
     System.getProperties().putIfAbsent("vaadin.project.basedir", applicationModulePath.toString());
+
     Path caddyExecutablePath =
         repositoryPath
             .resolve(System.getProperty("https.dev.caddy", "data/https/tools/caddy.exe"))
             .normalize();
     verifyCaddy(caddyExecutablePath);
     requireFreePorts(8080, 8081, 8443);
+
     String bindHostName = "localhost";
     Path caddyfilePath = repositoryPath.resolve("scripts/https/Caddyfile.ide");
-    String lanHost = System.getProperty("https.dev.lan-host");
-    if (lanHost != null) {
-      InetAddress bindAddress = privateIpv4(lanHost);
+    String configuredLanHost = System.getProperty("https.dev.lan-host");
+    if (configuredLanHost != null) {
+      InetAddress bindAddress = privateIpv4(configuredLanHost);
       if (NetworkInterface.getByInetAddress(bindAddress) == null) {
         throw new IOException("The LAN IPv4 address is not assigned to this computer");
       }
@@ -54,6 +57,7 @@ public final class HttpsDevelopmentApplication {
       System.setProperty("app.https.origin", "https://" + bindHostName + ":8443");
       System.setProperty("server.address", "127.0.0.1");
     }
+
     // Ein DevTools-Neustart des Main würde einen zweiten Proxy starten. Java-Debugging bleibt
     // aktiv.
     System.setProperty("spring.devtools.restart.enabled", "false");
@@ -72,8 +76,10 @@ public final class HttpsDevelopmentApplication {
                 repositoryPath.resolve("data/https/ide").toString().replace('\\', '/'),
                 "APP_HTTPS_IDE_LAN_HOST",
                 bindHostName));
+
     Runtime.getRuntime().addShutdownHook(new Thread(httpsProxy::close, "ide-https-cleanup"));
     httpsProxy.failApplicationOnUnexpectedExit();
+
     try {
       SpringApplication springApplication = new SpringApplication(Application.class);
       springApplication.setAdditionalProfiles("https");
@@ -98,6 +104,7 @@ public final class HttpsDevelopmentApplication {
       throw new IOException(
           "Start Application HTTPS with the repository root as working directory; app/pom.xml and scripts/https/Caddyfile.ide are required.");
     }
+
     return applicationModulePath;
   }
 
@@ -108,19 +115,22 @@ public final class HttpsDevelopmentApplication {
               + CADDY_VERSION
               + " in data/https/tools/caddy.exe or set -Dhttps.dev.caddy=<path>");
     }
-    Process versionProcess =
+
+    Process caddyVersionProcess =
         new ProcessBuilder(caddyExecutable.toString(), "version").redirectErrorStream(true).start();
     try {
-      if (!versionProcess.waitFor(5, TimeUnit.SECONDS)) {
+      if (!caddyVersionProcess.waitFor(5, TimeUnit.SECONDS)) {
         throw new IOException("Caddy version check timed out");
       }
-      String versionOutput =
-          new String(versionProcess.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-      if (versionProcess.exitValue() != 0 || !versionOutput.startsWith(CADDY_VERSION + " ")) {
+
+      String caddyVersionOutput =
+          new String(caddyVersionProcess.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+      if (caddyVersionProcess.exitValue() != 0
+          || !caddyVersionOutput.startsWith(CADDY_VERSION + " ")) {
         throw new IOException("Caddy " + CADDY_VERSION + " is required");
       }
     } finally {
-      IdeHttpsProxy.stopOwnedProcess(versionProcess);
+      IdeHttpsProxy.stopOwnedProcess(caddyVersionProcess);
     }
   }
 
@@ -132,9 +142,11 @@ public final class HttpsDevelopmentApplication {
 
   static InetAddress privateIpv4(String hostAddressText) {
     InetAddress bindAddress = InetAddress.ofLiteral(hostAddressText.strip());
+
     if (!(bindAddress instanceof Inet4Address) || !bindAddress.isSiteLocalAddress()) {
       throw new IllegalArgumentException("The HTTPS LAN launcher requires a private IPv4 address");
     }
+
     return bindAddress;
   }
 

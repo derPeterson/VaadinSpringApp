@@ -98,29 +98,34 @@ public class PasswordResetService {
     return createTokenLocked(stored);
   }
 
-  private String createTokenLocked(UserEntity user) {
-    LocalDateTime expiryDate =
+  private String createTokenLocked(UserEntity lockedUserEntity) {
+    LocalDateTime tokenExpiryDate =
         LocalDateTime.now(passwordResetClock)
             .plus(positiveDuration(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION));
-    invalidateTokensLocked(user);
+    invalidateTokensLocked(lockedUserEntity);
 
-    String token = UUID.randomUUID().toString();
-    PasswordResetTokenEntity resetToken = new PasswordResetTokenEntity();
-    resetToken.setToken(token);
-    resetToken.setUserEntity(user);
-    resetToken.setExpiryDate(expiryDate);
-    resetToken.setStatus(TokenStatus.ACTIVE);
-    tokenRepository.save(resetToken);
-    return token;
+    String resetTokenValue = UUID.randomUUID().toString();
+    PasswordResetTokenEntity resetTokenEntity = new PasswordResetTokenEntity();
+    resetTokenEntity.setToken(resetTokenValue);
+    resetTokenEntity.setUserEntity(lockedUserEntity);
+    resetTokenEntity.setExpiryDate(tokenExpiryDate);
+    resetTokenEntity.setStatus(TokenStatus.ACTIVE);
+    tokenRepository.save(resetTokenEntity);
+
+    return resetTokenValue;
   }
 
-  private Duration positiveDuration(ConfigEntry entry) {
-    Duration duration = Duration.parse(configService.getString(entry));
-    Duration minimum = entry.getMinimumTokenDuration();
-    if (!TokenDurationPolicy.meetsMinimumDuration(duration, minimum)) {
-      throw new IllegalArgumentException(entry + " muss mindestens " + minimum + " betragen.");
+  private Duration positiveDuration(ConfigEntry tokenDurationConfigEntry) {
+    Duration configuredTokenDuration =
+        Duration.parse(configService.getString(tokenDurationConfigEntry));
+    Duration minimumTokenDuration = tokenDurationConfigEntry.getMinimumTokenDuration();
+
+    if (!TokenDurationPolicy.meetsMinimumDuration(configuredTokenDuration, minimumTokenDuration)) {
+      throw new IllegalArgumentException(
+          tokenDurationConfigEntry + " muss mindestens " + minimumTokenDuration + " betragen.");
     }
-    return duration;
+
+    return configuredTokenDuration;
   }
 
   /** ACTIVE is an initial state, never a transition; terminal states are irreversible. */

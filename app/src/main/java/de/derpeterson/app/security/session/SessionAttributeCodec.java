@@ -15,54 +15,66 @@ public final class SessionAttributeCodec {
 
   private record Csrf(String header, String parameter, String token) {}
 
-  public byte[] encode(Object value) {
-    String kind;
-    Object payload = value;
-    if (value instanceof DurableAuthentication) {
-      kind = "authentication";
-    } else if (value instanceof Active) {
-      kind = "admission";
-    } else if (value instanceof CsrfToken token) {
-      kind = "csrf";
-      payload = new Csrf(token.getHeaderName(), token.getParameterName(), token.getToken());
-    } else if (value instanceof String) {
-      kind = "text";
-    } else if (value instanceof Boolean) {
-      kind = "flag";
+  public byte[] encode(Object sessionAttribute) {
+    String attributeKind;
+    Object attributePayload = sessionAttribute;
+    if (sessionAttribute instanceof DurableAuthentication) {
+      attributeKind = "authentication";
+    } else if (sessionAttribute instanceof Active) {
+      attributeKind = "admission";
+    } else if (sessionAttribute instanceof CsrfToken csrfToken) {
+      attributeKind = "csrf";
+      attributePayload =
+          new Csrf(csrfToken.getHeaderName(), csrfToken.getParameterName(), csrfToken.getToken());
+    } else if (sessionAttribute instanceof String) {
+      attributeKind = "text";
+    } else if (sessionAttribute instanceof Boolean) {
+      attributeKind = "flag";
     } else {
       throw new IllegalArgumentException("Unsupported durable session attribute");
     }
-    byte[] bytes =
+
+    byte[] encodedAttributeBytes =
         sessionAttributeJsonMapper.writeValueAsBytes(
-            new Value(1, kind, sessionAttributeJsonMapper.valueToTree(payload)));
-    if (bytes.length > MAX_BYTES) {
+            new Value(1, attributeKind, sessionAttributeJsonMapper.valueToTree(attributePayload)));
+
+    if (encodedAttributeBytes.length > MAX_BYTES) {
       throw new IllegalArgumentException("Durable session attribute too large");
     }
-    return bytes;
+
+    return encodedAttributeBytes;
   }
 
-  public Object decode(byte[] bytes) {
-    if (bytes.length > MAX_BYTES) {
+  public Object decode(byte[] encodedAttributeBytes) {
+    if (encodedAttributeBytes.length > MAX_BYTES) {
       throw new IllegalArgumentException("Durable session attribute too large");
     }
-    Value value = sessionAttributeJsonMapper.readValue(bytes, Value.class);
-    if (value == null
-        || value.version() != 1
-        || value.kind() == null
-        || value.value() == null
-        || value.value().isNull()) {
+
+    Value decodedAttribute =
+        sessionAttributeJsonMapper.readValue(encodedAttributeBytes, Value.class);
+    if (decodedAttribute == null
+        || decodedAttribute.version() != 1
+        || decodedAttribute.kind() == null
+        || decodedAttribute.value() == null
+        || decodedAttribute.value().isNull()) {
       throw new IllegalArgumentException("Unsupported durable session version");
     }
-    return switch (value.kind()) {
+
+    return switch (decodedAttribute.kind()) {
       case "authentication" ->
-          sessionAttributeJsonMapper.treeToValue(value.value(), DurableAuthentication.class);
-      case "admission" -> sessionAttributeJsonMapper.treeToValue(value.value(), Active.class);
+          sessionAttributeJsonMapper.treeToValue(
+              decodedAttribute.value(), DurableAuthentication.class);
+      case "admission" ->
+          sessionAttributeJsonMapper.treeToValue(decodedAttribute.value(), Active.class);
       case "csrf" -> {
-        Csrf csrf = sessionAttributeJsonMapper.treeToValue(value.value(), Csrf.class);
-        yield new DefaultCsrfToken(csrf.header(), csrf.parameter(), csrf.token());
+        Csrf decodedCsrfToken =
+            sessionAttributeJsonMapper.treeToValue(decodedAttribute.value(), Csrf.class);
+        yield new DefaultCsrfToken(
+            decodedCsrfToken.header(), decodedCsrfToken.parameter(), decodedCsrfToken.token());
       }
-      case "text" -> sessionAttributeJsonMapper.treeToValue(value.value(), String.class);
-      case "flag" -> sessionAttributeJsonMapper.treeToValue(value.value(), Boolean.class);
+      case "text" -> sessionAttributeJsonMapper.treeToValue(decodedAttribute.value(), String.class);
+      case "flag" ->
+          sessionAttributeJsonMapper.treeToValue(decodedAttribute.value(), Boolean.class);
       default -> throw new IllegalArgumentException("Unknown durable session attribute type");
     };
   }

@@ -20,24 +20,28 @@ final class FlowCsrfRequestMatcher implements RequestMatcher {
     if (!CsrfFilter.DEFAULT_CSRF_MATCHER.matches(httpRequest)) {
       return false;
     }
+
     String requestPath = HandlerHelper.getRequestPathInsideContext(httpRequest);
-    Optional<String> applicationPath =
+    Optional<String> vaadinPathOptional =
         HandlerHelper.getPathIfInsideServlet(servletMapping, requestPath);
-    if (applicationPath.isEmpty()
+    if (vaadinPathOptional.isEmpty()
         || !HandlerHelper.isFrameworkInternalRequest(servletMapping, httpRequest)) {
       return true;
     }
-    String vaadinRelativePath = applicationPath.get();
+
+    String vaadinRelativePath = vaadinPathOptional.get();
     if (vaadinRelativePath.isEmpty() || "/".equals(vaadinRelativePath)) {
       String vaadinRequestType = httpRequest.getParameter("v-r");
       return Arrays.stream(HandlerHelper.RequestType.values())
           .noneMatch(
               knownRequestType -> knownRequestType.getIdentifier().equals(vaadinRequestType));
     }
+
     // HandlerHelper additionally validates dynamic-resource paths against traversal.
     // Their upload security key and UIDL/Push tokens are checked by the Flow handlers.
     boolean pushRequest =
         "VAADIN/push".equals(vaadinRelativePath) && "push".equals(httpRequest.getParameter("v-r"));
+
     return !pushRequest && !vaadinRelativePath.startsWith("VAADIN/dynamic/resource/");
   }
 }

@@ -37,34 +37,44 @@ public final class FlowUiRecoveryFilter implements Filter {
 
   @Override
   public void doFilter(
-      ServletRequest httpRequest, ServletResponse httpResponse, FilterChain filterChain)
+      ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
       throws IOException, ServletException {
-    HttpServletRequest http = (HttpServletRequest) httpRequest;
-    HttpServletResponse target = (HttpServletResponse) httpResponse;
-    TwoFactorFlow flow = TwoFactorFlow.current(http);
-    if (flow != null
-        && !sessionAdmissionService.isExpired(http)
-        && (AppRoute.LOGOUT.getSecurityRoute().equals(http.getServletPath())
-            || AppRoute.LOGIN.getSecurityRoute().equals(http.getServletPath())
-                && "POST".equals(http.getMethod()))) {
-      target.setHeader("Cache-Control", "no-store");
-      target.sendRedirect(http.getContextPath() + flow.location());
+    HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
+    HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
+
+    TwoFactorFlow activeTwoFactorFlow = TwoFactorFlow.current(httpRequest);
+    if (activeTwoFactorFlow != null
+        && !sessionAdmissionService.isExpired(httpRequest)
+        && (AppRoute.LOGOUT.getSecurityRoute().equals(httpRequest.getServletPath())
+            || AppRoute.LOGIN.getSecurityRoute().equals(httpRequest.getServletPath())
+                && "POST".equals(httpRequest.getMethod()))) {
+      httpResponse.setHeader("Cache-Control", "no-store");
+      httpResponse.sendRedirect(httpRequest.getContextPath() + activeTwoFactorFlow.location());
       return;
     }
-    if (!staleTransport(http) || !restoredAuthentication(http)) {
-      filterChain.doFilter(httpRequest, httpResponse);
+
+    if (!staleTransport(httpRequest) || !restoredAuthentication(httpRequest)) {
+      filterChain.doFilter(servletRequest, servletResponse);
       return;
     }
-    target.setContentType("application/json;charset=UTF-8");
-    target.setHeader("Cache-Control", "no-store");
-    String destination = flow == null ? AppRoute.HOME.getSecurityRoute() : flow.location();
-    String route =
-        maintenanceService.blocks(http) ? AppRoute.MAINTENANCE.getSecurityRoute() : destination;
-    target
+
+    httpResponse.setContentType("application/json;charset=UTF-8");
+    httpResponse.setHeader("Cache-Control", "no-store");
+
+    String flowDestination =
+        activeTwoFactorFlow == null
+            ? AppRoute.HOME.getSecurityRoute()
+            : activeTwoFactorFlow.location();
+    String redirectRoute =
+        maintenanceService.blocks(httpRequest)
+            ? AppRoute.MAINTENANCE.getSecurityRoute()
+            : flowDestination;
+
+    httpResponse
         .getWriter()
         .write(
             VaadinService.createCriticalNotificationJSON(
-                null, null, null, http.getContextPath() + route));
+                null, null, null, httpRequest.getContextPath() + redirectRoute));
   }
 
   private boolean staleTransport(HttpServletRequest httpRequest) {

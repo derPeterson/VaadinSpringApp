@@ -268,7 +268,7 @@ class UserAvatarServicePersistenceTest {
       try {
         ReflectionTestUtils.invokeMethod(
             dialog,
-            "save",
+            "saveAvatarCrop",
             new ObjectMapper()
                 .readTree(
                     "{\"local\":true,\"loading\":false,\"imageId\":\""

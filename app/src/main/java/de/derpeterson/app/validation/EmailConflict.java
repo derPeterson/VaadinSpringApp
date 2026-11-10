@@ -29,6 +29,7 @@ public final class EmailConflict {
         }
       }
     }
+
     return false;
   }
 }

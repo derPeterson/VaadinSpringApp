@@ -231,16 +231,17 @@ public final class DurableSessionRepository<S extends Session>
   @Override
   public Map<String, LiveSession> findByIndexNameAndIndexValue(
       String indexName, String indexValue) {
-    Map<String, LiveSession> result = new HashMap<>();
+    Map<String, LiveSession> liveSessionsById = new HashMap<>();
     backingSessionRepository
         .findByIndexNameAndIndexValue(indexName, indexValue)
-        .forEach((id, ignored) -> {
-          LiveSession session = findById(id);
-          if (session != null) {
-            result.put(id, session);
+        .forEach((sessionId, indexedStoredSession) -> {
+          LiveSession liveSession = findById(sessionId);
+          if (liveSession != null) {
+            liveSessionsById.put(sessionId, liveSession);
           }
         });
-    return result;
+
+    return liveSessionsById;
   }
 
   @Scheduled(fixedDelay = 60000)

@@ -133,21 +133,30 @@ public class SecurityService {
   }
 
   /** Frische Rechte der gebundenen Sitzung; kein Zugriff auf den Kontext eines fremden Threads. */
-  public Optional<Authentication> refreshSessionAuthentication(HttpSession session) {
-    if (session == null) {
+  public Optional<Authentication> refreshSessionAuthentication(HttpSession httpSession) {
+    if (httpSession == null) {
       return Optional.empty();
     }
+
     try {
-      if (sessionAdmissionService.isSessionExpired(session.getId())) {
+      if (sessionAdmissionService.isSessionExpired(httpSession.getId())) {
         return Optional.empty();
       }
-      Authentication auth = sessionAuthentication(session);
-      if (auth == null && session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails p) {
-        auth = UsernamePasswordAuthenticationToken.authenticated(p, null, p.getAuthorities());
+
+      Authentication sessionAuthentication = sessionAuthentication(httpSession);
+      if (sessionAuthentication == null
+          && httpSession.getAttribute(AUTH_USER_SESSION_KEY)
+              instanceof UserDetails storedUserDetails) {
+        sessionAuthentication =
+            UsernamePasswordAuthenticationToken.authenticated(
+                storedUserDetails, null, storedUserDetails.getAuthorities());
       }
-      Optional<Authentication> fresh = refreshedAuthentication(auth);
-      fresh.ifPresent(a -> install(session, a));
-      return fresh;
+
+      Optional<Authentication> refreshedSessionAuthentication =
+          refreshedAuthentication(sessionAuthentication);
+      refreshedSessionAuthentication.ifPresent(
+          updatedAuthentication -> install(httpSession, updatedAuthentication));
+      return refreshedSessionAuthentication;
     } catch (IllegalStateException _) {
       return Optional.empty();
     }

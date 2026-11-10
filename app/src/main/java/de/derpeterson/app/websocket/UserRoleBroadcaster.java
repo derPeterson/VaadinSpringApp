@@ -15,6 +15,7 @@ public class UserRoleBroadcaster {
 
   public Registration register(Consumer<Long> roleChangeListener) {
     roleChangeListeners.add(roleChangeListener);
+
     return () -> roleChangeListeners.remove(roleChangeListener);
   }
 

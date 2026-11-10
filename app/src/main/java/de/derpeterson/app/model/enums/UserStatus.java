@@ -23,60 +23,65 @@ public enum UserStatus {
 
   /** Kleine Lucide-Symbole auf einer dezent gefüllten Statusfläche für Auswahlzeilen. */
   public Component getSelectionComponent() {
-    AppIcon statusIconType =
+    AppIcon statusAppIcon =
         switch (this) {
           case AVAILABLE -> AppIcon.CHECK;
           case EMPLOYED -> AppIcon.MINUS;
           case ABSENT -> AppIcon.CLOCK;
           case OFFLINE -> AppIcon.CLOSE;
         };
-    Div statusIconContainer = new Div(statusIconType.create());
-    statusIconContainer.addClassName("portal-status-symbol");
-    String selectionColor =
+
+    Div statusIconDiv = new Div(statusAppIcon.create());
+    statusIconDiv.addClassName("portal-status-symbol");
+
+    String selectionColorVariableName =
         switch (this) {
           case AVAILABLE -> "--cosmos-reference-success";
           case EMPLOYED -> "--cosmos-reference-invalid";
           case ABSENT -> "--cosmos-reference-warning";
           case OFFLINE -> "--cosmos-reference-secondary";
         };
-    statusIconContainer.getStyle().setColor("var(" + selectionColor + ", " + color + ")");
-    return statusIconContainer;
+
+    statusIconDiv.getStyle().setColor("var(" + selectionColorVariableName + ", " + color + ")");
+    return statusIconDiv;
   }
 
   /** Gemeinsame Kontursymbole für Avatar und Statusauswahl; Farben bleiben semantisch. */
   public Component getOutlineComponent(IconSize iconSize, boolean showAsOverlay) {
-    AppIcon statusIconType =
+    AppIcon statusAppIcon =
         switch (this) {
           case AVAILABLE -> AppIcon.CHECK_CIRCLE;
           case EMPLOYED -> AppIcon.CIRCLE_MINUS;
           case ABSENT -> AppIcon.CLOCK;
           case OFFLINE -> AppIcon.CLOSE_CIRCLE;
         };
-    SvgIcon statusSvgIcon = statusIconType.create();
+    SvgIcon statusSvgIcon = statusAppIcon.create();
     statusSvgIcon.setSize("100%");
-    Div statusIconContainer = new Div(statusSvgIcon);
+    Div statusIconDiv = new Div(statusSvgIcon);
     String iconWidth =
         (showAsOverlay ? Math.round(iconSize.getWidth() * .3) : iconSize.getWidth())
             + iconSize.getUnit().getSymbol();
     String iconHeight =
         (showAsOverlay ? Math.round(iconSize.getHeight() * .3) : iconSize.getHeight())
             + iconSize.getUnit().getSymbol();
-    statusIconContainer.setWidth(iconWidth);
-    statusIconContainer.setHeight(iconHeight);
-    statusIconContainer
+    statusIconDiv.setWidth(iconWidth);
+    statusIconDiv.setHeight(iconHeight);
+    statusIconDiv
         .getStyle()
         .setColor(color)
         .setBackgroundColor(backgroundColor)
         .setBorderRadius("50%");
+
     if (showAsOverlay) {
-      statusIconContainer
+      statusIconDiv
           .getStyle()
           .setPosition(Style.Position.ABSOLUTE)
           .setBottom("var(--cosmos-avatar-status-anchor)")
           .setRight("var(--cosmos-avatar-status-anchor)")
           .set("transform", "translate(50%, 50%)");
     }
-    return statusIconContainer;
+
+    return statusIconDiv;
   }
 
   public static UserStatus getDefaultStatus() {

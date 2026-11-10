@@ -24,42 +24,51 @@ public final class MaintenanceHttpFilter implements Filter {
 
   @Override
   public void doFilter(
-      ServletRequest httpRequest, ServletResponse httpResponse, FilterChain filterChain)
+      ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
       throws IOException, ServletException {
-    HttpServletRequest req = (HttpServletRequest) httpRequest;
-    HttpServletResponse res = (HttpServletResponse) httpResponse;
-    String path = req.getServletPath();
-    if (!maintenanceService.blocks(req) || AppRoute.LOGOUT.getSecurityRoute().equals(path)) {
-      filterChain.doFilter(httpRequest, httpResponse);
+    HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
+    HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
+    String servletPath = httpRequest.getServletPath();
+
+    if (!maintenanceService.blocks(httpRequest)
+        || AppRoute.LOGOUT.getSecurityRoute().equals(servletPath)) {
+      filterChain.doFilter(servletRequest, servletResponse);
       return;
     }
-    String type = req.getParameter("v-r");
-    if (isFlowMessage(path, type)) {
-      handleFlowMessage(req, res, filterChain, path);
+
+    String vaadinRequestType = httpRequest.getParameter("v-r");
+    if (isFlowMessage(servletPath, vaadinRequestType)) {
+      handleFlowMessage(httpRequest, httpResponse, filterChain, servletPath);
       return;
     }
+
     // Initialization cannot invoke component RPC. The UI route guard and account services
     // protect its route resolution; heartbeat only keeps an existing session alive.
-    if ((path.isEmpty() || "/".equals(path)) && ("init".equals(type) || "heartbeat".equals(type))) {
-      filterChain.doFilter(httpRequest, httpResponse);
+    if ((servletPath.isEmpty() || "/".equals(servletPath))
+        && ("init".equals(vaadinRequestType) || "heartbeat".equals(vaadinRequestType))) {
+      filterChain.doFilter(servletRequest, servletResponse);
       return;
     }
-    if (type == null && permittedDocument(req, path)) {
-      if (AppRoute.MAINTENANCE.getSecurityRoute().equals(path)) {
-        res.setStatus(503);
+
+    if (vaadinRequestType == null && permittedDocument(httpRequest, servletPath)) {
+      if (AppRoute.MAINTENANCE.getSecurityRoute().equals(servletPath)) {
+        httpResponse.setStatus(503);
       }
-      filterChain.doFilter(httpRequest, httpResponse);
+      filterChain.doFilter(servletRequest, servletResponse);
       return;
     }
-    if (("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod())) && type == null) {
+
+    if (("GET".equals(httpRequest.getMethod()) || "HEAD".equals(httpRequest.getMethod()))
+        && vaadinRequestType == null) {
       // Render the existing Vaadin view in a forward while retaining HTTP 503, not a 302 loop.
-      res.setStatus(503);
-      res.setHeader("Cache-Control", "no-store");
-      req.setAttribute(FORWARDED_DOCUMENT, Boolean.TRUE);
-      req.getRequestDispatcher(AppRoute.MAINTENANCE.getSecurityRoute())
-          .forward(httpRequest, httpResponse);
+      httpResponse.setStatus(503);
+      httpResponse.setHeader("Cache-Control", "no-store");
+      httpRequest.setAttribute(FORWARDED_DOCUMENT, Boolean.TRUE);
+      httpRequest
+          .getRequestDispatcher(AppRoute.MAINTENANCE.getSecurityRoute())
+          .forward(servletRequest, servletResponse);
     } else {
-      res.sendError(503);
+      httpResponse.sendError(503);
     }
   }
 

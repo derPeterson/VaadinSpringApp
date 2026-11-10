@@ -71,6 +71,7 @@ public class SessionPersistenceConfiguration {
     if (sessionTimeoutSeconds < 1) {
       throw new IllegalArgumentException("Session timeout must be positive");
     }
+
     return Duration.ofSeconds(sessionTimeoutSeconds);
   }
 

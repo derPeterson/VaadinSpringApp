@@ -26,9 +26,11 @@ public class UserNotificationCleanup {
         userNotificationRepository.deleteRetired(
             userNotificationPolicy.inboxCutoff(cleanupTime),
             userNotificationPolicy.historyCutoff(cleanupTime));
+
     if (deletedNotificationCount > 0) {
       AfterCommitLog.info(log, "Retired notifications deleted: count={}", deletedNotificationCount);
     }
+
     return deletedNotificationCount;
   }
 }

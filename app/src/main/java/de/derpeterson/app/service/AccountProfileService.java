@@ -31,7 +31,7 @@ public class AccountProfileService {
   private final SecurityService securityService;
   private final UserRepository userRepository;
   private final ConfigService configService;
-  private final UserProfileBroadcaster profileEvents;
+  private final UserProfileBroadcaster userProfileBroadcaster;
 
   // Kein Benutzerbezeichner aus dem Formular: Das Zielkonto kommt immer aus der Anmeldung.
   public record Changes(
@@ -51,52 +51,64 @@ public class AccountProfileService {
       Locale language,
       Gender gender)
       implements Serializable {
-    public static Profile from(UserEntity user) {
+    public static Profile from(UserEntity accountUserEntity) {
       return new Profile(
-          user.getVersion(),
-          user.getFirstName(),
-          user.getLastName(),
-          user.getBirthDate(),
-          user.getPreferredLocale(),
-          user.getGender());
+          accountUserEntity.getVersion(),
+          accountUserEntity.getFirstName(),
+          accountUserEntity.getLastName(),
+          accountUserEntity.getBirthDate(),
+          accountUserEntity.getPreferredLocale(),
+          accountUserEntity.getGender());
     }
   }
 
   // Eigene Transaktion verhindert, dass ein alter OSIV-/UI-Zustand als aktuelle DB-Version gilt.
   @Transactional(propagation = Propagation.REQUIRES_NEW)
-  public Profile save(HttpServletRequest request, Changes changes) {
-    UserDetails principal =
+  public Profile save(HttpServletRequest httpRequest, Changes profileChanges) {
+    UserDetails authenticatedUserDetails =
         securityService
-            .getAuthenticatedUser(request)
+            .getAuthenticatedUser(httpRequest)
             .orElseThrow(() -> new AccessDeniedException("Authentication required"));
+
     MaintenanceService.requirePublicAccess(configService);
-    Assert.notNull(changes, "Profile must not be null");
-    Assert.isTrue(UserInputRules.isRequiredTextValid(changes.firstName()), "Invalid first name");
-    Assert.isTrue(UserInputRules.isRequiredTextValid(changes.lastName()), "Invalid last name");
-    Assert.isTrue(UserInputRules.isBirthDateValid(changes.birthDate()), "Invalid birth date");
+    Assert.notNull(profileChanges, "Profile must not be null");
     Assert.isTrue(
-        Locale.GERMAN.equals(changes.language()) || Locale.ENGLISH.equals(changes.language()),
+        UserInputRules.isRequiredTextValid(profileChanges.firstName()), "Invalid first name");
+    Assert.isTrue(
+        UserInputRules.isRequiredTextValid(profileChanges.lastName()), "Invalid last name");
+    Assert.isTrue(
+        UserInputRules.isBirthDateValid(profileChanges.birthDate()), "Invalid birth date");
+    Assert.isTrue(
+        Locale.GERMAN.equals(profileChanges.language())
+            || Locale.ENGLISH.equals(profileChanges.language()),
         "Unsupported language");
-    UserEntity user =
+
+    UserEntity accountUserEntity =
         userRepository
-            .findByEmailForUpdate(principal.getUsername())
+            .findByEmailForUpdate(authenticatedUserDetails.getUsername())
             .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
-    if (!user.isEnabled()) {
+
+    if (!accountUserEntity.isEnabled()) {
       throw new AccessDeniedException("Account disabled");
     }
-    if (changes.version() == null || !Objects.equals(changes.version(), user.getVersion())) {
+    if (profileChanges.version() == null
+        || !Objects.equals(profileChanges.version(), accountUserEntity.getVersion())) {
       throw new OptimisticLockingFailureException("Profile changed; reload before saving");
     }
-    user.setFirstName(changes.firstName().trim());
-    user.setLastName(changes.lastName().trim());
-    user.setBirthDate(changes.birthDate());
-    user.setGender(changes.gender());
-    user.setPreferredLocale(changes.language());
+
+    accountUserEntity.setFirstName(profileChanges.firstName().trim());
+    accountUserEntity.setLastName(profileChanges.lastName().trim());
+    accountUserEntity.setBirthDate(profileChanges.birthDate());
+    accountUserEntity.setGender(profileChanges.gender());
+    accountUserEntity.setPreferredLocale(profileChanges.language());
+
     // Keine Übernahme einer UI-Entity: E-Mail, Passwort, Freigabe, Rollen und Tokens bleiben
     // erhalten.
-    userRepository.saveAndFlush(user);
-    profileEvents.afterCommit(user);
-    AfterCommitLog.debug(log, "Account profile updated: userId={}", user.getId());
-    return Profile.from(user);
+    userRepository.saveAndFlush(accountUserEntity);
+
+    userProfileBroadcaster.afterCommit(accountUserEntity);
+    AfterCommitLog.debug(log, "Account profile updated: userId={}", accountUserEntity.getId());
+
+    return Profile.from(accountUserEntity);
   }
 }

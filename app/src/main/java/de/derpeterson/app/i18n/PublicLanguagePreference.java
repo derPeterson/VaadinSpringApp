@@ -18,6 +18,7 @@ public final class PublicLanguagePreference {
     if (requestCookies == null) {
       return;
     }
+
     for (Cookie languageCookie : requestCookies) {
       if (COOKIE_NAME.equals(languageCookie.getName())) {
         String languageTag = languageCookie.getValue();
@@ -34,9 +35,11 @@ public final class PublicLanguagePreference {
   public static void save(Locale selectedLocale) {
     VaadinRequest vaadinRequest = VaadinRequest.getCurrent();
     VaadinResponse vaadinResponse = VaadinResponse.getCurrent();
+
     if (vaadinRequest == null || vaadinResponse == null) {
       return;
     }
+
     Cookie languageCookie = new Cookie(COOKIE_NAME, selectedLocale.getLanguage());
     String contextPath = vaadinRequest.getContextPath();
     languageCookie.setPath(contextPath.isEmpty() ? "/" : contextPath);
@@ -44,6 +47,7 @@ public final class PublicLanguagePreference {
     languageCookie.setSecure(vaadinRequest.isSecure());
     languageCookie.setAttribute("SameSite", "Lax");
     languageCookie.setMaxAge(MAX_AGE_SECONDS);
+
     vaadinResponse.addCookie(languageCookie);
   }
 }

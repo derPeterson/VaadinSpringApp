@@ -27,20 +27,22 @@ public class MailConfig {
     ConnectionAwareJavaMailSender connectionAwareMailSender =
         new ConnectionAwareJavaMailSender(this::createConfiguredMailSender);
     connectionAwareMailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
+
     return connectionAwareMailSender;
   }
 
   /** Erstellt einen Transport für einen festen SMTP-Stand, etwa für die manuelle Mailvorschau. */
   public ConnectionAwareJavaMailSender createConfiguredMailSender() {
     Map<ConfigEntry, String> smtpSettings = configService.snapshot(SMTP_SETTINGS);
-    ConnectionAwareJavaMailSender mailSender = new ConnectionAwareJavaMailSender();
-    mailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
-    mailSender.setHost(smtpSettings.get(ConfigEntry.MAIL_HOST));
-    mailSender.setPort(Integer.parseInt(smtpSettings.get(ConfigEntry.MAIL_PORT)));
-    mailSender.setUsername(smtpSettings.get(ConfigEntry.MAIL_USERNAME));
-    mailSender.setPassword(smtpSettings.get(ConfigEntry.MAIL_PASSWORD));
 
-    Properties javaMailProperties = mailSender.getJavaMailProperties();
+    ConnectionAwareJavaMailSender configuredMailSender = new ConnectionAwareJavaMailSender();
+    configuredMailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
+    configuredMailSender.setHost(smtpSettings.get(ConfigEntry.MAIL_HOST));
+    configuredMailSender.setPort(Integer.parseInt(smtpSettings.get(ConfigEntry.MAIL_PORT)));
+    configuredMailSender.setUsername(smtpSettings.get(ConfigEntry.MAIL_USERNAME));
+    configuredMailSender.setPassword(smtpSettings.get(ConfigEntry.MAIL_PASSWORD));
+
+    Properties javaMailProperties = configuredMailSender.getJavaMailProperties();
     putSmtpBooleanProperty(javaMailProperties, smtpSettings, ConfigEntry.MAIL_SMTP_AUTH);
     putSmtpBooleanProperty(javaMailProperties, smtpSettings, ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE);
     putSmtpBooleanProperty(javaMailProperties, smtpSettings, ConfigEntry.MAIL_SMTP_SSL_ENABLE);
@@ -50,7 +52,7 @@ public class MailConfig {
     javaMailProperties.setProperty(
         ConfigEntry.MAIL_DEBUG.getKey(), smtpSettings.get(ConfigEntry.MAIL_DEBUG));
 
-    return mailSender;
+    return configuredMailSender;
   }
 
   private static void putSmtpBooleanProperty(
@@ -63,6 +65,7 @@ public class MailConfig {
       throw new IllegalArgumentException(
           "Invalid boolean for configuration key " + configEntry.getKey());
     }
+
     javaMailProperties.put(configEntry.getKey(), Boolean.valueOf(configuredBooleanValue));
   }
 }

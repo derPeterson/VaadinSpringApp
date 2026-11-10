@@ -451,21 +451,28 @@ public class UserService {
             .anyMatch(roleEntity -> roleEntity.getName() == RoleType.ROLE_SUPERADMIN);
   }
 
-  private void validateUserFields(UserEntity user) {
+  private void validateUserFields(UserEntity accountUserEntity) {
     Assert.isTrue(
-        UserInputRules.isRequiredTextValid(user.getFirstName()), "First name must not be blank");
+        UserInputRules.isRequiredTextValid(accountUserEntity.getFirstName()),
+        "First name must not be blank");
     Assert.isTrue(
-        UserInputRules.isRequiredTextValid(user.getLastName()), "Last name must not be blank");
-    Assert.isTrue(UserInputRules.isEmailValid(user.getEmail()), "Invalid email");
+        UserInputRules.isRequiredTextValid(accountUserEntity.getLastName()),
+        "Last name must not be blank");
+    Assert.isTrue(UserInputRules.isEmailValid(accountUserEntity.getEmail()), "Invalid email");
     Assert.isTrue(
-        UserInputRules.isBirthDateValid(user.getBirthDate()), "Birth date must be in the past");
-    validateRoles(user.getRoleEntities());
+        UserInputRules.isBirthDateValid(accountUserEntity.getBirthDate()),
+        "Birth date must be in the past");
+
+    validateRoles(accountUserEntity.getRoleEntities());
   }
 
-  private void validateRoles(Collection<RoleEntity> roles) {
-    Assert.notNull(roles, "Roles must not be null");
+  private void validateRoles(Collection<RoleEntity> assignedRoleEntities) {
+    Assert.notNull(assignedRoleEntities, "Roles must not be null");
     Assert.isTrue(
-        roles.stream().allMatch(role -> role != null && role.getName() != null), "Invalid role");
+        assignedRoleEntities.stream()
+            .allMatch(assignedRoleEntity ->
+                assignedRoleEntity != null && assignedRoleEntity.getName() != null),
+        "Invalid role");
   }
 
   private void validateLocale(Locale locale) {

@@ -20,6 +20,7 @@ public class UserStatusBroadcaster {
   // UI-Komponenten registrieren, die den Status empfangen sollen
   public synchronized Registration register(Consumer<UserStatusMessage> userStatusListener) {
     userStatusListeners.add(userStatusListener);
+
     return () -> {
       synchronized (UserStatusBroadcaster.this) {
         userStatusListeners.remove(userStatusListener);

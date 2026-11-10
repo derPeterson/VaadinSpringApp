@@ -247,61 +247,76 @@ public class AccountSecurityService {
   }
 
   /** Erst der ausdrückliche Buttonklick verbraucht den Link, kein Mailscanner-GET. */
-  public Confirmation confirm(String token) {
+  public Confirmation confirm(String confirmationToken) {
     MaintenanceService.requirePublicAccess(configService);
-    String hash = tokenDigest(token);
-    if (hash == null) {
+    String confirmationTokenDigest = tokenDigest(confirmationToken);
+
+    if (confirmationTokenDigest == null) {
       return Confirmation.INVALID;
     }
+
     try {
       return transaction(() -> {
-        UserEntity user =
+        UserEntity lockedUserEntity =
             emailChangeTokenRepository
-                .findUserIdByDigest(hash)
+                .findUserIdByDigest(confirmationTokenDigest)
                 .flatMap(userRepository::lockVerificationUser)
                 .orElse(null);
-        if (user == null) {
+        if (lockedUserEntity == null) {
           return Confirmation.INVALID;
         }
-        EmailChangeTokenEntity pending =
-            emailChangeTokenRepository.findByDigest(hash).orElseThrow();
-        Confirmation state = state(pending);
+
+        EmailChangeTokenEntity emailChangeTokenEntity =
+            emailChangeTokenRepository.findByDigest(confirmationTokenDigest).orElseThrow();
+        Confirmation state = state(emailChangeTokenEntity);
         if (state != Confirmation.READY) {
           if (state == Confirmation.EXPIRED) {
-            pending.setStatus(TokenStatus.EXPIRED);
+            emailChangeTokenEntity.setStatus(TokenStatus.EXPIRED);
           }
           return state;
         }
-        if (userRepository.emailExistsForOtherUser(pending.getNewEmail(), user.getId())) {
-          pending.setStatus(TokenStatus.INACTIVE);
+
+        if (userRepository.emailExistsForOtherUser(
+            emailChangeTokenEntity.getNewEmail(), lockedUserEntity.getId())) {
+          emailChangeTokenEntity.setStatus(TokenStatus.INACTIVE);
           return Confirmation.CONFLICT;
         }
-        String old = user.getEmail();
-        String target = pending.getNewEmail();
-        String body =
+
+        String previousEmailAddress = lockedUserEntity.getEmail();
+        String newEmailAddress = emailChangeTokenEntity.getNewEmail();
+        String emailBodyHtml =
             accountSecurityMail.render(
-                "email_changed", user, Map.of("OLD_EMAIL", old, "NEW_EMAIL", target));
-        user.setEmail(target);
-        userRepository.saveAndFlush(user);
-        pending.setStatus(TokenStatus.USED);
-        emailChangeTokenRepository.save(pending);
-        invalidateEmailChanges(user);
-        invalidateResets(user);
-        String subject =
-            accountSecurityMail.messagePropertiesForRecipient(user).getAccountEmailChangedSubject();
-        emailQueueService.addAddressedNotification(user, old, subject, body);
-        emailQueueService.addAddressedNotification(user, target, subject, body);
+                "email_changed",
+                lockedUserEntity,
+                Map.of("OLD_EMAIL", previousEmailAddress, "NEW_EMAIL", newEmailAddress));
+
+        lockedUserEntity.setEmail(newEmailAddress);
+        userRepository.saveAndFlush(lockedUserEntity);
+        emailChangeTokenEntity.setStatus(TokenStatus.USED);
+        emailChangeTokenRepository.save(emailChangeTokenEntity);
+        invalidateEmailChanges(lockedUserEntity);
+        invalidateResets(lockedUserEntity);
+
+        String mailSubject =
+            accountSecurityMail
+                .messagePropertiesForRecipient(lockedUserEntity)
+                .getAccountEmailChangedSubject();
+        emailQueueService.addAddressedNotification(
+            lockedUserEntity, previousEmailAddress, mailSubject, emailBodyHtml);
+        emailQueueService.addAddressedNotification(
+            lockedUserEntity, newEmailAddress, mailSubject, emailBodyHtml);
         userNotificationService.recordSecurityEvent(
-            user, de.derpeterson.app.model.enums.UserNotificationType.EMAIL_CHANGED);
-        rememberMeTokenRepository.removeUserTokens(old);
-        revokeAfterCommit(old, null);
+            lockedUserEntity, de.derpeterson.app.model.enums.UserNotificationType.EMAIL_CHANGED);
+
+        rememberMeTokenRepository.removeUserTokens(previousEmailAddress);
+        revokeAfterCommit(previousEmailAddress, null);
         return Confirmation.SUCCESS;
       });
-    } catch (RuntimeException failure) {
-      if (EmailConflict.isDuplicate(failure)) {
+    } catch (RuntimeException emailChangeFailure) {
+      if (EmailConflict.isDuplicate(emailChangeFailure)) {
         return Confirmation.CONFLICT;
       }
-      throw failure;
+      throw emailChangeFailure;
     }
   }
 

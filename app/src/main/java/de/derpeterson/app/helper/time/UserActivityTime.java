@@ -17,10 +17,12 @@ public final class UserActivityTime {
     if (localCutoffTime == null) {
       return null;
     }
+
     List<ZoneOffset> validZoneOffsets = DISPLAY_ZONE.getRules().getValidOffsets(localCutoffTime);
     if (validZoneOffsets.isEmpty()) {
       throw new DateTimeException("Activity cutoff does not exist in the display zone");
     }
+
     // Bei der doppelten Herbststunde beginnt „aktiv seit“ am ersten Vorkommen.
     // So bleiben beide Vorkommen eingeschlossen; Frühlingslücken werden nicht verschoben.
     return localCutoffTime.toInstant(validZoneOffsets.getFirst());

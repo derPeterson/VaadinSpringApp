@@ -27,6 +27,7 @@ public class UserRoleChanges {
         .equals(userRolesChangedEvent.rolesAfterChange())) {
       return;
     }
+
     userNotificationService.recordSecurityEvent(
         userRepository.getReferenceById(userRolesChangedEvent.userId()),
         UserNotificationType.ROLES_CHANGED);

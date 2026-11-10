@@ -14,13 +14,14 @@ import java.io.IOException;
  */
 public class LoginCompletionFilter implements Filter {
   private final SessionAdmissionService sessionAdmissionService;
-  private final org.springframework.security.web.authentication.RememberMeServices rememberMe;
+  private final org.springframework.security.web.authentication.RememberMeServices
+      rememberMeServices;
 
   public LoginCompletionFilter(
       SessionAdmissionService sessionAdmissionService,
-      org.springframework.security.web.authentication.RememberMeServices rememberMe) {
+      org.springframework.security.web.authentication.RememberMeServices rememberMeServices) {
     this.sessionAdmissionService = sessionAdmissionService;
-    this.rememberMe = rememberMe;
+    this.rememberMeServices = rememberMeServices;
   }
 
   @Override
@@ -31,15 +32,17 @@ public class LoginCompletionFilter implements Filter {
       filterChain.doFilter(servletRequest, servletResponse);
     } catch (IOException | ServletException | RuntimeException loginCompletionFailure) {
       HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
-      boolean newLogin = sessionAdmissionService.rollback(httpRequest);
+      boolean rolledBackNewLogin = sessionAdmissionService.rollback(httpRequest);
       HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
-      if (newLogin && !httpResponse.isCommitted()) {
+
+      if (rolledBackNewLogin && !httpResponse.isCommitted()) {
         try {
-          rememberMe.loginFail(httpRequest, httpResponse);
+          rememberMeServices.loginFail(httpRequest, httpResponse);
         } catch (RuntimeException cleanupFailure) {
           loginCompletionFailure.addSuppressed(cleanupFailure);
         }
       }
+
       throw loginCompletionFailure;
     }
   }

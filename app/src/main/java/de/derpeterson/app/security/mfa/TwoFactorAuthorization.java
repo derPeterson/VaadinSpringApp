@@ -165,7 +165,8 @@ public class TwoFactorAuthorization {
   /** Nur der echte Passwortnachweis der gebundenen Sitzung, höchstens fünf Minuten alt. */
   public boolean hasFreshPasswordLogin(HttpServletRequest request) {
     Owner owner = owner(request);
-    Instant now = authorizationClock.instant();
+    Instant proofCheckTime = authorizationClock.instant();
+
     return owner.hasPassword()
         && securityServiceProvider
             .getObject()
@@ -179,8 +180,8 @@ public class TwoFactorAuthorization {
             .map(FactorGrantedAuthority.class::cast)
             .anyMatch(factor ->
                 FactorGrantedAuthority.PASSWORD_AUTHORITY.equals(factor.getAuthority())
-                    && !factor.getIssuedAt().isAfter(now)
-                    && factor.getIssuedAt().plusSeconds(300).isAfter(now));
+                    && !factor.getIssuedAt().isAfter(proofCheckTime)
+                    && factor.getIssuedAt().plusSeconds(300).isAfter(proofCheckTime));
   }
 
   private boolean required(
@@ -188,6 +189,7 @@ public class TwoFactorAuthorization {
     if (factor.operatorEnrollment()) {
       return true;
     }
+
     return !twoFactorPolicies.pauseEnabled(configuration)
         && configuration.policy().mode(owner.roles(), action).requiresFactor(factor.enrolled());
   }
