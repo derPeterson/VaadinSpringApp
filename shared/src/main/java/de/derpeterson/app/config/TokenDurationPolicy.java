@@ -5,8 +5,8 @@ import java.util.Objects;
 
 /** Shared minimums for configured token lifetimes, independent of UI and persistence. */
 public final class TokenDurationPolicy {
-  public static final Duration MIN_VALIDITY = Duration.ofMinutes(1);
-  public static final Duration MIN_RETENTION = Duration.ofMinutes(2);
+  public static final Duration MINIMUM_TOKEN_VALIDITY = Duration.ofMinutes(1);
+  public static final Duration MINIMUM_TOKEN_RETENTION = Duration.ofMinutes(2);
 
   private TokenDurationPolicy() {}
 

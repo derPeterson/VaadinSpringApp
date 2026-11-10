@@ -26,16 +26,16 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
   @DisplayName("CONFIG-03A: Verifikationsgültigkeit verlangt mindestens eine Minute")
   @Description(
       """
-        1. Als Admin Token-Konfiguration öffnen; Ausgangswerte merken und Mindesthinweis/Erklärung prüfen.
-        2. Null, negative Dauer, eine Sekunde und knapp unter dem Minimum einzeln speichern versuchen.
-        3. Feldfehler prüfen, jeweils neu laden: Ausgangswert muss erhalten bleiben.
-        4. Genau die Mindestdauer als Minutenangabe speichern und ISO-Wert frisch prüfen; Ausgangswerte wiederherstellen.
-        **Erwartet:** Alle vier Felder konsistent; Gültigkeit mindestens eine Minute. Keine SQL-/Servicevorbereitung.
-        """)
+      1. Als Admin Token-Konfiguration öffnen; Ausgangswerte merken und Mindesthinweis/Erklärung prüfen.
+      2. Null, negative Dauer, eine Sekunde und knapp unter dem Minimum einzeln speichern versuchen.
+      3. Feldfehler prüfen, jeweils neu laden: Ausgangswert muss erhalten bleiben.
+      4. Genau die Mindestdauer als Minutenangabe speichern und ISO-Wert frisch prüfen; Ausgangswerte wiederherstellen.
+      **Erwartet:** Alle vier Felder konsistent; Gültigkeit mindestens eine Minute. Keine SQL-/Servicevorbereitung.
+      """)
   void verificationValidity() {
     check(
         texts.getAdminConfigEntryVerificationTokenValidDuration(),
-        TokenDurationPolicy.MIN_VALIDITY,
+        TokenDurationPolicy.MINIMUM_TOKEN_VALIDITY,
         texts.getAdminConfigEntryVerificationTokenValidDurationTooltip());
   }
 
@@ -43,16 +43,16 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
   @DisplayName("CONFIG-03B: Verifikationstoken-Aufbewahrung verlangt mindestens zwei Minuten")
   @Description(
       """
-        1. Als Admin Ausgangswerte und Mindesthinweis/Erklärung der Token-Aufbewahrung prüfen.
-        2. Null, negative/einsekündige Dauer und knapp unter zwei Minuten versuchen.
-        3. Ablehnung und unveränderten gespeicherten Wert jeweils nach Neuladen prüfen.
-        4. Exakt zwei Minuten speichern, ISO-Wert neu laden und Original wiederherstellen.
-        **Erwartet:** Aufbewahrung nach Ablauf; weder Linkverlängerung noch unbegrenzte Bedeutung von Null.
-        """)
+      1. Als Admin Ausgangswerte und Mindesthinweis/Erklärung der Token-Aufbewahrung prüfen.
+      2. Null, negative/einsekündige Dauer und knapp unter zwei Minuten versuchen.
+      3. Ablehnung und unveränderten gespeicherten Wert jeweils nach Neuladen prüfen.
+      4. Exakt zwei Minuten speichern, ISO-Wert neu laden und Original wiederherstellen.
+      **Erwartet:** Aufbewahrung nach Ablauf; weder Linkverlängerung noch unbegrenzte Bedeutung von Null.
+      """)
   void verificationRetention() {
     check(
         texts.getAdminConfigEntryVerificationTokenLiveDuration(),
-        TokenDurationPolicy.MIN_RETENTION,
+        TokenDurationPolicy.MINIMUM_TOKEN_RETENTION,
         texts.getAdminConfigEntryVerificationTokenLiveDurationTooltip());
   }
 
@@ -60,16 +60,16 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
   @DisplayName("CONFIG-03C: Resetgültigkeit verlangt mindestens eine Minute")
   @Description(
       """
-        1. Als Admin Ausgangswerte und Mindesthinweis/Erklärung des Resetlinks prüfen.
-        2. Null, negative/einsekündige Dauer und knapp unter einer Minute versuchen.
-        3. Jede Ablehnung und unveränderten gespeicherten Wert nach Neuladen prüfen.
-        4. Exakt eine Minute speichern, ISO-Wert neu laden und Original wiederherstellen.
-        **Erwartet:** Der zuvor reproduzierte Null-Dauer-Fehler ist behoben; Mindestgrenze wird angenommen.
-        """)
+      1. Als Admin Ausgangswerte und Mindesthinweis/Erklärung des Resetlinks prüfen.
+      2. Null, negative/einsekündige Dauer und knapp unter einer Minute versuchen.
+      3. Jede Ablehnung und unveränderten gespeicherten Wert nach Neuladen prüfen.
+      4. Exakt eine Minute speichern, ISO-Wert neu laden und Original wiederherstellen.
+      **Erwartet:** Der zuvor reproduzierte Null-Dauer-Fehler ist behoben; Mindestgrenze wird angenommen.
+      """)
   void resetValidity() {
     check(
         texts.getAdminConfigEntryPasswordResetTokenValidDuration(),
-        TokenDurationPolicy.MIN_VALIDITY,
+        TokenDurationPolicy.MINIMUM_TOKEN_VALIDITY,
         texts.getAdminConfigEntryPasswordResetTokenValidDurationTooltip());
   }
 
@@ -77,16 +77,16 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
   @DisplayName("CONFIG-03D: Resettoken-Aufbewahrung verlangt mindestens zwei Minuten")
   @Description(
       """
-        1. Als Admin Ausgangswerte und Mindesthinweis/Erklärung der Reset-Aufbewahrung prüfen.
-        2. Null, negative/einsekündige Dauer und knapp unter zwei Minuten versuchen.
-        3. Jede Ablehnung und unveränderten gespeicherten Wert nach Neuladen prüfen.
-        4. Exakt zwei Minuten speichern, ISO-Wert neu laden und Original wiederherstellen.
-        **Erwartet:** Aufbewahrung nach Ablauf ist mindestens zwei Minuten, ohne unbegrenzte Null-Sonderregel.
-        """)
+      1. Als Admin Ausgangswerte und Mindesthinweis/Erklärung der Reset-Aufbewahrung prüfen.
+      2. Null, negative/einsekündige Dauer und knapp unter zwei Minuten versuchen.
+      3. Jede Ablehnung und unveränderten gespeicherten Wert nach Neuladen prüfen.
+      4. Exakt zwei Minuten speichern, ISO-Wert neu laden und Original wiederherstellen.
+      **Erwartet:** Aufbewahrung nach Ablauf ist mindestens zwei Minuten, ohne unbegrenzte Null-Sonderregel.
+      """)
   void resetRetention() {
     check(
         texts.getAdminConfigEntryPasswordResetTokenLiveDuration(),
-        TokenDurationPolicy.MIN_RETENTION,
+        TokenDurationPolicy.MINIMUM_TOKEN_RETENTION,
         texts.getAdminConfigEntryPasswordResetTokenLiveDurationTooltip());
   }
 

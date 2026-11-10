@@ -62,9 +62,9 @@ public enum ConfigEntry {
   public Duration getMinimumTokenDuration() {
     return switch (this) {
       case VERIFICATION_TOKEN_VALID_DURATION, PASSWORD_RESET_TOKEN_VALID_DURATION ->
-          TokenDurationPolicy.MIN_VALIDITY;
+          TokenDurationPolicy.MINIMUM_TOKEN_VALIDITY;
       case VERIFICATION_TOKEN_LIVE_DURATION, PASSWORD_RESET_TOKEN_LIVE_DURATION ->
-          TokenDurationPolicy.MIN_RETENTION;
+          TokenDurationPolicy.MINIMUM_TOKEN_RETENTION;
       default -> null;
     };
   }

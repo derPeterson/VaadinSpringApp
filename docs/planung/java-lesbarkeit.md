@@ -20,6 +20,12 @@ gezielt einsetzen. Jede Datei sichten und konkrete Lesbarkeitshürden beheben.
 
 ## Offene Arbeitspakete
 
+- [ ] **App-Oberfläche:** Views, Komponenten, UI-Helfer und Texte erneut
+  vollständig sichten. Fachliche Blöcke einschließlich ihrer Felder,
+  Konstruktorparameter, Methoden und Verwendungsstellen gemeinsam prüfen.
+- [ ] **App-Fachlogik und Infrastruktur:** Alle übrigen Hauptquellen erneut
+  sichten. Namen und Abläufe im Zusammenhang prüfen. Prüfungen,
+  Ausführungsreihenfolge und Transaktions- sowie Sperrgrenzen erhalten.
 - [ ] **App-Tests:** Alle Testquellen paketweise sichten. Testnamen, Vorbereitung,
   Ausführung und Erwartungen sollen das jeweilige Szenario erkennen lassen.
 - [ ] **Browser-Tests:** Java-Tests, Page Objects und Hilfscode sichten. Szenarien,

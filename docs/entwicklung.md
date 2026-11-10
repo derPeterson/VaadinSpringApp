@@ -492,15 +492,25 @@ sowie Oracles [Leitfaden zur Sichtbarkeit](https://docs.oracle.com/javase/tutori
 
 ### Namen und Methodenaufgaben
 
-Klassennamen benennen die fachliche Zuständigkeit, zum Beispiel `ResetPasswordView`
-oder `AccountSessionsComponent`. Methodennamen benennen die Aktion und ihr Ziel.
-Felder, Parameter und lokale Variablen benennen ihre Rolle so, dass sie am Aufruf
-oder bei der Verwendung verständlich sind. Bei mehreren gleichartigen Elementen
-auch das Ziel im Namen nennen. Listen heißen im Plural, einzelne Objekte im Singular.
-Booleans benennen eine erkennbare Bedingung. Ein kurzer Schleifenindex ist im
-unmittelbaren Kontext verständlich. Bei einem zentralen Objekt wie `MessageProperties`
-ist der ausgeschriebene Typname als Variablenname sinnvoll, wenn er die Rolle erklärt.
-Kryptische Kürzel, unnötige Typpräfixe und künstlich lange Namen vermeiden.
+Klassennamen verbinden die fachliche Zuständigkeit mit der Art des Bausteins,
+etwa `ResetPasswordView` oder `AccountSessionsComponent`. Methodennamen benennen
+die Aktion und die Art ihres Ziels oder Ergebnisses, etwa `closeAccountDialog()`
+oder `buildAccountHeaderLayout()`. Das soll auch am Aufruf erkennbar sein.
+
+**Namen enthalten Zweck und Typ.** Felder, Konstruktorparameter, andere
+Methodenparameter und lokale Variablen tragen die Bezeichnung ihres konkreten
+Typs oder ihrer fachlichen Art im Namen. Beispiele sind `closeDialogButton`,
+`accountHeaderLayout`, `httpRequest`, `twoFactorStore` und `messageProperties`.
+Die Art muss auch ohne sichtbare Typdeklaration verständlich sein. Bei einfachen
+Werten beschreibt der Name ihre fachliche Art, etwa `unreadNotificationCount`
+für eine Anzahl und `hasActiveSession` für eine Bedingung. Listen heißen im
+Plural, einzelne Objekte im Singular.
+
+Bei bewusst typübergreifenden Hilfsmethoden beschreibt der Name die gemeinsame
+Aufgabe oder Rolle, etwa `collectNonBlankNames()` oder `itemToValidate`.
+Extern vorgegebene Methodennamen wie `run()` und `beforeEnter()` bleiben bestehen.
+Ein kurzer Schleifenindex ist in einer unmittelbar überschaubaren Schleife
+zulässig.
 
 **Zusammengehörige Namen immer als Block prüfen.** Bei einer Java-Änderung oder
 einem Review die Namen im betroffenen fachlichen Block vollständig prüfen, etwa

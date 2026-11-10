@@ -13,6 +13,21 @@ import java.util.function.UnaryOperator;
 /** Typed translation getters shared by the application and external browser tests. */
 public class MessageTexts {
 
+  private final UnaryOperator<String> translationLookup;
+
+  public MessageTexts(UnaryOperator<String> translationLookup) {
+    this.translationLookup =
+        Objects.requireNonNull(translationLookup, "Translation lookup required.");
+  }
+
+  public String getTranslation(String translationKey) {
+    return translationLookup.apply(translationKey);
+  }
+
+  public String getFormattedTranslation(String translationKey, Object... formatArguments) {
+    return MessageFormat.format(getTranslation(translationKey), formatArguments);
+  }
+
   public String getBaseDetailsButton() {
     return getTranslation("base.button.details");
   }
@@ -21,8 +36,8 @@ public class MessageTexts {
     return getTranslation("support.title");
   }
 
-  public String getSupportTicketNumber(String number) {
-    return getFormattedTranslation("support.ticketNumber", number);
+  public String getSupportTicketNumber(String ticketNumber) {
+    return getFormattedTranslation("support.ticketNumber", ticketNumber);
   }
 
   public String getSupportInboxDescription() {
@@ -87,10 +102,11 @@ public class MessageTexts {
     return getTranslation("support.replyNotificationBody");
   }
 
-  public String getSupportRequesterClosedNotificationTitle(String number) {
-    return number == null
+  public String getSupportRequesterClosedNotificationTitle(String closedTicketNumber) {
+    return closedTicketNumber == null
         ? getSupportClosedByRequester()
-        : getFormattedTranslation("support.requesterClosedNotificationTicketTitle", number);
+        : getFormattedTranslation(
+            "support.requesterClosedNotificationTicketTitle", closedTicketNumber);
   }
 
   public String getSupportRequesterClosedNotificationBody() {
@@ -133,9 +149,10 @@ public class MessageTexts {
     return getTranslation("support.requesterClosedHint");
   }
 
-  public String getSupportUnreadMessages(long count) {
+  public String getSupportUnreadMessages(long unreadMessageCount) {
     return getFormattedTranslation(
-        count == 1 ? "support.unreadMessage" : "support.unreadMessages", count);
+        unreadMessageCount == 1 ? "support.unreadMessage" : "support.unreadMessages",
+        unreadMessageCount);
   }
 
   public String getSupportNewActivity() {
@@ -350,16 +367,16 @@ public class MessageTexts {
     return getTranslation("support.queue.empty.hint");
   }
 
-  public String getSupportMessageCount(int count) {
-    return count == 1
+  public String getSupportMessageCount(int messageCount) {
+    return messageCount == 1
         ? getTranslation("support.oneMessage")
-        : getFormattedTranslation("support.messageCount", count);
+        : getFormattedTranslation("support.messageCount", messageCount);
   }
 
-  public String getSupportRequestCount(int count) {
-    return count == 1
+  public String getSupportRequestCount(int requestCount) {
+    return requestCount == 1
         ? getTranslation("support.oneRequest")
-        : getFormattedTranslation("support.requestCount", count);
+        : getFormattedTranslation("support.requestCount", requestCount);
   }
 
   public String getSupportMessageSupport() {
@@ -374,26 +391,12 @@ public class MessageTexts {
     return getTranslation("support.instructionMessageTitle");
   }
 
-  private final UnaryOperator<String> lookup;
-
-  public MessageTexts(UnaryOperator<String> lookup) {
-    this.lookup = Objects.requireNonNull(lookup, "Translation lookup required.");
-  }
-
-  public String getTranslation(String key) {
-    return lookup.apply(key);
-  }
-
-  public String getFormattedTranslation(String key, Object... args) {
-    return MessageFormat.format(getTranslation(key), args);
-  }
-
   public String getTwoFactorPageTitle() {
     return getTranslation("mfa.page.title");
   }
 
-  public String getTwoFactorAreaLabel(boolean account) {
-    return getTranslation(account ? "mfa.area.account" : "mfa.area.login");
+  public String getTwoFactorAreaLabel(boolean isAccountArea) {
+    return getTranslation(isAccountArea ? "mfa.area.account" : "mfa.area.login");
   }
 
   public String getTwoFactorPageHint() {
@@ -748,8 +751,8 @@ public class MessageTexts {
     return getTranslation("mfa.settings.guide.timing");
   }
 
-  public String getTwoFactorRoleScope(String role) {
-    return getFormattedTranslation("mfa.settings.guide.scope", role);
+  public String getTwoFactorRoleScope(String roleName) {
+    return getFormattedTranslation("mfa.settings.guide.scope", roleName);
   }
 
   public String getTwoFactorAdminAccessHelp() {
@@ -1025,20 +1028,20 @@ public class MessageTexts {
     return getTranslation("external.verify.email");
   }
 
-  public String getExternalConnect(String provider) {
-    return getFormattedTranslation("external.connect", provider);
+  public String getExternalConnect(String providerName) {
+    return getFormattedTranslation("external.connect", providerName);
   }
 
-  public String getExternalDisconnect(String provider) {
-    return getFormattedTranslation("external.disconnect", provider);
+  public String getExternalDisconnect(String providerName) {
+    return getFormattedTranslation("external.disconnect", providerName);
   }
 
   public String getExternalProof() {
     return getTranslation("external.proof");
   }
 
-  public String getExternalProofWith(String provider) {
-    return getFormattedTranslation("external.proof.with", provider);
+  public String getExternalProofWith(String providerName) {
+    return getFormattedTranslation("external.proof.with", providerName);
   }
 
   public String getExternalProofHint() {
@@ -1291,8 +1294,9 @@ public class MessageTexts {
     return getTranslation("registrationView.birth_date_placeholder");
   }
 
-  public String getRegistrationSuccessMessage(String email) {
-    return getFormattedTranslation("registrationView.registration.success_message", email);
+  public String getRegistrationSuccessMessage(String registrationEmailAddress) {
+    return getFormattedTranslation(
+        "registrationView.registration.success_message", registrationEmailAddress);
   }
 
   public String getRegistrationUnavailableMessage() {
@@ -1730,8 +1734,8 @@ public class MessageTexts {
     return getTranslation("adminView.config.group.queue.description");
   }
 
-  public String getAdminConfigGroupDescription(AdminConfigGroup group) {
-    return switch (group) {
+  public String getAdminConfigGroupDescription(AdminConfigGroup configGroup) {
+    return switch (configGroup) {
       case GENERAL -> getAdminConfigGroupGeneralDescription();
       case SECURITY -> getAdminConfigGroupSecurityDescription();
       case EXTERNAL_LOGIN -> getProviderSettingsDescription();
@@ -1745,12 +1749,12 @@ public class MessageTexts {
     };
   }
 
-  public String getAdminConfigSettingsCount(int count) {
+  public String getAdminConfigSettingsCount(int settingCount) {
     return getFormattedTranslation(
-        count == 1
+        settingCount == 1
             ? "adminView.config.settings_count.one"
             : "adminView.config.settings_count.other",
-        count);
+        settingCount);
   }
 
   public String getAdminConfigSaveHint() {
@@ -1801,9 +1805,11 @@ public class MessageTexts {
     return getTranslation("adminView.config.placeholder.empty");
   }
 
-  public String getAdminConfigRuleInteger(int min, int max) {
+  public String getAdminConfigRuleInteger(int minimumValue, int maximumValue) {
     return getFormattedTranslation(
-        "adminView.config.rule.integer", Integer.toString(min), Integer.toString(max));
+        "adminView.config.rule.integer",
+        Integer.toString(minimumValue),
+        Integer.toString(maximumValue));
   }
 
   public String getAdminConfigInputRules() {
@@ -1862,33 +1868,33 @@ public class MessageTexts {
     return getTranslation("adminView.config.duration.unit_hint");
   }
 
-  public String getAdminConfigDurationSeconds(Number count) {
-    return formatDurationTranslation("seconds", count);
+  public String getAdminConfigDurationSeconds(Number secondCount) {
+    return formatDurationTranslation("seconds", secondCount);
   }
 
-  public String getAdminConfigDurationMinutes(Number count) {
-    return formatDurationTranslation("minutes", count);
+  public String getAdminConfigDurationMinutes(Number minuteCount) {
+    return formatDurationTranslation("minutes", minuteCount);
   }
 
-  public String getAdminConfigDurationHours(Number count) {
-    return formatDurationTranslation("hours", count);
+  public String getAdminConfigDurationHours(Number hourCount) {
+    return formatDurationTranslation("hours", hourCount);
   }
 
-  public String getAdminConfigDurationDays(Number count) {
-    return formatDurationTranslation("days", count);
+  public String getAdminConfigDurationDays(Number dayCount) {
+    return formatDurationTranslation("days", dayCount);
   }
 
   protected Locale formattingLocale() {
     return Locale.getDefault();
   }
 
-  private String formatDurationTranslation(String unit, Number count) {
-    BigDecimal durationAmount = new BigDecimal(count.toString());
+  private String formatDurationTranslation(String durationUnit, Number configuredAmount) {
+    BigDecimal durationAmount = new BigDecimal(configuredAmount.toString());
     NumberFormat durationNumberFormat = NumberFormat.getNumberInstance(formattingLocale());
     durationNumberFormat.setMaximumFractionDigits(Math.max(9, durationAmount.scale()));
     String translationKey =
         "adminView.config.duration."
-            + unit
+            + durationUnit
             + (durationAmount.compareTo(BigDecimal.ONE) == 0 ? ".one" : ".many");
     return getFormattedTranslation(translationKey, durationNumberFormat.format(durationAmount));
   }
@@ -2260,25 +2266,25 @@ public class MessageTexts {
   public String getAdminConfigEntryVerificationTokenValidDurationTooltip() {
     return getFormattedTranslation(
         "adminView.config.entry.verification_token_valid_duration.tooltip",
-        TokenDurationPolicy.MIN_VALIDITY.toMinutes());
+        TokenDurationPolicy.MINIMUM_TOKEN_VALIDITY.toMinutes());
   }
 
   public String getAdminConfigEntryVerificationTokenLiveDurationTooltip() {
     return getFormattedTranslation(
         "adminView.config.entry.verification_token_live_duration.tooltip",
-        TokenDurationPolicy.MIN_RETENTION.toMinutes());
+        TokenDurationPolicy.MINIMUM_TOKEN_RETENTION.toMinutes());
   }
 
   public String getAdminConfigEntryPasswordResetTokenValidDurationTooltip() {
     return getFormattedTranslation(
         "adminView.config.entry.password_reset_token_valid_duration.tooltip",
-        TokenDurationPolicy.MIN_VALIDITY.toMinutes());
+        TokenDurationPolicy.MINIMUM_TOKEN_VALIDITY.toMinutes());
   }
 
   public String getAdminConfigEntryPasswordResetTokenLiveDurationTooltip() {
     return getFormattedTranslation(
         "adminView.config.entry.password_reset_token_live_duration.tooltip",
-        TokenDurationPolicy.MIN_RETENTION.toMinutes());
+        TokenDurationPolicy.MINIMUM_TOKEN_RETENTION.toMinutes());
   }
 
   public String getAdminConfigEntryMailHostTooltip() {
@@ -2361,16 +2367,17 @@ public class MessageTexts {
     return getTranslation("adminView.config.validation.non_negative");
   }
 
-  public String getAdminConfigValidationSecretKey(int min) {
-    return getFormattedTranslation("adminView.config.validation.secret_key", min);
+  public String getAdminConfigValidationSecretKey(int minimumKeyLength) {
+    return getFormattedTranslation("adminView.config.validation.secret_key", minimumKeyLength);
   }
 
-  public String getAdminConfigValidationDurationMinimum(long minutes) {
-    return getFormattedTranslation("adminView.config.validation.duration_minimum", minutes);
+  public String getAdminConfigValidationDurationMinimum(long minimumMinutes) {
+    return getFormattedTranslation("adminView.config.validation.duration_minimum", minimumMinutes);
   }
 
-  public String getAdminConfigValidationTokenDuration(long minutes) {
-    return getFormattedTranslation("adminView.config.validation.token_duration", minutes);
+  public String getAdminConfigValidationTokenDuration(long minimumTokenMinutes) {
+    return getFormattedTranslation(
+        "adminView.config.validation.token_duration", minimumTokenMinutes);
   }
 
   public String getAdminConfigValidationPositiveDuration() {
@@ -2385,12 +2392,14 @@ public class MessageTexts {
     return getTranslation("adminView.config.validation.service_name");
   }
 
-  public String getAdminConfigValidationServiceNameMax(int max) {
-    return getFormattedTranslation("adminView.config.validation.service_name_max", max);
+  public String getAdminConfigValidationServiceNameMax(int maximumServiceNameLength) {
+    return getFormattedTranslation(
+        "adminView.config.validation.service_name_max", maximumServiceNameLength);
   }
 
-  public String getAdminConfigHelperServiceNameMax(int max) {
-    return getFormattedTranslation("adminView.config.helper.service_name_max", max);
+  public String getAdminConfigHelperServiceNameMax(int maximumServiceNameLength) {
+    return getFormattedTranslation(
+        "adminView.config.helper.service_name_max", maximumServiceNameLength);
   }
 
   public String getAdminUsersTitle() {
@@ -2417,9 +2426,10 @@ public class MessageTexts {
     return getTranslation("admin.users.self");
   }
 
-  public String getAdminUsersAccountCount(int count) {
+  public String getAdminUsersAccountCount(int accountCount) {
     return getFormattedTranslation(
-        count == 1 ? "admin.users.account_count.one" : "admin.users.account_count.other", count);
+        accountCount == 1 ? "admin.users.account_count.one" : "admin.users.account_count.other",
+        accountCount);
   }
 
   public String getAdminUsersDescription() {
@@ -2590,8 +2600,8 @@ public class MessageTexts {
     return getTranslation("admin.users.filter.apply");
   }
 
-  public String getAdminUsersActiveFilterCount(int count) {
-    return getFormattedTranslation("admin.users.filter.active_count", count);
+  public String getAdminUsersActiveFilterCount(int activeFilterCount) {
+    return getFormattedTranslation("admin.users.filter.active_count", activeFilterCount);
   }
 
   public String getAdminUsersFilterTimeHint() {
@@ -2630,35 +2640,42 @@ public class MessageTexts {
     return getTranslation("admin.users.activity.now");
   }
 
-  public String getAdminUsersActivityMinutes(long count) {
+  public String getAdminUsersActivityMinutes(long elapsedMinutes) {
     return getFormattedTranslation(
-        count == 1 ? "admin.users.activity.minutes.one" : "admin.users.activity.minutes.many",
-        count);
+        elapsedMinutes == 1
+            ? "admin.users.activity.minutes.one"
+            : "admin.users.activity.minutes.many",
+        elapsedMinutes);
   }
 
-  public String getAdminUsersActivityHours(long count) {
+  public String getAdminUsersActivityHours(long elapsedHours) {
     return getFormattedTranslation(
-        count == 1 ? "admin.users.activity.hours.one" : "admin.users.activity.hours.many", count);
+        elapsedHours == 1 ? "admin.users.activity.hours.one" : "admin.users.activity.hours.many",
+        elapsedHours);
   }
 
-  public String getAdminUsersActivityDays(long count) {
+  public String getAdminUsersActivityDays(long elapsedDays) {
     return getFormattedTranslation(
-        count == 1 ? "admin.users.activity.days.one" : "admin.users.activity.days.many", count);
+        elapsedDays == 1 ? "admin.users.activity.days.one" : "admin.users.activity.days.many",
+        elapsedDays);
   }
 
-  public String getAdminUsersActivityWeeks(long count) {
+  public String getAdminUsersActivityWeeks(long elapsedWeeks) {
     return getFormattedTranslation(
-        count == 1 ? "admin.users.activity.weeks.one" : "admin.users.activity.weeks.many", count);
+        elapsedWeeks == 1 ? "admin.users.activity.weeks.one" : "admin.users.activity.weeks.many",
+        elapsedWeeks);
   }
 
-  public String getAdminUsersActivityMonths(long count) {
+  public String getAdminUsersActivityMonths(long elapsedMonths) {
     return getFormattedTranslation(
-        count == 1 ? "admin.users.activity.months.one" : "admin.users.activity.months.many", count);
+        elapsedMonths == 1 ? "admin.users.activity.months.one" : "admin.users.activity.months.many",
+        elapsedMonths);
   }
 
-  public String getAdminUsersActivityYears(long count) {
+  public String getAdminUsersActivityYears(long elapsedYears) {
     return getFormattedTranslation(
-        count == 1 ? "admin.users.activity.years.one" : "admin.users.activity.years.many", count);
+        elapsedYears == 1 ? "admin.users.activity.years.one" : "admin.users.activity.years.many",
+        elapsedYears);
   }
 
   public String getAdminUsersFilterActiveSince() {
@@ -2673,8 +2690,8 @@ public class MessageTexts {
     return getTranslation("admin.users.filter.active_since_error");
   }
 
-  public String getAdminUsersPaginationPage(int page) {
-    return getFormattedTranslation("admin.users.pagination.page", page);
+  public String getAdminUsersPaginationPage(int pageNumber) {
+    return getFormattedTranslation("admin.users.pagination.page", pageNumber);
   }
 
   public String getAdminUsersRefreshTooltip() {
@@ -2748,9 +2765,12 @@ public class MessageTexts {
         "admin.users.password.validation.create", getBaseValidationPasswordInvalidMessage());
   }
 
-  public String getAdminUsersSelectedRoles(int count) {
+  public String getAdminUsersSelectedRoles(int selectedRoleCount) {
     return getFormattedTranslation(
-        count == 1 ? "admin.users.roles.selected.one" : "admin.users.roles.selected.many", count);
+        selectedRoleCount == 1
+            ? "admin.users.roles.selected.one"
+            : "admin.users.roles.selected.many",
+        selectedRoleCount);
   }
 
   public String getAdminUsersRolesHelper() {
@@ -2802,8 +2822,8 @@ public class MessageTexts {
   }
 
   /** Group identity is independent of the properties key and the current label. */
-  public String getAdminConfigGroupLabel(AdminConfigGroup group) {
-    return switch (group) {
+  public String getAdminConfigGroupLabel(AdminConfigGroup configGroup) {
+    return switch (configGroup) {
       case GENERAL -> getAdminConfigGroupGeneral();
       case SECURITY -> getAdminConfigGroupSecurity();
       case EXTERNAL_LOGIN -> getProviderSettingsTitle();
@@ -2867,8 +2887,8 @@ public class MessageTexts {
     return getTranslation("account.navigation.open");
   }
 
-  public String getAccountOpenUserMenu(String name) {
-    return getFormattedTranslation("account.user.menu.open", name);
+  public String getAccountOpenUserMenu(String accountDisplayName) {
+    return getFormattedTranslation("account.user.menu.open", accountDisplayName);
   }
 
   public String getAccountEmailAddressLabel() {
@@ -2991,8 +3011,8 @@ public class MessageTexts {
     return getTranslation("accountSettings.sessions.activity");
   }
 
-  public String getAccountSettingsSessionsLimit(int limit) {
-    return getFormattedTranslation("accountSettings.sessions.limit", limit);
+  public String getAccountSettingsSessionsLimit(int activeSessionLimit) {
+    return getFormattedTranslation("accountSettings.sessions.limit", activeSessionLimit);
   }
 
   public String getAccountSettingsCurrentDevice() {
@@ -3139,8 +3159,8 @@ public class MessageTexts {
     return getTranslation("sessions.unknown.device");
   }
 
-  public String getSessionSignedInVia(String method) {
-    return getSessionSignedInViaLabel() + ": " + method;
+  public String getSessionSignedInVia(String signInMethodName) {
+    return getSessionSignedInViaLabel() + ": " + signInMethodName;
   }
 
   public String getSessionSignedInViaLabel() {
@@ -3376,16 +3396,16 @@ public class MessageTexts {
     return getTranslation("notifications.description");
   }
 
-  public String getNotificationsLatest(int limit) {
-    return getFormattedTranslation("notifications.latest", limit);
+  public String getNotificationsLatest(int notificationLimit) {
+    return getFormattedTranslation("notifications.latest", notificationLimit);
   }
 
-  public String getNotificationsLatestUnread(int limit) {
-    return getFormattedTranslation("notifications.latestUnread", limit);
+  public String getNotificationsLatestUnread(int unreadNotificationLimit) {
+    return getFormattedTranslation("notifications.latestUnread", unreadNotificationLimit);
   }
 
-  public String getNotificationsLatestRead(int limit) {
-    return getFormattedTranslation("notifications.latestRead", limit);
+  public String getNotificationsLatestRead(int readNotificationLimit) {
+    return getFormattedTranslation("notifications.latestRead", readNotificationLimit);
   }
 
   public String getNotificationsAll() {
@@ -3496,8 +3516,8 @@ public class MessageTexts {
     return getTranslation("notifications.retentionUnlimited");
   }
 
-  public String getNotificationsRetention(int days) {
-    return getFormattedTranslation("notifications.retention", days);
+  public String getNotificationsRetention(int retentionDays) {
+    return getFormattedTranslation("notifications.retention", retentionDays);
   }
 
   public String getNotificationsPasswordChangedTitle() {
@@ -3600,12 +3620,12 @@ public class MessageTexts {
     return getTranslation("notifications.previewUpdated");
   }
 
-  public String getNotificationsEveryonePlaceholder(int count) {
-    return getFormattedTranslation("notifications.everyonePlaceholder", count);
+  public String getNotificationsEveryonePlaceholder(int eligibleUserCount) {
+    return getFormattedTranslation("notifications.everyonePlaceholder", eligibleUserCount);
   }
 
-  public String getNotificationsSelectedUsers(int count) {
-    return getFormattedTranslation("notifications.selectedUsers", count);
+  public String getNotificationsSelectedUsers(int selectedUserCount) {
+    return getFormattedTranslation("notifications.selectedUsers", selectedUserCount);
   }
 
   public String getNotificationsPreviewNeedsReview() {
@@ -3648,14 +3668,18 @@ public class MessageTexts {
     return getTranslation("notifications.historyDescription");
   }
 
-  public String getNotificationsHistoryCount(long count) {
+  public String getNotificationsHistoryCount(long sentNotificationCount) {
     return getFormattedTranslation(
-        count == 1 ? "notifications.historyCountSingle" : "notifications.historyCount", count);
+        sentNotificationCount == 1
+            ? "notifications.historyCountSingle"
+            : "notifications.historyCount",
+        sentNotificationCount);
   }
 
-  public String getNotificationsHistoryRecipients(int count) {
+  public String getNotificationsHistoryRecipients(int recipientCount) {
     return getFormattedTranslation(
-        count == 1 ? "notifications.historyRecipient" : "notifications.historyRecipients", count);
+        recipientCount == 1 ? "notifications.historyRecipient" : "notifications.historyRecipients",
+        recipientCount);
   }
 
   public String getNotificationsSentStatus() {
@@ -3738,12 +3762,12 @@ public class MessageTexts {
     return getTranslation("portal.notification.delete.read.explanation");
   }
 
-  public String getPortalNotificationAffected(long count) {
+  public String getPortalNotificationAffected(long affectedNotificationCount) {
     return getFormattedTranslation(
-        count == 1
+        affectedNotificationCount == 1
             ? "portal.notification.affected.singular"
             : "portal.notification.affected.plural",
-        count);
+        affectedNotificationCount);
   }
 
   public String getPortalDeleteReadQuestion() {
@@ -3806,8 +3830,10 @@ public class MessageTexts {
     return getTranslation("portal.menu.language");
   }
 
-  public String getPortalPaginationRange(long first, long last, long total) {
-    return getFormattedTranslation("portal.pagination.range", first, last, total);
+  public String getPortalPaginationRange(
+      long firstVisibleRow, long lastVisibleRow, long totalRowCount) {
+    return getFormattedTranslation(
+        "portal.pagination.range", firstVisibleRow, lastVisibleRow, totalRowCount);
   }
 
   public String getPortalConfirmAction() {
@@ -3822,28 +3848,29 @@ public class MessageTexts {
     return getTranslation("portal.session.inactive");
   }
 
-  public String getPortalSessionActiveGroup(int count) {
-    return getFormattedTranslation("portal.session.group.active", count);
+  public String getPortalSessionActiveGroup(int activeSessionCount) {
+    return getFormattedTranslation("portal.session.group.active", activeSessionCount);
   }
 
-  public String getPortalSessionSavedGroup(int count) {
-    return getFormattedTranslation("portal.session.group.saved", count);
+  public String getPortalSessionSavedGroup(int savedSignInCount) {
+    return getFormattedTranslation("portal.session.group.saved", savedSignInCount);
   }
 
-  public String getPortalSessionActiveCount(int count) {
+  public String getPortalSessionActiveCount(int activeSessionCount) {
     return getFormattedTranslation(
-        count == 1 ? "portal.session.count.singular" : "portal.session.count.plural", count);
+        activeSessionCount == 1 ? "portal.session.count.singular" : "portal.session.count.plural",
+        activeSessionCount);
   }
 
-  public String getPortalSessionSelection(int active, int saved) {
+  public String getPortalSessionSelection(int activeSessionCount, int savedSignInCount) {
     String savedCount =
         getFormattedTranslation(
-            saved == 1
+            savedSignInCount == 1
                 ? "portal.session.saved.count.singular"
                 : "portal.session.saved.count.plural",
-            saved);
+            savedSignInCount);
     return getFormattedTranslation(
-        "portal.session.selection", getPortalSessionActiveCount(active), savedCount);
+        "portal.session.selection", getPortalSessionActiveCount(activeSessionCount), savedCount);
   }
 
   public String getPortalSessionCheckSelection() {
@@ -3862,8 +3889,8 @@ public class MessageTexts {
     return getTranslation("portal.session.remembered");
   }
 
-  public String getPortalSessionLogoutAria(String device) {
-    return getFormattedTranslation("portal.session.logout.aria", device);
+  public String getPortalSessionLogoutAria(String deviceName) {
+    return getFormattedTranslation("portal.session.logout.aria", deviceName);
   }
 
   // Öffentlicher Referenzrahmen
@@ -4035,8 +4062,8 @@ public class MessageTexts {
     return getTranslation("admin.providers.assistantKicker");
   }
 
-  public String getProviderSettingsAssistantTitle(String provider) {
-    return getFormattedTranslation("admin.providers.assistantTitle", provider);
+  public String getProviderSettingsAssistantTitle(String providerName) {
+    return getFormattedTranslation("admin.providers.assistantTitle", providerName);
   }
 
   public String getProviderSettingsAssistantDescription() {
@@ -4115,28 +4142,30 @@ public class MessageTexts {
     return getTranslation("admin.providers.hint");
   }
 
-  public String getProviderSettingsUnconfiguredHint(String provider) {
-    return getFormattedTranslation("admin.providers.unconfiguredHint", provider);
+  public String getProviderSettingsUnconfiguredHint(String providerName) {
+    return getFormattedTranslation("admin.providers.unconfiguredHint", providerName);
   }
 
-  public String getProviderSettingsActiveHint(String provider) {
-    return getFormattedTranslation("admin.providers.activeHint", provider);
+  public String getProviderSettingsActiveHint(String providerName) {
+    return getFormattedTranslation("admin.providers.activeHint", providerName);
   }
 
-  public String getProviderSettingsInactiveHint(String provider) {
-    return getFormattedTranslation("admin.providers.inactiveHint", provider);
+  public String getProviderSettingsInactiveHint(String providerName) {
+    return getFormattedTranslation("admin.providers.inactiveHint", providerName);
   }
 
-  public String getProviderSettingsClientIdHelp(boolean microsoft) {
+  public String getProviderSettingsClientIdHelp(boolean isMicrosoftProvider) {
     return getTranslation(
-        microsoft
+        isMicrosoftProvider
             ? "admin.providers.microsoft.clientIdHelp"
             : "admin.providers.google.clientIdHelp");
   }
 
-  public String getProviderSettingsSecretHelp(boolean microsoft) {
+  public String getProviderSettingsSecretHelp(boolean isMicrosoftProvider) {
     return getTranslation(
-        microsoft ? "admin.providers.microsoft.secretHelp" : "admin.providers.google.secretHelp");
+        isMicrosoftProvider
+            ? "admin.providers.microsoft.secretHelp"
+            : "admin.providers.google.secretHelp");
   }
 
   public String getProviderSettingsEnableHelp() {
