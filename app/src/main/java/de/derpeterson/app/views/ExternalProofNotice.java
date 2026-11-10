@@ -10,8 +10,10 @@ import java.util.function.Supplier;
 final class ExternalProofNotice {
   private ExternalProofNotice() {}
 
-  static void showDisconnected(
-      AfterNavigationEvent navigationEvent, MessageProperties messageProperties, boolean signIn) {
+  static void showExternalDisconnectNotice(
+      AfterNavigationEvent navigationEvent,
+      MessageProperties messageProperties,
+      boolean isSignInPage) {
     if (navigationEvent
         .getLocation()
         .getQueryParameters()
@@ -20,28 +22,29 @@ final class ExternalProofNotice {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getExternalDisconnected,
-              signIn
+              isSignInPage
                   ? messageProperties::getExternalDisconnectedSignIn
                   : messageProperties::getExternalDisconnectedHint,
               NotificationHelper.NotificationType.SUCCESS);
     }
   }
 
-  static void show(AfterNavigationEvent navigationEvent, MessageProperties messageProperties) {
+  static void showExternalProofFailure(
+      AfterNavigationEvent navigationEvent, MessageProperties messageProperties) {
     // Erst der angehängte Zielrahmen liefert die Palette für ausgelagerte Meldungen.
-    List<String> queryParameterValues =
+    List<String> proofErrorParameterValues =
         navigationEvent
             .getLocation()
             .getQueryParameters()
             .getParameters()
             .get(ExternalLoginFlow.ERROR_PARAMETER);
-    if (queryParameterValues == null) {
+    if (proofErrorParameterValues == null) {
       return;
     }
     ExternalLoginFlow.ProofProblem proofProblem = ExternalLoginFlow.ProofProblem.UNAVAILABLE;
-    if (queryParameterValues.size() == 1) {
+    if (proofErrorParameterValues.size() == 1) {
       try {
-        proofProblem = ExternalLoginFlow.ProofProblem.valueOf(queryParameterValues.getFirst());
+        proofProblem = ExternalLoginFlow.ProofProblem.valueOf(proofErrorParameterValues.getFirst());
       } catch (IllegalArgumentException _) {
         // Nur bekannte Fehlerarten auswählen, nie Queryinhalte als Meldung ausgeben.
       }

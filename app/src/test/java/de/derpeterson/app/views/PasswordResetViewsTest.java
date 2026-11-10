@@ -104,8 +104,8 @@ class PasswordResetViewsTest {
             mock(HttpServletRequest.class),
             accountConfig());
     resetView.setParameter(null, "link-token");
-    field(resetView, "passwordField", PasswordField.class).setValue("Password!");
-    field(resetView, "confirmPasswordField", PasswordField.class).setValue("Password!");
+    field(resetView, "newPasswordField", PasswordField.class).setValue("Password!");
+    field(resetView, "confirmNewPasswordField", PasswordField.class).setValue("Password!");
   }
 
   private void notification(boolean success, String body, Locale locale) {
@@ -130,18 +130,18 @@ class PasswordResetViewsTest {
             accountConfig());
     when(passwordResetService.inspectToken("used-or-expired")).thenReturn(LinkState.INVALID);
     resetView.setParameter(null, "used-or-expired");
-    assertNull(ReflectionTestUtils.getField(resetView, "resetButton"));
+    assertNull(ReflectionTestUtils.getField(resetView, "saveNewPasswordButton"));
     assertEquals(
         messageProperties.getResetPasswordInvalidTitle(),
-        field(resetView, "invalidTitle", H1.class).getText());
-    Button request = field(resetView, "requestLinkButton", Button.class);
+        field(resetView, "resetLinkProblemTitleH1", H1.class).getText());
+    Button request = field(resetView, "requestNewResetLinkButton", Button.class);
     assertEquals(messageProperties.getPublicRequestNewLink(), request.getText());
     assertEquals("mail", request.getPrefixComponent().getElement().getAttribute("data-lucide"));
-    assertNull(ReflectionTestUtils.getField(resetView, "homeButton"));
+    assertNull(ReflectionTestUtils.getField(resetView, "returnHomeButton"));
     LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(
         messageProperties.getResetPasswordInvalidTitle(),
-        field(resetView, "invalidTitle", H1.class).getText());
+        field(resetView, "resetLinkProblemTitleH1", H1.class).getText());
     assertEquals(messageProperties.getPublicRequestNewLink(), request.getText());
     UI navigation = mock(UI.class);
     UI.setCurrent(navigation);
@@ -165,18 +165,18 @@ class PasswordResetViewsTest {
     resetView.setParameter(null, "expired");
     assertEquals(
         messageProperties.getResetPasswordExpiredTitle(),
-        field(resetView, "invalidTitle", H1.class).getText());
+        field(resetView, "resetLinkProblemTitleH1", H1.class).getText());
     assertEquals(
         messageProperties.getResetPasswordExpiredText(),
-        field(resetView, "invalidText", Span.class).getText());
-    assertNull(ReflectionTestUtils.getField(resetView, "resetButton"));
+        field(resetView, "resetLinkProblemMessageSpan", Span.class).getText());
+    assertNull(ReflectionTestUtils.getField(resetView, "saveNewPasswordButton"));
     LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(
         messageProperties.getResetPasswordExpiredTitle(),
-        field(resetView, "invalidTitle", H1.class).getText());
+        field(resetView, "resetLinkProblemTitleH1", H1.class).getText());
     assertEquals(
         messageProperties.getResetPasswordExpiredText(),
-        field(resetView, "invalidText", Span.class).getText());
+        field(resetView, "resetLinkProblemMessageSpan", Span.class).getText());
     verify(passwordResetService).inspectToken("expired");
     verifyNoMoreInteractions(passwordResetService);
   }
@@ -184,11 +184,11 @@ class PasswordResetViewsTest {
   @Test
   void resetFormHasClearActionsAndCanReturnToLoginWithoutChangingPassword() {
     createResetForm();
-    Button save = field(resetView, "resetButton", Button.class);
-    Button login = field(resetView, "loginButton", Button.class);
+    Button save = field(resetView, "saveNewPasswordButton", Button.class);
+    Button login = field(resetView, "goToLoginButton", Button.class);
     assertEquals(
         messageProperties.getPublicResetFormTitle(),
-        field(resetView, "resetPasswordTitle", H1.class).getText());
+        field(resetView, "resetPasswordTitleH1", H1.class).getText());
     assertEquals(messageProperties.getPublicSavePasswordAction(), save.getText());
     assertEquals("check", save.getPrefixComponent().getElement().getAttribute("data-lucide"));
     assertEquals("log-in", login.getPrefixComponent().getElement().getAttribute("data-lucide"));
@@ -313,7 +313,7 @@ class PasswordResetViewsTest {
     if (!success) {
       when(passwordResetService.inspectToken("link-token")).thenReturn(LinkState.EXPIRED);
     }
-    field(resetView, "resetButton", Button.class).click();
+    field(resetView, "saveNewPasswordButton", Button.class).click();
     verify(passwordResetService, times(success ? 1 : 2)).inspectToken("link-token");
     verify(passwordResetService).resetPassword("link-token", "Password!");
     verifyNoMoreInteractions(passwordResetService);
@@ -339,14 +339,14 @@ class PasswordResetViewsTest {
   @ValueSource(strings = {"required", "weak", "mismatch"})
   void invalidFormNeverCallsThePasswordChangeService(String kind) {
     createResetForm();
-    field(resetView, "confirmPasswordField", PasswordField.class)
+    field(resetView, "confirmNewPasswordField", PasswordField.class)
         .setValue(
             switch (kind) {
               case "required" -> "";
               case "weak" -> "weak";
               default -> "DifferentPassword!";
             });
-    field(resetView, "resetButton", Button.class).click();
+    field(resetView, "saveNewPasswordButton", Button.class).click();
     verify(passwordResetService).inspectToken("link-token");
     verifyNoMoreInteractions(passwordResetService);
   }
@@ -360,7 +360,7 @@ class PasswordResetViewsTest {
     assertLogged(
         ResetPasswordView.class,
         failure,
-        () -> field(resetView, "resetButton", Button.class).click());
+        () -> field(resetView, "saveNewPasswordButton", Button.class).click());
     notification(false, messageProperties.getResetPasswordTechnicalErrorMessage(), Locale.ENGLISH);
     Object visible =
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
@@ -383,7 +383,7 @@ class PasswordResetViewsTest {
             mock(SecurityService.class),
             mock(HttpServletRequest.class),
             accountConfig());
-    field(forgotView, "emailField", EmailField.class).setValue("test@example.com");
+    field(forgotView, "passwordResetEmailField", EmailField.class).setValue("test@example.com");
     if (outcome.equals("io") || outcome.equals("runtime")) {
       Exception failure =
           outcome.equals("io")
@@ -393,11 +393,11 @@ class PasswordResetViewsTest {
       assertLogged(
           ForgotPasswordView.class,
           failure,
-          () -> field(forgotView, "sendButton", Button.class).click());
+          () -> field(forgotView, "requestPasswordResetButton", Button.class).click());
     } else {
       when(passwordResetService.sendPasswordResetEmail("test@example.com"))
           .thenReturn(!outcome.equals("missing") && !outcome.equals("disabled"));
-      field(forgotView, "sendButton", Button.class).click();
+      field(forgotView, "requestPasswordResetButton", Button.class).click();
     }
     notification(true, messageProperties.getForgotPasswordSuccessMessage(), Locale.ENGLISH);
     NotificationHelper helper = NotificationHelper.getInstance();
@@ -428,20 +428,20 @@ class PasswordResetViewsTest {
             accountConfig());
     assertLogged(
         ResetPasswordView.class, failure, () -> resetView.setParameter(null, "link-token"));
-    assertNull(ReflectionTestUtils.getField(resetView, "resetButton"));
+    assertNull(ReflectionTestUtils.getField(resetView, "saveNewPasswordButton"));
     assertEquals(
         messageProperties.getBaseFailedTitle(),
-        field(resetView, "invalidTitle", H1.class).getText());
+        field(resetView, "resetLinkProblemTitleH1", H1.class).getText());
     assertEquals(
         messageProperties.getResetPasswordTechnicalErrorMessage(),
-        field(resetView, "invalidText", Span.class).getText());
+        field(resetView, "resetLinkProblemMessageSpan", Span.class).getText());
     LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(
         messageProperties.getBaseFailedTitle(),
-        field(resetView, "invalidTitle", H1.class).getText());
+        field(resetView, "resetLinkProblemTitleH1", H1.class).getText());
     assertEquals(
         messageProperties.getResetPasswordTechnicalErrorMessage(),
-        field(resetView, "invalidText", Span.class).getText());
+        field(resetView, "resetLinkProblemMessageSpan", Span.class).getText());
     verify(passwordResetService).inspectToken("link-token");
     verifyNoMoreInteractions(passwordResetService);
   }
@@ -456,8 +456,8 @@ class PasswordResetViewsTest {
             mock(SecurityService.class),
             mock(HttpServletRequest.class),
             accountConfig());
-    field(forgotView, "emailField", EmailField.class).setValue(value);
-    field(forgotView, "sendButton", Button.class).click();
+    field(forgotView, "passwordResetEmailField", EmailField.class).setValue(value);
+    field(forgotView, "requestPasswordResetButton", Button.class).click();
     verifyNoInteractions(passwordResetService);
   }
 

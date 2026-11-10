@@ -60,29 +60,29 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
   private final transient MessageProperties messageProperties;
   private final transient PasswordResetService passwordResetService;
 
-  private final VerticalLayout mainContent;
+  private final VerticalLayout resetPageContentLayout;
 
-  private H1 resetPasswordTitle = null;
-  private PasswordField passwordField = null;
-  private PasswordField confirmPasswordField = null;
-  private Button resetButton = null;
-  private Button homeButton = null;
-  private Button loginButton = null;
-  private Button requestLinkButton = null;
-  private H1 successTitle = null;
-  private Span successText = null;
-  private H1 invalidTitle = null;
-  private Span invalidText = null;
-  private boolean technicalFailure;
-  private LinkState linkState = LinkState.INVALID;
+  private H1 resetPasswordTitleH1 = null;
+  private PasswordField newPasswordField = null;
+  private PasswordField confirmNewPasswordField = null;
+  private Button saveNewPasswordButton = null;
+  private Button returnHomeButton = null;
+  private Button goToLoginButton = null;
+  private Button requestNewResetLinkButton = null;
+  private H1 resetSuccessTitleH1 = null;
+  private Span resetSuccessMessageSpan = null;
+  private H1 resetLinkProblemTitleH1 = null;
+  private Span resetLinkProblemMessageSpan = null;
+  private boolean hasResetLinkInspectionFailure;
+  private LinkState resetLinkState = LinkState.INVALID;
 
   public ResetPasswordView(
       MessageProperties messageProperties,
       PasswordResetService passwordResetService,
       SecurityService securityService,
-      HttpServletRequest request,
+      HttpServletRequest httpServletRequest,
       ConfigService configService) {
-    super(securityService, request, new HorizontalLayout());
+    super(securityService, httpServletRequest, new HorizontalLayout());
 
     this.messageProperties = messageProperties;
     this.passwordResetService = passwordResetService;
@@ -94,149 +94,153 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     getContent().setPadding(false);
     getContent().removeAll();
     setSpacing(false);
-    PublicPageComponent pageLayout =
+    PublicPageComponent resetPageComponent =
         new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.RESET);
-    mainContent = pageLayout.getCardContainer();
-    add(pageLayout);
+    resetPageContentLayout = resetPageComponent.getCardContainer();
+    add(resetPageComponent);
   }
 
-  private void applyResetPageLanguage(LanguageChangeEvent event) {
-    VaadinSession.getCurrent().setLocale(event.getNewLocale());
+  private void applyResetPageLanguage(LanguageChangeEvent languageChangeEvent) {
+    VaadinSession.getCurrent().setLocale(languageChangeEvent.getNewLocale());
 
     Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
-    Optional.ofNullable(resetPasswordTitle)
+    Optional.ofNullable(resetPasswordTitleH1)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getPublicResetFormTitle));
-    Optional.ofNullable(passwordField)
+    Optional.ofNullable(newPasswordField)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getResetPasswordNewPasswordField));
-    Optional.ofNullable(confirmPasswordField)
+    Optional.ofNullable(confirmNewPasswordField)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getResetPasswordConfirmField));
-    Optional.ofNullable(resetButton)
+    Optional.ofNullable(saveNewPasswordButton)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getPublicSavePasswordAction));
-    Optional.ofNullable(loginButton)
+    Optional.ofNullable(goToLoginButton)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getBaseLoginButton));
-    Optional.ofNullable(homeButton)
+    Optional.ofNullable(returnHomeButton)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getBaseHomeButton));
-    Optional.ofNullable(requestLinkButton)
+    Optional.ofNullable(requestNewResetLinkButton)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getPublicRequestNewLink));
-    Optional.ofNullable(successTitle)
+    Optional.ofNullable(resetSuccessTitleH1)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getBaseSuccessTitle));
-    Optional.ofNullable(successText)
+    Optional.ofNullable(resetSuccessMessageSpan)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getResetPasswordSuccessMessage));
-    Optional.ofNullable(invalidTitle)
-        .ifPresent(
-            component -> componentTranslationSupplierMap.put(component, this::linkProblemTitle));
-    Optional.ofNullable(invalidText)
-        .ifPresent(
-            component -> componentTranslationSupplierMap.put(component, this::linkProblemText));
+    Optional.ofNullable(resetLinkProblemTitleH1)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(component, this::resolveResetLinkProblemTitleText));
+    Optional.ofNullable(resetLinkProblemMessageSpan)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this::resolveResetLinkProblemMessageText));
 
     ComponentTextUpdateHelper.updateComponentTexts(componentTranslationSupplierMap);
-    updateInputPlaceholders();
+    updateNewPasswordFieldPlaceholders();
     NotificationHelper.getInstance().updateText();
   }
 
   @Override
-  public void setParameter(BeforeEvent event, @OptionalParameter String token) {
-    if (token != null && !token.isEmpty()) {
-      mainContent.removeAll();
-      technicalFailure = false;
+  public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String passwordResetToken) {
+    if (passwordResetToken != null && !passwordResetToken.isEmpty()) {
+      resetPageContentLayout.removeAll();
+      hasResetLinkInspectionFailure = false;
       try {
-        linkState = passwordResetService.inspectToken(token);
-        if (linkState == LinkState.VALID) {
-          showResetPasswordCard(token);
+        resetLinkState = passwordResetService.inspectToken(passwordResetToken);
+        if (resetLinkState == LinkState.VALID) {
+          showResetPasswordFormPanel(passwordResetToken);
         } else {
-          invalidTokenCard();
+          showResetLinkProblemPanel();
         }
-      } catch (RuntimeException failure) {
-        logger.error("Password reset link could not be validated", safeFailure(failure));
-        technicalFailure = true;
-        invalidTokenCard();
+      } catch (RuntimeException passwordResetFailure) {
+        logger.error(
+            "Password reset link could not be validated", safeFailure(passwordResetFailure));
+        hasResetLinkInspectionFailure = true;
+        showResetLinkProblemPanel();
       }
     } else {
-      event.forwardTo(HomeView.class);
+      beforeEvent.forwardTo(HomeView.class);
     }
   }
 
-  private void showResetPasswordCard(String token) {
+  private void showResetPasswordFormPanel(String passwordResetToken) {
 
-    this.resetPasswordTitle = new H1(messageProperties.getPublicResetFormTitle());
-    resetPasswordTitle.addClassName(COSMOS_HEADLINE_CLASS);
+    this.resetPasswordTitleH1 = new H1(messageProperties.getPublicResetFormTitle());
+    resetPasswordTitleH1.addClassName(COSMOS_HEADLINE_CLASS);
 
-    this.passwordField = new PasswordField(messageProperties.getResetPasswordNewPasswordField());
-    passwordField.setClearButtonVisible(true);
-    passwordField.setRequiredIndicatorVisible(true);
-    passwordField.setWidthFull();
+    this.newPasswordField = new PasswordField(messageProperties.getResetPasswordNewPasswordField());
+    newPasswordField.setClearButtonVisible(true);
+    newPasswordField.setRequiredIndicatorVisible(true);
+    newPasswordField.setWidthFull();
 
-    this.confirmPasswordField = new PasswordField(messageProperties.getResetPasswordConfirmField());
-    confirmPasswordField.setClearButtonVisible(true);
-    confirmPasswordField.setRequiredIndicatorVisible(true);
-    confirmPasswordField.setWidthFull();
+    this.confirmNewPasswordField =
+        new PasswordField(messageProperties.getResetPasswordConfirmField());
+    confirmNewPasswordField.setClearButtonVisible(true);
+    confirmNewPasswordField.setRequiredIndicatorVisible(true);
+    confirmNewPasswordField.setWidthFull();
 
-    updateInputPlaceholders();
+    updateNewPasswordFieldPlaceholders();
 
-    this.resetButton =
+    this.saveNewPasswordButton =
         new Button(
-            messageProperties.getPublicSavePasswordAction(), event -> submitPasswordReset(token));
-    resetButton.setPrefixComponent(AppIcon.CHECK.create());
-    resetButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    resetButton.setWidthFull();
+            messageProperties.getPublicSavePasswordAction(),
+            _ -> submitPasswordReset(passwordResetToken));
+    saveNewPasswordButton.setPrefixComponent(AppIcon.CHECK.create());
+    saveNewPasswordButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    saveNewPasswordButton.setWidthFull();
 
-    this.loginButton =
+    this.goToLoginButton =
         new Button(
-            messageProperties.getBaseLoginButton(),
-            event -> UI.getCurrent().navigate(LoginView.class));
-    loginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
-    Div actions = new Div(loginButton, resetButton);
-    actions.addClassName("public-panel-actions");
+            messageProperties.getBaseLoginButton(), _ -> UI.getCurrent().navigate(LoginView.class));
+    goToLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
+    Div resetFormActionsDiv = new Div(goToLoginButton, saveNewPasswordButton);
+    resetFormActionsDiv.addClassName("public-panel-actions");
 
-    CosmosCardComponent cardComponent =
+    CosmosCardComponent resetFormPanelComponent =
         new PublicPanelComponent(
             AppIcon.KEY.create(),
-            resetPasswordTitle,
+            resetPasswordTitleH1,
             messageProperties::getPublicResetSubtitle,
-            new Component[] {passwordField, confirmPasswordField},
-            actions);
+            new Component[] {newPasswordField, confirmNewPasswordField},
+            resetFormActionsDiv);
 
-    mainContent.add(cardComponent);
+    resetPageContentLayout.add(resetFormPanelComponent);
   }
 
-  private void submitPasswordReset(String token) {
+  private void submitPasswordReset(String passwordResetToken) {
     if (!ValidationHelper.validateRequiredInputs(
-        List.of(passwordField, confirmPasswordField), messageProperties)) {
+        List.of(newPasswordField, confirmNewPasswordField), messageProperties)) {
       return;
     }
 
     if (!ValidationHelper.validatePasswordSecureInputs(
-        List.of(passwordField, confirmPasswordField), messageProperties)) {
+        List.of(newPasswordField, confirmNewPasswordField), messageProperties)) {
       return;
     }
 
     if (!ValidationHelper.validatePasswordConfirmInputs(
-        passwordField, confirmPasswordField, messageProperties)) {
+        newPasswordField, confirmNewPasswordField, messageProperties)) {
       return;
     }
 
     try {
-      boolean success = passwordResetService.resetPassword(token, passwordField.getValue());
-      if (success) {
-        showSuccessCard();
+      boolean wasPasswordReset =
+          passwordResetService.resetPassword(passwordResetToken, newPasswordField.getValue());
+      if (wasPasswordReset) {
+        showPasswordResetSuccessPanel();
         NotificationHelper.getInstance()
             .showNotification(
                 messageProperties::getBaseSuccessTitle,
@@ -244,20 +248,20 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
                 -1,
                 NotificationHelper.NotificationType.SUCCESS);
       } else {
-        linkState = passwordResetService.inspectToken(token);
-        if (linkState == LinkState.VALID) {
-          linkState = LinkState.INVALID;
+        resetLinkState = passwordResetService.inspectToken(passwordResetToken);
+        if (resetLinkState == LinkState.VALID) {
+          resetLinkState = LinkState.INVALID;
         }
-        invalidTokenCard();
+        showResetLinkProblemPanel();
         NotificationHelper.getInstance()
             .showNotification(
                 messageProperties::getBaseFailedTitle,
-                this::linkProblemText,
+                this::resolveResetLinkProblemMessageText,
                 -1,
                 NotificationHelper.NotificationType.ERROR);
       }
-    } catch (RuntimeException failure) {
-      logger.error("Password could not be reset", safeFailure(failure));
+    } catch (RuntimeException passwordResetFailure) {
+      logger.error("Password could not be reset", safeFailure(passwordResetFailure));
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
@@ -267,101 +271,98 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     }
   }
 
-  private void showSuccessCard() {
-    mainContent.removeAll();
-    // Nach erfolgreichem Verbrauch des Tokens nur noch die Bestätigung anzeigen.
-    resetPasswordTitle = null;
-    passwordField = null;
-    confirmPasswordField = null;
-    resetButton = null;
-    loginButton = null;
+  private void showPasswordResetSuccessPanel() {
+    resetPageContentLayout.removeAll();
+    clearResetPasswordFormReferences();
 
-    SvgIcon successIcon = AppIcon.CHECK_CIRCLE.create();
-    successIcon.addClassNames(STATUS_ICON, LumoUtility.TextColor.SUCCESS);
+    SvgIcon resetSuccessSvgIcon = AppIcon.CHECK_CIRCLE.create();
+    resetSuccessSvgIcon.addClassNames(STATUS_ICON, LumoUtility.TextColor.SUCCESS);
 
-    this.successTitle = new H1(messageProperties.getBaseSuccessTitle());
-    successTitle.addClassName(COSMOS_HEADLINE_CLASS);
+    this.resetSuccessTitleH1 = new H1(messageProperties.getBaseSuccessTitle());
+    resetSuccessTitleH1.addClassName(COSMOS_HEADLINE_CLASS);
 
-    this.successText = new Span(messageProperties.getResetPasswordSuccessMessage());
-    successText.addClassName("cosmos-form-text");
-    VerticalLayout cardTextLayout = new VerticalLayout(successText);
+    this.resetSuccessMessageSpan = new Span(messageProperties.getResetPasswordSuccessMessage());
+    resetSuccessMessageSpan.addClassName("cosmos-form-text");
+    VerticalLayout cardTextLayout = new VerticalLayout(resetSuccessMessageSpan);
     cardTextLayout.addClassName("cosmos-intro");
     cardTextLayout.setWidthFull();
     cardTextLayout.setPadding(false);
     cardTextLayout.setSpacing(false);
     cardTextLayout.setAlignItems(FlexComponent.Alignment.START);
 
-    this.homeButton =
+    this.returnHomeButton =
         new Button(
-            messageProperties.getBaseHomeButton(),
-            event -> UI.getCurrent().navigate(HomeView.class));
-    homeButton.setPrefixComponent(AppIcon.ARROW_FORWARD.create());
-    homeButton.setWidthFull();
-    homeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+            messageProperties.getBaseHomeButton(), _ -> UI.getCurrent().navigate(HomeView.class));
+    returnHomeButton.setPrefixComponent(AppIcon.ARROW_FORWARD.create());
+    returnHomeButton.setWidthFull();
+    returnHomeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-    mainContent.add(
+    resetPageContentLayout.add(
         new PublicPanelComponent(
-            successIcon,
-            successTitle,
+            resetSuccessSvgIcon,
+            resetSuccessTitleH1,
             messageProperties::getPublicOutcomeSubtitle,
             new Component[] {cardTextLayout},
-            homeButton));
+            returnHomeButton));
   }
 
-  private void invalidTokenCard() {
-    mainContent.removeAll();
-    resetPasswordTitle = null;
-    passwordField = null;
-    confirmPasswordField = null;
-    resetButton = null;
-    loginButton = null;
+  private void showResetLinkProblemPanel() {
+    resetPageContentLayout.removeAll();
+    clearResetPasswordFormReferences();
 
-    SvgIcon warningIcon = AppIcon.WARNING.create();
-    warningIcon.addClassNames(
+    SvgIcon resetLinkProblemSvgIcon = AppIcon.WARNING.create();
+    resetLinkProblemSvgIcon.addClassNames(
         STATUS_ICON,
-        !technicalFailure && linkState == LinkState.EXPIRED
+        !hasResetLinkInspectionFailure && resetLinkState == LinkState.EXPIRED
             ? "cosmos-status-icon--warning"
             : LumoUtility.TextColor.ERROR);
 
-    this.invalidTitle = new H1(linkProblemTitle());
-    invalidTitle.addClassName(COSMOS_HEADLINE_CLASS);
+    this.resetLinkProblemTitleH1 = new H1(resolveResetLinkProblemTitleText());
+    resetLinkProblemTitleH1.addClassName(COSMOS_HEADLINE_CLASS);
 
-    VerticalLayout cardTextLayout = getCardTextLayout();
+    VerticalLayout cardTextLayout = buildResetLinkProblemMessageLayout();
 
-    Button action;
-    if (technicalFailure) {
-      requestLinkButton = null;
-      homeButton =
+    Button resetLinkProblemActionButton;
+    if (hasResetLinkInspectionFailure) {
+      requestNewResetLinkButton = null;
+      returnHomeButton =
           new Button(
-              messageProperties.getBaseHomeButton(),
-              event -> UI.getCurrent().navigate(HomeView.class));
-      homeButton.setPrefixComponent(AppIcon.HOME.create());
-      action = homeButton;
+              messageProperties.getBaseHomeButton(), _ -> UI.getCurrent().navigate(HomeView.class));
+      returnHomeButton.setPrefixComponent(AppIcon.HOME.create());
+      resetLinkProblemActionButton = returnHomeButton;
     } else {
-      homeButton = null;
-      requestLinkButton =
+      returnHomeButton = null;
+      requestNewResetLinkButton =
           new Button(
               messageProperties.getPublicRequestNewLink(),
-              event -> UI.getCurrent().navigate(ForgotPasswordView.class));
-      requestLinkButton.setPrefixComponent(AppIcon.ENVELOPE.create());
-      action = requestLinkButton;
+              _ -> UI.getCurrent().navigate(ForgotPasswordView.class));
+      requestNewResetLinkButton.setPrefixComponent(AppIcon.ENVELOPE.create());
+      resetLinkProblemActionButton = requestNewResetLinkButton;
     }
-    action.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    resetLinkProblemActionButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-    CosmosCardComponent cardComponent =
+    CosmosCardComponent resetFormPanelComponent =
         new PublicPanelComponent(
-            warningIcon,
-            invalidTitle,
+            resetLinkProblemSvgIcon,
+            resetLinkProblemTitleH1,
             messageProperties::getPublicOutcomeSubtitle,
             new Component[] {cardTextLayout},
-            action);
+            resetLinkProblemActionButton);
 
-    mainContent.add(cardComponent);
+    resetPageContentLayout.add(resetFormPanelComponent);
   }
 
-  private VerticalLayout getCardTextLayout() {
-    this.invalidText = new Span(linkProblemText());
-    invalidText.addClassName("cosmos-form-text");
+  private void clearResetPasswordFormReferences() {
+    resetPasswordTitleH1 = null;
+    newPasswordField = null;
+    confirmNewPasswordField = null;
+    saveNewPasswordButton = null;
+    goToLoginButton = null;
+  }
+
+  private VerticalLayout buildResetLinkProblemMessageLayout() {
+    this.resetLinkProblemMessageSpan = new Span(resolveResetLinkProblemMessageText());
+    resetLinkProblemMessageSpan.addClassName("cosmos-form-text");
     VerticalLayout cardTextLayout = new VerticalLayout();
     cardTextLayout.addClassName("cosmos-intro");
     cardTextLayout.setWidthFull();
@@ -369,34 +370,35 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     cardTextLayout.setSpacing(false);
     cardTextLayout.setAlignItems(FlexComponent.Alignment.START);
     cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-    cardTextLayout.add(invalidText);
+    cardTextLayout.add(resetLinkProblemMessageSpan);
     return cardTextLayout;
   }
 
-  private String linkProblemTitle() {
-    if (technicalFailure) {
+  private String resolveResetLinkProblemTitleText() {
+    if (hasResetLinkInspectionFailure) {
       return messageProperties.getBaseFailedTitle();
     }
-    return linkState == LinkState.EXPIRED
+    return resetLinkState == LinkState.EXPIRED
         ? messageProperties.getResetPasswordExpiredTitle()
         : messageProperties.getResetPasswordInvalidTitle();
   }
 
-  private String linkProblemText() {
-    if (technicalFailure) {
+  private String resolveResetLinkProblemMessageText() {
+    if (hasResetLinkInspectionFailure) {
       return messageProperties.getResetPasswordTechnicalErrorMessage();
     }
-    return linkState == LinkState.EXPIRED
+    return resetLinkState == LinkState.EXPIRED
         ? messageProperties.getResetPasswordExpiredText()
         : messageProperties.getResetPasswordInvalidText();
   }
 
-  private void updateInputPlaceholders() {
-    if (passwordField != null) {
-      passwordField.setPlaceholder(messageProperties.getAccountNewPasswordPlaceholder());
+  private void updateNewPasswordFieldPlaceholders() {
+    if (newPasswordField != null) {
+      newPasswordField.setPlaceholder(messageProperties.getAccountNewPasswordPlaceholder());
     }
-    if (confirmPasswordField != null) {
-      confirmPasswordField.setPlaceholder(messageProperties.getAccountConfirmPasswordPlaceholder());
+    if (confirmNewPasswordField != null) {
+      confirmNewPasswordField.setPlaceholder(
+          messageProperties.getAccountConfirmPasswordPlaceholder());
     }
   }
 }

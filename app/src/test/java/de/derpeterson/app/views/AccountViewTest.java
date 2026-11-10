@@ -310,7 +310,8 @@ class AccountViewTest {
   }
 
   private AccountSettingsComponent settings() {
-    return (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
+    return (AccountSettingsComponent)
+        ReflectionTestUtils.getField(view, "accountSettingsComponent");
   }
 
   private void enter(String query) {
@@ -522,7 +523,7 @@ class AccountViewTest {
   void trackedLanguageEventRefreshesTheAccountSurface() {
     LanguageChangeEvent.fire(testUi, Locale.ENGLISH);
     AccountSettingsComponent content =
-        (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
+        (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettingsComponent");
     MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH);
     assertTrue(
@@ -539,7 +540,7 @@ class AccountViewTest {
   @Test
   void saveUsesAuthenticatedRequestRefreshesNameAndAppliesLanguageOnlyAfterSuccess() {
     AccountSettingsComponent content =
-        (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
+        (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettingsComponent");
     LocalDate date = LocalDate.of(1990, 1, 1);
     when(accountProfileService.save(eq(mockHttpRequest), any()))
         .thenReturn(new Profile(4L, "Changed", "Name", date, Locale.ENGLISH, Gender.OTHER));
@@ -600,7 +601,7 @@ class AccountViewTest {
   @Test
   void failedSaveKeepsDraftAndDoesNotChangeLanguageOrTheUserSnapshot() {
     AccountSettingsComponent content =
-        (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
+        (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettingsComponent");
     when(accountProfileService.save(eq(mockHttpRequest), any()))
         .thenThrow(new IllegalStateException("Unavailable"));
     ((TextField)

@@ -24,6 +24,7 @@ import de.derpeterson.app.security.IsAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.service.AccountProfileService;
+import de.derpeterson.app.service.AccountProfileService.Profile;
 import de.derpeterson.app.service.AccountSecurityService;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
 import de.derpeterson.app.service.ConfigService;
@@ -48,103 +49,118 @@ import java.util.Objects;
 @UIScope
 @PermitAll
 public class AccountView extends IsAuthenticatedBaseView implements AfterNavigationObserver {
-  private final AccountSettingsComponent accountSettings;
+  private final AccountSettingsComponent accountSettingsComponent;
 
   @org.springframework.beans.factory.annotation.Autowired
   void configureTwoFactor(
       de.derpeterson.app.security.mfa.TwoFactorAuthorization twoFactorAuthorization,
       de.derpeterson.app.security.mfa.TwoFactorManagement twoFactorManagement,
-      HttpServletRequest request) {
-    accountSettings.configureTwoFactor(
+      HttpServletRequest httpServletRequest) {
+    accountSettingsComponent.configureTwoFactor(
         new de.derpeterson.app.ui.components.TwoFactorAccountComponent(
-            messageProperties, twoFactorAuthorization, twoFactorManagement, request));
+            messageProperties, twoFactorAuthorization, twoFactorManagement, httpServletRequest));
   }
 
   public AccountView(
-      MessageProperties messages,
-      SecurityService security,
-      HttpServletRequest request,
-      ConfigService config,
-      UserService users,
-      AccountProfileService profiles,
-      AccountSecurityService accountSecurity,
-      SessionManagementService sessions,
-      UserStatusBroadcaster broadcaster,
-      UserAvatarService avatars,
-      ExternalLoginFlow externalLogin,
-      ExternalIdentityService identities) {
-    super(messages, security, users, broadcaster, request, avatars);
+      MessageProperties messageProperties,
+      SecurityService securityService,
+      HttpServletRequest httpServletRequest,
+      ConfigService configService,
+      UserService userService,
+      AccountProfileService accountProfileService,
+      AccountSecurityService accountSecurityService,
+      SessionManagementService sessionManagementService,
+      UserStatusBroadcaster userStatusBroadcaster,
+      UserAvatarService userAvatarService,
+      ExternalLoginFlow externalLoginFlow,
+      ExternalIdentityService externalIdentityService) {
+    super(
+        messageProperties,
+        securityService,
+        userService,
+        userStatusBroadcaster,
+        httpServletRequest,
+        userAvatarService);
     addClassNames(
         "cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-account", REFERENCE_PORTAL);
-    HorizontalLayout header = createApplicationHeader(config);
+    HorizontalLayout applicationHeaderHorizontalLayout = createApplicationHeader(configService);
 
-    accountSettings =
+    accountSettingsComponent =
         new AccountSettingsComponent(
-            messages,
+            messageProperties,
             currentUser,
-            changes -> profiles.save(request, changes),
-            config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
-    accountSettings.configureNavigationToggle(accountNavigationToggle);
-    accountHeaderActions.setUnreadCountListener(accountSettings::updateUnreadCount);
-    accountSettings.configureAvatars(avatars, request);
-    accountSettings.configureStatusSelection(userPopoverMenu.createStatusSelect());
-    accountSettings.configureSecurityActions(
-        change -> {
-          PasswordChanged changed = accountSecurity.changePassword(request, change);
-          if (Objects.equals(currentUser.getVersion(), changed.previousVersion())) {
-            currentUser.setVersion(changed.version());
+            profileChanges -> accountProfileService.save(httpServletRequest, profileChanges),
+            configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
+    accountSettingsComponent.configureNavigationToggle(accountNavigationToggle);
+    accountHeaderActions.setUnreadCountListener(accountSettingsComponent::updateUnreadCount);
+    accountSettingsComponent.configureAvatars(userAvatarService, httpServletRequest);
+    accountSettingsComponent.configureStatusSelection(userPopoverMenu.createStatusSelect());
+    accountSettingsComponent.configureSecurityActions(
+        passwordChange -> {
+          PasswordChanged passwordChangeResult =
+              accountSecurityService.changePassword(httpServletRequest, passwordChange);
+          if (Objects.equals(currentUser.getVersion(), passwordChangeResult.previousVersion())) {
+            currentUser.setVersion(passwordChangeResult.version());
           }
-          return changed;
+          return passwordChangeResult;
         },
-        change -> accountSecurity.requestEmailChange(request, change));
-    accountSettings.configureSessionActions(
-        () -> sessions.list(request),
-        handle -> sessions.revoke(request, handle),
-        () -> sessions.revokeOthers(request));
-    accountSettings.addSectionChangeListener(
-        section -> UI.getCurrent().navigate(AccountView.class, section.queryParameters()));
+        emailChange -> accountSecurityService.requestEmailChange(httpServletRequest, emailChange));
+    accountSettingsComponent.configureSessionActions(
+        () -> sessionManagementService.list(httpServletRequest),
+        sessionHandle -> sessionManagementService.revoke(httpServletRequest, sessionHandle),
+        () -> sessionManagementService.revokeOthers(httpServletRequest));
+    accountSettingsComponent.addSectionChangeListener(selectedAccountSection ->
+        UI.getCurrent().navigate(AccountView.class, selectedAccountSection.queryParameters()));
+    accountSettingsComponent.addProfileSavedListener(this::applySavedProfileToPortal);
+    setPortalPage(applicationHeaderHorizontalLayout, accountSettingsComponent, configService);
+    configureExternalLogins(
+        externalLoginFlow, externalIdentityService, httpServletRequest, messageProperties);
+  }
+
+  private void applySavedProfileToPortal(Profile savedProfile) {
     // Erst nach bestätigtem Commit den sichtbaren UI-Zustand und die Sitzungssprache ändern.
-    accountSettings.addProfileSavedListener(saved -> {
-      currentUser.setFirstName(saved.firstName());
-      currentUser.setLastName(saved.lastName());
-      currentUser.setBirthDate(saved.birthDate());
-      currentUser.setGender(saved.gender());
-      currentUser.setPreferredLocale(saved.language());
-      currentUser.setVersion(saved.version());
-      userPopoverMenu.refreshProfileName();
-      refreshTrackedUserAvatar();
-      if (!saved.language().equals(VaadinSession.getCurrent().getLocale())) {
-        LanguageChangeEvent.fire(UI.getCurrent(), saved.language());
-      }
-    });
-    setPortalPage(header, accountSettings, config);
-    configureExternalLogins(externalLogin, identities, request, messages);
+    currentUser.setFirstName(savedProfile.firstName());
+    currentUser.setLastName(savedProfile.lastName());
+    currentUser.setBirthDate(savedProfile.birthDate());
+    currentUser.setGender(savedProfile.gender());
+    currentUser.setPreferredLocale(savedProfile.language());
+    currentUser.setVersion(savedProfile.version());
+    userPopoverMenu.refreshProfileName();
+    refreshTrackedUserAvatar();
+    if (!savedProfile.language().equals(VaadinSession.getCurrent().getLocale())) {
+      LanguageChangeEvent.fire(UI.getCurrent(), savedProfile.language());
+    }
   }
 
   @Override
-  public void beforeEnter(BeforeEnterEvent event) {
-    super.beforeEnter(event);
-    if (event.hasForwardTarget()) {
+  public void beforeEnter(BeforeEnterEvent navigationEvent) {
+    super.beforeEnter(navigationEvent);
+    if (navigationEvent.hasForwardTarget()) {
       return;
     }
-    Map<String, List<String>> query = event.getLocation().getQueryParameters().getParameters();
-    List<String> tabValues = query.getOrDefault(ACCOUNT_TAB_PARAMETER, List.of());
+    Map<String, List<String>> accountQueryParameters =
+        navigationEvent.getLocation().getQueryParameters().getParameters();
+    List<String> accountTabParameterValues =
+        accountQueryParameters.getOrDefault(ACCOUNT_TAB_PARAMETER, List.of());
     // Alte Direktlinks verwenden „tab“ noch für den Seitenbereich.
-    AccountSection section =
-        accountSection(query.getOrDefault(ACCOUNT_SECTION_PARAMETER, tabValues));
-    accountSettings.selectSection(section);
-    accountSettings.selectSecurityTab(
-        section == AccountSection.SECURITY
-                && query.containsKey(ACCOUNT_SECTION_PARAMETER)
-                && tabValues.size() == 1
-            ? tabValues.getFirst()
+    AccountSection selectedAccountSection =
+        parseAccountSection(
+            accountQueryParameters.getOrDefault(
+                ACCOUNT_SECTION_PARAMETER, accountTabParameterValues));
+    accountSettingsComponent.selectSection(selectedAccountSection);
+    accountSettingsComponent.selectSecurityTab(
+        selectedAccountSection == AccountSection.SECURITY
+                && accountQueryParameters.containsKey(ACCOUNT_SECTION_PARAMETER)
+                && accountTabParameterValues.size() == 1
+            ? accountTabParameterValues.getFirst()
             : AppRouteConstants.ACCOUNT_PORTAL_TAB);
   }
 
-  private AccountSection accountSection(List<String> values) {
-    if (values.size() == 1) {
+  private AccountSection parseAccountSection(List<String> accountSectionParameterValues) {
+    if (accountSectionParameterValues.size() == 1) {
       try {
-        return AccountSection.valueOf(values.getFirst().toUpperCase(Locale.ROOT));
+        return AccountSection.valueOf(
+            accountSectionParameterValues.getFirst().toUpperCase(Locale.ROOT));
       } catch (IllegalArgumentException _) {
         // Unbekannte Bereiche wie eine fehlende Auswahl behandeln.
       }
@@ -153,53 +169,58 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
   }
 
   @Override
-  public void afterNavigation(AfterNavigationEvent event) {
-    ExternalProofNotice.show(event, messageProperties);
-    ExternalProofNotice.showDisconnected(event, messageProperties, false);
+  public void afterNavigation(AfterNavigationEvent navigationEvent) {
+    ExternalProofNotice.showExternalProofFailure(navigationEvent, messageProperties);
+    ExternalProofNotice.showExternalDisconnectNotice(navigationEvent, messageProperties, false);
   }
 
   @Override
-  protected void onTrackedUserProfileChanged(String first, String last) {
-    if (accountSettings != null) {
-      accountSettings.refreshSummaryName(first, last);
+  protected void onTrackedUserProfileChanged(String firstName, String lastName) {
+    if (accountSettingsComponent != null) {
+      accountSettingsComponent.refreshSummaryName(firstName, lastName);
     }
   }
 
   @Override
-  protected void updateHeaderStatusIcon(UserStatus status) {
-    super.updateHeaderStatusIcon(status);
-    if (accountSettings != null) {
-      accountSettings.updateUserStatus(status);
+  protected void updateHeaderStatusIcon(UserStatus userStatus) {
+    super.updateHeaderStatusIcon(userStatus);
+    if (accountSettingsComponent != null) {
+      accountSettingsComponent.updateUserStatus(userStatus);
     }
   }
 
   @Override
   protected void onTrackedUserLanguageChanged() {
-    if (accountSettings != null) {
-      accountSettings.refreshTexts();
+    if (accountSettingsComponent != null) {
+      accountSettingsComponent.refreshTexts();
     }
   }
 
   private void configureExternalLogins(
-      ExternalLoginFlow flow,
-      ExternalIdentityService identities,
-      HttpServletRequest request,
-      MessageProperties messages) {
+      ExternalLoginFlow externalLoginFlow,
+      ExternalIdentityService externalIdentityService,
+      HttpServletRequest httpServletRequest,
+      MessageProperties messageProperties) {
     if (currentUser == null
-        || flow.providers().isEmpty() && identities.connected(currentUser.getId()).isEmpty()) {
+        || externalLoginFlow.providers().isEmpty()
+            && externalIdentityService.connected(currentUser.getId()).isEmpty()) {
       return;
     }
-    accountSettings.configureExternalLogins(
-        new ExternalConnectionsComponent(flow, identities, request, messages),
+    accountSettingsComponent.configureExternalLogins(
+        new ExternalConnectionsComponent(
+            externalLoginFlow, externalIdentityService, httpServletRequest, messageProperties),
         () ->
-            flow.owner(request).getPassword() != null
-                && flow.confirmedPurpose(request)
-                    .filter(purpose -> purpose == ExternalLoginFlow.Purpose.PASSWORD)
+            externalLoginFlow.owner(httpServletRequest).getPassword() != null
+                && externalLoginFlow
+                    .confirmedPurpose(httpServletRequest)
+                    .filter(
+                        confirmedPurpose -> confirmedPurpose == ExternalLoginFlow.Purpose.PASSWORD)
                     .isEmpty(),
         () ->
-            flow.owner(request).getPassword() != null
-                && flow.confirmedPurpose(request)
-                    .filter(purpose -> purpose == ExternalLoginFlow.Purpose.EMAIL)
+            externalLoginFlow.owner(httpServletRequest).getPassword() != null
+                && externalLoginFlow
+                    .confirmedPurpose(httpServletRequest)
+                    .filter(confirmedPurpose -> confirmedPurpose == ExternalLoginFlow.Purpose.EMAIL)
                     .isEmpty());
   }
 }

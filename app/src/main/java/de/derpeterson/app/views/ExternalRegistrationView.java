@@ -45,148 +45,160 @@ public final class ExternalRegistrationView extends VerticalLayout
   private final transient ExternalLoginFlow externalLoginFlow;
   private final transient ExternalIdentityService externalIdentityService;
   private final transient MessageProperties messageProperties;
-  private final transient HttpServletRequest httpRequest;
-  private final PublicPageComponent externalRegistrationPage;
-  private final H2 registrationTitle = new H2();
+  private final transient HttpServletRequest httpServletRequest;
+  private final PublicPageComponent externalRegistrationPageComponent;
+  private final H2 registrationTitleH2 = new H2();
   private final TextField firstNameField = new TextField();
   private final TextField lastNameField = new TextField();
-  private final EmailField emailField = new EmailField();
-  private final Span registrationError = new Span();
+  private final EmailField registrationEmailField = new EmailField();
+  private final Span registrationNoticeSpan = new Span();
   private final Button completeRegistrationButton = new Button();
   private final Button cancelRegistrationButton = new Button();
-  private boolean awaitingVerification;
-  private boolean expiredRegistration;
+  private boolean isAwaitingEmailVerification;
+  private boolean hasRegistrationDraftExpired;
 
   public ExternalRegistrationView(
-      ConfigService config,
+      ConfigService configService,
       MessageProperties messageProperties,
       ExternalLoginFlow externalLoginFlow,
       ExternalIdentityService externalIdentityService,
-      HttpServletRequest httpRequest) {
+      HttpServletRequest httpServletRequest) {
     this.externalLoginFlow = externalLoginFlow;
     this.externalIdentityService = externalIdentityService;
     this.messageProperties = messageProperties;
-    this.httpRequest = httpRequest;
+    this.httpServletRequest = httpServletRequest;
     setPadding(false);
     setSpacing(false);
     setWidthFull();
-    externalRegistrationPage =
-        new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.REGISTER);
-    registrationTitle.addClassName("cosmos-headline");
+    externalRegistrationPageComponent =
+        new PublicPageComponent(
+            configService, messageProperties, PublicPageComponent.Page.REGISTER);
+    registrationTitleH2.addClassName("cosmos-headline");
     firstNameField.setId("external-register-first");
     lastNameField.setId("external-register-last");
-    emailField.setId("external-register-email");
+    registrationEmailField.setId("external-register-email");
     firstNameField.setRequiredIndicatorVisible(true);
     lastNameField.setRequiredIndicatorVisible(true);
-    emailField.setRequiredIndicatorVisible(true);
+    registrationEmailField.setRequiredIndicatorVisible(true);
     firstNameField.setMaxLength(255);
     lastNameField.setMaxLength(255);
-    emailField.setMaxLength(255);
+    registrationEmailField.setMaxLength(255);
     firstNameField.setWidthFull();
     lastNameField.setWidthFull();
-    emailField.setWidthFull();
+    registrationEmailField.setWidthFull();
     completeRegistrationButton.setId("external-register-submit");
     completeRegistrationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     completeRegistrationButton.setPrefixComponent(AppIcon.USER_PLUS.create());
-    completeRegistrationButton.addClickListener(event -> register());
+    completeRegistrationButton.addClickListener(_ -> completeExternalRegistration());
     cancelRegistrationButton.setPrefixComponent(AppIcon.CLOSE.create());
-    cancelRegistrationButton.addClickListener(event -> {
-      externalLoginFlow.cancel(httpRequest);
-      UI.getCurrent().navigate(LoginView.class);
-    });
-    PublicPanelComponent panel =
+    cancelRegistrationButton.addClickListener(_ -> cancelExternalRegistration());
+    PublicPanelComponent externalRegistrationPanelComponent =
         new PublicPanelComponent(
             AppIcon.USER_PLUS.create(),
-            registrationTitle,
+            registrationTitleH2,
             messageProperties::getExternalCompleteHint,
-            new Component[] {registrationError, firstNameField, lastNameField, emailField},
+            new Component[] {
+              registrationNoticeSpan, firstNameField, lastNameField, registrationEmailField
+            },
             cancelRegistrationButton,
             completeRegistrationButton);
-    panel.addClassName("external-registration-panel");
-    externalRegistrationPage.getCardContainer().add(panel);
-    add(externalRegistrationPage);
-    ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> refreshTexts());
-    refreshTexts();
+    externalRegistrationPanelComponent.addClassName("external-registration-panel");
+    externalRegistrationPageComponent.getCardContainer().add(externalRegistrationPanelComponent);
+    add(externalRegistrationPageComponent);
+    ComponentUtil.addListener(
+        UI.getCurrent(), LanguageChangeEvent.class, _ -> refreshExternalRegistrationTexts());
+    refreshExternalRegistrationTexts();
   }
 
-  private void refreshTexts() {
-    registrationTitle.setText(messageProperties.getExternalCompleteTitle());
+  private void cancelExternalRegistration() {
+    externalLoginFlow.cancel(httpServletRequest);
+    UI.getCurrent().navigate(LoginView.class);
+  }
+
+  private void refreshExternalRegistrationTexts() {
+    registrationTitleH2.setText(messageProperties.getExternalCompleteTitle());
     firstNameField.setLabel(messageProperties.getRegistrationFirstNameField());
     lastNameField.setLabel(messageProperties.getRegistrationLastNameField());
-    emailField.setLabel(messageProperties.getPublicEmailField());
+    registrationEmailField.setLabel(messageProperties.getPublicEmailField());
     firstNameField.setPlaceholder(messageProperties.getAccountFirstNamePlaceholder());
     lastNameField.setPlaceholder(messageProperties.getAccountLastNamePlaceholder());
-    emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+    registrationEmailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
     completeRegistrationButton.setText(messageProperties.getBaseRegistrationButton());
     cancelRegistrationButton.setText(messageProperties.getAdminUsersCancel());
-    if (registrationError.isVisible()) {
-      registrationError.setText(currentErrorText());
+    if (registrationNoticeSpan.isVisible()) {
+      registrationNoticeSpan.setText(resolveRegistrationNoticeText());
     }
   }
 
-  private String currentErrorText() {
-    if (awaitingVerification) {
+  private String resolveRegistrationNoticeText() {
+    if (isAwaitingEmailVerification) {
       return messageProperties.getExternalVerifyEmail();
     }
-    return expiredRegistration
+    return hasRegistrationDraftExpired
         ? messageProperties.getExternalDraftExpired()
         : messageProperties.getExternalError();
   }
 
   @Override
-  public void beforeEnter(BeforeEnterEvent event) {
-    registrationError.setVisible(false);
-    if (event.getLocation().getQueryParameters().getParameters().containsKey("error")) {
-      hideForm();
-      registrationError.setText(messageProperties.getExternalError());
-      registrationError.setVisible(true);
+  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+    registrationNoticeSpan.setVisible(false);
+    if (beforeEnterEvent.getLocation().getQueryParameters().getParameters().containsKey("error")) {
+      hideRegistrationInputs();
+      registrationNoticeSpan.setText(messageProperties.getExternalError());
+      registrationNoticeSpan.setVisible(true);
       return;
     }
     try {
-      ExternalLoginFlow.Registration pending = externalLoginFlow.registration(httpRequest);
-      firstNameField.setValue(value(pending.identity().firstName()));
-      lastNameField.setValue(value(pending.identity().lastName()));
-      emailField.setValue(value(pending.identity().email()));
+      ExternalLoginFlow.Registration pendingExternalRegistration =
+          externalLoginFlow.registration(httpServletRequest);
+      firstNameField.setValue(
+          orEmptyRegistrationValue(pendingExternalRegistration.identity().firstName()));
+      lastNameField.setValue(
+          orEmptyRegistrationValue(pendingExternalRegistration.identity().lastName()));
+      registrationEmailField.setValue(
+          orEmptyRegistrationValue(pendingExternalRegistration.identity().email()));
     } catch (AccessDeniedException _) {
-      expiredRegistration = true;
-      hideForm();
-      registrationError.setText(messageProperties.getExternalDraftExpired());
-      registrationError.setVisible(true);
+      hasRegistrationDraftExpired = true;
+      hideRegistrationInputs();
+      registrationNoticeSpan.setText(messageProperties.getExternalDraftExpired());
+      registrationNoticeSpan.setVisible(true);
     }
   }
 
-  private void register() {
+  private void completeExternalRegistration() {
     if (!ValidationHelper.validateRequiredInputs(
-            List.of(firstNameField, lastNameField, emailField), messageProperties)
-        || !ValidationHelper.validateEmailValidInputs(List.of(emailField), messageProperties)) {
+            List.of(firstNameField, lastNameField, registrationEmailField), messageProperties)
+        || !ValidationHelper.validateEmailValidInputs(
+            List.of(registrationEmailField), messageProperties)) {
       return;
     }
     completeRegistrationButton.setEnabled(false);
     try {
-      ExternalLoginFlow.Registration pending = externalLoginFlow.registration(httpRequest);
-      UserEntity user =
+      ExternalLoginFlow.Registration pendingExternalRegistration =
+          externalLoginFlow.registration(httpServletRequest);
+      UserEntity registeredUserEntity =
           externalIdentityService.register(
-              pending.identity(),
-              emailField.getValue(),
+              pendingExternalRegistration.identity(),
+              registrationEmailField.getValue(),
               firstNameField.getValue(),
               lastNameField.getValue(),
               VaadinSession.getCurrent().getLocale());
-      externalLoginFlow.cancel(httpRequest);
-      if (user.isEnabled()) {
+      externalLoginFlow.cancel(httpServletRequest);
+      if (registeredUserEntity.isEnabled()) {
         UI.getCurrent()
             .getPage()
             .setLocation(
                 externalLoginFlow.finishLogin(
-                    httpRequest,
+                    httpServletRequest,
                     (HttpServletResponse) VaadinResponse.getCurrent(),
-                    user,
-                    pending.identity().provider(),
-                    pending.remember()));
+                    registeredUserEntity,
+                    pendingExternalRegistration.identity().provider(),
+                    pendingExternalRegistration.remember()));
       } else {
-        hideForm();
-        awaitingVerification = true;
-        registrationError.setText(messageProperties.getExternalVerifyEmail());
-        registrationError.setVisible(true);
+        hideRegistrationInputs();
+        isAwaitingEmailVerification = true;
+        registrationNoticeSpan.setText(messageProperties.getExternalVerifyEmail());
+        registrationNoticeSpan.setVisible(true);
       }
     } catch (IOException | RuntimeException _) {
       NotificationHelper.getInstance()
@@ -205,14 +217,14 @@ public final class ExternalRegistrationView extends VerticalLayout
     return messageProperties.getExternalCompleteTitle();
   }
 
-  private void hideForm() {
+  private void hideRegistrationInputs() {
     firstNameField.setVisible(false);
     lastNameField.setVisible(false);
-    emailField.setVisible(false);
+    registrationEmailField.setVisible(false);
     completeRegistrationButton.setVisible(false);
   }
 
-  private String value(String value) {
-    return value == null ? "" : value;
+  private String orEmptyRegistrationValue(String registrationValue) {
+    return registrationValue == null ? "" : registrationValue;
   }
 }

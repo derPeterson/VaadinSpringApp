@@ -569,14 +569,31 @@ einer nachvollziehbaren Reihenfolge anordnen und Hilfsmethoden in der Nähe des
 zugehörigen Ablaufs halten. Die Initialisierungsreihenfolge von Feldern erhalten,
 wenn sie das Verhalten beeinflusst.
 
-Auch innerhalb einer Methode zusammengehörige Anweisungen beieinander lassen. Beim
-Vaadin-Formular steht die Konfiguration eines Felds direkt bei seiner Deklaration
-oder Initialisierung. Eine Leerzeile macht den nächsten Arbeitsschritt sichtbar.
+**Auch innerhalb einer Methode jeden neuen logischen Arbeitsschritt mit einer
+Leerzeile absetzen.** Das gilt ebenso für kurze Methoden, wenn sie mehrere Schritte
+enthalten. Beim Formularaufbau können etwa Panel, Eingabebereich, Ereignisbehandlung
+und Einhängen der Komponenten eigene Absätze bilden. Die Deklaration eines Felds
+und seine Konfiguration gehören in denselben Absatz. Ein Beispiel ist
+`showLoginMethodTabs()` in
+[TwoFactorView](../app/src/main/java/de/derpeterson/app/views/TwoFactorView.java).
+
 Bei einem größeren Themenwechsel können es zwei sein, sofern der Projektformatter
-sie erhält. Bei größeren Feld- oder Methodenblöcken hilft ein kurzer Kommentar wie
-`// E-Mail ändern` als Orientierung beim Überfliegen. Der Aufbau der Passwortfelder
+sie erhält. Bei größeren Feld- oder Methodenblöcken kann eine kurze Überschrift
+wie `// E-Mail ändern` beim Überfliegen helfen. Die Leerzeile trennt den Block
+vom vorherigen Code und steht vor der Überschrift. Der erste Code des Blocks
+folgt direkt darunter. Die Überschrift benennt den fachlichen Zusammenhang
+und muss zum gesamten Block passen. Der Aufbau der Passwortfelder
 in [ResetPasswordView](../app/src/main/java/de/derpeterson/app/views/ResetPasswordView.java)
 zeigt diese Gliederung im Projekt.
+
+Bei einer klassenweiten Lesbarkeitsprüfung die ganze Klasse lesen und die
+Aufrufstellen der betroffenen Abläufe mitprüfen. Den Diff anschließend aus
+Lesersicht prüfen. Sind Felder und Methoden fachlich gruppiert? Stimmen Namen,
+Leerzeilen und Kommentare mit dem tatsächlichen Ablauf überein? Sind die
+Verzweigungen und Seiteneffekte noch vollständig? Eine Klasse mit einer
+angepassten Aufrufstelle bleibt bis zu ihrer eigenen Prüfung offen. Bei
+Umbenennungen auch vorhandene Tests prüfen, die Bezeichner als Zeichenketten
+referenzieren, und ihre bisherigen Erwartungen erhalten.
 
 ### Klammern und Kontrollfluss
 
@@ -635,6 +652,11 @@ Fehlerfälle erklären, soweit sie aus Namen und Code nicht klar hervorgehen.
 Wenn eine Methode mehrere eng zusammengehörige Schritte koordiniert, kann ein
 kurzer Kommentar darüber ihren Zweck oder eine notwendige Reihenfolge erklären.
 Selbsterklärende Getter oder offensichtliche Schritte brauchen keinen Kommentar.
+Beim Schreiben und im Review jeden betroffenen Kommentar mit dem Code darunter
+abgleichen. Kommentare direkt an die Stelle setzen, deren Grund oder Vertrag sie
+erklären. Beim Verschieben von Code die zugehörigen Kommentare mit verschieben
+und die Blocküberschriften erneut prüfen. Kommentare streichen, wenn sie nur
+einen Namen oder eine unmittelbar verständliche Anweisung wiederholen.
 
 ```java
 // Der Grenzzeitpunkt ist bereits fällig; Gleichheit darf keinen Retry verzögern.

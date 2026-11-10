@@ -32,89 +32,96 @@ import jakarta.servlet.http.HttpServletRequest;
 @AnonymousAllowed
 public class MaintenanceView extends VerticalLayout implements BeforeEnterObserver {
   private final transient MaintenanceService maintenanceService;
-  private final transient HttpServletRequest httpRequest;
+  private final transient HttpServletRequest httpServletRequest;
 
   public MaintenanceView(
-      ConfigService config,
-      MessageProperties messages,
+      ConfigService configService,
+      MessageProperties messageProperties,
       MaintenanceService maintenanceService,
-      SecurityService security,
-      HttpServletRequest httpRequest) {
+      SecurityService securityService,
+      HttpServletRequest httpServletRequest) {
     this.maintenanceService = maintenanceService;
-    this.httpRequest = httpRequest;
+    this.httpServletRequest = httpServletRequest;
     setPadding(false);
     setSpacing(false);
-    PublicPageComponent page =
-        new PublicPageComponent(config, messages, PublicPageComponent.Page.MAINTENANCE);
-    SvgIcon icon = AppIcon.WRENCH.create();
-    icon.addClassName(STATUS_ICON);
-    H1 title = new H1();
-    title.addClassName("cosmos-headline");
-    Span text = new Span();
-    text.addClassName("cosmos-form-text");
-    Button login =
+    PublicPageComponent maintenancePageComponent =
+        new PublicPageComponent(
+            configService, messageProperties, PublicPageComponent.Page.MAINTENANCE);
+    SvgIcon maintenanceSvgIcon = AppIcon.WRENCH.create();
+    maintenanceSvgIcon.addClassName(STATUS_ICON);
+    H1 maintenanceTitleH1 = new H1();
+    maintenanceTitleH1.addClassName("cosmos-headline");
+    Span maintenanceMessageSpan = new Span();
+    maintenanceMessageSpan.addClassName("cosmos-form-text");
+    Button maintenanceLoginButton =
         new Button(
             "",
-            event ->
+            _ ->
                 UI.getCurrent()
                     .getPage()
-                    .setLocation(httpRequest.getContextPath() + AppRoute.LOGIN.getSecurityRoute()));
-    boolean authenticated = security.getAuthenticatedUser(httpRequest).isPresent();
-    login.setVisible(!authenticated);
-    login.setPrefixComponent(AppIcon.SIGN_IN.create());
-    login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    login.setWidthFull();
-    Button retry =
+                    .setLocation(
+                        httpServletRequest.getContextPath() + AppRoute.LOGIN.getSecurityRoute()));
+    boolean isAuthenticatedUser =
+        securityService.getAuthenticatedUser(httpServletRequest).isPresent();
+    maintenanceLoginButton.setVisible(!isAuthenticatedUser);
+    maintenanceLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
+    maintenanceLoginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    maintenanceLoginButton.setWidthFull();
+    Button retryHomeButton =
         new Button(
             "",
-            event ->
+            _ ->
                 UI.getCurrent()
                     .getPage()
-                    .setLocation(httpRequest.getContextPath() + AppRoute.HOME.getSecurityRoute()));
-    retry.setPrefixComponent(AppIcon.REFRESH.create());
-    retry.setWidthFull();
-    Button logout =
+                    .setLocation(
+                        httpServletRequest.getContextPath() + AppRoute.HOME.getSecurityRoute()));
+    retryHomeButton.setPrefixComponent(AppIcon.REFRESH.create());
+    retryHomeButton.setWidthFull();
+    Button maintenanceLogoutButton =
         new Button(
             "",
-            event -> {
-              security.logout();
+            _ -> {
+              securityService.logout();
               UI.getCurrent()
                   .getPage()
-                  .setLocation(httpRequest.getContextPath() + AppRoute.LOGIN.getSecurityRoute());
+                  .setLocation(
+                      httpServletRequest.getContextPath() + AppRoute.LOGIN.getSecurityRoute());
             });
-    logout.setPrefixComponent(AppIcon.SIGN_OUT.create());
-    logout.setWidthFull();
-    logout.setVisible(authenticated);
-    Runnable translate =
+    maintenanceLogoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
+    maintenanceLogoutButton.setWidthFull();
+    maintenanceLogoutButton.setVisible(isAuthenticatedUser);
+    Runnable refreshMaintenanceTextsAction =
         () -> {
-          title.setText(messages.getMaintenanceTitle());
-          text.setText(
+          maintenanceTitleH1.setText(messageProperties.getMaintenanceTitle());
+          maintenanceMessageSpan.setText(
               maintenanceService.state() == MaintenanceService.State.UNAVAILABLE
-                  ? messages.getMaintenanceUnavailableMessage()
-                  : messages.getMaintenanceDescription());
-          login.setText(messages.getMaintenanceLoginButton());
-          retry.setText(messages.getMaintenanceRetryButton());
-          logout.setText(messages.getBaseLogoutButton());
+                  ? messageProperties.getMaintenanceUnavailableMessage()
+                  : messageProperties.getMaintenanceDescription());
+          maintenanceLoginButton.setText(messageProperties.getMaintenanceLoginButton());
+          retryHomeButton.setText(messageProperties.getMaintenanceRetryButton());
+          maintenanceLogoutButton.setText(messageProperties.getBaseLogoutButton());
         };
-    translate.run();
-    ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
-    page.getCardContainer()
+    refreshMaintenanceTextsAction.run();
+    ComponentUtil.addListener(
+        UI.getCurrent(), LanguageChangeEvent.class, _ -> refreshMaintenanceTextsAction.run());
+    maintenancePageComponent
+        .getCardContainer()
         .add(
             new PublicPanelComponent(
-                icon,
-                title,
-                messages::getPublicMaintenanceSubtitle,
-                new com.vaadin.flow.component.Component[] {text},
-                retry,
-                login,
-                logout));
-    add(page);
+                maintenanceSvgIcon,
+                maintenanceTitleH1,
+                messageProperties::getPublicMaintenanceSubtitle,
+                new com.vaadin.flow.component.Component[] {maintenanceMessageSpan},
+                retryHomeButton,
+                maintenanceLoginButton,
+                maintenanceLogoutButton));
+    add(maintenancePageComponent);
   }
 
   @Override
-  public void beforeEnter(BeforeEnterEvent event) {
-    if (!maintenanceService.blocks(httpRequest)) {
-      event.forwardTo(HomeView.class);
+  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+    if (!maintenanceService.blocks(httpServletRequest)) {
+      beforeEnterEvent.forwardTo(HomeView.class);
     }
   }
 }

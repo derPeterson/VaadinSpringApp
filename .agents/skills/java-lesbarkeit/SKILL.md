@@ -18,6 +18,11 @@ Nachschlagen zwingen. Beschreibe pro Befund, was schwer zu erkennen ist und wie
 eine gezielte Änderung das Lesen erleichtert. Ein reiner Prüfauftrag endet mit
 diesen Fundstellen und Vorschlägen.
 
+Die [Gliederung in Blöcke](../../../docs/entwicklung.md#gliederung-in-blöcke)
+als eigenen Prüfschritt anwenden. Jede Methode im Prüfbereich im Zusammenhang
+lesen, einschließlich der kurzen. Fehlende Leerzeilen an Übergängen zwischen
+Arbeitsschritten im Review als Befund nennen oder bei einem Umbau ergänzen.
+
 ## Überarbeiten
 
 - Bei projektweitem Auftrag die versionierten Java-Quellen in `app`, `shared`

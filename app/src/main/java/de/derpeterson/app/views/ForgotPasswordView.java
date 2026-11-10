@@ -28,7 +28,6 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.ui.components.AppIcon;
-import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.UserInputRules;
@@ -37,7 +36,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,144 +45,151 @@ import org.slf4j.LoggerFactory;
 @AnonymousAllowed
 public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
 
-  private static final Logger logger = LoggerFactory.getLogger(ForgotPasswordView.class);
+  private static final Logger passwordResetLogger =
+      LoggerFactory.getLogger(ForgotPasswordView.class);
 
   private final transient MessageProperties messageProperties;
   private final transient PasswordResetService passwordResetService;
 
-  private final VerticalLayout mainContent;
+  private final VerticalLayout passwordResetCardsVerticalLayout;
 
-  private H1 forgotPasswordPageTitle = null;
-  private Span forgotPasswordPageMessage = null;
-  private EmailField emailField = null;
-  private Button sendButton = null;
-  private Button loginButton = null;
+  private H1 forgotPasswordH1 = null;
+  private Span forgotPasswordMessageSpan = null;
+  private EmailField passwordResetEmailField = null;
+  private Button requestPasswordResetButton = null;
+  private Button returnToLoginButton = null;
 
   public ForgotPasswordView(
       MessageProperties messageProperties,
       PasswordResetService passwordResetService,
       SecurityService securityService,
-      HttpServletRequest request,
+      HttpServletRequest httpServletRequest,
       ConfigService configService) {
-    super(securityService, request, new HorizontalLayout());
+    super(securityService, httpServletRequest, new HorizontalLayout());
 
     this.messageProperties = messageProperties;
     this.passwordResetService = passwordResetService;
 
     ComponentUtil.addListener(
-        UI.getCurrent(),
-        LanguageChangeEvent.class,
-        event -> {
-          VaadinSession.getCurrent().setLocale(event.getNewLocale());
-
-          Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
-          Optional.ofNullable(forgotPasswordPageTitle)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getForgotPasswordTitle));
-          Optional.ofNullable(forgotPasswordPageMessage)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getForgotPasswordText));
-          Optional.ofNullable(emailField)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getPublicEmailField));
-          Optional.ofNullable(sendButton)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getPublicRequestLink));
-          Optional.ofNullable(loginButton)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getBaseLoginButton));
-
-          ComponentTextUpdateHelper.updateComponentTexts(componentTranslationSupplierMap);
-          updateInputPlaceholders();
-          NotificationHelper.getInstance().updateText();
-        });
+        UI.getCurrent(), LanguageChangeEvent.class, this::applyForgotPasswordPageLanguage);
 
     getContent().setWidthFull();
     getContent().setPadding(false);
     getContent().removeAll();
     setSpacing(false);
-    PublicPageComponent pageLayout =
+    PublicPageComponent forgotPasswordPageComponent =
         new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.FORGOT);
-    mainContent = pageLayout.getCardContainer();
+    passwordResetCardsVerticalLayout = forgotPasswordPageComponent.getCardContainer();
     createPasswordResetCard();
-    add(pageLayout);
+    add(forgotPasswordPageComponent);
+  }
+
+  private void applyForgotPasswordPageLanguage(LanguageChangeEvent languageChangeEvent) {
+    VaadinSession.getCurrent().setLocale(languageChangeEvent.getNewLocale());
+
+    Map<Component, Supplier<String>> textSuppliersByComponent = new HashMap<>();
+    addExistingComponentTranslation(
+        textSuppliersByComponent, forgotPasswordH1, messageProperties::getForgotPasswordTitle);
+    addExistingComponentTranslation(
+        textSuppliersByComponent,
+        forgotPasswordMessageSpan,
+        messageProperties::getForgotPasswordText);
+    addExistingComponentTranslation(
+        textSuppliersByComponent, passwordResetEmailField, messageProperties::getPublicEmailField);
+    addExistingComponentTranslation(
+        textSuppliersByComponent,
+        requestPasswordResetButton,
+        messageProperties::getPublicRequestLink);
+    addExistingComponentTranslation(
+        textSuppliersByComponent, returnToLoginButton, messageProperties::getBaseLoginButton);
+
+    ComponentTextUpdateHelper.updateComponentTexts(textSuppliersByComponent);
+    updatePasswordResetEmailPlaceholder();
+    NotificationHelper.getInstance().updateText();
+  }
+
+  private static void addExistingComponentTranslation(
+      Map<Component, Supplier<String>> textSuppliersByComponent,
+      Component translatedComponent,
+      Supplier<String> componentTextSupplier) {
+    if (translatedComponent != null) {
+      textSuppliersByComponent.put(translatedComponent, componentTextSupplier);
+    }
   }
 
   private void createPasswordResetCard() {
 
-    this.forgotPasswordPageTitle = new H1(messageProperties.getForgotPasswordTitle());
-    forgotPasswordPageTitle.addClassName("cosmos-headline");
+    this.forgotPasswordH1 = new H1(messageProperties.getForgotPasswordTitle());
+    forgotPasswordH1.addClassName("cosmos-headline");
 
-    this.forgotPasswordPageMessage = new Span(messageProperties.getForgotPasswordText());
-    forgotPasswordPageMessage.addClassName("cosmos-form-text");
-    this.emailField = new EmailField(messageProperties.getPublicEmailField());
-    emailField.setPattern(UserInputRules.EMAIL_REGEX);
-    emailField.setRequiredIndicatorVisible(true);
-    emailField.setClearButtonVisible(true);
-    emailField.setWidthFull();
-    emailField.setClearButtonVisible(true);
+    this.forgotPasswordMessageSpan = new Span(messageProperties.getForgotPasswordText());
+    forgotPasswordMessageSpan.addClassName("cosmos-form-text");
+    this.passwordResetEmailField = new EmailField(messageProperties.getPublicEmailField());
+    passwordResetEmailField.setPattern(UserInputRules.EMAIL_REGEX);
+    passwordResetEmailField.setRequiredIndicatorVisible(true);
+    passwordResetEmailField.setClearButtonVisible(true);
+    passwordResetEmailField.setWidthFull();
+    passwordResetEmailField.setClearButtonVisible(true);
 
-    updateInputPlaceholders();
+    updatePasswordResetEmailPlaceholder();
 
-    this.sendButton =
+    this.requestPasswordResetButton =
         new Button(
             messageProperties.getPublicRequestLink(),
-            event -> {
-              if (!ValidationHelper.validateRequiredInputs(
-                  List.of(emailField), messageProperties)) {
-                return;
-              }
+            requestClickEvent -> requestPasswordResetLink());
+    requestPasswordResetButton.setPrefixComponent(AppIcon.ENVELOPE.create());
+    requestPasswordResetButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    requestPasswordResetButton.setWidthFull();
 
-              if (!ValidationHelper.validateEmailValidInputs(
-                  List.of(emailField), messageProperties)) {
-                return;
-              }
-
-              try {
-                passwordResetService.sendPasswordResetEmail(emailField.getValue());
-              } catch (IOException | RuntimeException e) {
-                logger.error("Password reset request could not be processed", safeFailure(e));
-              }
-              // Identical text, style and duration even for account-dependent failures.
-              NotificationHelper.getInstance()
-                  .showNotification(
-                      this.messageProperties::getBaseSuccessTitle,
-                      this.messageProperties::getForgotPasswordSuccessMessage,
-                      -1,
-                      NotificationHelper.NotificationType.SUCCESS);
-            });
-    sendButton.setPrefixComponent(AppIcon.ENVELOPE.create());
-    sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    sendButton.setWidthFull();
-
-    this.loginButton =
+    this.returnToLoginButton =
         new Button(
             messageProperties.getBaseLoginButton(),
-            event -> UI.getCurrent().navigate(LoginView.class));
-    loginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
-    loginButton.setWidthFull();
-    Div actions = new Div(loginButton, sendButton);
-    actions.addClassName("public-panel-actions");
+            loginClickEvent -> UI.getCurrent().navigate(LoginView.class));
+    returnToLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
+    returnToLoginButton.setWidthFull();
+    Div forgotPasswordActionsDiv = new Div(returnToLoginButton, requestPasswordResetButton);
+    forgotPasswordActionsDiv.addClassName("public-panel-actions");
 
-    CosmosCardComponent cardComponent =
+    PublicPanelComponent forgotPasswordPanelComponent =
         new PublicPanelComponent(
             AppIcon.KEY.create(),
-            forgotPasswordPageTitle,
+            forgotPasswordH1,
             messageProperties::getPublicForgotSubtitle,
-            new Component[] {emailField},
-            actions);
+            new Component[] {passwordResetEmailField},
+            forgotPasswordActionsDiv);
 
-    mainContent.add(cardComponent);
+    passwordResetCardsVerticalLayout.add(forgotPasswordPanelComponent);
   }
 
-  private void updateInputPlaceholders() {
-    if (emailField != null) {
-      emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+  private void requestPasswordResetLink() {
+    if (!ValidationHelper.validateRequiredInputs(
+        List.of(passwordResetEmailField), messageProperties)) {
+      return;
+    }
+    if (!ValidationHelper.validateEmailValidInputs(
+        List.of(passwordResetEmailField), messageProperties)) {
+      return;
+    }
+
+    try {
+      passwordResetService.sendPasswordResetEmail(passwordResetEmailField.getValue());
+    } catch (IOException | RuntimeException passwordResetRequestException) {
+      passwordResetLogger.error(
+          "Password reset request could not be processed",
+          safeFailure(passwordResetRequestException));
+    }
+    // Auch bei kontobezogenen Fehlern bleibt die Rückmeldung gleich, damit sie kein Konto verrät.
+    NotificationHelper.getInstance()
+        .showNotification(
+            messageProperties::getBaseSuccessTitle,
+            messageProperties::getForgotPasswordSuccessMessage,
+            -1,
+            NotificationHelper.NotificationType.SUCCESS);
+  }
+
+  private void updatePasswordResetEmailPlaceholder() {
+    if (passwordResetEmailField != null) {
+      passwordResetEmailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
     }
   }
 }

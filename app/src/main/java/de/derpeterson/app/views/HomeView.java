@@ -42,18 +42,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class HomeView extends TrackedUserAppLayout implements AfterNavigationObserver {
 
   private final transient ConfigService configService;
-  private PortalContentComponent portalContent;
-  private PortalHomeComponent homeContent;
+  private PortalContentComponent homePortalContentComponent;
+  private PortalHomeComponent portalHomeComponent;
 
-  private final Span pageTitle = new Span();
-  private final Span pageDescription = new Span();
-  private final Span overviewLabel = new Span();
+  private final Span homeTitleSpan = new Span();
+  private final Span homeDescriptionSpan = new Span();
+  private final Span homeOverviewSpan = new Span();
 
   @Autowired
   public HomeView(
       MessageProperties messageProperties,
       SecurityService securityService,
-      HttpServletRequest request,
+      HttpServletRequest httpServletRequest,
       ConfigService configService,
       UserService userService,
       UserStatusBroadcaster userStatusBroadcaster,
@@ -63,7 +63,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
         securityService,
         userService,
         userStatusBroadcaster,
-        request,
+        httpServletRequest,
         userAvatarService);
 
     this.configService = configService;
@@ -76,94 +76,97 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
       setContent(
           new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.HOME));
     } else {
-      createHomeContent();
+      showAuthenticatedHomePage();
     }
-    refreshTexts();
+    refreshHomePageTexts();
   }
 
-  private void createHomeContent() {
-    HorizontalLayout header = createApplicationHeader(configService, createPopoverActions());
-    CosmosSectionHeaderComponent introduction =
-        new CosmosSectionHeaderComponent(overviewLabel, pageTitle, pageDescription);
+  private void showAuthenticatedHomePage() {
+    HorizontalLayout applicationHeaderHorizontalLayout =
+        createApplicationHeader(configService, createHomePopoverActions());
+    CosmosSectionHeaderComponent homeSectionHeaderComponent =
+        new CosmosSectionHeaderComponent(homeOverviewSpan, homeTitleSpan, homeDescriptionSpan);
 
-    homeContent = new PortalHomeComponent(messageProperties);
-    portalContent =
+    portalHomeComponent = new PortalHomeComponent(messageProperties);
+    homePortalContentComponent =
         new PortalContentComponent(
             messageProperties,
             currentUser,
             AppRoute.HOME,
-            introduction,
-            homeContent,
+            homeSectionHeaderComponent,
+            portalHomeComponent,
             userAvatarService,
             request);
-    portalContent.configureNavigationToggle(accountNavigationToggle);
-    portalContent.getSidebar().configureStatusSelection(userPopoverMenu.createStatusSelect());
-    accountHeaderActions.setUnreadCountListener(count -> {
-      portalContent.getSidebar().updateUnreadCount(count);
-      homeContent.updateUnreadCount(count);
+    homePortalContentComponent.configureNavigationToggle(accountNavigationToggle);
+    homePortalContentComponent
+        .getSidebar()
+        .configureStatusSelection(userPopoverMenu.createStatusSelect());
+    accountHeaderActions.setUnreadCountListener(unreadNotificationCount -> {
+      homePortalContentComponent.getSidebar().updateUnreadCount(unreadNotificationCount);
+      portalHomeComponent.updateUnreadCount(unreadNotificationCount);
     });
-    setPortalPage(header, portalContent, configService);
+    setPortalPage(applicationHeaderHorizontalLayout, homePortalContentComponent, configService);
   }
 
-  private void refreshTexts() {
-    pageTitle.setText(messageProperties.getHomeTitle());
-    pageDescription.setText(
+  private void refreshHomePageTexts() {
+    homeTitleSpan.setText(messageProperties.getHomeTitle());
+    homeDescriptionSpan.setText(
         currentUser == null
             ? messageProperties.getHomeDescription()
             : messageProperties.getPortalHomeIntroduction());
-    overviewLabel.setText(
+    homeOverviewSpan.setText(
         currentUser == null
             ? messageProperties.getHomeOverview()
             : messageProperties.getAccountNavigationPortal());
-    if (portalContent != null) {
-      portalContent.refreshTexts();
-      homeContent.refreshTexts();
+    if (homePortalContentComponent != null) {
+      homePortalContentComponent.refreshTexts();
+      portalHomeComponent.refreshTexts();
     }
   }
 
   @Override
-  protected void updateHeaderStatusIcon(UserStatus status) {
-    super.updateHeaderStatusIcon(status);
-    if (portalContent != null) {
-      portalContent.updateStatus(status);
+  protected void updateHeaderStatusIcon(UserStatus userStatus) {
+    super.updateHeaderStatusIcon(userStatus);
+    if (homePortalContentComponent != null) {
+      homePortalContentComponent.updateStatus(userStatus);
     }
   }
 
   @Override
-  protected void onTrackedUserProfileChanged(String first, String last) {
-    if (portalContent != null) {
-      portalContent.getSidebar().refreshName(first, last);
+  protected void onTrackedUserProfileChanged(String firstName, String lastName) {
+    if (homePortalContentComponent != null) {
+      homePortalContentComponent.getSidebar().refreshName(firstName, lastName);
     }
   }
 
-  private UserPopoverMenu.UserPopoverActions createPopoverActions() {
-    Runnable manageApplicationAction = null;
+  private UserPopoverMenu.UserPopoverActions createHomePopoverActions() {
+    Runnable openAdministrationAction = null;
 
     if (currentUser != null && currentUser.hasAdministrativeRole()) {
-      manageApplicationAction = () -> UI.getCurrent().navigate(AdminView.class);
+      openAdministrationAction = () -> UI.getCurrent().navigate(AdminView.class);
     }
 
-    return new UserPopoverMenu.UserPopoverActions(manageApplicationAction, null);
+    return new UserPopoverMenu.UserPopoverActions(openAdministrationAction, null);
   }
 
   @Override
   protected void onTrackedUserLanguageChanged() {
-    refreshTexts();
+    refreshHomePageTexts();
   }
 
   @Override
-  public void afterNavigation(AfterNavigationEvent event) {
+  public void afterNavigation(AfterNavigationEvent afterNavigationEvent) {
     Map<String, List<String>> queryParameters =
-        event.getLocation().getQueryParameters().getParameters();
-    List<String> errorParameters = queryParameters.get("error");
+        afterNavigationEvent.getLocation().getQueryParameters().getParameters();
+    List<String> navigationErrorParameterValues = queryParameters.get("error");
 
-    if (errorParameters == null || errorParameters.isEmpty()) {
+    if (navigationErrorParameterValues == null || navigationErrorParameterValues.isEmpty()) {
       return;
     }
 
-    String errorCode = errorParameters.getFirst();
+    String navigationErrorCodeText = navigationErrorParameterValues.getFirst();
 
-    NavigationErrorCode.fromCode(errorCode)
+    NavigationErrorCode.fromCode(navigationErrorCodeText)
         .ifPresent(error ->
             NotificationHelper.getInstance()
                 .showNotification(

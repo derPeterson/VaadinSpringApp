@@ -18,6 +18,7 @@ import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.SupportTicketService;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.CosmosClasses;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.SupportTicketsComponent;
 import jakarta.annotation.security.PermitAll;
@@ -31,104 +32,109 @@ import jakarta.servlet.http.HttpServletRequest;
 @StyleSheet("custom-theme/cosmos-mfa-confirmation.css")
 public final class RecoveryHelpView extends VerticalLayout implements BeforeEnterObserver {
   public static final String ROUTE = "recovery-help";
-  private final transient HttpServletRequest httpRequest;
+  private final transient HttpServletRequest httpServletRequest;
   private final transient SecurityService securityService;
   private final transient TwoFactorAuthorization twoFactorAuthorization;
-  private final PublicPageComponent recoveryHelpPage;
-  private final Button backButton;
-  private final Button logoutButton;
+  private final PublicPageComponent recoveryHelpPageComponent;
+  private final Button returnFromRecoveryHelpButton;
+  private final Button recoveryHelpLogoutButton;
   private final transient MessageProperties messageProperties;
   private TwoFactorFlow twoFactorFlow;
 
   public RecoveryHelpView(
-      ConfigService config,
+      ConfigService configService,
       MessageProperties messageProperties,
-      SupportTicketService tickets,
+      SupportTicketService supportTicketService,
       SecurityService securityService,
       TwoFactorAuthorization twoFactorAuthorization,
-      HttpServletRequest httpRequest) {
-    this.httpRequest = httpRequest;
+      HttpServletRequest httpServletRequest) {
+    this.httpServletRequest = httpServletRequest;
     this.securityService = securityService;
     this.twoFactorAuthorization = twoFactorAuthorization;
     this.messageProperties = messageProperties;
     setPadding(false);
     setSpacing(false);
     setWidthFull();
-    recoveryHelpPage =
-        new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.RECOVERY_HELP);
-    SupportTicketsComponent support =
-        new SupportTicketsComponent(messageProperties, tickets, httpRequest, false);
-    backButton = new Button(messageProperties.getTwoFactorReturnToCode(), event -> leaveHelp());
-    backButton.setId("support-back");
-    backButton.setPrefixComponent(AppIcon.ANGLE_LEFT.create());
-    backButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    support.addBackAction(backButton);
-    logoutButton =
+    recoveryHelpPageComponent =
+        new PublicPageComponent(
+            configService, messageProperties, PublicPageComponent.Page.RECOVERY_HELP);
+    SupportTicketsComponent recoveryHelpTicketsComponent =
+        new SupportTicketsComponent(
+            messageProperties, supportTicketService, httpServletRequest, false);
+    returnFromRecoveryHelpButton =
+        new Button(messageProperties.getTwoFactorReturnToCode(), _ -> returnFromRecoveryHelp());
+    returnFromRecoveryHelpButton.setId("support-back");
+    returnFromRecoveryHelpButton.setPrefixComponent(AppIcon.ANGLE_LEFT.create());
+    returnFromRecoveryHelpButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    recoveryHelpTicketsComponent.addBackAction(returnFromRecoveryHelpButton);
+    recoveryHelpLogoutButton =
         new Button(
             messageProperties.getBaseLogoutButton(),
-            event -> {
+            _ -> {
               securityService.logout();
-              UI.getCurrent().getPage().setLocation(httpRequest.getContextPath() + "/login");
+              UI.getCurrent().getPage().setLocation(httpServletRequest.getContextPath() + "/login");
             });
-    logoutButton.setId("support-sign-out");
-    logoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
-    logoutButton.addClassName(de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON);
-    support.addUserFooterAction(logoutButton);
-    recoveryHelpPage.getCardContainer().add(support);
-    add(recoveryHelpPage);
+    recoveryHelpLogoutButton.setId("support-sign-out");
+    recoveryHelpLogoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
+    recoveryHelpLogoutButton.addClassName(CosmosClasses.DELETE_BUTTON);
+    recoveryHelpTicketsComponent.addUserFooterAction(recoveryHelpLogoutButton);
+    recoveryHelpPageComponent.getCardContainer().add(recoveryHelpTicketsComponent);
+    add(recoveryHelpPageComponent);
     ComponentUtil.addListener(
         UI.getCurrent(),
         LanguageChangeEvent.class,
-        event -> {
-          support.refreshTexts();
-          refreshNavigation();
+        _ -> {
+          recoveryHelpTicketsComponent.refreshTexts();
+          refreshRecoveryHelpActions();
         });
   }
 
   @Override
-  public void beforeEnter(BeforeEnterEvent event) {
-    twoFactorFlow = TwoFactorFlow.current(httpRequest);
+  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+    twoFactorFlow = TwoFactorFlow.current(httpServletRequest);
     if (twoFactorFlow == null) {
       twoFactorFlow =
-          twoFactorAuthorization.sessionConfirmed(httpRequest)
+          twoFactorAuthorization.sessionConfirmed(httpServletRequest)
               ? TwoFactorFlow.ACCOUNT_HELP
               : TwoFactorFlow.LOGIN_HELP;
-      twoFactorFlow.enter(httpRequest);
+      twoFactorFlow.enter(httpServletRequest);
     }
     if (!twoFactorFlow.help()) {
-      event.forwardTo(TwoFactorView.class);
+      beforeEnterEvent.forwardTo(TwoFactorView.class);
       return;
     }
-    recoveryHelpPage.setAccountSecurity(
-        twoFactorFlow.account(), securityService.getCurrentUser(httpRequest).orElse(null));
-    refreshNavigation();
+    recoveryHelpPageComponent.setAccountSecurity(
+        twoFactorFlow.account(), securityService.getCurrentUser(httpServletRequest).orElse(null));
+    refreshRecoveryHelpActions();
   }
 
-  public boolean isCurrent(TwoFactorFlow active) {
-    return twoFactorFlow == active;
+  public boolean isCurrent(TwoFactorFlow activeTwoFactorFlow) {
+    return twoFactorFlow == activeTwoFactorFlow;
   }
 
-  private void refreshNavigation() {
-    boolean account = twoFactorFlow != null && twoFactorFlow.account();
-    backButton.setText(
-        account
+  private void refreshRecoveryHelpActions() {
+    boolean isAccountRecoveryHelp = twoFactorFlow != null && twoFactorFlow.account();
+    returnFromRecoveryHelpButton.setText(
+        isAccountRecoveryHelp
             ? messageProperties.getTwoFactorBack()
             : messageProperties.getTwoFactorReturnToCode());
-    logoutButton.setText(messageProperties.getBaseLogoutButton());
-    logoutButton.setVisible(!account);
+    recoveryHelpLogoutButton.setText(messageProperties.getBaseLogoutButton());
+    recoveryHelpLogoutButton.setVisible(!isAccountRecoveryHelp);
   }
 
-  private void leaveHelp() {
-    String destination;
+  private void returnFromRecoveryHelp() {
+    String destinationLocation;
     if (twoFactorFlow.account()) {
-      TwoFactorFlow.finish(httpRequest);
-      destination = AppRouteConstants.ACCOUNT_PORTAL_LOCATION;
+      TwoFactorFlow.finish(httpServletRequest);
+      destinationLocation = AppRouteConstants.ACCOUNT_PORTAL_LOCATION;
     } else {
-      TwoFactorFlow next =
+      TwoFactorFlow nextTwoFactorFlow =
           twoFactorFlow.administration() ? TwoFactorFlow.ADMINISTRATION : TwoFactorFlow.LOGIN;
-      next.enter(httpRequest);
-      destination = next.location();
+      nextTwoFactorFlow.enter(httpServletRequest);
+      destinationLocation = nextTwoFactorFlow.location();
     }
-    UI.getCurrent().getPage().setLocation(httpRequest.getContextPath() + destination);
+    UI.getCurrent()
+        .getPage()
+        .setLocation(httpServletRequest.getContextPath() + destinationLocation);
   }
 }
