@@ -3,6 +3,7 @@ package de.derpeterson.app.views;
 import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
 import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
 
+import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -28,6 +29,7 @@ import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
+import org.springframework.security.access.AccessDeniedException;
 
 @StyleSheet("custom-theme/cosmos-account.css")
 @Route(AppRouteConstants.NOTIFICATIONS_ROUTE)
@@ -35,81 +37,113 @@ import jakarta.servlet.http.HttpSession;
 @UIScope
 @PermitAll
 public class UserNotificationsView extends IsAuthenticatedBaseView {
-  private final UserNotificationsPanel notificationInbox;
-  private final PortalContentComponent portalContent;
+  private final UserNotificationsPanel notificationInboxPanel;
+  private final PortalContentComponent notificationsPortalContentComponent;
   private final Span portalBreadcrumbSpan = new Span();
   private final Span notificationsTitleSpan = new Span();
   private final Span notificationsDescriptionSpan = new Span();
-  private transient Registration registration;
+
+  private transient Registration inboxUpdateRegistration;
 
   public UserNotificationsView(
-      MessageProperties texts,
-      SecurityService security,
-      UserService users,
-      UserStatusBroadcaster status,
-      HttpServletRequest request,
-      UserAvatarService avatars,
-      UserNotificationService notifications,
-      ConfigService config) {
-    super(texts, security, users, status, request, avatars);
+      MessageProperties messageProperties,
+      SecurityService securityService,
+      UserService userService,
+      UserStatusBroadcaster userStatusBroadcaster,
+      HttpServletRequest httpServletRequest,
+      UserAvatarService userAvatarService,
+      UserNotificationService userNotificationService,
+      ConfigService configService) {
+    super(
+        messageProperties,
+        securityService,
+        userService,
+        userStatusBroadcaster,
+        httpServletRequest,
+        userAvatarService);
+
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", REFERENCE_PORTAL);
-    HorizontalLayout header = createApplicationHeader(config);
-    HttpSession session = request.getSession(false);
-    notificationInbox = new UserNotificationsPanel(texts, notifications, session, false);
-    CosmosSectionHeaderComponent sectionHeader =
+    HorizontalLayout applicationHeaderHorizontalLayout = createApplicationHeader(configService);
+    HttpSession inboxHttpSession = httpServletRequest.getSession(false);
+    notificationInboxPanel =
+        new UserNotificationsPanel(
+            messageProperties, userNotificationService, inboxHttpSession, false);
+
+    CosmosSectionHeaderComponent notificationsSectionHeaderComponent =
         new CosmosSectionHeaderComponent(
             portalBreadcrumbSpan, notificationsTitleSpan, notificationsDescriptionSpan);
-    CosmosCardComponent card = new CosmosCardComponent(notificationInbox);
-    card.addClassNames(PANEL_CARD, "cosmos-notification-inbox-card");
-    portalContent =
+    CosmosCardComponent inboxCardComponent = new CosmosCardComponent(notificationInboxPanel);
+    inboxCardComponent.addClassNames(PANEL_CARD, "cosmos-notification-inbox-card");
+    notificationsPortalContentComponent =
         new PortalContentComponent(
-            texts, currentUser, AppRoute.NOTIFICATIONS, sectionHeader, card, avatars, request);
-    portalContent.configureNavigationToggle(accountNavigationToggle);
-    portalContent.getSidebar().configureStatusSelection(userPopoverMenu.createStatusSelect());
-    accountHeaderActions.setUnreadCountListener(portalContent.getSidebar()::updateUnreadCount);
-    setPortalPage(header, portalContent, config);
-    addAttachListener(e -> {
-      try {
-        Long owner = notifications.ownerId(session);
-        registration =
-            notifications
-                .events()
-                .register(ids -> {
-                  if (ids.contains(owner)) {
-                    e.getUI()
-                        .access(() -> {
-                          if (isAttached()) {
-                            notificationInbox.refreshInbox();
-                          }
-                        });
-                  }
-                });
-        notificationInbox.refreshInbox();
-      } catch (org.springframework.security.access.AccessDeniedException _) {
-        notificationInbox.unavailable();
-      }
-    });
-    addDetachListener(e -> {
-      if (registration != null) {
-        registration.remove();
-      }
-      registration = null;
-    });
+            messageProperties,
+            currentUser,
+            AppRoute.NOTIFICATIONS,
+            notificationsSectionHeaderComponent,
+            inboxCardComponent,
+            userAvatarService,
+            httpServletRequest);
+    notificationsPortalContentComponent.configureNavigationToggle(accountNavigationToggle);
+    notificationsPortalContentComponent
+        .getSidebar()
+        .configureStatusSelection(userPopoverMenu.createStatusSelect());
+    accountHeaderActions.setUnreadCountListener(
+        notificationsPortalContentComponent.getSidebar()::updateUnreadCount);
+    setPortalPage(
+        applicationHeaderHorizontalLayout, notificationsPortalContentComponent, configService);
+
+    addAttachListener(inboxAttachEvent ->
+        subscribeAndRefreshNotificationInbox(
+            inboxAttachEvent, userNotificationService, inboxHttpSession));
+    addDetachListener(_ -> unsubscribeFromNotificationInboxUpdates());
     onTrackedUserLanguageChanged();
   }
 
-  @Override
-  protected void updateHeaderStatusIcon(UserStatus status) {
-    super.updateHeaderStatusIcon(status);
-    if (portalContent != null) {
-      portalContent.updateStatus(status);
+  private void subscribeAndRefreshNotificationInbox(
+      AttachEvent inboxAttachEvent,
+      UserNotificationService userNotificationService,
+      HttpSession inboxHttpSession) {
+    try {
+      Long inboxOwnerUserId = userNotificationService.ownerId(inboxHttpSession);
+      inboxUpdateRegistration =
+          userNotificationService
+              .events()
+              .register(affectedUserIds -> {
+                if (affectedUserIds.contains(inboxOwnerUserId)) {
+                  inboxAttachEvent.getUI().access(this::refreshNotificationInboxIfAttached);
+                }
+              });
+      notificationInboxPanel.refreshInbox();
+    } catch (AccessDeniedException _) {
+      notificationInboxPanel.unavailable();
+    }
+  }
+
+  private void refreshNotificationInboxIfAttached() {
+    if (isAttached()) {
+      notificationInboxPanel.refreshInbox();
+    }
+  }
+
+  private void unsubscribeFromNotificationInboxUpdates() {
+    if (inboxUpdateRegistration != null) {
+      inboxUpdateRegistration.remove();
+      inboxUpdateRegistration = null;
     }
   }
 
   @Override
-  protected void onTrackedUserProfileChanged(String first, String last) {
-    if (portalContent != null) {
-      portalContent.getSidebar().refreshName(first, last);
+  protected void updateHeaderStatusIcon(UserStatus userStatus) {
+    super.updateHeaderStatusIcon(userStatus);
+    if (notificationsPortalContentComponent != null) {
+      notificationsPortalContentComponent.updateStatus(userStatus);
+    }
+  }
+
+  @Override
+  protected void onTrackedUserProfileChanged(String firstName, String lastName) {
+    if (notificationsPortalContentComponent != null) {
+      notificationsPortalContentComponent.getSidebar().refreshName(firstName, lastName);
     }
   }
 
@@ -118,11 +152,11 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     portalBreadcrumbSpan.setText(messageProperties.getAccountNavigationPortal());
     notificationsTitleSpan.setText(messageProperties.getNotificationsTitle());
     notificationsDescriptionSpan.setText(messageProperties.getNotificationsPageDescription());
-    if (notificationInbox != null) {
-      notificationInbox.refreshTexts();
+    if (notificationInboxPanel != null) {
+      notificationInboxPanel.refreshTexts();
     }
-    if (portalContent != null) {
-      portalContent.refreshTexts();
+    if (notificationsPortalContentComponent != null) {
+      notificationsPortalContentComponent.refreshTexts();
     }
   }
 }
