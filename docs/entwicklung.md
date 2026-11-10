@@ -505,6 +505,8 @@ Methodenparameter und lokale Variablen enthalten den Typnamen, etwa
 werden. Bei einfachen Werten benennt der Name den fachlichen Typ, etwa
 `unreadNotificationCount` für eine Anzahl und `hasActiveSession` für eine
 Bedingung. Sammlungen benennen ihren Elementtyp im Plural, etwa `sessionEntries`.
+Bei UI-Elementen bezieht sich der Typ auf das Objekt. `expiredLinkHintSpan`
+bezeichnet die Komponente, `expiredLinkHintText` den darin angezeigten String.
 
 Bei bewusst typübergreifenden Hilfsmethoden beschreibt der Name die gemeinsame
 Aufgabe oder Rolle, etwa `collectNonBlankNames()` oder `itemToValidate`.
@@ -519,6 +521,8 @@ die Abhängigkeiten einer Klasse samt Konstruktorparametern oder die Felder und
 Aktionen eines Dialogs. Eine Textsuche nach bekannten Beispielen dient nur zum
 Auffinden der Stellen. An jeder Verwendung muss aus dem Namen hervorgehen,
 welcher fachliche Gegenstand gemeint ist und welche Rolle das Objekt hat.
+Bei einer Überarbeitung einer ganzen Klasse alle ihre selbst gewählten Namen
+prüfen, auch in fachlichen Blöcken, die der ursprüngliche Befund nicht erwähnt.
 Unklare Namen im selben Block gemeinsam korrigieren, wenn der Auftrag
 Lesbarkeitsänderungen erlaubt. Bei einem reinen Review alle konkreten Stellen
 benennen. Bereits klare Namen beibehalten.

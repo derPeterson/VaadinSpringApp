@@ -35,7 +35,6 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.VerificationService;
 import de.derpeterson.app.ui.components.AppIcon;
-import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.UserInputRules;
@@ -44,7 +43,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,362 +52,331 @@ import org.slf4j.LoggerFactory;
 @AnonymousAllowed
 public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     implements HasUrlParameter<String> {
-  private static final String COSMOS_HEADLINE_CLASS = "cosmos-headline";
-  private static final String COSMOS_FORM_TEXT_CLASS = "cosmos-form-text";
-  private static final String COSMOS_INTRO_CLASS = "cosmos-intro";
-
-  private static final Logger logger = LoggerFactory.getLogger(VerificationView.class);
+  private static final String HEADLINE_CSS_CLASS = "cosmos-headline";
+  private static final String FORM_TEXT_CSS_CLASS = "cosmos-form-text";
+  private static final String INTRO_CSS_CLASS = "cosmos-intro";
+  private static final Logger verificationLogger = LoggerFactory.getLogger(VerificationView.class);
 
   private final transient MessageProperties messageProperties;
   private final transient VerificationService verificationService;
+  private final VerticalLayout verificationCardsVerticalLayout;
+  private Button verificationHomeButton;
 
-  private final VerticalLayout mainContent;
+  private H1 expiredLinkH1;
+  private Span expiredLinkHintSpan;
+  private Button resendVerificationLinkButton;
 
-  private H1 expiredTitle = null;
-  private H1 notFoundTitle = null;
-  private H1 successTitle = null;
-  private Button resendButton = null;
-  private Button homeButton = null;
-  private Button loginButton = null;
-  private EmailField emailField = null;
-  private Button sendButton = null;
-  private Span expiredText1 = null;
-  private Span notFoundText1 = null;
-  private Span notFoundText2 = null;
-  private Span successText = null;
+  private H1 unknownLinkH1;
+  private Span invalidLinkExplanationSpan;
+  private Span requestNewLinkHintSpan;
+  private EmailField verificationEmailField;
+  private Button requestVerificationLinkButton;
+
+  private H1 verificationSuccessH1;
+  private Span verificationSuccessMessageSpan;
+  private Button verificationLoginButton;
 
   public VerificationView(
       MessageProperties messageProperties,
       VerificationService verificationService,
       SecurityService securityService,
-      HttpServletRequest request,
+      HttpServletRequest httpServletRequest,
       ConfigService configService) {
-    super(securityService, request, new HorizontalLayout());
+    super(securityService, httpServletRequest, new HorizontalLayout());
 
     this.messageProperties = messageProperties;
     this.verificationService = verificationService;
 
     ComponentUtil.addListener(
-        UI.getCurrent(),
-        LanguageChangeEvent.class,
-        event -> {
-          VaadinSession.getCurrent().setLocale(event.getNewLocale());
-
-          Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
-          Optional.ofNullable(expiredTitle)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getVerificationExpiredTitle));
-          Optional.ofNullable(notFoundTitle)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getVerificationNotFoundTitle));
-          Optional.ofNullable(successTitle)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getVerificationSuccessTitle));
-          Optional.ofNullable(resendButton)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getBaseResendButton));
-          Optional.ofNullable(homeButton)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getPublicHomeAction));
-          Optional.ofNullable(emailField)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getPublicEmailField));
-          Optional.ofNullable(homeButton)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getPublicHomeAction));
-          Optional.ofNullable(sendButton)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getVerificationRequestActivationLink));
-          Optional.ofNullable(expiredText1)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getVerificationExpiredText1));
-          Optional.ofNullable(notFoundText1)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getVerificationNotFoundText1));
-          Optional.ofNullable(notFoundText2)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getVerificationNotFoundText2));
-          Optional.ofNullable(successText)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getVerificationSuccessText));
-          Optional.ofNullable(loginButton)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getBaseLoginButton));
-
-          ComponentTextUpdateHelper.updateComponentTexts(componentTranslationSupplierMap);
-          updateInputPlaceholders();
-          NotificationHelper.getInstance().updateText();
-        });
+        UI.getCurrent(), LanguageChangeEvent.class, this::applyVerificationPageLanguage);
 
     getContent().setWidthFull();
     getContent().setPadding(false);
     getContent().removeAll();
     setSpacing(false);
-    PublicPageComponent pageLayout =
+    PublicPageComponent verificationPageComponent =
         new PublicPageComponent(
             configService, messageProperties, PublicPageComponent.Page.VERIFICATION);
-    mainContent = pageLayout.getCardContainer();
-    add(pageLayout);
+    verificationCardsVerticalLayout = verificationPageComponent.getCardContainer();
+    add(verificationPageComponent);
   }
 
   @Override
-  public void setParameter(BeforeEvent event, @OptionalParameter String token) {
-    if (token != null && !token.isEmpty()) {
-      boolean isValid = verificationService.validateToken(token);
-      if (isValid) {
-        createSuccessCard();
-      } else {
-        boolean exists = verificationService.existsToken(token);
-        if (exists) {
-          createExpiredCard(token);
-        } else {
-          createNotFoundCard();
-        }
-      }
+  public void setParameter(
+      BeforeEvent beforeNavigationEvent, @OptionalParameter String verificationToken) {
+    if (verificationToken == null || verificationToken.isEmpty()) {
+      beforeNavigationEvent.forwardTo(HomeView.class);
+      return;
+    }
+
+    // Die Prüfung kann das Konto freischalten und den Token verbrauchen.
+    boolean accountVerificationSucceeded = verificationService.validateToken(verificationToken);
+    if (accountVerificationSucceeded) {
+      showVerificationSuccessCard();
+      return;
+    }
+
+    if (verificationService.existsToken(verificationToken)) {
+      showExpiredLinkCard(verificationToken);
     } else {
-      event.forwardTo(HomeView.class);
+      showUnknownLinkCard();
     }
   }
 
-  private void createExpiredCard(String token) {
+  private void applyVerificationPageLanguage(LanguageChangeEvent languageChangeEvent) {
+    VaadinSession.getCurrent().setLocale(languageChangeEvent.getNewLocale());
 
-    SvgIcon successIcon = AppIcon.WARNING.create();
-    successIcon.addClassNames(STATUS_ICON, "cosmos-status-icon--warning");
+    Map<Component, Supplier<String>> textSuppliersByComponent = new HashMap<>();
+    addExistingComponentTranslation(
+        textSuppliersByComponent, verificationHomeButton, messageProperties::getPublicHomeAction);
 
-    this.expiredTitle = new H1(messageProperties.getVerificationExpiredTitle());
-    expiredTitle.addClassName(COSMOS_HEADLINE_CLASS);
+    addExistingComponentTranslation(
+        textSuppliersByComponent, expiredLinkH1, messageProperties::getVerificationExpiredTitle);
+    addExistingComponentTranslation(
+        textSuppliersByComponent,
+        expiredLinkHintSpan,
+        messageProperties::getVerificationExpiredText1);
+    addExistingComponentTranslation(
+        textSuppliersByComponent,
+        resendVerificationLinkButton,
+        messageProperties::getBaseResendButton);
 
-    VerticalLayout cardTextLayout = createExpiredCardTextLayout();
+    addExistingComponentTranslation(
+        textSuppliersByComponent, unknownLinkH1, messageProperties::getVerificationNotFoundTitle);
+    addExistingComponentTranslation(
+        textSuppliersByComponent,
+        invalidLinkExplanationSpan,
+        messageProperties::getVerificationNotFoundText1);
+    addExistingComponentTranslation(
+        textSuppliersByComponent,
+        requestNewLinkHintSpan,
+        messageProperties::getVerificationNotFoundText2);
+    addExistingComponentTranslation(
+        textSuppliersByComponent, verificationEmailField, messageProperties::getPublicEmailField);
+    addExistingComponentTranslation(
+        textSuppliersByComponent,
+        requestVerificationLinkButton,
+        messageProperties::getVerificationRequestActivationLink);
 
-    this.resendButton =
+    addExistingComponentTranslation(
+        textSuppliersByComponent,
+        verificationSuccessH1,
+        messageProperties::getVerificationSuccessTitle);
+    addExistingComponentTranslation(
+        textSuppliersByComponent,
+        verificationSuccessMessageSpan,
+        messageProperties::getVerificationSuccessText);
+    addExistingComponentTranslation(
+        textSuppliersByComponent, verificationLoginButton, messageProperties::getBaseLoginButton);
+
+    ComponentTextUpdateHelper.updateComponentTexts(textSuppliersByComponent);
+    updateVerificationEmailPlaceholder();
+    NotificationHelper.getInstance().updateText();
+  }
+
+  private static void addExistingComponentTranslation(
+      Map<Component, Supplier<String>> textSuppliersByComponent,
+      Component translatedComponent,
+      Supplier<String> componentTextSupplier) {
+    if (translatedComponent != null) {
+      textSuppliersByComponent.put(translatedComponent, componentTextSupplier);
+    }
+  }
+
+  private void showExpiredLinkCard(String verificationToken) {
+    SvgIcon expiredLinkWarningSvgIcon = AppIcon.WARNING.create();
+    expiredLinkWarningSvgIcon.addClassNames(STATUS_ICON, "cosmos-status-icon--warning");
+
+    expiredLinkH1 = new H1(messageProperties.getVerificationExpiredTitle());
+    expiredLinkH1.addClassName(HEADLINE_CSS_CLASS);
+    expiredLinkHintSpan = new Span(messageProperties.getVerificationExpiredText1());
+    expiredLinkHintSpan.addClassName(FORM_TEXT_CSS_CLASS);
+    VerticalLayout expiredLinkTextVerticalLayout =
+        createVerificationHelpVerticalLayout(expiredLinkHintSpan);
+
+    resendVerificationLinkButton =
         new Button(
             messageProperties.getBaseResendButton(),
-            event -> {
-              try {
-                boolean emailSent = verificationService.sendVerificationEmailByToken(token);
-                if (emailSent) {
-                  NotificationHelper.getInstance()
-                      .showNotification(
-                          this.messageProperties::getBaseSuccessTitle,
-                          this.messageProperties::getVerificationExpiredSuccessMessage,
-                          -1,
-                          NotificationHelper.NotificationType.SUCCESS);
-                } else {
-                  NotificationHelper.getInstance()
-                      .showNotification(
-                          this.messageProperties::getBaseFailedTitle,
-                          this.messageProperties::getBaseFailedMessage,
-                          -1,
-                          NotificationHelper.NotificationType.ERROR);
-                }
-              } catch (IOException e) {
-                logger.error("❌ Exception occurred:", safeFailure(e));
+            resendClickEvent -> requestVerificationLinkByToken(verificationToken));
+    resendVerificationLinkButton.setPrefixComponent(AppIcon.ENVELOPE.create());
+    resendVerificationLinkButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    resendVerificationLinkButton.setWidthFull();
 
-                NotificationHelper.getInstance()
-                    .showNotification(
-                        this.messageProperties::getBaseFailedTitle,
-                        this.messageProperties::getBaseFailedMessage,
-                        -1,
-                        NotificationHelper.NotificationType.ERROR);
-              }
-            });
-    resendButton.setPrefixComponent(AppIcon.ENVELOPE.create());
-    resendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    resendButton.setWidthFull();
+    verificationHomeButton = createVerificationHomeButton();
+    Div expiredLinkActionsDiv = new Div(verificationHomeButton, resendVerificationLinkButton);
+    expiredLinkActionsDiv.addClassName("public-panel-actions");
 
-    this.homeButton =
-        new Button(
-            messageProperties.getPublicHomeAction(),
-            event -> UI.getCurrent().navigate(HomeView.class));
-    homeButton.setPrefixComponent(AppIcon.HOME.create());
-    homeButton.setWidthFull();
-    Div actions = new Div(homeButton, resendButton);
-    actions.addClassName("public-panel-actions");
-
-    CosmosCardComponent cardComponent =
+    PublicPanelComponent expiredLinkPanelComponent =
         new PublicPanelComponent(
-            successIcon,
-            expiredTitle,
+            expiredLinkWarningSvgIcon,
+            expiredLinkH1,
             messageProperties::getPublicVerificationSubtitle,
-            new Component[] {cardTextLayout},
-            actions);
-
-    mainContent.add(cardComponent);
+            new Component[] {expiredLinkTextVerticalLayout},
+            expiredLinkActionsDiv);
+    verificationCardsVerticalLayout.add(expiredLinkPanelComponent);
   }
 
-  private VerticalLayout createExpiredCardTextLayout() {
-    this.expiredText1 = new Span(messageProperties.getVerificationExpiredText1());
-    expiredText1.addClassName(COSMOS_FORM_TEXT_CLASS);
-    VerticalLayout cardTextLayout = new VerticalLayout();
-    cardTextLayout.addClassName(COSMOS_INTRO_CLASS);
-    cardTextLayout.setWidthFull();
-    cardTextLayout.setPadding(false);
-    cardTextLayout.setSpacing(false);
-    cardTextLayout.setAlignItems(FlexComponent.Alignment.START);
-    cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-    cardTextLayout.add(expiredText1);
-    return cardTextLayout;
+  private void requestVerificationLinkByToken(String verificationToken) {
+    try {
+      boolean verificationRequestAccepted =
+          verificationService.sendVerificationEmailByToken(verificationToken);
+      showVerificationRequestResult(
+          verificationRequestAccepted, messageProperties::getVerificationExpiredSuccessMessage);
+    } catch (IOException verificationRequestIOException) {
+      verificationLogger.error(
+          "❌ Exception occurred:", safeFailure(verificationRequestIOException));
+      showVerificationRequestFailure();
+    }
   }
 
-  private VerticalLayout createNotFoundCardTextLayout(String text1String, String text2String) {
-    this.notFoundText1 = new Span(text1String);
-    notFoundText1.addClassName(COSMOS_FORM_TEXT_CLASS);
-    this.notFoundText2 = new Span(text2String);
-    notFoundText2.addClassName(COSMOS_FORM_TEXT_CLASS);
-    VerticalLayout cardTextLayout = new VerticalLayout();
-    cardTextLayout.addClassName(COSMOS_INTRO_CLASS);
-    cardTextLayout.setWidthFull();
-    cardTextLayout.setPadding(false);
-    cardTextLayout.setSpacing(false);
-    cardTextLayout.setAlignItems(FlexComponent.Alignment.START);
-    cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-    cardTextLayout.add(notFoundText1);
-    cardTextLayout.add(notFoundText2);
-    return cardTextLayout;
-  }
+  private void showUnknownLinkCard() {
+    SvgIcon invalidLinkWarningSvgIcon = AppIcon.WARNING.create();
+    invalidLinkWarningSvgIcon.addClassNames(STATUS_ICON, LumoUtility.TextColor.ERROR);
 
-  private void createNotFoundCard() {
+    unknownLinkH1 = new H1(messageProperties.getVerificationNotFoundTitle());
+    unknownLinkH1.addClassName(HEADLINE_CSS_CLASS);
+    invalidLinkExplanationSpan = new Span(messageProperties.getVerificationNotFoundText1());
+    invalidLinkExplanationSpan.addClassName(FORM_TEXT_CSS_CLASS);
+    requestNewLinkHintSpan = new Span(messageProperties.getVerificationNotFoundText2());
+    requestNewLinkHintSpan.addClassName(FORM_TEXT_CSS_CLASS);
+    VerticalLayout unknownLinkTextVerticalLayout =
+        createVerificationHelpVerticalLayout(invalidLinkExplanationSpan, requestNewLinkHintSpan);
 
-    SvgIcon successIcon = AppIcon.WARNING.create();
-    successIcon.addClassNames(STATUS_ICON, LumoUtility.TextColor.ERROR);
+    verificationEmailField = new EmailField(messageProperties.getPublicEmailField());
+    verificationEmailField.setPattern(UserInputRules.EMAIL_REGEX);
+    verificationEmailField.setWidthFull();
+    verificationEmailField.setClearButtonVisible(true);
+    verificationEmailField.setRequiredIndicatorVisible(true);
+    updateVerificationEmailPlaceholder();
 
-    this.notFoundTitle = new H1(messageProperties.getVerificationNotFoundTitle());
-    notFoundTitle.addClassName(COSMOS_HEADLINE_CLASS);
-
-    VerticalLayout cardTextLayout =
-        createNotFoundCardTextLayout(
-            messageProperties.getVerificationNotFoundText1(),
-            messageProperties.getVerificationNotFoundText2());
-
-    this.emailField = new EmailField(messageProperties.getPublicEmailField());
-    emailField.setPattern(UserInputRules.EMAIL_REGEX);
-    emailField.setWidthFull();
-    emailField.setClearButtonVisible(true);
-    emailField.setRequiredIndicatorVisible(true);
-
-    updateInputPlaceholders();
-
-    this.sendButton =
+    requestVerificationLinkButton =
         new Button(
             messageProperties.getVerificationRequestActivationLink(),
-            event -> {
-              if (!ValidationHelper.validateRequiredInputs(
-                  List.of(emailField), messageProperties)) {
-                return;
-              }
+            requestClickEvent -> requestVerificationLinkByEmail());
+    requestVerificationLinkButton.setPrefixComponent(AppIcon.ENVELOPE.create());
+    requestVerificationLinkButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    requestVerificationLinkButton.setWidthFull();
 
-              if (!ValidationHelper.validateEmailValidInputs(
-                  List.of(emailField), messageProperties)) {
-                return;
-              }
+    verificationHomeButton = createVerificationHomeButton();
+    Div unknownLinkActionsDiv = new Div(verificationHomeButton, requestVerificationLinkButton);
+    unknownLinkActionsDiv.addClassName("public-panel-actions");
 
-              try {
-                boolean emailSent =
-                    verificationService.sendVerificationEmailByEmail(emailField.getValue());
-                if (emailSent) {
-                  NotificationHelper.getInstance()
-                      .showNotification(
-                          this.messageProperties::getBaseSuccessTitle,
-                          this.messageProperties::getVerificationNotFoundSuccessMessage,
-                          -1,
-                          NotificationHelper.NotificationType.SUCCESS);
-                } else {
-                  NotificationHelper.getInstance()
-                      .showNotification(
-                          this.messageProperties::getBaseFailedTitle,
-                          this.messageProperties::getBaseFailedMessage,
-                          -1,
-                          NotificationHelper.NotificationType.ERROR);
-                }
-              } catch (IOException e) {
-                logger.error("❌ Exception occurred:", safeFailure(e));
+    PublicPanelComponent unknownLinkPanelComponent =
+        new PublicPanelComponent(
+            invalidLinkWarningSvgIcon,
+            unknownLinkH1,
+            messageProperties::getPublicVerificationSubtitle,
+            new Component[] {unknownLinkTextVerticalLayout, verificationEmailField},
+            unknownLinkActionsDiv);
+    verificationCardsVerticalLayout.add(unknownLinkPanelComponent);
+  }
 
-                NotificationHelper.getInstance()
-                    .showNotification(
-                        this.messageProperties::getBaseFailedTitle,
-                        this.messageProperties::getBaseFailedMessage,
-                        -1,
-                        NotificationHelper.NotificationType.ERROR);
-              }
-            });
-    sendButton.setPrefixComponent(AppIcon.ENVELOPE.create());
-    sendButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    sendButton.setWidthFull();
+  private void requestVerificationLinkByEmail() {
+    if (!ValidationHelper.validateRequiredInputs(
+        List.of(verificationEmailField), messageProperties)) {
+      return;
+    }
+    if (!ValidationHelper.validateEmailValidInputs(
+        List.of(verificationEmailField), messageProperties)) {
+      return;
+    }
 
-    this.homeButton =
+    try {
+      boolean verificationRequestAccepted =
+          verificationService.sendVerificationEmailByEmail(verificationEmailField.getValue());
+      showVerificationRequestResult(
+          verificationRequestAccepted, messageProperties::getVerificationNotFoundSuccessMessage);
+    } catch (IOException verificationRequestIOException) {
+      verificationLogger.error(
+          "❌ Exception occurred:", safeFailure(verificationRequestIOException));
+      showVerificationRequestFailure();
+    }
+  }
+
+  private void updateVerificationEmailPlaceholder() {
+    if (verificationEmailField != null) {
+      verificationEmailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+    }
+  }
+
+  private void showVerificationRequestResult(
+      boolean verificationRequestAccepted, Supplier<String> successMessageSupplier) {
+    if (verificationRequestAccepted) {
+      NotificationHelper.getInstance()
+          .showNotification(
+              messageProperties::getBaseSuccessTitle,
+              successMessageSupplier,
+              -1,
+              NotificationHelper.NotificationType.SUCCESS);
+    } else {
+      showVerificationRequestFailure();
+    }
+  }
+
+  private void showVerificationRequestFailure() {
+    NotificationHelper.getInstance()
+        .showNotification(
+            messageProperties::getBaseFailedTitle,
+            messageProperties::getBaseFailedMessage,
+            -1,
+            NotificationHelper.NotificationType.ERROR);
+  }
+
+  private VerticalLayout createVerificationHelpVerticalLayout(Span... verificationHintSpans) {
+    VerticalLayout verificationHelpVerticalLayout = new VerticalLayout();
+    verificationHelpVerticalLayout.addClassName(INTRO_CSS_CLASS);
+    verificationHelpVerticalLayout.setWidthFull();
+    verificationHelpVerticalLayout.setPadding(false);
+    verificationHelpVerticalLayout.setSpacing(false);
+    verificationHelpVerticalLayout.setAlignItems(FlexComponent.Alignment.START);
+    verificationHelpVerticalLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
+    verificationHelpVerticalLayout.add(verificationHintSpans);
+    return verificationHelpVerticalLayout;
+  }
+
+  private Button createVerificationHomeButton() {
+    Button homeNavigationButton =
         new Button(
             messageProperties.getPublicHomeAction(),
-            event -> UI.getCurrent().navigate(HomeView.class));
-    homeButton.setPrefixComponent(AppIcon.HOME.create());
-    homeButton.setWidthFull();
-
-    Div actions = new Div(homeButton, sendButton);
-    actions.addClassName("public-panel-actions");
-
-    CosmosCardComponent cardComponent =
-        new PublicPanelComponent(
-            successIcon,
-            notFoundTitle,
-            messageProperties::getPublicVerificationSubtitle,
-            new Component[] {cardTextLayout, emailField},
-            actions);
-
-    mainContent.add(cardComponent);
+            homeClickEvent -> UI.getCurrent().navigate(HomeView.class));
+    homeNavigationButton.setPrefixComponent(AppIcon.HOME.create());
+    homeNavigationButton.setWidthFull();
+    return homeNavigationButton;
   }
 
-  private void createSuccessCard() {
-
-    SvgIcon successIcon = AppIcon.CHECK_CIRCLE.create();
-    successIcon.addClassNames(
+  private void showVerificationSuccessCard() {
+    SvgIcon verificationSuccessSvgIcon = AppIcon.CHECK_CIRCLE.create();
+    verificationSuccessSvgIcon.addClassNames(
         "cosmos-verification-success-icon", STATUS_ICON, LumoUtility.TextColor.SUCCESS);
 
-    this.successTitle = new H1(messageProperties.getVerificationSuccessTitle());
-    successTitle.addClassName(COSMOS_HEADLINE_CLASS);
+    verificationSuccessH1 = new H1(messageProperties.getVerificationSuccessTitle());
+    verificationSuccessH1.addClassName(HEADLINE_CSS_CLASS);
 
-    this.successText = new Span(messageProperties.getVerificationSuccessText());
-    successText.addClassName(COSMOS_FORM_TEXT_CLASS);
-    HorizontalLayout cardTextLayout = new HorizontalLayout();
-    cardTextLayout.addClassName(COSMOS_INTRO_CLASS);
-    cardTextLayout.setWidthFull();
-    cardTextLayout.setPadding(false);
-    cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-    cardTextLayout.add(successText);
+    verificationSuccessMessageSpan = new Span(messageProperties.getVerificationSuccessText());
+    verificationSuccessMessageSpan.addClassName(FORM_TEXT_CSS_CLASS);
+    HorizontalLayout verificationSuccessTextHorizontalLayout = new HorizontalLayout();
+    verificationSuccessTextHorizontalLayout.addClassName(INTRO_CSS_CLASS);
+    verificationSuccessTextHorizontalLayout.setWidthFull();
+    verificationSuccessTextHorizontalLayout.setPadding(false);
+    verificationSuccessTextHorizontalLayout.setJustifyContentMode(
+        FlexComponent.JustifyContentMode.START);
+    verificationSuccessTextHorizontalLayout.add(verificationSuccessMessageSpan);
 
-    this.loginButton =
+    verificationLoginButton =
         new Button(
             messageProperties.getBaseLoginButton(),
-            event -> UI.getCurrent().navigate(LoginView.class));
-    loginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
-    loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    loginButton.setWidthFull();
+            loginClickEvent -> UI.getCurrent().navigate(LoginView.class));
+    verificationLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
+    verificationLoginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    verificationLoginButton.setWidthFull();
 
-    CosmosCardComponent cardComponent =
+    PublicPanelComponent verificationSuccessPanelComponent =
         new PublicPanelComponent(
-            successIcon,
-            successTitle,
+            verificationSuccessSvgIcon,
+            verificationSuccessH1,
             messageProperties::getPublicVerificationSubtitle,
-            new Component[] {cardTextLayout},
-            loginButton);
-
-    mainContent.add(cardComponent);
-  }
-
-  private void updateInputPlaceholders() {
-    if (emailField != null) {
-      emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
-    }
+            new Component[] {verificationSuccessTextHorizontalLayout},
+            verificationLoginButton);
+    verificationCardsVerticalLayout.add(verificationSuccessPanelComponent);
   }
 }

@@ -217,16 +217,16 @@ class PasswordResetViewsTest {
             mock(HttpServletRequest.class),
             accountConfig());
     view.setParameter(null, "expired-link");
-    Button resend = field(view, "resendButton", Button.class);
-    Button home = field(view, "homeButton", Button.class);
+    Button resend = field(view, "resendVerificationLinkButton", Button.class);
+    Button home = field(view, "verificationHomeButton", Button.class);
     assertEquals("mail", resend.getPrefixComponent().getElement().getAttribute("data-lucide"));
     LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(
         messageProperties.getVerificationExpiredTitle(),
-        field(view, "expiredTitle", H1.class).getText());
+        field(view, "expiredLinkH1", H1.class).getText());
     assertEquals(
         messageProperties.getVerificationExpiredText1(),
-        field(view, "expiredText1", Span.class).getText());
+        field(view, "expiredLinkHintSpan", Span.class).getText());
     assertEquals(messageProperties.getPublicHomeAction(), home.getText());
     assertEquals(messageProperties.getBaseResendButton(), resend.getText());
     resend.click();
@@ -248,7 +248,7 @@ class PasswordResetViewsTest {
             mock(HttpServletRequest.class),
             accountConfig());
     view.setParameter(null, "unknown-link");
-    Button request = field(view, "sendButton", Button.class);
+    Button request = field(view, "requestVerificationLinkButton", Button.class);
     assertEquals(messageProperties.getVerificationRequestActivationLink(), request.getText());
     assertEquals("mail", request.getPrefixComponent().getElement().getAttribute("data-lucide"));
     request.click();
@@ -259,14 +259,14 @@ class PasswordResetViewsTest {
     assertEquals(messageProperties.getVerificationRequestActivationLink(), request.getText());
     assertEquals(
         messageProperties.getVerificationNotFoundTitle(),
-        field(view, "notFoundTitle", H1.class).getText());
+        field(view, "unknownLinkH1", H1.class).getText());
     assertEquals(
         messageProperties.getVerificationNotFoundText1(),
-        field(view, "notFoundText1", Span.class).getText());
+        field(view, "invalidLinkExplanationSpan", Span.class).getText());
     assertEquals(
         messageProperties.getVerificationNotFoundText2(),
-        field(view, "notFoundText2", Span.class).getText());
-    field(view, "emailField", EmailField.class).setValue("pending@example.test");
+        field(view, "requestNewLinkHintSpan", Span.class).getText());
+    field(view, "verificationEmailField", EmailField.class).setValue("pending@example.test");
     request.click();
     verify(verification).sendVerificationEmailByEmail("pending@example.test");
     verifyNoMoreInteractions(verification);
@@ -284,16 +284,16 @@ class PasswordResetViewsTest {
             mock(HttpServletRequest.class),
             accountConfig());
     view.setParameter(null, "verified-link");
-    Button login = field(view, "loginButton", Button.class);
+    Button login = field(view, "verificationLoginButton", Button.class);
     assertEquals(messageProperties.getBaseLoginButton(), login.getText());
     assertEquals("log-in", login.getPrefixComponent().getElement().getAttribute("data-lucide"));
     LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(
         messageProperties.getVerificationSuccessTitle(),
-        field(view, "successTitle", H1.class).getText());
+        field(view, "verificationSuccessH1", H1.class).getText());
     assertEquals(
         messageProperties.getVerificationSuccessText(),
-        field(view, "successText", Span.class).getText());
+        field(view, "verificationSuccessMessageSpan", Span.class).getText());
     assertEquals(messageProperties.getBaseLoginButton(), login.getText());
     UI navigation = mock(UI.class);
     UI.setCurrent(navigation);
