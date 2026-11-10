@@ -65,13 +65,13 @@ public class PublicPageComponent extends PageFrameComponent {
   private Page page;
   private boolean accountSecurity;
   private SerializableRunnable refreshTexts;
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final VerticalLayout cards = new VerticalLayout();
   private final HorizontalLayout securityIdentity = new HorizontalLayout();
 
-  public PublicPageComponent(ConfigService config, MessageProperties texts, Page page) {
+  public PublicPageComponent(ConfigService config, MessageProperties messageProperties, Page page) {
     this.page = page;
-    this.texts = texts;
+    this.messageProperties = messageProperties;
     addClassNames("cosmos-theme", REFERENCE_PORTAL, "cosmos-reference-public");
     getElement().setAttribute("data-public-page", page.name().toLowerCase(Locale.ROOT));
     String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
@@ -135,7 +135,7 @@ public class PublicPageComponent extends PageFrameComponent {
     cards.setSpacing(false);
     cards.addClassName("public-cards");
     if (page == Page.HOME) {
-      cards.add(new PublicHomeComponent(texts));
+      cards.add(new PublicHomeComponent(messageProperties));
     }
     PortalPageComponent main = new PortalPageComponent(heading, null, cards);
     main.addClassName("public-main");
@@ -143,21 +143,21 @@ public class PublicPageComponent extends PageFrameComponent {
         header,
         main,
         new CosmosCopyrightComponent(
-            config, Clock.systemDefaultZone(), texts::getAccountCopyrightTemplate));
+            config, Clock.systemDefaultZone(), messageProperties::getAccountCopyrightTemplate));
     SerializableRunnable translate =
         () -> {
-          home.setText(texts.getHomeTitle());
-          home.setAriaLabel(texts.getHomeTitle());
-          login.setAriaLabel(texts.getBaseLoginButton());
-          register.setAriaLabel(texts.getBaseRegistrationButton());
-          login.setText(texts.getBaseLoginButton());
-          register.setText(texts.getBaseRegistrationButton());
+          home.setText(messageProperties.getHomeTitle());
+          home.setAriaLabel(messageProperties.getHomeTitle());
+          login.setAriaLabel(messageProperties.getBaseLoginButton());
+          register.setAriaLabel(messageProperties.getBaseRegistrationButton());
+          login.setText(messageProperties.getBaseLoginButton());
+          register.setText(messageProperties.getBaseRegistrationButton());
           kicker.setText(
               restricted
-                  ? texts.getTwoFactorAreaLabel(accountSecurity)
-                  : texts.getPublicAreaLabel());
-          title.setText(this.page.title.apply(texts));
-          description.setText(this.page.description.apply(texts));
+                  ? messageProperties.getTwoFactorAreaLabel(accountSecurity)
+                  : messageProperties.getPublicAreaLabel());
+          title.setText(this.page.title.apply(messageProperties));
+          description.setText(this.page.description.apply(messageProperties));
           german
               .getElement()
               .setAttribute(
@@ -205,7 +205,8 @@ public class PublicPageComponent extends PageFrameComponent {
     securityIdentity.removeAll();
     securityIdentity.setVisible(account != null);
     if (account != null) {
-      OverlayUserIcon avatar = new OverlayUserIcon(texts, account, null, IconSize.PIXEL_32);
+      OverlayUserIcon avatar =
+          new OverlayUserIcon(messageProperties, account, null, IconSize.PIXEL_32);
       avatar.getElement().setAttribute("aria-hidden", "true");
       Span name = new Span((account.getFirstName() + " " + account.getLastName()).strip());
       Div details = new Div(name, new Span(account.getEmail()));

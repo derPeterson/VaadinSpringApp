@@ -36,7 +36,7 @@ public final class ExternalConnectionsComponent extends Div {
   private final transient ExternalLoginFlow flow;
   private final transient ExternalIdentityService identities;
   private final transient HttpServletRequest request;
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final Div overview = new Div();
   private final ExternalIdentityConfirmationDialog confirmation;
   private SerializableRunnable passwordAction;
@@ -47,12 +47,13 @@ public final class ExternalConnectionsComponent extends Div {
       ExternalLoginFlow flow,
       ExternalIdentityService identities,
       HttpServletRequest request,
-      MessageProperties texts) {
+      MessageProperties messageProperties) {
     this.flow = flow;
     this.identities = identities;
     this.request = request;
-    this.texts = texts;
-    confirmation = new ExternalIdentityConfirmationDialog(flow, identities, request, texts);
+    this.messageProperties = messageProperties;
+    confirmation =
+        new ExternalIdentityConfirmationDialog(flow, identities, request, messageProperties);
     setId("account-external-connections");
     addClassName("account-external-connections");
     overview.addClassName("external-connections-overview");
@@ -125,7 +126,10 @@ public final class ExternalConnectionsComponent extends Div {
     Div icon = new Div(logo);
     icon.addClassName("cosmos-panel-icon");
     Badge state =
-        new Badge(linked ? texts.getExternalConnected() : texts.getExternalNotConnected());
+        new Badge(
+            linked
+                ? messageProperties.getExternalConnected()
+                : messageProperties.getExternalNotConnected());
     if (linked) {
       state.addThemeVariants(BadgeVariant.SUCCESS);
     }
@@ -138,28 +142,33 @@ public final class ExternalConnectionsComponent extends Div {
                 .noneMatch(other -> !other.equals(provider) && available.contains(other));
     String detail;
     if (!available.contains(provider)) {
-      detail = texts.getExternalProviderUnavailable();
+      detail = messageProperties.getExternalProviderUnavailable();
     } else if (lastMethod) {
-      detail = texts.getExternalLastMethod();
+      detail = messageProperties.getExternalLastMethod();
     } else {
-      detail = linked ? texts.getExternalConnectedHint() : texts.getExternalNotConnectedHint();
+      detail =
+          linked
+              ? messageProperties.getExternalConnectedHint()
+              : messageProperties.getExternalNotConnectedHint();
     }
     Span explanation = new Span(detail);
     explanation.addClassName("account-entry-description");
     Div copy = new Div(heading, explanation);
     copy.addClassNames("external-connection-copy", "account-entry-copy");
     Button action =
-        new Button(linked ? texts.getExternalDisconnect(brand) : texts.getExternalConnect(brand));
+        new Button(
+            linked
+                ? messageProperties.getExternalDisconnect(brand)
+                : messageProperties.getExternalConnect(brand));
     action.setId("external-connect-" + provider);
     action.setPrefixComponent((linked ? AppIcon.SIGN_OUT : AppIcon.SIGN_IN).create());
     action.setClassName(CosmosClasses.DELETE_BUTTON, linked);
     action.setEnabled(!lastMethod);
-    action.addClickListener(
-        event ->
-            requestAction(
-                linked
-                    ? ExternalLoginFlow.unlinkPurpose(provider)
-                    : ExternalLoginFlow.linkPurpose(provider)));
+    action.addClickListener(event ->
+        requestAction(
+            linked
+                ? ExternalLoginFlow.unlinkPurpose(provider)
+                : ExternalLoginFlow.linkPurpose(provider)));
     Div row = new Div(icon, copy, action);
     row.addClassNames("external-connection-row", "account-entry");
     return row;
@@ -187,10 +196,9 @@ public final class ExternalConnectionsComponent extends Div {
     UserEntity user = flow.owner(request);
     boolean providerProofAvailable =
         identities.connected(user.getId()).stream()
-            .anyMatch(
-                provider ->
-                    flow.providers().contains(provider)
-                        && flow.canUseProviderProof(request, provider, purpose));
+            .anyMatch(provider ->
+                flow.providers().contains(provider)
+                    && flow.canUseProviderProof(request, provider, purpose));
     if (!confirmed
         && !flow.factorEnrolled(request)
         && (flow.requiresFactor(request, purpose)
@@ -207,7 +215,8 @@ public final class ExternalConnectionsComponent extends Div {
         && !flow.requiresFactor(request, purpose)) {
       NotificationHelper.getInstance()
           .showNotification(
-              texts::getExternalProofUnavailable, NotificationHelper.NotificationType.WARNING);
+              messageProperties::getExternalProofUnavailable,
+              NotificationHelper.NotificationType.WARNING);
       return;
     }
     if (accountChange

@@ -29,15 +29,15 @@ public final class ExternalLoginButtons extends Div {
   public ExternalLoginButtons(
       ExternalLoginFlow flow,
       HttpServletRequest request,
-      MessageProperties texts,
+      MessageProperties messageProperties,
       BooleanSupplier remember) {
-    this(flow, request, texts, remember, Presentation.INLINE);
+    this(flow, request, messageProperties, remember, Presentation.INLINE);
   }
 
   public ExternalLoginButtons(
       ExternalLoginFlow flow,
       HttpServletRequest request,
-      MessageProperties texts,
+      MessageProperties messageProperties,
       BooleanSupplier remember,
       Presentation presentation) {
     setClassName("external-login-buttons");
@@ -58,9 +58,9 @@ public final class ExternalLoginButtons extends Div {
       hint.addClassName("external-login-hint");
       Runnable translate =
           () -> {
-            kicker.setText(texts.getExternalPanelKicker());
-            title.setText(texts.getExternalPanelTitle());
-            hint.setText(texts.getExternalPanelHint());
+            kicker.setText(messageProperties.getExternalPanelKicker());
+            title.setText(messageProperties.getExternalPanelTitle());
+            hint.setText(messageProperties.getExternalPanelHint());
           };
       translate.run();
       ComponentUtil.addListener(
@@ -69,12 +69,12 @@ public final class ExternalLoginButtons extends Div {
     }
     Supplier<String> googleText =
         presentation == Presentation.PANEL
-            ? texts::getExternalContinueGoogle
-            : texts::getExternalGoogle;
+            ? messageProperties::getExternalContinueGoogle
+            : messageProperties::getExternalGoogle;
     Supplier<String> microsoftText =
         presentation == Presentation.PANEL
-            ? texts::getExternalContinueMicrosoft
-            : texts::getExternalMicrosoft;
+            ? messageProperties::getExternalContinueMicrosoft
+            : messageProperties::getExternalMicrosoft;
     Div actions = new Div();
     actions.addClassName("external-provider-actions");
     for (String provider : providers) {
@@ -95,23 +95,22 @@ public final class ExternalLoginButtons extends Div {
       translate.run();
       ComponentUtil.addListener(
           UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
-      button.addClickListener(
-          event ->
-              UI.getCurrent()
-                  .getPage()
-                  .setLocation(
-                      flow.beginLogin(
-                          request,
-                          provider,
-                          remember.getAsBoolean(),
-                          VaadinSession.getCurrent().getLocale())));
+      button.addClickListener(event ->
+          UI.getCurrent()
+              .getPage()
+              .setLocation(
+                  flow.beginLogin(
+                      request,
+                      provider,
+                      remember.getAsBoolean(),
+                      VaadinSession.getCurrent().getLocale())));
       actions.add(button);
     }
     add(actions);
     if (presentation == Presentation.INLINE) {
       Span alternative = new Span();
       alternative.addClassName("external-login-alternative");
-      Runnable translate = () -> alternative.setText(texts.getExternalOr());
+      Runnable translate = () -> alternative.setText(messageProperties.getExternalOr());
       translate.run();
       ComponentUtil.addListener(
           UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());

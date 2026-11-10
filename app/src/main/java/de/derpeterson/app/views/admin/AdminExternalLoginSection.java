@@ -68,7 +68,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 public class AdminExternalLoginSection extends VerticalLayout {
   private static final String PROVIDER_PREFIX = "provider-";
   private static final Logger logger = LoggerFactory.getLogger(AdminExternalLoginSection.class);
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final transient ExternalProviderSettings settings;
   private final transient ConfigService config;
   private final List<ProviderForm> forms = new ArrayList<>();
@@ -90,16 +90,18 @@ public class AdminExternalLoginSection extends VerticalLayout {
       TwoFactorAuthorization twoFactor, jakarta.servlet.http.HttpServletRequest request) {
     this.twoFactor = twoFactor;
     this.request = request;
-    confirmation = new TwoFactorActionDialog(texts, twoFactor, request);
+    confirmation = new TwoFactorActionDialog(messageProperties, twoFactor, request);
     add(confirmation);
   }
 
   public AdminExternalLoginSection(
-      MessageProperties texts, ExternalProviderSettings settings, ConfigService config) {
-    this.texts = texts;
+      MessageProperties messageProperties,
+      ExternalProviderSettings settings,
+      ConfigService config) {
+    this.messageProperties = messageProperties;
     this.settings = settings;
     this.config = config;
-    helpPanel = new AdminSidePanel(texts, AppIcon.INFO_CIRCLE);
+    helpPanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
     helpPanel.addClassName("admin-config-help");
     helpPanel.setId("provider-field-help");
     closeHelp.setWidthFull();
@@ -154,13 +156,14 @@ public class AdminExternalLoginSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
-    breadcrumb.setText(texts.getAdminHeaderTitle() + " / " + texts.getAdminConfigTitle());
-    title.setText(texts.getAdminConfigTitle());
-    description.setText(texts.getAdminConfigDescription());
-    panelTitle.setText(texts.getProviderSettingsPanelTitle());
-    panelDescription.setText(texts.getProviderSettingsPanelDescription());
+    breadcrumb.setText(
+        messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminConfigTitle());
+    title.setText(messageProperties.getAdminConfigTitle());
+    description.setText(messageProperties.getAdminConfigDescription());
+    panelTitle.setText(messageProperties.getProviderSettingsPanelTitle());
+    panelDescription.setText(messageProperties.getProviderSettingsPanelDescription());
     forms.forEach(ProviderForm::refreshTexts);
-    closeHelp.setText(texts.getNotificationsClose());
+    closeHelp.setText(messageProperties.getNotificationsClose());
     if (helpPanel.isOpened()) {
       helpForm.refreshHelp();
     }
@@ -221,25 +224,24 @@ public class AdminExternalLoginSection extends VerticalLayout {
       redirect.setId(PROVIDER_PREFIX + provider + "-redirect");
       copy.addClassName("provider-copy");
       copy.setPrefixComponent(AppIcon.CLIPBOARD_COPY.create());
-      copy.addClickListener(
-          event ->
-              redirect
-                  .getElement()
-                  .executeJs(
-                      "return navigator.clipboard ? navigator.clipboard.writeText($0).then(() => true, () => false) : Promise.resolve(false)",
-                      redirect.getValue())
-                  .then(
-                      Boolean.class,
-                      copied ->
-                          NotificationHelper.getInstance()
-                              .showNotification(
-                                  Boolean.TRUE.equals(copied)
-                                      ? texts::getProviderSettingsCopied
-                                      : texts::getProviderSettingsCopyFailed,
-                                  null,
-                                  Boolean.TRUE.equals(copied)
-                                      ? NotificationType.SUCCESS
-                                      : NotificationType.ERROR)));
+      copy.addClickListener(event ->
+          redirect
+              .getElement()
+              .executeJs(
+                  "return navigator.clipboard ? navigator.clipboard.writeText($0).then(() => true, () => false) : Promise.resolve(false)",
+                  redirect.getValue())
+              .then(
+                  Boolean.class,
+                  copied ->
+                      NotificationHelper.getInstance()
+                          .showNotification(
+                              Boolean.TRUE.equals(copied)
+                                  ? messageProperties::getProviderSettingsCopied
+                                  : messageProperties::getProviderSettingsCopyFailed,
+                              null,
+                              Boolean.TRUE.equals(copied)
+                                  ? NotificationType.SUCCESS
+                                  : NotificationType.ERROR)));
       Div address = new Div(redirect, copy);
       address.addClassName("provider-redirect");
       clientId.setWidthFull();
@@ -301,14 +303,14 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
 
     private String fieldRule(ProviderField field) {
-      return field.rule(texts);
+      return field.rule(messageProperties);
     }
 
     private void refreshHelp() {
       helpPanel.removeAll();
-      helpPanel.setHeading(texts.getAdminConfigHelpTitle());
-      helpPanel.setDescription(texts.getAdminConfigHelpDescription());
-      helpPanel.refreshCloseText(texts);
+      helpPanel.setHeading(messageProperties.getAdminConfigHelpTitle());
+      helpPanel.setDescription(messageProperties.getAdminConfigHelpDescription());
+      helpPanel.refreshCloseText(messageProperties);
       Span group = new Span(provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME);
       group.addClassName("admin-help-group");
       H3 fieldTitle = new H3(fieldLabel(helpField));
@@ -316,17 +318,18 @@ public class AdminExternalLoginSection extends VerticalLayout {
       Span explanation = new Span(fieldHelp(helpField));
       explanation.addClassName("admin-help-description");
       UnorderedList rules = new UnorderedList(new ListItem(fieldRule(helpField)));
-      Div rulesSection = new Div(new H4(texts.getAdminConfigInputRules()), rules);
+      Div rulesSection = new Div(new H4(messageProperties.getAdminConfigInputRules()), rules);
       rulesSection.addClassName("admin-help-rules");
       helpPanel.add(group, fieldTitle, explanation, rulesSection);
       String timing =
           switch (helpField) {
-            case CLIENT_ID -> texts.getAdminConfigEffectiveProviderClient();
-            case SECRET -> texts.getAdminConfigEffectiveProviderSecret();
-            case ENABLED -> texts.getAdminConfigEffectiveProviderEnabled();
+            case CLIENT_ID -> messageProperties.getAdminConfigEffectiveProviderClient();
+            case SECRET -> messageProperties.getAdminConfigEffectiveProviderSecret();
+            case ENABLED -> messageProperties.getAdminConfigEffectiveProviderEnabled();
           };
       helpPanel.addEffectiveUse(
-          texts, List.of(timing, texts.getAdminConfigEffectiveProviderExisting()));
+          messageProperties,
+          List.of(timing, messageProperties.getAdminConfigEffectiveProviderExisting()));
     }
 
     private Div step(Component body) {
@@ -378,11 +381,11 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
 
     private String fieldLabel(ProviderField field) {
-      return field.label(texts);
+      return field.label(messageProperties);
     }
 
     private String fieldHelp(ProviderField field) {
-      return field.description(texts, provider);
+      return field.description(messageProperties, provider);
     }
 
     private void load() {
@@ -423,62 +426,65 @@ public class AdminExternalLoginSection extends VerticalLayout {
         secret.clear();
         refreshTexts();
         NotificationHelper.getInstance()
-            .showNotification(texts::getProviderSettingsSaved, null, NotificationType.SUCCESS);
+            .showNotification(
+                messageProperties::getProviderSettingsSaved, null, NotificationType.SUCCESS);
       } catch (IllegalArgumentException _) {
         NotificationHelper.getInstance()
-            .showNotification(texts::getProviderSettingsIncomplete, null, NotificationType.ERROR);
+            .showNotification(
+                messageProperties::getProviderSettingsIncomplete, null, NotificationType.ERROR);
       } catch (OptimisticLockingFailureException _) {
         NotificationHelper.getInstance()
-            .showNotification(texts::getProviderSettingsConflict, null, NotificationType.ERROR);
+            .showNotification(
+                messageProperties::getProviderSettingsConflict, null, NotificationType.ERROR);
       } catch (RuntimeException failure) {
         logger.warn("Sign-in provider settings could not be saved", LogSafety.safeFailure(failure));
         NotificationHelper.getInstance()
-            .showNotification(texts::getProviderSettingsFailed, null, NotificationType.ERROR);
+            .showNotification(
+                messageProperties::getProviderSettingsFailed, null, NotificationType.ERROR);
       }
     }
 
     private void refreshTexts() {
       fieldLabels.forEach((field, label) -> label.setText(fieldLabel(field)));
-      infoButtons.forEach(
-          (field, info) -> {
-            info.refreshText();
-            info.setAriaLabel(texts.getAdminConfigHelpTitle() + ": " + fieldLabel(field));
-          });
+      infoButtons.forEach((field, info) -> {
+        info.refreshText();
+        info.setAriaLabel(messageProperties.getAdminConfigHelpTitle() + ": " + fieldLabel(field));
+      });
       String name = provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
-      assistantKickerText.setText(texts.getProviderSettingsAssistantKicker());
-      assistantTitle.setText(texts.getProviderSettingsAssistantTitle(name));
-      assistantDescription.setText(texts.getProviderSettingsAssistantDescription());
+      assistantKickerText.setText(messageProperties.getProviderSettingsAssistantKicker());
+      assistantTitle.setText(messageProperties.getProviderSettingsAssistantTitle(name));
+      assistantDescription.setText(messageProperties.getProviderSettingsAssistantDescription());
       for (int index = 0; index < stepLabels.size(); index++) {
         stepLabels
             .get(index)
             .setText(
                 switch (index) {
-                  case 0 -> texts.getProviderSettingsSetupProvider();
-                  case 1 -> texts.getProviderSettingsSetupCredentials();
-                  case 2 -> texts.getProviderSettingsEnableSignIn();
+                  case 0 -> messageProperties.getProviderSettingsSetupProvider();
+                  case 1 -> messageProperties.getProviderSettingsSetupCredentials();
+                  case 2 -> messageProperties.getProviderSettingsEnableSignIn();
                   default -> throw new IllegalStateException("Unsupported provider setup step");
                 });
       }
       guide.setText(
           provider.equals(GOOGLE)
-              ? texts.getProviderSettingsGoogleGuide()
-              : texts.getProviderSettingsMicrosoftGuide());
-      consoleCaption.setText(texts.getProviderSettingsOpenConsole());
-      redirect.setLabel(texts.getProviderSettingsRedirect());
-      copy.setText(texts.getProviderSettingsCopy());
-      clientId.setLabel(texts.getProviderSettingsClientId());
-      clientId.setPlaceholder(texts.getProviderSettingsClientIdPlaceholder());
-      secret.setLabel(texts.getProviderSettingsSecret());
+              ? messageProperties.getProviderSettingsGoogleGuide()
+              : messageProperties.getProviderSettingsMicrosoftGuide());
+      consoleCaption.setText(messageProperties.getProviderSettingsOpenConsole());
+      redirect.setLabel(messageProperties.getProviderSettingsRedirect());
+      copy.setText(messageProperties.getProviderSettingsCopy());
+      clientId.setLabel(messageProperties.getProviderSettingsClientId());
+      clientId.setPlaceholder(messageProperties.getProviderSettingsClientIdPlaceholder());
+      secret.setLabel(messageProperties.getProviderSettingsSecret());
       secret.setPlaceholder(
           stored != null && stored.secretStored()
-              ? texts.getProviderSettingsSecretStored()
-              : texts.getProviderSettingsSecretPlaceholder());
-      secret.setHelperText(texts.getProviderSettingsSecretHint());
-      enabledLabel.setText(texts.getProviderSettingsEnable());
-      enabled.setAriaLabel(texts.getProviderSettingsEnable());
-      hint.setText(texts.getProviderSettingsHint());
-      reload.setText(texts.getAdminConfigReload());
-      save.setText(texts.getAdminConfigSave());
+              ? messageProperties.getProviderSettingsSecretStored()
+              : messageProperties.getProviderSettingsSecretPlaceholder());
+      secret.setHelperText(messageProperties.getProviderSettingsSecretHint());
+      enabledLabel.setText(messageProperties.getProviderSettingsEnable());
+      enabled.setAriaLabel(messageProperties.getProviderSettingsEnable());
+      hint.setText(messageProperties.getProviderSettingsHint());
+      reload.setText(messageProperties.getAdminConfigReload());
+      save.setText(messageProperties.getAdminConfigSave());
       refreshAvailability();
       refreshStatus();
     }
@@ -497,7 +503,9 @@ public class AdminExternalLoginSection extends VerticalLayout {
       boolean active = configured && stored.enabled();
       String name = provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
       String state =
-          active ? texts.getProviderSettingsActive() : texts.getProviderSettingsInactive();
+          active
+              ? messageProperties.getProviderSettingsActive()
+              : messageProperties.getProviderSettingsInactive();
       status.setText(state);
       status.getElement().setAttribute("aria-label", name + ": " + state);
       status.removeThemeVariants(BadgeVariant.SUCCESS, BadgeVariant.WARNING);
@@ -505,11 +513,11 @@ public class AdminExternalLoginSection extends VerticalLayout {
       status.getElement().setAttribute("data-state", active ? "active" : "inactive");
       String explanation;
       if (!configured) {
-        explanation = texts.getProviderSettingsUnconfiguredHint(name);
+        explanation = messageProperties.getProviderSettingsUnconfiguredHint(name);
       } else if (active) {
-        explanation = texts.getProviderSettingsActiveHint(name);
+        explanation = messageProperties.getProviderSettingsActiveHint(name);
       } else {
-        explanation = texts.getProviderSettingsInactiveHint(name);
+        explanation = messageProperties.getProviderSettingsInactiveHint(name);
       }
       statusTooltip.setText(explanation);
     }

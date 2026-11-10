@@ -55,7 +55,7 @@ public class PortalConfirmationDialog extends Dialog {
     }
   }
 
-  private final MessageProperties texts;
+  private final MessageProperties messageProperties;
   private final H2 title = new H2();
   private final Span description = new Span();
   private final Span question = new Span();
@@ -70,8 +70,8 @@ public class PortalConfirmationDialog extends Dialog {
   private transient Prompt prompt;
   private SerializableRunnable pending;
 
-  public PortalConfirmationDialog(MessageProperties texts, String id) {
-    this.texts = texts;
+  public PortalConfirmationDialog(MessageProperties messageProperties, String id) {
+    this.messageProperties = messageProperties;
     setId(id);
     addClassNames("cosmos-theme", REFERENCE_OVERLAY, "portal-confirmation-dialog");
     getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
@@ -107,14 +107,13 @@ public class PortalConfirmationDialog extends Dialog {
     actions.addClassName("cosmos-dialog-actions");
     EqualButtonWidths.configure(actions);
     getFooter().add(actions);
-    addOpenedChangeListener(
-        event -> {
-          if (!event.isOpened()) {
-            pending = null;
-            prompt = null;
-            context.removeAll();
-          }
-        });
+    addOpenedChangeListener(event -> {
+      if (!event.isOpened()) {
+        pending = null;
+        prompt = null;
+        context.removeAll();
+      }
+    });
   }
 
   public void open(Prompt prompt, SerializableRunnable action) {
@@ -150,8 +149,8 @@ public class PortalConfirmationDialog extends Dialog {
   }
 
   public void refreshTexts() {
-    cancel.setText(texts.getAdminUsersCancel());
-    close.setAriaLabel(texts.getAdminUsersCloseDialog());
+    cancel.setText(messageProperties.getAdminUsersCancel());
+    close.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
     if (prompt == null) {
       return;
     }

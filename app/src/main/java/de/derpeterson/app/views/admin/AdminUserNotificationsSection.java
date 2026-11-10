@@ -61,7 +61,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private static final String ARIA_HIDDEN = "aria-hidden";
   private static final String DATA_STATE = "data-state";
 
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final transient UserNotificationService service;
   private final transient HttpServletRequest request;
   private final Span breadcrumb = new Span();
@@ -111,8 +111,10 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private int page;
 
   public AdminUserNotificationsSection(
-      MessageProperties texts, UserNotificationService service, HttpServletRequest request) {
-    this.texts = texts;
+      MessageProperties messageProperties,
+      UserNotificationService service,
+      HttpServletRequest request) {
+    this.messageProperties = messageProperties;
     this.service = service;
     this.request = request;
     setPadding(false);
@@ -147,14 +149,13 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     targets.setItemLabelGenerator(target -> target.name() + " · " + target.email());
     targets.setClassNameGenerator(target -> "admin-notification-recipient-option");
     targets.setRenderer(
-        new ComponentRenderer<>(
-            target -> {
-              Span name = new Span(target.name());
-              Span email = new Span(target.email());
-              Div label = new Div(name, email);
-              label.addClassName("admin-notification-recipient-label");
-              return label;
-            }));
+        new ComponentRenderer<>(target -> {
+          Span name = new Span(target.name());
+          Span email = new Span(target.email());
+          Div label = new Div(name, email);
+          label.addClassName("admin-notification-recipient-label");
+          return label;
+        }));
     targets.setWidthFull();
     targets.setManualValidation(true);
     targets.setRequiredIndicatorVisible(true);
@@ -178,22 +179,19 @@ public class AdminUserNotificationsSection extends VerticalLayout {
       field.setWidthFull();
       field.setRequiredIndicatorVisible(true);
       field.setValueChangeMode(ValueChangeMode.EAGER);
-      field.addValueChangeListener(
-          e -> {
-            refreshCounters();
-            invalidatePreview();
-          });
+      field.addValueChangeListener(e -> {
+        refreshCounters();
+        invalidatePreview();
+      });
     }
-    everyone.addValueChangeListener(
-        e -> {
-          refreshRecipientField();
-          invalidatePreview();
-        });
-    targets.addValueChangeListener(
-        e -> {
-          refreshRecipientSummary();
-          invalidatePreview();
-        });
+    everyone.addValueChangeListener(e -> {
+      refreshRecipientField();
+      invalidatePreview();
+    });
+    targets.addValueChangeListener(e -> {
+      refreshRecipientSummary();
+      invalidatePreview();
+    });
     previewButton.setId("admin-notifications-preview");
     previewButton.setIcon(AppIcon.EYE.create());
     send.setIcon(AppIcon.PAPERPLANE.create());
@@ -284,7 +282,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private CosmosPagination createHistoryPagination() {
     CosmosPagination pagination =
         new CosmosPagination(
-            texts,
+            messageProperties,
             selectedPage -> {
               page = selectedPage;
               loadHistory();
@@ -349,11 +347,11 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     deliveryMeta.getElement().setAttribute(DATA_STATE, state.name().toLowerCase(Locale.ROOT));
     String status =
         switch (state) {
-          case OPEN -> texts.getMaintenanceStatusAvailable();
-          case ACTIVE -> texts.getMaintenanceStatusActive();
-          case UNAVAILABLE -> texts.getMaintenanceStatusUnavailable();
+          case OPEN -> messageProperties.getMaintenanceStatusAvailable();
+          case ACTIVE -> messageProperties.getMaintenanceStatusActive();
+          case UNAVAILABLE -> messageProperties.getMaintenanceStatusUnavailable();
         };
-    String deliveryDescription = texts.getNotificationsInternal() + ": " + status;
+    String deliveryDescription = messageProperties.getNotificationsInternal() + ": " + status;
     deliveryMeta.getElement().setAttribute("aria-label", deliveryDescription);
     deliveryTooltip.setText(deliveryDescription);
   }
@@ -365,8 +363,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     }
     feedback(
         maintenanceState == MaintenanceService.State.ACTIVE
-            ? texts::getNotificationsDeliveryPaused
-            : texts::getNotificationsUnavailable);
+            ? messageProperties::getNotificationsDeliveryPaused
+            : messageProperties::getNotificationsUnavailable);
     return false;
   }
 
@@ -385,7 +383,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     clearValidation();
     preview = null;
     if (previewArea.isVisible()) {
-      previewStatus.setText(texts.getNotificationsPreviewNeedsReview());
+      previewStatus.setText(messageProperties.getNotificationsPreviewNeedsReview());
       previewStatus.addComponentAtIndex(0, decorativeIcon(AppIcon.BELL));
       previewStatus.getElement().setAttribute(DATA_STATE, "warning");
       previewStatus.setVisible(true);
@@ -421,7 +419,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
             ? eligibleTargets.isEmpty()
             : targets.getSelectedItems().isEmpty();
     if (noRecipients) {
-      markRecipientError(texts.getNotificationsNoRecipients());
+      markRecipientError(messageProperties.getNotificationsNoRecipients());
     }
     if (title.isInvalid() || body.isInvalid() || noRecipients) {
       previewValidationFeedback();
@@ -433,8 +431,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private void previewValidationFeedback() {
     NotificationHelper.getInstance()
         .showNotification(
-            texts::getNotificationsPreviewFailedTitle,
-            texts::getNotificationsPreviewFailedMessage,
+            messageProperties::getNotificationsPreviewFailedTitle,
+            messageProperties::getNotificationsPreviewFailedMessage,
             NotificationHelper.NotificationType.ERROR);
   }
 
@@ -474,8 +472,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
               || rejected.problem() == UserNotificationService.Problem.RECIPIENTS_CHANGED)) {
         markRecipientError(
             rejected.problem() == UserNotificationService.Problem.NO_RECIPIENTS
-                ? texts.getNotificationsNoRecipients()
-                : texts.getNotificationsRecipientsChanged());
+                ? messageProperties.getNotificationsNoRecipients()
+                : messageProperties.getNotificationsRecipientsChanged());
         previewValidationFeedback();
       } else {
         handle(failure);
@@ -509,23 +507,28 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     targets.getParent().ifPresent(wrapper -> wrapper.setVisible(!all));
     refreshRecipientSummary();
     everyoneRecipients.setVisible(all);
-    everyoneRecipients.setValue(texts.getNotificationsEveryonePlaceholder(eligibleTargets.size()));
+    everyoneRecipients.setValue(
+        messageProperties.getNotificationsEveryonePlaceholder(eligibleTargets.size()));
     targets.setPlaceholder(
         all
-            ? texts.getNotificationsEveryonePlaceholder(eligibleTargets.size())
-            : texts.getNotificationsSelectRecipients());
+            ? messageProperties.getNotificationsEveryonePlaceholder(eligibleTargets.size())
+            : messageProperties.getNotificationsSelectRecipients());
   }
 
   private void refreshRecipientSummary() {
     recipientSummary.setText(
-        texts.getNotificationsSelectedUsers(targets.getSelectedItems().size()));
+        messageProperties.getNotificationsSelectedUsers(targets.getSelectedItems().size()));
   }
 
   private void renderPreview() {
     previewArea.removeAll();
-    previewArea.getElement().setAttribute("aria-label", texts.getNotificationsReviewedPreview());
+    previewArea
+        .getElement()
+        .setAttribute("aria-label", messageProperties.getNotificationsReviewedPreview());
     Div previewHeading =
-        new Div(decorativeIcon(AppIcon.MESSAGE), new Span(texts.getNotificationsContentPreview()));
+        new Div(
+            decorativeIcon(AppIcon.MESSAGE),
+            new Span(messageProperties.getNotificationsContentPreview()));
     previewHeading.addClassName("admin-notification-preview-heading");
     Div previewHeader = new Div(previewHeading, previewStatus);
     previewHeader.addClassName("cosmos-notification-compose-preview-header");
@@ -536,19 +539,20 @@ public class AdminUserNotificationsSection extends VerticalLayout {
             .filter(t -> selected.contains(t.id()))
             .toList();
     Span recipientLabel =
-        new Span(decorativeIcon(AppIcon.USERS), new Span(texts.getNotificationsRecipients()));
+        new Span(
+            decorativeIcon(AppIcon.USERS),
+            new Span(messageProperties.getNotificationsRecipients()));
     recipientLabel.addClassName("admin-notification-preview-recipient-label");
     Div chips = new Div(recipientLabel);
     chips.addClassName("cosmos-notification-compose-recipients");
     selectedTargets.stream()
         .limit(3)
-        .forEach(
-            t -> {
-              Avatar avatar = new Avatar(t.name());
-              avatar.addThemeVariants(AvatarVariant.LUMO_XSMALL);
-              avatar.getElement().setAttribute("title", t.name() + " · " + t.email());
-              chips.add(avatar);
-            });
+        .forEach(t -> {
+          Avatar avatar = new Avatar(t.name());
+          avatar.addThemeVariants(AvatarVariant.LUMO_XSMALL);
+          avatar.getElement().setAttribute("title", t.name() + " · " + t.email());
+          chips.add(avatar);
+        });
     if (selectedTargets.size() > 3) {
       Span moreRecipients = new Span("+" + (selectedTargets.size() - 3));
       moreRecipients.addClassName("cosmos-notification-compose-recipient-more");
@@ -563,7 +567,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     details.addClassName("cosmos-notification-compose-details");
     details.setOpened(false);
     Button detailsButton =
-        new Button(texts.getNotificationsRecipientDetails(), AppIcon.ANGLE_DOWN.create());
+        new Button(
+            messageProperties.getNotificationsRecipientDetails(), AppIcon.ANGLE_DOWN.create());
     detailsButton.setId("admin-notifications-preview-details");
     detailsButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     detailsButton.addClassName("cosmos-notification-compose-details-toggle");
@@ -571,15 +576,13 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     detailsButton.getElement().setAttribute("aria-controls", details.getId().orElseThrow());
     detailsButton.getElement().setAttribute(ARIA_EXPANDED, "false");
     detailsButton.addClickListener(e -> details.setOpened(!details.isOpened()));
-    details.addOpenedChangeListener(
-        e -> {
-          detailsButton.setIcon(
-              e.isOpened() ? AppIcon.ANGLE_UP.create() : AppIcon.ANGLE_DOWN.create());
-          detailsButton.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(e.isOpened()));
-        });
+    details.addOpenedChangeListener(e -> {
+      detailsButton.setIcon(e.isOpened() ? AppIcon.ANGLE_UP.create() : AppIcon.ANGLE_DOWN.create());
+      detailsButton.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(e.isOpened()));
+    });
     chips.add(detailsButton);
 
-    Span source = new Span(texts.getNotificationsSourceAdministration());
+    Span source = new Span(messageProperties.getNotificationsSourceAdministration());
     source.addClassNames("cosmos-notification-preview-source", "portal-notification-source-admin");
     Span time =
         new Span(UserNotificationTexts.time(java.time.Instant.now(), UI.getCurrent().getLocale()));
@@ -596,7 +599,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     previewArea.add(previewHeader, messagePreview, chips, details);
     emptyPreview.setVisible(false);
     previewArea.setVisible(true);
-    previewStatus.setText(texts.getNotificationsPreviewUpdated());
+    previewStatus.setText(messageProperties.getNotificationsPreviewUpdated());
     previewStatus.addComponentAtIndex(0, decorativeIcon(AppIcon.CHECK));
     previewStatus.getElement().setAttribute(DATA_STATE, "success");
     previewStatus.setVisible(true);
@@ -618,8 +621,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
       page = 0;
       NotificationHelper.getInstance()
           .showNotification(
-              texts::getBaseSuccessTitle,
-              texts::getNotificationsSent,
+              messageProperties::getBaseSuccessTitle,
+              messageProperties::getNotificationsSent,
               NotificationHelper.NotificationType.SUCCESS);
       loadHistory();
     } catch (RuntimeException failure) {
@@ -635,30 +638,30 @@ public class AdminUserNotificationsSection extends VerticalLayout {
       switch (rejected.problem()) {
         case INVALID_DRAFT -> {
           invalidatePreview();
-          feedback(texts::getNotificationsInvalidDraft);
+          feedback(messageProperties::getNotificationsInvalidDraft);
         }
         case NO_RECIPIENTS -> {
           invalidatePreview();
-          feedback(texts::getNotificationsNoRecipients);
+          feedback(messageProperties::getNotificationsNoRecipients);
         }
         case RECIPIENTS_CHANGED -> {
           invalidatePreview();
-          feedback(texts::getNotificationsRecipientsChanged);
+          feedback(messageProperties::getNotificationsRecipientsChanged);
         }
         case DELIVERY_PAUSED -> {
           invalidatePreview();
           refreshDeliveryState();
-          feedback(texts::getNotificationsDeliveryPaused);
+          feedback(messageProperties::getNotificationsDeliveryPaused);
         }
         case REQUEST_CONFLICT -> {
           invalidatePreview();
-          feedback(texts::getNotificationsRequestConflict);
+          feedback(messageProperties::getNotificationsRequestConflict);
         }
       }
     } else {
       LoggerFactory.getLogger(getClass())
           .warn("Admin notification action failed", safeFailure(failure));
-      feedback(texts::getNotificationsUnavailable);
+      feedback(messageProperties::getNotificationsUnavailable);
     }
   }
 
@@ -676,12 +679,12 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     }
     history.removeAll();
     if (result.isEmpty()) {
-      history.add(new NotificationEmptyState(texts.getNotificationsSentEmpty()));
+      history.add(new NotificationEmptyState(messageProperties.getNotificationsSentEmpty()));
     }
     for (Sent item : result) {
       history.add(sentRow(item));
     }
-    historyCount.setText(texts.getNotificationsHistoryCount(result.getTotalElements()));
+    historyCount.setText(messageProperties.getNotificationsHistoryCount(result.getTotalElements()));
     historyPagination.showPage(page, Math.toIntExact(result.getTotalElements()), historyPageSize);
   }
 
@@ -694,45 +697,49 @@ public class AdminUserNotificationsSection extends VerticalLayout {
         new Span(
             UserNotificationTexts.time(item.createdAt(), UI.getCurrent().getLocale())
                 + " · "
-                + texts.getNotificationsHistoryRecipients(item.recipientCount()));
+                + messageProperties.getNotificationsHistoryRecipients(item.recipientCount()));
     metadata.addClassName("cosmos-notification-sent-meta");
     Div sentHeading = new Div(subject, metadata);
     sentHeading.addClassName("cosmos-notification-sent-heading");
     Span status =
-        new Span(decorativeIcon(AppIcon.CHECK), new Span(texts.getNotificationsSentStatus()));
+        new Span(
+            decorativeIcon(AppIcon.CHECK),
+            new Span(messageProperties.getNotificationsSentStatus()));
     status.getElement().setAttribute("theme", "badge success");
     status.addClassName("cosmos-notification-sent-status");
     Div content = new Div();
     content.setText(item.body());
     content.addClassNames("cosmos-notification-body", "cosmos-notification-sent-body");
     Div contentHeading =
-        new Div(decorativeIcon(AppIcon.MESSAGE), new Span(texts.getNotificationsMessageContent()));
+        new Div(
+            decorativeIcon(AppIcon.MESSAGE),
+            new Span(messageProperties.getNotificationsMessageContent()));
     contentHeading.addClassName("admin-history-content-heading");
     Div deliveryNote =
         new Div(
-            new Span(texts.getNotificationsHistoryDelivery()),
-            new Span(texts.getNotificationsHistoryImmutableLog()));
+            new Span(messageProperties.getNotificationsHistoryDelivery()),
+            new Span(messageProperties.getNotificationsHistoryImmutableLog()));
     deliveryNote.addClassName("admin-history-note");
     Div detailContent = new Div(contentHeading, content, deliveryNote);
     detailContent.addClassName("cosmos-notification-sent-content");
     Details details = new Details("", detailContent);
     details.setId("admin-notifications-sent-detail-" + item.id());
     details.addClassName("cosmos-notification-sent-details");
-    Button toggle = new Button(texts.getNotificationsHistoryDetails(), AppIcon.ANGLE_DOWN.create());
+    Button toggle =
+        new Button(messageProperties.getNotificationsHistoryDetails(), AppIcon.ANGLE_DOWN.create());
     toggle.setIconAfterText(true);
     toggle.addClassName("cosmos-notification-sent-toggle");
     toggle.getElement().setAttribute("aria-controls", details.getId().orElseThrow());
     toggle.getElement().setAttribute(ARIA_EXPANDED, "false");
-    toggle.setAriaLabel(texts.getNotificationsRecipientDetails() + ": " + item.title());
+    toggle.setAriaLabel(messageProperties.getNotificationsRecipientDetails() + ": " + item.title());
     toggle.addClickListener(e -> details.setOpened(!details.isOpened()));
-    details.addOpenedChangeListener(
-        e -> {
-          String label = texts.getNotificationsHistoryDetails();
-          toggle.setText(label);
-          toggle.setAriaLabel(label + ": " + item.title());
-          toggle.setIcon(e.isOpened() ? AppIcon.ANGLE_UP.create() : AppIcon.ANGLE_DOWN.create());
-          toggle.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(e.isOpened()));
-        });
+    details.addOpenedChangeListener(e -> {
+      String label = messageProperties.getNotificationsHistoryDetails();
+      toggle.setText(label);
+      toggle.setAriaLabel(label + ": " + item.title());
+      toggle.setIcon(e.isOpened() ? AppIcon.ANGLE_UP.create() : AppIcon.ANGLE_DOWN.create());
+      toggle.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(e.isOpened()));
+    });
     Div actions = new Div(status, toggle);
     actions.addClassName("cosmos-notification-sent-actions");
     Div row = new Div(icon, sentHeading, actions, details);
@@ -741,35 +748,38 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
-    breadcrumb.setText(texts.getAdminHeaderTitle() + " / " + texts.getNotificationsTitle());
-    pageTitle.setText(texts.getNotificationsTitle());
-    pageDescription.setText(texts.getNotificationsAdminPageDescription());
-    emptyPreviewText.setText(texts.getNotificationsPreview());
-    previewTitle.setText(texts.getNotificationsPreviewTitle());
-    previewDescription.setText(texts.getNotificationsReviewAgain());
-    beforeSend.setText(texts.getNotificationsBeforeSendHint());
-    heading.setText(texts.getNotificationsComposeTitle());
-    deliveryLabel.setText(texts.getNotificationsInternal());
+    breadcrumb.setText(
+        messageProperties.getAdminHeaderTitle()
+            + " / "
+            + messageProperties.getNotificationsTitle());
+    pageTitle.setText(messageProperties.getNotificationsTitle());
+    pageDescription.setText(messageProperties.getNotificationsAdminPageDescription());
+    emptyPreviewText.setText(messageProperties.getNotificationsPreview());
+    previewTitle.setText(messageProperties.getNotificationsPreviewTitle());
+    previewDescription.setText(messageProperties.getNotificationsReviewAgain());
+    beforeSend.setText(messageProperties.getNotificationsBeforeSendHint());
+    heading.setText(messageProperties.getNotificationsComposeTitle());
+    deliveryLabel.setText(messageProperties.getNotificationsInternal());
     refreshDeliveryState();
-    deliveryInfo.setText(texts.getNotificationsDeliveryInfo());
-    everyoneHint.setText(texts.getNotificationsEveryoneHint());
+    deliveryInfo.setText(messageProperties.getNotificationsDeliveryInfo());
+    everyoneHint.setText(messageProperties.getNotificationsEveryoneHint());
     refreshCounters();
     refreshRecipientField();
-    description.setText(texts.getNotificationsAdminDescription());
-    everyoneCaption.setText(texts.getNotificationsEveryone());
-    targets.setLabel(texts.getNotificationsRecipients());
-    everyoneRecipients.setLabel(texts.getNotificationsRecipients());
-    title.setLabel(texts.getNotificationsSubject());
-    body.setLabel(texts.getNotificationsBody());
-    targets.setErrorMessage(texts.getNotificationsNoRecipients());
-    everyoneRecipients.setErrorMessage(texts.getNotificationsNoRecipients());
-    title.setErrorMessage(texts.getNotificationsInvalidSubject());
-    body.setErrorMessage(texts.getNotificationsInvalidBody());
-    previewButton.setText(texts.getNotificationsPreview());
-    send.setText(texts.getNotificationsSend());
-    hint.setText(texts.getNotificationsRecheckHint());
-    historyTitle.setText(texts.getNotificationsSentHistory());
-    historyDescription.setText(texts.getNotificationsHistoryDescription());
+    description.setText(messageProperties.getNotificationsAdminDescription());
+    everyoneCaption.setText(messageProperties.getNotificationsEveryone());
+    targets.setLabel(messageProperties.getNotificationsRecipients());
+    everyoneRecipients.setLabel(messageProperties.getNotificationsRecipients());
+    title.setLabel(messageProperties.getNotificationsSubject());
+    body.setLabel(messageProperties.getNotificationsBody());
+    targets.setErrorMessage(messageProperties.getNotificationsNoRecipients());
+    everyoneRecipients.setErrorMessage(messageProperties.getNotificationsNoRecipients());
+    title.setErrorMessage(messageProperties.getNotificationsInvalidSubject());
+    body.setErrorMessage(messageProperties.getNotificationsInvalidBody());
+    previewButton.setText(messageProperties.getNotificationsPreview());
+    send.setText(messageProperties.getNotificationsSend());
+    hint.setText(messageProperties.getNotificationsRecheckHint());
+    historyTitle.setText(messageProperties.getNotificationsSentHistory());
+    historyDescription.setText(messageProperties.getNotificationsHistoryDescription());
     historyPagination.refreshTexts();
     if (isAttached()) {
       clearPreview();

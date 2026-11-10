@@ -16,7 +16,7 @@ import jakarta.servlet.http.HttpSession;
 
 /** Keine Request-Proxys auf Push-Threads: die beim Attach gebundene Sitzung wird frisch geprüft. */
 public class UserNotificationBell extends Div {
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final transient UserNotificationService service;
   private final Button target;
   private final Span count = new Span();
@@ -31,11 +31,11 @@ public class UserNotificationBell extends Div {
   }
 
   public UserNotificationBell(
-      MessageProperties texts,
+      MessageProperties messageProperties,
       UserNotificationService service,
       HttpServletRequest request,
       Button target) {
-    this.texts = texts;
+    this.messageProperties = messageProperties;
     this.service = service;
     this.target = target;
     addClassName("cosmos-notification-bell");
@@ -53,61 +53,55 @@ public class UserNotificationBell extends Div {
     popover.setPosition(PopoverPosition.BOTTOM_END);
     popover.getThemeNames().add("cosmos");
     popover.getThemeNames().add("cosmos-notifications");
-    popover.setAriaLabel(texts.getNotificationsTitle());
-    popover.addOpenedChangeListener(
-        e -> {
-          if (e.isOpened()) {
-            refresh();
-          }
-        });
-    addAttachListener(
-        event -> {
-          session = request.getSession(false);
-          panel = new UserNotificationsPanel(texts, service, session, true);
-          if (referenceStyle) {
-            panel.addClassName(REFERENCE_OVERLAY);
-          }
-          panel.setCloseAction(popover::close);
-          panel.setDetailOpenListener(
-              open -> {
-                popover.setCloseOnOutsideClick(!open);
-                popover.setCloseOnEsc(!open);
-              });
-          popover.removeAll();
-          popover.add(panel);
-          try {
-            Long owner = service.ownerId(session);
-            registration =
-                service
-                    .events()
-                    .register(
-                        ids -> {
-                          if (!ids.contains(owner)) {
-                            return;
-                          }
-                          event
-                              .getUI()
-                              .access(
-                                  () -> {
-                                    if (isAttached()) {
-                                      refresh();
-                                    }
-                                  });
-                        });
-          } catch (org.springframework.security.access.AccessDeniedException _) {
-            target.setEnabled(false);
-          }
-          refresh();
-        });
-    addDetachListener(
-        event -> {
-          if (registration != null) {
-            registration.remove();
-          }
-          registration = null;
-          session = null;
-          popover.close();
-        });
+    popover.setAriaLabel(messageProperties.getNotificationsTitle());
+    popover.addOpenedChangeListener(e -> {
+      if (e.isOpened()) {
+        refresh();
+      }
+    });
+    addAttachListener(event -> {
+      session = request.getSession(false);
+      panel = new UserNotificationsPanel(messageProperties, service, session, true);
+      if (referenceStyle) {
+        panel.addClassName(REFERENCE_OVERLAY);
+      }
+      panel.setCloseAction(popover::close);
+      panel.setDetailOpenListener(open -> {
+        popover.setCloseOnOutsideClick(!open);
+        popover.setCloseOnEsc(!open);
+      });
+      popover.removeAll();
+      popover.add(panel);
+      try {
+        Long owner = service.ownerId(session);
+        registration =
+            service
+                .events()
+                .register(ids -> {
+                  if (!ids.contains(owner)) {
+                    return;
+                  }
+                  event
+                      .getUI()
+                      .access(() -> {
+                        if (isAttached()) {
+                          refresh();
+                        }
+                      });
+                });
+      } catch (org.springframework.security.access.AccessDeniedException _) {
+        target.setEnabled(false);
+      }
+      refresh();
+    });
+    addDetachListener(event -> {
+      if (registration != null) {
+        registration.remove();
+      }
+      registration = null;
+      session = null;
+      popover.close();
+    });
   }
 
   private boolean referenceStyle;
@@ -121,7 +115,7 @@ public class UserNotificationBell extends Div {
   }
 
   public void refreshTexts() {
-    popover.setAriaLabel(texts.getNotificationsTitle());
+    popover.setAriaLabel(messageProperties.getNotificationsTitle());
     if (panel != null) {
       panel.refreshTexts();
     }
@@ -137,7 +131,7 @@ public class UserNotificationBell extends Div {
       target.setEnabled(true);
       count.setVisible(unread > 0);
       count.setText(unread > 99 ? "99+" : Long.toString(unread));
-      target.setAriaLabel(texts.getNotificationsTitle() + " (" + unread + ")");
+      target.setAriaLabel(messageProperties.getNotificationsTitle() + " (" + unread + ")");
       if (popover.isOpened() && panel != null) {
         panel.refresh();
       }

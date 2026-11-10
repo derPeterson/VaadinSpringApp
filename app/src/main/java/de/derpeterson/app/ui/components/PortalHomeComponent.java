@@ -15,7 +15,7 @@ import de.derpeterson.app.views.UserNotificationsView;
 
 /** Abgenommener Startseitenausblick mit echten Kontozugängen und echtem Ungelesenzähler. */
 public class PortalHomeComponent extends Div {
-  private final MessageProperties texts;
+  private final MessageProperties messageProperties;
   private final Span kicker = new Span();
   private final H2 welcome = new H2();
   private final Span welcomeText = new Span();
@@ -25,8 +25,8 @@ public class PortalHomeComponent extends Div {
   private final Button notifications = new Button();
   private final Button account = new Button();
 
-  public PortalHomeComponent(MessageProperties texts) {
-    this.texts = texts;
+  public PortalHomeComponent(MessageProperties messageProperties) {
+    this.messageProperties = messageProperties;
     addClassNames("portal-home-page", "portal-home-card");
     kicker.addClassName("portal-home-kicker");
     Span dot = new Span(".");
@@ -71,11 +71,11 @@ public class PortalHomeComponent extends Div {
   }
 
   public void refreshTexts() {
-    kicker.setText(texts.getPortalHomeKicker());
-    welcomeText.setText(texts.getPortalHomeWelcome());
-    description.setText(texts.getPortalHomeDescription());
-    notice.setText(texts.getPortalHomeNotice());
-    notifications.setText(texts.getNotificationsTitle());
-    account.setText(texts.getBaseManageAccountButton());
+    kicker.setText(messageProperties.getPortalHomeKicker());
+    welcomeText.setText(messageProperties.getPortalHomeWelcome());
+    description.setText(messageProperties.getPortalHomeDescription());
+    notice.setText(messageProperties.getPortalHomeNotice());
+    notifications.setText(messageProperties.getNotificationsTitle());
+    account.setText(messageProperties.getBaseManageAccountButton());
   }
 }

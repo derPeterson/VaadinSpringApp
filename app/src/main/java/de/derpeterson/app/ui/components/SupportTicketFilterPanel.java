@@ -28,7 +28,7 @@ import de.derpeterson.app.service.SupportTicketService.Ticket;
 
 /** Nativer Filterentwurf; erst Anwenden übernimmt ihn in die berechtigte Datenbankabfrage. */
 public final class SupportTicketFilterPanel extends AdminSidePanel {
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final ItemLabelGenerator<Status> statusLabels;
   private final CheckboxGroup<Status> statuses = new CheckboxGroup<>();
   private final RadioButtonGroup<Assignment> assignment = new RadioButtonGroup<>();
@@ -43,12 +43,12 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
   private SupportTicketFilter applied = SupportTicketFilter.ALL;
 
   public SupportTicketFilterPanel(
-      MessageProperties texts,
+      MessageProperties messageProperties,
       ItemLabelGenerator<Status> statusLabels,
       SerializableRunnable onApply,
       SerializablePredicate<String> onJump) {
-    super(texts, AppIcon.FILTER);
-    this.texts = texts;
+    super(messageProperties, AppIcon.FILTER);
+    this.messageProperties = messageProperties;
     this.statusLabels = statusLabels;
     setId("support-filter-panel");
     addClassNames("admin-user-filter-drawer", "support-filter-drawer");
@@ -73,12 +73,11 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     fields.setWidthFull();
     fields.addClassName("admin-user-filters");
     reset.setId("support-filter-reset");
-    reset.addClickListener(
-        event -> {
-          statuses.clear();
-          assignment.setValue(Assignment.ALL);
-          reading.setValue(Reading.ALL);
-        });
+    reset.addClickListener(event -> {
+      statuses.clear();
+      assignment.setValue(Assignment.ALL);
+      reading.setValue(Reading.ALL);
+    });
     reset.addClassNames(CosmosClasses.DELETE_BUTTON, "admin-user-filter-reset");
     draftCount.addClassName("admin-user-active-filter-count");
     draftCount.setId("support-filter-draft-count");
@@ -97,23 +96,22 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     ticketNumber.setMaxLength(20);
     ticketNumber.setManualValidation(true);
     jump.setId("support-jump");
-    jump.addClickListener(
-        event -> {
-          if (ticketNumber.isEmpty()) {
-            ticketNumber.setInvalid(true);
-            NotificationHelper.getInstance()
-                .showNotification(
-                    texts::getBaseFailedTitle,
-                    texts::getBaseValidationRequiredMessage,
-                    NotificationHelper.NotificationType.ERROR);
-            ticketNumber.focus();
-            return;
-          }
-          ticketNumber.setInvalid(false);
-          if (onJump.test(ticketNumber.getValue())) {
-            close();
-          }
-        });
+    jump.addClickListener(event -> {
+      if (ticketNumber.isEmpty()) {
+        ticketNumber.setInvalid(true);
+        NotificationHelper.getInstance()
+            .showNotification(
+                messageProperties::getBaseFailedTitle,
+                messageProperties::getBaseValidationRequiredMessage,
+                NotificationHelper.NotificationType.ERROR);
+        ticketNumber.focus();
+        return;
+      }
+      ticketNumber.setInvalid(false);
+      if (onJump.test(ticketNumber.getValue())) {
+        close();
+      }
+    });
     HorizontalLayout jumpRow = new HorizontalLayout(ticketNumber, jump);
     jumpRow.setPadding(false);
     jumpRow.setSpacing(false);
@@ -129,14 +127,13 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     cancel.addClickListener(event -> close());
     apply.setId("support-filter-apply");
     apply.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    apply.addClickListener(
-        event -> {
-          applied =
-              new SupportTicketFilter(
-                  statuses.getValue(), assignment.getValue(), reading.getValue(), null);
-          onApply.run();
-          close();
-        });
+    apply.addClickListener(event -> {
+      applied =
+          new SupportTicketFilter(
+              statuses.getValue(), assignment.getValue(), reading.getValue(), null);
+      onApply.run();
+      close();
+    });
     HorizontalLayout actions = new HorizontalLayout(cancel, apply);
     actions.setPadding(false);
     actions.setSpacing(false);
@@ -183,38 +180,37 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
   }
 
   public void refreshTexts() {
-    setHeading(texts.getAdminUsersFilterPanelTitle());
-    setDescription(texts.getSupportFilterDescription());
-    refreshCloseText(texts);
-    statuses.setLabel(texts.getSupportFilterStatus());
+    setHeading(messageProperties.getAdminUsersFilterPanelTitle());
+    setDescription(messageProperties.getSupportFilterDescription());
+    refreshCloseText(messageProperties);
+    statuses.setLabel(messageProperties.getSupportFilterStatus());
     statuses.setItemLabelGenerator(statusLabels);
     statuses.setRenderer(
-        new ComponentRenderer<>(
-            status -> {
-              Span label = new Span(statusLabels.apply(status));
-              label.getElement().setAttribute("data-status", status.name());
-              return label;
-            }));
-    assignment.setLabel(texts.getSupportFilterAssignment());
-    assignment.setItemLabelGenerator(
-        value ->
-            switch (value) {
-              case ALL -> texts.getAdminUsersFilterAll();
-              case MINE -> texts.getSupportFilterMine();
-              case UNASSIGNED -> texts.getSupportUnassigned();
-            });
-    reading.setLabel(texts.getSupportFilterMessages());
-    reading.setItemLabelGenerator(
-        value ->
-            value == Reading.ALL ? texts.getAdminUsersFilterAll() : texts.getNotificationsUnread());
-    ticketNumber.setLabel(texts.getSupportJumpTicketNumber());
-    ticketNumber.setPlaceholder(texts.getSupportJumpTicketNumberPlaceholder());
-    jumpHint.setText(texts.getSupportJumpTicketNumberHint());
-    jump.setText(texts.getSupportJumpOpen());
+        new ComponentRenderer<>(status -> {
+          Span label = new Span(statusLabels.apply(status));
+          label.getElement().setAttribute("data-status", status.name());
+          return label;
+        }));
+    assignment.setLabel(messageProperties.getSupportFilterAssignment());
+    assignment.setItemLabelGenerator(value ->
+        switch (value) {
+          case ALL -> messageProperties.getAdminUsersFilterAll();
+          case MINE -> messageProperties.getSupportFilterMine();
+          case UNASSIGNED -> messageProperties.getSupportUnassigned();
+        });
+    reading.setLabel(messageProperties.getSupportFilterMessages());
+    reading.setItemLabelGenerator(value ->
+        value == Reading.ALL
+            ? messageProperties.getAdminUsersFilterAll()
+            : messageProperties.getNotificationsUnread());
+    ticketNumber.setLabel(messageProperties.getSupportJumpTicketNumber());
+    ticketNumber.setPlaceholder(messageProperties.getSupportJumpTicketNumberPlaceholder());
+    jumpHint.setText(messageProperties.getSupportJumpTicketNumberHint());
+    jump.setText(messageProperties.getSupportJumpOpen());
     refreshDraftCount();
-    reset.setText(texts.getAdminUsersClearFilters());
-    cancel.setText(texts.getAdminUsersCancel());
-    apply.setText(texts.getAdminUsersApplyFilters());
+    reset.setText(messageProperties.getAdminUsersClearFilters());
+    cancel.setText(messageProperties.getAdminUsersCancel());
+    apply.setText(messageProperties.getAdminUsersApplyFilters());
   }
 
   private void refreshDraftCount() {
@@ -222,6 +218,6 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
         (statuses.isEmpty() ? 0 : 1)
             + (assignment.getValue() == Assignment.ALL ? 0 : 1)
             + (reading.getValue() == Reading.ALL ? 0 : 1);
-    draftCount.setText(texts.getAdminUsersActiveFilterCount(count));
+    draftCount.setText(messageProperties.getAdminUsersActiveFilterCount(count));
   }
 }

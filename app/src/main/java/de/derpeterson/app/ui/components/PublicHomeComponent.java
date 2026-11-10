@@ -16,7 +16,7 @@ import de.derpeterson.app.views.RegistrationView;
 
 /** Öffentlicher Startseitenausblick mit demselben lokal gesicherten Kosmosmotiv. */
 public class PublicHomeComponent extends Div {
-  public PublicHomeComponent(MessageProperties texts) {
+  public PublicHomeComponent(MessageProperties messageProperties) {
     addClassNames("portal-home-page", "portal-home-card", "public-home");
     Span kicker = new Span();
     kicker.addClassName("portal-home-kicker");
@@ -52,12 +52,12 @@ public class PublicHomeComponent extends Div {
     add(layout, footer);
     Runnable translate =
         () -> {
-          kicker.setText(texts.getPublicHomeKicker());
-          welcome.setText(texts.getPortalHomeWelcome());
-          description.setText(texts.getPublicHomeDescription());
-          notice.setText(texts.getPortalHomeNotice());
-          login.setText(texts.getBaseLoginButton());
-          register.setText(texts.getBaseRegistrationButton());
+          kicker.setText(messageProperties.getPublicHomeKicker());
+          welcome.setText(messageProperties.getPortalHomeWelcome());
+          description.setText(messageProperties.getPublicHomeDescription());
+          notice.setText(messageProperties.getPortalHomeNotice());
+          login.setText(messageProperties.getBaseLoginButton());
+          register.setText(messageProperties.getBaseRegistrationButton());
         };
     translate.run();
     ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());

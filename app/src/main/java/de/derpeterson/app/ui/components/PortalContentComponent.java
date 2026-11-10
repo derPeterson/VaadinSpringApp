@@ -14,18 +14,22 @@ public class PortalContentComponent extends PortalPageComponent {
   private final AccountAvatarDialog avatarDialog;
 
   public PortalContentComponent(
-      MessageProperties texts,
+      MessageProperties messageProperties,
       UserEntity user,
       AppRoute route,
       Component heading,
       Component content,
       UserAvatarService avatars,
       HttpServletRequest request) {
-    avatarDialog = new AccountAvatarDialog(texts, user);
+    avatarDialog = new AccountAvatarDialog(messageProperties, user);
     avatarDialog.configure(avatars, request);
     sidebar =
         new PortalSidebarComponent(
-            texts, user, route, PortalSidebarComponent.accountLinks(texts), avatarDialog::open);
+            messageProperties,
+            user,
+            route,
+            PortalSidebarComponent.accountLinks(messageProperties),
+            avatarDialog::open);
     sidebar.configureAvatars(avatars);
     setPortalContent(heading, sidebar, content);
     add(avatarDialog);

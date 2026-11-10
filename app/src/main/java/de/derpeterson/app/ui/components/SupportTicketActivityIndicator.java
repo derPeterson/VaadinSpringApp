@@ -13,7 +13,7 @@ import jakarta.servlet.http.HttpSession;
 
 /** Zeigt dieselben relevanten ungelesenen Nachrichten wie die administrative Vorgangsliste. */
 public final class SupportTicketActivityIndicator extends Badge {
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final transient SupportTicketService service;
   private final Tooltip tooltip;
   private transient HttpSession session;
@@ -21,11 +21,11 @@ public final class SupportTicketActivityIndicator extends Badge {
   private transient Registration registration;
 
   public SupportTicketActivityIndicator(
-      MessageProperties texts,
+      MessageProperties messageProperties,
       SupportTicketService service,
       HttpServletRequest request,
       SideNavItem navigation) {
-    this.texts = texts;
+    this.messageProperties = messageProperties;
     this.service = service;
     setId("admin-nav-support-activity");
     addClassName("admin-nav-support-activity");
@@ -34,38 +34,34 @@ public final class SupportTicketActivityIndicator extends Badge {
     navigation.setSuffixComponent(this);
     tooltip = Tooltip.forComponent(navigation);
     // Am stets angehängten Navigationseintrag registrieren, auch wenn der Punkt unsichtbar ist.
-    navigation.addAttachListener(
-        event -> {
-          HttpSession attachedSession = request.getSession(false);
-          session = attachedSession;
-          registration =
-              service
-                  .events()
-                  .register(
-                      change -> {
-                        if (!change.affects(viewerId, true)) {
-                          return;
-                        }
-                        event
-                            .getUI()
-                            .access(
-                                () -> {
-                                  if (navigation.isAttached() && session == attachedSession) {
-                                    refresh();
-                                  }
-                                });
-                      });
-          refresh();
-        });
-    navigation.addDetachListener(
-        event -> {
-          if (registration != null) {
-            registration.remove();
-            registration = null;
-          }
-          session = null;
-          viewerId = null;
-        });
+    navigation.addAttachListener(event -> {
+      HttpSession attachedSession = request.getSession(false);
+      session = attachedSession;
+      registration =
+          service
+              .events()
+              .register(change -> {
+                if (!change.affects(viewerId, true)) {
+                  return;
+                }
+                event
+                    .getUI()
+                    .access(() -> {
+                      if (navigation.isAttached() && session == attachedSession) {
+                        refresh();
+                      }
+                    });
+              });
+      refresh();
+    });
+    navigation.addDetachListener(event -> {
+      if (registration != null) {
+        registration.remove();
+        registration = null;
+      }
+      session = null;
+      viewerId = null;
+    });
   }
 
   private void refresh() {
@@ -81,7 +77,7 @@ public final class SupportTicketActivityIndicator extends Badge {
   }
 
   public void refreshTexts() {
-    String label = isVisible() ? texts.getSupportNewActivity() : "";
+    String label = isVisible() ? messageProperties.getSupportNewActivity() : "";
     tooltip.setText(label);
     getElement().setAttribute("aria-label", label);
   }

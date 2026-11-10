@@ -52,12 +52,12 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
 
   @org.springframework.beans.factory.annotation.Autowired
   void configureTwoFactor(
-      de.derpeterson.app.security.mfa.TwoFactorAuthorization authorization,
-      de.derpeterson.app.security.mfa.TwoFactorManagement management,
+      de.derpeterson.app.security.mfa.TwoFactorAuthorization twoFactorAuthorization,
+      de.derpeterson.app.security.mfa.TwoFactorManagement twoFactorManagement,
       HttpServletRequest request) {
     accountSettings.configureTwoFactor(
         new de.derpeterson.app.ui.components.TwoFactorAccountComponent(
-            messageProperties, authorization, management, request));
+            messageProperties, twoFactorAuthorization, twoFactorManagement, request));
   }
 
   public AccountView(
@@ -104,20 +104,19 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
     accountSettings.addSectionChangeListener(
         section -> UI.getCurrent().navigate(AccountView.class, section.queryParameters()));
     // Erst nach bestätigtem Commit den sichtbaren UI-Zustand und die Sitzungssprache ändern.
-    accountSettings.addProfileSavedListener(
-        saved -> {
-          currentUser.setFirstName(saved.firstName());
-          currentUser.setLastName(saved.lastName());
-          currentUser.setBirthDate(saved.birthDate());
-          currentUser.setGender(saved.gender());
-          currentUser.setPreferredLocale(saved.language());
-          currentUser.setVersion(saved.version());
-          userPopoverMenu.refreshProfileName();
-          refreshTrackedUserAvatar();
-          if (!saved.language().equals(VaadinSession.getCurrent().getLocale())) {
-            LanguageChangeEvent.fire(UI.getCurrent(), saved.language());
-          }
-        });
+    accountSettings.addProfileSavedListener(saved -> {
+      currentUser.setFirstName(saved.firstName());
+      currentUser.setLastName(saved.lastName());
+      currentUser.setBirthDate(saved.birthDate());
+      currentUser.setGender(saved.gender());
+      currentUser.setPreferredLocale(saved.language());
+      currentUser.setVersion(saved.version());
+      userPopoverMenu.refreshProfileName();
+      refreshTrackedUserAvatar();
+      if (!saved.language().equals(VaadinSession.getCurrent().getLocale())) {
+        LanguageChangeEvent.fire(UI.getCurrent(), saved.language());
+      }
+    });
     setPortalPage(header, accountSettings, config);
     configureExternalLogins(externalLogin, identities, request, messages);
   }

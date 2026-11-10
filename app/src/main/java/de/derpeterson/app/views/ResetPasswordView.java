@@ -88,70 +88,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     this.passwordResetService = passwordResetService;
 
     ComponentUtil.addListener(
-        UI.getCurrent(),
-        LanguageChangeEvent.class,
-        event -> {
-          VaadinSession.getCurrent().setLocale(event.getNewLocale());
-
-          Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
-          Optional.ofNullable(title)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicResetFormTitle));
-          Optional.ofNullable(passwordField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getResetPasswordNewPasswordField));
-          Optional.ofNullable(confirmPasswordField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getResetPasswordConfirmField));
-          Optional.ofNullable(resetButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicSavePasswordAction));
-          Optional.ofNullable(loginButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getBaseLoginButton));
-          Optional.ofNullable(homeButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getBaseHomeButton));
-          Optional.ofNullable(requestLinkButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicRequestNewLink));
-          Optional.ofNullable(successTitle)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getBaseSuccessTitle));
-          Optional.ofNullable(successText)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getResetPasswordSuccessMessage));
-          Optional.ofNullable(invalidTitle)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(component, this::linkProblemTitle));
-          Optional.ofNullable(invalidText)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(component, this::linkProblemText));
-
-          ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
-          updateInputPlaceholders();
-          NotificationHelper.getInstance().updateText();
-        });
+        UI.getCurrent(), LanguageChangeEvent.class, this::applyResetPageLanguage);
 
     getContent().setWidthFull();
     getContent().setPadding(false);
@@ -161,6 +98,58 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.RESET);
     mainContent = pageLayout.getCardContainer();
     add(pageLayout);
+  }
+
+  private void applyResetPageLanguage(LanguageChangeEvent event) {
+    VaadinSession.getCurrent().setLocale(event.getNewLocale());
+
+    Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
+    Optional.ofNullable(title)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getPublicResetFormTitle));
+    Optional.ofNullable(passwordField)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getResetPasswordNewPasswordField));
+    Optional.ofNullable(confirmPasswordField)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getResetPasswordConfirmField));
+    Optional.ofNullable(resetButton)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getPublicSavePasswordAction));
+    Optional.ofNullable(loginButton)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getBaseLoginButton));
+    Optional.ofNullable(homeButton)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getBaseHomeButton));
+    Optional.ofNullable(requestLinkButton)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getPublicRequestNewLink));
+    Optional.ofNullable(successTitle)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getBaseSuccessTitle));
+    Optional.ofNullable(successText)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getResetPasswordSuccessMessage));
+    Optional.ofNullable(invalidTitle)
+        .ifPresent(
+            component -> componentTranslationSupplierMap.put(component, this::linkProblemTitle));
+    Optional.ofNullable(invalidText)
+        .ifPresent(
+            component -> componentTranslationSupplierMap.put(component, this::linkProblemText));
+
+    ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+    updateInputPlaceholders();
+    NotificationHelper.getInstance().updateText();
   }
 
   @Override
@@ -204,57 +193,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
 
     this.resetButton =
         new Button(
-            messageProperties.getPublicSavePasswordAction(),
-            event -> {
-              if (!ValidationHelper.validateRequiredInputs(
-                  List.of(passwordField, confirmPasswordField), messageProperties)) {
-                return;
-              }
-
-              if (!ValidationHelper.validatePasswordSecureInputs(
-                  List.of(passwordField, confirmPasswordField), messageProperties)) {
-                return;
-              }
-
-              if (!ValidationHelper.validatePasswordConfirmInputs(
-                  passwordField, confirmPasswordField, messageProperties)) {
-                return;
-              }
-
-              try {
-                boolean success =
-                    passwordResetService.resetPassword(token, passwordField.getValue());
-                if (success) {
-                  showSuccessCard();
-                  NotificationHelper.getInstance()
-                      .showNotification(
-                          messageProperties::getBaseSuccessTitle,
-                          messageProperties::getResetPasswordSuccessMessage,
-                          -1,
-                          NotificationHelper.NotificationType.SUCCESS);
-                } else {
-                  linkState = passwordResetService.inspectToken(token);
-                  if (linkState == LinkState.VALID) {
-                    linkState = LinkState.INVALID;
-                  }
-                  invalidTokenCard();
-                  NotificationHelper.getInstance()
-                      .showNotification(
-                          messageProperties::getBaseFailedTitle,
-                          this::linkProblemText,
-                          -1,
-                          NotificationHelper.NotificationType.ERROR);
-                }
-              } catch (RuntimeException failure) {
-                logger.error("Password could not be reset", safeFailure(failure));
-                NotificationHelper.getInstance()
-                    .showNotification(
-                        messageProperties::getBaseFailedTitle,
-                        messageProperties::getResetPasswordTechnicalErrorMessage,
-                        -1,
-                        NotificationHelper.NotificationType.ERROR);
-              }
-            });
+            messageProperties.getPublicSavePasswordAction(), event -> submitPasswordReset(token));
     resetButton.setPrefixComponent(AppIcon.CHECK.create());
     resetButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     resetButton.setWidthFull();
@@ -276,6 +215,56 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
             actions);
 
     mainContent.add(cardComponent);
+  }
+
+  private void submitPasswordReset(String token) {
+    if (!ValidationHelper.validateRequiredInputs(
+        List.of(passwordField, confirmPasswordField), messageProperties)) {
+      return;
+    }
+
+    if (!ValidationHelper.validatePasswordSecureInputs(
+        List.of(passwordField, confirmPasswordField), messageProperties)) {
+      return;
+    }
+
+    if (!ValidationHelper.validatePasswordConfirmInputs(
+        passwordField, confirmPasswordField, messageProperties)) {
+      return;
+    }
+
+    try {
+      boolean success = passwordResetService.resetPassword(token, passwordField.getValue());
+      if (success) {
+        showSuccessCard();
+        NotificationHelper.getInstance()
+            .showNotification(
+                messageProperties::getBaseSuccessTitle,
+                messageProperties::getResetPasswordSuccessMessage,
+                -1,
+                NotificationHelper.NotificationType.SUCCESS);
+      } else {
+        linkState = passwordResetService.inspectToken(token);
+        if (linkState == LinkState.VALID) {
+          linkState = LinkState.INVALID;
+        }
+        invalidTokenCard();
+        NotificationHelper.getInstance()
+            .showNotification(
+                messageProperties::getBaseFailedTitle,
+                this::linkProblemText,
+                -1,
+                NotificationHelper.NotificationType.ERROR);
+      }
+    } catch (RuntimeException failure) {
+      logger.error("Password could not be reset", safeFailure(failure));
+      NotificationHelper.getInstance()
+          .showNotification(
+              messageProperties::getBaseFailedTitle,
+              messageProperties::getResetPasswordTechnicalErrorMessage,
+              -1,
+              NotificationHelper.NotificationType.ERROR);
+    }
   }
 
   private void showSuccessCard() {

@@ -69,7 +69,7 @@ public class UserNotificationsPanel extends Div {
   private static final String COSMOS_NOTIFICATION_BODY_CLASS = "cosmos-notification-body";
 
   private static final int PREVIEW_LIMIT = 5;
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final transient UserNotificationService service;
   private final transient HttpSession session;
   private final boolean compact;
@@ -110,17 +110,17 @@ public class UserNotificationsPanel extends Div {
   private final PortalConfirmationDialog confirmation;
 
   public UserNotificationsPanel(
-      MessageProperties texts,
+      MessageProperties messageProperties,
       UserNotificationService service,
       HttpSession session,
       boolean compact) {
-    this.texts = texts;
+    this.messageProperties = messageProperties;
     this.service = service;
     this.session = session;
     this.compact = compact;
     confirmation =
         new PortalConfirmationDialog(
-            texts,
+            messageProperties,
             compact ? "notifications-preview-confirmation" : "notifications-inbox-confirmation");
     confirmation.addClassName("portal-notification-confirmation");
     confirmation.addOpenedChangeListener(event -> notifyOverlayState());
@@ -143,13 +143,12 @@ public class UserNotificationsPanel extends Div {
     }
     add(confirmation);
     refreshTexts();
-    addDetachListener(
-        e -> {
-          confirmation.close();
-          if (detail != null) {
-            detail.close();
-          }
-        });
+    addDetachListener(e -> {
+      confirmation.close();
+      if (detail != null) {
+        detail.close();
+      }
+    });
   }
 
   private void configureReadFilter() {
@@ -157,33 +156,31 @@ public class UserNotificationsPanel extends Div {
     readFilter.setItems(List.of(ReadFilter.ALL, ReadFilter.UNREAD, ReadFilter.READ));
     readFilter.setItemLabelGenerator(this::filterLabel);
     readFilter.setRenderer(
-        new com.vaadin.flow.data.renderer.ComponentRenderer<>(
-            filter -> {
-              Span label = new Span(filterLabel(filter));
-              Span count = new Span();
-              count.addClassName("portal-filter-count");
-              count.getElement().setAttribute(ARIA_HIDDEN, "true");
-              long total = totalItems;
-              long unread = unreadIds.size();
-              count.setText(
-                  Long.toString(
-                      switch (filter) {
-                        case ALL -> total;
-                        case UNREAD -> unread;
-                        case READ -> Math.max(0, total - unread);
-                      }));
-              Div option = new Div(label, count);
-              option.addClassName("portal-read-filter-option");
-              return option;
-            }));
+        new com.vaadin.flow.data.renderer.ComponentRenderer<>(filter -> {
+          Span label = new Span(filterLabel(filter));
+          Span count = new Span();
+          count.addClassName("portal-filter-count");
+          count.getElement().setAttribute(ARIA_HIDDEN, "true");
+          long total = totalItems;
+          long unread = unreadIds.size();
+          count.setText(
+              Long.toString(
+                  switch (filter) {
+                    case ALL -> total;
+                    case UNREAD -> unread;
+                    case READ -> Math.max(0, total - unread);
+                  }));
+          Div option = new Div(label, count);
+          option.addClassName("portal-read-filter-option");
+          return option;
+        }));
     readFilter.setValue(ReadFilter.ALL);
-    readFilter.addValueChangeListener(
-        e -> {
-          if (!updatingFilterLabels) {
-            page = 0;
-            refresh();
-          }
-        });
+    readFilter.addValueChangeListener(e -> {
+      if (!updatingFilterLabels) {
+        page = 0;
+        refresh();
+      }
+    });
   }
 
   private void configureCommonActions() {
@@ -195,33 +192,28 @@ public class UserNotificationsPanel extends Div {
     dismissRead.addClickListener(e -> confirmDismissRead());
     refresh.addClickListener(e -> refresh(true));
     markAll.addClickListener(e -> confirmMarkAll());
-    previous.addClickListener(
-        e -> {
-          if (page > 0) {
-            page--;
-          }
-          refresh();
-        });
-    next.addClickListener(
-        e -> {
-          page++;
-          refresh();
-        });
-    history.addClickListener(
-        e -> {
-          closeAction.run();
-          UI.getCurrent().navigate(UserNotificationsView.class);
-        });
-    first.addClickListener(
-        e -> {
-          page = 0;
-          refresh();
-        });
-    last.addClickListener(
-        e -> {
-          page = Math.max(0, totalPages - 1);
-          refresh();
-        });
+    previous.addClickListener(e -> {
+      if (page > 0) {
+        page--;
+      }
+      refresh();
+    });
+    next.addClickListener(e -> {
+      page++;
+      refresh();
+    });
+    history.addClickListener(e -> {
+      closeAction.run();
+      UI.getCurrent().navigate(UserNotificationsView.class);
+    });
+    first.addClickListener(e -> {
+      page = 0;
+      refresh();
+    });
+    last.addClickListener(e -> {
+      page = Math.max(0, totalPages - 1);
+      refresh();
+    });
   }
 
   private void buildPreview(Div toolbar) {
@@ -286,11 +278,10 @@ public class UserNotificationsPanel extends Div {
     search.setClearButtonVisible(true);
     search.setMaxLength(UserNotificationService.TITLE_LIMIT);
     search.setValueChangeMode(ValueChangeMode.EAGER);
-    search.addValueChangeListener(
-        e -> {
-          page = 0;
-          refresh();
-        });
+    search.addValueChangeListener(e -> {
+      page = 0;
+      refresh();
+    });
     Div tools = new Div(refresh, markAll, dismissRead);
     tools.addClassName("cosmos-notification-inbox-tools");
     refresh.addClassName(COSMOS_NOTIFICATION_INBOX_TOOL_CLASS);
@@ -313,13 +304,12 @@ public class UserNotificationsPanel extends Div {
     pageSize.setValue(10);
     pageSize.setAllowCustomValue(false);
     pageSize.setWidth("64px");
-    pageSize.addValueChangeListener(
-        e -> {
-          if (e.getValue() != null) {
-            page = 0;
-            refresh();
-          }
-        });
+    pageSize.addValueChangeListener(e -> {
+      if (e.getValue() != null) {
+        page = 0;
+        refresh();
+      }
+    });
     Div summary = new Div(pageLabel, pageSize);
     pageTotal.addClassName("cosmos-notification-inbox-range");
     summary.addClassName("cosmos-notification-inbox-page-summary");
@@ -350,15 +340,17 @@ public class UserNotificationsPanel extends Div {
 
   public void refreshTexts() {
     confirmation.refreshTexts();
-    heading.setText(texts.getNotificationsTitle());
+    heading.setText(messageProperties.getNotificationsTitle());
     description.setText(
-        compact ? texts.getNotificationsDescription() : texts.getNotificationsInboxDescription());
-    totalLabel.setText(texts.getNotificationsTotal());
-    unreadLabel.setText(texts.getNotificationsUnread());
-    search.setPlaceholder(texts.getNotificationsSearch());
-    search.setAriaLabel(texts.getNotificationsSearch());
-    close.setAriaLabel(texts.getNotificationsClose());
-    readFilter.setAriaLabel(texts.getNotificationsFilter());
+        compact
+            ? messageProperties.getNotificationsDescription()
+            : messageProperties.getNotificationsInboxDescription());
+    totalLabel.setText(messageProperties.getNotificationsTotal());
+    unreadLabel.setText(messageProperties.getNotificationsUnread());
+    search.setPlaceholder(messageProperties.getNotificationsSearch());
+    search.setAriaLabel(messageProperties.getNotificationsSearch());
+    close.setAriaLabel(messageProperties.getNotificationsClose());
+    readFilter.setAriaLabel(messageProperties.getNotificationsFilter());
     updatingFilterLabels = true;
     try {
       ReadFilter selected = selectedFilter();
@@ -367,23 +359,23 @@ public class UserNotificationsPanel extends Div {
     } finally {
       updatingFilterLabels = false;
     }
-    refresh.setAriaLabel(texts.getNotificationsRefresh());
-    refresh.setTooltipText(texts.getNotificationsRefresh());
-    markAll.setAriaLabel(texts.getNotificationsMarkAll());
-    markAll.setTooltipText(texts.getNotificationsMarkAll());
-    dismissRead.setTooltipText(texts.getNotificationsDismissRead());
-    dismissRead.setAriaLabel(texts.getNotificationsDismissRead());
-    pageLabel.setText(texts.getAdminUsersPaginationPerPage());
-    pageSize.setAriaLabel(texts.getAdminUsersPaginationPerPage());
-    previous.setAriaLabel(texts.getNotificationsPrevious());
-    previous.setTooltipText(texts.getNotificationsPrevious());
-    next.setAriaLabel(texts.getNotificationsNext());
-    next.setTooltipText(texts.getNotificationsNext());
-    first.setAriaLabel(texts.getAdminUsersPaginationFirstPage());
-    first.setTooltipText(texts.getAdminUsersPaginationFirstPage());
-    last.setAriaLabel(texts.getAdminUsersPaginationLastPage());
-    last.setTooltipText(texts.getAdminUsersPaginationLastPage());
-    history.setText(texts.getNotificationsHistory());
+    refresh.setAriaLabel(messageProperties.getNotificationsRefresh());
+    refresh.setTooltipText(messageProperties.getNotificationsRefresh());
+    markAll.setAriaLabel(messageProperties.getNotificationsMarkAll());
+    markAll.setTooltipText(messageProperties.getNotificationsMarkAll());
+    dismissRead.setTooltipText(messageProperties.getNotificationsDismissRead());
+    dismissRead.setAriaLabel(messageProperties.getNotificationsDismissRead());
+    pageLabel.setText(messageProperties.getAdminUsersPaginationPerPage());
+    pageSize.setAriaLabel(messageProperties.getAdminUsersPaginationPerPage());
+    previous.setAriaLabel(messageProperties.getNotificationsPrevious());
+    previous.setTooltipText(messageProperties.getNotificationsPrevious());
+    next.setAriaLabel(messageProperties.getNotificationsNext());
+    next.setTooltipText(messageProperties.getNotificationsNext());
+    first.setAriaLabel(messageProperties.getAdminUsersPaginationFirstPage());
+    first.setTooltipText(messageProperties.getAdminUsersPaginationFirstPage());
+    last.setAriaLabel(messageProperties.getAdminUsersPaginationLastPage());
+    last.setTooltipText(messageProperties.getAdminUsersPaginationLastPage());
+    history.setText(messageProperties.getNotificationsHistory());
     refreshRetention();
     refreshPreviewHint();
     if (isAttached()) {
@@ -398,8 +390,8 @@ public class UserNotificationsPanel extends Div {
     OptionalInt days = service.retentionDays();
     retention.setText(
         days.isPresent()
-            ? texts.getNotificationsRetention(days.getAsInt())
-            : texts.getNotificationsRetentionUnlimited());
+            ? messageProperties.getNotificationsRetention(days.getAsInt())
+            : messageProperties.getNotificationsRetentionUnlimited());
   }
 
   private ReadFilter selectedFilter() {
@@ -408,18 +400,18 @@ public class UserNotificationsPanel extends Div {
 
   private String filterLabel(ReadFilter filter) {
     return switch (filter) {
-      case ALL -> texts.getNotificationsAll();
-      case READ -> texts.getNotificationsRead();
-      case UNREAD -> texts.getNotificationsUnread();
+      case ALL -> messageProperties.getNotificationsAll();
+      case READ -> messageProperties.getNotificationsRead();
+      case UNREAD -> messageProperties.getNotificationsUnread();
     };
   }
 
   private void refreshPreviewHint() {
     previewHint.setText(
         switch (selectedFilter()) {
-          case ALL -> texts.getNotificationsLatest(PREVIEW_LIMIT);
-          case READ -> texts.getNotificationsLatestRead(PREVIEW_LIMIT);
-          case UNREAD -> texts.getNotificationsLatestUnread(PREVIEW_LIMIT);
+          case ALL -> messageProperties.getNotificationsLatest(PREVIEW_LIMIT);
+          case READ -> messageProperties.getNotificationsLatestRead(PREVIEW_LIMIT);
+          case UNREAD -> messageProperties.getNotificationsLatestUnread(PREVIEW_LIMIT);
         });
     if (compact) {
       description.setText(previewHint.getText());
@@ -437,7 +429,7 @@ public class UserNotificationsPanel extends Div {
         session,
         selectedFilter(),
         search.getValue(),
-        UserNotificationTexts.matchingTypes(texts, search.getValue()),
+        UserNotificationTexts.matchingTypes(messageProperties, search.getValue()),
         page,
         selectedPageSize());
   }
@@ -484,11 +476,12 @@ public class UserNotificationsPanel extends Div {
       long lastEntry =
           result.isEmpty() ? 0 : (long) page * selectedPageSize() + result.getNumberOfElements();
       pageTotal.setText(
-          texts.getPortalPaginationRange(firstEntry, lastEntry, result.getTotalElements()));
+          messageProperties.getPortalPaginationRange(
+              firstEntry, lastEntry, result.getTotalElements()));
       if (notifyResult) {
         NotificationHelper.getInstance()
             .showNotification(
-                texts::getNotificationsRefreshed,
+                messageProperties::getNotificationsRefreshed,
                 null,
                 NotificationHelper.NotificationType.SUCCESS);
       }
@@ -497,7 +490,8 @@ public class UserNotificationsPanel extends Div {
       if (notifyResult) {
         NotificationHelper.getInstance()
             .showNotification(
-                texts::getNotificationsUnavailable, NotificationHelper.NotificationType.ERROR);
+                messageProperties::getNotificationsUnavailable,
+                NotificationHelper.NotificationType.ERROR);
       }
     }
   }
@@ -524,8 +518,8 @@ public class UserNotificationsPanel extends Div {
       rows.add(
           new NotificationEmptyState(
               !compact && !search.isEmpty()
-                  ? texts.getNotificationsSearchEmpty()
-                  : texts.getNotificationsEmpty()));
+                  ? messageProperties.getNotificationsSearchEmpty()
+                  : messageProperties.getNotificationsEmpty()));
     }
     for (Item item : result) {
       rows.add(row(item));
@@ -536,7 +530,7 @@ public class UserNotificationsPanel extends Div {
     confirmation.close();
     unreadIds = List.of();
     rows.removeAll();
-    rows.add(new Span(texts.getNotificationsUnavailable()));
+    rows.add(new Span(messageProperties.getNotificationsUnavailable()));
     markAll.setEnabled(false);
     dismissRead.setEnabled(false);
     previous.setEnabled(false);
@@ -578,7 +572,7 @@ public class UserNotificationsPanel extends Div {
                 page = index;
                 refresh();
               });
-      button.setAriaLabel(texts.getAdminUsersPaginationPage(index + 1));
+      button.setAriaLabel(messageProperties.getAdminUsersPaginationPage(index + 1));
       if (index == page) {
         button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         button.getElement().setAttribute("aria-current", "page");
@@ -590,7 +584,8 @@ public class UserNotificationsPanel extends Div {
 
   private Div row(Item item) {
     Button title =
-        new Button(UserNotificationTexts.title(texts, item), e -> action(() -> open(item)));
+        new Button(
+            UserNotificationTexts.title(messageProperties, item), e -> action(() -> open(item)));
     title.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     title.addClassName("cosmos-notification-title");
     if (compact) {
@@ -600,21 +595,25 @@ public class UserNotificationsPanel extends Div {
     meta.addClassName("cosmos-notification-inbox-meta");
     Button open = new Button(AppIcon.EYE.create(), e -> action(() -> open(item)));
     open.addClassNames(COSMOS_NOTIFICATION_ROW_ACTION_CLASS, "cosmos-notification-row-open");
-    open.setTooltipText(texts.getNotificationsOpen());
+    open.setTooltipText(messageProperties.getNotificationsOpen());
     open.setAriaLabel(
-        texts.getNotificationsOpen() + ": " + UserNotificationTexts.title(texts, item));
+        messageProperties.getNotificationsOpen()
+            + ": "
+            + UserNotificationTexts.title(messageProperties, item));
     Button mark = new Button(AppIcon.CHECK.create(), e -> confirmMarkRead(item));
     mark.setVisible(item.unread());
     mark.addClassNames("cosmos-notification-inbox-mark-read", COSMOS_NOTIFICATION_ROW_ACTION_CLASS);
-    mark.setTooltipText(texts.getNotificationsMarkRead());
+    mark.setTooltipText(messageProperties.getNotificationsMarkRead());
     mark.setAriaLabel(
-        texts.getNotificationsMarkRead() + ": " + UserNotificationTexts.title(texts, item));
+        messageProperties.getNotificationsMarkRead()
+            + ": "
+            + UserNotificationTexts.title(messageProperties, item));
     Div actions = new Div(open, mark, dismissButton(item));
     actions.addClassName("cosmos-notification-inbox-actions");
     Div top = new Div(meta, actions);
     top.addClassName("cosmos-notification-inbox-row-header");
     Div body = new Div();
-    body.setText(UserNotificationTexts.body(texts, item));
+    body.setText(UserNotificationTexts.body(messageProperties, item));
     body.addClassNames(COSMOS_NOTIFICATION_BODY_CLASS, "cosmos-notification-inbox-message");
     Div content = new Div(title, body);
     content.addClassName("cosmos-notification-inbox-content");
@@ -633,9 +632,11 @@ public class UserNotificationsPanel extends Div {
     Button dismiss = new Button(AppIcon.TRASH.create(), e -> confirmDismiss(item));
     dismiss.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     dismiss.addClassNames("cosmos-notification-preview-dismiss", DELETE_BUTTON);
-    dismiss.setTooltipText(texts.getNotificationsDismiss());
+    dismiss.setTooltipText(messageProperties.getNotificationsDismiss());
     dismiss.setAriaLabel(
-        texts.getNotificationsDismiss() + ": " + UserNotificationTexts.title(texts, item));
+        messageProperties.getNotificationsDismiss()
+            + ": "
+            + UserNotificationTexts.title(messageProperties, item));
     return dismiss;
   }
 
@@ -643,20 +644,24 @@ public class UserNotificationsPanel extends Div {
     Div meta = messageMetadata(item);
     meta.addClassName("cosmos-notification-preview-meta");
     Div body = new Div();
-    body.setText(UserNotificationTexts.body(texts, item));
+    body.setText(UserNotificationTexts.body(messageProperties, item));
     body.addClassNames(COSMOS_NOTIFICATION_BODY_CLASS, "cosmos-notification-preview-message");
     Button open = new Button(AppIcon.EYE.create(), e -> action(() -> open(item)));
     open.setAriaLabel(
-        texts.getNotificationsOpen() + ": " + UserNotificationTexts.title(texts, item));
+        messageProperties.getNotificationsOpen()
+            + ": "
+            + UserNotificationTexts.title(messageProperties, item));
     open.addClassNames(COSMOS_NOTIFICATION_ROW_ACTION_CLASS, "cosmos-notification-row-open");
-    open.setTooltipText(texts.getNotificationsOpen());
+    open.setTooltipText(messageProperties.getNotificationsOpen());
     Button markRead = new Button(AppIcon.CHECK.create(), e -> confirmMarkRead(item));
     markRead.addClassNames(
         "cosmos-notification-preview-mark-read", COSMOS_NOTIFICATION_ROW_ACTION_CLASS);
-    markRead.setTooltipText(texts.getNotificationsMarkRead());
+    markRead.setTooltipText(messageProperties.getNotificationsMarkRead());
     markRead.setVisible(item.unread());
     markRead.setAriaLabel(
-        texts.getNotificationsMarkRead() + ": " + UserNotificationTexts.title(texts, item));
+        messageProperties.getNotificationsMarkRead()
+            + ": "
+            + UserNotificationTexts.title(messageProperties, item));
     Div actions = new Div(open, markRead, dismissButton(item));
     actions.addClassName("cosmos-notification-preview-actions");
     Div row = new Div(title, body, meta, actions);
@@ -683,7 +688,8 @@ public class UserNotificationsPanel extends Div {
       LoggerFactory.getLogger(getClass()).warn("Notification action failed", safeFailure(failure));
       NotificationHelper.getInstance()
           .showNotification(
-              texts::getNotificationsUnavailable, NotificationHelper.NotificationType.ERROR);
+              messageProperties::getNotificationsUnavailable,
+              NotificationHelper.NotificationType.ERROR);
     }
   }
 
@@ -694,13 +700,12 @@ public class UserNotificationsPanel extends Div {
     }
     openedItem = item;
     detail = new Dialog();
-    detail.addOpenedChangeListener(
-        e -> {
-          if (!e.isOpened() && detailActionsMenu != null) {
-            detailActionsMenu.close();
-          }
-          notifyOverlayState();
-        });
+    detail.addOpenedChangeListener(e -> {
+      if (!e.isOpened() && detailActionsMenu != null) {
+        detailActionsMenu.close();
+      }
+      notifyOverlayState();
+    });
     detail.addClassNames(COSMOS_THEME, REFERENCE_OVERLAY, "cosmos-notification-dialog");
     detail.setModality(com.vaadin.flow.component.ModalityMode.STRICT);
     detail.getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
@@ -716,7 +721,8 @@ public class UserNotificationsPanel extends Div {
 
   private PortalContextCard context(Item item) {
     PortalContextCard card =
-        new PortalContextCard(AppIcon.BELL.create(), UserNotificationTexts.title(texts, item));
+        new PortalContextCard(
+            AppIcon.BELL.create(), UserNotificationTexts.title(messageProperties, item));
     card.addMetadata(messageMetadata(item));
     return card;
   }
@@ -724,13 +730,13 @@ public class UserNotificationsPanel extends Div {
   private void confirmMarkRead(Item item) {
     confirmation.open(
         new PortalConfirmationDialog.Prompt(
-            texts::getNotificationsMarkRead,
-            texts::getPortalNotificationSelectionHint,
-            texts::getPortalMarkReadQuestion,
-            texts::getPortalMarkReadExplanation,
+            messageProperties::getNotificationsMarkRead,
+            messageProperties::getPortalNotificationSelectionHint,
+            messageProperties::getPortalMarkReadQuestion,
+            messageProperties::getPortalMarkReadExplanation,
             () -> context(item),
-            texts::getPortalNotificationSyncHint,
-            texts::getPortalConfirmAction,
+            messageProperties::getPortalNotificationSyncHint,
+            messageProperties::getPortalConfirmAction,
             false),
         () -> action(() -> markRead(item)));
   }
@@ -742,73 +748,71 @@ public class UserNotificationsPanel extends Div {
     }
     confirmation.open(
         new PortalConfirmationDialog.Prompt(
-            texts::getNotificationsMarkAll,
-            texts::getPortalNotificationSelectionHint,
-            texts::getPortalMarkAllQuestion,
-            texts::getPortalMarkAllExplanation,
+            messageProperties::getNotificationsMarkAll,
+            messageProperties::getPortalNotificationSelectionHint,
+            messageProperties::getPortalMarkAllQuestion,
+            messageProperties::getPortalMarkAllExplanation,
             () ->
                 new PortalContextCard(
-                    AppIcon.BELL.create(), texts.getPortalNotificationAffected(selected.size())),
-            texts::getPortalNotificationSyncHint,
-            texts::getPortalConfirmAction,
+                    AppIcon.BELL.create(),
+                    messageProperties.getPortalNotificationAffected(selected.size())),
+            messageProperties::getPortalNotificationSyncHint,
+            messageProperties::getPortalConfirmAction,
             false,
             AppIcon.CHECK_CHECK::create),
         () ->
-            action(
-                () -> {
-                  boolean includesOpened = openedItem != null && selected.contains(openedItem.id());
-                  service.markRead(session, selected);
-                  if (includesOpened) {
-                    updateOpenedRead();
-                  }
-                }));
+            action(() -> {
+              boolean includesOpened = openedItem != null && selected.contains(openedItem.id());
+              service.markRead(session, selected);
+              if (includesOpened) {
+                updateOpenedRead();
+              }
+            }));
   }
 
   private void confirmDismiss(Item item) {
     confirmation.open(
         new PortalConfirmationDialog.Prompt(
-            texts::getNotificationsDismiss,
-            texts::getPortalNotificationSelectionHint,
-            texts::getPortalDeleteNotificationQuestion,
-            texts::getPortalDeleteNotificationExplanation,
+            messageProperties::getNotificationsDismiss,
+            messageProperties::getPortalNotificationSelectionHint,
+            messageProperties::getPortalDeleteNotificationQuestion,
+            messageProperties::getPortalDeleteNotificationExplanation,
             () -> context(item),
-            texts::getPortalDeleteNotificationHint,
-            texts::getPortalDeleteAction,
+            messageProperties::getPortalDeleteNotificationHint,
+            messageProperties::getPortalDeleteAction,
             true),
         () ->
-            action(
-                () -> {
-                  service.dismiss(session, item.id());
-                  if (detail != null && openedItem != null && openedItem.id().equals(item.id())) {
-                    detail.close();
-                  }
-                }));
+            action(() -> {
+              service.dismiss(session, item.id());
+              if (detail != null && openedItem != null && openedItem.id().equals(item.id())) {
+                detail.close();
+              }
+            }));
   }
 
   private void confirmDismissRead() {
-    action(
-        () ->
-            confirmation.open(
-                new PortalConfirmationDialog.Prompt(
-                    texts::getNotificationsDismissRead,
-                    texts::getPortalNotificationSelectionHint,
-                    texts::getPortalDeleteReadQuestion,
-                    texts::getPortalDeleteReadExplanation,
-                    () ->
-                        new PortalContextCard(
-                            AppIcon.BELL.create(),
-                            texts.getPortalNotificationAffected(service.readCount(session))),
-                    texts::getPortalDeleteNotificationHint,
-                    texts::getPortalDeleteAction,
-                    true),
+    action(() ->
+        confirmation.open(
+            new PortalConfirmationDialog.Prompt(
+                messageProperties::getNotificationsDismissRead,
+                messageProperties::getPortalNotificationSelectionHint,
+                messageProperties::getPortalDeleteReadQuestion,
+                messageProperties::getPortalDeleteReadExplanation,
                 () ->
-                    action(
-                        () -> {
-                          service.dismissRead(session);
-                          if (detail != null && openedItem != null && openedItem.read()) {
-                            detail.close();
-                          }
-                        })));
+                    new PortalContextCard(
+                        AppIcon.BELL.create(),
+                        messageProperties.getPortalNotificationAffected(
+                            service.readCount(session))),
+                messageProperties::getPortalDeleteNotificationHint,
+                messageProperties::getPortalDeleteAction,
+                true),
+            () ->
+                action(() -> {
+                  service.dismissRead(session);
+                  if (detail != null && openedItem != null && openedItem.read()) {
+                    detail.close();
+                  }
+                })));
   }
 
   private void markRead(Item item) {
@@ -842,14 +846,14 @@ public class UserNotificationsPanel extends Div {
         administration ? "portal-notification-source-admin" : "portal-notification-source-system");
     Span time = new Span(UserNotificationTexts.time(item.createdAt(), UI.getCurrent().getLocale()));
     time.addClassName("cosmos-notification-message-time");
-    Span state = new Span(UserNotificationTexts.relevance(texts, item));
+    Span state = new Span(UserNotificationTexts.relevance(messageProperties, item));
     state.getElement().setAttribute(THEME_ATTRIBUTE, BADGE_THEME);
     state.getElement().setAttribute("data-read", Boolean.toString(item.read()));
     state.addClassName("cosmos-notification-preview-state");
     state.addClassNames(stateClasses);
     Component status = state;
     if (item.relevance() != UserNotificationRelevance.ACTIVE) {
-      Badge retired = new Badge(UserNotificationTexts.relevance(texts, item));
+      Badge retired = new Badge(UserNotificationTexts.relevance(messageProperties, item));
       retired.addClassNames("cosmos-notification-preview-state");
       retired.addClassNames(stateClasses);
       retired.getElement().setAttribute("data-relevance", item.relevance().name());
@@ -862,8 +866,8 @@ public class UserNotificationsPanel extends Div {
 
   private String source(Item item) {
     return item.type() == UserNotificationType.ADMIN_ANNOUNCEMENT
-        ? texts.getNotificationsSourceAdministration()
-        : texts.getNotificationsSourceSystem();
+        ? messageProperties.getNotificationsSourceAdministration()
+        : messageProperties.getNotificationsSourceSystem();
   }
 
   private void renderDetail() {
@@ -873,10 +877,10 @@ public class UserNotificationsPanel extends Div {
     detail.removeAll();
     detail.getHeader().removeAll();
     detail.getFooter().removeAll();
-    String subject = UserNotificationTexts.title(texts, openedItem);
-    H2 title = new H2(texts.getNotificationsDetailTitle());
+    String subject = UserNotificationTexts.title(messageProperties, openedItem);
+    H2 title = new H2(messageProperties.getNotificationsDetailTitle());
     title.addClassName(PANEL_TITLE);
-    Span detailDescription = new Span(texts.getNotificationsDetailDescription());
+    Span detailDescription = new Span(messageProperties.getNotificationsDetailDescription());
     detailDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div titles = new Div(title, detailDescription);
     titles.addClassName(COSMOS_PANEL_HEADING_CLASS);
@@ -887,8 +891,8 @@ public class UserNotificationsPanel extends Div {
     Button closeIcon = new Button(AppIcon.CLOSE_CIRCLE.create(), e -> detail.close());
     closeIcon.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     closeIcon.addClassName("cosmos-overlay-close");
-    closeIcon.setAriaLabel(texts.getNotificationsClose());
-    closeIcon.setTooltipText(texts.getNotificationsClose());
+    closeIcon.setAriaLabel(messageProperties.getNotificationsClose());
+    closeIcon.setTooltipText(messageProperties.getNotificationsClose());
     Div header = new Div(badge, titles, closeIcon);
     header.addClassName("cosmos-notification-detail-header");
     detail.getHeader().add(header);
@@ -901,7 +905,7 @@ public class UserNotificationsPanel extends Div {
     Div contentMeta = messageMetadata(openedItem, "cosmos-notification-detail-state");
     contentMeta.addClassName("cosmos-notification-detail-meta");
     Div body = new Div();
-    body.setText(UserNotificationTexts.body(texts, openedItem));
+    body.setText(UserNotificationTexts.body(messageProperties, openedItem));
     body.addClassNames(COSMOS_NOTIFICATION_BODY_CLASS, "cosmos-notification-detail-body");
     Div message = new Div(titleRow, contentMeta, body);
     message.addClassName("cosmos-notification-detail-message");
@@ -914,7 +918,7 @@ public class UserNotificationsPanel extends Div {
 
     Button detailHistory =
         new Button(
-            texts.getNotificationsHistory(),
+            messageProperties.getNotificationsHistory(),
             AppIcon.BELL.create(),
             e -> {
               detailActionsMenu.close();
@@ -922,13 +926,13 @@ public class UserNotificationsPanel extends Div {
               closeAction.run();
               UI.getCurrent().navigate(UserNotificationsView.class);
             });
-    detailHistory.setAriaLabel(texts.getNotificationsHistory());
-    detailHistory.setTooltipText(texts.getNotificationsHistory());
+    detailHistory.setAriaLabel(messageProperties.getNotificationsHistory());
+    detailHistory.setTooltipText(messageProperties.getNotificationsHistory());
     detailHistory.addClassName("cosmos-notification-detail-history");
     detailHistory.setVisible(compact);
     Button markRead =
         new Button(
-            texts.getNotificationsMarkRead(),
+            messageProperties.getNotificationsMarkRead(),
             AppIcon.CHECK.create(),
             e -> confirmMarkRead(openedItem));
     markRead.addClassName("cosmos-notification-detail-mark-read");
@@ -943,7 +947,8 @@ public class UserNotificationsPanel extends Div {
     readActions.setVisible(openedItem.unread());
     message.add(readActions);
     Button detailClose =
-        new Button(texts.getNotificationsClose(), AppIcon.CLOSE.create(), e -> detail.close());
+        new Button(
+            messageProperties.getNotificationsClose(), AppIcon.CLOSE.create(), e -> detail.close());
     detailClose.addClassName("cosmos-notification-detail-close");
     Button destination = null;
     if (Set.of(
@@ -955,7 +960,7 @@ public class UserNotificationsPanel extends Div {
         && service.canOpenTickets(session)) {
       destination =
           new Button(
-              texts.getNotificationsOpenTicket(),
+              messageProperties.getNotificationsOpenTicket(),
               AppIcon.MESSAGE.create(),
               event -> {
                 service.ownerId(session);
@@ -981,7 +986,7 @@ public class UserNotificationsPanel extends Div {
         .contains(openedItem.type())) {
       destination =
           new Button(
-              texts.getNotificationsOpenAccount(),
+              messageProperties.getNotificationsOpenAccount(),
               AppIcon.LOCK.create(),
               e -> {
                 detail.close();
@@ -993,16 +998,17 @@ public class UserNotificationsPanel extends Div {
     }
     Button delete =
         new Button(
-            texts.getNotificationsDismiss(),
+            messageProperties.getNotificationsDismiss(),
             AppIcon.TRASH.create(),
             event -> {
               detailActionsMenu.close();
               confirmDismiss(openedItem);
             });
     delete.addClassNames("cosmos-notification-detail-delete", DELETE_BUTTON);
-    delete.setAriaLabel(texts.getNotificationsDismiss());
-    delete.setTooltipText(texts.getNotificationsDismiss());
-    Button more = new Button(texts.getNotificationsMoreActions(), AppIcon.ANGLE_DOWN.create());
+    delete.setAriaLabel(messageProperties.getNotificationsDismiss());
+    delete.setTooltipText(messageProperties.getNotificationsDismiss());
+    Button more =
+        new Button(messageProperties.getNotificationsMoreActions(), AppIcon.ANGLE_DOWN.create());
     more.setIconAfterText(true);
     more.addClassName("cosmos-notification-detail-more");
     detailActionsMenu = new Popover();
@@ -1012,7 +1018,7 @@ public class UserNotificationsPanel extends Div {
     detailActionsMenu.setCloseOnEsc(true);
     detailActionsMenu.setCloseOnOutsideClick(true);
     detailActionsMenu.addClassName("cosmos-notification-actions-popover");
-    detailActionsMenu.setAriaLabel(texts.getNotificationsMoreActions());
+    detailActionsMenu.setAriaLabel(messageProperties.getNotificationsMoreActions());
     VerticalLayout tools = new VerticalLayout(detailHistory, delete);
     tools.setPadding(false);
     tools.setSpacing(false);

@@ -35,7 +35,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     }
   }
 
-  private final MessageProperties texts;
+  private final MessageProperties messageProperties;
   private final Storage storage;
   private final IntegerField amount = new IntegerField();
   private final BigDecimalField preciseAmount = new BigDecimalField();
@@ -46,12 +46,12 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   private final Button decrease = new Button(AppIcon.MINUS.create(), event -> step(-1));
   private final Button increase = new Button(AppIcon.PLUS.create(), event -> step(1));
 
-  public AdminDurationField(MessageProperties texts) {
-    this(texts, Storage.SECONDS);
+  public AdminDurationField(MessageProperties messageProperties) {
+    this(messageProperties, Storage.SECONDS);
   }
 
-  public AdminDurationField(MessageProperties texts, Storage storage) {
-    this.texts = texts;
+  public AdminDurationField(MessageProperties messageProperties, Storage storage) {
+    this.messageProperties = messageProperties;
     this.storage = storage;
     addClassName("admin-duration-field");
     getElement().setAttribute("role", "group");
@@ -78,11 +78,10 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     }
     amount.addValueChangeListener(event -> changed());
     preciseAmount.addValueChangeListener(event -> changed());
-    unit.addValueChangeListener(
-        event -> {
-          updateLimits();
-          changed();
-        });
+    unit.addValueChangeListener(event -> {
+      updateLimits();
+      changed();
+    });
     refreshTexts();
     updateLimits();
   }
@@ -209,7 +208,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     amount.setMax(
         storage == Storage.DAYS ? Integer.MAX_VALUE : Integer.MAX_VALUE / selected.seconds);
     if (storage == Storage.DAYS) {
-      amount.setPlaceholder(texts.getAdminConfigUnlimited());
+      amount.setPlaceholder(messageProperties.getAdminConfigUnlimited());
       return;
     }
     try {
@@ -238,7 +237,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
 
   public String displayStoredValue(String value) {
     if (value.isBlank()) {
-      return texts.getAdminConfigDefaultEmpty();
+      return messageProperties.getAdminConfigDefaultEmpty();
     }
     BigDecimal seconds = decode(value);
     Unit selected = storage == Storage.DAYS ? Unit.DAYS : exactUnit(seconds);
@@ -249,25 +248,27 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     BigDecimal current = number();
     if (current == null) {
       if (storage == Storage.DAYS) {
-        return texts.getAdminConfigUnlimited();
+        return messageProperties.getAdminConfigUnlimited();
       }
       return storage == Storage.SECONDS
           ? displayStoredValue(defaultValue)
-          : texts.getAdminConfigDurationInvalid();
+          : messageProperties.getAdminConfigDurationInvalid();
     }
-    return validAmount() ? format(current, unit.getValue()) : texts.getAdminConfigDurationInvalid();
+    return validAmount()
+        ? format(current, unit.getValue())
+        : messageProperties.getAdminConfigDurationInvalid();
   }
 
   public String getEquivalentValue() {
     if (number() == null && storage == Storage.DAYS) {
-      return texts.getAdminConfigUnlimited();
+      return messageProperties.getAdminConfigUnlimited();
     }
     if (!validAmount()) {
-      return texts.getAdminConfigDurationInvalid();
+      return messageProperties.getAdminConfigDurationInvalid();
     }
     BigDecimal seconds =
         number() == null ? decode(defaultValue) : new BigDecimal(getSecondsValue());
-    return texts.getAdminConfigDurationSeconds(seconds.stripTrailingZeros());
+    return messageProperties.getAdminConfigDurationSeconds(seconds.stripTrailingZeros());
   }
 
   private boolean validAmount() {
@@ -286,26 +287,25 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   private String format(BigDecimal value, Unit selected) {
     BigDecimal normalized = value.stripTrailingZeros();
     return switch (selected) {
-      case SECONDS -> texts.getAdminConfigDurationSeconds(normalized);
-      case MINUTES -> texts.getAdminConfigDurationMinutes(normalized);
-      case HOURS -> texts.getAdminConfigDurationHours(normalized);
-      case DAYS -> texts.getAdminConfigDurationDays(normalized);
+      case SECONDS -> messageProperties.getAdminConfigDurationSeconds(normalized);
+      case MINUTES -> messageProperties.getAdminConfigDurationMinutes(normalized);
+      case HOURS -> messageProperties.getAdminConfigDurationHours(normalized);
+      case DAYS -> messageProperties.getAdminConfigDurationDays(normalized);
     };
   }
 
   public void refreshTexts() {
     preciseAmount.setLocale(CustomI18NProvider.getCurrentLocale());
-    unit.setAriaLabel(texts.getAdminConfigDurationUnit());
-    unit.setItemLabelGenerator(
-        value ->
-            switch (value) {
-              case SECONDS -> texts.getAdminConfigDurationUnitSeconds();
-              case MINUTES -> texts.getAdminConfigDurationUnitMinutes();
-              case HOURS -> texts.getAdminConfigDurationUnitHours();
-              case DAYS -> texts.getAdminConfigDurationUnitDays();
-            });
-    decrease.setAriaLabel(texts.getAdminConfigDurationDecrease());
-    increase.setAriaLabel(texts.getAdminConfigDurationIncrease());
+    unit.setAriaLabel(messageProperties.getAdminConfigDurationUnit());
+    unit.setItemLabelGenerator(value ->
+        switch (value) {
+          case SECONDS -> messageProperties.getAdminConfigDurationUnitSeconds();
+          case MINUTES -> messageProperties.getAdminConfigDurationUnitMinutes();
+          case HOURS -> messageProperties.getAdminConfigDurationUnitHours();
+          case DAYS -> messageProperties.getAdminConfigDurationUnitDays();
+        });
+    decrease.setAriaLabel(messageProperties.getAdminConfigDurationDecrease());
+    increase.setAriaLabel(messageProperties.getAdminConfigDurationIncrease());
     updateLimits();
   }
 

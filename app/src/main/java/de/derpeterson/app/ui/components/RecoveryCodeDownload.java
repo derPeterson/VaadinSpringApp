@@ -31,31 +31,26 @@ public final class RecoveryCodeDownload {
   public static final String RESOURCE_NAME = "two-factor-recovery-codes.pdf";
 
   private final TwoFactorEnrollment enrollment;
-  private final TwoFactorAuthorization authorization;
+  private final TwoFactorAuthorization twoFactorAuthorization;
   private final ConfigService config;
   private final CustomI18NProvider i18n;
   private final RecoveryCodeDocument pdf;
 
   /** Ein Fehlerstatus darf im Browser weder eine TXT-Datei noch einen Seitenwechsel auslösen. */
   public void configure(Button button, Runnable failed) {
-    button.addAttachListener(
-        event ->
-            event
-                .getUI()
-                .getPage()
-                .addJavaScript("context://custom-theme/recovery-code-download.js"));
-    button.addClickListener(
-        event ->
-            button
-                .getElement()
-                .executeJs("return window.cosmosRecoveryCodeDownload(this)")
-                .then(
-                    Boolean.class,
-                    success -> {
-                      if (Boolean.FALSE.equals(success)) {
-                        failed.run();
-                      }
-                    }));
+    button.addAttachListener(event ->
+        event.getUI().getPage().addJavaScript("context://custom-theme/recovery-code-download.js"));
+    button.addClickListener(event ->
+        button
+            .getElement()
+            .executeJs("return window.cosmosRecoveryCodeDownload(this)")
+            .then(
+                Boolean.class,
+                success -> {
+                  if (Boolean.FALSE.equals(success)) {
+                    failed.run();
+                  }
+                }));
   }
 
   public DownloadHandler handler(UUID outputId, Locale locale) {
@@ -84,7 +79,7 @@ public final class RecoveryCodeDownload {
       bytes =
           pdf.render(
               serviceName,
-              authorization.owner(request).email(),
+              twoFactorAuthorization.owner(request).email(),
               codes,
               Instant.now(),
               locale,

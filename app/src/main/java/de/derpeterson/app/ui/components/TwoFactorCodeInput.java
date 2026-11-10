@@ -25,7 +25,7 @@ import java.util.List;
 @StyleSheet("custom-theme/cosmos-mfa-methods.css")
 @StyleSheet("custom-theme/cosmos-mfa-confirmation.css")
 final class TwoFactorCodeInput extends VerticalLayout {
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final OtpField appCode = new OtpField();
   private final TextField recoveryCode = new TextField();
   private final Span appCodeLabel = new Span();
@@ -39,12 +39,12 @@ final class TwoFactorCodeInput extends VerticalLayout {
   private final VerticalLayout input = new VerticalLayout(hint, appCode, recoveryCode);
 
   TwoFactorCodeInput(
-      MessageProperties texts,
+      MessageProperties messageProperties,
       HttpServletRequest request,
       String fieldPrefix,
       String methodPrefix,
       SerializableRunnable closeAction) {
-    this.texts = texts;
+    this.messageProperties = messageProperties;
     appCode.setId(fieldPrefix + "-factor");
     TwoFactorCodeFields.configureOtp(appCode, request.getContextPath());
     recoveryCode.setId(fieldPrefix + "-recovery-code");
@@ -63,11 +63,10 @@ final class TwoFactorCodeInput extends VerticalLayout {
     methods.setWidthFull();
     methods.addClassName("two-factor-method-tabs");
     methods.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
-    methods.addSelectedChangeListener(
-        event -> {
-          resetFields();
-          refreshMethod();
-        });
+    methods.addSelectedChangeListener(event -> {
+      resetFields();
+      refreshMethod();
+    });
     hint.addClassName(CosmosClasses.PANEL_DESCRIPTION);
     input.setId(inputId);
     input.addClassName("two-factor-confirmation-input");
@@ -81,14 +80,13 @@ final class TwoFactorCodeInput extends VerticalLayout {
     help.setIcon(AppIcon.OPEN_SECTION.create());
     help.setIconAfterText(true);
     help.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    help.addClickListener(
-        event -> {
-          closeAction.run();
-          TwoFactorFlow.ACCOUNT_HELP.enter(request);
-          UI.getCurrent()
-              .getPage()
-              .setLocation(request.getContextPath() + TwoFactorFlow.ACCOUNT_HELP.location());
-        });
+    help.addClickListener(event -> {
+      closeAction.run();
+      TwoFactorFlow.ACCOUNT_HELP.enter(request);
+      UI.getCurrent()
+          .getPage()
+          .setLocation(request.getContextPath() + TwoFactorFlow.ACCOUNT_HELP.location());
+    });
     HorizontalLayout helpRow = new HorizontalLayout(helpPrompt, help);
     helpRow.setAlignItems(Alignment.CENTER);
     helpRow.addClassName("two-factor-help-row");
@@ -97,12 +95,12 @@ final class TwoFactorCodeInput extends VerticalLayout {
   }
 
   void refreshTexts() {
-    appCodeLabel.setText(texts.getTwoFactorConfirmationAppTab());
-    recoveryTabLabel.setText(texts.getTwoFactorRecoveryCodeLabel());
-    appCode.setLabel(texts.getTwoFactorSetupCodeLabel());
-    recoveryCode.setLabel(texts.getTwoFactorRecoveryCodeLabel());
-    helpPrompt.setText(texts.getSupportHelpSubtitle());
-    help.setText(texts.getSupportHelpTitle());
+    appCodeLabel.setText(messageProperties.getTwoFactorConfirmationAppTab());
+    recoveryTabLabel.setText(messageProperties.getTwoFactorRecoveryCodeLabel());
+    appCode.setLabel(messageProperties.getTwoFactorSetupCodeLabel());
+    recoveryCode.setLabel(messageProperties.getTwoFactorRecoveryCodeLabel());
+    helpPrompt.setText(messageProperties.getSupportHelpSubtitle());
+    help.setText(messageProperties.getSupportHelpTitle());
     refreshMethod();
   }
 
@@ -112,16 +110,18 @@ final class TwoFactorCodeInput extends VerticalLayout {
     recoveryCode.setVisible(recovery);
     Tab selected = recovery ? recoveryTab : appCodeTab;
     input.getElement().setAttribute("aria-labelledby", selected.getId().orElseThrow());
-    hint.setText(recovery ? texts.getTwoFactorActionRecoveryHint() : texts.getTwoFactorLoginHint());
+    hint.setText(
+        recovery
+            ? messageProperties.getTwoFactorActionRecoveryHint()
+            : messageProperties.getTwoFactorLoginHint());
   }
 
   void addAppCodeCompleteListener(SerializableRunnable listener) {
-    appCode.addCompleteListener(
-        event -> {
-          if (isVisible() && TwoFactorCodeFields.isCurrentCompleteOtp(appCode, event)) {
-            listener.run();
-          }
-        });
+    appCode.addCompleteListener(event -> {
+      if (isVisible() && TwoFactorCodeFields.isCurrentCompleteOtp(appCode, event)) {
+        listener.run();
+      }
+    });
   }
 
   void focusAppCode() {
@@ -146,7 +146,8 @@ final class TwoFactorCodeInput extends VerticalLayout {
 
   boolean validate() {
     return ValidationHelper.validateRequiredInputs(
-        List.of(methods.getSelectedTab() == recoveryTab ? recoveryCode : appCode), texts);
+        List.of(methods.getSelectedTab() == recoveryTab ? recoveryCode : appCode),
+        messageProperties);
   }
 
   String getValue() {

@@ -44,7 +44,7 @@ public final class ExternalRegistrationView extends VerticalLayout
     implements BeforeEnterObserver, HasDynamicTitle {
   private final transient ExternalLoginFlow flow;
   private final transient ExternalIdentityService identities;
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final transient HttpServletRequest request;
   private final PublicPageComponent page;
   private final H2 title = new H2();
@@ -59,18 +59,18 @@ public final class ExternalRegistrationView extends VerticalLayout
 
   public ExternalRegistrationView(
       ConfigService config,
-      MessageProperties texts,
+      MessageProperties messageProperties,
       ExternalLoginFlow flow,
       ExternalIdentityService identities,
       HttpServletRequest request) {
     this.flow = flow;
     this.identities = identities;
-    this.texts = texts;
+    this.messageProperties = messageProperties;
     this.request = request;
     setPadding(false);
     setSpacing(false);
     setWidthFull();
-    page = new PublicPageComponent(config, texts, PublicPageComponent.Page.REGISTER);
+    page = new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.REGISTER);
     title.addClassName("cosmos-headline");
     first.setId("external-register-first");
     last.setId("external-register-last");
@@ -89,16 +89,15 @@ public final class ExternalRegistrationView extends VerticalLayout
     submit.setPrefixComponent(AppIcon.USER_PLUS.create());
     submit.addClickListener(event -> register());
     cancel.setPrefixComponent(AppIcon.CLOSE.create());
-    cancel.addClickListener(
-        event -> {
-          flow.cancel(request);
-          UI.getCurrent().navigate(LoginView.class);
-        });
+    cancel.addClickListener(event -> {
+      flow.cancel(request);
+      UI.getCurrent().navigate(LoginView.class);
+    });
     PublicPanelComponent panel =
         new PublicPanelComponent(
             AppIcon.USER_PLUS.create(),
             title,
-            texts::getExternalCompleteHint,
+            messageProperties::getExternalCompleteHint,
             new Component[] {error, first, last, email},
             cancel,
             submit);
@@ -110,15 +109,15 @@ public final class ExternalRegistrationView extends VerticalLayout
   }
 
   private void refreshTexts() {
-    title.setText(texts.getExternalCompleteTitle());
-    first.setLabel(texts.getRegistrationFirstNameField());
-    last.setLabel(texts.getRegistrationLastNameField());
-    email.setLabel(texts.getPublicEmailField());
-    first.setPlaceholder(texts.getAccountFirstNamePlaceholder());
-    last.setPlaceholder(texts.getAccountLastNamePlaceholder());
-    email.setPlaceholder(texts.getAccountEmailPlaceholder());
-    submit.setText(texts.getBaseRegistrationButton());
-    cancel.setText(texts.getAdminUsersCancel());
+    title.setText(messageProperties.getExternalCompleteTitle());
+    first.setLabel(messageProperties.getRegistrationFirstNameField());
+    last.setLabel(messageProperties.getRegistrationLastNameField());
+    email.setLabel(messageProperties.getPublicEmailField());
+    first.setPlaceholder(messageProperties.getAccountFirstNamePlaceholder());
+    last.setPlaceholder(messageProperties.getAccountLastNamePlaceholder());
+    email.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+    submit.setText(messageProperties.getBaseRegistrationButton());
+    cancel.setText(messageProperties.getAdminUsersCancel());
     if (error.isVisible()) {
       error.setText(currentErrorText());
     }
@@ -126,9 +125,11 @@ public final class ExternalRegistrationView extends VerticalLayout
 
   private String currentErrorText() {
     if (awaitingVerification) {
-      return texts.getExternalVerifyEmail();
+      return messageProperties.getExternalVerifyEmail();
     }
-    return expiredRegistration ? texts.getExternalDraftExpired() : texts.getExternalError();
+    return expiredRegistration
+        ? messageProperties.getExternalDraftExpired()
+        : messageProperties.getExternalError();
   }
 
   @Override
@@ -136,7 +137,7 @@ public final class ExternalRegistrationView extends VerticalLayout
     error.setVisible(false);
     if (event.getLocation().getQueryParameters().getParameters().containsKey("error")) {
       hideForm();
-      error.setText(texts.getExternalError());
+      error.setText(messageProperties.getExternalError());
       error.setVisible(true);
       return;
     }
@@ -148,14 +149,14 @@ public final class ExternalRegistrationView extends VerticalLayout
     } catch (AccessDeniedException _) {
       expiredRegistration = true;
       hideForm();
-      error.setText(texts.getExternalDraftExpired());
+      error.setText(messageProperties.getExternalDraftExpired());
       error.setVisible(true);
     }
   }
 
   private void register() {
-    if (!ValidationHelper.validateRequiredInputs(List.of(first, last, email), texts)
-        || !ValidationHelper.validateEmailValidInputs(List.of(email), texts)) {
+    if (!ValidationHelper.validateRequiredInputs(List.of(first, last, email), messageProperties)
+        || !ValidationHelper.validateEmailValidInputs(List.of(email), messageProperties)) {
       return;
     }
     submit.setEnabled(false);
@@ -182,14 +183,14 @@ public final class ExternalRegistrationView extends VerticalLayout
       } else {
         hideForm();
         awaitingVerification = true;
-        error.setText(texts.getExternalVerifyEmail());
+        error.setText(messageProperties.getExternalVerifyEmail());
         error.setVisible(true);
       }
     } catch (IOException | RuntimeException _) {
       NotificationHelper.getInstance()
           .showNotification(
-              texts::getBaseFailedTitle,
-              texts::getExternalError,
+              messageProperties::getBaseFailedTitle,
+              messageProperties::getExternalError,
               -1,
               NotificationHelper.NotificationType.ERROR);
     } finally {
@@ -199,7 +200,7 @@ public final class ExternalRegistrationView extends VerticalLayout
 
   @Override
   public String getPageTitle() {
-    return texts.getExternalCompleteTitle();
+    return messageProperties.getExternalCompleteTitle();
   }
 
   private void hideForm() {

@@ -47,7 +47,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
   private final transient ExternalLoginFlow flow;
   private final transient ExternalIdentityService identities;
   private final transient HttpServletRequest request;
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final H2 title = new H2();
   private final Div symbol = new Div();
   private final Span description = new Span();
@@ -70,11 +70,11 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
       ExternalLoginFlow flow,
       ExternalIdentityService identities,
       HttpServletRequest request,
-      MessageProperties texts) {
+      MessageProperties messageProperties) {
     this.flow = flow;
     this.identities = identities;
     this.request = request;
-    this.texts = texts;
+    this.messageProperties = messageProperties;
     setId("external-identity-dialog");
     addClassNames(
         "cosmos-theme", REFERENCE_OVERLAY, "account-change-dialog", "external-identity-dialog");
@@ -100,7 +100,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     password.setValueChangeMode(ValueChangeMode.EAGER);
     codePanel =
         new TwoFactorCodeInput(
-            texts,
+            messageProperties,
             request,
             "external-confirm",
             "external-proof",
@@ -108,14 +108,13 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
               flow.cancel(request);
               close();
             });
-    codePanel.addAppCodeCompleteListener(
-        () -> {
-          if ((purpose == Purpose.LINK_GOOGLE || purpose == Purpose.LINK_MICROSOFT)
-              && isOpened()
-              && confirm.isEnabled()) {
-            submit();
-          }
-        });
+    codePanel.addAppCodeCompleteListener(() -> {
+      if ((purpose == Purpose.LINK_GOOGLE || purpose == Purpose.LINK_MICROSOFT)
+          && isOpened()
+          && confirm.isEnabled()) {
+        submit();
+      }
+    });
     separator.addClassName("external-proof-separator");
     alternatives.addClassName("external-proof-alternatives");
     explanation.addClassName(PANEL_DESCRIPTION);
@@ -145,16 +144,15 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     actions.addClassName("cosmos-dialog-actions");
     EqualButtonWidths.configure(actions);
     getFooter().add(actions);
-    addOpenedChangeListener(
-        event -> {
-          if (!event.isOpened()) {
-            password.clear();
-            password.setInvalid(false);
-            codePanel.reset();
-            purpose = null;
-            action = null;
-          }
-        });
+    addOpenedChangeListener(event -> {
+      if (!event.isOpened()) {
+        password.clear();
+        password.setInvalid(false);
+        codePanel.reset();
+        purpose = null;
+        action = null;
+      }
+    });
   }
 
   public void open(Purpose purpose, SerializableRunnable action) {
@@ -177,25 +175,27 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     boolean confirmed = flow.confirmedPurpose(request).filter(purpose::equals).isPresent();
     boolean hasPassword = flow.owner(request).getPassword() != null;
     boolean needsFactor = flow.requiresFactor(request, purpose);
-    developmentWarning.setText(texts.getTwoFactorDevelopmentWarning());
+    developmentWarning.setText(messageProperties.getTwoFactorDevelopmentWarning());
     developmentWarning.setVisible(flow.developmentExceptionActive());
     refreshHeader();
     explanation.setText(
-        needsFactor ? texts.getTwoFactorActionHint() : texts.getExternalProofHint());
+        needsFactor
+            ? messageProperties.getTwoFactorActionHint()
+            : messageProperties.getExternalProofHint());
     explanation.setVisible(!needsFactor || confirmed);
-    ready.setText(texts.getExternalProofReady());
+    ready.setText(messageProperties.getExternalProofReady());
     ready.setVisible(confirmed);
-    password.setLabel(texts.getAccountPasswordDialogCurrentPassword());
-    password.setPlaceholder(texts.getAccountPasswordPlaceholder());
+    password.setLabel(messageProperties.getAccountPasswordDialogCurrentPassword());
+    password.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
     password.setVisible(hasPassword && !confirmed && !needsFactor);
     password.setRequiredIndicatorVisible(password.isVisible());
     codePanel.refreshTexts();
     codePanel.setVisible(needsFactor && !confirmed);
     refreshAlternatives(confirmed);
     if (!confirmed && !hasPassword && !alternatives.isVisible() && !needsFactor) {
-      explanation.setText(texts.getExternalProofUnavailable());
+      explanation.setText(messageProperties.getExternalProofUnavailable());
     }
-    separator.setText(texts.getExternalOr());
+    separator.setText(messageProperties.getExternalOr());
     separator.setVisible(password.isVisible() && alternatives.isVisible());
     refreshActions(confirmed || hasPassword || needsFactor);
   }
@@ -222,7 +222,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
       symbol.add(mark);
     }
     getElement().setProperty("ariaLabel", title.getText());
-    description.setText(texts.getExternalProof());
+    description.setText(messageProperties.getExternalProof());
   }
 
   private void refreshAlternatives(boolean confirmed) {
@@ -231,7 +231,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
       for (String provider : identities.connected(flow.owner(request).getId())) {
         if (flow.providers().contains(provider)
             && flow.canUseProviderProof(request, provider, purpose)) {
-          Button proof = new Button(texts.getExternalProofWith(brand(provider)));
+          Button proof = new Button(messageProperties.getExternalProofWith(brand(provider)));
           proof.setId("external-confirm-" + provider);
           Image mark =
               new Image(
@@ -251,7 +251,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
 
   private void refreshActions(boolean enabled) {
     boolean destructive = purpose == Purpose.UNLINK_GOOGLE || purpose == Purpose.UNLINK_MICROSOFT;
-    warning.setText(texts.getExternalDisconnectHint());
+    warning.setText(messageProperties.getExternalDisconnectHint());
     note.setVisible(destructive);
     confirm.setClassName(DELETE_BUTTON, destructive);
     confirm.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -261,11 +261,11 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     confirm.setPrefixComponent((destructive ? AppIcon.SIGN_OUT : AppIcon.CHECK).create());
     confirm.setText(
         purpose == Purpose.PASSWORD || purpose == Purpose.EMAIL
-            ? texts.getExternalContinueAction()
+            ? messageProperties.getExternalContinueAction()
             : actionTitle());
     confirm.setEnabled(enabled);
-    cancel.setText(texts.getAdminUsersCancel());
-    close.setAriaLabel(texts.getAdminUsersCloseDialog());
+    cancel.setText(messageProperties.getAdminUsersCancel());
+    close.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
   }
 
   private void submit() {
@@ -309,28 +309,31 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
       return true;
     } catch (RuntimeException failure) {
       codePanel.markInvalid();
-      Supplier<String> message = texts::getTwoFactorFailed;
+      Supplier<String> message = messageProperties::getTwoFactorFailed;
       if (failure instanceof LockedException) {
-        message = texts::getTwoFactorThrottled;
+        message = messageProperties::getTwoFactorThrottled;
       } else if (failure instanceof BadCredentialsException) {
-        message = texts::getTwoFactorInvalidCode;
+        message = messageProperties::getTwoFactorInvalidCode;
       }
       NotificationHelper.getInstance()
           .showNotification(
-              texts::getBaseFailedTitle, message, NotificationHelper.NotificationType.ERROR);
+              messageProperties::getBaseFailedTitle,
+              message,
+              NotificationHelper.NotificationType.ERROR);
       return false;
     }
   }
 
   private boolean confirmPassword() {
-    if (!ValidationHelper.validateRequiredInputs(List.of(password), texts)) {
+    if (!ValidationHelper.validateRequiredInputs(List.of(password), messageProperties)) {
       return false;
     }
     try {
       flow.confirmPassword(request, password.getValue(), purpose);
       return true;
     } catch (RuntimeException failure) {
-      AccountSecurityFeedback.Field field = AccountSecurityFeedback.failure(texts, failure);
+      AccountSecurityFeedback.Field field =
+          AccountSecurityFeedback.failure(messageProperties, failure);
       password.setInvalid(field == AccountSecurityFeedback.Field.CURRENT_PASSWORD);
       refreshTexts();
       return false;
@@ -340,8 +343,8 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
   private void showExternalFailure() {
     NotificationHelper.getInstance()
         .showNotification(
-            texts::getBaseFailedTitle,
-            texts::getExternalError,
+            messageProperties::getBaseFailedTitle,
+            messageProperties::getExternalError,
             NotificationHelper.NotificationType.ERROR);
   }
 
@@ -356,7 +359,8 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
         close();
         NotificationHelper.getInstance()
             .showNotification(
-                texts::getExternalProviderUnavailable, NotificationHelper.NotificationType.WARNING);
+                messageProperties::getExternalProviderUnavailable,
+                NotificationHelper.NotificationType.WARNING);
       } else {
         showExternalFailure();
       }
@@ -381,12 +385,12 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
 
   private String actionTitle() {
     return switch (purpose) {
-      case PASSWORD -> texts.getExternalPasswordSetup();
-      case EMAIL -> texts.getAccountSettingsChangeEmail();
-      case LINK_GOOGLE -> texts.getExternalConnect(GOOGLE_NAME);
-      case LINK_MICROSOFT -> texts.getExternalConnect(MICROSOFT_NAME);
-      case UNLINK_GOOGLE -> texts.getExternalDisconnect(GOOGLE_NAME);
-      case UNLINK_MICROSOFT -> texts.getExternalDisconnect(MICROSOFT_NAME);
+      case PASSWORD -> messageProperties.getExternalPasswordSetup();
+      case EMAIL -> messageProperties.getAccountSettingsChangeEmail();
+      case LINK_GOOGLE -> messageProperties.getExternalConnect(GOOGLE_NAME);
+      case LINK_MICROSOFT -> messageProperties.getExternalConnect(MICROSOFT_NAME);
+      case UNLINK_GOOGLE -> messageProperties.getExternalDisconnect(GOOGLE_NAME);
+      case UNLINK_MICROSOFT -> messageProperties.getExternalDisconnect(MICROSOFT_NAME);
       case ENROLL_FACTOR -> throw new IllegalArgumentException("Enrollment has its own view");
     };
   }

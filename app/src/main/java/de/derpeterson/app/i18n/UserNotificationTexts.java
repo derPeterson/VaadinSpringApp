@@ -14,44 +14,50 @@ import java.util.Set;
 public final class UserNotificationTexts {
   private UserNotificationTexts() {}
 
-  public static String title(MessageProperties texts, Item item) {
+  public static String title(MessageProperties messageProperties, Item item) {
     return switch (item.type()) {
       case ADMIN_ANNOUNCEMENT -> item.title();
-      case PASSWORD_CHANGED -> texts.getNotificationsPasswordChangedTitle();
-      case PASSWORD_RESET -> texts.getNotificationsPasswordResetTitle();
-      case EMAIL_CHANGED -> texts.getNotificationsEmailChangedTitle();
-      case ROLES_CHANGED -> texts.getNotificationsRolesChangedTitle();
-      case RECOVERY_REQUEST -> texts.getSupportRecoverySubject();
-      case SUPPORT_REPLY -> texts.getSupportReplyNotificationTitle(item.supportTicketNumber());
+      case PASSWORD_CHANGED -> messageProperties.getNotificationsPasswordChangedTitle();
+      case PASSWORD_RESET -> messageProperties.getNotificationsPasswordResetTitle();
+      case EMAIL_CHANGED -> messageProperties.getNotificationsEmailChangedTitle();
+      case ROLES_CHANGED -> messageProperties.getNotificationsRolesChangedTitle();
+      case RECOVERY_REQUEST -> messageProperties.getSupportRecoverySubject();
+      case SUPPORT_REPLY ->
+          messageProperties.getSupportReplyNotificationTitle(item.supportTicketNumber());
       case SUPPORT_REQUESTER_CLOSED ->
-          texts.getSupportRequesterClosedNotificationTitle(item.supportTicketNumber());
+          messageProperties.getSupportRequesterClosedNotificationTitle(item.supportTicketNumber());
     };
   }
 
-  public static String body(MessageProperties texts, Item item) {
+  public static String body(MessageProperties messageProperties, Item item) {
     return switch (item.type()) {
       case ADMIN_ANNOUNCEMENT -> item.body();
-      case PASSWORD_CHANGED -> texts.getNotificationsPasswordChangedBody();
-      case PASSWORD_RESET -> texts.getNotificationsPasswordResetBody();
-      case EMAIL_CHANGED -> texts.getNotificationsEmailChangedBody();
-      case ROLES_CHANGED -> texts.getNotificationsRolesChangedBody();
-      case RECOVERY_REQUEST -> texts.getSupportRecoveryNotification();
-      case SUPPORT_REPLY -> texts.getSupportReplyNotificationBody();
-      case SUPPORT_REQUESTER_CLOSED -> texts.getSupportRequesterClosedNotificationBody();
+      case PASSWORD_CHANGED -> messageProperties.getNotificationsPasswordChangedBody();
+      case PASSWORD_RESET -> messageProperties.getNotificationsPasswordResetBody();
+      case EMAIL_CHANGED -> messageProperties.getNotificationsEmailChangedBody();
+      case ROLES_CHANGED -> messageProperties.getNotificationsRolesChangedBody();
+      case RECOVERY_REQUEST -> messageProperties.getSupportRecoveryNotification();
+      case SUPPORT_REPLY -> messageProperties.getSupportReplyNotificationBody();
+      case SUPPORT_REQUESTER_CLOSED ->
+          messageProperties.getSupportRequesterClosedNotificationBody();
     };
   }
 
-  public static String relevance(MessageProperties texts, Item item) {
+  public static String relevance(MessageProperties messageProperties, Item item) {
     return switch (item.relevance()) {
-      case ACTIVE -> item.read() ? texts.getNotificationsRead() : texts.getNotificationsUnread();
-      case TICKET_ASSIGNED -> texts.getNotificationsTicketAssigned();
-      case REQUESTER_CLOSED -> texts.getSupportClosedByRequester();
-      case TICKET_CLOSED -> texts.getSupportClosed();
+      case ACTIVE ->
+          item.read()
+              ? messageProperties.getNotificationsRead()
+              : messageProperties.getNotificationsUnread();
+      case TICKET_ASSIGNED -> messageProperties.getNotificationsTicketAssigned();
+      case REQUESTER_CLOSED -> messageProperties.getSupportClosedByRequester();
+      case TICKET_CLOSED -> messageProperties.getSupportClosed();
     };
   }
 
   /** Systemtexte und Herkunft in der sichtbaren Sprache für die Datenbanksuche abgleichen. */
-  public static Set<UserNotificationType> matchingTypes(MessageProperties texts, String query) {
+  public static Set<UserNotificationType> matchingTypes(
+      MessageProperties messageProperties, String query) {
     String term = query.strip().toLowerCase(Locale.ROOT);
     EnumSet<UserNotificationType> matches = EnumSet.noneOf(UserNotificationType.class);
     if (term.isEmpty()) {
@@ -60,7 +66,7 @@ public final class UserNotificationTexts {
     for (UserNotificationType type : UserNotificationType.values()) {
       String visible;
       if (type == UserNotificationType.ADMIN_ANNOUNCEMENT) {
-        visible = texts.getNotificationsSourceAdministration();
+        visible = messageProperties.getNotificationsSourceAdministration();
       } else {
         // Sichtbare Titelvorlage ohne Nummer; konkrete Nummern durchsucht das Repository.
         Item item =
@@ -74,11 +80,11 @@ public final class UserNotificationTexts {
                 "",
                 UserNotificationRelevance.ACTIVE);
         visible =
-            title(texts, item)
+            title(messageProperties, item)
                 + " "
-                + body(texts, item)
+                + body(messageProperties, item)
                 + " "
-                + texts.getNotificationsSourceSystem();
+                + messageProperties.getNotificationsSourceSystem();
       }
       if (visible.toLowerCase(Locale.ROOT).contains(term)) {
         matches.add(type);

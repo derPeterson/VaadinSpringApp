@@ -23,8 +23,8 @@ import org.springframework.security.authentication.LockedException;
 /** Gemeinsamer nativer Bestätigungsdialog für Faktorverwaltung und Sicherheitskonfiguration. */
 @StyleSheet("custom-theme/cosmos-account.css")
 public final class TwoFactorActionDialog extends Dialog {
-  private final transient MessageProperties texts;
-  private final transient TwoFactorAuthorization authorization;
+  private final transient MessageProperties messageProperties;
+  private final transient TwoFactorAuthorization twoFactorAuthorization;
   private final transient HttpServletRequest request;
   private final TwoFactorCodeInput code;
   private final H2 title = new H2();
@@ -35,9 +35,11 @@ public final class TwoFactorActionDialog extends Dialog {
   private SerializableRunnable action;
 
   public TwoFactorActionDialog(
-      MessageProperties texts, TwoFactorAuthorization authorization, HttpServletRequest request) {
-    this.texts = texts;
-    this.authorization = authorization;
+      MessageProperties messageProperties,
+      TwoFactorAuthorization twoFactorAuthorization,
+      HttpServletRequest request) {
+    this.messageProperties = messageProperties;
+    this.twoFactorAuthorization = twoFactorAuthorization;
     this.request = request;
     setId("two-factor-action-dialog");
     addClassNames("cosmos-theme", CosmosClasses.REFERENCE_OVERLAY, "account-change-dialog");
@@ -55,7 +57,7 @@ public final class TwoFactorActionDialog extends Dialog {
     getHeader().add(header);
     code =
         new TwoFactorCodeInput(
-            texts, request, "two-factor-action", "two-factor-action", this::close);
+            messageProperties, request, "two-factor-action", "two-factor-action", this::close);
     Div body = new Div(code);
     body.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
     add(body);
@@ -69,14 +71,13 @@ public final class TwoFactorActionDialog extends Dialog {
     actions.addClassName("cosmos-dialog-actions");
     EqualButtonWidths.configure(actions);
     getFooter().add(actions);
-    addOpenedChangeListener(
-        event -> {
-          if (!event.isOpened()) {
-            code.reset();
-            purpose = null;
-            action = null;
-          }
-        });
+    addOpenedChangeListener(event -> {
+      if (!event.isOpened()) {
+        code.reset();
+        purpose = null;
+        action = null;
+      }
+    });
     refreshTexts();
   }
 
@@ -90,11 +91,11 @@ public final class TwoFactorActionDialog extends Dialog {
   }
 
   public void refreshTexts() {
-    title.setText(texts.getExternalProof());
+    title.setText(messageProperties.getExternalProof());
     code.refreshTexts();
-    cancel.setText(texts.getAdminUsersCancel());
-    confirm.setText(texts.getTwoFactorConfirm());
-    close.setAriaLabel(texts.getNotificationsClose());
+    cancel.setText(messageProperties.getAdminUsersCancel());
+    confirm.setText(messageProperties.getTwoFactorConfirm());
+    close.setAriaLabel(messageProperties.getNotificationsClose());
   }
 
   private void submit() {
@@ -102,21 +103,23 @@ public final class TwoFactorActionDialog extends Dialog {
       return;
     }
     try {
-      authorization.confirmAction(request, purpose, code.getValue());
+      twoFactorAuthorization.confirmAction(request, purpose, code.getValue());
       SerializableRunnable confirmedAction = action;
       confirmedAction.run();
       close();
     } catch (RuntimeException failure) {
       code.markInvalid();
-      Supplier<String> message = texts::getTwoFactorFailed;
+      Supplier<String> message = messageProperties::getTwoFactorFailed;
       if (failure instanceof LockedException) {
-        message = texts::getTwoFactorThrottled;
+        message = messageProperties::getTwoFactorThrottled;
       } else if (failure instanceof BadCredentialsException) {
-        message = texts::getTwoFactorInvalidCode;
+        message = messageProperties::getTwoFactorInvalidCode;
       }
       NotificationHelper.getInstance()
           .showNotification(
-              texts::getBaseFailedTitle, message, NotificationHelper.NotificationType.ERROR);
+              messageProperties::getBaseFailedTitle,
+              message,
+              NotificationHelper.NotificationType.ERROR);
     } finally {
       code.clear();
     }

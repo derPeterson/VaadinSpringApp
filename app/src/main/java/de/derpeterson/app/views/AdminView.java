@@ -141,19 +141,20 @@ public class AdminView extends IsAuthenticatedBaseView {
 
   @org.springframework.beans.factory.annotation.Autowired
   public void configureExternalProviders(
-      ExternalProviderSettings settings, TwoFactorAuthorization authorization) {
+      ExternalProviderSettings settings, TwoFactorAuthorization twoFactorAuthorization) {
     if (canConfigureSecurity()) {
       externalLoginSection =
           new AdminExternalLoginSection(messageProperties, settings, configService);
-      externalLoginSection.configureConfirmation(authorization, request);
+      externalLoginSection.configureConfirmation(twoFactorAuthorization, request);
     }
   }
 
   @org.springframework.beans.factory.annotation.Autowired
-  public void configureTwoFactor(TwoFactorPolicies policies, TwoFactorAuthorization authorization) {
+  public void configureTwoFactor(
+      TwoFactorPolicies policies, TwoFactorAuthorization twoFactorAuthorization) {
     if (canConfigureSecurity()) {
       twoFactorSection =
-          new AdminTwoFactorSection(messageProperties, policies, authorization, request);
+          new AdminTwoFactorSection(messageProperties, policies, twoFactorAuthorization, request);
     }
   }
 
@@ -266,14 +267,13 @@ public class AdminView extends IsAuthenticatedBaseView {
       parameters.put("ticket", state.ticketNumber());
     }
     getUI()
-        .ifPresent(
-            ui ->
-                ui.getPage()
-                    .getHistory()
-                    .replaceState(
-                        null,
-                        new Location(
-                            AppRouteConstants.ADMIN_ROUTE, QueryParameters.simple(parameters))));
+        .ifPresent(ui ->
+            ui.getPage()
+                .getHistory()
+                .replaceState(
+                    null,
+                    new Location(
+                        AppRouteConstants.ADMIN_ROUTE, QueryParameters.simple(parameters))));
   }
 
   private static <E extends Enum<E>> E parameter(
@@ -465,17 +465,16 @@ public class AdminView extends IsAuthenticatedBaseView {
         .getChildren()
         .filter(de.derpeterson.app.ui.components.CosmosSectionHeaderComponent.class::isInstance)
         .findFirst()
-        .ifPresent(
-            header -> {
-              if (activeSection == AdminSection.CONFIGURATION
-                  && activeConfigurationGroup != null
-                  && activeConfigurationGroup.isSuperadminOnly()) {
-                specialConfigurationHeadings.put(activeConfigurationGroup, header);
-              } else {
-                pageHeadings.put(activeSection, header);
-              }
-              selected.remove(header);
-            });
+        .ifPresent(header -> {
+          if (activeSection == AdminSection.CONFIGURATION
+              && activeConfigurationGroup != null
+              && activeConfigurationGroup.isSuperadminOnly()) {
+            specialConfigurationHeadings.put(activeConfigurationGroup, header);
+          } else {
+            pageHeadings.put(activeSection, header);
+          }
+          selected.remove(header);
+        });
     pageHeading.removeAll();
     com.vaadin.flow.component.Component heading =
         activeSection == AdminSection.CONFIGURATION
@@ -501,14 +500,13 @@ public class AdminView extends IsAuthenticatedBaseView {
       configurationNavItem.getElement().removeAttribute(ARIA_CURRENT);
     }
 
-    configurationSubmenuItems.forEach(
-        (group, item) -> {
-          item.setVisible(!group.isSuperadminOnly() || canConfigureSecurity());
-          boolean isActive =
-              activeSection == AdminSection.CONFIGURATION
-                  && Objects.equals(activeConfigurationGroup, group);
-          applyNavigationItemState(item, isActive);
-        });
+    configurationSubmenuItems.forEach((group, item) -> {
+      item.setVisible(!group.isSuperadminOnly() || canConfigureSecurity());
+      boolean isActive =
+          activeSection == AdminSection.CONFIGURATION
+              && Objects.equals(activeConfigurationGroup, group);
+      applyNavigationItemState(item, isActive);
+    });
   }
 
   private void applyNavigationItemState(SideNavItem item, boolean active) {
@@ -541,12 +539,11 @@ public class AdminView extends IsAuthenticatedBaseView {
     mailTestNavItem.setLabel(messageProperties.getAdminNavMailTest());
     userManagementNavItem.setLabel(messageProperties.getAdminUsersTitle());
 
-    configurationSubmenuItems.forEach(
-        (group, item) ->
-            item.setLabel(
-                group == AdminConfigGroup.TWO_FACTOR
-                    ? messageProperties.getTwoFactorNavigationLabel()
-                    : messageProperties.getAdminConfigGroupLabel(group)));
+    configurationSubmenuItems.forEach((group, item) ->
+        item.setLabel(
+            group == AdminConfigGroup.TWO_FACTOR
+                ? messageProperties.getTwoFactorNavigationLabel()
+                : messageProperties.getAdminConfigGroupLabel(group)));
     twoFactorNavigationTooltip.setText(messageProperties.getTwoFactorSettingsTitle());
     sideNavigation.getElement().setAttribute("aria-label", messageProperties.getAdminHeaderTitle());
     sideNavigation.setI18n(

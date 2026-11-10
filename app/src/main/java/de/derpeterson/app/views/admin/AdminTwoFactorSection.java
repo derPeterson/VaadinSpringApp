@@ -71,9 +71,9 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     }
   }
 
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private final transient TwoFactorPolicies policies;
-  private final transient TwoFactorAuthorization authorization;
+  private final transient TwoFactorAuthorization twoFactorAuthorization;
   private final transient HttpServletRequest request;
   private final Map<RoleType, Map<TwoFactorAction, ComboBox<TwoFactorMode>>> rules =
       new EnumMap<>(RoleType.class);
@@ -102,13 +102,13 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   private transient Runnable refreshHelp;
 
   public AdminTwoFactorSection(
-      MessageProperties texts,
+      MessageProperties messageProperties,
       TwoFactorPolicies policies,
-      TwoFactorAuthorization authorization,
+      TwoFactorAuthorization twoFactorAuthorization,
       HttpServletRequest request) {
-    this.texts = texts;
+    this.messageProperties = messageProperties;
     this.policies = policies;
-    this.authorization = authorization;
+    this.twoFactorAuthorization = twoFactorAuthorization;
     this.request = request;
     setWidthFull();
     setPadding(false);
@@ -116,8 +116,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     addClassNames("cosmos-admin-section", "cosmos-provider-settings", "cosmos-mfa-settings");
     setId("admin-two-factor-settings");
     add(new CosmosSectionHeaderComponent(breadcrumb, pageTitle, pageHint));
-    confirmation = new TwoFactorActionDialog(texts, authorization, request);
-    help = new AdminSidePanel(texts, AppIcon.INFO_CIRCLE);
+    confirmation = new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, request);
+    help = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
     help.addClassName("admin-config-help");
     help.setId("two-factor-field-help");
     closeHelp.setWidthFull();
@@ -148,13 +148,13 @@ public final class AdminTwoFactorSection extends VerticalLayout {
               role,
               selections,
               AppIcon.NUMBER_ONE,
-              texts::getTwoFactorAccessGroup,
+              messageProperties::getTwoFactorAccessGroup,
               List.of(TwoFactorAction.LOGIN, TwoFactorAction.ADMINISTRATION)),
           ruleGroup(
               role,
               selections,
               AppIcon.NUMBER_TWO,
-              texts::getTwoFactorAccountGroup,
+              messageProperties::getTwoFactorAccountGroup,
               List.of(
                   TwoFactorAction.PASSWORD,
                   TwoFactorAction.EMAIL,
@@ -163,7 +163,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
               role,
               selections,
               AppIcon.NUMBER_THREE,
-              texts::getTwoFactorMethodsGroup,
+              messageProperties::getTwoFactorMethodsGroup,
               List.of(
                   TwoFactorAction.LINK_PROVIDER,
                   TwoFactorAction.UNLINK_PROVIDER,
@@ -179,7 +179,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     inactivity.setId("two-factor-inactivity-enabled");
     inactivity.addClassName(CONFIG_SWITCH_CLASS);
     inactivity.setWidthFull();
-    duration = new AdminDurationField(texts);
+    duration = new AdminDurationField(messageProperties);
     duration.setAvailableUnits(
         AdminDurationField.Unit.MINUTES,
         AdminDurationField.Unit.HOURS,
@@ -195,35 +195,36 @@ public final class AdminTwoFactorSection extends VerticalLayout {
             withHelp(
                 duration,
                 new FieldHelp(
-                    texts::getTwoFactorInactivityGroup,
-                    texts::getTwoFactorInactivityDuration,
-                    texts::getTwoFactorInactivityDescription,
+                    messageProperties::getTwoFactorInactivityGroup,
+                    messageProperties::getTwoFactorInactivityDuration,
+                    messageProperties::getTwoFactorInactivityDescription,
                     () -> duration.displayStoredValue(DEFAULT_INACTIVITY_SECONDS),
                     () ->
                         List.of(
-                            texts.getAdminConfigDurationNumberRule(),
-                            texts.getTwoFactorInactivityRange()),
-                    texts::getAdminConfigEffectiveTwoFactorInactivityDuration)));
+                            messageProperties.getAdminConfigDurationNumberRule(),
+                            messageProperties.getTwoFactorInactivityRange()),
+                    messageProperties::getAdminConfigEffectiveTwoFactorInactivityDuration)));
     durationField.addClassName("provider-help-field");
     Div common =
         new Div(
             withHelp(
                 inactivity,
                 new FieldHelp(
-                    texts::getTwoFactorInactivityGroup,
-                    texts::getTwoFactorInactivityEnabled,
-                    texts::getTwoFactorInactivityDescription,
+                    messageProperties::getTwoFactorInactivityGroup,
+                    messageProperties::getTwoFactorInactivityEnabled,
+                    messageProperties::getTwoFactorInactivityDescription,
                     () ->
                         DEFAULT_POLICY.inactivityEnabled()
-                            ? texts.getAdminUsersYes()
-                            : texts.getAdminUsersNo(),
-                    () -> List.of(texts.getTwoFactorInactivityRange()),
-                    texts::getAdminConfigEffectiveTwoFactorInactivitySwitch)),
+                            ? messageProperties.getAdminUsersYes()
+                            : messageProperties.getAdminUsersNo(),
+                    () -> List.of(messageProperties.getTwoFactorInactivityRange()),
+                    messageProperties::getAdminConfigEffectiveTwoFactorInactivitySwitch)),
             durationField);
     common.addClassName("mfa-policy-grid");
     VerticalLayout inactivitySection =
         new VerticalLayout(
-            sectionHeading(AppIcon.NUMBER_FOUR, texts::getTwoFactorInactivityGroup), common);
+            sectionHeading(AppIcon.NUMBER_FOUR, messageProperties::getTwoFactorInactivityGroup),
+            common);
     inactivitySection.setSpacing(false);
     inactivitySection.setPadding(false);
     inactivitySection.addClassName("mfa-inactivity-section");
@@ -281,12 +282,11 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       modeField.setItems(TwoFactorMode.values());
       modeField.setAllowCustomValue(false);
       PortalFields.styleChoice(modeField, this::modeLabel, false);
-      modeField.addValueChangeListener(
-          event -> {
-            if (event.getValue() == null && event.getOldValue() != null) {
-              modeField.setValue(event.getOldValue());
-            }
-          });
+      modeField.addValueChangeListener(event -> {
+        if (event.getValue() == null && event.getOldValue() != null) {
+          modeField.setValue(event.getOldValue());
+        }
+      });
       selections.put(action, modeField);
       fields.add(
           withHelp(
@@ -296,8 +296,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
                   () -> actionLabel(action),
                   () -> ruleDescription(action),
                   () -> modeLabel(DEFAULT_POLICY.rules().get(role).get(action)),
-                  texts::twoFactorRuleHelpItems,
-                  texts::getAdminConfigEffectiveTwoFactorRule)));
+                  messageProperties::twoFactorRuleHelpItems,
+                  messageProperties::getAdminConfigEffectiveTwoFactorRule)));
     }
     VerticalLayout group = new VerticalLayout(sectionHeading(icon, heading), fields);
     group.setPadding(false);
@@ -324,17 +324,19 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     scopeInfo.addClassName("mfa-role-scope");
     VerticalLayout guide =
         new VerticalLayout(
-            sectionHeading(AppIcon.INFO_CIRCLE, texts::getTwoFactorRoleGuide),
+            sectionHeading(AppIcon.INFO_CIRCLE, messageProperties::getTwoFactorRoleGuide),
             guideItem(
                 AppIcon.NUMBER_ONE,
-                texts::getTwoFactorRolePriority,
-                texts::getTwoFactorRolePriorityHint),
+                messageProperties::getTwoFactorRolePriority,
+                messageProperties::getTwoFactorRolePriorityHint),
             guideItem(
                 AppIcon.NUMBER_TWO,
-                texts::getTwoFactorExistingFactors,
-                texts::getTwoFactorExistingFactorsHint),
+                messageProperties::getTwoFactorExistingFactors,
+                messageProperties::getTwoFactorExistingFactorsHint),
             guideItem(
-                AppIcon.NUMBER_THREE, texts::getTwoFactorRuleTiming, texts::getTwoFactorSaveHint),
+                AppIcon.NUMBER_THREE,
+                messageProperties::getTwoFactorRuleTiming,
+                messageProperties::getTwoFactorSaveHint),
             new Hr(),
             scopeInfo);
     guide.addClassName("mfa-role-guide");
@@ -343,10 +345,10 @@ public final class AdminTwoFactorSection extends VerticalLayout {
 
   private void refreshRoleScope(Span scope, RoleType role) {
     String placeholder = "{role}";
-    String message = texts.getTwoFactorRoleScope(placeholder);
+    String message = messageProperties.getTwoFactorRoleScope(placeholder);
     int rolePosition = message.indexOf(placeholder);
     if (rolePosition < 0) {
-      scope.setText(texts.getTwoFactorRoleScope(roleLabel(role)));
+      scope.setText(messageProperties.getTwoFactorRoleScope(roleLabel(role)));
       return;
     }
     Span roleName = new Span(roleLabel(role));
@@ -364,11 +366,10 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     heading.addClassName("mfa-guide-item-title");
     Span copy = new Span();
     copy.addClassName(CosmosClasses.PANEL_DESCRIPTION);
-    fieldTextUpdates.add(
-        () -> {
-          heading.setText(title.get());
-          copy.setText(description.get());
-        });
+    fieldTextUpdates.add(() -> {
+      heading.setText(title.get());
+      copy.setText(description.get());
+    });
     VerticalLayout text = new VerticalLayout(heading, copy);
     text.setPadding(false);
     text.setSpacing(false);
@@ -382,9 +383,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     snapshot
         .policy()
         .rules()
-        .forEach(
-            (role, actions) ->
-                actions.forEach((action, mode) -> rules.get(role).get(action).setValue(mode)));
+        .forEach((role, actions) ->
+            actions.forEach((action, mode) -> rules.get(role).get(action).setValue(mode)));
     inactivity.setValue(snapshot.policy().inactivityEnabled());
     duration.setStoredValue(Long.toString(snapshot.policy().inactivity().toSeconds()));
     duration.setControlsEnabled(inactivity.getValue());
@@ -397,7 +397,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       activate();
       NotificationHelper.getInstance()
           .showNotification(
-              texts::getAdminConfigReloadSuccess, NotificationHelper.NotificationType.SUCCESS);
+              messageProperties::getAdminConfigReloadSuccess,
+              NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException failure) {
       failure(failure);
     }
@@ -410,12 +411,11 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     try {
       Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> desiredRules =
           new EnumMap<>(RoleType.class);
-      rules.forEach(
-          (role, actions) -> {
-            Map<TwoFactorAction, TwoFactorMode> modes = new EnumMap<>(TwoFactorAction.class);
-            actions.forEach((action, modeField) -> modes.put(action, modeField.getValue()));
-            desiredRules.put(role, modes);
-          });
+      rules.forEach((role, actions) -> {
+        Map<TwoFactorAction, TwoFactorMode> modes = new EnumMap<>(TwoFactorAction.class);
+        actions.forEach((action, modeField) -> modes.put(action, modeField.getValue()));
+        desiredRules.put(role, modes);
+      });
       Duration period =
           duration.getStoredValue().isBlank() && !Boolean.TRUE.equals(inactivity.getValue())
               ? snapshot.policy().inactivity()
@@ -428,7 +428,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
               policies.developmentOptionsAvailable() && developmentPause.getValue(),
               policies.developmentOptionsAvailable() && developmentGoogle.getValue());
       long revision = snapshot.revision();
-      if (authorization.requires(request, TwoFactorAction.SECURITY_CONFIGURATION)) {
+      if (twoFactorAuthorization.requires(request, TwoFactorAction.SECURITY_CONFIGURATION)) {
         confirmation.open(TwoFactorAction.SECURITY_CONFIGURATION, () -> save(revision, desired));
       } else {
         save(revision, desired);
@@ -442,7 +442,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     try {
       snapshot = policies.save(request, revision, desired);
       NotificationHelper.getInstance()
-          .showNotification(texts::getTwoFactorSaved, NotificationHelper.NotificationType.SUCCESS);
+          .showNotification(
+              messageProperties::getTwoFactorSaved, NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException failure) {
       failure(failure);
     }
@@ -451,10 +452,10 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   private void failure(RuntimeException failure) {
     NotificationHelper.getInstance()
         .showNotification(
-            texts::getBaseFailedTitle,
+            messageProperties::getBaseFailedTitle,
             failure instanceof OptimisticLockingFailureException
-                ? texts::getTwoFactorConflict
-                : texts::getTwoFactorFailed,
+                ? messageProperties::getTwoFactorConflict
+                : messageProperties::getTwoFactorFailed,
             NotificationHelper.NotificationType.ERROR);
   }
 
@@ -470,8 +471,9 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     Div row = new Div(field, button);
     row.addClassName("cosmos-config-input-row");
     infoButtons.add(button);
-    fieldTextUpdates.add(
-        () -> button.setAriaLabel(texts.getAdminConfigHelpTitle() + " – " + details.title().get()));
+    fieldTextUpdates.add(() ->
+        button.setAriaLabel(
+            messageProperties.getAdminConfigHelpTitle() + " – " + details.title().get()));
     if (field instanceof ComboBox<?> modeField) {
       Span caption = new Span();
       caption.setId(field.getId().orElseThrow() + "-label");
@@ -486,8 +488,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   }
 
   private void renderHelp(FieldHelp details) {
-    help.setHeading(texts.getAdminConfigHelpTitle());
-    help.setDescription(texts.getAdminConfigHelpDescription());
+    help.setHeading(messageProperties.getAdminConfigHelpTitle());
+    help.setDescription(messageProperties.getAdminConfigHelpDescription());
     Span group = new Span(details.group().get());
     group.addClassName("admin-help-group");
     H3 fieldTitle = new H3(details.title().get());
@@ -495,48 +497,50 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     Span description = new Span(details.description().get());
     description.addClassName("admin-help-description");
     Div defaultValue =
-        new Div(new Span(texts.getAdminConfigDefault()), new Span(details.defaultValue().get()));
+        new Div(
+            new Span(messageProperties.getAdminConfigDefault()),
+            new Span(details.defaultValue().get()));
     defaultValue.addClassName("admin-help-default");
     UnorderedList rulesList = new UnorderedList();
     details.rules().get().forEach(rule -> rulesList.add(new ListItem(rule)));
-    Div rulesSection = new Div(new H4(texts.getAdminConfigInputRules()), rulesList);
+    Div rulesSection = new Div(new H4(messageProperties.getAdminConfigInputRules()), rulesList);
     rulesSection.addClassName("admin-help-rules");
     help.removeAll();
     help.add(group, fieldTitle, description, defaultValue, rulesSection);
     help.addEffectiveUse(
-        texts,
-        List.of(details.effectiveUse().get(), texts.getAdminConfigEffectiveTwoFactorExisting()));
+        messageProperties,
+        List.of(
+            details.effectiveUse().get(),
+            messageProperties.getAdminConfigEffectiveTwoFactorExisting()));
   }
 
   public void refreshTexts() {
-    breadcrumb.setText(texts.getAdminHeaderTitle() + " / " + texts.getAdminConfigTitle());
-    pageTitle.setText(texts.getAdminConfigTitle());
-    pageHint.setText(texts.getTwoFactorSettingsPageHint());
-    title.setText(texts.getTwoFactorSettingsTitle());
-    hint.setText(texts.getTwoFactorSettingsHint());
-    roleTabs.forEach(
-        (role, tab) -> {
-          tab.removeAll();
-          tab.add(new Span(roleLabel(role)));
-        });
-    rules.forEach(
-        (role, actions) ->
-            actions.forEach(
-                (action, modeField) -> modeField.setItemLabelGenerator(this::modeLabel)));
+    breadcrumb.setText(
+        messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminConfigTitle());
+    pageTitle.setText(messageProperties.getAdminConfigTitle());
+    pageHint.setText(messageProperties.getTwoFactorSettingsPageHint());
+    title.setText(messageProperties.getTwoFactorSettingsTitle());
+    hint.setText(messageProperties.getTwoFactorSettingsHint());
+    roleTabs.forEach((role, tab) -> {
+      tab.removeAll();
+      tab.add(new Span(roleLabel(role)));
+    });
+    rules.forEach((role, actions) ->
+        actions.forEach((action, modeField) -> modeField.setItemLabelGenerator(this::modeLabel)));
     fieldTextUpdates.forEach(Runnable::run);
     infoButtons.forEach(ConfigInfoButton::refreshText);
-    inactivity.setLabel(texts.getTwoFactorInactivityEnabled());
-    durationLabel.setText(texts.getTwoFactorInactivityDuration());
+    inactivity.setLabel(messageProperties.getTwoFactorInactivityEnabled());
+    durationLabel.setText(messageProperties.getTwoFactorInactivityDuration());
     duration.refreshTexts();
-    developmentTitle.setText(texts.getTwoFactorDevelopmentTitle());
-    developmentWarning.setText(texts.getTwoFactorDevelopmentWarning());
-    developmentPause.setLabel(texts.getTwoFactorDevelopmentPause());
-    developmentGoogle.setLabel(texts.getTwoFactorDevelopmentGoogle());
-    saveHint.setText(texts.getTwoFactorSaveHint());
-    reload.setText(texts.getAdminConfigReload());
-    save.setText(texts.getAdminConfigSave());
-    closeHelp.setText(texts.getAdminUsersCloseDialog());
-    help.refreshCloseText(texts);
+    developmentTitle.setText(messageProperties.getTwoFactorDevelopmentTitle());
+    developmentWarning.setText(messageProperties.getTwoFactorDevelopmentWarning());
+    developmentPause.setLabel(messageProperties.getTwoFactorDevelopmentPause());
+    developmentGoogle.setLabel(messageProperties.getTwoFactorDevelopmentGoogle());
+    saveHint.setText(messageProperties.getTwoFactorSaveHint());
+    reload.setText(messageProperties.getAdminConfigReload());
+    save.setText(messageProperties.getAdminConfigSave());
+    closeHelp.setText(messageProperties.getAdminUsersCloseDialog());
+    help.refreshCloseText(messageProperties);
     if (refreshHelp != null) {
       refreshHelp.run();
     }
@@ -545,30 +549,30 @@ public final class AdminTwoFactorSection extends VerticalLayout {
 
   private String modeLabel(TwoFactorMode mode) {
     return switch (mode) {
-      case OFF -> texts.getTwoFactorModeOff();
-      case IF_ENROLLED -> texts.getTwoFactorModeEnrolled();
-      case REQUIRED -> texts.getTwoFactorModeRequired();
+      case OFF -> messageProperties.getTwoFactorModeOff();
+      case IF_ENROLLED -> messageProperties.getTwoFactorModeEnrolled();
+      case REQUIRED -> messageProperties.getTwoFactorModeRequired();
     };
   }
 
   private String roleLabel(RoleType role) {
     return switch (role) {
-      case ROLE_SUPERADMIN -> texts.getRoleSuperadmin();
-      case ROLE_ADMIN -> texts.getRoleAdmin();
-      case ROLE_USER -> texts.getRoleUser();
-      case ROLE_GUEST -> texts.getRoleGuest();
+      case ROLE_SUPERADMIN -> messageProperties.getRoleSuperadmin();
+      case ROLE_ADMIN -> messageProperties.getRoleAdmin();
+      case ROLE_USER -> messageProperties.getRoleUser();
+      case ROLE_GUEST -> messageProperties.getRoleGuest();
     };
   }
 
   private String actionLabel(TwoFactorAction action) {
-    return ConfigurationCatalog.actionLabel(action, texts);
+    return ConfigurationCatalog.actionLabel(action, messageProperties);
   }
 
   private String ruleDescription(TwoFactorAction action) {
     return switch (action) {
-      case ADMINISTRATION -> texts.getTwoFactorAdminAccessHelp();
-      case SECURITY_CONFIGURATION -> texts.getTwoFactorSaveHint();
-      default -> texts.getTwoFactorRulesHint();
+      case ADMINISTRATION -> messageProperties.getTwoFactorAdminAccessHelp();
+      case SECURITY_CONFIGURATION -> messageProperties.getTwoFactorSaveHint();
+      default -> messageProperties.getTwoFactorRulesHint();
     };
   }
 }

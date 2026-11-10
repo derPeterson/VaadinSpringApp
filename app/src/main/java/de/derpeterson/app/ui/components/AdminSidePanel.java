@@ -23,7 +23,7 @@ public class AdminSidePanel extends Dialog {
   private final Span description = new Span();
   private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create());
 
-  public AdminSidePanel(MessageProperties texts, AppIcon icon) {
+  public AdminSidePanel(MessageProperties messageProperties, AppIcon icon) {
     addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-drawer");
     getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
     title.addClassName(PANEL_TITLE);
@@ -41,7 +41,7 @@ public class AdminSidePanel extends Dialog {
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
     addOpenedChangeListener(event -> updateBounds());
-    refreshCloseText(texts);
+    refreshCloseText(messageProperties);
   }
 
   public void setHeading(String text) {
@@ -53,10 +53,10 @@ public class AdminSidePanel extends Dialog {
     description.setVisible(!text.isBlank());
   }
 
-  public void addEffectiveUse(MessageProperties texts, List<String> notes) {
+  public void addEffectiveUse(MessageProperties messageProperties, List<String> notes) {
     UnorderedList list = new UnorderedList();
     notes.forEach(note -> list.add(new ListItem(note)));
-    Div section = new Div(new H4(texts.getAdminConfigEffectiveTitle()), list);
+    Div section = new Div(new H4(messageProperties.getAdminConfigEffectiveTitle()), list);
     section.addClassNames("admin-help-rules", "admin-help-effective-use");
     add(section);
   }
@@ -96,8 +96,8 @@ public class AdminSidePanel extends Dialog {
             """);
   }
 
-  public void refreshCloseText(MessageProperties texts) {
-    close.setAriaLabel(texts.getNotificationsClose());
-    close.setTooltipText(texts.getNotificationsClose());
+  public void refreshCloseText(MessageProperties messageProperties) {
+    close.setAriaLabel(messageProperties.getNotificationsClose());
+    close.setTooltipText(messageProperties.getNotificationsClose());
   }
 }

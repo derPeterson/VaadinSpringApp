@@ -19,25 +19,25 @@ public final class PublicAuthenticationPanels extends Div {
       Component form,
       ExternalLoginFlow flow,
       HttpServletRequest request,
-      MessageProperties texts,
+      MessageProperties messageProperties,
       BooleanSupplier remember) {
     super(form);
     addClassName("public-auth-panels");
     ExternalLoginButtons external =
         new ExternalLoginButtons(
-            flow, request, texts, remember, ExternalLoginButtons.Presentation.PANEL);
+            flow, request, messageProperties, remember, ExternalLoginButtons.Presentation.PANEL);
     if (!external.isVisible()) {
       return;
     }
     addClassName("public-auth-panels--external");
-    Span alternative = new Span(texts.getExternalOr());
+    Span alternative = new Span(messageProperties.getExternalOr());
     Div divider = new Div(alternative);
     divider.addClassName("external-login-divider");
     divider.getElement().setAttribute("aria-hidden", "true");
     ComponentUtil.addListener(
         UI.getCurrent(),
         LanguageChangeEvent.class,
-        event -> alternative.setText(texts.getExternalOr()));
+        event -> alternative.setText(messageProperties.getExternalOr()));
     add(divider, external);
   }
 }

@@ -24,56 +24,57 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 /** Abgestimmter Einstieg mit echten Schnellzugriffen, ohne erfundene Kennzahlen. */
 public class AdminDashboardSection extends VerticalLayout {
-  private final MessageProperties texts;
+  private final MessageProperties messageProperties;
   private final List<SerializableRunnable> translations = new ArrayList<>();
 
-  public AdminDashboardSection(MessageProperties texts, UserDetails authenticatedUser) {
-    this.texts = texts;
+  public AdminDashboardSection(MessageProperties messageProperties, UserDetails authenticatedUser) {
+    this.messageProperties = messageProperties;
     setPadding(false);
     setSpacing(false);
     setWidthFull();
     addClassNames("cosmos-admin-section", "cosmos-admin-section--dashboard");
-    Span overview = copy(texts::getAdminHeaderTitle);
-    Span title = copy(texts::getAdminDashboardTitle);
-    Span description = copy(texts::getAdminDashboardDescription);
-    Div eyebrow = new Div(copy(texts::getAdminDashboardHeroEyebrow));
+    Span overview = copy(messageProperties::getAdminHeaderTitle);
+    Span title = copy(messageProperties::getAdminDashboardTitle);
+    Span description = copy(messageProperties::getAdminDashboardDescription);
+    Div eyebrow = new Div(copy(messageProperties::getAdminDashboardHeroEyebrow));
     eyebrow.addClassName("admin-dashboard-eyebrow");
     H2 welcome = new H2();
-    translations.add(() -> welcome.setText(texts.getAdminDashboardHeroTitle() + "."));
-    Div copy = new Div(eyebrow, welcome, copy(texts::getAdminDashboardHeroDescription));
+    translations.add(() -> welcome.setText(messageProperties.getAdminDashboardHeroTitle() + "."));
+    Div copy = new Div(eyebrow, welcome, copy(messageProperties::getAdminDashboardHeroDescription));
     copy.addClassName("admin-dashboard-copy");
     Image picture = new Image("images/admin-dashboard.jpg", "");
     picture.addClassName("admin-dashboard-image");
     Div intro = new Div(copy, picture);
     intro.addClassName("admin-dashboard-intro");
-    Div hint = new Div(AppIcon.INFO_CIRCLE.create(), copy(texts::getAdminDashboardFutureHint));
+    Div hint =
+        new Div(AppIcon.INFO_CIRCLE.create(), copy(messageProperties::getAdminDashboardFutureHint));
     hint.addClassName("admin-dashboard-hint");
     Div hero = new Div(intro, hint);
     hero.addClassName("admin-dashboard-hero");
     H2 shortcuts = new H2();
-    translations.add(() -> shortcuts.setText(texts.getAdminDashboardShortcuts()));
+    translations.add(() -> shortcuts.setText(messageProperties.getAdminDashboardShortcuts()));
     Div grid = new Div();
     grid.addClassName("admin-dashboard-shortcuts");
     grid.add(
         shortcut(
             AppIcon.USERS,
-            texts::getAdminUsersTitle,
-            texts::getAdminUsersDescription,
+            messageProperties::getAdminUsersTitle,
+            messageProperties::getAdminUsersDescription,
             "user_management"),
         shortcut(
             AppIcon.COGS,
-            texts::getAdminNavConfiguration,
-            texts::getAdminConfigDescription,
+            messageProperties::getAdminNavConfiguration,
+            messageProperties::getAdminConfigDescription,
             "configuration"),
         shortcut(
             AppIcon.ENVELOPE,
-            texts::getAdminMailTitle,
-            texts::getAdminMailDescription,
+            messageProperties::getAdminMailTitle,
+            messageProperties::getAdminMailDescription,
             "mail_test"),
         shortcut(
             AppIcon.MESSAGES,
-            texts::getSupportTitle,
-            texts::getSupportShortcutDescription,
+            messageProperties::getSupportTitle,
+            messageProperties::getSupportShortcutDescription,
             "support"));
     boolean canSend =
         authenticatedUser != null
@@ -83,11 +84,11 @@ public class AdminDashboardSection extends VerticalLayout {
       grid.add(
           shortcut(
               AppIcon.BELL,
-              texts::getNotificationsTitle,
-              texts::getNotificationsAdminPageDescription,
+              messageProperties::getNotificationsTitle,
+              messageProperties::getNotificationsAdminPageDescription,
               "notifications"));
     }
-    Div accessHeading = new Div(shortcuts, copy(texts::getAdminDashboardShortcutsHint));
+    Div accessHeading = new Div(shortcuts, copy(messageProperties::getAdminDashboardShortcutsHint));
     accessHeading.addClassName("admin-dashboard-access-heading");
     add(new CosmosSectionHeaderComponent(overview, title, description), hero, accessHeading, grid);
     refreshTexts();
@@ -116,11 +117,10 @@ public class AdminDashboardSection extends VerticalLayout {
             event ->
                 UI.getCurrent()
                     .navigate(AdminView.class, QueryParameters.simple(Map.of("section", section))));
-    translations.add(
-        () -> {
-          open.setText(texts.getAdminDashboardOpen());
-          open.setAriaLabel(name.get() + ": " + texts.getAdminDashboardOpen());
-        });
+    translations.add(() -> {
+      open.setText(messageProperties.getAdminDashboardOpen());
+      open.setAriaLabel(name.get() + ": " + messageProperties.getAdminDashboardOpen());
+    });
     Div card = new Div(symbol, copy, open);
     card.addClassName("admin-dashboard-shortcut");
     return card;

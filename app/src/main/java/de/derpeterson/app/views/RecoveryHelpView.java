@@ -33,37 +33,39 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
   public static final String ROUTE = "recovery-help";
   private final transient HttpServletRequest request;
   private final transient SecurityService security;
-  private final transient TwoFactorAuthorization authorization;
+  private final transient TwoFactorAuthorization twoFactorAuthorization;
   private final PublicPageComponent page;
   private final Button back;
   private final Button logout;
-  private final transient MessageProperties texts;
+  private final transient MessageProperties messageProperties;
   private TwoFactorFlow flow;
 
   public RecoveryHelpView(
       ConfigService config,
-      MessageProperties texts,
+      MessageProperties messageProperties,
       SupportTicketService tickets,
       SecurityService security,
-      TwoFactorAuthorization authorization,
+      TwoFactorAuthorization twoFactorAuthorization,
       HttpServletRequest request) {
     this.request = request;
     this.security = security;
-    this.authorization = authorization;
-    this.texts = texts;
+    this.twoFactorAuthorization = twoFactorAuthorization;
+    this.messageProperties = messageProperties;
     setPadding(false);
     setSpacing(false);
     setWidthFull();
-    page = new PublicPageComponent(config, texts, PublicPageComponent.Page.RECOVERY_HELP);
-    SupportTicketsComponent support = new SupportTicketsComponent(texts, tickets, request, false);
-    back = new Button(texts.getTwoFactorReturnToCode(), event -> leaveHelp());
+    page =
+        new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.RECOVERY_HELP);
+    SupportTicketsComponent support =
+        new SupportTicketsComponent(messageProperties, tickets, request, false);
+    back = new Button(messageProperties.getTwoFactorReturnToCode(), event -> leaveHelp());
     back.setId("support-back");
     back.setPrefixComponent(AppIcon.ANGLE_LEFT.create());
     back.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     support.addBackAction(back);
     logout =
         new Button(
-            texts.getBaseLogoutButton(),
+            messageProperties.getBaseLogoutButton(),
             event -> {
               security.logout();
               UI.getCurrent().getPage().setLocation(request.getContextPath() + "/login");
@@ -88,7 +90,7 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
     flow = TwoFactorFlow.current(request);
     if (flow == null) {
       flow =
-          authorization.sessionConfirmed(request)
+          twoFactorAuthorization.sessionConfirmed(request)
               ? TwoFactorFlow.ACCOUNT_HELP
               : TwoFactorFlow.LOGIN_HELP;
       flow.enter(request);
@@ -107,8 +109,11 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
 
   private void refreshNavigation() {
     boolean account = flow != null && flow.account();
-    back.setText(account ? texts.getTwoFactorBack() : texts.getTwoFactorReturnToCode());
-    logout.setText(texts.getBaseLogoutButton());
+    back.setText(
+        account
+            ? messageProperties.getTwoFactorBack()
+            : messageProperties.getTwoFactorReturnToCode());
+    logout.setText(messageProperties.getBaseLogoutButton());
     logout.setVisible(!account);
   }
 

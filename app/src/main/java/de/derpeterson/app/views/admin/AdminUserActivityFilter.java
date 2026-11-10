@@ -72,13 +72,13 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
     refreshPlaceholders();
   }
 
-  void refreshTexts(MessageProperties texts) {
-    CompactDateInput.configure(date, texts);
-    date.setLabel(texts.getAdminUsersFilterActiveSince());
-    date.setAriaLabel(texts.getAdminUsersActivityDate());
-    date.setPlaceholder(texts.getRegistrationBirthDatePlaceholder());
+  void refreshTexts(MessageProperties messageProperties) {
+    CompactDateInput.configure(date, messageProperties);
+    date.setLabel(messageProperties.getAdminUsersFilterActiveSince());
+    date.setAriaLabel(messageProperties.getAdminUsersActivityDate());
+    date.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
     refreshPlaceholders();
-    time.setAriaLabel(texts.getAdminUsersActivityTimeOptional());
+    time.setAriaLabel(messageProperties.getAdminUsersActivityTimeOptional());
   }
 
   void refreshPlaceholders() {
@@ -103,14 +103,14 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
     time.getElement()
         .executeJs(
             """
-                requestAnimationFrame(() => requestAnimationFrame(() => {
-                    if (!this.opened || this.value || this.inputElement?.value || this._focusedIndex >= 0) return;
-                    const scroller = this._scroller;
-                    if (!scroller?.opened || typeof scroller.scrollIntoView !== 'function') return;
-                    const index = scroller.items?.findIndex(item => item.value === $0);
-                    if (index >= 0) scroller.scrollIntoView(index);
-                }));
-                """,
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                if (!this.opened || this.value || this.inputElement?.value || this._focusedIndex >= 0) return;
+                const scroller = this._scroller;
+                if (!scroller?.opened || typeof scroller.scrollIntoView !== 'function') return;
+                const index = scroller.items?.findIndex(item => item.value === $0);
+                if (index >= 0) scroller.scrollIntoView(index);
+            }));
+            """,
             placeholderTime.format(DateTimeFormatter.ofPattern("HH:mm")));
   }
 
