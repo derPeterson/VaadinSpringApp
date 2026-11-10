@@ -28,10 +28,7 @@ public class MessageTexts {
     return MessageFormat.format(getTranslation(translationKey), formatArguments);
   }
 
-  public String getBaseDetailsButton() {
-    return getTranslation("base.button.details");
-  }
-
+  // Support-Tickets und Posteingang
   public String getSupportTitle() {
     return getTranslation("support.title");
   }
@@ -84,6 +81,7 @@ public class MessageTexts {
     return getTranslation("support.assigneeColumn");
   }
 
+  // Support-Benachrichtigungen
   public String getSupportRecoverySubject() {
     return getTranslation("support.recoverySubject");
   }
@@ -117,6 +115,7 @@ public class MessageTexts {
     return getTranslation("notifications.ticketAssigned");
   }
 
+  // Ticketansicht und Sicherheitshinweise
   public String getSupportSubscription() {
     return getTranslation("support.subscription");
   }
@@ -179,6 +178,7 @@ public class MessageTexts {
     return getTranslation("support.description");
   }
 
+  // Antworten und interne Ticketnotizen
   public String getSupportCreate() {
     return getTranslation("support.create");
   }
@@ -231,6 +231,7 @@ public class MessageTexts {
     return getTranslation("support.internalSaved");
   }
 
+  // Ticketaktionen, Status und Rückmeldungen
   public String getSupportClaim() {
     return getTranslation("support.claim");
   }
@@ -319,6 +320,7 @@ public class MessageTexts {
     return getTranslation("support.cases");
   }
 
+  // Ticketfilter und Direktsuche
   public String getSupportFilterDescription() {
     return getTranslation("support.filter.description");
   }
@@ -391,6 +393,7 @@ public class MessageTexts {
     return getTranslation("support.instructionMessageTitle");
   }
 
+  // Zwei-Faktor-Anmeldung und Wiederherstellung
   public String getTwoFactorPageTitle() {
     return getTranslation("mfa.page.title");
   }
@@ -459,6 +462,7 @@ public class MessageTexts {
     return getTranslation("mfa.login.hint");
   }
 
+  // Einrichtung der Authenticator-App und Codeprüfung
   public String getTwoFactorSetupTitle() {
     return getTranslation("mfa.setup.title");
   }
@@ -579,6 +583,7 @@ public class MessageTexts {
     return getTranslation("mfa.email.code.label");
   }
 
+  // Ersatzcodes und Download
   public String getTwoFactorRecoveryTitle() {
     return getTranslation("mfa.recovery.title");
   }
@@ -695,6 +700,7 @@ public class MessageTexts {
     return getTranslation("mfa.request.help");
   }
 
+  // Zwei-Faktor-Regeln in der Administration
   public String getTwoFactorSettingsTitle() {
     return getTranslation("mfa.settings.title");
   }
@@ -823,6 +829,7 @@ public class MessageTexts {
         getTranslation("mfa.rule.help.confirmation"));
   }
 
+  // Inaktivität, Entwicklungsoptionen und Speichern
   public String getTwoFactorInactivityEnabled() {
     return getTranslation("mfa.inactivity.enabled");
   }
@@ -871,6 +878,7 @@ public class MessageTexts {
     return getTranslation("mfa.conflict");
   }
 
+  // Zwei-Faktor-Verwaltung im eigenen Konto
   public String getTwoFactorAccountHint() {
     return getTranslation("mfa.account.hint");
   }
@@ -911,6 +919,7 @@ public class MessageTexts {
     return getTranslation("mfa.disabled");
   }
 
+  // Zwei-Faktor-E-Mails, Sicherheitshinweise und Codeeingabe
   public String getTwoFactorDisabledSubject() {
     return getTranslation("mfa.disabled.subject");
   }
@@ -925,11 +934,6 @@ public class MessageTexts {
 
   public String getTwoFactorRenewedExplanation() {
     return getTranslation("mfa.renewed.explanation");
-  }
-
-  // Externe Anmeldung: gemeinsame DE-/EN-Texte.
-  public String getExternalGoogle() {
-    return getTranslation("external.google");
   }
 
   public String getTwoFactorEmailSubject() {
@@ -970,6 +974,11 @@ public class MessageTexts {
 
   public String getTwoFactorInvalidCode() {
     return getTranslation("mfa.code.invalid");
+  }
+
+  // Anmeldung mit externen Anbietern
+  public String getExternalGoogle() {
+    return getTranslation("external.google");
   }
 
   public String getExternalMicrosoft() {
@@ -1112,7 +1121,7 @@ public class MessageTexts {
     return getTranslation("external.draft.expired");
   }
 
-  // Startseite: gemeinsame Getter für Anwendung und Browserprüfungen
+  // Startseite und Portalnavigation
   public String getHomeTitle() {
     return getTranslation("homeView.title");
   }
@@ -1186,7 +1195,7 @@ public class MessageTexts {
     return getTranslation("adminView.config.entry.copyright_text.tooltip");
   }
 
-  // Login View
+  // Anmeldung
   public String getLoginTitle() {
     return getTranslation("loginView.title");
   }
@@ -1231,7 +1240,7 @@ public class MessageTexts {
     return getTranslation("loginView.login.success_message");
   }
 
-  // Forgot Password View
+  // Passwort vergessen
   public String getForgotPasswordTitle() {
     return getTranslation("forgotPasswordView.title");
   }
@@ -1248,7 +1257,7 @@ public class MessageTexts {
     return getTranslation("resetPasswordView.technical_error_message");
   }
 
-  // Email Subjects
+  // E-Mail-Betreffzeilen
   public String getEmailResetPasswordSubject() {
     return getTranslation("email.reset_password.subject");
   }
@@ -1257,7 +1266,7 @@ public class MessageTexts {
     return getTranslation("email.verification.subject");
   }
 
-  // Registration View
+  // Registrierung
   public String getRegistrationTitle() {
     return getTranslation("registrationView.title");
   }
@@ -1303,7 +1312,7 @@ public class MessageTexts {
     return getTranslation("registrationView.registration.unavailable_message");
   }
 
-  // Verification View
+  // Kontoaktivierung
   public String getVerificationSuccessTitle() {
     return getTranslation("verificationView.success.title");
   }
@@ -1344,7 +1353,7 @@ public class MessageTexts {
     return getTranslation("verificationView.not_found.success_message");
   }
 
-  // Reset Password View
+  // Passwort zurücksetzen
   public String getResetPasswordInvalidTitle() {
     return getTranslation("resetPasswordView.invalid.title");
   }
@@ -1377,7 +1386,11 @@ public class MessageTexts {
     return getTranslation("resetPasswordView.reset.success_message");
   }
 
-  // Base Buttons
+  // Allgemeine Schaltflächen
+  public String getBaseDetailsButton() {
+    return getTranslation("base.button.details");
+  }
+
   public String getBaseLoginButton() {
     return getTranslation("base.login_button");
   }
@@ -1410,7 +1423,7 @@ public class MessageTexts {
     return getTranslation("base.manage_application_button");
   }
 
-  // Base Status / Errors
+  // Allgemeine Status- und Fehlermeldungen
   public String getBaseSuccessTitle() {
     return getTranslation("base.success.title");
   }
@@ -1443,7 +1456,7 @@ public class MessageTexts {
     return getTranslation("base.error.path_not_found");
   }
 
-  // Validation Messages
+  // Allgemeine Validierungsmeldungen
   public String getBaseValidationRequiredMessage() {
     return getTranslation("base.validation.required_message");
   }
@@ -1476,7 +1489,7 @@ public class MessageTexts {
     return getTranslation("base.validation.birth_date_past_message");
   }
 
-  // User Status
+  // Benutzerstatus
   public String getUserStatusOffline() {
     return getTranslation("userStatus.offline");
   }
@@ -1509,7 +1522,7 @@ public class MessageTexts {
     return getTranslation("userStatus.available.description");
   }
 
-  // Admin View
+  // Admin-Navigation
   public String getAdminHeaderTitle() {
     return getTranslation("adminView.header.title");
   }
@@ -1530,6 +1543,7 @@ public class MessageTexts {
     return getTranslation("adminView.nav.mail_test");
   }
 
+  // Konfigurationsgruppen und Aufbewahrung von Mitteilungen
   public String getAdminConfigGroupNotifications() {
     return getTranslation("adminView.config.group.notifications");
   }
@@ -1582,6 +1596,7 @@ public class MessageTexts {
     return getTranslation("adminView.config.group.queue");
   }
 
+  // Admin-Übersicht
   public String getAdminDashboardHeroEyebrow() {
     return getTranslation("adminView.dashboard.hero_eyebrow");
   }
@@ -1618,6 +1633,7 @@ public class MessageTexts {
     return getTranslation("adminView.dashboard.description");
   }
 
+  // E-Mail-Test
   public String getAdminMailTitle() {
     return getTranslation("adminView.mail.title");
   }
@@ -1698,6 +1714,7 @@ public class MessageTexts {
     return getTranslation("adminView.mail.error");
   }
 
+  // Konfigurationsansicht und Gruppenbeschreibungen
   public String getAdminConfigTitle() {
     return getTranslation("adminView.config.title");
   }
@@ -1769,6 +1786,7 @@ public class MessageTexts {
     return getTranslation("adminView.config.reload");
   }
 
+  // Eingaberegeln und Standardwerte
   public String getAdminConfigRuleOptional() {
     return getTranslation("adminView.config.rule.optional");
   }
@@ -1820,6 +1838,7 @@ public class MessageTexts {
     return getTranslation("adminView.config.default");
   }
 
+  // Dauerfelder und lokalisierte Zahlen
   public String getAdminConfigDurationIncrease() {
     return getTranslation("adminView.config.duration.increase");
   }
@@ -1888,14 +1907,16 @@ public class MessageTexts {
     return Locale.getDefault();
   }
 
-  private String formatDurationTranslation(String durationUnit, Number configuredAmount) {
-    BigDecimal durationAmount = new BigDecimal(configuredAmount.toString());
+  private String formatDurationTranslation(String durationUnitKeyPart, Number configuredDuration) {
+    BigDecimal durationAmount = new BigDecimal(configuredDuration.toString());
     NumberFormat durationNumberFormat = NumberFormat.getNumberInstance(formattingLocale());
     durationNumberFormat.setMaximumFractionDigits(Math.max(9, durationAmount.scale()));
+
     String translationKey =
         "adminView.config.duration."
-            + durationUnit
+            + durationUnitKeyPart
             + (durationAmount.compareTo(BigDecimal.ONE) == 0 ? ".one" : ".many");
+
     return getFormattedTranslation(translationKey, durationNumberFormat.format(durationAmount));
   }
 
@@ -1903,6 +1924,7 @@ public class MessageTexts {
     return getFormattedTranslation("adminView.config.duration.rule", maximumSeconds);
   }
 
+  // Konfigurationshilfe und Rückmeldungen beim Speichern
   public String getAdminConfigHelpTitle() {
     return getTranslation("adminView.config.help.title");
   }
@@ -1943,6 +1965,7 @@ public class MessageTexts {
     return getTranslation("adminView.config.restart_detail");
   }
 
+  // Zeitpunkt und Reichweite von Konfigurationsänderungen
   public String getAdminConfigEffectiveTitle() {
     return getTranslation("adminView.config.effective_title");
   }
@@ -2107,6 +2130,7 @@ public class MessageTexts {
     return getTranslation("adminView.config.effective_mail_transport");
   }
 
+  // Bezeichnungen der Konfigurationseinträge
   public String getAdminConfigEntryServiceName() {
     return getTranslation("adminView.config.entry.service_name");
   }
@@ -2219,6 +2243,7 @@ public class MessageTexts {
     return getTranslation("adminView.config.entry.email_queue_sent_live_duration");
   }
 
+  // Feldhilfen der Konfigurationseinträge
   public String getAdminConfigEntryServiceNameTooltip() {
     return getTranslation("adminView.config.entry.service_name.tooltip");
   }
@@ -2339,6 +2364,7 @@ public class MessageTexts {
     return getTranslation("adminView.config.entry.email_queue_sent_live_duration.tooltip");
   }
 
+  // Validierung der Konfiguration
   public String getAdminConfigValidationInvalidFields() {
     return getTranslation("adminView.config.validation.invalid_fields");
   }
@@ -2402,6 +2428,7 @@ public class MessageTexts {
         "adminView.config.helper.service_name_max", maximumServiceNameLength);
   }
 
+  // Benutzerverwaltung
   public String getAdminUsersTitle() {
     return getTranslation("admin.users.title");
   }
@@ -2540,6 +2567,7 @@ public class MessageTexts {
     return getTranslation("admin.users.save_success_updated");
   }
 
+  // Geschlecht und Rollen
   public String getGenderMale() {
     return getTranslation("gender.male");
   }
@@ -2568,6 +2596,7 @@ public class MessageTexts {
     return getTranslation("role.user");
   }
 
+  // Benutzertabelle, Suche und Filter
   public String getAdminUsersGridName() {
     return getTranslation("admin.users.grid.name");
   }
@@ -2636,6 +2665,7 @@ public class MessageTexts {
     return getTranslation("admin.users.activity.time_optional");
   }
 
+  // Zeitangaben zur Benutzeraktivität
   public String getAdminUsersActivityNow() {
     return getTranslation("admin.users.activity.now");
   }
@@ -2842,6 +2872,7 @@ public class MessageTexts {
     return getTranslation("account.copyright.template");
   }
 
+  // Wartungsmodus
   public String getMaintenanceTitle() {
     return getTranslation("maintenance.title");
   }
@@ -2878,7 +2909,7 @@ public class MessageTexts {
     return getTranslation("maintenance.unavailable.message");
   }
 
-  // Kontoverwaltung: erste Gestaltungsstufe, ohne schreibende Kontoaktionen.
+  // Kontonavigation und Kontoeinstellungen
   public String getAccountNavigationPortal() {
     return getTranslation("account.navigation.portal");
   }
@@ -2939,6 +2970,7 @@ public class MessageTexts {
     return getTranslation("accountSettings.edit.picture");
   }
 
+  // Profil und Sprache
   public String getAccountSettingsProfileTitle() {
     return getTranslation("accountSettings.profile.title");
   }
@@ -2975,6 +3007,7 @@ public class MessageTexts {
     return getTranslation("accountSettings.save");
   }
 
+  // Kontosicherheit und Sitzungen
   public String getAccountSettingsSecurityTitle() {
     return getTranslation("accountSettings.security.title");
   }
@@ -3035,6 +3068,7 @@ public class MessageTexts {
     return getTranslation("accountSettings.save.failed");
   }
 
+  // E-Mail-Adresse und Passwort ändern
   public String getAccountEmailDialogDescription() {
     return getTranslation("accountSettings.email.dialog.description");
   }
@@ -3115,6 +3149,7 @@ public class MessageTexts {
     return getTranslation("account.security.email.pending");
   }
 
+  // Änderung der E-Mail-Adresse bestätigen
   public String getAccountEmailConfirmationTitle() {
     return getTranslation("account.security.email.confirm.title");
   }
@@ -3147,6 +3182,7 @@ public class MessageTexts {
     return getTranslation("account.security.email.confirm.action");
   }
 
+  // Sitzungsverwaltung und Anmeldung
   public String getSessionManagementHint() {
     return getTranslation("sessions.management.hint");
   }
@@ -3255,6 +3291,7 @@ public class MessageTexts {
     return getTranslation("sessions.saved.since");
   }
 
+  // Profilbild
   public String getAccountAvatarDescription() {
     return getTranslation("account.avatar.description");
   }
@@ -3359,7 +3396,7 @@ public class MessageTexts {
     return getTranslation("account.avatar.error.output");
   }
 
-  // Persönliche Mitteilungen und Superadmin-Versand
+  // Persönliche Mitteilungen
   public String getNotificationsTitle() {
     return getTranslation("notifications.title");
   }
@@ -3544,6 +3581,7 @@ public class MessageTexts {
     return getTranslation("notifications.emailChangedBody");
   }
 
+  // Versand und Versandverlauf von Mitteilungen
   public String getNotificationsAdminDescription() {
     return getTranslation("notifications.adminDescription");
   }
@@ -3738,6 +3776,7 @@ public class MessageTexts {
     return getTranslation("roles.permissionDenied");
   }
 
+  // Mitteilungen im Portal löschen und als gelesen markieren
   public String getPortalDeleteAction() {
     return getTranslation("portal.action.delete");
   }
@@ -3794,6 +3833,7 @@ public class MessageTexts {
     return getTranslation("portal.notification.sync.hint");
   }
 
+  // Sitzungen und gespeicherte Anmeldungen im Portal
   public String getPortalSessionLogoutTitle() {
     return getTranslation("portal.session.logout.title");
   }
@@ -3863,14 +3903,17 @@ public class MessageTexts {
   }
 
   public String getPortalSessionSelection(int activeSessionCount, int savedSignInCount) {
-    String savedCount =
+    String savedSignInCountText =
         getFormattedTranslation(
             savedSignInCount == 1
                 ? "portal.session.saved.count.singular"
                 : "portal.session.saved.count.plural",
             savedSignInCount);
+
     return getFormattedTranslation(
-        "portal.session.selection", getPortalSessionActiveCount(activeSessionCount), savedCount);
+        "portal.session.selection",
+        getPortalSessionActiveCount(activeSessionCount),
+        savedSignInCountText);
   }
 
   public String getPortalSessionCheckSelection() {
@@ -3893,7 +3936,7 @@ public class MessageTexts {
     return getFormattedTranslation("portal.session.logout.aria", deviceName);
   }
 
-  // Öffentlicher Referenzrahmen
+  // Öffentliche Seiten und Kontoabläufe
   public String getPublicAreaLabel() {
     return getTranslation("public.area");
   }
@@ -4042,6 +4085,7 @@ public class MessageTexts {
     return getTranslation("public.field.password.confirm");
   }
 
+  // Anmeldeanbieter konfigurieren
   public String getProviderSettingsTitle() {
     return getTranslation("admin.providers.title");
   }
