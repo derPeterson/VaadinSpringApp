@@ -41,13 +41,13 @@ import org.springframework.transaction.support.TransactionTemplate;
   TwoFactorEnrollmentTest.Config.class
 })
 class OperatorRecoveryTest {
-  @Autowired DataSource source;
-  @Autowired PlatformTransactionManager transactions;
-  @Autowired TransactionTemplate transaction;
-  @Autowired UserRepository users;
+  @Autowired DataSource testDataSource;
+  @Autowired PlatformTransactionManager transactionManager;
+  @Autowired TransactionTemplate transactionTemplate;
+  @Autowired UserRepository userRepository;
   @Autowired TwoFactorAuthorization twoFactorAuthorization;
-  @Autowired TwoFactorStore factors;
-  @Autowired TwoFactorEnrollment enrollment;
+  @Autowired TwoFactorStore twoFactorStore;
+  @Autowired TwoFactorEnrollment twoFactorEnrollment;
   @Autowired TwoFactorStoreTest.TestClock clock;
   @PersistenceContext EntityManager entityManager;
 
@@ -56,11 +56,11 @@ class OperatorRecoveryTest {
       throws Exception {
     clock.now.set(Instant.parse("2026-11-02T12:00:00Z"));
     UserEntity user =
-        transaction.execute(status -> {
+        transactionTemplate.execute(status -> {
           RoleEntity role = new RoleEntity();
           role.setName(RoleType.ROLE_SUPERADMIN);
           entityManager.persist(role);
-          return users.saveAndFlush(
+          return userRepository.saveAndFlush(
               UserEntity.builder()
                   .firstName("Operator")
                   .lastName("Fixture")
@@ -71,18 +71,19 @@ class OperatorRecoveryTest {
                   .build());
         });
     var request = TwoFactorAuthorizationTest.requestFor(user.getEmail());
-    TwoFactorEnrollment.Pending initial = enrollment.beginPassword(request, "correct");
-    byte[] oldSeed = enrollment.pendingSecret(request, initial.id());
+    TwoFactorEnrollment.Pending initial = twoFactorEnrollment.beginPassword(request, "correct");
+    byte[] oldSeed = twoFactorEnrollment.pendingSecret(request, initial.id());
     UUID output =
-        enrollment.complete(
+        twoFactorEnrollment.complete(
             request, initial.id(), Totp.code(oldSeed, clock.instant().getEpochSecond() / 30));
-    List<String> codes = enrollment.recoveryOutput(request, output);
+    List<String> codes = twoFactorEnrollment.recoveryOutput(request, output);
     twoFactorAuthorization.confirmAction(
         request, TwoFactorAction.SECURITY_CONFIGURATION, codes.getFirst());
     assertTrue(twoFactorAuthorization.sessionConfirmed(request));
     new ResourceDatabasePopulator(new ClassPathResource("db/durable-sessions-h2.sql"))
-        .execute(source);
-    DeviceTokenRepository remembered = new DeviceTokenRepository(source, transactions);
+        .execute(testDataSource);
+    DeviceTokenRepository remembered =
+        new DeviceTokenRepository(testDataSource, transactionManager);
     remembered.createNewToken(
         new PersistentRememberMeToken(
             user.getEmail(), "own-series", "own-token", Date.from(clock.instant())));
@@ -91,7 +92,7 @@ class OperatorRecoveryTest {
         user.getEmail(),
         DeviceDescription.from("Windows Chrome/130"),
         clock.instant());
-    JdbcTemplate jdbc = new JdbcTemplate(source);
+    JdbcTemplate jdbc = new JdbcTemplate(testDataSource);
     String control = "control@example.test";
     remembered.createNewToken(
         new PersistentRememberMeToken(
@@ -110,8 +111,8 @@ class OperatorRecoveryTest {
     Path instructions = Path.of("..", "docs", "betrieb", "2fa-notfall.md");
     String markdown = Files.readString(instructions);
     String sql = markdown.split("```sql", 2)[1].split("```", 2)[0];
-    NamedParameterJdbcTemplate parameters = new NamedParameterJdbcTemplate(source);
-    transaction.executeWithoutResult(status -> {
+    NamedParameterJdbcTemplate parameters = new NamedParameterJdbcTemplate(testDataSource);
+    transactionTemplate.executeWithoutResult(status -> {
       int updates = 0;
       for (String statement : sql.split(";")) {
         if (!statement.isBlank()) {
@@ -130,17 +131,18 @@ class OperatorRecoveryTest {
       }
       assertEquals(7, updates);
     });
-    UserEntity repaired = users.findById(user.getId()).orElseThrow();
+    UserEntity repaired = userRepository.findById(user.getId()).orElseThrow();
     assertNotEquals(user.getAccessVersion(), repaired.getAccessVersion());
     assertFalse(twoFactorAuthorization.sessionConfirmed(request));
     Long userId = user.getId();
     String accessVersion = user.getAccessVersion();
     String recoveryCode = codes.get(1);
     assertThrows(
-        BadCredentialsException.class, () -> factors.verify(userId, accessVersion, recoveryCode));
+        BadCredentialsException.class,
+        () -> twoFactorStore.verify(userId, accessVersion, recoveryCode));
     assertThrows(
         org.springframework.security.access.AccessDeniedException.class,
-        () -> enrollment.recoveryOutput(request, output));
+        () -> twoFactorEnrollment.recoveryOutput(request, output));
     assertEquals(
         0,
         jdbc.queryForObject(
@@ -171,16 +173,18 @@ class OperatorRecoveryTest {
     assertTrue(
         twoFactorAuthorization.state(twoFactorAuthorization.owner(next)).operatorEnrollment());
     assertFalse(twoFactorAuthorization.sessionConfirmed(next));
-    assertThrows(BadCredentialsException.class, () -> enrollment.beginPassword(next, "wrong"));
-    TwoFactorEnrollment.Pending setup = enrollment.beginPassword(next, "correct");
-    byte[] seed = enrollment.pendingSecret(next, setup.id());
-    enrollment.complete(next, setup.id(), Totp.code(seed, clock.instant().getEpochSecond() / 30));
+    assertThrows(
+        BadCredentialsException.class, () -> twoFactorEnrollment.beginPassword(next, "wrong"));
+    TwoFactorEnrollment.Pending setup = twoFactorEnrollment.beginPassword(next, "correct");
+    byte[] seed = twoFactorEnrollment.pendingSecret(next, setup.id());
+    twoFactorEnrollment.complete(
+        next, setup.id(), Totp.code(seed, clock.instant().getEpochSecond() / 30));
     assertTrue(twoFactorAuthorization.sessionConfirmed(next));
     assertFalse(
         twoFactorAuthorization.state(twoFactorAuthorization.owner(next)).operatorEnrollment());
     String repairedAccessVersion = repaired.getAccessVersion();
     assertThrows(
         BadCredentialsException.class,
-        () -> factors.verify(userId, repairedAccessVersion, recoveryCode));
+        () -> twoFactorStore.verify(userId, repairedAccessVersion, recoveryCode));
   }
 }

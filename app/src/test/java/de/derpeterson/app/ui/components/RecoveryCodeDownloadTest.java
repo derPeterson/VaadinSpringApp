@@ -44,7 +44,7 @@ class RecoveryCodeDownloadTest {
           recoveryCodeDocument);
   private final DownloadEvent event = mock(DownloadEvent.class);
   private final VaadinServletRequest request = mock(VaadinServletRequest.class);
-  private final VaadinResponse response = mock(VaadinResponse.class);
+  private final VaadinResponse vaadinResponse = mock(VaadinResponse.class);
   private final UUID id = UUID.randomUUID();
   private final List<String> codes = List.of("SYNTHETIC-RECOVERY-CODE");
 
@@ -52,7 +52,7 @@ class RecoveryCodeDownloadTest {
   void prepare() {
     when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("My / Service");
     when(event.getRequest()).thenReturn(request);
-    when(event.getResponse()).thenReturn(response);
+    when(event.getResponse()).thenReturn(vaadinResponse);
     when(twoFactorEnrollment.recoveryOutput(request, id)).thenReturn(codes);
     TwoFactorAuthorization.Owner owner = mock(TwoFactorAuthorization.Owner.class);
     when(twoFactorAuthorization.owner(request)).thenReturn(owner);
@@ -73,7 +73,7 @@ class RecoveryCodeDownloadTest {
     assertArrayEquals(new byte[bytes.length], bytes);
     verify(event).setFileName("My-Service-recovery-codes.pdf");
     verify(event).setContentType("application/pdf");
-    verify(response).setHeader("Cache-Control", "no-store");
+    verify(vaadinResponse).setHeader("Cache-Control", "no-store");
     verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
   }
 
@@ -86,7 +86,7 @@ class RecoveryCodeDownloadTest {
     when(event.getOutputStream()).thenReturn(output);
 
     recoveryCodeDownload.write(event, id, Locale.GERMAN);
-    verify(response).setStatus(500);
+    verify(vaadinResponse).setStatus(500);
     recoveryCodeDownload.write(event, id, Locale.GERMAN);
 
     assertArrayEquals("%PDF-retry".getBytes(StandardCharsets.US_ASCII), output.toByteArray());
@@ -100,7 +100,7 @@ class RecoveryCodeDownloadTest {
 
     recoveryCodeDownload.write(event, id, Locale.GERMAN);
 
-    verify(response).setStatus(403);
+    verify(vaadinResponse).setStatus(403);
     verify(event, never()).setContentLength(anyLong());
     verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
   }
@@ -116,7 +116,7 @@ class RecoveryCodeDownloadTest {
 
     recoveryCodeDownload.write(event, id, Locale.GERMAN);
 
-    verify(response).setStatus(500);
+    verify(vaadinResponse).setStatus(500);
     assertArrayEquals(new byte[bytes.length], bytes);
     verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
   }

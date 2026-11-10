@@ -86,14 +86,14 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.User;
 
 class TwoFactorFlowViewTest {
-  private final HttpServletRequest request = mock(HttpServletRequest.class);
+  private final HttpServletRequest mockHttpRequest = mock(HttpServletRequest.class);
   private final SecurityService securityService = mock(SecurityService.class);
   private final TwoFactorAuthorization twoFactorAuthorization = mock(TwoFactorAuthorization.class);
   private final TwoFactorEnrollment twoFactorEnrollment = mock(TwoFactorEnrollment.class);
   private final ConfigService configService = mock(ConfigService.class);
   private MessageProperties messageProperties;
-  private UI ui;
-  private VaadinSession session;
+  private UI testUi;
+  private VaadinSession vaadinSession;
   private VaadinService vaadinService;
 
   private TwoFactorView openTwoFactorPage(String language, boolean recovering) {
@@ -110,7 +110,7 @@ class TwoFactorFlowViewTest {
             mock(ExternalLoginFlow.class),
             mock(ExternalIdentityService.class),
             mock(RecoveryCodeDownload.class),
-            request);
+            mockHttpRequest);
     BeforeEnterEvent event = mock(BeforeEnterEvent.class);
     when(event.getLocation())
         .thenReturn(new Location("two-factor" + (recovering ? "?recover" : "")));
@@ -119,38 +119,38 @@ class TwoFactorFlowViewTest {
   }
 
   private void setUpLocalizedVaadinUi(String language) {
-    ui = new UI();
-    UI.setCurrent(ui);
-    session = mock(VaadinSession.class);
+    testUi = new UI();
+    UI.setCurrent(testUi);
+    vaadinSession = mock(VaadinSession.class);
     vaadinService = mock(VaadinService.class);
     DeploymentConfiguration deployment = mock(DeploymentConfiguration.class);
     when(deployment.getUrlSafeSchemes()).thenCallRealMethod();
     when(vaadinService.getDeploymentConfiguration()).thenReturn(deployment);
-    when(session.getService()).thenReturn(vaadinService);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenReturn(Locale.forLanguageTag(language));
-    VaadinSession.setCurrent(session);
+    when(vaadinSession.getService()).thenReturn(vaadinService);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenReturn(Locale.forLanguageTag(language));
+    VaadinSession.setCurrent(vaadinSession);
     VaadinService.setCurrent(vaadinService);
-    ui.getInternals().setSession(session);
+    testUi.getInternals().setSession(vaadinSession);
     messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
   }
 
   private void stubAuthenticatedTwoFactorOwner() {
     when(configService.getString(any(ConfigEntry.class))).thenReturn("Testportal");
-    when(request.getContextPath()).thenReturn("");
+    when(mockHttpRequest.getContextPath()).thenReturn("");
     org.springframework.mock.web.MockHttpSession httpSession =
         new org.springframework.mock.web.MockHttpSession();
-    when(request.getSession()).thenReturn(httpSession);
-    when(request.getSession(false)).thenReturn(httpSession);
-    when(securityService.getAuthenticatedUser(request))
+    when(mockHttpRequest.getSession()).thenReturn(httpSession);
+    when(mockHttpRequest.getSession(false)).thenReturn(httpSession);
+    when(securityService.getAuthenticatedUser(mockHttpRequest))
         .thenReturn(
             Optional.of(
                 User.withUsername("flow@example.test").password("unused").roles("USER").build()));
     TwoFactorAuthorization.Owner owner =
         new TwoFactorAuthorization.Owner(
             1L, "flow@example.test", "current", true, true, List.of(RoleType.ROLE_USER));
-    when(twoFactorAuthorization.owner(request)).thenReturn(owner);
+    when(twoFactorAuthorization.owner(mockHttpRequest)).thenReturn(owner);
     when(twoFactorAuthorization.state(owner))
         .thenReturn(
             new TwoFactorAuthorization.State(true, false, false, UUID.randomUUID(), Instant.now()));
@@ -173,7 +173,7 @@ class TwoFactorFlowViewTest {
             .lastName("User")
             .email("flow@example.test")
             .build();
-    when(securityService.getCurrentUser(request)).thenReturn(Optional.of(account));
+    when(securityService.getCurrentUser(mockHttpRequest)).thenReturn(Optional.of(account));
     TwoFactorView confirmation = openTwoFactorPage("de", false);
     Component identity = find(confirmation, "public-security-identity");
     assertTrue(identity.isVisible());
@@ -181,7 +181,7 @@ class TwoFactorFlowViewTest {
     assertTrue(identity.getElement().getTextRecursively().contains("flow@example.test"));
     assertFalse(tree(identity).anyMatch(Button.class::isInstance));
 
-    TwoFactorFlow.LOGIN_HELP.enter(request);
+    TwoFactorFlow.LOGIN_HELP.enter(mockHttpRequest);
     RecoveryHelpView help =
         new RecoveryHelpView(
             configService,
@@ -189,14 +189,14 @@ class TwoFactorFlowViewTest {
             mock(SupportTicketService.class),
             securityService,
             twoFactorAuthorization,
-            request);
+            mockHttpRequest);
     help.beforeEnter(mock(BeforeEnterEvent.class));
     Component helpIdentity = find(help, "public-security-identity");
     assertTrue(helpIdentity.isVisible());
     assertEquals(
         identity.getElement().getTextRecursively(), helpIdentity.getElement().getTextRecursively());
 
-    when(securityService.getCurrentUser(request)).thenReturn(Optional.empty());
+    when(securityService.getCurrentUser(mockHttpRequest)).thenReturn(Optional.empty());
     help.beforeEnter(mock(BeforeEnterEvent.class));
     assertFalse(helpIdentity.isVisible());
     assertEquals("", helpIdentity.getElement().getTextRecursively());
@@ -228,8 +228,8 @@ class TwoFactorFlowViewTest {
     String value = "12345678-12345678-12345678-12345678";
     recovery.setValue(value);
     ((Button) find(view, "two-factor-submit")).click();
-    verify(twoFactorAuthorization).confirmSession(request, value);
-    verify(twoFactorEnrollment, never()).beginRecovery(eq(request), anyString());
+    verify(twoFactorAuthorization).confirmSession(mockHttpRequest, value);
+    verify(twoFactorEnrollment, never()).beginRecovery(eq(mockHttpRequest), anyString());
     assertEquals("", recovery.getValue());
   }
 
@@ -239,25 +239,25 @@ class TwoFactorFlowViewTest {
     TwoFactorView view = openTwoFactorPage(language, false);
     ((OtpField) find(view, "two-factor-code")).setValue("123456");
     ((Button) find(view, "two-factor-submit")).click();
-    verify(twoFactorAuthorization).confirmSession(request, "123456");
-    verify(twoFactorEnrollment, never()).beginRecovery(eq(request), anyString());
+    verify(twoFactorAuthorization).confirmSession(mockHttpRequest, "123456");
+    verify(twoFactorEnrollment, never()).beginRecovery(eq(mockHttpRequest), anyString());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void completedAuthenticatorCodeConfirmsOnceWithoutClickingTheButton(String language) {
     TwoFactorView view = openTwoFactorPage(language, false);
-    ui.add(view);
+    testUi.add(view);
     OtpField otp = (OtpField) find(view, "two-factor-code");
     for (String partial : List.of("1", "12", "123", "1234", "12345")) {
       otp.setValue(partial);
     }
-    verify(twoFactorAuthorization, never()).confirmSession(eq(request), anyString());
+    verify(twoFactorAuthorization, never()).confirmSession(eq(mockHttpRequest), anyString());
     otp.setValue("123456");
-    verify(twoFactorAuthorization, never()).confirmSession(eq(request), anyString());
+    verify(twoFactorAuthorization, never()).confirmSession(eq(mockHttpRequest), anyString());
     ComponentUtil.fireEvent(otp, new OtpCompleteEvent(otp, true, "123456"));
     ComponentUtil.fireEvent(otp, new OtpCompleteEvent(otp, true, "123456"));
-    verify(twoFactorAuthorization).confirmSession(request, "123456");
+    verify(twoFactorAuthorization).confirmSession(mockHttpRequest, "123456");
     assertTrue(otp.isEmpty());
     assertTrue(find(view, "two-factor-submit").isVisible());
   }
@@ -274,18 +274,19 @@ class TwoFactorFlowViewTest {
   void completedEnrollmentCodeActivatesOnceWithoutClickingTheButton(
       String language, SetupProof proof) {
     UUID enrollmentId = UUID.randomUUID();
-    when(twoFactorEnrollment.pending(request))
+    when(twoFactorEnrollment.pending(mockHttpRequest))
         .thenReturn(new TwoFactorEnrollment.Pending(enrollmentId, Kind.ENROLLMENT, proof));
     TwoFactorView view = openTwoFactorPage(language, false);
-    ui.add(view);
+    testUi.add(view);
     OtpField otp = (OtpField) find(view, "two-factor-enrollment-code");
     assertTrue(otp.isAutofocus());
     otp.setValue("12345");
-    verify(twoFactorEnrollment, never()).complete(eq(request), eq(enrollmentId), anyString());
+    verify(twoFactorEnrollment, never())
+        .complete(eq(mockHttpRequest), eq(enrollmentId), anyString());
     otp.setValue("123456");
     ComponentUtil.fireEvent(otp, new OtpCompleteEvent(otp, true, "123456"));
     ComponentUtil.fireEvent(otp, new OtpCompleteEvent(otp, true, "123456"));
-    verify(twoFactorEnrollment).complete(request, enrollmentId, "123456");
+    verify(twoFactorEnrollment).complete(mockHttpRequest, enrollmentId, "123456");
     assertTrue(otp.isEmpty());
     assertTrue(find(view, "two-factor-submit").isVisible());
   }
@@ -294,26 +295,26 @@ class TwoFactorFlowViewTest {
   @ValueSource(strings = {"de", "en"})
   void incorrectCodeCanBeReenteredAndConfirmedAutomatically(String language) {
     TwoFactorView view = openTwoFactorPage(language, false);
-    ui.add(view);
+    testUi.add(view);
     OtpField otp = (OtpField) find(view, "two-factor-code");
     doThrow(new BadCredentialsException("Invalid test code"))
         .when(twoFactorAuthorization)
-        .confirmSession(request, "123456");
+        .confirmSession(mockHttpRequest, "123456");
     otp.setValue("123456");
     ComponentUtil.fireEvent(otp, new OtpCompleteEvent(otp, true, "123456"));
     assertTrue(otp.isInvalid());
     assertTrue(otp.isEmpty());
     otp.setValue("654321");
     ComponentUtil.fireEvent(otp, new OtpCompleteEvent(otp, true, "654321"));
-    verify(twoFactorAuthorization).confirmSession(request, "123456");
-    verify(twoFactorAuthorization).confirmSession(request, "654321");
+    verify(twoFactorAuthorization).confirmSession(mockHttpRequest, "123456");
+    verify(twoFactorAuthorization).confirmSession(mockHttpRequest, "654321");
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void automaticConfirmationIgnoresDisabledActionsAndStaleCodes(String language) {
     TwoFactorView view = openTwoFactorPage(language, false);
-    ui.add(view);
+    testUi.add(view);
     OtpField otp = (OtpField) find(view, "two-factor-code");
     Button button = (Button) find(view, "two-factor-submit");
     button.setEnabled(false);
@@ -324,7 +325,7 @@ class TwoFactorFlowViewTest {
     ComponentUtil.fireEvent(otp, new OtpCompleteEvent(otp, true, "654321"));
     otp.setValue("12345");
     ComponentUtil.fireEvent(otp, new OtpCompleteEvent(otp, true, "12345"));
-    verify(twoFactorAuthorization, never()).confirmSession(eq(request), anyString());
+    verify(twoFactorAuthorization, never()).confirmSession(eq(mockHttpRequest), anyString());
   }
 
   @ParameterizedTest
@@ -336,24 +337,25 @@ class TwoFactorFlowViewTest {
     assertInstanceOf(
         HorizontalLayout.class, find(view, "two-factor-recovery-back").getParent().orElseThrow());
     ((Button) find(view, "two-factor-submit")).click();
-    verify(twoFactorEnrollment).beginRecovery(request, value);
-    verify(twoFactorAuthorization, never()).confirmSession(eq(request), anyString());
+    verify(twoFactorEnrollment).beginRecovery(mockHttpRequest, value);
+    verify(twoFactorAuthorization, never()).confirmSession(eq(mockHttpRequest), anyString());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void helpKeepsTheExistingTicketListAndUsesNativeFooterActions(String language) {
     openTwoFactorPage(language, false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
-    when(tickets.list(request, false)).thenReturn(List.of());
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
+    when(mockSupportTicketService.listTicketsForViewer(mockHttpRequest, false))
+        .thenReturn(List.of());
     RecoveryHelpView help =
         new RecoveryHelpView(
             configService,
             messageProperties,
-            tickets,
+            mockSupportTicketService,
             securityService,
             twoFactorAuthorization,
-            request);
+            mockHttpRequest);
     assertTrue(find(help, "support-no-unlock").isVisible());
     assertInstanceOf(HorizontalLayout.class, find(help, "support-back").getParent().orElseThrow());
     assertTrue(find(help, "support-create") instanceof Button);
@@ -376,7 +378,7 @@ class TwoFactorFlowViewTest {
   @ValueSource(strings = {"de", "en"})
   void helpSelectsTheOpenRequestWhenAnOlderRequestIsListedFirst(String language) {
     openTwoFactorPage(language, false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
     Ticket closed =
         new Ticket(
             1L,
@@ -409,16 +411,17 @@ class TwoFactorFlowViewTest {
             false,
             false,
             null);
-    when(tickets.list(request, false)).thenReturn(List.of(closed, active));
+    when(mockSupportTicketService.listTicketsForViewer(mockHttpRequest, false))
+        .thenReturn(List.of(closed, active));
 
     RecoveryHelpView help =
         new RecoveryHelpView(
             configService,
             messageProperties,
-            tickets,
+            mockSupportTicketService,
             securityService,
             twoFactorAuthorization,
-            request);
+            mockHttpRequest);
 
     Grid<?> grid = (Grid<?>) find(help, "support-ticket-grid");
     assertEquals(
@@ -439,13 +442,14 @@ class TwoFactorFlowViewTest {
                     : "Help accessing your authenticator"));
     assertTrue(find(help, "support-add-reply").isVisible());
     assertFalse(find(help, "support-create").isVisible());
-    verify(tickets, never()).conversation(request, closed.id(), false);
+    verify(mockSupportTicketService, never())
+        .loadTicketConversation(mockHttpRequest, closed.id(), false);
   }
 
   @Test
   void closingAnOpenRequestElsewhereDoesNotTurnItsReplyDraftIntoANewRequest() {
     openTwoFactorPage("de", false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
     Ticket active =
         new Ticket(
             1L,
@@ -478,15 +482,16 @@ class TwoFactorFlowViewTest {
             false,
             false,
             null);
-    when(tickets.list(request, false)).thenReturn(List.of(active));
+    when(mockSupportTicketService.listTicketsForViewer(mockHttpRequest, false))
+        .thenReturn(List.of(active));
     RecoveryHelpView help =
         new RecoveryHelpView(
             configService,
             messageProperties,
-            tickets,
+            mockSupportTicketService,
             securityService,
             twoFactorAuthorization,
-            request);
+            mockHttpRequest);
     TextArea draft = (TextArea) find(help, "support-reply");
     draft.setValue("Entwurf für die offene Anfrage.");
 
@@ -494,7 +499,8 @@ class TwoFactorFlowViewTest {
     refresh.click();
     assertEquals("Entwurf für die offene Anfrage.", draft.getValue());
 
-    when(tickets.list(request, false)).thenReturn(List.of(closed));
+    when(mockSupportTicketService.listTicketsForViewer(mockHttpRequest, false))
+        .thenReturn(List.of(closed));
     refresh.click();
     assertTrue(find(help, "support-create").isVisible());
     assertTrue(draft.isEmpty());
@@ -504,10 +510,11 @@ class TwoFactorFlowViewTest {
   @ValueSource(strings = {"de", "en"})
   void ticketSelectionHintUsesThePointerIconAndTheSharedEmptyStyle(String language) {
     openTwoFactorPage(language, false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
-    stubInbox(tickets, List.of());
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
+    stubInbox(mockSupportTicketService, List.of());
     SupportTicketsComponent component =
-        new SupportTicketsComponent(messageProperties, tickets, request, true);
+        new SupportTicketsComponent(
+            messageProperties, mockSupportTicketService, mockHttpRequest, true);
     VerticalLayout hint =
         assertInstanceOf(VerticalLayout.class, find(component, "support-select-ticket"));
     assertTrue(hint.hasClassName("cosmos-notification-empty"));
@@ -530,16 +537,17 @@ class TwoFactorFlowViewTest {
   @SuppressWarnings("unchecked")
   void ticketFiltersApplyTogetherAndDiscardCancelledDrafts(String language) {
     openTwoFactorPage(language, false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
     List<Ticket> values =
         List.of(
             filterTicket(1L, Status.IN_PROGRESS, 9L),
             filterTicket(2L, Status.OPEN, null),
             filterTicket(3L, Status.CLOSED, 10L));
-    stubInbox(tickets, values);
-    when(tickets.administratorId(request)).thenReturn(9L);
+    stubInbox(mockSupportTicketService, values);
+    when(mockSupportTicketService.administratorId(mockHttpRequest)).thenReturn(9L);
     SupportTicketsComponent component =
-        new SupportTicketsComponent(messageProperties, tickets, request, true);
+        new SupportTicketsComponent(
+            messageProperties, mockSupportTicketService, mockHttpRequest, true);
     Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
     SupportTicketFilterPanel filters =
         (SupportTicketFilterPanel) find(component, "support-filter-panel");
@@ -576,13 +584,14 @@ class TwoFactorFlowViewTest {
   @SuppressWarnings("unchecked")
   void unassignedFilterUpdatesOnRefreshAndTicketLinksCanOpenHiddenCases(String language) {
     openTwoFactorPage(language, false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
     Ticket mine = filterTicket(1L, Status.IN_PROGRESS, 9L);
     Ticket unassigned = filterTicket(2L, Status.OPEN, null);
-    stubInbox(tickets, List.of(mine, unassigned));
-    when(tickets.administratorId(request)).thenReturn(9L);
+    stubInbox(mockSupportTicketService, List.of(mine, unassigned));
+    when(mockSupportTicketService.administratorId(mockHttpRequest)).thenReturn(9L);
     SupportTicketsComponent component =
-        new SupportTicketsComponent(messageProperties, tickets, request, true);
+        new SupportTicketsComponent(
+            messageProperties, mockSupportTicketService, mockHttpRequest, true);
     Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
     SupportTicketFilterPanel filters =
         (SupportTicketFilterPanel) find(component, "support-filter-panel");
@@ -592,7 +601,7 @@ class TwoFactorFlowViewTest {
         .setValue(Assignment.UNASSIGNED);
     filterAction(filters, "support-filter-apply").click();
     assertEquals(List.of(2L), grid.getListDataView().getItems().map(Ticket::id).toList());
-    stubInbox(tickets, List.of(mine, filterTicket(2L, Status.IN_PROGRESS, 10L)));
+    stubInbox(mockSupportTicketService, List.of(mine, filterTicket(2L, Status.IN_PROGRESS, 10L)));
     component.refreshTicketWorkspace();
     assertEquals(0, grid.getListDataView().getItemCount());
     Component emptyQueue = find(component, "support-queue-empty");
@@ -619,12 +628,13 @@ class TwoFactorFlowViewTest {
   @SuppressWarnings("unchecked")
   void filteringAnOpenTicketPreservesItsReplyDraft(String language) {
     openTwoFactorPage(language, false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
     Ticket mine = filterTicket(1L, Status.IN_PROGRESS, 9L);
-    stubInbox(tickets, List.of(mine, filterTicket(2L, Status.OPEN, null)));
-    when(tickets.administratorId(request)).thenReturn(9L);
+    stubInbox(mockSupportTicketService, List.of(mine, filterTicket(2L, Status.OPEN, null)));
+    when(mockSupportTicketService.administratorId(mockHttpRequest)).thenReturn(9L);
     SupportTicketsComponent component =
-        new SupportTicketsComponent(messageProperties, tickets, request, true);
+        new SupportTicketsComponent(
+            messageProperties, mockSupportTicketService, mockHttpRequest, true);
     Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
     grid.asSingleSelect().setValue(mine);
     component.refreshTicketWorkspace();
@@ -662,8 +672,8 @@ class TwoFactorFlowViewTest {
   }
 
   /** UI-Antworten des Dienstes; die echten Datenbankfilter werden im H2-Diensttest geprüft. */
-  private void stubInbox(SupportTicketService tickets, List<Ticket> values) {
-    when(tickets.findForAdministration(eq(request), anyString()))
+  private void stubInbox(SupportTicketService mockSupportTicketService, List<Ticket> values) {
+    when(mockSupportTicketService.findForAdministration(eq(mockHttpRequest), anyString()))
         .thenAnswer(call -> {
           String number = call.getArgument(1);
           return values.stream()
@@ -671,11 +681,11 @@ class TwoFactorFlowViewTest {
               .findFirst()
               .orElse(null);
         });
-    when(tickets.inbox(eq(request), any(), any()))
+    when(mockSupportTicketService.loadTicketInbox(eq(mockHttpRequest), any(), any()))
         .thenAnswer(call -> {
           Long selectedId = call.getArgument(1);
           SupportTicketService.InboxQuery query = call.getArgument(2);
-          Long viewer = tickets.administratorId(request);
+          Long viewer = mockSupportTicketService.administratorId(mockHttpRequest);
           List<Ticket> matches =
               values.stream()
                   .filter(ticket -> query.filter().matchesMetadata(ticket, viewer))
@@ -695,7 +705,10 @@ class TwoFactorFlowViewTest {
               viewer,
               rows,
               selected,
-              selected == null ? List.of() : tickets.conversation(request, selectedId, true),
+              selected == null
+                  ? List.of()
+                  : mockSupportTicketService.loadTicketConversation(
+                      mockHttpRequest, selectedId, true),
               null,
               matches.size(),
               page,
@@ -728,15 +741,17 @@ class TwoFactorFlowViewTest {
   @SuppressWarnings("unchecked")
   void unreadFilterAndDirectJumpKeepAppliedStateAndExistingDrafts(String language) {
     openTwoFactorPage(language, false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
     Ticket unread = filterTicket(1L, Status.IN_PROGRESS, 9L, 2);
     Ticket read = filterTicket(2L, Status.OPEN, null);
     Ticket older = filterTicket(3L, Status.CLOSED, null);
-    stubInbox(tickets, List.of(unread, read));
-    when(tickets.findForAdministration(request, "10003")).thenReturn(older);
-    when(tickets.administratorId(request)).thenReturn(9L);
+    stubInbox(mockSupportTicketService, List.of(unread, read));
+    when(mockSupportTicketService.findForAdministration(mockHttpRequest, "10003"))
+        .thenReturn(older);
+    when(mockSupportTicketService.administratorId(mockHttpRequest)).thenReturn(9L);
     SupportTicketsComponent component =
-        new SupportTicketsComponent(messageProperties, tickets, request, true);
+        new SupportTicketsComponent(
+            messageProperties, mockSupportTicketService, mockHttpRequest, true);
     Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
     SupportTicketFilterPanel filters =
         (SupportTicketFilterPanel) find(component, "support-filter-panel");
@@ -749,7 +764,7 @@ class TwoFactorFlowViewTest {
     assertEquals(1, filters.activeCount());
     grid.asSingleSelect().setValue(unread);
     component.refreshTicketWorkspace();
-    stubInbox(tickets, List.of(filterTicket(1L, Status.IN_PROGRESS, 9L), read));
+    stubInbox(mockSupportTicketService, List.of(filterTicket(1L, Status.IN_PROGRESS, 9L), read));
     component.refreshTicketWorkspace();
     assertEquals(0, grid.getListDataView().getItemCount());
     assertTrue(find(component, "support-ticket-panel").isVisible());
@@ -765,7 +780,7 @@ class TwoFactorFlowViewTest {
     assertEquals(read, grid.asSingleSelect().getValue());
     assertEquals(0, filters.activeCount());
     ((Button) find(component, "support-filter")).click();
-    stubInbox(tickets, List.of(older));
+    stubInbox(mockSupportTicketService, List.of(older));
     number.setValue("#10003");
     ((Button) find(filters, "support-jump")).click();
     assertEquals(older, grid.asSingleSelect().getValue());
@@ -784,12 +799,13 @@ class TwoFactorFlowViewTest {
   @SuppressWarnings("unchecked")
   void restoredTicketNavigationDoesNotEchoAndSelectionChangesAreReportedOnce(String language) {
     openTwoFactorPage(language, false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
     Ticket ticket = filterTicket(1L, Status.OPEN, null);
-    stubInbox(tickets, List.of(ticket));
-    when(tickets.administratorId(request)).thenReturn(9L);
+    stubInbox(mockSupportTicketService, List.of(ticket));
+    when(mockSupportTicketService.administratorId(mockHttpRequest)).thenReturn(9L);
     SupportTicketsComponent component =
-        new SupportTicketsComponent(messageProperties, tickets, request, true);
+        new SupportTicketsComponent(
+            messageProperties, mockSupportTicketService, mockHttpRequest, true);
     List<NavigationState> changes = new ArrayList<>();
     component.setNavigationListener(changes::add);
 
@@ -834,29 +850,30 @@ class TwoFactorFlowViewTest {
   void administrativeStatusHintFollowsTicketTransitionsWithoutEnablingClosedReplies(
       String language) {
     openTwoFactorPage(language, false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
-    when(tickets.administratorId(request)).thenReturn(9L);
-    stubInbox(tickets, List.of(filterTicket(1L, Status.OPEN, null)));
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
+    when(mockSupportTicketService.administratorId(mockHttpRequest)).thenReturn(9L);
+    stubInbox(mockSupportTicketService, List.of(filterTicket(1L, Status.OPEN, null)));
     SupportTicketsComponent component =
-        new SupportTicketsComponent(messageProperties, tickets, request, true);
+        new SupportTicketsComponent(
+            messageProperties, mockSupportTicketService, mockHttpRequest, true);
     component.openTicket("10001");
     Component hint = find(component, "support-ticket-status-note");
     assertTrue(hint.isVisible());
     assertEquals(messageProperties.getSupportUnassignedHint(), hint.getElement().getText());
 
-    stubInbox(tickets, List.of(filterTicket(1L, Status.IN_PROGRESS, 9L)));
+    stubInbox(mockSupportTicketService, List.of(filterTicket(1L, Status.IN_PROGRESS, 9L)));
     component.refreshTicketWorkspace();
     assertFalse(hint.isVisible());
     assertTrue(find(component, "support-add-reply").isVisible());
 
-    stubInbox(tickets, List.of(filterTicket(1L, Status.CLOSED_BY_REQUESTER, 9L)));
+    stubInbox(mockSupportTicketService, List.of(filterTicket(1L, Status.CLOSED_BY_REQUESTER, 9L)));
     component.refreshTicketWorkspace();
     assertTrue(hint.isVisible());
     assertEquals(messageProperties.getSupportRequesterClosedHint(), hint.getElement().getText());
     assertFalse(find(component, "support-add-reply").isVisible());
     assertTrue(find(component, "support-close").isVisible());
 
-    stubInbox(tickets, List.of(filterTicket(1L, Status.CLOSED, 9L)));
+    stubInbox(mockSupportTicketService, List.of(filterTicket(1L, Status.CLOSED, 9L)));
     component.refreshTexts();
     assertTrue(hint.isVisible());
     assertEquals(messageProperties.getSupportClosedHint(), hint.getElement().getText());
@@ -873,7 +890,7 @@ class TwoFactorFlowViewTest {
   @ValueSource(strings = {"de", "en"})
   void administrationShowsOwnAssignmentOrTheAssignedAdministratorsName(String language) {
     openTwoFactorPage(language, false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
     Ticket assigned =
         new Ticket(
             1L,
@@ -890,8 +907,8 @@ class TwoFactorFlowViewTest {
             false,
             false,
             new UserIdentity("Riley", "Antrag", "riley@example.test"));
-    stubInbox(tickets, List.of(assigned));
-    when(tickets.conversation(request, assigned.id(), true))
+    stubInbox(mockSupportTicketService, List.of(assigned));
+    when(mockSupportTicketService.loadTicketConversation(mockHttpRequest, assigned.id(), true))
         .thenReturn(
             List.of(
                 new Reply(
@@ -904,9 +921,10 @@ class TwoFactorFlowViewTest {
                     null,
                     null,
                     null)));
-    when(tickets.administratorId(request)).thenReturn(9L);
+    when(mockSupportTicketService.administratorId(mockHttpRequest)).thenReturn(9L);
     SupportTicketsComponent component =
-        new SupportTicketsComponent(messageProperties, tickets, request, true);
+        new SupportTicketsComponent(
+            messageProperties, mockSupportTicketService, mockHttpRequest, true);
     Component pageHeader = find(component, "support-page-header");
     assertTrue(pageHeader.hasClassName("cosmos-section-header"));
     String headingText = pageHeader.getElement().getTextRecursively();
@@ -952,7 +970,7 @@ class TwoFactorFlowViewTest {
 
     assertSupportEditorWarnings(component);
 
-    when(tickets.administratorId(request)).thenReturn(10L);
+    when(mockSupportTicketService.administratorId(mockHttpRequest)).thenReturn(10L);
     component.refreshTicketWorkspace();
     Component otherAssignee = renderer.createComponent(assigned);
     assertFalse(find(component, "support-ticket-tools").isVisible());
@@ -1031,22 +1049,22 @@ class TwoFactorFlowViewTest {
   void instructionPreviewUsesCurrentInterfaceLanguageAndUpdatesWhileOpen(String language) {
     openTwoFactorPage(language, false);
     MessageProperties liveTexts = new MessageProperties(new CustomI18NProvider());
-    SupportTicketService tickets = mock(SupportTicketService.class);
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
     Ticket assigned = filterTicket(1L, Status.IN_PROGRESS, 9L);
-    stubInbox(tickets, List.of(assigned));
-    when(tickets.administratorId(request)).thenReturn(9L);
+    stubInbox(mockSupportTicketService, List.of(assigned));
+    when(mockSupportTicketService.administratorId(mockHttpRequest)).thenReturn(9L);
     SupportTicketsComponent component =
-        new SupportTicketsComponent(liveTexts, tickets, request, true);
+        new SupportTicketsComponent(liveTexts, mockSupportTicketService, mockHttpRequest, true);
     @SuppressWarnings("unchecked")
     Grid<Ticket> grid = (Grid<Ticket>) find(component, "support-ticket-grid");
     grid.asSingleSelect().setValue(assigned);
     component.refreshTicketWorkspace();
     ((Button) find(component, "support-instructions")).click();
-    verify(tickets).validateInstructionPreview(request, assigned.id());
+    verify(mockSupportTicketService).validateInstructionPreview(mockHttpRequest, assigned.id());
     Component dialog = find(component, "support-instruction-preview");
     for (String current : List.of(language, "de".equals(language) ? "en" : "de")) {
       Locale locale = Locale.forLanguageTag(current);
-      when(session.getLocale()).thenReturn(locale);
+      when(vaadinSession.getLocale()).thenReturn(locale);
       component.refreshTexts();
       String expected =
           MessageProperties.forLocale(new CustomI18NProvider(), locale)
@@ -1068,14 +1086,14 @@ class TwoFactorFlowViewTest {
       assertTrue(content.contains(expected.split("\n\n")[6]));
       assertEquals(6, guide.getChildren().count());
     }
-    verify(tickets, never()).sendInstructions(any(), any(), any());
+    verify(mockSupportTicketService, never()).sendTicketRecoveryInstructions(any(), any(), any());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void supportSenderIdentityIsVisibleOnlyInAdministration(String language) {
     openTwoFactorPage(language, false);
-    SupportTicketService tickets = mock(SupportTicketService.class);
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
     Ticket assigned = filterTicket(1L, Status.IN_PROGRESS, 9L);
     UserIdentity author = new UserIdentity("Morgan", "Autor", "morgan@example.test");
     Reply publicReply =
@@ -1111,20 +1129,24 @@ class TwoFactorFlowViewTest {
             null,
             null,
             null);
-    when(tickets.administratorId(request)).thenReturn(9L);
+    when(mockSupportTicketService.administratorId(mockHttpRequest)).thenReturn(9L);
     for (boolean administration : List.of(true, false)) {
       List<Reply> messages =
           administration
               ? List.of(publicReply, internalNote, deletedAuthor)
               : List.of(publicReply, deletedAuthor);
       if (administration) {
-        stubInbox(tickets, List.of(assigned));
+        stubInbox(mockSupportTicketService, List.of(assigned));
       } else {
-        when(tickets.list(request, false)).thenReturn(List.of(assigned));
+        when(mockSupportTicketService.listTicketsForViewer(mockHttpRequest, false))
+            .thenReturn(List.of(assigned));
       }
-      when(tickets.conversation(request, assigned.id(), administration)).thenReturn(messages);
+      when(mockSupportTicketService.loadTicketConversation(
+              mockHttpRequest, assigned.id(), administration))
+          .thenReturn(messages);
       SupportTicketsComponent component =
-          new SupportTicketsComponent(messageProperties, tickets, request, administration);
+          new SupportTicketsComponent(
+              messageProperties, mockSupportTicketService, mockHttpRequest, administration);
       component.openTicket("10001");
       List<Component> entries =
           tree(component).filter(part -> part.hasClassName("support-message")).toList();

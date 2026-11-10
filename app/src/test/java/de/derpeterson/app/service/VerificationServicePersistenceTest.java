@@ -93,7 +93,7 @@ class VerificationServicePersistenceTest {
   private static final Clock CLOCK =
       Clock.fixed(Instant.parse("2026-10-07T12:00:00Z"), ZoneOffset.UTC);
   @Autowired private VerificationService service;
-  @Autowired private VerificationTokenRepository tokens;
+  @Autowired private VerificationTokenRepository verificationTokenRepository;
   @Autowired private UserRepository users;
   @Autowired private TransactionTemplate transaction;
   @Autowired private Probes probes;
@@ -101,7 +101,7 @@ class VerificationServicePersistenceTest {
 
   @BeforeEach
   void setUp() {
-    reset(probes.tokens(), probes.config(), probes.queue(), probes.users());
+    reset(probes.verificationTokenRepository(), probes.config(), probes.queue(), probes.users());
     when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
         .thenReturn("PT1H");
     when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn("P7D");
@@ -109,24 +109,23 @@ class VerificationServicePersistenceTest {
         .thenReturn("© {year} {serviceName} (isolated fixture)");
     when(probes.config().getString(ConfigEntry.SERVICE_NAME)).thenReturn("Test Service");
     when(probes.config().getString(ConfigEntry.BASE_URL)).thenReturn("https://example.com/");
-    transaction.executeWithoutResult(
-        status -> {
-          tokens.deleteAll();
-          users.deleteAll();
-          users.flush();
-          UserEntity user =
-              UserEntity.builder()
-                  .firstName("Test")
-                  .lastName("User")
-                  .email("test@example.com")
-                  .password("hash")
-                  .gender(Gender.OTHER)
-                  .birthDate(LocalDate.of(1990, 1, 1))
-                  .preferredLocale(Locale.ENGLISH)
-                  .enabled(false)
-                  .build();
-          userId = users.saveAndFlush(user).getId();
-        });
+    transaction.executeWithoutResult(status -> {
+      verificationTokenRepository.deleteAll();
+      users.deleteAll();
+      users.flush();
+      UserEntity user =
+          UserEntity.builder()
+              .firstName("Test")
+              .lastName("User")
+              .email("test@example.com")
+              .password("hash")
+              .gender(Gender.OTHER)
+              .birthDate(LocalDate.of(1990, 1, 1))
+              .preferredLocale(Locale.ENGLISH)
+              .enabled(false)
+              .build();
+      userId = users.saveAndFlush(user).getId();
+    });
   }
 
   @Test
@@ -186,7 +185,7 @@ class VerificationServicePersistenceTest {
     UserEntity targetUser = detachedUser();
     assertThrows(DateTimeParseException.class, () -> service.createToken(targetUser));
     assertEquals(TokenStatus.ACTIVE, status("old"));
-    assertEquals(1, tokens.count());
+    assertEquals(1, verificationTokenRepository.count());
   }
 
   @ParameterizedTest
@@ -216,9 +215,9 @@ class VerificationServicePersistenceTest {
       assertThrows(IllegalArgumentException.class, () -> resend(entry));
     }
     assertEquals(TokenStatus.ACTIVE, status("old"));
-    assertEquals(1, tokens.count());
+    assertEquals(1, verificationTokenRepository.count());
     assertFalse(users.findById(userId).orElseThrow().isEnabled());
-    verify(probes.tokens(), never()).save(any());
+    verify(probes.verificationTokenRepository(), never()).save(any());
     verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
   }
 
@@ -241,7 +240,7 @@ class VerificationServicePersistenceTest {
     }
     assertEquals(TokenStatus.INACTIVE, status("old"));
     assertEquals(1, activeCount());
-    assertEquals(2, tokens.count());
+    assertEquals(2, verificationTokenRepository.count());
     assertFalse(users.findById(userId).orElseThrow().isEnabled());
     verify(probes.queue())
         .addEmailToQueue(
@@ -270,9 +269,9 @@ class VerificationServicePersistenceTest {
                 users.flush();
                 throw new IllegalStateException("simulated token persistence failure");
               }
-              return tokens.save(entity);
+              return verificationTokenRepository.save(entity);
             })
-        .when(probes.tokens())
+        .when(probes.verificationTokenRepository())
         .save(any(VerificationTokenEntity.class));
     assertThrows(IllegalStateException.class, () -> service.validateToken("valid"));
     assertFalse(users.findById(userId).orElseThrow().isEnabled());
@@ -291,7 +290,7 @@ class VerificationServicePersistenceTest {
       assertThrows(IllegalStateException.class, () -> resend(entry));
     }
     assertEquals(TokenStatus.ACTIVE, status("old"));
-    assertEquals(1, tokens.count());
+    assertEquals(1, verificationTokenRepository.count());
   }
 
   @ParameterizedTest
@@ -326,11 +325,11 @@ class VerificationServicePersistenceTest {
         assertInstanceOf(FileNotFoundException.class, thrown);
       }
     }
-    verify(probes.tokens(), times(2)).save(any(VerificationTokenEntity.class));
+    verify(probes.verificationTokenRepository(), times(2)).save(any(VerificationTokenEntity.class));
     assertEquals(TokenStatus.ACTIVE, status("old"));
     assertEquals(TokenStatus.INACTIVE, status("inactive"));
     assertEquals(TokenStatus.USED, status("used"));
-    assertEquals(3, tokens.count());
+    assertEquals(3, verificationTokenRepository.count());
     assertEquals(1, activeCount());
     assertFalse(users.findById(userId).orElseThrow().isEnabled());
     verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
@@ -352,7 +351,7 @@ class VerificationServicePersistenceTest {
     assertTrue(service.existsToken("recent"));
     assertEquals(tokenStatus, status("recent"));
     assertEquals(tokenStatus, status("future"));
-    assertEquals(3, tokens.count());
+    assertEquals(3, verificationTokenRepository.count());
     assertFalse(users.findById(userId).orElseThrow().isEnabled());
   }
 
@@ -366,8 +365,8 @@ class VerificationServicePersistenceTest {
         duration.equals("invalid") ? DateTimeParseException.class : IllegalArgumentException.class;
     assertThrows(expected, service::deleteExpiredTokens);
     assertEquals(TokenStatus.EXPIRED, status("old"));
-    assertEquals(1, tokens.count());
-    verify(probes.tokens(), never()).deleteByExpiryDateBefore(any());
+    assertEquals(1, verificationTokenRepository.count());
+    verify(probes.verificationTokenRepository(), never()).deleteByExpiryDateBefore(any());
   }
 
   @Test
@@ -386,7 +385,7 @@ class VerificationServicePersistenceTest {
     assertInstanceOf(String.class, values.get(1));
     assertNotEquals(values.get(0), values.get(1));
     assertEquals(1, activeCount());
-    assertEquals(2, tokens.count());
+    assertEquals(2, verificationTokenRepository.count());
   }
 
   @Test
@@ -432,18 +431,17 @@ class VerificationServicePersistenceTest {
   @ValueSource(booleans = {false, true})
   void repeatedAccountLockPreservesActivationAndOuterRollback(boolean rollback) {
     seed("outer-verify", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
-    transaction.executeWithoutResult(
-        tx -> {
-          assertTrue(service.validateToken("outer-verify"));
-          UserEntity managed = users.findById(userId).orElseThrow();
-          managed.setFirstName("Local");
-          service.setInactiveTokensForUser(managed);
-          assertTrue(managed.isEnabled());
-          assertEquals("Local", managed.getFirstName());
-          if (rollback) {
-            tx.setRollbackOnly();
-          }
-        });
+    transaction.executeWithoutResult(tx -> {
+      assertTrue(service.validateToken("outer-verify"));
+      UserEntity managed = users.findById(userId).orElseThrow();
+      managed.setFirstName("Local");
+      service.setInactiveTokensForUser(managed);
+      assertTrue(managed.isEnabled());
+      assertEquals("Local", managed.getFirstName());
+      if (rollback) {
+        tx.setRollbackOnly();
+      }
+    });
     assertEquals(!rollback, users.findById(userId).orElseThrow().isEnabled());
     assertEquals(rollback ? "Test" : "Local", users.findById(userId).orElseThrow().getFirstName());
     assertEquals(rollback ? TokenStatus.ACTIVE : TokenStatus.USED, status("outer-verify"));
@@ -459,28 +457,26 @@ class VerificationServicePersistenceTest {
   }
 
   private void seed(String value, TokenStatus tokenStatus, LocalDateTime expiry) {
-    transaction.executeWithoutResult(
-        tx ->
-            tokens.saveAndFlush(
-                new VerificationTokenEntity(
-                    null, value, users.findById(userId).orElseThrow(), expiry, tokenStatus)));
+    transaction.executeWithoutResult(tx ->
+        verificationTokenRepository.saveAndFlush(
+            new VerificationTokenEntity(
+                null, value, users.findById(userId).orElseThrow(), expiry, tokenStatus)));
   }
 
   private TokenStatus status(String value) {
-    return transaction.execute(tx -> tokens.findByToken(value).orElseThrow().getStatus());
+    return transaction.execute(
+        tx -> verificationTokenRepository.findByToken(value).orElseThrow().getStatus());
   }
 
   private int activeCount() {
-    return transaction.execute(
-        tx ->
-            tokens
-                .findAllByUserEntityAndStatus(
-                    users.findById(userId).orElseThrow(), TokenStatus.ACTIVE)
-                .size());
+    return transaction.execute(tx ->
+        verificationTokenRepository
+            .findAllByUserEntityAndStatus(users.findById(userId).orElseThrow(), TokenStatus.ACTIVE)
+            .size());
   }
 
   record Probes(
-      VerificationTokenRepository tokens,
+      VerificationTokenRepository verificationTokenRepository,
       ConfigService config,
       EmailQueueService queue,
       UserRepository users) {}
@@ -489,7 +485,7 @@ class VerificationServicePersistenceTest {
   void maintenanceCannotConsumeVerificationOrQueueMailAndExistingLinkWorksAfterwards() {
     SecurityContextHolder.clearContext();
     String token = service.createToken(users.findById(userId).orElseThrow());
-    long tokenCount = tokens.count();
+    long tokenCount = verificationTokenRepository.count();
     clearInvocations(probes.queue());
     when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     assertThrows(MaintenanceAccessException.class, () -> service.validateToken(token));
@@ -498,14 +494,17 @@ class VerificationServicePersistenceTest {
     assertThrows(
         MaintenanceAccessException.class,
         () -> service.sendVerificationEmailByEmail("test@example.com"));
-    assertEquals(tokenCount, tokens.count());
-    assertEquals(TokenStatus.ACTIVE, tokens.findByToken(token).orElseThrow().getStatus());
+    assertEquals(tokenCount, verificationTokenRepository.count());
+    assertEquals(
+        TokenStatus.ACTIVE,
+        verificationTokenRepository.findByToken(token).orElseThrow().getStatus());
     assertFalse(users.findById(userId).orElseThrow().isEnabled());
     verifyNoInteractions(probes.queue());
     service.deleteExpiredTokens();
     when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
     assertTrue(service.validateToken(token));
-    assertEquals(TokenStatus.USED, tokens.findByToken(token).orElseThrow().getStatus());
+    assertEquals(
+        TokenStatus.USED, verificationTokenRepository.findByToken(token).orElseThrow().getStatus());
   }
 
   @Autowired RegistrationService registration;
@@ -526,12 +525,12 @@ class VerificationServicePersistenceTest {
             .enabled(false)
             .build();
     long count = users.count();
-    long tokenCount = tokens.count();
+    long tokenCount = verificationTokenRepository.count();
     when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false, true);
     assertTrue(AopUtils.isAopProxy(registration));
     assertThrows(MaintenanceAccessException.class, () -> registration.register(candidate));
     assertEquals(count, users.count());
-    assertEquals(tokenCount, tokens.count());
+    assertEquals(tokenCount, verificationTokenRepository.count());
     assertTrue(users.findByEmail("paused-registration@example.test").isEmpty());
     verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
   }
@@ -583,9 +582,9 @@ class VerificationServicePersistenceTest {
     }
 
     @Bean
-    Probes probes(VerificationTokenRepository tokens, UserRepository users) {
+    Probes probes(VerificationTokenRepository verificationTokenRepository, UserRepository users) {
       return new Probes(
-          mock(VerificationTokenRepository.class, delegatesTo(tokens)),
+          mock(VerificationTokenRepository.class, delegatesTo(verificationTokenRepository)),
           mock(ConfigService.class),
           mock(EmailQueueService.class),
           mock(UserRepository.class, delegatesTo(users)));
@@ -596,7 +595,12 @@ class VerificationServicePersistenceTest {
       MessageProperties messages = mock(MessageProperties.class);
       when(messages.getEmailVerificationSubject()).thenReturn("Verify account");
       return new VerificationService(
-          messages, probes.tokens(), probes.users(), probes.config(), probes.queue(), CLOCK);
+          messages,
+          probes.verificationTokenRepository(),
+          probes.users(),
+          probes.config(),
+          probes.queue(),
+          CLOCK);
     }
   }
 }

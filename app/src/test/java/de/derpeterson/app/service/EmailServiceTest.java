@@ -71,13 +71,13 @@ import org.springframework.mail.javamail.MimeMailMessage;
 class EmailServiceTest {
   private static final String RECIPIENT = "recipient@example.com";
   private static final String FROM = "sender@example.com";
-  @Mock private ConfigService config;
+  @Mock private ConfigService configService;
   @Mock private JavaMailSender sender;
-  private EmailService service;
+  private EmailService emailService;
 
   @BeforeEach
   void setup() {
-    service = new EmailService(config, sender);
+    emailService = new EmailService(configService, sender);
   }
 
   private UserEntity user(String email) {
@@ -110,11 +110,11 @@ class EmailServiceTest {
   @ValueSource(strings = {"Normal subject", "Grüße – 密码 🔐", ""})
   void htmlMailRoundTripsRealMimeHeadersBodyAndUtf8(String subject) throws Exception {
     MimeMessage original = prepareMime();
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     String body =
         "<html><body>Grüße &amp; 密码 🔐\r\n<a href=\"https://example.com/reset?t=abc\">Link</a></body></html>";
 
-    service.sendEmail(user(RECIPIENT), subject, body);
+    emailService.sendEmail(user(RECIPIENT), subject, body);
 
     MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, RECIPIENT, FROM, subject);
@@ -125,16 +125,16 @@ class EmailServiceTest {
     if (!subject.isEmpty() && !subject.equals("Normal subject")) {
       assertTrue(message.getHeader("Subject", null).toLowerCase().contains("=?utf-8?"));
     }
-    verify(config).getString(ConfigEntry.EMAIL_FROM);
-    verifyNoMoreInteractions(config);
+    verify(configService).getString(ConfigEntry.EMAIL_FROM);
+    verifyNoMoreInteractions(configService);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"", "plain-looking text", "<b>Ä € 日本語 😀</b>", "<p>"})
   void htmlBodyIsPreservedEvenIfEmptyOrNotValidHtml(String body) throws Exception {
     MimeMessage original = prepareMime();
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
-    service.sendEmail(user(RECIPIENT), "subject", body);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    emailService.sendEmail(user(RECIPIENT), "subject", body);
     MimeMessage message = roundTrip(sentMime(original));
     assertHtml(message, body);
   }
@@ -142,8 +142,8 @@ class EmailServiceTest {
   @Test
   void namedAddressesRoundTripWithoutAddingCcBccOrReplyTo() throws Exception {
     MimeMessage original = prepareMime();
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("Sender <sender@example.com>");
-    service.sendEmail(user("Recipient <recipient@example.com>"), "subject", "<p>body</p>");
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn("Sender <sender@example.com>");
+    emailService.sendEmail(user("Recipient <recipient@example.com>"), "subject", "<p>body</p>");
     MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, RECIPIENT, FROM, "subject");
     assertEquals(
@@ -156,17 +156,17 @@ class EmailServiceTest {
   @Test
   void htmlAddressParsingDoesNotEnforceAnInternetDomain() throws Exception {
     MimeMessage message = prepareMime();
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("local-sender");
-    service.sendEmail(user("local-recipient"), "subject", "body");
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn("local-sender");
+    emailService.sendEmail(user("local-recipient"), "subject", "body");
     assertEnvelope(roundTrip(sentMime(message)), "local-recipient", "local-sender", "subject");
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"Normal subject", "Grüße – 密码 🔐", ""})
   void adminMailPreservesAllFieldsAndUnicodeAsPlainText(String subject) {
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     String body = "Grüße – 密码 🔐\nFailure details\n<b>literal markup</b>";
-    service.sendAdminEmail(RECIPIENT, subject, body);
+    emailService.sendAdminEmail(RECIPIENT, subject, body);
     SimpleMailMessage message = sentSimple();
     assertArrayEquals(new String[] {RECIPIENT}, message.getTo());
     assertEquals(FROM, message.getFrom());
@@ -175,8 +175,8 @@ class EmailServiceTest {
     assertNull(message.getCc());
     assertNull(message.getBcc());
     assertNull(message.getReplyTo());
-    verify(config).getString(ConfigEntry.EMAIL_FROM);
-    verifyNoMoreInteractions(config);
+    verify(configService).getString(ConfigEntry.EMAIL_FROM);
+    verifyNoMoreInteractions(configService);
   }
 
   @ParameterizedTest
@@ -195,9 +195,9 @@ class EmailServiceTest {
             })
         .when(sender)
         .send(any(SimpleMailMessage.class));
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     String body = "Ä € 日本語 😀\r\n<b>literal markup</b>";
-    service.sendAdminEmail(RECIPIENT, subject, body);
+    emailService.sendAdminEmail(RECIPIENT, subject, body);
     SimpleMailMessage simple = sentSimple();
     assertEquals(body, simple.getText());
     MimeMessage message = roundTrip(mime);
@@ -213,7 +213,7 @@ class EmailServiceTest {
   }
 
   private JavaMailSenderImpl configuredSender() {
-    return (JavaMailSenderImpl) new MailConfig(config).javaMailSender();
+    return (JavaMailSenderImpl) new MailConfig(configService).javaMailSender();
   }
 
   @ParameterizedTest
@@ -228,12 +228,13 @@ class EmailServiceTest {
             })
         .when(sender)
         .send(any(SimpleMailMessage.class));
-    when(config.getString(ConfigEntry.EMAIL_FROM))
+    when(configService.getString(ConfigEntry.EMAIL_FROM))
         .thenReturn(invalidField.equals("from") ? "bad@@example.com" : FROM);
     String recipient2 = invalidField.equals("recipient") ? "bad@@example.com" : RECIPIENT;
     MailParseException failure =
         assertThrows(
-            MailParseException.class, () -> service.sendAdminEmail(recipient2, "subject", "body"));
+            MailParseException.class,
+            () -> emailService.sendAdminEmail(recipient2, "subject", "body"));
     assertInstanceOf(MessagingException.class, failure.getCause());
     sentSimple();
   }
@@ -242,8 +243,8 @@ class EmailServiceTest {
   @NullAndEmptySource
   @ValueSource(strings = {" ", "first\r\nsecond", "<b>Ä € 日本語 😀</b>"})
   void adminMailForwardsBodyWithoutValidationOrHtmlInterpretation(String body) {
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
-    service.sendAdminEmail(RECIPIENT, "subject", body);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    emailService.sendAdminEmail(RECIPIENT, "subject", body);
     assertEquals(body, sentSimple().getText());
   }
 
@@ -251,8 +252,8 @@ class EmailServiceTest {
   @NullAndEmptySource
   @ValueSource(strings = {" ", "bad@@example.com"})
   void adminMailForwardsUnvalidatedRecipientAndFrom(String address) {
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(address);
-    service.sendAdminEmail(address, null, "body");
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(address);
+    emailService.sendAdminEmail(address, null, "body");
     SimpleMailMessage message = sentSimple();
     assertArrayEquals(new String[] {address}, message.getTo());
     assertEquals(address, message.getFrom());
@@ -264,12 +265,12 @@ class EmailServiceTest {
     MimeMessage first = new MimeMessage(Session.getInstance(new Properties()));
     MimeMessage second = new MimeMessage(Session.getInstance(new Properties()));
     when(sender.createMimeMessage()).thenReturn(first, second);
-    when(config.getString(ConfigEntry.EMAIL_FROM))
+    when(configService.getString(ConfigEntry.EMAIL_FROM))
         .thenReturn(FROM, "other@example.com", FROM, "other@example.com");
-    service.sendEmail(user(RECIPIENT), "first", "one");
-    service.sendEmail(user("other-recipient@example.com"), "second", "two");
-    service.sendAdminEmail(RECIPIENT, "first", "one");
-    service.sendAdminEmail("other-recipient@example.com", "second", "two");
+    emailService.sendEmail(user(RECIPIENT), "first", "one");
+    emailService.sendEmail(user("other-recipient@example.com"), "second", "two");
+    emailService.sendAdminEmail(RECIPIENT, "first", "one");
+    emailService.sendAdminEmail("other-recipient@example.com", "second", "two");
     assertEnvelope(roundTrip(first), RECIPIENT, FROM, "first");
     assertEnvelope(roundTrip(second), "other-recipient@example.com", "other@example.com", "second");
     ArgumentCaptor<SimpleMailMessage> messages = ArgumentCaptor.forClass(SimpleMailMessage.class);
@@ -289,25 +290,24 @@ class EmailServiceTest {
     verify(sender).send(first);
     verify(sender).send(second);
     verifyNoMoreInteractions(sender);
-    verify(config, times(4)).getString(ConfigEntry.EMAIL_FROM);
+    verify(configService, times(4)).getString(ConfigEntry.EMAIL_FROM);
   }
 
   static Stream<Arguments> sendFailures() {
     return Stream.of(false, true)
-        .flatMap(
-            html ->
-                Stream.of(
-                        new MailSendException("controlled send failure"),
-                        new MailAuthenticationException("controlled auth failure"),
-                        new MailParseException("controlled parse failure"))
-                    .map(failure -> Arguments.of(html, failure)));
+        .flatMap(html ->
+            Stream.of(
+                    new MailSendException("controlled send failure"),
+                    new MailAuthenticationException("controlled auth failure"),
+                    new MailParseException("controlled parse failure"))
+                .map(failure -> Arguments.of(html, failure)));
   }
 
   @ParameterizedTest
   @MethodSource("sendFailures")
   void senderFailuresPropagateUnchangedWithoutRetry(boolean html, MailException failure)
       throws Exception {
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     if (html) {
       MimeMessage message = prepareMime();
       doThrow(failure).when(sender).send(message);
@@ -315,14 +315,15 @@ class EmailServiceTest {
       assertSame(
           failure,
           assertThrows(
-              MailException.class, () -> service.sendEmail(targetUser, "subject", "body")));
+              MailException.class, () -> emailService.sendEmail(targetUser, "subject", "body")));
       sentMime(message);
     } else {
       doThrow(failure).when(sender).send(any(SimpleMailMessage.class));
       assertSame(
           failure,
           assertThrows(
-              MailException.class, () -> service.sendAdminEmail(RECIPIENT, "subject", "body")));
+              MailException.class,
+              () -> emailService.sendAdminEmail(RECIPIENT, "subject", "body")));
       assertEquals("body", sentSimple().getText());
     }
   }
@@ -331,21 +332,22 @@ class EmailServiceTest {
   @ValueSource(booleans = {false, true})
   void configFailuresPropagateBeforeSend(boolean html) {
     IllegalStateException failure = new IllegalStateException("controlled config failure");
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenThrow(failure);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenThrow(failure);
     if (html) {
       prepareMime();
       UserEntity targetUser = user(RECIPIENT);
       assertSame(
           failure,
           assertThrows(
-              IllegalStateException.class, () -> service.sendEmail(targetUser, "subject", "body")));
+              IllegalStateException.class,
+              () -> emailService.sendEmail(targetUser, "subject", "body")));
       verify(sender).createMimeMessage();
     } else {
       assertSame(
           failure,
           assertThrows(
               IllegalStateException.class,
-              () -> service.sendAdminEmail(RECIPIENT, "subject", "body")));
+              () -> emailService.sendAdminEmail(RECIPIENT, "subject", "body")));
     }
     verifyNoMoreInteractions(sender);
   }
@@ -358,10 +360,10 @@ class EmailServiceTest {
     assertSame(
         failure,
         assertThrows(
-            MailParseException.class, () -> service.sendEmail(targetUser, "subject", "body")));
+            MailParseException.class, () -> emailService.sendEmail(targetUser, "subject", "body")));
     verify(sender).createMimeMessage();
     verifyNoMoreInteractions(sender);
-    verifyNoInteractions(config);
+    verifyNoInteractions(configService);
   }
 
   @ParameterizedTest
@@ -375,7 +377,7 @@ class EmailServiceTest {
           doThrow(failure).when(message).setContent("body", "text/html;charset=UTF-8");
       case "subject" -> doThrow(failure).when(message).setSubject("subject", "UTF-8");
       case "from" -> {
-        when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+        when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
         doThrow(failure).when(message).setFrom(any(Address.class));
       }
       default -> fail("unknown fixture stage");
@@ -383,11 +385,12 @@ class EmailServiceTest {
     assertSame(
         failure,
         assertThrows(
-            MessagingException.class, () -> service.sendEmail(user(RECIPIENT), "subject", "body")));
+            MessagingException.class,
+            () -> emailService.sendEmail(user(RECIPIENT), "subject", "body")));
     verify(sender).createMimeMessage();
     verifyNoMoreInteractions(sender);
     if (!stage.equals("from")) {
-      verifyNoInteractions(config);
+      verifyNoInteractions(configService);
     }
   }
 
@@ -399,14 +402,15 @@ class EmailServiceTest {
     if (address == null) {
       UserEntity targetUser = user(null);
       assertThrows(
-          IllegalArgumentException.class, () -> service.sendEmail(targetUser, "subject", "body"));
+          IllegalArgumentException.class,
+          () -> emailService.sendEmail(targetUser, "subject", "body"));
     } else {
       assertThrows(
-          MessagingException.class, () -> service.sendEmail(user(address), "subject", "body"));
+          MessagingException.class, () -> emailService.sendEmail(user(address), "subject", "body"));
     }
     verify(sender).createMimeMessage();
     verifyNoMoreInteractions(sender);
-    verifyNoInteractions(config);
+    verifyNoInteractions(configService);
   }
 
   @ParameterizedTest
@@ -414,18 +418,20 @@ class EmailServiceTest {
   @ValueSource(strings = {"bad@@example.com", "a@example.com,b@example.com"})
   void invalidHtmlFromFailsBeforeSend(String address) {
     prepareMime();
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(address);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(address);
     if (address == null) {
       UserEntity targetUser = user(RECIPIENT);
       assertThrows(
-          IllegalArgumentException.class, () -> service.sendEmail(targetUser, "subject", "body"));
+          IllegalArgumentException.class,
+          () -> emailService.sendEmail(targetUser, "subject", "body"));
     } else {
       assertThrows(
-          MessagingException.class, () -> service.sendEmail(user(RECIPIENT), "subject", "body"));
+          MessagingException.class,
+          () -> emailService.sendEmail(user(RECIPIENT), "subject", "body"));
     }
     verify(sender).createMimeMessage();
     verifyNoMoreInteractions(sender);
-    verify(config).getString(ConfigEntry.EMAIL_FROM);
+    verify(configService).getString(ConfigEntry.EMAIL_FROM);
   }
 
   @ParameterizedTest
@@ -437,23 +443,23 @@ class EmailServiceTest {
     assertThrows(
         expected,
         () ->
-            service.sendEmail(
+            emailService.sendEmail(
                 argument.equals("user") ? null : user(RECIPIENT),
                 argument.equals("subject") ? null : "subject",
                 argument.equals("body") ? null : "body"));
     verify(sender).createMimeMessage();
     verifyNoMoreInteractions(sender);
-    verifyNoInteractions(config);
+    verifyNoInteractions(configService);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"<p>Grüße – 密码 🔐</p>", "<p>Reset</p>"})
   void inlineLogoRoundTripsItsCidPngBytesAndUtf8Html(String text) throws Exception {
     MimeMessage original = prepareMime();
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     String cid = de.derpeterson.app.helper.email.EmailLogo.CONTENT_ID;
     String body = text + "<img src=\"cid:" + cid + "\" alt=\"Service\">";
-    service.sendEmail(user(RECIPIENT), "Logo – Ä", body);
+    emailService.sendEmail(user(RECIPIENT), "Logo – Ä", body);
     MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, RECIPIENT, FROM, "Logo – Ä");
     assertTrue(message.isMimeType("multipart/related"));
@@ -474,7 +480,7 @@ class EmailServiceTest {
   @Test
   void unreadableInlineLogoFailsBeforeTransportWithoutRetry() {
     MimeMessage message = prepareMime();
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     IOException failure = new java.io.IOException("controlled logo read failure");
     try (MockedStatic<EmailLogo> logo =
         mockStatic(de.derpeterson.app.helper.email.EmailLogo.class)) {
@@ -483,7 +489,7 @@ class EmailServiceTest {
           assertThrows(
               org.springframework.mail.MailPreparationException.class,
               () ->
-                  service.sendEmail(
+                  emailService.sendEmail(
                       user(RECIPIENT),
                       "subject",
                       "<img src=\"cid:"
@@ -499,9 +505,9 @@ class EmailServiceTest {
   @Test
   void unknownCidDoesNotTriggerAnUnrelatedLogoAttachment() throws Exception {
     MimeMessage message = prepareMime();
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     String body = "<img src=\"cid:unknown-image\">";
-    service.sendEmail(user(RECIPIENT), "subject", body);
+    emailService.sendEmail(user(RECIPIENT), "subject", body);
     MimeMessage received = roundTrip(sentMime(message));
     assertFalse(received.isMimeType("multipart/*"));
     assertHtml(received, body);
@@ -510,7 +516,7 @@ class EmailServiceTest {
   @Test
   void unmarkedMultipartSendFailureRemainsUnknownAndIsNotRetried() {
     MimeMessage message = prepareMime();
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     MailSendException failure = new MailSendException("unknown outcome");
     doThrow(failure).when(sender).send(message);
     UserEntity targetUser = user(RECIPIENT);
@@ -518,7 +524,7 @@ class EmailServiceTest {
     assertSame(
         failure,
         assertThrows(
-            MailSendException.class, () -> service.sendEmail(targetUser, "subject", body2)));
+            MailSendException.class, () -> emailService.sendEmail(targetUser, "subject", body2)));
     sentMime(message);
   }
 
@@ -557,8 +563,8 @@ class EmailServiceTest {
   void addressedSecurityEmailUsesExactlyTheCapturedRecipientAndExistingMimeContract()
       throws Exception {
     MimeMessage original = prepareMime();
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
-    service.sendEmailTo(
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
+    emailService.sendEmailTo(
         "confirmed-new@example.test", "Sicherheitsmeldung", "<p>Änderung bestätigt</p>");
     MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, "confirmed-new@example.test", FROM, "Sicherheitsmeldung");

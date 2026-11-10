@@ -62,38 +62,38 @@ class ExternalProviderSettingsPersistenceTest {
     }
   }
 
-  @Autowired ExternalProviderSettings settings;
+  @Autowired ExternalProviderSettings externalProviderSettings;
   @Autowired ExternalProviderRepository repository;
-  @Autowired ExternalLoginProperties properties;
-  @Autowired AdminRolePolicy policy;
+  @Autowired ExternalLoginProperties externalLoginProperties;
+  @Autowired AdminRolePolicy adminRolePolicy;
   @Autowired ExternalProviderSecrets secrets;
-  @Autowired DataSource source;
+  @Autowired DataSource testDataSource;
 
   @BeforeEach
   void resetSettings() {
     repository.deleteAll();
-    properties.getGoogle().setClientId(null);
-    properties.getGoogle().setClientSecret(null);
-    properties.getGoogle().setEnabled(false);
-    properties.getMicrosoft().setClientId(null);
-    properties.getMicrosoft().setClientSecret(null);
-    properties.getMicrosoft().setEnabled(false);
-    reset(policy);
+    externalLoginProperties.getGoogle().setClientId(null);
+    externalLoginProperties.getGoogle().setClientSecret(null);
+    externalLoginProperties.getGoogle().setEnabled(false);
+    externalLoginProperties.getMicrosoft().setClientId(null);
+    externalLoginProperties.getMicrosoft().setClientSecret(null);
+    externalLoginProperties.getMicrosoft().setEnabled(false);
+    reset(adminRolePolicy);
   }
 
   @Test
   void startupPersistsBothProvidersAndPreservesSavedSettingsAcrossRestarts() {
-    properties.getGoogle().setClientId("own-google-client");
-    properties.getGoogle().setClientSecret("own-google-secret");
-    properties.getGoogle().setEnabled(true);
-    properties.getMicrosoft().setClientId("own-microsoft-client");
-    properties.getMicrosoft().setClientSecret("own-microsoft-secret");
+    externalLoginProperties.getGoogle().setClientId("own-google-client");
+    externalLoginProperties.getGoogle().setClientSecret("own-google-secret");
+    externalLoginProperties.getGoogle().setEnabled(true);
+    externalLoginProperties.getMicrosoft().setClientId("own-microsoft-client");
+    externalLoginProperties.getMicrosoft().setClientSecret("own-microsoft-secret");
 
-    settings.initializeDefaults();
+    externalProviderSettings.initializeDefaults();
 
     assertEquals(2, repository.count());
     String rawGoogle =
-        new JdbcTemplate(source)
+        new JdbcTemplate(testDataSource)
             .queryForObject(
                 "select encrypted_client_secret from external_providers where provider = 'google'",
                 String.class);
@@ -109,53 +109,54 @@ class ExternalProviderSettingsPersistenceTest {
     assertEquals(
         java.util.List.of("google"),
         new ExternalLoginConfiguration()
-            .managedExternalRegistrations(new ExternalLoginProperties(), settings)
+            .managedExternalRegistrations(new ExternalLoginProperties(), externalProviderSettings)
             .providers());
-    ExternalProviderSettings.Settings saved = settings.load("google");
-    settings.save("google", "saved-client", "", false, saved.revision());
-    properties.getGoogle().setClientId("changed-environment-client");
-    properties.getGoogle().setClientSecret("changed-environment-secret");
-    properties.getMicrosoft().setEnabled(true);
-    settings.initializeDefaults();
+    ExternalProviderSettings.Settings saved = externalProviderSettings.load("google");
+    externalProviderSettings.save("google", "saved-client", "", false, saved.revision());
+    externalLoginProperties.getGoogle().setClientId("changed-environment-client");
+    externalLoginProperties.getGoogle().setClientSecret("changed-environment-secret");
+    externalLoginProperties.getMicrosoft().setEnabled(true);
+    externalProviderSettings.initializeDefaults();
 
-    assertEquals("saved-client", settings.load("google").clientId());
-    assertFalse(settings.load("google").enabled());
-    assertFalse(settings.load("microsoft").enabled());
+    assertEquals("saved-client", externalProviderSettings.load("google").clientId());
+    assertFalse(externalProviderSettings.load("google").enabled());
+    assertFalse(externalProviderSettings.load("microsoft").enabled());
     assertEquals(
         "own-google-secret",
         secrets.decrypt(
             "google", repository.findById("google").orElseThrow().getEncryptedClientSecret()));
     assertTrue(
         new ExternalLoginConfiguration()
-            .managedExternalRegistrations(new ExternalLoginProperties(), settings)
+            .managedExternalRegistrations(new ExternalLoginProperties(), externalProviderSettings)
             .providers()
             .isEmpty());
   }
 
   @Test
   void startupCreatesDisabledRowsWithoutCredentialsAndNeverStoresInvalidActivationPartially() {
-    properties.getMicrosoft().setEnabled(true);
-    assertThrows(IllegalArgumentException.class, settings::initializeDefaults);
+    externalLoginProperties.getMicrosoft().setEnabled(true);
+    assertThrows(IllegalArgumentException.class, externalProviderSettings::initializeDefaults);
     assertEquals(0, repository.count());
 
-    properties.getMicrosoft().setEnabled(false);
-    settings.initializeDefaults();
+    externalLoginProperties.getMicrosoft().setEnabled(false);
+    externalProviderSettings.initializeDefaults();
     assertEquals(2, repository.count());
     for (String provider : ExternalProviderSettings.PROVIDERS) {
-      assertEquals("", settings.load(provider).clientId());
-      assertFalse(settings.load(provider).secretStored());
-      assertFalse(settings.load(provider).enabled());
+      assertEquals("", externalProviderSettings.load(provider).clientId());
+      assertFalse(externalProviderSettings.load(provider).secretStored());
+      assertFalse(externalProviderSettings.load(provider).enabled());
     }
   }
 
   @Test
   void configurationBecomesAvailableWithoutRestartAndSurvivesANewAdapter() {
     ExternalLoginConfiguration.Registrations live =
-        new ExternalLoginConfiguration().managedExternalRegistrations(properties, settings);
+        new ExternalLoginConfiguration()
+            .managedExternalRegistrations(externalLoginProperties, externalProviderSettings);
     assertTrue(live.providers().isEmpty());
-    ExternalProviderSettings.Settings empty = settings.load("google");
+    ExternalProviderSettings.Settings empty = externalProviderSettings.load("google");
     ExternalProviderSettings.Settings saved =
-        settings.save("google", "own-client", "own-secret", true, empty.revision());
+        externalProviderSettings.save("google", "own-client", "own-secret", true, empty.revision());
     assertEquals("own-client", live.findByRegistrationId("google").getClientId());
     assertEquals("own-secret", live.findByRegistrationId("google").getClientSecret());
     String encrypted = repository.findById("google").orElseThrow().getEncryptedClientSecret();
@@ -163,9 +164,9 @@ class ExternalProviderSettingsPersistenceTest {
     assertFalse(saved.toString().contains("own-secret"));
     assertNotNull(
         new ExternalLoginConfiguration()
-            .managedExternalRegistrations(properties, settings)
+            .managedExternalRegistrations(externalLoginProperties, externalProviderSettings)
             .findByRegistrationId("google"));
-    settings.save("google", "own-client", "", false, saved.revision());
+    externalProviderSettings.save("google", "own-client", "", false, saved.revision());
     assertEquals(encrypted, repository.findById("google").orElseThrow().getEncryptedClientSecret());
     assertNull(live.findByRegistrationId("google"));
     assertEquals(
@@ -176,18 +177,24 @@ class ExternalProviderSettingsPersistenceTest {
 
   @Test
   void unreadableStoredSecretsFailStartupInsteadOfBeingOverwrittenByEnvironment() {
-    settings.save("google", "own-client", "own-secret", true, settings.load("google").revision());
+    externalProviderSettings.save(
+        "google",
+        "own-client",
+        "own-secret",
+        true,
+        externalProviderSettings.load("google").revision());
     String expected = repository.findById("google").orElseThrow().getEncryptedClientSecret();
     ExternalProviderEntity corrupted = repository.findById("google").orElseThrow();
     corrupted.setEncryptedClientSecret(expected.substring(0, expected.length() - 5));
     repository.saveAndFlush(corrupted);
-    properties.getGoogle().setClientSecret("environment-cannot-repair-this");
-    assertThrows(IllegalStateException.class, settings::initializeDefaults);
+    externalLoginProperties.getGoogle().setClientSecret("environment-cannot-repair-this");
+    assertThrows(IllegalStateException.class, externalProviderSettings::initializeDefaults);
     assertEquals(
         expected.substring(0, expected.length() - 5),
         repository.findById("google").orElseThrow().getEncryptedClientSecret());
     ExternalLoginConfiguration.Registrations registrations =
-        new ExternalLoginConfiguration().managedExternalRegistrations(properties, settings);
+        new ExternalLoginConfiguration()
+            .managedExternalRegistrations(externalLoginProperties, externalProviderSettings);
     assertThrows(IllegalStateException.class, registrations::providers);
   }
 
@@ -196,14 +203,19 @@ class ExternalProviderSettingsPersistenceTest {
   void bothProvidersUseDecryptedCredentialsWhileDatabaseAndEmptyUpdatesKeepCiphertext(
       String provider) {
     ExternalProviderSettings.Settings saved =
-        settings.save(
-            provider, "own-client", "own-secret", true, settings.load(provider).revision());
+        externalProviderSettings.save(
+            provider,
+            "own-client",
+            "own-secret",
+            true,
+            externalProviderSettings.load(provider).revision());
     String encrypted = repository.findById(provider).orElseThrow().getEncryptedClientSecret();
     assertFalse(encrypted.contains("own-secret"));
     ExternalLoginConfiguration.Registrations registrations =
-        new ExternalLoginConfiguration().managedExternalRegistrations(properties, settings);
+        new ExternalLoginConfiguration()
+            .managedExternalRegistrations(externalLoginProperties, externalProviderSettings);
     assertEquals("own-secret", registrations.findByRegistrationId(provider).getClientSecret());
-    settings.save(provider, "own-client", "", true, saved.revision());
+    externalProviderSettings.save(provider, "own-client", "", true, saved.revision());
     assertEquals(encrypted, repository.findById(provider).orElseThrow().getEncryptedClientSecret());
     assertEquals("own-secret", registrations.findByRegistrationId(provider).getClientSecret());
   }
@@ -213,17 +225,17 @@ class ExternalProviderSettingsPersistenceTest {
     ExternalProviderSettings unavailable =
         new ExternalProviderSettings(
             repository,
-            properties,
+            externalLoginProperties,
             new ExternalProviderSecrets(new MockEnvironment()),
-            policy,
+            adminRolePolicy,
             mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class),
             new org.springframework.mock.web.MockHttpServletRequest());
-    properties.getGoogle().setClientId("own-client");
-    properties.getGoogle().setClientSecret("own-secret");
-    properties.getGoogle().setEnabled(true);
+    externalLoginProperties.getGoogle().setClientId("own-client");
+    externalLoginProperties.getGoogle().setClientSecret("own-secret");
+    externalLoginProperties.getGoogle().setEnabled(true);
     assertThrows(IllegalStateException.class, unavailable::initializeDefaults);
     assertEquals(0, repository.count());
-    String revision = settings.load("google").revision();
+    String revision = externalProviderSettings.load("google").revision();
     assertThrows(
         IllegalStateException.class,
         () -> unavailable.save("google", "own-client", "own-secret", true, revision));
@@ -232,14 +244,15 @@ class ExternalProviderSettingsPersistenceTest {
 
   @Test
   void emptySecretPreservesImportedCredentialAndDatabaseDisableWinsOverEnvironment() {
-    properties.getMicrosoft().setClientId("own-environment-client");
-    properties.getMicrosoft().setEnabled(true);
-    properties.getMicrosoft().setClientSecret("own-environment-secret");
-    ExternalProviderSettings.Settings imported = settings.load("microsoft");
+    externalLoginProperties.getMicrosoft().setClientId("own-environment-client");
+    externalLoginProperties.getMicrosoft().setEnabled(true);
+    externalLoginProperties.getMicrosoft().setClientSecret("own-environment-secret");
+    ExternalProviderSettings.Settings imported = externalProviderSettings.load("microsoft");
     assertTrue(imported.enabled());
     ExternalProviderSettings.Settings saved =
-        settings.save("microsoft", imported.clientId(), "", false, imported.revision());
-    assertFalse(settings.load("microsoft").enabled());
+        externalProviderSettings.save(
+            "microsoft", imported.clientId(), "", false, imported.revision());
+    assertFalse(externalProviderSettings.load("microsoft").enabled());
     assertTrue(saved.secretStored());
     assertEquals(
         "own-environment-secret",
@@ -250,32 +263,33 @@ class ExternalProviderSettingsPersistenceTest {
 
   @Test
   void activationRequiresBothCredentialsAndRollsBackInvalidUpdates() {
-    String revision = settings.load("google").revision();
+    String revision = externalProviderSettings.load("google").revision();
     assertThrows(
-        IllegalArgumentException.class, () -> settings.save("google", "own", "", true, revision));
+        IllegalArgumentException.class,
+        () -> externalProviderSettings.save("google", "own", "", true, revision));
     assertTrue(repository.findAll().isEmpty());
     ExternalProviderSettings.Settings saved =
-        settings.save("google", "own", "own-secret", true, revision);
+        externalProviderSettings.save("google", "own", "own-secret", true, revision);
     String savedRevision = saved.revision();
     assertThrows(
         IllegalArgumentException.class,
-        () -> settings.save("google", "bad\nclient", "", true, savedRevision));
-    assertEquals("own", settings.load("google").clientId());
+        () -> externalProviderSettings.save("google", "bad\nclient", "", true, savedRevision));
+    assertEquals("own", externalProviderSettings.load("google").clientId());
   }
 
   @Test
   void staleFormCannotOverwriteNewConfigurationOrCreateASecondInitialVersion() {
-    String initial = settings.load("google").revision();
+    String initial = externalProviderSettings.load("google").revision();
     ExternalProviderSettings.Settings first =
-        settings.save("google", "own", "first-secret", true, initial);
+        externalProviderSettings.save("google", "own", "first-secret", true, initial);
     assertThrows(
         OptimisticLockingFailureException.class,
-        () -> settings.save("google", "stale", "", false, initial));
-    settings.save("google", "own", "second-secret", true, first.revision());
+        () -> externalProviderSettings.save("google", "stale", "", false, initial));
+    externalProviderSettings.save("google", "own", "second-secret", true, first.revision());
     String firstRevision = first.revision();
     assertThrows(
         OptimisticLockingFailureException.class,
-        () -> settings.save("google", "stale", "", false, firstRevision));
+        () -> externalProviderSettings.save("google", "stale", "", false, firstRevision));
     assertEquals(
         "second-secret",
         secrets.decrypt(
@@ -284,14 +298,14 @@ class ExternalProviderSettingsPersistenceTest {
 
   @Test
   void freshAdministratorAuthorizationProtectsReadAndWriteAndUnsupportedProvidersAreRejected() {
-    String revision = settings.load("google").revision();
-    doThrow(new AccessDeniedException("Revoked")).when(policy).requireSuperadmin();
-    assertThrows(AccessDeniedException.class, () -> settings.load("google"));
+    String revision = externalProviderSettings.load("google").revision();
+    doThrow(new AccessDeniedException("Revoked")).when(adminRolePolicy).requireSuperadmin();
+    assertThrows(AccessDeniedException.class, () -> externalProviderSettings.load("google"));
     assertThrows(
         AccessDeniedException.class,
-        () -> settings.save("google", "own", "own-secret", true, revision));
+        () -> externalProviderSettings.save("google", "own", "own-secret", true, revision));
     assertTrue(repository.findAll().isEmpty());
-    reset(policy);
-    assertThrows(IllegalArgumentException.class, () -> settings.load("unknown"));
+    reset(adminRolePolicy);
+    assertThrows(IllegalArgumentException.class, () -> externalProviderSettings.load("unknown"));
   }
 }

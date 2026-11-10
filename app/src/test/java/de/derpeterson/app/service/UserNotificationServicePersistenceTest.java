@@ -111,8 +111,8 @@ class UserNotificationServicePersistenceTest {
     }
 
     @Bean
-    UserNotificationPolicy policy(ConfigService config) {
-      return new UserNotificationPolicy(config);
+    UserNotificationPolicy policy(ConfigService configService) {
+      return new UserNotificationPolicy(configService);
     }
 
     @Bean
@@ -121,46 +121,49 @@ class UserNotificationServicePersistenceTest {
     }
 
     @Bean
-    SessionAdmissionService admissions(ConfigService config, SessionRegistryImpl registry) {
-      return new SessionAdmissionService(config, registry);
+    SessionAdmissionService admissions(
+        ConfigService configService, SessionRegistryImpl sessionRegistry) {
+      return new SessionAdmissionService(configService, sessionRegistry);
     }
   }
 
-  @Autowired UserNotificationService service;
-  @Autowired UserNotificationRepository notifications;
-  @Autowired UserNotificationRecipientRepository recipients;
-  @Autowired UserRepository users;
-  @Autowired UserNotificationBroadcaster events;
+  @Autowired UserNotificationService userNotificationService;
+  @Autowired UserNotificationRepository userNotificationRepository;
+  @Autowired UserNotificationRecipientRepository userNotificationRecipientRepository;
+  @Autowired UserRepository userRepository;
+  @Autowired UserNotificationBroadcaster userNotificationBroadcaster;
   @Autowired UserNotificationCleanup cleanup;
-  @Autowired TransactionTemplate tx;
-  @Autowired SessionRegistryImpl registry;
-  @Autowired ConfigService config;
+  @Autowired TransactionTemplate transactionTemplate;
+  @Autowired SessionRegistryImpl sessionRegistry;
+  @Autowired ConfigService configService;
   @Autowired TwoFactorAuthorization twoFactor;
-  @PersistenceContext EntityManager em;
+  @PersistenceContext EntityManager entityManager;
   UserEntity sender, ordinary, guest, disabled, pending;
   MockHttpSession adminSession, userSession;
   final List<com.vaadin.flow.shared.Registration> subscriptions = new ArrayList<>();
 
   @BeforeEach
   void seed() {
-    reset(config, twoFactor);
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("180");
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS)).thenReturn("365");
-    tx.executeWithoutResult(s -> {
-      recipients.deleteAll();
-      notifications.deleteAll();
-      users.deleteAll();
-      users.flush();
-      em.createQuery("delete from RoleEntity").executeUpdate();
+    reset(configService, twoFactor);
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
+        .thenReturn("180");
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
+        .thenReturn("365");
+    transactionTemplate.executeWithoutResult(s -> {
+      userNotificationRecipientRepository.deleteAll();
+      userNotificationRepository.deleteAll();
+      userRepository.deleteAll();
+      userRepository.flush();
+      entityManager.createQuery("delete from RoleEntity").executeUpdate();
       for (RoleType role : RoleType.values()) {
-        em.persist(RoleEntity.builder().name(role).build());
+        entityManager.persist(RoleEntity.builder().name(role).build());
       }
       sender = create("sender", RoleType.ROLE_SUPERADMIN, true);
       ordinary = create("ordinary", RoleType.ROLE_USER, true);
       guest = create("guest", RoleType.ROLE_GUEST, true);
       disabled = create("disabled", RoleType.ROLE_USER, false);
       disabled.setEnabled(false);
-      users.save(disabled);
+      userRepository.save(disabled);
       pending = create("pending", RoleType.ROLE_USER, false);
     });
     adminSession = session(sender);
@@ -176,24 +179,30 @@ class UserNotificationServicePersistenceTest {
 
   @Test
   void notificationReadsAndChangesStopWhenTheSessionFactorExpires() {
-    assertDoesNotThrow(() -> service.unreadCount(userSession));
+    assertDoesNotThrow(() -> userNotificationService.unreadCount(userSession));
     doThrow(new AccessDeniedException("Second factor expired"))
         .when(twoFactor)
         .requireSession(userSession);
-    assertThrows(AccessDeniedException.class, () -> service.unreadCount(userSession));
     assertThrows(
-        AccessDeniedException.class, () -> service.inbox(userSession, ReadFilter.ALL, 0, 5));
-    assertThrows(AccessDeniedException.class, () -> service.ownerId(userSession));
+        AccessDeniedException.class, () -> userNotificationService.unreadCount(userSession));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 5));
+    assertThrows(AccessDeniedException.class, () -> userNotificationService.ownerId(userSession));
     List<Long> notificationIds = List.of(1L);
-    assertThrows(AccessDeniedException.class, () -> service.markRead(userSession, notificationIds));
-    assertThrows(AccessDeniedException.class, () -> service.dismiss(userSession, 1L));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> userNotificationService.markRead(userSession, notificationIds));
+    assertThrows(
+        AccessDeniedException.class, () -> userNotificationService.dismiss(userSession, 1L));
     doNothing().when(twoFactor).requireSession(userSession);
-    assertDoesNotThrow(() -> service.unreadCount(userSession));
+    assertDoesNotThrow(() -> userNotificationService.unreadCount(userSession));
   }
 
   UserEntity create(String name, RoleType type, boolean enabled) {
     RoleEntity role =
-        em.createQuery("select r from RoleEntity r where r.name = :type", RoleEntity.class)
+        entityManager
+            .createQuery("select r from RoleEntity r where r.name = :type", RoleEntity.class)
             .setParameter("type", type)
             .getSingleResult();
     UserEntity u =
@@ -208,11 +217,12 @@ class UserNotificationServicePersistenceTest {
             .status(UserStatus.OFFLINE)
             .roleEntities(new ArrayList<>(List.of(role)))
             .build();
-    return users.saveAndFlush(u);
+    return userRepository.saveAndFlush(u);
   }
 
   MockHttpSession session(UserEntity user) {
-    UserDetails principal = new CustomUserDetailsService(users).loadUserByUsername(user.getEmail());
+    UserDetails principal =
+        new CustomUserDetailsService(userRepository).loadUserByUsername(user.getEmail());
     SecurityContext context = SecurityContextHolder.createEmptyContext();
     context.setAuthentication(
         UsernamePasswordAuthenticationToken.authenticated(
@@ -223,23 +233,25 @@ class UserNotificationServicePersistenceTest {
   }
 
   Preview everyone() {
-    return service.preview(adminSession, new Selection(true, Set.of()));
+    return userNotificationService.preview(adminSession, new Selection(true, Set.of()));
   }
 
   Preview selected(Long... ids) {
-    return service.preview(adminSession, new Selection(false, Set.of(ids)));
+    return userNotificationService.preview(adminSession, new Selection(false, Set.of(ids)));
   }
 
   Sent broadcast() {
-    return service.send(adminSession, UUID.randomUUID(), "Update", "Plain text", everyone());
+    return userNotificationService.send(
+        adminSession, UUID.randomUUID(), "Update", "Plain text", everyone());
   }
 
   long notificationCount() {
-    return notifications.count();
+    return userNotificationRepository.count();
   }
 
   void mutate(UserEntity user, java.util.function.Consumer<UserEntity> change) {
-    tx.executeWithoutResult(s -> change.accept(users.findById(user.getId()).orElseThrow()));
+    transactionTemplate.executeWithoutResult(
+        s -> change.accept(userRepository.findById(user.getId()).orElseThrow()));
   }
 
   void assertProblem(Problem problem, Runnable work) {
@@ -255,22 +267,24 @@ class UserNotificationServicePersistenceTest {
     try {
       Preview preview = selected(ordinary.getId());
       UUID request = UUID.randomUUID();
-      tx.executeWithoutResult(status -> {
-        service.send(adminSession, request, "private title", "private body token=secret", preview);
+      transactionTemplate.executeWithoutResult(status -> {
+        userNotificationService.send(
+            adminSession, request, "private title", "private body token=secret", preview);
         assertTrue(logs.list.isEmpty());
         status.setRollbackOnly();
       });
       assertTrue(logs.list.isEmpty());
-      assertEquals(0, notifications.count());
+      assertEquals(0, userNotificationRepository.count());
       Sent sent =
-          service.send(
+          userNotificationService.send(
               adminSession, request, "private title", "private body token=secret", preview);
       assertEquals(
           1,
           logs.list.stream()
               .filter(e -> e.getFormattedMessage().startsWith("Admin notification created:"))
               .count());
-      service.send(adminSession, request, "private title", "private body token=secret", preview);
+      userNotificationService.send(
+          adminSession, request, "private title", "private body token=secret", preview);
       assertEquals(
           1,
           logs.list.stream()
@@ -296,27 +310,30 @@ class UserNotificationServicePersistenceTest {
   void broadcastSnapshotsEnabledAccountsIncludingOfflineGuestAndSender() {
     Sent sent = broadcast();
     assertEquals(3, sent.recipientCount());
-    assertEquals(3, recipients.count());
-    assertEquals(1, service.unreadCount(adminSession));
-    assertEquals(1, service.unreadCount(userSession));
-    assertEquals(0, recipients.countUnread(disabled.getId(), Instant.EPOCH));
-    assertEquals(0, recipients.countUnread(pending.getId(), Instant.EPOCH));
-    tx.executeWithoutResult(s -> create("later", RoleType.ROLE_USER, true));
-    assertEquals(3, recipients.count());
+    assertEquals(3, userNotificationRecipientRepository.count());
+    assertEquals(1, userNotificationService.unreadCount(adminSession));
+    assertEquals(1, userNotificationService.unreadCount(userSession));
+    assertEquals(
+        0, userNotificationRecipientRepository.countUnread(disabled.getId(), Instant.EPOCH));
+    assertEquals(
+        0, userNotificationRecipientRepository.countUnread(pending.getId(), Instant.EPOCH));
+    transactionTemplate.executeWithoutResult(s -> create("later", RoleType.ROLE_USER, true));
+    assertEquals(3, userNotificationRecipientRepository.count());
   }
 
   @Test
   void individualSelectionIsDistinctAndStable() {
     Preview selected = selected(guest.getId(), ordinary.getId());
-    Sent sent = service.send(adminSession, UUID.randomUUID(), "Note", "Body", selected);
+    Sent sent =
+        userNotificationService.send(adminSession, UUID.randomUUID(), "Note", "Body", selected);
     assertEquals(2, sent.recipientCount());
-    assertEquals(0, service.unreadCount(adminSession));
-    assertEquals(selected.ids(), recipients.recipientIds(sent.id()));
+    assertEquals(0, userNotificationService.unreadCount(adminSession));
+    assertEquals(selected.ids(), userNotificationRecipientRepository.recipientIds(sent.id()));
   }
 
   @Test
   void targetsDoNotExposeCredentialsAndExcludePendingAndDisabled() {
-    List<Target> targets = service.targets(adminSession);
+    List<Target> targets = userNotificationService.targets(adminSession);
     assertEquals(3, targets.size());
     assertEquals(
         List.of("id", "name", "email"),
@@ -345,17 +362,19 @@ class UserNotificationServicePersistenceTest {
       value = RoleType.class,
       names = {"ROLE_ADMIN", "ROLE_USER", "ROLE_GUEST"})
   void nonSuperadminsCannotListTargetsPreviewSendOrViewSent(RoleType role) {
-    UserEntity user = tx.execute(s -> create("role" + role.name(), role, true));
+    UserEntity user = transactionTemplate.execute(s -> create("role" + role.name(), role, true));
     MockHttpSession session = session(user);
-    assertFalse(service.canSend(session));
-    assertThrows(AccessDeniedException.class, () -> service.targets(session));
+    assertFalse(userNotificationService.canSend(session));
+    assertThrows(AccessDeniedException.class, () -> userNotificationService.targets(session));
     Selection selection = new Selection(true, Set.of());
-    assertThrows(AccessDeniedException.class, () -> service.preview(session, selection));
-    assertThrows(AccessDeniedException.class, () -> service.sent(session, 0, 5));
+    assertThrows(
+        AccessDeniedException.class, () -> userNotificationService.preview(session, selection));
+    assertThrows(AccessDeniedException.class, () -> userNotificationService.sent(session, 0, 5));
     UUID operationId = UUID.randomUUID();
     Preview preview2 = everyone();
     assertThrows(
-        AccessDeniedException.class, () -> service.send(session, operationId, "X", "Y", preview2));
+        AccessDeniedException.class,
+        () -> userNotificationService.send(session, operationId, "X", "Y", preview2));
     assertEquals(0, notificationCount());
   }
 
@@ -368,43 +387,49 @@ class UserNotificationServicePersistenceTest {
     SecurityContextHolder.setContext(context);
     MockHttpSession restricted = new MockHttpSession();
     restricted.setAttribute("sessionRecoveryUserId", sender.getId());
-    assertThrows(AccessDeniedException.class, () -> service.inbox(null, ReadFilter.ALL, 0, 20));
     assertThrows(
-        AccessDeniedException.class, () -> service.inbox(restricted, ReadFilter.ALL, 0, 20));
+        AccessDeniedException.class,
+        () -> userNotificationService.inbox(null, ReadFilter.ALL, 0, 20));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> userNotificationService.inbox(restricted, ReadFilter.ALL, 0, 20));
   }
 
   @Test
   void revokedOrInvalidatedSessionCannotRead() {
-    registry.registerNewSession(userSession.getId(), ordinary.getEmail());
-    registry.getSessionInformation(userSession.getId()).expireNow();
-    assertThrows(AccessDeniedException.class, () -> service.unreadCount(userSession));
+    sessionRegistry.registerNewSession(userSession.getId(), ordinary.getEmail());
+    sessionRegistry.getSessionInformation(userSession.getId()).expireNow();
+    assertThrows(
+        AccessDeniedException.class, () -> userNotificationService.unreadCount(userSession));
     adminSession.invalidate();
-    assertFalse(service.canSend(adminSession));
+    assertFalse(userNotificationService.canSend(adminSession));
   }
 
   @Test
   void freshRoleCheckRejectsOldSuperadminSessionAfterDemotion() {
     mutate(sender, u -> u.setRoleEntities(new ArrayList<>()));
-    assertFalse(service.canSend(adminSession));
-    assertEquals(0, service.inbox(adminSession, ReadFilter.ALL, 0, 20).getTotalElements());
+    assertFalse(userNotificationService.canSend(adminSession));
+    assertEquals(
+        0, userNotificationService.inbox(adminSession, ReadFilter.ALL, 0, 20).getTotalElements());
     assertFalse(adminSession.isInvalid());
   }
 
   @Test
   void disabledSessionCannotReadOrSend() {
     mutate(sender, u -> u.setEnabled(false));
-    assertFalse(service.canSend(adminSession));
-    assertThrows(AccessDeniedException.class, () -> service.targets(adminSession));
+    assertFalse(userNotificationService.canSend(adminSession));
+    assertThrows(AccessDeniedException.class, () -> userNotificationService.targets(adminSession));
   }
 
   @Test
   void maintenancePausesOrdinaryInboxButAllowsSuperadmin() {
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    assertThrows(AccessDeniedException.class, () -> service.unreadCount(userSession));
-    assertTrue(service.canSend(adminSession));
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE))
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    assertThrows(
+        AccessDeniedException.class, () -> userNotificationService.unreadCount(userSession));
+    assertTrue(userNotificationService.canSend(adminSession));
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE))
         .thenThrow(new IllegalStateException("unavailable"));
-    assertFalse(service.canSend(adminSession));
+    assertFalse(userNotificationService.canSend(adminSession));
   }
 
   @ParameterizedTest
@@ -412,10 +437,11 @@ class UserNotificationServicePersistenceTest {
   void sentHistoryUsesSelectedPageSizeAndKeepsSenderOwnership(int size) {
     Preview checked = everyone();
     for (int index = 0; index < 17; index++) {
-      service.send(adminSession, UUID.randomUUID(), "Update " + index, "Body", checked);
+      userNotificationService.send(
+          adminSession, UUID.randomUUID(), "Update " + index, "Body", checked);
     }
-    Page<Sent> first = service.sent(adminSession, 0, size);
-    Page<Sent> second = service.sent(adminSession, 1, size);
+    Page<Sent> first = userNotificationService.sent(adminSession, 0, size);
+    Page<Sent> second = userNotificationService.sent(adminSession, 1, size);
     assertEquals(17, first.getTotalElements());
     assertEquals(size, first.getNumberOfElements());
     assertEquals(Math.min(size, 17 - size), second.getNumberOfElements());
@@ -423,45 +449,49 @@ class UserNotificationServicePersistenceTest {
     assertTrue(first.getContent().stream().noneMatch(second.getContent()::contains));
     assertEquals("Update 16", first.getContent().getFirst().title());
     UserEntity other =
-        tx.execute(status -> create("other-superadmin", RoleType.ROLE_SUPERADMIN, true));
-    assertTrue(service.sent(session(other), 0, size).isEmpty());
+        transactionTemplate.execute(
+            status -> create("other-superadmin", RoleType.ROLE_SUPERADMIN, true));
+    assertTrue(userNotificationService.sent(session(other), 0, size).isEmpty());
   }
 
   @Test
   void maintenanceBlocksManualReviewAndSendButKeepsSentHistoryReadable() {
     broadcast();
     Preview checked = everyone();
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    assertEquals(MaintenanceService.State.ACTIVE, service.deliveryState());
-    assertTrue(service.canSend(adminSession));
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    assertEquals(MaintenanceService.State.ACTIVE, userNotificationService.deliveryState());
+    assertTrue(userNotificationService.canSend(adminSession));
     assertProblem(
         Problem.DELIVERY_PAUSED,
-        () -> service.preview(adminSession, new Selection(true, Set.of())));
+        () -> userNotificationService.preview(adminSession, new Selection(true, Set.of())));
     assertProblem(
         Problem.DELIVERY_PAUSED,
-        () -> service.send(adminSession, UUID.randomUUID(), "New", "Body", checked));
-    assertEquals(1, service.sent(adminSession, 0, 5).getTotalElements());
+        () ->
+            userNotificationService.send(adminSession, UUID.randomUUID(), "New", "Body", checked));
+    assertEquals(1, userNotificationService.sent(adminSession, 0, 5).getTotalElements());
     assertEquals(1, notificationCount());
-    assertEquals(3, recipients.count());
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
-    service.send(adminSession, UUID.randomUUID(), "Resumed", "Body", everyone());
+    assertEquals(3, userNotificationRecipientRepository.count());
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+    userNotificationService.send(adminSession, UUID.randomUUID(), "Resumed", "Body", everyone());
     assertEquals(2, notificationCount());
   }
 
   @Test
   void unreadableMaintenanceSettingBlocksPreviouslyReviewedManualSend() {
     Preview checked = everyone();
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE))
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE))
         .thenThrow(new IllegalStateException("Isolated configuration failure"));
-    assertEquals(MaintenanceService.State.UNAVAILABLE, service.deliveryState());
+    assertEquals(MaintenanceService.State.UNAVAILABLE, userNotificationService.deliveryState());
     Selection selection = new Selection(true, Set.of());
-    assertThrows(AccessDeniedException.class, () -> service.preview(adminSession, selection));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> userNotificationService.preview(adminSession, selection));
     UUID operationId = UUID.randomUUID();
     assertThrows(
         AccessDeniedException.class,
-        () -> service.send(adminSession, operationId, "Subject", "Body", checked));
+        () -> userNotificationService.send(adminSession, operationId, "Subject", "Body", checked));
     assertEquals(0, notificationCount());
-    assertEquals(0, recipients.count());
+    assertEquals(0, userNotificationRecipientRepository.count());
   }
 
   @Test
@@ -470,7 +500,7 @@ class UserNotificationServicePersistenceTest {
     mutate(ordinary, u -> u.setEnabled(false));
     assertProblem(
         Problem.RECIPIENTS_CHANGED,
-        () -> service.send(adminSession, UUID.randomUUID(), "X", "Y", preview));
+        () -> userNotificationService.send(adminSession, UUID.randomUUID(), "X", "Y", preview));
     assertEquals(0, notificationCount());
   }
 
@@ -478,8 +508,8 @@ class UserNotificationServicePersistenceTest {
   void recipientPreviewRechecksDatabaseEvenWithAnOldManagedAccount() throws Exception {
     Preview preview = everyone();
     try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
-      tx.executeWithoutResult(s -> {
-        assertTrue(users.findById(ordinary.getId()).orElseThrow().isEnabled());
+      transactionTemplate.executeWithoutResult(s -> {
+        assertTrue(userRepository.findById(ordinary.getId()).orElseThrow().isEnabled());
         try {
           executor
               .submit(() -> mutate(ordinary, u -> u.setEnabled(false)))
@@ -489,7 +519,7 @@ class UserNotificationServicePersistenceTest {
         }
         assertProblem(
             Problem.RECIPIENTS_CHANGED,
-            () -> service.send(adminSession, UUID.randomUUID(), "X", "Y", preview));
+            () -> userNotificationService.send(adminSession, UUID.randomUUID(), "X", "Y", preview));
         s.setRollbackOnly();
       });
     }
@@ -501,7 +531,7 @@ class UserNotificationServicePersistenceTest {
     mutate(pending, u -> u.setEnabled(true));
     assertProblem(
         Problem.RECIPIENTS_CHANGED,
-        () -> service.send(adminSession, UUID.randomUUID(), "X", "Y", preview));
+        () -> userNotificationService.send(adminSession, UUID.randomUUID(), "X", "Y", preview));
   }
 
   @ParameterizedTest
@@ -510,17 +540,21 @@ class UserNotificationServicePersistenceTest {
     String title = value.isBlank() ? value : value.repeat(13);
     assertProblem(
         Problem.INVALID_DRAFT,
-        () -> service.send(adminSession, UUID.randomUUID(), title, "body", everyone()));
-    assertEquals(0, recipients.count());
+        () ->
+            userNotificationService.send(
+                adminSession, UUID.randomUUID(), title, "body", everyone()));
+    assertEquals(0, userNotificationRecipientRepository.count());
   }
 
   @Test
   void oversizedBodyRejectedAndPlainTextStoredExactly() {
     assertProblem(
         Problem.INVALID_DRAFT,
-        () -> service.send(adminSession, UUID.randomUUID(), "title", "x".repeat(4001), everyone()));
+        () ->
+            userNotificationService.send(
+                adminSession, UUID.randomUUID(), "title", "x".repeat(4001), everyone()));
     Sent sent =
-        service.send(
+        userNotificationService.send(
             adminSession,
             UUID.randomUUID(),
             "<script>title</script>",
@@ -533,13 +567,13 @@ class UserNotificationServicePersistenceTest {
   void sameRequestIsIdempotentAndChangedContentRejected() {
     UUID key = UUID.randomUUID();
     Preview preview = everyone();
-    Sent first = service.send(adminSession, key, "title", "body", preview);
-    assertEquals(first, service.send(adminSession, key, "title", "body", preview));
+    Sent first = userNotificationService.send(adminSession, key, "title", "body", preview);
+    assertEquals(first, userNotificationService.send(adminSession, key, "title", "body", preview));
     assertEquals(1, notificationCount());
     assertProblem(
         Problem.REQUEST_CONFLICT,
-        () -> service.send(adminSession, key, "changed", "body", preview));
-    assertEquals(3, recipients.count());
+        () -> userNotificationService.send(adminSession, key, "changed", "body", preview));
+    assertEquals(3, userNotificationRecipientRepository.count());
   }
 
   @Test
@@ -551,7 +585,7 @@ class UserNotificationServicePersistenceTest {
       Callable<Sent> send =
           () -> {
             assertTrue(start.await(5, TimeUnit.SECONDS));
-            return service.send(adminSession, key, "title", "body", preview);
+            return userNotificationService.send(adminSession, key, "title", "body", preview);
           };
       Future<Sent> a = executor.submit(send);
       Future<Sent> b = executor.submit(send);
@@ -559,144 +593,190 @@ class UserNotificationServicePersistenceTest {
       assertEquals(a.get(15, TimeUnit.SECONDS).id(), b.get(15, TimeUnit.SECONDS).id());
     }
     assertEquals(1, notificationCount());
-    assertEquals(3, recipients.count());
+    assertEquals(3, userNotificationRecipientRepository.count());
   }
 
   @Test
   void senderCannotReplayOtherSendersRequest() {
     UUID key = UUID.randomUUID();
     Preview preview = everyone();
-    service.send(adminSession, key, "title", "body", preview);
-    UserEntity other = tx.execute(s -> create("super2", RoleType.ROLE_SUPERADMIN, true));
+    userNotificationService.send(adminSession, key, "title", "body", preview);
+    UserEntity other =
+        transactionTemplate.execute(s -> create("super2", RoleType.ROLE_SUPERADMIN, true));
     assertProblem(
         Problem.REQUEST_CONFLICT,
-        () -> service.send(session(other), key, "title", "body", preview));
+        () -> userNotificationService.send(session(other), key, "title", "body", preview));
   }
 
   @Test
   void readStatusIsAccountWideIdempotentAndDoesNotLeakOtherInbox() {
     broadcast();
-    Item own = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-    Item foreign = service.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-    service.markRead(userSession, List.of(foreign.id()));
-    assertEquals(1, service.unreadCount(adminSession));
-    assertEquals(1, service.unreadCount(userSession));
-    service.markRead(userSession, List.of(own.id()));
-    service.markRead(userSession, List.of(own.id()));
-    assertEquals(0, service.unreadCount(session(ordinary)));
-    assertEquals(0, service.inbox(userSession, ReadFilter.UNREAD, 0, 20).getTotalElements());
-    assertTrue(service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().read());
+    Item own =
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    Item foreign =
+        userNotificationService.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    userNotificationService.markRead(userSession, List.of(foreign.id()));
+    assertEquals(1, userNotificationService.unreadCount(adminSession));
+    assertEquals(1, userNotificationService.unreadCount(userSession));
+    userNotificationService.markRead(userSession, List.of(own.id()));
+    userNotificationService.markRead(userSession, List.of(own.id()));
+    assertEquals(0, userNotificationService.unreadCount(session(ordinary)));
+    assertEquals(
+        0, userNotificationService.inbox(userSession, ReadFilter.UNREAD, 0, 20).getTotalElements());
+    assertTrue(
+        userNotificationService
+            .inbox(userSession, ReadFilter.ALL, 0, 20)
+            .getContent()
+            .getFirst()
+            .read());
   }
 
   @Test
   void dismissAffectsOnlyOwnInboxAndUnreadCountAndSurvivesNewSessions() {
     Sent sent = broadcast();
-    Item own = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-    Item foreign = service.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    Item own =
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    Item foreign =
+        userNotificationService.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
     ArrayList<Set<Long>> pushes = new ArrayList<Set<Long>>();
-    subscriptions.add(service.events().register(pushes::add));
-    service.dismiss(userSession, foreign.id());
-    assertEquals(1, service.unreadCount(adminSession));
-    assertEquals(1, service.unreadCount(userSession));
+    subscriptions.add(userNotificationService.events().register(pushes::add));
+    userNotificationService.dismiss(userSession, foreign.id());
+    assertEquals(1, userNotificationService.unreadCount(adminSession));
+    assertEquals(1, userNotificationService.unreadCount(userSession));
     assertTrue(pushes.isEmpty());
-    service.dismiss(userSession, own.id());
-    service.dismiss(userSession, own.id());
+    userNotificationService.dismiss(userSession, own.id());
+    userNotificationService.dismiss(userSession, own.id());
     assertEquals(List.of(Set.of(ordinary.getId())), pushes);
-    assertTrue(service.inbox(session(ordinary), ReadFilter.ALL, 0, 20).isEmpty());
-    assertTrue(service.inbox(userSession, ReadFilter.UNREAD, 0, 20).isEmpty());
-    assertEquals(0, service.unreadCount(userSession));
-    assertTrue(service.unreadSnapshot(userSession).isEmpty());
-    service.markRead(userSession, List.of(own.id()));
-    assertNotNull(recipients.findById(own.id()).orElseThrow().getDismissedAt());
-    assertNull(recipients.findById(own.id()).orElseThrow().getReadAt());
-    assertEquals(1, service.inbox(adminSession, ReadFilter.ALL, 0, 20).getTotalElements());
-    assertEquals(1, service.unreadCount(adminSession));
-    assertEquals(3, service.sent(adminSession, 0, 5).getContent().getFirst().recipientCount());
-    assertEquals(3, recipients.recipientIds(sent.id()).size());
+    assertTrue(userNotificationService.inbox(session(ordinary), ReadFilter.ALL, 0, 20).isEmpty());
+    assertTrue(userNotificationService.inbox(userSession, ReadFilter.UNREAD, 0, 20).isEmpty());
+    assertEquals(0, userNotificationService.unreadCount(userSession));
+    assertTrue(userNotificationService.unreadSnapshot(userSession).isEmpty());
+    userNotificationService.markRead(userSession, List.of(own.id()));
+    assertNotNull(
+        userNotificationRecipientRepository.findById(own.id()).orElseThrow().getDismissedAt());
+    assertNull(userNotificationRecipientRepository.findById(own.id()).orElseThrow().getReadAt());
+    assertEquals(
+        1, userNotificationService.inbox(adminSession, ReadFilter.ALL, 0, 20).getTotalElements());
+    assertEquals(1, userNotificationService.unreadCount(adminSession));
+    assertEquals(
+        3,
+        userNotificationService.sent(adminSession, 0, 5).getContent().getFirst().recipientCount());
+    assertEquals(3, userNotificationRecipientRepository.recipientIds(sent.id()).size());
   }
 
   @Test
   void dismissReadPreservesUnreadOtherOwnersHistoryAndIdempotency() {
     UUID key = UUID.randomUUID();
     Preview preview = everyone();
-    Sent sent = service.send(adminSession, key, "Read notice", "Body", preview);
-    Item own = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-    Item other = service.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-    service.markRead(userSession, List.of(own.id()));
-    service.markRead(adminSession, List.of(other.id()));
+    Sent sent = userNotificationService.send(adminSession, key, "Read notice", "Body", preview);
+    Item own =
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    Item other =
+        userNotificationService.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    userNotificationService.markRead(userSession, List.of(own.id()));
+    userNotificationService.markRead(adminSession, List.of(other.id()));
     broadcast();
-    Item unread = service.inbox(userSession, ReadFilter.UNREAD, 0, 20).getContent().getFirst();
+    Item unread =
+        userNotificationService
+            .inbox(userSession, ReadFilter.UNREAD, 0, 20)
+            .getContent()
+            .getFirst();
     Sent expired = broadcast();
-    Item expiredReceipt = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-    service.markRead(userSession, List.of(expiredReceipt.id()));
+    Item expiredReceipt =
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    userNotificationService.markRead(userSession, List.of(expiredReceipt.id()));
     createdAt(expired.id(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
-    assertEquals(1, service.readCount(userSession));
+    assertEquals(1, userNotificationService.readCount(userSession));
     ArrayList<Set<Long>> pushes = new ArrayList<Set<Long>>();
-    subscriptions.add(events.register(pushes::add));
-    service.dismissRead(userSession);
-    service.dismissRead(userSession);
+    subscriptions.add(userNotificationBroadcaster.register(pushes::add));
+    userNotificationService.dismissRead(userSession);
+    userNotificationService.dismissRead(userSession);
     assertEquals(List.of(Set.of(ordinary.getId())), pushes);
-    assertEquals(0, service.readCount(session(ordinary)));
+    assertEquals(0, userNotificationService.readCount(session(ordinary)));
     assertEquals(
         List.of(unread.id()),
-        service.inbox(userSession, ReadFilter.ALL, 0, 20).stream().map(Item::id).toList());
-    assertEquals(1, service.unreadCount(userSession));
-    assertEquals(1, service.readCount(adminSession));
-    assertNull(recipients.findById(other.id()).orElseThrow().getDismissedAt());
-    assertNull(recipients.findById(expiredReceipt.id()).orElseThrow().getDismissedAt());
-    UserNotificationRecipientEntity removed = recipients.findById(own.id()).orElseThrow();
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).stream()
+            .map(Item::id)
+            .toList());
+    assertEquals(1, userNotificationService.unreadCount(userSession));
+    assertEquals(1, userNotificationService.readCount(adminSession));
+    assertNull(
+        userNotificationRecipientRepository.findById(other.id()).orElseThrow().getDismissedAt());
+    assertNull(
+        userNotificationRecipientRepository
+            .findById(expiredReceipt.id())
+            .orElseThrow()
+            .getDismissedAt());
+    UserNotificationRecipientEntity removed =
+        userNotificationRecipientRepository.findById(own.id()).orElseThrow();
     assertNotNull(removed.getDismissedAt());
     assertNotNull(removed.getReadAt());
-    assertEquals(3, service.sent(adminSession, 0, 20).getTotalElements());
-    assertEquals(3, recipients.recipientIds(sent.id()).size());
-    assertEquals(sent.id(), service.send(adminSession, key, "Read notice", "Body", preview).id());
-    assertEquals(0, service.readCount(userSession));
-    assertEquals(1, service.inbox(userSession, ReadFilter.ALL, 0, 20).getTotalElements());
+    assertEquals(3, userNotificationService.sent(adminSession, 0, 20).getTotalElements());
+    assertEquals(3, userNotificationRecipientRepository.recipientIds(sent.id()).size());
+    assertEquals(
+        sent.id(),
+        userNotificationService.send(adminSession, key, "Read notice", "Body", preview).id());
+    assertEquals(0, userNotificationService.readCount(userSession));
+    assertEquals(
+        1, userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getTotalElements());
   }
 
   @Test
   void dismissReadRollbackAndAuthorizationDoNotRemoveEntriesOrPublish() {
     broadcast();
-    Item own = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-    service.markRead(userSession, List.of(own.id()));
+    Item own =
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    userNotificationService.markRead(userSession, List.of(own.id()));
     ArrayList<Set<Long>> pushes = new ArrayList<Set<Long>>();
-    subscriptions.add(events.register(pushes::add));
-    tx.executeWithoutResult(status -> {
-      service.dismissRead(userSession);
+    subscriptions.add(userNotificationBroadcaster.register(pushes::add));
+    transactionTemplate.executeWithoutResult(status -> {
+      userNotificationService.dismissRead(userSession);
       assertTrue(pushes.isEmpty());
       status.setRollbackOnly();
     });
     assertTrue(pushes.isEmpty());
-    assertEquals(1, service.readCount(userSession));
-    assertNull(recipients.findById(own.id()).orElseThrow().getDismissedAt());
-    assertThrows(AccessDeniedException.class, () -> service.dismissRead(null));
-    assertThrows(AccessDeniedException.class, () -> service.readCount(null));
+    assertEquals(1, userNotificationService.readCount(userSession));
+    assertNull(
+        userNotificationRecipientRepository.findById(own.id()).orElseThrow().getDismissedAt());
+    assertThrows(AccessDeniedException.class, () -> userNotificationService.dismissRead(null));
+    assertThrows(AccessDeniedException.class, () -> userNotificationService.readCount(null));
     mutate(ordinary, user -> user.setEnabled(false));
-    assertThrows(AccessDeniedException.class, () -> service.dismissRead(userSession));
-    assertThrows(AccessDeniedException.class, () -> service.readCount(userSession));
+    assertThrows(
+        AccessDeniedException.class, () -> userNotificationService.dismissRead(userSession));
+    assertThrows(AccessDeniedException.class, () -> userNotificationService.readCount(userSession));
     assertTrue(pushes.isEmpty());
-    assertNull(recipients.findById(own.id()).orElseThrow().getDismissedAt());
+    assertNull(
+        userNotificationRecipientRepository.findById(own.id()).orElseThrow().getDismissedAt());
   }
 
   @Test
   void dismissReadHonorsUnlimitedRetentionAndHandlesAutomaticNotifications() {
     Sent sent = broadcast();
-    Item manual = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-    service.markRead(userSession, List.of(manual.id()));
+    Item manual =
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    userNotificationService.markRead(userSession, List.of(manual.id()));
     createdAt(sent.id(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
-    tx.executeWithoutResult(status ->
-        service.recordSecurityEvent(
-            users.findById(ordinary.getId()).orElseThrow(), UserNotificationType.PASSWORD_CHANGED));
-    Item automatic = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-    service.markRead(userSession, List.of(automatic.id()));
-    assertEquals(1, service.readCount(userSession));
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("");
-    assertEquals(2, service.readCount(userSession));
-    service.dismissRead(userSession);
-    assertTrue(service.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
-    assertEquals(0, service.readCount(userSession));
-    assertNotNull(recipients.findById(manual.id()).orElseThrow().getDismissedAt());
-    assertNotNull(recipients.findById(automatic.id()).orElseThrow().getDismissedAt());
+    transactionTemplate.executeWithoutResult(status ->
+        userNotificationService.recordSecurityEvent(
+            userRepository.findById(ordinary.getId()).orElseThrow(),
+            UserNotificationType.PASSWORD_CHANGED));
+    Item automatic =
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    userNotificationService.markRead(userSession, List.of(automatic.id()));
+    assertEquals(1, userNotificationService.readCount(userSession));
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
+        .thenReturn("");
+    assertEquals(2, userNotificationService.readCount(userSession));
+    userNotificationService.dismissRead(userSession);
+    assertTrue(userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
+    assertEquals(0, userNotificationService.readCount(userSession));
+    assertNotNull(
+        userNotificationRecipientRepository.findById(manual.id()).orElseThrow().getDismissedAt());
+    assertNotNull(
+        userNotificationRecipientRepository
+            .findById(automatic.id())
+            .orElseThrow()
+            .getDismissedAt());
     assertEquals(2, notificationCount());
   }
 
@@ -704,47 +784,61 @@ class UserNotificationServicePersistenceTest {
   void dismissedNotificationDoesNotReappearOnIdempotentSendRetry() {
     Preview preview = everyone();
     UUID key = UUID.randomUUID();
-    Sent first = service.send(adminSession, key, "Title", "Body", preview);
-    Item own = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-    service.dismiss(userSession, own.id());
-    assertEquals(first.id(), service.send(adminSession, key, "Title", "Body", preview).id());
+    Sent first = userNotificationService.send(adminSession, key, "Title", "Body", preview);
+    Item own =
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    userNotificationService.dismiss(userSession, own.id());
+    assertEquals(
+        first.id(), userNotificationService.send(adminSession, key, "Title", "Body", preview).id());
     assertEquals(1, notificationCount());
-    assertTrue(service.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
+    assertTrue(userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
   }
 
   @Test
   void dismissRollbackPublishesNothingAndRequiresValidOwnerSession() {
     broadcast();
-    Item own = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    Item own =
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
     ArrayList<Set<Long>> pushes = new ArrayList<Set<Long>>();
-    subscriptions.add(service.events().register(pushes::add));
-    tx.executeWithoutResult(status -> {
-      service.dismiss(userSession, own.id());
+    subscriptions.add(userNotificationService.events().register(pushes::add));
+    transactionTemplate.executeWithoutResult(status -> {
+      userNotificationService.dismiss(userSession, own.id());
       status.setRollbackOnly();
     });
     assertTrue(pushes.isEmpty());
-    assertEquals(1, service.unreadCount(userSession));
+    assertEquals(1, userNotificationService.unreadCount(userSession));
     Long ownNotificationId = own.id();
-    assertThrows(AccessDeniedException.class, () -> service.dismiss(null, ownNotificationId));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> userNotificationService.dismiss(null, ownNotificationId));
     mutate(ordinary, user -> user.setEnabled(false));
     Long disabledNotificationId = own.id();
     assertThrows(
-        AccessDeniedException.class, () -> service.dismiss(userSession, disabledNotificationId));
-    assertNull(recipients.findById(own.id()).orElseThrow().getDismissedAt());
+        AccessDeniedException.class,
+        () -> userNotificationService.dismiss(userSession, disabledNotificationId));
+    assertNull(
+        userNotificationRecipientRepository.findById(own.id()).orElseThrow().getDismissedAt());
   }
 
   @Test
   void readUpdateIsVisibleInsideSamePersistenceContextWithoutClearingUnrelatedChanges() {
     broadcast();
-    tx.executeWithoutResult(s -> {
-      Item first = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-      UserNotificationRecipientEntity managed = recipients.findById(first.id()).orElseThrow();
+    transactionTemplate.executeWithoutResult(s -> {
+      Item first =
+          userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+      UserNotificationRecipientEntity managed =
+          userNotificationRecipientRepository.findById(first.id()).orElseThrow();
       assertNull(managed.getReadAt());
-      UserEntity user = users.findById(ordinary.getId()).orElseThrow();
+      UserEntity user = userRepository.findById(ordinary.getId()).orElseThrow();
       user.setFirstName("Pending");
-      service.markRead(userSession, List.of(first.id()));
-      assertTrue(service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().read());
-      assertTrue(em.contains(user));
+      userNotificationService.markRead(userSession, List.of(first.id()));
+      assertTrue(
+          userNotificationService
+              .inbox(userSession, ReadFilter.ALL, 0, 20)
+              .getContent()
+              .getFirst()
+              .read());
+      assertTrue(entityManager.contains(user));
       assertEquals("Pending", user.getFirstName());
     });
   }
@@ -752,12 +846,12 @@ class UserNotificationServicePersistenceTest {
   @Test
   void markAllUsesSnapshotAndDoesNotMarkLaterArrivals() {
     broadcast();
-    List<Long> snapshot = service.unreadSnapshot(userSession);
+    List<Long> snapshot = userNotificationService.unreadSnapshot(userSession);
     broadcast();
-    service.markRead(userSession, snapshot);
-    assertEquals(1, service.unreadCount(userSession));
-    service.markRead(userSession, List.of());
-    assertEquals(1, service.unreadCount(userSession));
+    userNotificationService.markRead(userSession, snapshot);
+    assertEquals(1, userNotificationService.unreadCount(userSession));
+    userNotificationService.markRead(userSession, List.of());
+    assertEquals(1, userNotificationService.unreadCount(userSession));
   }
 
   @Test
@@ -765,122 +859,176 @@ class UserNotificationServicePersistenceTest {
     broadcast();
     Sent newer = broadcast();
     MockHttpSession fresh = session(ordinary);
-    Page<Item> page = service.inbox(fresh, ReadFilter.ALL, 0, 1);
+    Page<Item> page = userNotificationService.inbox(fresh, ReadFilter.ALL, 0, 1);
     assertEquals(2, page.getTotalElements());
     assertTrue(page.hasNext());
     assertEquals(newer.createdAt(), page.getContent().getFirst().createdAt());
-    assertEquals(1, service.inbox(fresh, ReadFilter.ALL, 1, 1).getNumberOfElements());
+    assertEquals(
+        1, userNotificationService.inbox(fresh, ReadFilter.ALL, 1, 1).getNumberOfElements());
   }
 
   @ParameterizedTest
   @EnumSource(ReadFilter.class)
   void readFilterKeepsOwnershipDismissalRetentionAndPagination(ReadFilter filter) {
     broadcast();
-    Long unreadId = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().id();
+    Long unreadId =
+        userNotificationService
+            .inbox(userSession, ReadFilter.ALL, 0, 20)
+            .getContent()
+            .getFirst()
+            .id();
     broadcast();
-    Long readId = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().id();
-    service.markRead(userSession, List.of(readId));
+    Long readId =
+        userNotificationService
+            .inbox(userSession, ReadFilter.ALL, 0, 20)
+            .getContent()
+            .getFirst()
+            .id();
+    userNotificationService.markRead(userSession, List.of(readId));
     broadcast();
-    Long dismissed = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().id();
-    service.markRead(userSession, List.of(dismissed));
-    service.dismiss(userSession, dismissed);
+    Long dismissed =
+        userNotificationService
+            .inbox(userSession, ReadFilter.ALL, 0, 20)
+            .getContent()
+            .getFirst()
+            .id();
+    userNotificationService.markRead(userSession, List.of(dismissed));
+    userNotificationService.dismiss(userSession, dismissed);
     Sent expired = broadcast();
     createdAt(expired.id(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
-    Page<Item> page = service.inbox(session(ordinary), filter, 0, 1);
+    Page<Item> page = userNotificationService.inbox(session(ordinary), filter, 0, 1);
     assertEquals(filter == ReadFilter.ALL ? 2 : 1, page.getTotalElements());
     assertEquals(
         filter == ReadFilter.UNREAD ? unreadId : readId, page.getContent().getFirst().id());
     if (filter == ReadFilter.ALL) {
       assertTrue(page.hasNext());
-      assertEquals(unreadId, service.inbox(userSession, filter, 1, 1).getContent().getFirst().id());
+      assertEquals(
+          unreadId,
+          userNotificationService.inbox(userSession, filter, 1, 1).getContent().getFirst().id());
     } else {
       assertFalse(page.hasNext());
     }
-    assertTrue(service.inbox(adminSession, ReadFilter.READ, 0, 5).isEmpty());
-    assertEquals(List.of(unreadId), service.unreadSnapshot(userSession));
-    service.markRead(userSession, List.of(unreadId));
-    assertEquals(2, service.inbox(userSession, ReadFilter.READ, 0, 5).getTotalElements());
-    assertTrue(service.inbox(userSession, ReadFilter.UNREAD, 0, 5).isEmpty());
+    assertTrue(userNotificationService.inbox(adminSession, ReadFilter.READ, 0, 5).isEmpty());
+    assertEquals(List.of(unreadId), userNotificationService.unreadSnapshot(userSession));
+    userNotificationService.markRead(userSession, List.of(unreadId));
+    assertEquals(
+        2, userNotificationService.inbox(userSession, ReadFilter.READ, 0, 5).getTotalElements());
+    assertTrue(userNotificationService.inbox(userSession, ReadFilter.UNREAD, 0, 5).isEmpty());
   }
 
   @Test
   void readFilterSelectsBeforeApplyingFiveItemPreviewLimit() {
-    for (int i = 0; i < 7; i++) {
+    for (int notificationIndex = 0; notificationIndex < 7; notificationIndex++) {
       broadcast();
     }
-    List<Item> all = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent();
-    service.markRead(userSession, all.subList(1, 7).stream().map(Item::id).toList());
-    Page<Item> first = service.inbox(userSession, ReadFilter.READ, 0, 5);
+    List<Item> all = userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent();
+    userNotificationService.markRead(
+        userSession, all.subList(1, 7).stream().map(Item::id).toList());
+    Page<Item> first = userNotificationService.inbox(userSession, ReadFilter.READ, 0, 5);
     assertEquals(6, first.getTotalElements());
     assertEquals(5, first.getNumberOfElements());
     assertTrue(first.hasNext());
     assertTrue(first.stream().allMatch(Item::read));
-    assertEquals(1, service.inbox(userSession, ReadFilter.READ, 1, 5).getNumberOfElements());
+    assertEquals(
+        1, userNotificationService.inbox(userSession, ReadFilter.READ, 1, 5).getNumberOfElements());
     assertEquals(
         all.getFirst().id(),
-        service.inbox(userSession, ReadFilter.UNREAD, 0, 5).getContent().getFirst().id());
-    assertThrows(AccessDeniedException.class, () -> service.inbox(null, ReadFilter.READ, 0, 5));
+        userNotificationService
+            .inbox(userSession, ReadFilter.UNREAD, 0, 5)
+            .getContent()
+            .getFirst()
+            .id());
+    assertThrows(
+        AccessDeniedException.class,
+        () -> userNotificationService.inbox(null, ReadFilter.READ, 0, 5));
   }
 
   @Test
   void inboxSearchFiltersBeforePagingAndExcludesForeignDismissedExpiredEntries() {
-    service.send(adminSession, UUID.randomUUID(), "Alpha report", "First body", everyone());
-    Long older = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().id();
-    service.markRead(userSession, List.of(older));
-    service.send(adminSession, UUID.randomUUID(), "Second report", "ALPHA in the body", everyone());
-    Long newer = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().id();
-    service.send(
+    userNotificationService.send(
+        adminSession, UUID.randomUUID(), "Alpha report", "First body", everyone());
+    Long older =
+        userNotificationService
+            .inbox(userSession, ReadFilter.ALL, 0, 20)
+            .getContent()
+            .getFirst()
+            .id();
+    userNotificationService.markRead(userSession, List.of(older));
+    userNotificationService.send(
+        adminSession, UUID.randomUUID(), "Second report", "ALPHA in the body", everyone());
+    Long newer =
+        userNotificationService
+            .inbox(userSession, ReadFilter.ALL, 0, 20)
+            .getContent()
+            .getFirst()
+            .id();
+    userNotificationService.send(
         adminSession, UUID.randomUUID(), "Alpha private", "Foreign body", selected(sender.getId()));
-    service.send(adminSession, UUID.randomUUID(), "Alpha removed", "Removed body", everyone());
-    service.dismiss(
+    userNotificationService.send(
+        adminSession, UUID.randomUUID(), "Alpha removed", "Removed body", everyone());
+    userNotificationService.dismiss(
         userSession,
-        service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().id());
+        userNotificationService
+            .inbox(userSession, ReadFilter.ALL, 0, 20)
+            .getContent()
+            .getFirst()
+            .id());
     Sent expired =
-        service.send(adminSession, UUID.randomUUID(), "Alpha old", "Expired body", everyone());
+        userNotificationService.send(
+            adminSession, UUID.randomUUID(), "Alpha old", "Expired body", everyone());
     createdAt(expired.id(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
-    assertEquals(2, service.inboxCount(userSession));
+    assertEquals(2, userNotificationService.inboxCount(userSession));
     Page<Item> first =
-        service.searchInbox(session(ordinary), ReadFilter.ALL, "  aLpHa  ", Set.of(), 0, 1);
+        userNotificationService.searchInbox(
+            session(ordinary), ReadFilter.ALL, "  aLpHa  ", Set.of(), 0, 1);
     assertEquals(2, first.getTotalElements());
     assertEquals(newer, first.getContent().getFirst().id());
     assertTrue(first.hasNext());
     assertEquals(
         older,
-        service
+        userNotificationService
             .searchInbox(userSession, ReadFilter.ALL, "alpha", Set.of(), 1, 1)
             .getContent()
             .getFirst()
             .id());
     Page<Item> unread =
-        service.searchInbox(userSession, ReadFilter.UNREAD, "alpha", Set.of(), 0, 20);
+        userNotificationService.searchInbox(
+            userSession, ReadFilter.UNREAD, "alpha", Set.of(), 0, 20);
     assertEquals(List.of(newer), unread.stream().map(Item::id).toList());
     assertEquals(
         List.of(older),
-        service.searchInbox(userSession, ReadFilter.READ, "alpha", Set.of(), 0, 20).stream()
+        userNotificationService
+            .searchInbox(userSession, ReadFilter.READ, "alpha", Set.of(), 0, 20)
+            .stream()
             .map(Item::id)
             .toList());
     assertEquals(
         2,
-        service.searchInbox(userSession, ReadFilter.ALL, "  ", Set.of(), 0, 20).getTotalElements());
+        userNotificationService
+            .searchInbox(userSession, ReadFilter.ALL, "  ", Set.of(), 0, 20)
+            .getTotalElements());
     assertThrows(
         AccessDeniedException.class,
-        () -> service.searchInbox(null, ReadFilter.ALL, "alpha", Set.of(), 0, 20));
-    assertThrows(AccessDeniedException.class, () -> service.inboxCount(null));
+        () -> userNotificationService.searchInbox(null, ReadFilter.ALL, "alpha", Set.of(), 0, 20));
+    assertThrows(AccessDeniedException.class, () -> userNotificationService.inboxCount(null));
     String longSearchText = "x".repeat(121);
     Set<UserNotificationType> notificationTypes = Set.of();
     assertThrows(
         IllegalArgumentException.class,
         () ->
-            service.searchInbox(
+            userNotificationService.searchInbox(
                 userSession, ReadFilter.ALL, longSearchText, notificationTypes, 0, 20));
     assertThrows(
         IllegalArgumentException.class,
-        () -> service.searchInbox(userSession, ReadFilter.ALL, "alpha", Set.of(), -1, 20));
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("");
-    assertEquals(3, service.inboxCount(userSession));
+        () ->
+            userNotificationService.searchInbox(
+                userSession, ReadFilter.ALL, "alpha", Set.of(), -1, 20));
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
+        .thenReturn("");
+    assertEquals(3, userNotificationService.inboxCount(userSession));
     assertEquals(
         3,
-        service
+        userNotificationService
             .searchInbox(userSession, ReadFilter.ALL, "alpha", Set.of(), 0, 20)
             .getTotalElements());
   }
@@ -888,13 +1036,31 @@ class UserNotificationServicePersistenceTest {
   @ParameterizedTest
   @org.junit.jupiter.params.provider.EnumSource(ReadFilter.class)
   void inboxSearchReadStatesAreAppliedBeforePagingAndForEmptyQueries(ReadFilter filter) {
-    service.send(adminSession, UUID.randomUUID(), "Alpha first", "Body", everyone());
-    Long first = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().id();
-    service.send(adminSession, UUID.randomUUID(), "Alpha second", "Body", everyone());
-    Long second = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().id();
-    service.markRead(userSession, List.of(first, second));
-    service.send(adminSession, UUID.randomUUID(), "Alpha third", "Body", everyone());
-    Long third = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().id();
+    userNotificationService.send(
+        adminSession, UUID.randomUUID(), "Alpha first", "Body", everyone());
+    Long first =
+        userNotificationService
+            .inbox(userSession, ReadFilter.ALL, 0, 20)
+            .getContent()
+            .getFirst()
+            .id();
+    userNotificationService.send(
+        adminSession, UUID.randomUUID(), "Alpha second", "Body", everyone());
+    Long second =
+        userNotificationService
+            .inbox(userSession, ReadFilter.ALL, 0, 20)
+            .getContent()
+            .getFirst()
+            .id();
+    userNotificationService.markRead(userSession, List.of(first, second));
+    userNotificationService.send(
+        adminSession, UUID.randomUUID(), "Alpha third", "Body", everyone());
+    Long third =
+        userNotificationService
+            .inbox(userSession, ReadFilter.ALL, 0, 20)
+            .getContent()
+            .getFirst()
+            .id();
     List<Long> expected =
         switch (filter) {
           case ALL -> List.of(third, second, first);
@@ -903,21 +1069,22 @@ class UserNotificationServicePersistenceTest {
         };
     assertEquals(
         expected,
-        service.searchInbox(userSession, filter, "alpha", Set.of(), 0, 20).stream()
+        userNotificationService.searchInbox(userSession, filter, "alpha", Set.of(), 0, 20).stream()
             .map(Item::id)
             .toList());
     assertEquals(
         expected,
-        service.searchInbox(userSession, filter, "  ", Set.of(), 0, 20).stream()
+        userNotificationService.searchInbox(userSession, filter, "  ", Set.of(), 0, 20).stream()
             .map(Item::id)
             .toList());
-    Page<Item> firstPage = service.searchInbox(userSession, filter, "alpha", Set.of(), 0, 1);
+    Page<Item> firstPage =
+        userNotificationService.searchInbox(userSession, filter, "alpha", Set.of(), 0, 1);
     assertEquals(expected.size(), firstPage.getTotalElements());
     assertEquals(expected.getFirst(), firstPage.getContent().getFirst().id());
     if (expected.size() > 1) {
       assertEquals(
           expected.get(1),
-          service
+          userNotificationService
               .searchInbox(userSession, filter, "alpha", Set.of(), 1, 1)
               .getContent()
               .getFirst()
@@ -925,16 +1092,23 @@ class UserNotificationServicePersistenceTest {
     }
     assertThrows(
         AccessDeniedException.class,
-        () -> service.searchInbox(null, filter, "alpha", Set.of(), 0, 20));
+        () -> userNotificationService.searchInbox(null, filter, "alpha", Set.of(), 0, 20));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"%", "_", "!"})
   void inboxSearchTreatsLikeMetacharactersLiterally(String literal) {
-    service.send(adminSession, UUID.randomUUID(), "Needle " + literal, "Exact match", everyone());
-    Long expected = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().id();
+    userNotificationService.send(
+        adminSession, UUID.randomUUID(), "Needle " + literal, "Exact match", everyone());
+    Long expected =
+        userNotificationService
+            .inbox(userSession, ReadFilter.ALL, 0, 20)
+            .getContent()
+            .getFirst()
+            .id();
     broadcast();
-    Page<Item> found = service.searchInbox(userSession, ReadFilter.ALL, literal, Set.of(), 0, 20);
+    Page<Item> found =
+        userNotificationService.searchInbox(userSession, ReadFilter.ALL, literal, Set.of(), 0, 20);
     assertEquals(List.of(expected), found.stream().map(Item::id).toList());
   }
 
@@ -945,10 +1119,11 @@ class UserNotificationServicePersistenceTest {
     MessageProperties messageProperties =
         de.derpeterson.app.i18n.MessageProperties.forLocale(
             provider, Locale.forLanguageTag(language));
-    tx.executeWithoutResult(status ->
-        service.recordSecurityEvent(
-            users.findById(ordinary.getId()).orElseThrow(), UserNotificationType.PASSWORD_CHANGED));
-    service.send(
+    transactionTemplate.executeWithoutResult(status ->
+        userNotificationService.recordSecurityEvent(
+            userRepository.findById(ordinary.getId()).orElseThrow(),
+            UserNotificationType.PASSWORD_CHANGED));
+    userNotificationService.send(
         adminSession, UUID.randomUUID(), "Original notice", "Original manual body", everyone());
     String title = messageProperties.getNotificationsPasswordChangedTitle();
     Set<UserNotificationType> types =
@@ -957,28 +1132,38 @@ class UserNotificationServicePersistenceTest {
     assertTrue(types.contains(UserNotificationType.PASSWORD_CHANGED));
     assertEquals(
         1,
-        service.searchInbox(userSession, ReadFilter.ALL, title, types, 0, 20).getTotalElements());
+        userNotificationService
+            .searchInbox(userSession, ReadFilter.ALL, title, types, 0, 20)
+            .getTotalElements());
     String body = messageProperties.getNotificationsPasswordChangedBody().substring(0, 25);
     types =
         de.derpeterson.app.i18n.UserNotificationTexts.findMatchingNotificationTypes(
             messageProperties, body);
     assertEquals(
-        1, service.searchInbox(userSession, ReadFilter.ALL, body, types, 0, 20).getTotalElements());
+        1,
+        userNotificationService
+            .searchInbox(userSession, ReadFilter.ALL, body, types, 0, 20)
+            .getTotalElements());
     String system = messageProperties.getNotificationsSourceSystem();
     types =
         de.derpeterson.app.i18n.UserNotificationTexts.findMatchingNotificationTypes(
             messageProperties, system);
     assertEquals(
         1,
-        service.searchInbox(userSession, ReadFilter.ALL, system, types, 0, 20).getTotalElements());
-    assertTrue(service.searchInbox(adminSession, ReadFilter.ALL, system, types, 0, 20).isEmpty());
+        userNotificationService
+            .searchInbox(userSession, ReadFilter.ALL, system, types, 0, 20)
+            .getTotalElements());
+    assertTrue(
+        userNotificationService
+            .searchInbox(adminSession, ReadFilter.ALL, system, types, 0, 20)
+            .isEmpty());
     String administration = messageProperties.getNotificationsSourceAdministration();
     types =
         de.derpeterson.app.i18n.UserNotificationTexts.findMatchingNotificationTypes(
             messageProperties, administration);
     assertEquals(
         UserNotificationType.ADMIN_ANNOUNCEMENT,
-        service
+        userNotificationService
             .searchInbox(userSession, ReadFilter.ALL, administration, types, 0, 20)
             .getContent()
             .getFirst()
@@ -994,7 +1179,8 @@ class UserNotificationServicePersistenceTest {
   void requesterClosureCanBeFoundByItsVisibleTicketTitlePrefix(String language) {
     MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
-    tx.executeWithoutResult(status -> service.recordRequesterClosed("#10001", 1L, List.of(sender)));
+    transactionTemplate.executeWithoutResult(
+        status -> userNotificationService.recordRequesterClosed("#10001", 1L, List.of(sender)));
     String query = messageProperties.getSupportTicketNumber("").strip();
     Set<UserNotificationType> types =
         de.derpeterson.app.i18n.UserNotificationTexts.findMatchingNotificationTypes(
@@ -1002,28 +1188,33 @@ class UserNotificationServicePersistenceTest {
     assertTrue(types.contains(UserNotificationType.SUPPORT_REQUESTER_CLOSED));
     assertEquals(
         1,
-        service.searchInbox(adminSession, ReadFilter.ALL, query, types, 0, 20).getTotalElements());
+        userNotificationService
+            .searchInbox(adminSession, ReadFilter.ALL, query, types, 0, 20)
+            .getTotalElements());
   }
 
   @Test
   void paginationBoundsAreChecked() {
     assertThrows(
-        IllegalArgumentException.class, () -> service.inbox(userSession, ReadFilter.ALL, -1, 20));
+        IllegalArgumentException.class,
+        () -> userNotificationService.inbox(userSession, ReadFilter.ALL, -1, 20));
     assertThrows(
-        IllegalArgumentException.class, () -> service.inbox(userSession, ReadFilter.ALL, 0, 101));
+        IllegalArgumentException.class,
+        () -> userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 101));
     assertThrows(
-        IllegalArgumentException.class, () -> service.inbox(userSession, ReadFilter.ALL, 0, 0));
+        IllegalArgumentException.class,
+        () -> userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 0));
   }
 
   @Test
   void eventsPublishOnlyAfterCommitAndNotOnRollback() {
     AtomicInteger count = new AtomicInteger();
     subscriptions.add(
-        events.register(ids -> {
+        userNotificationBroadcaster.register(ids -> {
           assertTrue(ids.contains(ordinary.getId()));
           count.incrementAndGet();
         }));
-    tx.executeWithoutResult(s -> {
+    transactionTemplate.executeWithoutResult(s -> {
       broadcast();
       assertEquals(0, count.get());
       s.setRollbackOnly();
@@ -1037,11 +1228,11 @@ class UserNotificationServicePersistenceTest {
   @Test
   void brokenPushSubscriberCannotTurnCommittedSendIntoFailure() {
     subscriptions.add(
-        events.register(ids -> {
+        userNotificationBroadcaster.register(ids -> {
           throw new IllegalStateException("detached UI");
         }));
     AtomicInteger count = new AtomicInteger();
-    subscriptions.add(events.register(ids -> count.incrementAndGet()));
+    subscriptions.add(userNotificationBroadcaster.register(ids -> count.incrementAndGet()));
     assertDoesNotThrow(this::broadcast);
     assertEquals(1, notificationCount());
     assertEquals(1, count.get());
@@ -1053,35 +1244,43 @@ class UserNotificationServicePersistenceTest {
       names = {"PASSWORD_CHANGED", "PASSWORD_RESET", "EMAIL_CHANGED"})
   void securityEventsAreMinimalAndRequireTheDomainTransaction(UserNotificationType type) {
     assertThrows(
-        IllegalTransactionStateException.class, () -> service.recordSecurityEvent(ordinary, type));
-    tx.executeWithoutResult(
-        s -> service.recordSecurityEvent(users.findById(ordinary.getId()).orElseThrow(), type));
-    Item item = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+        IllegalTransactionStateException.class,
+        () -> userNotificationService.recordSecurityEvent(ordinary, type));
+    transactionTemplate.executeWithoutResult(s ->
+        userNotificationService.recordSecurityEvent(
+            userRepository.findById(ordinary.getId()).orElseThrow(), type));
+    Item item =
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
     assertEquals(type, item.type());
     assertNull(item.title());
     assertNull(item.body());
-    assertEquals(0, service.sent(adminSession, 0, 5).getTotalElements());
+    assertEquals(0, userNotificationService.sent(adminSession, 0, 5).getTotalElements());
   }
 
   @Test
   void recoveryNotificationKeepsTheTicketDestinationRestrictedToAdministrators() {
-    tx.executeWithoutResult(status -> service.recordRecoveryRequest("#10001", 1L));
-    Item item = service.inbox(adminSession, ReadFilter.UNREAD, 0, 20).getContent().getFirst();
+    transactionTemplate.executeWithoutResult(
+        status -> userNotificationService.recordRecoveryRequest("#10001", 1L));
+    Item item =
+        userNotificationService
+            .inbox(adminSession, ReadFilter.UNREAD, 0, 20)
+            .getContent()
+            .getFirst();
     assertEquals(UserNotificationType.RECOVERY_REQUEST, item.type());
     assertEquals("#10001", item.supportTicketNumber());
-    assertTrue(service.canOpenTickets(adminSession));
-    assertFalse(service.canOpenTickets(userSession));
-    assertFalse(service.canOpenTickets(new MockHttpSession()));
-    assertTrue(service.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
+    assertTrue(userNotificationService.canOpenTickets(adminSession));
+    assertFalse(userNotificationService.canOpenTickets(userSession));
+    assertFalse(userNotificationService.canOpenTickets(new MockHttpSession()));
+    assertTrue(userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
   }
 
   @Test
   void supportReplyNotificationShowsOnlyTheTicketNumberToItsRecipient() {
     String ticketNumber = "#10003";
-    tx.executeWithoutResult(
-        status -> service.recordSupportReply(ticketNumber, 1L, List.of(sender)));
+    transactionTemplate.executeWithoutResult(
+        status -> userNotificationService.recordSupportReply(ticketNumber, 1L, List.of(sender)));
     Item item =
-        service
+        userNotificationService
             .searchInbox(adminSession, ReadFilter.UNREAD, ticketNumber, Set.of(), 0, 20)
             .getContent()
             .getFirst();
@@ -1089,79 +1288,84 @@ class UserNotificationServicePersistenceTest {
     assertEquals(ticketNumber, item.supportTicketNumber());
     assertNull(item.title());
     assertNull(item.body());
-    assertTrue(service.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
+    assertTrue(userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
   }
 
   @Test
   void retiredTicketHintsStayInHistoryWithoutChangingReadStateOrCountingAsUnread() {
-    tx.executeWithoutResult(status -> service.recordRecoveryRequest("#10001", 1L));
-    tx.executeWithoutResult(status ->
-        service.retireTicketNotifications(
+    transactionTemplate.executeWithoutResult(
+        status -> userNotificationService.recordRecoveryRequest("#10001", 1L));
+    transactionTemplate.executeWithoutResult(status ->
+        userNotificationService.retireTicketNotifications(
             "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED));
-    assertEquals(0, service.unreadCount(adminSession));
-    assertTrue(service.unreadSnapshot(adminSession).isEmpty());
-    assertTrue(service.inbox(adminSession, ReadFilter.UNREAD, 0, 20).isEmpty());
-    Item assigned = service.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    assertEquals(0, userNotificationService.unreadCount(adminSession));
+    assertTrue(userNotificationService.unreadSnapshot(adminSession).isEmpty());
+    assertTrue(userNotificationService.inbox(adminSession, ReadFilter.UNREAD, 0, 20).isEmpty());
+    Item assigned =
+        userNotificationService.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
     assertFalse(assigned.read());
     assertFalse(assigned.unread());
     assertEquals(
         de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED,
         assigned.relevance());
-    tx.executeWithoutResult(status ->
-        service.retireTicketNotifications(
+    transactionTemplate.executeWithoutResult(status ->
+        userNotificationService.retireTicketNotifications(
             "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_CLOSED));
-    tx.executeWithoutResult(status ->
-        service.retireTicketNotifications(
+    transactionTemplate.executeWithoutResult(status ->
+        userNotificationService.retireTicketNotifications(
             "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_CLOSED));
-    Item closed = service.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    Item closed =
+        userNotificationService.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
     assertFalse(closed.read());
     assertEquals(
         de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_CLOSED, closed.relevance());
-    assertEquals(0, service.unreadCount(adminSession));
-    assertEquals(1, service.inboxCount(adminSession));
+    assertEquals(0, userNotificationService.unreadCount(adminSession));
+    assertEquals(1, userNotificationService.inboxCount(adminSession));
   }
 
   @Test
   void rolledBackTicketRetirementKeepsTheHintActionableAndDoesNotPublish() {
-    tx.executeWithoutResult(status -> service.recordRecoveryRequest("#10001", 1L));
+    transactionTemplate.executeWithoutResult(
+        status -> userNotificationService.recordRecoveryRequest("#10001", 1L));
     List<Set<Long>> changes = new ArrayList<>();
-    subscriptions.add(events.register(changes::add));
-    tx.executeWithoutResult(status -> {
-      service.retireTicketNotifications(
+    subscriptions.add(userNotificationBroadcaster.register(changes::add));
+    transactionTemplate.executeWithoutResult(status -> {
+      userNotificationService.retireTicketNotifications(
           "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED);
       status.setRollbackOnly();
     });
     assertTrue(changes.isEmpty());
-    assertEquals(1, service.unreadCount(adminSession));
+    assertEquals(1, userNotificationService.unreadCount(adminSession));
   }
 
   @Test
   void rolledBackSecurityEventDoesNotClaimSuccess() {
-    tx.executeWithoutResult(s -> {
-      service.recordSecurityEvent(ordinary, UserNotificationType.PASSWORD_CHANGED);
+    transactionTemplate.executeWithoutResult(s -> {
+      userNotificationService.recordSecurityEvent(ordinary, UserNotificationType.PASSWORD_CHANGED);
       s.setRollbackOnly();
     });
     assertEquals(0, notificationCount());
-    assertEquals(0, recipients.count());
+    assertEquals(0, userNotificationRecipientRepository.count());
   }
 
   @Test
   void deletingRecipientKeepsSharedNotificationForOthersAndDeletingSenderSetsNull() {
     Sent sent = broadcast();
-    tx.executeWithoutResult(s -> {
-      users.deleteById(ordinary.getId());
-      users.flush();
+    transactionTemplate.executeWithoutResult(s -> {
+      userRepository.deleteById(ordinary.getId());
+      userRepository.flush();
     });
-    assertEquals(2, recipients.count());
-    assertTrue(notifications.existsById(sent.id()));
-    tx.executeWithoutResult(s -> {
-      users.deleteById(sender.getId());
-      users.flush();
+    assertEquals(2, userNotificationRecipientRepository.count());
+    assertTrue(userNotificationRepository.existsById(sent.id()));
+    transactionTemplate.executeWithoutResult(s -> {
+      userRepository.deleteById(sender.getId());
+      userRepository.flush();
     });
-    assertEquals(1, recipients.count());
-    tx.executeWithoutResult(
-        s -> assertNull(notifications.findById(sent.id()).orElseThrow().getSender()));
-    assertEquals(1, service.inbox(session(guest), ReadFilter.ALL, 0, 20).getTotalElements());
+    assertEquals(1, userNotificationRecipientRepository.count());
+    transactionTemplate.executeWithoutResult(
+        s -> assertNull(userNotificationRepository.findById(sent.id()).orElseThrow().getSender()));
+    assertEquals(
+        1, userNotificationService.inbox(session(guest), ReadFilter.ALL, 0, 20).getTotalElements());
   }
 
   @Test
@@ -1169,23 +1373,25 @@ class UserNotificationServicePersistenceTest {
     Sent old = broadcast();
     Sent fresh = broadcast();
     // Unveränderliche Fachspalten nur als künstliche Altstruktur per SQL altern lassen.
-    tx.executeWithoutResult(s ->
-        em.createNativeQuery("update user_notifications set created_at = :old where id = :id")
+    transactionTemplate.executeWithoutResult(s ->
+        entityManager
+            .createNativeQuery("update user_notifications set created_at = :old where id = :id")
             .setParameter("old", Instant.now().minus(366, java.time.temporal.ChronoUnit.DAYS))
             .setParameter("id", old.id())
             .executeUpdate());
     assertEquals(1, cleanup.purgeRetiredNotifications());
-    assertFalse(notifications.existsById(old.id()));
-    assertTrue(notifications.existsById(fresh.id()));
-    assertEquals(3, recipients.count());
-    tx.executeWithoutResult(s -> recipients.deleteAll());
+    assertFalse(userNotificationRepository.existsById(old.id()));
+    assertTrue(userNotificationRepository.existsById(fresh.id()));
+    assertEquals(3, userNotificationRecipientRepository.count());
+    transactionTemplate.executeWithoutResult(s -> userNotificationRecipientRepository.deleteAll());
     assertEquals(0, cleanup.purgeRetiredNotifications());
-    assertTrue(notifications.existsById(fresh.id()));
+    assertTrue(userNotificationRepository.existsById(fresh.id()));
   }
 
   private void createdAt(Long id, Instant created) {
-    tx.executeWithoutResult(status ->
-        em.createNativeQuery("update user_notifications set created_at = :created where id = :id")
+    transactionTemplate.executeWithoutResult(status ->
+        entityManager
+            .createNativeQuery("update user_notifications set created_at = :created where id = :id")
             .setParameter("created", created)
             .setParameter("id", id)
             .executeUpdate());
@@ -1195,68 +1401,81 @@ class UserNotificationServicePersistenceTest {
   void inboxAndAdminHistoryExpireIndependentlyAndReadLiveConfiguration() {
     Sent sent = broadcast();
     createdAt(sent.id(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
-    assertTrue(service.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
-    assertTrue(service.inbox(userSession, ReadFilter.UNREAD, 0, 20).isEmpty());
-    assertEquals(0, service.unreadCount(userSession));
-    assertTrue(service.unreadSnapshot(userSession).isEmpty());
-    assertEquals(1, service.sent(adminSession, 0, 5).getTotalElements());
+    assertTrue(userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).isEmpty());
+    assertTrue(userNotificationService.inbox(userSession, ReadFilter.UNREAD, 0, 20).isEmpty());
+    assertEquals(0, userNotificationService.unreadCount(userSession));
+    assertTrue(userNotificationService.unreadSnapshot(userSession).isEmpty());
+    assertEquals(1, userNotificationService.sent(adminSession, 0, 5).getTotalElements());
     assertEquals(0, cleanup.purgeRetiredNotifications());
-    assertEquals(3, recipients.count());
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("365");
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS)).thenReturn("90");
-    assertEquals(1, service.inbox(userSession, ReadFilter.ALL, 0, 20).getTotalElements());
-    assertEquals(1, service.unreadCount(userSession));
-    assertTrue(service.sent(adminSession, 0, 5).isEmpty());
+    assertEquals(3, userNotificationRecipientRepository.count());
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
+        .thenReturn("365");
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
+        .thenReturn("90");
+    assertEquals(
+        1, userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getTotalElements());
+    assertEquals(1, userNotificationService.unreadCount(userSession));
+    assertTrue(userNotificationService.sent(adminSession, 0, 5).isEmpty());
     assertEquals(0, cleanup.purgeRetiredNotifications());
-    assertTrue(notifications.existsById(sent.id()));
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("90");
+    assertTrue(userNotificationRepository.existsById(sent.id()));
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
+        .thenReturn("90");
     assertEquals(1, cleanup.purgeRetiredNotifications());
-    assertFalse(notifications.existsById(sent.id()));
-    assertEquals(0, recipients.count());
+    assertFalse(userNotificationRepository.existsById(sent.id()));
+    assertEquals(0, userNotificationRecipientRepository.count());
   }
 
   @ParameterizedTest
   @CsvSource({"true,true", "true,false", "false,true", "false,false"})
   void unlimitedAndLimitedPeriodsRemainIndependent(boolean inboxLimited, boolean historyLimited) {
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
         .thenReturn(inboxLimited ? "180" : "");
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
         .thenReturn(historyLimited ? "365" : "");
     Sent sent = broadcast();
     createdAt(sent.id(), Instant.now().minus(400, java.time.temporal.ChronoUnit.DAYS));
     assertEquals(
-        inboxLimited ? 0 : 1, service.inbox(userSession, ReadFilter.ALL, 0, 20).getTotalElements());
-    assertEquals(inboxLimited ? 0 : 1, service.unreadCount(userSession));
-    assertEquals(inboxLimited ? 0 : 1, service.unreadSnapshot(userSession).size());
-    assertEquals(historyLimited ? 0 : 1, service.sent(adminSession, 0, 5).getTotalElements());
+        inboxLimited ? 0 : 1,
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getTotalElements());
+    assertEquals(inboxLimited ? 0 : 1, userNotificationService.unreadCount(userSession));
+    assertEquals(inboxLimited ? 0 : 1, userNotificationService.unreadSnapshot(userSession).size());
+    assertEquals(
+        historyLimited ? 0 : 1,
+        userNotificationService.sent(adminSession, 0, 5).getTotalElements());
     assertEquals(inboxLimited && historyLimited ? 1 : 0, cleanup.purgeRetiredNotifications());
-    assertEquals(!(inboxLimited && historyLimited), notifications.existsById(sent.id()));
+    assertEquals(
+        !(inboxLimited && historyLimited), userNotificationRepository.existsById(sent.id()));
   }
 
   @Test
   void unlimitedInboxAlsoProtectsOldAutomaticSystemNotifications() {
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("");
-    tx.executeWithoutResult(status ->
-        service.recordSecurityEvent(
-            users.findById(ordinary.getId()).orElseThrow(), UserNotificationType.PASSWORD_CHANGED));
-    UserNotificationEntity automatic = notifications.findAll().getFirst();
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
+        .thenReturn("");
+    transactionTemplate.executeWithoutResult(status ->
+        userNotificationService.recordSecurityEvent(
+            userRepository.findById(ordinary.getId()).orElseThrow(),
+            UserNotificationType.PASSWORD_CHANGED));
+    UserNotificationEntity automatic = userNotificationRepository.findAll().getFirst();
     createdAt(automatic.getId(), Instant.now().minus(400, java.time.temporal.ChronoUnit.DAYS));
-    assertEquals(1, service.inbox(userSession, ReadFilter.ALL, 0, 20).getTotalElements());
+    assertEquals(
+        1, userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getTotalElements());
     assertEquals(0, cleanup.purgeRetiredNotifications());
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("180");
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
+        .thenReturn("180");
     assertEquals(1, cleanup.purgeRetiredNotifications());
   }
 
   @Test
   void automaticNotificationsUseOnlyTheInboxRetentionPeriod() {
-    tx.executeWithoutResult(status ->
-        service.recordSecurityEvent(
-            users.findById(ordinary.getId()).orElseThrow(), UserNotificationType.PASSWORD_CHANGED));
-    UserNotificationEntity automatic = notifications.findAll().getFirst();
+    transactionTemplate.executeWithoutResult(status ->
+        userNotificationService.recordSecurityEvent(
+            userRepository.findById(ordinary.getId()).orElseThrow(),
+            UserNotificationType.PASSWORD_CHANGED));
+    UserNotificationEntity automatic = userNotificationRepository.findAll().getFirst();
     createdAt(automatic.getId(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
     assertEquals(1, cleanup.purgeRetiredNotifications());
     assertEquals(0, notificationCount());
-    assertEquals(0, recipients.count());
+    assertEquals(0, userNotificationRecipientRepository.count());
   }
 
   @Test
@@ -1266,22 +1485,22 @@ class UserNotificationServicePersistenceTest {
     createdAt(sent.id(), cutoff);
     assertEquals(
         1,
-        recipients
+        userNotificationRecipientRepository
             .inbox(
                 ordinary.getId(),
                 null,
                 cutoff,
                 org.springframework.data.domain.PageRequest.of(0, 5))
             .getTotalElements());
-    assertEquals(1, recipients.countUnread(ordinary.getId(), cutoff));
-    assertEquals(1, recipients.unreadIds(ordinary.getId(), cutoff).size());
+    assertEquals(1, userNotificationRecipientRepository.countUnread(ordinary.getId(), cutoff));
+    assertEquals(1, userNotificationRecipientRepository.unreadIds(ordinary.getId(), cutoff).size());
     assertEquals(
         1,
-        notifications
+        userNotificationRepository
             .sent(sender.getId(), cutoff, org.springframework.data.domain.PageRequest.of(0, 5))
             .getTotalElements());
     assertTrue(
-        recipients
+        userNotificationRecipientRepository
             .inbox(
                 ordinary.getId(),
                 null,
@@ -1289,66 +1508,84 @@ class UserNotificationServicePersistenceTest {
                 org.springframework.data.domain.PageRequest.of(0, 5))
             .isEmpty());
     assertEquals(
-        0, tx.<Integer>execute(status -> notifications.deleteRetired(cutoff, cutoff)).intValue());
+        0,
+        transactionTemplate
+            .<Integer>execute(status -> userNotificationRepository.deleteRetired(cutoff, cutoff))
+            .intValue());
     assertEquals(
         1,
-        tx.<Integer>execute(
-                status -> notifications.deleteRetired(cutoff.plusSeconds(1), cutoff.plusSeconds(1)))
+        transactionTemplate
+            .<Integer>execute(status ->
+                userNotificationRepository.deleteRetired(
+                    cutoff.plusSeconds(1), cutoff.plusSeconds(1)))
             .intValue());
   }
 
   @Test
   void retentionMustBePositiveAndVisiblePolicyUsesSameValue() {
-    UserNotificationPolicy policy = new UserNotificationPolicy(config);
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS)).thenReturn("0");
+    UserNotificationPolicy policy = new UserNotificationPolicy(configService);
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
+        .thenReturn("0");
     assertThrows(IllegalArgumentException.class, policy::historyRetentionDays);
-    when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS)).thenReturn("365");
-    assertEquals(OptionalInt.of(180), service.retentionDays());
+    when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
+        .thenReturn("365");
+    assertEquals(OptionalInt.of(180), userNotificationService.retentionDays());
   }
 
   @Test
   void notificationSqlSchemaHasConsistentNamesAndPreservesStoredReadState() {
-    tx.executeWithoutResult(s -> {
+    transactionTemplate.executeWithoutResult(s -> {
       List columns =
-          em.createNativeQuery(
+          entityManager
+              .createNativeQuery(
                   "select column_name from information_schema.columns where table_name='USER_NOTIFICATION_RECIPIENTS'")
               .getResultList();
       assertTrue(columns.contains("NOTIFICATION_ID"));
       List constraints =
-          em.createNativeQuery(
+          entityManager
+              .createNativeQuery(
                   "select constraint_name from information_schema.table_constraints where table_name in ('USER_NOTIFICATIONS','USER_NOTIFICATION_RECIPIENTS')")
               .getResultList();
       assertTrue(constraints.contains("UK_USER_NOTIFICATION_REQUEST"));
       assertTrue(constraints.contains("UK_USER_NOTIFICATION_RECIPIENT"));
       List indexes =
-          em.createNativeQuery(
+          entityManager
+              .createNativeQuery(
                   "select index_name from information_schema.indexes where table_name in ('USER_NOTIFICATIONS','USER_NOTIFICATION_RECIPIENTS')")
               .getResultList();
       assertTrue(indexes.contains("IDX_USER_NOTIFICATION_CREATED"));
       assertTrue(indexes.contains("IDX_USER_NOTIFICATION_INBOX"));
     });
     Instant created = Instant.parse("2026-10-18T10:00:00Z");
-    tx.executeWithoutResult(s -> {
-      em.createNativeQuery(
+    transactionTemplate.executeWithoutResult(s -> {
+      entityManager
+          .createNativeQuery(
               "insert into user_notifications (id, request_key, type, title, body, created_at, broadcast, recipient_count, sender_id) values (900001, 'schema:notification', 'ADMIN_ANNOUNCEMENT', 'Existing title', 'Existing body', :created, false, 1, :sender)")
           .setParameter("created", created)
           .setParameter("sender", sender.getId())
           .executeUpdate();
-      em.createNativeQuery(
+      entityManager
+          .createNativeQuery(
               "insert into user_notification_recipients (id, notification_id, user_id, read_at, relevance) values (900002, 900001, :owner, :read, 'ACTIVE')")
           .setParameter("owner", ordinary.getId())
           .setParameter("read", created)
           .executeUpdate();
     });
-    Item item = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+    Item item =
+        userNotificationService.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
     assertEquals(900002L, item.id());
     assertEquals(UserNotificationType.ADMIN_ANNOUNCEMENT, item.type());
     assertEquals("Existing title", item.title());
     assertEquals("Existing body", item.body());
     assertTrue(item.read());
-    assertEquals(0, service.unreadCount(userSession));
+    assertEquals(0, userNotificationService.unreadCount(userSession));
     Long notificationId =
-        tx.execute(s -> recipients.findById(item.id()).orElseThrow().getNotification().getId());
+        transactionTemplate.execute(s ->
+            userNotificationRecipientRepository
+                .findById(item.id())
+                .orElseThrow()
+                .getNotification()
+                .getId());
     assertEquals(Long.valueOf(900001L), notificationId);
   }
 }

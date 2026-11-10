@@ -50,13 +50,13 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Echte UIDL-Ausgabe des Frameworks; kein Browser und kein eigener JSON-Nachbau. */
 class RoleUiGuardTest {
-  UI ui;
-  VaadinSession session;
+  UI testUi;
+  VaadinSession vaadinSession;
   VaadinServletService servlet;
-  MockHttpServletRequest http;
-  MockHttpSession login;
+  MockHttpServletRequest mockHttpRequest;
+  MockHttpSession mockHttpSession;
   VaadinServletRequest request;
-  SecurityService security;
+  SecurityService securityService;
   UserRoleBroadcaster events;
   RoleUiGuard guard;
   AtomicReference<Authentication> current = new AtomicReference<>();
@@ -66,41 +66,40 @@ class RoleUiGuardTest {
     servlet = mock(VaadinServletService.class);
     DeploymentConfiguration config = mock(DeploymentConfiguration.class);
     when(servlet.getDeploymentConfiguration()).thenReturn(config);
-    session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getService()).thenReturn(servlet);
-    when(session.getLocale()).thenReturn(Locale.ENGLISH);
-    when(session.access(any()))
-        .thenAnswer(
-            c -> {
-              ((Command) c.getArgument(0)).execute();
-              return CompletableFuture.completedFuture(null);
-            });
-    ui = new UI();
-    UI.setCurrent(ui);
-    VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
-    when(servlet.findUI(any())).thenReturn(ui);
-    login = new MockHttpSession();
-    http = spy(new MockHttpServletRequest("POST", "/VAADIN/uidl"));
-    http.setSession(login);
-    http.setParameter("v-r", "uidl");
-    request = new VaadinServletRequest(http, servlet);
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getService()).thenReturn(servlet);
+    when(vaadinSession.getLocale()).thenReturn(Locale.ENGLISH);
+    when(vaadinSession.access(any()))
+        .thenAnswer(c -> {
+          ((Command) c.getArgument(0)).execute();
+          return CompletableFuture.completedFuture(null);
+        });
+    testUi = new UI();
+    UI.setCurrent(testUi);
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
+    when(servlet.findUI(any())).thenReturn(testUi);
+    mockHttpSession = new MockHttpSession();
+    mockHttpRequest = spy(new MockHttpServletRequest("POST", "/VAADIN/uidl"));
+    mockHttpRequest.setSession(mockHttpSession);
+    mockHttpRequest.setParameter("v-r", "uidl");
+    request = new VaadinServletRequest(mockHttpRequest, servlet);
     com.vaadin.flow.internal.CurrentInstance.set(VaadinRequest.class, request);
-    security = mock(SecurityService.class);
+    securityService = mock(SecurityService.class);
     events = new UserRoleBroadcaster();
-    guard = new RoleUiGuard(security, events);
+    guard = new RoleUiGuard(securityService, events);
     current.set(auth("ADMIN"));
-    when(security.refreshSessionAuthentication(login))
+    when(securityService.refreshSessionAuthentication(mockHttpSession))
         .thenAnswer(c -> Optional.ofNullable(current.get()));
-    when(security.getSessionUser(login))
+    when(securityService.getSessionUser(mockHttpSession))
         .thenReturn(Optional.of(UserEntity.builder().id(5L).build()));
     location("admin?section=user_management");
   }
 
   @AfterEach
   void cleanup() {
-    ComponentUtil.fireEvent(ui, new DetachEvent(ui));
+    ComponentUtil.fireEvent(testUi, new DetachEvent(testUi));
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
     com.vaadin.flow.internal.CurrentInstance.set(VaadinRequest.class, null);
@@ -112,7 +111,7 @@ class RoleUiGuardTest {
   }
 
   void location(String path) {
-    ReflectionTestUtils.setField(ui.getInternals(), "viewLocation", new Location(path));
+    ReflectionTestUtils.setField(testUi.getInternals(), "viewLocation", new Location(path));
   }
 
   SynchronizedRequestHandler handler() {
@@ -123,12 +122,12 @@ class RoleUiGuardTest {
 
   @Test
   void changedRoleRequestWritesFrameworkRedirectWithoutDispatchOrLogout() throws Exception {
-    guard.bind(ui);
+    guard.bind(testUi);
     current.set(auth("USER"));
     MockHttpServletResponse raw = new MockHttpServletResponse();
     VaadinServletResponse response = new VaadinServletResponse(raw, servlet);
     AtomicInteger dispatch = new AtomicInteger();
-    if (!handler().synchronizedHandleRequest(session, request, response)) {
+    if (!handler().synchronizedHandleRequest(vaadinSession, request, response)) {
       dispatch.incrementAndGet();
     }
     assertEquals(0, dispatch.get());
@@ -136,18 +135,18 @@ class RoleUiGuardTest {
     assertTrue(raw.getContentAsString().contains("/home"));
     assertTrue(raw.getContentAsString().contains("execute"));
     assertEquals("application/json; charset=UTF-8", raw.getContentType());
-    assertFalse(login.isInvalid());
-    verify(http, never()).getReader();
-    assertTrue(RoleUiState.changed(ui, current.get()));
+    assertFalse(mockHttpSession.isInvalid());
+    verify(mockHttpRequest, never()).getReader();
+    assertTrue(RoleUiState.hasUiRoleStateChanged(testUi, current.get()));
   }
 
   @Test
   void unchangedRoleRequestPassesThroughWithoutConsumingBody() throws Exception {
-    guard.bind(ui);
+    guard.bind(testUi);
     VaadinServletResponse response =
         new VaadinServletResponse(new MockHttpServletResponse(), servlet);
-    assertFalse(handler().synchronizedHandleRequest(session, request, response));
-    verify(http, never()).getReader();
+    assertFalse(handler().synchronizedHandleRequest(vaadinSession, request, response));
+    verify(mockHttpRequest, never()).getReader();
   }
 
   @ParameterizedTest
@@ -161,48 +160,48 @@ class RoleUiGuardTest {
   void permittedLocationAndAccountTabSurviveButLostAdminAccessGoesHome(
       String path, String expected) {
     location(path);
-    assertEquals(expected, RoleUiState.target(ui, auth("USER"), "/ctx"));
+    assertEquals(expected, RoleUiState.resolveRoleRefreshLocation(testUi, auth("USER"), "/ctx"));
   }
 
   @Test
   void roleAdditionRebuildsCurrentLocationWithoutDiscardingAuthentication() {
     current.set(auth("USER"));
     location("home");
-    guard.bind(ui);
+    guard.bind(testUi);
     current.set(auth("USER", "ADMIN"));
-    assertTrue(RoleUiState.refresh(ui, current.get(), ""));
-    assertFalse(login.isInvalid());
+    assertTrue(RoleUiState.refreshUiAfterRoleChange(testUi, current.get(), ""));
+    assertFalse(mockHttpSession.isInvalid());
     assertTrue(
-        ui.getInternals().dumpPendingJavaScriptInvocations().stream()
+        testUi.getInternals().dumpPendingJavaScriptInvocations().stream()
             .anyMatch(js -> js.getInvocation().getParameters().toString().contains("/home")));
   }
 
   @Test
   void liveEventsRefreshOnlyTheTargetAndDetachRemovesSubscription() {
-    guard.bind(ui);
-    guard.bind(ui);
-    clearInvocations(security);
+    guard.bind(testUi);
+    guard.bind(testUi);
+    clearInvocations(securityService);
     current.set(auth("USER"));
     events.publish(999L);
-    verifyNoInteractions(security);
+    verifyNoInteractions(securityService);
     events.publish(5L);
-    verify(security).refreshSessionAuthentication(login);
+    verify(securityService).refreshSessionAuthentication(mockHttpSession);
     assertTrue(
-        ui.getInternals().dumpPendingJavaScriptInvocations().stream()
+        testUi.getInternals().dumpPendingJavaScriptInvocations().stream()
             .anyMatch(js -> js.getInvocation().getParameters().toString().contains("/home")));
-    ComponentUtil.fireEvent(ui, new DetachEvent(ui));
-    clearInvocations(security);
+    ComponentUtil.fireEvent(testUi, new DetachEvent(testUi));
+    clearInvocations(securityService);
     events.publish(5L);
-    verifyNoInteractions(security);
+    verifyNoInteractions(securityService);
   }
 
   @Test
   void anonymousUiIsBoundOnlyAfterAuthenticationBecomesAvailable() {
     current.set(null);
-    guard.bind(ui);
-    assertNull(ComponentUtil.getData(ui, RoleUiState.class));
+    guard.bind(testUi);
+    assertNull(ComponentUtil.getData(testUi, RoleUiState.class));
     current.set(auth("USER"));
-    guard.bind(ui);
-    assertNotNull(ComponentUtil.getData(ui, RoleUiState.class));
+    guard.bind(testUi);
+    assertNotNull(ComponentUtil.getData(testUi, RoleUiState.class));
   }
 }

@@ -31,14 +31,14 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 /** Deterministic interleavings at the session/context boundary, without timing or a server. */
 class SecurityServiceSessionStateTest {
   private CustomUserDetailsService users;
-  private SecurityService security;
+  private SecurityService securityService;
   private UserDetails principal;
 
   @BeforeEach
   void setup() {
     SecurityContextHolder.clearContext();
     users = mock(CustomUserDetailsService.class);
-    security =
+    securityService =
         new SecurityService(
             mock(PersistentTokenBasedRememberMeServices.class),
             mock(UserService.class),
@@ -65,7 +65,7 @@ class SecurityServiceSessionStateTest {
         .thenReturn(null);
     MockHttpServletRequest request = request(session);
 
-    assertFalse(security.hasCurrentSessionPrivileges(request));
+    assertFalse(securityService.hasCurrentSessionPrivileges(request));
 
     assertTrue(session.isInvalid());
     assertNull(SecurityContextHolder.getContext().getAuthentication());
@@ -80,7 +80,7 @@ class SecurityServiceSessionStateTest {
     session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
     MockHttpServletRequest request = request(session);
 
-    assertFalse(security.hasCurrentSessionPrivileges(request));
+    assertFalse(securityService.hasCurrentSessionPrivileges(request));
 
     assertTrue(session.isInvalid());
     assertNull(SecurityContextHolder.getContext().getAuthentication());
@@ -99,7 +99,7 @@ class SecurityServiceSessionStateTest {
         HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context(authentication));
     when(users.loadUserByUsername(principal.getUsername())).thenReturn(principal);
 
-    assertTrue(security.hasCurrentSessionPrivileges(request(session)));
+    assertTrue(securityService.hasCurrentSessionPrivileges(request(session)));
 
     assertFalse(session.isInvalid());
     assertSame(authentication, SecurityContextHolder.getContext().getAuthentication());
@@ -110,7 +110,7 @@ class SecurityServiceSessionStateTest {
   void anonymousSessionRemainsForTheFollowingAuthorizationFilterToDecide() {
     MockHttpSession session = new MockHttpSession();
 
-    assertTrue(security.hasCurrentSessionPrivileges(request(session)));
+    assertTrue(securityService.hasCurrentSessionPrivileges(request(session)));
 
     assertFalse(session.isInvalid());
     assertNull(SecurityContextHolder.getContext().getAuthentication());

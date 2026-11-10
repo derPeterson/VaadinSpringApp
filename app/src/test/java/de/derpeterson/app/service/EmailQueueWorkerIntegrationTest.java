@@ -86,34 +86,39 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Execution(ExecutionMode.SAME_THREAD)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class EmailQueueWorkerIntegrationTest {
-  @Autowired ConfigService config;
-  @Autowired EmailQueueRepository emails;
-  @Autowired UserRepository users;
+  @Autowired ConfigService configService;
+  @Autowired EmailQueueRepository emailQueueRepository;
+  @Autowired UserRepository userRepository;
   @Autowired AdminNotificationAttemptRepository attempts;
   @Autowired EmailQueueServicePersistenceTest.Probes probes;
   @Autowired JpaTransactionManager manager;
-  @Autowired TransactionTemplate tx;
-  @Autowired EmailService mail;
+  @Autowired TransactionTemplate transactionTemplate;
+  @Autowired EmailService emailService;
   @Autowired MutableQueueClock clock;
   private final List<EmailQueueWorkerPool> pools = new ArrayList<>();
   private Long userId;
 
   @BeforeEach
   void seed() {
-    reset(config, mail, probes.emails(), probes.users(), probes.adminAttempts());
+    reset(
+        configService,
+        emailService,
+        probes.emailQueueRepository(),
+        probes.userRepository(),
+        probes.adminAttempts());
     clock.set(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
-    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(2);
-    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS)).thenReturn(60);
-    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(50);
-    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
-    when(config.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.test");
-    tx.executeWithoutResult(status -> {
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(2);
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS)).thenReturn(60);
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(50);
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+    when(configService.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.test");
+    transactionTemplate.executeWithoutResult(status -> {
       attempts.deleteAll();
-      emails.deleteAll();
-      users.deleteAll();
-      users.flush();
+      emailQueueRepository.deleteAll();
+      userRepository.deleteAll();
+      userRepository.flush();
       userId =
-          users
+          userRepository
               .saveAndFlush(
                   UserEntity.builder()
                       .firstName("Worker")
@@ -136,17 +141,17 @@ class EmailQueueWorkerIntegrationTest {
 
   EmailQueueWorkerPool pool() {
     EmailQueueWorkerPool pool =
-        new EmailQueueWorkerPool(new ThreadPoolConfig(config).taskExecutor());
+        new EmailQueueWorkerPool(new ThreadPoolConfig(configService).taskExecutor());
     pools.add(pool);
     return pool;
   }
 
   EmailQueueService service(EmailQueueWorkerPool pool, EmailService sender) {
     return new EmailQueueService(
-        config,
-        probes.emails(),
+        configService,
+        probes.emailQueueRepository(),
         sender,
-        probes.users(),
+        probes.userRepository(),
         manager,
         probes.adminAttempts(),
         clock,
@@ -154,31 +159,33 @@ class EmailQueueWorkerIntegrationTest {
   }
 
   Long insert(String subject, LocalDateTime retry) {
-    return tx.execute(status -> {
+    return transactionTemplate.execute(status -> {
       EmailQueueEntity item = new EmailQueueEntity();
-      item.setUserEntity(users.findById(userId).orElseThrow());
+      item.setUserEntity(userRepository.findById(userId).orElseThrow());
       item.setSubject(subject);
       item.setBody("<p>body:" + subject + "</p>");
       item.setStatus(EmailStatus.PENDING);
       item.setEmailType(EmailType.NOTIFICATION);
       item.setCreatedAt(LocalDateTime.now(clock).minusMinutes(2));
       item.setLastRetryAt(retry);
-      return emails.saveAndFlush(item).getId();
+      return emailQueueRepository.saveAndFlush(item).getId();
     });
   }
 
   private long statusCount(EmailStatus status) {
-    return emails.findAll().stream().filter(entry -> entry.getStatus() == status).count();
+    return emailQueueRepository.findAll().stream()
+        .filter(entry -> entry.getStatus() == status)
+        .count();
   }
 
   @Test
   void realSmtpUsesTwoConcurrentTransportsAndRefillsWithoutMimeMixups() throws Exception {
     try (SmtpFixture smtp = new SmtpFixture(2);
         ExecutorService caller = Executors.newSingleThreadExecutor()) {
-      when(config.snapshot(anyList())).thenReturn(smtpSettings(smtp));
-      when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.test");
-      when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(3);
-      JavaMailSender sender = new MailConfig(config).javaMailSender();
+      when(configService.snapshot(anyList())).thenReturn(smtpSettings(smtp));
+      when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.test");
+      when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(3);
+      JavaMailSender sender = new MailConfig(configService).javaMailSender();
       Properties properties =
           ((org.springframework.mail.javamail.JavaMailSenderImpl) sender).getJavaMailProperties();
       properties.put("mail.smtp.connectiontimeout", "5000");
@@ -188,7 +195,7 @@ class EmailQueueWorkerIntegrationTest {
       List<Long> ids =
           List.of(insert("smtp-one", null), insert("smtp-two", null), insert("smtp-three", null));
       Future<?> run =
-          caller.submit(service(pool(), new EmailService(config, sender))::processQueue);
+          caller.submit(service(pool(), new EmailService(configService, sender))::processQueue);
       try {
         await(smtp.firstWave);
         assertEquals(2, smtp.messages.size());
@@ -200,9 +207,11 @@ class EmailQueueWorkerIntegrationTest {
       }
       run.get(15, TimeUnit.SECONDS);
       for (Long id : ids) {
-        assertEquals(EmailStatus.SENT, emails.findById(id).orElseThrow().getStatus());
+        assertEquals(EmailStatus.SENT, emailQueueRepository.findById(id).orElseThrow().getStatus());
       }
-      assertEquals(EmailStatus.PENDING, emails.findById(pendingRetry).orElseThrow().getStatus());
+      assertEquals(
+          EmailStatus.PENDING,
+          emailQueueRepository.findById(pendingRetry).orElseThrow().getStatus());
       assertEquals(Set.of("smtp-one", "smtp-two", "smtp-three"), smtp.messages.keySet());
       smtp.messages.forEach(
           (subject, body) -> assertEquals("<p>body:" + subject + "</p>\r\n", body));
@@ -216,12 +225,13 @@ class EmailQueueWorkerIntegrationTest {
         SmtpFixture second = new SmtpFixture(1)) {
       first.release.countDown();
       second.release.countDown();
-      when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.test");
-      when(config.snapshot(anyList())).thenReturn(smtpSettings(first));
-      EmailService smtpSender = new EmailService(config, new MailConfig(config).javaMailSender());
+      when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.test");
+      when(configService.snapshot(anyList())).thenReturn(smtpSettings(first));
+      EmailService smtpSender =
+          new EmailService(configService, new MailConfig(configService).javaMailSender());
 
       smtpSender.sendAdminEmail("recipient@example.test", "first transport", "fixture");
-      when(config.snapshot(anyList())).thenReturn(smtpSettings(second));
+      when(configService.snapshot(anyList())).thenReturn(smtpSettings(second));
       smtpSender.sendAdminEmail("recipient@example.test", "second transport", "fixture");
 
       assertEquals(Set.of("first transport"), first.messages.keySet());
@@ -244,13 +254,16 @@ class EmailQueueWorkerIntegrationTest {
 
   @Test
   void batchCapacityBoundsSelectionDespiteFreeWorkers() throws Exception {
-    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(2);
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(2);
     List<Long> ids = List.of(insert("one", null), insert("two", null), insert("three", null));
-    service(pool(), mail).processQueue();
-    assertEquals(EmailStatus.SENT, emails.findById(ids.get(0)).orElseThrow().getStatus());
-    assertEquals(EmailStatus.SENT, emails.findById(ids.get(1)).orElseThrow().getStatus());
-    assertEquals(EmailStatus.PENDING, emails.findById(ids.get(2)).orElseThrow().getStatus());
-    verify(mail, times(2)).sendEmail(any(), any(), any());
+    service(pool(), emailService).processQueue();
+    assertEquals(
+        EmailStatus.SENT, emailQueueRepository.findById(ids.get(0)).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.SENT, emailQueueRepository.findById(ids.get(1)).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.PENDING, emailQueueRepository.findById(ids.get(2)).orElseThrow().getStatus());
+    verify(emailService, times(2)).sendEmail(any(), any(), any());
   }
 
   @Test
@@ -260,44 +273,44 @@ class EmailQueueWorkerIntegrationTest {
     doAnswer(
             call -> {
               List<EmailQueueEntity> result =
-                  emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
+                  emailQueueRepository.findPendingEmails(call.getArgument(0), call.getArgument(1));
               selected.await(10, TimeUnit.SECONDS);
               return result;
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .findPendingEmails(any(), any());
     try (ExecutorService callers = Executors.newFixedThreadPool(2)) {
-      Future<?> first = callers.submit(service(pool(), mail)::processQueue);
-      Future<?> second = callers.submit(service(pool(), mail)::processQueue);
+      Future<?> first = callers.submit(service(pool(), emailService)::processQueue);
+      Future<?> second = callers.submit(service(pool(), emailService)::processQueue);
       first.get(15, TimeUnit.SECONDS);
       second.get(15, TimeUnit.SECONDS);
     }
     for (Long id : ids) {
-      assertEquals(EmailStatus.SENT, emails.findById(id).orElseThrow().getStatus());
+      assertEquals(EmailStatus.SENT, emailQueueRepository.findById(id).orElseThrow().getStatus());
     }
     for (String subject : List.of("one", "two", "three")) {
-      verify(mail).sendEmail(any(), eq(subject), any());
+      verify(emailService).sendEmail(any(), eq(subject), any());
     }
   }
 
   @Test
   void rejectedTasksNeverClaimTheirCandidates() {
     Long id = insert("pending", null);
-    ThreadPoolExecutor executor = new ThreadPoolConfig(config).taskExecutor();
+    ThreadPoolExecutor executor = new ThreadPoolConfig(configService).taskExecutor();
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
     pools.add(pool);
     executor.shutdown();
-    service(pool, mail).processQueue();
-    assertEquals(EmailStatus.PENDING, emails.findById(id).orElseThrow().getStatus());
-    verifyNoInteractions(mail);
+    service(pool, emailService).processQueue();
+    assertEquals(EmailStatus.PENDING, emailQueueRepository.findById(id).orElseThrow().getStatus());
+    verifyNoInteractions(emailService);
   }
 
   @Test
   void forcedShutdownKeepsACommittedClaimAndUnstartedCandidatesIntact() throws Exception {
-    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(1);
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(1);
     Long firstId = insert("started", null);
     Long nextId = insert("not-started", null);
-    ThreadPoolExecutor executor = new ThreadPoolConfig(config).taskExecutor();
+    ThreadPoolExecutor executor = new ThreadPoolConfig(configService).taskExecutor();
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor, Duration.ZERO);
     pools.add(pool);
     CountDownLatch sending = new CountDownLatch(1);
@@ -313,23 +326,26 @@ class EmailQueueWorkerIntegrationTest {
               }
               return null;
             })
-        .when(mail)
+        .when(emailService)
         .sendEmail(any(), any(), any());
     try (ExecutorService caller = Executors.newSingleThreadExecutor()) {
-      Future<?> run = caller.submit(service(pool, mail)::processQueue);
+      Future<?> run = caller.submit(service(pool, emailService)::processQueue);
       await(sending);
-      assertEquals(EmailStatus.IN_PROGRESS, emails.findById(firstId).orElseThrow().getStatus());
+      assertEquals(
+          EmailStatus.IN_PROGRESS,
+          emailQueueRepository.findById(firstId).orElseThrow().getStatus());
       pool.shutdown();
       run.get(10, TimeUnit.SECONDS);
       assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
     }
-    EmailQueueEntity claimed = emails.findById(firstId).orElseThrow();
+    EmailQueueEntity claimed = emailQueueRepository.findById(firstId).orElseThrow();
     assertEquals(EmailStatus.IN_PROGRESS, claimed.getStatus());
     assertEquals(0, claimed.getRetryCount());
     assertNull(claimed.getLastRetryAt());
-    assertEquals(EmailStatus.PENDING, emails.findById(nextId).orElseThrow().getStatus());
-    verify(mail).sendEmail(any(), eq("started"), any());
-    verify(mail, never()).sendEmail(any(), eq("not-started"), any());
+    assertEquals(
+        EmailStatus.PENDING, emailQueueRepository.findById(nextId).orElseThrow().getStatus());
+    verify(emailService).sendEmail(any(), eq("started"), any());
+    verify(emailService, never()).sendEmail(any(), eq("not-started"), any());
     assertEquals(0, attempts.count());
   }
 
@@ -339,21 +355,24 @@ class EmailQueueWorkerIntegrationTest {
     Long known = insert("known", null);
     Long unknown = insert("unknown", null);
     doThrow(new MailAuthenticationException("fixture authentication failure"))
-        .when(mail)
+        .when(emailService)
         .sendEmail(any(), eq("known"), any());
     doThrow(new MailSendException("fixture unknown SMTP outcome"))
-        .when(mail)
+        .when(emailService)
         .sendEmail(any(), eq("unknown"), any());
-    EmailQueueService service = service(pool(), mail);
+    EmailQueueService service = service(pool(), emailService);
     service.processQueue();
-    assertEquals(EmailStatus.SENT, emails.findById(healthy).orElseThrow().getStatus());
-    assertEquals(EmailStatus.FAILED, emails.findById(known).orElseThrow().getStatus());
-    assertEquals(EmailStatus.IN_PROGRESS, emails.findById(unknown).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.SENT, emailQueueRepository.findById(healthy).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.FAILED, emailQueueRepository.findById(known).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.IN_PROGRESS, emailQueueRepository.findById(unknown).orElseThrow().getStatus());
     AdminNotificationAttemptEntity audit = attempts.findAll().getFirst();
     assertEquals(known, audit.getQueueId());
     assertEquals(AdminNotificationStatus.SENT, audit.getStatus());
     service.processQueue();
-    verify(mail).sendAdminEmail(any(), any(), any());
+    verify(emailService).sendAdminEmail(any(), any(), any());
     assertEquals(1, attempts.count());
   }
 
@@ -378,17 +397,18 @@ class EmailQueueWorkerIntegrationTest {
                       }
                     });
               }
-              return emails.save(item);
+              return emailQueueRepository.save(item);
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .save(any());
-    service(pool(), mail).processQueue();
+    service(pool(), emailService).processQueue();
     assertTrue(injected.get());
     assertEquals(
         resultCommit ? EmailStatus.IN_PROGRESS : EmailStatus.PENDING,
-        emails.findById(affected).orElseThrow().getStatus());
-    assertEquals(EmailStatus.SENT, emails.findById(healthy).orElseThrow().getStatus());
-    verify(mail, times(resultCommit ? 1 : 0)).sendEmail(any(), eq("affected"), any());
+        emailQueueRepository.findById(affected).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.SENT, emailQueueRepository.findById(healthy).orElseThrow().getStatus());
+    verify(emailService, times(resultCommit ? 1 : 0)).sendEmail(any(), eq("affected"), any());
   }
 
   static class SmtpFixture implements AutoCloseable {

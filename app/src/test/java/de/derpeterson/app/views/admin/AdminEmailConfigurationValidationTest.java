@@ -30,33 +30,33 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** SMTP policy through the actual configuration validator; no application, database or mail. */
 class AdminEmailConfigurationValidationTest {
-  private UI ui;
-  private VaadinSession session;
-  private AdminConfigurationSection section;
-  private MessageProperties messages;
+  private UI testUi;
+  private VaadinSession vaadinSession;
+  private AdminConfigurationSection configurationSection;
+  private MessageProperties messageProperties;
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
-    session = mock(VaadinSession.class);
-    when(session.getLocale()).thenReturn(Locale.GERMAN);
-    when(session.hasLock()).thenReturn(true);
-    VaadinSession.setCurrent(session);
-    messages = MessageProperties.forLocale(new CustomI18NProvider(), Locale.GERMAN);
+    testUi = new UI();
+    UI.setCurrent(testUi);
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenReturn(Locale.GERMAN);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    VaadinSession.setCurrent(vaadinSession);
+    messageProperties = MessageProperties.forLocale(new CustomI18NProvider(), Locale.GERMAN);
     ConfigService config = mock(ConfigService.class);
     when(config.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-    section = new AdminConfigurationSection(messages, config, () -> {});
+    configurationSection = new AdminConfigurationSection(messageProperties, config, () -> {});
   }
 
   @AfterEach
   void cleanup() {
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
-    section = null;
-    session = null;
-    ui = null;
+    configurationSection = null;
+    vaadinSession = null;
+    testUi = null;
   }
 
   @ParameterizedTest
@@ -105,7 +105,7 @@ class AdminEmailConfigurationValidationTest {
       assertNull(validate(entry, value), () -> "Expected accepted SMTP address: " + value);
     }
     for (String value : rejected) {
-      assertEquals(messages.getAdminConfigValidationEmail(), validate(entry, value));
+      assertEquals(messageProperties.getAdminConfigValidationEmail(), validate(entry, value));
     }
   }
 
@@ -134,8 +134,9 @@ class AdminEmailConfigurationValidationTest {
       value = ConfigEntry.class,
       names = {"EMAIL_FROM", "EMAIL_ADMIN"})
   void automaticFieldValidationUsesTheSameSafeSmtpPolicy(ConfigEntry entry) {
-    section.showGroup(AdminConfigGroup.EMAIL_SENDER);
-    Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
+    configurationSection.showGroup(AdminConfigGroup.EMAIL_SENDER);
+    Map<?, ?> inputs =
+        (Map<?, ?>) ReflectionTestUtils.getField(configurationSection, "configInputs");
     EmailField field = (EmailField) inputs.get(entry);
     String domain = "b.".repeat(50_000);
     assertTimeout(
@@ -157,6 +158,6 @@ class AdminEmailConfigurationValidationTest {
   }
 
   private String validate(ConfigEntry entry, String value) {
-    return ReflectionTestUtils.invokeMethod(section, "validateValue", entry, value);
+    return ReflectionTestUtils.invokeMethod(configurationSection, "validateValue", entry, value);
   }
 }

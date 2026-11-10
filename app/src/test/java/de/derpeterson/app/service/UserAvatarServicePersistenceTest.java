@@ -120,35 +120,35 @@ class UserAvatarServicePersistenceTest {
     }
   }
 
-  @Autowired UserAvatarService service;
-  @Autowired SecurityService security;
+  @Autowired UserAvatarService userAvatarService;
+  @Autowired SecurityService securityService;
   @Autowired UserAvatarRepository avatars;
-  @Autowired UserRepository users;
+  @Autowired UserRepository userRepository;
   @Autowired ConfigService config;
-  @Autowired UserProfileBroadcaster events;
-  @Autowired TransactionTemplate tx;
+  @Autowired UserProfileBroadcaster userProfileBroadcaster;
+  @Autowired TransactionTemplate transactionTemplate;
   @Autowired Clock avatarUploadClock;
-  @PersistenceContext EntityManager em;
+  @PersistenceContext EntityManager entityManager;
   UserEntity user, other;
-  final MockHttpServletRequest request = new MockHttpServletRequest();
+  final MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
 
   @BeforeEach
   void setup() {
     SecurityContextHolder.clearContext();
     reset(config, avatarUploadClock);
     when(avatarUploadClock.instant()).thenReturn(START);
-    tx.executeWithoutResult(status -> {
+    transactionTemplate.executeWithoutResult(status -> {
       avatars.deleteAll();
-      users.deleteAll();
-      users.flush();
-      em.createQuery("delete from RoleEntity").executeUpdate();
+      userRepository.deleteAll();
+      userRepository.flush();
+      entityManager.createQuery("delete from RoleEntity").executeUpdate();
       RoleEntity role = new RoleEntity();
       role.setName(RoleType.ROLE_USER);
-      em.persist(role);
+      entityManager.persist(role);
       user = newUser("avatar@example.test", role);
       other = newUser("other-avatar@example.test", role);
-      em.persist(user);
-      em.persist(other);
+      entityManager.persist(user);
+      entityManager.persist(other);
     });
     authenticate(user);
   }
@@ -169,7 +169,7 @@ class UserAvatarServicePersistenceTest {
 
   void authenticate(UserEntity account) {
     UserDetails principal =
-        new CustomUserDetailsService(users).loadUserByUsername(account.getEmail());
+        new CustomUserDetailsService(userRepository).loadUserByUsername(account.getEmail());
     SecurityContextHolder.getContext()
         .setAuthentication(
             UsernamePasswordAuthenticationToken.authenticated(
@@ -182,14 +182,14 @@ class UserAvatarServicePersistenceTest {
   }
 
   State uploadAndSave() throws Exception {
-    Open opened = service.open(request);
+    Open opened = userAvatarService.open(mockHttpRequest);
     UUID id =
-        service.upload(
-            request,
+        userAvatarService.upload(
+            mockHttpRequest,
             opened.draft(),
             new ByteArrayInputStream(AvatarImageProcessorTest.image("png", 200, 100)));
-    return service.save(
-        request,
+    return userAvatarService.save(
+        mockHttpRequest,
         new Change(
             opened.state().version(),
             AvatarMode.CUSTOM,
@@ -224,8 +224,8 @@ class UserAvatarServicePersistenceTest {
         ui.getInternals().setSession(session);
         UserDetails principal =
             (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        request.getSession().setAttribute("authenticatedUser", principal);
-        request
+        mockHttpRequest.getSession().setAttribute("authenticatedUser", principal);
+        mockHttpRequest
             .getSession()
             .setAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
@@ -235,7 +235,7 @@ class UserAvatarServicePersistenceTest {
         AccountAvatarEditor editor =
             spy((AccountAvatarEditor) ReflectionTestUtils.getField(dialog, "avatarEditor"));
         ReflectionTestUtils.setField(dialog, "avatarEditor", editor);
-        dialog.configure(service, request);
+        dialog.configure(userAvatarService, mockHttpRequest);
         ArgumentCaptor<UploadHandler> captured = ArgumentCaptor.forClass(UploadHandler.class);
         verify(editor).setUploadHandler(captured.capture());
         handler = captured.getValue();
@@ -251,14 +251,14 @@ class UserAvatarServicePersistenceTest {
         SecurityContextHolder.clearContext();
       }
       assertFalse(session.hasLock());
-      request.setMethod("POST");
+      mockHttpRequest.setMethod("POST");
       // Die ursprüngliche Formatangabe muss aus den Bytes stammen, nicht aus diesem Header.
-      request.setContentType("image/png");
-      request.addHeader("X-Avatar-Draft", token.toString());
-      request.setContent(AvatarImageProcessorTest.image("jpg", 1367, 1823));
+      mockHttpRequest.setContentType("image/png");
+      mockHttpRequest.addHeader("X-Avatar-Draft", token.toString());
+      mockHttpRequest.setContent(AvatarImageProcessorTest.image("jpg", 1367, 1823));
       MockHttpServletResponse response = new MockHttpServletResponse();
       handler.handleRequest(
-          new VaadinServletRequest(request, servlet),
+          new VaadinServletRequest(mockHttpRequest, servlet),
           new VaadinServletResponse(response, servlet),
           session,
           uploader.getElement());
@@ -278,19 +278,20 @@ class UserAvatarServicePersistenceTest {
       } finally {
         session.unlock();
       }
-      State saved = service.state(user.getId());
+      State saved = userAvatarService.state(user.getId());
       assertTrue(saved.hasImage());
       UserAvatarEntity stored = avatars.findById(user.getId()).orElseThrow();
       assertEquals(AvatarImageFormat.JPEG, stored.getOriginalFormat());
       assertEquals(1367, stored.getOriginalWidth());
       assertEquals(1823, stored.getOriginalHeight());
-      assertEquals(Locale.GERMAN, users.findById(user.getId()).orElseThrow().getPreferredLocale());
+      assertEquals(
+          Locale.GERMAN, userRepository.findById(user.getId()).orElseThrow().getPreferredLocale());
       DownloadHandler download =
           AvatarImageResource.createAvatarImageDownloadHandler(
-              service, user.getId(), saved.imageRevision(), false);
+              userAvatarService, user.getId(), saved.imageRevision(), false);
       MockHttpServletResponse imageResponse = new MockHttpServletResponse();
       download.handleRequest(
-          new VaadinServletRequest(request, servlet),
+          new VaadinServletRequest(mockHttpRequest, servlet),
           new VaadinServletResponse(imageResponse, servlet),
           session,
           new Element("img"));
@@ -300,13 +301,13 @@ class UserAvatarServicePersistenceTest {
           new ByteArrayInputStream(imageResponse.getContentAsByteArray())) {
         assertEquals(512, javax.imageio.ImageIO.read(downloadedImage).getWidth());
       }
-      tx.executeWithoutResult(
-          status -> users.findById(user.getId()).orElseThrow().setEnabled(false));
+      transactionTemplate.executeWithoutResult(
+          status -> userRepository.findById(user.getId()).orElseThrow().setEnabled(false));
       SecurityContextHolder.clearContext();
-      assertTrue(security.getAuthenticatedUser(request).isEmpty());
+      assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isEmpty());
       MockHttpServletResponse denied = new MockHttpServletResponse();
       download.handleRequest(
-          new VaadinServletRequest(request, servlet),
+          new VaadinServletRequest(mockHttpRequest, servlet),
           new VaadinServletResponse(denied, servlet),
           session,
           new Element("img"));
@@ -330,17 +331,19 @@ class UserAvatarServicePersistenceTest {
 
   @Test
   void metadataIsCommittedWithThePictureAndRetainedWhenSwitchingToInitials() throws Exception {
-    Open opened = service.open(request);
+    Open opened = userAvatarService.open(mockHttpRequest);
     Instant uploadedAt = START.plusSeconds(15);
     when(avatarUploadClock.instant()).thenReturn(uploadedAt);
     byte[] original = AvatarImageProcessorTest.image("jpeg", 67, 43);
-    UUID image = service.upload(request, opened.draft(), new ByteArrayInputStream(original));
+    UUID image =
+        userAvatarService.upload(
+            mockHttpRequest, opened.draft(), new ByteArrayInputStream(original));
     assertEquals(0, avatars.count());
 
     when(avatarUploadClock.instant()).thenReturn(START.plusSeconds(45));
     State saved =
-        service.save(
-            request,
+        userAvatarService.save(
+            mockHttpRequest,
             new Change(
                 opened.state().version(),
                 AvatarMode.CUSTOM,
@@ -351,16 +354,18 @@ class UserAvatarServicePersistenceTest {
     UserAvatarEntity row = avatars.findById(user.getId()).orElseThrow();
     assertOriginalMetadata(row, uploadedAt, AvatarImageFormat.JPEG, original.length, 67, 43);
 
-    service.save(
-        request, new Change(saved.version(), AvatarMode.INITIALS, false, null, null, null));
+    userAvatarService.save(
+        mockHttpRequest, new Change(saved.version(), AvatarMode.INITIALS, false, null, null, null));
     row = avatars.findById(user.getId()).orElseThrow();
     assertOriginalMetadata(row, uploadedAt, AvatarImageFormat.JPEG, original.length, 67, 43);
 
-    Open replacement = service.open(request);
+    Open replacement = userAvatarService.open(mockHttpRequest);
     Instant replacedAt = START.plusSeconds(60);
     when(avatarUploadClock.instant()).thenReturn(replacedAt);
     byte[] next = AvatarImageProcessorTest.image("png", 29, 31);
-    UUID nextImage = service.upload(request, replacement.draft(), new ByteArrayInputStream(next));
+    UUID nextImage =
+        userAvatarService.upload(
+            mockHttpRequest, replacement.draft(), new ByteArrayInputStream(next));
     assertOriginalMetadata(
         avatars.findById(user.getId()).orElseThrow(),
         uploadedAt,
@@ -369,8 +374,8 @@ class UserAvatarServicePersistenceTest {
         67,
         43);
     when(avatarUploadClock.instant()).thenReturn(START.plusSeconds(90));
-    service.save(
-        request,
+    userAvatarService.save(
+        mockHttpRequest,
         new Change(
             replacement.state().version(),
             AvatarMode.CUSTOM,
@@ -386,9 +391,10 @@ class UserAvatarServicePersistenceTest {
         29,
         31);
 
-    Open cancelled = service.open(request);
-    service.upload(request, cancelled.draft(), new ByteArrayInputStream(original));
-    service.release(cancelled.draft());
+    Open cancelled = userAvatarService.open(mockHttpRequest);
+    userAvatarService.upload(
+        mockHttpRequest, cancelled.draft(), new ByteArrayInputStream(original));
+    userAvatarService.release(cancelled.draft());
     assertOriginalMetadata(
         avatars.findById(user.getId()).orElseThrow(),
         replacedAt,
@@ -414,33 +420,51 @@ class UserAvatarServicePersistenceTest {
 
   @Test
   void saveSwitchKeepReplaceDeleteAndDeleteAccountHaveNoImageHistory() throws Exception {
-    Long profileVersion = users.findById(user.getId()).orElseThrow().getVersion();
+    Long profileVersion = userRepository.findById(user.getId()).orElseThrow().getVersion();
     State saved = uploadAndSave();
     assertTrue(saved.hasImage());
     assertEquals(AvatarMode.CUSTOM, saved.mode());
     assertEquals(1, avatars.count());
-    byte[] first = service.image(request, user.getId(), saved.imageRevision(), false).orElseThrow();
+    byte[] first =
+        userAvatarService
+            .image(mockHttpRequest, user.getId(), saved.imageRevision(), false)
+            .orElseThrow();
     assertEquals(512, javax.imageio.ImageIO.read(new ByteArrayInputStream(first)).getWidth());
     State initials =
-        service.save(
-            request, new Change(saved.version(), AvatarMode.INITIALS, false, null, null, null));
+        userAvatarService.save(
+            mockHttpRequest,
+            new Change(saved.version(), AvatarMode.INITIALS, false, null, null, null));
     assertTrue(initials.hasImage());
     assertEquals(saved.imageRevision(), initials.imageRevision());
-    assertTrue(service.image(request, user.getId(), saved.imageRevision(), false).isEmpty());
+    assertTrue(
+        userAvatarService
+            .image(mockHttpRequest, user.getId(), saved.imageRevision(), false)
+            .isEmpty());
     assertArrayEquals(
-        first, service.image(request, user.getId(), saved.imageRevision(), true).orElseThrow());
+        first,
+        userAvatarService
+            .image(mockHttpRequest, user.getId(), saved.imageRevision(), true)
+            .orElseThrow());
     State custom =
-        service.save(
-            request, new Change(initials.version(), AvatarMode.CUSTOM, false, null, null, null));
+        userAvatarService.save(
+            mockHttpRequest,
+            new Change(initials.version(), AvatarMode.CUSTOM, false, null, null, null));
     assertArrayEquals(
-        first, service.image(request, user.getId(), custom.imageRevision(), false).orElseThrow());
+        first,
+        userAvatarService
+            .image(mockHttpRequest, user.getId(), custom.imageRevision(), false)
+            .orElseThrow());
     State replaced = uploadAndSave();
     assertNotEquals(saved.imageRevision(), replaced.imageRevision());
     assertEquals(1, avatars.count());
-    assertTrue(service.image(request, user.getId(), saved.imageRevision(), false).isEmpty());
+    assertTrue(
+        userAvatarService
+            .image(mockHttpRequest, user.getId(), saved.imageRevision(), false)
+            .isEmpty());
     State deleted =
-        service.save(
-            request, new Change(replaced.version(), AvatarMode.INITIALS, true, null, null, null));
+        userAvatarService.save(
+            mockHttpRequest,
+            new Change(replaced.version(), AvatarMode.INITIALS, true, null, null, null));
     assertFalse(deleted.hasImage());
     assertNull(deleted.imageRevision());
     assertNull(avatars.findById(user.getId()).orElseThrow().getImage());
@@ -450,11 +474,11 @@ class UserAvatarServicePersistenceTest {
     assertNull(deletedRow.getOriginalSizeBytes());
     assertNull(deletedRow.getOriginalWidth());
     assertNull(deletedRow.getOriginalHeight());
-    assertEquals(profileVersion, users.findById(user.getId()).orElseThrow().getVersion());
+    assertEquals(profileVersion, userRepository.findById(user.getId()).orElseThrow().getVersion());
     uploadAndSave();
-    tx.executeWithoutResult(status -> {
-      users.deleteById(user.getId());
-      users.flush();
+    transactionTemplate.executeWithoutResult(status -> {
+      userRepository.deleteById(user.getId());
+      userRepository.flush();
     });
     assertEquals(0, avatars.count());
   }
@@ -463,18 +487,20 @@ class UserAvatarServicePersistenceTest {
   void staleDialogAndRollbackCannotReplaceANewerImageOrPublishPrematureEvents() throws Exception {
     ArrayList<UserProfileChangeMessage> messages =
         new ArrayList<UserProfileBroadcaster.UserProfileChangeMessage>();
-    Registration registration = events.register(messages::add);
+    Registration registration = userProfileBroadcaster.register(messages::add);
     try {
-      Open old = service.open(request);
+      Open old = userAvatarService.open(mockHttpRequest);
       State saved = uploadAndSave();
       assertEquals(1, messages.size());
       Change draftId =
           new Change(old.state().version(), AvatarMode.INITIALS, true, old.draft(), null, null);
-      assertThrows(OptimisticLockingFailureException.class, () -> service.save(request, draftId));
-      assertEquals(saved, service.state(user.getId()));
+      assertThrows(
+          OptimisticLockingFailureException.class,
+          () -> userAvatarService.save(mockHttpRequest, draftId));
+      assertEquals(saved, userAvatarService.state(user.getId()));
       assertEquals(1, messages.size());
-      tx.executeWithoutResult(status -> {
-        events.afterCommit(user);
+      transactionTemplate.executeWithoutResult(status -> {
+        userProfileBroadcaster.afterCommit(user);
         status.setRollbackOnly();
       });
       assertEquals(1, messages.size());
@@ -485,18 +511,19 @@ class UserAvatarServicePersistenceTest {
 
   @Test
   void cancelInvalidUploadAndMissingImageNeverWrite() throws Exception {
-    Open opened = service.open(request);
-    service.upload(
-        request,
+    Open opened = userAvatarService.open(mockHttpRequest);
+    userAvatarService.upload(
+        mockHttpRequest,
         opened.draft(),
         new ByteArrayInputStream(AvatarImageProcessorTest.image("png", 10, 10)));
-    service.release(opened.draft());
+    userAvatarService.release(opened.draft());
     assertEquals(0, avatars.count());
     UUID draftId = opened.draft();
     ByteArrayInputStream imageInput = new ByteArrayInputStream(new byte[] {1});
-    assertThrows(InvalidImage.class, () -> service.upload(request, draftId, imageInput));
+    assertThrows(
+        InvalidImage.class, () -> userAvatarService.upload(mockHttpRequest, draftId, imageInput));
     Change change = new Change(null, AvatarMode.CUSTOM, false, null, null, null);
-    assertThrows(InvalidImage.class, () -> service.save(request, change));
+    assertThrows(InvalidImage.class, () -> userAvatarService.save(mockHttpRequest, change));
     assertEquals(0, avatars.count());
   }
 
@@ -505,28 +532,31 @@ class UserAvatarServicePersistenceTest {
   void everyRoleCanSaveOwnImageAndOnlyAdministratorsCanReadAnotherImage(RoleType role)
       throws Exception {
     State target = uploadAndSave();
-    tx.executeWithoutResult(status -> {
+    transactionTemplate.executeWithoutResult(status -> {
       RoleEntity r = new RoleEntity();
       r.setName(role);
       if (role == RoleType.ROLE_USER) {
-        r = em.find(RoleEntity.class, user.getRoleEntities().iterator().next().getId());
+        r = entityManager.find(RoleEntity.class, user.getRoleEntities().iterator().next().getId());
       } else {
-        em.persist(r);
+        entityManager.persist(r);
       }
-      UserEntity account = users.findById(other.getId()).orElseThrow();
+      UserEntity account = userRepository.findById(other.getId()).orElseThrow();
       account.setRoleEntities(new ArrayList<>(List.of(r)));
     });
     authenticate(other);
     State own = uploadAndSave();
     assertTrue(own.hasImage());
     if (role == RoleType.ROLE_ADMIN || role == RoleType.ROLE_SUPERADMIN) {
-      assertTrue(service.image(request, user.getId(), target.imageRevision(), false).isPresent());
+      assertTrue(
+          userAvatarService
+              .image(mockHttpRequest, user.getId(), target.imageRevision(), false)
+              .isPresent());
     } else {
       Long targetUserId = user.getId();
       UUID targetImageRevision = target.imageRevision();
       assertThrows(
           AccessDeniedException.class,
-          () -> service.image(request, targetUserId, targetImageRevision, false));
+          () -> userAvatarService.image(mockHttpRequest, targetUserId, targetImageRevision, false));
     }
   }
 
@@ -538,48 +568,52 @@ class UserAvatarServicePersistenceTest {
     UUID anonymousImageRevision = saved.imageRevision();
     assertThrows(
         AuthenticationCredentialsNotFoundException.class,
-        () -> service.image(request, anonymousUserId, anonymousImageRevision, false));
+        () ->
+            userAvatarService.image(
+                mockHttpRequest, anonymousUserId, anonymousImageRevision, false));
     authenticate(user);
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    assertThrows(MaintenanceAccessException.class, () -> service.open(request));
+    assertThrows(MaintenanceAccessException.class, () -> userAvatarService.open(mockHttpRequest));
     reset(config);
-    tx.executeWithoutResult(status -> users.findById(user.getId()).orElseThrow().setEnabled(false));
+    transactionTemplate.executeWithoutResult(
+        status -> userRepository.findById(user.getId()).orElseThrow().setEnabled(false));
     Long disabledUserId = user.getId();
     UUID disabledImageRevision = saved.imageRevision();
     assertThrows(
         AuthenticationCredentialsNotFoundException.class,
-        () -> service.image(request, disabledUserId, disabledImageRevision, false));
+        () ->
+            userAvatarService.image(mockHttpRequest, disabledUserId, disabledImageRevision, false));
   }
 
   @Test
   void repositoryDefaultMethodRetainsTheIndependentSecurityRead() {
-    tx.executeWithoutResult(status -> {
-      UserEntity pending = users.findById(user.getId()).orElseThrow();
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity pending = userRepository.findById(user.getId()).orElseThrow();
       pending.setEnabled(false);
-      em.flush();
+      entityManager.flush();
 
-      assertTrue(users.findSecurityUser(user.getEmail()).getFirst().isEnabled());
+      assertTrue(userRepository.findSecurityUser(user.getEmail()).getFirst().isEnabled());
 
       status.setRollbackOnly();
     });
-    assertTrue(users.findById(user.getId()).orElseThrow().isEnabled());
+    assertTrue(userRepository.findById(user.getId()).orElseThrow().isEnabled());
   }
 
   @Test
   void singleMetadataReadIsIndependentOfPendingOuterChanges() throws Exception {
     State committed = uploadAndSave();
-    tx.executeWithoutResult(status -> {
+    transactionTemplate.executeWithoutResult(status -> {
       de.derpeterson.app.model.UserAvatarEntity pending =
           avatars.findById(user.getId()).orElseThrow();
       pending.setMode(AvatarMode.INITIALS);
-      em.flush();
+      entityManager.flush();
 
-      assertEquals(committed, service.state(user.getId()));
-      assertEquals(committed, service.states(List.of(user.getId())).get(user.getId()));
+      assertEquals(committed, userAvatarService.state(user.getId()));
+      assertEquals(committed, userAvatarService.states(List.of(user.getId())).get(user.getId()));
 
       status.setRollbackOnly();
     });
-    assertEquals(committed, service.state(user.getId()));
+    assertEquals(committed, userAvatarService.state(user.getId()));
   }
 
   @Test
@@ -595,7 +629,7 @@ class UserAvatarServicePersistenceTest {
               if (!start.await(5, TimeUnit.SECONDS)) {
                 throw new IllegalStateException("test synchronization timeout");
               }
-              service.save(
+              userAvatarService.save(
                   new MockHttpServletRequest(),
                   new Change(null, AvatarMode.INITIALS, false, null, null, null));
               return true;

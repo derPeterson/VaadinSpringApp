@@ -55,42 +55,42 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 class AccountAvatarDialogTest {
-  private UI ui;
-  private UserEntity user;
-  private MessageProperties messages;
-  private AccountAvatarDialog dialog;
-  private UserAvatarService avatars;
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
+  private UI testUi;
+  private UserEntity testUserEntity;
+  private MessageProperties messageProperties;
+  private AccountAvatarDialog accountAvatarDialog;
+  private UserAvatarService userAvatarService;
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
+    testUi = new UI();
+    UI.setCurrent(testUi);
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
+    when(session.getLocale()).thenAnswer(call -> localeReference.get());
     VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
-    messages = new MessageProperties(new CustomI18NProvider());
-    user =
+    testUi.getInternals().setSession(session);
+    messageProperties = new MessageProperties(new CustomI18NProvider());
+    testUserEntity =
         UserEntity.builder()
             .firstName("Christian")
             .lastName("Doebl")
             .version(7L)
             .status(UserStatus.AVAILABLE)
             .build();
-    dialog = new AccountAvatarDialog(messages, user);
-    avatars = mock(UserAvatarService.class);
-    when(avatars.open(any()))
+    accountAvatarDialog = new AccountAvatarDialog(messageProperties, testUserEntity);
+    userAvatarService = mock(UserAvatarService.class);
+    when(userAvatarService.open(any()))
         .thenAnswer(call ->
             new UserAvatarService.Open(UserAvatarService.State.initial(), UUID.randomUUID()));
-    dialog.configure(avatars, new MockHttpServletRequest());
-    ui.add(dialog);
+    accountAvatarDialog.configure(userAvatarService, new MockHttpServletRequest());
+    testUi.add(accountAvatarDialog);
   }
 
   @AfterEach
   void cleanup() {
-    dialog.close();
+    accountAvatarDialog.close();
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
@@ -99,19 +99,20 @@ class AccountAvatarDialogTest {
   @SuppressWarnings("unchecked")
   private RadioButtonGroup<AvatarMode> mode() {
     return (RadioButtonGroup<AvatarMode>)
-        ReflectionTestUtils.getField(dialog, "avatarModeSelector");
+        ReflectionTestUtils.getField(accountAvatarDialog, "avatarModeSelector");
   }
 
   private AccountAvatarEditor editor() {
-    return (AccountAvatarEditor) ReflectionTestUtils.getField(dialog, "avatarEditor");
+    return (AccountAvatarEditor) ReflectionTestUtils.getField(accountAvatarDialog, "avatarEditor");
   }
 
   private Button button(String field) {
-    return (Button) ReflectionTestUtils.getField(dialog, field);
+    return (Button) ReflectionTestUtils.getField(accountAvatarDialog, field);
   }
 
   private PortalConfirmationDialog deleteConfirmation() {
-    return (PortalConfirmationDialog) ReflectionTestUtils.getField(dialog, "deleteConfirmation");
+    return (PortalConfirmationDialog)
+        ReflectionTestUtils.getField(accountAvatarDialog, "deleteConfirmation");
   }
 
   private Button confirmationButton(String field) {
@@ -119,10 +120,13 @@ class AccountAvatarDialogTest {
   }
 
   private UUID openUploadedPicture() {
-    dialog.open();
+    accountAvatarDialog.open();
     UUID image = UUID.randomUUID();
     ReflectionTestUtils.invokeMethod(
-        dialog, "showUploadedImage", ReflectionTestUtils.getField(dialog, "avatarDraftId"), image);
+        accountAvatarDialog,
+        "showUploadedImage",
+        ReflectionTestUtils.getField(accountAvatarDialog, "avatarDraftId"),
+        image);
     return image;
   }
 
@@ -141,16 +145,16 @@ class AccountAvatarDialogTest {
     UUID image = openUploadedPicture();
     button("deleteAvatarButton").click();
     assertTrue(deleteConfirmation().isOpened());
-    assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImageOnSave"));
-    assertEquals(image, ReflectionTestUtils.getField(dialog, "uploadedImageId"));
+    assertEquals(false, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
+    assertEquals(image, ReflectionTestUtils.getField(accountAvatarDialog, "uploadedImageId"));
 
     confirmationButton("cancelButton").click();
 
-    assertTrue(dialog.isOpened());
+    assertTrue(accountAvatarDialog.isOpened());
     assertFalse(deleteConfirmation().isOpened());
     assertEquals(AvatarMode.CUSTOM, mode().getValue());
-    assertEquals(image, ReflectionTestUtils.getField(dialog, "uploadedImageId"));
-    verify(avatars, never()).save(any(), any());
+    assertEquals(image, ReflectionTestUtils.getField(accountAvatarDialog, "uploadedImageId"));
+    verify(userAvatarService, never()).save(any(), any());
   }
 
   @Test
@@ -158,37 +162,37 @@ class AccountAvatarDialogTest {
     openUploadedPicture();
     button("deleteAvatarButton").click();
     confirmationButton("confirmButton").click();
-    assertTrue(dialog.isOpened());
+    assertTrue(accountAvatarDialog.isOpened());
     assertFalse(deleteConfirmation().isOpened());
-    assertEquals(true, ReflectionTestUtils.getField(dialog, "deleteImageOnSave"));
+    assertEquals(true, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
     assertEquals(AvatarMode.INITIALS, mode().getValue());
-    assertNull(ReflectionTestUtils.getField(dialog, "uploadedImageId"));
-    verify(avatars, never()).save(any(), any());
+    assertNull(ReflectionTestUtils.getField(accountAvatarDialog, "uploadedImageId"));
+    verify(userAvatarService, never()).save(any(), any());
 
     ReflectionTestUtils.invokeMethod(
-        dialog,
+        accountAvatarDialog,
         "save",
         new ObjectMapper().readTree("{\"local\":false,\"zoom\":1,\"x\":0,\"y\":0}"));
 
     ArgumentCaptor<Change> change = ArgumentCaptor.forClass(Change.class);
-    verify(avatars).save(any(), change.capture());
+    verify(userAvatarService).save(any(), change.capture());
     assertTrue(change.getValue().deleteImage());
-    assertFalse(dialog.isOpened());
+    assertFalse(accountAvatarDialog.isOpened());
   }
 
   @Test
   void closingEditorDiscardsPendingDeletionAndCannotAffectTheNextDraft() {
     openUploadedPicture();
     button("deleteAvatarButton").click();
-    dialog.close();
+    accountAvatarDialog.close();
     assertFalse(deleteConfirmation().isOpened());
     UUID nextImage = openUploadedPicture();
 
     confirmationButton("confirmButton").click();
 
-    assertEquals(nextImage, ReflectionTestUtils.getField(dialog, "uploadedImageId"));
-    assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImageOnSave"));
-    verify(avatars, never()).save(any(), any());
+    assertEquals(nextImage, ReflectionTestUtils.getField(accountAvatarDialog, "uploadedImageId"));
+    assertEquals(false, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
+    verify(userAvatarService, never()).save(any(), any());
   }
 
   @Test
@@ -197,15 +201,15 @@ class AccountAvatarDialogTest {
     button("deleteAvatarButton").click();
     UUID newerImage = UUID.randomUUID();
     ReflectionTestUtils.invokeMethod(
-        dialog,
+        accountAvatarDialog,
         "showUploadedImage",
-        ReflectionTestUtils.getField(dialog, "avatarDraftId"),
+        ReflectionTestUtils.getField(accountAvatarDialog, "avatarDraftId"),
         newerImage);
 
     confirmationButton("confirmButton").click();
 
-    assertEquals(newerImage, ReflectionTestUtils.getField(dialog, "uploadedImageId"));
-    assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImageOnSave"));
+    assertEquals(newerImage, ReflectionTestUtils.getField(accountAvatarDialog, "uploadedImageId"));
+    assertEquals(false, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
   }
 
   @ParameterizedTest
@@ -213,26 +217,27 @@ class AccountAvatarDialogTest {
   void deletionConfirmationUsesCurrentLanguage(String language) {
     openUploadedPicture();
     button("deleteAvatarButton").click();
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
 
-    dialog.refreshTexts();
+    accountAvatarDialog.refreshTexts();
 
     assertTrue(
         deleteConfirmation()
             .getElement()
             .getTextRecursively()
-            .contains(messages.getAccountAvatarDeleteQuestion()));
+            .contains(messageProperties.getAccountAvatarDeleteQuestion()));
     assertTrue(
         deleteConfirmation()
             .getElement()
             .getTextRecursively()
-            .contains(messages.getAccountAvatarDeleteHint()));
-    assertEquals(messages.getPortalDeleteAction(), confirmationButton("confirmButton").getText());
+            .contains(messageProperties.getAccountAvatarDeleteHint()));
+    assertEquals(
+        messageProperties.getPortalDeleteAction(), confirmationButton("confirmButton").getText());
   }
 
   @Test
   void previewUsesSavedInitialsAndReadsNameChangesOnReopenWithoutChangingTheAccount() {
-    dialog.open();
+    accountAvatarDialog.open();
     assertEquals(
         "CD", ((Span) ReflectionTestUtils.getField(editor(), "avatarInitialsLabel")).getText());
     assertEquals(AvatarMode.INITIALS, mode().getValue());
@@ -242,26 +247,26 @@ class AccountAvatarDialogTest {
             .getChildren()
             .flatMap(Element::getChildren)
             .noneMatch(element -> element.getClassList().contains("cosmos-avatar-status")));
-    dialog.close();
-    user.setFirstName("  Änne  ");
-    user.setLastName("Öster");
-    dialog.open();
+    accountAvatarDialog.close();
+    testUserEntity.setFirstName("  Änne  ");
+    testUserEntity.setLastName("Öster");
+    accountAvatarDialog.open();
     assertEquals(
         "ÄÖ", ((Span) ReflectionTestUtils.getField(editor(), "avatarInitialsLabel")).getText());
-    assertEquals(7L, user.getVersion());
-    assertEquals(UserStatus.AVAILABLE, user.getStatus());
+    assertEquals(7L, testUserEntity.getVersion());
+    assertEquals(UserStatus.AVAILABLE, testUserEntity.getStatus());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"cancelAvatarChangesButton", "closeDialogButton"})
   void closingDiscardsTheSelectedMode(String closeButton) {
-    dialog.open();
+    accountAvatarDialog.open();
     mode().setValue(AvatarMode.CUSTOM);
     assertEquals("CUSTOM", editor().getElement().getAttribute("data-mode"));
     button(closeButton).click();
-    assertFalse(dialog.isOpened());
+    assertFalse(accountAvatarDialog.isOpened());
     assertEquals(AvatarMode.INITIALS, mode().getValue());
-    dialog.open();
+    accountAvatarDialog.open();
     assertEquals("INITIALS", editor().getElement().getAttribute("data-mode"));
     assertFalse(button("deleteAvatarButton").isVisible());
   }
@@ -269,84 +274,97 @@ class AccountAvatarDialogTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void labelsFollowLanguageChangesWithoutLosingTheSelectedMode(String language) {
-    dialog.open();
+    accountAvatarDialog.open();
     mode().setValue(AvatarMode.CUSTOM);
-    locale.set(Locale.forLanguageTag(language));
-    dialog.refreshTexts();
+    localeReference.set(Locale.forLanguageTag(language));
+    accountAvatarDialog.refreshTexts();
     assertEquals(AvatarMode.CUSTOM, mode().getValue());
-    assertEquals(messages.getAccountAvatarMode(), mode().getAriaLabel().orElseThrow());
+    assertEquals(messageProperties.getAccountAvatarMode(), mode().getAriaLabel().orElseThrow());
     assertEquals(
-        messages.getAccountAvatarCustom(), mode().getItemLabelGenerator().apply(AvatarMode.CUSTOM));
+        messageProperties.getAccountAvatarCustom(),
+        mode().getItemLabelGenerator().apply(AvatarMode.CUSTOM));
     assertTrue(
-        mode().getElement().getTextRecursively().contains(messages.getAccountAvatarInitials()));
+        mode()
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getAccountAvatarInitials()));
     assertTrue(
-        mode().getElement().getTextRecursively().contains(messages.getAccountAvatarCustom()));
+        mode()
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getAccountAvatarCustom()));
     Button choose = (Button) ReflectionTestUtils.getField(editor(), "chooseAvatarFileButton");
-    assertEquals(messages.getAccountAvatarChoose(), choose.getAriaLabel().orElseThrow());
+    assertEquals(messageProperties.getAccountAvatarChoose(), choose.getAriaLabel().orElseThrow());
     assertTrue(
-        choose.getElement().getTextRecursively().contains(messages.getAccountAvatarUploadHint()));
-    assertEquals(messages.getAdminUsersSave(), button("saveAvatarButton").getText());
-    assertTrue(dialog.isCloseOnEsc());
-    assertTrue(dialog.isCloseOnOutsideClick());
+        choose
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getAccountAvatarUploadHint()));
+    assertEquals(messageProperties.getAdminUsersSave(), button("saveAvatarButton").getText());
+    assertTrue(accountAvatarDialog.isCloseOnEsc());
+    assertTrue(accountAvatarDialog.isCloseOnOutsideClick());
   }
 
   @Test
   void savePersistsTheSelectedModeClosesTheDialogAndShowsTheRealSuccessMessage() {
-    dialog.open();
+    accountAvatarDialog.open();
     JsonNode json =
         new ObjectMapper()
             .readTree("{\"local\":false,\"loading\":false,\"zoom\":1,\"x\":0,\"y\":0}");
-    ReflectionTestUtils.invokeMethod(dialog, "save", json);
+    ReflectionTestUtils.invokeMethod(accountAvatarDialog, "save", json);
     ArgumentCaptor<Change> captor = ArgumentCaptor.forClass(UserAvatarService.Change.class);
-    verify(avatars).save(any(), captor.capture());
+    verify(userAvatarService).save(any(), captor.capture());
     assertEquals(AvatarMode.INITIALS, captor.getValue().mode());
     assertNull(captor.getValue().imageId());
-    assertFalse(dialog.isOpened());
+    assertFalse(accountAvatarDialog.isOpened());
     Notification notification =
         (Notification)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
     assertNotNull(notification);
     assertTrue(
-        notification.getElement().getTextRecursively().contains(messages.getBaseSuccessTitle()));
+        notification
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getBaseSuccessTitle()));
   }
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void cancellingTheNewSelectionPreservesTheSavedPictureAndKeepsTheDialogOpen(boolean hasImage) {
     AccountAvatarEditor editor = spy(editor());
-    ReflectionTestUtils.setField(dialog, "avatarEditor", editor);
+    ReflectionTestUtils.setField(accountAvatarDialog, "avatarEditor", editor);
     doNothing().when(editor).loadSaved(any(), any(), any());
     UUID revision = hasImage ? UUID.randomUUID() : null;
-    when(avatars.open(any()))
+    when(userAvatarService.open(any()))
         .thenReturn(
             new UserAvatarService.Open(
                 new UserAvatarService.State(7L, AvatarMode.INITIALS, hasImage, revision),
                 UUID.randomUUID()));
-    dialog.open();
+    accountAvatarDialog.open();
     mode().setValue(AvatarMode.CUSTOM);
-    ReflectionTestUtils.setField(dialog, "uploadedImageId", UUID.randomUUID());
+    ReflectionTestUtils.setField(accountAvatarDialog, "uploadedImageId", UUID.randomUUID());
     button("deleteAvatarButton").setVisible(true);
-    ReflectionTestUtils.invokeMethod(dialog, "cancelSelection");
-    assertNull(ReflectionTestUtils.getField(dialog, "uploadedImageId"));
+    ReflectionTestUtils.invokeMethod(accountAvatarDialog, "cancelSelection");
+    assertNull(ReflectionTestUtils.getField(accountAvatarDialog, "uploadedImageId"));
     assertEquals(AvatarMode.CUSTOM, mode().getValue());
-    assertTrue(dialog.isOpened());
+    assertTrue(accountAvatarDialog.isOpened());
     assertEquals(hasImage, button("deleteAvatarButton").isVisible());
-    assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImageOnSave"));
-    verify(avatars, never()).save(any(), any());
+    assertEquals(false, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
+    verify(userAvatarService, never()).save(any(), any());
     if (hasImage) {
-      verify(editor, times(2)).loadSaved(avatars, user.getId(), revision);
+      verify(editor, times(2)).loadSaved(userAvatarService, testUserEntity.getId(), revision);
     }
   }
 
   @Test
   void completedUploadDoesNotChangeAReopenedDialogAndClosesItsInput() throws Exception {
     AccountAvatarEditor editor = spy(editor());
-    ReflectionTestUtils.setField(dialog, "avatarEditor", editor);
-    dialog.configure(avatars, new MockHttpServletRequest());
+    ReflectionTestUtils.setField(accountAvatarDialog, "avatarEditor", editor);
+    accountAvatarDialog.configure(userAvatarService, new MockHttpServletRequest());
     ArgumentCaptor<UploadHandler> handler = ArgumentCaptor.forClass(UploadHandler.class);
     verify(editor).setUploadHandler(handler.capture());
-    dialog.open();
-    UUID token = (UUID) ReflectionTestUtils.getField(dialog, "avatarDraftId");
+    accountAvatarDialog.open();
+    UUID token = (UUID) ReflectionTestUtils.getField(accountAvatarDialog, "avatarDraftId");
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("X-Avatar-Draft", token.toString());
     UploadEvent event = mock(UploadEvent.class);
@@ -360,23 +378,23 @@ class AccountAvatarDialogTest {
     when(event.getUI()).thenReturn(uploadUi);
     doAnswer(
             call -> {
-              dialog.close();
-              dialog.open();
+              accountAvatarDialog.close();
+              accountAvatarDialog.open();
               ((Command) call.getArgument(0)).execute();
               return null;
             })
         .when(uploadUi)
         .accessSynchronously(any());
-    when(avatars.upload(any(), eq(token), any())).thenReturn(UUID.randomUUID());
+    when(userAvatarService.upload(any(), eq(token), any())).thenReturn(UUID.randomUUID());
 
     handler.getValue().handleUploadRequest(event);
 
     verify(event).reject();
     verify(input).close();
-    verify(avatars).release(token);
-    assertTrue(dialog.isOpened());
-    assertNotEquals(token, ReflectionTestUtils.getField(dialog, "avatarDraftId"));
-    assertNull(ReflectionTestUtils.getField(dialog, "uploadedImageId"));
+    verify(userAvatarService).release(token);
+    assertTrue(accountAvatarDialog.isOpened());
+    assertNotEquals(token, ReflectionTestUtils.getField(accountAvatarDialog, "avatarDraftId"));
+    assertNull(ReflectionTestUtils.getField(accountAvatarDialog, "uploadedImageId"));
     assertEquals(AvatarMode.INITIALS, mode().getValue());
     assertFalse(button("deleteAvatarButton").isVisible());
   }
@@ -385,12 +403,12 @@ class AccountAvatarDialogTest {
   void uploadResponseBindsTheAcceptedOriginalToItsServerRevisionAndRejectsOldDrafts()
       throws Exception {
     AccountAvatarEditor editor = spy(editor());
-    ReflectionTestUtils.setField(dialog, "avatarEditor", editor);
-    dialog.configure(avatars, new MockHttpServletRequest());
+    ReflectionTestUtils.setField(accountAvatarDialog, "avatarEditor", editor);
+    accountAvatarDialog.configure(userAvatarService, new MockHttpServletRequest());
     ArgumentCaptor<UploadHandler> handler = ArgumentCaptor.forClass(UploadHandler.class);
     verify(editor).setUploadHandler(handler.capture());
-    dialog.open();
-    UUID token = (UUID) ReflectionTestUtils.getField(dialog, "avatarDraftId");
+    accountAvatarDialog.open();
+    UUID token = (UUID) ReflectionTestUtils.getField(accountAvatarDialog, "avatarDraftId");
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.addHeader("X-Avatar-Draft", token.toString());
     UploadEvent event = mock(UploadEvent.class);
@@ -409,15 +427,15 @@ class AccountAvatarDialogTest {
         .when(uploadUi)
         .accessSynchronously(any());
     UUID revision = UUID.randomUUID();
-    when(avatars.upload(any(), eq(token), any())).thenReturn(revision);
+    when(userAvatarService.upload(any(), eq(token), any())).thenReturn(revision);
     handler.getValue().handleUploadRequest(event);
     verify(response).setHeader("X-Avatar-Image", revision.toString());
     assertEquals(AvatarMode.CUSTOM, mode().getValue());
     assertTrue(button("deleteAvatarButton").isVisible());
-    dialog.close();
-    dialog.open();
+    accountAvatarDialog.close();
+    accountAvatarDialog.open();
     handler.getValue().handleUploadRequest(event);
     verify(event).reject();
-    verify(avatars, times(1)).upload(any(), any(), any());
+    verify(userAvatarService, times(1)).upload(any(), any(), any());
   }
 }

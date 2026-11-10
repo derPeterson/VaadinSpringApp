@@ -44,20 +44,20 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Filter and pagination callbacks with application entities; no database or browser. */
 class AdminUserManagementFilterTest {
-  private UI ui;
-  private VaadinSession session;
-  private AdminUserManagementSection section;
+  private UI testUi;
+  private VaadinSession vaadinSession;
+  private AdminUserManagementSection userManagementSection;
   private MessageProperties messageProperties;
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.ENGLISH);
   private final LocalDateTime cutoff = LocalDateTime.of(2026, 10, 12, 10, 30);
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
-    session = mock(VaadinSession.class);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
-    VaadinSession.setCurrent(session);
+    testUi = new UI();
+    UI.setCurrent(testUi);
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    VaadinSession.setCurrent(vaadinSession);
     UserService service = mock(UserService.class);
     List<UserEntity> users =
         IntStream.rangeClosed(1, 25)
@@ -79,7 +79,7 @@ class AdminUserManagementFilterTest {
             .toList();
     when(service.findAllUsers()).thenReturn(users);
     messageProperties = new MessageProperties(new CustomI18NProvider());
-    section =
+    userManagementSection =
         new AdminUserManagementSection(
             messageProperties, service, mock(RoleService.class), mock(SecurityService.class));
   }
@@ -120,8 +120,8 @@ class AdminUserManagementFilterTest {
     ((AdminUserActivityFilter) field("lastActivityFilter")).setValue(cutoff);
     applyFilters();
     assertEquals(6, visibleUsers().size());
-    locale.set(Locale.forLanguageTag(language));
-    section.refreshTexts();
+    localeReference.set(Locale.forLanguageTag(language));
+    userManagementSection.refreshTexts();
     assertEquals(AdminUserFilters.Enabled.YES, filter("enabledFilter").getValue());
     assertEquals(Set.of(UserStatus.AVAILABLE), filter("statusFilter").getValue());
     assertEquals(Set.of(RoleType.ROLE_USER), filter("roleFilter").getValue());
@@ -135,7 +135,7 @@ class AdminUserManagementFilterTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void repeatedAutumnHourHasDistinctTooltipsAndChronologicalSortingAndFiltering(String language) {
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     Instant first = Instant.parse("2026-10-25T00:30:00Z");
     Instant second = Instant.parse("2026-10-25T01:30:00Z");
     UserEntity earlier =
@@ -145,7 +145,7 @@ class AdminUserManagementFilterTest {
     UserService service = mock(UserService.class);
     when(service.findAllUsers()).thenReturn(List.of(later, earlier));
     Instant now = Instant.parse("2026-10-25T01:45:00Z");
-    section =
+    userManagementSection =
         new AdminUserManagementSection(
             messageProperties,
             service,
@@ -159,8 +159,10 @@ class AdminUserManagementFilterTest {
                 new com.vaadin.flow.component.grid.GridSortOrder<>(
                     column, SortDirection.ASCENDING)));
     assertEquals(List.of(earlier, later), visibleUsers());
-    Span earlierLabel = ReflectionTestUtils.invokeMethod(section, "createLastActivity", earlier);
-    Span laterLabel = ReflectionTestUtils.invokeMethod(section, "createLastActivity", later);
+    Span earlierLabel =
+        ReflectionTestUtils.invokeMethod(userManagementSection, "createLastActivity", earlier);
+    Span laterLabel =
+        ReflectionTestUtils.invokeMethod(userManagementSection, "createLastActivity", later);
     assertEquals(messageProperties.getAdminUsersActivityHours(1), earlierLabel.getText());
     assertEquals(messageProperties.getAdminUsersActivityMinutes(15), laterLabel.getText());
     assertTrue(earlierLabel.getElement().getAttribute("title").endsWith("+02:00"));
@@ -177,7 +179,8 @@ class AdminUserManagementFilterTest {
     assertEquals(List.of(earlier, later), visibleUsers());
     assertTrue(((AdminUserActivityFilter) field("lastActivityFilter")).isInvalid());
     UserEntity future = UserEntity.builder().lastActivity(now.plusSeconds(3600)).build();
-    Span futureLabel = ReflectionTestUtils.invokeMethod(section, "createLastActivity", future);
+    Span futureLabel =
+        ReflectionTestUtils.invokeMethod(userManagementSection, "createLastActivity", future);
     assertEquals(futureLabel.getElement().getAttribute("title"), futureLabel.getText());
     assertTrue(futureLabel.getText().endsWith("+01:00"));
   }
@@ -290,7 +293,7 @@ class AdminUserManagementFilterTest {
   }
 
   private Object field(String name) {
-    return ReflectionTestUtils.getField(section, name);
+    return ReflectionTestUtils.getField(userManagementSection, name);
   }
 
   private HasValue filter(String name) {

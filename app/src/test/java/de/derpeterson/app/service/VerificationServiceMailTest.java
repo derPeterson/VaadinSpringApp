@@ -53,49 +53,50 @@ import org.springframework.core.io.ClassPathResource;
 @ExtendWith(MockitoExtension.class)
 @Isolated
 class VerificationServiceMailTest {
-  @Mock private MessageProperties messages;
-  @Mock private VerificationTokenRepository tokens;
-  @Mock private UserRepository users;
-  @Mock private ConfigService config;
-  @Mock private EmailQueueService queue;
-  private VerificationService service;
-  private UserEntity user;
+  @Mock private MessageProperties messageProperties;
+  @Mock private VerificationTokenRepository verificationTokenRepository;
+  @Mock private UserRepository userRepository;
+  @Mock private ConfigService configService;
+  @Mock private EmailQueueService emailQueueService;
+  private VerificationService verificationService;
+  private UserEntity testUserEntity;
 
   @BeforeEach
   void setUp() {
     // Neue Konfiguration gehört zur Mailfixture; andere Fälle lesen diese Werte nicht.
     lenient()
-        .when(config.getString(ConfigEntry.COPYRIGHT_TEXT))
+        .when(configService.getString(ConfigEntry.COPYRIGHT_TEXT))
         .thenReturn(ConfigEntry.COPYRIGHT_TEXT.getDefaultValueString());
     lenient()
-        .when(messages.getAccountCopyrightTemplate())
-        .thenAnswer(
-            call ->
-                MessageProperties.forLocale(
-                        new CustomI18NProvider(), CustomI18NProvider.getCurrentLocale())
-                    .getAccountCopyrightTemplate());
-    service =
+        .when(messageProperties.getAccountCopyrightTemplate())
+        .thenAnswer(call ->
+            MessageProperties.forLocale(
+                    new CustomI18NProvider(), CustomI18NProvider.getCurrentLocale())
+                .getAccountCopyrightTemplate());
+    verificationService =
         new VerificationService(
-            messages,
-            tokens,
-            users,
-            config,
-            queue,
+            messageProperties,
+            verificationTokenRepository,
+            userRepository,
+            configService,
+            emailQueueService,
             Clock.fixed(Instant.parse("2026-10-07T12:00:00Z"), ZoneOffset.UTC));
-    user =
+    testUserEntity =
         UserEntity.builder()
             .id(1L)
             .firstName("Test")
             .lastName("User")
             .email("test@example.com")
             .build();
-    when(users.lockVerificationUser(1L)).thenReturn(Optional.of(user));
+    when(userRepository.lockVerificationUser(1L)).thenReturn(Optional.of(testUserEntity));
     lenient()
-        .when(config.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
+        .when(configService.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
         .thenReturn("PT1H");
-    lenient().when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Test Service");
-    lenient().when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://example.com/");
-    lenient().when(messages.getEmailVerificationSubject()).thenReturn("Verify account");
+    lenient().when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Test Service");
+    lenient()
+        .when(configService.getString(ConfigEntry.BASE_URL))
+        .thenReturn("https://example.com/");
+    lenient().when(messageProperties.getEmailVerificationSubject()).thenReturn("Verify account");
   }
 
   @ParameterizedTest
@@ -118,15 +119,19 @@ class VerificationServiceMailTest {
       locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.ENGLISH);
       if (readFailure || closeFailure) {
         IOException failure =
-            assertThrows(IOException.class, () -> service.sendVerificationEmailByUser(user));
+            assertThrows(
+                IOException.class,
+                () -> verificationService.sendVerificationEmailByUser(testUserEntity));
         assertSame(readFailure ? stream.readError : stream.closeError, failure);
         assertArrayEquals(
             readFailure && closeFailure ? new Throwable[] {stream.closeError} : new Throwable[0],
             failure.getSuppressed());
-        verify(queue, never()).addEmailToQueue(any(), any(), any(), any());
+        verify(emailQueueService, never()).addEmailToQueue(any(), any(), any(), any());
       } else {
-        assertTrue(service.sendVerificationEmailByUser(user));
-        verify(queue).addEmailToQueue(user, "Verify account", "Hello Test", EmailType.VERIFICATION);
+        assertTrue(verificationService.sendVerificationEmailByUser(testUserEntity));
+        verify(emailQueueService)
+            .addEmailToQueue(
+                testUserEntity, "Verify account", "Hello Test", EmailType.VERIFICATION);
       }
       assertEquals(1, resources.constructed().size());
       assertTrue(stream.closed);
@@ -145,26 +150,30 @@ class VerificationServiceMailTest {
           .when(CustomI18NProvider::getCurrentLocale)
           .thenReturn(outcome.equals("templateFailure") ? Locale.FRENCH : Locale.ENGLISH);
       if (outcome.equals("duplicate")) {
-        when(queue.hasOpenEmailForUserAndType(user, EmailType.VERIFICATION)).thenReturn(true);
+        when(emailQueueService.hasOpenEmailForUserAndType(testUserEntity, EmailType.VERIFICATION))
+            .thenReturn(true);
       } else if (outcome.equals("queueFailure")) {
         doAnswer(
                 call -> {
                   assertTrue(
                       logs.list.stream()
-                          .noneMatch(
-                              event ->
-                                  event.getFormattedMessage().contains("added to the mail queue")));
+                          .noneMatch(event ->
+                              event.getFormattedMessage().contains("added to the mail queue")));
                   throw new IllegalStateException("queue failed");
                 })
-            .when(queue)
+            .when(emailQueueService)
             .addEmailToQueue(any(), any(), any(), any());
       }
       if (outcome.equals("queueFailure")) {
-        assertThrows(IllegalStateException.class, () -> service.sendVerificationEmailByUser(user));
+        assertThrows(
+            IllegalStateException.class,
+            () -> verificationService.sendVerificationEmailByUser(testUserEntity));
       } else if (outcome.equals("templateFailure")) {
-        assertThrows(IOException.class, () -> service.sendVerificationEmailByUser(user));
+        assertThrows(
+            IOException.class,
+            () -> verificationService.sendVerificationEmailByUser(testUserEntity));
       } else {
-        assertTrue(service.sendVerificationEmailByUser(user));
+        assertTrue(verificationService.sendVerificationEmailByUser(testUserEntity));
       }
       assertEquals(
           outcome.equals("queued") ? 1 : 0,
@@ -174,11 +183,11 @@ class VerificationServiceMailTest {
       assertTrue(
           logs.list.stream().noneMatch(event -> event.getFormattedMessage().contains("sent")));
       if (outcome.equals("queued") || outcome.equals("queueFailure")) {
-        verify(queue)
+        verify(emailQueueService)
             .addEmailToQueue(
-                eq(user), eq("Verify account"), anyString(), eq(EmailType.VERIFICATION));
+                eq(testUserEntity), eq("Verify account"), anyString(), eq(EmailType.VERIFICATION));
       } else {
-        verify(queue, never()).addEmailToQueue(any(), any(), any(), any());
+        verify(emailQueueService, never()).addEmailToQueue(any(), any(), any(), any());
       }
     } finally {
       logger.detachAppender(logs);

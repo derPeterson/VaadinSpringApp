@@ -89,8 +89,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class EmailQueueServicePersistenceTest {
   @Autowired private EmailQueueService service;
-  @Autowired private EmailQueueRepository emails;
-  @Autowired private UserRepository users;
+  @Autowired private EmailQueueRepository emailQueueRepository;
+  @Autowired private UserRepository userRepository;
   @Autowired private ConfigService config;
   @Autowired private EmailService mail;
   @Autowired private TransactionTemplate tx;
@@ -101,7 +101,12 @@ class EmailQueueServicePersistenceTest {
 
   @BeforeEach
   void seed() {
-    reset(probes.emails(), probes.users(), probes.adminAttempts(), config, mail);
+    reset(
+        probes.emailQueueRepository(),
+        probes.userRepository(),
+        probes.adminAttempts(),
+        config,
+        mail);
     clock.set(java.time.Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS)).thenReturn(60);
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(50);
@@ -110,27 +115,26 @@ class EmailQueueServicePersistenceTest {
     lenient()
         .when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION))
         .thenReturn("PT168H");
-    tx.executeWithoutResult(
-        status -> {
-          adminAttempts.deleteAll();
-          emails.deleteAll();
-          users.deleteAll();
-          users.flush();
-          userId =
-              users
-                  .saveAndFlush(
-                      UserEntity.builder()
-                          .firstName("Fixture")
-                          .lastName("User")
-                          .email("recipient@example.com")
-                          .password("fixture-hash-not-a-real-password")
-                          .gender(Gender.OTHER)
-                          .birthDate(LocalDate.of(1990, 1, 1))
-                          .preferredLocale(Locale.ENGLISH)
-                          .roleEntities(new ArrayList<>())
-                          .build())
-                  .getId();
-        });
+    tx.executeWithoutResult(status -> {
+      adminAttempts.deleteAll();
+      emailQueueRepository.deleteAll();
+      userRepository.deleteAll();
+      userRepository.flush();
+      userId =
+          userRepository
+              .saveAndFlush(
+                  UserEntity.builder()
+                      .firstName("Fixture")
+                      .lastName("User")
+                      .email("recipient@example.com")
+                      .password("fixture-hash-not-a-real-password")
+                      .gender(Gender.OTHER)
+                      .birthDate(LocalDate.of(1990, 1, 1))
+                      .preferredLocale(Locale.ENGLISH)
+                      .roleEntities(new ArrayList<>())
+                      .build())
+              .getId();
+    });
   }
 
   @ParameterizedTest
@@ -140,9 +144,9 @@ class EmailQueueServicePersistenceTest {
     doAnswer(
             call -> {
               barrier.await(10, TimeUnit.SECONDS);
-              return users.lockVerificationUser(call.getArgument(0));
+              return userRepository.lockVerificationUser(call.getArgument(0));
             })
-        .when(probes.users())
+        .when(probes.userRepository())
         .lockVerificationUser(userId);
     UserEntity detached = snapshot();
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
@@ -153,8 +157,8 @@ class EmailQueueServicePersistenceTest {
       first.get(20, TimeUnit.SECONDS);
       second.get(20, TimeUnit.SECONDS);
     }
-    assertEquals(1, emails.count());
-    assertEquals(type, emails.findAll().getFirst().getEmailType());
+    assertEquals(1, emailQueueRepository.count());
+    assertEquals(type, emailQueueRepository.findAll().getFirst().getEmailType());
     assertTrue(service.hasOpenEmailForUserAndType(detached, type));
     verifyNoInteractions(mail);
   }
@@ -167,25 +171,31 @@ class EmailQueueServicePersistenceTest {
     service.addEmailToQueue(user, "new", "body", EmailType.NOTIFICATION);
     service.addEmailToQueue(user, "different-type", "body", EmailType.PROMOTION);
     boolean open = status == EmailStatus.PENDING || status == EmailStatus.IN_PROGRESS;
-    assertEquals(open ? 2 : 3, emails.count());
+    assertEquals(open ? 2 : 3, emailQueueRepository.count());
     assertEquals(
-        1, emails.findAll().stream().filter(e -> e.getEmailType() == EmailType.PROMOTION).count());
+        1,
+        emailQueueRepository.findAll().stream()
+            .filter(e -> e.getEmailType() == EmailType.PROMOTION)
+            .count());
   }
 
   private long statusCount(EmailStatus status) {
-    return emails.findAll().stream().filter(entry -> entry.getStatus() == status).count();
+    return emailQueueRepository.findAll().stream()
+        .filter(entry -> entry.getStatus() == status)
+        .count();
   }
 
   @Test
   void staleEligibilityIsReloadedBeforeVerificationQueueDecision() {
     UserEntity stale = snapshot();
-    tx.executeWithoutResult(status -> users.findById(userId).orElseThrow().setEnabled(false));
+    tx.executeWithoutResult(
+        status -> userRepository.findById(userId).orElseThrow().setEnabled(false));
     assertTrue(stale.isVerificationPending());
     service.addEmailToQueue(stale, "verify", "body", EmailType.VERIFICATION);
-    assertEquals(0, emails.count());
+    assertEquals(0, emailQueueRepository.count());
     // No undocumented enabled-account requirement is added by this queue method.
     service.addEmailToQueue(stale, "reset", "body", EmailType.PASSWORD_RESET);
-    assertEquals(1, emails.count());
+    assertEquals(1, emailQueueRepository.count());
   }
 
   @Test
@@ -194,10 +204,10 @@ class EmailQueueServicePersistenceTest {
     doAnswer(
             call -> {
               assertTrue(TransactionSynchronizationManager.isActualTransactionActive());
-              emails.saveAndFlush(call.getArgument(0));
+              emailQueueRepository.saveAndFlush(call.getArgument(0));
               throw failure;
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .save(any());
     UserEntity targetUser = snapshot();
     assertSame(
@@ -205,7 +215,7 @@ class EmailQueueServicePersistenceTest {
         assertThrows(
             IllegalStateException.class,
             () -> service.addEmailToQueue(targetUser, "subject", "body", EmailType.NOTIFICATION)));
-    assertEquals(0, emails.count());
+    assertEquals(0, emailQueueRepository.count());
   }
 
   @Test
@@ -239,14 +249,14 @@ class EmailQueueServicePersistenceTest {
         .when(mail)
         .sendEmail(any(), anyString(), anyString());
     service.processQueue();
-    EmailQueueEntity retry = emails.findById(id).orElseThrow();
+    EmailQueueEntity retry = emailQueueRepository.findById(id).orElseThrow();
     assertEquals(EmailStatus.PENDING, retry.getStatus());
     assertEquals(1, retry.getRetryCount());
     assertNotNull(retry.getLastRetryAt());
     verify(mail, never()).sendAdminEmail(any(), any(), any());
     clock.advance(java.time.Duration.ofMinutes(1));
     service.processQueue();
-    EmailQueueEntity failed = emails.findById(id).orElseThrow();
+    EmailQueueEntity failed = emailQueueRepository.findById(id).orElseThrow();
     assertEquals(EmailStatus.FAILED, failed.getStatus());
     assertEquals(1, failed.getRetryCount());
     assertFalse(failed.getLastRetryAt().isBefore(retry.getLastRetryAt()));
@@ -273,7 +283,7 @@ class EmailQueueServicePersistenceTest {
             : new IllegalStateException("admin runtime");
     doThrow(failure).when(mail).sendAdminEmail(any(), any(), any());
     assertDoesNotThrow(service::processQueue);
-    EmailQueueEntity actual = emails.findById(id).orElseThrow();
+    EmailQueueEntity actual = emailQueueRepository.findById(id).orElseThrow();
     assertEquals(EmailStatus.FAILED, actual.getStatus());
     assertEquals(0, actual.getRetryCount());
     assertNotNull(actual.getLastRetryAt());
@@ -285,15 +295,18 @@ class EmailQueueServicePersistenceTest {
     Long one = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
     Long two = insert("two", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
     // Deterministic order, using real managed entities inside the actual transaction.
-    doAnswer(
-            call -> List.of(emails.findById(one).orElseThrow(), emails.findById(two).orElseThrow()))
-        .when(probes.emails())
+    doAnswer(call ->
+            List.of(
+                emailQueueRepository.findById(one).orElseThrow(),
+                emailQueueRepository.findById(two).orElseThrow()))
+        .when(probes.emailQueueRepository())
         .findPendingEmails(any(), any());
     IllegalStateException failure = new IllegalStateException("second dispatch runtime");
     doThrow(failure).when(mail).sendEmail(any(), eq("two"), eq("body"));
     assertDoesNotThrow(service::processQueue);
-    assertEquals(EmailStatus.SENT, emails.findById(one).orElseThrow().getStatus());
-    assertEquals(EmailStatus.IN_PROGRESS, emails.findById(two).orElseThrow().getStatus());
+    assertEquals(EmailStatus.SENT, emailQueueRepository.findById(one).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.IN_PROGRESS, emailQueueRepository.findById(two).orElseThrow().getStatus());
     verify(mail).sendEmail(any(), eq("one"), eq("body"));
     // Stale candidate lists must not redispatch SENT or unknown IN_PROGRESS.
     reset(mail);
@@ -310,13 +323,13 @@ class EmailQueueServicePersistenceTest {
     doAnswer(
             call -> {
               List<EmailQueueEntity> result =
-                  emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
+                  emailQueueRepository.findPendingEmails(call.getArgument(0), call.getArgument(1));
               assertEquals(1, result.size());
               assertEquals(EmailStatus.PENDING, result.getFirst().getStatus());
               selected.await(10, TimeUnit.SECONDS);
               return result;
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .findPendingEmails(any(), any());
     doAnswer(
             call -> {
@@ -332,8 +345,8 @@ class EmailQueueServicePersistenceTest {
       second.get(20, TimeUnit.SECONDS);
     }
     assertEquals(1, calls.get());
-    assertEquals(EmailStatus.SENT, emails.findById(id).orElseThrow().getStatus());
-    assertEquals(1, emails.count());
+    assertEquals(EmailStatus.SENT, emailQueueRepository.findById(id).orElseThrow().getStatus());
+    assertEquals(1, emailQueueRepository.count());
   }
 
   @Test
@@ -345,21 +358,21 @@ class EmailQueueServicePersistenceTest {
     doAnswer(
             call -> {
               List<EmailQueueEntity> result =
-                  emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
+                  emailQueueRepository.findPendingEmails(call.getArgument(0), call.getArgument(1));
               assertEquals(1, result.size());
               selected.await(10, TimeUnit.SECONDS);
               return result;
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .findPendingEmails(any(), any());
     doAnswer(
             call -> {
               if (Boolean.TRUE.equals(failingWorker.get())) {
                 await(successCommitted);
               }
-              return emails.lockById(call.getArgument(0));
+              return emailQueueRepository.lockById(call.getArgument(0));
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .lockById(any());
     doAnswer(
             call -> {
@@ -373,28 +386,26 @@ class EmailQueueServicePersistenceTest {
         .sendEmail(any(), anyString(), anyString());
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       Future<?> success =
-          executor.submit(
-              () -> {
-                try {
-                  service.processQueue();
-                } finally {
-                  successCommitted.countDown();
-                }
-              });
+          executor.submit(() -> {
+            try {
+              service.processQueue();
+            } finally {
+              successCommitted.countDown();
+            }
+          });
       Future<?> failure =
-          executor.submit(
-              () -> {
-                failingWorker.set(true);
-                try {
-                  service.processQueue();
-                } finally {
-                  failingWorker.remove();
-                }
-              });
+          executor.submit(() -> {
+            failingWorker.set(true);
+            try {
+              service.processQueue();
+            } finally {
+              failingWorker.remove();
+            }
+          });
       success.get(20, TimeUnit.SECONDS);
       failure.get(20, TimeUnit.SECONDS);
     }
-    EmailQueueEntity actual = emails.findById(id).orElseThrow();
+    EmailQueueEntity actual = emailQueueRepository.findById(id).orElseThrow();
     assertEquals(EmailStatus.SENT, actual.getStatus());
     assertEquals(0, actual.getRetryCount());
     verify(mail, times(1)).sendEmail(any(), anyString(), anyString());
@@ -419,7 +430,7 @@ class EmailQueueServicePersistenceTest {
       try {
         await(sending);
         service.addEmailToQueue(user, "duplicate", "body", EmailType.NOTIFICATION);
-        assertEquals(1, emails.count());
+        assertEquals(1, emailQueueRepository.count());
       } finally {
         release.countDown();
       }
@@ -438,11 +449,11 @@ class EmailQueueServicePersistenceTest {
     doAnswer(
             call -> {
               List<EmailQueueEntity> result =
-                  emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
+                  emailQueueRepository.findPendingEmails(call.getArgument(0), call.getArgument(1));
               selected.await(10, TimeUnit.SECONDS);
               return result;
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .findPendingEmails(any(), any());
     doAnswer(
             call -> {
@@ -467,7 +478,8 @@ class EmailQueueServicePersistenceTest {
       try {
         await(sending);
         await(contenderCompleted);
-        assertEquals(EmailStatus.IN_PROGRESS, emails.findById(id).orElseThrow().getStatus());
+        assertEquals(
+            EmailStatus.IN_PROGRESS, emailQueueRepository.findById(id).orElseThrow().getStatus());
         verify(mail, times(1)).sendEmail(any(), anyString(), anyString());
       } finally {
         release.countDown();
@@ -475,7 +487,7 @@ class EmailQueueServicePersistenceTest {
       first.get(20, TimeUnit.SECONDS);
       second.get(20, TimeUnit.SECONDS);
     }
-    assertEquals(EmailStatus.SENT, emails.findById(id).orElseThrow().getStatus());
+    assertEquals(EmailStatus.SENT, emailQueueRepository.findById(id).orElseThrow().getStatus());
   }
 
   @Test
@@ -492,12 +504,12 @@ class EmailQueueServicePersistenceTest {
     doAnswer(
             call -> {
               List<EmailQueueEntity> result =
-                  emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
+                  emailQueueRepository.findPendingEmails(call.getArgument(0), call.getArgument(1));
               assertEquals(3, result.size());
               selected.await(10, TimeUnit.SECONDS);
               return result;
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .findPendingEmails(any(), any());
     doThrow(new MailAuthenticationException("known failure"))
         .when(mail)
@@ -511,9 +523,11 @@ class EmailQueueServicePersistenceTest {
       first.get(20, TimeUnit.SECONDS);
       second.get(20, TimeUnit.SECONDS);
     }
-    assertEquals(EmailStatus.SENT, emails.findById(sent).orElseThrow().getStatus());
-    assertEquals(EmailStatus.FAILED, emails.findById(failed).orElseThrow().getStatus());
-    assertEquals(EmailStatus.IN_PROGRESS, emails.findById(unknown).orElseThrow().getStatus());
+    assertEquals(EmailStatus.SENT, emailQueueRepository.findById(sent).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.FAILED, emailQueueRepository.findById(failed).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.IN_PROGRESS, emailQueueRepository.findById(unknown).orElseThrow().getStatus());
     for (String subject : List.of("success", "known-failure", "unknown")) {
       verify(mail, times(1)).sendEmail(any(), eq(subject), eq("body"));
     }
@@ -547,7 +561,7 @@ class EmailQueueServicePersistenceTest {
                 target = EmailStatus.PENDING;
               }
               if (item.getId().equals(affected) && item.getStatus() == target) {
-                emails.saveAndFlush(item);
+                emailQueueRepository.saveAndFlush(item);
                 if (stage.endsWith("Save")) {
                   throw failure;
                 }
@@ -559,18 +573,19 @@ class EmailQueueServicePersistenceTest {
                       }
                     });
               } else {
-                emails.save(item);
+                emailQueueRepository.save(item);
               }
               return item;
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .save(any());
     assertDoesNotThrow(service::processQueue);
-    EmailQueueEntity actual = emails.findById(affected).orElseThrow();
+    EmailQueueEntity actual = emailQueueRepository.findById(affected).orElseThrow();
     assertEquals(claimFailure ? EmailStatus.PENDING : EmailStatus.IN_PROGRESS, actual.getStatus());
     assertEquals(0, actual.getRetryCount());
     assertNull(actual.getLastRetryAt());
-    assertEquals(EmailStatus.SENT, emails.findById(healthy).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.SENT, emailQueueRepository.findById(healthy).orElseThrow().getStatus());
     verify(mail, times(claimFailure ? 0 : 1)).sendEmail(any(), eq("affected"), anyString());
     verify(mail, times(1)).sendEmail(any(), eq("healthy"), anyString());
     if (!claimFailure) {
@@ -591,13 +606,12 @@ class EmailQueueServicePersistenceTest {
     Long terminal =
         insert("terminal", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
     Long last = insert("last", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
-    doAnswer(
-            call ->
-                List.of(
-                    emails.findById(first).orElseThrow(),
-                    emails.findById(terminal).orElseThrow(),
-                    emails.findById(last).orElseThrow()))
-        .when(probes.emails())
+    doAnswer(call ->
+            List.of(
+                emailQueueRepository.findById(first).orElseThrow(),
+                emailQueueRepository.findById(terminal).orElseThrow(),
+                emailQueueRepository.findById(last).orElseThrow()))
+        .when(probes.emailQueueRepository())
         .findPendingEmails(any(), any());
     doThrow(new MailAuthenticationException("recipient failure"))
         .when(mail)
@@ -609,7 +623,8 @@ class EmailQueueServicePersistenceTest {
               call -> {
                 assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
                 assertEquals(
-                    EmailStatus.FAILED, emails.findById(terminal).orElseThrow().getStatus());
+                    EmailStatus.FAILED,
+                    emailQueueRepository.findById(terminal).orElseThrow().getStatus());
                 if (stage.equals("adminMail")) {
                   throw new MailSendException(stage);
                 }
@@ -619,9 +634,10 @@ class EmailQueueServicePersistenceTest {
           .sendAdminEmail(any(), any(), any());
     }
     assertDoesNotThrow(service::processQueue);
-    assertEquals(EmailStatus.SENT, emails.findById(first).orElseThrow().getStatus());
-    assertEquals(EmailStatus.FAILED, emails.findById(terminal).orElseThrow().getStatus());
-    assertEquals(EmailStatus.SENT, emails.findById(last).orElseThrow().getStatus());
+    assertEquals(EmailStatus.SENT, emailQueueRepository.findById(first).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.FAILED, emailQueueRepository.findById(terminal).orElseThrow().getStatus());
+    assertEquals(EmailStatus.SENT, emailQueueRepository.findById(last).orElseThrow().getStatus());
     reset(mail);
     service.processQueue();
     verifyNoInteractions(mail);
@@ -630,12 +646,11 @@ class EmailQueueServicePersistenceTest {
   @Test
   void ambientCallerRollbackCannotUndoClaimOrSuccessfulOutcome() throws Exception {
     Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
-    tx.executeWithoutResult(
-        status -> {
-          service.processQueue();
-          status.setRollbackOnly();
-        });
-    assertEquals(EmailStatus.SENT, emails.findById(id).orElseThrow().getStatus());
+    tx.executeWithoutResult(status -> {
+      service.processQueue();
+      status.setRollbackOnly();
+    });
+    assertEquals(EmailStatus.SENT, emailQueueRepository.findById(id).orElseThrow().getStatus());
     verify(mail, times(1)).sendEmail(any(), anyString(), anyString());
   }
 
@@ -656,7 +671,7 @@ class EmailQueueServicePersistenceTest {
             : new IllegalStateException("sender outcome unknown");
     doThrow(failure).when(mail).sendEmail(any(), anyString(), anyString());
     service.processQueue();
-    EmailQueueEntity actual = emails.findById(id).orElseThrow();
+    EmailQueueEntity actual = emailQueueRepository.findById(id).orElseThrow();
     assertEquals(EmailStatus.IN_PROGRESS, actual.getStatus());
     assertEquals(2, actual.getRetryCount());
     assertNull(actual.getLastRetryAt());
@@ -665,8 +680,9 @@ class EmailQueueServicePersistenceTest {
     service.processQueue();
     service.deleteSentEmails();
     service.addEmailToQueue(snapshot(), "duplicate", "body", EmailType.NOTIFICATION);
-    assertEquals(1, emails.count());
-    assertEquals(EmailStatus.IN_PROGRESS, emails.findById(id).orElseThrow().getStatus());
+    assertEquals(1, emailQueueRepository.count());
+    assertEquals(
+        EmailStatus.IN_PROGRESS, emailQueueRepository.findById(id).orElseThrow().getStatus());
     verifyNoInteractions(mail);
   }
 
@@ -679,14 +695,14 @@ class EmailQueueServicePersistenceTest {
     doAnswer(
             call -> {
               tx.executeWithoutResult(
-                  status -> emails.findById(id).orElseThrow().setStatus(terminal));
+                  status -> emailQueueRepository.findById(id).orElseThrow().setStatus(terminal));
               return null;
             })
         .when(mail)
         .sendEmail(any(), anyString(), anyString());
     assertDoesNotThrow(service::processQueue);
-    assertEquals(terminal, emails.findById(id).orElseThrow().getStatus());
-    assertEquals(0, emails.findById(id).orElseThrow().getRetryCount());
+    assertEquals(terminal, emailQueueRepository.findById(id).orElseThrow().getStatus());
+    assertEquals(0, emailQueueRepository.findById(id).orElseThrow().getRetryCount());
     verify(mail, never()).sendAdminEmail(any(), any(), any());
   }
 
@@ -695,13 +711,14 @@ class EmailQueueServicePersistenceTest {
     Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
     doAnswer(
             call -> {
-              tx.executeWithoutResult(status -> emails.findById(id).orElseThrow().setRetryCount(9));
+              tx.executeWithoutResult(
+                  status -> emailQueueRepository.findById(id).orElseThrow().setRetryCount(9));
               return null;
             })
         .when(mail)
         .sendEmail(any(), anyString(), anyString());
     service.processQueue();
-    EmailQueueEntity actual = emails.findById(id).orElseThrow();
+    EmailQueueEntity actual = emailQueueRepository.findById(id).orElseThrow();
     assertEquals(EmailStatus.IN_PROGRESS, actual.getStatus());
     assertEquals(9, actual.getRetryCount());
     verify(mail, never()).sendAdminEmail(any(), any(), any());
@@ -729,14 +746,14 @@ class EmailQueueServicePersistenceTest {
     Long id = insert("one", EmailStatus.PENDING, EmailType.NOTIFICATION, LocalDateTime.now(), 0);
     for (int attempt = 1; attempt <= retries + 1; attempt++) {
       service.processQueue();
-      EmailQueueEntity actual = emails.findById(id).orElseThrow();
+      EmailQueueEntity actual = emailQueueRepository.findById(id).orElseThrow();
       assertEquals(
           attempt <= retries ? EmailStatus.PENDING : EmailStatus.FAILED, actual.getStatus());
       assertEquals(Math.min(attempt, retries), actual.getRetryCount());
       assertNotNull(actual.getLastRetryAt());
       if (attempt <= retries) {
         service.addEmailToQueue(snapshot(), "duplicate", "body", EmailType.NOTIFICATION);
-        assertEquals(1, emails.count());
+        assertEquals(1, emailQueueRepository.count());
         clock.advance(java.time.Duration.ofMinutes(1));
       }
     }
@@ -747,7 +764,7 @@ class EmailQueueServicePersistenceTest {
         .sendAdminEmail(
             eq("admin@example.com"), anyString(), contains("after " + (retries + 1) + " attempts"));
     service.addEmailToQueue(snapshot(), "new", "body", EmailType.NOTIFICATION);
-    assertEquals(2, emails.count());
+    assertEquals(2, emailQueueRepository.count());
   }
 
   @ParameterizedTest
@@ -776,8 +793,8 @@ class EmailQueueServicePersistenceTest {
     service.processQueue();
     service.processQueue();
     service.addEmailToQueue(snapshot(), "duplicate", "body", EmailType.NOTIFICATION);
-    assertEquals(1, emails.count());
-    EmailQueueEntity actual = emails.findById(id).orElseThrow();
+    assertEquals(1, emailQueueRepository.count());
+    EmailQueueEntity actual = emailQueueRepository.findById(id).orElseThrow();
     assertEquals(EmailStatus.IN_PROGRESS, actual.getStatus());
     assertEquals(0, actual.getRetryCount());
     assertNull(actual.getLastRetryAt());
@@ -804,24 +821,25 @@ class EmailQueueServicePersistenceTest {
     doAnswer(
             call -> {
               int deleted =
-                  emails.deleteByStatusAndCreatedAtBefore(call.getArgument(0), call.getArgument(1));
-              emails.flush();
+                  emailQueueRepository.deleteByStatusAndCreatedAtBefore(
+                      call.getArgument(0), call.getArgument(1));
+              emailQueueRepository.flush();
               assertEquals(1, deleted);
-              assertFalse(emails.existsById(old));
+              assertFalse(emailQueueRepository.existsById(old));
               return deleted;
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .deleteByStatusAndCreatedAtBefore(any(), any());
     assertDoesNotThrow(service::deleteSentEmails);
-    assertFalse(emails.existsById(old));
-    assertEquals(2, emails.count());
+    assertFalse(emailQueueRepository.existsById(old));
+    assertEquals(2, emailQueueRepository.count());
     verifyNoInteractions(mail);
   }
 
   @Test
   void cleanupCompletesWhenThereIsNothingToDelete() {
     assertDoesNotThrow(service::deleteSentEmails);
-    assertEquals(0, emails.count());
+    assertEquals(0, emailQueueRepository.count());
   }
 
   @Test
@@ -837,21 +855,26 @@ class EmailQueueServicePersistenceTest {
         insert("oldest", EmailStatus.PENDING, EmailType.NOTIFICATION, now.minusDays(2), 0);
     Long waiting =
         insert("not-due", EmailStatus.PENDING, EmailType.NOTIFICATION, now.minusDays(3), 1);
-    tx.executeWithoutResult(status -> emails.findById(waiting).orElseThrow().setLastRetryAt(now));
+    tx.executeWithoutResult(
+        status -> emailQueueRepository.findById(waiting).orElseThrow().setLastRetryAt(now));
     insert("unknown", EmailStatus.IN_PROGRESS, EmailType.NOTIFICATION, now.minusDays(4), 0);
     service.processQueue();
     InOrder order = inOrder(mail);
     order.verify(mail).sendEmail(any(), eq("oldest"), eq("body"));
     order.verify(mail).sendEmail(any(), eq("tie-first"), eq("body"));
-    assertEquals(EmailStatus.PENDING, emails.findById(equalSecond).orElseThrow().getStatus());
-    assertEquals(EmailStatus.PENDING, emails.findById(recent).orElseThrow().getStatus());
-    assertEquals(EmailStatus.PENDING, emails.findById(waiting).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.PENDING, emailQueueRepository.findById(equalSecond).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.PENDING, emailQueueRepository.findById(recent).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.PENDING, emailQueueRepository.findById(waiting).orElseThrow().getStatus());
     service.processQueue();
     order.verify(mail).sendEmail(any(), eq("tie-second"), eq("body"));
     order.verify(mail).sendEmail(any(), eq("recent"), eq("body"));
     assertEquals(2, statusCount(EmailStatus.PENDING) + statusCount(EmailStatus.IN_PROGRESS));
-    assertEquals(EmailStatus.SENT, emails.findById(oldest).orElseThrow().getStatus());
-    assertEquals(EmailStatus.SENT, emails.findById(equalFirst).orElseThrow().getStatus());
+    assertEquals(EmailStatus.SENT, emailQueueRepository.findById(oldest).orElseThrow().getStatus());
+    assertEquals(
+        EmailStatus.SENT, emailQueueRepository.findById(equalFirst).orElseThrow().getStatus());
   }
 
   @Test
@@ -863,15 +886,16 @@ class EmailQueueServicePersistenceTest {
         .when(mail)
         .sendEmail(any(), anyString(), anyString());
     service.processQueue();
-    assertEquals(now, emails.findById(id).orElseThrow().getLastRetryAt());
+    assertEquals(now, emailQueueRepository.findById(id).orElseThrow().getLastRetryAt());
     clock.advance(java.time.Duration.ofSeconds(59).plusNanos(999_999_999));
     service.processQueue();
     verify(mail, times(1)).sendEmail(any(), anyString(), anyString());
     clock.advance(java.time.Duration.ofNanos(1));
     service.processQueue();
     verify(mail, times(2)).sendEmail(any(), anyString(), anyString());
-    assertEquals(2, emails.findById(id).orElseThrow().getRetryCount());
-    assertEquals(now.plusMinutes(1), emails.findById(id).orElseThrow().getLastRetryAt());
+    assertEquals(2, emailQueueRepository.findById(id).orElseThrow().getRetryCount());
+    assertEquals(
+        now.plusMinutes(1), emailQueueRepository.findById(id).orElseThrow().getLastRetryAt());
   }
 
   @Test
@@ -884,51 +908,49 @@ class EmailQueueServicePersistenceTest {
     doAnswer(
             call -> {
               List<EmailQueueEntity> candidates =
-                  emails.findPendingEmails(call.getArgument(0), call.getArgument(1));
+                  emailQueueRepository.findPendingEmails(call.getArgument(0), call.getArgument(1));
               assertEquals(1, candidates.size());
               selected.await(10, TimeUnit.SECONDS);
               return candidates;
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .findPendingEmails(any(), any());
     doAnswer(
             call -> {
               if (Boolean.TRUE.equals(stale.get())) {
                 await(firstCommitted);
               }
-              return emails.lockById(call.getArgument(0));
+              return emailQueueRepository.lockById(call.getArgument(0));
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .lockById(any());
     doThrow(new MailAuthenticationException("fixture"))
         .when(mail)
         .sendEmail(any(), anyString(), anyString());
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       Future<?> first =
-          executor.submit(
-              () -> {
-                try {
-                  service.processQueue();
-                } finally {
-                  firstCommitted.countDown();
-                }
-              });
+          executor.submit(() -> {
+            try {
+              service.processQueue();
+            } finally {
+              firstCommitted.countDown();
+            }
+          });
       Future<?> second =
-          executor.submit(
-              () -> {
-                stale.set(true);
-                try {
-                  service.processQueue();
-                } finally {
-                  stale.remove();
-                }
-              });
+          executor.submit(() -> {
+            stale.set(true);
+            try {
+              service.processQueue();
+            } finally {
+              stale.remove();
+            }
+          });
       first.get(20, TimeUnit.SECONDS);
       second.get(20, TimeUnit.SECONDS);
     }
     verify(mail, times(1)).sendEmail(any(), anyString(), anyString());
-    assertEquals(EmailStatus.PENDING, emails.findById(id).orElseThrow().getStatus());
-    assertEquals(1, emails.findById(id).orElseThrow().getRetryCount());
+    assertEquals(EmailStatus.PENDING, emailQueueRepository.findById(id).orElseThrow().getStatus());
+    assertEquals(1, emailQueueRepository.findById(id).orElseThrow().getRetryCount());
   }
 
   @Test
@@ -944,20 +966,23 @@ class EmailQueueServicePersistenceTest {
         List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS, EmailStatus.FAILED)) {
       insert(status.name(), status, EmailType.NOTIFICATION, cutoff.minusDays(1), 0);
     }
-    tx.executeWithoutResult(
-        status -> emails.findById(before).orElseThrow().setLastRetryAt(LocalDateTime.now(clock)));
+    tx.executeWithoutResult(status ->
+        emailQueueRepository
+            .findById(before)
+            .orElseThrow()
+            .setLastRetryAt(LocalDateTime.now(clock)));
     service.deleteSentEmails();
-    assertFalse(emails.existsById(before));
-    assertTrue(emails.existsById(equal));
-    assertTrue(emails.existsById(after));
-    assertEquals(5, emails.count());
+    assertFalse(emailQueueRepository.existsById(before));
+    assertTrue(emailQueueRepository.existsById(equal));
+    assertTrue(emailQueueRepository.existsById(after));
+    assertEquals(5, emailQueueRepository.count());
   }
 
   @Test
   void queueAcceptsEmptyContentAndUsesInjectedLocalTime() {
     clock.set(java.time.Instant.parse("2030-01-01T12:00:00Z"));
     service.addEmailToQueue(snapshot(), "", "", EmailType.NOTIFICATION);
-    EmailQueueEntity actual = emails.findAll().getFirst();
+    EmailQueueEntity actual = emailQueueRepository.findAll().getFirst();
     assertEquals("", actual.getSubject());
     assertEquals("", actual.getBody());
     assertEquals(LocalDateTime.now(clock), actual.getCreatedAt());
@@ -975,25 +1000,24 @@ class EmailQueueServicePersistenceTest {
         List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS, EmailStatus.FAILED)) {
       insert(status.name(), status, EmailType.NOTIFICATION, cutoff.minusDays(1), 0);
     }
-    tx.executeWithoutResult(
-        status -> {
-          emails.findById(older).orElseThrow().setLastRetryAt(cutoff.plusDays(3));
-          assertEquals(1, emails.deleteByStatusAndCreatedAtBefore(EmailStatus.SENT, cutoff));
-          emails.flush();
-        });
-    assertFalse(emails.existsById(older));
-    assertTrue(emails.existsById(equal));
-    assertTrue(emails.existsById(newer));
-    assertEquals(5, emails.count());
+    tx.executeWithoutResult(status -> {
+      emailQueueRepository.findById(older).orElseThrow().setLastRetryAt(cutoff.plusDays(3));
+      assertEquals(
+          1, emailQueueRepository.deleteByStatusAndCreatedAtBefore(EmailStatus.SENT, cutoff));
+      emailQueueRepository.flush();
+    });
+    assertFalse(emailQueueRepository.existsById(older));
+    assertTrue(emailQueueRepository.existsById(equal));
+    assertTrue(emailQueueRepository.existsById(newer));
+    assertEquals(5, emailQueueRepository.count());
   }
 
   private UserEntity snapshot() {
-    return tx.execute(
-        status -> {
-          UserEntity user = users.findById(userId).orElseThrow();
-          user.getRoleEntities().size();
-          return user;
-        });
+    return tx.execute(status -> {
+      UserEntity user = userRepository.findById(userId).orElseThrow();
+      user.getRoleEntities().size();
+      return user;
+    });
   }
 
   @Test
@@ -1020,32 +1044,31 @@ class EmailQueueServicePersistenceTest {
             EmailType.NOTIFICATION,
             cutoff.minusDays(100),
             3);
-    tx.executeWithoutResult(
-        status -> {
-          emails.findById(before).orElseThrow().setLastRetryAt(cutoff.minusNanos(1000));
-          emails.findById(equal).orElseThrow().setLastRetryAt(cutoff);
-          emails.findById(after).orElseThrow().setLastRetryAt(cutoff.plusNanos(1000));
-          emails.findById(recent).orElseThrow().setLastRetryAt(LocalDateTime.now(clock));
-        });
+    tx.executeWithoutResult(status -> {
+      emailQueueRepository.findById(before).orElseThrow().setLastRetryAt(cutoff.minusNanos(1000));
+      emailQueueRepository.findById(equal).orElseThrow().setLastRetryAt(cutoff);
+      emailQueueRepository.findById(after).orElseThrow().setLastRetryAt(cutoff.plusNanos(1000));
+      emailQueueRepository.findById(recent).orElseThrow().setLastRetryAt(LocalDateTime.now(clock));
+    });
     for (EmailStatus state :
         List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS, EmailStatus.SENT)) {
       Long id = insert(state.name(), state, EmailType.NOTIFICATION, cutoff.minusDays(100), 0);
-      tx.executeWithoutResult(
-          status -> emails.findById(id).orElseThrow().setLastRetryAt(cutoff.minusDays(1)));
+      tx.executeWithoutResult(status ->
+          emailQueueRepository.findById(id).orElseThrow().setLastRetryAt(cutoff.minusDays(1)));
     }
     service.deleteFailedEmails();
-    assertFalse(emails.existsById(before));
+    assertFalse(emailQueueRepository.existsById(before));
     for (Long id : List.of(equal, after, missing, recent)) {
-      assertTrue(emails.existsById(id));
+      assertTrue(emailQueueRepository.existsById(id));
     }
-    assertEquals(7, emails.count());
+    assertEquals(7, emailQueueRepository.count());
     verifyNoInteractions(mail);
     // Independent of invalid SENT retention configuration.
     when(config.getString(ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION)).thenReturn("PT0S");
     clock.advance(java.time.Duration.ofNanos(1000));
     service.deleteFailedEmails();
-    assertFalse(emails.existsById(equal));
-    assertTrue(emails.existsById(after));
+    assertFalse(emailQueueRepository.existsById(equal));
+    assertTrue(emailQueueRepository.existsById(after));
   }
 
   @ParameterizedTest
@@ -1098,7 +1121,9 @@ class EmailQueueServicePersistenceTest {
       doAnswer(
               call -> {
                 assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
-                assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
+                assertEquals(
+                    EmailStatus.FAILED,
+                    emailQueueRepository.findById(id).orElseThrow().getStatus());
                 AdminNotificationAttemptEntity started = adminAttempts.findAll().getFirst();
                 assertEquals(AdminNotificationStatus.IN_PROGRESS, started.getStatus());
                 assertEquals(id, started.getQueueId());
@@ -1116,7 +1141,7 @@ class EmailQueueServicePersistenceTest {
     assertEquals(id, stored.getQueueId());
     assertEquals(startedAt, stored.getStartedAt());
     assertEquals(LocalDateTime.now(clock), stored.getCompletedAt());
-    assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
+    assertEquals(EmailStatus.FAILED, emailQueueRepository.findById(id).orElseThrow().getStatus());
     // The schema stores only IDs, status and timestamps, not arbitrary exception text.
     assertEquals(
         Set.of("id", "queueId", "startedAt", "completedAt", "status"),
@@ -1132,9 +1157,9 @@ class EmailQueueServicePersistenceTest {
     // Queue cleanup must not cascade-delete observability.
     clock.advance(java.time.Duration.ofDays(31));
     service.deleteFailedEmails();
-    assertFalse(emails.existsById(id));
+    assertFalse(emailQueueRepository.existsById(id));
     assertEquals(stored, adminAttempts.findById(stored.getId()).orElseThrow());
-    tx.executeWithoutResult(status -> users.deleteAll());
+    tx.executeWithoutResult(status -> userRepository.deleteAll());
     assertEquals(stored, adminAttempts.findById(stored.getId()).orElseThrow());
   }
 
@@ -1192,8 +1217,8 @@ class EmailQueueServicePersistenceTest {
         .when(probes.adminAttempts())
         .saveAndFlush(any());
     assertDoesNotThrow(service::processQueue);
-    assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
-    assertEquals(EmailStatus.SENT, emails.findById(next).orElseThrow().getStatus());
+    assertEquals(EmailStatus.FAILED, emailQueueRepository.findById(id).orElseThrow().getStatus());
+    assertEquals(EmailStatus.SENT, emailQueueRepository.findById(next).orElseThrow().getStatus());
     boolean startFailed = stage.startsWith("start");
     verify(mail, times(startFailed ? 0 : 1)).sendAdminEmail(any(), any(), any());
     if (List.of("startSave", "startCommit").contains(stage)) {
@@ -1226,12 +1251,11 @@ class EmailQueueServicePersistenceTest {
     assertThrows(
         IllegalStateException.class,
         () ->
-            tx.executeWithoutResult(
-                status -> {
-                  service.processQueue();
-                  throw new IllegalStateException("caller rollback");
-                }));
-    assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
+            tx.executeWithoutResult(status -> {
+              service.processQueue();
+              throw new IllegalStateException("caller rollback");
+            }));
+    assertEquals(EmailStatus.FAILED, emailQueueRepository.findById(id).orElseThrow().getStatus());
     assertEquals(AdminNotificationStatus.SENT, adminAttempts.findAll().getFirst().getStatus());
   }
 
@@ -1240,12 +1264,12 @@ class EmailQueueServicePersistenceTest {
   void failedCleanupStorageFailureRollsBackDeletion(String stage) {
     LocalDateTime now = LocalDateTime.now(clock);
     Long id = insert("old", EmailStatus.FAILED, EmailType.NOTIFICATION, now.minusDays(40), 0);
-    tx.executeWithoutResult(
-        status -> emails.findById(id).orElseThrow().setLastRetryAt(now.minusDays(31)));
+    tx.executeWithoutResult(status ->
+        emailQueueRepository.findById(id).orElseThrow().setLastRetryAt(now.minusDays(31)));
     doAnswer(
             call -> {
               int deleted =
-                  emails.deleteByStatusAndLastRetryAtBefore(
+                  emailQueueRepository.deleteByStatusAndLastRetryAtBefore(
                       call.getArgument(0), call.getArgument(1));
               if (stage.equals("delete")) {
                 throw new IllegalStateException("delete failure");
@@ -1259,11 +1283,12 @@ class EmailQueueServicePersistenceTest {
                   });
               return deleted;
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .deleteByStatusAndLastRetryAtBefore(any(), any());
     assertThrows(IllegalStateException.class, service::deleteFailedEmails);
-    assertTrue(emails.existsById(id));
-    assertEquals(now.minusDays(31), emails.findById(id).orElseThrow().getLastRetryAt());
+    assertTrue(emailQueueRepository.existsById(id));
+    assertEquals(
+        now.minusDays(31), emailQueueRepository.findById(id).orElseThrow().getLastRetryAt());
     verifyNoInteractions(mail);
   }
 
@@ -1274,21 +1299,21 @@ class EmailQueueServicePersistenceTest {
     when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(1);
     Long id =
         insert("old pending", EmailStatus.PENDING, EmailType.NOTIFICATION, now.minusDays(100), 1);
-    tx.executeWithoutResult(
-        status -> emails.findById(id).orElseThrow().setLastRetryAt(now.minusDays(40)));
+    tx.executeWithoutResult(status ->
+        emailQueueRepository.findById(id).orElseThrow().setLastRetryAt(now.minusDays(40)));
     doThrow(new MailAuthenticationException("fixture"))
         .when(mail)
         .sendEmail(any(), anyString(), anyString());
     service.processQueue();
-    assertEquals(now, emails.findById(id).orElseThrow().getLastRetryAt());
+    assertEquals(now, emailQueueRepository.findById(id).orElseThrow().getLastRetryAt());
     service.deleteFailedEmails();
-    assertTrue(emails.existsById(id));
+    assertTrue(emailQueueRepository.existsById(id));
     clock.advance(java.time.Duration.ofDays(30));
     service.deleteFailedEmails();
-    assertTrue(emails.existsById(id));
+    assertTrue(emailQueueRepository.existsById(id));
     clock.advance(java.time.Duration.ofNanos(1000));
     service.deleteFailedEmails();
-    assertFalse(emails.existsById(id));
+    assertFalse(emailQueueRepository.existsById(id));
     assertEquals(1, adminAttempts.count());
   }
 
@@ -1302,14 +1327,13 @@ class EmailQueueServicePersistenceTest {
         .when(mail)
         .sendEmail(any(), anyString(), anyString());
     service.processQueue();
-    tx.executeWithoutResult(
-        status -> {
-          EmailQueueEntity email = emails.findById(id).orElseThrow();
-          email.setStatus(EmailStatus.PENDING);
-          email.setLastRetryAt(null);
-        });
+    tx.executeWithoutResult(status -> {
+      EmailQueueEntity email = emailQueueRepository.findById(id).orElseThrow();
+      email.setStatus(EmailStatus.PENDING);
+      email.setLastRetryAt(null);
+    });
     service.processQueue();
-    assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
+    assertEquals(EmailStatus.FAILED, emailQueueRepository.findById(id).orElseThrow().getStatus());
     assertEquals(1, adminAttempts.count());
     verify(mail, times(1)).sendAdminEmail(any(), any(), any());
   }
@@ -1326,21 +1350,20 @@ class EmailQueueServicePersistenceTest {
         .sendEmail(any(), anyString(), anyString());
     doAnswer(
             call -> {
-              tx.executeWithoutResult(
-                  status -> {
-                    AdminNotificationAttemptEntity audit = adminAttempts.findAll().getFirst();
-                    if (scenario.equals("missing")) {
-                      adminAttempts.delete(audit);
-                    } else {
-                      audit.setStatus(AdminNotificationStatus.UNKNOWN);
-                    }
-                  });
+              tx.executeWithoutResult(status -> {
+                AdminNotificationAttemptEntity audit = adminAttempts.findAll().getFirst();
+                if (scenario.equals("missing")) {
+                  adminAttempts.delete(audit);
+                } else {
+                  audit.setStatus(AdminNotificationStatus.UNKNOWN);
+                }
+              });
               return null;
             })
         .when(mail)
         .sendAdminEmail(any(), any(), any());
     assertDoesNotThrow(service::processQueue);
-    assertEquals(EmailStatus.FAILED, emails.findById(id).orElseThrow().getStatus());
+    assertEquals(EmailStatus.FAILED, emailQueueRepository.findById(id).orElseThrow().getStatus());
     if (scenario.equals("missing")) {
       assertEquals(0, adminAttempts.count());
     } else {
@@ -1352,18 +1375,17 @@ class EmailQueueServicePersistenceTest {
 
   private Long insert(
       String subject, EmailStatus status, EmailType type, LocalDateTime created, int retries) {
-    return tx.execute(
-        transaction -> {
-          EmailQueueEntity item = new EmailQueueEntity();
-          item.setUserEntity(users.findById(userId).orElseThrow());
-          item.setSubject(subject);
-          item.setBody("body");
-          item.setStatus(status);
-          item.setEmailType(type);
-          item.setCreatedAt(created);
-          item.setRetryCount(retries);
-          return emails.saveAndFlush(item).getId();
-        });
+    return tx.execute(transaction -> {
+      EmailQueueEntity item = new EmailQueueEntity();
+      item.setUserEntity(userRepository.findById(userId).orElseThrow());
+      item.setSubject(subject);
+      item.setBody("body");
+      item.setStatus(status);
+      item.setEmailType(type);
+      item.setCreatedAt(created);
+      item.setRetryCount(retries);
+      return emailQueueRepository.saveAndFlush(item).getId();
+    });
   }
 
   private void await(CountDownLatch latch) throws InterruptedException {
@@ -1371,8 +1393,8 @@ class EmailQueueServicePersistenceTest {
   }
 
   record Probes(
-      UserRepository users,
-      EmailQueueRepository emails,
+      UserRepository userRepository,
+      EmailQueueRepository emailQueueRepository,
       AdminNotificationAttemptRepository adminAttempts) {}
 
   @Configuration
@@ -1411,12 +1433,12 @@ class EmailQueueServicePersistenceTest {
 
     @Bean
     Probes probes(
-        UserRepository users,
-        EmailQueueRepository emails,
+        UserRepository userRepository,
+        EmailQueueRepository emailQueueRepository,
         AdminNotificationAttemptRepository adminAttempts) {
       return new Probes(
-          mock(UserRepository.class, delegatesTo(users)),
-          mock(EmailQueueRepository.class, delegatesTo(emails)),
+          mock(UserRepository.class, delegatesTo(userRepository)),
+          mock(EmailQueueRepository.class, delegatesTo(emailQueueRepository)),
           mock(AdminNotificationAttemptRepository.class, delegatesTo(adminAttempts)));
     }
 
@@ -1444,9 +1466,9 @@ class EmailQueueServicePersistenceTest {
         MutableQueueClock clock) {
       return new EmailQueueService(
           config,
-          probes.emails(),
+          probes.emailQueueRepository(),
           mail,
-          probes.users(),
+          probes.userRepository(),
           manager,
           probes.adminAttempts(),
           clock,

@@ -48,65 +48,67 @@ import org.springframework.transaction.support.TransactionTemplate;
 @SpringJUnitConfig(ConfigServicePersistenceTest.Config.class)
 @Execution(ExecutionMode.SAME_THREAD)
 class ConfigServicePersistenceTest {
-  @Autowired private ConfigRepository repository;
+  @Autowired private ConfigRepository configRepository;
   @Autowired private JpaTransactionManager transactionManager;
-  private ConfigService service;
+  private ConfigService configService;
 
   @BeforeEach
   void clearDatabase() {
-    repository.deleteAll();
-    service = new ConfigService(repository, transactionManager, new MockEnvironment());
+    configRepository.deleteAll();
+    configService = new ConfigService(configRepository, transactionManager, new MockEnvironment());
   }
 
   @Test
   void createAndUpdatePreserveIdentityAndVerbatimValues() {
-    service.set(ConfigEntry.SERVICE_NAME, "  Grüße  ");
-    ConfigEntity created = repository.findByKey(ConfigEntry.SERVICE_NAME.getKey()).orElseThrow();
+    configService.set(ConfigEntry.SERVICE_NAME, "  Grüße  ");
+    ConfigEntity created =
+        configRepository.findByKey(ConfigEntry.SERVICE_NAME.getKey()).orElseThrow();
     assertNotNull(created.getId());
     assertEquals("  Grüße  ", created.getValue());
 
-    service.set(ConfigEntry.SERVICE_NAME, "");
+    configService.set(ConfigEntry.SERVICE_NAME, "");
 
-    ConfigEntity updated = repository.findByKey(created.getKey()).orElseThrow();
+    ConfigEntity updated = configRepository.findByKey(created.getKey()).orElseThrow();
     assertEquals(created.getId(), updated.getId());
     assertEquals("", updated.getValue());
-    assertEquals(1, repository.count());
+    assertEquals(1, configRepository.count());
   }
 
   @Test
   void rejectedNullDoesNotCreateOrModifyARow() {
-    assertThrows(NullPointerException.class, () -> service.set(ConfigEntry.SERVICE_NAME, null));
-    assertEquals(0, repository.count());
-    service.set(ConfigEntry.SERVICE_NAME, "old");
-    assertThrows(NullPointerException.class, () -> service.set(ConfigEntry.SERVICE_NAME, null));
-    assertEquals("old", service.getString(ConfigEntry.SERVICE_NAME));
+    assertThrows(
+        NullPointerException.class, () -> configService.set(ConfigEntry.SERVICE_NAME, null));
+    assertEquals(0, configRepository.count());
+    configService.set(ConfigEntry.SERVICE_NAME, "old");
+    assertThrows(
+        NullPointerException.class, () -> configService.set(ConfigEntry.SERVICE_NAME, null));
+    assertEquals("old", configService.getString(ConfigEntry.SERVICE_NAME));
   }
 
   @Test
   void databaseStillEnforcesNonNullAndUniqueKeyConstraints() {
-    service.set(ConfigEntry.SERVICE_NAME, "old");
+    configService.set(ConfigEntry.SERVICE_NAME, "old");
 
     ConfigEntity configEntity =
         new ConfigEntity(null, ConfigEntry.SERVICE_NAME.getKey(), "duplicate");
     assertThrows(
-        DataIntegrityViolationException.class, () -> repository.saveAndFlush(configEntity));
+        DataIntegrityViolationException.class, () -> configRepository.saveAndFlush(configEntity));
     ConfigEntity configEntity2 = new ConfigEntity(null, ConfigEntry.BASE_URL.getKey(), null);
     assertThrows(
-        DataIntegrityViolationException.class, () -> repository.saveAndFlush(configEntity2));
-    assertEquals(1, repository.count());
-    assertEquals("old", service.getString(ConfigEntry.SERVICE_NAME));
+        DataIntegrityViolationException.class, () -> configRepository.saveAndFlush(configEntity2));
+    assertEquals(1, configRepository.count());
+    assertEquals("old", configService.getString(ConfigEntry.SERVICE_NAME));
   }
 
   @Test
   void setCommitsIndependentlyOfAnOuterRollback() {
     new TransactionTemplate(transactionManager)
-        .executeWithoutResult(
-            status -> {
-              service.set(ConfigEntry.SERVICE_NAME, "committed");
-              status.setRollbackOnly();
-            });
+        .executeWithoutResult(status -> {
+          configService.set(ConfigEntry.SERVICE_NAME, "committed");
+          status.setRollbackOnly();
+        });
 
-    assertEquals("committed", service.getString(ConfigEntry.SERVICE_NAME));
+    assertEquals("committed", configService.getString(ConfigEntry.SERVICE_NAME));
   }
 
   @RepeatedTest(3)
@@ -118,10 +120,10 @@ class ConfigServicePersistenceTest {
     AtomicReference<String> retryValue = new AtomicReference<String>();
     // Only coordinate the reads; all queries, inserts, commits and rollbacks
     // go to the real repository. Both transactions must see the missing key.
-    ConfigRepository coordinated = mock(ConfigRepository.class, delegatesTo(repository));
+    ConfigRepository coordinated = mock(ConfigRepository.class, delegatesTo(configRepository));
     doAnswer(
             invocation -> {
-              Optional<ConfigEntity> result = repository.findByKey(invocation.getArgument(0));
+              Optional<ConfigEntity> result = configRepository.findByKey(invocation.getArgument(0));
               if (result.isEmpty()) {
                 missingReads.incrementAndGet();
                 bothReadMissing.await(10, TimeUnit.SECONDS);
@@ -135,7 +137,7 @@ class ConfigServicePersistenceTest {
               ConfigEntity entity = invocation.getArgument(0);
               boolean inserting = entity.getId() == null;
               try {
-                ConfigEntity saved = repository.saveAndFlush(entity);
+                ConfigEntity saved = configRepository.saveAndFlush(entity);
                 if (inserting) {
                   insertedId.set(saved.getId());
                 }
@@ -165,15 +167,16 @@ class ConfigServicePersistenceTest {
 
     assertEquals(2, missingReads.get());
     assertEquals(1, conflicts.get(), "The test must exercise a real unique-key violation");
-    assertEquals(1, repository.count());
-    ConfigEntity stored = repository.findByKey(ConfigEntry.SERVICE_NAME.getKey()).orElseThrow();
+    assertEquals(1, configRepository.count());
+    ConfigEntity stored =
+        configRepository.findByKey(ConfigEntry.SERVICE_NAME.getKey()).orElseThrow();
     assertEquals(insertedId.get(), stored.getId());
     assertEquals(retryValue.get(), stored.getValue(), "The retry is the last committed write");
     verify(coordinated, times(3)).findByKey(ConfigEntry.SERVICE_NAME.getKey());
     verify(coordinated, times(3)).saveAndFlush(any());
     // Neither a failed persistence context nor rollback-only state leaks.
-    service.set(ConfigEntry.SERVICE_NAME, "after race");
-    assertEquals("after race", service.getString(ConfigEntry.SERVICE_NAME));
+    configService.set(ConfigEntry.SERVICE_NAME, "after race");
+    assertEquals("after race", configService.getString(ConfigEntry.SERVICE_NAME));
   }
 
   @Configuration

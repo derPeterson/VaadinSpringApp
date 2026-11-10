@@ -24,8 +24,8 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 class AdminRolePolicyPrincipalSnapshotTest {
-  private final UserRepository users = mock(UserRepository.class);
-  private final AdminRolePolicy policy = new AdminRolePolicy(users);
+  private final UserRepository userRepository = mock(UserRepository.class);
+  private final AdminRolePolicy adminRolePolicy = new AdminRolePolicy(userRepository);
 
   @AfterEach
   void cleanup() {
@@ -43,10 +43,10 @@ class AdminRolePolicyPrincipalSnapshotTest {
     org.mockito.Mockito.lenient().when(row.getAccessVersion()).thenReturn("fixture-access-version");
     when(row.isEnabled()).thenReturn(true);
     when(row.getRole()).thenReturn(RoleType.ROLE_SUPERADMIN);
-    when(users.findSecurityUser(principal.getUsername())).thenReturn(List.of(row));
+    when(userRepository.findSecurityUser(principal.getUsername())).thenReturn(List.of(row));
     SecurityContextHolder.getContext().setAuthentication(authentication);
 
-    assertDoesNotThrow(() -> policy.authorizeMutation(null, Set.of(RoleType.ROLE_USER)));
+    assertDoesNotThrow(() -> adminRolePolicy.authorizeMutation(null, Set.of(RoleType.ROLE_USER)));
 
     verify(authentication, times(1)).getPrincipal();
   }
@@ -64,8 +64,9 @@ class AdminRolePolicyPrincipalSnapshotTest {
     }
     Set<RoleType> desiredRoles = Set.of(RoleType.ROLE_USER);
 
-    assertThrows(AccessDeniedException.class, () -> policy.authorizeMutation(null, desiredRoles));
+    assertThrows(
+        AccessDeniedException.class, () -> adminRolePolicy.authorizeMutation(null, desiredRoles));
 
-    verifyNoInteractions(users);
+    verifyNoInteractions(userRepository);
   }
 }

@@ -51,43 +51,43 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @SpringJUnitConfig(TwoFactorStoreTest.Config.class)
 class TwoFactorStoreTest {
-  @Autowired TwoFactorStore store;
+  @Autowired TwoFactorStore twoFactorStore;
   @Autowired TwoFactorSecrets secrets;
-  @Autowired TwoFactorAccountRepository accounts;
+  @Autowired TwoFactorAccountRepository twoFactorAccountRepository;
   @Autowired TwoFactorRecoveryCodeRepository codes;
-  @Autowired UserRepository users;
+  @Autowired UserRepository userRepository;
   @Autowired TransactionTemplate transaction;
   @Autowired TestClock clock;
-  @Autowired DataSource source;
+  @Autowired DataSource testDataSource;
   @PersistenceContext EntityManager entityManager;
-  private UserEntity user;
+  private UserEntity testUserEntity;
   private byte[] secret;
   private UUID initialRevision;
 
   @BeforeEach
   void setup() {
     clock.now.set(Instant.parse("2026-11-02T12:00:00Z"));
-    user =
-        transaction.execute(
-            status -> {
-              UserEntity account =
-                  UserEntity.builder()
-                      .firstName("Test")
-                      .lastName("Account")
-                      .email(UUID.randomUUID() + "@example.test")
-                      .enabled(true)
-                      .roleEntities(List.of())
-                      .build();
-              return users.saveAndFlush(account);
-            });
+    testUserEntity =
+        transaction.execute(status -> {
+          UserEntity account =
+              UserEntity.builder()
+                  .firstName("Test")
+                  .lastName("Account")
+                  .email(UUID.randomUUID() + "@example.test")
+                  .enabled(true)
+                  .roleEntities(List.of())
+                  .build();
+          return userRepository.saveAndFlush(account);
+        });
     secret = Totp.newSecret();
-    initialRevision = store.initialize(user.getId(), user.getAccessVersion());
+    initialRevision =
+        twoFactorStore.initialize(testUserEntity.getId(), testUserEntity.getAccessVersion());
   }
 
   private TwoFactorStore.Enrollment enroll() {
-    return store.enroll(
-        user.getId(),
-        user.getAccessVersion(),
+    return twoFactorStore.enroll(
+        testUserEntity.getId(),
+        testUserEntity.getAccessVersion(),
         initialRevision,
         secret,
         Totp.code(secret, clock.instant().getEpochSecond() / 30),
@@ -97,26 +97,35 @@ class TwoFactorStoreTest {
   @Test
   void persistsOnlyEncryptedSecretAndDigestsAndRejectsCodeReplay() {
     TwoFactorStore.Enrollment result = enroll();
-    String encrypted = accounts.findById(user.getId()).orElseThrow().getEncryptedSecret();
+    String encrypted =
+        twoFactorAccountRepository
+            .findById(testUserEntity.getId())
+            .orElseThrow()
+            .getEncryptedSecret();
     assertFalse(encrypted.contains(Totp.base32(secret)));
-    JdbcTemplate jdbc = new JdbcTemplate(source);
+    JdbcTemplate jdbc = new JdbcTemplate(testDataSource);
     List<String> digests =
         jdbc.queryForList(
             "select digest from two_factor_recovery_codes where user_id = ?",
             String.class,
-            user.getId());
+            testUserEntity.getId());
     assertEquals(10, digests.size());
     assertTrue(digests.stream().noneMatch(result.recoveryCodes()::contains));
     String firstCode = Totp.code(secret, clock.instant().getEpochSecond() / 30);
-    Long userId = user.getId();
-    String accessVersion = user.getAccessVersion();
+    Long userId = testUserEntity.getId();
+    String accessVersion = testUserEntity.getAccessVersion();
     assertThrows(
-        BadCredentialsException.class, () -> store.verify(userId, accessVersion, firstCode));
+        BadCredentialsException.class,
+        () -> twoFactorStore.verify(userId, accessVersion, firstCode));
     clock.now.updateAndGet(now -> now.plusSeconds(30));
     String nextCode = Totp.code(secret, clock.instant().getEpochSecond() / 30);
-    assertFalse(store.verify(user.getId(), user.getAccessVersion(), nextCode).recoveryCode());
+    assertFalse(
+        twoFactorStore
+            .verify(testUserEntity.getId(), testUserEntity.getAccessVersion(), nextCode)
+            .recoveryCode());
     assertThrows(
-        BadCredentialsException.class, () -> store.verify(userId, accessVersion, nextCode));
+        BadCredentialsException.class,
+        () -> twoFactorStore.verify(userId, accessVersion, nextCode));
   }
 
   @ParameterizedTest
@@ -138,7 +147,9 @@ class TwoFactorStoreTest {
             try {
               assertEquals(
                   recovery,
-                  store.verify(user.getId(), user.getAccessVersion(), code).recoveryCode());
+                  twoFactorStore
+                      .verify(testUserEntity.getId(), testUserEntity.getAccessVersion(), code)
+                      .recoveryCode());
               return true;
             } catch (BadCredentialsException _) {
               return false;
@@ -150,7 +161,7 @@ class TwoFactorStoreTest {
       start.countDown();
       assertNotEquals(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS));
     }
-    assertEquals(recovery ? 9 : 10, codes.remaining(user.getId()));
+    assertEquals(recovery ? 9 : 10, codes.remaining(testUserEntity.getId()));
   }
 
   @Test
@@ -169,19 +180,23 @@ class TwoFactorStoreTest {
       TwoFactorStore.Enrollment secondResult = second.get(10, TimeUnit.SECONDS);
       assertNotEquals(firstResult == null, secondResult == null);
       byte[] expected = firstResult != null ? secret : otherSecret;
-      String encrypted = accounts.findById(user.getId()).orElseThrow().getEncryptedSecret();
-      assertArrayEquals(expected, secrets.decrypt(user.getId(), "factor", encrypted));
-      assertEquals(10, codes.remaining(user.getId()));
+      String encrypted =
+          twoFactorAccountRepository
+              .findById(testUserEntity.getId())
+              .orElseThrow()
+              .getEncryptedSecret();
+      assertArrayEquals(expected, secrets.decrypt(testUserEntity.getId(), "factor", encrypted));
+      assertEquals(10, codes.remaining(testUserEntity.getId()));
       TwoFactorStore.Enrollment winner = firstResult != null ? firstResult : secondResult;
       List<String> stored =
-          new JdbcTemplate(source)
+          new JdbcTemplate(testDataSource)
               .queryForList(
                   "select digest from two_factor_recovery_codes where user_id = ?",
                   String.class,
-                  user.getId());
+                  testUserEntity.getId());
       assertTrue(
           winner.recoveryCodes().stream()
-              .map(code -> TwoFactorSecrets.recoveryDigest(user.getId(), code))
+              .map(code -> TwoFactorSecrets.recoveryDigest(testUserEntity.getId(), code))
               .allMatch(stored::contains));
     }
   }
@@ -191,9 +206,9 @@ class TwoFactorStoreTest {
     ready.countDown();
     assertTrue(start.await(10, TimeUnit.SECONDS));
     try {
-      return store.enroll(
-          user.getId(),
-          user.getAccessVersion(),
+      return twoFactorStore.enroll(
+          testUserEntity.getId(),
+          testUserEntity.getAccessVersion(),
           initialRevision,
           seed,
           Totp.code(seed, clock.instant().getEpochSecond() / 30),
@@ -206,64 +221,85 @@ class TwoFactorStoreTest {
   @Test
   void failedChecksRemainCommittedAndThrottleAcrossCalls() {
     enroll();
-    Long userId = user.getId();
-    String accessVersion = user.getAccessVersion();
+    Long userId = testUserEntity.getId();
+    String accessVersion = testUserEntity.getAccessVersion();
     for (int attempt = 0; attempt < 4; attempt++) {
       assertThrows(
-          BadCredentialsException.class, () -> store.verify(userId, accessVersion, "invalid"));
+          BadCredentialsException.class,
+          () -> twoFactorStore.verify(userId, accessVersion, "invalid"));
     }
-    assertThrows(LockedException.class, () -> store.verify(userId, accessVersion, "invalid"));
+    assertThrows(
+        LockedException.class, () -> twoFactorStore.verify(userId, accessVersion, "invalid"));
     clock.now.updateAndGet(now -> now.plusSeconds(30));
     String valid = Totp.code(secret, clock.instant().getEpochSecond() / 30);
-    assertThrows(LockedException.class, () -> store.verify(userId, accessVersion, valid));
+    assertThrows(LockedException.class, () -> twoFactorStore.verify(userId, accessVersion, valid));
     clock.now.updateAndGet(now -> now.plusSeconds(901));
-    store.verify(
-        user.getId(),
-        user.getAccessVersion(),
+    twoFactorStore.verify(
+        testUserEntity.getId(),
+        testUserEntity.getAccessVersion(),
         Totp.code(secret, clock.instant().getEpochSecond() / 30));
-    assertEquals(0, accounts.findById(user.getId()).orElseThrow().getFailedAttempts());
+    assertEquals(
+        0,
+        twoFactorAccountRepository
+            .findById(testUserEntity.getId())
+            .orElseThrow()
+            .getFailedAttempts());
   }
 
   @Test
   void regenerationInvalidatesEveryOldCodeAndChangesTheFactorRevision() {
     TwoFactorStore.Enrollment enrolled = enroll();
     List<String> renewed =
-        store.renewRecoveryCodes(user.getId(), user.getAccessVersion(), enrolled.revision());
-    assertNotEquals(enrolled.revision(), accounts.state(user.getId()).orElseThrow().getRevision());
-    Long userId = user.getId();
-    String accessVersion = user.getAccessVersion();
+        twoFactorStore.renewRecoveryCodes(
+            testUserEntity.getId(), testUserEntity.getAccessVersion(), enrolled.revision());
+    assertNotEquals(
+        enrolled.revision(),
+        twoFactorAccountRepository.state(testUserEntity.getId()).orElseThrow().getRevision());
+    Long userId = testUserEntity.getId();
+    String accessVersion = testUserEntity.getAccessVersion();
     String firstRecoveryCode = enrolled.recoveryCodes().getFirst();
     assertThrows(
         BadCredentialsException.class,
-        () -> store.verify(userId, accessVersion, firstRecoveryCode));
+        () -> twoFactorStore.verify(userId, accessVersion, firstRecoveryCode));
     assertTrue(
-        store.verify(user.getId(), user.getAccessVersion(), renewed.getFirst()).recoveryCode());
-    assertEquals(9, codes.remaining(user.getId()));
+        twoFactorStore
+            .verify(testUserEntity.getId(), testUserEntity.getAccessVersion(), renewed.getFirst())
+            .recoveryCode());
+    assertEquals(9, codes.remaining(testUserEntity.getId()));
   }
 
   @Test
   void staleCredentialsOrEnrollmentCannotReplaceAFactor() {
     TwoFactorStore.Enrollment enrolled = enroll();
-    Long userId = user.getId();
-    String accessVersion = user.getAccessVersion();
+    Long userId = testUserEntity.getId();
+    String accessVersion = testUserEntity.getAccessVersion();
     byte[] replacementSecret = Totp.newSecret();
     assertThrows(
         BadCredentialsException.class,
         () ->
-            store.enroll(
+            twoFactorStore.enroll(
                 userId, accessVersion, initialRevision, replacementSecret, "123456", false));
     String recoveryCode = enrolled.recoveryCodes().getFirst();
     assertThrows(
-        BadCredentialsException.class, () -> store.verify(userId, "changed", recoveryCode));
-    store.disable(user.getId(), user.getAccessVersion(), enrolled.revision());
-    assertFalse(accounts.state(user.getId()).orElseThrow().getEnrolled());
-    assertTrue(accounts.state(user.getId()).orElseThrow().getPreviouslyEnrolled());
-    assertEquals(0, codes.remaining(user.getId()));
-    UUID revision = accounts.state(user.getId()).orElseThrow().getRevision();
+        BadCredentialsException.class,
+        () -> twoFactorStore.verify(userId, "changed", recoveryCode));
+    twoFactorStore.disable(
+        testUserEntity.getId(), testUserEntity.getAccessVersion(), enrolled.revision());
+    assertFalse(
+        twoFactorAccountRepository.state(testUserEntity.getId()).orElseThrow().getEnrolled());
+    assertTrue(
+        twoFactorAccountRepository
+            .state(testUserEntity.getId())
+            .orElseThrow()
+            .getPreviouslyEnrolled());
+    assertEquals(0, codes.remaining(testUserEntity.getId()));
+    UUID revision =
+        twoFactorAccountRepository.state(testUserEntity.getId()).orElseThrow().getRevision();
     String replacementCode = Totp.code(secret, clock.instant().getEpochSecond() / 30);
     assertThrows(
         BadCredentialsException.class,
-        () -> store.enroll(userId, accessVersion, revision, secret, replacementCode, false));
+        () ->
+            twoFactorStore.enroll(userId, accessVersion, revision, secret, replacementCode, false));
   }
 
   static class TestClock extends Clock {
@@ -295,9 +331,9 @@ class TwoFactorStoreTest {
     }
 
     @Bean
-    LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource source) {
+    LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource testDataSource) {
       LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
-      factory.setDataSource(source);
+      factory.setDataSource(testDataSource);
       factory.setPackagesToScan("de.derpeterson.app.model");
       factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
       factory.setJpaPropertyMap(
@@ -336,16 +372,16 @@ class TwoFactorStoreTest {
 
     @Bean
     TwoFactorStore store(
-        UserRepository users,
-        TwoFactorAccountRepository accounts,
+        UserRepository userRepository,
+        TwoFactorAccountRepository twoFactorAccountRepository,
         TwoFactorRecoveryCodeRepository codes,
         EntityManagerFactory factory,
         TwoFactorSecrets secrets,
         JpaTransactionManager manager,
         TestClock clock) {
       return new TwoFactorStore(
-          users,
-          accounts,
+          userRepository,
+          twoFactorAccountRepository,
           codes,
           SharedEntityManagerCreator.createSharedEntityManager(factory),
           secrets,

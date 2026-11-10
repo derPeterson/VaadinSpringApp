@@ -52,8 +52,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Real direct caller callbacks and language events; no server, database or SMTP. */
 class PasswordResetViewsTest {
-  private UI ui;
-  private VaadinSession session;
+  private UI testUi;
+  private VaadinSession vaadinSession;
   private PasswordResetService passwordResetService;
   private ResetPasswordView resetView;
   private ForgotPasswordView forgotView;
@@ -62,20 +62,20 @@ class PasswordResetViewsTest {
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    session = mock(VaadinSession.class);
+    testUi = new UI();
+    vaadinSession = mock(VaadinSession.class);
     AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
-    when(session.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(call -> locale.get());
+    when(vaadinSession.hasLock()).thenReturn(true);
     doAnswer(
             call -> {
               locale.set(call.getArgument(0));
               return null;
             })
-        .when(session)
+        .when(vaadinSession)
         .setLocale(any());
-    UI.setCurrent(ui);
-    VaadinSession.setCurrent(session);
+    UI.setCurrent(testUi);
+    VaadinSession.setCurrent(vaadinSession);
     passwordResetService = mock(PasswordResetService.class);
   }
 
@@ -86,8 +86,8 @@ class PasswordResetViewsTest {
     VaadinSession.setCurrent(null);
     resetView = null;
     forgotView = null;
-    session = null;
-    ui = null;
+    vaadinSession = null;
+    testUi = null;
   }
 
   private <T> T field(Object view, String name, Class<T> type) {
@@ -138,7 +138,7 @@ class PasswordResetViewsTest {
     assertEquals(messageProperties.getPublicRequestNewLink(), request.getText());
     assertEquals("mail", request.getPrefixComponent().getElement().getAttribute("data-lucide"));
     assertNull(ReflectionTestUtils.getField(resetView, "homeButton"));
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(
         messageProperties.getResetPasswordInvalidTitle(),
         field(resetView, "invalidTitle", H1.class).getText());
@@ -147,7 +147,7 @@ class PasswordResetViewsTest {
     UI.setCurrent(navigation);
     request.click();
     verify(navigation).navigate(ForgotPasswordView.class);
-    UI.setCurrent(ui);
+    UI.setCurrent(testUi);
     verify(passwordResetService).inspectToken("used-or-expired");
     verifyNoMoreInteractions(passwordResetService);
   }
@@ -170,7 +170,7 @@ class PasswordResetViewsTest {
         messageProperties.getResetPasswordExpiredText(),
         field(resetView, "invalidText", Span.class).getText());
     assertNull(ReflectionTestUtils.getField(resetView, "resetButton"));
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(
         messageProperties.getResetPasswordExpiredTitle(),
         field(resetView, "invalidTitle", H1.class).getText());
@@ -192,14 +192,14 @@ class PasswordResetViewsTest {
     assertEquals(messageProperties.getPublicSavePasswordAction(), save.getText());
     assertEquals("check", save.getPrefixComponent().getElement().getAttribute("data-lucide"));
     assertEquals("log-in", login.getPrefixComponent().getElement().getAttribute("data-lucide"));
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(messageProperties.getPublicSavePasswordAction(), save.getText());
     assertEquals(messageProperties.getBaseLoginButton(), login.getText());
     UI navigation = mock(UI.class);
     UI.setCurrent(navigation);
     login.click();
     verify(navigation).navigate(LoginView.class);
-    UI.setCurrent(ui);
+    UI.setCurrent(testUi);
     verify(passwordResetService).inspectToken("link-token");
     verifyNoMoreInteractions(passwordResetService);
   }
@@ -220,7 +220,7 @@ class PasswordResetViewsTest {
     Button resend = field(view, "resendButton", Button.class);
     Button home = field(view, "homeButton", Button.class);
     assertEquals("mail", resend.getPrefixComponent().getElement().getAttribute("data-lucide"));
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(
         messageProperties.getVerificationExpiredTitle(),
         field(view, "expiredTitle", H1.class).getText());
@@ -255,7 +255,7 @@ class PasswordResetViewsTest {
     verify(verification).validateToken("unknown-link");
     verify(verification).existsToken("unknown-link");
     verifyNoMoreInteractions(verification);
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(messageProperties.getVerificationRequestActivationLink(), request.getText());
     assertEquals(
         messageProperties.getVerificationNotFoundTitle(),
@@ -287,7 +287,7 @@ class PasswordResetViewsTest {
     Button login = field(view, "loginButton", Button.class);
     assertEquals(messageProperties.getBaseLoginButton(), login.getText());
     assertEquals("log-in", login.getPrefixComponent().getElement().getAttribute("data-lucide"));
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(
         messageProperties.getVerificationSuccessTitle(),
         field(view, "successTitle", H1.class).getText());
@@ -299,7 +299,7 @@ class PasswordResetViewsTest {
     UI.setCurrent(navigation);
     login.click();
     verify(navigation).navigate(LoginView.class);
-    UI.setCurrent(ui);
+    UI.setCurrent(testUi);
     verify(verification).validateToken("verified-link");
     verifyNoMoreInteractions(verification);
   }
@@ -325,7 +325,7 @@ class PasswordResetViewsTest {
         Locale.ENGLISH);
     NotificationHelper helper = NotificationHelper.getInstance();
     Object visible = ReflectionTestUtils.getField(helper, "currentNotification");
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertSame(visible, ReflectionTestUtils.getField(helper, "currentNotification"));
     notification(
         success,
@@ -364,7 +364,7 @@ class PasswordResetViewsTest {
     notification(false, messageProperties.getResetPasswordTechnicalErrorMessage(), Locale.ENGLISH);
     Object visible =
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertSame(
         visible,
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification"));
@@ -407,7 +407,7 @@ class PasswordResetViewsTest {
     assertEquals(-1, visible.getDuration());
     assertTrue(
         ((Span) ReflectionTestUtils.getField(helper, "titleText")).hasClassName("text-success"));
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertSame(visible, ReflectionTestUtils.getField(helper, "currentNotification"));
     notification(true, messageProperties.getForgotPasswordSuccessMessage(), Locale.GERMAN);
     verify(passwordResetService).sendPasswordResetEmail("test@example.com");
@@ -435,7 +435,7 @@ class PasswordResetViewsTest {
     assertEquals(
         messageProperties.getResetPasswordTechnicalErrorMessage(),
         field(resetView, "invalidText", Span.class).getText());
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(
         messageProperties.getBaseFailedTitle(),
         field(resetView, "invalidTitle", H1.class).getText());
@@ -469,7 +469,7 @@ class PasswordResetViewsTest {
             .contains("If an eligible account exists"));
     assertTrue(
         messageProperties.getResetPasswordTechnicalErrorMessage().contains("try again later"));
-    session.setLocale(Locale.GERMAN);
+    vaadinSession.setLocale(Locale.GERMAN);
     assertTrue(
         messageProperties.getForgotPasswordSuccessMessage().contains("Wenn ein geeignetes Konto"));
     assertTrue(messageProperties.getForgotPasswordSuccessMessage().contains("prüfen"));

@@ -19,11 +19,11 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
 
 class TwoFactorDocumentsTest {
-  private final TwoFactorEnrollment enrollment = mock(TwoFactorEnrollment.class);
+  private final TwoFactorEnrollment twoFactorEnrollment = mock(TwoFactorEnrollment.class);
   private final CustomI18NProvider i18n = new CustomI18NProvider();
   private final TwoFactorDocuments documents =
       new TwoFactorDocuments(
-          enrollment,
+          twoFactorEnrollment,
           mock(TwoFactorAuthorization.class),
           mock(ConfigService.class),
           i18n,
@@ -35,7 +35,7 @@ class TwoFactorDocumentsTest {
     UUID id = UUID.randomUUID();
     byte[] secret = new byte[20];
     Arrays.fill(secret, (byte) 1);
-    when(enrollment.pendingSecret(request, id)).thenReturn(secret);
+    when(twoFactorEnrollment.pendingSecret(request, id)).thenReturn(secret);
 
     ResponseEntity<byte[]> response = documents.manualKey(request, id);
 
@@ -55,7 +55,7 @@ class TwoFactorDocumentsTest {
   void manualKeyCannotBeViewedWithoutAnAuthorizedPendingSetup() {
     MockHttpServletRequest request = new MockHttpServletRequest();
     UUID id = UUID.randomUUID();
-    when(enrollment.pendingSecret(request, id))
+    when(twoFactorEnrollment.pendingSecret(request, id))
         .thenThrow(new AccessDeniedException("Expired setup"));
 
     assertThrows(AccessDeniedException.class, () -> documents.manualKey(request, id));
@@ -70,7 +70,7 @@ class TwoFactorDocumentsTest {
     UUID id = UUID.randomUUID();
     List<String> codes =
         List.of("12345678-12345678-12345678-12345678", "ABCDEF12-ABCDEF12-ABCDEF12-ABCDEF12");
-    when(enrollment.recoveryOutput(request, id)).thenReturn(codes);
+    when(twoFactorEnrollment.recoveryOutput(request, id)).thenReturn(codes);
 
     ResponseEntity<byte[]> response = documents.codes(request, id);
 
@@ -85,7 +85,7 @@ class TwoFactorDocumentsTest {
   void recoveryDocumentCannotBeViewedWithoutAnAuthorizedOutput() {
     MockHttpServletRequest request = new MockHttpServletRequest();
     UUID id = UUID.randomUUID();
-    when(enrollment.recoveryOutput(request, id))
+    when(twoFactorEnrollment.recoveryOutput(request, id))
         .thenThrow(new AccessDeniedException("Expired output"));
 
     assertThrows(AccessDeniedException.class, () -> documents.codes(request, id));

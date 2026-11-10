@@ -38,27 +38,28 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Real component save action and language refresh, no application or database. */
 class AdminTokenDurationValidationTest {
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
-  private AdminConfigurationSection section;
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
+  private AdminConfigurationSection configurationSection;
   private ConfigService configService;
   private MessageProperties messageProperties;
-  private UI ui;
-  private VaadinSession session;
+  private UI testUi;
+  private VaadinSession vaadinSession;
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
-    session = mock(VaadinSession.class);
-    when(session.getLocale()).thenAnswer(ignored -> locale.get());
-    when(session.hasLock()).thenReturn(true);
-    VaadinSession.setCurrent(session);
+    testUi = new UI();
+    UI.setCurrent(testUi);
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenAnswer(ignored -> localeReference.get());
+    when(vaadinSession.hasLock()).thenReturn(true);
+    VaadinSession.setCurrent(vaadinSession);
     configService = mock(ConfigService.class);
     when(configService.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     messageProperties = new MessageProperties(new CustomI18NProvider());
-    section = new AdminConfigurationSection(messageProperties, configService, () -> {});
-    section.showGroup(AdminConfigGroup.TOKENS);
+    configurationSection =
+        new AdminConfigurationSection(messageProperties, configService, () -> {});
+    configurationSection.showGroup(AdminConfigGroup.TOKENS);
   }
 
   @AfterEach
@@ -66,9 +67,9 @@ class AdminTokenDurationValidationTest {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
-    section = null;
-    ui = null;
-    session = null;
+    configurationSection = null;
+    testUi = null;
+    vaadinSession = null;
   }
 
   static Stream<Arguments> tokenSettings() {
@@ -85,8 +86,8 @@ class AdminTokenDurationValidationTest {
   @ParameterizedTest
   @MethodSource("tokenSettings")
   void invalidAndTooShortInputsDoNotSaveAnyVisibleSetting(ConfigEntry entry, Locale language) {
-    locale.set(language);
-    section.refreshTexts();
+    localeReference.set(language);
+    configurationSection.refreshTexts();
     Duration minimum = entry.getMinimumTokenDuration();
     AdminDurationField input = field(entry);
     assertEquals(
@@ -115,8 +116,8 @@ class AdminTokenDurationValidationTest {
       verify(configService, never()).set(any(ConfigEntry.class), anyString());
     }
     // Existing invalid field errors must follow a later language switch.
-    locale.set(language.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
-    section.refreshTexts();
+    localeReference.set(language.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
+    configurationSection.refreshTexts();
     assertEquals(
         messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
         amount(entry).getErrorMessage());
@@ -125,8 +126,8 @@ class AdminTokenDurationValidationTest {
   @ParameterizedTest
   @MethodSource("tokenSettings")
   void exactMinimumInHumanFormatIsSavedAsIsoDuration(ConfigEntry entry, Locale language) {
-    locale.set(language);
-    section.refreshTexts();
+    localeReference.set(language);
+    configurationSection.refreshTexts();
     Duration minimum = entry.getMinimumTokenDuration();
     field(entry).setStoredValue(minimum.toMinutes() + "m");
     clearInvocations(configService);
@@ -135,7 +136,8 @@ class AdminTokenDurationValidationTest {
     assertFalse(field(entry).isInvalid());
     ConfigInfoButton info =
         (ConfigInfoButton)
-            ((Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons")).get(entry);
+            ((Map<?, ?>) ReflectionTestUtils.getField(configurationSection, "configInfoButtons"))
+                .get(entry);
     assertTrue(
         info.getTooltip().getText().contains(messageProperties.getAdminConfigDurationNumberRule()));
     assertTrue(
@@ -151,9 +153,9 @@ class AdminTokenDurationValidationTest {
   @ParameterizedTest
   @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
   void queueRetentionRejectsZeroAndNegativeButAcceptsPositiveSeconds(String language) {
-    locale.set(Locale.forLanguageTag(language));
-    section.refreshTexts();
-    section.showGroup(AdminConfigGroup.QUEUE);
+    localeReference.set(Locale.forLanguageTag(language));
+    configurationSection.refreshTexts();
+    configurationSection.showGroup(AdminConfigGroup.QUEUE);
     ConfigEntry entry = ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION;
     for (String invalid : new String[] {"0s", "PT0S", "-1s"}) {
       field(entry).setStoredValue(invalid);
@@ -174,7 +176,7 @@ class AdminTokenDurationValidationTest {
 
   private AdminDurationField field(ConfigEntry entry) {
     return (AdminDurationField)
-        ((Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs")).get(entry);
+        ((Map<?, ?>) ReflectionTestUtils.getField(configurationSection, "configInputs")).get(entry);
   }
 
   private BigDecimalField amount(ConfigEntry entry) {
@@ -182,6 +184,6 @@ class AdminTokenDurationValidationTest {
   }
 
   private Button saveButton() {
-    return (Button) ReflectionTestUtils.getField(section, "saveConfigButton");
+    return (Button) ReflectionTestUtils.getField(configurationSection, "saveConfigButton");
   }
 }

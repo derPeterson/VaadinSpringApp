@@ -48,26 +48,26 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Native Komponenten und Callback-Sperre mit Mocks; kein Browser, Server oder SMTP. */
 class AdminMailTestSectionTest {
-  private UI ui;
+  private UI testUi;
   private ConfigService configService;
   private EmailService emailService;
   private MessageProperties messageProperties;
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
+    testUi = new UI();
+    UI.setCurrent(testUi);
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(c -> locale.get());
+    when(session.getLocale()).thenAnswer(c -> localeReference.get());
     VaadinService service = mock(VaadinService.class);
     DeploymentConfiguration deployment = mock(DeploymentConfiguration.class);
     when(deployment.getUrlSafeSchemes()).thenReturn(Set.of("http", "https"));
     when(service.getDeploymentConfiguration()).thenReturn(deployment);
     when(session.getService()).thenReturn(service);
     VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
+    testUi.getInternals().setSession(session);
     configService = mock(ConfigService.class);
     emailService = mock(EmailService.class);
     messageProperties = new MessageProperties(new CustomI18NProvider());
@@ -75,7 +75,7 @@ class AdminMailTestSectionTest {
 
   @AfterEach
   void cleanup() {
-    ui.getChildren().toList().forEach(ui::remove);
+    testUi.getChildren().toList().forEach(testUi::remove);
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
@@ -104,7 +104,7 @@ class AdminMailTestSectionTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void smtpSettingsUseANavigationLinkAndFollowLanguageChanges(String language) {
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     AdminMailTestSection section = section();
     Anchor link = field(section, "smtpLink");
     TextArea body = field(section, "testBodyField");
@@ -115,7 +115,7 @@ class AdminMailTestSectionTest {
     assertEquals(messageProperties.getAdminMailBodyHint(), bodyHint.getText());
     assertEquals(body.getHelperText(), bodyHint.getText());
     assertEquals("true", bodyHint.getElement().getAttribute("aria-hidden"));
-    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     section.refreshTexts();
     assertEquals(
         messageProperties.getAdminConfigGroupSmtp(), link.getElement().getTextRecursively());
@@ -127,7 +127,7 @@ class AdminMailTestSectionTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void openFieldHelpFollowsLanguageChangesWithoutSending(String language) {
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     AdminMailTestSection section = section();
     ConfigInfoButton info = field(section, "bodyInfoButton");
     AdminSidePanel help = field(section, "helpPanel");
@@ -139,7 +139,7 @@ class AdminMailTestSectionTest {
         help.getElement()
             .getTextRecursively()
             .contains(messageProperties.getAdminMailValidationBody()));
-    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     section.refreshTexts();
     assertTrue(help.isOpened());
     assertTrue(
@@ -153,7 +153,7 @@ class AdminMailTestSectionTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void maintenanceLocksEntirePanelAndReopeningPreservesDraft(String language) {
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     AdminMailTestSection section = section();
     TextField subject = field(section, "testSubjectField");
     TextArea body = field(section, "testBodyField");
@@ -257,22 +257,22 @@ class AdminMailTestSectionTest {
   @ParameterizedTest
   @ValueSource(ints = {-1, 1000, 12000})
   void pollingRefreshesStateAndDetachingRestoresPreviousInterval(int previousInterval) {
-    ui.setPollInterval(previousInterval);
+    testUi.setPollInterval(previousInterval);
     int[] unrelatedPolls = {0};
-    Registration unrelated = ui.addPollListener(e -> unrelatedPolls[0]++);
+    Registration unrelated = testUi.addPollListener(e -> unrelatedPolls[0]++);
     try {
       AdminMailTestSection section = section();
-      ui.add(section);
+      testUi.add(section);
       assertEquals(
-          previousInterval > 0 ? Math.min(previousInterval, 5000) : 5000, ui.getPollInterval());
+          previousInterval > 0 ? Math.min(previousInterval, 5000) : 5000, testUi.getPollInterval());
       when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-      ComponentUtil.fireEvent(ui, new PollEvent(ui, true));
+      ComponentUtil.fireEvent(testUi, new PollEvent(testUi, true));
       assertFalse(((VerticalLayout) field(section, "mailLayout")).isEnabled());
       assertEquals(1, unrelatedPolls[0]);
-      ui.remove(section);
-      assertEquals(previousInterval, ui.getPollInterval());
+      testUi.remove(section);
+      assertEquals(previousInterval, testUi.getPollInterval());
       clearInvocations(configService);
-      ComponentUtil.fireEvent(ui, new PollEvent(ui, true));
+      ComponentUtil.fireEvent(testUi, new PollEvent(testUi, true));
       assertEquals(2, unrelatedPolls[0]);
       verifyNoInteractions(configService);
       verifyNoInteractions(emailService);

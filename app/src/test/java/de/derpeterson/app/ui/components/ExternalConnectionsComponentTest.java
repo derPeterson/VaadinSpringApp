@@ -65,19 +65,19 @@ class ExternalConnectionsComponentTest {
   private final UserEntity testAccount =
       UserEntity.builder().id(1L).email("own@example.test").build();
   private final AtomicInteger settingsActionCount = new AtomicInteger();
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
   private MessageProperties messageProperties;
-  private UI ui;
+  private UI testUi;
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
+    testUi = new UI();
+    UI.setCurrent(testUi);
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
+    when(session.getLocale()).thenAnswer(call -> localeReference.get());
     VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
+    testUi.getInternals().setSession(session);
     messageProperties = new MessageProperties(new CustomI18NProvider());
     when(externalLoginFlow.owner(mockHttpRequest)).thenReturn(testAccount);
     when(externalLoginFlow.factorEnrolled(mockHttpRequest)).thenReturn(true);
@@ -102,7 +102,7 @@ class ExternalConnectionsComponentTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void overviewKeepsLastMethodProtectedAndRequestsOnlyTheChosenAction(String language) {
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     ExternalConnectionsComponent component =
         new ExternalConnectionsComponent(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
@@ -120,14 +120,15 @@ class ExternalConnectionsComponentTest {
         tree(dialog)
             .filter(c -> c.getId().orElse("").equals("external-confirm-microsoft"))
             .count());
-    verify(externalLoginFlow, never()).beginLink(mockHttpRequest, "microsoft", locale.get());
+    verify(externalLoginFlow, never())
+        .beginLink(mockHttpRequest, "microsoft", localeReference.get());
   }
 
   @ParameterizedTest
   @CsvSource({"false, de", "true, de", "false, en", "true, en"})
   void disabledProvidersKeepConnectionsAndRequireAnExistingConfirmationMethod(
       boolean hasPassword, String language) {
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     testAccount.setPassword(hasPassword ? "encoded" : null);
     when(externalLoginFlow.providers()).thenReturn(List.of());
     ExternalConnectionsComponent component =
@@ -152,7 +153,7 @@ class ExternalConnectionsComponentTest {
           (Supplier<?>)
               ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
       assertEquals(messageProperties.getExternalProofUnavailable(), message.get());
-      locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+      localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
       assertEquals(messageProperties.getExternalProofUnavailable(), message.get());
     }
   }
@@ -310,7 +311,7 @@ class ExternalConnectionsComponentTest {
   })
   void factorFailureUsesStandardToastAndDistinguishesLockFromInvalidCode(
       String language, String reason) {
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     when(externalLoginFlow.requiresFactor(mockHttpRequest, Purpose.PASSWORD)).thenReturn(true);
     when(externalLoginFlow.canUseProviderProof(
             org.mockito.ArgumentMatchers.any(),
@@ -359,7 +360,7 @@ class ExternalConnectionsComponentTest {
     ExternalIdentityConfirmationDialog dialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    ui.add(dialog);
+    testUi.add(dialog);
     dialog.open(purpose, settingsActionCount::incrementAndGet);
 
     OtpField appCode = (OtpField) find(dialog, "external-confirm-factor");
@@ -401,7 +402,7 @@ class ExternalConnectionsComponentTest {
     ExternalIdentityConfirmationDialog dialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    ui.add(dialog);
+    testUi.add(dialog);
     dialog.open(purpose, settingsActionCount::incrementAndGet);
     OtpField appCode = (OtpField) find(dialog, "external-confirm-factor");
     appCode.setValue("123456");
@@ -438,7 +439,7 @@ class ExternalConnectionsComponentTest {
     dialog.open(Purpose.PASSWORD, settingsActionCount::incrementAndGet);
     PasswordField password = (PasswordField) find(dialog, "external-confirm-password");
     password.setValue("Draft1!");
-    locale.set(Locale.ENGLISH);
+    localeReference.set(Locale.ENGLISH);
     dialog.refreshTexts();
     assertEquals("Draft1!", password.getValue());
     assertEquals(

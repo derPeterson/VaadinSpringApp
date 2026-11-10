@@ -99,31 +99,30 @@ class ExternalIdentityServicePersistenceTest {
     }
   }
 
-  @Autowired private ExternalIdentityService service;
+  @Autowired private ExternalIdentityService externalIdentityService;
   @Autowired private ExternalIdentityRepository identities;
-  @Autowired private UserRepository users;
-  @Autowired private ConfigService config;
-  @Autowired private VerificationService verification;
-  @Autowired private TransactionTemplate transaction;
-  @Autowired private PlatformTransactionManager transactions;
-  @Autowired private SessionRegistry sessions;
+  @Autowired private UserRepository userRepository;
+  @Autowired private ConfigService configService;
+  @Autowired private VerificationService verificationService;
+  @Autowired private TransactionTemplate transactionTemplate;
+  @Autowired private PlatformTransactionManager transactionManager;
+  @Autowired private SessionRegistry sessionRegistry;
   @Autowired private DeviceTokenRepository remembered;
-  @PersistenceContext private EntityManager em;
+  @PersistenceContext private EntityManager entityManager;
 
   @BeforeEach
   void setup() throws IOException {
-    reset(config, verification, remembered);
-    when(verification.sendVerificationEmailByUser(any())).thenReturn(true);
-    transaction.executeWithoutResult(
-        status -> {
-          identities.deleteAll();
-          users.deleteAll();
-          users.flush();
-          em.createQuery("delete from RoleEntity").executeUpdate();
-          for (RoleType type : RoleType.values()) {
-            em.persist(RoleEntity.builder().name(type).build());
-          }
-        });
+    reset(configService, verificationService, remembered);
+    when(verificationService.sendVerificationEmailByUser(any())).thenReturn(true);
+    transactionTemplate.executeWithoutResult(status -> {
+      identities.deleteAll();
+      userRepository.deleteAll();
+      userRepository.flush();
+      entityManager.createQuery("delete from RoleEntity").executeUpdate();
+      for (RoleType type : RoleType.values()) {
+        entityManager.persist(RoleEntity.builder().name(type).build());
+      }
+    });
   }
 
   private ExternalIdentityEvidence evidence(String provider, String subject, boolean trusted) {
@@ -141,23 +140,26 @@ class ExternalIdentityServicePersistenceTest {
   }
 
   private UserEntity register(ExternalIdentityEvidence identity) throws IOException {
-    return service.register(identity, "person@example.test", "Alex", "Example", Locale.GERMAN);
+    return externalIdentityService.register(
+        identity, "person@example.test", "Alex", "Example", Locale.GERMAN);
   }
 
   @Test
   void verifiedIdentityCreatesOnlyUserRoleWithoutPasswordOrInventedProfileValues()
       throws IOException {
     UserEntity user = register(evidence("google", "subject-one", true));
-    UserEntity stored = users.findById(user.getId()).orElseThrow();
+    UserEntity stored = userRepository.findById(user.getId()).orElseThrow();
     assertTrue(stored.isEnabled());
     assertFalse(stored.isVerificationPending());
     assertNull(stored.getPassword());
     assertEquals(RegistrationChannel.GOOGLE, stored.getRegistrationChannel());
-    assertEquals(Set.of(SignInMethod.GOOGLE), service.availableSignInMethods(stored.getId()));
+    assertEquals(
+        Set.of(SignInMethod.GOOGLE),
+        externalIdentityService.availableSignInMethods(stored.getId()));
     assertNull(stored.getGender());
     assertNull(stored.getBirthDate());
-    assertEquals(List.of("google"), service.connected(user.getId()));
-    CustomUserDetailsService details = new CustomUserDetailsService(users);
+    assertEquals(List.of("google"), externalIdentityService.connected(user.getId()));
+    CustomUserDetailsService details = new CustomUserDetailsService(userRepository);
     assertEquals(
         List.of("ROLE_USER"),
         details.loadUserByUsername(stored.getEmail()).getAuthorities().stream()
@@ -165,10 +167,15 @@ class ExternalIdentityServicePersistenceTest {
             .toList());
     assertThrows(
         UsernameNotFoundException.class,
-        () -> transaction.execute(status -> details.loadPasswordUserByUsername(stored.getEmail())));
+        () ->
+            transactionTemplate.execute(
+                status -> details.loadPasswordUserByUsername(stored.getEmail())));
     assertEquals(
         user.getId(),
-        service.resolve(evidence("google", "subject-one", true)).orElseThrow().getId());
+        externalIdentityService
+            .resolve(evidence("google", "subject-one", true))
+            .orElseThrow()
+            .getId());
   }
 
   @Test
@@ -177,13 +184,15 @@ class ExternalIdentityServicePersistenceTest {
     assertFalse(user.isEnabled());
     assertTrue(user.isVerificationPending());
     ExternalIdentityEvidence pendingIdentity = evidence("microsoft", "subject-two", false);
-    assertThrows(DisabledException.class, () -> service.resolve(pendingIdentity));
+    assertThrows(DisabledException.class, () -> externalIdentityService.resolve(pendingIdentity));
     Long userId = user.getId();
     String version = user.getAccessVersion();
     ExternalIdentityEvidence additionalIdentity = evidence("google", "other", true);
-    assertThrows(DisabledException.class, () -> service.link(userId, version, additionalIdentity));
+    assertThrows(
+        DisabledException.class,
+        () -> externalIdentityService.link(userId, version, additionalIdentity));
     UserEntity changedContact =
-        service.register(
+        externalIdentityService.register(
             evidence("google", "changed-contact", true),
             "changed@example.test",
             "Alex",
@@ -200,7 +209,7 @@ class ExternalIdentityServicePersistenceTest {
     ExternalIdentityEvidence differentIdentity = evidence("google", "subject-different", true);
     assertThrows(AccessDeniedException.class, () -> register(microsoftIdentity));
     assertThrows(AccessDeniedException.class, () -> register(differentIdentity));
-    assertEquals(1, users.count());
+    assertEquals(1, userRepository.count());
     assertEquals(1, identities.count());
   }
 
@@ -211,11 +220,13 @@ class ExternalIdentityServicePersistenceTest {
     String version = user.getAccessVersion();
     MockHttpServletRequest request = new MockHttpServletRequest();
     assertThrows(
-        AccessDeniedException.class, () -> service.unlink(request, userId, version, "google"));
-    service.link(user.getId(), user.getAccessVersion(), evidence("microsoft", "two", false));
-    sessions.registerNewSession("own-active-session", user.getEmail());
-    sessions.registerNewSession("other-active-session", user.getEmail());
-    CustomUserDetailsService details = new CustomUserDetailsService(users);
+        AccessDeniedException.class,
+        () -> externalIdentityService.unlink(request, userId, version, "google"));
+    externalIdentityService.link(
+        user.getId(), user.getAccessVersion(), evidence("microsoft", "two", false));
+    sessionRegistry.registerNewSession("own-active-session", user.getEmail());
+    sessionRegistry.registerNewSession("other-active-session", user.getEmail());
+    CustomUserDetailsService details = new CustomUserDetailsService(userRepository);
     DurableAuthentication durable =
         DurableAuthentication.capture(
             new ExternalAuthenticationToken(details.loadUserByUsername(user.getEmail()), "google"),
@@ -224,50 +235,55 @@ class ExternalIdentityServicePersistenceTest {
         durable.restore(details, "test-key").getAuthentication()
             instanceof ExternalAuthenticationToken);
     assertTrue(durable.factors().isEmpty());
-    service.unlink(new MockHttpServletRequest(), user.getId(), user.getAccessVersion(), "google");
-    assertTrue(sessions.getSessionInformation("own-active-session").isExpired());
-    assertTrue(sessions.getSessionInformation("other-active-session").isExpired());
+    externalIdentityService.unlink(
+        new MockHttpServletRequest(), user.getId(), user.getAccessVersion(), "google");
+    assertTrue(sessionRegistry.getSessionInformation("own-active-session").isExpired());
+    assertTrue(sessionRegistry.getSessionInformation("other-active-session").isExpired());
     verify(remembered).removeUserTokens(user.getEmail());
     assertNotEquals(
-        user.getAccessVersion(), users.findById(user.getId()).orElseThrow().getAccessVersion());
+        user.getAccessVersion(),
+        userRepository.findById(user.getId()).orElseThrow().getAccessVersion());
     assertThrows(AuthenticationServiceException.class, () -> durable.restore(details, "test-key"));
-    assertEquals(List.of("microsoft"), service.connected(user.getId()));
-    assertEquals(Set.of(SignInMethod.MICROSOFT), service.availableSignInMethods(user.getId()));
+    assertEquals(List.of("microsoft"), externalIdentityService.connected(user.getId()));
     assertEquals(
-        RegistrationChannel.GOOGLE, users.findById(userId).orElseThrow().getRegistrationChannel());
+        Set.of(SignInMethod.MICROSOFT),
+        externalIdentityService.availableSignInMethods(user.getId()));
+    assertEquals(
+        RegistrationChannel.GOOGLE,
+        userRepository.findById(userId).orElseThrow().getRegistrationChannel());
     ExternalIdentityEvidence additionalIdentity = evidence("google", "three", true);
     assertThrows(
-        AccessDeniedException.class, () -> service.link(userId, version, additionalIdentity));
+        AccessDeniedException.class,
+        () -> externalIdentityService.link(userId, version, additionalIdentity));
   }
 
   @Test
   void failedVerificationQueueRollsBackTheAccountAndIdentity() throws IOException {
-    when(verification.sendVerificationEmailByUser(any()))
+    when(verificationService.sendVerificationEmailByUser(any()))
         .thenThrow(new IOException("Own queue unavailable"));
     assertThrows(IOException.class, () -> register(evidence("microsoft", "two", false)));
-    assertEquals(0, users.count());
+    assertEquals(0, userRepository.count());
     assertEquals(0, identities.count());
   }
 
   @Test
   void maintenancePreventsPublicExternalRegistration() {
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     ExternalIdentityEvidence identity = evidence("google", "one", true);
     assertThrows(MaintenanceAccessException.class, () -> register(identity));
-    assertEquals(0, users.count());
+    assertEquals(0, userRepository.count());
   }
 
   @Test
   void disabledAccountCannotBeOpenedByItsConnectedIdentity() throws IOException {
     ExternalIdentityEvidence identity = evidence("google", "one", true);
     UserEntity user = register(identity);
-    transaction.executeWithoutResult(
-        status -> {
-          UserEntity changed = users.findById(user.getId()).orElseThrow();
-          changed.setEnabled(false);
-          users.saveAndFlush(changed);
-        });
-    assertThrows(DisabledException.class, () -> service.resolve(identity));
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity changed = userRepository.findById(user.getId()).orElseThrow();
+      changed.setEnabled(false);
+      userRepository.saveAndFlush(changed);
+    });
+    assertThrows(DisabledException.class, () -> externalIdentityService.resolve(identity));
   }
 
   @Test
@@ -278,17 +294,16 @@ class ExternalIdentityServicePersistenceTest {
       List<Future<Boolean>> results = new ArrayList<>();
       for (int attempt = 0; attempt < 2; attempt++) {
         results.add(
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  assertTrue(start.await(10, TimeUnit.SECONDS));
-                  try {
-                    register(evidence("google", "same-identity", true));
-                    return true;
-                  } catch (AccessDeniedException _) {
-                    return false;
-                  }
-                }));
+            executor.submit(() -> {
+              ready.countDown();
+              assertTrue(start.await(10, TimeUnit.SECONDS));
+              try {
+                register(evidence("google", "same-identity", true));
+                return true;
+              } catch (AccessDeniedException _) {
+                return false;
+              }
+            }));
       }
       assertTrue(ready.await(10, TimeUnit.SECONDS));
       start.countDown();
@@ -299,7 +314,7 @@ class ExternalIdentityServicePersistenceTest {
         }
       }
       assertEquals(1, succeeded);
-      assertEquals(1, users.count());
+      assertEquals(1, userRepository.count());
       assertEquals(1, identities.count());
     }
   }
@@ -307,28 +322,25 @@ class ExternalIdentityServicePersistenceTest {
   @Test
   void concurrentUnlinkCannotRemoveBothRemainingProviders() throws Exception {
     UserEntity user = register(evidence("google", "one", true));
-    service.link(user.getId(), user.getAccessVersion(), evidence("microsoft", "two", false));
+    externalIdentityService.link(
+        user.getId(), user.getAccessVersion(), evidence("microsoft", "two", false));
     CountDownLatch ready = new CountDownLatch(2);
     CountDownLatch start = new CountDownLatch(1);
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       List<Future<Boolean>> results = new ArrayList<>();
       for (String provider : List.of("google", "microsoft")) {
         results.add(
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  assertTrue(start.await(10, TimeUnit.SECONDS));
-                  try {
-                    service.unlink(
-                        new MockHttpServletRequest(),
-                        user.getId(),
-                        user.getAccessVersion(),
-                        provider);
-                    return true;
-                  } catch (AccessDeniedException _) {
-                    return false;
-                  }
-                }));
+            executor.submit(() -> {
+              ready.countDown();
+              assertTrue(start.await(10, TimeUnit.SECONDS));
+              try {
+                externalIdentityService.unlink(
+                    new MockHttpServletRequest(), user.getId(), user.getAccessVersion(), provider);
+                return true;
+              } catch (AccessDeniedException _) {
+                return false;
+              }
+            }));
       }
       assertTrue(ready.await(10, TimeUnit.SECONDS));
       start.countDown();
@@ -339,7 +351,7 @@ class ExternalIdentityServicePersistenceTest {
         }
       }
       assertEquals(1, succeeded);
-      assertEquals(1, service.connected(user.getId()).size());
+      assertEquals(1, externalIdentityService.connected(user.getId()).size());
     }
   }
 
@@ -357,27 +369,25 @@ class ExternalIdentityServicePersistenceTest {
             "Owner",
             Instant.now());
     UserEntity second =
-        service.register(secondIdentity, "second@example.test", "Second", "Owner", Locale.ENGLISH);
+        externalIdentityService.register(
+            secondIdentity, "second@example.test", "Second", "Owner", Locale.ENGLISH);
     CountDownLatch ready = new CountDownLatch(2);
     CountDownLatch start = new CountDownLatch(1);
     try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
       List<Future<Boolean>> results = new ArrayList<>();
       for (UserEntity user : List.of(first, second)) {
         results.add(
-            executor.submit(
-                () -> {
-                  ready.countDown();
-                  assertTrue(start.await(10, TimeUnit.SECONDS));
-                  try {
-                    service.link(
-                        user.getId(),
-                        user.getAccessVersion(),
-                        evidence("microsoft", "shared", false));
-                    return true;
-                  } catch (AccessDeniedException | DataIntegrityViolationException _) {
-                    return false;
-                  }
-                }));
+            executor.submit(() -> {
+              ready.countDown();
+              assertTrue(start.await(10, TimeUnit.SECONDS));
+              try {
+                externalIdentityService.link(
+                    user.getId(), user.getAccessVersion(), evidence("microsoft", "shared", false));
+                return true;
+              } catch (AccessDeniedException | DataIntegrityViolationException _) {
+                return false;
+              }
+            }));
       }
       assertTrue(ready.await(10, TimeUnit.SECONDS));
       start.countDown();
@@ -389,8 +399,9 @@ class ExternalIdentityServicePersistenceTest {
       }
       assertEquals(1, succeeded);
       assertTrue(
-          service.belongsTo(first.getId(), evidence("microsoft", "shared", false))
-              ^ service.belongsTo(second.getId(), evidence("microsoft", "shared", false)));
+          externalIdentityService.belongsTo(first.getId(), evidence("microsoft", "shared", false))
+              ^ externalIdentityService.belongsTo(
+                  second.getId(), evidence("microsoft", "shared", false)));
       assertEquals(3, identities.count());
     }
   }
@@ -398,7 +409,8 @@ class ExternalIdentityServicePersistenceTest {
   @Test
   void disabledProviderDoesNotCountAsTheLastUsableAlternative() throws Exception {
     UserEntity user = register(evidence("google", "one", true));
-    service.link(user.getId(), user.getAccessVersion(), evidence("microsoft", "two", false));
+    externalIdentityService.link(
+        user.getId(), user.getAccessVersion(), evidence("microsoft", "two", false));
     ExternalLoginProperties properties = new ExternalLoginProperties();
     properties.getGoogle().setClientId("own-client");
     properties.getGoogle().setEnabled(true);
@@ -406,24 +418,23 @@ class ExternalIdentityServicePersistenceTest {
     ExternalIdentityService restricted =
         new ExternalIdentityService(
             identities,
-            users,
-            verification,
-            config,
-            sessions,
+            userRepository,
+            verificationService,
+            configService,
+            sessionRegistry,
             remembered,
             new ExternalLoginConfiguration().externalRegistrations(properties),
-            transactions,
-            new AdminRolePolicy(users));
+            transactionManager,
+            new AdminRolePolicy(userRepository));
     assertThrows(
         AccessDeniedException.class,
         () ->
-            transaction.executeWithoutResult(
-                status ->
-                    restricted.unlink(
-                        new MockHttpServletRequest(),
-                        user.getId(),
-                        user.getAccessVersion(),
-                        "google")));
-    assertEquals(2, service.connected(user.getId()).size());
+            transactionTemplate.executeWithoutResult(status ->
+                restricted.unlink(
+                    new MockHttpServletRequest(),
+                    user.getId(),
+                    user.getAccessVersion(),
+                    "google")));
+    assertEquals(2, externalIdentityService.connected(user.getId()).size());
   }
 }

@@ -34,7 +34,7 @@ class ExternalIdTokenDecodersTest {
   private static final String TENANT = "9188040d-6c67-4c5b-b112-36a304b66dad";
   private HttpServer server;
   private RSAKey key;
-  private ExternalLoginProperties properties;
+  private ExternalLoginProperties externalLoginProperties;
 
   @BeforeEach
   void setup() throws Exception {
@@ -55,10 +55,10 @@ class ExternalIdTokenDecodersTest {
           }
         });
     server.start();
-    properties = new ExternalLoginProperties();
+    externalLoginProperties = new ExternalLoginProperties();
     for (ExternalLoginProperties.Provider provider :
         new ExternalLoginProperties.Provider[] {
-          properties.getGoogle(), properties.getMicrosoft()
+          externalLoginProperties.getGoogle(), externalLoginProperties.getMicrosoft()
         }) {
       provider.setClientId("own-client");
       provider.setEnabled(true);
@@ -74,7 +74,7 @@ class ExternalIdTokenDecodersTest {
 
   private ClientRegistration registration(String provider) {
     return new ExternalLoginConfiguration()
-        .externalRegistrations(properties)
+        .externalRegistrations(externalLoginProperties)
         .findByRegistrationId(provider);
   }
 
@@ -107,7 +107,7 @@ class ExternalIdTokenDecodersTest {
             ? "https://accounts.google.com"
             : "https://login.microsoftonline.com/" + TENANT + "/v2.0";
     JwtDecoder decoder =
-        new ExternalIdTokenDecoders(properties).createDecoder(registration(provider));
+        new ExternalIdTokenDecoders(externalLoginProperties).createDecoder(registration(provider));
     Instant valid = Instant.now().plusSeconds(300);
     assertEquals(
         "stable-subject",
@@ -130,12 +130,14 @@ class ExternalIdTokenDecodersTest {
         provider.equals("google")
             ? "https://accounts.google.com"
             : "https://login.microsoftonline.com/" + TENANT + "/v2.0";
-    ExternalIdTokenDecoders factory = new ExternalIdTokenDecoders(properties);
+    ExternalIdTokenDecoders factory = new ExternalIdTokenDecoders(externalLoginProperties);
     Instant expires = Instant.now().plusSeconds(300);
     factory
         .createDecoder(registration(provider))
         .decode(token(issuer, "own-client", TENANT, expires, key));
-    (provider.equals("google") ? properties.getGoogle() : properties.getMicrosoft())
+    (provider.equals("google")
+            ? externalLoginProperties.getGoogle()
+            : externalLoginProperties.getMicrosoft())
         .setClientId("replacement-client");
     JwtDecoder replacement = factory.createDecoder(registration(provider));
     String previousAudience = token(issuer, "own-client", TENANT, expires, key);
@@ -148,7 +150,8 @@ class ExternalIdTokenDecodersTest {
   @Test
   void microsoftSupportsDifferentConcreteTenantsButNeverArbitraryIssuerPaths() throws Exception {
     JwtDecoder decoder =
-        new ExternalIdTokenDecoders(properties).createDecoder(registration("microsoft"));
+        new ExternalIdTokenDecoders(externalLoginProperties)
+            .createDecoder(registration("microsoft"));
     String company = "12345678-1234-1234-1234-123456789abc";
     assertEquals(
         company,

@@ -58,47 +58,46 @@ import org.springframework.transaction.support.TransactionTemplate;
 /** Real committed roles, actual service/filter, strong UI fixtures; no HTTP server. */
 @SpringJUnitConfig(UserServicePersistenceTest.Config.class)
 class SessionAuthorityPersistenceTest {
-  @Autowired UserService users;
-  @Autowired UserRepository repository;
-  @Autowired SecurityService security;
-  @Autowired TransactionTemplate transaction;
+  @Autowired UserService userService;
+  @Autowired UserRepository userRepository;
+  @Autowired SecurityService securityService;
+  @Autowired TransactionTemplate transactionTemplate;
   @PersistenceContext EntityManager entityManager;
   private Long victimId;
   private RoleEntity ordinaryRole;
   private UserDetails oldPrincipal;
-  private UI ui;
-  private VaadinSession vaadin;
+  private UI testUi;
+  private VaadinSession vaadinSession;
   private final AtomicReference<UserDetails> vaadinPrincipal = new AtomicReference<>();
 
   @BeforeEach
   void setup() {
-    transaction.executeWithoutResult(
-        tx -> {
-          repository.deleteAll();
-          repository.flush();
-          entityManager.createQuery("delete from RoleEntity").executeUpdate();
-          RoleEntity admin = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
-          ordinaryRole = RoleEntity.builder().name(RoleType.ROLE_USER).build();
-          entityManager.persist(admin);
-          entityManager.persist(ordinaryRole);
-          victimId = create("victim@example.com", admin);
-          create("survivor@example.com", admin);
-        });
+    transactionTemplate.executeWithoutResult(tx -> {
+      userRepository.deleteAll();
+      userRepository.flush();
+      entityManager.createQuery("delete from RoleEntity").executeUpdate();
+      RoleEntity admin = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+      ordinaryRole = RoleEntity.builder().name(RoleType.ROLE_USER).build();
+      entityManager.persist(admin);
+      entityManager.persist(ordinaryRole);
+      victimId = create("victim@example.com", admin);
+      create("survivor@example.com", admin);
+    });
     oldPrincipal =
-        new CustomUserDetailsService(repository).loadUserByUsername("victim@example.com");
-    ui = new UI();
-    vaadin = mock(VaadinSession.class);
-    when(vaadin.hasLock()).thenReturn(true);
-    when(vaadin.getAttribute(UserDetails.class)).thenAnswer(call -> vaadinPrincipal.get());
+        new CustomUserDetailsService(userRepository).loadUserByUsername("victim@example.com");
+    testUi = new UI();
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getAttribute(UserDetails.class)).thenAnswer(call -> vaadinPrincipal.get());
     doAnswer(
             call -> {
               vaadinPrincipal.set(call.getArgument(1));
               return null;
             })
-        .when(vaadin)
+        .when(vaadinSession)
         .setAttribute(eq(UserDetails.class), any());
-    UI.setCurrent(ui);
-    VaadinSession.setCurrent(vaadin);
+    UI.setCurrent(testUi);
+    VaadinSession.setCurrent(vaadinSession);
     SecurityContextHolder.clearContext();
   }
 
@@ -125,12 +124,12 @@ class SessionAuthorityPersistenceTest {
     VaadinSession.setCurrent(null);
     UI.setCurrent(null);
     vaadinPrincipal.set(null);
-    vaadin = null;
-    ui = null;
+    vaadinSession = null;
+    testUi = null;
   }
 
   private UserEntity form() {
-    return repository.findAll().stream()
+    return userRepository.findAll().stream()
         .filter(user -> user.getId().equals(victimId))
         .findFirst()
         .orElseThrow();
@@ -139,7 +138,7 @@ class SessionAuthorityPersistenceTest {
   private void revoke() {
     UserEntity edited = form();
     edited.setRoleEntities(List.of(ordinaryRole));
-    users.updateAdminUser(edited, edited.getVersion(), "");
+    userService.updateAdminUser(edited, edited.getVersion(), "");
   }
 
   private MockHttpServletRequest request(String source, String path) {
@@ -187,7 +186,7 @@ class SessionAuthorityPersistenceTest {
     revoke();
     @SuppressWarnings("unchecked")
     ObjectProvider<SecurityService> provider = mock(ObjectProvider.class);
-    when(provider.getObject()).thenReturn(security);
+    when(provider.getObject()).thenReturn(securityService);
     VaadinSecurityFilter filter = new VaadinSecurityFilter(provider);
     MockHttpServletResponse response = new MockHttpServletResponse();
     FilterChain action = mock(FilterChain.class);
@@ -205,12 +204,12 @@ class SessionAuthorityPersistenceTest {
         vaadinPrincipal.get().getAuthorities().stream().map(Object::toString).toList());
     assertEquals(
         List.of("ROLE_USER"),
-        security.getAuthenticatedUser(second).orElseThrow().getAuthorities().stream()
+        securityService.getAuthenticatedUser(second).orElseThrow().getAuthorities().stream()
             .map(Object::toString)
             .toList());
     assertFalse(secondSession.isInvalid());
     UserDetails current =
-        new CustomUserDetailsService(repository).loadUserByUsername(oldPrincipal.getUsername());
+        new CustomUserDetailsService(userRepository).loadUserByUsername(oldPrincipal.getUsername());
     assertEquals(
         List.of("ROLE_USER"), current.getAuthorities().stream().map(Object::toString).toList());
   }
@@ -227,29 +226,28 @@ class SessionAuthorityPersistenceTest {
     "remember,ROLE_GUEST"
   })
   void replacingRolesRefreshesEveryExistingPrincipalSource(String source, RoleType roleType) {
-    transaction.executeWithoutResult(
-        tx -> {
-          RoleEntity role = RoleEntity.builder().name(roleType).build();
-          entityManager.persist(role);
-          form().setRoleEntities(new ArrayList<>(List.of(role)));
-          // Der Entzug testet die Sitzung; der neue Mindestschutz bleibt separat wirksam.
-          if (roleType == RoleType.ROLE_SUPERADMIN) {
-            repository
-                .findByEmail("survivor@example.com")
-                .orElseThrow()
-                .getRoleEntities()
-                .add(role);
-          }
-        });
+    transactionTemplate.executeWithoutResult(tx -> {
+      RoleEntity role = RoleEntity.builder().name(roleType).build();
+      entityManager.persist(role);
+      form().setRoleEntities(new ArrayList<>(List.of(role)));
+      // Der Entzug testet die Sitzung; der neue Mindestschutz bleibt separat wirksam.
+      if (roleType == RoleType.ROLE_SUPERADMIN) {
+        userRepository
+            .findByEmail("survivor@example.com")
+            .orElseThrow()
+            .getRoleEntities()
+            .add(role);
+      }
+    });
     oldPrincipal =
-        new CustomUserDetailsService(repository).loadUserByUsername("victim@example.com");
+        new CustomUserDetailsService(userRepository).loadUserByUsername("victim@example.com");
     MockHttpServletRequest request = request(source, "/VAADIN/uidl");
     MockHttpSession oldSession = (MockHttpSession) request.getSession(false);
-    assertTrue(security.getAuthenticatedUser(request).isPresent());
+    assertTrue(securityService.getAuthenticatedUser(request).isPresent());
     revoke();
     assertEquals(
         List.of("ROLE_USER"),
-        security.getAuthenticatedUser(request).orElseThrow().getAuthorities().stream()
+        securityService.getAuthenticatedUser(request).orElseThrow().getAuthorities().stream()
             .map(Object::toString)
             .toList());
     assertFalse(oldSession.isInvalid());
@@ -273,21 +271,20 @@ class SessionAuthorityPersistenceTest {
             .authorities(authorities)
             .build();
     MockHttpServletRequest request = request("context", "/admin");
-    assertTrue(security.getAuthenticatedUser(request).isEmpty());
+    assertTrue(securityService.getAuthenticatedUser(request).isEmpty());
   }
 
   @Test
   void rollbackDoesNotInvalidateCurrentAuthoritiesAndReadIgnoresPendingRoleEdits() {
     MockHttpServletRequest request = request("context", "/admin");
     Authentication original = SecurityContextHolder.getContext().getAuthentication();
-    transaction.executeWithoutResult(
-        tx -> {
-          revoke();
-          assertTrue(security.getAuthenticatedUser(request).isPresent());
-          assertSame(original, SecurityContextHolder.getContext().getAuthentication());
-          tx.setRollbackOnly();
-        });
-    assertTrue(security.getAuthenticatedUser(request).isPresent());
+    transactionTemplate.executeWithoutResult(tx -> {
+      revoke();
+      assertTrue(securityService.getAuthenticatedUser(request).isPresent());
+      assertSame(original, SecurityContextHolder.getContext().getAuthentication());
+      tx.setRollbackOnly();
+    });
+    assertTrue(securityService.getAuthenticatedUser(request).isPresent());
     assertTrue(form().hasRole(RoleType.ROLE_ADMIN));
     assertFalse(((MockHttpSession) request.getSession(false)).isInvalid());
   }
@@ -295,20 +292,20 @@ class SessionAuthorityPersistenceTest {
   @Test
   void committedRevocationCannotHideBehindAStaleManagedUserOrRolesCollection() {
     MockHttpServletRequest request = request("context", "/admin");
-    TransactionTemplate independent = new TransactionTemplate(transaction.getTransactionManager());
+    TransactionTemplate independent =
+        new TransactionTemplate(transactionTemplate.getTransactionManager());
     independent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-    transaction.executeWithoutResult(
-        tx -> {
-          UserEntity stale = form();
-          assertTrue(stale.hasRole(RoleType.ROLE_ADMIN));
-          independent.executeWithoutResult(other -> revoke());
-          assertTrue(stale.hasRole(RoleType.ROLE_ADMIN));
-          assertEquals(
-              List.of("ROLE_USER"),
-              security.getAuthenticatedUser(request).orElseThrow().getAuthorities().stream()
-                  .map(Object::toString)
-                  .toList());
-        });
+    transactionTemplate.executeWithoutResult(tx -> {
+      UserEntity stale = form();
+      assertTrue(stale.hasRole(RoleType.ROLE_ADMIN));
+      independent.executeWithoutResult(other -> revoke());
+      assertTrue(stale.hasRole(RoleType.ROLE_ADMIN));
+      assertEquals(
+          List.of("ROLE_USER"),
+          securityService.getAuthenticatedUser(request).orElseThrow().getAuthorities().stream()
+              .map(Object::toString)
+              .toList());
+    });
   }
 
   @ParameterizedTest
@@ -316,12 +313,12 @@ class SessionAuthorityPersistenceTest {
   void ordinaryStatusActivityAndProfileChangesRetainAuthenticationAndRememberMeType(String source) {
     MockHttpServletRequest request = request(source, "/VAADIN/uidl");
     Authentication original = SecurityContextHolder.getContext().getAuthentication();
-    users.updateLastActivity(victimId);
-    users.updateUserStatus(form(), UserStatus.EMPLOYED, true);
+    userService.updateLastActivity(victimId);
+    userService.updateUserStatus(form(), UserStatus.EMPLOYED, true);
     UserEntity edited = form();
     edited.setFirstName("Profile changed");
-    users.updateAdminUser(edited, edited.getVersion(), "");
-    assertTrue(security.getAuthenticatedUser(request).isPresent());
+    userService.updateAdminUser(edited, edited.getVersion(), "");
+    assertTrue(securityService.getAuthenticatedUser(request).isPresent());
     assertSame(original, SecurityContextHolder.getContext().getAuthentication());
   }
 
@@ -332,12 +329,12 @@ class SessionAuthorityPersistenceTest {
     MockHttpSession session = (MockHttpSession) request.getSession(false);
     UserEntity user = form();
     if (change.equals("delete")) {
-      users.deleteUser(user);
+      userService.deleteUser(user);
     } else {
       user.setEnabled(false);
-      users.save(user);
+      userService.save(user);
     }
-    assertTrue(security.getAuthenticatedUser(request).isEmpty());
+    assertTrue(securityService.getAuthenticatedUser(request).isEmpty());
     assertTrue(session.isInvalid());
   }
 
@@ -347,7 +344,7 @@ class SessionAuthorityPersistenceTest {
     MockHttpServletResponse response = new MockHttpServletResponse();
     @SuppressWarnings("unchecked")
     ObjectProvider<SecurityService> provider = mock(ObjectProvider.class);
-    when(provider.getObject()).thenReturn(security);
+    when(provider.getObject()).thenReturn(securityService);
     FilterChain action = mock(FilterChain.class);
     new VaadinSecurityFilter(provider).doFilter(request, response, action);
     verify(action).doFilter(request, response);

@@ -99,13 +99,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 class SecurityChainRegressionTest {
   @Autowired SecurityFilterChain chain;
   @Autowired FilterRegistrationBean<VaadinSecurityFilter> registration;
-  @Autowired UserService users;
-  @Autowired UserRepository repository;
-  @Autowired TransactionTemplate transaction;
+  @Autowired UserService userService;
+  @Autowired UserRepository userRepository;
+  @Autowired TransactionTemplate transactionTemplate;
   @Autowired ConfigService settings;
   @Autowired AuthenticationManager passwordManager;
-  @Autowired PasswordEncoder encoder;
-  @Autowired LoginAttemptRepository attempts;
+  @Autowired PasswordEncoder passwordEncoder;
+  @Autowired LoginAttemptRepository loginAttemptRepository;
   @Autowired de.derpeterson.app.security.mfa.TwoFactorPolicies twoFactorPolicies;
   @PersistenceContext EntityManager entityManager;
 
@@ -227,9 +227,9 @@ class SecurityChainRegressionTest {
   }
 
   private int index(List<Filter> filters, Class<?> type) {
-    for (int i = 0; i < filters.size(); i++) {
-      if (type.isInstance(filters.get(i))) {
-        return i;
+    for (int filterIndex = 0; filterIndex < filters.size(); filterIndex++) {
+      if (type.isInstance(filters.get(filterIndex))) {
+        return filterIndex;
       }
     }
     fail("Missing filter: " + type.getSimpleName());
@@ -240,19 +240,18 @@ class SecurityChainRegressionTest {
   @ValueSource(strings = {"/admin", "/"})
   void actualChainUsesFreshRolesAndKeepsTheLogin(String path) throws Exception {
     Long victimId =
-        transaction.execute(
-            tx -> {
-              repository.deleteAll();
-              repository.flush();
-              entityManager.createQuery("delete from RoleEntity").executeUpdate();
-              RoleEntity admin = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
-              entityManager.persist(admin);
-              Long victim = create("chain-victim@example.com", admin);
-              create("chain-survivor@example.com", admin);
-              return victim;
-            });
+        transactionTemplate.execute(tx -> {
+          userRepository.deleteAll();
+          userRepository.flush();
+          entityManager.createQuery("delete from RoleEntity").executeUpdate();
+          RoleEntity admin = RoleEntity.builder().name(RoleType.ROLE_ADMIN).build();
+          entityManager.persist(admin);
+          Long victim = create("chain-victim@example.com", admin);
+          create("chain-survivor@example.com", admin);
+          return victim;
+        });
     UserDetails principal =
-        new CustomUserDetailsService(repository).loadUserByUsername("chain-victim@example.com");
+        new CustomUserDetailsService(userRepository).loadUserByUsername("chain-victim@example.com");
     SecurityContext context = SecurityContextHolder.createEmptyContext();
     context.setAuthentication(
         UsernamePasswordAuthenticationToken.authenticated(
@@ -269,12 +268,12 @@ class SecurityChainRegressionTest {
       request.setParameter("v-r", "uidl");
     }
     UserEntity edited =
-        repository.findAll().stream()
+        userRepository.findAll().stream()
             .filter(user -> user.getId().equals(victimId))
             .findFirst()
             .orElseThrow();
     edited.setRoleEntities(new ArrayList<>());
-    users.updateAdminUser(edited, edited.getVersion(), "");
+    userService.updateAdminUser(edited, edited.getVersion(), "");
     MockHttpServletResponse response = new MockHttpServletResponse();
     FilterChain action = mock(FilterChain.class);
     new FilterChainProxy(chain).doFilter(request, response, action);
@@ -298,17 +297,16 @@ class SecurityChainRegressionTest {
   @ParameterizedTest
   @EnumSource(RoleType.class)
   void currentRoleGrantsHomeAndOnlyAdministratorsReachAdmin(RoleType roleType) throws Exception {
-    transaction.executeWithoutResult(
-        tx -> {
-          repository.deleteAll();
-          repository.flush();
-          entityManager.createQuery("delete from RoleEntity").executeUpdate();
-          RoleEntity role = RoleEntity.builder().name(roleType).build();
-          entityManager.persist(role);
-          create("role-access@example.test", role);
-        });
+    transactionTemplate.executeWithoutResult(tx -> {
+      userRepository.deleteAll();
+      userRepository.flush();
+      entityManager.createQuery("delete from RoleEntity").executeUpdate();
+      RoleEntity role = RoleEntity.builder().name(roleType).build();
+      entityManager.persist(role);
+      create("role-access@example.test", role);
+    });
     UserDetails principal =
-        new CustomUserDetailsService(repository).loadUserByUsername("role-access@example.test");
+        new CustomUserDetailsService(userRepository).loadUserByUsername("role-access@example.test");
     Set<String> expected =
         roleType == RoleType.ROLE_SUPERADMIN
             ? Set.of("ROLE_SUPERADMIN", "ROLE_ADMIN")
@@ -316,10 +314,10 @@ class SecurityChainRegressionTest {
     assertEquals(
         expected,
         principal.getAuthorities().stream().map(Object::toString).collect(Collectors.toSet()));
-    assertTrue(repository.findAll().getFirst().hasRole(roleType));
+    assertTrue(userRepository.findAll().getFirst().hasRole(roleType));
     if (roleType == RoleType.ROLE_SUPERADMIN) {
       assertFalse(
-          repository.findAll().getFirst().hasRole(RoleType.ROLE_ADMIN),
+          userRepository.findAll().getFirst().hasRole(RoleType.ROLE_ADMIN),
           "Inherited permission must not add a stored assignment");
     }
     for (String path : List.of("/home", "/admin")) {
@@ -357,22 +355,23 @@ class SecurityChainRegressionTest {
     assertTrue(
         providers.getProviders().stream().anyMatch(LoginAuthenticationService.class::isInstance));
     String email = "password-" + UUID.randomUUID() + "@example.test";
-    transaction.executeWithoutResult(
-        tx -> {
-          RoleEntity role =
-              entityManager
-                  .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
-                  .setParameter("role", roleType)
-                  .getResultStream()
-                  .findFirst()
-                  .orElse(null);
-          if (role == null) {
-            role = RoleEntity.builder().name(roleType).build();
-            entityManager.persist(role);
-          }
-          Long id = create(email, role);
-          entityManager.find(UserEntity.class, id).setPassword(encoder.encode("OriginalPassword!"));
-        });
+    transactionTemplate.executeWithoutResult(tx -> {
+      RoleEntity role =
+          entityManager
+              .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
+              .setParameter("role", roleType)
+              .getResultStream()
+              .findFirst()
+              .orElse(null);
+      if (role == null) {
+        role = RoleEntity.builder().name(roleType).build();
+        entityManager.persist(role);
+      }
+      Long id = create(email, role);
+      entityManager
+          .find(UserEntity.class, id)
+          .setPassword(passwordEncoder.encode("OriginalPassword!"));
+    });
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(2);
     PasswordResponse successful = postPassword(email, "OriginalPassword!");
     assertEquals(
@@ -400,14 +399,18 @@ class SecurityChainRegressionTest {
                     .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY)
                 == null);
     assertEquals(
-        2, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+        2,
+        loginAttemptRepository
+            .findById(LoginAttemptService.identityKey(email))
+            .orElseThrow()
+            .getFailures());
     SecurityContext saved =
         (SecurityContext)
             originalSession.getAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
     UserDetails oldPrincipal = (UserDetails) saved.getAuthentication().getPrincipal();
     UserDetails currentPrincipal =
-        new CustomUserDetailsService(repository).loadUserByUsername(email);
+        new CustomUserDetailsService(userRepository).loadUserByUsername(email);
     Set<String> currentRoles =
         currentPrincipal.getAuthorities().stream()
             .map(Object::toString)
@@ -437,8 +440,8 @@ class SecurityChainRegressionTest {
     verify(servlet).doFilter(any(), any());
     // Fixture-only state change proves framework factor evidence cannot preserve a disabled
     // account.
-    transaction.executeWithoutResult(
-        tx -> repository.findByEmail(email).orElseThrow().setEnabled(false));
+    transactionTemplate.executeWithoutResult(
+        tx -> userRepository.findByEmail(email).orElseThrow().setEnabled(false));
     MockHttpServletRequest revoked = new MockHttpServletRequest("GET", "/home");
     revoked.setServletPath("/home");
     revoked.setSession(originalSession);
@@ -462,13 +465,13 @@ class SecurityChainRegressionTest {
     assertEquals(
         "/login?error=unavailable",
         postPassword(other, "WrongPassword!").response().getRedirectedUrl());
-    assertFalse(attempts.existsById(LoginAttemptService.identityKey(other)));
+    assertFalse(loginAttemptRepository.existsById(LoginAttemptService.identityKey(other)));
   }
 
   @Test
   void rememberMeUsesItsOwnProviderWithoutPasswordCountersEvenWithInvalidPasswordLimit() {
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(0);
-    long before = attempts.count();
+    long before = loginAttemptRepository.count();
     UserDetails principal =
         User.withUsername("remember-fixture@example.test").password("unused").roles("USER").build();
     RememberMeAuthenticationToken token =
@@ -478,7 +481,7 @@ class SecurityChainRegressionTest {
     RememberMeAuthenticationToken forged =
         new RememberMeAuthenticationToken("wrong-key", principal, principal.getAuthorities());
     assertThrows(BadCredentialsException.class, () -> passwordManager.authenticate(forged));
-    assertEquals(before, attempts.count());
+    assertEquals(before, loginAttemptRepository.count());
   }
 
   @Autowired SessionManagementService management;
@@ -508,7 +511,7 @@ class SecurityChainRegressionTest {
       Snapshot list = management.recoveryList(request);
       assertEquals(1, list.active());
       management.recoveryRevoke(request, list.entries().getFirst().handle());
-      assertTrue(admissions.isExpired(old.request()));
+      assertTrue(sessionAdmissionService.isExpired(old.request()));
       assertFalse(management.finishRecovery(request, new MockHttpServletResponse()));
       assertFalse(management.hasRecovery(request));
       MockHttpServletRequest admitted = new MockHttpServletRequest("GET", "/account");
@@ -534,10 +537,14 @@ class SecurityChainRegressionTest {
         () -> management.startRecovery(request, email, "OriginalPassword!", false));
     assertFalse(management.hasRecovery(request));
     assertEquals(
-        1, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+        1,
+        loginAttemptRepository
+            .findById(LoginAttemptService.identityKey(email))
+            .orElseThrow()
+            .getFailures());
   }
 
-  @Autowired SessionAdmissionService admissions;
+  @Autowired SessionAdmissionService sessionAdmissionService;
   @Autowired SessionRegistry sessionRegistry;
 
   @Autowired PersistentTokenRepository tokens;
@@ -551,11 +558,16 @@ class SecurityChainRegressionTest {
       PasswordResponse first = postPassword(email, "OriginalPassword!");
       HttpSession session = first.request().getSession(false);
       assertNotNull(session);
-      UserDetails principal = new CustomUserDetailsService(repository).loadUserByUsername(email);
+      UserDetails principal =
+          new CustomUserDetailsService(userRepository).loadUserByUsername(email);
       PasswordResponse denied = postPassword(email, "OriginalPassword!");
       assertEquals("/login?error=sessions", denied.response().getRedirectedUrl());
       assertEquals(
-          0, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+          0,
+          loginAttemptRepository
+              .findById(LoginAttemptService.identityKey(email))
+              .orElseThrow()
+              .getFailures());
       MockHttpServletRequest attemptRequest = new MockHttpServletRequest();
       MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
       assertThrows(
@@ -670,12 +682,20 @@ class SecurityChainRegressionTest {
       assertNull(anonymous.getAttribute("authenticatedUser"));
       assertTrue(sessionRegistry.getAllSessions(email, false).isEmpty());
       assertEquals(
-          0, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+          0,
+          loginAttemptRepository
+              .findById(LoginAttemptService.identityKey(email))
+              .orElseThrow()
+              .getFailures());
       assertEquals(
           "/login?error=invalid",
           postPassword(email, "WrongPassword!").response().getRedirectedUrl());
       assertEquals(
-          1, attempts.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+          1,
+          loginAttemptRepository
+              .findById(LoginAttemptService.identityKey(email))
+              .orElseThrow()
+              .getFailures());
     }
   }
 
@@ -739,22 +759,23 @@ class SecurityChainRegressionTest {
 
   private String sessionUser(RoleType roleType) {
     String email = "session-" + UUID.randomUUID() + "@example.test";
-    transaction.executeWithoutResult(
-        tx -> {
-          RoleEntity role =
-              entityManager
-                  .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
-                  .setParameter("role", roleType)
-                  .getResultStream()
-                  .findFirst()
-                  .orElse(null);
-          if (role == null) {
-            role = RoleEntity.builder().name(roleType).build();
-            entityManager.persist(role);
-          }
-          Long id = create(email, role);
-          entityManager.find(UserEntity.class, id).setPassword(encoder.encode("OriginalPassword!"));
-        });
+    transactionTemplate.executeWithoutResult(tx -> {
+      RoleEntity role =
+          entityManager
+              .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
+              .setParameter("role", roleType)
+              .getResultStream()
+              .findFirst()
+              .orElse(null);
+      if (role == null) {
+        role = RoleEntity.builder().name(roleType).build();
+        entityManager.persist(role);
+      }
+      Long id = create(email, role);
+      entityManager
+          .find(UserEntity.class, id)
+          .setPassword(passwordEncoder.encode("OriginalPassword!"));
+    });
     return email;
   }
 
@@ -850,8 +871,8 @@ class SecurityChainRegressionTest {
     }
 
     @Bean
-    CustomUserDetailsService userDetailsService(UserRepository repository) {
-      return new CustomUserDetailsService(repository);
+    CustomUserDetailsService userDetailsService(UserRepository userRepository) {
+      return new CustomUserDetailsService(userRepository);
     }
 
     @Bean

@@ -31,14 +31,14 @@ import org.springframework.test.util.ReflectionTestUtils;
 class AdminUserActivityFilterTest {
   private static final Clock CLOCK =
       Clock.fixed(Instant.parse("2026-10-12T12:07:33Z"), ZoneId.of("America/New_York"));
-  private UI ui;
+  private UI testUi;
   private AdminUserActivityFilter field;
   private final LocalDate day = LocalDate.of(2026, 10, 12);
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
+    testUi = new UI();
+    UI.setCurrent(testUi);
     field = new AdminUserActivityFilter(CLOCK);
   }
 

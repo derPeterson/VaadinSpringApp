@@ -81,16 +81,16 @@ import org.springframework.transaction.support.TransactionTemplate;
 class TwoFactorEnrollmentTest {
   @Autowired TwoFactorEnrollment twoFactorEnrollment;
   @Autowired TwoFactorAuthorization twoFactorAuthorization;
-  @Autowired TwoFactorStore store;
+  @Autowired TwoFactorStore twoFactorStore;
   @Autowired TwoFactorMail mail;
-  @Autowired UserRepository users;
-  @Autowired TwoFactorAccountRepository accounts;
+  @Autowired UserRepository userRepository;
+  @Autowired TwoFactorAccountRepository twoFactorAccountRepository;
   @Autowired TwoFactorRecoveryCodeRepository recoveryCodes;
   @Autowired TwoFactorChallengeRepository challenges;
-  @Autowired TransactionTemplate transaction;
-  @Autowired PlatformTransactionManager transactions;
+  @Autowired TransactionTemplate transactionTemplate;
+  @Autowired PlatformTransactionManager transactionManager;
   @Autowired TwoFactorStoreTest.TestClock clock;
-  @Autowired SecurityService security;
+  @Autowired SecurityService securityService;
   @PersistenceContext EntityManager entityManager;
   private UserEntity testAccount;
   private MockHttpServletRequest mockHttpRequest;
@@ -100,7 +100,7 @@ class TwoFactorEnrollmentTest {
     reset(mail);
     clock.now.set(Instant.parse("2026-11-02T12:00:00Z"));
     testAccount =
-        transaction.execute(status -> {
+        transactionTemplate.execute(status -> {
           RoleEntity role = new RoleEntity();
           role.setName(RoleType.ROLE_USER);
           role =
@@ -113,7 +113,7 @@ class TwoFactorEnrollmentTest {
           if (role.getId() == null) {
             entityManager.persist(role);
           }
-          return users.saveAndFlush(
+          return userRepository.saveAndFlush(
               UserEntity.builder()
                   .firstName("Factor")
                   .lastName("Fixture")
@@ -169,7 +169,8 @@ class TwoFactorEnrollmentTest {
             currentCode(twoFactorEnrollment.pendingSecret(mockHttpRequest, pending.id())));
     List<String> originalCodes = twoFactorEnrollment.recoveryOutput(mockHttpRequest, output);
     clock.now.updateAndGet(now -> now.plusSeconds(3600));
-    transaction.executeWithoutResult(status -> challenges.clearExpiredSecrets(clock.instant()));
+    transactionTemplate.executeWithoutResult(
+        status -> challenges.clearExpiredSecrets(clock.instant()));
 
     assertEquals(originalCodes, twoFactorEnrollment.recoveryOutput(mockHttpRequest, output));
     assertEquals(output, twoFactorEnrollment.pending(mockHttpRequest).id());
@@ -192,11 +193,12 @@ class TwoFactorEnrollmentTest {
             pending.id(),
             currentCode(twoFactorEnrollment.pendingSecret(mockHttpRequest, pending.id())));
     clock.now.updateAndGet(now -> now.plusSeconds(301));
-    transaction.executeWithoutResult(status -> challenges.clearExpiredSecrets(clock.instant()));
+    transactionTemplate.executeWithoutResult(
+        status -> challenges.clearExpiredSecrets(clock.instant()));
 
     assertDoesNotThrow(() -> twoFactorEnrollment.dismissOutput(mockHttpRequest, output));
     assertDoesNotThrow(() -> twoFactorEnrollment.dismissOutput(mockHttpRequest, output));
-    transaction.executeWithoutResult(status -> challenges.deleteById(output));
+    transactionTemplate.executeWithoutResult(status -> challenges.deleteById(output));
     assertDoesNotThrow(() -> twoFactorEnrollment.dismissOutput(mockHttpRequest, output));
     assertThrows(
         AccessDeniedException.class,
@@ -314,7 +316,7 @@ class TwoFactorEnrollmentTest {
                 principal,
                 null,
                 List.of(new SimpleGrantedAuthority(FactorGrantedAuthority.PASSWORD_AUTHORITY))))) {
-      when(security.refreshSessionAuthentication(mockHttpRequest.getSession(false)))
+      when(securityService.refreshSessionAuthentication(mockHttpRequest.getSession(false)))
           .thenReturn(Optional.of(other));
       assertFalse(twoFactorEnrollment.canBeginFromPasswordLogin(mockHttpRequest));
       assertThrows(
@@ -326,32 +328,35 @@ class TwoFactorEnrollmentTest {
   @Test
   void optionalEnrollmentAndRemovedFactorsStillNeedExplicitProof() {
     freshPasswordSignIn();
-    transaction.executeWithoutResult(status -> {
-      UserEntity current = users.findById(testAccount.getId()).orElseThrow();
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity current = userRepository.findById(testAccount.getId()).orElseThrow();
       current.setRoleEntities(
           entityManager
               .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
               .setParameter("role", RoleType.ROLE_USER)
               .getResultList());
-      users.saveAndFlush(current);
+      userRepository.saveAndFlush(current);
     });
     assertFalse(twoFactorEnrollment.canBeginFromPasswordLogin(mockHttpRequest));
     freshPasswordSignIn();
-    UUID revision = store.initialize(testAccount.getId(), testAccount.getAccessVersion());
-    transaction.executeWithoutResult(status -> {
-      TwoFactorAccountEntity account = accounts.findById(testAccount.getId()).orElseThrow();
+    UUID revision = twoFactorStore.initialize(testAccount.getId(), testAccount.getAccessVersion());
+    transactionTemplate.executeWithoutResult(status -> {
+      TwoFactorAccountEntity account =
+          twoFactorAccountRepository.findById(testAccount.getId()).orElseThrow();
       account.setPreviouslyEnrolled(true);
-      accounts.saveAndFlush(account);
+      twoFactorAccountRepository.saveAndFlush(account);
     });
     assertFalse(twoFactorEnrollment.canBeginFromPasswordLogin(mockHttpRequest));
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.beginFromPasswordLogin(mockHttpRequest));
-    assertEquals(revision, accounts.findById(testAccount.getId()).orElseThrow().getRevision());
+    assertEquals(
+        revision,
+        twoFactorAccountRepository.findById(testAccount.getId()).orElseThrow().getRevision());
   }
 
   private Authentication freshPasswordSignIn() {
-    transaction.executeWithoutResult(status -> {
+    transactionTemplate.executeWithoutResult(status -> {
       RoleEntity role =
           entityManager
               .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
@@ -363,9 +368,9 @@ class TwoFactorEnrollmentTest {
         role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
         entityManager.persist(role);
       }
-      UserEntity current = users.findById(testAccount.getId()).orElseThrow();
+      UserEntity current = userRepository.findById(testAccount.getId()).orElseThrow();
       current.setRoleEntities(new ArrayList<>(List.of(role)));
-      users.saveAndFlush(current);
+      userRepository.saveAndFlush(current);
     });
     UserDetails principal =
         User.withUsername(testAccount.getEmail()).password("").roles("SUPERADMIN").build();
@@ -376,13 +381,15 @@ class TwoFactorEnrollmentTest {
             .build());
     Authentication authentication =
         UsernamePasswordAuthenticationToken.authenticated(principal, null, authorities);
-    when(security.refreshSessionAuthentication(mockHttpRequest.getSession(false)))
+    when(securityService.refreshSessionAuthentication(mockHttpRequest.getSession(false)))
         .thenReturn(Optional.of(authentication));
     return authentication;
   }
 
   private Authentication freshAuthentication() {
-    return security.refreshSessionAuthentication(mockHttpRequest.getSession(false)).orElseThrow();
+    return securityService
+        .refreshSessionAuthentication(mockHttpRequest.getSession(false))
+        .orElseThrow();
   }
 
   @Test
@@ -390,7 +397,7 @@ class TwoFactorEnrollmentTest {
     TwoFactorEnrollment.Pending pending =
         twoFactorEnrollment.beginPassword(mockHttpRequest, "correct");
     byte[] secret = twoFactorEnrollment.pendingSecret(mockHttpRequest, pending.id());
-    TransactionTemplate concurrentChange = new TransactionTemplate(transactions);
+    TransactionTemplate concurrentChange = new TransactionTemplate(transactionManager);
     concurrentChange.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     doAnswer(
             invocation -> {
@@ -402,9 +409,9 @@ class TwoFactorEnrollmentTest {
                     public void afterCommit() {
                       concurrentChange.executeWithoutResult(status -> {
                         TwoFactorAccountEntity account =
-                            accounts.findById(testAccount.getId()).orElseThrow();
+                            twoFactorAccountRepository.findById(testAccount.getId()).orElseThrow();
                         account.setRevision(UUID.randomUUID());
-                        accounts.saveAndFlush(account);
+                        twoFactorAccountRepository.saveAndFlush(account);
                       });
                     }
                   });
@@ -514,14 +521,14 @@ class TwoFactorEnrollmentTest {
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.confirmEmail(otherRequest, secondId, secondEmailCode));
-    transaction.executeWithoutResult(status -> {
-      UserEntity changed = users.findById(testAccount.getId()).orElseThrow();
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity changed = userRepository.findById(testAccount.getId()).orElseThrow();
       changed.setEmail("changed-" + UUID.randomUUID() + "@example.test");
-      users.saveAndFlush(changed);
+      userRepository.saveAndFlush(changed);
     });
     MockHttpServletRequest changedRequest =
         TwoFactorAuthorizationTest.requestFor(
-            users.findById(testAccount.getId()).orElseThrow().getEmail());
+            userRepository.findById(testAccount.getId()).orElseThrow().getEmail());
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.confirmEmail(changedRequest, secondId, secondEmailCode));
@@ -573,11 +580,12 @@ class TwoFactorEnrollmentTest {
     String accessVersion = testAccount.getAccessVersion();
     String recoveryCode = oldCodes.get(1);
     assertThrows(
-        BadCredentialsException.class, () -> store.verify(userId, accessVersion, recoveryCode));
+        BadCredentialsException.class,
+        () -> twoFactorStore.verify(userId, accessVersion, recoveryCode));
     String previousFactorCode = currentCode(old);
     assertThrows(
         BadCredentialsException.class,
-        () -> store.verify(userId, accessVersion, previousFactorCode));
+        () -> twoFactorStore.verify(userId, accessVersion, previousFactorCode));
   }
 
   private String currentCode(byte[] secret) {
@@ -608,7 +616,8 @@ class TwoFactorEnrollmentTest {
     assertEquals(SetupProof.RECOVERY_CODE, twoFactorEnrollment.pending(recovery).proof());
     Long userId = testAccount.getId();
     String accessVersion = testAccount.getAccessVersion();
-    assertThrows(BadCredentialsException.class, () -> store.verify(userId, accessVersion, last));
+    assertThrows(
+        BadCredentialsException.class, () -> twoFactorStore.verify(userId, accessVersion, last));
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorAuthorization.authorizeCurrent(recovery, TwoFactorAction.PASSWORD, false));
@@ -638,7 +647,8 @@ class TwoFactorEnrollmentTest {
   @Test
   void invalidNewTotpAndMailFailureKeepTheOldFactorAndRecoveryCode() {
     String last = lastRecoveryCode();
-    String oldSecret = accounts.findById(testAccount.getId()).orElseThrow().getEncryptedSecret();
+    String oldSecret =
+        twoFactorAccountRepository.findById(testAccount.getId()).orElseThrow().getEncryptedSecret();
     TwoFactorEnrollment.Pending pending = twoFactorEnrollment.beginRecovery(mockHttpRequest, last);
     byte[] secret = twoFactorEnrollment.pendingSecret(mockHttpRequest, pending.id());
     UUID pendingId = pending.id();
@@ -654,7 +664,11 @@ class TwoFactorEnrollmentTest {
         IllegalStateException.class,
         () -> twoFactorEnrollment.complete(mockHttpRequest, pendingId, code));
     assertEquals(
-        oldSecret, accounts.findById(testAccount.getId()).orElseThrow().getEncryptedSecret());
+        oldSecret,
+        twoFactorAccountRepository
+            .findById(testAccount.getId())
+            .orElseThrow()
+            .getEncryptedSecret());
     assertEquals(1, recoveryCodes.remaining(testAccount.getId()));
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     reset(mail);
@@ -755,7 +769,7 @@ class TwoFactorEnrollmentTest {
   private String lastRecoveryCode() {
     List<String> codes = initialRecoveryCodes();
     for (int index = 1; index < codes.size(); index++) {
-      store.verify(testAccount.getId(), testAccount.getAccessVersion(), codes.get(index));
+      twoFactorStore.verify(testAccount.getId(), testAccount.getAccessVersion(), codes.get(index));
     }
     return codes.getFirst();
   }
@@ -802,25 +816,25 @@ class TwoFactorEnrollmentTest {
     @Bean
     TwoFactorEnrollment enrollment(
         TwoFactorAuthorization twoFactorAuthorization,
-        TwoFactorStore store,
+        TwoFactorStore twoFactorStore,
         TwoFactorSecrets secrets,
         de.derpeterson.app.repository.TwoFactorChallengeRepository challenges,
         TwoFactorPolicies policies,
         ObjectProvider<AuthenticationManager> passwords,
         ObjectProvider<SessionManagementService> sessions,
         TwoFactorMail mail,
-        PlatformTransactionManager transactions,
+        PlatformTransactionManager transactionManager,
         TwoFactorStoreTest.TestClock clock) {
       return new TwoFactorEnrollment(
           twoFactorAuthorization,
-          store,
+          twoFactorStore,
           secrets,
           challenges,
           policies,
           passwords,
           sessions,
           mail,
-          transactions,
+          transactionManager,
           clock);
     }
   }

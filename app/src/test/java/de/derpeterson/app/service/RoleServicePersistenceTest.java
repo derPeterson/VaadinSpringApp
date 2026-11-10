@@ -33,38 +33,38 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 @SpringJUnitConfig(RoleServicePersistenceTest.Config.class)
 @Execution(ExecutionMode.SAME_THREAD)
 class RoleServicePersistenceTest {
-  @Autowired private RoleRepository repository;
+  @Autowired private RoleRepository roleRepository;
   private RoleService service;
 
   @BeforeEach
   void clearDatabase() {
-    repository.deleteAll();
-    service = new RoleService(repository);
+    roleRepository.deleteAll();
+    service = new RoleService(roleRepository);
   }
 
   @ParameterizedTest
   @EnumSource(RoleType.class)
   void findsExactlyTheRequestedPersistedRole(RoleType name) {
     for (RoleType role : RoleType.values()) {
-      repository.saveAndFlush(RoleEntity.builder().name(role).build());
+      roleRepository.saveAndFlush(RoleEntity.builder().name(role).build());
     }
 
     RoleEntity found = service.findByName(name).orElseThrow();
 
     assertEquals(name, found.getName());
     assertNotNull(found.getId());
-    assertEquals(repository.findByName(name).orElseThrow().getId(), found.getId());
-    assertEquals(RoleType.values().length, repository.count());
+    assertEquals(roleRepository.findByName(name).orElseThrow().getId(), found.getId());
+    assertEquals(RoleType.values().length, roleRepository.count());
   }
 
   @ParameterizedTest
   @EnumSource(RoleType.class)
   void absentRoleIsNotConfusedWithAnotherRoleOrCreated(RoleType name) {
     RoleType other = name == RoleType.ROLE_ADMIN ? RoleType.ROLE_USER : RoleType.ROLE_ADMIN;
-    repository.saveAndFlush(RoleEntity.builder().name(other).build());
+    roleRepository.saveAndFlush(RoleEntity.builder().name(other).build());
 
     assertTrue(service.findByName(name).isEmpty());
-    assertEquals(1, repository.count());
+    assertEquals(1, roleRepository.count());
     assertTrue(service.findByName(other).isPresent());
   }
 
@@ -74,29 +74,31 @@ class RoleServicePersistenceTest {
       assertTrue(service.findByName(name).isEmpty());
     }
     assertTrue(service.findByName(null).isEmpty());
-    repository.saveAndFlush(RoleEntity.builder().name(RoleType.ROLE_USER).build());
+    roleRepository.saveAndFlush(RoleEntity.builder().name(RoleType.ROLE_USER).build());
     assertTrue(service.findByName(null).isEmpty());
-    assertEquals(1, repository.count());
+    assertEquals(1, roleRepository.count());
   }
 
   @Test
   void uniqueNameConstraintRejectsDuplicatesAndPreservesOriginalLookup() {
     RoleEntity original =
-        repository.saveAndFlush(RoleEntity.builder().name(RoleType.ROLE_USER).build());
+        roleRepository.saveAndFlush(RoleEntity.builder().name(RoleType.ROLE_USER).build());
 
     RoleEntity roleEntity = RoleEntity.builder().name(RoleType.ROLE_USER).build();
-    assertThrows(DataIntegrityViolationException.class, () -> repository.saveAndFlush(roleEntity));
+    assertThrows(
+        DataIntegrityViolationException.class, () -> roleRepository.saveAndFlush(roleEntity));
 
-    assertEquals(1, repository.count());
+    assertEquals(1, roleRepository.count());
     assertEquals(original.getId(), service.findByName(RoleType.ROLE_USER).orElseThrow().getId());
   }
 
   @Test
   void nullNameCannotBePersistedAndDoesNotLeaveARow() {
     RoleEntity roleEntity = RoleEntity.builder().build();
-    assertThrows(DataIntegrityViolationException.class, () -> repository.saveAndFlush(roleEntity));
+    assertThrows(
+        DataIntegrityViolationException.class, () -> roleRepository.saveAndFlush(roleEntity));
 
-    assertEquals(0, repository.count());
+    assertEquals(0, roleRepository.count());
     assertTrue(service.findByName(null).isEmpty());
   }
 

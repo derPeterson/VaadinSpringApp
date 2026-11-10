@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Test;
 
 /** Locale lifecycle contracts; UI rendering remains in the browser suites. */
 class MessagePropertiesLocaleTest {
-  private final CustomI18NProvider provider =
+  private final CustomI18NProvider i18nProvider =
       new CustomI18NProvider() {
         @Override
         public String getTranslation(String key, Locale locale, Object... parameters) {
@@ -56,7 +56,7 @@ class MessagePropertiesLocaleTest {
     VaadinSession session = mock(VaadinSession.class);
     when(session.getLocale()).thenAnswer(ignored -> locale.get());
     VaadinSession.setCurrent(session);
-    MessageProperties messages = new MessageProperties(provider);
+    MessageProperties messages = new MessageProperties(i18nProvider);
     assertEquals("de", messages.getLoginTitle());
     locale.set(Locale.ENGLISH);
     assertEquals("en", messages.getLoginTitle());
@@ -64,7 +64,7 @@ class MessagePropertiesLocaleTest {
 
   @Test
   void explicitLocaleWorksWithoutSessionAndDoesNotFollowLaterSessionChanges() {
-    MessageProperties messages = MessageProperties.forLocale(provider, Locale.GERMAN);
+    MessageProperties messages = MessageProperties.forLocale(i18nProvider, Locale.GERMAN);
     assertEquals("de", messages.getLoginTitle());
     VaadinSession session = mock(VaadinSession.class);
     when(session.getLocale()).thenReturn(Locale.ENGLISH);

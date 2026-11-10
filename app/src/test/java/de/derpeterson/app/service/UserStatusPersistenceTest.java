@@ -66,25 +66,25 @@ import org.springframework.transaction.support.TransactionTemplate;
 @SpringJUnitConfig(UserServicePersistenceTest.Config.class)
 @Execution(ExecutionMode.SAME_THREAD)
 class UserStatusPersistenceTest {
-  @Autowired private UserService service;
-  @Autowired private SecurityService security;
-  @Autowired private UserRepository repository;
-  @Autowired private UserStatusBroadcaster broadcaster;
-  @Autowired private TransactionTemplate transaction;
+  @Autowired private UserService userService;
+  @Autowired private SecurityService securityService;
+  @Autowired private UserRepository userRepository;
+  @Autowired private UserStatusBroadcaster userStatusBroadcaster;
+  @Autowired private TransactionTemplate transactionTemplate;
   @PersistenceContext private EntityManager entityManager;
 
   private Long userId;
-  private UI ui;
-  private VaadinSession session;
+  private UI testUi;
+  private VaadinSession vaadinSession;
   private final List<UserStatusBroadcaster.UserStatusMessage> messages = new ArrayList<>();
   private final List<Registration> registrations = new ArrayList<>();
 
   @BeforeEach
   void seed() {
     messages.clear();
-    transaction.executeWithoutResult(status -> {
-      repository.deleteAll();
-      repository.flush();
+    transactionTemplate.executeWithoutResult(status -> {
+      userRepository.deleteAll();
+      userRepository.flush();
       entityManager.createQuery("delete from RoleEntity").executeUpdate();
       RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_USER).build();
       entityManager.persist(role);
@@ -116,24 +116,25 @@ class UserStatusPersistenceTest {
     }
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
-    ui = null;
-    session = null;
+    testUi = null;
+    vaadinSession = null;
   }
 
   private void listen() {
-    registrations.add(broadcaster.register(messages::add));
+    registrations.add(userStatusBroadcaster.register(messages::add));
   }
 
   private UserEntity stored() {
-    return repository.findById(userId).orElseThrow();
+    return userRepository.findById(userId).orElseThrow();
   }
 
   private UserEntity form() {
-    return repository.findAll().getFirst();
+    return userRepository.findAll().getFirst();
   }
 
   private TransactionTemplate independent() {
-    TransactionTemplate separate = new TransactionTemplate(transaction.getTransactionManager());
+    TransactionTemplate separate =
+        new TransactionTemplate(transactionTemplate.getTransactionManager());
     separate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     return separate;
   }
@@ -146,25 +147,25 @@ class UserStatusPersistenceTest {
       CountDownLatch entered = new java.util.concurrent.CountDownLatch(1);
       AtomicReference<Future<?>> future =
           new java.util.concurrent.atomic.AtomicReference<java.util.concurrent.Future<?>>();
-      transaction.executeWithoutResult(tx -> {
-        UserEntity profile = repository.findByIdForUpdate(userId).orElseThrow();
+      transactionTemplate.executeWithoutResult(tx -> {
+        UserEntity profile = userRepository.findByIdForUpdate(userId).orElseThrow();
         profile.setFirstName("Concurrent profile");
         profile.setPassword("concurrent-security-hash");
         profile.setEnabled(false);
         profile.setManualStatus(UserStatus.EMPLOYED);
-        repository.flush();
+        userRepository.flush();
         future.set(
             worker.submit(() -> {
               entered.countDown();
               if (login) {
-                security.handleLogin(
+                securityService.handleLogin(
                     org.springframework.security.core.userdetails.User.withUsername(
                             "status@example.com")
                         .password("hash")
                         .roles("USER")
                         .build());
               } else {
-                service.updateLastActivity(userId);
+                userService.updateLastActivity(userId);
               }
             }));
         assertTrue(await(entered));
@@ -199,10 +200,10 @@ class UserStatusPersistenceTest {
       throws Exception {
     UserStatus initial = toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT;
     UserStatus target = toAbsent ? UserStatus.ABSENT : UserStatus.AVAILABLE;
-    service.updateUserStatus(stored(), initial, false);
+    userService.updateUserStatus(stored(), initial, false);
     Instant activity = toAbsent ? Instant.now().minusSeconds(3600) : Instant.now();
     Long otherId =
-        transaction.execute(tx -> {
+        transactionTemplate.execute(tx -> {
           UserEntity first = stored();
           first.setLastActivity(activity);
           UserEntity other =
@@ -222,7 +223,7 @@ class UserStatusPersistenceTest {
           entityManager.persist(other);
           return other.getId();
         });
-    List<UserEntity> candidates = List.of(stored(), repository.findById(otherId).orElseThrow());
+    List<UserEntity> candidates = List.of(stored(), userRepository.findById(otherId).orElseThrow());
     UserRepository selection = mock(UserRepository.class);
     ConfigService config = mock(ConfigService.class);
     if (toAbsent) {
@@ -232,11 +233,11 @@ class UserStatusPersistenceTest {
       when(selection.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(any(), eq(initial)))
           .thenReturn(candidates);
     }
-    UserStatusScheduler scheduler = new UserStatusScheduler(selection, service, config);
+    UserStatusScheduler scheduler = new UserStatusScheduler(selection, userService, config);
     listen();
     try (ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
-      transaction.executeWithoutResult(tx -> {
-        repository.findByIdForUpdate(userId).orElseThrow();
+      transactionTemplate.executeWithoutResult(tx -> {
+        userRepository.findByIdForUpdate(userId).orElseThrow();
         Future<?> future =
             worker.submit(() -> {
               if (toAbsent) {
@@ -251,7 +252,7 @@ class UserStatusPersistenceTest {
       });
     }
     assertEquals(initial, stored().getStatus());
-    assertEquals(target, repository.findById(otherId).orElseThrow().getStatus());
+    assertEquals(target, userRepository.findById(otherId).orElseThrow().getStatus());
     assertEquals(
         List.of(
             new UserStatusBroadcaster.UserStatusMessage(otherId, initial.name(), target.name())),
@@ -261,14 +262,15 @@ class UserStatusPersistenceTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void scheduledMutationWaitsForActivityCommitAndThenRechecks(boolean toAbsent) throws Exception {
-    service.updateUserStatus(stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, false);
+    userService.updateUserStatus(
+        stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, false);
     Instant cutoff = Instant.now().minusSeconds(300);
-    transaction.executeWithoutResult(tx ->
+    transactionTemplate.executeWithoutResult(tx ->
         stored().setLastActivity(toAbsent ? cutoff.minusSeconds(60) : cutoff.plusSeconds(60)));
     List<UserEntity> candidates =
         toAbsent
-            ? repository.findByLastActivityBeforeAndStatus(cutoff, UserStatus.AVAILABLE)
-            : repository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
+            ? userRepository.findByLastActivityBeforeAndStatus(cutoff, UserStatus.AVAILABLE)
+            : userRepository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
                 cutoff, UserStatus.ABSENT);
     assertEquals(1, candidates.size());
     listen();
@@ -276,14 +278,14 @@ class UserStatusPersistenceTest {
       CountDownLatch entered = new java.util.concurrent.CountDownLatch(1);
       AtomicReference<Future<?>> future =
           new java.util.concurrent.atomic.AtomicReference<java.util.concurrent.Future<?>>();
-      transaction.executeWithoutResult(tx -> {
-        UserEntity active = repository.findByIdForUpdate(userId).orElseThrow();
+      transactionTemplate.executeWithoutResult(tx -> {
+        UserEntity active = userRepository.findByIdForUpdate(userId).orElseThrow();
         active.setLastActivity(toAbsent ? cutoff.plusSeconds(60) : cutoff.minusSeconds(60));
-        repository.flush();
+        userRepository.flush();
         future.set(
             worker.submit(() -> {
               entered.countDown();
-              service.updateScheduledStatus(
+              userService.updateScheduledStatus(
                   candidates.getFirst().getId(),
                   toAbsent ? UserStatus.ABSENT : UserStatus.AVAILABLE,
                   cutoff);
@@ -302,14 +304,14 @@ class UserStatusPersistenceTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void activityFromAnAlreadyLoadedContextSurvivesConcurrentVersionedChanges(boolean statusChange) {
-    transaction.executeWithoutResult(status -> {
-      UserEntity stale = repository.findById(userId).orElseThrow();
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity stale = userRepository.findById(userId).orElseThrow();
       Long version = stale.getVersion();
       independent()
           .executeWithoutResult(other -> {
-            UserEntity fresh = repository.findById(userId).orElseThrow();
+            UserEntity fresh = userRepository.findById(userId).orElseThrow();
             if (statusChange) {
-              service.updateUserStatus(fresh, UserStatus.EMPLOYED, true);
+              userService.updateUserStatus(fresh, UserStatus.EMPLOYED, true);
             } else {
               fresh.setFirstName("Latest profile");
               fresh.setPassword("latest-security-hash");
@@ -318,7 +320,7 @@ class UserStatusPersistenceTest {
             }
           });
       assertEquals(version, stale.getVersion());
-      assertDoesNotThrow(() -> service.updateLastActivity(userId));
+      assertDoesNotThrow(() -> userService.updateLastActivity(userId));
     });
     UserEntity fresh = stored();
     assertTrue(fresh.getLastActivity().isAfter(Instant.now().minusSeconds(60)));
@@ -336,12 +338,12 @@ class UserStatusPersistenceTest {
   void concurrentActivityIsNotOverwrittenByAnAlreadyLoadedStatusOrProfileEditor(
       boolean statusChange) {
     AtomicReference<Instant> activity = new java.util.concurrent.atomic.AtomicReference<Instant>();
-    transaction.executeWithoutResult(status -> {
-      UserEntity editor = repository.findById(userId).orElseThrow();
-      independent().executeWithoutResult(other -> service.updateLastActivity(userId));
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity editor = userRepository.findById(userId).orElseThrow();
+      independent().executeWithoutResult(other -> userService.updateLastActivity(userId));
       activity.set(independent().execute(other -> stored().getLastActivity()));
       if (statusChange) {
-        service.updateUserStatus(editor, UserStatus.ABSENT, false);
+        userService.updateUserStatus(editor, UserStatus.ABSENT, false);
       } else {
         editor.setLastName("Newest");
         editor.setPassword("new-password");
@@ -358,19 +360,20 @@ class UserStatusPersistenceTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void schedulerRechecksActivityChangedAfterSelectionInBothDirections(boolean toAbsent) {
-    service.updateUserStatus(stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, false);
+    userService.updateUserStatus(
+        stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, false);
     if (!toAbsent) {
-      service.updateLastActivity(userId);
+      userService.updateLastActivity(userId);
     }
     UserRepository selection = mock(UserRepository.class);
     if (toAbsent) {
       when(selection.findByLastActivityBeforeAndStatus(any(), eq(UserStatus.AVAILABLE)))
           .thenAnswer(call -> {
             List<UserEntity> candidates =
-                repository.findByLastActivityBeforeAndStatus(
+                userRepository.findByLastActivityBeforeAndStatus(
                     call.getArgument(0), UserStatus.AVAILABLE);
             assertEquals(1, candidates.size());
-            service.updateLastActivity(userId);
+            userService.updateLastActivity(userId);
             return candidates;
           });
     } else {
@@ -378,10 +381,10 @@ class UserStatusPersistenceTest {
               any(), eq(UserStatus.ABSENT)))
           .thenAnswer(call -> {
             List<UserEntity> candidates =
-                repository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
+                userRepository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
                     call.getArgument(0), UserStatus.ABSENT);
             assertEquals(1, candidates.size());
-            transaction.executeWithoutResult(
+            transactionTemplate.executeWithoutResult(
                 tx -> stored().setLastActivity(Instant.now().minusSeconds(600)));
             return candidates;
           });
@@ -390,7 +393,7 @@ class UserStatusPersistenceTest {
     if (toAbsent) {
       when(config.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
     }
-    UserStatusScheduler scheduler = new UserStatusScheduler(selection, service, config);
+    UserStatusScheduler scheduler = new UserStatusScheduler(selection, userService, config);
     listen();
     if (toAbsent) {
       scheduler.checkInactiveAvailableUsers();
@@ -405,22 +408,23 @@ class UserStatusPersistenceTest {
   @EnumSource(UserStatus.class)
   void schedulerRechecksInterveningManualStatusInBothDirections(UserStatus manual) {
     for (boolean toAbsent : new boolean[] {true, false}) {
-      service.updateUserStatus(stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, true);
-      service.updateUserStatus(
+      userService.updateUserStatus(
+          stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, true);
+      userService.updateUserStatus(
           stored(), toAbsent ? UserStatus.AVAILABLE : UserStatus.ABSENT, false);
       Instant cutoff = Instant.now().minusSeconds(300);
-      transaction.executeWithoutResult(tx ->
+      transactionTemplate.executeWithoutResult(tx ->
           stored().setLastActivity(toAbsent ? cutoff.minusSeconds(60) : cutoff.plusSeconds(60)));
       List<UserEntity> candidates =
           toAbsent
-              ? repository.findByLastActivityBeforeAndStatus(cutoff, UserStatus.AVAILABLE)
-              : repository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
+              ? userRepository.findByLastActivityBeforeAndStatus(cutoff, UserStatus.AVAILABLE)
+              : userRepository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
                   cutoff, UserStatus.ABSENT);
       assertEquals(1, candidates.size());
-      service.updateUserStatus(stored(), manual, true);
+      userService.updateUserStatus(stored(), manual, true);
       messages.clear();
       listen();
-      service.updateScheduledStatus(
+      userService.updateScheduledStatus(
           candidates.getFirst().getId(),
           toAbsent ? UserStatus.ABSENT : UserStatus.AVAILABLE,
           cutoff);
@@ -436,19 +440,19 @@ class UserStatusPersistenceTest {
   @Test
   void deletedUserHasExplicitStatusActivityAndFormContracts() {
     UserEntity snapshot = form();
-    repository.deleteById(userId);
+    userRepository.deleteById(userId);
     listen();
     assertThrows(
         IllegalStateException.class,
-        () -> service.updateUserStatus(snapshot, UserStatus.AVAILABLE, true));
-    assertThrows(IllegalStateException.class, () -> service.updateLastActivity(userId));
+        () -> userService.updateUserStatus(snapshot, UserStatus.AVAILABLE, true));
+    assertThrows(IllegalStateException.class, () -> userService.updateLastActivity(userId));
     Long snapshotVersion = snapshot.getVersion();
     assertThrows(
         OptimisticLockingFailureException.class,
-        () -> service.updateAdminUser(snapshot, snapshotVersion, "new"));
+        () -> userService.updateAdminUser(snapshot, snapshotVersion, "new"));
     assertDoesNotThrow(
-        () -> service.updateScheduledStatus(userId, UserStatus.ABSENT, Instant.now()));
-    assertFalse(repository.existsById(userId));
+        () -> userService.updateScheduledStatus(userId, UserStatus.ABSENT, Instant.now()));
+    assertFalse(userRepository.existsById(userId));
     assertTrue(messages.isEmpty());
   }
 
@@ -458,7 +462,7 @@ class UserStatusPersistenceTest {
     edited.setFirstName("Rejected");
     assertThrows(
         OptimisticLockingFailureException.class,
-        () -> service.updateAdminUser(edited, null, "new"));
+        () -> userService.updateAdminUser(edited, null, "new"));
     assertEquals("Test", stored().getFirstName());
     assertEquals("old-hash", stored().getPassword());
     assertEquals(edited.getVersion(), stored().getVersion());
@@ -466,10 +470,10 @@ class UserStatusPersistenceTest {
 
   @Test
   void explicitAdminPasswordPreservesUnrelatedStatusLocaleAndActivity() {
-    service.updateUserStatus(stored(), UserStatus.EMPLOYED, true);
-    transaction.executeWithoutResult(tx -> stored().setPreferredLocale(Locale.GERMAN));
+    userService.updateUserStatus(stored(), UserStatus.EMPLOYED, true);
+    transactionTemplate.executeWithoutResult(tx -> stored().setPreferredLocale(Locale.GERMAN));
     UserEntity edited = form();
-    service.updateLastActivity(userId);
+    userService.updateLastActivity(userId);
     Instant activity = stored().getLastActivity();
     // These snapshot fields are not admin-editable and must not be merged.
     edited.setStatus(UserStatus.OFFLINE);
@@ -477,7 +481,7 @@ class UserStatusPersistenceTest {
     edited.setPreferredLocale(Locale.ENGLISH);
     edited.setLastActivity(Instant.EPOCH);
     edited.setFirstName("Admin edited");
-    service.updateAdminUser(edited, edited.getVersion(), "Explicit-new-password!");
+    userService.updateAdminUser(edited, edited.getVersion(), "Explicit-new-password!");
     UserEntity fresh = stored();
     assertTrue(
         new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
@@ -498,8 +502,8 @@ class UserStatusPersistenceTest {
     assertFalse(Hibernate.isInitialized(stale.getRoleEntities()));
     Instant activity =
         Instant.now().minusSeconds(120).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
-    transaction.executeWithoutResult(status -> {
-      UserEntity user = repository.findById(userId).orElseThrow();
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity user = userRepository.findById(userId).orElseThrow();
       user.setEnabled(false);
       user.setPassword("new-hash");
       user.setPreferredLocale(Locale.GERMAN);
@@ -509,7 +513,7 @@ class UserStatusPersistenceTest {
     });
     listen();
 
-    StatusUpdate result = service.updateUserStatus(stale, UserStatus.AVAILABLE, true);
+    StatusUpdate result = userService.updateUserStatus(stale, UserStatus.AVAILABLE, true);
 
     UserEntity current = stored();
     assertFalse(current.isEnabled());
@@ -530,25 +534,25 @@ class UserStatusPersistenceTest {
     UserEntity first = form();
     UserEntity stale = form();
     first.setFirstName("First editor");
-    service.updateAdminUser(first, first.getVersion(), "");
+    userService.updateAdminUser(first, first.getVersion(), "");
     stale.setLastName("Second editor");
 
     Long staleVersion = stale.getVersion();
     OptimisticLockingFailureException conflict =
         assertThrows(
             OptimisticLockingFailureException.class,
-            () -> service.updateAdminUser(stale, staleVersion, ""));
+            () -> userService.updateAdminUser(stale, staleVersion, ""));
     assertTrue(conflict.getMessage().contains("Formular neu öffnen"));
     assertEquals("First editor", stored().getFirstName());
     assertEquals("User", stored().getLastName());
 
     UserEntity beforePasswordChange = form();
-    transaction.executeWithoutResult(
-        status -> repository.findById(userId).orElseThrow().setPassword("reset-hash"));
+    transactionTemplate.executeWithoutResult(
+        status -> userRepository.findById(userId).orElseThrow().setPassword("reset-hash"));
     Long beforePasswordChangeVersion = beforePasswordChange.getVersion();
     assertThrows(
         OptimisticLockingFailureException.class,
-        () -> service.updateAdminUser(beforePasswordChange, beforePasswordChangeVersion, ""));
+        () -> userService.updateAdminUser(beforePasswordChange, beforePasswordChangeVersion, ""));
     assertEquals("reset-hash", stored().getPassword());
   }
 
@@ -556,14 +560,14 @@ class UserStatusPersistenceTest {
   void activityDoesNotInvalidateAdminFormAndAdminSavePreservesActivity() {
     UserEntity edited = form();
     Long version = edited.getVersion();
-    for (int i = 0; i < 3; i++) {
-      service.updateLastActivity(userId);
+    for (int activityUpdateIndex = 0; activityUpdateIndex < 3; activityUpdateIndex++) {
+      userService.updateLastActivity(userId);
     }
     Instant activity = stored().getLastActivity();
     assertEquals(version, stored().getVersion());
     assertTrue(activity.isAfter(edited.getLastActivity()));
     edited.setFirstName("Edited");
-    service.updateAdminUser(edited, version, "");
+    userService.updateAdminUser(edited, version, "");
     assertEquals(activity, stored().getLastActivity());
     assertEquals("Edited", stored().getFirstName());
   }
@@ -571,24 +575,24 @@ class UserStatusPersistenceTest {
   @Test
   void statusChangeInvalidatesAdminFormButRepeatedNoOpDoesNotAdvanceVersion() {
     UserEntity edited = form();
-    service.updateUserStatus(edited, UserStatus.AVAILABLE, true);
+    userService.updateUserStatus(edited, UserStatus.AVAILABLE, true);
     Long version = stored().getVersion();
-    service.updateUserStatus(edited, UserStatus.AVAILABLE, true);
+    userService.updateUserStatus(edited, UserStatus.AVAILABLE, true);
     assertEquals(version, stored().getVersion());
     Long editedVersion = edited.getVersion();
     assertThrows(
         OptimisticLockingFailureException.class,
-        () -> service.updateAdminUser(edited, editedVersion, ""));
+        () -> userService.updateAdminUser(edited, editedVersion, ""));
     assertEquals(UserStatus.AVAILABLE, stored().getStatus());
   }
 
   @Test
   void genericSaveAlsoRejectsStaleDetachedEntities() {
     UserEntity stale = form();
-    transaction.executeWithoutResult(
-        status -> repository.findById(userId).orElseThrow().setPassword("reset-hash"));
+    transactionTemplate.executeWithoutResult(
+        status -> userRepository.findById(userId).orElseThrow().setPassword("reset-hash"));
     stale.setFirstName("Stale");
-    assertThrows(OptimisticLockingFailureException.class, () -> service.saveUser(stale));
+    assertThrows(OptimisticLockingFailureException.class, () -> userService.saveUser(stale));
     assertEquals("reset-hash", stored().getPassword());
     assertEquals("Test", stored().getFirstName());
   }
@@ -596,10 +600,10 @@ class UserStatusPersistenceTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void adminFormUpdateRetainsLastSuperadminProtection(boolean disable) {
-    transaction.executeWithoutResult(status -> {
+    transactionTemplate.executeWithoutResult(status -> {
       RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
       entityManager.persist(role);
-      repository.findById(userId).orElseThrow().setRoleEntities(new ArrayList<>(List.of(role)));
+      userRepository.findById(userId).orElseThrow().setRoleEntities(new ArrayList<>(List.of(role)));
     });
     UserEntity edited = form();
     if (disable) {
@@ -609,21 +613,21 @@ class UserStatusPersistenceTest {
     }
     Long editedVersion = edited.getVersion();
     assertThrows(
-        IllegalStateException.class, () -> service.updateAdminUser(edited, editedVersion, ""));
+        IllegalStateException.class, () -> userService.updateAdminUser(edited, editedVersion, ""));
     assertTrue(stored().isEnabled());
     assertTrue(form().hasRole(RoleType.ROLE_SUPERADMIN));
-    service.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
+    userService.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
     assertTrue(form().hasRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
   void detachedListingAndAdminHelpersHaveAnExplicitRolesLoadContract() {
-    List<UserEntity> users = service.findAllUsers();
+    List<UserEntity> users = userService.findAllUsers();
     assertTrue(Hibernate.isInitialized(users.getFirst().getRoleEntities()));
     assertTrue(users.getFirst().hasRole(RoleType.ROLE_USER));
-    assertTrue(service.canDeleteUser(users.getFirst()));
+    assertTrue(userService.canDeleteUser(users.getFirst()));
     assertFalse(
-        service.wouldRemoveLastEnabledSuperadmin(
+        userService.wouldRemoveLastEnabledSuperadmin(
             userId, false, users.getFirst().getRoleEntities()));
   }
 
@@ -631,9 +635,9 @@ class UserStatusPersistenceTest {
   @EnumSource(UserStatus.class)
   void automaticPriorityUsesStoredStateNotTheDetachedSnapshot(UserStatus manualStatus) {
     UserEntity stale = stored();
-    service.updateUserStatus(stale, manualStatus, true);
+    userService.updateUserStatus(stale, manualStatus, true);
     listen();
-    StatusUpdate result = service.updateUserStatus(stale, UserStatus.ABSENT, false);
+    StatusUpdate result = userService.updateUserStatus(stale, UserStatus.ABSENT, false);
     boolean protectedStatus =
         manualStatus == UserStatus.EMPLOYED || manualStatus == UserStatus.OFFLINE;
     assertEquals(protectedStatus ? manualStatus : UserStatus.ABSENT, result.status());
@@ -646,17 +650,17 @@ class UserStatusPersistenceTest {
   void schedulerRunsBothDirectionsWithoutOsivOrInitializedRoles() {
     ConfigService config = mock(ConfigService.class);
     when(config.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
-    UserStatusScheduler scheduler = new UserStatusScheduler(repository, service, config);
-    service.updateUserStatus(stored(), UserStatus.AVAILABLE, false);
+    UserStatusScheduler scheduler = new UserStatusScheduler(userRepository, userService, config);
+    userService.updateUserStatus(stored(), UserStatus.AVAILABLE, false);
     UserEntity candidate =
-        repository
+        userRepository
             .findByLastActivityBeforeAndStatus(Instant.now(), UserStatus.AVAILABLE)
             .getFirst();
     assertFalse(Hibernate.isInitialized(candidate.getRoleEntities()));
     listen();
     scheduler.checkInactiveAvailableUsers();
     assertEquals(UserStatus.ABSENT, stored().getStatus());
-    service.updateLastActivity(userId);
+    userService.updateLastActivity(userId);
     scheduler.checkRecentlyActiveAbsentUsers();
     assertEquals(UserStatus.AVAILABLE, stored().getStatus());
     assertEquals(2, messages.size());
@@ -669,9 +673,9 @@ class UserStatusPersistenceTest {
     stale.setStatus(
         UserStatus.EMPLOYED); // Even the former popover ordering cannot corrupt the old status.
     listen();
-    transaction.executeWithoutResult(status -> {
-      service.updateUserStatus(stale, UserStatus.AVAILABLE, true);
-      repository.flush();
+    transactionTemplate.executeWithoutResult(status -> {
+      userService.updateUserStatus(stale, UserStatus.AVAILABLE, true);
+      userRepository.flush();
       assertTrue(messages.isEmpty());
     });
     assertEquals(
@@ -683,9 +687,9 @@ class UserStatusPersistenceTest {
   @Test
   void rollbackSendsNothingEvenAfterFlush() {
     listen();
-    transaction.executeWithoutResult(status -> {
-      service.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
-      repository.flush();
+    transactionTemplate.executeWithoutResult(status -> {
+      userService.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
+      userRepository.flush();
       status.setRollbackOnly();
     });
     assertTrue(messages.isEmpty());
@@ -696,10 +700,10 @@ class UserStatusPersistenceTest {
   @ValueSource(booleans = {true, false})
   void repeatedChangesInOneTransactionOnlySendTheCommittedNetChange(boolean returnToOriginal) {
     listen();
-    transaction.executeWithoutResult(status -> {
-      service.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
-      repository.flush();
-      service.updateUserStatus(
+    transactionTemplate.executeWithoutResult(status -> {
+      userService.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
+      userRepository.flush();
+      userService.updateUserStatus(
           stored(), returnToOriginal ? UserStatus.OFFLINE : UserStatus.EMPLOYED, true);
       assertTrue(messages.isEmpty());
     });
@@ -714,15 +718,16 @@ class UserStatusPersistenceTest {
   @Test
   void realOptimisticCommitFailureSendsNothingAndPreservesConcurrentPasswordChange() {
     listen();
-    TransactionTemplate independent = new TransactionTemplate(transaction.getTransactionManager());
+    TransactionTemplate independent =
+        new TransactionTemplate(transactionTemplate.getTransactionManager());
     independent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     assertThrows(
         OptimisticLockingFailureException.class,
         () ->
-            transaction.executeWithoutResult(status -> {
-              service.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
+            transactionTemplate.executeWithoutResult(status -> {
+              userService.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
               independent.executeWithoutResult(other ->
-                  repository.findById(userId).orElseThrow().setPassword("concurrent-hash"));
+                  userRepository.findById(userId).orElseThrow().setPassword("concurrent-hash"));
               assertTrue(messages.isEmpty());
               // No explicit flush: the real JpaTransactionManager commit must fail.
             }));
@@ -734,7 +739,7 @@ class UserStatusPersistenceTest {
   @Test
   void unchangedStatusCanChangeManualFlagWithoutAnEvent() {
     listen();
-    service.updateUserStatus(stored(), UserStatus.OFFLINE, true);
+    userService.updateUserStatus(stored(), UserStatus.OFFLINE, true);
     assertTrue(stored().isStatusManuallySet());
     assertTrue(messages.isEmpty());
   }
@@ -743,11 +748,11 @@ class UserStatusPersistenceTest {
   @ValueSource(booleans = {true, false})
   void loginPreservesManualPriorityAndUsesCommitBoundStatusUpdates(boolean manual) {
     if (manual) {
-      service.updateUserStatus(stored(), UserStatus.EMPLOYED, true);
+      userService.updateUserStatus(stored(), UserStatus.EMPLOYED, true);
     }
     Instant previousActivity = stored().getLastActivity();
     listen();
-    security.handleLogin(
+    securityService.handleLogin(
         org.springframework.security.core.userdetails.User.withUsername("status@example.com")
             .password("hash")
             .roles("USER")
@@ -760,23 +765,23 @@ class UserStatusPersistenceTest {
   @Test
   void faultyFirstListenerDoesNotBlockHealthyListenerOrSuccessfulPersistence() {
     registrations.add(
-        broadcaster.register(message -> {
+        userStatusBroadcaster.register(message -> {
           throw new IllegalStateException("broken listener");
         }));
     listen();
-    assertDoesNotThrow(() -> service.updateUserStatus(stored(), UserStatus.AVAILABLE, true));
+    assertDoesNotThrow(() -> userService.updateUserStatus(stored(), UserStatus.AVAILABLE, true));
     assertEquals(UserStatus.AVAILABLE, stored().getStatus());
     assertEquals(1, messages.size());
   }
 
   private UserPopoverMenu popover(
       UserService statusService, UserEntity snapshot, List<UserStatus> icons) {
-    ui = new UI();
-    UI.setCurrent(ui);
-    session = mock(VaadinSession.class);
-    when(session.getLocale()).thenReturn(Locale.ENGLISH);
-    when(session.hasLock()).thenReturn(true);
-    VaadinSession.setCurrent(session);
+    testUi = new UI();
+    UI.setCurrent(testUi);
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenReturn(Locale.ENGLISH);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    VaadinSession.setCurrent(vaadinSession);
     MessageProperties messageProperties =
         mock(
             MessageProperties.class,
@@ -801,9 +806,9 @@ class UserStatusPersistenceTest {
   void actualPopoverCommitsBeforeUpdatingSnapshotAndIcons() {
     UserEntity snapshot = stored();
     List<UserStatus> icons = new ArrayList<>();
-    UserPopoverMenu menu = popover(service, snapshot, icons);
+    UserPopoverMenu menu = popover(userService, snapshot, icons);
     registrations.add(
-        broadcaster.register(message -> {
+        userStatusBroadcaster.register(message -> {
           assertEquals(UserStatus.OFFLINE, snapshot.getStatus());
           assertTrue(icons.isEmpty());
           messages.add(message);

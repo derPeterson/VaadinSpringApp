@@ -131,14 +131,15 @@ class AccountSecurityServicePersistenceTest {
 
     @Bean
     ConfigService config() {
-      ConfigService config = mock(ConfigService.class);
-      when(config.getString(any()))
+      ConfigService configService = mock(ConfigService.class);
+      when(configService.getString(any()))
           .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-      when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://account.example.test");
-      when(config.getInteger(any()))
+      when(configService.getString(ConfigEntry.BASE_URL))
+          .thenReturn("https://account.example.test");
+      when(configService.getInteger(any()))
           .thenAnswer(call ->
               Integer.parseInt(((ConfigEntry) call.getArgument(0)).getDefaultValueString()));
-      return config;
+      return configService;
     }
 
     @Bean
@@ -152,8 +153,9 @@ class AccountSecurityServicePersistenceTest {
     }
 
     @Bean
-    SessionAdmissionService admission(ConfigService config, SessionRegistryImpl registry) {
-      return new SessionAdmissionService(config, registry);
+    SessionAdmissionService admission(
+        ConfigService configService, SessionRegistryImpl sessionRegistry) {
+      return new SessionAdmissionService(configService, sessionRegistry);
     }
 
     @Bean
@@ -163,15 +165,22 @@ class AccountSecurityServicePersistenceTest {
 
     @Bean
     EmailQueueService queue(
-        ConfigService config,
+        ConfigService configService,
         EmailQueueRepository queue,
-        EmailService sender,
-        UserRepository users,
+        EmailService emailService,
+        UserRepository userRepository,
         PlatformTransactionManager manager,
         AdminNotificationAttemptRepository attempts) {
       return spy(
           new EmailQueueService(
-              config, queue, sender, users, manager, attempts, FIXED, QueueTestWorkers.inline()));
+              configService,
+              queue,
+              emailService,
+              userRepository,
+              manager,
+              attempts,
+              FIXED,
+              QueueTestWorkers.inline()));
     }
 
     @Bean
@@ -185,60 +194,64 @@ class AccountSecurityServicePersistenceTest {
     }
   }
 
-  @Autowired AccountSecurityService service;
+  @Autowired AccountSecurityService accountSecurityService;
   @Autowired UserNotificationService userNotifications;
   @Autowired UserNotificationRepository userNotificationRepository;
 
-  @Autowired SecurityService security;
-  @Autowired UserRepository users;
-  @Autowired EmailChangeTokenRepository tokens;
-  @Autowired PasswordResetTokenRepository resets;
-  @Autowired EmailQueueRepository emails;
+  @Autowired SecurityService securityService;
+  @Autowired UserRepository userRepository;
+  @Autowired EmailChangeTokenRepository emailChangeTokenRepository;
+  @Autowired PasswordResetTokenRepository passwordResetTokenRepository;
+  @Autowired EmailQueueRepository emailQueueRepository;
   @Autowired LoginAttemptRepository attempts;
-  @Autowired PasswordEncoder encoder;
+  @Autowired PasswordEncoder passwordEncoder;
   @Autowired CustomUserDetailsService details;
   @Autowired EmailQueueService queue;
-  @Autowired EmailService sender;
-  @Autowired ConfigService config;
+  @Autowired EmailService emailService;
+  @Autowired ConfigService configService;
   @Autowired PersistentTokenRepository remembered;
-  @Autowired SessionRegistryImpl registry;
-  @Autowired TransactionTemplate tx;
-  @PersistenceContext EntityManager em;
-  UserEntity account;
-  MockHttpServletRequest request;
+  @Autowired SessionRegistryImpl sessionRegistry;
+  @Autowired TransactionTemplate transactionTemplate;
+  @PersistenceContext EntityManager entityManager;
+  UserEntity testUserEntity;
+  MockHttpServletRequest mockHttpRequest;
 
   @BeforeEach
   void setup() {
     SecurityContextHolder.clearContext();
-    reset(queue, sender);
-    registry
+    reset(queue, emailService);
+    sessionRegistry
         .getAllPrincipals()
         .forEach(principal ->
-            registry
+            sessionRegistry
                 .getAllSessions(principal, true)
-                .forEach(info -> registry.removeSessionInformation(info.getSessionId())));
-    ReflectionTestUtils.setField(service, "clock", FIXED);
-    tx.executeWithoutResult(status -> {
-      em.createQuery("delete from UserNotificationRecipientEntity").executeUpdate();
-      em.createQuery("delete from UserNotificationEntity").executeUpdate();
-      em.createQuery("delete from EmailQueueEntity").executeUpdate();
-      em.createQuery("delete from EmailChangeTokenEntity").executeUpdate();
-      em.createQuery("delete from PasswordResetTokenEntity").executeUpdate();
-      users.deleteAll();
-      users.flush();
+                .forEach(info -> sessionRegistry.removeSessionInformation(info.getSessionId())));
+    ReflectionTestUtils.setField(accountSecurityService, "clock", FIXED);
+    transactionTemplate.executeWithoutResult(status -> {
+      entityManager.createQuery("delete from UserNotificationRecipientEntity").executeUpdate();
+      entityManager.createQuery("delete from UserNotificationEntity").executeUpdate();
+      entityManager.createQuery("delete from EmailQueueEntity").executeUpdate();
+      entityManager.createQuery("delete from EmailChangeTokenEntity").executeUpdate();
+      entityManager.createQuery("delete from PasswordResetTokenEntity").executeUpdate();
+      userRepository.deleteAll();
+      userRepository.flush();
       attempts.deleteAll();
-      account = newUser("old@example.test");
-      users.saveAndFlush(account);
+      testUserEntity = newUser("old@example.test");
+      userRepository.saveAndFlush(testUserEntity);
     });
-    account = users.findById(account.getId()).orElseThrow();
-    remembered.removeUserTokens(account.getEmail());
-    request = new MockHttpServletRequest();
-    registry.registerNewSession(request.getSession().getId(), account.getEmail());
-    registry.registerNewSession("other-device", account.getEmail());
+    testUserEntity = userRepository.findById(testUserEntity.getId()).orElseThrow();
+    remembered.removeUserTokens(testUserEntity.getEmail());
+    mockHttpRequest = new MockHttpServletRequest();
+    sessionRegistry.registerNewSession(
+        mockHttpRequest.getSession().getId(), testUserEntity.getEmail());
+    sessionRegistry.registerNewSession("other-device", testUserEntity.getEmail());
     remembered.createNewToken(
         new PersistentRememberMeToken(
-            account.getEmail(), "remember-series", "remember-token", Date.from(FIXED.instant())));
-    authenticate(account);
+            testUserEntity.getEmail(),
+            "remember-series",
+            "remember-token",
+            Date.from(FIXED.instant())));
+    authenticate(testUserEntity);
   }
 
   @AfterEach
@@ -251,7 +264,7 @@ class AccountSecurityServicePersistenceTest {
         .email(email)
         .firstName("Own")
         .lastName("Account")
-        .password(encoder.encode("Old-secret!"))
+        .password(passwordEncoder.encode("Old-secret!"))
         .enabled(true)
         .preferredLocale(Locale.GERMAN)
         .birthDate(LocalDate.of(1990, 1, 1))
@@ -269,16 +282,17 @@ class AccountSecurityServicePersistenceTest {
   }
 
   UserEntity stored() {
-    return users.findById(account.getId()).orElseThrow();
+    return userRepository.findById(testUserEntity.getId()).orElseThrow();
   }
 
   void requestChange(String email) {
-    service.requestEmailChange(request, new EmailChange(email, email, "Old-secret!"));
+    accountSecurityService.requestEmailChange(
+        mockHttpRequest, new EmailChange(email, email, "Old-secret!"));
   }
 
   String linkToken() {
     String html =
-        emails.findAll().stream()
+        emailQueueRepository.findAll().stream()
             .filter(mail -> mail.getBody().contains("confirm-email-change/"))
             .reduce((first, second) -> second)
             .orElseThrow()
@@ -295,29 +309,30 @@ class AccountSecurityServicePersistenceTest {
   @Test
   void passwordChangeIsAtomicQueuesNoticeAndKeepsOnlyCurrentSession() {
     requestChange("new@example.test");
-    tx.executeWithoutResult(status -> {
+    transactionTemplate.executeWithoutResult(status -> {
       PasswordResetTokenEntity reset = new PasswordResetTokenEntity();
       reset.setToken("reset-before-change");
-      reset.setUserEntity(users.findById(account.getId()).orElseThrow());
+      reset.setUserEntity(userRepository.findById(testUserEntity.getId()).orElseThrow());
       reset.setExpiryDate(LocalDateTime.now(FIXED).plusHours(1));
-      resets.save(reset);
+      passwordResetTokenRepository.save(reset);
     });
     PasswordChanged result =
-        service.changePassword(
-            request, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
+        accountSecurityService.changePassword(
+            mockHttpRequest, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
     assertEquals(1, userNotificationRepository.count());
     assertEquals(
         UserNotificationType.PASSWORD_CHANGED,
         userNotificationRepository.findAll().getFirst().getType());
-    assertEquals(account.getVersion(), result.previousVersion());
+    assertEquals(testUserEntity.getVersion(), result.previousVersion());
     assertTrue(result.version() > result.previousVersion());
-    assertTrue(encoder.matches("New-secret!", stored().getPassword()));
+    assertTrue(passwordEncoder.matches("New-secret!", stored().getPassword()));
     assertEquals("old@example.test", stored().getEmail());
-    assertEquals(TokenStatus.INACTIVE, tokens.findAll().getFirst().getStatus());
+    assertEquals(TokenStatus.INACTIVE, emailChangeTokenRepository.findAll().getFirst().getStatus());
     assertEquals(
-        TokenStatus.INACTIVE, resets.findByToken("reset-before-change").orElseThrow().getStatus());
+        TokenStatus.INACTIVE,
+        passwordResetTokenRepository.findByToken("reset-before-change").orElseThrow().getStatus());
     EmailQueueEntity notice =
-        emails.findAll().stream()
+        emailQueueRepository.findAll().stream()
             .filter(mail -> mail.getSubject().contains("Passwort"))
             .findFirst()
             .orElseThrow();
@@ -325,8 +340,9 @@ class AccountSecurityServicePersistenceTest {
     assertFalse(notice.getBody().contains("New-secret!"));
     assertFalse(notice.getBody().contains("Old-secret!"));
     assertTrue(notice.getBody().contains("cid:"));
-    assertFalse(registry.getSessionInformation(request.getSession().getId()).isExpired());
-    assertTrue(registry.getSessionInformation("other-device").isExpired());
+    assertFalse(
+        sessionRegistry.getSessionInformation(mockHttpRequest.getSession().getId()).isExpired());
+    assertTrue(sessionRegistry.getSessionInformation("other-device").isExpired());
     assertNull(remembered.getTokenForSeries("remember-series"));
   }
 
@@ -336,18 +352,20 @@ class AccountSecurityServicePersistenceTest {
     doThrow(new IllegalStateException("message storage unavailable"))
         .when(failing)
         .recordSecurityEvent(any(), any());
-    ReflectionTestUtils.setField(service, "userNotificationService", failing);
+    ReflectionTestUtils.setField(accountSecurityService, "userNotificationService", failing);
     try {
       PasswordChange passwordChange =
           new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
       assertThrows(
-          IllegalStateException.class, () -> service.changePassword(request, passwordChange));
-      assertTrue(encoder.matches("Old-secret!", stored().getPassword()));
-      assertEquals(0, emails.count());
-      assertFalse(registry.getSessionInformation("other-device").isExpired());
+          IllegalStateException.class,
+          () -> accountSecurityService.changePassword(mockHttpRequest, passwordChange));
+      assertTrue(passwordEncoder.matches("Old-secret!", stored().getPassword()));
+      assertEquals(0, emailQueueRepository.count());
+      assertFalse(sessionRegistry.getSessionInformation("other-device").isExpired());
       assertNotNull(remembered.getTokenForSeries("remember-series"));
     } finally {
-      ReflectionTestUtils.setField(service, "userNotificationService", userNotifications);
+      ReflectionTestUtils.setField(
+          accountSecurityService, "userNotificationService", userNotifications);
     }
   }
 
@@ -359,15 +377,16 @@ class AccountSecurityServicePersistenceTest {
     doThrow(new IllegalStateException("message storage unavailable"))
         .when(failing)
         .recordSecurityEvent(any(), any());
-    ReflectionTestUtils.setField(service, "userNotificationService", failing);
+    ReflectionTestUtils.setField(accountSecurityService, "userNotificationService", failing);
     try {
-      assertThrows(IllegalStateException.class, () -> service.confirm(raw));
+      assertThrows(IllegalStateException.class, () -> accountSecurityService.confirm(raw));
       assertEquals("old@example.test", stored().getEmail());
-      assertEquals(TokenStatus.ACTIVE, tokens.findAll().getFirst().getStatus());
-      assertEquals(1, emails.count());
-      assertFalse(registry.getSessionInformation("other-device").isExpired());
+      assertEquals(TokenStatus.ACTIVE, emailChangeTokenRepository.findAll().getFirst().getStatus());
+      assertEquals(1, emailQueueRepository.count());
+      assertFalse(sessionRegistry.getSessionInformation("other-device").isExpired());
     } finally {
-      ReflectionTestUtils.setField(service, "userNotificationService", userNotifications);
+      ReflectionTestUtils.setField(
+          accountSecurityService, "userNotificationService", userNotifications);
     }
   }
 
@@ -375,11 +394,12 @@ class AccountSecurityServicePersistenceTest {
   void wrongCurrentPasswordPersistsTheAttemptButChangesNothing() {
     PasswordChange passwordChange = new PasswordChange("Wrong!", "New-secret!", "New-secret!");
     assertThrows(
-        BadCredentialsException.class, () -> service.changePassword(request, passwordChange));
-    assertTrue(encoder.matches("Old-secret!", stored().getPassword()));
+        BadCredentialsException.class,
+        () -> accountSecurityService.changePassword(mockHttpRequest, passwordChange));
+    assertTrue(passwordEncoder.matches("Old-secret!", stored().getPassword()));
     assertEquals(1, attempts.findAll().getFirst().getFailures());
-    assertEquals(0, emails.count());
-    assertFalse(registry.getSessionInformation("other-device").isExpired());
+    assertEquals(0, emailQueueRepository.count());
+    assertFalse(sessionRegistry.getSessionInformation("other-device").isExpired());
     assertNotNull(remembered.getTokenForSeries("remember-series"));
   }
 
@@ -387,14 +407,15 @@ class AccountSecurityServicePersistenceTest {
   void invalidPasswordOrConfirmationNeverPersistsOrAuthenticates() {
     PasswordChange shortPasswordChange = new PasswordChange("Old-secret!", "x", "x");
     assertThrows(
-        IllegalArgumentException.class, () -> service.changePassword(request, shortPasswordChange));
+        IllegalArgumentException.class,
+        () -> accountSecurityService.changePassword(mockHttpRequest, shortPasswordChange));
     PasswordChange mismatchedConfirmation =
         new PasswordChange("Old-secret!", "New-secret!", "Different!");
     assertThrows(
         IllegalArgumentException.class,
-        () -> service.changePassword(request, mismatchedConfirmation));
+        () -> accountSecurityService.changePassword(mockHttpRequest, mismatchedConfirmation));
     assertEquals(0, attempts.count());
-    assertEquals(0, emails.count());
+    assertEquals(0, emailQueueRepository.count());
   }
 
   @Test
@@ -405,27 +426,28 @@ class AccountSecurityServicePersistenceTest {
         .addAddressedNotification(any(), anyString(), anyString(), anyString());
     PasswordChange passwordChange = new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
     assertThrows(
-        IllegalStateException.class, () -> service.changePassword(request, passwordChange));
-    assertTrue(encoder.matches("Old-secret!", stored().getPassword()));
-    assertEquals(TokenStatus.ACTIVE, tokens.findAll().getFirst().getStatus());
-    assertEquals(1, emails.count());
+        IllegalStateException.class,
+        () -> accountSecurityService.changePassword(mockHttpRequest, passwordChange));
+    assertTrue(passwordEncoder.matches("Old-secret!", stored().getPassword()));
+    assertEquals(TokenStatus.ACTIVE, emailChangeTokenRepository.findAll().getFirst().getStatus());
+    assertEquals(1, emailQueueRepository.count());
     assertNotNull(remembered.getTokenForSeries("remember-series"));
-    assertFalse(registry.getSessionInformation("other-device").isExpired());
+    assertFalse(sessionRegistry.getSessionInformation("other-device").isExpired());
   }
 
   @Test
   void emailRequestOnlyQueuesToNewAddressAndGetDoesNotConsumeTheHashedToken() {
     requestChange("  New@Example.Test  ");
     assertEquals("old@example.test", stored().getEmail());
-    assertEquals("new@example.test", emails.findAll().getFirst().getRecipient());
+    assertEquals("new@example.test", emailQueueRepository.findAll().getFirst().getRecipient());
     String raw = linkToken();
-    EmailChangeTokenEntity token = tokens.findAll().getFirst();
+    EmailChangeTokenEntity token = emailChangeTokenRepository.findAll().getFirst();
     assertNotEquals(raw, token.getDigest());
     assertEquals(64, token.getDigest().length());
-    assertEquals(Confirmation.READY, service.inspect(raw));
-    assertEquals(Confirmation.READY, service.inspect(raw));
-    assertEquals(TokenStatus.ACTIVE, tokens.findAll().getFirst().getStatus());
-    assertFalse(registry.getSessionInformation("other-device").isExpired());
+    assertEquals(Confirmation.READY, accountSecurityService.inspect(raw));
+    assertEquals(Confirmation.READY, accountSecurityService.inspect(raw));
+    assertEquals(TokenStatus.ACTIVE, emailChangeTokenRepository.findAll().getFirst().getStatus());
+    assertFalse(sessionRegistry.getSessionInformation("other-device").isExpired());
   }
 
   @Test
@@ -433,50 +455,55 @@ class AccountSecurityServicePersistenceTest {
     requestChange("new@example.test");
     String raw = linkToken();
     assertEquals(0, userNotificationRepository.count());
-    assertEquals(Confirmation.SUCCESS, service.confirm(raw));
+    assertEquals(Confirmation.SUCCESS, accountSecurityService.confirm(raw));
     assertEquals(1, userNotificationRepository.count());
     assertEquals(
         UserNotificationType.EMAIL_CHANGED,
         userNotificationRepository.findAll().getFirst().getType());
     assertEquals("new@example.test", stored().getEmail());
-    assertEquals(TokenStatus.USED, tokens.findAll().getFirst().getStatus());
-    assertEquals(3, emails.count());
+    assertEquals(TokenStatus.USED, emailChangeTokenRepository.findAll().getFirst().getStatus());
+    assertEquals(3, emailQueueRepository.count());
     assertEquals(
         1,
-        emails.findAll().stream().filter(m -> m.getRecipient().equals("old@example.test")).count());
+        emailQueueRepository.findAll().stream()
+            .filter(m -> m.getRecipient().equals("old@example.test"))
+            .count());
     assertEquals(
         2,
-        emails.findAll().stream().filter(m -> m.getRecipient().equals("new@example.test")).count());
-    assertTrue(registry.getSessionInformation(request.getSession().getId()).isExpired());
-    assertTrue(registry.getSessionInformation("other-device").isExpired());
+        emailQueueRepository.findAll().stream()
+            .filter(m -> m.getRecipient().equals("new@example.test"))
+            .count());
+    assertTrue(
+        sessionRegistry.getSessionInformation(mockHttpRequest.getSession().getId()).isExpired());
+    assertTrue(sessionRegistry.getSessionInformation("other-device").isExpired());
     assertNull(remembered.getTokenForSeries("remember-series"));
-    assertEquals(Confirmation.INVALID, service.confirm(raw));
-    assertEquals(3, emails.count());
+    assertEquals(Confirmation.INVALID, accountSecurityService.confirm(raw));
+    assertEquals(3, emailQueueRepository.count());
   }
 
   @Test
   void expiredTokenAtExactBoundaryCannotChangeTheAddress() {
     requestChange("new@example.test");
     String raw = linkToken();
-    tx.executeWithoutResult(status -> {
-      EmailChangeTokenEntity t = tokens.findAll().getFirst();
+    transactionTemplate.executeWithoutResult(status -> {
+      EmailChangeTokenEntity t = emailChangeTokenRepository.findAll().getFirst();
       t.setExpiryDate(LocalDateTime.now(FIXED));
-      tokens.save(t);
+      emailChangeTokenRepository.save(t);
     });
-    assertEquals(Confirmation.EXPIRED, service.inspect(raw));
-    assertEquals(Confirmation.EXPIRED, service.confirm(raw));
+    assertEquals(Confirmation.EXPIRED, accountSecurityService.inspect(raw));
+    assertEquals(Confirmation.EXPIRED, accountSecurityService.confirm(raw));
     assertEquals("old@example.test", stored().getEmail());
-    assertEquals(TokenStatus.EXPIRED, tokens.findAll().getFirst().getStatus());
+    assertEquals(TokenStatus.EXPIRED, emailChangeTokenRepository.findAll().getFirst().getStatus());
   }
 
   @Test
   void addressClaimedAfterRequestIsRejectedWithoutChangingEitherAccount() {
     requestChange("new@example.test");
     String raw = linkToken();
-    users.saveAndFlush(newUser("new@example.test"));
-    assertEquals(Confirmation.CONFLICT, service.confirm(raw));
+    userRepository.saveAndFlush(newUser("new@example.test"));
+    assertEquals(Confirmation.CONFLICT, accountSecurityService.confirm(raw));
     assertEquals("old@example.test", stored().getEmail());
-    assertEquals(1, emails.count());
+    assertEquals(1, emailQueueRepository.count());
   }
 
   @ParameterizedTest
@@ -484,10 +511,10 @@ class AccountSecurityServicePersistenceTest {
   void staleOrDisabledAccountCannotUseTheOldLink(String mutation) {
     requestChange("new@example.test");
     String raw = linkToken();
-    tx.executeWithoutResult(status -> {
-      UserEntity user = users.findById(account.getId()).orElseThrow();
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity user = userRepository.findById(testUserEntity.getId()).orElseThrow();
       if (mutation.equals("password")) {
-        user.setPassword(encoder.encode("Another-secret!"));
+        user.setPassword(passwordEncoder.encode("Another-secret!"));
       }
       if (mutation.equals("email")) {
         user.setEmail("admin-changed@example.test");
@@ -495,10 +522,10 @@ class AccountSecurityServicePersistenceTest {
       if (mutation.equals("disabled")) {
         user.setEnabled(false);
       }
-      users.saveAndFlush(user);
+      userRepository.saveAndFlush(user);
     });
-    assertEquals(Confirmation.INVALID, service.confirm(raw));
-    assertEquals(1, emails.count());
+    assertEquals(Confirmation.INVALID, accountSecurityService.confirm(raw));
+    assertEquals(1, emailQueueRepository.count());
   }
 
   @Test
@@ -508,13 +535,14 @@ class AccountSecurityServicePersistenceTest {
     assertEquals(
         Problem.REQUEST_PENDING,
         assertThrows(Rejected.class, () -> requestChange("second@example.test")).problem());
-    assertEquals(1, emails.count());
-    ReflectionTestUtils.setField(service, "clock", Clock.offset(FIXED, Duration.ofSeconds(61)));
+    assertEquals(1, emailQueueRepository.count());
+    ReflectionTestUtils.setField(
+        accountSecurityService, "clock", Clock.offset(FIXED, Duration.ofSeconds(61)));
     requestChange("second@example.test");
     String second = linkToken();
     assertNotEquals(first, second);
-    assertEquals(Confirmation.INVALID, service.inspect(first));
-    assertEquals(Confirmation.READY, service.inspect(second));
+    assertEquals(Confirmation.INVALID, accountSecurityService.inspect(first));
+    assertEquals(Confirmation.READY, accountSecurityService.inspect(second));
   }
 
   @Test
@@ -522,16 +550,17 @@ class AccountSecurityServicePersistenceTest {
     assertEquals(
         Problem.SAME_EMAIL,
         assertThrows(Rejected.class, () -> requestChange("OLD@example.test")).problem());
-    users.saveAndFlush(newUser("taken@example.test"));
+    userRepository.saveAndFlush(newUser("taken@example.test"));
     assertEquals(
         Problem.EMAIL_UNAVAILABLE,
         assertThrows(Rejected.class, () -> requestChange("TAKEN@example.test")).problem());
     EmailChange emailChange =
         new EmailChange("new@example.test", "other@example.test", "Old-secret!");
     assertThrows(
-        IllegalArgumentException.class, () -> service.requestEmailChange(request, emailChange));
-    assertEquals(0, tokens.count());
-    assertEquals(0, emails.count());
+        IllegalArgumentException.class,
+        () -> accountSecurityService.requestEmailChange(mockHttpRequest, emailChange));
+    assertEquals(0, emailChangeTokenRepository.count());
+    assertEquals(0, emailQueueRepository.count());
   }
 
   @Test
@@ -541,12 +570,12 @@ class AccountSecurityServicePersistenceTest {
     doThrow(new IllegalStateException("Own simulated outbox failure"))
         .when(queue)
         .addAddressedNotification(any(), anyString(), anyString(), anyString());
-    assertThrows(IllegalStateException.class, () -> service.confirm(raw));
+    assertThrows(IllegalStateException.class, () -> accountSecurityService.confirm(raw));
     assertEquals("old@example.test", stored().getEmail());
-    assertEquals(TokenStatus.ACTIVE, tokens.findAll().getFirst().getStatus());
-    assertFalse(registry.getSessionInformation("other-device").isExpired());
+    assertEquals(TokenStatus.ACTIVE, emailChangeTokenRepository.findAll().getFirst().getStatus());
+    assertFalse(sessionRegistry.getSessionInformation("other-device").isExpired());
     assertNotNull(remembered.getTokenForSeries("remember-series"));
-    assertEquals(1, emails.count());
+    assertEquals(1, emailQueueRepository.count());
   }
 
   @Test
@@ -560,7 +589,7 @@ class AccountSecurityServicePersistenceTest {
           () -> {
             ready.countDown();
             assertTrue(start.await(10, TimeUnit.SECONDS));
-            return service.confirm(raw);
+            return accountSecurityService.confirm(raw);
           };
       Future<Confirmation> a = executor.submit(confirm);
       Future<Confirmation> b = executor.submit(confirm);
@@ -571,35 +600,35 @@ class AccountSecurityServicePersistenceTest {
       assertEquals(1, results.stream().filter(r -> r == Confirmation.SUCCESS).count());
       assertEquals(1, results.stream().filter(r -> r == Confirmation.INVALID).count());
     }
-    assertEquals(3, emails.count());
+    assertEquals(3, emailQueueRepository.count());
   }
 
   @Test
   void queuedRecipientNeverFollowsALaterUnrelatedAddressChange() throws Exception {
     requestChange("new@example.test");
-    tx.executeWithoutResult(status -> {
-      UserEntity user = users.findById(account.getId()).orElseThrow();
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity user = userRepository.findById(testUserEntity.getId()).orElseThrow();
       user.setEmail("later@example.test");
-      users.saveAndFlush(user);
+      userRepository.saveAndFlush(user);
     });
     queue.processQueue();
-    verify(sender).sendEmailTo(eq("new@example.test"), anyString(), anyString());
-    verify(sender, never()).sendEmail(any(), anyString(), anyString());
+    verify(emailService).sendEmailTo(eq("new@example.test"), anyString(), anyString());
+    verify(emailService, never()).sendEmail(any(), anyString(), anyString());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void newMailsUseFixedAccountLanguageAndEscapeConfiguredHtml(String language) {
-    tx.executeWithoutResult(status -> {
-      UserEntity user = users.findById(account.getId()).orElseThrow();
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity user = userRepository.findById(testUserEntity.getId()).orElseThrow();
       user.setPreferredLocale(Locale.forLanguageTag(language));
-      users.saveAndFlush(user);
+      userRepository.saveAndFlush(user);
     });
-    when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Own <script>text</script>");
+    when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Own <script>text</script>");
     try {
-      service.changePassword(
-          request, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
-      EmailQueueEntity mail = emails.findAll().getFirst();
+      accountSecurityService.changePassword(
+          mockHttpRequest, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
+      EmailQueueEntity mail = emailQueueRepository.findAll().getFirst();
       assertTrue(mail.getBody().contains("&lt;script&gt;text&lt;/script&gt;"));
       assertFalse(mail.getBody().contains("<script>text</script>"));
       assertTrue(
@@ -610,30 +639,30 @@ class AccountSecurityServicePersistenceTest {
                       : "Ihr Passwort wurde geändert"));
       assertFalse(mail.getBody().contains("{{"));
     } finally {
-      when(config.getString(ConfigEntry.SERVICE_NAME))
+      when(configService.getString(ConfigEntry.SERVICE_NAME))
           .thenReturn(ConfigEntry.SERVICE_NAME.getDefaultValueString());
     }
   }
 
   @Test
   void currentPasswordChecksUseTheConfiguredPersistentAttemptLimit() {
-    when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(1);
-    when(config.getInteger(ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS)).thenReturn(900);
+    when(configService.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(1);
+    when(configService.getInteger(ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS)).thenReturn(900);
     try {
       PasswordChange wrongPasswordChange =
           new PasswordChange("Wrong!", "New-secret!", "New-secret!");
       assertThrows(
           BadCredentialsException.class,
-          () -> service.changePassword(request, wrongPasswordChange));
+          () -> accountSecurityService.changePassword(mockHttpRequest, wrongPasswordChange));
       PasswordChange blockedPasswordChange =
           new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
       assertThrows(
           LoginThrottledException.class,
-          () -> service.changePassword(request, blockedPasswordChange));
-      assertTrue(encoder.matches("Old-secret!", stored().getPassword()));
-      assertEquals(0, emails.count());
+          () -> accountSecurityService.changePassword(mockHttpRequest, blockedPasswordChange));
+      assertTrue(passwordEncoder.matches("Old-secret!", stored().getPassword()));
+      assertEquals(0, emailQueueRepository.count());
     } finally {
-      when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT))
+      when(configService.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT))
           .thenReturn(Integer.parseInt(ConfigEntry.LOGIN_ATTEMPTS_LIMIT.getDefaultValueString()));
     }
   }
@@ -646,14 +675,15 @@ class AccountSecurityServicePersistenceTest {
     MockHttpServletRequest anonymous = new MockHttpServletRequest();
     PasswordChange passwordChange = new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
     assertThrows(
-        AccessDeniedException.class, () -> service.changePassword(anonymous, passwordChange));
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+        AccessDeniedException.class,
+        () -> accountSecurityService.changePassword(anonymous, passwordChange));
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     try {
-      assertThrows(MaintenanceAccessException.class, () -> service.confirm(raw));
-      assertEquals(TokenStatus.ACTIVE, tokens.findAll().getFirst().getStatus());
+      assertThrows(MaintenanceAccessException.class, () -> accountSecurityService.confirm(raw));
+      assertEquals(TokenStatus.ACTIVE, emailChangeTokenRepository.findAll().getFirst().getStatus());
       assertEquals("old@example.test", stored().getEmail());
     } finally {
-      when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+      when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
     }
   }
 
@@ -661,9 +691,10 @@ class AccountSecurityServicePersistenceTest {
   void twoAccountsCannotConfirmTheSameTargetAddressConcurrently() throws Exception {
     requestChange("target@example.test");
     String first = linkToken();
-    UserEntity secondAccount = users.saveAndFlush(newUser("second@example.test"));
-    request = new MockHttpServletRequest();
-    registry.registerNewSession(request.getSession().getId(), secondAccount.getEmail());
+    UserEntity secondAccount = userRepository.saveAndFlush(newUser("second@example.test"));
+    mockHttpRequest = new MockHttpServletRequest();
+    sessionRegistry.registerNewSession(
+        mockHttpRequest.getSession().getId(), secondAccount.getEmail());
     authenticate(secondAccount);
     requestChange("target@example.test");
     String second = linkToken();
@@ -674,13 +705,13 @@ class AccountSecurityServicePersistenceTest {
           executor.submit(() -> {
             ready.countDown();
             assertTrue(start.await(10, TimeUnit.SECONDS));
-            return service.confirm(first);
+            return accountSecurityService.confirm(first);
           });
       Future<Confirmation> b =
           executor.submit(() -> {
             ready.countDown();
             assertTrue(start.await(10, TimeUnit.SECONDS));
-            return service.confirm(second);
+            return accountSecurityService.confirm(second);
           });
       assertTrue(ready.await(10, TimeUnit.SECONDS));
       start.countDown();
@@ -691,8 +722,10 @@ class AccountSecurityServicePersistenceTest {
     }
     assertEquals(
         1,
-        users.findAll().stream().filter(u -> u.getEmail().equals("target@example.test")).count());
-    assertEquals(4, emails.count());
+        userRepository.findAll().stream()
+            .filter(u -> u.getEmail().equals("target@example.test"))
+            .count());
+    assertEquals(4, emailQueueRepository.count());
   }
 
   @ParameterizedTest
@@ -700,8 +733,8 @@ class AccountSecurityServicePersistenceTest {
   void revokedSessionsFailHttpAndPushGuardsWhileTheCurrentSessionStaysValid(boolean push)
       throws Exception {
     SecurityContext context = SecurityContextHolder.getContext();
-    request.getSession().setAttribute("SPRING_SECURITY_CONTEXT", context);
-    request
+    mockHttpRequest.getSession().setAttribute("SPRING_SECURITY_CONTEXT", context);
+    mockHttpRequest
         .getSession()
         .setAttribute("authenticatedUser", context.getAuthentication().getPrincipal());
     MockHttpSession otherSession = new MockHttpSession(null, "other-device");
@@ -709,20 +742,20 @@ class AccountSecurityServicePersistenceTest {
     otherSession.setAttribute("authenticatedUser", context.getAuthentication().getPrincipal());
     MockHttpServletRequest other = new MockHttpServletRequest();
     other.setSession(otherSession);
-    service.changePassword(
-        request, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
-    assertTrue(security.hasCurrentSessionPrivileges(request));
-    assertTrue(security.getAuthenticatedUser(request).isPresent());
+    accountSecurityService.changePassword(
+        mockHttpRequest, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
+    assertTrue(securityService.hasCurrentSessionPrivileges(mockHttpRequest));
+    assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isPresent());
     if (push) {
       PushSecurityInterceptor interceptor =
-          new PushSecurityInterceptor(security, new MaintenanceService(config));
+          new PushSecurityInterceptor(securityService, new MaintenanceService(configService));
       VaadinServletRequest servletRequest =
           new VaadinServletRequest(other, mock(VaadinServletService.class));
       assertThrows(
           AccessDeniedException.class, () -> interceptor.requestStart(servletRequest, null));
     } else {
       ObjectProvider<SecurityService> provider = mock(ObjectProvider.class);
-      when(provider.getObject()).thenReturn(security);
+      when(provider.getObject()).thenReturn(securityService);
       MockHttpServletResponse response = new MockHttpServletResponse();
       FilterChain chain = mock(FilterChain.class);
       new VaadinSecurityFilter(provider).doFilter(other, response, chain);
@@ -735,21 +768,21 @@ class AccountSecurityServicePersistenceTest {
   @Test
   void revokedIdentityCanLoadLoginDocumentAfterTheOldSessionHasBeenCleared() throws Exception {
     SecurityContext context = SecurityContextHolder.getContext();
-    request.getSession().setAttribute("SPRING_SECURITY_CONTEXT", context);
-    request
+    mockHttpRequest.getSession().setAttribute("SPRING_SECURITY_CONTEXT", context);
+    mockHttpRequest
         .getSession()
         .setAttribute("authenticatedUser", context.getAuthentication().getPrincipal());
     requestChange("new@example.test");
-    assertEquals(Confirmation.SUCCESS, service.confirm(linkToken()));
-    MockHttpSession session = (MockHttpSession) request.getSession();
-    request.setMethod("GET");
-    request.setServletPath(AppRoute.LOGIN.getSecurityRoute());
+    assertEquals(Confirmation.SUCCESS, accountSecurityService.confirm(linkToken()));
+    MockHttpSession session = (MockHttpSession) mockHttpRequest.getSession();
+    mockHttpRequest.setMethod("GET");
+    mockHttpRequest.setServletPath(AppRoute.LOGIN.getSecurityRoute());
     ObjectProvider<SecurityService> provider = mock(ObjectProvider.class);
-    when(provider.getObject()).thenReturn(security);
+    when(provider.getObject()).thenReturn(securityService);
     MockHttpServletResponse response = new MockHttpServletResponse();
     FilterChain chain = mock(FilterChain.class);
-    new VaadinSecurityFilter(provider).doFilter(request, response, chain);
-    verify(chain).doFilter(request, response);
+    new VaadinSecurityFilter(provider).doFilter(mockHttpRequest, response, chain);
+    verify(chain).doFilter(mockHttpRequest, response);
     assertEquals(200, response.getStatus());
     assertTrue(session.isInvalid());
     assertNull(SecurityContextHolder.getContext().getAuthentication());

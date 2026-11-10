@@ -78,15 +78,15 @@ import org.springframework.test.util.ReflectionTestUtils;
 class LoginSessionRecoveryTest {
   private TrackingUI ui;
   private LoginView view;
-  private final ConfigService config = mock(ConfigService.class);
-  private final SecurityService security = mock(SecurityService.class);
+  private final ConfigService configService = mock(ConfigService.class);
+  private final SecurityService securityService = mock(SecurityService.class);
   private final AuthenticationManager authentication = mock(AuthenticationManager.class);
   private final SessionManagementService sessions = mock(SessionManagementService.class);
   private final ExternalLoginFlow externalLogin = mock(ExternalLoginFlow.class);
-  private MockHttpServletRequest request;
-  private MockHttpServletResponse response;
+  private MockHttpServletRequest mockHttpRequest;
+  private MockHttpServletResponse mockHttpResponse;
   private VaadinServletResponse vaadinResponse;
-  private MessageProperties messages;
+  private MessageProperties messageProperties;
 
   @BeforeEach
   void setup() {
@@ -97,8 +97,8 @@ class LoginSessionRecoveryTest {
     when(vaadinSession.getLocale()).thenReturn(Locale.GERMAN);
     VaadinSession.setCurrent(vaadinSession);
     ui.getInternals().setSession(vaadinSession);
-    request = new MockHttpServletRequest();
-    response = new MockHttpServletResponse();
+    mockHttpRequest = new MockHttpServletRequest();
+    mockHttpResponse = new MockHttpServletResponse();
     var registry = new ApplicationRouteRegistry(mock(VaadinContext.class)) {};
     registry.setRoute("registration", RegistrationView.class, List.of());
     registry.setRoute("forgot-password", ForgotPasswordView.class, List.of());
@@ -109,14 +109,14 @@ class LoginSessionRecoveryTest {
     when(service.getDeploymentConfiguration()).thenReturn(deploymentConfiguration);
     when(vaadinSession.getService()).thenReturn(service);
     VaadinService.setCurrent(service);
-    CurrentInstance.set(VaadinRequest.class, new VaadinServletRequest(request, service));
-    vaadinResponse = new VaadinServletResponse(response, service);
+    CurrentInstance.set(VaadinRequest.class, new VaadinServletRequest(mockHttpRequest, service));
+    vaadinResponse = new VaadinServletResponse(mockHttpResponse, service);
     CurrentInstance.set(VaadinResponse.class, vaadinResponse);
-    when(config.getString(any()))
+    when(configService.getString(any()))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
-    messages = new MessageProperties(new CustomI18NProvider());
-    when(externalLogin.loginConfirmed(request)).thenReturn(true);
+    when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+    messageProperties = new MessageProperties(new CustomI18NProvider());
+    when(externalLogin.loginConfirmed(mockHttpRequest)).thenReturn(true);
     view = createView();
     ui.add(view);
     UserDetails principal =
@@ -126,10 +126,10 @@ class LoginSessionRecoveryTest {
             UsernamePasswordAuthenticationToken.authenticated(
                 principal, null, principal.getAuthorities()));
     doThrow(new SessionLimitException())
-        .when(security)
+        .when(securityService)
         .storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
     Instant when = Instant.parse("2026-10-17T03:00:00Z");
-    when(sessions.recoveryList(request))
+    when(sessions.recoveryList(mockHttpRequest))
         .thenReturn(
             new SessionManagementService.Snapshot(
                 List.of(
@@ -157,7 +157,13 @@ class LoginSessionRecoveryTest {
 
   private LoginView createView() {
     return new LoginView(
-        messages, authentication, security, request, config, sessions, externalLogin);
+        messageProperties,
+        authentication,
+        securityService,
+        mockHttpRequest,
+        configService,
+        sessions,
+        externalLogin);
   }
 
   @ParameterizedTest
@@ -183,18 +189,18 @@ class LoginSessionRecoveryTest {
         (Supplier<String>) ReflectionTestUtils.getField(helper, "messageSupplier");
     String expected =
         switch (reason) {
-          case "maintenance" -> messages.getMaintenanceLoginMessage();
-          case "sessions" -> messages.getLoginSessionLimitMessage();
-          case "throttled" -> messages.getLoginThrottledMessage();
-          case "unavailable" -> messages.getLoginUnavailableMessage();
-          default -> messages.getLoginFailedMessage();
+          case "maintenance" -> messageProperties.getMaintenanceLoginMessage();
+          case "sessions" -> messageProperties.getLoginSessionLimitMessage();
+          case "throttled" -> messageProperties.getLoginThrottledMessage();
+          case "unavailable" -> messageProperties.getLoginUnavailableMessage();
+          default -> messageProperties.getLoginFailedMessage();
         };
     assertEquals(expected, message.get());
   }
 
   @Test
   void recoveryKeepsPriorityOverAnErrorInTheRedirectUrl() {
-    when(sessions.hasRecovery(request)).thenReturn(true);
+    when(sessions.hasRecovery(mockHttpRequest)).thenReturn(true);
     Location location = new Location("login?error=sessions");
     BeforeEnterEvent before = mock(BeforeEnterEvent.class);
     when(before.getLocation()).thenReturn(location);
@@ -232,17 +238,26 @@ class LoginSessionRecoveryTest {
   @Test
   void correctPasswordAtLimitOpensOnlyManagementAndClearsPassword() {
     reachedLimit();
-    verify(sessions).startRecovery(request, "own@example.test", "Secret!Password8", true);
-    verify(sessions).recoveryList(request);
+    verify(sessions).startRecovery(mockHttpRequest, "own@example.test", "Secret!Password8", true);
+    verify(sessions).recoveryList(mockHttpRequest);
     assertTrue(field("recoveryArea", Div.class).isVisible());
     Div recovery = field("recoveryArea", Div.class);
     assertEquals(1, recovery.getChildren().count());
     assertTrue(
-        recovery.getElement().getTextRecursively().contains(messages.getSessionRecoveryTitle()));
+        recovery
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getSessionRecoveryTitle()));
     assertTrue(
-        recovery.getElement().getTextRecursively().contains(messages.getSessionRecoveryHint()));
+        recovery
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getSessionRecoveryHint()));
     assertTrue(
-        recovery.getElement().getTextRecursively().contains(messages.getSessionRecoveryListHint()));
+        recovery
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getSessionRecoveryListHint()));
     Component panel = recovery.getChildren().findFirst().orElseThrow();
     assertTrue(tree(panel).anyMatch(item -> item == button("session-recovery-cancel")));
     assertTrue(tree(panel).anyMatch(item -> item == button("session-recovery-continue")));
@@ -258,13 +273,15 @@ class LoginSessionRecoveryTest {
     Switch rememberSwitch = field("rememberMeSwitch", Switch.class);
     assertFalse(rememberSwitch.getValue());
     rememberSwitch.setValue(remember);
-    doNothing().when(security).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
+    doNothing()
+        .when(securityService)
+        .storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
     field("emailField", EmailField.class).setValue("own@example.test");
     field("passwordField", PasswordField.class).setValue("Secret!Password8");
 
     field("loginButton", Button.class).click();
 
-    verify(security).storeVerifiedAuthentication(any(), any(), any(), eq(remember));
+    verify(securityService).storeVerifiedAuthentication(any(), any(), any(), eq(remember));
     verifyNoInteractions(sessions);
     assertEquals(HomeView.class, ui.target);
   }
@@ -272,29 +289,30 @@ class LoginSessionRecoveryTest {
   @ParameterizedTest
   @CsvSource({"true,true", "false,false", "invalid,false"})
   void savedSwitchChoiceDoesNotRestoreCredentialsOrAuthenticate(String saved, boolean expected) {
-    request.setCookies(new Cookie("login-remember-choice", saved));
+    mockHttpRequest.setCookies(new Cookie("login-remember-choice", saved));
     view = createView();
 
     assertEquals(expected, field("rememberMeSwitch", Switch.class).getValue());
     assertTrue(field("emailField", EmailField.class).isEmpty());
     assertTrue(field("passwordField", PasswordField.class).isEmpty());
-    assertEquals(0, response.getCookies().length);
-    verifyNoInteractions(authentication, security, sessions);
+    assertEquals(0, mockHttpResponse.getCookies().length);
+    verifyNoInteractions(authentication, securityService, sessions);
   }
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void explicitSwitchChangeStoresOnlyPreferenceBeforeLogin(boolean remember) {
-    request.setSecure(true);
+    mockHttpRequest.setSecure(true);
     Switch rememberSwitch = field("rememberMeSwitch", Switch.class);
     rememberSwitch.setValue(remember);
-    assertEquals(0, response.getCookies().length, "Programmatische Änderungen speichern nichts");
+    assertEquals(
+        0, mockHttpResponse.getCookies().length, "Programmatische Änderungen speichern nichts");
 
     ComponentUtil.fireEvent(
         rememberSwitch,
         new ComponentValueChangeEvent<>(rememberSwitch, rememberSwitch, !remember, true));
 
-    Cookie choice = response.getCookie("login-remember-choice");
+    Cookie choice = mockHttpResponse.getCookie("login-remember-choice");
     assertNotNull(choice);
     assertEquals(Boolean.toString(remember), choice.getValue());
     assertEquals(31536000, choice.getMaxAge());
@@ -302,8 +320,8 @@ class LoginSessionRecoveryTest {
     assertTrue(choice.isHttpOnly());
     assertTrue(choice.getSecure());
     assertEquals("Lax", choice.getAttribute("SameSite"));
-    assertNull(response.getCookie("remember-me"));
-    verifyNoInteractions(authentication, security, sessions);
+    assertNull(mockHttpResponse.getCookie("remember-me"));
+    verifyNoInteractions(authentication, securityService, sessions);
   }
 
   @Test
@@ -314,25 +332,25 @@ class LoginSessionRecoveryTest {
     verifyNoInteractions(sessions);
     assertFalse(field("recoveryArea", Div.class).isVisible());
     assertTrue(field("loginPanels", Component.class).isVisible());
-    verify(security, never()).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
+    verify(securityService, never()).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
     Supplier<String> text =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
-    assertEquals(messages.getLoginFailedMessage(), text.get());
+    assertEquals(messageProperties.getLoginFailedMessage(), text.get());
   }
 
   @Test
   void cancelDropsProofAndReturnsToNormalLogin() {
     reachedLimit();
     button("session-recovery-cancel").click();
-    verify(sessions).cancelRecovery(request);
+    verify(sessions).cancelRecovery(mockHttpRequest);
     assertFalse(field("recoveryArea", Div.class).isVisible());
     assertTrue(field("loginPanels", Component.class).isVisible());
     assertTrue(field("passwordField", PasswordField.class).isEmpty());
   }
 
   private void freeSessionSlot() {
-    when(sessions.recoveryList(request))
+    when(sessions.recoveryList(mockHttpRequest))
         .thenReturn(new SessionManagementService.Snapshot(List.of(), 0, 1));
     button("account-sessions-refresh").click();
     assertTrue(button("session-recovery-continue").isEnabled());
@@ -346,12 +364,12 @@ class LoginSessionRecoveryTest {
     assertFalse(button("session-recovery-continue").isEnabled());
     Object sessionsPanel = ReflectionTestUtils.getField(view, "recoverySessions");
     Object dialog = ReflectionTestUtils.getField(sessionsPanel, "sessionConfirmationDialog");
-    when(sessions.recoveryList(request))
+    when(sessions.recoveryList(mockHttpRequest))
         .thenReturn(new SessionManagementService.Snapshot(List.of(), 0, 1));
     ((Button) ReflectionTestUtils.getField(dialog, "confirmButton")).click();
-    verify(sessions).recoveryRevoke(request, "opaque-device");
+    verify(sessions).recoveryRevoke(mockHttpRequest, "opaque-device");
     assertTrue(button("session-recovery-continue").isEnabled());
-    verify(sessions, never()).finishRecovery(request, vaadinResponse);
+    verify(sessions, never()).finishRecovery(mockHttpRequest, vaadinResponse);
   }
 
   @Test
@@ -359,14 +377,14 @@ class LoginSessionRecoveryTest {
     reachedLimit();
     freeSessionSlot();
     button("session-recovery-continue").click();
-    verify(sessions).finishRecovery(request, vaadinResponse);
+    verify(sessions).finishRecovery(mockHttpRequest, vaadinResponse);
     assertEquals(HomeView.class, ui.target);
     verify(authentication, times(1)).authenticate(any());
   }
 
   @Test
   void admittedFirstFactorRequiresTwoFactorBeforePortalAndSuccessNotice() {
-    when(externalLogin.loginConfirmed(request)).thenReturn(false);
+    when(externalLogin.loginConfirmed(mockHttpRequest)).thenReturn(false);
     reachedLimit();
     freeSessionSlot();
     NotificationHelper.getInstance().closeAndClearAllNotifications();
@@ -386,8 +404,9 @@ class LoginSessionRecoveryTest {
             ReflectionTestUtils.getField(
                 field("recoverySessions", Component.class), "sessionSnapshot");
     freeSessionSlot();
-    when(sessions.recoveryList(request)).thenReturn(full);
-    when(sessions.finishRecovery(request, vaadinResponse)).thenThrow(new SessionLimitException());
+    when(sessions.recoveryList(mockHttpRequest)).thenReturn(full);
+    when(sessions.finishRecovery(mockHttpRequest, vaadinResponse))
+        .thenThrow(new SessionLimitException());
     button("session-recovery-continue").click();
     assertTrue(field("recoveryArea", Div.class).isVisible());
     assertFalse(button("session-recovery-continue").isEnabled());
@@ -395,14 +414,14 @@ class LoginSessionRecoveryTest {
     Supplier<String> text =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
-    assertEquals(messages.getLoginSessionLimitMessage(), text.get());
+    assertEquals(messageProperties.getLoginSessionLimitMessage(), text.get());
   }
 
   @Test
   void expiredProofReturnsToLoginWithUnderstandableNotification() {
     reachedLimit();
     freeSessionSlot();
-    when(sessions.finishRecovery(request, vaadinResponse))
+    when(sessions.finishRecovery(mockHttpRequest, vaadinResponse))
         .thenThrow(new AuthenticationCredentialsNotFoundException("expired"));
     button("session-recovery-continue").click();
     assertTrue(field("loginPanels", Component.class).isVisible());
@@ -411,7 +430,7 @@ class LoginSessionRecoveryTest {
     Supplier<String> text =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
-    assertEquals(messages.getSessionRecoveryExpired(), text.get());
+    assertEquals(messageProperties.getSessionRecoveryExpired(), text.get());
   }
 
   private static class TrackingUI extends UI {

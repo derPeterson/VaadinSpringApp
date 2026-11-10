@@ -34,21 +34,21 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.authentication.BadCredentialsException;
 
 class AccountPasswordChangeDialogTest {
-  private UI ui;
+  private UI testUi;
   private AccountPasswordChangeDialog dialog;
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
+    testUi = new UI();
+    UI.setCurrent(testUi);
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
+    when(session.getLocale()).thenAnswer(call -> localeReference.get());
     VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
+    testUi.getInternals().setSession(session);
     dialog = new AccountPasswordChangeDialog(new MessageProperties(new CustomI18NProvider()));
-    ui.add(dialog);
+    testUi.add(dialog);
   }
 
   @AfterEach
@@ -87,11 +87,11 @@ class AccountPasswordChangeDialogTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void localizedFieldsUsePasswordManagerSemanticsAndNativeDismissal(String language) {
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     dialog.refreshTexts();
     dialog.open();
     MessageProperties messageProperties =
-        MessageProperties.forLocale(new CustomI18NProvider(), locale.get());
+        MessageProperties.forLocale(new CustomI18NProvider(), localeReference.get());
     assertEquals(
         messageProperties.getAccountSettingsChangePassword(),
         dialog.getElement().getProperty("ariaLabel"));
@@ -161,7 +161,7 @@ class AccountPasswordChangeDialogTest {
     for (String suffix : new String[] {"current", "new", "confirm"}) {
       field(suffix).setValue("Local-" + suffix);
     }
-    locale.set(Locale.ENGLISH);
+    localeReference.set(Locale.ENGLISH);
     dialog.refreshTexts();
     Button save = (Button) byId("account-password-save");
     assertEquals(

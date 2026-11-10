@@ -41,8 +41,8 @@ import org.springframework.security.authentication.LockedException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class TwoFactorActionDialogTest {
-  private UI ui;
-  private VaadinSession session;
+  private UI testUi;
+  private VaadinSession vaadinSession;
 
   @AfterEach
   void cleanup() {
@@ -108,7 +108,7 @@ class TwoFactorActionDialogTest {
     HttpServletRequest request = mock(HttpServletRequest.class);
     TwoFactorActionDialog dialog =
         new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, request);
-    ui.add(dialog);
+    testUi.add(dialog);
     AtomicInteger actions = new AtomicInteger();
     dialog.open(TwoFactorAction.MANAGE_FACTOR, actions::incrementAndGet);
     TwoFactorCodeInput input =
@@ -139,18 +139,18 @@ class TwoFactorActionDialogTest {
   }
 
   private MessageProperties useLanguage(String language) {
-    ui = new UI();
-    UI.setCurrent(ui);
-    session = mock(VaadinSession.class);
+    testUi = new UI();
+    UI.setCurrent(testUi);
+    vaadinSession = mock(VaadinSession.class);
     VaadinService service = mock(VaadinService.class);
     DeploymentConfiguration configuration = mock(DeploymentConfiguration.class);
     when(configuration.getUrlSafeSchemes()).thenCallRealMethod();
     when(service.getDeploymentConfiguration()).thenReturn(configuration);
-    when(session.getService()).thenReturn(service);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenReturn(Locale.forLanguageTag(language));
-    VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
+    when(vaadinSession.getService()).thenReturn(service);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenReturn(Locale.forLanguageTag(language));
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
     return new MessageProperties(new CustomI18NProvider());
   }
 
@@ -161,7 +161,7 @@ class TwoFactorActionDialogTest {
     MockHttpServletRequest request = new MockHttpServletRequest();
     TwoFactorActionDialog dialog =
         new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, request);
-    ui.add(dialog);
+    testUi.add(dialog);
     AtomicInteger actions = new AtomicInteger();
     dialog.open(TwoFactorAction.MANAGE_FACTOR, actions::incrementAndGet);
     TwoFactorCodeInput input =

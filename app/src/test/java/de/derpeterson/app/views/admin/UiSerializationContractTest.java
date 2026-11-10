@@ -66,16 +66,16 @@ import org.springframework.web.context.support.GenericWebApplicationContext;
 
 /** Round-trips nur eigener Testbytes; keine Fremdstreams und keine vollständige UI-Passivierung. */
 class UiSerializationContractTest {
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
   private GenericWebApplicationContext context;
-  private VaadinSession session;
+  private VaadinSession vaadinSession;
 
   @BeforeEach
   void setup() {
-    session = mock(VaadinSession.class);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
-    when(session.hasLock()).thenReturn(true);
-    VaadinSession.setCurrent(session);
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    when(vaadinSession.hasLock()).thenReturn(true);
+    VaadinSession.setCurrent(vaadinSession);
     UI.setCurrent(new UI());
   }
 
@@ -85,7 +85,7 @@ class UiSerializationContractTest {
       context.close();
     }
     com.vaadin.flow.internal.CurrentInstance.clearAll();
-    session = null;
+    vaadinSession = null;
   }
 
   @SuppressWarnings("unchecked")
@@ -110,10 +110,11 @@ class UiSerializationContractTest {
     MessageProperties dynamic = copy(new MessageProperties(new CustomI18NProvider()));
     MessageProperties fixed =
         copy(MessageProperties.forLocale(new CustomI18NProvider(), fixedLocale));
-    locale.set(fixedLocale);
+    localeReference.set(fixedLocale);
     assertEquals(fixed.getNotificationsTitle(), dynamic.getNotificationsTitle());
-    locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
-    MessageProperties other = MessageProperties.forLocale(new CustomI18NProvider(), locale.get());
+    localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    MessageProperties other =
+        MessageProperties.forLocale(new CustomI18NProvider(), localeReference.get());
     assertEquals(other.getNotificationsTitle(), dynamic.getNotificationsTitle());
     assertEquals(
         MessageProperties.forLocale(new CustomI18NProvider(), fixedLocale).getNotificationsTitle(),

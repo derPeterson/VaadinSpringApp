@@ -26,12 +26,12 @@ import org.springframework.dao.IncorrectResultSizeDataAccessException;
 /** Delegation contract, without application startup or persistence. */
 @ExtendWith(MockitoExtension.class)
 class RoleServiceTest {
-  @Mock private RoleRepository repository;
+  @Mock private RoleRepository roleRepository;
   private RoleService service;
 
   @BeforeEach
   void setUp() {
-    service = new RoleService(repository);
+    service = new RoleService(roleRepository);
   }
 
   @ParameterizedTest
@@ -39,42 +39,42 @@ class RoleServiceTest {
   void foundRoleReturnsTheSameOptionalAndUnmodifiedEntity(RoleType name) {
     RoleEntity entity = RoleEntity.builder().id(17L).name(name).build();
     Optional<RoleEntity> result = Optional.of(entity);
-    when(repository.findByName(name)).thenReturn(result);
+    when(roleRepository.findByName(name)).thenReturn(result);
 
     assertSame(result, service.findByName(name));
     assertEquals(17L, entity.getId());
     assertSame(name, entity.getName());
     assertNull(entity.getUserEntities());
-    verify(repository).findByName(name);
-    verifyNoMoreInteractions(repository);
+    verify(roleRepository).findByName(name);
+    verifyNoMoreInteractions(roleRepository);
   }
 
   @ParameterizedTest
   @EnumSource(RoleType.class)
   void missingRoleRemainsEmptyWithoutCreatingADefault(RoleType name) {
-    when(repository.findByName(name)).thenReturn(Optional.empty());
+    when(roleRepository.findByName(name)).thenReturn(Optional.empty());
 
     assertTrue(service.findByName(name).isEmpty());
 
-    verify(repository).findByName(name);
-    verifyNoMoreInteractions(repository);
+    verify(roleRepository).findByName(name);
+    verifyNoMoreInteractions(roleRepository);
   }
 
   @Test
   void nullNameIsDelegatedWithoutServiceValidation() {
-    when(repository.findByName(null)).thenReturn(Optional.empty());
+    when(roleRepository.findByName(null)).thenReturn(Optional.empty());
 
     assertTrue(service.findByName(null).isEmpty());
 
-    verify(repository).findByName(null);
-    verifyNoMoreInteractions(repository);
+    verify(roleRepository).findByName(null);
+    verifyNoMoreInteractions(roleRepository);
   }
 
   @Test
   void repositoryOutageIsPropagatedUnchangedWithoutRetry() {
     DataAccessResourceFailureException failure =
         new DataAccessResourceFailureException("isolated test failure");
-    when(repository.findByName(RoleType.ROLE_USER)).thenThrow(failure);
+    when(roleRepository.findByName(RoleType.ROLE_USER)).thenThrow(failure);
 
     assertSame(
         failure,
@@ -82,15 +82,15 @@ class RoleServiceTest {
             DataAccessResourceFailureException.class,
             () -> service.findByName(RoleType.ROLE_USER)));
 
-    verify(repository).findByName(RoleType.ROLE_USER);
-    verifyNoMoreInteractions(repository);
+    verify(roleRepository).findByName(RoleType.ROLE_USER);
+    verifyNoMoreInteractions(roleRepository);
   }
 
   @Test
   void nonUniqueResultIsNotDisguisedAsAMissingRole() {
     IncorrectResultSizeDataAccessException failure =
         new IncorrectResultSizeDataAccessException(1, 2);
-    when(repository.findByName(RoleType.ROLE_ADMIN)).thenThrow(failure);
+    when(roleRepository.findByName(RoleType.ROLE_ADMIN)).thenThrow(failure);
 
     assertSame(
         failure,
@@ -98,7 +98,7 @@ class RoleServiceTest {
             IncorrectResultSizeDataAccessException.class,
             () -> service.findByName(RoleType.ROLE_ADMIN)));
 
-    verify(repository).findByName(RoleType.ROLE_ADMIN);
-    verifyNoMoreInteractions(repository);
+    verify(roleRepository).findByName(RoleType.ROLE_ADMIN);
+    verifyNoMoreInteractions(roleRepository);
   }
 }

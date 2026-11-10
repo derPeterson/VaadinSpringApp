@@ -86,7 +86,7 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class AccountViewTest {
-  private UI ui;
+  private UI testUi;
   private SecurityService securityService;
   private HttpServletRequest mockHttpRequest;
   private AccountView view;
@@ -97,28 +97,28 @@ class AccountViewTest {
   private UserAvatarService userAvatarService;
   private ExternalLoginFlow externalLogin;
   private ExternalIdentityService externalIdentityService;
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
 
   @BeforeEach
   void setup() {
-    ui = spy(new UI());
-    UI.setCurrent(ui);
+    testUi = spy(new UI());
+    UI.setCurrent(testUi);
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     VaadinService service = mock(VaadinService.class);
     DeploymentConfiguration deployment = mock(DeploymentConfiguration.class);
     when(service.getDeploymentConfiguration()).thenReturn(deployment);
     when(session.getService()).thenReturn(service);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
+    when(session.getLocale()).thenAnswer(call -> localeReference.get());
     doAnswer(
             call -> {
-              locale.set(call.getArgument(0));
+              localeReference.set(call.getArgument(0));
               return null;
             })
         .when(session)
         .setLocale(any());
     VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
+    testUi.getInternals().setSession(session);
     mockHttpRequest = mock(HttpServletRequest.class);
     securityService = mock(SecurityService.class);
     configService = mock(ConfigService.class);
@@ -203,7 +203,7 @@ class AccountViewTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void avatarStatusUsesTheExistingSaveActionAndTracksOtherStatusChanges(String language) {
-    LanguageChangeEvent.fire(ui, Locale.forLanguageTag(language));
+    LanguageChangeEvent.fire(testUi, Locale.forLanguageTag(language));
     Select<UserStatus> select = avatarStatus();
     assertEquals(UserStatus.getDefaultStatus(), select.getValue());
     assertTrue(select.isEnabled());
@@ -238,7 +238,7 @@ class AccountViewTest {
     menu.applyExternalStatus(UserStatus.EMPLOYED);
     assertMenuStatus(menu, UserStatus.EMPLOYED);
     assertEquals(UserStatus.EMPLOYED, select.getValue());
-    LanguageChangeEvent.fire(ui, Locale.forLanguageTag(language.equals("de") ? "en" : "de"));
+    LanguageChangeEvent.fire(testUi, Locale.forLanguageTag(language.equals("de") ? "en" : "de"));
     assertEquals(UserStatus.EMPLOYED, select.getValue());
     assertEquals("", tooltip.getText());
     assertEquals(
@@ -330,7 +330,7 @@ class AccountViewTest {
                 ReflectionTestUtils.getField(
                     NotificationHelper.getInstance(), "currentNotification"))
             .isOpened());
-    ui.add(view);
+    testUi.add(view);
     AfterNavigationEvent event = mock(AfterNavigationEvent.class);
     when(event.getLocation())
         .thenReturn(new Location("account?tab=security&external_error=" + problem));
@@ -344,7 +344,7 @@ class AccountViewTest {
     assertTrue(notification.getElement().getThemeList().contains("cosmos-reference-error"));
     MessageProperties messageProperties = new MessageProperties(new CustomI18NProvider());
     for (Locale language : List.of(Locale.GERMAN, Locale.ENGLISH)) {
-      LanguageChangeEvent.fire(ui, language);
+      LanguageChangeEvent.fire(testUi, language);
       Html message =
           (Html) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText");
       String expected =
@@ -385,7 +385,7 @@ class AccountViewTest {
           tree(settings()).filter(c -> c.getId().orElse("").equals(id)).findFirst().orElseThrow();
       assertEquals(section == expected, panel.isVisible());
     }
-    verify(ui, never()).navigate(eq(AccountView.class), any(QueryParameters.class));
+    verify(testUi, never()).navigate(eq(AccountView.class), any(QueryParameters.class));
   }
 
   @ParameterizedTest
@@ -409,7 +409,7 @@ class AccountViewTest {
   @Test
   void aClientTabChangeReplacesTheCurrentAccountLocation() {
     UI attachedUi = new UI();
-    attachedUi.getInternals().setSession(ui.getSession());
+    attachedUi.getInternals().setSession(testUi.getSession());
     UI.setCurrent(attachedUi);
     attachedUi.add(view);
     enter("?section=security&tab=portal");
@@ -442,7 +442,7 @@ class AccountViewTest {
   @Test
   void tabChangesNavigateWithFlowAndHistoryRestorationDoesNotNavigateAgainOrLoseDrafts() {
     doReturn(Optional.of(view))
-        .when(ui)
+        .when(testUi)
         .navigate(eq(AccountView.class), any(QueryParameters.class));
     TextField first =
         (TextField)
@@ -458,27 +458,27 @@ class AccountViewTest {
                 .findFirst()
                 .orElseThrow();
     navigation.activate(navigation.getItems().get(2));
-    verify(ui).navigate(AccountView.class, QueryParameters.of("section", "sessions"));
+    verify(testUi).navigate(AccountView.class, QueryParameters.of("section", "sessions"));
     enter("?section=security&tab=portal");
     assertEquals(AccountSection.SECURITY, settings().getSelectedSection());
     enter("?section=sessions");
     assertEquals(AccountSection.SESSIONS, settings().getSelectedSection());
     assertEquals("Unsaved draft", first.getValue());
-    verify(ui, times(1)).navigate(eq(AccountView.class), any(QueryParameters.class));
+    verify(testUi, times(1)).navigate(eq(AccountView.class), any(QueryParameters.class));
     verifyNoInteractions(accountProfileService);
   }
 
   @Test
   void invalidOrMissingTabResetsEarlierSelectionAndLanguageChangesKeepTheTab() {
     enter("?tab=security");
-    LanguageChangeEvent.fire(ui, Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, Locale.ENGLISH);
     assertEquals(AccountSection.SECURITY, settings().getSelectedSection());
     enter("?tab=unknown");
     assertEquals(AccountSection.PROFILE, settings().getSelectedSection());
     enter("?tab=sessions");
     enter("");
     assertEquals(AccountSection.PROFILE, settings().getSelectedSection());
-    verify(ui, never()).navigate(eq(AccountView.class), any(QueryParameters.class));
+    verify(testUi, never()).navigate(eq(AccountView.class), any(QueryParameters.class));
   }
 
   @Test
@@ -509,18 +509,18 @@ class AccountViewTest {
     UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
     Button button = (Button) ReflectionTestUtils.getField(menu, "manageAccountButton");
     assertTrue(button.isEnabled());
-    doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
+    doReturn(Optional.empty()).when(testUi).navigate(AccountView.class);
     menu.getPopover().setOpened(true);
     button.click();
     assertFalse(menu.getPopover().isOpened());
-    verify(ui).navigate(AccountView.class);
+    verify(testUi).navigate(AccountView.class);
     verify(securityService).getCurrentUser(mockHttpRequest);
     verifyNoMoreInteractions(securityService);
   }
 
   @Test
   void trackedLanguageEventRefreshesTheAccountSurface() {
-    LanguageChangeEvent.fire(ui, Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, Locale.ENGLISH);
     AccountSettingsComponent content =
         (AccountSettingsComponent) ReflectionTestUtils.getField(view, "accountSettings");
     MessageProperties messageProperties =
@@ -565,7 +565,7 @@ class AccountViewTest {
         .save(
             mockHttpRequest,
             new Changes(3L, "Changed", "Account", date, Locale.ENGLISH, Gender.OTHER));
-    assertEquals(Locale.ENGLISH, locale.get());
+    assertEquals(Locale.ENGLISH, localeReference.get());
     assertEquals("Changed", testAccount.getFirstName());
     List<Component> avatarComponents =
         Stream.concat(
@@ -621,7 +621,7 @@ class AccountViewTest {
                 .findFirst()
                 .orElseThrow())
         .click();
-    assertEquals(Locale.GERMAN, locale.get());
+    assertEquals(Locale.GERMAN, localeReference.get());
     assertEquals("Own", testAccount.getFirstName());
     assertEquals(Locale.GERMAN, testAccount.getPreferredLocale());
     assertEquals(

@@ -56,13 +56,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 @WebAppConfiguration
 class CsrfSecurityChainTest {
   @Autowired SecurityFilterChain chain;
-  @Autowired SessionRegistry registry;
-  @Autowired LoginAttemptRepository attempts;
-  @Autowired UserRepository users;
-  @Autowired ConfigService settings;
-  @Autowired PasswordEncoder encoder;
-  @Autowired TransactionTemplate transaction;
-  @Autowired SecurityService security;
+  @Autowired SessionRegistry sessionRegistry;
+  @Autowired LoginAttemptRepository loginAttemptRepository;
+  @Autowired UserRepository userRepository;
+  @Autowired ConfigService configService;
+  @Autowired PasswordEncoder passwordEncoder;
+  @Autowired TransactionTemplate transactionTemplate;
+  @Autowired SecurityService securityService;
   @Autowired PersistentTokenRepository tokens;
   @PersistenceContext EntityManager entityManager;
   private final HttpSessionCsrfTokenRepository csrf = new HttpSessionCsrfTokenRepository();
@@ -70,7 +70,7 @@ class CsrfSecurityChainTest {
   @AfterEach
   void cleanup() {
     SecurityContextHolder.clearContext();
-    when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
   }
 
   @ParameterizedTest
@@ -96,8 +96,8 @@ class CsrfSecurityChainTest {
     assertEquals(403, response.getStatus());
     assertNull(response.getRedirectedUrl());
     verifyNoInteractions(downstream);
-    assertTrue(registry.getAllSessions(email, true).isEmpty());
-    assertTrue(attempts.findById(LoginAttemptService.identityKey(email)).isEmpty());
+    assertTrue(sessionRegistry.getAllSessions(email, true).isEmpty());
+    assertTrue(loginAttemptRepository.findById(LoginAttemptService.identityKey(email)).isEmpty());
     assertNull(
         session(bootstrap)
             .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
@@ -115,7 +115,7 @@ class CsrfSecurityChainTest {
     Exchange login = login(email, bootstrap, body, false);
     assertEquals("/home", login.response().getRedirectedUrl());
     assertNotEquals(oldId, session(login).getId());
-    assertEquals(1, registry.getAllSessions(email, false).size());
+    assertEquals(1, sessionRegistry.getAllSessions(email, false).size());
     Exchange fresh = bootstrap(session(login));
     String currentRaw = csrf.loadToken(fresh.request()).getToken();
     assertNotEquals(oldRaw, currentRaw);
@@ -130,7 +130,7 @@ class CsrfSecurityChainTest {
     MockHttpSession loggedIn = session(login);
     assertEquals("/login", execute(logout).response().getRedirectedUrl());
     assertTrue(loggedIn.isInvalid());
-    assertTrue(registry.getAllSessions(email, true).isEmpty());
+    assertTrue(sessionRegistry.getAllSessions(email, true).isEmpty());
   }
 
   @ParameterizedTest
@@ -153,7 +153,7 @@ class CsrfSecurityChainTest {
     assertNotNull(
         session(login)
             .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
-    assertEquals(1, registry.getAllSessions(email, false).size());
+    assertEquals(1, sessionRegistry.getAllSessions(email, false).size());
     assertNotNull(tokens.getTokenForSeries(series(rememberCookie(login))));
   }
 
@@ -170,7 +170,7 @@ class CsrfSecurityChainTest {
     assertNull(tokens.getTokenForSeries(series(rememberCookie(first))));
     assertNotNull(tokens.getTokenForSeries(series(rememberCookie(other))));
     assertFalse(session(other).isInvalid());
-    assertEquals(1, registry.getAllSessions(email, false).size());
+    assertEquals(1, sessionRegistry.getAllSessions(email, false).size());
     assertEquals(0, result.response().getCookie("remember-me").getMaxAge());
     assertEquals(0, result.response().getCookie("JSESSIONID").getMaxAge());
   }
@@ -188,7 +188,7 @@ class CsrfSecurityChainTest {
     assertNotNull(
         session(restored)
             .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
-    assertEquals(2, registry.getAllSessions(email, false).size());
+    assertEquals(2, sessionRegistry.getAllSessions(email, false).size());
     MockHttpServletRequest logout = request("POST", "/logout", session(restored));
     logout.addHeader("X-CSRF-TOKEN", restored.response().getHeader("X-CSRF-TOKEN"));
     assertEquals("/login", execute(logout).response().getRedirectedUrl());
@@ -199,15 +199,15 @@ class CsrfSecurityChainTest {
     String email = user();
     Exchange bootstrap = bootstrap(null);
     String oldRaw = csrf.loadToken(bootstrap.request()).getToken();
-    security.storeAuthenticatedUser(
+    securityService.storeAuthenticatedUser(
         bootstrap.request(),
         new MockHttpServletResponse(),
-        new CustomUserDetailsService(users).loadUserByUsername(email),
+        new CustomUserDetailsService(userRepository).loadUserByUsername(email),
         false);
     Exchange fresh = bootstrap(session(bootstrap));
     String current = csrf.loadToken(fresh.request()).getToken();
     assertNotEquals(oldRaw, current);
-    assertEquals(1, registry.getAllSessions(email, false).size());
+    assertEquals(1, sessionRegistry.getAllSessions(email, false).size());
     execute(request("GET", "/account", session(fresh)));
     assertEquals(current, csrf.loadToken(fresh.request()).getToken());
   }
@@ -328,7 +328,7 @@ class CsrfSecurityChainTest {
 
   private String user() {
     String email = "csrf-" + UUID.randomUUID() + "@example.test";
-    transaction.executeWithoutResult(tx -> {
+    transactionTemplate.executeWithoutResult(tx -> {
       RoleEntity role =
           entityManager
               .createQuery("select r from RoleEntity r where r.name = :role", RoleEntity.class)
@@ -343,7 +343,7 @@ class CsrfSecurityChainTest {
       entityManager.persist(
           UserEntity.builder()
               .email(email)
-              .password(encoder.encode("SecretPassword!"))
+              .password(passwordEncoder.encode("SecretPassword!"))
               .firstName("CSRF")
               .lastName("Test")
               .enabled(true)

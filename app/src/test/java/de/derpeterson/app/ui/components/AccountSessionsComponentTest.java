@@ -37,9 +37,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class AccountSessionsComponentTest {
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
-  private UI ui;
-  private VaadinSession session;
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
+  private UI testUi;
+  private VaadinSession vaadinSession;
   private MessageProperties messageProperties;
   private CustomI18NProvider i18nProvider;
   private AccountSessionsComponent accountSessionsComponent;
@@ -81,13 +81,13 @@ class AccountSessionsComponentTest {
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
-    session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
-    VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
+    testUi = new UI();
+    UI.setCurrent(testUi);
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
     i18nProvider = new CustomI18NProvider();
     messageProperties = new MessageProperties(i18nProvider);
     sessionsSnapshot.set(
@@ -113,8 +113,8 @@ class AccountSessionsComponentTest {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     VaadinSession.setCurrent(null);
     UI.setCurrent(null);
-    ui = null;
-    session = null;
+    testUi = null;
+    vaadinSession = null;
   }
 
   private Stream<Component> tree(Component root) {
@@ -155,9 +155,9 @@ class AccountSessionsComponentTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void realRowsDistinguishCurrentActiveAndSavedSignInsAndTranslate(String language) {
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     accountSessionsComponent.refreshTexts();
-    MessageProperties expected = MessageProperties.forLocale(i18nProvider, locale.get());
+    MessageProperties expected = MessageProperties.forLocale(i18nProvider, localeReference.get());
     String content = accountSessionsComponent.getElement().getTextRecursively();
     assertTrue(content.contains(expected.getPortalSessionActiveCount(2)));
     Component countValue =
@@ -275,7 +275,7 @@ class AccountSessionsComponentTest {
         (Supplier<String>) ReflectionTestUtils.getField(helper, "titleSupplier");
     assertEquals(messageProperties.getSessionRefreshSuccess(), successText.get());
     assertNull(ReflectionTestUtils.getField(helper, "messageSupplier"));
-    locale.set(Locale.ENGLISH);
+    localeReference.set(Locale.ENGLISH);
     helper.updateText();
     assertEquals(
         messageProperties.getSessionRefreshSuccess(),
@@ -285,7 +285,7 @@ class AccountSessionsComponentTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void everyDeviceConfirmationKeepsItsReferenceIconAndCompleteContext(String language) {
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     accountSessionsComponent.refreshTexts();
     for (Entry entry : List.of(otherSessionEntry, rememberedSessionEntry)) {
       button("session-revoke-" + entry.handle()).click();
@@ -352,7 +352,7 @@ class AccountSessionsComponentTest {
   @Test
   void restrictedPanelUsesReferenceCopyWithoutChangingTheNormalAccountPanel() {
     for (Locale language : List.of(Locale.GERMAN, Locale.ENGLISH)) {
-      locale.set(language);
+      localeReference.set(language);
       accountSessionsComponent.setRestricted(true);
       String restrictedCopy = accountSessionsComponent.getElement().getTextRecursively();
       assertTrue(restrictedCopy.contains(messageProperties.getSessionRecoveryTitle()));

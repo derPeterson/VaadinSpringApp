@@ -76,52 +76,54 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Real dialog/button callbacks and language events; no application, DB or SMTP. */
 class AdminUserErrorNotificationTest {
-  private UI ui;
-  private VaadinSession session;
+  private UI testUi;
+  private VaadinSession vaadinSession;
   private TrackedUserAppLayout layout;
-  private AdminUserManagementSection section;
-  private UserService users;
-  private SecurityService security;
+  private AdminUserManagementSection userManagementSection;
+  private UserService userService;
+  private SecurityService securityService;
   private RoleService roles;
-  private final CustomI18NProvider provider = new CustomI18NProvider();
-  private final MessageProperties messageProperties = new MessageProperties(provider);
+  private final CustomI18NProvider i18nProvider = new CustomI18NProvider();
+  private final MessageProperties messageProperties = new MessageProperties(i18nProvider);
   private ListAppender<ILoggingEvent> logs;
   private Logger logger;
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    session = mock(VaadinSession.class);
+    testUi = new UI();
+    vaadinSession = mock(VaadinSession.class);
     AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
-    when(session.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(call -> locale.get());
+    when(vaadinSession.hasLock()).thenReturn(true);
     doAnswer(
             call -> {
               locale.set(call.getArgument(0));
               return null;
             })
-        .when(session)
+        .when(vaadinSession)
         .setLocale(any());
-    UI.setCurrent(ui);
-    VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
-    users = mock(UserService.class);
-    security = mock(SecurityService.class);
+    UI.setCurrent(testUi);
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
+    userService = mock(UserService.class);
+    securityService = mock(SecurityService.class);
     roles = mock(RoleService.class);
     when(roles.findByName(any()))
         .thenAnswer(call -> Optional.of(RoleEntity.builder().name(call.getArgument(0)).build()));
-    when(users.canDeleteUser(any())).thenReturn(true);
+    when(userService.canDeleteUser(any())).thenReturn(true);
     layout =
         new TrackedUserAppLayout(
             messageProperties,
-            security,
-            users,
+            securityService,
+            userService,
             new UserStatusBroadcaster(),
             mock(HttpServletRequest.class),
             mock(UserAvatarService.class)) {};
-    section = new AdminUserManagementSection(messageProperties, users, roles, security);
+    userManagementSection =
+        new AdminUserManagementSection(messageProperties, userService, roles, securityService);
     // Same section refresh path used by AdminView.onTrackedUserLanguageChanged.
-    ComponentUtil.addListener(ui, LanguageChangeEvent.class, event -> section.refreshTexts());
+    ComponentUtil.addListener(
+        testUi, LanguageChangeEvent.class, event -> userManagementSection.refreshTexts());
     logger = (Logger) LoggerFactory.getLogger(AdminUserManagementSection.class);
     logs = new ListAppender<>();
     logs.start();
@@ -132,7 +134,7 @@ class AdminUserErrorNotificationTest {
   void cleanup() {
     logger.detachAppender(logs);
     logs.stop();
-    descendants(ui)
+    descendants(testUi)
         .filter(Dialog.class::isInstance)
         .map(Dialog.class::cast)
         .toList()
@@ -140,10 +142,10 @@ class AdminUserErrorNotificationTest {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
-    section = null;
+    userManagementSection = null;
     layout = null;
-    ui = null;
-    session = null;
+    testUi = null;
+    vaadinSession = null;
   }
 
   private static Stream<Component> descendants(Component root) {
@@ -167,8 +169,8 @@ class AdminUserErrorNotificationTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void birthdayInputInCreateAndEditFollowsTheLocaleWithoutLosingTheDate(boolean create) {
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
-    ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
+    ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", user(create));
     DatePicker picker =
         descendants(dialog())
             .filter(DatePicker.class::isInstance)
@@ -179,11 +181,11 @@ class AdminUserErrorNotificationTest {
     assertEquals(Locale.GERMAN, picker.getLocale());
     assertEquals(messageProperties.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
     LocalDate selected = picker.getValue();
-    LanguageChangeEvent.fire(ui, Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, Locale.ENGLISH);
     assertEquals(Locale.ENGLISH, picker.getLocale());
     assertEquals(messageProperties.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
     assertEquals(selected, picker.getValue());
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(Locale.GERMAN, picker.getLocale());
     assertEquals(messageProperties.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
     assertEquals(selected, picker.getValue());
@@ -207,8 +209,8 @@ class AdminUserErrorNotificationTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void passwordHelpFollowsFormStateAndLanguage(boolean create) {
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
-    ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
+    ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", user(create));
     Dialog editor = dialog();
     List<PasswordField> passwords =
         descendants(editor)
@@ -233,7 +235,7 @@ class AdminUserErrorNotificationTest {
     passwords.getFirst().setValue("Password!");
     assertEquals(messageProperties.getAdminUsersPasswordHelperCreate(), hint.getText());
     assertTrue(passwords.get(1).isEnabled());
-    LanguageChangeEvent.fire(ui, Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, Locale.ENGLISH);
     assertEquals(messageProperties.getAdminUsersPasswordHelperCreate(), hint.getText());
 
     passwords.getFirst().clear();
@@ -244,7 +246,7 @@ class AdminUserErrorNotificationTest {
         hint.getText());
     assertFalse(passwords.get(1).isEnabled());
     assertTrue(hint.getText().contains(messageProperties.getAdminUsersPasswordHelperCreate()));
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertEquals(
         create
             ? messageProperties.getAdminUsersPasswordHelperCreate()
@@ -253,8 +255,8 @@ class AdminUserErrorNotificationTest {
   }
 
   private Dialog dialog() {
-    ui.getInternals().getStateTree().runExecutionsBeforeClientResponse();
-    return descendants(ui)
+    testUi.getInternals().getStateTree().runExecutionsBeforeClientResponse();
+    return descendants(testUi)
         .filter(Dialog.class::isInstance)
         .map(Dialog.class::cast)
         .filter(Dialog::isOpened)
@@ -264,7 +266,7 @@ class AdminUserErrorNotificationTest {
 
   private void submit(String operation, UserEntity user) {
     ReflectionTestUtils.invokeMethod(
-        section, operation.equals("delete") ? "deleteUser" : "openDialog", user);
+        userManagementSection, operation.equals("delete") ? "deleteUser" : "openDialog", user);
     Dialog dialog = dialog();
     if (operation.equals("create")) {
       descendants(dialog)
@@ -334,14 +336,14 @@ class AdminUserErrorNotificationTest {
   @MethodSource("failures")
   void mutationCallbacksMapErrorsLogDetailsAndTranslateTheSameVisibleNotification(
       boolean german, String operation, String kind) {
-    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
     RuntimeException failure = failure(kind);
     if (operation.equals("delete")) {
-      doThrow(failure).when(users).deleteUser(any());
+      doThrow(failure).when(userService).deleteUser(any());
     } else if (operation.equals("create")) {
-      doThrow(failure).when(users).createAdminUser(any(), any());
+      doThrow(failure).when(userService).createAdminUser(any(), any());
     } else {
-      doThrow(failure).when(users).updateAdminUser(any(), any(), any());
+      doThrow(failure).when(userService).updateAdminUser(any(), any(), any());
     }
     submit(operation, user(operation.equals("create")));
     String expected =
@@ -373,7 +375,7 @@ class AdminUserErrorNotificationTest {
                 event.getThrowableProxy() != null
                     && Objects.equals(
                         event.getThrowableProxy().getMessage(), failure.getClass().getName())));
-    LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
     assertSame(
         notification,
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification"));
@@ -400,11 +402,11 @@ class AdminUserErrorNotificationTest {
     assertNotEquals(expected, translated);
     assertNotification(translated);
     if (operation.equals("delete")) {
-      verify(users).deleteUser(any());
+      verify(userService).deleteUser(any());
     } else if (operation.equals("create")) {
-      verify(users).createAdminUser(any(), any());
+      verify(userService).createAdminUser(any(), any());
     } else {
-      verify(users).updateAdminUser(any(), eq(3L), any());
+      verify(userService).updateAdminUser(any(), eq(3L), any());
     }
   }
 
@@ -426,20 +428,20 @@ class AdminUserErrorNotificationTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void manualRefreshReportsSuccessAndFollowsLanguage(boolean german) {
-    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
     NotificationHelper helper = NotificationHelper.getInstance();
     assertNull(ReflectionTestUtils.getField(helper, "titleText"));
-    clearInvocations(users);
+    clearInvocations(userService);
 
-    Button refresh = (Button) ReflectionTestUtils.getField(section, "refreshButton");
+    Button refresh = (Button) ReflectionTestUtils.getField(userManagementSection, "refreshButton");
     refresh.click();
 
-    verify(users).findAllUsers();
+    verify(userService).findAllUsers();
     Span notificationTitle = (Span) ReflectionTestUtils.getField(helper, "titleText");
     assertEquals(messageProperties.getAdminUsersRefreshSuccess(), notificationTitle.getText());
     assertTrue(notificationTitle.hasClassName("text-success"));
     Object notification = ReflectionTestUtils.getField(helper, "currentNotification");
-    LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
     assertSame(notification, ReflectionTestUtils.getField(helper, "currentNotification"));
     assertEquals(messageProperties.getAdminUsersRefreshSuccess(), notificationTitle.getText());
   }
@@ -447,17 +449,17 @@ class AdminUserErrorNotificationTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void manualRefreshReportsFailureAndCanBeRetried(boolean german) {
-    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
-    Object previousUsers = ReflectionTestUtils.getField(section, "users");
+    LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
+    Object previousUsers = ReflectionTestUtils.getField(userManagementSection, "users");
     DataAccessResourceFailureException failure =
         new DataAccessResourceFailureException("secret SELECT account data");
-    when(users.findAllUsers()).thenThrow(failure);
+    when(userService.findAllUsers()).thenThrow(failure);
 
-    Button refresh = (Button) ReflectionTestUtils.getField(section, "refreshButton");
+    Button refresh = (Button) ReflectionTestUtils.getField(userManagementSection, "refreshButton");
     refresh.click();
 
     assertNotification(messageProperties.getAdminUsersRefreshFailed());
-    assertSame(previousUsers, ReflectionTestUtils.getField(section, "users"));
+    assertSame(previousUsers, ReflectionTestUtils.getField(userManagementSection, "users"));
     assertTrue(
         logs.list.stream()
             .anyMatch(event ->
@@ -466,10 +468,10 @@ class AdminUserErrorNotificationTest {
                         .getThrowableProxy()
                         .getMessage()
                         .equals(failure.getClass().getName())));
-    LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
     assertNotification(messageProperties.getAdminUsersRefreshFailed());
 
-    doReturn(List.of()).when(users).findAllUsers();
+    doReturn(List.of()).when(userService).findAllUsers();
     refresh.click();
     Span notificationTitle =
         (Span) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "titleText");
@@ -486,13 +488,13 @@ class AdminUserErrorNotificationTest {
   @ParameterizedTest
   @MethodSource("guards")
   void preflightHintsAreDynamicInBothDirections(boolean german, String guard) {
-    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
     UserEntity user = user(false);
     if (guard.equals("own-delete") || guard.equals("disable") || guard.equals("remove-admin")) {
-      when(security.getCurrentUser()).thenReturn(Optional.of(user));
+      when(securityService.getCurrentUser()).thenReturn(Optional.of(user));
     }
     if (guard.equals("last-delete")) {
-      when(users.canDeleteUser(any())).thenReturn(false);
+      when(userService.canDeleteUser(any())).thenReturn(false);
     }
     if (guard.equals("role")) {
       when(roles.findByName(any())).thenReturn(Optional.empty());
@@ -504,20 +506,21 @@ class AdminUserErrorNotificationTest {
       user.setRoleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_USER).build()));
     }
     if (guard.equals("last-save")) {
-      when(users.wouldRemoveLastEnabledSuperadmin(any(), anyBoolean(), any())).thenReturn(true);
+      when(userService.wouldRemoveLastEnabledSuperadmin(any(), anyBoolean(), any()))
+          .thenReturn(true);
     }
     if (guard.endsWith("delete")) {
-      ReflectionTestUtils.invokeMethod(section, "deleteUser", user);
+      ReflectionTestUtils.invokeMethod(userManagementSection, "deleteUser", user);
     } else {
       submit("edit", user);
     }
     String expected = guardText(guard);
     assertNotification(expected);
-    LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
     assertNotEquals(expected, guardText(guard));
     assertNotification(guardText(guard));
-    verify(users, never()).updateAdminUser(any(), any(), any());
-    verify(users, never()).deleteUser(any());
+    verify(userService, never()).updateAdminUser(any(), any(), any());
+    verify(userService, never()).deleteUser(any());
   }
 
   private String guardText(String guard) {
@@ -535,8 +538,8 @@ class AdminUserErrorNotificationTest {
   @ValueSource(booleans = {true, false})
   void alreadyVisibleFieldErrorsRefreshWithoutWritingAndClosedDialogsReleaseRefreshers(
       boolean german) {
-    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
-    ReflectionTestUtils.invokeMethod(section, "openDialog", user(false));
+    LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
+    ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", user(false));
     Dialog dialog = dialog();
     TextField firstName =
         descendants(dialog)
@@ -549,13 +552,14 @@ class AdminUserErrorNotificationTest {
     firstName.setValue(" ");
     assertTrue(firstName.isInvalid());
     assertEquals(messageProperties.getBaseValidationRequiredMessage(), firstName.getErrorMessage());
-    LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
     assertTrue(firstName.isInvalid());
     assertEquals(messageProperties.getBaseValidationRequiredMessage(), firstName.getErrorMessage());
-    verify(users, never()).updateAdminUser(any(), any(), any());
+    verify(userService, never()).updateAdminUser(any(), any(), any());
     dialog.close();
     assertTrue(
-        ((List<?>) ReflectionTestUtils.getField(section, "dialogErrorRefreshers")).isEmpty());
+        ((List<?>) ReflectionTestUtils.getField(userManagementSection, "dialogErrorRefreshers"))
+            .isEmpty());
   }
 
   static Stream<Arguments> preflightFailures() {
@@ -567,21 +571,22 @@ class AdminUserErrorNotificationTest {
   @MethodSource("preflightFailures")
   void unexpectedPreflightDatabaseFailuresAlsoUseGenericDynamicHints(
       boolean german, boolean deleting) {
-    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
     DataAccessResourceFailureException failure =
         new DataAccessResourceFailureException("secret SQL connection failure");
     if (deleting) {
-      when(users.canDeleteUser(any())).thenThrow(failure);
-      ReflectionTestUtils.invokeMethod(section, "deleteUser", user(false));
+      when(userService.canDeleteUser(any())).thenThrow(failure);
+      ReflectionTestUtils.invokeMethod(userManagementSection, "deleteUser", user(false));
     } else {
-      when(users.wouldRemoveLastEnabledSuperadmin(any(), anyBoolean(), any())).thenThrow(failure);
+      when(userService.wouldRemoveLastEnabledSuperadmin(any(), anyBoolean(), any()))
+          .thenThrow(failure);
       submit("edit", user(false));
     }
     assertNotification(
         deleting
             ? messageProperties.getAdminUsersErrorDeleteFailed()
             : messageProperties.getAdminUsersErrorSaveFailed());
-    LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
     assertNotification(
         deleting
             ? messageProperties.getAdminUsersErrorDeleteFailed()
@@ -609,8 +614,8 @@ class AdminUserErrorNotificationTest {
   @MethodSource("emailChecks")
   void emailValidationSeparatesDuplicatesFromTechnicalFailuresAndBlocksSaveInBothLanguages(
       boolean german, boolean create, String kind) {
-    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
-    ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
+    LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
+    ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", user(create));
     Dialog dialog = dialog();
     if (create) {
       descendants(dialog)
@@ -640,9 +645,9 @@ class AdminUserErrorNotificationTest {
           default -> new IllegalStateException("secret SQL unexpected failure");
         };
     if (technical) {
-      when(users.emailExistsForOtherUser(anyString(), any())).thenThrow(failure);
+      when(userService.emailExistsForOtherUser(anyString(), any())).thenThrow(failure);
     } else {
-      when(users.emailExistsForOtherUser(anyString(), any())).thenReturn(true);
+      when(userService.emailExistsForOtherUser(anyString(), any())).thenReturn(true);
     }
     email.setValue("other@example.com");
     assertTrue(email.isInvalid());
@@ -653,7 +658,8 @@ class AdminUserErrorNotificationTest {
         email.getErrorMessage());
     assertFalse(email.getErrorMessage().contains("secret"));
     assertFalse(save.isEnabled());
-    verify(users, atLeastOnce()).emailExistsForOtherUser("other@example.com", create ? null : 2L);
+    verify(userService, atLeastOnce())
+        .emailExistsForOtherUser("other@example.com", create ? null : 2L);
     // Exercise the server callback as well, not merely the disabled button.
     save.setEnabled(true);
     save.click();
@@ -664,7 +670,7 @@ class AdminUserErrorNotificationTest {
             : messageProperties.getAdminUsersValidationCheckFields());
     Object notification =
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
-    LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
     assertSame(
         notification,
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification"));
@@ -679,9 +685,9 @@ class AdminUserErrorNotificationTest {
         email.getErrorMessage());
     assertTrue(email.isInvalid());
     assertFalse(save.isEnabled());
-    verify(users, never()).updatePassword(any(), any());
-    verify(users, never()).createAdminUser(any(), any());
-    verify(users, never()).updateAdminUser(any(), any(), any());
+    verify(userService, never()).updatePassword(any(), any());
+    verify(userService, never()).createAdminUser(any(), any());
+    verify(userService, never()).updateAdminUser(any(), any(), any());
     if (technical) {
       assertTrue(
           logs.list.stream()
@@ -700,8 +706,8 @@ class AdminUserErrorNotificationTest {
   @MethodSource("preflightFailures")
   void successfulRetryClearsTechnicalFieldErrorAndAllowsCreateOrEdit(
       boolean german, boolean create) {
-    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
-    ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
+    LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
+    ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", user(create));
     Dialog dialog = dialog();
     if (create) {
       descendants(dialog)
@@ -722,22 +728,22 @@ class AdminUserErrorNotificationTest {
             .filter(button -> button.getText().equals(messageProperties.getAdminUsersSave()))
             .findFirst()
             .orElseThrow();
-    when(users.emailExistsForOtherUser(anyString(), any()))
+    when(userService.emailExistsForOtherUser(anyString(), any()))
         .thenThrow(new DataAccessResourceFailureException("secret SQL"));
     email.setValue("unavailable@example.com");
     assertTrue(email.isInvalid());
     assertFalse(save.isEnabled());
-    doReturn(false).when(users).emailExistsForOtherUser(anyString(), any());
+    doReturn(false).when(userService).emailExistsForOtherUser(anyString(), any());
     email.setValue("available@example.com");
     assertFalse(email.isInvalid());
     assertTrue(save.isEnabled());
     save.click();
     if (create) {
-      verify(users)
+      verify(userService)
           .createAdminUser(
               argThat(edited -> edited.getEmail().equals("available@example.com")), any());
     } else {
-      verify(users)
+      verify(userService)
           .updateAdminUser(
               argThat(edited -> edited.getEmail().equals("available@example.com")), eq(3L), any());
     }
@@ -747,8 +753,8 @@ class AdminUserErrorNotificationTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void adminCreatedDisabledAccountIsNotEligibleForSelfVerification(boolean german) {
-    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
-    ReflectionTestUtils.invokeMethod(section, "openDialog", user(true));
+    LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
+    ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", user(true));
     Dialog dialog = dialog();
     descendants(dialog)
         .filter(PasswordField.class::isInstance)
@@ -770,7 +776,7 @@ class AdminUserErrorNotificationTest {
             .orElseThrow();
     assertTrue(save.isEnabled());
     save.click();
-    verify(users)
+    verify(userService)
         .createAdminUser(
             argThat(edited -> !edited.isEnabled() && !edited.isVerificationPending()), any());
     assertFalse(dialog.isOpened());
@@ -779,8 +785,8 @@ class AdminUserErrorNotificationTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void invalidEmailFormatStillSkipsTheTechnicalCheckAfterAnEarlierFailure(boolean german) {
-    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
-    ReflectionTestUtils.invokeMethod(section, "openDialog", user(false));
+    LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
+    ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", user(false));
     Dialog dialog = dialog();
     EmailField email =
         descendants(dialog)
@@ -788,16 +794,16 @@ class AdminUserErrorNotificationTest {
             .map(EmailField.class::cast)
             .findFirst()
             .orElseThrow();
-    when(users.emailExistsForOtherUser(anyString(), any()))
+    when(userService.emailExistsForOtherUser(anyString(), any()))
         .thenThrow(new DataAccessResourceFailureException("secret SQL"));
     email.setValue("unavailable@example.com");
-    clearInvocations(users);
+    clearInvocations(userService);
     email.setValue("invalid");
     assertTrue(email.isInvalid());
     // Flow's pre-existing default EmailField validator rejects this value
     // before the custom validators, with its default empty error text.
     assertEquals("", email.getErrorMessage());
-    verify(users, never()).emailExistsForOtherUser(anyString(), any());
+    verify(userService, never()).emailExistsForOtherUser(anyString(), any());
     Button save =
         descendants(dialog)
             .filter(Button.class::isInstance)
@@ -808,15 +814,15 @@ class AdminUserErrorNotificationTest {
     save.setEnabled(true);
     save.click();
     assertNotification(messageProperties.getAdminUsersValidationCheckFields());
-    verify(users, never()).updateAdminUser(any(), any(), any());
+    verify(userService, never()).updateAdminUser(any(), any(), any());
   }
 
   @ParameterizedTest
   @MethodSource("preflightFailures")
   void technicalFailureFirstEncounteredOnSaveBlocksAnInitiallyValidForm(
       boolean german, boolean create) {
-    LanguageChangeEvent.fire(ui, german ? Locale.GERMAN : Locale.ENGLISH);
-    ReflectionTestUtils.invokeMethod(section, "openDialog", user(create));
+    LanguageChangeEvent.fire(testUi, german ? Locale.GERMAN : Locale.ENGLISH);
+    ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", user(create));
     Dialog dialog = dialog();
     if (create) {
       descendants(dialog)
@@ -832,13 +838,13 @@ class AdminUserErrorNotificationTest {
             .findFirst()
             .orElseThrow();
     assertTrue(save.isEnabled());
-    when(users.emailExistsForOtherUser(anyString(), any()))
+    when(userService.emailExistsForOtherUser(anyString(), any()))
         .thenThrow(new DataAccessResourceFailureException("secret SQL on save"));
     save.click();
     assertNotification(messageProperties.getAdminUsersErrorSaveFailed());
     assertFalse(save.isEnabled());
     assertTrue(dialog.isOpened());
-    LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, german ? Locale.ENGLISH : Locale.GERMAN);
     assertNotification(messageProperties.getAdminUsersErrorSaveFailed());
     EmailField email =
         descendants(dialog)
@@ -848,8 +854,8 @@ class AdminUserErrorNotificationTest {
             .orElseThrow();
     assertTrue(email.isInvalid());
     assertEquals(messageProperties.getAdminUsersErrorSaveFailed(), email.getErrorMessage());
-    verify(users, never()).updatePassword(any(), any());
-    verify(users, never()).createAdminUser(any(), any());
-    verify(users, never()).updateAdminUser(any(), any(), any());
+    verify(userService, never()).updatePassword(any(), any());
+    verify(userService, never()).createAdminUser(any(), any());
+    verify(userService, never()).updateAdminUser(any(), any(), any());
   }
 }

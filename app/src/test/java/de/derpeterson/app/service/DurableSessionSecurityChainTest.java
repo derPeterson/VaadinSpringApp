@@ -60,11 +60,11 @@ class DurableSessionSecurityChainTest {
   private static final String EMAIL = "restart-fixture@example.test";
   private static final String PASSWORD = "RestartFixturePassword!";
   private AnnotationConfigWebApplicationContext context;
-  private DataSource database;
+  private DataSource testDataSource;
 
   @BeforeEach
   void setup() {
-    database =
+    testDataSource =
         new DriverManagerDataSource(
             "jdbc:h2:mem:restart-chain-" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1",
             "sa",
@@ -86,16 +86,15 @@ class DurableSessionSecurityChainTest {
     context.setServletContext(new MockServletContext());
     context.register(
         SecurityChainRegressionTest.Config.class, SessionPersistenceConfiguration.class);
-    context.addBeanFactoryPostProcessor(
-        factory -> {
-          // Nur diese neue Testdatenbank; create-drop des gemeinsamen Fixtures hier durch update
-          // ersetzen.
-          factory.registerSingleton("dataSource", database);
-          factory
-              .getBeanDefinition("entityManagerFactory")
-              .getPropertyValues()
-              .add("jpaPropertyMap", Map.of("hibernate.hbm2ddl.auto", "update"));
-        });
+    context.addBeanFactoryPostProcessor(factory -> {
+      // Nur diese neue Testdatenbank; create-drop des gemeinsamen Fixtures hier durch update
+      // ersetzen.
+      factory.registerSingleton("dataSource", testDataSource);
+      factory
+          .getBeanDefinition("entityManagerFactory")
+          .getPropertyValues()
+          .add("jpaPropertyMap", Map.of("hibernate.hbm2ddl.auto", "update"));
+    });
     context.refresh();
     when(context.getBean(ConfigService.class).getInteger(ConfigEntry.MAX_SESSIONS_PER_USER))
         .thenReturn(1);
@@ -111,31 +110,30 @@ class DurableSessionSecurityChainTest {
   private void createUser() {
     context
         .getBean(TransactionTemplate.class)
-        .executeWithoutResult(
-            status -> {
-              EntityManager manager =
-                  EntityManagerFactoryUtils.getTransactionalEntityManager(
-                      context.getBean(EntityManagerFactory.class));
-              assertNotNull(manager);
-              {
-                RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_USER).build();
-                manager.persist(role);
-                UserEntity user =
-                    UserEntity.builder()
-                        .firstName("Restart")
-                        .lastName("Fixture")
-                        .email(EMAIL)
-                        .password(context.getBean(PasswordEncoder.class).encode(PASSWORD))
-                        .gender(Gender.OTHER)
-                        .birthDate(LocalDate.of(1990, 1, 1))
-                        .enabled(true)
-                        .preferredLocale(Locale.ENGLISH)
-                        .roleEntities(new ArrayList<>(List.of(role)))
-                        .build();
-                manager.persist(user);
-                manager.flush();
-              }
-            });
+        .executeWithoutResult(status -> {
+          EntityManager manager =
+              EntityManagerFactoryUtils.getTransactionalEntityManager(
+                  context.getBean(EntityManagerFactory.class));
+          assertNotNull(manager);
+          {
+            RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_USER).build();
+            manager.persist(role);
+            UserEntity user =
+                UserEntity.builder()
+                    .firstName("Restart")
+                    .lastName("Fixture")
+                    .email(EMAIL)
+                    .password(context.getBean(PasswordEncoder.class).encode(PASSWORD))
+                    .gender(Gender.OTHER)
+                    .birthDate(LocalDate.of(1990, 1, 1))
+                    .enabled(true)
+                    .preferredLocale(Locale.ENGLISH)
+                    .roleEntities(new ArrayList<>(List.of(role)))
+                    .build();
+            manager.persist(user);
+            manager.flush();
+          }
+        });
   }
 
   private record Result(MockHttpServletResponse response, Cookie cookie, String id, int reached) {}
@@ -267,19 +265,17 @@ class DurableSessionSecurityChainTest {
     Result login = login(false);
     new TransactionTemplate(
             context.getBean(org.springframework.transaction.PlatformTransactionManager.class))
-        .executeWithoutResult(
-            status -> {
-              EntityManager em =
-                  EntityManagerFactoryUtils.getTransactionalEntityManager(
-                      context.getBean(EntityManagerFactory.class));
-              UserEntity user =
-                  em.createQuery(
-                          "select u from UserEntity u where u.email = :email", UserEntity.class)
-                      .setParameter("email", EMAIL)
-                      .getSingleResult();
-              user.setEnabled(false);
-              em.flush();
-            });
+        .executeWithoutResult(status -> {
+          EntityManager em =
+              EntityManagerFactoryUtils.getTransactionalEntityManager(
+                  context.getBean(EntityManagerFactory.class));
+          UserEntity user =
+              em.createQuery("select u from UserEntity u where u.email = :email", UserEntity.class)
+                  .setParameter("email", EMAIL)
+                  .getSingleResult();
+          user.setEnabled(false);
+          em.flush();
+        });
     Result denied = request("POST", "/", login.cookie(), Map.of("v-r", "uidl"), null, null);
     assertEquals(401, denied.response().getStatus());
     assertEquals(0, denied.reached());

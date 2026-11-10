@@ -28,14 +28,15 @@ import org.springframework.security.web.csrf.CsrfToken;
 import org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository;
 
 class CsrfAdmissionTest {
-  private final ConfigService config = mock(ConfigService.class);
-  private final SessionRegistryImpl registry = new SessionRegistryImpl();
-  private final SessionAdmissionService admissions = new SessionAdmissionService(config, registry);
+  private final ConfigService configService = mock(ConfigService.class);
+  private final SessionRegistryImpl sessionRegistry = new SessionRegistryImpl();
+  private final SessionAdmissionService sessionAdmissionService =
+      new SessionAdmissionService(configService, sessionRegistry);
   private final HttpSessionCsrfTokenRepository csrf = new HttpSessionCsrfTokenRepository();
-  private final MockHttpServletResponse response = new MockHttpServletResponse();
+  private final MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
 
   CsrfAdmissionTest() {
-    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3);
+    when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3);
   }
 
   @ParameterizedTest
@@ -51,21 +52,21 @@ class CsrfAdmissionTest {
           }
         };
     CsrfToken before = csrf.generateToken(request);
-    csrf.saveToken(before, request, response);
+    csrf.saveToken(before, request, mockHttpResponse);
     String oldId = request.getSession().getId();
     request.setRequestedSessionId(oldId);
     Authentication authentication = authentication(path.equals("remember"));
     if (path.equals("flow")) {
-      admissions.completeLogin(
+      sessionAdmissionService.completeLogin(
           authentication,
           request,
-          response,
+          mockHttpResponse,
           () -> {
-            assertEquals(1, registry.getAllSessions(authentication.getName(), false).size());
+            assertEquals(1, sessionRegistry.getAllSessions(authentication.getName(), false).size());
             assertNotEquals(before.getToken(), currentToken(request));
           });
     } else {
-      admissions.onAuthentication(authentication, request, response);
+      sessionAdmissionService.onAuthentication(authentication, request, mockHttpResponse);
     }
     String current = currentToken(request);
     assertNotEquals(before.getToken(), current);
@@ -75,30 +76,30 @@ class CsrfAdmissionTest {
     MockHttpServletRequest next = new MockHttpServletRequest();
     next.setSession(request.getSession());
     next.setRequestedSessionId(admittedId);
-    admissions.complete(authentication, next, response, () -> {});
+    sessionAdmissionService.complete(authentication, next, mockHttpResponse, () -> {});
     assertEquals(current, csrf.loadToken(next).getToken());
     assertEquals(admittedId, next.getSession().getId());
-    assertEquals(1, registry.getAllSessions(authentication.getName(), true).size());
+    assertEquals(1, sessionRegistry.getAllSessions(authentication.getName(), true).size());
   }
 
   @Test
   void failedCompletionAfterRotationReleasesOnlyNewSessionAndPreservesOtherToken() {
     Authentication authentication = authentication(false);
     MockHttpServletRequest existing = new MockHttpServletRequest();
-    csrf.saveToken(csrf.generateToken(existing), existing, response);
-    admissions.onAuthentication(authentication, existing, response);
+    csrf.saveToken(csrf.generateToken(existing), existing, mockHttpResponse);
+    sessionAdmissionService.onAuthentication(authentication, existing, mockHttpResponse);
     String existingToken = currentToken(existing);
     MockHttpSession previous = (MockHttpSession) existing.getSession();
     MockHttpServletRequest failing = new MockHttpServletRequest();
-    csrf.saveToken(csrf.generateToken(failing), failing, response);
+    csrf.saveToken(csrf.generateToken(failing), failing, mockHttpResponse);
     MockHttpSession attempted = (MockHttpSession) failing.getSession();
     assertThrows(
         IllegalStateException.class,
         () ->
-            admissions.completeLogin(
+            sessionAdmissionService.completeLogin(
                 authentication,
                 failing,
-                response,
+                mockHttpResponse,
                 () -> {
                   assertNotNull(currentToken(failing));
                   throw new IllegalStateException("isolated completion failure");
@@ -106,26 +107,27 @@ class CsrfAdmissionTest {
     assertTrue(attempted.isInvalid());
     assertFalse(previous.isInvalid());
     assertEquals(existingToken, csrf.loadToken(existing).getToken());
-    assertEquals(1, registry.getAllSessions(authentication.getName(), true).size());
+    assertEquals(1, sessionRegistry.getAllSessions(authentication.getName(), true).size());
   }
 
   @Test
   void rejectedAdmissionNeverRotatesAnonymousTokenOrPublishesCompletion() {
-    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+    when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     Authentication authentication = authentication(false);
-    admissions.onAuthentication(authentication, new MockHttpServletRequest(), response);
+    sessionAdmissionService.onAuthentication(
+        authentication, new MockHttpServletRequest(), mockHttpResponse);
     MockHttpServletRequest rejected = new MockHttpServletRequest();
     CsrfToken before = csrf.generateToken(rejected);
-    csrf.saveToken(before, rejected, response);
+    csrf.saveToken(before, rejected, mockHttpResponse);
     AtomicInteger published = new AtomicInteger();
     assertThrows(
         SessionLimitException.class,
         () ->
-            admissions.completeLogin(
-                authentication, rejected, response, published::incrementAndGet));
+            sessionAdmissionService.completeLogin(
+                authentication, rejected, mockHttpResponse, published::incrementAndGet));
     assertEquals(0, published.get());
     assertEquals(before.getToken(), csrf.loadToken(rejected).getToken());
-    assertEquals(1, registry.getAllSessions(authentication.getName(), false).size());
+    assertEquals(1, sessionRegistry.getAllSessions(authentication.getName(), false).size());
   }
 
   private String currentToken(MockHttpServletRequest request) {

@@ -70,10 +70,10 @@ class LogSafetyTest {
   @Test
   void deepCausesAndSuppressedFailuresAreBounded() {
     Throwable chain = new IOException("secret");
-    for (int i = 0; i < 100; i++) {
+    for (int causeDepthIndex = 0; causeDepthIndex < 100; causeDepthIndex++) {
       chain = new RuntimeException("secret", chain);
     }
-    for (int i = 0; i < 100; i++) {
+    for (int suppressedFailureIndex = 0; suppressedFailureIndex < 100; suppressedFailureIndex++) {
       chain.addSuppressed(new IOException("secret"));
     }
     Throwable safe = LogSafety.safeFailure(chain);

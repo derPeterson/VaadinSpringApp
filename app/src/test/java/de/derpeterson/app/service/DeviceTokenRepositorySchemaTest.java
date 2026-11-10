@@ -16,22 +16,22 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken;
 
 class DeviceTokenRepositorySchemaTest {
-  private DriverManagerDataSource source;
-  private JdbcTemplate jdbc;
+  private DriverManagerDataSource testDataSource;
+  private JdbcTemplate jdbcTemplate;
 
   @BeforeEach
   void setup() {
-    source =
+    testDataSource =
         new DriverManagerDataSource(
             "jdbc:h2:mem:device-schema-" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1",
             "sa",
             "");
-    jdbc = new JdbcTemplate(source);
+    jdbcTemplate = new JdbcTemplate(testDataSource);
   }
 
   private DeviceTokenRepository repository() throws Exception {
     DeviceTokenRepository repository =
-        new DeviceTokenRepository(source, new DataSourceTransactionManager(source));
+        new DeviceTokenRepository(testDataSource, new DataSourceTransactionManager(testDataSource));
     repository.afterPropertiesSet();
     return repository;
   }
@@ -41,7 +41,7 @@ class DeviceTokenRepositorySchemaTest {
     DeviceTokenRepository repository = repository();
     assertEquals(
         255,
-        jdbc.<Integer>query(
+        jdbcTemplate.<Integer>query(
             "select username from persistent_logins where 1=0",
             result -> {
               return result.getMetaData().getPrecision(1);
@@ -75,6 +75,7 @@ class DeviceTokenRepositorySchemaTest {
         new PersistentRememberMeToken(
             "fixture@example.test", "incomplete-series", "fixture-token", new Date()));
     assertTrue(repository.saved("fixture@example.test", 3600).isEmpty());
-    assertEquals(0, jdbc.queryForObject("select count(*) from remembered_device", Integer.class));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from remembered_device", Integer.class));
   }
 }

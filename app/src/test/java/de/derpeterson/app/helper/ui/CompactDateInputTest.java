@@ -28,8 +28,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class CompactDateInputTest {
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
-  private MessageProperties messages;
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
+  private MessageProperties messageProperties;
   private DatePicker field;
 
   @BeforeEach
@@ -37,14 +37,14 @@ class CompactDateInputTest {
     UI ui = new UI();
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
+    when(session.getLocale()).thenAnswer(call -> localeReference.get());
     UI.setCurrent(ui);
     VaadinSession.setCurrent(session);
     ui.getInternals().setSession(session);
-    messages = new MessageProperties(new CustomI18NProvider());
+    messageProperties = new MessageProperties(new CustomI18NProvider());
     field = new DatePicker();
     field.setLocale(Locale.GERMAN);
-    CompactDateInput.configureDatePickerInput(field, messages);
+    CompactDateInput.configureDatePickerInput(field, messageProperties);
   }
 
   @AfterEach
@@ -111,10 +111,10 @@ class CompactDateInputTest {
     ComponentUtil.setData(
         UI.getCurrent(), NotificationHelper.class, mock(NotificationHelper.class));
     field.setValue(LocalDate.now().plusDays(1));
-    assertFalse(ValidationHelper.validateBirthDateBeforeInput(field, messages));
+    assertFalse(ValidationHelper.validateBirthDateBeforeInput(field, messageProperties));
     field.clear();
     field.setInvalid(true);
-    assertTrue(ValidationHelper.validateBirthDateBeforeInput(field, messages));
+    assertTrue(ValidationHelper.validateBirthDateBeforeInput(field, messageProperties));
     assertFalse(field.isInvalid());
   }
 
@@ -124,10 +124,10 @@ class CompactDateInputTest {
         UI.getCurrent(), NotificationHelper.class, mock(NotificationHelper.class));
     commit("not-a-date");
     assertNull(field.getValue());
-    assertFalse(ValidationHelper.validateBirthDateBeforeInput(field, messages));
+    assertFalse(ValidationHelper.validateBirthDateBeforeInput(field, messageProperties));
     assertTrue(field.isInvalid());
     commit("");
-    assertTrue(ValidationHelper.validateBirthDateBeforeInput(field, messages));
+    assertTrue(ValidationHelper.validateBirthDateBeforeInput(field, messageProperties));
   }
 
   @Test
@@ -146,7 +146,7 @@ class CompactDateInputTest {
     commit("31022026");
     assertNull(field.getValue());
     assertTrue(field.isInvalid());
-    assertEquals(messages.getBaseValidationDateInvalidMessage(), field.getErrorMessage());
+    assertEquals(messageProperties.getBaseValidationDateInvalidMessage(), field.getErrorMessage());
     commit("01012050");
     assertEquals(LocalDate.of(2050, 1, 1), field.getValue());
     assertTrue(field.isInvalid());
@@ -158,16 +158,16 @@ class CompactDateInputTest {
   @Test
   void languageChangesUseTheCurrentFieldOrderAndTranslateNewErrors() {
     assertEquals(
-        messages.getBaseValidationDateInvalidMessage(),
+        messageProperties.getBaseValidationDateInvalidMessage(),
         field.getFallbackParser().apply("bad").getMessage().orElseThrow());
-    locale.set(Locale.ENGLISH);
+    localeReference.set(Locale.ENGLISH);
     field.setLocale(Locale.ENGLISH);
     assertEquals(
         "Please enter a valid date.",
         field.getFallbackParser().apply("bad").getMessage().orElseThrow());
     commit("4586");
     assertEquals(LocalDate.of(1986, 4, 5), field.getValue());
-    locale.set(Locale.GERMAN);
+    localeReference.set(Locale.GERMAN);
     field.setLocale(Locale.GERMAN);
     assertEquals(LocalDate.of(1986, 4, 5), field.getValue());
     commit("4586");
@@ -181,12 +181,12 @@ class CompactDateInputTest {
     assertEquals(
         List.of("dd.MM.yyyy", "d.M.yyyy", "dd.MM.yy", "d.M.yy"), field.getI18n().getDateFormats());
     field.setLocale(Locale.ENGLISH);
-    CompactDateInput.configureDatePickerInput(field, messages);
+    CompactDateInput.configureDatePickerInput(field, messageProperties);
     assertEquals(List.of("M/d/yyyy", "M/d/yy"), field.getI18n().getDateFormats());
     assertEquals(LocalDate.of(1986, 5, 4), field.getValue());
     assertEquals(LocalDate.of(2026, 10, 18), field.getMax());
     field.setLocale(Locale.GERMAN);
-    CompactDateInput.configureDatePickerInput(field, messages);
+    CompactDateInput.configureDatePickerInput(field, messageProperties);
     assertEquals(
         List.of("dd.MM.yyyy", "d.M.yyyy", "dd.MM.yy", "d.M.yy"), field.getI18n().getDateFormats());
     assertEquals(LocalDate.of(2000, 1, 1), field.getI18n().getReferenceDate());

@@ -22,7 +22,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.support.TransactionTemplate;
 
 class AfterCommitLogTest {
-  private LoggerContext context;
+  private LoggerContext loggerContext;
   private Logger logger;
   private ListAppender<ILoggingEvent> logs;
   private StubTransactionManager manager;
@@ -30,8 +30,8 @@ class AfterCommitLogTest {
 
   @BeforeEach
   void setup() {
-    context = new LoggerContext();
-    logger = context.getLogger("commit-test");
+    loggerContext = new LoggerContext();
+    logger = loggerContext.getLogger("commit-test");
     logger.setLevel(Level.DEBUG);
     logs = new ListAppender<>();
     logs.start();
@@ -43,17 +43,16 @@ class AfterCommitLogTest {
   @AfterEach
   void cleanup() {
     TransactionSynchronizationManager.clear();
-    context.stop();
+    loggerContext.stop();
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"INFO", "DEBUG", "WARN"})
   void successAppearsOnlyAfterCommit(String level) {
-    transaction.executeWithoutResult(
-        status -> {
-          emit(level);
-          assertTrue(logs.list.isEmpty());
-        });
+    transaction.executeWithoutResult(status -> {
+      emit(level);
+      assertTrue(logs.list.isEmpty());
+    });
     assertEquals(1, logs.list.size());
     assertEquals(Level.toLevel(level), logs.list.getFirst().getLevel());
     assertEquals("Committed userId=17", logs.list.getFirst().getFormattedMessage());
@@ -62,11 +61,10 @@ class AfterCommitLogTest {
   @ParameterizedTest
   @ValueSource(strings = {"INFO", "DEBUG", "WARN"})
   void rollbackDoesNotReportCommittedEvents(String level) {
-    transaction.executeWithoutResult(
-        status -> {
-          emit(level);
-          status.setRollbackOnly();
-        });
+    transaction.executeWithoutResult(status -> {
+      emit(level);
+      status.setRollbackOnly();
+    });
     assertTrue(logs.list.isEmpty());
   }
 
@@ -87,12 +85,11 @@ class AfterCommitLogTest {
 
   @Test
   void pendingArgumentsAreAnArraySnapshot() {
-    transaction.executeWithoutResult(
-        status -> {
-          Object[] fields = {17L};
-          AfterCommitLog.info(logger, "Committed userId={}", fields);
-          fields[0] = 99L;
-        });
+    transaction.executeWithoutResult(status -> {
+      Object[] fields = {17L};
+      AfterCommitLog.info(logger, "Committed userId={}", fields);
+      fields[0] = 99L;
+    });
     assertEquals("Committed userId=17", logs.list.getFirst().getFormattedMessage());
   }
 

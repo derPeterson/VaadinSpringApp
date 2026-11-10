@@ -56,18 +56,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 @SpringJUnitConfig({TwoFactorStoreTest.Config.class, TwoFactorAuthorizationTest.Config.class})
 class TwoFactorAuthorizationTest {
   @Autowired TwoFactorAuthorization twoFactorAuthorization;
-  @Autowired TwoFactorPolicies policies;
+  @Autowired TwoFactorPolicies twoFactorPolicies;
   @Autowired TwoFactorStore twoFactorStore;
   @Autowired TwoFactorPolicyRepository settings;
-  @Autowired TwoFactorAccountRepository accounts;
-  @Autowired UserRepository users;
-  @Autowired TransactionTemplate transaction;
+  @Autowired TwoFactorAccountRepository twoFactorAccountRepository;
+  @Autowired UserRepository userRepository;
+  @Autowired TransactionTemplate transactionTemplate;
   @Autowired TwoFactorStoreTest.TestClock clock;
   @Autowired EntityManagerFactory factory;
   @Autowired AdminRolePolicy administrators;
   @Autowired ObjectProvider<TwoFactorAuthorization> authorizations;
   @Autowired ObjectProvider<SecurityService> security;
-  @Autowired TwoFactorChallengeRepository challenges;
+  @Autowired TwoFactorChallengeRepository twoFactorChallengeRepository;
   @Autowired JpaTransactionManager manager;
   @PersistenceContext EntityManager entityManager;
   private UserEntity testAccount;
@@ -79,7 +79,7 @@ class TwoFactorAuthorizationTest {
     clock.now.set(java.time.Instant.parse("2026-11-02T12:00:00Z"));
     settings.deleteAll();
     testAccount =
-        transaction.execute(status -> {
+        transactionTemplate.execute(status -> {
           RoleEntity role =
               entityManager
                   .createQuery("select r from RoleEntity r where r.name = :name", RoleEntity.class)
@@ -91,7 +91,7 @@ class TwoFactorAuthorizationTest {
             role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
             entityManager.persist(role);
           }
-          return users.saveAndFlush(
+          return userRepository.saveAndFlush(
               UserEntity.builder()
                   .firstName("MFA")
                   .lastName("Fixture")
@@ -182,7 +182,8 @@ class TwoFactorAuthorizationTest {
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
     twoFactorAuthorization.confirmAction(
         mockHttpRequest, TwoFactorAction.EMAIL, recoveryCodes.get(1));
-    UUID revision = accounts.state(testAccount.getId()).orElseThrow().getRevision();
+    UUID revision =
+        twoFactorAccountRepository.state(testAccount.getId()).orElseThrow().getRevision();
     twoFactorStore.renewRecoveryCodes(
         testAccount.getId(), testAccount.getAccessVersion(), revision);
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
@@ -206,12 +207,12 @@ class TwoFactorAuthorizationTest {
         (String) mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF);
     String previous = testAccount.getAccessVersion();
     clock.now.updateAndGet(now -> now.plusSeconds(60));
-    transaction.executeWithoutResult(status -> {
-      UserEntity account = users.findById(testAccount.getId()).orElseThrow();
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity account = userRepository.findById(testAccount.getId()).orElseThrow();
       account.setPassword("new-fixture-hash");
-      users.saveAndFlush(account);
+      userRepository.saveAndFlush(account);
     });
-    String current = users.findById(testAccount.getId()).orElseThrow().getAccessVersion();
+    String current = userRepository.findById(testAccount.getId()).orElseThrow().getAccessVersion();
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     twoFactorAuthorization.retainAfterAccessVersionChange(mockHttpRequest, previous);
     assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
@@ -232,7 +233,7 @@ class TwoFactorAuthorizationTest {
   void disablingPolicyRequiresProofUnderOldRuleAndDevelopmentGateCannotBeBypassed() {
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
     Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> relaxed = new EnumMap<>(RoleType.class);
-    policies
+    twoFactorPolicies
         .current()
         .policy()
         .rules()
@@ -243,16 +244,18 @@ class TwoFactorAuthorizationTest {
         });
     TwoFactorPolicy desired =
         new TwoFactorPolicy(relaxed, false, Duration.ofHours(1), false, false);
-    assertThrows(AccessDeniedException.class, () -> policies.save(mockHttpRequest, -1, desired));
+    assertThrows(
+        AccessDeniedException.class, () -> twoFactorPolicies.save(mockHttpRequest, -1, desired));
     twoFactorAuthorization.confirmAction(
         mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
     TwoFactorPolicy development =
         new TwoFactorPolicy(relaxed, false, Duration.ofHours(1), true, true);
     assertThrows(
-        AccessDeniedException.class, () -> policies.save(mockHttpRequest, -1, development));
-    policies.save(mockHttpRequest, -1, desired);
+        AccessDeniedException.class,
+        () -> twoFactorPolicies.save(mockHttpRequest, -1, development));
+    twoFactorPolicies.save(mockHttpRequest, -1, desired);
     assertTrue(twoFactorAuthorization.sessionConfirmed(requestFor(testAccount.getEmail())));
-    assertFalse(policies.weakGoogleAllowed());
+    assertFalse(twoFactorPolicies.weakGoogleAllowed());
   }
 
   @Test
@@ -264,14 +267,14 @@ class TwoFactorAuthorizationTest {
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
     twoFactorAuthorization.confirmAction(
         mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
-    TwoFactorPolicy original = policies.current().policy();
+    TwoFactorPolicy original = twoFactorPolicies.current().policy();
     UserDetails principal =
         User.withUsername(testAccount.getEmail()).password("unused").roles("SUPERADMIN").build();
     SecurityContextHolder.getContext()
         .setAuthentication(
             UsernamePasswordAuthenticationToken.authenticated(
                 principal, null, principal.getAuthorities()));
-    policies.save(
+    twoFactorPolicies.save(
         mockHttpRequest,
         -1,
         new TwoFactorPolicy(original.rules(), true, Duration.ofMinutes(1), false, false));
@@ -294,8 +297,8 @@ class TwoFactorAuthorizationTest {
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
     twoFactorAuthorization.confirmAction(
         mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
-    TwoFactorPolicy original = policies.current().policy();
-    policies.save(
+    TwoFactorPolicy original = twoFactorPolicies.current().policy();
+    twoFactorPolicies.save(
         mockHttpRequest,
         -1,
         new TwoFactorPolicy(original.rules(), true, Duration.ofHours(1), false, false));
@@ -313,14 +316,14 @@ class TwoFactorAuthorizationTest {
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
     twoFactorAuthorization.confirmAction(
         mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
-    TwoFactorPolicy original = policies.current().policy();
+    TwoFactorPolicy original = twoFactorPolicies.current().policy();
     Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> rules = new EnumMap<>(original.rules());
     Map<TwoFactorAction, TwoFactorMode> superadmin =
         new EnumMap<>(rules.get(RoleType.ROLE_SUPERADMIN));
     superadmin.put(TwoFactorAction.LOGIN, TwoFactorMode.OFF);
     rules.put(RoleType.ROLE_SUPERADMIN, superadmin);
     TwoFactorPolicies.Snapshot saved =
-        policies.save(
+        twoFactorPolicies.save(
             mockHttpRequest,
             -1,
             new TwoFactorPolicy(rules, false, original.inactivity(), false, false));
@@ -328,17 +331,18 @@ class TwoFactorAuthorizationTest {
     String previousProof =
         mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF).toString();
     TwoFactorChallengeEntity recovery = new TwoFactorChallengeEntity();
-    recovery.setUser(users.getReferenceById(testAccount.getId()));
+    recovery.setUser(userRepository.getReferenceById(testAccount.getId()));
     recovery.setSessionDigest(TwoFactorAuthorization.sessionDigest(mockHttpRequest.getSession()));
     recovery.setAccessVersion(testAccount.getAccessVersion());
-    recovery.setFactorRevision(accounts.state(testAccount.getId()).orElseThrow().getRevision());
+    recovery.setFactorRevision(
+        twoFactorAccountRepository.state(testAccount.getId()).orElseThrow().getRevision());
     recovery.setPolicyRevision(saved.revision());
     recovery.setAction(TwoFactorAction.MANAGE_FACTOR);
     recovery.setKind(Kind.ENROLLMENT);
     recovery.setSetupProof(SetupProof.RECOVERY_CODE);
     recovery.setCreatedAt(clock.instant());
     recovery.setExpiresAt(clock.instant().plusSeconds(300));
-    challenges.saveAndFlush(recovery);
+    twoFactorChallengeRepository.saveAndFlush(recovery);
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     assertTrue(twoFactorAuthorization.sessionConfirmed(requestFor(testAccount.getEmail())));
     clock.now.updateAndGet(now -> now.plusSeconds(300));
@@ -354,7 +358,7 @@ class TwoFactorAuthorizationTest {
     TwoFactorPolicies development =
         new TwoFactorPolicies(
             settings,
-            users,
+            userRepository,
             SharedEntityManagerCreator.createSharedEntityManager(factory),
             administrators,
             authorizations,
@@ -365,21 +369,28 @@ class TwoFactorAuthorizationTest {
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
     twoFactorAuthorization.confirmAction(
         mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
-    TwoFactorPolicy original = policies.current().policy();
-    transaction.executeWithoutResult(status ->
+    TwoFactorPolicy original = twoFactorPolicies.current().policy();
+    transactionTemplate.executeWithoutResult(status ->
         development.save(
             mockHttpRequest,
             -1,
             new TwoFactorPolicy(original.rules(), false, original.inactivity(), true, true)));
     assertTrue(development.pauseEnabled(development.current()));
     assertTrue(development.weakGoogleAllowed());
-    assertFalse(policies.pauseEnabled(policies.current()));
-    assertFalse(policies.weakGoogleAllowed());
+    assertFalse(twoFactorPolicies.pauseEnabled(twoFactorPolicies.current()));
+    assertFalse(twoFactorPolicies.weakGoogleAllowed());
     MockHttpServletRequest newSession = requestFor(testAccount.getEmail());
     assertFalse(twoFactorAuthorization.sessionConfirmed(newSession));
     TwoFactorAuthorization relaxed =
         new TwoFactorAuthorization(
-            security, users, accounts, challenges, development, twoFactorStore, manager, clock);
+            security,
+            userRepository,
+            twoFactorAccountRepository,
+            twoFactorChallengeRepository,
+            development,
+            twoFactorStore,
+            manager,
+            clock);
     assertTrue(relaxed.sessionConfirmed(newSession));
     assertNull(newSession.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF));
     assertThrows(
@@ -406,20 +417,20 @@ class TwoFactorAuthorizationTest {
     }
 
     @Bean
-    AdminRolePolicy adminRolePolicy(UserRepository users) {
-      return new AdminRolePolicy(users);
+    AdminRolePolicy adminRolePolicy(UserRepository userRepository) {
+      return new AdminRolePolicy(userRepository);
     }
 
     @Bean
     TwoFactorPolicies policies(
         TwoFactorPolicyRepository repository,
-        UserRepository users,
+        UserRepository userRepository,
         EntityManagerFactory factory,
         AdminRolePolicy administrators,
         ObjectProvider<TwoFactorAuthorization> twoFactorAuthorization) {
       return new TwoFactorPolicies(
           repository,
-          users,
+          userRepository,
           SharedEntityManagerCreator.createSharedEntityManager(factory),
           administrators,
           twoFactorAuthorization,
@@ -429,15 +440,22 @@ class TwoFactorAuthorizationTest {
     @Bean
     TwoFactorAuthorization authorization(
         ObjectProvider<SecurityService> security,
-        UserRepository users,
-        TwoFactorAccountRepository accounts,
-        TwoFactorChallengeRepository challenges,
-        TwoFactorPolicies policies,
+        UserRepository userRepository,
+        TwoFactorAccountRepository twoFactorAccountRepository,
+        TwoFactorChallengeRepository twoFactorChallengeRepository,
+        TwoFactorPolicies twoFactorPolicies,
         TwoFactorStore store,
         JpaTransactionManager transactions,
         TwoFactorStoreTest.TestClock clock) {
       return new TwoFactorAuthorization(
-          security, users, accounts, challenges, policies, store, transactions, clock);
+          security,
+          userRepository,
+          twoFactorAccountRepository,
+          twoFactorChallengeRepository,
+          twoFactorPolicies,
+          store,
+          transactions,
+          clock);
     }
   }
 }

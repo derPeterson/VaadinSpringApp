@@ -51,41 +51,41 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Actual maintenance actions and visibility, without a running application or database. */
 class MaintenanceViewTest {
-  private UI ui;
+  private UI testUi;
   // CurrentInstance only retains weak references; keep the locale fixture alive for every
   // assertion.
-  private VaadinSession session;
+  private VaadinSession vaadinSession;
   private Page page;
-  private SecurityService security;
-  private ConfigService config;
+  private SecurityService securityService;
+  private ConfigService configService;
   private MaintenanceView view;
-  private MockHttpServletRequest request;
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
-  private final CustomI18NProvider provider = new CustomI18NProvider();
+  private MockHttpServletRequest mockHttpRequest;
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
+  private final CustomI18NProvider i18nProvider = new CustomI18NProvider();
 
   @BeforeEach
   void setup() {
-    ui = spy(new UI());
+    testUi = spy(new UI());
     page = mock(Page.class);
-    doReturn(page).when(ui).getPage();
-    UI.setCurrent(ui);
-    session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
+    doReturn(page).when(testUi).getPage();
+    UI.setCurrent(testUi);
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
     VaadinService vaadin = mock(VaadinService.class);
     DeploymentConfiguration deployment = mock(DeploymentConfiguration.class);
-    when(session.getService()).thenReturn(vaadin);
+    when(vaadinSession.getService()).thenReturn(vaadin);
     when(vaadin.getDeploymentConfiguration()).thenReturn(deployment);
     when(deployment.getUrlSafeSchemes()).thenReturn(Set.of("http", "https"));
-    when(session.getLocale()).thenAnswer(call -> locale.get());
-    VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
-    security = mock(SecurityService.class);
-    config = mock(ConfigService.class);
-    when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Test");
-    when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    request = new MockHttpServletRequest();
-    request.setContextPath("/app");
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
+    securityService = mock(SecurityService.class);
+    configService = mock(ConfigService.class);
+    when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Test");
+    when(configService.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    mockHttpRequest = new MockHttpServletRequest();
+    mockHttpRequest.setContextPath("/app");
   }
 
   @AfterEach
@@ -93,7 +93,7 @@ class MaintenanceViewTest {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
-    session = null;
+    vaadinSession = null;
   }
 
   private void create(RoleType role) {
@@ -105,21 +105,21 @@ class MaintenanceViewTest {
               .build();
       UsernamePasswordAuthenticationToken authentication =
           UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities());
-      request
+      mockHttpRequest
           .getSession()
           .setAttribute(
               HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
               new SecurityContextImpl(authentication));
-      when(security.getAuthenticatedUser(request)).thenReturn(Optional.of(user));
+      when(securityService.getAuthenticatedUser(mockHttpRequest)).thenReturn(Optional.of(user));
     }
     view =
         new MaintenanceView(
-            config,
-            new MessageProperties(provider),
-            new MaintenanceService(config),
-            security,
-            request);
-    ui.add(view);
+            configService,
+            new MessageProperties(i18nProvider),
+            new MaintenanceService(configService),
+            securityService,
+            mockHttpRequest);
+    testUi.add(view);
   }
 
   private Stream<Component> tree(Component component) {
@@ -145,24 +145,24 @@ class MaintenanceViewTest {
   void authenticatedVisitorOnlySeesLogoutAndRetryWithoutChangingSession(RoleType role) {
     create(role);
     Object stored =
-        request
+        mockHttpRequest
             .getSession()
             .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
     for (Locale language : new Locale[] {Locale.GERMAN, Locale.ENGLISH}) {
-      locale.set(language);
-      LanguageChangeEvent.fire(ui, language);
-      MessageProperties messageProperties = MessageProperties.forLocale(provider, language);
+      localeReference.set(language);
+      LanguageChangeEvent.fire(testUi, language);
+      MessageProperties messageProperties = MessageProperties.forLocale(i18nProvider, language);
       assertFalse(button(messageProperties.getMaintenanceLoginButton()).isVisible());
       assertTrue(button(messageProperties.getBaseLogoutButton()).isVisible());
       assertTrue(button(messageProperties.getMaintenanceRetryButton()).isVisible());
     }
     assertSame(
         stored,
-        request
+        mockHttpRequest
             .getSession()
             .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
     verifyNoInteractions(page);
-    verify(security, never()).logout();
+    verify(securityService, never()).logout();
   }
 
   @Test
@@ -178,16 +178,19 @@ class MaintenanceViewTest {
     assertEquals("icons/lucide/wrench.svg", maintenanceIcon.getSrc());
     assertFalse(maintenanceIcon.hasClassName("cosmos-status-icon--warning"));
     for (Locale language : new Locale[] {Locale.GERMAN, Locale.ENGLISH}) {
-      locale.set(language);
-      LanguageChangeEvent.fire(ui, language);
-      MessageProperties messageProperties = MessageProperties.forLocale(provider, language);
+      localeReference.set(language);
+      LanguageChangeEvent.fire(testUi, language);
+      MessageProperties messageProperties = MessageProperties.forLocale(i18nProvider, language);
       assertTrue(button(messageProperties.getMaintenanceLoginButton()).isVisible());
       assertFalse(button(messageProperties.getBaseLogoutButton()).isVisible());
       assertTrue(button(messageProperties.getMaintenanceRetryButton()).isVisible());
     }
-    button(MessageProperties.forLocale(provider, locale.get()).getMaintenanceLoginButton()).click();
+    button(
+            MessageProperties.forLocale(i18nProvider, localeReference.get())
+                .getMaintenanceLoginButton())
+        .click();
     verify(page).setLocation("/app" + AppRoute.LOGIN.getSecurityRoute());
     assertNull(ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText"));
-    verify(security, never()).logout();
+    verify(securityService, never()).logout();
   }
 }

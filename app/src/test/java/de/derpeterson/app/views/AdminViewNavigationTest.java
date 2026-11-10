@@ -78,23 +78,23 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class AdminViewNavigationTest {
-  private UI ui;
-  private SecurityService security;
-  private HttpServletRequest request;
+  private UI testUi;
+  private SecurityService securityService;
+  private HttpServletRequest mockHttpRequest;
   private AdminView view;
-  private ConfigService config;
-  private UserAvatarService avatars;
-  private ExternalProviderSettings providers;
+  private ConfigService configService;
+  private UserAvatarService userAvatarService;
+  private ExternalProviderSettings externalProviderSettings;
 
   @BeforeEach
   void setup() {
-    ui = spy(new UI());
-    UI.setCurrent(ui);
+    testUi = spy(new UI());
+    UI.setCurrent(testUi);
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenReturn(Locale.GERMAN);
     VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
+    testUi.getInternals().setSession(session);
     var registry = new ApplicationRouteRegistry(mock(VaadinContext.class)) {};
     registry.setRoute(AppRouteConstants.ADMIN_ROUTE, AdminView.class, List.of());
     TestService service = mock(TestService.class);
@@ -104,16 +104,16 @@ class AdminViewNavigationTest {
     when(service.getRouteRegistry()).thenReturn(registry);
     when(session.getService()).thenReturn(service);
     VaadinService.setCurrent(service);
-    security = mock(SecurityService.class);
-    request = mock(HttpServletRequest.class);
-    when(security.getAuthenticatedUser(request))
+    securityService = mock(SecurityService.class);
+    mockHttpRequest = mock(HttpServletRequest.class);
+    when(securityService.getAuthenticatedUser(mockHttpRequest))
         .thenReturn(
             Optional.of(
                 User.withUsername("admin@example.test")
                     .password("unused")
                     .roles("SUPERADMIN", "ADMIN")
                     .build()));
-    when(security.getCurrentUser(request))
+    when(securityService.getCurrentUser(mockHttpRequest))
         .thenReturn(
             Optional.of(
                 UserEntity.builder()
@@ -123,11 +123,11 @@ class AdminViewNavigationTest {
                     .email("admin@example.test")
                     .enabled(true)
                     .build()));
-    config = mock(ConfigService.class);
-    when(config.getString(any(ConfigEntry.class)))
+    configService = mock(ConfigService.class);
+    when(configService.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-    avatars = mock(UserAvatarService.class);
-    when(avatars.events()).thenReturn(new UserProfileBroadcaster());
+    userAvatarService = mock(UserAvatarService.class);
+    when(userAvatarService.events()).thenReturn(new UserProfileBroadcaster());
     view = createView();
   }
 
@@ -135,24 +135,24 @@ class AdminViewNavigationTest {
     AdminView created =
         new AdminView(
             new MessageProperties(new CustomI18NProvider()),
-            security,
-            config,
-            new MaintenanceService(config),
+            securityService,
+            configService,
+            new MaintenanceService(configService),
             mock(EmailService.class),
             mock(UserService.class),
             mock(RoleService.class),
-            request,
+            mockHttpRequest,
             new UserStatusBroadcaster(),
-            avatars,
+            userAvatarService,
             mock(ExternalIdentityService.class));
-    providers = mock(ExternalProviderSettings.class);
-    when(providers.load(any()))
+    externalProviderSettings = mock(ExternalProviderSettings.class);
+    when(externalProviderSettings.load(any()))
         .thenAnswer(call ->
             new ExternalProviderSettings.Settings(
                 call.getArgument(0), "", false, false, "own-version"));
     de.derpeterson.app.security.mfa.TwoFactorAuthorization factor =
         mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class);
-    created.configureExternalProviders(providers, factor);
+    created.configureExternalProviders(externalProviderSettings, factor);
     de.derpeterson.app.security.mfa.TwoFactorPolicies policies =
         mock(de.derpeterson.app.security.mfa.TwoFactorPolicies.class);
     when(policies.load())
@@ -187,7 +187,7 @@ class AdminViewNavigationTest {
         "?ticket=10001&tab=recovery&section=support"
       })
   void ticketLinkSelectsOnlyItsMatchingVisibleTicketRegardlessOfParameterOrder(String query) {
-    SupportTicketService tickets = mock(SupportTicketService.class);
+    SupportTicketService mockSupportTicketService = mock(SupportTicketService.class);
     Ticket ticket =
         new Ticket(
             1L,
@@ -204,9 +204,9 @@ class AdminViewNavigationTest {
             false,
             false,
             null);
-    when(tickets.findForAdministration(eq(request), any()))
+    when(mockSupportTicketService.findForAdministration(eq(mockHttpRequest), any()))
         .thenAnswer(call -> "10001".equals(call.getArgument(1)) ? ticket : null);
-    when(tickets.inbox(eq(request), any(), any()))
+    when(mockSupportTicketService.loadTicketInbox(eq(mockHttpRequest), any(), any()))
         .thenAnswer(call -> {
           Long selected = call.getArgument(1);
           return new SupportTicketService.LiveView(
@@ -219,7 +219,7 @@ class AdminViewNavigationTest {
               0,
               10);
         });
-    view.configureSupport(tickets);
+    view.configureSupport(mockSupportTicketService);
     enter(query);
     Component support = (Component) ReflectionTestUtils.getField(view, "supportSection");
     Grid<?> grid = (Grid<?>) ReflectionTestUtils.getField(support, "ticketGrid");
@@ -281,7 +281,7 @@ class AdminViewNavigationTest {
         new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
       context.registerBean(
           de.derpeterson.app.service.UserNotificationService.class, () -> notifications);
-      context.registerBean(ExternalProviderSettings.class, () -> providers);
+      context.registerBean(ExternalProviderSettings.class, () -> externalProviderSettings);
       context.registerBean(
           de.derpeterson.app.security.mfa.TwoFactorAuthorization.class,
           () -> mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class));
@@ -332,8 +332,8 @@ class AdminViewNavigationTest {
       VerticalLayout layout = (VerticalLayout) ReflectionTestUtils.getField(view, "sectionLayout");
       assertSame(
           ReflectionTestUtils.getField(view, "externalLoginSection"), layout.getComponentAt(0));
-      verify(providers).load("google");
-      verify(providers).load("microsoft");
+      verify(externalProviderSettings).load("google");
+      verify(externalProviderSettings).load("microsoft");
     } else if (group == AdminConfigGroup.TWO_FACTOR) {
       VerticalLayout layout = (VerticalLayout) ReflectionTestUtils.getField(view, "sectionLayout");
       assertSame(ReflectionTestUtils.getField(view, "twoFactorSection"), layout.getComponentAt(0));
@@ -372,13 +372,15 @@ class AdminViewNavigationTest {
 
   @Test
   void menuSelectionUsesFlowNavigationWithTheSameParametersAsTheLink() {
-    doReturn(Optional.of(view)).when(ui).navigate(eq(AdminView.class), any(QueryParameters.class));
+    doReturn(Optional.of(view))
+        .when(testUi)
+        .navigate(eq(AdminView.class), any(QueryParameters.class));
     PageNavigationComponent navigation =
         (PageNavigationComponent) ReflectionTestUtils.getField(view, "sideNavigation");
     Map<?, ?> items = (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuItems");
     SideNavItem item = (SideNavItem) items.get(AdminConfigGroup.SECURITY);
     navigation.activate(item);
-    verify(ui)
+    verify(testUi)
         .navigate(
             AdminView.class,
             QueryParameters.simple(Map.of("section", "configuration", "group", "security")));
@@ -386,7 +388,7 @@ class AdminViewNavigationTest {
 
   @Test
   void restoringTheUrlDoesNotBypassTheExistingAccessCheck() {
-    when(security.getAuthenticatedUser(request)).thenReturn(Optional.empty());
+    when(securityService.getAuthenticatedUser(mockHttpRequest)).thenReturn(Optional.empty());
     BeforeEnterEvent event = mock(BeforeEnterEvent.class);
     when(event.hasForwardTarget()).thenReturn(true);
     view.beforeEnter(event);
@@ -396,8 +398,8 @@ class AdminViewNavigationTest {
 
   @Test
   void requestWithoutCurrentUserIsForwardedWithoutBuildingAnAnonymousUserMenu() {
-    when(security.getCurrentUser(request)).thenReturn(Optional.empty());
-    when(security.getAuthenticatedUser(request)).thenReturn(Optional.empty());
+    when(securityService.getCurrentUser(mockHttpRequest)).thenReturn(Optional.empty());
+    when(securityService.getAuthenticatedUser(mockHttpRequest)).thenReturn(Optional.empty());
     AdminView anonymous = createView();
     assertNull(ReflectionTestUtils.getField(anonymous, "userPopoverMenu"));
     assertNull(ReflectionTestUtils.getField(anonymous, "userIconButton"));

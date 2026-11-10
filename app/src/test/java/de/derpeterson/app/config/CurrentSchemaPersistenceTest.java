@@ -33,11 +33,11 @@ import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 
 /** Aktuelles Schema und Wiederanlauf auf eigenen H2-Daten, ohne Anwendungsserver. */
 class CurrentSchemaPersistenceTest {
-  private DriverManagerDataSource source;
+  private DriverManagerDataSource testDataSource;
 
   @BeforeEach
   void setup() {
-    source =
+    testDataSource =
         new DriverManagerDataSource(
             "jdbc:h2:mem:current-schema-" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1",
             "sa",
@@ -47,12 +47,12 @@ class CurrentSchemaPersistenceTest {
 
   private void initialize() {
     new ResourceDatabasePopulator(new ClassPathResource("db/application-schema-h2.sql"))
-        .execute(source);
+        .execute(testDataSource);
   }
 
   private LocalContainerEntityManagerFactoryBean factory() {
     LocalContainerEntityManagerFactoryBean factory = new LocalContainerEntityManagerFactoryBean();
-    factory.setDataSource(source);
+    factory.setDataSource(testDataSource);
     factory.setPackagesToScan("de.derpeterson.app.model");
     factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
     factory.setJpaPropertyMap(
@@ -70,7 +70,7 @@ class CurrentSchemaPersistenceTest {
   void currentSchemaValidatesAgainstEveryJpaMappingAndAcceptsAllCurrentEnumValues() {
     LocalContainerEntityManagerFactoryBean factory = factory();
     try {
-      JdbcTemplate jdbc = new JdbcTemplate(source);
+      JdbcTemplate jdbc = new JdbcTemplate(testDataSource);
       for (RoleType role : RoleType.values()) {
         jdbc.update("insert into roles(name) values(?)", role.name());
       }
@@ -153,7 +153,7 @@ class CurrentSchemaPersistenceTest {
       assertEquals(12L, avatar.getOriginalSizeBytes());
       assertEquals(20, avatar.getOriginalWidth());
       assertEquals(10, avatar.getOriginalHeight());
-      JdbcTemplate jdbc = new JdbcTemplate(source);
+      JdbcTemplate jdbc = new JdbcTemplate(testDataSource);
       assertThrows(
           DataIntegrityViolationException.class,
           () -> jdbc.update("update user_avatar set uploaded_at = null where user_id = ?", userId));

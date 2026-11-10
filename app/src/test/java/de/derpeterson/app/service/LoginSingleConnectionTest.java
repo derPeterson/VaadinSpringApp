@@ -40,17 +40,18 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @SpringJUnitConfig(LoginSingleConnectionTest.Config.class)
 class LoginSingleConnectionTest {
   @Autowired HikariDataSource source;
-  @Autowired UserRepository users;
-  @Autowired RoleRepository roles;
+  @Autowired UserRepository userRepository;
+  @Autowired RoleRepository roleRepository;
   @Autowired LoginAttemptService attempts;
-  @Autowired LoginAttemptRepository records;
+  @Autowired LoginAttemptRepository loginAttemptRepository;
 
   @Test
   void protectedPasswordLookupSharesTheOnlyConnectionAndKeepsItsCounter() {
     BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
-    RoleEntity role = roles.saveAndFlush(RoleEntity.builder().name(RoleType.ROLE_USER).build());
+    RoleEntity role =
+        roleRepository.saveAndFlush(RoleEntity.builder().name(RoleType.ROLE_USER).build());
     String email = "one-connection@example.test";
-    users.saveAndFlush(
+    userRepository.saveAndFlush(
         UserEntity.builder()
             .email(email)
             .firstName("Single")
@@ -63,7 +64,7 @@ class LoginSingleConnectionTest {
             .build());
     DaoAuthenticationProvider provider =
         new DaoAuthenticationProvider(
-            new CustomUserDetailsService(users)::loadPasswordUserByUsername);
+            new CustomUserDetailsService(userRepository)::loadPasswordUserByUsername);
     provider.setPasswordEncoder(encoder);
     LoginAuthenticationService login = new LoginAuthenticationService(provider, attempts);
     assertTrue(
@@ -75,7 +76,11 @@ class LoginSingleConnectionTest {
         UsernamePasswordAuthenticationToken.unauthenticated(email, "WrongPassword!");
     assertThrows(BadCredentialsException.class, () -> login.authenticate(loginCredentials));
     assertEquals(
-        1, records.findById(LoginAttemptService.identityKey(email)).orElseThrow().getFailures());
+        1,
+        loginAttemptRepository
+            .findById(LoginAttemptService.identityKey(email))
+            .orElseThrow()
+            .getFailures());
     assertEquals(0, source.getHikariPoolMXBean().getActiveConnections());
     assertEquals(1, source.getMaximumPoolSize());
   }

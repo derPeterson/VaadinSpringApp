@@ -45,21 +45,20 @@ import org.springframework.transaction.support.TransactionTemplate;
 @SpringJUnitConfig(UserServicePersistenceTest.Config.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class BootstrapAccountsPersistenceTest {
-  @Autowired UserRepository users;
-  @Autowired RoleRepository roles;
-  @Autowired PlatformTransactionManager manager;
-  @Autowired TransactionTemplate tx;
-  @PersistenceContext EntityManager em;
+  @Autowired UserRepository userRepository;
+  @Autowired RoleRepository roleRepository;
+  @Autowired PlatformTransactionManager transactionManager;
+  @Autowired TransactionTemplate transactionTemplate;
+  @PersistenceContext EntityManager entityManager;
   BootstrapAccountsProperties settings;
 
   @BeforeEach
   void resetDatabase() {
-    tx.executeWithoutResult(
-        s -> {
-          users.deleteAll();
-          users.flush();
-          em.createQuery("delete from RoleEntity").executeUpdate();
-        });
+    transactionTemplate.executeWithoutResult(s -> {
+      userRepository.deleteAll();
+      userRepository.flush();
+      entityManager.createQuery("delete from RoleEntity").executeUpdate();
+    });
     settings = new BootstrapAccountsProperties();
     settings.setEnabled(true);
   }
@@ -75,13 +74,13 @@ class BootstrapAccountsPersistenceTest {
     ConfigService config = mock(ConfigService.class);
     when(config.exists(any())).thenReturn(true);
     return new DatabaseInitializer(
-        users,
-        roles,
+        userRepository,
+        roleRepository,
         config,
         encoder,
         mock(Environment.class),
         settings,
-        manager,
+        transactionManager,
         mock(de.derpeterson.app.security.ExternalProviderSettings.class));
   }
 
@@ -98,8 +97,8 @@ class BootstrapAccountsPersistenceTest {
     settings.setGuests(List.of(account("guest@example.test")));
     run();
     run();
-    assertEquals(5, users.count());
-    assertEquals(4, roles.count());
+    assertEquals(5, userRepository.count());
+    assertEquals(4, roleRepository.count());
     Map<String, RoleType> expected =
         Map.of(
             "super1",
@@ -112,7 +111,7 @@ class BootstrapAccountsPersistenceTest {
             RoleType.ROLE_USER,
             "guest",
             RoleType.ROLE_GUEST);
-    for (UserEntity user : users.findAll()) {
+    for (UserEntity user : userRepository.findAll()) {
       assertEquals(
           Set.of(expected.get(user.getEmail().split("@")[0])),
           user.getRoleEntities().stream()
@@ -128,7 +127,7 @@ class BootstrapAccountsPersistenceTest {
   void existingAccountIsNotPromotedRenamedOrGivenANewPassword() throws Exception {
     settings.setUsers(List.of(account("existing@example.test")));
     run();
-    UserEntity existing = users.findAll().getFirst();
+    UserEntity existing = userRepository.findAll().getFirst();
     String hash = existing.getPassword();
     settings.setUsers(List.of());
     Account replacement = account(" EXISTING@example.test ");
@@ -136,10 +135,10 @@ class BootstrapAccountsPersistenceTest {
     replacement.setFirstName("Changed");
     settings.setSuperadmins(List.of(replacement));
     run();
-    UserEntity stored = users.findAll().getFirst();
+    UserEntity stored = userRepository.findAll().getFirst();
     assertEquals(hash, stored.getPassword());
     assertEquals(existing.getFirstName(), stored.getFirstName());
-    assertEquals(1, users.count());
+    assertEquals(1, userRepository.count());
     assertTrue(stored.hasRole(RoleType.ROLE_USER));
     assertFalse(stored.hasRole(RoleType.ROLE_SUPERADMIN));
   }
@@ -150,7 +149,7 @@ class BootstrapAccountsPersistenceTest {
     settings.setGuests(List.of(account(" DUPLICATE@example.test ")));
     IllegalArgumentException error = assertThrows(IllegalArgumentException.class, this::run);
     assertFalse(error.getMessage().contains("OnlyForTests"));
-    assertEquals(0, users.count());
+    assertEquals(0, userRepository.count());
   }
 
   @ParameterizedTest
@@ -167,7 +166,7 @@ class BootstrapAccountsPersistenceTest {
     }
     settings.setAdmins(List.of(account("valid@example.test"), broken));
     assertThrows(IllegalArgumentException.class, this::run);
-    assertEquals(0, users.count());
+    assertEquals(0, userRepository.count());
   }
 
   @Test
@@ -179,8 +178,8 @@ class BootstrapAccountsPersistenceTest {
         .thenThrow(new IllegalStateException("test failure"));
     CommandLineRunner initialization = initializer(encoder).initDatabase();
     assertThrows(IllegalStateException.class, initialization::run);
-    assertEquals(0, users.count());
-    assertEquals(0, roles.count());
+    assertEquals(0, userRepository.count());
+    assertEquals(0, roleRepository.count());
   }
 
   @Test
@@ -188,8 +187,8 @@ class BootstrapAccountsPersistenceTest {
     settings.setEnabled(false);
     settings.setUsers(List.of(account("invalid")));
     run();
-    assertEquals(0, users.count());
-    assertEquals(4, roles.count());
+    assertEquals(0, userRepository.count());
+    assertEquals(4, roleRepository.count());
   }
 
   @Test

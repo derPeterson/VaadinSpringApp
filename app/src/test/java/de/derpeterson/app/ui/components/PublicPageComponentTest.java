@@ -38,28 +38,28 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 class PublicPageComponentTest {
-  private UI ui;
-  private VaadinSession session;
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
+  private UI testUi;
+  private VaadinSession vaadinSession;
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
   private final MessageProperties messageProperties =
       new MessageProperties(new CustomI18NProvider());
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
+    testUi = new UI();
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
     doAnswer(
             call -> {
-              locale.set(call.getArgument(0));
+              localeReference.set(call.getArgument(0));
               return null;
             })
-        .when(session)
+        .when(vaadinSession)
         .setLocale(any());
-    VaadinSession.setCurrent(session);
-    UI.setCurrent(ui);
-    ui.getInternals().setSession(session);
+    VaadinSession.setCurrent(vaadinSession);
+    UI.setCurrent(testUi);
+    testUi.getInternals().setSession(vaadinSession);
   }
 
   @AfterEach
@@ -174,7 +174,7 @@ class PublicPageComponentTest {
             .findFirst()
             .orElseThrow();
     english.click();
-    assertEquals(Locale.ENGLISH, locale.get());
+    assertEquals(Locale.ENGLISH, localeReference.get());
     assertEquals("true", english.getElement().getAttribute("aria-pressed"));
     if (scene == PublicPageComponent.Page.HOME) {
       assertTrue(

@@ -24,7 +24,8 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
 class FlowUiRecoveryFilterTest {
-  private final SessionAdmissionService admission = mock(SessionAdmissionService.class);
+  private final SessionAdmissionService sessionAdmissionService =
+      mock(SessionAdmissionService.class);
   private final MaintenanceService maintenance = mock(MaintenanceService.class);
 
   private MockHttpServletRequest request(String path, String type) {
@@ -48,7 +49,8 @@ class FlowUiRecoveryFilterTest {
     AtomicInteger dispatched = new AtomicInteger();
     FilterChain chain = (input, output) -> dispatched.incrementAndGet();
     MockHttpServletResponse response = new MockHttpServletResponse();
-    new FlowUiRecoveryFilter(mapping, admission, maintenance).doFilter(request, response, chain);
+    new FlowUiRecoveryFilter(mapping, sessionAdmissionService, maintenance)
+        .doFilter(request, response, chain);
     assertEquals(rebuild ? 0 : 1, dispatched.get());
     if (rebuild) {
       assertEquals("no-store", response.getHeader("Cache-Control"));
@@ -130,7 +132,7 @@ class FlowUiRecoveryFilterTest {
           request
               .getSession()
               .removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-      case "expired" -> when(admission.isExpired(request)).thenReturn(true);
+      case "expired" -> when(sessionAdmissionService.isExpired(request)).thenReturn(true);
       case "live-ui" -> request.getSession().setAttribute("runtime-ui", mock(VaadinSession.class));
       default -> throw new IllegalArgumentException(state);
     }

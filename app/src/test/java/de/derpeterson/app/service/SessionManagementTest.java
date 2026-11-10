@@ -81,16 +81,16 @@ import org.springframework.test.util.ReflectionTestUtils;
  * Appstart.
  */
 class SessionManagementTest {
-  private final ConfigService config = mock(ConfigService.class);
+  private final ConfigService configService = mock(ConfigService.class);
   private final CustomUserDetailsService users = mock(CustomUserDetailsService.class);
   private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(4);
   private final AtomicReference<UserDetails> account = new AtomicReference<>();
   private DeviceTokenRepository tokens;
-  private JdbcTemplate jdbc;
-  private SessionRegistryImpl registry;
-  private SessionAdmissionService admissions;
+  private JdbcTemplate jdbcTemplate;
+  private SessionRegistryImpl sessionRegistry;
+  private SessionAdmissionService sessionAdmissionService;
   private DeviceRememberMeServices remembered;
-  private SecurityService security;
+  private SecurityService securityService;
   private SessionManagementService management;
   private static final String IDENTITY = "sessions@example.test";
   private static final String PASSWORD = "Strong!Password8";
@@ -100,10 +100,10 @@ class SessionManagementTest {
 
   @BeforeEach
   void setup() {
-    when(config.getInteger(any()))
+    when(configService.getInteger(any()))
         .thenAnswer(
             call -> Integer.parseInt(((ConfigEntry) call.getArgument(0)).getDefaultValueString()));
-    when(config.getInteger(ConfigEntry.REMEMBER_ME_DURATION)).thenReturn(3600);
+    when(configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION)).thenReturn(3600);
     account.set(
         User.withUsername(IDENTITY).password(encoder.encode(PASSWORD)).roles("USER").build());
     when(users.loadUserByUsername(IDENTITY)).thenAnswer(call -> account.get());
@@ -112,8 +112,8 @@ class SessionManagementTest {
             "jdbc:h2:mem:session-management-" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1",
             "sa",
             "");
-    jdbc = new JdbcTemplate(source);
-    jdbc.execute(
+    jdbcTemplate = new JdbcTemplate(source);
+    jdbcTemplate.execute(
         "create table persistent_logins (username varchar(255) not null, series varchar(64) primary key, token varchar(64) not null, last_used timestamp not null)");
     tokens = new DeviceTokenRepository(source, new DataSourceTransactionManager(source));
     tokens.afterPropertiesSet();
@@ -121,25 +121,25 @@ class SessionManagementTest {
   }
 
   private void restart() {
-    registry = new SessionRegistryImpl();
-    admissions = new SessionAdmissionService(config, registry);
-    admissions.setDeviceTokens(tokens);
+    sessionRegistry = new SessionRegistryImpl();
+    sessionAdmissionService = new SessionAdmissionService(configService, sessionRegistry);
+    sessionAdmissionService.setDeviceTokens(tokens);
     remembered =
         new DeviceRememberMeServices(
             "isolated-remember-me-key",
             users,
             tokens,
-            admissions,
-            () -> config.getInteger(ConfigEntry.REMEMBER_ME_DURATION));
+            sessionAdmissionService,
+            () -> configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION));
     remembered.afterPropertiesSet();
-    security =
+    securityService =
         new SecurityService(
             remembered,
             mock(UserService.class),
             mock(UserRepository.class),
             users,
-            new AdmittedSecurityContextRepository(admissions),
-            admissions);
+            new AdmittedSecurityContextRepository(sessionAdmissionService),
+            sessionAdmissionService);
     AuthenticationManager authentication =
         request -> {
           if (!account.get().isEnabled()
@@ -152,7 +152,14 @@ class SessionManagementTest {
         };
     management =
         new SessionManagementService(
-            admissions, tokens, security, users, authentication, encoder, config, remembered);
+            sessionAdmissionService,
+            tokens,
+            securityService,
+            users,
+            authentication,
+            encoder,
+            configService,
+            remembered);
     ReflectionTestUtils.setField(management, "sessionClock", Clock.fixed(NOW, ZoneOffset.UTC));
     SecurityContextHolder.clearContext();
   }
@@ -162,18 +169,19 @@ class SessionManagementTest {
     Login owner = login(true);
     assertEquals(3600, cookie(owner).getMaxAge());
     String series = tokens.saved(IDENTITY, 3600).getFirst().series();
-    jdbc.update(
+    jdbcTemplate.update(
         "update persistent_logins set last_used=? where series=?",
         Timestamp.from(Instant.now().minusSeconds(120)),
         series);
     management.deleteExpiredSavedLogins();
     assertNotNull(tokens.getTokenForSeries(series));
-    when(config.getInteger(ConfigEntry.REMEMBER_ME_DURATION)).thenReturn(1);
+    when(configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION)).thenReturn(1);
     assertNull(returnWith(cookie(owner), new MockHttpServletRequest()));
     management.list(owner.request());
     management.deleteExpiredSavedLogins();
     assertNull(tokens.getTokenForSeries(series));
-    assertEquals(0, jdbc.queryForObject("select count(*) from remembered_device", Integer.class));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from remembered_device", Integer.class));
   }
 
   @AfterEach
@@ -186,7 +194,7 @@ class SessionManagementTest {
     request.addHeader("User-Agent", agent);
     MockHttpServletResponse response = new MockHttpServletResponse();
     UserDetails principal = User.withUserDetails(account.get()).password("").build();
-    security.storeAuthenticatedUser(request, response, principal, remember);
+    securityService.storeAuthenticatedUser(request, response, principal, remember);
     SecurityContextHolder.clearContext();
     return new Login(next(request), response);
   }
@@ -229,8 +237,10 @@ class SessionManagementTest {
         Arrays.stream(rejected.getCookies())
             .anyMatch(c -> c.getName().equals("remember-me") && c.getMaxAge() == 0));
     assertNull(SecurityContextHolder.getContext().getAuthentication());
-    assertEquals(0, jdbc.queryForObject("select count(*) from persistent_logins", Integer.class));
-    assertEquals(0, jdbc.queryForObject("select count(*) from remembered_device", Integer.class));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from remembered_device", Integer.class));
     assertNull(returnWith(otherDevice, new MockHttpServletRequest()));
   }
 
@@ -245,11 +255,11 @@ class SessionManagementTest {
     String previous = privateSession.getId();
     String privateId = "private-http-session-" + UUID.randomUUID();
     ReflectionTestUtils.setField(privateSession, "id", privateId);
-    admissions.sessionIdChanged(
+    sessionAdmissionService.sessionIdChanged(
         previous,
         privateId,
         () ->
-            registry.onApplicationEvent(
+            sessionRegistry.onApplicationEvent(
                 new org.springframework.security.web.session.HttpSessionIdChangedEvent(
                     privateSession, previous)));
     login(false, "Mozilla/5.0 (Android) Chrome/130.0 Mobile");
@@ -271,7 +281,7 @@ class SessionManagementTest {
 
   @Test
   void revokesOnlySelectedSessionAndItsSavedSignInAndImmediatelyFreesSlot() {
-    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(2);
+    when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(2);
     Login first = login(true);
     Login second = login(true);
     Entry other =
@@ -280,11 +290,12 @@ class SessionManagementTest {
             .findFirst()
             .orElseThrow();
     management.revoke(first.request(), other.handle());
-    assertTrue(admissions.isExpired(second.request()));
-    assertFalse(admissions.isExpired(first.request()));
+    assertTrue(sessionAdmissionService.isExpired(second.request()));
+    assertFalse(sessionAdmissionService.isExpired(first.request()));
     assertEquals(1, management.list(first.request()).active());
     assertNull(returnWith(cookie(second), new MockHttpServletRequest()));
-    assertEquals(1, jdbc.queryForObject("select count(*) from persistent_logins", Integer.class));
+    assertEquals(
+        1, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
     assertNotNull(login(false));
     management.revoke(first.request(), other.handle());
     assertEquals(2, management.list(first.request()).active());
@@ -302,14 +313,15 @@ class SessionManagementTest {
         User.withUsername("foreign@example.test").password("unused").roles("USER").build();
     when(users.loadUserByUsername("foreign@example.test")).thenReturn(foreign);
     MockHttpServletRequest foreignRequest = new MockHttpServletRequest();
-    admissions.onAuthentication(
+    sessionAdmissionService.onAuthentication(
         UsernamePasswordAuthenticationToken.authenticated(foreign, null, foreign.getAuthorities()),
         foreignRequest,
         new MockHttpServletResponse());
-    String foreignHandle = admissions.active("foreign@example.test").getFirst().handle();
+    String foreignHandle =
+        sessionAdmissionService.active("foreign@example.test").getFirst().handle();
     management.revoke(first.request(), foreignHandle);
-    assertFalse(admissions.isExpired(foreignRequest));
-    assertFalse(admissions.isExpired(first.request()));
+    assertFalse(sessionAdmissionService.isExpired(foreignRequest));
+    assertFalse(sessionAdmissionService.isExpired(first.request()));
     assertEquals(1, management.list(first.request()).entries().size());
   }
 
@@ -319,10 +331,11 @@ class SessionManagementTest {
     Login second = login(true);
     Login third = login(false);
     management.revokeOthers(first.request());
-    assertFalse(admissions.isExpired(first.request()));
-    assertTrue(admissions.isExpired(second.request()));
-    assertTrue(admissions.isExpired(third.request()));
-    assertEquals(1, jdbc.queryForObject("select count(*) from persistent_logins", Integer.class));
+    assertFalse(sessionAdmissionService.isExpired(first.request()));
+    assertTrue(sessionAdmissionService.isExpired(second.request()));
+    assertTrue(sessionAdmissionService.isExpired(third.request()));
+    assertEquals(
+        1, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
     assertEquals(1, management.list(first.request()).active());
     assertNotNull(returnWith(cookie(first), new MockHttpServletRequest()));
     assertNull(returnWith(cookie(second), new MockHttpServletRequest()));
@@ -334,7 +347,8 @@ class SessionManagementTest {
     MockHttpServletRequest returning = new MockHttpServletRequest();
     Authentication authentication = returnWith(cookie(owner), returning);
     assertNotNull(authentication);
-    admissions.onAuthentication(authentication, returning, new MockHttpServletResponse());
+    sessionAdmissionService.onAuthentication(
+        authentication, returning, new MockHttpServletResponse());
     Snapshot snapshot = management.list(owner.request());
     assertEquals(2, snapshot.active());
     assertEquals(
@@ -343,9 +357,10 @@ class SessionManagementTest {
     Entry other =
         snapshot.entries().stream().filter(entry -> !entry.current()).findFirst().orElseThrow();
     management.revoke(owner.request(), other.savedHandle());
-    assertTrue(admissions.isExpired(returning));
-    assertFalse(admissions.isExpired(owner.request()));
-    assertEquals(0, jdbc.queryForObject("select count(*) from persistent_logins", Integer.class));
+    assertTrue(sessionAdmissionService.isExpired(returning));
+    assertFalse(sessionAdmissionService.isExpired(owner.request()));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
     assertEquals(1, management.list(owner.request()).active());
   }
 
@@ -393,8 +408,8 @@ class SessionManagementTest {
     MockHttpServletRequest returning = new MockHttpServletRequest();
     Authentication auth = returnWith(cookie(old), returning);
     assertNotNull(auth);
-    admissions.onAuthentication(auth, returning, new MockHttpServletResponse());
-    assertEquals(2, registry.getAllSessions(IDENTITY, false).size());
+    sessionAdmissionService.onAuthentication(auth, returning, new MockHttpServletResponse());
+    assertEquals(2, sessionRegistry.getAllSessions(IDENTITY, false).size());
     assertEquals(handle, tokens.saved(IDENTITY, 3600).getFirst().handle());
   }
 
@@ -415,8 +430,8 @@ class SessionManagementTest {
     MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
     assertThrows(
         AuthenticationServiceException.class,
-        () -> admissions.onAuthentication(auth, request, attemptResponse));
-    assertEquals(1, registry.getAllSessions(IDENTITY, false).size());
+        () -> sessionAdmissionService.onAuthentication(auth, request, attemptResponse));
+    assertEquals(1, sessionRegistry.getAllSessions(IDENTITY, false).size());
   }
 
   @Test
@@ -439,7 +454,8 @@ class SessionManagementTest {
             Authentication auth = returnWith(cookie(old), returning);
             if (auth != null) {
               try {
-                admissions.onAuthentication(auth, returning, new MockHttpServletResponse());
+                sessionAdmissionService.onAuthentication(
+                    auth, returning, new MockHttpServletResponse());
               } catch (AuthenticationServiceException _) {
                 /* Expected if the revocation won. */
               }
@@ -457,13 +473,13 @@ class SessionManagementTest {
       revoke.get(5, TimeUnit.SECONDS);
       // Eine Rückkehr vor dem Widerruf hat eine neue aktive Zeile mit derselben Tokenserie.
       assertNull(returnWith(cookie(old), new MockHttpServletRequest()));
-      assertEquals(1, registry.getAllSessions(IDENTITY, false).size());
+      assertEquals(1, sessionRegistry.getAllSessions(IDENTITY, false).size());
     }
   }
 
   @Test
   void passwordProofPermitsOnlyManagementAndThenRegularAdmissionAfterFreeingSlot() {
-    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+    when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     Login old = login(true);
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.getSession().setAttribute("public-ui", "preserved");
@@ -472,7 +488,7 @@ class SessionManagementTest {
     assertNotEquals(anonymousId, request.getSession().getId());
     assertEquals("preserved", request.getSession().getAttribute("public-ui"));
     assertTrue(management.hasRecovery(request));
-    assertTrue(security.getAuthenticatedUser(request).isEmpty());
+    assertTrue(securityService.getAuthenticatedUser(request).isEmpty());
     assertNull(request.getSession().getAttribute("authenticatedUser"));
     assertNull(SecurityContextHolder.getContext().getAuthentication());
     MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
@@ -482,24 +498,24 @@ class SessionManagementTest {
     assertEquals(1, snapshot.active());
     assertFalse(snapshot.entries().getFirst().current());
     management.recoveryRevoke(request, snapshot.entries().getFirst().handle());
-    assertTrue(admissions.isExpired(old.request()));
+    assertTrue(sessionAdmissionService.isExpired(old.request()));
     assertFalse(management.finishRecovery(request, new MockHttpServletResponse()));
     assertFalse(management.hasRecovery(request));
-    assertTrue(security.getAuthenticatedUser(request).isPresent());
-    assertEquals(1, registry.getAllSessions(IDENTITY, false).size());
+    assertTrue(securityService.getAuthenticatedUser(request).isPresent());
+    assertEquals(1, sessionRegistry.getAllSessions(IDENTITY, false).size());
     assertThrows(
         AuthenticationCredentialsNotFoundException.class, () -> management.recoveryList(request));
   }
 
   @Test
   void externalProofHonorsLimitAndRememberChoiceWithoutGrantingFullAccessBeforeAdmission() {
-    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+    when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     UserDetails external =
         new de.derpeterson.app.security.PortalUserDetails(
             IDENTITY, null, UUID.randomUUID().toString(), true, account.get().getAuthorities());
     account.set(external);
     MockHttpServletRequest first = new MockHttpServletRequest();
-    security.storeVerifiedAuthentication(
+    securityService.storeVerifiedAuthentication(
         first,
         new MockHttpServletResponse(),
         new de.derpeterson.app.security.ExternalAuthenticationToken(external, "google"),
@@ -512,16 +528,16 @@ class SessionManagementTest {
         new de.derpeterson.app.security.ExternalAuthenticationToken(external, "google"),
         false);
     assertTrue(management.hasRecovery(returning));
-    assertTrue(security.getAuthenticatedUser(returning).isEmpty());
+    assertTrue(securityService.getAuthenticatedUser(returning).isEmpty());
     MockHttpServletResponse limitedResponse = new MockHttpServletResponse();
     assertThrows(
         SessionLimitException.class, () -> management.finishRecovery(returning, limitedResponse));
     Snapshot snapshot = management.recoveryList(returning);
     management.recoveryRevoke(returning, snapshot.entries().getFirst().handle());
-    assertTrue(admissions.isExpired(first));
+    assertTrue(sessionAdmissionService.isExpired(first));
     assertFalse(management.finishRecovery(returning, new MockHttpServletResponse()));
     assertFalse(management.hasRecovery(returning));
-    assertTrue(security.getAuthenticatedUser(returning).isPresent());
+    assertTrue(securityService.getAuthenticatedUser(returning).isPresent());
     assertTrue(
         SecurityContextHolder.getContext().getAuthentication()
             instanceof de.derpeterson.app.security.ExternalAuthenticationToken);
@@ -537,7 +553,7 @@ class SessionManagementTest {
     assertFalse(management.hasRecovery(request));
     assertThrows(
         AuthenticationCredentialsNotFoundException.class, () -> management.recoveryList(request));
-    assertTrue(security.getAuthenticatedUser(request).isEmpty());
+    assertTrue(securityService.getAuthenticatedUser(request).isEmpty());
   }
 
   @Test
@@ -574,7 +590,8 @@ class SessionManagementTest {
     assertThrows(
         AuthenticationCredentialsNotFoundException.class, () -> management.recoveryList(request));
     assertFalse(management.hasRecovery(request));
-    assertEquals(0, jdbc.queryForObject("select count(*) from persistent_logins", Integer.class));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
   }
 
   @Test
@@ -582,7 +599,7 @@ class SessionManagementTest {
     Login owner = login(false);
     MockHttpServletRequest request = new MockHttpServletRequest();
     management.startRecovery(request, IDENTITY, PASSWORD, false);
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     MockHttpServletRequest attemptRequest = owner.request();
     assertThrows(MaintenanceAuthenticationException.class, () -> management.list(attemptRequest));
     assertThrows(MaintenanceAuthenticationException.class, () -> management.recoveryList(request));
@@ -590,7 +607,7 @@ class SessionManagementTest {
     assertThrows(
         MaintenanceAuthenticationException.class,
         () -> management.finishRecovery(request, attemptResponse));
-    assertFalse(admissions.isExpired(owner.request()));
+    assertFalse(sessionAdmissionService.isExpired(owner.request()));
   }
 
   @Test
@@ -602,7 +619,7 @@ class SessionManagementTest {
     assertThrows(
         AuthenticationCredentialsNotFoundException.class,
         () -> management.recoveryRevokeOthers(request));
-    assertFalse(admissions.isExpired(owner.request()));
+    assertFalse(sessionAdmissionService.isExpired(owner.request()));
   }
 
   @ParameterizedTest
@@ -617,17 +634,17 @@ class SessionManagementTest {
             .orElseThrow()
             .handle();
     management.revoke(owner.request(), handle);
-    assertTrue(security.hasCurrentSessionPrivileges(owner.request()));
+    assertTrue(securityService.hasCurrentSessionPrivileges(owner.request()));
     MockHttpSession oldSession = (MockHttpSession) old.request().getSession(false);
     if (push) {
       PushSecurityInterceptor interceptor =
-          new PushSecurityInterceptor(security, new MaintenanceService(config));
+          new PushSecurityInterceptor(securityService, new MaintenanceService(configService));
       VaadinServletRequest request =
           new VaadinServletRequest(old.request(), mock(VaadinServletService.class));
       assertThrows(AccessDeniedException.class, () -> interceptor.requestStart(request, null));
     } else {
       ObjectProvider<SecurityService> provider = mock(ObjectProvider.class);
-      when(provider.getObject()).thenReturn(security);
+      when(provider.getObject()).thenReturn(securityService);
       old.request().setMethod("POST");
       old.request().setServletPath("/");
       old.request().setParameter("v-r", "uidl");
@@ -638,7 +655,7 @@ class SessionManagementTest {
       verifyNoInteractions(business);
     }
     assertTrue(oldSession.isInvalid());
-    assertFalse(admissions.isExpired(owner.request()));
+    assertFalse(sessionAdmissionService.isExpired(owner.request()));
   }
 
   @Test
@@ -651,9 +668,11 @@ class SessionManagementTest {
               tokens.removeUserTokens(IDENTITY);
               throw new IllegalStateException("force rollback");
             }));
-    assertEquals(1, jdbc.queryForObject("select count(*) from persistent_logins", Integer.class));
-    assertEquals(1, jdbc.queryForObject("select count(*) from remembered_device", Integer.class));
-    assertFalse(admissions.isExpired(owner.request()));
+    assertEquals(
+        1, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
+    assertEquals(
+        1, jdbcTemplate.queryForObject("select count(*) from remembered_device", Integer.class));
+    assertFalse(sessionAdmissionService.isExpired(owner.request()));
   }
 
   @Test
@@ -662,11 +681,11 @@ class SessionManagementTest {
     Entry before = management.list(owner.request()).entries().getFirst();
     String previous = owner.request().getSession().getId();
     String current = owner.request().changeSessionId();
-    admissions.sessionIdChanged(
+    sessionAdmissionService.sessionIdChanged(
         previous,
         current,
         () ->
-            registry.onApplicationEvent(
+            sessionRegistry.onApplicationEvent(
                 new org.springframework.security.web.session.HttpSessionIdChangedEvent(
                     owner.request().getSession(), previous)));
     Entry after = management.list(owner.request()).entries().getFirst();
@@ -680,14 +699,16 @@ class SessionManagementTest {
   void cleanupRemovesExpiredGrantsAndOrphanMetadataWithoutEndingActiveSessions() {
     Login owner = login(true);
     Saved old = tokens.saved(IDENTITY, 3600).getFirst();
-    jdbc.update(
+    jdbcTemplate.update(
         "update persistent_logins set last_used=? where series=?",
         Timestamp.from(Instant.now().minusSeconds(7200)),
         old.series());
     management.deleteExpiredSavedLogins();
-    assertEquals(0, jdbc.queryForObject("select count(*) from persistent_logins", Integer.class));
-    assertEquals(0, jdbc.queryForObject("select count(*) from remembered_device", Integer.class));
-    assertFalse(admissions.isExpired(owner.request()));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from remembered_device", Integer.class));
+    assertFalse(sessionAdmissionService.isExpired(owner.request()));
     assertEquals(1, management.list(owner.request()).active());
   }
 
@@ -695,8 +716,10 @@ class SessionManagementTest {
   void accountWideTokenRevocationAlsoRemovesDeviceMetadata() {
     login(true);
     tokens.removeUserTokens(IDENTITY);
-    assertEquals(0, jdbc.queryForObject("select count(*) from persistent_logins", Integer.class));
-    assertEquals(0, jdbc.queryForObject("select count(*) from remembered_device", Integer.class));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from remembered_device", Integer.class));
   }
 
   @Test
@@ -706,6 +729,7 @@ class SessionManagementTest {
         new PersistentRememberMeToken(
             IDENTITY, "expired-series", "unused", Date.from(Instant.now().minusSeconds(7200))));
     assertEquals(1, management.list(owner.request()).entries().size());
-    assertEquals(0, jdbc.queryForObject("select count(*) from persistent_logins", Integer.class));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
   }
 }

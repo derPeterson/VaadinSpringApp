@@ -43,29 +43,29 @@ class AdminUserActivityClockSerializationTest {
     USER_MANAGEMENT
   }
 
-  private UI ui;
-  private VaadinSession session;
+  private UI testUi;
+  private VaadinSession vaadinSession;
   private MessageProperties messageProperties;
-  private UserService users;
+  private UserService userService;
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
-    session = mock(VaadinSession.class);
-    when(session.getLocale()).thenReturn(Locale.ENGLISH);
-    VaadinSession.setCurrent(session);
+    testUi = new UI();
+    UI.setCurrent(testUi);
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenReturn(Locale.ENGLISH);
+    VaadinSession.setCurrent(vaadinSession);
     messageProperties = MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH);
-    users = mock(UserService.class);
-    when(users.findAllUsers()).thenReturn(List.of());
+    userService = mock(UserService.class);
+    when(userService.findAllUsers()).thenReturn(List.of());
   }
 
   @AfterEach
   void cleanup() {
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
-    ui = null;
-    session = null;
+    testUi = null;
+    vaadinSession = null;
   }
 
   @ParameterizedTest
@@ -76,7 +76,10 @@ class AdminUserActivityClockSerializationTest {
           case FILTER -> new AdminUserActivityFilter();
           case USER_MANAGEMENT ->
               new AdminUserManagementSection(
-                  messageProperties, users, mock(RoleService.class), mock(SecurityService.class));
+                  messageProperties,
+                  userService,
+                  mock(RoleService.class),
+                  mock(SecurityService.class));
         };
     Clock original = storedClock(component);
     Clock restored = roundTrip(original);
@@ -120,7 +123,7 @@ class AdminUserActivityClockSerializationTest {
       case USER_MANAGEMENT ->
           new AdminUserManagementSection(
               messageProperties,
-              users,
+              userService,
               mock(RoleService.class),
               mock(SecurityService.class),
               clock);

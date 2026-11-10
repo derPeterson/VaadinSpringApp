@@ -34,21 +34,21 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class AccountEmailChangeDialogTest {
-  private UI ui;
+  private UI testUi;
   private AccountEmailChangeDialog dialog;
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
+    testUi = new UI();
+    UI.setCurrent(testUi);
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
+    when(session.getLocale()).thenAnswer(call -> localeReference.get());
     VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
+    testUi.getInternals().setSession(session);
     dialog = new AccountEmailChangeDialog(new MessageProperties(new CustomI18NProvider()));
-    ui.add(dialog);
+    testUi.add(dialog);
   }
 
   @AfterEach
@@ -83,11 +83,11 @@ class AccountEmailChangeDialogTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void fieldsAndHeaderUseTheSelectedLanguageAndNativeModalDismissal(String language) {
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     dialog.refreshTexts();
     dialog.open();
     MessageProperties messageProperties =
-        MessageProperties.forLocale(new CustomI18NProvider(), locale.get());
+        MessageProperties.forLocale(new CustomI18NProvider(), localeReference.get());
     assertTrue(dialog.isOpened());
     assertEquals(ModalityMode.STRICT, dialog.getModality());
     assertTrue(dialog.isCloseOnEsc());
@@ -144,7 +144,7 @@ class AccountEmailChangeDialogTest {
   void languageRefreshPreservesDraftsAndIncompleteSubmissionKeepsTheDialogOpen() {
     dialog.open();
     ((EmailField) byId("account-email-new")).setValue("draft@example.test");
-    locale.set(Locale.ENGLISH);
+    localeReference.set(Locale.ENGLISH);
     dialog.refreshTexts();
     assertEquals("draft@example.test", ((EmailField) byId("account-email-new")).getValue());
     Button request = (Button) byId("account-email-request");

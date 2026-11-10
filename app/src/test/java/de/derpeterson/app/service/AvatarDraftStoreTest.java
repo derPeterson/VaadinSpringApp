@@ -58,7 +58,7 @@ class AvatarDraftStoreTest {
     assertEquals(
         Problem.EXPIRED,
         assertThrows(InvalidImage.class, () -> drafts.image(token, 2L, id)).problem());
-    for (int i = 0; i < 15; i++) {
+    for (int avatarDraftIndex = 0; avatarDraftIndex < 15; avatarDraftIndex++) {
       drafts.begin(1L);
     }
     assertEquals(Problem.BUSY, assertThrows(InvalidImage.class, () -> drafts.begin(1L)).problem());

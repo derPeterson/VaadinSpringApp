@@ -84,38 +84,40 @@ class VerificationQueueConcurrencyTest {
   @Autowired private VerificationService verification;
   @Autowired private EmailQueueService mailQueue;
   @Autowired private UserService admin;
-  @Autowired private UserRepository users;
-  @Autowired private VerificationTokenRepository tokens;
-  @Autowired private EmailQueueRepository emails;
+  @Autowired private UserRepository userRepository;
+  @Autowired private VerificationTokenRepository verificationTokenRepository;
+  @Autowired private EmailQueueRepository emailQueueRepository;
   @Autowired private TransactionTemplate tx;
   @Autowired private Probes probes;
   private Long id;
 
   @BeforeEach
   void seed() {
-    reset(probes.users(), probes.tokens(), probes.emails());
-    tx.executeWithoutResult(
-        status -> {
-          emails.deleteAll();
-          tokens.deleteAll();
-          users.deleteAll();
-          users.flush();
-          UserEntity user =
-              UserEntity.builder()
-                  .firstName("Test")
-                  .lastName("User")
-                  .email("test@example.com")
-                  .password("hash")
-                  .gender(Gender.OTHER)
-                  .birthDate(LocalDate.of(1990, 1, 1))
-                  .preferredLocale(Locale.ENGLISH)
-                  .roleEntities(new ArrayList<>())
-                  .build();
-          id = users.saveAndFlush(user).getId();
-          tokens.saveAndFlush(
-              new VerificationTokenEntity(
-                  null, "old", user, LocalDateTime.now().plusDays(1), TokenStatus.ACTIVE));
-        });
+    reset(
+        probes.userRepository(),
+        probes.verificationTokenRepository(),
+        probes.emailQueueRepository());
+    tx.executeWithoutResult(status -> {
+      emailQueueRepository.deleteAll();
+      verificationTokenRepository.deleteAll();
+      userRepository.deleteAll();
+      userRepository.flush();
+      UserEntity user =
+          UserEntity.builder()
+              .firstName("Test")
+              .lastName("User")
+              .email("test@example.com")
+              .password("hash")
+              .gender(Gender.OTHER)
+              .birthDate(LocalDate.of(1990, 1, 1))
+              .preferredLocale(Locale.ENGLISH)
+              .roleEntities(new ArrayList<>())
+              .build();
+      id = userRepository.saveAndFlush(user).getId();
+      verificationTokenRepository.saveAndFlush(
+          new VerificationTokenEntity(
+              null, "old", user, LocalDateTime.now().plusDays(1), TokenStatus.ACTIVE));
+    });
   }
 
   @ParameterizedTest
@@ -125,7 +127,7 @@ class VerificationQueueConcurrencyTest {
     assertEquals(List.of(true, true), compete(() -> resend(entry), () -> resend(entry)));
     assertCoherentQueue();
     assertEquals(TokenStatus.INACTIVE, tokenStatus("old"));
-    assertEquals(2, tokens.count());
+    assertEquals(2, verificationTokenRepository.count());
   }
 
   @Test
@@ -144,7 +146,7 @@ class VerificationQueueConcurrencyTest {
       assertTrue(snapshot().isEnabled());
       assertFalse(snapshot().isVerificationPending());
       assertEquals(TokenStatus.USED, tokenStatus("old"));
-      assertEquals(0, emails.count());
+      assertEquals(0, emailQueueRepository.count());
     } else {
       assertEquals(List.of(false, true), results);
       assertCoherentQueue();
@@ -180,8 +182,8 @@ class VerificationQueueConcurrencyTest {
         assertInstanceOf(java.io.FileNotFoundException.class, thrown);
       }
     }
-    assertEquals(0, emails.count());
-    assertEquals(1, tokens.count());
+    assertEquals(0, emailQueueRepository.count());
+    assertEquals(1, verificationTokenRepository.count());
     assertEquals(TokenStatus.ACTIVE, tokenStatus("old"));
     assertFalse(snapshot().isEnabled());
     assertTrue(snapshot().isVerificationPending());
@@ -214,15 +216,15 @@ class VerificationQueueConcurrencyTest {
         new IllegalStateException("simulated failure after queue insert");
     doAnswer(
             call -> {
-              emails.save(call.getArgument(0));
-              emails.flush();
+              emailQueueRepository.save(call.getArgument(0));
+              emailQueueRepository.flush();
               throw failure;
             })
-        .when(probes.emails())
+        .when(probes.emailQueueRepository())
         .save(any());
     assertSame(failure, assertThrows(IllegalStateException.class, () -> resend(entry)));
-    assertEquals(0, emails.count());
-    assertEquals(1, tokens.count());
+    assertEquals(0, emailQueueRepository.count());
+    assertEquals(1, verificationTokenRepository.count());
     assertEquals(TokenStatus.ACTIVE, tokenStatus("old"));
     assertTrue(snapshot().isVerificationPending());
   }
@@ -234,7 +236,9 @@ class VerificationQueueConcurrencyTest {
         optimistic
             ? new OptimisticLockingFailureException("unrelated optimistic conflict")
             : new IllegalStateException("simulated database failure");
-    doThrow(failure).when(probes.tokens()).findByTokenAndStatus("old", TokenStatus.ACTIVE);
+    doThrow(failure)
+        .when(probes.verificationTokenRepository())
+        .findByTokenAndStatus("old", TokenStatus.ACTIVE);
     assertSame(failure, assertThrows(failure.getClass(), () -> verification.validateToken("old")));
     assertFalse(snapshot().isEnabled());
     assertTrue(snapshot().isVerificationPending());
@@ -255,8 +259,8 @@ class VerificationQueueConcurrencyTest {
     assertFalse(snapshot().isEnabled());
     assertFalse(snapshot().isVerificationPending());
     assertEquals(TokenStatus.ACTIVE, tokenStatus("old"));
-    assertEquals(1, tokens.count());
-    assertEquals(0, emails.count());
+    assertEquals(1, verificationTokenRepository.count());
+    assertEquals(0, emailQueueRepository.count());
   }
 
   @Test
@@ -265,7 +269,7 @@ class VerificationQueueConcurrencyTest {
     assertFalse(snapshot().isVerificationPending());
     assertFalse(verification.validateToken("old"));
     assertFalse(resend("user"));
-    assertEquals(0, emails.count());
+    assertEquals(0, emailQueueRepository.count());
   }
 
   @Test
@@ -284,43 +288,40 @@ class VerificationQueueConcurrencyTest {
             .verificationPending(false)
             .build();
     admin.saveUser(created);
-    tx.executeWithoutResult(
-        status ->
-            tokens.saveAndFlush(
-                new VerificationTokenEntity(
-                    null,
-                    "created-link",
-                    users.findById(created.getId()).orElseThrow(),
-                    LocalDateTime.now().plusDays(1),
-                    TokenStatus.ACTIVE)));
-    assertFalse(users.findById(created.getId()).orElseThrow().isVerificationPending());
+    tx.executeWithoutResult(status ->
+        verificationTokenRepository.saveAndFlush(
+            new VerificationTokenEntity(
+                null,
+                "created-link",
+                userRepository.findById(created.getId()).orElseThrow(),
+                LocalDateTime.now().plusDays(1),
+                TokenStatus.ACTIVE)));
+    assertFalse(userRepository.findById(created.getId()).orElseThrow().isVerificationPending());
     assertFalse(verification.validateToken("created-link"));
     assertFalse(verification.sendVerificationEmailByUser(created));
-    assertFalse(users.findById(created.getId()).orElseThrow().isEnabled());
-    assertEquals(0, emails.count());
+    assertFalse(userRepository.findById(created.getId()).orElseThrow().isEnabled());
+    assertEquals(0, emailQueueRepository.count());
   }
 
   @Test
   void staleManagedAccountIsRefreshedBeforeTheEligibilityDecision() throws Exception {
-    tx.executeWithoutResult(
-        status -> {
-          UserEntity cached = users.findById(id).orElseThrow();
-          assertTrue(cached.isVerificationPending());
-          try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
-            executor
-                .submit(
-                    () -> {
-                      editEnabled(false);
-                      return null;
-                    })
-                .get(10, TimeUnit.SECONDS);
-          } catch (Exception failure) {
-            throw new IllegalStateException(failure);
-          }
-          assertTrue(cached.isVerificationPending());
-          assertFalse(verification.validateToken("old"));
-          assertFalse(cached.isVerificationPending());
-        });
+    tx.executeWithoutResult(status -> {
+      UserEntity cached = userRepository.findById(id).orElseThrow();
+      assertTrue(cached.isVerificationPending());
+      try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
+        executor
+            .submit(() -> {
+              editEnabled(false);
+              return null;
+            })
+            .get(10, TimeUnit.SECONDS);
+      } catch (Exception failure) {
+        throw new IllegalStateException(failure);
+      }
+      assertTrue(cached.isVerificationPending());
+      assertFalse(verification.validateToken("old"));
+      assertFalse(cached.isVerificationPending());
+    });
     assertFalse(snapshot().isEnabled());
   }
 
@@ -333,19 +334,18 @@ class VerificationQueueConcurrencyTest {
     doAnswer(
             call -> {
               verificationAttempted.countDown();
-              return users.lockVerificationUser(call.getArgument(0));
+              return userRepository.lockVerificationUser(call.getArgument(0));
             })
-        .when(probes.users())
+        .when(probes.userRepository())
         .lockVerificationUser(id);
     List<Object> results =
         compete(
             () -> {
-              tx.executeWithoutResult(
-                  status -> {
-                    editEnabled(false);
-                    adminHasWritten.countDown();
-                    await(verificationAttempted);
-                  });
+              tx.executeWithoutResult(status -> {
+                editEnabled(false);
+                adminHasWritten.countDown();
+                await(verificationAttempted);
+              });
               return true;
             },
             () -> {
@@ -355,7 +355,7 @@ class VerificationQueueConcurrencyTest {
     assertEquals(List.of(true, false), results);
     assertFalse(snapshot().isEnabled());
     assertFalse(snapshot().isVerificationPending());
-    assertEquals(0, emails.count());
+    assertEquals(0, emailQueueRepository.count());
     assertEquals(TokenStatus.ACTIVE, tokenStatus("old"));
   }
 
@@ -366,34 +366,33 @@ class VerificationQueueConcurrencyTest {
     AtomicBoolean first = new AtomicBoolean(true);
     doAnswer(
             call -> {
-              Optional<UserEntity> user = users.lockVerificationUser(call.getArgument(0));
+              Optional<UserEntity> user = userRepository.lockVerificationUser(call.getArgument(0));
               if (first.getAndSet(false)) {
                 verificationHasLock.countDown();
                 await(adminAttempted);
               }
               return user;
             })
-        .when(probes.users())
+        .when(probes.userRepository())
         .lockVerificationUser(id);
     doAnswer(
             call -> {
               adminAttempted.countDown();
-              return users.findByIdForUpdate(call.getArgument(0));
+              return userRepository.findByIdForUpdate(call.getArgument(0));
             })
-        .when(probes.users())
+        .when(probes.userRepository())
         .findByIdForUpdate(id);
     List<Object> results =
         compete(
             () -> verification.validateToken("old"),
             () -> {
               await(verificationHasLock);
-              tx.executeWithoutResult(
-                  status -> {
-                    UserEntity fresh = probes.users().findByIdForUpdate(id).orElseThrow();
-                    Long version = fresh.getVersion();
-                    fresh.setEnabled(false);
-                    admin.updateAdminUser(fresh, version, "");
-                  });
+              tx.executeWithoutResult(status -> {
+                UserEntity fresh = probes.userRepository().findByIdForUpdate(id).orElseThrow();
+                Long version = fresh.getVersion();
+                fresh.setEnabled(false);
+                admin.updateAdminUser(fresh, version, "");
+              });
               return true;
             });
     assertEquals(List.of(true, true), results);
@@ -401,7 +400,7 @@ class VerificationQueueConcurrencyTest {
     assertFalse(snapshot().isVerificationPending());
     assertEquals(TokenStatus.USED, tokenStatus("old"));
     // Remove synchronization hooks before the sequential regression check.
-    reset(probes.users());
+    reset(probes.userRepository());
     assertFalse(verification.validateToken("old"));
     assertFalse(resend("email"));
   }
@@ -428,12 +427,12 @@ class VerificationQueueConcurrencyTest {
           return true;
         };
     assertEquals(List.of(true, true), compete(producer, producer));
-    assertEquals(1, emails.count());
-    reset(probes.users());
+    assertEquals(1, emailQueueRepository.count());
+    reset(probes.userRepository());
     editEnabled(false);
-    tx.executeWithoutResult(status -> emails.deleteAll());
+    tx.executeWithoutResult(status -> emailQueueRepository.deleteAll());
     mailQueue.addEmailToQueue(snapshot(), "Subject", "Body", EmailType.VERIFICATION);
-    assertEquals(0, emails.count());
+    assertEquals(0, emailQueueRepository.count());
   }
 
   private void rendezvous() {
@@ -444,9 +443,9 @@ class VerificationQueueConcurrencyTest {
               if (threads.add(Thread.currentThread().threadId())) {
                 barrier.await(10, TimeUnit.SECONDS);
               }
-              return users.lockVerificationUser(call.getArgument(0));
+              return userRepository.lockVerificationUser(call.getArgument(0));
             })
-        .when(probes.users())
+        .when(probes.userRepository())
         .lockVerificationUser(id);
   }
 
@@ -485,12 +484,11 @@ class VerificationQueueConcurrencyTest {
   }
 
   private UserEntity snapshot() {
-    return tx.execute(
-        status -> {
-          UserEntity user = users.findById(id).orElseThrow();
-          user.getRoleEntities().size();
-          return user;
-        });
+    return tx.execute(status -> {
+      UserEntity user = userRepository.findById(id).orElseThrow();
+      user.getRoleEntities().size();
+      return user;
+    });
   }
 
   private void editEnabled(boolean enabled) {
@@ -501,18 +499,18 @@ class VerificationQueueConcurrencyTest {
   }
 
   private TokenStatus tokenStatus(String value) {
-    return tokens.findByToken(value).orElseThrow().getStatus();
+    return verificationTokenRepository.findByToken(value).orElseThrow().getStatus();
   }
 
   private List<VerificationTokenEntity> activeTokens() {
-    return tx.execute(
-        status -> tokens.findAllByUserEntityAndStatus(snapshot(), TokenStatus.ACTIVE));
+    return tx.execute(status ->
+        verificationTokenRepository.findAllByUserEntityAndStatus(snapshot(), TokenStatus.ACTIVE));
   }
 
   private void assertCoherentQueue() {
     List<VerificationTokenEntity> active = activeTokens();
     assertEquals(1, active.size());
-    List<EmailQueueEntity> queued = emails.findAll();
+    List<EmailQueueEntity> queued = emailQueueRepository.findAll();
     assertEquals(1, queued.size());
     assertEquals(EmailStatus.PENDING, queued.getFirst().getStatus());
     assertTrue(
@@ -522,7 +520,9 @@ class VerificationQueueConcurrencyTest {
   }
 
   record Probes(
-      UserRepository users, VerificationTokenRepository tokens, EmailQueueRepository emails) {}
+      UserRepository userRepository,
+      VerificationTokenRepository verificationTokenRepository,
+      EmailQueueRepository emailQueueRepository) {}
 
   @Configuration
   @EnableTransactionManagement
@@ -560,11 +560,13 @@ class VerificationQueueConcurrencyTest {
 
     @Bean
     Probes probes(
-        UserRepository users, VerificationTokenRepository tokens, EmailQueueRepository emails) {
+        UserRepository userRepository,
+        VerificationTokenRepository verificationTokenRepository,
+        EmailQueueRepository emailQueueRepository) {
       return new Probes(
-          mock(UserRepository.class, delegatesTo(users)),
-          mock(VerificationTokenRepository.class, delegatesTo(tokens)),
-          mock(EmailQueueRepository.class, delegatesTo(emails)));
+          mock(UserRepository.class, delegatesTo(userRepository)),
+          mock(VerificationTokenRepository.class, delegatesTo(verificationTokenRepository)),
+          mock(EmailQueueRepository.class, delegatesTo(emailQueueRepository)));
     }
 
     @Bean
@@ -583,9 +585,9 @@ class VerificationQueueConcurrencyTest {
         ConfigService config, Probes probes, JpaTransactionManager manager) {
       return new EmailQueueService(
           config,
-          probes.emails(),
+          probes.emailQueueRepository(),
           mock(EmailService.class),
-          probes.users(),
+          probes.userRepository(),
           manager,
           mock(de.derpeterson.app.repository.AdminNotificationAttemptRepository.class),
           QueueTestWorkers.inline());
@@ -596,13 +598,14 @@ class VerificationQueueConcurrencyTest {
         ConfigService config, Probes probes, EmailQueueService queue) {
       MessageProperties messages = mock(MessageProperties.class);
       when(messages.getEmailVerificationSubject()).thenReturn("Verify account");
-      return new VerificationService(messages, probes.tokens(), probes.users(), config, queue);
+      return new VerificationService(
+          messages, probes.verificationTokenRepository(), probes.userRepository(), config, queue);
     }
 
     @Bean
     UserService userService(Probes probes) {
       return new UserService(
-          probes.users(),
+          probes.userRepository(),
           mock(UserStatusBroadcaster.class),
           mock(PasswordEncoder.class),
           mock(UserProfileBroadcaster.class),

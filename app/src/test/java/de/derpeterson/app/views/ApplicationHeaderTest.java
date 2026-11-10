@@ -64,18 +64,16 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Gemeinsame Kopfzeile und echte Menüaktionen ohne Browser oder Anwendungsdaten. */
 class ApplicationHeaderTest {
-  private UI ui;
+  private UI testUi;
 
   static Stream<Arguments> pagesRolesAndLanguages() {
     Stream<Arguments> authenticated =
         Stream.of("home", "account", "notifications")
-            .flatMap(
-                page ->
-                    Stream.of(RoleType.ROLE_USER, RoleType.ROLE_ADMIN, RoleType.ROLE_SUPERADMIN)
-                        .flatMap(
-                            role ->
-                                Stream.of(Locale.GERMAN, Locale.ENGLISH)
-                                    .map(locale -> Arguments.of(page, role, locale))));
+            .flatMap(page ->
+                Stream.of(RoleType.ROLE_USER, RoleType.ROLE_ADMIN, RoleType.ROLE_SUPERADMIN)
+                    .flatMap(role ->
+                        Stream.of(Locale.GERMAN, Locale.ENGLISH)
+                            .map(locale -> Arguments.of(page, role, locale))));
     return Stream.concat(
         authenticated,
         Stream.of(Locale.GERMAN, Locale.ENGLISH).map(locale -> Arguments.of("home", null, locale)));
@@ -142,14 +140,14 @@ class ApplicationHeaderTest {
     MessageProperties texts = fixture.texts();
     if (user == null) {
       assertPublicHeader(view, texts);
-      doReturn(Optional.empty()).when(ui).navigate(RegistrationView.class);
-      doReturn(Optional.empty()).when(ui).navigate(LoginView.class);
+      doReturn(Optional.empty()).when(testUi).navigate(RegistrationView.class);
+      doReturn(Optional.empty()).when(testUi).navigate(LoginView.class);
       buttonById(view, "public-nav-register").click();
       buttonById(view, "public-nav-login").click();
-      verify(ui).navigate(RegistrationView.class);
-      verify(ui).navigate(LoginView.class);
+      verify(testUi).navigate(RegistrationView.class);
+      verify(testUi).navigate(LoginView.class);
       LanguageChangeEvent.fire(
-          ui, initialLocale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
+          testUi, initialLocale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
       assertPublicHeader(view, texts);
       assertTrue(tree(view).noneMatch(c -> c.hasClassName("tracked-user-button")));
       return;
@@ -192,16 +190,16 @@ class ApplicationHeaderTest {
             .findFirst()
             .orElseThrow();
     LanguageChangeEvent.fire(
-        ui, initialLocale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
+        testUi, initialLocale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
     assertFalse(presence.isOpened());
     assertEquals(texts.getPortalPresenceHeading(), presenceToggle.getAriaLabel().orElseThrow());
     presenceToggle.click();
     assertTrue(presence.isOpened());
     assertEquals(texts.getBaseManageAccountButton(), settings.getAriaLabel().orElseThrow());
     assertAccountMenuNavigation(page, role, texts, menu);
-    doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
+    doReturn(Optional.empty()).when(testUi).navigate(AccountView.class);
     settings.click();
-    verify(ui).navigate(AccountView.class);
+    verify(testUi).navigate(AccountView.class);
     assertNotNull(menuButton(menu, "logoutButton"));
     assertTrue(
         tree(menu.getPopover())
@@ -228,16 +226,16 @@ class ApplicationHeaderTest {
       assertEquals(
           "icons/lucide/shield-cog.svg",
           admin.getPrefixComponent().getElement().getAttribute("src"));
-      doReturn(Optional.empty()).when(ui).navigate(AdminView.class);
+      doReturn(Optional.empty()).when(testUi).navigate(AdminView.class);
       admin.click();
-      verify(ui).navigate(AdminView.class);
+      verify(testUi).navigate(AdminView.class);
     }
     Button home = menuButton(menu, "homeButton");
     assertEquals(!page.equals("home"), home != null);
     if (home != null) {
-      doReturn(Optional.empty()).when(ui).navigate(HomeView.class);
+      doReturn(Optional.empty()).when(testUi).navigate(HomeView.class);
       home.click();
-      verify(ui).navigate(HomeView.class);
+      verify(testUi).navigate(HomeView.class);
     }
   }
 
@@ -313,26 +311,26 @@ class ApplicationHeaderTest {
               .noneMatch(
                   item -> item.getElement().getClassList().contains("cosmos-nav-item--active")));
       doReturn(Optional.empty())
-          .when(ui)
+          .when(testUi)
           .navigate(eq(AccountView.class), any(com.vaadin.flow.router.QueryParameters.class));
-      ui.add(navigation);
+      testUi.add(navigation);
       navigation.activate(entries.get(1));
       org.mockito.ArgumentCaptor<com.vaadin.flow.router.QueryParameters> query =
           org.mockito.ArgumentCaptor.forClass(com.vaadin.flow.router.QueryParameters.class);
-      verify(ui).navigate(eq(AccountView.class), query.capture());
+      verify(testUi).navigate(eq(AccountView.class), query.capture());
       assertEquals(
           java.util.Map.of("section", List.of("security"), "tab", List.of("portal")),
           query.getValue().getParameters());
-      ui.remove(navigation);
-      org.mockito.Mockito.clearInvocations(ui);
-      ui.add(navigation);
+      testUi.remove(navigation);
+      org.mockito.Mockito.clearInvocations(testUi);
+      testUi.add(navigation);
       assertTrue(
           entries.stream()
               .noneMatch(
                   item -> item.getElement().getClassList().contains("cosmos-nav-item--active")));
-      verify(ui, never())
+      verify(testUi, never())
           .navigate(eq(AccountView.class), any(com.vaadin.flow.router.QueryParameters.class));
-      ui.remove(navigation);
+      testUi.remove(navigation);
     }
   }
 
@@ -361,8 +359,8 @@ class ApplicationHeaderTest {
   }
 
   private HeaderFixture createHeader(String page, RoleType role, Locale initialLocale) {
-    ui = spy(new UI());
-    UI.setCurrent(ui);
+    testUi = spy(new UI());
+    UI.setCurrent(testUi);
     AtomicReference<Locale> locale = new AtomicReference<>(initialLocale);
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
@@ -375,7 +373,7 @@ class ApplicationHeaderTest {
         .when(session)
         .setLocale(any());
     VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
+    testUi.getInternals().setSession(session);
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.setSession(new MockHttpSession());
     SecurityService security = mock(SecurityService.class);

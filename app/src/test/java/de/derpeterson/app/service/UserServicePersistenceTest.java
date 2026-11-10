@@ -50,7 +50,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @Execution(ExecutionMode.SAME_THREAD)
 class UserServicePersistenceTest {
   @Autowired private UserService service;
-  @Autowired private UserRepository repository;
+  @Autowired private UserRepository userRepository;
   @Autowired private TransactionTemplate transaction;
   @PersistenceContext private EntityManager entityManager;
 
@@ -58,17 +58,16 @@ class UserServicePersistenceTest {
 
   @BeforeEach
   void seedDatabase() {
-    transaction.executeWithoutResult(
-        status -> {
-          repository.deleteAll();
-          repository.flush();
-          entityManager.createQuery("delete from RoleEntity").executeUpdate();
-          RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
-          entityManager.persist(role);
-          UserEntity admin = newUser("admin@example.com", role, true);
-          entityManager.persist(admin);
-          adminId = admin.getId();
-        });
+    transaction.executeWithoutResult(status -> {
+      userRepository.deleteAll();
+      userRepository.flush();
+      entityManager.createQuery("delete from RoleEntity").executeUpdate();
+      RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
+      entityManager.persist(role);
+      UserEntity admin = newUser("admin@example.com", role, true);
+      entityManager.persist(admin);
+      adminId = admin.getId();
+    });
   }
 
   @ParameterizedTest
@@ -77,19 +76,19 @@ class UserServicePersistenceTest {
     assertThrows(
         IllegalStateException.class,
         () ->
-            transaction.executeWithoutResult(
-                status -> {
-                  UserEntity admin = repository.findById(adminId).orElseThrow();
-                  admin.setEnabled(false);
-                  if (useSaveUser) {
-                    service.saveUser(admin);
-                  } else {
-                    service.save(admin);
-                  }
-                }));
+            transaction.executeWithoutResult(status -> {
+              UserEntity admin = userRepository.findById(adminId).orElseThrow();
+              admin.setEnabled(false);
+              if (useSaveUser) {
+                service.saveUser(admin);
+              } else {
+                service.save(admin);
+              }
+            }));
 
-    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
-    assertTrue(repository.findById(adminId).orElseThrow().isEnabled());
+    assertEquals(
+        List.of(adminId), userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
+    assertTrue(userRepository.findById(adminId).orElseThrow().isEnabled());
   }
 
   @Test
@@ -97,68 +96,68 @@ class UserServicePersistenceTest {
     assertThrows(
         IllegalStateException.class,
         () ->
-            transaction.executeWithoutResult(
-                status -> {
-                  UserEntity admin = repository.findById(adminId).orElseThrow();
-                  admin.getRoleEntities().clear();
-                  service.saveUser(admin);
-                }));
+            transaction.executeWithoutResult(status -> {
+              UserEntity admin = userRepository.findById(adminId).orElseThrow();
+              admin.getRoleEntities().clear();
+              service.saveUser(admin);
+            }));
 
-    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
+    assertEquals(
+        List.of(adminId), userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
   void detachedLastSuperadminCannotBeDeletedEvenWithStalePrivileges() {
-    UserEntity stale = repository.findById(adminId).orElseThrow();
+    UserEntity stale = userRepository.findById(adminId).orElseThrow();
     stale.setEnabled(false);
     stale.setRoleEntities(List.of());
 
     assertThrows(IllegalStateException.class, () -> service.deleteUser(stale));
 
-    assertTrue(repository.existsById(adminId));
-    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
+    assertTrue(userRepository.existsById(adminId));
+    assertEquals(
+        List.of(adminId), userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
   void queryExcludesDisabledAdminsAndUsersWithoutTheAdminRole() {
-    transaction.executeWithoutResult(
-        status -> {
-          RoleEntity adminRole =
-              entityManager
-                  .createQuery("select r from RoleEntity r", RoleEntity.class)
-                  .getSingleResult();
-          entityManager.persist(newUser("disabled@example.com", adminRole, false));
-          RoleEntity ordinaryRole = RoleEntity.builder().name(RoleType.ROLE_USER).build();
-          entityManager.persist(ordinaryRole);
-          entityManager.persist(newUser("ordinary@example.com", ordinaryRole, true));
-        });
+    transaction.executeWithoutResult(status -> {
+      RoleEntity adminRole =
+          entityManager
+              .createQuery("select r from RoleEntity r", RoleEntity.class)
+              .getSingleResult();
+      entityManager.persist(newUser("disabled@example.com", adminRole, false));
+      RoleEntity ordinaryRole = RoleEntity.builder().name(RoleType.ROLE_USER).build();
+      entityManager.persist(ordinaryRole);
+      entityManager.persist(newUser("ordinary@example.com", ordinaryRole, true));
+    });
 
-    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
+    assertEquals(
+        List.of(adminId), userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
   void demotionCommitsWhenAnotherEnabledAdminRemains() {
     Long otherId =
-        transaction.execute(
-            status -> {
-              RoleEntity role =
-                  entityManager
-                      .createQuery("select r from RoleEntity r", RoleEntity.class)
-                      .getSingleResult();
-              UserEntity other = newUser("other@example.com", role, true);
-              entityManager.persist(other);
-              return other.getId();
-            });
-
-    transaction.executeWithoutResult(
-        status -> {
-          UserEntity admin = repository.findById(adminId).orElseThrow();
-          admin.setEnabled(false);
-          service.save(admin);
+        transaction.execute(status -> {
+          RoleEntity role =
+              entityManager
+                  .createQuery("select r from RoleEntity r", RoleEntity.class)
+                  .getSingleResult();
+          UserEntity other = newUser("other@example.com", role, true);
+          entityManager.persist(other);
+          return other.getId();
         });
 
-    assertFalse(repository.findById(adminId).orElseThrow().isEnabled());
-    assertEquals(List.of(otherId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
+    transaction.executeWithoutResult(status -> {
+      UserEntity admin = userRepository.findById(adminId).orElseThrow();
+      admin.setEnabled(false);
+      service.save(admin);
+    });
+
+    assertFalse(userRepository.findById(adminId).orElseThrow().isEnabled());
+    assertEquals(
+        List.of(otherId), userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   private static UserEntity newUser(String email, RoleEntity role, boolean enabled) {
@@ -226,19 +225,19 @@ class UserServicePersistenceTest {
 
     @Bean
     UserService userService(
-        UserRepository repository,
+        UserRepository userRepository,
         UserStatusBroadcaster broadcaster,
         UserProfileBroadcaster profiles,
         de.derpeterson.app.security.AdminRolePolicy policy,
         org.springframework.context.ApplicationEventPublisher publisher) {
       return new UserService(
-          repository, broadcaster, new BCryptPasswordEncoder(), profiles, policy, publisher);
+          userRepository, broadcaster, new BCryptPasswordEncoder(), profiles, policy, publisher);
     }
 
     @Bean
     SecurityService securityService(
         UserService service,
-        UserRepository repository,
+        UserRepository userRepository,
         org.springframework.beans.factory.ObjectProvider<
                 de.derpeterson.app.security.SessionAdmissionService>
             admissions) {
@@ -248,18 +247,17 @@ class UserServicePersistenceTest {
       return new SecurityService(
           remembered,
           service,
-          repository,
-          new de.derpeterson.app.security.CustomUserDetailsService(repository),
+          userRepository,
+          new de.derpeterson.app.security.CustomUserDetailsService(userRepository),
           new org.springframework.security.web.context.HttpSessionSecurityContextRepository(),
-          admissions.getIfAvailable(
-              () -> {
-                ConfigService config = mock(ConfigService.class);
-                when(config.getInteger(
-                        de.derpeterson.app.model.enums.ConfigEntry.MAX_SESSIONS_PER_USER))
-                    .thenReturn(3);
-                return new de.derpeterson.app.security.SessionAdmissionService(
-                    config, new org.springframework.security.core.session.SessionRegistryImpl());
-              }));
+          admissions.getIfAvailable(() -> {
+            ConfigService config = mock(ConfigService.class);
+            when(config.getInteger(
+                    de.derpeterson.app.model.enums.ConfigEntry.MAX_SESSIONS_PER_USER))
+                .thenReturn(3);
+            return new de.derpeterson.app.security.SessionAdmissionService(
+                config, new org.springframework.security.core.session.SessionRegistryImpl());
+          }));
     }
   }
 }

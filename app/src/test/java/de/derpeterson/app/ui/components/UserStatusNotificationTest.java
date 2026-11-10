@@ -44,28 +44,28 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Real translations, notification components and existing language event; no browser. */
 class UserStatusNotificationTest {
-  private UI ui;
-  private VaadinSession session;
+  private UI testUi;
+  private VaadinSession vaadinSession;
   private TrackedUserAppLayout layout;
-  private final CustomI18NProvider provider = new CustomI18NProvider();
-  private final MessageProperties messageProperties = new MessageProperties(provider);
+  private final CustomI18NProvider i18nProvider = new CustomI18NProvider();
+  private final MessageProperties messageProperties = new MessageProperties(i18nProvider);
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    session = mock(VaadinSession.class);
+    testUi = new UI();
+    vaadinSession = mock(VaadinSession.class);
     AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
-    when(session.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(call -> locale.get());
+    when(vaadinSession.hasLock()).thenReturn(true);
     doAnswer(
             call -> {
               locale.set(call.getArgument(0));
               return null;
             })
-        .when(session)
+        .when(vaadinSession)
         .setLocale(any());
-    UI.setCurrent(ui);
-    VaadinSession.setCurrent(session);
+    UI.setCurrent(testUi);
+    VaadinSession.setCurrent(vaadinSession);
     SecurityService security = mock(SecurityService.class);
     when(security.getCurrentUser(any(HttpServletRequest.class))).thenReturn(Optional.empty());
     layout =
@@ -84,8 +84,8 @@ class UserStatusNotificationTest {
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
     layout = null;
-    ui = null;
-    session = null;
+    testUi = null;
+    vaadinSession = null;
   }
 
   @ParameterizedTest
@@ -110,13 +110,13 @@ class UserStatusNotificationTest {
     ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED);
     Notification original = currentNotification();
     assertText(Locale.ENGLISH, conflict);
-    LanguageChangeEvent.fire(ui, Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, Locale.GERMAN);
     assertSame(original, currentNotification());
     assertText(Locale.GERMAN, conflict);
     ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED);
     assertNotSame(original, currentNotification());
     assertText(Locale.GERMAN, conflict);
-    LanguageChangeEvent.fire(ui, Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, Locale.ENGLISH);
     assertText(Locale.ENGLISH, conflict);
     assertEquals(UserStatus.OFFLINE, user.getStatus());
   }
@@ -124,7 +124,7 @@ class UserStatusNotificationTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void adminConflictSupplierUsesCurrentSessionLanguageAndUpdatesVisibleTitle(boolean startGerman) {
-    LanguageChangeEvent.fire(ui, startGerman ? Locale.GERMAN : Locale.ENGLISH);
+    LanguageChangeEvent.fire(testUi, startGerman ? Locale.GERMAN : Locale.ENGLISH);
     AdminUserManagementSection admin =
         new AdminUserManagementSection(
             messageProperties,
@@ -136,7 +136,7 @@ class UserStatusNotificationTest {
         "showError",
         (java.util.function.Supplier<String>) messageProperties::getBaseUserUpdateConflict);
     assertText(startGerman ? Locale.GERMAN : Locale.ENGLISH, true);
-    LanguageChangeEvent.fire(ui, startGerman ? Locale.ENGLISH : Locale.GERMAN);
+    LanguageChangeEvent.fire(testUi, startGerman ? Locale.ENGLISH : Locale.GERMAN);
     assertText(startGerman ? Locale.ENGLISH : Locale.GERMAN, true);
   }
 
@@ -174,7 +174,7 @@ class UserStatusNotificationTest {
           Boolean.toString(status == expected),
           buttons.get(status).getElement().getAttribute("aria-pressed"));
     }
-    session.setLocale(Locale.GERMAN);
+    vaadinSession.setLocale(Locale.GERMAN);
     menu.refreshForLanguageChange();
     assertEquals(
         messageProperties.getUserStatusLabel(UserStatus.EMPLOYED),
@@ -192,10 +192,10 @@ class UserStatusNotificationTest {
     assertTrue(currentNotification().isOpened());
     Span title = (Span) ReflectionTestUtils.getField(helper, "titleText");
     Html message = (Html) ReflectionTestUtils.getField(helper, "messageText");
-    MessageProperties expectedTexts = MessageProperties.forLocale(provider, locale);
+    MessageProperties expectedTexts = MessageProperties.forLocale(i18nProvider, locale);
     MessageProperties otherTexts =
         MessageProperties.forLocale(
-            provider, locale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
+            i18nProvider, locale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
     String expectedTitle = expectedTexts.getBaseFailedTitle();
     String expectedMessage =
         conflict

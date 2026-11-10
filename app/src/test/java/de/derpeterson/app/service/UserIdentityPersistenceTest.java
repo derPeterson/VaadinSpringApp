@@ -72,9 +72,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 /** Real constraints/commits in the isolated H2 fixture, never application data. */
 @SpringJUnitConfig(UserServicePersistenceTest.Config.class)
 class UserIdentityPersistenceTest {
-  @Autowired UserService service;
-  @Autowired UserRepository repository;
-  @Autowired TransactionTemplate transaction;
+  @Autowired UserService userService;
+  @Autowired UserRepository userRepository;
+  @Autowired TransactionTemplate transactionTemplate;
   @Autowired DataSource dataSource;
   @PersistenceContext EntityManager entityManager;
   private Long adminId;
@@ -84,44 +84,43 @@ class UserIdentityPersistenceTest {
 
   @BeforeEach
   void seed() {
-    transaction.executeWithoutResult(
-        tx -> {
-          entityManager.createQuery("delete from VerificationTokenEntity").executeUpdate();
-          entityManager.createQuery("delete from PasswordResetTokenEntity").executeUpdate();
-          entityManager.createQuery("delete from EmailQueueEntity").executeUpdate();
-          repository.deleteAll();
-          repository.flush();
-          entityManager.createQuery("delete from RoleEntity").executeUpdate();
-          RoleEntity admin = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
-          ordinary = RoleEntity.builder().name(RoleType.ROLE_USER).build();
-          entityManager.persist(admin);
-          entityManager.persist(ordinary);
-          adminId = persist("admin@example.com", admin);
-          targetId = persist("target@example.com", ordinary);
-          otherId = persist("other@example.com", ordinary);
-          for (Long id : List.of(targetId, otherId, adminId)) {
-            UserEntity user = entityManager.find(UserEntity.class, id);
-            for (TokenStatus status : TokenStatus.values()) {
-              VerificationTokenEntity verification =
-                  new VerificationTokenEntity(
-                      null,
-                      "verification-" + id + status,
-                      user,
-                      LocalDateTime.now().plusHours(1),
-                      status);
-              PasswordResetTokenEntity reset =
-                  new PasswordResetTokenEntity(
-                      null, "reset-" + id + status, user, LocalDateTime.now().plusHours(1), status);
-              entityManager.persist(verification);
-              entityManager.persist(reset);
-            }
-            EmailQueueEntity mail = new EmailQueueEntity();
-            mail.setUserEntity(user);
-            mail.setSubject("Test");
-            mail.setBody("Test");
-            entityManager.persist(mail);
-          }
-        });
+    transactionTemplate.executeWithoutResult(tx -> {
+      entityManager.createQuery("delete from VerificationTokenEntity").executeUpdate();
+      entityManager.createQuery("delete from PasswordResetTokenEntity").executeUpdate();
+      entityManager.createQuery("delete from EmailQueueEntity").executeUpdate();
+      userRepository.deleteAll();
+      userRepository.flush();
+      entityManager.createQuery("delete from RoleEntity").executeUpdate();
+      RoleEntity admin = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
+      ordinary = RoleEntity.builder().name(RoleType.ROLE_USER).build();
+      entityManager.persist(admin);
+      entityManager.persist(ordinary);
+      adminId = persist("admin@example.com", admin);
+      targetId = persist("target@example.com", ordinary);
+      otherId = persist("other@example.com", ordinary);
+      for (Long id : List.of(targetId, otherId, adminId)) {
+        UserEntity user = entityManager.find(UserEntity.class, id);
+        for (TokenStatus status : TokenStatus.values()) {
+          VerificationTokenEntity verification =
+              new VerificationTokenEntity(
+                  null,
+                  "verification-" + id + status,
+                  user,
+                  LocalDateTime.now().plusHours(1),
+                  status);
+          PasswordResetTokenEntity reset =
+              new PasswordResetTokenEntity(
+                  null, "reset-" + id + status, user, LocalDateTime.now().plusHours(1), status);
+          entityManager.persist(verification);
+          entityManager.persist(reset);
+        }
+        EmailQueueEntity mail = new EmailQueueEntity();
+        mail.setUserEntity(user);
+        mail.setSubject("Test");
+        mail.setBody("Test");
+        entityManager.persist(mail);
+      }
+    });
   }
 
   private UserEntity user(String email, RoleEntity role) {
@@ -145,7 +144,7 @@ class UserIdentityPersistenceTest {
   }
 
   private UserEntity form(Long id) {
-    return repository.findAll().stream()
+    return userRepository.findAll().stream()
         .filter(user -> user.getId().equals(id))
         .findFirst()
         .orElseThrow();
@@ -158,26 +157,25 @@ class UserIdentityPersistenceTest {
 
   @Test
   void deletionCascadesAllTokenStatesAndQueuedMailWithoutRemovingOtherUsersOrRoles() {
-    service.deleteUser(form(targetId));
-    assertFalse(repository.existsById(targetId));
+    userService.deleteUser(form(targetId));
+    assertFalse(userRepository.existsById(targetId));
     for (String table :
         List.of("verification_token", "password_reset_token", "email_queue", "users_roles")) {
       assertEquals(0, children(table, targetId));
       assertTrue(children(table, otherId) > 0);
     }
-    assertTrue(repository.existsById(otherId));
-    assertEquals(1, repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN).size());
+    assertTrue(userRepository.existsById(otherId));
+    assertEquals(1, userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN).size());
   }
 
   @Test
   void outerRollbackRestoresUserAndEveryDependentRowAfterSuccessfulDeleteFlush() {
-    transaction.executeWithoutResult(
-        tx -> {
-          service.deleteUser(form(targetId));
-          assertFalse(repository.existsById(targetId));
-          tx.setRollbackOnly();
-        });
-    assertTrue(repository.existsById(targetId));
+    transactionTemplate.executeWithoutResult(tx -> {
+      userService.deleteUser(form(targetId));
+      assertFalse(userRepository.existsById(targetId));
+      tx.setRollbackOnly();
+    });
+    assertTrue(userRepository.existsById(targetId));
     assertEquals(TokenStatus.values().length, children("verification_token", targetId));
     assertEquals(TokenStatus.values().length, children("password_reset_token", targetId));
     assertEquals(1, children("email_queue", targetId));
@@ -186,8 +184,8 @@ class UserIdentityPersistenceTest {
   @Test
   void lastAdminRejectionLeavesAllTokensAndMailUntouched() {
     UserEntity targetUser = form(adminId);
-    assertThrows(IllegalStateException.class, () -> service.deleteUser(targetUser));
-    assertTrue(repository.existsById(adminId));
+    assertThrows(IllegalStateException.class, () -> userService.deleteUser(targetUser));
+    assertTrue(userRepository.existsById(adminId));
     assertEquals(TokenStatus.values().length, children("verification_token", adminId));
     assertEquals(TokenStatus.values().length, children("password_reset_token", adminId));
     assertEquals(1, children("email_queue", adminId));
@@ -198,22 +196,22 @@ class UserIdentityPersistenceTest {
     assertThrows(
         IllegalStateException.class,
         () ->
-            transaction.executeWithoutResult(
-                tx -> {
-                  List<UserEntity> users = repository.findAll();
+            transactionTemplate.executeWithoutResult(tx -> {
+              List<UserEntity> users = userRepository.findAll();
+              users.stream()
+                  .filter(user -> user.getId().equals(adminId))
+                  .findFirst()
+                  .orElseThrow()
+                  .setEnabled(false);
+              assertFalse(userService.emailExistsForOtherUser("unused@example.com", null));
+              userService.save(
                   users.stream()
-                      .filter(user -> user.getId().equals(adminId))
+                      .filter(user -> user.getId().equals(targetId))
                       .findFirst()
-                      .orElseThrow()
-                      .setEnabled(false);
-                  assertFalse(service.emailExistsForOtherUser("unused@example.com", null));
-                  service.save(
-                      users.stream()
-                          .filter(user -> user.getId().equals(targetId))
-                          .findFirst()
-                          .orElseThrow());
-                }));
-    assertEquals(List.of(adminId), repository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
+                      .orElseThrow());
+            }));
+    assertEquals(
+        List.of(adminId), userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
@@ -221,8 +219,8 @@ class UserIdentityPersistenceTest {
     UserEntity stale = form(targetId);
     UserEntity fresh = form(targetId);
     fresh.setFirstName("Changed");
-    service.updateAdminUser(fresh, fresh.getVersion(), "");
-    assertThrows(OptimisticLockingFailureException.class, () -> service.deleteUser(stale));
+    userService.updateAdminUser(fresh, fresh.getVersion(), "");
+    assertThrows(OptimisticLockingFailureException.class, () -> userService.deleteUser(stale));
     assertEquals("Changed", form(targetId).getFirstName());
     assertEquals(TokenStatus.values().length, children("verification_token", targetId));
     assertEquals(TokenStatus.values().length, children("password_reset_token", targetId));
@@ -233,32 +231,31 @@ class UserIdentityPersistenceTest {
   void canonicalIdentityIsSharedBySaveLookupSecurityLocaleAndUniqueness() {
     UserEntity edited = form(targetId);
     edited.setEmail("  MiXeD@Example.COM  ");
-    service.updateAdminUser(edited, edited.getVersion(), "");
+    userService.updateAdminUser(edited, edited.getVersion(), "");
     assertEquals("mixed@example.com", form(targetId).getEmail());
-    assertEquals(targetId, service.findByEmail(" MIXED@EXAMPLE.COM ").orElseThrow().getId());
-    assertEquals(targetId, repository.findByEmail(" MIXED@EXAMPLE.COM ").orElseThrow().getId());
+    assertEquals(targetId, userService.findByEmail(" MIXED@EXAMPLE.COM ").orElseThrow().getId());
+    assertEquals(targetId, userRepository.findByEmail(" MIXED@EXAMPLE.COM ").orElseThrow().getId());
     assertEquals(
         "mixed@example.com",
-        new CustomUserDetailsService(repository)
+        new CustomUserDetailsService(userRepository)
             .loadUserByUsername(" MIXED@EXAMPLE.COM ")
             .getUsername());
-    transaction.executeWithoutResult(
-        tx ->
-            assertEquals(
-                targetId,
-                repository.findByEmailForUpdate(" MIXED@EXAMPLE.COM ").orElseThrow().getId()));
-    service.updateUserLocale(" MIXED@EXAMPLE.COM ", Locale.GERMAN);
+    transactionTemplate.executeWithoutResult(tx ->
+        assertEquals(
+            targetId,
+            userRepository.findByEmailForUpdate(" MIXED@EXAMPLE.COM ").orElseThrow().getId()));
+    userService.updateUserLocale(" MIXED@EXAMPLE.COM ", Locale.GERMAN);
     assertEquals(Locale.GERMAN, form(targetId).getPreferredLocale());
-    assertTrue(service.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", otherId));
-    assertFalse(service.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", targetId));
-    assertTrue(service.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", null));
-    assertTrue(repository.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", otherId));
-    assertFalse(repository.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", targetId));
+    assertTrue(userService.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", otherId));
+    assertFalse(userService.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", targetId));
+    assertTrue(userService.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", null));
+    assertTrue(userRepository.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", otherId));
+    assertFalse(userRepository.emailExistsForOtherUser(" MIXED@EXAMPLE.COM ", targetId));
   }
 
   @Test
   void directJpaBuilderAndUpdatesAlsoCanonicalizeAndDatabaseRejectsRawVariants() {
-    Long id = transaction.execute(tx -> persist(" BUILDER@Example.COM ", ordinary));
+    Long id = transactionTemplate.execute(tx -> persist(" BUILDER@Example.COM ", ordinary));
     assertEquals("builder@example.com", form(id).getEmail());
     JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
     assertThrows(
@@ -280,12 +277,11 @@ class UserIdentityPersistenceTest {
             jdbcTemplate.update(
                 "update users set email = ? where id = ?", "builder@example.com", otherId));
     assertEquals("other@example.com", form(otherId).getEmail());
-    transaction.executeWithoutResult(
-        tx -> {
-          UserEntity managed = entityManager.find(UserEntity.class, id);
-          ReflectionTestUtils.setField(managed, "email", " UPDATED@Example.COM ");
-          managed.setFirstName("Updated through field access");
-        });
+    transactionTemplate.executeWithoutResult(tx -> {
+      UserEntity managed = entityManager.find(UserEntity.class, id);
+      ReflectionTestUtils.setField(managed, "email", " UPDATED@Example.COM ");
+      managed.setFirstName("Updated through field access");
+    });
     assertEquals("updated@example.com", form(id).getEmail());
   }
 
@@ -293,7 +289,7 @@ class UserIdentityPersistenceTest {
   void actualEmailConstraintCanBeDistinguishedFromOtherDatabaseFailures() {
     UserEntity duplicate = user("TARGET@EXAMPLE.COM", ordinary);
     DataIntegrityViolationException failure =
-        assertThrows(DataIntegrityViolationException.class, () -> service.saveUser(duplicate));
+        assertThrows(DataIntegrityViolationException.class, () -> userService.saveUser(duplicate));
     assertTrue(
         EmailConflict.isDuplicate(failure),
         () -> {
@@ -305,7 +301,7 @@ class UserIdentityPersistenceTest {
               ? "constraint=" + v.getConstraintName() + ", state=" + v.getSQLState()
               : cause.toString();
         });
-    assertEquals(3, repository.count());
+    assertEquals(3, userRepository.count());
     JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
     DataIntegrityViolationException invalid =
         assertThrows(
@@ -335,17 +331,16 @@ class UserIdentityPersistenceTest {
     try {
       UserService users = Mockito.mock(UserService.class);
       Mockito.when(users.findByEmail("registration@example.com"))
-          .thenAnswer(
-              call -> {
-                assertTrue(service.findByEmail("registration@example.com").isEmpty());
-                // Deterministic competing commit after a successful preflight;
-                // the following callback must encounter the actual DB constraint.
-                service.saveUser(user("registration@example.com", ordinary));
-                return Optional.empty();
-              });
+          .thenAnswer(call -> {
+            assertTrue(userService.findByEmail("registration@example.com").isEmpty());
+            // Deterministic competing commit after a successful preflight;
+            // the following callback must encounter the actual DB constraint.
+            userService.saveUser(user("registration@example.com", ordinary));
+            return Optional.empty();
+          });
       Mockito.doAnswer(
               call -> {
-                service.saveUser(call.getArgument(0));
+                userService.saveUser(call.getArgument(0));
                 return null;
               })
           .when(users)
@@ -383,7 +378,7 @@ class UserIdentityPersistenceTest {
       assertTrue(((EmailField) ReflectionTestUtils.getField(view, "emailField")).isInvalid());
       assertTrue(
           ((EmailField) ReflectionTestUtils.getField(view, "confirmEmailField")).isInvalid());
-      assertEquals(4, repository.count());
+      assertEquals(4, userRepository.count());
       Mockito.verifyNoInteractions(verification);
     } finally {
       NotificationHelper.getInstance().closeAndClearAllNotifications();
@@ -414,21 +409,20 @@ class UserIdentityPersistenceTest {
 
   private boolean race(Long id, String email, boolean update, CyclicBarrier barrier) {
     try {
-      transaction.executeWithoutResult(
-          tx -> {
-            UserEntity candidate =
-                update ? entityManager.find(UserEntity.class, id) : user(email, ordinary);
-            assertFalse(service.emailExistsForOtherUser(email, update ? id : null));
-            try {
-              barrier.await(5, TimeUnit.SECONDS);
-            } catch (Exception exception) {
-              throw new AssertionError(exception);
-            }
-            // Deliberately bypass the role-row service lock: the UNIQUE
-            // constraint must be authoritative for any writer/instance.
-            candidate.setEmail(email);
-            repository.saveAndFlush(candidate);
-          });
+      transactionTemplate.executeWithoutResult(tx -> {
+        UserEntity candidate =
+            update ? entityManager.find(UserEntity.class, id) : user(email, ordinary);
+        assertFalse(userService.emailExistsForOtherUser(email, update ? id : null));
+        try {
+          barrier.await(5, TimeUnit.SECONDS);
+        } catch (Exception exception) {
+          throw new AssertionError(exception);
+        }
+        // Deliberately bypass the role-row service lock: the UNIQUE
+        // constraint must be authoritative for any writer/instance.
+        candidate.setEmail(email);
+        userRepository.saveAndFlush(candidate);
+      });
       return true;
     } catch (DataIntegrityViolationException conflict) {
       assertTrue(EmailConflict.isDuplicate(conflict));

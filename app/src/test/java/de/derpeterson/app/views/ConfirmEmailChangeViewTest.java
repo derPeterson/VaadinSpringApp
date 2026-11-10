@@ -31,26 +31,26 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 class ConfirmEmailChangeViewTest {
-  private UI ui;
-  AccountSecurityService service;
-  MessageProperties messages;
+  private UI testUi;
+  AccountSecurityService accountSecurityService;
+  MessageProperties messageProperties;
   ConfirmEmailChangeView view;
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    UI.setCurrent(ui);
+    testUi = new UI();
+    UI.setCurrent(testUi);
     VaadinSession session = mock(VaadinSession.class);
     when(session.hasLock()).thenReturn(true);
     when(session.getLocale()).thenReturn(Locale.GERMAN);
     VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
+    testUi.getInternals().setSession(session);
     ConfigService config = mock(ConfigService.class);
     when(config.getString(any()))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-    service = mock(AccountSecurityService.class);
-    messages = new MessageProperties(new CustomI18NProvider());
-    view = new ConfirmEmailChangeView(messages, service, config);
+    accountSecurityService = mock(AccountSecurityService.class);
+    messageProperties = new MessageProperties(new CustomI18NProvider());
+    view = new ConfirmEmailChangeView(messageProperties, accountSecurityService, config);
   }
 
   @AfterEach
@@ -82,10 +82,10 @@ class ConfirmEmailChangeViewTest {
 
   @Test
   void openingTheLinkNeverChangesTheAccountAndConfirmationNeedsAnExplicitClick() {
-    when(service.inspect("own-token")).thenReturn(Confirmation.READY);
-    when(service.confirm("own-token")).thenReturn(Confirmation.SUCCESS);
+    when(accountSecurityService.inspect("own-token")).thenReturn(Confirmation.READY);
+    when(accountSecurityService.confirm("own-token")).thenReturn(Confirmation.SUCCESS);
     view.setParameter(mock(BeforeEvent.class), "own-token");
-    verify(service, never()).confirm(any());
+    verify(accountSecurityService, never()).confirm(any());
     assertTrue(confirm().isVisible());
     Component hint =
         tree(view)
@@ -94,11 +94,16 @@ class ConfirmEmailChangeViewTest {
             .orElseThrow();
     assertTrue(hint.isVisible());
     assertTrue(
-        hint.getElement().getTextRecursively().contains(messages.getPublicEmailConfirmationHint()));
-    assertTrue(view.getElement().getTextRecursively().contains(messages.getPublicEmailFormTitle()));
+        hint.getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getPublicEmailConfirmationHint()));
+    assertTrue(
+        view.getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getPublicEmailFormTitle()));
     assertEquals("icons/lucide/mail.svg", statusIcon().getElement().getAttribute("src"));
     confirm().click();
-    verify(service).confirm("own-token");
+    verify(accountSecurityService).confirm("own-token");
     assertFalse(confirm().isVisible());
     assertFalse(hint.isVisible());
     assertEquals("icons/lucide/circle-check.svg", statusIcon().getElement().getAttribute("src"));
@@ -106,7 +111,7 @@ class ConfirmEmailChangeViewTest {
     assertTrue(
         view.getElement()
             .getTextRecursively()
-            .contains(messages.getAccountEmailConfirmationSuccess()));
+            .contains(messageProperties.getAccountEmailConfirmationSuccess()));
   }
 
   @ParameterizedTest
@@ -114,7 +119,7 @@ class ConfirmEmailChangeViewTest {
       value = Confirmation.class,
       names = {"INVALID", "EXPIRED", "CONFLICT"})
   void unavailableLinksNeverOfferAnAction(Confirmation state) {
-    when(service.inspect(any())).thenReturn(state);
+    when(accountSecurityService.inspect(any())).thenReturn(state);
     view.setParameter(mock(BeforeEvent.class), "own-token");
     assertFalse(confirm().isVisible());
     assertEquals("icons/lucide/circle-alert.svg", statusIcon().getElement().getAttribute("src"));
@@ -122,18 +127,19 @@ class ConfirmEmailChangeViewTest {
         statusIcon().hasClassName(state == Confirmation.EXPIRED ? "text-warning" : "text-error"));
     assertEquals(
         state == Confirmation.EXPIRED, statusIcon().hasClassName("cosmos-status-icon--warning"));
-    verify(service, never()).confirm(any());
+    verify(accountSecurityService, never()).confirm(any());
   }
 
   @Test
   void technicalFailureIsLocalizedAndDoesNotExposeBackendDetails() {
-    when(service.inspect(any())).thenThrow(new IllegalStateException("secret SQL details"));
+    when(accountSecurityService.inspect(any()))
+        .thenThrow(new IllegalStateException("secret SQL details"));
     view.setParameter(mock(BeforeEvent.class), "own-token");
     assertFalse(confirm().isVisible());
     assertEquals("icons/lucide/circle-alert.svg", statusIcon().getElement().getAttribute("src"));
     assertTrue(statusIcon().hasClassName("text-error"));
     String text = view.getElement().getTextRecursively();
-    assertTrue(text.contains(messages.getAccountEmailConfirmationFailed()));
+    assertTrue(text.contains(messageProperties.getAccountEmailConfirmationFailed()));
     assertFalse(text.contains("secret SQL"));
   }
 }

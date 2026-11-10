@@ -96,27 +96,27 @@ class DurableSessionPersistenceTest {
   private static final String CSRF =
       "org.springframework.security.web.csrf.HttpSessionCsrfTokenRepository.CSRF_TOKEN";
   private DataSource source;
-  private JdbcTemplate jdbc;
+  private JdbcTemplate jdbcTemplate;
   private DurableSessionRepository<?> repository;
   private final List<JdbcIndexedSessionRepository> backends = new ArrayList<>();
   private final AtomicReference<UserDetails> account = new AtomicReference<>();
   private final AtomicReference<String> key = new AtomicReference<>("fixture-key");
-  private ConfigService config;
+  private ConfigService configService;
 
   @BeforeEach
   void setup() {
     source =
         new DriverManagerDataSource(
             "jdbc:h2:mem:durable-" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1", "sa", "");
-    jdbc = new JdbcTemplate(source);
+    jdbcTemplate = new JdbcTemplate(source);
     account.set(
         User.withUsername("fixture@example.test")
             .password("fixture-encoded-password")
             .roles("USER")
             .build());
-    config = mock(ConfigService.class);
-    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
-    when(config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(1800);
+    configService = mock(ConfigService.class);
+    when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+    when(configService.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(1800);
     repository = restart();
   }
 
@@ -131,7 +131,7 @@ class DurableSessionPersistenceTest {
   private DurableSessionRepository<?> restart() {
     JdbcIndexedSessionRepository backend =
         new SessionPersistenceConfiguration()
-            .durableJdbcSessions(source, new DataSourceTransactionManager(source), config);
+            .durableJdbcSessions(source, new DataSourceTransactionManager(source), configService);
     backends.add(backend);
     return new DurableSessionRepository<>(
         backend,
@@ -143,7 +143,7 @@ class DurableSessionPersistenceTest {
           return current;
         },
         key::get,
-        () -> SessionPersistenceConfiguration.sessionTimeout(config));
+        () -> SessionPersistenceConfiguration.sessionTimeout(configService));
   }
 
   @Test
@@ -151,7 +151,7 @@ class DurableSessionPersistenceTest {
     Session existing = repository.createSession();
     assertEquals(Duration.ofMinutes(30), existing.getMaxInactiveInterval());
 
-    when(config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(10);
+    when(configService.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(10);
     assertEquals(
         Duration.ofMinutes(30), repository.findById(existing.getId()).getMaxInactiveInterval());
     assertEquals(Duration.ofSeconds(10), repository.createSession().getMaxInactiveInterval());
@@ -164,7 +164,7 @@ class DurableSessionPersistenceTest {
 
   @Test
   void invalidTimeoutIsRejectedAtStartup() {
-    when(config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(0);
+    when(configService.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(0);
     assertThrows(IllegalArgumentException.class, this::restart);
   }
 
@@ -302,7 +302,7 @@ class DurableSessionPersistenceTest {
     assertEquals("fixture-csrf", csrf.getToken());
     String stored =
         new String(
-            jdbc.queryForObject(
+            jdbcTemplate.queryForObject(
                 "select ATTRIBUTE_BYTES from SPRING_SESSION_ATTRIBUTES where ATTRIBUTE_NAME = ?",
                 byte[].class,
                 CONTEXT),
@@ -339,7 +339,7 @@ class DurableSessionPersistenceTest {
     assertNull(restored.getAttribute(DurableSessionRepository.EXPIRED));
     assertEquals(
         0,
-        jdbc.queryForObject(
+        jdbcTemplate.queryForObject(
             "select count(*) from SPRING_SESSION_ATTRIBUTES where ATTRIBUTE_NAME in (?, ?)",
             Integer.class,
             CONTEXT,
@@ -397,7 +397,7 @@ class DurableSessionPersistenceTest {
   @Test
   void expiredSessionDoesNotReceiveANewLifetimeOnRestart() {
     Session before = admitted(false);
-    jdbc.update(
+    jdbcTemplate.update(
         "update SPRING_SESSION set LAST_ACCESS_TIME = ?, EXPIRY_TIME = ? where SESSION_ID = ?",
         Instant.now().minusSeconds(1801).toEpochMilli(),
         Instant.now().minusSeconds(1).toEpochMilli(),
@@ -469,7 +469,7 @@ class DurableSessionPersistenceTest {
   @Test
   void malformedStoredAuthenticationIsDeletedRatherThanRestoredOrRetriedForever() {
     Session before = admitted(false);
-    jdbc.update(
+    jdbcTemplate.update(
         "update SPRING_SESSION_ATTRIBUTES set ATTRIBUTE_BYTES = ? where ATTRIBUTE_NAME = ?",
         "{invalid-json".getBytes(StandardCharsets.UTF_8),
         CONTEXT);
@@ -486,7 +486,7 @@ class DurableSessionPersistenceTest {
   @Test
   void simultaneousAdmissionsReserveOnlyOneSlot() throws Exception {
     SessionAdmissionService admissions =
-        new SessionAdmissionService(config, new DurableSessionRegistry<>(repository));
+        new SessionAdmissionService(configService, new DurableSessionRegistry<>(repository));
     CountDownLatch ready = new CountDownLatch(2);
     CountDownLatch start = new CountDownLatch(1);
     Callable<Boolean> login =
@@ -541,7 +541,7 @@ class DurableSessionPersistenceTest {
     Session previous = admitted(false);
     DurableSessionRepository<?> restarted = restart();
     SessionAdmissionService admissions =
-        new SessionAdmissionService(config, new DurableSessionRegistry<>(restarted));
+        new SessionAdmissionService(configService, new DurableSessionRegistry<>(restarted));
     assertEquals(1, admissions.active(account.get().getUsername()).size());
     assertEquals(
         "fixture-handle", admissions.active(account.get().getUsername()).getFirst().handle());
@@ -568,7 +568,7 @@ class DurableSessionPersistenceTest {
   @Test
   void failedCompletionReleasesTheDurableReservationImmediately() throws Exception {
     SessionAdmissionService admissions =
-        new SessionAdmissionService(config, new DurableSessionRegistry<>(repository));
+        new SessionAdmissionService(configService, new DurableSessionRegistry<>(repository));
     Authentication authentication = context(false).getAuthentication();
     withRequest(
         repository,
@@ -584,7 +584,8 @@ class DurableSessionPersistenceTest {
               () -> admissions.complete(authentication, request, response, completion));
         });
     assertTrue(admissions.active(account.get().getUsername()).isEmpty());
-    assertEquals(0, jdbc.queryForObject("select count(*) from SPRING_SESSION", Integer.class));
+    assertEquals(
+        0, jdbcTemplate.queryForObject("select count(*) from SPRING_SESSION", Integer.class));
   }
 
   @Test
@@ -706,7 +707,7 @@ class DurableSessionPersistenceTest {
     assertNull(restart().findById(id));
     assertEquals(
         0,
-        jdbc.queryForObject(
+        jdbcTemplate.queryForObject(
             "select count(*) from SPRING_SESSION where SESSION_ID = ?", Integer.class, id));
   }
 
@@ -717,7 +718,7 @@ class DurableSessionPersistenceTest {
     Session existing = admitted(false);
     String id = existing.getId();
     SessionAdmissionService admissions =
-        new SessionAdmissionService(config, new DurableSessionRegistry<>(repository));
+        new SessionAdmissionService(configService, new DurableSessionRegistry<>(repository));
     SecurityService security =
         new SecurityService(
             mock(PersistentTokenBasedRememberMeServices.class),
@@ -761,10 +762,9 @@ class DurableSessionPersistenceTest {
                 };
             MockHttpServletResponse response = new MockHttpServletResponse();
             AtomicBoolean reachedApplication = new AtomicBoolean();
-            assertDoesNotThrow(
-                () ->
-                    new VaadinSecurityFilter(provider)
-                        .doFilter(callback, response, (req, res) -> reachedApplication.set(true)));
+            assertDoesNotThrow(() ->
+                new VaadinSecurityFilter(provider)
+                    .doFilter(callback, response, (req, res) -> reachedApplication.set(true)));
             assertEquals(login, reachedApplication.get());
             assertEquals(login ? 200 : 401, response.getStatus());
           }
@@ -775,7 +775,7 @@ class DurableSessionPersistenceTest {
     assertNull(restart().findById(id));
     assertEquals(
         0,
-        jdbc.queryForObject(
+        jdbcTemplate.queryForObject(
             "select count(*) from SPRING_SESSION where SESSION_ID = ?", Integer.class, id));
   }
 

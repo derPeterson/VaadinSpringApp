@@ -19,14 +19,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 class AccountHeaderActionsTest {
-  private final UI ui = spy(new UI());
-  private final MessageProperties messages = mock(MessageProperties.class);
+  private final UI testUi = spy(new UI());
+  private final MessageProperties messageProperties = mock(MessageProperties.class);
 
   private AccountHeaderActions create(boolean authenticated) {
-    UI.setCurrent(ui);
-    when(messages.getBaseNotifications()).thenReturn("Benachrichtigungen");
-    when(messages.getBaseManageAccountButton()).thenReturn("Konto verwalten");
-    return new AccountHeaderActions(messages, authenticated);
+    UI.setCurrent(testUi);
+    when(messageProperties.getBaseNotifications()).thenReturn("Benachrichtigungen");
+    when(messageProperties.getBaseManageAccountButton()).thenReturn("Konto verwalten");
+    return new AccountHeaderActions(messageProperties, authenticated);
   }
 
   @AfterEach
@@ -52,11 +52,11 @@ class AccountHeaderActionsTest {
   @Test
   void settingsOpensTheAccountDirectlyWithoutUsingTheBell() {
     AccountHeaderActions actions = create(true);
-    doReturn(Optional.empty()).when(ui).navigate(AccountView.class);
+    doReturn(Optional.empty()).when(testUi).navigate(AccountView.class);
     button(actions, "account-header-notifications").click();
-    verify(ui, never()).navigate(AccountView.class);
+    verify(testUi, never()).navigate(AccountView.class);
     button(actions, "account-header-settings").click();
-    verify(ui).navigate(AccountView.class);
+    verify(testUi).navigate(AccountView.class);
   }
 
   @Test
@@ -65,8 +65,8 @@ class AccountHeaderActionsTest {
     assertEquals(
         "Benachrichtigungen",
         button(actions, "account-header-notifications").getAriaLabel().orElseThrow());
-    when(messages.getBaseNotifications()).thenReturn("Notifications");
-    when(messages.getBaseManageAccountButton()).thenReturn("Manage account");
+    when(messageProperties.getBaseNotifications()).thenReturn("Notifications");
+    when(messageProperties.getBaseManageAccountButton()).thenReturn("Manage account");
     actions.refreshTexts();
     assertEquals(
         "Notifications",

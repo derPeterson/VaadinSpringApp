@@ -66,8 +66,8 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.test.util.ReflectionTestUtils;
 
 class MaintenanceServiceTest {
-  private final ConfigService config = mock(ConfigService.class);
-  private final MaintenanceService maintenance = new MaintenanceService(config);
+  private final ConfigService configService = mock(ConfigService.class);
+  private final MaintenanceService maintenance = new MaintenanceService(configService);
 
   @AfterEach
   void clearContext() {
@@ -93,19 +93,19 @@ class MaintenanceServiceTest {
     session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
     request.setSession(session);
     assertFalse(maintenance.blocks(request));
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     assertEquals(!role.isAdministrative(), maintenance.blocks(request));
     assertFalse(session.isInvalid());
     assertSame(
         context,
         session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
     assertFalse(maintenance.blocks(request));
   }
 
   @Test
   void requestSessionIdentityWinsOverAnUnrelatedPushWorkerContext() {
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     MockHttpServletRequest request = new MockHttpServletRequest();
     MockHttpSession session = new MockHttpSession();
     request.setSession(session);
@@ -133,9 +133,9 @@ class MaintenanceServiceTest {
   @Test
   void anonymousAndUnreadableConfigurationFailClosed() {
     MockHttpServletRequest request = new MockHttpServletRequest();
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     assertTrue(maintenance.blocks(request));
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE))
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE))
         .thenThrow(new IllegalArgumentException("invalid boolean"));
     assertEquals(MaintenanceService.State.UNAVAILABLE, maintenance.state());
     assertTrue(maintenance.blocks(request));
@@ -144,16 +144,17 @@ class MaintenanceServiceTest {
         AuthenticationServiceException.class,
         () -> maintenance.requireLogin(attemptAuthentication));
     assertThrows(
-        MaintenanceAccessException.class, () -> MaintenanceService.requirePublicAccess(config));
+        MaintenanceAccessException.class,
+        () -> MaintenanceService.requirePublicAccess(configService));
   }
 
   @ParameterizedTest
   @EnumSource(RoleType.class)
   void newAdmissionIsCheckedBeforeSessionAndRegistryAllocation(RoleType role) {
-    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3);
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     SessionRegistryImpl registry = new SessionRegistryImpl();
-    SessionAdmissionService admission = new SessionAdmissionService(config, registry);
+    SessionAdmissionService admission = new SessionAdmissionService(configService, registry);
     MockHttpServletRequest request = new MockHttpServletRequest();
     MockHttpServletResponse response = new MockHttpServletResponse();
     if (role.isAdministrative()) {
@@ -172,20 +173,20 @@ class MaintenanceServiceTest {
 
   @Test
   void existingSlotCanBeRestoredDuringMaintenanceAndReusedAfterwards() {
-    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
+    when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     SessionRegistryImpl registry = new SessionRegistryImpl();
-    SessionAdmissionService admission = new SessionAdmissionService(config, registry);
+    SessionAdmissionService admission = new SessionAdmissionService(configService, registry);
     MockHttpServletRequest request = new MockHttpServletRequest();
     MockHttpServletResponse response = new MockHttpServletResponse();
     Authentication user = actor(RoleType.ROLE_USER);
     admission.onAuthentication(user, request, response);
     HttpSession session = request.getSession(false);
     String id = session.getId();
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     admission.complete(user, request, response, () -> {});
     assertEquals(id, session.getId());
     assertEquals(1, registry.getAllSessions(user.getName(), true).size());
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
     admission.onAuthentication(user, request, response);
     assertSame(session, request.getSession(false));
   }
@@ -202,7 +203,7 @@ class MaintenanceServiceTest {
         "/h2/"
       })
   void initialDocumentUses503AndMaintenanceViewWithoutTokenEcho(String path) throws Exception {
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
     request.setServletPath(path);
     MockHttpServletResponse response = new MockHttpServletResponse();
@@ -226,7 +227,7 @@ class MaintenanceServiceTest {
         "/logout"
       })
   void requiredResourcesAndRecoveryStayReachable(String path) throws Exception {
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
     request.setServletPath(path);
     MockHttpServletResponse response = new MockHttpServletResponse();
@@ -238,7 +239,7 @@ class MaintenanceServiceTest {
   @ParameterizedTest
   @ValueSource(strings = {"/home", "/login", "/VAADIN/uidl"})
   void oldOrSpoofedUiCannotDispatchCallbacksThroughPublicLoginPath(String path) throws Exception {
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
     request.setServletPath(path);
     request.setParameter("v-r", "uidl");
@@ -269,7 +270,7 @@ class MaintenanceServiceTest {
       restored = (VaadinSession) input.readObject();
     }
     assertNull(restored.getLockInstance());
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/");
     request.setServletPath("/");
     request.setParameter("v-r", type);
@@ -315,7 +316,7 @@ class MaintenanceServiceTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void onlyTheActualLoginUiMayUseLoginRpc(boolean loginUi) throws Exception {
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/");
     request.setServletPath("/");
     request.setParameter("v-r", "uidl");
@@ -360,7 +361,7 @@ class MaintenanceServiceTest {
   })
   void protocolParametersDoNotReleaseOtherServletsEvenWithARealLoginUi(String path, String type)
       throws Exception {
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
     request.setServletPath(path);
     request.setParameter("v-r", type);
@@ -389,7 +390,7 @@ class MaintenanceServiceTest {
 
   @Test
   void realServerCreatedBlankUiCanCompleteItsRouteGuardedBootstrap() throws Exception {
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     MockHttpServletRequest request = new MockHttpServletRequest("POST", "/");
     request.setServletPath("/");
     request.setParameter("v-r", "uidl");
@@ -433,10 +434,10 @@ class MaintenanceServiceTest {
 
   @Test
   void publicServiceGuardRunsBeforeAnyAccountOrQueueInteraction() {
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     UserService users = mock(UserService.class);
     VerificationService verification = mock(VerificationService.class);
-    RegistrationService registration = new RegistrationService(users, verification, config);
+    RegistrationService registration = new RegistrationService(users, verification, configService);
     UserEntity targetUser = new UserEntity();
     assertThrows(MaintenanceAccessException.class, () -> registration.register(targetUser));
     verifyNoInteractions(users, verification);

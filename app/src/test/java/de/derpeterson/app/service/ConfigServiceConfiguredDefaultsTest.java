@@ -27,15 +27,15 @@ import org.springframework.transaction.PlatformTransactionManager;
 /** Startup configuration with an empty repository; no application, database or SMTP. */
 @ExtendWith(MockitoExtension.class)
 class ConfigServiceConfiguredDefaultsTest {
-  @Mock private ConfigRepository repository;
+  @Mock private ConfigRepository configRepository;
   @Mock private PlatformTransactionManager transactionManager;
   private MockEnvironment environment;
-  private ConfigService service;
+  private ConfigService configService;
 
   @BeforeEach
   void setUp() {
     environment = new MockEnvironment();
-    service = new ConfigService(repository, transactionManager, environment);
+    configService = new ConfigService(configRepository, transactionManager, environment);
   }
 
   @Test
@@ -47,7 +47,8 @@ class ConfigServiceConfiguredDefaultsTest {
     configure(ConfigEntry.MAIL_SMTP_SSL_ENABLE, "false");
     configure(ConfigEntry.REMEMBER_ME_SECRET_KEY, "fixture-only-key");
 
-    ConnectionAwareJavaMailSender sender = new MailConfig(service).createConfiguredMailSender();
+    ConnectionAwareJavaMailSender sender =
+        new MailConfig(configService).createConfiguredMailSender();
 
     assertEquals("mailpit", sender.getHost());
     assertEquals(1025, sender.getPort());
@@ -55,9 +56,9 @@ class ConfigServiceConfiguredDefaultsTest {
     assertEquals(false, sender.getJavaMailProperties().get("mail.smtp.starttls.enable"));
     assertEquals(false, sender.getJavaMailProperties().get("mail.smtp.ssl.enable"));
     assertEquals("UTF-8", sender.getDefaultEncoding());
-    assertEquals("fixture-only-key", service.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY));
-    verify(repository, never()).save(any());
-    verify(repository, never()).saveAndFlush(any());
+    assertEquals("fixture-only-key", configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY));
+    verify(configRepository, never()).save(any());
+    verify(configRepository, never()).saveAndFlush(any());
     verifyNoInteractions(transactionManager);
   }
 
@@ -70,9 +71,9 @@ class ConfigServiceConfiguredDefaultsTest {
     stored(ConfigEntry.MAIL_PORT, "2525");
     stored(ConfigEntry.MAIL_SMTP_AUTH, "true");
 
-    assertEquals("", service.getString(ConfigEntry.MAIL_HOST));
-    assertEquals(2525, service.getInteger(ConfigEntry.MAIL_PORT));
-    assertTrue(service.getBoolean(ConfigEntry.MAIL_SMTP_AUTH));
+    assertEquals("", configService.getString(ConfigEntry.MAIL_HOST));
+    assertEquals(2525, configService.getInteger(ConfigEntry.MAIL_PORT));
+    assertTrue(configService.getBoolean(ConfigEntry.MAIL_SMTP_AUTH));
   }
 
   @Test
@@ -81,10 +82,10 @@ class ConfigServiceConfiguredDefaultsTest {
     configure(ConfigEntry.MAIL_PORT, "2525");
     configure(ConfigEntry.MAIL_SMTP_AUTH, "false");
 
-    assertEquals("explicit", service.getString(ConfigEntry.MAIL_HOST, "explicit"));
-    assertNull(service.getString(ConfigEntry.MAIL_HOST, null));
-    assertEquals(999, service.getInteger(ConfigEntry.MAIL_PORT, 999));
-    assertTrue(service.getBoolean(ConfigEntry.MAIL_SMTP_AUTH, true));
+    assertEquals("explicit", configService.getString(ConfigEntry.MAIL_HOST, "explicit"));
+    assertNull(configService.getString(ConfigEntry.MAIL_HOST, null));
+    assertEquals(999, configService.getInteger(ConfigEntry.MAIL_PORT, 999));
+    assertTrue(configService.getBoolean(ConfigEntry.MAIL_SMTP_AUTH, true));
   }
 
   @Test
@@ -94,8 +95,8 @@ class ConfigServiceConfiguredDefaultsTest {
     stored(ConfigEntry.MAIL_HOST, null);
     stored(ConfigEntry.MAIL_PORT, null);
 
-    assertEquals("", service.getString(ConfigEntry.MAIL_HOST));
-    assertEquals(2525, service.getInteger(ConfigEntry.MAIL_PORT));
+    assertEquals("", configService.getString(ConfigEntry.MAIL_HOST));
+    assertEquals(2525, configService.getInteger(ConfigEntry.MAIL_PORT));
   }
 
   @Test
@@ -103,9 +104,10 @@ class ConfigServiceConfiguredDefaultsTest {
     configure(ConfigEntry.MAIL_PORT, "bad-port");
     configure(ConfigEntry.MAIL_SMTP_AUTH, " false ");
 
-    assertThrows(NumberFormatException.class, () -> service.getInteger(ConfigEntry.MAIL_PORT));
     assertThrows(
-        IllegalArgumentException.class, () -> service.getBoolean(ConfigEntry.MAIL_SMTP_AUTH));
+        NumberFormatException.class, () -> configService.getInteger(ConfigEntry.MAIL_PORT));
+    assertThrows(
+        IllegalArgumentException.class, () -> configService.getBoolean(ConfigEntry.MAIL_SMTP_AUTH));
   }
 
   @Test
@@ -113,7 +115,7 @@ class ConfigServiceConfiguredDefaultsTest {
     configure(ConfigEntry.MAIL_HOST, "${missing.test.property}");
     stored(ConfigEntry.MAIL_HOST, "stored-host");
 
-    assertEquals("stored-host", service.getString(ConfigEntry.MAIL_HOST));
+    assertEquals("stored-host", configService.getString(ConfigEntry.MAIL_HOST));
   }
 
   private void configure(ConfigEntry entry, String value) {
@@ -121,7 +123,7 @@ class ConfigServiceConfiguredDefaultsTest {
   }
 
   private void stored(ConfigEntry entry, String value) {
-    when(repository.findByKey(entry.getKey()))
+    when(configRepository.findByKey(entry.getKey()))
         .thenReturn(Optional.of(new ConfigEntity(null, entry.getKey(), value)));
   }
 }

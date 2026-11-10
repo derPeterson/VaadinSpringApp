@@ -29,20 +29,20 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 class LoggingPolicyTest {
-  private LoggerContext context;
+  private LoggerContext loggerContext;
 
   @AfterEach
   void stopContext() {
-    if (context != null) {
-      context.stop();
+    if (loggerContext != null) {
+      loggerContext.stop();
     }
   }
 
   @Test
   void normalApplicationLoggingIsInfoInBothConfigurations() throws Exception {
-    context = isolatedConfiguration();
-    assertEquals(Level.INFO, context.getLogger("de.derpeterson.app").getLevel());
-    assertFalse(context.getLogger("de.derpeterson.app.service.UserService").isDebugEnabled());
+    loggerContext = isolatedConfiguration();
+    assertEquals(Level.INFO, loggerContext.getLogger("de.derpeterson.app").getLevel());
+    assertFalse(loggerContext.getLogger("de.derpeterson.app.service.UserService").isDebugEnabled());
     assertEquals("INFO", properties().getProperty("logging.level.de.derpeterson.app"));
   }
 
@@ -53,20 +53,20 @@ class LoggingPolicyTest {
         "de.derpeterson.app.security.DeviceRememberMeServices"
       })
   void inheritedSensitiveDebugRemainsOffWhenParentDebugIsEnabled(String name) throws Exception {
-    context = isolatedConfiguration();
-    context.getLogger("de.derpeterson.app").setLevel(Level.DEBUG);
-    Logger logger = context.getLogger(name);
+    loggerContext = isolatedConfiguration();
+    loggerContext.getLogger("de.derpeterson.app").setLevel(Level.DEBUG);
+    Logger logger = loggerContext.getLogger(name);
     assertEquals(Level.INFO, logger.getLevel());
     assertEquals("INFO", properties().getProperty("logging.level." + name));
     ListAppender<ILoggingEvent> logs = new ListAppender<>();
     logs.start();
-    context.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(logs);
-    for (int i = 0; i < 20; i++) {
+    loggerContext.getLogger(Logger.ROOT_LOGGER_NAME).addAppender(logs);
+    for (int debugMessageIndex = 0; debugMessageIndex < 20; debugMessageIndex++) {
       logger.debug("Retrieved SecurityContext: {}", "private credentials token");
     }
     logger.warn("Fixture operational warning");
     logger.error("Fixture operational failure");
-    context
+    loggerContext
         .getLogger("de.derpeterson.app.service.UserService")
         .debug("Fixture targeted diagnostic");
     assertEquals(3, logs.list.size());

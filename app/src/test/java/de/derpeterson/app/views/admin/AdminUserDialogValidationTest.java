@@ -56,31 +56,31 @@ import org.springframework.test.util.ReflectionTestUtils;
  * Password confirmation and validation timing through real dialog callbacks, without DB or SMTP.
  */
 class AdminUserDialogValidationTest {
-  private UI ui;
-  private VaadinSession session;
-  private UserService users;
-  private AdminUserManagementSection section;
+  private UI testUi;
+  private VaadinSession vaadinSession;
+  private UserService userService;
+  private AdminUserManagementSection userManagementSection;
   private MessageProperties messageProperties;
   private Dialog dialog;
-  private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
+  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.ENGLISH);
 
   @BeforeEach
   void setup() {
-    ui = new UI();
-    session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
-    UI.setCurrent(ui);
-    VaadinSession.setCurrent(session);
-    ui.getInternals().setSession(session);
-    users = mock(UserService.class);
+    testUi = new UI();
+    vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    UI.setCurrent(testUi);
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
+    userService = mock(UserService.class);
     RoleService roles = mock(RoleService.class);
     when(roles.findByName(any()))
         .thenAnswer(call -> Optional.of(RoleEntity.builder().name(call.getArgument(0)).build()));
     messageProperties = new MessageProperties(new CustomI18NProvider());
-    section =
+    userManagementSection =
         new AdminUserManagementSection(
-            messageProperties, users, roles, mock(SecurityService.class));
+            messageProperties, userService, roles, mock(SecurityService.class));
   }
 
   @AfterEach
@@ -91,9 +91,9 @@ class AdminUserDialogValidationTest {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
-    section = null;
-    session = null;
-    ui = null;
+    userManagementSection = null;
+    vaadinSession = null;
+    testUi = null;
   }
 
   @ParameterizedTest
@@ -106,7 +106,7 @@ class AdminUserDialogValidationTest {
                 new SignInSummary(
                     RegistrationChannel.GOOGLE,
                     Set.of(SignInMethod.PORTAL, SignInMethod.MICROSOFT))));
-    section.configureSignInDetails(identities);
+    userManagementSection.configureSignInDetails(identities);
     open(language, false);
 
     Badge registration = (Badge) signInDetail("admin-user-registered-via");
@@ -133,7 +133,7 @@ class AdminUserDialogValidationTest {
     assertFalse(confirm().isRequiredIndicatorVisible());
     assertTrue(save().isEnabled());
     save().click();
-    verify(users).updateAdminUser(any(), eq(3L), eq(""));
+    verify(userService).updateAdminUser(any(), eq(3L), eq(""));
     assertFalse(dialog.isOpened());
   }
 
@@ -169,7 +169,7 @@ class AdminUserDialogValidationTest {
     assertFalse(confirm().isInvalid());
     assertTrue(save().isEnabled());
     save().click();
-    verify(users).updateAdminUser(any(), eq(3L), eq("ChangedPassword!"));
+    verify(userService).updateAdminUser(any(), eq(3L), eq("ChangedPassword!"));
   }
 
   @ParameterizedTest
@@ -200,7 +200,7 @@ class AdminUserDialogValidationTest {
     confirm().setValue("ValidPassword!");
     assertTrue(save().isEnabled());
     save().click();
-    verify(users)
+    verify(userService)
         .createAdminUser(
             argThat(user -> Locale.forLanguageTag(language).equals(user.getPreferredLocale())),
             eq("ValidPassword!"));
@@ -212,7 +212,7 @@ class AdminUserDialogValidationTest {
     MultiSelectComboBox<RoleType> roles = roles();
     assertFalse(roles.getListDataView().getItems().toList().contains(RoleType.ROLE_SUPERADMIN));
     assertTrue(roles.getListDataView().getItems().toList().contains(RoleType.ROLE_ADMIN));
-    when(users.canManageSuperadmins()).thenReturn(true);
+    when(userService.canManageSuperadmins()).thenReturn(true);
     roles.getDataProvider().refreshAll();
     assertTrue(roles.getListDataView().getItems().toList().contains(RoleType.ROLE_SUPERADMIN));
   }
@@ -223,8 +223,8 @@ class AdminUserDialogValidationTest {
     MultiSelectComboBox<RoleType> roles = roles();
     roles.setValue(Set.of(RoleType.ROLE_USER, RoleType.ROLE_GUEST));
     assertEquals(messageProperties.getAdminUsersSelectedRoles(2), roles.getPlaceholder());
-    locale.set(Locale.ENGLISH);
-    section.refreshTexts();
+    localeReference.set(Locale.ENGLISH);
+    userManagementSection.refreshTexts();
     assertEquals(Set.of(RoleType.ROLE_USER, RoleType.ROLE_GUEST), roles.getValue());
     assertEquals(messageProperties.getAdminUsersSelectedRoles(2), roles.getPlaceholder());
     assertEquals(
@@ -247,8 +247,8 @@ class AdminUserDialogValidationTest {
     password().setValue("ValidPassword!");
     confirm().setValue("Different!");
     blur(confirm());
-    locale.set(Locale.ENGLISH);
-    section.refreshTexts();
+    localeReference.set(Locale.ENGLISH);
+    userManagementSection.refreshTexts();
     assertEquals("ValidPassword!", password().getValue());
     assertEquals("Different!", confirm().getValue());
     assertEquals(
@@ -260,7 +260,7 @@ class AdminUserDialogValidationTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void newRolesCanBeAssignedAndHaveTranslatedLabels(String language) {
-    when(users.canManageSuperadmins()).thenReturn(true);
+    when(userService.canManageSuperadmins()).thenReturn(true);
     open(language, false);
     @SuppressWarnings("unchecked")
     MultiSelectComboBox<RoleType> roles =
@@ -278,7 +278,7 @@ class AdminUserDialogValidationTest {
     roles.setValue(Set.of(RoleType.ROLE_SUPERADMIN, RoleType.ROLE_GUEST));
     save().click();
     ArgumentCaptor<UserEntity> edited = org.mockito.ArgumentCaptor.forClass(UserEntity.class);
-    verify(users).updateAdminUser(edited.capture(), eq(3L), eq(""));
+    verify(userService).updateAdminUser(edited.capture(), eq(3L), eq(""));
     assertEquals(
         Set.of(RoleType.ROLE_SUPERADMIN, RoleType.ROLE_GUEST),
         edited.getValue().getRoleEntities().stream()
@@ -298,11 +298,11 @@ class AdminUserDialogValidationTest {
               .lastName("User")
               .email("test@example.test")
               .build();
-      when(users.canDeleteUser(target)).thenReturn(true);
-      ReflectionTestUtils.invokeMethod(section, "deleteUser", target);
-      ui.getInternals().getStateTree().runExecutionsBeforeClientResponse();
+      when(userService.canDeleteUser(target)).thenReturn(true);
+      ReflectionTestUtils.invokeMethod(userManagementSection, "deleteUser", target);
+      testUi.getInternals().getStateTree().runExecutionsBeforeClientResponse();
       dialog =
-          descendants(ui)
+          descendants(testUi)
               .filter(Dialog.class::isInstance)
               .map(Dialog.class::cast)
               .filter(Dialog::isOpened)
@@ -315,10 +315,10 @@ class AdminUserDialogValidationTest {
     assertTrue(dialog.isCloseOnEsc());
     dialog.setOpened(false);
     assertFalse(dialog.isOpened());
-    verify(users, never()).save(any());
-    verify(users, never()).createAdminUser(any(), any());
-    verify(users, never()).updateAdminUser(any(), any(), any());
-    verify(users, never()).deleteUser(any());
+    verify(userService, never()).save(any());
+    verify(userService, never()).createAdminUser(any(), any());
+    verify(userService, never()).updateAdminUser(any(), any(), any());
+    verify(userService, never()).deleteUser(any());
   }
 
   @ParameterizedTest
@@ -342,23 +342,23 @@ class AdminUserDialogValidationTest {
     assertTrue(save().isEnabled());
     assertFalse(confirm().isInvalid());
     save().click();
-    verify(users).updateAdminUser(any(), eq(3L), eq("EditedPassword!"));
+    verify(userService).updateAdminUser(any(), eq(3L), eq("EditedPassword!"));
     assertFalse(editing.isOpened());
     assertTrue(creating.isOpened());
-    verify(users, never()).createAdminUser(any(), any());
+    verify(userService, never()).createAdminUser(any(), any());
 
     dialog = creating;
     assertEquals("CreatedPassword!", password().getValue());
     assertTrue(confirm().isInvalid());
     confirm().setValue("CreatedPassword!");
     save().click();
-    verify(users).createAdminUser(any(), eq("CreatedPassword!"));
+    verify(userService).createAdminUser(any(), eq("CreatedPassword!"));
     assertFalse(creating.isOpened());
   }
 
   private void open(String language, boolean create) {
     Dialog previouslyOpened = dialog;
-    locale.set(Locale.forLanguageTag(language));
+    localeReference.set(Locale.forLanguageTag(language));
     UserEntity user =
         UserEntity.builder()
             .id(create ? null : 2L)
@@ -371,10 +371,10 @@ class AdminUserDialogValidationTest {
             .enabled(true)
             .roleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_USER).build()))
             .build();
-    ReflectionTestUtils.invokeMethod(section, "openDialog", user);
-    ui.getInternals().getStateTree().runExecutionsBeforeClientResponse();
+    ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", user);
+    testUi.getInternals().getStateTree().runExecutionsBeforeClientResponse();
     dialog =
-        descendants(ui)
+        descendants(testUi)
             .filter(Dialog.class::isInstance)
             .map(Dialog.class::cast)
             .filter(Dialog::isOpened)

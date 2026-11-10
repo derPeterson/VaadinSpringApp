@@ -39,21 +39,21 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 class UserInputValidationTest {
-  private UserRepository repository;
-  private PasswordEncoder encoder;
-  private UserStatusBroadcaster broadcaster;
-  private UserService service;
+  private UserRepository userRepository;
+  private PasswordEncoder passwordEncoder;
+  private UserStatusBroadcaster userStatusBroadcaster;
+  private UserService userService;
 
   @BeforeEach
   void setup() {
-    repository = mock(UserRepository.class);
-    encoder = mock(PasswordEncoder.class);
-    broadcaster = mock(UserStatusBroadcaster.class);
-    service =
+    userRepository = mock(UserRepository.class);
+    passwordEncoder = mock(PasswordEncoder.class);
+    userStatusBroadcaster = mock(UserStatusBroadcaster.class);
+    userService =
         new UserService(
-            repository,
-            broadcaster,
-            encoder,
+            userRepository,
+            userStatusBroadcaster,
+            passwordEncoder,
             mock(UserProfileBroadcaster.class),
             mock(de.derpeterson.app.security.AdminRolePolicy.class),
             mock(org.springframework.context.ApplicationEventPublisher.class));
@@ -92,9 +92,9 @@ class UserInputValidationTest {
   void invalidSavedFieldsAreRejectedBeforeRepositoryOrEncoding(String field) {
     UserEntity candidate = user();
     invalidate(candidate, field);
-    assertThrows(IllegalArgumentException.class, () -> service.save(candidate));
-    assertThrows(IllegalArgumentException.class, () -> service.saveUser(candidate));
-    verifyNoInteractions(repository, encoder, broadcaster);
+    assertThrows(IllegalArgumentException.class, () -> userService.save(candidate));
+    assertThrows(IllegalArgumentException.class, () -> userService.saveUser(candidate));
+    verifyNoInteractions(userRepository, passwordEncoder, userStatusBroadcaster);
   }
 
   @ParameterizedTest
@@ -104,13 +104,13 @@ class UserInputValidationTest {
     UserEntity edited = user();
     edited.setFirstName("Attempted edit");
     invalidate(edited, field);
-    when(repository.findByIdForUpdate(1L)).thenReturn(Optional.of(stored));
+    when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(stored));
     assertThrows(
-        IllegalArgumentException.class, () -> service.updateAdminUser(edited, 2L, "Password!"));
+        IllegalArgumentException.class, () -> userService.updateAdminUser(edited, 2L, "Password!"));
     assertEquals("Test", stored.getFirstName());
     assertEquals("old-hash", stored.getPassword());
-    verify(repository, never()).saveAndFlush(any());
-    verifyNoInteractions(encoder, broadcaster);
+    verify(userRepository, never()).saveAndFlush(any());
+    verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
   }
 
   @ParameterizedTest
@@ -120,21 +120,21 @@ class UserInputValidationTest {
       String password) {
     assertFalse(ValidationHelper.isPasswordSecure(password));
     UserEntity user = user();
-    assertThrows(IllegalArgumentException.class, () -> service.updatePassword(user, password));
+    assertThrows(IllegalArgumentException.class, () -> userService.updatePassword(user, password));
     assertEquals("old-hash", user.getPassword());
     PasswordResetTokenRepository tokens = mock(PasswordResetTokenRepository.class);
     PasswordResetService reset =
         new PasswordResetService(
             null,
             tokens,
-            repository,
+            userRepository,
             mock(ConfigService.class),
-            encoder,
+            passwordEncoder,
             null,
             mock(LoginAttemptService.class),
             mock(UserNotificationService.class));
     assertThrows(IllegalArgumentException.class, () -> reset.resetPassword("token", password));
-    verifyNoInteractions(tokens, repository, encoder, broadcaster);
+    verifyNoInteractions(tokens, userRepository, passwordEncoder, userStatusBroadcaster);
   }
 
   @Test
@@ -142,33 +142,35 @@ class UserInputValidationTest {
     UserEntity stored = user();
     UserEntity edited = user();
     edited.setFirstName("Attempted edit");
-    when(repository.findByIdForUpdate(1L)).thenReturn(Optional.of(stored));
-    assertThrows(IllegalArgumentException.class, () -> service.updateAdminUser(edited, 2L, "weak"));
+    when(userRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(stored));
+    assertThrows(
+        IllegalArgumentException.class, () -> userService.updateAdminUser(edited, 2L, "weak"));
     assertEquals("Test", stored.getFirstName());
-    verify(repository, never()).saveAndFlush(any());
-    verifyNoInteractions(encoder);
+    verify(userRepository, never()).saveAndFlush(any());
+    verifyNoInteractions(passwordEncoder);
   }
 
   @Test
   void nullStatusLocaleAndSchedulerArgumentsAreRejectedBeforeLookupAndNotifications() {
     UserEntity targetUser = user();
     assertThrows(
-        IllegalArgumentException.class, () -> service.updateUserStatus(targetUser, null, true));
-    assertThrows(
-        IllegalArgumentException.class, () -> service.updateUserLocale("test@example.com", null));
-    assertThrows(IllegalArgumentException.class, () -> service.updateLastActivity(null));
+        IllegalArgumentException.class, () -> userService.updateUserStatus(targetUser, null, true));
     assertThrows(
         IllegalArgumentException.class,
-        () -> service.updateScheduledStatus(1L, UserStatus.ABSENT, null));
-    verifyNoInteractions(repository, encoder, broadcaster);
+        () -> userService.updateUserLocale("test@example.com", null));
+    assertThrows(IllegalArgumentException.class, () -> userService.updateLastActivity(null));
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> userService.updateScheduledStatus(1L, UserStatus.ABSENT, null));
+    verifyNoInteractions(userRepository, passwordEncoder, userStatusBroadcaster);
   }
 
   @Test
   void emailExistenceUsesOnlyOneTargetedQueryWithCanonicalParameter() {
-    when(repository.emailExistsForOtherUser("test@example.com", 7L)).thenReturn(true);
-    assertTrue(service.emailExistsForOtherUser(" TEST@EXAMPLE.COM ", 7L));
-    verify(repository).emailExistsForOtherUser("test@example.com", 7L);
-    verifyNoMoreInteractions(repository);
+    when(userRepository.emailExistsForOtherUser("test@example.com", 7L)).thenReturn(true);
+    assertTrue(userService.emailExistsForOtherUser(" TEST@EXAMPLE.COM ", 7L));
+    verify(userRepository).emailExistsForOtherUser("test@example.com", 7L);
+    verifyNoMoreInteractions(userRepository);
   }
 
   @Test
@@ -182,10 +184,10 @@ class UserInputValidationTest {
       Locale.setDefault(previous);
     }
     String raw = "  Password!  ";
-    when(encoder.encode(raw)).thenReturn("new-hash");
+    when(passwordEncoder.encode(raw)).thenReturn("new-hash");
     UserEntity user = user();
-    service.updatePassword(user, raw);
-    verify(encoder).encode(raw);
+    userService.updatePassword(user, raw);
+    verify(passwordEncoder).encode(raw);
     assertEquals("new-hash", user.getPassword());
   }
 
@@ -196,24 +198,24 @@ class UserInputValidationTest {
         new PasswordResetService(
             null,
             tokens,
-            repository,
+            userRepository,
             mock(ConfigService.class),
-            encoder,
+            passwordEncoder,
             null,
             mock(LoginAttemptService.class),
             mock(UserNotificationService.class));
     UserEntity user = user();
     user.setEnabled(true);
     when(tokens.findUserIdByToken("token")).thenReturn(Optional.of(user.getId()));
-    when(repository.lockVerificationUser(user.getId())).thenReturn(Optional.of(user));
+    when(userRepository.lockVerificationUser(user.getId())).thenReturn(Optional.of(user));
     PasswordResetTokenEntity token =
         new PasswordResetTokenEntity(
             null, "token", user, LocalDateTime.now().plusHours(1), TokenStatus.ACTIVE);
     when(tokens.findByTokenAndStatus("token", TokenStatus.ACTIVE)).thenReturn(Optional.of(token));
-    when(encoder.encode("Password!")).thenReturn("new-hash");
+    when(passwordEncoder.encode("Password!")).thenReturn("new-hash");
     assertTrue(reset.resetPassword("token", "Password!"));
     assertEquals("new-hash", user.getPassword());
     assertEquals(TokenStatus.USED, token.getStatus());
-    verify(repository).save(user);
+    verify(userRepository).save(user);
   }
 }

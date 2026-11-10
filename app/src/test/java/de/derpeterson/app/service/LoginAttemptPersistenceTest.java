@@ -65,35 +65,34 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @SpringJUnitConfig(LoginAttemptPersistenceTest.Config.class)
 class LoginAttemptPersistenceTest {
-  @Autowired LoginAttemptRepository attempts;
+  @Autowired LoginAttemptRepository loginAttemptRepository;
   @Autowired LoginAttemptGuardRepository guard;
-  @Autowired LoginAttemptService service;
+  @Autowired LoginAttemptService loginAttemptService;
   @Autowired ConfigService config;
-  @Autowired PlatformTransactionManager manager;
-  @Autowired TransactionTemplate transaction;
+  @Autowired PlatformTransactionManager transactionManager;
+  @Autowired TransactionTemplate transactionTemplate;
   @Autowired MutableQueueClock clock;
   @Autowired AtomicInteger limit;
   @Autowired AtomicInteger loginWindow;
-  @Autowired UserRepository users;
-  @Autowired PasswordEncoder encoder;
-  @Autowired PasswordResetTokenRepository tokens;
+  @Autowired UserRepository userRepository;
+  @Autowired PasswordEncoder passwordEncoder;
+  @Autowired PasswordResetTokenRepository passwordResetTokenRepository;
   @PersistenceContext EntityManager entityManager;
   private static final String EMAIL = "login-fixture@example.test";
 
   @BeforeEach
   void clean() {
-    attempts.deleteAll();
+    loginAttemptRepository.deleteAll();
     guard.deleteAll();
     limit.set(3);
     loginWindow.set(900);
     clock.set(Instant.parse("2026-10-15T12:00:00Z"));
-    transaction.executeWithoutResult(
-        tx -> {
-          entityManager.createQuery("delete from PasswordResetTokenEntity").executeUpdate();
-          users.deleteAll();
-          users.flush();
-          entityManager.createQuery("delete from RoleEntity").executeUpdate();
-        });
+    transactionTemplate.executeWithoutResult(tx -> {
+      entityManager.createQuery("delete from PasswordResetTokenEntity").executeUpdate();
+      userRepository.deleteAll();
+      userRepository.flush();
+      entityManager.createQuery("delete from RoleEntity").executeUpdate();
+    });
   }
 
   private Authentication accepted() {
@@ -108,7 +107,7 @@ class LoginAttemptPersistenceTest {
     assertThrows(
         BadCredentialsException.class,
         () ->
-            service.authenticate(
+            loginAttemptService.authenticate(
                 identity,
                 () -> {
                   throw new BadCredentialsException("fixture");
@@ -116,7 +115,7 @@ class LoginAttemptPersistenceTest {
   }
 
   private LoginAttemptEntity state(String identity) {
-    return attempts.findById(LoginAttemptService.identityKey(identity)).orElseThrow();
+    return loginAttemptRepository.findById(LoginAttemptService.identityKey(identity)).orElseThrow();
   }
 
   @Test
@@ -130,7 +129,7 @@ class LoginAttemptPersistenceTest {
     assertThrows(
         LoginThrottledException.class,
         () ->
-            service.authenticate(
+            loginAttemptService.authenticate(
                 EMAIL,
                 () -> {
                   fail("Must not check password");
@@ -139,9 +138,11 @@ class LoginAttemptPersistenceTest {
     assertEquals(until, state(EMAIL).getBlockedUntil());
     assertEquals(2, state(EMAIL).getFailures());
     clock.set(until.minusMillis(1));
-    assertThrows(LoginThrottledException.class, () -> service.authenticate(EMAIL, this::accepted));
+    assertThrows(
+        LoginThrottledException.class,
+        () -> loginAttemptService.authenticate(EMAIL, this::accepted));
     clock.set(until);
-    assertNotNull(service.authenticate(EMAIL, this::accepted));
+    assertNotNull(loginAttemptService.authenticate(EMAIL, this::accepted));
     assertEquals(0, state(EMAIL).getFailures());
   }
 
@@ -154,7 +155,7 @@ class LoginAttemptPersistenceTest {
     clock.advance(Duration.ofMillis(1));
     bad(EMAIL);
     assertEquals(1, state(EMAIL).getFailures());
-    service.authenticate(EMAIL, this::accepted);
+    loginAttemptService.authenticate(EMAIL, this::accepted);
     assertEquals(0, state(EMAIL).getFailures());
     bad(EMAIL);
     assertEquals(1, state(EMAIL).getFailures());
@@ -164,9 +165,9 @@ class LoginAttemptPersistenceTest {
   void normalizedAndUnknownIdentitiesReceiveIdenticalCountersWithoutCreatingAccounts() {
     bad(" Unknown@Example.Test ");
     bad("unknown@example.test");
-    assertEquals(1, attempts.count());
+    assertEquals(1, loginAttemptRepository.count());
     assertEquals(2, state("UNKNOWN@example.test").getFailures());
-    assertEquals(0, users.count());
+    assertEquals(0, userRepository.count());
     assertEquals(64, state("unknown@example.test").getIdentityHash().length());
   }
 
@@ -176,11 +177,15 @@ class LoginAttemptPersistenceTest {
     bad(EMAIL);
     bad(EMAIL);
     limit.set(2);
-    assertThrows(LoginThrottledException.class, () -> service.authenticate(EMAIL, this::accepted));
+    assertThrows(
+        LoginThrottledException.class,
+        () -> loginAttemptService.authenticate(EMAIL, this::accepted));
     Instant until = state(EMAIL).getBlockedUntil();
     limit.set(100);
     loginWindow.set(1);
-    assertThrows(LoginThrottledException.class, () -> service.authenticate(EMAIL, this::accepted));
+    assertThrows(
+        LoginThrottledException.class,
+        () -> loginAttemptService.authenticate(EMAIL, this::accepted));
     assertEquals(until, state(EMAIL).getBlockedUntil());
   }
 
@@ -200,7 +205,7 @@ class LoginAttemptPersistenceTest {
     limit.set(4);
     bad(EMAIL);
     assertNull(state(EMAIL).getBlockedUntil());
-    service.authenticate(EMAIL, this::accepted);
+    loginAttemptService.authenticate(EMAIL, this::accepted);
   }
 
   @ParameterizedTest
@@ -210,13 +215,13 @@ class LoginAttemptPersistenceTest {
     assertThrows(
         AuthenticationServiceException.class,
         () ->
-            service.authenticate(
+            loginAttemptService.authenticate(
                 EMAIL,
                 () -> {
                   fail();
                   return accepted();
                 }));
-    assertEquals(0, attempts.count());
+    assertEquals(0, loginAttemptRepository.count());
   }
 
   @Test
@@ -225,7 +230,7 @@ class LoginAttemptPersistenceTest {
     assertThrows(
         AuthenticationServiceException.class,
         () ->
-            service.authenticate(
+            loginAttemptService.authenticate(
                 EMAIL,
                 () -> {
                   throw new IllegalStateException("fixture storage outage");
@@ -234,7 +239,7 @@ class LoginAttemptPersistenceTest {
     assertThrows(
         AuthenticationServiceException.class,
         () ->
-            service.authenticate(
+            loginAttemptService.authenticate(
                 EMAIL,
                 () -> {
                   throw new InternalAuthenticationServiceException("fixture");
@@ -250,29 +255,33 @@ class LoginAttemptPersistenceTest {
     AtomicInteger calls = new AtomicInteger();
     LoginAttemptService other =
         new LoginAttemptService(
-            attempts, guard, config, manager, clock, LoginAttemptService.MAX_IDENTITIES);
+            loginAttemptRepository,
+            guard,
+            config,
+            transactionManager,
+            clock,
+            LoginAttemptService.MAX_IDENTITIES);
     try (ExecutorService workers = Executors.newFixedThreadPool(8)) {
       ArrayList<Future<Boolean>> tasks = new ArrayList<Future<Boolean>>();
-      for (int i = 0; i < 8; i++) {
-        LoginAttemptService target = i % 2 == 0 ? service : other;
+      for (int loginAttemptIndex = 0; loginAttemptIndex < 8; loginAttemptIndex++) {
+        LoginAttemptService target = loginAttemptIndex % 2 == 0 ? loginAttemptService : other;
         tasks.add(
-            workers.submit(
-                () -> {
-                  start.await(10, TimeUnit.SECONDS);
-                  try {
-                    target.authenticate(
-                        EMAIL,
-                        () -> {
-                          calls.incrementAndGet();
-                          throw new BadCredentialsException("fixture");
-                        });
-                    throw new AssertionError("Must reject");
-                  } catch (LoginThrottledException _) {
-                    return true;
-                  } catch (BadCredentialsException _) {
-                    return false;
-                  }
-                }));
+            workers.submit(() -> {
+              start.await(10, TimeUnit.SECONDS);
+              try {
+                target.authenticate(
+                    EMAIL,
+                    () -> {
+                      calls.incrementAndGet();
+                      throw new BadCredentialsException("fixture");
+                    });
+                throw new AssertionError("Must reject");
+              } catch (LoginThrottledException _) {
+                return true;
+              } catch (BadCredentialsException _) {
+                return false;
+              }
+            }));
       }
       int blocked = 0;
       for (Future<Boolean> task : tasks) {
@@ -284,19 +293,23 @@ class LoginAttemptPersistenceTest {
     }
     assertEquals(2, calls.get());
     assertEquals(2, state(EMAIL).getFailures());
-    assertEquals(1, attempts.count());
+    assertEquals(1, loginAttemptRepository.count());
   }
 
   @Test
   void independentFailuresSurviveCallerRollbackAndANewServiceInstance() {
-    transaction.executeWithoutResult(
-        tx -> {
-          bad(EMAIL);
-          tx.setRollbackOnly();
-        });
+    transactionTemplate.executeWithoutResult(tx -> {
+      bad(EMAIL);
+      tx.setRollbackOnly();
+    });
     LoginAttemptService restarted =
         new LoginAttemptService(
-            attempts, guard, config, manager, clock, LoginAttemptService.MAX_IDENTITIES);
+            loginAttemptRepository,
+            guard,
+            config,
+            transactionManager,
+            clock,
+            LoginAttemptService.MAX_IDENTITIES);
     restarted.authenticate(EMAIL, this::accepted);
     assertEquals(0, state(EMAIL).getFailures());
     limit.set(1);
@@ -308,7 +321,8 @@ class LoginAttemptPersistenceTest {
   @Test
   void boundedCapacityRefusesNewKeysButKeepsExistingKeysUsableAndCleanupReclaimsSpace() {
     LoginAttemptService bounded =
-        new LoginAttemptService(attempts, guard, config, manager, clock, 2);
+        new LoginAttemptService(
+            loginAttemptRepository, guard, config, transactionManager, clock, 2);
     bounded.authenticate("first@example.test", this::accepted);
     bounded.authenticate("second@example.test", this::accepted);
     assertThrows(
@@ -317,61 +331,62 @@ class LoginAttemptPersistenceTest {
     bounded.authenticate("first@example.test", this::accepted);
     clock.advance(LoginAttemptService.RETENTION);
     bounded.deleteExpiredAttempts();
-    assertEquals(2, attempts.count());
+    assertEquals(2, loginAttemptRepository.count());
     clock.advance(Duration.ofMillis(1));
     bounded.deleteExpiredAttempts();
-    assertEquals(0, attempts.count());
+    assertEquals(0, loginAttemptRepository.count());
     bounded.authenticate("third@example.test", this::accepted);
   }
 
   @Test
   void cleanupNeverDeletesAnActiveBlockEvenWithOldActivity() {
     bad(EMAIL);
-    transaction.executeWithoutResult(
-        tx -> {
-          LoginAttemptEntity row =
-              attempts.lockIdentity(LoginAttemptService.identityKey(EMAIL)).orElseThrow();
-          row.setLastActivity(clock.instant().minus(Duration.ofDays(2)));
-          row.setBlockedUntil(clock.instant().plus(Duration.ofHours(1)));
-        });
-    service.deleteExpiredAttempts();
-    assertEquals(1, attempts.count());
+    transactionTemplate.executeWithoutResult(tx -> {
+      LoginAttemptEntity row =
+          loginAttemptRepository.lockIdentity(LoginAttemptService.identityKey(EMAIL)).orElseThrow();
+      row.setLastActivity(clock.instant().minus(Duration.ofDays(2)));
+      row.setBlockedUntil(clock.instant().plus(Duration.ofHours(1)));
+    });
+    loginAttemptService.deleteExpiredAttempts();
+    assertEquals(1, loginAttemptRepository.count());
   }
 
   @Test
   void passwordResetClearParticipatesInTransactionAndRollbackRetainsTheBlock() {
     limit.set(1);
     bad(EMAIL);
-    transaction.executeWithoutResult(
-        tx -> {
-          service.clearAfterPasswordReset(EMAIL);
-          tx.setRollbackOnly();
-        });
-    assertThrows(LoginThrottledException.class, () -> service.authenticate(EMAIL, this::accepted));
-    transaction.executeWithoutResult(tx -> service.clearAfterPasswordReset(EMAIL));
-    assertNotNull(service.authenticate(EMAIL, this::accepted));
+    transactionTemplate.executeWithoutResult(tx -> {
+      loginAttemptService.clearAfterPasswordReset(EMAIL);
+      tx.setRollbackOnly();
+    });
+    assertThrows(
+        LoginThrottledException.class,
+        () -> loginAttemptService.authenticate(EMAIL, this::accepted));
+    transactionTemplate.executeWithoutResult(
+        tx -> loginAttemptService.clearAfterPasswordReset(EMAIL));
+    assertNotNull(loginAttemptService.authenticate(EMAIL, this::accepted));
   }
 
   @Test
   void concurrentDifferentKeysNeverExceedThePersistentCapacity() throws Exception {
     LoginAttemptService bounded =
-        new LoginAttemptService(attempts, guard, config, manager, clock, 2);
+        new LoginAttemptService(
+            loginAttemptRepository, guard, config, transactionManager, clock, 2);
     CyclicBarrier start = new CyclicBarrier(6);
     try (ExecutorService workers = Executors.newFixedThreadPool(6)) {
       ArrayList<Future<Boolean>> results = new ArrayList<Future<Boolean>>();
-      for (int i = 0; i < 6; i++) {
-        String email = "capacity-" + i + "@example.test";
+      for (int emailAddressIndex = 0; emailAddressIndex < 6; emailAddressIndex++) {
+        String email = "capacity-" + emailAddressIndex + "@example.test";
         results.add(
-            workers.submit(
-                () -> {
-                  start.await(10, TimeUnit.SECONDS);
-                  try {
-                    bounded.authenticate(email, this::accepted);
-                    return true;
-                  } catch (AuthenticationServiceException _) {
-                    return false;
-                  }
-                }));
+            workers.submit(() -> {
+              start.await(10, TimeUnit.SECONDS);
+              try {
+                bounded.authenticate(email, this::accepted);
+                return true;
+              } catch (AuthenticationServiceException _) {
+                return false;
+              }
+            }));
       }
       int accepted = 0;
       for (Future<Boolean> result : results) {
@@ -380,7 +395,7 @@ class LoginAttemptPersistenceTest {
         }
       }
       assertEquals(2, accepted);
-      assertEquals(2, attempts.count());
+      assertEquals(2, loginAttemptRepository.count());
     }
   }
 
@@ -391,19 +406,18 @@ class LoginAttemptPersistenceTest {
     CountDownLatch release = new CountDownLatch(1);
     try (ExecutorService workers = Executors.newFixedThreadPool(2)) {
       Future<Authentication> success =
-          workers.submit(
-              () ->
-                  service.authenticate(
-                      EMAIL,
-                      () -> {
-                        inside.countDown();
-                        try {
-                          assertTrue(release.await(10, TimeUnit.SECONDS));
-                        } catch (InterruptedException error) {
-                          throw new AssertionError(error);
-                        }
-                        return accepted();
-                      }));
+          workers.submit(() ->
+              loginAttemptService.authenticate(
+                  EMAIL,
+                  () -> {
+                    inside.countDown();
+                    try {
+                      assertTrue(release.await(10, TimeUnit.SECONDS));
+                    } catch (InterruptedException error) {
+                      throw new AssertionError(error);
+                    }
+                    return accepted();
+                  }));
       assertTrue(inside.await(10, TimeUnit.SECONDS));
       Future<?> failure = workers.submit(() -> bad(EMAIL));
       release.countDown();
@@ -417,25 +431,24 @@ class LoginAttemptPersistenceTest {
   }
 
   private UserEntity createAccount(RoleType type) {
-    return transaction.execute(
-        tx -> {
-          RoleEntity role = RoleEntity.builder().name(type).build();
-          entityManager.persist(role);
-          UserEntity user =
-              UserEntity.builder()
-                  .email(EMAIL)
-                  .firstName("Login")
-                  .lastName("Fixture")
-                  .password(encoder.encode("OriginalPassword!"))
-                  .enabled(true)
-                  .gender(Gender.OTHER)
-                  .birthDate(LocalDate.of(1990, 1, 1))
-                  .preferredLocale(Locale.ENGLISH)
-                  .roleEntities(new ArrayList<>(List.of(role)))
-                  .build();
-          entityManager.persist(user);
-          return user;
-        });
+    return transactionTemplate.execute(tx -> {
+      RoleEntity role = RoleEntity.builder().name(type).build();
+      entityManager.persist(role);
+      UserEntity user =
+          UserEntity.builder()
+              .email(EMAIL)
+              .firstName("Login")
+              .lastName("Fixture")
+              .password(passwordEncoder.encode("OriginalPassword!"))
+              .enabled(true)
+              .gender(Gender.OTHER)
+              .birthDate(LocalDate.of(1990, 1, 1))
+              .preferredLocale(Locale.ENGLISH)
+              .roleEntities(new ArrayList<>(List.of(role)))
+              .build();
+      entityManager.persist(user);
+      return user;
+    });
   }
 
   @ParameterizedTest
@@ -444,9 +457,10 @@ class LoginAttemptPersistenceTest {
     createAccount(role);
     DaoAuthenticationProvider provider =
         new org.springframework.security.authentication.dao.DaoAuthenticationProvider(
-            new CustomUserDetailsService(users)::loadPasswordUserByUsername);
-    provider.setPasswordEncoder(encoder);
-    LoginAuthenticationService authentication = new LoginAuthenticationService(provider, service);
+            new CustomUserDetailsService(userRepository)::loadPasswordUserByUsername);
+    provider.setPasswordEncoder(passwordEncoder);
+    LoginAuthenticationService authentication =
+        new LoginAuthenticationService(provider, loginAttemptService);
     Authentication result =
         authentication.authenticate(
             UsernamePasswordAuthenticationToken.unauthenticated(
@@ -467,53 +481,62 @@ class LoginAttemptPersistenceTest {
         UsernamePasswordAuthenticationToken.unauthenticated(EMAIL, "OriginalPassword!");
     assertThrows(
         LoginThrottledException.class, () -> authentication.authenticate(blockedCredentials));
-    assertTrue(users.findByEmail(EMAIL).orElseThrow().isEnabled());
+    assertTrue(userRepository.findByEmail(EMAIL).orElseThrow().isEnabled());
   }
 
   @Test
   void actualPasswordResetClearsOnlyOnCommitTogetherWithTokenAndPassword() {
     UserEntity account = createAccount(RoleType.ROLE_USER);
-    transaction.executeWithoutResult(
-        tx ->
-            entityManager.persist(
-                new PasswordResetTokenEntity(
-                    null,
-                    "fixture-reset",
-                    entityManager.find(UserEntity.class, account.getId()),
-                    LocalDateTime.now(clock).plusHours(1),
-                    TokenStatus.ACTIVE)));
+    transactionTemplate.executeWithoutResult(tx ->
+        entityManager.persist(
+            new PasswordResetTokenEntity(
+                null,
+                "fixture-reset",
+                entityManager.find(UserEntity.class, account.getId()),
+                LocalDateTime.now(clock).plusHours(1),
+                TokenStatus.ACTIVE)));
     PasswordResetService reset =
         new PasswordResetService(
             mock(de.derpeterson.app.i18n.MessageProperties.class),
-            tokens,
-            users,
+            passwordResetTokenRepository,
+            userRepository,
             config,
-            encoder,
+            passwordEncoder,
             mock(EmailQueueService.class),
-            service,
+            loginAttemptService,
             mock(UserNotificationService.class),
             clock);
     limit.set(1);
     bad(EMAIL);
-    boolean invalid = transaction.execute(tx -> reset.resetPassword("invalid", "ChangedPassword!"));
+    boolean invalid =
+        transactionTemplate.execute(tx -> reset.resetPassword("invalid", "ChangedPassword!"));
     assertFalse(invalid);
-    assertThrows(LoginThrottledException.class, () -> service.authenticate(EMAIL, this::accepted));
-    transaction.executeWithoutResult(
-        tx -> {
-          assertTrue(reset.resetPassword("fixture-reset", "ChangedPassword!"));
-          tx.setRollbackOnly();
-        });
-    assertEquals(TokenStatus.ACTIVE, tokens.findByToken("fixture-reset").orElseThrow().getStatus());
+    assertThrows(
+        LoginThrottledException.class,
+        () -> loginAttemptService.authenticate(EMAIL, this::accepted));
+    transactionTemplate.executeWithoutResult(tx -> {
+      assertTrue(reset.resetPassword("fixture-reset", "ChangedPassword!"));
+      tx.setRollbackOnly();
+    });
+    assertEquals(
+        TokenStatus.ACTIVE,
+        passwordResetTokenRepository.findByToken("fixture-reset").orElseThrow().getStatus());
     assertTrue(
-        encoder.matches("OriginalPassword!", users.findByEmail(EMAIL).orElseThrow().getPassword()));
-    assertThrows(LoginThrottledException.class, () -> service.authenticate(EMAIL, this::accepted));
+        passwordEncoder.matches(
+            "OriginalPassword!", userRepository.findByEmail(EMAIL).orElseThrow().getPassword()));
+    assertThrows(
+        LoginThrottledException.class,
+        () -> loginAttemptService.authenticate(EMAIL, this::accepted));
     boolean changed =
-        transaction.execute(tx -> reset.resetPassword("fixture-reset", "ChangedPassword!"));
+        transactionTemplate.execute(tx -> reset.resetPassword("fixture-reset", "ChangedPassword!"));
     assertTrue(changed);
-    assertEquals(TokenStatus.USED, tokens.findByToken("fixture-reset").orElseThrow().getStatus());
+    assertEquals(
+        TokenStatus.USED,
+        passwordResetTokenRepository.findByToken("fixture-reset").orElseThrow().getStatus());
     assertTrue(
-        encoder.matches("ChangedPassword!", users.findByEmail(EMAIL).orElseThrow().getPassword()));
-    assertNotNull(service.authenticate(EMAIL, this::accepted));
+        passwordEncoder.matches(
+            "ChangedPassword!", userRepository.findByEmail(EMAIL).orElseThrow().getPassword()));
+    assertNotNull(loginAttemptService.authenticate(EMAIL, this::accepted));
   }
 
   @Configuration
@@ -550,13 +573,18 @@ class LoginAttemptPersistenceTest {
 
     @Bean
     LoginAttemptService attempts(
-        LoginAttemptRepository attempts,
+        LoginAttemptRepository loginAttemptRepository,
         LoginAttemptGuardRepository guard,
         ConfigService config,
-        PlatformTransactionManager manager,
+        PlatformTransactionManager transactionManager,
         MutableQueueClock clock) {
       return new LoginAttemptService(
-          attempts, guard, config, manager, clock, LoginAttemptService.MAX_IDENTITIES);
+          loginAttemptRepository,
+          guard,
+          config,
+          transactionManager,
+          clock,
+          LoginAttemptService.MAX_IDENTITIES);
     }
   }
 }

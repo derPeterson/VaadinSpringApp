@@ -32,18 +32,18 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @SpringJUnitConfig(TwoFactorStoreTest.Config.class)
 class TwoFactorCleanupTest {
-  @Autowired UserRepository users;
-  @Autowired TwoFactorChallengeRepository challenges;
+  @Autowired UserRepository userRepository;
+  @Autowired TwoFactorChallengeRepository twoFactorChallengeRepository;
   @Autowired SupportTicketRepository tickets;
   @Autowired SupportReplyRepository replies;
-  @Autowired TransactionTemplate transaction;
-  @Autowired DataSource source;
+  @Autowired TransactionTemplate transactionTemplate;
+  @Autowired DataSource testDataSource;
 
   @Test
   void clearsExpiredSecretsBeforeMetadataAndDeletesOnlyOldClosedConversations() {
     Instant now = Instant.now();
     UserEntity user =
-        users.saveAndFlush(
+        userRepository.saveAndFlush(
             UserEntity.builder()
                 .firstName("Cleanup")
                 .lastName("Fixture")
@@ -69,19 +69,21 @@ class TwoFactorCleanupTest {
     replies.saveAndFlush(reply);
 
     new ResourceDatabasePopulator(new ClassPathResource("db/durable-sessions-h2.sql"))
-        .execute(source);
-    transaction.executeWithoutResult(status ->
-        new TwoFactorCleanup(challenges, tickets, new JdbcTemplate(source))
+        .execute(testDataSource);
+    transactionTemplate.executeWithoutResult(status ->
+        new TwoFactorCleanup(
+                twoFactorChallengeRepository, tickets, new JdbcTemplate(testDataSource))
             .purgeExpiredRecoveryData());
 
-    TwoFactorChallengeEntity cleared = challenges.findById(expired.getId()).orElseThrow();
+    TwoFactorChallengeEntity cleared =
+        twoFactorChallengeRepository.findById(expired.getId()).orElseThrow();
     assertTrue(cleared.isConsumed());
     assertNull(cleared.getEncryptedPayload());
     assertNull(cleared.getVerificationDigest());
-    assertFalse(challenges.existsById(old.getId()));
+    assertFalse(twoFactorChallengeRepository.existsById(old.getId()));
     assertEquals(
         "synthetic encrypted payload",
-        challenges.findById(active.getId()).orElseThrow().getEncryptedPayload());
+        twoFactorChallengeRepository.findById(active.getId()).orElseThrow().getEncryptedPayload());
     assertFalse(tickets.existsById(oldClosed.getId()));
     assertFalse(tickets.existsById(oldRequesterClosed.getId()));
     assertFalse(replies.existsById(reply.getId()));
@@ -93,8 +95,8 @@ class TwoFactorCleanupTest {
   @Test
   void recoveryOutputsFollowTheSessionAndAcknowledgementInsteadOfConfirmationExpiry() {
     new ResourceDatabasePopulator(new ClassPathResource("db/durable-sessions-h2.sql"))
-        .execute(source);
-    JdbcTemplate jdbc = new JdbcTemplate(source);
+        .execute(testDataSource);
+    JdbcTemplate jdbc = new JdbcTemplate(testDataSource);
     Instant now = Instant.now();
     String sessionId = UUID.randomUUID().toString();
     String expiredSessionId = UUID.randomUUID().toString();
@@ -108,7 +110,7 @@ class TwoFactorCleanupTest {
         new byte[] {1},
         revokedSessionId);
     UserEntity user =
-        users.saveAndFlush(
+        userRepository.saveAndFlush(
             UserEntity.builder()
                 .firstName("Recovery")
                 .lastName("Fixture")
@@ -124,19 +126,21 @@ class TwoFactorCleanupTest {
     TwoFactorChallengeEntity missing =
         output(user, UUID.randomUUID().toString(), now.minusSeconds(7200), false);
     TwoFactorChallengeEntity saved = output(user, sessionId, now.minusSeconds(7200), true);
-    transaction.executeWithoutResult(
-        status -> new TwoFactorCleanup(challenges, tickets, jdbc).purgeExpiredRecoveryData());
+    transactionTemplate.executeWithoutResult(status ->
+        new TwoFactorCleanup(twoFactorChallengeRepository, tickets, jdbc)
+            .purgeExpiredRecoveryData());
     assertEquals(
         "synthetic encrypted payload",
-        challenges.findById(active.getId()).orElseThrow().getEncryptedPayload());
-    assertFalse(challenges.existsById(expired.getId()));
-    assertFalse(challenges.existsById(revoked.getId()));
-    assertFalse(challenges.existsById(missing.getId()));
-    assertFalse(challenges.existsById(saved.getId()));
+        twoFactorChallengeRepository.findById(active.getId()).orElseThrow().getEncryptedPayload());
+    assertFalse(twoFactorChallengeRepository.existsById(expired.getId()));
+    assertFalse(twoFactorChallengeRepository.existsById(revoked.getId()));
+    assertFalse(twoFactorChallengeRepository.existsById(missing.getId()));
+    assertFalse(twoFactorChallengeRepository.existsById(saved.getId()));
     jdbc.update("delete from SPRING_SESSION where SESSION_ID = ?", sessionId);
-    transaction.executeWithoutResult(
-        status -> new TwoFactorCleanup(challenges, tickets, jdbc).purgeExpiredRecoveryData());
-    assertFalse(challenges.existsById(active.getId()));
+    transactionTemplate.executeWithoutResult(status ->
+        new TwoFactorCleanup(twoFactorChallengeRepository, tickets, jdbc)
+            .purgeExpiredRecoveryData());
+    assertFalse(twoFactorChallengeRepository.existsById(active.getId()));
   }
 
   private void insertSession(JdbcTemplate jdbc, String id, Instant expires) {
@@ -157,7 +161,7 @@ class TwoFactorCleanupTest {
     output.setKind(Kind.RECOVERY_OUTPUT);
     output.setSessionDigest(TwoFactorAuthorization.sessionDigest(sessionId));
     output.setConsumed(saved);
-    return challenges.saveAndFlush(output);
+    return twoFactorChallengeRepository.saveAndFlush(output);
   }
 
   private TwoFactorChallengeEntity challenge(UserEntity user, Instant expiry) {
@@ -172,7 +176,7 @@ class TwoFactorCleanupTest {
     row.setExpiresAt(expiry);
     row.setEncryptedPayload("synthetic encrypted payload");
     row.setVerificationDigest("synthetic digest");
-    return challenges.saveAndFlush(row);
+    return twoFactorChallengeRepository.saveAndFlush(row);
   }
 
   private SupportTicketEntity ticket(UserEntity user, Instant updated, Status status) {
