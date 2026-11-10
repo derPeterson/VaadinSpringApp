@@ -45,11 +45,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class TwoFactorDocuments {
   public static final String PATH = "/internal/two-factor";
-  private final TwoFactorEnrollment enrollment;
+  private final TwoFactorEnrollment twoFactorEnrollment;
   private final TwoFactorAuthorization twoFactorAuthorization;
-  private final ConfigService config;
-  private final CustomI18NProvider i18n;
-  private final RecoveryCodeDocument pdf;
+  private final ConfigService configService;
+  private final CustomI18NProvider i18nProvider;
+  private final RecoveryCodeDocument recoveryCodeDocument;
 
   @ExceptionHandler(AccessDeniedException.class)
   public ResponseEntity<Void> denied() {
@@ -59,9 +59,9 @@ public class TwoFactorDocuments {
 
   @GetMapping("/setup/{id}/qr.png")
   public ResponseEntity<byte[]> qr(HttpServletRequest request, @PathVariable UUID id) {
-    byte[] secret = enrollment.pendingSecret(request, id);
+    byte[] secret = twoFactorEnrollment.pendingSecret(request, id);
     try {
-      String service = config.getString(ConfigEntry.SERVICE_NAME);
+      String service = configService.getString(ConfigEntry.SERVICE_NAME);
       String identity = twoFactorAuthorization.owner(request).email();
       String uri =
           "otpauth://totp/"
@@ -101,7 +101,7 @@ public class TwoFactorDocuments {
 
   @GetMapping("/setup/{id}/key")
   public ResponseEntity<byte[]> manualKey(HttpServletRequest request, @PathVariable UUID id) {
-    byte[] secret = enrollment.pendingSecret(request, id);
+    byte[] secret = twoFactorEnrollment.pendingSecret(request, id);
     try {
       return response(
           Totp.base32(secret).getBytes(StandardCharsets.US_ASCII), MediaType.TEXT_PLAIN);
@@ -112,7 +112,7 @@ public class TwoFactorDocuments {
 
   @GetMapping("/recovery/{id}/codes")
   public ResponseEntity<byte[]> codes(HttpServletRequest request, @PathVariable UUID id) {
-    List<String> codes = enrollment.recoveryOutput(request, id);
+    List<String> codes = twoFactorEnrollment.recoveryOutput(request, id);
     return response(
         String.join("\n", codes).getBytes(StandardCharsets.US_ASCII), MediaType.TEXT_PLAIN);
   }
@@ -122,17 +122,17 @@ public class TwoFactorDocuments {
       HttpServletRequest request,
       @PathVariable UUID id,
       @RequestParam(defaultValue = "en") String lang) {
-    List<String> codes = enrollment.recoveryOutput(request, id);
+    List<String> codes = twoFactorEnrollment.recoveryOutput(request, id);
     Locale locale = locale(lang);
-    String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
+    String serviceName = configService.getString(ConfigEntry.SERVICE_NAME);
     byte[] bytes =
-        pdf.render(
+        recoveryCodeDocument.render(
             serviceName,
             twoFactorAuthorization.owner(request).email(),
             codes,
             Instant.now(),
             locale,
-            MessageProperties.forLocale(i18n, locale));
+            MessageProperties.forLocale(i18nProvider, locale));
     return response(
         bytes,
         MediaType.APPLICATION_PDF,

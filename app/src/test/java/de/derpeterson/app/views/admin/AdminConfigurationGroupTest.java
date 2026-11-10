@@ -48,12 +48,12 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 /** Group identity and language-refresh lifecycle; no application, database or browser. */
 class AdminConfigurationGroupTest {
-  private final CustomI18NProvider provider = new CustomI18NProvider();
+  private final CustomI18NProvider i18nProvider = new CustomI18NProvider();
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
   private UI ui;
   private VaadinSession session;
   private AdminConfigurationSection section;
-  private ConfigService config;
+  private ConfigService configService;
 
   @BeforeEach
   void setup() {
@@ -63,10 +63,11 @@ class AdminConfigurationGroupTest {
     when(session.getLocale()).thenAnswer(ignored -> locale.get());
     when(session.hasLock()).thenReturn(true);
     VaadinSession.setCurrent(session);
-    config = mock(ConfigService.class);
-    when(config.getString(any(ConfigEntry.class)))
+    configService = mock(ConfigService.class);
+    when(configService.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-    section = new AdminConfigurationSection(new MessageProperties(provider), config, () -> {});
+    section =
+        new AdminConfigurationSection(new MessageProperties(i18nProvider), configService, () -> {});
   }
 
   @AfterEach
@@ -90,22 +91,24 @@ class AdminConfigurationGroupTest {
     IntegerField inbox =
         (IntegerField)
             ReflectionTestUtils.getField(
-                inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS), "amount");
+                inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS),
+                "durationAmountField");
     IntegerField history =
         (IntegerField)
             ReflectionTestUtils.getField(
-                inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS), "amount");
+                inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS),
+                "durationAmountField");
     assertEquals(180, inbox.getValue());
     assertEquals(365, history.getValue());
     inbox.setValue(0);
     ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
     assertTrue(inbox.isInvalid());
-    verify(config, never()).set(any(), anyString());
+    verify(configService, never()).set(any(), anyString());
     inbox.setValue(30);
     history.setValue(14);
     ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
-    verify(config).set(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS, "30");
-    verify(config).set(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS, "14");
+    verify(configService).set(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS, "30");
+    verify(configService).set(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS, "14");
     de.derpeterson.app.helper.ui.NotificationHelper.getInstance().closeAndClearAllNotifications();
   }
 
@@ -115,7 +118,7 @@ class AdminConfigurationGroupTest {
     locale.set(Locale.forLanguageTag(language));
     EnumMap<ConfigEntry, String> stored =
         new java.util.EnumMap<ConfigEntry, String>(ConfigEntry.class);
-    when(config.getString(any()))
+    when(configService.getString(any()))
         .thenAnswer(call -> {
           ConfigEntry entry = call.getArgument(0);
           return stored.getOrDefault(entry, entry.getDefaultValueString());
@@ -125,7 +128,7 @@ class AdminConfigurationGroupTest {
               stored.put(call.getArgument(0), call.getArgument(1));
               return null;
             })
-        .when(config)
+        .when(configService)
         .set(any(), anyString());
     section.showGroup(AdminConfigGroup.NOTIFICATIONS);
     section.refreshTexts();
@@ -133,14 +136,16 @@ class AdminConfigurationGroupTest {
     IntegerField inbox =
         (IntegerField)
             ReflectionTestUtils.getField(
-                inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS), "amount");
+                inputs.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS),
+                "durationAmountField");
     IntegerField history =
         (IntegerField)
             ReflectionTestUtils.getField(
-                inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS), "amount");
+                inputs.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS),
+                "durationAmountField");
     inbox.clear();
     history.clear();
-    MessageProperties messages = MessageProperties.forLocale(provider, locale.get());
+    MessageProperties messages = MessageProperties.forLocale(i18nProvider, locale.get());
     assertEquals(messages.getAdminConfigUnlimited(), inbox.getPlaceholder());
     assertEquals(messages.getAdminConfigUnlimited(), history.getPlaceholder());
     ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
@@ -156,12 +161,12 @@ class AdminConfigurationGroupTest {
     assertNull(inbox.getValue());
     assertNull(history.getValue());
     assertEquals(
-        MessageProperties.forLocale(provider, locale.get()).getAdminConfigUnlimited(),
+        MessageProperties.forLocale(i18nProvider, locale.get()).getAdminConfigUnlimited(),
         inbox.getPlaceholder());
     Map<?, ?> infos = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons");
     ConfigInfoButton info =
         (ConfigInfoButton) infos.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
-    MessageProperties translated = MessageProperties.forLocale(provider, locale.get());
+    MessageProperties translated = MessageProperties.forLocale(i18nProvider, locale.get());
     assertTrue(info.getTooltip().getText().contains(translated.getAdminConfigRuleEmptyUnlimited()));
     assertFalse(
         info.getTooltip().getText().contains(translated.getAdminConfigRuleEmptyUsesDefault()));
@@ -230,11 +235,12 @@ class AdminConfigurationGroupTest {
       field.setStoredValue("PT2H");
       @SuppressWarnings("unchecked")
       Select<AdminDurationField.Unit> units =
-          (Select<AdminDurationField.Unit>) ReflectionTestUtils.getField(field, "unit");
+          (Select<AdminDurationField.Unit>)
+              ReflectionTestUtils.getField(field, "durationUnitSelector");
       units.setValue(AdminDurationField.Unit.MINUTES);
       assertEquals("PT2M", field.getStoredValue());
       BigDecimalField amount =
-          (BigDecimalField) ReflectionTestUtils.getField(field, "preciseAmount");
+          (BigDecimalField) ReflectionTestUtils.getField(field, "preciseDurationField");
       amount.setValue(new BigDecimal("0.5"));
       assertEquals("PT30S", field.getStoredValue());
       String error =
@@ -248,7 +254,7 @@ class AdminConfigurationGroupTest {
       assertEquals("", ReflectionTestUtils.invokeMethod(section, "extractInputValue", entry));
       assertNotNull(ReflectionTestUtils.invokeMethod(section, "validateValue", entry, ""));
     }
-    verify(config, never()).set(any(), anyString());
+    verify(configService, never()).set(any(), anyString());
   }
 
   @Test
@@ -257,16 +263,17 @@ class AdminConfigurationGroupTest {
     Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
     AdminDurationField field =
         (AdminDurationField) inputs.get(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION);
-    BigDecimalField amount = (BigDecimalField) ReflectionTestUtils.getField(field, "preciseAmount");
+    BigDecimalField amount =
+        (BigDecimalField) ReflectionTestUtils.getField(field, "preciseDurationField");
     field.setStoredValue("PT1S");
     amount.setValue(new BigDecimal("0.0000000001"));
     assertEquals("invalid", field.getStoredValue());
     ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
     assertTrue(field.isInvalid());
-    verify(config, never()).set(any(), anyString());
+    verify(configService, never()).set(any(), anyString());
     field.setStoredValue("PT90S");
     ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
-    verify(config).set(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION, "PT1M30S");
+    verify(configService).set(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION, "PT1M30S");
     de.derpeterson.app.helper.ui.NotificationHelper.getInstance().closeAndClearAllNotifications();
   }
 
@@ -278,7 +285,7 @@ class AdminConfigurationGroupTest {
     assertEquals("1800", field.getStoredValue());
     field.setSecondsValue(10);
     ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
-    verify(config).set(ConfigEntry.SESSION_TIMEOUT_SECONDS, "10");
+    verify(configService).set(ConfigEntry.SESSION_TIMEOUT_SECONDS, "10");
     de.derpeterson.app.helper.ui.NotificationHelper.getInstance().closeAndClearAllNotifications();
   }
 
@@ -289,7 +296,7 @@ class AdminConfigurationGroupTest {
     AdminDurationField timeout =
         (AdminDurationField) inputs.get(ConfigEntry.SESSION_TIMEOUT_SECONDS);
     PasswordField key = (PasswordField) inputs.get(ConfigEntry.REMEMBER_ME_SECRET_KEY);
-    MessageProperties messages = new MessageProperties(provider);
+    MessageProperties messages = new MessageProperties(i18nProvider);
     NotificationHelper notification = NotificationHelper.getInstance();
     try {
       timeout.setSecondsValue(120);
@@ -322,7 +329,7 @@ class AdminConfigurationGroupTest {
   @Test
   void fieldHelpSeparatesLiveTimingFromTheRestartWarning() {
     section.showGroup(AdminConfigGroup.SECURITY);
-    MessageProperties messages = new MessageProperties(provider);
+    MessageProperties messages = new MessageProperties(i18nProvider);
     AdminSidePanel help = (AdminSidePanel) ReflectionTestUtils.getField(section, "helpPanel");
 
     ReflectionTestUtils.invokeMethod(section, "openHelp", ConfigEntry.SESSION_TIMEOUT_SECONDS);
@@ -370,10 +377,11 @@ class AdminConfigurationGroupTest {
     section.showGroup(AdminConfigGroup.SECURITY);
     Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
     AdminDurationField field = (AdminDurationField) inputs.get(ConfigEntry.REMEMBER_ME_DURATION);
-    IntegerField amount = (IntegerField) ReflectionTestUtils.getField(field, "amount");
+    IntegerField amount = (IntegerField) ReflectionTestUtils.getField(field, "durationAmountField");
     @SuppressWarnings("unchecked")
     Select<AdminDurationField.Unit> unit =
-        (Select<AdminDurationField.Unit>) ReflectionTestUtils.getField(field, "unit");
+        (Select<AdminDurationField.Unit>)
+            ReflectionTestUtils.getField(field, "durationUnitSelector");
     assertEquals(14, amount.getValue());
     assertEquals(AdminDurationField.Unit.DAYS, unit.getValue());
     for (int seconds : new int[] {61, 3600, 1209600, Integer.MAX_VALUE}) {
@@ -386,7 +394,7 @@ class AdminConfigurationGroupTest {
     amount.setValue(999999);
     ReflectionTestUtils.invokeMethod(section, "saveConfigValues");
     assertTrue(field.isInvalid());
-    verify(config, never()).set(any(), anyString());
+    verify(configService, never()).set(any(), anyString());
     amount.clear();
     assertEquals(
         "1209600",
@@ -403,7 +411,7 @@ class AdminConfigurationGroupTest {
     section.refreshTexts();
     Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
     AdminDurationField field = (AdminDurationField) inputs.get(ConfigEntry.REMEMBER_ME_DURATION);
-    IntegerField amount = (IntegerField) ReflectionTestUtils.getField(field, "amount");
+    IntegerField amount = (IntegerField) ReflectionTestUtils.getField(field, "durationAmountField");
     amount.setValue(7);
     ReflectionTestUtils.invokeMethod(section, "openHelp", ConfigEntry.REMEMBER_ME_DURATION);
     AdminSidePanel help = (AdminSidePanel) ReflectionTestUtils.getField(section, "helpPanel");
@@ -415,7 +423,7 @@ class AdminConfigurationGroupTest {
     section.refreshTexts();
     assertEquals(7, amount.getValue());
     assertTrue(help.getElement().getTextRecursively().contains(field.getDisplayValue()));
-    verify(config, never()).set(any(), anyString());
+    verify(configService, never()).set(any(), anyString());
   }
 
   @org.junit.jupiter.params.ParameterizedTest
@@ -430,28 +438,30 @@ class AdminConfigurationGroupTest {
   void clearedDurationFieldsKeepDefaultUnlimitedAndRequiredMeanings(
       String language, AdminDurationField.Storage storage) {
     locale.set(Locale.forLanguageTag(language));
-    MessageProperties texts = new MessageProperties(provider);
-    AdminDurationField field = new AdminDurationField(texts, storage);
+    MessageProperties messageProperties = new MessageProperties(i18nProvider);
+    AdminDurationField field = new AdminDurationField(messageProperties, storage);
     if (storage == AdminDurationField.Storage.DURATION) {
       field.setDefaultValue("PT15M");
       field.setStoredValue("PT30S");
       BigDecimalField amount =
-          (BigDecimalField) ReflectionTestUtils.getField(field, "preciseAmount");
+          (BigDecimalField) ReflectionTestUtils.getField(field, "preciseDurationField");
       amount.clear();
-      assertEquals(texts.getAdminConfigDurationInvalid(), field.getDisplayValue());
-      assertEquals(texts.getAdminConfigDurationInvalid(), field.getEquivalentValue());
+      assertEquals(messageProperties.getAdminConfigDurationInvalid(), field.getDisplayValue());
+      assertEquals(messageProperties.getAdminConfigDurationInvalid(), field.getEquivalentValue());
     } else {
       field.setStoredValue(storage == AdminDurationField.Storage.DAYS ? "7" : "1209600");
-      IntegerField amount = (IntegerField) ReflectionTestUtils.getField(field, "amount");
+      IntegerField amount =
+          (IntegerField) ReflectionTestUtils.getField(field, "durationAmountField");
       amount.clear();
       if (storage == AdminDurationField.Storage.DAYS) {
-        assertEquals(texts.getAdminConfigUnlimited(), field.getDisplayValue());
-        assertEquals(texts.getAdminConfigUnlimited(), field.getEquivalentValue());
+        assertEquals(messageProperties.getAdminConfigUnlimited(), field.getDisplayValue());
+        assertEquals(messageProperties.getAdminConfigUnlimited(), field.getEquivalentValue());
       } else {
         assertEquals(
-            texts.getAdminConfigDurationDays(BigDecimal.valueOf(14)), field.getDisplayValue());
+            messageProperties.getAdminConfigDurationDays(BigDecimal.valueOf(14)),
+            field.getDisplayValue());
         assertEquals(
-            texts.getAdminConfigDurationSeconds(BigDecimal.valueOf(1209600)),
+            messageProperties.getAdminConfigDurationSeconds(BigDecimal.valueOf(1209600)),
             field.getEquivalentValue());
       }
     }
@@ -477,13 +487,13 @@ class AdminConfigurationGroupTest {
     secretField.setValue("edited-test-value");
     H2 title = (H2) ReflectionTestUtils.getField(section, "currentGroupTitle");
     String germanTitle =
-        MessageProperties.forLocale(provider, Locale.GERMAN).getAdminConfigGroupSecurity();
+        MessageProperties.forLocale(i18nProvider, Locale.GERMAN).getAdminConfigGroupSecurity();
     assertEquals(germanTitle, title.getText());
 
     locale.set(Locale.ENGLISH);
     section.refreshTexts();
     assertEquals(
-        MessageProperties.forLocale(provider, Locale.ENGLISH).getAdminConfigGroupSecurity(),
+        MessageProperties.forLocale(i18nProvider, Locale.ENGLISH).getAdminConfigGroupSecurity(),
         title.getText());
     assertNotEquals(germanTitle, title.getText());
     assertEquals(AdminConfigGroup.SECURITY, selectedGroup());
@@ -500,11 +510,12 @@ class AdminConfigurationGroupTest {
   @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
   void tooltipUsesConfiguredDefaultAndRefreshesLanguageWithoutSavingTheDraft(String language) {
-    when(config.getDefaultValue(ConfigEntry.SERVICE_NAME)).thenReturn("Configured default");
-    when(config.getDefaultValue(ConfigEntry.REMEMBER_ME_SECRET_KEY)).thenReturn("SecretDefault1!");
+    when(configService.getDefaultValue(ConfigEntry.SERVICE_NAME)).thenReturn("Configured default");
+    when(configService.getDefaultValue(ConfigEntry.REMEMBER_ME_SECRET_KEY))
+        .thenReturn("SecretDefault1!");
     locale.set(Locale.forLanguageTag(language));
     section.refreshTexts();
-    MessageProperties messages = MessageProperties.forLocale(provider, locale.get());
+    MessageProperties messages = MessageProperties.forLocale(i18nProvider, locale.get());
     Map<?, ?> inputs = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInputs");
     Map<?, ?> infos = (Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons");
     TextField serviceName = (TextField) inputs.get(ConfigEntry.SERVICE_NAME);
@@ -528,8 +539,9 @@ class AdminConfigurationGroupTest {
     assertTrue(
         info.getTooltip()
             .getText()
-            .contains(MessageProperties.forLocale(provider, locale.get()).getAdminConfigDefault()));
-    verify(config, never()).set(any(ConfigEntry.class), anyString());
+            .contains(
+                MessageProperties.forLocale(i18nProvider, locale.get()).getAdminConfigDefault()));
+    verify(configService, never()).set(any(ConfigEntry.class), anyString());
   }
 
   private AdminConfigGroup selectedGroup() {
@@ -542,7 +554,7 @@ class AdminConfigurationGroupTest {
   void everyFieldHelpKeepsRulesAndSafeDefaultsWithoutChangingConfiguration(String language) {
     locale.set(Locale.forLanguageTag(language));
     section.refreshTexts();
-    MessageProperties messages = MessageProperties.forLocale(provider, locale.get());
+    MessageProperties messages = MessageProperties.forLocale(i18nProvider, locale.get());
     Map<ConfigEntry, ConfigInfoButton> infos =
         (Map<ConfigEntry, ConfigInfoButton>)
             ReflectionTestUtils.getField(section, "configInfoButtons");
@@ -580,7 +592,7 @@ class AdminConfigurationGroupTest {
       }
     }
     assertEquals(ConfigEntry.values().length, checkedFields);
-    verify(config, never()).set(any(ConfigEntry.class), anyString());
+    verify(configService, never()).set(any(ConfigEntry.class), anyString());
   }
 
   private List<?> visibleEntries() {

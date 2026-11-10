@@ -25,12 +25,12 @@ import java.util.function.Supplier;
 /** Eine gemeinsame Identitätskarte und Navigation für Startseite, Postfach und Konto. */
 public class PortalSidebarComponent extends Div {
   private final MessageProperties messageProperties;
-  private final OverlayUserIcon avatar;
+  private final OverlayUserIcon accountAvatar;
   private final PageNavigationComponent accountNavigation;
-  private final Span name = new Span();
-  private final Span presence = new Span();
-  private final Span unread = new Span();
-  private final List<Runnable> textUpdates = new ArrayList<>();
+  private final Span accountNameLabel = new Span();
+  private final Span presenceLabel = new Span();
+  private final Span unreadNotificationCount = new Span();
+  private final List<Runnable> localizedTextUpdates = new ArrayList<>();
   private UserStatus status;
 
   public PortalSidebarComponent(
@@ -47,9 +47,9 @@ public class PortalSidebarComponent extends Div {
             : Objects.requireNonNullElse(user.getStatus(), UserStatus.getDefaultStatus());
     setId("account-sidebar");
     addClassName("account-sidebar");
-    avatar = new OverlayUserIcon(messageProperties, user, status, IconSize.PIXEL_48, true);
-    avatar.addClassName("account-summary-avatar");
-    name.addClassName("account-summary-name");
+    accountAvatar = new OverlayUserIcon(messageProperties, user, status, IconSize.PIXEL_48, true);
+    accountAvatar.addClassName("account-summary-avatar");
+    accountNameLabel.addClassName("account-summary-name");
     refreshName(user == null ? "" : user.getFirstName(), user == null ? "" : user.getLastName());
     Span address = new Span(user == null ? "" : Objects.toString(user.getEmail(), ""));
     address.addClassName("account-summary-email");
@@ -64,12 +64,12 @@ public class PortalSidebarComponent extends Div {
         .getElement()
         .getThemeList()
         .addAll(List.of("badge", user != null && user.isEnabled() ? "success" : "error"));
-    presence.addClassName("account-summary-presence");
-    Div badges = new Div(active, presence);
+    presenceLabel.addClassName("account-summary-presence");
+    Div badges = new Div(active, presenceLabel);
     badges.addClassName("account-summary-badges");
-    Div identity = new Div(name, address, badges);
+    Div identity = new Div(accountNameLabel, address, badges);
     identity.addClassName("account-summary-details");
-    Div row = new Div(avatar, identity);
+    Div row = new Div(accountAvatar, identity);
     row.addClassName("account-summary-row");
     Button edit =
         button(AppIcon.EDIT, messageProperties::getAccountSettingsEditPicture, editAvatar);
@@ -81,20 +81,21 @@ public class PortalSidebarComponent extends Div {
     PageNavigationComponent portalNavigation = new PageNavigationComponent();
     SideNavItem home = new SideNavItem("", AppRoute.HOME.getSecurityRoute(), AppIcon.HOME.create());
     home.setId("account-nav-home");
-    textUpdates.add(() -> home.setLabel(messageProperties.getBaseHomeButton()));
+    localizedTextUpdates.add(() -> home.setLabel(messageProperties.getBaseHomeButton()));
     portalNavigation.registerAction(home, () -> UI.getCurrent().navigate(HomeView.class));
     PageNavigationComponent.setItemActive(home, selectedRoute == AppRoute.HOME);
     SideNavItem notifications =
         new SideNavItem("", AppRoute.NOTIFICATIONS.getSecurityRoute(), AppIcon.BELL.create());
     notifications.setId("account-nav-notifications");
-    textUpdates.add(() -> notifications.setLabel(messageProperties.getNotificationsTitle()));
+    localizedTextUpdates.add(
+        () -> notifications.setLabel(messageProperties.getNotificationsTitle()));
     portalNavigation.registerAction(
         notifications, () -> UI.getCurrent().navigate(UserNotificationsView.class));
     PageNavigationComponent.setItemActive(notifications, selectedRoute == AppRoute.NOTIFICATIONS);
-    unread.addClassName("account-nav-count");
-    unread.setVisible(false);
-    unread.getElement().setAttribute("aria-hidden", "true");
-    notifications.setSuffixComponent(unread);
+    unreadNotificationCount.addClassName("account-nav-count");
+    unreadNotificationCount.setVisible(false);
+    unreadNotificationCount.getElement().setAttribute("aria-hidden", "true");
+    notifications.setSuffixComponent(unreadNotificationCount);
     portalNavigation.addItem(home, notifications);
     Span accountGroup = label(messageProperties::getAccountSettingsOverview);
     accountGroup.addClassName("account-nav-group");
@@ -126,7 +127,7 @@ public class PortalSidebarComponent extends Div {
 
   private Span label(Supplier<String> value) {
     Span label = new Span();
-    textUpdates.add(() -> label.setText(value.get()));
+    localizedTextUpdates.add(() -> label.setText(value.get()));
     return label;
   }
 
@@ -134,12 +135,12 @@ public class PortalSidebarComponent extends Div {
     Button button = new Button();
     button.setPrefixComponent(icon.create());
     button.addClickListener(event -> action.run());
-    textUpdates.add(() -> button.setText(value.get()));
+    localizedTextUpdates.add(() -> button.setText(value.get()));
     return button;
   }
 
   public void configureAvatars(UserAvatarService avatars) {
-    avatar.configureAvatar(avatars, null);
+    accountAvatar.configureAvatar(avatars, null);
   }
 
   public void configureStatusSelection(Select<UserStatus> selection) {
@@ -152,34 +153,35 @@ public class PortalSidebarComponent extends Div {
                 .set(
                     "--portal-status-heading",
                     "\"" + messageProperties.getPortalPresenceHeading() + "\"");
-    textUpdates.add(heading);
+    localizedTextUpdates.add(heading);
     heading.run();
-    avatar.setStatusSelection(selection);
+    accountAvatar.setStatusSelection(selection);
   }
 
   public void refreshName(String first, String last) {
-    name.setText((Objects.toString(first, "") + " " + Objects.toString(last, "")).trim());
-    avatar.setName(first, last);
+    accountNameLabel.setText(
+        (Objects.toString(first, "") + " " + Objects.toString(last, "")).trim());
+    accountAvatar.setName(first, last);
   }
 
   public void updateStatus(UserStatus newStatus) {
     status = Objects.requireNonNullElse(newStatus, UserStatus.getDefaultStatus());
-    avatar.setUserStatus(status);
+    accountAvatar.setUserStatus(status);
     refreshPresence();
   }
 
   private void refreshPresence() {
-    presence.setText(messageProperties.getUserStatusLabel(status));
-    presence.getStyle().set("--account-presence-color", status.getColor());
+    presenceLabel.setText(messageProperties.getUserStatusLabel(status));
+    presenceLabel.getStyle().set("--account-presence-color", status.getColor());
   }
 
   public void updateUnreadCount(long count) {
-    unread.setVisible(count > 0);
-    unread.setText(count > 99 ? "99+" : Long.toString(Math.max(0, count)));
+    unreadNotificationCount.setVisible(count > 0);
+    unreadNotificationCount.setText(count > 99 ? "99+" : Long.toString(Math.max(0, count)));
   }
 
   public void refreshTexts() {
-    textUpdates.forEach(Runnable::run);
+    localizedTextUpdates.forEach(Runnable::run);
     List<String> labels =
         List.of(
             messageProperties.getAccountSettingsProfileTab(),
@@ -189,7 +191,7 @@ public class PortalSidebarComponent extends Div {
     for (int index = 0; index < Math.min(labels.size(), items.size()); index++) {
       items.get(index).setLabel(labels.get(index));
     }
-    avatar.refreshTexts();
+    accountAvatar.refreshTexts();
     refreshPresence();
   }
 }

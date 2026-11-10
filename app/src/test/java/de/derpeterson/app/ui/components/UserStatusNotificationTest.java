@@ -48,7 +48,7 @@ class UserStatusNotificationTest {
   private VaadinSession session;
   private TrackedUserAppLayout layout;
   private final CustomI18NProvider provider = new CustomI18NProvider();
-  private final MessageProperties texts = new MessageProperties(provider);
+  private final MessageProperties messageProperties = new MessageProperties(provider);
 
   @BeforeEach
   void setup() {
@@ -70,7 +70,7 @@ class UserStatusNotificationTest {
     when(security.getCurrentUser(any(HttpServletRequest.class))).thenReturn(Optional.empty());
     layout =
         new TrackedUserAppLayout(
-            texts,
+            messageProperties,
             security,
             mock(UserService.class),
             new UserStatusBroadcaster(),
@@ -100,7 +100,7 @@ class UserStatusNotificationTest {
                 : new IllegalStateException("failed"));
     UserPopoverMenu menu =
         new UserPopoverMenu(
-            texts,
+            messageProperties,
             mock(SecurityService.class),
             service,
             user,
@@ -127,9 +127,14 @@ class UserStatusNotificationTest {
     LanguageChangeEvent.fire(ui, startGerman ? Locale.GERMAN : Locale.ENGLISH);
     AdminUserManagementSection admin =
         new AdminUserManagementSection(
-            texts, mock(UserService.class), mock(RoleService.class), mock(SecurityService.class));
+            messageProperties,
+            mock(UserService.class),
+            mock(RoleService.class),
+            mock(SecurityService.class));
     ReflectionTestUtils.invokeMethod(
-        admin, "showError", (java.util.function.Supplier<String>) texts::getBaseUserUpdateConflict);
+        admin,
+        "showError",
+        (java.util.function.Supplier<String>) messageProperties::getBaseUserUpdateConflict);
     assertText(startGerman ? Locale.GERMAN : Locale.ENGLISH, true);
     LanguageChangeEvent.fire(ui, startGerman ? Locale.ENGLISH : Locale.GERMAN);
     assertText(startGerman ? Locale.ENGLISH : Locale.GERMAN, true);
@@ -150,7 +155,7 @@ class UserStatusNotificationTest {
     }
     UserPopoverMenu menu =
         new UserPopoverMenu(
-            texts,
+            messageProperties,
             mock(SecurityService.class),
             service,
             user,
@@ -172,7 +177,7 @@ class UserStatusNotificationTest {
     session.setLocale(Locale.GERMAN);
     menu.refreshForLanguageChange();
     assertEquals(
-        texts.getUserStatusLabel(UserStatus.EMPLOYED),
+        messageProperties.getUserStatusLabel(UserStatus.EMPLOYED),
         buttons.get(UserStatus.EMPLOYED).getAriaLabel().orElseThrow());
     verify(service).updateUserStatus(user, UserStatus.EMPLOYED, true);
   }

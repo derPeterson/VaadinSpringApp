@@ -14,7 +14,7 @@ import jakarta.servlet.http.HttpSession;
 /** Zeigt dieselben relevanten ungelesenen Nachrichten wie die administrative Vorgangsliste. */
 public final class SupportTicketActivityIndicator extends Badge {
   private final transient MessageProperties messageProperties;
-  private final transient SupportTicketService service;
+  private final transient SupportTicketService supportTicketService;
   private final Tooltip tooltip;
   private transient HttpSession session;
   private transient volatile Long viewerId;
@@ -22,11 +22,11 @@ public final class SupportTicketActivityIndicator extends Badge {
 
   public SupportTicketActivityIndicator(
       MessageProperties messageProperties,
-      SupportTicketService service,
+      SupportTicketService supportTicketService,
       HttpServletRequest request,
       SideNavItem navigation) {
     this.messageProperties = messageProperties;
-    this.service = service;
+    this.supportTicketService = supportTicketService;
     setId("admin-nav-support-activity");
     addClassName("admin-nav-support-activity");
     addThemeVariants(BadgeVariant.ERROR);
@@ -38,7 +38,7 @@ public final class SupportTicketActivityIndicator extends Badge {
       HttpSession attachedSession = request.getSession(false);
       session = attachedSession;
       registration =
-          service
+          supportTicketService
               .events()
               .register(change -> {
                 if (!change.affects(viewerId, true)) {
@@ -48,11 +48,11 @@ public final class SupportTicketActivityIndicator extends Badge {
                     .getUI()
                     .access(() -> {
                       if (navigation.isAttached() && session == attachedSession) {
-                        refresh();
+                        refreshUnreadTicketIndicator();
                       }
                     });
               });
-      refresh();
+      refreshUnreadTicketIndicator();
     });
     navigation.addDetachListener(event -> {
       if (registration != null) {
@@ -64,9 +64,9 @@ public final class SupportTicketActivityIndicator extends Badge {
     });
   }
 
-  private void refresh() {
+  private void refreshUnreadTicketIndicator() {
     try {
-      Activity state = service.activity(session);
+      Activity state = supportTicketService.activity(session);
       viewerId = state.viewerId();
       setVisible(state.unread());
     } catch (RuntimeException _) {

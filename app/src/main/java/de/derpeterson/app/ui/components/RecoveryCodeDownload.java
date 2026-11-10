@@ -30,11 +30,11 @@ import org.springframework.stereotype.Component;
 public final class RecoveryCodeDownload {
   public static final String RESOURCE_NAME = "two-factor-recovery-codes.pdf";
 
-  private final TwoFactorEnrollment enrollment;
+  private final TwoFactorEnrollment twoFactorEnrollment;
   private final TwoFactorAuthorization twoFactorAuthorization;
-  private final ConfigService config;
-  private final CustomI18NProvider i18n;
-  private final RecoveryCodeDocument pdf;
+  private final ConfigService configService;
+  private final CustomI18NProvider i18nProvider;
+  private final RecoveryCodeDocument recoveryCodeDocument;
 
   /** Ein Fehlerstatus darf im Browser weder eine TXT-Datei noch einen Seitenwechsel auslösen. */
   public void configure(Button button, Runnable failed) {
@@ -74,16 +74,16 @@ public final class RecoveryCodeDownload {
     byte[] bytes = null;
     try {
       HttpServletRequest request = (HttpServletRequest) event.getRequest();
-      List<String> codes = enrollment.recoveryOutput(request, outputId);
-      String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
+      List<String> codes = twoFactorEnrollment.recoveryOutput(request, outputId);
+      String serviceName = configService.getString(ConfigEntry.SERVICE_NAME);
       bytes =
-          pdf.render(
+          recoveryCodeDocument.render(
               serviceName,
               twoFactorAuthorization.owner(request).email(),
               codes,
               Instant.now(),
               locale,
-              MessageProperties.forLocale(i18n, locale));
+              MessageProperties.forLocale(i18nProvider, locale));
       event.setFileName(RecoveryCodeDocument.fileName(serviceName));
       event.setContentType("application/pdf");
       event.setContentLength(bytes.length);

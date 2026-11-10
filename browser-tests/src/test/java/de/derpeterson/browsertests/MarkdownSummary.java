@@ -16,11 +16,11 @@ import java.util.stream.Stream;
 
 /** Human checklist from Allure results; Allure itself still produces the HTML. */
 final class MarkdownSummary {
-  static void write(Path run, Map<String, Object> metadata) throws IOException {
-    Files.writeString(run.resolve("report.md"), render(metadata, readResults(run)));
+  static void writeRunReport(Path run, Map<String, Object> metadata) throws IOException {
+    Files.writeString(run.resolve("report.md"), renderRunReport(metadata, readAllureResults(run)));
   }
 
-  static List<JsonNode> readResults(Path run) throws IOException {
+  static List<JsonNode> readAllureResults(Path run) throws IOException {
     List<JsonNode> results = new ArrayList<>();
     try (Stream<Path> files = Files.list(run.resolve("allure-results"))) {
       for (Path file :
@@ -34,7 +34,39 @@ final class MarkdownSummary {
     return results;
   }
 
-  static String render(Map<String, Object> metadata, List<JsonNode> results) {
+  static String renderRunReport(Map<String, Object> metadata, List<JsonNode> results) {
+    StringBuilder reportMarkdown =
+        new StringBuilder(
+            "# Automatisierter Browser-Testlauf (Java)\n\n**Status: "
+                + reportStatus(metadata, results)
+                + "**\n\n| Angabe | Wert |\n| --- | --- |\n");
+    appendRunMetadata(reportMarkdown, metadata);
+    appendParallelWorkerResults(reportMarkdown, metadata);
+    appendCoverageSummary(reportMarkdown, metadata);
+    reportMarkdown
+        .append("\n## Umfang und Grenzen\n\n")
+        .append("Dieses Protokoll bewertet nur die ausgewählten, unten aufgeführten Browserfälle. ")
+        .append(
+            "Ein bestandener Lauf belegt nur diese Fälle, keine vollständige Prüfung der Anwendung. ")
+        .append("Nicht ausgewählte Suites wurden in diesem Lauf nicht geprüft. ")
+        .append(
+            "Die verbleibenden Teilfälle und Betriebsgrenzen stehen in [Abdeckung und offene Punkte](../../abdeckung.md). Ein grüner Lauf bestätigt nur die tatsächlich aufgeführten Schritte.\n\n")
+        .append(
+            "Suites, Testfälle und Grenzen: [Browser-Testanleitung](../../README.md).\n\n## Ergebnisse\n\n");
+    appendTestResults(reportMarkdown, results);
+    appendRunDiagnostics(reportMarkdown, metadata);
+    reportMarkdown
+        .append(
+            "\n## Belege des Durchlaufs\n\n- [HTML-Bericht starten](html/open-report.bat) — im Explorer doppelklicken; benötigt den lokalen Testordner.\n")
+        .append(
+            "- [HTML-Einstiegsdatei](html/index.html) — über den Berichtserver öffnen, nicht direkt als Datei.\n")
+        .append("- [Laufdaten und Git-Stand](metadata.json)\n- [Ablauflog](runner.log)\n\n")
+        .append(
+            "Screenshots, Browseraktionen und Traces befinden sich auch im Allure-Bericht. Lokale Belege sind von Git ausgeschlossen.\n");
+    return reportMarkdown.toString();
+  }
+
+  private static String reportStatus(Map<String, Object> metadata, List<JsonNode> results) {
     boolean finished = metadata.containsKey("finishedAt");
     boolean passed =
         finished
@@ -46,19 +78,14 @@ final class MarkdownSummary {
             && (!metadata.containsKey("testsFound")
                 || results.size() == ((Number) metadata.get("testsFound")).longValue())
             && results.stream().allMatch(test -> "passed".equals(test.path("status").asText()));
-    String state;
     if (!finished) {
-      state = "IN BEARBEITUNG";
-    } else if (passed) {
-      state = "BESTANDEN";
-    } else {
-      state = "UNVOLLSTÄNDIG / FEHLER";
+      return "IN BEARBEITUNG";
     }
-    StringBuilder text =
-        new StringBuilder(
-            "# Automatisierter Browser-Testlauf (Java)\n\n**Status: "
-                + state
-                + "**\n\n| Angabe | Wert |\n| --- | --- |\n");
+    return passed ? "BESTANDEN" : "UNVOLLSTÄNDIG / FEHLER";
+  }
+
+  private static void appendRunMetadata(
+      StringBuilder reportMarkdown, Map<String, Object> metadata) {
     Map<String, String> labels =
         Map.ofEntries(
             Map.entry("runId", "Run-ID"),
@@ -105,24 +132,31 @@ final class MarkdownSummary {
             "tests",
             "cleanup",
             "html")) {
-      text.append("| ")
+      reportMarkdown
+          .append("| ")
           .append(labels.get(key))
           .append(" | ")
-          .append(cell(metadata.get(key)))
+          .append(escapeMarkdownTableCell(metadata.get(key)))
           .append(" |\n");
     }
-    text.append("| Lokale Änderungen | ")
+    reportMarkdown
+        .append("| Lokale Änderungen | ")
         .append(
             metadata.getOrDefault("gitStatus", "").toString().isBlank()
                 ? "nein"
                 : "ja; siehe metadata.json")
         .append(" |\n");
     if ("fast".equals(metadata.get("suite"))) {
-      text.append(
+      reportMarkdown.append(
           "\n**Schnellprüfung:** Nur explizit mit `fast` markierte Kernfälle. Lange Ablaufzeiten, vollständige Rechte-/Sitzungsprüfungen und weitere Spezialfälle sind hier nicht enthalten; `all` bleibt die vollständige Auswahl.\n");
     }
+  }
+
+  private static void appendParallelWorkerResults(
+      StringBuilder reportMarkdown, Map<String, Object> metadata) {
     if (metadata.containsKey("workersActual")) {
-      text.append("\n## Parallele Worker\n\n")
+      reportMarkdown
+          .append("\n## Parallele Worker\n\n")
           .append("Angefordert: ")
           .append(metadata.get("workersRequested"))
           .append("; gestartet: ")
@@ -136,17 +170,18 @@ final class MarkdownSummary {
           if (!(entry instanceof Map<?, ?> data)) {
             continue;
           }
-          String id = cell(data.get("worker"));
-          text.append("| ")
+          String id = escapeMarkdownTableCell(data.get("worker"));
+          reportMarkdown
+              .append("| ")
               .append(id)
               .append(" | ")
               .append(data.get("testsPassed"))
               .append(" / ")
               .append(data.get("testsFound"))
               .append(" | ")
-              .append(cell(data.get("setup")))
+              .append(escapeMarkdownTableCell(data.get("setup")))
               .append(" | ")
-              .append(cell(data.get("cleanup")))
+              .append(escapeMarkdownTableCell(data.get("cleanup")))
               .append(" | ")
               .append(data.get("exitCode"))
               .append(" | [Laufdaten](workers/")
@@ -157,128 +192,143 @@ final class MarkdownSummary {
         }
       }
     }
+  }
+
+  private static void appendCoverageSummary(
+      StringBuilder reportMarkdown, Map<String, Object> metadata) {
     if ("passed".equals(metadata.get("coverage"))) {
-      text.append(
+      reportMarkdown
+          .append(
               "\n## Gemessene Browser-Coverage\n\n[JaCoCo-Bericht](coverage/html/index.html), [XML](coverage/jacoco.xml), [CSV](coverage/jacoco.csv). ")
           .append(
               "Gemessen wurde der serverseitige Anwendungscode im getesteten Docker-JAR, einschließlich Start und Browserabläufen. ")
           .append("Dies ist keine CSS-/JavaScript- oder vollständige fachliche Abdeckung.\n");
     } else if ("failed".equals(metadata.get("coverage"))) {
-      text.append("\n**Angeforderte Coverage konnte nicht erstellt werden:** ")
-          .append(cell(metadata.get("coverageError")))
+      reportMarkdown
+          .append("\n**Angeforderte Coverage konnte nicht erstellt werden:** ")
+          .append(escapeMarkdownTableCell(metadata.get("coverageError")))
           .append("\n");
     }
-    text.append("\n## Umfang und Grenzen\n\n")
-        .append("Dieses Protokoll bewertet nur die ausgewählten, unten aufgeführten Browserfälle. ")
-        .append(
-            "Ein bestandener Lauf belegt nur diese Fälle, keine vollständige Prüfung der Anwendung. ")
-        .append("Nicht ausgewählte Suites wurden in diesem Lauf nicht geprüft. ")
-        .append(
-            "Die verbleibenden Teilfälle und Betriebsgrenzen stehen in [Abdeckung und offene Punkte](../../abdeckung.md). Ein grüner Lauf bestätigt nur die tatsächlich aufgeführten Schritte.\n\n")
-        .append(
-            "Suites, Testfälle und Grenzen: [Browser-Testanleitung](../../README.md).\n\n## Ergebnisse\n\n");
+  }
+
+  private static void appendTestResults(StringBuilder reportMarkdown, List<JsonNode> results) {
     if (results.isEmpty()) {
-      text.append("Keine Testfälle vom Reporter erfasst.\n");
+      reportMarkdown.append("Keine Testfälle vom Reporter erfasst.\n");
     }
     List<JsonNode> ordered = new ArrayList<>(results);
     ordered.sort(
-        Comparator.comparing((JsonNode test) -> label(test, "feature"))
+        Comparator.comparing((JsonNode test) -> readAllureLabel(test, "feature"))
             .thenComparing(test -> test.path("name").asText()));
     String previousSuite = null;
     for (JsonNode test : ordered) {
-      String suite = label(test, "feature");
+      String suite = readAllureLabel(test, "feature");
       if (suite.isBlank()) {
         suite = "Weitere Prüfungen";
       }
       if (!suite.equals(previousSuite)) {
-        text.append("### ").append(cell(suite)).append("\n\n");
+        reportMarkdown.append("### ").append(escapeMarkdownTableCell(suite)).append("\n\n");
         previousSuite = suite;
       }
-      String status = test.path("status").asText("unknown");
-      String readable =
-          switch (status) {
-            case "passed" -> "BESTANDEN";
-            case "failed", "broken" -> "FEHLER";
-            case "skipped" -> "NICHT AUSGEFÜHRT";
-            default -> "UNBEKANNT";
-          };
-      text.append("#### ").append(cell(test.path("name").asText())).append("\n\n");
-      String story = label(test, "story");
-      if (!story.isBlank()) {
-        text.append("**Prüfbereich:** ").append(cell(story)).append("\n\n");
-      }
-      String description = test.path("description").asText();
-      if (!description.isBlank()) {
-        text.append(description).append("\n\n");
-      }
-      text.append("- [")
-          .append("passed".equals(status) ? "x" : " ")
-          .append("] **")
-          .append(readable)
-          .append("**\n")
-          .append("- **Status:** ")
-          .append(readable)
-          .append("\n")
-          .append("- **Zeitpunkt (UTC):** ")
-          .append(timestamp(test, "start"))
-          .append(" → ")
-          .append(timestamp(test, "stop"))
-          .append("\n")
-          .append("- **Ist / Grund:** ")
-          .append(
-              switch (status) {
-                case "passed" -> "Alle ausgeführten Assertions dieses Testfalls erfüllt.";
-                case "skipped" -> "Testfall nicht ausgeführt; kein erfolgreicher Nachweis.";
-                default -> "Erwartung nicht vollständig bestätigt; Diagnose siehe unten.";
-              })
+      appendTestResult(reportMarkdown, test);
+    }
+  }
+
+  private static void appendTestResult(StringBuilder reportMarkdown, JsonNode test) {
+    String status = test.path("status").asText("unknown");
+    String readable =
+        switch (status) {
+          case "passed" -> "BESTANDEN";
+          case "failed", "broken" -> "FEHLER";
+          case "skipped" -> "NICHT AUSGEFÜHRT";
+          default -> "UNBEKANNT";
+        };
+    reportMarkdown
+        .append("#### ")
+        .append(escapeMarkdownTableCell(test.path("name").asText()))
+        .append("\n\n");
+    String story = readAllureLabel(test, "story");
+    if (!story.isBlank()) {
+      reportMarkdown
+          .append("**Prüfbereich:** ")
+          .append(escapeMarkdownTableCell(story))
           .append("\n\n");
-      String error = test.path("statusDetails").path("message").asText();
-      if (!error.isBlank()) {
-        text.append("~~~~text\n").append(error.replace("~~~~", "''''")).append("\n~~~~\n\n");
-      }
-      Map<String, String> attachments = new LinkedHashMap<>();
-      for (JsonNode array : test.findValues("attachments")) {
-        for (JsonNode attachment : array) {
-          String source = attachment.path("source").asText();
-          // Nur einfache Dateinamen aus ASCII-Buchstaben/Ziffern/Unterstrich/Punkt/Minus;
-          // Pfadtrenner sind ausgeschlossen.
-          if (source.matches("[\\w.-]+")) {
-            attachments.put(source, attachment.path("name").asText("Beleg"));
-          }
+    }
+    String description = test.path("description").asText();
+    if (!description.isBlank()) {
+      reportMarkdown.append(description).append("\n\n");
+    }
+    reportMarkdown
+        .append("- [")
+        .append("passed".equals(status) ? "x" : " ")
+        .append("] **")
+        .append(readable)
+        .append("**\n")
+        .append("- **Status:** ")
+        .append(readable)
+        .append("\n")
+        .append("- **Zeitpunkt (UTC):** ")
+        .append(formatResultTimestamp(test, "start"))
+        .append(" → ")
+        .append(formatResultTimestamp(test, "stop"))
+        .append("\n")
+        .append("- **Ist / Grund:** ")
+        .append(
+            switch (status) {
+              case "passed" -> "Alle ausgeführten Assertions dieses Testfalls erfüllt.";
+              case "skipped" -> "Testfall nicht ausgeführt; kein erfolgreicher Nachweis.";
+              default -> "Erwartung nicht vollständig bestätigt; Diagnose siehe unten.";
+            })
+        .append("\n\n");
+    String error = test.path("statusDetails").path("message").asText();
+    if (!error.isBlank()) {
+      reportMarkdown
+          .append("~~~~text\n")
+          .append(error.replace("~~~~", "''''"))
+          .append("\n~~~~\n\n");
+    }
+    appendTestAttachments(reportMarkdown, test);
+  }
+
+  private static void appendTestAttachments(StringBuilder reportMarkdown, JsonNode test) {
+    Map<String, String> attachments = new LinkedHashMap<>();
+    for (JsonNode array : test.findValues("attachments")) {
+      for (JsonNode attachment : array) {
+        String source = attachment.path("source").asText();
+        // Nur einfache Dateinamen aus ASCII-Buchstaben/Ziffern/Unterstrich/Punkt/Minus;
+        // Pfadtrenner sind ausgeschlossen.
+        if (source.matches("[\\w.-]+")) {
+          attachments.put(source, attachment.path("name").asText("Beleg"));
         }
       }
-      if (!attachments.isEmpty()) {
-        text.append("**Belege:**\n\n");
-        attachments.forEach(
-            (source, name) ->
-                text.append("- [")
-                    .append(cell(name))
-                    .append("](allure-results/")
-                    .append(source)
-                    .append(")\n"));
-        text.append("\n");
-      }
     }
+    if (!attachments.isEmpty()) {
+      reportMarkdown.append("**Belege:**\n\n");
+      attachments.forEach((source, name) ->
+          reportMarkdown
+              .append("- [")
+              .append(escapeMarkdownTableCell(name))
+              .append("](allure-results/")
+              .append(source)
+              .append(")\n"));
+      reportMarkdown.append("\n");
+    }
+  }
+
+  private static void appendRunDiagnostics(
+      StringBuilder reportMarkdown, Map<String, Object> metadata) {
     for (String key : List.of("error", "cleanupError", "reportError")) {
       if (metadata.containsKey(key)) {
-        text.append("\n**")
+        reportMarkdown
+            .append("\n**")
             .append(key)
             .append("**\n\n~~~~text\n")
             .append(metadata.get(key).toString().replace("~~~~", "''''"))
             .append("\n~~~~\n");
       }
     }
-    text.append(
-            "\n## Belege des Durchlaufs\n\n- [HTML-Bericht starten](html/open-report.bat) — im Explorer doppelklicken; benötigt den lokalen Testordner.\n")
-        .append(
-            "- [HTML-Einstiegsdatei](html/index.html) — über den Berichtserver öffnen, nicht direkt als Datei.\n")
-        .append("- [Laufdaten und Git-Stand](metadata.json)\n- [Ablauflog](runner.log)\n\n")
-        .append(
-            "Screenshots, Browseraktionen und Traces befinden sich auch im Allure-Bericht. Lokale Belege sind von Git ausgeschlossen.\n");
-    return text.toString();
   }
 
-  private static String label(JsonNode test, String name) {
+  private static String readAllureLabel(JsonNode test, String name) {
     List<String> values = new ArrayList<>();
     for (JsonNode label : test.path("labels")) {
       if (name.equals(label.path("name").asText())) {
@@ -288,13 +338,13 @@ final class MarkdownSummary {
     return String.join("; ", values);
   }
 
-  private static String timestamp(JsonNode test, String key) {
+  private static String formatResultTimestamp(JsonNode test, String key) {
     return test.path(key).isNumber()
         ? Instant.ofEpochMilli(test.path(key).asLong()).toString()
         : "nicht verfügbar";
   }
 
-  private static String cell(Object value) {
+  private static String escapeMarkdownTableCell(Object value) {
     return Objects.toString(value, "nicht verfügbar")
         .replace("|", "\\|")
         .replace('\n', ' ')

@@ -47,7 +47,7 @@ class AdminUserManagementFilterTest {
   private UI ui;
   private VaadinSession session;
   private AdminUserManagementSection section;
-  private MessageProperties texts;
+  private MessageProperties messageProperties;
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
   private final LocalDateTime cutoff = LocalDateTime.of(2026, 10, 12, 10, 30);
 
@@ -61,28 +61,27 @@ class AdminUserManagementFilterTest {
     UserService service = mock(UserService.class);
     List<UserEntity> users =
         IntStream.rangeClosed(1, 25)
-            .mapToObj(
-                i ->
-                    UserEntity.builder()
-                        .id((long) i)
-                        .firstName(String.format("Name%02d", i))
-                        .lastName("Test")
-                        .email("user" + i + "@example.test")
-                        .enabled(i % 2 == 0)
-                        .status(i % 2 == 0 ? UserStatus.AVAILABLE : UserStatus.OFFLINE)
-                        .lastActivity(UserActivityTime.inclusiveCutoff(cutoff.plusMinutes(i - 13)))
-                        .roleEntities(
-                            List.of(
-                                RoleEntity.builder()
-                                    .name(i == 25 ? RoleType.ROLE_ADMIN : RoleType.ROLE_USER)
-                                    .build()))
-                        .build())
+            .mapToObj(i ->
+                UserEntity.builder()
+                    .id((long) i)
+                    .firstName(String.format("Name%02d", i))
+                    .lastName("Test")
+                    .email("user" + i + "@example.test")
+                    .enabled(i % 2 == 0)
+                    .status(i % 2 == 0 ? UserStatus.AVAILABLE : UserStatus.OFFLINE)
+                    .lastActivity(UserActivityTime.inclusiveCutoff(cutoff.plusMinutes(i - 13)))
+                    .roleEntities(
+                        List.of(
+                            RoleEntity.builder()
+                                .name(i == 25 ? RoleType.ROLE_ADMIN : RoleType.ROLE_USER)
+                                .build()))
+                    .build())
             .toList();
     when(service.findAllUsers()).thenReturn(users);
-    texts = new MessageProperties(new CustomI18NProvider());
+    messageProperties = new MessageProperties(new CustomI18NProvider());
     section =
         new AdminUserManagementSection(
-            texts, service, mock(RoleService.class), mock(SecurityService.class));
+            messageProperties, service, mock(RoleService.class), mock(SecurityService.class));
   }
 
   @AfterEach
@@ -128,7 +127,7 @@ class AdminUserManagementFilterTest {
     assertEquals(Set.of(RoleType.ROLE_USER), filter("roleFilter").getValue());
     assertEquals(cutoff, ((AdminUserActivityFilter) field("lastActivityFilter")).getValue());
     assertEquals(
-        texts.getAdminUsersFilterRole(),
+        messageProperties.getAdminUsersFilterRole(),
         ((com.vaadin.flow.component.checkbox.CheckboxGroup<?>) field("roleFilter")).getLabel());
     assertEquals(6, visibleUsers().size());
   }
@@ -148,7 +147,7 @@ class AdminUserManagementFilterTest {
     Instant now = Instant.parse("2026-10-25T01:45:00Z");
     section =
         new AdminUserManagementSection(
-            texts,
+            messageProperties,
             service,
             mock(RoleService.class),
             mock(SecurityService.class),
@@ -162,8 +161,8 @@ class AdminUserManagementFilterTest {
     assertEquals(List.of(earlier, later), visibleUsers());
     Span earlierLabel = ReflectionTestUtils.invokeMethod(section, "createLastActivity", earlier);
     Span laterLabel = ReflectionTestUtils.invokeMethod(section, "createLastActivity", later);
-    assertEquals(texts.getAdminUsersActivityHours(1), earlierLabel.getText());
-    assertEquals(texts.getAdminUsersActivityMinutes(15), laterLabel.getText());
+    assertEquals(messageProperties.getAdminUsersActivityHours(1), earlierLabel.getText());
+    assertEquals(messageProperties.getAdminUsersActivityMinutes(15), laterLabel.getText());
     assertTrue(earlierLabel.getElement().getAttribute("title").endsWith("+02:00"));
     assertTrue(laterLabel.getElement().getAttribute("title").endsWith("+01:00"));
     ((AdminUserActivityFilter) field("lastActivityFilter"))
@@ -202,7 +201,7 @@ class AdminUserManagementFilterTest {
 
   @Test
   void navigationSizeChangesAndEmptyResultsRemainConsistent() {
-    ((ComboBox<Integer>) ReflectionTestUtils.getField(field("pagination"), "pageSize"))
+    ((ComboBox<Integer>) ReflectionTestUtils.getField(field("pagination"), "pageSizeSelector"))
         .setValue(20);
     assertEquals(20, visibleUsers().size());
     paginationButtons()
@@ -248,13 +247,13 @@ class AdminUserManagementFilterTest {
     filter("enabledFilter").setValue(AdminUserFilters.Enabled.NO);
     applyFilters();
     assertFalse(visibleUsers().getFirst().isEnabled());
-    filterButton(texts.getAdminUsersAddFilter()).click();
-    filterButton(texts.getAdminUsersClearFilters()).click();
+    filterButton(messageProperties.getAdminUsersAddFilter()).click();
+    filterButton(messageProperties.getAdminUsersClearFilters()).click();
     assertFalse(visibleUsers().getFirst().isEnabled());
-    filterButton(texts.getAdminUsersCancel()).click();
+    filterButton(messageProperties.getAdminUsersCancel()).click();
     assertEquals(AdminUserFilters.Enabled.NO, filter("enabledFilter").getValue());
-    filterButton(texts.getAdminUsersAddFilter()).click();
-    filterButton(texts.getAdminUsersClearFilters()).click();
+    filterButton(messageProperties.getAdminUsersAddFilter()).click();
+    filterButton(messageProperties.getAdminUsersClearFilters()).click();
     applyFilters();
     assertEquals(AdminUserFilters.Enabled.ALL, filter("enabledFilter").getValue());
     assertEquals(25, ((List<?>) field("filteredUsers")).size());
@@ -275,12 +274,14 @@ class AdminUserManagementFilterTest {
   }
 
   private void applyFilters() {
-    filterButton(texts.getAdminUsersApplyFilters()).click();
+    filterButton(messageProperties.getAdminUsersApplyFilters()).click();
   }
 
   private Button filterButton(String label) {
     Object bar = field("filterBar");
-    return List.of("filterButton", "applyFiltersButton", "clearFilters", "cancel").stream()
+    return List.of(
+            "filterButton", "applyFiltersButton", "clearFilters", "cancelFilterChangesButton")
+        .stream()
         .map(name -> (Button) ReflectionTestUtils.getField(bar, name))
         .filter(button -> button.getText().equals(label))
         .findFirst()

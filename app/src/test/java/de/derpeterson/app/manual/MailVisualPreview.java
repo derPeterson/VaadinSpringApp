@@ -103,13 +103,13 @@ final class MailVisualPreview {
               .email("alex@example.invalid")
               .preferredLocale(locale)
               .build();
-      MessageProperties texts = renderer.messagePropertiesForRecipient(user);
+      MessageProperties messageProperties = renderer.messagePropertiesForRecipient(user);
       examples.add(
           html(
               renderer,
               user,
               "welcome",
-              texts.getEmailVerificationSubject(),
+              messageProperties.getEmailVerificationSubject(),
               Map.of(
                   "FIRST_NAME",
                   user.getFirstName(),
@@ -122,21 +122,21 @@ final class MailVisualPreview {
               renderer,
               user,
               "reset_password",
-              texts.getEmailResetPasswordSubject(),
+              messageProperties.getEmailResetPasswordSubject(),
               Map.of("RESET_PASSWORD_LINK", link(AppRoute.RESET_PASSWORD))));
       examples.add(
           html(
               renderer,
               user,
               "password_changed",
-              texts.getAccountPasswordChangedSubject(),
+              messageProperties.getAccountPasswordChangedSubject(),
               Map.of()));
       examples.add(
           html(
               renderer,
               user,
               "email_change_request",
-              texts.getAccountEmailChangeSubject(),
+              messageProperties.getAccountEmailChangeSubject(),
               Map.of(
                   "CONFIRM_EMAIL_LINK",
                   link(AppRoute.EMAIL_CHANGE),
@@ -147,30 +147,30 @@ final class MailVisualPreview {
               renderer,
               user,
               "email_changed",
-              texts.getAccountEmailChangedSubject(),
+              messageProperties.getAccountEmailChangedSubject(),
               Map.of("OLD_EMAIL", "old@example.invalid", "NEW_EMAIL", "new@example.invalid")));
       examples.add(
           new Example(
               "admin-test",
               locale,
-              texts.getAdminMailDefaultSubject(),
-              texts.getAdminMailDefaultBody(),
+              messageProperties.getAdminMailDefaultSubject(),
+              messageProperties.getAdminMailDefaultBody(),
               false));
       examples.add(
           html(
               renderer,
               user,
               "two_factor",
-              texts.getTwoFactorEmailSubject(),
+              messageProperties.getTwoFactorEmailSubject(),
               Map.of(
                   "TITLE",
-                  texts.getTwoFactorEmailSubject(),
+                  messageProperties.getTwoFactorEmailSubject(),
                   "MESSAGE",
-                  texts.getTwoFactorEmailExplanation(),
+                  messageProperties.getTwoFactorEmailExplanation(),
                   "CODE",
                   "12345678",
                   "NOTICE",
-                  texts.getTwoFactorEmailNotice())));
+                  messageProperties.getTwoFactorEmailNotice())));
     }
     // Der technische Fehlerhinweis der Queue ist in der Anwendung ausschließlich englisch.
     // Seine Beispieldaten lösen weder einen Queuefehler noch einen erneuten Versandversuch aus.

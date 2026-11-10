@@ -140,11 +140,11 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       try (Page tab = owner.context.newPage()) {
         tab.navigate(path(HOME_ROUTE));
         new UserMenu(tab).selectTestLanguage();
-        sessions.refresh();
+        sessions.refreshSessionList();
         sessions.assertCounts(2, 1, 0);
       }
       limit(7);
-      sessions.refresh();
+      sessions.refreshSessionList();
       assertThat(owner.page.locator("#account-sessions-limit"))
           .hasText(texts.getAccountSettingsSessionsLimit(7));
       owner.page.reload();
@@ -321,7 +321,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
         sessions.open();
         owner.page.waitForCondition(
             () -> {
-              sessions.refresh();
+              sessions.refreshSessionList();
               return sessions.rows("saved").count() == 1;
             },
             new Page.WaitForConditionOptions().setTimeout(30_000));
@@ -453,7 +453,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
               next.page, () -> next.page.locator("#sessions-confirmation-cancel").click());
         }
       }
-      recovery.confirm();
+      recovery.confirmDeviceRevocation();
       assertThat(next.page.locator("#account-session-entries [data-session-state='active']"))
           .hasCount(0);
       UiActions.complete(next.page, () -> next.page.locator("#session-recovery-continue").click());

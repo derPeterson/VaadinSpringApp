@@ -69,44 +69,46 @@ public class AdminExternalLoginSection extends VerticalLayout {
   private static final String PROVIDER_PREFIX = "provider-";
   private static final Logger logger = LoggerFactory.getLogger(AdminExternalLoginSection.class);
   private final transient MessageProperties messageProperties;
-  private final transient ExternalProviderSettings settings;
-  private final transient ConfigService config;
+  private final transient ExternalProviderSettings externalProviderSettings;
+  private final transient ConfigService configService;
   private final List<ProviderForm> forms = new ArrayList<>();
   private final Span breadcrumb = new Span();
   private final Span title = new Span();
   private final Span description = new Span();
   private final H2 panelTitle = new H2();
   private final Span panelDescription = new Span();
-  private final TabSheet providers = new TabSheet();
+  private final TabSheet providerTabs = new TabSheet();
   private final AdminSidePanel helpPanel;
-  private final Button closeHelp = new Button(AppIcon.CLOSE.create());
+  private final Button closeFieldHelpButton = new Button(AppIcon.CLOSE.create());
   private ProviderForm helpForm;
   private ProviderField helpField;
-  private transient TwoFactorAuthorization twoFactor;
+  private transient TwoFactorAuthorization twoFactorAuthorization;
   private transient jakarta.servlet.http.HttpServletRequest request;
-  private TwoFactorActionDialog confirmation;
+  private TwoFactorActionDialog twoFactorConfirmationDialog;
 
   public void configureConfirmation(
-      TwoFactorAuthorization twoFactor, jakarta.servlet.http.HttpServletRequest request) {
-    this.twoFactor = twoFactor;
+      TwoFactorAuthorization twoFactorAuthorization,
+      jakarta.servlet.http.HttpServletRequest request) {
+    this.twoFactorAuthorization = twoFactorAuthorization;
     this.request = request;
-    confirmation = new TwoFactorActionDialog(messageProperties, twoFactor, request);
-    add(confirmation);
+    twoFactorConfirmationDialog =
+        new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, request);
+    add(twoFactorConfirmationDialog);
   }
 
   public AdminExternalLoginSection(
       MessageProperties messageProperties,
-      ExternalProviderSettings settings,
-      ConfigService config) {
+      ExternalProviderSettings externalProviderSettings,
+      ConfigService configService) {
     this.messageProperties = messageProperties;
-    this.settings = settings;
-    this.config = config;
+    this.externalProviderSettings = externalProviderSettings;
+    this.configService = configService;
     helpPanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
     helpPanel.addClassName("admin-config-help");
     helpPanel.setId("provider-field-help");
-    closeHelp.setWidthFull();
-    closeHelp.addClickListener(event -> helpPanel.close());
-    helpPanel.getFooter().add(closeHelp);
+    closeFieldHelpButton.setWidthFull();
+    closeFieldHelpButton.addClickListener(event -> helpPanel.close());
+    helpPanel.getFooter().add(closeFieldHelpButton);
     setWidthFull();
     setPadding(false);
     setSpacing(false);
@@ -123,10 +125,10 @@ public class AdminExternalLoginSection extends VerticalLayout {
     statuses.addClassName("provider-statuses");
     Div header = new Div(symbol, heading, statuses);
     header.addClassNames(PANEL_HEADER, "provider-panel-header");
-    providers.setId("admin-provider-tabs");
-    providers.addClassName(PANEL_TABS);
-    providers.setWidthFull();
-    providers.addThemeVariants(TabSheetVariant.NO_PADDING);
+    providerTabs.setId("admin-provider-tabs");
+    providerTabs.addClassName(PANEL_TABS);
+    providerTabs.setWidthFull();
+    providerTabs.addThemeVariants(TabSheetVariant.NO_PADDING);
     for (String provider : ExternalProviderSettings.PROVIDERS) {
       ProviderForm form = new ProviderForm(provider);
       forms.add(form);
@@ -136,9 +138,9 @@ public class AdminExternalLoginSection extends VerticalLayout {
       logo.getElement().setAttribute("aria-hidden", "true");
       Tab tab = new Tab(logo, new Span(name));
       tab.setId("provider-tab-" + provider);
-      providers.add(tab, form.content);
+      providerTabs.add(tab, form.content);
     }
-    CosmosCardComponent card = new CosmosCardComponent(header, providers);
+    CosmosCardComponent card = new CosmosCardComponent(header, providerTabs);
     card.addClassNames("cosmos-admin-form-card", PANEL_CARD);
     add(card, helpPanel);
     refreshTexts();
@@ -163,7 +165,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
     panelTitle.setText(messageProperties.getProviderSettingsPanelTitle());
     panelDescription.setText(messageProperties.getProviderSettingsPanelDescription());
     forms.forEach(ProviderForm::refreshTexts);
-    closeHelp.setText(messageProperties.getNotificationsClose());
+    closeFieldHelpButton.setText(messageProperties.getNotificationsClose());
     if (helpPanel.isOpened()) {
       helpForm.refreshHelp();
     }
@@ -389,23 +391,24 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
 
     private void load() {
-      stored = settings.load(provider);
+      stored = externalProviderSettings.load(provider);
       clientId.setValue(stored.clientId());
       secret.clear();
       enabled.setValue(stored.enabled());
       clientId.setInvalid(false);
       secret.setInvalid(false);
       // BASE_URL ist dieselbe vertrauenswürdige öffentliche Adresse wie für Bestätigungslinks.
-      String base = config.getString(ConfigEntry.BASE_URL);
+      String base = configService.getString(ConfigEntry.BASE_URL);
       URI origin = URI.create(base);
       redirect.setValue(origin.resolve("/login/oauth2/code/" + provider).toString());
       refreshTexts();
     }
 
     private void save() {
-      if (twoFactor != null
-          && twoFactor.requires(request, TwoFactorAction.SECURITY_CONFIGURATION)) {
-        confirmation.open(TwoFactorAction.SECURITY_CONFIGURATION, this::saveConfirmed);
+      if (twoFactorAuthorization != null
+          && twoFactorAuthorization.requires(request, TwoFactorAction.SECURITY_CONFIGURATION)) {
+        twoFactorConfirmationDialog.open(
+            TwoFactorAction.SECURITY_CONFIGURATION, this::saveConfirmed);
       } else {
         saveConfirmed();
       }
@@ -417,7 +420,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
           enabled.getValue() && secret.getValue().isBlank() && !stored.secretStored());
       try {
         stored =
-            settings.save(
+            externalProviderSettings.save(
                 provider,
                 clientId.getValue(),
                 secret.getValue(),

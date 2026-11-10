@@ -72,9 +72,9 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   }
 
   private final transient MessageProperties messageProperties;
-  private final transient TwoFactorPolicies policies;
+  private final transient TwoFactorPolicies twoFactorPolicies;
   private final transient TwoFactorAuthorization twoFactorAuthorization;
-  private final transient HttpServletRequest request;
+  private final transient HttpServletRequest httpRequest;
   private final Map<RoleType, Map<TwoFactorAction, ComboBox<TwoFactorMode>>> rules =
       new EnumMap<>(RoleType.class);
   private final Map<RoleType, Tab> roleTabs = new EnumMap<>(RoleType.class);
@@ -86,44 +86,45 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   private final H2 title = new H2();
   private final Span hint = new Span();
   private final Span saveHint = new Span();
-  private final Switch inactivity = new Switch();
+  private final Switch reconfirmAfterInactivitySwitch = new Switch();
   private final Span durationLabel = new Span();
-  private final AdminDurationField duration;
+  private final AdminDurationField inactivityDurationField;
   private final Switch developmentPause = new Switch();
   private final Switch developmentGoogle = new Switch();
   private final Span developmentTitle = new Span();
   private final Span developmentWarning = new Span();
-  private final Button reload = new Button();
-  private final Button save = new Button();
-  private final AdminSidePanel help;
-  private final Button closeHelp = new Button();
-  private final TwoFactorActionDialog confirmation;
-  private TwoFactorPolicies.Snapshot snapshot;
+  private final Button reloadPolicyButton = new Button();
+  private final Button savePolicyButton = new Button();
+  private final AdminSidePanel fieldHelpPanel;
+  private final Button closeFieldHelpButton = new Button();
+  private final TwoFactorActionDialog twoFactorConfirmationDialog;
+  private TwoFactorPolicies.Snapshot twoFactorPolicySnapshot;
   private transient Runnable refreshHelp;
 
   public AdminTwoFactorSection(
       MessageProperties messageProperties,
-      TwoFactorPolicies policies,
+      TwoFactorPolicies twoFactorPolicies,
       TwoFactorAuthorization twoFactorAuthorization,
-      HttpServletRequest request) {
+      HttpServletRequest httpRequest) {
     this.messageProperties = messageProperties;
-    this.policies = policies;
+    this.twoFactorPolicies = twoFactorPolicies;
     this.twoFactorAuthorization = twoFactorAuthorization;
-    this.request = request;
+    this.httpRequest = httpRequest;
     setWidthFull();
     setPadding(false);
     setSpacing(false);
     addClassNames("cosmos-admin-section", "cosmos-provider-settings", "cosmos-mfa-settings");
     setId("admin-two-factor-settings");
     add(new CosmosSectionHeaderComponent(breadcrumb, pageTitle, pageHint));
-    confirmation = new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, request);
-    help = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
-    help.addClassName("admin-config-help");
-    help.setId("two-factor-field-help");
-    closeHelp.setWidthFull();
-    closeHelp.setPrefixComponent(AppIcon.CLOSE.create());
-    closeHelp.addClickListener(event -> help.close());
-    help.getFooter().add(closeHelp);
+    twoFactorConfirmationDialog =
+        new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, httpRequest);
+    fieldHelpPanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
+    fieldHelpPanel.addClassName("admin-config-help");
+    fieldHelpPanel.setId("two-factor-field-help");
+    closeFieldHelpButton.setWidthFull();
+    closeFieldHelpButton.setPrefixComponent(AppIcon.CLOSE.create());
+    closeFieldHelpButton.addClickListener(event -> fieldHelpPanel.close());
+    fieldHelpPanel.getFooter().add(closeFieldHelpButton);
     title.addClassName(CosmosClasses.PANEL_TITLE);
     hint.addClassName(CosmosClasses.PANEL_DESCRIPTION);
     Div heading = new Div(title, hint);
@@ -176,29 +177,29 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       roleTabs.put(role, tab);
       tabs.add(tab, content);
     }
-    inactivity.setId("two-factor-inactivity-enabled");
-    inactivity.addClassName(CONFIG_SWITCH_CLASS);
-    inactivity.setWidthFull();
-    duration = new AdminDurationField(messageProperties);
-    duration.setAvailableUnits(
+    reconfirmAfterInactivitySwitch.setId("two-factor-inactivity-enabled");
+    reconfirmAfterInactivitySwitch.addClassName(CONFIG_SWITCH_CLASS);
+    reconfirmAfterInactivitySwitch.setWidthFull();
+    inactivityDurationField = new AdminDurationField(messageProperties);
+    inactivityDurationField.setAvailableUnits(
         AdminDurationField.Unit.MINUTES,
         AdminDurationField.Unit.HOURS,
         AdminDurationField.Unit.DAYS);
-    duration.setId("two-factor-inactivity-duration");
-    duration.setDefaultValue(DEFAULT_INACTIVITY_SECONDS);
+    inactivityDurationField.setId("two-factor-inactivity-duration");
+    inactivityDurationField.setDefaultValue(DEFAULT_INACTIVITY_SECONDS);
     durationLabel.setId("two-factor-inactivity-label");
     durationLabel.addClassName("provider-field-label");
-    duration.setAriaLabelledBy("two-factor-inactivity-label");
+    inactivityDurationField.setAriaLabelledBy("two-factor-inactivity-label");
     Div durationField =
         new Div(
             durationLabel,
             withHelp(
-                duration,
+                inactivityDurationField,
                 new FieldHelp(
                     messageProperties::getTwoFactorInactivityGroup,
                     messageProperties::getTwoFactorInactivityDuration,
                     messageProperties::getTwoFactorInactivityDescription,
-                    () -> duration.displayStoredValue(DEFAULT_INACTIVITY_SECONDS),
+                    () -> inactivityDurationField.displayStoredValue(DEFAULT_INACTIVITY_SECONDS),
                     () ->
                         List.of(
                             messageProperties.getAdminConfigDurationNumberRule(),
@@ -208,7 +209,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     Div common =
         new Div(
             withHelp(
-                inactivity,
+                reconfirmAfterInactivitySwitch,
                 new FieldHelp(
                     messageProperties::getTwoFactorInactivityGroup,
                     messageProperties::getTwoFactorInactivityEnabled,
@@ -228,7 +229,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     inactivitySection.setSpacing(false);
     inactivitySection.setPadding(false);
     inactivitySection.addClassName("mfa-inactivity-section");
-    inactivity.addValueChangeListener(event -> duration.setControlsEnabled(event.getValue()));
+    reconfirmAfterInactivitySwitch.addValueChangeListener(
+        event -> inactivityDurationField.setControlsEnabled(event.getValue()));
     developmentPause.addClassName(CONFIG_SWITCH_CLASS);
     developmentPause.setWidthFull();
     developmentGoogle.addClassName(CONFIG_SWITCH_CLASS);
@@ -240,26 +242,26 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     Div development =
         new Div(developmentTitle, developmentWarning, developmentPause, developmentGoogle);
     development.addClassName("mfa-development-options");
-    development.setVisible(policies.developmentOptionsAvailable());
+    development.setVisible(twoFactorPolicies.developmentOptionsAvailable());
     Div body = new Div(tabs, inactivitySection, development);
     body.addClassName("mfa-settings-body");
     Div info = new Div(AppIcon.INFO_CIRCLE.create(), saveHint);
     info.addClassName("cosmos-config-save-hint");
-    reload.setId("two-factor-reload");
-    reload.setPrefixComponent(AppIcon.REFRESH.create());
-    reload.addClickListener(event -> reload());
-    save.setId("two-factor-save");
-    save.setPrefixComponent(AppIcon.CHECK.create());
-    save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    save.addClickListener(event -> saveRequested());
-    Div actions = new Div(reload, save);
+    reloadPolicyButton.setId("two-factor-reload");
+    reloadPolicyButton.setPrefixComponent(AppIcon.REFRESH.create());
+    reloadPolicyButton.addClickListener(event -> reload());
+    savePolicyButton.setId("two-factor-save");
+    savePolicyButton.setPrefixComponent(AppIcon.CHECK.create());
+    savePolicyButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    savePolicyButton.addClickListener(event -> saveRequested());
+    Div actions = new Div(reloadPolicyButton, savePolicyButton);
     actions.addClassName("cosmos-config-card-actions");
     EqualButtonWidths.configure(actions);
     Div footer = new Div(info, actions);
     footer.addClassName("cosmos-panel-footer");
     CosmosCardComponent card = new CosmosCardComponent(header, body, footer);
     card.addClassName(CosmosClasses.PANEL_CARD);
-    add(card, help, confirmation);
+    add(card, fieldHelpPanel, twoFactorConfirmationDialog);
     refreshTexts();
   }
 
@@ -379,17 +381,18 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   }
 
   public void activate() {
-    snapshot = policies.load();
-    snapshot
+    twoFactorPolicySnapshot = twoFactorPolicies.load();
+    twoFactorPolicySnapshot
         .policy()
         .rules()
         .forEach((role, actions) ->
             actions.forEach((action, mode) -> rules.get(role).get(action).setValue(mode)));
-    inactivity.setValue(snapshot.policy().inactivityEnabled());
-    duration.setStoredValue(Long.toString(snapshot.policy().inactivity().toSeconds()));
-    duration.setControlsEnabled(inactivity.getValue());
-    developmentPause.setValue(snapshot.policy().developmentPause());
-    developmentGoogle.setValue(snapshot.policy().developmentGoogleConfirmation());
+    reconfirmAfterInactivitySwitch.setValue(twoFactorPolicySnapshot.policy().inactivityEnabled());
+    inactivityDurationField.setStoredValue(
+        Long.toString(twoFactorPolicySnapshot.policy().inactivity().toSeconds()));
+    inactivityDurationField.setControlsEnabled(reconfirmAfterInactivitySwitch.getValue());
+    developmentPause.setValue(twoFactorPolicySnapshot.policy().developmentPause());
+    developmentGoogle.setValue(twoFactorPolicySnapshot.policy().developmentGoogleConfirmation());
   }
 
   private void reload() {
@@ -405,7 +408,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   }
 
   private void saveRequested() {
-    if (snapshot == null) {
+    if (twoFactorPolicySnapshot == null) {
       return;
     }
     try {
@@ -417,19 +420,21 @@ public final class AdminTwoFactorSection extends VerticalLayout {
         desiredRules.put(role, modes);
       });
       Duration period =
-          duration.getStoredValue().isBlank() && !Boolean.TRUE.equals(inactivity.getValue())
-              ? snapshot.policy().inactivity()
-              : Duration.ofSeconds(Long.parseLong(duration.getStoredValue()));
+          inactivityDurationField.getStoredValue().isBlank()
+                  && !Boolean.TRUE.equals(reconfirmAfterInactivitySwitch.getValue())
+              ? twoFactorPolicySnapshot.policy().inactivity()
+              : Duration.ofSeconds(Long.parseLong(inactivityDurationField.getStoredValue()));
       TwoFactorPolicy desired =
           new TwoFactorPolicy(
               desiredRules,
-              inactivity.getValue(),
+              reconfirmAfterInactivitySwitch.getValue(),
               period,
-              policies.developmentOptionsAvailable() && developmentPause.getValue(),
-              policies.developmentOptionsAvailable() && developmentGoogle.getValue());
-      long revision = snapshot.revision();
-      if (twoFactorAuthorization.requires(request, TwoFactorAction.SECURITY_CONFIGURATION)) {
-        confirmation.open(TwoFactorAction.SECURITY_CONFIGURATION, () -> save(revision, desired));
+              twoFactorPolicies.developmentOptionsAvailable() && developmentPause.getValue(),
+              twoFactorPolicies.developmentOptionsAvailable() && developmentGoogle.getValue());
+      long revision = twoFactorPolicySnapshot.revision();
+      if (twoFactorAuthorization.requires(httpRequest, TwoFactorAction.SECURITY_CONFIGURATION)) {
+        twoFactorConfirmationDialog.open(
+            TwoFactorAction.SECURITY_CONFIGURATION, () -> save(revision, desired));
       } else {
         save(revision, desired);
       }
@@ -440,7 +445,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
 
   private void save(long revision, TwoFactorPolicy desired) {
     try {
-      snapshot = policies.save(request, revision, desired);
+      twoFactorPolicySnapshot = twoFactorPolicies.save(httpRequest, revision, desired);
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getTwoFactorSaved, NotificationHelper.NotificationType.SUCCESS);
@@ -466,7 +471,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
             () -> {
               refreshHelp = () -> renderHelp(details);
               refreshHelp.run();
-              help.open();
+              fieldHelpPanel.open();
             });
     Div row = new Div(field, button);
     row.addClassName("cosmos-config-input-row");
@@ -488,8 +493,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   }
 
   private void renderHelp(FieldHelp details) {
-    help.setHeading(messageProperties.getAdminConfigHelpTitle());
-    help.setDescription(messageProperties.getAdminConfigHelpDescription());
+    fieldHelpPanel.setHeading(messageProperties.getAdminConfigHelpTitle());
+    fieldHelpPanel.setDescription(messageProperties.getAdminConfigHelpDescription());
     Span group = new Span(details.group().get());
     group.addClassName("admin-help-group");
     H3 fieldTitle = new H3(details.title().get());
@@ -505,9 +510,9 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     details.rules().get().forEach(rule -> rulesList.add(new ListItem(rule)));
     Div rulesSection = new Div(new H4(messageProperties.getAdminConfigInputRules()), rulesList);
     rulesSection.addClassName("admin-help-rules");
-    help.removeAll();
-    help.add(group, fieldTitle, description, defaultValue, rulesSection);
-    help.addEffectiveUse(
+    fieldHelpPanel.removeAll();
+    fieldHelpPanel.add(group, fieldTitle, description, defaultValue, rulesSection);
+    fieldHelpPanel.addEffectiveUse(
         messageProperties,
         List.of(
             details.effectiveUse().get(),
@@ -529,22 +534,22 @@ public final class AdminTwoFactorSection extends VerticalLayout {
         actions.forEach((action, modeField) -> modeField.setItemLabelGenerator(this::modeLabel)));
     fieldTextUpdates.forEach(Runnable::run);
     infoButtons.forEach(ConfigInfoButton::refreshText);
-    inactivity.setLabel(messageProperties.getTwoFactorInactivityEnabled());
+    reconfirmAfterInactivitySwitch.setLabel(messageProperties.getTwoFactorInactivityEnabled());
     durationLabel.setText(messageProperties.getTwoFactorInactivityDuration());
-    duration.refreshTexts();
+    inactivityDurationField.refreshTexts();
     developmentTitle.setText(messageProperties.getTwoFactorDevelopmentTitle());
     developmentWarning.setText(messageProperties.getTwoFactorDevelopmentWarning());
     developmentPause.setLabel(messageProperties.getTwoFactorDevelopmentPause());
     developmentGoogle.setLabel(messageProperties.getTwoFactorDevelopmentGoogle());
     saveHint.setText(messageProperties.getTwoFactorSaveHint());
-    reload.setText(messageProperties.getAdminConfigReload());
-    save.setText(messageProperties.getAdminConfigSave());
-    closeHelp.setText(messageProperties.getAdminUsersCloseDialog());
-    help.refreshCloseText(messageProperties);
+    reloadPolicyButton.setText(messageProperties.getAdminConfigReload());
+    savePolicyButton.setText(messageProperties.getAdminConfigSave());
+    closeFieldHelpButton.setText(messageProperties.getAdminUsersCloseDialog());
+    fieldHelpPanel.refreshCloseText(messageProperties);
     if (refreshHelp != null) {
       refreshHelp.run();
     }
-    confirmation.refreshTexts();
+    twoFactorConfirmationDialog.refreshTexts();
   }
 
   private String modeLabel(TwoFactorMode mode) {

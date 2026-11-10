@@ -130,12 +130,11 @@ class MaintenanceViewTest {
     return tree(view)
         .filter(Button.class::isInstance)
         .map(Button.class::cast)
-        .filter(
-            button ->
-                button
-                    .getParent()
-                    .map(parent -> parent.hasClassName("public-panel-footer"))
-                    .orElse(false))
+        .filter(button ->
+            button
+                .getParent()
+                .map(parent -> parent.hasClassName("public-panel-footer"))
+                .orElse(false))
         .filter(button -> label.equals(button.getText()))
         .findFirst()
         .orElseThrow();
@@ -152,10 +151,10 @@ class MaintenanceViewTest {
     for (Locale language : new Locale[] {Locale.GERMAN, Locale.ENGLISH}) {
       locale.set(language);
       LanguageChangeEvent.fire(ui, language);
-      MessageProperties texts = MessageProperties.forLocale(provider, language);
-      assertFalse(button(texts.getMaintenanceLoginButton()).isVisible());
-      assertTrue(button(texts.getBaseLogoutButton()).isVisible());
-      assertTrue(button(texts.getMaintenanceRetryButton()).isVisible());
+      MessageProperties messageProperties = MessageProperties.forLocale(provider, language);
+      assertFalse(button(messageProperties.getMaintenanceLoginButton()).isVisible());
+      assertTrue(button(messageProperties.getBaseLogoutButton()).isVisible());
+      assertTrue(button(messageProperties.getMaintenanceRetryButton()).isVisible());
     }
     assertSame(
         stored,
@@ -181,10 +180,10 @@ class MaintenanceViewTest {
     for (Locale language : new Locale[] {Locale.GERMAN, Locale.ENGLISH}) {
       locale.set(language);
       LanguageChangeEvent.fire(ui, language);
-      MessageProperties texts = MessageProperties.forLocale(provider, language);
-      assertTrue(button(texts.getMaintenanceLoginButton()).isVisible());
-      assertFalse(button(texts.getBaseLogoutButton()).isVisible());
-      assertTrue(button(texts.getMaintenanceRetryButton()).isVisible());
+      MessageProperties messageProperties = MessageProperties.forLocale(provider, language);
+      assertTrue(button(messageProperties.getMaintenanceLoginButton()).isVisible());
+      assertFalse(button(messageProperties.getBaseLogoutButton()).isVisible());
+      assertTrue(button(messageProperties.getMaintenanceRetryButton()).isVisible());
     }
     button(MessageProperties.forLocale(provider, locale.get()).getMaintenanceLoginButton()).click();
     verify(page).setLocation("/app" + AppRoute.LOGIN.getSecurityRoute());

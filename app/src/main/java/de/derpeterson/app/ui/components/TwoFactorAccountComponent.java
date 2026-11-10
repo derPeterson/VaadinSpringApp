@@ -24,7 +24,7 @@ public final class TwoFactorAccountComponent extends Div {
   private final transient TwoFactorManagement twoFactorManagement;
   private final transient HttpServletRequest httpRequest;
 
-  private final Div twoFactorAccountEntry = new Div();
+  private final Div twoFactorAccountCard = new Div();
   private final TwoFactorActionDialog twoFactorConfirmationDialog;
 
   public TwoFactorAccountComponent(
@@ -40,13 +40,13 @@ public final class TwoFactorAccountComponent extends Div {
     setId("account-two-factor");
     twoFactorConfirmationDialog =
         new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, httpRequest);
-    add(twoFactorAccountEntry, twoFactorConfirmationDialog);
+    add(twoFactorAccountCard, twoFactorConfirmationDialog);
 
     refreshTwoFactorAccountSection();
   }
 
   void refreshTwoFactorAccountSection() {
-    twoFactorAccountEntry.removeAll();
+    twoFactorAccountCard.removeAll();
     TwoFactorAuthorization.State twoFactorState =
         twoFactorAuthorization.state(twoFactorAuthorization.owner(httpRequest));
     Div twoFactorIcon = new Div(AppIcon.SHIELD_KEYHOLE.create());
@@ -54,8 +54,8 @@ public final class TwoFactorAccountComponent extends Div {
 
     Div twoFactorDescription = createTwoFactorDescription(twoFactorState.enrolled());
     Div twoFactorActions = createTwoFactorActions(twoFactorState.enrolled());
-    twoFactorAccountEntry.add(twoFactorIcon, twoFactorDescription, twoFactorActions);
-    twoFactorAccountEntry.addClassNames("account-entry", "two-factor-account-entry");
+    twoFactorAccountCard.add(twoFactorIcon, twoFactorDescription, twoFactorActions);
+    twoFactorAccountCard.addClassNames("account-entry", "two-factor-account-entry");
     twoFactorConfirmationDialog.refreshTexts();
   }
 

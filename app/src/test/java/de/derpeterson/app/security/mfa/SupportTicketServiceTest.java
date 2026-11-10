@@ -83,7 +83,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 class SupportTicketServiceTest {
   @Autowired SupportTicketService service;
   @Autowired SupportReplyRepository replies;
-  @Autowired TwoFactorAuthorization authorization;
+  @Autowired TwoFactorAuthorization twoFactorAuthorization;
   @Autowired TwoFactorStore factors;
   @Autowired UserRepository users;
   @Autowired TransactionTemplate transaction;
@@ -118,25 +118,24 @@ class SupportTicketServiceTest {
     SupportTicketFilter filter =
         new SupportTicketFilter(Set.of(Status.CLOSED), Assignment.MINE, Reading.ALL, null);
     List<Long> fixtureIds = new ArrayList<>();
-    transaction.executeWithoutResult(
-        status -> {
-          entityManager.find(SupportTicketEntity.class, older.id()).setStatus(Status.CLOSED);
-          UserEntity assignee = entityManager.find(UserEntity.class, administratorId);
-          entityManager.find(SupportTicketEntity.class, older.id()).setAssignee(assignee);
-          UserEntity requester = entityManager.find(UserEntity.class, user.getId());
-          for (int index = 0; index < 101; index++) {
-            SupportTicketEntity ticket = new SupportTicketEntity();
-            ticket.setOwner(requester);
-            ticket.setAssignee(assignee);
-            ticket.setStatus(Status.CLOSED);
-            ticket.setSubject("Synthetic archived request");
-            ticket.setCreatedAt(older.createdAt().plusSeconds(index + 1));
-            ticket.setUpdatedAt(older.updatedAt().plusSeconds(index + 1));
-            ticket.setPublicUpdatedAt(older.updatedAt().plusSeconds(index + 1));
-            entityManager.persist(ticket);
-            fixtureIds.add(ticket.getId());
-          }
-        });
+    transaction.executeWithoutResult(status -> {
+      entityManager.find(SupportTicketEntity.class, older.id()).setStatus(Status.CLOSED);
+      UserEntity assignee = entityManager.find(UserEntity.class, administratorId);
+      entityManager.find(SupportTicketEntity.class, older.id()).setAssignee(assignee);
+      UserEntity requester = entityManager.find(UserEntity.class, user.getId());
+      for (int index = 0; index < 101; index++) {
+        SupportTicketEntity ticket = new SupportTicketEntity();
+        ticket.setOwner(requester);
+        ticket.setAssignee(assignee);
+        ticket.setStatus(Status.CLOSED);
+        ticket.setSubject("Synthetic archived request");
+        ticket.setCreatedAt(older.createdAt().plusSeconds(index + 1));
+        ticket.setUpdatedAt(older.updatedAt().plusSeconds(index + 1));
+        ticket.setPublicUpdatedAt(older.updatedAt().plusSeconds(index + 1));
+        entityManager.persist(ticket);
+        fixtureIds.add(ticket.getId());
+      }
+    });
     try {
       assertFalse(
           service.list(administrator, true).stream()
@@ -145,7 +144,7 @@ class SupportTicketServiceTest {
       SupportTicketService.LiveView first =
           service.inbox(administrator, null, new InboxQuery(filter, 0, 10));
       assertEquals(102, first.totalTickets());
-      assertEquals(10, first.tickets().size());
+      assertEquals(10, first.visibleTickets().size());
       assertEquals(10, service.pageFor(administrator, older.id(), filter, 10));
       for (int size : List.of(10, 20, 50)) {
         int lastPage = 101 / size;
@@ -153,14 +152,15 @@ class SupportTicketServiceTest {
             service.inbox(
                 administrator, older.id(), new InboxQuery(filter, Integer.MAX_VALUE, size));
         assertEquals(lastPage, last.page());
-        assertEquals(102 % size, last.tickets().size());
+        assertEquals(102 % size, last.visibleTickets().size());
         assertEquals(older.id(), last.selected().id());
-        assertEquals(older.id(), last.tickets().getLast().id());
+        assertEquals(older.id(), last.visibleTickets().getLast().id());
       }
       SupportTicketService.LiveView detail =
           service.inbox(administrator, older.id(), new InboxQuery(filter, 0, 10));
       assertEquals(older.id(), detail.selected().id());
-      assertFalse(detail.tickets().stream().anyMatch(ticket -> ticket.id().equals(older.id())));
+      assertFalse(
+          detail.visibleTickets().stream().anyMatch(ticket -> ticket.id().equals(older.id())));
       SupportTicketFilter open =
           new SupportTicketFilter(Set.of(Status.OPEN), Assignment.MINE, Reading.ALL, null);
       assertEquals(
@@ -178,12 +178,11 @@ class SupportTicketServiceTest {
       assertThrows(AccessDeniedException.class, () -> service.inbox(owner, olderId, allTickets));
       assertThrows(IllegalArgumentException.class, () -> new InboxQuery(filter, 0, 7));
     } finally {
-      transaction.executeWithoutResult(
-          status -> {
-            for (Long id : fixtureIds) {
-              entityManager.remove(entityManager.find(SupportTicketEntity.class, id));
-            }
-          });
+      transaction.executeWithoutResult(status -> {
+        for (Long id : fixtureIds) {
+          entityManager.remove(entityManager.find(SupportTicketEntity.class, id));
+        }
+      });
     }
   }
 
@@ -196,7 +195,7 @@ class SupportTicketServiceTest {
     InboxQuery query = new InboxQuery(mine, 0, 10);
     SupportTicketService.LiveView unread = service.inbox(administrator, ticket.id(), query);
     assertEquals(1, unread.totalTickets());
-    assertEquals(ticket.id(), unread.tickets().getFirst().id());
+    assertEquals(ticket.id(), unread.visibleTickets().getFirst().id());
     SupportTicketFilter any =
         new SupportTicketFilter(Set.of(Status.IN_PROGRESS), Assignment.ALL, Reading.UNREAD, null);
     assertEquals(
@@ -214,7 +213,7 @@ class SupportTicketServiceTest {
         unread.selected().version());
     SupportTicketService.LiveView read = service.inbox(administrator, ticket.id(), query);
     assertEquals(0, read.totalTickets());
-    assertTrue(read.tickets().isEmpty());
+    assertTrue(read.visibleTickets().isEmpty());
     assertEquals(ticket.id(), read.selected().id());
   }
 
@@ -230,14 +229,12 @@ class SupportTicketServiceTest {
             service.administratorId(administrator),
             service.administratorId(otherAdministrator)
           }) {
-        transaction.executeWithoutResult(
-            transactionStatus -> {
-              SupportTicketEntity entity =
-                  entityManager.find(SupportTicketEntity.class, ticket.id());
-              entity.setStatus(status);
-              entity.setAssignee(
-                  assignee == null ? null : entityManager.find(UserEntity.class, assignee));
-            });
+        transaction.executeWithoutResult(transactionStatus -> {
+          SupportTicketEntity entity = entityManager.find(SupportTicketEntity.class, ticket.id());
+          entity.setStatus(status);
+          entity.setAssignee(
+              assignee == null ? null : entityManager.find(UserEntity.class, assignee));
+        });
         SupportTicketFilter unread =
             new SupportTicketFilter(Set.of(status), Assignment.ALL, Reading.UNREAD, null);
         for (MockHttpServletRequest viewer : List.of(administrator, otherAdministrator, watcher)) {
@@ -246,7 +243,10 @@ class SupportTicketServiceTest {
                   viewer, SupportTicketService.ticketNumber(ticket.id()).substring(1));
           int page = service.pageFor(viewer, ticket.id(), unread, 10);
           boolean listed =
-              service.inbox(viewer, null, new InboxQuery(unread, page, 10)).tickets().stream()
+              service
+                  .inbox(viewer, null, new InboxQuery(unread, page, 10))
+                  .visibleTickets()
+                  .stream()
                   .anyMatch(value -> value.id().equals(ticket.id()));
           assertEquals(expected.unreadMessages() > 0, listed, status + " / " + assignee);
         }
@@ -268,7 +268,7 @@ class SupportTicketServiceTest {
     assertThrows(AccessDeniedException.class, () -> service.list(owner, true));
     Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
     UserIdentity expectedAssignee =
-        new UserIdentity("Support", "Fixture", authorization.owner(administrator).email());
+        new UserIdentity("Support", "Fixture", twoFactorAuthorization.owner(administrator).email());
     assertEquals(expectedAssignee, claimed.assigneeIdentity());
     UserIdentity expectedRequester =
         new UserIdentity(user.getFirstName(), user.getLastName(), user.getEmail());
@@ -319,7 +319,7 @@ class SupportTicketServiceTest {
             .findFirst()
             .orElseThrow()
             .actor());
-    assertFalse(authorization.state(authorization.owner(owner)).enrolled());
+    assertFalse(twoFactorAuthorization.state(twoFactorAuthorization.owner(owner)).enrolled());
   }
 
   @Test
@@ -357,7 +357,8 @@ class SupportTicketServiceTest {
         List.of(Status.OPEN, Status.IN_PROGRESS, Status.CLOSED_BY_REQUESTER),
         history.stream().skip(1).map(Reply::previousStatus).toList());
     assertEquals(user.getEmail(), history.get(2).actor().email());
-    assertEquals(authorization.owner(administrator).email(), history.getLast().actor().email());
+    assertEquals(
+        twoFactorAuthorization.owner(administrator).email(), history.getLast().actor().email());
     assertEquals(createdAt, closed.createdAt());
     assertEquals(1, service.conversation(owner, created.id(), false).size());
     assertEquals(0L, ticketFor(otherAdministrator, created.id(), true).unreadMessages());
@@ -412,13 +413,12 @@ class SupportTicketServiceTest {
         .recordSupportReply(
             eq(SupportTicketService.ticketNumber(ticket.id())),
             any(),
-            argThat(
-                recipients ->
-                    recipients.size() == 2
-                        && recipients.stream()
-                            .map(UserEntity::getId)
-                            .toList()
-                            .containsAll(List.of(assignedId, watcherId))));
+            argThat(recipients ->
+                recipients.size() == 2
+                    && recipients.stream()
+                        .map(UserEntity::getId)
+                        .toList()
+                        .containsAll(List.of(assignedId, watcherId))));
     service.setSubscription(superadmin, ticket.id(), false);
     assertFalse(ticketFor(superadmin, ticket.id(), true).subscribed());
     service.closeOwn(owner, updated.id(), updated.version());
@@ -591,13 +591,12 @@ class SupportTicketServiceTest {
     Long disabledId = service.administratorId(disabled);
     service.setSubscription(revoked, ticket.id(), true);
     service.setSubscription(disabled, ticket.id(), true);
-    transaction.executeWithoutResult(
-        status -> {
-          UserEntity formerAdmin = users.findById(revokedId).orElseThrow();
-          formerAdmin.setRoleEntities(List.of());
-          UserEntity disabledAdmin = users.findById(disabledId).orElseThrow();
-          disabledAdmin.setEnabled(false);
-        });
+    transaction.executeWithoutResult(status -> {
+      UserEntity formerAdmin = users.findById(revokedId).orElseThrow();
+      formerAdmin.setRoleEntities(List.of());
+      UserEntity disabledAdmin = users.findById(disabledId).orElseThrow();
+      disabledAdmin.setEnabled(false);
+    });
     Ticket updated =
         service.reply(owner, ticket.id(), claimed.version(), "Neue Frage.", false, false);
     service.closeOwn(owner, ticket.id(), updated.version());
@@ -611,12 +610,11 @@ class SupportTicketServiceTest {
     List<SupportTicketBroadcaster.Change> changes = new ArrayList<>();
     Registration listener = service.events().register(changes::add);
     try {
-      transaction.executeWithoutResult(
-          status -> {
-            service.reply(owner, ticket.id(), ticket.version(), "Zurückgerollt.", false, false);
-            assertTrue(changes.isEmpty());
-            status.setRollbackOnly();
-          });
+      transaction.executeWithoutResult(status -> {
+        service.reply(owner, ticket.id(), ticket.version(), "Zurückgerollt.", false, false);
+        assertTrue(changes.isEmpty());
+        status.setRollbackOnly();
+      });
       assertTrue(changes.isEmpty());
       service.reply(owner, ticket.id(), ticket.version(), "Gespeichert.", false, false);
       assertEquals(List.of(new SupportTicketBroadcaster.Change(user.getId(), null)), changes);
@@ -729,11 +727,10 @@ class SupportTicketServiceTest {
   void rolledBackClaimKeepsOriginalNotificationAndTicketOpen() {
     Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
     Long adminId = service.administratorId(administrator);
-    transaction.executeWithoutResult(
-        status -> {
-          service.claim(administrator, ticket.id(), ticket.version());
-          status.setRollbackOnly();
-        });
+    transaction.executeWithoutResult(status -> {
+      service.claim(administrator, ticket.id(), ticket.version());
+      status.setRollbackOnly();
+    });
     assertEquals(Status.OPEN, ticketFor(administrator, ticket.id(), true).status());
     assertEquals(
         List.of(Kind.TICKET_CREATED, Kind.MESSAGE),
@@ -786,14 +783,14 @@ class SupportTicketServiceTest {
   void restrictedFirstFactorCanAskForHelpButCannotReadAdministrationOrExceedLimits() {
     UserEntity required = create(RoleType.ROLE_ADMIN);
     MockHttpServletRequest firstFactor = TwoFactorAuthorizationTest.requestFor(required.getEmail());
-    assertFalse(authorization.sessionConfirmed(firstFactor));
+    assertFalse(twoFactorAuthorization.sessionConfirmed(firstFactor));
     assertThrows(IllegalArgumentException.class, () -> service.createRecovery(firstFactor, " "));
     String overlongMessage = "x".repeat(2001);
     assertThrows(
         IllegalArgumentException.class, () -> service.createRecovery(firstFactor, overlongMessage));
     for (int attempt = 0; attempt < 3; attempt++) {
       Ticket ticket = service.createRecovery(firstFactor, "Verlorener Authenticator.");
-      assertFalse(authorization.sessionConfirmed(firstFactor));
+      assertFalse(twoFactorAuthorization.sessionConfirmed(firstFactor));
       assertThrows(AccessDeniedException.class, () -> service.list(firstFactor, true));
       Ticket claimed = service.claim(administrator, ticket.id(), ticket.version());
       Ticket closed = service.close(administrator, claimed.id(), claimed.version());
@@ -834,7 +831,7 @@ class SupportTicketServiceTest {
     assertThrows(
         AccessDeniedException.class,
         () -> service.validateInstructionPreview(administrator, copiedTextId));
-    assertFalse(authorization.state(authorization.owner(owner)).enrolled());
+    assertFalse(twoFactorAuthorization.state(twoFactorAuthorization.owner(owner)).enrolled());
   }
 
   @Test
@@ -872,34 +869,33 @@ class SupportTicketServiceTest {
                 Totp.code(seed, clock.instant().getEpochSecond() / 30),
                 false)
             .recoveryCodes();
-    authorization.confirmSession(request, codes.getFirst());
+    twoFactorAuthorization.confirmSession(request, codes.getFirst());
     return request;
   }
 
   private UserEntity create(RoleType type) {
-    return transaction.execute(
-        status -> {
-          RoleEntity role =
-              entityManager
-                  .createQuery("select r from RoleEntity r where r.name = :name", RoleEntity.class)
-                  .setParameter("name", type)
-                  .getResultStream()
-                  .findFirst()
-                  .orElse(null);
-          if (role == null) {
-            role = RoleEntity.builder().name(type).build();
-            entityManager.persist(role);
-          }
-          return users.saveAndFlush(
-              UserEntity.builder()
-                  .email(UUID.randomUUID() + "@example.test")
-                  .firstName("Support")
-                  .lastName("Fixture")
-                  .preferredLocale(Locale.GERMAN)
-                  .enabled(true)
-                  .roleEntities(List.of(role))
-                  .build());
-        });
+    return transaction.execute(status -> {
+      RoleEntity role =
+          entityManager
+              .createQuery("select r from RoleEntity r where r.name = :name", RoleEntity.class)
+              .setParameter("name", type)
+              .getResultStream()
+              .findFirst()
+              .orElse(null);
+      if (role == null) {
+        role = RoleEntity.builder().name(type).build();
+        entityManager.persist(role);
+      }
+      return users.saveAndFlush(
+          UserEntity.builder()
+              .email(UUID.randomUUID() + "@example.test")
+              .firstName("Support")
+              .lastName("Fixture")
+              .preferredLocale(Locale.GERMAN)
+              .enabled(true)
+              .roleEntities(List.of(role))
+              .build());
+    });
   }
 
   @Configuration
@@ -930,7 +926,7 @@ class SupportTicketServiceTest {
         UserRepository users,
         SecurityService security,
         ConfigService config,
-        TwoFactorAuthorization authorization) {
+        TwoFactorAuthorization twoFactorAuthorization) {
       return spy(
           new UserNotificationService(
               new UserNotificationPolicy(config),
@@ -940,7 +936,7 @@ class SupportTicketServiceTest {
               security,
               config,
               new UserNotificationBroadcaster(),
-              authorization));
+              twoFactorAuthorization));
     }
 
     @Bean
@@ -950,7 +946,7 @@ class SupportTicketServiceTest {
 
     @Bean
     SupportTicketService support(
-        TwoFactorAuthorization authorization,
+        TwoFactorAuthorization twoFactorAuthorization,
         SupportTicketRepository tickets,
         SupportReplyRepository replies,
         SupportTicketViewerRepository viewers,
@@ -962,7 +958,7 @@ class SupportTicketServiceTest {
         ConfigService config,
         SupportTicketBroadcaster events) {
       return new SupportTicketService(
-          authorization,
+          twoFactorAuthorization,
           tickets,
           replies,
           viewers,

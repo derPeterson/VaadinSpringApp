@@ -33,64 +33,65 @@ import java.util.List;
 public final class ExternalConnectionsComponent extends Div {
   private static final String LINK_RETURN =
       ExternalConnectionsComponent.class.getName() + ".linkReturn";
-  private final transient ExternalLoginFlow flow;
-  private final transient ExternalIdentityService identities;
+  private final transient ExternalLoginFlow externalLoginFlow;
+  private final transient ExternalIdentityService externalIdentityService;
   private final transient HttpServletRequest request;
   private final transient MessageProperties messageProperties;
-  private final Div overview = new Div();
-  private final ExternalIdentityConfirmationDialog confirmation;
-  private SerializableRunnable passwordAction;
-  private SerializableRunnable emailAction;
+  private final Div providerOverview = new Div();
+  private final ExternalIdentityConfirmationDialog identityConfirmationDialog;
+  private SerializableRunnable openPasswordSettings;
+  private SerializableRunnable openEmailSettings;
   private SerializableRunnable showProviders = () -> {};
 
   public ExternalConnectionsComponent(
-      ExternalLoginFlow flow,
-      ExternalIdentityService identities,
+      ExternalLoginFlow externalLoginFlow,
+      ExternalIdentityService externalIdentityService,
       HttpServletRequest request,
       MessageProperties messageProperties) {
-    this.flow = flow;
-    this.identities = identities;
+    this.externalLoginFlow = externalLoginFlow;
+    this.externalIdentityService = externalIdentityService;
     this.request = request;
     this.messageProperties = messageProperties;
-    confirmation =
-        new ExternalIdentityConfirmationDialog(flow, identities, request, messageProperties);
+    identityConfirmationDialog =
+        new ExternalIdentityConfirmationDialog(
+            externalLoginFlow, externalIdentityService, request, messageProperties);
     setId("account-external-connections");
     addClassName("account-external-connections");
-    overview.addClassName("external-connections-overview");
-    EqualButtonWidths.configure(overview);
-    add(overview);
+    providerOverview.addClassName("external-connections-overview");
+    EqualButtonWidths.configure(providerOverview);
+    add(providerOverview);
     ComponentUtil.addListener(
         UI.getCurrent(), LanguageChangeEvent.class, event -> refreshAccount());
     refreshAccount();
   }
 
   public void configureAccountActions(
-      SerializableRunnable passwordAction,
-      SerializableRunnable emailAction,
+      SerializableRunnable openPasswordSettings,
+      SerializableRunnable openEmailSettings,
       SerializableRunnable showProviders) {
-    this.passwordAction = passwordAction;
-    this.emailAction = emailAction;
+    this.openPasswordSettings = openPasswordSettings;
+    this.openEmailSettings = openEmailSettings;
     this.showProviders = showProviders;
     // Nach der Rückkehr vom Anbieter sichtbar fortsetzen, nie automatisch trennen.
     UI.getCurrent()
         .beforeClientResponse(
-            confirmation,
+            identityConfirmationDialog,
             context -> {
               HttpSession session = request.getSession(false);
               if (session != null && Boolean.TRUE.equals(session.getAttribute(LINK_RETURN))) {
                 session.removeAttribute(LINK_RETURN);
                 showProviders.run();
               }
-              confirmation.consumeProviderReturn().ifPresent(this::requestAction);
+              identityConfirmationDialog.consumeProviderReturn().ifPresent(this::requestAction);
             });
   }
 
   public ExternalIdentityConfirmationDialog getConfirmationDialog() {
-    return confirmation;
+    return identityConfirmationDialog;
   }
 
   public boolean developmentExceptionActive() {
-    return flow.developmentExceptionActive();
+    return externalLoginFlow.developmentExceptionActive();
   }
 
   public void requestPasswordChange() {
@@ -102,17 +103,17 @@ public final class ExternalConnectionsComponent extends Div {
   }
 
   public void refreshAccount() {
-    overview.removeAll();
-    UserEntity user = flow.owner(request);
-    List<String> connected = identities.connected(user.getId());
-    List<String> available = flow.providers();
-    overview.setVisible(!available.isEmpty() || !connected.isEmpty());
+    providerOverview.removeAll();
+    UserEntity user = externalLoginFlow.owner(request);
+    List<String> connected = externalIdentityService.connected(user.getId());
+    List<String> available = externalLoginFlow.providers();
+    providerOverview.setVisible(!available.isEmpty() || !connected.isEmpty());
     for (String provider : ExternalProviderSettings.PROVIDERS) {
       if (available.contains(provider) || connected.contains(provider)) {
-        overview.add(providerRow(provider, user, connected, available));
+        providerOverview.add(providerRow(provider, user, connected, available));
       }
     }
-    confirmation.refreshTexts();
+    identityConfirmationDialog.refreshTexts();
   }
 
   private Div providerRow(
@@ -177,8 +178,8 @@ public final class ExternalConnectionsComponent extends Div {
   private void requestAction(Purpose purpose) {
     SerializableRunnable action =
         switch (purpose) {
-          case PASSWORD -> passwordAction;
-          case EMAIL -> emailAction;
+          case PASSWORD -> openPasswordSettings;
+          case EMAIL -> openEmailSettings;
           case LINK_GOOGLE -> () -> link(GOOGLE);
           case LINK_MICROSOFT -> () -> link("microsoft");
           case UNLINK_GOOGLE -> () -> unlink(GOOGLE);
@@ -192,16 +193,17 @@ public final class ExternalConnectionsComponent extends Div {
     if (!accountChange) {
       showProviders.run();
     }
-    boolean confirmed = flow.confirmedPurpose(request).filter(purpose::equals).isPresent();
-    UserEntity user = flow.owner(request);
+    boolean confirmed =
+        externalLoginFlow.confirmedPurpose(request).filter(purpose::equals).isPresent();
+    UserEntity user = externalLoginFlow.owner(request);
     boolean providerProofAvailable =
-        identities.connected(user.getId()).stream()
+        externalIdentityService.connected(user.getId()).stream()
             .anyMatch(provider ->
-                flow.providers().contains(provider)
-                    && flow.canUseProviderProof(request, provider, purpose));
+                externalLoginFlow.providers().contains(provider)
+                    && externalLoginFlow.canUseProviderProof(request, provider, purpose));
     if (!confirmed
-        && !flow.factorEnrolled(request)
-        && (flow.requiresFactor(request, purpose)
+        && !externalLoginFlow.factorEnrolled(request)
+        && (externalLoginFlow.requiresFactor(request, purpose)
             || user.getPassword() == null && !providerProofAvailable)) {
       TwoFactorFlow.SETUP.enter(request);
       UI.getCurrent()
@@ -212,7 +214,7 @@ public final class ExternalConnectionsComponent extends Div {
     if (!confirmed
         && user.getPassword() == null
         && !providerProofAvailable
-        && !flow.requiresFactor(request, purpose)) {
+        && !externalLoginFlow.requiresFactor(request, purpose)) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getExternalProofUnavailable,
@@ -223,23 +225,24 @@ public final class ExternalConnectionsComponent extends Div {
         && (confirmed
             || user.getPassword() != null
                 && !providerProofAvailable
-                && !flow.requiresFactor(request, purpose))) {
+                && !externalLoginFlow.requiresFactor(request, purpose))) {
       // Lokale Konten behalten den bestehenden Änderungsdialog mit Passwortprüfung.
       action.run();
     } else {
-      confirmation.open(purpose, action);
+      identityConfirmationDialog.open(purpose, action);
     }
   }
 
   private void link(String provider) {
-    String destination = flow.beginLink(request, provider, VaadinSession.getCurrent().getLocale());
+    String destination =
+        externalLoginFlow.beginLink(request, provider, VaadinSession.getCurrent().getLocale());
     // Nur die Ansichtsposition merken, keinen Anmeldenachweis oder eine weitere Aktion.
     request.getSession(false).setAttribute(LINK_RETURN, true);
     UI.getCurrent().getPage().setLocation(destination);
   }
 
   private void unlink(String provider) {
-    boolean retained = flow.disconnect(request, provider);
+    boolean retained = externalLoginFlow.disconnect(request, provider);
     String destination =
         retained
             ? AppRouteConstants.ACCOUNT_PROVIDERS_LOCATION + "&"

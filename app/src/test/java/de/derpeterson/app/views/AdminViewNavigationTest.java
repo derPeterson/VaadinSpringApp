@@ -147,10 +147,9 @@ class AdminViewNavigationTest {
             mock(ExternalIdentityService.class));
     providers = mock(ExternalProviderSettings.class);
     when(providers.load(any()))
-        .thenAnswer(
-            call ->
-                new ExternalProviderSettings.Settings(
-                    call.getArgument(0), "", false, false, "own-version"));
+        .thenAnswer(call ->
+            new ExternalProviderSettings.Settings(
+                call.getArgument(0), "", false, false, "own-version"));
     de.derpeterson.app.security.mfa.TwoFactorAuthorization factor =
         mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class);
     created.configureExternalProviders(providers, factor);
@@ -208,23 +207,22 @@ class AdminViewNavigationTest {
     when(tickets.findForAdministration(eq(request), any()))
         .thenAnswer(call -> "10001".equals(call.getArgument(1)) ? ticket : null);
     when(tickets.inbox(eq(request), any(), any()))
-        .thenAnswer(
-            call -> {
-              Long selected = call.getArgument(1);
-              return new SupportTicketService.LiveView(
-                  1L,
-                  List.of(ticket),
-                  ticket.id().equals(selected) ? ticket : null,
-                  List.of(),
-                  null,
-                  1,
-                  0,
-                  10);
-            });
+        .thenAnswer(call -> {
+          Long selected = call.getArgument(1);
+          return new SupportTicketService.LiveView(
+              1L,
+              List.of(ticket),
+              ticket.id().equals(selected) ? ticket : null,
+              List.of(),
+              null,
+              1,
+              0,
+              10);
+        });
     view.configureSupport(tickets);
     enter(query);
     Component support = (Component) ReflectionTestUtils.getField(view, "supportSection");
-    Grid<?> grid = (Grid<?>) ReflectionTestUtils.getField(support, "grid");
+    Grid<?> grid = (Grid<?>) ReflectionTestUtils.getField(support, "ticketGrid");
     assertEquals(List.of(ticket), List.copyOf(grid.getSelectedItems()));
     Tabs categories = (Tabs) ReflectionTestUtils.getField(support, "ticketCategories");
     assertEquals(query.contains("tab=recovery") ? 1 : 0, categories.getSelectedIndex());

@@ -27,11 +27,11 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Component
 @RequiredArgsConstructor
 public class AccountSecurityMail {
-  private final ConfigService config;
-  private final CustomI18NProvider i18n;
+  private final ConfigService configService;
+  private final CustomI18NProvider i18nProvider;
 
   public MessageProperties messagePropertiesForRecipient(UserEntity user) {
-    return MessageProperties.forLocale(i18n, recipientLocale(user));
+    return MessageProperties.forLocale(i18nProvider, recipientLocale(user));
   }
 
   private Locale recipientLocale(UserEntity user) {
@@ -41,7 +41,7 @@ public class AccountSecurityMail {
   }
 
   public String render(String template, UserEntity user, Map<String, String> values) {
-    String service = config.getString(ConfigEntry.SERVICE_NAME);
+    String service = configService.getString(ConfigEntry.SERVICE_NAME);
     HashMap<String, String> replacements = new HashMap<>(values);
     try {
       replacements.put("SERVICE_LOGO", EmailLogo.validatedContentId());
@@ -50,16 +50,17 @@ public class AccountSecurityMail {
     }
     replacements.put("SERVICE_NAME", service);
     replacements.put(
-        "INTER_FONT_STYLESHEET", EmailFonts.styleSheetUrl(config.getString(ConfigEntry.BASE_URL)));
+        "INTER_FONT_STYLESHEET",
+        EmailFonts.styleSheetUrl(configService.getString(ConfigEntry.BASE_URL)));
     replacements.put(
         "LOGIN_LINK",
-        UriComponentsBuilder.fromUriString(config.getString(ConfigEntry.BASE_URL))
+        UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
             .pathSegment(AppRoute.LOGIN.getRoute())
             .toUriString());
     replacements.put(
         "COPYRIGHT_TEXT",
         CopyrightTextFormatter.format(
-            config.getString(ConfigEntry.COPYRIGHT_TEXT),
+            configService.getString(ConfigEntry.COPYRIGHT_TEXT),
             service,
             Clock.systemDefaultZone(),
             messagePropertiesForRecipient(user)::getAccountCopyrightTemplate));

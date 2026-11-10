@@ -16,7 +16,7 @@ import io.qameta.allure.Step;
 /** Only the visible login form; does not bypass the application's authentication. */
 public final class LoginPage {
   private final Page page;
-  private final UiTexts texts = UiTexts.selected();
+  private final UiTexts uiTexts = UiTexts.selected();
 
   public LoginPage(Page page) {
     this.page = page;
@@ -38,21 +38,22 @@ public final class LoginPage {
     for (Locator notice : page.locator("vaadin-notification-card:not([closing])").all()) {
       notice.getByRole(AriaRole.BUTTON).click();
     }
-    page.getByLabel(texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
+    page.getByLabel(uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
         .fill(email);
-    page.getByLabel(texts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true))
+    page.getByLabel(uiTexts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true))
         .fill(password);
     Locator submit =
         page.locator(".public-panel")
             .getByRole(
                 AriaRole.BUTTON,
-                new Locator.GetByRoleOptions().setName(texts.getBaseLoginButton()).setExact(true));
+                new Locator.GetByRoleOptions()
+                    .setName(uiTexts.getBaseLoginButton())
+                    .setExact(true));
     UiActions.complete(page, submit::click);
-    page.waitForCondition(
-        () ->
-            !java.net.URI.create(page.url()).getPath().equals(path(LOGIN_ROUTE))
-                || page.locator("vaadin-notification-card:not([closing])").isVisible()
-                || page.locator("#session-recovery").isVisible());
+    page.waitForCondition(() ->
+        !java.net.URI.create(page.url()).getPath().equals(path(LOGIN_ROUTE))
+            || page.locator("vaadin-notification-card:not([closing])").isVisible()
+            || page.locator("#session-recovery").isVisible());
   }
 
   @Step("Loginformular ist in der ausgewählten Sprache sichtbar")
@@ -61,16 +62,16 @@ public final class LoginPage {
     assertThat(page).hasTitle(LOGIN_PAGE_TITLE);
     assertThat(
             page.getByLabel(
-                texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)))
+                uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)))
         .isVisible();
     assertThat(
             page.getByLabel(
-                texts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true)))
+                uiTexts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true)))
         .isVisible();
     assertThat(
             page.getByRole(
                 AriaRole.HEADING,
-                new Page.GetByRoleOptions().setName(texts.getLoginTitle()).setExact(true)))
+                new Page.GetByRoleOptions().setName(uiTexts.getLoginTitle()).setExact(true)))
         .isVisible();
   }
 
@@ -80,13 +81,13 @@ public final class LoginPage {
     assertThat(
             page.locator("vaadin-notification-card:not([closing])")
                 .getByText(
-                    texts.getLoginFailedMessage(), new Locator.GetByTextOptions().setExact(true)))
+                    uiTexts.getLoginFailedMessage(), new Locator.GetByTextOptions().setExact(true)))
         .isVisible();
     assertThat(
             page.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
-                    .setName(texts.getAdminDashboardTitle())
+                    .setName(uiTexts.getAdminDashboardTitle())
                     .setExact(true)
                     .setLevel(1)))
         .hasCount(0);
@@ -97,7 +98,7 @@ public final class LoginPage {
     assertFormVisible();
     assertThat(
             page.getByText(
-                texts.getLoginSessionLimitMessage(), new Page.GetByTextOptions().setExact(true)))
+                uiTexts.getLoginSessionLimitMessage(), new Page.GetByTextOptions().setExact(true)))
         .isVisible();
   }
 
@@ -105,11 +106,11 @@ public final class LoginPage {
   public void assertRestrictedManagement() {
     assertThat(page).hasURL(urlPattern(LOGIN_ROUTE));
     assertThat(page.locator("#session-recovery")).isVisible();
-    assertThat(page.locator("#session-recovery")).containsText(texts.getSessionRecoveryHint());
+    assertThat(page.locator("#session-recovery")).containsText(uiTexts.getSessionRecoveryHint());
     assertThat(page.locator("#session-recovery-continue")).isVisible();
     assertThat(
             page.getByLabel(
-                texts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true)))
+                uiTexts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true)))
         .not()
         .isVisible();
   }
@@ -122,7 +123,7 @@ public final class LoginPage {
             page.locator("#account-session-entries [data-session-state='active'] vaadin-button")
                 .nth(index)
                 .click());
-    new AccountSessionsPage(page).confirm();
+    new AccountSessionsPage(page).confirmDeviceRevocation();
   }
 
   @Step("Eingeschränkte Verwaltung abbrechen und zur normalen Anmeldung zurückkehren")
@@ -136,7 +137,7 @@ public final class LoginPage {
     assertFormVisible();
     assertThat(
             page.getByText(
-                texts.getLoginThrottledMessage(), new Page.GetByTextOptions().setExact(true)))
+                uiTexts.getLoginThrottledMessage(), new Page.GetByTextOptions().setExact(true)))
         .isVisible();
   }
 
@@ -155,7 +156,7 @@ public final class LoginPage {
             page.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
-                    .setName(texts.getAdminDashboardTitle())
+                    .setName(uiTexts.getAdminDashboardTitle())
                     .setExact(true)
                     .setLevel(1)))
         .isVisible();

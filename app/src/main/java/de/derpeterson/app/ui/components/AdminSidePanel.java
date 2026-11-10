@@ -19,23 +19,23 @@ import java.util.List;
 
 /** Rechte, modal überlagerte Seitenleiste; native Fokus- und Escape-Bedienung bleibt erhalten. */
 public class AdminSidePanel extends Dialog {
-  private final H2 title = new H2();
-  private final Span description = new Span();
-  private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create());
+  private final H2 panelTitle = new H2();
+  private final Span panelDescription = new Span();
+  private final Button closePanelButton = new Button(AppIcon.CLOSE_CIRCLE.create());
 
   public AdminSidePanel(MessageProperties messageProperties, AppIcon icon) {
     addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-drawer");
     getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
-    title.addClassName(PANEL_TITLE);
-    description.addClassName(PANEL_DESCRIPTION);
-    description.setVisible(false);
-    Div heading = new Div(title, description);
+    panelTitle.addClassName(PANEL_TITLE);
+    panelDescription.addClassName(PANEL_DESCRIPTION);
+    panelDescription.setVisible(false);
+    Div heading = new Div(panelTitle, panelDescription);
     heading.addClassName(PANEL_HEADING);
     Div symbol = new Div(icon.create());
     symbol.addClassName(PANEL_ICON);
-    close.addClassName("cosmos-overlay-close");
-    close.addClickListener(event -> close());
-    Div header = new Div(symbol, heading, close);
+    closePanelButton.addClassName("cosmos-overlay-close");
+    closePanelButton.addClickListener(event -> close());
+    Div header = new Div(symbol, heading, closePanelButton);
     header.addClassName("admin-reference-drawer-heading");
     getHeader().add(header);
     setCloseOnEsc(true);
@@ -45,12 +45,12 @@ public class AdminSidePanel extends Dialog {
   }
 
   public void setHeading(String text) {
-    title.setText(text);
+    panelTitle.setText(text);
   }
 
   public void setDescription(String text) {
-    description.setText(text);
-    description.setVisible(!text.isBlank());
+    panelDescription.setText(text);
+    panelDescription.setVisible(!text.isBlank());
   }
 
   public void addEffectiveUse(MessageProperties messageProperties, List<String> notes) {
@@ -97,7 +97,7 @@ public class AdminSidePanel extends Dialog {
   }
 
   public void refreshCloseText(MessageProperties messageProperties) {
-    close.setAriaLabel(messageProperties.getNotificationsClose());
-    close.setTooltipText(messageProperties.getNotificationsClose());
+    closePanelButton.setAriaLabel(messageProperties.getNotificationsClose());
+    closePanelButton.setTooltipText(messageProperties.getNotificationsClose());
   }
 }

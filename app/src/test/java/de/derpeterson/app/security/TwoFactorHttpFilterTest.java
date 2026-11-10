@@ -18,9 +18,10 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.core.userdetails.User;
 
 class TwoFactorHttpFilterTest {
-  private final SecurityService security = mock(SecurityService.class);
-  private final TwoFactorAuthorization authorization = mock(TwoFactorAuthorization.class);
-  private final TwoFactorHttpFilter filter = new TwoFactorHttpFilter(security, authorization);
+  private final SecurityService securityService = mock(SecurityService.class);
+  private final TwoFactorAuthorization twoFactorAuthorization = mock(TwoFactorAuthorization.class);
+  private final TwoFactorHttpFilter twoFactorHttpFilter =
+      new TwoFactorHttpFilter(securityService, twoFactorAuthorization);
 
   @ParameterizedTest
   @CsvSource({
@@ -39,7 +40,7 @@ class TwoFactorHttpFilterTest {
     MockHttpServletResponse response = new MockHttpServletResponse();
     MockFilterChain chain = new MockFilterChain();
 
-    filter.doFilter(request, response, chain);
+    twoFactorHttpFilter.doFilter(request, response, chain);
 
     assertEquals(target, response.getRedirectedUrl());
     assertNull(chain.getRequest());
@@ -53,7 +54,7 @@ class TwoFactorHttpFilterTest {
     TwoFactorFlow.finish(request);
     MockFilterChain chain = new MockFilterChain();
 
-    filter.doFilter(request, new MockHttpServletResponse(), chain);
+    twoFactorHttpFilter.doFilter(request, new MockHttpServletResponse(), chain);
 
     assertEquals(request, chain.getRequest());
   }
@@ -72,7 +73,7 @@ class TwoFactorHttpFilterTest {
     flow.enter(request);
     MockFilterChain chain = new MockFilterChain();
 
-    filter.doFilter(request, new MockHttpServletResponse(), chain);
+    twoFactorHttpFilter.doFilter(request, new MockHttpServletResponse(), chain);
 
     assertEquals(permitted ? request : null, chain.getRequest());
   }
@@ -80,11 +81,11 @@ class TwoFactorHttpFilterTest {
   private MockHttpServletRequest authenticatedRequest(String path) {
     MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
     request.setServletPath(path);
-    when(security.getAuthenticatedUser(request))
+    when(securityService.getAuthenticatedUser(request))
         .thenReturn(
             Optional.of(User.withUsername("fixture").password("unused").roles("USER").build()));
-    when(authorization.sessionConfirmed(request)).thenReturn(true);
-    when(authorization.administrationConfirmed(request)).thenReturn(true);
+    when(twoFactorAuthorization.sessionConfirmed(request)).thenReturn(true);
+    when(twoFactorAuthorization.administrationConfirmed(request)).thenReturn(true);
     return request;
   }
 }

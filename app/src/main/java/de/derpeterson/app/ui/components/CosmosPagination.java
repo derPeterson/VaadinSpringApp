@@ -21,14 +21,14 @@ public final class CosmosPagination extends HorizontalLayout {
 
   private final MessageProperties messageProperties;
   private final SerializableConsumer<Integer> selectPage;
-  private final ComboBox<Integer> pageSize = new ComboBox<>();
+  private final ComboBox<Integer> pageSizeSelector = new ComboBox<>();
   private final Span rowsLabel = new Span();
   private final Span totalLabel = new Span();
-  private final HorizontalLayout numbers = new HorizontalLayout();
-  private final Button first = new Button(AppIcon.ANGLE_DOUBLE_LEFT.create());
-  private final Button previous = new Button(AppIcon.ANGLE_LEFT.create());
-  private final Button next = new Button(AppIcon.ANGLE_RIGHT.create());
-  private final Button last = new Button(AppIcon.ANGLE_DOUBLE_RIGHT.create());
+  private final HorizontalLayout pageNumberButtons = new HorizontalLayout();
+  private final Button firstPageButton = new Button(AppIcon.ANGLE_DOUBLE_LEFT.create());
+  private final Button previousPageButton = new Button(AppIcon.ANGLE_LEFT.create());
+  private final Button nextPageButton = new Button(AppIcon.ANGLE_RIGHT.create());
+  private final Button lastPageButton = new Button(AppIcon.ANGLE_DOUBLE_RIGHT.create());
   private int currentPage;
   private int totalPages = 1;
   private long totalItems;
@@ -62,39 +62,43 @@ public final class CosmosPagination extends HorizontalLayout {
     setWidthFull();
     setAlignItems(Alignment.CENTER);
     setPadding(false);
-    pageSize.setItems(pageSizes);
-    pageSize.setValue(pageSizes.getFirst());
-    pageSize.setAllowCustomValue(false);
-    PortalFields.styleChoice(pageSize, Object::toString, false);
-    pageSize.addClassName("portal-pagination-size");
-    pageSize.setWidth("56px");
-    pageSize.addValueChangeListener(event -> {
+    pageSizeSelector.setItems(pageSizes);
+    pageSizeSelector.setValue(pageSizes.getFirst());
+    pageSizeSelector.setAllowCustomValue(false);
+    PortalFields.styleChoice(pageSizeSelector, Object::toString, false);
+    pageSizeSelector.addClassName("portal-pagination-size");
+    pageSizeSelector.setWidth("56px");
+    pageSizeSelector.addValueChangeListener(event -> {
       if (event.getValue() != null) {
         selectPageSize.accept(event.getValue());
       }
     });
-    HorizontalLayout summary = new HorizontalLayout(rowsLabel, pageSize, totalLabel);
+    HorizontalLayout summary = new HorizontalLayout(rowsLabel, pageSizeSelector, totalLabel);
     summary.addClassName("admin-user-pagination-summary");
     summary.setAlignItems(Alignment.CENTER);
-    numbers.addClassName("admin-user-pagination-numbers");
-    numbers.setSpacing(false);
-    numbers.setAlignItems(Alignment.CENTER);
-    HorizontalLayout navigation = new HorizontalLayout(first, previous, numbers, next, last);
+    pageNumberButtons.addClassName("admin-user-pagination-numbers");
+    pageNumberButtons.setSpacing(false);
+    pageNumberButtons.setAlignItems(Alignment.CENTER);
+    HorizontalLayout navigation =
+        new HorizontalLayout(
+            firstPageButton, previousPageButton, pageNumberButtons, nextPageButton, lastPageButton);
     navigation.addClassName("admin-user-pagination-nav");
     navigation.setSpacing(false);
     navigation.setAlignItems(Alignment.CENTER);
-    first.setVisible(mode == Mode.NUMBERED);
-    last.setVisible(mode == Mode.NUMBERED);
-    numbers.setVisible(mode == Mode.NUMBERED);
-    for (Button button : List.of(first, previous, next, last)) {
+    firstPageButton.setVisible(mode == Mode.NUMBERED);
+    lastPageButton.setVisible(mode == Mode.NUMBERED);
+    pageNumberButtons.setVisible(mode == Mode.NUMBERED);
+    for (Button button :
+        List.of(firstPageButton, previousPageButton, nextPageButton, lastPageButton)) {
       button.addClassName("admin-user-pagination-arrow");
     }
-    first.addClickListener(event -> selectPage.accept(0));
-    previous.addClickListener(event -> selectPage.accept(Math.max(0, currentPage - 1)));
-    previous.addClassName("cosmos-pagination-previous");
-    next.addClassName("cosmos-pagination-next");
-    next.addClickListener(event -> selectPage.accept(Math.min(totalPages - 1, currentPage + 1)));
-    last.addClickListener(event -> selectPage.accept(totalPages - 1));
+    firstPageButton.addClickListener(event -> selectPage.accept(0));
+    previousPageButton.addClickListener(event -> selectPage.accept(Math.max(0, currentPage - 1)));
+    previousPageButton.addClassName("cosmos-pagination-previous");
+    nextPageButton.addClassName("cosmos-pagination-next");
+    nextPageButton.addClickListener(
+        event -> selectPage.accept(Math.min(totalPages - 1, currentPage + 1)));
+    lastPageButton.addClickListener(event -> selectPage.accept(totalPages - 1));
     summary.remove(totalLabel);
     if (mode == Mode.PREVIOUS_NEXT) {
       summary.remove(rowsLabel);
@@ -114,24 +118,24 @@ public final class CosmosPagination extends HorizontalLayout {
 
   public void refreshTexts() {
     rowsLabel.setText(messageProperties.getAdminUsersPaginationPerPage());
-    pageSize.setAriaLabel(messageProperties.getAdminUsersPaginationPerPage());
+    pageSizeSelector.setAriaLabel(messageProperties.getAdminUsersPaginationPerPage());
     if (mode == Mode.PREVIOUS_NEXT) {
-      pageSize.setTooltipText(messageProperties.getAdminUsersPaginationPerPage());
+      pageSizeSelector.setTooltipText(messageProperties.getAdminUsersPaginationPerPage());
     }
-    int size = pageSize.getValue();
+    int size = pageSizeSelector.getValue();
     long from = totalItems == 0 ? 0 : (long) currentPage * size + 1;
     long to = Math.min(((long) currentPage + 1) * size, totalItems);
     totalLabel.setText(messageProperties.getPortalPaginationRange(from, to, totalItems));
     totalLabel.addClassName("admin-user-pagination-total");
-    label(first, messageProperties.getAdminUsersPaginationFirstPage());
-    label(previous, messageProperties.getAdminUsersPaginationPreviousPage());
-    label(next, messageProperties.getAdminUsersPaginationNextPage());
-    label(last, messageProperties.getAdminUsersPaginationLastPage());
-    first.setEnabled(currentPage > 0);
-    previous.setEnabled(currentPage > 0);
-    next.setEnabled(currentPage < totalPages - 1);
-    last.setEnabled(currentPage < totalPages - 1);
-    numbers.removeAll();
+    label(firstPageButton, messageProperties.getAdminUsersPaginationFirstPage());
+    label(previousPageButton, messageProperties.getAdminUsersPaginationPreviousPage());
+    label(nextPageButton, messageProperties.getAdminUsersPaginationNextPage());
+    label(lastPageButton, messageProperties.getAdminUsersPaginationLastPage());
+    firstPageButton.setEnabled(currentPage > 0);
+    previousPageButton.setEnabled(currentPage > 0);
+    nextPageButton.setEnabled(currentPage < totalPages - 1);
+    lastPageButton.setEnabled(currentPage < totalPages - 1);
+    pageNumberButtons.removeAll();
     if (mode == Mode.PREVIOUS_NEXT) {
       return;
     }
@@ -140,7 +144,7 @@ public final class CosmosPagination extends HorizontalLayout {
       if (preceding >= 0 && page - preceding > 1) {
         Span gap = new Span("…");
         gap.addClassName("admin-user-pagination-ellipsis");
-        numbers.add(gap);
+        pageNumberButtons.add(gap);
       }
       Button button = new Button(Integer.toString(page + 1), event -> selectPage.accept(page));
       button.addClassName("admin-user-pagination-number");
@@ -150,7 +154,7 @@ public final class CosmosPagination extends HorizontalLayout {
         button.addClassName("admin-user-pagination-current");
         button.getElement().setAttribute("aria-current", "page");
       }
-      numbers.add(button);
+      pageNumberButtons.add(button);
       preceding = page;
     }
   }

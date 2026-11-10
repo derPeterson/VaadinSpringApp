@@ -502,6 +502,23 @@ unmittelbaren Kontext verständlich. Bei einem zentralen Objekt wie `MessageProp
 ist der ausgeschriebene Typname als Variablenname sinnvoll, wenn er die Rolle erklärt.
 Kryptische Kürzel, unnötige Typpräfixe und künstlich lange Namen vermeiden.
 
+**Zusammengehörige Namen immer als Block prüfen.** Bei einer Java-Änderung oder
+einem Review die Namen im betroffenen fachlichen Block vollständig prüfen, etwa
+die Abhängigkeiten einer Klasse samt Konstruktorparametern oder die Felder und
+Aktionen eines Dialogs. Eine Textsuche nach bekannten Beispielen dient nur zum
+Auffinden der Stellen. An jeder Verwendung muss aus dem Namen hervorgehen,
+welcher fachliche Gegenstand gemeint ist und welche Rolle das Objekt hat.
+Unklare Namen im selben Block gemeinsam korrigieren, wenn der Auftrag
+Lesbarkeitsänderungen erlaubt. Bei einem reinen Review alle konkreten Stellen
+benennen. Bereits klare Namen beibehalten.
+
+Beispiel: In einem 2FA-Dienst genügt es nicht, nur `authorization` in
+`twoFactorAuthorization` umzubenennen. Die benachbarten Abhängigkeiten
+`policies`, `factors` und `enrollment` werden im selben Durchgang geprüft und
+heißen hier `twoFactorPolicies`, `twoFactorStore` und `twoFactorEnrollment`.
+`factors` klingt wie eine Sammlung von Faktoren; `twoFactorStore` benennt den
+Speicher, der tatsächlich verwendet wird.
+
 | Wenig aussagekräftig | Verständlicher im passenden Kontext |
 | --- | --- |
 | `list`, `data` | `unreadNotifications` |

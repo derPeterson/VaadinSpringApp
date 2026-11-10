@@ -55,9 +55,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 @SpringJUnitConfig({TwoFactorStoreTest.Config.class, TwoFactorAuthorizationTest.Config.class})
 class TwoFactorAuthorizationTest {
-  @Autowired TwoFactorAuthorization authorization;
+  @Autowired TwoFactorAuthorization twoFactorAuthorization;
   @Autowired TwoFactorPolicies policies;
-  @Autowired TwoFactorStore factors;
+  @Autowired TwoFactorStore twoFactorStore;
   @Autowired TwoFactorPolicyRepository settings;
   @Autowired TwoFactorAccountRepository accounts;
   @Autowired UserRepository users;
@@ -70,52 +70,53 @@ class TwoFactorAuthorizationTest {
   @Autowired TwoFactorChallengeRepository challenges;
   @Autowired JpaTransactionManager manager;
   @PersistenceContext EntityManager entityManager;
-  private UserEntity user;
-  private MockHttpServletRequest request;
-  private List<String> codes;
+  private UserEntity testAccount;
+  private MockHttpServletRequest mockHttpRequest;
+  private List<String> recoveryCodes;
 
   @BeforeEach
   void setup() {
     clock.now.set(java.time.Instant.parse("2026-11-02T12:00:00Z"));
     settings.deleteAll();
-    user =
-        transaction.execute(
-            status -> {
-              RoleEntity role =
-                  entityManager
-                      .createQuery(
-                          "select r from RoleEntity r where r.name = :name", RoleEntity.class)
-                      .setParameter("name", RoleType.ROLE_SUPERADMIN)
-                      .getResultStream()
-                      .findFirst()
-                      .orElse(null);
-              if (role == null) {
-                role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
-                entityManager.persist(role);
-              }
-              return users.saveAndFlush(
-                  UserEntity.builder()
-                      .firstName("MFA")
-                      .lastName("Fixture")
-                      .email(UUID.randomUUID() + "@example.test")
-                      .enabled(true)
-                      .roleEntities(List.of(role))
-                      .build());
-            });
-    request = requestFor(user.getEmail());
+    testAccount =
+        transaction.execute(status -> {
+          RoleEntity role =
+              entityManager
+                  .createQuery("select r from RoleEntity r where r.name = :name", RoleEntity.class)
+                  .setParameter("name", RoleType.ROLE_SUPERADMIN)
+                  .getResultStream()
+                  .findFirst()
+                  .orElse(null);
+          if (role == null) {
+            role = RoleEntity.builder().name(RoleType.ROLE_SUPERADMIN).build();
+            entityManager.persist(role);
+          }
+          return users.saveAndFlush(
+              UserEntity.builder()
+                  .firstName("MFA")
+                  .lastName("Fixture")
+                  .email(UUID.randomUUID() + "@example.test")
+                  .enabled(true)
+                  .roleEntities(List.of(role))
+                  .build());
+        });
+    mockHttpRequest = requestFor(testAccount.getEmail());
     UserDetails principal =
-        User.withUsername(user.getEmail()).password("unused").roles("SUPERADMIN", "ADMIN").build();
+        User.withUsername(testAccount.getEmail())
+            .password("unused")
+            .roles("SUPERADMIN", "ADMIN")
+            .build();
     SecurityContextHolder.getContext()
         .setAuthentication(
             UsernamePasswordAuthenticationToken.authenticated(
                 principal, null, principal.getAuthorities()));
-    UUID revision = factors.initialize(user.getId(), user.getAccessVersion());
+    UUID revision = twoFactorStore.initialize(testAccount.getId(), testAccount.getAccessVersion());
     byte[] secret = Totp.newSecret();
-    codes =
-        factors
+    recoveryCodes =
+        twoFactorStore
             .enroll(
-                user.getId(),
-                user.getAccessVersion(),
+                testAccount.getId(),
+                testAccount.getAccessVersion(),
                 revision,
                 secret,
                 Totp.code(secret, clock.instant().getEpochSecond() / 30),
@@ -124,10 +125,10 @@ class TwoFactorAuthorizationTest {
   }
 
   static MockHttpServletRequest requestFor(String identity) {
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    request.setSession(new MockHttpSession());
-    request.setAttribute("fixture.identity", identity);
-    return request;
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    mockHttpRequest.setSession(new MockHttpSession());
+    mockHttpRequest.setAttribute("fixture.identity", identity);
+    return mockHttpRequest;
   }
 
   @AfterEach
@@ -137,164 +138,181 @@ class TwoFactorAuthorizationTest {
 
   @Test
   void firstFactorOrRememberedSessionDoesNotSatisfyTheCurrentLoginRule() {
-    assertFalse(authorization.sessionConfirmed(request));
-    String recoveryCode = codes.get(0);
+    assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
+    String recoveryCode = recoveryCodes.get(0);
     assertThrows(
         AccessDeniedException.class,
-        () -> authorization.confirmAction(request, TwoFactorAction.PASSWORD, recoveryCode));
-    authorization.confirmSession(request, codes.get(0));
-    assertTrue(authorization.sessionConfirmed(request));
-    assertFalse(authorization.sessionConfirmed(requestFor(user.getEmail())));
+        () ->
+            twoFactorAuthorization.confirmAction(
+                mockHttpRequest, TwoFactorAction.PASSWORD, recoveryCode));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
+    assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
+    assertFalse(twoFactorAuthorization.sessionConfirmed(requestFor(testAccount.getEmail())));
   }
 
   @Test
   void actionProofIsBoundToPurposeSessionAndSingleUse() {
-    authorization.confirmSession(request, codes.get(0));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
     assertThrows(
         AccessDeniedException.class,
-        () -> authorization.authorizeCurrent(request, TwoFactorAction.PASSWORD, true));
-    authorization.confirmAction(request, TwoFactorAction.PASSWORD, codes.get(1));
+        () ->
+            twoFactorAuthorization.authorizeCurrent(
+                mockHttpRequest, TwoFactorAction.PASSWORD, true));
+    twoFactorAuthorization.confirmAction(
+        mockHttpRequest, TwoFactorAction.PASSWORD, recoveryCodes.get(1));
     assertThrows(
         AccessDeniedException.class,
-        () -> authorization.authorizeCurrent(request, TwoFactorAction.EMAIL, true));
-    MockHttpServletRequest another = requestFor(user.getEmail());
-    authorization.confirmSession(another, codes.get(2));
+        () ->
+            twoFactorAuthorization.authorizeCurrent(mockHttpRequest, TwoFactorAction.EMAIL, true));
+    MockHttpServletRequest another = requestFor(testAccount.getEmail());
+    twoFactorAuthorization.confirmSession(another, recoveryCodes.get(2));
     assertThrows(
         AccessDeniedException.class,
-        () -> authorization.authorizeCurrent(another, TwoFactorAction.PASSWORD, true));
-    authorization.authorizeCurrent(request, TwoFactorAction.PASSWORD, true);
+        () -> twoFactorAuthorization.authorizeCurrent(another, TwoFactorAction.PASSWORD, true));
+    twoFactorAuthorization.authorizeCurrent(mockHttpRequest, TwoFactorAction.PASSWORD, true);
     assertThrows(
         AccessDeniedException.class,
-        () -> authorization.authorizeCurrent(request, TwoFactorAction.PASSWORD, true));
+        () ->
+            twoFactorAuthorization.authorizeCurrent(
+                mockHttpRequest, TwoFactorAction.PASSWORD, true));
   }
 
   @Test
   void accountFactorAndSessionRotationInvalidateExistingProofs() {
-    authorization.confirmSession(request, codes.get(0));
-    authorization.confirmAction(request, TwoFactorAction.EMAIL, codes.get(1));
-    UUID revision = accounts.state(user.getId()).orElseThrow().getRevision();
-    factors.renewRecoveryCodes(user.getId(), user.getAccessVersion(), revision);
-    assertFalse(authorization.sessionConfirmed(request));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
+    twoFactorAuthorization.confirmAction(
+        mockHttpRequest, TwoFactorAction.EMAIL, recoveryCodes.get(1));
+    UUID revision = accounts.state(testAccount.getId()).orElseThrow().getRevision();
+    twoFactorStore.renewRecoveryCodes(
+        testAccount.getId(), testAccount.getAccessVersion(), revision);
+    assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     assertThrows(
         AccessDeniedException.class,
-        () -> authorization.authorizeCurrent(request, TwoFactorAction.EMAIL, true));
-    MockHttpSession original = (MockHttpSession) request.getSession();
+        () ->
+            twoFactorAuthorization.authorizeCurrent(mockHttpRequest, TwoFactorAction.EMAIL, true));
+    MockHttpSession original = (MockHttpSession) mockHttpRequest.getSession();
     original.changeSessionId();
-    assertFalse(authorization.sessionConfirmed(request));
+    assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
   }
 
   @Test
   void ownConfirmedPasswordChangePreservesOnlyExistingSessionProofWithoutRenewingItsTime() {
-    authorization.confirmSession(request, codes.get(0));
-    authorization.confirmAction(request, TwoFactorAction.EMAIL, codes.get(1));
-    MockHttpServletRequest other = requestFor(user.getEmail());
-    authorization.confirmSession(other, codes.get(2));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
+    twoFactorAuthorization.confirmAction(
+        mockHttpRequest, TwoFactorAction.EMAIL, recoveryCodes.get(1));
+    MockHttpServletRequest other = requestFor(testAccount.getEmail());
+    twoFactorAuthorization.confirmSession(other, recoveryCodes.get(2));
     String before =
-        (String) request.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF);
-    String previous = user.getAccessVersion();
+        (String) mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF);
+    String previous = testAccount.getAccessVersion();
     clock.now.updateAndGet(now -> now.plusSeconds(60));
-    transaction.executeWithoutResult(
-        status -> {
-          UserEntity account = users.findById(user.getId()).orElseThrow();
-          account.setPassword("new-fixture-hash");
-          users.saveAndFlush(account);
-        });
-    String current = users.findById(user.getId()).orElseThrow().getAccessVersion();
-    assertFalse(authorization.sessionConfirmed(request));
-    authorization.retainAfterAccessVersionChange(request, previous);
-    assertTrue(authorization.sessionConfirmed(request));
+    transaction.executeWithoutResult(status -> {
+      UserEntity account = users.findById(testAccount.getId()).orElseThrow();
+      account.setPassword("new-fixture-hash");
+      users.saveAndFlush(account);
+    });
+    String current = users.findById(testAccount.getId()).orElseThrow().getAccessVersion();
+    assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
+    twoFactorAuthorization.retainAfterAccessVersionChange(mockHttpRequest, previous);
+    assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     org.junit.jupiter.api.Assertions.assertEquals(
         before.replace(previous, current),
-        request.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF));
-    assertFalse(authorization.sessionConfirmed(other));
+        mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF));
+    assertFalse(twoFactorAuthorization.sessionConfirmed(other));
     assertThrows(
         AccessDeniedException.class,
-        () -> authorization.authorizeCurrent(request, TwoFactorAction.EMAIL, true));
-    MockHttpServletRequest unconfirmed = requestFor(user.getEmail());
-    authorization.retainAfterAccessVersionChange(unconfirmed, previous);
-    assertFalse(authorization.sessionConfirmed(unconfirmed));
+        () ->
+            twoFactorAuthorization.authorizeCurrent(mockHttpRequest, TwoFactorAction.EMAIL, true));
+    MockHttpServletRequest unconfirmed = requestFor(testAccount.getEmail());
+    twoFactorAuthorization.retainAfterAccessVersionChange(unconfirmed, previous);
+    assertFalse(twoFactorAuthorization.sessionConfirmed(unconfirmed));
   }
 
   @Test
   void disablingPolicyRequiresProofUnderOldRuleAndDevelopmentGateCannotBeBypassed() {
-    authorization.confirmSession(request, codes.get(0));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
     Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> relaxed = new EnumMap<>(RoleType.class);
     policies
         .current()
         .policy()
         .rules()
-        .forEach(
-            (role, actions) -> {
-              Map<TwoFactorAction, TwoFactorMode> changed = new EnumMap<>(actions);
-              changed.replaceAll((action, value) -> TwoFactorMode.OFF);
-              relaxed.put(role, changed);
-            });
+        .forEach((role, actions) -> {
+          Map<TwoFactorAction, TwoFactorMode> changed = new EnumMap<>(actions);
+          changed.replaceAll((action, value) -> TwoFactorMode.OFF);
+          relaxed.put(role, changed);
+        });
     TwoFactorPolicy desired =
         new TwoFactorPolicy(relaxed, false, Duration.ofHours(1), false, false);
-    assertThrows(AccessDeniedException.class, () -> policies.save(request, -1, desired));
-    authorization.confirmAction(request, TwoFactorAction.SECURITY_CONFIGURATION, codes.get(1));
+    assertThrows(AccessDeniedException.class, () -> policies.save(mockHttpRequest, -1, desired));
+    twoFactorAuthorization.confirmAction(
+        mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
     TwoFactorPolicy development =
         new TwoFactorPolicy(relaxed, false, Duration.ofHours(1), true, true);
-    assertThrows(AccessDeniedException.class, () -> policies.save(request, -1, development));
-    policies.save(request, -1, desired);
-    assertTrue(authorization.sessionConfirmed(requestFor(user.getEmail())));
+    assertThrows(
+        AccessDeniedException.class, () -> policies.save(mockHttpRequest, -1, development));
+    policies.save(mockHttpRequest, -1, desired);
+    assertTrue(twoFactorAuthorization.sessionConfirmed(requestFor(testAccount.getEmail())));
     assertFalse(policies.weakGoogleAllowed());
   }
 
   @Test
   void sessionBoundPushReadsRequireFreshProofWithoutARequestOrSecurityContext() {
-    HttpSession session = request.getSession();
-    when(security.getObject().getSessionUser(session)).thenReturn(Optional.of(user));
+    HttpSession session = mockHttpRequest.getSession();
+    when(security.getObject().getSessionUser(session)).thenReturn(Optional.of(testAccount));
     SecurityContextHolder.clearContext();
-    assertThrows(AccessDeniedException.class, () -> authorization.requireSession(session));
-    authorization.confirmSession(request, codes.get(0));
-    authorization.confirmAction(request, TwoFactorAction.SECURITY_CONFIGURATION, codes.get(1));
+    assertThrows(AccessDeniedException.class, () -> twoFactorAuthorization.requireSession(session));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
+    twoFactorAuthorization.confirmAction(
+        mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
     TwoFactorPolicy original = policies.current().policy();
     UserDetails principal =
-        User.withUsername(user.getEmail()).password("unused").roles("SUPERADMIN").build();
+        User.withUsername(testAccount.getEmail()).password("unused").roles("SUPERADMIN").build();
     SecurityContextHolder.getContext()
         .setAuthentication(
             UsernamePasswordAuthenticationToken.authenticated(
                 principal, null, principal.getAuthorities()));
     policies.save(
-        request,
+        mockHttpRequest,
         -1,
         new TwoFactorPolicy(original.rules(), true, Duration.ofMinutes(1), false, false));
-    authorization.confirmSession(request, codes.get(2));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(2));
     SecurityContextHolder.clearContext();
-    assertDoesNotThrow(() -> authorization.requireSession(session));
+    assertDoesNotThrow(() -> twoFactorAuthorization.requireSession(session));
     String proof = (String) session.getAttribute(TwoFactorAuthorization.SESSION_PROOF);
     clock.now.updateAndGet(now -> now.plusSeconds(60));
-    assertThrows(AccessDeniedException.class, () -> authorization.requireSession(session));
+    assertThrows(AccessDeniedException.class, () -> twoFactorAuthorization.requireSession(session));
     assertEquals(proof, session.getAttribute(TwoFactorAuthorization.SESSION_PROOF));
     MockHttpSession unboundSession = new MockHttpSession();
-    assertThrows(AccessDeniedException.class, () -> authorization.requireSession(unboundSession));
-    authorization.confirmSession(request, codes.get(3));
-    assertDoesNotThrow(() -> authorization.requireSession(session));
+    assertThrows(
+        AccessDeniedException.class, () -> twoFactorAuthorization.requireSession(unboundSession));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(3));
+    assertDoesNotThrow(() -> twoFactorAuthorization.requireSession(session));
   }
 
   @Test
   void inactivityIsServerTimedAndExpiredProofCannotBeExtendedByActivity() {
-    authorization.confirmSession(request, codes.get(0));
-    authorization.confirmAction(request, TwoFactorAction.SECURITY_CONFIGURATION, codes.get(1));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
+    twoFactorAuthorization.confirmAction(
+        mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
     TwoFactorPolicy original = policies.current().policy();
     policies.save(
-        request,
+        mockHttpRequest,
         -1,
         new TwoFactorPolicy(original.rules(), true, Duration.ofHours(1), false, false));
-    assertFalse(authorization.sessionConfirmed(request));
-    authorization.confirmSession(request, codes.get(2));
+    assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(2));
     clock.now.updateAndGet(now -> now.plusSeconds(3599));
-    assertTrue(authorization.sessionConfirmed(request));
+    assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     clock.now.updateAndGet(now -> now.plusSeconds(1));
-    authorization.recordActivity(request);
-    assertFalse(authorization.sessionConfirmed(request));
+    twoFactorAuthorization.recordActivity(mockHttpRequest);
+    assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
   }
 
   @Test
   void activeRecoveryRestrictsItsSessionEvenWhenTheLoginRuleIsOff() {
-    authorization.confirmSession(request, codes.get(0));
-    authorization.confirmAction(request, TwoFactorAction.SECURITY_CONFIGURATION, codes.get(1));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
+    twoFactorAuthorization.confirmAction(
+        mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
     TwoFactorPolicy original = policies.current().policy();
     Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> rules = new EnumMap<>(original.rules());
     Map<TwoFactorAction, TwoFactorMode> superadmin =
@@ -303,15 +321,17 @@ class TwoFactorAuthorizationTest {
     rules.put(RoleType.ROLE_SUPERADMIN, superadmin);
     TwoFactorPolicies.Snapshot saved =
         policies.save(
-            request, -1, new TwoFactorPolicy(rules, false, original.inactivity(), false, false));
-    assertTrue(authorization.sessionConfirmed(request));
+            mockHttpRequest,
+            -1,
+            new TwoFactorPolicy(rules, false, original.inactivity(), false, false));
+    assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     String previousProof =
-        request.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF).toString();
+        mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF).toString();
     TwoFactorChallengeEntity recovery = new TwoFactorChallengeEntity();
-    recovery.setUser(users.getReferenceById(user.getId()));
-    recovery.setSessionDigest(TwoFactorAuthorization.sessionDigest(request.getSession()));
-    recovery.setAccessVersion(user.getAccessVersion());
-    recovery.setFactorRevision(accounts.state(user.getId()).orElseThrow().getRevision());
+    recovery.setUser(users.getReferenceById(testAccount.getId()));
+    recovery.setSessionDigest(TwoFactorAuthorization.sessionDigest(mockHttpRequest.getSession()));
+    recovery.setAccessVersion(testAccount.getAccessVersion());
+    recovery.setFactorRevision(accounts.state(testAccount.getId()).orElseThrow().getRevision());
     recovery.setPolicyRevision(saved.revision());
     recovery.setAction(TwoFactorAction.MANAGE_FACTOR);
     recovery.setKind(Kind.ENROLLMENT);
@@ -319,13 +339,14 @@ class TwoFactorAuthorizationTest {
     recovery.setCreatedAt(clock.instant());
     recovery.setExpiresAt(clock.instant().plusSeconds(300));
     challenges.saveAndFlush(recovery);
-    assertFalse(authorization.sessionConfirmed(request));
-    assertTrue(authorization.sessionConfirmed(requestFor(user.getEmail())));
+    assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
+    assertTrue(twoFactorAuthorization.sessionConfirmed(requestFor(testAccount.getEmail())));
     clock.now.updateAndGet(now -> now.plusSeconds(300));
     // Nach Ablauf gilt wieder die ausdrückliche Aus-Regel. Es wurde kein Nachweis erneuert.
-    assertTrue(authorization.sessionConfirmed(request));
+    assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     assertEquals(
-        previousProof, request.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF));
+        previousProof,
+        mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF));
   }
 
   @Test
@@ -341,24 +362,24 @@ class TwoFactorAuthorizationTest {
     assertTrue(development.developmentOptionsAvailable());
     assertFalse(development.pauseEnabled(development.current()));
     assertFalse(development.weakGoogleAllowed());
-    authorization.confirmSession(request, codes.get(0));
-    authorization.confirmAction(request, TwoFactorAction.SECURITY_CONFIGURATION, codes.get(1));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
+    twoFactorAuthorization.confirmAction(
+        mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
     TwoFactorPolicy original = policies.current().policy();
-    transaction.executeWithoutResult(
-        status ->
-            development.save(
-                request,
-                -1,
-                new TwoFactorPolicy(original.rules(), false, original.inactivity(), true, true)));
+    transaction.executeWithoutResult(status ->
+        development.save(
+            mockHttpRequest,
+            -1,
+            new TwoFactorPolicy(original.rules(), false, original.inactivity(), true, true)));
     assertTrue(development.pauseEnabled(development.current()));
     assertTrue(development.weakGoogleAllowed());
     assertFalse(policies.pauseEnabled(policies.current()));
     assertFalse(policies.weakGoogleAllowed());
-    MockHttpServletRequest newSession = requestFor(user.getEmail());
-    assertFalse(authorization.sessionConfirmed(newSession));
+    MockHttpServletRequest newSession = requestFor(testAccount.getEmail());
+    assertFalse(twoFactorAuthorization.sessionConfirmed(newSession));
     TwoFactorAuthorization relaxed =
         new TwoFactorAuthorization(
-            security, users, accounts, challenges, development, factors, manager, clock);
+            security, users, accounts, challenges, development, twoFactorStore, manager, clock);
     assertTrue(relaxed.sessionConfirmed(newSession));
     assertNull(newSession.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF));
     assertThrows(
@@ -373,17 +394,14 @@ class TwoFactorAuthorizationTest {
     SecurityService securityService() {
       SecurityService security = mock(SecurityService.class);
       when(security.getAuthenticatedUser(any()))
-          .thenAnswer(
-              invocation -> {
-                jakarta.servlet.http.HttpServletRequest invocationRequest =
-                    invocation.getArgument(0);
-                Object identity = invocationRequest.getAttribute("fixture.identity");
-                if (!(identity instanceof String email)) {
-                  return Optional.empty();
-                }
-                return Optional.of(
-                    User.withUsername(email).password("unused").roles("USER").build());
-              });
+          .thenAnswer(invocation -> {
+            jakarta.servlet.http.HttpServletRequest invocationRequest = invocation.getArgument(0);
+            Object identity = invocationRequest.getAttribute("fixture.identity");
+            if (!(identity instanceof String email)) {
+              return Optional.empty();
+            }
+            return Optional.of(User.withUsername(email).password("unused").roles("USER").build());
+          });
       return security;
     }
 
@@ -398,13 +416,13 @@ class TwoFactorAuthorizationTest {
         UserRepository users,
         EntityManagerFactory factory,
         AdminRolePolicy administrators,
-        ObjectProvider<TwoFactorAuthorization> authorization) {
+        ObjectProvider<TwoFactorAuthorization> twoFactorAuthorization) {
       return new TwoFactorPolicies(
           repository,
           users,
           SharedEntityManagerCreator.createSharedEntityManager(factory),
           administrators,
-          authorization,
+          twoFactorAuthorization,
           new MockEnvironment());
     }
 

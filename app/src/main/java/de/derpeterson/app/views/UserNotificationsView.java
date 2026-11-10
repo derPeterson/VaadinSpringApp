@@ -35,7 +35,7 @@ import jakarta.servlet.http.HttpSession;
 @UIScope
 @PermitAll
 public class UserNotificationsView extends IsAuthenticatedBaseView {
-  private final UserNotificationsPanel inbox;
+  private final UserNotificationsPanel notificationInbox;
   private final PortalContentComponent portalContent;
   private final Span overview = new Span();
   private final Span title = new Span();
@@ -55,10 +55,10 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", REFERENCE_PORTAL);
     HorizontalLayout header = createApplicationHeader(config);
     HttpSession session = request.getSession(false);
-    inbox = new UserNotificationsPanel(texts, notifications, session, false);
+    notificationInbox = new UserNotificationsPanel(texts, notifications, session, false);
     CosmosSectionHeaderComponent sectionHeader =
         new CosmosSectionHeaderComponent(overview, title, description);
-    CosmosCardComponent card = new CosmosCardComponent(inbox);
+    CosmosCardComponent card = new CosmosCardComponent(notificationInbox);
     card.addClassNames(PANEL_CARD, "cosmos-notification-inbox-card");
     portalContent =
         new PortalContentComponent(
@@ -67,37 +67,33 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     portalContent.getSidebar().configureStatusSelection(userPopoverMenu.createStatusSelect());
     accountHeaderActions.setUnreadCountListener(portalContent.getSidebar()::updateUnreadCount);
     setPortalPage(header, portalContent, config);
-    addAttachListener(
-        e -> {
-          try {
-            Long owner = notifications.ownerId(session);
-            registration =
-                notifications
-                    .events()
-                    .register(
-                        ids -> {
-                          if (ids.contains(owner)) {
-                            e.getUI()
-                                .access(
-                                    () -> {
-                                      if (isAttached()) {
-                                        inbox.refresh();
-                                      }
-                                    });
+    addAttachListener(e -> {
+      try {
+        Long owner = notifications.ownerId(session);
+        registration =
+            notifications
+                .events()
+                .register(ids -> {
+                  if (ids.contains(owner)) {
+                    e.getUI()
+                        .access(() -> {
+                          if (isAttached()) {
+                            notificationInbox.refreshInbox();
                           }
                         });
-            inbox.refresh();
-          } catch (org.springframework.security.access.AccessDeniedException _) {
-            inbox.unavailable();
-          }
-        });
-    addDetachListener(
-        e -> {
-          if (registration != null) {
-            registration.remove();
-          }
-          registration = null;
-        });
+                  }
+                });
+        notificationInbox.refreshInbox();
+      } catch (org.springframework.security.access.AccessDeniedException _) {
+        notificationInbox.unavailable();
+      }
+    });
+    addDetachListener(e -> {
+      if (registration != null) {
+        registration.remove();
+      }
+      registration = null;
+    });
     onTrackedUserLanguageChanged();
   }
 
@@ -121,8 +117,8 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     overview.setText(messageProperties.getAccountNavigationPortal());
     title.setText(messageProperties.getNotificationsTitle());
     description.setText(messageProperties.getNotificationsPageDescription());
-    if (inbox != null) {
-      inbox.refreshTexts();
+    if (notificationInbox != null) {
+      notificationInbox.refreshTexts();
     }
     if (portalContent != null) {
       portalContent.refreshTexts();

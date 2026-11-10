@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 
 /** Portalrahmen für Bereiche außerhalb des eigenen Kontobinders. */
 public class PortalContentComponent extends PortalPageComponent {
-  private final PortalSidebarComponent sidebar;
+  private final PortalSidebarComponent portalSidebar;
   private final AccountAvatarDialog avatarDialog;
 
   public PortalContentComponent(
@@ -23,28 +23,28 @@ public class PortalContentComponent extends PortalPageComponent {
       HttpServletRequest request) {
     avatarDialog = new AccountAvatarDialog(messageProperties, user);
     avatarDialog.configure(avatars, request);
-    sidebar =
+    portalSidebar =
         new PortalSidebarComponent(
             messageProperties,
             user,
             route,
             PortalSidebarComponent.accountLinks(messageProperties),
             avatarDialog::open);
-    sidebar.configureAvatars(avatars);
-    setPortalContent(heading, sidebar, content);
+    portalSidebar.configureAvatars(avatars);
+    setPortalContent(heading, portalSidebar, content);
     add(avatarDialog);
   }
 
   public PortalSidebarComponent getSidebar() {
-    return sidebar;
+    return portalSidebar;
   }
 
   public void updateStatus(UserStatus status) {
-    sidebar.updateStatus(status);
+    portalSidebar.updateStatus(status);
   }
 
   public void refreshTexts() {
-    sidebar.refreshTexts();
+    portalSidebar.refreshTexts();
     avatarDialog.refreshTexts();
   }
 }

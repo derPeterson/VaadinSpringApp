@@ -62,8 +62,8 @@ class TwoFactorActionDialogTest {
   })
   void rejectedCodeShowsTheRightLocalizedToastAndNeverRunsTheAction(
       String language, String reason) {
-    MessageProperties texts = useLanguage(language);
-    TwoFactorAuthorization authorization = mock(TwoFactorAuthorization.class);
+    MessageProperties messageProperties = useLanguage(language);
+    TwoFactorAuthorization twoFactorAuthorization = mock(TwoFactorAuthorization.class);
     HttpServletRequest request = mock(HttpServletRequest.class);
     RuntimeException failure =
         switch (reason) {
@@ -72,15 +72,17 @@ class TwoFactorActionDialogTest {
           default -> new IllegalStateException("fixture");
         };
     doThrow(failure)
-        .when(authorization)
+        .when(twoFactorAuthorization)
         .confirmAction(request, TwoFactorAction.MANAGE_FACTOR, "123456");
     AtomicInteger actions = new AtomicInteger();
-    TwoFactorActionDialog dialog = new TwoFactorActionDialog(texts, authorization, request);
+    TwoFactorActionDialog dialog =
+        new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, request);
     dialog.open(TwoFactorAction.MANAGE_FACTOR, actions::incrementAndGet);
-    TwoFactorCodeInput input = (TwoFactorCodeInput) ReflectionTestUtils.getField(dialog, "code");
-    OtpField field = (OtpField) ReflectionTestUtils.getField(input, "appCode");
+    TwoFactorCodeInput input =
+        (TwoFactorCodeInput) ReflectionTestUtils.getField(dialog, "twoFactorCodeInput");
+    OtpField field = (OtpField) ReflectionTestUtils.getField(input, "appCodeField");
     field.setValue("123456");
-    ((Button) ReflectionTestUtils.getField(dialog, "confirm")).click();
+    ((Button) ReflectionTestUtils.getField(dialog, "confirmIdentityButton")).click();
     assertEquals(0, actions.get());
     assertTrue(dialog.isOpened());
     assertTrue(field.isEmpty());
@@ -91,9 +93,9 @@ class TwoFactorActionDialogTest {
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
     assertEquals(
         switch (reason) {
-          case "invalid" -> texts.getTwoFactorInvalidCode();
-          case "locked" -> texts.getTwoFactorThrottled();
-          default -> texts.getTwoFactorFailed();
+          case "invalid" -> messageProperties.getTwoFactorInvalidCode();
+          case "locked" -> messageProperties.getTwoFactorThrottled();
+          default -> messageProperties.getTwoFactorFailed();
         },
         message.get());
   }
@@ -101,16 +103,18 @@ class TwoFactorActionDialogTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void accountChangeRequiresClickForEitherCode(boolean useRecovery) {
-    MessageProperties texts = useLanguage("de");
-    TwoFactorAuthorization authorization = mock(TwoFactorAuthorization.class);
+    MessageProperties messageProperties = useLanguage("de");
+    TwoFactorAuthorization twoFactorAuthorization = mock(TwoFactorAuthorization.class);
     HttpServletRequest request = mock(HttpServletRequest.class);
-    TwoFactorActionDialog dialog = new TwoFactorActionDialog(texts, authorization, request);
+    TwoFactorActionDialog dialog =
+        new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, request);
     ui.add(dialog);
     AtomicInteger actions = new AtomicInteger();
     dialog.open(TwoFactorAction.MANAGE_FACTOR, actions::incrementAndGet);
-    TwoFactorCodeInput input = (TwoFactorCodeInput) ReflectionTestUtils.getField(dialog, "code");
-    OtpField appCode = (OtpField) ReflectionTestUtils.getField(input, "appCode");
-    TextField recovery = (TextField) ReflectionTestUtils.getField(input, "recoveryCode");
+    TwoFactorCodeInput input =
+        (TwoFactorCodeInput) ReflectionTestUtils.getField(dialog, "twoFactorCodeInput");
+    OtpField appCode = (OtpField) ReflectionTestUtils.getField(input, "appCodeField");
+    TextField recovery = (TextField) ReflectionTestUtils.getField(input, "recoveryCodeField");
     assertTrue(appCode.isAutofocus());
     assertEquals(6, appCode.getLength());
     String code = "123456";
@@ -124,10 +128,10 @@ class TwoFactorActionDialogTest {
     } else {
       ComponentUtil.fireEvent(appCode, new OtpCompleteEvent(appCode, true, code));
     }
-    verifyNoInteractions(authorization);
+    verifyNoInteractions(twoFactorAuthorization);
     assertEquals(0, actions.get());
-    ((Button) ReflectionTestUtils.getField(dialog, "confirm")).click();
-    verify(authorization).confirmAction(request, TwoFactorAction.MANAGE_FACTOR, code);
+    ((Button) ReflectionTestUtils.getField(dialog, "confirmIdentityButton")).click();
+    verify(twoFactorAuthorization).confirmAction(request, TwoFactorAction.MANAGE_FACTOR, code);
     assertEquals(1, actions.get());
     assertFalse(dialog.isOpened());
     assertTrue(appCode.isEmpty());
@@ -152,19 +156,21 @@ class TwoFactorActionDialogTest {
 
   @Test
   void recoveryHelpClosesThePendingActionWithoutConfirmingIt() {
-    MessageProperties texts = useLanguage("de");
-    TwoFactorAuthorization authorization = mock(TwoFactorAuthorization.class);
+    MessageProperties messageProperties = useLanguage("de");
+    TwoFactorAuthorization twoFactorAuthorization = mock(TwoFactorAuthorization.class);
     MockHttpServletRequest request = new MockHttpServletRequest();
-    TwoFactorActionDialog dialog = new TwoFactorActionDialog(texts, authorization, request);
+    TwoFactorActionDialog dialog =
+        new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, request);
     ui.add(dialog);
     AtomicInteger actions = new AtomicInteger();
     dialog.open(TwoFactorAction.MANAGE_FACTOR, actions::incrementAndGet);
-    TwoFactorCodeInput input = (TwoFactorCodeInput) ReflectionTestUtils.getField(dialog, "code");
-    ((Button) ReflectionTestUtils.getField(input, "help")).click();
+    TwoFactorCodeInput input =
+        (TwoFactorCodeInput) ReflectionTestUtils.getField(dialog, "twoFactorCodeInput");
+    ((Button) ReflectionTestUtils.getField(input, "openRecoveryHelpButton")).click();
 
     assertFalse(dialog.isOpened());
     assertEquals(TwoFactorFlow.ACCOUNT_HELP, TwoFactorFlow.current(request));
     assertEquals(0, actions.get());
-    verifyNoInteractions(authorization);
+    verifyNoInteractions(twoFactorAuthorization);
   }
 }

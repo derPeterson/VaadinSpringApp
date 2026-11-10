@@ -433,7 +433,7 @@ public class AdminView extends IsAuthenticatedBaseView {
       }
       case SUPPORT -> {
         sectionLayout.add(supportSection);
-        supportSection.refresh();
+        supportSection.refreshTicketWorkspace();
       }
       case MAIL_TEST -> sectionLayout.add(mailTestSection);
       case USER_MANAGEMENT -> sectionLayout.add(userManagementSection);

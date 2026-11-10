@@ -16,39 +16,40 @@ import de.derpeterson.app.views.UserNotificationsView;
 /** Abgenommener Startseitenausblick mit echten Kontozugängen und echtem Ungelesenzähler. */
 public class PortalHomeComponent extends Div {
   private final MessageProperties messageProperties;
-  private final Span kicker = new Span();
-  private final H2 welcome = new H2();
+  private final Span welcomeEyebrow = new Span();
+  private final H2 welcomeTitle = new H2();
   private final Span welcomeText = new Span();
-  private final Paragraph description = new Paragraph();
-  private final Span notice = new Span();
-  private final Span unread = new Span();
-  private final Button notifications = new Button();
-  private final Button account = new Button();
+  private final Paragraph portalDescription = new Paragraph();
+  private final Span portalNotice = new Span();
+  private final Span unreadNotificationCount = new Span();
+  private final Button openNotificationsButton = new Button();
+  private final Button openAccountButton = new Button();
 
   public PortalHomeComponent(MessageProperties messageProperties) {
     this.messageProperties = messageProperties;
     addClassNames("portal-home-page", "portal-home-card");
-    kicker.addClassName("portal-home-kicker");
+    welcomeEyebrow.addClassName("portal-home-kicker");
     Span dot = new Span(".");
     dot.addClassName("portal-home-dot");
-    welcome.add(welcomeText, dot);
-    description.addClassName("portal-home-description");
-    notifications.setPrefixComponent(AppIcon.BELL.create());
-    notifications.setId("portal-home-notifications");
-    notifications.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    notifications.addClickListener(event -> UI.getCurrent().navigate(UserNotificationsView.class));
-    unread.addClassName("portal-home-unread");
-    unread.setVisible(false);
-    notifications.setSuffixComponent(unread);
-    account.setPrefixComponent(AppIcon.USER.create());
-    account.setId("portal-home-account");
-    account.addClickListener(event -> UI.getCurrent().navigate(AccountView.class));
-    notifications.addClassName("portal-button");
-    account.addClassName("portal-button");
-    Div actions = new Div(notifications, account);
+    welcomeTitle.add(welcomeText, dot);
+    portalDescription.addClassName("portal-home-description");
+    openNotificationsButton.setPrefixComponent(AppIcon.BELL.create());
+    openNotificationsButton.setId("portal-home-notifications");
+    openNotificationsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    openNotificationsButton.addClickListener(
+        event -> UI.getCurrent().navigate(UserNotificationsView.class));
+    unreadNotificationCount.addClassName("portal-home-unread");
+    unreadNotificationCount.setVisible(false);
+    openNotificationsButton.setSuffixComponent(unreadNotificationCount);
+    openAccountButton.setPrefixComponent(AppIcon.USER.create());
+    openAccountButton.setId("portal-home-account");
+    openAccountButton.addClickListener(event -> UI.getCurrent().navigate(AccountView.class));
+    openNotificationsButton.addClassName("portal-button");
+    openAccountButton.addClassName("portal-button");
+    Div actions = new Div(openNotificationsButton, openAccountButton);
     actions.addClassName("portal-home-actions");
     EqualButtonWidths.configure(actions);
-    Div copy = new Div(kicker, welcome, description, actions);
+    Div copy = new Div(welcomeEyebrow, welcomeTitle, portalDescription, actions);
     copy.addClassName("portal-home-copy");
     Image planet = new Image("icons/portal-home.svg", "");
     planet.addClassName("portal-home-planet");
@@ -59,23 +60,23 @@ public class PortalHomeComponent extends Div {
     layout.addClassName("portal-home-layout");
     Span star = new Span("✦");
     star.getElement().setAttribute("aria-hidden", "true");
-    Div footer = new Div(star, notice);
+    Div footer = new Div(star, portalNotice);
     footer.addClassName("portal-home-note");
     add(layout, footer);
     refreshTexts();
   }
 
   public void updateUnreadCount(long count) {
-    unread.setVisible(count > 0);
-    unread.setText(count > 99 ? "99+" : Long.toString(Math.max(0, count)));
+    unreadNotificationCount.setVisible(count > 0);
+    unreadNotificationCount.setText(count > 99 ? "99+" : Long.toString(Math.max(0, count)));
   }
 
   public void refreshTexts() {
-    kicker.setText(messageProperties.getPortalHomeKicker());
+    welcomeEyebrow.setText(messageProperties.getPortalHomeKicker());
     welcomeText.setText(messageProperties.getPortalHomeWelcome());
-    description.setText(messageProperties.getPortalHomeDescription());
-    notice.setText(messageProperties.getPortalHomeNotice());
-    notifications.setText(messageProperties.getNotificationsTitle());
-    account.setText(messageProperties.getBaseManageAccountButton());
+    portalDescription.setText(messageProperties.getPortalHomeDescription());
+    portalNotice.setText(messageProperties.getPortalHomeNotice());
+    openNotificationsButton.setText(messageProperties.getNotificationsTitle());
+    openAccountButton.setText(messageProperties.getBaseManageAccountButton());
   }
 }

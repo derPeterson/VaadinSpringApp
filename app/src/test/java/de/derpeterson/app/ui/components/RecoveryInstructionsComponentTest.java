@@ -19,9 +19,9 @@ class RecoveryInstructionsComponentTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void localizedInstructionsKeepFourStepsAndEverySentWord(String language) {
-    MessageProperties texts =
+    MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
-    String snapshot = texts.getSupportRecoveryInstructions();
+    String snapshot = messageProperties.getSupportRecoveryInstructions();
     RecoveryInstructionsComponent guide = new RecoveryInstructionsComponent(snapshot);
     assertTrue(snapshot.length() <= SupportTicketService.MESSAGE_LIMIT);
     assertEquals(4, tree(guide).filter(Badge.class::isInstance).count());
@@ -38,11 +38,11 @@ class RecoveryInstructionsComponentTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void sharedDetailsButtonKeepsArrowAndExpandedStateSynchronized(String language) {
-    MessageProperties texts =
+    MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     Details details = new Details();
     details.setId("instruction-details");
-    DetailsToggleButton toggle = new DetailsToggleButton(texts, details, "Guide");
+    DetailsToggleButton toggle = new DetailsToggleButton(messageProperties, details, "Guide");
     assertEquals("false", toggle.getElement().getAttribute("aria-expanded"));
     toggle.click();
     assertTrue(details.isOpened());
@@ -50,7 +50,7 @@ class RecoveryInstructionsComponentTest {
     toggle.click();
     assertFalse(details.isOpened());
     assertEquals("false", toggle.getElement().getAttribute("aria-expanded"));
-    assertEquals(texts.getBaseDetailsButton(), toggle.getText());
+    assertEquals(messageProperties.getBaseDetailsButton(), toggle.getText());
   }
 
   private static Stream<Component> tree(Component component) {

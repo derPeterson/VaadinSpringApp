@@ -30,16 +30,16 @@ import de.derpeterson.app.service.SupportTicketService.Ticket;
 public final class SupportTicketFilterPanel extends AdminSidePanel {
   private final transient MessageProperties messageProperties;
   private final ItemLabelGenerator<Status> statusLabels;
-  private final CheckboxGroup<Status> statuses = new CheckboxGroup<>();
-  private final RadioButtonGroup<Assignment> assignment = new RadioButtonGroup<>();
-  private final RadioButtonGroup<Reading> reading = new RadioButtonGroup<>();
-  private final Badge draftCount = new Badge();
-  private final TextField ticketNumber = new TextField();
+  private final CheckboxGroup<Status> statusFilter = new CheckboxGroup<>();
+  private final RadioButtonGroup<Assignment> assignmentFilter = new RadioButtonGroup<>();
+  private final RadioButtonGroup<Reading> readingFilter = new RadioButtonGroup<>();
+  private final Badge draftFilterCountBadge = new Badge();
+  private final TextField ticketNumberField = new TextField();
   private final Span jumpHint = new Span();
-  private final Button jump = new Button(AppIcon.OPEN_SECTION.create());
-  private final Button reset = new Button(AppIcon.ROTATE_LEFT.create());
-  private final Button cancel = new Button(AppIcon.CLOSE.create());
-  private final Button apply = new Button(AppIcon.CHECK.create());
+  private final Button openTicketButton = new Button(AppIcon.OPEN_SECTION.create());
+  private final Button resetFiltersButton = new Button(AppIcon.ROTATE_LEFT.create());
+  private final Button cancelFilterChangesButton = new Button(AppIcon.CLOSE.create());
+  private final Button applyFiltersButton = new Button(AppIcon.CHECK.create());
   private SupportTicketFilter applied = SupportTicketFilter.ALL;
 
   public SupportTicketFilterPanel(
@@ -52,89 +52,89 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     this.statusLabels = statusLabels;
     setId("support-filter-panel");
     addClassNames("admin-user-filter-drawer", "support-filter-drawer");
-    statuses.setId("support-filter-status");
-    statuses.setItems(Status.values());
-    statuses.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
-    statuses.setWidthFull();
-    statuses.addClassName("admin-filter-choices");
-    assignment.setId("support-filter-assignment");
-    assignment.setItems(Assignment.values());
-    assignment.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
-    assignment.setValue(Assignment.ALL);
-    assignment.setWidthFull();
-    reading.setId("support-filter-reading");
-    reading.setItems(Reading.values());
-    reading.setValue(Reading.ALL);
-    reading.addClassNames("admin-filter-enabled", "support-filter-reading");
-    reading.setWidthFull();
-    VerticalLayout fields = new VerticalLayout(reading, statuses, assignment);
+    statusFilter.setId("support-filter-status");
+    statusFilter.setItems(Status.values());
+    statusFilter.addThemeVariants(CheckboxGroupVariant.LUMO_VERTICAL);
+    statusFilter.setWidthFull();
+    statusFilter.addClassName("admin-filter-choices");
+    assignmentFilter.setId("support-filter-assignment");
+    assignmentFilter.setItems(Assignment.values());
+    assignmentFilter.addThemeVariants(RadioGroupVariant.LUMO_VERTICAL);
+    assignmentFilter.setValue(Assignment.ALL);
+    assignmentFilter.setWidthFull();
+    readingFilter.setId("support-filter-reading");
+    readingFilter.setItems(Reading.values());
+    readingFilter.setValue(Reading.ALL);
+    readingFilter.addClassNames("admin-filter-enabled", "support-filter-reading");
+    readingFilter.setWidthFull();
+    VerticalLayout fields = new VerticalLayout(readingFilter, statusFilter, assignmentFilter);
     fields.setPadding(false);
     fields.setSpacing(false);
     fields.setWidthFull();
     fields.addClassName("admin-user-filters");
-    reset.setId("support-filter-reset");
-    reset.addClickListener(event -> {
-      statuses.clear();
-      assignment.setValue(Assignment.ALL);
-      reading.setValue(Reading.ALL);
+    resetFiltersButton.setId("support-filter-reset");
+    resetFiltersButton.addClickListener(event -> {
+      statusFilter.clear();
+      assignmentFilter.setValue(Assignment.ALL);
+      readingFilter.setValue(Reading.ALL);
     });
-    reset.addClassNames(CosmosClasses.DELETE_BUTTON, "admin-user-filter-reset");
-    draftCount.addClassName("admin-user-active-filter-count");
-    draftCount.setId("support-filter-draft-count");
-    HorizontalLayout tools = new HorizontalLayout(draftCount, reset);
+    resetFiltersButton.addClassNames(CosmosClasses.DELETE_BUTTON, "admin-user-filter-reset");
+    draftFilterCountBadge.addClassName("admin-user-active-filter-count");
+    draftFilterCountBadge.setId("support-filter-draft-count");
+    HorizontalLayout tools = new HorizontalLayout(draftFilterCountBadge, resetFiltersButton);
     tools.setPadding(false);
     tools.setSpacing(false);
     tools.setWidthFull();
     tools.setJustifyContentMode(JustifyContentMode.BETWEEN);
     tools.addClassName("admin-filter-tools");
-    statuses.addValueChangeListener(event -> refreshDraftCount());
-    assignment.addValueChangeListener(event -> refreshDraftCount());
-    reading.addValueChangeListener(event -> refreshDraftCount());
-    ticketNumber.setId("support-jump-number");
-    ticketNumber.setWidthFull();
-    ticketNumber.setAllowedCharPattern("[0-9#]");
-    ticketNumber.setMaxLength(20);
-    ticketNumber.setManualValidation(true);
-    jump.setId("support-jump");
-    jump.addClickListener(event -> {
-      if (ticketNumber.isEmpty()) {
-        ticketNumber.setInvalid(true);
+    statusFilter.addValueChangeListener(event -> refreshDraftCount());
+    assignmentFilter.addValueChangeListener(event -> refreshDraftCount());
+    readingFilter.addValueChangeListener(event -> refreshDraftCount());
+    ticketNumberField.setId("support-jump-number");
+    ticketNumberField.setWidthFull();
+    ticketNumberField.setAllowedCharPattern("[0-9#]");
+    ticketNumberField.setMaxLength(20);
+    ticketNumberField.setManualValidation(true);
+    openTicketButton.setId("support-jump");
+    openTicketButton.addClickListener(event -> {
+      if (ticketNumberField.isEmpty()) {
+        ticketNumberField.setInvalid(true);
         NotificationHelper.getInstance()
             .showNotification(
                 messageProperties::getBaseFailedTitle,
                 messageProperties::getBaseValidationRequiredMessage,
                 NotificationHelper.NotificationType.ERROR);
-        ticketNumber.focus();
+        ticketNumberField.focus();
         return;
       }
-      ticketNumber.setInvalid(false);
-      if (onJump.test(ticketNumber.getValue())) {
+      ticketNumberField.setInvalid(false);
+      if (onJump.test(ticketNumberField.getValue())) {
         close();
       }
     });
-    HorizontalLayout jumpRow = new HorizontalLayout(ticketNumber, jump);
+    HorizontalLayout jumpRow = new HorizontalLayout(ticketNumberField, openTicketButton);
     jumpRow.setPadding(false);
     jumpRow.setSpacing(false);
     jumpRow.setWidthFull();
     jumpRow.setAlignItems(Alignment.END);
-    jumpRow.setFlexGrow(1, ticketNumber);
+    jumpRow.setFlexGrow(1, ticketNumberField);
     jumpRow.addClassName("support-filter-jump");
     Div jumpInfo = new Div(AppIcon.INFO_CIRCLE.create(), jumpHint);
     jumpInfo.setId("support-jump-info");
     jumpInfo.addClassName("admin-filter-hint");
     add(tools, fields, jumpRow, jumpInfo);
-    cancel.setId("support-filter-cancel");
-    cancel.addClickListener(event -> close());
-    apply.setId("support-filter-apply");
-    apply.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    apply.addClickListener(event -> {
+    cancelFilterChangesButton.setId("support-filter-cancel");
+    cancelFilterChangesButton.addClickListener(event -> close());
+    applyFiltersButton.setId("support-filter-apply");
+    applyFiltersButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    applyFiltersButton.addClickListener(event -> {
       applied =
           new SupportTicketFilter(
-              statuses.getValue(), assignment.getValue(), reading.getValue(), null);
+              statusFilter.getValue(), assignmentFilter.getValue(), readingFilter.getValue(), null);
       onApply.run();
       close();
     });
-    HorizontalLayout actions = new HorizontalLayout(cancel, apply);
+    HorizontalLayout actions = new HorizontalLayout(cancelFilterChangesButton, applyFiltersButton);
     actions.setPadding(false);
     actions.setSpacing(false);
     actions.setWidthFull();
@@ -144,11 +144,11 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
   }
 
   public void openWithAppliedFilters() {
-    statuses.setValue(applied.statuses());
-    assignment.setValue(applied.assignment());
-    reading.setValue(applied.reading());
-    ticketNumber.clear();
-    ticketNumber.setInvalid(false);
+    statusFilter.setValue(applied.statuses());
+    assignmentFilter.setValue(applied.assignment());
+    readingFilter.setValue(applied.reading());
+    ticketNumberField.clear();
+    ticketNumberField.setInvalid(false);
     open();
   }
 
@@ -183,41 +183,41 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     setHeading(messageProperties.getAdminUsersFilterPanelTitle());
     setDescription(messageProperties.getSupportFilterDescription());
     refreshCloseText(messageProperties);
-    statuses.setLabel(messageProperties.getSupportFilterStatus());
-    statuses.setItemLabelGenerator(statusLabels);
-    statuses.setRenderer(
+    statusFilter.setLabel(messageProperties.getSupportFilterStatus());
+    statusFilter.setItemLabelGenerator(statusLabels);
+    statusFilter.setRenderer(
         new ComponentRenderer<>(status -> {
           Span label = new Span(statusLabels.apply(status));
           label.getElement().setAttribute("data-status", status.name());
           return label;
         }));
-    assignment.setLabel(messageProperties.getSupportFilterAssignment());
-    assignment.setItemLabelGenerator(value ->
+    assignmentFilter.setLabel(messageProperties.getSupportFilterAssignment());
+    assignmentFilter.setItemLabelGenerator(value ->
         switch (value) {
           case ALL -> messageProperties.getAdminUsersFilterAll();
           case MINE -> messageProperties.getSupportFilterMine();
           case UNASSIGNED -> messageProperties.getSupportUnassigned();
         });
-    reading.setLabel(messageProperties.getSupportFilterMessages());
-    reading.setItemLabelGenerator(value ->
+    readingFilter.setLabel(messageProperties.getSupportFilterMessages());
+    readingFilter.setItemLabelGenerator(value ->
         value == Reading.ALL
             ? messageProperties.getAdminUsersFilterAll()
             : messageProperties.getNotificationsUnread());
-    ticketNumber.setLabel(messageProperties.getSupportJumpTicketNumber());
-    ticketNumber.setPlaceholder(messageProperties.getSupportJumpTicketNumberPlaceholder());
+    ticketNumberField.setLabel(messageProperties.getSupportJumpTicketNumber());
+    ticketNumberField.setPlaceholder(messageProperties.getSupportJumpTicketNumberPlaceholder());
     jumpHint.setText(messageProperties.getSupportJumpTicketNumberHint());
-    jump.setText(messageProperties.getSupportJumpOpen());
+    openTicketButton.setText(messageProperties.getSupportJumpOpen());
     refreshDraftCount();
-    reset.setText(messageProperties.getAdminUsersClearFilters());
-    cancel.setText(messageProperties.getAdminUsersCancel());
-    apply.setText(messageProperties.getAdminUsersApplyFilters());
+    resetFiltersButton.setText(messageProperties.getAdminUsersClearFilters());
+    cancelFilterChangesButton.setText(messageProperties.getAdminUsersCancel());
+    applyFiltersButton.setText(messageProperties.getAdminUsersApplyFilters());
   }
 
   private void refreshDraftCount() {
     int count =
-        (statuses.isEmpty() ? 0 : 1)
-            + (assignment.getValue() == Assignment.ALL ? 0 : 1)
-            + (reading.getValue() == Reading.ALL ? 0 : 1);
-    draftCount.setText(messageProperties.getAdminUsersActiveFilterCount(count));
+        (statusFilter.isEmpty() ? 0 : 1)
+            + (assignmentFilter.getValue() == Assignment.ALL ? 0 : 1)
+            + (readingFilter.getValue() == Reading.ALL ? 0 : 1);
+    draftFilterCountBadge.setText(messageProperties.getAdminUsersActiveFilterCount(count));
   }
 }

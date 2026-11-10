@@ -90,35 +90,41 @@ class AccountPasswordChangeDialogTest {
     locale.set(Locale.forLanguageTag(language));
     dialog.refreshTexts();
     dialog.open();
-    MessageProperties texts = MessageProperties.forLocale(new CustomI18NProvider(), locale.get());
+    MessageProperties messageProperties =
+        MessageProperties.forLocale(new CustomI18NProvider(), locale.get());
     assertEquals(
-        texts.getAccountSettingsChangePassword(), dialog.getElement().getProperty("ariaLabel"));
-    assertEquals(texts.getAccountPasswordDialogCurrentPassword(), field("current").getLabel());
-    assertEquals(texts.getResetPasswordNewPasswordField(), field("new").getLabel());
-    assertEquals(texts.getAccountPasswordDialogConfirmPassword(), field("confirm").getLabel());
-    assertEquals(texts.getAccountPasswordPlaceholder(), field("current").getPlaceholder());
-    assertEquals(texts.getAccountNewPasswordPlaceholder(), field("new").getPlaceholder());
-    assertEquals(texts.getAccountConfirmPasswordPlaceholder(), field("confirm").getPlaceholder());
+        messageProperties.getAccountSettingsChangePassword(),
+        dialog.getElement().getProperty("ariaLabel"));
+    assertEquals(
+        messageProperties.getAccountPasswordDialogCurrentPassword(), field("current").getLabel());
+    assertEquals(messageProperties.getResetPasswordNewPasswordField(), field("new").getLabel());
+    assertEquals(
+        messageProperties.getAccountPasswordDialogConfirmPassword(), field("confirm").getLabel());
+    assertEquals(
+        messageProperties.getAccountPasswordPlaceholder(), field("current").getPlaceholder());
+    assertEquals(
+        messageProperties.getAccountNewPasswordPlaceholder(), field("new").getPlaceholder());
+    assertEquals(
+        messageProperties.getAccountConfirmPasswordPlaceholder(),
+        field("confirm").getPlaceholder());
     assertEquals(Autocomplete.CURRENT_PASSWORD, field("current").getAutocomplete());
     assertEquals(Autocomplete.NEW_PASSWORD, field("new").getAutocomplete());
     assertEquals(Autocomplete.NEW_PASSWORD, field("confirm").getAutocomplete());
     assertEquals(
-        texts.getAdminUsersCloseDialog(),
+        messageProperties.getAdminUsersCloseDialog(),
         ((Button) byId("account-password-close")).getAriaLabel().orElseThrow());
     assertTrue(
         tree(dialog)
-            .anyMatch(
-                component ->
-                    component
-                        .getElement()
-                        .getTextRecursively()
-                        .contains(texts.getAccountPasswordDialogHint())));
+            .anyMatch(component ->
+                component
+                    .getElement()
+                    .getTextRecursively()
+                    .contains(messageProperties.getAccountPasswordDialogHint())));
     assertTrue(
         slot(dialog.getHeader().getElement())
-            .anyMatch(
-                component ->
-                    component instanceof SvgIcon icon
-                        && "icons/lucide/key-round.svg".equals(icon.getSrc())));
+            .anyMatch(component ->
+                component instanceof SvgIcon icon
+                    && "icons/lucide/key-round.svg".equals(icon.getSrc())));
     assertEquals(ModalityMode.STRICT, dialog.getModality());
     assertTrue(dialog.isCloseOnEsc());
     assertTrue(dialog.isCloseOnOutsideClick());
@@ -186,11 +192,10 @@ class AccountPasswordChangeDialogTest {
   @Test
   void successfulSubmissionCallsActionClosesAndClearsAllSecrets() {
     ArrayList<PasswordChange> calls = new ArrayList<PasswordChange>();
-    dialog.setChangeAction(
-        change -> {
-          calls.add(change);
-          return new PasswordChanged(1L, 2L);
-        });
+    dialog.setChangeAction(change -> {
+      calls.add(change);
+      return new PasswordChanged(1L, 2L);
+    });
     dialog.open();
     field("current").setValue("Old-secret!");
     field("new").setValue("New-secret!");
@@ -208,11 +213,10 @@ class AccountPasswordChangeDialogTest {
   @Test
   void invalidAndMismatchedPasswordsNeverInvokeTheAction() {
     AtomicInteger calls = new AtomicInteger();
-    dialog.setChangeAction(
-        change -> {
-          calls.incrementAndGet();
-          return null;
-        });
+    dialog.setChangeAction(change -> {
+      calls.incrementAndGet();
+      return null;
+    });
     dialog.open();
     ((Button) byId("account-password-save")).click();
     assertTrue(field("current").isInvalid());
@@ -230,10 +234,9 @@ class AccountPasswordChangeDialogTest {
 
   @Test
   void wrongCurrentPasswordMarksOnlyThatFieldAndKeepsDialogOpen() {
-    dialog.setChangeAction(
-        change -> {
-          throw new BadCredentialsException("invalid");
-        });
+    dialog.setChangeAction(change -> {
+      throw new BadCredentialsException("invalid");
+    });
     dialog.open();
     field("current").setValue("Wrong-secret!");
     field("new").setValue("New-secret!");

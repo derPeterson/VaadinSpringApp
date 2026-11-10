@@ -24,12 +24,12 @@ public final class TwoFactorHttpFilter implements Filter {
           "/VAADIN/dynamic/resource/[0-9]+/[0-9a-f-]{36}/"
               + Pattern.quote(RecoveryCodeDownload.RESOURCE_NAME));
 
-  private final SecurityService security;
+  private final SecurityService securityService;
   private final TwoFactorAuthorization twoFactorAuthorization;
 
   public TwoFactorHttpFilter(
-      SecurityService security, TwoFactorAuthorization twoFactorAuthorization) {
-    this.security = security;
+      SecurityService securityService, TwoFactorAuthorization twoFactorAuthorization) {
+    this.securityService = securityService;
     this.twoFactorAuthorization = twoFactorAuthorization;
   }
 
@@ -38,7 +38,7 @@ public final class TwoFactorHttpFilter implements Filter {
       throws IOException, ServletException {
     HttpServletRequest http = (HttpServletRequest) request;
     HttpServletResponse reply = (HttpServletResponse) response;
-    if (security.getAuthenticatedUser(http).isEmpty()) {
+    if (securityService.getAuthenticatedUser(http).isEmpty()) {
       chain.doFilter(request, response);
       return;
     }

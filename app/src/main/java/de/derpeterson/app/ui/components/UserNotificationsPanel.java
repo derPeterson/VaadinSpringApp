@@ -71,30 +71,30 @@ public class UserNotificationsPanel extends Div {
   private static final int PREVIEW_LIMIT = 5;
   private final transient MessageProperties messageProperties;
   private final transient UserNotificationService userNotificationService;
-  private final transient HttpSession session;
+  private final transient HttpSession httpSession;
   private final boolean compact;
-  private final Div rows = new Div();
-  private final H2 heading = new H2();
-  private final Span description = new Span();
-  private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create());
+  private final Div notificationRows = new Div();
+  private final H2 inboxHeading = new H2();
+  private final Span inboxDescription = new Span();
+  private final Button closeInboxButton = new Button(AppIcon.CLOSE_CIRCLE.create());
   private transient Runnable closeAction = () -> {};
   private transient Consumer<Boolean> detailOpenListener = open -> {};
   private final RadioButtonGroup<ReadFilter> readFilter = new RadioButtonGroup<>();
   private boolean updatingFilterLabels;
-  private final Button markAll = new Button();
-  private final Button dismissRead = new Button(AppIcon.TRASH.create());
-  private final Button previous = new Button();
-  private final Button next = new Button();
-  private final Button refresh = new Button();
-  private final Button history = new Button();
+  private final Button markAllReadButton = new Button();
+  private final Button dismissReadButton = new Button(AppIcon.TRASH.create());
+  private final Button previousPageButton = new Button();
+  private final Button nextPageButton = new Button();
+  private final Button refreshInboxButton = new Button();
+  private final Button openHistoryButton = new Button();
   private final Span pageLabel = new Span();
   private final ComboBox<Integer> pageSize = new ComboBox<>();
   private final Span pageTotal = new Span();
   private long totalItems;
-  private final Button first = new Button(AppIcon.ANGLE_DOUBLE_LEFT.create());
-  private final Button last = new Button(AppIcon.ANGLE_DOUBLE_RIGHT.create());
+  private final Button firstPageButton = new Button(AppIcon.ANGLE_DOUBLE_LEFT.create());
+  private final Button lastPageButton = new Button(AppIcon.ANGLE_DOUBLE_RIGHT.create());
   private final Div pageNumbers = new Div();
-  private final TextField search = new TextField();
+  private final TextField notificationSearchField = new TextField();
   private final Span totalLabel = new Span();
   private final Span totalCount = new Span("0");
   private final Span unreadCount = new Span("0");
@@ -104,49 +104,50 @@ public class UserNotificationsPanel extends Div {
   private final Span previewHint = new Span();
   private List<Long> unreadIds = List.of();
   private int page;
-  private Dialog detail;
+  private Dialog notificationDetailDialog;
   private Popover detailActionsMenu;
-  private Item openedItem;
-  private final PortalConfirmationDialog confirmation;
+  private Item openedNotification;
+  private final PortalConfirmationDialog notificationActionConfirmation;
 
   public UserNotificationsPanel(
       MessageProperties messageProperties,
       UserNotificationService userNotificationService,
-      HttpSession session,
+      HttpSession httpSession,
       boolean compact) {
     this.messageProperties = messageProperties;
     this.userNotificationService = userNotificationService;
-    this.session = session;
+    this.httpSession = httpSession;
     this.compact = compact;
-    confirmation =
+    notificationActionConfirmation =
         new PortalConfirmationDialog(
             messageProperties,
             compact ? "notifications-preview-confirmation" : "notifications-inbox-confirmation");
-    confirmation.addClassName("portal-notification-confirmation");
-    confirmation.addOpenedChangeListener(event -> notifyOverlayState());
+    notificationActionConfirmation.addClassName("portal-notification-confirmation");
+    notificationActionConfirmation.addOpenedChangeListener(event -> notifyOverlayState());
     addClassNames(COSMOS_THEME, "cosmos-notifications-panel");
     setId(compact ? "notifications-preview" : "notifications-inbox");
-    heading.addClassName(PANEL_TITLE);
+    inboxHeading.addClassName(PANEL_TITLE);
     configureReadFilter();
-    Div toolbar = new Div(readFilter, refresh);
+    Div toolbar = new Div(readFilter, refreshInboxButton);
     toolbar.addClassName("cosmos-notifications-actions");
     configureCommonActions();
-    Div paging = new Div(first, previous, pageNumbers, next, last);
+    Div paging =
+        new Div(firstPageButton, previousPageButton, pageNumbers, nextPageButton, lastPageButton);
     paging.addClassName("cosmos-notifications-actions");
     paging.setVisible(!compact);
-    history.setVisible(compact);
+    openHistoryButton.setVisible(compact);
     retention.addClassName("cosmos-notifications-secondary");
     if (compact) {
       buildPreview(toolbar);
     } else {
       buildInbox(toolbar, paging);
     }
-    add(confirmation);
+    add(notificationActionConfirmation);
     refreshTexts();
     addDetachListener(e -> {
-      confirmation.close();
-      if (detail != null) {
-        detail.close();
+      notificationActionConfirmation.close();
+      if (notificationDetailDialog != null) {
+        notificationDetailDialog.close();
       }
     });
   }
@@ -178,7 +179,7 @@ public class UserNotificationsPanel extends Div {
     readFilter.addValueChangeListener(e -> {
       if (!updatingFilterLabels) {
         page = 0;
-        refresh();
+        refreshInbox();
       }
     });
   }
@@ -186,33 +187,33 @@ public class UserNotificationsPanel extends Div {
   private void configureCommonActions() {
     SvgIcon readAllIcon = AppIcon.CHECK_CHECK.create();
     readAllIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
-    markAll.setIcon(readAllIcon);
-    dismissRead.addClassName(DELETE_BUTTON);
-    dismissRead.setEnabled(false);
-    dismissRead.addClickListener(e -> confirmDismissRead());
-    refresh.addClickListener(e -> refresh(true));
-    markAll.addClickListener(e -> confirmMarkAll());
-    previous.addClickListener(e -> {
+    markAllReadButton.setIcon(readAllIcon);
+    dismissReadButton.addClassName(DELETE_BUTTON);
+    dismissReadButton.setEnabled(false);
+    dismissReadButton.addClickListener(e -> confirmDismissRead());
+    refreshInboxButton.addClickListener(e -> refreshInbox(true));
+    markAllReadButton.addClickListener(e -> confirmMarkAll());
+    previousPageButton.addClickListener(e -> {
       if (page > 0) {
         page--;
       }
-      refresh();
+      refreshInbox();
     });
-    next.addClickListener(e -> {
+    nextPageButton.addClickListener(e -> {
       page++;
-      refresh();
+      refreshInbox();
     });
-    history.addClickListener(e -> {
+    openHistoryButton.addClickListener(e -> {
       closeAction.run();
       UI.getCurrent().navigate(UserNotificationsView.class);
     });
-    first.addClickListener(e -> {
+    firstPageButton.addClickListener(e -> {
       page = 0;
-      refresh();
+      refreshInbox();
     });
-    last.addClickListener(e -> {
+    lastPageButton.addClickListener(e -> {
       page = Math.max(0, totalPages - 1);
-      refresh();
+      refreshInbox();
     });
   }
 
@@ -221,35 +222,35 @@ public class UserNotificationsPanel extends Div {
     icon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div badge = new Div(icon);
     badge.addClassName(PANEL_ICON);
-    description.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
-    Div titles = new Div(heading, description);
+    inboxDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
+    Div titles = new Div(inboxHeading, inboxDescription);
     titles.addClassName(COSMOS_PANEL_HEADING_CLASS);
-    close.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    close.addClassName("cosmos-overlay-close");
-    close.addClickListener(e -> closeAction.run());
+    closeInboxButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    closeInboxButton.addClassName("cosmos-overlay-close");
+    closeInboxButton.addClickListener(e -> closeAction.run());
     unreadCount.addClassName("portal-preview-unread-count");
-    Div header = new Div(badge, titles, unreadCount, close);
+    Div header = new Div(badge, titles, unreadCount, closeInboxButton);
     header.addClassName("cosmos-notification-preview-header");
     toolbar.addClassName("cosmos-notification-preview-toolbar");
-    refresh.setIcon(AppIcon.REFRESH.create());
-    refresh.addClassNames(
+    refreshInboxButton.setIcon(AppIcon.REFRESH.create());
+    refreshInboxButton.addClassNames(
         "cosmos-notification-preview-refresh", "cosmos-notification-preview-tool");
-    markAll.addClassNames(
+    markAllReadButton.addClassNames(
         "cosmos-notification-preview-mark-all", "cosmos-notification-preview-tool");
-    Div tools = new Div(refresh, markAll);
+    Div tools = new Div(refreshInboxButton, markAllReadButton);
     tools.addClassName("cosmos-notification-preview-tools");
     toolbar.removeAll();
     toolbar.add(readFilter, tools);
-    rows.addClassName("cosmos-notification-preview-rows");
+    notificationRows.addClassName("cosmos-notification-preview-rows");
     previewHint.addClassName("cosmos-notification-preview-hint");
     previewHint.setVisible(false);
-    Div content = new Div(toolbar, previewHint, rows);
+    Div content = new Div(toolbar, previewHint, notificationRows);
     content.addClassName("cosmos-notification-preview-content");
-    history.setIcon(AppIcon.EYE.create());
-    history.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    openHistoryButton.setIcon(AppIcon.EYE.create());
+    openHistoryButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     Div note = new Div(AppIcon.INFO_CIRCLE.create(), retention);
     note.addClassName("cosmos-notification-preview-retention");
-    Div footer = new Div(history, note);
+    Div footer = new Div(openHistoryButton, note);
     footer.addClassName("cosmos-notification-preview-footer");
     add(header, content, footer);
   }
@@ -259,8 +260,8 @@ public class UserNotificationsPanel extends Div {
     archive.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div icon = new Div(archive);
     icon.addClassName(PANEL_ICON);
-    description.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
-    Div titles = new Div(heading, description);
+    inboxDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
+    Div titles = new Div(inboxHeading, inboxDescription);
     titles.addClassName(COSMOS_PANEL_HEADING_CLASS);
     Div unreadStat = stat(unreadLabel, unreadCount);
     unreadStat.addClassName("cosmos-notification-inbox-stat-unread");
@@ -272,29 +273,29 @@ public class UserNotificationsPanel extends Div {
     headingGroup.addClassName("cosmos-notification-inbox-heading");
     Div header = new Div(headingGroup, counts);
     header.addClassNames(PANEL_HEADER, "cosmos-notification-inbox-header");
-    refresh.setIcon(AppIcon.REFRESH.create());
-    search.setId("notifications-inbox-search");
-    search.setPrefixComponent(AppIcon.SEARCH.create());
-    search.setClearButtonVisible(true);
-    search.setMaxLength(UserNotificationService.TITLE_LIMIT);
-    search.setValueChangeMode(ValueChangeMode.EAGER);
-    search.addValueChangeListener(e -> {
+    refreshInboxButton.setIcon(AppIcon.REFRESH.create());
+    notificationSearchField.setId("notifications-inbox-search");
+    notificationSearchField.setPrefixComponent(AppIcon.SEARCH.create());
+    notificationSearchField.setClearButtonVisible(true);
+    notificationSearchField.setMaxLength(UserNotificationService.TITLE_LIMIT);
+    notificationSearchField.setValueChangeMode(ValueChangeMode.EAGER);
+    notificationSearchField.addValueChangeListener(e -> {
       page = 0;
-      refresh();
+      refreshInbox();
     });
-    Div tools = new Div(refresh, markAll, dismissRead);
+    Div tools = new Div(refreshInboxButton, markAllReadButton, dismissReadButton);
     tools.addClassName("cosmos-notification-inbox-tools");
-    refresh.addClassName(COSMOS_NOTIFICATION_INBOX_TOOL_CLASS);
-    markAll.addClassName(COSMOS_NOTIFICATION_INBOX_TOOL_CLASS);
-    dismissRead.addClassName(COSMOS_NOTIFICATION_INBOX_TOOL_CLASS);
+    refreshInboxButton.addClassName(COSMOS_NOTIFICATION_INBOX_TOOL_CLASS);
+    markAllReadButton.addClassName(COSMOS_NOTIFICATION_INBOX_TOOL_CLASS);
+    dismissReadButton.addClassName(COSMOS_NOTIFICATION_INBOX_TOOL_CLASS);
     toolbar.removeAll();
     Div controls = new Div(readFilter, tools);
     controls.addClassName("cosmos-notification-inbox-controls");
-    toolbar.add(controls, search);
+    toolbar.add(controls, notificationSearchField);
     toolbar.addClassName("cosmos-notification-inbox-toolbar");
-    rows.addClassName("cosmos-notification-inbox-rows");
-    previous.setIcon(AppIcon.ANGLE_LEFT.create());
-    next.setIcon(AppIcon.ANGLE_RIGHT.create());
+    notificationRows.addClassName("cosmos-notification-inbox-rows");
+    previousPageButton.setIcon(AppIcon.ANGLE_LEFT.create());
+    nextPageButton.setIcon(AppIcon.ANGLE_RIGHT.create());
     pageNumbers.addClassName("cosmos-notification-inbox-page-numbers");
     paging.addClassName("cosmos-notification-inbox-pagination");
     pageSize.setId("notifications-inbox-page-size");
@@ -307,7 +308,7 @@ public class UserNotificationsPanel extends Div {
     pageSize.addValueChangeListener(e -> {
       if (e.getValue() != null) {
         page = 0;
-        refresh();
+        refreshInbox();
       }
     });
     Div summary = new Div(pageLabel, pageSize);
@@ -319,7 +320,7 @@ public class UserNotificationsPanel extends Div {
     retentionNote.addClassName("cosmos-notification-inbox-retention");
     Div footer = new Div(paginationRow, retentionNote);
     footer.addClassName("cosmos-notification-inbox-footer");
-    add(header, toolbar, rows, footer);
+    add(header, toolbar, notificationRows, footer);
   }
 
   private Div stat(Span label, Span value) {
@@ -339,17 +340,17 @@ public class UserNotificationsPanel extends Div {
   }
 
   public void refreshTexts() {
-    confirmation.refreshTexts();
-    heading.setText(messageProperties.getNotificationsTitle());
-    description.setText(
+    notificationActionConfirmation.refreshTexts();
+    inboxHeading.setText(messageProperties.getNotificationsTitle());
+    inboxDescription.setText(
         compact
             ? messageProperties.getNotificationsDescription()
             : messageProperties.getNotificationsInboxDescription());
     totalLabel.setText(messageProperties.getNotificationsTotal());
     unreadLabel.setText(messageProperties.getNotificationsUnread());
-    search.setPlaceholder(messageProperties.getNotificationsSearch());
-    search.setAriaLabel(messageProperties.getNotificationsSearch());
-    close.setAriaLabel(messageProperties.getNotificationsClose());
+    notificationSearchField.setPlaceholder(messageProperties.getNotificationsSearch());
+    notificationSearchField.setAriaLabel(messageProperties.getNotificationsSearch());
+    closeInboxButton.setAriaLabel(messageProperties.getNotificationsClose());
     readFilter.setAriaLabel(messageProperties.getNotificationsFilter());
     updatingFilterLabels = true;
     try {
@@ -359,29 +360,31 @@ public class UserNotificationsPanel extends Div {
     } finally {
       updatingFilterLabels = false;
     }
-    refresh.setAriaLabel(messageProperties.getNotificationsRefresh());
-    refresh.setTooltipText(messageProperties.getNotificationsRefresh());
-    markAll.setAriaLabel(messageProperties.getNotificationsMarkAll());
-    markAll.setTooltipText(messageProperties.getNotificationsMarkAll());
-    dismissRead.setTooltipText(messageProperties.getNotificationsDismissRead());
-    dismissRead.setAriaLabel(messageProperties.getNotificationsDismissRead());
+    refreshInboxButton.setAriaLabel(messageProperties.getNotificationsRefresh());
+    refreshInboxButton.setTooltipText(messageProperties.getNotificationsRefresh());
+    markAllReadButton.setAriaLabel(messageProperties.getNotificationsMarkAll());
+    markAllReadButton.setTooltipText(messageProperties.getNotificationsMarkAll());
+    dismissReadButton.setTooltipText(messageProperties.getNotificationsDismissRead());
+    dismissReadButton.setAriaLabel(messageProperties.getNotificationsDismissRead());
     pageLabel.setText(messageProperties.getAdminUsersPaginationPerPage());
     pageSize.setAriaLabel(messageProperties.getAdminUsersPaginationPerPage());
-    previous.setAriaLabel(messageProperties.getNotificationsPrevious());
-    previous.setTooltipText(messageProperties.getNotificationsPrevious());
-    next.setAriaLabel(messageProperties.getNotificationsNext());
-    next.setTooltipText(messageProperties.getNotificationsNext());
-    first.setAriaLabel(messageProperties.getAdminUsersPaginationFirstPage());
-    first.setTooltipText(messageProperties.getAdminUsersPaginationFirstPage());
-    last.setAriaLabel(messageProperties.getAdminUsersPaginationLastPage());
-    last.setTooltipText(messageProperties.getAdminUsersPaginationLastPage());
-    history.setText(messageProperties.getNotificationsHistory());
+    previousPageButton.setAriaLabel(messageProperties.getNotificationsPrevious());
+    previousPageButton.setTooltipText(messageProperties.getNotificationsPrevious());
+    nextPageButton.setAriaLabel(messageProperties.getNotificationsNext());
+    nextPageButton.setTooltipText(messageProperties.getNotificationsNext());
+    firstPageButton.setAriaLabel(messageProperties.getAdminUsersPaginationFirstPage());
+    firstPageButton.setTooltipText(messageProperties.getAdminUsersPaginationFirstPage());
+    lastPageButton.setAriaLabel(messageProperties.getAdminUsersPaginationLastPage());
+    lastPageButton.setTooltipText(messageProperties.getAdminUsersPaginationLastPage());
+    openHistoryButton.setText(messageProperties.getNotificationsHistory());
     refreshRetention();
     refreshPreviewHint();
     if (isAttached()) {
-      refresh();
+      refreshInbox();
     }
-    if (detail != null && detail.isOpened() && openedItem != null) {
+    if (notificationDetailDialog != null
+        && notificationDetailDialog.isOpened()
+        && openedNotification != null) {
       renderOpenedNotification();
     }
   }
@@ -414,42 +417,42 @@ public class UserNotificationsPanel extends Div {
           case UNREAD -> messageProperties.getNotificationsLatestUnread(PREVIEW_LIMIT);
         });
     if (compact) {
-      description.setText(previewHint.getText());
+      inboxDescription.setText(previewHint.getText());
     }
   }
 
   private Page<Item> loadPage() {
     if (compact) {
-      return userNotificationService.inbox(session, selectedFilter(), page, PREVIEW_LIMIT);
+      return userNotificationService.inbox(httpSession, selectedFilter(), page, PREVIEW_LIMIT);
     }
-    if (search.isEmpty()) {
-      return userNotificationService.inbox(session, selectedFilter(), page, selectedPageSize());
+    if (notificationSearchField.isEmpty()) {
+      return userNotificationService.inbox(httpSession, selectedFilter(), page, selectedPageSize());
     }
     return userNotificationService.searchInbox(
-        session,
+        httpSession,
         selectedFilter(),
-        search.getValue(),
-        UserNotificationTexts.matchingTypes(messageProperties, search.getValue()),
+        notificationSearchField.getValue(),
+        UserNotificationTexts.matchingTypes(messageProperties, notificationSearchField.getValue()),
         page,
         selectedPageSize());
   }
 
-  public void refresh() {
-    refresh(false);
+  public void refreshInbox() {
+    refreshInbox(false);
   }
 
-  private void refresh(boolean notifyResult) {
+  private void refreshInbox(boolean notifyResult) {
     try {
       refreshRetention();
       refreshPreviewHint();
       Page<Item> result = loadPage();
       if (page > 0 && page >= result.getTotalPages()) {
         page = Math.max(0, result.getTotalPages() - 1);
-        refresh(notifyResult);
+        refreshInbox(notifyResult);
         return;
       }
-      unreadIds = userNotificationService.unreadSnapshot(session);
-      totalItems = userNotificationService.inboxCount(session);
+      unreadIds = userNotificationService.unreadSnapshot(httpSession);
+      totalItems = userNotificationService.inboxCount(httpSession);
       totalCount.setText(Long.toString(totalItems));
       unreadCount.setText(Integer.toString(unreadIds.size()));
       updatingFilterLabels = true;
@@ -461,14 +464,14 @@ public class UserNotificationsPanel extends Div {
         updatingFilterLabels = false;
       }
       refreshOpenedDetail(result);
-      markAll.setEnabled(!unreadIds.isEmpty());
-      dismissRead.setEnabled(!compact && userNotificationService.readCount(session) > 0);
+      markAllReadButton.setEnabled(!unreadIds.isEmpty());
+      dismissReadButton.setEnabled(!compact && userNotificationService.readCount(httpSession) > 0);
       renderRows(result);
       totalPages = Math.max(1, result.getTotalPages());
-      first.setEnabled(page > 0);
-      previous.setEnabled(page > 0);
-      next.setEnabled(result.hasNext());
-      last.setEnabled(result.hasNext());
+      firstPageButton.setEnabled(page > 0);
+      previousPageButton.setEnabled(page > 0);
+      nextPageButton.setEnabled(result.hasNext());
+      lastPageButton.setEnabled(result.hasNext());
       if (!compact) {
         renderPageNumbers();
       }
@@ -497,53 +500,57 @@ public class UserNotificationsPanel extends Div {
   }
 
   private void refreshOpenedDetail(Page<Item> result) {
-    if (detail != null && detail.isOpened() && openedItem != null) {
+    if (notificationDetailDialog != null
+        && notificationDetailDialog.isOpened()
+        && openedNotification != null) {
       Item current =
           result.stream()
-              .filter(item -> item.id().equals(openedItem.id()))
+              .filter(item -> item.id().equals(openedNotification.id()))
               .findFirst()
-              .orElseGet(
-                  () -> userNotificationService.inboxItem(session, openedItem.id()).orElse(null));
+              .orElseGet(() ->
+                  userNotificationService
+                      .inboxItem(httpSession, openedNotification.id())
+                      .orElse(null));
       if (current == null) {
-        detail.close();
-      } else if (!current.equals(openedItem)) {
-        openedItem = current;
+        notificationDetailDialog.close();
+      } else if (!current.equals(openedNotification)) {
+        openedNotification = current;
         renderOpenedNotification();
       }
     }
   }
 
   private void renderRows(Page<Item> result) {
-    rows.removeAll();
+    notificationRows.removeAll();
     if (result.isEmpty()) {
-      rows.add(
+      notificationRows.add(
           new NotificationEmptyState(
-              !compact && !search.isEmpty()
+              !compact && !notificationSearchField.isEmpty()
                   ? messageProperties.getNotificationsSearchEmpty()
                   : messageProperties.getNotificationsEmpty()));
     }
     for (Item item : result) {
-      rows.add(row(item));
+      notificationRows.add(row(item));
     }
   }
 
   public void unavailable() {
-    confirmation.close();
+    notificationActionConfirmation.close();
     unreadIds = List.of();
-    rows.removeAll();
-    rows.add(new Span(messageProperties.getNotificationsUnavailable()));
-    markAll.setEnabled(false);
-    dismissRead.setEnabled(false);
-    previous.setEnabled(false);
-    next.setEnabled(false);
-    first.setEnabled(false);
-    last.setEnabled(false);
+    notificationRows.removeAll();
+    notificationRows.add(new Span(messageProperties.getNotificationsUnavailable()));
+    markAllReadButton.setEnabled(false);
+    dismissReadButton.setEnabled(false);
+    previousPageButton.setEnabled(false);
+    nextPageButton.setEnabled(false);
+    firstPageButton.setEnabled(false);
+    lastPageButton.setEnabled(false);
     pageNumbers.removeAll();
     pageTotal.setText("–");
     totalCount.setText("–");
     unreadCount.setText("–");
-    if (detail != null) {
-      detail.close();
+    if (notificationDetailDialog != null) {
+      notificationDetailDialog.close();
     }
   }
 
@@ -571,7 +578,7 @@ public class UserNotificationsPanel extends Div {
               Integer.toString(index + 1),
               e -> {
                 page = index;
-                refresh();
+                refreshInbox();
               });
       button.setAriaLabel(messageProperties.getAdminUsersPaginationPage(index + 1));
       if (index == page) {
@@ -681,7 +688,7 @@ public class UserNotificationsPanel extends Div {
   private void action(Runnable action) {
     try {
       action.run();
-      refresh();
+      refreshInbox();
     } catch (RuntimeException failure) {
       if (failure instanceof org.springframework.security.access.AccessDeniedException) {
         unavailable();
@@ -695,29 +702,32 @@ public class UserNotificationsPanel extends Div {
   }
 
   private void open(Item item) {
-    userNotificationService.ownerId(session);
-    if (detail != null) {
-      detail.close();
+    userNotificationService.ownerId(httpSession);
+    if (notificationDetailDialog != null) {
+      notificationDetailDialog.close();
     }
-    openedItem = item;
-    detail = new Dialog();
-    detail.addOpenedChangeListener(e -> {
+    openedNotification = item;
+    notificationDetailDialog = new Dialog();
+    notificationDetailDialog.addOpenedChangeListener(e -> {
       if (!e.isOpened() && detailActionsMenu != null) {
         detailActionsMenu.close();
       }
       notifyOverlayState();
     });
-    detail.addClassNames(COSMOS_THEME, REFERENCE_OVERLAY, "cosmos-notification-dialog");
-    detail.setModality(com.vaadin.flow.component.ModalityMode.STRICT);
-    detail.getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
-    detail.setCloseOnOutsideClick(true);
-    detail.setCloseOnEsc(true);
+    notificationDetailDialog.addClassNames(
+        COSMOS_THEME, REFERENCE_OVERLAY, "cosmos-notification-dialog");
+    notificationDetailDialog.setModality(com.vaadin.flow.component.ModalityMode.STRICT);
+    notificationDetailDialog.getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
+    notificationDetailDialog.setCloseOnOutsideClick(true);
+    notificationDetailDialog.setCloseOnEsc(true);
     renderOpenedNotification();
-    detail.open();
+    notificationDetailDialog.open();
   }
 
   private void notifyOverlayState() {
-    detailOpenListener.accept(confirmation.isOpened() || detail != null && detail.isOpened());
+    detailOpenListener.accept(
+        notificationActionConfirmation.isOpened()
+            || notificationDetailDialog != null && notificationDetailDialog.isOpened());
   }
 
   private PortalContextCard context(Item item) {
@@ -729,7 +739,7 @@ public class UserNotificationsPanel extends Div {
   }
 
   private void confirmMarkRead(Item item) {
-    confirmation.open(
+    notificationActionConfirmation.open(
         new PortalConfirmationDialog.Prompt(
             messageProperties::getNotificationsMarkRead,
             messageProperties::getPortalNotificationSelectionHint,
@@ -747,7 +757,7 @@ public class UserNotificationsPanel extends Div {
     if (selected.isEmpty()) {
       return;
     }
-    confirmation.open(
+    notificationActionConfirmation.open(
         new PortalConfirmationDialog.Prompt(
             messageProperties::getNotificationsMarkAll,
             messageProperties::getPortalNotificationSelectionHint,
@@ -763,8 +773,9 @@ public class UserNotificationsPanel extends Div {
             AppIcon.CHECK_CHECK::create),
         () ->
             action(() -> {
-              boolean includesOpened = openedItem != null && selected.contains(openedItem.id());
-              userNotificationService.markRead(session, selected);
+              boolean includesOpened =
+                  openedNotification != null && selected.contains(openedNotification.id());
+              userNotificationService.markRead(httpSession, selected);
               if (includesOpened) {
                 updateOpenedRead();
               }
@@ -772,7 +783,7 @@ public class UserNotificationsPanel extends Div {
   }
 
   private void confirmDismiss(Item item) {
-    confirmation.open(
+    notificationActionConfirmation.open(
         new PortalConfirmationDialog.Prompt(
             messageProperties::getNotificationsDismiss,
             messageProperties::getPortalNotificationSelectionHint,
@@ -784,16 +795,18 @@ public class UserNotificationsPanel extends Div {
             true),
         () ->
             action(() -> {
-              userNotificationService.dismiss(session, item.id());
-              if (detail != null && openedItem != null && openedItem.id().equals(item.id())) {
-                detail.close();
+              userNotificationService.dismiss(httpSession, item.id());
+              if (notificationDetailDialog != null
+                  && openedNotification != null
+                  && openedNotification.id().equals(item.id())) {
+                notificationDetailDialog.close();
               }
             }));
   }
 
   private void confirmDismissRead() {
     action(() ->
-        confirmation.open(
+        notificationActionConfirmation.open(
             new PortalConfirmationDialog.Prompt(
                 messageProperties::getNotificationsDismissRead,
                 messageProperties::getPortalNotificationSelectionHint,
@@ -803,38 +816,40 @@ public class UserNotificationsPanel extends Div {
                     new PortalContextCard(
                         AppIcon.BELL.create(),
                         messageProperties.getPortalNotificationAffected(
-                            userNotificationService.readCount(session))),
+                            userNotificationService.readCount(httpSession))),
                 messageProperties::getPortalDeleteNotificationHint,
                 messageProperties::getPortalDeleteAction,
                 true),
             () ->
                 action(() -> {
-                  userNotificationService.dismissRead(session);
-                  if (detail != null && openedItem != null && openedItem.read()) {
-                    detail.close();
+                  userNotificationService.dismissRead(httpSession);
+                  if (notificationDetailDialog != null
+                      && openedNotification != null
+                      && openedNotification.read()) {
+                    notificationDetailDialog.close();
                   }
                 })));
   }
 
   private void markRead(Item item) {
-    userNotificationService.markRead(session, List.of(item.id()));
-    if (openedItem != null && openedItem.id().equals(item.id())) {
+    userNotificationService.markRead(httpSession, List.of(item.id()));
+    if (openedNotification != null && openedNotification.id().equals(item.id())) {
       updateOpenedRead();
     }
   }
 
   private void updateOpenedRead() {
-    openedItem =
+    openedNotification =
         new Item(
-            openedItem.id(),
-            openedItem.type(),
-            openedItem.title(),
-            openedItem.body(),
-            openedItem.createdAt(),
+            openedNotification.id(),
+            openedNotification.type(),
+            openedNotification.title(),
+            openedNotification.body(),
+            openedNotification.createdAt(),
             true,
-            openedItem.supportTicketNumber(),
-            openedItem.relevance());
-    if (detail != null && detail.isOpened()) {
+            openedNotification.supportTicketNumber(),
+            openedNotification.relevance());
+    if (notificationDetailDialog != null && notificationDetailDialog.isOpened()) {
       renderOpenedNotification();
     }
   }
@@ -875,10 +890,10 @@ public class UserNotificationsPanel extends Div {
     if (detailActionsMenu != null) {
       detailActionsMenu.close();
     }
-    detail.removeAll();
-    detail.getHeader().removeAll();
-    detail.getFooter().removeAll();
-    String subject = UserNotificationTexts.title(messageProperties, openedItem);
+    notificationDetailDialog.removeAll();
+    notificationDetailDialog.getHeader().removeAll();
+    notificationDetailDialog.getFooter().removeAll();
+    String subject = UserNotificationTexts.title(messageProperties, openedNotification);
     buildNotificationDetailHeader(subject);
     Div notificationMessage = buildNotificationDetailContent(subject);
     buildNotificationDetailActions(notificationMessage);
@@ -895,15 +910,16 @@ public class UserNotificationsPanel extends Div {
     icon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div badge = new Div(icon);
     badge.addClassName(PANEL_ICON);
-    Button closeIcon = new Button(AppIcon.CLOSE_CIRCLE.create(), e -> detail.close());
+    Button closeIcon =
+        new Button(AppIcon.CLOSE_CIRCLE.create(), e -> notificationDetailDialog.close());
     closeIcon.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     closeIcon.addClassName("cosmos-overlay-close");
     closeIcon.setAriaLabel(messageProperties.getNotificationsClose());
     closeIcon.setTooltipText(messageProperties.getNotificationsClose());
     Div header = new Div(badge, titles, closeIcon);
     header.addClassName("cosmos-notification-detail-header");
-    detail.getHeader().add(header);
-    detail.getElement().setProperty("ariaLabel", subject);
+    notificationDetailDialog.getHeader().add(header);
+    notificationDetailDialog.getElement().setProperty("ariaLabel", subject);
   }
 
   private Div buildNotificationDetailContent(String subject) {
@@ -911,19 +927,19 @@ public class UserNotificationsPanel extends Div {
     contentTitle.addClassName("cosmos-notification-detail-title");
     Div titleRow = new Div(contentTitle);
     titleRow.addClassName("cosmos-notification-detail-title-row");
-    Div contentMeta = messageMetadata(openedItem, "cosmos-notification-detail-state");
+    Div contentMeta = messageMetadata(openedNotification, "cosmos-notification-detail-state");
     contentMeta.addClassName("cosmos-notification-detail-meta");
     Div body = new Div();
-    body.setText(UserNotificationTexts.body(messageProperties, openedItem));
+    body.setText(UserNotificationTexts.body(messageProperties, openedNotification));
     body.addClassNames(COSMOS_NOTIFICATION_BODY_CLASS, "cosmos-notification-detail-body");
     Div message = new Div(titleRow, contentMeta, body);
     message.addClassName("cosmos-notification-detail-message");
-    if (openedItem.unread()) {
+    if (openedNotification.unread()) {
       message.addClassName("cosmos-notification-detail-message--unread");
     }
     Div detailContent = new Div(message);
     detailContent.addClassName("cosmos-notification-detail-content");
-    detail.add(detailContent);
+    notificationDetailDialog.add(detailContent);
     return message;
   }
 
@@ -934,7 +950,7 @@ public class UserNotificationsPanel extends Div {
             AppIcon.BELL.create(),
             e -> {
               detailActionsMenu.close();
-              detail.close();
+              notificationDetailDialog.close();
               closeAction.run();
               UI.getCurrent().navigate(UserNotificationsView.class);
             });
@@ -946,21 +962,23 @@ public class UserNotificationsPanel extends Div {
         new Button(
             messageProperties.getNotificationsMarkRead(),
             AppIcon.CHECK.create(),
-            e -> confirmMarkRead(openedItem));
+            e -> confirmMarkRead(openedNotification));
     markRead.addClassName("cosmos-notification-detail-mark-read");
     markRead.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    markRead.setVisible(openedItem.unread());
+    markRead.setVisible(openedNotification.unread());
     HorizontalLayout readActions = new HorizontalLayout(markRead);
     readActions.setPadding(false);
     readActions.setSpacing(false);
     readActions.setWidthFull();
     readActions.setJustifyContentMode(JustifyContentMode.END);
     readActions.addClassName("cosmos-notification-detail-read-actions");
-    readActions.setVisible(openedItem.unread());
+    readActions.setVisible(openedNotification.unread());
     notificationMessage.add(readActions);
     Button detailClose =
         new Button(
-            messageProperties.getNotificationsClose(), AppIcon.CLOSE.create(), e -> detail.close());
+            messageProperties.getNotificationsClose(),
+            AppIcon.CLOSE.create(),
+            e -> notificationDetailDialog.close());
     detailClose.addClassName("cosmos-notification-detail-close");
     Button destination = createNotificationDestinationButton();
     Button delete =
@@ -969,7 +987,7 @@ public class UserNotificationsPanel extends Div {
             AppIcon.TRASH.create(),
             event -> {
               detailActionsMenu.close();
-              confirmDismiss(openedItem);
+              confirmDismiss(openedNotification);
             });
     delete.addClassNames("cosmos-notification-detail-delete", DELETE_BUTTON);
     delete.setAriaLabel(messageProperties.getNotificationsDismiss());
@@ -991,7 +1009,7 @@ public class UserNotificationsPanel extends Div {
     tools.setSpacing(false);
     tools.addClassNames("cosmos-notification-detail-tools", COSMOS_THEME, REFERENCE_OVERLAY);
     detailActionsMenu.add(tools);
-    detail.add(detailActionsMenu);
+    notificationDetailDialog.add(detailActionsMenu);
     HorizontalLayout primary = new HorizontalLayout(detailClose);
     primary.setPadding(false);
     primary.setSpacing(false);
@@ -1011,7 +1029,7 @@ public class UserNotificationsPanel extends Div {
     actions.setJustifyContentMode(JustifyContentMode.BETWEEN);
     actions.setWidthFull();
     actions.addClassNames("cosmos-dialog-actions", "cosmos-notification-detail-actions");
-    detail.getFooter().add(actions);
+    notificationDetailDialog.getFooter().add(actions);
   }
 
   private Button createNotificationDestinationButton() {
@@ -1020,16 +1038,16 @@ public class UserNotificationsPanel extends Div {
                 UserNotificationType.RECOVERY_REQUEST,
                 UserNotificationType.SUPPORT_REPLY,
                 UserNotificationType.SUPPORT_REQUESTER_CLOSED)
-            .contains(openedItem.type())
-        && openedItem.supportTicketNumber() != null
-        && userNotificationService.canOpenTickets(session)) {
+            .contains(openedNotification.type())
+        && openedNotification.supportTicketNumber() != null
+        && userNotificationService.canOpenTickets(httpSession)) {
       destination =
           new Button(
               messageProperties.getNotificationsOpenTicket(),
               AppIcon.MESSAGE.create(),
               event -> {
-                userNotificationService.ownerId(session);
-                detail.close();
+                userNotificationService.ownerId(httpSession);
+                notificationDetailDialog.close();
                 closeAction.run();
                 UI.getCurrent()
                     .navigate(
@@ -1039,7 +1057,7 @@ public class UserNotificationsPanel extends Div {
                                 "section",
                                 "support",
                                 "ticket",
-                                openedItem.supportTicketNumber().substring(1))));
+                                openedNotification.supportTicketNumber().substring(1))));
               });
       destination.addClassName("cosmos-notification-detail-ticket");
     }
@@ -1048,13 +1066,13 @@ public class UserNotificationsPanel extends Div {
             UserNotificationType.PASSWORD_RESET,
             UserNotificationType.EMAIL_CHANGED,
             UserNotificationType.ROLES_CHANGED)
-        .contains(openedItem.type())) {
+        .contains(openedNotification.type())) {
       destination =
           new Button(
               messageProperties.getNotificationsOpenAccount(),
               AppIcon.LOCK.create(),
               e -> {
-                detail.close();
+                notificationDetailDialog.close();
                 closeAction.run();
                 UI.getCurrent()
                     .navigate(AccountView.class, AccountSection.SECURITY.queryParameters());

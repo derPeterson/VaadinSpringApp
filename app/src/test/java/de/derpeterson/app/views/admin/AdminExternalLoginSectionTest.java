@@ -33,7 +33,7 @@ class AdminExternalLoginSectionTest {
   })
   void statusExplainsStoredSettingsAndDoesNotApplyAnUnsavedSwitch(
       String language, boolean configured, boolean enabled) {
-    MessageProperties texts =
+    MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     ExternalProviderSettings settings = mock(ExternalProviderSettings.class);
     ConfigService config = mock(ConfigService.class);
@@ -45,20 +45,23 @@ class AdminExternalLoginSectionTest {
     when(settings.load("microsoft"))
         .thenReturn(
             new ExternalProviderSettings.Settings("microsoft", "", false, false, "revision"));
-    AdminExternalLoginSection section = new AdminExternalLoginSection(texts, settings, config);
+    AdminExternalLoginSection section =
+        new AdminExternalLoginSection(messageProperties, settings, config);
     section.activate();
     Badge badge = (Badge) find(section, "provider-google-status");
     String expected =
-        enabled ? texts.getProviderSettingsActive() : texts.getProviderSettingsInactive();
+        enabled
+            ? messageProperties.getProviderSettingsActive()
+            : messageProperties.getProviderSettingsInactive();
     assertEquals(expected, badge.getText());
     assertEquals("Google: " + expected, badge.getElement().getAttribute("aria-label"));
     assertTrue(badge.getThemeNames().contains(enabled ? "success" : "warning"));
     String expectedHint =
         !configured
-            ? texts.getProviderSettingsUnconfiguredHint("Google")
+            ? messageProperties.getProviderSettingsUnconfiguredHint("Google")
             : enabled
-                ? texts.getProviderSettingsActiveHint("Google")
-                : texts.getProviderSettingsInactiveHint("Google");
+                ? messageProperties.getProviderSettingsActiveHint("Google")
+                : messageProperties.getProviderSettingsInactiveHint("Google");
     assertEquals(expectedHint, Tooltip.forComponent(badge).getText());
     TabSheet tabs = (TabSheet) find(section, "admin-provider-tabs");
     Switch activationSwitch =
@@ -79,7 +82,7 @@ class AdminExternalLoginSectionTest {
   @CsvSource({"de,false", "de,true", "en,false", "en,true"})
   void enablingRequiresCredentialsButDisablingRemainsPossible(
       String language, boolean secretStored) {
-    MessageProperties texts =
+    MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     ExternalProviderSettings settings = mock(ExternalProviderSettings.class);
     ConfigService config = mock(ConfigService.class);
@@ -91,7 +94,8 @@ class AdminExternalLoginSectionTest {
     when(settings.load("microsoft"))
         .thenReturn(
             new ExternalProviderSettings.Settings("microsoft", "", false, false, "revision"));
-    AdminExternalLoginSection section = new AdminExternalLoginSection(texts, settings, config);
+    AdminExternalLoginSection section =
+        new AdminExternalLoginSection(messageProperties, settings, config);
     section.activate();
     TabSheet tabs = (TabSheet) find(section, "admin-provider-tabs");
     Component form = tabs.getComponent(tabs.getTabAt(0));
@@ -117,7 +121,7 @@ class AdminExternalLoginSectionTest {
     activationSwitch.setValue(false);
     assertFalse(activationSwitch.isEnabled());
     assertEquals(
-        texts.getProviderSettingsInactive(),
+        messageProperties.getProviderSettingsInactive(),
         ((Badge) find(section, "provider-google-status")).getText());
   }
 

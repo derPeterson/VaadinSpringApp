@@ -136,9 +136,8 @@ class AccountSecurityServicePersistenceTest {
           .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
       when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://account.example.test");
       when(config.getInteger(any()))
-          .thenAnswer(
-              call ->
-                  Integer.parseInt(((ConfigEntry) call.getArgument(0)).getDefaultValueString()));
+          .thenAnswer(call ->
+              Integer.parseInt(((ConfigEntry) call.getArgument(0)).getDefaultValueString()));
       return config;
     }
 
@@ -214,25 +213,23 @@ class AccountSecurityServicePersistenceTest {
     reset(queue, sender);
     registry
         .getAllPrincipals()
-        .forEach(
-            principal ->
-                registry
-                    .getAllSessions(principal, true)
-                    .forEach(info -> registry.removeSessionInformation(info.getSessionId())));
+        .forEach(principal ->
+            registry
+                .getAllSessions(principal, true)
+                .forEach(info -> registry.removeSessionInformation(info.getSessionId())));
     ReflectionTestUtils.setField(service, "clock", FIXED);
-    tx.executeWithoutResult(
-        status -> {
-          em.createQuery("delete from UserNotificationRecipientEntity").executeUpdate();
-          em.createQuery("delete from UserNotificationEntity").executeUpdate();
-          em.createQuery("delete from EmailQueueEntity").executeUpdate();
-          em.createQuery("delete from EmailChangeTokenEntity").executeUpdate();
-          em.createQuery("delete from PasswordResetTokenEntity").executeUpdate();
-          users.deleteAll();
-          users.flush();
-          attempts.deleteAll();
-          account = newUser("old@example.test");
-          users.saveAndFlush(account);
-        });
+    tx.executeWithoutResult(status -> {
+      em.createQuery("delete from UserNotificationRecipientEntity").executeUpdate();
+      em.createQuery("delete from UserNotificationEntity").executeUpdate();
+      em.createQuery("delete from EmailQueueEntity").executeUpdate();
+      em.createQuery("delete from EmailChangeTokenEntity").executeUpdate();
+      em.createQuery("delete from PasswordResetTokenEntity").executeUpdate();
+      users.deleteAll();
+      users.flush();
+      attempts.deleteAll();
+      account = newUser("old@example.test");
+      users.saveAndFlush(account);
+    });
     account = users.findById(account.getId()).orElseThrow();
     remembered.removeUserTokens(account.getEmail());
     request = new MockHttpServletRequest();
@@ -298,14 +295,13 @@ class AccountSecurityServicePersistenceTest {
   @Test
   void passwordChangeIsAtomicQueuesNoticeAndKeepsOnlyCurrentSession() {
     requestChange("new@example.test");
-    tx.executeWithoutResult(
-        status -> {
-          PasswordResetTokenEntity reset = new PasswordResetTokenEntity();
-          reset.setToken("reset-before-change");
-          reset.setUserEntity(users.findById(account.getId()).orElseThrow());
-          reset.setExpiryDate(LocalDateTime.now(FIXED).plusHours(1));
-          resets.save(reset);
-        });
+    tx.executeWithoutResult(status -> {
+      PasswordResetTokenEntity reset = new PasswordResetTokenEntity();
+      reset.setToken("reset-before-change");
+      reset.setUserEntity(users.findById(account.getId()).orElseThrow());
+      reset.setExpiryDate(LocalDateTime.now(FIXED).plusHours(1));
+      resets.save(reset);
+    });
     PasswordChanged result =
         service.changePassword(
             request, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
@@ -340,7 +336,7 @@ class AccountSecurityServicePersistenceTest {
     doThrow(new IllegalStateException("message storage unavailable"))
         .when(failing)
         .recordSecurityEvent(any(), any());
-    ReflectionTestUtils.setField(service, "userNotifications", failing);
+    ReflectionTestUtils.setField(service, "userNotificationService", failing);
     try {
       PasswordChange passwordChange =
           new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
@@ -351,7 +347,7 @@ class AccountSecurityServicePersistenceTest {
       assertFalse(registry.getSessionInformation("other-device").isExpired());
       assertNotNull(remembered.getTokenForSeries("remember-series"));
     } finally {
-      ReflectionTestUtils.setField(service, "userNotifications", userNotifications);
+      ReflectionTestUtils.setField(service, "userNotificationService", userNotifications);
     }
   }
 
@@ -363,7 +359,7 @@ class AccountSecurityServicePersistenceTest {
     doThrow(new IllegalStateException("message storage unavailable"))
         .when(failing)
         .recordSecurityEvent(any(), any());
-    ReflectionTestUtils.setField(service, "userNotifications", failing);
+    ReflectionTestUtils.setField(service, "userNotificationService", failing);
     try {
       assertThrows(IllegalStateException.class, () -> service.confirm(raw));
       assertEquals("old@example.test", stored().getEmail());
@@ -371,7 +367,7 @@ class AccountSecurityServicePersistenceTest {
       assertEquals(1, emails.count());
       assertFalse(registry.getSessionInformation("other-device").isExpired());
     } finally {
-      ReflectionTestUtils.setField(service, "userNotifications", userNotifications);
+      ReflectionTestUtils.setField(service, "userNotificationService", userNotifications);
     }
   }
 
@@ -462,12 +458,11 @@ class AccountSecurityServicePersistenceTest {
   void expiredTokenAtExactBoundaryCannotChangeTheAddress() {
     requestChange("new@example.test");
     String raw = linkToken();
-    tx.executeWithoutResult(
-        status -> {
-          EmailChangeTokenEntity t = tokens.findAll().getFirst();
-          t.setExpiryDate(LocalDateTime.now(FIXED));
-          tokens.save(t);
-        });
+    tx.executeWithoutResult(status -> {
+      EmailChangeTokenEntity t = tokens.findAll().getFirst();
+      t.setExpiryDate(LocalDateTime.now(FIXED));
+      tokens.save(t);
+    });
     assertEquals(Confirmation.EXPIRED, service.inspect(raw));
     assertEquals(Confirmation.EXPIRED, service.confirm(raw));
     assertEquals("old@example.test", stored().getEmail());
@@ -489,20 +484,19 @@ class AccountSecurityServicePersistenceTest {
   void staleOrDisabledAccountCannotUseTheOldLink(String mutation) {
     requestChange("new@example.test");
     String raw = linkToken();
-    tx.executeWithoutResult(
-        status -> {
-          UserEntity user = users.findById(account.getId()).orElseThrow();
-          if (mutation.equals("password")) {
-            user.setPassword(encoder.encode("Another-secret!"));
-          }
-          if (mutation.equals("email")) {
-            user.setEmail("admin-changed@example.test");
-          }
-          if (mutation.equals("disabled")) {
-            user.setEnabled(false);
-          }
-          users.saveAndFlush(user);
-        });
+    tx.executeWithoutResult(status -> {
+      UserEntity user = users.findById(account.getId()).orElseThrow();
+      if (mutation.equals("password")) {
+        user.setPassword(encoder.encode("Another-secret!"));
+      }
+      if (mutation.equals("email")) {
+        user.setEmail("admin-changed@example.test");
+      }
+      if (mutation.equals("disabled")) {
+        user.setEnabled(false);
+      }
+      users.saveAndFlush(user);
+    });
     assertEquals(Confirmation.INVALID, service.confirm(raw));
     assertEquals(1, emails.count());
   }
@@ -583,12 +577,11 @@ class AccountSecurityServicePersistenceTest {
   @Test
   void queuedRecipientNeverFollowsALaterUnrelatedAddressChange() throws Exception {
     requestChange("new@example.test");
-    tx.executeWithoutResult(
-        status -> {
-          UserEntity user = users.findById(account.getId()).orElseThrow();
-          user.setEmail("later@example.test");
-          users.saveAndFlush(user);
-        });
+    tx.executeWithoutResult(status -> {
+      UserEntity user = users.findById(account.getId()).orElseThrow();
+      user.setEmail("later@example.test");
+      users.saveAndFlush(user);
+    });
     queue.processQueue();
     verify(sender).sendEmailTo(eq("new@example.test"), anyString(), anyString());
     verify(sender, never()).sendEmail(any(), anyString(), anyString());
@@ -597,12 +590,11 @@ class AccountSecurityServicePersistenceTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void newMailsUseFixedAccountLanguageAndEscapeConfiguredHtml(String language) {
-    tx.executeWithoutResult(
-        status -> {
-          UserEntity user = users.findById(account.getId()).orElseThrow();
-          user.setPreferredLocale(Locale.forLanguageTag(language));
-          users.saveAndFlush(user);
-        });
+    tx.executeWithoutResult(status -> {
+      UserEntity user = users.findById(account.getId()).orElseThrow();
+      user.setPreferredLocale(Locale.forLanguageTag(language));
+      users.saveAndFlush(user);
+    });
     when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Own <script>text</script>");
     try {
       service.changePassword(
@@ -679,19 +671,17 @@ class AccountSecurityServicePersistenceTest {
       CountDownLatch ready = new CountDownLatch(2);
       CountDownLatch start = new CountDownLatch(1);
       Future<Confirmation> a =
-          executor.submit(
-              () -> {
-                ready.countDown();
-                assertTrue(start.await(10, TimeUnit.SECONDS));
-                return service.confirm(first);
-              });
+          executor.submit(() -> {
+            ready.countDown();
+            assertTrue(start.await(10, TimeUnit.SECONDS));
+            return service.confirm(first);
+          });
       Future<Confirmation> b =
-          executor.submit(
-              () -> {
-                ready.countDown();
-                assertTrue(start.await(10, TimeUnit.SECONDS));
-                return service.confirm(second);
-              });
+          executor.submit(() -> {
+            ready.countDown();
+            assertTrue(start.await(10, TimeUnit.SECONDS));
+            return service.confirm(second);
+          });
       assertTrue(ready.await(10, TimeUnit.SECONDS));
       start.countDown();
       List<Confirmation> results =

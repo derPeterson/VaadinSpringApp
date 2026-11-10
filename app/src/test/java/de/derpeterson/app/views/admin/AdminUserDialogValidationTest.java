@@ -60,7 +60,7 @@ class AdminUserDialogValidationTest {
   private VaadinSession session;
   private UserService users;
   private AdminUserManagementSection section;
-  private MessageProperties texts;
+  private MessageProperties messageProperties;
   private Dialog dialog;
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
 
@@ -77,8 +77,10 @@ class AdminUserDialogValidationTest {
     RoleService roles = mock(RoleService.class);
     when(roles.findByName(any()))
         .thenAnswer(call -> Optional.of(RoleEntity.builder().name(call.getArgument(0)).build()));
-    texts = new MessageProperties(new CustomI18NProvider());
-    section = new AdminUserManagementSection(texts, users, roles, mock(SecurityService.class));
+    messageProperties = new MessageProperties(new CustomI18NProvider());
+    section =
+        new AdminUserManagementSection(
+            messageProperties, users, roles, mock(SecurityService.class));
   }
 
   @AfterEach
@@ -109,9 +111,10 @@ class AdminUserDialogValidationTest {
 
     Badge registration = (Badge) signInDetail("admin-user-registered-via");
     Component available = signInDetail("admin-user-sign-in-methods");
-    assertEquals(texts.getExternalGoogle(), registration.getText());
+    assertEquals(messageProperties.getExternalGoogle(), registration.getText());
     assertEquals(
-        List.of(texts.getSignInPortalPassword(), texts.getExternalMicrosoft()),
+        List.of(
+            messageProperties.getSignInPortalPassword(), messageProperties.getExternalMicrosoft()),
         available.getChildren().map(Badge.class::cast).map(Badge::getText).toList());
   }
 
@@ -146,7 +149,8 @@ class AdminUserDialogValidationTest {
     assertFalse(save().isEnabled());
     blur(password());
     assertTrue(password().isInvalid());
-    assertEquals(texts.getAdminUsersPasswordValidationEdit(), password().getErrorMessage());
+    assertEquals(
+        messageProperties.getAdminUsersPasswordValidationEdit(), password().getErrorMessage());
     focus(password());
     assertFalse(password().isInvalid());
     password().setValue("ChangedPassword!");
@@ -156,7 +160,8 @@ class AdminUserDialogValidationTest {
     assertFalse(save().isEnabled());
     blur(confirm());
     assertTrue(confirm().isInvalid());
-    assertEquals(texts.getBaseValidationPasswordConfirmMessage(), confirm().getErrorMessage());
+    assertEquals(
+        messageProperties.getBaseValidationPasswordConfirmMessage(), confirm().getErrorMessage());
     focus(confirm());
     assertFalse(confirm().isInvalid());
     confirm().setValue("ChangedPassword!");
@@ -217,12 +222,13 @@ class AdminUserDialogValidationTest {
     open("de", false);
     MultiSelectComboBox<RoleType> roles = roles();
     roles.setValue(Set.of(RoleType.ROLE_USER, RoleType.ROLE_GUEST));
-    assertEquals(texts.getAdminUsersSelectedRoles(2), roles.getPlaceholder());
+    assertEquals(messageProperties.getAdminUsersSelectedRoles(2), roles.getPlaceholder());
     locale.set(Locale.ENGLISH);
     section.refreshTexts();
     assertEquals(Set.of(RoleType.ROLE_USER, RoleType.ROLE_GUEST), roles.getValue());
-    assertEquals(texts.getAdminUsersSelectedRoles(2), roles.getPlaceholder());
-    assertEquals(texts.getRoleGuest(), roles.getItemLabelGenerator().apply(RoleType.ROLE_GUEST));
+    assertEquals(messageProperties.getAdminUsersSelectedRoles(2), roles.getPlaceholder());
+    assertEquals(
+        messageProperties.getRoleGuest(), roles.getItemLabelGenerator().apply(RoleType.ROLE_GUEST));
     roles.clear();
     assertFalse(save().isEnabled());
     roles.setValue(Set.of(RoleType.ROLE_USER));
@@ -245,8 +251,10 @@ class AdminUserDialogValidationTest {
     section.refreshTexts();
     assertEquals("ValidPassword!", password().getValue());
     assertEquals("Different!", confirm().getValue());
-    assertEquals(texts.getBaseValidationPasswordConfirmMessage(), confirm().getErrorMessage());
-    assertEquals(texts.getAccountConfirmPasswordPlaceholder(), confirm().getPlaceholder());
+    assertEquals(
+        messageProperties.getBaseValidationPasswordConfirmMessage(), confirm().getErrorMessage());
+    assertEquals(
+        messageProperties.getAccountConfirmPasswordPlaceholder(), confirm().getPlaceholder());
   }
 
   @ParameterizedTest
@@ -263,8 +271,10 @@ class AdminUserDialogValidationTest {
                 .orElseThrow();
     assertEquals(List.of(RoleType.values()), roles.getListDataView().getItems().toList());
     assertEquals(
-        texts.getRoleSuperadmin(), roles.getItemLabelGenerator().apply(RoleType.ROLE_SUPERADMIN));
-    assertEquals(texts.getRoleGuest(), roles.getItemLabelGenerator().apply(RoleType.ROLE_GUEST));
+        messageProperties.getRoleSuperadmin(),
+        roles.getItemLabelGenerator().apply(RoleType.ROLE_SUPERADMIN));
+    assertEquals(
+        messageProperties.getRoleGuest(), roles.getItemLabelGenerator().apply(RoleType.ROLE_GUEST));
     roles.setValue(Set.of(RoleType.ROLE_SUPERADMIN, RoleType.ROLE_GUEST));
     save().click();
     ArgumentCaptor<UserEntity> edited = org.mockito.ArgumentCaptor.forClass(UserEntity.class);
@@ -397,7 +407,7 @@ class AdminUserDialogValidationTest {
         .flatMap(this::descendants)
         .filter(Button.class::isInstance)
         .map(Button.class::cast)
-        .filter(button -> button.getText().equals(texts.getAdminUsersSave()))
+        .filter(button -> button.getText().equals(messageProperties.getAdminUsersSave()))
         .findFirst()
         .orElseThrow();
   }

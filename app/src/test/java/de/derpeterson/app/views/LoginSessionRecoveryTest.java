@@ -348,7 +348,7 @@ class LoginSessionRecoveryTest {
     Object dialog = ReflectionTestUtils.getField(sessionsPanel, "confirmation");
     when(sessions.recoveryList(request))
         .thenReturn(new SessionManagementService.Snapshot(List.of(), 0, 1));
-    ((Button) ReflectionTestUtils.getField(dialog, "confirm")).click();
+    ((Button) ReflectionTestUtils.getField(dialog, "confirmButton")).click();
     verify(sessions).recoveryRevoke(request, "opaque-device");
     assertTrue(button("session-recovery-continue").isEnabled());
     verify(sessions, never()).finishRecovery(request, vaadinResponse);

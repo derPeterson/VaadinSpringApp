@@ -82,9 +82,8 @@ class AccountAvatarDialogTest {
     dialog = new AccountAvatarDialog(messages, user);
     avatars = mock(UserAvatarService.class);
     when(avatars.open(any()))
-        .thenAnswer(
-            call ->
-                new UserAvatarService.Open(UserAvatarService.State.initial(), UUID.randomUUID()));
+        .thenAnswer(call ->
+            new UserAvatarService.Open(UserAvatarService.State.initial(), UUID.randomUUID()));
     dialog.configure(avatars, new MockHttpServletRequest());
     ui.add(dialog);
   }
@@ -144,7 +143,7 @@ class AccountAvatarDialogTest {
     assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImage"));
     assertEquals(image, ReflectionTestUtils.getField(dialog, "uploadedImage"));
 
-    confirmationButton("cancel").click();
+    confirmationButton("cancelButton").click();
 
     assertTrue(dialog.isOpened());
     assertFalse(deleteConfirmation().isOpened());
@@ -157,7 +156,7 @@ class AccountAvatarDialogTest {
   void confirmedDeletionIsOnlyPersistedWhenTheEditorIsSaved() {
     openUploadedPicture();
     button("delete").click();
-    confirmationButton("confirm").click();
+    confirmationButton("confirmButton").click();
     assertTrue(dialog.isOpened());
     assertFalse(deleteConfirmation().isOpened());
     assertEquals(true, ReflectionTestUtils.getField(dialog, "deleteImage"));
@@ -184,7 +183,7 @@ class AccountAvatarDialogTest {
     assertFalse(deleteConfirmation().isOpened());
     UUID nextImage = openUploadedPicture();
 
-    confirmationButton("confirm").click();
+    confirmationButton("confirmButton").click();
 
     assertEquals(nextImage, ReflectionTestUtils.getField(dialog, "uploadedImage"));
     assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImage"));
@@ -199,7 +198,7 @@ class AccountAvatarDialogTest {
     ReflectionTestUtils.invokeMethod(
         dialog, "showUploadedImage", ReflectionTestUtils.getField(dialog, "draft"), newerImage);
 
-    confirmationButton("confirm").click();
+    confirmationButton("confirmButton").click();
 
     assertEquals(newerImage, ReflectionTestUtils.getField(dialog, "uploadedImage"));
     assertEquals(false, ReflectionTestUtils.getField(dialog, "deleteImage"));
@@ -224,7 +223,7 @@ class AccountAvatarDialogTest {
             .getElement()
             .getTextRecursively()
             .contains(messages.getAccountAvatarDeleteHint()));
-    assertEquals(messages.getPortalDeleteAction(), confirmationButton("confirm").getText());
+    assertEquals(messages.getPortalDeleteAction(), confirmationButton("confirmButton").getText());
   }
 
   @Test

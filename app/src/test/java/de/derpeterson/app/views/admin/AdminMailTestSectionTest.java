@@ -49,9 +49,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 /** Native Komponenten und Callback-Sperre mit Mocks; kein Browser, Server oder SMTP. */
 class AdminMailTestSectionTest {
   private UI ui;
-  private ConfigService config;
-  private EmailService email;
-  private MessageProperties texts;
+  private ConfigService configService;
+  private EmailService emailService;
+  private MessageProperties messageProperties;
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
 
   @BeforeEach
@@ -68,9 +68,9 @@ class AdminMailTestSectionTest {
     when(session.getService()).thenReturn(service);
     VaadinSession.setCurrent(session);
     ui.getInternals().setSession(session);
-    config = mock(ConfigService.class);
-    email = mock(EmailService.class);
-    texts = new MessageProperties(new CustomI18NProvider());
+    configService = mock(ConfigService.class);
+    emailService = mock(EmailService.class);
+    messageProperties = new MessageProperties(new CustomI18NProvider());
   }
 
   @AfterEach
@@ -84,9 +84,9 @@ class AdminMailTestSectionTest {
   private AdminMailTestSection section() {
     AdminMailTestSection section =
         new AdminMailTestSection(
-            texts,
-            email,
-            new MaintenanceService(config),
+            messageProperties,
+            emailService,
+            new MaintenanceService(configService),
             User.withUsername("admin@example.test").password("unused").roles("ADMIN").build());
     section.refreshTexts();
     return section;
@@ -110,16 +110,18 @@ class AdminMailTestSectionTest {
     TextArea body = field(section, "testBodyField");
     Span bodyHint = field(section, "mailBodyHint");
     assertEquals("admin?section=configuration&group=smtp", link.getHref());
-    assertEquals(texts.getAdminConfigGroupSmtp(), link.getElement().getTextRecursively());
-    assertEquals(texts.getAdminMailBodyHint(), bodyHint.getText());
+    assertEquals(
+        messageProperties.getAdminConfigGroupSmtp(), link.getElement().getTextRecursively());
+    assertEquals(messageProperties.getAdminMailBodyHint(), bodyHint.getText());
     assertEquals(body.getHelperText(), bodyHint.getText());
     assertEquals("true", bodyHint.getElement().getAttribute("aria-hidden"));
     locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     section.refreshTexts();
-    assertEquals(texts.getAdminConfigGroupSmtp(), link.getElement().getTextRecursively());
-    assertEquals(texts.getAdminMailBodyHint(), bodyHint.getText());
+    assertEquals(
+        messageProperties.getAdminConfigGroupSmtp(), link.getElement().getTextRecursively());
+    assertEquals(messageProperties.getAdminMailBodyHint(), bodyHint.getText());
     assertEquals(body.getHelperText(), bodyHint.getText());
-    verifyNoInteractions(email);
+    verifyNoInteractions(emailService);
   }
 
   @ParameterizedTest
@@ -133,13 +135,19 @@ class AdminMailTestSectionTest {
     body.setValue("Draft body");
     info.click();
     assertTrue(help.isOpened());
-    assertTrue(help.getElement().getTextRecursively().contains(texts.getAdminMailValidationBody()));
+    assertTrue(
+        help.getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getAdminMailValidationBody()));
     locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     section.refreshTexts();
     assertTrue(help.isOpened());
-    assertTrue(help.getElement().getTextRecursively().contains(texts.getAdminMailValidationBody()));
+    assertTrue(
+        help.getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getAdminMailValidationBody()));
     assertEquals("Draft body", body.getValue());
-    verifyNoInteractions(email);
+    verifyNoInteractions(emailService);
   }
 
   @ParameterizedTest
@@ -158,10 +166,14 @@ class AdminMailTestSectionTest {
     assertEquals("open", badge.getElement().getAttribute("data-state"));
     com.vaadin.flow.component.shared.Tooltip statusHint = field(section, "deliveryTooltip");
     assertEquals(
-        texts.getAdminMailCardBadge() + ": " + texts.getMaintenanceStatusAvailable(),
+        messageProperties.getAdminMailCardBadge()
+            + ": "
+            + messageProperties.getMaintenanceStatusAvailable(),
         statusHint.getText());
-    assertEquals(texts.getAdminMailCardBadge(), ((Span) field(section, "mailCardBadge")).getText());
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+    assertEquals(
+        messageProperties.getAdminMailCardBadge(),
+        ((Span) field(section, "mailCardBadge")).getText());
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     section.refreshDeliveryState();
     assertFalse(panel.isEnabled());
     assertEquals("true", panel.getElement().getAttribute("aria-disabled"));
@@ -176,12 +188,17 @@ class AdminMailTestSectionTest {
             .noneMatch(ConfigInfoButton::isEnabled));
     assertEquals("active", badge.getElement().getAttribute("data-state"));
     assertTrue(
-        badge.getElement().getAttribute("aria-label").contains(texts.getMaintenanceStatusActive()));
+        badge
+            .getElement()
+            .getAttribute("aria-label")
+            .contains(messageProperties.getMaintenanceStatusActive()));
     assertEquals(
-        texts.getAdminMailCardBadge() + ": " + texts.getMaintenanceStatusActive(),
+        messageProperties.getAdminMailCardBadge()
+            + ": "
+            + messageProperties.getMaintenanceStatusActive(),
         statusHint.getText());
     assertTrue(section.isEnabled());
-    when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+    when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
     section.refreshDeliveryState();
     assertTrue(panel.isEnabled());
     assertTrue(send.isEnabled());
@@ -190,17 +207,19 @@ class AdminMailTestSectionTest {
     assertEquals("Draft subject", subject.getValue());
     assertEquals("Draft body", body.getValue());
     assertEquals(
-        texts.getAdminMailCardBadge() + ": " + texts.getMaintenanceStatusAvailable(),
+        messageProperties.getAdminMailCardBadge()
+            + ": "
+            + messageProperties.getMaintenanceStatusAvailable(),
         statusHint.getText());
     send.click();
-    verify(email).sendAdminEmail("admin@example.test", "Draft subject", "Draft body");
+    verify(emailService).sendAdminEmail("admin@example.test", "Draft subject", "Draft body");
   }
 
   private void block(MaintenanceService.State state) {
     if (state == MaintenanceService.State.ACTIVE) {
-      when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+      when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     } else {
-      when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE))
+      when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE))
           .thenThrow(new IllegalStateException("fixture unavailable"));
     }
   }
@@ -220,7 +239,7 @@ class AdminMailTestSectionTest {
     assertEquals(
         state.name().toLowerCase(Locale.ROOT),
         ((Div) field(section, "deliveryMeta")).getElement().getAttribute("data-state"));
-    verifyNoInteractions(email);
+    verifyNoInteractions(emailService);
   }
 
   @ParameterizedTest
@@ -232,7 +251,7 @@ class AdminMailTestSectionTest {
     AdminMailTestSection section = section();
     assertFalse(((VerticalLayout) field(section, "mailLayout")).isEnabled());
     assertFalse(((Button) field(section, "sendTestMailButton")).isEnabled());
-    verifyNoInteractions(email);
+    verifyNoInteractions(emailService);
   }
 
   @ParameterizedTest
@@ -246,17 +265,17 @@ class AdminMailTestSectionTest {
       ui.add(section);
       assertEquals(
           previousInterval > 0 ? Math.min(previousInterval, 5000) : 5000, ui.getPollInterval());
-      when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+      when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
       ComponentUtil.fireEvent(ui, new PollEvent(ui, true));
       assertFalse(((VerticalLayout) field(section, "mailLayout")).isEnabled());
       assertEquals(1, unrelatedPolls[0]);
       ui.remove(section);
       assertEquals(previousInterval, ui.getPollInterval());
-      clearInvocations(config);
+      clearInvocations(configService);
       ComponentUtil.fireEvent(ui, new PollEvent(ui, true));
       assertEquals(2, unrelatedPolls[0]);
-      verifyNoInteractions(config);
-      verifyNoInteractions(email);
+      verifyNoInteractions(configService);
+      verifyNoInteractions(emailService);
     } finally {
       unrelated.remove();
     }

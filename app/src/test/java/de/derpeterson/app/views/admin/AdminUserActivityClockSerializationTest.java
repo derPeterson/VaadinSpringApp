@@ -45,7 +45,7 @@ class AdminUserActivityClockSerializationTest {
 
   private UI ui;
   private VaadinSession session;
-  private MessageProperties texts;
+  private MessageProperties messageProperties;
   private UserService users;
 
   @BeforeEach
@@ -55,7 +55,7 @@ class AdminUserActivityClockSerializationTest {
     session = mock(VaadinSession.class);
     when(session.getLocale()).thenReturn(Locale.ENGLISH);
     VaadinSession.setCurrent(session);
-    texts = MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH);
+    messageProperties = MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH);
     users = mock(UserService.class);
     when(users.findAllUsers()).thenReturn(List.of());
   }
@@ -76,7 +76,7 @@ class AdminUserActivityClockSerializationTest {
           case FILTER -> new AdminUserActivityFilter();
           case USER_MANAGEMENT ->
               new AdminUserManagementSection(
-                  texts, users, mock(RoleService.class), mock(SecurityService.class));
+                  messageProperties, users, mock(RoleService.class), mock(SecurityService.class));
         };
     Clock original = storedClock(component);
     Clock restored = roundTrip(original);
@@ -98,10 +98,10 @@ class AdminUserActivityClockSerializationTest {
     Component rebuilt = withClock(owner, restored);
     if (rebuilt instanceof AdminUserActivityFilter filter) {
       filter.setLocale(Locale.ENGLISH);
-      filter.refreshTexts(texts);
+      filter.refreshTexts(messageProperties);
       DatePicker date = (DatePicker) ReflectionTestUtils.getField(filter, "date");
       TimePicker time = (TimePicker) ReflectionTestUtils.getField(filter, "time");
-      assertEquals(texts.getRegistrationBirthDatePlaceholder(), date.getPlaceholder());
+      assertEquals(messageProperties.getRegistrationBirthDatePlaceholder(), date.getPlaceholder());
       assertEquals(
           LocalTime.of(2, 45),
           LocalTime.parse(
@@ -109,7 +109,7 @@ class AdminUserActivityClockSerializationTest {
     } else {
       UserEntity user = UserEntity.builder().lastActivity(instant.minusSeconds(900)).build();
       Span activity = ReflectionTestUtils.invokeMethod(rebuilt, "createLastActivity", user);
-      assertEquals(texts.getAdminUsersActivityMinutes(15), activity.getText());
+      assertEquals(messageProperties.getAdminUsersActivityMinutes(15), activity.getText());
       assertTrue(activity.getElement().getAttribute("title").endsWith("+01:00"));
     }
   }
@@ -119,7 +119,11 @@ class AdminUserActivityClockSerializationTest {
       case FILTER -> new AdminUserActivityFilter(clock);
       case USER_MANAGEMENT ->
           new AdminUserManagementSection(
-              texts, users, mock(RoleService.class), mock(SecurityService.class), clock);
+              messageProperties,
+              users,
+              mock(RoleService.class),
+              mock(SecurityService.class),
+              clock);
     };
   }
 

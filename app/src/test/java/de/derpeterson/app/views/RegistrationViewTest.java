@@ -338,16 +338,16 @@ public class RegistrationViewTest {
     assertSame(role, user.getRoleEntities().iterator().next());
     assertTrue(logs.list.stream().noneMatch(event -> event.getLevel() == Level.ERROR));
 
-    MessageProperties texts = new MessageProperties(provider);
+    MessageProperties messageProperties = new MessageProperties(provider);
     NotificationHelper helper = NotificationHelper.getInstance();
     Object notification = ReflectionTestUtils.getField(helper, "currentNotification");
     assertEquals(
-        texts.getBaseSuccessTitle(),
+        messageProperties.getBaseSuccessTitle(),
         ((Span) ReflectionTestUtils.getField(helper, "titleText")).getText());
     assertEquals(
         new Html(
                 HtmlHelper.ensureParagraphTags(
-                    texts.getRegistrationSuccessMessage(user.getEmail())))
+                    messageProperties.getRegistrationSuccessMessage(user.getEmail())))
             .getElement()
             .getProperty("innerHTML"),
         ((Html) ReflectionTestUtils.getField(helper, "messageText"))
@@ -356,12 +356,12 @@ public class RegistrationViewTest {
     LanguageChangeEvent.fire(ui, Locale.GERMAN);
     assertSame(notification, ReflectionTestUtils.getField(helper, "currentNotification"));
     assertEquals(
-        texts.getBaseSuccessTitle(),
+        messageProperties.getBaseSuccessTitle(),
         ((Span) ReflectionTestUtils.getField(helper, "titleText")).getText());
     assertEquals(
         new Html(
                 HtmlHelper.ensureParagraphTags(
-                    texts.getRegistrationSuccessMessage(user.getEmail())))
+                    messageProperties.getRegistrationSuccessMessage(user.getEmail())))
             .getElement()
             .getProperty("innerHTML"),
         ((Html) ReflectionTestUtils.getField(helper, "messageText"))
@@ -394,11 +394,10 @@ public class RegistrationViewTest {
     assertFalse(field("firstNameField", TextField.class).isInvalid());
     verify(users)
         .saveUser(
-            argThat(
-                user ->
-                    user.getFirstName().equals(" Test ")
-                        && !user.isEnabled()
-                        && user.getPassword().equals("hash")));
+            argThat(user ->
+                user.getFirstName().equals(" Test ")
+                    && !user.isEnabled()
+                    && user.getPassword().equals("hash")));
     verify(verification).sendVerificationEmailByUser(any());
   }
 

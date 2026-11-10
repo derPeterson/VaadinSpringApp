@@ -25,11 +25,12 @@ import org.springframework.stereotype.Component;
 
 @Component
 public final class TwoFactorUiGuard implements VaadinServiceInitListener, VaadinRequestInterceptor {
-  private final ServiceReference<SecurityService> security;
+  private final ServiceReference<SecurityService> securityService;
   private final ServiceReference<TwoFactorAuthorization> twoFactorAuthorization;
 
-  public TwoFactorUiGuard(SecurityService security, TwoFactorAuthorization twoFactorAuthorization) {
-    this.security = new ServiceReference<>(SecurityService.class, security);
+  public TwoFactorUiGuard(
+      SecurityService securityService, TwoFactorAuthorization twoFactorAuthorization) {
+    this.securityService = new ServiceReference<>(SecurityService.class, securityService);
     this.twoFactorAuthorization =
         new ServiceReference<>(TwoFactorAuthorization.class, twoFactorAuthorization);
   }
@@ -60,7 +61,7 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
   private void recordActivity() {
     if (VaadinRequest.getCurrent() instanceof VaadinServletRequest servlet) {
       HttpServletRequest request = servlet.getHttpServletRequest();
-      if (security.get().getAuthenticatedUser(request).isPresent()) {
+      if (securityService.get().getAuthenticatedUser(request).isPresent()) {
         twoFactorAuthorization.get().recordActivity(request);
       }
     }
@@ -73,7 +74,7 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
     }
     HttpServletRequest request = servlet.getHttpServletRequest();
     TwoFactorFlow flow = TwoFactorFlow.current(request);
-    if (flow != null && security.get().getAuthenticatedUser(request).isPresent()) {
+    if (flow != null && securityService.get().getAuthenticatedUser(request).isPresent()) {
       forwardToActiveFlow(navigation, target, flow);
       return;
     }
@@ -81,7 +82,7 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
       return;
     }
     boolean administration = target == AdminView.class;
-    if (security.get().getAuthenticatedUser(request).isPresent()
+    if (securityService.get().getAuthenticatedUser(request).isPresent()
         && (!twoFactorAuthorization.get().sessionConfirmed(request)
             || administration && !twoFactorAuthorization.get().administrationConfirmed(request))) {
       navigation.forwardTo(
@@ -104,7 +105,7 @@ public final class TwoFactorUiGuard implements VaadinServiceInitListener, Vaadin
   public void requestStart(VaadinRequest request, VaadinResponse response) {
     if (response == null && request instanceof VaadinServletRequest servlet) {
       HttpServletRequest http = servlet.getHttpServletRequest();
-      if (security.get().getAuthenticatedUser(http).isPresent()
+      if (securityService.get().getAuthenticatedUser(http).isPresent()
           && (TwoFactorFlow.current(http) != null
               || !twoFactorAuthorization.get().sessionConfirmed(http)
               || TwoFactorTransport.administrativeUi(http)

@@ -41,7 +41,8 @@ class PublicPageComponentTest {
   private UI ui;
   private VaadinSession session;
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
-  private final MessageProperties texts = new MessageProperties(new CustomI18NProvider());
+  private final MessageProperties messageProperties =
+      new MessageProperties(new CustomI18NProvider());
 
   @BeforeEach
   void setup() {
@@ -82,7 +83,7 @@ class PublicPageComponentTest {
     when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Review Service");
     when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
     PublicPageComponent page =
-        new PublicPageComponent(config, texts, PublicPageComponent.Page.LOGIN);
+        new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.LOGIN);
     verifyNoInteractions(response);
 
     tree(page)
@@ -130,17 +131,17 @@ class PublicPageComponentTest {
     ConfigService config = mock(ConfigService.class);
     when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Review Service");
     when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
-    PublicPageComponent page = new PublicPageComponent(config, texts, scene);
+    PublicPageComponent page = new PublicPageComponent(config, messageProperties, scene);
     Button nativeAction = new Button("Action");
     AtomicReference<Boolean> clicked = new AtomicReference<>(false);
     nativeAction.addClickListener(event -> clicked.set(true));
-    Span title = new Span(texts.getLoginTitle());
+    Span title = new Span(messageProperties.getLoginTitle());
     page.getCardContainer()
         .add(
             new PublicPanelComponent(
                 AppIcon.SIGN_IN.create(),
                 title,
-                texts::getPublicLoginSubtitle,
+                messageProperties::getPublicLoginSubtitle,
                 new Component[] {new Span("Example")},
                 nativeAction));
     boolean restricted =
@@ -180,7 +181,7 @@ class PublicPageComponentTest {
           tree(page)
               .filter(Span.class::isInstance)
               .map(Span.class::cast)
-              .anyMatch(span -> span.getText().equals(texts.getPublicHomeKicker())));
+              .anyMatch(span -> span.getText().equals(messageProperties.getPublicHomeKicker())));
     }
     if (!restricted) {
       Button login =
@@ -189,7 +190,7 @@ class PublicPageComponentTest {
               .map(Button.class::cast)
               .findFirst()
               .orElseThrow();
-      assertEquals(texts.getBaseLoginButton(), login.getText());
+      assertEquals(messageProperties.getBaseLoginButton(), login.getText());
       assertEquals(
           scene == PublicPageComponent.Page.LOGIN, login.hasClassName("public-nav-active"));
     }
@@ -197,7 +198,7 @@ class PublicPageComponentTest {
         tree(page)
             .filter(Span.class::isInstance)
             .map(Span.class::cast)
-            .anyMatch(span -> span.getText().equals(texts.getPublicLoginSubtitle())));
+            .anyMatch(span -> span.getText().equals(messageProperties.getPublicLoginSubtitle())));
     nativeAction.click();
     assertTrue(clicked.get());
   }

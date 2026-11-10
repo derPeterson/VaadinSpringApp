@@ -13,7 +13,7 @@ import io.qameta.allure.Step;
 /** Assertions on the actual activation page, including its existing idempotent success contract. */
 public final class VerificationPage {
   private final Page page;
-  private final UiTexts texts = UiTexts.selected();
+  private final UiTexts uiTexts = UiTexts.selected();
 
   public VerificationPage(Page page) {
     this.page = page;
@@ -27,12 +27,12 @@ public final class VerificationPage {
             page.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
-                    .setName(texts.getVerificationSuccessTitle())
+                    .setName(uiTexts.getVerificationSuccessTitle())
                     .setExact(true)))
         .isVisible();
     assertThat(
             page.getByText(
-                texts.getVerificationSuccessText(), new Page.GetByTextOptions().setExact(true)))
+                uiTexts.getVerificationSuccessText(), new Page.GetByTextOptions().setExact(true)))
         .isVisible();
   }
 
@@ -44,14 +44,14 @@ public final class VerificationPage {
             page.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
-                    .setName(texts.getVerificationExpiredTitle())
+                    .setName(uiTexts.getVerificationExpiredTitle())
                     .setExact(true)))
         .isVisible();
     assertThat(
             page.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
-                    .setName(texts.getVerificationSuccessTitle())
+                    .setName(uiTexts.getVerificationSuccessTitle())
                     .setExact(true)))
         .hasCount(0);
   }
@@ -62,23 +62,23 @@ public final class VerificationPage {
             page.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
-                    .setName(texts.getVerificationNotFoundTitle())
+                    .setName(uiTexts.getVerificationNotFoundTitle())
                     .setExact(true)))
         .isVisible();
     assertThat(
             page.getByText(
-                texts.getVerificationNotFoundText1(), new Page.GetByTextOptions().setExact(true)))
+                uiTexts.getVerificationNotFoundText1(), new Page.GetByTextOptions().setExact(true)))
         .isVisible();
     assertThat(
             page.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
-                    .setName(texts.getVerificationSuccessTitle())
+                    .setName(uiTexts.getVerificationSuccessTitle())
                     .setExact(true)))
         .hasCount(0);
     assertThat(
             page.getByLabel(
-                texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)))
+                uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)))
         .isVisible();
   }
 }

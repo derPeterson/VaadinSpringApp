@@ -16,61 +16,95 @@ class AdminUserActivityTextTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void missingActivityAndTheMinuteBoundaryAreDisplayedWithoutInventingAnAge(String language) {
-    MessageProperties texts = texts(language);
-    assertEquals("-", format(null, texts));
-    assertEquals(texts.getAdminUsersActivityNow(), format(now, texts));
-    assertEquals(texts.getAdminUsersActivityNow(), format(now.minusSeconds(59), texts));
-    assertEquals(texts.getAdminUsersActivityMinutes(1), format(now.minusSeconds(60), texts));
-    assertEquals(texts.getAdminUsersActivityMinutes(59), format(now.minusMinutes(59), texts));
+    MessageProperties messageProperties = texts(language);
+    assertEquals("-", format(null, messageProperties));
+    assertEquals(messageProperties.getAdminUsersActivityNow(), format(now, messageProperties));
+    assertEquals(
+        messageProperties.getAdminUsersActivityNow(),
+        format(now.minusSeconds(59), messageProperties));
+    assertEquals(
+        messageProperties.getAdminUsersActivityMinutes(1),
+        format(now.minusSeconds(60), messageProperties));
+    assertEquals(
+        messageProperties.getAdminUsersActivityMinutes(59),
+        format(now.minusMinutes(59), messageProperties));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void hourDayAndWeekBoundariesUseTheCorrespondingSingularOrPluralGetter(String language) {
-    MessageProperties texts = texts(language);
-    assertEquals(texts.getAdminUsersActivityHours(1), format(now.minusHours(1), texts));
-    assertEquals(texts.getAdminUsersActivityHours(23), format(now.minusHours(23), texts));
-    assertEquals(texts.getAdminUsersActivityDays(1), format(now.minusDays(1), texts));
-    assertEquals(texts.getAdminUsersActivityDays(6), format(now.minusDays(6), texts));
-    assertEquals(texts.getAdminUsersActivityWeeks(1), format(now.minusDays(7), texts));
-    assertEquals(texts.getAdminUsersActivityWeeks(3), format(now.minusDays(21), texts));
+    MessageProperties messageProperties = texts(language);
+    assertEquals(
+        messageProperties.getAdminUsersActivityHours(1),
+        format(now.minusHours(1), messageProperties));
+    assertEquals(
+        messageProperties.getAdminUsersActivityHours(23),
+        format(now.minusHours(23), messageProperties));
+    assertEquals(
+        messageProperties.getAdminUsersActivityDays(1),
+        format(now.minusDays(1), messageProperties));
+    assertEquals(
+        messageProperties.getAdminUsersActivityDays(6),
+        format(now.minusDays(6), messageProperties));
+    assertEquals(
+        messageProperties.getAdminUsersActivityWeeks(1),
+        format(now.minusDays(7), messageProperties));
+    assertEquals(
+        messageProperties.getAdminUsersActivityWeeks(3),
+        format(now.minusDays(21), messageProperties));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void monthsAndYearsFollowCalendarBoundariesInsteadOfFixedThirtyDayMonths(String language) {
-    MessageProperties texts = texts(language);
-    assertEquals(texts.getAdminUsersActivityMonths(1), format(now.minusMonths(1), texts));
-    assertEquals(texts.getAdminUsersActivityMonths(2), format(now.minusMonths(2), texts));
-    assertEquals(texts.getAdminUsersActivityYears(1), format(now.minusYears(1), texts));
-    assertEquals(texts.getAdminUsersActivityYears(2), format(now.minusYears(2), texts));
+    MessageProperties messageProperties = texts(language);
+    assertEquals(
+        messageProperties.getAdminUsersActivityMonths(1),
+        format(now.minusMonths(1), messageProperties));
+    assertEquals(
+        messageProperties.getAdminUsersActivityMonths(2),
+        format(now.minusMonths(2), messageProperties));
+    assertEquals(
+        messageProperties.getAdminUsersActivityYears(1),
+        format(now.minusYears(1), messageProperties));
+    assertEquals(
+        messageProperties.getAdminUsersActivityYears(2),
+        format(now.minusYears(2), messageProperties));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void clockChangesUseElapsedHoursAndTwentyFourHourDays(String language) {
-    MessageProperties texts = texts(language);
+    MessageProperties messageProperties = texts(language);
     assertEquals(
-        texts.getAdminUsersActivityHours(1),
+        messageProperties.getAdminUsersActivityHours(1),
         AdminUserActivityText.format(
-            Instant.parse("2026-03-29T00:30:00Z"), Instant.parse("2026-03-29T01:30:00Z"), texts));
+            Instant.parse("2026-03-29T00:30:00Z"),
+            Instant.parse("2026-03-29T01:30:00Z"),
+            messageProperties));
     assertEquals(
-        texts.getAdminUsersActivityHours(1),
+        messageProperties.getAdminUsersActivityHours(1),
         AdminUserActivityText.format(
-            Instant.parse("2026-10-25T00:30:00Z"), Instant.parse("2026-10-25T01:30:00Z"), texts));
+            Instant.parse("2026-10-25T00:30:00Z"),
+            Instant.parse("2026-10-25T01:30:00Z"),
+            messageProperties));
     assertEquals(
-        texts.getAdminUsersActivityHours(23),
+        messageProperties.getAdminUsersActivityHours(23),
         AdminUserActivityText.format(
-            Instant.parse("2026-03-28T11:00:00Z"), Instant.parse("2026-03-29T10:00:00Z"), texts));
+            Instant.parse("2026-03-28T11:00:00Z"),
+            Instant.parse("2026-03-29T10:00:00Z"),
+            messageProperties));
     assertEquals(
-        texts.getAdminUsersActivityDays(1),
+        messageProperties.getAdminUsersActivityDays(1),
         AdminUserActivityText.format(
-            Instant.parse("2026-10-24T10:00:00Z"), Instant.parse("2026-10-25T11:00:00Z"), texts));
+            Instant.parse("2026-10-24T10:00:00Z"),
+            Instant.parse("2026-10-25T11:00:00Z"),
+            messageProperties));
   }
 
-  private String format(ZonedDateTime value, MessageProperties texts) {
+  private String format(ZonedDateTime value, MessageProperties messageProperties) {
     return AdminUserActivityText.format(
-        value == null ? null : value.toInstant(), now.toInstant(), texts);
+        value == null ? null : value.toInstant(), now.toInstant(), messageProperties);
   }
 
   private MessageProperties texts(String language) {

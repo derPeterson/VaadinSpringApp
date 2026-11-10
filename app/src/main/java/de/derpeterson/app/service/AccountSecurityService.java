@@ -110,25 +110,25 @@ public class AccountSecurityService {
     }
   }
 
-  private final UserNotificationService userNotifications;
-  private final SecurityService security;
-  private final CustomUserDetailsService details;
-  private final LoginAttemptService attempts;
-  private final UserRepository users;
-  private final EmailChangeTokenRepository tokens;
-  private final PasswordResetTokenRepository resets;
-  private final PasswordEncoder encoder;
-  private final ConfigService config;
-  private final EmailQueueService queue;
-  private final AccountSecurityMail mail;
-  private final PersistentTokenRepository remembered;
-  private final SessionRegistry sessions;
-  private final PlatformTransactionManager manager;
+  private final UserNotificationService userNotificationService;
+  private final SecurityService securityService;
+  private final CustomUserDetailsService userDetailsService;
+  private final LoginAttemptService loginAttemptService;
+  private final UserRepository userRepository;
+  private final EmailChangeTokenRepository emailChangeTokenRepository;
+  private final PasswordResetTokenRepository passwordResetTokenRepository;
+  private final PasswordEncoder passwordEncoder;
+  private final ConfigService configService;
+  private final EmailQueueService emailQueueService;
+  private final AccountSecurityMail accountSecurityMail;
+  private final PersistentTokenRepository rememberMeTokenRepository;
+  private final SessionRegistry sessionRegistry;
+  private final PlatformTransactionManager transactionManager;
   private final Clock clock = Clock.systemDefaultZone();
-  private final SecureRandom random = new SecureRandom();
+  private final SecureRandom secureRandom = new SecureRandom();
 
-  private final ObjectProvider<ExternalLoginFlow> externalLogins;
-  private final TwoFactorAuthorization twoFactor;
+  private final ObjectProvider<ExternalLoginFlow> externalLoginFlowProvider;
+  private final TwoFactorAuthorization twoFactorAuthorization;
 
   public PasswordChanged changePassword(HttpServletRequest request, PasswordChange change) {
     Assert.notNull(change, "Password change required");
@@ -140,31 +140,34 @@ public class AccountSecurityService {
       UserEntity user =
           lockedAccount(
               request, identity, change.currentPassword(), ExternalLoginFlow.Purpose.PASSWORD);
-      if (user.getPassword() != null && encoder.matches(change.newPassword(), user.getPassword())) {
+      if (user.getPassword() != null
+          && passwordEncoder.matches(change.newPassword(), user.getPassword())) {
         throw new Rejected(Problem.SAME_PASSWORD);
       }
-      String body = mail.render("password_changed", user, Map.of());
+      String body = accountSecurityMail.render("password_changed", user, Map.of());
       Long previous = user.getVersion();
       String previousAccessVersion = user.getAccessVersion();
-      user.setPassword(encoder.encode(change.newPassword()));
-      users.saveAndFlush(user);
+      user.setPassword(passwordEncoder.encode(change.newPassword()));
+      userRepository.saveAndFlush(user);
       invalidateEmailChanges(user);
       invalidateResets(user);
-      queue.addAddressedNotification(
+      emailQueueService.addAddressedNotification(
           user,
           user.getEmail(),
-          mail.messagePropertiesForRecipient(user).getAccountPasswordChangedSubject(),
+          accountSecurityMail
+              .messagePropertiesForRecipient(user)
+              .getAccountPasswordChangedSubject(),
           body);
-      userNotifications.recordSecurityEvent(
+      userNotificationService.recordSecurityEvent(
           user, de.derpeterson.app.model.enums.UserNotificationType.PASSWORD_CHANGED);
-      remembered.removeUserTokens(identity);
+      rememberMeTokenRepository.removeUserTokens(identity);
       HttpSession session = request.getSession(false);
       revokeAfterCommit(identity, session == null ? null : session.getId());
       TransactionSynchronizationManager.registerSynchronization(
           new TransactionSynchronization() {
             @Override
             public void afterCommit() {
-              twoFactor.retainAfterAccessVersionChange(request, previousAccessVersion);
+              twoFactorAuthorization.retainAfterAccessVersionChange(request, previousAccessVersion);
             }
           });
       return new PasswordChanged(previous, user.getVersion());
@@ -187,30 +190,30 @@ public class AccountSecurityService {
       if (user.getEmail().equals(target)) {
         throw new Rejected(Problem.SAME_EMAIL);
       }
-      if (users.emailExistsForOtherUser(target, user.getId())) {
+      if (userRepository.emailExistsForOtherUser(target, user.getId())) {
         throw new Rejected(Problem.EMAIL_UNAVAILABLE);
       }
       LocalDateTime now = LocalDateTime.now(clock);
       List<EmailChangeTokenEntity> active =
-          tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
+          emailChangeTokenRepository.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
       if (active.stream().anyMatch(t -> t.getCreatedAt().isAfter(now.minusMinutes(1)))) {
         throw new Rejected(Problem.REQUEST_PENDING);
       }
       Duration duration = duration(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION);
       byte[] raw = new byte[32];
-      random.nextBytes(raw);
+      secureRandom.nextBytes(raw);
       String token = Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
       String link =
-          UriComponentsBuilder.fromUriString(config.getString(ConfigEntry.BASE_URL))
+          UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))
               .pathSegment(AppRoute.EMAIL_CHANGE.getRoute(), token)
               .toUriString();
       String body =
-          mail.render(
+          accountSecurityMail.render(
               "email_change_request",
               user,
               Map.of("CONFIRM_EMAIL_LINK", link, "NEW_EMAIL", target));
       active.forEach(t -> t.setStatus(TokenStatus.INACTIVE));
-      tokens.saveAll(active);
+      emailChangeTokenRepository.saveAll(active);
       EmailChangeTokenEntity pending = new EmailChangeTokenEntity();
       pending.setDigest(digest(token));
       pending.setUserEntity(user);
@@ -219,11 +222,11 @@ public class AccountSecurityService {
       pending.setCredentialDigest(digest(user.getAccessVersion()));
       pending.setCreatedAt(now);
       pending.setExpiryDate(now.plus(duration));
-      tokens.save(pending);
-      queue.addAddressedNotification(
+      emailChangeTokenRepository.save(pending);
+      emailQueueService.addAddressedNotification(
           user,
           target,
-          mail.messagePropertiesForRecipient(user).getAccountEmailChangeSubject(),
+          accountSecurityMail.messagePropertiesForRecipient(user).getAccountEmailChangeSubject(),
           body);
       AfterCommitLog.info(log, "Email change confirmation queued: userId={}", user.getId());
       return null;
@@ -231,18 +234,21 @@ public class AccountSecurityService {
   }
 
   public Confirmation inspect(String token) {
-    MaintenanceService.requirePublicAccess(config);
+    MaintenanceService.requirePublicAccess(configService);
     String hash = tokenDigest(token);
     if (hash == null) {
       return Confirmation.INVALID;
     }
-    return transaction(
-        () -> tokens.findByDigest(hash).map(this::state).orElse(Confirmation.INVALID));
+    return transaction(() ->
+        emailChangeTokenRepository
+            .findByDigest(hash)
+            .map(this::state)
+            .orElse(Confirmation.INVALID));
   }
 
   /** Erst der ausdrückliche Buttonklick verbraucht den Link, kein Mailscanner-GET. */
   public Confirmation confirm(String token) {
-    MaintenanceService.requirePublicAccess(config);
+    MaintenanceService.requirePublicAccess(configService);
     String hash = tokenDigest(token);
     if (hash == null) {
       return Confirmation.INVALID;
@@ -250,11 +256,15 @@ public class AccountSecurityService {
     try {
       return transaction(() -> {
         UserEntity user =
-            tokens.findUserIdByDigest(hash).flatMap(users::lockVerificationUser).orElse(null);
+            emailChangeTokenRepository
+                .findUserIdByDigest(hash)
+                .flatMap(userRepository::lockVerificationUser)
+                .orElse(null);
         if (user == null) {
           return Confirmation.INVALID;
         }
-        EmailChangeTokenEntity pending = tokens.findByDigest(hash).orElseThrow();
+        EmailChangeTokenEntity pending =
+            emailChangeTokenRepository.findByDigest(hash).orElseThrow();
         Confirmation state = state(pending);
         if (state != Confirmation.READY) {
           if (state == Confirmation.EXPIRED) {
@@ -262,26 +272,28 @@ public class AccountSecurityService {
           }
           return state;
         }
-        if (users.emailExistsForOtherUser(pending.getNewEmail(), user.getId())) {
+        if (userRepository.emailExistsForOtherUser(pending.getNewEmail(), user.getId())) {
           pending.setStatus(TokenStatus.INACTIVE);
           return Confirmation.CONFLICT;
         }
         String old = user.getEmail();
         String target = pending.getNewEmail();
         String body =
-            mail.render("email_changed", user, Map.of("OLD_EMAIL", old, "NEW_EMAIL", target));
+            accountSecurityMail.render(
+                "email_changed", user, Map.of("OLD_EMAIL", old, "NEW_EMAIL", target));
         user.setEmail(target);
-        users.saveAndFlush(user);
+        userRepository.saveAndFlush(user);
         pending.setStatus(TokenStatus.USED);
-        tokens.save(pending);
+        emailChangeTokenRepository.save(pending);
         invalidateEmailChanges(user);
         invalidateResets(user);
-        String subject = mail.messagePropertiesForRecipient(user).getAccountEmailChangedSubject();
-        queue.addAddressedNotification(user, old, subject, body);
-        queue.addAddressedNotification(user, target, subject, body);
-        userNotifications.recordSecurityEvent(
+        String subject =
+            accountSecurityMail.messagePropertiesForRecipient(user).getAccountEmailChangedSubject();
+        emailQueueService.addAddressedNotification(user, old, subject, body);
+        emailQueueService.addAddressedNotification(user, target, subject, body);
+        userNotificationService.recordSecurityEvent(
             user, de.derpeterson.app.model.enums.UserNotificationType.EMAIL_CHANGED);
-        remembered.removeUserTokens(old);
+        rememberMeTokenRepository.removeUserTokens(old);
         revokeAfterCommit(old, null);
         return Confirmation.SUCCESS;
       });
@@ -312,15 +324,15 @@ public class AccountSecurityService {
   private String reauthenticate(
       HttpServletRequest request, String password, ExternalLoginFlow.Purpose purpose) {
     UserDetails principal =
-        security
+        securityService
             .getAuthenticatedUser(request)
             .orElseThrow(() -> new AccessDeniedException("Authentication required"));
-    MaintenanceService.requirePublicAccess(config);
-    twoFactor.authorizeCurrent(request, ExternalLoginFlow.action(purpose), false);
-    ExternalLoginFlow externalLogin = externalLogins.getIfAvailable();
+    MaintenanceService.requirePublicAccess(configService);
+    twoFactorAuthorization.authorizeCurrent(request, ExternalLoginFlow.action(purpose), false);
+    ExternalLoginFlow externalLogin = externalLoginFlowProvider.getIfAvailable();
     if ((password == null || password.isBlank()) && externalLogin != null) {
       UserEntity user =
-          users
+          userRepository
               .findByEmail(principal.getUsername())
               .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
       externalLogin.authorize(request, user, purpose, false);
@@ -328,14 +340,15 @@ public class AccountSecurityService {
     }
     Assert.hasText(password, "Current password required");
     Authentication auth =
-        attempts.authenticate(
+        loginAttemptService.authenticate(
             principal.getUsername(),
             () -> {
-              UserDetails current = details.loadPasswordUserByUsername(principal.getUsername());
+              UserDetails current =
+                  userDetailsService.loadPasswordUserByUsername(principal.getUsername());
               if (!current.isEnabled()) {
                 throw new DisabledException("Account disabled");
               }
-              if (!encoder.matches(password, current.getPassword())) {
+              if (!passwordEncoder.matches(password, current.getPassword())) {
                 throw new BadCredentialsException("Current password invalid");
               }
               return UsernamePasswordAuthenticationToken.authenticated(
@@ -349,37 +362,38 @@ public class AccountSecurityService {
       String identity,
       String password,
       ExternalLoginFlow.Purpose purpose) {
-    MaintenanceService.requirePublicAccess(config);
+    MaintenanceService.requirePublicAccess(configService);
     UserEntity user =
-        users
+        userRepository
             .findByEmailForUpdate(identity)
             .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
     if (!user.isEnabled()) {
       throw new AccessDeniedException("Account disabled");
     }
-    ExternalLoginFlow externalLogin = externalLogins.getIfAvailable();
+    ExternalLoginFlow externalLogin = externalLoginFlowProvider.getIfAvailable();
     if ((password == null || password.isBlank()) && externalLogin != null) {
       externalLogin.authorize(request, user, purpose, true);
-    } else if (user.getPassword() == null || !encoder.matches(password, user.getPassword())) {
+    } else if (user.getPassword() == null
+        || !passwordEncoder.matches(password, user.getPassword())) {
       throw new BadCredentialsException("Credentials changed");
     } else {
-      twoFactor.authorizeCurrent(request, ExternalLoginFlow.action(purpose), true);
+      twoFactorAuthorization.authorizeCurrent(request, ExternalLoginFlow.action(purpose), true);
     }
     return user;
   }
 
   private void invalidateEmailChanges(UserEntity user) {
     List<EmailChangeTokenEntity> active =
-        tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
+        emailChangeTokenRepository.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
     active.forEach(t -> t.setStatus(TokenStatus.INACTIVE));
-    tokens.saveAll(active);
+    emailChangeTokenRepository.saveAll(active);
   }
 
   private void invalidateResets(UserEntity user) {
     List<PasswordResetTokenEntity> active =
-        resets.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
+        passwordResetTokenRepository.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
     active.forEach(t -> t.setStatus(TokenStatus.INACTIVE));
-    resets.saveAll(active);
+    passwordResetTokenRepository.saveAll(active);
   }
 
   private void revokeAfterCommit(String identity, String keep) {
@@ -387,10 +401,10 @@ public class AccountSecurityService {
         new TransactionSynchronization() {
           @Override
           public void afterCommit() {
-            if (keep != null && sessions instanceof DurableSessionRegistry<?> durable) {
+            if (keep != null && sessionRegistry instanceof DurableSessionRegistry<?> durable) {
               durable.retainAfterPasswordChange(keep, identity);
             }
-            sessions.getAllSessions(identity, true).stream()
+            sessionRegistry.getAllSessions(identity, true).stream()
                 .filter(session -> !Objects.equals(session.getSessionId(), keep))
                 .forEach(SessionInformation::expireNow);
           }
@@ -398,13 +412,13 @@ public class AccountSecurityService {
   }
 
   private <T> T transaction(Supplier<T> action) {
-    TransactionTemplate tx = new TransactionTemplate(manager);
+    TransactionTemplate tx = new TransactionTemplate(transactionManager);
     tx.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     return tx.execute(status -> action.get());
   }
 
   private Duration duration(ConfigEntry entry) {
-    Duration value = Duration.parse(config.getString(entry));
+    Duration value = Duration.parse(configService.getString(entry));
     Assert.isTrue(
         TokenDurationPolicy.meetsMinimumDuration(value, entry.getMinimumTokenDuration()),
         "Invalid token duration");
@@ -415,7 +429,7 @@ public class AccountSecurityService {
   public void deleteExpiredTokens() {
     LocalDateTime cutoff =
         LocalDateTime.now(clock).minus(duration(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION));
-    transaction(() -> tokens.deleteByExpiryDateBefore(cutoff));
+    transaction(() -> emailChangeTokenRepository.deleteByExpiryDateBefore(cutoff));
   }
 
   private static String tokenDigest(String raw) {

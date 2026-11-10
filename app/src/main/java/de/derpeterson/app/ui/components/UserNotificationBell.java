@@ -17,13 +17,13 @@ import jakarta.servlet.http.HttpSession;
 /** Keine Request-Proxys auf Push-Threads: die beim Attach gebundene Sitzung wird frisch geprüft. */
 public class UserNotificationBell extends Div {
   private final transient MessageProperties messageProperties;
-  private final transient UserNotificationService service;
-  private final Button target;
-  private final Span count = new Span();
-  private final Popover popover = new Popover();
+  private final transient UserNotificationService userNotificationService;
+  private final Button notificationBellButton;
+  private final Span unreadCountBadge = new Span();
+  private final Popover notificationPopover = new Popover();
   private transient HttpSession session;
   private transient Registration registration;
-  private UserNotificationsPanel panel;
+  private UserNotificationsPanel notificationPreviewPanel;
   private SerializableConsumer<Long> unreadCountListener = value -> {};
 
   public void setUnreadCountListener(SerializableConsumer<Long> listener) {
@@ -32,50 +32,51 @@ public class UserNotificationBell extends Div {
 
   public UserNotificationBell(
       MessageProperties messageProperties,
-      UserNotificationService service,
+      UserNotificationService userNotificationService,
       HttpServletRequest request,
-      Button target) {
+      Button notificationBellButton) {
     this.messageProperties = messageProperties;
-    this.service = service;
-    this.target = target;
+    this.userNotificationService = userNotificationService;
+    this.notificationBellButton = notificationBellButton;
     addClassName("cosmos-notification-bell");
-    count.addClassName("cosmos-notification-count");
-    count.setVisible(false);
-    count.getElement().setAttribute("aria-hidden", "true");
-    add(target, count, popover);
-    popover.setTarget(target);
-    popover.setOpenOnClick(true);
-    popover.setOpenOnFocus(false);
-    popover.setOpenOnHover(false);
-    popover.setCloseOnEsc(true);
-    popover.setCloseOnOutsideClick(true);
-    popover.setAutofocus(true);
-    popover.setPosition(PopoverPosition.BOTTOM_END);
-    popover.getThemeNames().add("cosmos");
-    popover.getThemeNames().add("cosmos-notifications");
-    popover.setAriaLabel(messageProperties.getNotificationsTitle());
-    popover.addOpenedChangeListener(e -> {
+    unreadCountBadge.addClassName("cosmos-notification-count");
+    unreadCountBadge.setVisible(false);
+    unreadCountBadge.getElement().setAttribute("aria-hidden", "true");
+    add(notificationBellButton, unreadCountBadge, notificationPopover);
+    notificationPopover.setTarget(notificationBellButton);
+    notificationPopover.setOpenOnClick(true);
+    notificationPopover.setOpenOnFocus(false);
+    notificationPopover.setOpenOnHover(false);
+    notificationPopover.setCloseOnEsc(true);
+    notificationPopover.setCloseOnOutsideClick(true);
+    notificationPopover.setAutofocus(true);
+    notificationPopover.setPosition(PopoverPosition.BOTTOM_END);
+    notificationPopover.getThemeNames().add("cosmos");
+    notificationPopover.getThemeNames().add("cosmos-notifications");
+    notificationPopover.setAriaLabel(messageProperties.getNotificationsTitle());
+    notificationPopover.addOpenedChangeListener(e -> {
       if (e.isOpened()) {
-        refresh();
+        refreshNotificationBell();
       }
     });
     addAttachListener(event -> {
       session = request.getSession(false);
-      panel = new UserNotificationsPanel(messageProperties, service, session, true);
+      notificationPreviewPanel =
+          new UserNotificationsPanel(messageProperties, userNotificationService, session, true);
       if (referenceStyle) {
-        panel.addClassName(REFERENCE_OVERLAY);
+        notificationPreviewPanel.addClassName(REFERENCE_OVERLAY);
       }
-      panel.setCloseAction(popover::close);
-      panel.setDetailOpenListener(open -> {
-        popover.setCloseOnOutsideClick(!open);
-        popover.setCloseOnEsc(!open);
+      notificationPreviewPanel.setCloseAction(notificationPopover::close);
+      notificationPreviewPanel.setDetailOpenListener(open -> {
+        notificationPopover.setCloseOnOutsideClick(!open);
+        notificationPopover.setCloseOnEsc(!open);
       });
-      popover.removeAll();
-      popover.add(panel);
+      notificationPopover.removeAll();
+      notificationPopover.add(notificationPreviewPanel);
       try {
-        Long owner = service.ownerId(session);
+        Long owner = userNotificationService.ownerId(session);
         registration =
-            service
+            userNotificationService
                 .events()
                 .register(ids -> {
                   if (!ids.contains(owner)) {
@@ -85,14 +86,14 @@ public class UserNotificationBell extends Div {
                       .getUI()
                       .access(() -> {
                         if (isAttached()) {
-                          refresh();
+                          refreshNotificationBell();
                         }
                       });
                 });
       } catch (org.springframework.security.access.AccessDeniedException _) {
-        target.setEnabled(false);
+        notificationBellButton.setEnabled(false);
       }
-      refresh();
+      refreshNotificationBell();
     });
     addDetachListener(event -> {
       if (registration != null) {
@@ -100,7 +101,7 @@ public class UserNotificationBell extends Div {
       }
       registration = null;
       session = null;
-      popover.close();
+      notificationPopover.close();
     });
   }
 
@@ -108,40 +109,41 @@ public class UserNotificationBell extends Div {
 
   public void useReferenceStyle() {
     referenceStyle = true;
-    popover.getThemeNames().add("cosmos-reference");
-    if (panel != null) {
-      panel.addClassName(REFERENCE_OVERLAY);
+    notificationPopover.getThemeNames().add("cosmos-reference");
+    if (notificationPreviewPanel != null) {
+      notificationPreviewPanel.addClassName(REFERENCE_OVERLAY);
     }
   }
 
   public void refreshTexts() {
-    popover.setAriaLabel(messageProperties.getNotificationsTitle());
-    if (panel != null) {
-      panel.refreshTexts();
+    notificationPopover.setAriaLabel(messageProperties.getNotificationsTitle());
+    if (notificationPreviewPanel != null) {
+      notificationPreviewPanel.refreshTexts();
     }
     if (isAttached()) {
-      refresh();
+      refreshNotificationBell();
     }
   }
 
-  private void refresh() {
+  private void refreshNotificationBell() {
     try {
-      long unread = service.unreadCount(session);
+      long unread = userNotificationService.unreadCount(session);
       unreadCountListener.accept(unread);
-      target.setEnabled(true);
-      count.setVisible(unread > 0);
-      count.setText(unread > 99 ? "99+" : Long.toString(unread));
-      target.setAriaLabel(messageProperties.getNotificationsTitle() + " (" + unread + ")");
-      if (popover.isOpened() && panel != null) {
-        panel.refresh();
+      notificationBellButton.setEnabled(true);
+      unreadCountBadge.setVisible(unread > 0);
+      unreadCountBadge.setText(unread > 99 ? "99+" : Long.toString(unread));
+      notificationBellButton.setAriaLabel(
+          messageProperties.getNotificationsTitle() + " (" + unread + ")");
+      if (notificationPopover.isOpened() && notificationPreviewPanel != null) {
+        notificationPreviewPanel.refreshInbox();
       }
     } catch (RuntimeException _) {
       unreadCountListener.accept(-1L);
-      count.setVisible(false);
-      target.setEnabled(false);
-      popover.close();
-      if (panel != null) {
-        panel.unavailable();
+      unreadCountBadge.setVisible(false);
+      notificationBellButton.setEnabled(false);
+      notificationPopover.close();
+      if (notificationPreviewPanel != null) {
+        notificationPreviewPanel.unavailable();
       }
     }
   }

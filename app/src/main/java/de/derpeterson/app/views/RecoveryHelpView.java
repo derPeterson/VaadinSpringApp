@@ -31,51 +31,51 @@ import jakarta.servlet.http.HttpServletRequest;
 @StyleSheet("custom-theme/cosmos-mfa-confirmation.css")
 public final class RecoveryHelpView extends VerticalLayout implements BeforeEnterObserver {
   public static final String ROUTE = "recovery-help";
-  private final transient HttpServletRequest request;
-  private final transient SecurityService security;
+  private final transient HttpServletRequest httpRequest;
+  private final transient SecurityService securityService;
   private final transient TwoFactorAuthorization twoFactorAuthorization;
-  private final PublicPageComponent page;
-  private final Button back;
-  private final Button logout;
+  private final PublicPageComponent recoveryHelpPage;
+  private final Button backButton;
+  private final Button logoutButton;
   private final transient MessageProperties messageProperties;
-  private TwoFactorFlow flow;
+  private TwoFactorFlow twoFactorFlow;
 
   public RecoveryHelpView(
       ConfigService config,
       MessageProperties messageProperties,
       SupportTicketService tickets,
-      SecurityService security,
+      SecurityService securityService,
       TwoFactorAuthorization twoFactorAuthorization,
-      HttpServletRequest request) {
-    this.request = request;
-    this.security = security;
+      HttpServletRequest httpRequest) {
+    this.httpRequest = httpRequest;
+    this.securityService = securityService;
     this.twoFactorAuthorization = twoFactorAuthorization;
     this.messageProperties = messageProperties;
     setPadding(false);
     setSpacing(false);
     setWidthFull();
-    page =
+    recoveryHelpPage =
         new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.RECOVERY_HELP);
     SupportTicketsComponent support =
-        new SupportTicketsComponent(messageProperties, tickets, request, false);
-    back = new Button(messageProperties.getTwoFactorReturnToCode(), event -> leaveHelp());
-    back.setId("support-back");
-    back.setPrefixComponent(AppIcon.ANGLE_LEFT.create());
-    back.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    support.addBackAction(back);
-    logout =
+        new SupportTicketsComponent(messageProperties, tickets, httpRequest, false);
+    backButton = new Button(messageProperties.getTwoFactorReturnToCode(), event -> leaveHelp());
+    backButton.setId("support-back");
+    backButton.setPrefixComponent(AppIcon.ANGLE_LEFT.create());
+    backButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    support.addBackAction(backButton);
+    logoutButton =
         new Button(
             messageProperties.getBaseLogoutButton(),
             event -> {
-              security.logout();
-              UI.getCurrent().getPage().setLocation(request.getContextPath() + "/login");
+              securityService.logout();
+              UI.getCurrent().getPage().setLocation(httpRequest.getContextPath() + "/login");
             });
-    logout.setId("support-sign-out");
-    logout.setPrefixComponent(AppIcon.SIGN_OUT.create());
-    logout.addClassName(de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON);
-    support.addUserFooterAction(logout);
-    page.getCardContainer().add(support);
-    add(page);
+    logoutButton.setId("support-sign-out");
+    logoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
+    logoutButton.addClassName(de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON);
+    support.addUserFooterAction(logoutButton);
+    recoveryHelpPage.getCardContainer().add(support);
+    add(recoveryHelpPage);
     ComponentUtil.addListener(
         UI.getCurrent(),
         LanguageChangeEvent.class,
@@ -87,47 +87,48 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    flow = TwoFactorFlow.current(request);
-    if (flow == null) {
-      flow =
-          twoFactorAuthorization.sessionConfirmed(request)
+    twoFactorFlow = TwoFactorFlow.current(httpRequest);
+    if (twoFactorFlow == null) {
+      twoFactorFlow =
+          twoFactorAuthorization.sessionConfirmed(httpRequest)
               ? TwoFactorFlow.ACCOUNT_HELP
               : TwoFactorFlow.LOGIN_HELP;
-      flow.enter(request);
+      twoFactorFlow.enter(httpRequest);
     }
-    if (!flow.help()) {
+    if (!twoFactorFlow.help()) {
       event.forwardTo(TwoFactorView.class);
       return;
     }
-    page.setAccountSecurity(flow.account(), security.getCurrentUser(request).orElse(null));
+    recoveryHelpPage.setAccountSecurity(
+        twoFactorFlow.account(), securityService.getCurrentUser(httpRequest).orElse(null));
     refreshNavigation();
   }
 
   public boolean isCurrent(TwoFactorFlow active) {
-    return flow == active;
+    return twoFactorFlow == active;
   }
 
   private void refreshNavigation() {
-    boolean account = flow != null && flow.account();
-    back.setText(
+    boolean account = twoFactorFlow != null && twoFactorFlow.account();
+    backButton.setText(
         account
             ? messageProperties.getTwoFactorBack()
             : messageProperties.getTwoFactorReturnToCode());
-    logout.setText(messageProperties.getBaseLogoutButton());
-    logout.setVisible(!account);
+    logoutButton.setText(messageProperties.getBaseLogoutButton());
+    logoutButton.setVisible(!account);
   }
 
   private void leaveHelp() {
     String destination;
-    if (flow.account()) {
-      TwoFactorFlow.finish(request);
+    if (twoFactorFlow.account()) {
+      TwoFactorFlow.finish(httpRequest);
       destination = AppRouteConstants.ACCOUNT_PORTAL_LOCATION;
     } else {
       TwoFactorFlow next =
-          flow.administration() ? TwoFactorFlow.ADMINISTRATION : TwoFactorFlow.LOGIN;
-      next.enter(request);
+          twoFactorFlow.administration() ? TwoFactorFlow.ADMINISTRATION : TwoFactorFlow.LOGIN;
+      next.enter(httpRequest);
       destination = next.location();
     }
-    UI.getCurrent().getPage().setLocation(request.getContextPath() + destination);
+    UI.getCurrent().getPage().setLocation(httpRequest.getContextPath() + destination);
   }
 }

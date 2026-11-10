@@ -46,113 +46,119 @@ import tools.jackson.databind.json.JsonMapper;
   TwoFactorManagementTest.Config.class
 })
 class TwoFactorManagementTest {
-  @Autowired TwoFactorEnrollment enrollment;
-  @Autowired TwoFactorAuthorization authorization;
-  @Autowired TwoFactorManagement management;
-  @Autowired TwoFactorStore factors;
-  @Autowired UserRepository users;
-  @Autowired TransactionTemplate transaction;
+  @Autowired TwoFactorEnrollment twoFactorEnrollment;
+  @Autowired TwoFactorAuthorization twoFactorAuthorization;
+  @Autowired TwoFactorManagement twoFactorManagement;
+  @Autowired TwoFactorStore twoFactorStore;
+  @Autowired UserRepository userRepository;
+  @Autowired TransactionTemplate transactionTemplate;
   @Autowired TwoFactorStoreTest.TestClock clock;
-  @Autowired ExternalIdentityService identities;
-  @Autowired ExternalLoginConfiguration.Registrations providers;
-  @Autowired SecurityService security;
+  @Autowired ExternalIdentityService externalIdentityService;
+  @Autowired ExternalLoginConfiguration.Registrations providerRegistrations;
+  @Autowired SecurityService securityService;
   @PersistenceContext EntityManager entityManager;
-  private MockHttpServletRequest request;
-  private UserEntity user;
-  private List<String> codes;
+  private MockHttpServletRequest mockHttpRequest;
+  private UserEntity testAccount;
+  private List<String> recoveryCodes;
 
   @BeforeEach
   void setup() {
-    when(identities.connected(any())).thenReturn(List.of("google"));
-    when(providers.providers()).thenReturn(List.of("google"));
+    when(externalIdentityService.connected(any())).thenReturn(List.of("google"));
+    when(providerRegistrations.providers()).thenReturn(List.of("google"));
     clock.now.set(Instant.parse("2026-11-02T12:00:00Z"));
-    user =
-        transaction.execute(
-            status -> {
-              RoleEntity role =
-                  entityManager
-                      .createQuery(
-                          "select r from RoleEntity r where r.name = :name", RoleEntity.class)
-                      .setParameter("name", RoleType.ROLE_USER)
-                      .getResultStream()
-                      .findFirst()
-                      .orElse(null);
-              if (role == null) {
-                role = RoleEntity.builder().name(RoleType.ROLE_USER).build();
-                entityManager.persist(role);
-              }
-              return users.saveAndFlush(
-                  UserEntity.builder()
-                      .firstName("Manage")
-                      .lastName("Fixture")
-                      .email(UUID.randomUUID() + "@example.test")
-                      .password("hash")
-                      .enabled(true)
-                      .roleEntities(List.of(role))
-                      .build());
-            });
-    request = TwoFactorAuthorizationTest.requestFor(user.getEmail());
-    TwoFactorEnrollment.Pending pending = enrollment.beginPassword(request, "correct");
-    byte[] secret = enrollment.pendingSecret(request, pending.id());
+    testAccount =
+        transactionTemplate.execute(status -> {
+          RoleEntity role =
+              entityManager
+                  .createQuery("select r from RoleEntity r where r.name = :name", RoleEntity.class)
+                  .setParameter("name", RoleType.ROLE_USER)
+                  .getResultStream()
+                  .findFirst()
+                  .orElse(null);
+          if (role == null) {
+            role = RoleEntity.builder().name(RoleType.ROLE_USER).build();
+            entityManager.persist(role);
+          }
+          return userRepository.saveAndFlush(
+              UserEntity.builder()
+                  .firstName("Manage")
+                  .lastName("Fixture")
+                  .email(UUID.randomUUID() + "@example.test")
+                  .password("hash")
+                  .enabled(true)
+                  .roleEntities(List.of(role))
+                  .build());
+        });
+    mockHttpRequest = TwoFactorAuthorizationTest.requestFor(testAccount.getEmail());
+    TwoFactorEnrollment.Pending pending =
+        twoFactorEnrollment.beginPassword(mockHttpRequest, "correct");
+    byte[] secret = twoFactorEnrollment.pendingSecret(mockHttpRequest, pending.id());
     UUID output =
-        enrollment.complete(
-            request, pending.id(), Totp.code(secret, clock.instant().getEpochSecond() / 30));
-    codes = enrollment.recoveryOutput(request, output);
-    enrollment.dismissOutput(request, output);
+        twoFactorEnrollment.complete(
+            mockHttpRequest,
+            pending.id(),
+            Totp.code(secret, clock.instant().getEpochSecond() / 30));
+    recoveryCodes = twoFactorEnrollment.recoveryOutput(mockHttpRequest, output);
+    twoFactorEnrollment.dismissOutput(mockHttpRequest, output);
   }
 
   @Test
   void regeneratingCodesConsumesOwnGrantAndRevokesOldCodes() {
-    assertThrows(AccessDeniedException.class, () -> management.regenerate(request));
-    authorization.confirmSession(request, codes.get(1));
+    assertThrows(
+        AccessDeniedException.class, () -> twoFactorManagement.regenerate(mockHttpRequest));
+    twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(1));
     String previousProof =
-        (String) request.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF);
-    clearInvocations(security);
-    authorization.confirmAction(request, TwoFactorAction.MANAGE_RECOVERY_CODES, codes.getFirst());
+        (String) mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF);
+    clearInvocations(securityService);
+    twoFactorAuthorization.confirmAction(
+        mockHttpRequest, TwoFactorAction.MANAGE_RECOVERY_CODES, recoveryCodes.getFirst());
     clock.now.updateAndGet(now -> now.plusSeconds(60));
-    UUID output = management.regenerate(request);
-    assertTrue(authorization.sessionConfirmed(request));
+    UUID output = twoFactorManagement.regenerate(mockHttpRequest);
+    assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     JsonMapper json = JsonMapper.builder().build();
     String currentProof =
-        (String) request.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF);
+        (String) mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF);
     assertEquals(
         json.readTree(previousProof).get("verifiedAt"),
         json.readTree(currentProof).get("verifiedAt"));
     assertEquals(
         json.readTree(previousProof).get("activityAt"),
         json.readTree(currentProof).get("activityAt"));
-    verify(security, never())
+    verify(securityService, never())
         .recordSecondFactor(any(), org.mockito.ArgumentMatchers.anyBoolean(), any());
-    assertEquals(10, enrollment.recoveryOutput(request, output).size());
-    Long userId = user.getId();
-    String accessVersion = user.getAccessVersion();
-    String recoveryCode = codes.get(2);
+    assertEquals(10, twoFactorEnrollment.recoveryOutput(mockHttpRequest, output).size());
+    Long userId = testAccount.getId();
+    String accessVersion = testAccount.getAccessVersion();
+    String recoveryCode = recoveryCodes.get(2);
     assertThrows(
-        BadCredentialsException.class, () -> factors.verify(userId, accessVersion, recoveryCode));
-    assertThrows(AccessDeniedException.class, () -> management.regenerate(request));
+        BadCredentialsException.class,
+        () -> twoFactorStore.verify(userId, accessVersion, recoveryCode));
+    assertThrows(
+        AccessDeniedException.class, () -> twoFactorManagement.regenerate(mockHttpRequest));
   }
 
   @Test
   void removingAuthenticatorPreservesHistoryAndRequiresProtectedReenrollment() {
-    authorization.confirmAction(request, TwoFactorAction.MANAGE_FACTOR, codes.getFirst());
-    management.disable(request);
-    TwoFactorAuthorization.State state = authorization.state(authorization.owner(request));
+    twoFactorAuthorization.confirmAction(
+        mockHttpRequest, TwoFactorAction.MANAGE_FACTOR, recoveryCodes.getFirst());
+    twoFactorManagement.disable(mockHttpRequest);
+    TwoFactorAuthorization.State state =
+        twoFactorAuthorization.state(twoFactorAuthorization.owner(mockHttpRequest));
     assertFalse(state.enrolled());
     assertTrue(state.previouslyEnrolled());
-    assertEquals(0, management.remainingCodes(request));
+    assertEquals(0, twoFactorManagement.remainingCodes(mockHttpRequest));
   }
 
   @Test
   void googleOnlyAccountCannotRemoveItsOnlySafeFutureEnrollmentPath() {
-    transaction.executeWithoutResult(
-        status -> {
-          UserEntity account = users.findById(user.getId()).orElseThrow();
-          // Das Setzen ist hier nur Fixture: echte Passwortänderung prüft die Faktorfreigabe.
-          account.setPassword(null);
-        });
+    transactionTemplate.executeWithoutResult(status -> {
+      UserEntity account = userRepository.findById(testAccount.getId()).orElseThrow();
+      // Das Setzen ist hier nur Fixture: echte Passwortänderung prüft die Faktorfreigabe.
+      account.setPassword(null);
+    });
     assertEquals(
         TwoFactorManagement.DisableProblem.NO_INDEPENDENT_ACCESS,
-        management.disableProblem(request));
+        twoFactorManagement.disableProblem(mockHttpRequest));
   }
 
   @Configuration
@@ -169,27 +175,27 @@ class TwoFactorManagementTest {
 
     @Bean
     TwoFactorManagement management(
-        TwoFactorAuthorization authorization,
+        TwoFactorAuthorization twoFactorAuthorization,
         TwoFactorPolicies policies,
         TwoFactorStore store,
-        TwoFactorEnrollment enrollment,
-        TwoFactorRecoveryCodeRepository codes,
+        TwoFactorEnrollment twoFactorEnrollment,
+        TwoFactorRecoveryCodeRepository recoveryCodes,
         TwoFactorChallengeRepository challenges,
         TwoFactorMail mail,
         ObjectProvider<SessionManagementService> sessions,
-        ExternalIdentityService identities,
-        ExternalLoginConfiguration.Registrations providers) {
+        ExternalIdentityService externalIdentityService,
+        ExternalLoginConfiguration.Registrations providerRegistrations) {
       return new TwoFactorManagement(
-          authorization,
+          twoFactorAuthorization,
           policies,
           store,
-          enrollment,
-          codes,
+          twoFactorEnrollment,
+          recoveryCodes,
           challenges,
           mail,
           sessions,
-          identities,
-          providers);
+          externalIdentityService,
+          providerRegistrations);
     }
   }
 }

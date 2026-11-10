@@ -40,16 +40,16 @@ public class TwoFactorEnrollment {
   // Die Codeausgabe endet mit der Sitzung oder Bestätigung, nicht mit einer Bestätigungsfrist.
   private static final Instant SESSION_BOUND_OUTPUT = Instant.parse("9999-12-31T23:59:59Z");
   private final TwoFactorAuthorization twoFactorAuthorization;
-  private final TwoFactorStore factors;
-  private final TwoFactorSecrets secrets;
-  private final TwoFactorChallengeRepository challenges;
-  private final TwoFactorPolicies policies;
-  private final ObjectProvider<AuthenticationManager> passwords;
-  private final ObjectProvider<SessionManagementService> sessions;
-  private final TwoFactorMail mail;
-  private final TransactionTemplate transaction;
+  private final TwoFactorStore twoFactorStore;
+  private final TwoFactorSecrets twoFactorSecrets;
+  private final TwoFactorChallengeRepository twoFactorChallengeRepository;
+  private final TwoFactorPolicies twoFactorPolicies;
+  private final ObjectProvider<AuthenticationManager> passwordAuthenticationManagerProvider;
+  private final ObjectProvider<SessionManagementService> sessionManagementServiceProvider;
+  private final TwoFactorMail twoFactorMail;
+  private final TransactionTemplate transactionTemplate;
   private final Clock clock;
-  private final SecureRandom random = new SecureRandom();
+  private final SecureRandom secureRandom = new SecureRandom();
 
   public record Pending(UUID id, Kind kind, SetupProof proof) implements Serializable {}
 
@@ -58,52 +58,52 @@ public class TwoFactorEnrollment {
   @Autowired
   public TwoFactorEnrollment(
       TwoFactorAuthorization twoFactorAuthorization,
-      TwoFactorStore factors,
-      TwoFactorSecrets secrets,
-      TwoFactorChallengeRepository challenges,
-      TwoFactorPolicies policies,
-      ObjectProvider<AuthenticationManager> passwords,
-      ObjectProvider<SessionManagementService> sessions,
-      TwoFactorMail mail,
+      TwoFactorStore twoFactorStore,
+      TwoFactorSecrets twoFactorSecrets,
+      TwoFactorChallengeRepository twoFactorChallengeRepository,
+      TwoFactorPolicies twoFactorPolicies,
+      ObjectProvider<AuthenticationManager> passwordAuthenticationManagerProvider,
+      ObjectProvider<SessionManagementService> sessionManagementServiceProvider,
+      TwoFactorMail twoFactorMail,
       PlatformTransactionManager transactions) {
     this(
         twoFactorAuthorization,
-        factors,
-        secrets,
-        challenges,
-        policies,
-        passwords,
-        sessions,
-        mail,
+        twoFactorStore,
+        twoFactorSecrets,
+        twoFactorChallengeRepository,
+        twoFactorPolicies,
+        passwordAuthenticationManagerProvider,
+        sessionManagementServiceProvider,
+        twoFactorMail,
         transactions,
         Clock.systemUTC());
   }
 
   TwoFactorEnrollment(
       TwoFactorAuthorization twoFactorAuthorization,
-      TwoFactorStore factors,
-      TwoFactorSecrets secrets,
-      TwoFactorChallengeRepository challenges,
-      TwoFactorPolicies policies,
-      ObjectProvider<AuthenticationManager> passwords,
-      ObjectProvider<SessionManagementService> sessions,
-      TwoFactorMail mail,
+      TwoFactorStore twoFactorStore,
+      TwoFactorSecrets twoFactorSecrets,
+      TwoFactorChallengeRepository twoFactorChallengeRepository,
+      TwoFactorPolicies twoFactorPolicies,
+      ObjectProvider<AuthenticationManager> passwordAuthenticationManagerProvider,
+      ObjectProvider<SessionManagementService> sessionManagementServiceProvider,
+      TwoFactorMail twoFactorMail,
       PlatformTransactionManager transactions,
       Clock clock) {
     this.twoFactorAuthorization = twoFactorAuthorization;
-    this.factors = factors;
-    this.secrets = secrets;
-    this.challenges = challenges;
-    this.policies = policies;
-    this.passwords = passwords;
-    this.sessions = sessions;
-    this.mail = mail;
+    this.twoFactorStore = twoFactorStore;
+    this.twoFactorSecrets = twoFactorSecrets;
+    this.twoFactorChallengeRepository = twoFactorChallengeRepository;
+    this.twoFactorPolicies = twoFactorPolicies;
+    this.passwordAuthenticationManagerProvider = passwordAuthenticationManagerProvider;
+    this.sessionManagementServiceProvider = sessionManagementServiceProvider;
+    this.twoFactorMail = twoFactorMail;
     this.clock = clock;
-    transaction = new TransactionTemplate(transactions);
+    transactionTemplate = new TransactionTemplate(transactions);
   }
 
   public boolean available() {
-    return secrets.available();
+    return twoFactorSecrets.available();
   }
 
   /** Ein Ersatzcode bereitet nur den Wechsel vor. Verbraucht wird er atomar beim Abschluss. */
@@ -114,23 +114,23 @@ public class TwoFactorEnrollment {
     TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     String digest = TwoFactorSecrets.recoveryDigest(owner.id(), code);
     Pending pending =
-        factors.locked(
+        twoFactorStore.locked(
             owner.id(),
             owner.accessVersion(),
             account -> {
-              if (!factors.checkAdditionalProof(
-                  account, factors.hasUnusedRecoveryCode(account, digest))) {
+              if (!twoFactorStore.checkAdditionalProof(
+                  account, twoFactorStore.hasUnusedRecoveryCode(account, digest))) {
                 return null;
               }
               TwoFactorChallengeEntity challenge = create(request, account, Kind.ENROLLMENT);
               challenge.setSetupProof(SetupProof.RECOVERY_CODE);
               challenge.setVerificationDigest(digest);
               prepareSecret(challenge);
-              challenges.saveAndFlush(challenge);
+              twoFactorChallengeRepository.saveAndFlush(challenge);
               return new Pending(challenge.getId(), challenge.getKind(), challenge.getSetupProof());
             });
     if (pending == null) {
-      throw factors.invalidConfirmation(owner.id());
+      throw twoFactorStore.invalidConfirmation(owner.id());
     }
     twoFactorAuthorization.clearSessionProof(request);
     return pending;
@@ -144,7 +144,7 @@ public class TwoFactorEnrollment {
     }
     // Ein echter TOTP-/Ersatzcode ist auch bei abgeschalteter Rollenregel notwendig.
     twoFactorAuthorization.authorizeFactorGrant(request, TwoFactorAction.MANAGE_FACTOR, true);
-    return factors.locked(
+    return twoFactorStore.locked(
         owner.id(),
         owner.accessVersion(),
         account -> {
@@ -154,14 +154,14 @@ public class TwoFactorEnrollment {
           TwoFactorChallengeEntity challenge = create(request, account, Kind.ENROLLMENT);
           challenge.setSetupProof(SetupProof.FACTOR);
           prepareSecret(challenge);
-          challenges.saveAndFlush(challenge);
+          twoFactorChallengeRepository.saveAndFlush(challenge);
           return new Pending(challenge.getId(), challenge.getKind(), challenge.getSetupProof());
         });
   }
 
   public Pending beginPassword(HttpServletRequest request, String password) {
     TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
-    passwords
+    passwordAuthenticationManagerProvider
         .getObject()
         .authenticate(UsernamePasswordAuthenticationToken.unauthenticated(owner.email(), password));
     TwoFactorAuthorization.Owner current = twoFactorAuthorization.owner(request);
@@ -221,7 +221,7 @@ public class TwoFactorEnrollment {
         || !owner.verifiedContact()) {
       throw new AccessDeniedException("Independent enrollment confirmation required");
     }
-    return factors.locked(
+    return twoFactorStore.locked(
         owner.id(),
         owner.accessVersion(),
         account -> {
@@ -232,16 +232,20 @@ public class TwoFactorEnrollment {
               || account.getUser().isVerificationPending()) {
             throw new AccessDeniedException("Google email enrollment is not available");
           }
-          if (challenges.emailRequests(owner.id(), clock.instant().minusSeconds(60)) > 0
-              || challenges.emailRequests(owner.id(), clock.instant().minusSeconds(900)) >= 5) {
+          if (twoFactorChallengeRepository.emailRequests(
+                      owner.id(), clock.instant().minusSeconds(60))
+                  > 0
+              || twoFactorChallengeRepository.emailRequests(
+                      owner.id(), clock.instant().minusSeconds(900))
+                  >= 5) {
             throw new AccessDeniedException("Enrollment email requested too often");
           }
           TwoFactorChallengeEntity challenge = create(request, account, Kind.GOOGLE_EMAIL);
-          String code = String.format(Locale.ROOT, "%08d", random.nextInt(100_000_000));
+          String code = String.format(Locale.ROOT, "%08d", secureRandom.nextInt(100_000_000));
           challenge.setContactAddress(owner.email());
           challenge.setVerificationDigest(emailDigest(challenge, code));
-          challenges.saveAndFlush(challenge);
-          mail.setupCode(account.getUser(), code);
+          twoFactorChallengeRepository.saveAndFlush(challenge);
+          twoFactorMail.setupCode(account.getUser(), code);
           return new Pending(challenge.getId(), challenge.getKind(), challenge.getSetupProof());
         });
   }
@@ -256,10 +260,10 @@ public class TwoFactorEnrollment {
       TwoFactorAuthorization.Owner owner,
       SetupProof proof,
       boolean passwordLogin) {
-    if (!secrets.available()) {
+    if (!twoFactorSecrets.available()) {
       throw new IllegalStateException("TOTP encryption key is not configured");
     }
-    return factors.locked(
+    return twoFactorStore.locked(
         owner.id(),
         owner.accessVersion(),
         account -> {
@@ -276,7 +280,7 @@ public class TwoFactorEnrollment {
           TwoFactorChallengeEntity challenge = create(request, account, Kind.ENROLLMENT);
           challenge.setSetupProof(proof);
           prepareSecret(challenge);
-          challenges.saveAndFlush(challenge);
+          twoFactorChallengeRepository.saveAndFlush(challenge);
           return new Pending(challenge.getId(), challenge.getKind(), challenge.getSetupProof());
         });
   }
@@ -284,7 +288,7 @@ public class TwoFactorEnrollment {
   public Pending confirmEmail(HttpServletRequest request, UUID id, String code) {
     TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     Pending result =
-        factors.locked(
+        twoFactorStore.locked(
             owner.id(),
             owner.accessVersion(),
             account -> {
@@ -302,23 +306,23 @@ public class TwoFactorEnrollment {
                       && MessageDigest.isEqual(
                           challenge.getVerificationDigest().getBytes(StandardCharsets.US_ASCII),
                           emailDigest(challenge, code).getBytes(StandardCharsets.US_ASCII));
-              if (!factors.checkAdditionalProof(account, valid)) {
+              if (!twoFactorStore.checkAdditionalProof(account, valid)) {
                 challenge.setAttempts(challenge.getAttempts() + 1);
                 if (challenge.getAttempts() >= 5) {
                   challenge.setConsumed(true);
                 }
-                challenges.saveAndFlush(challenge);
+                twoFactorChallengeRepository.saveAndFlush(challenge);
                 return null;
               }
               challenge.setKind(Kind.ENROLLMENT);
               challenge.setSetupProof(SetupProof.GOOGLE_EMAIL);
               challenge.setVerificationDigest(null);
               prepareSecret(challenge);
-              challenges.saveAndFlush(challenge);
+              twoFactorChallengeRepository.saveAndFlush(challenge);
               return new Pending(challenge.getId(), challenge.getKind(), challenge.getSetupProof());
             });
     if (result == null) {
-      throw factors.invalidConfirmation(owner.id());
+      throw twoFactorStore.invalidConfirmation(owner.id());
     }
     return result;
   }
@@ -326,7 +330,7 @@ public class TwoFactorEnrollment {
   public UUID complete(HttpServletRequest request, UUID id, String firstCode) {
     TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     CompletedEnrollment completed =
-        factors.locked(
+        twoFactorStore.locked(
             owner.id(),
             owner.accessVersion(),
             account -> {
@@ -336,11 +340,12 @@ public class TwoFactorEnrollment {
                 throw new AccessDeniedException("Enrollment changed");
               }
               if (challenge.getSetupProof() == SetupProof.RECOVERY_CODE
-                  && !factors.hasUnusedRecoveryCode(account, challenge.getVerificationDigest())) {
+                  && !twoFactorStore.hasUnusedRecoveryCode(
+                      account, challenge.getVerificationDigest())) {
                 throw new AccessDeniedException("Recovery code was already used or changed");
               }
               byte[] secret =
-                  secrets.decrypt(
+                  twoFactorSecrets.decrypt(
                       owner.id(), ENROLLMENT_PREFIX + id, challenge.getEncryptedPayload());
               TwoFactorStore.Enrollment result;
               try {
@@ -350,7 +355,7 @@ public class TwoFactorEnrollment {
                   throw new AccessDeniedException("Existing factor requires its own proof");
                 }
                 result =
-                    factors.enrollLocked(
+                    twoFactorStore.enrollLocked(
                         account,
                         challenge.getFactorRevision(),
                         secret,
@@ -364,40 +369,41 @@ public class TwoFactorEnrollment {
               }
               challenge.setConsumed(true);
               challenge.setEncryptedPayload(null);
-              challenges.saveAndFlush(challenge);
+              twoFactorChallengeRepository.saveAndFlush(challenge);
               TwoFactorChallengeEntity codes =
                   recoveryOutput(request, account, result.recoveryCodes());
               codes.setSetupProof(challenge.getSetupProof());
-              mail.securityChange(account.getUser(), TwoFactorMail.Event.ENABLED);
+              twoFactorMail.securityChange(account.getUser(), TwoFactorMail.Event.ENABLED);
               AfterCommitLog.info(log, "Authenticator enrolled: accountId={}", owner.id());
               return new CompletedEnrollment(codes.getId(), result.revision());
             });
     if (completed == null) {
-      throw factors.invalidConfirmation(owner.id());
+      throw twoFactorStore.invalidConfirmation(owner.id());
     }
     // Ein konkurrierender Faktorwechsel nach dem Commit darf nicht nachträglich als von
     // dieser Einrichtung bestätigt gelten.
     twoFactorAuthorization.markSession(request, owner, completed.factorRevision());
-    sessions.getObject().revokeOthers(request);
+    sessionManagementServiceProvider.getObject().revokeOthers(request);
     return completed.outputId();
   }
 
   /** Ausschließlich für einen sitzungsgebundenen, nicht gecachten internen Dokument-Endpunkt. */
   public byte[] pendingSecret(HttpServletRequest request, UUID id) {
     TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
-    return transaction.execute(status -> {
+    return transactionTemplate.execute(status -> {
       TwoFactorChallengeEntity challenge = locked(request, owner, id, Kind.ENROLLMENT);
-      return secrets.decrypt(owner.id(), ENROLLMENT_PREFIX + id, challenge.getEncryptedPayload());
+      return twoFactorSecrets.decrypt(
+          owner.id(), ENROLLMENT_PREFIX + id, challenge.getEncryptedPayload());
     });
   }
 
   public List<String> recoveryOutput(HttpServletRequest request, UUID id) {
     TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     twoFactorAuthorization.requireSession(request);
-    return transaction.execute(status -> {
+    return transactionTemplate.execute(status -> {
       TwoFactorChallengeEntity challenge = locked(request, owner, id, Kind.RECOVERY_OUTPUT);
       byte[] plaintext =
-          secrets.decrypt(owner.id(), "recovery:" + id, challenge.getEncryptedPayload());
+          twoFactorSecrets.decrypt(owner.id(), "recovery:" + id, challenge.getEncryptedPayload());
       try {
         return List.of(new String(plaintext, StandardCharsets.UTF_8).split("\n"));
       } finally {
@@ -410,11 +416,11 @@ public class TwoFactorEnrollment {
       HttpServletRequest request, TwoFactorAccountEntity account, List<String> values) {
     TwoFactorChallengeEntity codes = create(request, account, Kind.RECOVERY_OUTPUT);
     codes.setEncryptedPayload(
-        secrets.encrypt(
+        twoFactorSecrets.encrypt(
             account.getUserId(),
             "recovery:" + codes.getId(),
             String.join("\n", values).getBytes(StandardCharsets.UTF_8)));
-    return challenges.saveAndFlush(codes);
+    return twoFactorChallengeRepository.saveAndFlush(codes);
   }
 
   /**
@@ -424,8 +430,8 @@ public class TwoFactorEnrollment {
   public void dismissOutput(HttpServletRequest request, UUID id) {
     TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     twoFactorAuthorization.requireSession(request);
-    transaction.executeWithoutResult(status -> {
-      TwoFactorChallengeEntity challenge = challenges.lock(id).orElse(null);
+    transactionTemplate.executeWithoutResult(status -> {
+      TwoFactorChallengeEntity challenge = twoFactorChallengeRepository.lock(id).orElse(null);
       if (challenge == null) {
         return;
       }
@@ -439,16 +445,16 @@ public class TwoFactorEnrollment {
       }
       challenge.setEncryptedPayload(null);
       challenge.setConsumed(true);
-      challenges.saveAndFlush(challenge);
+      twoFactorChallengeRepository.saveAndFlush(challenge);
     });
   }
 
   public Pending pending(HttpServletRequest request) {
     TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
-    return transaction.execute(status -> {
+    return transactionTemplate.execute(status -> {
       for (Kind kind : List.of(Kind.RECOVERY_OUTPUT, Kind.GOOGLE_EMAIL, Kind.ENROLLMENT)) {
         List<UUID> ids =
-            challenges.active(
+            twoFactorChallengeRepository.active(
                 owner.id(),
                 TwoFactorAuthorization.sessionDigest(request.getSession(false)),
                 kind,
@@ -470,7 +476,7 @@ public class TwoFactorEnrollment {
   /** Ein Abbruch verwirft nur vorbereitete Schritte, niemals bereits ausgegebene Codes. */
   public boolean cancelPreparation(HttpServletRequest request) {
     return Boolean.TRUE.equals(
-        transaction.execute(status -> {
+        transactionTemplate.execute(status -> {
           Pending current = pending(request);
           if (current == null) {
             return true;
@@ -483,7 +489,7 @@ public class TwoFactorEnrollment {
           draft.setConsumed(true);
           draft.setEncryptedPayload(null);
           draft.setVerificationDigest(null);
-          challenges.saveAndFlush(draft);
+          twoFactorChallengeRepository.saveAndFlush(draft);
           return true;
         }));
   }
@@ -491,13 +497,14 @@ public class TwoFactorEnrollment {
   private TwoFactorChallengeEntity create(
       HttpServletRequest request, TwoFactorAccountEntity account, Kind kind) {
     String session = TwoFactorAuthorization.sessionDigest(request.getSession(false));
-    challenges.invalidate(account.getUserId(), session, kind, TwoFactorAction.MANAGE_FACTOR);
+    twoFactorChallengeRepository.invalidate(
+        account.getUserId(), session, kind, TwoFactorAction.MANAGE_FACTOR);
     TwoFactorChallengeEntity challenge = new TwoFactorChallengeEntity();
     challenge.setUser(account.getUser());
     challenge.setAccessVersion(account.getUser().getAccessVersion());
     challenge.setSessionDigest(session);
     challenge.setFactorRevision(account.getRevision());
-    challenge.setPolicyRevision(policies.current().revision());
+    challenge.setPolicyRevision(twoFactorPolicies.current().revision());
     challenge.setAction(TwoFactorAction.MANAGE_FACTOR);
     challenge.setKind(kind);
     challenge.setCreatedAt(clock.instant());
@@ -510,7 +517,7 @@ public class TwoFactorEnrollment {
   private TwoFactorChallengeEntity locked(
       HttpServletRequest request, TwoFactorAuthorization.Owner owner, UUID id, Kind kind) {
     TwoFactorChallengeEntity challenge =
-        challenges
+        twoFactorChallengeRepository
             .lock(id)
             .orElseThrow(() -> new AccessDeniedException("Two-factor challenge unavailable"));
     if (challenge.isConsumed()
@@ -521,7 +528,7 @@ public class TwoFactorEnrollment {
             .getSessionDigest()
             .equals(TwoFactorAuthorization.sessionDigest(request.getSession(false)))
         || kind != Kind.RECOVERY_OUTPUT && !challenge.getExpiresAt().isAfter(clock.instant())
-        || challenge.getPolicyRevision() != policies.current().revision()
+        || challenge.getPolicyRevision() != twoFactorPolicies.current().revision()
         || !Objects.equals(
             challenge.getFactorRevision(), twoFactorAuthorization.state(owner).revision())) {
       throw new AccessDeniedException("Two-factor challenge expired or changed");
@@ -539,7 +546,7 @@ public class TwoFactorEnrollment {
     byte[] secret = Totp.newSecret();
     try {
       challenge.setEncryptedPayload(
-          secrets.encrypt(
+          twoFactorSecrets.encrypt(
               challenge.getUser().getId(), ENROLLMENT_PREFIX + challenge.getId(), secret));
     } finally {
       Arrays.fill(secret, (byte) 0);
@@ -547,7 +554,7 @@ public class TwoFactorEnrollment {
   }
 
   private String emailDigest(TwoFactorChallengeEntity challenge, String code) {
-    return secrets.emailVerifier(
+    return twoFactorSecrets.emailVerifier(
         challenge.getUser().getId(), challenge.getId(), challenge.getContactAddress(), code);
   }
 }

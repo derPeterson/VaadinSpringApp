@@ -109,17 +109,19 @@ class AdminUserActivityFilterTest {
   @ValueSource(strings = {"de", "en"})
   void languageChangesUpdateBothInputLabelsWithoutChangingTheCutoff(String language) {
     Locale locale = Locale.forLanguageTag(language);
-    MessageProperties texts = MessageProperties.forLocale(new CustomI18NProvider(), locale);
+    MessageProperties messageProperties =
+        MessageProperties.forLocale(new CustomI18NProvider(), locale);
     LocalDateTime cutoff = day.atTime(10, 15);
     field.setValue(cutoff);
     field.setLocale(locale);
-    field.refreshTexts(texts);
+    field.refreshTexts(messageProperties);
     assertEquals(cutoff, field.getValue());
     assertEquals(locale, date().getLocale());
     assertEquals(locale, time().getLocale());
-    assertEquals(texts.getAdminUsersActivityDate(), date().getAriaLabel().orElseThrow());
-    assertEquals(texts.getAdminUsersFilterActiveSince(), date().getLabel());
-    assertEquals(texts.getRegistrationBirthDatePlaceholder(), date().getPlaceholder());
+    assertEquals(
+        messageProperties.getAdminUsersActivityDate(), date().getAriaLabel().orElseThrow());
+    assertEquals(messageProperties.getAdminUsersFilterActiveSince(), date().getLabel());
+    assertEquals(messageProperties.getRegistrationBirthDatePlaceholder(), date().getPlaceholder());
     LocalTime placeholder =
         LocalTime.parse(
             time().getPlaceholder(),
@@ -131,7 +133,8 @@ class AdminUserActivityFilterTest {
             LocalDateTime.ofInstant(CLOCK.instant(), UserActivityTime.DISPLAY_ZONE).toLocalTime()));
     assertFalse(date().isAutoOpen());
     assertFalse(time().isAutoOpen());
-    assertEquals(texts.getAdminUsersActivityTimeOptional(), time().getAriaLabel().orElseThrow());
+    assertEquals(
+        messageProperties.getAdminUsersActivityTimeOptional(), time().getAriaLabel().orElseThrow());
   }
 
   @Test

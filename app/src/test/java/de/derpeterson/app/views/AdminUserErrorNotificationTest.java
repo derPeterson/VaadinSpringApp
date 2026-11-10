@@ -84,7 +84,7 @@ class AdminUserErrorNotificationTest {
   private SecurityService security;
   private RoleService roles;
   private final CustomI18NProvider provider = new CustomI18NProvider();
-  private final MessageProperties texts = new MessageProperties(provider);
+  private final MessageProperties messageProperties = new MessageProperties(provider);
   private ListAppender<ILoggingEvent> logs;
   private Logger logger;
 
@@ -113,13 +113,13 @@ class AdminUserErrorNotificationTest {
     when(users.canDeleteUser(any())).thenReturn(true);
     layout =
         new TrackedUserAppLayout(
-            texts,
+            messageProperties,
             security,
             users,
             new UserStatusBroadcaster(),
             mock(HttpServletRequest.class),
             mock(UserAvatarService.class)) {};
-    section = new AdminUserManagementSection(texts, users, roles, security);
+    section = new AdminUserManagementSection(messageProperties, users, roles, security);
     // Same section refresh path used by AdminView.onTrackedUserLanguageChanged.
     ComponentUtil.addListener(ui, LanguageChangeEvent.class, event -> section.refreshTexts());
     logger = (Logger) LoggerFactory.getLogger(AdminUserManagementSection.class);
@@ -177,15 +177,15 @@ class AdminUserErrorNotificationTest {
             .orElseThrow();
     assertFalse(picker.isAutoOpen());
     assertEquals(Locale.GERMAN, picker.getLocale());
-    assertEquals(texts.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
+    assertEquals(messageProperties.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
     LocalDate selected = picker.getValue();
     LanguageChangeEvent.fire(ui, Locale.ENGLISH);
     assertEquals(Locale.ENGLISH, picker.getLocale());
-    assertEquals(texts.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
+    assertEquals(messageProperties.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
     assertEquals(selected, picker.getValue());
     LanguageChangeEvent.fire(ui, Locale.GERMAN);
     assertEquals(Locale.GERMAN, picker.getLocale());
-    assertEquals(texts.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
+    assertEquals(messageProperties.getRegistrationBirthDatePlaceholder(), picker.getPlaceholder());
     assertEquals(selected, picker.getValue());
   }
 
@@ -224,31 +224,31 @@ class AdminUserErrorNotificationTest {
             .orElseThrow();
     assertEquals(
         create
-            ? texts.getAdminUsersPasswordHelperCreate()
-            : texts.getAdminUsersPasswordHelperEdit(),
+            ? messageProperties.getAdminUsersPasswordHelperCreate()
+            : messageProperties.getAdminUsersPasswordHelperEdit(),
         hint.getText());
     assertFalse(passwords.get(1).isEnabled());
-    assertTrue(hint.getText().contains(texts.getAdminUsersPasswordHelperCreate()));
+    assertTrue(hint.getText().contains(messageProperties.getAdminUsersPasswordHelperCreate()));
 
     passwords.getFirst().setValue("Password!");
-    assertEquals(texts.getAdminUsersPasswordHelperCreate(), hint.getText());
+    assertEquals(messageProperties.getAdminUsersPasswordHelperCreate(), hint.getText());
     assertTrue(passwords.get(1).isEnabled());
     LanguageChangeEvent.fire(ui, Locale.ENGLISH);
-    assertEquals(texts.getAdminUsersPasswordHelperCreate(), hint.getText());
+    assertEquals(messageProperties.getAdminUsersPasswordHelperCreate(), hint.getText());
 
     passwords.getFirst().clear();
     assertEquals(
         create
-            ? texts.getAdminUsersPasswordHelperCreate()
-            : texts.getAdminUsersPasswordHelperEdit(),
+            ? messageProperties.getAdminUsersPasswordHelperCreate()
+            : messageProperties.getAdminUsersPasswordHelperEdit(),
         hint.getText());
     assertFalse(passwords.get(1).isEnabled());
-    assertTrue(hint.getText().contains(texts.getAdminUsersPasswordHelperCreate()));
+    assertTrue(hint.getText().contains(messageProperties.getAdminUsersPasswordHelperCreate()));
     LanguageChangeEvent.fire(ui, Locale.GERMAN);
     assertEquals(
         create
-            ? texts.getAdminUsersPasswordHelperCreate()
-            : texts.getAdminUsersPasswordHelperEdit(),
+            ? messageProperties.getAdminUsersPasswordHelperCreate()
+            : messageProperties.getAdminUsersPasswordHelperEdit(),
         hint.getText());
   }
 
@@ -273,7 +273,9 @@ class AdminUserErrorNotificationTest {
           .forEach(field -> field.setValue("Password!"));
     }
     String label =
-        operation.equals("delete") ? texts.getPortalDeleteAction() : texts.getAdminUsersSave();
+        operation.equals("delete")
+            ? messageProperties.getPortalDeleteAction()
+            : messageProperties.getAdminUsersSave();
     descendants(dialog)
         .filter(Button.class::isInstance)
         .map(Button.class::cast)
@@ -285,21 +287,19 @@ class AdminUserErrorNotificationTest {
 
   static Stream<Arguments> failures() {
     return Stream.of(false, true)
-        .flatMap(
-            german ->
-                Stream.of("create", "edit", "delete")
-                    .flatMap(
-                        operation ->
-                            Stream.of(
-                                    "version",
-                                    "email",
-                                    "admin",
-                                    "argument",
-                                    "unknown-argument",
-                                    "unknown",
-                                    "integrity",
-                                    "null-message")
-                                .map(kind -> Arguments.of(german, operation, kind))));
+        .flatMap(german ->
+            Stream.of("create", "edit", "delete")
+                .flatMap(operation ->
+                    Stream.of(
+                            "version",
+                            "email",
+                            "admin",
+                            "argument",
+                            "unknown-argument",
+                            "unknown",
+                            "integrity",
+                            "null-message")
+                        .map(kind -> Arguments.of(german, operation, kind))));
   }
 
   private RuntimeException failure(String kind) {
@@ -346,57 +346,56 @@ class AdminUserErrorNotificationTest {
     submit(operation, user(operation.equals("create")));
     String expected =
         switch (kind) {
-          case "version" -> texts.getBaseUserUpdateConflict();
+          case "version" -> messageProperties.getBaseUserUpdateConflict();
           case "email" ->
               operation.equals("delete")
-                  ? texts.getAdminUsersErrorDeleteFailed()
-                  : texts.getBaseValidationEmailExistsMessage();
+                  ? messageProperties.getAdminUsersErrorDeleteFailed()
+                  : messageProperties.getBaseValidationEmailExistsMessage();
           case "admin" ->
               operation.equals("delete")
-                  ? texts.getAdminUsersErrorDeleteLastSuperadmin()
-                  : texts.getAdminUsersErrorLastActiveSuperadmin();
+                  ? messageProperties.getAdminUsersErrorDeleteLastSuperadmin()
+                  : messageProperties.getAdminUsersErrorLastActiveSuperadmin();
           case "argument" ->
               operation.equals("delete")
-                  ? texts.getAdminUsersErrorDeleteFailed()
-                  : texts.getAdminUsersValidationCheckFields();
+                  ? messageProperties.getAdminUsersErrorDeleteFailed()
+                  : messageProperties.getAdminUsersValidationCheckFields();
           default ->
               operation.equals("delete")
-                  ? texts.getAdminUsersErrorDeleteFailed()
-                  : texts.getAdminUsersErrorSaveFailed();
+                  ? messageProperties.getAdminUsersErrorDeleteFailed()
+                  : messageProperties.getAdminUsersErrorSaveFailed();
         };
     Object notification =
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
     assertNotification(expected);
     assertTrue(
         logs.list.stream()
-            .anyMatch(
-                event ->
-                    event.getThrowableProxy() != null
-                        && Objects.equals(
-                            event.getThrowableProxy().getMessage(), failure.getClass().getName())));
+            .anyMatch(event ->
+                event.getThrowableProxy() != null
+                    && Objects.equals(
+                        event.getThrowableProxy().getMessage(), failure.getClass().getName())));
     LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
     assertSame(
         notification,
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification"));
     String translated =
         switch (kind) {
-          case "version" -> texts.getBaseUserUpdateConflict();
+          case "version" -> messageProperties.getBaseUserUpdateConflict();
           case "email" ->
               operation.equals("delete")
-                  ? texts.getAdminUsersErrorDeleteFailed()
-                  : texts.getBaseValidationEmailExistsMessage();
+                  ? messageProperties.getAdminUsersErrorDeleteFailed()
+                  : messageProperties.getBaseValidationEmailExistsMessage();
           case "admin" ->
               operation.equals("delete")
-                  ? texts.getAdminUsersErrorDeleteLastSuperadmin()
-                  : texts.getAdminUsersErrorLastActiveSuperadmin();
+                  ? messageProperties.getAdminUsersErrorDeleteLastSuperadmin()
+                  : messageProperties.getAdminUsersErrorLastActiveSuperadmin();
           case "argument" ->
               operation.equals("delete")
-                  ? texts.getAdminUsersErrorDeleteFailed()
-                  : texts.getAdminUsersValidationCheckFields();
+                  ? messageProperties.getAdminUsersErrorDeleteFailed()
+                  : messageProperties.getAdminUsersValidationCheckFields();
           default ->
               operation.equals("delete")
-                  ? texts.getAdminUsersErrorDeleteFailed()
-                  : texts.getAdminUsersErrorSaveFailed();
+                  ? messageProperties.getAdminUsersErrorDeleteFailed()
+                  : messageProperties.getAdminUsersErrorSaveFailed();
         };
     assertNotEquals(expected, translated);
     assertNotification(translated);
@@ -412,7 +411,7 @@ class AdminUserErrorNotificationTest {
   private void assertNotification(String expected) {
     NotificationHelper helper = NotificationHelper.getInstance();
     assertEquals(
-        texts.getBaseFailedTitle(),
+        messageProperties.getBaseFailedTitle(),
         ((Span) ReflectionTestUtils.getField(helper, "titleText")).getText());
     String actual =
         ((Html) ReflectionTestUtils.getField(helper, "messageText"))
@@ -437,12 +436,12 @@ class AdminUserErrorNotificationTest {
 
     verify(users).findAllUsers();
     Span notificationTitle = (Span) ReflectionTestUtils.getField(helper, "titleText");
-    assertEquals(texts.getAdminUsersRefreshSuccess(), notificationTitle.getText());
+    assertEquals(messageProperties.getAdminUsersRefreshSuccess(), notificationTitle.getText());
     assertTrue(notificationTitle.hasClassName("text-success"));
     Object notification = ReflectionTestUtils.getField(helper, "currentNotification");
     LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
     assertSame(notification, ReflectionTestUtils.getField(helper, "currentNotification"));
-    assertEquals(texts.getAdminUsersRefreshSuccess(), notificationTitle.getText());
+    assertEquals(messageProperties.getAdminUsersRefreshSuccess(), notificationTitle.getText());
   }
 
   @ParameterizedTest
@@ -457,34 +456,31 @@ class AdminUserErrorNotificationTest {
     Button refresh = (Button) ReflectionTestUtils.getField(section, "refreshButton");
     refresh.click();
 
-    assertNotification(texts.getAdminUsersRefreshFailed());
+    assertNotification(messageProperties.getAdminUsersRefreshFailed());
     assertSame(previousUsers, ReflectionTestUtils.getField(section, "users"));
     assertTrue(
         logs.list.stream()
-            .anyMatch(
-                event ->
-                    event.getThrowableProxy() != null
-                        && event
-                            .getThrowableProxy()
-                            .getMessage()
-                            .equals(failure.getClass().getName())));
+            .anyMatch(event ->
+                event.getThrowableProxy() != null
+                    && event
+                        .getThrowableProxy()
+                        .getMessage()
+                        .equals(failure.getClass().getName())));
     LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
-    assertNotification(texts.getAdminUsersRefreshFailed());
+    assertNotification(messageProperties.getAdminUsersRefreshFailed());
 
     doReturn(List.of()).when(users).findAllUsers();
     refresh.click();
     Span notificationTitle =
         (Span) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "titleText");
-    assertEquals(texts.getAdminUsersRefreshSuccess(), notificationTitle.getText());
+    assertEquals(messageProperties.getAdminUsersRefreshSuccess(), notificationTitle.getText());
   }
 
   static Stream<Arguments> guards() {
     return Stream.of(false, true)
-        .flatMap(
-            german ->
-                Stream.of(
-                        "own-delete", "last-delete", "role", "disable", "remove-admin", "last-save")
-                    .map(guard -> Arguments.of(german, guard)));
+        .flatMap(german ->
+            Stream.of("own-delete", "last-delete", "role", "disable", "remove-admin", "last-save")
+                .map(guard -> Arguments.of(german, guard)));
   }
 
   @ParameterizedTest
@@ -526,12 +522,12 @@ class AdminUserErrorNotificationTest {
 
   private String guardText(String guard) {
     return switch (guard) {
-      case "own-delete" -> texts.getAdminUsersErrorDeleteOwnUser();
-      case "last-delete" -> texts.getAdminUsersErrorDeleteLastSuperadmin();
-      case "role" -> texts.getAdminUsersErrorRoleMissing();
-      case "disable" -> texts.getAdminUsersErrorDisableOwnUser();
-      case "remove-admin" -> texts.getAdminUsersErrorRemoveOwnAdminRole();
-      default -> texts.getAdminUsersErrorLastActiveSuperadmin();
+      case "own-delete" -> messageProperties.getAdminUsersErrorDeleteOwnUser();
+      case "last-delete" -> messageProperties.getAdminUsersErrorDeleteLastSuperadmin();
+      case "role" -> messageProperties.getAdminUsersErrorRoleMissing();
+      case "disable" -> messageProperties.getAdminUsersErrorDisableOwnUser();
+      case "remove-admin" -> messageProperties.getAdminUsersErrorRemoveOwnAdminRole();
+      default -> messageProperties.getAdminUsersErrorLastActiveSuperadmin();
     };
   }
 
@@ -546,15 +542,16 @@ class AdminUserErrorNotificationTest {
         descendants(dialog)
             .filter(TextField.class::isInstance)
             .map(TextField.class::cast)
-            .filter(field -> field.getLabel().equals(texts.getAdminUsersFieldFirstName()))
+            .filter(
+                field -> field.getLabel().equals(messageProperties.getAdminUsersFieldFirstName()))
             .findFirst()
             .orElseThrow();
     firstName.setValue(" ");
     assertTrue(firstName.isInvalid());
-    assertEquals(texts.getBaseValidationRequiredMessage(), firstName.getErrorMessage());
+    assertEquals(messageProperties.getBaseValidationRequiredMessage(), firstName.getErrorMessage());
     LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
     assertTrue(firstName.isInvalid());
-    assertEquals(texts.getBaseValidationRequiredMessage(), firstName.getErrorMessage());
+    assertEquals(messageProperties.getBaseValidationRequiredMessage(), firstName.getErrorMessage());
     verify(users, never()).updateAdminUser(any(), any(), any());
     dialog.close();
     assertTrue(
@@ -581,30 +578,31 @@ class AdminUserErrorNotificationTest {
       submit("edit", user(false));
     }
     assertNotification(
-        deleting ? texts.getAdminUsersErrorDeleteFailed() : texts.getAdminUsersErrorSaveFailed());
+        deleting
+            ? messageProperties.getAdminUsersErrorDeleteFailed()
+            : messageProperties.getAdminUsersErrorSaveFailed());
     LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
     assertNotification(
-        deleting ? texts.getAdminUsersErrorDeleteFailed() : texts.getAdminUsersErrorSaveFailed());
+        deleting
+            ? messageProperties.getAdminUsersErrorDeleteFailed()
+            : messageProperties.getAdminUsersErrorSaveFailed());
     assertTrue(
         logs.list.stream()
-            .anyMatch(
-                event ->
-                    event.getThrowableProxy() != null
-                        && event
-                            .getThrowableProxy()
-                            .getMessage()
-                            .equals(failure.getClass().getName())));
+            .anyMatch(event ->
+                event.getThrowableProxy() != null
+                    && event
+                        .getThrowableProxy()
+                        .getMessage()
+                        .equals(failure.getClass().getName())));
   }
 
   static Stream<Arguments> emailChecks() {
     return Stream.of(false, true)
-        .flatMap(
-            german ->
-                Stream.of(false, true)
-                    .flatMap(
-                        create ->
-                            Stream.of("duplicate", "connection", "integrity", "unexpected")
-                                .map(kind -> Arguments.of(german, create, kind))));
+        .flatMap(german ->
+            Stream.of(false, true)
+                .flatMap(create ->
+                    Stream.of("duplicate", "connection", "integrity", "unexpected")
+                        .map(kind -> Arguments.of(german, create, kind))));
   }
 
   @ParameterizedTest
@@ -630,7 +628,7 @@ class AdminUserErrorNotificationTest {
         descendants(dialog)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
-            .filter(button -> button.getText().equals(texts.getAdminUsersSave()))
+            .filter(button -> button.getText().equals(messageProperties.getAdminUsersSave()))
             .findFirst()
             .orElseThrow();
     boolean technical = !kind.equals("duplicate");
@@ -650,8 +648,8 @@ class AdminUserErrorNotificationTest {
     assertTrue(email.isInvalid());
     assertEquals(
         technical
-            ? texts.getAdminUsersErrorSaveFailed()
-            : texts.getBaseValidationEmailExistsMessage(),
+            ? messageProperties.getAdminUsersErrorSaveFailed()
+            : messageProperties.getBaseValidationEmailExistsMessage(),
         email.getErrorMessage());
     assertFalse(email.getErrorMessage().contains("secret"));
     assertFalse(save.isEnabled());
@@ -662,8 +660,8 @@ class AdminUserErrorNotificationTest {
     assertFalse(save.isEnabled());
     assertNotification(
         technical
-            ? texts.getAdminUsersErrorSaveFailed()
-            : texts.getAdminUsersValidationCheckFields());
+            ? messageProperties.getAdminUsersErrorSaveFailed()
+            : messageProperties.getAdminUsersValidationCheckFields());
     Object notification =
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
     LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
@@ -672,12 +670,12 @@ class AdminUserErrorNotificationTest {
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification"));
     assertNotification(
         technical
-            ? texts.getAdminUsersErrorSaveFailed()
-            : texts.getAdminUsersValidationCheckFields());
+            ? messageProperties.getAdminUsersErrorSaveFailed()
+            : messageProperties.getAdminUsersValidationCheckFields());
     assertEquals(
         technical
-            ? texts.getAdminUsersErrorSaveFailed()
-            : texts.getBaseValidationEmailExistsMessage(),
+            ? messageProperties.getAdminUsersErrorSaveFailed()
+            : messageProperties.getBaseValidationEmailExistsMessage(),
         email.getErrorMessage());
     assertTrue(email.isInvalid());
     assertFalse(save.isEnabled());
@@ -687,13 +685,12 @@ class AdminUserErrorNotificationTest {
     if (technical) {
       assertTrue(
           logs.list.stream()
-              .anyMatch(
-                  event ->
-                      event.getThrowableProxy() != null
-                          && event
-                              .getThrowableProxy()
-                              .getMessage()
-                              .equals(failure.getClass().getName())));
+              .anyMatch(event ->
+                  event.getThrowableProxy() != null
+                      && event
+                          .getThrowableProxy()
+                          .getMessage()
+                          .equals(failure.getClass().getName())));
     } else {
       assertTrue(logs.list.isEmpty());
     }
@@ -722,7 +719,7 @@ class AdminUserErrorNotificationTest {
         descendants(dialog)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
-            .filter(button -> button.getText().equals(texts.getAdminUsersSave()))
+            .filter(button -> button.getText().equals(messageProperties.getAdminUsersSave()))
             .findFirst()
             .orElseThrow();
     when(users.emailExistsForOtherUser(anyString(), any()))
@@ -768,7 +765,7 @@ class AdminUserErrorNotificationTest {
         descendants(dialog)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
-            .filter(button -> button.getText().equals(texts.getAdminUsersSave()))
+            .filter(button -> button.getText().equals(messageProperties.getAdminUsersSave()))
             .findFirst()
             .orElseThrow();
     assertTrue(save.isEnabled());
@@ -805,12 +802,12 @@ class AdminUserErrorNotificationTest {
         descendants(dialog)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
-            .filter(button -> button.getText().equals(texts.getAdminUsersSave()))
+            .filter(button -> button.getText().equals(messageProperties.getAdminUsersSave()))
             .findFirst()
             .orElseThrow();
     save.setEnabled(true);
     save.click();
-    assertNotification(texts.getAdminUsersValidationCheckFields());
+    assertNotification(messageProperties.getAdminUsersValidationCheckFields());
     verify(users, never()).updateAdminUser(any(), any(), any());
   }
 
@@ -831,18 +828,18 @@ class AdminUserErrorNotificationTest {
         descendants(dialog)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
-            .filter(button -> button.getText().equals(texts.getAdminUsersSave()))
+            .filter(button -> button.getText().equals(messageProperties.getAdminUsersSave()))
             .findFirst()
             .orElseThrow();
     assertTrue(save.isEnabled());
     when(users.emailExistsForOtherUser(anyString(), any()))
         .thenThrow(new DataAccessResourceFailureException("secret SQL on save"));
     save.click();
-    assertNotification(texts.getAdminUsersErrorSaveFailed());
+    assertNotification(messageProperties.getAdminUsersErrorSaveFailed());
     assertFalse(save.isEnabled());
     assertTrue(dialog.isOpened());
     LanguageChangeEvent.fire(ui, german ? Locale.ENGLISH : Locale.GERMAN);
-    assertNotification(texts.getAdminUsersErrorSaveFailed());
+    assertNotification(messageProperties.getAdminUsersErrorSaveFailed());
     EmailField email =
         descendants(dialog)
             .filter(EmailField.class::isInstance)
@@ -850,7 +847,7 @@ class AdminUserErrorNotificationTest {
             .findFirst()
             .orElseThrow();
     assertTrue(email.isInvalid());
-    assertEquals(texts.getAdminUsersErrorSaveFailed(), email.getErrorMessage());
+    assertEquals(messageProperties.getAdminUsersErrorSaveFailed(), email.getErrorMessage());
     verify(users, never()).updatePassword(any(), any());
     verify(users, never()).createAdminUser(any(), any());
     verify(users, never()).updateAdminUser(any(), any(), any());

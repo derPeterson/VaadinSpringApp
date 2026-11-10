@@ -54,13 +54,12 @@ class ConfigurationCatalogTest {
       for (ProviderField field : ProviderField.values()) {
         assertTrue(
             entries.stream()
-                .anyMatch(
-                    entry ->
-                        entry.storage() == Storage.SIGN_IN_PROVIDER
-                            && entry.key().equals(field.property(provider))
-                            && entry
-                                .environmentVariable()
-                                .equals(field.environmentVariable(provider))));
+                .anyMatch(entry ->
+                    entry.storage() == Storage.SIGN_IN_PROVIDER
+                        && entry.key().equals(field.property(provider))
+                        && entry
+                            .environmentVariable()
+                            .equals(field.environmentVariable(provider))));
       }
     }
     assertThrows(UnsupportedOperationException.class, entries::clear);
@@ -88,10 +87,8 @@ class ConfigurationCatalogTest {
     }
     Entry encryption =
         ConfigurationCatalog.entries().stream()
-            .filter(
-                entry ->
-                    entry.environmentVariable() != null
-                        && entry.environmentVariable().equals(variable))
+            .filter(entry ->
+                entry.environmentVariable() != null && entry.environmentVariable().equals(variable))
             .findFirst()
             .orElseThrow();
     assertTrue(encryption.secret());
@@ -105,11 +102,11 @@ class ConfigurationCatalogTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void labelsAndHelpUseTheExistingLanguageCatalog(String language) {
-    MessageProperties texts =
+    MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     for (Entry entry : ConfigurationCatalog.entries()) {
-      assertFalse(entry.label().apply(texts).isBlank(), entry.key());
-      assertFalse(entry.description().apply(texts).isBlank(), entry.key());
+      assertFalse(entry.label().apply(messageProperties).isBlank(), entry.key());
+      assertFalse(entry.description().apply(messageProperties).isBlank(), entry.key());
     }
   }
 }

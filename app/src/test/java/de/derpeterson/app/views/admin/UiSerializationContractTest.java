@@ -180,10 +180,11 @@ class UiSerializationContractTest {
     pagination.showPage(2, 100, 10);
     Paging restored = copy(new Paging(pagination, probe));
     restored.component().refreshTexts();
-    Button last = (Button) ReflectionTestUtils.getField(restored.component(), "last");
+    Button last = (Button) ReflectionTestUtils.getField(restored.component(), "lastPageButton");
     last.click();
     assertEquals(9, restored.probe().page);
-    ComboBox<?> size = (ComboBox<?>) ReflectionTestUtils.getField(restored.component(), "pageSize");
+    ComboBox<?> size =
+        (ComboBox<?>) ReflectionTestUtils.getField(restored.component(), "pageSizeSelector");
     setPageSize(size);
     assertEquals(20, restored.probe().size);
     assertEquals(messages.getAdminUsersPaginationLastPage(), last.getAriaLabel().orElseThrow());

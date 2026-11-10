@@ -40,8 +40,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 class AdminTokenDurationValidationTest {
   private final AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
   private AdminConfigurationSection section;
-  private ConfigService config;
-  private MessageProperties messages;
+  private ConfigService configService;
+  private MessageProperties messageProperties;
   private UI ui;
   private VaadinSession session;
 
@@ -53,11 +53,11 @@ class AdminTokenDurationValidationTest {
     when(session.getLocale()).thenAnswer(ignored -> locale.get());
     when(session.hasLock()).thenReturn(true);
     VaadinSession.setCurrent(session);
-    config = mock(ConfigService.class);
-    when(config.getString(any(ConfigEntry.class)))
+    configService = mock(ConfigService.class);
+    when(configService.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-    messages = new MessageProperties(new CustomI18NProvider());
-    section = new AdminConfigurationSection(messages, config, () -> {});
+    messageProperties = new MessageProperties(new CustomI18NProvider());
+    section = new AdminConfigurationSection(messageProperties, configService, () -> {});
     section.showGroup(AdminConfigGroup.TOKENS);
   }
 
@@ -77,10 +77,9 @@ class AdminTokenDurationValidationTest {
             ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION,
             ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION,
             ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)
-        .flatMap(
-            entry ->
-                Stream.of(Locale.GERMAN, Locale.ENGLISH)
-                    .map(language -> Arguments.of(entry, language)));
+        .flatMap(entry ->
+            Stream.of(Locale.GERMAN, Locale.ENGLISH)
+                .map(language -> Arguments.of(entry, language)));
   }
 
   @ParameterizedTest
@@ -100,26 +99,26 @@ class AdminTokenDurationValidationTest {
       } else {
         input.setStoredValue(value);
       }
-      clearInvocations(config);
+      clearInvocations(configService);
       saveButton().click();
       assertTrue(input.isInvalid(), entry + " / " + value);
       assertNotNull(amount(entry).getErrorMessage());
       if (!value.isBlank()) {
         assertEquals(
-            messages.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
+            messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
             amount(entry).getErrorMessage());
       } else {
         assertEquals(
-            messages.getAdminConfigValidationTokenDuration(minimum.toMinutes()),
+            messageProperties.getAdminConfigValidationTokenDuration(minimum.toMinutes()),
             amount(entry).getErrorMessage());
       }
-      verify(config, never()).set(any(ConfigEntry.class), anyString());
+      verify(configService, never()).set(any(ConfigEntry.class), anyString());
     }
     // Existing invalid field errors must follow a later language switch.
     locale.set(language.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
     section.refreshTexts();
     assertEquals(
-        messages.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
+        messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
         amount(entry).getErrorMessage());
   }
 
@@ -130,20 +129,23 @@ class AdminTokenDurationValidationTest {
     section.refreshTexts();
     Duration minimum = entry.getMinimumTokenDuration();
     field(entry).setStoredValue(minimum.toMinutes() + "m");
-    clearInvocations(config);
+    clearInvocations(configService);
     saveButton().click();
-    verify(config).set(entry, minimum.toString());
+    verify(configService).set(entry, minimum.toString());
     assertFalse(field(entry).isInvalid());
     ConfigInfoButton info =
         (ConfigInfoButton)
             ((Map<?, ?>) ReflectionTestUtils.getField(section, "configInfoButtons")).get(entry);
-    assertTrue(info.getTooltip().getText().contains(messages.getAdminConfigDurationNumberRule()));
+    assertTrue(
+        info.getTooltip().getText().contains(messageProperties.getAdminConfigDurationNumberRule()));
     assertTrue(
         info.getTooltip()
             .getText()
-            .contains(messages.getAdminConfigValidationDurationMinimum(minimum.toMinutes())));
-    assertTrue(info.getTooltip().getText().contains(messages.getAdminConfigEntryTooltip(entry)));
-    assertFalse(messages.getAdminConfigEntryTooltip(entry).contains("{0}"));
+            .contains(
+                messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes())));
+    assertTrue(
+        info.getTooltip().getText().contains(messageProperties.getAdminConfigEntryTooltip(entry)));
+    assertFalse(messageProperties.getAdminConfigEntryTooltip(entry).contains("{0}"));
   }
 
   @ParameterizedTest
@@ -155,18 +157,19 @@ class AdminTokenDurationValidationTest {
     ConfigEntry entry = ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION;
     for (String invalid : new String[] {"0s", "PT0S", "-1s"}) {
       field(entry).setStoredValue(invalid);
-      clearInvocations(config);
+      clearInvocations(configService);
       saveButton().click();
       assertTrue(field(entry).isInvalid());
       assertEquals(
-          messages.getAdminConfigValidationPositiveDuration(), amount(entry).getErrorMessage());
-      verify(config, never()).set(any(ConfigEntry.class), anyString());
+          messageProperties.getAdminConfigValidationPositiveDuration(),
+          amount(entry).getErrorMessage());
+      verify(configService, never()).set(any(ConfigEntry.class), anyString());
     }
     field(entry).setStoredValue("1s");
-    clearInvocations(config);
+    clearInvocations(configService);
     saveButton().click();
     assertFalse(field(entry).isInvalid());
-    verify(config).set(entry, "PT1S");
+    verify(configService).set(entry, "PT1S");
   }
 
   private AdminDurationField field(ConfigEntry entry) {
@@ -175,7 +178,7 @@ class AdminTokenDurationValidationTest {
   }
 
   private BigDecimalField amount(ConfigEntry entry) {
-    return (BigDecimalField) ReflectionTestUtils.getField(field(entry), "preciseAmount");
+    return (BigDecimalField) ReflectionTestUtils.getField(field(entry), "preciseDurationField");
   }
 
   private Button saveButton() {

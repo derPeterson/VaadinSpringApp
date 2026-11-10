@@ -146,24 +146,23 @@ class UserNotificationServicePersistenceTest {
     reset(config, twoFactor);
     when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("180");
     when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS)).thenReturn("365");
-    tx.executeWithoutResult(
-        s -> {
-          recipients.deleteAll();
-          notifications.deleteAll();
-          users.deleteAll();
-          users.flush();
-          em.createQuery("delete from RoleEntity").executeUpdate();
-          for (RoleType role : RoleType.values()) {
-            em.persist(RoleEntity.builder().name(role).build());
-          }
-          sender = create("sender", RoleType.ROLE_SUPERADMIN, true);
-          ordinary = create("ordinary", RoleType.ROLE_USER, true);
-          guest = create("guest", RoleType.ROLE_GUEST, true);
-          disabled = create("disabled", RoleType.ROLE_USER, false);
-          disabled.setEnabled(false);
-          users.save(disabled);
-          pending = create("pending", RoleType.ROLE_USER, false);
-        });
+    tx.executeWithoutResult(s -> {
+      recipients.deleteAll();
+      notifications.deleteAll();
+      users.deleteAll();
+      users.flush();
+      em.createQuery("delete from RoleEntity").executeUpdate();
+      for (RoleType role : RoleType.values()) {
+        em.persist(RoleEntity.builder().name(role).build());
+      }
+      sender = create("sender", RoleType.ROLE_SUPERADMIN, true);
+      ordinary = create("ordinary", RoleType.ROLE_USER, true);
+      guest = create("guest", RoleType.ROLE_GUEST, true);
+      disabled = create("disabled", RoleType.ROLE_USER, false);
+      disabled.setEnabled(false);
+      users.save(disabled);
+      pending = create("pending", RoleType.ROLE_USER, false);
+    });
     adminSession = session(sender);
     userSession = session(ordinary);
   }
@@ -256,13 +255,11 @@ class UserNotificationServicePersistenceTest {
     try {
       Preview preview = selected(ordinary.getId());
       UUID request = UUID.randomUUID();
-      tx.executeWithoutResult(
-          status -> {
-            service.send(
-                adminSession, request, "private title", "private body token=secret", preview);
-            assertTrue(logs.list.isEmpty());
-            status.setRollbackOnly();
-          });
+      tx.executeWithoutResult(status -> {
+        service.send(adminSession, request, "private title", "private body token=secret", preview);
+        assertTrue(logs.list.isEmpty());
+        status.setRollbackOnly();
+      });
       assertTrue(logs.list.isEmpty());
       assertEquals(0, notifications.count());
       Sent sent =
@@ -481,21 +478,20 @@ class UserNotificationServicePersistenceTest {
   void recipientPreviewRechecksDatabaseEvenWithAnOldManagedAccount() throws Exception {
     Preview preview = everyone();
     try (ExecutorService executor = Executors.newSingleThreadExecutor()) {
-      tx.executeWithoutResult(
-          s -> {
-            assertTrue(users.findById(ordinary.getId()).orElseThrow().isEnabled());
-            try {
-              executor
-                  .submit(() -> mutate(ordinary, u -> u.setEnabled(false)))
-                  .get(5, TimeUnit.SECONDS);
-            } catch (Exception failure) {
-              throw new IllegalStateException(failure);
-            }
-            assertProblem(
-                Problem.RECIPIENTS_CHANGED,
-                () -> service.send(adminSession, UUID.randomUUID(), "X", "Y", preview));
-            s.setRollbackOnly();
-          });
+      tx.executeWithoutResult(s -> {
+        assertTrue(users.findById(ordinary.getId()).orElseThrow().isEnabled());
+        try {
+          executor
+              .submit(() -> mutate(ordinary, u -> u.setEnabled(false)))
+              .get(5, TimeUnit.SECONDS);
+        } catch (Exception failure) {
+          throw new IllegalStateException(failure);
+        }
+        assertProblem(
+            Problem.RECIPIENTS_CHANGED,
+            () -> service.send(adminSession, UUID.randomUUID(), "X", "Y", preview));
+        s.setRollbackOnly();
+      });
     }
   }
 
@@ -665,12 +661,11 @@ class UserNotificationServicePersistenceTest {
     service.markRead(userSession, List.of(own.id()));
     ArrayList<Set<Long>> pushes = new ArrayList<Set<Long>>();
     subscriptions.add(events.register(pushes::add));
-    tx.executeWithoutResult(
-        status -> {
-          service.dismissRead(userSession);
-          assertTrue(pushes.isEmpty());
-          status.setRollbackOnly();
-        });
+    tx.executeWithoutResult(status -> {
+      service.dismissRead(userSession);
+      assertTrue(pushes.isEmpty());
+      status.setRollbackOnly();
+    });
     assertTrue(pushes.isEmpty());
     assertEquals(1, service.readCount(userSession));
     assertNull(recipients.findById(own.id()).orElseThrow().getDismissedAt());
@@ -689,11 +684,9 @@ class UserNotificationServicePersistenceTest {
     Item manual = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
     service.markRead(userSession, List.of(manual.id()));
     createdAt(sent.id(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
-    tx.executeWithoutResult(
-        status ->
-            service.recordSecurityEvent(
-                users.findById(ordinary.getId()).orElseThrow(),
-                UserNotificationType.PASSWORD_CHANGED));
+    tx.executeWithoutResult(status ->
+        service.recordSecurityEvent(
+            users.findById(ordinary.getId()).orElseThrow(), UserNotificationType.PASSWORD_CHANGED));
     Item automatic = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
     service.markRead(userSession, List.of(automatic.id()));
     assertEquals(1, service.readCount(userSession));
@@ -725,11 +718,10 @@ class UserNotificationServicePersistenceTest {
     Item own = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
     ArrayList<Set<Long>> pushes = new ArrayList<Set<Long>>();
     subscriptions.add(service.events().register(pushes::add));
-    tx.executeWithoutResult(
-        status -> {
-          service.dismiss(userSession, own.id());
-          status.setRollbackOnly();
-        });
+    tx.executeWithoutResult(status -> {
+      service.dismiss(userSession, own.id());
+      status.setRollbackOnly();
+    });
     assertTrue(pushes.isEmpty());
     assertEquals(1, service.unreadCount(userSession));
     Long ownNotificationId = own.id();
@@ -744,19 +736,17 @@ class UserNotificationServicePersistenceTest {
   @Test
   void readUpdateIsVisibleInsideSamePersistenceContextWithoutClearingUnrelatedChanges() {
     broadcast();
-    tx.executeWithoutResult(
-        s -> {
-          Item first = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
-          UserNotificationRecipientEntity managed = recipients.findById(first.id()).orElseThrow();
-          assertNull(managed.getReadAt());
-          UserEntity user = users.findById(ordinary.getId()).orElseThrow();
-          user.setFirstName("Pending");
-          service.markRead(userSession, List.of(first.id()));
-          assertTrue(
-              service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().read());
-          assertTrue(em.contains(user));
-          assertEquals("Pending", user.getFirstName());
-        });
+    tx.executeWithoutResult(s -> {
+      Item first = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
+      UserNotificationRecipientEntity managed = recipients.findById(first.id()).orElseThrow();
+      assertNull(managed.getReadAt());
+      UserEntity user = users.findById(ordinary.getId()).orElseThrow();
+      user.setFirstName("Pending");
+      service.markRead(userSession, List.of(first.id()));
+      assertTrue(service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst().read());
+      assertTrue(em.contains(user));
+      assertEquals("Pending", user.getFirstName());
+    });
   }
 
   @Test
@@ -952,35 +942,35 @@ class UserNotificationServicePersistenceTest {
   @ValueSource(strings = {"de", "en"})
   void inboxSearchMatchesLocalizedSystemTitlesBodiesAndSources(String language) {
     CustomI18NProvider provider = new de.derpeterson.app.i18n.CustomI18NProvider();
-    MessageProperties texts =
+    MessageProperties messageProperties =
         de.derpeterson.app.i18n.MessageProperties.forLocale(
             provider, Locale.forLanguageTag(language));
-    tx.executeWithoutResult(
-        status ->
-            service.recordSecurityEvent(
-                users.findById(ordinary.getId()).orElseThrow(),
-                UserNotificationType.PASSWORD_CHANGED));
+    tx.executeWithoutResult(status ->
+        service.recordSecurityEvent(
+            users.findById(ordinary.getId()).orElseThrow(), UserNotificationType.PASSWORD_CHANGED));
     service.send(
         adminSession, UUID.randomUUID(), "Original notice", "Original manual body", everyone());
-    String title = texts.getNotificationsPasswordChangedTitle();
+    String title = messageProperties.getNotificationsPasswordChangedTitle();
     Set<UserNotificationType> types =
-        de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, title);
+        de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(messageProperties, title);
     assertTrue(types.contains(UserNotificationType.PASSWORD_CHANGED));
     assertEquals(
         1,
         service.searchInbox(userSession, ReadFilter.ALL, title, types, 0, 20).getTotalElements());
-    String body = texts.getNotificationsPasswordChangedBody().substring(0, 25);
-    types = de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, body);
+    String body = messageProperties.getNotificationsPasswordChangedBody().substring(0, 25);
+    types = de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(messageProperties, body);
     assertEquals(
         1, service.searchInbox(userSession, ReadFilter.ALL, body, types, 0, 20).getTotalElements());
-    String system = texts.getNotificationsSourceSystem();
-    types = de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, system);
+    String system = messageProperties.getNotificationsSourceSystem();
+    types = de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(messageProperties, system);
     assertEquals(
         1,
         service.searchInbox(userSession, ReadFilter.ALL, system, types, 0, 20).getTotalElements());
     assertTrue(service.searchInbox(adminSession, ReadFilter.ALL, system, types, 0, 20).isEmpty());
-    String administration = texts.getNotificationsSourceAdministration();
-    types = de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, administration);
+    String administration = messageProperties.getNotificationsSourceAdministration();
+    types =
+        de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(
+            messageProperties, administration);
     assertEquals(
         UserNotificationType.ADMIN_ANNOUNCEMENT,
         service
@@ -988,18 +978,20 @@ class UserNotificationServicePersistenceTest {
             .getContent()
             .getFirst()
             .type());
-    assertTrue(de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, "   ").isEmpty());
+    assertTrue(
+        de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(messageProperties, "   ")
+            .isEmpty());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void requesterClosureCanBeFoundByItsVisibleTicketTitlePrefix(String language) {
-    MessageProperties texts =
+    MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     tx.executeWithoutResult(status -> service.recordRequesterClosed("#10001", 1L, List.of(sender)));
-    String query = texts.getSupportTicketNumber("").strip();
+    String query = messageProperties.getSupportTicketNumber("").strip();
     Set<UserNotificationType> types =
-        de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(texts, query);
+        de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(messageProperties, query);
     assertTrue(types.contains(UserNotificationType.SUPPORT_REQUESTER_CLOSED));
     assertEquals(
         1,
@@ -1020,17 +1012,15 @@ class UserNotificationServicePersistenceTest {
   void eventsPublishOnlyAfterCommitAndNotOnRollback() {
     AtomicInteger count = new AtomicInteger();
     subscriptions.add(
-        events.register(
-            ids -> {
-              assertTrue(ids.contains(ordinary.getId()));
-              count.incrementAndGet();
-            }));
-    tx.executeWithoutResult(
-        s -> {
-          broadcast();
-          assertEquals(0, count.get());
-          s.setRollbackOnly();
-        });
+        events.register(ids -> {
+          assertTrue(ids.contains(ordinary.getId()));
+          count.incrementAndGet();
+        }));
+    tx.executeWithoutResult(s -> {
+      broadcast();
+      assertEquals(0, count.get());
+      s.setRollbackOnly();
+    });
     assertEquals(0, count.get());
     assertEquals(0, notificationCount());
     broadcast();
@@ -1040,10 +1030,9 @@ class UserNotificationServicePersistenceTest {
   @Test
   void brokenPushSubscriberCannotTurnCommittedSendIntoFailure() {
     subscriptions.add(
-        events.register(
-            ids -> {
-              throw new IllegalStateException("detached UI");
-            }));
+        events.register(ids -> {
+          throw new IllegalStateException("detached UI");
+        }));
     AtomicInteger count = new AtomicInteger();
     subscriptions.add(events.register(ids -> count.incrementAndGet()));
     assertDoesNotThrow(this::broadcast);
@@ -1099,11 +1088,9 @@ class UserNotificationServicePersistenceTest {
   @Test
   void retiredTicketHintsStayInHistoryWithoutChangingReadStateOrCountingAsUnread() {
     tx.executeWithoutResult(status -> service.recordRecoveryRequest("#10001", 1L));
-    tx.executeWithoutResult(
-        status ->
-            service.retireTicketNotifications(
-                "#10001",
-                de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED));
+    tx.executeWithoutResult(status ->
+        service.retireTicketNotifications(
+            "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED));
     assertEquals(0, service.unreadCount(adminSession));
     assertTrue(service.unreadSnapshot(adminSession).isEmpty());
     assertTrue(service.inbox(adminSession, ReadFilter.UNREAD, 0, 20).isEmpty());
@@ -1113,14 +1100,12 @@ class UserNotificationServicePersistenceTest {
     assertEquals(
         de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED,
         assigned.relevance());
-    tx.executeWithoutResult(
-        status ->
-            service.retireTicketNotifications(
-                "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_CLOSED));
-    tx.executeWithoutResult(
-        status ->
-            service.retireTicketNotifications(
-                "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_CLOSED));
+    tx.executeWithoutResult(status ->
+        service.retireTicketNotifications(
+            "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_CLOSED));
+    tx.executeWithoutResult(status ->
+        service.retireTicketNotifications(
+            "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_CLOSED));
     Item closed = service.inbox(adminSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
     assertFalse(closed.read());
     assertEquals(
@@ -1134,23 +1119,21 @@ class UserNotificationServicePersistenceTest {
     tx.executeWithoutResult(status -> service.recordRecoveryRequest("#10001", 1L));
     List<Set<Long>> changes = new ArrayList<>();
     subscriptions.add(events.register(changes::add));
-    tx.executeWithoutResult(
-        status -> {
-          service.retireTicketNotifications(
-              "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED);
-          status.setRollbackOnly();
-        });
+    tx.executeWithoutResult(status -> {
+      service.retireTicketNotifications(
+          "#10001", de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED);
+      status.setRollbackOnly();
+    });
     assertTrue(changes.isEmpty());
     assertEquals(1, service.unreadCount(adminSession));
   }
 
   @Test
   void rolledBackSecurityEventDoesNotClaimSuccess() {
-    tx.executeWithoutResult(
-        s -> {
-          service.recordSecurityEvent(ordinary, UserNotificationType.PASSWORD_CHANGED);
-          s.setRollbackOnly();
-        });
+    tx.executeWithoutResult(s -> {
+      service.recordSecurityEvent(ordinary, UserNotificationType.PASSWORD_CHANGED);
+      s.setRollbackOnly();
+    });
     assertEquals(0, notificationCount());
     assertEquals(0, recipients.count());
   }
@@ -1158,18 +1141,16 @@ class UserNotificationServicePersistenceTest {
   @Test
   void deletingRecipientKeepsSharedNotificationForOthersAndDeletingSenderSetsNull() {
     Sent sent = broadcast();
-    tx.executeWithoutResult(
-        s -> {
-          users.deleteById(ordinary.getId());
-          users.flush();
-        });
+    tx.executeWithoutResult(s -> {
+      users.deleteById(ordinary.getId());
+      users.flush();
+    });
     assertEquals(2, recipients.count());
     assertTrue(notifications.existsById(sent.id()));
-    tx.executeWithoutResult(
-        s -> {
-          users.deleteById(sender.getId());
-          users.flush();
-        });
+    tx.executeWithoutResult(s -> {
+      users.deleteById(sender.getId());
+      users.flush();
+    });
     assertEquals(1, recipients.count());
     tx.executeWithoutResult(
         s -> assertNull(notifications.findById(sent.id()).orElseThrow().getSender()));
@@ -1181,12 +1162,11 @@ class UserNotificationServicePersistenceTest {
     Sent old = broadcast();
     Sent fresh = broadcast();
     // Unveränderliche Fachspalten nur als künstliche Altstruktur per SQL altern lassen.
-    tx.executeWithoutResult(
-        s ->
-            em.createNativeQuery("update user_notifications set created_at = :old where id = :id")
-                .setParameter("old", Instant.now().minus(366, java.time.temporal.ChronoUnit.DAYS))
-                .setParameter("id", old.id())
-                .executeUpdate());
+    tx.executeWithoutResult(s ->
+        em.createNativeQuery("update user_notifications set created_at = :old where id = :id")
+            .setParameter("old", Instant.now().minus(366, java.time.temporal.ChronoUnit.DAYS))
+            .setParameter("id", old.id())
+            .executeUpdate());
     assertEquals(1, cleanup.cleanup());
     assertFalse(notifications.existsById(old.id()));
     assertTrue(notifications.existsById(fresh.id()));
@@ -1197,13 +1177,11 @@ class UserNotificationServicePersistenceTest {
   }
 
   private void createdAt(Long id, Instant created) {
-    tx.executeWithoutResult(
-        status ->
-            em.createNativeQuery(
-                    "update user_notifications set created_at = :created where id = :id")
-                .setParameter("created", created)
-                .setParameter("id", id)
-                .executeUpdate());
+    tx.executeWithoutResult(status ->
+        em.createNativeQuery("update user_notifications set created_at = :created where id = :id")
+            .setParameter("created", created)
+            .setParameter("id", id)
+            .executeUpdate());
   }
 
   @Test
@@ -1251,11 +1229,9 @@ class UserNotificationServicePersistenceTest {
   @Test
   void unlimitedInboxAlsoProtectsOldAutomaticSystemNotifications() {
     when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("");
-    tx.executeWithoutResult(
-        status ->
-            service.recordSecurityEvent(
-                users.findById(ordinary.getId()).orElseThrow(),
-                UserNotificationType.PASSWORD_CHANGED));
+    tx.executeWithoutResult(status ->
+        service.recordSecurityEvent(
+            users.findById(ordinary.getId()).orElseThrow(), UserNotificationType.PASSWORD_CHANGED));
     UserNotificationEntity automatic = notifications.findAll().getFirst();
     createdAt(automatic.getId(), Instant.now().minus(400, java.time.temporal.ChronoUnit.DAYS));
     assertEquals(1, service.inbox(userSession, ReadFilter.ALL, 0, 20).getTotalElements());
@@ -1266,11 +1242,9 @@ class UserNotificationServicePersistenceTest {
 
   @Test
   void automaticNotificationsUseOnlyTheInboxRetentionPeriod() {
-    tx.executeWithoutResult(
-        status ->
-            service.recordSecurityEvent(
-                users.findById(ordinary.getId()).orElseThrow(),
-                UserNotificationType.PASSWORD_CHANGED));
+    tx.executeWithoutResult(status ->
+        service.recordSecurityEvent(
+            users.findById(ordinary.getId()).orElseThrow(), UserNotificationType.PASSWORD_CHANGED));
     UserNotificationEntity automatic = notifications.findAll().getFirst();
     createdAt(automatic.getId(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
     assertEquals(1, cleanup.cleanup());
@@ -1327,40 +1301,38 @@ class UserNotificationServicePersistenceTest {
 
   @Test
   void notificationSqlSchemaHasConsistentNamesAndPreservesStoredReadState() {
-    tx.executeWithoutResult(
-        s -> {
-          List columns =
-              em.createNativeQuery(
-                      "select column_name from information_schema.columns where table_name='USER_NOTIFICATION_RECIPIENTS'")
-                  .getResultList();
-          assertTrue(columns.contains("NOTIFICATION_ID"));
-          List constraints =
-              em.createNativeQuery(
-                      "select constraint_name from information_schema.table_constraints where table_name in ('USER_NOTIFICATIONS','USER_NOTIFICATION_RECIPIENTS')")
-                  .getResultList();
-          assertTrue(constraints.contains("UK_USER_NOTIFICATION_REQUEST"));
-          assertTrue(constraints.contains("UK_USER_NOTIFICATION_RECIPIENT"));
-          List indexes =
-              em.createNativeQuery(
-                      "select index_name from information_schema.indexes where table_name in ('USER_NOTIFICATIONS','USER_NOTIFICATION_RECIPIENTS')")
-                  .getResultList();
-          assertTrue(indexes.contains("IDX_USER_NOTIFICATION_CREATED"));
-          assertTrue(indexes.contains("IDX_USER_NOTIFICATION_INBOX"));
-        });
+    tx.executeWithoutResult(s -> {
+      List columns =
+          em.createNativeQuery(
+                  "select column_name from information_schema.columns where table_name='USER_NOTIFICATION_RECIPIENTS'")
+              .getResultList();
+      assertTrue(columns.contains("NOTIFICATION_ID"));
+      List constraints =
+          em.createNativeQuery(
+                  "select constraint_name from information_schema.table_constraints where table_name in ('USER_NOTIFICATIONS','USER_NOTIFICATION_RECIPIENTS')")
+              .getResultList();
+      assertTrue(constraints.contains("UK_USER_NOTIFICATION_REQUEST"));
+      assertTrue(constraints.contains("UK_USER_NOTIFICATION_RECIPIENT"));
+      List indexes =
+          em.createNativeQuery(
+                  "select index_name from information_schema.indexes where table_name in ('USER_NOTIFICATIONS','USER_NOTIFICATION_RECIPIENTS')")
+              .getResultList();
+      assertTrue(indexes.contains("IDX_USER_NOTIFICATION_CREATED"));
+      assertTrue(indexes.contains("IDX_USER_NOTIFICATION_INBOX"));
+    });
     Instant created = Instant.parse("2026-10-18T10:00:00Z");
-    tx.executeWithoutResult(
-        s -> {
-          em.createNativeQuery(
-                  "insert into user_notifications (id, request_key, type, title, body, created_at, broadcast, recipient_count, sender_id) values (900001, 'schema:notification', 'ADMIN_ANNOUNCEMENT', 'Existing title', 'Existing body', :created, false, 1, :sender)")
-              .setParameter("created", created)
-              .setParameter("sender", sender.getId())
-              .executeUpdate();
-          em.createNativeQuery(
-                  "insert into user_notification_recipients (id, notification_id, user_id, read_at, relevance) values (900002, 900001, :owner, :read, 'ACTIVE')")
-              .setParameter("owner", ordinary.getId())
-              .setParameter("read", created)
-              .executeUpdate();
-        });
+    tx.executeWithoutResult(s -> {
+      em.createNativeQuery(
+              "insert into user_notifications (id, request_key, type, title, body, created_at, broadcast, recipient_count, sender_id) values (900001, 'schema:notification', 'ADMIN_ANNOUNCEMENT', 'Existing title', 'Existing body', :created, false, 1, :sender)")
+          .setParameter("created", created)
+          .setParameter("sender", sender.getId())
+          .executeUpdate();
+      em.createNativeQuery(
+              "insert into user_notification_recipients (id, notification_id, user_id, read_at, relevance) values (900002, 900001, :owner, :read, 'ACTIVE')")
+          .setParameter("owner", ordinary.getId())
+          .setParameter("read", created)
+          .executeUpdate();
+    });
     Item item = service.inbox(userSession, ReadFilter.ALL, 0, 20).getContent().getFirst();
     assertEquals(900002L, item.id());
     assertEquals(UserNotificationType.ADMIN_ANNOUNCEMENT, item.type());

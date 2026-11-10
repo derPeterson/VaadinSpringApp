@@ -99,32 +99,32 @@ public final class TwoFactorView extends VerticalLayout
   private static final String ARIA_LABELLED_BY = "aria-labelledby";
   private static final String PANEL_DESCRIPTION_CLASS = "cosmos-panel-description";
   private final transient MessageProperties messageProperties;
-  private final transient SecurityService security;
+  private final transient SecurityService securityService;
   private final transient TwoFactorAuthorization twoFactorAuthorization;
-  private final transient TwoFactorEnrollment enrollment;
-  private final transient ExternalLoginFlow external;
-  private final transient ExternalIdentityService identities;
-  private final transient HttpServletRequest request;
-  private final transient RecoveryCodeDownload recoveryDownloads;
-  private final PublicPageComponent page;
-  private final AccountPanelComponent panel =
+  private final transient TwoFactorEnrollment twoFactorEnrollment;
+  private final transient ExternalLoginFlow externalLoginFlow;
+  private final transient ExternalIdentityService externalIdentityService;
+  private final transient HttpServletRequest httpRequest;
+  private final transient RecoveryCodeDownload recoveryCodeDownload;
+  private final PublicPageComponent twoFactorPage;
+  private final AccountPanelComponent twoFactorPanel =
       new AccountPanelComponent("two-factor-panel", AppIcon.LOCK);
-  private final Div content = new Div();
-  private final Div extraActions = new Div();
-  private final HorizontalLayout footerNavigation = new HorizontalLayout();
-  private final Button cancel = new Button();
-  private final Button submit = new Button();
-  private final PasswordField password = new PasswordField();
-  private final TextField code = new TextField();
-  private final OtpField enrollmentCode = new OtpField();
-  private final OtpField confirmationCode = new OtpField();
-  private final Switch recoverySaved = new Switch();
+  private final Div stepContentLayout = new Div();
+  private final Div additionalStepActions = new Div();
+  private final HorizontalLayout stepNavigationLayout = new HorizontalLayout();
+  private final Button cancelTwoFactorButton = new Button();
+  private final Button continueTwoFactorButton = new Button();
+  private final PasswordField passwordField = new PasswordField();
+  private final TextField additionalProofField = new TextField();
+  private final OtpField enrollmentOtpField = new OtpField();
+  private final OtpField confirmationOtpField = new OtpField();
+  private final Switch confirmRecoveryCodesSavedSwitch = new Switch();
   private UUID recoveryOutputId;
-  private TwoFactorEnrollment.Pending pending;
-  private TwoFactorFlow flow;
-  private boolean recovering;
-  private boolean initializing;
-  private boolean introduction;
+  private TwoFactorEnrollment.Pending pendingTwoFactorChallenge;
+  private TwoFactorFlow twoFactorFlow;
+  private boolean recoveryMode;
+  private boolean initialSetupMode;
+  private boolean showingSetupIntroduction;
   private boolean manualSetupSelected;
   private boolean recoveryCodesVisible;
   private boolean recoveryLoginSelected;
@@ -133,113 +133,116 @@ public final class TwoFactorView extends VerticalLayout
   public TwoFactorView(
       ConfigService config,
       MessageProperties messageProperties,
-      SecurityService security,
+      SecurityService securityService,
       TwoFactorAuthorization twoFactorAuthorization,
-      TwoFactorEnrollment enrollment,
-      ExternalLoginFlow external,
-      ExternalIdentityService identities,
-      RecoveryCodeDownload recoveryDownloads,
-      HttpServletRequest request) {
+      TwoFactorEnrollment twoFactorEnrollment,
+      ExternalLoginFlow externalLoginFlow,
+      ExternalIdentityService externalIdentityService,
+      RecoveryCodeDownload recoveryCodeDownload,
+      HttpServletRequest httpRequest) {
     this.messageProperties = messageProperties;
-    this.security = security;
+    this.securityService = securityService;
     this.twoFactorAuthorization = twoFactorAuthorization;
-    this.enrollment = enrollment;
-    this.external = external;
-    this.identities = identities;
-    this.request = request;
-    this.recoveryDownloads = recoveryDownloads;
+    this.twoFactorEnrollment = twoFactorEnrollment;
+    this.externalLoginFlow = externalLoginFlow;
+    this.externalIdentityService = externalIdentityService;
+    this.httpRequest = httpRequest;
+    this.recoveryCodeDownload = recoveryCodeDownload;
     setPadding(false);
     setSpacing(false);
     setWidthFull();
     addClassName("two-factor-view");
-    page = new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.TWO_FACTOR);
-    content.addClassName("two-factor-content");
-    extraActions.addClassName("two-factor-extra-actions");
-    panel.getBody().add(content, extraActions);
-    password.setId("two-factor-password");
-    password.setWidthFull();
-    password.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
-    password.setManualValidation(true);
-    password.setRequiredIndicatorVisible(true);
-    code.setId("two-factor-code");
-    code.setWidthFull();
-    code.setManualValidation(true);
-    code.setRequiredIndicatorVisible(true);
-    code.getElement().setAttribute(AUTOCOMPLETE_ATTRIBUTE, "one-time-code");
-    configureOtp(enrollmentCode, "two-factor-enrollment-code");
-    configureOtp(confirmationCode, "two-factor-code");
-    recoverySaved.setId("two-factor-codes-saved");
-    recoverySaved.addValueChangeListener(event -> updateRecoveryActions());
-    cancel.setId("two-factor-cancel");
-    cancel.setPrefixComponent(AppIcon.CLOSE.create());
-    cancel.addClickListener(event -> cancel());
-    submit.setId("two-factor-submit");
-    submit.setPrefixComponent(AppIcon.CHECK.create());
-    submit.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    submit.addClickListener(event -> submit());
-    HorizontalLayout actions = new HorizontalLayout(cancel, submit);
+    twoFactorPage =
+        new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.TWO_FACTOR);
+    stepContentLayout.addClassName("two-factor-content");
+    additionalStepActions.addClassName("two-factor-extra-actions");
+    twoFactorPanel.getBody().add(stepContentLayout, additionalStepActions);
+    passwordField.setId("two-factor-password");
+    passwordField.setWidthFull();
+    passwordField.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
+    passwordField.setManualValidation(true);
+    passwordField.setRequiredIndicatorVisible(true);
+    additionalProofField.setId("two-factor-code");
+    additionalProofField.setWidthFull();
+    additionalProofField.setManualValidation(true);
+    additionalProofField.setRequiredIndicatorVisible(true);
+    additionalProofField.getElement().setAttribute(AUTOCOMPLETE_ATTRIBUTE, "one-time-code");
+    configureOtp(enrollmentOtpField, "two-factor-enrollment-code");
+    configureOtp(confirmationOtpField, "two-factor-code");
+    confirmRecoveryCodesSavedSwitch.setId("two-factor-codes-saved");
+    confirmRecoveryCodesSavedSwitch.addValueChangeListener(event -> updateRecoveryActions());
+    cancelTwoFactorButton.setId("two-factor-cancel");
+    cancelTwoFactorButton.setPrefixComponent(AppIcon.CLOSE.create());
+    cancelTwoFactorButton.addClickListener(event -> cancel());
+    continueTwoFactorButton.setId("two-factor-submit");
+    continueTwoFactorButton.setPrefixComponent(AppIcon.CHECK.create());
+    continueTwoFactorButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    continueTwoFactorButton.addClickListener(event -> submitTwoFactorForm());
+    HorizontalLayout actions = new HorizontalLayout(cancelTwoFactorButton, continueTwoFactorButton);
     actions.setPadding(false);
     actions.setSpacing(false);
     actions.addClassName("cosmos-dialog-actions");
     EqualButtonWidths.configure(actions);
-    footerNavigation.setPadding(false);
-    footerNavigation.setSpacing(false);
-    footerNavigation.addClassName("two-factor-footer-navigation");
-    HorizontalLayout footer = new HorizontalLayout(footerNavigation, actions);
+    stepNavigationLayout.setPadding(false);
+    stepNavigationLayout.setSpacing(false);
+    stepNavigationLayout.addClassName("two-factor-footer-navigation");
+    HorizontalLayout footer = new HorizontalLayout(stepNavigationLayout, actions);
     footer.setPadding(false);
     footer.setSpacing(false);
     footer.setWidthFull();
     footer.setAlignItems(Alignment.CENTER);
     footer.addClassName("two-factor-footer");
-    panel.addActionFooter(footer);
-    page.getCardContainer().add(panel);
-    add(page);
+    twoFactorPanel.addActionFooter(footer);
+    twoFactorPage.getCardContainer().add(twoFactorPanel);
+    add(twoFactorPage);
     ComponentUtil.addListener(
         UI.getCurrent(), LanguageChangeEvent.class, event -> renderCurrentTwoFactorStep());
   }
 
   private void configureOtp(OtpField field, String id) {
     field.setId(id);
-    TwoFactorCodeFields.configureOtp(field, request.getContextPath());
+    TwoFactorCodeFields.configureOtp(field, httpRequest.getContextPath());
     field.addCompleteListener(event -> {
-      if (submit.isVisible()
-          && submit.isEnabled()
+      if (continueTwoFactorButton.isVisible()
+          && continueTwoFactorButton.isEnabled()
           && TwoFactorCodeFields.isCurrentCompleteOtp(field, event)) {
-        submit();
+        submitTwoFactorForm();
       }
     });
   }
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    if (security.getAuthenticatedUser(request).isEmpty()) {
+    if (securityService.getAuthenticatedUser(httpRequest).isEmpty()) {
       event.forwardTo(LoginView.class);
       return;
     }
-    flow = TwoFactorFlow.current(request);
-    if (flow == null) {
+    twoFactorFlow = TwoFactorFlow.current(httpRequest);
+    if (twoFactorFlow == null) {
       Map<String, List<String>> query = event.getLocation().getQueryParameters().getParameters();
-      boolean confirmed = twoFactorAuthorization.sessionConfirmed(request);
+      boolean confirmed = twoFactorAuthorization.sessionConfirmed(httpRequest);
       if (query.containsKey("recover")) {
-        flow = confirmed ? TwoFactorFlow.ACCOUNT_RECOVERY : TwoFactorFlow.RECOVERY;
+        twoFactorFlow = confirmed ? TwoFactorFlow.ACCOUNT_RECOVERY : TwoFactorFlow.RECOVERY;
       } else if (query.containsKey("administration")) {
-        flow = TwoFactorFlow.ADMINISTRATION;
+        twoFactorFlow = TwoFactorFlow.ADMINISTRATION;
       } else {
-        flow = confirmed && query.containsKey("setup") ? TwoFactorFlow.SETUP : TwoFactorFlow.LOGIN;
+        twoFactorFlow =
+            confirmed && query.containsKey("setup") ? TwoFactorFlow.SETUP : TwoFactorFlow.LOGIN;
       }
-      flow.enter(request);
+      twoFactorFlow.enter(httpRequest);
     }
-    if (flow.help()) {
+    if (twoFactorFlow.help()) {
       event.forwardTo(RecoveryHelpView.class);
       return;
     }
-    page.setAccountSecurity(flow.account(), security.getCurrentUser(request).orElse(null));
-    recovering = flow.recovery();
+    twoFactorPage.setAccountSecurity(
+        twoFactorFlow.account(), securityService.getCurrentUser(httpRequest).orElse(null));
+    recoveryMode = twoFactorFlow.recovery();
     renderCurrentTwoFactorStep();
   }
 
   public boolean isCurrent(TwoFactorFlow active) {
-    return flow == active;
+    return twoFactorFlow == active;
   }
 
   @Override
@@ -248,38 +251,41 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void renderCurrentTwoFactorStep() {
-    if (security.getAuthenticatedUser(request).isEmpty()) {
+    if (securityService.getAuthenticatedUser(httpRequest).isEmpty()) {
       return;
     }
     clearPreviousStep();
 
-    pending = enrollment.pending(request);
+    pendingTwoFactorChallenge = twoFactorEnrollment.pending(httpRequest);
     resetStepPresentation();
 
-    recovering = recovering || pending != null && pending.proof() == SetupProof.RECOVERY_CODE;
+    recoveryMode =
+        recoveryMode
+            || pendingTwoFactorChallenge != null
+                && pendingTwoFactorChallenge.proof() == SetupProof.RECOVERY_CODE;
     TwoFactorAuthorization.State state =
-        twoFactorAuthorization.state(twoFactorAuthorization.owner(request));
-    initializing = pending == null && !state.enrolled();
-    boolean startsRecovery = pending == null && state.enrolled() && recovering;
-    panel.setIcon((startsRecovery ? AppIcon.LOCK_RESET : AppIcon.LOCK).create());
-    panel.setHeading(
-        initializing
+        twoFactorAuthorization.state(twoFactorAuthorization.owner(httpRequest));
+    initialSetupMode = pendingTwoFactorChallenge == null && !state.enrolled();
+    boolean startsRecovery = pendingTwoFactorChallenge == null && state.enrolled() && recoveryMode;
+    twoFactorPanel.setIcon((startsRecovery ? AppIcon.LOCK_RESET : AppIcon.LOCK).create());
+    twoFactorPanel.setHeading(
+        initialSetupMode
             ? messageProperties.getTwoFactorSetupTitle()
             : messageProperties.getTwoFactorConfirmTitle(),
         messageProperties.getTwoFactorPageHint(),
         "");
-    cancel.setText(
-        flow.account() && twoFactorAuthorization.sessionConfirmed(request)
+    cancelTwoFactorButton.setText(
+        twoFactorFlow.account() && twoFactorAuthorization.sessionConfirmed(httpRequest)
             ? messageProperties.getTwoFactorBack()
             : messageProperties.getBaseLogoutButton());
-    if (!flow.account() || !twoFactorAuthorization.sessionConfirmed(request)) {
-      cancel.addClassName(DELETE_BUTTON);
-      cancel.setPrefixComponent(AppIcon.SIGN_OUT.create());
+    if (!twoFactorFlow.account() || !twoFactorAuthorization.sessionConfirmed(httpRequest)) {
+      cancelTwoFactorButton.addClassName(DELETE_BUTTON);
+      cancelTwoFactorButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
     }
-    submit.setEnabled(true);
-    cancel.setEnabled(true);
-    cancel.setVisible(true);
-    if (pending != null) {
+    continueTwoFactorButton.setEnabled(true);
+    cancelTwoFactorButton.setEnabled(true);
+    cancelTwoFactorButton.setVisible(true);
+    if (pendingTwoFactorChallenge != null) {
       showPending();
     } else if (startsRecovery) {
       showRecovery();
@@ -291,35 +297,35 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void clearPreviousStep() {
-    content.removeAll();
-    extraActions.removeAll();
-    footerNavigation.removeAll();
-    password.clear();
-    code.clear();
-    enrollmentCode.clear();
-    confirmationCode.clear();
-    password.setInvalid(false);
-    code.setInvalid(false);
-    enrollmentCode.setInvalid(false);
-    confirmationCode.setInvalid(false);
+    stepContentLayout.removeAll();
+    additionalStepActions.removeAll();
+    stepNavigationLayout.removeAll();
+    passwordField.clear();
+    additionalProofField.clear();
+    enrollmentOtpField.clear();
+    confirmationOtpField.clear();
+    passwordField.setInvalid(false);
+    additionalProofField.setInvalid(false);
+    enrollmentOtpField.setInvalid(false);
+    confirmationOtpField.setInvalid(false);
   }
 
   private void resetStepPresentation() {
-    introduction = false;
-    panel.removeClassName("two-factor-introduction");
-    panel.removeClassName("two-factor-setup");
-    panel.removeClassName("two-factor-recovery");
-    panel.removeClassName("two-factor-confirmation");
-    panel.removeClassName("two-factor-restore");
-    cancel.removeClassName(DELETE_BUTTON);
-    cancel.setPrefixComponent(AppIcon.CLOSE.create());
-    submit.setPrefixComponent(AppIcon.CHECK.create());
+    showingSetupIntroduction = false;
+    twoFactorPanel.removeClassName("two-factor-introduction");
+    twoFactorPanel.removeClassName("two-factor-setup");
+    twoFactorPanel.removeClassName("two-factor-recovery");
+    twoFactorPanel.removeClassName("two-factor-confirmation");
+    twoFactorPanel.removeClassName("two-factor-restore");
+    cancelTwoFactorButton.removeClassName(DELETE_BUTTON);
+    cancelTwoFactorButton.setPrefixComponent(AppIcon.CLOSE.create());
+    continueTwoFactorButton.setPrefixComponent(AppIcon.CHECK.create());
   }
 
   private void showExistingFactor() {
-    if (flow.administration()
-        ? twoFactorAuthorization.administrationConfirmed(request)
-        : twoFactorAuthorization.sessionConfirmed(request)) {
+    if (twoFactorFlow.administration()
+        ? twoFactorAuthorization.administrationConfirmed(httpRequest)
+        : twoFactorAuthorization.sessionConfirmed(httpRequest)) {
       finish();
       return;
     }
@@ -330,13 +336,18 @@ public final class TwoFactorView extends VerticalLayout
     recover.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     recover.setId("two-factor-recover");
     recover.addClickListener(event ->
-        moveTo(flow.administration() ? TwoFactorFlow.ADMIN_RECOVERY : TwoFactorFlow.RECOVERY));
+        moveTo(
+            twoFactorFlow.administration()
+                ? TwoFactorFlow.ADMIN_RECOVERY
+                : TwoFactorFlow.RECOVERY));
     Button help =
         new Button(
             messageProperties.getSupportHelpTitle(),
             event ->
                 moveTo(
-                    flow.administration() ? TwoFactorFlow.ADMIN_HELP : TwoFactorFlow.LOGIN_HELP));
+                    twoFactorFlow.administration()
+                        ? TwoFactorFlow.ADMIN_HELP
+                        : TwoFactorFlow.LOGIN_HELP));
     help.setId("two-factor-help");
     help.setIcon(AppIcon.OPEN_SECTION.create());
     help.setIconAfterText(true);
@@ -363,13 +374,13 @@ public final class TwoFactorView extends VerticalLayout
             messageProperties.getTwoFactorLoginHelpTitle());
     toggle.setPrefixComponent(topic);
     toggle.addClassName("two-factor-login-help-toggle");
-    extraActions.add(toggle, alternatives);
-    submit.setText(
-        flow.administration()
+    additionalStepActions.add(toggle, alternatives);
+    continueTwoFactorButton.setText(
+        twoFactorFlow.administration()
             ? messageProperties.getTwoFactorConfirm()
             : messageProperties.getBaseLoginButton());
-    if (!flow.administration()) {
-      submit.setPrefixComponent(AppIcon.SIGN_IN.create());
+    if (!twoFactorFlow.administration()) {
+      continueTwoFactorButton.setPrefixComponent(AppIcon.SIGN_IN.create());
     }
   }
 
@@ -387,9 +398,9 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void showLoginMethods() {
-    panel.addClassName("two-factor-confirmation");
-    panel.setIcon(AppIcon.SHIELD_KEYHOLE.create());
-    panel.setHeading(
+    twoFactorPanel.addClassName("two-factor-confirmation");
+    twoFactorPanel.setIcon(AppIcon.SHIELD_KEYHOLE.create());
+    twoFactorPanel.setHeading(
         messageProperties.getTwoFactorConfirmTitle(),
         messageProperties.getTwoFactorConfirmSubtitle(),
         "");
@@ -419,16 +430,16 @@ public final class TwoFactorView extends VerticalLayout
       recoveryLoginSelected = event.getSelectedTab() == recovery;
       showLoginInput(input);
     });
-    content.add(selector, input);
+    stepContentLayout.add(selector, input);
     showLoginInput(input);
   }
 
   private void showLoginInput(VerticalLayout input) {
     input.removeAll();
-    code.clear();
-    confirmationCode.clear();
-    code.setInvalid(false);
-    confirmationCode.setInvalid(false);
+    additionalProofField.clear();
+    confirmationOtpField.clear();
+    additionalProofField.setInvalid(false);
+    confirmationOtpField.setInvalid(false);
     input
         .getElement()
         .setAttribute(
@@ -439,30 +450,31 @@ public final class TwoFactorView extends VerticalLayout
             ? messageProperties.getTwoFactorLoginRecoveryHint()
             : messageProperties.getTwoFactorLoginHint();
     Span hint =
-        new Span(flow.administration() ? messageProperties.getTwoFactorActionHint() : hintText);
+        new Span(
+            twoFactorFlow.administration() ? messageProperties.getTwoFactorActionHint() : hintText);
     hint.addClassName(PANEL_DESCRIPTION_CLASS);
     input.add(hint);
     if (recoveryLoginSelected) {
       input.add(prepareRecoveryCode());
     } else {
-      confirmationCode.setLabel(messageProperties.getTwoFactorSetupCodeLabel());
-      input.add(confirmationCode);
+      confirmationOtpField.setLabel(messageProperties.getTwoFactorSetupCodeLabel());
+      input.add(confirmationOtpField);
     }
   }
 
   private void showRecovery() {
-    panel.addClassName("two-factor-restore");
-    panel.setHeading(
+    twoFactorPanel.addClassName("two-factor-restore");
+    twoFactorPanel.setHeading(
         messageProperties.getTwoFactorRecoverAction(),
         messageProperties.getTwoFactorRecoverSubtitle(),
         "");
-    if (!enrollment.available()) {
+    if (!twoFactorEnrollment.available()) {
       addHint(messageProperties.getTwoFactorUnavailable());
     }
-    content.add(prepareRecoveryCode());
-    submit.setVisible(true);
-    submit.setEnabled(enrollment.available());
-    submit.setText(messageProperties.getTwoFactorRecoveryContinue());
+    stepContentLayout.add(prepareRecoveryCode());
+    continueTwoFactorButton.setVisible(true);
+    continueTwoFactorButton.setEnabled(twoFactorEnrollment.available());
+    continueTwoFactorButton.setText(messageProperties.getTwoFactorRecoveryContinue());
     HorizontalLayout notice =
         new HorizontalLayout(
             AppIcon.INFO_CIRCLE.create(),
@@ -473,44 +485,46 @@ public final class TwoFactorView extends VerticalLayout
     notice.setSpacing(false);
     notice.setAlignItems(Alignment.CENTER);
     notice.addClassName("two-factor-restore-notice");
-    content.add(notice);
+    stepContentLayout.add(notice);
     Button back =
         new Button(messageProperties.getTwoFactorReturnToCode(), AppIcon.ANGLE_LEFT.create());
     back.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     back.setId("two-factor-recovery-back");
     back.addClickListener(event ->
-        moveTo(flow.administration() ? TwoFactorFlow.ADMINISTRATION : TwoFactorFlow.LOGIN));
-    footerNavigation.add(back);
+        moveTo(
+            twoFactorFlow.administration() ? TwoFactorFlow.ADMINISTRATION : TwoFactorFlow.LOGIN));
+    stepNavigationLayout.add(back);
   }
 
   private void showSetup() {
-    if (!flow.account()
-        && !Boolean.TRUE.equals(request.getSession().getAttribute(TwoFactorFlow.INTRO_ACCEPTED))
-        && (twoFactorAuthorization.requires(request, TwoFactorAction.LOGIN)
-            || twoFactorAuthorization.requires(request, TwoFactorAction.ADMINISTRATION))) {
+    if (!twoFactorFlow.account()
+        && !Boolean.TRUE.equals(httpRequest.getSession().getAttribute(TwoFactorFlow.INTRO_ACCEPTED))
+        && (twoFactorAuthorization.requires(httpRequest, TwoFactorAction.LOGIN)
+            || twoFactorAuthorization.requires(httpRequest, TwoFactorAction.ADMINISTRATION))) {
       showIntroduction();
       return;
     }
     addHint(
-        enrollment.available()
+        twoFactorEnrollment.available()
             ? messageProperties.getTwoFactorSetupHint()
             : messageProperties.getTwoFactorUnavailable());
-    boolean local = external.owner(request).getPassword() != null;
+    boolean local = externalLoginFlow.owner(httpRequest).getPassword() != null;
     if (local) {
-      password.setLabel(messageProperties.getAccountPasswordDialogCurrentPassword());
-      password.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
-      content.add(password);
+      passwordField.setLabel(messageProperties.getAccountPasswordDialogCurrentPassword());
+      passwordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
+      stepContentLayout.add(passwordField);
     }
-    submit.setVisible(local);
-    submit.setEnabled(enrollment.available());
-    submit.setText(messageProperties.getTwoFactorStartSetup());
-    for (String provider : identities.connected(twoFactorAuthorization.owner(request).id())) {
+    continueTwoFactorButton.setVisible(local);
+    continueTwoFactorButton.setEnabled(twoFactorEnrollment.available());
+    continueTwoFactorButton.setText(messageProperties.getTwoFactorStartSetup());
+    for (String provider :
+        externalIdentityService.connected(twoFactorAuthorization.owner(httpRequest).id())) {
       if (!availableEnrollmentProvider(provider)) {
         continue;
       }
-      extraActions.add(enrollmentProofButton(provider));
+      additionalStepActions.add(enrollmentProofButton(provider));
     }
-    if (!local && extraActions.getComponentCount() == 0) {
+    if (!local && additionalStepActions.getComponentCount() == 0) {
       addHint(messageProperties.getExternalProofUnavailable());
     }
   }
@@ -524,66 +538,66 @@ public final class TwoFactorView extends VerticalLayout
     Image mark = new Image("icons/external-login/" + provider + (google ? ".png" : ".svg"), "");
     mark.addClassName("external-proof-provider-mark");
     proof.setPrefixComponent(mark);
-    proof.setEnabled(enrollment.available());
+    proof.setEnabled(twoFactorEnrollment.available());
     proof.addClickListener(event -> {
       try {
         UI.getCurrent()
             .getPage()
             .setLocation(
-                external.beginProof(
-                    request,
+                externalLoginFlow.beginProof(
+                    httpRequest,
                     provider,
                     ExternalLoginFlow.Purpose.ENROLL_FACTOR,
                     VaadinSession.getCurrent().getLocale()));
       } catch (RuntimeException failure) {
-        failure(failure);
+        showTwoFactorFailure(failure);
       }
     });
     return proof;
   }
 
   private boolean availableEnrollmentProvider(String provider) {
-    if (!external.providers().contains(provider)) {
+    if (!externalLoginFlow.providers().contains(provider)) {
       return false;
     }
     TwoFactorAuthorization.State state =
-        twoFactorAuthorization.state(twoFactorAuthorization.owner(request));
+        twoFactorAuthorization.state(twoFactorAuthorization.owner(httpRequest));
     return !ExternalProviderSettings.GOOGLE.equals(provider)
         || !state.previouslyEnrolled()
         || state.operatorEnrollment();
   }
 
   private void showIntroduction() {
-    introduction = true;
-    panel.addClassName("two-factor-introduction");
+    showingSetupIntroduction = true;
+    twoFactorPanel.addClassName("two-factor-introduction");
     Image illustration = new Image("images/two-factor-locks.svg", "");
     illustration.addClassName("two-factor-introduction-art");
     illustration.getElement().setAttribute("aria-hidden", "true");
     H2 heading = new H2(messageProperties.getTwoFactorRequiredTitle());
     heading.setId("two-factor-introduction-title");
     heading.addClassName("two-factor-introduction-title");
-    content.add(illustration, heading);
+    stepContentLayout.add(illustration, heading);
     addHint(messageProperties.getTwoFactorRequiredHint());
-    if (!enrollment.available()) {
+    if (!twoFactorEnrollment.available()) {
       addHint(messageProperties.getTwoFactorUnavailable());
     }
-    cancel.setText(messageProperties.getBaseLogoutButton());
-    cancel.setPrefixComponent(AppIcon.SIGN_OUT.create());
-    cancel.addClassName(DELETE_BUTTON);
-    submit.setVisible(true);
-    submit.setEnabled(enrollment.available());
-    submit.setText(messageProperties.getTwoFactorBeginSetup());
-    submit.setPrefixComponent(AppIcon.SHIELD_CHECK.create());
+    cancelTwoFactorButton.setText(messageProperties.getBaseLogoutButton());
+    cancelTwoFactorButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
+    cancelTwoFactorButton.addClassName(DELETE_BUTTON);
+    continueTwoFactorButton.setVisible(true);
+    continueTwoFactorButton.setEnabled(twoFactorEnrollment.available());
+    continueTwoFactorButton.setText(messageProperties.getTwoFactorBeginSetup());
+    continueTwoFactorButton.setPrefixComponent(AppIcon.SHIELD_CHECK.create());
   }
 
   private void showPending() {
-    submit.setVisible(true);
-    switch (pending.kind()) {
+    continueTwoFactorButton.setVisible(true);
+    switch (pendingTwoFactorChallenge.kind()) {
       case GOOGLE_EMAIL -> {
         addHint(messageProperties.getTwoFactorEmailCodeHint());
-        content.add(prepareCode(messageProperties.getTwoFactorEmailCodeLabel(), 8));
-        code.getElement().setAttribute(INPUT_MODE_ATTRIBUTE, "numeric");
-        submit.setText(messageProperties.getTwoFactorConfirm());
+        stepContentLayout.add(prepareCode(messageProperties.getTwoFactorEmailCodeLabel(), 8));
+        additionalProofField.getElement().setAttribute(INPUT_MODE_ATTRIBUTE, "numeric");
+        continueTwoFactorButton.setText(messageProperties.getTwoFactorConfirm());
       }
       case ENROLLMENT -> showEnrollment();
       case RECOVERY_OUTPUT -> showRecoveryCodes();
@@ -592,15 +606,15 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void showEnrollment() {
-    panel.addClassName("two-factor-setup");
-    panel.setIcon(AppIcon.SHIELD_KEYHOLE.create());
-    panel.setHeading(
+    twoFactorPanel.addClassName("two-factor-setup");
+    twoFactorPanel.setIcon(AppIcon.SHIELD_KEYHOLE.create());
+    twoFactorPanel.setHeading(
         messageProperties.getTwoFactorSetupTitle(),
         messageProperties.getTwoFactorSetupSubtitle(),
         "");
     Image qr =
         new Image(
-            documentPath("setup/" + pending.id() + "/qr.png"),
+            documentPath("setup/" + pendingTwoFactorChallenge.id() + "/qr.png"),
             messageProperties.getTwoFactorQrAlt());
     qr.setId("two-factor-qr");
     qr.addClassName("two-factor-qr");
@@ -717,14 +731,14 @@ public final class TwoFactorView extends VerticalLayout
     firstStep.setPadding(false);
     firstStep.setSpacing(false);
     firstStep.addClassName("two-factor-setup-step");
-    enrollmentCode.setLabel(messageProperties.getTwoFactorSetupCodeLabel());
+    enrollmentOtpField.setLabel(messageProperties.getTwoFactorSetupCodeLabel());
     Span codeHint = new Span(messageProperties.getTwoFactorSetupCodeHint());
     codeHint.addClassName(PANEL_DESCRIPTION_CLASS);
     VerticalLayout secondStep =
         new VerticalLayout(
             setupStep(AppIcon.NUMBER_TWO, messageProperties.getTwoFactorCodeStep()),
             codeHint,
-            enrollmentCode);
+            enrollmentOtpField);
     secondStep.setPadding(false);
     secondStep.setSpacing(false);
     secondStep.addClassName("two-factor-setup-step");
@@ -734,8 +748,8 @@ public final class TwoFactorView extends VerticalLayout
     instructions.addClassName("two-factor-setup-instructions");
     Div layout = new Div(methods, instructions);
     layout.addClassName("two-factor-setup-layout");
-    content.add(layout);
-    submit.setText(messageProperties.getTwoFactorEnable());
+    stepContentLayout.add(layout);
+    continueTwoFactorButton.setText(messageProperties.getTwoFactorEnable());
   }
 
   private Anchor authenticatorLink(String url, String caption) {
@@ -775,7 +789,7 @@ public final class TwoFactorView extends VerticalLayout
             }
             })();
             """,
-            documentPath("setup/" + pending.id() + "/key"))
+            documentPath("setup/" + pendingTwoFactorChallenge.id() + "/key"))
         .then(
             Boolean.class,
             loaded -> {
@@ -801,16 +815,16 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void showRecoveryCodes() {
-    cancel.setVisible(false);
-    panel.addClassName("two-factor-recovery");
-    panel.setHeading(
+    cancelTwoFactorButton.setVisible(false);
+    twoFactorPanel.addClassName("two-factor-recovery");
+    twoFactorPanel.setHeading(
         messageProperties.getTwoFactorRecoveryTitle(),
         messageProperties.getTwoFactorRecoverySubtitle(),
         "");
-    UUID outputId = pending.id();
+    UUID outputId = pendingTwoFactorChallenge.id();
     if (!outputId.equals(recoveryOutputId)) {
       recoveryOutputId = outputId;
-      recoverySaved.setValue(false);
+      confirmRecoveryCodesSavedSwitch.setValue(false);
       recoveryCodesVisible = true;
     }
     Image illustration = new Image("images/two-factor-vault.svg", "");
@@ -922,8 +936,8 @@ public final class TwoFactorView extends VerticalLayout
         new Button(messageProperties.getTwoFactorDownloadPdf(), AppIcon.DOWNLOAD.create());
     download
         .getElement()
-        .setAttribute("data-download-url", recoveryDownloads.handler(outputId, locale));
-    recoveryDownloads.configure(
+        .setAttribute("data-download-url", recoveryCodeDownload.handler(outputId, locale));
+    recoveryCodeDownload.configure(
         download,
         () ->
             NotificationHelper.getInstance()
@@ -938,16 +952,17 @@ public final class TwoFactorView extends VerticalLayout
     actions.setSpacing(false);
     actions.addClassName("two-factor-recovery-actions");
     explanation.add(actions);
-    recoverySaved.setLabel(messageProperties.getTwoFactorCodesSavedConfirmation());
-    recoverySaved.addThemeVariants(SwitchVariant.AURA_REVERSE);
-    VerticalLayout controls = new VerticalLayout(codesSection, recoverySaved);
+    confirmRecoveryCodesSavedSwitch.setLabel(
+        messageProperties.getTwoFactorCodesSavedConfirmation());
+    confirmRecoveryCodesSavedSwitch.addThemeVariants(SwitchVariant.AURA_REVERSE);
+    VerticalLayout controls = new VerticalLayout(codesSection, confirmRecoveryCodesSavedSwitch);
     controls.setPadding(false);
     controls.setSpacing(false);
     controls.addClassName("two-factor-recovery-controls");
     Div layout = new Div(explanation, controls);
     layout.addClassName("two-factor-recovery-layout");
-    content.add(layout);
-    submit.setText(messageProperties.getTwoFactorCodesSaved());
+    stepContentLayout.add(layout);
+    continueTwoFactorButton.setText(messageProperties.getTwoFactorCodesSaved());
     updateRecoveryActions();
   }
 
@@ -977,7 +992,7 @@ public final class TwoFactorView extends VerticalLayout
               }
             })();
             """,
-            documentPath("recovery/" + pending.id() + "/codes"))
+            documentPath("recovery/" + pendingTwoFactorChallenge.id() + "/codes"))
         .then(
             Boolean.class,
             loaded -> {
@@ -1021,66 +1036,70 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void updateRecoveryActions() {
-    if (pending != null && pending.kind() == Kind.RECOVERY_OUTPUT) {
-      submit.setEnabled(recoverySaved.getValue());
+    if (pendingTwoFactorChallenge != null
+        && pendingTwoFactorChallenge.kind() == Kind.RECOVERY_OUTPUT) {
+      continueTwoFactorButton.setEnabled(confirmRecoveryCodesSavedSwitch.getValue());
     }
   }
 
   private TextField prepareRecoveryCode() {
-    code.setLabel(messageProperties.getTwoFactorRecoveryCodeLabel());
-    code.getElement().removeAttribute(INPUT_MODE_ATTRIBUTE);
-    TwoFactorCodeFields.configureRecoveryCode(code);
-    return code;
+    additionalProofField.setLabel(messageProperties.getTwoFactorRecoveryCodeLabel());
+    additionalProofField.getElement().removeAttribute(INPUT_MODE_ATTRIBUTE);
+    TwoFactorCodeFields.configureRecoveryCode(additionalProofField);
+    return additionalProofField;
   }
 
   private TextField prepareCode(String label, int maximumLength) {
-    code.removeClassName("two-factor-recovery-input");
-    code.setLabel(label);
-    code.setPlaceholder(messageProperties.getTwoFactorCodePlaceholder());
-    code.setMaxLength(maximumLength);
-    code.getElement().setAttribute(AUTOCOMPLETE_ATTRIBUTE, "one-time-code");
-    code.getElement().removeAttribute(INPUT_MODE_ATTRIBUTE);
-    return code;
+    additionalProofField.removeClassName("two-factor-recovery-input");
+    additionalProofField.setLabel(label);
+    additionalProofField.setPlaceholder(messageProperties.getTwoFactorCodePlaceholder());
+    additionalProofField.setMaxLength(maximumLength);
+    additionalProofField.getElement().setAttribute(AUTOCOMPLETE_ATTRIBUTE, "one-time-code");
+    additionalProofField.getElement().removeAttribute(INPUT_MODE_ATTRIBUTE);
+    return additionalProofField;
   }
 
-  private void submit() {
+  private void submitTwoFactorForm() {
     try {
       submitCurrentStep();
     } catch (RuntimeException failure) {
       invalidateCurrentInput();
-      failure(failure);
+      showTwoFactorFailure(failure);
     } finally {
-      password.clear();
-      code.clear();
-      enrollmentCode.clear();
-      confirmationCode.clear();
+      passwordField.clear();
+      additionalProofField.clear();
+      enrollmentOtpField.clear();
+      confirmationOtpField.clear();
     }
   }
 
   private void submitCurrentStep() {
-    if (introduction) {
-      if (enrollment.canBeginFromPasswordLogin(request)) {
-        enrollment.beginFromPasswordLogin(request);
+    if (showingSetupIntroduction) {
+      if (twoFactorEnrollment.canBeginFromPasswordLogin(httpRequest)) {
+        twoFactorEnrollment.beginFromPasswordLogin(httpRequest);
       }
-      request.getSession().setAttribute(TwoFactorFlow.INTRO_ACCEPTED, true);
+      httpRequest.getSession().setAttribute(TwoFactorFlow.INTRO_ACCEPTED, true);
       renderCurrentTwoFactorStep();
       return;
     }
-    if (pending == null) {
+    if (pendingTwoFactorChallenge == null) {
       submitWithoutPending();
       return;
     }
-    switch (pending.kind()) {
+    switch (pendingTwoFactorChallenge.kind()) {
       case RECOVERY_OUTPUT -> submitRecoveryOutput();
       case ENROLLMENT -> submitEnrollmentCode();
       case GOOGLE_EMAIL, ACTION -> {
-        if (!ValidationHelper.validateRequiredInputs(List.of(code), messageProperties)) {
+        if (!ValidationHelper.validateRequiredInputs(
+            List.of(additionalProofField), messageProperties)) {
           return;
         }
-        if (pending.kind() == Kind.GOOGLE_EMAIL) {
-          enrollment.confirmEmail(request, pending.id(), code.getValue());
+        if (pendingTwoFactorChallenge.kind() == Kind.GOOGLE_EMAIL) {
+          twoFactorEnrollment.confirmEmail(
+              httpRequest, pendingTwoFactorChallenge.id(), additionalProofField.getValue());
         } else {
-          enrollment.complete(request, pending.id(), code.getValue());
+          twoFactorEnrollment.complete(
+              httpRequest, pendingTwoFactorChallenge.id(), additionalProofField.getValue());
         }
         renderCurrentTwoFactorStep();
       }
@@ -1088,59 +1107,63 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private void submitRecoveryOutput() {
-    if (Boolean.TRUE.equals(recoverySaved.getValue())) {
-      enrollment.dismissOutput(request, pending.id());
+    if (Boolean.TRUE.equals(confirmRecoveryCodesSavedSwitch.getValue())) {
+      twoFactorEnrollment.dismissOutput(httpRequest, pendingTwoFactorChallenge.id());
       finish();
     }
   }
 
   private void submitEnrollmentCode() {
-    if (ValidationHelper.validateRequiredInputs(List.of(enrollmentCode), messageProperties)) {
-      enrollment.complete(request, pending.id(), enrollmentCode.getValue());
+    if (ValidationHelper.validateRequiredInputs(List.of(enrollmentOtpField), messageProperties)) {
+      twoFactorEnrollment.complete(
+          httpRequest, pendingTwoFactorChallenge.id(), enrollmentOtpField.getValue());
       renderCurrentTwoFactorStep();
     }
   }
 
   private void submitWithoutPending() {
-    if (initializing) {
-      if (ValidationHelper.validateRequiredInputs(List.of(password), messageProperties)) {
-        enrollment.beginPassword(request, password.getValue());
+    if (initialSetupMode) {
+      if (ValidationHelper.validateRequiredInputs(List.of(passwordField), messageProperties)) {
+        twoFactorEnrollment.beginPassword(httpRequest, passwordField.getValue());
         renderCurrentTwoFactorStep();
       }
       return;
     }
-    if (recovering) {
-      if (ValidationHelper.validateRequiredInputs(List.of(code), messageProperties)) {
-        enrollment.beginRecovery(request, code.getValue());
+    if (recoveryMode) {
+      if (ValidationHelper.validateRequiredInputs(
+          List.of(additionalProofField), messageProperties)) {
+        twoFactorEnrollment.beginRecovery(httpRequest, additionalProofField.getValue());
         renderCurrentTwoFactorStep();
       }
       return;
     }
     if (recoveryLoginSelected) {
-      if (ValidationHelper.validateRequiredInputs(List.of(code), messageProperties)) {
-        twoFactorAuthorization.confirmSession(request, code.getValue());
+      if (ValidationHelper.validateRequiredInputs(
+          List.of(additionalProofField), messageProperties)) {
+        twoFactorAuthorization.confirmSession(httpRequest, additionalProofField.getValue());
         finish();
       }
     } else if (ValidationHelper.validateRequiredInputs(
-        List.of(confirmationCode), messageProperties)) {
-      twoFactorAuthorization.confirmSession(request, confirmationCode.getValue());
+        List.of(confirmationOtpField), messageProperties)) {
+      twoFactorAuthorization.confirmSession(httpRequest, confirmationOtpField.getValue());
       finish();
     }
   }
 
   private void invalidateCurrentInput() {
-    if (initializing) {
-      password.setInvalid(true);
-    } else if (pending != null && pending.kind() == Kind.ENROLLMENT) {
-      enrollmentCode.setInvalid(true);
-    } else if (pending == null && !recovering && !recoveryLoginSelected) {
-      confirmationCode.setInvalid(true);
+    if (initialSetupMode) {
+      passwordField.setInvalid(true);
+    } else if (pendingTwoFactorChallenge != null
+        && pendingTwoFactorChallenge.kind() == Kind.ENROLLMENT) {
+      enrollmentOtpField.setInvalid(true);
+    } else if (pendingTwoFactorChallenge == null && !recoveryMode && !recoveryLoginSelected) {
+      confirmationOtpField.setInvalid(true);
     } else {
-      code.setInvalid(true);
+      additionalProofField.setInvalid(true);
     }
   }
 
-  private void failure(RuntimeException failure) {
+  private void showTwoFactorFailure(RuntimeException failure) {
     Supplier<String> message = messageProperties::getTwoFactorFailed;
     if (failure instanceof LoginThrottledException) {
       message = messageProperties::getLoginThrottledMessage;
@@ -1148,7 +1171,7 @@ public final class TwoFactorView extends VerticalLayout
       message = messageProperties::getTwoFactorThrottled;
     } else if (failure instanceof BadCredentialsException) {
       message =
-          initializing
+          initialSetupMode
               ? messageProperties::getAccountSecurityWrongPassword
               : messageProperties::getTwoFactorInvalidCode;
     }
@@ -1162,46 +1185,46 @@ public final class TwoFactorView extends VerticalLayout
   private void addHint(String value) {
     Span hint = new Span(value);
     hint.addClassName(PANEL_DESCRIPTION_CLASS);
-    content.add(hint);
+    stepContentLayout.add(hint);
   }
 
   private String documentPath(String suffix) {
-    return request.getContextPath() + TwoFactorDocuments.PATH + "/" + suffix;
+    return httpRequest.getContextPath() + TwoFactorDocuments.PATH + "/" + suffix;
   }
 
   private void cancel() {
-    if (!enrollment.cancelPreparation(request)) {
+    if (!twoFactorEnrollment.cancelPreparation(httpRequest)) {
       renderCurrentTwoFactorStep();
       return;
     }
-    external.cancel(request);
-    TwoFactorFlow.finish(request);
-    if (flow.account() && twoFactorAuthorization.sessionConfirmed(request)) {
+    externalLoginFlow.cancel(httpRequest);
+    TwoFactorFlow.finish(httpRequest);
+    if (twoFactorFlow.account() && twoFactorAuthorization.sessionConfirmed(httpRequest)) {
       UI.getCurrent()
           .getPage()
-          .setLocation(request.getContextPath() + AppRouteConstants.ACCOUNT_PORTAL_LOCATION);
+          .setLocation(httpRequest.getContextPath() + AppRouteConstants.ACCOUNT_PORTAL_LOCATION);
     } else {
-      security.logout();
-      UI.getCurrent().getPage().setLocation(request.getContextPath() + "/login");
+      securityService.logout();
+      UI.getCurrent().getPage().setLocation(httpRequest.getContextPath() + "/login");
     }
   }
 
   private void finish() {
-    twoFactorAuthorization.requireSession(request);
-    TwoFactorFlow.finish(request);
+    twoFactorAuthorization.requireSession(httpRequest);
+    TwoFactorFlow.finish(httpRequest);
     String target = AppRouteConstants.ACCOUNT_PORTAL_LOCATION;
-    if (!flow.account() && !recovering) {
+    if (!twoFactorFlow.account() && !recoveryMode) {
       boolean administrative =
-          twoFactorAuthorization.owner(request).roles().stream()
+          twoFactorAuthorization.owner(httpRequest).roles().stream()
               .anyMatch(RoleType::isAdministrative);
       target = administrative ? "/admin" : "/home";
     }
-    UI.getCurrent().getPage().setLocation(request.getContextPath() + target);
+    UI.getCurrent().getPage().setLocation(httpRequest.getContextPath() + target);
   }
 
   private void moveTo(TwoFactorFlow next) {
-    next.enter(request);
-    UI.getCurrent().getPage().setLocation(request.getContextPath() + next.location());
+    next.enter(httpRequest);
+    UI.getCurrent().getPage().setLocation(httpRequest.getContextPath() + next.location());
   }
 
   @Override

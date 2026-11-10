@@ -32,8 +32,8 @@ class PortalConfirmationDialogTest {
     UI ui = new UI();
     ui.getInternals().setSession(session);
     UI.setCurrent(ui);
-    MessageProperties texts = new MessageProperties(new CustomI18NProvider());
-    dialog = new PortalConfirmationDialog(texts, "test-confirmation");
+    MessageProperties messageProperties = new MessageProperties(new CustomI18NProvider());
+    dialog = new PortalConfirmationDialog(messageProperties, "test-confirmation");
     ui.add(dialog);
     prompt =
         new PortalConfirmationDialog.Prompt(
@@ -43,7 +43,7 @@ class PortalConfirmationDialogTest {
             () -> "Erklärung",
             () -> new Span("Betroffener Eintrag"),
             () -> "Hinweis",
-            texts::getPortalDeleteAction,
+            messageProperties::getPortalDeleteAction,
             true);
   }
 
@@ -61,11 +61,11 @@ class PortalConfirmationDialogTest {
   void cancellingAndClosingNeverExecuteOrRetainTheAction() {
     AtomicInteger calls = new AtomicInteger();
     dialog.open(prompt, calls::incrementAndGet);
-    button("cancel").click();
-    button("confirm").click();
+    button("cancelButton").click();
+    button("confirmButton").click();
     dialog.open(prompt, calls::incrementAndGet);
-    button("close").click();
-    button("confirm").click();
+    button("closeDialogButton").click();
+    button("confirmButton").click();
     assertEquals(0, calls.get());
     assertFalse(dialog.isOpened());
   }
@@ -76,8 +76,8 @@ class PortalConfirmationDialogTest {
     dialog.open(prompt, () -> calls.addAndGet(100));
     dialog.close();
     dialog.open(prompt, calls::incrementAndGet);
-    button("confirm").click();
-    button("confirm").click();
+    button("confirmButton").click();
+    button("confirmButton").click();
     assertEquals(1, calls.get());
     assertFalse(dialog.isOpened());
   }
@@ -91,9 +91,9 @@ class PortalConfirmationDialogTest {
           calls.incrementAndGet();
           throw new IllegalStateException("Test failure");
         });
-    Button confirm = button("confirm");
+    Button confirm = button("confirmButton");
     assertThrows(IllegalStateException.class, confirm::click);
-    button("confirm").click();
+    button("confirmButton").click();
     assertEquals(1, calls.get());
     assertFalse(dialog.isOpened());
   }

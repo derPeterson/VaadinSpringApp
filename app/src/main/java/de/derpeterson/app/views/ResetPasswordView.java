@@ -62,7 +62,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
 
   private final VerticalLayout mainContent;
 
-  private H1 title = null;
+  private H1 resetPasswordTitle = null;
   private PasswordField passwordField = null;
   private PasswordField confirmPasswordField = null;
   private Button resetButton = null;
@@ -104,7 +104,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     VaadinSession.getCurrent().setLocale(event.getNewLocale());
 
     Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
-    Optional.ofNullable(title)
+    Optional.ofNullable(resetPasswordTitle)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getPublicResetFormTitle));
@@ -176,8 +176,8 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
 
   private void showResetPasswordCard(String token) {
 
-    this.title = new H1(messageProperties.getPublicResetFormTitle());
-    title.addClassName(COSMOS_HEADLINE_CLASS);
+    this.resetPasswordTitle = new H1(messageProperties.getPublicResetFormTitle());
+    resetPasswordTitle.addClassName(COSMOS_HEADLINE_CLASS);
 
     this.passwordField = new PasswordField(messageProperties.getResetPasswordNewPasswordField());
     passwordField.setClearButtonVisible(true);
@@ -209,7 +209,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     CosmosCardComponent cardComponent =
         new PublicPanelComponent(
             AppIcon.KEY.create(),
-            title,
+            resetPasswordTitle,
             messageProperties::getPublicResetSubtitle,
             new Component[] {passwordField, confirmPasswordField},
             actions);
@@ -270,7 +270,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
   private void showSuccessCard() {
     mainContent.removeAll();
     // Nach erfolgreichem Verbrauch des Tokens nur noch die Bestätigung anzeigen.
-    title = null;
+    resetPasswordTitle = null;
     passwordField = null;
     confirmPasswordField = null;
     resetButton = null;
@@ -310,7 +310,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
 
   private void invalidTokenCard() {
     mainContent.removeAll();
-    title = null;
+    resetPasswordTitle = null;
     passwordField = null;
     confirmPasswordField = null;
     resetButton = null;

@@ -31,12 +31,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.security.access.AccessDeniedException;
 
 class RecoveryCodeDownloadTest {
-  private final TwoFactorEnrollment enrollment = mock(TwoFactorEnrollment.class);
-  private final TwoFactorAuthorization authorization = mock(TwoFactorAuthorization.class);
-  private final RecoveryCodeDocument pdf = mock(RecoveryCodeDocument.class);
-  private final ConfigService config = mock(ConfigService.class);
-  private final RecoveryCodeDownload download =
-      new RecoveryCodeDownload(enrollment, authorization, config, new CustomI18NProvider(), pdf);
+  private final TwoFactorEnrollment twoFactorEnrollment = mock(TwoFactorEnrollment.class);
+  private final TwoFactorAuthorization twoFactorAuthorization = mock(TwoFactorAuthorization.class);
+  private final RecoveryCodeDocument recoveryCodeDocument = mock(RecoveryCodeDocument.class);
+  private final ConfigService configService = mock(ConfigService.class);
+  private final RecoveryCodeDownload recoveryCodeDownload =
+      new RecoveryCodeDownload(
+          twoFactorEnrollment,
+          twoFactorAuthorization,
+          configService,
+          new CustomI18NProvider(),
+          recoveryCodeDocument);
   private final DownloadEvent event = mock(DownloadEvent.class);
   private final VaadinServletRequest request = mock(VaadinServletRequest.class);
   private final VaadinResponse response = mock(VaadinResponse.class);
@@ -45,12 +50,12 @@ class RecoveryCodeDownloadTest {
 
   @BeforeEach
   void prepare() {
-    when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("My / Service");
+    when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("My / Service");
     when(event.getRequest()).thenReturn(request);
     when(event.getResponse()).thenReturn(response);
-    when(enrollment.recoveryOutput(request, id)).thenReturn(codes);
+    when(twoFactorEnrollment.recoveryOutput(request, id)).thenReturn(codes);
     TwoFactorAuthorization.Owner owner = mock(TwoFactorAuthorization.Owner.class);
-    when(authorization.owner(request)).thenReturn(owner);
+    when(twoFactorAuthorization.owner(request)).thenReturn(owner);
     when(owner.email()).thenReturn("fixture@example.test");
   }
 
@@ -59,43 +64,45 @@ class RecoveryCodeDownloadTest {
     byte[] bytes = "%PDF-synthetic".getBytes(StandardCharsets.US_ASCII);
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     when(event.getOutputStream()).thenReturn(output);
-    when(pdf.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any())).thenReturn(bytes);
+    when(recoveryCodeDocument.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any()))
+        .thenReturn(bytes);
 
-    download.write(event, id, Locale.GERMAN);
+    recoveryCodeDownload.write(event, id, Locale.GERMAN);
 
     assertArrayEquals("%PDF-synthetic".getBytes(StandardCharsets.US_ASCII), output.toByteArray());
     assertArrayEquals(new byte[bytes.length], bytes);
     verify(event).setFileName("My-Service-recovery-codes.pdf");
     verify(event).setContentType("application/pdf");
     verify(response).setHeader("Cache-Control", "no-store");
-    verify(enrollment, never()).dismissOutput(any(), any());
+    verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
   }
 
   @Test
   void generationFailureKeepsOutputAvailableForRetry() {
-    when(pdf.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any()))
+    when(recoveryCodeDocument.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any()))
         .thenThrow(new IllegalStateException("Synthetic renderer failure"))
         .thenReturn("%PDF-retry".getBytes(StandardCharsets.US_ASCII));
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     when(event.getOutputStream()).thenReturn(output);
 
-    download.write(event, id, Locale.GERMAN);
+    recoveryCodeDownload.write(event, id, Locale.GERMAN);
     verify(response).setStatus(500);
-    download.write(event, id, Locale.GERMAN);
+    recoveryCodeDownload.write(event, id, Locale.GERMAN);
 
     assertArrayEquals("%PDF-retry".getBytes(StandardCharsets.US_ASCII), output.toByteArray());
-    verify(enrollment, never()).dismissOutput(any(), any());
+    verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
   }
 
   @Test
   void expiredOrRevokedOutputRemainsDenied() {
-    when(enrollment.recoveryOutput(request, id)).thenThrow(new AccessDeniedException("Expired"));
+    when(twoFactorEnrollment.recoveryOutput(request, id))
+        .thenThrow(new AccessDeniedException("Expired"));
 
-    download.write(event, id, Locale.GERMAN);
+    recoveryCodeDownload.write(event, id, Locale.GERMAN);
 
     verify(response).setStatus(403);
     verify(event, never()).setContentLength(anyLong());
-    verify(enrollment, never()).dismissOutput(any(), any());
+    verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
   }
 
   @Test
@@ -104,12 +111,13 @@ class RecoveryCodeDownloadTest {
     OutputStream output = mock(OutputStream.class);
     doThrow(new IOException("Synthetic disconnected client")).when(output).write(bytes);
     when(event.getOutputStream()).thenReturn(output);
-    when(pdf.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any())).thenReturn(bytes);
+    when(recoveryCodeDocument.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any()))
+        .thenReturn(bytes);
 
-    download.write(event, id, Locale.GERMAN);
+    recoveryCodeDownload.write(event, id, Locale.GERMAN);
 
     verify(response).setStatus(500);
     assertArrayEquals(new byte[bytes.length], bytes);
-    verify(enrollment, never()).dismissOutput(any(), any());
+    verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
   }
 }

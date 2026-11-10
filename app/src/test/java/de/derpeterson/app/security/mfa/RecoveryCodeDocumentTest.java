@@ -41,7 +41,8 @@ class RecoveryCodeDocumentTest {
   @ValueSource(strings = {"de", "en"})
   void rendersOneA4PageWithLogoAllCodesAndEscapedIdentity(String language) throws Exception {
     Locale locale = Locale.forLanguageTag(language);
-    MessageProperties texts = MessageProperties.forLocale(new CustomI18NProvider(), locale);
+    MessageProperties messageProperties =
+        MessageProperties.forLocale(new CustomI18NProvider(), locale);
     List<String> codes =
         IntStream.range(0, 10)
             .mapToObj(index -> String.format(Locale.ROOT, "%08X-12345678-ABCDEF01-23456789", index))
@@ -54,7 +55,7 @@ class RecoveryCodeDocumentTest {
                 codes,
                 Instant.parse("2026-11-02T12:00:00Z"),
                 locale,
-                texts);
+                messageProperties);
     try (PdfReader reader = new PdfReader(bytes)) {
       assertEquals(1, reader.getNumberOfPages());
       assertEquals(595, Math.round(reader.getPageSize(1).getWidth()));
@@ -62,10 +63,10 @@ class RecoveryCodeDocumentTest {
       String content = new PdfTextExtractor(reader).getTextFromPage(1);
       // Zeilenumbrüche und andere Leerraumfolgen des PDF-Textauszugs zusammenfassen.
       String normalized = content.replaceAll("\\s+", " ");
-      assertTrue(normalized.contains(texts.getTwoFactorRecoveryExplanation()));
+      assertTrue(normalized.contains(messageProperties.getTwoFactorRecoveryExplanation()));
       assertTrue(content.contains("Cosmos <Test>"));
       assertTrue(content.contains("fixture@example.test"));
-      assertTrue(content.contains(texts.getTwoFactorRecoveryTitle()));
+      assertTrue(content.contains(messageProperties.getTwoFactorRecoveryTitle()));
       for (String code : codes) {
         assertTrue(content.contains(code), "Every complete recovery code must be readable");
       }

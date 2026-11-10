@@ -22,14 +22,14 @@ class CopyrightTextFormatterTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void defaultUsesTypedTranslationAndTheClocksLocalYear(String language) {
-    MessageProperties texts =
+    MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     String result =
         CopyrightTextFormatter.format(
             ConfigEntry.COPYRIGHT_TEXT.getDefaultValueString(),
             "Example",
             CLOCK,
-            texts::getAccountCopyrightTemplate);
+            messageProperties::getAccountCopyrightTemplate);
     assertTrue(result.startsWith("© 2031 Example."));
     assertFalse(result.contains("{year}"));
     assertFalse(result.contains("{serviceName}"));

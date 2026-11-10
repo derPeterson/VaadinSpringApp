@@ -52,8 +52,8 @@ public class EmailQueueService {
   private final UserRepository userRepository;
   private final PlatformTransactionManager transactionManager;
   private final Clock clock;
-  private final AdminNotificationAttemptRepository adminAttempts;
-  private final EmailQueueWorkerPool workers;
+  private final AdminNotificationAttemptRepository adminNotificationAttemptRepository;
+  private final EmailQueueWorkerPool emailQueueWorkerPool;
 
   @Autowired
   public EmailQueueService(
@@ -62,17 +62,17 @@ public class EmailQueueService {
       EmailService emailService,
       UserRepository userRepository,
       PlatformTransactionManager transactionManager,
-      AdminNotificationAttemptRepository adminAttempts,
-      EmailQueueWorkerPool workers) {
+      AdminNotificationAttemptRepository adminNotificationAttemptRepository,
+      EmailQueueWorkerPool emailQueueWorkerPool) {
     this(
         configService,
         emailQueueRepository,
         emailService,
         userRepository,
         transactionManager,
-        adminAttempts,
+        adminNotificationAttemptRepository,
         Clock.systemDefaultZone(),
-        workers);
+        emailQueueWorkerPool);
   }
 
   public EmailQueueService(
@@ -81,17 +81,18 @@ public class EmailQueueService {
       EmailService emailService,
       UserRepository userRepository,
       PlatformTransactionManager transactionManager,
-      AdminNotificationAttemptRepository adminAttempts,
+      AdminNotificationAttemptRepository adminNotificationAttemptRepository,
       Clock clock,
-      EmailQueueWorkerPool workers) {
-    this.workers = Objects.requireNonNull(workers, "workers");
+      EmailQueueWorkerPool emailQueueWorkerPool) {
+    this.emailQueueWorkerPool = Objects.requireNonNull(emailQueueWorkerPool, "workers");
     this.configService = configService;
     this.emailQueueRepository = emailQueueRepository;
     this.emailService = emailService;
     this.userRepository = userRepository;
     this.transactionManager = transactionManager;
     this.clock = Objects.requireNonNull(clock, "clock");
-    this.adminAttempts = Objects.requireNonNull(adminAttempts, "adminAttempts");
+    this.adminNotificationAttemptRepository =
+        Objects.requireNonNull(adminNotificationAttemptRepository, "adminAttempts");
   }
 
   private String deliveryRecipient(EmailQueueEntity email) {
@@ -207,7 +208,8 @@ public class EmailQueueService {
                 .stream()
                 .map(EmailQueueEntity::getId)
                 .toList());
-    workers.dispatchEmailBatch(pendingIds, id -> processCandidate(id, maxRetry, retryDelay));
+    emailQueueWorkerPool.dispatchEmailBatch(
+        pendingIds, id -> processCandidate(id, maxRetry, retryDelay));
   }
 
   private void processCandidate(long id, int maxRetry, Duration retryDelay) {
@@ -360,7 +362,7 @@ public class EmailQueueService {
           AdminNotificationAttemptEntity audit = new AdminNotificationAttemptEntity();
           audit.setQueueId(failedEmail.getId());
           audit.setStartedAt(LocalDateTime.now(clock));
-          return adminAttempts.saveAndFlush(audit).getId();
+          return adminNotificationAttemptRepository.saveAndFlush(audit).getId();
         });
     AdminNotificationStatus outcome = AdminNotificationStatus.NOT_SENT;
     boolean dispatchStarted = false;
@@ -400,14 +402,15 @@ public class EmailQueueService {
     final AdminNotificationStatus finalOutcome = outcome;
     // Independent of the already committed FAILED; failure here leaves the durable start.
     transaction.executeWithoutResult(status -> {
-      AdminNotificationAttemptEntity audit = adminAttempts.lockById(auditId).orElseThrow();
+      AdminNotificationAttemptEntity audit =
+          adminNotificationAttemptRepository.lockById(auditId).orElseThrow();
       if (audit.getStatus() != AdminNotificationStatus.IN_PROGRESS) {
         throw new IllegalStateException(
             "Admin notification attempt no longer matches the stored state.");
       }
       audit.setStatus(finalOutcome);
       audit.setCompletedAt(LocalDateTime.now(clock));
-      adminAttempts.saveAndFlush(audit);
+      adminNotificationAttemptRepository.saveAndFlush(audit);
     });
   }
 }

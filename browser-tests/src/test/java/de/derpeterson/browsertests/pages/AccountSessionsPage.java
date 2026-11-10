@@ -10,7 +10,7 @@ import io.qameta.allure.Step;
 
 public final class AccountSessionsPage {
   private final Page page;
-  private final UiTexts texts = UiTexts.selected();
+  private final UiTexts uiTexts = UiTexts.selected();
 
   public AccountSessionsPage(Page page) {
     this.page = page;
@@ -30,7 +30,7 @@ public final class AccountSessionsPage {
   @Step("Aktive Anzahl, andere Sitzungen und gespeicherte Zugänge prüfen")
   public void assertCounts(int active, int other, int saved) {
     assertThat(page.locator("#account-panel-sessions vaadin-badge.account-session-count"))
-        .hasText(texts.getPortalSessionActiveCount(active));
+        .hasText(uiTexts.getPortalSessionActiveCount(active));
     assertThat(rows("current")).hasCount(1);
     assertThat(page.locator("#account-current-session")).isDisabled();
     assertThat(rows("active")).hasCount(other);
@@ -41,11 +41,11 @@ public final class AccountSessionsPage {
   public void assertGroups(int active, int saved) {
     Locator activeGroup = page.locator("#account-session-group-active");
     Locator savedGroup = page.locator("#account-session-group-saved");
-    assertThat(activeGroup).hasText(texts.getPortalSessionActiveGroup(active));
+    assertThat(activeGroup).hasText(uiTexts.getPortalSessionActiveGroup(active));
     assertThat(activeGroup).hasCSS("text-transform", "uppercase");
     assertThat(activeGroup).hasCSS("color", "rgb(56, 189, 248)");
     if (saved > 0) {
-      assertThat(savedGroup).hasText(texts.getPortalSessionSavedGroup(saved));
+      assertThat(savedGroup).hasText(uiTexts.getPortalSessionSavedGroup(saved));
       assertThat(savedGroup).hasCSS("text-transform", "uppercase");
       assertThat(savedGroup).hasCSS("color", "rgb(148, 163, 184)");
     } else {
@@ -72,12 +72,12 @@ public final class AccountSessionsPage {
   public void assertConfirmationDetails() {
     Locator card = page.locator("#sessions-confirmation .portal-context-card");
     Locator method = card.locator(".account-session-sign-in-method .account-session-detail-value");
-    assertThat(method).hasText(texts.getSignInPortalPassword());
+    assertThat(method).hasText(uiTexts.getSignInPortalPassword());
     assertThat(method).hasCSS("font-weight", "700");
     assertThat(method).hasCSS("color", "rgb(255, 255, 255)");
     assertThat(card.locator(".portal-context-detail > .account-session-detail-value")).hasCount(3);
     assertThat(card.locator("vaadin-badge.account-session-state"))
-        .hasText(texts.getPortalSessionActive());
+        .hasText(uiTexts.getPortalSessionActive());
     assertThat(card.locator("vaadin-badge.account-session-state"))
         .hasCSS("border-top-width", "1px");
   }
@@ -85,22 +85,22 @@ public final class AccountSessionsPage {
   @Step("Andere Sitzung gezielt abmelden")
   public void revokeOther(int index) {
     UiActions.complete(page, () -> rows("active").nth(index).locator("vaadin-button").click());
-    confirm();
+    confirmDeviceRevocation();
   }
 
   @Step("Gespeicherten Zugang widerrufen")
   public void revokeSaved(int index) {
     UiActions.complete(page, () -> rows("saved").nth(index).locator("vaadin-button").click());
-    confirm();
+    confirmDeviceRevocation();
   }
 
   @Step("Alle anderen Sitzungen abmelden")
   public void revokeOthers() {
     UiActions.complete(page, () -> page.locator("#account-logout-others").click());
-    confirm();
+    confirmDeviceRevocation();
   }
 
-  public void confirm() {
+  public void confirmDeviceRevocation() {
     assertThat(
             page.locator(
                 "#sessions-confirmation[opened] vaadin-dialog-overlay > [part~='overlay']"))
@@ -110,7 +110,7 @@ public final class AccountSessionsPage {
   }
 
   @Step("Sitzungsliste über Aktualisieren neu laden")
-  public void refresh() {
+  public void refreshSessionList() {
     UiActions.complete(page, () -> page.locator("#account-sessions-refresh").click());
   }
 }

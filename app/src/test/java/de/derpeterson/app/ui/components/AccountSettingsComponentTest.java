@@ -143,13 +143,13 @@ class AccountSettingsComponentTest {
   void sessionsShowConfiguredLimitWithoutPresentingSampleCountAsReal(String language) {
     locale.set(Locale.forLanguageTag(language));
     content.refreshTexts();
-    MessageProperties texts = MessageProperties.forLocale(provider, locale.get());
+    MessageProperties messageProperties = MessageProperties.forLocale(provider, locale.get());
     assertEquals(
-        texts.getAccountSettingsSessionsLimit(7),
+        messageProperties.getAccountSettingsSessionsLimit(7),
         ((Badge) byId("account-sessions-limit")).getText());
     String panel = byId("account-panel-sessions").getElement().getTextRecursively();
-    assertTrue(panel.contains(texts.getPortalSessionActiveCount(0)));
-    assertTrue(panel.contains(texts.getAccountSettingsSessionsActivity()));
+    assertTrue(panel.contains(messageProperties.getPortalSessionActiveCount(0)));
+    assertTrue(panel.contains(messageProperties.getAccountSettingsSessionsActivity()));
     verifyNoInteractions(saver);
   }
 
@@ -159,7 +159,7 @@ class AccountSettingsComponentTest {
     locale.set(Locale.forLanguageTag(language));
     navigateTo(AccountSection.SECURITY);
     content.refreshTexts();
-    MessageProperties texts = MessageProperties.forLocale(provider, locale.get());
+    MessageProperties messageProperties = MessageProperties.forLocale(provider, locale.get());
     String heading =
         tree(content)
             .filter(CosmosSectionHeaderComponent.class::isInstance)
@@ -167,21 +167,23 @@ class AccountSettingsComponentTest {
             .orElseThrow()
             .getElement()
             .getTextRecursively();
-    assertTrue(heading.contains(texts.getAccountSettingsSecurityIntroduction()));
-    assertFalse(heading.contains(texts.getAccountSettingsSecurityDescription()));
+    assertTrue(heading.contains(messageProperties.getAccountSettingsSecurityIntroduction()));
+    assertFalse(heading.contains(messageProperties.getAccountSettingsSecurityDescription()));
     Button emailAction = (Button) byId("account-email-edit-security");
-    assertEquals(texts.getAccountSettingsChangeAction(), emailAction.getText());
-    assertEquals(texts.getAccountSettingsChangeEmail(), emailAction.getAriaLabel().orElseThrow());
+    assertEquals(messageProperties.getAccountSettingsChangeAction(), emailAction.getText());
+    assertEquals(
+        messageProperties.getAccountSettingsChangeEmail(),
+        emailAction.getAriaLabel().orElseThrow());
     TabSheet tabs = (TabSheet) byId("account-security-tabs");
     assertEquals(byId("account-security-tab-portal"), tabs.getSelectedTab());
     assertEquals(
-        texts.getAccountSecurityPortalAccess(),
+        messageProperties.getAccountSecurityPortalAccess(),
         byId("account-security-tab-portal").getElement().getTextRecursively());
     tabs.setSelectedTab((Tab) byId("account-security-tab-providers"));
     content.refreshTexts();
     assertEquals(byId("account-security-tab-providers"), tabs.getSelectedTab());
     assertEquals(
-        texts.getProviderSettingsPanelTitle(),
+        messageProperties.getProviderSettingsPanelTitle(),
         byId("account-security-tab-providers").getElement().getTextRecursively());
     assertEquals("Alex", ((TextField) byId("account-first-name")).getValue());
     verifyNoInteractions(saver);
@@ -212,18 +214,22 @@ class AccountSettingsComponentTest {
     navigateTo(AccountSection.SESSIONS);
     locale.set(Locale.forLanguageTag(language));
     content.refreshTexts();
-    MessageProperties texts = MessageProperties.forLocale(provider, locale.get());
-    assertTrue(content.getElement().getTextRecursively().contains(texts.getAccountSettingsTitle()));
+    MessageProperties messageProperties = MessageProperties.forLocale(provider, locale.get());
+    assertTrue(
+        content
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getAccountSettingsTitle()));
     assertTrue(
         byId("account-tab-sessions")
             .getElement()
             .getTextRecursively()
-            .contains(texts.getAccountSettingsSessionsTab()));
+            .contains(messageProperties.getAccountSettingsSessionsTab()));
     assertTrue(
         byId("account-panel-sessions")
             .getElement()
             .getTextRecursively()
-            .contains(texts.getAccountSettingsSessionsActivity()));
+            .contains(messageProperties.getAccountSettingsSessionsActivity()));
     assertEquals(AccountSection.SESSIONS, content.getSelectedSection());
     assertEquals("Unsaved", ((TextField) byId("account-first-name")).getValue());
     assertEquals("Alex", user.getFirstName());
@@ -243,13 +249,12 @@ class AccountSettingsComponentTest {
         tree(content)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
-            .filter(
-                button ->
-                    button
-                        .getText()
-                        .equals(
-                            MessageProperties.forLocale(provider, locale.get())
-                                .getAccountSettingsEditPicture()))
+            .filter(button ->
+                button
+                    .getText()
+                    .equals(
+                        MessageProperties.forLocale(provider, locale.get())
+                            .getAccountSettingsEditPicture()))
             .findFirst()
             .orElseThrow();
     assertTrue(picture.isEnabled());
@@ -279,16 +284,15 @@ class AccountSettingsComponentTest {
         title.hasClassName(error ? LumoUtility.TextColor.ERROR : LumoUtility.TextColor.SUCCESS));
     assertTrue(
         tree(notification)
-            .anyMatch(
-                component ->
-                    component.getElement().getAttribute("src") != null
-                        && component
-                            .getElement()
-                            .getAttribute("src")
-                            .equals(
-                                error
-                                    ? "icons/lucide/triangle-alert.svg"
-                                    : "icons/lucide/circle-check.svg")));
+            .anyMatch(component ->
+                component.getElement().getAttribute("src") != null
+                    && component
+                        .getElement()
+                        .getAttribute("src")
+                        .equals(
+                            error
+                                ? "icons/lucide/triangle-alert.svg"
+                                : "icons/lucide/circle-check.svg")));
   }
 
   @ParameterizedTest

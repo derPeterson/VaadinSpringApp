@@ -18,11 +18,11 @@ public class TwoFactorMail {
     RECOVERY_CODES
   }
 
-  private final AccountSecurityMail templates;
-  private final EmailQueueService queue;
+  private final AccountSecurityMail accountSecurityMail;
+  private final EmailQueueService emailQueueService;
 
   public void setupCode(UserEntity user, String code) {
-    MessageProperties messageProperties = templates.messagePropertiesForRecipient(user);
+    MessageProperties messageProperties = accountSecurityMail.messagePropertiesForRecipient(user);
     enqueue(
         user,
         messageProperties.getTwoFactorEmailSubject(),
@@ -32,7 +32,7 @@ public class TwoFactorMail {
   }
 
   public void securityChange(UserEntity user, Event event) {
-    MessageProperties messageProperties = templates.messagePropertiesForRecipient(user);
+    MessageProperties messageProperties = accountSecurityMail.messagePropertiesForRecipient(user);
     String title =
         switch (event) {
           case ENABLED -> messageProperties.getTwoFactorEnabledSubject();
@@ -50,10 +50,10 @@ public class TwoFactorMail {
 
   private void enqueue(UserEntity user, String title, String message, String code, String notice) {
     String body =
-        templates.render(
+        accountSecurityMail.render(
             "two_factor",
             user,
             Map.of("TITLE", title, "MESSAGE", message, "CODE", code, "NOTICE", notice));
-    queue.addAddressedNotification(user, user.getEmail(), title, body);
+    emailQueueService.addAddressedNotification(user, user.getEmail(), title, body);
   }
 }

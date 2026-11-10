@@ -86,38 +86,39 @@ class AccountEmailChangeDialogTest {
     locale.set(Locale.forLanguageTag(language));
     dialog.refreshTexts();
     dialog.open();
-    MessageProperties texts = MessageProperties.forLocale(new CustomI18NProvider(), locale.get());
+    MessageProperties messageProperties =
+        MessageProperties.forLocale(new CustomI18NProvider(), locale.get());
     assertTrue(dialog.isOpened());
     assertEquals(ModalityMode.STRICT, dialog.getModality());
     assertTrue(dialog.isCloseOnEsc());
     assertTrue(dialog.isCloseOnOutsideClick());
     assertEquals(
-        texts.getAccountSettingsChangeEmail(), dialog.getElement().getProperty("ariaLabel"));
+        messageProperties.getAccountSettingsChangeEmail(),
+        dialog.getElement().getProperty("ariaLabel"));
     assertEquals(
-        texts.getAccountEmailDialogNewEmail(), ((EmailField) byId("account-email-new")).getLabel());
+        messageProperties.getAccountEmailDialogNewEmail(),
+        ((EmailField) byId("account-email-new")).getLabel());
     assertEquals(
-        texts.getAccountEmailDialogConfirmEmail(),
+        messageProperties.getAccountEmailDialogConfirmEmail(),
         ((EmailField) byId("account-email-confirm")).getLabel());
     PasswordField password = (PasswordField) byId("account-email-password");
-    assertEquals(texts.getAccountEmailDialogPassword(), password.getLabel());
+    assertEquals(messageProperties.getAccountEmailDialogPassword(), password.getLabel());
     assertEquals(Autocomplete.CURRENT_PASSWORD, password.getAutocomplete());
     assertEquals(
-        texts.getAdminUsersCloseDialog(),
+        messageProperties.getAdminUsersCloseDialog(),
         ((Button) byId("account-email-close")).getAriaLabel().orElseThrow());
     assertTrue(
         slottedTree(dialog.getHeader().getElement())
-            .anyMatch(
-                component ->
-                    component instanceof SvgIcon icon
-                        && "icons/lucide/mail.svg".equals(icon.getSrc())));
+            .anyMatch(component ->
+                component instanceof SvgIcon icon
+                    && "icons/lucide/mail.svg".equals(icon.getSrc())));
     assertTrue(
         tree(dialog)
-            .anyMatch(
-                component ->
-                    component
-                        .getElement()
-                        .getTextRecursively()
-                        .contains(texts.getAccountEmailDialogHint())));
+            .anyMatch(component ->
+                component
+                    .getElement()
+                    .getTextRecursively()
+                    .contains(messageProperties.getAccountEmailDialogHint())));
   }
 
   @ParameterizedTest
@@ -195,10 +196,9 @@ class AccountEmailChangeDialogTest {
 
   @Test
   void conflictingAddressMarksBothEmailFieldsAndKeepsTheCurrentPasswordUnmarked() {
-    dialog.setRequestAction(
-        change -> {
-          throw new Rejected(Problem.EMAIL_UNAVAILABLE);
-        });
+    dialog.setRequestAction(change -> {
+      throw new Rejected(Problem.EMAIL_UNAVAILABLE);
+    });
     dialog.open();
     ((EmailField) byId("account-email-new")).setValue("taken@example.test");
     ((EmailField) byId("account-email-confirm")).setValue("taken@example.test");
