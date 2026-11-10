@@ -20,13 +20,6 @@ gezielt einsetzen. Jede Datei sichten und konkrete Lesbarkeitshürden beheben.
 
 ## Offene Arbeitspakete
 
-- [ ] **App-Oberfläche:** Nach den Kontoeinstellungen und der 2FA-Kontokomponente
-  die übrigen Views, UI-Komponenten, zugehörige
-  UI-Helfer und Texte paketweise sichten. Vaadin-Aufbau, Sprachwechsel und
-  Klickabläufe müssen sich in der Klasse leicht finden und nachvollziehen lassen.
-- [ ] **App-Fachlogik und Infrastruktur:** Anmeldung, Berechtigungen, Sitzungen,
-  Dienste, Datenzugriff und die übrigen Hauptquellen sichten. Bei Änderungen die
-  Aufrufreihenfolge, Fehlerfälle sowie Transaktions- und Sperrgrenzen prüfen.
 - [ ] **App-Tests:** Alle Testquellen paketweise sichten. Testnamen, Vorbereitung,
   Ausführung und Erwartungen sollen das jeweilige Szenario erkennen lassen.
 - [ ] **Browser-Tests:** Java-Tests, Page Objects und Hilfscode sichten. Szenarien,

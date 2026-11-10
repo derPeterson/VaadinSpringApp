@@ -89,7 +89,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private static final DraftTarget NEW_REQUEST_DRAFT = new DraftTarget(null);
 
   private final transient MessageProperties messageProperties;
-  private final transient SupportTicketService service;
+  private final transient SupportTicketService supportTicketService;
   private final transient HttpServletRequest request;
   private final boolean administration;
   private final Grid<Ticket> grid = new Grid<>();
@@ -188,11 +188,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   public SupportTicketsComponent(
       MessageProperties messageProperties,
-      SupportTicketService service,
+      SupportTicketService supportTicketService,
       HttpServletRequest request,
       boolean administration) {
     this.messageProperties = messageProperties;
-    this.service = service;
+    this.supportTicketService = supportTicketService;
     this.request = request;
     this.administration = administration;
     instructionDialog =
@@ -348,7 +348,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     subscription.addValueChangeListener(event -> {
       if (event.isFromClient() && selected != null) {
         try {
-          service.setSubscription(request, selected.id(), event.getValue());
+          supportTicketService.setSubscription(request, selected.id(), event.getValue());
           refresh();
         } catch (RuntimeException failure) {
           subscription.setValue(selected.subscribed());
@@ -364,7 +364,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     create.addClickListener(event -> {
       if (ValidationHelper.validateRequiredInputs(List.of(body), messageProperties)) {
         perform(
-            () -> service.createRecovery(request, body.getValue()),
+            () -> supportTicketService.createRecovery(request, body.getValue()),
             messageProperties::getSupportCreated,
             true);
       }
@@ -373,7 +373,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     claim.setPrefixComponent(AppIcon.CHECK.create());
     claim.addClickListener(event ->
         perform(
-            () -> service.claim(request, selected.id(), selected.version()),
+            () -> supportTicketService.claim(request, selected.id(), selected.version()),
             messageProperties::getSupportSaved,
             false));
     reply.setId("support-add-reply");
@@ -383,7 +383,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
         boolean privateNote = administration && isInternalNote();
         perform(
             () ->
-                service.reply(
+                supportTicketService.reply(
                     request,
                     selected.id(),
                     selected.version(),
@@ -402,8 +402,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
         perform(
             () ->
                 administration
-                    ? service.close(request, selected.id(), selected.version())
-                    : service.closeOwn(request, selected.id(), selected.version()),
+                    ? supportTicketService.close(request, selected.id(), selected.version())
+                    : supportTicketService.closeOwn(request, selected.id(), selected.version()),
             messageProperties::getSupportSaved,
             true));
     instructions.setId("support-instructions");
@@ -430,6 +430,16 @@ public final class SupportTicketsComponent extends VerticalLayout {
       currentPage = 0;
       refresh();
     });
+    buildAdminTicketQueue();
+    VerticalLayout ticketHeader = buildAdminTicketHeader();
+    buildAdminTicketDetail(ticketHeader, sensitiveNotice);
+    VerticalLayout ticketDetailColumn = buildAdminDetailColumn();
+    adminWorkspace.add(adminQueue, ticketDetailColumn);
+    adminWorkspace.addClassName("support-admin-columns");
+    panel.getBody().add(ticketCategories, adminWorkspace);
+  }
+
+  private void buildAdminTicketQueue() {
     queueHeading.addClassName(CosmosClasses.PANEL_TITLE);
     HorizontalLayout queueIcon = new HorizontalLayout(AppIcon.LIST.create());
     queueIcon.setPadding(false);
@@ -444,30 +454,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     queueHeader.setJustifyContentMode(JustifyContentMode.BETWEEN);
     queueHeader.setFlexGrow(1, queueHeading);
     queueHeader.addClassName(CosmosClasses.PANEL_HEADER);
-    filters =
-        new SupportTicketFilterPanel(
-            messageProperties,
-            this::status,
-            () -> {
-              currentPage = 0;
-              refresh();
-            },
-            this::jumpToTicket);
-    add(filters);
-    filterButton.setId("support-filter");
-    filterButton.getElement().setAttribute("aria-controls", "support-filter-panel");
-    filterButton.getElement().setAttribute("aria-haspopup", "dialog");
-    filterButton.getElement().setAttribute("aria-expanded", "false");
-    filters.addOpenedChangeListener(event ->
-        filterButton
-            .getElement()
-            .setAttribute("aria-expanded", Boolean.toString(event.isOpened())));
-    filterButton.setPrefixComponent(AppIcon.FILTER.create());
-    activeFilterCount.addClassName(SECTION_COUNT_CLASS);
-    activeFilterCount.setId("support-active-filter-count");
-    activeFilterCount.setVisible(false);
-    filterButton.setSuffixComponent(activeFilterCount);
-    filterButton.addClickListener(event -> filters.openWithAppliedFilters());
+    configureAdminQueueFilter();
     HorizontalLayout queueTools = new HorizontalLayout(filterButton, reload);
     queueTools.setId("support-queue-tools");
     queueTools.setPadding(false);
@@ -514,7 +501,36 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminQueue.add(queuePanel);
     adminQueue.setPadding(false);
     adminQueue.addClassName("support-admin-queue");
+  }
 
+  private void configureAdminQueueFilter() {
+    filters =
+        new SupportTicketFilterPanel(
+            messageProperties,
+            this::status,
+            () -> {
+              currentPage = 0;
+              refresh();
+            },
+            this::jumpToTicket);
+    add(filters);
+    filterButton.setId("support-filter");
+    filterButton.getElement().setAttribute("aria-controls", "support-filter-panel");
+    filterButton.getElement().setAttribute("aria-haspopup", "dialog");
+    filterButton.getElement().setAttribute("aria-expanded", "false");
+    filters.addOpenedChangeListener(event ->
+        filterButton
+            .getElement()
+            .setAttribute("aria-expanded", Boolean.toString(event.isOpened())));
+    filterButton.setPrefixComponent(AppIcon.FILTER.create());
+    activeFilterCount.addClassName(SECTION_COUNT_CLASS);
+    activeFilterCount.setId("support-active-filter-count");
+    activeFilterCount.setVisible(false);
+    filterButton.setSuffixComponent(activeFilterCount);
+    filterButton.addClickListener(event -> filters.openWithAppliedFilters());
+  }
+
+  private VerticalLayout buildAdminTicketHeader() {
     adminSubject.addClassNames(CosmosClasses.PANEL_TITLE, "support-admin-subject");
     adminTicketNumber.addClassName("support-ticket-number");
     HorizontalLayout metadata = new HorizontalLayout(adminTicketNumber, adminStatus);
@@ -566,6 +582,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
     ticketHeader.setWidthFull();
     ticketHeader.setAlignItems(Alignment.STRETCH);
     ticketHeader.addClassNames(CosmosClasses.PANEL_HEADER, "support-admin-ticket-header");
+    return ticketHeader;
+  }
+
+  private void buildAdminTicketDetail(
+      VerticalLayout ticketHeader, HorizontalLayout sensitiveNotice) {
     adminTicketTools.setId("support-ticket-tools");
     adminTicketTools.setPadding(false);
     adminTicketTools.setSpacing(false);
@@ -616,6 +637,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
     adminDetail.setId("support-ticket-panel");
     adminDetail.addClassNames(CosmosClasses.PANEL_CARD, "support-admin-detail");
     adminDetail.add(ticketHeader, adminTicketTools, content, adminActionFooter);
+  }
+
+  private VerticalLayout buildAdminDetailColumn() {
     noSelectionTitle.addClassName("cosmos-notification-empty-title");
     selectTicket.addClassName(CosmosClasses.PANEL_DESCRIPTION);
     noSelection.add(AppIcon.MOUSE_POINTER_CLICK.create(), noSelectionTitle, selectTicket);
@@ -627,14 +651,12 @@ public final class SupportTicketsComponent extends VerticalLayout {
     noSelection.setId("support-select-ticket");
     noSelection.addClassNames("support-admin-no-selection", "cosmos-notification-empty");
     selectTicket.getElement().setAttribute("role", "status");
-    VerticalLayout detail = new VerticalLayout(noSelection, adminDetail);
-    detail.setPadding(false);
-    detail.setSpacing(false);
-    detail.setFlexGrow(1, noSelection);
-    detail.addClassName("support-admin-detail-column");
-    adminWorkspace.add(adminQueue, detail);
-    adminWorkspace.addClassName("support-admin-columns");
-    panel.getBody().add(ticketCategories, adminWorkspace);
+    VerticalLayout ticketDetailColumn = new VerticalLayout(noSelection, adminDetail);
+    ticketDetailColumn.setPadding(false);
+    ticketDetailColumn.setSpacing(false);
+    ticketDetailColumn.setFlexGrow(1, noSelection);
+    ticketDetailColumn.addClassName("support-admin-detail-column");
+    return ticketDetailColumn;
   }
 
   private void setTicketFocused(boolean focused) {
@@ -765,10 +787,10 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private boolean openTicket(String number, boolean directJump) {
-    List<Ticket> values = administration ? List.of() : service.list(request, false);
+    List<Ticket> values = administration ? List.of() : supportTicketService.list(request, false);
     Ticket matching =
         administration
-            ? service.findForAdministration(request, number)
+            ? supportTicketService.findForAdministration(request, number)
             : values.stream()
                 .filter(ticket -> ticketNumber(ticket).equals("#" + number))
                 .findFirst()
@@ -787,10 +809,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
     }
     if (administration) {
       if (matching != null) {
-        currentPage = service.pageFor(request, matching.id(), inboxQuery().filter(), pageSize);
+        currentPage =
+            supportTicketService.pageFor(request, matching.id(), inboxQuery().filter(), pageSize);
       }
       selected = matching;
-      applyInbox(service.inbox(request, selectedId(), inboxQuery()));
+      applyInbox(supportTicketService.inbox(request, selectedId(), inboxQuery()));
       if (matching == null) {
         failed(messageProperties::getSupportTicketUnavailable);
       }
@@ -871,7 +894,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     HttpSession session = wrapped.getHttpSession();
     liveSession = session;
     liveRegistration =
-        service
+        supportTicketService
             .events()
             .register(change -> {
               Long viewer = liveViewerId;
@@ -900,7 +923,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private void refreshLive(HttpSession session) {
     try {
       LiveView state =
-          service.liveView(
+          supportTicketService.liveView(
               session,
               administration,
               selectedId(),
@@ -922,9 +945,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private void refresh(boolean notifySuccess) {
     try {
       if (administration) {
-        applyInbox(service.inbox(request, selectedId(), inboxQuery()));
+        applyInbox(supportTicketService.inbox(request, selectedId(), inboxQuery()));
       } else {
-        List<Ticket> values = service.list(request, false);
+        List<Ticket> values = supportTicketService.list(request, false);
         applyTickets(values, SupportTicketService.selectTicket(values, selectedId(), false));
         refreshConversation();
       }
@@ -1109,9 +1132,13 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   private void refreshConversation() {
     List<Reply> messages =
-        selected == null ? List.of() : service.conversation(request, selected.id(), administration);
+        selected == null
+            ? List.of()
+            : supportTicketService.conversation(request, selected.id(), administration);
     UserIdentity requester =
-        !administration && !messages.isEmpty() ? service.requesterIdentity(request) : null;
+        !administration && !messages.isEmpty()
+            ? supportTicketService.requesterIdentity(request)
+            : null;
     showConversation(messages, requester);
   }
 
@@ -1302,7 +1329,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
                 return;
               }
               try {
-                service.markSeen(
+                supportTicketService.markSeen(
                     session, administration, ticket.id(), lastReplyId, ticket.version());
               } catch (AccessDeniedException _) {
                 // Eine inzwischen abgelaufene Sitzung darf keine Lesegrenze schreiben.
@@ -1525,7 +1552,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   private void previewInstructions() {
     try {
-      service.validateInstructionPreview(request, selected.id());
+      supportTicketService.validateInstructionPreview(request, selected.id());
       RecoveryInstructionsComponent guide =
           new RecoveryInstructionsComponent(messageProperties.getSupportRecoveryInstructions());
       instructionPreview = guide;
@@ -1543,7 +1570,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
               AppIcon.ENVELOPE::create),
           () -> {
             try {
-              service.sendInstructions(request, target.id(), target.version());
+              supportTicketService.sendInstructions(request, target.id(), target.version());
               refresh();
               NotificationHelper.getInstance()
                   .showNotification(

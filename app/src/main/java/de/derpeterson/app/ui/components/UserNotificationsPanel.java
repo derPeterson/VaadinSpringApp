@@ -70,7 +70,7 @@ public class UserNotificationsPanel extends Div {
 
   private static final int PREVIEW_LIMIT = 5;
   private final transient MessageProperties messageProperties;
-  private final transient UserNotificationService service;
+  private final transient UserNotificationService userNotificationService;
   private final transient HttpSession session;
   private final boolean compact;
   private final Div rows = new Div();
@@ -111,11 +111,11 @@ public class UserNotificationsPanel extends Div {
 
   public UserNotificationsPanel(
       MessageProperties messageProperties,
-      UserNotificationService service,
+      UserNotificationService userNotificationService,
       HttpSession session,
       boolean compact) {
     this.messageProperties = messageProperties;
-    this.service = service;
+    this.userNotificationService = userNotificationService;
     this.session = session;
     this.compact = compact;
     confirmation =
@@ -382,12 +382,12 @@ public class UserNotificationsPanel extends Div {
       refresh();
     }
     if (detail != null && detail.isOpened() && openedItem != null) {
-      renderDetail();
+      renderOpenedNotification();
     }
   }
 
   private void refreshRetention() {
-    OptionalInt days = service.retentionDays();
+    OptionalInt days = userNotificationService.retentionDays();
     retention.setText(
         days.isPresent()
             ? messageProperties.getNotificationsRetention(days.getAsInt())
@@ -420,12 +420,12 @@ public class UserNotificationsPanel extends Div {
 
   private Page<Item> loadPage() {
     if (compact) {
-      return service.inbox(session, selectedFilter(), page, PREVIEW_LIMIT);
+      return userNotificationService.inbox(session, selectedFilter(), page, PREVIEW_LIMIT);
     }
     if (search.isEmpty()) {
-      return service.inbox(session, selectedFilter(), page, selectedPageSize());
+      return userNotificationService.inbox(session, selectedFilter(), page, selectedPageSize());
     }
-    return service.searchInbox(
+    return userNotificationService.searchInbox(
         session,
         selectedFilter(),
         search.getValue(),
@@ -448,8 +448,8 @@ public class UserNotificationsPanel extends Div {
         refresh(notifyResult);
         return;
       }
-      unreadIds = service.unreadSnapshot(session);
-      totalItems = service.inboxCount(session);
+      unreadIds = userNotificationService.unreadSnapshot(session);
+      totalItems = userNotificationService.inboxCount(session);
       totalCount.setText(Long.toString(totalItems));
       unreadCount.setText(Integer.toString(unreadIds.size()));
       updatingFilterLabels = true;
@@ -462,7 +462,7 @@ public class UserNotificationsPanel extends Div {
       }
       refreshOpenedDetail(result);
       markAll.setEnabled(!unreadIds.isEmpty());
-      dismissRead.setEnabled(!compact && service.readCount(session) > 0);
+      dismissRead.setEnabled(!compact && userNotificationService.readCount(session) > 0);
       renderRows(result);
       totalPages = Math.max(1, result.getTotalPages());
       first.setEnabled(page > 0);
@@ -502,12 +502,13 @@ public class UserNotificationsPanel extends Div {
           result.stream()
               .filter(item -> item.id().equals(openedItem.id()))
               .findFirst()
-              .orElseGet(() -> service.inboxItem(session, openedItem.id()).orElse(null));
+              .orElseGet(
+                  () -> userNotificationService.inboxItem(session, openedItem.id()).orElse(null));
       if (current == null) {
         detail.close();
       } else if (!current.equals(openedItem)) {
         openedItem = current;
-        renderDetail();
+        renderOpenedNotification();
       }
     }
   }
@@ -694,7 +695,7 @@ public class UserNotificationsPanel extends Div {
   }
 
   private void open(Item item) {
-    service.ownerId(session);
+    userNotificationService.ownerId(session);
     if (detail != null) {
       detail.close();
     }
@@ -711,7 +712,7 @@ public class UserNotificationsPanel extends Div {
     detail.getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
     detail.setCloseOnOutsideClick(true);
     detail.setCloseOnEsc(true);
-    renderDetail();
+    renderOpenedNotification();
     detail.open();
   }
 
@@ -763,7 +764,7 @@ public class UserNotificationsPanel extends Div {
         () ->
             action(() -> {
               boolean includesOpened = openedItem != null && selected.contains(openedItem.id());
-              service.markRead(session, selected);
+              userNotificationService.markRead(session, selected);
               if (includesOpened) {
                 updateOpenedRead();
               }
@@ -783,7 +784,7 @@ public class UserNotificationsPanel extends Div {
             true),
         () ->
             action(() -> {
-              service.dismiss(session, item.id());
+              userNotificationService.dismiss(session, item.id());
               if (detail != null && openedItem != null && openedItem.id().equals(item.id())) {
                 detail.close();
               }
@@ -802,13 +803,13 @@ public class UserNotificationsPanel extends Div {
                     new PortalContextCard(
                         AppIcon.BELL.create(),
                         messageProperties.getPortalNotificationAffected(
-                            service.readCount(session))),
+                            userNotificationService.readCount(session))),
                 messageProperties::getPortalDeleteNotificationHint,
                 messageProperties::getPortalDeleteAction,
                 true),
             () ->
                 action(() -> {
-                  service.dismissRead(session);
+                  userNotificationService.dismissRead(session);
                   if (detail != null && openedItem != null && openedItem.read()) {
                     detail.close();
                   }
@@ -816,7 +817,7 @@ public class UserNotificationsPanel extends Div {
   }
 
   private void markRead(Item item) {
-    service.markRead(session, List.of(item.id()));
+    userNotificationService.markRead(session, List.of(item.id()));
     if (openedItem != null && openedItem.id().equals(item.id())) {
       updateOpenedRead();
     }
@@ -834,7 +835,7 @@ public class UserNotificationsPanel extends Div {
             openedItem.supportTicketNumber(),
             openedItem.relevance());
     if (detail != null && detail.isOpened()) {
-      renderDetail();
+      renderOpenedNotification();
     }
   }
 
@@ -870,7 +871,7 @@ public class UserNotificationsPanel extends Div {
         : messageProperties.getNotificationsSourceSystem();
   }
 
-  private void renderDetail() {
+  private void renderOpenedNotification() {
     if (detailActionsMenu != null) {
       detailActionsMenu.close();
     }
@@ -878,6 +879,12 @@ public class UserNotificationsPanel extends Div {
     detail.getHeader().removeAll();
     detail.getFooter().removeAll();
     String subject = UserNotificationTexts.title(messageProperties, openedItem);
+    buildNotificationDetailHeader(subject);
+    Div notificationMessage = buildNotificationDetailContent(subject);
+    buildNotificationDetailActions(notificationMessage);
+  }
+
+  private void buildNotificationDetailHeader(String subject) {
     H2 title = new H2(messageProperties.getNotificationsDetailTitle());
     title.addClassName(PANEL_TITLE);
     Span detailDescription = new Span(messageProperties.getNotificationsDetailDescription());
@@ -897,7 +904,9 @@ public class UserNotificationsPanel extends Div {
     header.addClassName("cosmos-notification-detail-header");
     detail.getHeader().add(header);
     detail.getElement().setProperty("ariaLabel", subject);
+  }
 
+  private Div buildNotificationDetailContent(String subject) {
     H3 contentTitle = new H3(subject);
     contentTitle.addClassName("cosmos-notification-detail-title");
     Div titleRow = new Div(contentTitle);
@@ -915,7 +924,10 @@ public class UserNotificationsPanel extends Div {
     Div detailContent = new Div(message);
     detailContent.addClassName("cosmos-notification-detail-content");
     detail.add(detailContent);
+    return message;
+  }
 
+  private void buildNotificationDetailActions(Div notificationMessage) {
     Button detailHistory =
         new Button(
             messageProperties.getNotificationsHistory(),
@@ -945,57 +957,12 @@ public class UserNotificationsPanel extends Div {
     readActions.setJustifyContentMode(JustifyContentMode.END);
     readActions.addClassName("cosmos-notification-detail-read-actions");
     readActions.setVisible(openedItem.unread());
-    message.add(readActions);
+    notificationMessage.add(readActions);
     Button detailClose =
         new Button(
             messageProperties.getNotificationsClose(), AppIcon.CLOSE.create(), e -> detail.close());
     detailClose.addClassName("cosmos-notification-detail-close");
-    Button destination = null;
-    if (Set.of(
-                UserNotificationType.RECOVERY_REQUEST,
-                UserNotificationType.SUPPORT_REPLY,
-                UserNotificationType.SUPPORT_REQUESTER_CLOSED)
-            .contains(openedItem.type())
-        && openedItem.supportTicketNumber() != null
-        && service.canOpenTickets(session)) {
-      destination =
-          new Button(
-              messageProperties.getNotificationsOpenTicket(),
-              AppIcon.MESSAGE.create(),
-              event -> {
-                service.ownerId(session);
-                detail.close();
-                closeAction.run();
-                UI.getCurrent()
-                    .navigate(
-                        AdminView.class,
-                        QueryParameters.simple(
-                            Map.of(
-                                "section",
-                                "support",
-                                "ticket",
-                                openedItem.supportTicketNumber().substring(1))));
-              });
-      destination.addClassName("cosmos-notification-detail-ticket");
-    }
-    if (Set.of(
-            UserNotificationType.PASSWORD_CHANGED,
-            UserNotificationType.PASSWORD_RESET,
-            UserNotificationType.EMAIL_CHANGED,
-            UserNotificationType.ROLES_CHANGED)
-        .contains(openedItem.type())) {
-      destination =
-          new Button(
-              messageProperties.getNotificationsOpenAccount(),
-              AppIcon.LOCK.create(),
-              e -> {
-                detail.close();
-                closeAction.run();
-                UI.getCurrent()
-                    .navigate(AccountView.class, AccountSection.SECURITY.queryParameters());
-              });
-      destination.addClassName("cosmos-notification-detail-account");
-    }
+    Button destination = createNotificationDestinationButton();
     Button delete =
         new Button(
             messageProperties.getNotificationsDismiss(),
@@ -1045,5 +1012,55 @@ public class UserNotificationsPanel extends Div {
     actions.setWidthFull();
     actions.addClassNames("cosmos-dialog-actions", "cosmos-notification-detail-actions");
     detail.getFooter().add(actions);
+  }
+
+  private Button createNotificationDestinationButton() {
+    Button destination = null;
+    if (Set.of(
+                UserNotificationType.RECOVERY_REQUEST,
+                UserNotificationType.SUPPORT_REPLY,
+                UserNotificationType.SUPPORT_REQUESTER_CLOSED)
+            .contains(openedItem.type())
+        && openedItem.supportTicketNumber() != null
+        && userNotificationService.canOpenTickets(session)) {
+      destination =
+          new Button(
+              messageProperties.getNotificationsOpenTicket(),
+              AppIcon.MESSAGE.create(),
+              event -> {
+                userNotificationService.ownerId(session);
+                detail.close();
+                closeAction.run();
+                UI.getCurrent()
+                    .navigate(
+                        AdminView.class,
+                        QueryParameters.simple(
+                            Map.of(
+                                "section",
+                                "support",
+                                "ticket",
+                                openedItem.supportTicketNumber().substring(1))));
+              });
+      destination.addClassName("cosmos-notification-detail-ticket");
+    }
+    if (Set.of(
+            UserNotificationType.PASSWORD_CHANGED,
+            UserNotificationType.PASSWORD_RESET,
+            UserNotificationType.EMAIL_CHANGED,
+            UserNotificationType.ROLES_CHANGED)
+        .contains(openedItem.type())) {
+      destination =
+          new Button(
+              messageProperties.getNotificationsOpenAccount(),
+              AppIcon.LOCK.create(),
+              e -> {
+                detail.close();
+                closeAction.run();
+                UI.getCurrent()
+                    .navigate(AccountView.class, AccountSection.SECURITY.queryParameters());
+              });
+      destination.addClassName("cosmos-notification-detail-account");
+    }
+    return destination;
   }
 }
