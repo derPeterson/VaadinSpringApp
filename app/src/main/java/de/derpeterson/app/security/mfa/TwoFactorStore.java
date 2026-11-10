@@ -29,13 +29,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class TwoFactorStore {
   private static final Duration ATTEMPT_WINDOW = Duration.ofMinutes(15);
   private static final int ATTEMPT_LIMIT = 5;
-  private final UserRepository users;
-  private final TwoFactorAccountRepository accounts;
-  private final TwoFactorRecoveryCodeRepository recoveryCodes;
+  private final UserRepository userRepository;
+  private final TwoFactorAccountRepository twoFactorAccountRepository;
+  private final TwoFactorRecoveryCodeRepository twoFactorRecoveryCodeRepository;
   private final EntityManager entityManager;
-  private final TwoFactorSecrets secrets;
-  private final TransactionTemplate independent;
-  private final Clock clock;
+  private final TwoFactorSecrets twoFactorSecrets;
+  private final TransactionTemplate independentTransactionTemplate;
+  private final Clock twoFactorClock;
 
   record Verified(UUID revision, boolean recoveryCode) {}
 
@@ -48,31 +48,39 @@ public class TwoFactorStore {
 
   @Autowired
   public TwoFactorStore(
-      UserRepository users,
-      TwoFactorAccountRepository accounts,
-      TwoFactorRecoveryCodeRepository recoveryCodes,
+      UserRepository userRepository,
+      TwoFactorAccountRepository twoFactorAccountRepository,
+      TwoFactorRecoveryCodeRepository twoFactorRecoveryCodeRepository,
       EntityManager entityManager,
-      TwoFactorSecrets secrets,
-      PlatformTransactionManager transactions) {
-    this(users, accounts, recoveryCodes, entityManager, secrets, transactions, Clock.systemUTC());
+      TwoFactorSecrets twoFactorSecrets,
+      PlatformTransactionManager transactionManager) {
+    this(
+        userRepository,
+        twoFactorAccountRepository,
+        twoFactorRecoveryCodeRepository,
+        entityManager,
+        twoFactorSecrets,
+        transactionManager,
+        Clock.systemUTC());
   }
 
   TwoFactorStore(
-      UserRepository users,
-      TwoFactorAccountRepository accounts,
-      TwoFactorRecoveryCodeRepository recoveryCodes,
+      UserRepository userRepository,
+      TwoFactorAccountRepository twoFactorAccountRepository,
+      TwoFactorRecoveryCodeRepository twoFactorRecoveryCodeRepository,
       EntityManager entityManager,
-      TwoFactorSecrets secrets,
-      PlatformTransactionManager transactions,
-      Clock clock) {
-    this.users = users;
-    this.accounts = accounts;
-    this.recoveryCodes = recoveryCodes;
+      TwoFactorSecrets twoFactorSecrets,
+      PlatformTransactionManager transactionManager,
+      Clock twoFactorClock) {
+    this.userRepository = userRepository;
+    this.twoFactorAccountRepository = twoFactorAccountRepository;
+    this.twoFactorRecoveryCodeRepository = twoFactorRecoveryCodeRepository;
     this.entityManager = entityManager;
-    this.secrets = secrets;
-    this.clock = Objects.requireNonNull(clock);
-    independent = new TransactionTemplate(transactions);
-    independent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    this.twoFactorSecrets = twoFactorSecrets;
+    this.twoFactorClock = Objects.requireNonNull(twoFactorClock);
+    independentTransactionTemplate = new TransactionTemplate(transactionManager);
+    independentTransactionTemplate.setPropagationBehavior(
+        TransactionDefinition.PROPAGATION_REQUIRES_NEW);
   }
 
   Verified verify(Long userId, String accessVersion, String input) {
@@ -90,14 +98,15 @@ public class TwoFactorStore {
   private record Verification(Verified verified, boolean blocked) {}
 
   private Verification verifyLocked(TwoFactorAccountEntity account, String input) {
-    Instant now = clock.instant();
+    Instant now = twoFactorClock.instant();
     if (blocked(account, now)) {
       return new Verification(null, true);
     }
     if (!account.enrolled() || account.isOperatorEnrollment()) {
       return failed(account, now);
     }
-    byte[] secret = secrets.decrypt(account.getUserId(), "factor", account.getEncryptedSecret());
+    byte[] secret =
+        twoFactorSecrets.decrypt(account.getUserId(), "factor", account.getEncryptedSecret());
     long step;
     try {
       step = Totp.verify(secret, input, now, account.getAcceptedStep());
@@ -111,7 +120,9 @@ public class TwoFactorStore {
     }
     String digest = TwoFactorSecrets.recoveryDigest(account.getUserId(), input);
     TwoFactorRecoveryCodeEntity recovery =
-        digest == null ? null : recoveryCodes.unused(account.getUserId(), digest).orElse(null);
+        digest == null
+            ? null
+            : twoFactorRecoveryCodeRepository.unused(account.getUserId(), digest).orElse(null);
     if (recovery != null) {
       recovery.setUsedAt(now);
       resetAttempts(account);
@@ -141,7 +152,7 @@ public class TwoFactorStore {
   }
 
   boolean checkAdditionalProof(TwoFactorAccountEntity account, boolean valid) {
-    Instant now = clock.instant();
+    Instant now = twoFactorClock.instant();
     if (blocked(account, now)) {
       return false;
     }
@@ -156,7 +167,7 @@ public class TwoFactorStore {
     return account.enrolled()
         && !account.isOperatorEnrollment()
         && digest != null
-        && recoveryCodes.unused(account.getUserId(), digest).isPresent();
+        && twoFactorRecoveryCodeRepository.unused(account.getUserId(), digest).isPresent();
   }
 
   private void resetAttempts(TwoFactorAccountEntity account) {
@@ -167,7 +178,10 @@ public class TwoFactorStore {
 
   AuthenticationException invalidConfirmation(Long userId) {
     // Fehlversuch und Sperre wurden bereits unabhängig committed. Frischen Skalarstand lesen.
-    return accounts.blockedUntil(userId).filter(until -> until.isAfter(clock.instant())).isPresent()
+    return twoFactorAccountRepository
+            .blockedUntil(userId)
+            .filter(until -> until.isAfter(twoFactorClock.instant()))
+            .isPresent()
         ? new LockedException("Two-factor confirmation is temporarily locked")
         : new BadCredentialsException("Invalid two-factor confirmation");
   }
@@ -202,7 +216,7 @@ public class TwoFactorStore {
       byte[] secret,
       String firstCode,
       boolean protectedReenrollment) {
-    Instant now = clock.instant();
+    Instant now = twoFactorClock.instant();
     if (!Objects.equals(account.getRevision(), expectedRevision)
         || account.enrolled() && !protectedReenrollment
         || account.isPreviouslyEnrolled() && !protectedReenrollment) {
@@ -216,7 +230,7 @@ public class TwoFactorStore {
       failed(account, now);
       return null;
     }
-    account.setEncryptedSecret(secrets.encrypt(account.getUserId(), "factor", secret));
+    account.setEncryptedSecret(twoFactorSecrets.encrypt(account.getUserId(), "factor", secret));
     account.setPreviouslyEnrolled(true);
     account.setOperatorEnrollment(false);
     account.setEnrolledAt(now);
@@ -246,7 +260,7 @@ public class TwoFactorStore {
           account.setEncryptedSecret(null);
           account.setRevision(UUID.randomUUID());
           account.setAcceptedStep(-1);
-          recoveryCodes.deleteForUser(userId);
+          twoFactorRecoveryCodeRepository.deleteForUser(userId);
           // Die Historie bleibt erhalten: Löschen eröffnet niemals den schwachen
           // Ersteinrichtungsweg.
           return null;
@@ -264,39 +278,38 @@ public class TwoFactorStore {
   }
 
   List<String> replaceRecoveryCodes(TwoFactorAccountEntity account) {
-    recoveryCodes.deleteForUser(account.getUserId());
-    List<String> codes = secrets.newRecoveryCodes();
+    twoFactorRecoveryCodeRepository.deleteForUser(account.getUserId());
+    List<String> codes = twoFactorSecrets.newRecoveryCodes();
     for (String code : codes) {
       TwoFactorRecoveryCodeEntity row = new TwoFactorRecoveryCodeEntity();
       row.setUser(account.getUser());
       row.setDigest(TwoFactorSecrets.recoveryDigest(account.getUserId(), code));
-      recoveryCodes.save(row);
+      twoFactorRecoveryCodeRepository.save(row);
     }
     return codes;
   }
 
   <T> T locked(Long userId, String accessVersion, Function<TwoFactorAccountEntity, T> action) {
-    return independent.execute(
-        status -> {
-          UserEntity user =
-              users
-                  .findByIdForUpdate(userId)
-                  .orElseThrow(() -> new BadCredentialsException("Account unavailable"));
-          entityManager.refresh(user);
-          if (!user.isEnabled() || !Objects.equals(user.getAccessVersion(), accessVersion)) {
-            throw new BadCredentialsException("Account access changed");
-          }
-          TwoFactorAccountEntity account = accounts.findById(userId).orElse(null);
-          if (account == null) {
-            account = new TwoFactorAccountEntity();
-            account.setUser(user);
-            account = accounts.saveAndFlush(account);
-          } else {
-            entityManager.refresh(account);
-          }
-          T result = action.apply(account);
-          accounts.saveAndFlush(account);
-          return result;
-        });
+    return independentTransactionTemplate.execute(status -> {
+      UserEntity user =
+          userRepository
+              .findByIdForUpdate(userId)
+              .orElseThrow(() -> new BadCredentialsException("Account unavailable"));
+      entityManager.refresh(user);
+      if (!user.isEnabled() || !Objects.equals(user.getAccessVersion(), accessVersion)) {
+        throw new BadCredentialsException("Account access changed");
+      }
+      TwoFactorAccountEntity account = twoFactorAccountRepository.findById(userId).orElse(null);
+      if (account == null) {
+        account = new TwoFactorAccountEntity();
+        account.setUser(user);
+        account = twoFactorAccountRepository.saveAndFlush(account);
+      } else {
+        entityManager.refresh(account);
+      }
+      T result = action.apply(account);
+      twoFactorAccountRepository.saveAndFlush(account);
+      return result;
+    });
   }
 }

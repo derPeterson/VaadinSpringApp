@@ -8,17 +8,17 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 
 /** Nur der Beantyp überlebt Serialisierung; Auflösung erfolgt im aktuellen Servletkontext. */
 public final class ServiceReference<T> implements Serializable {
-  private final Class<T> type;
+  private final Class<T> serviceType;
   // Veröffentlicht nur die Beanreferenz; Zustand und Synchronisierung gehören zum Spring-Service.
-  private transient volatile T live;
+  private transient volatile T liveService;
 
-  public ServiceReference(Class<T> type, T live) {
-    this.type = Objects.requireNonNull(type);
-    this.live = Objects.requireNonNull(live);
+  public ServiceReference(Class<T> serviceType, T liveService) {
+    this.serviceType = Objects.requireNonNull(serviceType);
+    this.liveService = Objects.requireNonNull(liveService);
   }
 
   public T get() {
-    T available = live;
+    T available = liveService;
     if (available != null) {
       return available;
     }
@@ -28,8 +28,8 @@ public final class ServiceReference<T> implements Serializable {
     available =
         WebApplicationContextUtils.getRequiredWebApplicationContext(
                 service.getServlet().getServletContext())
-            .getBean(type);
-    live = available;
+            .getBean(serviceType);
+    liveService = available;
     return available;
   }
 }

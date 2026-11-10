@@ -17,21 +17,21 @@ import org.springframework.stereotype.Component;
 public final class ExternalProviderSecrets {
   public static final String KEY_PROPERTY =
       StartupSetting.PROVIDER_SECRETS_ENCRYPTION_KEY.property();
-  private final byte[] key;
-  private final SecureRandom random = new SecureRandom();
+  private final byte[] encryptionKeyBytes;
+  private final SecureRandom secureRandom = new SecureRandom();
 
   public ExternalProviderSecrets(Environment environment) {
     String configured = environment.getProperty(KEY_PROPERTY, "").trim();
     if (configured.isEmpty()) {
-      key = null;
+      encryptionKeyBytes = null;
       return;
     }
     try {
-      key = Base64.getDecoder().decode(configured);
+      encryptionKeyBytes = Base64.getDecoder().decode(configured);
     } catch (IllegalArgumentException _) {
       throw new IllegalStateException("Invalid provider encryption key encoding");
     }
-    if (key.length != 32) {
+    if (encryptionKeyBytes.length != 32) {
       throw new IllegalStateException("Provider encryption key must contain 32 random bytes");
     }
   }
@@ -42,7 +42,7 @@ public final class ExternalProviderSecrets {
     }
     byte[] plaintext = secret.getBytes(StandardCharsets.UTF_8);
     byte[] nonce = new byte[12];
-    random.nextBytes(nonce);
+    secureRandom.nextBytes(nonce);
     try {
       byte[] ciphertext = cipher(Cipher.ENCRYPT_MODE, provider, nonce).doFinal(plaintext);
       byte[] envelope = new byte[13 + ciphertext.length];
@@ -83,14 +83,15 @@ public final class ExternalProviderSecrets {
   }
 
   private Cipher cipher(int mode, String provider, byte[] nonce) throws GeneralSecurityException {
-    if (key == null) {
+    if (encryptionKeyBytes == null) {
       throw new IllegalStateException("Provider secrets encryption key is not configured");
     }
     if (!ExternalProviderSettings.PROVIDERS.contains(provider)) {
       throw new IllegalArgumentException("Unsupported sign-in provider");
     }
     Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-    cipher.init(mode, new SecretKeySpec(key, "AES"), new GCMParameterSpec(128, nonce));
+    cipher.init(
+        mode, new SecretKeySpec(encryptionKeyBytes, "AES"), new GCMParameterSpec(128, nonce));
     cipher.updateAAD(("external-provider:1:" + provider).getBytes(StandardCharsets.UTF_8));
     return cipher;
   }

@@ -26,13 +26,13 @@ import tools.jackson.databind.json.JsonMapper;
 @Service
 @Slf4j
 public class TwoFactorPolicies {
-  private final TwoFactorPolicyRepository repository;
-  private final UserRepository users;
+  private final TwoFactorPolicyRepository twoFactorPolicyRepository;
+  private final UserRepository userRepository;
   private final EntityManager entityManager;
-  private final AdminRolePolicy administrators;
-  private final ObjectProvider<TwoFactorAuthorization> authorization;
+  private final AdminRolePolicy adminRolePolicy;
+  private final ObjectProvider<TwoFactorAuthorization> twoFactorAuthorizationProvider;
   private final boolean developmentOptions;
-  private final JsonMapper mapper = JsonMapper.builder().build();
+  private final JsonMapper policyJsonMapper = JsonMapper.builder().build();
 
   public record Snapshot(long revision, TwoFactorPolicy policy) implements Serializable {}
 
@@ -45,17 +45,17 @@ public class TwoFactorPolicies {
       boolean developmentGoogleConfirmation) {}
 
   public TwoFactorPolicies(
-      TwoFactorPolicyRepository repository,
-      UserRepository users,
+      TwoFactorPolicyRepository twoFactorPolicyRepository,
+      UserRepository userRepository,
       EntityManager entityManager,
-      AdminRolePolicy administrators,
-      ObjectProvider<TwoFactorAuthorization> authorization,
+      AdminRolePolicy adminRolePolicy,
+      ObjectProvider<TwoFactorAuthorization> twoFactorAuthorizationProvider,
       Environment environment) {
-    this.repository = repository;
-    this.users = users;
+    this.twoFactorPolicyRepository = twoFactorPolicyRepository;
+    this.userRepository = userRepository;
     this.entityManager = entityManager;
-    this.administrators = administrators;
-    this.authorization = authorization;
+    this.adminRolePolicy = adminRolePolicy;
+    this.twoFactorAuthorizationProvider = twoFactorAuthorizationProvider;
     developmentOptions =
         environment.getProperty(
             StartupSetting.DEVELOPMENT_OPTIONS_ENABLED.property(), Boolean.class, false);
@@ -65,14 +65,14 @@ public class TwoFactorPolicies {
    * Interner Regelzugriff für Anmeldung und Fachprüfungen, unabhängig von UI-Administratorrechten.
    */
   public Snapshot current() {
-    return repository
+    return twoFactorPolicyRepository
         .snapshot()
         .map(row -> new Snapshot(row.getVersion(), decode(row.getRules())))
         .orElseGet(() -> new Snapshot(-1, TwoFactorPolicy.defaults()));
   }
 
   public Snapshot load() {
-    administrators.requireSuperadmin();
+    adminRolePolicy.requireSuperadmin();
     return current();
   }
 
@@ -92,10 +92,10 @@ public class TwoFactorPolicies {
   public Snapshot save(HttpServletRequest request, long expectedRevision, TwoFactorPolicy desired) {
     Objects.requireNonNull(desired);
     // Derselbe Rollenlock schützt auch konkurrierenden Superadmin-Entzug.
-    users
+    userRepository
         .lockRole(RoleType.ROLE_SUPERADMIN)
         .orElseThrow(() -> new AccessDeniedException("Superadmin role unavailable"));
-    administrators.requireSuperadmin();
+    adminRolePolicy.requireSuperadmin();
     Snapshot previous = current();
     if (previous.revision() != expectedRevision) {
       throw new OptimisticLockingFailureException("Two-factor configuration changed");
@@ -105,10 +105,11 @@ public class TwoFactorPolicies {
       throw new AccessDeniedException("Development security options are disabled at startup");
     }
     // Die alte Regel entscheidet über ihre eigene Abschwächung, niemals die Formularwerte.
-    authorization
+    twoFactorAuthorizationProvider
         .getObject()
         .authorizeCurrent(request, TwoFactorAction.SECURITY_CONFIGURATION, true);
-    TwoFactorPolicyEntity row = repository.findById(1).orElseGet(TwoFactorPolicyEntity::new);
+    TwoFactorPolicyEntity row =
+        twoFactorPolicyRepository.findById(1).orElseGet(TwoFactorPolicyEntity::new);
     if (row.getVersion() != null) {
       entityManager.refresh(row);
       if (row.getVersion() != expectedRevision) {
@@ -116,7 +117,7 @@ public class TwoFactorPolicies {
       }
     }
     row.setRules(encode(desired));
-    TwoFactorPolicyEntity saved = repository.saveAndFlush(row);
+    TwoFactorPolicyEntity saved = twoFactorPolicyRepository.saveAndFlush(row);
     AfterCommitLog.info(
         log,
         "Two-factor policy updated: revision={}, developmentPause={}, developmentGoogle={}",
@@ -127,7 +128,7 @@ public class TwoFactorPolicies {
   }
 
   private String encode(TwoFactorPolicy policy) {
-    return mapper.writeValueAsString(
+    return policyJsonMapper.writeValueAsString(
         new Stored(
             policy.rules(),
             policy.inactivityEnabled(),
@@ -137,7 +138,7 @@ public class TwoFactorPolicies {
   }
 
   private TwoFactorPolicy decode(String json) {
-    Stored stored = mapper.readValue(json, Stored.class);
+    Stored stored = policyJsonMapper.readValue(json, Stored.class);
     return new TwoFactorPolicy(
         stored.rules(),
         stored.inactivityEnabled(),

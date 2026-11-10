@@ -153,7 +153,7 @@ class SessionManagementTest {
     management =
         new SessionManagementService(
             admissions, tokens, security, users, authentication, encoder, config, remembered);
-    ReflectionTestUtils.setField(management, "clock", Clock.fixed(NOW, ZoneOffset.UTC));
+    ReflectionTestUtils.setField(management, "sessionClock", Clock.fixed(NOW, ZoneOffset.UTC));
     SecurityContextHolder.clearContext();
   }
 
@@ -434,26 +434,24 @@ class SessionManagementTest {
     try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
       MockHttpServletRequest returning = new MockHttpServletRequest();
       Future<Object> automatic =
-          pool.submit(
-              () -> {
-                start.await();
-                Authentication auth = returnWith(cookie(old), returning);
-                if (auth != null) {
-                  try {
-                    admissions.onAuthentication(auth, returning, new MockHttpServletResponse());
-                  } catch (AuthenticationServiceException _) {
-                    /* Expected if the revocation won. */
-                  }
-                }
-                return null;
-              });
+          pool.submit(() -> {
+            start.await();
+            Authentication auth = returnWith(cookie(old), returning);
+            if (auth != null) {
+              try {
+                admissions.onAuthentication(auth, returning, new MockHttpServletResponse());
+              } catch (AuthenticationServiceException _) {
+                /* Expected if the revocation won. */
+              }
+            }
+            return null;
+          });
       Future<Object> revoke =
-          pool.submit(
-              () -> {
-                start.await();
-                management.revoke(owner.request(), handle);
-                return null;
-              });
+          pool.submit(() -> {
+            start.await();
+            management.revoke(owner.request(), handle);
+            return null;
+          });
       start.countDown();
       automatic.get(5, TimeUnit.SECONDS);
       revoke.get(5, TimeUnit.SECONDS);
@@ -551,7 +549,7 @@ class SessionManagementTest {
         AuthenticationCredentialsNotFoundException.class,
         () -> management.recoveryList(attemptRequest));
     ReflectionTestUtils.setField(
-        management, "clock", Clock.fixed(NOW.plusSeconds(300), ZoneOffset.UTC));
+        management, "sessionClock", Clock.fixed(NOW.plusSeconds(300), ZoneOffset.UTC));
     assertFalse(management.hasRecovery(request));
     assertThrows(
         AuthenticationCredentialsNotFoundException.class, () -> management.recoveryList(request));
@@ -649,11 +647,10 @@ class SessionManagementTest {
     assertThrows(
         IllegalStateException.class,
         () ->
-            tokens.atomic(
-                () -> {
-                  tokens.removeUserTokens(IDENTITY);
-                  throw new IllegalStateException("force rollback");
-                }));
+            tokens.atomic(() -> {
+              tokens.removeUserTokens(IDENTITY);
+              throw new IllegalStateException("force rollback");
+            }));
     assertEquals(1, jdbc.queryForObject("select count(*) from persistent_logins", Integer.class));
     assertEquals(1, jdbc.queryForObject("select count(*) from remembered_device", Integer.class));
     assertFalse(admissions.isExpired(owner.request()));

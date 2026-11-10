@@ -21,11 +21,13 @@ public class PushSecurityInterceptor
     implements VaadinServiceInitListener, VaadinRequestInterceptor {
 
   private final ServiceReference<SecurityService> securityService;
-  private final ServiceReference<MaintenanceService> maintenance;
+  private final ServiceReference<MaintenanceService> maintenanceServiceReference;
 
-  public PushSecurityInterceptor(SecurityService securityService, MaintenanceService maintenance) {
+  public PushSecurityInterceptor(
+      SecurityService securityService, MaintenanceService maintenanceServiceReference) {
     this.securityService = new ServiceReference<>(SecurityService.class, securityService);
-    this.maintenance = new ServiceReference<>(MaintenanceService.class, maintenance);
+    this.maintenanceServiceReference =
+        new ServiceReference<>(MaintenanceService.class, maintenanceServiceReference);
   }
 
   @Override
@@ -74,18 +76,18 @@ public class PushSecurityInterceptor
     if (!RoleUiState.changed(ui, authentication)) {
       return false;
     }
-    ui.access(
-        () -> {
-          RoleUiState.refresh(ui, authentication, contextPath);
-          if (ui.getPushConfiguration().getPushMode().isEnabled()) {
-            ui.push();
-          }
-        });
+    ui.access(() -> {
+      RoleUiState.refresh(ui, authentication, contextPath);
+      if (ui.getPushConfiguration().getPushMode().isEnabled()) {
+        ui.push();
+      }
+    });
     return true;
   }
 
   private void requireMaintenanceAccess(HttpServletRequest request) {
-    if (maintenance.get().blocks(request) && !MaintenanceTransport.allowedUi(request)) {
+    if (maintenanceServiceReference.get().blocks(request)
+        && !MaintenanceTransport.allowedUi(request)) {
       MaintenanceTransport.redirectUi(request);
       clearRequestContexts();
       throw new MaintenanceAccessException("UI actions paused for maintenance");

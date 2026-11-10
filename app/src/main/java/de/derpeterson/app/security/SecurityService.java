@@ -49,7 +49,7 @@ public class SecurityService {
   private final UserRepository userRepository;
   private final CustomUserDetailsService userDetailsService;
   private final SecurityContextRepository securityContextRepository;
-  private final SessionAdmissionService admissions;
+  private final SessionAdmissionService sessionAdmissionService;
 
   /**
    * Runs before Vaadin resolves/locks a UI, including for each WebSocket message. Use the
@@ -68,7 +68,7 @@ public class SecurityService {
               || session.getAttribute(AUTH_USER_SESSION_KEY) instanceof UserDetails;
       Optional<Authentication> refreshed =
           hadPrincipal ? refreshSessionAuthentication(session) : Optional.<Authentication>empty();
-      if (admissions.isExpired(request) || hadPrincipal && refreshed.isEmpty()) {
+      if (sessionAdmissionService.isExpired(request) || hadPrincipal && refreshed.isEmpty()) {
         clearStaleAuthentication(request);
         return false;
       }
@@ -82,7 +82,7 @@ public class SecurityService {
 
   public Optional<UserDetails> getAuthenticatedUser(HttpServletRequest request) {
     try {
-      if (admissions.isExpired(request)) {
+      if (sessionAdmissionService.isExpired(request)) {
         clearStaleAuthentication(request);
         return Optional.empty();
       }
@@ -138,7 +138,7 @@ public class SecurityService {
       return Optional.empty();
     }
     try {
-      if (admissions.isSessionExpired(session.getId())) {
+      if (sessionAdmissionService.isSessionExpired(session.getId())) {
         return Optional.empty();
       }
       Authentication auth = sessionAuthentication(session);
@@ -190,7 +190,7 @@ public class SecurityService {
   }
 
   public void touchSession(HttpServletRequest request) {
-    admissions.touch(request);
+    sessionAdmissionService.touch(request);
   }
 
   /** Nur Nachweismetadaten. Zugriff und Frische bleiben an den MFA-Regel-/Faktorstand gebunden. */
@@ -278,7 +278,7 @@ public class SecurityService {
       throw new AuthenticationServiceException("Verified portal identity required");
     }
     try {
-      admissions.completeLogin(
+      sessionAdmissionService.completeLogin(
           auth,
           request,
           response,

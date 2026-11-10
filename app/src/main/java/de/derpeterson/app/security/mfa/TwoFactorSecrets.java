@@ -26,34 +26,34 @@ import org.springframework.stereotype.Component;
 @Component
 public final class TwoFactorSecrets {
   public static final String KEY_PROPERTY = StartupSetting.TOTP_ENCRYPTION_KEY.property();
-  private final byte[] key;
-  private final SecureRandom random = new SecureRandom();
+  private final byte[] encryptionKeyBytes;
+  private final SecureRandom secureRandom = new SecureRandom();
 
   public TwoFactorSecrets(Environment environment) {
     String configured = environment.getProperty(KEY_PROPERTY, "").trim();
     if (configured.isEmpty()) {
-      key = null;
+      encryptionKeyBytes = null;
       return;
     }
     try {
-      key = Base64.getDecoder().decode(configured);
+      encryptionKeyBytes = Base64.getDecoder().decode(configured);
     } catch (IllegalArgumentException _) {
       throw new IllegalStateException("Invalid TOTP encryption key encoding");
     }
-    if (key.length != 32) {
+    if (encryptionKeyBytes.length != 32) {
       throw new IllegalStateException("TOTP encryption key must contain 32 random bytes");
     }
   }
 
   public boolean available() {
-    return key != null;
+    return encryptionKeyBytes != null;
   }
 
   public String emailVerifier(Long owner, UUID challenge, String contact, String code) {
     requireAvailable();
     try {
       Mac mac = Mac.getInstance("HmacSHA256");
-      mac.init(new SecretKeySpec(key, "HmacSHA256"));
+      mac.init(new SecretKeySpec(encryptionKeyBytes, "HmacSHA256"));
       // Ein kurzer Mailcode darf auch bei lesender Datenbankkenntnis nicht offline erraten werden.
       return HexFormat.of()
           .formatHex(
@@ -68,7 +68,7 @@ public final class TwoFactorSecrets {
   public String encrypt(Long userId, String purpose, byte[] plaintext) {
     requireAvailable();
     byte[] nonce = new byte[12];
-    random.nextBytes(nonce);
+    secureRandom.nextBytes(nonce);
     try {
       Cipher cipher = cipher(Cipher.ENCRYPT_MODE, userId, purpose, nonce);
       byte[] ciphertext = cipher.doFinal(plaintext);
@@ -104,7 +104,8 @@ public final class TwoFactorSecrets {
       throw new IllegalArgumentException("Secret owner and purpose required");
     }
     Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-    cipher.init(mode, new SecretKeySpec(key, "AES"), new GCMParameterSpec(128, nonce));
+    cipher.init(
+        mode, new SecretKeySpec(encryptionKeyBytes, "AES"), new GCMParameterSpec(128, nonce));
     cipher.updateAAD(("mfa:1:" + userId + ":" + purpose).getBytes(StandardCharsets.UTF_8));
     return cipher;
   }
@@ -121,7 +122,7 @@ public final class TwoFactorSecrets {
 
   private String randomCode() {
     byte[] bytes = new byte[16];
-    random.nextBytes(bytes);
+    secureRandom.nextBytes(bytes);
     String hex = HexFormat.of().withUpperCase().formatHex(bytes);
     return String.join(
         "-", hex.substring(0, 8), hex.substring(8, 16), hex.substring(16, 24), hex.substring(24));

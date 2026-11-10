@@ -16,10 +16,10 @@ import org.springframework.session.Session;
  * Auch Reservierungen ohne veröffentlichten SecurityContext zählen sofort zum bestehenden Limit.
  */
 public final class DurableSessionRegistry<S extends Session> implements SessionRegistry {
-  private final FindByIndexNameSessionRepository<S> repository;
+  private final FindByIndexNameSessionRepository<S> sessionRepository;
 
-  public DurableSessionRegistry(FindByIndexNameSessionRepository<S> repository) {
-    this.repository = repository;
+  public DurableSessionRegistry(FindByIndexNameSessionRepository<S> sessionRepository) {
+    this.sessionRepository = sessionRepository;
   }
 
   @Override
@@ -29,7 +29,7 @@ public final class DurableSessionRegistry<S extends Session> implements SessionR
 
   @Override
   public List<SessionInformation> getAllSessions(Object principal, boolean includeExpiredSessions) {
-    return repository.findByPrincipalName(principal.toString()).values().stream()
+    return sessionRepository.findByPrincipalName(principal.toString()).values().stream()
         .map(this::information)
         .filter(Objects::nonNull)
         .filter(info -> includeExpiredSessions || !info.isExpired())
@@ -38,7 +38,7 @@ public final class DurableSessionRegistry<S extends Session> implements SessionR
 
   @Override
   public SessionInformation getSessionInformation(String id) {
-    S session = repository.findById(id);
+    S session = sessionRepository.findById(id);
     return session == null ? null : information(session);
   }
 
@@ -53,31 +53,31 @@ public final class DurableSessionRegistry<S extends Session> implements SessionR
 
   @Override
   public void refreshLastRequest(String id) {
-    S session = repository.findById(id);
+    S session = sessionRepository.findById(id);
     if (session != null) {
       session.setLastAccessedTime(java.time.Instant.now());
-      repository.save(session);
+      sessionRepository.save(session);
     }
   }
 
   @Override
   public void registerNewSession(String id, Object principal) {
-    S session = repository.findById(id);
+    S session = sessionRepository.findById(id);
     if (session == null) {
       throw new AuthenticationServiceException("Session reservation unavailable");
     }
     session.setAttribute(
         FindByIndexNameSessionRepository.PRINCIPAL_NAME_INDEX_NAME, principal.toString());
-    repository.save(session);
+    sessionRepository.save(session);
   }
 
   @Override
   public void removeSessionInformation(String id) {
-    repository.deleteById(id);
+    sessionRepository.deleteById(id);
   }
 
   public void retainAfterPasswordChange(String id, String identity) {
-    if (repository instanceof DurableSessionRepository<?> durable) {
+    if (sessionRepository instanceof DurableSessionRepository<?> durable) {
       durable.retainAfterPasswordChange(id, identity);
     }
   }
@@ -88,13 +88,13 @@ public final class DurableSessionRegistry<S extends Session> implements SessionR
       String previousVersion,
       String newVersion,
       Set<SignInMethod> remainingMethods) {
-    return repository instanceof DurableSessionRepository<?> durable
+    return sessionRepository instanceof DurableSessionRepository<?> durable
         && durable.retainAfterProviderUnlink(
             id, identity, previousVersion, newVersion, remainingMethods);
   }
 
   public Active metadata(String id) {
-    S session = repository.findById(id);
+    S session = sessionRepository.findById(id);
     if (session instanceof DurableSessionRepository<?>.LiveSession live) {
       return live.activeMetadata();
     }
@@ -125,7 +125,7 @@ public final class DurableSessionRegistry<S extends Session> implements SessionR
     @Override
     public void expireNow() {
       session.setAttribute(DurableSessionRepository.EXPIRED, Boolean.TRUE);
-      repository.save(session);
+      sessionRepository.save(session);
       // Die alte UI bleibt bis zu ihrer abgewehrten Anfrage erhalten. Ihre eigentliche
       // Invalidierung bzw. der Timeout räumt Laufzeitobjekte und Listener auf.
       super.expireNow();

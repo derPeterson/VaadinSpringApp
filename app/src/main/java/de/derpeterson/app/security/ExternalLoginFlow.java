@@ -165,19 +165,19 @@ public class ExternalLoginFlow {
   private static final String ATTEMPT = ExternalLoginFlow.class.getName() + ".attempt";
   private static final String REGISTRATION = ExternalLoginFlow.class.getName() + ".registration";
   private static final String GRANT = ExternalLoginFlow.class.getName() + ".grant";
-  private final ExternalLoginConfiguration.Registrations clients;
-  private final ExternalIdentityService identities;
-  private final UserRepository users;
-  private final CustomUserDetailsService details;
-  private final SecurityService security;
-  private final SessionManagementService sessions;
+  private final ExternalLoginConfiguration.Registrations providerRegistrations;
+  private final ExternalIdentityService externalIdentityService;
+  private final UserRepository userRepository;
+  private final CustomUserDetailsService customUserDetailsService;
+  private final SecurityService securityService;
+  private final SessionManagementService sessionManagementService;
   private final AuthenticationManager authenticationManager;
   private final TwoFactorAuthorization twoFactor;
-  private final TwoFactorEnrollment enrollment;
-  private final TwoFactorPolicies policies;
+  private final TwoFactorEnrollment twoFactorEnrollment;
+  private final TwoFactorPolicies twoFactorPolicies;
   private final EntityManager entityManager;
-  private final PlatformTransactionManager transactions;
-  private Clock clock = Clock.systemUTC();
+  private final PlatformTransactionManager transactionManager;
+  private Clock externalLoginClock = Clock.systemUTC();
 
   public void confirmPassword(HttpServletRequest request, String password, Purpose purpose) {
     Objects.requireNonNull(purpose, "Security action required");
@@ -211,13 +211,14 @@ public class ExternalLoginFlow {
   }
 
   public boolean developmentExceptionActive() {
-    return policies.pauseEnabled(policies.current()) || policies.weakGoogleAllowed();
+    return twoFactorPolicies.pauseEnabled(twoFactorPolicies.current())
+        || twoFactorPolicies.weakGoogleAllowed();
   }
 
   public boolean canUseProviderProof(HttpServletRequest request, String provider, Purpose purpose) {
     return purpose == Purpose.ENROLL_FACTOR
         || !requiresFactor(request, purpose)
-            && (!GOOGLE.equals(provider) || policies.weakGoogleAllowed());
+            && (!GOOGLE.equals(provider) || twoFactorPolicies.weakGoogleAllowed());
   }
 
   public void confirmFactor(HttpServletRequest request, String code, Purpose purpose) {
@@ -230,12 +231,12 @@ public class ExternalLoginFlow {
   }
 
   public List<String> providers() {
-    return clients.providers();
+    return providerRegistrations.providers();
   }
 
   public String beginLogin(
       HttpServletRequest request, String provider, boolean remember, Locale locale) {
-    if (security.getAuthenticatedUser(request).isPresent()) {
+    if (securityService.getAuthenticatedUser(request).isPresent()) {
       throw new AccessDeniedException("Already signed in");
     }
     return begin(request, provider, Mode.LOGIN, null, null, remember, locale);
@@ -245,7 +246,7 @@ public class ExternalLoginFlow {
       HttpServletRequest request, String provider, Purpose purpose, Locale locale) {
     Objects.requireNonNull(purpose, "Security action required");
     UserEntity user = owner(request);
-    if (!identities.connected(user.getId()).contains(provider)) {
+    if (!externalIdentityService.connected(user.getId()).contains(provider)) {
       throw new AccessDeniedException("Provider not connected");
     }
     return begin(request, provider, Mode.PROOF, user, purpose, false, locale);
@@ -264,12 +265,13 @@ public class ExternalLoginFlow {
     UserEntity user = owner(request);
     authorize(request, user, unlinkPurpose(provider), true);
     String previousAccessVersion = user.getAccessVersion();
-    boolean retained = identities.unlink(request, user.getId(), previousAccessVersion, provider);
+    boolean retained =
+        externalIdentityService.unlink(request, user.getId(), previousAccessVersion, provider);
     cancel(request);
     if (retained) {
       twoFactor.retainAfterAccessVersionChange(request, previousAccessVersion);
     } else {
-      security.logout();
+      securityService.logout();
     }
     return retained;
   }
@@ -283,7 +285,7 @@ public class ExternalLoginFlow {
       boolean remember,
       Locale locale) {
     requireCompatibleFlow(request, purpose);
-    if (clients.findByRegistrationId(provider) == null) {
+    if (providerRegistrations.findByRegistrationId(provider) == null) {
       throw new AccessDeniedException("Provider unavailable");
     }
     HttpSession session = request.getSession(true);
@@ -298,7 +300,7 @@ public class ExternalLoginFlow {
             purpose,
             remember,
             Locale.GERMAN.equals(locale) ? Locale.GERMAN : Locale.ENGLISH,
-            clock.instant(),
+            externalLoginClock.instant(),
             null));
     return "/oauth2/authorization/" + provider;
   }
@@ -320,7 +322,7 @@ public class ExternalLoginFlow {
                 String previousState))
         || !previousProvider.equals(provider)
         || previousState != null
-        || started.plusSeconds(300).isBefore(clock.instant())) {
+        || started.plusSeconds(300).isBefore(externalLoginClock.instant())) {
       throw new AccessDeniedException("Start sign-in from the portal");
     }
     requireCompatibleFlow(request, purpose);
@@ -348,7 +350,7 @@ public class ExternalLoginFlow {
       session.removeAttribute(ATTEMPT);
     }
     if (attempt == null
-        || attempt.started().plusSeconds(300).isBefore(clock.instant())
+        || attempt.started().plusSeconds(300).isBefore(externalLoginClock.instant())
         || !Objects.equals(attempt.state(), request.getParameter("state"))
         || !(authentication instanceof OAuth2AuthenticationToken oauth)
         || !attempt.provider().equals(oauth.getAuthorizedClientRegistrationId())
@@ -370,7 +372,7 @@ public class ExternalLoginFlow {
               : AppRouteConstants.ACCOUNT_PORTAL_LOCATION);
       return;
     }
-    Optional<UserEntity> user = identities.resolve(evidence);
+    Optional<UserEntity> user = externalIdentityService.resolve(evidence);
     if (user.isPresent()) {
       login(request, response, user.get(), evidence.provider(), attempt.remember());
       return;
@@ -378,7 +380,10 @@ public class ExternalLoginFlow {
     session.setAttribute(
         REGISTRATION,
         new Registration(
-            evidence, attempt.locale(), attempt.remember(), clock.instant().plusSeconds(600)));
+            evidence,
+            attempt.locale(),
+            attempt.remember(),
+            externalLoginClock.instant().plusSeconds(600)));
     response.sendRedirect("/external-registration");
   }
 
@@ -396,12 +401,12 @@ public class ExternalLoginFlow {
       Attempt attempt,
       ExternalIdentityEvidence evidence) {
     UserEntity user =
-        users
+        userRepository
             .findById(attempt.userId())
             .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
     if (!user.isEnabled()
         || !Objects.equals(attempt.accessVersion(), user.getAccessVersion())
-        || security
+        || securityService
             .getAuthenticatedUser(request)
             .filter(principal -> principal.getUsername().equals(user.getEmail()))
             .isEmpty()) {
@@ -413,10 +418,10 @@ public class ExternalLoginFlow {
     }
     validateAccountProof(attempt, evidence, user);
     if (attempt.purpose() == Purpose.ENROLL_FACTOR) {
-      enrollment.afterProviderConfirmation(
+      twoFactorEnrollment.afterProviderConfirmation(
           request,
           new EnrollmentConfirmation(
-              user, session, attempt.provider(), clock.instant().plusSeconds(60)));
+              user, session, attempt.provider(), externalLoginClock.instant().plusSeconds(60)));
       return;
     }
     if (!canUseProviderProof(request, attempt.provider(), attempt.purpose())) {
@@ -431,7 +436,7 @@ public class ExternalLoginFlow {
 
   private void validateAccountProof(
       Attempt attempt, ExternalIdentityEvidence evidence, UserEntity user) {
-    if (!identities.belongsTo(user.getId(), evidence)) {
+    if (!externalIdentityService.belongsTo(user.getId(), evidence)) {
       throw new ProofRejected(ProofProblem.IDENTITY_MISMATCH);
     }
     if (attempt.provider().equals(GOOGLE)) {
@@ -440,25 +445,24 @@ public class ExternalLoginFlow {
     Instant authenticated = evidence.authenticatedAt();
     if (authenticated == null
         || authenticated.isBefore(attempt.started().minusSeconds(5))
-        || authenticated.isAfter(clock.instant().plusSeconds(30))) {
+        || authenticated.isAfter(externalLoginClock.instant().plusSeconds(30))) {
       throw new ProofRejected(ProofProblem.FRESH_AUTHENTICATION_REQUIRED);
     }
   }
 
   private void completeLink(
       HttpServletRequest request, Attempt attempt, ExternalIdentityEvidence evidence) {
-    new TransactionTemplate(transactions)
-        .executeWithoutResult(
-            status -> {
-              UserEntity current = users.findByIdForUpdate(attempt.userId()).orElseThrow();
-              entityManager.refresh(current);
-              if (!current.isEnabled()
-                  || !Objects.equals(current.getAccessVersion(), attempt.accessVersion())) {
-                throw new AccessDeniedException("Account access changed");
-              }
-              authorize(request, current, attempt.purpose(), true);
-              identities.link(current.getId(), attempt.accessVersion(), evidence);
-            });
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(status -> {
+          UserEntity current = userRepository.findByIdForUpdate(attempt.userId()).orElseThrow();
+          entityManager.refresh(current);
+          if (!current.isEnabled()
+              || !Objects.equals(current.getAccessVersion(), attempt.accessVersion())) {
+            throw new AccessDeniedException("Account access changed");
+          }
+          authorize(request, current, attempt.purpose(), true);
+          externalIdentityService.link(current.getId(), attempt.accessVersion(), evidence);
+        });
   }
 
   private void storeGrant(
@@ -470,11 +474,11 @@ public class ExternalLoginFlow {
             user.getId(),
             user.getAccessVersion(),
             purpose,
-            clock.instant().plusSeconds(300),
+            externalLoginClock.instant().plusSeconds(300),
             session.getId(),
             method,
             currentFactorRevision(request),
-            policies.current().revision()));
+            twoFactorPolicies.current().revision()));
   }
 
   private UUID currentFactorRevision(HttpServletRequest request) {
@@ -499,9 +503,10 @@ public class ExternalLoginFlow {
       boolean remember) {
     requireProvider(provider);
     ExternalAuthenticationToken authentication =
-        new ExternalAuthenticationToken(details.loadUserByUsername(user.getEmail()), provider);
+        new ExternalAuthenticationToken(
+            customUserDetailsService.loadUserByUsername(user.getEmail()), provider);
     try {
-      security.storeVerifiedAuthentication(request, response, authentication, remember);
+      securityService.storeVerifiedAuthentication(request, response, authentication, remember);
       if (!twoFactor.sessionConfirmed(request)) {
         return AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE;
       }
@@ -510,7 +515,7 @@ public class ExternalLoginFlow {
           ? "/admin"
           : "/home";
     } catch (SessionLimitException _) {
-      sessions.startExternalRecovery(request, authentication, remember);
+      sessionManagementService.startExternalRecovery(request, authentication, remember);
       return "/login?error=sessions";
     }
   }
@@ -519,7 +524,7 @@ public class ExternalLoginFlow {
     HttpSession session = request.getSession(false);
     if (session != null
         && session.getAttribute(REGISTRATION) instanceof Registration registration
-        && registration.expires().isAfter(clock.instant())) {
+        && registration.expires().isAfter(externalLoginClock.instant())) {
       requireProvider(registration.identity().provider());
       return registration;
     }
@@ -527,7 +532,7 @@ public class ExternalLoginFlow {
   }
 
   private void requireProvider(String provider) {
-    if (!clients.providers().contains(provider)) {
+    if (!providerRegistrations.providers().contains(provider)) {
       throw new AccessDeniedException("Sign-in provider unavailable");
     }
   }
@@ -562,11 +567,11 @@ public class ExternalLoginFlow {
         || !userId.equals(user.getId())
         || !version.equals(user.getAccessVersion())
         || grantedPurpose != purpose
-        || !expires.isAfter(clock.instant())
+        || !expires.isAfter(externalLoginClock.instant())
         || !sessionId.equals(session.getId())
-        || policyRevision != policies.current().revision()
+        || policyRevision != twoFactorPolicies.current().revision()
         || !Objects.equals(factorRevision, currentFactorRevision(request))
-        || method == ProofMethod.GOOGLE_DEVELOPMENT && !policies.weakGoogleAllowed()) {
+        || method == ProofMethod.GOOGLE_DEVELOPMENT && !twoFactorPolicies.weakGoogleAllowed()) {
       throw new AccessDeniedException("Confirm this security action again");
     }
     if (requiresFactor(request, purpose) && method != ProofMethod.SECOND_FACTOR) {
@@ -607,11 +612,11 @@ public class ExternalLoginFlow {
 
   public UserEntity owner(HttpServletRequest request) {
     String email =
-        security
+        securityService
             .getAuthenticatedUser(request)
             .orElseThrow(() -> new AccessDeniedException("Sign in required"))
             .getUsername();
-    return users
+    return userRepository
         .findByEmail(email)
         .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
   }

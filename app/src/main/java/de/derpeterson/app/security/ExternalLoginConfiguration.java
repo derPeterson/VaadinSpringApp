@@ -20,19 +20,19 @@ import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 public class ExternalLoginConfiguration {
   public static final class Registrations
       implements ClientRegistrationRepository, Iterable<ClientRegistration> {
-    private final Supplier<List<ClientRegistration>> clients;
+    private final Supplier<List<ClientRegistration>> clientRegistrationsSupplier;
 
-    Registrations(List<ClientRegistration> clients) {
-      this.clients = () -> List.copyOf(clients);
+    Registrations(List<ClientRegistration> clientRegistrationsSupplier) {
+      this.clientRegistrationsSupplier = () -> List.copyOf(clientRegistrationsSupplier);
     }
 
-    Registrations(Supplier<List<ClientRegistration>> clients) {
-      this.clients = clients;
+    Registrations(Supplier<List<ClientRegistration>> clientRegistrationsSupplier) {
+      this.clientRegistrationsSupplier = clientRegistrationsSupplier;
     }
 
     @Override
     public ClientRegistration findByRegistrationId(String id) {
-      return clients.get().stream()
+      return clientRegistrationsSupplier.get().stream()
           .filter(client -> client.getRegistrationId().equals(id))
           .findFirst()
           .orElse(null);
@@ -40,47 +40,48 @@ public class ExternalLoginConfiguration {
 
     @Override
     public Iterator<ClientRegistration> iterator() {
-      return clients.get().iterator();
+      return clientRegistrationsSupplier.get().iterator();
     }
 
     public List<String> providers() {
-      return clients.get().stream().map(ClientRegistration::getRegistrationId).toList();
+      return clientRegistrationsSupplier.get().stream()
+          .map(ClientRegistration::getRegistrationId)
+          .toList();
     }
   }
 
   @Bean
   public Registrations managedExternalRegistrations(
       ExternalLoginProperties properties, ExternalProviderSettings settings) {
-    return new Registrations(
-        () -> {
-          ExternalLoginProperties current = new ExternalLoginProperties();
-          for (String provider : ExternalProviderSettings.PROVIDERS) {
-            Credentials stored = settings.credentials(provider);
-            ExternalLoginProperties.Provider target =
-                provider.equals(GOOGLE) ? current.getGoogle() : current.getMicrosoft();
-            ExternalLoginProperties.Provider defaults =
-                provider.equals(GOOGLE) ? properties.getGoogle() : properties.getMicrosoft();
-            if (stored.enabled()) {
-              target.setClientId(stored.clientId());
-              target.setClientSecret(stored.clientSecret());
-              target.setEnabled(true);
-            }
-            // Endpunkte stammen ausschließlich aus der Serverkonfiguration, nie aus Admin-Eingaben.
-            target.setAuthorizationUri(defaults.getAuthorizationUri());
-            target.setTokenUri(defaults.getTokenUri());
-            target.setJwkSetUri(defaults.getJwkSetUri());
-          }
-          List<ClientRegistration> result = new ArrayList<>();
-          externalRegistrations(current).forEach(result::add);
-          return List.copyOf(result);
-        });
+    return new Registrations(() -> {
+      ExternalLoginProperties current = new ExternalLoginProperties();
+      for (String provider : ExternalProviderSettings.PROVIDERS) {
+        Credentials stored = settings.credentials(provider);
+        ExternalLoginProperties.Provider target =
+            provider.equals(GOOGLE) ? current.getGoogle() : current.getMicrosoft();
+        ExternalLoginProperties.Provider defaults =
+            provider.equals(GOOGLE) ? properties.getGoogle() : properties.getMicrosoft();
+        if (stored.enabled()) {
+          target.setClientId(stored.clientId());
+          target.setClientSecret(stored.clientSecret());
+          target.setEnabled(true);
+        }
+        // Endpunkte stammen ausschließlich aus der Serverkonfiguration, nie aus Admin-Eingaben.
+        target.setAuthorizationUri(defaults.getAuthorizationUri());
+        target.setTokenUri(defaults.getTokenUri());
+        target.setJwkSetUri(defaults.getJwkSetUri());
+      }
+      List<ClientRegistration> result = new ArrayList<>();
+      externalRegistrations(current).forEach(result::add);
+      return List.copyOf(result);
+    });
   }
 
   /** Unveränderliche Registrierungen für isolierte Protokolltests. */
   public Registrations externalRegistrations(ExternalLoginProperties properties) {
-    List<ClientRegistration> clients = new ArrayList<>();
+    List<ClientRegistration> clientRegistrationsSupplier = new ArrayList<>();
     if (properties.getGoogle().configured()) {
-      clients.add(
+      clientRegistrationsSupplier.add(
           registration(
               GOOGLE,
               properties.getGoogle(),
@@ -90,7 +91,7 @@ public class ExternalLoginConfiguration {
               "https://www.googleapis.com/oauth2/v3/certs"));
     }
     if (properties.getMicrosoft().configured()) {
-      clients.add(
+      clientRegistrationsSupplier.add(
           registration(
               "microsoft",
               properties.getMicrosoft(),
@@ -99,7 +100,7 @@ public class ExternalLoginConfiguration {
               "https://login.microsoftonline.com/common/oauth2/v2.0/token",
               "https://login.microsoftonline.com/common/discovery/v2.0/keys"));
     }
-    return new Registrations(clients);
+    return new Registrations(clientRegistrationsSupplier);
   }
 
   private ClientRegistration registration(

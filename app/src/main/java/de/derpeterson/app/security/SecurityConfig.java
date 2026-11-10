@@ -90,8 +90,9 @@ public class SecurityConfig {
   }
 
   @Bean
-  public SecurityContextRepository securityContextRepository(SessionAdmissionService admissions) {
-    return new AdmittedSecurityContextRepository(admissions);
+  public SecurityContextRepository securityContextRepository(
+      SessionAdmissionService sessionAdmissionService) {
+    return new AdmittedSecurityContextRepository(sessionAdmissionService);
   }
 
   @Bean
@@ -113,11 +114,12 @@ public class SecurityConfig {
   }
 
   @Bean
-  public HttpSessionEventPublisher httpSessionEventPublisher(SessionAdmissionService admissions) {
+  public HttpSessionEventPublisher httpSessionEventPublisher(
+      SessionAdmissionService sessionAdmissionService) {
     return new HttpSessionEventPublisher() {
       @Override
       public void sessionIdChanged(HttpSessionEvent event, String previous) {
-        admissions.sessionIdChanged(
+        sessionAdmissionService.sessionIdChanged(
             previous, event.getSession().getId(), () -> super.sessionIdChanged(event, previous));
       }
     };
@@ -126,9 +128,10 @@ public class SecurityConfig {
   @Bean
   public SessionAdmissionService sessionAdmissionService(
       SessionRegistry registry, DeviceTokenRepository tokens) {
-    SessionAdmissionService admissions = new SessionAdmissionService(configService, registry);
-    admissions.setDeviceTokens(tokens);
-    return admissions;
+    SessionAdmissionService sessionAdmissionService =
+        new SessionAdmissionService(configService, registry);
+    sessionAdmissionService.setDeviceTokens(tokens);
+    return sessionAdmissionService;
   }
 
   @Bean
@@ -154,7 +157,7 @@ public class SecurityConfig {
   public DeviceRememberMeServices rememberMeServices(
       DeviceTokenRepository tokenRepository,
       CustomUserDetailsService userDetailsService,
-      SessionAdmissionService admissions) {
+      SessionAdmissionService sessionAdmissionService) {
     String secretKey = configService.getString(ConfigEntry.REMEMBER_ME_SECRET_KEY);
 
     DeviceRememberMeServices remembered =
@@ -162,7 +165,7 @@ public class SecurityConfig {
             secretKey,
             userDetailsService,
             tokenRepository,
-            admissions,
+            sessionAdmissionService,
             () -> configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION));
     remembered.validitySeconds();
     remembered.setCookieCustomizer(cookie -> cookie.setAttribute("SameSite", "Lax"));
@@ -171,23 +174,24 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain securityFilterChain(
-      HttpSecurity http,
+      HttpSecurity httpSecurity,
       PersistentTokenBasedRememberMeServices rememberMeServices,
       AuthenticationManager authenticationManager,
-      SessionAdmissionService admissions,
-      MaintenanceService maintenance,
+      SessionAdmissionService sessionAdmissionService,
+      MaintenanceService maintenanceService,
       SecurityContextRepository contextRepository,
-      ObjectProvider<SessionManagementService> sessionManagement,
+      ObjectProvider<SessionManagementService> sessionManagementServiceProvider,
       @Qualifier("h2Console") ObjectProvider<ServletRegistrationBean<?>> h2Console,
-      ObjectProvider<ExternalLoginHttp> externalLogin,
+      ObjectProvider<ExternalLoginHttp> externalLoginHttpProvider,
       SecurityService securityService,
-      TwoFactorAuthorization twoFactor) {
+      TwoFactorAuthorization twoFactorAuthorization) {
     logger.debug("🔥 SecurityConfig is loading!");
 
     H2ConsoleOriginFilter consoleProtection =
         new H2ConsoleOriginFilter(exposeH2Console, h2Console::getIfAvailable);
     FlowCsrfRequestMatcher flowProtection = new FlowCsrfRequestMatcher(vaadinServletMapping);
-    http.authenticationManager(authenticationManager)
+    httpSecurity
+        .authenticationManager(authenticationManager)
         .csrf(csrf ->
             csrf.requireCsrfProtectionMatcher(request ->
                 flowProtection.matches(request)
@@ -195,7 +199,8 @@ public class SecurityConfig {
         .headers(headers -> headers.frameOptions(FrameOptionsConfig::sameOrigin))
         .addFilterBefore(consoleProtection, CsrfFilter.class)
         .addFilterBefore(
-            new FlowUiRecoveryFilter(vaadinServletMapping, admissions, maintenance),
+            new FlowUiRecoveryFilter(
+                vaadinServletMapping, sessionAdmissionService, maintenanceService),
             CsrfFilter.class)
         .authorizeHttpRequests(
             requests -> configureRequestAuthorization(requests, consoleProtection))
@@ -206,11 +211,12 @@ public class SecurityConfig {
                 .accessDeniedHandler(this::handleAccessDenied))
         .addFilterAfter(new LoginCsrfTokenFilter(), RememberMeAuthenticationFilter.class)
         .addFilterBefore(vaadinSecurityFilter, AuthorizationFilter.class)
-        .addFilterAfter(new MaintenanceHttpFilter(maintenance), VaadinSecurityFilter.class)
+        .addFilterAfter(new MaintenanceHttpFilter(maintenanceService), VaadinSecurityFilter.class)
         .addFilterAfter(
-            new TwoFactorHttpFilter(securityService, twoFactor), MaintenanceHttpFilter.class)
+            new TwoFactorHttpFilter(securityService, twoFactorAuthorization),
+            MaintenanceHttpFilter.class)
         .addFilterBefore(
-            new LoginCompletionFilter(admissions, rememberMeServices),
+            new LoginCompletionFilter(sessionAdmissionService, rememberMeServices),
             UsernamePasswordAuthenticationFilter.class)
         .sessionManagement(session -> session.sessionFixation().changeSessionId())
         .securityContext(
@@ -220,7 +226,7 @@ public class SecurityConfig {
               new ObjectPostProcessor<UsernamePasswordAuthenticationFilter>() {
                 @Override
                 public <O extends UsernamePasswordAuthenticationFilter> O postProcess(O filter) {
-                  filter.setSessionAuthenticationStrategy(admissions);
+                  filter.setSessionAuthenticationStrategy(sessionAdmissionService);
                   return filter;
                 }
               });
@@ -229,10 +235,15 @@ public class SecurityConfig {
               .defaultSuccessUrl(AppRoute.ADMIN.getSecurityRoute(), true)
               .successHandler((request, response, authentication) ->
                   completeFormLogin(
-                      request, response, authentication, rememberMeServices, twoFactor))
+                      request,
+                      response,
+                      authentication,
+                      rememberMeServices,
+                      twoFactorAuthorization))
               .failureHandler((request, response, failure) -> {
                 AuthenticationException result =
-                    recoverSessionLimit(request, failure, rememberMeServices, sessionManagement);
+                    recoverSessionLimit(
+                        request, failure, rememberMeServices, sessionManagementServiceProvider);
                 response.sendRedirect(
                     AppRoute.LOGIN.getSecurityRoute()
                         + LOGIN_ERROR_QUERY
@@ -253,18 +264,18 @@ public class SecurityConfig {
                     new ObjectPostProcessor<RememberMeAuthenticationFilter>() {
                       @Override
                       public <O extends RememberMeAuthenticationFilter> O postProcess(O filter) {
-                        filter.setSessionAuthenticationStrategy(admissions);
+                        filter.setSessionAuthenticationStrategy(sessionAdmissionService);
                         return filter;
                       }
                     }));
 
     logger.debug("🔧 SecurityConfig loaded!");
 
-    ExternalLoginHttp external = externalLogin.getIfAvailable();
+    ExternalLoginHttp external = externalLoginHttpProvider.getIfAvailable();
     if (external != null) {
-      external.configure(http);
+      external.configure(httpSecurity);
     }
-    return http.build();
+    return httpSecurity.build();
   }
 
   private void configureRequestAuthorization(
@@ -367,7 +378,7 @@ public class SecurityConfig {
       HttpServletResponse response,
       Authentication authentication,
       PersistentTokenBasedRememberMeServices rememberMeServices,
-      TwoFactorAuthorization twoFactor)
+      TwoFactorAuthorization twoFactorAuthorization)
       throws IOException {
     if (rememberMeServices instanceof DeviceRememberMeServices devices
         && !devices.requested(request)) {
@@ -376,7 +387,7 @@ public class SecurityConfig {
     boolean admin =
         authentication.getAuthorities().stream()
             .anyMatch(authority -> RoleType.ROLE_ADMIN.name().equals(authority.getAuthority()));
-    if (!twoFactor.sessionConfirmed(request)) {
+    if (!twoFactorAuthorization.sessionConfirmed(request)) {
       response.sendRedirect(AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE);
       return;
     }
@@ -387,9 +398,9 @@ public class SecurityConfig {
       HttpServletRequest request,
       AuthenticationException failure,
       PersistentTokenBasedRememberMeServices rememberMeServices,
-      ObjectProvider<SessionManagementService> sessionManagement) {
+      ObjectProvider<SessionManagementService> sessionManagementServiceProvider) {
     if (failure instanceof SessionLimitException) {
-      SessionManagementService sessions = sessionManagement.getIfAvailable();
+      SessionManagementService sessions = sessionManagementServiceProvider.getIfAvailable();
       if (sessions != null) {
         try {
           sessions.startRecovery(

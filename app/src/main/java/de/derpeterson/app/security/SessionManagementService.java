@@ -77,25 +77,25 @@ public class SessionManagementService {
   }
 
   private static final String PROOF = SessionManagementService.class.getName() + ".proof";
-  private final SessionAdmissionService admissions;
-  private final DeviceTokenRepository tokens;
-  private final SecurityService security;
-  private final CustomUserDetailsService users;
-  private final AuthenticationManager authentication;
-  private final PasswordEncoder encoder;
-  private final ConfigService config;
-  private final DeviceRememberMeServices remembered;
-  private Clock clock = Clock.systemUTC();
+  private final SessionAdmissionService sessionAdmissionService;
+  private final DeviceTokenRepository deviceTokenRepository;
+  private final SecurityService securityService;
+  private final CustomUserDetailsService customUserDetailsService;
+  private final AuthenticationManager authenticationManager;
+  private final PasswordEncoder passwordEncoder;
+  private final ConfigService configService;
+  private final DeviceRememberMeServices deviceRememberMeServices;
+  private Clock sessionClock = Clock.systemUTC();
 
   @Scheduled(cron = "0 0 * * * *")
   public void deleteExpiredSavedLogins() {
-    tokens.deleteExpired(savedLoginDuration());
+    deviceTokenRepository.deleteExpired(savedLoginDuration());
   }
 
   private int savedLoginDuration() {
     // Dies ist startgebunden wie die Cookieprüfung. Bloßes Speichern einer neuen
     // Konfiguration darf vorhandene Zugänge noch nicht vorzeitig entfernen.
-    int duration = remembered.validitySeconds();
+    int duration = deviceRememberMeServices.validitySeconds();
     if (duration < 1) {
       throw new AuthenticationServiceException("Invalid saved-login duration");
     }
@@ -104,12 +104,13 @@ public class SessionManagementService {
 
   public Snapshot list(HttpServletRequest request) {
     String identity = owner(request);
-    return admissions.withIdentity(identity, () -> snapshot(identity, currentId(request)));
+    return sessionAdmissionService.withIdentity(
+        identity, () -> snapshot(identity, currentId(request)));
   }
 
   public void revoke(HttpServletRequest request, String handle) {
     String identity = owner(request);
-    admissions.withIdentity(
+    sessionAdmissionService.withIdentity(
         identity,
         () -> {
           revokeOwned(identity, currentId(request), handle);
@@ -119,7 +120,7 @@ public class SessionManagementService {
 
   public void revokeOthers(HttpServletRequest request) {
     String identity = owner(request);
-    admissions.withIdentity(
+    sessionAdmissionService.withIdentity(
         identity,
         () -> {
           revokeOthersOwned(identity, currentId(request));
@@ -129,10 +130,10 @@ public class SessionManagementService {
 
   private String owner(HttpServletRequest request) {
     UserDetails user =
-        security
+        securityService
             .getAuthenticatedUser(request)
             .orElseThrow(() -> new AuthenticationCredentialsNotFoundException("Sign in required"));
-    new MaintenanceService(config)
+    new MaintenanceService(configService)
         .requireLogin(
             UsernamePasswordAuthenticationToken.authenticated(user, null, user.getAuthorities()));
     return user.getUsername();
@@ -140,8 +141,8 @@ public class SessionManagementService {
 
   private Snapshot snapshot(String identity, String current) {
     int duration = savedLoginDuration();
-    List<DeviceTokenRepository.Saved> saved = tokens.saved(identity, duration);
-    List<SessionAdmissionService.Active> active = admissions.active(identity);
+    List<DeviceTokenRepository.Saved> saved = deviceTokenRepository.saved(identity, duration);
+    List<SessionAdmissionService.Active> active = sessionAdmissionService.active(identity);
     Set<String> activeSeries = new HashSet<>();
     List<Entry> entries = new ArrayList<>();
     active.stream()
@@ -149,40 +150,38 @@ public class SessionManagementService {
             Comparator.comparing(
                     (SessionAdmissionService.Active item) -> !item.sessionId().equals(current))
                 .thenComparing(SessionAdmissionService.Active::created))
-        .forEach(
-            item -> {
-              Optional<Saved> savedLogin =
-                  saved.stream().filter(grant -> grant.series().equals(item.series())).findFirst();
-              boolean hasSavedLogin = savedLogin.isPresent();
-              if (hasSavedLogin) {
-                activeSeries.add(item.series());
-              }
-              entries.add(
-                  new Entry(
-                      item.handle(),
-                      item.device(),
-                      item.created(),
-                      admissions.lastActivity(item.sessionId()),
-                      item.sessionId().equals(current),
-                      true,
-                      hasSavedLogin,
-                      savedLogin.map(DeviceTokenRepository.Saved::handle).orElse(null),
-                      item.signInMethod()));
-            });
+        .forEach(item -> {
+          Optional<Saved> savedLogin =
+              saved.stream().filter(grant -> grant.series().equals(item.series())).findFirst();
+          boolean hasSavedLogin = savedLogin.isPresent();
+          if (hasSavedLogin) {
+            activeSeries.add(item.series());
+          }
+          entries.add(
+              new Entry(
+                  item.handle(),
+                  item.device(),
+                  item.created(),
+                  sessionAdmissionService.lastActivity(item.sessionId()),
+                  item.sessionId().equals(current),
+                  true,
+                  hasSavedLogin,
+                  savedLogin.map(DeviceTokenRepository.Saved::handle).orElse(null),
+                  item.signInMethod()));
+        });
     saved.stream()
         .filter(item -> !activeSeries.contains(item.series()))
-        .forEach(
-            item ->
-                entries.add(
-                    new Entry(
-                        item.handle(),
-                        item.device(),
-                        item.created(),
-                        item.lastUsed(),
-                        false,
-                        false,
-                        true)));
-    int limit = config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER);
+        .forEach(item ->
+            entries.add(
+                new Entry(
+                    item.handle(),
+                    item.device(),
+                    item.created(),
+                    item.lastUsed(),
+                    false,
+                    false,
+                    true)));
+    int limit = configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER);
     if (limit < 1) {
       throw new AuthenticationServiceException("Invalid session limit");
     }
@@ -193,9 +192,9 @@ public class SessionManagementService {
     if (handle == null || handle.isBlank()) {
       throw new IllegalArgumentException("Entry required");
     }
-    List<Active> active = admissions.active(identity);
+    List<Active> active = sessionAdmissionService.active(identity);
     Optional<Saved> savedLogin =
-        tokens.saved(identity, savedLoginDuration()).stream()
+        deviceTokenRepository.saved(identity, savedLoginDuration()).stream()
             .filter(item -> item.handle().equals(handle))
             .findFirst();
     Optional<Active> exact =
@@ -204,51 +203,46 @@ public class SessionManagementService {
       throw new IllegalArgumentException("Use normal logout for the current session");
     }
     Optional<Active> target =
-        exact.or(
-            () ->
-                active.stream()
-                    .filter(
-                        item ->
-                            !item.sessionId().equals(current)
-                                && savedLogin.isPresent()
-                                && savedLogin.get().series().equals(item.series()))
-                    .findFirst());
+        exact.or(() ->
+            active.stream()
+                .filter(item ->
+                    !item.sessionId().equals(current)
+                        && savedLogin.isPresent()
+                        && savedLogin.get().series().equals(item.series()))
+                .findFirst());
     if (target.isEmpty()
         && savedLogin.isPresent()
         && active.stream()
-            .anyMatch(
-                item ->
-                    item.sessionId().equals(current)
-                        && savedLogin.get().series().equals(item.series()))) {
+            .anyMatch(item ->
+                item.sessionId().equals(current)
+                    && savedLogin.get().series().equals(item.series()))) {
       throw new IllegalArgumentException("Use normal logout for the current session");
     }
     // Zuerst dauerhaft widerrufen; bei Datenbankfehlern keine nur teilweise abgemeldete Sitzung.
     if (target.isPresent()) {
       Active item = target.get();
       if (item.series() != null) {
-        tokens.removeSeries(identity, item.series());
+        deviceTokenRepository.removeSeries(identity, item.series());
       }
       active.stream()
           .filter(other -> !other.sessionId().equals(current))
-          .filter(
-              other ->
-                  Objects.equals(other.series(), item.series()) && item.series() != null
-                      || other.sessionId().equals(item.sessionId()))
-          .forEach(other -> admissions.expire(identity, other.sessionId()));
+          .filter(other ->
+              Objects.equals(other.series(), item.series()) && item.series() != null
+                  || other.sessionId().equals(item.sessionId()))
+          .forEach(other -> sessionAdmissionService.expire(identity, other.sessionId()));
       log.info(
           "Owned device access revoked: activeSession=true, savedLogin={}", item.series() != null);
       return;
     }
     // Fremde und bereits entfernte Kennungen liefern denselben neutralen Zustand.
-    savedLogin.ifPresent(
-        item -> {
-          tokens.removeSeries(identity, item.series());
-          log.info("Owned device access revoked: activeSession=false, savedLogin=true");
-        });
+    savedLogin.ifPresent(item -> {
+      deviceTokenRepository.removeSeries(identity, item.series());
+      log.info("Owned device access revoked: activeSession=false, savedLogin=true");
+    });
   }
 
   private void revokeOthersOwned(String identity, String current) {
-    List<Active> active = admissions.active(identity);
+    List<Active> active = sessionAdmissionService.active(identity);
     String keep =
         active.stream()
             .filter(item -> item.sessionId().equals(current))
@@ -263,16 +257,15 @@ public class SessionManagementService {
                         item -> !item.sessionId().equals(current) && keep.equals(item.series()))
             ? null
             : keep;
-    tokens.atomic(
-        () -> {
-          tokens.saved(identity, savedLoginDuration()).stream()
-              .filter(item -> !Objects.equals(item.series(), retainedSeries))
-              .forEach(item -> tokens.removeSeries(identity, item.series()));
-          return null;
-        });
+    deviceTokenRepository.atomic(() -> {
+      deviceTokenRepository.saved(identity, savedLoginDuration()).stream()
+          .filter(item -> !Objects.equals(item.series(), retainedSeries))
+          .forEach(item -> deviceTokenRepository.removeSeries(identity, item.series()));
+      return null;
+    });
     active.stream()
         .filter(item -> !item.sessionId().equals(current))
-        .forEach(item -> admissions.expire(identity, item.sessionId()));
+        .forEach(item -> sessionAdmissionService.expire(identity, item.sessionId()));
     log.info("Other device access revoked");
   }
 
@@ -284,16 +277,16 @@ public class SessionManagementService {
       HttpServletRequest request, String email, String password, boolean remember) {
     cancelRecovery(request);
     Authentication verified =
-        authentication.authenticate(
+        authenticationManager.authenticate(
             UsernamePasswordAuthenticationToken.unauthenticated(email, password));
     if (!verified.isAuthenticated() || !(verified.getPrincipal() instanceof UserDetails)) {
       throw new BadCredentialsException("Invalid sign-in");
     }
-    UserDetails current = users.loadUserByUsername(verified.getName());
-    if (!current.isEnabled() || !encoder.matches(password, current.getPassword())) {
+    UserDetails current = customUserDetailsService.loadUserByUsername(verified.getName());
+    if (!current.isEnabled() || !passwordEncoder.matches(password, current.getPassword())) {
       throw new BadCredentialsException("Sign-in changed");
     }
-    new MaintenanceService(config).requireLogin(verified);
+    new MaintenanceService(configService).requireLogin(verified);
     request.getSession(true);
     // Auch der eingeschränkte Zugang darf keine vorab bekannte Sitzungskennung übernehmen.
     request.changeSessionId();
@@ -305,7 +298,7 @@ public class SessionManagementService {
                 current.getUsername(),
                 fingerprint(current),
                 remember,
-                clock.instant().plusSeconds(300),
+                sessionClock.instant().plusSeconds(300),
                 null));
   }
 
@@ -313,13 +306,13 @@ public class SessionManagementService {
   public void startExternalRecovery(
       HttpServletRequest request, ExternalAuthenticationToken verified, boolean remember) {
     cancelRecovery(request);
-    UserDetails current = users.loadUserByUsername(verified.getName());
+    UserDetails current = customUserDetailsService.loadUserByUsername(verified.getName());
     if (!current.isEnabled()
         || !PortalUserDetails.version(current)
             .equals(PortalUserDetails.version(verified.getPrincipal()))) {
       throw new BadCredentialsException("Sign-in changed");
     }
-    new MaintenanceService(config).requireLogin(verified);
+    new MaintenanceService(configService).requireLogin(verified);
     request.getSession(true);
     request.changeSessionId();
     request
@@ -330,7 +323,7 @@ public class SessionManagementService {
                 current.getUsername(),
                 fingerprint(current),
                 remember,
-                clock.instant().plusSeconds(300),
+                sessionClock.instant().plusSeconds(300),
                 verified.provider()));
   }
 
@@ -338,7 +331,7 @@ public class SessionManagementService {
     HttpSession session = request.getSession(false);
     return session != null
         && session.getAttribute(PROOF) instanceof Proof proof
-        && clock.instant().isBefore(proof.expires());
+        && sessionClock.instant().isBefore(proof.expires());
   }
 
   public Snapshot recoveryList(HttpServletRequest request) {
@@ -376,9 +369,10 @@ public class SessionManagementService {
             Proof proof = (Proof) session.getAttribute(PROOF);
             UserDetails principal = User.withUserDetails(user).password("").build();
             if (proof.provider() == null) {
-              security.storeAuthenticatedUser(request, response, principal, proof.remember());
+              securityService.storeAuthenticatedUser(
+                  request, response, principal, proof.remember());
             } else {
-              security.storeVerifiedAuthentication(
+              securityService.storeVerifiedAuthentication(
                   request,
                   response,
                   new ExternalAuthenticationToken(user, proof.provider()),
@@ -403,19 +397,20 @@ public class SessionManagementService {
     if (session == null || !(session.getAttribute(PROOF) instanceof Proof proof)) {
       throw new AuthenticationCredentialsNotFoundException("Sign in again");
     }
-    return admissions.withIdentity(
+    return sessionAdmissionService.withIdentity(
         proof.identity(),
         () -> {
-          if (session.getAttribute(PROOF) != proof || !clock.instant().isBefore(proof.expires())) {
+          if (session.getAttribute(PROOF) != proof
+              || !sessionClock.instant().isBefore(proof.expires())) {
             cancelRecovery(request);
             throw new AuthenticationCredentialsNotFoundException("Sign in again");
           }
-          UserDetails current = users.loadUserByUsername(proof.identity());
+          UserDetails current = customUserDetailsService.loadUserByUsername(proof.identity());
           if (!current.isEnabled() || !proof.fingerprint().equals(fingerprint(current))) {
             cancelRecovery(request);
             throw new AuthenticationCredentialsNotFoundException("Sign-in changed");
           }
-          new MaintenanceService(config)
+          new MaintenanceService(configService)
               .requireLogin(
                   UsernamePasswordAuthenticationToken.authenticated(
                       current, null, current.getAuthorities()));

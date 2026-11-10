@@ -30,11 +30,11 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 @Slf4j
 public class ExternalLoginHttp {
-  private final ExternalLoginConfiguration.Registrations clients;
-  private final ExternalLoginProperties properties;
-  private final ExternalLoginFlow flow;
-  private final ExternalProviderSettings settings;
-  private final SecurityService security;
+  private final ExternalLoginConfiguration.Registrations providerRegistrations;
+  private final ExternalLoginProperties externalLoginProperties;
+  private final ExternalLoginFlow externalLoginFlow;
+  private final ExternalProviderSettings externalProviderSettings;
+  private final SecurityService securityService;
 
   public void configure(HttpSecurity http) {
     OidcUserService userService = new OidcUserService();
@@ -42,61 +42,59 @@ public class ExternalLoginHttp {
     OidcAuthorizationCodeAuthenticationProvider provider =
         new OidcAuthorizationCodeAuthenticationProvider(
             new RestClientAuthorizationCodeTokenResponseClient(), userService);
-    provider.setJwtDecoderFactory(new ExternalIdTokenDecoders(properties));
-    DefaultOAuth2AuthorizationRequestResolver base =
-        new DefaultOAuth2AuthorizationRequestResolver(clients, "/oauth2/authorization");
-    base.setAuthorizationRequestCustomizer(OAuth2AuthorizationRequestCustomizers.withPkce());
-    http.oauth2Login(
-        oauth -> {
-          oauth.addObjectPostProcessor(
-              new ObjectPostProcessor<OAuth2LoginAuthenticationFilter>() {
-                @Override
-                public <O extends OAuth2LoginAuthenticationFilter> O postProcess(O filter) {
-                  filter.setAuthenticationManager(new ProviderManager(provider));
-                  filter.setSessionAuthenticationStrategy(new NullAuthenticatedSessionStrategy());
-                  // Der gemeinsame HTTP-Kontext darf das vorläufige OIDC-Token nicht speichern.
-                  // Erst flow.complete vergibt nach den lokalen Kontoprüfungen eine Portalsitzung.
-                  filter.setSecurityContextRepository(new NullSecurityContextRepository());
-                  return filter;
-                }
-              });
-          oauth
-              .clientRegistrationRepository(clients)
-              .loginPage("/login")
-              .authorizedClientRepository(new DiscardedClients())
-              .securityContextRepository(new NullSecurityContextRepository())
-              .authorizationEndpoint(
-                  endpoint ->
-                      endpoint
-                          .authorizationRequestResolver(new Resolver(base))
-                          .authorizationRequestRepository(
-                              new ProviderAuthorizationRequests(settings)))
-              .successHandler(
-                  (request, response, authentication) -> {
-                    try {
-                      flow.complete(request, response, authentication);
-                    } catch (RuntimeException failure) {
-                      log.warn(
-                          "External sign-in completion failed: reason={}",
-                          proofProblem(failure),
-                          LogSafety.safeFailure(failure));
-                      fail(request, response, failure);
-                    }
-                  })
-              .failureHandler(
-                  (request, response, failure) -> {
-                    log.warn("External sign-in was rejected", LogSafety.safeFailure(failure));
-                    fail(request, response, failure);
-                  });
-        });
+    provider.setJwtDecoderFactory(new ExternalIdTokenDecoders(externalLoginProperties));
+    DefaultOAuth2AuthorizationRequestResolver defaultAuthorizationRequestResolver =
+        new DefaultOAuth2AuthorizationRequestResolver(
+            providerRegistrations, "/oauth2/authorization");
+    defaultAuthorizationRequestResolver.setAuthorizationRequestCustomizer(
+        OAuth2AuthorizationRequestCustomizers.withPkce());
+    http.oauth2Login(oauth -> {
+      oauth.addObjectPostProcessor(
+          new ObjectPostProcessor<OAuth2LoginAuthenticationFilter>() {
+            @Override
+            public <O extends OAuth2LoginAuthenticationFilter> O postProcess(O filter) {
+              filter.setAuthenticationManager(new ProviderManager(provider));
+              filter.setSessionAuthenticationStrategy(new NullAuthenticatedSessionStrategy());
+              // Der gemeinsame HTTP-Kontext darf das vorläufige OIDC-Token nicht speichern.
+              // Erst flow.complete vergibt nach den lokalen Kontoprüfungen eine Portalsitzung.
+              filter.setSecurityContextRepository(new NullSecurityContextRepository());
+              return filter;
+            }
+          });
+      oauth
+          .clientRegistrationRepository(providerRegistrations)
+          .loginPage("/login")
+          .authorizedClientRepository(new DiscardedClients())
+          .securityContextRepository(new NullSecurityContextRepository())
+          .authorizationEndpoint(endpoint ->
+              endpoint
+                  .authorizationRequestResolver(new Resolver(defaultAuthorizationRequestResolver))
+                  .authorizationRequestRepository(
+                      new ProviderAuthorizationRequests(externalProviderSettings)))
+          .successHandler((request, response, authentication) -> {
+            try {
+              externalLoginFlow.complete(request, response, authentication);
+            } catch (RuntimeException failure) {
+              log.warn(
+                  "External sign-in completion failed: reason={}",
+                  proofProblem(failure),
+                  LogSafety.safeFailure(failure));
+              fail(request, response, failure);
+            }
+          })
+          .failureHandler((request, response, failure) -> {
+            log.warn("External sign-in was rejected", LogSafety.safeFailure(failure));
+            fail(request, response, failure);
+          });
+    });
   }
 
   private void fail(
       HttpServletRequest request, HttpServletResponse response, RuntimeException failure)
       throws IOException {
-    boolean localAccount = security.getAuthenticatedUser(request).isPresent();
+    boolean localAccount = securityService.getAuthenticatedUser(request).isPresent();
     TwoFactorFlow active = localAccount ? TwoFactorFlow.current(request) : null;
-    flow.cancel(request);
+    externalLoginFlow.cancel(request);
     if (!localAccount) {
       response.sendRedirect("/external-registration?error=external");
       return;
@@ -117,20 +115,21 @@ public class ExternalLoginHttp {
   }
 
   private final class Resolver implements OAuth2AuthorizationRequestResolver {
-    private final DefaultOAuth2AuthorizationRequestResolver base;
+    private final DefaultOAuth2AuthorizationRequestResolver defaultAuthorizationRequestResolver;
 
-    private Resolver(DefaultOAuth2AuthorizationRequestResolver base) {
-      this.base = base;
+    private Resolver(
+        DefaultOAuth2AuthorizationRequestResolver defaultAuthorizationRequestResolver) {
+      this.defaultAuthorizationRequestResolver = defaultAuthorizationRequestResolver;
     }
 
     @Override
     public OAuth2AuthorizationRequest resolve(HttpServletRequest request) {
-      return bind(request, base.resolve(request));
+      return bind(request, defaultAuthorizationRequestResolver.resolve(request));
     }
 
     @Override
     public OAuth2AuthorizationRequest resolve(HttpServletRequest request, String id) {
-      return bind(request, base.resolve(request, id));
+      return bind(request, defaultAuthorizationRequestResolver.resolve(request, id));
     }
 
     private OAuth2AuthorizationRequest bind(
@@ -140,21 +139,20 @@ public class ExternalLoginHttp {
       }
       String id = authorization.getAttribute("registration_id");
       ExternalLoginFlow.Attempt attempt =
-          flow.bindAuthorization(request, id, authorization.getState());
+          externalLoginFlow.bindAuthorization(request, id, authorization.getState());
       if (attempt.mode() != ExternalLoginFlow.Mode.PROOF) {
         return authorization;
       }
       return OAuth2AuthorizationRequest.from(authorization)
-          .additionalParameters(
-              parameters -> {
-                if (id.equals("google")) {
-                  parameters.put("prompt", "select_account consent");
-                } else {
-                  parameters.put("max_age", "0");
-                  parameters.put("claims", "{\"id_token\":{\"auth_time\":{\"essential\":true}}}");
-                  parameters.put("prompt", "login");
-                }
-              })
+          .additionalParameters(parameters -> {
+            if (id.equals("google")) {
+              parameters.put("prompt", "select_account consent");
+            } else {
+              parameters.put("max_age", "0");
+              parameters.put("claims", "{\"id_token\":{\"auth_time\":{\"essential\":true}}}");
+              parameters.put("prompt", "login");
+            }
+          })
           .build();
     }
   }

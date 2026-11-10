@@ -31,15 +31,15 @@ import tools.jackson.databind.json.JsonMapper;
 public class TwoFactorAuthorization {
   private static final String SIGN_IN_REQUIRED = "Sign in required";
   public static final String SESSION_PROOF = TwoFactorAuthorization.class.getName() + ".proof";
-  private final ObjectProvider<SecurityService> security;
-  private final UserRepository users;
-  private final TwoFactorAccountRepository accounts;
-  private final TwoFactorChallengeRepository challenges;
-  private final TwoFactorPolicies policies;
-  private final TwoFactorStore factors;
-  private final TransactionTemplate transaction;
-  private final Clock clock;
-  private final JsonMapper mapper = JsonMapper.builder().build();
+  private final ObjectProvider<SecurityService> securityServiceProvider;
+  private final UserRepository userRepository;
+  private final TwoFactorAccountRepository twoFactorAccountRepository;
+  private final TwoFactorChallengeRepository twoFactorChallengeRepository;
+  private final TwoFactorPolicies twoFactorPolicies;
+  private final TwoFactorStore twoFactorStore;
+  private final TransactionTemplate transactionTemplate;
+  private final Clock authorizationClock;
+  private final JsonMapper proofJsonMapper = JsonMapper.builder().build();
 
   public record Owner(
       Long id,
@@ -67,38 +67,46 @@ public class TwoFactorAuthorization {
 
   @Autowired
   public TwoFactorAuthorization(
-      ObjectProvider<SecurityService> security,
-      UserRepository users,
-      TwoFactorAccountRepository accounts,
-      TwoFactorChallengeRepository challenges,
-      TwoFactorPolicies policies,
-      TwoFactorStore factors,
-      PlatformTransactionManager transactions) {
-    this(security, users, accounts, challenges, policies, factors, transactions, Clock.systemUTC());
+      ObjectProvider<SecurityService> securityServiceProvider,
+      UserRepository userRepository,
+      TwoFactorAccountRepository twoFactorAccountRepository,
+      TwoFactorChallengeRepository twoFactorChallengeRepository,
+      TwoFactorPolicies twoFactorPolicies,
+      TwoFactorStore twoFactorStore,
+      PlatformTransactionManager transactionManager) {
+    this(
+        securityServiceProvider,
+        userRepository,
+        twoFactorAccountRepository,
+        twoFactorChallengeRepository,
+        twoFactorPolicies,
+        twoFactorStore,
+        transactionManager,
+        Clock.systemUTC());
   }
 
   TwoFactorAuthorization(
-      ObjectProvider<SecurityService> security,
-      UserRepository users,
-      TwoFactorAccountRepository accounts,
-      TwoFactorChallengeRepository challenges,
-      TwoFactorPolicies policies,
-      TwoFactorStore factors,
-      PlatformTransactionManager transactions,
-      Clock clock) {
-    this.security = security;
-    this.users = users;
-    this.accounts = accounts;
-    this.challenges = challenges;
-    this.policies = policies;
-    this.factors = factors;
-    this.transaction = new TransactionTemplate(transactions);
-    this.clock = clock;
+      ObjectProvider<SecurityService> securityServiceProvider,
+      UserRepository userRepository,
+      TwoFactorAccountRepository twoFactorAccountRepository,
+      TwoFactorChallengeRepository twoFactorChallengeRepository,
+      TwoFactorPolicies twoFactorPolicies,
+      TwoFactorStore twoFactorStore,
+      PlatformTransactionManager transactionManager,
+      Clock authorizationClock) {
+    this.securityServiceProvider = securityServiceProvider;
+    this.userRepository = userRepository;
+    this.twoFactorAccountRepository = twoFactorAccountRepository;
+    this.twoFactorChallengeRepository = twoFactorChallengeRepository;
+    this.twoFactorPolicies = twoFactorPolicies;
+    this.twoFactorStore = twoFactorStore;
+    this.transactionTemplate = new TransactionTemplate(transactionManager);
+    this.authorizationClock = authorizationClock;
   }
 
   public Owner owner(HttpServletRequest request) {
     String identity =
-        security
+        securityServiceProvider
             .getObject()
             .getAuthenticatedUser(request)
             .orElseThrow(() -> new AccessDeniedException(SIGN_IN_REQUIRED))
@@ -109,7 +117,7 @@ public class TwoFactorAuthorization {
   /** Authentifiziert Push-Aktualisierungen aus der gebundenen Sitzung ohne Aktivität zu buchen. */
   public Owner owner(HttpSession session) {
     String identity =
-        security
+        securityServiceProvider
             .getObject()
             .refreshSessionAuthentication(session)
             .orElseThrow(() -> new AccessDeniedException(SIGN_IN_REQUIRED))
@@ -118,7 +126,7 @@ public class TwoFactorAuthorization {
   }
 
   private Owner owner(String identity) {
-    List<TwoFactorAccessRow> rows = users.findTwoFactorAccess(identity);
+    List<TwoFactorAccessRow> rows = userRepository.findTwoFactorAccess(identity);
     if (rows.isEmpty() || !rows.getFirst().getEnabled()) {
       throw new AccessDeniedException("Account unavailable");
     }
@@ -137,46 +145,42 @@ public class TwoFactorAuthorization {
   }
 
   public State state(Owner owner) {
-    return accounts
+    return twoFactorAccountRepository
         .state(owner.id())
-        .map(
-            row ->
-                new State(
-                    row.getEnrolled(),
-                    row.getPreviouslyEnrolled(),
-                    row.getOperatorEnrollment(),
-                    row.getRevision(),
-                    row.getEnrolledAt()))
+        .map(row ->
+            new State(
+                row.getEnrolled(),
+                row.getPreviouslyEnrolled(),
+                row.getOperatorEnrollment(),
+                row.getRevision(),
+                row.getEnrolledAt()))
         .orElse(new State(false, false, false, null, null));
   }
 
   public boolean requires(HttpServletRequest request, TwoFactorAction action) {
     Owner owner = owner(request);
-    return required(owner, state(owner), policies.current(), action);
+    return required(owner, state(owner), twoFactorPolicies.current(), action);
   }
 
   /** Nur der echte Passwortnachweis der gebundenen Sitzung, höchstens fünf Minuten alt. */
   public boolean hasFreshPasswordLogin(HttpServletRequest request) {
     Owner owner = owner(request);
-    Instant now = clock.instant();
+    Instant now = authorizationClock.instant();
     return owner.hasPassword()
-        && security
+        && securityServiceProvider
             .getObject()
             .refreshSessionAuthentication(request.getSession(false))
             .filter(UsernamePasswordAuthenticationToken.class::isInstance)
-            .filter(
-                authentication ->
-                    authentication.isAuthenticated()
-                        && authentication.getName().equals(owner.email()))
+            .filter(authentication ->
+                authentication.isAuthenticated() && authentication.getName().equals(owner.email()))
             .stream()
             .flatMap(authentication -> authentication.getAuthorities().stream())
             .filter(FactorGrantedAuthority.class::isInstance)
             .map(FactorGrantedAuthority.class::cast)
-            .anyMatch(
-                factor ->
-                    FactorGrantedAuthority.PASSWORD_AUTHORITY.equals(factor.getAuthority())
-                        && !factor.getIssuedAt().isAfter(now)
-                        && factor.getIssuedAt().plusSeconds(300).isAfter(now));
+            .anyMatch(factor ->
+                FactorGrantedAuthority.PASSWORD_AUTHORITY.equals(factor.getAuthority())
+                    && !factor.getIssuedAt().isAfter(now)
+                    && factor.getIssuedAt().plusSeconds(300).isAfter(now));
   }
 
   private boolean required(
@@ -184,7 +188,7 @@ public class TwoFactorAuthorization {
     if (factor.operatorEnrollment()) {
       return true;
     }
-    return !policies.pauseEnabled(configuration)
+    return !twoFactorPolicies.pauseEnabled(configuration)
         && configuration.policy().mode(owner.roles(), action).requiresFactor(factor.enrolled());
   }
 
@@ -208,14 +212,14 @@ public class TwoFactorAuthorization {
 
   private boolean sessionConfirmed(Owner owner, HttpSession session, TwoFactorAction action) {
     State factor = state(owner);
-    TwoFactorPolicies.Snapshot configuration = policies.current();
+    TwoFactorPolicies.Snapshot configuration = twoFactorPolicies.current();
     if (session != null
-        && challenges.setupInProgress(
+        && twoFactorChallengeRepository.setupInProgress(
             owner.id(),
             sessionDigest(session),
             Kind.ENROLLMENT,
             SetupProof.RECOVERY_CODE,
-            clock.instant())) {
+            authorizationClock.instant())) {
       return false;
     }
     if (!required(owner, factor, configuration, action)) {
@@ -238,12 +242,12 @@ public class TwoFactorAuthorization {
         && proof.factorRevision().equals(factor.revision())
         && proof.policyRevision() == configuration.revision()
         && proof.sessionDigest().equals(sessionDigest(session))
-        && !proof.verifiedAt().isAfter(clock.instant())
+        && !proof.verifiedAt().isAfter(authorizationClock.instant())
         && (!configuration.policy().inactivityEnabled()
             || proof
                 .activityAt()
                 .plus(configuration.policy().inactivity())
-                .isAfter(clock.instant()));
+                .isAfter(authorizationClock.instant()));
   }
 
   public void requireSession(HttpServletRequest request) {
@@ -255,7 +259,7 @@ public class TwoFactorAuthorization {
   /** Auch Push-Callbacks prüfen den aktuellen Nachweis ohne einen Servlet-Request-Proxy. */
   public void requireSession(HttpSession session) {
     String identity =
-        security
+        securityServiceProvider
             .getObject()
             .getSessionUser(session)
             .orElseThrow(() -> new AccessDeniedException(SIGN_IN_REQUIRED))
@@ -271,7 +275,7 @@ public class TwoFactorAuthorization {
     if (session != null) {
       session.removeAttribute(SESSION_PROOF);
     }
-    security.getObject().clearSecondFactor(request);
+    securityServiceProvider.getObject().clearSecondFactor(request);
   }
 
   /**
@@ -291,10 +295,10 @@ public class TwoFactorAuthorization {
             current.verifiedContact(),
             current.hasPassword(),
             current.roles());
-    if (validSessionProof(previous, state(current), policies.current(), session, proof)) {
+    if (validSessionProof(previous, state(current), twoFactorPolicies.current(), session, proof)) {
       session.setAttribute(
           SESSION_PROOF,
-          mapper.writeValueAsString(
+          proofJsonMapper.writeValueAsString(
               new SessionProof(
                   current.id(),
                   current.accessVersion(),
@@ -310,10 +314,10 @@ public class TwoFactorAuthorization {
     HttpSession session = request.getSession(false);
     SessionProof proof = sessionProof(session);
     Owner owner = owner(request);
-    if (validSessionProof(owner, state(owner), policies.current(), session, proof)) {
+    if (validSessionProof(owner, state(owner), twoFactorPolicies.current(), session, proof)) {
       session.setAttribute(
           SESSION_PROOF,
-          mapper.writeValueAsString(
+          proofJsonMapper.writeValueAsString(
               new SessionProof(
                   proof.userId(),
                   proof.accessVersion(),
@@ -321,7 +325,7 @@ public class TwoFactorAuthorization {
                   proof.policyRevision(),
                   proof.sessionDigest(),
                   proof.verifiedAt(),
-                  clock.instant())));
+                  authorizationClock.instant())));
     }
   }
 
@@ -342,10 +346,10 @@ public class TwoFactorAuthorization {
             current.operatorEnrollment(),
             previousRevision,
             current.enrolledAt());
-    if (validSessionProof(owner, previous, policies.current(), session, proof)) {
+    if (validSessionProof(owner, previous, twoFactorPolicies.current(), session, proof)) {
       session.setAttribute(
           SESSION_PROOF,
-          mapper.writeValueAsString(
+          proofJsonMapper.writeValueAsString(
               new SessionProof(
                   owner.id(),
                   owner.accessVersion(),
@@ -359,7 +363,8 @@ public class TwoFactorAuthorization {
 
   public void confirmSession(HttpServletRequest request, String code) {
     Owner owner = owner(request);
-    TwoFactorStore.Verified verified = factors.verify(owner.id(), owner.accessVersion(), code);
+    TwoFactorStore.Verified verified =
+        twoFactorStore.verify(owner.id(), owner.accessVersion(), code);
     markSession(request, owner, verified.revision(), verified.recoveryCode());
   }
 
@@ -380,42 +385,44 @@ public class TwoFactorAuthorization {
     HttpSession session = request.getSession(false);
     session.setAttribute(
         SESSION_PROOF,
-        mapper.writeValueAsString(
+        proofJsonMapper.writeValueAsString(
             new SessionProof(
                 owner.id(),
                 owner.accessVersion(),
                 revision,
-                policies.current().revision(),
+                twoFactorPolicies.current().revision(),
                 sessionDigest(session),
-                clock.instant(),
-                clock.instant())));
-    security.getObject().recordSecondFactor(request, recoveryCode, clock.instant());
+                authorizationClock.instant(),
+                authorizationClock.instant())));
+    securityServiceProvider
+        .getObject()
+        .recordSecondFactor(request, recoveryCode, authorizationClock.instant());
   }
 
   public void confirmAction(HttpServletRequest request, TwoFactorAction action, String code) {
     requireSession(request);
     Owner owner = owner(request);
-    TwoFactorStore.Verified verified = factors.verify(owner.id(), owner.accessVersion(), code);
-    transaction.executeWithoutResult(
-        status -> {
-          State current = state(owner);
-          if (!current.enrolled() || !Objects.equals(current.revision(), verified.revision())) {
-            throw new AccessDeniedException("Two-factor account changed");
-          }
-          String session = sessionDigest(request.getSession(false));
-          challenges.invalidate(owner.id(), session, Kind.ACTION, action);
-          TwoFactorChallengeEntity grant = new TwoFactorChallengeEntity();
-          grant.setUser(users.getReferenceById(owner.id()));
-          grant.setAccessVersion(owner.accessVersion());
-          grant.setSessionDigest(session);
-          grant.setFactorRevision(verified.revision());
-          grant.setPolicyRevision(policies.current().revision());
-          grant.setAction(action);
-          grant.setKind(Kind.ACTION);
-          grant.setCreatedAt(clock.instant());
-          grant.setExpiresAt(clock.instant().plusSeconds(300));
-          challenges.saveAndFlush(grant);
-        });
+    TwoFactorStore.Verified verified =
+        twoFactorStore.verify(owner.id(), owner.accessVersion(), code);
+    transactionTemplate.executeWithoutResult(status -> {
+      State current = state(owner);
+      if (!current.enrolled() || !Objects.equals(current.revision(), verified.revision())) {
+        throw new AccessDeniedException("Two-factor account changed");
+      }
+      String session = sessionDigest(request.getSession(false));
+      twoFactorChallengeRepository.invalidate(owner.id(), session, Kind.ACTION, action);
+      TwoFactorChallengeEntity grant = new TwoFactorChallengeEntity();
+      grant.setUser(userRepository.getReferenceById(owner.id()));
+      grant.setAccessVersion(owner.accessVersion());
+      grant.setSessionDigest(session);
+      grant.setFactorRevision(verified.revision());
+      grant.setPolicyRevision(twoFactorPolicies.current().revision());
+      grant.setAction(action);
+      grant.setKind(Kind.ACTION);
+      grant.setCreatedAt(authorizationClock.instant());
+      grant.setExpiresAt(authorizationClock.instant().plusSeconds(300));
+      twoFactorChallengeRepository.saveAndFlush(grant);
+    });
   }
 
   public void authorizeCurrent(
@@ -433,7 +440,7 @@ public class TwoFactorAuthorization {
       throw new AccessDeniedException("Account access changed");
     }
     State factor = state(current);
-    TwoFactorPolicies.Snapshot configuration = policies.current();
+    TwoFactorPolicies.Snapshot configuration = twoFactorPolicies.current();
     if (!required(current, factor, configuration, action)) {
       return;
     }
@@ -448,33 +455,34 @@ public class TwoFactorAuthorization {
     requireSession(request);
     Owner current = owner(request);
     State factor = state(current);
-    TwoFactorPolicies.Snapshot configuration = policies.current();
+    TwoFactorPolicies.Snapshot configuration = twoFactorPolicies.current();
     if (!factor.enrolled()) {
       throw new AccessDeniedException("Set up two-factor authentication first");
     }
     String session = sessionDigest(request.getSession(false));
     Boolean accepted =
-        transaction.execute(
-            status -> {
-              List<UUID> grants =
-                  challenges.active(current.id(), session, Kind.ACTION, action, clock.instant());
-              if (grants.isEmpty()) {
-                return false;
-              }
-              TwoFactorChallengeEntity grant = challenges.lock(grants.getFirst()).orElseThrow();
-              if (grant.isConsumed()
-                  || !grant.getExpiresAt().isAfter(clock.instant())
-                  || !grant.getAccessVersion().equals(current.accessVersion())
-                  || !grant.getFactorRevision().equals(factor.revision())
-                  || grant.getPolicyRevision() != configuration.revision()) {
-                return false;
-              }
-              if (consume) {
-                grant.setConsumed(true);
-                challenges.saveAndFlush(grant);
-              }
-              return true;
-            });
+        transactionTemplate.execute(status -> {
+          List<UUID> grants =
+              twoFactorChallengeRepository.active(
+                  current.id(), session, Kind.ACTION, action, authorizationClock.instant());
+          if (grants.isEmpty()) {
+            return false;
+          }
+          TwoFactorChallengeEntity grant =
+              twoFactorChallengeRepository.lock(grants.getFirst()).orElseThrow();
+          if (grant.isConsumed()
+              || !grant.getExpiresAt().isAfter(authorizationClock.instant())
+              || !grant.getAccessVersion().equals(current.accessVersion())
+              || !grant.getFactorRevision().equals(factor.revision())
+              || grant.getPolicyRevision() != configuration.revision()) {
+            return false;
+          }
+          if (consume) {
+            grant.setConsumed(true);
+            twoFactorChallengeRepository.saveAndFlush(grant);
+          }
+          return true;
+        });
     if (!Boolean.TRUE.equals(accepted)) {
       throw new AccessDeniedException("Confirm this action with your second factor");
     }
@@ -485,7 +493,7 @@ public class TwoFactorAuthorization {
       return null;
     }
     try {
-      return mapper.readValue(json, SessionProof.class);
+      return proofJsonMapper.readValue(json, SessionProof.class);
     } catch (RuntimeException _) {
       session.removeAttribute(SESSION_PROOF);
       return null;

@@ -22,25 +22,28 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 
 /** Nach einem Neustart nur ein neues Dokument anfordern; niemals veraltete RPCs ausführen. */
 public final class FlowUiRecoveryFilter implements Filter {
-  private final String mapping;
-  private final SessionAdmissionService admissions;
-  private final MaintenanceService maintenance;
+  private final String vaadinServletMapping;
+  private final SessionAdmissionService sessionAdmissionService;
+  private final MaintenanceService maintenanceService;
 
   public FlowUiRecoveryFilter(
-      String mapping, SessionAdmissionService admissions, MaintenanceService maintenance) {
-    this.mapping = mapping;
-    this.admissions = admissions;
-    this.maintenance = maintenance;
+      String vaadinServletMapping,
+      SessionAdmissionService sessionAdmissionService,
+      MaintenanceService maintenanceService) {
+    this.vaadinServletMapping = vaadinServletMapping;
+    this.sessionAdmissionService = sessionAdmissionService;
+    this.maintenanceService = maintenanceService;
   }
 
   @Override
-  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+  public void doFilter(
+      ServletRequest httpRequest, ServletResponse httpResponse, FilterChain filterChain)
       throws IOException, ServletException {
-    HttpServletRequest http = (HttpServletRequest) request;
-    HttpServletResponse target = (HttpServletResponse) response;
+    HttpServletRequest http = (HttpServletRequest) httpRequest;
+    HttpServletResponse target = (HttpServletResponse) httpResponse;
     TwoFactorFlow flow = TwoFactorFlow.current(http);
     if (flow != null
-        && !admissions.isExpired(http)
+        && !sessionAdmissionService.isExpired(http)
         && (AppRoute.LOGOUT.getSecurityRoute().equals(http.getServletPath())
             || AppRoute.LOGIN.getSecurityRoute().equals(http.getServletPath())
                 && "POST".equals(http.getMethod()))) {
@@ -49,13 +52,14 @@ public final class FlowUiRecoveryFilter implements Filter {
       return;
     }
     if (!staleTransport(http) || !restoredAuthentication(http)) {
-      chain.doFilter(request, response);
+      filterChain.doFilter(httpRequest, httpResponse);
       return;
     }
     target.setContentType("application/json;charset=UTF-8");
     target.setHeader("Cache-Control", "no-store");
     String destination = flow == null ? AppRoute.HOME.getSecurityRoute() : flow.location();
-    String route = maintenance.blocks(http) ? AppRoute.MAINTENANCE.getSecurityRoute() : destination;
+    String route =
+        maintenanceService.blocks(http) ? AppRoute.MAINTENANCE.getSecurityRoute() : destination;
     target
         .getWriter()
         .write(
@@ -63,14 +67,14 @@ public final class FlowUiRecoveryFilter implements Filter {
                 null, null, null, http.getContextPath() + route));
   }
 
-  private boolean staleTransport(HttpServletRequest request) {
-    String type = request.getParameter("v-r");
+  private boolean staleTransport(HttpServletRequest httpRequest) {
+    String type = httpRequest.getParameter("v-r");
     if (!("uidl".equals(type) || "push".equals(type))) {
       return false;
     }
     Optional<String> inside =
         HandlerHelper.getPathIfInsideServlet(
-            mapping, HandlerHelper.getRequestPathInsideContext(request));
+            vaadinServletMapping, HandlerHelper.getRequestPathInsideContext(httpRequest));
     if (inside.isEmpty()) {
       return false;
     }
@@ -78,11 +82,11 @@ public final class FlowUiRecoveryFilter implements Filter {
     return path.isEmpty() || "/".equals(path) || "VAADIN/push".equals(path) && "push".equals(type);
   }
 
-  private boolean restoredAuthentication(HttpServletRequest request) {
-    HttpSession session = request.getSession(false);
+  private boolean restoredAuthentication(HttpServletRequest httpRequest) {
+    HttpSession session = httpRequest.getSession(false);
     if (session == null
         || session.getAttribute(DurableSessionRepository.ACTIVE) == null
-        || admissions.isExpired(request)) {
+        || sessionAdmissionService.isExpired(httpRequest)) {
       return false;
     }
     Object value =

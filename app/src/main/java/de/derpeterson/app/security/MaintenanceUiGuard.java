@@ -19,10 +19,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MaintenanceUiGuard implements VaadinServiceInitListener {
-  private final ServiceReference<MaintenanceService> maintenance;
+  private final ServiceReference<MaintenanceService> maintenanceServiceReference;
 
-  public MaintenanceUiGuard(MaintenanceService maintenance) {
-    this.maintenance = new ServiceReference<>(MaintenanceService.class, maintenance);
+  public MaintenanceUiGuard(MaintenanceService maintenanceServiceReference) {
+    this.maintenanceServiceReference =
+        new ServiceReference<>(MaintenanceService.class, maintenanceServiceReference);
   }
 
   @Override
@@ -46,15 +47,14 @@ public class MaintenanceUiGuard implements VaadinServiceInitListener {
 
   private void initializeUi(UI ui) {
     installMaintenanceErrorHandler(ui.getSession());
-    ui.addBeforeEnterListener(
-        navigation -> {
-          if (VaadinRequest.getCurrent() instanceof VaadinServletRequest request
-              && maintenance.get().blocks(request.getHttpServletRequest())
-              && navigation.getNavigationTarget() != LoginView.class
-              && navigation.getNavigationTarget() != MaintenanceView.class) {
-            navigation.rerouteTo(MaintenanceView.class);
-          }
-        });
+    ui.addBeforeEnterListener(navigation -> {
+      if (VaadinRequest.getCurrent() instanceof VaadinServletRequest request
+          && maintenanceServiceReference.get().blocks(request.getHttpServletRequest())
+          && navigation.getNavigationTarget() != LoginView.class
+          && navigation.getNavigationTarget() != MaintenanceView.class) {
+        navigation.rerouteTo(MaintenanceView.class);
+      }
+    });
   }
 
   private void installMaintenanceErrorHandler(VaadinSession session) {
@@ -63,17 +63,16 @@ public class MaintenanceUiGuard implements VaadinServiceInitListener {
       return;
     }
     ErrorHandler previous = session.getErrorHandler();
-    session.setErrorHandler(
-        error -> {
-          if (redirectMaintenanceFailure(error.getThrowable())) {
-            return;
-          }
-          if (previous != null) {
-            previous.error(error);
-          } else {
-            new DefaultErrorHandler().error(error);
-          }
-        });
+    session.setErrorHandler(error -> {
+      if (redirectMaintenanceFailure(error.getThrowable())) {
+        return;
+      }
+      if (previous != null) {
+        previous.error(error);
+      } else {
+        new DefaultErrorHandler().error(error);
+      }
+    });
     session.setAttribute(marker, Boolean.TRUE);
   }
 

@@ -28,12 +28,12 @@ public class ExternalProviderSettings {
   public static final String GOOGLE_NAME = "Google";
   public static final String MICROSOFT_NAME = "Microsoft";
   public static final List<String> PROVIDERS = List.of(GOOGLE, MICROSOFT);
-  private final ExternalProviderRepository repository;
-  private final ExternalLoginProperties properties;
-  private final ExternalProviderSecrets secrets;
-  private final AdminRolePolicy administrators;
+  private final ExternalProviderRepository externalProviderRepository;
+  private final ExternalLoginProperties externalLoginProperties;
+  private final ExternalProviderSecrets externalProviderSecrets;
+  private final AdminRolePolicy adminRolePolicy;
   private final TwoFactorAuthorization twoFactor;
-  private final jakarta.servlet.http.HttpServletRequest request;
+  private final jakarta.servlet.http.HttpServletRequest httpRequest;
 
   public record Settings(
       String provider, String clientId, boolean secretStored, boolean enabled, String revision)
@@ -50,7 +50,7 @@ public class ExternalProviderSettings {
 
   @Transactional(readOnly = true)
   public Settings load(String provider) {
-    administrators.requireSuperadmin();
+    adminRolePolicy.requireSuperadmin();
     return describe(readCredentials(provider));
   }
 
@@ -58,9 +58,9 @@ public class ExternalProviderSettings {
   @Transactional
   public Settings save(
       String provider, String clientId, String newSecret, boolean enabled, String revision) {
-    administrators.requireSuperadmin();
+    adminRolePolicy.requireSuperadmin();
     requireProvider(provider);
-    ExternalProviderEntity entity = repository.findById(provider).orElse(null);
+    ExternalProviderEntity entity = externalProviderRepository.findById(provider).orElse(null);
     Credentials current = entity == null ? defaultCredentials(provider) : decrypted(entity);
     if (!Objects.equals(revision, revision(current))) {
       throw new OptimisticLockingFailureException("Provider configuration changed");
@@ -69,17 +69,17 @@ public class ExternalProviderSettings {
     String secret =
         Objects.requireNonNull(newSecret).isBlank() ? current.clientSecret() : newSecret;
     validateCredentials(id, secret, enabled);
-    twoFactor.authorizeCurrent(request, TwoFactorAction.SECURITY_CONFIGURATION, true);
+    twoFactor.authorizeCurrent(httpRequest, TwoFactorAction.SECURITY_CONFIGURATION, true);
     if (entity == null) {
       entity = new ExternalProviderEntity();
     }
     entity.setProvider(provider);
     entity.setClientId(id);
     if (entity.getEncryptedClientSecret() == null || !newSecret.isBlank()) {
-      entity.setEncryptedClientSecret(secrets.encrypt(provider, secret));
+      entity.setEncryptedClientSecret(externalProviderSecrets.encrypt(provider, secret));
     }
     entity.setEnabled(enabled);
-    ExternalProviderEntity saved = repository.saveAndFlush(entity);
+    ExternalProviderEntity saved = externalProviderRepository.saveAndFlush(entity);
     AfterCommitLog.info(
         log, "Sign-in provider configuration updated: provider={}, enabled={}", provider, enabled);
     return describe(decrypted(saved));
@@ -89,23 +89,22 @@ public class ExternalProviderSettings {
   @Transactional
   public void initializeDefaults() {
     // Ein verlorener/falscher Schlüssel darf bestehende Secrets weder ersetzen noch umgehen.
-    repository.findAll().forEach(this::decrypted);
+    externalProviderRepository.findAll().forEach(this::decrypted);
     List<ExternalProviderEntity> missing =
         PROVIDERS.stream()
-            .filter(provider -> !repository.existsById(provider))
-            .map(
-                provider -> {
-                  Credentials defaults = defaultCredentials(provider);
-                  ExternalProviderEntity entity = new ExternalProviderEntity();
-                  entity.setProvider(provider);
-                  entity.setClientId(defaults.clientId());
-                  entity.setEncryptedClientSecret(
-                      secrets.encrypt(provider, defaults.clientSecret()));
-                  entity.setEnabled(defaults.enabled());
-                  return entity;
-                })
+            .filter(provider -> !externalProviderRepository.existsById(provider))
+            .map(provider -> {
+              Credentials defaults = defaultCredentials(provider);
+              ExternalProviderEntity entity = new ExternalProviderEntity();
+              entity.setProvider(provider);
+              entity.setClientId(defaults.clientId());
+              entity.setEncryptedClientSecret(
+                  externalProviderSecrets.encrypt(provider, defaults.clientSecret()));
+              entity.setEnabled(defaults.enabled());
+              return entity;
+            })
             .toList();
-    repository.saveAllAndFlush(missing);
+    externalProviderRepository.saveAllAndFlush(missing);
   }
 
   private void validateCredentials(String id, String secret, boolean enabled) {
@@ -126,7 +125,7 @@ public class ExternalProviderSettings {
 
   private Credentials readCredentials(String provider) {
     requireProvider(provider);
-    return repository
+    return externalProviderRepository
         .findById(provider)
         .map(this::decrypted)
         .orElseGet(() -> defaultCredentials(provider));
@@ -140,7 +139,9 @@ public class ExternalProviderSettings {
 
   private Credentials defaultCredentials(String provider) {
     ExternalLoginProperties.Provider defaults =
-        provider.equals(GOOGLE) ? properties.getGoogle() : properties.getMicrosoft();
+        provider.equals(GOOGLE)
+            ? externalLoginProperties.getGoogle()
+            : externalLoginProperties.getMicrosoft();
     String clientId = Objects.requireNonNullElse(defaults.getClientId(), "").trim();
     String secret = Objects.requireNonNullElse(defaults.getClientSecret(), "");
     validateCredentials(clientId, secret, defaults.isEnabled());
@@ -151,7 +152,7 @@ public class ExternalProviderSettings {
     return new Credentials(
         entity.getProvider(),
         entity.getClientId(),
-        secrets.decrypt(entity.getProvider(), entity.getEncryptedClientSecret()),
+        externalProviderSecrets.decrypt(entity.getProvider(), entity.getEncryptedClientSecret()),
         entity.isEnabled(),
         entity.getVersion());
   }

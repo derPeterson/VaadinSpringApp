@@ -18,27 +18,26 @@ public abstract class IsNotAuthenticatedBaseView<T extends Component & FlexCompo
 
   private final transient SecurityService securityService;
 
-  private final transient HttpServletRequest request;
+  private final transient HttpServletRequest httpRequest;
 
   protected IsNotAuthenticatedBaseView(
-      SecurityService securityService, HttpServletRequest request, T layout) {
+      SecurityService securityService, HttpServletRequest httpRequest, T layout) {
     this.securityService = securityService;
-    this.request = request;
+    this.httpRequest = httpRequest;
     getContent().add(layout);
   }
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
     securityService
-        .getAuthenticatedUser(this.request)
-        .ifPresent(
-            user -> {
-              if (hasAdminRole(user)) {
-                event.forwardTo(AdminView.class);
-              } else {
-                event.forwardTo(HomeView.class);
-              }
-            });
+        .getAuthenticatedUser(this.httpRequest)
+        .ifPresent(user -> {
+          if (hasAdminRole(user)) {
+            event.forwardTo(AdminView.class);
+          } else {
+            event.forwardTo(HomeView.class);
+          }
+        });
   }
 
   private boolean hasAdminRole(UserDetails user) {

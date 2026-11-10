@@ -53,11 +53,11 @@ public final class DurableSessionRepository<S extends Session>
           PRINCIPAL_NAME_INDEX_NAME,
           DeviceRememberMeServices.SERIES);
   private static final Logger logger = LoggerFactory.getLogger(DurableSessionRepository.class);
-  private final FindByIndexNameSessionRepository<S> backend;
-  private final UserDetailsService users;
+  private final FindByIndexNameSessionRepository<S> backingSessionRepository;
+  private final UserDetailsService userDetailsService;
   private final Supplier<String> rememberKey;
-  private final Supplier<Duration> timeout;
-  private final Map<String, RuntimeState> runtime = new ConcurrentHashMap<>();
+  private final Supplier<Duration> sessionTimeoutSupplier;
+  private final Map<String, RuntimeState> runtimeSessionsById = new ConcurrentHashMap<>();
 
   /** Ein bereits geladener Request darf nach paralleler Abmeldung keine Rechte mehr erhalten. */
   public static final class MissingSessionException extends IllegalStateException {
@@ -77,27 +77,27 @@ public final class DurableSessionRepository<S extends Session>
   }
 
   public DurableSessionRepository(
-      FindByIndexNameSessionRepository<S> backend,
-      UserDetailsService users,
+      FindByIndexNameSessionRepository<S> backingSessionRepository,
+      UserDetailsService userDetailsService,
       Supplier<String> rememberKey,
-      Supplier<Duration> timeout) {
-    this.backend = backend;
-    this.users = users;
+      Supplier<Duration> sessionTimeoutSupplier) {
+    this.backingSessionRepository = backingSessionRepository;
+    this.userDetailsService = userDetailsService;
     this.rememberKey = rememberKey;
-    this.timeout = timeout;
+    this.sessionTimeoutSupplier = sessionTimeoutSupplier;
   }
 
   @Override
   public LiveSession createSession() {
-    S stored = backend.createSession();
-    stored.setMaxInactiveInterval(timeout.get());
-    backend.save(stored);
-    return wrap(stored);
+    S storedSession = backingSessionRepository.createSession();
+    storedSession.setMaxInactiveInterval(sessionTimeoutSupplier.get());
+    backingSessionRepository.save(storedSession);
+    return wrap(storedSession);
   }
 
   @Override
   public LiveSession findById(String id) {
-    RuntimeState known = runtime.get(id);
+    RuntimeState known = runtimeSessionsById.get(id);
     if (known != null) {
       // Ein parallel laufender ID-Wechsel darf nicht als Sitzungsende bereinigt werden.
       synchronized (known) {
@@ -108,32 +108,32 @@ public final class DurableSessionRepository<S extends Session>
   }
 
   private LiveSession findStoredById(String id) {
-    S stored = backend.findById(id);
-    if (stored == null) {
+    S storedSession = backingSessionRepository.findById(id);
+    if (storedSession == null) {
       discardRuntime(id);
       return null;
     }
     try {
-      Object authentication = stored.getAttribute(CONTEXT);
+      Object authentication = storedSession.getAttribute(CONTEXT);
       if (authentication instanceof DurableAuthentication durable) {
-        durable.restore(users, rememberKey.get());
+        durable.restore(userDetailsService, rememberKey.get());
       } else if (authentication != null) {
         throw new IllegalArgumentException("Unexpected persisted authentication");
       }
-      return wrap(stored);
+      return wrap(storedSession);
     } catch (AuthenticationException | IllegalArgumentException | ConversionException failure) {
       logger.warn("Persisted session rejected; fresh sign-in required", safeFailure(failure));
       // Widerrufsnachweis bis zur HTTP-Invalidierung erhalten: alte RPCs brauchen eine
       // ausdrückliche 401 und dürfen nicht als neue anonyme Vaadin-Sitzung weiterlaufen.
-      stored.removeAttribute(CONTEXT);
-      stored.setAttribute(EXPIRED, Boolean.TRUE);
-      backend.save(stored);
-      return wrap(stored);
+      storedSession.removeAttribute(CONTEXT);
+      storedSession.setAttribute(EXPIRED, Boolean.TRUE);
+      backingSessionRepository.save(storedSession);
+      return wrap(storedSession);
     }
   }
 
   private LiveSession wrap(S session) {
-    RuntimeState state = runtime.computeIfAbsent(session.getId(), RuntimeState::new);
+    RuntimeState state = runtimeSessionsById.computeIfAbsent(session.getId(), RuntimeState::new);
     return new LiveSession(session, state);
   }
 
@@ -145,23 +145,23 @@ public final class DurableSessionRepository<S extends Session>
       if (!session.refreshIfPresent()) {
         return;
       }
-      backend.save(session.stored);
+      backingSessionRepository.save(session.storedSession);
     }
   }
 
   /** Nur nach dem bestätigten eigenen Passwortwechsel; andere Sitzungen bleiben ungültig. */
   public void retainAfterPasswordChange(String id, String identity) {
-    RuntimeState state = runtime.computeIfAbsent(id, RuntimeState::new);
+    RuntimeState state = runtimeSessionsById.computeIfAbsent(id, RuntimeState::new);
     synchronized (state) {
-      S session = backend.findById(state.id);
+      S session = backingSessionRepository.findById(state.id);
       if (session == null || Boolean.TRUE.equals(session.getAttribute(EXPIRED))) {
         return;
       }
       Object value = session.getAttribute(CONTEXT);
       if (value instanceof DurableAuthentication authentication
           && identity.equals(authentication.username())) {
-        session.setAttribute(CONTEXT, authentication.withCurrentCredentials(users));
-        backend.save(session);
+        session.setAttribute(CONTEXT, authentication.withCurrentCredentials(userDetailsService));
+        backingSessionRepository.save(session);
       }
     }
   }
@@ -172,9 +172,9 @@ public final class DurableSessionRepository<S extends Session>
       String previousVersion,
       String newVersion,
       Set<SignInMethod> remainingMethods) {
-    RuntimeState state = runtime.computeIfAbsent(id, RuntimeState::new);
+    RuntimeState state = runtimeSessionsById.computeIfAbsent(id, RuntimeState::new);
     synchronized (state) {
-      S session = backend.findById(state.id);
+      S session = backingSessionRepository.findById(state.id);
       if (session == null || Boolean.TRUE.equals(session.getAttribute(EXPIRED))) {
         return false;
       }
@@ -189,7 +189,7 @@ public final class DurableSessionRepository<S extends Session>
       }
       DurableAuthentication retained;
       try {
-        retained = authentication.withCurrentCredentials(users);
+        retained = authentication.withCurrentCredentials(userDetailsService);
       } catch (AuthenticationException _) {
         return false;
       }
@@ -197,35 +197,34 @@ public final class DurableSessionRepository<S extends Session>
         return false;
       }
       session.setAttribute(CONTEXT, retained);
-      backend.save(session);
+      backingSessionRepository.save(session);
       return true;
     }
   }
 
   @Override
   public void deleteById(String id) {
-    backend.deleteById(id);
+    backingSessionRepository.deleteById(id);
     discardRuntime(id);
   }
 
   void discardRuntime(String id) {
-    RuntimeState removed = runtime.remove(id);
+    RuntimeState removed = runtimeSessionsById.remove(id);
     if (removed == null) {
       return;
     }
     Set<VaadinSession> unbound = new HashSet<>();
-    removed.attributes.forEach(
-        (name, value) -> {
-          if (value instanceof VaadinSession session && unbound.add(session)) {
-            if (session.getSession() instanceof WrappedHttpSession wrapped) {
-              // Vaadins Binding-Lifecycle erhält die UI bis zum Ende einer laufenden UIDL-Antwort.
-              // Direktes fireSessionDestroy würde sie davor ablösen und den Metadatenaufbau stören.
-              session.valueUnbound(new HttpSessionBindingEvent(wrapped.getHttpSession(), name));
-            } else if (session.getService() != null) {
-              session.getService().fireSessionDestroy(session);
-            }
-          }
-        });
+    removed.attributes.forEach((name, value) -> {
+      if (value instanceof VaadinSession session && unbound.add(session)) {
+        if (session.getSession() instanceof WrappedHttpSession wrapped) {
+          // Vaadins Binding-Lifecycle erhält die UI bis zum Ende einer laufenden UIDL-Antwort.
+          // Direktes fireSessionDestroy würde sie davor ablösen und den Metadatenaufbau stören.
+          session.valueUnbound(new HttpSessionBindingEvent(wrapped.getHttpSession(), name));
+        } else if (session.getService() != null) {
+          session.getService().fireSessionDestroy(session);
+        }
+      }
+    });
     removed.attributes.clear();
   }
 
@@ -233,42 +232,41 @@ public final class DurableSessionRepository<S extends Session>
   public Map<String, LiveSession> findByIndexNameAndIndexValue(
       String indexName, String indexValue) {
     Map<String, LiveSession> result = new HashMap<>();
-    backend
+    backingSessionRepository
         .findByIndexNameAndIndexValue(indexName, indexValue)
-        .forEach(
-            (id, ignored) -> {
-              LiveSession session = findById(id);
-              if (session != null) {
-                result.put(id, session);
-              }
-            });
+        .forEach((id, ignored) -> {
+          LiveSession session = findById(id);
+          if (session != null) {
+            result.put(id, session);
+          }
+        });
     return result;
   }
 
   @Scheduled(fixedDelay = 60000)
   public void cleanExpiredRuntimeState() {
-    for (String id : Set.copyOf(runtime.keySet())) {
+    for (String id : Set.copyOf(runtimeSessionsById.keySet())) {
       // Dieselbe Synchronisierung wie HTTP-Lookups schützt auch den periodischen Cleanup.
       findById(id);
     }
   }
 
   public final class LiveSession implements Session {
-    private S stored;
+    private S storedSession;
     private final RuntimeState state;
 
-    private LiveSession(S stored, RuntimeState state) {
-      this.stored = stored;
+    private LiveSession(S storedSession, RuntimeState state) {
+      this.storedSession = storedSession;
       this.state = state;
     }
 
     private void current() {
-      if (!stored.getId().equals(state.id)) {
-        S replacement = backend.findById(state.id);
+      if (!storedSession.getId().equals(state.id)) {
+        S replacement = backingSessionRepository.findById(state.id);
         if (replacement == null) {
           throw new MissingSessionException();
         }
-        stored = replacement;
+        storedSession = replacement;
       }
     }
 
@@ -279,25 +277,25 @@ public final class DurableSessionRepository<S extends Session>
     }
 
     private boolean refreshIfPresent() {
-      S latest = backend.findById(state.id);
+      S latest = backingSessionRepository.findById(state.id);
       if (latest == null) {
         return false;
       }
-      stored = latest;
+      storedSession = latest;
       return true;
     }
 
     Active activeMetadata() {
       synchronized (state) {
-        if (!refreshIfPresent() || Boolean.TRUE.equals(stored.getAttribute(EXPIRED))) {
+        if (!refreshIfPresent() || Boolean.TRUE.equals(storedSession.getAttribute(EXPIRED))) {
           return null;
         }
-        Active active = stored.getAttribute(ACTIVE);
+        Active active = storedSession.getAttribute(ACTIVE);
         if (active == null) {
           return null;
         }
         SignInMethod method =
-            stored.getAttribute(CONTEXT) instanceof DurableAuthentication authentication
+            storedSession.getAttribute(CONTEXT) instanceof DurableAuthentication authentication
                 ? authentication.signInMethod()
                 : null;
         return new Active(
@@ -323,11 +321,11 @@ public final class DurableSessionRepository<S extends Session>
       synchronized (state) {
         current();
         String previous = state.id;
-        String changed = stored.changeSessionId();
-        backend.save(stored);
+        String changed = storedSession.changeSessionId();
+        backingSessionRepository.save(storedSession);
         state.id = changed;
-        runtime.remove(previous, state);
-        runtime.put(changed, state);
+        runtimeSessionsById.remove(previous, state);
+        runtimeSessionsById.put(changed, state);
         return changed;
       }
     }
@@ -342,9 +340,9 @@ public final class DurableSessionRepository<S extends Session>
         }
         // Sicherheitsattribute müssen auch Änderungen anderer bereits geladener Requests sehen.
         fresh();
-        Object value = stored.getAttribute(name);
+        Object value = storedSession.getAttribute(name);
         if (CONTEXT.equals(name) && value instanceof DurableAuthentication authentication) {
-          return (T) authentication.restore(users, rememberKey.get());
+          return (T) authentication.restore(userDetailsService, rememberKey.get());
         }
         return (T) value;
       }
@@ -354,7 +352,7 @@ public final class DurableSessionRepository<S extends Session>
     public Set<String> getAttributeNames() {
       synchronized (state) {
         current();
-        Set<String> names = new HashSet<>(stored.getAttributeNames());
+        Set<String> names = new HashSet<>(storedSession.getAttributeNames());
         names.addAll(state.attributes.keySet());
         return names;
       }
@@ -377,14 +375,16 @@ public final class DurableSessionRepository<S extends Session>
         if (CONTEXT.equals(name) && value instanceof SecurityContext context) {
           Authentication authentication = context.getAuthentication();
           storedValue =
-              authentication == null ? null : DurableAuthentication.capture(authentication, users);
+              authentication == null
+                  ? null
+                  : DurableAuthentication.capture(authentication, userDetailsService);
         }
         if (storedValue == null) {
-          stored.removeAttribute(name);
+          storedSession.removeAttribute(name);
         } else {
-          stored.setAttribute(name, storedValue);
+          storedSession.setAttribute(name, storedValue);
         }
-        backend.save(stored);
+        backingSessionRepository.save(storedSession);
       }
     }
 
@@ -397,7 +397,7 @@ public final class DurableSessionRepository<S extends Session>
     public Instant getCreationTime() {
       synchronized (state) {
         current();
-        return stored.getCreationTime();
+        return storedSession.getCreationTime();
       }
     }
 
@@ -405,7 +405,7 @@ public final class DurableSessionRepository<S extends Session>
     public Instant getLastAccessedTime() {
       synchronized (state) {
         current();
-        return stored.getLastAccessedTime();
+        return storedSession.getLastAccessedTime();
       }
     }
 
@@ -415,10 +415,10 @@ public final class DurableSessionRepository<S extends Session>
         current();
         fresh();
         // Ein verspätet abgeschlossener Request darf die Inaktivitätsfrist nicht zurücksetzen.
-        if (time.isAfter(stored.getLastAccessedTime())) {
-          stored.setLastAccessedTime(time);
+        if (time.isAfter(storedSession.getLastAccessedTime())) {
+          storedSession.setLastAccessedTime(time);
         }
-        backend.save(stored);
+        backingSessionRepository.save(storedSession);
       }
     }
 
@@ -426,7 +426,7 @@ public final class DurableSessionRepository<S extends Session>
     public Duration getMaxInactiveInterval() {
       synchronized (state) {
         current();
-        return stored.getMaxInactiveInterval();
+        return storedSession.getMaxInactiveInterval();
       }
     }
 
@@ -435,8 +435,8 @@ public final class DurableSessionRepository<S extends Session>
       synchronized (state) {
         current();
         fresh();
-        stored.setMaxInactiveInterval(interval);
-        backend.save(stored);
+        storedSession.setMaxInactiveInterval(interval);
+        backingSessionRepository.save(storedSession);
       }
     }
 
@@ -444,7 +444,7 @@ public final class DurableSessionRepository<S extends Session>
     public boolean isExpired() {
       synchronized (state) {
         current();
-        return stored.isExpired();
+        return storedSession.isExpired();
       }
     }
   }

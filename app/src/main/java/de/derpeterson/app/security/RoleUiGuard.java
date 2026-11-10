@@ -25,12 +25,15 @@ import org.springframework.stereotype.Component;
 /** Aktualisiert alte Ansichten mit erhaltenem HTTP-Login und stoppt vorher ihre alten RPCs. */
 @Component
 public class RoleUiGuard implements VaadinServiceInitListener {
-  private final ServiceReference<SecurityService> security;
-  private final ServiceReference<UserRoleBroadcaster> events;
+  private final ServiceReference<SecurityService> securityServiceReference;
+  private final ServiceReference<UserRoleBroadcaster> userRoleBroadcasterReference;
 
-  public RoleUiGuard(SecurityService security, UserRoleBroadcaster events) {
-    this.security = new ServiceReference<>(SecurityService.class, security);
-    this.events = new ServiceReference<>(UserRoleBroadcaster.class, events);
+  public RoleUiGuard(
+      SecurityService securityServiceReference, UserRoleBroadcaster userRoleBroadcasterReference) {
+    this.securityServiceReference =
+        new ServiceReference<>(SecurityService.class, securityServiceReference);
+    this.userRoleBroadcasterReference =
+        new ServiceReference<>(UserRoleBroadcaster.class, userRoleBroadcasterReference);
   }
 
   @Override
@@ -50,7 +53,7 @@ public class RoleUiGuard implements VaadinServiceInitListener {
               return false;
             }
             Optional<Authentication> auth =
-                security
+                securityServiceReference
                     .get()
                     .refreshSessionAuthentication(
                         servlet.getHttpServletRequest().getSession(false));
@@ -71,12 +74,11 @@ public class RoleUiGuard implements VaadinServiceInitListener {
         });
     event
         .getSource()
-        .addUIInitListener(
-            init -> {
-              UI ui = init.getUI();
-              ui.addBeforeEnterListener(navigation -> bind(ui));
-              bind(ui);
-            });
+        .addUIInitListener(init -> {
+          UI ui = init.getUI();
+          ui.addBeforeEnterListener(navigation -> bind(ui));
+          bind(ui);
+        });
   }
 
   void bind(UI ui) {
@@ -84,7 +86,8 @@ public class RoleUiGuard implements VaadinServiceInitListener {
       return;
     }
     HttpSession http = request.getHttpServletRequest().getSession(false);
-    Optional<Authentication> auth = security.get().refreshSessionAuthentication(http);
+    Optional<Authentication> auth =
+        securityServiceReference.get().refreshSessionAuthentication(http);
     if (auth.isEmpty()) {
       return;
     }
@@ -93,31 +96,29 @@ public class RoleUiGuard implements VaadinServiceInitListener {
     if (com.vaadin.flow.component.ComponentUtil.getData(ui, marker) != null) {
       return;
     }
-    UserEntity owner = security.get().getSessionUser(http).orElse(null);
+    UserEntity owner = securityServiceReference.get().getSessionUser(http).orElse(null);
     if (owner == null) {
       return;
     }
     com.vaadin.flow.component.ComponentUtil.setData(ui, marker, Boolean.TRUE);
     String contextPath = request.getContextPath();
     Registration registration =
-        events
+        userRoleBroadcasterReference
             .get()
-            .register(
-                id -> {
-                  if (!Objects.equals(owner.getId(), id)) {
-                    return;
-                  }
-                  ui.access(
-                      () -> {
-                        if (!ui.isAttached()) {
-                          return;
-                        }
-                        security
-                            .get()
-                            .refreshSessionAuthentication(http)
-                            .ifPresent(fresh -> RoleUiState.refresh(ui, fresh, contextPath));
-                      });
-                });
+            .register(id -> {
+              if (!Objects.equals(owner.getId(), id)) {
+                return;
+              }
+              ui.access(() -> {
+                if (!ui.isAttached()) {
+                  return;
+                }
+                securityServiceReference
+                    .get()
+                    .refreshSessionAuthentication(http)
+                    .ifPresent(fresh -> RoleUiState.refresh(ui, fresh, contextPath));
+              });
+            });
     ui.addDetachListener(detach -> registration.remove());
   }
 }

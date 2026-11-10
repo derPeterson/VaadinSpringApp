@@ -26,16 +26,17 @@ import org.springframework.boot.web.servlet.ServletRegistrationBean;
 final class H2ConsoleOriginFilter implements Filter {
   private static final String NO_STORE = "no-store";
   private static final Set<String> LOCAL_HOSTS = Set.of("localhost", "127.0.0.1", "::1");
-  private final boolean exposed;
-  private final Supplier<ServletRegistrationBean<?>> registrations;
+  private final boolean consoleExposed;
+  private final Supplier<ServletRegistrationBean<?>> consoleRegistrationSupplier;
 
-  H2ConsoleOriginFilter(boolean exposed, Supplier<ServletRegistrationBean<?>> registrations) {
-    this.exposed = exposed;
-    this.registrations = registrations;
+  H2ConsoleOriginFilter(
+      boolean consoleExposed, Supplier<ServletRegistrationBean<?>> consoleRegistrationSupplier) {
+    this.consoleExposed = consoleExposed;
+    this.consoleRegistrationSupplier = consoleRegistrationSupplier;
   }
 
-  boolean isConsoleRequest(HttpServletRequest request) {
-    ServletRegistrationBean<?> registration = registrations.get();
+  boolean isConsoleRequest(HttpServletRequest httpRequest) {
+    ServletRegistrationBean<?> registration = consoleRegistrationSupplier.get();
     if (registration == null || !registration.isEnabled()) {
       return false;
     }
@@ -44,29 +45,30 @@ final class H2ConsoleOriginFilter implements Filter {
         || !"org.h2.server.web.JakartaWebServlet".equals(servlet.getClass().getName())) {
       return false;
     }
-    HttpServletMapping mapping = request.getHttpServletMapping();
+    HttpServletMapping mapping = httpRequest.getHttpServletMapping();
     // Actual container mapping, not a URL prefix or a client-controlled framework parameter.
     return mapping != null
         && registration.getServletName().equals(mapping.getServletName())
         && registration.getUrlMappings().contains(mapping.getPattern());
   }
 
-  boolean allowsConsoleRequest(HttpServletRequest request) {
-    return exposed
-        && isConsoleRequest(request)
-        && eligibleMapping(request)
-        && trustedSource(request);
+  boolean allowsConsoleRequest(HttpServletRequest httpRequest) {
+    return consoleExposed
+        && isConsoleRequest(httpRequest)
+        && eligibleMapping(httpRequest)
+        && trustedSource(httpRequest);
   }
 
   @Override
-  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+  public void doFilter(
+      ServletRequest httpRequest, ServletResponse httpResponse, FilterChain filterChain)
       throws IOException, ServletException {
-    HttpServletRequest http = (HttpServletRequest) request;
+    HttpServletRequest http = (HttpServletRequest) httpRequest;
     if (isConsoleRequest(http)) {
-      HttpServletResponse outgoing = (HttpServletResponse) response;
+      HttpServletResponse outgoing = (HttpServletResponse) httpResponse;
       outgoing.setHeader(CACHE_CONTROL, NO_STORE);
       outgoing.addHeader("Vary", "Sec-Fetch-Site, Origin, Referer");
-      if (!exposed || !eligibleMapping(http) || !trustedSource(http)) {
+      if (!consoleExposed || !eligibleMapping(http) || !trustedSource(http)) {
         outgoing.sendError(HttpServletResponse.SC_FORBIDDEN);
         return;
       }
@@ -87,39 +89,39 @@ final class H2ConsoleOriginFilter implements Filter {
               }
             }
           };
-      chain.doFilter(request, uncached);
+      filterChain.doFilter(httpRequest, uncached);
       return;
     }
-    chain.doFilter(request, response);
+    filterChain.doFilter(httpRequest, httpResponse);
   }
 
-  private boolean eligibleMapping(HttpServletRequest request) {
-    String pattern = request.getHttpServletMapping().getPattern();
+  private boolean eligibleMapping(HttpServletRequest httpRequest) {
+    String pattern = httpRequest.getHttpServletMapping().getPattern();
     return pattern.length() > 2
         && pattern.endsWith("/*")
-        && !AppRoute.LOGIN.getSecurityRoute().equals(request.getServletPath())
-        && !AppRoute.LOGOUT.getSecurityRoute().equals(request.getServletPath());
+        && !AppRoute.LOGIN.getSecurityRoute().equals(httpRequest.getServletPath())
+        && !AppRoute.LOGOUT.getSecurityRoute().equals(httpRequest.getServletPath());
   }
 
-  private boolean trustedSource(HttpServletRequest request) {
+  private boolean trustedSource(HttpServletRequest httpRequest) {
     // Avoid accepting arbitrary Host values (including DNS-rebinding origins) for this dev tool.
     if (!LOCAL_HOSTS.contains(
-        unbracket(request.getServerName()).toLowerCase(java.util.Locale.ROOT))) {
+        unbracket(httpRequest.getServerName()).toLowerCase(java.util.Locale.ROOT))) {
       return false;
     }
-    if (hasRepeatedSourceHeaders(request)) {
+    if (hasRepeatedSourceHeaders(httpRequest)) {
       return false;
     }
-    String site = request.getHeader("Sec-Fetch-Site");
+    String site = httpRequest.getHeader("Sec-Fetch-Site");
     if (site != null && !"same-origin".equals(site) && !"none".equals(site)) {
       return false;
     }
-    String origin = request.getHeader("Origin");
-    if (origin != null && !sameOrigin(request, origin, false)) {
+    String origin = httpRequest.getHeader("Origin");
+    if (origin != null && !sameOrigin(httpRequest, origin, false)) {
       return false;
     }
-    String referer = request.getHeader("Referer");
-    if (referer != null && !sameOrigin(request, referer, true)) {
+    String referer = httpRequest.getHeader("Referer");
+    if (referer != null && !sameOrigin(httpRequest, referer, true)) {
       return false;
     }
     if (origin != null || referer != null || "same-origin".equals(site)) {
@@ -127,23 +129,23 @@ final class H2ConsoleOriginFilter implements Filter {
     }
     // Only the harmless entry document can be opened directly without source headers.
     // H2 also accepts mutating .do actions via GET, so do not exempt other GET requests.
-    return ("GET".equals(request.getMethod()) || "HEAD".equals(request.getMethod()))
-        && (request.getPathInfo() == null || "/".equals(request.getPathInfo()))
-        && request.getQueryString() == null
-        && request.getParameterMap().isEmpty();
+    return ("GET".equals(httpRequest.getMethod()) || "HEAD".equals(httpRequest.getMethod()))
+        && (httpRequest.getPathInfo() == null || "/".equals(httpRequest.getPathInfo()))
+        && httpRequest.getQueryString() == null
+        && httpRequest.getParameterMap().isEmpty();
   }
 
-  private boolean hasRepeatedSourceHeaders(HttpServletRequest request) {
+  private boolean hasRepeatedSourceHeaders(HttpServletRequest httpRequest) {
     for (String header : List.of("Origin", "Referer", "Sec-Fetch-Site")) {
-      if (repeated(request, header)) {
+      if (repeated(httpRequest, header)) {
         return true;
       }
     }
     return false;
   }
 
-  private boolean repeated(HttpServletRequest request, String header) {
-    Enumeration<String> values = request.getHeaders(header);
+  private boolean repeated(HttpServletRequest httpRequest, String header) {
+    Enumeration<String> values = httpRequest.getHeaders(header);
     if (!values.hasMoreElements()) {
       return false;
     }
@@ -151,7 +153,7 @@ final class H2ConsoleOriginFilter implements Filter {
     return values.hasMoreElements();
   }
 
-  private boolean sameOrigin(HttpServletRequest request, String value, boolean referer) {
+  private boolean sameOrigin(HttpServletRequest httpRequest, String value, boolean referer) {
     try {
       URI source = new URI(value);
       String scheme = source.getScheme();
@@ -167,9 +169,9 @@ final class H2ConsoleOriginFilter implements Filter {
       if (port == -1) {
         port = "https".equalsIgnoreCase(scheme) ? 443 : 80;
       }
-      return scheme.equalsIgnoreCase(request.getScheme())
-          && unbracket(source.getHost()).equalsIgnoreCase(unbracket(request.getServerName()))
-          && port == request.getServerPort();
+      return scheme.equalsIgnoreCase(httpRequest.getScheme())
+          && unbracket(source.getHost()).equalsIgnoreCase(unbracket(httpRequest.getServerName()))
+          && port == httpRequest.getServerPort();
     } catch (URISyntaxException _) {
       return false;
     }

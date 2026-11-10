@@ -8,31 +8,34 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 /** Geprüfte externe Identität mit ausschließlich lokalen Rechten; kein Passwort-/MFA-Nachweis. */
 public final class ExternalAuthenticationToken extends AbstractAuthenticationToken {
-  private final UserDetails principal;
-  private final String provider;
+  private final UserDetails authenticatedUserDetails;
+  private final String identityProviderName;
 
-  public ExternalAuthenticationToken(UserDetails principal, String provider) {
-    this(principal, provider, principal.getAuthorities());
+  public ExternalAuthenticationToken(
+      UserDetails authenticatedUserDetails, String identityProviderName) {
+    this(authenticatedUserDetails, identityProviderName, authenticatedUserDetails.getAuthorities());
   }
 
   public ExternalAuthenticationToken(
-      UserDetails principal, String provider, Collection<? extends GrantedAuthority> authorities) {
-    if (!"google".equals(provider) && !"microsoft".equals(provider)) {
+      UserDetails authenticatedUserDetails,
+      String identityProviderName,
+      Collection<? extends GrantedAuthority> authorities) {
+    if (!"google".equals(identityProviderName) && !"microsoft".equals(identityProviderName)) {
       throw new IllegalArgumentException("Unknown external provider");
     }
     super(authorities);
-    this.principal = principal;
-    this.provider = provider;
+    this.authenticatedUserDetails = authenticatedUserDetails;
+    this.identityProviderName = identityProviderName;
     super.setAuthenticated(true);
   }
 
   public String provider() {
-    return provider;
+    return identityProviderName;
   }
 
   @Override
   public UserDetails getPrincipal() {
-    return principal;
+    return authenticatedUserDetails;
   }
 
   @Override
@@ -44,11 +47,11 @@ public final class ExternalAuthenticationToken extends AbstractAuthenticationTok
   public boolean equals(Object other) {
     return other instanceof ExternalAuthenticationToken external
         && super.equals(other)
-        && provider.equals(external.provider);
+        && identityProviderName.equals(external.identityProviderName);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(super.hashCode(), provider);
+    return Objects.hash(super.hashCode(), identityProviderName);
   }
 }

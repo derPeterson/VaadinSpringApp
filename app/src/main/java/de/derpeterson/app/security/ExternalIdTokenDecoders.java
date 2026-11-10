@@ -16,13 +16,13 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 /** Microsofts gemeinsamer Einstieg wird auf einen konkret geprüften Mandanten aufgelöst. */
 public final class ExternalIdTokenDecoders implements JwtDecoderFactory<ClientRegistration> {
-  private OidcIdTokenDecoderFactory standard = new OidcIdTokenDecoderFactory();
+  private OidcIdTokenDecoderFactory defaultIdTokenDecoderFactory = new OidcIdTokenDecoderFactory();
   private String googleClientId;
-  private final ExternalLoginProperties properties;
-  private final Map<String, JwtDecoder> tenants = new LinkedHashMap<>();
+  private final ExternalLoginProperties externalLoginProperties;
+  private final Map<String, JwtDecoder> tenantTokenDecoders = new LinkedHashMap<>();
 
-  public ExternalIdTokenDecoders(ExternalLoginProperties properties) {
-    this.properties = properties;
+  public ExternalIdTokenDecoders(ExternalLoginProperties externalLoginProperties) {
+    this.externalLoginProperties = externalLoginProperties;
   }
 
   @Override
@@ -30,10 +30,10 @@ public final class ExternalIdTokenDecoders implements JwtDecoderFactory<ClientRe
     if (!"microsoft".equals(registration.getRegistrationId())) {
       if (!registration.getClientId().equals(googleClientId)) {
         // Der Frameworkcache ist nach Registrierungs-ID indiziert, nicht nach Client-ID.
-        standard = new OidcIdTokenDecoderFactory();
+        defaultIdTokenDecoderFactory = new OidcIdTokenDecoderFactory();
         googleClientId = registration.getClientId();
       }
-      return standard.createDecoder(registration);
+      return defaultIdTokenDecoderFactory.createDecoder(registration);
     }
     return token -> decodeMicrosoft(registration, token);
   }
@@ -51,12 +51,12 @@ public final class ExternalIdTokenDecoders implements JwtDecoderFactory<ClientRe
       throw new JwtException("Invalid Microsoft tenant", failure);
     }
     JwtDecoder decoder;
-    synchronized (tenants) {
+    synchronized (tenantTokenDecoders) {
       String cacheKey = registration.getClientId() + ":" + tenant;
-      decoder = tenants.get(cacheKey);
+      decoder = tenantTokenDecoders.get(cacheKey);
       if (decoder == null) {
         String base = "https://login.microsoftonline.com/" + tenant;
-        String keys = properties.getMicrosoft().getJwkSetUri();
+        String keys = externalLoginProperties.getMicrosoft().getJwkSetUri();
         ClientRegistration scoped =
             ClientRegistration.withClientRegistration(registration)
                 .issuerUri(base + "/v2.0")
@@ -73,10 +73,10 @@ public final class ExternalIdTokenDecoders implements JwtDecoderFactory<ClientRe
         microsoft.setJwtValidator(new OidcIdTokenValidator(scoped));
         decoder = microsoft;
         // Auch der Frameworkcache bleibt begrenzt: je Eintrag eine eigene Decoderfactory.
-        if (tenants.size() >= 32) {
-          tenants.remove(tenants.keySet().iterator().next());
+        if (tenantTokenDecoders.size() >= 32) {
+          tenantTokenDecoders.remove(tenantTokenDecoders.keySet().iterator().next());
         }
-        tenants.put(cacheKey, decoder);
+        tenantTokenDecoders.put(cacheKey, decoder);
       }
     }
     Jwt jwt = decoder.decode(token);

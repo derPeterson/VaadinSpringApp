@@ -34,12 +34,13 @@ public final class TwoFactorHttpFilter implements Filter {
   }
 
   @Override
-  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+  public void doFilter(
+      ServletRequest httpRequest, ServletResponse httpResponse, FilterChain filterChain)
       throws IOException, ServletException {
-    HttpServletRequest http = (HttpServletRequest) request;
-    HttpServletResponse reply = (HttpServletResponse) response;
+    HttpServletRequest http = (HttpServletRequest) httpRequest;
+    HttpServletResponse reply = (HttpServletResponse) httpResponse;
     if (securityService.getAuthenticatedUser(http).isEmpty()) {
-      chain.doFilter(request, response);
+      filterChain.doFilter(httpRequest, httpResponse);
       return;
     }
     String path = http.getServletPath();
@@ -49,7 +50,7 @@ public final class TwoFactorHttpFilter implements Filter {
     boolean confirmed = flow == null && confirmed(http, path, protocol);
     if (protocol) {
       if (serviceEndpoint(path) && (confirmed || TwoFactorTransport.allowedUi(http))) {
-        chain.doFilter(request, response);
+        filterChain.doFilter(httpRequest, httpResponse);
       } else {
         reply.setContentType("application/json;charset=UTF-8");
         reply.setHeader("Cache-Control", "no-store");
@@ -62,7 +63,7 @@ public final class TwoFactorHttpFilter implements Filter {
       return;
     }
     if (confirmed || permitted(http, path, type, flow)) {
-      chain.doFilter(request, response);
+      filterChain.doFilter(httpRequest, httpResponse);
       return;
     }
     reply.setHeader("Cache-Control", "no-store");
@@ -80,20 +81,20 @@ public final class TwoFactorHttpFilter implements Filter {
         || "/VAADIN/push".equals(path);
   }
 
-  private boolean confirmed(HttpServletRequest request, String path, boolean protocol) {
-    return twoFactorAuthorization.sessionConfirmed(request)
-        && (!("/admin".equals(path) || protocol && TwoFactorTransport.administrativeUi(request))
-            || twoFactorAuthorization.administrationConfirmed(request));
+  private boolean confirmed(HttpServletRequest httpRequest, String path, boolean protocol) {
+    return twoFactorAuthorization.sessionConfirmed(httpRequest)
+        && (!("/admin".equals(path) || protocol && TwoFactorTransport.administrativeUi(httpRequest))
+            || twoFactorAuthorization.administrationConfirmed(httpRequest));
   }
 
   private boolean permitted(
-      HttpServletRequest request, String path, String type, TwoFactorFlow flow) {
+      HttpServletRequest httpRequest, String path, String type, TwoFactorFlow flow) {
     if (serviceEndpoint(path) && ("init".equals(type) || "heartbeat".equals(type))) {
       return true;
     }
     if (flow != null) {
       return type == null
-          && ("GET".equals(request.getMethod()) || "HEAD".equals(request.getMethod()))
+          && ("GET".equals(httpRequest.getMethod()) || "HEAD".equals(httpRequest.getMethod()))
           && (flow.path().equals(path)
               || !flow.help()
                   && (path.startsWith(TwoFactorDocuments.PATH + "/")
@@ -108,7 +109,7 @@ public final class TwoFactorHttpFilter implements Filter {
             || path.startsWith("/oauth2/authorization/")
             || path.startsWith("/login/oauth2/code/")
             || path.startsWith(TwoFactorDocuments.PATH + "/")
-            || ("GET".equals(request.getMethod()) || "HEAD".equals(request.getMethod()))
+            || ("GET".equals(httpRequest.getMethod()) || "HEAD".equals(httpRequest.getMethod()))
                 && resource(path));
   }
 

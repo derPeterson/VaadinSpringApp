@@ -24,27 +24,28 @@ public class DeviceTokenRepository extends JdbcTokenRepositoryImpl {
       Instant created,
       Instant lastUsed) {}
 
-  private final JdbcTemplate jdbc;
-  private final TransactionTemplate transaction;
+  private final JdbcTemplate jdbcTemplate;
+  private final TransactionTemplate transactionTemplate;
 
   public DeviceTokenRepository(DataSource source, PlatformTransactionManager manager) {
     setDataSource(source);
-    jdbc = new JdbcTemplate(source);
-    transaction = new TransactionTemplate(manager);
+    jdbcTemplate = new JdbcTemplate(source);
+    transactionTemplate = new TransactionTemplate(manager);
     // Aktuelles Remember-me-Schema mit derselben maximalen Identitätslänge wie Benutzerkonten.
-    jdbc.execute(
+    jdbcTemplate.execute(
         "create table if not exists persistent_logins (username varchar(255) not null, series varchar(64) primary key, token varchar(64) not null, last_used timestamp not null)");
-    jdbc.execute(
+    jdbcTemplate.execute(
         "create table if not exists remembered_device (series varchar(64) primary key, handle varchar(36) not null unique, username varchar(255) not null, device_system varchar(32) not null, browser varchar(32) not null, mobile boolean not null, created_at timestamp not null)");
   }
 
   public <T> T atomic(Supplier<T> action) {
-    return transaction.execute(status -> action.get());
+    return transactionTemplate.execute(status -> action.get());
   }
 
   public void describe(String series, String identity, DeviceDescription device, Instant created) {
-    jdbc.update("delete from remembered_device where series=? and username=?", series, identity);
-    jdbc.update(
+    jdbcTemplate.update(
+        "delete from remembered_device where series=? and username=?", series, identity);
+    jdbcTemplate.update(
         "insert into remembered_device(series,handle,username,device_system,browser,mobile,created_at) values(?,?,?,?,?,?,?)",
         series,
         UUID.randomUUID().toString(),
@@ -64,63 +65,59 @@ public class DeviceTokenRepository extends JdbcTokenRepositoryImpl {
   }
 
   public void removeSeries(String identity, String series) {
-    atomic(
-        () -> {
-          jdbc.update(
-              "delete from persistent_logins where username=? and series=?", identity, series);
-          jdbc.update(
-              "delete from remembered_device where username=? and series=?", identity, series);
-          return null;
-        });
+    atomic(() -> {
+      jdbcTemplate.update(
+          "delete from persistent_logins where username=? and series=?", identity, series);
+      jdbcTemplate.update(
+          "delete from remembered_device where username=? and series=?", identity, series);
+      return null;
+    });
   }
 
   @Override
   public void removeUserTokens(String identity) {
-    atomic(
-        () -> {
-          super.removeUserTokens(identity);
-          jdbc.update("delete from remembered_device where username=?", identity);
-          return null;
-        });
+    atomic(() -> {
+      super.removeUserTokens(identity);
+      jdbcTemplate.update("delete from remembered_device where username=?", identity);
+      return null;
+    });
   }
 
   public void deleteExpired(int duration) {
     if (duration < 1) {
       throw new IllegalArgumentException("Invalid saved-login duration");
     }
-    atomic(
-        () -> {
-          jdbc.update(
-              "delete from persistent_logins where last_used<?",
-              Timestamp.from(Instant.now().minusSeconds(duration)));
-          jdbc.update(
-              "delete from remembered_device where not exists (select 1 from persistent_logins p where p.series=remembered_device.series and p.username=remembered_device.username)");
-          return null;
-        });
+    atomic(() -> {
+      jdbcTemplate.update(
+          "delete from persistent_logins where last_used<?",
+          Timestamp.from(Instant.now().minusSeconds(duration)));
+      jdbcTemplate.update(
+          "delete from remembered_device where not exists (select 1 from persistent_logins p where p.series=remembered_device.series and p.username=remembered_device.username)");
+      return null;
+    });
   }
 
   public List<Saved> saved(String identity, int duration) {
     Instant cutoff = Instant.now().minusSeconds(duration);
-    return atomic(
-        () -> {
-          jdbc.update(
-              "delete from persistent_logins where username=? and last_used<?",
-              identity,
-              Timestamp.from(cutoff));
-          jdbc.update(
-              "delete from remembered_device where username=? and not exists (select 1 from persistent_logins p where p.series=remembered_device.series and p.username=remembered_device.username)",
-              identity);
-          return jdbc.query(
-              "select d.handle,d.series,d.username,d.device_system,d.browser,d.mobile,d.created_at,p.last_used from remembered_device d join persistent_logins p on p.series=d.series and p.username=d.username where d.username=? order by p.last_used desc",
-              (rs, row) ->
-                  new Saved(
-                      rs.getString(1),
-                      rs.getString(2),
-                      rs.getString(3),
-                      new DeviceDescription(rs.getString(4), rs.getString(5), rs.getBoolean(6)),
-                      rs.getTimestamp(7).toInstant(),
-                      rs.getTimestamp(8).toInstant()),
-              identity);
-        });
+    return atomic(() -> {
+      jdbcTemplate.update(
+          "delete from persistent_logins where username=? and last_used<?",
+          identity,
+          Timestamp.from(cutoff));
+      jdbcTemplate.update(
+          "delete from remembered_device where username=? and not exists (select 1 from persistent_logins p where p.series=remembered_device.series and p.username=remembered_device.username)",
+          identity);
+      return jdbcTemplate.query(
+          "select d.handle,d.series,d.username,d.device_system,d.browser,d.mobile,d.created_at,p.last_used from remembered_device d join persistent_logins p on p.series=d.series and p.username=d.username where d.username=? order by p.last_used desc",
+          (rs, row) ->
+              new Saved(
+                  rs.getString(1),
+                  rs.getString(2),
+                  rs.getString(3),
+                  new DeviceDescription(rs.getString(4), rs.getString(5), rs.getBoolean(6)),
+                  rs.getTimestamp(7).toInstant(),
+                  rs.getTimestamp(8).toInstant()),
+          identity);
+    });
   }
 }

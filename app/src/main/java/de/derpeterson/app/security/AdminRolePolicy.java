@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class AdminRolePolicy {
-  private final UserRepository users;
+  private final UserRepository userRepository;
 
   public void requireSuperadmin() {
     if (!currentRoles().contains(RoleType.ROLE_SUPERADMIN)) {
@@ -55,7 +55,8 @@ public class AdminRolePolicy {
 
   private boolean protectedTarget(Long targetId, Set<RoleType> desired) {
     return desired.contains(RoleType.ROLE_SUPERADMIN)
-        || targetId != null && users.findExplicitRoles(targetId).contains(RoleType.ROLE_SUPERADMIN);
+        || targetId != null
+            && userRepository.findExplicitRoles(targetId).contains(RoleType.ROLE_SUPERADMIN);
   }
 
   private Set<RoleType> currentRoles() {
@@ -66,7 +67,7 @@ public class AdminRolePolicy {
       throw denied();
     }
     try {
-      List<SecurityUserRow> rows = users.findSecurityUser(principal.getUsername());
+      List<SecurityUserRow> rows = userRepository.findSecurityUser(principal.getUsername());
       if (rows.isEmpty() || !rows.getFirst().isEnabled()) {
         throw denied();
       }

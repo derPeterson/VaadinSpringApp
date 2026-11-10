@@ -14,17 +14,17 @@ final class ProviderAuthorizationRequests
     implements AuthorizationRequestRepository<OAuth2AuthorizationRequest> {
   private static final String REVISION =
       ProviderAuthorizationRequests.class.getName() + ".revision";
-  private final HttpSessionOAuth2AuthorizationRequestRepository delegate =
+  private final HttpSessionOAuth2AuthorizationRequestRepository authorizationRequestRepository =
       new HttpSessionOAuth2AuthorizationRequestRepository();
-  private final ExternalProviderSettings settings;
+  private final ExternalProviderSettings externalProviderSettings;
 
-  ProviderAuthorizationRequests(ExternalProviderSettings settings) {
-    this.settings = settings;
+  ProviderAuthorizationRequests(ExternalProviderSettings externalProviderSettings) {
+    this.externalProviderSettings = externalProviderSettings;
   }
 
   @Override
   public OAuth2AuthorizationRequest loadAuthorizationRequest(HttpServletRequest request) {
-    return delegate.loadAuthorizationRequest(request);
+    return authorizationRequestRepository.loadAuthorizationRequest(request);
   }
 
   @Override
@@ -33,32 +33,33 @@ final class ProviderAuthorizationRequests
       HttpServletRequest request,
       HttpServletResponse response) {
     if (authorization == null) {
-      delegate.removeAuthorizationRequest(request, response);
+      authorizationRequestRepository.removeAuthorizationRequest(request, response);
       return;
     }
     String provider = authorization.getAttribute("registration_id");
     authorization =
         OAuth2AuthorizationRequest.from(authorization)
-            .attributes(
-                attributes ->
-                    attributes.put(
-                        REVISION,
-                        ExternalProviderSettings.revision(settings.credentials(provider))))
+            .attributes(attributes ->
+                attributes.put(
+                    REVISION,
+                    ExternalProviderSettings.revision(
+                        externalProviderSettings.credentials(provider))))
             .build();
-    delegate.saveAuthorizationRequest(authorization, request, response);
+    authorizationRequestRepository.saveAuthorizationRequest(authorization, request, response);
   }
 
   @Override
   public OAuth2AuthorizationRequest removeAuthorizationRequest(
       HttpServletRequest request, HttpServletResponse response) {
     OAuth2AuthorizationRequest authorization =
-        delegate.removeAuthorizationRequest(request, response);
+        authorizationRequestRepository.removeAuthorizationRequest(request, response);
     if (authorization == null) {
       return null;
     }
     String provider = authorization.getAttribute("registration_id");
     String revision = authorization.getAttribute(REVISION);
-    return ExternalProviderSettings.revision(settings.credentials(provider)).equals(revision)
+    return ExternalProviderSettings.revision(externalProviderSettings.credentials(provider))
+            .equals(revision)
         ? authorization
         : null;
   }

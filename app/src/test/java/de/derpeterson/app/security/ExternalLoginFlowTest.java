@@ -185,15 +185,15 @@ class ExternalLoginFlowTest {
   void redirectCannotExtendTheOriginalProofDeadline() {
     Instant start = Instant.now();
     signedIn();
-    ReflectionTestUtils.setField(flow, "clock", Clock.fixed(start, ZoneOffset.UTC));
+    ReflectionTestUtils.setField(flow, "externalLoginClock", Clock.fixed(start, ZoneOffset.UTC));
     flow.confirmPassword(request, "own-password", Purpose.LINK_MICROSOFT);
     ReflectionTestUtils.setField(
-        flow, "clock", Clock.fixed(start.plusSeconds(299), ZoneOffset.UTC));
+        flow, "externalLoginClock", Clock.fixed(start.plusSeconds(299), ZoneOffset.UTC));
     flow.beginLink(request, "microsoft", Locale.GERMAN);
     flow.bindAuthorization(request, "microsoft", "link-state");
     request.setParameter("state", "link-state");
     ReflectionTestUtils.setField(
-        flow, "clock", Clock.fixed(start.plusSeconds(301), ZoneOffset.UTC));
+        flow, "externalLoginClock", Clock.fixed(start.plusSeconds(301), ZoneOffset.UTC));
     OAuth2AuthenticationToken microsoftLogin = oidc("microsoft", "new-subject", start);
     assertThrows(
         AccessDeniedException.class, () -> flow.complete(request, response, microsoftLogin));
@@ -270,12 +270,11 @@ class ExternalLoginFlowTest {
             .expiresAt(now.plusSeconds(300))
             .claim("email", "person@gmail.com")
             .claim("email_verified", true)
-            .claims(
-                claims -> {
-                  if (authenticated != null) {
-                    claims.put("auth_time", authenticated);
-                  }
-                })
+            .claims(claims -> {
+              if (authenticated != null) {
+                claims.put("auth_time", authenticated);
+              }
+            })
             .build();
     DefaultOidcUser user = new DefaultOidcUser(List.of(), token);
     return new OAuth2AuthenticationToken(user, List.of(), provider);
@@ -488,24 +487,24 @@ class ExternalLoginFlowTest {
   @Test
   void expiredAttemptAndRegistrationCannotBeReused() throws Exception {
     Instant start = Instant.now();
-    ReflectionTestUtils.setField(flow, "clock", Clock.fixed(start, ZoneOffset.UTC));
+    ReflectionTestUtils.setField(flow, "externalLoginClock", Clock.fixed(start, ZoneOffset.UTC));
     flow.beginLogin(request, "google", false, Locale.GERMAN);
     flow.bindAuthorization(request, "google", "expired-state");
     request.setParameter("state", "expired-state");
     ReflectionTestUtils.setField(
-        flow, "clock", Clock.fixed(start.plusSeconds(301), ZoneOffset.UTC));
+        flow, "externalLoginClock", Clock.fixed(start.plusSeconds(301), ZoneOffset.UTC));
     OAuth2AuthenticationToken expiredConfirmation = oidc("subject", start);
     assertThrows(
         AccessDeniedException.class, () -> flow.complete(request, response, expiredConfirmation));
     assertThrows(AccessDeniedException.class, () -> flow.registration(request));
-    ReflectionTestUtils.setField(flow, "clock", Clock.fixed(start, ZoneOffset.UTC));
+    ReflectionTestUtils.setField(flow, "externalLoginClock", Clock.fixed(start, ZoneOffset.UTC));
     flow.beginLogin(request, "google", false, Locale.GERMAN);
     flow.bindAuthorization(request, "google", "registration-state");
     request.setParameter("state", "registration-state");
     flow.complete(request, response, oidc("subject", start));
     flow.registration(request);
     ReflectionTestUtils.setField(
-        flow, "clock", Clock.fixed(start.plusSeconds(601), ZoneOffset.UTC));
+        flow, "externalLoginClock", Clock.fixed(start.plusSeconds(601), ZoneOffset.UTC));
     assertThrows(AccessDeniedException.class, () -> flow.registration(request));
   }
 
@@ -513,7 +512,7 @@ class ExternalLoginFlowTest {
   void expiredFreshProofCannotAuthorizeSecurityActions() throws Exception {
     when(policies.weakGoogleAllowed()).thenReturn(true);
     Instant start = Instant.now();
-    ReflectionTestUtils.setField(flow, "clock", Clock.fixed(start, ZoneOffset.UTC));
+    ReflectionTestUtils.setField(flow, "externalLoginClock", Clock.fixed(start, ZoneOffset.UTC));
     signedIn();
     flow.beginProof(request, "google", Purpose.EMAIL, Locale.GERMAN);
     flow.bindAuthorization(request, "google", "proof-state");
@@ -521,7 +520,7 @@ class ExternalLoginFlowTest {
     flow.complete(request, response, oidc("subject", start));
     flow.authorize(request, owner, Purpose.EMAIL, false);
     ReflectionTestUtils.setField(
-        flow, "clock", Clock.fixed(start.plusSeconds(301), ZoneOffset.UTC));
+        flow, "externalLoginClock", Clock.fixed(start.plusSeconds(301), ZoneOffset.UTC));
     assertThrows(
         AccessDeniedException.class, () -> flow.authorize(request, owner, Purpose.EMAIL, true));
   }

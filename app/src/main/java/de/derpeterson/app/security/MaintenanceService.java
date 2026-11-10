@@ -18,15 +18,15 @@ public final class MaintenanceService {
     UNAVAILABLE
   }
 
-  private final ConfigService config;
+  private final ConfigService configService;
 
-  public MaintenanceService(ConfigService config) {
-    this.config = config;
+  public MaintenanceService(ConfigService configService) {
+    this.configService = configService;
   }
 
   public State state() {
     try {
-      return config.getBoolean(ConfigEntry.MAINTENANCE_MODE) ? State.ACTIVE : State.OPEN;
+      return configService.getBoolean(ConfigEntry.MAINTENANCE_MODE) ? State.ACTIVE : State.OPEN;
     } catch (RuntimeException _) {
       // An unreadable/invalid setting must never silently open the application.
       return State.UNAVAILABLE;
@@ -37,10 +37,9 @@ public final class MaintenanceService {
     return authentication != null
         && authentication.isAuthenticated()
         && authentication.getAuthorities().stream()
-            .anyMatch(
-                a ->
-                    "ROLE_ADMIN".equals(a.getAuthority())
-                        || "ROLE_SUPERADMIN".equals(a.getAuthority()));
+            .anyMatch(a ->
+                "ROLE_ADMIN".equals(a.getAuthority())
+                    || "ROLE_SUPERADMIN".equals(a.getAuthority()));
   }
 
   public static Authentication authentication(HttpServletRequest request) {
@@ -73,8 +72,8 @@ public final class MaintenanceService {
     }
   }
 
-  public static void requirePublicAccess(ConfigService config) {
-    State state = new MaintenanceService(config).state();
+  public static void requirePublicAccess(ConfigService configService) {
+    State state = new MaintenanceService(configService).state();
     if (state == State.UNAVAILABLE) {
       throw new MaintenanceAccessException("Service temporarily unavailable");
     }

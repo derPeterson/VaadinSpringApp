@@ -13,32 +13,34 @@ import java.io.IOException;
  * Covers errors after reservation, including context storage, cookie issuance and success handlers.
  */
 public class LoginCompletionFilter implements Filter {
-  private final SessionAdmissionService admissions;
+  private final SessionAdmissionService sessionAdmissionService;
   private final org.springframework.security.web.authentication.RememberMeServices rememberMe;
 
   public LoginCompletionFilter(
-      SessionAdmissionService admissions,
+      SessionAdmissionService sessionAdmissionService,
       org.springframework.security.web.authentication.RememberMeServices rememberMe) {
-    this.admissions = admissions;
+    this.sessionAdmissionService = sessionAdmissionService;
     this.rememberMe = rememberMe;
   }
 
   @Override
-  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+  public void doFilter(
+      ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
       throws IOException, ServletException {
     try {
-      chain.doFilter(request, response);
-    } catch (IOException | ServletException | RuntimeException failure) {
-      boolean newLogin = admissions.rollback((HttpServletRequest) request);
-      HttpServletResponse httpResponse = (jakarta.servlet.http.HttpServletResponse) response;
+      filterChain.doFilter(servletRequest, servletResponse);
+    } catch (IOException | ServletException | RuntimeException loginCompletionFailure) {
+      HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
+      boolean newLogin = sessionAdmissionService.rollback(httpRequest);
+      HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
       if (newLogin && !httpResponse.isCommitted()) {
         try {
-          rememberMe.loginFail((HttpServletRequest) request, httpResponse);
+          rememberMe.loginFail(httpRequest, httpResponse);
         } catch (RuntimeException cleanupFailure) {
-          failure.addSuppressed(cleanupFailure);
+          loginCompletionFailure.addSuppressed(cleanupFailure);
         }
       }
-      throw failure;
+      throw loginCompletionFailure;
     }
   }
 }

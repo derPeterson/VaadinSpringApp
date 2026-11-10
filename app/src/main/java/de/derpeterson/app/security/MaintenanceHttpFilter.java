@@ -16,38 +16,39 @@ import java.util.Set;
 public final class MaintenanceHttpFilter implements Filter {
   public static final String FORWARDED_DOCUMENT =
       MaintenanceHttpFilter.class.getName() + ".forward";
-  private final MaintenanceService maintenance;
+  private final MaintenanceService maintenanceService;
 
-  public MaintenanceHttpFilter(MaintenanceService maintenance) {
-    this.maintenance = maintenance;
+  public MaintenanceHttpFilter(MaintenanceService maintenanceService) {
+    this.maintenanceService = maintenanceService;
   }
 
   @Override
-  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+  public void doFilter(
+      ServletRequest httpRequest, ServletResponse httpResponse, FilterChain filterChain)
       throws IOException, ServletException {
-    HttpServletRequest req = (HttpServletRequest) request;
-    HttpServletResponse res = (HttpServletResponse) response;
+    HttpServletRequest req = (HttpServletRequest) httpRequest;
+    HttpServletResponse res = (HttpServletResponse) httpResponse;
     String path = req.getServletPath();
-    if (!maintenance.blocks(req) || AppRoute.LOGOUT.getSecurityRoute().equals(path)) {
-      chain.doFilter(request, response);
+    if (!maintenanceService.blocks(req) || AppRoute.LOGOUT.getSecurityRoute().equals(path)) {
+      filterChain.doFilter(httpRequest, httpResponse);
       return;
     }
     String type = req.getParameter("v-r");
     if (isFlowMessage(path, type)) {
-      handleFlowMessage(req, res, chain, path);
+      handleFlowMessage(req, res, filterChain, path);
       return;
     }
     // Initialization cannot invoke component RPC. The UI route guard and account services
     // protect its route resolution; heartbeat only keeps an existing session alive.
     if ((path.isEmpty() || "/".equals(path)) && ("init".equals(type) || "heartbeat".equals(type))) {
-      chain.doFilter(request, response);
+      filterChain.doFilter(httpRequest, httpResponse);
       return;
     }
     if (type == null && permittedDocument(req, path)) {
       if (AppRoute.MAINTENANCE.getSecurityRoute().equals(path)) {
         res.setStatus(503);
       }
-      chain.doFilter(request, response);
+      filterChain.doFilter(httpRequest, httpResponse);
       return;
     }
     if (("GET".equals(req.getMethod()) || "HEAD".equals(req.getMethod())) && type == null) {
@@ -55,7 +56,8 @@ public final class MaintenanceHttpFilter implements Filter {
       res.setStatus(503);
       res.setHeader("Cache-Control", "no-store");
       req.setAttribute(FORWARDED_DOCUMENT, Boolean.TRUE);
-      req.getRequestDispatcher(AppRoute.MAINTENANCE.getSecurityRoute()).forward(request, response);
+      req.getRequestDispatcher(AppRoute.MAINTENANCE.getSecurityRoute())
+          .forward(httpRequest, httpResponse);
     } else {
       res.sendError(503);
     }
@@ -69,29 +71,32 @@ public final class MaintenanceHttpFilter implements Filter {
   }
 
   private void handleFlowMessage(
-      HttpServletRequest request, HttpServletResponse response, FilterChain chain, String path)
+      HttpServletRequest httpRequest,
+      HttpServletResponse httpResponse,
+      FilterChain filterChain,
+      String path)
       throws IOException, ServletException {
-    if (flowEndpoint(path) && MaintenanceTransport.allowedUi(request)) {
-      chain.doFilter(request, response);
+    if (flowEndpoint(path) && MaintenanceTransport.allowedUi(httpRequest)) {
+      filterChain.doFilter(httpRequest, httpResponse);
       return;
     }
     // A Vaadin protocol message, never an HTML page in an existing UIDL response.
-    response.setContentType("application/json;charset=UTF-8");
-    response.setHeader("Cache-Control", "no-store");
-    response
+    httpResponse.setContentType("application/json;charset=UTF-8");
+    httpResponse.setHeader("Cache-Control", "no-store");
+    httpResponse
         .getWriter()
         .write(
             VaadinService.createCriticalNotificationJSON(
                 null,
                 null,
                 null,
-                request.getContextPath() + AppRoute.MAINTENANCE.getSecurityRoute()));
+                httpRequest.getContextPath() + AppRoute.MAINTENANCE.getSecurityRoute()));
   }
 
-  private boolean permittedDocument(HttpServletRequest request, String path) {
+  private boolean permittedDocument(HttpServletRequest httpRequest, String path) {
     return AppRoute.LOGIN.getSecurityRoute().equals(path)
         || AppRoute.MAINTENANCE.getSecurityRoute().equals(path)
-        || resource(request, path);
+        || resource(httpRequest, path);
   }
 
   private boolean flowEndpoint(String path) {
@@ -103,8 +108,8 @@ public final class MaintenanceHttpFilter implements Filter {
         || "/VAADIN/push".equals(path);
   }
 
-  private boolean resource(HttpServletRequest request, String path) {
-    if (!("GET".equals(request.getMethod()) || "HEAD".equals(request.getMethod()))) {
+  private boolean resource(HttpServletRequest httpRequest, String path) {
+    if (!("GET".equals(httpRequest.getMethod()) || "HEAD".equals(httpRequest.getMethod()))) {
       return false;
     }
     if (Set.of(

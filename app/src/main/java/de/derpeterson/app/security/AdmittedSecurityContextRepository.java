@@ -9,10 +9,10 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 
 /** Last persistence gate, shared by HTTP, Vaadin and Remember-me. */
 public class AdmittedSecurityContextRepository extends HttpSessionSecurityContextRepository {
-  private final SessionAdmissionService admissions;
+  private final SessionAdmissionService sessionAdmissionService;
 
-  public AdmittedSecurityContextRepository(SessionAdmissionService admissions) {
-    this.admissions = admissions;
+  public AdmittedSecurityContextRepository(SessionAdmissionService sessionAdmissionService) {
+    this.sessionAdmissionService = sessionAdmissionService;
   }
 
   @Override
@@ -25,7 +25,7 @@ public class AdmittedSecurityContextRepository extends HttpSessionSecurityContex
       super.saveContext(context, request, response);
       return;
     }
-    admissions.complete(
+    sessionAdmissionService.complete(
         authentication, request, response, () -> super.saveContext(context, request, response));
   }
 }

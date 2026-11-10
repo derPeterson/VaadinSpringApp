@@ -19,15 +19,15 @@ public enum TwoFactorFlow {
   public static final String SESSION_ATTRIBUTE = TwoFactorFlow.class.getName();
   public static final String INTRO_ACCEPTED = SESSION_ATTRIBUTE + ".introAccepted";
   public static final String HELP_PATH = "/recovery-help";
-  private final String query;
+  private final String flowQueryParameter;
   private final boolean account;
 
   private static final class Query {
     private static final String RECOVER = "?recover";
   }
 
-  TwoFactorFlow(String query, boolean account) {
-    this.query = query;
+  TwoFactorFlow(String flowQueryParameter, boolean account) {
+    this.flowQueryParameter = flowQueryParameter;
     this.account = account;
   }
 
@@ -55,11 +55,11 @@ public enum TwoFactorFlow {
   }
 
   public String location() {
-    return help() ? path() : path() + query;
+    return help() ? path() : path() + flowQueryParameter;
   }
 
   public boolean help() {
-    return query == null;
+    return flowQueryParameter == null;
   }
 
   public boolean account() {
