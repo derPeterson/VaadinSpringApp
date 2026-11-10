@@ -42,15 +42,15 @@ public final class TwoFactorActionDialog extends Dialog {
     this.twoFactorAuthorization = twoFactorAuthorization;
     this.httpRequest = httpRequest;
     setId("two-factor-action-dialog");
-    addClassNames("cosmos-theme", CosmosClasses.REFERENCE_OVERLAY, "account-change-dialog");
+    addClassNames("cosmos-theme", CosmosCssClasses.REFERENCE_OVERLAY, "account-change-dialog");
     getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
     setModality(ModalityMode.STRICT);
-    dialogTitleHeading.addClassName(CosmosClasses.PANEL_TITLE);
+    dialogTitleHeading.addClassName(CosmosCssClasses.PANEL_TITLE);
 
     Div dialogHeadingDiv = new Div(dialogTitleHeading);
-    dialogHeadingDiv.addClassName(CosmosClasses.PANEL_HEADING);
+    dialogHeadingDiv.addClassName(CosmosCssClasses.PANEL_HEADING);
     Div dialogIconDiv = new Div(AppIcon.LOCK.create());
-    dialogIconDiv.addClassName(CosmosClasses.PANEL_ICON);
+    dialogIconDiv.addClassName(CosmosCssClasses.PANEL_ICON);
     closeDialogButton.addClassName("cosmos-overlay-close");
     closeDialogButton.addClickListener(event -> close());
     Div dialogHeaderDiv = new Div(dialogIconDiv, dialogHeadingDiv, closeDialogButton);

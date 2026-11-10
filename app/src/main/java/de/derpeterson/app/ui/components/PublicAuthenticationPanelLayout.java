@@ -14,8 +14,8 @@ import java.util.function.BooleanSupplier;
 
 /** Gemeinsame Anordnung für lokales Formular und optionalen externen Schnellzugang. */
 @StyleSheet("custom-theme/cosmos-external-login.css")
-public final class PublicAuthenticationPanels extends Div {
-  public PublicAuthenticationPanels(
+public final class PublicAuthenticationPanelLayout extends Div {
+  public PublicAuthenticationPanelLayout(
       Component authenticationFormComponent,
       ExternalLoginFlow externalLoginFlow,
       HttpServletRequest httpServletRequest,

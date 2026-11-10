@@ -1,6 +1,6 @@
 package de.derpeterson.app.views.admin;
 
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;

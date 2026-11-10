@@ -32,7 +32,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
-import de.derpeterson.app.ui.components.AdminSidePanel;
+import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import java.util.Locale;
 import java.util.Set;
@@ -132,7 +132,7 @@ class AdminMailTestSectionTest {
     localeReference.set(Locale.forLanguageTag(language));
     AdminMailTestSection section = section();
     ConfigInfoButton info = field(section, "bodyInfoButton");
-    AdminSidePanel help = field(section, "mailFieldHelpPanel");
+    AdminSidePanelDialog help = field(section, "mailFieldHelpPanel");
     TextArea body = field(section, "testBodyField");
     body.setValue("Draft body");
     info.click();

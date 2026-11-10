@@ -3,7 +3,7 @@ package de.derpeterson.app.security;
 import com.vaadin.flow.server.VaadinService;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
-import de.derpeterson.app.security.mfa.TwoFactorDocuments;
+import de.derpeterson.app.security.mfa.TwoFactorDocumentsController;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -111,7 +111,7 @@ public final class TwoFactorHttpFilter implements Filter {
           && ("GET".equals(httpRequest.getMethod()) || "HEAD".equals(httpRequest.getMethod()))
           && (twoFactorFlow.path().equals(servletPath)
               || !twoFactorFlow.help()
-                  && (servletPath.startsWith(TwoFactorDocuments.PATH + "/")
+                  && (servletPath.startsWith(TwoFactorDocumentsController.PATH + "/")
                       || RECOVERY_DOWNLOAD.matcher(servletPath).matches())
               || isPublicResourcePath(servletPath));
     }
@@ -123,7 +123,7 @@ public final class TwoFactorHttpFilter implements Filter {
             || "/login".equals(servletPath)
             || servletPath.startsWith("/oauth2/authorization/")
             || servletPath.startsWith("/login/oauth2/code/")
-            || servletPath.startsWith(TwoFactorDocuments.PATH + "/")
+            || servletPath.startsWith(TwoFactorDocumentsController.PATH + "/")
             || ("GET".equals(httpRequest.getMethod()) || "HEAD".equals(httpRequest.getMethod()))
                 && isPublicResourcePath(servletPath));
   }

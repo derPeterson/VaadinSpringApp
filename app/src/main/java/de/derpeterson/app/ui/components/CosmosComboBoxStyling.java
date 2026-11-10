@@ -8,8 +8,8 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.function.SerializableFunction;
 
 /** Gemeinsame native Auswahllisten; Werte, Tastatur und Filterung bleiben bei Vaadin. */
-public final class PortalFields {
-  private PortalFields() {}
+public final class CosmosComboBoxStyling {
+  private CosmosComboBoxStyling() {}
 
   public static <T> void styleChoice(
       ComboBox<T> choiceComboBox,

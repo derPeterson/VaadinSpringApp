@@ -32,7 +32,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AdminDurationField;
-import de.derpeterson.app.ui.components.AdminSidePanel;
+import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
@@ -114,7 +114,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private final Button saveConfigButton;
   private final Button reloadConfigButton;
 
-  private final AdminSidePanel helpPanel;
+  private final AdminSidePanelDialog helpPanel;
   private ConfigEntry openHelpConfigEntry;
   private AdminConfigGroup selectedGroup = null;
 
@@ -132,7 +132,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     setAlignItems(FlexComponent.Alignment.CENTER);
     addClassNames("cosmos-admin-section", "cosmos-admin-section--config");
 
-    helpPanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
+    helpPanel = new AdminSidePanelDialog(messageProperties, AppIcon.INFO_CIRCLE);
     helpPanel.addClassName("admin-config-help");
     helpPanel.setId("admin-config-help");
     add(helpPanel);

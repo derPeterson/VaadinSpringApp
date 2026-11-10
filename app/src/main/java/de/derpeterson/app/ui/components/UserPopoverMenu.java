@@ -1,8 +1,8 @@
 package de.derpeterson.app.ui.components;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
-import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
-import static de.derpeterson.app.ui.components.CosmosClasses.USER_MENU_ACTION;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLAY;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.USER_MENU_ACTION;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;

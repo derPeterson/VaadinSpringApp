@@ -24,8 +24,8 @@ import de.derpeterson.browsertests.BrowserTestRunner;
 import de.derpeterson.browsertests.PersistentBrowserActor;
 import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.AccountSessionsPage;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -45,7 +45,7 @@ import org.junit.jupiter.api.io.TempDir;
 @Tag("browser")
 @Feature("Eigene Sitzungen und gespeicherte Anmeldungen verwalten")
 public class SessionManagementBrowserTest extends BrowserFixture {
-  private ConfigurationPage configuration;
+  private AdminConfigurationPage configuration;
   private String original;
   @TempDir Path profile;
 
@@ -62,7 +62,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
         .check();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
-    configuration = new ConfigurationPage(browserPage);
+    configuration = new AdminConfigurationPage(browserPage);
     configuration.open(AdminConfigGroup.SECURITY);
     original = configuration.value(uiTexts.getAdminConfigEntryMaxSessionsPerUser());
     limit(5);

@@ -16,9 +16,9 @@ import com.microsoft.playwright.options.ScreenshotAnimations;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.AccountPage;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
@@ -577,7 +577,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
             case "secret" -> uiTexts.getAdminConfigEffectiveProviderSecret();
             default -> uiTexts.getAdminConfigEffectiveProviderEnabled();
           };
-      ConfigurationPage.assertEffectiveUse(
+      AdminConfigurationPage.assertEffectiveUse(
           help, uiTexts, timing, uiTexts.getAdminConfigEffectiveProviderExisting());
       help.locator("[slot=footer] vaadin-button").click();
     }

@@ -1,7 +1,7 @@
 package de.derpeterson.app.ui.components;
 
 /** Gemeinsame CSS-Klassen der freigegebenen Cosmos-Bausteine. Die Gestaltung bleibt im Theme. */
-public final class CosmosClasses {
+public final class CosmosCssClasses {
   public static final String REFERENCE_PORTAL = "cosmos-reference-portal";
   public static final String REFERENCE_OVERLAY = "cosmos-reference-overlay";
   public static final String PANEL_ICON = "cosmos-panel-icon";
@@ -16,5 +16,5 @@ public final class CosmosClasses {
   public static final String USER_MENU_ACTION = "portal-menu-action";
   public static final String ACCOUNT_NAVIGATION_OPEN = "account-navigation-open";
 
-  private CosmosClasses() {}
+  private CosmosCssClasses() {}
 }

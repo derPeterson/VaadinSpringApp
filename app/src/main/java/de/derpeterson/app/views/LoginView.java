@@ -46,7 +46,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AccountSessionsComponent;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
-import de.derpeterson.app.ui.components.PublicAuthenticationPanels;
+import de.derpeterson.app.ui.components.PublicAuthenticationPanelLayout;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.UserInputRules;
@@ -93,7 +93,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
   // Anmeldeformular und Links zum Konto
   private PublicPageComponent loginPageComponent;
-  private PublicAuthenticationPanels loginAuthenticationPanels;
+  private PublicAuthenticationPanelLayout loginAuthenticationPanels;
   private RouterLink createAccountRouterLink = null;
   private EmailField loginEmailField = null;
   private PasswordField loginPasswordField = null;
@@ -222,7 +222,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
             loginButton);
 
     loginAuthenticationPanels =
-        new PublicAuthenticationPanels(
+        new PublicAuthenticationPanelLayout(
             loginPanelComponent,
             externalLoginFlow,
             httpServletRequest,

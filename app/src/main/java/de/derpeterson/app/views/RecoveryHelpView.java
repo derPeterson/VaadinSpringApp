@@ -18,7 +18,7 @@ import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.SupportTicketService;
 import de.derpeterson.app.ui.components.AppIcon;
-import de.derpeterson.app.ui.components.CosmosClasses;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.SupportTicketsComponent;
 import jakarta.annotation.security.PermitAll;
@@ -80,7 +80,7 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
             });
     recoveryHelpLogoutButton.setId("support-sign-out");
     recoveryHelpLogoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
-    recoveryHelpLogoutButton.addClassName(CosmosClasses.DELETE_BUTTON);
+    recoveryHelpLogoutButton.addClassName(CosmosCssClasses.DELETE_BUTTON);
     recoveryHelpTicketsComponent.addUserFooterAction(recoveryHelpLogoutButton);
 
     recoveryHelpPageComponent.getCardContainer().add(recoveryHelpTicketsComponent);

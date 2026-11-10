@@ -1,6 +1,6 @@
 package de.derpeterson.app.views;
 
-import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_PORTAL;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -41,8 +41,8 @@ import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.PageContentLayout;
 import de.derpeterson.app.ui.components.PageNavigationComponent;
-import de.derpeterson.app.ui.components.PortalPageComponent;
 import de.derpeterson.app.ui.components.SupportTicketActivityIndicator;
 import de.derpeterson.app.ui.components.SupportTicketsComponent;
 import de.derpeterson.app.ui.components.SupportTicketsComponent.Category;
@@ -50,7 +50,7 @@ import de.derpeterson.app.ui.components.SupportTicketsComponent.NavigationState;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.admin.AdminConfigurationSection;
 import de.derpeterson.app.views.admin.AdminDashboardSection;
-import de.derpeterson.app.views.admin.AdminExternalLoginSection;
+import de.derpeterson.app.views.admin.AdminExternalProviderSettingsSection;
 import de.derpeterson.app.views.admin.AdminMailTestSection;
 import de.derpeterson.app.views.admin.AdminTwoFactorSection;
 import de.derpeterson.app.views.admin.AdminUserManagementSection;
@@ -113,10 +113,10 @@ public class AdminView extends IsAuthenticatedBaseView {
       new LinkedHashMap<>();
 
   private VerticalLayout adminSectionContentLayout = null;
-  private PortalPageComponent adminPortalPageComponent;
+  private PageContentLayout adminPageContentLayout;
   private AdminDashboardSection dashboardSection = null;
   private AdminConfigurationSection configurationSection = null;
-  private AdminExternalLoginSection externalLoginSection;
+  private AdminExternalProviderSettingsSection externalProviderSettingsSection;
   private AdminTwoFactorSection twoFactorSection;
 
   private AdminMailTestSection mailTestSection = null;
@@ -184,11 +184,11 @@ public class AdminView extends IsAuthenticatedBaseView {
     userManagementSection.configureAvatars(userAvatarService);
     userManagementSection.configureSignInDetails(externalIdentityService);
 
-    adminPortalPageComponent =
-        new PortalPageComponent(adminHeadingDiv, adminSidebarLayout, adminSectionContentLayout);
-    adminPortalPageComponent.addClassName("admin-reference-frame");
-    adminPortalPageComponent.configureNavigationToggle(accountNavigationToggle);
-    setPortalPage(adminHeaderLayout, adminPortalPageComponent, configService);
+    adminPageContentLayout =
+        new PageContentLayout(adminHeadingDiv, adminSidebarLayout, adminSectionContentLayout);
+    adminPageContentLayout.addClassName("admin-reference-frame");
+    adminPageContentLayout.configureNavigationToggle(accountNavigationToggle);
+    setPortalPage(adminHeaderLayout, adminPageContentLayout, configService);
 
     selectSection(AdminSection.DASHBOARD, null);
 
@@ -229,9 +229,10 @@ public class AdminView extends IsAuthenticatedBaseView {
       ExternalProviderSettings externalProviderSettings,
       TwoFactorAuthorization twoFactorAuthorization) {
     if (canConfigureSecurity()) {
-      externalLoginSection =
-          new AdminExternalLoginSection(messageProperties, externalProviderSettings, configService);
-      externalLoginSection.configureConfirmation(twoFactorAuthorization, request);
+      externalProviderSettingsSection =
+          new AdminExternalProviderSettingsSection(
+              messageProperties, externalProviderSettings, configService);
+      externalProviderSettingsSection.configureConfirmation(twoFactorAuthorization, request);
     }
   }
 
@@ -481,7 +482,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     showAdminSectionContent(requestedAdminSection);
 
     updatePageHeading();
-    adminPortalPageComponent.closeNavigation();
+    adminPageContentLayout.closeNavigation();
     updateNavigationState();
   }
 
@@ -492,9 +493,9 @@ public class AdminView extends IsAuthenticatedBaseView {
           twoFactorSection.activate();
           adminSectionContentLayout.add(twoFactorSection);
         } else if (activeConfigurationGroup == AdminConfigGroup.EXTERNAL_LOGIN
-            && externalLoginSection != null) {
-          externalLoginSection.activate();
-          adminSectionContentLayout.add(externalLoginSection);
+            && externalProviderSettingsSection != null) {
+          externalProviderSettingsSection.activate();
+          adminSectionContentLayout.add(externalProviderSettingsSection);
         } else {
           adminSectionContentLayout.add(configurationSection);
           configurationSection.showGroup(activeConfigurationGroup);
@@ -635,8 +636,8 @@ public class AdminView extends IsAuthenticatedBaseView {
     if (configurationSection != null) {
       configurationSection.refreshTexts();
     }
-    if (externalLoginSection != null) {
-      externalLoginSection.refreshTexts();
+    if (externalProviderSettingsSection != null) {
+      externalProviderSettingsSection.refreshTexts();
     }
     if (twoFactorSection != null) {
       twoFactorSection.refreshTexts();

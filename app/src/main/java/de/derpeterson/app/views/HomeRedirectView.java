@@ -9,7 +9,7 @@ import de.derpeterson.app.config.AppRouteConstants;
 
 @Route(AppRouteConstants.BASE_ROUTE)
 @PageTitle(AppRouteConstants.BASE_PAGE_TITLE)
-public class MainView extends VerticalLayout implements BeforeEnterObserver {
+public class HomeRedirectView extends VerticalLayout implements BeforeEnterObserver {
 
   @Override
   public void beforeEnter(BeforeEnterEvent navigationEvent) {

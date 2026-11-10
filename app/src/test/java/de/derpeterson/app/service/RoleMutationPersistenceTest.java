@@ -64,7 +64,7 @@ class RoleMutationPersistenceTest {
   @Import({
     UserServicePersistenceTest.Config.class,
     UserNotificationService.class,
-    UserRoleChanges.class,
+    UserRoleChangeListener.class,
     UserNotificationBroadcaster.class,
     UserRoleBroadcaster.class
   })
@@ -101,7 +101,7 @@ class RoleMutationPersistenceTest {
   @Autowired UserNotificationRepository userNotificationRepository;
   @Autowired UserNotificationRecipientRepository userNotificationRecipientRepository;
   @Autowired UserNotificationService userNotificationService;
-  @Autowired UserRoleChanges changes;
+  @Autowired UserRoleChangeListener changes;
   @Autowired UserRoleBroadcaster events;
   @Autowired SecurityService securityService;
   @Autowired TransactionTemplate transactionTemplate;

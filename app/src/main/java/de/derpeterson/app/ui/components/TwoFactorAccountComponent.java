@@ -51,7 +51,7 @@ public final class TwoFactorAccountComponent extends Div {
         twoFactorAuthorization.state(twoFactorAuthorization.owner(httpRequest));
 
     Div twoFactorIconContainerDiv = new Div(AppIcon.SHIELD_KEYHOLE.create());
-    twoFactorIconContainerDiv.addClassName(CosmosClasses.PANEL_ICON);
+    twoFactorIconContainerDiv.addClassName(CosmosCssClasses.PANEL_ICON);
 
     Div twoFactorDescriptionDiv = createTwoFactorDescriptionDiv(twoFactorState.enrolled());
     Div twoFactorActionsDiv = createTwoFactorActionsDiv(twoFactorState.enrolled());
@@ -122,7 +122,7 @@ public final class TwoFactorAccountComponent extends Div {
     Button removeAuthenticatorButton =
         new Button(messageProperties.getTwoFactorDisableAction(), AppIcon.TRASH.create());
     removeAuthenticatorButton.setId("account-two-factor-remove");
-    removeAuthenticatorButton.addClassName(CosmosClasses.DELETE_BUTTON);
+    removeAuthenticatorButton.addClassName(CosmosCssClasses.DELETE_BUTTON);
 
     TwoFactorManagement.DisableProblem authenticatorDisableProblem =
         twoFactorManagement.disableProblem(httpRequest);

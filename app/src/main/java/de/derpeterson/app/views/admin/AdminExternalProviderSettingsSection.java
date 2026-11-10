@@ -3,13 +3,13 @@ package de.derpeterson.app.views.admin;
 import static de.derpeterson.app.security.ExternalProviderSettings.GOOGLE;
 import static de.derpeterson.app.security.ExternalProviderSettings.GOOGLE_NAME;
 import static de.derpeterson.app.security.ExternalProviderSettings.MICROSOFT_NAME;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TABS;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_CARD;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADER;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TABS;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.badge.Badge;
@@ -46,7 +46,7 @@ import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.security.mfa.TwoFactorAction;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.service.ConfigService;
-import de.derpeterson.app.ui.components.AdminSidePanel;
+import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
@@ -66,9 +66,10 @@ import org.springframework.dao.OptimisticLockingFailureException;
 
 /** Geführte Einrichtung auf den vorhandenen Konfigurations-/Panelbausteinen. */
 @StyleSheet("custom-theme/cosmos-provider-settings.css")
-public class AdminExternalLoginSection extends VerticalLayout {
+public class AdminExternalProviderSettingsSection extends VerticalLayout {
   private static final String PROVIDER_PREFIX = "provider-";
-  private static final Logger logger = LoggerFactory.getLogger(AdminExternalLoginSection.class);
+  private static final Logger logger =
+      LoggerFactory.getLogger(AdminExternalProviderSettingsSection.class);
   private final transient MessageProperties messageProperties;
   private final transient ExternalProviderSettings externalProviderSettings;
   private final transient ConfigService configService;
@@ -79,7 +80,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
   private final H2 providerPanelTitleH2 = new H2();
   private final Span providerPanelDescriptionSpan = new Span();
   private final TabSheet providerTabSheet = new TabSheet();
-  private final AdminSidePanel fieldHelpSidePanel;
+  private final AdminSidePanelDialog fieldHelpSidePanel;
   private final Button closeFieldHelpButton = new Button(AppIcon.CLOSE.create());
   private ProviderForm fieldHelpProviderForm;
   private ProviderField fieldHelpProviderField;
@@ -96,7 +97,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
     add(twoFactorConfirmationDialog);
   }
 
-  public AdminExternalLoginSection(
+  public AdminExternalProviderSettingsSection(
       MessageProperties messageProperties,
       ExternalProviderSettings externalProviderSettings,
       ConfigService configService) {
@@ -104,7 +105,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
     this.externalProviderSettings = externalProviderSettings;
     this.configService = configService;
 
-    fieldHelpSidePanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
+    fieldHelpSidePanel = new AdminSidePanelDialog(messageProperties, AppIcon.INFO_CIRCLE);
     fieldHelpSidePanel.addClassName("admin-config-help");
     fieldHelpSidePanel.setId("provider-field-help");
     closeFieldHelpButton.setWidthFull();

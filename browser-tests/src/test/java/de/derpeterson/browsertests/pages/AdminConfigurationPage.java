@@ -11,11 +11,11 @@ import io.qameta.allure.Step;
 import java.util.regex.Pattern;
 
 /** Configuration through visible groups and inputs; no application API access. */
-public final class ConfigurationPage {
+public final class AdminConfigurationPage {
   private final Page browserPage;
   private final UiTexts uiTexts = UiTexts.selected();
 
-  public ConfigurationPage(Page browserPage) {
+  public AdminConfigurationPage(Page browserPage) {
     this.browserPage = browserPage;
   }
 

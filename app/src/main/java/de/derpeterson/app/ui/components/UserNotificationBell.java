@@ -1,6 +1,6 @@
 package de.derpeterson.app.ui.components;
 
-import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLAY;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;

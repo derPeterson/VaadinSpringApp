@@ -171,7 +171,7 @@ public final class ExternalConnectionsComponent extends Div {
                 : messageProperties.getExternalConnect(providerBrandText));
     providerActionButton.setId("external-connect-" + providerName);
     providerActionButton.setPrefixComponent((linked ? AppIcon.SIGN_OUT : AppIcon.SIGN_IN).create());
-    providerActionButton.setClassName(CosmosClasses.DELETE_BUTTON, linked);
+    providerActionButton.setClassName(CosmosCssClasses.DELETE_BUTTON, linked);
     providerActionButton.setEnabled(!lastMethod);
     providerActionButton.addClickListener(event ->
         requestAction(

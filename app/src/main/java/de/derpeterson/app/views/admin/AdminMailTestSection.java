@@ -1,12 +1,12 @@
 package de.derpeterson.app.views.admin;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_CARD;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADER;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
@@ -36,7 +36,7 @@ import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.MaintenanceService.State;
 import de.derpeterson.app.service.EmailService;
-import de.derpeterson.app.ui.components.AdminSidePanel;
+import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
@@ -87,7 +87,7 @@ public class AdminMailTestSection extends VerticalLayout {
   private final ConfigInfoButton recipientInfoButton;
   private final ConfigInfoButton subjectInfoButton;
   private final ConfigInfoButton bodyInfoButton;
-  private final AdminSidePanel mailFieldHelpPanel;
+  private final AdminSidePanelDialog mailFieldHelpPanel;
   private final Button closeHelpButton = new Button(AppIcon.CLOSE.create());
   private transient FieldHelp selectedMailFieldHelp;
 
@@ -144,7 +144,7 @@ public class AdminMailTestSection extends VerticalLayout {
     testBodyField.setRequiredIndicatorVisible(true);
     testBodyField.addClassName("cosmos-mail-body-field");
 
-    mailFieldHelpPanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
+    mailFieldHelpPanel = new AdminSidePanelDialog(messageProperties, AppIcon.INFO_CIRCLE);
     mailFieldHelpPanel.addClassName("admin-config-help");
     mailFieldHelpPanel.setId("admin-mail-field-help");
     closeHelpButton.setWidthFull();

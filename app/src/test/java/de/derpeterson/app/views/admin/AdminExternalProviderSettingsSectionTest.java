@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-class AdminExternalLoginSectionTest {
+class AdminExternalProviderSettingsSectionTest {
   @ParameterizedTest
   @CsvSource({
     "de,true,true", "de,true,false", "de,false,false",
@@ -45,8 +45,8 @@ class AdminExternalLoginSectionTest {
     when(settings.load("microsoft"))
         .thenReturn(
             new ExternalProviderSettings.Settings("microsoft", "", false, false, "revision"));
-    AdminExternalLoginSection section =
-        new AdminExternalLoginSection(messageProperties, settings, configService);
+    AdminExternalProviderSettingsSection section =
+        new AdminExternalProviderSettingsSection(messageProperties, settings, configService);
     section.activate();
     Badge badge = (Badge) find(section, "provider-google-status");
     String expected =
@@ -97,8 +97,8 @@ class AdminExternalLoginSectionTest {
     when(settings.load("microsoft"))
         .thenReturn(
             new ExternalProviderSettings.Settings("microsoft", "", false, false, "revision"));
-    AdminExternalLoginSection section =
-        new AdminExternalLoginSection(messageProperties, settings, configService);
+    AdminExternalProviderSettingsSection section =
+        new AdminExternalProviderSettingsSection(messageProperties, settings, configService);
     section.activate();
     TabSheet tabs = (TabSheet) find(section, "admin-provider-tabs");
     Component form = tabs.getComponent(tabs.getTabAt(0));

@@ -25,10 +25,10 @@ import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.PersistentBrowserActor;
 import de.derpeterson.browsertests.mail.MailpitInbox;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.ForgotPasswordPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
@@ -52,7 +52,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 @Tag("browser")
 @Feature("Wartungsmodus")
 public class MaintenanceBrowserTest extends BrowserFixture {
-  private ConfigurationPage settings;
+  private AdminConfigurationPage settings;
   private boolean originalMode;
   private String originalLimit;
   @TempDir Path profile;
@@ -63,7 +63,7 @@ public class MaintenanceBrowserTest extends BrowserFixture {
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
-    settings = new ConfigurationPage(browserPage);
+    settings = new AdminConfigurationPage(browserPage);
     settings.open(AdminConfigGroup.SECURITY);
     originalMode = settings.input(uiTexts.getAdminConfigEntryMaintenanceMode()).isChecked();
     originalLimit = settings.value(uiTexts.getAdminConfigEntryMaxSessionsPerUser());
@@ -257,7 +257,7 @@ public class MaintenanceBrowserTest extends BrowserFixture {
       if (administrative) {
         assertThat(browserActor.browserPage).hasURL(urlPattern(ADMIN_ROUTE));
         new UserMenu(browserActor.browserPage).selectTestLanguage();
-        ConfigurationPage ownSettings = new ConfigurationPage(browserActor.browserPage);
+        AdminConfigurationPage ownSettings = new AdminConfigurationPage(browserActor.browserPage);
         ownSettings.open(AdminConfigGroup.SECURITY);
         ownSettings.input(uiTexts.getAdminConfigEntryMaintenanceMode()).uncheck();
         ownSettings.save();

@@ -1,6 +1,6 @@
 package de.derpeterson.app.views;
 
-import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.DELETE_BUTTON;
 
 import com.flowingcode.vaadin.addons.otpfield.OtpField;
 import com.vaadin.flow.component.ComponentUtil;
@@ -49,7 +49,7 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.TwoFactorFlow;
 import de.derpeterson.app.security.mfa.TwoFactorAction;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
-import de.derpeterson.app.security.mfa.TwoFactorDocuments;
+import de.derpeterson.app.security.mfa.TwoFactorDocumentsController;
 import de.derpeterson.app.security.mfa.TwoFactorEnrollment;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.ExternalIdentityService;
@@ -1282,7 +1282,10 @@ public final class TwoFactorView extends VerticalLayout
   }
 
   private String buildTwoFactorDocumentPath(String documentPathSuffix) {
-    return httpServletRequest.getContextPath() + TwoFactorDocuments.PATH + "/" + documentPathSuffix;
+    return httpServletRequest.getContextPath()
+        + TwoFactorDocumentsController.PATH
+        + "/"
+        + documentPathSuffix;
   }
 
   // Bestätigung der einzelnen Schritte und Rückmeldung bei Fehlern

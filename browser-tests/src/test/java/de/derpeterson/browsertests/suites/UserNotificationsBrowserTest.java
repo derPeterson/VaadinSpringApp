@@ -14,9 +14,9 @@ import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -193,7 +193,7 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     compose.draft("Maintenance draft", "Preserved draft");
     Page mailPage = browserContext.newPage(), settingsPage = browserContext.newPage();
     AdminMailPage mail = new AdminMailPage(mailPage);
-    ConfigurationPage settings = new ConfigurationPage(settingsPage);
+    AdminConfigurationPage settings = new AdminConfigurationPage(settingsPage);
     try {
       mailPage.navigate(path(ADMIN_ROUTE) + "?section=mail_test");
       settingsPage.navigate(path(ADMIN_ROUTE));

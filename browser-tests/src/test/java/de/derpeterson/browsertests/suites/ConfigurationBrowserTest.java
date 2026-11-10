@@ -17,8 +17,8 @@ import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminNavigation;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UserMenu;
 import de.derpeterson.browsertests.pages.UserStatusMenu;
@@ -46,7 +46,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       **Erwartet:** Stringvalidierung und Speicherung sind sichtbar wirksam; kein Neustartnachweis.
       """)
   void stringValidationAndPersistence() {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.GENERAL);
     String name = uiTexts.getAdminConfigEntryServiceName(),
         url = uiTexts.getAdminConfigEntryBaseUrl();
@@ -106,7 +106,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       **Erwartet:** Boolean-Bedienung und Persistenz; keine Behauptung einer Wartungsfunktion.
       """)
   void booleanPersistsAcrossReload() {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.SECURITY);
     Locator checkbox =
         browserPage.getByRole(
@@ -140,7 +140,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       **Erwartet:** Echter IntegerField-Vertrag; gleichzeitig eingeloggte Konten werden hier nicht verändert.
       """)
   void integerValidationAndPersistence() {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.SECURITY);
     String label = uiTexts.getAdminConfigEntryMaxSessionsPerUser(),
         original = settings.value(label);
@@ -174,7 +174,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       **Erwartet:** Elternpunkt navigiert nicht; Bedienung und Sprache erhalten Entwürfe. URL stellt den gewählten Bereich wieder her.
       """)
   void hierarchyTogglePreservesDraftAndSupportsKeyboardAndLanguage() {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.GENERAL);
     AdminNavigation navigation = new AdminNavigation(browserPage);
     String label = uiTexts.getAdminConfigEntryServiceName(),
@@ -296,7 +296,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       **Erwartet:** Echte manuelle Tooltips im Card-Stil; Öffnen/Schließen speichert keine Konfiguration.
       """)
   void manualTooltipUsesDefaultAndCanReopenAfterOutsideClick() {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.GENERAL);
     String label = uiTexts.getAdminConfigEntryServiceName(), draft = "Tooltip draft";
 
@@ -357,7 +357,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       **Erwartet:** UI und Backend verlangen dieselbe strikt positive Dauer.
       """)
   void queueRetentionMustBePositiveWithoutAnInventedMinimum() {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.QUEUE);
     String label = uiTexts.getAdminConfigEntryEmailQueueSentLiveDuration(),
         original =
@@ -400,7 +400,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       **Erwartet:** Keine Gruppe verliert ihre Bedienung; alle bisherigen Felder erhalten die gemeinsame Info-Funktion.
       """)
   void everyConfigurationFieldHasAnAccessibleLocalizedInfo(int width) {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     browserPage.setViewportSize(width, 900);
     int total = 0;
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
@@ -436,7 +436,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
                     .count()
                 > 0,
             "Feldinfo hat keine Eingaberegel: " + info.getAttribute("aria-labelledby"));
-        ConfigurationPage.assertEffectiveUse(settings.helpPanel(), uiTexts);
+        AdminConfigurationPage.assertEffectiveUse(settings.helpPanel(), uiTexts);
         if (info.getAttribute("aria-labelledby").equals("config-label-remember_me_secret_key")) {
           assertThat(settings.helpPanel())
               .containsText(uiTexts.getAdminConfigDefaultConfidential());
@@ -456,7 +456,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     try {
       userMenu.selectLanguage(other.language());
       settings.info(other.getAdminConfigEntrySessionTimeout()).click();
-      ConfigurationPage.assertEffectiveUse(
+      AdminConfigurationPage.assertEffectiveUse(
           settings.helpPanel(),
           other,
           other.getAdminConfigEffectiveSessionNew(),
@@ -480,7 +480,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       **Erwartet:** Der auf Eingabefelder begrenzte Shortcut übernimmt auch noch nicht per Blur übertragene Werte.
       """)
   void fieldEnterSavesTheLatestValueWithoutPriorBlur() {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.GENERAL);
     String label = uiTexts.getAdminConfigEntryServiceName(), original = settings.value(label);
     String changed = "Keyboard " + UUID.randomUUID().toString().substring(0, 8);
@@ -517,7 +517,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       **Erwartet:** Tooltip und Benutzermenü bleiben schmal bedienbar; keine abgeschnittene Abmeldeaktion.
       """)
   void manualInfoRemainsWithinTheMobileViewport() {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     browserPage.setViewportSize(320, 568);
 
     assertThat(browserPage.locator("#account-navigation-toggle")).isVisible();
@@ -588,7 +588,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @Description(
       "Zeitfelder in Sicherheit, E-Mail-Queue, Benutzerstatus und Benachrichtigungen speichern und neu laden. Sitzungs-Feldhilfe und Neustartwarnung bei unverändertem und geändertem Anmeldeschlüssel prüfen. Originalwerte werden über die UI wiederhergestellt.")
   void remainingDurationFieldsPersistWithoutExposingTheCalculationBelowTheInput(int width) {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     browserPage.setViewportSize(width, 844);
     assertSessionTimeoutUnitFits(settings);
     assertRestartHelpAndNotice(settings);
@@ -662,7 +662,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     }
   }
 
-  private void assertRestartHelpAndNotice(ConfigurationPage settings) {
+  private void assertRestartHelpAndNotice(AdminConfigurationPage settings) {
     settings.open(AdminConfigGroup.SECURITY);
     String timeout = uiTexts.getAdminConfigEntrySessionTimeout();
     settings.info(timeout).click();
@@ -733,7 +733,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     }
   }
 
-  private void assertSessionTimeoutUnitFits(ConfigurationPage settings) {
+  private void assertSessionTimeoutUnitFits(AdminConfigurationPage settings) {
     settings.open(AdminConfigGroup.SECURITY);
     String label = uiTexts.getAdminConfigEntrySessionTimeout();
     settings.enterSeconds(label, java.math.BigDecimal.valueOf(119));
@@ -761,13 +761,13 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     settings.reload();
   }
 
-  private ConfigurationPage admin() {
+  private AdminConfigurationPage admin() {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
-    return new ConfigurationPage(browserPage);
+    return new AdminConfigurationPage(browserPage);
   }
 
   @Test
@@ -781,7 +781,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       **Erwartet:** Kein falscher Offline-Erfolg; nach Wiederverbindung ist Weiterarbeiten möglich.
       """)
   void offlineSaveHasNoFalseSuccessAndCanBeContinued() {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.GENERAL);
     String label = uiTexts.getAdminConfigEntryServiceName();
     String original = settings.value(label);

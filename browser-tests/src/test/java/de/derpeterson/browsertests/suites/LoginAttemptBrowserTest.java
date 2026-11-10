@@ -14,8 +14,8 @@ import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.mail.MailpitInbox.CapturedMail;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.ForgotPasswordPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.ResetPasswordPage;
@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
 @Tag("browser")
 @Feature("Anmeldeversuche begrenzen")
 public class LoginAttemptBrowserTest extends BrowserFixture {
-  private ConfigurationPage settings;
+  private AdminConfigurationPage settings;
   private String original;
 
   @BeforeEach
@@ -41,7 +41,7 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
-    settings = new ConfigurationPage(browserPage);
+    settings = new AdminConfigurationPage(browserPage);
     settings.open(AdminConfigGroup.SECURITY);
     original = settings.value(uiTexts.getAdminConfigEntryLoginAttemptsLimit());
   }

@@ -17,9 +17,9 @@ import de.derpeterson.browsertests.BrowserTestRunner;
 import de.derpeterson.browsertests.PersistentBrowserActor;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationInboxPage;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
@@ -2815,7 +2815,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
     assertThat(help.locator(".admin-help-rules:not(.admin-help-effective-use) li"))
         .hasText(helpItems.toArray(String[]::new));
-    ConfigurationPage.assertEffectiveUse(
+    AdminConfigurationPage.assertEffectiveUse(
         help,
         uiTexts,
         uiTexts.getAdminConfigEffectiveTwoFactorRule(),
@@ -2872,7 +2872,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   }
 
   private void assertTwoFactorTimingAndClose(Locator help, String timing) {
-    ConfigurationPage.assertEffectiveUse(
+    AdminConfigurationPage.assertEffectiveUse(
         help, uiTexts, timing, uiTexts.getAdminConfigEffectiveTwoFactorExisting());
     browserPage.keyboard().press("Escape");
 

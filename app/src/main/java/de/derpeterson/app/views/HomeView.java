@@ -1,6 +1,6 @@
 package de.derpeterson.app.views;
 
-import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_PORTAL;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.StyleSheet;
@@ -24,8 +24,8 @@ import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.base.TrackedUserAppLayout;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
-import de.derpeterson.app.ui.components.PortalContentComponent;
 import de.derpeterson.app.ui.components.PortalHomeComponent;
+import de.derpeterson.app.ui.components.PortalSidebarPageLayout;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
@@ -42,7 +42,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class HomeView extends TrackedUserAppLayout implements AfterNavigationObserver {
 
   private final transient ConfigService configService;
-  private PortalContentComponent homePortalContentComponent;
+  private PortalSidebarPageLayout homePortalContentComponent;
   private PortalHomeComponent portalHomeComponent;
 
   private final Span homeTitleSpan = new Span();
@@ -91,7 +91,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
 
     portalHomeComponent = new PortalHomeComponent(messageProperties);
     homePortalContentComponent =
-        new PortalContentComponent(
+        new PortalSidebarPageLayout(
             messageProperties,
             currentUser,
             AppRoute.HOME,

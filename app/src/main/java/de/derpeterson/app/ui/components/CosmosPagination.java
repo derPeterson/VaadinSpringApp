@@ -65,7 +65,7 @@ public final class CosmosPagination extends HorizontalLayout {
     pageSizeSelector.setItems(pageSizes);
     pageSizeSelector.setValue(pageSizes.getFirst());
     pageSizeSelector.setAllowCustomValue(false);
-    PortalFields.styleChoice(pageSizeSelector, Object::toString, false);
+    CosmosComboBoxStyling.styleChoice(pageSizeSelector, Object::toString, false);
     pageSizeSelector.addClassName("portal-pagination-size");
     pageSizeSelector.setWidth("56px");
     pageSizeSelector.addValueChangeListener(event -> {

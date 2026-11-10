@@ -1,11 +1,11 @@
 package de.derpeterson.app.ui.components;
 
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_CARD;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADER;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.html.Div;

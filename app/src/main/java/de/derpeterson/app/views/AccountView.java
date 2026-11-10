@@ -2,7 +2,7 @@ package de.derpeterson.app.views;
 
 import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_SECTION_PARAMETER;
 import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_TAB_PARAMETER;
-import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_PORTAL;
 
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.StyleSheet;

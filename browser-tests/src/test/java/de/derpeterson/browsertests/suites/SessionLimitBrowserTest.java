@@ -15,8 +15,8 @@ import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.PersistentBrowserActor;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
@@ -33,7 +33,7 @@ import org.junit.jupiter.api.io.TempDir;
 @Tag("browser")
 @Feature("Gleichzeitige Sitzungen begrenzen")
 public class SessionLimitBrowserTest extends BrowserFixture {
-  private ConfigurationPage settings;
+  private AdminConfigurationPage settings;
   private String original;
   @TempDir Path profile;
 
@@ -43,7 +43,7 @@ public class SessionLimitBrowserTest extends BrowserFixture {
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
-    settings = new ConfigurationPage(browserPage);
+    settings = new AdminConfigurationPage(browserPage);
     settings.open(AdminConfigGroup.SECURITY);
     original = settings.value(uiTexts.getAdminConfigEntryMaxSessionsPerUser());
   }

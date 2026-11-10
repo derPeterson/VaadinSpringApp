@@ -1,7 +1,7 @@
 package de.derpeterson.app.ui.base;
 
 import static com.vaadin.flow.component.button.ButtonVariant.LUMO_TERTIARY_INLINE;
-import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_PORTAL;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
@@ -32,8 +32,8 @@ import de.derpeterson.app.ui.components.AccountHeaderActions;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCopyrightComponent;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
+import de.derpeterson.app.ui.components.PageContentLayout;
 import de.derpeterson.app.ui.components.PageFrameComponent;
-import de.derpeterson.app.ui.components.PortalPageComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.AdminView;
 import de.derpeterson.app.views.HomeView;
@@ -154,7 +154,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
   }
 
   protected final void setPortalPage(
-      Component header, PortalPageComponent content, ConfigService config) {
+      Component header, PageContentLayout content, ConfigService config) {
     setContent(
         new PageFrameComponent(
             header,

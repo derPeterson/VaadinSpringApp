@@ -41,9 +41,9 @@ import org.springframework.web.bind.annotation.RestController;
  * landen.
  */
 @RestController
-@RequestMapping(TwoFactorDocuments.PATH)
+@RequestMapping(TwoFactorDocumentsController.PATH)
 @RequiredArgsConstructor
-public class TwoFactorDocuments {
+public class TwoFactorDocumentsController {
   public static final String PATH = "/internal/two-factor";
   private final TwoFactorEnrollment twoFactorEnrollment;
   private final TwoFactorAuthorization twoFactorAuthorization;

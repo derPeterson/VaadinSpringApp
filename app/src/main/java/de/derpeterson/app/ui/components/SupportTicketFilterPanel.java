@@ -27,7 +27,7 @@ import de.derpeterson.app.service.SupportTicketFilter.Reading;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 
 /** Nativer Filterentwurf; erst Anwenden übernimmt ihn in die berechtigte Datenbankabfrage. */
-public final class SupportTicketFilterPanel extends AdminSidePanel {
+public final class SupportTicketFilterPanel extends AdminSidePanelDialog {
   private final transient MessageProperties messageProperties;
   private final ItemLabelGenerator<Status> statusLabels;
   private final CheckboxGroup<Status> statusFilter = new CheckboxGroup<>();
@@ -80,7 +80,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
       assignmentFilter.setValue(Assignment.ALL);
       readingFilter.setValue(Reading.ALL);
     });
-    resetFiltersButton.addClassNames(CosmosClasses.DELETE_BUTTON, "admin-user-filter-reset");
+    resetFiltersButton.addClassNames(CosmosCssClasses.DELETE_BUTTON, "admin-user-filter-reset");
     draftFilterCountBadge.addClassName("admin-user-active-filter-count");
     draftFilterCountBadge.setId("support-filter-draft-count");
 

@@ -1,10 +1,10 @@
 package de.derpeterson.app.ui.components;
 
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
-import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLAY;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -18,12 +18,12 @@ import de.derpeterson.app.i18n.MessageProperties;
 import java.util.List;
 
 /** Rechte, modal überlagerte Seitenleiste; native Fokus- und Escape-Bedienung bleibt erhalten. */
-public class AdminSidePanel extends Dialog {
+public class AdminSidePanelDialog extends Dialog {
   private final H2 panelTitleHeading = new H2();
   private final Span panelDescriptionSpan = new Span();
   private final Button closePanelButton = new Button(AppIcon.CLOSE_CIRCLE.create());
 
-  public AdminSidePanel(MessageProperties messageProperties, AppIcon panelAppIcon) {
+  public AdminSidePanelDialog(MessageProperties messageProperties, AppIcon panelAppIcon) {
     addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-drawer");
     getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
 

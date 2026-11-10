@@ -1,6 +1,6 @@
 package de.derpeterson.app.views.admin;
 
-import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.DELETE_BUTTON;
 
 import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.button.Button;
@@ -15,7 +15,7 @@ import com.vaadin.flow.function.SerializableRunnable;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
-import de.derpeterson.app.ui.components.AdminSidePanel;
+import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,7 +32,7 @@ final class AdminUserFilterBar extends VerticalLayout {
   private final Button cancelFilterChangesButton = new Button();
   private final Span activeFilterCountBadge = new Span();
   private final Span filterHintSpan = new Span();
-  private final AdminSidePanel filterSidePanel;
+  private final AdminSidePanelDialog filterSidePanel;
   private int activeFilterCount;
   private boolean wereFiltersApplied;
   private SerializableRunnable restoreFilterDraftAction = () -> {};
@@ -62,7 +62,7 @@ final class AdminUserFilterBar extends VerticalLayout {
     setWidthFull();
     addClassName("admin-user-filter-bar");
 
-    filterSidePanel = new AdminSidePanel(messageProperties, AppIcon.FILTER);
+    filterSidePanel = new AdminSidePanelDialog(messageProperties, AppIcon.FILTER);
     filterSidePanel.setId("admin-user-filter-panel");
     filterSidePanel.addClassName("admin-user-filter-drawer");
 

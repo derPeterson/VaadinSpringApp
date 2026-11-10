@@ -16,11 +16,11 @@ import de.derpeterson.browsertests.suites.LoginAttemptBrowserTest;
 import de.derpeterson.browsertests.suites.LoginLayoutBrowserTest;
 import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
 import de.derpeterson.browsertests.suites.NotificationInboxBrowserTest;
-import de.derpeterson.browsertests.suites.OperationsBrowserTest;
 import de.derpeterson.browsertests.suites.PasswordResetBrowserTest;
 import de.derpeterson.browsertests.suites.PresentationBrowserTest;
 import de.derpeterson.browsertests.suites.RegistrationBrowserTest;
 import de.derpeterson.browsertests.suites.RememberMeBrowserTest;
+import de.derpeterson.browsertests.suites.RestartAndSmtpBrowserTest;
 import de.derpeterson.browsertests.suites.SessionLimitBrowserTest;
 import de.derpeterson.browsertests.suites.SessionManagementBrowserTest;
 import de.derpeterson.browsertests.suites.SessionSecurityBrowserTest;
@@ -49,7 +49,7 @@ final class BrowserSuites {
               UserNotificationsBrowserTest.class,
               NotificationInboxBrowserTest.class,
               InfrastructureBrowserTest.class,
-              OperationsBrowserTest.class,
+              RestartAndSmtpBrowserTest.class,
               AuthenticationBrowserTest.class,
               RegistrationBrowserTest.class,
               ExternalLoginBrowserTest.class,
@@ -130,12 +130,12 @@ final class BrowserSuites {
               RememberMeBrowserTest.class);
       case "infrastructure" -> List.of(InfrastructureBrowserTest.class);
       case "https-night" -> List.of(InfrastructureBrowserTest.class, RememberMeBrowserTest.class);
-      case "operations" -> List.of(OperationsBrowserTest.class);
+      case "operations" -> List.of(RestartAndSmtpBrowserTest.class);
       case "configuration-follow-up" ->
           List.of(
               ConfigurationBrowserTest.class,
               SessionManagementBrowserTest.class,
-              OperationsBrowserTest.class);
+              RestartAndSmtpBrowserTest.class);
       case "configuration-field-help" ->
           List.of(
               ConfigurationBrowserTest.class,

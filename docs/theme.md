@@ -164,10 +164,11 @@ Umstellung vor.
 verwenden `cosmos-reference-portal`. Der gemeinsame Rahmen aller drei Einstiegsbereiche ist `PageFrameComponent`:
 Der Servicekopf liegt in `.cosmos-frame-header` und bleibt beim Scrollen oben.
 Seitenüberschrift, optionale Seitennavigation, Inhalt und Copyrightzeile scrollen
-zusammen im Dokument. `PortalPageComponent` ordnet Überschrift und optionale
-Navigations-/Inhaltsspalten an. Besucher übergeben keine Seitennavigation.
-`PortalSidebarComponent` ergänzt im angemeldeten Portal die Identitätskarte;
-`PortalContentComponent` liefert die Startseiten- und Postfachinhalte.
+zusammen im Dokument. `PageContentLayout` ordnet Überschrift und optionale
+Navigations-/Inhaltsspalten im Portal, in der Administration und im Besucherbereich
+an. Der Besucherbereich verwendet das Layout ohne Seitennavigation.
+`PortalSidebarPageLayout` ergänzt auf Startseite und im Postfach die
+`PortalSidebarComponent` mit Identitätskarte sowie den Avatar-Dialog.
 
 Escape für die mobile Navigation wird nur innerhalb der Seitenleiste behandelt.
 Dialoge und Popovers behalten ihre native Escape-Bedienung. Lange Servicenamen im
@@ -182,7 +183,7 @@ Die gemeinsame Gestaltung und die mobilen Grenzen liegen in `cosmos-shell.css`.
 Die mobile Navigation überlagert den Inhalt unter dem Servicekopf, ohne die
 Formularspalten zu verschieben. Außenklick, Escape und Seitenwahl schließen sie.
 
-Wiederkehrende gemeinsame CSS-Klassen werden im Java-Code über `CosmosClasses`
+Wiederkehrende gemeinsame CSS-Klassen werden im Java-Code über `CosmosCssClasses`
 verwendet, etwa `REFERENCE_PORTAL`, `REFERENCE_OVERLAY`, `PANEL_ICON` und `DELETE_BUTTON`.
 Der Halter enthält ausschließlich Klassenbezeichner. Gestaltung, Farben, Größen
 und Zustände bleiben in den bestehenden CSS-Quellen; lokale Klassen bleiben bei
@@ -200,7 +201,7 @@ SVG und MIT-Lizenz liegen unter `icons/tabler/`, die Lucide-Dateien weiterhin un
 `icons/lucide/`. Der gemeinsame Baustein `AppIcon` kennt die Herkunft und liefert
 für beide native `SvgIcon`-Komponenten. Es wird keine zusätzliche Iconbibliothek eingebunden.
 
-Feldlabels erfassen nur Feldhosts, keine Buttonlabels. `PortalFields` erhält
+Feldlabels erfassen nur Feldhosts, keine Buttonlabels. `CosmosComboBoxStyling` erhält
 native ComboBox-Bedienung und ergänzt die Referenzdarstellung von Punkt und Haken;
 Seitengrößen erhalten keinen dekorativen Punkt.
 
@@ -581,7 +582,7 @@ Statusicons haben keine negativen Badge-Ränder und halten den Referenzabstand
 zum Text ein. Der Aktualisieren-Button meldet erst nach vollständigem Neuladen
 Erfolg. Ein Ladefehler erzeugt eine globale Fehlermeldung; automatische interne
 Aktualisierungen ergänzen keine Erfolgsmeldung.
-`AdminUserFilterBar` öffnet `AdminSidePanel` rechts über der Oberfläche. Suche,
+`AdminUserFilterBar` öffnet `AdminSidePanelDialog` rechts über der Oberfläche. Suche,
 Aktivschalter, Status- und Rollenmehrfachwahl sowie Aktivitätsgrenze sind ein
 Entwurf: Nur Anwenden übernimmt einen unveränderlichen Filterstand. Zurücksetzen
 ändert den Entwurf; Abbrechen, Außenklick und Escape stellen ihn wieder her.
@@ -598,7 +599,7 @@ zusätzlichen JavaScript-Klickhandler. Die lokale Regel steht in
 `cosmos-admin-reference.css`.
 
 Alle Konfigurationsgruppen behalten ihre vorhandenen Eingaben und Validierung.
-Die rechte Feldhilfe nutzt `AdminSidePanel` im kompakten Referenzaufbau: fester
+Die rechte Feldhilfe nutzt `AdminSidePanelDialog` im kompakten Referenzaufbau: fester
 Kopf „Feldhilfe“ mit Unterzeile, Gruppenname, Feldtitel, Beschreibung, geteilte
 Standardwertzeile und vollständige Eingaberegeln. Bei Copyright stehen die zulässigen
 Platzhalter mit Erklärung vor dem Standardwert. Vertrauliche Standardwerte bleiben
@@ -606,7 +607,7 @@ verdeckt. Die Feldhilfe ist bis zu 380 px breit. Der Schließen-Button füllt di
 Copyrightbereich begrenzen die Leiste; beim Scrollen und bei Größenänderung werden
 die Grenzen aktualisiert. Ein nicht sichtbarer Seitenfooter reserviert keinen Abstand.
 Feldhilfe und Benutzerfilter enden auf Desktop am rechten Rand der Inhaltsspalte,
-auch auf breiten Bildschirmen. Dafür misst `AdminSidePanel` die aktuelle Inhaltskante
+auch auf breiten Bildschirmen. Dafür misst `AdminSidePanelDialog` die aktuelle Inhaltskante
 und setzt `--admin-drawer-right`. Unterhalb der Desktopnavigation bleibt der Rand
 am Viewport.
 Es gibt keine behauptete Livevalidierung oder Speicherung durch die Hilfe.
@@ -900,7 +901,7 @@ markiert die Auswahl.
 `admin-duration-step` gestaltet die Schaltflächen an der präzisen Vaadin-Zahleneingabe.
 Konfigurationsfelder mit externem Label blenden die leere interne Labelzeile aus,
 damit beide Spalten dieselbe Ober- und Unterkante haben.
-Jede Feldhilfe in der Konfiguration verwendet `AdminSidePanel.addEffectiveUse`
+Jede Feldhilfe in der Konfiguration verwendet `AdminSidePanelDialog.addEffectiveUse`
 für die kurze Liste unter „Wann gilt die Änderung?“. Neustarthinweise nutzen die
 gelbe gemeinsame Warnbox in der Feldhilfe.
 
@@ -1035,7 +1036,7 @@ Feld-, Dialog- und Buttonregeln bleiben die Grundlage. Anbieterbuttons verwenden
 die offiziellen Google-/Microsoft-Markenressourcen unter `icons/external-login/`
 und eine begrenzte Abweichung für das Anbieterbranding.
 
-Anmeldung und Registrierung verwenden `PublicAuthenticationPanels` für das lokale
+Anmeldung und Registrierung verwenden `PublicAuthenticationPanelLayout` für das lokale
 Formular und den optionalen eigenständigen Schnellzugang. `ExternalLoginButtons`
 liefert in seiner Paneldarstellung Kicker, Überschrift, Erklärung und „Mit … fortfahren“.
 `.public-auth-panels--external` ordnet das lokale Formular, den Trenner und den
@@ -1104,7 +1105,7 @@ und bei deaktivierten Anbietern den Erhalt bestehender Sitzungen. Ungespeicherte
 Formularänderungen ändern diese Statusanzeige nicht. Die Statusanzeigen bleiben
 auch mit Tastaturfokus lesbar. Client-ID, Client-Secret
 und Freigabe haben rechts einen `ConfigInfoButton`. Ein Klick öffnet die bestehende
-`AdminSidePanel`-Feldhilfe mit anbieterspezifischer Erklärung und Eingaberegeln.
+`AdminSidePanelDialog`-Feldhilfe mit anbieterspezifischer Erklärung und Eingaberegeln.
 Geheimniswerte werden dabei weder angezeigt noch zurückgeladen. Die Hilfe und
 Status-Tooltips folgen dem Sprachwechsel. Der Tabinhalt beginnt mit „Einrichtungsassistent“
 in 11 px bei Gewicht 600 und dem Lucide-`bot`-Icon, einer Anbieterüberschrift
@@ -1151,7 +1152,7 @@ Vaadin den bereits ausgewählten Feldwert ebenso aktualisiert wie die Auswahllis
 
 ## Zwei-Faktor-Bereiche
 
-Die gemeinsame Klasse `cosmos-panel-tabs` (`CosmosClasses.PANEL_TABS`) gestaltet
+Die gemeinsame Klasse `cosmos-panel-tabs` (`CosmosCssClasses.PANEL_TABS`) gestaltet
 die nativen Ticket-`Tabs` und die `TabSheet`-Leisten der Anmeldeanbieter sowie der
 2FA-Rollen. Die gemeinsamen Regeln stehen in `cosmos-provider-settings.css`:
 48 px Höhe, mindestens 168 px Breite auf Desktop, abgerundete obere Ecken und
@@ -1182,7 +1183,7 @@ Inaktivitätsdauer verwenden die 40 px hohen Eingabeflächen
 der Konfiguration mit externen Feldlabels und 6 px Abstand. Die Regelauswahl
 verwendet eine native `ComboBox` mit dem gemeinsamen Optionsstil der Pagination
 und der nativen Platzierung des Auswahlmenüs am Feld.
-Die Feldhilfe nutzt `ConfigInfoButton` und `AdminSidePanel` mit demselben Aufbau
+Die Feldhilfe nutzt `ConfigInfoButton` und `AdminSidePanelDialog` mit demselben Aufbau
 wie die allgemeine Konfiguration. Sie zeigt Gruppe, Feldtitel, Beschreibung,
 Standardwert aus der 2FA-Standardrichtlinie und die Eingaberegeln als Liste.
 
@@ -1356,7 +1357,7 @@ mit den vorhandenen Panelklassen. Der Kopf verwendet `HorizontalLayout`,
 links `list` im gemeinsamen `cosmos-panel-icon`-Rahmen und den Titel
 mit `cosmos-panel-title`. Darunter steht eine eigene native `HorizontalLayout`-
 Werkzeugleiste mit dem vorhandenen Aktualisieren-Button rechts, vor dem ersten Eintrag.
-Links öffnet ein nativer Filterbutton den bestehenden `AdminSidePanel`-Baustein.
+Links öffnet ein nativer Filterbutton den bestehenden `AdminSidePanelDialog`-Baustein.
 `SupportTicketFilterPanel` übernimmt die vorhandenen Klassen des Benutzerfilters:
 `admin-user-filter-drawer`, `admin-filter-tools`, `admin-user-filters` und
 `admin-filter-choices`. Oben steht die native `RadioButtonGroup` „Alle / Ungelesen“.

@@ -8,12 +8,12 @@ import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.service.UserAvatarService;
 import jakarta.servlet.http.HttpServletRequest;
 
-/** Portalrahmen für Bereiche außerhalb des eigenen Kontobinders. */
-public class PortalContentComponent extends PortalPageComponent {
+/** Portalrahmen mit der Konto-Seitennavigation für eigenständige Portalseiten. */
+public class PortalSidebarPageLayout extends PageContentLayout {
   private final PortalSidebarComponent portalSidebar;
   private final AccountAvatarDialog avatarDialog;
 
-  public PortalContentComponent(
+  public PortalSidebarPageLayout(
       MessageProperties messageProperties,
       UserEntity user,
       AppRoute route,
@@ -31,7 +31,7 @@ public class PortalContentComponent extends PortalPageComponent {
             PortalSidebarComponent.accountLinks(messageProperties),
             avatarDialog::open);
     portalSidebar.configureAvatars(avatars);
-    setPortalContent(pageHeadingComponent, portalSidebar, pageContentComponent);
+    setPageContent(pageHeadingComponent, portalSidebar, pageContentComponent);
     add(avatarDialog);
   }
 

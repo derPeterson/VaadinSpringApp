@@ -1,6 +1,6 @@
 package de.derpeterson.app.views;
 
-import static de.derpeterson.app.ui.components.CosmosClasses.STATUS_ICON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.STATUS_ICON;
 
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;

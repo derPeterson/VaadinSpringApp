@@ -14,7 +14,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 @Component
 @RequiredArgsConstructor
-public class UserRoleChanges {
+public class UserRoleChangeListener {
   private final UserNotificationService userNotificationService;
   private final UserRepository userRepository;
   private final UserRoleBroadcaster userRoleBroadcaster;

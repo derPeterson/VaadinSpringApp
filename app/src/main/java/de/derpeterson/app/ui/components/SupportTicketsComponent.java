@@ -471,7 +471,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     add(heading);
     ticketWorkspacePanel.setIcon(AppIcon.MESSAGES.create());
     ticketCategories.setId("support-ticket-categories");
-    ticketCategories.addClassName(CosmosClasses.PANEL_TABS);
+    ticketCategories.addClassName(CosmosCssClasses.PANEL_TABS);
     ticketCategories.setWidthFull();
     ticketCategories.addSelectedChangeListener(event -> {
       currentPage = 0;
@@ -487,11 +487,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private void buildAdminTicketQueue() {
-    queueHeading.addClassName(CosmosClasses.PANEL_TITLE);
+    queueHeading.addClassName(CosmosCssClasses.PANEL_TITLE);
     HorizontalLayout queueIconLayout = new HorizontalLayout(AppIcon.LIST.create());
     queueIconLayout.setPadding(false);
     queueIconLayout.setSpacing(false);
-    queueIconLayout.addClassName(CosmosClasses.PANEL_ICON);
+    queueIconLayout.addClassName(CosmosCssClasses.PANEL_ICON);
     HorizontalLayout queueHeaderLayout = new HorizontalLayout(queueIconLayout, queueHeading);
     queueHeaderLayout.setId("support-queue-header");
     queueHeaderLayout.setPadding(false);
@@ -500,7 +500,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     queueHeaderLayout.setAlignItems(Alignment.CENTER);
     queueHeaderLayout.setJustifyContentMode(JustifyContentMode.BETWEEN);
     queueHeaderLayout.setFlexGrow(1, queueHeading);
-    queueHeaderLayout.addClassName(CosmosClasses.PANEL_HEADER);
+    queueHeaderLayout.addClassName(CosmosCssClasses.PANEL_HEADER);
     configureAdminQueueFilter();
     HorizontalLayout queueToolsLayout = new HorizontalLayout(filterButton, reloadTicketsButton);
     queueToolsLayout.setId("support-queue-tools");
@@ -548,7 +548,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
             adminTicketScroll,
             queueFooterLayout);
     queuePanel.setId("support-queue-panel");
-    queuePanel.addClassNames(CosmosClasses.PANEL_CARD, "support-admin-list-panel");
+    queuePanel.addClassNames(CosmosCssClasses.PANEL_CARD, "support-admin-list-panel");
     adminQueueLayout.add(queuePanel);
     adminQueueLayout.setPadding(false);
     adminQueueLayout.addClassName("support-admin-queue");
@@ -582,7 +582,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   }
 
   private VerticalLayout buildAdminTicketHeader() {
-    adminSubject.addClassNames(CosmosClasses.PANEL_TITLE, "support-admin-subject");
+    adminSubject.addClassNames(CosmosCssClasses.PANEL_TITLE, "support-admin-subject");
     adminTicketNumber.addClassName("support-ticket-number");
     HorizontalLayout ticketMetadataLayout = new HorizontalLayout(adminTicketNumber, adminStatus);
     ticketMetadataLayout.setPadding(false);
@@ -604,7 +604,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     HorizontalLayout ticketIconLayout = new HorizontalLayout(AppIcon.LOCK_QUESTION.create());
     ticketIconLayout.setPadding(false);
     ticketIconLayout.setSpacing(false);
-    ticketIconLayout.addClassName(CosmosClasses.PANEL_ICON);
+    ticketIconLayout.addClassName(CosmosCssClasses.PANEL_ICON);
     toggleTicketFocusButton.setId("support-focus-toggle");
     toggleTicketFocusButton.addThemeVariants(ButtonVariant.LUMO_ICON);
     toggleTicketFocusButton
@@ -635,7 +635,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     ticketHeaderLayout.setSpacing(false);
     ticketHeaderLayout.setWidthFull();
     ticketHeaderLayout.setAlignItems(Alignment.STRETCH);
-    ticketHeaderLayout.addClassNames(CosmosClasses.PANEL_HEADER, "support-admin-ticket-header");
+    ticketHeaderLayout.addClassNames(CosmosCssClasses.PANEL_HEADER, "support-admin-ticket-header");
     return ticketHeaderLayout;
   }
 
@@ -690,13 +690,13 @@ public final class SupportTicketsComponent extends VerticalLayout {
     ticketDetailContentLayout.setWidthFull();
     ticketDetailContentLayout.addClassName("support-admin-detail-content");
     adminDetail.setId("support-ticket-panel");
-    adminDetail.addClassNames(CosmosClasses.PANEL_CARD, "support-admin-detail");
+    adminDetail.addClassNames(CosmosCssClasses.PANEL_CARD, "support-admin-detail");
     adminDetail.add(ticketHeader, adminTicketTools, ticketDetailContentLayout, adminActionFooter);
   }
 
   private VerticalLayout buildAdminDetailColumn() {
     noSelectionTitle.addClassName("cosmos-notification-empty-title");
-    selectTicketHintSpan.addClassName(CosmosClasses.PANEL_DESCRIPTION);
+    selectTicketHintSpan.addClassName(CosmosCssClasses.PANEL_DESCRIPTION);
     ticketSelectionPlaceholder.add(
         AppIcon.MOUSE_POINTER_CLICK.create(), noSelectionTitle, selectTicketHintSpan);
     ticketSelectionPlaceholder.setAlignItems(Alignment.CENTER);

@@ -1,8 +1,8 @@
 package de.derpeterson.app.ui.components;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
-import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.DELETE_BUTTON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
 
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.badge.BadgeVariant;

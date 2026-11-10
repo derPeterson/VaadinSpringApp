@@ -17,11 +17,11 @@ import com.microsoft.playwright.options.ForcedColors;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
 import de.derpeterson.browsertests.pages.AdminNavigation;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -238,7 +238,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       "Alle fünf Boolean-Einstellungen der Sicherheits- und SMTP-Gruppen auf Desktop und Smartphone vermessen: Text links, Switch rechts, Info außerhalb. Label und Schalter schalten denselben Zustand. Der Marker bleibt innerhalb der Bahn vertikal zentriert. Keine Einstellung wird gespeichert.")
   void configurationSwitchGeometryAndBothClickTargets() {
     signIn();
-    ConfigurationPage settings = new ConfigurationPage(browserPage);
+    AdminConfigurationPage settings = new AdminConfigurationPage(browserPage);
     for (int width : new int[] {1280, 390}) {
       browserPage.setViewportSize(width, 900);
       int checkedFields = 0;

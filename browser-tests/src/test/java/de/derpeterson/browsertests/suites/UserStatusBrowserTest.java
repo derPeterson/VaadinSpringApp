@@ -12,8 +12,8 @@ import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.TokenConfigurationPage;
 import de.derpeterson.browsertests.pages.UiActions;
@@ -107,14 +107,14 @@ public class UserStatusBrowserTest extends BrowserFixture {
       """)
   void automaticAbsenceAndReturnRespectManualStatus() {
     String email = createUser();
-    ConfigurationPage configurationPage = new ConfigurationPage(browserPage);
-    configurationPage.open(AdminConfigGroup.USER_STATUS);
+    AdminConfigurationPage adminConfigurationPage = new AdminConfigurationPage(browserPage);
+    adminConfigurationPage.open(AdminConfigGroup.USER_STATUS);
     String label = uiTexts.getAdminConfigEntryUserAutoAbsentTimeout();
     TokenConfigurationPage durations = new TokenConfigurationPage(browserPage);
     String original = durations.value(label);
     try {
       durations.enter(label, "PT10S");
-      configurationPage.save();
+      adminConfigurationPage.save();
       try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
         browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
         new UserMenu(browserActor.browserPage).selectTestLanguage();
@@ -142,9 +142,9 @@ public class UserStatusBrowserTest extends BrowserFixture {
         menu.expect(uiTexts.getUserStatusAbsent());
       }
     } finally {
-      configurationPage.open(AdminConfigGroup.USER_STATUS);
+      adminConfigurationPage.open(AdminConfigGroup.USER_STATUS);
       durations.enter(label, original);
-      configurationPage.save();
+      adminConfigurationPage.save();
     }
   }
 

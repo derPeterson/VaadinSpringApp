@@ -1,7 +1,7 @@
 package de.derpeterson.app.views;
 
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
-import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_CARD;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_PORTAL;
 
 import com.vaadin.flow.component.AttachEvent;
 import com.vaadin.flow.component.dependency.StyleSheet;
@@ -23,7 +23,7 @@ import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
-import de.derpeterson.app.ui.components.PortalContentComponent;
+import de.derpeterson.app.ui.components.PortalSidebarPageLayout;
 import de.derpeterson.app.ui.components.UserNotificationsPanel;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.PermitAll;
@@ -38,7 +38,7 @@ import org.springframework.security.access.AccessDeniedException;
 @PermitAll
 public class UserNotificationsView extends IsAuthenticatedBaseView {
   private final UserNotificationsPanel notificationInboxPanel;
-  private final PortalContentComponent notificationsPortalContentComponent;
+  private final PortalSidebarPageLayout notificationsPortalContentComponent;
   private final Span portalBreadcrumbSpan = new Span();
   private final Span notificationsTitleSpan = new Span();
   private final Span notificationsDescriptionSpan = new Span();
@@ -76,7 +76,7 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     CosmosCardComponent inboxCardComponent = new CosmosCardComponent(notificationInboxPanel);
     inboxCardComponent.addClassNames(PANEL_CARD, "cosmos-notification-inbox-card");
     notificationsPortalContentComponent =
-        new PortalContentComponent(
+        new PortalSidebarPageLayout(
             messageProperties,
             currentUser,
             AppRoute.NOTIFICATIONS,

@@ -1,6 +1,6 @@
 package de.derpeterson.app.ui.components;
 
-import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_PORTAL;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
@@ -137,8 +137,8 @@ public class PublicPageComponent extends PageFrameComponent {
       pageCardsLayout.add(new PublicHomeComponent(messageProperties));
     }
 
-    PortalPageComponent publicPageLayout =
-        new PortalPageComponent(pageHeadingDiv, null, pageCardsLayout);
+    PageContentLayout publicPageLayout =
+        new PageContentLayout(pageHeadingDiv, null, pageCardsLayout);
     publicPageLayout.addClassName("public-main");
     setFrameContent(
         publicHeaderDiv,

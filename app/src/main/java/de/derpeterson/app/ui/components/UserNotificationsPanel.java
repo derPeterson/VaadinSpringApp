@@ -1,13 +1,13 @@
 package de.derpeterson.app.ui.components;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
-import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
-import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.DELETE_BUTTON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADER;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLAY;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
@@ -314,7 +314,7 @@ public class UserNotificationsPanel extends Div {
     inboxPagingDiv.addClassName("cosmos-notification-inbox-pagination");
     pageSize.setId("notifications-inbox-page-size");
     pageSize.addClassName("portal-page-size");
-    PortalFields.styleChoice(pageSize, Object::toString, false);
+    CosmosComboBoxStyling.styleChoice(pageSize, Object::toString, false);
     pageSize.setItems(10, 20, 50);
     pageSize.setValue(10);
     pageSize.setAllowCustomValue(false);

@@ -18,11 +18,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.security.access.AccessDeniedException;
 
-class TwoFactorDocumentsTest {
+class TwoFactorDocumentsControllerTest {
   private final TwoFactorEnrollment twoFactorEnrollment = mock(TwoFactorEnrollment.class);
   private final CustomI18NProvider i18n = new CustomI18NProvider();
-  private final TwoFactorDocuments documents =
-      new TwoFactorDocuments(
+  private final TwoFactorDocumentsController documents =
+      new TwoFactorDocumentsController(
           twoFactorEnrollment,
           mock(TwoFactorAuthorization.class),
           mock(ConfigService.class),

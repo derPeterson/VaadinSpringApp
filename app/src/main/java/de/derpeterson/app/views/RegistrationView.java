@@ -46,8 +46,8 @@ import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
-import de.derpeterson.app.ui.components.PortalFields;
-import de.derpeterson.app.ui.components.PublicAuthenticationPanels;
+import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
+import de.derpeterson.app.ui.components.PublicAuthenticationPanelLayout;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.EmailConflict;
@@ -188,8 +188,8 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
             existingAccountLinkLayout,
             submitRegistrationButton);
 
-    PublicAuthenticationPanels registrationPanels =
-        new PublicAuthenticationPanels(
+    PublicAuthenticationPanelLayout registrationPanels =
+        new PublicAuthenticationPanelLayout(
             registrationCardComponent,
             externalLoginFlow,
             httpServletRequest,
@@ -467,7 +467,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     genderComboBox.setWidthFull();
     genderComboBox.setItems(Gender.MALE, Gender.FEMALE, Gender.OTHER);
     genderComboBox.setItemLabelGenerator(this::formatGenderLabel);
-    PortalFields.styleChoice(genderComboBox, this::formatGenderLabel, true);
+    CosmosComboBoxStyling.styleChoice(genderComboBox, this::formatGenderLabel, true);
 
     this.birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
     birthDatePicker.setAutoOpen(false);

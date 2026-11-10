@@ -69,7 +69,7 @@ final class TwoFactorCodeInput extends VerticalLayout {
       resetFields();
       refreshSelectedCodeInput();
     });
-    codeEntryHintSpan.addClassName(CosmosClasses.PANEL_DESCRIPTION);
+    codeEntryHintSpan.addClassName(CosmosCssClasses.PANEL_DESCRIPTION);
     codeFieldsLayout.setId(inputId);
     codeFieldsLayout.addClassName("two-factor-confirmation-input");
     codeFieldsLayout.getElement().setAttribute("role", "tabpanel");

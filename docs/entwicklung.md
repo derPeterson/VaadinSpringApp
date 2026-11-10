@@ -493,9 +493,27 @@ sowie Oracles [Leitfaden zur Sichtbarkeit](https://docs.oracle.com/javase/tutori
 ### Namen und Methodenaufgaben
 
 Klassennamen verbinden die fachliche Zuständigkeit mit der Art des Bausteins,
-etwa `ResetPasswordView` oder `AccountSessionsComponent`. Methodennamen benennen
-die Aktion und die Art ihres Ziels oder Ergebnisses, etwa `closeAccountDialog()`
-oder `buildAccountHeaderLayout()`. Das soll auch am Aufruf erkennbar sein.
+etwa `ResetPasswordView` oder `AccountSessionsComponent`. Der Einsatz im Code
+bestimmt den Bereichspräfix.
+
+| Namensbestandteil | Verwendung |
+| --- | --- |
+| `Admin` | Aufgabe der Administration, etwa `AdminExternalProviderSettingsSection`. |
+| `Portal` | Aufgabe des angemeldeten Benutzerportals, etwa `PortalSidebarPageLayout`. |
+| `Public` | Aufgabe im Besucherbereich, etwa `PublicAuthenticationPanelLayout`. |
+| `Cosmos` | Gemeinsame Gestaltung im Cosmos-Theme, etwa `CosmosComboBoxStyling` oder `CosmosCssClasses`. |
+| `Page` am Anfang | Bereichsübergreifender Seitenaufbau oder Seitennavigation, etwa `PageContentLayout` oder `PageNavigationComponent`. |
+| `Page` am Ende | Page Object für Browsertests, etwa `AccountPage` oder `AdminConfigurationPage`. |
+
+Bei bereichsübergreifenden Bausteinen den tatsächlichen gemeinsamen Zweck nennen.
+Für die Art des Bausteins den passenden Zusatz verwenden, etwa `Layout`, `Dialog`,
+`Controller` oder `Listener`. Bei Umbenennungen auch Klassennamen in Zeichenketten
+und Dokumentationsverweise prüfen. Die Browsertest-Auswahl und ihre
+Laufzeitgewichte stehen in `BrowserSuites` und `BrowserExecutionPlan`.
+
+Methodennamen benennen die Aktion und die Art ihres Ziels oder Ergebnisses,
+etwa `closeAccountDialog()` oder `buildAccountHeaderLayout()`. Das soll auch am
+Aufruf erkennbar sein.
 
 **Namen enthalten Zweck und Typ.** Felder, Konstruktorparameter, andere
 Methodenparameter und lokale Variablen enthalten den Typnamen, etwa

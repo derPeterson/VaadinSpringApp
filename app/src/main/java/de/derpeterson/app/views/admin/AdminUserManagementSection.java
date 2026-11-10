@@ -1,14 +1,14 @@
 package de.derpeterson.app.views.admin;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
-import static de.derpeterson.app.ui.components.CosmosClasses.DELETE_BUTTON;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_CARD;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_DESCRIPTION;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADER;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_HEADING;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_TITLE;
-import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_OVERLAY;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.DELETE_BUTTON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_CARD;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_DESCRIPTION;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADER;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADING;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLAY;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.badge.Badge;
@@ -65,10 +65,10 @@ import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
-import de.derpeterson.app.ui.components.PortalFields;
 import de.derpeterson.app.validation.EmailConflict;
 import de.derpeterson.app.validation.UserInputRules;
 import java.io.IOException;
@@ -910,7 +910,8 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       genderComboBox = new ComboBox<>(messageProperties.getRegistrationGenderCombobox());
       genderComboBox.setItems(Gender.values());
-      PortalFields.styleChoice(genderComboBox, AdminUserManagementSection.this::formatGender, true);
+      CosmosComboBoxStyling.styleChoice(
+          genderComboBox, AdminUserManagementSection.this::formatGender, true);
       genderComboBox.setPlaceholder(messageProperties.getAccountGenderPlaceholder());
       genderComboBox.setWidthFull();
       genderComboBox.setClearButtonVisible(true);

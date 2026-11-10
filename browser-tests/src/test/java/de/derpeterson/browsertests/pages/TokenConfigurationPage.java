@@ -19,17 +19,20 @@ public final class TokenConfigurationPage {
 
   @Step("Token-Laufzeiten über die Adminnavigation öffnen")
   public void open() {
-    new ConfigurationPage(browserPage).open(de.derpeterson.app.config.AdminConfigGroup.TOKENS);
+    new AdminConfigurationPage(browserPage).open(de.derpeterson.app.config.AdminConfigGroup.TOKENS);
 
     assertThat(button(uiTexts.getAdminConfigSave())).isVisible();
   }
 
   public Locator field(String label) {
-    return new ConfigurationPage(browserPage).duration(label).locator("vaadin-big-decimal-field");
+    return new AdminConfigurationPage(browserPage)
+        .duration(label)
+        .locator("vaadin-big-decimal-field");
   }
 
   public String value(String label) {
-    java.math.BigDecimal tokenDurationSeconds = new ConfigurationPage(browserPage).seconds(label);
+    java.math.BigDecimal tokenDurationSeconds =
+        new AdminConfigurationPage(browserPage).seconds(label);
     java.math.BigInteger[] secondsAndNanoseconds =
         tokenDurationSeconds
             .movePointRight(9)
@@ -52,7 +55,7 @@ public final class TokenConfigurationPage {
         java.math.BigDecimal.valueOf(tokenDuration.getSeconds())
             .add(java.math.BigDecimal.valueOf(tokenDuration.getNano(), 9));
 
-    new ConfigurationPage(browserPage).enterSeconds(label, tokenDurationSeconds);
+    new AdminConfigurationPage(browserPage).enterSeconds(label, tokenDurationSeconds);
   }
 
   @Step("Dauer ablehnen und lokalisierten Feldfehler prüfen")
@@ -83,7 +86,7 @@ public final class TokenConfigurationPage {
 
   @Step("Mindestdauer und Erklärung im neuen Klick-Tooltip prüfen")
   public void explain(String label, long minutes, String explanation) {
-    new ConfigurationPage(browserPage)
+    new AdminConfigurationPage(browserPage)
         .explain(label, explanation, uiTexts.getAdminConfigValidationDurationMinimum(minutes));
   }
 

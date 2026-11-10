@@ -31,13 +31,13 @@ import de.derpeterson.app.security.mfa.TwoFactorMode;
 import de.derpeterson.app.security.mfa.TwoFactorPolicies;
 import de.derpeterson.app.security.mfa.TwoFactorPolicy;
 import de.derpeterson.app.ui.components.AdminDurationField;
-import de.derpeterson.app.ui.components.AdminSidePanel;
+import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
-import de.derpeterson.app.ui.components.CosmosClasses;
+import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
-import de.derpeterson.app.ui.components.PortalFields;
 import de.derpeterson.app.ui.components.TwoFactorActionDialog;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
@@ -95,7 +95,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   private final Span developmentWarningSpan = new Span();
   private final Button reloadPolicyButton = new Button();
   private final Button savePolicyButton = new Button();
-  private final AdminSidePanel fieldHelpPanel;
+  private final AdminSidePanelDialog fieldHelpPanel;
   private final Button closeFieldHelpButton = new Button();
   private final TwoFactorActionDialog twoFactorConfirmationDialog;
   private TwoFactorPolicies.Snapshot twoFactorPolicySnapshot;
@@ -123,7 +123,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     twoFactorConfirmationDialog =
         new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, httpServletRequest);
 
-    fieldHelpPanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
+    fieldHelpPanel = new AdminSidePanelDialog(messageProperties, AppIcon.INFO_CIRCLE);
     fieldHelpPanel.addClassName("admin-config-help");
     fieldHelpPanel.setId("two-factor-field-help");
     closeFieldHelpButton.setWidthFull();
@@ -131,18 +131,18 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     closeFieldHelpButton.addClickListener(_ -> fieldHelpPanel.close());
     fieldHelpPanel.getFooter().add(closeFieldHelpButton);
 
-    twoFactorPolicyHeadingH2.addClassName(CosmosClasses.PANEL_TITLE);
-    twoFactorPolicyDescriptionSpan.addClassName(CosmosClasses.PANEL_DESCRIPTION);
+    twoFactorPolicyHeadingH2.addClassName(CosmosCssClasses.PANEL_TITLE);
+    twoFactorPolicyDescriptionSpan.addClassName(CosmosCssClasses.PANEL_DESCRIPTION);
     Div policyPanelHeadingDiv = new Div(twoFactorPolicyHeadingH2, twoFactorPolicyDescriptionSpan);
-    policyPanelHeadingDiv.addClassName(CosmosClasses.PANEL_HEADING);
+    policyPanelHeadingDiv.addClassName(CosmosCssClasses.PANEL_HEADING);
     Div policyIconDiv = new Div(AppIcon.SHIELD_KEYHOLE.create());
-    policyIconDiv.addClassName(CosmosClasses.PANEL_ICON);
+    policyIconDiv.addClassName(CosmosCssClasses.PANEL_ICON);
     Div policyPanelHeaderDiv = new Div(policyIconDiv, policyPanelHeadingDiv);
-    policyPanelHeaderDiv.addClassNames(CosmosClasses.PANEL_HEADER, "mfa-settings-header");
+    policyPanelHeaderDiv.addClassNames(CosmosCssClasses.PANEL_HEADER, "mfa-settings-header");
 
     TabSheet roleTabSheet = new TabSheet();
     roleTabSheet.setId("two-factor-role-tabs");
-    roleTabSheet.addClassName(CosmosClasses.PANEL_TABS);
+    roleTabSheet.addClassName(CosmosCssClasses.PANEL_TABS);
     roleTabSheet.setWidthFull();
     roleTabSheet.addThemeVariants(TabSheetVariant.NO_PADDING);
     for (RoleType role : RoleType.values()) {
@@ -249,7 +249,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     developmentPauseSwitch.setId("two-factor-development-pause");
     developmentGoogleConfirmationSwitch.setId("two-factor-development-google");
     developmentOptionsTitleSpan.addClassName("provider-kicker");
-    developmentWarningSpan.addClassName(CosmosClasses.PANEL_DESCRIPTION);
+    developmentWarningSpan.addClassName(CosmosCssClasses.PANEL_DESCRIPTION);
     Div developmentOptionsDiv =
         new Div(
             developmentOptionsTitleSpan,
@@ -281,7 +281,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
 
     CosmosCardComponent policyCardComponent =
         new CosmosCardComponent(policyPanelHeaderDiv, policyPanelBodyDiv, policyPanelFooterDiv);
-    policyCardComponent.addClassName(CosmosClasses.PANEL_CARD);
+    policyCardComponent.addClassName(CosmosCssClasses.PANEL_CARD);
     add(policyCardComponent, fieldHelpPanel, twoFactorConfirmationDialog);
     refreshTexts();
   }
@@ -304,7 +304,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       ruleModeComboBox.setWidthFull();
       ruleModeComboBox.setItems(TwoFactorMode.values());
       ruleModeComboBox.setAllowCustomValue(false);
-      PortalFields.styleChoice(ruleModeComboBox, this::modeLabel, false);
+      CosmosComboBoxStyling.styleChoice(ruleModeComboBox, this::modeLabel, false);
       ruleModeComboBox.addValueChangeListener(event -> {
         if (event.getValue() == null && event.getOldValue() != null) {
           ruleModeComboBox.setValue(event.getOldValue());
@@ -395,7 +395,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     Span guideTitleSpan = new Span();
     guideTitleSpan.addClassName("mfa-guide-item-title");
     Span guideDescriptionSpan = new Span();
-    guideDescriptionSpan.addClassName(CosmosClasses.PANEL_DESCRIPTION);
+    guideDescriptionSpan.addClassName(CosmosCssClasses.PANEL_DESCRIPTION);
 
     fieldTextRefreshActions.add(() -> {
       guideTitleSpan.setText(guideTitleTextSupplier.get());

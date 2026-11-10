@@ -12,9 +12,9 @@ import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.BrowserTestRunner;
 import de.derpeterson.browsertests.mail.MailpitInbox;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Tag("browser")
 @Feature("Isolierter Wiederanlauf und SMTP-Betrieb")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class OperationsBrowserTest extends BrowserFixture {
+public class RestartAndSmtpBrowserTest extends BrowserFixture {
   @Order(1)
   @Test
   @Tag("configuration-follow-up")
@@ -52,7 +52,7 @@ public class OperationsBrowserTest extends BrowserFixture {
       **Erwartet:** Neue SMTP-Verbindungen greifen auf den gespeicherten Stand zu. Konten und Einstellungen bleiben nach einem Neustart erhalten.
       """)
   void persistedConfigurationAndAccountsSurviveRestartWithoutBootstrap() throws Exception {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     AdminUsersPage users = new AdminUsersPage(browserPage);
     users.open();
     String email = "restart-" + UUID.randomUUID() + "@example.test";
@@ -112,7 +112,7 @@ public class OperationsBrowserTest extends BrowserFixture {
       **Erwartet:** Begrenzte echte Transportversuche, keine doppelte oder terminal erneuerte Zustellung.
       """)
   void realConnectionFailureRecoversOnceOrRemainsTerminal(boolean recover) throws Exception {
-    ConfigurationPage settings = admin();
+    AdminConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.QUEUE);
     String label = uiTexts.getAdminConfigEntryEmailQueueMaxRetry();
     String original = settings.value(label);
@@ -230,12 +230,12 @@ public class OperationsBrowserTest extends BrowserFixture {
         new BrowserContext.WaitForConditionOptions().setTimeout(timeout));
   }
 
-  private ConfigurationPage admin() {
+  private AdminConfigurationPage admin() {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
-    return new ConfigurationPage(browserPage);
+    return new AdminConfigurationPage(browserPage);
   }
 }

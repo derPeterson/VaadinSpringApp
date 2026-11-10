@@ -55,9 +55,9 @@ import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.components.PageContentLayout;
 import de.derpeterson.app.ui.components.PageFrameComponent;
 import de.derpeterson.app.ui.components.PageNavigationComponent;
-import de.derpeterson.app.ui.components.PortalPageComponent;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
@@ -250,8 +250,8 @@ class AdminViewNavigationTest {
   @Test
   void sharedFrameKeepsHeadingAndNavigationInContentAndClosesMobileNavigationOnSelection() {
     assertInstanceOf(PageFrameComponent.class, adminView.getContent());
-    PortalPageComponent page =
-        (PortalPageComponent) ReflectionTestUtils.getField(adminView, "adminPortalPageComponent");
+    PageContentLayout page =
+        (PageContentLayout) ReflectionTestUtils.getField(adminView, "adminPageContentLayout");
     Component heading = (Component) ReflectionTestUtils.getField(adminView, "adminHeadingDiv");
 
     assertSame(page, heading.getParent().orElseThrow());
@@ -348,7 +348,7 @@ class AdminViewNavigationTest {
       VerticalLayout layout = getAdminSectionContentLayout();
 
       assertSame(
-          ReflectionTestUtils.getField(adminView, "externalLoginSection"),
+          ReflectionTestUtils.getField(adminView, "externalProviderSettingsSection"),
           layout.getComponentAt(0));
       verify(externalProviderSettings).load("google");
       verify(externalProviderSettings).load("microsoft");

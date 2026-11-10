@@ -23,9 +23,9 @@ import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
+import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminNavigation;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
-import de.derpeterson.browsertests.pages.ConfigurationPage;
 import de.derpeterson.browsertests.pages.ForgotPasswordPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
@@ -177,20 +177,20 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       """)
   void copyrightCanBeConfiguredThroughTheUi() {
     String homePrimary = primary(browserPage, "html");
-    ConfigurationPage configurationPage = adminConfig();
+    AdminConfigurationPage adminConfigurationPage = adminConfig();
 
     assertEquals(homePrimary, primary(browserPage, "html"));
     assertThat(browserPage.locator(".cosmos-app-shell.cosmos-theme")).isVisible();
     assertEquals("#38bdf8", primary(browserPage, ".cosmos-page-frame"));
     String label = uiTexts.getAdminConfigEntryCopyrightText();
-    String original = configurationPage.value(label);
+    String original = adminConfigurationPage.value(label);
     String template = "© {year} {serviceName} · <b>Browser-Test</b>";
     try {
-      configurationPage.enter(label, template);
-      configurationPage.save();
-      configurationPage.reload();
+      adminConfigurationPage.enter(label, template);
+      adminConfigurationPage.save();
+      adminConfigurationPage.reload();
 
-      assertEquals(template, configurationPage.value(label));
+      assertEquals(template, adminConfigurationPage.value(label));
       new UserMenu(browserPage).signOut();
       Locator footer = browserPage.locator(".cosmos-footer");
 
@@ -214,7 +214,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       forgotPasswordPage.requestedResponse();
       inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email));
     } finally {
-      ConfigurationPage restore = adminConfig();
+      AdminConfigurationPage restore = adminConfig();
       restore.enter(label, original);
       restore.save();
     }
@@ -329,7 +329,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     }
     AllurePlaywright.attachScreenshot(id + " Adminnavigation", browserPage);
     openDrawerIfNeeded();
-    new ConfigurationPage(browserPage).open(AdminConfigGroup.GENERAL);
+    new AdminConfigurationPage(browserPage).open(AdminConfigGroup.GENERAL);
     closeOverlayDrawerIfNeeded();
     assertWithinViewport(browserPage.locator(".cosmos-admin-form-card"));
     assertAppShell();
@@ -384,7 +384,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       }
     }
     browserPage.navigate(path(ADMIN_ROUTE));
-    ConfigurationPage settings = new ConfigurationPage(browserPage);
+    AdminConfigurationPage settings = new AdminConfigurationPage(browserPage);
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
       settings.open(group);
       for (Locator hint : browserPage.locator(".cosmos-config-save-hint").all()) {
@@ -441,7 +441,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
           browserPage.locator("#admin-sidebar").boundingBox().y < 189 - 20,
           "Auch die Desktopnavigation muss mit dem Seiteninhalt scrollen.");
     }
-    ConfigurationPage settings = new ConfigurationPage(browserPage);
+    AdminConfigurationPage settings = new AdminConfigurationPage(browserPage);
     settings.info(uiTexts.getAdminConfigEntryMailHost()).click();
     Locator overlay =
         browserPage.locator("#admin-config-help vaadin-dialog-overlay > [part~='overlay']");
@@ -533,15 +533,15 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     new AdminNavigation(browserPage).closeOverlayDrawer();
   }
 
-  private ConfigurationPage adminConfig() {
+  private AdminConfigurationPage adminConfig() {
     browserPage.setViewportSize(1280, 900);
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
-    ConfigurationPage configurationPage = new ConfigurationPage(browserPage);
-    configurationPage.open(AdminConfigGroup.GENERAL);
-    return configurationPage;
+    AdminConfigurationPage adminConfigurationPage = new AdminConfigurationPage(browserPage);
+    adminConfigurationPage.open(AdminConfigGroup.GENERAL);
+    return adminConfigurationPage;
   }
 
   private String primary(Page target, String selector) {

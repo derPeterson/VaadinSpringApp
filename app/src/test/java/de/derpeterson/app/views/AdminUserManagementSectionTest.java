@@ -75,7 +75,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /** Real dialog/button callbacks and language events; no application, DB or SMTP. */
-class AdminUserErrorNotificationTest {
+class AdminUserManagementSectionTest {
   private UI testUi;
   private VaadinSession vaadinSession;
   private TrackedUserAppLayout layout;
@@ -163,7 +163,7 @@ class AdminUserErrorNotificationTest {
                   .flatMap(element -> element.getComponent().stream()));
     }
     return Stream.concat(
-        Stream.of(root), children.flatMap(AdminUserErrorNotificationTest::descendants));
+        Stream.of(root), children.flatMap(AdminUserManagementSectionTest::descendants));
   }
 
   @ParameterizedTest

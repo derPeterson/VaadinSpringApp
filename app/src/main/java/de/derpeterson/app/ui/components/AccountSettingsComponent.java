@@ -6,7 +6,7 @@ import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_SECTION_PARAME
 import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_SECURITY_SECTION;
 import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_TAB_PARAMETER;
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
-import static de.derpeterson.app.ui.components.CosmosClasses.PANEL_ICON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasText;
@@ -63,7 +63,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 
 /** Eigene Profildaten, Kontosicherheit, Profilbild und Sitzungen. */
 @Slf4j
-public class AccountSettingsComponent extends PortalPageComponent {
+public class AccountSettingsComponent extends PageContentLayout {
   private static final String ARIA_HIDDEN = "aria-hidden";
 
   public enum AccountSection {
@@ -176,7 +176,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
             accountNavigation,
             avatarDialog::open);
     accountSectionContentDiv.add(panelsBySection.values().toArray(AccountPanelComponent[]::new));
-    setPortalContent(accountSectionHeader, accountSidebar, accountSectionContentDiv);
+    setPageContent(accountSectionHeader, accountSidebar, accountSectionContentDiv);
     add(emailChangeDialog, passwordChangeDialog, avatarDialog);
 
     refreshTexts();
@@ -717,7 +717,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
 
   private <T> void styleChoices(
       ComboBox<T> profileChoiceComboBox, SerializableFunction<T, String> choiceLabelFunction) {
-    PortalFields.styleChoice(profileChoiceComboBox, choiceLabelFunction, true);
+    CosmosComboBoxStyling.styleChoice(profileChoiceComboBox, choiceLabelFunction, true);
   }
 
   private String genderLabel(Gender gender) {

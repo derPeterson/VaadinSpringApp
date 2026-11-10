@@ -32,7 +32,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AdminDurationField;
-import de.derpeterson.app.ui.components.AdminSidePanel;
+import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import java.math.BigDecimal;
 import java.util.EnumMap;
@@ -361,8 +361,8 @@ class AdminConfigurationGroupTest {
   void fieldHelpSeparatesLiveTimingFromTheRestartWarning() {
     configurationSection.showGroup(AdminConfigGroup.SECURITY);
     MessageProperties messages = new MessageProperties(i18nProvider);
-    AdminSidePanel help =
-        (AdminSidePanel) ReflectionTestUtils.getField(configurationSection, "helpPanel");
+    AdminSidePanelDialog help =
+        (AdminSidePanelDialog) ReflectionTestUtils.getField(configurationSection, "helpPanel");
 
     ReflectionTestUtils.invokeMethod(
         configurationSection, "openHelp", ConfigEntry.SESSION_TIMEOUT_SECONDS);
@@ -384,8 +384,8 @@ class AdminConfigurationGroupTest {
   @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
   void allConfigurationFieldsRenderLocalizedTimingNotes(String language) {
     localeReference.set(Locale.forLanguageTag(language));
-    AdminSidePanel help =
-        (AdminSidePanel) ReflectionTestUtils.getField(configurationSection, "helpPanel");
+    AdminSidePanelDialog help =
+        (AdminSidePanelDialog) ReflectionTestUtils.getField(configurationSection, "helpPanel");
     for (ConfigEntry entry : ConfigEntry.values()) {
       ReflectionTestUtils.invokeMethod(configurationSection, "openHelp", entry);
       Component timing =
@@ -462,8 +462,8 @@ class AdminConfigurationGroupTest {
     amount.setValue(7);
     ReflectionTestUtils.invokeMethod(
         configurationSection, "openHelp", ConfigEntry.REMEMBER_ME_DURATION);
-    AdminSidePanel help =
-        (AdminSidePanel) ReflectionTestUtils.getField(configurationSection, "helpPanel");
+    AdminSidePanelDialog help =
+        (AdminSidePanelDialog) ReflectionTestUtils.getField(configurationSection, "helpPanel");
     String copy = help.getElement().getTextRecursively();
 
     assertTrue(copy.contains(adminDurationField.getDisplayValue()));
@@ -631,8 +631,8 @@ class AdminConfigurationGroupTest {
     Map<ConfigEntry, ConfigInfoButton> infos =
         (Map<ConfigEntry, ConfigInfoButton>)
             ReflectionTestUtils.getField(configurationSection, "configInfoButtons");
-    AdminSidePanel panel =
-        (AdminSidePanel) ReflectionTestUtils.getField(configurationSection, "helpPanel");
+    AdminSidePanelDialog panel =
+        (AdminSidePanelDialog) ReflectionTestUtils.getField(configurationSection, "helpPanel");
     int checkedFields = 0;
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
       if (group.isSuperadminOnly()) {
