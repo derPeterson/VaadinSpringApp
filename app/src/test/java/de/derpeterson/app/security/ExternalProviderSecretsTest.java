@@ -18,6 +18,7 @@ class ExternalProviderSecretsTest {
     ExternalProviderSecrets secrets = configured((byte) 1);
     String original = "€".repeat(2048);
     String encrypted = secrets.encrypt(provider, original);
+
     assertNotEquals(original, encrypted);
     assertNotEquals(encrypted, secrets.encrypt(provider, original));
     assertFalse(encrypted.contains(original));
@@ -28,15 +29,18 @@ class ExternalProviderSecretsTest {
   @Test
   void missingOrMalformedKeysNeverFallBackToPlaintext() {
     ExternalProviderSecrets missing = new ExternalProviderSecrets(new MockEnvironment());
+
     assertEquals("", missing.encrypt("google", ""));
     assertEquals("", missing.decrypt("microsoft", ""));
     assertThrows(IllegalStateException.class, () -> missing.encrypt("google", "own-secret"));
     String encrypted = configured((byte) 1).encrypt("google", "own-secret");
+
     assertThrows(IllegalStateException.class, () -> missing.decrypt("google", encrypted));
     for (String value :
         new String[] {"not-base64!", Base64.getEncoder().encodeToString(new byte[16])}) {
       MockEnvironment environment =
           new MockEnvironment().withProperty(ExternalProviderSecrets.KEY_PROPERTY, value);
+
       assertThrows(IllegalStateException.class, () -> new ExternalProviderSecrets(environment));
     }
   }
@@ -45,8 +49,10 @@ class ExternalProviderSecretsTest {
   void anotherProviderAnotherKeyTamperingAndPlaintextAreRejectedWithoutSecretDetails() {
     ExternalProviderSecrets secrets = configured((byte) 1);
     String encrypted = secrets.encrypt("google", "own-secret");
+
     assertThrows(IllegalStateException.class, () -> secrets.decrypt("microsoft", encrypted));
     ExternalProviderSecrets otherCipher = configured((byte) 2);
+
     assertThrows(IllegalStateException.class, () -> otherCipher.decrypt("google", encrypted));
     byte[] damaged = Base64.getUrlDecoder().decode(encrypted);
     damaged[damaged.length - 1] ^= 1;
@@ -54,6 +60,7 @@ class ExternalProviderSecretsTest {
     for (String invalid : new String[] {tampered, "own-secret", encrypted.substring(0, 5)}) {
       IllegalStateException failure =
           assertThrows(IllegalStateException.class, () -> secrets.decrypt("google", invalid));
+
       assertFalse(failure.getMessage().contains("own-secret"));
       assertFalse(failure.getMessage().contains(invalid));
     }

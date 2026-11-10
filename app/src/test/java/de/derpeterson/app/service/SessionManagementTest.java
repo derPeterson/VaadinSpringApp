@@ -167,6 +167,7 @@ class SessionManagementTest {
   @Test
   void changingSavedLoginDurationTakesEffectWithoutRestart() {
     Login owner = login(true);
+
     assertEquals(3600, cookie(owner).getMaxAge());
     String series = tokens.saved(IDENTITY, 3600).getFirst().series();
     jdbcTemplate.update(
@@ -174,11 +175,14 @@ class SessionManagementTest {
         Timestamp.from(Instant.now().minusSeconds(120)),
         series);
     management.deleteExpiredSavedLogins();
+
     assertNotNull(tokens.getTokenForSeries(series));
     when(configService.getInteger(ConfigEntry.REMEMBER_ME_DURATION)).thenReturn(1);
+
     assertNull(returnWith(cookie(owner), new MockHttpServletRequest()));
     management.list(owner.request());
     management.deleteExpiredSavedLogins();
+
     assertNull(tokens.getTokenForSeries(series));
     assertEquals(
         0, jdbcTemplate.queryForObject("select count(*) from remembered_device", Integer.class));
@@ -190,13 +194,13 @@ class SessionManagementTest {
   }
 
   private Login login(boolean remember, String agent) {
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    request.addHeader("User-Agent", agent);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    mockHttpRequest.addHeader("User-Agent", agent);
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     UserDetails principal = User.withUserDetails(account.get()).password("").build();
-    securityService.storeAuthenticatedUser(request, response, principal, remember);
+    securityService.storeAuthenticatedUser(mockHttpRequest, mockHttpResponse, principal, remember);
     SecurityContextHolder.clearContext();
-    return new Login(next(request), response);
+    return new Login(next(mockHttpRequest), mockHttpResponse);
   }
 
   private Login login(boolean remember) {
@@ -216,15 +220,16 @@ class SessionManagementTest {
         .orElseThrow();
   }
 
-  private Authentication returnWith(Cookie cookie, MockHttpServletRequest request) {
-    request.setCookies(cookie);
-    return remembered.autoLogin(request, new MockHttpServletResponse());
+  private Authentication returnWith(Cookie cookie, MockHttpServletRequest mockHttpRequest) {
+    mockHttpRequest.setCookies(cookie);
+    return remembered.autoLogin(mockHttpRequest, new MockHttpServletResponse());
   }
 
   @Test
   void replayedSavedLoginRevokesEverySavedTokenAndReturnsToNormalAuthorization() {
     Cookie original = cookie(login(true));
     Cookie otherDevice = cookie(login(true));
+
     assertEquals(2, tokens.saved(IDENTITY, 3600).size());
     assertNotNull(returnWith(original, new MockHttpServletRequest()));
     MockHttpServletRequest replay = new MockHttpServletRequest();
@@ -264,6 +269,7 @@ class SessionManagementTest {
                     privateSession, previous)));
     login(false, "Mozilla/5.0 (Android) Chrome/130.0 Mobile");
     Snapshot snapshot = management.list(first.request());
+
     assertEquals(2, snapshot.active());
     assertEquals(3, snapshot.limit());
     assertEquals(2, snapshot.entries().size());
@@ -290,6 +296,7 @@ class SessionManagementTest {
             .findFirst()
             .orElseThrow();
     management.revoke(first.request(), other.handle());
+
     assertTrue(sessionAdmissionService.isExpired(second.request()));
     assertFalse(sessionAdmissionService.isExpired(first.request()));
     assertEquals(1, management.list(first.request()).active());
@@ -298,6 +305,7 @@ class SessionManagementTest {
         1, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
     assertNotNull(login(false));
     management.revoke(first.request(), other.handle());
+
     assertEquals(2, management.list(first.request()).active());
   }
 
@@ -307,6 +315,7 @@ class SessionManagementTest {
     Entry own = management.list(first.request()).entries().getFirst();
     MockHttpServletRequest attemptRequest = first.request();
     String sessionHandle = own.handle();
+
     assertThrows(
         IllegalArgumentException.class, () -> management.revoke(attemptRequest, sessionHandle));
     UserDetails foreign =
@@ -320,6 +329,7 @@ class SessionManagementTest {
     String foreignHandle =
         sessionAdmissionService.active("foreign@example.test").getFirst().handle();
     management.revoke(first.request(), foreignHandle);
+
     assertFalse(sessionAdmissionService.isExpired(foreignRequest));
     assertFalse(sessionAdmissionService.isExpired(first.request()));
     assertEquals(1, management.list(first.request()).entries().size());
@@ -331,6 +341,7 @@ class SessionManagementTest {
     Login second = login(true);
     Login third = login(false);
     management.revokeOthers(first.request());
+
     assertFalse(sessionAdmissionService.isExpired(first.request()));
     assertTrue(sessionAdmissionService.isExpired(second.request()));
     assertTrue(sessionAdmissionService.isExpired(third.request()));
@@ -346,10 +357,12 @@ class SessionManagementTest {
     Login owner = login(true);
     MockHttpServletRequest returning = new MockHttpServletRequest();
     Authentication authentication = returnWith(cookie(owner), returning);
+
     assertNotNull(authentication);
     sessionAdmissionService.onAuthentication(
         authentication, returning, new MockHttpServletResponse());
     Snapshot snapshot = management.list(owner.request());
+
     assertEquals(2, snapshot.active());
     assertEquals(
         2,
@@ -357,6 +370,7 @@ class SessionManagementTest {
     Entry other =
         snapshot.entries().stream().filter(entry -> !entry.current()).findFirst().orElseThrow();
     management.revoke(owner.request(), other.savedHandle());
+
     assertTrue(sessionAdmissionService.isExpired(returning));
     assertFalse(sessionAdmissionService.isExpired(owner.request()));
     assertEquals(
@@ -374,6 +388,7 @@ class SessionManagementTest {
         UsernamePasswordAuthenticationToken.authenticated(
             account.get(), null, account.get().getAuthorities()));
     second.request().getSession().invalidate();
+
     assertNotNull(returnWith(cookie(first), new MockHttpServletRequest()));
     assertNull(returnWith(cookie(second), new MockHttpServletRequest()));
     assertEquals(1, management.list(first.request()).active());
@@ -385,11 +400,14 @@ class SessionManagementTest {
     Login second = login(true);
     second.request().getSession().invalidate();
     Snapshot snapshot = management.list(first.request());
+
     assertEquals(1, snapshot.active());
     Entry saved =
         snapshot.entries().stream().filter(entry -> !entry.active()).findFirst().orElseThrow();
+
     assertTrue(saved.remembered());
     management.revoke(first.request(), saved.handle());
+
     assertNull(returnWith(cookie(second), new MockHttpServletRequest()));
     assertEquals(1, management.list(first.request()).entries().size());
   }
@@ -401,14 +419,17 @@ class SessionManagementTest {
     restart();
     Login current = login(false);
     Snapshot snapshot = management.list(current.request());
+
     assertEquals(1, snapshot.active());
     assertTrue(
         snapshot.entries().stream()
             .anyMatch(entry -> !entry.active() && entry.handle().equals(handle)));
     MockHttpServletRequest returning = new MockHttpServletRequest();
     Authentication auth = returnWith(cookie(old), returning);
+
     assertNotNull(auth);
     sessionAdmissionService.onAuthentication(auth, returning, new MockHttpServletResponse());
+
     assertEquals(2, sessionRegistry.getAllSessions(IDENTITY, false).size());
     assertEquals(handle, tokens.saved(IDENTITY, 3600).getFirst().handle());
   }
@@ -418,8 +439,9 @@ class SessionManagementTest {
     Login owner = login(false);
     Login old = login(true);
     old.request().getSession().invalidate();
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    Authentication auth = returnWith(cookie(old), request);
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    Authentication auth = returnWith(cookie(old), mockHttpRequest);
+
     assertNotNull(auth);
     Entry saved =
         management.list(owner.request()).entries().stream()
@@ -428,9 +450,10 @@ class SessionManagementTest {
             .orElseThrow();
     management.revoke(owner.request(), saved.handle());
     MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
+
     assertThrows(
         AuthenticationServiceException.class,
-        () -> sessionAdmissionService.onAuthentication(auth, request, attemptResponse));
+        () -> sessionAdmissionService.onAuthentication(auth, mockHttpRequest, attemptResponse));
     assertEquals(1, sessionRegistry.getAllSessions(IDENTITY, false).size());
   }
 
@@ -481,30 +504,36 @@ class SessionManagementTest {
   void passwordProofPermitsOnlyManagementAndThenRegularAdmissionAfterFreeingSlot() {
     when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     Login old = login(true);
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    request.getSession().setAttribute("public-ui", "preserved");
-    String anonymousId = request.getSession().getId();
-    management.startRecovery(request, IDENTITY, PASSWORD, true);
-    assertNotEquals(anonymousId, request.getSession().getId());
-    assertEquals("preserved", request.getSession().getAttribute("public-ui"));
-    assertTrue(management.hasRecovery(request));
-    assertTrue(securityService.getAuthenticatedUser(request).isEmpty());
-    assertNull(request.getSession().getAttribute("authenticatedUser"));
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    mockHttpRequest.getSession().setAttribute("public-ui", "preserved");
+    String anonymousId = mockHttpRequest.getSession().getId();
+    management.startRecovery(mockHttpRequest, IDENTITY, PASSWORD, true);
+
+    assertNotEquals(anonymousId, mockHttpRequest.getSession().getId());
+    assertEquals("preserved", mockHttpRequest.getSession().getAttribute("public-ui"));
+    assertTrue(management.hasRecovery(mockHttpRequest));
+    assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isEmpty());
+    assertNull(mockHttpRequest.getSession().getAttribute("authenticatedUser"));
     assertNull(SecurityContextHolder.getContext().getAuthentication());
     MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
+
     assertThrows(
-        SessionLimitException.class, () -> management.finishRecovery(request, attemptResponse));
-    Snapshot snapshot = management.recoveryList(request);
+        SessionLimitException.class,
+        () -> management.finishRecovery(mockHttpRequest, attemptResponse));
+    Snapshot snapshot = management.recoveryList(mockHttpRequest);
+
     assertEquals(1, snapshot.active());
     assertFalse(snapshot.entries().getFirst().current());
-    management.recoveryRevoke(request, snapshot.entries().getFirst().handle());
+    management.recoveryRevoke(mockHttpRequest, snapshot.entries().getFirst().handle());
+
     assertTrue(sessionAdmissionService.isExpired(old.request()));
-    assertFalse(management.finishRecovery(request, new MockHttpServletResponse()));
-    assertFalse(management.hasRecovery(request));
-    assertTrue(securityService.getAuthenticatedUser(request).isPresent());
+    assertFalse(management.finishRecovery(mockHttpRequest, new MockHttpServletResponse()));
+    assertFalse(management.hasRecovery(mockHttpRequest));
+    assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isPresent());
     assertEquals(1, sessionRegistry.getAllSessions(IDENTITY, false).size());
     assertThrows(
-        AuthenticationCredentialsNotFoundException.class, () -> management.recoveryList(request));
+        AuthenticationCredentialsNotFoundException.class,
+        () -> management.recoveryList(mockHttpRequest));
   }
 
   @Test
@@ -514,12 +543,13 @@ class SessionManagementTest {
         new de.derpeterson.app.security.PortalUserDetails(
             IDENTITY, null, UUID.randomUUID().toString(), true, account.get().getAuthorities());
     account.set(external);
-    MockHttpServletRequest first = new MockHttpServletRequest();
+    MockHttpServletRequest firstMockHttpRequest = new MockHttpServletRequest();
     securityService.storeVerifiedAuthentication(
-        first,
+        firstMockHttpRequest,
         new MockHttpServletResponse(),
         new de.derpeterson.app.security.ExternalAuthenticationToken(external, "google"),
         true);
+
     assertEquals(1, tokens.saved(IDENTITY, 3600).size());
     SecurityContextHolder.clearContext();
     MockHttpServletRequest returning = new MockHttpServletRequest();
@@ -527,14 +557,17 @@ class SessionManagementTest {
         returning,
         new de.derpeterson.app.security.ExternalAuthenticationToken(external, "google"),
         false);
+
     assertTrue(management.hasRecovery(returning));
     assertTrue(securityService.getAuthenticatedUser(returning).isEmpty());
     MockHttpServletResponse limitedResponse = new MockHttpServletResponse();
+
     assertThrows(
         SessionLimitException.class, () -> management.finishRecovery(returning, limitedResponse));
     Snapshot snapshot = management.recoveryList(returning);
     management.recoveryRevoke(returning, snapshot.entries().getFirst().handle());
-    assertTrue(sessionAdmissionService.isExpired(first));
+
+    assertTrue(sessionAdmissionService.isExpired(firstMockHttpRequest));
     assertFalse(management.finishRecovery(returning, new MockHttpServletResponse()));
     assertFalse(management.hasRecovery(returning));
     assertTrue(securityService.getAuthenticatedUser(returning).isPresent());
@@ -546,36 +579,41 @@ class SessionManagementTest {
 
   @Test
   void wrongPasswordNeverCreatesManagementProof() {
-    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+
     assertThrows(
         BadCredentialsException.class,
-        () -> management.startRecovery(request, IDENTITY, "wrong", false));
-    assertFalse(management.hasRecovery(request));
+        () -> management.startRecovery(mockHttpRequest, IDENTITY, "wrong", false));
+    assertFalse(management.hasRecovery(mockHttpRequest));
     assertThrows(
-        AuthenticationCredentialsNotFoundException.class, () -> management.recoveryList(request));
-    assertTrue(securityService.getAuthenticatedUser(request).isEmpty());
+        AuthenticationCredentialsNotFoundException.class,
+        () -> management.recoveryList(mockHttpRequest));
+    assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isEmpty());
   }
 
   @Test
   void proofExpiresExactlyAtFiveMinutesAndCannotBeTransferredToAnotherSession() {
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    management.startRecovery(request, IDENTITY, PASSWORD, false);
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    management.startRecovery(mockHttpRequest, IDENTITY, PASSWORD, false);
     MockHttpServletRequest attemptRequest = new MockHttpServletRequest();
+
     assertThrows(
         AuthenticationCredentialsNotFoundException.class,
         () -> management.recoveryList(attemptRequest));
     ReflectionTestUtils.setField(
         management, "sessionClock", Clock.fixed(NOW.plusSeconds(300), ZoneOffset.UTC));
-    assertFalse(management.hasRecovery(request));
+
+    assertFalse(management.hasRecovery(mockHttpRequest));
     assertThrows(
-        AuthenticationCredentialsNotFoundException.class, () -> management.recoveryList(request));
+        AuthenticationCredentialsNotFoundException.class,
+        () -> management.recoveryList(mockHttpRequest));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"password", "disabled", "roles"})
   void changedSecurityDataInvalidatesProof(String change) {
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    management.startRecovery(request, IDENTITY, PASSWORD, false);
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    management.startRecovery(mockHttpRequest, IDENTITY, PASSWORD, false);
     UserBuilder builder = User.withUserDetails(account.get());
     if (change.equals("password")) {
       builder.password(encoder.encode("Another!Password9"));
@@ -587,9 +625,11 @@ class SessionManagementTest {
       builder.roles("ADMIN");
     }
     account.set(builder.build());
+
     assertThrows(
-        AuthenticationCredentialsNotFoundException.class, () -> management.recoveryList(request));
-    assertFalse(management.hasRecovery(request));
+        AuthenticationCredentialsNotFoundException.class,
+        () -> management.recoveryList(mockHttpRequest));
+    assertFalse(management.hasRecovery(mockHttpRequest));
     assertEquals(
         0, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
   }
@@ -597,28 +637,32 @@ class SessionManagementTest {
   @Test
   void maintenanceProtectsBothNormalManagementAndRestrictedAccess() {
     Login owner = login(false);
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    management.startRecovery(request, IDENTITY, PASSWORD, false);
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    management.startRecovery(mockHttpRequest, IDENTITY, PASSWORD, false);
     when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     MockHttpServletRequest attemptRequest = owner.request();
+
     assertThrows(MaintenanceAuthenticationException.class, () -> management.list(attemptRequest));
-    assertThrows(MaintenanceAuthenticationException.class, () -> management.recoveryList(request));
+    assertThrows(
+        MaintenanceAuthenticationException.class, () -> management.recoveryList(mockHttpRequest));
     MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
+
     assertThrows(
         MaintenanceAuthenticationException.class,
-        () -> management.finishRecovery(request, attemptResponse));
+        () -> management.finishRecovery(mockHttpRequest, attemptResponse));
     assertFalse(sessionAdmissionService.isExpired(owner.request()));
   }
 
   @Test
   void canceledRecoveryCannotMutateSessions() {
     Login owner = login(false);
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    management.startRecovery(request, IDENTITY, PASSWORD, false);
-    management.cancelRecovery(request);
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    management.startRecovery(mockHttpRequest, IDENTITY, PASSWORD, false);
+    management.cancelRecovery(mockHttpRequest);
+
     assertThrows(
         AuthenticationCredentialsNotFoundException.class,
-        () -> management.recoveryRevokeOthers(request));
+        () -> management.recoveryRevokeOthers(mockHttpRequest));
     assertFalse(sessionAdmissionService.isExpired(owner.request()));
   }
 
@@ -634,24 +678,28 @@ class SessionManagementTest {
             .orElseThrow()
             .handle();
     management.revoke(owner.request(), handle);
+
     assertTrue(securityService.hasCurrentSessionPrivileges(owner.request()));
     MockHttpSession oldSession = (MockHttpSession) old.request().getSession(false);
     if (push) {
       PushSecurityInterceptor interceptor =
           new PushSecurityInterceptor(securityService, new MaintenanceService(configService));
-      VaadinServletRequest request =
+      VaadinServletRequest vaadinServletRequest =
           new VaadinServletRequest(old.request(), mock(VaadinServletService.class));
-      assertThrows(AccessDeniedException.class, () -> interceptor.requestStart(request, null));
+
+      assertThrows(
+          AccessDeniedException.class, () -> interceptor.requestStart(vaadinServletRequest, null));
     } else {
       ObjectProvider<SecurityService> provider = mock(ObjectProvider.class);
       when(provider.getObject()).thenReturn(securityService);
       old.request().setMethod("POST");
       old.request().setServletPath("/");
       old.request().setParameter("v-r", "uidl");
-      MockHttpServletResponse response = new MockHttpServletResponse();
+      MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
       FilterChain business = mock(FilterChain.class);
-      new VaadinSecurityFilter(provider).doFilter(old.request(), response, business);
-      assertEquals(401, response.getStatus());
+      new VaadinSecurityFilter(provider).doFilter(old.request(), mockHttpResponse, business);
+
+      assertEquals(401, mockHttpResponse.getStatus());
       verifyNoInteractions(business);
     }
     assertTrue(oldSession.isInvalid());
@@ -661,6 +709,7 @@ class SessionManagementTest {
   @Test
   void failedTokenTransactionPreservesBothAuthenticationAndMetadata() {
     Login owner = login(true);
+
     assertThrows(
         IllegalStateException.class,
         () ->
@@ -689,6 +738,7 @@ class SessionManagementTest {
                 new org.springframework.security.web.session.HttpSessionIdChangedEvent(
                     owner.request().getSession(), previous)));
     Entry after = management.list(owner.request()).entries().getFirst();
+
     assertEquals(before.handle(), after.handle());
     assertEquals(before.device(), after.device());
     assertTrue(after.current());
@@ -704,6 +754,7 @@ class SessionManagementTest {
         Timestamp.from(Instant.now().minusSeconds(7200)),
         old.series());
     management.deleteExpiredSavedLogins();
+
     assertEquals(
         0, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
     assertEquals(
@@ -716,6 +767,7 @@ class SessionManagementTest {
   void accountWideTokenRevocationAlsoRemovesDeviceMetadata() {
     login(true);
     tokens.removeUserTokens(IDENTITY);
+
     assertEquals(
         0, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));
     assertEquals(
@@ -728,6 +780,7 @@ class SessionManagementTest {
     tokens.createNewToken(
         new PersistentRememberMeToken(
             IDENTITY, "expired-series", "unused", Date.from(Instant.now().minusSeconds(7200))));
+
     assertEquals(1, management.list(owner.request()).entries().size());
     assertEquals(
         0, jdbcTemplate.queryForObject("select count(*) from persistent_logins", Integer.class));

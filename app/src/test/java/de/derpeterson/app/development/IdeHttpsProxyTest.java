@@ -68,6 +68,7 @@ class IdeHttpsProxyTest {
         AclFileAttributeView acl = Files.getFileAttributeView(path, AclFileAttributeView.class);
         if (acl != null) {
           List<AclEntry> entries = acl.getAcl();
+
           assertFalse(entries.isEmpty());
           assertTrue(
               entries.stream()
@@ -81,6 +82,7 @@ class IdeHttpsProxyTest {
         }
       }
       Files.writeString(file, "owned fixture arguments");
+
       assertEquals("owned fixture arguments", Files.readString(file));
     }
     assertFalse(Files.exists(file));
@@ -95,9 +97,11 @@ class IdeHttpsProxyTest {
       assertNoLauncherArguments(work);
       ProcessHandle child = ProcessHandle.of(proxy.proxyPid()).orElseThrow();
       ProcessHandle supervisor = ProcessHandle.of(proxy.supervisorPid()).orElseThrow();
+
       assertTrue(child.isAlive());
       proxy.close();
       proxy.close();
+
       assertFalse(child.isAlive());
       assertFalse(supervisor.isAlive());
     }
@@ -108,11 +112,13 @@ class IdeHttpsProxyTest {
     for (String mode : List.of("fail", "wrong")) {
       Path pidFile = directory.resolve(mode + ".pid");
       List<String> command = fakeCommand(mode, pidFile.toString());
+
       assertThrows(
           IOException.class, () -> IdeHttpsProxy.startHttpsProxy(directory, command, Map.of()));
       assertNoLauncherArguments(directory);
       ProcessHandle child =
           ProcessHandle.of(Long.parseLong(Files.readString(pidFile))).orElse(null);
+
       assertTrue(child == null || !child.isAlive());
     }
   }
@@ -121,10 +127,12 @@ class IdeHttpsProxyTest {
   void missingStartupConfirmationTimesOutAndStopsTheOwnedChild() throws Exception {
     Path pidFile = directory.resolve("timeout.pid");
     List<String> command = fakeCommand("stall", pidFile.toString());
+
     assertThrows(
         IOException.class, () -> IdeHttpsProxy.startHttpsProxy(directory, command, Map.of()));
     assertNoLauncherArguments(directory);
     ProcessHandle child = ProcessHandle.of(Long.parseLong(Files.readString(pidFile))).orElse(null);
+
     assertTrue(child == null || !child.isAlive());
   }
 
@@ -160,11 +168,14 @@ class IdeHttpsProxyTest {
       String[] pids = ready.get(20, TimeUnit.SECONDS).split(" ");
       child = ProcessHandle.of(Long.parseLong(pids[1])).orElseThrow();
       supervisor = ProcessHandle.of(Long.parseLong(pids[2])).orElseThrow();
+
       assertTrue(child.isAlive());
       owner.destroyForcibly();
+
       assertTrue(owner.waitFor(5, TimeUnit.SECONDS));
       child.onExit().get(10, TimeUnit.SECONDS);
       supervisor.onExit().get(10, TimeUnit.SECONDS);
+
       assertFalse(child.isAlive());
       assertFalse(supervisor.isAlive());
     } finally {
@@ -194,6 +205,7 @@ class IdeHttpsProxyTest {
       String[] pids = owner.inputReader().readLine().split(" ");
       ProcessHandle child = ProcessHandle.of(Long.parseLong(pids[1])).orElseThrow();
       child.destroyForcibly();
+
       assertTrue(owner.waitFor(10, TimeUnit.SECONDS));
       assertEquals(1, owner.exitValue());
       assertFalse(child.isAlive());
@@ -210,6 +222,7 @@ class IdeHttpsProxyTest {
           assertThrows(
               IOException.class,
               () -> HttpsDevelopmentApplication.requireFreePorts(occupied.getLocalPort()));
+
       assertTrue(failure.getMessage().contains(String.valueOf(occupied.getLocalPort())));
       try (Socket client = new Socket("127.0.0.1", occupied.getLocalPort());
           Socket accepted = occupied.accept()) {
@@ -246,6 +259,7 @@ class IdeHttpsProxyTest {
     Files.writeString(module.resolve("pom.xml"), "owned module fixture");
     Path scripts = Files.createDirectories(directory.resolve("scripts/https"));
     Files.writeString(scripts.resolve("Caddyfile.ide"), "owned proxy fixture");
+
     assertEquals(module, HttpsDevelopmentApplication.requireApplicationModule(directory));
     assertThrows(
         IOException.class, () -> HttpsDevelopmentApplication.requireApplicationModule(module));
@@ -255,6 +269,7 @@ class IdeHttpsProxyTest {
   void incompleteRepositoryIsRejectedBeforeCreatingRuntimeData() throws Exception {
     Path module = Files.createDirectories(directory.resolve("app"));
     Files.writeString(module.resolve("pom.xml"), "owned module fixture");
+
     assertThrows(
         IOException.class, () -> HttpsDevelopmentApplication.requireApplicationModule(directory));
     assertFalse(Files.exists(directory.resolve("data")));
@@ -326,6 +341,7 @@ class IdeHttpsProxyTest {
       List<ProcessHandle> ownedChildren = List.of();
       try {
         Path root = work.resolve("data/https/ide/pki/authorities/local/root.crt");
+
         assertTrue(
             awaitApplicationReady(application, root, output),
             () -> {
@@ -356,16 +372,19 @@ class IdeHttpsProxyTest {
                       .GET()
                       .build(),
                   HttpResponse.BodyHandlers.ofByteArray());
+
           assertEquals(200, stylesheet.statusCode());
           assertArrayEquals(expected.readAllBytes(), stylesheet.body());
         }
         assertFalse(Files.exists(module.resolve("data")));
         assertFalse(Files.exists(module.resolve("logs")));
         ownedChildren = application.descendants().toList();
+
         assertTrue(ownedChildren.size() >= 2);
         IdeHttpsProxy.stopOwnedProcess(application);
         for (ProcessHandle child : ownedChildren) {
           child.onExit().get(10, TimeUnit.SECONDS);
+
           assertFalse(child.isAlive());
         }
       } finally {
@@ -408,15 +427,16 @@ class IdeHttpsProxyTest {
               .sslContext(trustOnly(ca.resolve("pki/authorities/local/root.crt")))
               .connectTimeout(Duration.ofSeconds(3))
               .build()) {
-        HttpResponse<String> response =
+        HttpResponse<String> httpResponse =
             client.send(
                 HttpRequest.newBuilder(URI.create("https://localhost:" + port))
                     .timeout(Duration.ofSeconds(5))
                     .GET()
                     .build(),
                 HttpResponse.BodyHandlers.ofString());
-        assertEquals(200, response.statusCode());
-        assertEquals("OK", response.body());
+
+        assertEquals(200, httpResponse.statusCode());
+        assertEquals("OK", httpResponse.body());
       }
     }
     assertTrue(
@@ -462,14 +482,14 @@ class IdeHttpsProxyTest {
             .sslContext(trustOnly(root))
             .connectTimeout(Duration.ofSeconds(1))
             .build()) {
-      HttpResponse<String> response =
+      HttpResponse<String> httpResponse =
           client.send(
               HttpRequest.newBuilder(URI.create("https://localhost:8443/login"))
                   .timeout(Duration.ofSeconds(2))
                   .GET()
                   .build(),
               HttpResponse.BodyHandlers.ofString());
-      return response.statusCode() == 200;
+      return httpResponse.statusCode() == 200;
     } catch (IOException _) {
       // Ausschließlich auf die eigene frisch gestartete Anwendung warten.
       return false;

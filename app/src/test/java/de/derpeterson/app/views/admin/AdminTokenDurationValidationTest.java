@@ -90,6 +90,7 @@ class AdminTokenDurationValidationTest {
     configurationSection.refreshTexts();
     Duration minimum = entry.getMinimumTokenDuration();
     AdminDurationField input = field(entry);
+
     assertEquals(
         "config-label-" + entry.name().toLowerCase(Locale.ROOT),
         input.getElement().getAttribute("aria-labelledby"));
@@ -102,6 +103,7 @@ class AdminTokenDurationValidationTest {
       }
       clearInvocations(configService);
       saveButton().click();
+
       assertTrue(input.isInvalid(), entry + " / " + value);
       assertNotNull(amount(entry).getErrorMessage());
       if (!value.isBlank()) {
@@ -118,6 +120,7 @@ class AdminTokenDurationValidationTest {
     // Existing invalid field errors must follow a later language switch.
     localeReference.set(language.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
     configurationSection.refreshTexts();
+
     assertEquals(
         messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
         amount(entry).getErrorMessage());
@@ -132,12 +135,14 @@ class AdminTokenDurationValidationTest {
     field(entry).setStoredValue(minimum.toMinutes() + "m");
     clearInvocations(configService);
     saveButton().click();
+
     verify(configService).set(entry, minimum.toString());
     assertFalse(field(entry).isInvalid());
     ConfigInfoButton info =
         (ConfigInfoButton)
             ((Map<?, ?>) ReflectionTestUtils.getField(configurationSection, "configInfoButtons"))
                 .get(entry);
+
     assertTrue(
         info.getTooltip().getText().contains(messageProperties.getAdminConfigDurationNumberRule()));
     assertTrue(
@@ -161,6 +166,7 @@ class AdminTokenDurationValidationTest {
       field(entry).setStoredValue(invalid);
       clearInvocations(configService);
       saveButton().click();
+
       assertTrue(field(entry).isInvalid());
       assertEquals(
           messageProperties.getAdminConfigValidationPositiveDuration(),
@@ -170,6 +176,7 @@ class AdminTokenDurationValidationTest {
     field(entry).setStoredValue("1s");
     clearInvocations(configService);
     saveButton().click();
+
     assertFalse(field(entry).isInvalid());
     verify(configService).set(entry, "PT1S");
   }

@@ -98,6 +98,7 @@ class DurableSessionSecurityChainTest {
     context.refresh();
     when(context.getBean(ConfigService.class).getInteger(ConfigEntry.MAX_SESSIONS_PER_USER))
         .thenReturn(1);
+
     assertTrue(context.getBean(SessionRegistry.class) instanceof DurableSessionRegistry<?>);
   }
 
@@ -114,11 +115,12 @@ class DurableSessionSecurityChainTest {
           EntityManager manager =
               EntityManagerFactoryUtils.getTransactionalEntityManager(
                   context.getBean(EntityManagerFactory.class));
+
           assertNotNull(manager);
           {
             RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_USER).build();
             manager.persist(role);
-            UserEntity user =
+            UserEntity testUserEntity =
                 UserEntity.builder()
                     .firstName("Restart")
                     .lastName("Fixture")
@@ -130,7 +132,7 @@ class DurableSessionSecurityChainTest {
                     .preferredLocale(Locale.ENGLISH)
                     .roleEntities(new ArrayList<>(List.of(role)))
                     .build();
-            manager.persist(user);
+            manager.persist(testUserEntity);
             manager.flush();
           }
         });
@@ -147,24 +149,24 @@ class DurableSessionSecurityChainTest {
       FilterChain action)
       throws Exception {
     SecurityContextHolder.clearContext();
-    MockHttpServletRequest request =
+    MockHttpServletRequest mockHttpRequest =
         new MockHttpServletRequest(context.getServletContext(), method, path);
-    request.setServletPath(path);
+    mockHttpRequest.setServletPath(path);
     if (cookie != null) {
-      request.setCookies(cookie);
+      mockHttpRequest.setCookies(cookie);
     }
-    parameters.forEach(request::setParameter);
+    parameters.forEach(mockHttpRequest::setParameter);
     if (csrf != null) {
-      request.addHeader("X-CSRF-TOKEN", csrf);
+      mockHttpRequest.addHeader("X-CSRF-TOKEN", csrf);
     }
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     AtomicReference<String> id = new AtomicReference<>();
     AtomicInteger reached = new AtomicInteger();
     SessionRepositoryFilter<?> sessions = context.getBean(SessionRepositoryFilter.class);
     FilterChainProxy security = new FilterChainProxy(context.getBean(SecurityFilterChain.class));
     sessions.doFilter(
-        request,
-        response,
+        mockHttpRequest,
+        mockHttpResponse,
         (wrapped, output) -> {
           security.doFilter(
               wrapped,
@@ -181,15 +183,16 @@ class DurableSessionSecurityChainTest {
           }
         });
     Cookie latest =
-        Arrays.stream(response.getCookies())
+        Arrays.stream(mockHttpResponse.getCookies())
             .filter(candidate -> "JSESSIONID".equals(candidate.getName()))
             .reduce((first, second) -> second)
             .orElse(cookie);
-    return new Result(response, latest, id.get(), reached.get());
+    return new Result(mockHttpResponse, latest, id.get(), reached.get());
   }
 
   private Result login(boolean remembered) throws Exception {
     Result bootstrap = request("GET", "/login", null, Map.of(), null, null);
+
     assertNotNull(bootstrap.cookie());
     assertTrue(bootstrap.cookie().isHttpOnly());
     Result logged =
@@ -206,6 +209,7 @@ class DurableSessionSecurityChainTest {
                 Boolean.toString(remembered)),
             bootstrap.response().getHeader("X-CSRF-TOKEN"),
             null);
+
     assertEquals("/home", logged.response().getRedirectedUrl());
     assertEquals(0, logged.reached());
     assertNotNull(logged.id());
@@ -239,12 +243,14 @@ class DurableSessionSecurityChainTest {
               assertEquals(EMAIL, SecurityContextHolder.getContext().getAuthentication().getName());
               assertNull(((HttpServletRequest) req).getSession().getAttribute("unsaved-ui"));
             });
+
     assertEquals(200, restored.response().getStatus());
     assertEquals(1, restored.reached());
     assertEquals(before.id(), restored.id());
     assertEquals(
         handle, context.getBean(SessionAdmissionService.class).active(EMAIL).getFirst().handle());
     Result denied = loginWithoutSuccessAssertion();
+
     assertEquals("/login?error=sessions", denied.response().getRedirectedUrl());
     assertEquals(1, context.getBean(SessionAdmissionService.class).active(EMAIL).size());
   }
@@ -269,14 +275,15 @@ class DurableSessionSecurityChainTest {
           EntityManager em =
               EntityManagerFactoryUtils.getTransactionalEntityManager(
                   context.getBean(EntityManagerFactory.class));
-          UserEntity user =
+          UserEntity testUserEntity =
               em.createQuery("select u from UserEntity u where u.email = :email", UserEntity.class)
                   .setParameter("email", EMAIL)
                   .getSingleResult();
-          user.setEnabled(false);
+          testUserEntity.setEnabled(false);
           em.flush();
         });
     Result denied = request("POST", "/", login.cookie(), Map.of("v-r", "uidl"), null, null);
+
     assertEquals(401, denied.response().getStatus());
     assertEquals(0, denied.reached());
   }
@@ -287,11 +294,13 @@ class DurableSessionSecurityChainTest {
     restart();
     Result uidl =
         request("POST", "/", before.cookie(), Map.of("v-r", "uidl", "v-uiId", "0"), null, null);
+
     assertEquals(200, uidl.response().getStatus());
     assertEquals(0, uidl.reached());
     assertTrue(uidl.response().getContentAsString().contains("/home"));
     assertEquals("no-store", uidl.response().getHeader("Cache-Control"));
     Result forged = request("POST", "/admin", before.cookie(), Map.of("v-r", "uidl"), null, null);
+
     assertEquals(403, forged.response().getStatus());
     assertEquals(0, forged.reached());
   }
@@ -303,6 +312,7 @@ class DurableSessionSecurityChainTest {
     when(context.getBean(ConfigService.class).getBoolean(ConfigEntry.MAINTENANCE_MODE))
         .thenReturn(true);
     Result blocked = request("GET", "/account", before.cookie(), Map.of(), null, null);
+
     assertEquals(503, blocked.response().getStatus());
     assertEquals("/maintenance", blocked.response().getForwardedUrl());
     assertEquals(0, blocked.reached());
@@ -315,10 +325,12 @@ class DurableSessionSecurityChainTest {
             Map.of(),
             bootstrap.response().getHeader("X-CSRF-TOKEN"),
             null);
+
     assertEquals("/login", logout.response().getRedirectedUrl());
     assertTrue(context.getBean(SessionAdmissionService.class).active(EMAIL).isEmpty());
     restart();
     Result missing = request("GET", "/account", before.cookie(), Map.of(), null, null);
+
     assertEquals("/login", missing.response().getRedirectedUrl());
     assertEquals(0, missing.reached());
   }
@@ -329,6 +341,7 @@ class DurableSessionSecurityChainTest {
     context.getBean(SessionAdmissionService.class).expire(EMAIL, before.id());
     restart();
     Result refused = request("GET", "/account", before.cookie(), Map.of(), null, null);
+
     assertEquals(401, refused.response().getStatus());
     assertEquals(0, refused.reached());
     assertTrue(context.getBean(SessionAdmissionService.class).active(EMAIL).isEmpty());
@@ -357,9 +370,11 @@ class DurableSessionSecurityChainTest {
                       (UserDetails) authenticated.getPrincipal(),
                       false);
             });
+
     assertEquals(1, logged.reached());
     restart();
     Result restored = request("GET", "/account", logged.cookie(), Map.of(), null, null);
+
     assertEquals(200, restored.response().getStatus());
     assertEquals(1, restored.reached());
   }

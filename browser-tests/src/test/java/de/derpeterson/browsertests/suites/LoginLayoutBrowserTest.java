@@ -53,6 +53,7 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
     browserPage.setViewportSize(width, height);
     LoginPage login = new LoginPage(browserPage);
     login.open();
+
     assertThat(browserPage.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");
     assertThat(browserPage.locator(".public-brand img")).isVisible();
     assertThat(browserPage.locator(".cosmos-sky img, .public-panel img")).hasCount(0);
@@ -92,13 +93,17 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
                 .setName(uiTexts.getLoginRememberMeCheckbox())
                 .setExact(true));
     remember.check();
+
     assertThat(remember).isChecked();
     remember.uncheck();
+
     assertThat(remember).not().isChecked();
     remember.focus();
     remember.press("Space");
+
     assertThat(remember).isChecked();
     remember.press("Space");
+
     assertThat(remember).not().isChecked();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, "DefinitelyWrong1!");
     login.assertRejected();
@@ -107,8 +112,10 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
             .locator("vaadin-notification-card:not([closing])")
             .filter(new Locator.FilterOptions().setHasText(uiTexts.getLoginFailedMessage()));
     notice.getByRole(AriaRole.BUTTON).click();
+
     assertThat(notice).not().isVisible();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
     // Die anschließende Adminansicht ist kein Teil des responsiven Loginauftrags.
     browserPage.setViewportSize(1280, 900);
@@ -131,6 +138,7 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
         new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.NO_PREFERENCE));
     new LoginPage(browserPage).open();
     Locator sky = browserPage.locator(".cosmos-sky");
+
     assertThat(sky).hasAttribute("aria-hidden", "true");
     assertThat(sky).isHidden();
     Locator frame = browserPage.locator(".cosmos-page-frame.cosmos-reference-portal");
@@ -148,6 +156,7 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
               .contains("radial-gradient"));
     }
     browserPage.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
+
     assertEquals("none", frame.evaluate("el => getComputedStyle(el,'::after').animationName"));
     AllurePlaywright.attachScreenshot("Referenzhintergrund mit reduzierter Bewegung", browserPage);
     browserPage
@@ -155,10 +164,12 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
             AriaRole.LINK,
             new Page.GetByRoleOptions().setName(uiTexts.getLoginCreateAccountLink()).setExact(true))
         .click();
+
     assertThat(browserPage).hasURL(urlPattern(REGISTRATION_ROUTE));
     assertThat(browserPage.locator(".cosmos-reference-public[data-public-page=register]"))
         .isVisible();
     browserPage.navigate(path(HOME_ROUTE));
+
     assertThat(browserPage).hasTitle(HOME_PAGE_TITLE);
     assertThat(browserPage.locator(".cosmos-home.cosmos-theme")).isVisible();
     assertThat(browserPage.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");

@@ -41,6 +41,7 @@ class AdminUserFiltersTest {
             Set.of(UserStatus.AVAILABLE, UserStatus.EMPLOYED, UserStatus.ABSENT),
             EnumSet.allOf(RoleType.class),
             null);
+
     assertEquals(3, filters.activeGroupCount());
     assertEquals(
         3,
@@ -53,6 +54,7 @@ class AdminUserFiltersTest {
     AdminUserFilters filters =
         new AdminUserFilters(
             "Lena", false, EnumSet.allOf(UserStatus.class), EnumSet.allOf(RoleType.class), cutoff);
+
     assertEquals(5, filters.activeGroupCount());
     assertEquals(1, new AdminUserFilters("", null, Set.of(), Set.of(), cutoff).activeGroupCount());
   }
@@ -85,9 +87,11 @@ class AdminUserFiltersTest {
             .matches(user()));
     UserEntity plain = user();
     plain.setRoleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_USER).build()));
+
     assertFalse(
         new AdminUserFilters("", null, Set.of(), Set.of(RoleType.ROLE_ADMIN), null).matches(plain));
     plain.setRoleEntities(null);
+
     assertFalse(
         new AdminUserFilters("", null, Set.of(), Set.of(RoleType.ROLE_USER), null).matches(plain));
   }
@@ -96,12 +100,16 @@ class AdminUserFiltersTest {
   void activeSinceIncludesEqualityAndLaterButExcludesEarlierOrMissingActivity() {
     AdminUserFilters filter = new AdminUserFilters("", null, Set.of(), Set.of(), cutoff);
     UserEntity candidate = user();
+
     assertTrue(filter.matches(candidate));
     candidate.setLastActivity(cutoff.plusNanos(1));
+
     assertTrue(filter.matches(candidate));
     candidate.setLastActivity(cutoff.minusNanos(1));
+
     assertFalse(filter.matches(candidate));
     candidate.setLastActivity(null);
+
     assertFalse(filter.matches(candidate));
     assertTrue(new AdminUserFilters("", null, Set.of(), Set.of(), null).matches(candidate));
   }

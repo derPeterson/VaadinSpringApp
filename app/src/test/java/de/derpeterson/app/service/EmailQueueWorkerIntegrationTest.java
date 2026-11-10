@@ -160,15 +160,15 @@ class EmailQueueWorkerIntegrationTest {
 
   Long insert(String subject, LocalDateTime retry) {
     return transactionTemplate.execute(status -> {
-      EmailQueueEntity item = new EmailQueueEntity();
-      item.setUserEntity(userRepository.findById(userId).orElseThrow());
-      item.setSubject(subject);
-      item.setBody("<p>body:" + subject + "</p>");
-      item.setStatus(EmailStatus.PENDING);
-      item.setEmailType(EmailType.NOTIFICATION);
-      item.setCreatedAt(LocalDateTime.now(clock).minusMinutes(2));
-      item.setLastRetryAt(retry);
-      return emailQueueRepository.saveAndFlush(item).getId();
+      EmailQueueEntity emailQueueEntry = new EmailQueueEntity();
+      emailQueueEntry.setUserEntity(userRepository.findById(userId).orElseThrow());
+      emailQueueEntry.setSubject(subject);
+      emailQueueEntry.setBody("<p>body:" + subject + "</p>");
+      emailQueueEntry.setStatus(EmailStatus.PENDING);
+      emailQueueEntry.setEmailType(EmailType.NOTIFICATION);
+      emailQueueEntry.setCreatedAt(LocalDateTime.now(clock).minusMinutes(2));
+      emailQueueEntry.setLastRetryAt(retry);
+      return emailQueueRepository.saveAndFlush(emailQueueEntry).getId();
     });
   }
 
@@ -198,6 +198,7 @@ class EmailQueueWorkerIntegrationTest {
           caller.submit(service(pool(), new EmailService(configService, sender))::processQueue);
       try {
         await(smtp.firstWave);
+
         assertEquals(2, smtp.messages.size());
         assertEquals(2, statusCount(EmailStatus.IN_PROGRESS));
         assertEquals(2, statusCount(EmailStatus.PENDING));
@@ -215,6 +216,7 @@ class EmailQueueWorkerIntegrationTest {
       assertEquals(Set.of("smtp-one", "smtp-two", "smtp-three"), smtp.messages.keySet());
       smtp.messages.forEach(
           (subject, body) -> assertEquals("<p>body:" + subject + "</p>\r\n", body));
+
       assertTrue(smtp.failures.isEmpty(), smtp.failures::toString);
     }
   }
@@ -257,6 +259,7 @@ class EmailQueueWorkerIntegrationTest {
     when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY)).thenReturn(2);
     List<Long> ids = List.of(insert("one", null), insert("two", null), insert("three", null));
     service(pool(), emailService).processQueue();
+
     assertEquals(
         EmailStatus.SENT, emailQueueRepository.findById(ids.get(0)).orElseThrow().getStatus());
     assertEquals(
@@ -272,10 +275,10 @@ class EmailQueueWorkerIntegrationTest {
     CyclicBarrier selected = new CyclicBarrier(2);
     doAnswer(
             call -> {
-              List<EmailQueueEntity> result =
+              List<EmailQueueEntity> emailQueueEntries =
                   emailQueueRepository.findPendingEmails(call.getArgument(0), call.getArgument(1));
               selected.await(10, TimeUnit.SECONDS);
-              return result;
+              return emailQueueEntries;
             })
         .when(probes.emailQueueRepository())
         .findPendingEmails(any(), any());
@@ -301,6 +304,7 @@ class EmailQueueWorkerIntegrationTest {
     pools.add(pool);
     executor.shutdown();
     service(pool, emailService).processQueue();
+
     assertEquals(EmailStatus.PENDING, emailQueueRepository.findById(id).orElseThrow().getStatus());
     verifyNoInteractions(emailService);
   }
@@ -331,14 +335,17 @@ class EmailQueueWorkerIntegrationTest {
     try (ExecutorService caller = Executors.newSingleThreadExecutor()) {
       Future<?> run = caller.submit(service(pool, emailService)::processQueue);
       await(sending);
+
       assertEquals(
           EmailStatus.IN_PROGRESS,
           emailQueueRepository.findById(firstId).orElseThrow().getStatus());
       pool.shutdown();
       run.get(10, TimeUnit.SECONDS);
+
       assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
     }
     EmailQueueEntity claimed = emailQueueRepository.findById(firstId).orElseThrow();
+
     assertEquals(EmailStatus.IN_PROGRESS, claimed.getStatus());
     assertEquals(0, claimed.getRetryCount());
     assertNull(claimed.getLastRetryAt());
@@ -362,6 +369,7 @@ class EmailQueueWorkerIntegrationTest {
         .sendEmail(any(), eq("unknown"), any());
     EmailQueueService service = service(pool(), emailService);
     service.processQueue();
+
     assertEquals(
         EmailStatus.SENT, emailQueueRepository.findById(healthy).orElseThrow().getStatus());
     assertEquals(
@@ -369,9 +377,11 @@ class EmailQueueWorkerIntegrationTest {
     assertEquals(
         EmailStatus.IN_PROGRESS, emailQueueRepository.findById(unknown).orElseThrow().getStatus());
     AdminNotificationAttemptEntity audit = attempts.findAll().getFirst();
+
     assertEquals(known, audit.getQueueId());
     assertEquals(AdminNotificationStatus.SENT, audit.getStatus());
     service.processQueue();
+
     verify(emailService).sendAdminEmail(any(), any(), any());
     assertEquals(1, attempts.count());
   }
@@ -385,9 +395,10 @@ class EmailQueueWorkerIntegrationTest {
     AtomicBoolean injected = new AtomicBoolean();
     doAnswer(
             call -> {
-              EmailQueueEntity item = call.getArgument(0);
-              if (item.getSubject().equals("affected")
-                  && item.getStatus() == (resultCommit ? EmailStatus.SENT : EmailStatus.IN_PROGRESS)
+              EmailQueueEntity emailQueueEntry = call.getArgument(0);
+              if (emailQueueEntry.getSubject().equals("affected")
+                  && emailQueueEntry.getStatus()
+                      == (resultCommit ? EmailStatus.SENT : EmailStatus.IN_PROGRESS)
                   && injected.compareAndSet(false, true)) {
                 TransactionSynchronizationManager.registerSynchronization(
                     new TransactionSynchronization() {
@@ -397,11 +408,12 @@ class EmailQueueWorkerIntegrationTest {
                       }
                     });
               }
-              return emailQueueRepository.save(item);
+              return emailQueueRepository.save(emailQueueEntry);
             })
         .when(probes.emailQueueRepository())
         .save(any());
     service(pool(), emailService).processQueue();
+
     assertTrue(injected.get());
     assertEquals(
         resultCommit ? EmailStatus.IN_PROGRESS : EmailStatus.PENDING,
@@ -471,6 +483,7 @@ class EmailQueueWorkerIntegrationTest {
                 new MimeMessage(
                     Session.getInstance(new Properties()),
                     new ByteArrayInputStream(data.toString().getBytes(StandardCharsets.UTF_8)));
+
             assertEquals("recipient@example.test", message.getAllRecipients()[0].toString());
             assertNull(messages.putIfAbsent(message.getSubject(), message.getContent().toString()));
             firstWave.countDown();
@@ -505,6 +518,7 @@ class EmailQueueWorkerIntegrationTest {
         socket.close();
       }
       handlers.shutdownNow();
+
       assertTrue(handlers.awaitTermination(10, TimeUnit.SECONDS));
     }
   }

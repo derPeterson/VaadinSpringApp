@@ -43,6 +43,7 @@ class DurableAuthenticationTest {
   void erasedLoginCredentialsUseTheCurrentStoredVersion(String erased) {
     Authentication authenticated = authentication(account(erased));
     DurableAuthentication captured = DurableAuthentication.capture(authenticated, name -> current);
+
     assertEquals(IDENTITY, captured.username());
     assertNotNull(captured.restore(name -> current, "fixture-key").getAuthentication());
   }
@@ -52,6 +53,7 @@ class DurableAuthenticationTest {
     String overlongIdentity = "a".repeat(256);
     String credentialVersion = "0".repeat(64);
     List<DurableAuthentication.Factor> factors = List.of();
+
     assertThrows(
         IllegalArgumentException.class,
         () -> new DurableAuthentication(overlongIdentity, credentialVersion, false, 0, factors));
@@ -69,6 +71,7 @@ class DurableAuthenticationTest {
     when(authentication.getPrincipal()).thenReturn(principal, null);
     when(authentication.getAuthorities()).thenReturn(List.of());
     DurableAuthentication captured = DurableAuthentication.capture(authentication, name -> stored);
+
     assertEquals(IDENTITY, captured.username());
     verify(authentication).getPrincipal();
     verify(principal).getPassword();
@@ -81,6 +84,7 @@ class DurableAuthenticationTest {
         mock(UsernamePasswordAuthenticationToken.class);
     when(authentication.isAuthenticated()).thenReturn(true);
     UserDetailsService users = name -> current;
+
     assertThrows(
         AuthenticationServiceException.class,
         () -> DurableAuthentication.capture(authentication, users));
@@ -90,6 +94,7 @@ class DurableAuthenticationTest {
   void aDifferentNonErasedLoginPasswordCannotAdoptTheCurrentVersion() {
     Authentication authenticated = authentication(account("different-version"));
     UserDetailsService users = name -> current;
+
     assertThrows(
         AuthenticationServiceException.class,
         () -> DurableAuthentication.capture(authenticated, users));
@@ -101,6 +106,7 @@ class DurableAuthenticationTest {
     Authentication authenticated = authentication(account(null));
     UserDetails unavailable = account(missing);
     UserDetailsService users = name -> unavailable;
+
     assertThrows(
         AuthenticationServiceException.class,
         () -> DurableAuthentication.capture(authenticated, users));
@@ -113,6 +119,7 @@ class DurableAuthenticationTest {
         DurableAuthentication.capture(authentication(current), name -> current);
     UserDetails unavailable = account(missing);
     UserDetailsService users = name -> unavailable;
+
     assertThrows(
         AuthenticationServiceException.class, () -> captured.restore(users, "fixture-key"));
   }
@@ -124,6 +131,7 @@ class DurableAuthenticationTest {
         DurableAuthentication.capture(authentication(current), name -> current);
     UserDetails unavailable = account(missing);
     UserDetailsService users = name -> unavailable;
+
     assertThrows(
         AuthenticationServiceException.class, () -> captured.withCurrentCredentials(users));
   }

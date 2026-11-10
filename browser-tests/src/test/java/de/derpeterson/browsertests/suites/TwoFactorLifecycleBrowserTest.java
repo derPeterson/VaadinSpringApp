@@ -40,6 +40,7 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     browserPage.locator("#external-register-first input").fill("Locale");
     browserPage.locator("#external-register-last input").fill("Fixture");
     browserPage.locator("#external-register-submit").click();
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
     new UserMenu(browserPage).selectTestLanguage();
     browserPage.navigate("/account?section=security&tab=portal");
@@ -49,14 +50,17 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     String mailCode = new MailpitInbox(browserContext).awaitAuthenticatorSetupCode(email);
     UiTexts other = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     new UserMenu(browserPage).selectLanguage(other.language());
+
     assertThat(browserPage.locator("#two-factor-code"))
         .hasJSProperty("label", other.getTwoFactorEmailCodeLabel());
     browserPage.locator("#two-factor-code input").fill(mailCode);
     browserPage.locator("#two-factor-submit").click();
+
     assertThat(browserPage.locator("#two-factor-qr")).isVisible();
     Locator qr = browserPage.locator("#two-factor-qr");
     String originalQr = qr.getAttribute("src");
     new UserMenu(browserPage).selectTestLanguage();
+
     assertThat(qr).hasAttribute("src", originalQr);
     assertThat(browserPage.locator("#two-factor-qr"))
         .hasAttribute("alt", uiTexts.getTwoFactorQrAlt());
@@ -68,25 +72,31 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     providerIdentity(email);
     TwoFactorPage.openLoginHelp(browserPage);
     browserPage.locator("#two-factor-help").click();
+
     assertThat(browserPage.locator("#account-support")).isVisible();
     String draft = "Own recovery request " + UUID.randomUUID();
     browserPage.locator("#support-reply textarea").fill(draft);
     new UserMenu(browserPage).selectLanguage(other.language());
+
     assertThat(browserPage.locator("#support-reply"))
         .hasJSProperty("label", other.getSupportDescription());
     assertThat(browserPage.locator("#support-reply textarea")).hasValue(draft);
     browserPage.locator("#support-create").click();
     Locator ticket =
         browserPage.locator("#support-ticket-grid").getByText(Pattern.compile("^#[0-9]+$"));
+
     assertThat(ticket).hasCount(1);
     String number = ticket.innerText();
     new UserMenu(browserPage).selectTestLanguage();
+
     assertThat(ticket).hasText(number);
     assertThat(browserPage.locator("#account-support")).containsText(draft);
     AllurePlaywright.attachScreenshot("Sprachwechsel im eingeschränkten Hilfszugang", browserPage);
     browserPage.navigate("/home");
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/recovery-help$"));
     browserPage.locator("#support-back").click();
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor$"));
     browserPage.locator("#two-factor-cancel").click();
     new LoginPage(browserPage).assertFormVisible();
@@ -97,10 +107,12 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator("#two-factor-recovery-details")).hasAttribute("opened", "");
     Locator firstCode = browserPage.locator("#two-factor-recovery-code-1");
     firstCode.locator("input").focus();
+
     assertThat(firstCode).hasJSProperty("value", "");
     assertThat(firstCode.locator("vaadin-button")).hasCSS("color", "rgb(56, 189, 248)");
     browserContext.grantPermissions(java.util.List.of("clipboard-read", "clipboard-write"));
     firstCode.locator("vaadin-button").click();
+
     assertThat(
             browserPage
                 .locator("vaadin-notification-card:not([closing])")
@@ -113,11 +125,13 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     org.junit.jupiter.api.Assertions.assertEquals(
         codes, TwoFactorPage.recoveryCodeValues(browserPage));
     browserPage.locator("#two-factor-recovery-toggle").click();
+
     assertThat(browserPage.locator("#two-factor-recovery-codes")).isHidden();
     assertThat(browserPage.locator("#two-factor-copy-codes")).isEnabled();
     assertThat(browserPage.locator("#two-factor-download-pdf")).isEnabled();
     browserPage.locator("#two-factor-codes-saved input").setChecked(true);
     new UserMenu(browserPage).selectLanguage(other.language());
+
     assertThat(browserPage.locator("#two-factor-recovery-codes")).isHidden();
     assertThat(browserPage.locator("#two-factor-recovery-details"))
         .not()
@@ -136,6 +150,7 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     org.junit.jupiter.api.Assertions.assertEquals(
         codes, TwoFactorPage.recoveryCodeValues(browserPage));
     browserPage.locator("#two-factor-submit").click();
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
   }
 
@@ -150,12 +165,13 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
     AdminUserDialog form = users.openEdit(email);
     form.setRole(uiTexts.getRoleSuperadmin(), true);
     form.save();
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.browserPage.setViewportSize(width, 900);
-      actor.loginAdmin(email, BrowserTestAccounts.USER_PASSWORD);
-      actor.browserPage.navigate("/admin?section=configuration&group=two_factor");
-      assertThat(actor.browserPage.locator("#two-factor-save")).isVisible();
-      actor
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.browserPage.setViewportSize(width, 900);
+      browserActor.loginAdmin(email, BrowserTestAccounts.USER_PASSWORD);
+      browserActor.browserPage.navigate("/admin?section=configuration&group=two_factor");
+
+      assertThat(browserActor.browserPage.locator("#two-factor-save")).isVisible();
+      browserActor
           .browserPage
           .getByRole(
               AriaRole.SWITCH,
@@ -163,9 +179,10 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
                   .setName(uiTexts.getTwoFactorInactivityEnabled())
                   .setExact(true))
           .setChecked(true);
-      try (Page provider = actor.browserContext.newPage()) {
+      try (Page provider = browserActor.browserContext.newPage()) {
         provider.setViewportSize(width, 900);
         provider.navigate("/admin?section=configuration&group=external_login");
+
         assertThat(provider.locator("#provider-google-save")).isVisible();
         String originalId = provider.locator("#provider-google-client-id input").inputValue();
         provider.locator("#provider-google-client-id input").fill("unsaved-own-test-draft");
@@ -174,21 +191,25 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
         form.save();
         // Der bestehende Login und die normale Adminrolle bleiben erhalten. Die live
         // zurückgezogenen Sonderrechte müssen beide alten Formulare verwerfen.
-        assertThat(actor.browserPage.locator("#two-factor-save")).hasCount(0);
+        assertThat(browserActor.browserPage.locator("#two-factor-save")).hasCount(0);
         assertThat(provider.locator("#provider-google-save")).hasCount(0);
-        actor.browserPage.navigate("/admin?section=configuration&group=two_factor");
-        assertThat(actor.browserPage.locator("#admin-two-factor-settings")).hasCount(0);
+        browserActor.browserPage.navigate("/admin?section=configuration&group=two_factor");
+
+        assertThat(browserActor.browserPage.locator("#admin-two-factor-settings")).hasCount(0);
         provider.navigate("/admin?section=configuration&group=external_login");
+
         assertThat(provider.locator("#admin-provider-settings")).hasCount(0);
         AllurePlaywright.attachScreenshot(
-            "Zurückgezogene Superadminrechte in offener Ansicht", actor.browserPage);
+            "Zurückgezogene Superadminrechte in offener Ansicht", browserActor.browserPage);
         openConfiguration();
+
         assertThat(browserPage.locator("#two-factor-inactivity-enabled"))
             .hasJSProperty("checked", false);
         browserPage.navigate("/admin?section=configuration&group=external_login");
+
         assertThat(browserPage.locator("#provider-google-client-id input")).hasValue(originalId);
       }
-      new UserMenu(actor.browserPage).signOut();
+      new UserMenu(browserActor.browserPage).signOut();
     }
   }
 
@@ -202,6 +223,7 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
       openConfiguration();
       for (int width : new int[] {1280, 390}) {
         browserPage.setViewportSize(width, 900);
+
         assertThat(
                 browserPage.getByText(
                     uiTexts.getTwoFactorDevelopmentWarning(),
@@ -230,20 +252,22 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
                   .setExact(true))
           .setChecked(true);
       saveConfiguration();
-      try (BrowserActor actor = new BrowserActor(testBrowser)) {
-        LoginPage login = new LoginPage(actor.browserPage);
+      try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+        LoginPage login = new LoginPage(browserActor.browserPage);
         login.open();
         login.signInFirstFactor(
             BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-        assertThat(actor.browserPage).hasURL(Pattern.compile(".*/admin$"));
-        assertThat(actor.browserPage.locator("#two-factor-code")).hasCount(0);
-        new UserMenu(actor.browserPage).selectTestLanguage();
-        new UserMenu(actor.browserPage).signOut();
+
+        assertThat(browserActor.browserPage).hasURL(Pattern.compile(".*/admin$"));
+        assertThat(browserActor.browserPage.locator("#two-factor-code")).hasCount(0);
+        new UserMenu(browserActor.browserPage).selectTestLanguage();
+        new UserMenu(browserActor.browserPage).signOut();
       }
     } finally {
       BrowserTestRunner.restartWithDevelopmentOptions(false);
     }
     openConfiguration();
+
     assertThat(
             browserPage.getByText(
                 uiTexts.getTwoFactorDevelopmentTitle(), new Page.GetByTextOptions().setExact(true)))
@@ -264,6 +288,7 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
         browserPage, BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
     browserPage.navigate("/admin?section=configuration&group=two_factor");
     new UserMenu(browserPage).selectTestLanguage();
+
     assertThat(browserPage.locator("#two-factor-save")).isVisible();
   }
 
@@ -273,6 +298,7 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
         browserPage, TwoFactorPage.nextCode(browserPage, BrowserTestAccounts.SUPERADMIN_EMAIL));
     UiActions.complete(
         browserPage, () -> browserPage.locator("#two-factor-action-confirm").click());
+
     assertThat(browserPage.locator("#two-factor-action-confirm")).isHidden();
     browserPage.waitForCondition(() ->
         java.net.URI.create(browserPage.url()).getPath().equals("/two-factor")
@@ -289,15 +315,16 @@ public class TwoFactorLifecycleBrowserTest extends BrowserFixture {
   }
 
   private void assertFreshLoginNeedsFactor() {
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      LoginPage login = new LoginPage(actor.browserPage);
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      LoginPage login = new LoginPage(browserActor.browserPage);
       login.open();
       login.signInFirstFactor(
           BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-      assertThat(actor.browserPage).hasURL(Pattern.compile(".*/two-factor.*"));
-      assertThat(actor.browserPage.locator("#two-factor-code")).isVisible();
-      actor.browserPage.locator("#two-factor-cancel").click();
-      new LoginPage(actor.browserPage).assertFormVisible();
+
+      assertThat(browserActor.browserPage).hasURL(Pattern.compile(".*/two-factor.*"));
+      assertThat(browserActor.browserPage.locator("#two-factor-code")).isVisible();
+      browserActor.browserPage.locator("#two-factor-cancel").click();
+      new LoginPage(browserActor.browserPage).assertFormVisible();
     }
   }
 

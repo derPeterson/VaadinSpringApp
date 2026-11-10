@@ -92,10 +92,11 @@ public class SessionManagementBrowserTest extends BrowserFixture {
     return email;
   }
 
-  private void login(BrowserActor actor, String email, boolean remember) {
-    actor.login(email, BrowserTestAccounts.USER_PASSWORD, remember);
-    assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
-    new UserMenu(actor.browserPage).selectTestLanguage();
+  private void login(BrowserActor browserActor, String email, boolean remember) {
+    browserActor.login(email, BrowserTestAccounts.USER_PASSWORD, remember);
+
+    assertThat(browserActor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+    new UserMenu(browserActor.browserPage).selectTestLanguage();
   }
 
   private void revoked(Page target) {
@@ -148,9 +149,11 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       }
       limit(7);
       sessions.refreshSessionList();
+
       assertThat(owner.browserPage.locator("#account-sessions-limit"))
           .hasText(uiTexts.getAccountSettingsSessionsLimit(7));
       owner.browserPage.reload();
+
       assertThat(owner.browserPage).hasURL(urlPattern(ACCOUNT_ROUTE, "\\?section=sessions"));
       assertThat(owner.browserPage.locator("#account-tab-sessions"))
           .hasAttribute("aria-current", "page");
@@ -191,13 +194,16 @@ public class SessionManagementBrowserTest extends BrowserFixture {
                   response.status() == 401
                       && response.url().startsWith(System.getProperty("browser.tests.baseUrl")),
               () -> stale.host("account-save").click());
+
       assertEquals(401, denied.status());
       revoked(other.browserPage);
       UiActions.complete(
           owner.browserPage, () -> owner.browserPage.locator("#account-tab-profile").click());
+
       assertThat(new AccountPage(owner.browserPage).input("account-first-name"))
           .hasValue(originalName);
       owner.browserPage.reload();
+
       assertThat(new AccountPage(owner.browserPage).input("account-email")).hasValue(email);
       assertThat(new AccountPage(owner.browserPage).input("account-first-name"))
           .hasValue(originalName);
@@ -228,11 +234,13 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       sessions.assertCounts(3, 2, 0);
       sessions.revokeOthers();
       sessions.assertCounts(1, 0, 0);
+
       assertThat(owner.browserPage.locator("#account-logout-others")).isDisabled();
       revoked(second.browserPage);
       revoked(third.browserPage);
       owner.browserPage.reload();
       sessions.assertCounts(1, 0, 0);
+
       assertTrue(
           owner.browserContext.cookies().stream()
               .anyMatch(cookie -> cookie.name.equals("remember-me")));
@@ -267,6 +275,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
                   .setExact(true))
           .check();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+
       assertThat(persistent.browserPage).hasURL(urlPattern(HOME_ROUTE));
     }
     try (BrowserActor owner = new BrowserActor(testBrowser)) {
@@ -277,6 +286,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       owner.browserPage.navigate("about:blank");
       BrowserTestRunner.restartTestApplication();
       owner.browserPage.navigate(path(HOME_ROUTE));
+
       assertThat(owner.browserPage).hasURL(urlPattern(HOME_ROUTE));
       new UserMenu(owner.browserPage).selectTestLanguage();
       AccountSessionsPage sessions = new AccountSessionsPage(owner.browserPage);
@@ -340,6 +350,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
           sessions.assertCounts(2, 1, 1);
           sessions.assertSummaryAlignment();
           String deviceLabel = sessions.rows("current").locator(".account-entry-title").innerText();
+
           assertThat(sessions.rows("active").locator(".account-entry-title")).hasText(deviceLabel);
           assertThat(sessions.rows("saved").locator(".account-entry-title")).hasText(deviceLabel);
           assertThat(sessions.rows("saved").locator(".account-session-sign-in-method")).hasCount(0);
@@ -349,6 +360,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
               sessions
                   .rows("active")
                   .locator(".account-session-sign-in-method .account-session-detail-value");
+
           assertThat(method).hasText(uiTexts.getSignInPortalPassword());
           assertThat(method).hasCSS("font-weight", "700");
           assertThat(method).hasCSS("color", "rgb(255, 255, 255)");
@@ -396,8 +408,10 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       form.input("account-first-name").fill("MustNotSurviveRestart");
       BrowserTestRunner.restartTestApplication();
       form.host("account-save").click();
+
       assertThat(owner.browserPage).hasURL(urlPattern(HOME_ROUTE));
       form.open();
+
       assertThat(form.input("account-first-name")).hasValue(originalName);
       next.login(email, BrowserTestAccounts.USER_PASSWORD);
       LoginPage recovery = new LoginPage(next.browserPage);
@@ -405,6 +419,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       recovery.revokeRecoverySession(0);
       UiActions.complete(
           next.browserPage, () -> next.browserPage.locator("#session-recovery-continue").click());
+
       assertThat(next.browserPage).hasURL(urlPattern(HOME_ROUTE));
       BrowserTestRunner.restartTestApplication();
       next.browserPage.reload();
@@ -436,11 +451,13 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       next.login(email, BrowserTestAccounts.USER_PASSWORD, true);
       LoginPage login = new LoginPage(next.browserPage);
       login.assertRestrictedManagement();
+
       assertFalse(
           next.browserContext.cookies().stream()
               .anyMatch(cookie -> cookie.name.equals("remember-me")));
       next.browserPage.navigate(path(ACCOUNT_ROUTE));
       login.assertRestrictedManagement();
+
       assertThat(next.browserPage.locator("#account-session-entries [data-session-state='active']"))
           .hasCount(1);
       assertThat(
@@ -455,6 +472,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
             recovery
                 .rows("active")
                 .locator(".account-session-sign-in-method .account-session-detail-value");
+
         assertThat(method).hasText(uiTexts.getSignInPortalPassword());
         assertThat(method).hasCSS("font-weight", "700");
         AllurePlaywright.attachScreenshot("Sitzungslimit bei " + width + " px", next.browserPage);
@@ -470,12 +488,15 @@ public class SessionManagementBrowserTest extends BrowserFixture {
         }
       }
       recovery.confirmDeviceRevocation();
+
       assertThat(next.browserPage.locator("#account-session-entries [data-session-state='active']"))
           .hasCount(0);
       UiActions.complete(
           next.browserPage, () -> next.browserPage.locator("#session-recovery-continue").click());
+
       assertThat(next.browserPage).hasURL(urlPattern(HOME_ROUTE));
       new UserMenu(next.browserPage).selectTestLanguage();
+
       assertTrue(
           next.browserContext.cookies().stream()
               .anyMatch(cookie -> cookie.name.equals("remember-me")));

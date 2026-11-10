@@ -114,8 +114,10 @@ class VerificationServiceTest {
 
     ArgumentCaptor<VerificationTokenEntity> captor =
         ArgumentCaptor.forClass(VerificationTokenEntity.class);
+
     verify(verificationTokenRepository, times(3)).save(captor.capture());
     VerificationTokenEntity created = captor.getAllValues().getLast();
+
     assertEquals(TokenStatus.INACTIVE, first.getStatus());
     assertEquals(TokenStatus.INACTIVE, second.getStatus());
     assertEquals(UUID.fromString(value).toString(), value);
@@ -132,6 +134,7 @@ class VerificationServiceTest {
   void invalidLifetimePropagatesRatherThanSavingANewToken() {
     when(configService.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
         .thenReturn("invalid");
+
     assertThrows(
         DateTimeParseException.class, () -> verificationService.createToken(testUserEntity));
     verify(verificationTokenRepository, never()).save(any());
@@ -143,6 +146,7 @@ class VerificationServiceTest {
   void belowMinimumLifetimeIsRejectedBeforeInvalidatingTokens(String duration) {
     when(configService.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
         .thenReturn(duration);
+
     assertThrows(
         IllegalArgumentException.class, () -> verificationService.createToken(testUserEntity));
     verify(verificationTokenRepository, never()).findAllByUserEntityAndStatus(any(), any());
@@ -156,6 +160,7 @@ class VerificationServiceTest {
     verificationService.createToken(testUserEntity);
     ArgumentCaptor<VerificationTokenEntity> captor =
         ArgumentCaptor.forClass(VerificationTokenEntity.class);
+
     verify(verificationTokenRepository).save(captor.capture());
     assertEquals(NOW.plusMinutes(1), captor.getValue().getExpiryDate());
   }
@@ -164,6 +169,7 @@ class VerificationServiceTest {
   void unrepresentableExpiryDoesNotInvalidateExistingTokens() {
     when(configService.getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
         .thenReturn("P366000000000D");
+
     assertThrows(DateTimeException.class, () -> verificationService.createToken(testUserEntity));
     verify(verificationTokenRepository, never()).findAllByUserEntityAndStatus(any(), any());
     verify(verificationTokenRepository, never()).save(any());
@@ -190,6 +196,7 @@ class VerificationServiceTest {
     VerificationTokenEntity entity = token(TokenStatus.ACTIVE, NOW.plusNanos(offsetNanos));
     when(verificationTokenRepository.findByTokenAndStatus("token", TokenStatus.ACTIVE))
         .thenReturn(Optional.of(entity));
+
     assertEquals(offsetNanos > 0, verificationService.validateToken("token"));
     assertEquals(offsetNanos > 0, testUserEntity.isEnabled());
     assertEquals(offsetNanos > 0 ? TokenStatus.USED : TokenStatus.EXPIRED, entity.getStatus());
@@ -229,6 +236,7 @@ class VerificationServiceTest {
     when(verificationTokenRepository.findByTokenAndStatus("token", TokenStatus.ACTIVE))
         .thenReturn(Optional.of(entity));
     verificationService.setTokenStatus("token", status);
+
     assertEquals(status, entity.getStatus());
     verify(verificationTokenRepository).save(entity);
   }
@@ -240,16 +248,19 @@ class VerificationServiceTest {
         () -> verificationService.setTokenStatus("token", TokenStatus.ACTIVE));
     VerificationTokenEntity entity = token(TokenStatus.USED, NOW.plusDays(1));
     when(verificationTokenRepository.findByToken("token")).thenReturn(Optional.of(entity));
+
     assertThrows(
         IllegalStateException.class,
         () -> verificationService.setTokenStatus("token", TokenStatus.INACTIVE));
     verificationService.setTokenStatus("token", TokenStatus.USED);
+
     verify(verificationTokenRepository, never()).save(any());
   }
 
   @Test
   void missingStatusTargetIsANoOp() {
     verificationService.setTokenStatus("missing", TokenStatus.USED);
+
     verify(verificationTokenRepository, never()).save(any());
   }
 
@@ -259,6 +270,7 @@ class VerificationServiceTest {
     when(verificationTokenRepository.findByToken("token"))
         .thenReturn(
             exists ? Optional.of(token(TokenStatus.EXPIRED, NOW.minusDays(1))) : Optional.empty());
+
     assertEquals(exists, verificationService.existsToken("token"));
   }
 
@@ -273,13 +285,16 @@ class VerificationServiceTest {
     when(messageProperties.getEmailVerificationSubject()).thenReturn("Verify account");
     try (MockedStatic<CustomI18NProvider> locale = mockStatic(CustomI18NProvider.class)) {
       locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.forLanguageTag(language));
+
       assertTrue(resend(entry));
     }
 
     ArgumentCaptor<VerificationTokenEntity> tokenCaptor =
         ArgumentCaptor.forClass(VerificationTokenEntity.class);
+
     verify(verificationTokenRepository).save(tokenCaptor.capture());
     ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
+
     verify(emailQueueService)
         .addEmailToQueue(
             eq(testUserEntity), eq("Verify account"), body.capture(), eq(EmailType.VERIFICATION));
@@ -305,6 +320,7 @@ class VerificationServiceTest {
             .getAccountCopyrightTemplate()
             .replace("{year}", String.valueOf(Year.now(CLOCK).getValue()))
             .replace("{serviceName}", "Example Service");
+
     assertTrue(HtmlUtils.htmlUnescape(body.getValue()).contains(expectedFooter));
     assertFalse(body.getValue().contains("{{"));
     assertFalse(testUserEntity.isEnabled());
@@ -319,8 +335,10 @@ class VerificationServiceTest {
     when(configService.getString(ConfigEntry.COPYRIGHT_TEXT))
         .thenReturn("© {year} {serviceName} <b>Eigener Text</b>");
     when(messageProperties.getEmailVerificationSubject()).thenReturn("subject");
+
     assertTrue(resend("email"));
     ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
+
     verify(emailQueueService)
         .addEmailToQueue(
             eq(testUserEntity), eq("subject"), body.capture(), eq(EmailType.VERIFICATION));
@@ -338,6 +356,7 @@ class VerificationServiceTest {
     prepareResend(entry);
     when(emailQueueService.hasOpenEmailForUserAndType(testUserEntity, EmailType.VERIFICATION))
         .thenReturn(true);
+
     assertTrue(resend(entry));
     verify(verificationTokenRepository, never()).save(any());
     verify(emailQueueService, never()).addEmailToQueue(any(), any(), any(), any());
@@ -349,9 +368,11 @@ class VerificationServiceTest {
   void resendForEnabledAccountIsRejected(String entry) throws IOException {
     prepareResend(entry);
     testUserEntity.setEnabled(true);
+
     assertFalse(resend(entry));
     verifyNoInteractions(emailQueueService);
     verifyMaintenanceOnly(1);
+
     verify(verificationTokenRepository, never()).save(any());
   }
 
@@ -369,8 +390,10 @@ class VerificationServiceTest {
   @Test
   void cleanupDeletesUsingConfiguredCutoffWithoutFormattingFailure() {
     when(configService.getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn("P7D");
+
     assertDoesNotThrow(verificationService::deleteExpiredTokens);
     ArgumentCaptor<LocalDateTime> cutoff = ArgumentCaptor.forClass(LocalDateTime.class);
+
     verify(verificationTokenRepository).deleteByExpiryDateBefore(cutoff.capture());
     assertEquals(NOW.minusDays(7), cutoff.getValue());
   }
@@ -382,6 +405,7 @@ class VerificationServiceTest {
         .thenReturn(duration);
     Class<? extends RuntimeException> expected =
         duration.equals("invalid") ? DateTimeParseException.class : IllegalArgumentException.class;
+
     assertThrows(expected, verificationService::deleteExpiredTokens);
     verifyNoInteractions(verificationTokenRepository);
   }
@@ -390,14 +414,17 @@ class VerificationServiceTest {
   void minimumRetentionUsesExpiryBasedCutoff() {
     when(configService.getString(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION)).thenReturn("PT2M");
     verificationService.deleteExpiredTokens();
+
     verify(verificationTokenRepository).deleteByExpiryDateBefore(NOW.minusMinutes(2));
   }
 
   @Test
   void disappearedAccountRejectsValidationStatusChangesAndResend() throws IOException {
     when(userRepository.lockVerificationUser(1L)).thenReturn(Optional.empty());
+
     assertFalse(verificationService.validateToken("token"));
     verificationService.setTokenStatus("token", TokenStatus.INACTIVE);
+
     assertFalse(verificationService.sendVerificationEmailByUser(testUserEntity));
     assertThrows(
         IllegalStateException.class, () -> verificationService.createToken(testUserEntity));

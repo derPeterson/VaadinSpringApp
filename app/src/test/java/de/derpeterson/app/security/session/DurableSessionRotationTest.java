@@ -48,11 +48,10 @@ class DurableSessionRotationTest {
     CountDownLatch readerStarted = new CountDownLatch(1);
     when(backend.createSession()).thenAnswer(call -> new MapSession());
     when(backend.findById(anyString()))
-        .thenAnswer(
-            call -> {
-              MapSession value = rows.get(call.getArgument(0));
-              return value == null ? null : new MapSession(value);
-            });
+        .thenAnswer(call -> {
+          MapSession value = rows.get(call.getArgument(0));
+          return value == null ? null : new MapSession(value);
+        });
     doAnswer(
             call -> {
               MapSession value = call.getArgument(0);
@@ -62,6 +61,7 @@ class DurableSessionRotationTest {
               rows.put(value.getId(), new MapSession(value));
               if (rotating.get()) {
                 published.countDown();
+
                 assertTrue(release.await(10, TimeUnit.SECONDS));
               }
               return null;
@@ -77,33 +77,35 @@ class DurableSessionRotationTest {
     Session session = repository.createSession();
     oldId.set(session.getId());
     VaadinSession ui = mock(VaadinSession.class);
-    VaadinService service = mock(VaadinService.class);
-    when(ui.getService()).thenReturn(service);
+    VaadinService vaadinService = mock(VaadinService.class);
+    when(ui.getService()).thenReturn(vaadinService);
     session.setAttribute("runtime-ui", ui);
     rotating.set(true);
-    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+    try (ExecutorService executorService = Executors.newFixedThreadPool(2)) {
       try {
-        Future<String> changed = executor.submit(session::changeSessionId);
+        Future<String> changed = executorService.submit(session::changeSessionId);
+
         assertTrue(published.await(10, TimeUnit.SECONDS));
         Future<Session> oldRequest =
-            executor.submit(
-                () -> {
-                  readerStarted.countDown();
-                  if (cleanup) {
-                    repository.cleanExpiredRuntimeState();
-                    return null;
-                  }
-                  return repository.findById(oldId.get());
-                });
+            executorService.submit(() -> {
+              readerStarted.countDown();
+              if (cleanup) {
+                repository.cleanExpiredRuntimeState();
+                return null;
+              }
+              return repository.findById(oldId.get());
+            });
+
         assertTrue(readerStarted.await(10, TimeUnit.SECONDS));
         // Der Writer ist nachweislich vor Veröffentlichung seines Runtime-Zustands angehalten.
         assertThrows(TimeoutException.class, () -> oldRequest.get(200, TimeUnit.MILLISECONDS));
         release.countDown();
         String currentId = changed.get(10, TimeUnit.SECONDS);
+
         assertNotNull(currentId);
         assertNull(oldRequest.get(10, TimeUnit.SECONDS));
         assertSame(ui, repository.findById(currentId).getAttribute("runtime-ui"));
-        verify(service, never()).fireSessionDestroy(ui);
+        verify(vaadinService, never()).fireSessionDestroy(ui);
       } finally {
         release.countDown();
       }

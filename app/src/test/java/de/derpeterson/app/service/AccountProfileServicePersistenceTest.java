@@ -146,30 +146,33 @@ class AccountProfileServicePersistenceTest {
     testUserEntity = userRepository.findById(testUserEntity.getId()).orElseThrow();
     authenticate();
     Profile saved = profiles.save(mockHttpRequest, changes(testUserEntity.getVersion()));
-    UserEntity stored =
+    UserEntity storedUserEntity =
         transactionTemplate.execute(status -> {
           UserEntity user = userRepository.findById(testUserEntity.getId()).orElseThrow();
+
           assertEquals(
               List.of(role), user.getRoleEntities().stream().map(RoleEntity::getName).toList());
           return user;
         });
-    assertEquals("Updated", stored.getFirstName());
-    assertEquals("Name", stored.getLastName());
-    assertEquals(LocalDate.of(1995, 2, 3), stored.getBirthDate());
-    assertEquals(Locale.ENGLISH, stored.getPreferredLocale());
-    assertEquals(testUserEntity.getEmail(), stored.getEmail());
-    assertEquals(testUserEntity.getPassword(), stored.getPassword());
-    assertEquals(testUserEntity.getGender(), stored.getGender());
-    assertTrue(stored.isEnabled());
-    assertEquals(testUserEntity.isVerificationPending(), stored.isVerificationPending());
-    assertEquals(testUserEntity.getStatus(), stored.getStatus());
-    assertEquals(testUserEntity.getLastActivity(), stored.getLastActivity());
+
+    assertEquals("Updated", storedUserEntity.getFirstName());
+    assertEquals("Name", storedUserEntity.getLastName());
+    assertEquals(LocalDate.of(1995, 2, 3), storedUserEntity.getBirthDate());
+    assertEquals(Locale.ENGLISH, storedUserEntity.getPreferredLocale());
+    assertEquals(testUserEntity.getEmail(), storedUserEntity.getEmail());
+    assertEquals(testUserEntity.getPassword(), storedUserEntity.getPassword());
+    assertEquals(testUserEntity.getGender(), storedUserEntity.getGender());
+    assertTrue(storedUserEntity.isEnabled());
+    assertEquals(testUserEntity.isVerificationPending(), storedUserEntity.isVerificationPending());
+    assertEquals(testUserEntity.getStatus(), storedUserEntity.getStatus());
+    assertEquals(testUserEntity.getLastActivity(), storedUserEntity.getLastActivity());
     assertEquals("Before", userRepository.findById(otherId).orElseThrow().getFirstName());
     transactionTemplate.executeWithoutResult(status ->
         assertEquals(
             "own-unconsumed-token",
             entityManager.find(VerificationTokenEntity.class, tokenId).getToken()));
-    assertEquals(stored.getVersion(), saved.version());
+
+    assertEquals(storedUserEntity.getVersion(), saved.version());
     assertNotEquals(testUserEntity.getVersion(), saved.version());
     assertDoesNotThrow(() -> profiles.save(mockHttpRequest, changes(saved.version())));
   }
@@ -179,10 +182,12 @@ class AccountProfileServicePersistenceTest {
     transactionTemplate.executeWithoutResult(status ->
         userRepository.findById(testUserEntity.getId()).orElseThrow().setFirstName("Concurrent"));
     Changes changesaccountVersion = changes(testUserEntity.getVersion());
+
     assertThrows(
         OptimisticLockingFailureException.class,
         () -> profiles.save(mockHttpRequest, changesaccountVersion));
     Changes profileChanges = changes(null);
+
     assertThrows(
         OptimisticLockingFailureException.class,
         () -> profiles.save(mockHttpRequest, profileChanges));
@@ -202,6 +207,7 @@ class AccountProfileServicePersistenceTest {
             Locale.ENGLISH,
             gender);
     Profile saved = profiles.save(mockHttpRequest, change);
+
     assertEquals(gender, saved.gender());
     assertEquals(gender, userRepository.findById(testUserEntity.getId()).orElseThrow().getGender());
     assertEquals(Gender.OTHER, userRepository.findById(otherId).orElseThrow().getGender());
@@ -212,14 +218,15 @@ class AccountProfileServicePersistenceTest {
     Changes change =
         new Changes(testUserEntity.getVersion(), "Updated", "Name", null, Locale.ENGLISH, null);
     AccountProfileService.Profile saved = profiles.save(mockHttpRequest, change);
-    UserEntity stored = userRepository.findById(testUserEntity.getId()).orElseThrow();
+    UserEntity storedUserEntity = userRepository.findById(testUserEntity.getId()).orElseThrow();
+
     assertNull(saved.gender());
     assertNull(saved.birthDate());
-    assertNull(stored.getGender());
-    assertNull(stored.getBirthDate());
-    assertEquals("Updated", stored.getFirstName());
-    assertEquals(testUserEntity.getPassword(), stored.getPassword());
-    assertEquals(saved.version(), stored.getVersion());
+    assertNull(storedUserEntity.getGender());
+    assertNull(storedUserEntity.getBirthDate());
+    assertEquals("Updated", storedUserEntity.getFirstName());
+    assertEquals(testUserEntity.getPassword(), storedUserEntity.getPassword());
+    assertEquals(saved.version(), storedUserEntity.getVersion());
   }
 
   @ParameterizedTest
@@ -277,23 +284,27 @@ class AccountProfileServicePersistenceTest {
                   Locale.FRENCH,
                   Gender.OTHER);
         };
+
     assertThrows(IllegalArgumentException.class, () -> profiles.save(mockHttpRequest, invalid));
-    UserEntity stored = userRepository.findById(testUserEntity.getId()).orElseThrow();
-    assertEquals("Before", stored.getFirstName());
-    assertEquals(testUserEntity.getVersion(), stored.getVersion());
-    assertEquals(Locale.GERMAN, stored.getPreferredLocale());
+    UserEntity storedUserEntity = userRepository.findById(testUserEntity.getId()).orElseThrow();
+
+    assertEquals("Before", storedUserEntity.getFirstName());
+    assertEquals(testUserEntity.getVersion(), storedUserEntity.getVersion());
+    assertEquals(Locale.GERMAN, storedUserEntity.getPreferredLocale());
   }
 
   @Test
   void anonymousAndRevokedAccountsCannotSave() {
     SecurityContextHolder.clearContext();
     Changes changesaccountVersion2 = changes(testUserEntity.getVersion());
+
     assertThrows(
         AccessDeniedException.class, () -> profiles.save(mockHttpRequest, changesaccountVersion2));
     authenticate();
     transactionTemplate.executeWithoutResult(
         status -> userRepository.findById(testUserEntity.getId()).orElseThrow().setEnabled(false));
     Changes changesaccountVersion3 = changes(testUserEntity.getVersion());
+
     assertThrows(
         AccessDeniedException.class, () -> profiles.save(mockHttpRequest, changesaccountVersion3));
     assertEquals(
@@ -305,6 +316,7 @@ class AccountProfileServicePersistenceTest {
     when(config.getBoolean(ConfigEntry.MAINTENANCE_MODE))
         .thenThrow(new IllegalStateException("Unavailable"));
     Changes changesaccountVersion4 = changes(testUserEntity.getVersion());
+
     assertThrows(
         MaintenanceAccessException.class,
         () -> profiles.save(mockHttpRequest, changesaccountVersion4));
@@ -317,6 +329,7 @@ class AccountProfileServicePersistenceTest {
     transactionTemplate.executeWithoutResult(
         status -> userRepository.deleteById(testUserEntity.getId()));
     Changes changesaccountVersion5 = changes(testUserEntity.getVersion());
+
     assertThrows(
         AccessDeniedException.class, () -> profiles.save(mockHttpRequest, changesaccountVersion5));
     assertFalse(userRepository.existsById(testUserEntity.getId()));
@@ -345,6 +358,7 @@ class AccountProfileServicePersistenceTest {
           () -> profiles.save(mockHttpRequest, changes(testUserEntity.getVersion())));
     } else {
       Changes changesaccountVersion6 = changes(testUserEntity.getVersion());
+
       assertThrows(
           MaintenanceAccessException.class,
           () -> profiles.save(mockHttpRequest, changesaccountVersion6));

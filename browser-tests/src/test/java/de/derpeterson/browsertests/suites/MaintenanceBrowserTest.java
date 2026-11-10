@@ -135,11 +135,11 @@ public class MaintenanceBrowserTest extends BrowserFixture {
       """)
   void documentsAndExistingSession() {
     String account = user("user");
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.login(account, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(actor.browserPage).selectTestLanguage();
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.login(account, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(browserActor.browserPage).selectTestLanguage();
       Cookie sessionCookie =
-          actor.browserContext.cookies().stream()
+          browserActor.browserContext.cookies().stream()
               .filter(c -> c.name.equals("JSESSIONID"))
               .findFirst()
               .orElseThrow();
@@ -148,9 +148,11 @@ public class MaintenanceBrowserTest extends BrowserFixture {
         for (String route :
             new String[] {HOME_ROUTE, REGISTRATION_ROUTE, FORGOT_PASSWORD_ROUTE, ADMIN_ROUTE}) {
           Response response = anonymous.browserPage.navigate(path(route));
+
           assertNotNull(response);
           assertEquals(503, response.status());
           maintenance(anonymous.browserPage);
+
           assertThat(
                   anonymous
                       .browserPage
@@ -174,10 +176,11 @@ public class MaintenanceBrowserTest extends BrowserFixture {
           assertThat(anonymous.browserPage.locator(".cosmos-card")).isVisible();
         }
       }
-      actor.browserPage.reload();
-      maintenance(actor.browserPage);
+      browserActor.browserPage.reload();
+      maintenance(browserActor.browserPage);
+
       assertThat(
-              actor
+              browserActor
                   .browserPage
                   .locator(".public-panel")
                   .getByRole(
@@ -187,18 +190,19 @@ public class MaintenanceBrowserTest extends BrowserFixture {
                           .setExact(true)))
           .isHidden();
       assertThat(
-              actor.browserPage.getByRole(
+              browserActor.browserPage.getByRole(
                   AriaRole.BUTTON,
                   new Page.GetByRoleOptions()
                       .setName(uiTexts.getBaseLogoutButton())
                       .setExact(true)))
           .isVisible();
       assertTrue(
-          actor.browserContext.cookies().stream()
+          browserActor.browserContext.cookies().stream()
               .anyMatch(c -> c.name.equals("JSESSIONID") && c.value.equals(sessionCookie.value)));
       AdminMailPage mail = new AdminMailPage(browserPage);
       mail.open();
       Locator deliveryStatus = browserPage.locator(".cosmos-mail-delivery");
+
       assertThat(deliveryStatus).isVisible();
       assertThat(deliveryStatus).hasAttribute("data-state", "active");
       assertThat(deliveryStatus)
@@ -206,11 +210,13 @@ public class MaintenanceBrowserTest extends BrowserFixture {
               "aria-label",
               uiTexts.getAdminMailCardBadge() + ": " + uiTexts.getMaintenanceStatusActive());
       deliveryStatus.hover();
+
       assertThat(browserPage.getByRole(AriaRole.TOOLTIP))
           .hasText(uiTexts.getAdminMailCardBadge() + ": " + uiTexts.getMaintenanceStatusActive());
       browserPage.mouse().move(1, 1);
       mode(false);
       mail.open();
+
       assertThat(deliveryStatus).isVisible();
       assertThat(deliveryStatus).hasAttribute("data-state", "open");
       assertThat(deliveryStatus)
@@ -218,12 +224,13 @@ public class MaintenanceBrowserTest extends BrowserFixture {
               "aria-label",
               uiTexts.getAdminMailCardBadge() + ": " + uiTexts.getMaintenanceStatusAvailable());
       deliveryStatus.hover();
+
       assertThat(browserPage.getByRole(AriaRole.TOOLTIP))
           .hasText(
               uiTexts.getAdminMailCardBadge() + ": " + uiTexts.getMaintenanceStatusAvailable());
       browserPage.mouse().move(1, 1);
-      actor.browserPage.navigate(path(HOME_ROUTE));
-      new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(account);
+      browserActor.browserPage.navigate(path(HOME_ROUTE));
+      new UserMenu(browserActor.browserPage).assertUserSignedInWithoutAdminAction(account);
     }
   }
 
@@ -244,26 +251,28 @@ public class MaintenanceBrowserTest extends BrowserFixture {
       """)
   void allRoles(String caseId, String role, boolean administrative) {
     String account = user(role);
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
       mode(true);
-      actor.login(account, BrowserTestAccounts.USER_PASSWORD, true);
+      browserActor.login(account, BrowserTestAccounts.USER_PASSWORD, true);
       if (administrative) {
-        assertThat(actor.browserPage).hasURL(urlPattern(ADMIN_ROUTE));
-        new UserMenu(actor.browserPage).selectTestLanguage();
-        ConfigurationPage ownSettings = new ConfigurationPage(actor.browserPage);
+        assertThat(browserActor.browserPage).hasURL(urlPattern(ADMIN_ROUTE));
+        new UserMenu(browserActor.browserPage).selectTestLanguage();
+        ConfigurationPage ownSettings = new ConfigurationPage(browserActor.browserPage);
         ownSettings.open(AdminConfigGroup.SECURITY);
         ownSettings.input(uiTexts.getAdminConfigEntryMaintenanceMode()).uncheck();
         ownSettings.save();
       } else {
-        assertThat(actor.browserPage.locator("vaadin-notification-card:not([closing])"))
+        assertThat(browserActor.browserPage.locator("vaadin-notification-card:not([closing])"))
             .containsText(uiTexts.getMaintenanceLoginMessage());
         assertFalse(
-            actor.browserContext.cookies().stream().anyMatch(c -> c.name.equals("remember-me")));
+            browserActor.browserContext.cookies().stream()
+                .anyMatch(c -> c.name.equals("remember-me")));
         mode(false);
-        LoginPage login = new LoginPage(actor.browserPage);
+        LoginPage login = new LoginPage(browserActor.browserPage);
         login.dismissFailure();
         login.signIn(account, BrowserTestAccounts.USER_PASSWORD);
-        assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+
+        assertThat(browserActor.browserPage).hasURL(urlPattern(HOME_ROUTE));
       }
     }
   }
@@ -279,17 +288,18 @@ public class MaintenanceBrowserTest extends BrowserFixture {
       """)
   void staleRegistrationCannotCreateAccount() {
     String account = email();
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      RegistrationPage registration = new RegistrationPage(actor.browserPage);
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      RegistrationPage registration = new RegistrationPage(browserActor.browserPage);
       registration.open();
       registration.fillValid(account, BrowserTestAccounts.USER_PASSWORD);
-      actor.browserPage.locator("vaadin-date-picker input").press("Tab");
+      browserActor.browserPage.locator("vaadin-date-picker input").press("Tab");
       mode(true);
       registration.submit();
-      maintenance(actor.browserPage);
+      maintenance(browserActor.browserPage);
       AdminUsersPage users = new AdminUsersPage(browserPage);
       users.open();
       users.search(account);
+
       assertThat(
               browserPage
                   .locator("vaadin-grid")
@@ -311,12 +321,12 @@ public class MaintenanceBrowserTest extends BrowserFixture {
   void realMailLinksAndOldResetForm(String caseId, String kind) {
     boolean reset = kind.equals("reset");
     String account = reset ? user("user") : email();
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      MailpitInbox inbox = new MailpitInbox(actor.browserContext);
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      MailpitInbox inbox = new MailpitInbox(browserActor.browserContext);
       MailpitInbox.CapturedMail mail;
       Page oldForm = null;
       if (reset) {
-        ForgotPasswordPage forgot = new ForgotPasswordPage(actor.browserPage);
+        ForgotPasswordPage forgot = new ForgotPasswordPage(browserActor.browserPage);
         forgot.open();
         forgot.enterEmail(account);
         forgot.submit();
@@ -328,7 +338,7 @@ public class MaintenanceBrowserTest extends BrowserFixture {
         password.fillPasswords("MaintenanceNewPassword!", "MaintenanceNewPassword!");
         oldForm.locator("vaadin-password-field input").last().press("Tab");
       } else {
-        RegistrationPage registration = new RegistrationPage(actor.browserPage);
+        RegistrationPage registration = new RegistrationPage(browserActor.browserPage);
         registration.open();
         registration.fillValid(account, BrowserTestAccounts.USER_PASSWORD);
         registration.submit();
@@ -395,6 +405,7 @@ public class MaintenanceBrowserTest extends BrowserFixture {
           .check();
       login.signIn(account, BrowserTestAccounts.USER_PASSWORD);
       new UserMenu(persistent.browserPage).selectTestLanguage();
+
       assertTrue(
           persistent.browserContext.cookies().stream().anyMatch(c -> c.name.equals("remember-me")));
     }
@@ -407,6 +418,7 @@ public class MaintenanceBrowserTest extends BrowserFixture {
       LoginPage login = new LoginPage(resumed.browserPage);
       login.dismissFailure();
       login.signIn(account, BrowserTestAccounts.USER_PASSWORD);
+
       assertThat(resumed.browserPage).hasURL(urlPattern(HOME_ROUTE));
     }
   }

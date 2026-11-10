@@ -32,6 +32,7 @@ class ConfigurationCatalogTest {
         Arrays.stream(stored.getRecordComponents())
             .map(component -> "two-factor." + component.getName())
             .collect(Collectors.toSet());
+
     assertEquals(
         fields,
         ConfigurationCatalog.entries().stream()
@@ -43,6 +44,7 @@ class ConfigurationCatalogTest {
   @Test
   void catalogCoversAllGeneralSettingsAndBothProviderFormsWithoutDuplicateKeys() {
     List<Entry> entries = ConfigurationCatalog.entries();
+
     assertEquals(entries.size(), entries.stream().map(Entry::key).distinct().count());
     assertEquals(
         Set.of(ConfigEntry.values()).stream().map(ConfigEntry::getKey).collect(Collectors.toSet()),
@@ -82,6 +84,7 @@ class ConfigurationCatalogTest {
       assertNotNull(entry.group());
       if (entry.environmentVariable() != null) {
         environment.setProperty(entry.environmentVariable(), "own-fixture-value");
+
         assertEquals("own-fixture-value", environment.getRequiredProperty(entry.property()));
       }
     }
@@ -91,6 +94,7 @@ class ConfigurationCatalogTest {
                 entry.environmentVariable() != null && entry.environmentVariable().equals(variable))
             .findFirst()
             .orElseThrow();
+
     assertTrue(encryption.secret());
     assertEquals(Storage.STARTUP_ONLY, encryption.storage());
     assertFalse(

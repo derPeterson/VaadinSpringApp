@@ -51,19 +51,24 @@ public class UserManagementBrowserTest extends BrowserFixture {
       expected.add(email);
     }
     users.search(prefix);
+
     assertThat(users.emailCells(prefix)).hasCount(10);
     Set<String> firstPage = new HashSet<>(users.emailCells(prefix).allTextContents());
+
     assertThat(
             browserPage.getByText(
                 uiTexts.getPortalPaginationRange(1, 10, 12),
                 new Page.GetByTextOptions().setExact(true)))
         .isVisible();
     button(uiTexts.getAdminUsersPaginationPage(2)).click();
+
     assertThat(users.emailCells(prefix)).hasCount(2);
     Set<String> secondPage = new HashSet<>(users.emailCells(prefix).allTextContents());
+
     assertTrue(Collections.disjoint(firstPage, secondPage));
     Set<String> all = new HashSet<>(firstPage);
     all.addAll(secondPage);
+
     assertEquals(expected, all);
     assertThat(button(uiTexts.getAdminUsersPaginationPage(2))).hasAttribute("aria-current", "page");
     assertThat(button(uiTexts.getAdminUsersPaginationNextPage())).isDisabled();
@@ -73,6 +78,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
             new Page.GetByRoleOptions()
                 .setName(uiTexts.getAdminUsersPaginationPerPage())
                 .setExact(true));
+
     assertEquals(
         64,
         browserPage.locator(".admin-user-pagination vaadin-combo-box").boundingBox().width,
@@ -81,10 +87,12 @@ public class UserManagementBrowserTest extends BrowserFixture {
     browserPage
         .getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName("20").setExact(true))
         .click();
+
     assertThat(users.emailCells(prefix)).hasCount(12);
     assertEquals(expected, new HashSet<>(users.emailCells(prefix).allTextContents()));
     AllurePlaywright.attachScreenshot("Eigene Konten und nummerierte Pagination", browserPage);
     users.search(unique("nothing"));
+
     assertThat(users.emailCells(prefix)).hasCount(0);
     assertThat(
             browserPage.getByText(
@@ -111,24 +119,30 @@ public class UserManagementBrowserTest extends BrowserFixture {
     String existing = unique("existing") + "@example.test";
     users.createActiveUser(existing, BrowserTestAccounts.USER_PASSWORD);
     AdminUserDialog form = users.openCreate();
+
     assertThat(form.saveButton()).isDisabled();
     String email = unique("validated") + "@example.test";
     form.fillNewUser(email, "weak", true, false);
+
     assertThat(form.saveButton()).isDisabled();
     assertThat(form.root()).containsText(uiTexts.getAdminUsersPasswordHelperCreate());
     form.password().fill("ABCDEFG!");
     form.confirmPassword().fill("ABCDEFG!");
     form.password().press("Tab");
+
     assertThat(form.saveButton()).isEnabled();
     form.firstName().fill("   ");
     form.firstName().press("Tab");
+
     assertThat(form.saveButton()).isDisabled();
     form.firstName().fill("Browser");
     form.email().fill("not-an-email");
     form.email().press("Tab");
+
     assertThat(form.saveButton()).isDisabled();
     form.email().fill(existing);
     form.email().press("Tab");
+
     assertThat(form.saveButton()).isDisabled();
     assertThat(form.root()).containsText(uiTexts.getBaseValidationEmailExistsMessage());
     form.email().fill(email);
@@ -137,6 +151,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
         "Korrigiertes Formular mit zentraler Passwortregel", browserPage);
     form.save();
     users.search(email);
+
     assertThat(users.emailCells(email)).hasCount(1);
     signInAsCreatedUser(email, "ABCDEFG!");
   }
@@ -159,16 +174,20 @@ public class UserManagementBrowserTest extends BrowserFixture {
         changed = unique("renamed") + "@example.test";
     users.createActiveUser(original, BrowserTestAccounts.USER_PASSWORD);
     AdminUserDialog form = users.openEdit(original);
+
     assertThat(form.firstName()).hasValue("Browser");
     assertThat(form.root()).containsText(uiTexts.getAdminUsersPasswordHelperEdit());
     form.firstName().fill("Edited");
     form.lastName().fill("Account");
     form.email().fill(changed);
+
     assertThat(form.password()).hasValue("");
     form.save();
     users.search(original);
+
     assertThat(users.emailCells(original)).hasCount(0);
     form = users.openEdit(changed);
+
     assertThat(form.firstName()).hasValue("Edited");
     assertThat(form.lastName()).hasValue("Account");
     assertThat(form.password()).hasValue("");
@@ -196,9 +215,11 @@ public class UserManagementBrowserTest extends BrowserFixture {
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     AdminUserDialog form = users.openEdit(email);
     AdminUserDeleteDialog confirmation = form.requestDelete();
+
     assertThat(confirmation.root()).containsText(email);
     assertThat(confirmation.root()).containsText(uiTexts.getAdminUsersDeleteDialogWarning());
     confirmation.cancel();
+
     assertThat(form.root()).hasCount(1);
     assertThat(form.email()).isVisible();
     assertThat(form.email()).hasValue(email);
@@ -206,14 +227,17 @@ public class UserManagementBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot(
         "Eindeutige Bestätigung für das eigene Testkonto", browserPage);
     confirmation.confirm();
+
     assertThat(form.root()).hasCount(0);
     users.search(email);
+
     assertThat(users.emailCells(email)).hasCount(0);
     assertThat(
             browserPage.getByText(
                 uiTexts.getAdminUsersGridEmptyState(), new Page.GetByTextOptions().setExact(true)))
         .isVisible();
     button(uiTexts.getAdminUsersRefreshTooltip()).click();
+
     assertThat(users.emailCells(email)).hasCount(0);
   }
 
@@ -230,11 +254,13 @@ public class UserManagementBrowserTest extends BrowserFixture {
     AdminUsersPage users = login();
     users.open();
     AdminUserDialog form = users.openEdit(BrowserTestAccounts.ADMIN_EMAIL);
+
     assertThat(form.deleteButton()).isVisible();
     assertThat(form.deleteButton()).isDisabled();
     assertThat(browserPage.locator("vaadin-dialog.admin-user-delete-dialog[opened]")).hasCount(0);
     AllurePlaywright.attachScreenshot("Selbstlöschschutz im Bearbeitungsformular", browserPage);
     form.cancel();
+
     assertThat(users.emailCells(BrowserTestAccounts.ADMIN_EMAIL)).hasCount(1);
   }
 
@@ -255,12 +281,14 @@ public class UserManagementBrowserTest extends BrowserFixture {
     users.createUser(disabled, BrowserTestAccounts.USER_PASSWORD, false);
     users.search(prefix);
     users.selectFilter(uiTexts.getAdminUsersGridEnabled(), uiTexts.getAdminUsersNo());
+
     assertThat(users.emailCells(prefix)).hasCount(1);
     assertThat(users.emailCells(prefix)).hasText(disabled);
     UiTexts other = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     new UserMenu(browserPage).selectLanguage(other.language());
     AdminUsersPage translated = new AdminUsersPage(browserPage, other);
     translated.openFilters();
+
     assertThat(translated.searchField()).hasValue(prefix);
     assertThat(
             translated
@@ -274,6 +302,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     browserPage.keyboard().press("Escape");
     new UserMenu(browserPage).selectTestLanguage();
     users.openFilters();
+
     assertThat(
             users
                 .filterField(uiTexts.getAdminUsersGridEnabled())
@@ -305,6 +334,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     AdminUserDialog form = users.openEdit(email);
     form.password().fill("weak");
     form.password().press("Tab");
+
     assertThat(form.saveButton()).isDisabled();
     form.password().fill(changed);
     form.confirmPassword().fill(changed);
@@ -316,6 +346,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
     login.assertRejected();
     login.signIn(email, changed);
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
     new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);
@@ -344,15 +375,18 @@ public class UserManagementBrowserTest extends BrowserFixture {
     int original = Integer.parseInt(total.innerText().replaceAll("\\D", ""));
     String email = unique("counter") + "@example.test";
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+
     assertThat(total).hasAttribute("aria-label", uiTexts.getAdminUsersAccountCount(original + 1));
     String query = unique("no-result");
     users.search(query);
+
     assertThat(users.emailCells(email)).hasCount(0);
     assertThat(total).hasAttribute("aria-label", uiTexts.getAdminUsersAccountCount(original + 1));
     UiTexts other =
         new de.derpeterson.browsertests.i18n.UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     try {
       new UserMenu(browserPage).selectLanguage(other.language());
+
       assertThat(total).hasAttribute("aria-label", other.getAdminUsersAccountCount(original + 1));
       assertThat(new AdminUsersPage(browserPage, other).searchField()).hasValue(query);
       AllurePlaywright.attachScreenshot(
@@ -362,6 +396,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     }
     AdminUserDialog form = users.openEdit(email);
     form.requestDelete().confirm();
+
     assertThat(total).hasAttribute("aria-label", uiTexts.getAdminUsersAccountCount(original));
   }
 
@@ -383,25 +418,31 @@ public class UserManagementBrowserTest extends BrowserFixture {
     String email = unique("confirmation") + "@example.test";
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     AdminUserDialog form = users.openEdit(email);
+
     assertThat(form.confirmPassword()).isDisabled();
     assertThat(form.saveButton()).isEnabled();
     Locator passwordHost = form.root().locator("vaadin-password-field").nth(0);
     Locator confirmHost = form.root().locator("vaadin-password-field").nth(1);
     form.password().fill("w");
+
     assertThat(form.confirmPassword()).isEnabled();
     assertThat(form.saveButton()).isDisabled();
     assertThat(passwordHost).hasJSProperty("invalid", false);
     assertThat(confirmHost).hasJSProperty("invalid", false);
     form.password().press("Tab");
+
     assertThat(passwordHost).hasJSProperty("invalid", true);
     assertThat(confirmHost).hasJSProperty("invalid", false);
     form.password().fill("ChangedBrowser2!");
     form.confirmPassword().fill("DifferentBrowser2!");
+
     assertThat(confirmHost).hasJSProperty("invalid", false);
     form.firstName().click();
+
     assertThat(confirmHost).hasJSProperty("invalid", true);
     assertThat(form.root()).containsText(uiTexts.getBaseValidationPasswordConfirmMessage());
     form.password().fill("");
+
     assertThat(form.confirmPassword()).isDisabled();
     assertThat(form.confirmPassword()).hasValue("");
     assertThat(confirmHost).hasJSProperty("invalid", false);
@@ -428,6 +469,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     AdminUserDialog form = users.openEdit(email);
     AdminUserDeleteDialog confirmation = form.requestDelete();
+
     assertThat(confirmation.root()).containsText(uiTexts.getAdminUsersDeleteDialogDescription());
     assertThat(confirmation.root()).containsText(uiTexts.getAdminUsersDeleteDialogQuestion());
     assertThat(confirmation.root()).containsText(uiTexts.getAdminUsersDeleteDialogWarning());
@@ -440,6 +482,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
                 .setName(uiTexts.getAdminUsersCloseDialog())
                 .setExact(true))
         .click();
+
     assertThat(confirmation.root()).hasCount(0);
     assertThat(form.email()).hasValue(email);
     Locator editHeading =
@@ -457,8 +500,10 @@ public class UserManagementBrowserTest extends BrowserFixture {
                 .setName(uiTexts.getAdminUsersCloseDialog())
                 .setExact(true))
         .click();
+
     assertThat(form.root()).hasCount(0);
     users.search(email);
+
     assertThat(users.emailCells(email)).hasCount(1);
   }
 
@@ -475,6 +520,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(email, password);
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
     new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);

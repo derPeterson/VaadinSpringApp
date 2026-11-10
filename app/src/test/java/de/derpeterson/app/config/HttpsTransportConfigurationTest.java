@@ -41,29 +41,27 @@ class HttpsTransportConfigurationTest {
     factory.setBaseDirectory(directory.toFile());
     config.httpsProxy("127.0.0.1").customize(factory);
     server =
-        factory.getWebServer(
-            context -> {
-              config.httpsOrigin("https://localhost:8443").onStartup(context);
-              context
-                  .addServlet(
-                      "probe",
-                      new HttpServlet() {
-                        @Override
-                        protected void service(
-                            HttpServletRequest request, HttpServletResponse response)
-                            throws IOException {
-                          response
-                              .getWriter()
-                              .write(
-                                  request.getScheme()
-                                      + "://"
-                                      + request.getServerName()
-                                      + ":"
-                                      + request.getServerPort());
-                        }
-                      })
-                  .addMapping("/*");
-            });
+        factory.getWebServer(context -> {
+          config.httpsOrigin("https://localhost:8443").onStartup(context);
+          context
+              .addServlet(
+                  "probe",
+                  new HttpServlet() {
+                    @Override
+                    protected void service(HttpServletRequest request, HttpServletResponse response)
+                        throws IOException {
+                      response
+                          .getWriter()
+                          .write(
+                              request.getScheme()
+                                  + "://"
+                                  + request.getServerName()
+                                  + ":"
+                                  + request.getServerPort());
+                    }
+                  })
+              .addMapping("/*");
+        });
     server.start();
   }
 
@@ -77,6 +75,7 @@ class HttpsTransportConfigurationTest {
   @Test
   void exactProxyCanSupplyTheExternalHttpsOrigin() throws Exception {
     String response = exchange("127.0.0.1", "GET", "/login", forwarded("localhost", "8443"));
+
     assertTrue(response.startsWith("HTTP/1.1 200"), response);
     assertTrue(response.endsWith("https://localhost:8443"), response);
   }
@@ -84,6 +83,7 @@ class HttpsTransportConfigurationTest {
   @Test
   void otherLoopbackPeerCannotForgeForwardedHttps() throws Exception {
     String response = exchange("127.0.0.2", "POST", "/login", forwarded("localhost", "8443"));
+
     assertTrue(response.startsWith("HTTP/1.1 403"), response);
   }
 
@@ -121,6 +121,7 @@ class HttpsTransportConfigurationTest {
       })
   void invalidExternalOriginsFailConfiguration(String origin) {
     HttpsTransportConfiguration configuration = new HttpsTransportConfiguration();
+
     assertThrows(IllegalArgumentException.class, () -> configuration.httpsOrigin(origin));
   }
 
@@ -131,19 +132,21 @@ class HttpsTransportConfigurationTest {
     environment
         .getPropertySources()
         .addLast(new ResourcePropertySource("classpath:application-https.properties"));
+
     assertEquals(
         "https://127.0.0.1:28443/", environment.getProperty("app.config.defaults.base.url"));
   }
 
   @Test
   void sessionCookieUsesSecureHttpOnlyAndSameSiteOnHttps() {
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    request.setSecure(true);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    mockHttpRequest.setSecure(true);
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     new SessionPersistenceConfiguration()
         .cookieSerializer()
-        .writeCookieValue(new CookieValue(request, response, "owned-test-session"));
-    String cookie = response.getHeader("Set-Cookie");
+        .writeCookieValue(new CookieValue(mockHttpRequest, mockHttpResponse, "owned-test-session"));
+    String cookie = mockHttpResponse.getHeader("Set-Cookie");
+
     assertTrue(cookie.contains("Secure"));
     assertTrue(cookie.contains("HttpOnly"));
     assertTrue(cookie.contains("SameSite=Lax"));

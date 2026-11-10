@@ -46,6 +46,7 @@ public class RememberMeBrowserTest extends BrowserFixture {
     String email = createUser();
     try (PersistentBrowserActor actor = new PersistentBrowserActor(playwrightRuntime, profile)) {
       signIn(actor, email, false);
+
       assertTrue(
           actor.browserContext.cookies().stream()
               .noneMatch(cookie -> cookie.name.equals("remember-me")));
@@ -69,6 +70,7 @@ public class RememberMeBrowserTest extends BrowserFixture {
     String email = createUser();
     try (PersistentBrowserActor actor = new PersistentBrowserActor(playwrightRuntime, profile)) {
       signIn(actor, email, true);
+
       assertTrue(
           actor.browserContext.cookies().stream()
               .anyMatch(cookie ->
@@ -148,6 +150,7 @@ public class RememberMeBrowserTest extends BrowserFixture {
                 .setExact(true))
         .setChecked(remember);
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+
     assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(actor.browserPage).selectTestLanguage();
     new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);

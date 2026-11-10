@@ -83,6 +83,7 @@ class AdminUserActivityClockSerializationTest {
         };
     Clock original = storedClock(component);
     Clock restored = roundTrip(original);
+
     assertEquals(original, restored);
     assertEquals(ZoneOffset.UTC, restored.getZone());
     assertNotNull(restored.instant());
@@ -96,6 +97,7 @@ class AdminUserActivityClockSerializationTest {
     Clock fixed = Clock.fixed(instant, ZoneId.of("America/New_York"));
     Component original = withClock(owner, fixed);
     Clock restored = roundTrip(storedClock(original));
+
     assertEquals(instant, restored.instant());
     assertEquals(fixed.getZone(), restored.getZone());
     Component rebuilt = withClock(owner, restored);
@@ -104,14 +106,18 @@ class AdminUserActivityClockSerializationTest {
       filter.refreshTexts(messageProperties);
       DatePicker date = (DatePicker) ReflectionTestUtils.getField(filter, "activityDatePicker");
       TimePicker time = (TimePicker) ReflectionTestUtils.getField(filter, "activityTimePicker");
+
       assertEquals(messageProperties.getRegistrationBirthDatePlaceholder(), date.getPlaceholder());
       assertEquals(
           LocalTime.of(2, 45),
           LocalTime.parse(
               time.getPlaceholder(), DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH)));
     } else {
-      UserEntity user = UserEntity.builder().lastActivity(instant.minusSeconds(900)).build();
-      Span activity = ReflectionTestUtils.invokeMethod(rebuilt, "createLastActivity", user);
+      UserEntity testUserEntity =
+          UserEntity.builder().lastActivity(instant.minusSeconds(900)).build();
+      Span activity =
+          ReflectionTestUtils.invokeMethod(rebuilt, "createLastActivity", testUserEntity);
+
       assertEquals(messageProperties.getAdminUsersActivityMinutes(15), activity.getText());
       assertTrue(activity.getElement().getAttribute("title").endsWith("+01:00"));
     }

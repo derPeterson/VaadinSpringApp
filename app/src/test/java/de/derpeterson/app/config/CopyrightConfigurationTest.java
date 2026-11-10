@@ -20,35 +20,37 @@ import org.springframework.test.util.ReflectionTestUtils;
 class CopyrightConfigurationTest {
   @Test
   void missingCopyrightIsSeededWithItsCentralDefault() {
-    ConfigService config = mock(ConfigService.class);
-    when(config.exists(any())).thenReturn(true);
-    when(config.exists(ConfigEntry.COPYRIGHT_TEXT)).thenReturn(false);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.exists(any())).thenReturn(true);
+    when(configService.exists(ConfigEntry.COPYRIGHT_TEXT)).thenReturn(false);
     Environment environment = mock(Environment.class);
     when(environment.getProperty(
             "app.config.defaults.copyright.text",
             ConfigEntry.COPYRIGHT_TEXT.getDefaultValueString()))
         .thenReturn(ConfigEntry.COPYRIGHT_TEXT.getDefaultValueString());
     ReflectionTestUtils.invokeMethod(
-        initializer(config, environment), "createDefaultConfigSettings");
-    verify(config).set(ConfigEntry.COPYRIGHT_TEXT, "© {year} {serviceName}");
+        initializer(configService, environment), "createDefaultConfigSettings");
+
+    verify(configService).set(ConfigEntry.COPYRIGHT_TEXT, "© {year} {serviceName}");
   }
 
   @Test
   void anExistingCopyrightIsNeverOverwrittenByStartupDefaults() {
-    ConfigService config = mock(ConfigService.class);
-    when(config.exists(any())).thenReturn(true);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.exists(any())).thenReturn(true);
     Environment environment = mock(Environment.class);
     ReflectionTestUtils.invokeMethod(
-        initializer(config, environment), "createDefaultConfigSettings");
-    verify(config, never()).set(any(), any());
+        initializer(configService, environment), "createDefaultConfigSettings");
+
+    verify(configService, never()).set(any(), any());
     verifyNoInteractions(environment);
   }
 
-  private DatabaseInitializer initializer(ConfigService config, Environment environment) {
+  private DatabaseInitializer initializer(ConfigService configService, Environment environment) {
     return new DatabaseInitializer(
         mock(UserRepository.class),
         mock(RoleRepository.class),
-        config,
+        configService,
         mock(PasswordEncoder.class),
         environment,
         new BootstrapAccountsProperties(),

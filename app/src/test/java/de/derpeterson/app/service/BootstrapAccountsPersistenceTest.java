@@ -71,12 +71,12 @@ class BootstrapAccountsPersistenceTest {
   }
 
   DatabaseInitializer initializer(PasswordEncoder encoder) {
-    ConfigService config = mock(ConfigService.class);
-    when(config.exists(any())).thenReturn(true);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.exists(any())).thenReturn(true);
     return new DatabaseInitializer(
         userRepository,
         roleRepository,
-        config,
+        configService,
         encoder,
         mock(Environment.class),
         settings,
@@ -97,6 +97,7 @@ class BootstrapAccountsPersistenceTest {
     settings.setGuests(List.of(account("guest@example.test")));
     run();
     run();
+
     assertEquals(5, userRepository.count());
     assertEquals(4, roleRepository.count());
     Map<String, RoleType> expected =
@@ -135,12 +136,13 @@ class BootstrapAccountsPersistenceTest {
     replacement.setFirstName("Changed");
     settings.setSuperadmins(List.of(replacement));
     run();
-    UserEntity stored = userRepository.findAll().getFirst();
-    assertEquals(hash, stored.getPassword());
-    assertEquals(existing.getFirstName(), stored.getFirstName());
+    UserEntity storedUserEntity = userRepository.findAll().getFirst();
+
+    assertEquals(hash, storedUserEntity.getPassword());
+    assertEquals(existing.getFirstName(), storedUserEntity.getFirstName());
     assertEquals(1, userRepository.count());
-    assertTrue(stored.hasRole(RoleType.ROLE_USER));
-    assertFalse(stored.hasRole(RoleType.ROLE_SUPERADMIN));
+    assertTrue(storedUserEntity.hasRole(RoleType.ROLE_USER));
+    assertFalse(storedUserEntity.hasRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
@@ -148,6 +150,7 @@ class BootstrapAccountsPersistenceTest {
     settings.setSuperadmins(List.of(account("duplicate@example.test")));
     settings.setGuests(List.of(account(" DUPLICATE@example.test ")));
     IllegalArgumentException error = assertThrows(IllegalArgumentException.class, this::run);
+
     assertFalse(error.getMessage().contains("OnlyForTests"));
     assertEquals(0, userRepository.count());
   }
@@ -165,6 +168,7 @@ class BootstrapAccountsPersistenceTest {
       default -> throw new IllegalArgumentException("Unknown invalid bootstrap field: " + invalid);
     }
     settings.setAdmins(List.of(account("valid@example.test"), broken));
+
     assertThrows(IllegalArgumentException.class, this::run);
     assertEquals(0, userRepository.count());
   }
@@ -177,6 +181,7 @@ class BootstrapAccountsPersistenceTest {
         .thenReturn("first-hash")
         .thenThrow(new IllegalStateException("test failure"));
     CommandLineRunner initialization = initializer(encoder).initDatabase();
+
     assertThrows(IllegalStateException.class, initialization::run);
     assertEquals(0, userRepository.count());
     assertEquals(0, roleRepository.count());
@@ -187,6 +192,7 @@ class BootstrapAccountsPersistenceTest {
     settings.setEnabled(false);
     settings.setUsers(List.of(account("invalid")));
     run();
+
     assertEquals(0, userRepository.count());
     assertEquals(4, roleRepository.count());
   }
@@ -206,6 +212,7 @@ class BootstrapAccountsPersistenceTest {
         new Binder(new MapConfigurationPropertySource(values))
             .bind("app.bootstrap", Bindable.of(BootstrapAccountsProperties.class))
             .get();
+
     assertEquals(4, bound.validatedEntries().size());
     assertEquals("Test", bound.getSuperadmins().getFirst().getFirstName());
     assertEquals(Locale.GERMAN, bound.getSuperadmins().getFirst().getPreferredLocale());
@@ -228,6 +235,7 @@ class BootstrapAccountsPersistenceTest {
         new Binder(ConfigurationPropertySources.from(env))
             .bind("app.bootstrap", Bindable.of(BootstrapAccountsProperties.class))
             .get();
+
     assertEquals(1, bound.validatedEntries().size());
     assertEquals(RoleType.ROLE_ADMIN, bound.validatedEntries().getFirst().role());
   }

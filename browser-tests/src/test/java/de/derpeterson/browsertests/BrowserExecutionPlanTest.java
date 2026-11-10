@@ -95,6 +95,7 @@ class BrowserExecutionPlanTest {
                   "administrativeProviderSettings",
                   "disabledProvidersPreserveExistingAccountAccess");
         };
+
     assertEquals(expected, methods);
   }
 
@@ -102,6 +103,7 @@ class BrowserExecutionPlanTest {
   void externalSuiteKeepsTheLongProviderClassOnItsOwnWorker() {
     List<List<Class<?>>> groups =
         BrowserExecutionPlan.partition(BrowserSuites.select("external-login"), 3, "external-login");
+
     assertEquals(
         List.of(ExternalLoginBrowserTest.class),
         groups.stream()
@@ -114,6 +116,7 @@ class BrowserExecutionPlanTest {
   void notificationCasesAreInAllAndKeepTheFastSelectionUnchanged() {
     Class<UserNotificationsBrowserTest> type =
         de.derpeterson.browsertests.suites.UserNotificationsBrowserTest.class;
+
     assertTrue(BrowserSuites.select("all").contains(type));
     assertFalse(BrowserExecutionPlan.classes("fast").contains(type));
     int cases = 0;
@@ -140,6 +143,7 @@ class BrowserExecutionPlanTest {
   @Test
   void fastUsesOnlyExplicitlyMarkedExistingCases() {
     List<Class<?>> selected = BrowserExecutionPlan.classes("fast");
+
     assertFalse(selected.isEmpty());
     assertTrue(BrowserSuites.select("all").containsAll(selected));
     TestPlan plan =
@@ -168,10 +172,8 @@ class BrowserExecutionPlanTest {
     assertTrue(discovered.stream().anyMatch(name -> name.contains("CosmosDesignBrowserTest")));
     assertTrue(
         discovered.stream()
-            .noneMatch(
-                name ->
-                    name.contains("TokenExpiryBrowserTest")
-                        || name.contains("UserStatusBrowserTest")));
+            .noneMatch(name ->
+                name.contains("TokenExpiryBrowserTest") || name.contains("UserStatusBrowserTest")));
   }
 
   @Test
@@ -184,6 +186,7 @@ class BrowserExecutionPlanTest {
         }
         CsvSource csv = method.getAnnotation(CsvSource.class);
         cases += csv == null ? 1 : csv.value().length;
+
         assertFalse(method.isAnnotationPresent(Disabled.class));
       }
     }
@@ -207,6 +210,7 @@ class BrowserExecutionPlanTest {
       for (int workers = 1; workers <= 4; workers++) {
         List<List<Class<?>>> groups = BrowserExecutionPlan.partition(selected, workers, suite);
         List<Class<?>> flattened = groups.stream().flatMap(List::stream).toList();
+
         assertEquals(selected.size(), flattened.size());
         assertEquals(new HashSet<>(selected), new HashSet<>(flattened));
         assertEquals(Math.min(workers, selected.size()), groups.size());
@@ -219,6 +223,7 @@ class BrowserExecutionPlanTest {
   @Test
   void persistenceAcceptanceCombinesSessionMaintenanceAndAccountSecurityWithoutDuplicates() {
     List<Class<?>> selected = BrowserSuites.select("session-persistence");
+
     assertEquals(9, selected.size());
     assertEquals(selected.size(), new HashSet<>(selected).size());
     assertTrue(selected.containsAll(BrowserSuites.select("session-limits")));
@@ -238,6 +243,7 @@ class BrowserExecutionPlanTest {
                 "all", "AuthenticationBrowserTest,AuthenticationBrowserTest"));
     List<Class<?>> empty = List.of();
     List<Class<?>> all = BrowserExecutionPlan.classes("all");
+
     assertThrows(
         IllegalArgumentException.class, () -> BrowserExecutionPlan.partition(empty, 2, "all"));
     assertThrows(
@@ -252,6 +258,7 @@ class BrowserExecutionPlanTest {
   @Test
   void maintenanceCasesAreIncludedInAllButNotImplicitlyInFast() {
     List<Class<?>> classes = BrowserSuites.select("maintenance");
+
     assertEquals(List.of(MaintenanceBrowserTest.class), classes);
     assertTrue(BrowserSuites.select("all").containsAll(classes));
     int cases = 0;

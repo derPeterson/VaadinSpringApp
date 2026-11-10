@@ -57,6 +57,7 @@ public final class AdminUserDialog {
     lastName().fill("Testuser");
     this.email().fill(email);
     this.password().fill(password);
+
     assertThat(confirmPassword()).isEnabled();
     confirmPassword().fill(password);
     field(uiTexts.getRegistrationGenderCombobox()).click();
@@ -66,12 +67,15 @@ public final class AdminUserDialog {
             new Page.GetByRoleOptions().setName(uiTexts.getGenderOther()).setExact(true))
         .click();
     Locator birthday = field(uiTexts.getRegistrationBirthDateField());
+
     assertThat(birthday).hasAttribute("placeholder", uiTexts.getRegistrationBirthDatePlaceholder());
     birthday.click();
+
     assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     birthday.fill(uiTexts.dateInput(LocalDate.of(1990, 1, 1)));
     // A real focus change commits the birthday; no Enter or popup cancellation.
     firstName().click();
+
     assertThat(root().locator("vaadin-date-picker")).hasJSProperty("value", "1990-01-01");
     assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     check(uiTexts.getAdminUsersFieldEnabled(), enabled);
@@ -104,18 +108,18 @@ public final class AdminUserDialog {
 
   @Step("Explizite Rolle im Benutzerformular vergeben oder entziehen")
   public void setRole(String translatedRole, boolean selected) {
-    Locator option = role(translatedRole);
-    if (selected != "true".equals(option.getAttribute("aria-selected"))) {
-      option.click();
+    Locator roleOptionLocator = role(translatedRole);
+    if (selected != "true".equals(roleOptionLocator.getAttribute("aria-selected"))) {
+      roleOptionLocator.click();
     }
-    assertThat(option).hasAttribute("aria-selected", Boolean.toString(selected));
+    assertThat(roleOptionLocator).hasAttribute("aria-selected", Boolean.toString(selected));
     rolesInput().press("Escape");
   }
 
   public Locator role(String translatedRole) {
-    Locator input = rolesInput();
-    if (!"true".equals(input.getAttribute("aria-expanded"))) {
-      input.click();
+    Locator rolesInputLocator = rolesInput();
+    if (!"true".equals(rolesInputLocator.getAttribute("aria-expanded"))) {
+      rolesInputLocator.click();
     }
     return browserPage.getByRole(
         AriaRole.OPTION, new Page.GetByRoleOptions().setName(translatedRole).setExact(true));
@@ -129,19 +133,24 @@ public final class AdminUserDialog {
   public void expectSaveError(String message) {
     assertThat(saveButton()).isEnabled();
     saveButton().click();
+
     assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
         .containsText(message);
     assertThat(root()).hasCount(1);
-    Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
-    notice.getByRole(AriaRole.BUTTON).click();
-    assertThat(notice).not().isVisible();
+    Locator notificationCardLocator =
+        browserPage.locator("vaadin-notification-card:not([closing])");
+    notificationCardLocator.getByRole(AriaRole.BUTTON).click();
+
+    assertThat(notificationCardLocator).not().isVisible();
   }
 
   @Step("Benutzerformular speichern und dessen tatsächliches Schließen abwarten")
   public void save() {
     closeRoleOptions();
+
     assertThat(saveButton()).isEnabled();
     saveButton().click();
+
     assertThat(root()).hasCount(0);
   }
 
@@ -149,6 +158,7 @@ public final class AdminUserDialog {
   public void cancel() {
     closeRoleOptions();
     button(uiTexts.getAdminUsersCancel()).click();
+
     assertThat(root()).hasCount(0);
   }
 
@@ -157,6 +167,7 @@ public final class AdminUserDialog {
     assertThat(deleteButton()).isEnabled();
     deleteButton().click();
     AdminUserDeleteDialog confirmation = new AdminUserDeleteDialog(browserPage, uiTexts);
+
     assertThat(confirmation.root()).hasCount(1);
     assertThat(
             confirmation

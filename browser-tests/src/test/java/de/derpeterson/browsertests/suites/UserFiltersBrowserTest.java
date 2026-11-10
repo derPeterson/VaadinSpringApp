@@ -45,16 +45,20 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     users.createUser(active, BrowserTestAccounts.USER_PASSWORD, true);
     users.createUser(disabled, BrowserTestAccounts.USER_PASSWORD, false, true);
     users.search(prefix);
+
     assertThat(users.emailCells(prefix)).hasCount(2);
     users.selectFilter(uiTexts.getAdminUsersGridEnabled(), uiTexts.getAdminUsersYes());
+
     assertThat(users.emailCells(prefix)).hasCount(1);
     assertThat(users.emailCells(prefix)).hasText(active);
     users.selectFilter(uiTexts.getAdminUsersGridEnabled(), uiTexts.getAdminUsersNo());
+
     assertThat(users.emailCells(prefix)).hasCount(1);
     assertThat(users.emailCells(prefix)).hasText(disabled);
     users.removeFilter(uiTexts.getAdminUsersGridEnabled());
     users.selectFilter(uiTexts.getAdminUsersGridStatus(), uiTexts.getUserStatusOffline());
     users.selectFilter(uiTexts.getAdminUsersFilterRole(), uiTexts.getRoleUser());
+
     assertThat(users.emailCells(prefix)).hasCount(2);
     users.selectDraftFilter(uiTexts.getAdminUsersFilterRole(), uiTexts.getRoleAdmin());
     Locator adminRole =
@@ -66,25 +70,33 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     adminRole.click(
         new Locator.ClickOptions()
             .setPosition(adminRole.boundingBox().width - 6, adminRole.boundingBox().height / 2));
+
     assertThat(adminRole.getByRole(AriaRole.CHECKBOX)).not().isChecked();
     adminRole.click();
+
     assertThat(adminRole.getByRole(AriaRole.CHECKBOX)).isChecked();
     AllurePlaywright.attachScreenshot("Vollständig anklickbare Filter-Badges", browserPage);
     users.applyFilters();
+
     assertThat(users.emailCells(prefix)).hasCount(1);
     assertThat(users.emailCells(prefix)).hasText(disabled);
     users.selectFilter(uiTexts.getAdminUsersFilterRole(), uiTexts.getRoleUser());
     users.activeSince(LocalDate.of(2099, 1, 1));
+
     assertThat(users.emailCells(prefix)).hasCount(0);
     users.activeSince(LocalDate.of(2000, 1, 1));
+
     assertThat(users.emailCells(prefix)).hasCount(2);
     users.activityTime(LocalTime.of(14, 30));
+
     assertThat(users.emailCells(prefix)).hasCount(2);
     users.clearActivityTime();
+
     assertThat(users.emailCells(prefix)).hasCount(2);
     users.removeFilter(uiTexts.getAdminUsersFilterActiveSince());
     users.clearAllFilters();
     users.search(prefix);
+
     assertThat(users.emailCells(prefix)).hasCount(2);
     AllurePlaywright.attachScreenshot(
         "Zurückgesetzte Filter und weiterhin erreichbare Konten", browserPage);
@@ -107,23 +119,31 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     String email = unique("calendar-filter") + "@example.test";
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     users.search(email);
+
     assertThat(users.emailCells(email)).hasCount(1);
     users.activityDateUsingCalendar(1);
+
     assertThat(users.emailCells(email)).hasCount(0);
     users.activityDateUsingCalendar(-1);
+
     assertThat(users.emailCells(email)).hasCount(1);
     users.activityTimeUsingDropdown(LocalTime.of(14, 30));
+
     assertThat(users.emailCells(email)).hasCount(1);
     // Beide Scrollrichtungen unabhängig von der tatsächlichen Uhrzeit nachweisen.
     users.activityTimeUsingDropdown(LocalTime.of(23, 45));
+
     assertThat(users.emailCells(email)).hasCount(1);
     users.activityTimeUsingDropdown(LocalTime.of(14, 30));
+
     assertThat(users.emailCells(email)).hasCount(1);
     users.clearActivityTime();
+
     assertThat(users.emailCells(email)).hasCount(1);
     AllurePlaywright.attachScreenshot("Kalenderauswahl und optionale Uhrzeit", browserPage);
     users.clearAllFilters();
     users.search(email);
+
     assertThat(users.emailCells(email)).hasCount(1);
   }
 
@@ -149,6 +169,7 @@ public class UserFiltersBrowserTest extends BrowserFixture {
                   AriaRole.BUTTON,
                   new Page.GetByRoleOptions().setName(uiTexts.getAdminUsersCancel()).setExact(true))
               .click();
+
           assertThat(browserPage.locator("#admin-user-filter-panel[opened]")).hasCount(0);
         }
         new UserMenu(browserPage).selectLanguage(expected.language());
@@ -156,13 +177,16 @@ public class UserFiltersBrowserTest extends BrowserFixture {
       }
       users.activityTime().fill("930");
       users.activityTime().press("Tab");
+
       assertThat(users.activityTime()).hasValue(expected.timeInput(LocalTime.of(9, 30)));
       users.activityTime().fill("1430");
       users.activityTime().press("Enter");
+
       assertThat(users.activityTime()).hasValue(expected.timeInput(LocalTime.of(14, 30)));
     }
     users.activityTime().fill("2460");
     users.activityTime().press("Tab");
+
     assertThat(browserPage.locator("vaadin-time-picker")).hasAttribute("invalid", "");
   }
 
@@ -180,6 +204,7 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     users.search(prefix);
     users.selectDraftFilter(uiTexts.getAdminUsersGridEnabled(), uiTexts.getAdminUsersNo());
     users.searchField().fill("no-match-" + prefix);
+
     assertThat(users.emailCells(prefix)).hasCount(2);
     // Im nativen TextField leert Escape zuerst den Suchtext. Den Dialogabschluss
     // deshalb außerhalb dieses Felds auslösen und die Schließantwort abwarten.
@@ -189,8 +214,10 @@ public class UserFiltersBrowserTest extends BrowserFixture {
             new Page.GetByRoleOptions().setName(uiTexts.getAdminUsersApplyFilters()).setExact(true))
         .focus();
     browserPage.keyboard().press("Escape");
+
     assertThat(browserPage.locator("#admin-user-filter-panel[opened]")).hasCount(0);
     users.openFilters();
+
     assertThat(users.searchField()).hasValue(prefix);
     assertThat(
             users
@@ -203,33 +230,41 @@ public class UserFiltersBrowserTest extends BrowserFixture {
         .isChecked();
     users.selectDraftFilter(uiTexts.getAdminUsersGridEnabled(), uiTexts.getAdminUsersNo());
     users.applyFilters();
+
     assertThat(users.emailCells(prefix)).hasCount(1);
     assertThat(users.emailCells(prefix)).hasText(disabled);
     users.clearAllFilters();
+
     assertThat(users.emailCells(prefix)).hasCount(1);
     browserPage.keyboard().press("Escape");
+
     assertThat(browserPage.locator("#admin-user-filter-panel[opened]")).hasCount(0);
     assertThat(users.emailCells(prefix)).hasCount(1);
     users.clearAllFilters();
     users.searchField().fill(prefix);
     users.applyFilters();
+
     assertThat(users.emailCells(prefix)).hasCount(2);
     users.selectDraftFilter(uiTexts.getAdminUsersGridStatus(), uiTexts.getUserStatusOffline());
     users
         .filterField(uiTexts.getAdminUsersGridStatus())
         .getByText(uiTexts.getUserStatusEmployed(), new Locator.GetByTextOptions().setExact(true))
         .click();
+
     assertThat(browserPage.locator(".admin-user-active-filter-count"))
         .hasText(uiTexts.getAdminUsersActiveFilterCount(2));
     users.applyFilters();
+
     assertThat(users.emailCells(prefix)).hasCount(2);
     users.selectFilter(uiTexts.getAdminUsersFilterRole(), uiTexts.getRoleAdmin());
     users.openFilters();
     browserPage.setViewportSize(390, 844);
+
     assertThat(browserPage.locator(".admin-user-active-filter-count"))
         .hasText(uiTexts.getAdminUsersActiveFilterCount(3));
     browserPage.setViewportSize(1280, 900);
     users.applyFilters();
+
     assertThat(users.emailCells(prefix)).hasCount(1);
     assertThat(users.emailCells(prefix)).hasText(disabled);
     AllurePlaywright.attachScreenshot("Filterentwürfe, Reset und Mehrfachauswahl", browserPage);
@@ -251,14 +286,18 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     AdminUsersPage users = login();
     users.open();
     users.openFilters();
+
     assertThat(users.activityTime()).isDisabled();
     users.activeSince(LocalDate.now(ZoneId.of("Europe/Berlin")).minusDays(1));
+
     assertThat(users.activityTime()).isEnabled();
     Locator picker = browserPage.locator(".admin-user-activity-filter vaadin-time-picker");
     picker.locator("[part~='toggle-button']").click();
     Locator overlay = browserPage.locator("vaadin-time-picker-overlay[opened]");
+
     assertThat(overlay).isVisible();
     String placeholder = users.activityTime().getAttribute("placeholder");
+
     assertThat(
             browserPage.getByRole(
                 AriaRole.OPTION, new Page.GetByRoleOptions().setName(placeholder).setExact(true)))
@@ -266,10 +305,12 @@ public class UserFiltersBrowserTest extends BrowserFixture {
     org.junit.jupiter.api.Assertions.assertTrue(
         overlay.locator("[part~='overlay']").boundingBox().height <= 302);
     users.activityTime().press("Escape");
+
     assertThat(overlay).hasCount(0);
     assertThat(users.activityTime()).hasValue("");
     users.activityDate().fill("");
     users.activityDate().press("Tab");
+
     assertThat(users.activityTime()).isDisabled();
     assertThat(users.activityTime()).hasValue("");
     AllurePlaywright.attachScreenshot("Datumabhängigkeit ohne implizite Zeitauswahl", browserPage);

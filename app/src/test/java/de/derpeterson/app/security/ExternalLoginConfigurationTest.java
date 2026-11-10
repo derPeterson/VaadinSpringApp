@@ -39,6 +39,7 @@ class ExternalLoginConfigurationTest {
   @CsvSource({"google,GOOGLE", "microsoft,MICROSOFT"})
   void credentialsAloneNeverEnableAProvider(String provider, String key) throws Exception {
     ExternalLoginConfiguration.Registrations registrations = registrations(key, "own-secret", null);
+
     assertTrue(registrations.providers().isEmpty());
     assertNull(registrations.findByRegistrationId(provider));
   }
@@ -49,6 +50,7 @@ class ExternalLoginConfigurationTest {
       throws Exception {
     ExternalLoginConfiguration.Registrations registrations =
         registrations(key, "own-secret", "false");
+
     assertTrue(registrations.providers().isEmpty());
     assertNull(registrations.findByRegistrationId(provider));
   }

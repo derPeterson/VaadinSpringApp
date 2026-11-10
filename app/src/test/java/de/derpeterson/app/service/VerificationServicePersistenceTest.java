@@ -113,7 +113,7 @@ class VerificationServicePersistenceTest {
       verificationTokenRepository.deleteAll();
       users.deleteAll();
       users.flush();
-      UserEntity user =
+      UserEntity testUserEntity =
           UserEntity.builder()
               .firstName("Test")
               .lastName("User")
@@ -124,18 +124,20 @@ class VerificationServicePersistenceTest {
               .preferredLocale(Locale.ENGLISH)
               .enabled(false)
               .build();
-      userId = users.saveAndFlush(user).getId();
+      userId = users.saveAndFlush(testUserEntity).getId();
     });
   }
 
   @Test
   void activationAndConsumptionCommitTogetherAndUsedTokenCannotReactivateDisabledAccount() {
     seed("valid", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
+
     assertTrue(service.validateToken("valid"));
     assertTrue(users.findById(userId).orElseThrow().isEnabled());
     assertEquals(TokenStatus.USED, status("valid"));
     assertTrue(service.validateToken("valid"));
     transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(false));
+
     assertFalse(service.validateToken("valid"));
     assertFalse(users.findById(userId).orElseThrow().isEnabled());
   }
@@ -146,6 +148,7 @@ class VerificationServicePersistenceTest {
       names = {"INACTIVE", "USED", "EXPIRED"})
   void nonActiveTokensExistButCannotActivateAccounts(TokenStatus tokenStatus) {
     seed("rejected", tokenStatus, LocalDateTime.now(CLOCK).plusDays(1));
+
     assertTrue(service.existsToken("rejected"));
     assertFalse(service.validateToken("rejected"));
     assertFalse(users.findById(userId).orElseThrow().isEnabled());
@@ -155,6 +158,7 @@ class VerificationServicePersistenceTest {
   @Test
   void expiredActiveTokenIsPersistentlyMarkedExpiredWithoutEnablingAccount() {
     seed("expired", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).minusDays(1));
+
     assertFalse(service.validateToken("expired"));
     assertEquals(TokenStatus.EXPIRED, status("expired"));
     assertFalse(users.findById(userId).orElseThrow().isEnabled());
@@ -167,6 +171,7 @@ class VerificationServicePersistenceTest {
     seed("expired", TokenStatus.EXPIRED, LocalDateTime.now(CLOCK).minusDays(1));
     String first = service.createToken(detachedUser());
     String second = service.createToken(detachedUser());
+
     assertNotEquals(first, second);
     assertEquals(TokenStatus.INACTIVE, status(first));
     assertEquals(TokenStatus.ACTIVE, status(second));
@@ -183,6 +188,7 @@ class VerificationServicePersistenceTest {
     when(probes.config().getString(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION))
         .thenReturn("invalid");
     UserEntity targetUser = detachedUser();
+
     assertThrows(DateTimeParseException.class, () -> service.createToken(targetUser));
     assertEquals(TokenStatus.ACTIVE, status("old"));
     assertEquals(1, verificationTokenRepository.count());
@@ -210,6 +216,7 @@ class VerificationServicePersistenceTest {
         .thenReturn(lifetime);
     if (entry.equals("create")) {
       UserEntity tokenUser = detachedUser();
+
       assertThrows(IllegalArgumentException.class, () -> service.createToken(tokenUser));
     } else {
       assertThrows(IllegalArgumentException.class, () -> resend(entry));
@@ -225,6 +232,7 @@ class VerificationServicePersistenceTest {
   @ValueSource(longs = {-1, 0, 1})
   void expirationBoundaryIsPersistedWithoutActivatingExpiredAccounts(long seconds) {
     seed("boundary", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusSeconds(seconds));
+
     assertEquals(seconds > 0, service.validateToken("boundary"));
     assertEquals(seconds > 0 ? TokenStatus.USED : TokenStatus.EXPIRED, status("boundary"));
     assertEquals(seconds > 0, users.findById(userId).orElseThrow().isEnabled());
@@ -236,6 +244,7 @@ class VerificationServicePersistenceTest {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
     try (MockedStatic<CustomI18NProvider> locale = mockStatic(CustomI18NProvider.class)) {
       locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.GERMAN);
+
       assertTrue(service.sendVerificationEmailByEmail("  TEST@EXAMPLE.COM  "));
     }
     assertEquals(TokenStatus.INACTIVE, status("old"));
@@ -254,6 +263,7 @@ class VerificationServicePersistenceTest {
   void enabledAccountRejectsValidationButLeavesTheUnusedTokenActive() {
     seed("unused", TokenStatus.ACTIVE, LocalDateTime.now(CLOCK).plusDays(1));
     transaction.executeWithoutResult(tx -> users.findById(userId).orElseThrow().setEnabled(true));
+
     assertFalse(service.validateToken("unused"));
     assertEquals(TokenStatus.ACTIVE, status("unused"));
     assertTrue(users.findById(userId).orElseThrow().isEnabled());
@@ -273,6 +283,7 @@ class VerificationServicePersistenceTest {
             })
         .when(probes.verificationTokenRepository())
         .save(any(VerificationTokenEntity.class));
+
     assertThrows(IllegalStateException.class, () -> service.validateToken("valid"));
     assertFalse(users.findById(userId).orElseThrow().isEnabled());
     assertEquals(TokenStatus.ACTIVE, status("valid"));
@@ -287,6 +298,7 @@ class VerificationServicePersistenceTest {
         .addEmailToQueue(any(), any(), any(), eq(EmailType.VERIFICATION));
     try (MockedStatic<CustomI18NProvider> locale = mockStatic(CustomI18NProvider.class)) {
       locale.when(CustomI18NProvider::getCurrentLocale).thenReturn(Locale.ENGLISH);
+
       assertThrows(IllegalStateException.class, () -> resend(entry));
     }
     assertEquals(TokenStatus.ACTIVE, status("old"));
@@ -344,6 +356,7 @@ class VerificationServicePersistenceTest {
     seed("boundary", tokenStatus, cutoff);
     seed("recent", tokenStatus, now.minusDays(1));
     seed("future", tokenStatus, now.plusDays(1));
+
     assertDoesNotThrow(service::deleteExpiredTokens);
     assertDoesNotThrow(service::deleteExpiredTokens);
     assertFalse(service.existsToken("old"));
@@ -363,6 +376,7 @@ class VerificationServicePersistenceTest {
         .thenReturn(duration);
     Class<? extends RuntimeException> expected =
         duration.equals("invalid") ? DateTimeParseException.class : IllegalArgumentException.class;
+
     assertThrows(expected, service::deleteExpiredTokens);
     assertEquals(TokenStatus.EXPIRED, status("old"));
     assertEquals(1, verificationTokenRepository.count());
@@ -379,8 +393,9 @@ class VerificationServicePersistenceTest {
             })
         .when(probes.users())
         .lockVerificationUser(userId);
-    UserEntity user = detachedUser();
-    List<Object> values = race(() -> service.createToken(user));
+    UserEntity testUserEntity = detachedUser();
+    List<Object> values = race(() -> service.createToken(testUserEntity));
+
     assertInstanceOf(String.class, values.get(0));
     assertInstanceOf(String.class, values.get(1));
     assertNotEquals(values.get(0), values.get(1));
@@ -401,6 +416,7 @@ class VerificationServicePersistenceTest {
         .when(probes.users())
         .lockVerificationUser(userId);
     List<Object> results = race(() -> service.validateToken("shared"));
+
     assertEquals(List.of(true, true), results);
     assertTrue(users.findById(userId).orElseThrow().isEnabled());
     assertEquals(originalVersion + 1, users.findById(userId).orElseThrow().getVersion());
@@ -408,7 +424,7 @@ class VerificationServicePersistenceTest {
   }
 
   private List<Object> race(Callable<Object> work) throws Exception {
-    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+    try (ExecutorService executorService = Executors.newFixedThreadPool(2)) {
       Callable<Object> capture =
           () -> {
             try {
@@ -417,8 +433,8 @@ class VerificationServicePersistenceTest {
               return failure;
             }
           };
-      Future<Object> first = executor.submit(capture);
-      Future<Object> second = executor.submit(capture);
+      Future<Object> first = executorService.submit(capture);
+      Future<Object> second = executorService.submit(capture);
       return List.of(first.get(20, TimeUnit.SECONDS), second.get(20, TimeUnit.SECONDS));
     }
   }
@@ -436,12 +452,14 @@ class VerificationServicePersistenceTest {
       UserEntity managed = users.findById(userId).orElseThrow();
       managed.setFirstName("Local");
       service.setInactiveTokensForUser(managed);
+
       assertTrue(managed.isEnabled());
       assertEquals("Local", managed.getFirstName());
       if (rollback) {
         tx.setRollbackOnly();
       }
     });
+
     assertEquals(!rollback, users.findById(userId).orElseThrow().isEnabled());
     assertEquals(rollback ? "Test" : "Local", users.findById(userId).orElseThrow().getFirstName());
     assertEquals(rollback ? TokenStatus.ACTIVE : TokenStatus.USED, status("outer-verify"));
@@ -488,6 +506,7 @@ class VerificationServicePersistenceTest {
     long tokenCount = verificationTokenRepository.count();
     clearInvocations(probes.queue());
     when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+
     assertThrows(MaintenanceAccessException.class, () -> service.validateToken(token));
     assertThrows(
         MaintenanceAccessException.class, () -> service.sendVerificationEmailByToken(token));
@@ -502,6 +521,7 @@ class VerificationServicePersistenceTest {
     verifyNoInteractions(probes.queue());
     service.deleteExpiredTokens();
     when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
+
     assertTrue(service.validateToken(token));
     assertEquals(
         TokenStatus.USED, verificationTokenRepository.findByToken(token).orElseThrow().getStatus());
@@ -527,6 +547,7 @@ class VerificationServicePersistenceTest {
     long count = users.count();
     long tokenCount = verificationTokenRepository.count();
     when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false, true);
+
     assertTrue(AopUtils.isAopProxy(registration));
     assertThrows(MaintenanceAccessException.class, () -> registration.register(candidate));
     assertEquals(count, users.count());
@@ -541,10 +562,10 @@ class VerificationServicePersistenceTest {
   static class Config {
     @Bean
     RegistrationService registrationService(
-        Probes probes, UserRepository repository, VerificationService verification) {
+        Probes probes, UserRepository userRepository, VerificationService verification) {
       UserService users =
           new UserService(
-              repository,
+              userRepository,
               new UserStatusBroadcaster(),
               mock(PasswordEncoder.class),
               mock(UserProfileBroadcaster.class),

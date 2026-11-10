@@ -86,7 +86,7 @@ final class BrowserHttps {
     managers.init(store);
     SSLContext tls = SSLContext.getInstance("TLS");
     tls.init(null, managers.getTrustManagers(), null);
-    try (HttpClient client =
+    try (HttpClient httpClient =
         HttpClient.newBuilder().sslContext(tls).connectTimeout(Duration.ofSeconds(3)).build()) {
       HttpRequest request =
           HttpRequest.newBuilder(target).timeout(Duration.ofSeconds(5)).GET().build();
@@ -94,7 +94,7 @@ final class BrowserHttps {
       while (true) {
         try {
           HttpResponse<Void> response =
-              client.send(request, HttpResponse.BodyHandlers.discarding());
+              httpClient.send(request, HttpResponse.BodyHandlers.discarding());
           if (response.statusCode() != 200) {
             throw new IOException("HTTPS login readiness returned " + response.statusCode());
           }

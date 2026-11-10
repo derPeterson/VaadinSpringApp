@@ -42,7 +42,7 @@ class TwoFactorCleanupTest {
   @Test
   void clearsExpiredSecretsBeforeMetadataAndDeletesOnlyOldClosedConversations() {
     Instant now = Instant.now();
-    UserEntity user =
+    UserEntity testUserEntity =
         userRepository.saveAndFlush(
             UserEntity.builder()
                 .firstName("Cleanup")
@@ -51,19 +51,22 @@ class TwoFactorCleanupTest {
                 .enabled(true)
                 .roleEntities(List.of())
                 .build());
-    TwoFactorChallengeEntity expired = challenge(user, now.minusSeconds(60));
-    TwoFactorChallengeEntity old = challenge(user, now.minusSeconds(7200));
-    TwoFactorChallengeEntity active = challenge(user, now.plusSeconds(300));
-    SupportTicketEntity oldClosed = ticket(user, now.minus(181, ChronoUnit.DAYS), Status.CLOSED);
+    TwoFactorChallengeEntity expired = challenge(testUserEntity, now.minusSeconds(60));
+    TwoFactorChallengeEntity old = challenge(testUserEntity, now.minusSeconds(7200));
+    TwoFactorChallengeEntity active = challenge(testUserEntity, now.plusSeconds(300));
+    SupportTicketEntity oldClosed =
+        ticket(testUserEntity, now.minus(181, ChronoUnit.DAYS), Status.CLOSED);
     SupportTicketEntity oldRequesterClosed =
-        ticket(user, now.minus(181, ChronoUnit.DAYS), Status.CLOSED_BY_REQUESTER);
-    SupportTicketEntity oldOpen = ticket(user, now.minus(181, ChronoUnit.DAYS), Status.OPEN);
-    SupportTicketEntity recentClosed = ticket(user, now.minus(1, ChronoUnit.DAYS), Status.CLOSED);
+        ticket(testUserEntity, now.minus(181, ChronoUnit.DAYS), Status.CLOSED_BY_REQUESTER);
+    SupportTicketEntity oldOpen =
+        ticket(testUserEntity, now.minus(181, ChronoUnit.DAYS), Status.OPEN);
+    SupportTicketEntity recentClosed =
+        ticket(testUserEntity, now.minus(1, ChronoUnit.DAYS), Status.CLOSED);
     SupportTicketEntity recentRequesterClosed =
-        ticket(user, now.minus(1, ChronoUnit.DAYS), Status.CLOSED_BY_REQUESTER);
+        ticket(testUserEntity, now.minus(1, ChronoUnit.DAYS), Status.CLOSED_BY_REQUESTER);
     SupportReplyEntity reply = new SupportReplyEntity();
     reply.setTicket(oldClosed);
-    reply.setAuthor(user);
+    reply.setAuthor(testUserEntity);
     reply.setBody("Synthetic closed conversation");
     reply.setCreatedAt(oldClosed.getCreatedAt());
     replies.saveAndFlush(reply);
@@ -77,6 +80,7 @@ class TwoFactorCleanupTest {
 
     TwoFactorChallengeEntity cleared =
         twoFactorChallengeRepository.findById(expired.getId()).orElseThrow();
+
     assertTrue(cleared.isConsumed());
     assertNull(cleared.getEncryptedPayload());
     assertNull(cleared.getVerificationDigest());
@@ -96,20 +100,20 @@ class TwoFactorCleanupTest {
   void recoveryOutputsFollowTheSessionAndAcknowledgementInsteadOfConfirmationExpiry() {
     new ResourceDatabasePopulator(new ClassPathResource("db/durable-sessions-h2.sql"))
         .execute(testDataSource);
-    JdbcTemplate jdbc = new JdbcTemplate(testDataSource);
+    JdbcTemplate jdbcTemplate = new JdbcTemplate(testDataSource);
     Instant now = Instant.now();
     String sessionId = UUID.randomUUID().toString();
     String expiredSessionId = UUID.randomUUID().toString();
     String revokedSessionId = UUID.randomUUID().toString();
-    insertSession(jdbc, sessionId, now.plusSeconds(1800));
-    insertSession(jdbc, expiredSessionId, now.minusSeconds(1));
-    insertSession(jdbc, revokedSessionId, now.plusSeconds(1800));
-    jdbc.update(
+    insertSession(jdbcTemplate, sessionId, now.plusSeconds(1800));
+    insertSession(jdbcTemplate, expiredSessionId, now.minusSeconds(1));
+    insertSession(jdbcTemplate, revokedSessionId, now.plusSeconds(1800));
+    jdbcTemplate.update(
         "insert into SPRING_SESSION_ATTRIBUTES (SESSION_PRIMARY_ID, ATTRIBUTE_NAME, ATTRIBUTE_BYTES) select PRIMARY_ID, ?, ? from SPRING_SESSION where SESSION_ID = ?",
         DurableSessionRepository.EXPIRED,
         new byte[] {1},
         revokedSessionId);
-    UserEntity user =
+    UserEntity testUserEntity =
         userRepository.saveAndFlush(
             UserEntity.builder()
                 .firstName("Recovery")
@@ -118,17 +122,20 @@ class TwoFactorCleanupTest {
                 .enabled(true)
                 .roleEntities(List.of())
                 .build());
-    TwoFactorChallengeEntity active = output(user, sessionId, now.minusSeconds(7200), false);
+    TwoFactorChallengeEntity active =
+        output(testUserEntity, sessionId, now.minusSeconds(7200), false);
     TwoFactorChallengeEntity expired =
-        output(user, expiredSessionId, now.minusSeconds(7200), false);
+        output(testUserEntity, expiredSessionId, now.minusSeconds(7200), false);
     TwoFactorChallengeEntity revoked =
-        output(user, revokedSessionId, now.minusSeconds(7200), false);
+        output(testUserEntity, revokedSessionId, now.minusSeconds(7200), false);
     TwoFactorChallengeEntity missing =
-        output(user, UUID.randomUUID().toString(), now.minusSeconds(7200), false);
-    TwoFactorChallengeEntity saved = output(user, sessionId, now.minusSeconds(7200), true);
+        output(testUserEntity, UUID.randomUUID().toString(), now.minusSeconds(7200), false);
+    TwoFactorChallengeEntity saved =
+        output(testUserEntity, sessionId, now.minusSeconds(7200), true);
     transactionTemplate.executeWithoutResult(status ->
-        new TwoFactorCleanup(twoFactorChallengeRepository, tickets, jdbc)
+        new TwoFactorCleanup(twoFactorChallengeRepository, tickets, jdbcTemplate)
             .purgeExpiredRecoveryData());
+
     assertEquals(
         "synthetic encrypted payload",
         twoFactorChallengeRepository.findById(active.getId()).orElseThrow().getEncryptedPayload());
@@ -136,16 +143,17 @@ class TwoFactorCleanupTest {
     assertFalse(twoFactorChallengeRepository.existsById(revoked.getId()));
     assertFalse(twoFactorChallengeRepository.existsById(missing.getId()));
     assertFalse(twoFactorChallengeRepository.existsById(saved.getId()));
-    jdbc.update("delete from SPRING_SESSION where SESSION_ID = ?", sessionId);
+    jdbcTemplate.update("delete from SPRING_SESSION where SESSION_ID = ?", sessionId);
     transactionTemplate.executeWithoutResult(status ->
-        new TwoFactorCleanup(twoFactorChallengeRepository, tickets, jdbc)
+        new TwoFactorCleanup(twoFactorChallengeRepository, tickets, jdbcTemplate)
             .purgeExpiredRecoveryData());
+
     assertFalse(twoFactorChallengeRepository.existsById(active.getId()));
   }
 
-  private void insertSession(JdbcTemplate jdbc, String id, Instant expires) {
+  private void insertSession(JdbcTemplate jdbcTemplate, String id, Instant expires) {
     long created = expires.minusSeconds(1800).toEpochMilli();
-    jdbc.update(
+    jdbcTemplate.update(
         "insert into SPRING_SESSION (PRIMARY_ID, SESSION_ID, CREATION_TIME, LAST_ACCESS_TIME, MAX_INACTIVE_INTERVAL, EXPIRY_TIME) values (?, ?, ?, ?, ?, ?)",
         UUID.randomUUID().toString(),
         id,
@@ -156,19 +164,19 @@ class TwoFactorCleanupTest {
   }
 
   private TwoFactorChallengeEntity output(
-      UserEntity user, String sessionId, Instant expiry, boolean saved) {
-    TwoFactorChallengeEntity output = challenge(user, expiry);
+      UserEntity testUserEntity, String sessionId, Instant expiry, boolean saved) {
+    TwoFactorChallengeEntity output = challenge(testUserEntity, expiry);
     output.setKind(Kind.RECOVERY_OUTPUT);
     output.setSessionDigest(TwoFactorAuthorization.sessionDigest(sessionId));
     output.setConsumed(saved);
     return twoFactorChallengeRepository.saveAndFlush(output);
   }
 
-  private TwoFactorChallengeEntity challenge(UserEntity user, Instant expiry) {
+  private TwoFactorChallengeEntity challenge(UserEntity testUserEntity, Instant expiry) {
     TwoFactorChallengeEntity row = new TwoFactorChallengeEntity();
-    row.setUser(user);
+    row.setUser(testUserEntity);
     row.setSessionDigest("synthetic-session");
-    row.setAccessVersion(user.getAccessVersion());
+    row.setAccessVersion(testUserEntity.getAccessVersion());
     row.setFactorRevision(UUID.randomUUID());
     row.setAction(TwoFactorAction.MANAGE_FACTOR);
     row.setKind(Kind.ENROLLMENT);
@@ -179,9 +187,9 @@ class TwoFactorCleanupTest {
     return twoFactorChallengeRepository.saveAndFlush(row);
   }
 
-  private SupportTicketEntity ticket(UserEntity user, Instant updated, Status status) {
+  private SupportTicketEntity ticket(UserEntity testUserEntity, Instant updated, Status status) {
     SupportTicketEntity row = new SupportTicketEntity();
-    row.setOwner(user);
+    row.setOwner(testUserEntity);
     row.setSubject("Synthetic recovery request");
     row.setStatus(status);
     row.setCreatedAt(updated);

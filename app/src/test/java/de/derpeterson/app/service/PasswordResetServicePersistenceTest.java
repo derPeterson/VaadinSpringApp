@@ -193,12 +193,14 @@ class PasswordResetServicePersistenceTest {
     assertFalse(service.resetPassword(token, "Password!"));
     assertFalse(passwordResetTokenRepository.findByToken(token).isPresent());
     service.setTokenStatus(token, TokenStatus.USED);
+
     assertEquals("old-hash", password());
   }
 
   @Test
   void successfulResetCommitsPasswordAndConsumptionTogetherAndSequentialReuseFails() {
     seed("valid", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+
     assertTrue(service.resetPassword("valid", "Password!"));
     assertEquals("hash-Password!", password());
     assertEquals(TokenStatus.USED, status("valid"));
@@ -253,6 +255,7 @@ class PasswordResetServicePersistenceTest {
       assertEquals("hash-Password!", managed.getPassword());
       assertEquals("Updated", managed.getFirstName());
     });
+
     assertEquals("hash-Password!", password());
     assertEquals("Updated", userRepository.findById(userId).orElseThrow().getFirstName());
     assertEquals(TokenStatus.USED, status("outer"));
@@ -285,6 +288,7 @@ class PasswordResetServicePersistenceTest {
       assertEquals(TokenStatus.INACTIVE, status("other"));
       tx.setRollbackOnly();
     });
+
     assertEquals("old-hash", password());
     assertEquals("Test", userRepository.findById(userId).orElseThrow().getFirstName());
     assertEquals(TokenStatus.ACTIVE, status("outer"));
@@ -313,6 +317,7 @@ class PasswordResetServicePersistenceTest {
         tx.setRollbackOnly();
       }
     });
+
     assertEquals(rollback ? "old-hash" : "hash-Password!", password());
     assertEquals(rollback ? TokenStatus.ACTIVE : TokenStatus.USED, status("outer-mail"));
     assertEquals(rollback ? 0 : 1, emailQueueRepository.count());
@@ -325,6 +330,7 @@ class PasswordResetServicePersistenceTest {
                       userRepository.findById(userId).orElseThrow(), TokenStatus.ACTIVE)
                   .getFirst()
                   .getToken());
+
       assertTrue(
           emailQueueRepository
               .findAll()
@@ -339,10 +345,12 @@ class PasswordResetServicePersistenceTest {
     transaction.executeWithoutResult(tx -> {
       UserEntity managed = userRepository.findById(userId).orElseThrow();
       managed.setFirstName("Local");
+
       assertSame(managed, userRepository.lockVerificationUser(userId).orElseThrow());
       assertEquals("Local", managed.getFirstName());
       tx.setRollbackOnly();
     });
+
     assertEquals("Test", userRepository.findById(userId).orElseThrow().getFirstName());
   }
 
@@ -351,12 +359,13 @@ class PasswordResetServicePersistenceTest {
     seed("blocked", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
     CountDownLatch loaded = new CountDownLatch(1);
     CountDownLatch disabled = new CountDownLatch(1);
-    ExecutorService executor = Executors.newSingleThreadExecutor();
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
     try {
       Future<Boolean> result =
-          executor.submit(() ->
+          executorService.submit(() ->
               transaction.execute(tx -> {
                 UserEntity stale = userRepository.findById(userId).orElseThrow();
+
                 assertTrue(stale.isEnabled());
                 loaded.countDown();
                 try {
@@ -367,15 +376,18 @@ class PasswordResetServicePersistenceTest {
                 }
                 return service.resetPassword("blocked", "Password!");
               }));
+
       assertTrue(loaded.await(10, TimeUnit.SECONDS));
       transaction.executeWithoutResult(
           tx -> userRepository.findById(userId).orElseThrow().setEnabled(false));
       disabled.countDown();
+
       assertFalse(result.get(10, TimeUnit.SECONDS));
     } finally {
       disabled.countDown();
-      executor.shutdownNow();
-      assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+      executorService.shutdownNow();
+
+      assertTrue(executorService.awaitTermination(10, TimeUnit.SECONDS));
     }
     assertEquals("old-hash", password());
     assertEquals(TokenStatus.ACTIVE, status("blocked"));
@@ -386,10 +398,10 @@ class PasswordResetServicePersistenceTest {
   void dirtyStaleAccountCannotOverwriteAConcurrentDisableDuringLockFlush() throws Exception {
     CountDownLatch loaded = new CountDownLatch(1);
     CountDownLatch disabled = new CountDownLatch(1);
-    ExecutorService executor = Executors.newSingleThreadExecutor();
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
     try {
       Future<Optional<UserEntity>> result =
-          executor.submit(() ->
+          executorService.submit(() ->
               transaction.execute(tx -> {
                 UserEntity stale = userRepository.findById(userId).orElseThrow();
                 stale.setFirstName("Stale edit");
@@ -402,22 +414,26 @@ class PasswordResetServicePersistenceTest {
                 }
                 return userRepository.lockVerificationUser(userId);
               }));
+
       assertTrue(loaded.await(10, TimeUnit.SECONDS));
       transaction.executeWithoutResult(
           tx -> userRepository.findById(userId).orElseThrow().setEnabled(false));
       disabled.countDown();
       ExecutionException failure =
           assertThrows(ExecutionException.class, () -> result.get(10, TimeUnit.SECONDS));
+
       assertInstanceOf(OptimisticLockingFailureException.class, failure.getCause());
     } finally {
       disabled.countDown();
-      executor.shutdownNow();
-      assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+      executorService.shutdownNow();
+
+      assertTrue(executorService.awaitTermination(10, TimeUnit.SECONDS));
     }
-    UserEntity stored = userRepository.findById(userId).orElseThrow();
-    assertFalse(stored.isEnabled());
-    assertEquals("Test", stored.getFirstName());
-    assertEquals("old-hash", stored.getPassword());
+    UserEntity storedUserEntity = userRepository.findById(userId).orElseThrow();
+
+    assertFalse(storedUserEntity.isEnabled());
+    assertEquals("Test", storedUserEntity.getFirstName());
+    assertEquals("old-hash", storedUserEntity.getPassword());
   }
 
   @ParameterizedTest
@@ -426,6 +442,7 @@ class PasswordResetServicePersistenceTest {
       names = {"USED", "INACTIVE", "EXPIRED"})
   void nonActiveTokensExistButCannotValidateOrChangePasswords(TokenStatus tokenStatus) {
     seed("closed", tokenStatus, LocalDateTime.now().plusDays(1));
+
     assertTrue(passwordResetTokenRepository.findByToken("closed").isPresent());
     assertEquals(
         tokenStatus == TokenStatus.EXPIRED
@@ -442,6 +459,7 @@ class PasswordResetServicePersistenceTest {
   void expiredTokensAreMarkedExpiredByBothEntrypointsWithoutChangingPassword() {
     seed("validate-expired", TokenStatus.ACTIVE, LocalDateTime.now().minusDays(1));
     seed("reset-expired", TokenStatus.ACTIVE, LocalDateTime.now().minusDays(1));
+
     assertEquals(PasswordResetService.LinkState.EXPIRED, service.inspectToken("validate-expired"));
     assertEquals(PasswordResetService.LinkState.EXPIRED, service.inspectToken("validate-expired"));
     assertFalse(service.resetPassword("reset-expired", "Password!"));
@@ -455,10 +473,12 @@ class PasswordResetServicePersistenceTest {
     seed("disabled", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
     transaction.executeWithoutResult(
         tx -> userRepository.findById(userId).orElseThrow().setEnabled(false));
+
     assertFalse(service.resetPassword("disabled", "Password!"));
     boolean valid =
         transaction.execute(
             tx -> service.inspectToken("disabled") == PasswordResetService.LinkState.VALID);
+
     assertFalse(valid);
     assertEquals(TokenStatus.ACTIVE, status("disabled"));
     assertEquals("old-hash", password());
@@ -467,10 +487,12 @@ class PasswordResetServicePersistenceTest {
   @Test
   void validTokenValidationWorksWithoutAnAmbientPersistenceContext() {
     seed("valid", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+
     assertEquals(PasswordResetService.LinkState.VALID, service.inspectToken("valid"));
     boolean valid =
         transaction.execute(
             tx -> service.inspectToken("valid") == PasswordResetService.LinkState.VALID);
+
     assertTrue(valid);
     assertEquals(TokenStatus.ACTIVE, status("valid"));
   }
@@ -482,6 +504,7 @@ class PasswordResetServicePersistenceTest {
     seed("expired", TokenStatus.EXPIRED, LocalDateTime.now().minusDays(1));
     String first = service.createToken(userRepository.findById(userId).orElseThrow());
     String second = service.createToken(userRepository.findById(userId).orElseThrow());
+
     assertNotEquals(first, second);
     assertEquals(TokenStatus.INACTIVE, status("active"));
     assertEquals(TokenStatus.INACTIVE, status(first));
@@ -495,6 +518,7 @@ class PasswordResetServicePersistenceTest {
   @Test
   void statusSetterCannotReactivateUsedTokensOrAllowASecondPasswordChange() {
     seed("reusable", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+
     assertTrue(service.resetPassword("reusable", "Password!"));
     assertThrows(
         IllegalArgumentException.class,
@@ -507,6 +531,7 @@ class PasswordResetServicePersistenceTest {
   @Test
   void nullStatusIsRejectedBeforePersistenceWithoutChangingStoredStatus() {
     seed("valid", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
+
     assertThrows(IllegalArgumentException.class, () -> service.setTokenStatus("valid", null));
     assertEquals(TokenStatus.ACTIVE, status("valid"));
   }
@@ -533,6 +558,7 @@ class PasswordResetServicePersistenceTest {
     assertEquals(TokenStatus.ACTIVE, status("valid"));
     reset(probes.encoder(), probes.userRepository(), probes.passwordResetTokenRepository());
     when(probes.encoder().encode("Password!")).thenReturn("retry-hash");
+
     assertTrue(service.resetPassword("valid", "Password!"));
     assertEquals("retry-hash", password());
     assertEquals(TokenStatus.USED, status("valid"));
@@ -541,6 +567,7 @@ class PasswordResetServicePersistenceTest {
   @Test
   void invalidPasswordDoesNotConsumeEvenAnExpiredToken() {
     seed("expired", TokenStatus.ACTIVE, LocalDateTime.now().minusDays(1));
+
     assertThrows(IllegalArgumentException.class, () -> service.resetPassword("expired", "weak"));
     assertEquals(TokenStatus.ACTIVE, status("expired"));
     assertEquals("old-hash", password());
@@ -553,6 +580,7 @@ class PasswordResetServicePersistenceTest {
     when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION))
         .thenReturn("invalid");
     UserEntity targetUser = userRepository.findById(userId).orElseThrow();
+
     assertThrows(DateTimeParseException.class, () -> service.createToken(targetUser));
     assertEquals(TokenStatus.ACTIVE, status("old"));
     assertEquals(1, passwordResetTokenRepository.count());
@@ -574,6 +602,7 @@ class PasswordResetServicePersistenceTest {
     when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION))
         .thenReturn(duration);
     UserEntity targetUser = userRepository.findById(userId).orElseThrow();
+
     assertThrows(RuntimeException.class, () -> service.createToken(targetUser));
     assertThrows(RuntimeException.class, () -> service.sendPasswordResetEmail("test@example.com"));
     assertEquals(TokenStatus.ACTIVE, status("old"));
@@ -581,6 +610,7 @@ class PasswordResetServicePersistenceTest {
     assertEquals(0, emailQueueRepository.count());
     when(probes.config().getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION))
         .thenReturn(duration);
+
     assertThrows(RuntimeException.class, service::deleteExpiredTokens);
     assertEquals(1, passwordResetTokenRepository.count());
   }
@@ -594,6 +624,7 @@ class PasswordResetServicePersistenceTest {
     LocalDateTime expiry = LocalDateTime.now(testClock).plusSeconds(offsetSeconds);
     seed("validate-boundary", TokenStatus.ACTIVE, expiry);
     seed("reset-boundary", TokenStatus.ACTIVE, expiry);
+
     assertEquals(
         offsetSeconds > 0
             ? PasswordResetService.LinkState.VALID
@@ -612,8 +643,10 @@ class PasswordResetServicePersistenceTest {
     Instant instant = Instant.parse("2026-10-08T10:00:00Z");
     when(testClock.instant()).thenReturn(instant);
     seed("later", TokenStatus.ACTIVE, LocalDateTime.now(testClock).plusSeconds(1));
+
     assertEquals(PasswordResetService.LinkState.VALID, service.inspectToken("later"));
     when(testClock.instant()).thenReturn(instant.plusSeconds(1));
+
     assertFalse(service.resetPassword("later", "Password!"));
     assertEquals(TokenStatus.EXPIRED, status("later"));
     assertEquals("old-hash", password());
@@ -632,6 +665,7 @@ class PasswordResetServicePersistenceTest {
     seed("future", TokenStatus.ACTIVE, now.plusDays(1));
     Instant cutoffInstant = now.atZone(testClock.getZone()).toInstant();
     when(testClock.instant()).thenReturn(cutoffInstant);
+
     assertDoesNotThrow(service::deleteExpiredTokens);
     assertDoesNotThrow(service::deleteExpiredTokens);
     for (TokenStatus status : TokenStatus.values()) {
@@ -648,9 +682,11 @@ class PasswordResetServicePersistenceTest {
     seed("old", TokenStatus.USED, LocalDateTime.now().minusDays(10));
     transaction.executeWithoutResult(tx -> {
       service.deleteExpiredTokens();
+
       assertEquals(0, passwordResetTokenRepository.count());
       tx.setRollbackOnly();
     });
+
     assertTrue(passwordResetTokenRepository.findByToken("old").isPresent());
   }
 
@@ -658,9 +694,9 @@ class PasswordResetServicePersistenceTest {
   void checkedTemplateIoFailureRollsBackTokenRotationWithoutQueuingMailAndAllowsRetry()
       throws IOException {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.getLocale()).thenReturn(Locale.FRENCH);
-    VaadinSession.setCurrent(session);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenReturn(Locale.FRENCH);
+    VaadinSession.setCurrent(vaadinSession);
     try {
       assertThrows(IOException.class, () -> service.sendPasswordResetEmail("test@example.com"));
     } finally {
@@ -674,6 +710,7 @@ class PasswordResetServicePersistenceTest {
                 .findAllByUserEntityAndStatus(
                     userRepository.findById(userId).orElseThrow(), TokenStatus.ACTIVE)
                 .size());
+
     assertEquals(1, active);
     verify(probes.queue(), never()).addEmailToQueue(any(), any(), any(), any());
     assertEquals(0, emailQueueRepository.count());
@@ -740,11 +777,13 @@ class PasswordResetServicePersistenceTest {
               mail.setEmailType(call.getArgument(3));
               mail.setStatus(EmailStatus.PENDING);
               emailQueueRepository.saveAndFlush(mail);
+
               assertEquals(1, emailQueueRepository.count());
               throw failure;
             })
         .when(probes.queue())
         .addEmailToQueue(any(), any(), any(), any());
+
     assertSame(
         failure,
         assertThrows(IOException.class, () -> service.sendPasswordResetEmail("test@example.com")));
@@ -752,6 +791,7 @@ class PasswordResetServicePersistenceTest {
     assertEquals(1, passwordResetTokenRepository.count());
     assertEquals(0, emailQueueRepository.count());
     reset(probes.queue());
+
     assertTrue(service.sendPasswordResetEmail("test@example.com"));
     assertEquals(1, emailQueueRepository.count());
   }
@@ -759,15 +799,16 @@ class PasswordResetServicePersistenceTest {
   @Test
   void caughtCheckedIoMarksTheOuterTransactionRollbackOnly() {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.getLocale()).thenReturn(Locale.FRENCH);
-    VaadinSession.setCurrent(session);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenReturn(Locale.FRENCH);
+    VaadinSession.setCurrent(vaadinSession);
     try {
       assertThrows(
           UnexpectedRollbackException.class,
           () ->
               transaction.executeWithoutResult(tx -> {
                 userRepository.findById(userId).orElseThrow().setFirstName("Must rollback");
+
                 assertThrows(
                     IOException.class, () -> service.sendPasswordResetEmail("test@example.com"));
               }));
@@ -786,6 +827,7 @@ class PasswordResetServicePersistenceTest {
     DataAccessResourceFailureException failure =
         new DataAccessResourceFailureException("isolated queue failure");
     doThrow(failure).when(probes.queue()).addEmailToQueue(any(), any(), any(), any());
+
     assertSame(
         failure,
         assertThrows(
@@ -800,9 +842,9 @@ class PasswordResetServicePersistenceTest {
   void successfulMailRequestCommitsOneNewTokenAndQueuesItsLinkWithoutSmtp(boolean german)
       throws IOException {
     seed("old", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.getLocale()).thenReturn(german ? Locale.GERMAN : Locale.ENGLISH);
-    VaadinSession.setCurrent(session);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenReturn(german ? Locale.GERMAN : Locale.ENGLISH);
+    VaadinSession.setCurrent(vaadinSession);
     try {
       assertTrue(service.sendPasswordResetEmail("test@example.com"));
     } finally {
@@ -817,6 +859,7 @@ class PasswordResetServicePersistenceTest {
                 .getFirst()
                 .getToken());
     ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
+
     verify(probes.queue())
         .addEmailToQueue(
             argThat(user -> userId.equals(user.getId())),
@@ -843,29 +886,33 @@ class PasswordResetServicePersistenceTest {
               if (Thread.currentThread() == staleReader.get()) {
                 assertTrue(result.isPresent());
                 activeRead.countDown();
+
                 assertTrue(firstCommitted.await(10, TimeUnit.SECONDS));
               }
               return result;
             })
         .when(probes.passwordResetTokenRepository())
         .findUserIdByToken("race");
-    ExecutorService executor = Executors.newSingleThreadExecutor();
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
     try {
       Future<Boolean> second =
-          executor.submit(() -> {
+          executorService.submit(() -> {
             staleReader.set(Thread.currentThread());
             return service.resetPassword("race", "SecondPassword!");
           });
+
       assertTrue(activeRead.await(10, TimeUnit.SECONDS));
       assertTrue(service.resetPassword("race", "FirstPassword!"));
       firstCommitted.countDown();
+
       assertFalse(
           second.get(10, TimeUnit.SECONDS),
           "The committed consumption must be observed after locking");
     } finally {
       firstCommitted.countDown();
-      executor.shutdownNow();
-      assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+      executorService.shutdownNow();
+
+      assertTrue(executorService.awaitTermination(10, TimeUnit.SECONDS));
     }
     assertEquals("hash-FirstPassword!", password());
     assertEquals(TokenStatus.USED, status("race"));
@@ -884,26 +931,29 @@ class PasswordResetServicePersistenceTest {
               Optional<UserEntity> result = userRepository.lockVerificationUser(userId);
               if (Thread.currentThread() == owner.get()) {
                 locked.countDown();
+
                 assertTrue(contender.await(10, TimeUnit.SECONDS));
               }
               return result;
             })
         .when(probes.userRepository())
         .lockVerificationUser(userId);
-    ExecutorService executor = Executors.newFixedThreadPool(2);
+    ExecutorService executorService = Executors.newFixedThreadPool(2);
     try {
       Future<T> a =
-          executor.submit(() -> {
+          executorService.submit(() -> {
             owner.set(Thread.currentThread());
             return first.call();
           });
+
       assertTrue(locked.await(10, TimeUnit.SECONDS));
-      Future<T> b = executor.submit(second);
+      Future<T> b = executorService.submit(second);
       return List.of(a.get(10, TimeUnit.SECONDS), b.get(10, TimeUnit.SECONDS));
     } finally {
       contender.countDown();
-      executor.shutdownNow();
-      assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+      executorService.shutdownNow();
+
+      assertTrue(executorService.awaitTermination(10, TimeUnit.SECONDS));
     }
   }
 
@@ -914,6 +964,7 @@ class PasswordResetServicePersistenceTest {
         overlap(
             () -> service.resetPassword("overlap", "FirstPassword!"),
             () -> service.resetPassword("overlap", "SecondPassword!"));
+
     assertEquals(List.of(true, false), results);
     assertEquals("hash-FirstPassword!", password());
     assertEquals(TokenStatus.USED, status("overlap"));
@@ -925,6 +976,7 @@ class PasswordResetServicePersistenceTest {
     UserEntity detached = userRepository.findById(userId).orElseThrow();
     List<String> results =
         overlap(() -> service.createToken(detached), () -> service.createToken(detached));
+
     assertNotEquals(results.getFirst(), results.getLast());
     assertEquals(TokenStatus.INACTIVE, status(results.getFirst()));
     assertEquals(TokenStatus.ACTIVE, status(results.getLast()));
@@ -934,6 +986,7 @@ class PasswordResetServicePersistenceTest {
                 .findAllByUserEntityAndStatus(
                     userRepository.findById(userId).orElseThrow(), TokenStatus.ACTIVE)
                 .size());
+
     assertEquals(1, active);
   }
 
@@ -943,6 +996,7 @@ class PasswordResetServicePersistenceTest {
         overlap(
             () -> service.sendPasswordResetEmail("test@example.com"),
             () -> service.sendPasswordResetEmail("test@example.com"));
+
     assertEquals(List.of(true, true), results);
     assertEquals(1, emailQueueRepository.count());
     assertEquals(1, passwordResetTokenRepository.count());
@@ -953,6 +1007,7 @@ class PasswordResetServicePersistenceTest {
                     userRepository.findById(userId).orElseThrow(), TokenStatus.ACTIVE)
                 .getFirst()
                 .getToken());
+
     assertTrue(
         emailQueueRepository.findAll().getFirst().getBody().contains("/reset-password/" + active));
     assertEquals(PasswordResetService.LinkState.VALID, service.inspectToken(active));
@@ -981,6 +1036,7 @@ class PasswordResetServicePersistenceTest {
                 assertTrue(service.sendPasswordResetEmail("test@example.com"));
                 return "mail-queued";
               });
+
       assertEquals(TokenStatus.INACTIVE, status(results.getFirst()));
       assertEquals(2, passwordResetTokenRepository.count());
     }
@@ -989,6 +1045,7 @@ class PasswordResetServicePersistenceTest {
         transaction.execute(tx ->
             passwordResetTokenRepository.findAllByUserEntityAndStatus(
                 userRepository.findById(userId).orElseThrow(), TokenStatus.ACTIVE));
+
     assertEquals(1, active.size());
     assertTrue(
         emailQueueRepository
@@ -1003,6 +1060,7 @@ class PasswordResetServicePersistenceTest {
     UserEntity detached = userRepository.findById(userId).orElseThrow();
     transaction.executeWithoutResult(
         tx -> userRepository.findById(userId).orElseThrow().setEnabled(false));
+
     assertThrows(IllegalStateException.class, () -> service.createToken(detached));
     assertEquals(0, passwordResetTokenRepository.count());
     assertEquals(0, emailQueueRepository.count());
@@ -1016,9 +1074,9 @@ class PasswordResetServicePersistenceTest {
     when(probes.config().getString(ConfigEntry.BASE_URL)).thenReturn("https://example.invalid/");
     doAnswer(
             call -> {
-              UserEntity user = (UserEntity) call.getArgument(0);
+              UserEntity testUserEntity = (UserEntity) call.getArgument(0);
               EmailQueueEntity broken = new EmailQueueEntity();
-              broken.setUserEntity(user);
+              broken.setUserEntity(testUserEntity);
               broken.setEmailType(EmailType.PASSWORD_RESET);
               broken.setStatus(EmailStatus.PENDING);
               emailQueueRepository.saveAndFlush(broken);
@@ -1026,6 +1084,7 @@ class PasswordResetServicePersistenceTest {
             })
         .when(probes.queue())
         .addEmailToQueue(any(), any(), any(), any());
+
     assertThrows(
         DataIntegrityViolationException.class,
         () -> service.sendPasswordResetEmail("test@example.com"));
@@ -1050,6 +1109,7 @@ class PasswordResetServicePersistenceTest {
                 .getFirst()
                 .getToken());
     UserEntity targetUser = userRepository.findById(userId).orElseThrow();
+
     assertThrows(IllegalStateException.class, () -> service.createToken(targetUser));
     assertEquals(TokenStatus.ACTIVE, status(active));
     assertEquals(1, passwordResetTokenRepository.count());
@@ -1062,6 +1122,7 @@ class PasswordResetServicePersistenceTest {
       names = {"USED", "INACTIVE", "EXPIRED"})
   void terminalTokensRemainIrreversibleAndRepeatedSameStatusIsIdempotent(TokenStatus terminal) {
     seed("closed", terminal, LocalDateTime.now().plusDays(1));
+
     assertThrows(
         IllegalArgumentException.class, () -> service.setTokenStatus("closed", TokenStatus.ACTIVE));
     for (TokenStatus target :
@@ -1080,13 +1141,14 @@ class PasswordResetServicePersistenceTest {
     seed("stale", TokenStatus.ACTIVE, LocalDateTime.now().plusDays(1));
     CountDownLatch read = new CountDownLatch(1);
     CountDownLatch committed = new CountDownLatch(1);
-    ExecutorService executor = Executors.newSingleThreadExecutor();
+    ExecutorService executorService = Executors.newSingleThreadExecutor();
     try {
       Future<Boolean> stale =
-          executor.submit(() ->
+          executorService.submit(() ->
               transaction.execute(tx -> {
                 PasswordResetTokenEntity managed =
                     passwordResetTokenRepository.findByToken("stale").orElseThrow();
+
                 assertEquals(TokenStatus.ACTIVE, managed.getStatus());
                 read.countDown();
                 try {
@@ -1097,14 +1159,17 @@ class PasswordResetServicePersistenceTest {
                 }
                 return service.resetPassword("stale", "SecondPassword!");
               }));
+
       assertTrue(read.await(10, TimeUnit.SECONDS));
       assertTrue(service.resetPassword("stale", "FirstPassword!"));
       committed.countDown();
+
       assertFalse(stale.get(10, TimeUnit.SECONDS));
     } finally {
       committed.countDown();
-      executor.shutdownNow();
-      assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+      executorService.shutdownNow();
+
+      assertTrue(executorService.awaitTermination(10, TimeUnit.SECONDS));
     }
     assertEquals("hash-FirstPassword!", password());
   }
@@ -1125,6 +1190,7 @@ class PasswordResetServicePersistenceTest {
     long mailCount = emailQueueRepository.count();
     clearInvocations(probes.queue(), probes.encoder());
     when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
+
     assertThrows(
         MaintenanceAccessException.class, () -> service.resetPassword(token, "NewPassword!"));
     assertThrows(MaintenanceAccessException.class, () -> service.inspectToken(token));
@@ -1140,6 +1206,7 @@ class PasswordResetServicePersistenceTest {
     service.deleteExpiredTokens();
     when(probes.config().getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
     when(probes.encoder().encode("NewPassword!")).thenReturn("updated-hash");
+
     assertTrue(service.resetPassword(token, "NewPassword!"));
     assertEquals(
         TokenStatus.USED,

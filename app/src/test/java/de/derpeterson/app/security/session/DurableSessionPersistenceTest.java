@@ -149,14 +149,17 @@ class DurableSessionPersistenceTest {
   @Test
   void changedTimeoutAppliesImmediatelyOnlyToNewSessions() {
     Session existing = repository.createSession();
+
     assertEquals(Duration.ofMinutes(30), existing.getMaxInactiveInterval());
 
     when(configService.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(10);
+
     assertEquals(
         Duration.ofMinutes(30), repository.findById(existing.getId()).getMaxInactiveInterval());
     assertEquals(Duration.ofSeconds(10), repository.createSession().getMaxInactiveInterval());
 
     DurableSessionRepository<?> restarted = restart();
+
     assertEquals(
         Duration.ofMinutes(30), restarted.findById(existing.getId()).getMaxInactiveInterval());
     assertEquals(Duration.ofSeconds(10), restarted.createSession().getMaxInactiveInterval());
@@ -165,6 +168,7 @@ class DurableSessionPersistenceTest {
   @Test
   void invalidTimeoutIsRejectedAtStartup() {
     when(configService.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS)).thenReturn(0);
+
     assertThrows(IllegalArgumentException.class, this::restart);
   }
 
@@ -213,11 +217,13 @@ class DurableSessionPersistenceTest {
             new de.derpeterson.app.security.ExternalAuthenticationToken(external, "microsoft")));
     DurableSessionRepository<?> restarted = restart();
     Session restored = restarted.findById(before.getId());
+
     assertNotNull(restored);
     assertEquals(
         SignInMethod.MICROSOFT,
         new DurableSessionRegistry<>(restarted).metadata(before.getId()).signInMethod());
     SecurityContext security = restored.getAttribute(CONTEXT);
+
     assertTrue(
         security.getAuthentication()
             instanceof de.derpeterson.app.security.ExternalAuthenticationToken);
@@ -232,6 +238,7 @@ class DurableSessionPersistenceTest {
             true,
             external.getAuthorities()));
     Session revoked = restart().findById(before.getId());
+
     assertNull(revoked.getAttribute(CONTEXT));
     assertEquals(Boolean.TRUE, revoked.getAttribute(DurableSessionRepository.EXPIRED));
   }
@@ -241,14 +248,17 @@ class DurableSessionPersistenceTest {
   void maximumAccountIdentityRemainsAuthenticatedAfterRepositoryRestart(boolean remembered) {
     String identity =
         "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62);
+
     assertEquals(255, identity.length());
     account.set(
         User.withUsername(identity).password("fixture-encoded-password").roles("USER").build());
     Session session = admitted(remembered);
     DurableSessionRepository<?> restarted = restart();
     Session restored = restarted.findById(session.getId());
+
     assertNotNull(restored);
     SecurityContext restoredContext = restored.getAttribute(CONTEXT);
+
     assertNotNull(restoredContext);
     assertEquals(identity, restoredContext.getAuthentication().getName());
     assertTrue(restoredContext.getAuthentication().isAuthenticated());
@@ -285,10 +295,12 @@ class DurableSessionPersistenceTest {
     Instant created = before.getCreationTime();
     DurableSessionRepository<?> afterRestart = restart();
     Session after = afterRestart.findById(before.getId());
+
     assertNotNull(after);
     assertEquals(Instant.ofEpochMilli(created.toEpochMilli()), after.getCreationTime());
     assertNull(after.getAttribute("runtime-only"));
     SecurityContext restored = after.getAttribute(CONTEXT);
+
     assertEquals(account.get().getUsername(), restored.getAuthentication().getName());
     assertEquals(remembered, restored.getAuthentication() instanceof RememberMeAuthenticationToken);
     FactorGrantedAuthority factor =
@@ -297,8 +309,10 @@ class DurableSessionPersistenceTest {
             .map(FactorGrantedAuthority.class::cast)
             .findFirst()
             .orElseThrow();
+
     assertEquals(Instant.parse("2026-10-20T10:00:00Z"), factor.getIssuedAt());
     CsrfToken csrf = after.getAttribute(CSRF);
+
     assertEquals("fixture-csrf", csrf.getToken());
     String stored =
         new String(
@@ -307,6 +321,7 @@ class DurableSessionPersistenceTest {
                 byte[].class,
                 CONTEXT),
             StandardCharsets.UTF_8);
+
     assertFalse(stored.contains("fixture-encoded-password"));
     assertFalse(stored.contains("javaClass"));
     assertTrue(stored.startsWith("{"));
@@ -316,6 +331,7 @@ class DurableSessionPersistenceTest {
   @ValueSource(strings = {"null-value", "remove", "empty-context"})
   void removedSecurityAndRuntimeAttributesStayAbsentAfterRestart(String mode) {
     DurableSessionRepository<?>.LiveSession session = repository.findById(admitted(false).getId());
+
     assertNotNull(session);
     session.setAttribute(CSRF, new DefaultCsrfToken("header", "parameter", "fixture"));
     session.setAttribute("runtime-only", new Object());
@@ -332,6 +348,7 @@ class DurableSessionPersistenceTest {
     assertNull(session.getAttribute("runtime-only"));
     assertFalse(session.getAttributeNames().contains(CONTEXT));
     Session restored = restart().findById(session.getId());
+
     assertNotNull(restored);
     assertNotNull(restored.getAttribute(DurableSessionRepository.ACTIVE));
     assertNull(restored.getAttribute(CONTEXT));
@@ -353,6 +370,7 @@ class DurableSessionPersistenceTest {
     account.set(User.withUserDetails(account.get()).roles("USER").build());
     Session restored = restart().findById(before.getId());
     SecurityContext context = restored.getAttribute(CONTEXT);
+
     assertFalse(
         context.getAuthentication().getAuthorities().stream()
             .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority())));
@@ -374,6 +392,7 @@ class DurableSessionPersistenceTest {
       default -> throw new IllegalArgumentException("Unknown fixture change");
     }
     Session rejected = restart().findById(before.getId());
+
     assertNotNull(rejected);
     assertNull(rejected.getAttribute(CONTEXT));
     assertEquals(Boolean.TRUE, rejected.getAttribute(DurableSessionRepository.EXPIRED));
@@ -389,6 +408,7 @@ class DurableSessionPersistenceTest {
     DurableSessionRegistry<?> registry = new DurableSessionRegistry<>(repository);
     registry.getSessionInformation(before.getId()).expireNow();
     DurableSessionRegistry<?> restoredRegistry = new DurableSessionRegistry<>(restart());
+
     assertTrue(restoredRegistry.getSessionInformation(before.getId()).isExpired());
     assertTrue(restoredRegistry.getAllSessions(account.get().getUsername(), false).isEmpty());
     assertEquals(1, restoredRegistry.getAllSessions(account.get().getUsername(), true).size());
@@ -402,6 +422,7 @@ class DurableSessionPersistenceTest {
         Instant.now().minusSeconds(1801).toEpochMilli(),
         Instant.now().minusSeconds(1).toEpochMilli(),
         before.getId());
+
     assertNull(restart().findById(before.getId()));
   }
 
@@ -413,6 +434,7 @@ class DurableSessionPersistenceTest {
     first.setAttribute("live-ui", new Object());
     String old = first.getId();
     String changed = first.changeSessionId();
+
     assertNull(repository.findById(old));
     assertEquals(changed, second.getId());
     assertSame(mutex, second.getAttribute(WebUtils.SESSION_MUTEX_ATTRIBUTE));
@@ -431,6 +453,7 @@ class DurableSessionPersistenceTest {
     DurableSessionRepository<S>.LiveSession stale = sessions.findById(existing.getId());
     sessions.deleteById(existing.getId());
     Instant accessed = Instant.now();
+
     assertThrows(IllegalStateException.class, () -> stale.setLastAccessedTime(accessed));
     assertDoesNotThrow(() -> sessions.save(stale));
     assertNull(sessions.findById(existing.getId()));
@@ -440,6 +463,7 @@ class DurableSessionPersistenceTest {
   void separateRequestsKeepTheSameMutexAndIndependentAttributeChanges() {
     Session first = admitted(false);
     Session second = repository.findById(first.getId());
+
     assertSame(
         first.getAttribute(WebUtils.SESSION_MUTEX_ATTRIBUTE),
         second.getAttribute(WebUtils.SESSION_MUTEX_ATTRIBUTE));
@@ -447,6 +471,7 @@ class DurableSessionPersistenceTest {
     second.setAttribute(DurableSessionRepository.EXPIRED, true);
     Session restored = restart().findById(first.getId());
     CsrfToken csrf = restored.getAttribute(CSRF);
+
     assertEquals("fresh", csrf.getToken());
     assertTrue((Boolean) restored.getAttribute(DurableSessionRepository.EXPIRED));
   }
@@ -460,6 +485,7 @@ class DurableSessionPersistenceTest {
     delayed.setLastAccessedTime(newer.minusSeconds(5));
     first.setAttribute(CSRF, new DefaultCsrfToken("header", "parameter", "new-token"));
     CsrfToken observed = delayed.getAttribute(CSRF);
+
     assertEquals("new-token", observed.getToken());
     assertEquals(
         newer.toEpochMilli(),
@@ -474,6 +500,7 @@ class DurableSessionPersistenceTest {
         "{invalid-json".getBytes(StandardCharsets.UTF_8),
         CONTEXT);
     Session rejected = restart().findById(before.getId());
+
     assertNotNull(rejected);
     assertNull(rejected.getAttribute(CONTEXT));
     assertEquals(Boolean.TRUE, rejected.getAttribute(DurableSessionRepository.EXPIRED));
@@ -492,16 +519,17 @@ class DurableSessionPersistenceTest {
     Callable<Boolean> login =
         () -> {
           ready.countDown();
+
           assertTrue(start.await(10, TimeUnit.SECONDS));
           AtomicReference<Boolean> admitted = new AtomicReference<>(false);
           withRequest(
               repository,
               null,
-              request -> {
+              mockHttpRequest -> {
                 try {
                   admissions.complete(
                       context(false).getAuthentication(),
-                      request,
+                      mockHttpRequest,
                       new MockHttpServletResponse(),
                       () -> {});
                   admitted.set(true);
@@ -511,11 +539,13 @@ class DurableSessionPersistenceTest {
               });
           return admitted.get();
         };
-    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
-      Future<Boolean> first = executor.submit(login);
-      Future<Boolean> second = executor.submit(login);
+    try (ExecutorService executorService = Executors.newFixedThreadPool(2)) {
+      Future<Boolean> first = executorService.submit(login);
+      Future<Boolean> second = executorService.submit(login);
+
       assertTrue(ready.await(10, TimeUnit.SECONDS));
       start.countDown();
+
       assertEquals(
           1,
           (first.get(10, TimeUnit.SECONDS) ? 1 : 0) + (second.get(10, TimeUnit.SECONDS) ? 1 : 0));
@@ -531,8 +561,10 @@ class DurableSessionPersistenceTest {
     DurableSessionRegistry<?> registry = new DurableSessionRegistry<>(repository);
     registry.registerNewSession(session.getId(), account.get().getUsername());
     DurableSessionRegistry<?> fresh = new DurableSessionRegistry<>(restart());
+
     assertEquals(1, fresh.getAllSessions(account.get().getUsername(), false).size());
     registry.removeSessionInformation(session.getId());
+
     assertTrue(fresh.getAllSessions(account.get().getUsername(), false).isEmpty());
   }
 
@@ -542,6 +574,7 @@ class DurableSessionPersistenceTest {
     DurableSessionRepository<?> restarted = restart();
     SessionAdmissionService admissions =
         new SessionAdmissionService(configService, new DurableSessionRegistry<>(restarted));
+
     assertEquals(1, admissions.active(account.get().getUsername()).size());
     assertEquals(
         "fixture-handle", admissions.active(account.get().getUsername()).getFirst().handle());
@@ -549,19 +582,22 @@ class DurableSessionPersistenceTest {
     withRequest(
         restarted,
         previous.getId(),
-        request -> {
-          admissions.complete(auth, request, new MockHttpServletResponse(), () -> {});
-          assertEquals(previous.getId(), request.getSession(false).getId());
+        mockHttpRequest -> {
+          admissions.complete(auth, mockHttpRequest, new MockHttpServletResponse(), () -> {});
+
+          assertEquals(previous.getId(), mockHttpRequest.getSession(false).getId());
         });
     withRequest(
         restarted,
         null,
-        request -> {
-          MockHttpServletResponse response = new MockHttpServletResponse();
+        mockHttpRequest -> {
+          MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
+
           assertThrows(
               SessionLimitException.class,
-              () -> admissions.complete(auth, request, response, () -> {}));
+              () -> admissions.complete(auth, mockHttpRequest, mockHttpResponse, () -> {}));
         });
+
     assertEquals(1, admissions.active(account.get().getUsername()).size());
   }
 
@@ -573,16 +609,20 @@ class DurableSessionPersistenceTest {
     withRequest(
         repository,
         null,
-        request -> {
-          MockHttpServletResponse response = new MockHttpServletResponse();
+        mockHttpRequest -> {
+          MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
           Runnable completion =
               () -> {
                 throw new IllegalStateException("fixture completion failure");
               };
+
           assertThrows(
               IllegalStateException.class,
-              () -> admissions.complete(authentication, request, response, completion));
+              () ->
+                  admissions.complete(
+                      authentication, mockHttpRequest, mockHttpResponse, completion));
         });
+
     assertTrue(admissions.active(account.get().getUsername()).isEmpty());
     assertEquals(
         0, jdbcTemplate.queryForObject("select count(*) from SPRING_SESSION", Integer.class));
@@ -597,6 +637,7 @@ class DurableSessionPersistenceTest {
             .roles("USER")
             .build());
     Session session = repository.createSession();
+
     assertThrows(
         org.springframework.security.authentication.AuthenticationServiceException.class,
         () -> session.setAttribute(CONTEXT, authenticated));
@@ -615,8 +656,10 @@ class DurableSessionPersistenceTest {
     new DurableSessionRegistry<>(repository)
         .retainAfterPasswordChange(own.getId(), account.get().getUsername());
     DurableSessionRepository<?> fresh = restart();
+
     assertNotNull(fresh.findById(own.getId()).getAttribute(CONTEXT));
     Session rejected = fresh.findById(other.getId());
+
     assertNull(rejected.getAttribute(CONTEXT));
     assertEquals(Boolean.TRUE, rejected.getAttribute(DurableSessionRepository.EXPIRED));
   }
@@ -671,9 +714,11 @@ class DurableSessionPersistenceTest {
             "{\"version\":1,\"kind\":\"java.lang.Runtime\",\"value\":{}}",
             "{\"version\":1,\"kind\":\"text\",\"value\":null}")) {
       byte[] bytes = invalid.getBytes(StandardCharsets.UTF_8);
+
       assertThrows(IllegalArgumentException.class, () -> codec.decode(bytes));
     }
     String oversized = "x".repeat(65536);
+
     assertThrows(IllegalArgumentException.class, () -> codec.encode(oversized));
   }
 
@@ -687,6 +732,7 @@ class DurableSessionPersistenceTest {
     session.setAttribute("runtime-b", ui);
     repository.deleteById(session.getId());
     repository.deleteById(session.getId());
+
     verify(service).fireSessionDestroy(ui);
     assertNull(repository.findById(session.getId()));
   }
@@ -699,10 +745,11 @@ class DurableSessionPersistenceTest {
     withRequest(
         repository,
         id,
-        request -> {
-          assertNotNull(request.getSession(false));
+        mockHttpRequest -> {
+          assertNotNull(mockHttpRequest.getSession(false));
           repository.deleteById(id);
         });
+
     assertNull(repository.findById(id));
     assertNull(restart().findById(id));
     assertEquals(
@@ -733,18 +780,18 @@ class DurableSessionPersistenceTest {
     withRequest(
         repository,
         id,
-        request -> {
-          assertNotNull(request.getSession(false));
+        mockHttpRequest -> {
+          assertNotNull(mockHttpRequest.getSession(false));
           if (!"anonymous-uidl".equals(entry)) {
             SecurityContextHolder.setContext(context(false));
           }
           repository.deleteById(id);
           if ("privileges".equals(entry)) {
-            assertFalse(security.hasCurrentSessionPrivileges(request));
+            assertFalse(security.hasCurrentSessionPrivileges(mockHttpRequest));
           } else {
             boolean login = "login".equals(entry);
             HttpServletRequestWrapper callback =
-                new HttpServletRequestWrapper(request) {
+                new HttpServletRequestWrapper(mockHttpRequest) {
                   @Override
                   public String getMethod() {
                     return login ? "GET" : "POST";
@@ -760,18 +807,21 @@ class DurableSessionPersistenceTest {
                     return "v-r".equals(name) && !login ? "uidl" : super.getParameter(name);
                   }
                 };
-            MockHttpServletResponse response = new MockHttpServletResponse();
+            MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
             AtomicBoolean reachedApplication = new AtomicBoolean();
+
             assertDoesNotThrow(() ->
                 new VaadinSecurityFilter(provider)
-                    .doFilter(callback, response, (req, res) -> reachedApplication.set(true)));
+                    .doFilter(
+                        callback, mockHttpResponse, (req, res) -> reachedApplication.set(true)));
             assertEquals(login, reachedApplication.get());
-            assertEquals(login ? 200 : 401, response.getStatus());
+            assertEquals(login ? 200 : 401, mockHttpResponse.getStatus());
           }
-          assertNull(request.getSession(false));
+          assertNull(mockHttpRequest.getSession(false));
           assertNull(SecurityContextHolder.getContext().getAuthentication());
-          assertTrue(security.getAuthenticatedUser(request).isEmpty());
+          assertTrue(security.getAuthenticatedUser(mockHttpRequest).isEmpty());
         });
+
     assertNull(restart().findById(id));
     assertEquals(
         0,
@@ -782,10 +832,10 @@ class DurableSessionPersistenceTest {
   @Test
   void logoutKeepsTheCurrentVaadinUiAttachedUntilItsResponseHasBeenWritten() {
     Session stored = admitted(false);
-    VaadinService service = mock(VaadinService.class);
+    VaadinService vaadinService = mock(VaadinService.class);
     DeploymentConfiguration configuration = mock(DeploymentConfiguration.class);
-    when(service.getDeploymentConfiguration()).thenReturn(configuration);
-    VaadinSession live = new VaadinSession(service);
+    when(vaadinService.getDeploymentConfiguration()).thenReturn(configuration);
+    VaadinSession live = new VaadinSession(vaadinService);
     ReflectionTestUtils.setField(live, "lock", new ReentrantLock());
     ReflectionTestUtils.setField(live, "sessionLockCheckStrategy", SessionLockCheckStrategy.THROW);
     ReflectionTestUtils.setField(live, "session", new WrappedHttpSession(new MockHttpSession()));
@@ -797,10 +847,11 @@ class DurableSessionPersistenceTest {
       ui.getInternals().setSession(live);
       stored.setAttribute("runtime-ui", live);
       repository.deleteById(stored.getId());
+
       assertSame(live, ui.getSession());
       assertEquals(VaadinSessionState.CLOSING, live.getState());
       assertNull(live.getSession());
-      verify(service, never()).fireSessionDestroy(live);
+      verify(vaadinService, never()).fireSessionDestroy(live);
     } finally {
       CurrentInstance.set(VaadinRequest.class, null);
       VaadinSession.setCurrent(null);
@@ -822,12 +873,12 @@ class DurableSessionPersistenceTest {
     serializer.setUseBase64Encoding(false);
     cookies.setCookieSerializer(serializer);
     filter.setHttpSessionIdResolver(cookies);
-    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
     if (id != null) {
-      request.setCookies(new jakarta.servlet.http.Cookie("JSESSIONID", id));
+      mockHttpRequest.setCookies(new jakarta.servlet.http.Cookie("JSESSIONID", id));
     }
     filter.doFilter(
-        request,
+        mockHttpRequest,
         new MockHttpServletResponse(),
         (req, res) -> action.accept((jakarta.servlet.http.HttpServletRequest) req));
   }

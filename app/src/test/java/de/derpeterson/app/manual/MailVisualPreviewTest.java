@@ -49,6 +49,7 @@ class MailVisualPreviewTest {
   void everyRealHtmlTemplateIsCoveredInBothLanguagesWithoutUnresolvedPlaceholders()
       throws Exception {
     MailVisualPreview preview = MailVisualPreview.prepare(settings()::get);
+
     assertEquals(15, preview.examples().size());
     Set<String> expected =
         Arrays.stream(
@@ -60,6 +61,7 @@ class MailVisualPreviewTest {
             .filter(MailVisualPreview.Example::html)
             .map(example -> example.template() + "_" + example.locale().getLanguage() + ".html")
             .collect(Collectors.toSet());
+
     assertEquals(expected, actual);
     assertEquals(12, actual.size());
     for (MailVisualPreview.Example example : preview.examples()) {
@@ -84,6 +86,7 @@ class MailVisualPreviewTest {
     Map<String, String> values = settings();
     values.put("MAIL_PREVIEW_LANGUAGES", language);
     MailVisualPreview preview = MailVisualPreview.prepare(values::get);
+
     assertEquals(8, preview.examples().size());
     assertEquals("en", preview.examples().getLast().locale().getLanguage());
     assertEquals("dispatch-failure", preview.examples().getLast().template());
@@ -97,6 +100,7 @@ class MailVisualPreviewTest {
   void unknownOrEmptyLanguageSelectionFailsBeforeSending(String language) {
     Map<String, String> values = settings();
     values.put("MAIL_PREVIEW_LANGUAGES", language);
+
     assertThrows(IllegalArgumentException.class, () -> MailVisualPreview.prepare(values::get));
   }
 
@@ -111,6 +115,7 @@ class MailVisualPreviewTest {
   void onlyOneExplicitValidRecipientIsAccepted(String recipient) {
     Map<String, String> values = settings();
     values.put("MAIL_PREVIEW_TO", recipient);
+
     assertThrows(IllegalArgumentException.class, () -> MailVisualPreview.prepare(values::get));
   }
 
@@ -121,11 +126,14 @@ class MailVisualPreviewTest {
     when(sender.createMimeMessage())
         .thenAnswer(ignored -> new MimeMessage(Session.getInstance(new Properties())));
     int accepted = preview.send(sender);
+
     assertEquals(15, accepted);
     ArgumentCaptor<MimeMessage> html = ArgumentCaptor.forClass(MimeMessage.class);
+
     verify(sender, times(12)).send(html.capture());
     for (MimeMessage message : html.getAllValues()) {
       message.saveChanges();
+
       assertEquals(
           "reader@example.test", message.getRecipients(Message.RecipientType.TO)[0].toString());
       assertEquals(1, message.getAllRecipients().length);
@@ -134,6 +142,7 @@ class MailVisualPreviewTest {
       assertTrue(message.isMimeType("multipart/related"));
     }
     ArgumentCaptor<SimpleMailMessage> plain = ArgumentCaptor.forClass(SimpleMailMessage.class);
+
     verify(sender, times(3)).send(plain.capture());
     for (SimpleMailMessage message : plain.getAllValues()) {
       assertEquals(List.of("reader@example.test"), Arrays.asList(message.getTo()));
@@ -149,6 +158,7 @@ class MailVisualPreviewTest {
     values.put("MAIL_PREVIEW_SECURITY", security);
     JavaMailSenderImpl sender = MailVisualPreview.prepare(values::get).createSender();
     Properties properties = sender.getJavaMailProperties();
+
     assertEquals("false", properties.getProperty("mail.debug"));
     assertFalse(properties.containsKey("mail.smtp.ssl.trust"));
     assertEquals("true", properties.getProperty("mail.smtp.ssl.checkserveridentity"));
@@ -165,12 +175,14 @@ class MailVisualPreviewTest {
     for (String key : settings().keySet()) {
       Map<String, String> values = settings();
       values.remove(key);
+
       assertThrows(IllegalArgumentException.class, () -> MailVisualPreview.prepare(values::get));
     }
     Map<String, String> relay = settings();
     relay.put("MAIL_PREVIEW_SMTP_AUTH", "false");
     relay.remove("MAIL_PREVIEW_SMTP_PASSWORD");
     relay.remove("MAIL_PREVIEW_SMTP_USERNAME");
+
     assertEquals(
         false,
         MailVisualPreview.prepare(relay::get)
@@ -184,6 +196,7 @@ class MailVisualPreviewTest {
   void invalidPortsAreRejected(String port) {
     Map<String, String> values = settings();
     values.put("MAIL_PREVIEW_SMTP_PORT", port);
+
     assertThrows(IllegalArgumentException.class, () -> MailVisualPreview.prepare(values::get));
   }
 
@@ -197,6 +210,7 @@ class MailVisualPreviewTest {
         .when(sender)
         .send(any(MimeMessage.class));
     AssertionError failure = assertThrows(AssertionError.class, () -> preview.send(sender));
+
     verify(sender).send(any(MimeMessage.class));
     assertFalse(failure.getMessage().contains("fixture-secret"));
     assertFalse(failure.getMessage().contains("reader@example.test"));

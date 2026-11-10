@@ -42,12 +42,12 @@ public class UserStatusBrowserTest extends BrowserFixture {
       """)
   void manualStatusIsStoredAndPushedToAnotherTab() {
     String email = createUser();
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(actor.browserPage).selectTestLanguage();
-      Page second = actor.browserContext.newPage();
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(browserActor.browserPage).selectTestLanguage();
+      Page second = browserActor.browserContext.newPage();
       second.navigate(path(HOME_ROUTE));
-      UserStatusMenu firstMenu = new UserStatusMenu(actor.browserPage),
+      UserStatusMenu firstMenu = new UserStatusMenu(browserActor.browserPage),
           secondMenu = new UserStatusMenu(second);
       secondMenu.expect(uiTexts.getUserStatusAvailable());
       for (String status :
@@ -62,31 +62,35 @@ public class UserStatusBrowserTest extends BrowserFixture {
       }
       firstMenu.select(uiTexts.getUserStatusEmployed());
       secondMenu.expect(uiTexts.getUserStatusEmployed());
-      assertPresenceTogglePreservesChoice(actor.browserPage, firstMenu);
-      actor.browserPage.reload();
+      assertPresenceTogglePreservesChoice(browserActor.browserPage, firstMenu);
+      browserActor.browserPage.reload();
       firstMenu.expect(uiTexts.getUserStatusEmployed());
       second.close();
     }
   }
 
   private void assertPresenceTogglePreservesChoice(Page target, UserStatusMenu status) {
-    UserMenu menu = new UserMenu(target);
+    UserMenu userMenu = new UserMenu(target);
     UiTexts other = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     for (int width : new int[] {1280, 390}) {
       target.setViewportSize(width, 900);
       status.expect(uiTexts.getUserStatusEmployed());
       Locator toggle = target.locator("#portal-menu-presence-toggle");
+
       assertThat(toggle).hasAttribute("aria-expanded", "true");
       UiActions.complete(target, toggle::click);
+
       assertThat(toggle).hasAttribute("aria-expanded", "false");
       assertThat(status.current()).isHidden();
-      menu.selectLanguage(other.language());
-      menu.open();
+      userMenu.selectLanguage(other.language());
+      userMenu.open();
+
       assertThat(toggle).hasAttribute("aria-expanded", "false");
       UiActions.complete(target, () -> toggle.press("Enter"));
+
       assertThat(toggle).hasAttribute("aria-expanded", "true");
       assertThat(status.current()).containsText(other.getUserStatusEmployed());
-      menu.selectTestLanguage();
+      userMenu.selectTestLanguage();
     }
   }
 
@@ -103,43 +107,44 @@ public class UserStatusBrowserTest extends BrowserFixture {
       """)
   void automaticAbsenceAndReturnRespectManualStatus() {
     String email = createUser();
-    ConfigurationPage config = new ConfigurationPage(browserPage);
-    config.open(AdminConfigGroup.USER_STATUS);
+    ConfigurationPage configurationPage = new ConfigurationPage(browserPage);
+    configurationPage.open(AdminConfigGroup.USER_STATUS);
     String label = uiTexts.getAdminConfigEntryUserAutoAbsentTimeout();
     TokenConfigurationPage durations = new TokenConfigurationPage(browserPage);
     String original = durations.value(label);
     try {
       durations.enter(label, "PT10S");
-      config.save();
-      try (BrowserActor actor = new BrowserActor(testBrowser)) {
-        actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-        new UserMenu(actor.browserPage).selectTestLanguage();
-        UserStatusMenu menu = new UserStatusMenu(actor.browserPage);
+      configurationPage.save();
+      try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+        browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
+        new UserMenu(browserActor.browserPage).selectTestLanguage();
+        UserStatusMenu menu = new UserStatusMenu(browserActor.browserPage);
         menu.expect(uiTexts.getUserStatusAvailable());
+
         assertThat(menu.current())
             .containsText(
                 uiTexts.getUserStatusAbsent(),
                 new com.microsoft.playwright.assertions.LocatorAssertions.ContainsTextOptions()
                     .setTimeout(40_000));
-        actor.browserPage.reload();
+        browserActor.browserPage.reload();
         menu.expect(uiTexts.getUserStatusAvailable());
         menu.select(uiTexts.getUserStatusEmployed());
         long end = System.nanoTime() + java.time.Duration.ofSeconds(20).toNanos();
-        actor.browserContext.waitForCondition(
+        browserActor.browserContext.waitForCondition(
             () -> System.nanoTime() >= end,
             new BrowserContext.WaitForConditionOptions().setTimeout(25_000));
         menu.expect(uiTexts.getUserStatusEmployed());
         menu.select(uiTexts.getUserStatusAbsent());
-        actor.browserPage.reload();
+        browserActor.browserPage.reload();
         menu.expect(uiTexts.getUserStatusAbsent());
         long returnScan = System.nanoTime() + java.time.Duration.ofSeconds(3).toNanos();
-        actor.browserContext.waitForCondition(() -> System.nanoTime() >= returnScan);
+        browserActor.browserContext.waitForCondition(() -> System.nanoTime() >= returnScan);
         menu.expect(uiTexts.getUserStatusAbsent());
       }
     } finally {
-      config.open(AdminConfigGroup.USER_STATUS);
+      configurationPage.open(AdminConfigGroup.USER_STATUS);
       durations.enter(label, original);
-      config.save();
+      configurationPage.save();
     }
   }
 

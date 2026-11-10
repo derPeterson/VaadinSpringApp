@@ -102,7 +102,7 @@ class SessionAuthorityPersistenceTest {
   }
 
   private Long create(String email, RoleEntity role) {
-    UserEntity user =
+    UserEntity testUserEntity =
         UserEntity.builder()
             .email(email)
             .firstName("Test")
@@ -114,8 +114,8 @@ class SessionAuthorityPersistenceTest {
             .preferredLocale(Locale.ENGLISH)
             .roleEntities(new ArrayList<>(List.of(role)))
             .build();
-    entityManager.persist(user);
-    return user.getId();
+    entityManager.persist(testUserEntity);
+    return testUserEntity.getId();
   }
 
   @AfterEach
@@ -142,10 +142,10 @@ class SessionAuthorityPersistenceTest {
   }
 
   private MockHttpServletRequest request(String source, String path) {
-    MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
-    MockHttpSession session = new MockHttpSession();
-    request.setSession(session);
-    session.setAttribute("authenticatedUser", oldPrincipal);
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("POST", path);
+    MockHttpSession mockHttpSession = new MockHttpSession();
+    mockHttpRequest.setSession(mockHttpSession);
+    mockHttpSession.setAttribute("authenticatedUser", oldPrincipal);
     if (source.equals("vaadin")) {
       vaadinPrincipal.set(oldPrincipal);
     } else if (!source.equals("http")) {
@@ -158,10 +158,10 @@ class SessionAuthorityPersistenceTest {
       SecurityContext context = SecurityContextHolder.createEmptyContext();
       context.setAuthentication(auth);
       SecurityContextHolder.setContext(context);
-      session.setAttribute(
+      mockHttpSession.setAttribute(
           HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
     }
-    return request;
+    return mockHttpRequest;
   }
 
   @ParameterizedTest
@@ -177,22 +177,23 @@ class SessionAuthorityPersistenceTest {
   })
   void roleRevocationRefreshesEveryExistingPrincipalSourceWithoutLogout(String source, String path)
       throws Exception {
-    MockHttpServletRequest first = request(source, path);
-    MockHttpSession firstSession = (MockHttpSession) first.getSession(false);
-    MockHttpServletRequest second = new MockHttpServletRequest("POST", path);
+    MockHttpServletRequest firstMockHttpRequest = request(source, path);
+    MockHttpSession firstSession = (MockHttpSession) firstMockHttpRequest.getSession(false);
+    MockHttpServletRequest secondMockHttpRequest = new MockHttpServletRequest("POST", path);
     MockHttpSession secondSession = new MockHttpSession();
     secondSession.setAttribute("authenticatedUser", oldPrincipal);
-    second.setSession(secondSession);
+    secondMockHttpRequest.setSession(secondSession);
     revoke();
     @SuppressWarnings("unchecked")
     ObjectProvider<SecurityService> provider = mock(ObjectProvider.class);
     when(provider.getObject()).thenReturn(securityService);
     VaadinSecurityFilter filter = new VaadinSecurityFilter(provider);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     FilterChain action = mock(FilterChain.class);
-    filter.doFilter(first, response, action);
-    assertEquals(200, response.getStatus());
-    verify(action).doFilter(first, response);
+    filter.doFilter(firstMockHttpRequest, mockHttpResponse, action);
+
+    assertEquals(200, mockHttpResponse.getStatus());
+    verify(action).doFilter(firstMockHttpRequest, mockHttpResponse);
     assertFalse(firstSession.isInvalid());
     assertEquals(
         List.of("ROLE_USER"),
@@ -204,12 +205,17 @@ class SessionAuthorityPersistenceTest {
         vaadinPrincipal.get().getAuthorities().stream().map(Object::toString).toList());
     assertEquals(
         List.of("ROLE_USER"),
-        securityService.getAuthenticatedUser(second).orElseThrow().getAuthorities().stream()
+        securityService
+            .getAuthenticatedUser(secondMockHttpRequest)
+            .orElseThrow()
+            .getAuthorities()
+            .stream()
             .map(Object::toString)
             .toList());
     assertFalse(secondSession.isInvalid());
     UserDetails current =
         new CustomUserDetailsService(userRepository).loadUserByUsername(oldPrincipal.getUsername());
+
     assertEquals(
         List.of("ROLE_USER"), current.getAuthorities().stream().map(Object::toString).toList());
   }
@@ -241,13 +247,19 @@ class SessionAuthorityPersistenceTest {
     });
     oldPrincipal =
         new CustomUserDetailsService(userRepository).loadUserByUsername("victim@example.com");
-    MockHttpServletRequest request = request(source, "/VAADIN/uidl");
-    MockHttpSession oldSession = (MockHttpSession) request.getSession(false);
-    assertTrue(securityService.getAuthenticatedUser(request).isPresent());
+    MockHttpServletRequest mockHttpRequest = request(source, "/VAADIN/uidl");
+    MockHttpSession oldSession = (MockHttpSession) mockHttpRequest.getSession(false);
+
+    assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isPresent());
     revoke();
+
     assertEquals(
         List.of("ROLE_USER"),
-        securityService.getAuthenticatedUser(request).orElseThrow().getAuthorities().stream()
+        securityService
+            .getAuthenticatedUser(mockHttpRequest)
+            .orElseThrow()
+            .getAuthorities()
+            .stream()
             .map(Object::toString)
             .toList());
     assertFalse(oldSession.isInvalid());
@@ -270,39 +282,48 @@ class SessionAuthorityPersistenceTest {
             .password("unused")
             .authorities(authorities)
             .build();
-    MockHttpServletRequest request = request("context", "/admin");
-    assertTrue(securityService.getAuthenticatedUser(request).isEmpty());
+    MockHttpServletRequest mockHttpRequest = request("context", "/admin");
+
+    assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isEmpty());
   }
 
   @Test
   void rollbackDoesNotInvalidateCurrentAuthoritiesAndReadIgnoresPendingRoleEdits() {
-    MockHttpServletRequest request = request("context", "/admin");
+    MockHttpServletRequest mockHttpRequest = request("context", "/admin");
     Authentication original = SecurityContextHolder.getContext().getAuthentication();
     transactionTemplate.executeWithoutResult(tx -> {
       revoke();
-      assertTrue(securityService.getAuthenticatedUser(request).isPresent());
+
+      assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isPresent());
       assertSame(original, SecurityContextHolder.getContext().getAuthentication());
       tx.setRollbackOnly();
     });
-    assertTrue(securityService.getAuthenticatedUser(request).isPresent());
+
+    assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isPresent());
     assertTrue(form().hasRole(RoleType.ROLE_ADMIN));
-    assertFalse(((MockHttpSession) request.getSession(false)).isInvalid());
+    assertFalse(((MockHttpSession) mockHttpRequest.getSession(false)).isInvalid());
   }
 
   @Test
   void committedRevocationCannotHideBehindAStaleManagedUserOrRolesCollection() {
-    MockHttpServletRequest request = request("context", "/admin");
+    MockHttpServletRequest mockHttpRequest = request("context", "/admin");
     TransactionTemplate independent =
         new TransactionTemplate(transactionTemplate.getTransactionManager());
     independent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     transactionTemplate.executeWithoutResult(tx -> {
       UserEntity stale = form();
+
       assertTrue(stale.hasRole(RoleType.ROLE_ADMIN));
       independent.executeWithoutResult(other -> revoke());
+
       assertTrue(stale.hasRole(RoleType.ROLE_ADMIN));
       assertEquals(
           List.of("ROLE_USER"),
-          securityService.getAuthenticatedUser(request).orElseThrow().getAuthorities().stream()
+          securityService
+              .getAuthenticatedUser(mockHttpRequest)
+              .orElseThrow()
+              .getAuthorities()
+              .stream()
               .map(Object::toString)
               .toList());
     });
@@ -311,44 +332,46 @@ class SessionAuthorityPersistenceTest {
   @ParameterizedTest
   @ValueSource(strings = {"context", "remember"})
   void ordinaryStatusActivityAndProfileChangesRetainAuthenticationAndRememberMeType(String source) {
-    MockHttpServletRequest request = request(source, "/VAADIN/uidl");
+    MockHttpServletRequest mockHttpRequest = request(source, "/VAADIN/uidl");
     Authentication original = SecurityContextHolder.getContext().getAuthentication();
     userService.updateLastActivity(victimId);
     userService.updateUserStatus(form(), UserStatus.EMPLOYED, true);
     UserEntity edited = form();
     edited.setFirstName("Profile changed");
     userService.updateAdminUser(edited, edited.getVersion(), "");
-    assertTrue(securityService.getAuthenticatedUser(request).isPresent());
+
+    assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isPresent());
     assertSame(original, SecurityContextHolder.getContext().getAuthentication());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"disable", "delete"})
   void disabledAndDeletedAccountsAlsoLoseExistingAuthentication(String change) {
-    MockHttpServletRequest request = request("context", "/admin");
-    MockHttpSession session = (MockHttpSession) request.getSession(false);
-    UserEntity user = form();
+    MockHttpServletRequest mockHttpRequest = request("context", "/admin");
+    MockHttpSession mockHttpSession = (MockHttpSession) mockHttpRequest.getSession(false);
+    UserEntity testUserEntity = form();
     if (change.equals("delete")) {
-      userService.deleteUser(user);
+      userService.deleteUser(testUserEntity);
     } else {
-      user.setEnabled(false);
-      userService.save(user);
+      testUserEntity.setEnabled(false);
+      userService.save(testUserEntity);
     }
-    assertTrue(securityService.getAuthenticatedUser(request).isEmpty());
-    assertTrue(session.isInvalid());
+    assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isEmpty());
+    assertTrue(mockHttpSession.isInvalid());
   }
 
   @Test
   void unauthenticatedPublicRequestContinuesWithoutCreatingASession() throws Exception {
-    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/home");
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("GET", "/home");
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     @SuppressWarnings("unchecked")
     ObjectProvider<SecurityService> provider = mock(ObjectProvider.class);
     when(provider.getObject()).thenReturn(securityService);
     FilterChain action = mock(FilterChain.class);
-    new VaadinSecurityFilter(provider).doFilter(request, response, action);
-    verify(action).doFilter(request, response);
-    assertEquals(200, response.getStatus());
-    assertNull(request.getSession(false));
+    new VaadinSecurityFilter(provider).doFilter(mockHttpRequest, mockHttpResponse, action);
+
+    verify(action).doFilter(mockHttpRequest, mockHttpResponse);
+    assertEquals(200, mockHttpResponse.getStatus());
+    assertNull(mockHttpRequest.getSession(false));
   }
 }

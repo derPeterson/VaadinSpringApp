@@ -40,17 +40,17 @@ class ConfirmEmailChangeViewTest {
   void setup() {
     testUi = new UI();
     UI.setCurrent(testUi);
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenReturn(Locale.GERMAN);
-    VaadinSession.setCurrent(session);
-    testUi.getInternals().setSession(session);
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(any()))
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenReturn(Locale.GERMAN);
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(any()))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     accountSecurityService = mock(AccountSecurityService.class);
     messageProperties = new MessageProperties(new CustomI18NProvider());
-    view = new ConfirmEmailChangeView(messageProperties, accountSecurityService, config);
+    view = new ConfirmEmailChangeView(messageProperties, accountSecurityService, configService);
   }
 
   @AfterEach
@@ -85,6 +85,7 @@ class ConfirmEmailChangeViewTest {
     when(accountSecurityService.inspect("own-token")).thenReturn(Confirmation.READY);
     when(accountSecurityService.confirm("own-token")).thenReturn(Confirmation.SUCCESS);
     view.setParameter(mock(BeforeEvent.class), "own-token");
+
     verify(accountSecurityService, never()).confirm(any());
     assertTrue(confirm().isVisible());
     Component hint =
@@ -92,6 +93,7 @@ class ConfirmEmailChangeViewTest {
             .filter(c -> c.getId().orElse("").equals("account-email-confirm-hint"))
             .findFirst()
             .orElseThrow();
+
     assertTrue(hint.isVisible());
     assertTrue(
         hint.getElement()
@@ -103,6 +105,7 @@ class ConfirmEmailChangeViewTest {
             .contains(messageProperties.getPublicEmailFormTitle()));
     assertEquals("icons/lucide/mail.svg", statusIcon().getElement().getAttribute("src"));
     confirm().click();
+
     verify(accountSecurityService).confirm("own-token");
     assertFalse(confirm().isVisible());
     assertFalse(hint.isVisible());
@@ -121,6 +124,7 @@ class ConfirmEmailChangeViewTest {
   void unavailableLinksNeverOfferAnAction(Confirmation state) {
     when(accountSecurityService.inspect(any())).thenReturn(state);
     view.setParameter(mock(BeforeEvent.class), "own-token");
+
     assertFalse(confirm().isVisible());
     assertEquals("icons/lucide/circle-alert.svg", statusIcon().getElement().getAttribute("src"));
     assertTrue(
@@ -135,10 +139,12 @@ class ConfirmEmailChangeViewTest {
     when(accountSecurityService.inspect(any()))
         .thenThrow(new IllegalStateException("secret SQL details"));
     view.setParameter(mock(BeforeEvent.class), "own-token");
+
     assertFalse(confirm().isVisible());
     assertEquals("icons/lucide/circle-alert.svg", statusIcon().getElement().getAttribute("src"));
     assertTrue(statusIcon().hasClassName("text-error"));
     String text = view.getElement().getTextRecursively();
+
     assertTrue(text.contains(messageProperties.getAccountEmailConfirmationFailed()));
     assertFalse(text.contains("secret SQL"));
   }

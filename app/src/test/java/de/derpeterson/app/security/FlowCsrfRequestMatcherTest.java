@@ -24,10 +24,12 @@ class FlowCsrfRequestMatcherTest {
         "/VAADIN/other"
       })
   void forgedFrameworkMarkerNeverExemptsClassicOrUnknownEndpoints(String path) {
-    MockHttpServletRequest request = request("POST", path, "uidl");
-    assertTrue(matcher.matches(request));
-    request.setParameter("v-r", "push");
-    assertTrue(matcher.matches(request));
+    MockHttpServletRequest mockHttpRequest = request("POST", path, "uidl");
+
+    assertTrue(matcher.matches(mockHttpRequest));
+    mockHttpRequest.setParameter("v-r", "push");
+
+    assertTrue(matcher.matches(mockHttpRequest));
   }
 
   @Test
@@ -38,6 +40,7 @@ class FlowCsrfRequestMatcherTest {
     MockHttpServletRequest forwardedRoot = request("POST", "/", "uidl");
     forwardedRoot.setServletPath("");
     forwardedRoot.setPathInfo("/");
+
     assertFalse(matcher.matches(forwardedRoot));
     assertTrue(matcher.matches(request("POST", "/", "invented")));
     assertTrue(matcher.matches(request("POST", "/", null)));
@@ -71,24 +74,27 @@ class FlowCsrfRequestMatcherTest {
     inside.setContextPath("/app");
     inside.setServletPath("/ui");
     inside.setPathInfo("/");
+
     assertFalse(mapped.matches(inside));
     MockHttpServletRequest outside = request("POST", "/app/login", "uidl");
     outside.setContextPath("/app");
     outside.setServletPath("/login");
+
     assertTrue(mapped.matches(outside));
     MockHttpServletRequest nested = request("POST", "/app/ui/login", "uidl");
     nested.setContextPath("/app");
     nested.setServletPath("/ui");
     nested.setPathInfo("/login");
+
     assertTrue(mapped.matches(nested));
   }
 
   private MockHttpServletRequest request(String method, String path, String type) {
-    MockHttpServletRequest request = new MockHttpServletRequest(method, path);
-    request.setServletPath(path);
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest(method, path);
+    mockHttpRequest.setServletPath(path);
     if (type != null) {
-      request.setParameter("v-r", type);
+      mockHttpRequest.setParameter("v-r", type);
     }
-    return request;
+    return mockHttpRequest;
   }
 }

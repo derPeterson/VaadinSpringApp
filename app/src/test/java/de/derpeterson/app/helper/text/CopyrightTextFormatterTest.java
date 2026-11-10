@@ -30,6 +30,7 @@ class CopyrightTextFormatterTest {
             "Example",
             CLOCK,
             messageProperties::getAccountCopyrightTemplate);
+
     assertTrue(result.startsWith("© 2031 Example."));
     assertFalse(result.contains("{year}"));
     assertFalse(result.contains("{serviceName}"));

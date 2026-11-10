@@ -43,19 +43,17 @@ class BrowserTestCaTest {
     byte[] originalStore = Files.readAllBytes(authority.resolve("root.p12"));
     byte[] originalPassword = Files.readAllBytes(authority.resolve("password"));
     Path first = directory.resolve("worker one"), second = directory.resolve("worker two");
-    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+    try (ExecutorService executorService = Executors.newFixedThreadPool(2)) {
       Future<?> firstIssuance =
-          executor.submit(
-              () -> {
-                BrowserTestCa.issue(authority, first);
-                return null;
-              });
+          executorService.submit(() -> {
+            BrowserTestCa.issue(authority, first);
+            return null;
+          });
       Future<?> secondIssuance =
-          executor.submit(
-              () -> {
-                BrowserTestCa.issue(authority, second);
-                return null;
-              });
+          executorService.submit(() -> {
+            BrowserTestCa.issue(authority, second);
+            return null;
+          });
       firstIssuance.get(60, TimeUnit.SECONDS);
       secondIssuance.get(60, TimeUnit.SECONDS);
     }
@@ -64,6 +62,7 @@ class BrowserTestCaTest {
     X509Certificate two = BrowserTestCa.certificate(second.resolve("server.crt"));
     one.verify(root.getPublicKey());
     two.verify(root.getPublicKey());
+
     assertNotEquals(one.getSerialNumber(), two.getSerialNumber());
     assertNotEquals(one.getPublicKey(), two.getPublicKey());
     assertEquals(-1, one.getBasicConstraints());
@@ -79,6 +78,7 @@ class BrowserTestCaTest {
       assertFalse(Files.exists(worker.resolve("root.p12")));
       assertFalse(Files.exists(worker.resolve("server.csr")));
       BrowserTestCa.cleanupWorker(worker);
+
       assertFalse(Files.exists(worker.resolve("server.key")));
       assertTrue(Files.exists(worker.resolve("server.crt")));
     }
@@ -99,6 +99,7 @@ class BrowserTestCaTest {
     }
     BrowserTestCa.cleanupWorker(directory);
     BrowserTestCa.cleanupWorker(directory);
+
     assertFalse(Files.exists(directory.resolve("server.key")));
     assertFalse(Files.exists(directory.resolve("server.p12")));
     assertTrue(Files.exists(directory.resolve("server.crt")));
@@ -119,6 +120,7 @@ class BrowserTestCaTest {
               () ->
                   BrowserTestRunner.main(
                       new String[] {module.toString(), "--suite", "infrastructure", "--no-build"}));
+
       assertTrue(failure.getMessage().contains("browser-tests-zertifikat-einrichten.bat"));
       assertFalse(Files.exists(directory.resolve("data")));
       assertFalse(Files.exists(module.resolve("runs")));
@@ -131,6 +133,7 @@ class BrowserTestCaTest {
   @Test
   void incompleteSetupIsNotSilentlyRegeneratedOrTakenOver() throws Exception {
     Files.writeString(directory.resolve("unrelated.txt"), "keep");
+
     assertThrows(IOException.class, () -> BrowserTestCa.initialize(directory));
     assertEquals("keep", Files.readString(directory.resolve("unrelated.txt")));
     assertFalse(Files.exists(directory.resolve("root.p12")));
@@ -160,6 +163,7 @@ class BrowserTestCaTest {
   @EnabledOnOs(OS.WINDOWS)
   void untrustedFixtureCaIsRejectedWithoutImportOrMarkerCreation() throws Exception {
     X509Certificate root = BrowserTestCa.ownedCertificate(authority);
+
     assertFalse(BrowserTestCa.trusted(root));
     assertThrows(IOException.class, () -> BrowserTestCa.requireTrusted(authority));
     assertFalse(Files.exists(authority.resolve("root.crt.owned")));
@@ -169,7 +173,7 @@ class BrowserTestCaTest {
   @Test
   void hardWorkerAbortLeavesOnlyOwnedPrivateFilesForParentCleanup() throws Exception {
     Path worker = directory.resolve("aborted worker");
-    Process process =
+    Process testProcess =
         new ProcessBuilder(
                 BrowserParallelWorkers.javaExecutable(),
                 "-cp",
@@ -180,15 +184,17 @@ class BrowserTestCaTest {
             .redirectErrorStream(true)
             .start();
     try {
-      assertEquals("ready", process.inputReader().readLine());
+      assertEquals("ready", testProcess.inputReader().readLine());
       assertTrue(Files.exists(worker.resolve("server.key")));
-      BrowserParallelWorkers.stopWorker(process);
-      assertFalse(process.isAlive());
+      BrowserParallelWorkers.stopWorker(testProcess);
+
+      assertFalse(testProcess.isAlive());
       BrowserTestCa.cleanupWorker(worker);
+
       assertFalse(Files.exists(worker.resolve("server.key")));
       assertTrue(Files.exists(authority.resolve("root.p12")));
     } finally {
-      BrowserHttps.stopBeforeTrustCleanup(process);
+      BrowserHttps.stopBeforeTrustCleanup(testProcess);
       BrowserTestCa.cleanupWorker(worker);
     }
   }

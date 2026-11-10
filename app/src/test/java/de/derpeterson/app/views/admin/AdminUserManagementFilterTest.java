@@ -58,7 +58,7 @@ class AdminUserManagementFilterTest {
     vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
     VaadinSession.setCurrent(vaadinSession);
-    UserService service = mock(UserService.class);
+    UserService userService = mock(UserService.class);
     List<UserEntity> users =
         IntStream.rangeClosed(1, 25)
             .mapToObj(i ->
@@ -77,11 +77,11 @@ class AdminUserManagementFilterTest {
                                 .build()))
                     .build())
             .toList();
-    when(service.findAllUsers()).thenReturn(users);
+    when(userService.findAllUsers()).thenReturn(users);
     messageProperties = new MessageProperties(new CustomI18NProvider());
     userManagementSection =
         new AdminUserManagementSection(
-            messageProperties, service, mock(RoleService.class), mock(SecurityService.class));
+            messageProperties, userService, mock(RoleService.class), mock(SecurityService.class));
   }
 
   @AfterEach
@@ -97,17 +97,21 @@ class AdminUserManagementFilterTest {
         .findFirst()
         .orElseThrow()
         .click();
+
     assertEquals(5, visibleUsers().size());
     ((TextField) field("searchField")).setValue("user24@example.test");
     applyFilters();
+
     assertEquals(
         List.of("user24@example.test"), visibleUsers().stream().map(UserEntity::getEmail).toList());
     assertEquals(0, field("currentPage"));
     filter("enabledFilter").setValue(AdminUserFilters.Enabled.NO);
     applyFilters();
+
     assertTrue(visibleUsers().isEmpty());
     filter("enabledFilter").setValue(AdminUserFilters.Enabled.ALL);
     applyFilters();
+
     assertEquals(1, visibleUsers().size());
   }
 
@@ -119,9 +123,11 @@ class AdminUserManagementFilterTest {
     filter("roleFilter").setValue(Set.of(RoleType.ROLE_USER));
     ((AdminUserActivityFilter) field("lastActivityFilter")).setValue(cutoff);
     applyFilters();
+
     assertEquals(6, visibleUsers().size());
     localeReference.set(Locale.forLanguageTag(language));
     userManagementSection.refreshTexts();
+
     assertEquals(AdminUserFilters.Enabled.YES, filter("enabledFilter").getValue());
     assertEquals(Set.of(UserStatus.AVAILABLE), filter("statusFilter").getValue());
     assertEquals(Set.of(RoleType.ROLE_USER), filter("roleFilter").getValue());
@@ -142,13 +148,13 @@ class AdminUserManagementFilterTest {
         UserEntity.builder().id(1L).firstName("Z earlier").lastActivity(first).build();
     UserEntity later =
         UserEntity.builder().id(2L).firstName("A later").lastActivity(second).build();
-    UserService service = mock(UserService.class);
-    when(service.findAllUsers()).thenReturn(List.of(later, earlier));
+    UserService userService = mock(UserService.class);
+    when(userService.findAllUsers()).thenReturn(List.of(later, earlier));
     Instant now = Instant.parse("2026-10-25T01:45:00Z");
     userManagementSection =
         new AdminUserManagementSection(
             messageProperties,
-            service,
+            userService,
             mock(RoleService.class),
             mock(SecurityService.class),
             Clock.fixed(now, ZoneId.of("America/New_York")));
@@ -158,11 +164,13 @@ class AdminUserManagementFilterTest {
             List.of(
                 new com.vaadin.flow.component.grid.GridSortOrder<>(
                     column, SortDirection.ASCENDING)));
+
     assertEquals(List.of(earlier, later), visibleUsers());
     Span earlierLabel =
         ReflectionTestUtils.invokeMethod(userManagementSection, "createLastActivity", earlier);
     Span laterLabel =
         ReflectionTestUtils.invokeMethod(userManagementSection, "createLastActivity", later);
+
     assertEquals(messageProperties.getAdminUsersActivityHours(1), earlierLabel.getText());
     assertEquals(messageProperties.getAdminUsersActivityMinutes(15), laterLabel.getText());
     assertTrue(earlierLabel.getElement().getAttribute("title").endsWith("+02:00"));
@@ -170,17 +178,20 @@ class AdminUserManagementFilterTest {
     ((AdminUserActivityFilter) field("lastActivityFilter"))
         .setValue(LocalDateTime.of(2026, 10, 25, 2, 30));
     applyFilters();
+
     assertEquals(List.of(earlier, later), visibleUsers());
     assertEquals(first, ((AdminUserFilters) field("appliedFilters")).activeSince());
     // A nonexistent draft must preserve the already applied autumn cutoff.
     ((AdminUserActivityFilter) field("lastActivityFilter"))
         .setValue(LocalDateTime.of(2026, 3, 29, 2, 30));
     applyFilters();
+
     assertEquals(List.of(earlier, later), visibleUsers());
     assertTrue(((AdminUserActivityFilter) field("lastActivityFilter")).isInvalid());
     UserEntity future = UserEntity.builder().lastActivity(now.plusSeconds(3600)).build();
     Span futureLabel =
         ReflectionTestUtils.invokeMethod(userManagementSection, "createLastActivity", future);
+
     assertEquals(futureLabel.getElement().getAttribute("title"), futureLabel.getText());
     assertTrue(futureLabel.getText().endsWith("+01:00"));
   }
@@ -193,12 +204,14 @@ class AdminUserManagementFilterTest {
         List.of(
             new com.vaadin.flow.component.grid.GridSortOrder<>(
                 column, com.vaadin.flow.data.provider.SortDirection.DESCENDING)));
+
     assertEquals("Name25", visibleUsers().getFirst().getFirstName());
     paginationButtons()
         .filter(button -> button.getText().equals("3"))
         .findFirst()
         .orElseThrow()
         .click();
+
     assertEquals("Name05", visibleUsers().getFirst().getFirstName());
   }
 
@@ -207,15 +220,18 @@ class AdminUserManagementFilterTest {
     ((ComboBox<Integer>)
             ReflectionTestUtils.getField(field("userTablePagination"), "pageSizeSelector"))
         .setValue(20);
+
     assertEquals(20, visibleUsers().size());
     paginationButtons()
         .filter(button -> button.getText().equals("2"))
         .findFirst()
         .orElseThrow()
         .click();
+
     assertEquals(5, visibleUsers().size());
     ((TextField) field("searchField")).setValue("no-such-user");
     applyFilters();
+
     assertTrue(visibleUsers().isEmpty());
     assertEquals(0, field("currentPage"));
     assertTrue(
@@ -250,15 +266,19 @@ class AdminUserManagementFilterTest {
   void resetWaitsForApplyAndCancellationRestoresTheAppliedDraft() {
     filter("enabledFilter").setValue(AdminUserFilters.Enabled.NO);
     applyFilters();
+
     assertFalse(visibleUsers().getFirst().isEnabled());
     filterButton(messageProperties.getAdminUsersAddFilter()).click();
     filterButton(messageProperties.getAdminUsersClearFilters()).click();
+
     assertFalse(visibleUsers().getFirst().isEnabled());
     filterButton(messageProperties.getAdminUsersCancel()).click();
+
     assertEquals(AdminUserFilters.Enabled.NO, filter("enabledFilter").getValue());
     filterButton(messageProperties.getAdminUsersAddFilter()).click();
     filterButton(messageProperties.getAdminUsersClearFilters()).click();
     applyFilters();
+
     assertEquals(AdminUserFilters.Enabled.ALL, filter("enabledFilter").getValue());
     assertEquals(25, ((List<?>) field("filteredUsers")).size());
   }
@@ -267,13 +287,16 @@ class AdminUserManagementFilterTest {
   void searchAndMultipleChoicesWaitForApplyAndInvalidActivityPreservesTheTable() {
     ((TextField) field("searchField")).setValue("user24@example.test");
     filter("statusFilter").setValue(Set.of(UserStatus.AVAILABLE, UserStatus.OFFLINE));
+
     assertEquals(10, visibleUsers().size());
     applyFilters();
+
     assertEquals(
         List.of("user24@example.test"), visibleUsers().stream().map(UserEntity::getEmail).toList());
     ((AdminUserActivityFilter) field("lastActivityFilter")).setInvalid(true);
     ((TextField) field("searchField")).clear();
     applyFilters();
+
     assertEquals(1, visibleUsers().size());
   }
 

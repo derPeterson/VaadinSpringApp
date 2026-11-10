@@ -26,14 +26,15 @@ public final class AccountSecurityPage {
   public void openPassword() {
     new AccountPage(browserPage).section("account-tab-security");
     host("account-password-edit-security").click();
+
     assertThat(input("account-password-new")).isVisible();
   }
 
   @Step("Neues Passwort, Bestätigung und aktuelles Passwort eingeben")
-  public void password(String value, String confirmation, String current) {
-    input("account-password-new").fill(value);
-    input("account-password-confirm").fill(confirmation);
-    input("account-password-current").fill(current);
+  public void password(String newPassword, String confirmationPassword, String currentPassword) {
+    input("account-password-new").fill(newPassword);
+    input("account-password-confirm").fill(confirmationPassword);
+    input("account-password-current").fill(currentPassword);
   }
 
   @Step("Passwortänderung bewusst absenden")
@@ -47,10 +48,11 @@ public final class AccountSecurityPage {
   }
 
   @Step("Neue Adresse, Bestätigung und aktuelles Passwort eingeben")
-  public void email(String value, String confirmation, String current) {
-    input("account-email-new").fill(value);
-    input("account-email-confirm").fill(confirmation);
-    input("account-email-password").fill(current);
+  public void email(
+      String newEmailAddress, String confirmationEmailAddress, String currentPassword) {
+    input("account-email-new").fill(newEmailAddress);
+    input("account-email-confirm").fill(confirmationEmailAddress);
+    input("account-email-password").fill(currentPassword);
   }
 
   @Step("Verifizierungsanfrage über den Dialog absenden")

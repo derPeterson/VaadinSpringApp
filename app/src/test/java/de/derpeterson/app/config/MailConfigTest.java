@@ -19,8 +19,8 @@ class MailConfigTest {
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void productionSenderSetsUtf8AndPreservesConnectionProperties(boolean enabled) {
-    ConfigService config = mock(ConfigService.class);
-    when(config.snapshot(anyList()))
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.snapshot(anyList()))
         .thenReturn(
             Map.of(
                 ConfigEntry.MAIL_HOST, "smtp.invalid",
@@ -33,10 +33,11 @@ class MailConfigTest {
                 ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE, Boolean.toString(enabled),
                 ConfigEntry.MAIL_SMTP_SSL_ENABLE, Boolean.toString(enabled)));
 
-    MailConfig mail = new MailConfig(config);
+    MailConfig mail = new MailConfig(configService);
     ConnectionAwareJavaMailSender live =
         assertInstanceOf(ConnectionAwareJavaMailSender.class, mail.javaMailSender());
     ConnectionAwareJavaMailSender sender = mail.createConfiguredMailSender();
+
     assertEquals("UTF-8", new MimeMessageHelper(live.createMimeMessage()).getEncoding());
     assertEquals("UTF-8", sender.getDefaultEncoding());
     assertEquals("UTF-8", new MimeMessageHelper(sender.createMimeMessage()).getEncoding());
@@ -45,6 +46,7 @@ class MailConfigTest {
     assertEquals("fixture-user", sender.getUsername());
     assertEquals("fixture-only-not-a-secret", sender.getPassword());
     Properties properties = sender.getJavaMailProperties();
+
     assertEquals(enabled, properties.get(ConfigEntry.MAIL_SMTP_AUTH.getKey()));
     assertEquals(enabled, properties.get(ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE.getKey()));
     assertEquals(enabled, properties.get(ConfigEntry.MAIL_SMTP_SSL_ENABLE.getKey()));

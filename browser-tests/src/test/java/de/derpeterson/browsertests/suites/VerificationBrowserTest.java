@@ -88,6 +88,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     browserPage.navigate(path(VERIFICATION_ROUTE) + "/" + UUID.randomUUID());
     new VerificationPage(browserPage).assertUnknownToken();
     browserPage.navigate(path(VERIFICATION_ROUTE));
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     assertThat(
             browserPage.getByText(
@@ -109,6 +110,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(target);
     login.open();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+
     assertThat(target).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(target).selectTestLanguage();
     new UserMenu(target).assertUserSignedInWithoutAdminAction(email);

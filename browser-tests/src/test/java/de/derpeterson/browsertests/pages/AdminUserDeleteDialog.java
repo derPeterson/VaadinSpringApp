@@ -25,12 +25,14 @@ public final class AdminUserDeleteDialog {
   @Step("Löschbestätigung abbrechen; Konto und Bearbeitungsformular erhalten")
   public void cancel() {
     button(uiTexts.getAdminUsersCancel()).click();
+
     assertThat(root()).hasCount(0);
   }
 
   @Step("Löschung ausschließlich des eigenen wegwerfbaren Testkontos bestätigen")
   public void confirm() {
     button(uiTexts.getPortalDeleteAction()).click();
+
     assertThat(root()).hasCount(0);
   }
 

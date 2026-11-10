@@ -31,6 +31,7 @@ class RecoveryCodeDocumentTest {
             "...<>|?*", "recovery-codes.pdf");
     examples.forEach(
         (service, expected) -> assertEquals(expected, RecoveryCodeDocument.fileName(service)));
+
     assertEquals("recovery-codes.pdf", RecoveryCodeDocument.fileName(null));
     assertEquals("recovery-codes.pdf", RecoveryCodeDocument.fileName(""));
     assertEquals(
@@ -63,6 +64,7 @@ class RecoveryCodeDocumentTest {
       String content = new PdfTextExtractor(reader).getTextFromPage(1);
       // Zeilenumbrüche und andere Leerraumfolgen des PDF-Textauszugs zusammenfassen.
       String normalized = content.replaceAll("\\s+", " ");
+
       assertTrue(normalized.contains(messageProperties.getTwoFactorRecoveryExplanation()));
       assertTrue(content.contains("Cosmos <Test>"));
       assertTrue(content.contains("fixture@example.test"));
@@ -75,12 +77,14 @@ class RecoveryCodeDocumentTest {
           fonts.getKeys().stream()
               .map(name -> fonts.getAsDict(name).getAsName(PdfName.BASEFONT).toString())
               .reduce("", (names, name) -> names + " " + name);
+
       assertTrue(fontNames.contains("Inter"), "Document text must use Inter");
       assertTrue(fontNames.contains("SpaceMono"), "Recovery codes must use Space Mono");
       for (PdfName name : fonts.getKeys()) {
         PdfDictionary font = fonts.getAsDict(name);
         if (font.getAsArray(PdfName.DESCENDANTFONTS) != null) {
           PdfDictionary descendant = font.getAsArray(PdfName.DESCENDANTFONTS).getAsDict(0);
+
           assertTrue(
               descendant.getAsDict(PdfName.FONTDESCRIPTOR).contains(PdfName.FONTFILE2),
               "TrueType fonts must be embedded for offline use");

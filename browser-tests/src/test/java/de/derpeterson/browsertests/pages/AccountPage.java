@@ -30,6 +30,7 @@ public final class AccountPage {
                 .setName(uiTexts.getBaseManageAccountButton())
                 .setExact(true))
         .click();
+
     assertThat(browserPage.locator("#account-panel-profile")).isVisible();
   }
 
@@ -42,12 +43,13 @@ public final class AccountPage {
   }
 
   @Step("Basisdaten im Profilformular eingeben")
-  public void fill(String first, String last, LocalDate date) {
-    input("account-first-name").fill(first);
-    input("account-last-name").fill(last);
-    input("account-birth-date").fill(uiTexts.dateInput(date));
+  public void fill(String firstName, String lastName, LocalDate birthDate) {
+    input("account-first-name").fill(firstName);
+    input("account-last-name").fill(lastName);
+    input("account-birth-date").fill(uiTexts.dateInput(birthDate));
     input("account-first-name").click();
-    assertThat(host("account-birth-date")).hasJSProperty("value", date.toString());
+
+    assertThat(host("account-birth-date")).hasJSProperty("value", birthDate.toString());
   }
 
   @Step("Profiländerungen speichern")
@@ -65,6 +67,7 @@ public final class AccountPage {
 
   public void closeNotification() {
     browserPage.locator("vaadin-notification-card").getByRole(AriaRole.BUTTON).click();
+
     assertThat(browserPage.locator("vaadin-notification-card")).hasCount(0);
   }
 
@@ -88,31 +91,36 @@ public final class AccountPage {
   }
 
   @Step("Kontobereich über die Seitennavigation auswählen")
-  public void section(String id) {
-    assertThat(host(id)).hasCount(1);
-    if (!host(id).isVisible() && host("account-navigation-toggle").isVisible()) {
+  public void section(String sectionNavigationId) {
+    assertThat(host(sectionNavigationId)).hasCount(1);
+
+    if (!host(sectionNavigationId).isVisible() && host("account-navigation-toggle").isVisible()) {
       UiActions.complete(browserPage, () -> host("account-navigation-toggle").click());
+
       assertThat(host("account-navigation-toggle")).hasAttribute("aria-expanded", "true");
     }
-    host(id).click();
+
+    host(sectionNavigationId).click();
   }
 
   @Step("E-Mail-Dialog öffnen")
   public void openEmail() {
     section("account-tab-security");
     host("account-email-edit-security").click();
+
     assertThat(input("account-email-new")).isVisible();
   }
 
   @Step("E-Mail-Dialog auf dem gewählten UI-Weg schließen")
-  public void closeEmail(String action) {
-    switch (action) {
+  public void closeEmail(String closeAction) {
+    switch (closeAction) {
       case "icon" -> host("account-email-close").click();
       case "cancel" -> host("account-email-cancel").click();
       case "escape" -> browserPage.keyboard().press("Escape");
       case "outside" -> browserPage.mouse().click(4, 4);
-      default -> throw new IllegalArgumentException(action);
+      default -> throw new IllegalArgumentException(closeAction);
     }
+
     assertThat(dialog()).hasCount(0);
     assertThat(browserPage.locator("vaadin-dialog.account-email-dialog[closing]")).hasCount(0);
   }

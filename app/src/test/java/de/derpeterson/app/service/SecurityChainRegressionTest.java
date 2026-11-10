@@ -125,45 +125,50 @@ class SecurityChainRegressionTest {
                 4, de.derpeterson.app.security.mfa.TwoFactorPolicy.defaults()));
     String email = sessionUser(RoleType.ROLE_ADMIN);
     PasswordResponse firstFactor = postPassword(email, "OriginalPassword!");
+
     assertEquals("/two-factor", firstFactor.response().getRedirectedUrl());
-    MockHttpSession session = (MockHttpSession) firstFactor.request().getSession(false);
+    MockHttpSession mockHttpSession = (MockHttpSession) firstFactor.request().getSession(false);
     MockHttpServletRequest business = new MockHttpServletRequest("GET", "/admin");
     business.setServletPath("/admin");
-    business.setSession(session);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    business.setSession(mockHttpSession);
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     FilterChain action = mock(FilterChain.class);
-    new FilterChainProxy(chain).doFilter(business, response, action);
-    assertEquals("/two-factor?administration", response.getRedirectedUrl());
+    new FilterChainProxy(chain).doFilter(business, mockHttpResponse, action);
+
+    assertEquals("/two-factor?administration", mockHttpResponse.getRedirectedUrl());
     verifyNoInteractions(action);
     MockHttpServletRequest help = new MockHttpServletRequest("GET", "/recovery-help");
     help.setServletPath("/recovery-help");
-    help.setSession(session);
+    help.setSession(mockHttpSession);
     new FilterChainProxy(chain).doFilter(help, new MockHttpServletResponse(), action);
+
     verify(action).doFilter(any(), any());
   }
 
   @Test
   void policyUpgradeBlocksAnAlreadyOpenTransportWithoutDiscardingItsFirstFactor() throws Exception {
     PasswordResponse login = postPassword(sessionUser(RoleType.ROLE_ADMIN), "OriginalPassword!");
-    MockHttpSession session = (MockHttpSession) login.request().getSession(false);
+    MockHttpSession mockHttpSession = (MockHttpSession) login.request().getSession(false);
     when(twoFactorPolicies.current())
         .thenReturn(
             new de.derpeterson.app.security.mfa.TwoFactorPolicies.Snapshot(
                 5, de.derpeterson.app.security.mfa.TwoFactorPolicy.defaults()));
     MockHttpServletRequest uidl = new MockHttpServletRequest("POST", "/");
     uidl.setServletPath("/");
-    uidl.setSession(session);
+    uidl.setSession(mockHttpSession);
     uidl.setParameter("v-r", "uidl");
     // Vom Client behauptete UI-Kennung ist kein Nachweis einer eingeschränkten Serveransicht.
     uidl.setParameter("v-uiId", "7");
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     FilterChain action = mock(FilterChain.class);
-    new FilterChainProxy(chain).doFilter(uidl, response, action);
-    assertTrue(response.getContentAsString().contains("/two-factor"));
+    new FilterChainProxy(chain).doFilter(uidl, mockHttpResponse, action);
+
+    assertTrue(mockHttpResponse.getContentAsString().contains("/two-factor"));
     verifyNoInteractions(action);
-    assertFalse(session.isInvalid());
+    assertFalse(mockHttpSession.isInvalid());
     assertNotNull(
-        session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+        mockHttpSession.getAttribute(
+            HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
   }
 
   @Test
@@ -175,12 +180,13 @@ class SecurityChainRegressionTest {
             AppRouteConstants.TWO_FACTOR_SECURITY_ROUTE,
             "/recovery-help")) {
       when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
-      MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
-      request.setServletPath(path);
-      MockHttpServletResponse response = new MockHttpServletResponse();
+      MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("GET", path);
+      mockHttpRequest.setServletPath(path);
+      MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
       FilterChain servlet = mock(FilterChain.class);
-      new FilterChainProxy(chain).doFilter(request, response, servlet);
-      assertTrue(response.getRedirectedUrl().endsWith(AppRoute.LOGIN.getSecurityRoute()));
+      new FilterChainProxy(chain).doFilter(mockHttpRequest, mockHttpResponse, servlet);
+
+      assertTrue(mockHttpResponse.getRedirectedUrl().endsWith(AppRoute.LOGIN.getSecurityRoute()));
       verifyNoInteractions(servlet);
     }
   }
@@ -190,26 +196,27 @@ class SecurityChainRegressionTest {
   void accountRouteAllowsEveryAccountRoleAndRespectsMaintenance(RoleType role) throws Exception {
     String email = sessionUser(role);
     PasswordResponse login = postPassword(email, "OriginalPassword!");
-    MockHttpSession session = (MockHttpSession) login.request().getSession(false);
+    MockHttpSession mockHttpSession = (MockHttpSession) login.request().getSession(false);
     for (String path :
         java.util.List.of(
             AppRoute.ACCOUNT.getSecurityRoute(), AppRoute.NOTIFICATIONS.getSecurityRoute())) {
       when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
-      MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
-      request.setServletPath(path);
-      request.setSession(session);
+      MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("GET", path);
+      mockHttpRequest.setServletPath(path);
+      mockHttpRequest.setSession(mockHttpSession);
       FilterChain servlet = mock(FilterChain.class);
-      new FilterChainProxy(chain).doFilter(request, new MockHttpServletResponse(), servlet);
+      new FilterChainProxy(chain).doFilter(mockHttpRequest, new MockHttpServletResponse(), servlet);
+
       verify(servlet).doFilter(any(), any());
       clearInvocations(servlet);
       when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-      MockHttpServletResponse response = new MockHttpServletResponse();
-      new FilterChainProxy(chain).doFilter(request, response, servlet);
+      MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
+      new FilterChainProxy(chain).doFilter(mockHttpRequest, mockHttpResponse, servlet);
       if (role.isAdministrative()) {
         verify(servlet).doFilter(any(), any());
       } else {
-        assertEquals(503, response.getStatus());
-        assertEquals(AppRoute.MAINTENANCE.getSecurityRoute(), response.getForwardedUrl());
+        assertEquals(503, mockHttpResponse.getStatus());
+        assertEquals(AppRoute.MAINTENANCE.getSecurityRoute(), mockHttpResponse.getForwardedUrl());
         verifyNoInteractions(servlet);
       }
     }
@@ -218,6 +225,7 @@ class SecurityChainRegressionTest {
   @Test
   void revalidationRunsAfterRememberMeBeforeAuthorizationAndNotAsAContainerFilter() {
     List<Filter> filters = chain.getFilters();
+
     assertTrue(
         index(filters, RememberMeAuthenticationFilter.class)
             < index(filters, VaadinSecurityFilter.class));
@@ -256,16 +264,17 @@ class SecurityChainRegressionTest {
     context.setAuthentication(
         UsernamePasswordAuthenticationToken.authenticated(
             principal, null, principal.getAuthorities()));
-    MockHttpSession session = new MockHttpSession();
-    session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-    MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
-    request.setServletPath(path);
-    request.setSession(session);
+    MockHttpSession mockHttpSession = new MockHttpSession();
+    mockHttpSession.setAttribute(
+        HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("POST", path);
+    mockHttpRequest.setServletPath(path);
+    mockHttpRequest.setSession(mockHttpSession);
     if (path.equals("/admin")) {
       // Bootstrap before revocation: the POST itself must refresh the old authorities.
-      addCsrfToken(request);
+      addCsrfToken(mockHttpRequest);
     } else {
-      request.setParameter("v-r", "uidl");
+      mockHttpRequest.setParameter("v-r", "uidl");
     }
     UserEntity edited =
         userRepository.findAll().stream()
@@ -274,22 +283,25 @@ class SecurityChainRegressionTest {
             .orElseThrow();
     edited.setRoleEntities(new ArrayList<>());
     userService.updateAdminUser(edited, edited.getVersion(), "");
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     FilterChain action = mock(FilterChain.class);
-    new FilterChainProxy(chain).doFilter(request, response, action);
-    assertFalse(session.isInvalid());
+    new FilterChainProxy(chain).doFilter(mockHttpRequest, mockHttpResponse, action);
+
+    assertFalse(mockHttpSession.isInvalid());
     if (path.equals("/admin")) {
-      assertEquals("/home?error=admin-access-denied", response.getRedirectedUrl());
+      assertEquals("/home?error=admin-access-denied", mockHttpResponse.getRedirectedUrl());
       verifyNoInteractions(action);
     } else {
-      assertEquals(200, response.getStatus());
+      assertEquals(200, mockHttpResponse.getStatus());
       // Ohne jede aktuelle Rolle gibt es keine konfigurierte Ausnahme vom MFA-Schutz.
-      assertTrue(response.getContentAsString().contains("/two-factor"));
+      assertTrue(mockHttpResponse.getContentAsString().contains("/two-factor"));
       verifyNoInteractions(action);
     }
     SecurityContext refreshed =
         (org.springframework.security.core.context.SecurityContext)
-            session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+            mockHttpSession.getAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+
     assertNotNull(refreshed.getAuthentication());
     assertTrue(refreshed.getAuthentication().getAuthorities().isEmpty());
   }
@@ -311,6 +323,7 @@ class SecurityChainRegressionTest {
         roleType == RoleType.ROLE_SUPERADMIN
             ? Set.of("ROLE_SUPERADMIN", "ROLE_ADMIN")
             : Set.of(roleType.name());
+
     assertEquals(
         expected,
         principal.getAuthorities().stream().map(Object::toString).collect(Collectors.toSet()));
@@ -325,24 +338,24 @@ class SecurityChainRegressionTest {
       context.setAuthentication(
           UsernamePasswordAuthenticationToken.authenticated(
               principal, null, principal.getAuthorities()));
-      MockHttpSession session = new MockHttpSession();
-      session.setAttribute(
+      MockHttpSession mockHttpSession = new MockHttpSession();
+      mockHttpSession.setAttribute(
           HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-      MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
-      request.setServletPath(path);
-      request.setSession(session);
-      MockHttpServletResponse response = new MockHttpServletResponse();
+      MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("GET", path);
+      mockHttpRequest.setServletPath(path);
+      mockHttpRequest.setSession(mockHttpSession);
+      MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
       FilterChain action = mock(FilterChain.class);
-      new FilterChainProxy(chain).doFilter(request, response, action);
+      new FilterChainProxy(chain).doFilter(mockHttpRequest, mockHttpResponse, action);
       if (path.equals("/home")
           || roleType == RoleType.ROLE_ADMIN
           || roleType == RoleType.ROLE_SUPERADMIN) {
         verify(action).doFilter(any(), any());
-        assertEquals(200, response.getStatus());
+        assertEquals(200, mockHttpResponse.getStatus());
       } else {
         verifyNoInteractions(action);
-        assertEquals(302, response.getStatus());
-        assertEquals("/home?error=admin-access-denied", response.getRedirectedUrl());
+        assertEquals(302, mockHttpResponse.getStatus());
+        assertEquals("/home?error=admin-access-denied", mockHttpResponse.getRedirectedUrl());
       }
     }
   }
@@ -352,6 +365,7 @@ class SecurityChainRegressionTest {
   void actualHttpPasswordFilterCannotBypassThrottleAndExistingSessionSurvives(RoleType roleType)
       throws Exception {
     ProviderManager providers = assertInstanceOf(ProviderManager.class, passwordManager);
+
     assertTrue(
         providers.getProviders().stream().anyMatch(LoginAuthenticationService.class::isInstance));
     String email = "password-" + UUID.randomUUID() + "@example.test";
@@ -374,9 +388,11 @@ class SecurityChainRegressionTest {
     });
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(2);
     PasswordResponse successful = postPassword(email, "OriginalPassword!");
+
     assertEquals(
         roleType.isAdministrative() ? "/admin" : "/home", successful.response().getRedirectedUrl());
     HttpSession originalSession = successful.request().getSession(false);
+
     assertNotNull(
         originalSession.getAttribute(
             HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
@@ -387,6 +403,7 @@ class SecurityChainRegressionTest {
         "/login?error=invalid",
         postPassword(email, "WrongPassword!").response().getRedirectedUrl());
     PasswordResponse blocked = postPassword(email, "OriginalPassword!");
+
     assertEquals("/login?error=throttled", blocked.response().getRedirectedUrl());
     assertFalse(
         Arrays.stream(blocked.response().getCookies())
@@ -415,6 +432,7 @@ class SecurityChainRegressionTest {
         currentPrincipal.getAuthorities().stream()
             .map(Object::toString)
             .collect(Collectors.toSet());
+
     assertEquals(
         currentRoles,
         oldPrincipal.getAuthorities().stream()
@@ -430,13 +448,17 @@ class SecurityChainRegressionTest {
         new MockHttpServletRequest("GET", roleType.isAdministrative() ? "/admin" : "/home");
     oldRequest.setServletPath(oldRequest.getRequestURI());
     oldRequest.setSession(originalSession);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     FilterChain servlet = mock(FilterChain.class);
-    new FilterChainProxy(chain).doFilter(oldRequest, response, servlet);
+    new FilterChainProxy(chain).doFilter(oldRequest, mockHttpResponse, servlet);
+
     assertEquals(
         200,
-        response.getStatus(),
-        "Existing session: " + response.getRedirectedUrl() + " / " + response.getErrorMessage());
+        mockHttpResponse.getStatus(),
+        "Existing session: "
+            + mockHttpResponse.getRedirectedUrl()
+            + " / "
+            + mockHttpResponse.getErrorMessage());
     verify(servlet).doFilter(any(), any());
     // Fixture-only state change proves framework factor evidence cannot preserve a disabled
     // account.
@@ -447,6 +469,7 @@ class SecurityChainRegressionTest {
     revoked.setSession(originalSession);
     MockHttpServletResponse denied = new MockHttpServletResponse();
     new FilterChainProxy(chain).doFilter(revoked, denied, mock(FilterChain.class));
+
     assertEquals(401, denied.getStatus());
   }
 
@@ -454,6 +477,7 @@ class SecurityChainRegressionTest {
   void unknownHttpIdentityIsLimitedAndTechnicalConfigurationFailureDoesNotCount() throws Exception {
     String email = "unknown-" + UUID.randomUUID() + "@example.test";
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(1);
+
     assertEquals(
         "/login?error=invalid",
         postPassword(email, "WrongPassword!").response().getRedirectedUrl());
@@ -462,6 +486,7 @@ class SecurityChainRegressionTest {
         postPassword(email, "WrongPassword!").response().getRedirectedUrl());
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(0);
     String other = "technical-" + UUID.randomUUID() + "@example.test";
+
     assertEquals(
         "/login?error=unavailable",
         postPassword(other, "WrongPassword!").response().getRedirectedUrl());
@@ -477,9 +502,11 @@ class SecurityChainRegressionTest {
     RememberMeAuthenticationToken token =
         new RememberMeAuthenticationToken(
             "isolated-test-key", principal, principal.getAuthorities());
+
     assertTrue(passwordManager.authenticate(token).isAuthenticated());
     RememberMeAuthenticationToken forged =
         new RememberMeAuthenticationToken("wrong-key", principal, principal.getAuthorities());
+
     assertThrows(BadCredentialsException.class, () -> passwordManager.authenticate(forged));
     assertEquals(before, loginAttemptRepository.count());
   }
@@ -493,6 +520,7 @@ class SecurityChainRegressionTest {
     try {
       PasswordResponse old = postPassword(email, "OriginalPassword!");
       PasswordResponse restricted = postPassword(email, "OriginalPassword!");
+
       assertEquals("/login?error=sessions", restricted.response().getRedirectedUrl());
       assertTrue(management.hasRecovery(restricted.request()));
       assertNull(
@@ -500,24 +528,28 @@ class SecurityChainRegressionTest {
               .request()
               .getSession()
               .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
-      MockHttpServletRequest request = new MockHttpServletRequest("GET", "/account");
-      request.setServletPath("/account");
-      request.setSession(restricted.request().getSession(false));
-      MockHttpServletResponse response = new MockHttpServletResponse();
+      MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("GET", "/account");
+      mockHttpRequest.setServletPath("/account");
+      mockHttpRequest.setSession(restricted.request().getSession(false));
+      MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
       FilterChain business = mock(FilterChain.class);
-      new FilterChainProxy(chain).doFilter(request, response, business);
+      new FilterChainProxy(chain).doFilter(mockHttpRequest, mockHttpResponse, business);
+
       verifyNoInteractions(business);
-      assertTrue(response.getRedirectedUrl().endsWith("/login"));
-      Snapshot list = management.recoveryList(request);
+      assertTrue(mockHttpResponse.getRedirectedUrl().endsWith("/login"));
+      Snapshot list = management.recoveryList(mockHttpRequest);
+
       assertEquals(1, list.active());
-      management.recoveryRevoke(request, list.entries().getFirst().handle());
+      management.recoveryRevoke(mockHttpRequest, list.entries().getFirst().handle());
+
       assertTrue(sessionAdmissionService.isExpired(old.request()));
-      assertFalse(management.finishRecovery(request, new MockHttpServletResponse()));
-      assertFalse(management.hasRecovery(request));
+      assertFalse(management.finishRecovery(mockHttpRequest, new MockHttpServletResponse()));
+      assertFalse(management.hasRecovery(mockHttpRequest));
       MockHttpServletRequest admitted = new MockHttpServletRequest("GET", "/account");
       admitted.setServletPath("/account");
-      admitted.setSession(request.getSession(false));
+      admitted.setSession(mockHttpRequest.getSession(false));
       new FilterChainProxy(chain).doFilter(admitted, new MockHttpServletResponse(), business);
+
       verify(business).doFilter(any(), any());
     } finally {
       when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3);
@@ -528,14 +560,15 @@ class SecurityChainRegressionTest {
   void restrictedEntryPointUsesTheSamePersistentPasswordAttemptProtection() {
     String email = sessionUser(RoleType.ROLE_USER);
     when(settings.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(1);
-    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+
     assertThrows(
         BadCredentialsException.class,
-        () -> management.startRecovery(request, email, "WrongPassword!", false));
+        () -> management.startRecovery(mockHttpRequest, email, "WrongPassword!", false));
     assertThrows(
         LoginThrottledException.class,
-        () -> management.startRecovery(request, email, "OriginalPassword!", false));
-    assertFalse(management.hasRecovery(request));
+        () -> management.startRecovery(mockHttpRequest, email, "OriginalPassword!", false));
+    assertFalse(management.hasRecovery(mockHttpRequest));
     assertEquals(
         1,
         loginAttemptRepository
@@ -556,11 +589,13 @@ class SecurityChainRegressionTest {
     when(settings.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
     try {
       PasswordResponse first = postPassword(email, "OriginalPassword!");
-      HttpSession session = first.request().getSession(false);
-      assertNotNull(session);
+      HttpSession httpSession = first.request().getSession(false);
+
+      assertNotNull(httpSession);
       UserDetails principal =
           new CustomUserDetailsService(userRepository).loadUserByUsername(email);
       PasswordResponse denied = postPassword(email, "OriginalPassword!");
+
       assertEquals("/login?error=sessions", denied.response().getRedirectedUrl());
       assertEquals(
           0,
@@ -570,6 +605,7 @@ class SecurityChainRegressionTest {
               .getFailures());
       MockHttpServletRequest attemptRequest = new MockHttpServletRequest();
       MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
+
       assertThrows(
           SessionLimitException.class,
           () ->
@@ -578,10 +614,11 @@ class SecurityChainRegressionTest {
       assertEquals(1, sessionRegistry.getAllSessions(email, true).size());
       MockHttpServletRequest logout = new MockHttpServletRequest("POST", "/logout");
       logout.setServletPath("/logout");
-      logout.setSession(session);
+      logout.setSession(httpSession);
       addCsrfToken(logout);
       new FilterChainProxy(chain)
           .doFilter(logout, new MockHttpServletResponse(), mock(FilterChain.class));
+
       assertTrue(sessionRegistry.getAllSessions(email, true).isEmpty());
       assertEquals(
           roleType.isAdministrative() ? "/admin" : "/home",
@@ -608,17 +645,18 @@ class SecurityChainRegressionTest {
       String cookie =
           Base64.getEncoder()
               .encodeToString((series + ":token-value").getBytes(StandardCharsets.UTF_8));
-      MockHttpServletRequest request = new MockHttpServletRequest("GET", "/home");
-      request.setServletPath("/home");
-      request.setCookies(new Cookie("remember-me", cookie));
-      MockHttpServletResponse response = new MockHttpServletResponse();
+      MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("GET", "/home");
+      mockHttpRequest.setServletPath("/home");
+      mockHttpRequest.setCookies(new Cookie("remember-me", cookie));
+      MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
       FilterChain servlet = mock(FilterChain.class);
-      new FilterChainProxy(chain).doFilter(request, response, servlet);
-      assertEquals("/login?error=sessions", response.getRedirectedUrl());
+      new FilterChainProxy(chain).doFilter(mockHttpRequest, mockHttpResponse, servlet);
+
+      assertEquals("/login?error=sessions", mockHttpResponse.getRedirectedUrl());
       verifyNoInteractions(servlet);
       assertTrue(
-          request.getSession(false) == null
-              || request
+          mockHttpRequest.getSession(false) == null
+              || mockHttpRequest
                       .getSession(false)
                       .getAttribute(
                           HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY)
@@ -633,7 +671,7 @@ class SecurityChainRegressionTest {
               .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
       assertEquals(
           0,
-          Arrays.stream(response.getCookies())
+          Arrays.stream(mockHttpResponse.getCookies())
               .filter(cookieValue -> cookieValue.getName().equals("remember-me"))
               .toList()
               .getLast()
@@ -653,6 +691,7 @@ class SecurityChainRegressionTest {
       allowed.setCookies(new Cookie("remember-me", updatedCookie));
       FilterChain target = mock(FilterChain.class);
       new FilterChainProxy(chain).doFilter(allowed, new MockHttpServletResponse(), target);
+
       verify(target).doFilter(any(), any());
       assertEquals(2, sessionRegistry.getAllSessions(email, true).size());
       assertNotNull(
@@ -671,11 +710,13 @@ class SecurityChainRegressionTest {
     String email = sessionUser(role);
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     PasswordResponse login = postPassword(email, "OriginalPassword!");
+
     assertEquals(
         role.isAdministrative() ? "/admin" : "/login?error=maintenance",
         login.response().getRedirectedUrl());
     if (!role.isAdministrative()) {
       HttpSession anonymous = login.request().getSession(false);
+
       assertNotNull(anonymous);
       assertNull(
           anonymous.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
@@ -703,56 +744,64 @@ class SecurityChainRegressionTest {
   void realChainPausesExistingUserWithoutLosingContextAndAllowsLogout() throws Exception {
     String email = sessionUser(RoleType.ROLE_USER);
     PasswordResponse login = postPassword(email, "OriginalPassword!");
-    MockHttpSession session = (MockHttpSession) login.request().getSession(false);
+    MockHttpSession mockHttpSession = (MockHttpSession) login.request().getSession(false);
     Object context =
-        session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        mockHttpSession.getAttribute(
+            HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    MockHttpServletRequest request = new MockHttpServletRequest("GET", "/home");
-    request.setServletPath("/home");
-    request.setSession(session);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("GET", "/home");
+    mockHttpRequest.setServletPath("/home");
+    mockHttpRequest.setSession(mockHttpSession);
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     FilterChain servlet = mock(FilterChain.class);
-    new FilterChainProxy(chain).doFilter(request, response, servlet);
-    assertEquals(503, response.getStatus());
-    assertEquals("/maintenance", response.getForwardedUrl());
-    assertFalse(session.isInvalid());
+    new FilterChainProxy(chain).doFilter(mockHttpRequest, mockHttpResponse, servlet);
+
+    assertEquals(503, mockHttpResponse.getStatus());
+    assertEquals("/maintenance", mockHttpResponse.getForwardedUrl());
+    assertFalse(mockHttpSession.isInvalid());
     assertSame(
         context,
-        session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+        mockHttpSession.getAttribute(
+            HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
-    new FilterChainProxy(chain).doFilter(request, new MockHttpServletResponse(), servlet);
+    new FilterChainProxy(chain).doFilter(mockHttpRequest, new MockHttpServletResponse(), servlet);
+
     verify(servlet).doFilter(any(), any());
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     MockHttpServletRequest logout = new MockHttpServletRequest("POST", "/logout");
     logout.setServletPath("/logout");
-    logout.setSession(session);
+    logout.setSession(mockHttpSession);
     addCsrfToken(logout);
     new FilterChainProxy(chain)
         .doFilter(logout, new MockHttpServletResponse(), mock(FilterChain.class));
-    assertTrue(session.isInvalid());
+
+    assertTrue(mockHttpSession.isInvalid());
   }
 
   @Test
   void explicitReloginCannotReuseOldUserSlotToBypassMaintenance() throws Exception {
     String email = sessionUser(RoleType.ROLE_USER);
     PasswordResponse previous = postPassword(email, "OriginalPassword!");
-    MockHttpSession session = (MockHttpSession) previous.request().getSession(false);
+    MockHttpSession mockHttpSession = (MockHttpSession) previous.request().getSession(false);
     when(settings.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
-    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
-    request.setServletPath("/login");
-    request.setSession(session);
-    addCsrfToken(request);
-    request.setParameter("username", email);
-    request.setParameter("password", "OriginalPassword!");
-    request.setParameter("remember-me", "true");
-    MockHttpServletResponse response = new MockHttpServletResponse();
-    new FilterChainProxy(chain).doFilter(request, response, mock(FilterChain.class));
-    assertEquals("/login?error=maintenance", response.getRedirectedUrl());
-    assertFalse(session.isInvalid());
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("POST", "/login");
+    mockHttpRequest.setServletPath("/login");
+    mockHttpRequest.setSession(mockHttpSession);
+    addCsrfToken(mockHttpRequest);
+    mockHttpRequest.setParameter("username", email);
+    mockHttpRequest.setParameter("password", "OriginalPassword!");
+    mockHttpRequest.setParameter("remember-me", "true");
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
+    new FilterChainProxy(chain)
+        .doFilter(mockHttpRequest, mockHttpResponse, mock(FilterChain.class));
+
+    assertEquals("/login?error=maintenance", mockHttpResponse.getRedirectedUrl());
+    assertFalse(mockHttpSession.isInvalid());
     assertNotNull(
-        session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
+        mockHttpSession.getAttribute(
+            HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
     assertTrue(
-        Arrays.stream(response.getCookies())
+        Arrays.stream(mockHttpResponse.getCookies())
             .noneMatch(
                 cookie -> cookie.getName().equals("remember-me") && cookie.getMaxAge() != 0));
   }
@@ -783,31 +832,34 @@ class SecurityChainRegressionTest {
     MockHttpServletRequest bootstrap = new MockHttpServletRequest("GET", "/login");
     bootstrap.setServletPath("/login");
     bootstrap.setSession(target.getSession(false));
-    MockHttpServletResponse response = new MockHttpServletResponse();
-    new FilterChainProxy(chain).doFilter(bootstrap, response, mock(FilterChain.class));
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
+    new FilterChainProxy(chain).doFilter(bootstrap, mockHttpResponse, mock(FilterChain.class));
     target.setSession(bootstrap.getSession(false));
-    assertNotNull(response.getHeader("X-CSRF-TOKEN"));
-    target.addHeader("X-CSRF-TOKEN", response.getHeader("X-CSRF-TOKEN"));
+
+    assertNotNull(mockHttpResponse.getHeader("X-CSRF-TOKEN"));
+    target.addHeader("X-CSRF-TOKEN", mockHttpResponse.getHeader("X-CSRF-TOKEN"));
   }
 
   private PasswordResponse postPassword(String email, String password) throws Exception {
     SecurityContextHolder.clearContext();
-    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
-    request.setServletPath("/login");
-    addCsrfToken(request);
-    request.setParameter("username", email);
-    request.setParameter("password", password);
-    MockHttpServletResponse response = new MockHttpServletResponse();
-    new FilterChainProxy(chain).doFilter(request, response, mock(FilterChain.class));
-    assertEquals(302, response.getStatus());
-    return new PasswordResponse(request, response);
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("POST", "/login");
+    mockHttpRequest.setServletPath("/login");
+    addCsrfToken(mockHttpRequest);
+    mockHttpRequest.setParameter("username", email);
+    mockHttpRequest.setParameter("password", password);
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
+    new FilterChainProxy(chain)
+        .doFilter(mockHttpRequest, mockHttpResponse, mock(FilterChain.class));
+
+    assertEquals(302, mockHttpResponse.getStatus());
+    return new PasswordResponse(mockHttpRequest, mockHttpResponse);
   }
 
   private record PasswordResponse(
       MockHttpServletRequest request, MockHttpServletResponse response) {}
 
   private Long create(String email, RoleEntity role) {
-    UserEntity user =
+    UserEntity testUserEntity =
         UserEntity.builder()
             .email(email)
             .firstName("Test")
@@ -819,8 +871,8 @@ class SecurityChainRegressionTest {
             .preferredLocale(Locale.ENGLISH)
             .roleEntities(new ArrayList<>(List.of(role)))
             .build();
-    entityManager.persist(user);
-    return user.getId();
+    entityManager.persist(testUserEntity);
+    return testUserEntity.getId();
   }
 
   @Configuration

@@ -35,28 +35,28 @@ class TwoFactorHttpFilterTest {
   })
   void activeFlowBlocksDirectNavigationEvenAfterSuccessfulAuthentication(
       TwoFactorFlow flow, String path, String target) throws IOException, ServletException {
-    MockHttpServletRequest request = authenticatedRequest(path);
-    flow.enter(request);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletRequest mockHttpRequest = authenticatedRequest(path);
+    flow.enter(mockHttpRequest);
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     MockFilterChain chain = new MockFilterChain();
 
-    twoFactorHttpFilter.doFilter(request, response, chain);
+    twoFactorHttpFilter.doFilter(mockHttpRequest, mockHttpResponse, chain);
 
-    assertEquals(target, response.getRedirectedUrl());
+    assertEquals(target, mockHttpResponse.getRedirectedUrl());
     assertNull(chain.getRequest());
   }
 
   @Test
   void directNavigationIsAvailableAgainAfterCompletingTheFlow()
       throws IOException, ServletException {
-    MockHttpServletRequest request = authenticatedRequest("/account");
-    TwoFactorFlow.SETUP.enter(request);
-    TwoFactorFlow.finish(request);
+    MockHttpServletRequest mockHttpRequest = authenticatedRequest("/account");
+    TwoFactorFlow.SETUP.enter(mockHttpRequest);
+    TwoFactorFlow.finish(mockHttpRequest);
     MockFilterChain chain = new MockFilterChain();
 
-    twoFactorHttpFilter.doFilter(request, new MockHttpServletResponse(), chain);
+    twoFactorHttpFilter.doFilter(mockHttpRequest, new MockHttpServletResponse(), chain);
 
-    assertEquals(request, chain.getRequest());
+    assertEquals(mockHttpRequest, chain.getRequest());
   }
 
   @ParameterizedTest
@@ -67,25 +67,25 @@ class TwoFactorHttpFilterTest {
   })
   void activeFlowOnlyPassesTheNamedRecoveryDownloadToItsAuthorizationHandler(
       TwoFactorFlow flow, String name, boolean permitted) throws IOException, ServletException {
-    MockHttpServletRequest request =
+    MockHttpServletRequest mockHttpRequest =
         authenticatedRequest(
             "/VAADIN/dynamic/resource/0/c72f14a9-5489-45fe-b4cc-100312a972b1/" + name);
-    flow.enter(request);
+    flow.enter(mockHttpRequest);
     MockFilterChain chain = new MockFilterChain();
 
-    twoFactorHttpFilter.doFilter(request, new MockHttpServletResponse(), chain);
+    twoFactorHttpFilter.doFilter(mockHttpRequest, new MockHttpServletResponse(), chain);
 
-    assertEquals(permitted ? request : null, chain.getRequest());
+    assertEquals(permitted ? mockHttpRequest : null, chain.getRequest());
   }
 
   private MockHttpServletRequest authenticatedRequest(String path) {
-    MockHttpServletRequest request = new MockHttpServletRequest("GET", path);
-    request.setServletPath(path);
-    when(securityService.getAuthenticatedUser(request))
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("GET", path);
+    mockHttpRequest.setServletPath(path);
+    when(securityService.getAuthenticatedUser(mockHttpRequest))
         .thenReturn(
             Optional.of(User.withUsername("fixture").password("unused").roles("USER").build()));
-    when(twoFactorAuthorization.sessionConfirmed(request)).thenReturn(true);
-    when(twoFactorAuthorization.administrationConfirmed(request)).thenReturn(true);
-    return request;
+    when(twoFactorAuthorization.sessionConfirmed(mockHttpRequest)).thenReturn(true);
+    when(twoFactorAuthorization.administrationConfirmed(mockHttpRequest)).thenReturn(true);
+    return mockHttpRequest;
   }
 }

@@ -50,15 +50,16 @@ public class SessionSecurityBrowserTest extends BrowserFixture {
     AdminUsersPage users = admin();
     String account = email("session"), probe = email("blocked-create");
     users.createUser(account, BrowserTestAccounts.USER_PASSWORD, true, true);
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
       AtomicInteger serverErrors = new AtomicInteger();
-      actor.browserPage.onResponse(response -> {
+      browserActor.browserPage.onResponse(response -> {
         if (response.status() >= 500
             && response.url().startsWith(System.getProperty("browser.tests.baseUrl"))) {
           serverErrors.incrementAndGet();
         }
       });
-      AdminUsersPage other = actor.loginAdmin(account, BrowserTestAccounts.USER_PASSWORD, remember);
+      AdminUsersPage other =
+          browserActor.loginAdmin(account, BrowserTestAccounts.USER_PASSWORD, remember);
       other.open();
       AdminUserDialog stale = other.openCreate();
       stale.fillNewUser(probe, BrowserTestAccounts.USER_PASSWORD, true, false);
@@ -77,34 +78,38 @@ public class SessionSecurityBrowserTest extends BrowserFixture {
       }
       if (change.equals("role")) {
         // Rollenwechsel erhalten den Login; Push verwirft die alte privilegierte Ansicht.
-        assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
-        assertThat(actor.browserPage.locator("vaadin-dialog-overlay[opened]")).hasCount(0);
-        UserMenu menu = new UserMenu(actor.browserPage);
-        menu.assertUserSignedInWithoutAdminAction(account);
-        menu.close();
+        assertThat(browserActor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+        assertThat(browserActor.browserPage.locator("vaadin-dialog-overlay[opened]")).hasCount(0);
+        UserMenu userMenu = new UserMenu(browserActor.browserPage);
+        userMenu.assertUserSignedInWithoutAdminAction(account);
+        userMenu.close();
         users.open();
         users.search(probe);
+
         assertThat(users.emailCells(probe)).hasCount(0);
         assertEquals(0, serverErrors.get(), "Der Rechtewechsel darf keinen Serverfehler auslösen.");
         return;
       }
       Response denied =
-          actor.browserPage.waitForResponse(
+          browserActor.browserPage.waitForResponse(
               response ->
                   response.status() == 401
                       && response.url().startsWith(System.getProperty("browser.tests.baseUrl")),
               stale.saveButton()::click);
+
       assertEquals(401, denied.status());
       // Nach der 401 können alte Push-Anfragen noch auslaufen. Das neue Dokument
       // und die sichtbare Loginmaske belegen die Abwehr, nicht das globale load-Ereignis.
-      actor.browserPage.navigate(
+      browserActor.browserPage.navigate(
           path(ADMIN_ROUTE),
           new Page.NavigateOptions()
               .setWaitUntil(com.microsoft.playwright.options.WaitUntilState.DOMCONTENTLOADED));
-      new LoginPage(actor.browserPage).assertFormVisible();
+      new LoginPage(browserActor.browserPage).assertFormVisible();
+
       assertEquals(0, serverErrors.get(), "Die Neuanmeldung darf keinen Serverfehler auslösen.");
       users.open();
       users.search(probe);
+
       assertThat(users.emailCells(probe)).hasCount(0);
     }
   }

@@ -122,6 +122,7 @@ class VerificationServiceMailTest {
             assertThrows(
                 IOException.class,
                 () -> verificationService.sendVerificationEmailByUser(testUserEntity));
+
         assertSame(readFailure ? stream.readError : stream.closeError, failure);
         assertArrayEquals(
             readFailure && closeFailure ? new Throwable[] {stream.closeError} : new Throwable[0],

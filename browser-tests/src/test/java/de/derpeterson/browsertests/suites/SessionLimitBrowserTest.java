@@ -98,6 +98,7 @@ public class SessionLimitBrowserTest extends BrowserFixture {
       second.login(email, BrowserTestAccounts.USER_PASSWORD, true);
       LoginPage login = new LoginPage(second.browserPage);
       login.assertRestrictedManagement();
+
       assertFalse(
           second.browserContext.cookies().stream()
               .anyMatch(cookie -> cookie.name.equals("remember-me")));
@@ -198,6 +199,7 @@ public class SessionLimitBrowserTest extends BrowserFixture {
           .check();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       signedIn(persistent.browserPage, email);
+
       assertTrue(
           persistent.browserContext.cookies().stream()
               .anyMatch(cookie -> cookie.name.equals("remember-me")));
@@ -209,6 +211,7 @@ public class SessionLimitBrowserTest extends BrowserFixture {
           new PersistentBrowserActor(playwrightRuntime, profile, LOGIN_ROUTE)) {
         LoginPage login = new LoginPage(persistent.browserPage);
         login.assertSessionLimit();
+
         assertFalse(
             persistent.browserContext.cookies().stream()
                 .anyMatch(cookie -> cookie.name.equals("remember-me")));

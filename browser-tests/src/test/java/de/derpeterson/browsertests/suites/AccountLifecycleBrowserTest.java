@@ -135,6 +135,7 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
     login.signIn(email, BrowserTestAccounts.RESET_PASSWORD);
     login.assertRejected();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
     new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);
@@ -154,16 +155,17 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
   void unverifiedRequestIsNeutral() {
     String email = register();
     new MailpitInbox(browserContext).awaitVerificationMail(email);
-    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
-    request.open();
-    request.enterEmail(email);
-    request.submit();
-    String response = request.requestedResponse();
-    request.dismissRequestedNotice();
-    request.open();
-    request.enterEmail(unique());
-    request.submit();
-    assertEquals(response, request.requestedResponse());
+    ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserPage);
+    forgotPasswordPage.open();
+    forgotPasswordPage.enterEmail(email);
+    forgotPasswordPage.submit();
+    String response = forgotPasswordPage.requestedResponse();
+    forgotPasswordPage.dismissRequestedNotice();
+    forgotPasswordPage.open();
+    forgotPasswordPage.enterEmail(unique());
+    forgotPasswordPage.submit();
+
+    assertEquals(response, forgotPasswordPage.requestedResponse());
   }
 
   @Test
@@ -180,11 +182,11 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
       """)
   void staleResetFormCannotOverwritePassword() {
     String email = activate();
-    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
-    request.open();
-    request.enterEmail(email);
-    request.submit();
-    request.requestedResponse();
+    ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserPage);
+    forgotPasswordPage.open();
+    forgotPasswordPage.enterEmail(email);
+    forgotPasswordPage.submit();
+    forgotPasswordPage.requestedResponse();
     MailpitInbox inbox = new MailpitInbox(browserContext);
     browserPage = inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email));
     ResetPasswordPage first = new ResetPasswordPage(browserPage);
@@ -210,6 +212,7 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
         AllurePlaywright.attachScreenshot("Erfolgreicher erster Verbrauch", second);
         first.fillPasswords("OtherReset3!", "OtherReset3!");
         first.submit();
+
         assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
             .containsText(uiTexts.visibleText(browserPage, uiTexts.getResetPasswordInvalidText()));
         AllurePlaywright.attachScreenshot("Abgelehntes veraltetes Formular", browserPage);
@@ -218,6 +221,7 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
         login.signIn(email, "OtherReset3!");
         login.assertRejected();
         login.signIn(email, BrowserTestAccounts.RESET_PASSWORD);
+
         assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
       }
     }

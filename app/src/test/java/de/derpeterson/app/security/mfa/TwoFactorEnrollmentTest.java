@@ -130,19 +130,24 @@ class TwoFactorEnrollmentTest {
   void passwordSetupProtectsDocumentsAndProducesOneIssuancePhase() {
     TwoFactorEnrollment.Pending pending =
         twoFactorEnrollment.beginPassword(mockHttpRequest, "correct");
+
     assertEquals(Kind.ENROLLMENT, pending.kind());
     byte[] secret = twoFactorEnrollment.pendingSecret(mockHttpRequest, pending.id());
     MockHttpServletRequest otherRequest =
         TwoFactorAuthorizationTest.requestFor(testAccount.getEmail());
     UUID pendingId = pending.id();
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.pendingSecret(otherRequest, pendingId));
     UUID output = twoFactorEnrollment.complete(mockHttpRequest, pending.id(), currentCode(secret));
+
     assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     List<String> codes = twoFactorEnrollment.recoveryOutput(mockHttpRequest, output);
+
     assertEquals(10, codes.size());
     String code = currentCode(secret);
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.complete(mockHttpRequest, pendingId, code));
@@ -152,6 +157,7 @@ class TwoFactorEnrollmentTest {
             .anyMatch(
                 value -> value.contains(Totp.base32(secret)) || value.contains(codes.getFirst())));
     twoFactorEnrollment.dismissOutput(mockHttpRequest, output);
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.recoveryOutput(mockHttpRequest, output));
@@ -199,6 +205,7 @@ class TwoFactorEnrollmentTest {
     assertDoesNotThrow(() -> twoFactorEnrollment.dismissOutput(mockHttpRequest, output));
     assertDoesNotThrow(() -> twoFactorEnrollment.dismissOutput(mockHttpRequest, output));
     transactionTemplate.executeWithoutResult(status -> challenges.deleteById(output));
+
     assertDoesNotThrow(() -> twoFactorEnrollment.dismissOutput(mockHttpRequest, output));
     assertThrows(
         AccessDeniedException.class,
@@ -215,6 +222,7 @@ class TwoFactorEnrollmentTest {
             pending.id(),
             currentCode(twoFactorEnrollment.pendingSecret(mockHttpRequest, pending.id())));
     mockHttpRequest.getSession().invalidate();
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.recoveryOutput(mockHttpRequest, output));
@@ -228,6 +236,7 @@ class TwoFactorEnrollmentTest {
     clock.now.updateAndGet(now -> now.plusSeconds(300));
     UUID pendingId = pending.id();
     String code = currentCode(secret);
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.complete(mockHttpRequest, pendingId, code));
@@ -240,6 +249,7 @@ class TwoFactorEnrollmentTest {
     TwoFactorEnrollment.Pending pending =
         twoFactorEnrollment.beginPassword(mockHttpRequest, "correct");
     UUID pendingId = pending.id();
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.dismissOutput(mockHttpRequest, pendingId));
@@ -249,27 +259,33 @@ class TwoFactorEnrollmentTest {
             pending.id(),
             currentCode(twoFactorEnrollment.pendingSecret(mockHttpRequest, pending.id())));
     MockHttpServletRequest other = TwoFactorAuthorizationTest.requestFor(testAccount.getEmail());
+
     assertThrows(
         AccessDeniedException.class, () -> twoFactorEnrollment.dismissOutput(other, output));
     twoFactorAuthorization.confirmSession(
         other, twoFactorEnrollment.recoveryOutput(mockHttpRequest, output).getFirst());
+
     assertThrows(
         AccessDeniedException.class, () -> twoFactorEnrollment.dismissOutput(other, output));
     Object proof = mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF);
     mockHttpRequest.getSession().removeAttribute(TwoFactorAuthorization.SESSION_PROOF);
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.dismissOutput(mockHttpRequest, output));
     mockHttpRequest.getSession().setAttribute(TwoFactorAuthorization.SESSION_PROOF, proof);
+
     assertEquals(10, twoFactorEnrollment.recoveryOutput(mockHttpRequest, output).size());
   }
 
   @Test
   void freshPasswordSignInStartsOnlyRequiredFirstEnrollmentAndStillRequiresTotp() {
     Authentication authentication = freshPasswordSignIn();
+
     assertTrue(twoFactorEnrollment.canBeginFromPasswordLogin(mockHttpRequest));
     TwoFactorEnrollment.Pending pending =
         twoFactorEnrollment.beginFromPasswordLogin(mockHttpRequest);
+
     assertEquals(SetupProof.PASSWORD, pending.proof());
     assertFalse(
         twoFactorAuthorization.state(twoFactorAuthorization.owner(mockHttpRequest)).enrolled());
@@ -279,6 +295,7 @@ class TwoFactorEnrollmentTest {
         mockHttpRequest,
         pending.id(),
         currentCode(twoFactorEnrollment.pendingSecret(mockHttpRequest, pending.id())));
+
     assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     assertFalse(twoFactorEnrollment.canBeginFromPasswordLogin(mockHttpRequest));
   }
@@ -286,14 +303,18 @@ class TwoFactorEnrollmentTest {
   @Test
   void firstEnrollmentRejectsExpiredOrFuturePasswordEvidenceAndAnotherSession() {
     freshPasswordSignIn();
+
     assertFalse(
         twoFactorEnrollment.canBeginFromPasswordLogin(
             TwoFactorAuthorizationTest.requestFor(testAccount.getEmail())));
     clock.now.updateAndGet(now -> now.minusSeconds(1));
+
     assertFalse(twoFactorEnrollment.canBeginFromPasswordLogin(mockHttpRequest));
     clock.now.updateAndGet(now -> now.plusSeconds(300));
+
     assertTrue(twoFactorEnrollment.canBeginFromPasswordLogin(mockHttpRequest));
     clock.now.updateAndGet(now -> now.plusSeconds(1));
+
     assertFalse(twoFactorEnrollment.canBeginFromPasswordLogin(mockHttpRequest));
     assertThrows(
         AccessDeniedException.class,
@@ -318,6 +339,7 @@ class TwoFactorEnrollmentTest {
                 List.of(new SimpleGrantedAuthority(FactorGrantedAuthority.PASSWORD_AUTHORITY))))) {
       when(securityService.refreshSessionAuthentication(mockHttpRequest.getSession(false)))
           .thenReturn(Optional.of(other));
+
       assertFalse(twoFactorEnrollment.canBeginFromPasswordLogin(mockHttpRequest));
       assertThrows(
           AccessDeniedException.class,
@@ -337,6 +359,7 @@ class TwoFactorEnrollmentTest {
               .getResultList());
       userRepository.saveAndFlush(current);
     });
+
     assertFalse(twoFactorEnrollment.canBeginFromPasswordLogin(mockHttpRequest));
     freshPasswordSignIn();
     UUID revision = twoFactorStore.initialize(testAccount.getId(), testAccount.getAccessVersion());
@@ -346,6 +369,7 @@ class TwoFactorEnrollmentTest {
       account.setPreviouslyEnrolled(true);
       twoFactorAccountRepository.saveAndFlush(account);
     });
+
     assertFalse(twoFactorEnrollment.canBeginFromPasswordLogin(mockHttpRequest));
     assertThrows(
         AccessDeniedException.class,
@@ -422,6 +446,7 @@ class TwoFactorEnrollmentTest {
 
     UUID pendingId = pending.id();
     String code = currentCode(secret);
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.complete(mockHttpRequest, pendingId, code));
@@ -439,6 +464,7 @@ class TwoFactorEnrollmentTest {
     clock.now.updateAndGet(now -> now.plusSeconds(300));
     UUID pendingId = pending.id();
     String code = currentCode(secret);
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.complete(mockHttpRequest, pendingId, code));
@@ -456,6 +482,7 @@ class TwoFactorEnrollmentTest {
         .securityChange(any(), any());
     UUID pendingId = pending.id();
     String code = currentCode(secret);
+
     assertThrows(
         IllegalStateException.class,
         () -> twoFactorEnrollment.complete(mockHttpRequest, pendingId, code));
@@ -473,12 +500,15 @@ class TwoFactorEnrollmentTest {
     when(confirmation.provider()).thenReturn("google");
     TwoFactorEnrollment.Pending pending =
         twoFactorEnrollment.afterProviderConfirmation(mockHttpRequest, confirmation);
+
     assertEquals(Kind.GOOGLE_EMAIL, pending.kind());
     UUID pendingId = pending.id();
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.pendingSecret(mockHttpRequest, pendingId));
     ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
+
     verify(mail).setupCode(any(), code.capture());
     assertThrows(
         BadCredentialsException.class,
@@ -486,6 +516,7 @@ class TwoFactorEnrollmentTest {
     twoFactorEnrollment.confirmEmail(mockHttpRequest, pending.id(), code.getValue());
     byte[] secret = twoFactorEnrollment.pendingSecret(mockHttpRequest, pending.id());
     twoFactorEnrollment.complete(mockHttpRequest, pending.id(), currentCode(secret));
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.afterProviderConfirmation(mockHttpRequest, confirmation));
@@ -501,6 +532,7 @@ class TwoFactorEnrollmentTest {
     when(confirmation.provider()).thenReturn("google");
     TwoFactorEnrollment.Pending first =
         twoFactorEnrollment.afterProviderConfirmation(mockHttpRequest, confirmation);
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.afterProviderConfirmation(mockHttpRequest, confirmation));
@@ -508,9 +540,11 @@ class TwoFactorEnrollmentTest {
     TwoFactorEnrollment.Pending second =
         twoFactorEnrollment.afterProviderConfirmation(mockHttpRequest, confirmation);
     ArgumentCaptor<String> codes = ArgumentCaptor.forClass(String.class);
+
     verify(mail, times(2)).setupCode(any(), codes.capture());
     UUID firstId = first.id();
     String firstEmailCode = codes.getAllValues().getFirst();
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.confirmEmail(mockHttpRequest, firstId, firstEmailCode));
@@ -518,6 +552,7 @@ class TwoFactorEnrollmentTest {
         TwoFactorAuthorizationTest.requestFor(testAccount.getEmail());
     UUID secondId = second.id();
     String secondEmailCode = codes.getAllValues().getLast();
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.confirmEmail(otherRequest, secondId, secondEmailCode));
@@ -529,6 +564,7 @@ class TwoFactorEnrollmentTest {
     MockHttpServletRequest changedRequest =
         TwoFactorAuthorizationTest.requestFor(
             userRepository.findById(testAccount.getId()).orElseThrow().getEmail());
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.confirmEmail(changedRequest, secondId, secondEmailCode));
@@ -543,6 +579,7 @@ class TwoFactorEnrollmentTest {
         twoFactorEnrollment.afterProviderConfirmation(mockHttpRequest, confirmation);
     for (int attempt = 0; attempt < 4; attempt++) {
       UUID pendingId = pending.id();
+
       assertThrows(
           BadCredentialsException.class,
           () -> twoFactorEnrollment.confirmEmail(mockHttpRequest, pendingId, "invalid"));
@@ -553,6 +590,7 @@ class TwoFactorEnrollmentTest {
     TwoFactorEnrollment.Pending password =
         twoFactorEnrollment.beginPassword(mockHttpRequest, "correct");
     byte[] seed = twoFactorEnrollment.pendingSecret(mockHttpRequest, password.id());
+
     assertThrows(
         org.springframework.security.authentication.LockedException.class,
         () -> twoFactorEnrollment.complete(mockHttpRequest, password.id(), currentCode(seed)));
@@ -567,11 +605,13 @@ class TwoFactorEnrollmentTest {
     byte[] old = twoFactorEnrollment.pendingSecret(mockHttpRequest, first.id());
     UUID output = twoFactorEnrollment.complete(mockHttpRequest, first.id(), currentCode(old));
     List<String> oldCodes = twoFactorEnrollment.recoveryOutput(mockHttpRequest, output);
+
     assertThrows(
         AccessDeniedException.class, () -> twoFactorEnrollment.beginReplacement(mockHttpRequest));
     twoFactorAuthorization.confirmAction(
         mockHttpRequest, TwoFactorAction.MANAGE_FACTOR, oldCodes.getFirst());
     TwoFactorEnrollment.Pending replacement = twoFactorEnrollment.beginReplacement(mockHttpRequest);
+
     assertTrue(
         twoFactorAuthorization.state(twoFactorAuthorization.owner(mockHttpRequest)).enrolled());
     byte[] secret = twoFactorEnrollment.pendingSecret(mockHttpRequest, replacement.id());
@@ -579,10 +619,12 @@ class TwoFactorEnrollmentTest {
     Long userId = testAccount.getId();
     String accessVersion = testAccount.getAccessVersion();
     String recoveryCode = oldCodes.get(1);
+
     assertThrows(
         BadCredentialsException.class,
         () -> twoFactorStore.verify(userId, accessVersion, recoveryCode));
     String previousFactorCode = currentCode(old);
+
     assertThrows(
         BadCredentialsException.class,
         () -> twoFactorStore.verify(userId, accessVersion, previousFactorCode));
@@ -596,8 +638,10 @@ class TwoFactorEnrollmentTest {
   void lastRecoveryCodeAuthorizesOnlyReplacementUntilTheNewFirstTotp() {
     String last = lastRecoveryCode();
     MockHttpServletRequest recovery = TwoFactorAuthorizationTest.requestFor(testAccount.getEmail());
+
     assertFalse(twoFactorAuthorization.sessionConfirmed(recovery));
     TwoFactorEnrollment.Pending pending = twoFactorEnrollment.beginRecovery(recovery, last);
+
     assertEquals(SetupProof.RECOVERY_CODE, pending.proof());
     assertEquals(1, recoveryCodes.remaining(testAccount.getId()));
     assertFalse(twoFactorAuthorization.sessionConfirmed(recovery));
@@ -605,17 +649,20 @@ class TwoFactorEnrollmentTest {
         AccessDeniedException.class,
         () -> twoFactorAuthorization.authorizeCurrent(recovery, TwoFactorAction.PASSWORD, false));
     UUID pendingId = pending.id();
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorEnrollment.pendingSecret(mockHttpRequest, pendingId));
     byte[] secret = twoFactorEnrollment.pendingSecret(recovery, pending.id());
     UUID output = twoFactorEnrollment.complete(recovery, pending.id(), currentCode(secret));
+
     assertTrue(twoFactorAuthorization.sessionConfirmed(recovery));
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     assertEquals(10, twoFactorEnrollment.recoveryOutput(recovery, output).size());
     assertEquals(SetupProof.RECOVERY_CODE, twoFactorEnrollment.pending(recovery).proof());
     Long userId = testAccount.getId();
     String accessVersion = testAccount.getAccessVersion();
+
     assertThrows(
         BadCredentialsException.class, () -> twoFactorStore.verify(userId, accessVersion, last));
     assertThrows(
@@ -632,14 +679,17 @@ class TwoFactorEnrollmentTest {
     clock.now.updateAndGet(now -> now.plusSeconds(300));
     UUID pendingId = pending.id();
     String code = currentCode(secret);
+
     assertThrows(
         AccessDeniedException.class, () -> twoFactorEnrollment.complete(recovery, pendingId, code));
     assertFalse(twoFactorAuthorization.sessionConfirmed(recovery));
     assertEquals(1, recoveryCodes.remaining(testAccount.getId()));
     TwoFactorEnrollment.Pending retry = twoFactorEnrollment.beginRecovery(recovery, last);
+
     assertNotEquals(pending.id(), retry.id());
     twoFactorEnrollment.complete(
         recovery, retry.id(), currentCode(twoFactorEnrollment.pendingSecret(recovery, retry.id())));
+
     assertTrue(twoFactorAuthorization.sessionConfirmed(recovery));
     assertEquals(10, recoveryCodes.remaining(testAccount.getId()));
   }
@@ -652,6 +702,7 @@ class TwoFactorEnrollmentTest {
     TwoFactorEnrollment.Pending pending = twoFactorEnrollment.beginRecovery(mockHttpRequest, last);
     byte[] secret = twoFactorEnrollment.pendingSecret(mockHttpRequest, pending.id());
     UUID pendingId = pending.id();
+
     assertThrows(
         BadCredentialsException.class,
         () -> twoFactorEnrollment.complete(mockHttpRequest, pendingId, "invalid"));
@@ -660,6 +711,7 @@ class TwoFactorEnrollmentTest {
         .when(mail)
         .securityChange(any(), any());
     String code = currentCode(secret);
+
     assertThrows(
         IllegalStateException.class,
         () -> twoFactorEnrollment.complete(mockHttpRequest, pendingId, code));
@@ -673,6 +725,7 @@ class TwoFactorEnrollmentTest {
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     reset(mail);
     twoFactorEnrollment.complete(mockHttpRequest, pending.id(), currentCode(secret));
+
     assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
   }
 
@@ -689,6 +742,7 @@ class TwoFactorEnrollmentTest {
     twoFactorAuthorization.confirmSession(login, codes.getFirst());
     UUID pendingId = pending.id();
     String code = currentCode(secret);
+
     assertThrows(
         AccessDeniedException.class, () -> twoFactorEnrollment.complete(recovery, pendingId, code));
     assertEquals(
@@ -702,33 +756,44 @@ class TwoFactorEnrollmentTest {
   @Test
   void parallelRecoveryWithOneCodeCompletesExactlyOnce() throws Exception {
     String last = lastRecoveryCode();
-    MockHttpServletRequest first = TwoFactorAuthorizationTest.requestFor(testAccount.getEmail());
-    MockHttpServletRequest second = TwoFactorAuthorizationTest.requestFor(testAccount.getEmail());
-    TwoFactorEnrollment.Pending firstPending = twoFactorEnrollment.beginRecovery(first, last);
-    TwoFactorEnrollment.Pending secondPending = twoFactorEnrollment.beginRecovery(second, last);
-    String firstCode = currentCode(twoFactorEnrollment.pendingSecret(first, firstPending.id()));
-    String secondCode = currentCode(twoFactorEnrollment.pendingSecret(second, secondPending.id()));
+    MockHttpServletRequest firstMockHttpRequest =
+        TwoFactorAuthorizationTest.requestFor(testAccount.getEmail());
+    MockHttpServletRequest secondMockHttpRequest =
+        TwoFactorAuthorizationTest.requestFor(testAccount.getEmail());
+    TwoFactorEnrollment.Pending firstPending =
+        twoFactorEnrollment.beginRecovery(firstMockHttpRequest, last);
+    TwoFactorEnrollment.Pending secondPending =
+        twoFactorEnrollment.beginRecovery(secondMockHttpRequest, last);
+    String firstCode =
+        currentCode(twoFactorEnrollment.pendingSecret(firstMockHttpRequest, firstPending.id()));
+    String secondCode =
+        currentCode(twoFactorEnrollment.pendingSecret(secondMockHttpRequest, secondPending.id()));
     CountDownLatch ready = new CountDownLatch(2);
     CountDownLatch start = new CountDownLatch(1);
     reset(mail);
-    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+    try (ExecutorService executorService = Executors.newFixedThreadPool(2)) {
       Future<UUID> firstResult =
-          executor.submit(
-              () -> completeAfterStart(ready, start, first, firstPending.id(), firstCode));
+          executorService.submit(() ->
+              completeAfterStart(ready, start, firstMockHttpRequest, firstPending.id(), firstCode));
       Future<UUID> secondResult =
-          executor.submit(
-              () -> completeAfterStart(ready, start, second, secondPending.id(), secondCode));
+          executorService.submit(() ->
+              completeAfterStart(
+                  ready, start, secondMockHttpRequest, secondPending.id(), secondCode));
+
       assertTrue(ready.await(10, TimeUnit.SECONDS));
       start.countDown();
       UUID firstOutput = firstResult.get(10, TimeUnit.SECONDS);
       UUID secondOutput = secondResult.get(10, TimeUnit.SECONDS);
+
       assertNotEquals(firstOutput == null, secondOutput == null);
-      MockHttpServletRequest winner = firstOutput != null ? first : second;
+      MockHttpServletRequest winner =
+          firstOutput != null ? firstMockHttpRequest : secondMockHttpRequest;
       UUID output = firstOutput != null ? firstOutput : secondOutput;
+
       assertEquals(10, twoFactorEnrollment.recoveryOutput(winner, output).size());
       assertNotEquals(
-          twoFactorAuthorization.sessionConfirmed(first),
-          twoFactorAuthorization.sessionConfirmed(second));
+          twoFactorAuthorization.sessionConfirmed(firstMockHttpRequest),
+          twoFactorAuthorization.sessionConfirmed(secondMockHttpRequest));
       assertEquals(10, recoveryCodes.remaining(testAccount.getId()));
     }
     verify(mail, times(1)).securityChange(any(), eq(TwoFactorMail.Event.ENABLED));
@@ -748,6 +813,7 @@ class TwoFactorEnrollmentTest {
     assertThrows(LockedException.class, () -> twoFactorEnrollment.beginRecovery(recovery, last));
     assertEquals(1, recoveryCodes.remaining(testAccount.getId()));
     clock.now.updateAndGet(now -> now.plusSeconds(901));
+
     assertEquals(
         SetupProof.RECOVERY_CODE, twoFactorEnrollment.beginRecovery(recovery, last).proof());
     assertFalse(twoFactorAuthorization.sessionConfirmed(recovery));
@@ -782,6 +848,7 @@ class TwoFactorEnrollmentTest {
       String code)
       throws InterruptedException {
     ready.countDown();
+
     assertTrue(start.await(10, TimeUnit.SECONDS));
     try {
       return twoFactorEnrollment.complete(recovery, pending, code);

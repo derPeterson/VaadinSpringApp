@@ -88,8 +88,10 @@ public final class MailpitInbox {
     // Der achtstellige Code steht als eigener Text in der regulären Einrichtungsmail.
     java.util.regex.Matcher code =
         java.util.regex.Pattern.compile("(?<![0-9])[0-9]{8}(?![0-9])").matcher(text);
+
     assertTrue(code.find(), "Einrichtungsmail muss ihren achtstelligen Code enthalten.");
     String value = code.group();
+
     assertFalse(code.find(), "Einrichtungsmail muss genau einen Code enthalten.");
     return value;
   }
@@ -97,8 +99,10 @@ public final class MailpitInbox {
   @Step("Sicherheitsmail mit echtem Inline-Logo, Footer und ohne Passwortinhalte prüfen")
   public void assertSecurityNotice(CapturedMail mail, String... forbidden) {
     JsonNode actual = getJson("/api/v1/message/" + mail.id());
+
     assertTrue(addressedTo(actual, mail.recipient()));
     String html = actual.path("HTML").asText();
+
     assertFalse(html.isBlank());
     assertFalse(html.contains("{{"));
     for (String secret : forbidden) {
@@ -107,12 +111,15 @@ public final class MailpitInbox {
     Page message = browserContext.newPage();
     try {
       message.navigate(baseUrl + "/view/" + mail.id() + ".html");
+
       assertThat(message.locator("body")).containsText("VaadinSpringApp (Browser-Test)");
       Locator logo = message.locator("img[alt='VaadinSpringApp (Browser-Test)']");
+
       assertThat(logo).hasCount(1);
       assertThat(logo).isVisible();
       message.waitForFunction(
           "image => image.complete && image.naturalWidth > 0", logo.elementHandle());
+
       assertThat(message.locator("body")).containsText(expectedFooter(EMAIL_CHANGE_ROUTE));
       AllurePlaywright.attachScreenshot("Tatsächlich empfangene Sicherheitsmail", message);
     } finally {
@@ -175,8 +182,10 @@ public final class MailpitInbox {
         },
         new BrowserContext.WaitForConditionOptions().setTimeout(30_000));
     JsonNode mail = getJson("/api/v1/message/" + found.get().path("ID").asText());
+
     assertTrue(addressedTo(mail, recipient), "Mail gehört nicht zur eigenen Testadresse.");
     String subject = mail.path("Subject").asText();
+
     assertEquals(
         expectedSubject,
         subject,
@@ -233,6 +242,7 @@ public final class MailpitInbox {
       }
       assertThat(messagePage.locator("body")).containsText("VaadinSpringApp (Browser-Test)");
       Locator link = messagePage.locator("a[href*='" + path(route) + "/']");
+
       assertThat(link).hasCount(1);
       assertThat(link).isVisible();
       assertLocalActionLink(link.getAttribute("href"), route);
@@ -240,6 +250,7 @@ public final class MailpitInbox {
           messagePage.getByRole(
               com.microsoft.playwright.options.AriaRole.IMG,
               new Page.GetByRoleOptions().setName("VaadinSpringApp (Browser-Test)").setExact(true));
+
       assertThat(logo).hasCount(1);
       assertThat(logo).isVisible();
       // Mailpits HTML-Ansicht löst die tatsächlich empfangene Inline-Ressource auf.
@@ -272,6 +283,7 @@ public final class MailpitInbox {
         Objects.requireNonNull(
             MailpitInbox.class.getResourceAsStream(resource), "Mailvorlage fehlt: " + resource)) {
       String template = new String(source.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+
       assertTrue(
           template.contains("{{COPYRIGHT_TEXT}}"),
           "Die kanonische Vorlage enthält keinen konfigurierbaren Footer.");
@@ -307,6 +319,7 @@ public final class MailpitInbox {
   private static void assertLocalActionLink(String link, String route) {
     URI actual = URI.create(Objects.requireNonNull(link, "Mail-Link fehlt."));
     URI expected = URI.create(System.getProperty("browser.tests.baseUrl"));
+
     assertEquals(expected.getScheme(), actual.getScheme(), "Falsches Link-Protokoll.");
     assertEquals(expected.getHost(), actual.getHost(), "Link zeigt auf einen fremden Server.");
     assertEquals(expected.getPort(), actual.getPort(), "Link zeigt auf einen fremden Port.");

@@ -42,7 +42,7 @@ class LoginContextPersistenceTest {
     HttpSessionSecurityContextRepository repository = new HttpSessionSecurityContextRepository();
     PersistentTokenBasedRememberMeServices rememberService =
         mock(PersistentTokenBasedRememberMeServices.class);
-    SecurityService service =
+    SecurityService securityService =
         new SecurityService(
             rememberService,
             mock(UserService.class),
@@ -55,7 +55,7 @@ class LoginContextPersistenceTest {
     UserDetails principal =
         User.withUsername("context@example.test").password("test-hash").roles("USER").build();
     MockHttpServletRequest login = new MockHttpServletRequest();
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     if (remember) {
       doAnswer(
               call -> {
@@ -71,11 +71,12 @@ class LoginContextPersistenceTest {
           .when(rememberService)
           .loginSuccess(any(), any(), any());
     }
-    service.storeAuthenticatedUser(login, response, principal, remember);
+    securityService.storeAuthenticatedUser(login, mockHttpResponse, principal, remember);
     SecurityContextHolder.clearContext();
     MockHttpServletRequest following = new MockHttpServletRequest();
     following.setSession(login.getSession(false));
     Authentication loaded = repository.loadDeferredContext(following).get().getAuthentication();
+
     assertNotNull(loaded);
     assertNull(loaded.getCredentials());
     verify(rememberService, never()).setAlwaysRemember(anyBoolean());
@@ -83,16 +84,16 @@ class LoginContextPersistenceTest {
     assertSame(principal, loaded.getPrincipal());
     assertEquals("ROLE_USER", loaded.getAuthorities().iterator().next().getAuthority());
     if (remember) {
-      verify(rememberService).loginSuccess(any(), eq(response), any());
+      verify(rememberService).loginSuccess(any(), eq(mockHttpResponse), any());
     } else {
       verify(rememberService, never()).loginSuccess(any(), any(), any());
     }
   }
 
   private ConfigService configuredLimit() {
-    ConfigService config = mock(ConfigService.class);
-    when(config.getInteger(de.derpeterson.app.model.enums.ConfigEntry.MAX_SESSIONS_PER_USER))
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getInteger(de.derpeterson.app.model.enums.ConfigEntry.MAX_SESSIONS_PER_USER))
         .thenReturn(3);
-    return config;
+    return configService;
   }
 }

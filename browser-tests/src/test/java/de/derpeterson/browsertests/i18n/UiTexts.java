@@ -71,9 +71,9 @@ public final class UiTexts extends MessageTexts {
   }
 
   /** Render notification markup as text in an inert template, without changing the page. */
-  public String visibleText(Page page, String html) {
+  public String visibleText(Page browserPage, String html) {
     return (String)
-        page.evaluate(
+        browserPage.evaluate(
             "html => { const t = document.createElement('template'); "
                 + "t.innerHTML = html; return t.content.textContent; }",
             html);

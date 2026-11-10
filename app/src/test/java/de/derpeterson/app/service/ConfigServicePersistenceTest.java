@@ -63,12 +63,14 @@ class ConfigServicePersistenceTest {
     configService.set(ConfigEntry.SERVICE_NAME, "  Grüße  ");
     ConfigEntity created =
         configRepository.findByKey(ConfigEntry.SERVICE_NAME.getKey()).orElseThrow();
+
     assertNotNull(created.getId());
     assertEquals("  Grüße  ", created.getValue());
 
     configService.set(ConfigEntry.SERVICE_NAME, "");
 
     ConfigEntity updated = configRepository.findByKey(created.getKey()).orElseThrow();
+
     assertEquals(created.getId(), updated.getId());
     assertEquals("", updated.getValue());
     assertEquals(1, configRepository.count());
@@ -80,6 +82,7 @@ class ConfigServicePersistenceTest {
         NullPointerException.class, () -> configService.set(ConfigEntry.SERVICE_NAME, null));
     assertEquals(0, configRepository.count());
     configService.set(ConfigEntry.SERVICE_NAME, "old");
+
     assertThrows(
         NullPointerException.class, () -> configService.set(ConfigEntry.SERVICE_NAME, null));
     assertEquals("old", configService.getString(ConfigEntry.SERVICE_NAME));
@@ -91,9 +94,11 @@ class ConfigServicePersistenceTest {
 
     ConfigEntity configEntity =
         new ConfigEntity(null, ConfigEntry.SERVICE_NAME.getKey(), "duplicate");
+
     assertThrows(
         DataIntegrityViolationException.class, () -> configRepository.saveAndFlush(configEntity));
     ConfigEntity configEntity2 = new ConfigEntity(null, ConfigEntry.BASE_URL.getKey(), null);
+
     assertThrows(
         DataIntegrityViolationException.class, () -> configRepository.saveAndFlush(configEntity2));
     assertEquals(1, configRepository.count());
@@ -154,15 +159,18 @@ class ConfigServicePersistenceTest {
     ConfigService first = new ConfigService(coordinated, transactionManager, new MockEnvironment());
     ConfigService second =
         new ConfigService(coordinated, transactionManager, new MockEnvironment());
-    ExecutorService executor = Executors.newFixedThreadPool(2);
+    ExecutorService executorService = Executors.newFixedThreadPool(2);
     try {
-      Future<?> firstWrite = executor.submit(() -> first.set(ConfigEntry.SERVICE_NAME, "first"));
-      Future<?> secondWrite = executor.submit(() -> second.set(ConfigEntry.SERVICE_NAME, "second"));
+      Future<?> firstWrite =
+          executorService.submit(() -> first.set(ConfigEntry.SERVICE_NAME, "first"));
+      Future<?> secondWrite =
+          executorService.submit(() -> second.set(ConfigEntry.SERVICE_NAME, "second"));
       firstWrite.get(20, TimeUnit.SECONDS);
       secondWrite.get(20, TimeUnit.SECONDS);
     } finally {
-      executor.shutdownNow();
-      assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+      executorService.shutdownNow();
+
+      assertTrue(executorService.awaitTermination(10, TimeUnit.SECONDS));
     }
 
     assertEquals(2, missingReads.get());
@@ -170,12 +178,14 @@ class ConfigServicePersistenceTest {
     assertEquals(1, configRepository.count());
     ConfigEntity stored =
         configRepository.findByKey(ConfigEntry.SERVICE_NAME.getKey()).orElseThrow();
+
     assertEquals(insertedId.get(), stored.getId());
     assertEquals(retryValue.get(), stored.getValue(), "The retry is the last committed write");
     verify(coordinated, times(3)).findByKey(ConfigEntry.SERVICE_NAME.getKey());
     verify(coordinated, times(3)).saveAndFlush(any());
     // Neither a failed persistence context nor rollback-only state leaks.
     configService.set(ConfigEntry.SERVICE_NAME, "after race");
+
     assertEquals("after race", configService.getString(ConfigEntry.SERVICE_NAME));
   }
 

@@ -81,6 +81,7 @@ class UserInputRulesTest {
       for (String domain : domains) {
         String email = localPart + "@" + domain;
         boolean expected = email.matches(EmailValidator.PATTERN);
+
         assertEquals(expected, UserInputRules.isEmailValid(email), () -> "Address: " + email);
         assertEquals(expected, UserInputRules.isEmailValid(" \t" + email + "\r\n"));
       }
@@ -91,6 +92,7 @@ class UserInputRulesTest {
   @ValueSource(ints = {2048, 8192, 32768})
   void longDomainChainsAreValidatedWithoutStackOverflowOrExcessiveBacktracking(int segments) {
     String domain = "b.".repeat(segments);
+
     assertTimeout(
         Duration.ofSeconds(3),
         () -> {
@@ -105,6 +107,7 @@ class UserInputRulesTest {
   @Test
   void longLocalPartsAndMissingSeparatorsKeepTheirPreviousMeaning() {
     String localPart = "a".repeat(100_000);
+
     assertTimeout(
         Duration.ofSeconds(3),
         () -> {
@@ -120,14 +123,18 @@ class UserInputRulesTest {
     EmailField field = new EmailField();
     field.setPattern(UserInputRules.EMAIL_REGEX);
     String domain = "b.".repeat(32_768);
+
     assertTimeout(
         Duration.ofSeconds(3),
         () -> {
           field.setValue("a@" + domain + "test");
+
           assertFalse(field.isInvalid());
           field.setValue("a@" + domain + "test x");
+
           assertTrue(field.isInvalid());
           field.setValue("a@" + domain + ".test");
+
           assertTrue(field.isInvalid());
         });
   }

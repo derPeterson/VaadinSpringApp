@@ -30,15 +30,16 @@ class DeviceTokenRepositorySchemaTest {
   }
 
   private DeviceTokenRepository repository() throws Exception {
-    DeviceTokenRepository repository =
+    DeviceTokenRepository deviceTokenRepository =
         new DeviceTokenRepository(testDataSource, new DataSourceTransactionManager(testDataSource));
-    repository.afterPropertiesSet();
-    return repository;
+    deviceTokenRepository.afterPropertiesSet();
+    return deviceTokenRepository;
   }
 
   @Test
   void freshSchemaSupportsTheSameMaximumIdentityLengthAsTheUserColumn() throws Exception {
-    DeviceTokenRepository repository = repository();
+    DeviceTokenRepository deviceTokenRepository = repository();
+
     assertEquals(
         255,
         jdbcTemplate.<Integer>query(
@@ -48,10 +49,12 @@ class DeviceTokenRepositorySchemaTest {
             }));
     String identity =
         "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62);
+
     assertEquals(255, identity.length());
-    repository.createNewToken(
+    deviceTokenRepository.createNewToken(
         new PersistentRememberMeToken(identity, "max-series", "max-token", new Date()));
-    assertEquals(identity, repository.getTokenForSeries("max-series").getUsername());
+
+    assertEquals(identity, deviceTokenRepository.getTokenForSeries("max-series").getUsername());
   }
 
   @Test
@@ -64,17 +67,19 @@ class DeviceTokenRepositorySchemaTest {
         "fixture-series", identity, DeviceDescription.from("Windows Chrome/130"), Instant.now());
     String handle = first.saved(identity, 3600).getFirst().handle();
     DeviceTokenRepository second = repository();
+
     assertEquals(handle, second.saved(identity, 3600).getFirst().handle());
     assertEquals("fixture-token", second.getTokenForSeries("fixture-series").getTokenValue());
   }
 
   @Test
   void listingDoesNotInventMetadataForAnIncompleteToken() throws Exception {
-    DeviceTokenRepository repository = repository();
-    repository.createNewToken(
+    DeviceTokenRepository deviceTokenRepository = repository();
+    deviceTokenRepository.createNewToken(
         new PersistentRememberMeToken(
             "fixture@example.test", "incomplete-series", "fixture-token", new Date()));
-    assertTrue(repository.saved("fixture@example.test", 3600).isEmpty());
+
+    assertTrue(deviceTokenRepository.saved("fixture@example.test", 3600).isEmpty());
     assertEquals(
         0, jdbcTemplate.queryForObject("select count(*) from remembered_device", Integer.class));
   }

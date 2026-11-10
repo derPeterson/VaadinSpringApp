@@ -23,6 +23,7 @@ class RecoveryInstructionsComponentTest {
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     String snapshot = messageProperties.getSupportRecoveryInstructions();
     RecoveryInstructionsComponent guide = new RecoveryInstructionsComponent(snapshot);
+
     assertTrue(snapshot.length() <= SupportTicketService.MESSAGE_LIMIT);
     assertEquals(4, tree(guide).filter(Badge.class::isInstance).count());
     String rendered =
@@ -43,11 +44,14 @@ class RecoveryInstructionsComponentTest {
     Details details = new Details();
     details.setId("instruction-details");
     DetailsToggleButton toggle = new DetailsToggleButton(messageProperties, details, "Guide");
+
     assertEquals("false", toggle.getElement().getAttribute("aria-expanded"));
     toggle.click();
+
     assertTrue(details.isOpened());
     assertEquals("true", toggle.getElement().getAttribute("aria-expanded"));
     toggle.click();
+
     assertFalse(details.isOpened());
     assertEquals("false", toggle.getElement().getAttribute("aria-expanded"));
     assertEquals(messageProperties.getBaseDetailsButton(), toggle.getText());

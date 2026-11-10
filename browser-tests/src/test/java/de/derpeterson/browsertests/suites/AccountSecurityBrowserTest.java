@@ -53,6 +53,7 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
                 .setExact(true))
         .setChecked(remember);
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
     AccountPage form = new AccountPage(browserPage);
@@ -81,6 +82,7 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
     AccountSecurityPage security = new AccountSecurityPage(browserPage);
     security.openPassword();
     security.input("account-password-new").fill("x");
+
     assertThat(security.host("account-password-new")).hasJSProperty("invalid", false);
     assertThat(browserPage.locator("vaadin-notification-card")).hasCount(0);
     security.savePassword();
@@ -89,17 +91,20 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
     security.password("x", "x", BrowserTestAccounts.USER_PASSWORD);
     security.savePassword();
     form.assertMessage(uiTexts.getBaseValidationPasswordInvalidMessage());
+
     assertThat(security.host("account-password-new")).hasJSProperty("invalid", true);
     form.closeNotification();
     security.password(
         "Changed!Password9", "Different!Password9", BrowserTestAccounts.USER_PASSWORD);
     security.savePassword();
     form.assertMessage(uiTexts.getBaseValidationPasswordConfirmMessage());
+
     assertThat(security.host("account-password-confirm")).hasJSProperty("invalid", true);
     form.closeNotification();
     security.password("Changed!Password9", "Changed!Password9", "Wrong!Password9");
     security.savePassword();
     form.assertMessage(uiTexts.getAccountSecurityWrongPassword());
+
     assertThat(security.host("account-password-current")).hasJSProperty("invalid", true);
     assertThat(browserPage.locator("vaadin-dialog.account-password-dialog[opened]")).hasCount(1);
     assertThat(security.input("account-password-current")).isVisible();
@@ -123,18 +128,22 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
     String changed = "Changed!Password9";
     try (BrowserActor other = new BrowserActor(testBrowser)) {
       other.login(email, BrowserTestAccounts.USER_PASSWORD, true);
+
       assertThat(other.browserPage).hasURL(urlPattern(HOME_ROUTE));
       AccountSecurityPage security = new AccountSecurityPage(browserPage);
       security.openPassword();
+
       assertThat(browserPage.locator("vaadin-dialog.account-password-dialog[opened]"))
           .containsText(uiTexts.getAccountPasswordDialogHint());
       security.password(changed, changed, BrowserTestAccounts.USER_PASSWORD);
       security.savePassword();
       new AccountPage(browserPage).assertMessage(uiTexts.getAccountSecurityPasswordSuccess());
+
       assertThat(browserPage.locator("vaadin-dialog.account-password-dialog[opened]")).hasCount(0);
       browserPage.reload();
       // Nach Reload bleibt bewusst der Sicherheits-Tab ausgewählt; das Profil erst öffnen.
       UiActions.complete(browserPage, () -> browserPage.locator("#account-tab-profile").click());
+
       assertThat(browserPage.locator("#account-email input")).hasValue(email);
       MailpitInbox inbox = new MailpitInbox(browserContext);
       inbox.assertSecurityNotice(
@@ -148,6 +157,7 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
       login.assertRejected();
       login.open();
       login.signIn(email, changed);
+
       assertThat(other.browserPage).hasURL(urlPattern(HOME_ROUTE));
       new UserMenu(other.browserPage).selectTestLanguage();
     }
@@ -164,6 +174,7 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
           .locator(".cosmos-notification-row-open")
           .click();
       Locator destination = inbox.dialog().locator(".cosmos-notification-detail-account");
+
       assertThat(destination).hasAccessibleName(uiTexts.getNotificationsOpenAccount());
       assertThat(inbox.dialog().locator(".cosmos-notification-detail-ticket")).hasCount(0);
       if (width == 390) {
@@ -171,6 +182,7 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
         assertThat(destination).hasCSS("grid-column-end", "-1");
       }
       destination.click();
+
       assertThat(browserPage.locator("#account-security-tab-portal")).isVisible();
     }
   }
@@ -197,12 +209,14 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
         BrowserTestAccounts.USER_PASSWORD);
     security.requestEmail();
     form.assertMessage(uiTexts.getBaseValidationEmailConfirmMessage());
+
     assertThat(security.host("account-email-confirm")).hasJSProperty("invalid", true);
     form.closeNotification();
     String target = "new-" + UUID.randomUUID() + "@example.test";
     security.email(target, target, "Wrong!Password9");
     security.requestEmail();
     form.assertMessage(uiTexts.getAccountSecurityWrongPassword());
+
     assertThat(security.host("account-email-password")).hasJSProperty("invalid", true);
     form.closeNotification();
     security.email(email, email, BrowserTestAccounts.USER_PASSWORD);
@@ -210,6 +224,7 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
     form.assertMessage(uiTexts.getAccountSecuritySameEmail());
     security.host("account-email-cancel").click();
     form.host("account-tab-profile").click();
+
     assertThat(form.input("account-email")).hasValue(email);
   }
 
@@ -229,6 +244,7 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
     String newEmail = "confirmed-" + UUID.randomUUID() + "@example.test";
     try (BrowserActor other = new BrowserActor(testBrowser)) {
       other.login(oldEmail, BrowserTestAccounts.USER_PASSWORD, true);
+
       assertThat(other.browserPage).hasURL(urlPattern(HOME_ROUTE));
       AccountPage form = new AccountPage(browserPage);
       AccountSecurityPage security = new AccountSecurityPage(browserPage);
@@ -238,6 +254,7 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
       form.assertMessage(uiTexts.getAccountSecurityEmailRequested());
       form.closeNotification();
       form.host("account-tab-profile").click();
+
       assertThat(form.input("account-email")).hasValue(oldEmail);
       MailpitInbox inbox = new MailpitInbox(browserContext);
       CapturedMail requested =
@@ -247,10 +264,13 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
             .containsText(uiTexts.getAccountEmailConfirmationReady());
         String capturedLink = confirm.url();
         confirm.reload();
+
         assertThat(confirm.locator("#account-email-confirm-action")).isVisible();
         browserPage.reload();
+
         assertThat(form.input("account-email")).hasValue(oldEmail);
         UiActions.complete(confirm, () -> confirm.locator("#account-email-confirm-action").click());
+
         assertThat(confirm.locator("#account-email-confirmation"))
             .containsText(uiTexts.getAccountEmailConfirmationSuccess());
         inbox.assertSecurityNotice(
@@ -269,10 +289,12 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
         login.assertRejected();
         login.open();
         login.signIn(newEmail, BrowserTestAccounts.USER_PASSWORD);
+
         assertThat(confirm).hasURL(urlPattern(HOME_ROUTE));
         new UserMenu(confirm).selectTestLanguage();
         try (BrowserActor replay = new BrowserActor(testBrowser)) {
           replay.browserPage.navigate(capturedLink);
+
           assertThat(replay.browserPage.locator("#account-email-confirmation"))
               .containsText(uiTexts.getAccountEmailConfirmationInvalid());
           assertThat(replay.browserPage.locator("#account-email-confirm-action")).hasCount(0);

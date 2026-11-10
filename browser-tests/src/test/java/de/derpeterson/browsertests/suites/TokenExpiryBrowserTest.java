@@ -51,16 +51,16 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
     try {
       config.enter(label, "PT1M");
       config.save();
-      try (BrowserActor actor = new BrowserActor(testBrowser)) {
+      try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
         String email = email();
-        RegistrationPage registration = new RegistrationPage(actor.browserPage);
+        RegistrationPage registration = new RegistrationPage(browserActor.browserPage);
         registration.open();
         registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
         registration.submit();
         registration.assertSubmitted(email);
-        MailpitInbox inbox = new MailpitInbox(actor.browserContext);
+        MailpitInbox inbox = new MailpitInbox(browserActor.browserContext);
         CapturedMail old = inbox.awaitVerificationMail(email);
-        waitForExpiry(actor.browserContext);
+        waitForExpiry(browserActor.browserContext);
         try (Page expired = inbox.openVerificationAction(old)) {
           assertThat(
                   expired.getByRole(
@@ -74,20 +74,23 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
                   AriaRole.BUTTON,
                   new Page.GetByRoleOptions().setName(uiTexts.getBaseResendButton()).setExact(true))
               .click();
+
           assertThat(expired.locator("vaadin-notification-card:not([closing])"))
               .containsText(
                   uiTexts.visibleText(expired, uiTexts.getVerificationExpiredSuccessMessage()));
           CapturedMail fresh = inbox.awaitVerificationMailAfter(email, old);
+
           assertNotEquals(old.id(), fresh.id());
           inbox.openVerificationLink(fresh).close();
           try (Page stale = inbox.openVerificationAction(old)) {
             new VerificationPage(stale).assertExpired();
           }
         }
-        actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-        assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
-        new UserMenu(actor.browserPage).selectTestLanguage();
-        new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
+        browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
+
+        assertThat(browserActor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+        new UserMenu(browserActor.browserPage).selectTestLanguage();
+        new UserMenu(browserActor.browserPage).assertUserSignedInWithoutAdminAction(email);
       }
     } finally {
       config.open();
@@ -114,25 +117,26 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
     try {
       config.enter(label, "PT1M");
       config.save();
-      try (BrowserActor actor = new BrowserActor(testBrowser)) {
+      try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
         String email = email();
-        RegistrationPage registration = new RegistrationPage(actor.browserPage);
+        RegistrationPage registration = new RegistrationPage(browserActor.browserPage);
         registration.open();
         registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
         registration.submit();
         registration.assertSubmitted(email);
-        MailpitInbox inbox = new MailpitInbox(actor.browserContext);
+        MailpitInbox inbox = new MailpitInbox(browserActor.browserContext);
         inbox.openVerificationLink(inbox.awaitVerificationMail(email)).close();
-        ForgotPasswordPage forgot = new ForgotPasswordPage(actor.browserPage);
+        ForgotPasswordPage forgot = new ForgotPasswordPage(browserActor.browserPage);
         forgot.open();
         forgot.enterEmail(email);
         forgot.submit();
         forgot.requestedResponse();
         try (Page reset = inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email))) {
-          waitForExpiry(actor.browserContext);
+          waitForExpiry(browserActor.browserContext);
           ResetPasswordPage form = new ResetPasswordPage(reset);
           form.fillPasswords("ChangedPassword!", "ChangedPassword!");
           form.submit();
+
           assertThat(reset.locator("vaadin-notification-card:not([closing])"))
               .containsText(uiTexts.getResetPasswordExpiredText());
           assertThat(reset.locator("vaadin-notification-card:not([closing])"))
@@ -141,12 +145,13 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
           reset.reload();
           new ResetPasswordPage(reset).assertExpired();
         }
-        actor.login(email, "ChangedPassword!");
-        new LoginPage(actor.browserPage).assertRejected();
-        actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-        assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
-        new UserMenu(actor.browserPage).selectTestLanguage();
-        new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
+        browserActor.login(email, "ChangedPassword!");
+        new LoginPage(browserActor.browserPage).assertRejected();
+        browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
+
+        assertThat(browserActor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+        new UserMenu(browserActor.browserPage).selectTestLanguage();
+        new UserMenu(browserActor.browserPage).assertUserSignedInWithoutAdminAction(email);
       }
     } finally {
       config.open();
@@ -193,6 +198,7 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
     checkRequestError(uiTexts.getBaseValidationEmailInvalidMessage());
     input.fill(email);
     send.click();
+
     assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
         .containsText(
             uiTexts.visibleText(browserPage, uiTexts.getVerificationNotFoundSuccessMessage()));
@@ -201,9 +207,11 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
 
   private void checkRequestError(String message) {
     Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
+
     assertThat(notice).containsText(uiTexts.visibleText(browserPage, message));
     assertThat(browserPage.locator("vaadin-email-field[invalid]")).hasCount(1);
     notice.getByRole(AriaRole.BUTTON).click();
+
     assertThat(notice).not().isVisible();
   }
 

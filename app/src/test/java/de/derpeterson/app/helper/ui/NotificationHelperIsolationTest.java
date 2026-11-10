@@ -32,15 +32,15 @@ class NotificationHelperIsolationTest {
   private final List<VaadinSession> sessions = new ArrayList<>();
 
   private VaadinSession session() {
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    sessions.add(session);
-    return session;
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    sessions.add(vaadinSession);
+    return vaadinSession;
   }
 
-  private UI window(VaadinSession session) {
+  private UI window(VaadinSession vaadinSession) {
     UI ui = new UI();
-    ui.getInternals().setSession(session);
+    ui.getInternals().setSession(vaadinSession);
     windows.add(ui);
     select(ui);
     return ui;
@@ -84,11 +84,13 @@ class NotificationHelperIsolationTest {
     UI second = window(sameSession ? firstSession : session());
     show("Hinweis des zweiten Fensters");
     Notification secondNotice = notification(NotificationHelper.getInstance());
+
     assertTrue(
         firstNotice.isOpened(), "Das andere Fenster darf den ersten Hinweis nicht schließen");
     assertTrue(secondNotice.isOpened());
     select(first);
     NotificationHelper.getInstance().closeAndClearAllNotifications();
+
     assertFalse(firstNotice.isOpened());
     assertTrue(secondNotice.isOpened(), "Nur der eigene Hinweis wird geschlossen");
     select(second);
@@ -100,6 +102,7 @@ class NotificationHelperIsolationTest {
     UI ui = window(session());
     NotificationHelper helper = NotificationHelper.getInstance();
     show("Ohne Seitenrahmen");
+
     assertFalse(notification(helper).getElement().getThemeList().contains("cosmos"));
     PageFrameComponent frame = new PageFrameComponent(new Div(), new Div(), new Div());
     Div wrapper = new Div(frame);
@@ -107,9 +110,11 @@ class NotificationHelperIsolationTest {
     (themeOnPortalRoot ? wrapper : frame).addClassName("cosmos-theme");
     ui.add(wrapper);
     show("Mit verschachteltem Seitenrahmen");
+
     assertTrue(notification(helper).getElement().getThemeList().contains("cosmos"));
     ui.remove(wrapper);
     show("Nach Entfernen des Seitenrahmens");
+
     assertFalse(notification(helper).getElement().getThemeList().contains("cosmos"));
   }
 
@@ -129,6 +134,7 @@ class NotificationHelperIsolationTest {
     select(first);
     firstText.set("First notice EN");
     NotificationHelper.getInstance().updateText();
+
     assertTrue(
         message(NotificationHelper.getInstance()).getInnerHtml().contains("First notice EN"));
     assertTrue(secondMessage.getInnerHtml().contains("Second notice EN"));
@@ -146,12 +152,14 @@ class NotificationHelperIsolationTest {
     NotificationHelper helper = NotificationHelper.getInstance();
     helper.showNotification(() -> "Title", () -> "Message", 4200, type);
     Notification referenceNotice = notification(helper);
+
     assertTrue(referenceNotice.getElement().getThemeList().contains("cosmos-reference"));
     assertEquals(4200, referenceNotice.getDuration());
     assertEquals(Notification.Position.TOP_CENTER, referenceNotice.getPosition());
     assertTrue(message(helper).getInnerHtml().contains("Message"));
     window(session());
     NotificationHelper.getInstance().showNotification(() -> "Other window", type);
+
     assertFalse(
         notification(NotificationHelper.getInstance())
             .getElement()
@@ -168,11 +176,13 @@ class NotificationHelperIsolationTest {
     helper.showNotification(title::get, null, 4200, NotificationHelper.NotificationType.SUCCESS);
     Notification notice = notification(helper);
     Span heading = (Span) ReflectionTestUtils.getField(helper, "titleText");
+
     assertEquals(title.get(), heading.getText());
     assertNull(message(helper));
     assertTrue(notice.isOpened());
     title.set("Benachrichtigungen aktualisiert.");
     helper.updateText();
+
     assertEquals(title.get(), heading.getText());
     assertNull(message(helper));
     assertSame(notice, notification(helper));
@@ -187,12 +197,15 @@ class NotificationHelperIsolationTest {
     helper.showNotification(
         () -> "Title", body::get, 4200, NotificationHelper.NotificationType.SUCCESS);
     Notification notice = notification(helper);
+
     assertNull(message(helper));
     body.set("Details");
     helper.updateText();
+
     assertTrue(message(helper).getInnerHtml().contains("Details"));
     body.set("");
     helper.updateText();
+
     assertNull(message(helper));
     assertSame(notice, notification(helper));
   }
@@ -203,6 +216,7 @@ class NotificationHelperIsolationTest {
     show("Privater Hinweis");
     Notification current = notification(NotificationHelper.getInstance());
     UI.setCurrent(null);
+
     assertThrows(IllegalStateException.class, NotificationHelper::getInstance);
     assertTrue(current.isOpened());
   }

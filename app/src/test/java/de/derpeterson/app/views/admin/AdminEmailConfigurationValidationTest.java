@@ -44,10 +44,11 @@ class AdminEmailConfigurationValidationTest {
     when(vaadinSession.hasLock()).thenReturn(true);
     VaadinSession.setCurrent(vaadinSession);
     messageProperties = MessageProperties.forLocale(new CustomI18NProvider(), Locale.GERMAN);
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(any(ConfigEntry.class)))
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-    configurationSection = new AdminConfigurationSection(messageProperties, config, () -> {});
+    configurationSection =
+        new AdminConfigurationSection(messageProperties, configService, () -> {});
   }
 
   @AfterEach
@@ -116,6 +117,7 @@ class AdminEmailConfigurationValidationTest {
   void longValidAndInvalidValuesDoNotCauseExcessiveBacktracking(ConfigEntry entry) {
     String domain = "b.".repeat(50_000);
     String local = "a".repeat(100_000);
+
     assertTimeout(
         Duration.ofSeconds(3),
         () -> {
@@ -139,16 +141,19 @@ class AdminEmailConfigurationValidationTest {
         (Map<?, ?>) ReflectionTestUtils.getField(configurationSection, "configInputs");
     EmailField field = (EmailField) inputs.get(entry);
     String domain = "b.".repeat(50_000);
+
     assertTimeout(
         Duration.ofSeconds(3),
         () -> {
           field.setValue("a@" + domain + "test");
+
           assertFalse(
               field
                   .getDefaultValidator()
                   .apply(field.getValue(), new ValueContext(field))
                   .isError());
           field.setValue("a@" + domain + " x");
+
           assertTrue(
               field
                   .getDefaultValidator()

@@ -38,7 +38,7 @@ class BrowserHttpsTest {
   @EnabledOnOs(OS.WINDOWS)
   void actualTrustHelperCleansFailedImportsWithoutTouchingForeignEntries(
       String scenario, boolean rootOnly) throws Exception {
-    Process process =
+    Process testProcess =
         new ProcessBuilder(
                 "powershell.exe",
                 "-NoProfile",
@@ -58,12 +58,14 @@ class BrowserHttpsTest {
             .redirectErrorStream(true)
             .start();
     try {
-      assertTrue(process.waitFor(20, TimeUnit.SECONDS));
-      String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-      assertEquals(0, process.exitValue(), output);
+      assertTrue(testProcess.waitFor(20, TimeUnit.SECONDS));
+      String output =
+          new String(testProcess.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+
+      assertEquals(0, testProcess.exitValue(), output);
       assertTrue(output.contains("cleanup verified"), output);
     } finally {
-      BrowserHttps.stopBeforeTrustCleanup(process);
+      BrowserHttps.stopBeforeTrustCleanup(testProcess);
     }
   }
 
@@ -83,14 +85,15 @@ class BrowserHttpsTest {
         Write-Output ([bool]$RootOnly)
         Write-Output $env:PSExecutionPolicyPreference
         """);
-    ProcessBuilder builder =
+    ProcessBuilder processBuilder =
         new ProcessBuilder(BrowserHttps.trustCommand(repo, certificates, "Add"))
             .redirectErrorStream(true);
-    builder.environment().put("PSExecutionPolicyPreference", "Restricted");
-    Process command = builder.start();
+    processBuilder.environment().put("PSExecutionPolicyPreference", "Restricted");
+    Process command = processBuilder.start();
     try {
       assertTrue(command.waitFor(10, TimeUnit.SECONDS));
       String output = new String(command.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+
       assertEquals(0, command.exitValue(), output);
       assertEquals(
           List.of("Add", certificates.resolve("root.crt").toString(), "True", "RemoteSigned"),
@@ -103,8 +106,10 @@ class BrowserHttpsTest {
   @Test
   void cleanupRequiresTheExactOwnershipMarkerRatherThanOnlyACertificate() throws Exception {
     Files.writeString(directory.resolve("root.crt"), "not a trust marker");
+
     assertFalse(BrowserHttps.ownsTrust(directory));
     Files.writeString(directory.resolve("root.crt.owned"), "owned");
+
     assertTrue(BrowserHttps.ownsTrust(directory));
   }
 
@@ -121,6 +126,7 @@ class BrowserHttpsTest {
       assertEquals("ready", waiting.inputReader().readLine());
       assertTrue(waiting.isAlive());
       BrowserHttps.stopBeforeTrustCleanup(waiting);
+
       assertFalse(waiting.isAlive());
       BrowserHttps.stopBeforeTrustCleanup(waiting);
       BrowserHttps.stopBeforeTrustCleanup(null);
@@ -139,6 +145,7 @@ class BrowserHttpsTest {
           assertThrows(
               IOException.class,
               () -> BrowserHttps.awaitTrustCommand(failed, Duration.ofSeconds(10)));
+
       assertTrue(error.getMessage().contains(String.valueOf(exitCode)));
       assertFalse(failed.isAlive());
     } finally {
@@ -155,6 +162,7 @@ class BrowserHttpsTest {
           assertThrows(
               IOException.class,
               () -> BrowserHttps.awaitTrustCommand(waiting, Duration.ofMillis(50)));
+
       assertTrue(error.getMessage().contains("timed out"));
       assertFalse(waiting.isAlive());
     } finally {
@@ -168,8 +176,10 @@ class BrowserHttpsTest {
     ProcessHandle importer = null;
     try {
       importer = ProcessHandle.of(Long.parseLong(worker.inputReader().readLine())).orElseThrow();
+
       assertTrue(importer.isAlive());
       BrowserParallelWorkers.stopWorker(worker);
+
       assertFalse(worker.isAlive());
       assertFalse(importer.isAlive());
     } finally {
@@ -222,6 +232,7 @@ class BrowserHttpsTest {
   @Test
   void readinessRejectsHttpBeforeAnyConnectionOrCertificateRead() {
     Path absentCertificate = directory.resolve("absent.crt");
+
     assertThrows(
         IllegalArgumentException.class,
         () -> BrowserHttps.awaitReady("http://127.0.0.1:18081", absentCertificate));

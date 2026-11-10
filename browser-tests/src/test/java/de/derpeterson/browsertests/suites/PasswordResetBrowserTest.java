@@ -40,11 +40,11 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       """)
   void anonymousResetMailsFollowCurrentSessionLanguage() {
     String email = activateAccount();
-    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
-    request.open();
-    request.enterEmail(email);
-    request.submit();
-    request.requestedResponse();
+    ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserPage);
+    forgotPasswordPage.open();
+    forgotPasswordPage.enterEmail(email);
+    forgotPasswordPage.submit();
+    forgotPasswordPage.requestedResponse();
     MailpitInbox firstInbox = new MailpitInbox(browserContext);
     MailpitInbox.CapturedMail first = firstInbox.awaitPasswordResetMail(email);
     try (Page oldMail = browserContext.newPage()) {
@@ -80,6 +80,7 @@ public class PasswordResetBrowserTest extends BrowserFixture {
             original, newMail.locator("body").innerText());
       }
       oldMail.reload();
+
       assertEquals(original, oldMail.locator("body").innerText());
     } finally {
       browserPage.navigate(path(HOME_ROUTE));
@@ -133,17 +134,17 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       """)
   void requestEmailCanBeCorrected() {
     String email = activateAccount();
-    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
-    request.open();
-    request.submit();
-    request.assertRequiredError();
-    request.enterEmail("not-an-email");
-    request.submit();
-    request.assertEmailError();
+    ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserPage);
+    forgotPasswordPage.open();
+    forgotPasswordPage.submit();
+    forgotPasswordPage.assertRequiredError();
+    forgotPasswordPage.enterEmail("not-an-email");
+    forgotPasswordPage.submit();
+    forgotPasswordPage.assertEmailError();
     AllurePlaywright.attachScreenshot("Ungültige Reset-Anfrage", browserPage);
-    request.enterEmail(email);
-    request.submit();
-    request.requestedResponse();
+    forgotPasswordPage.enterEmail(email);
+    forgotPasswordPage.submit();
+    forgotPasswordPage.requestedResponse();
     new MailpitInbox(browserContext).awaitPasswordResetMail(email);
   }
 
@@ -197,17 +198,18 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       """)
   void unknownEmailHasTheSameVisibleResponse() {
     String email = activateAccount();
-    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
-    request.open();
-    request.enterEmail(email);
-    request.submit();
-    String knownResponse = request.requestedResponse();
+    ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserPage);
+    forgotPasswordPage.open();
+    forgotPasswordPage.enterEmail(email);
+    forgotPasswordPage.submit();
+    String knownResponse = forgotPasswordPage.requestedResponse();
     new MailpitInbox(browserContext).awaitPasswordResetMail(email);
-    request.dismissRequestedNotice();
-    request.open();
-    request.enterEmail("unknown-reset-" + UUID.randomUUID() + "@example.test");
-    request.submit();
-    assertEquals(knownResponse, request.requestedResponse());
+    forgotPasswordPage.dismissRequestedNotice();
+    forgotPasswordPage.open();
+    forgotPasswordPage.enterEmail("unknown-reset-" + UUID.randomUUID() + "@example.test");
+    forgotPasswordPage.submit();
+
+    assertEquals(knownResponse, forgotPasswordPage.requestedResponse());
   }
 
   @Test
@@ -229,6 +231,7 @@ public class PasswordResetBrowserTest extends BrowserFixture {
     new ResetPasswordPage(browserPage).assertInvalid();
     AllurePlaywright.attachScreenshot("Ungültiger Reset-Link", browserPage);
     browserPage.navigate(path(RESET_PASSWORD_ROUTE));
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     assertThat(browserPage).hasTitle(HOME_PAGE_TITLE);
     assertThat(
@@ -273,11 +276,11 @@ public class PasswordResetBrowserTest extends BrowserFixture {
   }
 
   private ResetPasswordPage openResetForm(String email) {
-    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
-    request.open();
-    request.enterEmail(email);
-    request.submit();
-    request.requestedResponse();
+    ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserPage);
+    forgotPasswordPage.open();
+    forgotPasswordPage.enterEmail(email);
+    forgotPasswordPage.submit();
+    forgotPasswordPage.requestedResponse();
     MailpitInbox inbox = new MailpitInbox(browserContext);
     browserPage = inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email));
     return new ResetPasswordPage(browserPage);
@@ -287,6 +290,7 @@ public class PasswordResetBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(email, BrowserTestAccounts.RESET_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
     new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);

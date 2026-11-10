@@ -19,6 +19,7 @@ public final class AdminMailPage {
   @Step("Mailtest über das Adminmenü öffnen")
   public void open() {
     new AdminNavigation(browserPage, uiTexts).openSection(uiTexts.getAdminMailTitle());
+
     assertThat(input(uiTexts.getAdminMailRecipient())).isVisible();
   }
 
@@ -43,12 +44,14 @@ public final class AdminMailPage {
   }
 
   public void notice(String message) {
-    Locator notice =
+    Locator notificationCardLocator =
         browserPage
             .locator("vaadin-notification-card:not([closing])")
             .filter(new Locator.FilterOptions().setHasText(message));
-    assertThat(notice).isVisible();
-    notice.getByRole(AriaRole.BUTTON).click();
-    assertThat(notice).not().isVisible();
+
+    assertThat(notificationCardLocator).isVisible();
+    notificationCardLocator.getByRole(AriaRole.BUTTON).click();
+
+    assertThat(notificationCardLocator).not().isVisible();
   }
 }

@@ -29,6 +29,7 @@ class TotpTest {
   @Test
   void acceptsOnlyTheTightTimeWindowAndRejectsReplay() {
     Instant now = Instant.ofEpochSecond(3000);
+
     assertEquals(99, Totp.verify(secret, Totp.code(secret, 99), now, -1));
     assertEquals(100, Totp.verify(secret, Totp.code(secret, 100), now, -1));
     assertEquals(101, Totp.verify(secret, Totp.code(secret, 101), now, -1));

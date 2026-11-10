@@ -27,18 +27,19 @@ class ThreadPoolConfigTest {
   @ParameterizedTest
   @ValueSource(ints = {0, -1})
   void invalidWorkerCountsAreRejectedBeforeAnyThreadStarts(int count) {
-    ConfigService config = mock(ConfigService.class);
-    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(count);
-    ThreadPoolConfig threadPoolConfig = new ThreadPoolConfig(config);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(count);
+    ThreadPoolConfig threadPoolConfig = new ThreadPoolConfig(configService);
+
     assertThrows(IllegalArgumentException.class, threadPoolConfig::taskExecutor);
   }
 
   @ParameterizedTest
   @ValueSource(ints = {1, 3})
   void poolUsesItsStartupSizeAndDoesNotUseTheLiveBatchCapacity(int count) throws Exception {
-    ConfigService config = mock(ConfigService.class);
-    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(count);
-    ThreadPoolExecutor executor = new ThreadPoolConfig(config).taskExecutor();
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(count);
+    ThreadPoolExecutor executor = new ThreadPoolConfig(configService).taskExecutor();
     try {
       assertEquals(count, executor.getCorePoolSize());
       assertEquals(count, executor.getMaximumPoolSize());
@@ -46,7 +47,7 @@ class ThreadPoolConfigTest {
       assertTrue(executor.submit(() -> Thread.currentThread().isDaemon()).get());
       assertTrue(
           executor.submit(() -> Thread.currentThread().getName()).get().startsWith("EmailSender-"));
-      verify(config, never()).getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY);
+      verify(configService, never()).getInteger(ConfigEntry.EMAIL_QUEUE_CAPACITY);
     } finally {
       executor.shutdownNow();
     }
@@ -56,9 +57,9 @@ class ThreadPoolConfigTest {
   void workerThreadsDoNotInheritCallerContext() throws Exception {
     InheritableThreadLocal<String> inherited = new InheritableThreadLocal<String>();
     inherited.set("fixture-caller-context");
-    ConfigService config = mock(ConfigService.class);
-    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(1);
-    ThreadPoolExecutor executor = new ThreadPoolConfig(config).taskExecutor();
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(1);
+    ThreadPoolExecutor executor = new ThreadPoolConfig(configService).taskExecutor();
     try {
       assertNull(executor.submit(inherited::get).get());
     } finally {
@@ -69,13 +70,13 @@ class ThreadPoolConfigTest {
 
   @Test
   void nextBatchUsesTheSavedWorkerCount() {
-    ConfigService config = mock(ConfigService.class);
-    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(1);
-    ThreadPoolExecutor initial = new ThreadPoolConfig(config).taskExecutor();
-    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(initial, config);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(1);
+    ThreadPoolExecutor initial = new ThreadPoolConfig(configService).taskExecutor();
+    EmailQueueWorkerPool pool = new EmailQueueWorkerPool(initial, configService);
     try {
       pool.dispatchEmailBatch(List.of(1L), ignored -> {});
-      when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(2);
+      when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(2);
       CountDownLatch started = new CountDownLatch(2);
       AtomicInteger concurrentlyStarted = new AtomicInteger();
       pool.dispatchEmailBatch(
@@ -90,6 +91,7 @@ class ThreadPoolConfigTest {
               Thread.currentThread().interrupt();
             }
           });
+
       assertTrue(initial.isShutdown());
       assertEquals(2, concurrentlyStarted.get());
     } finally {
@@ -99,12 +101,12 @@ class ThreadPoolConfigTest {
 
   @Test
   void springInjectsTheNamedExecutorAndClosesItWithTheWorkerComponent() {
-    ConfigService config = mock(ConfigService.class);
-    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(2);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(2);
     AtomicReference<String> thread = new AtomicReference<String>();
     java.util.concurrent.ThreadPoolExecutor executor;
     try (AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext()) {
-      context.registerBean(ConfigService.class, () -> config);
+      context.registerBean(ConfigService.class, () -> configService);
       context.register(ThreadPoolConfig.class, EmailQueueWorkerPool.class);
       context.refresh();
       executor =
@@ -112,6 +114,7 @@ class ThreadPoolConfigTest {
       context
           .getBean(EmailQueueWorkerPool.class)
           .dispatchEmailBatch(List.of(1L), id -> thread.set(Thread.currentThread().getName()));
+
       assertTrue(thread.get().startsWith("EmailSender-"));
     }
     assertTrue(executor.isTerminated());

@@ -43,7 +43,7 @@ class CsrfAdmissionTest {
   @ValueSource(strings = {"http", "remember", "flow"})
   void explicitLoginRotatesAfterAdmissionButContextPersistenceKeepsTokenAndId(String path) {
     AtomicInteger fixation = new AtomicInteger();
-    MockHttpServletRequest request =
+    MockHttpServletRequest mockHttpRequest =
         new MockHttpServletRequest() {
           @Override
           public String changeSessionId() {
@@ -51,32 +51,34 @@ class CsrfAdmissionTest {
             return super.changeSessionId();
           }
         };
-    CsrfToken before = csrf.generateToken(request);
-    csrf.saveToken(before, request, mockHttpResponse);
-    String oldId = request.getSession().getId();
-    request.setRequestedSessionId(oldId);
+    CsrfToken before = csrf.generateToken(mockHttpRequest);
+    csrf.saveToken(before, mockHttpRequest, mockHttpResponse);
+    String oldId = mockHttpRequest.getSession().getId();
+    mockHttpRequest.setRequestedSessionId(oldId);
     Authentication authentication = authentication(path.equals("remember"));
     if (path.equals("flow")) {
       sessionAdmissionService.completeLogin(
           authentication,
-          request,
+          mockHttpRequest,
           mockHttpResponse,
           () -> {
             assertEquals(1, sessionRegistry.getAllSessions(authentication.getName(), false).size());
-            assertNotEquals(before.getToken(), currentToken(request));
+            assertNotEquals(before.getToken(), currentToken(mockHttpRequest));
           });
     } else {
-      sessionAdmissionService.onAuthentication(authentication, request, mockHttpResponse);
+      sessionAdmissionService.onAuthentication(authentication, mockHttpRequest, mockHttpResponse);
     }
-    String current = currentToken(request);
+    String current = currentToken(mockHttpRequest);
+
     assertNotEquals(before.getToken(), current);
-    assertNotEquals(oldId, request.getSession().getId());
+    assertNotEquals(oldId, mockHttpRequest.getSession().getId());
     assertEquals(1, fixation.get());
-    String admittedId = request.getSession().getId();
+    String admittedId = mockHttpRequest.getSession().getId();
     MockHttpServletRequest next = new MockHttpServletRequest();
-    next.setSession(request.getSession());
+    next.setSession(mockHttpRequest.getSession());
     next.setRequestedSessionId(admittedId);
     sessionAdmissionService.complete(authentication, next, mockHttpResponse, () -> {});
+
     assertEquals(current, csrf.loadToken(next).getToken());
     assertEquals(admittedId, next.getSession().getId());
     assertEquals(1, sessionRegistry.getAllSessions(authentication.getName(), true).size());
@@ -93,6 +95,7 @@ class CsrfAdmissionTest {
     MockHttpServletRequest failing = new MockHttpServletRequest();
     csrf.saveToken(csrf.generateToken(failing), failing, mockHttpResponse);
     MockHttpSession attempted = (MockHttpSession) failing.getSession();
+
     assertThrows(
         IllegalStateException.class,
         () ->
@@ -120,6 +123,7 @@ class CsrfAdmissionTest {
     CsrfToken before = csrf.generateToken(rejected);
     csrf.saveToken(before, rejected, mockHttpResponse);
     AtomicInteger published = new AtomicInteger();
+
     assertThrows(
         SessionLimitException.class,
         () ->
@@ -130,11 +134,12 @@ class CsrfAdmissionTest {
     assertEquals(1, sessionRegistry.getAllSessions(authentication.getName(), false).size());
   }
 
-  private String currentToken(MockHttpServletRequest request) {
-    CsrfToken masked = (CsrfToken) request.getAttribute(CsrfToken.class.getName());
+  private String currentToken(MockHttpServletRequest mockHttpRequest) {
+    CsrfToken masked = (CsrfToken) mockHttpRequest.getAttribute(CsrfToken.class.getName());
+
     assertNotNull(masked);
     masked.getToken();
-    return csrf.loadToken(request).getToken();
+    return csrf.loadToken(mockHttpRequest).getToken();
   }
 
   private Authentication authentication(boolean remember) {

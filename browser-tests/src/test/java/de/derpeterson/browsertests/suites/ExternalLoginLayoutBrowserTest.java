@@ -51,8 +51,10 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     account.open();
     for (String section : List.of("sessions", "profile")) {
       account.section("account-tab-" + section);
+
       assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=" + section + "$"));
       browserPage.reload();
+
       assertThat(account.host("account-panel-" + section)).isVisible();
     }
 
@@ -60,6 +62,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     for (String tab : List.of("providers", "portal")) {
       Locator tabItem = account.host("account-security-tab-" + tab);
       tabItem.click();
+
       assertThat(browserPage)
           .hasURL(
               Pattern.compile(
@@ -69,10 +72,12 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
                       + tab
                       + "&section=security)$"));
       browserPage.reload();
+
       assertThat(tabItem).hasAttribute("selected", "");
       assertThat(account.host("account-security-" + tab)).isVisible();
     }
     browserPage.navigate("/account?tab=providers&section=security");
+
     assertThat(account.host("account-security-providers")).isVisible();
   }
 
@@ -88,9 +93,11 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     new UserMenu(browserPage).selectTestLanguage();
     browserPage.navigate("/account?section=security&tab=portal");
     Locator securityTabs = browserPage.locator("#account-security-tabs");
+
     assertThat(securityTabs.getByRole(AriaRole.TAB)).hasCount(2);
     Locator portalTab = browserPage.locator("#account-security-tab-portal");
     Locator providersTab = browserPage.locator("#account-security-tab-providers");
+
     assertThat(portalTab).hasText(uiTexts.getAccountSecurityPortalAccess());
     assertThat(providersTab).hasText(uiTexts.getProviderSettingsPanelTitle());
     assertThat(portalTab).hasAttribute("selected", "");
@@ -118,8 +125,10 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     attachPanels("Kontosicherheit: Portalzugang bei " + width + " px");
     portalTab.focus();
     portalTab.press("End");
+
     assertThat(providersTab).isFocused();
     providersTab.press("Space");
+
     assertThat(providersTab).hasAttribute("selected", "");
     assertThat(browserPage.locator("#account-security-portal .account-security-hint")).isHidden();
     assertThat(browserPage.locator("#account-password-edit-security")).isHidden();
@@ -133,8 +142,10 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
 
     browserPage.locator("#external-connect-google").click();
     browserPage.locator("#external-proof-help").click();
+
     assertThat(browserPage.locator("#account-support")).isVisible();
     browserPage.locator("#support-back").click();
+
     assertThat(browserPage.locator("#account-security-portal")).isVisible();
     assertThat(dialog.locator("vaadin-dialog-overlay")).isHidden();
 
@@ -148,6 +159,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     browserPage.locator("#account-security-tab-providers").click();
     browserPage.locator("#external-connect-google").click();
     Locator otpInput = browserPage.locator("#external-confirm-factor input");
+
     assertThat(otpInput).isFocused();
     String code = TwoFactorPage.totp(browserPage, BrowserTestAccounts.ADMIN_EMAIL);
     if (width == 390) {
@@ -162,32 +174,39 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
 
   private void assertProviderConfirmationDialog(Locator dialog, int width) {
     Locator content = dialog.locator("vaadin-dialog-overlay [part=content]");
+
     assertThat(content).hasCSS("background-color", "rgb(5, 8, 17)");
     Locator appCode = browserPage.locator("fc-otp-field#external-confirm-factor");
+
     assertThat(appCode.locator("[part=slot]")).hasCount(6);
     assertThat(appCode.locator("[part=slot]").first())
         .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
     assertThat(appCode.locator("input[slot=input]")).isFocused();
     Locator recoveryTab = browserPage.locator("#external-proof-recovery-code-tab");
     UiActions.complete(browserPage, recoveryTab::click);
+
     assertThat(browserPage.locator("#external-confirm-recovery-code")).isVisible();
     assertThat(browserPage.locator("#external-confirm-recovery-code input"))
         .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
     assertThat(appCode).isHidden();
     UiActions.complete(browserPage, browserPage.locator("#external-proof-app-code-tab")::click);
+
     assertThat(appCode).isVisible();
     assertThat(dialog.locator(".account-change-dialog-header .cosmos-panel-icon img"))
         .hasAttribute("src", "icons/external-login/google.png");
     assertDynamicTextWidths(dialog.locator(".cosmos-dialog-actions"));
     attachPanels("Kontosicherheit: stabiler Bestätigungsdialog bei " + width + " px");
     BoundingBox bounds = dialog.locator("vaadin-dialog-overlay > [part~=overlay]").boundingBox();
+
     assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= width);
     browserPage.keyboard().press("Escape");
+
     assertThat(dialog).hasJSProperty("opened", false);
   }
 
   private void assertAccountProviderRows(Locator portalTab, Locator providersTab) {
     Locator connectionBadge = browserPage.locator(".external-connection-row vaadin-badge").first();
+
     assertThat(connectionBadge).hasCSS("border-radius", "4px");
     assertThat(connectionBadge).hasCSS("border-top-width", "1px");
     assertThat(connectionBadge).hasCSS("font-size", "10px");
@@ -201,6 +220,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     Locator microsoft = browserPage.locator("#external-connect-microsoft");
     browserPage.waitForCondition(
         () -> Math.abs(google.boundingBox().width - microsoft.boundingBox().width) < 1);
+
     assertTrue(
         microsoft.boundingBox().width > 110,
         "Anbieteraktionen erhalten ihre eigene natürliche Breite statt der Änderungsbreite");
@@ -216,6 +236,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     Locator microsoftRow = microsoft.locator("xpath=..");
     microsoftRow.evaluate("row => row.style.display = 'none'");
     browserPage.waitForCondition(() -> google.boundingBox().width < bothWidth - 1);
+
     assertTrue(
         (Boolean)
             google
@@ -224,6 +245,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     microsoftRow.evaluate("row => row.style.removeProperty('display')");
     browserPage.waitForCondition(
         () -> Math.abs(google.boundingBox().width - microsoft.boundingBox().width) < 1);
+
     assertTrue(
         (Boolean) browserPage.evaluate("document.documentElement.scrollWidth <= innerWidth"));
   }
@@ -250,6 +272,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     browserPage.waitForCondition(() ->
         Math.abs(buttons.nth(0).boundingBox().width - buttons.nth(1).boundingBox().width) < 1);
     double original = buttons.nth(0).boundingBox().width;
+
     assertTrue(original < 200, "Textbuttons erhalten keine feste 200-px-Breite");
     group.evaluate(
         """
@@ -265,6 +288,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
           root.append(extra, icon);
         }
         """);
+
     assertEquals(original, buttons.nth(0).boundingBox().width, 1);
     assertEquals(32, group.locator("[data-width-probe=icon]").boundingBox().width, 1);
     Locator extra = group.locator("[data-width-probe=text]");
@@ -272,6 +296,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     browserPage.waitForCondition(() -> buttons.nth(0).boundingBox().width > original + 20);
     extra.evaluate("button => button.style.display = 'none'");
     browserPage.waitForCondition(() -> Math.abs(buttons.nth(0).boundingBox().width - original) < 1);
+
     assertEquals(32, group.locator("[data-width-probe=icon]").boundingBox().width, 1);
     group
         .locator("[data-width-probe]")
@@ -298,12 +323,14 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     browserPage.locator("#provider-tab-google").click();
     Locator google = browserPage.locator("#provider-google-content");
     Locator microsoft = browserPage.locator("#provider-microsoft-content");
+
     assertThat(google).isVisible();
     assertThat(microsoft).isHidden();
     attachPanels("Anmeldeanbieter: Google-Tab bei " + width + " px");
     Locator clientId = browserPage.locator("#provider-google-client-id input");
     clientId.fill("unsaved-google-example");
     browserPage.locator("#provider-tab-microsoft").click();
+
     assertThat(google).isHidden();
     assertThat(microsoft).isVisible();
     assertThat(browserPage.locator("#provider-tab-microsoft"))
@@ -312,8 +339,10 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     Locator microsoftId = browserPage.locator("#provider-microsoft-client-id input");
     microsoftId.fill("unsaved-microsoft-example");
     browserPage.locator("#provider-tab-google").click();
+
     assertThat(clientId).hasValue("unsaved-google-example");
     browserPage.locator("#provider-tab-microsoft").click();
+
     assertThat(microsoftId).hasValue("unsaved-microsoft-example");
     assertTrue(
         (Boolean)
@@ -327,23 +356,27 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
 
     browserPage.navigate("/admin?section=mail_test");
     Locator smtp = browserPage.locator("a.admin-smtp-link");
+
     assertThat(smtp).hasText(uiTexts.getAdminConfigGroupSmtp());
     assertLinkAlignmentAndStableHover(smtp);
     attachPanels("SMTP-Direktzugang Vaadin bei " + width + " px");
     String settingsUrl =
         URI.create(browserPage.url()).resolve(smtp.getAttribute("href")).toString();
     smtp.click();
+
     assertThat(browserPage).hasURL(settingsUrl);
   }
 
   private void assertNativeProviderSetup(String provider) {
     Locator badge = browserPage.locator("#provider-" + provider + "-status");
+
     assertThat(badge).hasAttribute("data-state", "active");
     assertThat(badge).hasText(uiTexts.getProviderSettingsActive());
     assertThat(badge).hasCSS("height", "30px");
     assertThat(badge.locator("img")).hasCount(1);
     browserPage.keyboard().press("Tab");
     badge.focus();
+
     assertThat(browserPage.getByRole(AriaRole.TOOLTIP))
         .containsText(
             uiTexts.getProviderSettingsActiveHint(
@@ -351,6 +384,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     browserPage.keyboard().press("Escape");
     browserPage.locator("#provider-tab-" + provider).click();
     Locator assistant = browserPage.locator("#provider-" + provider + "-content");
+
     assertThat(assistant.locator(".provider-assistant-kicker"))
         .hasText(uiTexts.getProviderSettingsAssistantKicker());
     assertThat(assistant.locator(".provider-assistant-kicker vaadin-icon"))
@@ -368,6 +402,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     }
     assertThat(assistant.locator(".provider-field-label.admin-config-required")).hasCount(2);
     Locator consoleLink = assistant.locator("a.provider-console-link");
+
     assertThat(consoleLink).hasText(uiTexts.getProviderSettingsOpenConsole());
     assertThat(consoleLink).hasAttribute("target", "_blank");
     assertThat(consoleLink).hasAttribute("rel", "noopener noreferrer");
@@ -436,6 +471,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
             .locator("#provider-tab-google")
             .evaluate("e => getComputedStyle(e, '::before').display"));
     assertProviderTabAppearance(browserPage.locator("#provider-tab-google"));
+
     assertThat(section.locator(".provider-panel-header h2"))
         .hasText(uiTexts.getProviderSettingsPanelTitle());
     assertThat(section.locator(".provider-panel-header .cosmos-panel-description"))
@@ -480,6 +516,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
                   ];
                 }
                 """);
+
     assertTrue(
         ((Number) geometry.get(0)).doubleValue() <= 1.5,
         "Icon und sichtbarer Text stehen vertikal mittig: " + geometry);
@@ -491,6 +528,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     Locator symbol = link.locator(":scope > vaadin-icon, :scope > svg");
     String iconColor = symbol.evaluate("element => getComputedStyle(element).color").toString();
     link.hover();
+
     assertThat(link).hasCSS("background-color", "rgba(0, 0, 0, 0)");
     assertThat(link).hasCSS("color", color);
     assertThat(symbol).hasCSS("color", iconColor);
@@ -511,6 +549,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
         info.scrollIntoViewIfNeeded();
         BoundingBox inputBounds = input.boundingBox();
         BoundingBox infoBounds = info.boundingBox();
+
         assertTrue(
             Math.abs(inputBounds.y + inputBounds.height / 2 - infoBounds.y - infoBounds.height / 2)
                 < 2,
@@ -521,6 +560,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
       }
       info.click();
       Locator help = browserPage.locator("#provider-field-help");
+
       assertThat(help.locator("vaadin-dialog-overlay > [part~=overlay]")).isVisible();
       String explanation =
           switch (field) {
@@ -529,6 +569,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
             case "secret" -> uiTexts.getProviderSettingsSecretHelp(provider.equals("microsoft"));
             default -> uiTexts.getProviderSettingsEnableHelp();
           };
+
       assertThat(help.locator(".admin-help-description")).hasText(explanation);
       String timing =
           switch (field) {
@@ -546,15 +587,19 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     String originalClient = client.inputValue();
     enabled.uncheck();
     client.fill(" ");
+
     assertThat(enabled).isDisabled();
     client.fill(originalClient);
+
     assertThat(enabled).isEnabled();
     assertThat(browserPage.locator("#provider-" + provider + "-status"))
         .hasAttribute("data-state", "active");
     enabled.check();
     client.fill("");
+
     assertThat(enabled).isEnabled();
     enabled.uncheck();
+
     assertThat(enabled).isDisabled();
     client.fill(originalClient);
     enabled.check();
@@ -570,6 +615,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     new UserMenu(browserPage).selectTestLanguage();
     Locator local = browserPage.locator(".public-auth-panels > .public-panel");
     Locator external = browserPage.locator(".public-auth-panels > .external-login-panel");
+
     assertThat(local.locator(".external-login-buttons")).hasCount(0);
     assertThat(external.locator("h2")).hasText(uiTexts.getExternalPanelTitle());
     assertThat(external.locator(".external-login-hint")).hasText(uiTexts.getExternalPanelHint());
@@ -588,8 +634,10 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
             .evaluate("el => getComputedStyle(el).backgroundColor"));
     assertPlacement(local, external, width, registration);
     assertProviderButtonsFlow(external, false);
+
     assertThat(browserPage.locator(".cosmos-footer")).hasCSS("text-align", "center");
     Number contentWidth = (Number) browserPage.evaluate("document.documentElement.clientWidth");
+
     assertEquals(
         contentWidth.doubleValue(),
         browserPage.locator(".cosmos-footer").boundingBox().width,
@@ -608,16 +656,21 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
 
   private void assertRememberSwitch(Locator panel) {
     Locator remember = panel.getByRole(AriaRole.SWITCH);
+
     assertThat(remember).hasCount(1);
     assertThat(remember).not().isChecked();
     remember.check();
+
     assertThat(remember).isChecked();
     browserPage.reload();
+
     assertThat(remember).isChecked();
     remember.focus();
     remember.press("Space");
+
     assertThat(remember).not().isChecked();
     browserPage.reload();
+
     assertThat(remember).not().isChecked();
     assertTrue(
         (Boolean)
@@ -646,6 +699,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
 
   private void assertRegistrationFields(Locator panel, int width) {
     Locator names = panel.locator("vaadin-text-field, #register-firstname, #register-lastname");
+
     assertThat(names).hasCount(2);
     assertThat(panel.locator("vaadin-email-field, .vp-field input[type=email]")).hasCount(2);
     assertThat(panel.locator("vaadin-password-field, .vp-field input[type=password]")).hasCount(2);
@@ -673,6 +727,7 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
       BoundingBox label = question.boundingBox();
       BoundingBox register = link.boundingBox();
       BoundingBox button = submit.boundingBox();
+
       assertTrue(
           register.x >= label.x + label.width + 6 || register.y >= label.y + label.height - 1,
           "Formularlink steht neben oder unter dem vollständigen Kontohinweis");
@@ -698,9 +753,11 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
 
   private void assertProviderButtonsFlow(Locator external, boolean sideBySide) {
     Locator buttons = external.locator(".external-provider-button");
+
     assertThat(buttons).hasCount(2);
     BoundingBox google = buttons.nth(0).boundingBox();
     BoundingBox microsoft = buttons.nth(1).boundingBox();
+
     assertEquals(google.width, microsoft.width, 1, "Anbieterbuttons behalten gleiche Breite");
     if (sideBySide) {
       assertTrue(
@@ -726,14 +783,17 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
       assertEquals(40, button.boundingBox().height, 0.5, "Gleiche Anbieterbuttonhöhe");
       assertEquals(signIn.evaluate(typography), button.evaluate(typography));
       BoundingBox mark = button.locator("img").boundingBox();
+
       assertEquals(16, mark.width, 0.5, "Anbieterlogo entspricht der normalen Iconbreite");
       assertEquals(16, mark.height, 0.5, "Anbieterlogo entspricht der normalen Iconhöhe");
     }
     BoundingBox form = local.boundingBox();
     BoundingBox providers = external.boundingBox();
     Locator divider = local.locator("..").locator(".external-login-divider");
+
     assertThat(divider).isVisible();
     BoundingBox separator = divider.boundingBox();
+
     assertEquals(
         width >= (registration ? 1200 : 1024) ? "column" : "row",
         divider.evaluate("el => getComputedStyle(el).flexDirection"),

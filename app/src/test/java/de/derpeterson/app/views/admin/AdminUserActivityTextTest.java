@@ -17,6 +17,7 @@ class AdminUserActivityTextTest {
   @ValueSource(strings = {"de", "en"})
   void missingActivityAndTheMinuteBoundaryAreDisplayedWithoutInventingAnAge(String language) {
     MessageProperties messageProperties = texts(language);
+
     assertEquals("-", format(null, messageProperties));
     assertEquals(messageProperties.getAdminUsersActivityNow(), format(now, messageProperties));
     assertEquals(
@@ -34,6 +35,7 @@ class AdminUserActivityTextTest {
   @ValueSource(strings = {"de", "en"})
   void hourDayAndWeekBoundariesUseTheCorrespondingSingularOrPluralGetter(String language) {
     MessageProperties messageProperties = texts(language);
+
     assertEquals(
         messageProperties.getAdminUsersActivityHours(1),
         format(now.minusHours(1), messageProperties));
@@ -58,6 +60,7 @@ class AdminUserActivityTextTest {
   @ValueSource(strings = {"de", "en"})
   void monthsAndYearsFollowCalendarBoundariesInsteadOfFixedThirtyDayMonths(String language) {
     MessageProperties messageProperties = texts(language);
+
     assertEquals(
         messageProperties.getAdminUsersActivityMonths(1),
         format(now.minusMonths(1), messageProperties));
@@ -76,6 +79,7 @@ class AdminUserActivityTextTest {
   @ValueSource(strings = {"de", "en"})
   void clockChangesUseElapsedHoursAndTwentyFourHourDays(String language) {
     MessageProperties messageProperties = texts(language);
+
     assertEquals(
         messageProperties.getAdminUsersActivityHours(1),
         AdminUserActivityText.format(

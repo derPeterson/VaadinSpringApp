@@ -66,6 +66,7 @@ public final class TwoFactorPage {
     String language = UiTexts.selected().language();
     Locator button =
         browserPage.locator(".public-languages vaadin-button[lang='" + language + "']");
+
     assertThat(button).isVisible();
     // Ein erneuter Klick auf die aktive Sprache baut die 2FA-Ansicht erneut auf.
     if (!"true".equals(button.getAttribute("aria-pressed"))) {
@@ -84,6 +85,7 @@ public final class TwoFactorPage {
         UiActions.complete(browserPage, method::click);
       }
       String field = recoveryCode ? "vaadin-text-field" : "fc-otp-field";
+
       assertThat(browserPage.locator(field + "#two-factor-code")).isVisible();
     }
     browserPage.locator("#two-factor-code input").fill(value);
@@ -99,6 +101,7 @@ public final class TwoFactorPage {
     Locator details = browserPage.locator("#two-factor-login-help");
     UiActions.complete(
         browserPage, () -> browserPage.locator("#two-factor-login-help-toggle").click());
+
     assertThat(details).hasAttribute("opened", "");
   }
 
@@ -164,6 +167,7 @@ public final class TwoFactorPage {
         """);
     try {
       copy.click();
+
       assertThat(
               browserPage
                   .locator("vaadin-notification-card:not([closing])")

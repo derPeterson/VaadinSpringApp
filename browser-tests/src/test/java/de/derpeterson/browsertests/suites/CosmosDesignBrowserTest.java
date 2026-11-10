@@ -128,14 +128,15 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     activated.setViewportSize(390, 844);
     checkDesign(activated);
     AllurePlaywright.attachScreenshot("Mobile Verifikation erfolgreich", activated);
-    ForgotPasswordPage request = new ForgotPasswordPage(activated);
-    request.open();
-    request.enterEmail(email);
-    request.submit();
-    request.requestedResponse();
+    ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(activated);
+    forgotPasswordPage.open();
+    forgotPasswordPage.enterEmail(email);
+    forgotPasswordPage.submit();
+    forgotPasswordPage.requestedResponse();
     Page resetPage = inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email));
     resetPage.setViewportSize(390, 844);
     checkDesign(resetPage);
+
     assertThat(
             resetPage.getByLabel(
                 uiTexts.getResetPasswordNewPasswordField(),
@@ -151,12 +152,14 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     reset.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
     reset.submit();
     reset.assertChanged();
+
     assertThat(resetPage.locator("vaadin-notification-card:not([closing])"))
         .hasAttribute("theme", java.util.regex.Pattern.compile(".*\\bcosmos\\b.*"));
     AllurePlaywright.attachScreenshot("Mobiler Passwortreset erfolgreich", resetPage);
     LoginPage login = new LoginPage(resetPage);
     login.open();
     login.signIn(email, BrowserTestAccounts.RESET_PASSWORD);
+
     assertThat(resetPage).hasURL(urlPattern(HOME_ROUTE));
   }
 
@@ -174,20 +177,23 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       """)
   void copyrightCanBeConfiguredThroughTheUi() {
     String homePrimary = primary(browserPage, "html");
-    ConfigurationPage config = adminConfig();
+    ConfigurationPage configurationPage = adminConfig();
+
     assertEquals(homePrimary, primary(browserPage, "html"));
     assertThat(browserPage.locator(".cosmos-app-shell.cosmos-theme")).isVisible();
     assertEquals("#38bdf8", primary(browserPage, ".cosmos-page-frame"));
     String label = uiTexts.getAdminConfigEntryCopyrightText();
-    String original = config.value(label);
+    String original = configurationPage.value(label);
     String template = "© {year} {serviceName} · <b>Browser-Test</b>";
     try {
-      config.enter(label, template);
-      config.save();
-      config.reload();
-      assertEquals(template, config.value(label));
+      configurationPage.enter(label, template);
+      configurationPage.save();
+      configurationPage.reload();
+
+      assertEquals(template, configurationPage.value(label));
       new UserMenu(browserPage).signOut();
       Locator footer = browserPage.locator(".cosmos-footer");
+
       assertThat(footer).containsText("VaadinSpringApp (Browser-Test) · <b>Browser-Test</b>");
       assertFalse(footer.innerText().contains("{year}"));
       assertThat(footer.locator("b")).hasCount(0);
@@ -201,11 +207,11 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       registration.assertSubmitted(email);
       MailpitInbox inbox = new MailpitInbox(browserContext, expectedFooter);
       Page activated = inbox.openVerificationLink(inbox.awaitVerificationMail(email));
-      ForgotPasswordPage request = new ForgotPasswordPage(activated);
-      request.open();
-      request.enterEmail(email);
-      request.submit();
-      request.requestedResponse();
+      ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(activated);
+      forgotPasswordPage.open();
+      forgotPasswordPage.enterEmail(email);
+      forgotPasswordPage.submit();
+      forgotPasswordPage.requestedResponse();
       inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email));
     } finally {
       ConfigurationPage restore = adminConfig();
@@ -230,16 +236,19 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     browserPage.setViewportSize(320, 568);
     LoginPage login = new LoginPage(browserPage);
     login.open();
+
     assertEquals("#38bdf8", primary(browserPage, ".cosmos-page-frame"));
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, "DefinitelyWrong1!");
     login.assertRejected();
     Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
+
     assertThat(notice).hasAttribute("theme", java.util.regex.Pattern.compile(".*\\bcosmos\\b.*"));
     String cardBackground =
         browserPage
             .locator(".public-panel")
             .evaluate("el => getComputedStyle(el).backgroundImage")
             .toString();
+
     assertEquals(
         cardBackground,
         notice.evaluate(
@@ -248,6 +257,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Schmale Cosmos-Fehlermeldung", browserPage);
     notice.getByRole(AriaRole.BUTTON).click();
     browserPage.navigate(path(HOME_ROUTE));
+
     assertThat(browserPage).hasTitle(HOME_PAGE_TITLE);
     assertEquals(homePrimary, primary(browserPage, "html"));
     assertThat(browserPage.locator(".cosmos-page-frame.cosmos-reference-public")).isVisible();
@@ -277,25 +287,29 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     browserPage.setViewportSize(width, height);
     browserPage.navigate(path(HOME_ROUTE));
     assertAppShell();
+
     assertThat(browserPage.locator(".public-navigation")).isVisible();
     assertThat(browserPage.locator(".public-languages vaadin-button")).hasCount(2);
     assertThat(browserPage.locator(".cosmos-topbar-account-menu")).hasCount(0);
     AllurePlaywright.attachScreenshot(id + " Öffentliche Startseite", browserPage);
-    UserMenu menu = new UserMenu(browserPage);
+    UserMenu userMenu = new UserMenu(browserPage);
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
-    menu.selectTestLanguage();
+    userMenu.selectTestLanguage();
     assertAppShell();
-    menu.open();
+    userMenu.open();
     Locator popup = browserPage.locator("vaadin-popover-overlay[opened] > [part~='overlay']");
+
     assertThat(popup).isVisible();
     assertWithinViewport(popup);
     AllurePlaywright.attachScreenshot(id + " Admin mit Avatar-Popup", browserPage);
-    menu.close();
+    userMenu.close();
     openDrawerIfNeeded();
     Locator drawer = browserPage.locator("#admin-sidebar");
+
     assertThat(drawer).isVisible();
     assertWithinViewport(drawer);
     new AdminNavigation(browserPage).openSection(uiTexts.getAdminNavDashboard());
@@ -310,6 +324,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
                       .locator(".cosmos-admin-sections")
                       .evaluate("el => el.getBoundingClientRect().left"))
               .doubleValue();
+
       assertTrue(left >= right - 1, "Desktopinhalt muss neben der Navigation beginnen.");
     }
     AllurePlaywright.attachScreenshot(id + " Adminnavigation", browserPage);
@@ -326,6 +341,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     Locator dialog =
         browserPage.locator(
             "vaadin-dialog.admin-user-dialog vaadin-dialog-overlay[opened] > [part~='overlay']");
+
     assertThat(dialog).isVisible();
     assertWithinViewport(dialog);
     for (Locator field :
@@ -359,6 +375,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       new de.derpeterson.browsertests.pages.AccountPage(browserPage)
           .section("account-tab-" + section);
       Locator panel = browserPage.locator("#account-panel-" + section);
+
       assertThat(panel).isVisible();
       if (section.equals("profile")) {
         assertThat(browserPage.locator("#account-save")).isVisible();
@@ -401,8 +418,10 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     if (width == 390) {
       Locator toggle = browserPage.locator("#account-navigation-toggle");
       toggle.click();
+
       assertThat(toggle).hasAttribute("aria-expanded", "true");
       browserPage.keyboard().press("Escape");
+
       assertThat(toggle).hasAttribute("aria-expanded", "false");
       assertThat(toggle).isFocused();
     }
@@ -411,6 +430,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     double headingTop = heading.boundingBox().y;
     browserPage.mouse().wheel(0, 600);
     browserContext.waitForCondition(() -> heading.boundingBox().y < headingTop - 20);
+
     assertEquals(0, header.boundingBox().y, 1);
     assertTrue(
         heading.boundingBox().y < headingTop - 20,
@@ -425,9 +445,11 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     settings.info(uiTexts.getAdminConfigEntryMailHost()).click();
     Locator overlay =
         browserPage.locator("#admin-config-help vaadin-dialog-overlay > [part~='overlay']");
+
     assertThat(overlay).isVisible();
     assertDrawerAtContentEdge(overlay, width);
     com.microsoft.playwright.options.BoundingBox bounds = overlay.boundingBox();
+
     assertTrue(bounds.y >= header.boundingBox().height - 1);
     com.microsoft.playwright.options.BoundingBox footer =
         browserPage.locator(".cosmos-footer").boundingBox();
@@ -442,6 +464,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     users.openFilters();
     Locator filter =
         browserPage.locator("#admin-user-filter-panel vaadin-dialog-overlay > [part~='overlay']");
+
     assertThat(filter).isVisible();
     assertDrawerAtContentEdge(filter, width);
     if (width == 2560) {
@@ -466,6 +489,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
                   .doubleValue();
       return drawer != null && Math.abs(drawer.x + drawer.width - right) < 2;
     });
+
     assertTrue(overlay.boundingBox().x >= 0, "Die Seitenleiste bleibt im sichtbaren Bereich");
   }
 
@@ -473,6 +497,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     assertThat(hint).isVisible();
     assertThat(hint).hasCSS("align-items", "center");
     Locator icon = hint.locator(":scope > vaadin-icon");
+
     assertThat(icon).hasCount(1);
     assertEquals(
         hint.boundingBox().y + hint.boundingBox().height / 2,
@@ -485,6 +510,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     assertEquals("#38bdf8", primary(browserPage, ".cosmos-page-frame"));
     if (browserPage.locator(".public-header").isVisible()) {
       assertWithinViewport(browserPage.locator(".public-header"));
+
       assertThat(browserPage.locator(".public-brand img")).isVisible();
     } else {
       assertThat(browserPage.locator(".cosmos-topbar-logo")).isVisible();
@@ -492,6 +518,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       assertWithinViewport(browserPage.locator(".cosmos-topbar-account-menu"));
     }
     assertWithinViewport(browserPage.locator(".cosmos-app-main"));
+
     assertTrue(
         (Boolean)
             browserPage.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"),
@@ -512,9 +539,9 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
-    ConfigurationPage config = new ConfigurationPage(browserPage);
-    config.open(AdminConfigGroup.GENERAL);
-    return config;
+    ConfigurationPage configurationPage = new ConfigurationPage(browserPage);
+    configurationPage.open(AdminConfigGroup.GENERAL);
+    return configurationPage;
   }
 
   private String primary(Page target, String selector) {
@@ -529,10 +556,12 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     assertThat(target.locator(".public-panel")).isVisible();
     assertThat(target.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");
     Locator logo = target.locator(".public-brand img");
+
     assertThat(logo).isVisible();
     target.waitForFunction(
         "image => image.complete && image.naturalWidth > 0", logo.elementHandle());
     assertWithinViewport(logo);
+
     assertThat(target.locator(".cosmos-frame-header")).hasCSS("position", "sticky");
     assertThat(target.locator(".cosmos-footer")).isVisible();
     for (Locator input :
@@ -541,6 +570,7 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       assertEquals("400", input.evaluate("el => getComputedStyle(el, '::placeholder').fontWeight"));
     }
     target.evaluate("() => document.fonts.ready");
+
     assertTrue((Boolean) target.evaluate("() => document.fonts.check('450 16px Inter')"));
     assertTrue(
         target

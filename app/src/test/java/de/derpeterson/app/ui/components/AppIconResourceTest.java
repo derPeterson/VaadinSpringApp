@@ -19,12 +19,15 @@ class AppIconResourceTest {
     parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
     for (AppIcon type : AppIcon.values()) {
       SvgIcon icon = type.create();
+
       assertEquals(type.getSource(), icon.getSrc());
       assertEquals("true", icon.getElement().getAttribute("aria-hidden"));
       String library = type.getSource().split("/")[1];
+
       assertTrue(icon.hasClassName("cosmos-" + library + "-icon"), type.name());
       try (InputStream stream = resource(type.getSource())) {
         Element svg = parser.newDocumentBuilder().parse(stream).getDocumentElement();
+
         assertEquals("svg", svg.getTagName(), type.name());
         switch (library) {
           case "lucide", "tabler" -> {
@@ -36,6 +39,7 @@ class AppIconResourceTest {
           case "material-symbols" -> {
             assertEquals("0 -960 960 960", svg.getAttribute("viewBox"), type.name());
             Element shape = (Element) svg.getElementsByTagName("path").item(0);
+
             assertNotNull(shape, type.name());
             assertEquals("currentColor", shape.getAttribute("fill"), type.name());
           }
@@ -49,16 +53,19 @@ class AppIconResourceTest {
   void licenseIsAvailableFromClasspath() throws Exception {
     try (InputStream stream = resource("icons/lucide/LICENSE")) {
       String license = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+
       assertTrue(license.contains("ISC"));
       assertTrue(license.contains("Lucide"));
     }
     try (InputStream stream = resource("icons/tabler/LICENSE")) {
       String license = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+
       assertTrue(license.contains("MIT License"));
       assertTrue(license.contains("Kuna"));
     }
     try (InputStream stream = resource("icons/material-symbols/LICENSE")) {
       String license = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+
       assertTrue(license.contains("Apache License"));
     }
   }
@@ -71,6 +78,7 @@ class AppIconResourceTest {
 
   private InputStream resource(String path) {
     InputStream stream = getClass().getResourceAsStream("/META-INF/resources/" + path);
+
     assertNotNull(stream, path);
     return stream;
   }

@@ -62,6 +62,7 @@ class DatabaseInitializerRolesTest {
             providers);
     initializer.initDatabase().run();
     initializer.initDatabase().run();
+
     assertEquals(Set.of(RoleType.values()), stored.keySet());
     assertSame(admin, stored.get(RoleType.ROLE_ADMIN));
     assertSame(user, stored.get(RoleType.ROLE_USER));
@@ -72,14 +73,14 @@ class DatabaseInitializerRolesTest {
 
   @Test
   void startupKeepsConfiguredValuesAndSeedsOnlyMissingKeys() throws Exception {
-    ConfigService config = mock(ConfigService.class);
-    when(config.exists(any())).thenReturn(true);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.exists(any())).thenReturn(true);
     Environment environment = mock(Environment.class);
     DatabaseInitializer initializer =
         new DatabaseInitializer(
             mock(UserRepository.class),
             mock(RoleRepository.class),
-            config,
+            configService,
             mock(PasswordEncoder.class),
             environment,
             new BootstrapAccountsProperties(),
@@ -89,13 +90,14 @@ class DatabaseInitializerRolesTest {
     initializer.initDatabase().run();
     initializer.initDatabase().run();
 
-    InOrder order = inOrder(config);
+    InOrder order = inOrder(configService);
     for (int run = 0; run < 2; run++) {
       for (ConfigEntry entry : de.derpeterson.app.model.enums.ConfigEntry.values()) {
-        order.verify(config).exists(entry);
+        order.verify(configService).exists(entry);
       }
     }
     order.verifyNoMoreInteractions();
+
     verifyNoInteractions(environment);
   }
 
@@ -125,6 +127,7 @@ class DatabaseInitializerRolesTest {
     ReflectionTestUtils.setField(initializer, "bootstrapAccountsProperties", bootstrap);
     initializer.initDatabase().run();
     ArgumentCaptor<UserEntity> created = ArgumentCaptor.forClass(UserEntity.class);
+
     verify(users).save(created.capture());
     assertEquals(
         Set.of(RoleType.ROLE_SUPERADMIN),

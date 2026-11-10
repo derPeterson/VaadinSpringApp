@@ -92,6 +92,7 @@ class EmailServiceTest {
 
   private MimeMessage sentMime(MimeMessage expected) {
     ArgumentCaptor<MimeMessage> captured = ArgumentCaptor.forClass(MimeMessage.class);
+
     verify(sender).createMimeMessage();
     verify(sender).send(captured.capture());
     verifyNoMoreInteractions(sender);
@@ -101,6 +102,7 @@ class EmailServiceTest {
 
   private SimpleMailMessage sentSimple() {
     ArgumentCaptor<SimpleMailMessage> captured = ArgumentCaptor.forClass(SimpleMailMessage.class);
+
     verify(sender).send(captured.capture());
     verifyNoMoreInteractions(sender);
     return captured.getValue();
@@ -118,9 +120,11 @@ class EmailServiceTest {
 
     MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, RECIPIENT, FROM, subject);
+
     assertFalse(message.isMimeType("multipart/*"));
     assertEquals(1, message.getHeader("Content-Type").length);
     assertHtml(message, body);
+
     verify(original, never()).addHeader(anyString(), anyString());
     if (!subject.isEmpty() && !subject.equals("Normal subject")) {
       assertTrue(message.getHeader("Subject", null).toLowerCase().contains("=?utf-8?"));
@@ -146,6 +150,7 @@ class EmailServiceTest {
     emailService.sendEmail(user("Recipient <recipient@example.com>"), "subject", "<p>body</p>");
     MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, RECIPIENT, FROM, "subject");
+
     assertEquals(
         "Recipient",
         ((InternetAddress) message.getRecipients(Message.RecipientType.TO)[0]).getPersonal());
@@ -168,6 +173,7 @@ class EmailServiceTest {
     String body = "Grüße – 密码 🔐\nFailure details\n<b>literal markup</b>";
     emailService.sendAdminEmail(RECIPIENT, subject, body);
     SimpleMailMessage message = sentSimple();
+
     assertArrayEquals(new String[] {RECIPIENT}, message.getTo());
     assertEquals(FROM, message.getFrom());
     assertEquals(subject, message.getSubject());
@@ -184,6 +190,7 @@ class EmailServiceTest {
   void adminMailRoundTripsWithTheProductionSenderAndRealSpringAdapter(String subject)
       throws Exception {
     JavaMailSenderImpl realSender = configuredSender();
+
     assertEquals("UTF-8", realSender.getDefaultEncoding());
     // Same conversion as JavaMailSenderImpl.send(SimpleMailMessage...), no transport.
     MimeMessage mime = realSender.createMimeMessage();
@@ -199,9 +206,11 @@ class EmailServiceTest {
     String body = "Ä € 日本語 😀\r\n<b>literal markup</b>";
     emailService.sendAdminEmail(RECIPIENT, subject, body);
     SimpleMailMessage simple = sentSimple();
+
     assertEquals(body, simple.getText());
     MimeMessage message = roundTrip(mime);
     assertEnvelope(message, RECIPIENT, FROM, subject);
+
     assertTrue(message.isMimeType("text/plain"));
     assertEquals("UTF-8", new ContentType(message.getContentType()).getParameter("charset"));
     assertEquals(body, message.getContent());
@@ -235,6 +244,7 @@ class EmailServiceTest {
         assertThrows(
             MailParseException.class,
             () -> emailService.sendAdminEmail(recipient2, "subject", "body"));
+
     assertInstanceOf(MessagingException.class, failure.getCause());
     sentSimple();
   }
@@ -245,6 +255,7 @@ class EmailServiceTest {
   void adminMailForwardsBodyWithoutValidationOrHtmlInterpretation(String body) {
     when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(FROM);
     emailService.sendAdminEmail(RECIPIENT, "subject", body);
+
     assertEquals(body, sentSimple().getText());
   }
 
@@ -255,6 +266,7 @@ class EmailServiceTest {
     when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(address);
     emailService.sendAdminEmail(address, null, "body");
     SimpleMailMessage message = sentSimple();
+
     assertArrayEquals(new String[] {address}, message.getTo());
     assertEquals(address, message.getFrom());
     assertNull(message.getSubject());
@@ -274,9 +286,11 @@ class EmailServiceTest {
     assertEnvelope(roundTrip(first), RECIPIENT, FROM, "first");
     assertEnvelope(roundTrip(second), "other-recipient@example.com", "other@example.com", "second");
     ArgumentCaptor<SimpleMailMessage> messages = ArgumentCaptor.forClass(SimpleMailMessage.class);
+
     verify(sender, times(2)).send(messages.capture());
     SimpleMailMessage adminFirst = messages.getAllValues().get(0);
     SimpleMailMessage adminSecond = messages.getAllValues().get(1);
+
     assertNotSame(adminFirst, adminSecond);
     assertEquals(FROM, adminFirst.getFrom());
     assertEquals("other@example.com", adminSecond.getFrom());
@@ -312,6 +326,7 @@ class EmailServiceTest {
       MimeMessage message = prepareMime();
       doThrow(failure).when(sender).send(message);
       UserEntity targetUser = user(RECIPIENT);
+
       assertSame(
           failure,
           assertThrows(
@@ -319,6 +334,7 @@ class EmailServiceTest {
       sentMime(message);
     } else {
       doThrow(failure).when(sender).send(any(SimpleMailMessage.class));
+
       assertSame(
           failure,
           assertThrows(
@@ -336,6 +352,7 @@ class EmailServiceTest {
     if (html) {
       prepareMime();
       UserEntity targetUser = user(RECIPIENT);
+
       assertSame(
           failure,
           assertThrows(
@@ -357,6 +374,7 @@ class EmailServiceTest {
     MailParseException failure = new MailParseException("controlled creation failure");
     when(sender.createMimeMessage()).thenThrow(failure);
     UserEntity targetUser = user(RECIPIENT);
+
     assertSame(
         failure,
         assertThrows(
@@ -401,6 +419,7 @@ class EmailServiceTest {
     prepareMime();
     if (address == null) {
       UserEntity targetUser = user(null);
+
       assertThrows(
           IllegalArgumentException.class,
           () -> emailService.sendEmail(targetUser, "subject", "body"));
@@ -421,6 +440,7 @@ class EmailServiceTest {
     when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn(address);
     if (address == null) {
       UserEntity targetUser = user(RECIPIENT);
+
       assertThrows(
           IllegalArgumentException.class,
           () -> emailService.sendEmail(targetUser, "subject", "body"));
@@ -440,6 +460,7 @@ class EmailServiceTest {
     prepareMime();
     Class<? extends RuntimeException> expected =
         argument.equals("user") ? NullPointerException.class : IllegalArgumentException.class;
+
     assertThrows(
         expected,
         () ->
@@ -462,11 +483,14 @@ class EmailServiceTest {
     emailService.sendEmail(user(RECIPIENT), "Logo – Ä", body);
     MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, RECIPIENT, FROM, "Logo – Ä");
+
     assertTrue(message.isMimeType("multipart/related"));
     Multipart parts = (jakarta.mail.Multipart) message.getContent();
+
     assertEquals(2, parts.getCount());
     assertHtml(parts.getBodyPart(0), body);
     BodyPart logo = parts.getBodyPart(1);
+
     assertTrue(logo.isMimeType("image/png"));
     assertEquals(Part.INLINE, logo.getDisposition());
     assertEquals("service-logo.png", logo.getFileName());
@@ -495,6 +519,7 @@ class EmailServiceTest {
                       "<img src=\"cid:"
                           + de.derpeterson.app.helper.email.EmailLogo.CONTENT_ID
                           + "\">"));
+
       assertSame(failure, thrown.getCause());
     }
     verify(sender).createMimeMessage();
@@ -509,6 +534,7 @@ class EmailServiceTest {
     String body = "<img src=\"cid:unknown-image\">";
     emailService.sendEmail(user(RECIPIENT), "subject", body);
     MimeMessage received = roundTrip(sentMime(message));
+
     assertFalse(received.isMimeType("multipart/*"));
     assertHtml(received, body);
   }
@@ -521,6 +547,7 @@ class EmailServiceTest {
     doThrow(failure).when(sender).send(message);
     UserEntity targetUser = user(RECIPIENT);
     String body2 = "<img src=\"cid:" + de.derpeterson.app.helper.email.EmailLogo.CONTENT_ID + "\">";
+
     assertSame(
         failure,
         assertThrows(
@@ -553,6 +580,7 @@ class EmailServiceTest {
   private void assertHtml(Part part, String expected) throws Exception {
     assertTrue(part.isMimeType("text/html"));
     ContentType type = new ContentType(part.getContentType());
+
     assertEquals(StandardCharsets.UTF_8.name(), type.getParameter("charset"));
     assertEquals(expected, part.getContent());
     assertNull(part.getDisposition());
@@ -568,6 +596,7 @@ class EmailServiceTest {
         "confirmed-new@example.test", "Sicherheitsmeldung", "<p>Änderung bestätigt</p>");
     MimeMessage message = roundTrip(sentMime(original));
     assertEnvelope(message, "confirmed-new@example.test", FROM, "Sicherheitsmeldung");
+
     assertEquals("<p>Änderung bestätigt</p>", message.getContent());
   }
 }

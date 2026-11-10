@@ -51,6 +51,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
       observer.login(observerEmail, BrowserTestAccounts.USER_PASSWORD);
       new UserMenu(observer.browserPage).selectTestLanguage();
       observer.browserPage.navigate("/admin");
+
       assertThat(observer.browserPage.locator("#admin-nav-support")).isVisible();
       if (observer.browserPage.locator("#admin-nav-support-activity").isVisible()) {
         clearObserverUnreadTickets(observer.browserPage);
@@ -82,6 +83,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
         for (Page view : List.of(observer.browserPage, mobile)) {
           assertThat(view.locator("#admin-nav-support-activity")).isVisible();
           view.locator("#admin-nav-support").hover();
+
           assertThat(ticketActivityTooltip(view)).hasText(uiTexts.getSupportNewActivity());
         }
         browserPage.navigate("/admin?section=support&ticket=" + number.substring(1));
@@ -90,11 +92,13 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
           assertThat(view.locator("#admin-nav-support-activity")).isHidden();
           assertThat(view.locator("#support-ticket-categories")).hasCount(0);
           Locator activityTooltip = ticketActivityTooltip(view);
+
           assertThat(activityTooltip).isHidden();
           view.mouse().move(0, 0);
           view.locator("#admin-nav-support").hover();
           // Der Mauszeiger bleibt länger als die normale Öffnungsverzögerung auf dem Link.
           view.waitForTimeout(700);
+
           assertFalse(activityTooltip.isVisible());
         }
         UiActions.complete(browserPage, () -> browserPage.locator("#support-close").click());
@@ -129,6 +133,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
       org.junit.jupiter.api.Assertions.assertTrue(
           seen.add(number), "Ticket bleibt ungelesen: " + number);
       observer.navigate(route + "&ticket=" + number.substring(1));
+
       assertThat(observer.locator("#support-ticket-panel .support-ticket-number"))
           .hasText(uiTexts.getSupportTicketNumber(number));
       assertThat(
@@ -160,6 +165,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
           .fill(BrowserTestAccounts.USER_PASSWORD);
       user.browserPage.locator("#two-factor-submit").click();
       TwoFactorPage.enrollCurrent(user.browserPage, email);
+
       assertThat(user.browserPage)
           .hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       try {
@@ -176,6 +182,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
         user.browserPage.waitForTimeout(35_000);
         String first = "Still confirmed " + UUID.randomUUID();
         send(email, first);
+
         assertThat(inbox.row(inbox.preview(), first)).isVisible();
         // Hintergrund-GETs dürfen den Nachweis nicht erneuern. Keine Benutzerinteraktion.
         user.browserPage.waitForTimeout(30_000);
@@ -183,6 +190,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
         user.browserPage.waitForTimeout(35_000);
         String denied = "Must remain hidden " + UUID.randomUUID();
         send(email, denied);
+
         assertThat(inbox.preview()).isHidden();
         // Das Schließen des nativen Popovers meldet dessen Zustand zurück. Der alte RPC wird
         // ebenfalls gesperrt und führt die ganze Ansicht unmittelbar zur erneuten Bestätigung.
@@ -195,6 +203,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
             user.browserPage, email, BrowserTestAccounts.USER_PASSWORD);
         user.browserPage.navigate("/home");
         inbox.openPreview();
+
         assertThat(inbox.row(inbox.preview(), denied)).isVisible();
       } finally {
         configureInactivity(false);
@@ -257,6 +266,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
                 .filter(new Locator.FilterOptions().setHasText(uiTexts.getTwoFactorSaved()))
                 .isVisible());
     openConfiguration();
+
     assertThat(browserPage.locator("#two-factor-inactivity-enabled"))
         .hasJSProperty("checked", enabled);
     assertThat(browserPage.locator("#two-factor-inactivity-duration vaadin-integer-field input"))
@@ -288,10 +298,12 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
                   .setName(uiTexts.getTwoFactorInactivityEnabled())
                   .setExact(true))
           .setChecked(false);
+
       assertThat(duration.locator("vaadin-integer-field input")).hasValue("12");
       assertThat(duration.locator("vaadin-select"))
           .containsText(uiTexts.getAdminConfigDurationUnitDays());
       browserPage.locator("#two-factor-reload").click();
+
       assertThat(duration.locator("vaadin-integer-field input")).hasValue("12");
       assertThat(duration.locator("vaadin-select"))
           .containsText(uiTexts.getAdminConfigDurationUnitHours());

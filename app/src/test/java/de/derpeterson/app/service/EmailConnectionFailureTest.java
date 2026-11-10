@@ -58,6 +58,7 @@ class EmailConnectionFailureTest {
         .connect(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
     MimeMessage message = sender.createMimeMessage();
     MailSendException failure = assertThrows(MailSendException.class, () -> sender.send(message));
+
     assertSame(cause, failure.getCause());
     assertSame(cause, failure.getFailedMessages().get(message));
     assertFalse(ConnectionAwareJavaMailSender.failedBeforeSending(failure, message));
@@ -74,11 +75,13 @@ class EmailConnectionFailureTest {
         .connect(nullable(String.class), anyInt(), nullable(String.class), nullable(String.class));
     MimeMessage message = sender.createMimeMessage();
     MailSendException raw = assertThrows(MailSendException.class, () -> sender.send(message));
+
     assertTrue(ConnectionAwareJavaMailSender.failedBeforeSending(raw, message));
     assertFalse(ConnectionAwareJavaMailSender.failedBeforeSending(raw, sender.createMimeMessage()));
     MimeMessage mimeMessage = sender.createMimeMessage();
     MailSendException multiple =
         assertThrows(MailSendException.class, () -> sender.send(message, mimeMessage));
+
     assertFalse(ConnectionAwareJavaMailSender.failedBeforeSending(multiple, message));
     EmailService emailService = service(sender);
     UserEntity targetUser = user();
@@ -86,6 +89,7 @@ class EmailConnectionFailureTest {
         assertThrows(
             MailPreparationException.class,
             () -> emailService.sendEmail(targetUser, "subject", "body"));
+
     assertInstanceOf(MailSendException.class, translated.getCause());
     assertSame(cause, translated.getCause().getCause().getCause());
     verify(sender.transport, never()).sendMessage(any(), any());
@@ -110,6 +114,7 @@ class EmailConnectionFailureTest {
     MailSendException failure =
         assertThrows(
             MailSendException.class, () -> emailService.sendEmail(targetUser, "subject", "body"));
+
     assertFalse(
         ConnectionAwareJavaMailSender.failedBeforeSending(failure, sender.createMimeMessage()));
     verify(sender.transport).sendMessage(any(), any());
@@ -128,14 +133,15 @@ class EmailConnectionFailureTest {
         assertThrows(
             MailAuthenticationException.class,
             () -> emailService.sendEmail(targetUser, "subject", "body"));
+
     assertSame(cause, failure.getCause());
     verify(sender.transport, never()).sendMessage(any(), any());
   }
 
   private EmailService service(Sender sender) {
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.com");
-    return new EmailService(config, sender);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(ConfigEntry.EMAIL_FROM)).thenReturn("sender@example.com");
+    return new EmailService(configService, sender);
   }
 
   private UserEntity user() {

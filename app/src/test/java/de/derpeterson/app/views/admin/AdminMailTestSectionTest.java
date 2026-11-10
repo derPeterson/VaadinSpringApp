@@ -58,16 +58,16 @@ class AdminMailTestSectionTest {
   void setup() {
     testUi = new UI();
     UI.setCurrent(testUi);
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(c -> localeReference.get());
-    VaadinService service = mock(VaadinService.class);
-    DeploymentConfiguration deployment = mock(DeploymentConfiguration.class);
-    when(deployment.getUrlSafeSchemes()).thenReturn(Set.of("http", "https"));
-    when(service.getDeploymentConfiguration()).thenReturn(deployment);
-    when(session.getService()).thenReturn(service);
-    VaadinSession.setCurrent(session);
-    testUi.getInternals().setSession(session);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(c -> localeReference.get());
+    VaadinService vaadinService = mock(VaadinService.class);
+    DeploymentConfiguration deploymentConfiguration = mock(DeploymentConfiguration.class);
+    when(deploymentConfiguration.getUrlSafeSchemes()).thenReturn(Set.of("http", "https"));
+    when(vaadinService.getDeploymentConfiguration()).thenReturn(deploymentConfiguration);
+    when(vaadinSession.getService()).thenReturn(vaadinService);
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
     configService = mock(ConfigService.class);
     emailService = mock(EmailService.class);
     messageProperties = new MessageProperties(new CustomI18NProvider());
@@ -109,6 +109,7 @@ class AdminMailTestSectionTest {
     Anchor link = field(section, "smtpLink");
     TextArea body = field(section, "testBodyField");
     Span bodyHint = field(section, "mailBodyHintSpan");
+
     assertEquals("admin?section=configuration&group=smtp", link.getHref());
     assertEquals(
         messageProperties.getAdminConfigGroupSmtp(), link.getElement().getTextRecursively());
@@ -117,6 +118,7 @@ class AdminMailTestSectionTest {
     assertEquals("true", bodyHint.getElement().getAttribute("aria-hidden"));
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     section.refreshTexts();
+
     assertEquals(
         messageProperties.getAdminConfigGroupSmtp(), link.getElement().getTextRecursively());
     assertEquals(messageProperties.getAdminMailBodyHint(), bodyHint.getText());
@@ -134,6 +136,7 @@ class AdminMailTestSectionTest {
     TextArea body = field(section, "testBodyField");
     body.setValue("Draft body");
     info.click();
+
     assertTrue(help.isOpened());
     assertTrue(
         help.getElement()
@@ -141,6 +144,7 @@ class AdminMailTestSectionTest {
             .contains(messageProperties.getAdminMailValidationBody()));
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     section.refreshTexts();
+
     assertTrue(help.isOpened());
     assertTrue(
         help.getElement()
@@ -162,9 +166,11 @@ class AdminMailTestSectionTest {
     Div badge = field(section, "deliveryStatusDiv");
     subject.setValue("Draft subject");
     body.setValue("Draft body");
+
     assertTrue(panel.isEnabled());
     assertEquals("open", badge.getElement().getAttribute("data-state"));
     com.vaadin.flow.component.shared.Tooltip statusHint = field(section, "deliveryTooltip");
+
     assertEquals(
         messageProperties.getAdminMailCardBadge()
             + ": "
@@ -175,6 +181,7 @@ class AdminMailTestSectionTest {
         ((Span) field(section, "mailDeliveryStatusSpan")).getText());
     when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     section.refreshDeliveryState();
+
     assertFalse(panel.isEnabled());
     assertEquals("true", panel.getElement().getAttribute("aria-disabled"));
     assertFalse(((EmailField) field(section, "testRecipientField")).isEnabled());
@@ -200,6 +207,7 @@ class AdminMailTestSectionTest {
     assertTrue(section.isEnabled());
     when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
     section.refreshDeliveryState();
+
     assertTrue(panel.isEnabled());
     assertTrue(send.isEnabled());
     assertEquals("false", panel.getElement().getAttribute("aria-disabled"));
@@ -212,6 +220,7 @@ class AdminMailTestSectionTest {
             + messageProperties.getMaintenanceStatusAvailable(),
         statusHint.getText());
     send.click();
+
     verify(emailService).sendAdminEmail("admin@example.test", "Draft subject", "Draft body");
   }
 
@@ -231,9 +240,11 @@ class AdminMailTestSectionTest {
   void sendingChecksFreshMaintenanceBeforeNextPoll(MaintenanceService.State state) {
     AdminMailTestSection section = section();
     Button send = field(section, "sendTestMailButton");
+
     assertTrue(send.isEnabled());
     block(state);
     send.click();
+
     assertFalse(send.isEnabled());
     assertFalse(((VerticalLayout) field(section, "mailCardContentLayout")).isEnabled());
     assertEquals(
@@ -249,6 +260,7 @@ class AdminMailTestSectionTest {
   void initiallyBlockedStateNeverEnablesPanel(MaintenanceService.State state) {
     block(state);
     AdminMailTestSection section = section();
+
     assertFalse(((VerticalLayout) field(section, "mailCardContentLayout")).isEnabled());
     assertFalse(((Button) field(section, "sendTestMailButton")).isEnabled());
     verifyNoInteractions(emailService);
@@ -263,16 +275,20 @@ class AdminMailTestSectionTest {
     try {
       AdminMailTestSection section = section();
       testUi.add(section);
+
       assertEquals(
           previousInterval > 0 ? Math.min(previousInterval, 5000) : 5000, testUi.getPollInterval());
       when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
       ComponentUtil.fireEvent(testUi, new PollEvent(testUi, true));
+
       assertFalse(((VerticalLayout) field(section, "mailCardContentLayout")).isEnabled());
       assertEquals(1, unrelatedPolls[0]);
       testUi.remove(section);
+
       assertEquals(previousInterval, testUi.getPollInterval());
       clearInvocations(configService);
       ComponentUtil.fireEvent(testUi, new PollEvent(testUi, true));
+
       assertEquals(2, unrelatedPolls[0]);
       verifyNoInteractions(configService);
       verifyNoInteractions(emailService);

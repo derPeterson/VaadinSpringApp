@@ -78,6 +78,7 @@ class UserServiceTest {
   void activityPropagatesOtherDatabaseFailuresWithoutLoadingOrRetryingAnEntity() {
     DataAccessResourceFailureException failure = repositoryFailure();
     when(userRepository.updateLastActivity(eq(1L), any())).thenThrow(failure);
+
     assertSame(
         failure,
         assertThrows(
@@ -102,6 +103,7 @@ class UserServiceTest {
             Clock.fixed(now, ZoneId.of(zone)));
     when(userRepository.updateLastActivity(1L, now)).thenReturn(1);
     timed.updateLastActivity(1L);
+
     verify(userRepository).updateLastActivity(1L, now);
     verify(userRepository, never()).save(any());
   }
@@ -111,42 +113,44 @@ class UserServiceTest {
     @ParameterizedTest(name = "saveUser alias: {0}")
     @ValueSource(booleans = {true, false})
     void bothSaveMethodsPersistTheSuppliedUser(boolean useSaveUser) {
-      UserEntity user = user(1L, true, RoleType.ROLE_USER);
+      UserEntity testUserEntity = user(1L, true, RoleType.ROLE_USER);
 
-      save(user, useSaveUser);
+      save(testUserEntity, useSaveUser);
 
-      verify(userRepository).save(same(user));
+      verify(userRepository).save(same(testUserEntity));
       verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
     }
 
     @ParameterizedTest(name = "saveUser alias: {0}")
     @ValueSource(booleans = {true, false})
     void bothSaveMethodsPropagatePersistenceFailures(boolean useSaveUser) {
-      UserEntity user = user(1L, true);
+      UserEntity testUserEntity = user(1L, true);
       DataAccessResourceFailureException failure = repositoryFailure();
-      when(userRepository.save(user)).thenThrow(failure);
+      when(userRepository.save(testUserEntity)).thenThrow(failure);
 
       assertSame(
           failure,
-          assertThrows(DataAccessResourceFailureException.class, () -> save(user, useSaveUser)));
+          assertThrows(
+              DataAccessResourceFailureException.class, () -> save(testUserEntity, useSaveUser)));
       verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
     }
 
-    private void save(UserEntity user, boolean useSaveUser) {
+    private void save(UserEntity testUserEntity, boolean useSaveUser) {
       if (useSaveUser) {
-        userService.saveUser(user);
+        userService.saveUser(testUserEntity);
       } else {
-        userService.save(user);
+        userService.save(testUserEntity);
       }
     }
 
     @Test
     void findsAnExistingUserUsingTheSuppliedEmail() {
-      UserEntity user = user(1L, true);
+      UserEntity testUserEntity = user(1L, true);
       String email = " MixedCase@example.com ";
-      when(userRepository.findByEmail("mixedcase@example.com")).thenReturn(Optional.of(user));
+      when(userRepository.findByEmail("mixedcase@example.com"))
+          .thenReturn(Optional.of(testUserEntity));
 
-      assertSame(user, userService.findByEmail(email).orElseThrow());
+      assertSame(testUserEntity, userService.findByEmail(email).orElseThrow());
       verify(userRepository).findByEmail("mixedcase@example.com");
       verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
     }
@@ -199,24 +203,25 @@ class UserServiceTest {
 
     @Test
     void deletesTheSuppliedUser() {
-      UserEntity user = user(1L, true, RoleType.ROLE_USER);
+      UserEntity testUserEntity = user(1L, true, RoleType.ROLE_USER);
 
-      userService.deleteUser(user);
+      userService.deleteUser(testUserEntity);
 
-      verify(userRepository).delete(same(user));
+      verify(userRepository).delete(same(testUserEntity));
       verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
     }
 
     @Test
     void propagatesDeletionFailure() {
-      UserEntity user = user(1L, true);
+      UserEntity testUserEntity = user(1L, true);
       DataAccessResourceFailureException failure = repositoryFailure();
-      doThrow(failure).when(userRepository).delete(user);
+      doThrow(failure).when(userRepository).delete(testUserEntity);
 
       assertSame(
           failure,
           assertThrows(
-              DataAccessResourceFailureException.class, () -> userService.deleteUser(user)));
+              DataAccessResourceFailureException.class,
+              () -> userService.deleteUser(testUserEntity)));
       verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
     }
   }
@@ -254,6 +259,7 @@ class UserServiceTest {
           .thenReturn(List.of(1L));
 
       UserEntity targetUser = user(1L, true, RoleType.ROLE_SUPERADMIN);
+
       assertThrows(IllegalStateException.class, () -> userService.deleteUser(targetUser));
 
       verify(userRepository, never()).delete(any());
@@ -261,15 +267,15 @@ class UserServiceTest {
 
     @Test
     void deletionAllowsAnAdminIfAnotherEnabledAdminRemains() {
-      UserEntity admin = user(1L, true, RoleType.ROLE_SUPERADMIN);
+      UserEntity adminUserEntity = user(1L, true, RoleType.ROLE_SUPERADMIN);
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
           .thenReturn(List.of(1L, 2L));
 
-      userService.deleteUser(admin);
+      userService.deleteUser(adminUserEntity);
 
       InOrder order = inOrder(userRepository);
       order.verify(userRepository).findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
-      order.verify(userRepository).delete(same(admin));
+      order.verify(userRepository).delete(same(adminUserEntity));
     }
 
     @Test
@@ -334,11 +340,11 @@ class UserServiceTest {
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void bothSaveMethodsAllowUnchangedAdminPrivileges(boolean useSaveUser) {
-      UserEntity admin = user(1L, true, RoleType.ROLE_SUPERADMIN);
+      UserEntity adminUserEntity = user(1L, true, RoleType.ROLE_SUPERADMIN);
 
-      save(admin, useSaveUser);
+      save(adminUserEntity, useSaveUser);
 
-      verify(userRepository).save(same(admin));
+      verify(userRepository).save(same(adminUserEntity));
       verify(userRepository, atLeastOnce()).findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
     }
 
@@ -372,6 +378,7 @@ class UserServiceTest {
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
       UserEntity targetUser = user(1L, false, RoleType.ROLE_SUPERADMIN);
+
       assertSame(
           failure,
           assertThrows(
@@ -386,6 +393,7 @@ class UserServiceTest {
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
       UserEntity targetUser = user(1L, true, RoleType.ROLE_SUPERADMIN);
+
       assertSame(
           failure,
           assertThrows(
@@ -396,14 +404,15 @@ class UserServiceTest {
 
     @Test
     void statusUpdateIgnoresDemotionInTheSuppliedSnapshot() {
-      UserEntity stored = user(1L, true, RoleType.ROLE_SUPERADMIN);
-      when(userRepository.findById(1L)).thenReturn(Optional.of(stored));
+      UserEntity storedUserEntity = user(1L, true, RoleType.ROLE_SUPERADMIN);
+      when(userRepository.findById(1L)).thenReturn(Optional.of(storedUserEntity));
       TransactionSynchronizationManager.initSynchronization();
       try {
         userService.updateUserStatus(
             user(1L, false, RoleType.ROLE_SUPERADMIN), UserStatus.AVAILABLE, true);
-        assertTrue(stored.isEnabled());
-        verify(userRepository).save(same(stored));
+
+        assertTrue(storedUserEntity.isEnabled());
+        verify(userRepository).save(same(storedUserEntity));
         verify(userRepository, never()).findEnabledUserIdsByRole(any());
         verifyNoInteractions(userStatusBroadcaster);
       } finally {
@@ -411,11 +420,11 @@ class UserServiceTest {
       }
     }
 
-    private void save(UserEntity user, boolean useSaveUser) {
+    private void save(UserEntity testUserEntity, boolean useSaveUser) {
       if (useSaveUser) {
-        userService.saveUser(user);
+        userService.saveUser(testUserEntity);
       } else {
-        userService.save(user);
+        userService.save(testUserEntity);
       }
     }
   }
@@ -424,14 +433,15 @@ class UserServiceTest {
   class LocaleUpdates {
     @Test
     void savesAnExistingUsersNewLocale() {
-      UserEntity user = user(1L, true);
-      user.setPreferredLocale(Locale.ENGLISH);
-      when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+      UserEntity testUserEntity = user(1L, true);
+      testUserEntity.setPreferredLocale(Locale.ENGLISH);
+      when(userRepository.findByEmail(testUserEntity.getEmail()))
+          .thenReturn(Optional.of(testUserEntity));
 
-      userService.updateUserLocale(user.getEmail(), Locale.FRENCH);
+      userService.updateUserLocale(testUserEntity.getEmail(), Locale.FRENCH);
 
-      assertEquals(Locale.FRENCH, user.getPreferredLocale());
-      verify(userRepository).save(same(user));
+      assertEquals(Locale.FRENCH, testUserEntity.getPreferredLocale());
+      verify(userRepository).save(same(testUserEntity));
       verifyNoInteractions(passwordEncoder, userStatusBroadcaster);
     }
 
@@ -447,23 +457,25 @@ class UserServiceTest {
 
     @Test
     void rejectsNullLocaleBeforeLookingUpOrChangingTheUser() {
-      UserEntity user = user(1L, true);
-      String accountEmail = user.getEmail();
+      UserEntity testUserEntity = user(1L, true);
+      String accountEmail = testUserEntity.getEmail();
+
       assertThrows(
           IllegalArgumentException.class, () -> userService.updateUserLocale(accountEmail, null));
-      assertEquals(Locale.ENGLISH, user.getPreferredLocale());
+      assertEquals(Locale.ENGLISH, testUserEntity.getPreferredLocale());
       verifyNoInteractions(userRepository);
     }
 
     @Test
     void acceptsTheRootLocale() {
-      UserEntity user = user(1L, true);
-      when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
+      UserEntity testUserEntity = user(1L, true);
+      when(userRepository.findByEmail(testUserEntity.getEmail()))
+          .thenReturn(Optional.of(testUserEntity));
 
-      userService.updateUserLocale(user.getEmail(), Locale.ROOT);
+      userService.updateUserLocale(testUserEntity.getEmail(), Locale.ROOT);
 
-      assertEquals(Locale.ROOT, user.getPreferredLocale());
-      verify(userRepository).save(same(user));
+      assertEquals(Locale.ROOT, testUserEntity.getPreferredLocale());
+      verify(userRepository).save(same(testUserEntity));
     }
 
     @Test
@@ -481,12 +493,14 @@ class UserServiceTest {
 
     @Test
     void propagatesLocalePersistenceFailure() {
-      UserEntity user = user(1L, true);
+      UserEntity testUserEntity = user(1L, true);
       DataAccessResourceFailureException failure = repositoryFailure();
-      when(userRepository.findByEmail(user.getEmail())).thenReturn(Optional.of(user));
-      when(userRepository.save(user)).thenThrow(failure);
+      when(userRepository.findByEmail(testUserEntity.getEmail()))
+          .thenReturn(Optional.of(testUserEntity));
+      when(userRepository.save(testUserEntity)).thenThrow(failure);
 
-      String accountEmail = user.getEmail();
+      String accountEmail = testUserEntity.getEmail();
+
       assertSame(
           failure,
           assertThrows(
@@ -500,13 +514,13 @@ class UserServiceTest {
     @ParameterizedTest
     @ValueSource(strings = {"NewPassword!", "  Password with spaces!  ", "A!234567"})
     void encodesTheUnmodifiedInputWithoutSavingTheUser(String rawPassword) {
-      UserEntity user = user(1L, true);
-      user.setPassword("old-hash");
+      UserEntity testUserEntity = user(1L, true);
+      testUserEntity.setPassword("old-hash");
       when(passwordEncoder.encode(rawPassword)).thenReturn("new-hash");
 
-      userService.updatePassword(user, rawPassword);
+      userService.updatePassword(testUserEntity, rawPassword);
 
-      assertEquals("new-hash", user.getPassword());
+      assertEquals("new-hash", testUserEntity.getPassword());
       verify(passwordEncoder).encode(rawPassword);
       verifyNoInteractions(userRepository, userStatusBroadcaster);
     }
@@ -520,25 +534,28 @@ class UserServiceTest {
 
     @Test
     void leavesTheExistingPasswordUnchangedWhenEncodingFails() {
-      UserEntity user = user(1L, true);
-      user.setPassword("old-hash");
+      UserEntity testUserEntity = user(1L, true);
+      testUserEntity.setPassword("old-hash");
       IllegalStateException failure = new IllegalStateException("Encoding failed");
       when(passwordEncoder.encode("NewPassword!")).thenThrow(failure);
 
       assertSame(
           failure,
           assertThrows(
-              IllegalStateException.class, () -> userService.updatePassword(user, "NewPassword!")));
-      assertEquals("old-hash", user.getPassword());
+              IllegalStateException.class,
+              () -> userService.updatePassword(testUserEntity, "NewPassword!")));
+      assertEquals("old-hash", testUserEntity.getPassword());
       verifyNoInteractions(userRepository, userStatusBroadcaster);
     }
 
     @Test
     void rejectsNullPasswordWithoutEncodingOrChangingTheUser() {
-      UserEntity user = user(1L, true);
-      user.setPassword("old-hash");
-      assertThrows(IllegalArgumentException.class, () -> userService.updatePassword(user, null));
-      assertEquals("old-hash", user.getPassword());
+      UserEntity testUserEntity = user(1L, true);
+      testUserEntity.setPassword("old-hash");
+
+      assertThrows(
+          IllegalArgumentException.class, () -> userService.updatePassword(testUserEntity, null));
+      assertEquals("old-hash", testUserEntity.getPassword());
       verifyNoInteractions(userRepository, userStatusBroadcaster);
       verifyNoInteractions(passwordEncoder);
     }
@@ -557,9 +574,9 @@ class UserServiceTest {
     }
 
     private UserEntity user(Long id, boolean enabled) {
-      UserEntity stored = UserServiceTest.user(id, enabled);
-      when(userRepository.findById(id)).thenReturn(Optional.of(stored));
-      return stored;
+      UserEntity storedUserEntity = UserServiceTest.user(id, enabled);
+      when(userRepository.findById(id)).thenReturn(Optional.of(storedUserEntity));
+      return storedUserEntity;
     }
 
     private void commit() {
@@ -570,41 +587,42 @@ class UserServiceTest {
 
     @Test
     void manualChangeSavesStatusAndFlagBeforeBroadcasting() {
-      UserEntity user = user(1L, true);
-      user.setStatus(UserStatus.AVAILABLE);
+      UserEntity testUserEntity = user(1L, true);
+      testUserEntity.setStatus(UserStatus.AVAILABLE);
       doAnswer(
               invocation -> {
-                assertEquals(UserStatus.EMPLOYED, user.getStatus());
-                assertTrue(user.isStatusManuallySet());
-                return user;
+                assertEquals(UserStatus.EMPLOYED, testUserEntity.getStatus());
+                assertTrue(testUserEntity.isStatusManuallySet());
+                return testUserEntity;
               })
           .when(userRepository)
-          .save(user);
+          .save(testUserEntity);
 
-      userService.updateUserStatus(user, UserStatus.EMPLOYED, true);
+      userService.updateUserStatus(testUserEntity, UserStatus.EMPLOYED, true);
       commit();
 
       InOrder order = inOrder(userRepository, userStatusBroadcaster);
-      order.verify(userRepository).save(same(user));
+      order.verify(userRepository).save(same(testUserEntity));
       order
           .verify(userStatusBroadcaster)
-          .broadcast(message(user, UserStatus.AVAILABLE, UserStatus.EMPLOYED));
+          .broadcast(message(testUserEntity, UserStatus.AVAILABLE, UserStatus.EMPLOYED));
+
       verifyNoInteractions(passwordEncoder);
     }
 
     @Test
     void automaticChangeSavesNewStatusWithoutManualFlag() {
-      UserEntity user = user(1L, true);
-      user.setStatus(UserStatus.AVAILABLE);
+      UserEntity testUserEntity = user(1L, true);
+      testUserEntity.setStatus(UserStatus.AVAILABLE);
 
-      userService.updateUserStatus(user, UserStatus.ABSENT, false);
+      userService.updateUserStatus(testUserEntity, UserStatus.ABSENT, false);
       commit();
 
-      assertEquals(UserStatus.ABSENT, user.getStatus());
-      assertFalse(user.isStatusManuallySet());
-      verify(userRepository).save(same(user));
+      assertEquals(UserStatus.ABSENT, testUserEntity.getStatus());
+      assertFalse(testUserEntity.isStatusManuallySet());
+      verify(userRepository).save(same(testUserEntity));
       verify(userStatusBroadcaster)
-          .broadcast(message(user, UserStatus.AVAILABLE, UserStatus.ABSENT));
+          .broadcast(message(testUserEntity, UserStatus.AVAILABLE, UserStatus.ABSENT));
     }
 
     @ParameterizedTest
@@ -612,16 +630,17 @@ class UserServiceTest {
         value = UserStatus.class,
         names = {"AVAILABLE", "ABSENT"})
     void automaticChangeResetsManualAvailableOrAbsentStatus(UserStatus previousStatus) {
-      UserEntity user = user(1L, true);
-      user.setManualStatus(previousStatus);
+      UserEntity testUserEntity = user(1L, true);
+      testUserEntity.setManualStatus(previousStatus);
 
-      userService.updateUserStatus(user, UserStatus.OFFLINE, false);
+      userService.updateUserStatus(testUserEntity, UserStatus.OFFLINE, false);
       commit();
 
-      assertEquals(UserStatus.OFFLINE, user.getStatus());
-      assertFalse(user.isStatusManuallySet());
-      verify(userRepository).save(same(user));
-      verify(userStatusBroadcaster).broadcast(message(user, previousStatus, UserStatus.OFFLINE));
+      assertEquals(UserStatus.OFFLINE, testUserEntity.getStatus());
+      assertFalse(testUserEntity.isStatusManuallySet());
+      verify(userRepository).save(same(testUserEntity));
+      verify(userStatusBroadcaster)
+          .broadcast(message(testUserEntity, previousStatus, UserStatus.OFFLINE));
     }
 
     @ParameterizedTest
@@ -630,37 +649,37 @@ class UserServiceTest {
         names = {"EMPLOYED", "OFFLINE"})
     void protectedManualStatusIsRetainedWithoutBroadcastingARejectedChange(
         UserStatus previousStatus) {
-      UserEntity user = user(1L, true);
-      user.setManualStatus(previousStatus);
+      UserEntity testUserEntity = user(1L, true);
+      testUserEntity.setManualStatus(previousStatus);
 
-      userService.updateUserStatus(user, UserStatus.ABSENT, false);
+      userService.updateUserStatus(testUserEntity, UserStatus.ABSENT, false);
 
-      assertEquals(previousStatus, user.getStatus());
-      assertTrue(user.isStatusManuallySet());
-      verify(userRepository).save(same(user));
+      assertEquals(previousStatus, testUserEntity.getStatus());
+      assertTrue(testUserEntity.isStatusManuallySet());
+      verify(userRepository).save(same(testUserEntity));
       verifyNoInteractions(userStatusBroadcaster);
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void sameStatusRequestPersistsTheManualFlagWithoutBroadcasting(boolean manualChange) {
-      UserEntity user = user(1L, true);
-      user.setStatus(UserStatus.AVAILABLE);
-      user.setStatusManuallySet(!manualChange);
+      UserEntity testUserEntity = user(1L, true);
+      testUserEntity.setStatus(UserStatus.AVAILABLE);
+      testUserEntity.setStatusManuallySet(!manualChange);
       doAnswer(
               invocation -> {
-                assertEquals(UserStatus.AVAILABLE, user.getStatus());
-                assertEquals(manualChange, user.isStatusManuallySet());
-                return user;
+                assertEquals(UserStatus.AVAILABLE, testUserEntity.getStatus());
+                assertEquals(manualChange, testUserEntity.isStatusManuallySet());
+                return testUserEntity;
               })
           .when(userRepository)
-          .save(user);
+          .save(testUserEntity);
 
-      userService.updateUserStatus(user, UserStatus.AVAILABLE, manualChange);
+      userService.updateUserStatus(testUserEntity, UserStatus.AVAILABLE, manualChange);
 
-      assertEquals(UserStatus.AVAILABLE, user.getStatus());
-      assertEquals(manualChange, user.isStatusManuallySet());
-      verify(userRepository).save(same(user));
+      assertEquals(UserStatus.AVAILABLE, testUserEntity.getStatus());
+      assertEquals(manualChange, testUserEntity.isStatusManuallySet());
+      verify(userRepository).save(same(testUserEntity));
       verifyNoInteractions(userStatusBroadcaster);
     }
 
@@ -669,63 +688,66 @@ class UserServiceTest {
         value = UserStatus.class,
         names = {"EMPLOYED", "OFFLINE"})
     void rejectedAutomaticChangeStillPropagatesPersistenceFailure(UserStatus previousStatus) {
-      UserEntity user = user(1L, true);
-      user.setManualStatus(previousStatus);
+      UserEntity testUserEntity = user(1L, true);
+      testUserEntity.setManualStatus(previousStatus);
       DataAccessResourceFailureException failure = repositoryFailure();
-      when(userRepository.save(user)).thenThrow(failure);
+      when(userRepository.save(testUserEntity)).thenThrow(failure);
 
       assertSame(
           failure,
           assertThrows(
               DataAccessResourceFailureException.class,
-              () -> userService.updateUserStatus(user, UserStatus.ABSENT, false)));
-      assertEquals(previousStatus, user.getStatus());
-      assertTrue(user.isStatusManuallySet());
-      verify(userRepository).save(same(user));
+              () -> userService.updateUserStatus(testUserEntity, UserStatus.ABSENT, false)));
+      assertEquals(previousStatus, testUserEntity.getStatus());
+      assertTrue(testUserEntity.isStatusManuallySet());
+      verify(userRepository).save(same(testUserEntity));
       verifyNoInteractions(userStatusBroadcaster);
     }
 
     @Test
     void manualChangeCanReplaceAProtectedManualStatus() {
-      UserEntity user = user(1L, true);
-      user.setManualStatus(UserStatus.EMPLOYED);
+      UserEntity testUserEntity = user(1L, true);
+      testUserEntity.setManualStatus(UserStatus.EMPLOYED);
 
-      userService.updateUserStatus(user, UserStatus.AVAILABLE, true);
+      userService.updateUserStatus(testUserEntity, UserStatus.AVAILABLE, true);
       commit();
 
-      assertEquals(UserStatus.AVAILABLE, user.getStatus());
-      assertTrue(user.isStatusManuallySet());
-      verify(userRepository).save(same(user));
+      assertEquals(UserStatus.AVAILABLE, testUserEntity.getStatus());
+      assertTrue(testUserEntity.isStatusManuallySet());
+      verify(userRepository).save(same(testUserEntity));
       verify(userStatusBroadcaster)
-          .broadcast(message(user, UserStatus.EMPLOYED, UserStatus.AVAILABLE));
+          .broadcast(message(testUserEntity, UserStatus.EMPLOYED, UserStatus.AVAILABLE));
     }
 
     @ParameterizedTest
     @ValueSource(booleans = {true, false})
     void doesNotBroadcastWhenSavingFails(boolean manualChange) {
-      UserEntity user = user(1L, true);
+      UserEntity testUserEntity = user(1L, true);
       DataAccessResourceFailureException failure = repositoryFailure();
-      when(userRepository.save(user)).thenThrow(failure);
+      when(userRepository.save(testUserEntity)).thenThrow(failure);
 
       assertSame(
           failure,
           assertThrows(
               DataAccessResourceFailureException.class,
-              () -> userService.updateUserStatus(user, UserStatus.AVAILABLE, manualChange)));
+              () ->
+                  userService.updateUserStatus(
+                      testUserEntity, UserStatus.AVAILABLE, manualChange)));
       verifyNoInteractions(userStatusBroadcaster);
     }
 
     @Test
     void isolatesBroadcastFailureAfterCommit() {
-      UserEntity user = user(1L, true);
-      UserStatusMessage event = message(user, UserStatus.OFFLINE, UserStatus.AVAILABLE);
+      UserEntity testUserEntity = user(1L, true);
+      UserStatusMessage event = message(testUserEntity, UserStatus.OFFLINE, UserStatus.AVAILABLE);
       IllegalStateException failure = new IllegalStateException("Listener failed");
       doThrow(failure).when(userStatusBroadcaster).broadcast(event);
 
-      userService.updateUserStatus(user, UserStatus.AVAILABLE, true);
+      userService.updateUserStatus(testUserEntity, UserStatus.AVAILABLE, true);
+
       assertDoesNotThrow(this::commit);
-      assertEquals(UserStatus.AVAILABLE, user.getStatus());
-      verify(userRepository).save(same(user));
+      assertEquals(UserStatus.AVAILABLE, testUserEntity.getStatus());
+      verify(userRepository).save(same(testUserEntity));
     }
   }
 
@@ -763,10 +785,12 @@ class UserServiceTest {
 
     @Test
     void ignoresTheCurrentAccountByIdRatherThanEntityIdentity() {
-      UserEntity stored = user(1000L, true);
-      when(userRepository.emailExistsForOtherUser(stored.getEmail(), 1000L)).thenReturn(false);
+      UserEntity storedUserEntity = user(1000L, true);
+      when(userRepository.emailExistsForOtherUser(storedUserEntity.getEmail(), 1000L))
+          .thenReturn(false);
 
-      assertFalse(userService.emailExistsForOtherUser(stored.getEmail(), Long.valueOf("1000")));
+      assertFalse(
+          userService.emailExistsForOtherUser(storedUserEntity.getEmail(), Long.valueOf("1000")));
     }
 
     @Test
@@ -816,8 +840,10 @@ class UserServiceTest {
     @Test
     void canDeleteUsersWithEmptyOrMissingRoles() {
       UserEntity withoutRoles = user(1L, true);
+
       assertTrue(userService.canDeleteUser(withoutRoles));
       withoutRoles.setRoleEntities(null);
+
       assertTrue(userService.canDeleteUser(withoutRoles));
       verify(userRepository, times(2)).findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
     }
@@ -838,21 +864,21 @@ class UserServiceTest {
 
     @Test
     void cannotDeleteLastEnabledSuperadminAndDoesNotCountSameIdOrIneligibleAccounts() {
-      UserEntity target = user(1000L, true, RoleType.ROLE_SUPERADMIN);
+      UserEntity targetUserEntity = user(1000L, true, RoleType.ROLE_SUPERADMIN);
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
           .thenReturn(List.of(Long.valueOf("1000")));
 
-      assertFalse(userService.canDeleteUser(target));
+      assertFalse(userService.canDeleteUser(targetUserEntity));
       verify(userRepository, never()).delete(any());
     }
 
     @Test
     void canDeleteAdminWhenAnotherEnabledAdminRemains() {
-      UserEntity target = user(1L, true, RoleType.ROLE_SUPERADMIN);
+      UserEntity targetUserEntity = user(1L, true, RoleType.ROLE_SUPERADMIN);
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN))
           .thenReturn(List.of(1L, 2L));
 
-      assertTrue(userService.canDeleteUser(target));
+      assertTrue(userService.canDeleteUser(targetUserEntity));
       verify(userRepository, never()).delete(any());
     }
 
@@ -925,6 +951,7 @@ class UserServiceTest {
       when(userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN)).thenThrow(failure);
 
       UserEntity targetUser = user(1L, true, RoleType.ROLE_SUPERADMIN);
+
       assertSame(
           failure,
           assertThrows(
@@ -968,9 +995,9 @@ class UserServiceTest {
   }
 
   private static UserStatusBroadcaster.UserStatusMessage message(
-      UserEntity user, UserStatus oldStatus, UserStatus requestedStatus) {
+      UserEntity testUserEntity, UserStatus oldStatus, UserStatus requestedStatus) {
     return new UserStatusBroadcaster.UserStatusMessage(
-        user.getId(), oldStatus.name(), requestedStatus.name());
+        testUserEntity.getId(), oldStatus.name(), requestedStatus.name());
   }
 
   private static DataAccessResourceFailureException repositoryFailure() {

@@ -50,6 +50,7 @@ class AvatarDraftStoreTest {
     byte[] original = AvatarImageProcessorTest.image("png", 10, 10);
     UUID id = drafts.upload(token, 1L, new ByteArrayInputStream(original));
     AvatarDraftStore.Image snapshot = drafts.image(token, 1L, id);
+
     assertEquals(now.get(), snapshot.uploadedAt());
     assertEquals(AvatarImageFormat.PNG, snapshot.metadata().format());
     assertEquals(original.length, snapshot.metadata().sizeBytes());
@@ -64,6 +65,7 @@ class AvatarDraftStoreTest {
     assertEquals(Problem.BUSY, assertThrows(InvalidImage.class, () -> drafts.begin(1L)).problem());
     now.set(now.get().plusSeconds(601));
     drafts.expire();
+
     assertEquals(
         Problem.EXPIRED,
         assertThrows(InvalidImage.class, () -> drafts.image(token, 1L, id)).problem());
@@ -79,13 +81,16 @@ class AvatarDraftStoreTest {
             token, 1L, new ByteArrayInputStream(AvatarImageProcessorTest.image("png", 10, 10)));
     AvatarDraftStore.Image accepted = drafts.image(token, 1L, id);
     ByteArrayInputStream imageInput = new ByteArrayInputStream("bad image".getBytes());
+
     assertThrows(InvalidImage.class, () -> drafts.upload(token, 1L, imageInput));
     assertEquals(accepted, drafts.image(token, 1L, id));
     UUID operationId = UUID.randomUUID();
+
     assertEquals(
         Problem.MISSING,
         assertThrows(InvalidImage.class, () -> drafts.image(token, 1L, operationId)).problem());
     drafts.release(token);
+
     assertEquals(
         Problem.EXPIRED,
         assertThrows(InvalidImage.class, () -> drafts.image(token, 1L, id)).problem());
@@ -114,8 +119,8 @@ class AvatarDraftStoreTest {
             return super.read(data, offset, length);
           }
         };
-    try (ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor()) {
-      Future<UUID> transfer = executor.submit(() -> drafts.upload(token, 1L, input));
+    try (ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor()) {
+      Future<UUID> transfer = executorService.submit(() -> drafts.upload(token, 1L, input));
       try (ByteArrayInputStream imageInput = new ByteArrayInputStream(bytes)) {
         assertTrue(entered.await(5, TimeUnit.SECONDS));
         assertEquals(
@@ -127,6 +132,7 @@ class AvatarDraftStoreTest {
       }
       ExecutionException failure =
           assertThrows(ExecutionException.class, () -> transfer.get(5, TimeUnit.SECONDS));
+
       assertInstanceOf(InvalidImage.class, failure.getCause());
       assertEquals(Problem.EXPIRED, ((InvalidImage) failure.getCause()).problem());
     }

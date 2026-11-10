@@ -33,21 +33,23 @@ class AvatarImageResourceTest {
     UUID revision = UUID.randomUUID();
     when(avatars.image(any(), eq(12L), eq(revision), eq(false)))
         .thenReturn(Optional.of(new byte[] {1, 2, 3}));
-    VaadinServletService service = mock(VaadinServletService.class);
-    VaadinServletRequest request = new VaadinServletRequest(new MockHttpServletRequest(), service);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    VaadinServletService vaadinServletService = mock(VaadinServletService.class);
+    VaadinServletRequest vaadinServletRequest =
+        new VaadinServletRequest(new MockHttpServletRequest(), vaadinServletService);
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     AvatarImageResource.createAvatarImageDownloadHandler(avatars, 12L, revision, false)
         .handleRequest(
-            request,
-            new VaadinServletResponse(response, service),
+            vaadinServletRequest,
+            new VaadinServletResponse(mockHttpResponse, vaadinServletService),
             mock(VaadinSession.class),
             new Element("img"));
-    assertEquals(200, response.getStatus());
-    assertEquals("image/png", response.getContentType());
-    assertEquals("private, no-store", response.getHeader("Cache-Control"));
-    assertEquals("nosniff", response.getHeader("X-Content-Type-Options"));
-    assertTrue(response.getHeader("Content-Disposition").startsWith("inline"));
-    assertArrayEquals(new byte[] {1, 2, 3}, response.getContentAsByteArray());
+
+    assertEquals(200, mockHttpResponse.getStatus());
+    assertEquals("image/png", mockHttpResponse.getContentType());
+    assertEquals("private, no-store", mockHttpResponse.getHeader("Cache-Control"));
+    assertEquals("nosniff", mockHttpResponse.getHeader("X-Content-Type-Options"));
+    assertTrue(mockHttpResponse.getHeader("Content-Disposition").startsWith("inline"));
+    assertArrayEquals(new byte[] {1, 2, 3}, mockHttpResponse.getContentAsByteArray());
   }
 
   @ParameterizedTest
@@ -66,16 +68,17 @@ class AvatarImageResourceTest {
                 default -> new AccessDeniedException("forbidden");
               });
     }
-    VaadinServletService service = mock(VaadinServletService.class);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    VaadinServletService vaadinServletService = mock(VaadinServletService.class);
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     AvatarImageResource.createAvatarImageDownloadHandler(avatars, 12L, revision, false)
         .handleRequest(
-            new VaadinServletRequest(new MockHttpServletRequest(), service),
-            new VaadinServletResponse(response, service),
+            new VaadinServletRequest(new MockHttpServletRequest(), vaadinServletService),
+            new VaadinServletResponse(mockHttpResponse, vaadinServletService),
             mock(VaadinSession.class),
             new Element("img"));
-    assertEquals(code, response.getStatus());
-    assertEquals(0, response.getContentAsByteArray().length);
-    assertEquals("private, no-store", response.getHeader("Cache-Control"));
+
+    assertEquals(code, mockHttpResponse.getStatus());
+    assertEquals(0, mockHttpResponse.getContentAsByteArray().length);
+    assertEquals("private, no-store", mockHttpResponse.getHeader("Cache-Control"));
   }
 }

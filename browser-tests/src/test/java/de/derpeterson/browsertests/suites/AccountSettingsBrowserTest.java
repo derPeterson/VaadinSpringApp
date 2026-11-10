@@ -75,16 +75,20 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
         .click();
     form.save();
     form.assertMessage(uiTexts.getAccountSettingsSaveSuccess());
+
     assertThat(browserPage.locator(".account-summary-name")).hasText("Profile Saved");
     assertThat(browserPage.locator(".cosmos-topbar .cosmos-avatar-initials")).hasText("PS");
     new UserMenu(browserPage).open();
+
     assertThat(browserPage.locator(".user-popover-avatar .cosmos-avatar-initials")).hasText("PS");
     new UserMenu(browserPage).close();
+
     assertThat(form.host("account-email")).hasJSProperty("readonly", true);
     assertThat(form.input("account-email")).isEnabled();
     assertThat(form.input("account-email")).hasAttribute("readonly", "");
     assertThat(form.input("account-email")).hasValue(email);
     browserPage.reload();
+
     assertThat(form.input("account-first-name")).hasValue("Profile");
     assertThat(form.input("account-last-name")).hasValue("Saved");
     assertThat(form.host("account-birth-date")).hasJSProperty("value", "1992-03-04");
@@ -93,6 +97,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.save();
     form.assertMessage(uiTexts.getAccountSettingsSaveSuccess());
     browserPage.reload();
+
     assertThat(form.input("account-first-name")).hasValue("Second");
     assertThat(browserPage.locator(".cosmos-topbar .cosmos-avatar-initials")).hasText("SS");
     assertThat(form.host("account-birth-date")).hasJSProperty("value", "1993-04-05");
@@ -103,6 +108,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.save();
     form.assertMessage(uiTexts.getAccountSettingsSaveSuccess());
     browserPage.reload();
+
     assertThat(form.input("account-birth-date")).hasValue("");
     assertThat(form.input("account-gender")).hasValue("");
   }
@@ -125,6 +131,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.input("account-last-name").fill("");
     form.save();
     form.assertMessage(uiTexts.getBaseValidationRequiredMessage());
+
     assertThat(form.host("account-first-name")).hasAttribute("invalid", "");
     assertThat(form.host("account-last-name")).hasAttribute("invalid", "");
     form.closeNotification();
@@ -136,10 +143,12 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       form.fill("NotSaved", "Invalid", date);
       form.save();
       form.assertMessage(uiTexts.getBaseValidationBirthDatePastMessage());
+
       assertThat(form.host("account-birth-date")).hasAttribute("invalid", "");
       form.closeNotification();
     }
     browserPage.reload();
+
     assertThat(form.input("account-first-name")).hasValue(original);
     assertThat(form.host("account-birth-date")).hasJSProperty("value", "1990-01-01");
   }
@@ -162,6 +171,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.language(other);
     form.save();
     form.assertMessage(translated.getAccountSettingsSaveSuccess());
+
     assertThat(browserPage.locator(".account-settings"))
         .containsText(translated.getAccountSettingsTitle());
     // Logout mit der tatsächlich gespeicherten Sprache, ohne sie vor der Prüfung
@@ -182,6 +192,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     login.open();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
     new UserMenu(browserPage).open();
+
     assertThat(
             browserPage.getByRole(
                 AriaRole.BUTTON,
@@ -217,9 +228,11 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.input("account-first-name").fill("Draft");
     form.host("account-tab-security").click();
     form.host("account-tab-profile").click();
+
     assertThat(form.input("account-first-name")).hasValue("Draft");
     assertThat(form.host("account-email-edit-profile")).hasCount(0);
     form.openEmail();
+
     assertThat(form.host("account-email-new"))
         .hasJSProperty("label", uiTexts.getAccountEmailDialogNewEmail());
     assertThat(form.host("account-email-confirm"))
@@ -241,11 +254,13 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.input("account-email-password").fill("Local-Draft-Only!");
     form.closeEmail(close);
     form.openEmail();
+
     assertThat(form.input("account-email-new")).hasValue("");
     assertThat(form.input("account-email-confirm")).hasValue("");
     assertThat(form.input("account-email-password")).hasValue("");
     form.closeEmail("cancel");
     form.host("account-tab-profile").click();
+
     assertThat(form.input("account-first-name")).hasValue("Draft");
     assertThat(form.input("account-email")).hasValue(email);
   }
@@ -263,12 +278,15 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     openAvatar();
     chooseMode(uiTexts.getAccountAvatarCustom());
     chooseMode(uiTexts.getAccountAvatarInitials());
+
     assertThat(browserPage.locator("account-avatar-editor")).hasAttribute("data-mode", "INITIALS");
     chooseMode(uiTexts.getAccountAvatarCustom());
     uploadAvatar(java.awt.Color.BLUE, true);
+
     assertThat(browserPage.locator(".account-avatar-upload")).isHidden();
     Locator reset = browserPage.locator("[data-avatar='reset']");
     Locator cancel = browserPage.locator("#account-avatar-cancel-selection");
+
     assertEquals(reset.boundingBox().width, cancel.boundingBox().width, 1);
     assertEquals(reset.boundingBox().y, cancel.boundingBox().y, 1);
     io.qameta.allure.playwright.AllurePlaywright.attachScreenshot(
@@ -276,6 +294,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     browserPage.locator("[data-avatar='zoom']").focus();
     browserPage.keyboard().press("ArrowRight");
     reset.click();
+
     assertThat(browserPage.locator("[data-avatar='percent']")).hasText("100 %");
     browserPage.locator("[data-avatar='zoom']").focus();
     browserPage.keyboard().press("ArrowRight");
@@ -289,6 +308,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
               BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
       users.open();
       users.search(email);
+
       assertThat(users.emailCells(email)).hasCount(1);
       assertThat(users.grid().locator(".cosmos-avatar-photo:visible")).hasCount(1);
       assertThat(users.grid().locator(".cosmos-avatar-photo:visible")).isVisible();
@@ -296,21 +316,25 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       new UserMenu(administrator.browserPage).signOut();
     }
     openAvatar();
+
     assertThat(browserPage.locator("account-avatar-editor")).hasAttribute("data-mode", "CUSTOM");
     assertThat(browserPage.locator(".account-avatar-upload")).isVisible();
     assertThat(browserPage.locator(".account-avatar-crop-controls")).isHidden();
     uploadAvatar(java.awt.Color.RED);
     cancel.click();
+
     assertThat(browserPage.locator(".account-avatar-upload")).isVisible();
     assertThat(browserPage.locator("account-avatar-editor"))
         .hasAttribute("data-local-image", "false");
     uploadAvatar(java.awt.Color.RED);
     browserPage.locator("#account-avatar-cancel").click();
     openAvatar();
+
     assertThat(browserPage.locator("account-avatar-editor"))
         .hasAttribute("data-local-image", "false");
     chooseMode(uiTexts.getAccountAvatarInitials());
     saveAvatar();
+
     assertThat(browserPage.locator(".account-summary-avatar .cosmos-avatar-photo")).isHidden();
     openAvatar();
     chooseMode(uiTexts.getAccountAvatarCustom());
@@ -325,10 +349,12 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     openAvatar();
     browserPage.locator("#account-avatar-delete").click();
     Locator confirmation = browserPage.locator("#account-avatar-delete-confirmation");
+
     assertThat(confirmation).hasJSProperty("opened", true);
     assertThat(confirmation).containsText(uiTexts.getAccountAvatarDeleteQuestion());
     assertThat(confirmation).containsText(uiTexts.getAccountAvatarDeleteHint());
     Locator contextIcon = confirmation.locator(".portal-context-card > .cosmos-panel-icon");
+
     assertThat(contextIcon).isVisible();
     assertEquals("12px", contextIcon.evaluate("e => getComputedStyle(e).borderRadius"));
     Locator hint = confirmation.locator(".portal-confirm-body > .cosmos-panel-hint");
@@ -344,13 +370,16 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
                     }
                     """))
             .doubleValue();
+
     assertEquals(0, centerOffset, 1);
     io.qameta.allure.playwright.AllurePlaywright.attachScreenshot(
         "Profilbild löschen bestätigen", browserPage);
     browserPage.locator("#account-avatar-delete-confirmation-cancel").click();
+
     assertThat(browserPage.locator("account-avatar-editor")).hasAttribute("data-mode", "CUSTOM");
     browserPage.locator("#account-avatar-delete").click();
     browserPage.locator("#account-avatar-delete-confirmation-submit").click();
+
     assertThat(browserPage.locator("account-avatar-editor")).hasAttribute("data-mode", "INITIALS");
     browserPage.locator("#account-avatar-cancel").click();
     browserPage.reload();
@@ -360,8 +389,10 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     browserPage.locator("#account-avatar-delete-confirmation-submit").click();
     saveAvatar();
     browserPage.reload();
+
     assertThat(browserPage.locator(".account-summary-avatar .cosmos-avatar-photo")).isHidden();
     openAvatar();
+
     assertThat(browserPage.locator("#account-avatar-delete")).isHidden();
     browserPage.locator("#account-avatar-cancel").click();
   }
@@ -388,6 +419,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
         .setFiles(
             new com.microsoft.playwright.options.FilePayload(
                 "broken.png", "image/png", new byte[] {(byte) 137, 80, 78, 71, 13, 10, 26, 10}));
+
     assertThat(browserPage.locator("[data-avatar='error']"))
         .hasText(uiTexts.getAccountAvatarImageError());
     assertThat(browserPage.locator("account-avatar-editor"))
@@ -396,6 +428,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.assertMessage(uiTexts.getAccountAvatarImageError());
     form.closeNotification();
     uploadAvatar(java.awt.Color.BLUE);
+
     assertThat(browserPage.locator("[data-avatar='error']")).isEmpty();
     saveAvatar();
     browserPage.reload();
@@ -404,6 +437,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
   private void openAvatar() {
     new AccountPage(browserPage).section("account-avatar-edit");
+
     assertThat(browserPage.locator("#account-avatar-choose")).isAttached();
   }
 
@@ -412,6 +446,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
         browserPage
             .locator("#account-avatar-mode vaadin-radio-button")
             .filter(new Locator.FilterOptions().setHasText(label));
+
     assertThat(radio).isVisible();
     radio.click(new Locator.ClickOptions().setPosition(radio.boundingBox().width - 3, 3));
   }
@@ -451,6 +486,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       try {
         Locator upload = browserPage.locator("#account-avatar-upload");
         upload.dispatchEvent("dragover", Map.of("dataTransfer", transfer));
+
         assertThat(upload).hasAttribute("dragover-valid", "true");
         upload.dispatchEvent("drop", Map.of("dataTransfer", transfer));
       } finally {
@@ -470,6 +506,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
   private void saveAvatar() {
     UiActions.complete(browserPage, () -> browserPage.locator("#account-avatar-save").click());
+
     assertThat(browserPage.locator("vaadin-dialog.account-avatar-dialog[opened]")).hasCount(0);
     new AccountPage(browserPage).assertMessage(uiTexts.getAccountAvatarSaved());
     new AccountPage(browserPage).closeNotification();
@@ -477,6 +514,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
   private void assertPhotos() {
     Locator navigationToggle = browserPage.locator("#account-navigation-toggle");
+
     assertThat(navigationToggle).hasCount(1);
     boolean mobileNavigation = navigationToggle.isVisible();
     if (mobileNavigation) {
@@ -487,15 +525,18 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     }
     for (String selector : new String[] {".account-summary-avatar", ".cosmos-topbar"}) {
       Locator image = browserPage.locator(selector + " .cosmos-avatar-photo");
+
       assertThat(image).isVisible();
       assertThat(image).hasJSProperty("complete", true);
       assertTrue(((Number) image.evaluate("e => e.naturalWidth")).intValue() > 0);
     }
     if (mobileNavigation) {
       UiActions.complete(browserPage, navigationToggle::click);
+
       assertThat(navigationToggle).hasAttribute("aria-expanded", "false");
     }
     new UserMenu(browserPage).open();
+
     assertThat(browserPage.locator(".user-popover-avatar .cosmos-avatar-photo")).isVisible();
     new UserMenu(browserPage).close();
   }
@@ -521,6 +562,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     for (int dateSampleIndex = 0; dateSampleIndex < samples.length; dateSampleIndex++) {
       form.input("account-birth-date").fill(samples[dateSampleIndex][german ? 0 : 1]);
       form.input("account-birth-date").press(dateSampleIndex % 2 == 0 ? "Tab" : "Enter");
+
       assertThat(form.host("account-birth-date"))
           .hasJSProperty("value", samples[dateSampleIndex][2]);
       assertThat(form.input("account-birth-date"))
@@ -528,6 +570,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     }
     form.input("account-birth-date").fill(german ? "310286" : "023186");
     form.input("account-birth-date").press("Tab");
+
     assertThat(form.host("account-birth-date")).hasAttribute("invalid", "");
   }
 
@@ -540,8 +583,10 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     new AccountPage(browserPage).open();
     Locator statusButton = browserPage.locator("#account-avatar-status vaadin-select-value-button");
     statusButton.focus();
+
     assertThat(statusButton).isFocused();
     statusButton.press("Space");
+
     assertThat(
             browserPage
                 .getByRole(AriaRole.OPTION)
@@ -569,6 +614,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
                       .setHas(
                           browserPage.getByText(
                               label, new Page.GetByTextOptions().setExact(true))));
+
       assertThat(option.locator("svg")).hasCount(1);
       UiActions.completeValueChange(browserPage, option::click);
       browserPage.locator("#account-avatar-status").click();
@@ -580,6 +626,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
                       .setHas(
                           browserPage.getByText(
                               label, new Page.GetByTextOptions().setExact(true))));
+
       assertThat(selected).hasAttribute("selected", java.util.regex.Pattern.compile(".*"));
       assertThat(selected.locator("[part~='checkmark']")).isHidden();
       assertNotEquals(
@@ -588,15 +635,18 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
           "Statusauswahl am Kontobild", browserPage);
       browserPage.keyboard().press("Escape");
       Locator circle = browserPage.locator(".account-summary-avatar .cosmos-avatar-circle");
+
       assertEquals("2px", circle.evaluate("e => getComputedStyle(e).borderTopWidth"));
       assertEquals("none", circle.evaluate("e => getComputedStyle(e).boxShadow"));
       String color = (String) circle.evaluate("e => getComputedStyle(e).borderTopColor");
+
       assertEquals(
           color,
           browserPage
               .locator(".cosmos-topbar .cosmos-avatar-circle")
               .evaluate("e => getComputedStyle(e).borderTopColor"));
       new UserStatusMenu(browserPage).expect(label);
+
       assertEquals(
           color,
           browserPage
@@ -605,6 +655,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       new UserMenu(browserPage).close();
     }
     browserPage.reload();
+
     assertThat(browserPage.locator("#account-avatar-status"))
         .containsText(uiTexts.getUserStatusAvailable());
   }

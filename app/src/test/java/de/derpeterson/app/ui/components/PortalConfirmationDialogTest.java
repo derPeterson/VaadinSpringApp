@@ -25,12 +25,12 @@ class PortalConfirmationDialogTest {
 
   @BeforeEach
   void setup() {
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenReturn(Locale.GERMAN);
-    VaadinSession.setCurrent(session);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenReturn(Locale.GERMAN);
+    VaadinSession.setCurrent(vaadinSession);
     UI ui = new UI();
-    ui.getInternals().setSession(session);
+    ui.getInternals().setSession(vaadinSession);
     UI.setCurrent(ui);
     MessageProperties messageProperties = new MessageProperties(new CustomI18NProvider());
     dialog = new PortalConfirmationDialog(messageProperties, "test-confirmation");
@@ -59,42 +59,46 @@ class PortalConfirmationDialogTest {
 
   @Test
   void cancellingAndClosingNeverExecuteOrRetainTheAction() {
-    AtomicInteger calls = new AtomicInteger();
-    dialog.open(prompt, calls::incrementAndGet);
+    AtomicInteger callCount = new AtomicInteger();
+    dialog.open(prompt, callCount::incrementAndGet);
     button("cancelButton").click();
     button("confirmButton").click();
-    dialog.open(prompt, calls::incrementAndGet);
+    dialog.open(prompt, callCount::incrementAndGet);
     button("closeDialogButton").click();
     button("confirmButton").click();
-    assertEquals(0, calls.get());
+
+    assertEquals(0, callCount.get());
     assertFalse(dialog.isOpened());
   }
 
   @Test
   void confirmingConsumesOnlyTheCurrentActionOnce() {
-    AtomicInteger calls = new AtomicInteger();
-    dialog.open(prompt, () -> calls.addAndGet(100));
+    AtomicInteger callCount = new AtomicInteger();
+    dialog.open(prompt, () -> callCount.addAndGet(100));
     dialog.close();
-    dialog.open(prompt, calls::incrementAndGet);
+    dialog.open(prompt, callCount::incrementAndGet);
     button("confirmButton").click();
     button("confirmButton").click();
-    assertEquals(1, calls.get());
+
+    assertEquals(1, callCount.get());
     assertFalse(dialog.isOpened());
   }
 
   @Test
   void aFailedActionCannotBeReplayed() {
-    AtomicInteger calls = new AtomicInteger();
+    AtomicInteger callCount = new AtomicInteger();
     dialog.open(
         prompt,
         () -> {
-          calls.incrementAndGet();
+          callCount.incrementAndGet();
           throw new IllegalStateException("Test failure");
         });
     Button confirm = button("confirmButton");
+
     assertThrows(IllegalStateException.class, confirm::click);
     button("confirmButton").click();
-    assertEquals(1, calls.get());
+
+    assertEquals(1, callCount.get());
     assertFalse(dialog.isOpened());
   }
 }

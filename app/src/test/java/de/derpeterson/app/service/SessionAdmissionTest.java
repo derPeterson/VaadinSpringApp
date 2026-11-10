@@ -86,9 +86,9 @@ class SessionAdmissionTest {
   }
 
   private MockHttpServletRequest admit() {
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    sessionAdmissionService.onAuthentication(authentication(), request, mockHttpResponse);
-    return request;
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    sessionAdmissionService.onAuthentication(authentication(), mockHttpRequest, mockHttpResponse);
+    return mockHttpRequest;
   }
 
   @ParameterizedTest
@@ -110,6 +110,7 @@ class SessionAdmissionTest {
         authentication("role@example.test", role), new MockHttpServletRequest(), mockHttpResponse);
     Authentication attemptAuthentication = authentication("role@example.test", role);
     MockHttpServletRequest attemptRequest = new MockHttpServletRequest();
+
     assertThrows(
         SessionLimitException.class,
         () ->
@@ -120,18 +121,22 @@ class SessionAdmissionTest {
   @Test
   void normalizedPrincipalAndExtraTabsReuseOneSlotWithoutRepeatingFixation() {
     when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
-    MockHttpServletRequest first = new MockHttpServletRequest();
-    first.getSession().setAttribute("vaadin-ui", "preserved");
-    String old = first.getSession().getId();
-    first.setRequestedSessionId(old);
+    MockHttpServletRequest firstMockHttpRequest = new MockHttpServletRequest();
+    firstMockHttpRequest.getSession().setAttribute("vaadin-ui", "preserved");
+    String old = firstMockHttpRequest.getSession().getId();
+    firstMockHttpRequest.setRequestedSessionId(old);
     sessionAdmissionService.onAuthentication(
-        authentication(" Session@Example.Test ", RoleType.ROLE_ADMIN), first, mockHttpResponse);
-    String current = first.getSession().getId();
+        authentication(" Session@Example.Test ", RoleType.ROLE_ADMIN),
+        firstMockHttpRequest,
+        mockHttpResponse);
+    String current = firstMockHttpRequest.getSession().getId();
+
     assertNotEquals(old, current);
     MockHttpServletRequest tab = new MockHttpServletRequest();
-    tab.setSession(first.getSession());
+    tab.setSession(firstMockHttpRequest.getSession());
     tab.setRequestedSessionId(current);
     sessionAdmissionService.onAuthentication(authentication(), tab, mockHttpResponse);
+
     assertEquals(current, tab.getSession().getId());
     assertEquals("preserved", tab.getSession().getAttribute("vaadin-ui"));
     assertEquals(1, sessionRegistry.getAllSessions("session@example.test", true).size());
@@ -140,14 +145,17 @@ class SessionAdmissionTest {
 
   @Test
   void changedLimitDoesNotEvictExistingSessions() {
-    MockHttpServletRequest first = admit();
-    MockHttpServletRequest second = admit();
+    MockHttpServletRequest firstMockHttpRequest = admit();
+    MockHttpServletRequest secondMockHttpRequest = admit();
     when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(1);
-    sessionAdmissionService.onAuthentication(authentication(), first, mockHttpResponse);
-    assertFalse(((MockHttpSession) second.getSession()).isInvalid());
+    sessionAdmissionService.onAuthentication(
+        authentication(), firstMockHttpRequest, mockHttpResponse);
+
+    assertFalse(((MockHttpSession) secondMockHttpRequest.getSession()).isInvalid());
     assertThrows(SessionLimitException.class, this::admit);
     when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(3);
     admit();
+
     assertThrows(SessionLimitException.class, this::admit);
   }
 
@@ -155,14 +163,15 @@ class SessionAdmissionTest {
   @ValueSource(ints = {0, -1})
   void invalidLimitFailsClosedWithoutCreatingSlot(int limit) {
     when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(limit);
-    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
     Authentication attemptAuthentication = authentication();
+
     assertThrows(
         AuthenticationServiceException.class,
         () ->
             sessionAdmissionService.onAuthentication(
-                attemptAuthentication, request, mockHttpResponse));
-    assertNull(request.getSession(false));
+                attemptAuthentication, mockHttpRequest, mockHttpResponse));
+    assertNull(mockHttpRequest.getSession(false));
     assertTrue(sessionRegistry.getAllPrincipals().isEmpty());
   }
 
@@ -189,6 +198,7 @@ class SessionAdmissionTest {
     MockHttpServletRequest failed = new MockHttpServletRequest();
     UserDetails userDetails =
         (org.springframework.security.core.userdetails.UserDetails) authentication().getPrincipal();
+
     assertThrows(
         AuthenticationServiceException.class,
         () -> security.storeAuthenticatedUser(failed, mockHttpResponse, userDetails, true));
@@ -203,6 +213,7 @@ class SessionAdmissionTest {
     MockHttpServletRequest attemptRequest = new MockHttpServletRequest();
     UserDetails userDetails2 =
         (org.springframework.security.core.userdetails.UserDetails) authentication().getPrincipal();
+
     assertThrows(
         AuthenticationServiceException.class,
         () ->
@@ -225,31 +236,36 @@ class SessionAdmissionTest {
             mock(CustomUserDetailsService.class),
             new AdmittedSecurityContextRepository(sessionAdmissionService),
             sessionAdmissionService);
-    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
     UserDetails userDetails3 =
         (org.springframework.security.core.userdetails.UserDetails) authentication().getPrincipal();
+
     assertThrows(
         AuthenticationServiceException.class,
-        () -> security.storeAuthenticatedUser(request, mockHttpResponse, userDetails3, true));
+        () ->
+            security.storeAuthenticatedUser(mockHttpRequest, mockHttpResponse, userDetails3, true));
     assertTrue(sessionRegistry.getAllPrincipals().isEmpty());
     assertNull(SecurityContextHolder.getContext().getAuthentication());
-    verify(remember).loginFail(request, mockHttpResponse);
+    verify(remember).loginFail(mockHttpRequest, mockHttpResponse);
     verify(remember, never()).setAlwaysRemember(anyBoolean());
   }
 
   @Test
   void invalidationTimeoutAndIdentifierChangeReleaseTheCorrectSlot() {
-    MockHttpServletRequest first = admit();
-    String old = first.getSession().getId();
-    MockHttpSession session = (MockHttpSession) first.getSession();
-    session.changeSessionId();
-    sessionRegistry.onApplicationEvent(new HttpSessionIdChangedEvent(session, old));
+    MockHttpServletRequest firstMockHttpRequest = admit();
+    String old = firstMockHttpRequest.getSession().getId();
+    MockHttpSession mockHttpSession = (MockHttpSession) firstMockHttpRequest.getSession();
+    mockHttpSession.changeSessionId();
+    sessionRegistry.onApplicationEvent(new HttpSessionIdChangedEvent(mockHttpSession, old));
+
     assertNull(sessionRegistry.getSessionInformation(old));
-    assertNotNull(sessionRegistry.getSessionInformation(session.getId()));
-    session.invalidate();
+    assertNotNull(sessionRegistry.getSessionInformation(mockHttpSession.getId()));
+    mockHttpSession.invalidate();
+
     assertTrue(sessionRegistry.getAllPrincipals().isEmpty());
     MockHttpServletRequest timedOut = admit();
     sessionRegistry.onApplicationEvent(new HttpSessionDestroyedEvent(timedOut.getSession()));
+
     assertTrue(sessionRegistry.getAllPrincipals().isEmpty());
   }
 
@@ -267,6 +283,7 @@ class SessionAdmissionTest {
         futures.add(
             pool.submit(() -> {
               ready.countDown();
+
               assertTrue(start.await(5, TimeUnit.SECONDS));
               try {
                 admit();
@@ -295,11 +312,11 @@ class SessionAdmissionTest {
     try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
       Future<?> first =
           pool.submit(() -> {
-            MockHttpServletRequest request = new MockHttpServletRequest();
-            request.setSession(shared);
+            MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+            mockHttpRequest.setSession(shared);
             sessionAdmissionService.complete(
                 authentication(),
-                request,
+                mockHttpRequest,
                 new MockHttpServletResponse(),
                 () -> {
                   reserved.countDown();
@@ -314,17 +331,18 @@ class SessionAdmissionTest {
       Future<Object> second =
           pool.submit(() -> {
             assertTrue(reserved.await(5, TimeUnit.SECONDS));
-            MockHttpServletRequest request = new MockHttpServletRequest();
-            request.setSession(shared);
+            MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+            mockHttpRequest.setSession(shared);
             competitor.countDown();
             Authentication attemptAuthentication =
                 authentication("other@example.test", RoleType.ROLE_USER);
             MockHttpServletResponse attemptResponse = new MockHttpServletResponse();
+
             assertThrows(
                 AuthenticationServiceException.class,
                 () ->
                     sessionAdmissionService.onAuthentication(
-                        attemptAuthentication, request, attemptResponse));
+                        attemptAuthentication, mockHttpRequest, attemptResponse));
             return null;
           });
       first.get(10, TimeUnit.SECONDS);
@@ -338,35 +356,37 @@ class SessionAdmissionTest {
 
   @Test
   void completionFilterReleasesReservationAfterLateFailure() {
-    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
     RememberMeServices remember =
         mock(org.springframework.security.web.authentication.RememberMeServices.class);
     LoginCompletionFilter filter = new LoginCompletionFilter(sessionAdmissionService, remember);
+
     assertThrows(
         jakarta.servlet.ServletException.class,
         () ->
             filter.doFilter(
-                request,
+                mockHttpRequest,
                 mockHttpResponse,
                 (req, res) -> {
                   sessionAdmissionService.onAuthentication(
-                      authentication(), request, mockHttpResponse);
+                      authentication(), mockHttpRequest, mockHttpResponse);
                   throw new jakarta.servlet.ServletException("fixture failure after save");
                 }));
     assertTrue(sessionRegistry.getAllPrincipals().isEmpty());
-    verify(remember).loginFail(request, mockHttpResponse);
+    verify(remember).loginFail(mockHttpRequest, mockHttpResponse);
   }
 
   @Test
   void alreadyRegisteredOtherAccountCannotBeReplaced() {
-    MockHttpServletRequest request = admit();
+    MockHttpServletRequest mockHttpRequest = admit();
     Authentication attemptAuthentication =
         authentication("different@example.test", RoleType.ROLE_USER);
+
     assertThrows(
         AuthenticationServiceException.class,
         () ->
             sessionAdmissionService.onAuthentication(
-                attemptAuthentication, request, mockHttpResponse));
+                attemptAuthentication, mockHttpRequest, mockHttpResponse));
     // Same request rollback undoes its initial reservation. A separate existing device stays
     // intact.
     assertTrue(sessionRegistry.getAllPrincipals().isEmpty());
@@ -378,12 +398,15 @@ class SessionAdmissionTest {
     MockHttpServletRequest old = new MockHttpServletRequest();
     sessionAdmissionService.onAuthentication(authentication(), old, mockHttpResponse);
     sessionRegistry.getSessionInformation(old.getSession().getId()).expireNow();
+
     assertTrue(sessionAdmissionService.isExpired(old));
     MockHttpServletRequest fresh = new MockHttpServletRequest();
+
     assertDoesNotThrow(
         () -> sessionAdmissionService.onAuthentication(authentication(), fresh, mockHttpResponse));
     assertFalse(sessionAdmissionService.isExpired(fresh));
     Authentication attemptAuthentication = authentication();
+
     assertThrows(
         AuthenticationServiceException.class,
         () ->

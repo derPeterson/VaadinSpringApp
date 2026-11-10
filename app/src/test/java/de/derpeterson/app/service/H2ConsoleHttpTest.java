@@ -61,7 +61,7 @@ class H2ConsoleHttpTest {
   @TempDir Path temporary;
   private Tomcat server;
   private Connection database;
-  private HttpClient client;
+  private HttpClient httpClient;
   private String origin;
   private String base;
   private String databaseUrl;
@@ -110,14 +110,14 @@ class H2ConsoleHttpTest {
     server.start();
     origin = "http://127.0.0.1:" + server.getConnector().getLocalPort();
     base = origin + "/app";
-    client = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
+    httpClient = HttpClient.newBuilder().followRedirects(HttpClient.Redirect.NORMAL).build();
   }
 
   @AfterEach
   void stop() throws Exception {
     try {
-      if (client != null) {
-        client.close();
+      if (httpClient != null) {
+        httpClient.close();
       }
     } finally {
       try {
@@ -144,6 +144,7 @@ class H2ConsoleHttpTest {
             "/h2/query.do?jsessionid=" + session,
             Map.of("sql", "insert into console_probe values ('H2_NATIVE_SQL_OK')"),
             Map.of("Origin", origin));
+
     assertEquals(200, inserted.statusCode());
     assertEquals(1, rows());
     HttpResponse<String> selected =
@@ -151,21 +152,25 @@ class H2ConsoleHttpTest {
             "/h2/query.do?jsessionid=" + session,
             Map.of("sql", "select message from console_probe"),
             Map.of("Referer", base + "/h2/query.jsp?jsessionid=" + session));
+
     assertEquals(200, selected.statusCode());
     assertTrue(selected.body().contains("H2_NATIVE_SQL_OK"));
     assertEquals("no-store", selected.headers().firstValue("Cache-Control").orElseThrow());
     assertEquals("SAMEORIGIN", selected.headers().firstValue("X-Frame-Options").orElseThrow());
     HttpResponse<String> logout =
         get("/h2/logout.do?jsessionid=" + session, Map.of("Sec-Fetch-Site", "same-origin"));
+
     assertEquals(200, logout.statusCode());
     assertTrue(logout.body().contains("login.jsp?jsessionid=" + session));
     HttpResponse<String> loginPage =
         get("/h2/login.jsp?jsessionid=" + session, Map.of("Referer", base + "/h2/index.do"));
+
     assertTrue(loginPage.body().contains("name=\"login\""));
     post(
         "/h2/query.do?jsessionid=" + session,
         Map.of("sql", "insert into console_probe values ('after logout')"),
         Map.of("Origin", origin));
+
     assertEquals(1, rows());
   }
 
@@ -191,6 +196,7 @@ class H2ConsoleHttpTest {
     assertEquals(403, rejected.statusCode());
     assertEquals(0, rows());
     HttpResponse<String> allowed = post(path, Map.of("sql", sql), Map.of("Origin", origin));
+
     assertEquals(200, allowed.statusCode());
     assertEquals(1, rows());
   }
@@ -200,25 +206,26 @@ class H2ConsoleHttpTest {
   void sourceLessSqlIsDeniedWithoutAffectingLiveConsole(String method) throws Exception {
     String session = login();
     String path = "/h2/query.do?jsessionid=" + session;
-    HttpResponse<String> response;
+    HttpResponse<String> httpResponse;
     if (method.equals("GET")) {
-      response = get(path + "&sql=" + encode("delete from console_probe"), Map.of());
+      httpResponse = get(path + "&sql=" + encode("delete from console_probe"), Map.of());
     } else {
-      response = post(path, Map.of("sql", "delete from console_probe"), Map.of());
+      httpResponse = post(path, Map.of("sql", "delete from console_probe"), Map.of());
     }
-    assertEquals(403, response.statusCode());
+    assertEquals(403, httpResponse.statusCode());
     assertEquals(0, rows());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"/login", "/logout", "/login?v-r=uidl", "/h2-spoof/login.do"})
   void consoleSourceHeadersCannotBypassApplicationCsrf(String path) throws Exception {
-    HttpResponse<String> response =
+    HttpResponse<String> httpResponse =
         post(
             path,
             Map.of("username", "unused@example.test", "password", "unused"),
             Map.of("Origin", origin, "Sec-Fetch-Site", "same-origin"));
-    assertEquals(403, response.statusCode());
+
+    assertEquals(403, httpResponse.statusCode());
     assertEquals(
         "SAMEORIGIN",
         get("/login", Map.of()).headers().firstValue("X-Frame-Options").orElseThrow());
@@ -226,9 +233,11 @@ class H2ConsoleHttpTest {
 
   private String login() throws Exception {
     HttpResponse<String> entry = get("/h2/", Map.of());
+
     assertEquals(200, entry.statusCode());
     // Sucht die H2-Sitzungskennung im nativen Formular: Hexziffern, eine Fanggruppe, ohne Anker.
     Matcher identifier = Pattern.compile("jsessionid=([a-f0-9]+)").matcher(entry.body());
+
     assertTrue(identifier.find());
     String session = identifier.group(1);
     HttpResponse<String> login =
@@ -236,6 +245,7 @@ class H2ConsoleHttpTest {
             "/h2/login.do?jsessionid=" + session,
             Map.of("driver", "org.h2.Driver", "url", databaseUrl, "user", "sa", "password", ""),
             Map.of("Origin", origin));
+
     assertEquals(200, login.statusCode());
     return session;
   }
@@ -259,13 +269,13 @@ class H2ConsoleHttpTest {
             .header("Content-Type", "application/x-www-form-urlencoded")
             .POST(HttpRequest.BodyPublishers.ofString(body));
     headers.forEach(request::header);
-    return client.send(request.build(), HttpResponse.BodyHandlers.ofString());
+    return httpClient.send(request.build(), HttpResponse.BodyHandlers.ofString());
   }
 
   private HttpResponse<String> get(String path, Map<String, String> headers) throws Exception {
     HttpRequest.Builder request = HttpRequest.newBuilder(URI.create(base + path)).GET();
     headers.forEach(request::header);
-    return client.send(request.build(), HttpResponse.BodyHandlers.ofString());
+    return httpClient.send(request.build(), HttpResponse.BodyHandlers.ofString());
   }
 
   private void restoreProperty(String name, String value) {

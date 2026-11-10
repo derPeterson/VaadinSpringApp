@@ -23,6 +23,7 @@ class BrowserBootstrapTest {
   @Test
   void reportingUsesOnlyTheDependentBrowserReactor() throws Exception {
     List<List<String>> calls = run("25.0.4", 0, 0, "-ReportingTests");
+
     assertEquals(
         List.of(
             List.of("--version"),
@@ -39,6 +40,7 @@ class BrowserBootstrapTest {
   @Test
   void compilationFailureStopsBeforeStartingTheJavaRunner() throws Exception {
     List<List<String>> calls = run("25.0.4", 23, 23);
+
     assertEquals(2, calls.size());
     assertTrue(
         calls
@@ -92,20 +94,20 @@ class BrowserBootstrapTest {
                 "-File",
                 module.resolve("run.ps1").toString()));
     command.addAll(Arrays.asList(options));
-    ProcessBuilder builder =
+    ProcessBuilder processBuilder =
         new ProcessBuilder(command)
             .directory(directory.toFile())
             .redirectErrorStream(true)
             .redirectOutput(output.toFile());
-    builder.environment().put("BOOTSTRAP_FIXTURE_CALLS", calls.toString());
-    builder.environment().put("BOOTSTRAP_FIXTURE_JAVA", javaVersion);
-    builder.environment().put("BOOTSTRAP_FIXTURE_EXIT", Integer.toString(buildExit));
-    Process process = builder.start();
+    processBuilder.environment().put("BOOTSTRAP_FIXTURE_CALLS", calls.toString());
+    processBuilder.environment().put("BOOTSTRAP_FIXTURE_JAVA", javaVersion);
+    processBuilder.environment().put("BOOTSTRAP_FIXTURE_EXIT", Integer.toString(buildExit));
+    Process testProcess = processBuilder.start();
     try {
-      assertTrue(process.waitFor(30, TimeUnit.SECONDS), "PowerShell fixture did not terminate");
+      assertTrue(testProcess.waitFor(30, TimeUnit.SECONDS), "PowerShell fixture did not terminate");
       assertEquals(
           expectedExit,
-          process.exitValue(),
+          testProcess.exitValue(),
           () -> {
             try {
               return Files.readString(output);
@@ -114,8 +116,8 @@ class BrowserBootstrapTest {
             }
           });
     } finally {
-      if (process.isAlive()) {
-        process.destroyForcibly();
+      if (testProcess.isAlive()) {
+        testProcess.destroyForcibly();
       }
     }
     ObjectMapper json = new ObjectMapper();

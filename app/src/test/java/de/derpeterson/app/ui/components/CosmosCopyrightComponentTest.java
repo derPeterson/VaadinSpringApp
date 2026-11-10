@@ -18,10 +18,10 @@ class CosmosCopyrightComponentTest {
       Clock.fixed(Instant.parse("2031-01-01T12:00:00Z"), ZoneOffset.UTC);
 
   private CosmosCopyrightComponent copyright(String text) {
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Example & Company");
-    when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn(text);
-    return new CosmosCopyrightComponent(config, CLOCK, null);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Example & Company");
+    when(configService.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn(text);
+    return new CosmosCopyrightComponent(configService, CLOCK, null);
   }
 
   @Test
@@ -32,6 +32,7 @@ class CosmosCopyrightComponentTest {
   @Test
   void configurationIsRenderedAsPlainTextWithoutHtmlElements() {
     CosmosCopyrightComponent footer = copyright("<b>{serviceName}</b> & <script>alert(1)</script>");
+
     assertEquals("<b>Example & Company</b> & <script>alert(1)</script>", footer.getText());
     assertEquals(1, footer.getElement().getChildCount());
     assertTrue(footer.getElement().getChild(0).isTextNode());

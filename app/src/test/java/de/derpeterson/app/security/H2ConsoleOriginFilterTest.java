@@ -49,64 +49,69 @@ class H2ConsoleOriginFilterTest {
         "file://localhost"
       })
   void invalidOriginCannotReachNativeConsole(String origin) throws Exception {
-    MockHttpServletRequest request = request("POST", "/login.do");
-    request.addHeader("Origin", origin);
-    assertDenied(request);
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login.do");
+    mockHttpRequest.addHeader("Origin", origin);
+    assertDenied(mockHttpRequest);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"same-site", "cross-site", "unknown", "same-origin, cross-site", ""})
   void untrustedFetchContextCannotOverrideMatchingOrigin(String site) throws Exception {
-    MockHttpServletRequest request = request("GET", "/query.do");
-    request.addHeader("Sec-Fetch-Site", site);
-    request.addHeader("Origin", "http://localhost");
-    assertDenied(request);
+    MockHttpServletRequest mockHttpRequest = request("GET", "/query.do");
+    mockHttpRequest.addHeader("Sec-Fetch-Site", site);
+    mockHttpRequest.addHeader("Origin", "http://localhost");
+    assertDenied(mockHttpRequest);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"Origin", "Referer", "Sec-Fetch-Site"})
   void duplicateSecurityHeadersFailClosed(String header) throws Exception {
-    MockHttpServletRequest request = request("POST", "/login.do");
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login.do");
     String value = header.equals("Sec-Fetch-Site") ? "same-origin" : "http://localhost";
-    request.addHeader(header, value);
-    request.addHeader(header, value);
-    assertDenied(request);
+    mockHttpRequest.addHeader(header, value);
+    mockHttpRequest.addHeader(header, value);
+    assertDenied(mockHttpRequest);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"Origin", "Referer", "Sec-Fetch-Site"})
   void nativePostWorksWithVerifiedBrowserSource(String header) throws Exception {
-    MockHttpServletRequest request = request("POST", "/login.do");
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login.do");
     String value = "http://localhost";
     if (header.equals("Referer")) {
       value += "/h2/login.jsp?jsessionid=own-test-session";
     } else if (header.equals("Sec-Fetch-Site")) {
       value = "same-origin";
     }
-    request.addHeader(header, value);
-    assertTrue(filter.allowsConsoleRequest(request));
+    mockHttpRequest.addHeader(header, value);
+
+    assertTrue(filter.allowsConsoleRequest(mockHttpRequest));
     AtomicInteger reached = new AtomicInteger();
-    MockHttpServletResponse response = new MockHttpServletResponse();
-    filter.doFilter(request, response, (incoming, outgoing) -> reached.incrementAndGet());
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
+    filter.doFilter(
+        mockHttpRequest, mockHttpResponse, (incoming, outgoing) -> reached.incrementAndGet());
+
     assertEquals(1, reached.get());
-    assertEquals("no-store", response.getHeader("Cache-Control"));
-    assertTrue(response.getHeaders("Vary").contains("Sec-Fetch-Site, Origin, Referer"));
+    assertEquals("no-store", mockHttpResponse.getHeader("Cache-Control"));
+    assertTrue(mockHttpResponse.getHeaders("Vary").contains("Sec-Fetch-Site, Origin, Referer"));
   }
 
   @Test
   void missingOriginCannotMutateEvenThroughGetOrForgedFrameworkMarker() throws Exception {
     for (String method : new String[] {"GET", "POST", "PUT", "DELETE"}) {
-      MockHttpServletRequest request = request(method, "/query.do");
-      request.setParameter("v-r", "uidl");
-      assertDenied(request);
+      MockHttpServletRequest mockHttpRequest = request(method, "/query.do");
+      mockHttpRequest.setParameter("v-r", "uidl");
+      assertDenied(mockHttpRequest);
     }
   }
 
   @Test
   void directEntryIsAllowedButSourceLessDeepLinksAndQueryParametersAreNot() throws Exception {
     MockHttpServletRequest entry = request("GET", "/");
+
     assertTrue(filter.allowsConsoleRequest(entry));
     entry.addHeader("Sec-Fetch-Site", "none");
+
     assertTrue(filter.allowsConsoleRequest(entry));
     entry.setParameter("jsessionid", "not-an-entry");
     assertDenied(entry);
@@ -116,54 +121,64 @@ class H2ConsoleOriginFilterTest {
 
   @Test
   void fetchHeaderDoesNotHideConflictingOriginOrReferer() throws Exception {
-    MockHttpServletRequest request = request("POST", "/login.do");
-    request.addHeader("Sec-Fetch-Site", "same-origin");
-    request.addHeader("Origin", "http://localhost");
-    request.addHeader("Referer", "http://evil.test/h2/");
-    assertDenied(request);
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login.do");
+    mockHttpRequest.addHeader("Sec-Fetch-Site", "same-origin");
+    mockHttpRequest.addHeader("Origin", "http://localhost");
+    mockHttpRequest.addHeader("Referer", "http://evil.test/h2/");
+    assertDenied(mockHttpRequest);
   }
 
   @Test
   void defaultPortsIpv6ContextAndCustomizedServletMappingWork() {
-    MockHttpServletRequest request = request("POST", "/login.do");
-    request.setScheme("https");
-    request.setServerPort(443);
-    request.addHeader("Origin", "https://localhost");
-    assertTrue(filter.allowsConsoleRequest(request));
-    request.setServerName("::1");
-    request.removeHeader("Origin");
-    request.addHeader("Origin", "https://[::1]:443");
-    assertTrue(filter.allowsConsoleRequest(request));
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login.do");
+    mockHttpRequest.setScheme("https");
+    mockHttpRequest.setServerPort(443);
+    mockHttpRequest.addHeader("Origin", "https://localhost");
+
+    assertTrue(filter.allowsConsoleRequest(mockHttpRequest));
+    mockHttpRequest.setServerName("::1");
+    mockHttpRequest.removeHeader("Origin");
+    mockHttpRequest.addHeader("Origin", "https://[::1]:443");
+
+    assertTrue(filter.allowsConsoleRequest(mockHttpRequest));
     registration.setUrlMappings(java.util.List.of("/console/*"));
-    request.setRequestURI("/app/console/login.do");
-    request.setContextPath("/app");
-    request.setServletPath("/console");
-    request.setHttpServletMapping(
+    mockHttpRequest.setRequestURI("/app/console/login.do");
+    mockHttpRequest.setContextPath("/app");
+    mockHttpRequest.setServletPath("/console");
+    mockHttpRequest.setHttpServletMapping(
         new MockHttpServletMapping("login.do", "/console/*", "h2Console", MappingMatch.PATH));
-    assertTrue(filter.allowsConsoleRequest(request));
+
+    assertTrue(filter.allowsConsoleRequest(mockHttpRequest));
   }
 
   @Test
   void flagsActualServletAndReservedApplicationEndpointsAreRequired() {
-    MockHttpServletRequest request = request("POST", "/login.do");
-    request.addHeader("Origin", "http://localhost");
-    assertFalse(new H2ConsoleOriginFilter(false, () -> registration).allowsConsoleRequest(request));
-    assertFalse(new H2ConsoleOriginFilter(true, () -> null).isConsoleRequest(request));
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login.do");
+    mockHttpRequest.addHeader("Origin", "http://localhost");
+
+    assertFalse(
+        new H2ConsoleOriginFilter(false, () -> registration).allowsConsoleRequest(mockHttpRequest));
+    assertFalse(new H2ConsoleOriginFilter(true, () -> null).isConsoleRequest(mockHttpRequest));
     registration.setEnabled(false);
-    assertFalse(filter.isConsoleRequest(request));
+
+    assertFalse(filter.isConsoleRequest(mockHttpRequest));
     registration.setEnabled(true);
-    request.setHttpServletMapping(
+    mockHttpRequest.setHttpServletMapping(
         new MockHttpServletMapping("login.do", "/h2/*", "otherServlet", MappingMatch.PATH));
-    assertFalse(filter.isConsoleRequest(request));
-    request.setHttpServletMapping(
+
+    assertFalse(filter.isConsoleRequest(mockHttpRequest));
+    mockHttpRequest.setHttpServletMapping(
         new MockHttpServletMapping("login.do", "/h2-spoof/*", "h2Console", MappingMatch.PATH));
-    assertFalse(filter.isConsoleRequest(request));
-    request.setHttpServletMapping(
+
+    assertFalse(filter.isConsoleRequest(mockHttpRequest));
+    mockHttpRequest.setHttpServletMapping(
         new MockHttpServletMapping("login", "/h2/*", "h2Console", MappingMatch.PATH));
-    request.setServletPath("/login");
-    assertFalse(filter.allowsConsoleRequest(request));
-    request.setServletPath("/logout");
-    assertFalse(filter.allowsConsoleRequest(request));
+    mockHttpRequest.setServletPath("/login");
+
+    assertFalse(filter.allowsConsoleRequest(mockHttpRequest));
+    mockHttpRequest.setServletPath("/logout");
+
+    assertFalse(filter.allowsConsoleRequest(mockHttpRequest));
   }
 
   @Test
@@ -172,10 +187,11 @@ class H2ConsoleOriginFilterTest {
         new ServletRegistrationBean<>(new JakartaWebServlet() {}, "/h2/*");
     alternative.setName("h2Console");
     H2ConsoleOriginFilter exactType = new H2ConsoleOriginFilter(true, () -> alternative);
-    MockHttpServletRequest request = request("POST", "/login.do");
-    request.addHeader("Origin", "http://localhost");
-    assertFalse(exactType.isConsoleRequest(request));
-    assertFalse(exactType.allowsConsoleRequest(request));
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login.do");
+    mockHttpRequest.addHeader("Origin", "http://localhost");
+
+    assertFalse(exactType.isConsoleRequest(mockHttpRequest));
+    assertFalse(exactType.allowsConsoleRequest(mockHttpRequest));
   }
 
   @Test
@@ -184,78 +200,86 @@ class H2ConsoleOriginFilterTest {
     incomplete.setName("h2Console");
     incomplete.setUrlMappings(java.util.List.of("/h2/*"));
     H2ConsoleOriginFilter incompleteFilter = new H2ConsoleOriginFilter(true, () -> incomplete);
-    MockHttpServletRequest request = request("POST", "/login.do");
-    request.addHeader("Origin", "http://localhost");
-    assertFalse(incompleteFilter.isConsoleRequest(request));
-    assertFalse(incompleteFilter.allowsConsoleRequest(request));
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login.do");
+    mockHttpRequest.addHeader("Origin", "http://localhost");
+
+    assertFalse(incompleteFilter.isConsoleRequest(mockHttpRequest));
+    assertFalse(incompleteFilter.allowsConsoleRequest(mockHttpRequest));
     AtomicInteger continued = new AtomicInteger();
     incompleteFilter.doFilter(
-        request,
+        mockHttpRequest,
         new MockHttpServletResponse(),
         (incoming, outgoing) -> continued.incrementAndGet());
+
     assertEquals(1, continued.get(), "The normal application security chain must continue");
   }
 
   @Test
   void disabledExposureRejectsNativeEntryEvenAtCustomPath() throws Exception {
     registration.setUrlMappings(java.util.List.of("/console/*"));
-    MockHttpServletRequest request = request("GET", "/");
-    request.setServletPath("/console");
-    request.setHttpServletMapping(
+    MockHttpServletRequest mockHttpRequest = request("GET", "/");
+    mockHttpRequest.setServletPath("/console");
+    mockHttpRequest.setHttpServletMapping(
         new MockHttpServletMapping("", "/console/*", "h2Console", MappingMatch.PATH));
     H2ConsoleOriginFilter closed = new H2ConsoleOriginFilter(false, () -> registration);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     FilterChain servlet = mock(FilterChain.class);
-    closed.doFilter(request, response, servlet);
-    assertEquals(403, response.getStatus());
+    closed.doFilter(mockHttpRequest, mockHttpResponse, servlet);
+
+    assertEquals(403, mockHttpResponse.getStatus());
     verifyNoInteractions(servlet);
   }
 
   @Test
   void rootMappedConsoleFailsClosedInsteadOfExemptingApplication() throws Exception {
     registration.setUrlMappings(java.util.List.of("/*"));
-    MockHttpServletRequest request = request("POST", "/login.do");
-    request.setServletPath("");
-    request.setHttpServletMapping(
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login.do");
+    mockHttpRequest.setServletPath("");
+    mockHttpRequest.setHttpServletMapping(
         new MockHttpServletMapping("login.do", "/*", "h2Console", MappingMatch.PATH));
-    request.addHeader("Origin", "http://localhost");
-    assertDenied(request);
+    mockHttpRequest.addHeader("Origin", "http://localhost");
+    assertDenied(mockHttpRequest);
   }
 
   @Test
   void arbitraryTargetHostIsDeniedEvenWithMatchingOrigin() throws Exception {
-    MockHttpServletRequest request = request("POST", "/login.do");
-    request.setServerName("rebound.example");
-    request.addHeader("Origin", "http://rebound.example");
-    assertDenied(request);
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login.do");
+    mockHttpRequest.setServerName("rebound.example");
+    mockHttpRequest.addHeader("Origin", "http://rebound.example");
+    assertDenied(mockHttpRequest);
   }
 
   @Test
   void ordinaryApplicationRequestsAreNotHandledByConsoleFilter() throws Exception {
-    MockHttpServletRequest request = new MockHttpServletRequest("POST", "/login");
-    request.setServletPath("/login");
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("POST", "/login");
+    mockHttpRequest.setServletPath("/login");
     AtomicInteger reached = new AtomicInteger();
     filter.doFilter(
-        request, new MockHttpServletResponse(), (incoming, outgoing) -> reached.incrementAndGet());
+        mockHttpRequest,
+        new MockHttpServletResponse(),
+        (incoming, outgoing) -> reached.incrementAndGet());
+
     assertEquals(1, reached.get());
-    assertFalse(filter.allowsConsoleRequest(request));
+    assertFalse(filter.allowsConsoleRequest(mockHttpRequest));
   }
 
-  private void assertDenied(MockHttpServletRequest request) throws Exception {
-    MockHttpServletResponse response = new MockHttpServletResponse();
+  private void assertDenied(MockHttpServletRequest mockHttpRequest) throws Exception {
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     FilterChain servlet = mock(FilterChain.class);
-    assertFalse(filter.allowsConsoleRequest(request));
-    filter.doFilter(request, response, servlet);
-    assertEquals(403, response.getStatus());
+
+    assertFalse(filter.allowsConsoleRequest(mockHttpRequest));
+    filter.doFilter(mockHttpRequest, mockHttpResponse, servlet);
+
+    assertEquals(403, mockHttpResponse.getStatus());
     verifyNoInteractions(servlet);
   }
 
   private MockHttpServletRequest request(String method, String pathInfo) {
-    MockHttpServletRequest request = new MockHttpServletRequest(method, "/h2" + pathInfo);
-    request.setServletPath("/h2");
-    request.setPathInfo(pathInfo);
-    request.setHttpServletMapping(
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest(method, "/h2" + pathInfo);
+    mockHttpRequest.setServletPath("/h2");
+    mockHttpRequest.setPathInfo(pathInfo);
+    mockHttpRequest.setHttpServletMapping(
         new MockHttpServletMapping(pathInfo.substring(1), "/h2/*", "h2Console", MappingMatch.PATH));
-    return request;
+    return mockHttpRequest;
   }
 }

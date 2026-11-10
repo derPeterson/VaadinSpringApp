@@ -42,11 +42,11 @@ class AccountEmailChangeDialogTest {
   void setup() {
     testUi = new UI();
     UI.setCurrent(testUi);
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> localeReference.get());
-    VaadinSession.setCurrent(session);
-    testUi.getInternals().setSession(session);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
     dialog = new AccountEmailChangeDialog(new MessageProperties(new CustomI18NProvider()));
     testUi.add(dialog);
   }
@@ -88,6 +88,7 @@ class AccountEmailChangeDialogTest {
     dialog.open();
     MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), localeReference.get());
+
     assertTrue(dialog.isOpened());
     assertEquals(ModalityMode.STRICT, dialog.getModality());
     assertTrue(dialog.isCloseOnEsc());
@@ -102,6 +103,7 @@ class AccountEmailChangeDialogTest {
         messageProperties.getAccountEmailDialogConfirmEmail(),
         ((EmailField) byId("account-email-confirm")).getLabel());
     PasswordField password = (PasswordField) byId("account-email-password");
+
     assertEquals(messageProperties.getAccountEmailDialogPassword(), password.getLabel());
     assertEquals(Autocomplete.CURRENT_PASSWORD, password.getAutocomplete());
     assertEquals(
@@ -135,6 +137,7 @@ class AccountEmailChangeDialogTest {
     }
     assertFalse(dialog.isOpened());
     dialog.open();
+
     assertTrue(((EmailField) byId("account-email-new")).isEmpty());
     assertTrue(((EmailField) byId("account-email-confirm")).isEmpty());
     assertTrue(((PasswordField) byId("account-email-password")).isEmpty());
@@ -146,14 +149,17 @@ class AccountEmailChangeDialogTest {
     ((EmailField) byId("account-email-new")).setValue("draft@example.test");
     localeReference.set(Locale.ENGLISH);
     dialog.refreshTexts();
+
     assertEquals("draft@example.test", ((EmailField) byId("account-email-new")).getValue());
     Button request = (Button) byId("account-email-request");
+
     assertEquals(
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)
             .getAccountEmailDialogRequest(),
         request.getText());
     assertTrue(request.isEnabled());
     request.click();
+
     assertTrue(dialog.isOpened());
     assertEquals("draft@example.test", ((EmailField) byId("account-email-new")).getValue());
   }
@@ -164,6 +170,7 @@ class AccountEmailChangeDialogTest {
     EmailField email = (EmailField) byId("account-email-new");
     EmailField confirm = (EmailField) byId("account-email-confirm");
     PasswordField password = (PasswordField) byId("account-email-password");
+
     assertEquals(ValueChangeMode.EAGER, email.getValueChangeMode());
     assertEquals(ValueChangeMode.EAGER, confirm.getValueChangeMode());
     assertEquals(ValueChangeMode.EAGER, password.getValueChangeMode());
@@ -173,6 +180,7 @@ class AccountEmailChangeDialogTest {
     confirm.setValue("late@example.test");
     password.setValue("late-draft");
     dialog.open();
+
     assertTrue(email.isEmpty());
     assertTrue(confirm.isEmpty());
     assertTrue(password.isEmpty());
@@ -187,6 +195,7 @@ class AccountEmailChangeDialogTest {
     ((EmailField) byId("account-email-confirm")).setValue("new@example.test");
     ((PasswordField) byId("account-email-password")).setValue("Old-secret!");
     ((Button) byId("account-email-request")).click();
+
     assertEquals(1, calls.size());
     assertEquals("new@example.test", calls.getFirst().newEmail());
     assertFalse(dialog.isOpened());
@@ -204,6 +213,7 @@ class AccountEmailChangeDialogTest {
     ((EmailField) byId("account-email-confirm")).setValue("taken@example.test");
     ((PasswordField) byId("account-email-password")).setValue("Old-secret!");
     ((Button) byId("account-email-request")).click();
+
     assertTrue(dialog.isOpened());
     assertTrue(((EmailField) byId("account-email-new")).isInvalid());
     assertTrue(((EmailField) byId("account-email-confirm")).isInvalid());

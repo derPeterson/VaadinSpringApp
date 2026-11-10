@@ -22,6 +22,7 @@ public final class ConfigurationPage {
   @Step("Gewählte Konfigurationsgruppe über das Adminmenü öffnen")
   public void open(AdminConfigGroup group) {
     new AdminNavigation(browserPage).openGroup(group);
+
     assertThat(button(uiTexts.getAdminConfigSave())).isVisible();
   }
 
@@ -41,21 +42,25 @@ public final class ConfigurationPage {
     return browserPage.locator("#admin-config-help[opened]");
   }
 
-  public static void assertEffectiveUse(Locator help, UiTexts uiTexts, String... notes) {
-    Locator section = help.locator(".admin-help-effective-use");
-    assertThat(section.getByRole(AriaRole.HEADING)).hasText(uiTexts.getAdminConfigEffectiveTitle());
-    Locator items = section.locator("li");
-    if (notes.length == 0) {
-      assertThat(items.first()).hasText(Pattern.compile("\\S"));
-      assertThat(section).not().containsText("adminView.config.effective_");
+  public static void assertEffectiveUse(
+      Locator helpPanelLocator, UiTexts uiTexts, String... expectedEffectiveUseNotes) {
+    Locator effectiveUseSectionLocator = helpPanelLocator.locator(".admin-help-effective-use");
+
+    assertThat(effectiveUseSectionLocator.getByRole(AriaRole.HEADING))
+        .hasText(uiTexts.getAdminConfigEffectiveTitle());
+    Locator effectiveUseItemLocators = effectiveUseSectionLocator.locator("li");
+    if (expectedEffectiveUseNotes.length == 0) {
+      assertThat(effectiveUseItemLocators.first()).hasText(Pattern.compile("\\S"));
+      assertThat(effectiveUseSectionLocator).not().containsText("adminView.config.effective_");
     } else {
-      assertThat(items).hasText(notes);
+      assertThat(effectiveUseItemLocators).hasText(expectedEffectiveUseNotes);
     }
   }
 
   @Step("Feldinformation per Klick öffnen und die tatsächlichen Regeln prüfen")
   public void explain(String label, String description, String... rules) {
     info(label).click();
+
     assertThat(helpPanel().locator("vaadin-dialog-overlay > [part~='overlay']")).isVisible();
     assertThat(helpPanel()).containsText(description);
     for (String rule : rules) {
@@ -63,6 +68,7 @@ public final class ConfigurationPage {
     }
     assertThat(helpPanel()).containsText(uiTexts.getAdminConfigInputRules());
     closeHelp();
+
     assertThat(helpPanel()).hasCount(0);
   }
 
@@ -75,6 +81,7 @@ public final class ConfigurationPage {
         .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(label).setExact(true))
         .last()
         .click();
+
     assertThat(helpPanel()).hasCount(0);
   }
 
@@ -84,23 +91,24 @@ public final class ConfigurationPage {
         .filter(new Locator.FilterOptions().setHas(input(label)));
   }
 
-  public java.math.BigDecimal seconds(String label) {
-    Locator field = duration(label);
-    String selected = field.locator("vaadin-select-value-button").innerText().trim();
-    int factor;
-    if (selected.equals(uiTexts.getAdminConfigDurationUnitDays())) {
-      factor = 86400;
-    } else if (selected.equals(uiTexts.getAdminConfigDurationUnitHours())) {
-      factor = 3600;
-    } else if (selected.equals(uiTexts.getAdminConfigDurationUnitMinutes())) {
-      factor = 60;
+  public java.math.BigDecimal seconds(String durationFieldLabel) {
+    Locator durationFieldLocator = duration(durationFieldLabel);
+    String selectedDurationUnitText =
+        durationFieldLocator.locator("vaadin-select-value-button").innerText().trim();
+    int secondsPerUnit;
+    if (selectedDurationUnitText.equals(uiTexts.getAdminConfigDurationUnitDays())) {
+      secondsPerUnit = 86400;
+    } else if (selectedDurationUnitText.equals(uiTexts.getAdminConfigDurationUnitHours())) {
+      secondsPerUnit = 3600;
+    } else if (selectedDurationUnitText.equals(uiTexts.getAdminConfigDurationUnitMinutes())) {
+      secondsPerUnit = 60;
     } else {
-      assertThat(field.locator("vaadin-select-value-button"))
+      assertThat(durationFieldLocator.locator("vaadin-select-value-button"))
           .hasText(uiTexts.getAdminConfigDurationUnitSeconds());
-      factor = 1;
+      secondsPerUnit = 1;
     }
-    return new java.math.BigDecimal(input(label).inputValue().replace(",", "."))
-        .multiply(java.math.BigDecimal.valueOf(factor));
+    return new java.math.BigDecimal(input(durationFieldLabel).inputValue().replace(",", "."))
+        .multiply(java.math.BigDecimal.valueOf(secondsPerUnit));
   }
 
   public void enterSeconds(String label, java.math.BigDecimal value) {
@@ -146,19 +154,22 @@ public final class ConfigurationPage {
   @Step("Ungültiges Feld und verständlichen Hinweis prüfen")
   public void reject(String component, String message) {
     button(uiTexts.getAdminConfigSave()).click();
+
     assertThat(browserPage.locator(component + "[invalid]")).hasCount(1);
     assertThat(browserPage.locator(component + "[invalid]")).hasJSProperty("errorMessage", message);
     notice(uiTexts.getAdminConfigValidationInvalidFields());
   }
 
-  private void notice(String expected) {
-    Locator notice =
+  private void notice(String expectedNotificationText) {
+    Locator notificationCardLocator =
         browserPage
             .locator("vaadin-notification-card:not([closing])")
-            .filter(new Locator.FilterOptions().setHasText(expected));
-    assertThat(notice).isVisible();
-    notice.getByRole(AriaRole.BUTTON).click();
-    assertThat(notice).not().isVisible();
+            .filter(new Locator.FilterOptions().setHasText(expectedNotificationText));
+
+    assertThat(notificationCardLocator).isVisible();
+    notificationCardLocator.getByRole(AriaRole.BUTTON).click();
+
+    assertThat(notificationCardLocator).not().isVisible();
   }
 
   private Locator button(String name) {

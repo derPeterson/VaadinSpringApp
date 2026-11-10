@@ -63,6 +63,7 @@ class ManualEmailPreviewIT {
   void sendExamplesToTheExplicitRecipient() {
     MailVisualPreview preview = MailVisualPreview.prepare(System::getenv);
     int accepted = preview.send(preview.createSender());
+
     assertEquals(
         preview.examples().size(),
         accepted,

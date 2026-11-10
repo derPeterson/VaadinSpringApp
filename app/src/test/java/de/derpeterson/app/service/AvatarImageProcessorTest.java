@@ -65,6 +65,7 @@ class AvatarImageProcessorTest {
     byte[] original = image(format, 200, 100);
     byte[] bytes = processor.normalize(original, new Crop(1, 0.5, 0));
     BufferedImage normalized = ImageIO.read(new ByteArrayInputStream(bytes));
+
     assertEquals(512, normalized.getWidth());
     assertEquals(512, normalized.getHeight());
     assertTrue(bytes.length <= AvatarImageProcessor.MAX_RESULT);
@@ -76,11 +77,13 @@ class AvatarImageProcessorTest {
   void rejectsInvalidFormatsCorruptionAndCoordinates() throws Exception {
     byte[] svgBytes = "<svg/>".getBytes();
     Crop svgCrop = Crop.centered();
+
     assertEquals(
         Problem.TYPE,
         assertThrows(InvalidImage.class, () -> processor.normalize(svgBytes, svgCrop)).problem());
     byte[] corruptJpegBytes = new byte[] {(byte) 255, (byte) 216, (byte) 255};
     Crop corruptJpegCrop = Crop.centered();
+
     assertEquals(
         Problem.IMAGE,
         assertThrows(
@@ -107,6 +110,7 @@ class AvatarImageProcessorTest {
     CRC32 crc = new CRC32();
     crc.update(bytes, 12, 17);
     ByteBuffer.wrap(bytes, 29, 4).putInt((int) crc.getValue());
+
     assertEquals(
         Problem.DIMENSIONS,
         assertThrows(InvalidImage.class, () -> processor.validate(bytes)).problem());
@@ -123,6 +127,7 @@ class AvatarImageProcessorTest {
             return ++read <= AvatarImageProcessor.MAX_UPLOAD + 100 ? 0 : -1;
           }
         };
+
     assertEquals(
         Problem.SIZE,
         assertThrows(InvalidImage.class, () -> AvatarImageProcessor.readLimited(input)).problem());
@@ -143,18 +148,19 @@ class AvatarImageProcessorTest {
         .putShort((short) orientation)
         .putShort((short) 0)
         .putInt(0);
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    out.write(original, 0, 2);
-    out.write(new byte[] {(byte) 255, (byte) 225, 0, 34});
-    out.write(new byte[] {'E', 'x', 'i', 'f', 0, 0});
-    out.write(tiff.array());
-    out.write(original, 2, original.length - 2);
-    byte[] bytes = processor.normalize(out.toByteArray(), Crop.centered());
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    outputStream.write(original, 0, 2);
+    outputStream.write(new byte[] {(byte) 255, (byte) 225, 0, 34});
+    outputStream.write(new byte[] {'E', 'x', 'i', 'f', 0, 0});
+    outputStream.write(tiff.array());
+    outputStream.write(original, 2, original.length - 2);
+    byte[] bytes = processor.normalize(outputStream.toByteArray(), Crop.centered());
     BufferedImage result = ImageIO.read(new ByteArrayInputStream(bytes));
     boolean swapped = orientation >= 5;
     boolean reversed = orientation == 2 || orientation == 3 || orientation == 7 || orientation == 8;
     int first = result.getRGB(swapped ? 256 : 80, swapped ? 80 : 256);
     Color color = new Color(first);
+
     assertTrue(reversed ? color.getBlue() > 180 : color.getRed() > 180);
     assertFalse(new String(bytes, java.nio.charset.StandardCharsets.ISO_8859_1).contains("Exif"));
   }
@@ -162,11 +168,13 @@ class AvatarImageProcessorTest {
   @Test
   void preservesPngTransparency() throws Exception {
     BufferedImage raw = new BufferedImage(4, 4, BufferedImage.TYPE_INT_ARGB);
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    ImageIO.write(raw, "png", out);
+    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+    ImageIO.write(raw, "png", outputStream);
     BufferedImage result =
         ImageIO.read(
-            new ByteArrayInputStream(processor.normalize(out.toByteArray(), Crop.centered())));
+            new ByteArrayInputStream(
+                processor.normalize(outputStream.toByteArray(), Crop.centered())));
+
     assertEquals(0, (result.getRGB(256, 256) >>> 24));
   }
 
@@ -183,6 +191,7 @@ class AvatarImageProcessorTest {
     output.write(chunk);
     output.write(png, 33, png.length - 33);
     byte[] imageBytes = output.toByteArray();
+
     assertEquals(
         Problem.TYPE,
         assertThrows(InvalidImage.class, () -> processor.validate(imageBytes)).problem());

@@ -41,6 +41,7 @@ class LoggingPolicyTest {
   @Test
   void normalApplicationLoggingIsInfoInBothConfigurations() throws Exception {
     loggerContext = isolatedConfiguration();
+
     assertEquals(Level.INFO, loggerContext.getLogger("de.derpeterson.app").getLevel());
     assertFalse(loggerContext.getLogger("de.derpeterson.app.service.UserService").isDebugEnabled());
     assertEquals("INFO", properties().getProperty("logging.level.de.derpeterson.app"));
@@ -56,6 +57,7 @@ class LoggingPolicyTest {
     loggerContext = isolatedConfiguration();
     loggerContext.getLogger("de.derpeterson.app").setLevel(Level.DEBUG);
     Logger logger = loggerContext.getLogger(name);
+
     assertEquals(Level.INFO, logger.getLevel());
     assertEquals("INFO", properties().getProperty("logging.level." + name));
     ListAppender<ILoggingEvent> logs = new ListAppender<>();
@@ -69,6 +71,7 @@ class LoggingPolicyTest {
     loggerContext
         .getLogger("de.derpeterson.app.service.UserService")
         .debug("Fixture targeted diagnostic");
+
     assertEquals(3, logs.list.size());
     assertTrue(
         logs.list.stream().noneMatch(event -> event.getFormattedMessage().contains("private")));

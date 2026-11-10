@@ -78,13 +78,15 @@ public class OperationsBrowserTest extends BrowserFixture {
               de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE));
       new LoginPage(browserPage).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
       settings.open(AdminConfigGroup.GENERAL);
+
       assertThat(settings.input(nameLabel)).hasValue("Restart proof");
       settings.open(AdminConfigGroup.SMTP);
+
       assertThat(settings.input(hostLabel)).hasValue("mailpit-secondary");
       sendAndAssertTarget(true);
-      try (BrowserActor actor = new BrowserActor(testBrowser)) {
-        actor.login(email, BrowserTestAccounts.USER_PASSWORD, false);
-        new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
+      try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+        browserActor.login(email, BrowserTestAccounts.USER_PASSWORD, false);
+        new UserMenu(browserActor.browserPage).assertUserSignedInWithoutAdminAction(email);
       }
     } finally {
       settings.open(AdminConfigGroup.GENERAL);
@@ -167,6 +169,7 @@ public class OperationsBrowserTest extends BrowserFixture {
       browserContext.waitForCondition(
           () -> Instant.now().isAfter(retryPeriodEnds),
           new BrowserContext.WaitForConditionOptions().setTimeout(75_000));
+
       assertEquals(recover ? 1 : 0, countMessages(email, false));
     } finally {
       BrowserTestRunner.setTestMailpitAvailable(true);
@@ -189,6 +192,7 @@ public class OperationsBrowserTest extends BrowserFixture {
     mail.send();
     mail.notice(uiTexts.getAdminMailSuccess());
     awaitCondition(() -> countMessages(email, secondary) == 1, 15_000);
+
     assertEquals(0, countMessages(email, !secondary));
   }
 

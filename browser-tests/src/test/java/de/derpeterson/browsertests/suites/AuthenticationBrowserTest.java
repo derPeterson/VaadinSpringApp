@@ -100,6 +100,7 @@ public class AuthenticationBrowserTest extends BrowserFixture {
   void anonymousUserCannotOpenAdmin() {
     browserPage.navigate(path(ADMIN_ROUTE));
     new LoginPage(browserPage).assertFormVisible();
+
     assertThat(
             browserPage.getByRole(
                 AriaRole.HEADING,
@@ -137,9 +138,11 @@ public class AuthenticationBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);
     browserPage.reload();
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);
     new UserMenu(browserPage).requestSignOut();
@@ -209,10 +212,12 @@ public class AuthenticationBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
     new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);
     browserPage.navigate(path(ADMIN_ROUTE));
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     assertThat(
             browserPage.getByText(
@@ -232,6 +237,7 @@ public class AuthenticationBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);

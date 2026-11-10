@@ -131,16 +131,16 @@ class UserNotificationsUiTest {
   void setup() {
     testUi = new UI();
     UI.setCurrent(testUi);
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(c -> localeReference.get());
-    when(session.access(any()))
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(c -> localeReference.get());
+    when(vaadinSession.access(any()))
         .thenAnswer(c -> {
           ((Command) c.getArgument(0)).execute();
           return CompletableFuture.completedFuture(null);
         });
-    VaadinSession.setCurrent(session);
-    testUi.getInternals().setSession(session);
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
     messageProperties = new MessageProperties(new CustomI18NProvider());
     userNotificationService = mock(UserNotificationService.class);
     mockHttpSession = new MockHttpSession();
@@ -191,33 +191,40 @@ class UserNotificationsUiTest {
         new SupportTicketActivityIndicator(
             messageProperties, mockSupportTicketService, mockHttpRequest, navigation);
     testUi.add(navigation);
+
     assertTrue(indicator.isVisible());
     assertNull(indicator.getText());
     assertEquals(
         messageProperties.getSupportNewActivity(), Tooltip.forComponent(navigation).getText());
 
     listener.get().accept(new SupportTicketBroadcaster.SupportTicketChangeMessage(null, 77L));
+
     verify(mockSupportTicketService, times(1)).loadTicketActivity(mockHttpSession);
 
     when(ticket.unreadMessages()).thenReturn(0L);
     listener.get().accept(new SupportTicketBroadcaster.SupportTicketChangeMessage(null, 5L));
+
     assertFalse(indicator.isVisible());
     assertEquals("", Tooltip.forComponent(navigation).getText());
 
     when(ticket.unreadMessages()).thenReturn(1L);
     listener.get().accept(new SupportTicketBroadcaster.SupportTicketChangeMessage(8L, null));
+
     assertTrue(indicator.isVisible());
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     indicator.refreshTexts();
+
     assertEquals(
         messageProperties.getSupportNewActivity(), Tooltip.forComponent(navigation).getText());
 
     when(mockSupportTicketService.loadTicketActivity(mockHttpSession))
         .thenThrow(new AccessDeniedException("Access revoked"));
     listener.get().accept(new SupportTicketBroadcaster.SupportTicketChangeMessage(null, 5L));
+
     assertFalse(indicator.isVisible());
     assertEquals("", Tooltip.forComponent(navigation).getText());
     testUi.remove(navigation);
+
     assertNull(listener.get());
   }
 
@@ -238,8 +245,10 @@ class UserNotificationsUiTest {
     for (ReadFilter filter : ReadFilter.values()) {
       filters.setValue(filter);
       panel.refreshInbox();
+
       assertEquals(1, rows.getComponentCount());
       Div empty = (Div) rows.getComponentAt(0);
+
       assertTrue(empty.hasClassName("cosmos-notification-empty"));
       assertEquals(2, empty.getComponentCount());
       assertEquals("icons/lucide/bell.svg", ((SvgIcon) empty.getComponentAt(0)).getSrc());
@@ -256,12 +265,14 @@ class UserNotificationsUiTest {
               anyInt()))
           .thenReturn(Page.empty());
       ((TextField) field(panel, "notificationSearchField")).setValue("no-hit");
+
       assertTrue(
           rows.getElement()
               .getTextRecursively()
               .contains(messageProperties.getNotificationsSearchEmpty()));
     }
     panel.unavailable();
+
     assertFalse(
         tree(rows).anyMatch(component -> component.hasClassName("cosmos-notification-empty")));
     assertTrue(
@@ -282,10 +293,12 @@ class UserNotificationsUiTest {
     testUi.add(panel);
     panel.refreshInbox();
     NotificationHelper helper = NotificationHelper.getInstance();
+
     assertNull(field(helper, "messageText"));
     Button refreshButton = field(panel, "refreshInboxButton");
     refreshButton.click();
     Span success = field(helper, "titleText");
+
     assertEquals(messageProperties.getNotificationsRefreshed(), success.getText());
     assertNull(field(helper, "messageText"));
     helper.closeAndClearAllNotifications();
@@ -294,6 +307,7 @@ class UserNotificationsUiTest {
         .thenThrow(new IllegalStateException("Unavailable test fixture"));
     refreshButton.click();
     Html failure = field(helper, "messageText");
+
     assertTrue(failure.getInnerHtml().contains(messageProperties.getNotificationsUnavailable()));
     assertFalse(failure.getInnerHtml().contains(messageProperties.getNotificationsRefreshed()));
     assertEquals("–", ((Span) field(panel, "unreadCount")).getText());
@@ -301,8 +315,10 @@ class UserNotificationsUiTest {
 
   private void confirmPending(UserNotificationsPanel panel) {
     PortalConfirmationDialog confirmation = field(panel, "notificationActionConfirmation");
+
     assertTrue(confirmation.isOpened());
     ((Button) field(confirmation, "confirmButton")).click();
+
     assertFalse(confirmation.isOpened());
   }
 
@@ -328,6 +344,7 @@ class UserNotificationsUiTest {
 
   private void assertReadAllIcon(Button button) {
     SvgIcon icon = assertInstanceOf(SvgIcon.class, button.getIcon());
+
     assertEquals("icons/lucide/check-check.svg", icon.getSrc());
     assertEquals("vaadin-icon", icon.getElement().getTag());
     assertEquals("true", icon.getElement().getAttribute("aria-hidden"));
@@ -347,19 +364,19 @@ class UserNotificationsUiTest {
   void personalNotificationsPageUsesSharedAccountSectionHeaderAndUpdatesLanguage(String language) {
     localeReference.set(Locale.forLanguageTag(language));
     SecurityService security = mock(de.derpeterson.app.security.SecurityService.class);
-    ConfigService config = mock(de.derpeterson.app.service.ConfigService.class);
-    when(config.getString(any(de.derpeterson.app.model.enums.ConfigEntry.class)))
+    ConfigService configService = mock(de.derpeterson.app.service.ConfigService.class);
+    when(configService.getString(any(de.derpeterson.app.model.enums.ConfigEntry.class)))
         .thenAnswer(c ->
             ((de.derpeterson.app.model.enums.ConfigEntry) c.getArgument(0))
                 .getDefaultValueString());
-    UserEntity user =
+    UserEntity testUserEntity =
         de.derpeterson.app.model.UserEntity.builder()
             .id(5L)
             .firstName("Own")
             .lastName("User")
             .enabled(true)
             .build();
-    when(security.getCurrentUser(mockHttpRequest)).thenReturn(Optional.of(user));
+    when(security.getCurrentUser(mockHttpRequest)).thenReturn(Optional.of(testUserEntity));
     UserService users = mock(de.derpeterson.app.service.UserService.class);
     UserAvatarService testAvatars = mock(de.derpeterson.app.service.UserAvatarService.class);
     class NotificationsView extends de.derpeterson.app.views.UserNotificationsView {
@@ -372,7 +389,7 @@ class UserNotificationsUiTest {
             UserNotificationsUiTest.this.mockHttpRequest,
             testAvatars,
             UserNotificationsUiTest.this.userNotificationService,
-            config);
+            configService);
       }
 
       void refreshLanguage() {
@@ -385,23 +402,26 @@ class UserNotificationsUiTest {
             .filter(CosmosSectionHeaderComponent.class::isInstance)
             .findFirst()
             .orElseThrow();
+
     assertTrue(header.hasClassName("cosmos-dashboard-introduction"));
     assertTrue(
         tree(header)
             .filter(H1.class::isInstance)
             .anyMatch(h -> h.hasClassName("cosmos-section-title")));
     Span overview = field(view, "portalBreadcrumbSpan");
-    Span title = field(view, "notificationsTitleSpan");
+    Span titleSpan = field(view, "notificationsTitleSpan");
     Span description = field(view, "notificationsDescriptionSpan");
+
     assertTrue(overview.hasClassName("cosmos-dashboard-kicker"));
     assertTrue(description.hasClassName("cosmos-dashboard-description"));
     assertEquals(messageProperties.getAccountNavigationPortal(), overview.getText());
-    assertEquals(messageProperties.getNotificationsTitle(), title.getText());
+    assertEquals(messageProperties.getNotificationsTitle(), titleSpan.getText());
     assertEquals(messageProperties.getNotificationsPageDescription(), description.getText());
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     view.refreshLanguage();
+
     assertEquals(messageProperties.getAccountNavigationPortal(), overview.getText());
-    assertEquals(messageProperties.getNotificationsTitle(), title.getText());
+    assertEquals(messageProperties.getNotificationsTitle(), titleSpan.getText());
     assertEquals(messageProperties.getNotificationsPageDescription(), description.getText());
     assertEquals(1, tree(view.getContent()).filter(c -> c == description).count());
     verify(userNotificationService, never()).markRead(any(), any());
@@ -416,6 +436,7 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpSession, true);
     testUi.add(panel);
     panel.refreshInbox();
+
     assertEquals(
         messageProperties.getNotificationsPasswordChangedTitle(), rowTitle(panel).getText());
     assertTrue(
@@ -424,6 +445,7 @@ class UserNotificationsUiTest {
             .map(Span.class::cast)
             .anyMatch(s -> s.getText().equals(messageProperties.getNotificationsRetention(180))));
     panel.refreshTexts();
+
     verify(userNotificationService, never()).markRead(any(), any());
   }
 
@@ -436,14 +458,17 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpRequest, new Button());
     testUi.add(bell);
     Popover popover = field(bell, "notificationPopover");
+
     assertTrue(popover.getThemeNames().contains("cosmos-notifications"));
     popover.open();
     UserNotificationsPanel panel = field(bell, "notificationPreviewPanel");
     assertReadAllIcon((Button) field(panel, "markAllReadButton"));
+
     assertEquals(
         messageProperties.getNotificationsLatest(5),
         ((Span) field(panel, "inboxDescription")).getText());
     RadioButtonGroup<ReadFilter> filter = field(panel, "readFilter");
+
     assertEquals(ReadFilter.ALL, filter.getValue());
     assertEquals(
         messageProperties.getNotificationsAll(),
@@ -457,17 +482,23 @@ class UserNotificationsUiTest {
     assertEquals(messageProperties.getNotificationsFilter(), filter.getAriaLabel().orElseThrow());
     assertTrue(tree(panel).noneMatch(Checkbox.class::isInstance));
     Span previewHint = field(panel, "previewHint");
+
     assertEquals(messageProperties.getNotificationsLatest(5), previewHint.getText());
     filter.setValue(ReadFilter.READ);
+
     assertEquals(messageProperties.getNotificationsLatestRead(5), previewHint.getText());
     filter.setValue(ReadFilter.UNREAD);
+
     assertEquals(messageProperties.getNotificationsLatestUnread(5), previewHint.getText());
     filter.setValue(ReadFilter.ALL);
+
     assertEquals(messageProperties.getNotificationsLatest(5), previewHint.getText());
     Button close = field(panel, "closeInboxButton");
+
     assertEquals(messageProperties.getNotificationsClose(), close.getAriaLabel().orElseThrow());
     assertTrue(close.hasClassName("cosmos-overlay-close"));
     close.click();
+
     assertFalse(popover.isOpened());
     verify(userNotificationService, never()).markRead(any(), any());
   }
@@ -496,18 +527,22 @@ class UserNotificationsUiTest {
     testUi.add(panel);
     panel.refreshInbox();
     RadioButtonGroup<ReadFilter> filter = field(panel, "readFilter");
+
     assertEquals(
         2, tree(panel).filter(c -> c.hasClassName("cosmos-notification-preview-row")).count());
     ReflectionTestUtils.setField(panel, "page", 2);
     filter.setValue(ReadFilter.READ);
+
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.READ, 0, 5);
     assertEquals(0, (int) field(panel, "page"));
     List<Component> rows =
         tree(panel).filter(c -> c.hasClassName("cosmos-notification-preview-row")).toList();
+
     assertEquals(1, rows.size());
     assertEquals("8", rows.getFirst().getElement().getAttribute("data-notification-id"));
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     panel.refreshTexts();
+
     assertEquals(ReadFilter.READ, filter.getValue());
     assertEquals(
         messageProperties.getNotificationsRead(),
@@ -516,12 +551,15 @@ class UserNotificationsUiTest {
         messageProperties.getNotificationsLatestRead(5),
         ((Span) field(panel, "previewHint")).getText());
     filter.setValue(ReadFilter.UNREAD);
+
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.UNREAD, 0, 5);
     rows = tree(panel).filter(c -> c.hasClassName("cosmos-notification-preview-row")).toList();
+
     assertEquals(1, rows.size());
     assertEquals("7", rows.getFirst().getElement().getAttribute("data-notification-id"));
     assertTrue(rows.getFirst().hasClassName("cosmos-notification-row--unread"));
     filter.setValue(ReadFilter.ALL);
+
     assertEquals(
         2, tree(panel).filter(c -> c.hasClassName("cosmos-notification-preview-row")).count());
     verify(userNotificationService, never()).markRead(any(), any());
@@ -544,6 +582,7 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpSession, true);
     testUi.add(panel);
     panel.refreshInbox();
+
     assertEquals(item.title(), rowTitle(panel).getText());
     assertTrue(
         tree(panel)
@@ -566,15 +605,19 @@ class UserNotificationsUiTest {
             .filter(button -> button.hasClassName("cosmos-notification-preview-mark-read"))
             .findFirst()
             .orElseThrow();
+
     assertTrue(read.isVisible());
     read.click();
     confirmPending(panel);
+
     verify(userNotificationService).markRead(mockHttpSession, List.of(7L));
     assertNull(field(panel, "notificationDetailDialog"));
     ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
+
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.UNREAD, 0, 5);
     item = new Item(item.id(), item.type(), item.title(), item.body(), item.createdAt(), true);
     panel.refreshInbox();
+
     assertTrue(
         tree(panel)
             .noneMatch(component -> component.hasClassName("cosmos-notification-row--unread")));
@@ -596,12 +639,15 @@ class UserNotificationsUiTest {
     popover.open();
     UserNotificationsPanel panel = field(bell, "notificationPreviewPanel");
     rowTitle(panel).click();
+
     assertTrue(popover.isOpened());
     Dialog detail = field(panel, "notificationDetailDialog");
+
     assertTrue(detail.isOpened());
     assertFalse(popover.isCloseOnOutsideClick());
     assertFalse(popover.isCloseOnEsc());
     detail.close();
+
     assertTrue(popover.isOpened());
     assertTrue(popover.isCloseOnOutsideClick());
     assertTrue(popover.isCloseOnEsc());
@@ -630,15 +676,19 @@ class UserNotificationsUiTest {
     ElementListenerMap listeners =
         element.getNode().getFeature(com.vaadin.flow.internal.nodefeature.ElementListenerMap.class);
     ObjectNode data = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
+
     assertTrue(listeners.getExpressions("dblclick").isEmpty());
     Set<String> expressions = listeners.getExpressions("click");
+
     assertFalse(expressions.isEmpty());
     expressions.forEach(expression -> data.put(expression, false));
     listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "click", data));
+
     assertNull(field(panel, "notificationDetailDialog"));
     verify(userNotificationService, never()).markRead(any(), any());
     expressions.forEach(expression -> data.put(expression, true));
     listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "click", data));
+
     assertTrue(popover.isOpened());
     assertTrue(((Dialog) field(panel, "notificationDetailDialog")).isOpened());
     verify(userNotificationService, never()).markRead(any(), any());
@@ -681,6 +731,7 @@ class UserNotificationsUiTest {
     }
     button.click();
     Dialog dialog = field(panel, "notificationDetailDialog");
+
     assertTrue(dialog.isOpened());
     assertTrue(popover.isOpened());
     assertEquals(
@@ -690,6 +741,7 @@ class UserNotificationsUiTest {
         detailState(dialog).getText());
     verify(userNotificationService, never()).markRead(any(), any());
     dialog.close();
+
     assertTrue(popover.isOpened());
   }
 
@@ -705,6 +757,7 @@ class UserNotificationsUiTest {
     popover.open();
     UserNotificationsPanel panel = field(bell, "notificationPreviewPanel");
     Button history = field(panel, "openHistoryButton");
+
     assertEquals("icons/lucide/eye.svg", ((SvgIcon) history.getIcon()).getSrc());
     Button dismiss =
         tree(panel)
@@ -713,6 +766,7 @@ class UserNotificationsUiTest {
             .filter(button -> button.hasClassName("cosmos-notification-preview-dismiss"))
             .findFirst()
             .orElseThrow();
+
     assertTrue(
         dismiss
             .getAriaLabel()
@@ -724,6 +778,7 @@ class UserNotificationsUiTest {
         .thenReturn(Page.empty());
     dismiss.click();
     confirmPending(panel);
+
     verify(userNotificationService).dismiss(mockHttpSession, 7L);
     verify(userNotificationService, never()).markRead(any(), any());
     assertTrue(popover.isOpened());
@@ -751,6 +806,7 @@ class UserNotificationsUiTest {
             .filter(b -> b.hasClassName("cosmos-notification-preview-dismiss"))
             .findFirst()
             .orElseThrow();
+
     assertTrue(dismiss.getParent().orElseThrow().hasClassName("cosmos-notification-inbox-actions"));
     assertEquals("icons/lucide/trash-2.svg", ((SvgIcon) dismiss.getIcon()).getSrc());
     assertEquals(messageProperties.getNotificationsDismiss(), dismiss.getTooltip().getText());
@@ -766,6 +822,7 @@ class UserNotificationsUiTest {
     when(userNotificationService.unreadSnapshot(mockHttpSession)).thenReturn(List.of());
     dismiss.click();
     confirmPending(panel);
+
     verify(userNotificationService).dismiss(mockHttpSession, 7L);
     verify(userNotificationService, never()).markRead(any(), any());
     assertNull(field(panel, "notificationDetailDialog"));
@@ -786,6 +843,7 @@ class UserNotificationsUiTest {
     panel.refreshInbox();
     Button remove = field(panel, "dismissReadButton");
     Button markAll = field(panel, "markAllReadButton");
+
     assertFalse(remove.isEnabled());
     assertEquals("", remove.getText());
     assertTrue(remove.hasClassName("cosmos-delete-button"));
@@ -794,6 +852,7 @@ class UserNotificationsUiTest {
     assertEquals(
         messageProperties.getNotificationsDismissRead(), remove.getAriaLabel().orElseThrow());
     List<Component> controls = remove.getParent().orElseThrow().getChildren().toList();
+
     assertEquals(controls.indexOf(markAll) + 1, controls.indexOf(remove));
     when(userNotificationService.readCount(mockHttpSession)).thenReturn(3L);
     when(userNotificationService.inboxCount(mockHttpSession)).thenReturn(4L);
@@ -805,9 +864,11 @@ class UserNotificationsUiTest {
             eq(mockHttpSession), any(ReadFilter.class), anyString(), anySet(), anyInt(), anyInt()))
         .thenReturn(Page.empty());
     search.setValue("no visible match");
+
     assertTrue(remove.isEnabled());
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     panel.refreshTexts();
+
     assertEquals(messageProperties.getNotificationsDismissRead(), remove.getTooltip().getText());
     doAnswer(
             call -> {
@@ -819,6 +880,7 @@ class UserNotificationsUiTest {
         .dismissRead(mockHttpSession);
     remove.click();
     confirmPending(panel);
+
     verify(userNotificationService).dismissRead(mockHttpSession);
     verify(userNotificationService, never()).dismiss(any(), any());
     verify(userNotificationService, never()).markRead(any(), any());
@@ -831,6 +893,7 @@ class UserNotificationsUiTest {
     assertEquals("1", ((Span) field(panel, "totalCount")).getText());
     assertEquals("1", ((Span) field(panel, "unreadCount")).getText());
     panel.unavailable();
+
     assertFalse(remove.isEnabled());
   }
 
@@ -845,6 +908,7 @@ class UserNotificationsUiTest {
     testUi.add(panel);
     panel.refreshInbox();
     Button remove = field(panel, "dismissReadButton");
+
     assertTrue(remove.getParent().isEmpty());
     assertFalse(remove.isEnabled());
     assertTrue(tree(panel).noneMatch(component -> component == remove));
@@ -862,11 +926,13 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpSession, true);
     testUi.add(panel);
     panel.refreshInbox();
+
     assertEquals(
         messageProperties.getNotificationsRetentionUnlimited(),
         ((Span) field(panel, "notificationRetentionSpan")).getText());
     when(userNotificationService.retentionDays()).thenReturn(OptionalInt.of(14));
     panel.refreshInbox();
+
     assertEquals(
         messageProperties.getNotificationsRetention(14),
         ((Span) field(panel, "notificationRetentionSpan")).getText());
@@ -881,6 +947,7 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpSession, false);
     testUi.add(panel);
     panel.refreshInbox();
+
     assertEquals(
         messageProperties.getNotificationsPasswordChangedTitle(), rowTitle(panel).getText());
     assertTrue(
@@ -889,6 +956,7 @@ class UserNotificationsUiTest {
             .map(Span.class::cast)
             .anyMatch(s -> s.getText().equals(messageProperties.getNotificationsRetention(180))));
     panel.refreshTexts();
+
     verify(userNotificationService, never()).markRead(any(), any());
   }
 
@@ -900,8 +968,10 @@ class UserNotificationsUiTest {
     testUi.add(panel);
     panel.refreshInbox();
     rowTitle(panel).click();
+
     verify(userNotificationService, never()).markRead(any(), any());
     Dialog detail = field(panel, "notificationDetailDialog");
+
     assertTrue(detail.isOpened());
     assertTrue(detail.getThemeNames().contains("cosmos"));
     assertTrue(detail.isCloseOnOutsideClick());
@@ -936,9 +1006,11 @@ class UserNotificationsUiTest {
       String language, boolean compact, boolean read) {
     NotificationDetailFixture fixture = openNotificationDetail(language, compact, read);
     Dialog dialog = fixture.dialog();
+
     assertTrue(dialog.isOpened());
     verify(userNotificationService, never()).markRead(any(), any());
     Span state = detailState(dialog);
+
     assertEquals(
         read
             ? messageProperties.getNotificationsRead()
@@ -954,11 +1026,13 @@ class UserNotificationsUiTest {
             .filter(c -> c.hasClassName("cosmos-notification-detail-header"))
             .findFirst()
             .orElseThrow();
+
     assertTrue(
         tree(header)
             .anyMatch(
                 c -> c instanceof SvgIcon icon && "icons/lucide/bell.svg".equals(icon.getSrc())));
     List<H2> headerTitles = tree(header).filter(H2.class::isInstance).map(H2.class::cast).toList();
+
     assertEquals(1, headerTitles.size());
     assertEquals(
         messageProperties.getNotificationsDetailTitle(), headerTitles.getFirst().getText());
@@ -1009,15 +1083,18 @@ class UserNotificationsUiTest {
     UserNotificationsPanel panel = fixture.panel();
     Dialog dialog = fixture.dialog();
     Button mark = detailButton(dialog, "cosmos-notification-detail-mark-read");
+
     assertEquals(!read, mark.isVisible());
     assertEquals("icons/lucide/check.svg", ((SvgIcon) mark.getIcon()).getSrc());
     Button history = detailButton(dialog, "cosmos-notification-detail-history");
+
     assertEquals(compact, history.isVisible());
     assertEquals(messageProperties.getNotificationsHistory(), history.getText());
     assertEquals(messageProperties.getNotificationsHistory(), history.getAriaLabel().orElseThrow());
     assertEquals(messageProperties.getNotificationsHistory(), history.getTooltip().getText());
     assertEquals("icons/lucide/bell.svg", ((SvgIcon) history.getIcon()).getSrc());
     Button account = detailButton(dialog, "cosmos-notification-detail-account");
+
     assertEquals(messageProperties.getNotificationsOpenAccount(), account.getText());
     assertEquals(
         messageProperties.getNotificationsOpenAccount(), account.getAriaLabel().orElseThrow());
@@ -1049,6 +1126,7 @@ class UserNotificationsUiTest {
           .markRead(mockHttpSession, List.of(7L));
       mark.click();
       confirmPending(panel);
+
       verify(userNotificationService).markRead(mockHttpSession, List.of(7L));
       assertTrue(dialog.isOpened());
       assertEquals(messageProperties.getNotificationsRead(), detailState(dialog).getText());
@@ -1061,6 +1139,7 @@ class UserNotificationsUiTest {
     }
     dialog.close();
     rowTitle(panel).click();
+
     assertEquals(
         messageProperties.getNotificationsRead(),
         detailState(field(panel, "notificationDetailDialog")).getText());
@@ -1079,6 +1158,7 @@ class UserNotificationsUiTest {
     UserNotificationsPanel panel = fixture.panel();
     Dialog dialog = fixture.dialog();
     Button delete = detailButton(dialog, "cosmos-notification-detail-delete");
+
     assertEquals(messageProperties.getNotificationsDismiss(), delete.getText());
     assertEquals(messageProperties.getNotificationsDismiss(), delete.getAriaLabel().orElseThrow());
     assertEquals(messageProperties.getNotificationsDismiss(), delete.getTooltip().getText());
@@ -1086,11 +1166,13 @@ class UserNotificationsUiTest {
     assertTrue(delete.hasClassName("cosmos-delete-button"));
     delete.click();
     PortalConfirmationDialog confirmation = field(panel, "notificationActionConfirmation");
+
     assertTrue(confirmation.isOpened());
     assertTrue(dialog.isOpened());
     verify(userNotificationService, never()).dismiss(any(), any());
     Button cancel = field(confirmation, "cancelButton");
     cancel.click();
+
     assertFalse(confirmation.isOpened());
     assertTrue(dialog.isOpened());
     verify(userNotificationService, never()).dismiss(any(), any());
@@ -1100,6 +1182,7 @@ class UserNotificationsUiTest {
     when(userNotificationService.unreadSnapshot(mockHttpSession)).thenReturn(List.of());
     delete.click();
     confirmPending(panel);
+
     verify(userNotificationService).dismiss(mockHttpSession, 7L);
     verify(userNotificationService, never()).markRead(any(), any());
     assertFalse(dialog.isOpened());
@@ -1156,6 +1239,7 @@ class UserNotificationsUiTest {
             "#10001",
             de.derpeterson.app.model.enums.UserNotificationRelevance.TICKET_ASSIGNED);
     fixture.panel().refreshInbox();
+
     assertTrue(fixture.dialog().isOpened());
     assertEquals(
         1,
@@ -1167,6 +1251,7 @@ class UserNotificationsUiTest {
                     .equals(messageProperties.getNotificationsTicketAssigned()))
             .count());
     Item shown = field(fixture.panel(), "openedNotification");
+
     assertFalse(shown.read());
     assertFalse(shown.unread());
     assertFalse(detailButton(fixture.dialog(), "cosmos-notification-detail-mark-read").isVisible());
@@ -1187,6 +1272,7 @@ class UserNotificationsUiTest {
         .thenReturn(Page.empty());
     when(userNotificationService.inboxItem(mockHttpSession, 7L)).thenReturn(Optional.of(item));
     fixture.panel().refreshInbox();
+
     assertTrue(fixture.dialog().isOpened());
     assertTrue(
         tree(fixture.dialog())
@@ -1204,6 +1290,7 @@ class UserNotificationsUiTest {
   void ticketNotificationsDoNotOfferUnrelatedAccountSecurityNavigation(UserNotificationType type) {
     item = new Item(7L, type, null, null, Instant.EPOCH, false);
     NotificationDetailFixture fixture = openNotificationDetail("de", true, false);
+
     assertFalse(
         tree(fixture.dialog())
             .filter(Button.class::isInstance)
@@ -1229,6 +1316,7 @@ class UserNotificationsUiTest {
     when(userNotificationService.canOpenTickets(mockHttpSession)).thenReturn(true);
     NotificationDetailFixture fixture = openNotificationDetail(language, true, false);
     Button ticket = detailButton(fixture.dialog(), "cosmos-notification-detail-ticket");
+
     assertEquals(messageProperties.getNotificationsOpenTicket(), ticket.getText());
     assertTrue(ticket.getThemeNames().contains("primary"));
     Button more = detailButton(fixture.dialog(), "cosmos-notification-detail-more");
@@ -1238,15 +1326,18 @@ class UserNotificationsUiTest {
             .map(Popover.class::cast)
             .findFirst()
             .orElseThrow();
+
     assertEquals(more, menu.getTarget());
     menu.open();
     detailButton(fixture.dialog(), "cosmos-notification-detail-delete").click();
+
     assertFalse(menu.isOpened());
     assertTrue(
         ((PortalConfirmationDialog) field(fixture.panel(), "notificationActionConfirmation"))
             .isOpened());
     when(userNotificationService.canOpenTickets(mockHttpSession)).thenReturn(false);
     fixture.panel().refreshTexts();
+
     assertTrue(
         tree(fixture.dialog())
             .noneMatch(button -> button.hasClassName("cosmos-notification-detail-ticket")));
@@ -1281,6 +1372,7 @@ class UserNotificationsUiTest {
       UI.setCurrent(testUi);
     }
     ArgumentCaptor<QueryParameters> parameters = ArgumentCaptor.forClass(QueryParameters.class);
+
     verify(navigator).navigate(eq(AdminView.class), parameters.capture());
     assertEquals(List.of("support"), parameters.getValue().getParameters().get("section"));
     assertEquals(List.of("10003"), parameters.getValue().getParameters().get("ticket"));
@@ -1311,6 +1403,7 @@ class UserNotificationsUiTest {
     dialog = field(panel, "notificationDetailDialog");
     localeReference.set(Locale.forLanguageTag(language));
     panel.refreshTexts();
+
     assertEquals(messageProperties.getNotificationsUnread(), detailState(dialog).getText());
     assertEquals(
         messageProperties.getNotificationsMarkRead(),
@@ -1348,6 +1441,7 @@ class UserNotificationsUiTest {
         .markRead(mockHttpSession, List.of(7L));
     detailButton(dialog, "cosmos-notification-detail-mark-read").click();
     confirmPending(panel);
+
     assertTrue(dialog.isOpened());
     assertEquals(messageProperties.getNotificationsUnread(), detailState(dialog).getText());
     assertTrue(detailButton(dialog, "cosmos-notification-detail-mark-read").isVisible());
@@ -1368,6 +1462,7 @@ class UserNotificationsUiTest {
     when(userNotificationService.unreadSnapshot(mockHttpSession)).thenReturn(List.of());
     when(userNotificationService.unreadCount(mockHttpSession)).thenReturn(0L);
     userNotificationBroadcaster.publish(Set.of(5L));
+
     assertTrue(dialog.isOpened());
     assertTrue(popover.isOpened());
     assertEquals(messageProperties.getNotificationsRead(), detailState(dialog).getText());
@@ -1386,6 +1481,7 @@ class UserNotificationsUiTest {
     when(userNotificationService.ownerId(mockHttpSession))
         .thenThrow(new AccessDeniedException("expired"));
     rowTitle(panel).click();
+
     assertNull(field(panel, "notificationDetailDialog"));
     verify(userNotificationService, never()).markRead(any(), any());
   }
@@ -1405,9 +1501,11 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpSession, false);
     testUi.add(panel);
     panel.refreshInbox();
+
     assertEquals(item.title(), rowTitle(panel).getText());
     rowTitle(panel).click();
     Dialog detail = field(panel, "notificationDetailDialog");
+
     assertTrue(
         tree(detail)
             .filter(Div.class::isInstance)
@@ -1426,13 +1524,16 @@ class UserNotificationsUiTest {
     testUi.add(panel);
     panel.refreshInbox();
     ((Button) field(panel, "markAllReadButton")).click();
+
     verify(userNotificationService, never()).markRead(any(), any());
     when(userNotificationService.unreadSnapshot(mockHttpSession)).thenReturn(List.of(7L, 9L));
     panel.refreshInbox();
     confirmPending(panel);
+
     verify(userNotificationService).markRead(mockHttpSession, List.of(7L));
     verify(userNotificationService, never()).markRead(mockHttpSession, List.of(7L, 9L));
     ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
+
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.UNREAD, 0, 10);
   }
 
@@ -1452,6 +1553,7 @@ class UserNotificationsUiTest {
             .map(Button.class::cast)
             .map(Button::getText)
             .toList();
+
     assertEquals(
         page < 0 ? List.of("1", "2", "3", "4", "20") : List.of("1", "17", "18", "19", "20"),
         labels);
@@ -1476,6 +1578,7 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpSession, false);
     testUi.add(panel);
     panel.refreshInbox();
+
     assertTrue(
         tree(panel)
             .anyMatch(
@@ -1490,9 +1593,11 @@ class UserNotificationsUiTest {
         ((SvgIcon) ((Button) field(panel, "refreshInboxButton")).getIcon()).getSrc());
     assertReadAllIcon((Button) field(panel, "markAllReadButton"));
     ((Button) field(panel, "lastPageButton")).click();
+
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.ALL, 4, 10);
     assertFalse(((Button) field(panel, "nextPageButton")).isEnabled());
     ((Button) field(panel, "firstPageButton")).click();
+
     assertEquals(0, (int) field(panel, "page"));
     Div numbers = (Div) field(panel, "pageNumbers");
     Button third =
@@ -1505,16 +1610,19 @@ class UserNotificationsUiTest {
     third.click();
     TextField search = field(panel, "notificationSearchField");
     search.setValue("alpha");
+
     assertEquals(0, (int) field(panel, "page"));
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.ALL, "alpha", Set.of(), 0, 10);
     assertEquals("6", ((Span) field(panel, "totalCount")).getText());
     assertEquals("2", ((Span) field(panel, "unreadCount")).getText());
     ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
+
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.UNREAD, "alpha", Set.of(), 0, 10);
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     panel.refreshTexts();
+
     assertEquals("alpha", search.getValue());
     assertEquals(messageProperties.getNotificationsSearch(), search.getPlaceholder());
     assertEquals(
@@ -1523,6 +1631,7 @@ class UserNotificationsUiTest {
             eq(mockHttpSession), any(ReadFilter.class), eq("no-hit"), anySet(), anyInt(), anyInt()))
         .thenReturn(Page.empty());
     search.setValue("no-hit");
+
     assertTrue(
         tree(panel)
             .filter(Span.class::isInstance)
@@ -1532,6 +1641,7 @@ class UserNotificationsUiTest {
     assertFalse(((Button) field(panel, "firstPageButton")).isEnabled());
     assertFalse(((Button) field(panel, "lastPageButton")).isEnabled());
     search.clear();
+
     verify(userNotificationService, atLeastOnce()).inbox(mockHttpSession, ReadFilter.UNREAD, 0, 10);
     verify(userNotificationService, never()).markRead(any(), any());
   }
@@ -1542,6 +1652,7 @@ class UserNotificationsUiTest {
     UserNotificationsPanel panel = inboxWithFortyFiveItems(language);
     com.vaadin.flow.component.combobox.ComboBox<Integer> sizes = field(panel, "pageSize");
     Span pageTotal = field(panel, "pageTotal");
+
     assertEquals(List.of(10, 20, 50), sizes.getListDataView().getItems().toList());
     assertEquals(10, sizes.getValue());
     assertFalse(sizes.isAllowCustomValue());
@@ -1552,13 +1663,17 @@ class UserNotificationsUiTest {
         ((Span) field(panel, "pageLabel")).getText());
     assertEquals(messageProperties.getPortalPaginationRange(1, 10, 45), pageTotal.getText());
     ((Button) field(panel, "lastPageButton")).click();
+
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.ALL, 4, 10);
     sizes.setValue(20);
+
     assertEquals(0, (int) field(panel, "page"));
     verify(userNotificationService, atLeastOnce()).inbox(mockHttpSession, ReadFilter.ALL, 0, 20);
     ((Button) field(panel, "nextPageButton")).click();
+
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.ALL, 1, 20);
     sizes.setValue(50);
+
     assertEquals(0, (int) field(panel, "page"));
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.ALL, 0, 50);
     assertFalse(((Button) field(panel, "nextPageButton")).isEnabled());
@@ -1574,16 +1689,20 @@ class UserNotificationsUiTest {
     ((RadioButtonGroup<ReadFilter>) field(panel, "readFilter")).setValue(ReadFilter.UNREAD);
     TextField search = field(panel, "notificationSearchField");
     search.setValue("alpha");
+
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.UNREAD, "alpha", Set.of(), 0, 50);
     sizes.setValue(20);
+
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.UNREAD, "alpha", Set.of(), 0, 20);
     ((Button) field(panel, "lastPageButton")).click();
+
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.UNREAD, "alpha", Set.of(), 2, 20);
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     panel.refreshTexts();
+
     assertEquals(20, sizes.getValue());
     assertEquals("alpha", search.getValue());
     assertEquals(
@@ -1595,10 +1714,12 @@ class UserNotificationsUiTest {
             eq(mockHttpSession), any(ReadFilter.class), eq("no-hit"), anySet(), anyInt(), anyInt()))
         .thenReturn(Page.empty());
     search.setValue("no-hit");
+
     assertEquals(messageProperties.getPortalPaginationRange(0, 0, 0), pageTotal.getText());
     assertFalse(((Button) field(panel, "firstPageButton")).isEnabled());
     assertFalse(((Button) field(panel, "lastPageButton")).isEnabled());
     panel.unavailable();
+
     assertEquals("–", pageTotal.getText());
     verify(userNotificationService, never()).markRead(any(), any());
   }
@@ -1649,6 +1770,7 @@ class UserNotificationsUiTest {
     testUi.add(panel);
     panel.refreshInbox();
     RadioButtonGroup<ReadFilter> filter = field(panel, "readFilter");
+
     assertEquals("notifications-inbox-filter", filter.getId().orElseThrow());
     assertEquals(ReadFilter.ALL, filter.getValue());
     assertEquals(
@@ -1658,26 +1780,32 @@ class UserNotificationsUiTest {
     assertTrue(tree(panel).noneMatch(c -> c.hasClassName("cosmos-notification-inbox-hint")));
     Button reload = field(panel, "refreshInboxButton");
     Button markAll = field(panel, "markAllReadButton");
+
     assertEquals("", reload.getText());
     assertEquals("", markAll.getText());
     assertEquals(messageProperties.getNotificationsRefresh(), reload.getAriaLabel().orElseThrow());
     assertEquals(messageProperties.getNotificationsRefresh(), reload.getTooltip().getText());
     assertEquals(messageProperties.getNotificationsMarkAll(), markAll.getTooltip().getText());
     filter.setValue(ReadFilter.READ);
+
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.READ, 0, 10);
     TextField search = field(panel, "notificationSearchField");
     search.setValue("alpha");
+
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.READ, "alpha", Set.of(), 0, 10);
     ReflectionTestUtils.setField(panel, "page", 4);
     filter.setValue(ReadFilter.UNREAD);
+
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.UNREAD, "alpha", Set.of(), 0, 10);
     filter.setValue(ReadFilter.ALL);
+
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.ALL, "alpha", Set.of(), 0, 10);
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     panel.refreshTexts();
+
     assertEquals(ReadFilter.ALL, filter.getValue());
     assertEquals(
         messageProperties.getNotificationsRead(),
@@ -1688,6 +1816,7 @@ class UserNotificationsUiTest {
     reload.click();
     markAll.click();
     confirmPending(panel);
+
     verify(userNotificationService).markRead(mockHttpSession, List.of(7L));
   }
 
@@ -1709,6 +1838,7 @@ class UserNotificationsUiTest {
             .filter(c -> c.hasClassName("cosmos-notification-inbox-row"))
             .findFirst()
             .orElseThrow();
+
     assertEquals(!read, row.hasClassName("cosmos-notification-row--unread"));
     assertTrue(
         tree(row)
@@ -1723,13 +1853,16 @@ class UserNotificationsUiTest {
         element.getNode().getFeature(com.vaadin.flow.internal.nodefeature.ElementListenerMap.class);
     ObjectNode data = tools.jackson.databind.node.JsonNodeFactory.instance.objectNode();
     Set<String> filters = listeners.getExpressions("click");
+
     assertFalse(filters.isEmpty());
     filters.forEach(expression -> data.put(expression, false));
     listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "click", data));
+
     assertNull(field(panel, "notificationDetailDialog"));
     filters.forEach(expression -> data.put(expression, true));
     listeners.fireEvent(new com.vaadin.flow.dom.DomEvent(element, "click", data));
     Dialog detail = field(panel, "notificationDetailDialog");
+
     assertTrue(detail.isOpened());
     assertEquals(
         read
@@ -1745,6 +1878,7 @@ class UserNotificationsUiTest {
             .filter(b -> b.hasClassName("cosmos-notification-inbox-mark-read"))
             .findFirst()
             .orElseThrow();
+
     assertEquals(!read, mark.isVisible());
     assertEquals("", mark.getText());
     assertEquals(messageProperties.getNotificationsMarkRead(), mark.getTooltip().getText());
@@ -1761,6 +1895,7 @@ class UserNotificationsUiTest {
           .markRead(mockHttpSession, List.of(7L));
       mark.click();
       confirmPending(panel);
+
       verify(userNotificationService).markRead(mockHttpSession, List.of(7L));
       assertEquals("0", ((Span) field(panel, "unreadCount")).getText());
       assertEquals("1", ((Span) field(panel, "totalCount")).getText());
@@ -1780,8 +1915,10 @@ class UserNotificationsUiTest {
     testUi.add(panel);
     panel.refreshInbox();
     ((Button) field(panel, "nextPageButton")).click();
+
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.ALL, 1, 10);
     ((Button) field(panel, "previousPageButton")).click();
+
     verify(userNotificationService, times(2)).inbox(mockHttpSession, ReadFilter.ALL, 0, 10);
   }
 
@@ -1798,6 +1935,7 @@ class UserNotificationsUiTest {
             eq(mockHttpSession), any(ReadFilter.class), anyInt(), anyInt()))
         .thenThrow(new AccessDeniedException("expired"));
     panel.refreshInbox();
+
     assertFalse(detail.isOpened());
     assertTrue(tree(panel).noneMatch(c -> c.hasClassName("cosmos-notification-title")));
     assertFalse(((Button) field(panel, "markAllReadButton")).isEnabled());
@@ -1812,17 +1950,21 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpRequest, button);
     testUi.add(bell);
     Span count = field(bell, "unreadCountBadge");
+
     assertEquals("99+", count.getText());
     assertTrue(count.isVisible());
     assertTrue(button.getAriaLabel().orElseThrow().contains("125"));
     clearInvocations(userNotificationService);
     userNotificationBroadcaster.publish(Set.of(999L));
+
     verify(userNotificationService, never()).unreadCount(any());
     userNotificationBroadcaster.publish(Set.of(5L));
+
     verify(userNotificationService).unreadCount(mockHttpSession);
     testUi.remove(bell);
     clearInvocations(userNotificationService);
     userNotificationBroadcaster.publish(Set.of(5L));
+
     verify(userNotificationService, never()).unreadCount(any());
   }
 
@@ -1833,12 +1975,14 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpRequest, new Button());
     testUi.add(bell);
     Popover popover = field(bell, "notificationPopover");
+
     assertTrue(popover.isOpenOnClick());
     assertFalse(popover.isOpenOnFocus());
     assertFalse(popover.isOpenOnHover());
     assertTrue(popover.isCloseOnEsc());
     assertTrue(popover.isCloseOnOutsideClick());
     popover.open();
+
     verify(userNotificationService, never()).markRead(any(), any());
   }
 
@@ -1852,6 +1996,7 @@ class UserNotificationsUiTest {
     when(userNotificationService.unreadCount(mockHttpSession))
         .thenThrow(new AccessDeniedException("expired"));
     userNotificationBroadcaster.publish(Set.of(5L));
+
     assertFalse(button.isEnabled());
     assertFalse(((Span) field(bell, "unreadCountBadge")).isVisible());
   }
@@ -1862,6 +2007,7 @@ class UserNotificationsUiTest {
     localeReference.set(Locale.forLanguageTag(language));
     for (UserNotificationType type : UserNotificationType.values()) {
       Item message = new Item(1L, type, "Original title", "Original body", Instant.now(), false);
+
       assertFalse(
           UserNotificationTexts.getNotificationTitleText(messageProperties, message).isBlank());
       assertFalse(
@@ -1909,13 +2055,16 @@ class UserNotificationsUiTest {
       HeaderView authenticated = new HeaderView();
       context.getAutowireCapableBeanFactory().autowireBean(authenticated);
       AccountHeaderActions actions = field(authenticated, "accountHeaderActions");
+
       assertTrue(tree(actions).anyMatch(UserNotificationBell.class::isInstance));
       testUi.add(actions);
+
       verify(userNotificationService).ownerId(mockHttpSession);
       when(security.getCurrentUser(mockHttpRequest)).thenReturn(Optional.empty());
       HeaderView anonymous = new HeaderView();
       context.getAutowireCapableBeanFactory().autowireBean(anonymous);
       AccountHeaderActions hidden = field(anonymous, "accountHeaderActions");
+
       assertFalse(hidden.isVisible());
       assertTrue(tree(hidden).noneMatch(UserNotificationBell.class::isInstance));
     }
@@ -1953,6 +2102,7 @@ class UserNotificationsUiTest {
                 PageRequest.of(4, 5),
                 21));
     section.activate();
+
     assertEquals(
         messageProperties.getNotificationsHistoryCount(21),
         ((Span) field(section, "historyCountSpan")).getText());
@@ -1967,9 +2117,11 @@ class UserNotificationsUiTest {
             .toList();
     List<Button> toggles =
         tree(history).filter(Button.class::isInstance).map(Button.class::cast).toList();
+
     assertEquals(2, details.size());
     assertTrue(details.stream().noneMatch(com.vaadin.flow.component.details.Details::isOpened));
     toggles.getFirst().click();
+
     assertTrue(details.getFirst().isOpened());
     assertFalse(details.getLast().isOpened());
     assertEquals("true", toggles.getFirst().getElement().getAttribute("aria-expanded"));
@@ -2007,9 +2159,11 @@ class UserNotificationsUiTest {
             .anyMatch(label ->
                 label.getText().equals(messageProperties.getNotificationsHistoryImmutableLog())));
     toggles.getFirst().click();
+
     assertFalse(details.getFirst().isOpened());
     assertEquals("false", toggles.getFirst().getElement().getAttribute("aria-expanded"));
     ((Button) field(field(section, "historyPagination"), "lastPageButton")).click();
+
     assertEquals(
         messageProperties.getPortalPaginationRange(21, 21, 21),
         ((Span) field(field(section, "historyPagination"), "totalItemsSpan")).getText());
@@ -2018,9 +2172,11 @@ class UserNotificationsUiTest {
     assertTrue(
         ((Button) field(field(section, "historyPagination"), "previousPageButton")).isEnabled());
     ((Button) field(field(section, "historyPagination"), "firstPageButton")).click();
+
     assertEquals(0, ((Integer) field(section, "historyPageIndex")).intValue());
     when(userNotificationService.sent(mockHttpSession, 0, 5)).thenReturn(Page.empty());
     section.activate();
+
     assertEquals(
         messageProperties.getPortalPaginationRange(0, 0, 0),
         ((Span) field(field(section, "historyPagination"), "totalItemsSpan")).getText());
@@ -2038,6 +2194,7 @@ class UserNotificationsUiTest {
     Object pagination = field(section, "historyPagination");
     com.vaadin.flow.component.combobox.ComboBox<Integer> sizes =
         field(pagination, "pageSizeSelector");
+
     assertEquals(List.of(5, 10, 15), sizes.getListDataView().getItems().toList());
     assertEquals(5, sizes.getValue());
     assertEquals(
@@ -2046,6 +2203,7 @@ class UserNotificationsUiTest {
       when(userNotificationService.sent(mockHttpSession, 0, size)).thenReturn(Page.empty());
       ReflectionTestUtils.setField(section, "historyPageIndex", 3);
       sizes.setValue(size);
+
       assertEquals(0, ((Integer) field(section, "historyPageIndex")).intValue());
       verify(userNotificationService, atLeastOnce()).sent(mockHttpSession, 0, size);
       assertEquals(size, ((Integer) field(section, "historyPageSize")).intValue());
@@ -2066,6 +2224,7 @@ class UserNotificationsUiTest {
     section.activate();
     when(userNotificationService.deliveryState()).thenReturn(MaintenanceService.State.ACTIVE);
     section.refreshDeliveryState();
+
     assertTrue(((Button) field(field(section, "historyPagination"), "nextPageButton")).isEnabled());
   }
 
@@ -2083,13 +2242,16 @@ class UserNotificationsUiTest {
     Button review = field(section, "previewButton");
     Button send = field(section, "sendNotificationButton");
     review.click();
+
     assertTrue(send.isEnabled());
     Div meta = field(section, "deliveryStatusDiv");
+
     assertEquals(
         messageProperties.getNotificationsInternal(),
         ((Span) field(section, "deliveryLabelSpan")).getText());
     assertEquals("open", meta.getElement().getAttribute("data-state"));
     com.vaadin.flow.component.shared.Tooltip statusHint = field(section, "deliveryTooltip");
+
     assertEquals(
         messageProperties.getNotificationsInternal()
             + ": "
@@ -2097,6 +2259,7 @@ class UserNotificationsUiTest {
         statusHint.getText());
     when(userNotificationService.deliveryState()).thenReturn(MaintenanceService.State.ACTIVE);
     section.refreshDeliveryState();
+
     assertEquals("active", meta.getElement().getAttribute("data-state"));
     assertTrue(
         meta.getElement()
@@ -2109,6 +2272,7 @@ class UserNotificationsUiTest {
         statusHint.getText());
     com.vaadin.flow.component.orderedlayout.VerticalLayout form =
         field(section, "notificationComposeLayout");
+
     assertFalse(form.isEnabled());
     assertEquals("true", form.getElement().getAttribute("aria-disabled"));
     assertFalse(((TextField) field(section, "notificationTitleField")).isEnabled());
@@ -2119,11 +2283,13 @@ class UserNotificationsUiTest {
     assertNull(field(section, "reviewedRecipientPreview"));
     when(userNotificationService.deliveryState()).thenReturn(MaintenanceService.State.OPEN);
     section.refreshDeliveryState();
+
     assertTrue(form.isEnabled());
     assertEquals("open", meta.getElement().getAttribute("data-state"));
     assertEquals("Subject", ((TextField) field(section, "notificationTitleField")).getValue());
     assertFalse(send.isEnabled());
     review.click();
+
     assertTrue(send.isEnabled());
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
   }
@@ -2143,12 +2309,14 @@ class UserNotificationsUiTest {
     review.click();
     when(userNotificationService.deliveryState()).thenReturn(state);
     ((Button) field(section, "sendNotificationButton")).click();
+
     assertFalse(
         ((com.vaadin.flow.component.orderedlayout.VerticalLayout)
                 field(section, "notificationComposeLayout"))
             .isEnabled());
     assertNull(field(section, "reviewedRecipientPreview"));
     review.click();
+
     verify(userNotificationService, times(1)).preview(any(), any());
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
   }
@@ -2162,19 +2330,23 @@ class UserNotificationsUiTest {
     try {
       AdminUserNotificationsSection section = admin();
       testUi.add(section);
+
       assertEquals(
           previousInterval > 0 ? Math.min(previousInterval, 5000) : 5000, testUi.getPollInterval());
       when(userNotificationService.deliveryState()).thenReturn(MaintenanceService.State.ACTIVE);
       ComponentUtil.fireEvent(testUi, new PollEvent(testUi, true));
+
       assertFalse(
           ((com.vaadin.flow.component.orderedlayout.VerticalLayout)
                   field(section, "notificationComposeLayout"))
               .isEnabled());
       assertEquals(1, unrelatedPolls[0]);
       testUi.remove(section);
+
       assertEquals(previousInterval, testUi.getPollInterval());
       clearInvocations(userNotificationService);
       ComponentUtil.fireEvent(testUi, new PollEvent(testUi, true));
+
       assertEquals(2, unrelatedPolls[0]);
       verify(userNotificationService, never()).deliveryState();
     } finally {
@@ -2186,6 +2358,7 @@ class UserNotificationsUiTest {
   void adminRequiresValidFieldsAndFreshPreviewBeforeSend() {
     AdminUserNotificationsSection section = admin();
     ((Button) field(section, "previewButton")).click();
+
     assertTrue(((TextField) field(section, "notificationTitleField")).isInvalid());
     assertTrue(((TextArea) field(section, "notificationBodyField")).isInvalid());
     verify(userNotificationService, never()).preview(any(), any());
@@ -2196,8 +2369,10 @@ class UserNotificationsUiTest {
     ((TextArea) field(section, "notificationBodyField")).setValue("Body");
     ((Checkbox) field(section, "sendToEveryoneCheckbox")).setValue(true);
     ((Button) field(section, "previewButton")).click();
+
     assertTrue(((Button) field(section, "sendNotificationButton")).isEnabled());
     ((TextField) field(section, "notificationTitleField")).setValue("Changed");
+
     assertFalse(((Button) field(section, "sendNotificationButton")).isEnabled());
   }
 
@@ -2212,6 +2387,7 @@ class UserNotificationsUiTest {
         field(section, "recipientComboBox");
     Button review = field(section, "previewButton");
     Button send = field(section, "sendNotificationButton");
+
     assertEquals(messageProperties.getNotificationsSend(), send.getText());
     subject.setValue("Draft");
     message.setValue("Draft");
@@ -2222,11 +2398,13 @@ class UserNotificationsUiTest {
     ReflectionTestUtils.invokeMethod(subject, "validate");
     ReflectionTestUtils.invokeMethod(message, "validate");
     ReflectionTestUtils.invokeMethod(recipients, "validate");
+
     assertFalse(subject.isInvalid());
     assertFalse(message.isInvalid());
     assertFalse(recipients.isInvalid());
     assertFalse(send.isEnabled());
     review.click();
+
     assertTrue(subject.isInvalid());
     assertTrue(message.isInvalid());
     assertTrue(recipients.isInvalid());
@@ -2236,21 +2414,26 @@ class UserNotificationsUiTest {
     assertEquals(messageProperties.getNotificationsNoRecipients(), recipients.getErrorMessage());
     assertPreviewValidationHint();
     ReflectionTestUtils.invokeMethod(recipients, "validate");
+
     assertTrue(recipients.isInvalid());
     subject.setValue("Changed");
+
     assertFalse(subject.isInvalid());
     assertFalse(message.isInvalid());
     assertFalse(recipients.isInvalid());
     subject.clear();
     ReflectionTestUtils.invokeMethod(subject, "validate");
+
     assertFalse(subject.isInvalid());
     subject.setValue("Valid subject");
     message.setValue("Valid message");
     review.click();
+
     assertFalse(subject.isInvalid());
     assertFalse(message.isInvalid());
     assertTrue(recipients.isInvalid());
     assertPreviewValidationHint();
+
     assertFalse(send.isEnabled());
     verify(userNotificationService, never()).preview(any(), any());
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
@@ -2260,6 +2443,7 @@ class UserNotificationsUiTest {
     NotificationHelper helper = NotificationHelper.getInstance();
     Span hintTitle = field(helper, "titleText");
     Html hintMessage = field(helper, "messageText");
+
     assertEquals(messageProperties.getNotificationsPreviewFailedTitle(), hintTitle.getText());
     assertEquals(
         new Html(
@@ -2283,6 +2467,7 @@ class UserNotificationsUiTest {
     recipients.setValue(Set.of(new Target(5L, "Own", "own@example.test")));
     when(userNotificationService.preview(any(), any())).thenThrow(new Rejected(problem));
     ((Button) field(section, "previewButton")).click();
+
     assertTrue(recipients.isInvalid());
     assertEquals(
         problem == Problem.NO_RECIPIENTS
@@ -2290,6 +2475,7 @@ class UserNotificationsUiTest {
             : messageProperties.getNotificationsRecipientsChanged(),
         recipients.getErrorMessage());
     assertPreviewValidationHint();
+
     assertFalse(((Button) field(section, "sendNotificationButton")).isEnabled());
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
   }
@@ -2310,8 +2496,10 @@ class UserNotificationsUiTest {
     recipients.setValue(Set.of(new Target(5L, "Own", "own@example.test")));
     Preview checked = new Preview(new Selection(false, Set.of(5L)), List.of(5L));
     when(userNotificationService.preview(mockHttpSession, checked.selection())).thenReturn(checked);
+
     assertFalse(send.isEnabled());
     review.click();
+
     assertTrue(send.isEnabled());
     switch (input) {
       case "title" -> subject.setValue("Changed subject");
@@ -2333,6 +2521,7 @@ class UserNotificationsUiTest {
     assertFalse(message.isInvalid());
     assertFalse(recipients.isInvalid());
     send.click();
+
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
   }
 
@@ -2354,8 +2543,10 @@ class UserNotificationsUiTest {
     Button review = field(section, "previewButton");
     Button send = field(section, "sendNotificationButton");
     review.click();
+
     assertTrue(send.isEnabled());
     review.click();
+
     assertFalse(send.isEnabled());
     assertNull(field(section, "reviewedRecipientPreview"));
     assertTrue(((Div) field(section, "notificationPreviewDiv")).isVisible());
@@ -2369,6 +2560,7 @@ class UserNotificationsUiTest {
         !problem.equals("UNAVAILABLE"),
         ((TextField) field(section, "everyoneRecipientsTextField")).isInvalid());
     send.click();
+
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
   }
 
@@ -2389,6 +2581,7 @@ class UserNotificationsUiTest {
     assertFalse(subject.isInvalid());
     assertFalse(message.isInvalid());
     ((Button) field(section, "previewButton")).click();
+
     assertEquals(input.equals("title"), subject.isInvalid());
     assertEquals(input.equals("body"), message.isInvalid());
     assertFalse(((Button) field(section, "sendNotificationButton")).isEnabled());
@@ -2409,9 +2602,11 @@ class UserNotificationsUiTest {
         .thenThrow(new IllegalStateException("response interrupted"))
         .thenReturn(new Sent(1L, "Title", "Body", Instant.now(), 1));
     ((Button) field(section, "sendNotificationButton")).click();
+
     assertEquals(key, (UUID) field(section, "sendRequestUuid"));
     assertEquals("Title", ((TextField) field(section, "notificationTitleField")).getValue());
     ((Button) field(section, "sendNotificationButton")).click();
+
     verify(userNotificationService, times(2)).send(mockHttpSession, key, "Title", "Body", preview);
     assertTrue(((TextField) field(section, "notificationTitleField")).isEmpty());
     assertFalse(((Button) field(section, "sendNotificationButton")).isEnabled());
@@ -2435,17 +2630,23 @@ class UserNotificationsUiTest {
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
         field(section, "recipientComboBox");
     Span summary = field(section, "recipientSummarySpan");
+
     assertEquals(messageProperties.getNotificationsSelectedUsers(0), summary.getText());
     recipients.setValue(Set.of(accounts.getFirst()));
+
     assertEquals(messageProperties.getNotificationsSelectedUsers(1), summary.getText());
     recipients.setValue(Set.copyOf(accounts));
+
     assertEquals(messageProperties.getNotificationsSelectedUsers(2), summary.getText());
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     section.refreshTexts();
+
     assertEquals(messageProperties.getNotificationsSelectedUsers(2), summary.getText());
     recipients.setValue(Set.of(accounts.getLast()));
+
     assertEquals(messageProperties.getNotificationsSelectedUsers(1), summary.getText());
     recipients.clear();
+
     assertEquals(messageProperties.getNotificationsSelectedUsers(0), summary.getText());
     assertFalse(((Button) field(section, "sendNotificationButton")).isEnabled());
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
@@ -2469,11 +2670,13 @@ class UserNotificationsUiTest {
         field(section, "recipientComboBox");
     TextField summary = field(section, "everyoneRecipientsTextField");
     Checkbox all = field(section, "sendToEveryoneCheckbox");
+
     assertTrue(recipients.isVisible());
     assertTrue(recipients.isEnabled());
     assertFalse(summary.isVisible());
     recipients.setValue(Set.of(accounts.getFirst()));
     all.setValue(true);
+
     assertFalse(recipients.isVisible());
     assertFalse(recipients.isEnabled());
     assertTrue(summary.isVisible());
@@ -2483,9 +2686,11 @@ class UserNotificationsUiTest {
     assertEquals(messageProperties.getNotificationsRecipients(), summary.getLabel());
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     section.refreshTexts();
+
     assertEquals(messageProperties.getNotificationsEveryonePlaceholder(2), summary.getValue());
     assertEquals(messageProperties.getNotificationsRecipients(), summary.getLabel());
     all.setValue(false);
+
     assertFalse(summary.isVisible());
     assertTrue(recipients.isVisible());
     assertTrue(recipients.isEnabled());
@@ -2500,6 +2705,7 @@ class UserNotificationsUiTest {
     AdminUserNotificationsSection section = fixture.section();
     TextField titleField = field(section, "notificationTitleField");
     TextArea bodyField = field(section, "notificationBodyField");
+
     assertEquals(
         titleField.getValue().length() + " / " + UserNotificationService.TITLE_LIMIT,
         ((Span) field(section, "titleCountSpan")).getText());
@@ -2510,13 +2716,16 @@ class UserNotificationsUiTest {
     assertEquals(UserNotificationService.BODY_LIMIT, bodyField.getMaxLength());
     com.vaadin.flow.component.combobox.MultiSelectComboBox<?> recipients =
         field(section, "recipientComboBox");
+
     assertFalse(recipients.isEnabled());
     assertEquals(
         messageProperties.getNotificationsEveryonePlaceholder(4), recipients.getPlaceholder());
     ((Button) field(section, "previewButton")).click();
     Div area = field(section, "notificationPreviewDiv");
+
     assertTrue(area.isVisible());
     Span status = field(section, "previewStatusSpan");
+
     assertTrue(status.isVisible());
     assertEquals(messageProperties.getNotificationsPreviewUpdated(), status.getText());
     assertEquals("success", status.getElement().getAttribute("data-state"));
@@ -2551,6 +2760,7 @@ class UserNotificationsUiTest {
             .map(com.vaadin.flow.component.details.Details.class::cast)
             .findFirst()
             .orElseThrow();
+
     assertFalse(details.isOpened());
     Button detailsButton =
         tree(area)
@@ -2560,6 +2770,7 @@ class UserNotificationsUiTest {
                 button -> button.getId().orElse("").equals("admin-notifications-preview-details"))
             .findFirst()
             .orElseThrow();
+
     assertEquals(messageProperties.getNotificationsRecipientDetails(), detailsButton.getText());
     assertEquals("false", detailsButton.getElement().getAttribute("aria-expanded"));
     assertEquals(
@@ -2570,10 +2781,12 @@ class UserNotificationsUiTest {
             .orElseThrow()
             .hasClassName("cosmos-notification-compose-recipients"));
     detailsButton.click();
+
     assertTrue(details.isOpened());
     assertEquals(messageProperties.getNotificationsRecipientDetails(), detailsButton.getText());
     assertEquals("true", detailsButton.getElement().getAttribute("aria-expanded"));
     detailsButton.click();
+
     assertFalse(details.isOpened());
     assertEquals(messageProperties.getNotificationsRecipientDetails(), detailsButton.getText());
     detailsButton.click();
@@ -2597,6 +2810,7 @@ class UserNotificationsUiTest {
     Span status = field(section, "previewStatusSpan");
     String checkedBody = bodyField.getValue();
     bodyField.setValue("Changed");
+
     assertTrue(area.isVisible());
     assertNull(field(section, "reviewedRecipientPreview"));
     assertTrue(status.isVisible());
@@ -2612,6 +2826,7 @@ class UserNotificationsUiTest {
         "7 / " + UserNotificationService.BODY_LIMIT,
         ((Span) field(section, "bodyCountSpan")).getText());
     ((Button) field(section, "previewButton")).click();
+
     assertTrue(((Button) field(section, "sendNotificationButton")).isEnabled());
     assertEquals(messageProperties.getNotificationsPreviewUpdated(), status.getText());
     assertEquals("success", status.getElement().getAttribute("data-state"));

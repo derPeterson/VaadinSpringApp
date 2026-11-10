@@ -15,6 +15,7 @@ final class BrowserHttpsSetup {
   static void setup(Path repo) throws Exception {
     Path directory = BrowserTestCa.directory(repo);
     BrowserTestCa.initialize(directory);
+
     try (var _ = BrowserTestCa.lease(directory, false)) {
       X509Certificate root = BrowserTestCa.ownedCertificate(directory);
       if (BrowserHttps.ownsTrust(directory)) {
@@ -47,6 +48,7 @@ final class BrowserHttpsSetup {
 
   static void remove(Path repo) throws Exception {
     Path directory = BrowserTestCa.directory(repo);
+
     if (!Files.exists(directory)) {
       System.out.println("No browser test CA is configured.");
       return;
@@ -66,6 +68,7 @@ final class BrowserHttpsSetup {
     }
     Files.deleteIfExists(directory.resolve("ca.lock"));
     boolean empty;
+
     try (Stream<Path> remaining = Files.list(directory)) {
       empty = remaining.findAny().isEmpty();
     }

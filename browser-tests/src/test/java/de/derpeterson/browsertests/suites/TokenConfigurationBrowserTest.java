@@ -94,6 +94,7 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
     TokenConfigurationPage settings = new TokenConfigurationPage(browserPage);
@@ -105,6 +106,7 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
       settings.enter(label, invalid);
       settings.reject(label, uiTexts.getAdminConfigValidationDurationMinimum(minimum.toMinutes()));
       settings.reload();
+
       assertEquals(original, settings.value(label));
     }
     AllurePlaywright.attachScreenshot("Unveränderte Werte nach abgelehnten Dauern", browserPage);
@@ -112,6 +114,7 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
       settings.enter(label, minimum.toMinutes() + "m");
       settings.save();
       settings.reload();
+
       assertEquals(minimum.toString(), settings.value(label));
     } finally {
       settings.enter(label, original);

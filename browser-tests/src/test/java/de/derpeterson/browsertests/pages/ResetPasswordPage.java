@@ -68,9 +68,11 @@ public final class ResetPasswordPage {
 
   @Step("Erfolgreiche Passwortänderung wird sichtbar bestätigt")
   public void assertChanged() {
-    Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
-    assertThat(notice).containsText(uiTexts.getBaseSuccessTitle());
-    assertThat(notice)
+    Locator notificationCardLocator =
+        browserPage.locator("vaadin-notification-card:not([closing])");
+
+    assertThat(notificationCardLocator).containsText(uiTexts.getBaseSuccessTitle());
+    assertThat(notificationCardLocator)
         .containsText(uiTexts.visibleText(browserPage, uiTexts.getResetPasswordSuccessMessage()));
     assertThat(browserPage.locator("vaadin-password-field")).hasCount(0);
     assertThat(

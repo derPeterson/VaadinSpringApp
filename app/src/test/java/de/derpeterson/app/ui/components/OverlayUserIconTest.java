@@ -54,17 +54,17 @@ class OverlayUserIconTest {
   void setup() {
     testUi = new UI();
     UI.setCurrent(testUi);
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getResourceRegistry()).thenReturn(new StreamResourceRegistry(session));
-    when(session.access(any()))
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getResourceRegistry()).thenReturn(new StreamResourceRegistry(vaadinSession));
+    when(vaadinSession.access(any()))
         .thenAnswer(call -> {
           ((Command) call.getArgument(0)).execute();
           return CompletableFuture.completedFuture(null);
         });
-    when(session.getLocale()).thenAnswer(call -> localeReference.get());
-    VaadinSession.setCurrent(session);
-    testUi.getInternals().setSession(session);
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
     messageProperties = new MessageProperties(new CustomI18NProvider());
   }
 
@@ -99,25 +99,29 @@ class OverlayUserIconTest {
     avatar.setName("Alex", "Beispiel");
     avatar.showIdentityTooltip("alex@example.test");
     Tooltip tooltip = (Tooltip) ReflectionTestUtils.getField(avatar, "avatarIdentityTooltip");
+
     assertNotNull(tooltip);
     assertEquals("Alex Beispiel\nalex@example.test", tooltip.getText());
     avatar.setName(null, null);
+
     assertEquals("alex@example.test", tooltip.getText());
   }
 
   @ParameterizedTest
   @EnumSource(UserStatus.class)
   void allExistingStatusesAreIndependentOfInitials(UserStatus value) {
-    UserEntity user =
+    UserEntity testUserEntity =
         UserEntity.builder().firstName("Christian").lastName("Doebl").version(7L).build();
     OverlayUserIcon avatar =
-        new OverlayUserIcon(messageProperties, user, value, IconSize.PIXEL_48, true);
+        new OverlayUserIcon(messageProperties, testUserEntity, value, IconSize.PIXEL_48, true);
     testUi.add(avatar);
     Span initials = (Span) ReflectionTestUtils.getField(avatar, "avatarInitialsLabel");
     Div status = (Div) ReflectionTestUtils.getField(avatar, "statusIndicatorContainer");
+
     assertEquals("CD", initials.getText());
     assertEquals(1, status.getComponentCount());
     Component mark = status.getComponentAt(0).getChildren().findFirst().orElseThrow();
+
     assertEquals("vaadin-icon", mark.getElement().getTag());
     assertNotNull(mark.getElement().getAttribute("data-lucide"));
     assertEquals("true", mark.getElement().getAttribute("aria-hidden"));
@@ -131,6 +135,7 @@ class OverlayUserIconTest {
         avatar.getElement().getAttribute("aria-label"));
     avatar.setUserStatus(UserStatus.ABSENT);
     avatar.setName("New", "Name");
+
     assertEquals("NN", initials.getText());
     assertEquals(1, status.getComponentCount());
     assertEquals(
@@ -138,39 +143,47 @@ class OverlayUserIconTest {
         status.getComponentAt(0).getElement().getStyle().get("color"));
     assertEquals(
         UserStatus.ABSENT.getColor(), avatar.getStyle().get("--cosmos-avatar-status-color"));
-    assertEquals(7L, user.getVersion());
+    assertEquals(7L, testUserEntity.getVersion());
   }
 
   @Test
   void anonymousAvatarUsesNeutralSymbolAndCanBecomeAnInitialsAvatarWithoutStaleChildren() {
     OverlayUserIcon avatar = new OverlayUserIcon(messageProperties, null, null, IconSize.PIXEL_48);
     Span initials = (Span) ReflectionTestUtils.getField(avatar, "avatarInitialsLabel");
+
     assertEquals(1, initials.getComponentCount());
     assertEquals(AppConstants.USER_ICON_ALT, avatar.getElement().getAttribute("aria-label"));
     avatar.setName("Christian", "Doebl");
+
     assertEquals("CD", initials.getText());
     assertEquals(0, initials.getComponentCount());
     avatar.setIdentity(null);
+
     assertEquals(1, initials.getComponentCount());
   }
 
   @Test
   void attachedAvatarRefreshesItsCurrentStatusAndRemovesLanguageListenerOnDetach() {
-    UserEntity user = UserEntity.builder().firstName("Christian").lastName("Doebl").build();
+    UserEntity testUserEntity =
+        UserEntity.builder().firstName("Christian").lastName("Doebl").build();
     OverlayUserIcon avatar =
-        new OverlayUserIcon(messageProperties, user, UserStatus.AVAILABLE, IconSize.PIXEL_48, true);
+        new OverlayUserIcon(
+            messageProperties, testUserEntity, UserStatus.AVAILABLE, IconSize.PIXEL_48, true);
     testUi.add(avatar);
     avatar.setUserStatus(UserStatus.EMPLOYED);
     localeReference.set(Locale.ENGLISH);
     LanguageChangeEvent.fire(testUi, Locale.ENGLISH);
     String english =
         "Christian Doebl – " + messageProperties.getUserStatusLabel(UserStatus.EMPLOYED);
+
     assertEquals(english, avatar.getElement().getAttribute("aria-label"));
     testUi.remove(avatar);
     localeReference.set(Locale.GERMAN);
     LanguageChangeEvent.fire(testUi, Locale.GERMAN);
+
     assertEquals(english, avatar.getElement().getAttribute("aria-label"));
     testUi.add(avatar);
+
     assertEquals(
         "Christian Doebl – " + messageProperties.getUserStatusLabel(UserStatus.EMPLOYED),
         avatar.getElement().getAttribute("aria-label"));
@@ -178,37 +191,45 @@ class OverlayUserIconTest {
 
   @Test
   void profileEventsRefreshTheImageWithoutRebuildingItForAStatusChangeAndDetachUnsubscribes() {
-    UserAvatarService service = mock(UserAvatarService.class);
+    UserAvatarService userAvatarService = mock(UserAvatarService.class);
     UserProfileBroadcaster events = new UserProfileBroadcaster();
-    when(service.events()).thenReturn(events);
+    when(userAvatarService.events()).thenReturn(events);
     UUID revision = UUID.randomUUID();
     State custom = new UserAvatarService.State(1L, AvatarMode.CUSTOM, true, revision);
-    when(service.state(12L))
+    when(userAvatarService.state(12L))
         .thenReturn(new UserAvatarService.State(2L, AvatarMode.INITIALS, true, revision), custom);
-    UserEntity user = UserEntity.builder().id(12L).firstName("Christian").lastName("Doebl").build();
+    UserEntity testUserEntity =
+        UserEntity.builder().id(12L).firstName("Christian").lastName("Doebl").build();
     OverlayUserIcon avatar =
-        new OverlayUserIcon(messageProperties, user, UserStatus.AVAILABLE, IconSize.PIXEL_48);
-    avatar.configureAvatar(service, custom);
+        new OverlayUserIcon(
+            messageProperties, testUserEntity, UserStatus.AVAILABLE, IconSize.PIXEL_48);
+    avatar.configureAvatar(userAvatarService, custom);
     testUi.add(avatar);
     Image photo = (Image) ReflectionTestUtils.getField(avatar, "avatarPhotoImage");
     String first = photo.getSrc();
+
     assertTrue(photo.isVisible());
     avatar.setUserStatus(UserStatus.ABSENT);
+
     assertEquals(first, photo.getSrc());
     Div status = (Div) ReflectionTestUtils.getField(avatar, "statusIndicatorContainer");
+
     assertFalse(status.isVisible());
     assertFalse(avatar.hasClassName("cosmos-avatar-with-status"));
     assertEquals(0, status.getComponentCount());
     assertEquals("Christian Doebl", avatar.getElement().getAttribute("aria-label"));
     events.broadcast(new UserProfileBroadcaster.UserProfileChangeMessage(12L, "New", "Name"));
+
     assertFalse(photo.isVisible());
     events.broadcast(new UserProfileBroadcaster.UserProfileChangeMessage(12L, "New", "Name"));
+
     assertTrue(photo.isVisible());
     assertNotEquals(first, photo.getSrc());
     assertEquals("New Name", avatar.getElement().getAttribute("aria-label"));
     assertFalse(status.isVisible());
     testUi.remove(avatar);
     events.broadcast(new UserProfileBroadcaster.UserProfileChangeMessage(12L, "Detached", "Name"));
-    verify(service, times(2)).state(12L);
+
+    verify(userAvatarService, times(2)).state(12L);
   }
 }

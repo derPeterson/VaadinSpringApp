@@ -18,6 +18,7 @@ class MicrosoftSigningKeysTest {
             + "{\"kid\":\"c\",\"issuer\":\"https://other.example.test\"},{\"kid\":\"d\"}]}";
     java.util.Map<String, Object> filtered =
         com.nimbusds.jose.util.JSONObjectUtils.parse(MicrosoftSigningKeys.filter(document, issuer));
+
     assertEquals(2, com.nimbusds.jose.util.JSONObjectUtils.getJSONArray(filtered, "keys").size());
     assertThrows(IOException.class, () -> MicrosoftSigningKeys.filter("invalid", issuer));
   }

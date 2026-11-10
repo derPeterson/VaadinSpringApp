@@ -12,15 +12,18 @@ import java.util.zip.ZipInputStream;
 
 /** Optional JaCoCo measurement of the disposable application's exact production classes. */
 final class BrowserCoverage {
-  static Path prepare(Path module, Path run) throws IOException {
-    Path agent = module.resolve("target/tools/jacocoagent.jar").toAbsolutePath().normalize();
-    if (!Files.isRegularFile(agent)) {
-      throw new IOException("JaCoCo agent missing: " + agent);
+  static Path prepare(Path browserTestModulePath, Path runDirectory) throws IOException {
+    Path coverageAgentPath =
+        browserTestModulePath.resolve("target/tools/jacocoagent.jar").toAbsolutePath().normalize();
+    if (!Files.isRegularFile(coverageAgentPath)) {
+      throw new IOException("JaCoCo agent missing: " + coverageAgentPath);
     }
-    Files.createDirectories(run.resolve("coverage"));
-    Path override = run.resolve("compose.coverage.yaml");
-    Files.writeString(override, overrideContents(agent));
-    return override;
+    Files.createDirectories(runDirectory.resolve("coverage"));
+
+    Path composeOverridePath = runDirectory.resolve("compose.coverage.yaml");
+    Files.writeString(composeOverridePath, overrideContents(coverageAgentPath));
+
+    return composeOverridePath;
   }
 
   static String overrideContents(Path agent) {
@@ -28,16 +31,16 @@ final class BrowserCoverage {
         agent.toAbsolutePath().normalize().toString().replace('\\', '/').replace("'", "''");
     // Jeder Lauf besitzt frische eigene Volumes; nach einem App-Neustart Messdaten ergänzen.
     return """
-                services:
-                  app:
-                    environment:
-                      JAVA_TOOL_OPTIONS: "-javaagent:/opt/jacoco/jacocoagent.jar=destfile=/app/logs/browser-jacoco.exec,append=true,includes=de.derpeterson.app.*"
-                    volumes:
-                      - type: bind
-                        source: '%s'
-                        target: /opt/jacoco/jacocoagent.jar
-                        read_only: true
-                """
+    services:
+      app:
+        environment:
+          JAVA_TOOL_OPTIONS: "-javaagent:/opt/jacoco/jacocoagent.jar=destfile=/app/logs/browser-jacoco.exec,append=true,includes=de.derpeterson.app.*"
+        volumes:
+          - type: bind
+            source: '%s'
+            target: /opt/jacoco/jacocoagent.jar
+            read_only: true
+    """
         .formatted(source);
   }
 
@@ -74,6 +77,7 @@ final class BrowserCoverage {
         }
       }
     }
+
     if (appClasses == 0 || sharedJars != 1 || sharedClasses == 0) {
       throw new IOException(
           "Tested JAR must contain application classes and exactly one Shared JAR.");
@@ -103,13 +107,15 @@ final class BrowserCoverage {
     }
   }
 
-  private static void copyEntry(InputStream input, Path root, String name) throws IOException {
-    Path output = root.resolve(name).normalize();
-    if (!output.startsWith(root)) {
+  private static void copyEntry(InputStream entryInputStream, Path targetRootPath, String entryName)
+      throws IOException {
+    Path targetFilePath = targetRootPath.resolve(entryName).normalize();
+    if (!targetFilePath.startsWith(targetRootPath)) {
       throw new IOException("Invalid path in tested code archive.");
     }
-    Files.createDirectories(output.getParent());
-    Files.copy(input, output);
+
+    Files.createDirectories(targetFilePath.getParent());
+    Files.copy(entryInputStream, targetFilePath);
   }
 
   static List<String> reportCommand(Path module, Path folder) {

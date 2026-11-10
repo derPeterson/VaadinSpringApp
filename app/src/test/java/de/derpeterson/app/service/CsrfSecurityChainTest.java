@@ -91,17 +91,18 @@ class CsrfSecurityChainTest {
       login.setParameter("v-r", "uidl");
     }
     FilterChain downstream = mock(FilterChain.class);
-    MockHttpServletResponse response = new MockHttpServletResponse();
-    new FilterChainProxy(chain).doFilter(login, response, downstream);
-    assertEquals(403, response.getStatus());
-    assertNull(response.getRedirectedUrl());
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
+    new FilterChainProxy(chain).doFilter(login, mockHttpResponse, downstream);
+
+    assertEquals(403, mockHttpResponse.getStatus());
+    assertNull(mockHttpResponse.getRedirectedUrl());
     verifyNoInteractions(downstream);
     assertTrue(sessionRegistry.getAllSessions(email, true).isEmpty());
     assertTrue(loginAttemptRepository.findById(LoginAttemptService.identityKey(email)).isEmpty());
     assertNull(
         session(bootstrap)
             .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
-    assertEquals(0, response.getCookies().length);
+    assertEquals(0, mockHttpResponse.getCookies().length);
   }
 
   @ParameterizedTest
@@ -113,21 +114,26 @@ class CsrfSecurityChainTest {
     String oldRaw = csrf.loadToken(bootstrap.request()).getToken();
     String oldId = session(bootstrap).getId();
     Exchange login = login(email, bootstrap, body, false);
+
     assertEquals("/home", login.response().getRedirectedUrl());
     assertNotEquals(oldId, session(login).getId());
     assertEquals(1, sessionRegistry.getAllSessions(email, false).size());
     Exchange fresh = bootstrap(session(login));
     String currentRaw = csrf.loadToken(fresh.request()).getToken();
+
     assertNotEquals(oldRaw, currentRaw);
     MockHttpServletRequest stale = request("POST", "/logout", session(login));
     stale.addHeader("X-CSRF-TOKEN", oldToken);
+
     assertEquals(403, execute(stale).response().getStatus());
     assertFalse(session(login).isInvalid());
     execute(request("GET", "/home", session(login)));
+
     assertEquals(currentRaw, csrf.loadToken(fresh.request()).getToken());
     MockHttpServletRequest logout = request("POST", "/logout", session(login));
     logout.addHeader("X-CSRF-TOKEN", fresh.response().getHeader("X-CSRF-TOKEN"));
     MockHttpSession loggedIn = session(login);
+
     assertEquals("/login", execute(logout).response().getRedirectedUrl());
     assertTrue(loggedIn.isInvalid());
     assertTrue(sessionRegistry.getAllSessions(email, true).isEmpty());
@@ -166,6 +172,7 @@ class CsrfSecurityChainTest {
     MockHttpServletRequest logout = request("POST", "/logout", session(first));
     logout.addHeader("X-CSRF-TOKEN", fresh.response().getHeader("X-CSRF-TOKEN"));
     Exchange result = execute(logout);
+
     assertEquals("/login", result.response().getRedirectedUrl());
     assertNull(tokens.getTokenForSeries(series(rememberCookie(first))));
     assertNotNull(tokens.getTokenForSeries(series(rememberCookie(other))));
@@ -184,6 +191,7 @@ class CsrfSecurityChainTest {
     MockHttpServletRequest returning = request("GET", "/login", session(anonymous));
     returning.setCookies(rememberCookie(first));
     Exchange restored = execute(returning);
+
     assertNotEquals(oldRaw, csrf.loadToken(returning).getToken());
     assertNotNull(
         session(restored)
@@ -191,6 +199,7 @@ class CsrfSecurityChainTest {
     assertEquals(2, sessionRegistry.getAllSessions(email, false).size());
     MockHttpServletRequest logout = request("POST", "/logout", session(restored));
     logout.addHeader("X-CSRF-TOKEN", restored.response().getHeader("X-CSRF-TOKEN"));
+
     assertEquals("/login", execute(logout).response().getRedirectedUrl());
   }
 
@@ -206,9 +215,11 @@ class CsrfSecurityChainTest {
         false);
     Exchange fresh = bootstrap(session(bootstrap));
     String current = csrf.loadToken(fresh.request()).getToken();
+
     assertNotEquals(oldRaw, current);
     assertEquals(1, sessionRegistry.getAllSessions(email, false).size());
     execute(request("GET", "/account", session(fresh)));
+
     assertEquals(current, csrf.loadToken(fresh.request()).getToken());
   }
 
@@ -216,6 +227,7 @@ class CsrfSecurityChainTest {
   @ValueSource(strings = {"/home", "/custom-theme/cosmos-theme.css", "/VAADIN/build/app.js"})
   void publicGetsDoNotCreateCsrfSession(String path) throws Exception {
     Exchange result = execute(request("GET", path, null));
+
     assertNull(result.request().getSession(false));
     assertNull(result.response().getHeader("X-CSRF-TOKEN"));
   }
@@ -226,14 +238,18 @@ class CsrfSecurityChainTest {
     contextLogin.setContextPath("/app");
     contextLogin.setServletPath("/login");
     Exchange underContext = execute(contextLogin);
+
     assertNotNull(underContext.response().getHeader("X-CSRF-TOKEN"));
     assertNotNull(underContext.request().getSession(false));
     Exchange first = bootstrap(null);
+
     assertNotNull(first.response().getHeader("X-CSRF-TOKEN"));
     assertTrue(first.response().getHeader("Cache-Control").contains("no-store"));
     String raw = csrf.loadToken(first.request()).getToken();
+
     assertNotEquals(raw, first.response().getHeader("X-CSRF-TOKEN"));
     Exchange second = bootstrap(session(first));
+
     assertEquals(session(first), session(second));
     assertEquals(raw, csrf.loadToken(second.request()).getToken());
     assertNotEquals(
@@ -243,24 +259,27 @@ class CsrfSecurityChainTest {
   @ParameterizedTest
   @ValueSource(strings = {"/h2/login.do", "/HILLA/push", "/VAADIN/uidl", "/"})
   void forgedTransportOrUnknownRootTypeCannotReachServlet(String path) throws Exception {
-    MockHttpServletRequest request = request("POST", path, null);
-    request.setParameter("v-r", path.equals("/") ? "invented" : "uidl");
-    assertEquals(403, execute(request).response().getStatus());
+    MockHttpServletRequest mockHttpRequest = request("POST", path, null);
+    mockHttpRequest.setParameter("v-r", path.equals("/") ? "invented" : "uidl");
+
+    assertEquals(403, execute(mockHttpRequest).response().getStatus());
   }
 
   @Test
   void httpsPasswordLoginIssuesSecureHttpOnlySameSiteRememberCookie() throws Exception {
     String email = user();
     Exchange bootstrap = bootstrap(null);
-    MockHttpServletRequest request = request("POST", "/login", session(bootstrap));
-    request.setSecure(true);
-    request.addHeader("X-CSRF-TOKEN", bootstrap.response().getHeader("X-CSRF-TOKEN"));
-    request.setParameter("username", email);
-    request.setParameter("password", "SecretPassword!");
-    request.setParameter("remember-me", "true");
-    Exchange authenticated = execute(request);
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login", session(bootstrap));
+    mockHttpRequest.setSecure(true);
+    mockHttpRequest.addHeader("X-CSRF-TOKEN", bootstrap.response().getHeader("X-CSRF-TOKEN"));
+    mockHttpRequest.setParameter("username", email);
+    mockHttpRequest.setParameter("password", "SecretPassword!");
+    mockHttpRequest.setParameter("remember-me", "true");
+    Exchange authenticated = execute(mockHttpRequest);
+
     assertEquals(302, authenticated.response().getStatus());
     Cookie cookie = rememberCookie(authenticated);
+
     assertTrue(cookie.getSecure());
     assertTrue(cookie.isHttpOnly());
     assertEquals("Lax", cookie.getAttribute("SameSite"));
@@ -268,46 +287,49 @@ class CsrfSecurityChainTest {
 
   private Exchange login(String email, Exchange bootstrap, boolean body, boolean remember)
       throws Exception {
-    MockHttpServletRequest request = request("POST", "/login", session(bootstrap));
+    MockHttpServletRequest mockHttpRequest = request("POST", "/login", session(bootstrap));
     String token = bootstrap.response().getHeader("X-CSRF-TOKEN");
     if (body) {
-      request.setParameter("_csrf", token);
+      mockHttpRequest.setParameter("_csrf", token);
     } else {
-      request.addHeader("X-CSRF-TOKEN", token);
+      mockHttpRequest.addHeader("X-CSRF-TOKEN", token);
     }
-    request.setParameter("username", email);
-    request.setParameter("password", "SecretPassword!");
+    mockHttpRequest.setParameter("username", email);
+    mockHttpRequest.setParameter("password", "SecretPassword!");
     if (remember) {
-      request.setParameter("remember-me", "true");
+      mockHttpRequest.setParameter("remember-me", "true");
     }
-    Exchange result = execute(request);
+    Exchange result = execute(mockHttpRequest);
+
     assertEquals(302, result.response().getStatus());
     return result;
   }
 
-  private Exchange bootstrap(MockHttpSession session) throws Exception {
-    return execute(request("GET", "/login", session));
+  private Exchange bootstrap(MockHttpSession mockHttpSession) throws Exception {
+    return execute(request("GET", "/login", mockHttpSession));
   }
 
   private MockHttpSession session(Exchange result) {
     return (MockHttpSession) result.request().getSession(false);
   }
 
-  private MockHttpServletRequest request(String method, String path, MockHttpSession session) {
-    MockHttpServletRequest request = new MockHttpServletRequest(method, path);
-    request.setServletPath(path);
-    request.setSession(session);
-    if (session != null) {
-      request.setRequestedSessionId(session.getId());
+  private MockHttpServletRequest request(
+      String method, String path, MockHttpSession mockHttpSession) {
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest(method, path);
+    mockHttpRequest.setServletPath(path);
+    mockHttpRequest.setSession(mockHttpSession);
+    if (mockHttpSession != null) {
+      mockHttpRequest.setRequestedSessionId(mockHttpSession.getId());
     }
-    return request;
+    return mockHttpRequest;
   }
 
-  private Exchange execute(MockHttpServletRequest request) throws Exception {
+  private Exchange execute(MockHttpServletRequest mockHttpRequest) throws Exception {
     SecurityContextHolder.clearContext();
-    MockHttpServletResponse response = new MockHttpServletResponse();
-    new FilterChainProxy(chain).doFilter(request, response, (incoming, outgoing) -> {});
-    return new Exchange(request, response);
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
+    new FilterChainProxy(chain)
+        .doFilter(mockHttpRequest, mockHttpResponse, (incoming, outgoing) -> {});
+    return new Exchange(mockHttpRequest, mockHttpResponse);
   }
 
   private Cookie rememberCookie(Exchange login) {
@@ -316,6 +338,7 @@ class CsrfSecurityChainTest {
             .filter(value -> "remember-me".equals(value.getName()) && value.getMaxAge() > 0)
             .reduce((previous, current) -> current)
             .orElse(null);
+
     assertNotNull(cookie);
     return cookie;
   }

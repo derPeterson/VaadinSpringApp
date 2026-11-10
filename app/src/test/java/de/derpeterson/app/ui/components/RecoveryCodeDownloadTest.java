@@ -86,6 +86,7 @@ class RecoveryCodeDownloadTest {
     when(event.getOutputStream()).thenReturn(output);
 
     recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
+
     verify(vaadinResponse).setStatus(500);
     recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
 

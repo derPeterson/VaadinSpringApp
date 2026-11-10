@@ -42,6 +42,7 @@ public final class BrowserActor implements AutoCloseable {
     traceSession = AllurePlaywright.startTracing(browserContext);
     browserPage = browserContext.newPage();
     browserPage.navigate(path(HOME_ROUTE));
+
     assertThat(browserPage).hasTitle(expectedInitialTitle);
     if (HOME_PAGE_TITLE.equals(expectedInitialTitle)) {
       new UserMenu(browserPage).selectTestLanguage();

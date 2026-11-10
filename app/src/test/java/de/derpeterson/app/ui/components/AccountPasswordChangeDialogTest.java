@@ -42,11 +42,11 @@ class AccountPasswordChangeDialogTest {
   void setup() {
     testUi = new UI();
     UI.setCurrent(testUi);
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> localeReference.get());
-    VaadinSession.setCurrent(session);
-    testUi.getInternals().setSession(session);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
     dialog = new AccountPasswordChangeDialog(new MessageProperties(new CustomI18NProvider()));
     testUi.add(dialog);
   }
@@ -92,6 +92,7 @@ class AccountPasswordChangeDialogTest {
     dialog.open();
     MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), localeReference.get());
+
     assertEquals(
         messageProperties.getAccountSettingsChangePassword(),
         dialog.getElement().getProperty("ariaLabel"));
@@ -164,6 +165,7 @@ class AccountPasswordChangeDialogTest {
     localeReference.set(Locale.ENGLISH);
     dialog.refreshTexts();
     Button save = (Button) byId("account-password-save");
+
     assertEquals(
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)
             .getAccountSettingsChangePassword(),
@@ -201,6 +203,7 @@ class AccountPasswordChangeDialogTest {
     field("new").setValue("New-secret!");
     field("confirm").setValue("New-secret!");
     ((Button) byId("account-password-save")).click();
+
     assertEquals(1, calls.size());
     assertEquals("Old-secret!", calls.getFirst().currentPassword());
     assertEquals("New-secret!", calls.getFirst().newPassword());
@@ -212,24 +215,27 @@ class AccountPasswordChangeDialogTest {
 
   @Test
   void invalidAndMismatchedPasswordsNeverInvokeTheAction() {
-    AtomicInteger calls = new AtomicInteger();
+    AtomicInteger callCount = new AtomicInteger();
     dialog.setChangeAction(change -> {
-      calls.incrementAndGet();
+      callCount.incrementAndGet();
       return null;
     });
     dialog.open();
     ((Button) byId("account-password-save")).click();
+
     assertTrue(field("current").isInvalid());
     field("current").setValue("Old-secret!");
     field("new").setValue("a");
     field("confirm").setValue("a");
     ((Button) byId("account-password-save")).click();
+
     assertTrue(field("new").isInvalid());
     field("new").setValue("New-secret!");
     field("confirm").setValue("Other-secret!");
     ((Button) byId("account-password-save")).click();
+
     assertTrue(field("confirm").isInvalid());
-    assertEquals(0, calls.get());
+    assertEquals(0, callCount.get());
   }
 
   @Test
@@ -242,6 +248,7 @@ class AccountPasswordChangeDialogTest {
     field("new").setValue("New-secret!");
     field("confirm").setValue("New-secret!");
     ((Button) byId("account-password-save")).click();
+
     assertTrue(dialog.isOpened());
     assertTrue(field("current").isInvalid());
     assertFalse(field("new").isInvalid());

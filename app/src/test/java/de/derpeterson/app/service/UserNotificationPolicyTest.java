@@ -35,16 +35,20 @@ class UserNotificationPolicyTest {
     environment
         .withProperty("app.config.defaults.user.notifications.inbox.retention.days", "30")
         .withProperty("app.config.defaults.user.notifications.history.retention.days", "60");
+
     assertEquals(java.util.OptionalInt.of(30), policy.retentionDays());
     assertEquals(java.util.OptionalInt.of(60), policy.historyRetentionDays());
     ConfigEntity stored =
         new ConfigEntity(null, ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS.getKey(), "45");
     when(configRepository.findByKey(stored.getKey())).thenReturn(Optional.of(stored));
+
     assertEquals(java.util.OptionalInt.of(45), policy.retentionDays());
     stored.setValue("90");
+
     assertEquals(java.util.OptionalInt.of(90), policy.retentionDays());
     assertEquals(java.util.OptionalInt.of(60), policy.historyRetentionDays());
     environment.setProperty("app.config.defaults.user.notifications.history.retention.days", "7");
+
     assertEquals(java.util.OptionalInt.of(7), policy.historyRetentionDays());
   }
 
@@ -53,9 +57,11 @@ class UserNotificationPolicyTest {
   void bothPeriodsRejectNonpositiveValues(int days) {
     environment.setProperty(
         "app.config.defaults.user.notifications.inbox.retention.days", Integer.toString(days));
+
     assertThrows(IllegalArgumentException.class, policy::retentionDays);
     environment.setProperty(
         "app.config.defaults.user.notifications.history.retention.days", Integer.toString(days));
+
     assertThrows(IllegalArgumentException.class, policy::historyRetentionDays);
   }
 
@@ -63,6 +69,7 @@ class UserNotificationPolicyTest {
   void malformedValueFailsInsteadOfSilentlyShorteningRetention() {
     environment.setProperty(
         "app.config.defaults.user.notifications.inbox.retention.days", "invalid");
+
     assertThrows(NumberFormatException.class, policy::retentionDays);
   }
 
@@ -74,6 +81,7 @@ class UserNotificationPolicyTest {
         .thenReturn(Optional.of(new ConfigEntity(null, inbox.getKey(), "")));
     when(configRepository.findByKey(history.getKey()))
         .thenReturn(Optional.of(new ConfigEntity(null, history.getKey(), "")));
+
     assertTrue(policy.retentionDays().isEmpty());
     assertTrue(policy.historyRetentionDays().isEmpty());
     assertNull(policy.inboxCutoff(java.time.Instant.now()));
@@ -86,6 +94,7 @@ class UserNotificationPolicyTest {
   void emptyConfiguredInitialValuesAreAlsoExplicitlyUnlimited() {
     environment.setProperty("app.config.defaults.user.notifications.inbox.retention.days", "");
     environment.setProperty("app.config.defaults.user.notifications.history.retention.days", "");
+
     assertTrue(policy.retentionDays().isEmpty());
     assertTrue(policy.historyRetentionDays().isEmpty());
   }

@@ -72,112 +72,129 @@ final class BrowserExecutionPlan {
         .toList();
   }
 
-  static LauncherDiscoveryRequest request(List<Class<?>> classes, String suite) {
-    LauncherDiscoveryRequestBuilder builder =
+  static LauncherDiscoveryRequest request(List<Class<?>> testClasses, String suiteName) {
+    LauncherDiscoveryRequestBuilder discoveryRequestBuilder =
         LauncherDiscoveryRequestBuilder.request()
-            .selectors(classes.stream().map(type -> selectClass(type)).toList())
+            .selectors(testClasses.stream().map(testClass -> selectClass(testClass)).toList())
             // Playwright und globale App-Konfiguration bleiben je Worker strikt sequenziell.
             .configurationParameter("junit.jupiter.execution.parallel.enabled", "false");
-    if (suite.equals("fast")) {
-      builder.filters(TagFilter.includeTags("fast"));
-    } else if (suite.equals("two-factor-recovery-output")) {
-      builder.filters(TagFilter.includeTags("recovery-output"));
-    } else if (suite.equals("two-factor-setup")) {
-      builder.filters(TagFilter.includeTags("setup-screen"));
-    } else if (suite.equals("two-factor-confirmation")) {
-      builder.filters(TagFilter.includeTags("confirmation-screens"));
-    } else if (suite.equals("two-factor-otp")) {
-      builder.filters(TagFilter.includeTags("otp-behavior"));
-    } else if (suite.equals("two-factor-ticket-filters")) {
-      builder.filters(TagFilter.includeTags("ticket-filters"));
-    } else if (suite.equals("two-factor-configuration")) {
-      builder.filters(TagFilter.includeTags("two-factor-configuration"));
-    } else if (suite.equals("two-factor-instructions")) {
-      builder.filters(TagFilter.includeTags("recovery-instructions"));
-    } else if (suite.equals("two-factor-ticket-layout")) {
-      builder.filters(TagFilter.includeTags("ticket-layout"));
-    } else if (suite.equals("two-factor-ticket-panel")) {
-      builder.filters(TagFilter.includeTags("ticket-panel-style"));
-    } else if (suite.equals("cosmos-scrollbars")) {
-      builder.filters(TagFilter.includeTags("scrollbar-style"));
-    } else if (suite.equals("external-login-settings")) {
-      builder.filters(TagFilter.includeTags("provider-settings"));
-    } else if (suite.equals("follow-up-regressions")) {
-      builder.filters(TagFilter.includeTags("follow-up-regression"));
-    } else if (suite.equals("ticket-browser-details")) {
-      builder.filters(TagFilter.includeTags("ticket-browser-detail"));
-    } else if (suite.equals("sign-in-session-layout")) {
-      builder.filters(TagFilter.includeTags("sign-in-session-layout"));
-    } else if (suite.equals("configuration-follow-up")) {
-      builder.filters(TagFilter.includeTags("configuration-follow-up"));
-    } else if (suite.equals("configuration-field-help")) {
-      builder.filters(TagFilter.includeTags("configuration-field-help"));
+
+    if (suiteName.equals("fast")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("fast"));
+    } else if (suiteName.equals("two-factor-recovery-output")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("recovery-output"));
+    } else if (suiteName.equals("two-factor-setup")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("setup-screen"));
+    } else if (suiteName.equals("two-factor-confirmation")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("confirmation-screens"));
+    } else if (suiteName.equals("two-factor-otp")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("otp-behavior"));
+    } else if (suiteName.equals("two-factor-ticket-filters")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("ticket-filters"));
+    } else if (suiteName.equals("two-factor-configuration")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("two-factor-configuration"));
+    } else if (suiteName.equals("two-factor-instructions")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("recovery-instructions"));
+    } else if (suiteName.equals("two-factor-ticket-layout")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("ticket-layout"));
+    } else if (suiteName.equals("two-factor-ticket-panel")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("ticket-panel-style"));
+    } else if (suiteName.equals("cosmos-scrollbars")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("scrollbar-style"));
+    } else if (suiteName.equals("external-login-settings")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("provider-settings"));
+    } else if (suiteName.equals("follow-up-regressions")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("follow-up-regression"));
+    } else if (suiteName.equals("ticket-browser-details")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("ticket-browser-detail"));
+    } else if (suiteName.equals("sign-in-session-layout")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("sign-in-session-layout"));
+    } else if (suiteName.equals("configuration-follow-up")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("configuration-follow-up"));
+    } else if (suiteName.equals("configuration-field-help")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("configuration-field-help"));
     }
-    return builder.build();
+
+    return discoveryRequestBuilder.build();
   }
 
-  static List<Class<?>> workerClasses(String suite, String names) {
-    List<Class<?>> allowed = classes(suite);
-    if (names == null) {
-      return allowed;
+  static List<Class<?>> workerClasses(String suiteName, String requestedClassNamesCsv) {
+    List<Class<?>> allowedClasses = classes(suiteName);
+    if (requestedClassNamesCsv == null) {
+      return allowedClasses;
     }
+
     // Das Komma ist ein literales Trennzeichen; keine Anker, Gruppen oder Ersetzungen.
-    List<String> requested = List.of(names.split(","));
-    List<Class<?>> selected =
-        allowed.stream().filter(type -> requested.contains(type.getSimpleName())).toList();
-    if (selected.isEmpty() || selected.size() != requested.size()) {
+    List<String> requestedClassNames = List.of(requestedClassNamesCsv.split(","));
+    List<Class<?>> selectedWorkerClasses =
+        allowedClasses.stream()
+            .filter(testClass -> requestedClassNames.contains(testClass.getSimpleName()))
+            .toList();
+
+    if (selectedWorkerClasses.isEmpty()
+        || selectedWorkerClasses.size() != requestedClassNames.size()) {
       throw new IllegalArgumentException(
           "Worker classes must be a unique subset of the selected suite.");
     }
-    return selected;
+
+    return selectedWorkerClasses;
   }
 
-  static List<List<Class<?>>> partition(List<Class<?>> classes, int workers, String suite) {
-    if (workers < 1
-        || workers > 4
-        || classes.isEmpty()
-        || new HashSet<>(classes).size() != classes.size()) {
+  static List<List<Class<?>>> partition(
+      List<Class<?>> testClasses, int requestedWorkerCount, String suiteName) {
+    if (requestedWorkerCount < 1
+        || requestedWorkerCount > 4
+        || testClasses.isEmpty()
+        || new HashSet<>(testClasses).size() != testClasses.size()) {
       throw new IllegalArgumentException("Use 1 to 4 workers and distinct, nonempty test classes.");
     }
-    int count = Math.min(workers, classes.size());
-    List<List<Class<?>>> groups = new ArrayList<>();
-    double[] costs = new double[count];
-    for (int workerGroupIndex = 0; workerGroupIndex < count; workerGroupIndex++) {
-      groups.add(new ArrayList<>());
+
+    int workerCount = Math.min(requestedWorkerCount, testClasses.size());
+    List<List<Class<?>>> classesByWorker = new ArrayList<>();
+    double[] estimatedSecondsByWorker = new double[workerCount];
+    for (int workerGroupIndex = 0; workerGroupIndex < workerCount; workerGroupIndex++) {
+      classesByWorker.add(new ArrayList<>());
     }
-    ArrayList<Class<?>> sorted = new ArrayList<>(classes);
-    sorted.sort(
-        Comparator.<Class<?>>comparingDouble(type -> weight(type, suite))
+
+    ArrayList<Class<?>> classesByDescendingWeight = new ArrayList<>(testClasses);
+    classesByDescendingWeight.sort(
+        Comparator.<Class<?>>comparingDouble(testClass -> weight(testClass, suiteName))
             .reversed()
             .thenComparing(Class::getSimpleName));
-    for (Class<?> type : sorted) {
-      int target = 0;
-      for (int workerGroupIndex = 1; workerGroupIndex < count; workerGroupIndex++) {
-        if (costs[workerGroupIndex] < costs[target]) {
-          target = workerGroupIndex;
+
+    for (Class<?> testClass : classesByDescendingWeight) {
+      int leastLoadedWorkerIndex = 0;
+      for (int workerGroupIndex = 1; workerGroupIndex < workerCount; workerGroupIndex++) {
+        if (estimatedSecondsByWorker[workerGroupIndex]
+            < estimatedSecondsByWorker[leastLoadedWorkerIndex]) {
+          leastLoadedWorkerIndex = workerGroupIndex;
         }
       }
-      groups.get(target).add(type);
-      costs[target] += weight(type, suite);
+      classesByWorker.get(leastLoadedWorkerIndex).add(testClass);
+      estimatedSecondsByWorker[leastLoadedWorkerIndex] += weight(testClass, suiteName);
     }
-    return groups.stream().map(List::copyOf).toList();
+
+    return classesByWorker.stream().map(List::copyOf).toList();
   }
 
-  private static double weight(Class<?> type, String suite) {
-    double total = 0, selected = 0;
-    for (Method method : type.getDeclaredMethods()) {
-      if (!method.isAnnotationPresent(Test.class)
-          && !method.isAnnotationPresent(ParameterizedTest.class)) {
+  private static double weight(Class<?> testClass, String suiteName) {
+    double totalCaseCount = 0, fastCaseCount = 0;
+    for (Method testMethod : testClass.getDeclaredMethods()) {
+      if (!testMethod.isAnnotationPresent(Test.class)
+          && !testMethod.isAnnotationPresent(ParameterizedTest.class)) {
         continue;
       }
-      CsvSource csv = method.getAnnotation(CsvSource.class);
-      int cases = csv == null ? 1 : Math.max(1, csv.value().length);
-      total += cases;
-      if (fast(method)) {
-        selected += cases;
+      CsvSource csvSource = testMethod.getAnnotation(CsvSource.class);
+      int methodCaseCount = csvSource == null ? 1 : Math.max(1, csvSource.value().length);
+      totalCaseCount += methodCaseCount;
+      if (fast(testMethod)) {
+        fastCaseCount += methodCaseCount;
       }
     }
-    double seconds = SECONDS.getOrDefault(type.getSimpleName(), 10);
-    return suite.equals("fast") && total > 0 ? seconds * selected / total : seconds;
+
+    double estimatedClassSeconds = SECONDS.getOrDefault(testClass.getSimpleName(), 10);
+    return suiteName.equals("fast") && totalCaseCount > 0
+        ? estimatedClassSeconds * fastCaseCount / totalCaseCount
+        : estimatedClassSeconds;
   }
 }

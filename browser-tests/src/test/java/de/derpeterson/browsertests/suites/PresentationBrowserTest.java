@@ -52,6 +52,7 @@ public class PresentationBrowserTest extends BrowserFixture {
   void homeLanguageMenuChangesBothDirections() {
     for (UiTexts expected : languages()) {
       new UserMenu(browserPage).selectLanguage(expected.language());
+
       assertThat(
               browserPage
                   .locator(".public-navigation")
@@ -74,6 +75,7 @@ public class PresentationBrowserTest extends BrowserFixture {
         reopened.addCookies(durableCookies);
         Page visitor = reopened.newPage();
         visitor.navigate(path(HOME_ROUTE));
+
         assertThat(visitor.locator(".public-languages vaadin-button[aria-pressed=true]"))
             .hasAttribute("lang", expected.language());
       }
@@ -97,6 +99,7 @@ public class PresentationBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
     UiTexts chosen = languages()[0];
@@ -115,6 +118,7 @@ public class PresentationBrowserTest extends BrowserFixture {
                 .click());
     // Normal Home logout invalidates the session but need not change the displayed route.
     browserPage.navigate(path(LOGIN_ROUTE));
+
     assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
     try (BrowserContext other =
         testBrowser.newContext(
@@ -129,8 +133,10 @@ public class PresentationBrowserTest extends BrowserFixture {
         LoginPage fresh = new LoginPage(visitor);
         fresh.open();
         fresh.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+
         assertThat(visitor).hasURL(urlPattern(HOME_ROUTE));
         new UserMenu(visitor).open();
+
         assertThat(
                 visitor.getByRole(
                     AriaRole.BUTTON,
@@ -158,6 +164,7 @@ public class PresentationBrowserTest extends BrowserFixture {
   void narrowRegistrationCanBeUsed() {
     browserPage.setViewportSize(390, 844);
     new LoginPage(browserPage).open();
+
     assertThat(
             browserPage.getByLabel(
                 uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)))
@@ -222,15 +229,18 @@ public class PresentationBrowserTest extends BrowserFixture {
         browserPage.getByLabel(
             uiTexts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true));
     email.focus();
+
     assertThat(email).isFocused();
     email.fill(BrowserTestAccounts.ADMIN_EMAIL);
     browserPage.keyboard().press("Tab");
+
     assertThat(password).isFocused();
     password.fill(BrowserTestAccounts.ADMIN_PASSWORD);
     password.press("Enter");
     browserPage.waitForURL(url -> !URI.create(url).getPath().equals(path(LOGIN_ROUTE)));
     TwoFactorPage.completeIfRequired(
         browserPage, BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
     new LoginPage(browserPage).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
@@ -244,6 +254,7 @@ public class PresentationBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+
     assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
     String email = "language-" + UUID.randomUUID() + "@example.test";

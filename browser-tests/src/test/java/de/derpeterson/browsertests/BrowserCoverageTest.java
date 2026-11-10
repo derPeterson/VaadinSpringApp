@@ -29,6 +29,7 @@ class BrowserCoverageTest {
   void overrideMountsOnlyTheAgentReadOnlyAndKeepsCoverageInsideTheTestContainer() {
     String yaml =
         BrowserCoverage.overrideContents(temporary.resolve("agent's directory/agent.jar"));
+
     assertTrue(yaml.contains("agent''s directory/agent.jar"));
     assertTrue(yaml.contains("read_only: true"));
     assertTrue(yaml.contains("destfile=/app/logs/browser-jacoco.exec"));
@@ -43,6 +44,7 @@ class BrowserCoverageTest {
     testedJar("de/derpeterson/app/config/Shared.class");
     sourceJar("app/src/main/java/de/derpeterson/app/Example.java");
     BrowserCoverage.extractTestedCode(temporary);
+
     assertArrayEquals(
         new byte[] {1, 2, 3},
         Files.readAllBytes(temporary.resolve("classes/de/derpeterson/app/Example.class")));
@@ -57,6 +59,7 @@ class BrowserCoverageTest {
             temporary.resolve(
                 "sources/shared/src/main/java/de/derpeterson/app/config/Shared.java")));
     List<String> command = BrowserCoverage.reportCommand(temporary, temporary);
+
     assertTrue(command.contains(temporary.resolve("classes").toString()));
     assertFalse(command.contains(temporary.resolve("target/classes").toString()));
     assertTrue(command.contains(temporary.resolve("sources/app/src/main/java").toString()));
@@ -81,6 +84,7 @@ class BrowserCoverageTest {
   @Test
   void sharedClassesCannotEscapeTheCoverageDirectory() throws Exception {
     testedJar("de/derpeterson/app/../../../../escape.class");
+
     assertThrows(IOException.class, () -> BrowserCoverage.extractTestedCode(temporary));
     assertFalse(Files.exists(temporary.resolve("escape.class")));
   }
@@ -89,6 +93,7 @@ class BrowserCoverageTest {
   void sourcesCannotEscapeTheirModule() throws Exception {
     testedJar("de/derpeterson/app/config/Shared.class");
     sourceJar("app/src/main/java/../../../../escape.java");
+
     assertThrows(IOException.class, () -> BrowserCoverage.extractTestedCode(temporary));
     assertFalse(Files.exists(temporary.resolve("sources/escape.java")));
   }
@@ -98,12 +103,14 @@ class BrowserCoverageTest {
     Files.write(
         temporary.resolve("app.jar"),
         zip(Map.of("BOOT-INF/classes/de/derpeterson/app/Example.class", new byte[] {1})));
+
     assertThrows(IOException.class, () -> BrowserCoverage.extractTestedCode(temporary));
   }
 
   @Test
   void missingImageSourcesCannotFallBackToLocalSources() throws Exception {
     testedJar("de/derpeterson/app/config/Shared.class");
+
     assertThrows(IOException.class, () -> BrowserCoverage.extractTestedCode(temporary));
   }
 
@@ -113,6 +120,7 @@ class BrowserCoverageTest {
     Files.write(
         temporary.resolve("coverage-sources.jar"),
         zip(Map.of("app/src/main/java/Example.java", new byte[] {1})));
+
     assertThrows(IOException.class, () -> BrowserCoverage.extractTestedCode(temporary));
   }
 

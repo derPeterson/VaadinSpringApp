@@ -22,6 +22,7 @@ class LogSafetyTest {
     original.addSuppressed(new IllegalStateException("body and credentials"));
     Throwable safe = LogSafety.safeFailure(original);
     String trace = trace(safe);
+
     assertTrue(trace.contains(SQLException.class.getName()));
     assertTrue(trace.contains(IOException.class.getName()));
     assertTrue(trace.contains(IllegalStateException.class.getName()));
@@ -54,6 +55,7 @@ class LogSafetyTest {
             throw new AssertionError("must not read secret");
           }
         };
+
     assertEquals(original.getClass().getName(), LogSafety.safeFailure(original).getMessage());
   }
 
@@ -63,6 +65,7 @@ class LogSafetyTest {
     RuntimeException second = new RuntimeException("private2", first);
     first.initCause(second);
     String trace = trace(LogSafety.safeFailure(first));
+
     assertTrue(trace.contains("CIRCULAR REFERENCE"));
     assertFalse(trace.contains("private"));
   }

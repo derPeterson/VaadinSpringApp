@@ -88,7 +88,7 @@ class UserStatusPersistenceTest {
       entityManager.createQuery("delete from RoleEntity").executeUpdate();
       RoleEntity role = RoleEntity.builder().name(RoleType.ROLE_USER).build();
       entityManager.persist(role);
-      UserEntity user =
+      UserEntity testUserEntity =
           UserEntity.builder()
               .firstName("Test")
               .lastName("User")
@@ -102,8 +102,8 @@ class UserStatusPersistenceTest {
               .status(UserStatus.OFFLINE)
               .lastActivity(Instant.now().minusSeconds(3600))
               .build();
-      entityManager.persist(user);
-      userId = user.getId();
+      entityManager.persist(testUserEntity);
+      userId = testUserEntity.getId();
     });
   }
 
@@ -168,6 +168,7 @@ class UserStatusPersistenceTest {
                 userService.updateLastActivity(userId);
               }
             }));
+
         assertTrue(await(entered));
         assertThrows(
             java.util.concurrent.TimeoutException.class,
@@ -204,8 +205,8 @@ class UserStatusPersistenceTest {
     Instant activity = toAbsent ? Instant.now().minusSeconds(3600) : Instant.now();
     Long otherId =
         transactionTemplate.execute(tx -> {
-          UserEntity first = stored();
-          first.setLastActivity(activity);
+          UserEntity firstUserEntity = stored();
+          firstUserEntity.setLastActivity(activity);
           UserEntity other =
               UserEntity.builder()
                   .firstName("Other")
@@ -216,7 +217,7 @@ class UserStatusPersistenceTest {
                   .gender(Gender.OTHER)
                   .birthDate(LocalDate.of(1990, 1, 1))
                   .preferredLocale(Locale.ENGLISH)
-                  .roleEntities(new ArrayList<>(first.getRoleEntities()))
+                  .roleEntities(new ArrayList<>(firstUserEntity.getRoleEntities()))
                   .status(initial)
                   .lastActivity(activity)
                   .build();
@@ -225,15 +226,15 @@ class UserStatusPersistenceTest {
         });
     List<UserEntity> candidates = List.of(stored(), userRepository.findById(otherId).orElseThrow());
     UserRepository selection = mock(UserRepository.class);
-    ConfigService config = mock(ConfigService.class);
+    ConfigService configService = mock(ConfigService.class);
     if (toAbsent) {
-      when(config.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
+      when(configService.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
       when(selection.findByLastActivityBeforeAndStatus(any(), eq(initial))).thenReturn(candidates);
     } else {
       when(selection.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(any(), eq(initial)))
           .thenReturn(candidates);
     }
-    UserStatusScheduler scheduler = new UserStatusScheduler(selection, userService, config);
+    UserStatusScheduler scheduler = new UserStatusScheduler(selection, userService, configService);
     listen();
     try (ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
       transactionTemplate.executeWithoutResult(tx -> {
@@ -272,6 +273,7 @@ class UserStatusPersistenceTest {
             ? userRepository.findByLastActivityBeforeAndStatus(cutoff, UserStatus.AVAILABLE)
             : userRepository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
                 cutoff, UserStatus.ABSENT);
+
     assertEquals(1, candidates.size());
     listen();
     try (ExecutorService worker = java.util.concurrent.Executors.newSingleThreadExecutor()) {
@@ -290,6 +292,7 @@ class UserStatusPersistenceTest {
                   toAbsent ? UserStatus.ABSENT : UserStatus.AVAILABLE,
                   cutoff);
             }));
+
         assertTrue(await(entered));
         assertThrows(
             java.util.concurrent.TimeoutException.class,
@@ -319,10 +322,12 @@ class UserStatusPersistenceTest {
               fresh.setPreferredLocale(Locale.GERMAN);
             }
           });
+
       assertEquals(version, stale.getVersion());
       assertDoesNotThrow(() -> userService.updateLastActivity(userId));
     });
     UserEntity fresh = stored();
+
     assertTrue(fresh.getLastActivity().isAfter(Instant.now().minusSeconds(60)));
     assertEquals(1L, fresh.getVersion());
     assertEquals(statusChange ? UserStatus.EMPLOYED : UserStatus.OFFLINE, fresh.getStatus());
@@ -350,6 +355,7 @@ class UserStatusPersistenceTest {
         editor.setEnabled(false);
       }
     });
+
     assertEquals(activity.get(), stored().getLastActivity());
     assertEquals(statusChange ? UserStatus.ABSENT : UserStatus.OFFLINE, stored().getStatus());
     assertEquals(statusChange ? "User" : "Newest", stored().getLastName());
@@ -372,6 +378,7 @@ class UserStatusPersistenceTest {
             List<UserEntity> candidates =
                 userRepository.findByLastActivityBeforeAndStatus(
                     call.getArgument(0), UserStatus.AVAILABLE);
+
             assertEquals(1, candidates.size());
             userService.updateLastActivity(userId);
             return candidates;
@@ -383,17 +390,18 @@ class UserStatusPersistenceTest {
             List<UserEntity> candidates =
                 userRepository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
                     call.getArgument(0), UserStatus.ABSENT);
+
             assertEquals(1, candidates.size());
             transactionTemplate.executeWithoutResult(
                 tx -> stored().setLastActivity(Instant.now().minusSeconds(600)));
             return candidates;
           });
     }
-    ConfigService config = mock(ConfigService.class);
+    ConfigService configService = mock(ConfigService.class);
     if (toAbsent) {
-      when(config.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
+      when(configService.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
     }
-    UserStatusScheduler scheduler = new UserStatusScheduler(selection, userService, config);
+    UserStatusScheduler scheduler = new UserStatusScheduler(selection, userService, configService);
     listen();
     if (toAbsent) {
       scheduler.checkInactiveAvailableUsers();
@@ -420,6 +428,7 @@ class UserStatusPersistenceTest {
               ? userRepository.findByLastActivityBeforeAndStatus(cutoff, UserStatus.AVAILABLE)
               : userRepository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
                   cutoff, UserStatus.ABSENT);
+
       assertEquals(1, candidates.size());
       userService.updateUserStatus(stored(), manual, true);
       messages.clear();
@@ -429,6 +438,7 @@ class UserStatusPersistenceTest {
           toAbsent ? UserStatus.ABSENT : UserStatus.AVAILABLE,
           cutoff);
       boolean eligible = toAbsent && manual == UserStatus.AVAILABLE;
+
       assertEquals(eligible ? UserStatus.ABSENT : manual, stored().getStatus());
       assertEquals(!eligible, stored().isStatusManuallySet());
       assertEquals(eligible ? 1 : 0, messages.size());
@@ -442,11 +452,13 @@ class UserStatusPersistenceTest {
     UserEntity snapshot = form();
     userRepository.deleteById(userId);
     listen();
+
     assertThrows(
         IllegalStateException.class,
         () -> userService.updateUserStatus(snapshot, UserStatus.AVAILABLE, true));
     assertThrows(IllegalStateException.class, () -> userService.updateLastActivity(userId));
     Long snapshotVersion = snapshot.getVersion();
+
     assertThrows(
         OptimisticLockingFailureException.class,
         () -> userService.updateAdminUser(snapshot, snapshotVersion, "new"));
@@ -460,6 +472,7 @@ class UserStatusPersistenceTest {
   void missingFormVersionIsRejectedWithoutChangingAnyField() {
     UserEntity edited = form();
     edited.setFirstName("Rejected");
+
     assertThrows(
         OptimisticLockingFailureException.class,
         () -> userService.updateAdminUser(edited, null, "new"));
@@ -483,6 +496,7 @@ class UserStatusPersistenceTest {
     edited.setFirstName("Admin edited");
     userService.updateAdminUser(edited, edited.getVersion(), "Explicit-new-password!");
     UserEntity fresh = stored();
+
     assertTrue(
         new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder()
             .matches("Explicit-new-password!", fresh.getPassword()));
@@ -498,24 +512,26 @@ class UserStatusPersistenceTest {
   @Test
   void staleStatusSnapshotCannotUndoLockPasswordRolesOrProfileChanges() {
     UserEntity stale = stored();
+
     assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
     assertFalse(Hibernate.isInitialized(stale.getRoleEntities()));
     Instant activity =
         Instant.now().minusSeconds(120).truncatedTo(java.time.temporal.ChronoUnit.MICROS);
     transactionTemplate.executeWithoutResult(status -> {
-      UserEntity user = userRepository.findById(userId).orElseThrow();
-      user.setEnabled(false);
-      user.setPassword("new-hash");
-      user.setPreferredLocale(Locale.GERMAN);
-      user.setFirstName("Changed");
-      user.setLastActivity(activity);
-      user.getRoleEntities().clear();
+      UserEntity testUserEntity = userRepository.findById(userId).orElseThrow();
+      testUserEntity.setEnabled(false);
+      testUserEntity.setPassword("new-hash");
+      testUserEntity.setPreferredLocale(Locale.GERMAN);
+      testUserEntity.setFirstName("Changed");
+      testUserEntity.setLastActivity(activity);
+      testUserEntity.getRoleEntities().clear();
     });
     listen();
 
     StatusUpdate result = userService.updateUserStatus(stale, UserStatus.AVAILABLE, true);
 
     UserEntity current = stored();
+
     assertFalse(current.isEnabled());
     assertEquals("new-hash", current.getPassword());
     assertEquals(Locale.GERMAN, current.getPreferredLocale());
@@ -531,10 +547,10 @@ class UserStatusPersistenceTest {
 
   @Test
   void staleAdminFormCannotUndoAnotherFormOrPasswordChange() {
-    UserEntity first = form();
+    UserEntity firstUserEntity = form();
     UserEntity stale = form();
-    first.setFirstName("First editor");
-    userService.updateAdminUser(first, first.getVersion(), "");
+    firstUserEntity.setFirstName("First editor");
+    userService.updateAdminUser(firstUserEntity, firstUserEntity.getVersion(), "");
     stale.setLastName("Second editor");
 
     Long staleVersion = stale.getVersion();
@@ -542,6 +558,7 @@ class UserStatusPersistenceTest {
         assertThrows(
             OptimisticLockingFailureException.class,
             () -> userService.updateAdminUser(stale, staleVersion, ""));
+
     assertTrue(conflict.getMessage().contains("Formular neu öffnen"));
     assertEquals("First editor", stored().getFirstName());
     assertEquals("User", stored().getLastName());
@@ -550,6 +567,7 @@ class UserStatusPersistenceTest {
     transactionTemplate.executeWithoutResult(
         status -> userRepository.findById(userId).orElseThrow().setPassword("reset-hash"));
     Long beforePasswordChangeVersion = beforePasswordChange.getVersion();
+
     assertThrows(
         OptimisticLockingFailureException.class,
         () -> userService.updateAdminUser(beforePasswordChange, beforePasswordChangeVersion, ""));
@@ -564,10 +582,12 @@ class UserStatusPersistenceTest {
       userService.updateLastActivity(userId);
     }
     Instant activity = stored().getLastActivity();
+
     assertEquals(version, stored().getVersion());
     assertTrue(activity.isAfter(edited.getLastActivity()));
     edited.setFirstName("Edited");
     userService.updateAdminUser(edited, version, "");
+
     assertEquals(activity, stored().getLastActivity());
     assertEquals("Edited", stored().getFirstName());
   }
@@ -578,8 +598,10 @@ class UserStatusPersistenceTest {
     userService.updateUserStatus(edited, UserStatus.AVAILABLE, true);
     Long version = stored().getVersion();
     userService.updateUserStatus(edited, UserStatus.AVAILABLE, true);
+
     assertEquals(version, stored().getVersion());
     Long editedVersion = edited.getVersion();
+
     assertThrows(
         OptimisticLockingFailureException.class,
         () -> userService.updateAdminUser(edited, editedVersion, ""));
@@ -592,6 +614,7 @@ class UserStatusPersistenceTest {
     transactionTemplate.executeWithoutResult(
         status -> userRepository.findById(userId).orElseThrow().setPassword("reset-hash"));
     stale.setFirstName("Stale");
+
     assertThrows(OptimisticLockingFailureException.class, () -> userService.saveUser(stale));
     assertEquals("reset-hash", stored().getPassword());
     assertEquals("Test", stored().getFirstName());
@@ -612,17 +635,20 @@ class UserStatusPersistenceTest {
       edited.setRoleEntities(List.of());
     }
     Long editedVersion = edited.getVersion();
+
     assertThrows(
         IllegalStateException.class, () -> userService.updateAdminUser(edited, editedVersion, ""));
     assertTrue(stored().isEnabled());
     assertTrue(form().hasRole(RoleType.ROLE_SUPERADMIN));
     userService.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
+
     assertTrue(form().hasRole(RoleType.ROLE_SUPERADMIN));
   }
 
   @Test
   void detachedListingAndAdminHelpersHaveAnExplicitRolesLoadContract() {
     List<UserEntity> users = userService.findAllUsers();
+
     assertTrue(Hibernate.isInitialized(users.getFirst().getRoleEntities()));
     assertTrue(users.getFirst().hasRole(RoleType.ROLE_USER));
     assertTrue(userService.canDeleteUser(users.getFirst()));
@@ -640,6 +666,7 @@ class UserStatusPersistenceTest {
     StatusUpdate result = userService.updateUserStatus(stale, UserStatus.ABSENT, false);
     boolean protectedStatus =
         manualStatus == UserStatus.EMPLOYED || manualStatus == UserStatus.OFFLINE;
+
     assertEquals(protectedStatus ? manualStatus : UserStatus.ABSENT, result.status());
     assertEquals(protectedStatus, result.manuallySet());
     assertEquals(result.status(), stored().getStatus());
@@ -648,20 +675,24 @@ class UserStatusPersistenceTest {
 
   @Test
   void schedulerRunsBothDirectionsWithoutOsivOrInitializedRoles() {
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
-    UserStatusScheduler scheduler = new UserStatusScheduler(userRepository, userService, config);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
+    UserStatusScheduler scheduler =
+        new UserStatusScheduler(userRepository, userService, configService);
     userService.updateUserStatus(stored(), UserStatus.AVAILABLE, false);
     UserEntity candidate =
         userRepository
             .findByLastActivityBeforeAndStatus(Instant.now(), UserStatus.AVAILABLE)
             .getFirst();
+
     assertFalse(Hibernate.isInitialized(candidate.getRoleEntities()));
     listen();
     scheduler.checkInactiveAvailableUsers();
+
     assertEquals(UserStatus.ABSENT, stored().getStatus());
     userService.updateLastActivity(userId);
     scheduler.checkRecentlyActiveAbsentUsers();
+
     assertEquals(UserStatus.AVAILABLE, stored().getStatus());
     assertEquals(2, messages.size());
     assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
@@ -676,8 +707,10 @@ class UserStatusPersistenceTest {
     transactionTemplate.executeWithoutResult(status -> {
       userService.updateUserStatus(stale, UserStatus.AVAILABLE, true);
       userRepository.flush();
+
       assertTrue(messages.isEmpty());
     });
+
     assertEquals(
         List.of(new UserStatusBroadcaster.UserStatusMessage(userId, "OFFLINE", "AVAILABLE")),
         messages);
@@ -692,6 +725,7 @@ class UserStatusPersistenceTest {
       userRepository.flush();
       status.setRollbackOnly();
     });
+
     assertTrue(messages.isEmpty());
     assertEquals(UserStatus.OFFLINE, stored().getStatus());
   }
@@ -705,8 +739,10 @@ class UserStatusPersistenceTest {
       userRepository.flush();
       userService.updateUserStatus(
           stored(), returnToOriginal ? UserStatus.OFFLINE : UserStatus.EMPLOYED, true);
+
       assertTrue(messages.isEmpty());
     });
+
     assertEquals(returnToOriginal ? UserStatus.OFFLINE : UserStatus.EMPLOYED, stored().getStatus());
     assertEquals(
         returnToOriginal
@@ -721,6 +757,7 @@ class UserStatusPersistenceTest {
     TransactionTemplate independent =
         new TransactionTemplate(transactionTemplate.getTransactionManager());
     independent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
     assertThrows(
         OptimisticLockingFailureException.class,
         () ->
@@ -728,6 +765,7 @@ class UserStatusPersistenceTest {
               userService.updateUserStatus(stored(), UserStatus.AVAILABLE, true);
               independent.executeWithoutResult(other ->
                   userRepository.findById(userId).orElseThrow().setPassword("concurrent-hash"));
+
               assertTrue(messages.isEmpty());
               // No explicit flush: the real JpaTransactionManager commit must fail.
             }));
@@ -740,6 +778,7 @@ class UserStatusPersistenceTest {
   void unchangedStatusCanChangeManualFlagWithoutAnEvent() {
     listen();
     userService.updateUserStatus(stored(), UserStatus.OFFLINE, true);
+
     assertTrue(stored().isStatusManuallySet());
     assertTrue(messages.isEmpty());
   }
@@ -757,6 +796,7 @@ class UserStatusPersistenceTest {
             .password("hash")
             .roles("USER")
             .build());
+
     assertEquals(manual ? UserStatus.EMPLOYED : UserStatus.AVAILABLE, stored().getStatus());
     assertTrue(stored().getLastActivity().isAfter(previousActivity));
     assertEquals(manual ? 0 : 1, messages.size());
@@ -769,6 +809,7 @@ class UserStatusPersistenceTest {
           throw new IllegalStateException("broken listener");
         }));
     listen();
+
     assertDoesNotThrow(() -> userService.updateUserStatus(stored(), UserStatus.AVAILABLE, true));
     assertEquals(UserStatus.AVAILABLE, stored().getStatus());
     assertEquals(1, messages.size());
@@ -789,7 +830,7 @@ class UserStatusPersistenceTest {
                 invocation.getMethod().getReturnType() == String.class
                     ? "Text"
                     : RETURNS_DEFAULTS.answer(invocation));
-    UserPopoverMenu menu =
+    UserPopoverMenu userPopoverMenu =
         new UserPopoverMenu(
             messageProperties,
             mock(SecurityService.class),
@@ -799,14 +840,14 @@ class UserStatusPersistenceTest {
             new UserPopoverMenu.UserPopoverActions(null, null),
             icons::add);
     icons.clear();
-    return menu;
+    return userPopoverMenu;
   }
 
   @Test
   void actualPopoverCommitsBeforeUpdatingSnapshotAndIcons() {
     UserEntity snapshot = stored();
     List<UserStatus> icons = new ArrayList<>();
-    UserPopoverMenu menu = popover(userService, snapshot, icons);
+    UserPopoverMenu userPopoverMenu = popover(userService, snapshot, icons);
     registrations.add(
         userStatusBroadcaster.register(message -> {
           assertEquals(UserStatus.OFFLINE, snapshot.getStatus());
@@ -814,7 +855,8 @@ class UserStatusPersistenceTest {
           messages.add(message);
         }));
 
-    ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED);
+    ReflectionTestUtils.invokeMethod(
+        userPopoverMenu, "handleUserStatusChange", UserStatus.EMPLOYED);
 
     assertEquals(UserStatus.EMPLOYED, stored().getStatus());
     assertEquals(UserStatus.EMPLOYED, snapshot.getStatus());
@@ -831,7 +873,7 @@ class UserStatusPersistenceTest {
     UserEntity snapshot = stored();
     UserService failing = mock(UserService.class);
     List<UserStatus> icons = new ArrayList<>();
-    UserPopoverMenu menu = popover(failing, snapshot, icons);
+    UserPopoverMenu userPopoverMenu = popover(failing, snapshot, icons);
     when(failing.updateUserStatus(snapshot, UserStatus.EMPLOYED, true))
         .thenAnswer(invocation -> {
           assertEquals(UserStatus.OFFLINE, snapshot.getStatus());
@@ -840,20 +882,24 @@ class UserStatusPersistenceTest {
         });
 
     assertDoesNotThrow(() ->
-        ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED));
+        ReflectionTestUtils.invokeMethod(
+            userPopoverMenu, "handleUserStatusChange", UserStatus.EMPLOYED));
     NotificationHelper helper = NotificationHelper.getInstance();
     Notification notification =
         (com.vaadin.flow.component.notification.Notification)
             ReflectionTestUtils.getField(helper, "currentNotification");
+
     assertTrue(notification.isOpened());
-    Span title =
+    Span titleSpan =
         (com.vaadin.flow.component.html.Span) ReflectionTestUtils.getField(helper, "titleText");
-    Html message =
+    Html messageHtml =
         (com.vaadin.flow.component.Html) ReflectionTestUtils.getField(helper, "messageText");
-    assertEquals("Text", title.getText());
-    assertEquals("p", message.getElement().getTag());
-    assertEquals("Text", message.getElement().getProperty("innerHTML"));
+
+    assertEquals("Text", titleSpan.getText());
+    assertEquals("p", messageHtml.getElement().getTag());
+    assertEquals("Text", messageHtml.getElement().getProperty("innerHTML"));
     assertEquals(UserStatus.OFFLINE, snapshot.getStatus());
+    assertFalse(icons.isEmpty(), "The popover must restore the icon status");
     assertTrue(icons.stream().allMatch(value -> value == UserStatus.OFFLINE));
     verify(failing, times(1)).updateUserStatus(snapshot, UserStatus.EMPLOYED, true);
   }

@@ -20,8 +20,8 @@ class ProviderAuthorizationRequestsTest {
     Credentials entity = new Credentials("google", "own-client", "own-secret", true, 0L);
     when(settings.credentials("google")).thenReturn(entity);
     ProviderAuthorizationRequests repository = new ProviderAuthorizationRequests(settings);
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     OAuth2AuthorizationRequest authorization =
         OAuth2AuthorizationRequest.authorizationCode()
             .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
@@ -29,11 +29,13 @@ class ProviderAuthorizationRequestsTest {
             .state("own-state")
             .attributes(attributes -> attributes.put("registration_id", "google"))
             .build();
-    repository.saveAuthorizationRequest(authorization, request, response);
-    request.setParameter("state", "own-state");
-    assertNotNull(repository.loadAuthorizationRequest(request));
-    repository.saveAuthorizationRequest(null, request, response);
-    assertNull(repository.loadAuthorizationRequest(request));
+    repository.saveAuthorizationRequest(authorization, mockHttpRequest, mockHttpResponse);
+    mockHttpRequest.setParameter("state", "own-state");
+
+    assertNotNull(repository.loadAuthorizationRequest(mockHttpRequest));
+    repository.saveAuthorizationRequest(null, mockHttpRequest, mockHttpResponse);
+
+    assertNull(repository.loadAuthorizationRequest(mockHttpRequest));
   }
 
   @ParameterizedTest
@@ -43,8 +45,8 @@ class ProviderAuthorizationRequestsTest {
     Credentials entity = new Credentials("google", "own-client", "own-secret", true, 0L);
     when(settings.credentials("google")).thenReturn(entity);
     ProviderAuthorizationRequests repository = new ProviderAuthorizationRequests(settings);
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     OAuth2AuthorizationRequest authorization =
         OAuth2AuthorizationRequest.authorizationCode()
             .authorizationUri("https://accounts.google.com/o/oauth2/v2/auth")
@@ -53,8 +55,8 @@ class ProviderAuthorizationRequestsTest {
             .state("own-state")
             .attributes(attributes -> attributes.put("registration_id", "google"))
             .build();
-    repository.saveAuthorizationRequest(authorization, request, response);
-    request.setParameter("state", "own-state");
+    repository.saveAuthorizationRequest(authorization, mockHttpRequest, mockHttpResponse);
+    mockHttpRequest.setParameter("state", "own-state");
     when(settings.credentials("google"))
         .thenReturn(
             new Credentials(
@@ -64,10 +66,10 @@ class ProviderAuthorizationRequestsTest {
                 !change.equals("disabled"),
                 change.equals("version") ? 2L : 0L));
     if (change.equals("unchanged")) {
-      assertNotNull(repository.removeAuthorizationRequest(request, response));
+      assertNotNull(repository.removeAuthorizationRequest(mockHttpRequest, mockHttpResponse));
     } else {
-      assertNull(repository.removeAuthorizationRequest(request, response));
+      assertNull(repository.removeAuthorizationRequest(mockHttpRequest, mockHttpResponse));
     }
-    assertNull(repository.removeAuthorizationRequest(request, response));
+    assertNull(repository.removeAuthorizationRequest(mockHttpRequest, mockHttpResponse));
   }
 }

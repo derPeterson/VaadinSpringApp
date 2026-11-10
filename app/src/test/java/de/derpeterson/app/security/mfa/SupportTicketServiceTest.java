@@ -123,10 +123,10 @@ class SupportTicketServiceTest {
       entityManager.find(SupportTicketEntity.class, older.id()).setStatus(Status.CLOSED);
       UserEntity assignee = entityManager.find(UserEntity.class, administratorId);
       entityManager.find(SupportTicketEntity.class, older.id()).setAssignee(assignee);
-      UserEntity requester = entityManager.find(UserEntity.class, testUserEntity.getId());
+      UserEntity requesterUserEntity = entityManager.find(UserEntity.class, testUserEntity.getId());
       for (int index = 0; index < 101; index++) {
         SupportTicketEntity ticket = new SupportTicketEntity();
-        ticket.setOwner(requester);
+        ticket.setOwner(requesterUserEntity);
         ticket.setAssignee(assignee);
         ticket.setStatus(Status.CLOSED);
         ticket.setSubject("Synthetic archived request");
@@ -144,6 +144,7 @@ class SupportTicketServiceTest {
       String number = SupportTicketService.ticketNumber(older.id()).substring(1);
       SupportTicketService.LiveView first =
           supportTicketService.loadTicketInbox(administrator, null, new InboxQuery(filter, 0, 10));
+
       assertEquals(102, first.totalTickets());
       assertEquals(10, first.visibleTickets().size());
       assertEquals(
@@ -153,6 +154,7 @@ class SupportTicketServiceTest {
         SupportTicketService.LiveView last =
             supportTicketService.loadTicketInbox(
                 administrator, older.id(), new InboxQuery(filter, Integer.MAX_VALUE, size));
+
         assertEquals(lastPage, last.page());
         assertEquals(102 % size, last.visibleTickets().size());
         assertEquals(older.id(), last.selected().id());
@@ -161,11 +163,13 @@ class SupportTicketServiceTest {
       SupportTicketService.LiveView detail =
           supportTicketService.loadTicketInbox(
               administrator, older.id(), new InboxQuery(filter, 0, 10));
+
       assertEquals(older.id(), detail.selected().id());
       assertFalse(
           detail.visibleTickets().stream().anyMatch(ticket -> ticket.id().equals(older.id())));
       SupportTicketFilter open =
           new SupportTicketFilter(Set.of(Status.OPEN), Assignment.MINE, Reading.ALL, null);
+
       assertEquals(
           0,
           supportTicketService
@@ -190,6 +194,7 @@ class SupportTicketServiceTest {
           () -> supportTicketService.findForAdministration(owner, number));
       Long olderId = older.id();
       InboxQuery allTickets = InboxQuery.all();
+
       assertThrows(
           AccessDeniedException.class,
           () -> supportTicketService.loadTicketInbox(owner, olderId, allTickets));
@@ -212,22 +217,26 @@ class SupportTicketServiceTest {
     InboxQuery query = new InboxQuery(mine, 0, 10);
     SupportTicketService.LiveView unread =
         supportTicketService.loadTicketInbox(administrator, ticket.id(), query);
+
     assertEquals(1, unread.totalTickets());
     assertEquals(ticket.id(), unread.visibleTickets().getFirst().id());
     SupportTicketFilter any =
         new SupportTicketFilter(Set.of(Status.IN_PROGRESS), Assignment.ALL, Reading.UNREAD, null);
+
     assertEquals(
         0,
         supportTicketService
             .loadTicketInbox(otherAdministrator, null, new InboxQuery(any, 0, 10))
             .totalTickets());
     MockHttpServletRequest watcher = confirmedAdmin(RoleType.ROLE_SUPERADMIN);
+
     assertEquals(
         0,
         supportTicketService
             .loadTicketInbox(watcher, null, new InboxQuery(any, 0, 10))
             .totalTickets());
     supportTicketService.setSubscription(watcher, ticket.id(), true);
+
     assertEquals(
         1,
         supportTicketService
@@ -242,6 +251,7 @@ class SupportTicketServiceTest {
         unread.selected().version());
     SupportTicketService.LiveView read =
         supportTicketService.loadTicketInbox(administrator, ticket.id(), query);
+
     assertEquals(0, read.totalTickets());
     assertTrue(read.visibleTickets().isEmpty());
     assertEquals(ticket.id(), read.selected().id());
@@ -278,6 +288,7 @@ class SupportTicketServiceTest {
                   .visibleTickets()
                   .stream()
                   .anyMatch(value -> value.id().equals(ticket.id()));
+
           assertEquals(expected.unreadMessages() > 0, listed, status + " / " + assignee);
         }
       }
@@ -287,14 +298,17 @@ class SupportTicketServiceTest {
   @Test
   void ownRequestDoesNotGrantPortalAccessAndNeverExposesInternalNotes() {
     Ticket ticket = supportTicketService.createRecovery(owner, "Ich benötige Hilfe.");
+
     verify(userNotificationService)
         .recordRecoveryRequest(eq(SupportTicketService.ticketNumber(ticket.id())), any());
     assertThrows(
         IllegalStateException.class, () -> supportTicketService.createRecovery(owner, "Doppelt"));
     MockHttpServletRequest foreign =
         TwoFactorAuthorizationTest.requestFor(create(RoleType.ROLE_USER).getEmail());
+
     assertTrue(supportTicketService.listTicketsForViewer(foreign, false).isEmpty());
     Long ticketId = ticket.id();
+
     assertThrows(
         AccessDeniedException.class,
         () -> supportTicketService.loadTicketConversation(foreign, ticketId, false));
@@ -303,10 +317,12 @@ class SupportTicketServiceTest {
     Ticket claimed = supportTicketService.claimTicket(administrator, ticket.id(), ticket.version());
     UserIdentity expectedAssignee =
         new UserIdentity("Support", "Fixture", twoFactorAuthorization.owner(administrator).email());
+
     assertEquals(expectedAssignee, claimed.assigneeIdentity());
     UserIdentity expectedRequester =
         new UserIdentity(
             testUserEntity.getFirstName(), testUserEntity.getLastName(), testUserEntity.getEmail());
+
     assertEquals(expectedRequester, claimed.requesterIdentity());
     assertEquals(
         expectedRequester, ticketFor(otherAdministrator, ticket.id(), true).requesterIdentity());
@@ -333,11 +349,13 @@ class SupportTicketServiceTest {
     Ticket changed =
         supportTicketService.replyToTicket(
             administrator, claimed.id(), claimed.version(), "Interne Prüfung", true, true);
+
     assertEquals(1, supportTicketService.loadTicketConversation(owner, ticket.id(), false).size());
     assertEquals(
         4, supportTicketService.loadTicketConversation(administrator, ticket.id(), true).size());
     Long changedId = changed.id();
     Long changedVersion = changed.version();
+
     assertThrows(
         AccessDeniedException.class,
         () ->
@@ -346,12 +364,14 @@ class SupportTicketServiceTest {
     supportTicketService.replyToTicket(
         administrator, changed.id(), changed.version(), "Öffentliche Antwort", false, true);
     List<Reply> visible = supportTicketService.loadTicketConversation(owner, ticket.id(), false);
+
     assertEquals(
         List.of(ReplyAuthor.REQUESTER, ReplyAuthor.SUPPORT),
         visible.stream().map(Reply::author).toList());
     assertTrue(visible.stream().allMatch(reply -> reply.actor() == null));
     List<Reply> administrativeMessages =
         supportTicketService.loadTicketConversation(administrator, ticket.id(), true);
+
     assertEquals(expectedAssignee, administrativeMessages.getLast().actor());
     assertEquals(
         expectedAssignee,
@@ -369,9 +389,11 @@ class SupportTicketServiceTest {
     Ticket created = supportTicketService.createRecovery(owner, "Bitte helfen.");
     List<Reply> first =
         supportTicketService.loadTicketConversation(administrator, created.id(), true);
+
     assertEquals(
         List.of(Kind.TICKET_CREATED, Kind.MESSAGE), first.stream().map(Reply::kind).toList());
     Instant createdAt = ticketFor(owner, created.id(), false).createdAt();
+
     assertEquals(createdAt, first.getFirst().createdAt());
     assertEquals(testUserEntity.getEmail(), first.getFirst().actor().email());
     assertNull(first.getFirst().previousStatus());
@@ -382,6 +404,7 @@ class SupportTicketServiceTest {
         supportTicketService.claimTicket(administrator, created.id(), created.version());
     Ticket repeated =
         supportTicketService.claimTicket(administrator, claimed.id(), claimed.version());
+
     assertEquals(
         3, supportTicketService.loadTicketConversation(administrator, created.id(), true).size());
     assertEquals(createdAt, repeated.createdAt());
@@ -399,6 +422,7 @@ class SupportTicketServiceTest {
         supportTicketService.loadTicketConversation(administrator, created.id(), true).stream()
             .filter(reply -> reply.kind().isHistory())
             .toList();
+
     assertEquals(
         List.of(Status.OPEN, Status.IN_PROGRESS, Status.CLOSED_BY_REQUESTER, Status.CLOSED),
         history.stream().map(Reply::nextStatus).toList());
@@ -413,6 +437,7 @@ class SupportTicketServiceTest {
     assertEquals(0L, ticketFor(otherAdministrator, created.id(), true).unreadMessages());
     Long closedId = closed.id();
     Long closedVersion = closed.version();
+
     assertThrows(
         AccessDeniedException.class,
         () ->
@@ -450,6 +475,7 @@ class SupportTicketServiceTest {
     Long assignedId = supportTicketService.administratorId(administrator);
     Long watcherId = supportTicketService.administratorId(superadmin);
     Long ticketId = ticket.id();
+
     assertThrows(
         AccessDeniedException.class,
         () -> supportTicketService.setSubscription(otherAdministrator, ticketId, true));
@@ -458,11 +484,13 @@ class SupportTicketServiceTest {
     Ticket noted =
         supportTicketService.replyToTicket(
             administrator, claimed.id(), claimed.version(), "Intern.", true, true);
+
     verify(userNotificationService, never()).recordSupportReply(any(), any(), any());
 
     Ticket updated =
         supportTicketService.replyToTicket(
             owner, noted.id(), noted.version(), "Noch eine Frage.", false, false);
+
     verify(userNotificationService)
         .recordSupportReply(
             eq(SupportTicketService.ticketNumber(ticket.id())),
@@ -474,8 +502,10 @@ class SupportTicketServiceTest {
                         .toList()
                         .containsAll(List.of(assignedId, watcherId))));
     supportTicketService.setSubscription(superadmin, ticket.id(), false);
+
     assertFalse(ticketFor(superadmin, ticket.id(), true).subscribed());
     supportTicketService.closeOwnTicket(owner, updated.id(), updated.version());
+
     assertThrows(
         AccessDeniedException.class,
         () -> supportTicketService.setSubscription(superadmin, ticketId, true));
@@ -495,11 +525,13 @@ class SupportTicketServiceTest {
             administrator, answered.id(), answered.version(), "Interner Vermerk.", true, true);
     Reply internal =
         supportTicketService.loadTicketConversation(administrator, ticket.id(), true).getLast();
+
     assertEquals(publicUpdate, ticketFor(owner, ticket.id(), false).updatedAt());
     supportTicketService.replyToTicket(
         administrator, noted.id(), noted.version(), "Zweite Antwort.", false, true);
     HttpSession requesterSession = bindLiveSession(owner);
     HttpSession administratorSession = bindLiveSession(administrator);
+
     assertEquals(2, ticketFor(owner, ticket.id(), false).unreadMessages());
     assertEquals(1, ticketFor(administrator, ticket.id(), true).unreadMessages());
     assertFalse(
@@ -519,6 +551,7 @@ class SupportTicketServiceTest {
             .unreadMessages());
     Reply latest =
         supportTicketService.liveView(requesterSession, false, ticket.id()).messages().getLast();
+
     assertTrue(
         supportTicketService.markSeen(
             requesterSession,
@@ -537,6 +570,7 @@ class SupportTicketServiceTest {
             ticketFor(administrator, ticket.id(), true).version()));
     assertEquals(0, ticketFor(administrator, ticket.id(), true).unreadMessages());
     Long ticketId = ticket.id();
+
     assertThrows(
         AccessDeniedException.class,
         () -> supportTicketService.liveView(requesterSession, true, ticketId));
@@ -546,23 +580,30 @@ class SupportTicketServiceTest {
   void countersFollowStatusAssignmentAndWatchWithoutDiscardingUnreadMessages() {
     Ticket ticket = supportTicketService.createRecovery(owner, "Hilfe bitte.");
     MockHttpServletRequest superadmin = confirmedAdmin(RoleType.ROLE_SUPERADMIN);
+
     assertEquals(1, ticketFor(otherAdministrator, ticket.id(), true).unreadMessages());
     Ticket claimed = supportTicketService.claimTicket(administrator, ticket.id(), ticket.version());
+
     assertEquals(0, ticketFor(otherAdministrator, ticket.id(), true).unreadMessages());
     assertEquals(1, ticketFor(administrator, ticket.id(), true).unreadMessages());
     assertEquals(0, ticketFor(superadmin, ticket.id(), true).unreadMessages());
     supportTicketService.setSubscription(superadmin, ticket.id(), true);
+
     assertEquals(1, ticketFor(superadmin, ticket.id(), true).unreadMessages());
     supportTicketService.setSubscription(superadmin, ticket.id(), false);
+
     assertEquals(0, ticketFor(superadmin, ticket.id(), true).unreadMessages());
     supportTicketService.setSubscription(superadmin, ticket.id(), true);
+
     assertEquals(1, ticketFor(superadmin, ticket.id(), true).unreadMessages());
     Ticket resolved = supportTicketService.closeOwnTicket(owner, claimed.id(), claimed.version());
+
     assertEquals(1, ticketFor(administrator, ticket.id(), true).unreadMessages());
     assertEquals(1, ticketFor(superadmin, ticket.id(), true).unreadMessages());
     assertEquals(0, ticketFor(otherAdministrator, ticket.id(), true).unreadMessages());
     supportTicketService.closeTicketAsAdministrator(
         administrator, resolved.id(), resolved.version());
+
     assertEquals(0, ticketFor(administrator, ticket.id(), true).unreadMessages());
     assertEquals(0, ticketFor(superadmin, ticket.id(), true).unreadMessages());
   }
@@ -572,14 +613,17 @@ class SupportTicketServiceTest {
     Ticket ticket = supportTicketService.createRecovery(owner, "Hilfe bitte.");
     Long adminId = supportTicketService.administratorId(administrator);
     Long otherId = supportTicketService.administratorId(otherAdministrator);
+
     assertEquals(1, notificationRecipients.countUnread(adminId, null));
     Ticket claimed = supportTicketService.claimTicket(administrator, ticket.id(), ticket.version());
+
     assertEquals(0, notificationRecipients.countUnread(adminId, null));
     assertEquals(0, notificationRecipients.countUnread(otherId, null));
     MockHttpServletRequest superadmin = confirmedAdmin(RoleType.ROLE_SUPERADMIN);
     Long watcherId = supportTicketService.administratorId(superadmin);
     supportTicketService.setSubscription(superadmin, ticket.id(), true);
     Ticket resolved = supportTicketService.closeOwnTicket(owner, ticket.id(), claimed.version());
+
     assertEquals(1, notificationRecipients.countUnread(adminId, null));
     assertEquals(1, notificationRecipients.countUnread(watcherId, null));
     assertEquals(0, notificationRecipients.countUnread(otherId, null));
@@ -587,6 +631,7 @@ class SupportTicketServiceTest {
         supportTicketService.loadTicketConversation(administrator, ticket.id(), true).getLast();
     HttpSession adminSession = bindLiveSession(administrator);
     supportTicketService.markSeen(adminSession, true, ticket.id(), last.id(), claimed.version());
+
     assertEquals(1, notificationRecipients.countUnread(adminId, null));
     assertTrue(
         supportTicketService.markSeen(
@@ -598,6 +643,7 @@ class SupportTicketServiceTest {
     assertEquals(1, notificationRecipients.countUnread(watcherId, null));
     supportTicketService.closeTicketAsAdministrator(
         administrator, resolved.id(), resolved.version());
+
     assertEquals(0, notificationRecipients.countUnread(watcherId, null));
     assertEquals(
         2,
@@ -610,6 +656,7 @@ class SupportTicketServiceTest {
   void requesterClosureBeforeClaimRemainsActionableForAllActiveAdministrators() {
     Ticket ticket = supportTicketService.createRecovery(owner, "Hilfe bitte.");
     Ticket resolved = supportTicketService.closeOwnTicket(owner, ticket.id(), ticket.version());
+
     assertEquals(
         1,
         notificationRecipients.countUnread(
@@ -621,6 +668,7 @@ class SupportTicketServiceTest {
     assertEquals(1, ticketFor(otherAdministrator, ticket.id(), true).unreadMessages());
     Long ticketId = ticket.id();
     Long resolvedVersion = resolved.version();
+
     assertThrows(
         AccessDeniedException.class,
         () -> supportTicketService.closeOwnTicket(owner, ticketId, resolvedVersion));
@@ -629,6 +677,7 @@ class SupportTicketServiceTest {
         notificationRecipients.countUnread(
             supportTicketService.administratorId(administrator), null));
     supportTicketService.closeTicketAsAdministrator(administrator, ticket.id(), resolved.version());
+
     assertEquals(
         0,
         notificationRecipients.countUnread(
@@ -649,24 +698,30 @@ class SupportTicketServiceTest {
     Ticket second =
         supportTicketService.replyToTicket(
             owner, ticket.id(), first.version(), "Später eingetroffen.", false, false);
+
     assertEquals(2, notificationRecipients.countUnread(adminId, null));
-    HttpSession session = bindLiveSession(administrator);
+    HttpSession httpSession = bindLiveSession(administrator);
+
     assertTrue(
-        supportTicketService.markSeen(session, true, ticket.id(), displayed.id(), first.version()));
+        supportTicketService.markSeen(
+            httpSession, true, ticket.id(), displayed.id(), first.version()));
     assertEquals(1, notificationRecipients.countUnread(adminId, null));
     assertFalse(
-        supportTicketService.markSeen(session, true, ticket.id(), displayed.id(), first.version()));
+        supportTicketService.markSeen(
+            httpSession, true, ticket.id(), displayed.id(), first.version()));
     assertEquals(1, notificationRecipients.countUnread(adminId, null));
     Reply latest =
         supportTicketService.loadTicketConversation(administrator, ticket.id(), true).getLast();
-    supportTicketService.markSeen(session, true, ticket.id(), latest.id(), second.version());
+    supportTicketService.markSeen(httpSession, true, ticket.id(), latest.id(), second.version());
     supportTicketService.setSubscription(administrator, ticket.id(), false);
     Ticket third =
         supportTicketService.replyToTicket(
             owner, ticket.id(), second.version(), "Ohne Beobachtung.", false, false);
+
     assertEquals(0, notificationRecipients.countUnread(adminId, null));
     assertEquals(1, ticketFor(administrator, ticket.id(), true).unreadMessages());
     supportTicketService.closeOwnTicket(owner, ticket.id(), third.version());
+
     assertEquals(1, notificationRecipients.countUnread(adminId, null));
   }
 
@@ -690,6 +745,7 @@ class SupportTicketServiceTest {
         supportTicketService.replyToTicket(
             owner, ticket.id(), claimed.version(), "Neue Frage.", false, false);
     supportTicketService.closeOwnTicket(owner, ticket.id(), updated.version());
+
     assertEquals(0, notificationRecipients.countUnread(revokedId, null));
     assertEquals(0, notificationRecipients.countUnread(disabledId, null));
   }
@@ -703,12 +759,15 @@ class SupportTicketServiceTest {
       transactionTemplate.executeWithoutResult(status -> {
         supportTicketService.replyToTicket(
             owner, ticket.id(), ticket.version(), "Zurückgerollt.", false, false);
+
         assertTrue(changes.isEmpty());
         status.setRollbackOnly();
       });
+
       assertTrue(changes.isEmpty());
       supportTicketService.replyToTicket(
           owner, ticket.id(), ticket.version(), "Gespeichert.", false, false);
+
       assertEquals(
           List.of(
               new SupportTicketBroadcaster.SupportTicketChangeMessage(
@@ -717,6 +776,7 @@ class SupportTicketServiceTest {
 
       Reply latest =
           supportTicketService.loadTicketConversation(owner, ticket.id(), false).getLast();
+
       assertTrue(
           supportTicketService.markSeen(
               bindLiveSession(owner),
@@ -726,6 +786,7 @@ class SupportTicketServiceTest {
               ticketFor(administrator, ticket.id(), true).version()));
       assertEquals(2, changes.size());
       SupportTicketBroadcaster.SupportTicketChangeMessage read = changes.getLast();
+
       assertTrue(read.affects(testUserEntity.getId(), false));
       assertFalse(read.affects(supportTicketService.administratorId(administrator), true));
     } finally {
@@ -733,24 +794,25 @@ class SupportTicketServiceTest {
     }
   }
 
-  private Ticket ticketFor(MockHttpServletRequest request, Long id, boolean administration) {
+  private Ticket ticketFor(
+      MockHttpServletRequest mockHttpRequest, Long id, boolean administration) {
     if (administration) {
       return supportTicketService.findForAdministration(
-          request, SupportTicketService.ticketNumber(id).substring(1));
+          mockHttpRequest, SupportTicketService.ticketNumber(id).substring(1));
     }
-    return supportTicketService.listTicketsForViewer(request, administration).stream()
+    return supportTicketService.listTicketsForViewer(mockHttpRequest, administration).stream()
         .filter(ticket -> ticket.id().equals(id))
         .findFirst()
         .orElseThrow();
   }
 
-  private HttpSession bindLiveSession(MockHttpServletRequest request) {
-    HttpSession session = request.getSession();
-    String email = (String) request.getAttribute("fixture.identity");
-    when(securityService.refreshSessionAuthentication(session))
+  private HttpSession bindLiveSession(MockHttpServletRequest mockHttpRequest) {
+    HttpSession httpSession = mockHttpRequest.getSession();
+    String email = (String) mockHttpRequest.getAttribute("fixture.identity");
+    when(securityService.refreshSessionAuthentication(httpSession))
         .thenReturn(
             Optional.of(UsernamePasswordAuthenticationToken.authenticated(email, null, List.of())));
-    return session;
+    return httpSession;
   }
 
   @Test
@@ -763,6 +825,7 @@ class SupportTicketServiceTest {
     Ticket claimed = supportTicketService.claimTicket(administrator, ticket.id(), ticket.version());
     Long claimedId = claimed.id();
     Long claimedVersion = claimed.version();
+
     assertThrows(
         IllegalArgumentException.class,
         () ->
@@ -770,6 +833,7 @@ class SupportTicketServiceTest {
                 administrator, claimedId, claimedVersion, " ", false, true));
     supportTicketService.replyToTicket(
         administrator, claimed.id(), claimed.version(), "Ich prüfe das.", false, true);
+
     assertEquals(2, supportTicketService.loadTicketConversation(owner, ticket.id(), false).size());
   }
 
@@ -780,13 +844,16 @@ class SupportTicketServiceTest {
         TwoFactorAuthorizationTest.requestFor(create(RoleType.ROLE_USER).getEmail());
     Long openId = open.id();
     Long openVersion = open.version();
+
     assertThrows(
         AccessDeniedException.class,
         () -> supportTicketService.closeOwnTicket(foreign, openId, openVersion));
     Ticket resolved = supportTicketService.closeOwnTicket(owner, open.id(), open.version());
+
     assertEquals(Status.CLOSED_BY_REQUESTER, resolved.status());
     Long resolvedId = resolved.id();
     Long resolvedVersion = resolved.version();
+
     assertThrows(
         AccessDeniedException.class,
         () ->
@@ -807,9 +874,11 @@ class SupportTicketServiceTest {
     Ticket closed =
         supportTicketService.closeTicketAsAdministrator(
             administrator, resolved.id(), resolved.version());
+
     assertEquals(Status.CLOSED, closed.status());
     Long closedId = closed.id();
     Long closedVersion = closed.version();
+
     assertThrows(
         AccessDeniedException.class,
         () ->
@@ -824,11 +893,13 @@ class SupportTicketServiceTest {
     Ticket claimed = supportTicketService.claimTicket(administrator, ticket.id(), ticket.version());
     Long ticketId = ticket.id();
     Long ticketVersion = ticket.version();
+
     assertThrows(
         OptimisticLockingFailureException.class,
         () -> supportTicketService.claimTicket(otherAdministrator, ticketId, ticketVersion));
     Long claimedId = claimed.id();
     Long claimedVersion = claimed.version();
+
     assertThrows(
         IllegalStateException.class,
         () -> supportTicketService.claimTicket(otherAdministrator, claimedId, claimedVersion));
@@ -847,6 +918,7 @@ class SupportTicketServiceTest {
       supportTicketService.claimTicket(administrator, ticket.id(), ticket.version());
       status.setRollbackOnly();
     });
+
     assertEquals(Status.OPEN, ticketFor(administrator, ticket.id(), true).status());
     assertEquals(
         List.of(Kind.TICKET_CREATED, Kind.MESSAGE),
@@ -855,6 +927,7 @@ class SupportTicketServiceTest {
             .toList());
     assertEquals(1, notificationRecipients.countUnread(adminId, null));
     supportTicketService.claimTicket(administrator, ticket.id(), ticket.version());
+
     assertEquals(0, notificationRecipients.countUnread(adminId, null));
   }
 
@@ -881,6 +954,7 @@ class SupportTicketServiceTest {
           };
       var first = executor.submit(() -> claim.apply(administrator));
       var second = executor.submit(() -> claim.apply(otherAdministrator));
+
       assertTrue(ready.await(10, java.util.concurrent.TimeUnit.SECONDS));
       start.countDown();
       org.junit.jupiter.api.Assertions.assertNotEquals(
@@ -905,16 +979,19 @@ class SupportTicketServiceTest {
   void restrictedFirstFactorCanAskForHelpButCannotReadAdministrationOrExceedLimits() {
     UserEntity required = create(RoleType.ROLE_ADMIN);
     MockHttpServletRequest firstFactor = TwoFactorAuthorizationTest.requestFor(required.getEmail());
+
     assertFalse(twoFactorAuthorization.sessionConfirmed(firstFactor));
     assertThrows(
         IllegalArgumentException.class,
         () -> supportTicketService.createRecovery(firstFactor, " "));
     String overlongMessage = "x".repeat(2001);
+
     assertThrows(
         IllegalArgumentException.class,
         () -> supportTicketService.createRecovery(firstFactor, overlongMessage));
     for (int attempt = 0; attempt < 3; attempt++) {
       Ticket ticket = supportTicketService.createRecovery(firstFactor, "Verlorener Authenticator.");
+
       assertFalse(twoFactorAuthorization.sessionConfirmed(firstFactor));
       assertThrows(
           AccessDeniedException.class,
@@ -926,6 +1003,7 @@ class SupportTicketServiceTest {
               administrator, claimed.id(), claimed.version());
       Long closedId = closed.id();
       Long closedVersion = closed.version();
+
       assertThrows(
           AccessDeniedException.class,
           () -> supportTicketService.claimTicket(administrator, closedId, closedVersion));
@@ -945,17 +1023,20 @@ class SupportTicketServiceTest {
     String preview =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.GERMAN)
             .getSupportRecoveryInstructions();
+
     assertTrue(preview.contains("Ersatzcode"));
     Ticket sent =
         supportTicketService.sendTicketRecoveryInstructions(
             administrator, claimed.id(), claimed.version());
     List<Reply> messages = supportTicketService.loadTicketConversation(owner, claimed.id(), false);
+
     assertEquals(Kind.RECOVERY_INSTRUCTIONS, messages.getLast().kind());
     assertEquals(preview, messages.getLast().body());
     assertTrue(preview.length() <= SupportTicketService.MESSAGE_LIMIT);
     Ticket copiedText =
         supportTicketService.replyToTicket(
             administrator, sent.id(), sent.version(), preview, false, true);
+
     assertEquals(
         Kind.MESSAGE,
         supportTicketService.loadTicketConversation(owner, claimed.id(), false).getLast().kind());
@@ -964,6 +1045,7 @@ class SupportTicketServiceTest {
     assertTrue(sent.instructionSent());
     Long copiedTextId = copiedText.id();
     Long copiedTextVersion = copiedText.version();
+
     assertThrows(
         AccessDeniedException.class,
         () ->
@@ -971,6 +1053,7 @@ class SupportTicketServiceTest {
                 administrator, copiedTextId, copiedTextVersion));
     supportTicketService.closeTicketAsAdministrator(
         administrator, copiedText.id(), copiedText.version());
+
     assertThrows(
         AccessDeniedException.class,
         () -> supportTicketService.validateInstructionPreview(administrator, copiedTextId));
@@ -986,6 +1069,7 @@ class SupportTicketServiceTest {
         .addAddressedNotification(any(), any(), any(), any());
     Long claimedId = claimed.id();
     Long claimedVersion = claimed.version();
+
     assertThrows(
         IllegalStateException.class,
         () ->
@@ -1001,22 +1085,24 @@ class SupportTicketServiceTest {
   }
 
   private MockHttpServletRequest confirmedAdmin(RoleType role) {
-    UserEntity admin = create(role);
-    MockHttpServletRequest request = TwoFactorAuthorizationTest.requestFor(admin.getEmail());
+    UserEntity adminUserEntity = create(role);
+    MockHttpServletRequest mockHttpRequest =
+        TwoFactorAuthorizationTest.requestFor(adminUserEntity.getEmail());
     byte[] seed = Totp.newSecret();
-    UUID revision = twoFactorStore.initialize(admin.getId(), admin.getAccessVersion());
+    UUID revision =
+        twoFactorStore.initialize(adminUserEntity.getId(), adminUserEntity.getAccessVersion());
     List<String> codes =
         twoFactorStore
             .enroll(
-                admin.getId(),
-                admin.getAccessVersion(),
+                adminUserEntity.getId(),
+                adminUserEntity.getAccessVersion(),
                 revision,
                 seed,
                 Totp.code(seed, clock.instant().getEpochSecond() / 30),
                 false)
             .recoveryCodes();
-    twoFactorAuthorization.confirmSession(request, codes.getFirst());
-    return request;
+    twoFactorAuthorization.confirmSession(mockHttpRequest, codes.getFirst());
+    return mockHttpRequest;
   }
 
   private UserEntity create(RoleType type) {
@@ -1053,11 +1139,11 @@ class SupportTicketServiceTest {
 
     @Bean
     ConfigService config() {
-      ConfigService config = mock(ConfigService.class);
-      when(config.getString(any()))
+      ConfigService configService = mock(ConfigService.class);
+      when(configService.getString(any()))
           .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-      when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://fixture.invalid/");
-      return config;
+      when(configService.getString(ConfigEntry.BASE_URL)).thenReturn("https://fixture.invalid/");
+      return configService;
     }
 
     @Bean

@@ -15,7 +15,7 @@ final class QueueTestWorkers {
   private QueueTestWorkers() {}
 
   static EmailQueueWorkerPool inline() {
-    EmailQueueWorkerPool workers = mock(EmailQueueWorkerPool.class);
+    EmailQueueWorkerPool inlineWorkerPool = mock(EmailQueueWorkerPool.class);
     lenient()
         .doAnswer(call -> {
           List<Long> ids = call.getArgument(0);
@@ -23,8 +23,9 @@ final class QueueTestWorkers {
           ids.forEach(dispatch::accept);
           return null;
         })
-        .when(workers)
+        .when(inlineWorkerPool)
         .dispatchEmailBatch(anyList(), any());
-    return workers;
+
+    return inlineWorkerPool;
   }
 }

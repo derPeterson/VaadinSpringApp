@@ -69,7 +69,7 @@ class TwoFactorStoreTest {
     clock.now.set(Instant.parse("2026-11-02T12:00:00Z"));
     testUserEntity =
         transaction.execute(status -> {
-          UserEntity account =
+          UserEntity testAccountEntity =
               UserEntity.builder()
                   .firstName("Test")
                   .lastName("Account")
@@ -77,7 +77,7 @@ class TwoFactorStoreTest {
                   .enabled(true)
                   .roleEntities(List.of())
                   .build();
-          return userRepository.saveAndFlush(account);
+          return userRepository.saveAndFlush(testAccountEntity);
         });
     secret = Totp.newSecret();
     initialRevision =
@@ -102,23 +102,27 @@ class TwoFactorStoreTest {
             .findById(testUserEntity.getId())
             .orElseThrow()
             .getEncryptedSecret();
+
     assertFalse(encrypted.contains(Totp.base32(secret)));
-    JdbcTemplate jdbc = new JdbcTemplate(testDataSource);
+    JdbcTemplate jdbcTemplate = new JdbcTemplate(testDataSource);
     List<String> digests =
-        jdbc.queryForList(
+        jdbcTemplate.queryForList(
             "select digest from two_factor_recovery_codes where user_id = ?",
             String.class,
             testUserEntity.getId());
+
     assertEquals(10, digests.size());
     assertTrue(digests.stream().noneMatch(result.recoveryCodes()::contains));
     String firstCode = Totp.code(secret, clock.instant().getEpochSecond() / 30);
     Long userId = testUserEntity.getId();
     String accessVersion = testUserEntity.getAccessVersion();
+
     assertThrows(
         BadCredentialsException.class,
         () -> twoFactorStore.verify(userId, accessVersion, firstCode));
     clock.now.updateAndGet(now -> now.plusSeconds(30));
     String nextCode = Totp.code(secret, clock.instant().getEpochSecond() / 30);
+
     assertFalse(
         twoFactorStore
             .verify(testUserEntity.getId(), testUserEntity.getAccessVersion(), nextCode)
@@ -139,10 +143,11 @@ class TwoFactorStoreTest {
             : Totp.code(secret, clock.instant().getEpochSecond() / 30);
     CountDownLatch ready = new CountDownLatch(2);
     CountDownLatch start = new CountDownLatch(1);
-    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+    try (ExecutorService executorService = Executors.newFixedThreadPool(2)) {
       Callable<Boolean> useCode =
           () -> {
             ready.countDown();
+
             assertTrue(start.await(10, TimeUnit.SECONDS));
             try {
               assertEquals(
@@ -155,10 +160,12 @@ class TwoFactorStoreTest {
               return false;
             }
           };
-      Future<Boolean> first = executor.submit(useCode);
-      Future<Boolean> second = executor.submit(useCode);
+      Future<Boolean> first = executorService.submit(useCode);
+      Future<Boolean> second = executorService.submit(useCode);
+
       assertTrue(ready.await(10, TimeUnit.SECONDS));
       start.countDown();
+
       assertNotEquals(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS));
     }
     assertEquals(recovery ? 9 : 10, codes.remaining(testUserEntity.getId()));
@@ -169,15 +176,17 @@ class TwoFactorStoreTest {
     byte[] otherSecret = Totp.newSecret();
     CountDownLatch ready = new CountDownLatch(2);
     CountDownLatch start = new CountDownLatch(1);
-    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+    try (ExecutorService executorService = Executors.newFixedThreadPool(2)) {
       Future<TwoFactorStore.Enrollment> first =
-          executor.submit(() -> enrollAfterStart(ready, start, secret));
+          executorService.submit(() -> enrollAfterStart(ready, start, secret));
       Future<TwoFactorStore.Enrollment> second =
-          executor.submit(() -> enrollAfterStart(ready, start, otherSecret));
+          executorService.submit(() -> enrollAfterStart(ready, start, otherSecret));
+
       assertTrue(ready.await(10, TimeUnit.SECONDS));
       start.countDown();
       TwoFactorStore.Enrollment firstResult = first.get(10, TimeUnit.SECONDS);
       TwoFactorStore.Enrollment secondResult = second.get(10, TimeUnit.SECONDS);
+
       assertNotEquals(firstResult == null, secondResult == null);
       byte[] expected = firstResult != null ? secret : otherSecret;
       String encrypted =
@@ -185,6 +194,7 @@ class TwoFactorStoreTest {
               .findById(testUserEntity.getId())
               .orElseThrow()
               .getEncryptedSecret();
+
       assertArrayEquals(expected, secrets.decrypt(testUserEntity.getId(), "factor", encrypted));
       assertEquals(10, codes.remaining(testUserEntity.getId()));
       TwoFactorStore.Enrollment winner = firstResult != null ? firstResult : secondResult;
@@ -194,6 +204,7 @@ class TwoFactorStoreTest {
                   "select digest from two_factor_recovery_codes where user_id = ?",
                   String.class,
                   testUserEntity.getId());
+
       assertTrue(
           winner.recoveryCodes().stream()
               .map(code -> TwoFactorSecrets.recoveryDigest(testUserEntity.getId(), code))
@@ -204,6 +215,7 @@ class TwoFactorStoreTest {
   private TwoFactorStore.Enrollment enrollAfterStart(
       CountDownLatch ready, CountDownLatch start, byte[] seed) throws InterruptedException {
     ready.countDown();
+
     assertTrue(start.await(10, TimeUnit.SECONDS));
     try {
       return twoFactorStore.enroll(
@@ -232,12 +244,14 @@ class TwoFactorStoreTest {
         LockedException.class, () -> twoFactorStore.verify(userId, accessVersion, "invalid"));
     clock.now.updateAndGet(now -> now.plusSeconds(30));
     String valid = Totp.code(secret, clock.instant().getEpochSecond() / 30);
+
     assertThrows(LockedException.class, () -> twoFactorStore.verify(userId, accessVersion, valid));
     clock.now.updateAndGet(now -> now.plusSeconds(901));
     twoFactorStore.verify(
         testUserEntity.getId(),
         testUserEntity.getAccessVersion(),
         Totp.code(secret, clock.instant().getEpochSecond() / 30));
+
     assertEquals(
         0,
         twoFactorAccountRepository
@@ -252,12 +266,14 @@ class TwoFactorStoreTest {
     List<String> renewed =
         twoFactorStore.renewRecoveryCodes(
             testUserEntity.getId(), testUserEntity.getAccessVersion(), enrolled.revision());
+
     assertNotEquals(
         enrolled.revision(),
         twoFactorAccountRepository.state(testUserEntity.getId()).orElseThrow().getRevision());
     Long userId = testUserEntity.getId();
     String accessVersion = testUserEntity.getAccessVersion();
     String firstRecoveryCode = enrolled.recoveryCodes().getFirst();
+
     assertThrows(
         BadCredentialsException.class,
         () -> twoFactorStore.verify(userId, accessVersion, firstRecoveryCode));
@@ -274,17 +290,20 @@ class TwoFactorStoreTest {
     Long userId = testUserEntity.getId();
     String accessVersion = testUserEntity.getAccessVersion();
     byte[] replacementSecret = Totp.newSecret();
+
     assertThrows(
         BadCredentialsException.class,
         () ->
             twoFactorStore.enroll(
                 userId, accessVersion, initialRevision, replacementSecret, "123456", false));
     String recoveryCode = enrolled.recoveryCodes().getFirst();
+
     assertThrows(
         BadCredentialsException.class,
         () -> twoFactorStore.verify(userId, "changed", recoveryCode));
     twoFactorStore.disable(
         testUserEntity.getId(), testUserEntity.getAccessVersion(), enrolled.revision());
+
     assertFalse(
         twoFactorAccountRepository.state(testUserEntity.getId()).orElseThrow().getEnrolled());
     assertTrue(
@@ -296,6 +315,7 @@ class TwoFactorStoreTest {
     UUID revision =
         twoFactorAccountRepository.state(testUserEntity.getId()).orElseThrow().getRevision();
     String replacementCode = Totp.code(secret, clock.instant().getEpochSecond() / 30);
+
     assertThrows(
         BadCredentialsException.class,
         () ->

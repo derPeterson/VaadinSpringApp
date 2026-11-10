@@ -51,8 +51,10 @@ class AfterCommitLogTest {
   void successAppearsOnlyAfterCommit(String level) {
     transaction.executeWithoutResult(status -> {
       emit(level);
+
       assertTrue(logs.list.isEmpty());
     });
+
     assertEquals(1, logs.list.size());
     assertEquals(Level.toLevel(level), logs.list.getFirst().getLevel());
     assertEquals("Committed userId=17", logs.list.getFirst().getFormattedMessage());
@@ -65,12 +67,14 @@ class AfterCommitLogTest {
       emit(level);
       status.setRollbackOnly();
     });
+
     assertTrue(logs.list.isEmpty());
   }
 
   @Test
   void failingCommitDoesNotReportSuccess() {
     manager.failCommit = true;
+
     assertThrows(
         TransactionSystemException.class,
         () -> transaction.executeWithoutResult(status -> emit("INFO")));
@@ -80,6 +84,7 @@ class AfterCommitLogTest {
   @Test
   void completedIndependentOperationCanLogImmediately() {
     emit("INFO");
+
     assertEquals(1, logs.list.size());
   }
 
@@ -90,6 +95,7 @@ class AfterCommitLogTest {
       AfterCommitLog.info(logger, "Committed userId={}", fields);
       fields[0] = 99L;
     });
+
     assertEquals("Committed userId=17", logs.list.getFirst().getFormattedMessage());
   }
 
@@ -97,6 +103,7 @@ class AfterCommitLogTest {
   void unobservableCommitDoesNotClaimSuccess() {
     TransactionSynchronizationManager.setActualTransactionActive(true);
     emit("INFO");
+
     assertTrue(logs.list.isEmpty());
   }
 

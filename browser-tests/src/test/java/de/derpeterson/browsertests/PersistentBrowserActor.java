@@ -48,6 +48,7 @@ public final class PersistentBrowserActor implements AutoCloseable {
     traceSession = AllurePlaywright.startTracing(browserContext);
     browserPage = browserContext.newPage();
     browserPage.navigate(path(HOME_ROUTE));
+
     assertThat(browserPage).hasURL(urlPattern(expectedRoute));
     assertThat(browserPage)
         .hasTitle(

@@ -28,6 +28,7 @@ class ImageHelperTest {
     }
 
     BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
+
     assertNotNull(image, "The classpath bytes must contain a readable image");
     assertEquals(512, image.getWidth());
     assertEquals(512, image.getHeight());

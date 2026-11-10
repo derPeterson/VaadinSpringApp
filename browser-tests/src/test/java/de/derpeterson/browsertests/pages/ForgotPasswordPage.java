@@ -30,6 +30,7 @@ public final class ForgotPasswordPage {
                 .setName(uiTexts.getLoginForgotPasswordLink())
                 .setExact(true))
         .click();
+
     assertThat(browserPage).hasURL(urlPattern(FORGOT_PASSWORD_ROUTE));
     assertThat(browserPage).hasTitle(FORGOT_PASSWORD_PAGE_TITLE);
     assertThat(
@@ -58,21 +59,23 @@ public final class ForgotPasswordPage {
 
   @Step("Neutralen Anfragehinweis mit Erfolgstitel prüfen")
   public String requestedResponse() {
-    Locator notice = requestedNotice();
-    assertThat(notice).isVisible();
-    assertThat(notice).containsText(uiTexts.getBaseSuccessTitle());
-    assertThat(notice)
+    Locator passwordResetNoticeLocator = requestedNotice();
+
+    assertThat(passwordResetNoticeLocator).isVisible();
+    assertThat(passwordResetNoticeLocator).containsText(uiTexts.getBaseSuccessTitle());
+    assertThat(passwordResetNoticeLocator)
         .containsText(uiTexts.visibleText(browserPage, uiTexts.getForgotPasswordSuccessMessage()));
     assertThat(browserPage).hasURL(urlPattern(FORGOT_PASSWORD_ROUTE));
-    return notice.innerText();
+    return passwordResetNoticeLocator.innerText();
   }
 
   @Step(
       "Vor einer weiteren Anfrage die vorhandene Bestätigung über ihren Schließen-Button schließen")
   public void dismissRequestedNotice() {
-    Locator notice = requestedNotice();
-    notice.getByRole(AriaRole.BUTTON).click();
-    assertThat(notice).not().isVisible();
+    Locator passwordResetNoticeLocator = requestedNotice();
+    passwordResetNoticeLocator.getByRole(AriaRole.BUTTON).click();
+
+    assertThat(passwordResetNoticeLocator).not().isVisible();
   }
 
   @Step("Pflichtfeldhinweis und markierte E-Mail prüfen")

@@ -9,27 +9,27 @@ import org.junit.jupiter.api.Test;
 class BrowserRoutesTest {
   @Test
   void localOriginIsLiteralAndCannotMatchASimilarHostOrAPrefixedUrl() {
-    withOrigin(
-        () -> {
-          Pattern pattern = BrowserRoutes.urlPattern("home");
-          assertTrue(pattern.matcher("https://127.0.0.1:18082/home").matches());
-          assertTrue(pattern.matcher("https://127.0.0.1:18082/home?tab=account").matches());
-          assertFalse(pattern.matcher("https://127X0X0X1:18082/home").matches());
-          assertFalse(
-              pattern.matcher("https://example.test/?url=https://127.0.0.1:18082/home").matches());
-          assertFalse(pattern.matcher("https://127.0.0.1:18080/home").matches());
-        });
+    withOrigin(() -> {
+      Pattern pattern = BrowserRoutes.urlPattern("home");
+
+      assertTrue(pattern.matcher("https://127.0.0.1:18082/home").matches());
+      assertTrue(pattern.matcher("https://127.0.0.1:18082/home?tab=account").matches());
+      assertFalse(pattern.matcher("https://127X0X0X1:18082/home").matches());
+      assertFalse(
+          pattern.matcher("https://example.test/?url=https://127.0.0.1:18082/home").matches());
+      assertFalse(pattern.matcher("https://127.0.0.1:18080/home").matches());
+    });
   }
 
   @Test
   void routeMetacharactersAreLiteralAndOtherPathsAreRejected() {
-    withOrigin(
-        () -> {
-          Pattern pattern = BrowserRoutes.urlPattern("screen.v2");
-          assertTrue(pattern.matcher("https://127.0.0.1:18082/screen.v2").matches());
-          assertFalse(pattern.matcher("https://127.0.0.1:18082/screenXv2").matches());
-          assertFalse(pattern.matcher("https://127.0.0.1:18082/screen.v2-extra").matches());
-        });
+    withOrigin(() -> {
+      Pattern pattern = BrowserRoutes.urlPattern("screen.v2");
+
+      assertTrue(pattern.matcher("https://127.0.0.1:18082/screen.v2").matches());
+      assertFalse(pattern.matcher("https://127.0.0.1:18082/screenXv2").matches());
+      assertFalse(pattern.matcher("https://127.0.0.1:18082/screen.v2-extra").matches());
+    });
   }
 
   private static void withOrigin(Runnable test) {

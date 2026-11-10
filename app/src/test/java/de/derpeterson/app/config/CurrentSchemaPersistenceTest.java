@@ -70,12 +70,12 @@ class CurrentSchemaPersistenceTest {
   void currentSchemaValidatesAgainstEveryJpaMappingAndAcceptsAllCurrentEnumValues() {
     LocalContainerEntityManagerFactoryBean factory = factory();
     try {
-      JdbcTemplate jdbc = new JdbcTemplate(testDataSource);
+      JdbcTemplate jdbcTemplate = new JdbcTemplate(testDataSource);
       for (RoleType role : RoleType.values()) {
-        jdbc.update("insert into roles(name) values(?)", role.name());
+        jdbcTemplate.update("insert into roles(name) values(?)", role.name());
       }
       for (UserNotificationType type : UserNotificationType.values()) {
-        jdbc.update(
+        jdbcTemplate.update(
             "insert into user_notifications(request_key,type,created_at,broadcast,recipient_count) values(?,?,?,?,?)",
             "fixture-" + type.name(),
             type.name(),
@@ -85,10 +85,10 @@ class CurrentSchemaPersistenceTest {
       }
       assertEquals(
           RoleType.values().length,
-          jdbc.queryForObject("select count(*) from roles", Integer.class));
+          jdbcTemplate.queryForObject("select count(*) from roles", Integer.class));
       assertEquals(
           UserNotificationType.values().length,
-          jdbc.queryForObject("select count(*) from user_notifications", Integer.class));
+          jdbcTemplate.queryForObject("select count(*) from user_notifications", Integer.class));
     } finally {
       factory.destroy();
     }
@@ -136,6 +136,7 @@ class CurrentSchemaPersistenceTest {
       manager.persist(block);
       manager.getTransaction().commit();
       userId = user.getId();
+
       assertEquals(0L, user.getVersion());
     } finally {
       first.destroy();
@@ -144,20 +145,26 @@ class CurrentSchemaPersistenceTest {
     LocalContainerEntityManagerFactoryBean restarted = factory();
     try (EntityManager manager = restarted.getObject().createEntityManager()) {
       UserEntity user = manager.find(UserEntity.class, userId);
+
       assertEquals(0L, user.getVersion());
       assertEquals("fixture-encoded-password", user.getPassword());
       assertTrue(user.hasRole(RoleType.ROLE_USER));
       UserAvatarEntity avatar = manager.find(UserAvatarEntity.class, userId);
+
       assertEquals(until, avatar.getUploadedAt());
       assertEquals(AvatarImageFormat.JPEG, avatar.getOriginalFormat());
       assertEquals(12L, avatar.getOriginalSizeBytes());
       assertEquals(20, avatar.getOriginalWidth());
       assertEquals(10, avatar.getOriginalHeight());
-      JdbcTemplate jdbc = new JdbcTemplate(testDataSource);
+      JdbcTemplate jdbcTemplate = new JdbcTemplate(testDataSource);
+
       assertThrows(
           DataIntegrityViolationException.class,
-          () -> jdbc.update("update user_avatar set uploaded_at = null where user_id = ?", userId));
+          () ->
+              jdbcTemplate.update(
+                  "update user_avatar set uploaded_at = null where user_id = ?", userId));
       LoginAttemptEntity block = manager.find(LoginAttemptEntity.class, "fixture-identity-hash");
+
       assertEquals(10, block.getFailures());
       assertEquals(until, block.getBlockedUntil());
     } finally {
@@ -169,11 +176,12 @@ class CurrentSchemaPersistenceTest {
   void maximumValidAccountIdentityFitsTheCurrentUserSchema() {
     String identity =
         "a".repeat(64) + "@" + "b".repeat(63) + "." + "c".repeat(63) + "." + "d".repeat(62);
+
     assertEquals(255, identity.length());
     LocalContainerEntityManagerFactoryBean factory = factory();
     try (EntityManager manager = factory.getObject().createEntityManager()) {
       manager.getTransaction().begin();
-      UserEntity user =
+      UserEntity testUserEntity =
           UserEntity.builder()
               .email(identity)
               .password("fixture-encoded-password")
@@ -184,10 +192,11 @@ class CurrentSchemaPersistenceTest {
               .birthDate(LocalDate.of(1990, 1, 1))
               .roleEntities(List.of())
               .build();
-      manager.persist(user);
+      manager.persist(testUserEntity);
       manager.getTransaction().commit();
       manager.clear();
-      assertEquals(identity, manager.find(UserEntity.class, user.getId()).getEmail());
+
+      assertEquals(identity, manager.find(UserEntity.class, testUserEntity.getId()).getEmail());
     } finally {
       factory.destroy();
     }

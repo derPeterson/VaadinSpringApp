@@ -26,9 +26,11 @@ public final class UiActions {
     // Am Seitenrand übernimmt kein verschachtelter Scroller die Dokumentgeste.
     double x = bounds.x + (document ? 8 : bounds.width / 2);
     double y = bottom - 12;
+
     CDPSession session = browserPage.context().newCDPSession(browserPage);
     JsonObject touch = new JsonObject();
     touch.addProperty("enabled", true);
+
     try {
       session.send("Emulation.setTouchEmulationEnabled", touch);
       sendTouch(session, "touchStart", x, y);
@@ -121,13 +123,14 @@ public final class UiActions {
   }
 
   /** Erkennt einen positiven Rückgabewert einer serverseitig gestarteten JavaScript-Abfrage. */
-  public static boolean carriesSuccessfulReturn(Request request) {
-    String body = request.postData();
-    if (!request.method().equals("POST") || body == null) {
+  public static boolean carriesSuccessfulReturn(Request vaadinRequest) {
+    String requestBodyText = vaadinRequest.postData();
+
+    if (!vaadinRequest.method().equals("POST") || requestBodyText == null) {
       return false;
     }
     try {
-      for (JsonNode call : JSON.readTree(body).path("rpc")) {
+      for (JsonNode call : JSON.readTree(requestBodyText).path("rpc")) {
         JsonNode arguments = call.path("args");
         if (call.path("type").asText().equals("channel")
             && arguments.isArray()
@@ -143,13 +146,14 @@ public final class UiActions {
     }
   }
 
-  private static boolean carriesValueChange(Response response) {
-    String body = response.request().postData();
-    if (body == null) {
+  private static boolean carriesValueChange(Response vaadinResponse) {
+    String requestBodyText = vaadinResponse.request().postData();
+
+    if (requestBodyText == null) {
       return false;
     }
     try {
-      for (JsonNode change : JSON.readTree(body).path("rpc")) {
+      for (JsonNode change : JSON.readTree(requestBodyText).path("rpc")) {
         String property = change.path("property").asText();
         if (change.path("type").asText().equals("mSync")
             && (property.equals("value") || property.equals("selectedItem"))) {

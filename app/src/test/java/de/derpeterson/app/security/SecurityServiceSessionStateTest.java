@@ -57,17 +57,18 @@ class SecurityServiceSessionStateTest {
 
   @Test
   void contextRemovedBetweenReadsRejectsTheRequestWithoutNullPointerException() {
-    MockHttpSession session = spy(new MockHttpSession());
+    MockHttpSession mockHttpSession = spy(new MockHttpSession());
     SecurityContext context = context(passwordAuthentication());
     // A logout removes the attribute after the first snapshot; the refresh must fail closed.
-    when(session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY))
+    when(mockHttpSession.getAttribute(
+            HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY))
         .thenReturn(context)
         .thenReturn(null);
-    MockHttpServletRequest request = request(session);
+    MockHttpServletRequest mockHttpRequest = request(mockHttpSession);
 
-    assertFalse(securityService.hasCurrentSessionPrivileges(request));
+    assertFalse(securityService.hasCurrentSessionPrivileges(mockHttpRequest));
 
-    assertTrue(session.isInvalid());
+    assertTrue(mockHttpSession.isInvalid());
     assertNull(SecurityContextHolder.getContext().getAuthentication());
     verifyNoInteractions(users);
   }
@@ -76,13 +77,14 @@ class SecurityServiceSessionStateTest {
   void authenticationClearedInsideAnExistingContextRejectsTheRequestWithoutNullPointerException() {
     SecurityContext context = mock(SecurityContext.class);
     when(context.getAuthentication()).thenReturn(passwordAuthentication()).thenReturn(null);
-    MockHttpSession session = new MockHttpSession();
-    session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-    MockHttpServletRequest request = request(session);
+    MockHttpSession mockHttpSession = new MockHttpSession();
+    mockHttpSession.setAttribute(
+        HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
+    MockHttpServletRequest mockHttpRequest = request(mockHttpSession);
 
-    assertFalse(securityService.hasCurrentSessionPrivileges(request));
+    assertFalse(securityService.hasCurrentSessionPrivileges(mockHttpRequest));
 
-    assertTrue(session.isInvalid());
+    assertTrue(mockHttpSession.isInvalid());
     assertNull(SecurityContextHolder.getContext().getAuthentication());
     verifyNoInteractions(users);
   }
@@ -94,25 +96,25 @@ class SecurityServiceSessionStateTest {
         remembered
             ? new RememberMeAuthenticationToken("test-key", principal, principal.getAuthorities())
             : passwordAuthentication();
-    MockHttpSession session = new MockHttpSession();
-    session.setAttribute(
+    MockHttpSession mockHttpSession = new MockHttpSession();
+    mockHttpSession.setAttribute(
         HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context(authentication));
     when(users.loadUserByUsername(principal.getUsername())).thenReturn(principal);
 
-    assertTrue(securityService.hasCurrentSessionPrivileges(request(session)));
+    assertTrue(securityService.hasCurrentSessionPrivileges(request(mockHttpSession)));
 
-    assertFalse(session.isInvalid());
+    assertFalse(mockHttpSession.isInvalid());
     assertSame(authentication, SecurityContextHolder.getContext().getAuthentication());
-    assertSame(principal, session.getAttribute("authenticatedUser"));
+    assertSame(principal, mockHttpSession.getAttribute("authenticatedUser"));
   }
 
   @Test
   void anonymousSessionRemainsForTheFollowingAuthorizationFilterToDecide() {
-    MockHttpSession session = new MockHttpSession();
+    MockHttpSession mockHttpSession = new MockHttpSession();
 
-    assertTrue(securityService.hasCurrentSessionPrivileges(request(session)));
+    assertTrue(securityService.hasCurrentSessionPrivileges(request(mockHttpSession)));
 
-    assertFalse(session.isInvalid());
+    assertFalse(mockHttpSession.isInvalid());
     assertNull(SecurityContextHolder.getContext().getAuthentication());
     verifyNoInteractions(users);
   }
@@ -128,9 +130,9 @@ class SecurityServiceSessionStateTest {
     return context;
   }
 
-  private MockHttpServletRequest request(MockHttpSession session) {
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    request.setSession(session);
-    return request;
+  private MockHttpServletRequest request(MockHttpSession mockHttpSession) {
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    mockHttpRequest.setSession(mockHttpSession);
+    return mockHttpRequest;
   }
 }

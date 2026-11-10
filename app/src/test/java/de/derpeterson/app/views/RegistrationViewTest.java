@@ -96,12 +96,12 @@ public class RegistrationViewTest {
   void setup() {
     testUi = new UI();
     vaadinSession = mock(VaadinSession.class);
-    AtomicReference<Locale> locale = new AtomicReference<>(Locale.ENGLISH);
-    when(vaadinSession.getLocale()).thenAnswer(call -> locale.get());
+    AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.ENGLISH);
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
     when(vaadinSession.hasLock()).thenReturn(true);
     doAnswer(
             call -> {
-              locale.set(call.getArgument(0));
+              localeReference.set(call.getArgument(0));
               return null;
             })
         .when(vaadinSession)
@@ -178,10 +178,12 @@ public class RegistrationViewTest {
     LanguageChangeEvent.fire(testUi, initial);
     String initialExample =
         MessageProperties.forLocale(i18nProvider, initial).getRegistrationBirthDatePlaceholder();
+
     assertEquals(initialExample, picker.getPlaceholder());
     LanguageChangeEvent.fire(testUi, other);
     String translatedExample =
         MessageProperties.forLocale(i18nProvider, other).getRegistrationBirthDatePlaceholder();
+
     assertNotEquals(initialExample, translatedExample);
     assertEquals(translatedExample, picker.getPlaceholder());
     assertEquals(LocalDate.of(1990, 1, 1), picker.getValue());
@@ -195,6 +197,7 @@ public class RegistrationViewTest {
     for (Locale locale : List.of(initial, other, initial)) {
       LanguageChangeEvent.fire(testUi, locale);
       MessageProperties expected = MessageProperties.forLocale(i18nProvider, locale);
+
       assertEquals(
           expected.getAccountFirstNamePlaceholder(),
           field("firstNameField", TextField.class).getPlaceholder());
@@ -234,12 +237,14 @@ public class RegistrationViewTest {
   private void assertNotification(
       Function<MessageProperties, String> messageGetter, Locale locale) {
     NotificationHelper helper = NotificationHelper.getInstance();
-    Span title = (Span) ReflectionTestUtils.getField(helper, "titleText");
+    Span titleSpan = (Span) ReflectionTestUtils.getField(helper, "titleText");
     Html body = (Html) ReflectionTestUtils.getField(helper, "messageText");
     MessageProperties expectedTexts = MessageProperties.forLocale(i18nProvider, locale);
-    assertEquals(expectedTexts.getBaseFailedTitle(), title.getText());
+
+    assertEquals(expectedTexts.getBaseFailedTitle(), titleSpan.getText());
     String expected = messageGetter.apply(expectedTexts);
     Locale other = locale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN;
+
     assertNotEquals(
         expected, messageGetter.apply(MessageProperties.forLocale(i18nProvider, other)));
     assertEquals(expected, body.getElement().getProperty("innerHTML"));
@@ -266,27 +271,33 @@ public class RegistrationViewTest {
     NotificationHelper helper = NotificationHelper.getInstance();
     Notification notification =
         (Notification) ReflectionTestUtils.getField(helper, "currentNotification");
+
     assertTrue(notification.isOpened());
     assertEquals(-1, notification.getDuration());
     String initialText = messageGetter.apply(MessageProperties.forLocale(i18nProvider, initial));
+
     assertFalse(initialText.contains("ROLE_USER"));
     assertFalse(initialText.contains("repository"));
     assertNotEquals(
         initialText, messageGetter.apply(MessageProperties.forLocale(i18nProvider, other)));
 
     LanguageChangeEvent.fire(testUi, other);
+
     assertSame(notification, ReflectionTestUtils.getField(helper, "currentNotification"));
     assertTrue(notification.isOpened());
     assertNotification(messageGetter, other);
     LanguageChangeEvent.fire(testUi, initial);
     assertNotification(messageGetter, initial);
+
     verifyNoMoreInteractions(userService, roles);
     verifyNoInteractions(passwordEncoder, verificationService);
 
     List<ILoggingEvent> failureLogs =
         logs.list.stream().filter(event -> event.getLevel() == Level.ERROR).toList();
+
     assertEquals(1, failureLogs.size());
     String technicalMessage = failureLogs.getFirst().getFormattedMessage();
+
     assertTrue(technicalMessage.contains("ROLE_USER"));
     assertTrue(technicalMessage.contains("missing"));
     assertFalse(technicalMessage.contains("test@example.com"));
@@ -300,6 +311,7 @@ public class RegistrationViewTest {
     vaadinSession.setLocale(selected);
     when(verificationService.sendVerificationEmailByUser(any())).thenReturn(true);
     click();
+
     verify(userService).saveUser(argThat(user -> selected.equals(user.getPreferredLocale())));
     verify(verificationService)
         .sendVerificationEmailByUser(argThat(user -> selected.equals(user.getPreferredLocale())));
@@ -330,6 +342,7 @@ public class RegistrationViewTest {
     UserEntity user = captured.getValue();
     order.verify(verificationService).sendVerificationEmailByUser(same(user));
     order.verifyNoMoreInteractions();
+
     assertEquals(42L, user.getId());
     assertEquals("hash", user.getPassword());
     assertEquals(
@@ -343,6 +356,7 @@ public class RegistrationViewTest {
     MessageProperties messageProperties = new MessageProperties(i18nProvider);
     NotificationHelper helper = NotificationHelper.getInstance();
     Object notification = ReflectionTestUtils.getField(helper, "currentNotification");
+
     assertEquals(
         messageProperties.getBaseSuccessTitle(),
         ((Span) ReflectionTestUtils.getField(helper, "titleText")).getText());
@@ -356,6 +370,7 @@ public class RegistrationViewTest {
             .getElement()
             .getProperty("innerHTML"));
     LanguageChangeEvent.fire(testUi, Locale.GERMAN);
+
     assertSame(notification, ReflectionTestUtils.getField(helper, "currentNotification"));
     assertEquals(
         messageProperties.getBaseSuccessTitle(),
@@ -376,6 +391,7 @@ public class RegistrationViewTest {
   void whitespaceNamesAreMarkedBeforeServiceOrEncodingAndHintChangesLanguage(String name) {
     field(name, TextField.class).setValue(" \t ");
     click();
+
     assertTrue(field(name, TextField.class).isInvalid());
     assertFalse(
         field(name.equals("firstNameField") ? "lastNameField" : "firstNameField", TextField.class)
@@ -393,6 +409,7 @@ public class RegistrationViewTest {
     field("firstNameField", TextField.class).setValue(" Test ");
     when(verificationService.sendVerificationEmailByUser(any())).thenReturn(true);
     click();
+
     assertFalse(field("firstNameField", TextField.class).isInvalid());
     verify(userService)
         .saveUser(
@@ -417,6 +434,7 @@ public class RegistrationViewTest {
       String constraint) {
     doThrow(integrity(constraint, "23505")).when(userService).saveUser(any());
     click();
+
     assertTrue(field("emailField", EmailField.class).isInvalid());
     assertTrue(field("confirmEmailField", EmailField.class).isInvalid());
     verify(userService).saveUser(any());
@@ -431,6 +449,7 @@ public class RegistrationViewTest {
   void unrelatedIntegrityFailureIsNeverPresentedAsDuplicate(String constraint) {
     DataIntegrityViolationException failure = integrity(constraint, "23505");
     doThrow(failure).when(userService).saveUser(any());
+
     assertSame(failure, assertThrows(DataIntegrityViolationException.class, this::click));
     assertFalse(field("emailField", EmailField.class).isInvalid());
     verifyNoInteractions(verificationService);
@@ -440,9 +459,11 @@ public class RegistrationViewTest {
   void namedConstraintWithOtherSqlStateAndUnexplainedArgumentFailurePropagate() {
     DataIntegrityViolationException failure = integrity("uk_users_email", "23503");
     doThrow(failure).when(userService).saveUser(any());
+
     assertSame(failure, assertThrows(DataIntegrityViolationException.class, this::click));
     IllegalArgumentException argument = new IllegalArgumentException("not a form problem");
     doThrow(argument).when(userService).saveUser(any());
+
     assertSame(argument, assertThrows(IllegalArgumentException.class, this::click));
     verifyNoInteractions(verificationService);
   }
@@ -457,16 +478,18 @@ public class RegistrationViewTest {
         .when(userService)
         .saveUser(any());
     click();
+
     assertTrue(field("lastNameField", TextField.class).isInvalid());
     assertNotification(MessageProperties::getBaseValidationRequiredMessage, Locale.ENGLISH);
+
     verifyNoInteractions(verificationService);
   }
 
   private static ConfigService accountConfig() {
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(any(ConfigEntry.class)))
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-    return config;
+    return configService;
   }
 
   @Test
@@ -474,15 +497,18 @@ public class RegistrationViewTest {
     EmailField email = field("emailField", EmailField.class);
     EmailField confirmation = field("confirmEmailField", EmailField.class);
     String address = "a@" + "b.".repeat(8192) + "test";
+
     assertTimeout(
         Duration.ofSeconds(3),
         () -> {
           email.setValue(address);
           confirmation.setValue(address);
+
           assertFalse(email.isInvalid());
           assertFalse(confirmation.isInvalid());
           email.setValue(address + " x");
           confirmation.setValue(address + " x");
+
           assertTrue(email.isInvalid());
           assertTrue(confirmation.isInvalid());
         });

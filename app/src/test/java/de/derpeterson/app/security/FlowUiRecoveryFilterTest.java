@@ -29,60 +29,62 @@ class FlowUiRecoveryFilterTest {
   private final MaintenanceService maintenance = mock(MaintenanceService.class);
 
   private MockHttpServletRequest request(String path, String type) {
-    MockHttpServletRequest request = new MockHttpServletRequest("POST", path);
-    request.setServletPath(path);
-    request.setParameter("v-r", type);
-    request.getSession().setAttribute(DurableSessionRepository.ACTIVE, "fixture");
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest("POST", path);
+    mockHttpRequest.setServletPath(path);
+    mockHttpRequest.setParameter("v-r", type);
+    mockHttpRequest.getSession().setAttribute(DurableSessionRepository.ACTIVE, "fixture");
     User user = (User) User.withUsername("fixture@example.test").password("").roles("USER").build();
-    request
+    mockHttpRequest
         .getSession()
         .setAttribute(
             HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
             new SecurityContextImpl(
                 UsernamePasswordAuthenticationToken.authenticated(
                     user, null, user.getAuthorities())));
-    return request;
+    return mockHttpRequest;
   }
 
   private MockHttpServletResponse apply(
-      String mapping, MockHttpServletRequest request, boolean rebuild) throws Exception {
+      String mapping, MockHttpServletRequest mockHttpRequest, boolean rebuild) throws Exception {
     AtomicInteger dispatched = new AtomicInteger();
     FilterChain chain = (input, output) -> dispatched.incrementAndGet();
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     new FlowUiRecoveryFilter(mapping, sessionAdmissionService, maintenance)
-        .doFilter(request, response, chain);
+        .doFilter(mockHttpRequest, mockHttpResponse, chain);
+
     assertEquals(rebuild ? 0 : 1, dispatched.get());
     if (rebuild) {
-      assertEquals("no-store", response.getHeader("Cache-Control"));
+      assertEquals("no-store", mockHttpResponse.getHeader("Cache-Control"));
     } else {
-      assertEquals("", response.getContentAsString());
+      assertEquals("", mockHttpResponse.getContentAsString());
     }
-    return response;
+    return mockHttpResponse;
   }
 
   @Test
   void missingAuthenticationDoesNotRequestRecovery() throws Exception {
-    MockHttpServletRequest request = request("/", "uidl");
-    request
+    MockHttpServletRequest mockHttpRequest = request("/", "uidl");
+    mockHttpRequest
         .getSession()
         .setAttribute(
             HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
             new SecurityContextImpl());
-    apply("/*", request, false);
+    apply("/*", mockHttpRequest, false);
   }
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   void recoveryUsesOneAuthenticationSnapshot(boolean authenticated) throws Exception {
-    MockHttpServletRequest request = request("/", "uidl");
+    MockHttpServletRequest mockHttpRequest = request("/", "uidl");
     Authentication authentication = mock(Authentication.class);
     when(authentication.isAuthenticated()).thenReturn(authenticated);
     SecurityContext context = mock(SecurityContext.class);
     when(context.getAuthentication()).thenReturn(authentication, null);
-    request
+    mockHttpRequest
         .getSession()
         .setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context);
-    apply("/*", request, authenticated);
+    apply("/*", mockHttpRequest, authenticated);
+
     verify(context).getAuthentication();
   }
 
@@ -110,6 +112,7 @@ class FlowUiRecoveryFilterTest {
     inside.setServletPath("/ui");
     inside.setPathInfo("/");
     when(maintenance.blocks(inside)).thenReturn(true);
+
     assertTrue(apply("/ui/*", inside, true).getContentAsString().contains("/app/maintenance"));
     MockHttpServletRequest outside = request("/app/login", "uidl");
     outside.setContextPath("/app");
@@ -125,17 +128,19 @@ class FlowUiRecoveryFilterTest {
   @ParameterizedTest
   @ValueSource(strings = {"no-admission", "no-context", "expired", "live-ui"})
   void onlyARestoredValidAuthenticationWithoutALiveUiGetsRecovery(String state) throws Exception {
-    MockHttpServletRequest request = request("/", "uidl");
+    MockHttpServletRequest mockHttpRequest = request("/", "uidl");
     switch (state) {
-      case "no-admission" -> request.getSession().removeAttribute(DurableSessionRepository.ACTIVE);
+      case "no-admission" ->
+          mockHttpRequest.getSession().removeAttribute(DurableSessionRepository.ACTIVE);
       case "no-context" ->
-          request
+          mockHttpRequest
               .getSession()
               .removeAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-      case "expired" -> when(sessionAdmissionService.isExpired(request)).thenReturn(true);
-      case "live-ui" -> request.getSession().setAttribute("runtime-ui", mock(VaadinSession.class));
+      case "expired" -> when(sessionAdmissionService.isExpired(mockHttpRequest)).thenReturn(true);
+      case "live-ui" ->
+          mockHttpRequest.getSession().setAttribute("runtime-ui", mock(VaadinSession.class));
       default -> throw new IllegalArgumentException(state);
     }
-    apply("/*", request, false);
+    apply("/*", mockHttpRequest, false);
   }
 }

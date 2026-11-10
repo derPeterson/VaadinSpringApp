@@ -49,15 +49,17 @@ public class UserAccessBrowserTest extends BrowserFixture {
     AdminUserDialog form = users.openEdit(email);
     form.setEnabled(false);
     form.save();
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      new LoginPage(actor.browserPage).assertRejected();
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
+      new LoginPage(browserActor.browserPage).assertRejected();
     }
     form = users.openEdit(email);
+
     assertThat(form.enabled()).not().isChecked();
     form.setEnabled(true);
     form.save();
     form = users.openEdit(email);
+
     assertThat(form.enabled()).isChecked();
     form.cancel();
     ordinaryLogin(email);
@@ -82,26 +84,30 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form.setAdministrator(true);
     form.save();
     form = users.openEdit(email);
+
     assertThat(form.administrator()).hasAttribute("aria-selected", "true");
     form.cancel();
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.loginAdmin(email, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(actor.browserPage).signOut();
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.loginAdmin(email, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(browserActor.browserPage).signOut();
     }
     form = users.openEdit(email);
     form.setAdministrator(false);
     form.save();
     form = users.openEdit(email);
+
     assertThat(form.administrator()).hasAttribute("aria-selected", "false");
     form.cancel();
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
-      new UserMenu(actor.browserPage).selectTestLanguage();
-      new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
-      actor.browserPage.navigate(path(ADMIN_ROUTE));
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
+
+      assertThat(browserActor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      new UserMenu(browserActor.browserPage).selectTestLanguage();
+      new UserMenu(browserActor.browserPage).assertUserSignedInWithoutAdminAction(email);
+      browserActor.browserPage.navigate(path(ADMIN_ROUTE));
+
       assertThat(
-              actor.browserPage.getByText(
+              browserActor.browserPage.getByText(
                   uiTexts.getBaseErrorAdminAccessDenied(),
                   new Page.GetByTextOptions().setExact(true)))
           .isVisible();
@@ -126,12 +132,13 @@ public class UserAccessBrowserTest extends BrowserFixture {
     register.submit();
     register.assertSubmitted(email);
     new MailpitInbox(browserContext).awaitVerificationMail(email);
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      new LoginPage(actor.browserPage).assertRejected();
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
+      new LoginPage(browserActor.browserPage).assertRejected();
     }
     AdminUsersPage users = admin();
     AdminUserDialog form = users.openEdit(email);
+
     assertThat(form.enabled()).not().isChecked();
     form.setEnabled(true);
     form.save();
@@ -153,8 +160,8 @@ public class UserAccessBrowserTest extends BrowserFixture {
     String target = email("version"), second = email("second-admin");
     users.createActiveUser(target, BrowserTestAccounts.USER_PASSWORD);
     users.createUser(second, BrowserTestAccounts.USER_PASSWORD, true, true);
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      AdminUsersPage other = actor.loginAdmin(second, BrowserTestAccounts.USER_PASSWORD);
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      AdminUsersPage other = browserActor.loginAdmin(second, BrowserTestAccounts.USER_PASSWORD);
       AdminUserDialog stale = other.openEdit(target);
       AdminUserDialog current = users.openEdit(target);
       current.firstName().fill("Winner");
@@ -164,6 +171,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
       stale.expectSaveError(uiTexts.getBaseUserUpdateConflict());
       stale.cancel();
       AdminUserDialog stored = users.openEdit(target);
+
       assertThat(stored.firstName()).hasValue("Winner");
       assertThat(stored.lastName()).hasValue("Testuser");
       AllurePlaywright.attachScreenshot(
@@ -193,6 +201,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form.expectSaveError(uiTexts.getAdminUsersErrorRemoveOwnAdminRole());
     form.cancel();
     form = users.openEdit(BrowserTestAccounts.ADMIN_EMAIL);
+
     assertThat(form.enabled()).isChecked();
     assertThat(form.administrator()).hasAttribute("aria-selected", "true");
     form.cancel();
@@ -223,17 +232,19 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form.setRole(uiTexts.getRoleSuperadmin(), true);
     form.save();
     form = users.openEdit(email);
+
     assertThat(form.role(uiTexts.getRoleSuperadmin())).hasAttribute("aria-selected", "true");
     assertThat(form.role(uiTexts.getRoleAdmin())).hasAttribute("aria-selected", "false");
     assertThat(form.role(uiTexts.getRoleUser())).hasAttribute("aria-selected", "false");
     assertThat(form.role(uiTexts.getRoleGuest())).hasAttribute("aria-selected", "false");
     form.cancel();
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.loginAdmin(email, BrowserTestAccounts.USER_PASSWORD);
-      actor.browserPage.navigate(path(HOME_ROUTE));
-      assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
-      new UserMenu(actor.browserPage).open();
-      actor
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.loginAdmin(email, BrowserTestAccounts.USER_PASSWORD);
+      browserActor.browserPage.navigate(path(HOME_ROUTE));
+
+      assertThat(browserActor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      new UserMenu(browserActor.browserPage).open();
+      browserActor
           .browserPage
           .getByRole(
               com.microsoft.playwright.options.AriaRole.BUTTON,
@@ -241,11 +252,13 @@ public class UserAccessBrowserTest extends BrowserFixture {
                   .setName(uiTexts.getBaseManageApplicationButton())
                   .setExact(true))
           .click();
-      assertThat(actor.browserPage).hasURL(urlPattern(ADMIN_ROUTE));
-      AdminUserDialog own = new AdminUsersPage(actor.browserPage).openEdit(email);
+
+      assertThat(browserActor.browserPage).hasURL(urlPattern(ADMIN_ROUTE));
+      AdminUserDialog own = new AdminUsersPage(browserActor.browserPage).openEdit(email);
       own.firstName().fill("Superadmin");
       own.save();
-      own = new AdminUsersPage(actor.browserPage).openEdit(email);
+      own = new AdminUsersPage(browserActor.browserPage).openEdit(email);
+
       assertThat(own.firstName()).hasValue("Superadmin");
       own.cancel();
     }
@@ -270,20 +283,23 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form.setRole(uiTexts.getRoleGuest(), true);
     form.save();
     form = users.openEdit(email);
+
     assertThat(form.role(uiTexts.getRoleGuest())).hasAttribute("aria-selected", "true");
     assertThat(form.role(uiTexts.getRoleUser())).hasAttribute("aria-selected", "false");
     assertThat(form.role(uiTexts.getRoleAdmin())).hasAttribute("aria-selected", "false");
     assertThat(form.role(uiTexts.getRoleSuperadmin())).hasCount(0);
     form.cancel();
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
-      new UserMenu(actor.browserPage).selectTestLanguage();
-      new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
-      new UserMenu(actor.browserPage).close();
-      actor.browserPage.navigate(path(ADMIN_ROUTE));
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
+
+      assertThat(browserActor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      new UserMenu(browserActor.browserPage).selectTestLanguage();
+      new UserMenu(browserActor.browserPage).assertUserSignedInWithoutAdminAction(email);
+      new UserMenu(browserActor.browserPage).close();
+      browserActor.browserPage.navigate(path(ADMIN_ROUTE));
+
       assertThat(
-              actor.browserPage.getByText(
+              browserActor.browserPage.getByText(
                   uiTexts.getBaseErrorAdminAccessDenied(),
                   new Page.GetByTextOptions().setExact(true)))
           .isVisible();
@@ -306,20 +322,20 @@ public class UserAccessBrowserTest extends BrowserFixture {
     AdminUsersPage users = admin();
     String email = email("live-role");
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(actor.browserPage).selectTestLanguage();
-      UserMenu menu = new UserMenu(actor.browserPage);
-      menu.assertUserSignedInWithoutAdminAction(email);
-      menu.close();
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(browserActor.browserPage).selectTestLanguage();
+      UserMenu userMenu = new UserMenu(browserActor.browserPage);
+      userMenu.assertUserSignedInWithoutAdminAction(email);
+      userMenu.close();
       String sessionId =
-          actor.browserContext.cookies().stream()
+          browserActor.browserContext.cookies().stream()
               .filter(c -> c.name.equals("JSESSIONID"))
               .findFirst()
               .orElseThrow()
               .value;
       AtomicInteger loginPosts = new java.util.concurrent.atomic.AtomicInteger();
-      actor.browserPage.onRequest(request -> {
+      browserActor.browserPage.onRequest(request -> {
         if (request.method().equals("POST") && request.url().endsWith(path(LOGIN_ROUTE))) {
           loginPosts.incrementAndGet();
         }
@@ -328,38 +344,44 @@ public class UserAccessBrowserTest extends BrowserFixture {
       change.setAdministrator(true);
       change.save();
       // Der 2FA-Pfad darf seine aktuelle Phase zusätzlich als Query enthalten.
-      assertThat(actor.browserPage).hasURL(java.util.regex.Pattern.compile(".*/two-factor.*"));
-      TwoFactorPage.completeIfRequired(actor.browserPage, email, BrowserTestAccounts.USER_PASSWORD);
+      assertThat(browserActor.browserPage)
+          .hasURL(java.util.regex.Pattern.compile(".*/two-factor.*"));
+      TwoFactorPage.completeIfRequired(
+          browserActor.browserPage, email, BrowserTestAccounts.USER_PASSWORD);
       // Die verpflichtende Einrichtung führt bereits ins nun zugängliche Admin-Dashboard.
       // Den Wechsel aus dem Portal weiterhin über die echte Menüaktion prüfen.
-      actor.browserPage.navigate(path(HOME_ROUTE));
-      menu.open();
+      browserActor.browserPage.navigate(path(HOME_ROUTE));
+      userMenu.open();
       Locator manage =
-          actor.browserPage.getByRole(
+          browserActor.browserPage.getByRole(
               com.microsoft.playwright.options.AriaRole.BUTTON,
               new Page.GetByRoleOptions()
                   .setName(uiTexts.getBaseManageApplicationButton())
                   .setExact(true));
+
       assertThat(manage).isVisible();
       manage.click();
-      assertThat(actor.browserPage).hasURL(urlPattern(ADMIN_ROUTE));
-      AdminUsersPage actorUsers = new AdminUsersPage(actor.browserPage);
+
+      assertThat(browserActor.browserPage).hasURL(urlPattern(ADMIN_ROUTE));
+      AdminUsersPage actorUsers = new AdminUsersPage(browserActor.browserPage);
       actorUsers.open();
       actorUsers.openCreate();
       change = users.openEdit(email);
       change.setAdministrator(false);
       change.save();
-      assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
-      assertThat(actor.browserPage.locator("vaadin-dialog-overlay[opened]")).hasCount(0);
-      menu.assertUserSignedInWithoutAdminAction(email);
-      menu.close();
-      actor.browserPage.navigate(path(NOTIFICATIONS_ROUTE));
-      assertThat(actor.browserPage.locator("#notifications-inbox"))
+
+      assertThat(browserActor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      assertThat(browserActor.browserPage.locator("vaadin-dialog-overlay[opened]")).hasCount(0);
+      userMenu.assertUserSignedInWithoutAdminAction(email);
+      userMenu.close();
+      browserActor.browserPage.navigate(path(NOTIFICATIONS_ROUTE));
+
+      assertThat(browserActor.browserPage.locator("#notifications-inbox"))
           .containsText(uiTexts.getNotificationsRolesChangedTitle());
       org.junit.jupiter.api.Assertions.assertEquals(0, loginPosts.get());
       org.junit.jupiter.api.Assertions.assertEquals(
           sessionId,
-          actor.browserContext.cookies().stream()
+          browserActor.browserContext.cookies().stream()
               .filter(c -> c.name.equals("JSESSIONID"))
               .findFirst()
               .orElseThrow()
@@ -377,11 +399,12 @@ public class UserAccessBrowserTest extends BrowserFixture {
   }
 
   private void ordinaryLogin(String email) {
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
-      new UserMenu(actor.browserPage).selectTestLanguage();
-      new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
+
+      assertThat(browserActor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      new UserMenu(browserActor.browserPage).selectTestLanguage();
+      new UserMenu(browserActor.browserPage).assertUserSignedInWithoutAdminAction(email);
     }
   }
 

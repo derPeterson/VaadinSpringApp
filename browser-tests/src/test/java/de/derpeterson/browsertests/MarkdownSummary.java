@@ -40,6 +40,7 @@ final class MarkdownSummary {
             "# Automatisierter Browser-Testlauf (Java)\n\n**Status: "
                 + reportStatus(metadata, results)
                 + "**\n\n| Angabe | Wert |\n| --- | --- |\n");
+
     appendRunMetadata(reportMarkdown, metadata);
     appendParallelWorkerResults(reportMarkdown, metadata);
     appendCoverageSummary(reportMarkdown, metadata);
@@ -63,6 +64,7 @@ final class MarkdownSummary {
         .append("- [Laufdaten und Git-Stand](metadata.json)\n- [Ablauflog](runner.log)\n\n")
         .append(
             "Screenshots, Browseraktionen und Traces befinden sich auch im Allure-Bericht. Lokale Belege sind von Git ausgeschlossen.\n");
+
     return reportMarkdown.toString();
   }
 
@@ -328,11 +330,11 @@ final class MarkdownSummary {
     }
   }
 
-  private static String readAllureLabel(JsonNode test, String name) {
+  private static String readAllureLabel(JsonNode testResultNode, String labelName) {
     List<String> values = new ArrayList<>();
-    for (JsonNode label : test.path("labels")) {
-      if (name.equals(label.path("name").asText())) {
-        values.add(label.path("value").asText());
+    for (JsonNode labelNode : testResultNode.path("labels")) {
+      if (labelName.equals(labelNode.path("name").asText())) {
+        values.add(labelNode.path("value").asText());
       }
     }
     return String.join("; ", values);

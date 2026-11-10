@@ -82,11 +82,12 @@ class RoleMutationPersistenceTest {
 
     @Bean
     ConfigService config() {
-      ConfigService config = mock(ConfigService.class);
-      when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("180");
-      when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
+      ConfigService configService = mock(ConfigService.class);
+      when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS))
+          .thenReturn("180");
+      when(configService.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS))
           .thenReturn("365");
-      return config;
+      return configService;
     }
 
     @Bean
@@ -193,6 +194,7 @@ class RoleMutationPersistenceTest {
   void adminCanAssignAndRemoveEveryNonSuperadminRole(RoleType type) {
     login(admin);
     assign(user, type);
+
     assertTrue(form(user).hasRole(type));
     if (type != RoleType.ROLE_USER) {
       assertEquals(1, userNotificationRepository.count());
@@ -200,23 +202,28 @@ class RoleMutationPersistenceTest {
       assertEquals(0, userNotificationRepository.count());
     }
     assign(user, RoleType.ROLE_GUEST);
+
     assertTrue(form(user).hasRole(RoleType.ROLE_GUEST));
   }
 
   @Test
   void ordinaryAdminCannotAssignSuperadminOrMutateExistingSuperadminAccount() {
     login(admin);
+
     assertThrows(AccessDeniedException.class, () -> assign(user, RoleType.ROLE_SUPERADMIN));
     assertThrows(AccessDeniedException.class, () -> assign(superadmin, RoleType.ROLE_ADMIN));
     UserEntity edited = form(superadmin);
     edited.setFirstName("Changed");
     Long editedVersion = edited.getVersion();
+
     assertThrows(
         AccessDeniedException.class,
         () -> userService.updateAdminUser(edited, editedVersion, "Changed-secret!"));
     UserEntity targetUser = form(superadmin);
+
     assertThrows(AccessDeniedException.class, () -> userService.deleteUser(targetUser));
     edited.setEnabled(false);
+
     assertThrows(AccessDeniedException.class, () -> userService.save(edited));
     assertEquals(0, userNotificationRepository.count());
     assertTrue(form(superadmin).isEnabled());
@@ -228,6 +235,7 @@ class RoleMutationPersistenceTest {
     login(admin);
     UserEntity edit = form(user);
     edit.setRoleEntities(form(superadmin).getRoleEntities());
+
     assertThrows(AccessDeniedException.class, () -> userService.save(edit));
     assertFalse(form(user).hasRole(RoleType.ROLE_SUPERADMIN));
   }
@@ -236,6 +244,7 @@ class RoleMutationPersistenceTest {
   void superadminCanGrantAndRemoveSuperadminAndOnlyRecipientSeesEvent() {
     login(superadmin);
     assign(user, RoleType.ROLE_SUPERADMIN);
+
     assertTrue(form(user).hasRole(RoleType.ROLE_SUPERADMIN));
     assertEquals(
         UserNotificationType.ROLES_CHANGED,
@@ -246,6 +255,7 @@ class RoleMutationPersistenceTest {
         transactionTemplate.execute(
             s -> userNotificationRecipientRepository.findAll().getFirst().getUser().getId()));
     assign(user, RoleType.ROLE_USER);
+
     assertFalse(form(user).hasRole(RoleType.ROLE_SUPERADMIN));
     assertEquals(2, userNotificationRepository.count());
   }
@@ -289,11 +299,13 @@ class RoleMutationPersistenceTest {
             .enabled(true)
             .roleEntities(form(superadmin).getRoleEntities())
             .build();
+
     assertThrows(
         AccessDeniedException.class, () -> userService.createAdminUser(a, "OnlyForTests!"));
     assertEquals(4, userRepository.count());
     a.setRoleEntities(form(guest).getRoleEntities());
     userService.createAdminUser(a, "OnlyForTests!");
+
     assertEquals(5, userRepository.count());
     assertEquals(0, userNotificationRepository.count());
   }
@@ -307,17 +319,21 @@ class RoleMutationPersistenceTest {
       UserEntity edit = form(user);
       edit.setFirstName("Changed");
       userService.updateAdminUser(edit, edit.getVersion(), "");
+
       assertEquals(0, userNotificationRepository.count());
       assertEquals(0, pushes.get());
       transactionTemplate.executeWithoutResult(s -> {
         assign(user, RoleType.ROLE_ADMIN);
+
         assertEquals(0, pushes.get());
         s.setRollbackOnly();
       });
+
       assertEquals(0, userNotificationRepository.count());
       assertEquals(0, pushes.get());
       assertTrue(form(user).hasRole(RoleType.ROLE_USER));
       assign(user, RoleType.ROLE_ADMIN);
+
       assertEquals(1, pushes.get());
       assertEquals(1, userNotificationRepository.count());
     } finally {
@@ -355,6 +371,7 @@ class RoleMutationPersistenceTest {
     String id = http.getId();
     login(admin);
     assign(user, RoleType.ROLE_ADMIN);
+
     assertEquals(id, http.getId());
     assertFalse(http.isInvalid());
     assertTrue(
@@ -362,6 +379,7 @@ class RoleMutationPersistenceTest {
             .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")));
     assertEquals(1, userNotificationService.inbox(http, ReadFilter.ALL, 0, 20).getTotalElements());
     assign(user, RoleType.ROLE_USER);
+
     assertFalse(http.isInvalid());
     assertFalse(
         securityService.refreshSessionAuthentication(http).orElseThrow().getAuthorities().stream()
@@ -376,12 +394,14 @@ class RoleMutationPersistenceTest {
     Registration registration = events.register(id -> count.incrementAndGet());
     try {
       UserEntity edited = form(superadmin);
+
       assertFalse(userService.canDeleteUser(edited));
       if (operation.equals("delete")) {
         assertThrows(IllegalStateException.class, () -> userService.deleteUser(edited));
       } else if (operation.equals("disable")) {
         edited.setEnabled(false);
         Long editedVersion = edited.getVersion();
+
         assertThrows(
             IllegalStateException.class,
             () -> userService.updateAdminUser(edited, editedVersion, ""));

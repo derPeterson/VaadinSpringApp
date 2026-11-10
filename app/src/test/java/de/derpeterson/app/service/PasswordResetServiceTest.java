@@ -155,6 +155,7 @@ class PasswordResetServiceTest {
         .thenReturn("PT1H");
     {
       String value = passwordResetService.createToken(testUserEntity);
+
       assertEquals(value, UUID.fromString(value).toString());
       assertNotEquals(old.getToken(), value);
       ArgumentCaptor<PasswordResetTokenEntity> saved =
@@ -166,6 +167,7 @@ class PasswordResetServiceTest {
           .findAllByUserEntityAndStatus(testUserEntity, TokenStatus.ACTIVE);
       order.verify(passwordResetTokenRepository).save(old);
       order.verify(passwordResetTokenRepository).save(saved.capture());
+
       assertEquals(TokenStatus.INACTIVE, old.getStatus());
       assertNull(saved.getValue().getId());
       assertSame(testUserEntity, saved.getValue().getUserEntity());
@@ -184,6 +186,7 @@ class PasswordResetServiceTest {
   void creationRejectsBelowMinimumDurationsBeforeInvalidation(String duration) {
     when(configService.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION))
         .thenReturn(duration);
+
     assertThrows(
         IllegalArgumentException.class, () -> passwordResetService.createToken(testUserEntity));
     verifyNoInteractions(passwordResetTokenRepository);
@@ -195,6 +198,7 @@ class PasswordResetServiceTest {
   void invalidDurationPropagatesWithoutSavingANewToken(String duration) {
     when(configService.getString(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION))
         .thenReturn(duration);
+
     assertThrows(RuntimeException.class, () -> passwordResetService.createToken(testUserEntity));
     verifyNoInteractions(passwordResetTokenRepository);
     verify(userRepository).lockVerificationUser(1L);
@@ -210,6 +214,7 @@ class PasswordResetServiceTest {
             testUserEntity, TokenStatus.ACTIVE))
         .thenReturn(List.of(first, second));
     passwordResetService.setInactiveTokensForUser(testUserEntity);
+
     assertEquals(TokenStatus.INACTIVE, first.getStatus());
     assertEquals(TokenStatus.INACTIVE, second.getStatus());
     verify(passwordResetTokenRepository).save(first);
@@ -250,6 +255,7 @@ class PasswordResetServiceTest {
     PasswordResetTokenEntity stored = token("active", TokenStatus.ACTIVE, NOW.plusDays(1));
     when(passwordResetTokenRepository.findByToken("active")).thenReturn(Optional.of(stored));
     passwordResetService.setTokenStatus("active", status);
+
     assertEquals(status, stored.getStatus());
     InOrder order = inOrder(passwordResetTokenRepository, userRepository);
     order.verify(passwordResetTokenRepository).findUserIdByToken("active");
@@ -277,6 +283,7 @@ class PasswordResetServiceTest {
           case "mail" -> () -> passwordResetService.sendPasswordResetEmail("test@example.com");
           default -> throw new IllegalArgumentException("Unknown fixture operation: " + operation);
         };
+
     assertSame(failure, assertThrows(DataAccessResourceFailureException.class, operationUnderTest));
     verify(passwordResetTokenRepository, never()).save(any());
     verify(userRepository, never()).save(any());
@@ -289,6 +296,7 @@ class PasswordResetServiceTest {
   void openMailPreventsDirectRotationBeforeInvalidation() {
     when(emailQueueService.hasOpenEmailForUserAndType(testUserEntity, EmailType.PASSWORD_RESET))
         .thenReturn(true);
+
     assertThrows(
         IllegalStateException.class, () -> passwordResetService.createToken(testUserEntity));
     verifyNoInteractions(passwordResetTokenRepository, passwordEncoder);
@@ -298,6 +306,7 @@ class PasswordResetServiceTest {
   @Test
   void deletedAccountCannotBeUsedForTokenCreation() {
     when(userRepository.lockVerificationUser(1L)).thenReturn(Optional.empty());
+
     assertThrows(
         IllegalStateException.class, () -> passwordResetService.createToken(testUserEntity));
     verifyNoInteractions(passwordResetTokenRepository, passwordEncoder, emailQueueService);
@@ -309,9 +318,11 @@ class PasswordResetServiceTest {
   @ValueSource(strings = {"unknown"})
   void unknownOrEmptyTokensAreNotValidAndDoNotReset(String value) {
     when(passwordResetTokenRepository.findUserIdByToken(value)).thenReturn(Optional.empty());
+
     assertEquals(LinkState.INVALID, passwordResetService.inspectToken(value));
     assertFalse(passwordResetService.resetPassword(value, "Password!"));
     passwordResetService.setTokenStatus(value, TokenStatus.USED);
+
     verify(passwordResetTokenRepository, times(3)).findUserIdByToken(value);
     verifyNoMoreInteractions(passwordResetTokenRepository);
     verifyNoInteractions(userRepository, passwordEncoder, emailQueueService);
@@ -325,6 +336,7 @@ class PasswordResetServiceTest {
   void closedLinksRetainTheirMeaningWithoutChangingPasswords(TokenStatus status) {
     PasswordResetTokenEntity stored = token("closed", status, NOW.minusDays(1));
     when(passwordResetTokenRepository.findByToken("closed")).thenReturn(Optional.of(stored));
+
     assertEquals(
         status == TokenStatus.EXPIRED ? LinkState.EXPIRED : LinkState.INVALID,
         passwordResetService.inspectToken("closed"));
@@ -355,6 +367,7 @@ class PasswordResetServiceTest {
         resetPassword
             ? passwordResetService.resetPassword("boundary", "Password!")
             : passwordResetService.inspectToken("boundary") == LinkState.VALID;
+
     assertEquals(nanoseconds > 0, result);
     TokenStatus expectedStatus = TokenStatus.ACTIVE;
     if (nanoseconds <= 0) {
@@ -415,12 +428,14 @@ class PasswordResetServiceTest {
     when(passwordResetTokenRepository.findByTokenAndStatus("valid", TokenStatus.ACTIVE))
         .thenReturn(Optional.of(stored));
     when(passwordEncoder.encode("  Password!  ")).thenReturn("hash");
+
     assertTrue(passwordResetService.resetPassword("valid", "  Password!  "));
     InOrder order = inOrder(passwordResetTokenRepository, userRepository, passwordEncoder);
     order.verify(passwordResetTokenRepository).findByTokenAndStatus("valid", TokenStatus.ACTIVE);
     order.verify(passwordEncoder).encode("  Password!  ");
     order.verify(userRepository).save(testUserEntity);
     order.verify(passwordResetTokenRepository).save(stored);
+
     assertEquals(TokenStatus.USED, stored.getStatus());
     assertEquals("hash", testUserEntity.getPassword());
   }
@@ -492,6 +507,7 @@ class PasswordResetServiceTest {
           case "create" -> () -> passwordResetService.createToken(testUserEntity);
           default -> throw new IllegalArgumentException("Unknown fixture operation: " + operation);
         };
+
     assertSame(failure, assertThrows(DataAccessResourceFailureException.class, operationUnderTest));
     verify(userRepository, never()).save(any());
     verifyNoInteractions(passwordEncoder);
@@ -512,6 +528,7 @@ class PasswordResetServiceTest {
     when(configService.getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION)).thenReturn("P7D");
     when(passwordResetTokenRepository.deleteByExpiryDateBefore(NOW.minusDays(7)))
         .thenReturn(deleted);
+
     assertDoesNotThrow(passwordResetService::deleteExpiredTokens);
     verify(passwordResetTokenRepository).deleteByExpiryDateBefore(NOW.minusDays(7));
   }
@@ -522,6 +539,7 @@ class PasswordResetServiceTest {
   void invalidRetentionNeverDeletesTokens(String duration) {
     when(configService.getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION))
         .thenReturn(duration);
+
     assertThrows(RuntimeException.class, passwordResetService::deleteExpiredTokens);
     verifyNoInteractions(passwordResetTokenRepository);
   }
@@ -533,6 +551,7 @@ class PasswordResetServiceTest {
     passwordResetService.createToken(testUserEntity);
     ArgumentCaptor<PasswordResetTokenEntity> saved =
         ArgumentCaptor.forClass(PasswordResetTokenEntity.class);
+
     verify(passwordResetTokenRepository).save(saved.capture());
     assertEquals(NOW.plusMinutes(1), saved.getValue().getExpiryDate());
   }
@@ -542,6 +561,7 @@ class PasswordResetServiceTest {
     when(configService.getString(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION))
         .thenReturn("PT2M");
     passwordResetService.deleteExpiredTokens();
+
     verify(passwordResetTokenRepository).deleteByExpiryDateBefore(NOW.minusMinutes(2));
   }
 
@@ -551,6 +571,7 @@ class PasswordResetServiceTest {
     DataAccessResourceFailureException failure =
         new DataAccessResourceFailureException("test cleanup");
     when(passwordResetTokenRepository.deleteByExpiryDateBefore(any())).thenThrow(failure);
+
     assertSame(
         failure,
         assertThrows(
@@ -587,6 +608,7 @@ class PasswordResetServiceTest {
     testUserEntity.setEnabled(false);
     when(userRepository.findByEmail("test@example.com"))
         .thenReturn(present ? Optional.of(testUserEntity) : Optional.empty());
+
     assertFalse(passwordResetService.sendPasswordResetEmail("test@example.com"));
     verifyNoInteractions(passwordResetTokenRepository, passwordEncoder, emailQueueService);
     verifyMaintenanceOnly(1);
@@ -597,9 +619,11 @@ class PasswordResetServiceTest {
     when(userRepository.findByEmail("test@example.com")).thenReturn(Optional.of(testUserEntity));
     when(emailQueueService.hasOpenEmailForUserAndType(testUserEntity, EmailType.PASSWORD_RESET))
         .thenReturn(true);
+
     assertTrue(passwordResetService.sendPasswordResetEmail("test@example.com"));
     verifyNoInteractions(passwordResetTokenRepository, passwordEncoder);
     verifyMaintenanceOnly(1);
+
     verify(emailQueueService, never()).addEmailToQueue(any(), any(), any(), any());
   }
 
@@ -613,9 +637,9 @@ class PasswordResetServiceTest {
     when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Reset Test Service");
     when(configService.getString(ConfigEntry.BASE_URL)).thenReturn("https://example.invalid/app/");
     when(messageProperties.getEmailResetPasswordSubject()).thenReturn("Reset subject");
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.getLocale()).thenReturn(german ? Locale.GERMAN : Locale.ENGLISH);
-    VaadinSession.setCurrent(session);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenReturn(german ? Locale.GERMAN : Locale.ENGLISH);
+    VaadinSession.setCurrent(vaadinSession);
     try {
       assertTrue(passwordResetService.sendPasswordResetEmail("test@example.com"));
     } finally {
@@ -623,8 +647,10 @@ class PasswordResetServiceTest {
     }
     ArgumentCaptor<PasswordResetTokenEntity> stored =
         ArgumentCaptor.forClass(PasswordResetTokenEntity.class);
+
     verify(passwordResetTokenRepository).save(stored.capture());
     ArgumentCaptor<String> html = ArgumentCaptor.forClass(String.class);
+
     verify(emailQueueService)
         .addEmailToQueue(
             same(testUserEntity),
@@ -643,6 +669,7 @@ class PasswordResetServiceTest {
             .getAccountCopyrightTemplate()
             .replace("{year}", String.valueOf(Year.now(CLOCK).getValue()))
             .replace("{serviceName}", "Reset Test Service");
+
     assertTrue(HtmlUtils.htmlUnescape(html.getValue()).contains(expectedFooter));
     assertFalse(html.getValue().contains("{{SERVICE_LOGO}}"));
     assertFalse(html.getValue().contains("{{RESET_PASSWORD_LINK}}"));
@@ -661,8 +688,10 @@ class PasswordResetServiceTest {
     when(configService.getString(ConfigEntry.COPYRIGHT_TEXT))
         .thenReturn("© {year} {serviceName} <b>Custom footer</b>");
     when(messageProperties.getEmailResetPasswordSubject()).thenReturn("subject");
+
     assertTrue(passwordResetService.sendPasswordResetEmail("test@example.com"));
     ArgumentCaptor<String> body = ArgumentCaptor.forClass(String.class);
+
     verify(emailQueueService)
         .addEmailToQueue(
             eq(testUserEntity), eq("subject"), body.capture(), eq(EmailType.PASSWORD_RESET));
@@ -690,6 +719,7 @@ class PasswordResetServiceTest {
                 .results()
                 .map(match -> match.group(1))
                 .collect(Collectors.toSet());
+
         assertEquals(
             Set.of(
                 "SERVICE_NAME",
@@ -758,6 +788,7 @@ class PasswordResetServiceTest {
             assertThrows(
                 IOException.class,
                 () -> passwordResetService.sendPasswordResetEmail("test@example.com"));
+
         assertSame(stage.contains("read") ? readFailure : closeFailure, thrown);
         if (stage.equals("read-and-close")) {
           assertArrayEquals(new Throwable[] {closeFailure}, thrown.getSuppressed());
@@ -779,6 +810,7 @@ class PasswordResetServiceTest {
     DataAccessResourceFailureException failure =
         new DataAccessResourceFailureException("test queue");
     doThrow(failure).when(emailQueueService).addEmailToQueue(any(), any(), any(), any());
+
     assertSame(
         failure,
         assertThrows(

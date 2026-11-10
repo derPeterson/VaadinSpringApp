@@ -46,6 +46,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   void globalScrollbarsPreserveNativeScrollingAndLocalChatSpacing() {
     signIn();
     browserPage.navigate("/admin?section=support");
+
     assertThat(browserPage.locator("#support-ticket-categories")).isVisible();
     browserPage.evaluate(
         """
@@ -113,6 +114,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
                     }
                     """));
         grid.evaluate("element => element.scrollLeft = 40");
+
         assertTrue((Boolean) grid.evaluate("element => element.scrollLeft > 0"));
         chat.evaluate("element => { element.scrollTop = 0; element.focus(); }");
         browserPage.keyboard().press("PageDown");
@@ -146,8 +148,10 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
         browserPage.evaluate("document.querySelector('#scrollbar-test-dialog').remove()");
       }
       browserPage.evaluate("window.scrollTo(0, 50)");
+
       assertTrue((Boolean) browserPage.evaluate("window.scrollY > 0"));
       browserPage.emulateMedia(new Page.EmulateMediaOptions().setForcedColors(ForcedColors.ACTIVE));
+
       assertThat(browserPage.locator("#scrollbar-test-chat")).hasCSS("scrollbar-color", "auto");
       assertThat(browserPage.locator("#scrollbar-test-chat")).hasCSS("scrollbar-width", "auto");
     } finally {
@@ -197,23 +201,29 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     dialog.setRole(uiTexts.getRoleUser(), true);
     Locator input = dialog.root().locator(".admin-user-roles input");
     Locator summary = dialog.root().locator(".admin-user-role-summary");
+
     assertThat(summary).hasText(uiTexts.getAdminUsersSelectedRoles(1));
     input.fill(uiTexts.getRoleAdmin().substring(0, 4));
     Locator admin =
         browserPage.getByRole(
             AriaRole.OPTION,
             new Page.GetByRoleOptions().setName(uiTexts.getRoleAdmin()).setExact(true));
+
     assertThat(admin).isVisible();
     admin.click();
+
     assertThat(summary).hasText(uiTexts.getAdminUsersSelectedRoles(2));
     input.fill("no-role-matches-this");
+
     assertThat(browserPage.locator("vaadin-multi-select-combo-box-item:visible")).hasCount(0);
     assertThat(summary).hasText(uiTexts.getAdminUsersSelectedRoles(2));
     input.fill("");
+
     assertThat(dialog.role(uiTexts.getRoleUser())).hasAttribute("aria-selected", "true");
     assertThat(admin).hasAttribute("aria-selected", "true");
     input.press("Escape");
     input.click();
+
     assertThat(dialog.role(uiTexts.getRoleUser())).hasAttribute("aria-selected", "true");
     assertThat(admin).hasAttribute("aria-selected", "true");
     assertThat(summary).hasText(uiTexts.getAdminUsersSelectedRoles(2));
@@ -242,6 +252,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
           Locator track = toggle.locator("[part=switch]");
           Locator info = row.locator(".cosmos-config-info");
           BoundingBox textBounds = label.boundingBox(), trackBounds = track.boundingBox();
+
           assertThat(label).hasCSS("font-size", "12px");
           assertThat(label).hasCSS("font-weight", "500");
           assertTrue(textBounds.x + textBounds.width <= trackBounds.x + 1);
@@ -258,6 +269,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
               1);
           boolean original = input.isChecked();
           label.click();
+
           assertThat(input)
               .isChecked(
                   new com.microsoft.playwright.assertions.LocatorAssertions.IsCheckedOptions()
@@ -269,6 +281,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
           browserPage
               .mouse()
               .click(clickTarget.x + clickTarget.width / 2, clickTarget.y + clickTarget.height / 2);
+
           assertThat(input)
               .isChecked(
                   new com.microsoft.playwright.assertions.LocatorAssertions.IsCheckedOptions()
@@ -286,12 +299,14 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
   private void assertSwitchMarker(Locator track) {
     Locator marker = track.locator("[part=marker]");
+
     assertThat(track).hasCSS("width", "34px");
     assertThat(track).hasCSS("height", "20px");
     assertThat(marker).hasCSS("width", "14px");
     assertThat(marker).hasCSS("height", "14px");
     BoundingBox area = track.boundingBox();
     BoundingBox thumb = marker.boundingBox();
+
     assertEquals(area.y + area.height / 2, thumb.y + thumb.height / 2, 1);
     assertTrue(thumb.x >= area.x && thumb.x + thumb.width <= area.x + area.width);
   }
@@ -314,6 +329,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       checkNav(browserPage.locator("#admin-nav-configuration-security"), "400", false);
       navigation.closeOverlayDrawer();
       browserPage.navigate(path(HOME_ROUTE));
+
       assertThat(browserPage.locator("#portal-home-account")).isVisible();
       browserPage.waitForFunction(
           """
@@ -340,6 +356,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
   private void openPortalNavigation() {
     Locator toggle = browserPage.locator("#account-navigation-toggle");
+
     assertThat(toggle).hasCount(1);
     if (toggle.isVisible() && !"true".equals(toggle.getAttribute("aria-expanded"))) {
       UiActions.complete(browserPage, toggle::click);
@@ -350,6 +367,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   private void checkNav(Locator item, String weight, boolean active) {
     Locator link = item.locator(":scope > [part=content] > [part=link]");
     Locator content = item.locator(":scope > [part=content]");
+
     assertThat(link).hasCSS("cursor", "pointer");
     assertThat(link).hasCSS("font-weight", weight);
     assertThat(link).hasCSS("text-align", "left");
@@ -358,6 +376,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     String background = (String) content.evaluate("el => getComputedStyle(el).backgroundColor");
     link.hover();
     BoundingBox after = content.boundingBox();
+
     assertEquals(before.x, after.x, 1);
     assertEquals(before.y, after.y, 1);
     assertEquals(before.width, after.width, 1);
@@ -379,6 +398,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
                   return [box.x, box.y + box.height / 2];
                 }
                 """);
+
     assertEquals(8, ((Number) label.get(0)).doubleValue() - icon.x - icon.width, 2);
     assertEquals(icon.y + icon.height / 2, ((Number) label.get(1)).doubleValue(), 2);
     browserPage.mouse().move(1, 1);
@@ -413,6 +433,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
               new Page.GetByRoleOptions().setName(uiTexts.getAdminMailRecipient()).setExact(true))
           .click();
       Locator fieldHelp = browserPage.locator("#admin-mail-field-help[opened]");
+
       assertThat(fieldHelp.locator("vaadin-dialog-overlay > [part~=overlay]")).isVisible();
       assertThat(fieldHelp.locator(".admin-help-description"))
           .hasText(uiTexts.getAdminMailRecipientHint());
@@ -420,6 +441,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       AllurePlaywright.attachScreenshot(
           "Seitliche Mail-Feldhilfe bei " + width + "px", browserPage);
       browserPage.keyboard().press("Escape");
+
       assertThat(fieldHelp).hasCount(0);
     }
   }
@@ -431,14 +453,15 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       "Admin, Startseite und Konto auf Desktop und Smartphone öffnen. Identität, vier sichtbare Statusoptionen, Sprachwahl und rechtsbündiges Abmelden bleiben innerhalb des Viewports. Das Menü enthält keine zweite versteckte Statusauswahl oder alte Kopfzeile. Mein Konto navigiert, Escape und Außenklick schließen. Bei vorausgewähltem Deutsch und Englisch aktualisiert ein Sprachwechsel sowohl Feldwert als auch Optionen, ohne die Auswahl zu ändern. Keine Statusänderung und kein Speichern des Profilformulars.")
   void userMenuKeepsItsLayoutNavigationAndNativeClosing() {
     signIn();
-    UserMenu menu = new UserMenu(browserPage);
+    UserMenu userMenu = new UserMenu(browserPage);
     for (int width : new int[] {1280, 390}) {
       browserPage.setViewportSize(width, 900);
       for (String route : List.of(ADMIN_ROUTE, HOME_ROUTE, ACCOUNT_ROUTE)) {
         browserPage.navigate(path(route));
-        menu.open();
+        userMenu.open();
         Locator body = browserPage.locator(".portal-user-menu-body:visible");
         Locator overlay = browserPage.locator("vaadin-popover-overlay[opened] > [part~='overlay']");
+
         assertThat(body.locator(".portal-menu-name")).isVisible();
         assertThat(body.locator(".portal-menu-email")).isVisible();
         assertThat(body.locator(".portal-menu-language-label"))
@@ -455,11 +478,13 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
                 new Locator.GetByRoleOptions()
                     .setName(uiTexts.getBaseManageAccountButton())
                     .setExact(true));
+
         assertThat(account).isVisible();
         Locator home =
             body.getByRole(
                 AriaRole.BUTTON,
                 new Locator.GetByRoleOptions().setName(uiTexts.getBaseHomeButton()).setExact(true));
+
         assertThat(home).hasCount(route.equals(HOME_ROUTE) ? 0 : 1);
         Locator admin =
             body.getByRole(
@@ -467,32 +492,37 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
                 new Locator.GetByRoleOptions()
                     .setName(uiTexts.getBaseManageApplicationButton())
                     .setExact(true));
+
         assertThat(admin).hasCount(route.equals(ADMIN_ROUTE) ? 0 : 1);
         BoundingBox bounds = overlay.boundingBox();
+
         assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= width + 1);
         assertTrue(bounds.y >= 0 && bounds.y + bounds.height <= 901);
         BoundingBox footer = body.locator(".portal-menu-footer").boundingBox();
         BoundingBox logout = body.locator(".portal-menu-logout").boundingBox();
+
         assertEquals(footer.x + footer.width - 8, logout.x + logout.width, 1);
         AllurePlaywright.attachScreenshot(
             "Benutzermenü " + route + " bei " + width + "px", browserPage);
-        menu.close();
-        menu.open();
+        userMenu.close();
+        userMenu.open();
         browserPage.mouse().click(1, 880);
+
         assertThat(
                 browserPage.locator(
                     "vaadin-popover-overlay[opened], vaadin-popover-overlay[closing]"))
             .hasCount(0);
-        menu.open();
+        userMenu.open();
         account.click();
+
         assertThat(browserPage.locator("#account-panel-profile")).isVisible();
         assertThat(browserPage.locator("vaadin-popover-overlay[opened]")).hasCount(0);
       }
-      assertPreferredLanguageLabels(menu);
+      assertPreferredLanguageLabels(userMenu);
     }
   }
 
-  private void assertPreferredLanguageLabels(UserMenu menu) {
+  private void assertPreferredLanguageLabels(UserMenu userMenu) {
     Locator field = browserPage.locator("#account-language");
     Locator input = field.locator("input");
     Locale originalInterface = Locale.forLanguageTag(uiTexts.language());
@@ -508,9 +538,10 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
           .click();
       browserPage.locator("#account-first-name input").click();
       for (String language : List.of(otherLanguage, uiTexts.language())) {
-        menu.selectLanguage(language);
+        userMenu.selectLanguage(language);
         Locale currentInterface = Locale.forLanguageTag(language);
         String expected = selected.getDisplayLanguage(currentInterface);
+
         assertThat(input).hasValue(expected);
         field.click();
         for (Locale option : List.of(Locale.GERMAN, Locale.ENGLISH)) {
@@ -523,6 +554,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
               .isVisible();
         }
         input.press("Escape");
+
         assertThat(input).hasValue(expected);
       }
     }
@@ -538,6 +570,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     assertThat(tooltip).hasCSS("font-size", "11px");
     assertThat(tooltip).hasCSS("font-weight", "400");
     BoundingBox bounds = tooltip.boundingBox();
+
     assertTrue(bounds.width <= 221);
     assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= browserPage.viewportSize().width + 1);
   }

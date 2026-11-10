@@ -75,6 +75,7 @@ class RoleServicePersistenceTest {
     }
     assertTrue(service.findByName(null).isEmpty());
     roleRepository.saveAndFlush(RoleEntity.builder().name(RoleType.ROLE_USER).build());
+
     assertTrue(service.findByName(null).isEmpty());
     assertEquals(1, roleRepository.count());
   }
@@ -85,6 +86,7 @@ class RoleServicePersistenceTest {
         roleRepository.saveAndFlush(RoleEntity.builder().name(RoleType.ROLE_USER).build());
 
     RoleEntity roleEntity = RoleEntity.builder().name(RoleType.ROLE_USER).build();
+
     assertThrows(
         DataIntegrityViolationException.class, () -> roleRepository.saveAndFlush(roleEntity));
 
@@ -95,6 +97,7 @@ class RoleServicePersistenceTest {
   @Test
   void nullNameCannotBePersistedAndDoesNotLeaveARow() {
     RoleEntity roleEntity = RoleEntity.builder().build();
+
     assertThrows(
         DataIntegrityViolationException.class, () -> roleRepository.saveAndFlush(roleEntity));
 

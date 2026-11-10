@@ -56,6 +56,7 @@ public final class NotificationComposePage {
   @Step("Benachrichtigungen verfassen direkt über die vorhandene Adminroute öffnen")
   public void open() {
     browserPage.navigate(path(ADMIN_ROUTE) + "?section=notifications");
+
     assertThat(root()).isVisible();
     assertThat(title()).isVisible();
   }
@@ -63,13 +64,15 @@ public final class NotificationComposePage {
   @Step("Bestimmten aktiven Empfänger im nativen Mehrfachauswahlmenü wählen")
   public void select(String email) {
     recipients().locator("input").fill(email);
-    Locator option =
+    Locator recipientOptionLocator =
         browserPage
             .getByRole(AriaRole.OPTION)
             .filter(new Locator.FilterOptions().setHasText(email));
-    assertThat(option).hasCount(1);
-    option.click();
+
+    assertThat(recipientOptionLocator).hasCount(1);
+    recipientOptionLocator.click();
     recipients().locator("input").press("Escape");
+
     assertThat(root().locator(".cosmos-notification-compose-recipient-summary"))
         .hasText(uiTexts.getNotificationsSelectedUsers(1));
   }
@@ -82,8 +85,10 @@ public final class NotificationComposePage {
     body().fill("Temporary");
     body().clear();
     title().press("Tab");
+
     assertThat(root().locator("[invalid]")).hasCount(0);
     review().click();
+
     assertThat(browserPage.locator("#admin-notifications-title"))
         .hasJSProperty("errorMessage", uiTexts.getNotificationsInvalidSubject());
     assertThat(browserPage.locator("#admin-notifications-title[invalid]")).hasCount(1);
@@ -101,12 +106,14 @@ public final class NotificationComposePage {
   public void draft(String subject, String message) {
     title().fill(subject);
     body().fill(message);
+
     assertThat(root().locator(".cosmos-notification-compose-counter").nth(0))
         .hasText(subject.length() + " / 120");
     assertThat(root().locator(".cosmos-notification-compose-counter").nth(1))
         .hasText(message.length() + " / 4000");
     assertThat(send()).isDisabled();
     review().click();
+
     assertThat(send()).isEnabled();
     assertThat(status()).hasText(uiTexts.getNotificationsPreviewUpdated());
     assertThat(
@@ -120,13 +127,16 @@ public final class NotificationComposePage {
   }
 
   public void notice(String... expected) {
-    Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
-    assertThat(notice).isVisible();
+    Locator notificationCardLocator =
+        browserPage.locator("vaadin-notification-card:not([closing])");
+
+    assertThat(notificationCardLocator).isVisible();
     for (String text : expected) {
-      assertThat(notice).containsText(text);
+      assertThat(notificationCardLocator).containsText(text);
     }
-    notice.getByRole(AriaRole.BUTTON).click();
-    assertThat(notice).not().isVisible();
+    notificationCardLocator.getByRole(AriaRole.BUTTON).click();
+
+    assertThat(notificationCardLocator).not().isVisible();
   }
 
   @Step(
@@ -134,21 +144,25 @@ public final class NotificationComposePage {
   public static void readOwn(Page target, String subject, String message) {
     UiTexts uiTexts = UiTexts.selected();
     target.navigate(path(NOTIFICATIONS_ROUTE));
-    Locator row =
+    Locator notificationRowLocator =
         target
             .locator("#notifications-inbox .cosmos-notification-row")
             .filter(new Locator.FilterOptions().setHasText(subject));
-    assertThat(row).hasCount(1);
+
+    assertThat(notificationRowLocator).hasCount(1);
     // .* erlaubt weitere CSS-Klassen vor/nach dem wörtlichen Status; keine Gruppen/Ersetzungen.
-    assertThat(row)
+    assertThat(notificationRowLocator)
         .hasClass(java.util.regex.Pattern.compile(".*cosmos-notification-row--unread.*"));
-    row.getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(subject).setExact(true))
+    notificationRowLocator
+        .getByRole(AriaRole.BUTTON, new Locator.GetByRoleOptions().setName(subject).setExact(true))
         .click();
-    Locator dialog = target.locator("vaadin-dialog.cosmos-notification-dialog[opened]");
-    assertThat(dialog).containsText(message);
-    assertThat(dialog.locator(".cosmos-notification-detail-state"))
+    Locator notificationDetailDialogLocator =
+        target.locator("vaadin-dialog.cosmos-notification-dialog[opened]");
+
+    assertThat(notificationDetailDialogLocator).containsText(message);
+    assertThat(notificationDetailDialogLocator.locator(".cosmos-notification-detail-state"))
         .hasText(uiTexts.getNotificationsUnread());
-    dialog
+    notificationDetailDialogLocator
         .getByRole(
             AriaRole.BUTTON,
             new Locator.GetByRoleOptions()
@@ -156,18 +170,21 @@ public final class NotificationComposePage {
                 .setExact(true))
         .click();
     new NotificationInboxPage(target).confirm();
-    assertThat(dialog.locator(".cosmos-notification-detail-state"))
+
+    assertThat(notificationDetailDialogLocator.locator(".cosmos-notification-detail-state"))
         .hasText(uiTexts.getNotificationsRead());
-    dialog
+    notificationDetailDialogLocator
         .getByRole(
             AriaRole.BUTTON,
             new Locator.GetByRoleOptions().setName(uiTexts.getNotificationsClose()).setExact(true))
         .last()
         .click();
-    assertThat(dialog).hasCount(0);
+
+    assertThat(notificationDetailDialogLocator).hasCount(0);
     target.reload();
-    assertThat(row).hasCount(1);
-    assertThat(row)
+
+    assertThat(notificationRowLocator).hasCount(1);
+    assertThat(notificationRowLocator)
         .not()
         .hasClass(java.util.regex.Pattern.compile(".*cosmos-notification-row--unread.*"));
   }

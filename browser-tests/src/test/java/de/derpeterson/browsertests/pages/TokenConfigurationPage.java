@@ -20,6 +20,7 @@ public final class TokenConfigurationPage {
   @Step("Token-Laufzeiten über die Adminnavigation öffnen")
   public void open() {
     new ConfigurationPage(browserPage).open(de.derpeterson.app.config.AdminConfigGroup.TOKENS);
+
     assertThat(button(uiTexts.getAdminConfigSave())).isVisible();
   }
 
@@ -28,31 +29,36 @@ public final class TokenConfigurationPage {
   }
 
   public String value(String label) {
-    java.math.BigDecimal seconds = new ConfigurationPage(browserPage).seconds(label);
-    java.math.BigInteger[] parts =
-        seconds
+    java.math.BigDecimal tokenDurationSeconds = new ConfigurationPage(browserPage).seconds(label);
+    java.math.BigInteger[] secondsAndNanoseconds =
+        tokenDurationSeconds
             .movePointRight(9)
             .toBigIntegerExact()
             .divideAndRemainder(java.math.BigInteger.valueOf(1_000_000_000));
-    return java.time.Duration.ofSeconds(parts[0].longValueExact(), parts[1].longValueExact())
+
+    return java.time.Duration.ofSeconds(
+            secondsAndNanoseconds[0].longValueExact(), secondsAndNanoseconds[1].longValueExact())
         .toString();
   }
 
   @Step("Dauer als Zahl und Einheit eingeben")
-  public void enter(String label, String value) {
-    java.time.Duration duration =
-        value.startsWith("P")
-            ? java.time.Duration.parse(value)
-            : java.time.Duration.ofMinutes(Long.parseLong(value.substring(0, value.length() - 1)));
-    java.math.BigDecimal seconds =
-        java.math.BigDecimal.valueOf(duration.getSeconds())
-            .add(java.math.BigDecimal.valueOf(duration.getNano(), 9));
-    new ConfigurationPage(browserPage).enterSeconds(label, seconds);
+  public void enter(String label, String tokenDurationText) {
+    java.time.Duration tokenDuration =
+        tokenDurationText.startsWith("P")
+            ? java.time.Duration.parse(tokenDurationText)
+            : java.time.Duration.ofMinutes(
+                Long.parseLong(tokenDurationText.substring(0, tokenDurationText.length() - 1)));
+    java.math.BigDecimal tokenDurationSeconds =
+        java.math.BigDecimal.valueOf(tokenDuration.getSeconds())
+            .add(java.math.BigDecimal.valueOf(tokenDuration.getNano(), 9));
+
+    new ConfigurationPage(browserPage).enterSeconds(label, tokenDurationSeconds);
   }
 
   @Step("Dauer ablehnen und lokalisierten Feldfehler prüfen")
   public void reject(String label, String error) {
     button(uiTexts.getAdminConfigSave()).click();
+
     assertThat(field(label)).hasAttribute("invalid", "");
     assertThat(field(label)).hasJSProperty("errorMessage", error);
     assertThat(notice()).containsText(uiTexts.getAdminConfigValidationInvalidFields());
@@ -62,6 +68,7 @@ public final class TokenConfigurationPage {
   @Step("Konfiguration speichern")
   public void save() {
     button(uiTexts.getAdminConfigSave()).click();
+
     assertThat(notice()).containsText(uiTexts.getAdminConfigSaveSuccess());
     dismiss();
   }
@@ -69,6 +76,7 @@ public final class TokenConfigurationPage {
   @Step("Gespeicherte Konfiguration erneut laden")
   public void reload() {
     button(uiTexts.getAdminConfigReload()).click();
+
     assertThat(notice()).containsText(uiTexts.getAdminConfigReloadSuccess());
     dismiss();
   }
@@ -85,6 +93,7 @@ public final class TokenConfigurationPage {
 
   private void dismiss() {
     notice().getByRole(AriaRole.BUTTON).click();
+
     assertThat(notice()).not().isVisible();
   }
 

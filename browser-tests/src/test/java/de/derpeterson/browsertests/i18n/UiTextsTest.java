@@ -16,21 +16,25 @@ class UiTextsTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void durationNumbersUseTheTestLanguageInsteadOfTheOperatingSystemLocale(String language) {
-    UiTexts texts = new UiTexts(language);
-    String grouped = language.equals("de") ? "172.800" : "172,800";
-    String decimal = language.equals("de") ? "1,5" : "1.5";
-    assertTrue(texts.getAdminConfigDurationSeconds(172800).contains(grouped));
+    UiTexts uiTexts = new UiTexts(language);
+    String expectedGroupedNumberText = language.equals("de") ? "172.800" : "172,800";
+    String expectedDecimalNumberText = language.equals("de") ? "1,5" : "1.5";
+
+    assertTrue(uiTexts.getAdminConfigDurationSeconds(172800).contains(expectedGroupedNumberText));
     assertTrue(
-        texts.getAdminConfigDurationMinutes(new java.math.BigDecimal("1.5")).contains(decimal));
+        uiTexts
+            .getAdminConfigDurationMinutes(new java.math.BigDecimal("1.5"))
+            .contains(expectedDecimalNumberText));
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void requiredKeysNeverFallBackToAnotherLanguageOrTheKeyItself(String language) {
-    UiTexts texts = new UiTexts(language);
+    UiTexts uiTexts = new UiTexts(language);
+
     assertThrows(
-        IllegalArgumentException.class, () -> texts.getTranslation("missing.browser.test.key"));
-    assertEquals(language, texts.language());
+        IllegalArgumentException.class, () -> uiTexts.getTranslation("missing.browser.test.key"));
+    assertEquals(language, uiTexts.language());
   }
 
   @Test
@@ -41,27 +45,29 @@ class UiTextsTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void formattedMessageKeepsItsRecipientAndSubstitutesItsPlaceholder(String language) {
-    String result = new UiTexts(language).getRegistrationSuccessMessage("test@example.test");
-    assertTrue(result.contains("test@example.test"));
-    assertFalse(result.contains("{0}"));
+    String registrationMessageText =
+        new UiTexts(language).getRegistrationSuccessMessage("test@example.test");
+
+    assertTrue(registrationMessageText.contains("test@example.test"));
+    assertFalse(registrationMessageText.contains("{0}"));
     assertFalse(
-        result.contains("\uFFFD"),
+        registrationMessageText.contains("\uFFFD"),
         "Original translation must not contain decoding replacement characters.");
-    assertNotEquals("registrationView.registration.success_message", result);
+    assertNotEquals("registrationView.registration.success_message", registrationMessageText);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void tokenMinimumMessagesAndExistingTooltipGettersAreFormattedInBothLanguages(String language) {
-    UiTexts texts = new UiTexts(language);
+    UiTexts uiTexts = new UiTexts(language);
     for (String value :
         new String[] {
-          texts.getAdminConfigValidationDurationMinimum(1),
-          texts.getAdminConfigValidationTokenDuration(2),
-          texts.getAdminConfigEntryVerificationTokenValidDurationTooltip(),
-          texts.getAdminConfigEntryVerificationTokenLiveDurationTooltip(),
-          texts.getAdminConfigEntryPasswordResetTokenValidDurationTooltip(),
-          texts.getAdminConfigEntryPasswordResetTokenLiveDurationTooltip()
+          uiTexts.getAdminConfigValidationDurationMinimum(1),
+          uiTexts.getAdminConfigValidationTokenDuration(2),
+          uiTexts.getAdminConfigEntryVerificationTokenValidDurationTooltip(),
+          uiTexts.getAdminConfigEntryVerificationTokenLiveDurationTooltip(),
+          uiTexts.getAdminConfigEntryPasswordResetTokenValidDurationTooltip(),
+          uiTexts.getAdminConfigEntryPasswordResetTokenLiveDurationTooltip()
         }) {
       assertFalse(value.contains("{0}"));
       assertFalse(value.contains("\uFFFD"));
@@ -72,22 +78,23 @@ class UiTextsTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void adminPasswordValidationUsesTheFullRuleAndEditReusesTheApprovedCreateHint(String language) {
-    UiTexts texts = new UiTexts(language);
-    String rule = texts.getBaseValidationPasswordInvalidMessage();
+    UiTexts uiTexts = new UiTexts(language);
+    String passwordRuleText = uiTexts.getBaseValidationPasswordInvalidMessage();
     // Der freigegebene Hinweis ist kürzer als der Validierungsfehler. Beim Bearbeiten
     // folgt nach dem Leer-lassen-Hinweis exakt dieselbe neue Passwortregel wie beim Anlegen.
-    String createHint = texts.getAdminUsersPasswordHelperCreate();
-    assertFalse(createHint.isBlank());
-    assertTrue(texts.getAdminUsersPasswordHelperEdit().endsWith(createHint));
-    assertNotEquals(createHint, texts.getAdminUsersPasswordHelperEdit());
-    assertTrue(texts.getAdminUsersPasswordValidationEdit().contains(rule));
-    assertTrue(texts.getAdminUsersPasswordValidationCreate().contains(rule));
+    String createPasswordHintText = uiTexts.getAdminUsersPasswordHelperCreate();
+
+    assertFalse(createPasswordHintText.isBlank());
+    assertTrue(uiTexts.getAdminUsersPasswordHelperEdit().endsWith(createPasswordHintText));
+    assertNotEquals(createPasswordHintText, uiTexts.getAdminUsersPasswordHelperEdit());
+    assertTrue(uiTexts.getAdminUsersPasswordValidationEdit().contains(passwordRuleText));
+    assertTrue(uiTexts.getAdminUsersPasswordValidationCreate().contains(passwordRuleText));
     for (String value :
         new String[] {
-          texts.getAdminUsersPasswordHelperEdit(),
-          texts.getAdminUsersPasswordHelperCreate(),
-          texts.getAdminUsersPasswordValidationEdit(),
-          texts.getAdminUsersPasswordValidationCreate()
+          uiTexts.getAdminUsersPasswordHelperEdit(),
+          uiTexts.getAdminUsersPasswordHelperCreate(),
+          uiTexts.getAdminUsersPasswordValidationEdit(),
+          uiTexts.getAdminUsersPasswordValidationCreate()
         }) {
       assertFalse(value.contains("{0}"));
       assertFalse(value.contains("\uFFFD"));
@@ -105,6 +112,7 @@ class UiTextsTest {
   @Test
   void dateEntryMatchesTheExplicitUiLanguage() {
     LocalDate date = LocalDate.of(1990, 1, 1);
+
     assertEquals("01.01.1990", new UiTexts("de").dateInput(date));
     assertEquals("1/1/1990", new UiTexts("en").dateInput(date));
   }
@@ -112,24 +120,25 @@ class UiTextsTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void cosmosPlaceholdersAndCopyrightTooltipUseTheSharedCatalogue(String language) {
-    UiTexts texts = new UiTexts(language);
+    UiTexts uiTexts = new UiTexts(language);
     for (String value :
         new String[] {
-          texts.getAccountEmailPlaceholder(),
-          texts.getAccountConfirmEmailPlaceholder(),
-          texts.getAccountPasswordPlaceholder(),
-          texts.getAccountConfirmPasswordPlaceholder(),
-          texts.getAccountNewPasswordPlaceholder(),
-          texts.getAccountFirstNamePlaceholder(),
-          texts.getAccountLastNamePlaceholder(),
-          texts.getAccountGenderPlaceholder(),
-          texts.getAdminConfigEntryCopyrightText()
+          uiTexts.getAccountEmailPlaceholder(),
+          uiTexts.getAccountConfirmEmailPlaceholder(),
+          uiTexts.getAccountPasswordPlaceholder(),
+          uiTexts.getAccountConfirmPasswordPlaceholder(),
+          uiTexts.getAccountNewPasswordPlaceholder(),
+          uiTexts.getAccountFirstNamePlaceholder(),
+          uiTexts.getAccountLastNamePlaceholder(),
+          uiTexts.getAccountGenderPlaceholder(),
+          uiTexts.getAdminConfigEntryCopyrightText()
         }) {
       assertFalse(value.isBlank());
       assertFalse(value.contains("\uFFFD"));
       assertFalse(value.contains("account.form."));
     }
-    String tooltip = texts.getAdminConfigEntryCopyrightTextTooltip();
+    String tooltip = uiTexts.getAdminConfigEntryCopyrightTextTooltip();
+
     assertTrue(tooltip.contains("{year}"));
     assertTrue(tooltip.contains("{serviceName}"));
     assertFalse(

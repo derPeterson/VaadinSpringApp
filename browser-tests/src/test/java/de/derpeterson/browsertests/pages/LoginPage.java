@@ -35,8 +35,9 @@ public final class LoginPage {
   }
 
   public void signInFirstFactor(String email, String password) {
-    for (Locator notice : browserPage.locator("vaadin-notification-card:not([closing])").all()) {
-      notice.getByRole(AriaRole.BUTTON).click();
+    for (Locator notificationCardLocator :
+        browserPage.locator("vaadin-notification-card:not([closing])").all()) {
+      notificationCardLocator.getByRole(AriaRole.BUTTON).click();
     }
     browserPage
         .getByLabel(uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
@@ -44,7 +45,7 @@ public final class LoginPage {
     browserPage
         .getByLabel(uiTexts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true))
         .fill(password);
-    Locator submit =
+    Locator loginSubmitButtonLocator =
         browserPage
             .locator(".public-panel")
             .getByRole(
@@ -52,7 +53,7 @@ public final class LoginPage {
                 new Locator.GetByRoleOptions()
                     .setName(uiTexts.getBaseLoginButton())
                     .setExact(true));
-    UiActions.complete(browserPage, submit::click);
+    UiActions.complete(browserPage, loginSubmitButtonLocator::click);
     browserPage.waitForCondition(() ->
         !java.net.URI.create(browserPage.url()).getPath().equals(path(LOGIN_ROUTE))
             || browserPage.locator("vaadin-notification-card:not([closing])").isVisible()
@@ -81,6 +82,7 @@ public final class LoginPage {
   @Step("Verständlicher Anmeldefehler ohne Zugriff auf den Adminbereich")
   public void assertRejected() {
     assertFormVisible();
+
     assertThat(
             browserPage
                 .locator("vaadin-notification-card:not([closing])")
@@ -100,6 +102,7 @@ public final class LoginPage {
   @Step("Sitzungsgrenze bei gültigen Zugangsdaten prüfen")
   public void assertSessionLimit() {
     assertFormVisible();
+
     assertThat(
             browserPage.getByText(
                 uiTexts.getLoginSessionLimitMessage(), new Page.GetByTextOptions().setExact(true)))
@@ -141,6 +144,7 @@ public final class LoginPage {
   @Step("Vorübergehende Anmeldesperre ohne Kontoauskunft prüfen")
   public void assertThrottled() {
     assertFormVisible();
+
     assertThat(
             browserPage.getByText(
                 uiTexts.getLoginThrottledMessage(), new Page.GetByTextOptions().setExact(true)))
@@ -149,10 +153,13 @@ public final class LoginPage {
 
   @Step("Vorhandenen Fehlerhinweis vor dem nächsten Anmeldeversuch schließen")
   public void dismissFailure() {
-    Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
-    assertThat(notice).hasCount(1);
-    notice.getByRole(AriaRole.BUTTON).click();
-    assertThat(notice).not().isVisible();
+    Locator notificationCardLocator =
+        browserPage.locator("vaadin-notification-card:not([closing])");
+
+    assertThat(notificationCardLocator).hasCount(1);
+    notificationCardLocator.getByRole(AriaRole.BUTTON).click();
+
+    assertThat(notificationCardLocator).not().isVisible();
   }
 
   @Step("Admin-Dashboard und angemeldetes Konto sind sichtbar")
@@ -166,9 +173,10 @@ public final class LoginPage {
                     .setExact(true)
                     .setLevel(1)))
         .isVisible();
-    UserMenu menu = new UserMenu(browserPage);
-    menu.open();
+    UserMenu userMenu = new UserMenu(browserPage);
+    userMenu.open();
+
     assertThat(browserPage.locator(".user-popover-body")).containsText(email);
-    menu.close();
+    userMenu.close();
   }
 }

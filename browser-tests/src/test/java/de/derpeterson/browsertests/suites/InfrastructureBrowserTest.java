@@ -39,6 +39,7 @@ public class InfrastructureBrowserTest extends BrowserFixture {
       """)
   void httpsIsTrustedAndUnsafeHttpIsRejectedBeforeRedirect() {
     String origin = System.getProperty("browser.tests.baseUrl");
+
     assertTrue(browserPage.url().startsWith(origin + "/"));
     assertTrue(origin.startsWith("https://"));
     String plain = System.getProperty("browser.tests.httpUrl");
@@ -74,12 +75,14 @@ public class InfrastructureBrowserTest extends BrowserFixture {
       """)
   void homeAndImagesLoad() {
     browserPage.navigate(path(HOME_ROUTE));
+
     assertThat(browserPage).hasTitle(HOME_PAGE_TITLE);
     assertThat(
             browserPage.getByText(
                 "VaadinSpringApp (Browser-Test)", new Page.GetByTextOptions().setExact(true)))
         .isVisible();
     assertImageLoaded(browserPage.locator(".public-brand img"));
+
     assertThat(browserPage.locator(".public-navigation")).isVisible();
     assertThat(browserPage.locator(".public-languages vaadin-button")).hasCount(2);
     assertThat(browserPage.locator(".public-languages vaadin-button[aria-pressed='true']"))
@@ -101,6 +104,7 @@ public class InfrastructureBrowserTest extends BrowserFixture {
       """)
   void loginFormLoads() {
     new de.derpeterson.browsertests.pages.LoginPage(browserPage).open();
+
     assertThat(
             browserPage
                 .locator(".public-panel")
@@ -128,8 +132,10 @@ public class InfrastructureBrowserTest extends BrowserFixture {
         browserContext
             .request()
             .get(System.getProperty("browser.tests.mailpitUrl") + "/api/v1/messages");
+
     assertTrue(response.ok());
     JsonNode inbox = new ObjectMapper().readTree(response.body());
+
     assertTrue(inbox.path("messages").isArray());
     assertTrue(inbox.path("total").asInt(-1) >= inbox.path("messages").size());
   }

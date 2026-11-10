@@ -80,6 +80,7 @@ class UserActivityTimePersistenceTest {
       Long firstId = earlier.getId();
       Long secondId = later.getId();
       entityManager.clear();
+
       assertEquals(first, userRepository.findById(firstId).orElseThrow().getLastActivity());
       assertEquals(second, userRepository.findById(secondId).orElseThrow().getLastActivity());
       assertEquals(
@@ -124,31 +125,35 @@ class UserActivityTimePersistenceTest {
             userRepository
                 .saveAndFlush(user("status-time@example.test", now.minusSeconds(120)))
                 .getId());
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)).thenReturn("PT5M");
     Clock fixed = Clock.fixed(now, ZoneId.of("America/New_York"));
     UserStatusScheduler scheduler =
-        new UserStatusScheduler(userRepository, userService, config, fixed);
+        new UserStatusScheduler(userRepository, userService, configService, fixed);
     scheduler.checkInactiveAvailableUsers();
+
     assertEquals(UserStatus.AVAILABLE, userRepository.findById(id).orElseThrow().getStatus());
     // Equality retains the original strict timeout contract.
     new UserStatusScheduler(
             userRepository,
             userService,
-            config,
+            configService,
             Clock.offset(fixed, java.time.Duration.ofMinutes(3)))
         .checkInactiveAvailableUsers();
+
     assertEquals(UserStatus.AVAILABLE, userRepository.findById(id).orElseThrow().getStatus());
     new UserStatusScheduler(
             userRepository,
             userService,
-            config,
+            configService,
             Clock.offset(fixed, java.time.Duration.ofSeconds(181)))
         .checkInactiveAvailableUsers();
+
     assertEquals(UserStatus.ABSENT, userRepository.findById(id).orElseThrow().getStatus());
     transactionTemplate.executeWithoutResult(
         tx -> userRepository.updateLastActivity(id, now.minusSeconds(1)));
     scheduler.checkRecentlyActiveAbsentUsers();
+
     assertEquals(UserStatus.AVAILABLE, userRepository.findById(id).orElseThrow().getStatus());
   }
 }

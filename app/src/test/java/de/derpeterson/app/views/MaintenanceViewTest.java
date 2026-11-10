@@ -55,7 +55,7 @@ class MaintenanceViewTest {
   // CurrentInstance only retains weak references; keep the locale fixture alive for every
   // assertion.
   private VaadinSession vaadinSession;
-  private Page page;
+  private Page browserPage;
   private SecurityService securityService;
   private ConfigService configService;
   private MaintenanceView view;
@@ -66,16 +66,16 @@ class MaintenanceViewTest {
   @BeforeEach
   void setup() {
     testUi = spy(new UI());
-    page = mock(Page.class);
-    doReturn(page).when(testUi).getPage();
+    browserPage = mock(Page.class);
+    doReturn(browserPage).when(testUi).getPage();
     UI.setCurrent(testUi);
     vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.hasLock()).thenReturn(true);
     VaadinService vaadin = mock(VaadinService.class);
-    DeploymentConfiguration deployment = mock(DeploymentConfiguration.class);
+    DeploymentConfiguration deploymentConfiguration = mock(DeploymentConfiguration.class);
     when(vaadinSession.getService()).thenReturn(vaadin);
-    when(vaadin.getDeploymentConfiguration()).thenReturn(deployment);
-    when(deployment.getUrlSafeSchemes()).thenReturn(Set.of("http", "https"));
+    when(vaadin.getDeploymentConfiguration()).thenReturn(deploymentConfiguration);
+    when(deploymentConfiguration.getUrlSafeSchemes()).thenReturn(Set.of("http", "https"));
     when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
     VaadinSession.setCurrent(vaadinSession);
     testUi.getInternals().setSession(vaadinSession);
@@ -152,6 +152,7 @@ class MaintenanceViewTest {
       localeReference.set(language);
       LanguageChangeEvent.fire(testUi, language);
       MessageProperties messageProperties = MessageProperties.forLocale(i18nProvider, language);
+
       assertFalse(button(messageProperties.getMaintenanceLoginButton()).isVisible());
       assertTrue(button(messageProperties.getBaseLogoutButton()).isVisible());
       assertTrue(button(messageProperties.getMaintenanceRetryButton()).isVisible());
@@ -161,7 +162,7 @@ class MaintenanceViewTest {
         mockHttpRequest
             .getSession()
             .getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY));
-    verifyNoInteractions(page);
+    verifyNoInteractions(browserPage);
     verify(securityService, never()).logout();
   }
 
@@ -175,12 +176,14 @@ class MaintenanceViewTest {
             .filter(icon -> icon.hasClassName("cosmos-status-icon"))
             .findFirst()
             .orElseThrow();
+
     assertEquals("icons/lucide/wrench.svg", maintenanceIcon.getSrc());
     assertFalse(maintenanceIcon.hasClassName("cosmos-status-icon--warning"));
     for (Locale language : new Locale[] {Locale.GERMAN, Locale.ENGLISH}) {
       localeReference.set(language);
       LanguageChangeEvent.fire(testUi, language);
       MessageProperties messageProperties = MessageProperties.forLocale(i18nProvider, language);
+
       assertTrue(button(messageProperties.getMaintenanceLoginButton()).isVisible());
       assertFalse(button(messageProperties.getBaseLogoutButton()).isVisible());
       assertTrue(button(messageProperties.getMaintenanceRetryButton()).isVisible());
@@ -189,7 +192,8 @@ class MaintenanceViewTest {
             MessageProperties.forLocale(i18nProvider, localeReference.get())
                 .getMaintenanceLoginButton())
         .click();
-    verify(page).setLocation("/app" + AppRoute.LOGIN.getSecurityRoute());
+
+    verify(browserPage).setLocation("/app" + AppRoute.LOGIN.getSecurityRoute());
     assertNull(ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText"));
     verify(securityService, never()).logout();
   }

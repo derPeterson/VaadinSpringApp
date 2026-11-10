@@ -54,20 +54,24 @@ class AccountHeaderActionsTest {
     AccountHeaderActions actions = create(true);
     doReturn(Optional.empty()).when(testUi).navigate(AccountView.class);
     button(actions, "account-header-notifications").click();
+
     verify(testUi, never()).navigate(AccountView.class);
     button(actions, "account-header-settings").click();
+
     verify(testUi).navigate(AccountView.class);
   }
 
   @Test
   void accessibleLabelsFollowLanguageChanges() {
     AccountHeaderActions actions = create(true);
+
     assertEquals(
         "Benachrichtigungen",
         button(actions, "account-header-notifications").getAriaLabel().orElseThrow());
     when(messageProperties.getBaseNotifications()).thenReturn("Notifications");
     when(messageProperties.getBaseManageAccountButton()).thenReturn("Manage account");
     actions.refreshTexts();
+
     assertEquals(
         "Notifications",
         button(actions, "account-header-notifications").getAriaLabel().orElseThrow());

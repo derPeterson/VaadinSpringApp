@@ -43,13 +43,13 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
       """)
   void verificationCannotUndoAnAdminBlock(String caseId, boolean previouslyActivated) {
     String account = email("old-verification");
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      RegistrationPage registration = new RegistrationPage(actor.browserPage);
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      RegistrationPage registration = new RegistrationPage(browserActor.browserPage);
       registration.open();
       registration.fillValid(account, BrowserTestAccounts.USER_PASSWORD);
       registration.submit();
       registration.assertSubmitted(account);
-      MailpitInbox inbox = new MailpitInbox(actor.browserContext);
+      MailpitInbox inbox = new MailpitInbox(browserActor.browserContext);
       CapturedMail mail = inbox.awaitVerificationMail(account);
       if (previouslyActivated) {
         inbox.openVerificationLink(mail).close();
@@ -77,14 +77,16 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
                 AriaRole.BUTTON,
                 new Page.GetByRoleOptions().setName(uiTexts.getBaseResendButton()).setExact(true))
             .click();
+
         assertThat(result.locator("vaadin-notification-card:not([closing])"))
             .containsText(uiTexts.visibleText(result, uiTexts.getBaseFailedMessage()));
       }
       AdminUserDialog stored = new AdminUsersPage(browserPage).openEdit(account);
+
       assertThat(stored.enabled()).not().isChecked();
       stored.cancel();
-      actor.login(account, BrowserTestAccounts.USER_PASSWORD);
-      new LoginPage(actor.browserPage).assertRejected();
+      browserActor.login(account, BrowserTestAccounts.USER_PASSWORD);
+      new LoginPage(browserActor.browserPage).assertRejected();
     }
   }
 
@@ -102,13 +104,13 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
     AdminUsersPage users = admin();
     String account = email("old-reset");
     users.createActiveUser(account, BrowserTestAccounts.USER_PASSWORD);
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      ForgotPasswordPage forgot = new ForgotPasswordPage(actor.browserPage);
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      ForgotPasswordPage forgot = new ForgotPasswordPage(browserActor.browserPage);
       forgot.open();
       forgot.enterEmail(account);
       forgot.submit();
       forgot.requestedResponse();
-      MailpitInbox inbox = new MailpitInbox(actor.browserContext);
+      MailpitInbox inbox = new MailpitInbox(browserActor.browserContext);
       CapturedMail mail = inbox.awaitPasswordResetMail(account);
       AdminUserDialog form = users.openEdit(account);
       if (change.equals("delete")) {
@@ -120,19 +122,21 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
       try (Page result = inbox.openPasswordResetAction(mail)) {
         new ResetPasswordPage(result).assertInvalid();
       }
-      actor.login(account, BrowserTestAccounts.USER_PASSWORD);
-      new LoginPage(actor.browserPage).assertRejected();
+      browserActor.login(account, BrowserTestAccounts.USER_PASSWORD);
+      new LoginPage(browserActor.browserPage).assertRejected();
       if (change.equals("disable")) {
         form = users.openEdit(account);
         form.setEnabled(true);
         form.save();
-        actor.login(account, BrowserTestAccounts.USER_PASSWORD);
-        assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
-        new UserMenu(actor.browserPage).selectTestLanguage();
-        new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(account);
+        browserActor.login(account, BrowserTestAccounts.USER_PASSWORD);
+
+        assertThat(browserActor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+        new UserMenu(browserActor.browserPage).selectTestLanguage();
+        new UserMenu(browserActor.browserPage).assertUserSignedInWithoutAdminAction(account);
       } else {
         users.open();
         users.search(account);
+
         assertThat(users.emailCells(account)).hasCount(0);
       }
     }
@@ -155,8 +159,8 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
     AdminUserDialog form = users.openEdit(account);
     form.setEnabled(false);
     form.save();
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      ForgotPasswordPage forgot = new ForgotPasswordPage(actor.browserPage);
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      ForgotPasswordPage forgot = new ForgotPasswordPage(browserActor.browserPage);
       forgot.open();
       forgot.enterEmail(account);
       forgot.submit();
@@ -164,6 +168,7 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
       forgot.dismissRequestedNotice();
       forgot.enterEmail(email("unknown"));
       forgot.submit();
+
       assertEquals(blocked, forgot.requestedResponse());
     }
   }

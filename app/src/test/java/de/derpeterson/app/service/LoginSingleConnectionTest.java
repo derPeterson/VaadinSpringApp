@@ -67,6 +67,7 @@ class LoginSingleConnectionTest {
             new CustomUserDetailsService(userRepository)::loadPasswordUserByUsername);
     provider.setPasswordEncoder(encoder);
     LoginAuthenticationService login = new LoginAuthenticationService(provider, attempts);
+
     assertTrue(
         login
             .authenticate(
@@ -74,6 +75,7 @@ class LoginSingleConnectionTest {
             .isAuthenticated());
     UsernamePasswordAuthenticationToken loginCredentials =
         UsernamePasswordAuthenticationToken.unauthenticated(email, "WrongPassword!");
+
     assertThrows(BadCredentialsException.class, () -> login.authenticate(loginCredentials));
     assertEquals(
         1,
@@ -118,10 +120,10 @@ class LoginSingleConnectionTest {
 
     @Bean
     ConfigService config() {
-      ConfigService config = mock(ConfigService.class);
-      when(config.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(2);
-      when(config.getInteger(ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS)).thenReturn(900);
-      return config;
+      ConfigService configService = mock(ConfigService.class);
+      when(configService.getInteger(ConfigEntry.LOGIN_ATTEMPTS_LIMIT)).thenReturn(2);
+      when(configService.getInteger(ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS)).thenReturn(900);
+      return configService;
     }
 
     @Bean

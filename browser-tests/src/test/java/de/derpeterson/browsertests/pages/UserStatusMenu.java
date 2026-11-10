@@ -21,21 +21,24 @@ public final class UserStatusMenu {
   @Step("Ausgewählten Benutzerstatus im geöffneten Menü prüfen")
   public void expect(String label) {
     new UserMenu(browserPage).open();
+
     assertThat(current()).containsText(label);
   }
 
   @Step("Manuellen Status über die tatsächlich angebotene Option auswählen")
   public void select(String label) {
     new UserMenu(browserPage).open();
-    Locator option =
+    Locator statusOptionLocator =
         browserPage
             .locator(".user-popover-body .portal-status-option")
             .filter(
                 new Locator.FilterOptions()
                     .setHas(
                         browserPage.getByText(label, new Page.GetByTextOptions().setExact(true))));
-    assertThat(option).hasCount(1);
-    UiActions.complete(browserPage, option::click);
+
+    assertThat(statusOptionLocator).hasCount(1);
+    UiActions.complete(browserPage, statusOptionLocator::click);
+
     assertThat(current()).containsText(label);
   }
 }

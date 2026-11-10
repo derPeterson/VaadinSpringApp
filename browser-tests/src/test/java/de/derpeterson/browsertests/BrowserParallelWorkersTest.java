@@ -77,6 +77,7 @@ class BrowserParallelWorkersTest {
             complete().put("testsFound", 0).put("testsPassed", 0), 0, "sha256:example", 0));
     ObjectNode unfinished = complete();
     unfinished.remove("finishedAt");
+
     assertFalse(BrowserParallelWorkers.successful(unfinished, 0, "sha256:example", 2));
   }
 
@@ -88,6 +89,7 @@ class BrowserParallelWorkersTest {
     Files.writeString(source.resolve("screenshot.png"), "image");
     Files.writeString(source.resolve("environment.properties"), "worker-only");
     BrowserParallelWorkers.collect(source, target);
+
     assertEquals("result", Files.readString(target.resolve("case-result.json")));
     assertEquals("image", Files.readString(target.resolve("screenshot.png")));
     assertFalse(Files.exists(source.resolve("screenshot.png")));
@@ -100,6 +102,7 @@ class BrowserParallelWorkersTest {
     Path target = Files.createDirectory(temporary.resolve("combined"));
     Files.writeString(source.resolve("same-result.json"), "second");
     Files.writeString(target.resolve("same-result.json"), "first");
+
     assertThrows(IOException.class, () -> BrowserParallelWorkers.collect(source, target));
     assertEquals("first", Files.readString(target.resolve("same-result.json")));
   }
@@ -114,6 +117,7 @@ class BrowserParallelWorkersTest {
         new ObjectMapper()
             .readTree(
                 "{\"testClasses\":[\"RegistrationBrowserTest\",\"AuthenticationBrowserTest\"]}");
+
     assertTrue(BrowserParallelWorkers.matchesClasses(data, expected));
     assertFalse(
         BrowserParallelWorkers.matchesClasses(

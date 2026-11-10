@@ -145,6 +145,7 @@ class RoleUiGuardTest {
     guard.bind(testUi);
     VaadinServletResponse response =
         new VaadinServletResponse(new MockHttpServletResponse(), servlet);
+
     assertFalse(handler().synchronizedHandleRequest(vaadinSession, request, response));
     verify(mockHttpRequest, never()).getReader();
   }
@@ -160,6 +161,7 @@ class RoleUiGuardTest {
   void permittedLocationAndAccountTabSurviveButLostAdminAccessGoesHome(
       String path, String expected) {
     location(path);
+
     assertEquals(expected, RoleUiState.resolveRoleRefreshLocation(testUi, auth("USER"), "/ctx"));
   }
 
@@ -169,6 +171,7 @@ class RoleUiGuardTest {
     location("home");
     guard.bind(testUi);
     current.set(auth("USER", "ADMIN"));
+
     assertTrue(RoleUiState.refreshUiAfterRoleChange(testUi, current.get(), ""));
     assertFalse(mockHttpSession.isInvalid());
     assertTrue(
@@ -183,8 +186,10 @@ class RoleUiGuardTest {
     clearInvocations(securityService);
     current.set(auth("USER"));
     events.publish(999L);
+
     verifyNoInteractions(securityService);
     events.publish(5L);
+
     verify(securityService).refreshSessionAuthentication(mockHttpSession);
     assertTrue(
         testUi.getInternals().dumpPendingJavaScriptInvocations().stream()
@@ -192,6 +197,7 @@ class RoleUiGuardTest {
     ComponentUtil.fireEvent(testUi, new DetachEvent(testUi));
     clearInvocations(securityService);
     events.publish(5L);
+
     verifyNoInteractions(securityService);
   }
 
@@ -199,9 +205,11 @@ class RoleUiGuardTest {
   void anonymousUiIsBoundOnlyAfterAuthenticationBecomesAvailable() {
     current.set(null);
     guard.bind(testUi);
+
     assertNull(ComponentUtil.getData(testUi, RoleUiState.class));
     current.set(auth("USER"));
     guard.bind(testUi);
+
     assertNotNull(ComponentUtil.getData(testUi, RoleUiState.class));
   }
 }

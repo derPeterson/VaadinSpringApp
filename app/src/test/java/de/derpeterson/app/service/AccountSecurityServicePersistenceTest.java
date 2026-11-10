@@ -319,6 +319,7 @@ class AccountSecurityServicePersistenceTest {
     PasswordChanged result =
         accountSecurityService.changePassword(
             mockHttpRequest, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
+
     assertEquals(1, userNotificationRepository.count());
     assertEquals(
         UserNotificationType.PASSWORD_CHANGED,
@@ -336,6 +337,7 @@ class AccountSecurityServicePersistenceTest {
             .filter(mail -> mail.getSubject().contains("Passwort"))
             .findFirst()
             .orElseThrow();
+
     assertEquals("old@example.test", notice.getRecipient());
     assertFalse(notice.getBody().contains("New-secret!"));
     assertFalse(notice.getBody().contains("Old-secret!"));
@@ -356,6 +358,7 @@ class AccountSecurityServicePersistenceTest {
     try {
       PasswordChange passwordChange =
           new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
+
       assertThrows(
           IllegalStateException.class,
           () -> accountSecurityService.changePassword(mockHttpRequest, passwordChange));
@@ -393,6 +396,7 @@ class AccountSecurityServicePersistenceTest {
   @Test
   void wrongCurrentPasswordPersistsTheAttemptButChangesNothing() {
     PasswordChange passwordChange = new PasswordChange("Wrong!", "New-secret!", "New-secret!");
+
     assertThrows(
         BadCredentialsException.class,
         () -> accountSecurityService.changePassword(mockHttpRequest, passwordChange));
@@ -406,11 +410,13 @@ class AccountSecurityServicePersistenceTest {
   @Test
   void invalidPasswordOrConfirmationNeverPersistsOrAuthenticates() {
     PasswordChange shortPasswordChange = new PasswordChange("Old-secret!", "x", "x");
+
     assertThrows(
         IllegalArgumentException.class,
         () -> accountSecurityService.changePassword(mockHttpRequest, shortPasswordChange));
     PasswordChange mismatchedConfirmation =
         new PasswordChange("Old-secret!", "New-secret!", "Different!");
+
     assertThrows(
         IllegalArgumentException.class,
         () -> accountSecurityService.changePassword(mockHttpRequest, mismatchedConfirmation));
@@ -425,6 +431,7 @@ class AccountSecurityServicePersistenceTest {
         .when(queue)
         .addAddressedNotification(any(), anyString(), anyString(), anyString());
     PasswordChange passwordChange = new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
+
     assertThrows(
         IllegalStateException.class,
         () -> accountSecurityService.changePassword(mockHttpRequest, passwordChange));
@@ -438,10 +445,12 @@ class AccountSecurityServicePersistenceTest {
   @Test
   void emailRequestOnlyQueuesToNewAddressAndGetDoesNotConsumeTheHashedToken() {
     requestChange("  New@Example.Test  ");
+
     assertEquals("old@example.test", stored().getEmail());
     assertEquals("new@example.test", emailQueueRepository.findAll().getFirst().getRecipient());
     String raw = linkToken();
     EmailChangeTokenEntity token = emailChangeTokenRepository.findAll().getFirst();
+
     assertNotEquals(raw, token.getDigest());
     assertEquals(64, token.getDigest().length());
     assertEquals(Confirmation.READY, accountSecurityService.inspect(raw));
@@ -454,6 +463,7 @@ class AccountSecurityServicePersistenceTest {
   void confirmationChangesIdentityOnceNotifiesBothAddressesAndRevokesEveryOldSession() {
     requestChange("new@example.test");
     String raw = linkToken();
+
     assertEquals(0, userNotificationRepository.count());
     assertEquals(Confirmation.SUCCESS, accountSecurityService.confirm(raw));
     assertEquals(1, userNotificationRepository.count());
@@ -490,6 +500,7 @@ class AccountSecurityServicePersistenceTest {
       t.setExpiryDate(LocalDateTime.now(FIXED));
       emailChangeTokenRepository.save(t);
     });
+
     assertEquals(Confirmation.EXPIRED, accountSecurityService.inspect(raw));
     assertEquals(Confirmation.EXPIRED, accountSecurityService.confirm(raw));
     assertEquals("old@example.test", stored().getEmail());
@@ -501,6 +512,7 @@ class AccountSecurityServicePersistenceTest {
     requestChange("new@example.test");
     String raw = linkToken();
     userRepository.saveAndFlush(newUser("new@example.test"));
+
     assertEquals(Confirmation.CONFLICT, accountSecurityService.confirm(raw));
     assertEquals("old@example.test", stored().getEmail());
     assertEquals(1, emailQueueRepository.count());
@@ -524,6 +536,7 @@ class AccountSecurityServicePersistenceTest {
       }
       userRepository.saveAndFlush(user);
     });
+
     assertEquals(Confirmation.INVALID, accountSecurityService.confirm(raw));
     assertEquals(1, emailQueueRepository.count());
   }
@@ -532,6 +545,7 @@ class AccountSecurityServicePersistenceTest {
   void duplicateRequestsAreRateLimitedAndNewerRequestInvalidatesPreviousLink() {
     requestChange("first@example.test");
     String first = linkToken();
+
     assertEquals(
         Problem.REQUEST_PENDING,
         assertThrows(Rejected.class, () -> requestChange("second@example.test")).problem());
@@ -542,6 +556,7 @@ class AccountSecurityServicePersistenceTest {
         Clock.offset(FIXED, Duration.ofSeconds(61)));
     requestChange("second@example.test");
     String second = linkToken();
+
     assertNotEquals(first, second);
     assertEquals(Confirmation.INVALID, accountSecurityService.inspect(first));
     assertEquals(Confirmation.READY, accountSecurityService.inspect(second));
@@ -553,11 +568,13 @@ class AccountSecurityServicePersistenceTest {
         Problem.SAME_EMAIL,
         assertThrows(Rejected.class, () -> requestChange("OLD@example.test")).problem());
     userRepository.saveAndFlush(newUser("taken@example.test"));
+
     assertEquals(
         Problem.EMAIL_UNAVAILABLE,
         assertThrows(Rejected.class, () -> requestChange("TAKEN@example.test")).problem());
     EmailChange emailChange =
         new EmailChange("new@example.test", "other@example.test", "Old-secret!");
+
     assertThrows(
         IllegalArgumentException.class,
         () -> accountSecurityService.requestEmailChange(mockHttpRequest, emailChange));
@@ -572,6 +589,7 @@ class AccountSecurityServicePersistenceTest {
     doThrow(new IllegalStateException("Own simulated outbox failure"))
         .when(queue)
         .addAddressedNotification(any(), anyString(), anyString(), anyString());
+
     assertThrows(IllegalStateException.class, () -> accountSecurityService.confirm(raw));
     assertEquals("old@example.test", stored().getEmail());
     assertEquals(TokenStatus.ACTIVE, emailChangeTokenRepository.findAll().getFirst().getStatus());
@@ -584,21 +602,24 @@ class AccountSecurityServicePersistenceTest {
   void concurrentConfirmationHasOneWinnerAndOneConsumedLink() throws Exception {
     requestChange("new@example.test");
     String raw = linkToken();
-    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+    try (ExecutorService executorService = Executors.newFixedThreadPool(2)) {
       CountDownLatch ready = new CountDownLatch(2);
       CountDownLatch start = new CountDownLatch(1);
       Callable<Confirmation> confirm =
           () -> {
             ready.countDown();
+
             assertTrue(start.await(10, TimeUnit.SECONDS));
             return accountSecurityService.confirm(raw);
           };
-      Future<Confirmation> a = executor.submit(confirm);
-      Future<Confirmation> b = executor.submit(confirm);
+      Future<Confirmation> a = executorService.submit(confirm);
+      Future<Confirmation> b = executorService.submit(confirm);
+
       assertTrue(ready.await(10, TimeUnit.SECONDS));
       start.countDown();
       List<Confirmation> results =
           List.of(a.get(20, TimeUnit.SECONDS), b.get(20, TimeUnit.SECONDS));
+
       assertEquals(1, results.stream().filter(r -> r == Confirmation.SUCCESS).count());
       assertEquals(1, results.stream().filter(r -> r == Confirmation.INVALID).count());
     }
@@ -614,6 +635,7 @@ class AccountSecurityServicePersistenceTest {
       userRepository.saveAndFlush(user);
     });
     queue.processQueue();
+
     verify(emailService).sendEmailTo(eq("new@example.test"), anyString(), anyString());
     verify(emailService, never()).sendEmail(any(), anyString(), anyString());
   }
@@ -631,6 +653,7 @@ class AccountSecurityServicePersistenceTest {
       accountSecurityService.changePassword(
           mockHttpRequest, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
       EmailQueueEntity mail = emailQueueRepository.findAll().getFirst();
+
       assertTrue(mail.getBody().contains("&lt;script&gt;text&lt;/script&gt;"));
       assertFalse(mail.getBody().contains("<script>text</script>"));
       assertTrue(
@@ -653,11 +676,13 @@ class AccountSecurityServicePersistenceTest {
     try {
       PasswordChange wrongPasswordChange =
           new PasswordChange("Wrong!", "New-secret!", "New-secret!");
+
       assertThrows(
           BadCredentialsException.class,
           () -> accountSecurityService.changePassword(mockHttpRequest, wrongPasswordChange));
       PasswordChange blockedPasswordChange =
           new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
+
       assertThrows(
           LoginThrottledException.class,
           () -> accountSecurityService.changePassword(mockHttpRequest, blockedPasswordChange));
@@ -676,6 +701,7 @@ class AccountSecurityServicePersistenceTest {
     SecurityContextHolder.clearContext();
     MockHttpServletRequest anonymous = new MockHttpServletRequest();
     PasswordChange passwordChange = new PasswordChange("Old-secret!", "New-secret!", "New-secret!");
+
     assertThrows(
         AccessDeniedException.class,
         () -> accountSecurityService.changePassword(anonymous, passwordChange));
@@ -700,25 +726,29 @@ class AccountSecurityServicePersistenceTest {
     authenticate(secondAccount);
     requestChange("target@example.test");
     String second = linkToken();
-    try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+    try (ExecutorService executorService = Executors.newFixedThreadPool(2)) {
       CountDownLatch ready = new CountDownLatch(2);
       CountDownLatch start = new CountDownLatch(1);
       Future<Confirmation> a =
-          executor.submit(() -> {
+          executorService.submit(() -> {
             ready.countDown();
+
             assertTrue(start.await(10, TimeUnit.SECONDS));
             return accountSecurityService.confirm(first);
           });
       Future<Confirmation> b =
-          executor.submit(() -> {
+          executorService.submit(() -> {
             ready.countDown();
+
             assertTrue(start.await(10, TimeUnit.SECONDS));
             return accountSecurityService.confirm(second);
           });
+
       assertTrue(ready.await(10, TimeUnit.SECONDS));
       start.countDown();
       List<Confirmation> results =
           List.of(a.get(20, TimeUnit.SECONDS), b.get(20, TimeUnit.SECONDS));
+
       assertEquals(1, results.stream().filter(r -> r == Confirmation.SUCCESS).count());
       assertEquals(1, results.stream().filter(r -> r == Confirmation.CONFLICT).count());
     }
@@ -746,6 +776,7 @@ class AccountSecurityServicePersistenceTest {
     other.setSession(otherSession);
     accountSecurityService.changePassword(
         mockHttpRequest, new PasswordChange("Old-secret!", "New-secret!", "New-secret!"));
+
     assertTrue(securityService.hasCurrentSessionPrivileges(mockHttpRequest));
     assertTrue(securityService.getAuthenticatedUser(mockHttpRequest).isPresent());
     if (push) {
@@ -753,15 +784,17 @@ class AccountSecurityServicePersistenceTest {
           new PushSecurityInterceptor(securityService, new MaintenanceService(configService));
       VaadinServletRequest servletRequest =
           new VaadinServletRequest(other, mock(VaadinServletService.class));
+
       assertThrows(
           AccessDeniedException.class, () -> interceptor.requestStart(servletRequest, null));
     } else {
       ObjectProvider<SecurityService> provider = mock(ObjectProvider.class);
       when(provider.getObject()).thenReturn(securityService);
-      MockHttpServletResponse response = new MockHttpServletResponse();
+      MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
       FilterChain chain = mock(FilterChain.class);
-      new VaadinSecurityFilter(provider).doFilter(other, response, chain);
-      assertEquals(401, response.getStatus());
+      new VaadinSecurityFilter(provider).doFilter(other, mockHttpResponse, chain);
+
+      assertEquals(401, mockHttpResponse.getStatus());
       verifyNoInteractions(chain);
     }
     assertTrue(otherSession.isInvalid());
@@ -775,18 +808,20 @@ class AccountSecurityServicePersistenceTest {
         .getSession()
         .setAttribute("authenticatedUser", context.getAuthentication().getPrincipal());
     requestChange("new@example.test");
+
     assertEquals(Confirmation.SUCCESS, accountSecurityService.confirm(linkToken()));
-    MockHttpSession session = (MockHttpSession) mockHttpRequest.getSession();
+    MockHttpSession mockHttpSession = (MockHttpSession) mockHttpRequest.getSession();
     mockHttpRequest.setMethod("GET");
     mockHttpRequest.setServletPath(AppRoute.LOGIN.getSecurityRoute());
     ObjectProvider<SecurityService> provider = mock(ObjectProvider.class);
     when(provider.getObject()).thenReturn(securityService);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     FilterChain chain = mock(FilterChain.class);
-    new VaadinSecurityFilter(provider).doFilter(mockHttpRequest, response, chain);
-    verify(chain).doFilter(mockHttpRequest, response);
-    assertEquals(200, response.getStatus());
-    assertTrue(session.isInvalid());
+    new VaadinSecurityFilter(provider).doFilter(mockHttpRequest, mockHttpResponse, chain);
+
+    verify(chain).doFilter(mockHttpRequest, mockHttpResponse);
+    assertEquals(200, mockHttpResponse.getStatus());
+    assertTrue(mockHttpSession.isInvalid());
     assertNull(SecurityContextHolder.getContext().getAuthentication());
   }
 }

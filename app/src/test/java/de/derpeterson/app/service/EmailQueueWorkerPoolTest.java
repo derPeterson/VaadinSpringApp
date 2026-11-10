@@ -62,6 +62,7 @@ class EmailQueueWorkerPoolTest {
                   id -> {
                     int concurrent = active.incrementAndGet();
                     maximum.accumulateAndGet(concurrent, Math::max);
+
                     assertTrue(seen.add(id));
                     try {
                       if (id <= limit) {
@@ -74,6 +75,7 @@ class EmailQueueWorkerPoolTest {
                   }));
       try {
         await(started);
+
         assertEquals(limit, seen.size());
         assertEquals(0, executor.getQueue().size());
         assertFalse(run.isDone());
@@ -81,6 +83,7 @@ class EmailQueueWorkerPoolTest {
         release.countDown();
       }
       run.get(10, TimeUnit.SECONDS);
+
       assertEquals(limit + 2, seen.size());
       assertEquals(limit, maximum.get());
     } finally {
@@ -114,6 +117,7 @@ class EmailQueueWorkerPoolTest {
                   }));
       try {
         await(thirdStarted);
+
         assertFalse(run.isDone());
       } finally {
         slow.countDown();
@@ -130,7 +134,7 @@ class EmailQueueWorkerPoolTest {
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor(1));
     CountDownLatch entered = new CountDownLatch(1);
     CountDownLatch release = new CountDownLatch(1);
-    AtomicInteger calls = new AtomicInteger();
+    AtomicInteger callCount = new AtomicInteger();
     try (ExecutorService caller = Executors.newSingleThreadExecutor()) {
       Future<?> run =
           caller.submit(() ->
@@ -142,14 +146,16 @@ class EmailQueueWorkerPoolTest {
                   }));
       try {
         await(entered);
-        pool.dispatchEmailBatch(List.of(2L), id -> calls.incrementAndGet());
-        assertEquals(0, calls.get());
+        pool.dispatchEmailBatch(List.of(2L), id -> callCount.incrementAndGet());
+
+        assertEquals(0, callCount.get());
       } finally {
         release.countDown();
       }
       run.get(10, TimeUnit.SECONDS);
-      pool.dispatchEmailBatch(List.of(2L), id -> calls.incrementAndGet());
-      assertEquals(1, calls.get());
+      pool.dispatchEmailBatch(List.of(2L), id -> callCount.incrementAndGet());
+
+      assertEquals(1, callCount.get());
     } finally {
       release.countDown();
       pool.shutdown();
@@ -169,6 +175,7 @@ class EmailQueueWorkerPoolTest {
             }
             completed.incrementAndGet();
           });
+
       assertEquals(1, completed.get());
     } finally {
       pool.shutdown();
@@ -180,10 +187,11 @@ class EmailQueueWorkerPoolTest {
     ThreadPoolExecutor executor = executor(2);
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
     executor.shutdown();
-    AtomicInteger calls = new AtomicInteger();
+    AtomicInteger callCount = new AtomicInteger();
     try {
-      pool.dispatchEmailBatch(List.of(1L, 2L), id -> calls.incrementAndGet());
-      assertEquals(0, calls.get());
+      pool.dispatchEmailBatch(List.of(1L, 2L), id -> callCount.incrementAndGet());
+
+      assertEquals(0, callCount.get());
     } finally {
       pool.shutdown();
     }
@@ -203,10 +211,11 @@ class EmailQueueWorkerPoolTest {
           }
         };
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
-    AtomicInteger calls = new AtomicInteger();
+    AtomicInteger callCount = new AtomicInteger();
     try {
-      pool.dispatchEmailBatch(List.of(1L, 2L, 3L), id -> calls.incrementAndGet());
-      assertEquals(1, calls.get());
+      pool.dispatchEmailBatch(List.of(1L, 2L, 3L), id -> callCount.incrementAndGet());
+
+      assertEquals(1, callCount.get());
       assertEquals(2, accepted.get());
     } finally {
       pool.shutdown();
@@ -230,8 +239,10 @@ class EmailQueueWorkerPoolTest {
     List<Long> dispatched = new java.util.concurrent.CopyOnWriteArrayList<>();
     try {
       pool.dispatchEmailBatch(List.of(1L, 2L), dispatched::add);
+
       assertTrue(dispatched.isEmpty());
       pool.dispatchEmailBatch(List.of(3L, 4L), dispatched::add);
+
       assertEquals(List.of(3L, 4L), dispatched);
     } finally {
       pool.shutdown();
@@ -243,7 +254,7 @@ class EmailQueueWorkerPoolTest {
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor(1));
     CountDownLatch entered = new CountDownLatch(1);
     CountDownLatch release = new CountDownLatch(1);
-    AtomicInteger calls = new AtomicInteger();
+    AtomicInteger callCount = new AtomicInteger();
     try (ExecutorService caller = Executors.newSingleThreadExecutor();
         GenericApplicationContext context = new GenericApplicationContext()) {
       Future<?> run =
@@ -251,7 +262,7 @@ class EmailQueueWorkerPoolTest {
               pool.dispatchEmailBatch(
                   List.of(1L, 2L),
                   id -> {
-                    calls.incrementAndGet();
+                    callCount.incrementAndGet();
                     entered.countDown();
                     await(release);
                   }));
@@ -262,8 +273,9 @@ class EmailQueueWorkerPoolTest {
         release.countDown();
       }
       run.get(10, TimeUnit.SECONDS);
-      pool.dispatchEmailBatch(List.of(3L), id -> calls.incrementAndGet());
-      assertEquals(1, calls.get());
+      pool.dispatchEmailBatch(List.of(3L), id -> callCount.incrementAndGet());
+
+      assertEquals(1, callCount.get());
     } finally {
       release.countDown();
       pool.shutdown();
@@ -297,12 +309,14 @@ class EmailQueueWorkerPoolTest {
       Future<?> close = callers.submit(pool::shutdown);
       try {
         await(shutdownCalled);
+
         assertFalse(close.isDone());
       } finally {
         release.countDown();
       }
       close.get(10, TimeUnit.SECONDS);
       run.get(10, TimeUnit.SECONDS);
+
       assertTrue(executor.isTerminated());
       pool.shutdown();
     } finally {
@@ -317,14 +331,14 @@ class EmailQueueWorkerPoolTest {
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor, Duration.ZERO);
     CountDownLatch entered = new CountDownLatch(1);
     CountDownLatch interrupted = new CountDownLatch(1);
-    AtomicInteger calls = new AtomicInteger();
+    AtomicInteger callCount = new AtomicInteger();
     try (ExecutorService caller = Executors.newSingleThreadExecutor()) {
       Future<?> run =
           caller.submit(() ->
               pool.dispatchEmailBatch(
                   List.of(1L, 2L),
                   id -> {
-                    calls.incrementAndGet();
+                    callCount.incrementAndGet();
                     entered.countDown();
                     try {
                       new CountDownLatch(1).await();
@@ -337,8 +351,9 @@ class EmailQueueWorkerPoolTest {
       pool.shutdown();
       await(interrupted);
       run.get(10, TimeUnit.SECONDS);
+
       assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
-      assertEquals(1, calls.get());
+      assertEquals(1, callCount.get());
     } finally {
       pool.shutdown();
     }
@@ -394,24 +409,26 @@ class EmailQueueWorkerPoolTest {
             };
           }
         };
-    AtomicInteger calls = new AtomicInteger();
+    AtomicInteger callCount = new AtomicInteger();
     try {
       pool.dispatchEmailBatch(
           candidates,
           id -> {
-            calls.incrementAndGet();
+            callCount.incrementAndGet();
             if (fail) {
               throw new IllegalStateException("controlled worker failure");
             }
           });
       boolean preserved = Thread.interrupted();
+
       assertTrue(injected.get(), "The interruption must hit the controlled refill boundary");
       assertTrue(preserved, "The coordinator must restore its interrupt flag");
       assertEquals(limit, accepted.get(), "No extra task may be accepted after interruption");
-      assertEquals(limit, calls.get());
+      assertEquals(limit, callCount.get());
       // Der Batchlock bleibt nach dem Abwarten für einen späteren Lauf nutzbar.
-      pool.dispatchEmailBatch(List.of(99L), id -> calls.incrementAndGet());
-      assertEquals(limit + 1, calls.get());
+      pool.dispatchEmailBatch(List.of(99L), id -> callCount.incrementAndGet());
+
+      assertEquals(limit + 1, callCount.get());
     } finally {
       Thread.interrupted();
       pool.shutdown();
@@ -421,15 +438,17 @@ class EmailQueueWorkerPoolTest {
   @Test
   void coordinatorAlreadyInterruptedDoesNotAcceptWorkAndKeepsTheFlag() {
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor(1));
-    AtomicInteger calls = new AtomicInteger();
+    AtomicInteger callCount = new AtomicInteger();
     try {
       Thread.currentThread().interrupt();
-      pool.dispatchEmailBatch(List.of(1L), id -> calls.incrementAndGet());
+      pool.dispatchEmailBatch(List.of(1L), id -> callCount.incrementAndGet());
       boolean preserved = Thread.interrupted();
+
       assertTrue(preserved);
-      assertEquals(0, calls.get());
-      pool.dispatchEmailBatch(List.of(2L), id -> calls.incrementAndGet());
-      assertEquals(1, calls.get());
+      assertEquals(0, callCount.get());
+      pool.dispatchEmailBatch(List.of(2L), id -> callCount.incrementAndGet());
+
+      assertEquals(1, callCount.get());
     } finally {
       Thread.interrupted();
       pool.shutdown();
@@ -449,13 +468,14 @@ class EmailQueueWorkerPoolTest {
           }
         };
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(executor);
-    AtomicInteger calls = new AtomicInteger();
+    AtomicInteger callCount = new AtomicInteger();
     try {
-      pool.dispatchEmailBatch(List.of(1L, 2L, 3L), id -> calls.incrementAndGet());
+      pool.dispatchEmailBatch(List.of(1L, 2L, 3L), id -> callCount.incrementAndGet());
       boolean preserved = Thread.interrupted();
+
       assertTrue(preserved);
       assertEquals(1, accepted.get());
-      assertEquals(1, calls.get());
+      assertEquals(1, callCount.get());
     } finally {
       Thread.interrupted();
       pool.shutdown();
@@ -468,7 +488,7 @@ class EmailQueueWorkerPoolTest {
     CountDownLatch entered = new CountDownLatch(1);
     CountDownLatch release = new CountDownLatch(1);
     AtomicReference<Thread> owner = new AtomicReference<Thread>();
-    AtomicInteger calls = new AtomicInteger();
+    AtomicInteger callCount = new AtomicInteger();
     try (ExecutorService caller = Executors.newSingleThreadExecutor()) {
       Future<Boolean> run =
           caller.submit(() -> {
@@ -476,7 +496,7 @@ class EmailQueueWorkerPoolTest {
             pool.dispatchEmailBatch(
                 List.of(1L, 2L),
                 id -> {
-                  calls.incrementAndGet();
+                  callCount.incrementAndGet();
                   entered.countDown();
                   await(release);
                 });
@@ -489,7 +509,7 @@ class EmailQueueWorkerPoolTest {
         release.countDown();
       }
       assertTrue(run.get(10, TimeUnit.SECONDS));
-      assertEquals(1, calls.get());
+      assertEquals(1, callCount.get());
     } finally {
       release.countDown();
       pool.shutdown();

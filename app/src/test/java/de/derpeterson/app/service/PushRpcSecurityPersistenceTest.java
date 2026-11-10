@@ -127,11 +127,11 @@ class PushRpcSecurityPersistenceTest {
       targetId = create("push-target@example.com", ordinaryRole);
     });
     service = mock(VaadinServletService.class);
-    DeploymentConfiguration deployment = mock(DeploymentConfiguration.class);
-    when(deployment.isXsrfProtectionEnabled()).thenReturn(true);
-    when(deployment.isSyncIdCheckEnabled()).thenReturn(true);
-    when(deployment.getMaxRequestBodySize()).thenReturn(1024L * 1024);
-    when(service.getDeploymentConfiguration()).thenReturn(deployment);
+    DeploymentConfiguration deploymentConfiguration = mock(DeploymentConfiguration.class);
+    when(deploymentConfiguration.isXsrfProtectionEnabled()).thenReturn(true);
+    when(deploymentConfiguration.isSyncIdCheckEnabled()).thenReturn(true);
+    when(deploymentConfiguration.getMaxRequestBodySize()).thenReturn(1024L * 1024);
+    when(service.getDeploymentConfiguration()).thenReturn(deploymentConfiguration);
     when(service.ensurePushAvailable()).thenReturn(true);
     when(service.getEventBus()).thenReturn(new VaadinServiceEventBus(service));
     // Use the actual registered interceptor collection and real requestStart
@@ -139,6 +139,7 @@ class PushRpcSecurityPersistenceTest {
     ServiceInitEvent init = new ServiceInitEvent(service);
     new PushSecurityInterceptor(securityService, new MaintenanceService(maintenanceConfig))
         .serviceInit(init);
+
     assertEquals(1, init.getAddedVaadinRequestInterceptor().count());
     ReflectionTestUtils.setField(service, "initialized", true);
     ReflectionTestUtils.setField(
@@ -179,9 +180,9 @@ class PushRpcSecurityPersistenceTest {
             "Protected mutation",
             event -> {
               int count = calls.incrementAndGet();
-              UserEntity target = form(targetId);
-              target.setFirstName("Mutation " + count);
-              userService.updateAdminUser(target, target.getVersion(), "");
+              UserEntity targetUserEntity = form(targetId);
+              targetUserEntity.setFirstName("Mutation " + count);
+              userService.updateAdminUser(targetUserEntity, targetUserEntity.getVersion(), "");
             });
     testUi.add(action);
     testUi.getInternals().getStateTree().collectChanges(change -> {});
@@ -206,7 +207,7 @@ class PushRpcSecurityPersistenceTest {
   }
 
   private Long create(String email, RoleEntity role) {
-    UserEntity user =
+    UserEntity testUserEntity =
         UserEntity.builder()
             .email(email)
             .firstName("Test")
@@ -218,8 +219,8 @@ class PushRpcSecurityPersistenceTest {
             .preferredLocale(Locale.ENGLISH)
             .roleEntities(new ArrayList<>(List.of(role)))
             .build();
-    entityManager.persist(user);
-    return user.getId();
+    entityManager.persist(testUserEntity);
+    return testUserEntity.getId();
   }
 
   private UserEntity form(Long id) {
@@ -284,15 +285,15 @@ class PushRpcSecurityPersistenceTest {
   }
 
   private void change(String kind) {
-    UserEntity actor = form(actorId);
+    UserEntity actingUserEntity = form(actorId);
     if (kind.equals("delete")) {
-      userService.deleteUser(actor);
+      userService.deleteUser(actingUserEntity);
     } else if (kind.equals("disable")) {
-      actor.setEnabled(false);
-      userService.save(actor);
+      actingUserEntity.setEnabled(false);
+      userService.save(actingUserEntity);
     } else {
-      actor.setRoleEntities(new ArrayList<>(List.of(ordinaryRole)));
-      userService.updateAdminUser(actor, actor.getVersion(), "");
+      actingUserEntity.setRoleEntities(new ArrayList<>(List.of(ordinaryRole)));
+      userService.updateAdminUser(actingUserEntity, actingUserEntity.getVersion(), "");
     }
   }
 
@@ -315,8 +316,10 @@ class PushRpcSecurityPersistenceTest {
     assertEquals(1, calls.get());
     assertEquals("Mutation 1", form(targetId).getFirstName());
     change(kind);
+
     assertTrue(VaadinService.isCsrfTokenValid(testUi, testUi.getCsrfToken()));
     String csrfToken = testUi.getCsrfToken();
+
     assertThrows(AccessDeniedException.class, () -> receive(csrfToken));
     assertEquals(1, calls.get());
     assertEquals("Mutation 1", form(targetId).getFirstName());
@@ -334,6 +337,7 @@ class PushRpcSecurityPersistenceTest {
       tx.setRollbackOnly();
     });
     receive(testUi.getCsrfToken());
+
     assertEquals("Mutation 1", form(targetId).getFirstName());
     assertFalse(httpSession.isInvalid());
   }
@@ -345,10 +349,11 @@ class PushRpcSecurityPersistenceTest {
     authenticate(actorId, remember, true);
     receive(testUi.getCsrfToken());
     userService.updateLastActivity(actorId);
-    UserEntity actor = form(actorId);
-    actor.setFirstName("Profile edit");
-    userService.updateAdminUser(actor, actor.getVersion(), "");
+    UserEntity actingUserEntity = form(actorId);
+    actingUserEntity.setFirstName("Profile edit");
+    userService.updateAdminUser(actingUserEntity, actingUserEntity.getVersion(), "");
     receive(testUi.getCsrfToken());
+
     assertEquals("Mutation 2", form(targetId).getFirstName());
     assertSame(
         authentication,
@@ -363,10 +368,12 @@ class PushRpcSecurityPersistenceTest {
   void ordinaryUserRpcStillRunsAndBackgroundMutationNeedsNoRequest() throws Exception {
     authenticate(targetId, false, true);
     receive(testUi.getCsrfToken());
+
     assertEquals("Mutation 1", form(targetId).getFirstName());
     CurrentInstance.clearAll();
     SecurityContextHolder.clearContext();
     userService.updateLastActivity(targetId);
+
     assertNotNull(form(targetId).getLastActivity());
   }
 
@@ -378,6 +385,7 @@ class PushRpcSecurityPersistenceTest {
     receive(testUi.getCsrfToken());
     when(maintenanceConfig.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     String csrfToken = testUi.getCsrfToken();
+
     assertThrows(MaintenanceAccessException.class, () -> receive(csrfToken));
     assertEquals(1, calls.get());
     assertEquals("Mutation 1", form(targetId).getFirstName());
@@ -385,6 +393,7 @@ class PushRpcSecurityPersistenceTest {
     assertNull(VaadinService.getCurrentRequest());
     when(maintenanceConfig.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(false);
     receive(testUi.getCsrfToken());
+
     assertEquals(2, calls.get());
   }
 
@@ -392,10 +401,12 @@ class PushRpcSecurityPersistenceTest {
   void maintenanceKeepsAdministrativeSocketAndBackgroundJobsUsable() throws Exception {
     when(maintenanceConfig.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     receive(testUi.getCsrfToken());
+
     assertEquals(1, calls.get());
     CurrentInstance.clearAll();
     SecurityContextHolder.clearContext();
     userService.updateLastActivity(targetId);
+
     assertNotNull(form(targetId).getLastActivity());
   }
 
@@ -405,6 +416,7 @@ class PushRpcSecurityPersistenceTest {
     when(maintenanceConfig.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     PushSecurityInterceptor interceptor =
         new PushSecurityInterceptor(securityService, new MaintenanceService(maintenanceConfig));
+
     assertDoesNotThrow(() ->
         interceptor.requestStart(
             new VaadinServletRequest(request, service), mock(VaadinResponse.class)));
@@ -419,7 +431,7 @@ class PushRpcSecurityPersistenceTest {
     http.setServletPath("/");
     http.setParameter("v-r", "uidl");
     http.setSession(httpSession);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     jakarta.servlet.FilterChain servlet =
         (incoming, outgoing) -> {
           VaadinServletRequest wrapped =
@@ -437,15 +449,17 @@ class PushRpcSecurityPersistenceTest {
           }
         };
     if (valid) {
-      new FilterChainProxy(httpChain).doFilter(http, response, servlet);
-      assertEquals(200, response.getStatus());
+      new FilterChainProxy(httpChain).doFilter(http, mockHttpResponse, servlet);
+
+      assertEquals(200, mockHttpResponse.getStatus());
       assertEquals(1, calls.get());
       assertEquals("Mutation 1", form(targetId).getFirstName());
     } else {
       ServletException failure =
           assertThrows(
               ServletException.class,
-              () -> new FilterChainProxy(httpChain).doFilter(http, response, servlet));
+              () -> new FilterChainProxy(httpChain).doFilter(http, mockHttpResponse, servlet));
+
       assertTrue(failure.getCause() instanceof ServerRpcHandler.InvalidUIDLSecurityKeyException);
       assertEquals(0, calls.get());
       assertEquals("Test", form(targetId).getFirstName());
@@ -458,11 +472,11 @@ class PushRpcSecurityPersistenceTest {
     http.setServletPath("/VAADIN/push");
     http.setParameter("v-r", "push");
     http.setSession(httpSession);
-    MockHttpServletResponse response = new MockHttpServletResponse();
+    MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
     new FilterChainProxy(httpChain)
         .doFilter(
             http,
-            response,
+            mockHttpResponse,
             (incoming, outgoing) -> {
               try {
                 receive(testUi.getCsrfToken());
@@ -470,7 +484,8 @@ class PushRpcSecurityPersistenceTest {
                 throw new ServletException(failure);
               }
             });
-    assertEquals(200, response.getStatus());
+
+    assertEquals(200, mockHttpResponse.getStatus());
     assertEquals(1, calls.get());
     assertEquals("Mutation 1", form(targetId).getFirstName());
   }
@@ -525,6 +540,7 @@ class PushRpcSecurityPersistenceTest {
                         new ForwardingRequestWrapper(
                             (jakarta.servlet.http.HttpServletRequest) incoming),
                         service);
+
                 assertTrue(
                     new StreamRequestHandler()
                         .handleRequest(
@@ -565,10 +581,12 @@ class PushRpcSecurityPersistenceTest {
   void pendingRoleChangesDoNotRevokeCommittedSessionAndRollbackRetainsRpc() throws Exception {
     transactionTemplate.executeWithoutResult(tx -> {
       change("role");
+
       assertTrue(securityService.hasCurrentSessionPrivileges(request));
       tx.setRollbackOnly();
     });
     receive(testUi.getCsrfToken());
+
     assertEquals("Mutation 1", form(targetId).getFirstName());
     assertFalse(httpSession.isInvalid());
   }
@@ -576,6 +594,7 @@ class PushRpcSecurityPersistenceTest {
   @Test
   void publicRequestDoesNotRequireOrCreateAnAuthenticatedSession() {
     MockHttpServletRequest publicRequest = new MockHttpServletRequest("GET", "/home");
+
     assertDoesNotThrow(
         () -> service.requestStart(new VaadinServletRequest(publicRequest, service), null));
     assertNull(publicRequest.getSession(false));

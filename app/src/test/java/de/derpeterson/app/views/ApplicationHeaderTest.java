@@ -90,43 +90,55 @@ class ApplicationHeaderTest {
   @MethodSource("pagesRolesAndLanguages")
   void sharedHeaderKeepsBrandShortcutsAndAvatar(String page, RoleType role, Locale initialLocale) {
     HeaderFixture fixture = createHeader(page, role, initialLocale);
-    TrackedUserAppLayout view = fixture.view();
-    UserEntity user = fixture.user();
-    if (user == null) {
-      assertPublicHeader(view, fixture.texts());
+    TrackedUserAppLayout trackedUserAppLayout = fixture.view();
+    UserEntity testUserEntity = fixture.user();
+    if (testUserEntity == null) {
+      assertPublicHeader(trackedUserAppLayout, fixture.texts());
       return;
     }
-    List<Component> headers = tree(view).filter(c -> c.hasClassName("cosmos-topbar")).toList();
+    List<Component> headers =
+        tree(trackedUserAppLayout).filter(c -> c.hasClassName("cosmos-topbar")).toList();
+
     assertEquals(1, headers.size());
     HorizontalLayout header = (HorizontalLayout) headers.getFirst();
+
     assertFalse(header.isSpacing());
     List<Component> parts = header.getChildren().toList();
+
     assertEquals(2, parts.size());
     Component brand = parts.getFirst();
+
     assertTrue(brand.hasClassName("cosmos-topbar-brand"));
     List<Component> brandParts = brand.getChildren().toList();
+
     assertEquals(2, brandParts.size());
-    if (user != null) {
+    if (testUserEntity != null) {
       assertEquals("account-navigation-toggle", brandParts.getFirst().getId().orElseThrow());
       Anchor home = assertInstanceOf(Anchor.class, brandParts.getLast());
+
       assertEquals("/home", home.getHref());
       brandParts = home.getChildren().toList();
     }
     Image logo = assertInstanceOf(Image.class, brandParts.getFirst());
+
     assertEquals("icons/service-logo.svg", logo.getSrc());
     assertTrue(logo.hasClassName("cosmos-topbar-logo"));
-    assertEquals(user != null, logo.getAlt().orElseThrow().isBlank());
+    assertEquals(testUserEntity != null, logo.getAlt().orElseThrow().isBlank());
     assertNotNull(getClass().getResource("/META-INF/resources/" + logo.getSrc()));
     assertEquals("Header Test Service", brandParts.getLast().getElement().getText());
     assertTrue(brandParts.getLast().hasClassName("cosmos-topbar-service-name"));
     Component right = parts.getLast();
+
     assertTrue(right.hasClassName("cosmos-topbar-account-menu"));
     List<Component> rightParts = right.getChildren().toList();
+
     assertEquals(2, rightParts.size());
     AccountHeaderActions shortcuts =
         assertInstanceOf(AccountHeaderActions.class, rightParts.getFirst());
-    assertEquals(user != null, shortcuts.isVisible());
+
+    assertEquals(testUserEntity != null, shortcuts.isVisible());
     Button avatar = assertInstanceOf(Button.class, rightParts.getLast());
+
     assertTrue(avatar.hasClassName("tracked-user-button"));
   }
 
@@ -135,30 +147,37 @@ class ApplicationHeaderTest {
   void headerMenuKeepsAuthorizedNavigationAndLanguageChanges(
       String page, RoleType role, Locale initialLocale) {
     HeaderFixture fixture = createHeader(page, role, initialLocale);
-    TrackedUserAppLayout view = fixture.view();
-    UserEntity user = fixture.user();
-    MessageProperties texts = fixture.texts();
-    if (user == null) {
-      assertPublicHeader(view, texts);
+    TrackedUserAppLayout trackedUserAppLayout = fixture.view();
+    UserEntity testUserEntity = fixture.user();
+    MessageProperties messageProperties = fixture.texts();
+    if (testUserEntity == null) {
+      assertPublicHeader(trackedUserAppLayout, messageProperties);
       doReturn(Optional.empty()).when(testUi).navigate(RegistrationView.class);
       doReturn(Optional.empty()).when(testUi).navigate(LoginView.class);
-      buttonById(view, "public-nav-register").click();
-      buttonById(view, "public-nav-login").click();
+      buttonById(trackedUserAppLayout, "public-nav-register").click();
+      buttonById(trackedUserAppLayout, "public-nav-login").click();
+
       verify(testUi).navigate(RegistrationView.class);
       verify(testUi).navigate(LoginView.class);
       LanguageChangeEvent.fire(
           testUi, initialLocale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
-      assertPublicHeader(view, texts);
-      assertTrue(tree(view).noneMatch(c -> c.hasClassName("tracked-user-button")));
+      assertPublicHeader(trackedUserAppLayout, messageProperties);
+
+      assertTrue(tree(trackedUserAppLayout).noneMatch(c -> c.hasClassName("tracked-user-button")));
       return;
     }
     HorizontalLayout header =
         (HorizontalLayout)
-            tree(view).filter(c -> c.hasClassName("cosmos-topbar")).findFirst().orElseThrow();
+            tree(trackedUserAppLayout)
+                .filter(c -> c.hasClassName("cosmos-topbar"))
+                .findFirst()
+                .orElseThrow();
     List<Component> rightParts = header.getChildren().toList().getLast().getChildren().toList();
     AccountHeaderActions shortcuts = (AccountHeaderActions) rightParts.getFirst();
     Button avatar = (Button) rightParts.getLast();
-    UserPopoverMenu menu = (UserPopoverMenu) ReflectionTestUtils.getField(view, "userPopoverMenu");
+    UserPopoverMenu menu =
+        (UserPopoverMenu) ReflectionTestUtils.getField(trackedUserAppLayout, "userPopoverMenu");
+
     assertNotNull(menu);
     assertTrue(menu.getPopover().getThemeNames().contains("cosmos"));
     Details presence =
@@ -173,15 +192,18 @@ class ApplicationHeaderTest {
                 .filter(c -> c.getId().orElse("").equals("portal-menu-presence-toggle"))
                 .findFirst()
                 .orElseThrow();
+
     assertTrue(presence.isOpened());
     assertTrue(presenceToggle.getText().isEmpty());
     presenceToggle.click();
+
     assertFalse(presence.isOpened());
     assertTrue(
         tree(menu.getPopover())
             .noneMatch(
                 component -> component.getId().orElse("").equals("portal-menu-avatar-edit")));
     avatar.click();
+
     assertTrue(menu.getPopover().isOpened());
     Button settings =
         tree(shortcuts)
@@ -191,14 +213,19 @@ class ApplicationHeaderTest {
             .orElseThrow();
     LanguageChangeEvent.fire(
         testUi, initialLocale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
+
     assertFalse(presence.isOpened());
-    assertEquals(texts.getPortalPresenceHeading(), presenceToggle.getAriaLabel().orElseThrow());
+    assertEquals(
+        messageProperties.getPortalPresenceHeading(), presenceToggle.getAriaLabel().orElseThrow());
     presenceToggle.click();
+
     assertTrue(presence.isOpened());
-    assertEquals(texts.getBaseManageAccountButton(), settings.getAriaLabel().orElseThrow());
-    assertAccountMenuNavigation(page, role, texts, menu);
+    assertEquals(
+        messageProperties.getBaseManageAccountButton(), settings.getAriaLabel().orElseThrow());
+    assertAccountMenuNavigation(page, role, messageProperties, menu);
     doReturn(Optional.empty()).when(testUi).navigate(AccountView.class);
     settings.click();
+
     verify(testUi).navigate(AccountView.class);
     assertNotNull(menuButton(menu, "logoutButton"));
     assertTrue(
@@ -216,25 +243,32 @@ class ApplicationHeaderTest {
   }
 
   private void assertAccountMenuNavigation(
-      String page, RoleType role, MessageProperties texts, UserPopoverMenu menu) {
-    Button admin = menuButton(menu, "manageApplicationButton");
+      String page,
+      RoleType role,
+      MessageProperties messageProperties,
+      UserPopoverMenu userPopoverMenu) {
+    Button admin = menuButton(userPopoverMenu, "manageApplicationButton");
+
     assertEquals(role != null && role.isAdministrative(), admin != null);
     if (admin != null) {
-      assertTrue(tree(menu.getPopover()).anyMatch(component -> component == admin));
+      assertTrue(tree(userPopoverMenu.getPopover()).anyMatch(component -> component == admin));
       assertTrue(admin.isVisible());
-      assertEquals(texts.getBaseManageApplicationButton(), admin.getText());
+      assertEquals(messageProperties.getBaseManageApplicationButton(), admin.getText());
       assertEquals(
           "icons/lucide/shield-cog.svg",
           admin.getPrefixComponent().getElement().getAttribute("src"));
       doReturn(Optional.empty()).when(testUi).navigate(AdminView.class);
       admin.click();
+
       verify(testUi).navigate(AdminView.class);
     }
-    Button home = menuButton(menu, "homeButton");
+    Button home = menuButton(userPopoverMenu, "homeButton");
+
     assertEquals(!page.equals("home"), home != null);
     if (home != null) {
       doReturn(Optional.empty()).when(testUi).navigate(HomeView.class);
       home.click();
+
       verify(testUi).navigate(HomeView.class);
     }
   }
@@ -244,15 +278,17 @@ class ApplicationHeaderTest {
   void sideNavigationKeepsSelectedRoutePlacementAndReattachment(
       String page, RoleType role, Locale initialLocale) {
     HeaderFixture fixture = createHeader(page, role, initialLocale);
-    TrackedUserAppLayout view = fixture.view();
-    MessageProperties texts = fixture.texts();
+    TrackedUserAppLayout trackedUserAppLayout = fixture.view();
+    MessageProperties messageProperties = fixture.texts();
     List<Component> sidebars =
-        tree(view).filter(c -> c.getId().orElse("").equals("account-sidebar")).toList();
+        tree(trackedUserAppLayout)
+            .filter(c -> c.getId().orElse("").equals("account-sidebar"))
+            .toList();
     if (fixture.user() == null) {
       assertTrue(sidebars.isEmpty());
       return;
     }
-    assertTrue(view.hasClassName("cosmos-reference-portal"));
+    assertTrue(trackedUserAppLayout.hasClassName("cosmos-reference-portal"));
     assertEquals(1, sidebars.size());
     Component sidebar = sidebars.getFirst();
     PageNavigationComponent navigation =
@@ -263,12 +299,18 @@ class ApplicationHeaderTest {
             .findFirst()
             .orElseThrow();
     List<SideNavItem> entries = navigation.getItems();
+
     assertEquals(3, entries.size());
-    assertEquals(texts.getAccountSettingsProfileTab(), entries.get(0).getLabel());
-    assertEquals(texts.getAccountSettingsSecurityTab(), entries.get(1).getLabel());
-    assertEquals(texts.getAccountSettingsSessionsTab(), entries.get(2).getLabel());
-    assertTrue(sidebar.getElement().getTextRecursively().contains(texts.getNotificationsTitle()));
+    assertEquals(messageProperties.getAccountSettingsProfileTab(), entries.get(0).getLabel());
+    assertEquals(messageProperties.getAccountSettingsSecurityTab(), entries.get(1).getLabel());
+    assertEquals(messageProperties.getAccountSettingsSessionsTab(), entries.get(2).getLabel());
+    assertTrue(
+        sidebar
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getNotificationsTitle()));
     Component columns = sidebar.getParent().orElseThrow();
+
     assertTrue(columns.hasClassName("account-columns"));
     assertSame(sidebar, columns.getChildren().findFirst().orElseThrow());
     assertTrue(
@@ -291,6 +333,7 @@ class ApplicationHeaderTest {
             .map(SideNavItem.class::cast)
             .findFirst()
             .orElseThrow();
+
     assertEquals(
         page.equals("home"), home.getElement().getClassList().contains("cosmos-nav-item--active"));
     assertEquals(
@@ -317,6 +360,7 @@ class ApplicationHeaderTest {
       navigation.activate(entries.get(1));
       org.mockito.ArgumentCaptor<com.vaadin.flow.router.QueryParameters> query =
           org.mockito.ArgumentCaptor.forClass(com.vaadin.flow.router.QueryParameters.class);
+
       verify(testUi).navigate(eq(AccountView.class), query.capture());
       assertEquals(
           java.util.Map.of("section", List.of("security"), "tab", List.of("portal")),
@@ -324,6 +368,7 @@ class ApplicationHeaderTest {
       testUi.remove(navigation);
       org.mockito.Mockito.clearInvocations(testUi);
       testUi.add(navigation);
+
       assertTrue(
           entries.stream()
               .noneMatch(
@@ -337,17 +382,20 @@ class ApplicationHeaderTest {
   private record HeaderFixture(
       TrackedUserAppLayout view, UserEntity user, MessageProperties texts, VaadinSession session) {}
 
-  private void assertPublicHeader(Component view, MessageProperties texts) {
+  private void assertPublicHeader(Component view, MessageProperties messageProperties) {
     assertEquals(1, tree(view).filter(c -> c.hasClassName("public-header")).count());
     Anchor brand =
         (Anchor) tree(view).filter(c -> c.hasClassName("public-brand")).findFirst().orElseThrow();
+
     assertEquals("/home", brand.getHref());
     assertEquals(
         "icons/service-logo.svg", ((Image) brand.getChildren().findFirst().orElseThrow()).getSrc());
-    assertEquals(texts.getHomeTitle(), buttonById(view, "public-nav-home").getText());
-    assertEquals(texts.getBaseLoginButton(), buttonById(view, "public-nav-login").getText());
+    assertEquals(messageProperties.getHomeTitle(), buttonById(view, "public-nav-home").getText());
     assertEquals(
-        texts.getBaseRegistrationButton(), buttonById(view, "public-nav-register").getText());
+        messageProperties.getBaseLoginButton(), buttonById(view, "public-nav-login").getText());
+    assertEquals(
+        messageProperties.getBaseRegistrationButton(),
+        buttonById(view, "public-nav-register").getText());
   }
 
   private Button buttonById(Component view, String id) {
@@ -361,23 +409,23 @@ class ApplicationHeaderTest {
   private HeaderFixture createHeader(String page, RoleType role, Locale initialLocale) {
     testUi = spy(new UI());
     UI.setCurrent(testUi);
-    AtomicReference<Locale> locale = new AtomicReference<>(initialLocale);
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> locale.get());
+    AtomicReference<Locale> localeReference = new AtomicReference<>(initialLocale);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
     doAnswer(
             call -> {
-              locale.set(call.getArgument(0));
+              localeReference.set(call.getArgument(0));
               return null;
             })
-        .when(session)
+        .when(vaadinSession)
         .setLocale(any());
-    VaadinSession.setCurrent(session);
-    testUi.getInternals().setSession(session);
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    request.setSession(new MockHttpSession());
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    mockHttpRequest.setSession(new MockHttpSession());
     SecurityService security = mock(SecurityService.class);
-    UserEntity user =
+    UserEntity testUserEntity =
         role == null
             ? null
             : UserEntity.builder()
@@ -388,33 +436,41 @@ class ApplicationHeaderTest {
                 .enabled(true)
                 .roleEntities(List.of(RoleEntity.builder().name(role).build()))
                 .build();
-    when(security.getCurrentUser(request)).thenReturn(Optional.ofNullable(user));
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(any(ConfigEntry.class)))
+    when(security.getCurrentUser(mockHttpRequest)).thenReturn(Optional.ofNullable(testUserEntity));
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
-    when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Header Test Service");
-    when(config.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(5);
-    MessageProperties texts = new MessageProperties(new CustomI18NProvider());
+    when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Header Test Service");
+    when(configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER)).thenReturn(5);
+    MessageProperties messageProperties = new MessageProperties(new CustomI18NProvider());
     UserService users = mock(UserService.class);
     UserAvatarService avatars = mock(UserAvatarService.class);
     UserStatusBroadcaster status = new UserStatusBroadcaster();
     UserNotificationService notifications = mock(UserNotificationService.class);
     when(notifications.inbox(
-            eq(request.getSession()),
+            eq(mockHttpRequest.getSession()),
             any(UserNotificationService.ReadFilter.class),
             anyInt(),
             anyInt()))
         .thenReturn(Page.empty());
     when(notifications.retentionDays()).thenReturn(OptionalInt.of(180));
-    TrackedUserAppLayout view =
+    TrackedUserAppLayout trackedUserAppLayout =
         switch (page) {
-          case "home" -> new HomeView(texts, security, request, config, users, status, avatars);
+          case "home" ->
+              new HomeView(
+                  messageProperties,
+                  security,
+                  mockHttpRequest,
+                  configService,
+                  users,
+                  status,
+                  avatars);
           case "account" ->
               new AccountView(
-                  texts,
+                  messageProperties,
                   security,
-                  request,
-                  config,
+                  mockHttpRequest,
+                  configService,
                   users,
                   mock(AccountProfileService.class),
                   mock(AccountSecurityService.class),
@@ -425,14 +481,22 @@ class ApplicationHeaderTest {
                   mock(de.derpeterson.app.service.ExternalIdentityService.class));
           case "notifications" ->
               new UserNotificationsView(
-                  texts, security, users, status, request, avatars, notifications, config);
+                  messageProperties,
+                  security,
+                  users,
+                  status,
+                  mockHttpRequest,
+                  avatars,
+                  notifications,
+                  configService);
           default -> throw new IllegalArgumentException(page);
         };
-    return new HeaderFixture(view, user, texts, session);
+    return new HeaderFixture(
+        trackedUserAppLayout, testUserEntity, messageProperties, vaadinSession);
   }
 
-  private Button menuButton(UserPopoverMenu menu, String name) {
-    return (Button) ReflectionTestUtils.getField(menu, name);
+  private Button menuButton(UserPopoverMenu userPopoverMenu, String name) {
+    return (Button) ReflectionTestUtils.getField(userPopoverMenu, name);
   }
 
   private Stream<Component> tree(Component component) {

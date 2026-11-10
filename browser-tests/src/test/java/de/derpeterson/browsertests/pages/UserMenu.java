@@ -41,14 +41,17 @@ public final class UserMenu {
         browserPage.locator(".public-languages vaadin-button[lang='" + language + "']");
     if (publicLanguage.isVisible()) {
       UiActions.complete(browserPage, publicLanguage::click);
+
       assertThat(publicLanguage).hasAttribute("aria-pressed", "true");
       return;
     }
     UiTexts expected = new UiTexts(language);
     open();
     Locator languageButton = browserPage.locator("#portal-language-" + language);
+
     assertThat(languageButton).isVisible();
     languageButton.click();
+
     assertThat(languageButton).hasAttribute("aria-pressed", "true");
     // The menu may be anonymous or authenticated; both expected labels use exactly this language.
     assertThat(
@@ -71,6 +74,7 @@ public final class UserMenu {
   @Step("Benutzermenü schließen und die native Schließanimation abwarten")
   public void close() {
     UiActions.complete(browserPage, () -> browserPage.keyboard().press("Escape"));
+
     assertThat(
             browserPage.locator("vaadin-popover-overlay[opened], vaadin-popover-overlay[closing]"))
         .hasCount(0);
@@ -107,6 +111,7 @@ public final class UserMenu {
   @Step("Normales Konto ist angemeldet und hat keine Adminaktion im Menü")
   public void assertUserSignedInWithoutAdminAction(String email) {
     open();
+
     assertThat(
             browserPage
                 .locator(".user-popover-body")

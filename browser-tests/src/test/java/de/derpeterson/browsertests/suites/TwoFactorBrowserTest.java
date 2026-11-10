@@ -91,6 +91,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     for (int width : new int[] {1280, 390}) {
       browserPage.setViewportSize(width, 1000);
       browserPage.navigate("/admin?section=support&ticket=" + numbers.getFirst());
+
       assertThat(browserPage.locator("#support-ticket-panel")).isVisible();
       if (browserPage.locator("#support-claim").isVisible()) {
         UiActions.complete(browserPage, () -> browserPage.locator("#support-claim").click());
@@ -101,21 +102,26 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       Locator previous = paging.locator(".cosmos-pagination-previous");
       Locator rows = browserPage.locator("#support-ticket-grid .support-admin-ticket-card:visible");
       Locator input = browserPage.locator("#support-reply textarea");
+
       assertThat(rows).hasCount(10);
       Locator scroll = browserPage.locator(".support-admin-ticket-scroll");
+
       assertTrue((Boolean) scroll.evaluate("area => area.scrollHeight > area.clientHeight"));
       rows.last().scrollIntoViewIfNeeded();
+
       assertTrue((Boolean) scroll.evaluate("area => area.scrollTop > 0"));
       assertThat(previous).isDisabled();
       assertThat(next).isEnabled();
       assertThat(paging.locator(".admin-user-pagination-arrow:visible")).hasCount(2);
       input.fill("This unsent reply survives changing ticket pages.");
       UiActions.complete(browserPage, next::click);
+
       assertThat(previous).isEnabled();
       assertThat(browserPage.locator("#support-ticket-panel .support-ticket-number"))
           .hasText(uiTexts.getSupportTicketNumber("#" + numbers.getFirst()));
       assertThat(input).hasValue("This unsent reply survives changing ticket pages.");
       UiActions.complete(browserPage, previous::click);
+
       assertThat(previous).isDisabled();
       for (int size : new int[] {20, 50, 10}) {
         if (width == 390) {
@@ -139,6 +145,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         assertThat(previous).isDisabled();
         String range = paging.locator(".admin-user-pagination-total").innerText();
         int total = Integer.parseInt(range.substring(range.lastIndexOf(' ') + 1));
+
         assertThat(rows).hasCount(Math.min(size, total));
         assertThat(input).hasValue("This unsent reply survives changing ticket pages.");
       }
@@ -157,6 +164,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       mobile.setViewportSize(390, 900);
       for (Page view : List.of(browserPage, mobile)) {
         view.navigate(route + "&ticket=" + assigned);
+
         assertThat(view.locator("#support-ticket-panel")).isVisible();
         view.locator("#support-reply textarea").fill("Draft retained outside the filtered list.");
         view.locator("#support-filter").click();
@@ -166,6 +174,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
             .getByText(uiTexts.getSupportOpen(), new Locator.GetByTextOptions().setExact(true))
             .click();
         UiActions.complete(view, () -> filter.locator("#support-filter-apply").click());
+
         assertThat(
                 view.locator(rowSelector)
                     .filter(new Locator.FilterOptions().setHasText("#" + assigned)))
@@ -177,10 +186,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         String firstRange = range.innerText();
         int total = Integer.parseInt(firstRange.substring(firstRange.lastIndexOf(' ') + 1));
         int pages = (total + 9) / 10;
+
         assertTrue(pages > 1, "Für das Abklemmen muss es mehrere Seiten geben");
         for (int current = 1; current < pages; current++) {
           String before = range.innerText();
           UiActions.complete(view, next::click);
+
           assertThat(range).not().hasText(before);
         }
         assertThat(next).isDisabled();
@@ -190,6 +201,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
               .locator(rowSelector)
               .getByText(Pattern.compile("^#[0-9]+$"))
               .allTextContents();
+
       assertTrue(!lastNumbers.isEmpty());
       assertThat(mobile.locator(rowSelector)).hasCount(lastNumbers.size());
       for (int index = 0; index < lastNumbers.size(); index++) {
@@ -218,6 +230,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
   private void assertSingleTicketListFits(Page view) {
     Locator scroll = view.locator(".support-admin-ticket-scroll");
+
     assertTrue(
         (Boolean)
             scroll.evaluate(
@@ -236,6 +249,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator filter = browserPage.locator("#support-filter-panel");
     filter.locator("#support-jump-number input").fill(number);
     UiActions.complete(browserPage, () -> filter.locator("#support-jump").click());
+
     assertThat(filter).not().hasAttribute("opened", "");
   }
 
@@ -279,9 +293,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
             () -> requester.browserPage.locator("#support-add-reply").click());
         assertSupportNavigationActivity(width);
         browserPage.navigate("/admin?section=support");
+
         assertThat(browserPage.locator("#support-select-ticket")).isVisible();
         browserPage.locator("#support-filter").click();
         Locator panel = browserPage.locator("#support-filter-panel");
+
         assertThat(browserPage.locator("#support-filter-panel"))
             .hasClass(Pattern.compile(".*admin-user-filter-drawer.*"));
         panel
@@ -298,6 +314,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
             .getByText(
                 uiTexts.getNotificationsUnread(), new Locator.GetByTextOptions().setExact(true))
             .click();
+
         assertThat(panel.locator("#support-filter-draft-count"))
             .hasText(uiTexts.getAdminUsersActiveFilterCount(3));
         assertThat(panel.locator("#support-jump-info"))
@@ -305,6 +322,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         AllurePlaywright.attachScreenshot("Vorgangsfilter mit Testwerten " + width, browserPage);
         panel.locator("#support-filter-cancel").click();
         browserPage.locator("#support-filter").click();
+
         assertThat(panel.locator("#support-filter-status input:checked")).hasCount(0);
         Locator openStatus =
             panel
@@ -312,24 +330,30 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                 .getByText(uiTexts.getSupportOpen(), new Locator.GetByTextOptions().setExact(true));
         openStatus.click();
         panel.locator("#support-filter-reset").click();
+
         assertThat(panel.locator("#support-filter-status input:checked")).hasCount(0);
         openStatus.click();
         browserPage.keyboard().press("Escape");
+
         assertThat(panel).not().hasAttribute("opened", "");
         browserPage.locator("#support-filter").click();
+
         assertThat(panel.locator("#support-filter-status input:checked")).hasCount(0);
         // Auf dem schmalen Display lässt nur die Queransicht eine Fläche neben dem Drawer frei.
         browserPage.setViewportSize(width, width == 390 ? 340 : 900);
         openStatus.click();
         Locator overlay = panel.locator("vaadin-dialog-overlay [part~=overlay]");
+
         assertThat(overlay).isVisible();
         BoundingBox overlayBounds = overlay.boundingBox();
+
         assertTrue(overlayBounds.x > 0, "Der Außenklick braucht eine sichtbare Fläche");
         if (width == 390) {
           Locator drawerBody = panel.locator("vaadin-dialog-overlay [part=content]");
           assertTouchScroll(browserPage, drawerBody);
         }
         browserPage.mouse().click(overlayBounds.x / 2, 150);
+
         assertThat(panel).not().hasAttribute("opened", "");
         browserPage.setViewportSize(width, 900);
         verifyUnreadFilterAndDirectJump(requester.browserPage, panel, number, width);
@@ -340,21 +364,25 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   private void verifyUnreadFilterAndDirectJump(
       Page requester, Locator panel, String number, int width) {
     browserPage.locator("#support-filter").click();
+
     assertThat(panel.locator("#support-filter-status input:checked")).hasCount(0);
     panel
         .locator("#support-filter-reading")
         .getByText(uiTexts.getNotificationsUnread(), new Locator.GetByTextOptions().setExact(true))
         .click();
     panel.locator("#support-filter-apply").click();
+
     assertThat(browserPage.locator("#support-active-filter-count")).hasText("1");
     Locator unread = ticketCard(browserPage, number).locator(".support-ticket-unread");
     int previousUnread = Integer.parseInt(unread.innerText());
     requester.locator("#support-reply textarea").fill("Live change at width " + width);
     UiActions.complete(requester, () -> requester.locator("#support-add-reply").click());
+
     assertThat(unread).hasText(Integer.toString(previousUnread + 1));
     assertThat(browserPage.locator("#support-active-filter-count")).hasText("1");
     assertThat(ticketCard(browserPage, number)).isVisible();
     UiActions.complete(browserPage, () -> ticketCard(browserPage, number).click());
+
     assertThat(browserPage.locator("#support-ticket-panel")).isVisible();
     assertThat(ticketCard(browserPage, number)).not().isVisible();
     assertThat(browserPage.locator("#support-ticket-panel")).isVisible();
@@ -362,11 +390,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator numberInput = panel.locator("#support-jump-number input");
     numberInput.fill("0");
     UiActions.complete(browserPage, () -> panel.locator("#support-jump").click());
+
     assertThat(panel).hasAttribute("opened", "");
     assertThat(browserPage.locator("#support-active-filter-count")).hasText("1");
     numberInput.clear();
     numberInput.pressSequentially(number.substring(1));
     UiActions.complete(browserPage, () -> panel.locator("#support-jump").click());
+
     assertThat(panel).not().hasAttribute("opened", "");
     assertThat(browserPage.locator("#support-ticket-panel")).isVisible();
     assertThat(browserPage)
@@ -374,11 +404,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator("#support-active-filter-count")).not().isVisible();
     browserPage.locator("#support-filter").click();
     numberInput.click();
+
     assertThat(numberInput).isFocused();
     browserPage.evaluate("value => navigator.clipboard.writeText(value)", number);
     numberInput.press("ControlOrMeta+V");
+
     assertThat(numberInput).hasValue(number);
     UiActions.complete(browserPage, () -> panel.locator("#support-jump").click());
+
     assertThat(panel).not().hasAttribute("opened", "");
     assertThat(browserPage.locator("#support-ticket-panel .support-ticket-number"))
         .hasText(uiTexts.getSupportTicketNumber(number));
@@ -387,19 +420,23 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   private void assertSupportNavigationActivity(int width) {
     if (width == 390) {
       Locator toggle = browserPage.locator("#account-navigation-toggle");
+
       assertThat(toggle).isVisible();
       UiActions.complete(browserPage, toggle::click);
+
       assertThat(toggle).hasAttribute("aria-expanded", "true");
     }
     assertThat(browserPage.locator("#admin-nav-support-activity"))
         .hasAttribute("aria-label", uiTexts.getSupportNewActivity());
     Locator item = browserPage.locator("#admin-nav-support");
     item.hover();
+
     assertThat(browserPage.getByRole(AriaRole.TOOLTIP)).hasText(uiTexts.getSupportNewActivity());
   }
 
   private void assertTouchScroll(Page target, Locator scroller) {
     scroller.evaluate("element => element.scrollTop = 0");
+
     assertTrue(
         (Boolean) scroller.evaluate("element => element.scrollHeight > element.clientHeight"));
     UiActions.swipeUp(target, scroller);
@@ -457,6 +494,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       UiActions.complete(
           actor.browserPage, () -> actor.browserPage.locator("#two-factor-recover").click());
       Locator recoveryInput = actor.browserPage.locator("vaadin-text-field#two-factor-code input");
+
       assertThat(recoveryInput).isVisible();
       recoveryInput.fill(TwoFactorPage.nextCode(actor.browserPage, email));
       actor.browserPage.locator("#two-factor-submit").click();
@@ -465,6 +503,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
       login.signInFirstFactor(adminEmail, BrowserTestAccounts.USER_PASSWORD);
       TwoFactorPage.selectTestLanguageIfNeeded(actor.browserPage);
+
       assertThat(actor.browserPage.locator("#two-factor-introduction-title")).isVisible();
       actor.browserPage.locator("#two-factor-submit").click();
       checkEnrollmentOtp(actor.browserPage, adminEmail, true);
@@ -481,6 +520,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
   private void signOutToLogin(Page actor) {
     new UserMenu(actor).requestSignOut();
+
     assertThat(actor.locator(".public-header")).isVisible();
     new LoginPage(actor).open();
   }
@@ -497,6 +537,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
   private void assertOtpFocus(Page actor, String id) {
     Locator otp = actor.locator("#" + id);
+
     assertThat(otp.locator("input")).isFocused();
     assertThat(otp.locator("[part=slot]").first()).hasAttribute("active", "");
     assertTrue((Boolean) otp.locator("input").evaluate("input => input.selectionStart === 0"));
@@ -509,18 +550,22 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator input = otp.locator("input");
     String invalid = TwoFactorPage.invalidCode(email);
     actor.keyboard().type(invalid.substring(0, 5));
+
     assertThat(input).hasValue(invalid.substring(0, 5));
     assertThat(otp.locator("[part=slot][filled]")).hasCount(5);
     actor.keyboard().type(invalid.substring(5));
+
     assertThat(otp).hasAttribute("invalid", "");
     assertThat(input).hasValue("");
     assertThat(input).isFocused();
 
     actor.context().grantPermissions(List.of("clipboard-read", "clipboard-write"));
     pasteOtp(actor, invalid.substring(0, 5));
+
     assertThat(input).hasValue(invalid.substring(0, 5));
     actor.keyboard().press("ControlOrMeta+A");
     pasteOtp(actor, invalid.substring(0, 3) + " " + invalid.substring(3));
+
     assertThat(input).hasValue("");
     assertThat(input).isFocused();
     assertThat(actor.locator("#two-factor-submit")).isEnabled();
@@ -567,6 +612,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assigneeForm.save();
     browserPage.setViewportSize(width, 1000);
     browserPage.navigate("/home");
+
     assertThat(browserPage.locator("#account-header-notifications")).isVisible();
     int previousNotifications = notificationCount(browserPage);
     try (BrowserActor assignee = new BrowserActor(testBrowser);
@@ -594,6 +640,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       verifyClaimNotification(admin, inbox, number, previousNotifications);
       inbox.closeDetail();
       browserPage.navigate("/admin?section=support");
+
       assertThat(ticketCard(browserPage, number).locator(".support-ticket-unread")).hasCount(0);
       UiActions.complete(browserPage, () -> ticketCard(browserPage, number).click());
       verifyAssignedIdentities(
@@ -619,6 +666,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       assertNotificationCount(browserPage, previousNotifications + 1);
       // Der Bearbeiter erhält den Nutzerabschluss ausdrücklich auch ohne aktiviertes Beobachten.
       assertNotificationCount(admin, 1);
+
       assertThat(user.locator("#support-add-reply")).not().isVisible();
       verifyClosureNotification(admin, inbox, number, previousNotifications);
 
@@ -632,6 +680,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       Page admin, Page user, String number, int previousNotifications) {
     user.locator("#support-reply textarea").fill("Zweite Anfrage ohne Bearbeiter.");
     UiActions.complete(user, () -> user.locator("#support-create").click());
+
     assertThat(user.locator("#support-ticket-grid").getByText(Pattern.compile("^#[0-9]+$")).first())
         .not()
         .hasText(number);
@@ -643,11 +692,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     UiActions.complete(user, () -> user.locator("#support-close").click());
     assertNotificationCount(browserPage, previousNotifications + 1);
     assertNotificationCount(admin, 1);
+
     assertThat(ticketCard(admin, unassignedNumber).locator(".support-ticket-unread")).hasText("1");
     UiActions.complete(admin, () -> ticketCard(admin, unassignedNumber).click());
     assertNotificationCount(admin, 0);
     UiActions.complete(admin, () -> admin.locator("#support-close").click());
     assertNotificationCount(browserPage, previousNotifications);
+
     assertThat(admin.locator("#support-ticket-status-note"))
         .hasText(uiTexts.getSupportClosedHint());
     verifyOtherTicketCounterSurvivesReading(admin, user, number);
@@ -665,11 +716,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertNotificationCount(admin, 0);
     browserPage.navigate("/admin?section=support");
     admin.navigate("/admin?section=support");
+
     assertThat(ticketCard(browserPage, number).locator(".support-ticket-unread")).hasText("1");
     assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasText("1");
     try (Page second = browserPage.context().newPage()) {
       second.setViewportSize(browserPage.viewportSize().width, 900);
       second.navigate("/admin?section=support");
+
       assertThat(ticketCard(second, number).locator(".support-ticket-unread")).hasText("1");
       Locator unread = ticketCard(second, number).locator(".support-ticket-unread");
       withDelayedTicketRead(
@@ -679,10 +732,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
             assertLongTicketCardFits(ticketCard(second, number));
             user.locator("#support-reply textarea").fill("Nachricht während der Lesequittierung.");
             UiActions.complete(user, () -> user.locator("#support-add-reply").click());
+
             assertThat(unread).hasText("2");
             acknowledge.run();
+
             assertThat(unread).hasText("1");
           });
+
       assertThat(ticketCard(second, number).locator(".support-ticket-unread")).hasCount(0);
       assertNotificationCount(second, previousNotifications);
     }
@@ -695,6 +751,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     // Zählers.
     assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasText("3");
     browserPage.navigate("/admin?section=support");
+
     assertThat(ticketCard(browserPage, number).locator(".support-ticket-unread")).hasCount(0);
     assertNotificationCount(browserPage, previousNotifications);
     assertNotificationCount(admin, 0);
@@ -714,11 +771,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           acknowledge -> {
             UiActions.complete(requester, () -> requester.locator("#support-close").click());
             assertNotificationCount(browserPage, previousNotifications + 1);
+
             assertThat(ticketCard(browserPage, number).locator(".support-ticket-status"))
                 .hasText(uiTexts.getSupportClosedByRequester());
             Locator unread = ticketCard(browserPage, number).locator(".support-ticket-unread");
+
             assertThat(unread).hasText("1");
             UiActions.complete(reader, acknowledge);
+
             assertThat(unread).hasCount(0);
             assertNotificationCount(browserPage, previousNotifications + 1);
             reader.navigate("/home");
@@ -759,6 +819,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   private void verifyClaimNotification(
       Page admin, NotificationInboxPage inbox, String number, int previousNotifications) {
     browserPage.navigate("/admin?section=support");
+
     assertThat(ticketCard(browserPage, number)).isVisible();
     browserPage.locator("#support-filter").click();
     Locator filters = browserPage.locator("#support-filter-panel");
@@ -767,6 +828,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         .getByText(uiTexts.getSupportFilterMine(), new Locator.GetByTextOptions().setExact(true))
         .click();
     UiActions.complete(browserPage, () -> filters.locator("#support-filter-apply").click());
+
     assertThat(browserPage.locator("#support-active-filter-count")).hasText("1");
     assertThat(ticketCard(browserPage, number)).isHidden();
     inbox.openPreview();
@@ -775,9 +837,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         .locator(".cosmos-notification-row-open")
         .first()
         .click();
+
     assertThat(inbox.dialog().locator(".cosmos-notification-detail-state"))
         .hasText(uiTexts.getNotificationsUnread());
     Locator target = inbox.dialog().locator(".cosmos-notification-detail-ticket");
+
     assertThat(target).hasAccessibleName(uiTexts.getNotificationsOpenTicket());
     assertThat(inbox.dialog().locator(".cosmos-notification-detail-account")).hasCount(0);
     if (browserPage.viewportSize().width == 390) {
@@ -785,6 +849,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       assertThat(target).hasCSS("grid-column-end", "-1");
     }
     target.click();
+
     assertThat(browserPage)
         .hasURL(
             Pattern.compile(
@@ -805,15 +870,19 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         .locator(".cosmos-notification-row-open")
         .first()
         .click();
+
     assertThat(inbox.dialog().locator(".cosmos-notification-detail-state"))
         .hasText(uiTexts.getNotificationsRead());
     admin.navigate("/admin?section=support");
+
     assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasText("1");
     UiActions.complete(admin, () -> ticketCard(admin, number).click());
     assertNotificationCount(admin, 0);
+
     assertThat(admin.locator("#support-ticket-status-note"))
         .hasText(uiTexts.getSupportUnassignedHint());
     UiActions.complete(admin, () -> admin.locator("#support-claim").click());
+
     assertThat(admin.locator("#support-ticket-status-note")).not().isVisible();
     assertThat(inbox.dialog().locator("[data-relevance=TICKET_ASSIGNED]"))
         .hasText(uiTexts.getNotificationsTicketAssigned());
@@ -833,6 +902,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     admin.navigate("/admin?section=support");
     UiActions.complete(admin, () -> ticketCard(admin, number).click());
     assertNotificationCount(admin, 0);
+
     assertThat(admin.locator("#support-ticket-status-note"))
         .hasText(uiTexts.getSupportRequesterClosedHint());
     assertThat(admin.locator("#support-ticket-status-note")).hasCSS("text-align", "center");
@@ -840,6 +910,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(admin.locator("#support-add-reply")).not().isVisible();
     AllurePlaywright.attachScreenshot("Nutzerabschluss mit prüfbarem Statushinweis", admin);
     UiActions.complete(admin, () -> admin.locator("#support-close").click());
+
     assertThat(admin.locator("#support-ticket-status-note"))
         .hasText(uiTexts.getSupportClosedHint());
     assertThat(ticketCard(admin, number).locator(".support-ticket-unread")).hasCount(0);
@@ -865,11 +936,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     String previous = newestRequest.innerText();
     requester.locator("#support-reply textarea").fill("Unabhängiger Vorgang für den Zähler.");
     UiActions.complete(requester, () -> requester.locator("#support-create").click());
+
     assertThat(newestRequest).not().hasText(previous);
     String other = newestRequest.innerText();
     Locator unread = ticketCard(admin, other).locator(".support-ticket-unread");
+
     assertThat(unread).hasText("1");
     UiActions.complete(admin, () -> ticketCard(admin, closed).click());
+
     assertThat(admin.locator("#support-ticket-panel .support-ticket-number"))
         .hasText(uiTexts.getSupportTicketNumber(closed));
     assertThat(unread).hasText("1");
@@ -892,6 +966,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   private void verifyInternalNoteLeavesHiddenConversationUnread(
       Page admin, Page requester, String closed, String other) {
     Locator activeCard = requesterCard(requester, other);
+
     assertThat(activeCard.locator(".support-ticket-status"))
         .hasText(uiTexts.getSupportInProgress());
     requester.bringToFront();
@@ -900,12 +975,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         () -> requesterCard(requester, closed).locator(".support-ticket-number").click());
     Locator displayedNumber =
         requester.locator(".support-conversation-heading .support-ticket-number");
+
     assertThat(displayedNumber).hasText(closed);
     Locator composer = admin.locator("#support-reply textarea");
     String reply = "Öffentliche Antwort für den Ungelesen-Zähler.";
     composer.fill(reply);
     UiActions.complete(admin, () -> admin.locator("#support-add-reply").click());
     Locator unread = activeCard.locator(".support-ticket-unread");
+
     assertThat(unread).hasText("1");
     assertThat(requester.locator(".support-message-thread")).not().containsText(reply);
 
@@ -913,12 +990,15 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     composer.fill(note);
     admin.locator("#support-internal-note").click();
     UiActions.complete(admin, () -> admin.locator("#support-add-reply").click());
+
     assertThat(admin.locator(".support-internal-message")).containsText(note);
     UiActions.complete(requester, () -> requester.locator("#support-reload").click());
+
     assertThat(unread).hasText("1");
     assertThat(displayedNumber).hasText(closed);
     assertThat(requester.locator(".support-message-thread")).not().containsText(reply);
     UiActions.complete(requester, () -> activeCard.locator(".support-ticket-number").click());
+
     assertThat(displayedNumber).hasText(other);
     assertThat(requester.locator(".support-message-thread")).containsText(reply);
     assertThat(requester.locator(".support-message-thread")).not().containsText(note);
@@ -928,6 +1008,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   private void verifyLiveRequesterSwitch(String firstTicket, String otherEmail) {
     browserPage.navigate("/admin?section=support&ticket=" + firstTicket.substring(1));
     Locator avatar = browserPage.locator("#support-detail-requester .cosmos-user-avatar");
+
     assertThat(avatar).isVisible();
     String firstEmail =
         browserPage.locator("#support-detail-requester .support-admin-person-email").innerText();
@@ -958,6 +1039,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           browserPage
               .locator("#admin-support .support-message")
               .filter(new Locator.FilterOptions().setHasText(followUp));
+
       assertThat(message).isVisible();
       assertIdentityTooltip(
           browserPage,
@@ -971,6 +1053,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
   private void assertRequesterCardLayout(Page requester, String number) {
     Locator card = requesterCard(requester, number);
+
     assertThat(card.locator(".support-ticket-details .support-ticket-number")).hasText(number);
     assertThat(card.locator(".support-ticket-details .support-ticket-title")).isVisible();
     assertThat(card.locator(".support-ticket-details .support-ticket-updated")).isVisible();
@@ -1017,6 +1100,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator foreign = browserPage.locator("#support-detail-assignee");
     Locator own = assignee.locator("#support-detail-assignee");
     Locator requester = browserPage.locator("#support-detail-requester");
+
     assertThat(requester.locator(".support-admin-person-label"))
         .hasText(uiTexts.getSupportRequester());
     assertThat(foreign.locator(".support-admin-person-label"))
@@ -1030,6 +1114,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(foreign).hasCSS("align-items", "flex-end");
     assertThat(foreign.locator(".support-admin-person-email")).hasText(assigneeEmail);
     Locator name = foreign.locator(".support-admin-person-name");
+
     assertThat(name).hasText(assigneeName);
     if (browserPage.viewportSize().width == 390) {
       assertTrue(
@@ -1058,6 +1143,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         false);
     assertIdentityTooltip(
         browserPage, foreign.locator(".cosmos-user-avatar"), assigneeName, assigneeEmail, true);
+
     assertThat(requester.locator(".support-admin-person-email")).hasText(requesterEmail);
     assertThat(requester.locator(".support-admin-person-name")).hasText("Browser Testuser");
     assertThat(requester.locator(".cosmos-user-avatar")).hasCSS("width", "32px");
@@ -1075,12 +1161,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       view.mouse().move(0, 0);
       view.keyboard().press("Tab");
       avatar.focus();
+
       assertThat(avatar).isFocused();
     } else {
       avatar.hover();
     }
     Locator tooltip =
         view.getByRole(AriaRole.TOOLTIP).filter(new Locator.FilterOptions().setHasText(email));
+
     assertThat(tooltip).isVisible();
     assertEquals(name + "\n" + email, tooltip.textContent());
     assertTrue(
@@ -1151,6 +1239,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Map<Integer, Object> providerTabStyles = new HashMap<>();
     for (int width : new int[] {1280, 390}) {
       browserPage.setViewportSize(width, 1000);
+
       assertThat(providerTab).isVisible();
       providerTabStyles.put(width, selectedTabStyle(providerTab));
     }
@@ -1170,6 +1259,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         .locator("#support-reply textarea")
         .fill("Synthetische offene Anfrage für die Layoutprüfung.");
     UiActions.complete(browserPage, () -> browserPage.locator("#support-create").click());
+
     assertThat(
             browserPage
                 .locator("#support-ticket-grid")
@@ -1184,11 +1274,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
             .first()
             .innerText();
     browserPage.locator("#support-back").click();
+
     assertThat(browserPage.locator("#account-panel-security")).isVisible();
     browserPage.navigate("/admin?section=support");
     Locator categories = browserPage.locator("#support-ticket-categories");
     Locator hint = browserPage.locator("#support-select-ticket");
     Locator heading = browserPage.locator("#support-page-header");
+
     assertThat(heading).containsText(uiTexts.getSupportPageDescription());
     assertThat(browserPage.locator("#support-panel .cosmos-panel-description").first())
         .hasText(uiTexts.getSupportInboxDescription());
@@ -1196,14 +1288,17 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(hint.locator("[data-lucide=mouse-pointer-click]")).isVisible();
     UiActions.complete(browserPage, () -> categories.locator("vaadin-tab").nth(1).click());
     assertTicketLocation("recovery", null);
+
     assertThat(heading).containsText(uiTexts.getSupportPageDescription());
     UiTexts otherLanguage = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     new UserMenu(browserPage).selectLanguage(otherLanguage.language());
+
     assertThat(heading).containsText(otherLanguage.getSupportPageDescription());
     assertThat(categories.locator("vaadin-tab[selected]"))
         .hasText(otherLanguage.getSupportRecoveryCategory());
     new UserMenu(browserPage).selectTestLanguage();
     browserPage.reload();
+
     assertThat(categories.locator("vaadin-tab[selected]"))
         .hasText(uiTexts.getSupportRecoveryCategory());
     assertThat(hint.locator("[data-lucide=mouse-pointer-click]")).isVisible();
@@ -1218,12 +1313,15 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     String openStatusBackground = verifyAssignedTicketLayout(ticketPanel, tools, footer);
     verifyTicketHistoryAndInternalEditor(ticketPanel, openStatusBackground);
     browserPage.navigate("/recovery-help");
+
     assertThat(browserPage.locator(".support-history-event")).hasCount(0);
     assertThat(browserPage.locator(".support-internal-message")).hasCount(0);
     assertThat(browserPage.locator(".support-message-copy")).not().containsText("Nur intern:");
     browserPage.locator("#support-back").click();
+
     assertThat(browserPage.locator("#account-panel-security")).isVisible();
     browserPage.navigate("/notifications");
+
     assertThat(browserPage.locator(".portal-notification-source-system").first()).isVisible();
     AllurePlaywright.attachScreenshot(
         "Gemeinsame Systemfarbe im Benachrichtigungsbadge", browserPage);
@@ -1239,6 +1337,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
             selectedTabStyle(categories.locator("vaadin-tab[selected]")));
       }
       Locator unassignedCard = ticketCard(browserPage, ownOpenNumber);
+
       assertThat(unassignedCard.locator(".support-ticket-unassigned"))
           .hasCSS("font-style", "italic");
       assertThat(unassignedCard.locator(".support-admin-ticket-metadata .support-ticket-status"))
@@ -1303,10 +1402,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator editor = ticketPanel.locator(".support-admin-editor");
     for (int width : new int[] {1280, 390}) {
       browserPage.setViewportSize(width, 1000);
+
       assertThat(editor.locator("#support-public-reply")).hasAttribute("selected", "");
       assertThat(ticketPanel.locator("#support-reply"))
           .hasJSProperty("label", uiTexts.getSupportReply());
       UiActions.complete(browserPage, () -> editor.locator("#support-internal-note").click());
+
       assertThat(editor).hasAttribute("data-internal", "true");
       assertThat(editor.locator(".cosmos-security-warning"))
           .containsText(uiTexts.getSupportInternalSecurityNotice());
@@ -1318,18 +1419,21 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       assertThat(ticketPanel.locator("#support-reply textarea"))
           .hasValue("Dieser Entwurf bleibt beim Vergrößern erhalten.");
       editor.scrollIntoViewIfNeeded();
+
       assertTrue(
           (Boolean)
               browserPage.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
       AllurePlaywright.attachScreenshot(
           "Interner Editor und History bei " + width + "px", browserPage);
       UiActions.complete(browserPage, () -> editor.locator("#support-public-reply").click());
+
       assertThat(editor.locator(".cosmos-security-warning"))
           .containsText(uiTexts.getSupportSecurityNotice());
     }
     UiActions.complete(browserPage, () -> editor.locator("#support-internal-note").click());
     ticketPanel.locator("#support-reply textarea").fill("Nur intern: synthetischer Vermerk.");
     UiActions.complete(browserPage, () -> ticketPanel.locator("#support-add-reply").click());
+
     assertThat(ticketPanel.locator(".support-internal-message .support-message-copy"))
         .hasText("Nur intern: synthetischer Vermerk.");
     assertThat(ticketPanel.locator(".support-section-header vaadin-badge"))
@@ -1342,6 +1446,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       browserPage.setViewportSize(width, 1000);
       messageScroll.scrollIntoViewIfNeeded();
       messageScroll.evaluate("element => element.scrollTop = element.scrollHeight");
+
       assertTrue(
           (Boolean)
               messageScroll.evaluate("element => element.scrollWidth <= element.clientWidth"));
@@ -1359,6 +1464,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                 .locator(".support-admin-ticket-metadata > .support-ticket-status")
                 .evaluate("badge => getComputedStyle(badge).backgroundColor");
     UiActions.complete(browserPage, () -> tools.locator("#support-claim").click());
+
     assertThat(ticketPanel.locator("#support-ticket-header"))
         .containsText(uiTexts.getSupportInProgress());
     assertThat(tools.locator("#support-instructions")).isVisible();
@@ -1370,21 +1476,27 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         .fill("Dieser Entwurf bleibt beim Vergrößern erhalten.");
     UiActions.complete(browserPage, () -> ticketPanel.locator("#support-focus-toggle").click());
     UiActions.complete(browserPage, () -> ticketPanel.locator("#support-focus-toggle").click());
+
     assertThat(ticketPanel.locator("#support-reply textarea"))
         .hasValue("Dieser Entwurf bleibt beim Vergrößern erhalten.");
     Locator requesterAvatar = ticketPanel.locator("#support-detail-requester .cosmos-user-avatar");
+
     assertThat(requesterAvatar.locator(".cosmos-avatar-initials")).hasCSS("cursor", "default");
     requesterAvatar.hover();
+
     assertThat(browserPage.locator("vaadin-tooltip-overlay[opened] [part=overlay]"))
         .hasCSS("pointer-events", "none");
     assertThat(requesterAvatar.locator(".cosmos-avatar-initials")).hasCSS("cursor", "default");
     Locator reload = browserPage.locator("#support-reload");
+
     assertThat(reload).hasCSS("cursor", "pointer");
     assertThat(reload).hasAttribute("aria-label", uiTexts.getSessionRefresh());
     assertThat(reload.locator("[data-lucide=refresh-cw]")).isVisible();
     BoundingBox reloadSize = reload.boundingBox();
+
     assertEquals(reloadSize.width, reloadSize.height, 1);
     reload.hover();
+
     assertThat(
             browserPage
                 .getByRole(AriaRole.TOOLTIP)
@@ -1433,6 +1545,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       AllurePlaywright.attachScreenshot("Ticket-Aktionsfooter bei " + width + "px", browserPage);
       browserPage.locator("#support-instructions").click();
       Locator preview = browserPage.locator("#support-instruction-preview");
+
       assertThat(preview).hasJSProperty("opened", true);
       browserPage.waitForCondition(() ->
           (Boolean)
@@ -1446,6 +1559,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
                   }
                   """));
       browserPage.locator("#support-instruction-preview-cancel").click();
+
       assertThat(preview).hasJSProperty("opened", false);
     }
     return openStatusBackground;
@@ -1454,6 +1568,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   private void verifyOpenTicketAndFocusMode(
       Locator ticketPanel, Locator tools, Locator footer, String openNumber) {
     AllurePlaywright.attachScreenshot("Offenes Ticket mit wiederherstellbarer URL", browserPage);
+
     assertThat(ticketPanel.locator("#support-ticket-header"))
         .containsText(uiTexts.getSupportRecoverySubject());
     assertThat(tools.locator("#support-claim")).isVisible();
@@ -1483,6 +1598,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
               < 2);
       browserPage.setViewportSize(width, 1000);
       UiActions.complete(browserPage, focus::click);
+
       assertThat(browserPage.locator(".support-admin-queue")).not().isVisible();
       assertThat(focus).hasAttribute("aria-label", uiTexts.getSupportRestoreSplitView());
       assertThat(focus.locator("[data-lucide=minimize]")).isVisible();
@@ -1503,6 +1619,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       ticketPanel.scrollIntoViewIfNeeded();
       AllurePlaywright.attachScreenshot("Ticket-Fokusansicht bei " + width + "px", browserPage);
       UiActions.complete(browserPage, focus::click);
+
       assertThat(browserPage.locator(".support-admin-queue")).isVisible();
       assertThat(focus.locator("[data-lucide=expand]")).isVisible();
       assertThat(
@@ -1526,6 +1643,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         browserPage, () -> browserPage.locator(".support-admin-ticket-card").first().click());
     assertTicketLocation("recovery", openNumber);
     browserPage.reload();
+
     assertThat(ticketPanel.locator(".support-ticket-number"))
         .hasText(uiTexts.getSupportTicketNumber("#" + openNumber));
     assertThat(categories.locator("vaadin-tab[selected]"))
@@ -1533,6 +1651,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     UiActions.complete(browserPage, () -> categories.locator("vaadin-tab").first().click());
     assertTicketLocation("all", openNumber);
     browserPage.reload();
+
     assertThat(categories.locator("vaadin-tab[selected]")).hasText(uiTexts.getSupportAllTickets());
     assertThat(ticketPanel.locator(".support-ticket-number"))
         .hasText(uiTexts.getSupportTicketNumber("#" + openNumber));
@@ -1546,6 +1665,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         browserPage, () -> browserPage.locator(".support-admin-ticket-card").nth(1).click());
     assertTicketLocation("all", closedNumber);
     browserPage.reload();
+
     assertThat(ticketPanel.locator(".support-ticket-number"))
         .hasText(uiTexts.getSupportTicketNumber("#" + closedNumber));
     UiActions.complete(
@@ -1588,6 +1708,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       fresh.open();
       fresh.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
       new UserMenu(actor.browserPage).selectTestLanguage();
+
       assertThat(actor.browserPage.locator("#two-factor-introduction-title"))
           .hasText(uiTexts.getTwoFactorRequiredTitle());
       assertThat(actor.browserPage.locator("#two-factor-password")).hasCount(0);
@@ -1608,23 +1729,30 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       AllurePlaywright.attachScreenshot(
           "Vaadin: verpflichtender Einstieg A bei " + width + "px", actor.browserPage);
       actor.browserPage.locator("#two-factor-cancel").click();
+
       assertThat(actor.browserPage).hasURL(Pattern.compile(".*/login$"));
       actor.browserPage.navigate("/home");
+
       assertThat(actor.browserPage.locator(".public-header")).isVisible();
       actor.browserPage.navigate("/account");
+
       assertThat(actor.browserPage).hasURL(Pattern.compile(".*/login.*"));
       new UserMenu(actor.browserPage).selectTestLanguage();
       fresh.assertFormVisible();
       fresh.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
       actor.browserPage.reload();
+
       assertThat(actor.browserPage.locator("#two-factor-introduction-title")).isVisible();
       actor.browserPage.navigate("/admin");
+
       assertThat(actor.browserPage).hasURL(Pattern.compile(".*/two-factor.*"));
       actor.browserPage.locator("#two-factor-submit").click();
+
       assertThat(actor.browserPage.locator("#two-factor-qr")).isVisible();
       assertThat(actor.browserPage.locator("#two-factor-password")).hasCount(0);
       assertEnrollmentControls(actor.browserPage);
       TwoFactorPage.enrollCurrent(actor.browserPage, email);
+
       assertThat(actor.browserPage).hasURL(Pattern.compile(".*/admin$"));
     }
   }
@@ -1658,10 +1786,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(manualInput).hasAttribute("readonly", "");
     String formattedKey = manualInput.inputValue();
     manualInput.focus();
+
     assertThat(manual).hasJSProperty("value", "");
     assertThat(manual.locator("#two-factor-copy-key")).hasCSS("color", "rgb(56, 189, 248)");
     enrollment.context().grantPermissions(java.util.List.of("clipboard-read", "clipboard-write"));
     manual.locator("#two-factor-copy-key").click();
+
     assertThat(
             enrollment
                 .locator("vaadin-notification-card:not([closing])")
@@ -1672,19 +1802,23 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         enrollment.evaluate("navigator.clipboard.readText()"));
     TwoFactorPage.assertCopyFailure(
         enrollment, manual.locator("#two-factor-copy-key"), uiTexts.getTwoFactorManualCopyFailed());
+
     assertThat(manualInput).hasValue(formattedKey);
     assertThat(manual).hasJSProperty("value", "");
     UiTexts other = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     new UserMenu(enrollment).selectLanguage(other.language());
+
     assertThat(enrollment.locator("#two-factor-manual-tab")).hasAttribute("selected", "");
     assertThat(manual).hasJSProperty("label", other.getTwoFactorManualLabel());
     assertThat(manualInput).hasValue(formattedKey);
     assertThat(manual).hasJSProperty("value", "");
     new UserMenu(enrollment).selectTestLanguage();
+
     assertThat(manualInput).hasValue(formattedKey);
     AllurePlaywright.attachScreenshot(
         "Manueller Einrichtungsschlüssel nach Sprachwechsel", enrollment);
     enrollment.locator("#two-factor-qr-tab").click();
+
     assertThat(enrollment.locator("#two-factor-qr")).isVisible();
     assertThat(enrollment.locator("#two-factor-qr")).hasJSProperty("complete", true);
     AllurePlaywright.attachScreenshot("QR-Einrichtung mit nativer OTP-Eingabe", enrollment);
@@ -1696,25 +1830,31 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator otp = enrollment.locator("#two-factor-enrollment-code");
     Locator slots = otp.locator("[part=slot]");
     Locator input = otp.locator("input");
+
     assertThat(slots).hasCount(6);
     assertThat(slots).hasText(new String[] {"•", "•", "•", "•", "•", "•"});
     assertThat(otp.locator("[part=slot][active]:not([filled])")).hasCount(1);
     assertThat(input).not().isFocused();
     input.pressSequentially("12");
+
     assertThat(otp.locator("[part=slot][filled]")).hasCount(2);
     assertThat(slots.nth(2)).hasAttribute("active", "");
     input.press("Backspace");
+
     assertThat(input).hasValue("1");
     assertThat(slots.nth(1)).hasAttribute("active", "");
     input.press("ArrowLeft");
+
     assertThat(slots.first()).hasAttribute("active", "");
     input.press("ArrowRight");
+
     assertThat(slots.nth(1)).hasAttribute("active", "");
     // Auch eingefügte, vom Add-on auf sechs Ziffern begrenzte Codes werden sofort geprüft.
     for (String copiedCode : new String[] {"1234567", "123 456 7"}) {
       enrollment.evaluate("value => navigator.clipboard.writeText(value)", copiedCode);
       input.press("ControlOrMeta+A");
       input.press("ControlOrMeta+V");
+
       assertThat(otp).hasAttribute("invalid", "");
       assertThat(input).hasValue("");
       assertThat(
@@ -1730,6 +1870,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     }
     input.fill("");
     enrollment.locator("#two-factor-submit").click();
+
     assertThat(otp).hasAttribute("invalid", "");
     assertThat(
             enrollment
@@ -1769,6 +1910,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     browserPage.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
     browserPage.locator("#two-factor-submit").click();
     TwoFactorPage.enrollCurrent(browserPage, email);
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     new UserMenu(browserPage).selectTestLanguage();
     if (!provider.equals("password")) {
@@ -1778,6 +1920,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           .locator("#external-confirm-factor input")
           .pressSequentially(TwoFactorPage.totp(browserPage, email));
       providerIdentity(email);
+
       assertThat(browserPage.locator("#external-connect-" + provider))
           .hasText(
               uiTexts.getExternalDisconnect(provider.equals("google") ? "Google" : "Microsoft"));
@@ -1796,39 +1939,48 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           .locator("#external-confirm-recovery-code input")
           .fill(TwoFactorPage.nextCode(browserPage, email));
       browserPage.locator("#external-confirm-local").click();
+
       assertThat(browserPage.locator("#account-" + action + "-new")).isVisible();
       browserPage.locator("#account-" + action + "-cancel").click();
+
       assertThat(browserPage.locator("#account-" + action + "-new")).isHidden();
     }
     String last = TwoFactorPage.nextCode(browserPage, email);
     new UserMenu(browserPage).requestSignOut();
+
     assertThat(browserPage.locator(".public-header")).isVisible();
     signInUntilSecondFactor(email, provider);
     TwoFactorPage.openLoginHelp(browserPage);
     browserPage.locator("#two-factor-recover").click();
+
     assertThat(browserPage.locator("#two-factor-panel .cosmos-panel-header"))
         .containsText(uiTexts.getTwoFactorRecoverSubtitle());
     TwoFactorPage.enterCode(browserPage, last);
     browserPage.locator("#two-factor-submit").click();
+
     assertThat(browserPage.locator("#two-factor-qr")).isVisible();
     try (Page blocked = browserContext.newPage()) {
       blocked.navigate("/account?tab=profile");
+
       assertThat(blocked).hasURL(Pattern.compile(".*/two-factor.*"));
       assertThat(blocked.locator("#two-factor-qr")).isVisible();
       assertThat(blocked.locator("#account-panel-profile")).hasCount(0);
     }
     browserPage.reload();
     TwoFactorPage.enrollCurrent(browserPage, email);
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     assertThat(browserPage.locator("#account-two-factor"))
         .containsText(uiTexts.getTwoFactorEnrolled());
     AllurePlaywright.attachScreenshot(
         "Wiederhergestellter Authenticator mit neuem Codesatz", browserPage);
     new UserMenu(browserPage).requestSignOut();
+
     assertThat(browserPage.locator(".public-header")).isVisible();
     signInUntilSecondFactor(email, provider);
     TwoFactorPage.enterCode(browserPage, last);
     browserPage.locator("#two-factor-submit").click();
+
     assertThat(browserPage.locator("#two-factor-code")).hasAttribute("invalid", "");
     assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
         .containsText(uiTexts.getTwoFactorInvalidCode());
@@ -1875,30 +2027,36 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           .fill(BrowserTestAccounts.USER_PASSWORD);
       user.browserPage.locator("#two-factor-submit").click();
       TwoFactorPage.enrollCurrent(user.browserPage, email);
+
       assertThat(user.browserPage)
           .hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       new UserMenu(user.browserPage).selectTestLanguage();
       user.browserPage.locator("#account-two-factor-replace").click();
       Locator actionOtp = user.browserPage.locator("#two-factor-action-factor");
+
       assertThat(actionOtp.locator("input[slot=input]")).isFocused();
       assertThat(actionOtp.locator("[part=slot]").first())
           .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
       TwoFactorPage.enterActionCode(
           user.browserPage, TwoFactorPage.nextCode(user.browserPage, email));
+
       assertThat(user.browserPage.locator("#two-factor-action-recovery-code input"))
           .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
       user.browserPage.locator("#two-factor-action-recovery-code input").press("Tab");
+
       assertThat(user.browserPage.locator("#two-factor-action-confirm")).isVisible();
       assertThat(user.browserPage)
           .hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       user.browserPage.locator("#two-factor-action-confirm").click();
       TwoFactorPage.enrollCurrent(user.browserPage, email);
+
       assertThat(user.browserPage)
           .hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       user.browserPage.locator("#account-two-factor-remove").click();
       TwoFactorPage.enterActionCode(
           user.browserPage, TwoFactorPage.nextCode(user.browserPage, email));
       user.browserPage.locator("#two-factor-action-confirm").click();
+
       assertThat(user.browserPage.locator("#account-two-factor-setup")).isVisible();
       assertThat(user.browserPage.locator("#account-two-factor vaadin-badge"))
           .hasText(uiTexts.getTwoFactorNotEnrolled());
@@ -1927,11 +2085,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       try {
         changeUserLoginRule(uiTexts.getTwoFactorModeRequired());
         user.browserPage.navigate("/account?tab=profile");
+
         assertThat(user.browserPage).hasURL(Pattern.compile(".*/two-factor.*"));
         assertThat(user.browserPage.locator("#account-first-name")).hasCount(0);
         TwoFactorPage.completeIfRequired(
             user.browserPage, email, BrowserTestAccounts.USER_PASSWORD);
         user.browserPage.navigate("/account?section=security&tab=portal");
+
         assertThat(user.browserPage.locator("#account-two-factor")).isVisible();
         AllurePlaywright.attachScreenshot(
             "Bestehende Sitzung nach neu vorgeschriebener Einrichtung", user.browserPage);
@@ -1941,6 +2101,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         TwoFactorPage.completeIfRequired(
             user.browserPage, email, BrowserTestAccounts.USER_PASSWORD);
         new UserMenu(user.browserPage).requestSignOut();
+
         assertThat(user.browserPage.locator(".public-header")).isVisible();
       }
     }
@@ -1978,6 +2139,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       TwoFactorPage.completeIfRequired(
           fresh, BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
       fresh.navigate("/admin?section=configuration&group=two_factor");
+
       assertThat(fresh.locator("#two-factor-save")).isVisible();
     }
   }
@@ -1992,10 +2154,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     browserPage.navigate("/account?section=security&tab=portal");
     try (Page second = browserContext.newPage()) {
       second.navigate("/account?section=security&tab=portal");
+
       assertThat(second.locator("#account-two-factor")).isVisible();
       BrowserTestRunner.restartTestApplication();
       browserPage.reload();
       second.reload();
+
       assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       assertThat(second).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       assertThat(browserPage.locator("#account-two-factor")).isVisible();
@@ -2034,6 +2198,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           .fill(BrowserTestAccounts.USER_PASSWORD);
       actor.browserPage.locator("#two-factor-submit").click();
       TwoFactorPage.enrollCurrent(actor.browserPage, email);
+
       assertThat(actor.browserPage)
           .hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       new UserMenu(actor.browserPage).selectTestLanguage();
@@ -2072,17 +2237,20 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     browserPage.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
     browserPage.locator("#two-factor-submit").click();
     TwoFactorPage.enrollCurrent(browserPage, email);
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     new UserMenu(browserPage).selectTestLanguage();
     new UserMenu(browserPage).signOut();
     login.signInFirstFactor(email, BrowserTestAccounts.USER_PASSWORD);
     TwoFactorPage.openLoginHelp(browserPage);
     browserPage.locator("#two-factor-help").click();
+
     assertThat(browserPage.locator("#account-support")).isVisible();
     browserPage
         .locator("#support-reply textarea")
         .fill("Synthetische Bitte um Hilfe mit meinen Ersatzcodes.");
     UiActions.complete(browserPage, () -> browserPage.locator("#support-create").click());
+
     assertThat(browserPage.locator("#support-request-count"))
         .hasText(uiTexts.getSupportRequestCount(1));
     String ticketNumber =
@@ -2099,6 +2267,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       admin.setViewportSize(width, 900);
       admin.navigate("/admin?section=support");
       Locator ticketCategories = admin.locator("#support-ticket-categories");
+
       assertThat(ticketCategories).containsText(uiTexts.getSupportAllTickets());
       UiActions.complete(
           admin, () -> ticketCategories.getByText(uiTexts.getSupportRecoveryCategory()).click());
@@ -2107,11 +2276,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
               .locator("#support-ticket-grid")
               .getByText(ticketNumber, new Locator.GetByTextOptions().setExact(true));
       UiActions.complete(admin, ticket::click);
+
       assertThat(admin.locator("#admin-support .support-message[data-side=other]"))
           .containsText("Synthetische Bitte um Hilfe mit meinen Ersatzcodes.");
       UiActions.complete(admin, () -> admin.locator("#support-claim").click());
       String assigneeName =
           admin.locator("#support-detail-assignee .cosmos-user-avatar").getAttribute("aria-label");
+
       assertThat(browserPage.locator("#support-ticket-grid"))
           .containsText(uiTexts.getSupportInProgress());
       assertThat(admin.locator("#admin-support .cosmos-security-warning")).isVisible();
@@ -2122,26 +2293,31 @@ public class TwoFactorBrowserTest extends BrowserFixture {
           .locator("#support-reply textarea")
           .fill("Dieser Entwurf gehört nur zur alten Anfrage.");
       UiActions.complete(admin, () -> admin.locator("#support-close").click());
+
       assertThat(browserPage.locator("#support-ticket-grid"))
           .containsText(uiTexts.getSupportClosed());
       assertThat(browserPage.locator("#support-create")).isVisible();
       assertThat(browserPage.locator("#support-reply textarea")).hasValue("");
       UiActions.complete(browserPage, () -> browserPage.locator("#support-reload").click());
+
       assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
           .containsText(uiTexts.getSupportRefreshed());
       browserPage.locator("#support-reply textarea").fill("Eine zweite isolierte Anfrage.");
       UiActions.complete(browserPage, () -> browserPage.locator("#support-create").click());
+
       assertThat(browserPage.locator("#support-request-count"))
           .hasText(uiTexts.getSupportRequestCount(2));
       UiActions.complete(browserPage, () -> browserPage.locator("#support-close").click());
       new UserMenu(admin).signOut();
     }
     browserPage.navigate("/admin");
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/recovery-help$"));
     browserPage.locator("#support-sign-out").click();
     new LoginPage(browserPage).assertFormVisible();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
     browserPage.navigate("/admin?section=support&ticket=" + ticketNumber.substring(1));
+
     assertThat(browserPage.locator("#support-ticket-panel, #admin-nav-support")).hasCount(0);
   }
 
@@ -2154,6 +2330,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     adminComposer.fill(draft);
     browserPage.locator("#support-reply textarea").fill(followUp);
     UiActions.complete(browserPage, () -> browserPage.locator("#support-add-reply").click());
+
     assertThat(admin.locator(".support-message-thread")).containsText(followUp);
     assertThat(adminComposer).hasValue(draft);
     adminComposer.fill(privateNote);
@@ -2164,11 +2341,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         browserPage
             .locator("#account-support .support-section-count")
             .filter(new Locator.FilterOptions().setHasText(uiTexts.getSupportMessageCount(2)));
+
     assertThat(requesterMessageCount).isVisible();
     UiActions.complete(admin, () -> admin.locator("#support-add-reply").click());
+
     assertThat(admin.locator(".support-internal-message")).containsText(privateNote);
     adminComposer.fill(publicReply);
     UiActions.complete(admin, () -> admin.locator("#support-add-reply").click());
+
     assertThat(browserPage.locator(".support-message-thread")).containsText(publicReply);
     assertThat(browserPage.locator(".support-message-thread")).not().containsText(privateNote);
     assertThat(browserPage.locator("#support-request-count")).hasText(requesterCountBeforeNote);
@@ -2186,6 +2366,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   private void verifyRecoveryInstructions(BrowserActor administrator, String email, int width) {
     Page admin = administrator.browserPage;
     admin.locator("#support-instructions").click();
+
     assertThat(admin.locator("#support-instruction-preview")).hasJSProperty("opened", true);
     assertThat(admin.locator("#support-instruction-preview"))
         .containsText(uiTexts.getSupportRecoveryInstructions().lines().findFirst().orElseThrow());
@@ -2199,16 +2380,19 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Geprüfte Hilfeantwort ohne neue Zugangscodes", admin);
     admin.setViewportSize(width, 900);
     admin.locator("#support-instruction-preview-submit").click();
+
     assertThat(admin.locator("vaadin-notification-card:not([closing])"))
         .containsText(uiTexts.getSupportQueued());
     new MailpitInbox(administrator.browserContext)
         .awaitSecurityMail(email, uiTexts.getSupportRecoverySubject());
     Locator guide = browserPage.locator(".support-instruction-message");
+
     assertThat(guide).containsText(uiTexts.getSupportInstructionMessageTitle());
     assertThat(guide.locator(".support-instruction-details")).not().hasAttribute("opened", "");
     guide.evaluate("element => element.scrollIntoView({block: 'nearest'})");
     AllurePlaywright.attachScreenshot("Anleitung kompakt im Nachrichtenverlauf", browserPage);
     UiActions.complete(browserPage, () -> guide.locator(".support-instruction-toggle").click());
+
     assertThat(guide.locator(".support-instruction-details")).hasAttribute("opened", "");
     assertThat(guide.locator(".support-instruction-step")).hasCount(4);
     assertThat(guide.locator(".cosmos-security-warning")).isVisible();
@@ -2221,6 +2405,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       assertTouchScroll(browserPage, thread);
     }
     UiActions.complete(browserPage, () -> browserPage.locator("#support-reload").click());
+
     assertThat(guide.locator(".support-instruction-details")).hasAttribute("opened", "");
     guide.evaluate("element => element.scrollIntoView({block: 'nearest'})");
     AllurePlaywright.attachScreenshot("Anleitung aufgeklappt im Nachrichtenverlauf", browserPage);
@@ -2261,20 +2446,25 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       browserPage.locator("#two-factor-submit").click();
     }
     TwoFactorPage.enrollCurrent(browserPage, identity);
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     new UserMenu(browserPage).signOut();
     browserPage.locator("#external-login-" + provider).click();
     providerIdentity(identity);
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor$"));
     TwoFactorPage.completeIfRequired(browserPage, identity, null);
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
     browserPage.navigate("/account?section=security&tab=portal");
     new UserMenu(browserPage).selectTestLanguage();
     browserPage.locator("#account-password-edit-security").click();
+
     assertThat(browserPage.locator("#external-confirm-password")).isHidden();
     assertThat(browserPage.locator("#external-confirm-" + provider)).hasCount(0);
     browserPage.locator("#external-confirm-factor input").fill("123");
     browserPage.locator("#external-confirm-local").click();
+
     assertThat(browserPage.locator("#external-confirm-factor")).hasJSProperty("invalid", true);
     assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
         .containsText(uiTexts.getBaseValidationRequiredMessage());
@@ -2291,15 +2481,18 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     browserPage.locator("#account-password-new input").fill("OwnOptionalPortal1!");
     browserPage.locator("#account-password-confirm input").fill("OwnOptionalPortal1!");
     browserPage.locator("#account-password-save").click();
+
     assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
         .containsText(uiTexts.getAccountSecurityPasswordSuccess());
     browserPage.locator("#account-security-tab-providers").click();
     String second = provider.equals("google") ? "microsoft" : "google";
     browserPage.locator("#external-connect-" + second).click();
+
     assertThat(browserPage.locator("#external-confirm-factor input")).isFocused();
     browserContext.grantPermissions(List.of("clipboard-read", "clipboard-write"));
     pasteOtp(browserPage, TwoFactorPage.totp(browserPage, identity));
     providerIdentity("linked-" + UUID.randomUUID() + "@gmail.com");
+
     assertThat(browserPage.locator("#external-connect-" + second))
         .hasText(uiTexts.getExternalDisconnect(second.equals("google") ? "Google" : "Microsoft"));
     AllurePlaywright.attachScreenshot(
@@ -2322,11 +2515,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signInFirstFactor(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor$"));
     assertThat(browserPage.locator("#two-factor-panel")).isVisible();
     if (browserPage.locator("#two-factor-password").isVisible()) {
       browserPage.locator("#two-factor-password input").fill("WrongSetupPassword!");
       browserPage.locator("#two-factor-submit").click();
+
       assertThat(browserPage.locator("#two-factor-password")).hasAttribute("invalid", "");
       assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
           .containsText(uiTexts.getAccountSecurityWrongPassword());
@@ -2334,17 +2529,21 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Eingeschränkter Zwei-Faktor-Zugang", browserPage);
     TwoFactorPage.completeIfRequired(
         browserPage, BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/admin$"));
     browserPage.reload();
+
     assertThat(browserPage.locator("#admin-sidebar")).isAttached();
     try (Page tab = browserContext.newPage()) {
       tab.navigate("/account?section=security&tab=portal");
       new UserMenu(tab).selectTestLanguage();
+
       assertThat(tab.locator("#account-two-factor")).containsText(uiTexts.getTwoFactorEnrolled());
       assertThat(tab).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     }
     browserPage.navigate("/account?section=security&tab=portal");
     new UserMenu(browserPage).selectTestLanguage();
+
     assertThat(browserPage.locator("#account-two-factor"))
         .containsText(uiTexts.getTwoFactorEnrolled());
     AllurePlaywright.attachScreenshot("Eigene Zwei-Faktor-Verwaltung", browserPage);
@@ -2363,8 +2562,10 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     browserPage.locator("#account-two-factor-renew").click();
     assertAccountActionCodeLayout();
     browserPage.locator("#two-factor-action-help").click();
+
     assertThat(browserPage.locator("#account-support")).isVisible();
     browserPage.locator("#support-back").click();
+
     assertThat(browserPage.locator("#account-two-factor-renew")).isVisible();
     assertThat(browserPage.locator("#two-factor-action-confirm")).isHidden();
     browserPage.locator("#account-two-factor-renew").click();
@@ -2373,10 +2574,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     try (Page previous = browserContext.newPage()) {
       previous.navigate("/account?section=security&tab=portal");
       Locator oldRenew = previous.locator("#account-two-factor-renew");
+
       assertThat(oldRenew).isVisible();
       browserPage.locator("#two-factor-action-confirm").click();
+
       assertThat(browserPage.locator("#two-factor-recovery-toggle")).isVisible();
       oldRenew.click();
+
       assertThat(previous).hasURL(browserPage.url());
       assertThat(previous.locator("#two-factor-recovery-toggle")).isVisible();
     }
@@ -2396,6 +2600,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         browserPage.waitForDownload(() -> browserPage.locator("#two-factor-download-pdf").click());
     org.junit.jupiter.api.Assertions.assertNull(download.failure());
     byte[] bytes = java.nio.file.Files.readAllBytes(download.path());
+
     assertEquals("%PDF-", new String(bytes, 0, 5, java.nio.charset.StandardCharsets.US_ASCII));
     assertThat(browserPage).hasURL(outputPage);
     org.junit.jupiter.api.Assertions.assertEquals(
@@ -2414,6 +2619,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
               () -> browserPage.locator("#two-factor-download-pdf").click());
       org.junit.jupiter.api.Assertions.assertNull(laterDownload.failure());
       byte[] laterBytes = java.nio.file.Files.readAllBytes(laterDownload.path());
+
       assertEquals(
           "%PDF-", new String(laterBytes, 0, 5, java.nio.charset.StandardCharsets.US_ASCII));
       assertThat(browserPage).hasURL(outputPage);
@@ -2421,6 +2627,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Einmalige Ausgabe synthetischer Ersatzcodes", browserPage);
     browserPage.locator("#two-factor-codes-saved input").setChecked(true);
     browserPage.locator("#two-factor-submit").click();
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     org.junit.jupiter.api.Assertions.assertTrue(
         ((Number)
@@ -2433,6 +2640,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   private String assertRestrictedRecoveryOutput(String outputPage) {
     assertThat(browserPage.locator("#two-factor-recovery-codes")).isVisible();
     browserPage.locator("#two-factor-recovery-toggle").click();
+
     assertThat(browserPage.locator("#two-factor-recovery-codes")).isHidden();
     assertThat(browserPage.locator("#two-factor-submit")).isDisabled();
     assertThat(browserPage.locator("#two-factor-cancel")).isHidden();
@@ -2443,6 +2651,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     try (Page second = browserContext.newPage()) {
       for (String path : List.of("/home", "/admin", "/account", "/recovery-help")) {
         second.navigate(path);
+
         assertThat(second).hasURL(outputPage);
         assertThat(second.locator("#two-factor-recovery-toggle")).isVisible();
       }
@@ -2470,17 +2679,21 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   private void assertAccountActionCodeLayout() {
     Locator dialog = browserPage.locator("#two-factor-action-dialog");
     Locator appCode = browserPage.locator("#two-factor-action-factor");
+
     assertThat(appCode.locator("input[slot=input]")).isFocused();
     assertThat(appCode.locator("[part=slot]").first())
         .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
     Locator header = dialog.locator(".account-change-dialog-header");
     Locator close = header.locator(".cosmos-overlay-close");
+
     assertThat(close).isVisible();
     BoundingBox headerBounds = header.boundingBox();
+
     assertTrue(close.boundingBox().x > headerBounds.x + headerBounds.width / 2);
     assertThat(dialog.locator(".two-factor-method-tabs")).hasCSS("height", "42px");
     UiActions.complete(
         browserPage, browserPage.locator("#two-factor-action-recovery-code-tab")::click);
+
     assertThat(browserPage.locator("#two-factor-action-recovery-code input"))
         .hasCSS("font-family", Pattern.compile(".*Space Mono.*"));
     assertThat(appCode).isHidden();
@@ -2500,6 +2713,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     browserPage.onDownload(captureDownload);
     try {
       browserPage.locator("#two-factor-download-pdf").click();
+
       assertThat(
               browserPage.getByText(
                   uiTexts.getTwoFactorDownloadFailed(), new Page.GetByTextOptions().setExact(true)))
@@ -2514,6 +2728,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(browserPage).hasURL(outputPage);
     org.junit.jupiter.api.Assertions.assertEquals(
         originalCodes, TwoFactorPage.recoveryCodeValues(browserPage));
+
     assertThat(browserPage.locator("#two-factor-submit")).isDisabled();
   }
 
@@ -2530,6 +2745,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
     browserPage.navigate("/admin?section=configuration&group=two_factor");
+
     assertThat(browserPage.locator("#two-factor-save")).isVisible();
     assertThat(
             browserPage.getByText(
@@ -2546,18 +2762,22 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     }
     Locator configuration = browserPage.locator("#admin-nav-configuration-two_factor");
     configuration.hover();
+
     assertThat(browserPage.getByRole(AriaRole.TOOLTIP))
         .hasText(uiTexts.getTwoFactorSettingsTitle());
     if (toggle.isVisible()) {
       UiActions.complete(browserPage, toggle::click);
     }
     Locator tabs = browserPage.locator("#two-factor-role-tabs vaadin-tab");
+
     assertThat(tabs).hasCount(4);
     Locator roleContent = browserPage.locator(".mfa-role-content:visible");
+
     assertThat(roleContent.locator("vaadin-combo-box")).hasCount(9);
     assertThat(roleContent.locator(".mfa-config-heading").first())
         .hasText(uiTexts.getTwoFactorAccessGroup());
     Locator guide = roleContent.locator(".mfa-role-guide");
+
     assertThat(guide).containsText(uiTexts.getTwoFactorRoleScope(uiTexts.getRoleSuperadmin()));
     assertTrue(
         (Boolean)
@@ -2584,6 +2804,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         .click();
     Locator help = browserPage.locator("#two-factor-field-help");
     Locator helpOverlay = help.locator("vaadin-dialog-overlay > [part~=overlay]");
+
     assertThat(helpOverlay).isVisible();
     assertThat(help).containsText(uiTexts.getTwoFactorAdminAccessHelp());
     assertThat(help.locator(".admin-help-field-title"))
@@ -2591,6 +2812,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(help.locator(".admin-help-default span").last())
         .hasText(uiTexts.getTwoFactorModeOff());
     List<String> helpItems = uiTexts.twoFactorRuleHelpItems();
+
     assertThat(help.locator(".admin-help-rules:not(.admin-help-effective-use) li"))
         .hasText(helpItems.toArray(String[]::new));
     ConfigurationPage.assertEffectiveUse(
@@ -2600,9 +2822,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         uiTexts.getAdminConfigEffectiveTwoFactorExisting());
     AllurePlaywright.attachScreenshot("2FA-Feldhilfe " + width, browserPage);
     browserPage.keyboard().press("Escape");
+
     assertThat(helpOverlay).isHidden();
     assertTwoFactorFieldTiming(tabs, help);
     tabs.nth(2).click();
+
     assertThat(guide).containsText(uiTexts.getTwoFactorRoleScope(uiTexts.getRoleUser()));
     assertThat(browserPage.locator("#two-factor-inactivity-enabled")).isVisible();
     assertTrue(
@@ -2618,10 +2842,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       administrator.login(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
       new UserMenu(administrator.browserPage).selectTestLanguage();
       administrator.browserPage.navigate("/admin?section=configuration&group=two_factor");
+
       assertThat(administrator.browserPage.locator("#two-factor-save")).hasCount(0);
       assertThat(administrator.browserPage.locator("#admin-nav-configuration-two_factor"))
           .isHidden();
       administrator.browserPage.navigate("/admin?section=configuration&group=external_login");
+
       assertThat(administrator.browserPage.locator("#admin-provider-settings")).hasCount(0);
       new UserMenu(administrator.browserPage).signOut();
     }
@@ -2631,6 +2857,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     for (Locator tab : tabs.all()) {
       tab.click();
       Locator fields = browserPage.locator(".mfa-role-content:visible .cosmos-config-info");
+
       assertThat(fields).hasCount(9);
       for (Locator info : fields.all()) {
         info.click();
@@ -2648,6 +2875,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     ConfigurationPage.assertEffectiveUse(
         help, uiTexts, timing, uiTexts.getAdminConfigEffectiveTwoFactorExisting());
     browserPage.keyboard().press("Escape");
+
     assertThat(help.locator("vaadin-dialog-overlay > [part~=overlay]")).isHidden();
   }
 
@@ -2655,28 +2883,35 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     Locator input = field.locator("input");
     Locator menu = field.locator("vaadin-combo-box-overlay [part~=overlay]");
     field.locator("[part~=toggle-button]").click();
+
     assertThat(menu).isVisible();
     BoundingBox control = field.locator("[part~=input-field]").boundingBox();
     BoundingBox overlay = menu.boundingBox();
+
     assertTrue(
         overlay.y >= control.y + control.height - 1 || overlay.y + overlay.height <= control.y + 1);
     Locator off =
         browserPage.getByRole(
             AriaRole.OPTION,
             new Page.GetByRoleOptions().setName(uiTexts.getTwoFactorModeOff()).setExact(true));
+
     assertThat(off).hasAttribute("aria-selected", "true");
     browserPage.keyboard().press("Escape");
+
     assertThat(menu).isHidden();
     input.press("ArrowDown");
+
     assertThat(menu).isVisible();
     Locator required =
         browserPage.getByRole(
             AriaRole.OPTION,
             new Page.GetByRoleOptions().setName(uiTexts.getTwoFactorModeRequired()).setExact(true));
     UiActions.completeValueChange(browserPage, required::click);
+
     assertThat(input).hasValue(uiTexts.getTwoFactorModeRequired());
     input.clear();
     input.press("Tab");
+
     assertThat(input).hasValue(uiTexts.getTwoFactorModeRequired());
   }
 
@@ -2713,8 +2948,10 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertNativeRecoveryFields();
     TwoFactorPage.openLoginHelp(browserPage);
     browserPage.locator("#two-factor-help").click();
+
     assertThat(browserPage.locator("#account-support")).containsText(uiTexts.getSupportEmpty());
     assertReducedSecurityHeader(firstName + " " + lastName, email);
+
     assertThat(browserPage.locator(".cosmos-panel-footer #support-back")).isVisible();
     assertThat(browserPage.locator("#support-ticket-grid")).isHidden();
     assertThat(browserPage.locator("#support-reload, #support-close, #support-add-reply"))
@@ -2724,11 +2961,13 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     String draft = "Synthetische Bitte um Hilfe zu meinen gesicherten Ersatzcodes.";
     browserPage.locator("#support-reply textarea").fill(draft);
     new UserMenu(browserPage).selectLanguage(other.language());
+
     assertThat(browserPage.locator("#support-reply textarea")).hasValue(draft);
     new UserMenu(browserPage).selectTestLanguage();
     AllurePlaywright.attachScreenshot(
         "Hilfeanfrage mit Leerzustand und nativen Footeraktionen", browserPage);
     browserPage.locator("#support-create").click();
+
     assertThat(browserPage.locator("#support-ticket-grid"))
         .containsText(uiTexts.getSupportRecoverySubject());
     assertThat(browserPage.locator("#support-add-reply")).isVisible();
@@ -2739,6 +2978,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator(".support-user-footer #support-sign-out ~ #support-add-reply"))
         .isVisible();
     UiActions.complete(browserPage, () -> browserPage.locator("#support-close").click());
+
     assertThat(browserPage.locator("#support-add-reply")).isHidden();
     assertThat(browserPage.locator("#support-close")).isHidden();
     assertThat(browserPage.locator(".support-conversation-actions #support-reload")).isVisible();
@@ -2748,6 +2988,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         (Boolean)
             browserPage.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
     browserPage.locator("#support-back").click();
+
     assertThat(browserPage.locator("#two-factor-code")).isVisible();
   }
 
@@ -2755,30 +2996,36 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator("#two-factor-code")).hasJSProperty("length", 6);
     assertThat(browserPage.locator("#two-factor-code [part=slot]")).hasCount(6);
     browserPage.locator("#two-factor-code input").fill("12345");
+
     assertThat(browserPage.locator("#two-factor-code [part=slot]"))
         .hasText(new String[] {"1", "2", "3", "4", "5", "•"});
     browserPage.locator("#two-factor-recovery-tab").click();
     String recoveryCode = "12345678-12345678-12345678-12345678";
     TwoFactorPage.enterCode(browserPage, recoveryCode);
+
     assertThat(browserPage.locator("#two-factor-code input")).hasValue(recoveryCode);
     new UserMenu(browserPage).selectLanguage(other.language());
+
     assertThat(browserPage.locator("#two-factor-recovery-tab")).hasAttribute("selected", "");
     assertThat(browserPage.locator("#two-factor-code"))
         .hasJSProperty("label", other.getTwoFactorRecoveryCodeLabel());
     new UserMenu(browserPage).selectTestLanguage();
     browserPage.locator("#two-factor-authenticator-tab").click();
+
     assertThat(browserPage.locator("#two-factor-code [part=slot]")).hasCount(6);
     assertTrue(
         (Boolean)
             browserPage.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
     AllurePlaywright.attachScreenshot(
         "Anmeldung bestätigen mit nativer Methodenauswahl", browserPage);
+
     assertThat(browserPage.locator("#two-factor-recover, #two-factor-help").first()).isHidden();
   }
 
   private void assertNativeRecoveryFields() {
     TwoFactorPage.openLoginHelp(browserPage);
     browserPage.locator("#two-factor-recover").click();
+
     assertThat(browserPage.locator("vaadin-text-field#two-factor-code input"))
         .hasAttribute("maxlength", "35");
     assertThat(browserPage.locator(".cosmos-panel-footer #two-factor-recovery-back"))
@@ -2789,6 +3036,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot(
         "Authenticator mit Ersatzcode geschützt wiederherstellen", browserPage);
     browserPage.locator("#two-factor-recovery-back").click();
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor$"));
     assertThat(browserPage.locator("#two-factor-authenticator-tab")).isVisible();
   }
@@ -2796,6 +3044,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   private void assertReducedSecurityHeader(String name, String email) {
     Locator identity = browserPage.locator("#public-security-identity");
     Locator languages = browserPage.locator(".public-security-navigation .public-languages");
+
     assertThat(identity.locator(".cosmos-header-identity > span"))
         .hasText(new String[] {name, email});
     assertThat(identity.locator(".cosmos-user-avatar")).isVisible();
@@ -2806,6 +3055,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(languages.locator("vaadin-button")).hasCount(2);
     BoundingBox languageBounds = languages.boundingBox();
     BoundingBox identityBounds = identity.boundingBox();
+
     assertTrue(languageBounds.x + languageBounds.width <= identityBounds.x);
     assertTrue(identityBounds.x + identityBounds.width <= browserPage.viewportSize().width);
   }
@@ -2819,9 +3069,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signInFirstFactor(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor$"));
     TwoFactorPage.openLoginHelp(browserPage);
     Locator help = browserPage.locator("#two-factor-help");
+
     assertThat(help).isVisible();
     assertTrue(
         (Boolean)
@@ -2832,20 +3084,24 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     // Der erste Fall hat dieses feste Testkonto eingerichtet. Im getrennten Hilfszugang
     // bleiben Authenticator und Backupcodes absichtlich unbenutzt.
     help.click();
+
     assertThat(browserPage.locator("#account-support")).isVisible();
     browserPage
         .locator("#support-reply textarea")
         .fill("Synthetische Anfrage: Ich finde meine gesicherten Ersatzcodes nicht.");
     if (browserPage.locator("#support-create").isVisible()) {
       browserPage.locator("#support-create").click();
+
       assertThat(browserPage.locator("#support-ticket-grid"))
           .containsText(uiTexts.getSupportRecoverySubject());
     }
     AllurePlaywright.attachScreenshot(
         "Eingeschränkte eigene Wiederherstellungsanfrage", browserPage);
     browserPage.navigate("/admin");
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/recovery-help$"));
     browserPage.locator("#support-sign-out").click();
+
     assertThat(browserPage).hasURL(Pattern.compile(".*/login$"));
   }
 }

@@ -81,7 +81,7 @@ class AdminViewNavigationTest {
   private UI testUi;
   private SecurityService securityService;
   private HttpServletRequest mockHttpRequest;
-  private AdminView view;
+  private AdminView adminView;
   private ConfigService configService;
   private UserAvatarService userAvatarService;
   private ExternalProviderSettings externalProviderSettings;
@@ -90,11 +90,11 @@ class AdminViewNavigationTest {
   void setup() {
     testUi = spy(new UI());
     UI.setCurrent(testUi);
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenReturn(Locale.GERMAN);
-    VaadinSession.setCurrent(session);
-    testUi.getInternals().setSession(session);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenReturn(Locale.GERMAN);
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
     var registry = new ApplicationRouteRegistry(mock(VaadinContext.class)) {};
     registry.setRoute(AppRouteConstants.ADMIN_ROUTE, AdminView.class, List.of());
     TestService service = mock(TestService.class);
@@ -102,7 +102,7 @@ class AdminViewNavigationTest {
     when(service.getDeploymentConfiguration()).thenReturn(deploymentConfiguration);
     when(service.getRouter()).thenReturn(new Router(registry));
     when(service.getRouteRegistry()).thenReturn(registry);
-    when(session.getService()).thenReturn(service);
+    when(vaadinSession.getService()).thenReturn(service);
     VaadinService.setCurrent(service);
     securityService = mock(SecurityService.class);
     mockHttpRequest = mock(HttpServletRequest.class);
@@ -128,7 +128,7 @@ class AdminViewNavigationTest {
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     userAvatarService = mock(UserAvatarService.class);
     when(userAvatarService.events()).thenReturn(new UserProfileBroadcaster());
-    view = createView();
+    adminView = createView();
   }
 
   private AdminView createView() {
@@ -172,10 +172,11 @@ class AdminViewNavigationTest {
   }
 
   private BeforeEnterEvent enter(String query) {
-    BeforeEnterEvent event = mock(BeforeEnterEvent.class);
-    when(event.getLocation()).thenReturn(new Location(AppRouteConstants.ADMIN_ROUTE + query));
-    view.beforeEnter(event);
-    return event;
+    BeforeEnterEvent beforeEnterEvent = mock(BeforeEnterEvent.class);
+    when(beforeEnterEvent.getLocation())
+        .thenReturn(new Location(AppRouteConstants.ADMIN_ROUTE + query));
+    adminView.beforeEnter(beforeEnterEvent);
+    return beforeEnterEvent;
   }
 
   @ParameterizedTest
@@ -219,41 +220,51 @@ class AdminViewNavigationTest {
               0,
               10);
         });
-    view.configureSupport(mockSupportTicketService);
+    adminView.configureSupport(mockSupportTicketService);
     enter(query);
-    Component support = (Component) ReflectionTestUtils.getField(view, "supportTicketsComponent");
+    Component support =
+        (Component) ReflectionTestUtils.getField(adminView, "supportTicketsComponent");
     Grid<?> grid = (Grid<?>) ReflectionTestUtils.getField(support, "ticketGrid");
+
     assertEquals(List.of(ticket), List.copyOf(grid.getSelectedItems()));
     Tabs categories = (Tabs) ReflectionTestUtils.getField(support, "ticketCategories");
+
     assertEquals(query.contains("tab=recovery") ? 1 : 0, categories.getSelectedIndex());
 
     enter("?section=support&tab=recovery");
+
     assertTrue(grid.getSelectedItems().isEmpty());
     assertEquals(1, categories.getSelectedIndex());
 
     enter("?section=support&tab=unknown&ticket=10001");
+
     assertEquals(List.of(ticket), List.copyOf(grid.getSelectedItems()));
     assertEquals(0, categories.getSelectedIndex());
 
     enter("?section=support&ticket=99999");
+
     assertTrue(grid.getSelectedItems().isEmpty());
-    assertEquals("SUPPORT", ReflectionTestUtils.getField(view, "activeAdminSection").toString());
+    assertEquals("SUPPORT", getActiveAdminSectionName());
   }
 
   @Test
   void sharedFrameKeepsHeadingAndNavigationInContentAndClosesMobileNavigationOnSelection() {
-    assertInstanceOf(PageFrameComponent.class, view.getContent());
+    assertInstanceOf(PageFrameComponent.class, adminView.getContent());
     PortalPageComponent page =
-        (PortalPageComponent) ReflectionTestUtils.getField(view, "adminPortalPageComponent");
-    Component heading = (Component) ReflectionTestUtils.getField(view, "adminHeadingDiv");
+        (PortalPageComponent) ReflectionTestUtils.getField(adminView, "adminPortalPageComponent");
+    Component heading = (Component) ReflectionTestUtils.getField(adminView, "adminHeadingDiv");
+
     assertSame(page, heading.getParent().orElseThrow());
     assertFalse(heading.getElement().hasAttribute("slot"));
-    Button toggle = (Button) ReflectionTestUtils.getField(view, "accountNavigationToggle");
+    Button toggle = (Button) ReflectionTestUtils.getField(adminView, "accountNavigationToggle");
+
     assertEquals("admin-sidebar", toggle.getElement().getAttribute("aria-controls"));
     toggle.click();
+
     assertTrue(page.hasClassName("account-navigation-open"));
     assertEquals("true", toggle.getElement().getAttribute("aria-expanded"));
     enter("?section=mail_test");
+
     assertFalse(page.hasClassName("account-navigation-open"));
     assertEquals("false", toggle.getElement().getAttribute("aria-expanded"));
   }
@@ -262,11 +273,11 @@ class AdminViewNavigationTest {
   void notificationsNavigationIsHiddenAndDirectUrlFallsBackForOrdinaryAdmin() {
     UserNotificationService notifications =
         mock(de.derpeterson.app.service.UserNotificationService.class);
-    view.configureAdminNotifications(notifications);
+    adminView.configureAdminNotifications(notifications);
     enter("?section=notifications");
-    assertFalse(
-        ((SideNavItem) ReflectionTestUtils.getField(view, "notificationsNavItem")).isVisible());
-    assertEquals("DASHBOARD", ReflectionTestUtils.getField(view, "activeAdminSection").toString());
+
+    assertFalse((getNotificationsNavItem()).isVisible());
+    assertEquals("DASHBOARD", getActiveAdminSectionName());
     verify(notifications, never()).targets(any());
   }
 
@@ -293,16 +304,16 @@ class AdminViewNavigationTest {
           de.derpeterson.app.service.SupportTicketService.class,
           () -> mock(de.derpeterson.app.service.SupportTicketService.class));
       context.refresh();
-      context.getAutowireCapableBeanFactory().autowireBean(view);
+      context.getAutowireCapableBeanFactory().autowireBean(adminView);
     }
     enter("?section=notifications");
-    assertEquals(
-        "NOTIFICATIONS", ReflectionTestUtils.getField(view, "activeAdminSection").toString());
-    assertTrue(
-        ((SideNavItem) ReflectionTestUtils.getField(view, "notificationsNavItem")).isVisible());
+
+    assertEquals("NOTIFICATIONS", getActiveAdminSectionName());
+    assertTrue((getNotificationsNavItem()).isVisible());
     when(notifications.canSend(any())).thenReturn(false);
     enter("?section=notifications");
-    assertEquals("DASHBOARD", ReflectionTestUtils.getField(view, "activeAdminSection").toString());
+
+    assertEquals("DASHBOARD", getActiveAdminSectionName());
   }
 
   @ParameterizedTest
@@ -317,11 +328,12 @@ class AdminViewNavigationTest {
   })
   void urlsSelectExactlyOnePanelAndItsNavigationItem(String query, String section, String item) {
     enter(query);
-    VerticalLayout layout =
-        (VerticalLayout) ReflectionTestUtils.getField(view, "adminSectionContentLayout");
+    VerticalLayout layout = getAdminSectionContentLayout();
+
     assertEquals(1, layout.getComponentCount());
-    assertSame(ReflectionTestUtils.getField(view, section), layout.getComponentAt(0));
-    SideNavItem nav = (SideNavItem) ReflectionTestUtils.getField(view, item);
+    assertSame(ReflectionTestUtils.getField(adminView, section), layout.getComponentAt(0));
+    SideNavItem nav = (SideNavItem) ReflectionTestUtils.getField(adminView, item);
+
     assertEquals("page", nav.getElement().getAttribute("aria-current"));
   }
 
@@ -329,26 +341,32 @@ class AdminViewNavigationTest {
   @EnumSource(AdminConfigGroup.class)
   void everyConfigurationGroupCanBeOpenedByDirectLink(AdminConfigGroup group) {
     enter("?section=configuration&group=" + group.name().toLowerCase(Locale.ROOT));
-    assertEquals(group, ReflectionTestUtils.getField(view, "activeConfigurationGroup"));
-    Object section = ReflectionTestUtils.getField(view, "configurationSection");
+
+    assertEquals(group, ReflectionTestUtils.getField(adminView, "activeConfigurationGroup"));
+    Object section = ReflectionTestUtils.getField(adminView, "configurationSection");
     if (group == AdminConfigGroup.EXTERNAL_LOGIN) {
-      VerticalLayout layout =
-          (VerticalLayout) ReflectionTestUtils.getField(view, "adminSectionContentLayout");
+      VerticalLayout layout = getAdminSectionContentLayout();
+
       assertSame(
-          ReflectionTestUtils.getField(view, "externalLoginSection"), layout.getComponentAt(0));
+          ReflectionTestUtils.getField(adminView, "externalLoginSection"),
+          layout.getComponentAt(0));
       verify(externalProviderSettings).load("google");
       verify(externalProviderSettings).load("microsoft");
     } else if (group == AdminConfigGroup.TWO_FACTOR) {
-      VerticalLayout layout =
-          (VerticalLayout) ReflectionTestUtils.getField(view, "adminSectionContentLayout");
-      assertSame(ReflectionTestUtils.getField(view, "twoFactorSection"), layout.getComponentAt(0));
+      VerticalLayout layout = getAdminSectionContentLayout();
+
+      assertSame(
+          ReflectionTestUtils.getField(adminView, "twoFactorSection"), layout.getComponentAt(0));
     } else {
       assertEquals(group, ReflectionTestUtils.getField(section, "selectedGroup"));
     }
-    SideNavItem parent = (SideNavItem) ReflectionTestUtils.getField(view, "configurationNavItem");
+    SideNavItem parent =
+        (SideNavItem) ReflectionTestUtils.getField(adminView, "configurationNavItem");
+
     assertTrue(parent.isExpanded());
     Map<?, ?> items =
-        (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuNavItems");
+        (Map<?, ?>) ReflectionTestUtils.getField(adminView, "configurationSubmenuNavItems");
+
     assertEquals(
         "page", ((SideNavItem) items.get(group)).getElement().getAttribute("aria-current"));
   }
@@ -356,14 +374,17 @@ class AdminViewNavigationTest {
   @Test
   void providerConfigurationAndGeneralConfigurationKeepTheirOwnHeadingsWhenSwitchingBack() {
     enter("?section=configuration&group=general");
-    Component heading = (Component) ReflectionTestUtils.getField(view, "adminHeadingDiv");
+    Component heading = (Component) ReflectionTestUtils.getField(adminView, "adminHeadingDiv");
     Component general = heading.getChildren().findFirst().orElseThrow();
     enter("?section=configuration&group=external_login");
     Component external = heading.getChildren().findFirst().orElseThrow();
+
     assertNotSame(general, external);
     enter("?section=configuration&group=general");
+
     assertSame(general, heading.getChildren().findFirst().orElseThrow());
     enter("?section=configuration&group=external_login");
+
     assertSame(external, heading.getChildren().findFirst().orElseThrow());
   }
 
@@ -372,22 +393,25 @@ class AdminViewNavigationTest {
   void missingOrInvalidGroupDoesNotReuseThePreviouslyOpenedGroup(String suffix) {
     enter("?section=configuration&group=security");
     enter("?section=configuration" + suffix);
+
     assertEquals(
-        AdminConfigGroup.GENERAL, ReflectionTestUtils.getField(view, "activeConfigurationGroup"));
+        AdminConfigGroup.GENERAL,
+        ReflectionTestUtils.getField(adminView, "activeConfigurationGroup"));
   }
 
   @Test
   void menuSelectionUsesFlowNavigationWithTheSameParametersAsTheLink() {
-    doReturn(Optional.of(view))
+    doReturn(Optional.of(adminView))
         .when(testUi)
         .navigate(eq(AdminView.class), any(QueryParameters.class));
     PageNavigationComponent navigation =
         (PageNavigationComponent)
-            ReflectionTestUtils.getField(view, "adminPageNavigationComponent");
+            ReflectionTestUtils.getField(adminView, "adminPageNavigationComponent");
     Map<?, ?> items =
-        (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuNavItems");
+        (Map<?, ?>) ReflectionTestUtils.getField(adminView, "configurationSubmenuNavItems");
     SideNavItem item = (SideNavItem) items.get(AdminConfigGroup.SECURITY);
     navigation.activate(item);
+
     verify(testUi)
         .navigate(
             AdminView.class,
@@ -397,11 +421,12 @@ class AdminViewNavigationTest {
   @Test
   void restoringTheUrlDoesNotBypassTheExistingAccessCheck() {
     when(securityService.getAuthenticatedUser(mockHttpRequest)).thenReturn(Optional.empty());
-    BeforeEnterEvent event = mock(BeforeEnterEvent.class);
-    when(event.hasForwardTarget()).thenReturn(true);
-    view.beforeEnter(event);
-    verify(event).forwardTo(LoginView.class);
-    verify(event, never()).getLocation();
+    BeforeEnterEvent beforeEnterEvent = mock(BeforeEnterEvent.class);
+    when(beforeEnterEvent.hasForwardTarget()).thenReturn(true);
+    adminView.beforeEnter(beforeEnterEvent);
+
+    verify(beforeEnterEvent).forwardTo(LoginView.class);
+    verify(beforeEnterEvent, never()).getLocation();
   }
 
   @Test
@@ -409,12 +434,14 @@ class AdminViewNavigationTest {
     when(securityService.getCurrentUser(mockHttpRequest)).thenReturn(Optional.empty());
     when(securityService.getAuthenticatedUser(mockHttpRequest)).thenReturn(Optional.empty());
     AdminView anonymous = createView();
+
     assertNull(ReflectionTestUtils.getField(anonymous, "userPopoverMenu"));
     assertNull(ReflectionTestUtils.getField(anonymous, "userIconButton"));
-    BeforeEnterEvent event = mock(BeforeEnterEvent.class);
-    when(event.hasForwardTarget()).thenReturn(true);
-    anonymous.beforeEnter(event);
-    verify(event).forwardTo(LoginView.class);
+    BeforeEnterEvent beforeEnterEvent = mock(BeforeEnterEvent.class);
+    when(beforeEnterEvent.hasForwardTarget()).thenReturn(true);
+    anonymous.beforeEnter(beforeEnterEvent);
+
+    verify(beforeEnterEvent).forwardTo(LoginView.class);
   }
 
   public static class TestService extends VaadinServletService {
@@ -422,5 +449,17 @@ class AdminViewNavigationTest {
     public RouteRegistry getRouteRegistry() {
       return super.getRouteRegistry();
     }
+  }
+
+  private String getActiveAdminSectionName() {
+    return ReflectionTestUtils.getField(adminView, "activeAdminSection").toString();
+  }
+
+  private VerticalLayout getAdminSectionContentLayout() {
+    return (VerticalLayout) ReflectionTestUtils.getField(adminView, "adminSectionContentLayout");
+  }
+
+  private SideNavItem getNotificationsNavItem() {
+    return (SideNavItem) ReflectionTestUtils.getField(adminView, "notificationsNavItem");
   }
 }

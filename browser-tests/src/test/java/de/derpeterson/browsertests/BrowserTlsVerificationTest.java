@@ -34,19 +34,22 @@ class BrowserTlsVerificationTest {
     try (var _ = BrowserTestCa.lease(authority, true);
         Playwright playwright = Playwright.create();
         Browser browser = playwright.chromium().launch();
-        BrowserContext context = browser.newContext()) {
+        BrowserContext browserContext = browser.newContext()) {
       String trusted = startProxy(authority, directory.resolve("trusted"), proxies);
       Path untrusted = directory.resolve("untrusted authority");
       BrowserTestCa.initialize(untrusted);
       String unknown = startProxy(untrusted, directory.resolve("untrusted worker"), proxies);
-      Page page = context.newPage();
-      assertEquals(200, page.navigate(trusted).status());
+      Page browserPage = browserContext.newPage();
+
+      assertEquals(200, browserPage.navigate(trusted).status());
       String wrongHostname = trusted.replace("127.0.0.1", "localhost");
       PlaywrightException hostname =
-          assertThrows(PlaywrightException.class, () -> page.navigate(wrongHostname));
+          assertThrows(PlaywrightException.class, () -> browserPage.navigate(wrongHostname));
+
       assertTrue(hostname.getMessage().contains("ERR_CERT_COMMON_NAME_INVALID"));
       PlaywrightException chain =
-          assertThrows(PlaywrightException.class, () -> page.navigate(unknown));
+          assertThrows(PlaywrightException.class, () -> browserPage.navigate(unknown));
+
       assertTrue(chain.getMessage().contains("ERR_CERT_AUTHORITY_INVALID"));
     } finally {
       for (Process proxy : proxies) {
@@ -82,7 +85,7 @@ class BrowserTlsVerificationTest {
                 port,
                 worker.resolve("server.crt").toString().replace('\\', '/'),
                 worker.resolve("server.key").toString().replace('\\', '/')));
-    ProcessBuilder builder =
+    ProcessBuilder processBuilder =
         new ProcessBuilder(
                 System.getProperty("browser.tests.caddyExecutable"),
                 "run",
@@ -92,9 +95,9 @@ class BrowserTlsVerificationTest {
                 "caddyfile")
             .redirectErrorStream(true)
             .redirectOutput(worker.resolve("proxy.log").toFile());
-    builder.environment().put("XDG_DATA_HOME", worker.resolve("caddy-data").toString());
-    builder.environment().put("XDG_CONFIG_HOME", worker.resolve("caddy-config").toString());
-    proxies.add(builder.start());
+    processBuilder.environment().put("XDG_DATA_HOME", worker.resolve("caddy-data").toString());
+    processBuilder.environment().put("XDG_CONFIG_HOME", worker.resolve("caddy-config").toString());
+    proxies.add(processBuilder.start());
     String origin = "https://127.0.0.1:" + port;
     BrowserHttps.awaitReady(origin, worker.resolve("root.crt"));
     return origin;

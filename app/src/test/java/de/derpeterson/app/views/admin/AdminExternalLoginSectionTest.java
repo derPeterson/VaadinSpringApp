@@ -36,8 +36,8 @@ class AdminExternalLoginSectionTest {
     MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     ExternalProviderSettings settings = mock(ExternalProviderSettings.class);
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://portal.example.test/");
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(ConfigEntry.BASE_URL)).thenReturn("https://portal.example.test/");
     when(settings.load("google"))
         .thenReturn(
             new ExternalProviderSettings.Settings(
@@ -46,13 +46,14 @@ class AdminExternalLoginSectionTest {
         .thenReturn(
             new ExternalProviderSettings.Settings("microsoft", "", false, false, "revision"));
     AdminExternalLoginSection section =
-        new AdminExternalLoginSection(messageProperties, settings, config);
+        new AdminExternalLoginSection(messageProperties, settings, configService);
     section.activate();
     Badge badge = (Badge) find(section, "provider-google-status");
     String expected =
         enabled
             ? messageProperties.getProviderSettingsActive()
             : messageProperties.getProviderSettingsInactive();
+
     assertEquals(expected, badge.getText());
     assertEquals("Google: " + expected, badge.getElement().getAttribute("aria-label"));
     assertTrue(badge.getThemeNames().contains(enabled ? "success" : "warning"));
@@ -62,12 +63,14 @@ class AdminExternalLoginSectionTest {
             : enabled
                 ? messageProperties.getProviderSettingsActiveHint("Google")
                 : messageProperties.getProviderSettingsInactiveHint("Google");
+
     assertEquals(expectedHint, Tooltip.forComponent(badge).getText());
     TabSheet tabs = (TabSheet) find(section, "admin-provider-tabs");
     Switch activationSwitch =
         (Switch) find(tabs.getComponent(tabs.getTabAt(0)), "provider-google-enabled");
     activationSwitch.setValue(!enabled);
     section.refreshTexts();
+
     assertEquals(expected, badge.getText(), "Ein Entwurf ist keine gespeicherte Freigabe");
     verify(settings, never())
         .save(
@@ -85,8 +88,8 @@ class AdminExternalLoginSectionTest {
     MessageProperties messageProperties =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
     ExternalProviderSettings settings = mock(ExternalProviderSettings.class);
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(ConfigEntry.BASE_URL)).thenReturn("https://portal.example.test/");
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(ConfigEntry.BASE_URL)).thenReturn("https://portal.example.test/");
     when(settings.load("google"))
         .thenReturn(
             new ExternalProviderSettings.Settings(
@@ -95,30 +98,37 @@ class AdminExternalLoginSectionTest {
         .thenReturn(
             new ExternalProviderSettings.Settings("microsoft", "", false, false, "revision"));
     AdminExternalLoginSection section =
-        new AdminExternalLoginSection(messageProperties, settings, config);
+        new AdminExternalLoginSection(messageProperties, settings, configService);
     section.activate();
     TabSheet tabs = (TabSheet) find(section, "admin-provider-tabs");
     Component form = tabs.getComponent(tabs.getTabAt(0));
     TextField client = (TextField) find(form, "provider-google-client-id");
     PasswordField secret = (PasswordField) find(form, "provider-google-secret");
     Switch activationSwitch = (Switch) find(form, "provider-google-enabled");
+
     assertEquals(secretStored, activationSwitch.isEnabled());
     client.setValue(" ");
+
     assertFalse(activationSwitch.isEnabled());
     secret.setValue("new-example-secret");
+
     assertFalse(activationSwitch.isEnabled());
     client.setValue("new-client");
+
     assertTrue(activationSwitch.isEnabled());
     secret.clear();
+
     assertEquals(
         secretStored, activationSwitch.isEnabled(), "Ein gespeichertes Secret zählt weiter");
     secret.setValue("new-example-secret");
     activationSwitch.setValue(true);
     client.clear();
+
     assertTrue(
         activationSwitch.isEnabled(),
         "Ausschalten muss auch bei unvollständigem Entwurf möglich bleiben");
     activationSwitch.setValue(false);
+
     assertFalse(activationSwitch.isEnabled());
     assertEquals(
         messageProperties.getProviderSettingsInactive(),

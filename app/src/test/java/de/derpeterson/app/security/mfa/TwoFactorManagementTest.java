@@ -114,10 +114,12 @@ class TwoFactorManagementTest {
         mockHttpRequest, TwoFactorAction.MANAGE_RECOVERY_CODES, recoveryCodes.getFirst());
     clock.now.updateAndGet(now -> now.plusSeconds(60));
     UUID output = twoFactorManagement.regenerate(mockHttpRequest);
+
     assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     JsonMapper json = JsonMapper.builder().build();
     String currentProof =
         (String) mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF);
+
     assertEquals(
         json.readTree(previousProof).get("verifiedAt"),
         json.readTree(currentProof).get("verifiedAt"));
@@ -130,6 +132,7 @@ class TwoFactorManagementTest {
     Long userId = testAccount.getId();
     String accessVersion = testAccount.getAccessVersion();
     String recoveryCode = recoveryCodes.get(2);
+
     assertThrows(
         BadCredentialsException.class,
         () -> twoFactorStore.verify(userId, accessVersion, recoveryCode));
@@ -144,6 +147,7 @@ class TwoFactorManagementTest {
     twoFactorManagement.disable(mockHttpRequest);
     TwoFactorAuthorization.State state =
         twoFactorAuthorization.state(twoFactorAuthorization.owner(mockHttpRequest));
+
     assertFalse(state.enrolled());
     assertTrue(state.previouslyEnrolled());
     assertEquals(0, twoFactorManagement.remainingCodes(mockHttpRequest));
@@ -152,10 +156,11 @@ class TwoFactorManagementTest {
   @Test
   void googleOnlyAccountCannotRemoveItsOnlySafeFutureEnrollmentPath() {
     transactionTemplate.executeWithoutResult(status -> {
-      UserEntity account = userRepository.findById(testAccount.getId()).orElseThrow();
+      UserEntity testAccountEntity = userRepository.findById(testAccount.getId()).orElseThrow();
       // Das Setzen ist hier nur Fixture: echte Passwortänderung prüft die Faktorfreigabe.
-      account.setPassword(null);
+      testAccountEntity.setPassword(null);
     });
+
     assertEquals(
         TwoFactorManagement.DisableProblem.NO_INDEPENDENT_ACCESS,
         twoFactorManagement.disableProblem(mockHttpRequest));

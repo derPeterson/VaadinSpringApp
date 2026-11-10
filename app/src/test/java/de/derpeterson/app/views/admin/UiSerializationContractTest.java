@@ -111,10 +111,12 @@ class UiSerializationContractTest {
     MessageProperties fixed =
         copy(MessageProperties.forLocale(new CustomI18NProvider(), fixedLocale));
     localeReference.set(fixedLocale);
+
     assertEquals(fixed.getNotificationsTitle(), dynamic.getNotificationsTitle());
     localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     MessageProperties other =
         MessageProperties.forLocale(new CustomI18NProvider(), localeReference.get());
+
     assertEquals(other.getNotificationsTitle(), dynamic.getNotificationsTitle());
     assertEquals(
         MessageProperties.forLocale(new CustomI18NProvider(), fixedLocale).getNotificationsTitle(),
@@ -143,10 +145,12 @@ class UiSerializationContractTest {
     Navigation restored = copy(new Navigation(navigation, probe));
     SideNavItem restoredAccount = restored.component().getItems().getFirst();
     SideNavItem restoredNotifications = restoredAccount.getItems().getFirst();
+
     assertEquals(messages.getAccountSettingsTitle(), restoredAccount.getLabel());
     assertEquals(messages.getNotificationsTitle(), restoredNotifications.getLabel());
     assertEquals("page", restoredNotifications.getElement().getAttribute("aria-current"));
     restored.component().activate(restoredNotifications);
+
     assertEquals(1, restored.probe().actions);
   }
 
@@ -183,10 +187,12 @@ class UiSerializationContractTest {
     restored.component().refreshTexts();
     Button last = (Button) ReflectionTestUtils.getField(restored.component(), "lastPageButton");
     last.click();
+
     assertEquals(9, restored.probe().page);
     ComboBox<?> size =
         (ComboBox<?>) ReflectionTestUtils.getField(restored.component(), "pageSizeSelector");
     setPageSize(size);
+
     assertEquals(20, restored.probe().size);
     assertEquals(messages.getAdminUsersPaginationLastPage(), last.getAriaLabel().orElseThrow());
   }
@@ -218,8 +224,10 @@ class UiSerializationContractTest {
     Filters restored = copy(new Filters(filter, probe));
     restored.component().refreshTexts();
     ((Button) ReflectionTestUtils.getField(restored.component(), "applyFiltersButton")).click();
+
     assertEquals(1, restored.probe().actions);
     ((Button) ReflectionTestUtils.getField(restored.component(), "clearFiltersButton")).click();
+
     assertEquals(1, restored.probe().actions);
   }
 
@@ -232,6 +240,7 @@ class UiSerializationContractTest {
     AdminUserFilters filters =
         new AdminUserFilters(
             "query", true, Set.of(UserStatus.AVAILABLE), Set.of(RoleType.ROLE_USER), Instant.now());
+
     assertEquals(
         List.of(target, preview, item, filters), copy(List.of(target, preview, item, filters)));
   }
@@ -247,10 +256,10 @@ class UiSerializationContractTest {
         WebApplicationContext.ROOT_WEB_APPLICATION_CONTEXT_ATTRIBUTE, context);
     VaadinServlet servlet = mock(VaadinServlet.class);
     when(servlet.getServletContext()).thenReturn(servletContext);
-    VaadinServletService service = mock(VaadinServletService.class);
-    when(service.getServlet()).thenReturn(servlet);
-    VaadinService.setCurrent(service);
-    return service;
+    VaadinServletService vaadinServletService = mock(VaadinServletService.class);
+    when(vaadinServletService.getServlet()).thenReturn(servlet);
+    VaadinService.setCurrent(vaadinServletService);
+    return vaadinServletService;
   }
 
   @Test
@@ -259,9 +268,11 @@ class UiSerializationContractTest {
     SecurityService old = mock(SecurityService.class);
     ServiceReference<SecurityService> restored =
         copy(new ServiceReference<>(SecurityService.class, old));
+
     assertThrows(IllegalStateException.class, restored::get);
     SecurityService fresh = mock(SecurityService.class);
     liveContext(fresh, mock(MaintenanceService.class));
+
     assertSame(fresh, restored.get());
     assertNotSame(old, restored.get());
   }
@@ -273,9 +284,11 @@ class UiSerializationContractTest {
             new PushSecurityInterceptor(
                 mock(SecurityService.class), mock(MaintenanceService.class)));
     SecurityService fresh = mock(SecurityService.class);
-    VaadinServletService service = liveContext(fresh, mock(MaintenanceService.class));
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    VaadinServletRequest servletRequest = new VaadinServletRequest(request, service);
+    VaadinServletService vaadinServletService = liveContext(fresh, mock(MaintenanceService.class));
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    VaadinServletRequest servletRequest =
+        new VaadinServletRequest(mockHttpRequest, vaadinServletService);
+
     assertThrows(AccessDeniedException.class, () -> guard.requestStart(servletRequest, null));
     verify(fresh).hasCurrentSessionPrivileges(servletRequest.getHttpServletRequest());
   }
@@ -309,6 +322,7 @@ class UiSerializationContractTest {
         new org.springframework.mock.web.MockHttpSession(servlet);
     restored.valueUnbound(
         new jakarta.servlet.http.HttpSessionBindingEvent(restoredSession, "fixture"));
+
     verify(fresh).removeSessionInformation(restoredSession.getId());
     org.mockito.Mockito.verifyNoInteractions(old);
   }
@@ -331,6 +345,7 @@ class UiSerializationContractTest {
     assertOwnSerializationHooksReject(avatar);
     assertOwnSerializationHooksReject(users);
     SessionAttributeCodec codec = new SessionAttributeCodec();
+
     assertThrows(IllegalArgumentException.class, () -> codec.encode(avatar));
     assertThrows(IllegalArgumentException.class, () -> codec.encode(users));
   }
@@ -343,6 +358,7 @@ class UiSerializationContractTest {
         ObjectOutputStream output = new ObjectOutputStream(bytes)) {
       InvocationTargetException rejected =
           assertThrows(InvocationTargetException.class, () -> write.invoke(editor, output));
+
       assertInstanceOf(NotSerializableException.class, rejected.getCause());
       assertEquals(
           "Runtime UI must be rebuilt from the authenticated session",
@@ -355,6 +371,7 @@ class UiSerializationContractTest {
     try (ObjectInputStream input = new ObjectInputStream(new ByteArrayInputStream(header))) {
       InvocationTargetException rejected =
           assertThrows(InvocationTargetException.class, () -> read.invoke(editor, input));
+
       assertInstanceOf(InvalidObjectException.class, rejected.getCause());
       assertEquals(
           "Runtime UI cannot be restored from a Java object graph",

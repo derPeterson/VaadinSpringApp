@@ -175,16 +175,18 @@ class LoginSessionRecoveryTest {
     when(before.getLocation()).thenReturn(location);
     view.beforeEnter(before);
     NotificationHelper helper = NotificationHelper.getInstance();
+
     assertFalse(
         ((Notification) ReflectionTestUtils.getField(helper, "currentNotification")).isOpened());
     ui.add(view);
     AfterNavigationEvent after = mock(AfterNavigationEvent.class);
     when(after.getLocation()).thenReturn(location);
     view.afterNavigation(after);
-    Notification notice =
+    Notification notification =
         (Notification) ReflectionTestUtils.getField(helper, "currentNotification");
-    assertTrue(notice.isOpened());
-    assertTrue(notice.getElement().getThemeList().contains("cosmos-reference-error"));
+
+    assertTrue(notification.isOpened());
+    assertTrue(notification.getElement().getThemeList().contains("cosmos-reference-error"));
     Supplier<String> message =
         (Supplier<String>) ReflectionTestUtils.getField(helper, "messageSupplier");
     String expected =
@@ -195,6 +197,7 @@ class LoginSessionRecoveryTest {
           case "unavailable" -> messageProperties.getLoginUnavailableMessage();
           default -> messageProperties.getLoginFailedMessage();
         };
+
     assertEquals(expected, message.get());
   }
 
@@ -208,11 +211,13 @@ class LoginSessionRecoveryTest {
     AfterNavigationEvent after = mock(AfterNavigationEvent.class);
     when(after.getLocation()).thenReturn(location);
     view.afterNavigation(after);
+
     assertTrue(field("sessionRecoveryDiv", Div.class).isVisible());
-    Notification notice =
+    Notification notification =
         (Notification)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
-    assertFalse(notice.isOpened());
+
+    assertFalse(notification.isOpened());
   }
 
   private Button button(String id) {
@@ -238,10 +243,12 @@ class LoginSessionRecoveryTest {
   @Test
   void correctPasswordAtLimitOpensOnlyManagementAndClearsPassword() {
     reachedLimit();
+
     verify(sessions).startRecovery(mockHttpRequest, "own@example.test", "Secret!Password8", true);
     verify(sessions).recoveryList(mockHttpRequest);
     assertTrue(field("sessionRecoveryDiv", Div.class).isVisible());
     Div recovery = field("sessionRecoveryDiv", Div.class);
+
     assertEquals(1, recovery.getChildren().count());
     assertTrue(
         recovery
@@ -259,6 +266,7 @@ class LoginSessionRecoveryTest {
             .getTextRecursively()
             .contains(messageProperties.getSessionRecoveryListHint()));
     Component panel = recovery.getChildren().findFirst().orElseThrow();
+
     assertTrue(tree(panel).anyMatch(item -> item == button("session-recovery-cancel")));
     assertTrue(tree(panel).anyMatch(item -> item == button("session-recovery-continue")));
     assertFalse(field("loginAuthenticationPanels", Component.class).isVisible());
@@ -271,6 +279,7 @@ class LoginSessionRecoveryTest {
   @ValueSource(booleans = {false, true})
   void switchForwardsRememberChoiceToNormalLogin(boolean remember) {
     Switch rememberSwitch = field("rememberMeSwitch", Switch.class);
+
     assertFalse(rememberSwitch.getValue());
     rememberSwitch.setValue(remember);
     doNothing()
@@ -305,6 +314,7 @@ class LoginSessionRecoveryTest {
     mockHttpRequest.setSecure(true);
     Switch rememberSwitch = field("rememberMeSwitch", Switch.class);
     rememberSwitch.setValue(remember);
+
     assertEquals(
         0, mockHttpResponse.getCookies().length, "Programmatische Änderungen speichern nichts");
 
@@ -313,6 +323,7 @@ class LoginSessionRecoveryTest {
         new ComponentValueChangeEvent<>(rememberSwitch, rememberSwitch, !remember, true));
 
     Cookie choice = mockHttpResponse.getCookie("login-remember-choice");
+
     assertNotNull(choice);
     assertEquals(Boolean.toString(remember), choice.getValue());
     assertEquals(31536000, choice.getMaxAge());
@@ -329,6 +340,7 @@ class LoginSessionRecoveryTest {
     when(authentication.authenticate(any()))
         .thenThrow(new BadCredentialsException("secret diagnostic"));
     reachedLimit();
+
     verifyNoInteractions(sessions);
     assertFalse(field("sessionRecoveryDiv", Div.class).isVisible());
     assertTrue(field("loginAuthenticationPanels", Component.class).isVisible());
@@ -336,6 +348,7 @@ class LoginSessionRecoveryTest {
     Supplier<String> text =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+
     assertEquals(messageProperties.getLoginFailedMessage(), text.get());
   }
 
@@ -343,6 +356,7 @@ class LoginSessionRecoveryTest {
   void cancelDropsProofAndReturnsToNormalLogin() {
     reachedLimit();
     button("session-recovery-cancel").click();
+
     verify(sessions).cancelRecovery(mockHttpRequest);
     assertFalse(field("sessionRecoveryDiv", Div.class).isVisible());
     assertTrue(field("loginAuthenticationPanels", Component.class).isVisible());
@@ -353,20 +367,24 @@ class LoginSessionRecoveryTest {
     when(sessions.recoveryList(mockHttpRequest))
         .thenReturn(new SessionManagementService.Snapshot(List.of(), 0, 1));
     button("account-sessions-refresh").click();
+
     assertTrue(button("session-recovery-continue").isEnabled());
   }
 
   @Test
   void continueIsEnabledOnlyAfterAConfirmedRevocationFreesASlot() {
     reachedLimit();
+
     assertFalse(button("session-recovery-continue").isEnabled());
     button("session-revoke-opaque-device").click();
+
     assertFalse(button("session-recovery-continue").isEnabled());
     Object sessionsPanel = ReflectionTestUtils.getField(view, "sessionRecoveryComponent");
     Object dialog = ReflectionTestUtils.getField(sessionsPanel, "sessionConfirmationDialog");
     when(sessions.recoveryList(mockHttpRequest))
         .thenReturn(new SessionManagementService.Snapshot(List.of(), 0, 1));
     ((Button) ReflectionTestUtils.getField(dialog, "confirmButton")).click();
+
     verify(sessions).recoveryRevoke(mockHttpRequest, "opaque-device");
     assertTrue(button("session-recovery-continue").isEnabled());
     verify(sessions, never()).finishRecovery(mockHttpRequest, vaadinResponse);
@@ -377,6 +395,7 @@ class LoginSessionRecoveryTest {
     reachedLimit();
     freeSessionSlot();
     button("session-recovery-continue").click();
+
     verify(sessions).finishRecovery(mockHttpRequest, vaadinResponse);
     assertEquals(HomeView.class, ui.target);
     verify(authentication, times(1)).authenticate(any());
@@ -389,11 +408,13 @@ class LoginSessionRecoveryTest {
     freeSessionSlot();
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     button("session-recovery-continue").click();
+
     assertEquals(TwoFactorView.class, ui.target);
-    Notification notice =
+    Notification notification =
         (Notification)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
-    assertFalse(notice.isOpened());
+
+    assertFalse(notification.isOpened());
   }
 
   @Test
@@ -408,12 +429,14 @@ class LoginSessionRecoveryTest {
     when(sessions.finishRecovery(mockHttpRequest, vaadinResponse))
         .thenThrow(new SessionLimitException());
     button("session-recovery-continue").click();
+
     assertTrue(field("sessionRecoveryDiv", Div.class).isVisible());
     assertFalse(button("session-recovery-continue").isEnabled());
     assertNull(ui.target);
     Supplier<String> text =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+
     assertEquals(messageProperties.getLoginSessionLimitMessage(), text.get());
   }
 
@@ -424,12 +447,14 @@ class LoginSessionRecoveryTest {
     when(sessions.finishRecovery(mockHttpRequest, vaadinResponse))
         .thenThrow(new AuthenticationCredentialsNotFoundException("expired"));
     button("session-recovery-continue").click();
+
     assertTrue(field("loginAuthenticationPanels", Component.class).isVisible());
     assertFalse(field("sessionRecoveryDiv", Div.class).isVisible());
     assertNull(ui.target);
     Supplier<String> text =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+
     assertEquals(messageProperties.getSessionRecoveryExpired(), text.get());
   }
 

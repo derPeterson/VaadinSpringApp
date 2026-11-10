@@ -35,6 +35,7 @@ class MessagePropertiesLocaleTest {
   void accountCountSurvivesTheRealTwoStageTranslation(String language, int count, String expected) {
     MessageProperties messages =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
+
     assertEquals(expected, messages.getAdminUsersAccountCount(count));
     assertFalse(messages.getAdminUsersAccountCount(count).contains("{"));
   }
@@ -47,29 +48,34 @@ class MessagePropertiesLocaleTest {
   void durationNumbersUseTheSelectedLocaleAndKeepAllDigits(String language, String expected) {
     MessageProperties messages =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
+
     assertEquals(expected, messages.getAdminConfigDurationSeconds(new BigDecimal("1.23456789")));
   }
 
   @Test
   void normalGettersFollowTheSessionLanguageWithoutRecreatingTheBean() {
-    AtomicReference<Locale> locale = new AtomicReference<>(Locale.GERMAN);
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.getLocale()).thenAnswer(ignored -> locale.get());
-    VaadinSession.setCurrent(session);
+    AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenAnswer(ignored -> localeReference.get());
+    VaadinSession.setCurrent(vaadinSession);
     MessageProperties messages = new MessageProperties(i18nProvider);
+
     assertEquals("de", messages.getLoginTitle());
-    locale.set(Locale.ENGLISH);
+    localeReference.set(Locale.ENGLISH);
+
     assertEquals("en", messages.getLoginTitle());
   }
 
   @Test
   void explicitLocaleWorksWithoutSessionAndDoesNotFollowLaterSessionChanges() {
     MessageProperties messages = MessageProperties.forLocale(i18nProvider, Locale.GERMAN);
+
     assertEquals("de", messages.getLoginTitle());
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.getLocale()).thenReturn(Locale.ENGLISH);
-    VaadinSession.setCurrent(session);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.getLocale()).thenReturn(Locale.ENGLISH);
+    VaadinSession.setCurrent(vaadinSession);
+
     assertEquals("de", messages.getLoginTitle());
-    assertEquals(Locale.ENGLISH, session.getLocale());
+    assertEquals(Locale.ENGLISH, vaadinSession.getLocale());
   }
 }

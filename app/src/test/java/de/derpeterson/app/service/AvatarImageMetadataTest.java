@@ -37,14 +37,11 @@ class AvatarImageMetadataTest {
 
   static Stream<Arguments> orientations() {
     return Stream.of("png", "jpeg")
-        .flatMap(
-            format ->
-                Stream.of(ByteOrder.LITTLE_ENDIAN, ByteOrder.BIG_ENDIAN)
-                    .flatMap(
-                        order ->
-                            IntStream.rangeClosed(1, 8)
-                                .mapToObj(
-                                    orientation -> Arguments.of(format, order, orientation))));
+        .flatMap(format ->
+            Stream.of(ByteOrder.LITTLE_ENDIAN, ByteOrder.BIG_ENDIAN)
+                .flatMap(order ->
+                    IntStream.rangeClosed(1, 8)
+                        .mapToObj(orientation -> Arguments.of(format, order, orientation))));
   }
 
   @ParameterizedTest
@@ -58,24 +55,23 @@ class AvatarImageMetadataTest {
 
   static Stream<Arguments> malformedMetadata() {
     return Stream.of("png", "jpeg")
-        .flatMap(
-            format ->
-                Stream.of(
-                        "empty",
-                        "short-header",
-                        "byte-order",
-                        "magic",
-                        "unsigned-offset",
-                        "last-byte-offset",
-                        "empty-directory",
-                        "short-entry",
-                        "huge-directory",
-                        "wrong-tag",
-                        "wrong-type",
-                        "wrong-count",
-                        "zero",
-                        "nine")
-                    .map(kind -> Arguments.of(format, kind)));
+        .flatMap(format ->
+            Stream.of(
+                    "empty",
+                    "short-header",
+                    "byte-order",
+                    "magic",
+                    "unsigned-offset",
+                    "last-byte-offset",
+                    "empty-directory",
+                    "short-entry",
+                    "huge-directory",
+                    "wrong-tag",
+                    "wrong-type",
+                    "wrong-count",
+                    "zero",
+                    "nine")
+                .map(kind -> Arguments.of(format, kind)));
   }
 
   @ParameterizedTest
@@ -129,6 +125,7 @@ class AvatarImageMetadataTest {
   void animatedPngIsStillRejectedAfterAnExifBlock() throws Exception {
     byte[] png = withMetadata("png", tiff(ByteOrder.LITTLE_ENDIAN, 2));
     byte[] animated = insertPngChunk(png, 33 + 26 + 12, "acTL", new byte[8]);
+
     assertEquals(
         Problem.TYPE,
         assertThrows(InvalidImage.class, () -> processor.validate(animated)).problem());
@@ -160,6 +157,7 @@ class AvatarImageMetadataTest {
     byte[] png = withMetadata("png", tiff(ByteOrder.LITTLE_ENDIAN, 2));
     ByteBuffer.wrap(png).putInt(33, declaredLength);
     Crop crop = Crop.centered();
+
     assertEquals(
         Problem.IMAGE,
         assertThrows(InvalidImage.class, () -> processor.normalize(png, crop)).problem());
@@ -193,6 +191,7 @@ class AvatarImageMetadataTest {
               Math.abs(actual.getRed() - color.getRed())
                   + Math.abs(actual.getGreen() - color.getGreen())
                   + Math.abs(actual.getBlue() - color.getBlue());
+
           assertTrue(distance < 40, "Unexpected color at corner " + corner + ": " + actual);
         }
       } finally {
@@ -200,6 +199,7 @@ class AvatarImageMetadataTest {
       }
     }
     String encoded = new String(normalized, StandardCharsets.ISO_8859_1);
+
     assertFalse(encoded.contains("Exif"));
     assertFalse(encoded.contains("eXIf"));
   }

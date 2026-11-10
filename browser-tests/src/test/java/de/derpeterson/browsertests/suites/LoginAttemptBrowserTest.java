@@ -71,6 +71,7 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
     try (BrowserActor existing = new BrowserActor(testBrowser);
         BrowserActor attacker = new BrowserActor(testBrowser)) {
       existing.login(email, BrowserTestAccounts.USER_PASSWORD, true);
+
       assertThat(existing.browserPage).hasURL(urlPattern(HOME_ROUTE));
       attacker.login(email, "WrongPassword!", true);
       LoginPage login = new LoginPage(attacker.browserPage);
@@ -81,6 +82,7 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
       login.dismissFailure();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       login.assertThrottled();
+
       assertFalse(
           attacker.browserContext.cookies().stream()
               .anyMatch(cookie -> cookie.name.equals("remember-me")));
@@ -139,21 +141,21 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
   void completedMailPasswordResetClearsTheBlock() {
     String email = createUser();
     limit(1);
-    try (BrowserActor actor = new BrowserActor(testBrowser)) {
-      actor.login(email, "WrongPassword!");
-      LoginPage login = new LoginPage(actor.browserPage);
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      browserActor.login(email, "WrongPassword!");
+      LoginPage login = new LoginPage(browserActor.browserPage);
       login.assertRejected();
       login.dismissFailure();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       login.assertThrottled();
       login.dismissFailure();
-      ForgotPasswordPage request = new ForgotPasswordPage(actor.browserPage);
-      request.open();
-      request.enterEmail(email);
-      request.submit();
-      request.requestedResponse();
-      request.dismissRequestedNotice();
-      MailpitInbox inbox = new MailpitInbox(actor.browserContext);
+      ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserActor.browserPage);
+      forgotPasswordPage.open();
+      forgotPasswordPage.enterEmail(email);
+      forgotPasswordPage.submit();
+      forgotPasswordPage.requestedResponse();
+      forgotPasswordPage.dismissRequestedNotice();
+      MailpitInbox inbox = new MailpitInbox(browserActor.browserContext);
       CapturedMail mail = inbox.awaitPasswordResetMail(email);
       login.open();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
@@ -168,6 +170,7 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
       LoginPage renewed = new LoginPage(resetPage);
       renewed.open();
       renewed.signIn(email, BrowserTestAccounts.RESET_PASSWORD);
+
       assertThat(resetPage).hasURL(urlPattern(HOME_ROUTE));
       new UserMenu(resetPage).assertUserSignedInWithoutAdminAction(email);
     }

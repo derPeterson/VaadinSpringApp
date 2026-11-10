@@ -74,17 +74,18 @@ class PublicPageComponentTest {
   @ValueSource(strings = {"de", "en"})
   void publicLanguageChoiceIsRestoredInANewSession(String language) {
     VaadinRequest request = mock(VaadinRequest.class);
-    VaadinResponse response = mock(VaadinResponse.class);
+    VaadinResponse vaadinResponse = mock(VaadinResponse.class);
     when(request.getContextPath()).thenReturn("");
     when(request.isSecure()).thenReturn(true);
     CurrentInstance.set(VaadinRequest.class, request);
-    CurrentInstance.set(VaadinResponse.class, response);
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Review Service");
-    when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
+    CurrentInstance.set(VaadinResponse.class, vaadinResponse);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Review Service");
+    when(configService.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
     PublicPageComponent page =
-        new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.LOGIN);
-    verifyNoInteractions(response);
+        new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.LOGIN);
+
+    verifyNoInteractions(vaadinResponse);
 
     tree(page)
         .filter(Button.class::isInstance)
@@ -95,8 +96,10 @@ class PublicPageComponentTest {
         .click();
 
     ArgumentCaptor<Cookie> cookies = ArgumentCaptor.forClass(Cookie.class);
-    verify(response).addCookie(cookies.capture());
+
+    verify(vaadinResponse).addCookie(cookies.capture());
     Cookie saved = cookies.getValue();
+
     assertEquals("public-language", saved.getName());
     assertEquals(language, saved.getValue());
     assertEquals("/", saved.getPath());
@@ -109,6 +112,7 @@ class PublicPageComponentTest {
     VaadinSession nextSession = mock(VaadinSession.class);
     when(nextRequest.getCookies()).thenReturn(new Cookie[] {saved});
     PublicLanguagePreference.restore(nextRequest, nextSession);
+
     verify(nextSession).setLocale(Locale.forLanguageTag(language));
   }
 
@@ -128,19 +132,19 @@ class PublicPageComponentTest {
   @EnumSource(PublicPageComponent.Page.class)
   void publicHeaderKeepsLiveLanguageAndOnlyOffersNavigationOutsideSecurity(
       PublicPageComponent.Page scene) {
-    ConfigService config = mock(ConfigService.class);
-    when(config.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Review Service");
-    when(config.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
-    PublicPageComponent page = new PublicPageComponent(config, messageProperties, scene);
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Review Service");
+    when(configService.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
+    PublicPageComponent page = new PublicPageComponent(configService, messageProperties, scene);
     Button nativeAction = new Button("Action");
     AtomicReference<Boolean> clicked = new AtomicReference<>(false);
     nativeAction.addClickListener(event -> clicked.set(true));
-    Span title = new Span(messageProperties.getLoginTitle());
+    Span titleSpan = new Span(messageProperties.getLoginTitle());
     page.getCardContainer()
         .add(
             new PublicPanelComponent(
                 AppIcon.SIGN_IN.create(),
-                title,
+                titleSpan,
                 messageProperties::getPublicLoginSubtitle,
                 new Component[] {new Span("Example")},
                 nativeAction));
@@ -154,6 +158,7 @@ class PublicPageComponentTest {
             .map(Anchor.class::cast)
             .map(Anchor::getHref)
             .toList();
+
     assertEquals(restricted ? List.of() : List.of("/home"), brandLinks);
     assertEquals(
         restricted ? 0 : 3,
@@ -161,11 +166,9 @@ class PublicPageComponentTest {
             .filter(component -> component.getId().orElse("").startsWith("public-nav-"))
             .count());
     assertFalse(tree(page).anyMatch(c -> c.hasClassName("tracked-user-button")));
-    assertTrue(
-        tree(page)
-            .filter(H1.class::isInstance)
-            .map(H1.class::cast)
-            .allMatch(h -> !h.getText().isBlank()));
+    List<H1> pageHeadings = tree(page).filter(H1.class::isInstance).map(H1.class::cast).toList();
+    assertEquals(1, pageHeadings.size());
+    assertFalse(pageHeadings.getFirst().getText().isBlank());
     Button english =
         tree(page)
             .filter(Button.class::isInstance)
@@ -174,6 +177,7 @@ class PublicPageComponentTest {
             .findFirst()
             .orElseThrow();
     english.click();
+
     assertEquals(Locale.ENGLISH, localeReference.get());
     assertEquals("true", english.getElement().getAttribute("aria-pressed"));
     if (scene == PublicPageComponent.Page.HOME) {
@@ -190,6 +194,7 @@ class PublicPageComponentTest {
               .map(Button.class::cast)
               .findFirst()
               .orElseThrow();
+
       assertEquals(messageProperties.getBaseLoginButton(), login.getText());
       assertEquals(
           scene == PublicPageComponent.Page.LOGIN, login.hasClassName("public-nav-active"));
@@ -200,6 +205,7 @@ class PublicPageComponentTest {
             .map(Span.class::cast)
             .anyMatch(span -> span.getText().equals(messageProperties.getPublicLoginSubtitle())));
     nativeAction.click();
+
     assertTrue(clicked.get());
   }
 

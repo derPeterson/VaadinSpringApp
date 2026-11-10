@@ -208,15 +208,16 @@ public final class BrowserTestRunner {
       if (!Files.isRegularFile(report.resolve("index.html"))) {
         throw new IOException("HTML report missing: " + report);
       }
-      Process process =
+      Process testProcess =
           new ProcessBuilder(
                   allureCommand(
                       browserTestModulePath, "open", report.toString(), "--host", "127.0.0.1"))
               .inheritIO()
               .start();
-      Runtime.getRuntime().addShutdownHook(new Thread(process::destroy));
-      System.exit(process.waitFor());
+      Runtime.getRuntime().addShutdownHook(new Thread(testProcess::destroy));
+      System.exit(testProcess.waitFor());
     }
+
     int languageIndex = Arrays.asList(args).indexOf("--language");
     if (languageIndex >= 0 && languageIndex + 1 >= args.length) {
       throw new IllegalArgumentException("Language missing.");
@@ -225,23 +226,30 @@ public final class BrowserTestRunner {
     new de.derpeterson.browsertests.i18n.UiTexts(
         language); // Validate before creating a Docker environment.
     System.setProperty("browser.tests.language", language);
+
     int suiteIndex = Arrays.asList(args).indexOf("--suite");
     if (suiteIndex >= 0 && suiteIndex + 1 >= args.length) {
       throw new IllegalArgumentException("Suite name missing.");
     }
     String suiteName = suiteIndex >= 0 ? args[suiteIndex + 1] : "all";
+
     int workersIndex = Arrays.asList(args).indexOf("--workers");
     if (workersIndex >= 0 && workersIndex + 1 >= args.length) {
       throw new IllegalArgumentException("Worker count missing.");
     }
     System.setProperty("browser.tests.workers", workersIndex >= 0 ? args[workersIndex + 1] : "1");
+
     Path authority = BrowserTestCa.directory(browserTestModulePath.getParent());
     BrowserTestCa.requireTrusted(authority);
     int exit;
     try (var _ = BrowserTestCa.lease(authority, true)) {
       BrowserTestCa.requireTrusted(authority);
-      BrowserTestRunner runner = new BrowserTestRunner(browserTestModulePath, options, suiteName);
-      exit = runner.workerCount > 1 ? runner.executeParallel(options) : runner.execute(options);
+      BrowserTestRunner browserTestRunner =
+          new BrowserTestRunner(browserTestModulePath, options, suiteName);
+      exit =
+          browserTestRunner.workerCount > 1
+              ? browserTestRunner.executeParallel(options)
+              : browserTestRunner.execute(options);
     }
     System.exit(exit);
   }
@@ -283,6 +291,7 @@ public final class BrowserTestRunner {
       System.setProperty(
           "allure.results.directory", runDirectory.resolve("allure-results").toString());
       save();
+
       Path certificates = runDirectory.resolve("https");
       BrowserTestCa.issue(BrowserTestCa.directory(repositoryPath), certificates);
       command(withCompose("config", "--quiet"));
@@ -329,10 +338,12 @@ public final class BrowserTestRunner {
               && result.getTestsSucceededCount() == result.getTestsFoundCount()
               && result.getTotalFailureCount() == 0;
       List<JsonNode> collected = MarkdownSummary.readAllureResults(runDirectory);
+
       if (collected.size() != result.getTestsFoundCount()) {
         passed = false;
         runMetadata.put("error", "JUnit and Allure case counts differ; incomplete evidence.");
       }
+
       if (result.getTotalFailureCount() > 0) {
         runMetadata.put(
             "error",
@@ -484,6 +495,7 @@ public final class BrowserTestRunner {
       boolean passed = true, setupPassed = true;
       long found = 0, succeeded = 0, failed = 0, skipped = 0;
       List<Map<String, Object>> details = new ArrayList<>();
+
       for (Worker child : browserParallelWorkers.workers()) {
         JsonNode data = JSON.readTree(child.directory().resolve("metadata.json").toFile());
         List<JsonNode> evidence = MarkdownSummary.readAllureResults(child.directory());
@@ -540,6 +552,7 @@ public final class BrowserTestRunner {
       // Jeder Fall genau einmal: fehlende und doppelte Nachweise verhindern ein grünes Ergebnis.
       List<JsonNode> results = MarkdownSummary.readAllureResults(runDirectory);
       Set<String> identities = new HashSet<>();
+
       for (JsonNode result : results) {
         String identity = result.path("fullName").asText() + result.path("parameters").toString();
         if (!identities.add(identity)) {
@@ -707,22 +720,22 @@ public final class BrowserTestRunner {
     }
   }
 
-  private String command(List<String> arguments) throws Exception {
+  private String command(List<String> commandArguments) throws Exception {
     Path temporaryOutput = Files.createTempFile(runDirectory, "command-", ".tmp");
     Files.writeString(
         runDirectory.resolve("runner.log"),
-        "\n> " + String.join(" ", arguments) + "\n",
+        "\n> " + String.join(" ", commandArguments) + "\n",
         StandardOpenOption.CREATE,
         StandardOpenOption.APPEND);
-    ProcessBuilder builder =
-        new ProcessBuilder(arguments)
+    ProcessBuilder processBuilder =
+        new ProcessBuilder(commandArguments)
             .directory(repositoryPath.toFile())
             .redirectErrorStream(true)
             .redirectOutput(temporaryOutput.toFile());
-    builder.environment().putAll(testEnvironment);
+    processBuilder.environment().putAll(testEnvironment);
     if (Path.of(dockerExecutable).isAbsolute()) {
-      builder.environment().keySet().removeIf(key -> key.equalsIgnoreCase("PATH"));
-      builder
+      processBuilder.environment().keySet().removeIf(key -> key.equalsIgnoreCase("PATH"));
+      processBuilder
           .environment()
           .put(
               "Path",
@@ -730,7 +743,7 @@ public final class BrowserTestRunner {
                   + java.io.File.pathSeparator
                   + System.getenv("PATH"));
     }
-    Process child = builder.start();
+    Process child = processBuilder.start();
     activeCommand = child;
     Thread childShutdown = new Thread(child::destroy);
     boolean hookRegistered = false;
@@ -742,9 +755,10 @@ public final class BrowserTestRunner {
         /* JVM shutdown began between the check and registration. */
       }
     }
-    int exit;
+
+    int commandExitCode;
     try {
-      exit = child.waitFor();
+      commandExitCode = child.waitFor();
     } finally {
       if (activeCommand == child) {
         activeCommand = null;
@@ -757,26 +771,34 @@ public final class BrowserTestRunner {
         }
       }
     }
-    String output = Files.readString(temporaryOutput);
-    Files.writeString(runDirectory.resolve("runner.log"), output, StandardOpenOption.APPEND);
+
+    String commandOutputText = Files.readString(temporaryOutput);
+    Files.writeString(
+        runDirectory.resolve("runner.log"), commandOutputText, StandardOpenOption.APPEND);
     Files.delete(temporaryOutput);
-    System.out.print(output);
-    if (exit != 0) {
+    System.out.print(commandOutputText);
+    if (commandExitCode != 0) {
       throw new IOException(
-          "Process exited with " + exit + "; see runner.log: " + arguments.getFirst());
+          "Process exited with "
+              + commandExitCode
+              + "; see runner.log: "
+              + commandArguments.getFirst());
     }
-    return output;
+
+    return commandOutputText;
   }
 
   /** Neustart ausschließlich der gerade vom Runner selbst erzeugten isolierten Testanwendung. */
   public static void restartTestApplication() throws Exception {
-    BrowserTestRunner runner = activeTestRunner;
-    if (runner == null || !runner.environmentStarted || runner.appContainer == null) {
+    BrowserTestRunner browserTestRunner = activeTestRunner;
+    if (browserTestRunner == null
+        || !browserTestRunner.environmentStarted
+        || browserTestRunner.appContainer == null) {
       throw new IllegalStateException("No owned test application is running");
     }
-    runner.testEnvironment.put("BROWSER_TEST_BOOTSTRAP_ENABLED", "false");
-    runner.command(
-        runner.withCompose(
+    browserTestRunner.testEnvironment.put("BROWSER_TEST_BOOTSTRAP_ENABLED", "false");
+    browserTestRunner.command(
+        browserTestRunner.withCompose(
             "up",
             "-d",
             "--no-build",
@@ -786,37 +808,39 @@ public final class BrowserTestRunner {
             "--wait-timeout",
             "180",
             "app"));
-    runner.appContainer = runner.command(runner.withCompose("ps", "-q", "app")).trim();
+    browserTestRunner.appContainer =
+        browserTestRunner.command(browserTestRunner.withCompose("ps", "-q", "app")).trim();
   }
 
   /** Startfreigabe nur für die eigene isolierte Anwendung, mit unverändertem Schlüssel und H2. */
   public static void restartWithDevelopmentOptions(boolean enabled) throws Exception {
-    BrowserTestRunner runner = ownedRunner();
-    runner.testEnvironment.put(
+    BrowserTestRunner browserTestRunner = ownedRunner();
+    browserTestRunner.testEnvironment.put(
         "BROWSER_TEST_DEVELOPMENT_OPTIONS_ENABLED", Boolean.toString(enabled));
     restartTestApplication();
   }
 
   /** Ausschließlich der Maildienst des aktiven eigenen Workers; keine fremden Dienste. */
   public static void setTestMailpitAvailable(boolean available) throws Exception {
-    BrowserTestRunner runner = ownedRunner();
-    runner.command(
+    BrowserTestRunner browserTestRunner = ownedRunner();
+    browserTestRunner.command(
         available
-            ? runner.withCompose("up", "-d", "--no-deps", "--wait", "mailpit")
-            : runner.withCompose("stop", "mailpit"));
+            ? browserTestRunner.withCompose("up", "-d", "--no-deps", "--wait", "mailpit")
+            : browserTestRunner.withCompose("stop", "mailpit"));
   }
 
   public static String testApplicationLogs() throws Exception {
-    BrowserTestRunner runner = ownedRunner();
-    return runner.command(runner.withCompose("logs", "--no-color", "--tail", "250", "app"));
+    BrowserTestRunner browserTestRunner = ownedRunner();
+    return browserTestRunner.command(
+        browserTestRunner.withCompose("logs", "--no-color", "--tail", "250", "app"));
   }
 
   public static JsonNode testMailpitMessages(boolean secondary) throws Exception {
-    BrowserTestRunner runner = ownedRunner();
+    BrowserTestRunner browserTestRunner = ownedRunner();
     String host = secondary ? "mailpit-secondary" : "mailpit";
     return JSON.readTree(
-        runner.command(
-            runner.withCompose(
+        browserTestRunner.command(
+            browserTestRunner.withCompose(
                 "exec",
                 "-T",
                 "app",
@@ -827,11 +851,13 @@ public final class BrowserTestRunner {
   }
 
   private static BrowserTestRunner ownedRunner() {
-    BrowserTestRunner runner = activeTestRunner;
-    if (runner == null || !runner.environmentStarted || runner.appContainer == null) {
+    BrowserTestRunner browserTestRunner = activeTestRunner;
+    if (browserTestRunner == null
+        || !browserTestRunner.environmentStarted
+        || browserTestRunner.appContainer == null) {
       throw new IllegalStateException("No owned test application is running");
     }
-    return runner;
+    return browserTestRunner;
   }
 
   private List<String> withCompose(String... args) {
@@ -840,35 +866,39 @@ public final class BrowserTestRunner {
     return result;
   }
 
-  private String git(String... args) throws Exception {
-    ArrayList<String> command = new ArrayList<>(List.of("git"));
-    command.addAll(List.of(args));
-    Process process =
-        new ProcessBuilder(command)
+  private String git(String... gitArguments) throws Exception {
+    ArrayList<String> gitCommandArguments = new ArrayList<>(List.of("git"));
+    gitCommandArguments.addAll(List.of(gitArguments));
+    Process gitProcess =
+        new ProcessBuilder(gitCommandArguments)
             .directory(repositoryPath.toFile())
             .redirectErrorStream(true)
             .start();
-    String output =
-        new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
+    String gitOutputText =
+        new String(
+                gitProcess.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8)
             .trim();
-    if (process.waitFor() != 0) {
-      throw new IOException("Cannot determine Git state: " + output);
+    if (gitProcess.waitFor() != 0) {
+      throw new IOException("Cannot determine Git state: " + gitOutputText);
     }
-    return output;
+
+    return gitOutputText;
   }
 
-  private static int port(String key, int fallback) {
-    int value = Integer.parseInt(System.getenv().getOrDefault(key, String.valueOf(fallback)));
-    if (value < 1024
-        || value > 65535
-        || value == 18080
-        || value == 18025
-        || value == 18443
-        || value == 8443) {
+  private static int port(String portVariableName, int defaultPort) {
+    int configuredPort =
+        Integer.parseInt(
+            System.getenv().getOrDefault(portVariableName, String.valueOf(defaultPort)));
+    if (configuredPort < 1024
+        || configuredPort > 65535
+        || configuredPort == 18080
+        || configuredPort == 18025
+        || configuredPort == 18443
+        || configuredPort == 8443) {
       throw new IllegalArgumentException(
           "Use free test ports from 1024 to 65535, excluding manual ports 8443/18080/18025/18443.");
     }
-    return value;
+    return configuredPort;
   }
 
   private static String dockerExecutable() {

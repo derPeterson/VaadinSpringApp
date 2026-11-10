@@ -45,20 +45,22 @@ public class AdminMailBrowserTest extends BrowserFixture {
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
-    ConfigurationPage config = new ConfigurationPage(browserPage);
-    config.open(AdminConfigGroup.EMAIL_SENDER);
-    String sender = config.value(uiTexts.getAdminConfigEntryEmailFrom());
+    ConfigurationPage configurationPage = new ConfigurationPage(browserPage);
+    configurationPage.open(AdminConfigGroup.EMAIL_SENDER);
+    String sender = configurationPage.value(uiTexts.getAdminConfigEntryEmailFrom());
     AdminMailPage mail = new AdminMailPage(browserPage);
     mail.open();
     String email = "mail-" + UUID.randomUUID() + "@example.test";
     mail.input(uiTexts.getAdminMailRecipient()).fill("invalid");
     mail.send();
     mail.notice(uiTexts.getAdminMailValidationRecipient());
+
     assertThat(browserPage.locator("vaadin-email-field[invalid]")).hasCount(1);
     mail.input(uiTexts.getAdminMailRecipient()).fill(email);
     mail.input(uiTexts.getAdminMailSubject()).fill("");
     mail.send();
     mail.notice(uiTexts.getAdminMailValidationSubject());
+
     assertThat(browserPage.locator("vaadin-text-field[invalid]")).hasCount(1);
     String subject = "Browser SMTP ÄÖÜ ß 中文 " + UUID.randomUUID(),
         body = "Unicode ÄÖÜ ß 中文 – geprüft";
@@ -66,11 +68,13 @@ public class AdminMailBrowserTest extends BrowserFixture {
     mail.input(uiTexts.getAdminMailBody()).fill("");
     mail.send();
     mail.notice(uiTexts.getAdminMailValidationBody());
+
     assertThat(browserPage.locator("vaadin-text-area[invalid]")).hasCount(1);
     mail.input(uiTexts.getAdminMailBody()).fill(body);
     mail.input(uiTexts.getAdminMailSubject()).focus();
     mail.sendFromSubject();
     mail.notice(uiTexts.getAdminMailSuccess());
+
     assertThat(
             browserPage.locator(
                 "vaadin-email-field[invalid],vaadin-text-field[invalid],vaadin-text-area[invalid]"))
@@ -134,11 +138,13 @@ public class AdminMailBrowserTest extends BrowserFixture {
       browserPage.setViewportSize(width, 900);
       for (String[] info : infos) {
         Locator help = openFieldHelp(info[0]);
+
         assertThat(help.locator(".admin-help-description")).hasText(info[1]);
         assertThat(help.locator(".admin-help-rules h4"))
             .hasText(uiTexts.getAdminConfigInputRules());
         assertThat(help.locator(".admin-help-rules li")).hasText(info[2]);
         help.locator("[slot=footer] vaadin-button").click();
+
         assertThat(help).hasCount(0);
       }
     }
@@ -146,15 +152,18 @@ public class AdminMailBrowserTest extends BrowserFixture {
         new de.derpeterson.browsertests.i18n.UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     try {
       new UserMenu(browserPage).selectLanguage(other.language());
+
       assertThat(mail.input(other.getAdminMailRecipient())).hasValue(email);
       assertThat(mail.input(other.getAdminMailSubject())).hasValue(subject);
       assertThat(mail.input(other.getAdminMailBody())).hasValue(body);
       Locator help = openFieldHelp(other.getAdminMailBody());
+
       assertThat(help.locator(".admin-help-description")).hasText(other.getAdminMailBodyHint());
       assertThat(help.locator(".admin-help-rules li")).hasText(other.getAdminMailValidationBody());
       AllurePlaywright.attachScreenshot(
           "Mail-Feldhilfe und erhaltene Nachricht nach Sprachwechsel", browserPage);
       browserPage.keyboard().press("Escape");
+
       assertThat(help).hasCount(0);
     } finally {
       new UserMenu(browserPage).selectTestLanguage();
@@ -170,6 +179,7 @@ public class AdminMailBrowserTest extends BrowserFixture {
     button.focus();
     UiActions.complete(browserPage, () -> browserPage.keyboard().press("Enter"));
     Locator help = browserPage.locator("#admin-mail-field-help[opened]");
+
     assertThat(help.locator("vaadin-dialog-overlay > [part~=overlay]")).isVisible();
     assertThat(help.locator(".admin-help-field-title")).hasText(field);
     return help;
@@ -179,6 +189,7 @@ public class AdminMailBrowserTest extends BrowserFixture {
     for (Locator row : browserPage.locator(".cosmos-mail-field-row").all()) {
       BoundingBox input = row.locator("[part~='input-field']").first().boundingBox();
       BoundingBox info = row.locator(":scope > .cosmos-config-info").boundingBox();
+
       assertEquals(
           input.y + input.height / 2,
           info.y + info.height / 2,
@@ -220,6 +231,7 @@ public class AdminMailBrowserTest extends BrowserFixture {
           body.pressSequentially("Second line ÄÖÜ");
           body.press("Tab");
         });
+
     assertThat(body).hasValue("First line\nSecond line ÄÖÜ");
     assertThat(browserPage.locator("vaadin-notification-card:not([closing])")).hasCount(0);
     mail.send();

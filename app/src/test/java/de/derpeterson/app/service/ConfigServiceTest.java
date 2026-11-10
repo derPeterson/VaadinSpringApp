@@ -234,6 +234,7 @@ class ConfigServiceTest {
           assertThrows(
               IllegalArgumentException.class,
               () -> configService.getBoolean(ConfigEntry.MAIL_SMTP_AUTH));
+
       assertTrue(failure.getMessage().contains(ConfigEntry.MAIL_SMTP_AUTH.getKey()));
       assertThrows(
           IllegalArgumentException.class,
@@ -246,8 +247,10 @@ class ConfigServiceTest {
     @Test
     void incompatibleBooleanDefaultIsValidatedOnlyWhenNeeded() {
       stored(ConfigEntry.SERVICE_NAME, "true");
+
       assertTrue(configService.getBoolean(ConfigEntry.SERVICE_NAME));
       missing(ConfigEntry.SERVICE_NAME);
+
       assertThrows(
           IllegalArgumentException.class, () -> configService.getBoolean(ConfigEntry.SERVICE_NAME));
       assertFalse(configService.getBoolean(ConfigEntry.SERVICE_NAME, false));
@@ -315,6 +318,7 @@ class ConfigServiceTest {
       InOrder order = inOrder(configRepository);
       order.verify(configRepository).findByKey(ConfigEntry.SERVICE_NAME.getKey());
       order.verify(configRepository).saveAndFlush(captor.capture());
+
       assertNull(captor.getValue().getId());
       assertEquals(ConfigEntry.SERVICE_NAME.getKey(), captor.getValue().getKey());
       assertEquals(value, captor.getValue().getValue());

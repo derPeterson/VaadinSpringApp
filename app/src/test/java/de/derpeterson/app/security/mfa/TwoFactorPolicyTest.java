@@ -16,6 +16,7 @@ class TwoFactorPolicyTest {
   @Test
   void defaultsRequireAdminsButAllowVoluntaryEnrollmentForOrdinaryUsers() {
     TwoFactorPolicy policy = TwoFactorPolicy.defaults();
+
     assertFalse(policy.inactivityEnabled());
     assertFalse(policy.developmentPause());
     assertFalse(policy.developmentGoogleConfirmation());
@@ -45,6 +46,7 @@ class TwoFactorPolicyTest {
     rules.get(RoleType.ROLE_ADMIN).put(TwoFactorAction.LOGIN, TwoFactorMode.OFF);
     rules.get(RoleType.ROLE_USER).put(TwoFactorAction.LOGIN, TwoFactorMode.REQUIRED);
     TwoFactorPolicy policy = new TwoFactorPolicy(rules, false, Duration.ofHours(2), false, false);
+
     assertEquals(
         TwoFactorMode.OFF,
         policy.mode(List.of(RoleType.ROLE_SUPERADMIN, RoleType.ROLE_ADMIN), TwoFactorAction.LOGIN));
@@ -52,6 +54,7 @@ class TwoFactorPolicyTest {
         TwoFactorMode.REQUIRED,
         policy.mode(List.of(RoleType.ROLE_ADMIN, RoleType.ROLE_USER), TwoFactorAction.LOGIN));
     rules.get(RoleType.ROLE_USER).put(TwoFactorAction.LOGIN, TwoFactorMode.OFF);
+
     assertEquals(
         TwoFactorMode.REQUIRED, policy.mode(List.of(RoleType.ROLE_USER), TwoFactorAction.LOGIN));
     assertEquals(TwoFactorMode.REQUIRED, policy.mode(List.of(), TwoFactorAction.LOGIN));
@@ -61,15 +64,18 @@ class TwoFactorPolicyTest {
   void rejectsIncompleteOrAmbiguousRules() {
     Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> missingRules = Map.of();
     Duration validTimeout = Duration.ofHours(1);
+
     assertThrows(
         IllegalArgumentException.class,
         () -> new TwoFactorPolicy(missingRules, false, validTimeout, false, false));
     Map<RoleType, Map<TwoFactorAction, TwoFactorMode>> defaultRules =
         TwoFactorPolicy.defaults().rules();
+
     assertThrows(
         IllegalArgumentException.class,
         () -> new TwoFactorPolicy(defaultRules, true, Duration.ZERO, false, false));
     Duration subsecondTimeout = Duration.ofNanos(1);
+
     assertThrows(
         IllegalArgumentException.class,
         () -> new TwoFactorPolicy(defaultRules, true, subsecondTimeout, false, false));

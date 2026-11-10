@@ -59,6 +59,7 @@ class UserStatusResourceTest {
           }
         }) {
       Class<?> packed = loader.loadClass(className);
+
       assertEquals(jar.toUri(), packed.getProtectionDomain().getCodeSource().getLocation().toURI());
       Object absent = packed.getField("ABSENT").get(null);
       Component rendered =
@@ -88,10 +89,12 @@ class UserStatusResourceTest {
           case ABSENT -> "clock";
           case OFFLINE -> "circle-x";
         };
+
     assertEquals("icons/lucide/" + name + ".svg", icon.getSrc());
     assertNotNull(UserStatus.class.getResource("/META-INF/resources/" + icon.getSrc()));
     double expectedWidth = overlay ? Math.round(size.getWidth() * .3) : size.getWidth();
     String width = Double.toString(expectedWidth) + size.getUnit().getSymbol();
+
     assertEquals(width, component.getElement().getStyle().get("width"));
     assertEquals(status.getColor(), component.getElement().getStyle().get("color"));
     assertEquals("50%", component.getElement().getStyle().get("border-radius"));

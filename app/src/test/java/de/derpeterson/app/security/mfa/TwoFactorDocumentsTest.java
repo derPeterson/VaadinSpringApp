@@ -31,13 +31,13 @@ class TwoFactorDocumentsTest {
 
   @Test
   void manualKeyIsDeliveredWithoutCachingAndSecretBufferIsCleared() {
-    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
     UUID id = UUID.randomUUID();
     byte[] secret = new byte[20];
     Arrays.fill(secret, (byte) 1);
-    when(twoFactorEnrollment.pendingSecret(request, id)).thenReturn(secret);
+    when(twoFactorEnrollment.pendingSecret(mockHttpRequest, id)).thenReturn(secret);
 
-    ResponseEntity<byte[]> response = documents.manualKey(request, id);
+    ResponseEntity<byte[]> response = documents.manualKey(mockHttpRequest, id);
 
     assertEquals(MediaType.TEXT_PLAIN, response.getHeaders().getContentType());
     assertEquals("no-store", response.getHeaders().getCacheControl());
@@ -53,26 +53,26 @@ class TwoFactorDocumentsTest {
 
   @Test
   void manualKeyCannotBeViewedWithoutAnAuthorizedPendingSetup() {
-    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
     UUID id = UUID.randomUUID();
-    when(twoFactorEnrollment.pendingSecret(request, id))
+    when(twoFactorEnrollment.pendingSecret(mockHttpRequest, id))
         .thenThrow(new AccessDeniedException("Expired setup"));
 
-    assertThrows(AccessDeniedException.class, () -> documents.manualKey(request, id));
+    assertThrows(AccessDeniedException.class, () -> documents.manualKey(mockHttpRequest, id));
     assertEquals(403, documents.denied().getStatusCode().value());
     assertEquals("no-store", documents.denied().getHeaders().getCacheControl());
   }
 
   @Test
   void recoveryCodesAreDeliveredAsPlainTextWithoutCaching() {
-    MockHttpServletRequest request = new MockHttpServletRequest();
-    request.setContextPath("/portal");
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
+    mockHttpRequest.setContextPath("/portal");
     UUID id = UUID.randomUUID();
     List<String> codes =
         List.of("12345678-12345678-12345678-12345678", "ABCDEF12-ABCDEF12-ABCDEF12-ABCDEF12");
-    when(twoFactorEnrollment.recoveryOutput(request, id)).thenReturn(codes);
+    when(twoFactorEnrollment.recoveryOutput(mockHttpRequest, id)).thenReturn(codes);
 
-    ResponseEntity<byte[]> response = documents.codes(request, id);
+    ResponseEntity<byte[]> response = documents.codes(mockHttpRequest, id);
 
     assertEquals("no-store", response.getHeaders().getCacheControl());
     assertEquals("no-cache", response.getHeaders().getPragma());
@@ -83,11 +83,11 @@ class TwoFactorDocumentsTest {
 
   @Test
   void recoveryDocumentCannotBeViewedWithoutAnAuthorizedOutput() {
-    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletRequest mockHttpRequest = new MockHttpServletRequest();
     UUID id = UUID.randomUUID();
-    when(twoFactorEnrollment.recoveryOutput(request, id))
+    when(twoFactorEnrollment.recoveryOutput(mockHttpRequest, id))
         .thenThrow(new AccessDeniedException("Expired output"));
 
-    assertThrows(AccessDeniedException.class, () -> documents.codes(request, id));
+    assertThrows(AccessDeniedException.class, () -> documents.codes(mockHttpRequest, id));
   }
 }

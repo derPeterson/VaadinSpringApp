@@ -50,12 +50,14 @@ public final class NotificationInboxPage {
   @Step("Persönliche Inbox direkt öffnen")
   public void open() {
     browserPage.navigate(path(NOTIFICATIONS_ROUTE));
+
     assertThat(inbox()).isVisible();
   }
 
   @Step("Benachrichtigungsvorschau über den gemeinsamen Header öffnen")
   public void openPreview() {
     browserPage.locator("#account-header-notifications").click();
+
     assertThat(preview()).isVisible();
     assertThat(
             preview()
@@ -73,6 +75,7 @@ public final class NotificationInboxPage {
     root.locator("vaadin-radio-button")
         .getByText(label, new Locator.GetByTextOptions().setExact(true))
         .click();
+
     assertThat(
             root.getByRole(
                 AriaRole.RADIO, new Locator.GetByRoleOptions().setName(label).setExact(true)))
@@ -101,6 +104,7 @@ public final class NotificationInboxPage {
   @Step("Detail öffnen: voller Text und keine automatische Lesemarkierung")
   public void openDetail(Locator root, String subject, String body, boolean fromPreview) {
     row(root, subject).locator(".cosmos-notification-row-open").click();
+
     assertThat(dialog().locator(".cosmos-notification-detail-title")).hasText(subject);
     assertThat(dialog().locator(".cosmos-notification-detail-body")).hasText(body);
     assertThat(dialog().locator(".cosmos-notification-detail-state"))
@@ -119,31 +123,40 @@ public final class NotificationInboxPage {
     AllurePlaywright.attachScreenshot(
         "Benachrichtigungsdetail mit beschrifteten Aktionen", browserPage);
     button(dialog(), uiTexts.getNotificationsMoreActions()).click();
-    Locator menu = browserPage.locator(".cosmos-notification-detail-tools:visible");
-    assertThat(menu).isVisible();
+    Locator detailToolsMenuLocator =
+        browserPage.locator(".cosmos-notification-detail-tools:visible");
+
+    assertThat(detailToolsMenuLocator).isVisible();
     if (fromPreview) {
-      assertThat(menu.locator(".cosmos-notification-detail-history")).isVisible();
+      assertThat(detailToolsMenuLocator.locator(".cosmos-notification-detail-history")).isVisible();
     } else {
-      assertThat(menu.locator(".cosmos-notification-detail-history")).hasCount(0);
+      assertThat(detailToolsMenuLocator.locator(".cosmos-notification-detail-history")).hasCount(0);
     }
-    assertThat(menu.locator(".cosmos-notification-detail-delete")).isVisible();
+    assertThat(detailToolsMenuLocator.locator(".cosmos-notification-detail-delete")).isVisible();
     browserPage.keyboard().press("Escape");
-    assertThat(menu).hasCount(0);
+
+    assertThat(detailToolsMenuLocator).hasCount(0);
     // Vaadin zeigt den Dialoginhalt im Overlay; der Flow-Host selbst hat keine sichtbare Fläche.
     assertThat(dialog().locator(".cosmos-notification-detail-title")).isVisible();
   }
 
   @Step("Die ausdrücklich ausgewählte Nachrichtenaktion bestätigen")
   public void confirm() {
-    Locator confirmation = browserPage.locator(".portal-confirmation-dialog[opened]");
-    assertThat(confirmation.locator("vaadin-dialog-overlay > [part~='overlay']")).isVisible();
+    Locator deleteConfirmationDialogLocator =
+        browserPage.locator(".portal-confirmation-dialog[opened]");
+
+    assertThat(deleteConfirmationDialogLocator.locator("vaadin-dialog-overlay > [part~='overlay']"))
+        .isVisible();
     UiActions.complete(
-        browserPage, () -> confirmation.locator("vaadin-button[id$='-submit']").click());
+        browserPage,
+        () -> deleteConfirmationDialogLocator.locator("vaadin-button[id$='-submit']").click());
+
     assertThat(browserPage.locator(".portal-confirmation-dialog[opened]")).hasCount(0);
   }
 
   public void closeDetail() {
     button(dialog(), uiTexts.getNotificationsClose()).last().click();
+
     assertThat(dialog()).hasCount(0);
   }
 
@@ -152,8 +165,9 @@ public final class NotificationInboxPage {
     String footerClass =
         compact ? ".cosmos-notification-preview-actions" : ".cosmos-notification-inbox-row-header";
     for (Locator row : rows(root).all()) {
-      Locator footer = row.locator(footerClass);
-      assertThat(footer).isVisible();
+      Locator notificationFooterLocator = row.locator(footerClass);
+
+      assertThat(notificationFooterLocator).isVisible();
       for (Locator action : row.locator(".cosmos-notification-row-action").all()) {
         // Tooltiptexte gehören zur Zugänglichkeit; nur die sichtbare Buttonbeschriftung muss leer
         // sein.
@@ -162,23 +176,28 @@ public final class NotificationInboxPage {
             action.evaluate(
                 "el => Array.from(el.childNodes).filter(n => n.nodeType === Node.TEXT_NODE).map(n => n.textContent).join('').trim()"));
         assertThat(action.locator("vaadin-icon")).hasCount(1);
-        assertTrue(action.boundingBox().y >= footer.boundingBox().y - 1);
+        assertTrue(action.boundingBox().y >= notificationFooterLocator.boundingBox().y - 1);
         assertTrue(
             action.boundingBox().y + action.boundingBox().height
-                <= footer.boundingBox().y + footer.boundingBox().height + 1);
+                <= notificationFooterLocator.boundingBox().y
+                    + notificationFooterLocator.boundingBox().height
+                    + 1);
       }
     }
     Locator firstRow = rows(root).first();
     Locator open = firstRow.locator(".cosmos-notification-row-open");
     Locator mark = firstRow.locator(".cosmos-notification-row-action").nth(1);
-    Locator tooltip = browserPage.getByRole(AriaRole.TOOLTIP);
+    Locator tooltipLocator = browserPage.getByRole(AriaRole.TOOLTIP);
     open.hover();
-    assertThat(tooltip).hasText(uiTexts.getNotificationsOpen());
+
+    assertThat(tooltipLocator).hasText(uiTexts.getNotificationsOpen());
     mark.hover();
-    assertThat(tooltip).hasText(uiTexts.getNotificationsMarkRead());
+
+    assertThat(tooltipLocator).hasText(uiTexts.getNotificationsMarkRead());
     browserPage.mouse().move(0, 0);
     open.focus();
     open.press("Tab");
+
     assertThat(mark).isFocused();
     assertTrue(
         (Boolean) root.evaluate("el => el.scrollWidth <= el.clientWidth + 1"),

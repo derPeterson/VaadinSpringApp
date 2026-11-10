@@ -73,11 +73,11 @@ class ExternalConnectionsComponentTest {
   void setup() {
     testUi = new UI();
     UI.setCurrent(testUi);
-    VaadinSession session = mock(VaadinSession.class);
-    when(session.hasLock()).thenReturn(true);
-    when(session.getLocale()).thenAnswer(call -> localeReference.get());
-    VaadinSession.setCurrent(session);
-    testUi.getInternals().setSession(session);
+    VaadinSession vaadinSession = mock(VaadinSession.class);
+    when(vaadinSession.hasLock()).thenReturn(true);
+    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    VaadinSession.setCurrent(vaadinSession);
+    testUi.getInternals().setSession(vaadinSession);
     messageProperties = new MessageProperties(new CustomI18NProvider());
     when(externalLoginFlow.owner(mockHttpRequest)).thenReturn(testAccount);
     when(externalLoginFlow.factorEnrolled(mockHttpRequest)).thenReturn(true);
@@ -106,18 +106,22 @@ class ExternalConnectionsComponentTest {
     ExternalConnectionsComponent component =
         new ExternalConnectionsComponent(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
+
     assertEquals(0, tree(component).filter(ComboBox.class::isInstance).count());
     assertFalse(((Button) find(component, "external-connect-google")).isEnabled());
     assertFalse(component.getConfirmationDialog().isOpened());
     ((Button) find(component, "external-connect-microsoft")).click();
-    ExternalIdentityConfirmationDialog dialog = component.getConfirmationDialog();
-    assertTrue(dialog.isOpened());
-    assertFalse(find(dialog, "external-confirm-password").isVisible());
-    assertFalse(((Button) find(dialog, "external-confirm-local")).isEnabled());
-    assertTrue(find(dialog, "external-confirm-google").isVisible());
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
+        component.getConfirmationDialog();
+
+    assertTrue(externalIdentityConfirmationDialog.isOpened());
+    assertFalse(find(externalIdentityConfirmationDialog, "external-confirm-password").isVisible());
+    assertFalse(
+        ((Button) find(externalIdentityConfirmationDialog, "external-confirm-local")).isEnabled());
+    assertTrue(find(externalIdentityConfirmationDialog, "external-confirm-google").isVisible());
     assertEquals(
         0,
-        tree(dialog)
+        tree(externalIdentityConfirmationDialog)
             .filter(c -> c.getId().orElse("").equals("external-confirm-microsoft"))
             .count());
     verify(externalLoginFlow, never())
@@ -136,6 +140,7 @@ class ExternalConnectionsComponentTest {
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
     component.configureAccountActions(
         settingsActionCount::incrementAndGet, settingsActionCount::incrementAndGet, () -> {});
+
     assertEquals(1, tree(component).filter(c -> c.hasClassName("external-connection-row")).count());
     assertEquals(hasPassword, ((Button) find(component, "external-connect-google")).isEnabled());
     assertTrue(
@@ -146,14 +151,17 @@ class ExternalConnectionsComponentTest {
                 span -> span.getText().equals(messageProperties.getExternalProviderUnavailable())));
     component.requestPasswordChange();
     component.requestEmailChange();
+
     assertEquals(hasPassword ? 2 : 0, settingsActionCount.get());
     assertFalse(component.getConfirmationDialog().isOpened());
     if (!hasPassword) {
       Supplier<?> message =
           (Supplier<?>)
               ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+
       assertEquals(messageProperties.getExternalProofUnavailable(), message.get());
       localeReference.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+
       assertEquals(messageProperties.getExternalProofUnavailable(), message.get());
     }
   }
@@ -161,8 +169,8 @@ class ExternalConnectionsComponentTest {
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
   void missingProofStartsTheSessionLockBeforeTheSetupPageLoads(boolean passwordChange) {
-    HttpSession session = mock(HttpSession.class);
-    when(mockHttpRequest.getSession()).thenReturn(session);
+    HttpSession httpSession = mock(HttpSession.class);
+    when(mockHttpRequest.getSession()).thenReturn(httpSession);
     when(mockHttpRequest.getContextPath()).thenReturn("");
     when(externalLoginFlow.factorEnrolled(mockHttpRequest)).thenReturn(false);
     when(externalLoginFlow.providers()).thenReturn(List.of());
@@ -171,9 +179,9 @@ class ExternalConnectionsComponentTest {
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
     component.configureAccountActions(
         settingsActionCount::incrementAndGet, settingsActionCount::incrementAndGet, () -> {});
-    Page page = mock(Page.class);
+    Page browserPage = mock(Page.class);
     UI redirectingUi = mock(UI.class);
-    when(redirectingUi.getPage()).thenReturn(page);
+    when(redirectingUi.getPage()).thenReturn(browserPage);
     UI.setCurrent(redirectingUi);
 
     if (passwordChange) {
@@ -182,49 +190,61 @@ class ExternalConnectionsComponentTest {
       component.requestEmailChange();
     }
 
-    InOrder effects = inOrder(session, page);
+    InOrder effects = inOrder(httpSession, browserPage);
     effects
-        .verify(session)
+        .verify(httpSession)
         .setAttribute(TwoFactorFlow.SESSION_ATTRIBUTE, TwoFactorFlow.SETUP.name());
-    effects.verify(page).setLocation(TwoFactorFlow.SETUP.location());
+    effects.verify(browserPage).setLocation(TwoFactorFlow.SETUP.location());
+
     assertEquals(0, settingsActionCount.get());
     assertFalse(component.getConfirmationDialog().isOpened());
   }
 
   @Test
   void refreshingConfirmationAfterDeactivationShowsNoPasswordPromptOrProviderAction() {
-    ExternalIdentityConfirmationDialog dialog =
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    dialog.open(Purpose.PASSWORD, settingsActionCount::incrementAndGet);
+    externalIdentityConfirmationDialog.open(Purpose.PASSWORD, settingsActionCount::incrementAndGet);
     when(externalLoginFlow.providers()).thenReturn(List.of());
-    dialog.refreshTexts();
-    assertFalse(find(dialog, "external-confirm-password").isVisible());
-    assertFalse(((Button) find(dialog, "external-confirm-local")).isEnabled());
-    assertEquals(0, tree(dialog).filter(c -> c.hasClassName("external-proof-provider")).count());
+    externalIdentityConfirmationDialog.refreshTexts();
+
+    assertFalse(find(externalIdentityConfirmationDialog, "external-confirm-password").isVisible());
+    assertFalse(
+        ((Button) find(externalIdentityConfirmationDialog, "external-confirm-local")).isEnabled());
+    assertEquals(
+        0,
+        tree(externalIdentityConfirmationDialog)
+            .filter(c -> c.hasClassName("external-proof-provider"))
+            .count());
     assertEquals(
         messageProperties.getExternalProofUnavailable(),
-        ((Span) ReflectionTestUtils.getField(dialog, "identityProofExplanation")).getText());
+        ((Span)
+                ReflectionTestUtils.getField(
+                    externalIdentityConfirmationDialog, "identityProofExplanation"))
+            .getText());
     assertEquals(0, settingsActionCount.get());
   }
 
   @Test
   void providerDisabledAfterOpeningClosesTheStaleConfirmationWithoutStartingAnAction() {
-    ExternalIdentityConfirmationDialog dialog =
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    dialog.open(Purpose.PASSWORD, settingsActionCount::incrementAndGet);
-    Button provider = (Button) find(dialog, "external-confirm-google");
+    externalIdentityConfirmationDialog.open(Purpose.PASSWORD, settingsActionCount::incrementAndGet);
+    Button provider = (Button) find(externalIdentityConfirmationDialog, "external-confirm-google");
     when(externalLoginFlow.providers()).thenReturn(List.of());
     doThrow(new AccessDeniedException("Provider unavailable"))
         .when(externalLoginFlow)
         .beginProof(mockHttpRequest, "google", Purpose.PASSWORD, Locale.GERMAN);
     provider.click();
-    assertFalse(dialog.isOpened());
+
+    assertFalse(externalIdentityConfirmationDialog.isOpened());
     assertEquals(0, settingsActionCount.get());
     Supplier<?> message =
         (Supplier<?>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+
     assertEquals(messageProperties.getExternalProviderUnavailable(), message.get());
   }
 
@@ -232,11 +252,13 @@ class ExternalConnectionsComponentTest {
   void localProofIsBoundToTheChosenActionAndClosingDiscardsSecrets() {
     testAccount.setPassword("encoded");
     confirmedPurpose.set(Purpose.EMAIL);
-    ExternalIdentityConfirmationDialog dialog =
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    dialog.open(Purpose.LINK_MICROSOFT, settingsActionCount::incrementAndGet);
-    PasswordField password = (PasswordField) find(dialog, "external-confirm-password");
+    externalIdentityConfirmationDialog.open(
+        Purpose.LINK_MICROSOFT, settingsActionCount::incrementAndGet);
+    PasswordField password =
+        (PasswordField) find(externalIdentityConfirmationDialog, "external-confirm-password");
     password.setValue("OwnPortal1!");
     doAnswer(
             call -> {
@@ -245,15 +267,17 @@ class ExternalConnectionsComponentTest {
             })
         .when(externalLoginFlow)
         .confirmPassword(mockHttpRequest, "OwnPortal1!", Purpose.LINK_MICROSOFT);
-    ((Button) find(dialog, "external-confirm-local")).click();
+    ((Button) find(externalIdentityConfirmationDialog, "external-confirm-local")).click();
+
     verify(externalLoginFlow)
         .confirmPassword(mockHttpRequest, "OwnPortal1!", Purpose.LINK_MICROSOFT);
     assertEquals(1, settingsActionCount.get());
-    assertFalse(dialog.isOpened());
+    assertFalse(externalIdentityConfirmationDialog.isOpened());
     assertTrue(password.isEmpty());
-    dialog.open(Purpose.EMAIL, settingsActionCount::incrementAndGet);
+    externalIdentityConfirmationDialog.open(Purpose.EMAIL, settingsActionCount::incrementAndGet);
     password.setValue("DiscardMe");
-    dialog.close();
+    externalIdentityConfirmationDialog.close();
+
     assertTrue(password.isEmpty());
     assertEquals(1, settingsActionCount.get());
   }
@@ -261,17 +285,21 @@ class ExternalConnectionsComponentTest {
   @Test
   void emptyProofUsesTheRequiredNotificationWithoutInlineErrorText() {
     testAccount.setPassword("encoded");
-    ExternalIdentityConfirmationDialog dialog =
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    dialog.open(Purpose.LINK_GOOGLE, settingsActionCount::incrementAndGet);
-    ((Button) find(dialog, "external-confirm-local")).click();
-    PasswordField password = (PasswordField) find(dialog, "external-confirm-password");
+    externalIdentityConfirmationDialog.open(
+        Purpose.LINK_GOOGLE, settingsActionCount::incrementAndGet);
+    ((Button) find(externalIdentityConfirmationDialog, "external-confirm-local")).click();
+    PasswordField password =
+        (PasswordField) find(externalIdentityConfirmationDialog, "external-confirm-password");
+
     assertTrue(password.isInvalid());
     assertTrue(password.getErrorMessage() == null || password.getErrorMessage().isBlank());
     Supplier<?> message =
         (Supplier<?>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+
     assertEquals(messageProperties.getBaseValidationRequiredMessage(), message.get());
     assertEquals(0, settingsActionCount.get());
   }
@@ -282,21 +310,25 @@ class ExternalConnectionsComponentTest {
     doThrow(new BadCredentialsException("Rejected"))
         .when(externalLoginFlow)
         .confirmPassword(mockHttpRequest, "wrong", Purpose.UNLINK_GOOGLE);
-    ExternalIdentityConfirmationDialog dialog =
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    dialog.open(Purpose.UNLINK_GOOGLE, settingsActionCount::incrementAndGet);
-    PasswordField password = (PasswordField) find(dialog, "external-confirm-password");
+    externalIdentityConfirmationDialog.open(
+        Purpose.UNLINK_GOOGLE, settingsActionCount::incrementAndGet);
+    PasswordField password =
+        (PasswordField) find(externalIdentityConfirmationDialog, "external-confirm-password");
     password.setValue("wrong");
-    ((Button) find(dialog, "external-confirm-local")).click();
+    ((Button) find(externalIdentityConfirmationDialog, "external-confirm-local")).click();
+
     assertEquals(0, settingsActionCount.get());
-    assertTrue(dialog.isOpened());
+    assertTrue(externalIdentityConfirmationDialog.isOpened());
     assertTrue(password.isEmpty());
     assertTrue(password.isInvalid());
     assertTrue(password.getErrorMessage() == null || password.getErrorMessage().isBlank());
     Supplier<?> message =
         (Supplier<?>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+
     assertEquals(messageProperties.getAccountSecurityWrongPassword(), message.get());
   }
 
@@ -328,21 +360,23 @@ class ExternalConnectionsComponentTest {
     doThrow(failure)
         .when(externalLoginFlow)
         .confirmFactor(mockHttpRequest, "123", Purpose.PASSWORD);
-    ExternalIdentityConfirmationDialog dialog =
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    dialog.open(Purpose.PASSWORD, settingsActionCount::incrementAndGet);
-    OtpField code = (OtpField) find(dialog, "external-confirm-factor");
+    externalIdentityConfirmationDialog.open(Purpose.PASSWORD, settingsActionCount::incrementAndGet);
+    OtpField code = (OtpField) find(externalIdentityConfirmationDialog, "external-confirm-factor");
     code.setValue("123");
-    ((Button) find(dialog, "external-confirm-local")).click();
+    ((Button) find(externalIdentityConfirmationDialog, "external-confirm-local")).click();
+
     assertEquals(0, settingsActionCount.get());
-    assertTrue(dialog.isOpened());
+    assertTrue(externalIdentityConfirmationDialog.isOpened());
     assertTrue(code.isEmpty());
     assertTrue(code.isInvalid());
     assertTrue(code.getErrorMessage() == null || code.getErrorMessage().isBlank());
     Supplier<?> message =
         (Supplier<?>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
+
     assertEquals(
         switch (reason) {
           case "locked" -> messageProperties.getTwoFactorThrottled();
@@ -357,14 +391,17 @@ class ExternalConnectionsComponentTest {
   void linkingConfirmsACompleteAppCodeOrAnExplicitRecoveryCode(
       Purpose purpose, boolean useRecoveryCode) {
     when(externalLoginFlow.requiresFactor(mockHttpRequest, purpose)).thenReturn(true);
-    ExternalIdentityConfirmationDialog dialog =
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    testUi.add(dialog);
-    dialog.open(purpose, settingsActionCount::incrementAndGet);
+    testUi.add(externalIdentityConfirmationDialog);
+    externalIdentityConfirmationDialog.open(purpose, settingsActionCount::incrementAndGet);
 
-    OtpField appCode = (OtpField) find(dialog, "external-confirm-factor");
-    TextField recoveryCode = (TextField) find(dialog, "external-confirm-recovery-code");
+    OtpField appCode =
+        (OtpField) find(externalIdentityConfirmationDialog, "external-confirm-factor");
+    TextField recoveryCode =
+        (TextField) find(externalIdentityConfirmationDialog, "external-confirm-recovery-code");
+
     assertTrue(appCode.isAutofocus());
     assertEquals(6, appCode.getLength());
     assertTrue(appCode.isVisible());
@@ -372,9 +409,11 @@ class ExternalConnectionsComponentTest {
     String value = "123456";
     appCode.setValue(value);
     if (useRecoveryCode) {
-      Tab recoveryTab = (Tab) find(dialog, "external-proof-recovery-code-tab");
+      Tab recoveryTab =
+          (Tab) find(externalIdentityConfirmationDialog, "external-proof-recovery-code-tab");
       Tabs methods = (Tabs) recoveryTab.getParent().orElseThrow();
       methods.setSelectedTab(recoveryTab);
+
       assertTrue(appCode.isEmpty());
       assertFalse(appCode.isVisible());
       assertTrue(recoveryCode.isVisible());
@@ -385,31 +424,34 @@ class ExternalConnectionsComponentTest {
     verify(externalLoginFlow, never()).confirmFactor(mockHttpRequest, value, purpose);
     assertEquals(0, settingsActionCount.get());
     if (useRecoveryCode) {
-      ((Button) find(dialog, "external-confirm-local")).click();
+      ((Button) find(externalIdentityConfirmationDialog, "external-confirm-local")).click();
     } else {
       ComponentUtil.fireEvent(appCode, new OtpCompleteEvent(appCode, true, "123456"));
       ComponentUtil.fireEvent(appCode, new OtpCompleteEvent(appCode, true, "123456"));
     }
     verify(externalLoginFlow).confirmFactor(mockHttpRequest, value, purpose);
     assertEquals(1, settingsActionCount.get());
-    assertFalse(dialog.isOpened());
+    assertFalse(externalIdentityConfirmationDialog.isOpened());
   }
 
   @ParameterizedTest
   @CsvSource({"UNLINK_GOOGLE", "UNLINK_MICROSOFT"})
   void unlinkingWaitsForExplicitConfirmation(Purpose purpose) {
     when(externalLoginFlow.requiresFactor(mockHttpRequest, purpose)).thenReturn(true);
-    ExternalIdentityConfirmationDialog dialog =
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    testUi.add(dialog);
-    dialog.open(purpose, settingsActionCount::incrementAndGet);
-    OtpField appCode = (OtpField) find(dialog, "external-confirm-factor");
+    testUi.add(externalIdentityConfirmationDialog);
+    externalIdentityConfirmationDialog.open(purpose, settingsActionCount::incrementAndGet);
+    OtpField appCode =
+        (OtpField) find(externalIdentityConfirmationDialog, "external-confirm-factor");
     appCode.setValue("123456");
     ComponentUtil.fireEvent(appCode, new OtpCompleteEvent(appCode, true, "123456"));
+
     verify(externalLoginFlow, never()).confirmFactor(mockHttpRequest, "123456", purpose);
     assertEquals(0, settingsActionCount.get());
-    ((Button) find(dialog, "external-confirm-local")).click();
+    ((Button) find(externalIdentityConfirmationDialog, "external-confirm-local")).click();
+
     verify(externalLoginFlow).confirmFactor(mockHttpRequest, "123456", purpose);
     assertEquals(1, settingsActionCount.get());
   }
@@ -417,71 +459,81 @@ class ExternalConnectionsComponentTest {
   @Test
   void expiredProviderProofCannotExecuteAPasswordlessAction() {
     confirmedPurpose.set(Purpose.UNLINK_GOOGLE);
-    ExternalIdentityConfirmationDialog dialog =
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    dialog.open(Purpose.UNLINK_GOOGLE, settingsActionCount::incrementAndGet);
-    Button confirm = (Button) find(dialog, "external-confirm-local");
+    externalIdentityConfirmationDialog.open(
+        Purpose.UNLINK_GOOGLE, settingsActionCount::incrementAndGet);
+    Button confirm = (Button) find(externalIdentityConfirmationDialog, "external-confirm-local");
+
     assertTrue(confirm.isEnabled());
     confirmedPurpose.set(null);
     confirm.click();
+
     assertEquals(0, settingsActionCount.get());
-    assertTrue(dialog.isOpened());
+    assertTrue(externalIdentityConfirmationDialog.isOpened());
     assertFalse(confirm.isEnabled());
   }
 
   @Test
   void languageRefreshPreservesTheOpenPasswordDraft() {
     testAccount.setPassword("encoded");
-    ExternalIdentityConfirmationDialog dialog =
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    dialog.open(Purpose.PASSWORD, settingsActionCount::incrementAndGet);
-    PasswordField password = (PasswordField) find(dialog, "external-confirm-password");
+    externalIdentityConfirmationDialog.open(Purpose.PASSWORD, settingsActionCount::incrementAndGet);
+    PasswordField password =
+        (PasswordField) find(externalIdentityConfirmationDialog, "external-confirm-password");
     password.setValue("Draft1!");
     localeReference.set(Locale.ENGLISH);
-    dialog.refreshTexts();
+    externalIdentityConfirmationDialog.refreshTexts();
+
     assertEquals("Draft1!", password.getValue());
     assertEquals(
         messageProperties.getExternalContinueAction(),
-        ((Button) find(dialog, "external-confirm-local")).getText());
+        ((Button) find(externalIdentityConfirmationDialog, "external-confirm-local")).getText());
   }
 
   @Test
   void providerReturnResumesOnlyOnceAndRequiresTheMatchingProof() {
-    HttpSession session = mock(HttpSession.class);
+    HttpSession httpSession = mock(HttpSession.class);
     Map<String, Object> attributes = new HashMap<>();
-    when(mockHttpRequest.getSession(false)).thenReturn(session);
-    when(session.getAttribute(org.mockito.ArgumentMatchers.anyString()))
+    when(mockHttpRequest.getSession(false)).thenReturn(httpSession);
+    when(httpSession.getAttribute(org.mockito.ArgumentMatchers.anyString()))
         .thenAnswer(call -> attributes.get(call.getArgument(0)));
     doAnswer(
             call -> {
               attributes.put(call.getArgument(0), call.getArgument(1));
               return null;
             })
-        .when(session)
+        .when(httpSession)
         .setAttribute(org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.any());
     doAnswer(
             call -> {
               attributes.remove(call.getArgument(0));
               return null;
             })
-        .when(session)
+        .when(httpSession)
         .removeAttribute(org.mockito.ArgumentMatchers.anyString());
     when(externalLoginFlow.beginProof(
             mockHttpRequest, "google", Purpose.LINK_MICROSOFT, Locale.GERMAN))
         .thenReturn("/own-provider");
-    ExternalIdentityConfirmationDialog dialog =
+    ExternalIdentityConfirmationDialog externalIdentityConfirmationDialog =
         new ExternalIdentityConfirmationDialog(
             externalLoginFlow, externalIdentityService, mockHttpRequest, messageProperties);
-    dialog.open(Purpose.LINK_MICROSOFT, settingsActionCount::incrementAndGet);
-    ((Button) find(dialog, "external-confirm-google")).click();
+    externalIdentityConfirmationDialog.open(
+        Purpose.LINK_MICROSOFT, settingsActionCount::incrementAndGet);
+    ((Button) find(externalIdentityConfirmationDialog, "external-confirm-google")).click();
     confirmedPurpose.set(Purpose.LINK_MICROSOFT);
-    assertEquals(Optional.of(Purpose.LINK_MICROSOFT), dialog.consumeProviderReturn());
-    assertTrue(dialog.consumeProviderReturn().isEmpty());
-    ((Button) find(dialog, "external-confirm-google")).click();
+
+    assertEquals(
+        Optional.of(Purpose.LINK_MICROSOFT),
+        externalIdentityConfirmationDialog.consumeProviderReturn());
+    assertTrue(externalIdentityConfirmationDialog.consumeProviderReturn().isEmpty());
+    ((Button) find(externalIdentityConfirmationDialog, "external-confirm-google")).click();
     confirmedPurpose.set(Purpose.EMAIL);
-    assertTrue(dialog.consumeProviderReturn().isEmpty());
+
+    assertTrue(externalIdentityConfirmationDialog.consumeProviderReturn().isEmpty());
     assertEquals(0, settingsActionCount.get());
   }
 

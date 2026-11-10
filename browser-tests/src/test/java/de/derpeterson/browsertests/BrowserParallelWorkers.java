@@ -29,131 +29,145 @@ final class BrowserParallelWorkers {
   }
 
   synchronized void start(
-      Path module,
-      Path run,
-      String suite,
-      String language,
-      List<List<Class<?>>> groups,
-      Map<String, String> environment,
-      String project,
+      Path browserTestModulePath,
+      Path runDirectory,
+      String suiteName,
+      String testLanguage,
+      List<List<Class<?>>> classesByWorker,
+      Map<String, String> workerEnvironment,
+      String composeProjectName,
       boolean headed,
       boolean coverage,
       boolean failureProbe)
       throws IOException {
     // Ports während der Planung reservieren. Nach Freigabe bindet nur Docker daran;
     // bei einer externen Kollision scheitert Compose, bevor ein Browser startet.
-    List<ServerSocket> sockets = reservePorts(groups.size());
+    List<ServerSocket> reservedPortSockets = reservePorts(classesByWorker.size());
     try {
-      for (int workerGroupIndex = 0; workerGroupIndex < groups.size(); workerGroupIndex++) {
-        Path directory = run.resolve("workers/" + (workerGroupIndex + 1));
-        Files.createDirectories(directory);
-        String workerProject = project + "-w" + (workerGroupIndex + 1);
-        List<String> command =
+      for (int workerGroupIndex = 0;
+          workerGroupIndex < classesByWorker.size();
+          workerGroupIndex++) {
+        Path workerRunDirectory = runDirectory.resolve("workers/" + (workerGroupIndex + 1));
+        Files.createDirectories(workerRunDirectory);
+        String workerComposeProject = composeProjectName + "-w" + (workerGroupIndex + 1);
+        List<String> workerCommandArguments =
             new ArrayList<>(
                 List.of(
                     javaExecutable(),
                     "-Dfile.encoding=UTF-8",
-                    "-Dbrowser.tests.workerRun=" + directory,
+                    "-Dbrowser.tests.workerRun=" + workerRunDirectory,
                     "-Dbrowser.tests.workerClasses="
                         + String.join(
                             ",",
-                            groups.get(workerGroupIndex).stream()
+                            classesByWorker.get(workerGroupIndex).stream()
                                 .map(Class::getSimpleName)
                                 .toList()),
-                    "-Dbrowser.tests.workerProject=" + workerProject,
+                    "-Dbrowser.tests.workerProject=" + workerComposeProject,
                     "-Dbrowser.tests.workerJar=" + (workerGroupIndex == 0),
-                    "-javaagent:" + module.resolve("target/tools/aspectjweaver.jar"),
+                    "-javaagent:" + browserTestModulePath.resolve("target/tools/aspectjweaver.jar"),
                     "-cp",
                     System.getProperty("java.class.path"),
                     BrowserTestRunner.class.getName(),
-                    module.toString(),
+                    browserTestModulePath.toString(),
                     "--suite",
-                    suite,
+                    suiteName,
                     "--language",
-                    language,
+                    testLanguage,
                     "--no-build"));
+
         if (headed) {
-          command.add("--headed");
+          workerCommandArguments.add("--headed");
         }
         if (coverage) {
-          command.add("--coverage");
+          workerCommandArguments.add("--coverage");
         }
         if (failureProbe) {
-          command.add("--failure-probe");
+          workerCommandArguments.add("--failure-probe");
         }
-        ProcessBuilder builder =
-            new ProcessBuilder(command)
-                .directory(module.getParent().toFile())
+
+        ProcessBuilder workerProcessBuilder =
+            new ProcessBuilder(workerCommandArguments)
+                .directory(browserTestModulePath.getParent().toFile())
                 .redirectErrorStream(true)
-                .redirectOutput(directory.resolve("console.log").toFile());
-        builder.environment().putAll(environment);
-        builder
+                .redirectOutput(workerRunDirectory.resolve("console.log").toFile());
+        workerProcessBuilder.environment().putAll(workerEnvironment);
+        workerProcessBuilder
             .environment()
             .put(
                 "BROWSER_TEST_APP_PORT",
-                String.valueOf(sockets.get(workerGroupIndex * 3).getLocalPort()));
-        builder
+                String.valueOf(reservedPortSockets.get(workerGroupIndex * 3).getLocalPort()));
+        workerProcessBuilder
             .environment()
             .put(
                 "BROWSER_TEST_MAILPIT_PORT",
-                String.valueOf(sockets.get(workerGroupIndex * 3 + 1).getLocalPort()));
-        builder
+                String.valueOf(reservedPortSockets.get(workerGroupIndex * 3 + 1).getLocalPort()));
+        workerProcessBuilder
             .environment()
             .put(
                 "BROWSER_TEST_HTTP_PORT",
-                String.valueOf(sockets.get(workerGroupIndex * 3 + 2).getLocalPort()));
-        sockets.get(workerGroupIndex * 3).close();
-        sockets.get(workerGroupIndex * 3 + 1).close();
-        sockets.get(workerGroupIndex * 3 + 2).close();
-        Process process = builder.start();
+                String.valueOf(reservedPortSockets.get(workerGroupIndex * 3 + 2).getLocalPort()));
+
+        reservedPortSockets.get(workerGroupIndex * 3).close();
+        reservedPortSockets.get(workerGroupIndex * 3 + 1).close();
+        reservedPortSockets.get(workerGroupIndex * 3 + 2).close();
+
+        Process workerProcess = workerProcessBuilder.start();
         workerProcesses.add(
             new Worker(
-                directory, workerProject, groups.get(workerGroupIndex), process, Instant.now()));
+                workerRunDirectory,
+                workerComposeProject,
+                classesByWorker.get(workerGroupIndex),
+                workerProcess,
+                Instant.now()));
+
         System.out.println(
             "Worker "
                 + (workerGroupIndex + 1)
                 + " gestartet: "
-                + groups.get(workerGroupIndex).stream().map(Class::getSimpleName).toList());
+                + classesByWorker.get(workerGroupIndex).stream()
+                    .map(Class::getSimpleName)
+                    .toList());
       }
     } finally {
-      for (ServerSocket socket : sockets) {
-        socket.close();
+      for (ServerSocket reservedPortSocket : reservedPortSockets) {
+        reservedPortSocket.close();
       }
     }
   }
 
-  static List<ServerSocket> reservePorts(int workerProcesses) throws IOException {
-    List<ServerSocket> sockets = new ArrayList<>();
+  static List<ServerSocket> reservePorts(int workerCount) throws IOException {
+    List<ServerSocket> reservedPortSockets = new ArrayList<>();
     try {
       for (int portReservationIndex = 0;
-          portReservationIndex < workerProcesses * 3;
+          portReservationIndex < workerCount * 3;
           portReservationIndex++) {
-        ServerSocket socket = new ServerSocket();
-        sockets.add(socket);
-        socket.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
+        ServerSocket portReservationSocket = new ServerSocket();
+        reservedPortSockets.add(portReservationSocket);
+        portReservationSocket.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
       }
-      return sockets;
-    } catch (IOException error) {
-      for (ServerSocket socket : sockets) {
+
+      return reservedPortSockets;
+    } catch (IOException reservationFailure) {
+      for (ServerSocket portReservationSocket : reservedPortSockets) {
         try {
-          socket.close();
-        } catch (IOException closeError) {
-          error.addSuppressed(closeError);
+          portReservationSocket.close();
+        } catch (IOException socketCloseFailure) {
+          reservationFailure.addSuppressed(socketCloseFailure);
         }
       }
-      throw error;
+      throw reservationFailure;
     }
   }
 
   void await() throws InterruptedException, IOException {
-    Set<Process> reported = new HashSet<>();
-    while (reported.size() < workerProcesses.size()) {
+    Set<Process> reportedWorkerProcesses = new HashSet<>();
+    while (reportedWorkerProcesses.size() < workerProcesses.size()) {
       for (Worker worker : workerProcesses) {
-        if (reported.contains(worker.process())) {
+        if (reportedWorkerProcesses.contains(worker.process())) {
           continue;
         }
         if (worker.process().waitFor(1, TimeUnit.SECONDS)) {
-          reported.add(worker.process());
+          reportedWorkerProcesses.add(worker.process());
           System.out.println(
               "Worker "
                   + worker.directory().getFileName()
@@ -184,16 +198,18 @@ final class BrowserParallelWorkers {
     // baut deshalb anschließend jedes eigene Compose-Projekt ausdrücklich ab.
   }
 
-  static void stopWorker(Process worker) throws IOException, InterruptedException {
-    List<ProcessHandle> descendants = worker.descendants().toList();
-    descendants.reversed().forEach(ProcessHandle::destroyForcibly);
-    BrowserHttps.stopBeforeTrustCleanup(worker);
-    for (ProcessHandle descendant : descendants) {
+  static void stopWorker(Process workerProcess) throws IOException, InterruptedException {
+    List<ProcessHandle> childProcessHandles = workerProcess.descendants().toList();
+    childProcessHandles.reversed().forEach(ProcessHandle::destroyForcibly);
+    BrowserHttps.stopBeforeTrustCleanup(workerProcess);
+
+    for (ProcessHandle childProcessHandle : childProcessHandles) {
       try {
-        descendant.onExit().get(10, TimeUnit.SECONDS);
+        childProcessHandle.onExit().get(10, TimeUnit.SECONDS);
       } catch (java.util.concurrent.ExecutionException
-          | java.util.concurrent.TimeoutException error) {
-        throw new IOException("Worker child remains alive; trust cleanup is unsafe", error);
+          | java.util.concurrent.TimeoutException childExitFailure) {
+        throw new IOException(
+            "Worker child remains alive; trust cleanup is unsafe", childExitFailure);
       }
     }
   }
@@ -206,41 +222,45 @@ final class BrowserParallelWorkers {
         .toString();
   }
 
-  static void collect(Path source, Path destination) throws IOException {
-    try (Stream<Path> files = Files.list(source)) {
-      for (Path file : files.toList()) {
-        if (file.getFileName().toString().equals("environment.properties")) {
+  static void collect(Path sourceEvidenceDirectory, Path destinationEvidenceDirectory)
+      throws IOException {
+    try (Stream<Path> evidencePaths = Files.list(sourceEvidenceDirectory)) {
+      for (Path evidencePath : evidencePaths.toList()) {
+        if (evidencePath.getFileName().toString().equals("environment.properties")) {
           continue;
         }
-        if (!Files.isRegularFile(file)) {
-          throw new IOException("Unexpected evidence directory: " + file);
+        if (!Files.isRegularFile(evidencePath)) {
+          throw new IOException("Unexpected evidence directory: " + evidencePath);
         }
         // Verschieben statt duplizieren: nur ein gemeinsamer Satz Screenshots/Traces.
         // Keine REPLACE_EXISTING-Option: Kollisionen dürfen keinen Nachweis überschreiben.
-        Files.move(file, destination.resolve(file.getFileName()));
+        Files.move(evidencePath, destinationEvidenceDirectory.resolve(evidencePath.getFileName()));
       }
     }
   }
 
-  static boolean matchesClasses(JsonNode metadata, List<Class<?>> expected) {
-    Set<String> actual = new HashSet<>();
-    for (JsonNode name : metadata.path("testClasses")) {
-      actual.add(name.asText());
+  static boolean matchesClasses(JsonNode workerMetadata, List<Class<?>> expectedTestClasses) {
+    Set<String> actualClassNames = new HashSet<>();
+    for (JsonNode testClassNameNode : workerMetadata.path("testClasses")) {
+      actualClassNames.add(testClassNameNode.asText());
     }
-    return metadata.path("testClasses").size() == expected.size()
-        && actual.equals(new HashSet<>(expected.stream().map(Class::getSimpleName).toList()));
+
+    return workerMetadata.path("testClasses").size() == expectedTestClasses.size()
+        && actualClassNames.equals(
+            new HashSet<>(expectedTestClasses.stream().map(Class::getSimpleName).toList()));
   }
 
-  static boolean successful(JsonNode metadata, int exit, String image, int evidenceCount) {
-    return exit == 0
-        && metadata.hasNonNull("finishedAt")
+  static boolean successful(
+      JsonNode workerMetadata, int workerExitCode, String expectedImageId, int evidenceCount) {
+    return workerExitCode == 0
+        && workerMetadata.hasNonNull("finishedAt")
         && List.of("setup", "tests", "cleanup").stream()
-            .allMatch(key -> metadata.path(key).asText().equals("passed"))
-        && metadata.path("imageId").asText().equals(image)
-        && metadata.path("testsFound").asInt() > 0
-        && metadata.path("testsFound").asInt() == metadata.path("testsPassed").asInt()
-        && metadata.path("testsFound").asInt() == evidenceCount
-        && metadata.path("testsFailed").asInt(-1) == 0
-        && metadata.path("testsSkipped").asInt(-1) == 0;
+            .allMatch(phaseKey -> workerMetadata.path(phaseKey).asText().equals("passed"))
+        && workerMetadata.path("imageId").asText().equals(expectedImageId)
+        && workerMetadata.path("testsFound").asInt() > 0
+        && workerMetadata.path("testsFound").asInt() == workerMetadata.path("testsPassed").asInt()
+        && workerMetadata.path("testsFound").asInt() == evidenceCount
+        && workerMetadata.path("testsFailed").asInt(-1) == 0
+        && workerMetadata.path("testsSkipped").asInt(-1) == 0;
   }
 }

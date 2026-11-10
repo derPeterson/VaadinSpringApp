@@ -140,12 +140,14 @@ class TwoFactorAuthorizationTest {
   void firstFactorOrRememberedSessionDoesNotSatisfyTheCurrentLoginRule() {
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     String recoveryCode = recoveryCodes.get(0);
+
     assertThrows(
         AccessDeniedException.class,
         () ->
             twoFactorAuthorization.confirmAction(
                 mockHttpRequest, TwoFactorAction.PASSWORD, recoveryCode));
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
+
     assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     assertFalse(twoFactorAuthorization.sessionConfirmed(requestFor(testAccount.getEmail())));
   }
@@ -153,6 +155,7 @@ class TwoFactorAuthorizationTest {
   @Test
   void actionProofIsBoundToPurposeSessionAndSingleUse() {
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
+
     assertThrows(
         AccessDeniedException.class,
         () ->
@@ -160,16 +163,19 @@ class TwoFactorAuthorizationTest {
                 mockHttpRequest, TwoFactorAction.PASSWORD, true));
     twoFactorAuthorization.confirmAction(
         mockHttpRequest, TwoFactorAction.PASSWORD, recoveryCodes.get(1));
+
     assertThrows(
         AccessDeniedException.class,
         () ->
             twoFactorAuthorization.authorizeCurrent(mockHttpRequest, TwoFactorAction.EMAIL, true));
     MockHttpServletRequest another = requestFor(testAccount.getEmail());
     twoFactorAuthorization.confirmSession(another, recoveryCodes.get(2));
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorAuthorization.authorizeCurrent(another, TwoFactorAction.PASSWORD, true));
     twoFactorAuthorization.authorizeCurrent(mockHttpRequest, TwoFactorAction.PASSWORD, true);
+
     assertThrows(
         AccessDeniedException.class,
         () ->
@@ -186,6 +192,7 @@ class TwoFactorAuthorizationTest {
         twoFactorAccountRepository.state(testAccount.getId()).orElseThrow().getRevision();
     twoFactorStore.renewRecoveryCodes(
         testAccount.getId(), testAccount.getAccessVersion(), revision);
+
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     assertThrows(
         AccessDeniedException.class,
@@ -193,6 +200,7 @@ class TwoFactorAuthorizationTest {
             twoFactorAuthorization.authorizeCurrent(mockHttpRequest, TwoFactorAction.EMAIL, true));
     MockHttpSession original = (MockHttpSession) mockHttpRequest.getSession();
     original.changeSessionId();
+
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
   }
 
@@ -208,17 +216,20 @@ class TwoFactorAuthorizationTest {
     String previous = testAccount.getAccessVersion();
     clock.now.updateAndGet(now -> now.plusSeconds(60));
     transactionTemplate.executeWithoutResult(status -> {
-      UserEntity account = userRepository.findById(testAccount.getId()).orElseThrow();
-      account.setPassword("new-fixture-hash");
-      userRepository.saveAndFlush(account);
+      UserEntity testAccountEntity = userRepository.findById(testAccount.getId()).orElseThrow();
+      testAccountEntity.setPassword("new-fixture-hash");
+      userRepository.saveAndFlush(testAccountEntity);
     });
     String current = userRepository.findById(testAccount.getId()).orElseThrow().getAccessVersion();
+
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     twoFactorAuthorization.retainAfterAccessVersionChange(mockHttpRequest, previous);
+
     assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     org.junit.jupiter.api.Assertions.assertEquals(
         before.replace(previous, current),
         mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF));
+
     assertFalse(twoFactorAuthorization.sessionConfirmed(other));
     assertThrows(
         AccessDeniedException.class,
@@ -226,6 +237,7 @@ class TwoFactorAuthorizationTest {
             twoFactorAuthorization.authorizeCurrent(mockHttpRequest, TwoFactorAction.EMAIL, true));
     MockHttpServletRequest unconfirmed = requestFor(testAccount.getEmail());
     twoFactorAuthorization.retainAfterAccessVersionChange(unconfirmed, previous);
+
     assertFalse(twoFactorAuthorization.sessionConfirmed(unconfirmed));
   }
 
@@ -244,26 +256,31 @@ class TwoFactorAuthorizationTest {
         });
     TwoFactorPolicy desired =
         new TwoFactorPolicy(relaxed, false, Duration.ofHours(1), false, false);
+
     assertThrows(
         AccessDeniedException.class, () -> twoFactorPolicies.save(mockHttpRequest, -1, desired));
     twoFactorAuthorization.confirmAction(
         mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
     TwoFactorPolicy development =
         new TwoFactorPolicy(relaxed, false, Duration.ofHours(1), true, true);
+
     assertThrows(
         AccessDeniedException.class,
         () -> twoFactorPolicies.save(mockHttpRequest, -1, development));
     twoFactorPolicies.save(mockHttpRequest, -1, desired);
+
     assertTrue(twoFactorAuthorization.sessionConfirmed(requestFor(testAccount.getEmail())));
     assertFalse(twoFactorPolicies.weakGoogleAllowed());
   }
 
   @Test
   void sessionBoundPushReadsRequireFreshProofWithoutARequestOrSecurityContext() {
-    HttpSession session = mockHttpRequest.getSession();
-    when(security.getObject().getSessionUser(session)).thenReturn(Optional.of(testAccount));
+    HttpSession httpSession = mockHttpRequest.getSession();
+    when(security.getObject().getSessionUser(httpSession)).thenReturn(Optional.of(testAccount));
     SecurityContextHolder.clearContext();
-    assertThrows(AccessDeniedException.class, () -> twoFactorAuthorization.requireSession(session));
+
+    assertThrows(
+        AccessDeniedException.class, () -> twoFactorAuthorization.requireSession(httpSession));
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(0));
     twoFactorAuthorization.confirmAction(
         mockHttpRequest, TwoFactorAction.SECURITY_CONFIGURATION, recoveryCodes.get(1));
@@ -280,16 +297,21 @@ class TwoFactorAuthorizationTest {
         new TwoFactorPolicy(original.rules(), true, Duration.ofMinutes(1), false, false));
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(2));
     SecurityContextHolder.clearContext();
-    assertDoesNotThrow(() -> twoFactorAuthorization.requireSession(session));
-    String proof = (String) session.getAttribute(TwoFactorAuthorization.SESSION_PROOF);
+
+    assertDoesNotThrow(() -> twoFactorAuthorization.requireSession(httpSession));
+    String proof = (String) httpSession.getAttribute(TwoFactorAuthorization.SESSION_PROOF);
     clock.now.updateAndGet(now -> now.plusSeconds(60));
-    assertThrows(AccessDeniedException.class, () -> twoFactorAuthorization.requireSession(session));
-    assertEquals(proof, session.getAttribute(TwoFactorAuthorization.SESSION_PROOF));
+
+    assertThrows(
+        AccessDeniedException.class, () -> twoFactorAuthorization.requireSession(httpSession));
+    assertEquals(proof, httpSession.getAttribute(TwoFactorAuthorization.SESSION_PROOF));
     MockHttpSession unboundSession = new MockHttpSession();
+
     assertThrows(
         AccessDeniedException.class, () -> twoFactorAuthorization.requireSession(unboundSession));
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(3));
-    assertDoesNotThrow(() -> twoFactorAuthorization.requireSession(session));
+
+    assertDoesNotThrow(() -> twoFactorAuthorization.requireSession(httpSession));
   }
 
   @Test
@@ -302,12 +324,15 @@ class TwoFactorAuthorizationTest {
         mockHttpRequest,
         -1,
         new TwoFactorPolicy(original.rules(), true, Duration.ofHours(1), false, false));
+
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     twoFactorAuthorization.confirmSession(mockHttpRequest, recoveryCodes.get(2));
     clock.now.updateAndGet(now -> now.plusSeconds(3599));
+
     assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     clock.now.updateAndGet(now -> now.plusSeconds(1));
     twoFactorAuthorization.recordActivity(mockHttpRequest);
+
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
   }
 
@@ -327,6 +352,7 @@ class TwoFactorAuthorizationTest {
             mockHttpRequest,
             -1,
             new TwoFactorPolicy(rules, false, original.inactivity(), false, false));
+
     assertTrue(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     String previousProof =
         mockHttpRequest.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF).toString();
@@ -343,6 +369,7 @@ class TwoFactorAuthorizationTest {
     recovery.setCreatedAt(clock.instant());
     recovery.setExpiresAt(clock.instant().plusSeconds(300));
     twoFactorChallengeRepository.saveAndFlush(recovery);
+
     assertFalse(twoFactorAuthorization.sessionConfirmed(mockHttpRequest));
     assertTrue(twoFactorAuthorization.sessionConfirmed(requestFor(testAccount.getEmail())));
     clock.now.updateAndGet(now -> now.plusSeconds(300));
@@ -363,6 +390,7 @@ class TwoFactorAuthorizationTest {
             administrators,
             authorizations,
             new MockEnvironment().withProperty("app.security.development-options-enabled", "true"));
+
     assertTrue(development.developmentOptionsAvailable());
     assertFalse(development.pauseEnabled(development.current()));
     assertFalse(development.weakGoogleAllowed());
@@ -375,11 +403,13 @@ class TwoFactorAuthorizationTest {
             mockHttpRequest,
             -1,
             new TwoFactorPolicy(original.rules(), false, original.inactivity(), true, true)));
+
     assertTrue(development.pauseEnabled(development.current()));
     assertTrue(development.weakGoogleAllowed());
     assertFalse(twoFactorPolicies.pauseEnabled(twoFactorPolicies.current()));
     assertFalse(twoFactorPolicies.weakGoogleAllowed());
     MockHttpServletRequest newSession = requestFor(testAccount.getEmail());
+
     assertFalse(twoFactorAuthorization.sessionConfirmed(newSession));
     TwoFactorAuthorization relaxed =
         new TwoFactorAuthorization(
@@ -391,6 +421,7 @@ class TwoFactorAuthorizationTest {
             twoFactorStore,
             manager,
             clock);
+
     assertTrue(relaxed.sessionConfirmed(newSession));
     assertNull(newSession.getSession().getAttribute(TwoFactorAuthorization.SESSION_PROOF));
     assertThrows(

@@ -20,6 +20,7 @@ public final class AccountSessionsPage {
   public void open() {
     new AccountPage(browserPage).open();
     new AccountPage(browserPage).section("account-tab-sessions");
+
     assertThat(browserPage.locator("#account-panel-sessions")).isVisible();
   }
 
@@ -28,37 +29,39 @@ public final class AccountSessionsPage {
   }
 
   @Step("Aktive Anzahl, andere Sitzungen und gespeicherte Zugänge prüfen")
-  public void assertCounts(int active, int other, int saved) {
+  public void assertCounts(int activeSessionCount, int otherSessionCount, int savedSignInCount) {
     assertThat(browserPage.locator("#account-panel-sessions vaadin-badge.account-session-count"))
-        .hasText(uiTexts.getPortalSessionActiveCount(active));
+        .hasText(uiTexts.getPortalSessionActiveCount(activeSessionCount));
     assertThat(rows("current")).hasCount(1);
     assertThat(browserPage.locator("#account-current-session")).isDisabled();
-    assertThat(rows("active")).hasCount(other);
-    assertThat(rows("saved")).hasCount(saved);
-    assertGroups(active, saved);
+    assertThat(rows("active")).hasCount(otherSessionCount);
+    assertThat(rows("saved")).hasCount(savedSignInCount);
+    assertGroups(activeSessionCount, savedSignInCount);
   }
 
-  public void assertGroups(int active, int saved) {
-    Locator activeGroup = browserPage.locator("#account-session-group-active");
-    Locator savedGroup = browserPage.locator("#account-session-group-saved");
-    assertThat(activeGroup).hasText(uiTexts.getPortalSessionActiveGroup(active));
-    assertThat(activeGroup).hasCSS("text-transform", "uppercase");
-    assertThat(activeGroup).hasCSS("color", "rgb(56, 189, 248)");
-    if (saved > 0) {
-      assertThat(savedGroup).hasText(uiTexts.getPortalSessionSavedGroup(saved));
-      assertThat(savedGroup).hasCSS("text-transform", "uppercase");
-      assertThat(savedGroup).hasCSS("color", "rgb(148, 163, 184)");
+  public void assertGroups(int activeSessionCount, int savedSignInCount) {
+    Locator activeGroupLocator = browserPage.locator("#account-session-group-active");
+    Locator savedGroupLocator = browserPage.locator("#account-session-group-saved");
+
+    assertThat(activeGroupLocator).hasText(uiTexts.getPortalSessionActiveGroup(activeSessionCount));
+    assertThat(activeGroupLocator).hasCSS("text-transform", "uppercase");
+    assertThat(activeGroupLocator).hasCSS("color", "rgb(56, 189, 248)");
+    if (savedSignInCount > 0) {
+      assertThat(savedGroupLocator).hasText(uiTexts.getPortalSessionSavedGroup(savedSignInCount));
+      assertThat(savedGroupLocator).hasCSS("text-transform", "uppercase");
+      assertThat(savedGroupLocator).hasCSS("color", "rgb(148, 163, 184)");
     } else {
-      assertThat(savedGroup).hasCount(0);
+      assertThat(savedGroupLocator).hasCount(0);
     }
   }
 
   public void assertSummaryAlignment() {
-    Locator heading = browserPage.locator(".account-session-heading");
-    assertThat(heading.locator(".account-session-summary")).hasCSS("row-gap", "6px");
+    Locator sessionHeadingLocator = browserPage.locator(".account-session-heading");
+
+    assertThat(sessionHeadingLocator.locator(".account-session-summary")).hasCSS("row-gap", "6px");
     assertTrue(
         (Boolean)
-            heading.evaluate(
+            sessionHeadingLocator.evaluate(
                 """
                 heading => {
                   const summary = heading.querySelector('.account-session-summary').getBoundingClientRect();
@@ -70,15 +73,22 @@ public final class AccountSessionsPage {
   }
 
   public void assertConfirmationDetails() {
-    Locator card = browserPage.locator("#sessions-confirmation .portal-context-card");
-    Locator method = card.locator(".account-session-sign-in-method .account-session-detail-value");
-    assertThat(method).hasText(uiTexts.getSignInPortalPassword());
-    assertThat(method).hasCSS("font-weight", "700");
-    assertThat(method).hasCSS("color", "rgb(255, 255, 255)");
-    assertThat(card.locator(".portal-context-detail > .account-session-detail-value")).hasCount(3);
-    assertThat(card.locator("vaadin-badge.account-session-state"))
+    Locator confirmationCardLocator =
+        browserPage.locator("#sessions-confirmation .portal-context-card");
+    Locator signInMethodLocator =
+        confirmationCardLocator.locator(
+            ".account-session-sign-in-method .account-session-detail-value");
+
+    assertThat(signInMethodLocator).hasText(uiTexts.getSignInPortalPassword());
+    assertThat(signInMethodLocator).hasCSS("font-weight", "700");
+    assertThat(signInMethodLocator).hasCSS("color", "rgb(255, 255, 255)");
+    assertThat(
+            confirmationCardLocator.locator(
+                ".portal-context-detail > .account-session-detail-value"))
+        .hasCount(3);
+    assertThat(confirmationCardLocator.locator("vaadin-badge.account-session-state"))
         .hasText(uiTexts.getPortalSessionActive());
-    assertThat(card.locator("vaadin-badge.account-session-state"))
+    assertThat(confirmationCardLocator.locator("vaadin-badge.account-session-state"))
         .hasCSS("border-top-width", "1px");
   }
 
@@ -109,6 +119,7 @@ public final class AccountSessionsPage {
         .isVisible();
     UiActions.complete(
         browserPage, () -> browserPage.locator("#sessions-confirmation-submit").click());
+
     assertThat(browserPage.locator("#sessions-confirmation[opened]")).hasCount(0);
   }
 
