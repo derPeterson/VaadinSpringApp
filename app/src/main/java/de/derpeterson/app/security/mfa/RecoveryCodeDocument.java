@@ -49,69 +49,19 @@ public final class RecoveryCodeDocument {
       List<String> codes,
       Instant createdAt,
       Locale locale,
-      MessageProperties texts) {
+      MessageProperties messageProperties) {
     if (codes.size() != 10
         || codes.stream().anyMatch(code -> TwoFactorSecrets.recoveryDigest(1L, code) == null)) {
       throw new IllegalArgumentException("Complete recovery code set required");
     }
     try (InputStream input = new ClassPathResource("pdf/recovery-codes.html").getInputStream();
         ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-      String template = new String(input.readAllBytes(), StandardCharsets.UTF_8);
-      Map<String, String> values = new LinkedHashMap<>();
-      values.put("LANG", locale.getLanguage());
-      values.put("TITLE", texts.getTwoFactorRecoveryTitle());
-      values.put("SERVICE", service);
-      values.put("ACCOUNT", account);
-      values.put("ACCOUNT_LABEL", texts.getTwoFactorDocumentAccount());
-      values.put("DATE_LABEL", texts.getTwoFactorDocumentDate());
-      values.put(
-          "DATE",
-          DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'")
-              .withZone(ZoneOffset.UTC)
-              .format(createdAt));
-      values.put("EXPLANATION", texts.getTwoFactorRecoveryExplanation());
-      values.put("STORAGE_NOTICE", texts.getTwoFactorRecoveryStorage());
-      values.put("REPLACEMENT_NOTICE", texts.getTwoFactorRecoveryReplacement());
-      values.put("SUPPORT_NOTICE", texts.getTwoFactorRecoverySupport());
-      values.put(
-          "LOGO",
-          "data:image/png;base64," + Base64.getEncoder().encodeToString(EmailLogo.readBytes()));
-      for (Map.Entry<String, String> value : values.entrySet()) {
-        template =
-            template.replace("{{" + value.getKey() + "}}", HtmlUtils.htmlEscape(value.getValue()));
-      }
-      StringBuilder rows = new StringBuilder();
-      for (int index = 0; index < codes.size(); index += 2) {
-        rows.append("<tr><td>")
-            .append(HtmlUtils.htmlEscape(codes.get(index)))
-            .append("</td><td>")
-            .append(HtmlUtils.htmlEscape(codes.get(index + 1)))
-            .append("</td></tr>");
-      }
-      template = template.replace("{{CODE_ROWS}}", rows.toString());
-      ITextRenderer renderer = new ITextRenderer();
-      addEmbeddedFont(renderer, "InterVariable.ttf", "Inter");
-      addEmbeddedFont(renderer, "SpaceMono-Regular.ttf", "Space Mono");
-      String defaultCss =
-          Objects.requireNonNull(
-                  ITextRenderer.class.getResource("/resources/css/XhtmlNamespaceHandler.css"))
-              .toExternalForm();
-      renderer
-          .getSharedContext()
-          .setUserAgentCallback(
-              new ITextUserAgent(renderer.getOutputDevice(), ITextRenderer.DEFAULT_DOTS_PER_PIXEL) {
-                @Override
-                public String resolveURI(String uri) {
-                  // Ausschließlich die mitgelieferte Renderer-Basis-CSS und unser eingebettetes
-                  // Logo.
-                  if (defaultCss.equals(uri)
-                      || uri != null && uri.startsWith("data:image/png;base64,")) {
-                    return uri;
-                  }
-                  throw new SecurityException("External PDF resources are not permitted");
-                }
-              });
-      renderer.setDocumentFromString(template);
+      String htmlTemplate = new String(input.readAllBytes(), StandardCharsets.UTF_8);
+      String documentHtml =
+          fillRecoveryCodeTemplate(
+              htmlTemplate, service, account, codes, createdAt, locale, messageProperties);
+      ITextRenderer renderer = createLocalPdfRenderer();
+      renderer.setDocumentFromString(documentHtml);
       renderer.layout();
       renderer.createPDF(output);
       return output.toByteArray();
@@ -120,6 +70,80 @@ public final class RecoveryCodeDocument {
     } catch (DocumentException failure) {
       throw new IllegalStateException("Cannot embed recovery document fonts", failure);
     }
+  }
+
+  private String fillRecoveryCodeTemplate(
+      String htmlTemplate,
+      String serviceName,
+      String account,
+      List<String> recoveryCodes,
+      Instant createdAt,
+      Locale locale,
+      MessageProperties messageProperties)
+      throws IOException {
+    Map<String, String> values = new LinkedHashMap<>();
+    values.put("LANG", locale.getLanguage());
+    values.put("TITLE", messageProperties.getTwoFactorRecoveryTitle());
+    values.put("SERVICE", serviceName);
+    values.put("ACCOUNT", account);
+    values.put("ACCOUNT_LABEL", messageProperties.getTwoFactorDocumentAccount());
+    values.put("DATE_LABEL", messageProperties.getTwoFactorDocumentDate());
+    values.put(
+        "DATE",
+        DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm 'UTC'")
+            .withZone(ZoneOffset.UTC)
+            .format(createdAt));
+    values.put("EXPLANATION", messageProperties.getTwoFactorRecoveryExplanation());
+    values.put("STORAGE_NOTICE", messageProperties.getTwoFactorRecoveryStorage());
+    values.put("REPLACEMENT_NOTICE", messageProperties.getTwoFactorRecoveryReplacement());
+    values.put("SUPPORT_NOTICE", messageProperties.getTwoFactorRecoverySupport());
+    values.put(
+        "LOGO",
+        "data:image/png;base64," + Base64.getEncoder().encodeToString(EmailLogo.readBytes()));
+    for (Map.Entry<String, String> value : values.entrySet()) {
+      htmlTemplate =
+          htmlTemplate.replace(
+              "{{" + value.getKey() + "}}", HtmlUtils.htmlEscape(value.getValue()));
+    }
+    return htmlTemplate.replace("{{CODE_ROWS}}", formatRecoveryCodeRows(recoveryCodes));
+  }
+
+  private String formatRecoveryCodeRows(List<String> recoveryCodes) {
+    StringBuilder rows = new StringBuilder();
+    for (int index = 0; index < recoveryCodes.size(); index += 2) {
+      rows.append("<tr><td>")
+          .append(HtmlUtils.htmlEscape(recoveryCodes.get(index)))
+          .append("</td><td>")
+          .append(HtmlUtils.htmlEscape(recoveryCodes.get(index + 1)))
+          .append("</td></tr>");
+    }
+    return rows.toString();
+  }
+
+  private ITextRenderer createLocalPdfRenderer() throws IOException, DocumentException {
+    ITextRenderer renderer = new ITextRenderer();
+    addEmbeddedFont(renderer, "InterVariable.ttf", "Inter");
+    addEmbeddedFont(renderer, "SpaceMono-Regular.ttf", "Space Mono");
+    String defaultCss =
+        Objects.requireNonNull(
+                ITextRenderer.class.getResource("/resources/css/XhtmlNamespaceHandler.css"))
+            .toExternalForm();
+    renderer
+        .getSharedContext()
+        .setUserAgentCallback(
+            new ITextUserAgent(renderer.getOutputDevice(), ITextRenderer.DEFAULT_DOTS_PER_PIXEL) {
+              @Override
+              public String resolveURI(String uri) {
+                // Ausschließlich die mitgelieferte Renderer-Basis-CSS und unser eingebettetes
+                // Logo.
+                if (defaultCss.equals(uri)
+                    || uri != null && uri.startsWith("data:image/png;base64,")) {
+                  return uri;
+                }
+                throw new SecurityException("External PDF resources are not permitted");
+              }
+            });
+    return renderer;
   }
 
   private void addEmbeddedFont(ITextRenderer renderer, String fileName, String family)

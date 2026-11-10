@@ -30,11 +30,11 @@ public class AccountSecurityMail {
   private final ConfigService config;
   private final CustomI18NProvider i18n;
 
-  public MessageProperties texts(UserEntity user) {
-    return MessageProperties.forLocale(i18n, locale(user));
+  public MessageProperties messagePropertiesForRecipient(UserEntity user) {
+    return MessageProperties.forLocale(i18n, recipientLocale(user));
   }
 
-  private Locale locale(UserEntity user) {
+  private Locale recipientLocale(UserEntity user) {
     return user.getPreferredLocale() != null && "en".equals(user.getPreferredLocale().getLanguage())
         ? Locale.ENGLISH
         : Locale.GERMAN;
@@ -62,9 +62,10 @@ public class AccountSecurityMail {
             config.getString(ConfigEntry.COPYRIGHT_TEXT),
             service,
             Clock.systemDefaultZone(),
-            texts(user)::getAccountCopyrightTemplate));
+            messagePropertiesForRecipient(user)::getAccountCopyrightTemplate));
     try (InputStream input =
-        new ClassPathResource("email/" + template + "_" + locale(user).getLanguage() + ".html")
+        new ClassPathResource(
+                "email/" + template + "_" + recipientLocale(user).getLanguage() + ".html")
             .getInputStream()) {
       String html = new String(input.readAllBytes(), StandardCharsets.UTF_8);
       for (Entry<String, String> entry : replacements.entrySet()) {

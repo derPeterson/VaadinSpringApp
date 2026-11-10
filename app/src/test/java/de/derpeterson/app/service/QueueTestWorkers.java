@@ -17,15 +17,14 @@ final class QueueTestWorkers {
   static EmailQueueWorkerPool inline() {
     EmailQueueWorkerPool workers = mock(EmailQueueWorkerPool.class);
     lenient()
-        .doAnswer(
-            call -> {
-              List<Long> ids = call.getArgument(0);
-              LongConsumer dispatch = call.getArgument(1);
-              ids.forEach(dispatch::accept);
-              return null;
-            })
+        .doAnswer(call -> {
+          List<Long> ids = call.getArgument(0);
+          LongConsumer dispatch = call.getArgument(1);
+          ids.forEach(dispatch::accept);
+          return null;
+        })
         .when(workers)
-        .process(anyList(), any());
+        .dispatchEmailBatch(anyList(), any());
     return workers;
   }
 }

@@ -51,7 +51,7 @@ public class SupportTicketService {
   public static final int MESSAGE_LIMIT = 2000;
   private static final long TICKET_NUMBER_OFFSET = 10_000L;
 
-  private final TwoFactorAuthorization authorization;
+  private final TwoFactorAuthorization twoFactorAuthorization;
   private final SupportTicketRepository tickets;
   private final SupportReplyRepository replies;
   private final SupportTicketViewerRepository viewers;
@@ -135,7 +135,7 @@ public class SupportTicketService {
 
   @Transactional(readOnly = true)
   public UserIdentity requesterIdentity(HttpServletRequest request) {
-    return requesterIdentity(authorization.owner(request).id());
+    return requesterIdentity(twoFactorAuthorization.owner(request).id());
   }
 
   private UserIdentity requesterIdentity(Long id) {
@@ -146,7 +146,8 @@ public class SupportTicketService {
 
   @Transactional(readOnly = true)
   public List<Ticket> list(HttpServletRequest request, boolean administration) {
-    Owner owner = administration ? requireAdministrator(request) : authorization.owner(request);
+    Owner owner =
+        administration ? requireAdministrator(request) : twoFactorAuthorization.owner(request);
     return list(owner, administration);
   }
 
@@ -199,17 +200,16 @@ public class SupportTicketService {
     Set<Long> subscribed =
         administration ? Set.copyOf(viewers.subscribedTickets(owner.id(), ids)) : Set.of();
     return visible.stream()
-        .map(
-            ticket ->
-                view(
-                    ticket,
-                    administration ? ticket.getUpdatedAt() : ticket.getPublicUpdatedAt(),
-                    unreadVisible(owner, ticket, administration, subscribed)
-                        ? unread.getOrDefault(ticket.getId(), 0L)
-                        : 0L,
-                    subscribed.contains(ticket.getId()),
-                    administration && canSubscribe(owner, ticket),
-                    administration))
+        .map(ticket ->
+            view(
+                ticket,
+                administration ? ticket.getUpdatedAt() : ticket.getPublicUpdatedAt(),
+                unreadVisible(owner, ticket, administration, subscribed)
+                    ? unread.getOrDefault(ticket.getId(), 0L)
+                    : 0L,
+                subscribed.contains(ticket.getId()),
+                administration && canSubscribe(owner, ticket),
+                administration))
         .toList();
   }
 
@@ -386,13 +386,12 @@ public class SupportTicketService {
   private SupportTicketViewerEntity viewer(Long ticketId, Long userId) {
     return viewers
         .findByTicketIdAndUserId(ticketId, userId)
-        .orElseGet(
-            () -> {
-              SupportTicketViewerEntity row = new SupportTicketViewerEntity();
-              row.setTicketId(ticketId);
-              row.setUserId(userId);
-              return row;
-            });
+        .orElseGet(() -> {
+          SupportTicketViewerEntity row = new SupportTicketViewerEntity();
+          row.setTicketId(ticketId);
+          row.setUserId(userId);
+          return row;
+        });
   }
 
   private boolean canSubscribe(Owner owner, SupportTicketEntity ticket) {
@@ -402,14 +401,15 @@ public class SupportTicketService {
   }
 
   private Owner liveViewer(HttpSession session, boolean administration) {
-    Owner owner = authorization.owner(session);
+    Owner owner = twoFactorAuthorization.owner(session);
     boolean administrator = owner.roles().stream().anyMatch(RoleType::isAdministrative);
     MaintenanceService.State state = maintenance.state();
     if (!owner.verifiedContact()
         || state == MaintenanceService.State.UNAVAILABLE
         || state == MaintenanceService.State.ACTIVE && !administrator
         || administration
-            && (!administrator || !authorization.administrationConfirmed(owner, session))) {
+            && (!administrator
+                || !twoFactorAuthorization.administrationConfirmed(owner, session))) {
       throw new AccessDeniedException("Ticket view unavailable");
     }
     return owner;
@@ -417,7 +417,7 @@ public class SupportTicketService {
 
   @Transactional
   public Ticket createRecovery(HttpServletRequest request, String description) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     UserEntity user = users.findByIdForUpdate(owner.id()).orElseThrow();
     entityManager.refresh(user);
     if (!user.isEnabled()
@@ -432,7 +432,7 @@ public class SupportTicketService {
     String body = bounded(description, MESSAGE_LIMIT);
     SupportTicketEntity ticket = new SupportTicketEntity();
     ticket.setOwner(user);
-    ticket.setSubject(templates.texts(user).getSupportRecoverySubject());
+    ticket.setSubject(templates.messagePropertiesForRecipient(user).getSupportRecoverySubject());
     ticket.setCreatedAt(Instant.now());
     ticket.setUpdatedAt(ticket.getCreatedAt());
     ticket.setPublicUpdatedAt(ticket.getCreatedAt());
@@ -457,23 +457,22 @@ public class SupportTicketService {
 
   private List<Reply> conversation(Long id, boolean administration) {
     return replies.visible(id, administration).stream()
-        .map(
-            reply ->
-                new Reply(
-                    reply.getId(),
-                    reply.getBody(),
-                    reply.isInternal(),
-                    reply.getCreatedAt(),
-                    reply.isSupportAuthor() ? ReplyAuthor.SUPPORT : ReplyAuthor.REQUESTER,
-                    reply.getKind(),
-                    reply.getPreviousStatus(),
-                    reply.getNextStatus(),
-                    administration && reply.getAuthor() != null
-                        ? new UserIdentity(
-                            reply.getAuthor().getFirstName(),
-                            reply.getAuthor().getLastName(),
-                            reply.getAuthor().getEmail())
-                        : null))
+        .map(reply ->
+            new Reply(
+                reply.getId(),
+                reply.getBody(),
+                reply.isInternal(),
+                reply.getCreatedAt(),
+                reply.isSupportAuthor() ? ReplyAuthor.SUPPORT : ReplyAuthor.REQUESTER,
+                reply.getKind(),
+                reply.getPreviousStatus(),
+                reply.getNextStatus(),
+                administration && reply.getAuthor() != null
+                    ? new UserIdentity(
+                        reply.getAuthor().getFirstName(),
+                        reply.getAuthor().getLastName(),
+                        reply.getAuthor().getEmail())
+                    : null))
         .toList();
   }
 
@@ -511,7 +510,7 @@ public class SupportTicketService {
       String text,
       boolean internal,
       boolean administration) {
-    TwoFactorAuthorization.Owner actor = authorization.owner(request);
+    TwoFactorAuthorization.Owner actor = twoFactorAuthorization.owner(request);
     accessible(request, id, administration);
     SupportTicketEntity ticket = locked(id, version);
     if (!ticket.getStatus().acceptsMessages() || !administration && internal) {
@@ -601,24 +600,24 @@ public class SupportTicketService {
         || recipient.isVerificationPending()) {
       throw new AccessDeniedException("Instruction delivery unavailable or already queued");
     }
-    MessageProperties texts = templates.texts(recipient);
-    String body = texts.getSupportRecoveryInstructions();
+    MessageProperties messageProperties = templates.messagePropertiesForRecipient(recipient);
+    String body = messageProperties.getSupportRecoveryInstructions();
     queue.addAddressedNotification(
         recipient,
         recipient.getEmail(),
-        texts.getSupportRecoverySubject(),
+        messageProperties.getSupportRecoverySubject(),
         templates.render(
             "two_factor",
             recipient,
             Map.of(
                 "TITLE",
-                texts.getSupportRecoverySubject(),
+                messageProperties.getSupportRecoverySubject(),
                 "MESSAGE",
                 body,
                 "CODE",
                 "",
                 "NOTICE",
-                texts.getSupportNoUnlock())));
+                messageProperties.getSupportNoUnlock())));
     append(
         ticket,
         users.getReferenceById(actor.id()),
@@ -634,7 +633,7 @@ public class SupportTicketService {
 
   private SupportTicketEntity accessible(
       HttpServletRequest request, Long id, boolean administration) {
-    TwoFactorAuthorization.Owner actor = authorization.owner(request);
+    TwoFactorAuthorization.Owner actor = twoFactorAuthorization.owner(request);
     if (administration) {
       requireAdministrator(request);
     }
@@ -652,9 +651,9 @@ public class SupportTicketService {
   }
 
   private TwoFactorAuthorization.Owner requireAdministrator(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     if (owner.roles().stream().noneMatch(de.derpeterson.app.model.enums.RoleType::isAdministrative)
-        || !authorization.administrationConfirmed(request)) {
+        || !twoFactorAuthorization.administrationConfirmed(request)) {
       throw new AccessDeniedException("Fully authenticated administrator required");
     }
     return owner;

@@ -46,7 +46,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TwoFactorDocuments {
   public static final String PATH = "/internal/two-factor";
   private final TwoFactorEnrollment enrollment;
-  private final TwoFactorAuthorization authorization;
+  private final TwoFactorAuthorization twoFactorAuthorization;
   private final ConfigService config;
   private final CustomI18NProvider i18n;
   private final RecoveryCodeDocument pdf;
@@ -62,7 +62,7 @@ public class TwoFactorDocuments {
     byte[] secret = enrollment.pendingSecret(request, id);
     try {
       String service = config.getString(ConfigEntry.SERVICE_NAME);
-      String identity = authorization.owner(request).email();
+      String identity = twoFactorAuthorization.owner(request).email();
       String uri =
           "otpauth://totp/"
               + encode(service + ":" + identity)
@@ -128,7 +128,7 @@ public class TwoFactorDocuments {
     byte[] bytes =
         pdf.render(
             serviceName,
-            authorization.owner(request).email(),
+            twoFactorAuthorization.owner(request).email(),
             codes,
             Instant.now(),
             locale,

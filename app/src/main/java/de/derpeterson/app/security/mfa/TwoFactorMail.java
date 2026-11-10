@@ -22,30 +22,30 @@ public class TwoFactorMail {
   private final EmailQueueService queue;
 
   public void setupCode(UserEntity user, String code) {
-    MessageProperties texts = templates.texts(user);
+    MessageProperties messageProperties = templates.messagePropertiesForRecipient(user);
     enqueue(
         user,
-        texts.getTwoFactorEmailSubject(),
-        texts.getTwoFactorEmailExplanation(),
+        messageProperties.getTwoFactorEmailSubject(),
+        messageProperties.getTwoFactorEmailExplanation(),
         code,
-        texts.getTwoFactorEmailNotice());
+        messageProperties.getTwoFactorEmailNotice());
   }
 
   public void securityChange(UserEntity user, Event event) {
-    MessageProperties texts = templates.texts(user);
+    MessageProperties messageProperties = templates.messagePropertiesForRecipient(user);
     String title =
         switch (event) {
-          case ENABLED -> texts.getTwoFactorEnabledSubject();
-          case DISABLED -> texts.getTwoFactorDisabledSubject();
-          case RECOVERY_CODES -> texts.getTwoFactorRenewedSubject();
+          case ENABLED -> messageProperties.getTwoFactorEnabledSubject();
+          case DISABLED -> messageProperties.getTwoFactorDisabledSubject();
+          case RECOVERY_CODES -> messageProperties.getTwoFactorRenewedSubject();
         };
     String message =
         switch (event) {
-          case ENABLED -> texts.getTwoFactorEnabledExplanation();
-          case DISABLED -> texts.getTwoFactorDisabledExplanation();
-          case RECOVERY_CODES -> texts.getTwoFactorRenewedExplanation();
+          case ENABLED -> messageProperties.getTwoFactorEnabledExplanation();
+          case DISABLED -> messageProperties.getTwoFactorDisabledExplanation();
+          case RECOVERY_CODES -> messageProperties.getTwoFactorRenewedExplanation();
         };
-    enqueue(user, title, message, "", texts.getTwoFactorSecurityNotice());
+    enqueue(user, title, message, "", messageProperties.getTwoFactorSecurityNotice());
   }
 
   private void enqueue(UserEntity user, String title, String message, String code, String notice) {

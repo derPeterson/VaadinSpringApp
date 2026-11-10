@@ -151,7 +151,10 @@ public class AccountSecurityService {
       invalidateEmailChanges(user);
       invalidateResets(user);
       queue.addAddressedNotification(
-          user, user.getEmail(), mail.texts(user).getAccountPasswordChangedSubject(), body);
+          user,
+          user.getEmail(),
+          mail.messagePropertiesForRecipient(user).getAccountPasswordChangedSubject(),
+          body);
       userNotifications.recordSecurityEvent(
           user, de.derpeterson.app.model.enums.UserNotificationType.PASSWORD_CHANGED);
       remembered.removeUserTokens(identity);
@@ -218,7 +221,10 @@ public class AccountSecurityService {
       pending.setExpiryDate(now.plus(duration));
       tokens.save(pending);
       queue.addAddressedNotification(
-          user, target, mail.texts(user).getAccountEmailChangeSubject(), body);
+          user,
+          target,
+          mail.messagePropertiesForRecipient(user).getAccountEmailChangeSubject(),
+          body);
       AfterCommitLog.info(log, "Email change confirmation queued: userId={}", user.getId());
       return null;
     });
@@ -270,7 +276,7 @@ public class AccountSecurityService {
         tokens.save(pending);
         invalidateEmailChanges(user);
         invalidateResets(user);
-        String subject = mail.texts(user).getAccountEmailChangedSubject();
+        String subject = mail.messagePropertiesForRecipient(user).getAccountEmailChangedSubject();
         queue.addAddressedNotification(user, old, subject, body);
         queue.addAddressedNotification(user, target, subject, body);
         userNotifications.recordSecurityEvent(

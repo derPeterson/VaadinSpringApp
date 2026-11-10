@@ -201,14 +201,13 @@ public class EmailQueueService {
     Duration retryDelay = Duration.ofSeconds(retryDelaySeconds);
     LocalDateTime retryCutoff = LocalDateTime.now(clock).minus(retryDelay);
     List<Long> pendingIds =
-        transaction.execute(
-            status ->
-                emailQueueRepository
-                    .findPendingEmails(retryCutoff, PageRequest.of(0, capacity))
-                    .stream()
-                    .map(EmailQueueEntity::getId)
-                    .toList());
-    workers.process(pendingIds, id -> processCandidate(id, maxRetry, retryDelay));
+        transaction.execute(status ->
+            emailQueueRepository
+                .findPendingEmails(retryCutoff, PageRequest.of(0, capacity))
+                .stream()
+                .map(EmailQueueEntity::getId)
+                .toList());
+    workers.dispatchEmailBatch(pendingIds, id -> processCandidate(id, maxRetry, retryDelay));
   }
 
   private void processCandidate(long id, int maxRetry, Duration retryDelay) {
@@ -216,23 +215,22 @@ public class EmailQueueService {
     transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     try {
       EmailQueueEntity claimed =
-          transaction.execute(
-              status -> {
-                EmailQueueEntity email = emailQueueRepository.lockById(id).orElse(null);
-                if (email == null || email.getStatus() != EmailStatus.PENDING) {
-                  return null;
-                }
-                if (email.getLastRetryAt() != null
-                    && email.getLastRetryAt().isAfter(LocalDateTime.now(clock).minus(retryDelay))) {
-                  return null;
-                }
-                // Empfänger im frischen Worker-Claim initialisieren, SMTP außerhalb der
-                // Transaktion.
-                email.getUserEntity().getEmail();
-                email.setStatus(EmailStatus.IN_PROGRESS);
-                emailQueueRepository.save(email);
-                return email;
-              });
+          transaction.execute(status -> {
+            EmailQueueEntity email = emailQueueRepository.lockById(id).orElse(null);
+            if (email == null || email.getStatus() != EmailStatus.PENDING) {
+              return null;
+            }
+            if (email.getLastRetryAt() != null
+                && email.getLastRetryAt().isAfter(LocalDateTime.now(clock).minus(retryDelay))) {
+              return null;
+            }
+            // Empfänger im frischen Worker-Claim initialisieren, SMTP außerhalb der
+            // Transaktion.
+            email.getUserEntity().getEmail();
+            email.setStatus(EmailStatus.IN_PROGRESS);
+            emailQueueRepository.save(email);
+            return email;
+          });
       if (claimed != null) {
         dispatchClaimed(transaction, claimed, maxRetry);
       }
@@ -358,13 +356,12 @@ public class EmailQueueService {
       TransactionTemplate transaction, EmailQueueEntity failedEmail, Exception e, long attempt) {
     // A failed/ambiguous start commit must prevent external dispatch.
     Long auditId =
-        transaction.execute(
-            status -> {
-              AdminNotificationAttemptEntity audit = new AdminNotificationAttemptEntity();
-              audit.setQueueId(failedEmail.getId());
-              audit.setStartedAt(LocalDateTime.now(clock));
-              return adminAttempts.saveAndFlush(audit).getId();
-            });
+        transaction.execute(status -> {
+          AdminNotificationAttemptEntity audit = new AdminNotificationAttemptEntity();
+          audit.setQueueId(failedEmail.getId());
+          audit.setStartedAt(LocalDateTime.now(clock));
+          return adminAttempts.saveAndFlush(audit).getId();
+        });
     AdminNotificationStatus outcome = AdminNotificationStatus.NOT_SENT;
     boolean dispatchStarted = false;
     try {
@@ -402,16 +399,15 @@ public class EmailQueueService {
     }
     final AdminNotificationStatus finalOutcome = outcome;
     // Independent of the already committed FAILED; failure here leaves the durable start.
-    transaction.executeWithoutResult(
-        status -> {
-          AdminNotificationAttemptEntity audit = adminAttempts.lockById(auditId).orElseThrow();
-          if (audit.getStatus() != AdminNotificationStatus.IN_PROGRESS) {
-            throw new IllegalStateException(
-                "Admin notification attempt no longer matches the stored state.");
-          }
-          audit.setStatus(finalOutcome);
-          audit.setCompletedAt(LocalDateTime.now(clock));
-          adminAttempts.saveAndFlush(audit);
-        });
+    transaction.executeWithoutResult(status -> {
+      AdminNotificationAttemptEntity audit = adminAttempts.lockById(auditId).orElseThrow();
+      if (audit.getStatus() != AdminNotificationStatus.IN_PROGRESS) {
+        throw new IllegalStateException(
+            "Admin notification attempt no longer matches the stored state.");
+      }
+      audit.setStatus(finalOutcome);
+      audit.setCompletedAt(LocalDateTime.now(clock));
+      adminAttempts.saveAndFlush(audit);
+    });
   }
 }

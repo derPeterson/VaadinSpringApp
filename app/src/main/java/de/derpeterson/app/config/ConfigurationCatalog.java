@@ -56,29 +56,29 @@ public final class ConfigurationCatalog {
       return "APP_EXTERNAL_LOGIN_" + provider.toUpperCase(Locale.ROOT) + "_" + environmentSuffix;
     }
 
-    public String label(MessageProperties texts) {
+    public String label(MessageProperties messageProperties) {
       return switch (this) {
-        case CLIENT_ID -> texts.getProviderSettingsClientId();
-        case SECRET -> texts.getProviderSettingsSecret();
-        case ENABLED -> texts.getProviderSettingsEnable();
+        case CLIENT_ID -> messageProperties.getProviderSettingsClientId();
+        case SECRET -> messageProperties.getProviderSettingsSecret();
+        case ENABLED -> messageProperties.getProviderSettingsEnable();
       };
     }
 
-    public String description(MessageProperties texts, String provider) {
+    public String description(MessageProperties messageProperties, String provider) {
       requireProvider(provider);
       boolean microsoft = ExternalProviderSettings.MICROSOFT.equals(provider);
       return switch (this) {
-        case CLIENT_ID -> texts.getProviderSettingsClientIdHelp(microsoft);
-        case SECRET -> texts.getProviderSettingsSecretHelp(microsoft);
-        case ENABLED -> texts.getProviderSettingsEnableHelp();
+        case CLIENT_ID -> messageProperties.getProviderSettingsClientIdHelp(microsoft);
+        case SECRET -> messageProperties.getProviderSettingsSecretHelp(microsoft);
+        case ENABLED -> messageProperties.getProviderSettingsEnableHelp();
       };
     }
 
-    public String rule(MessageProperties texts) {
+    public String rule(MessageProperties messageProperties) {
       return switch (this) {
-        case CLIENT_ID -> texts.getProviderSettingsClientIdRule();
-        case SECRET -> texts.getProviderSettingsSecretRule();
-        case ENABLED -> texts.getProviderSettingsEnableRule();
+        case CLIENT_ID -> messageProperties.getProviderSettingsClientIdRule();
+        case SECRET -> messageProperties.getProviderSettingsSecretRule();
+        case ENABLED -> messageProperties.getProviderSettingsEnableRule();
       };
     }
 
@@ -187,34 +187,33 @@ public final class ConfigurationCatalog {
     };
   }
 
-  public static String actionLabel(TwoFactorAction action, MessageProperties texts) {
+  public static String actionLabel(TwoFactorAction action, MessageProperties messageProperties) {
     return switch (action) {
-      case LOGIN -> texts.getTwoFactorRuleLogin();
-      case ADMINISTRATION -> texts.getTwoFactorRuleAdministration();
-      case PASSWORD -> texts.getTwoFactorRulePassword();
-      case EMAIL -> texts.getTwoFactorRuleEmail();
-      case LINK_PROVIDER -> texts.getTwoFactorRuleLink();
-      case UNLINK_PROVIDER -> texts.getTwoFactorRuleUnlink();
-      case MANAGE_FACTOR -> texts.getTwoFactorRuleFactor();
-      case MANAGE_RECOVERY_CODES -> texts.getTwoFactorRuleRecovery();
-      case SECURITY_CONFIGURATION -> texts.getTwoFactorRuleConfiguration();
+      case LOGIN -> messageProperties.getTwoFactorRuleLogin();
+      case ADMINISTRATION -> messageProperties.getTwoFactorRuleAdministration();
+      case PASSWORD -> messageProperties.getTwoFactorRulePassword();
+      case EMAIL -> messageProperties.getTwoFactorRuleEmail();
+      case LINK_PROVIDER -> messageProperties.getTwoFactorRuleLink();
+      case UNLINK_PROVIDER -> messageProperties.getTwoFactorRuleUnlink();
+      case MANAGE_FACTOR -> messageProperties.getTwoFactorRuleFactor();
+      case MANAGE_RECOVERY_CODES -> messageProperties.getTwoFactorRuleRecovery();
+      case SECURITY_CONFIGURATION -> messageProperties.getTwoFactorRuleConfiguration();
     };
   }
 
   private static List<Entry> createEntries() {
     List<Entry> entries = new ArrayList<>();
     Arrays.stream(ConfigEntry.values())
-        .map(
-            entry ->
-                new Entry(
-                    entry.getKey(),
-                    group(entry),
-                    Storage.GENERAL_SETTINGS,
-                    secret(entry),
-                    property(entry),
-                    environmentVariable(entry),
-                    texts -> texts.getAdminConfigEntryLabel(entry),
-                    texts -> texts.getAdminConfigEntryTooltip(entry)))
+        .map(entry ->
+            new Entry(
+                entry.getKey(),
+                group(entry),
+                Storage.GENERAL_SETTINGS,
+                secret(entry),
+                property(entry),
+                environmentVariable(entry),
+                messageProperties -> messageProperties.getAdminConfigEntryLabel(entry),
+                messageProperties -> messageProperties.getAdminConfigEntryTooltip(entry)))
         .forEachOrdered(entries::add);
     for (String provider : ExternalProviderSettings.PROVIDERS) {
       for (ProviderField field : ProviderField.values()) {
@@ -228,7 +227,7 @@ public final class ConfigurationCatalog {
                 property,
                 field.environmentVariable(provider),
                 field::label,
-                texts -> field.description(texts, provider)));
+                messageProperties -> field.description(messageProperties, provider)));
       }
     }
     entries.add(

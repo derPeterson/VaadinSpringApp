@@ -37,6 +37,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.ObjectPostProcessor;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer;
 import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.FrameOptionsConfig;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -187,70 +188,22 @@ public class SecurityConfig {
         new H2ConsoleOriginFilter(exposeH2Console, h2Console::getIfAvailable);
     FlowCsrfRequestMatcher flowProtection = new FlowCsrfRequestMatcher(vaadinServletMapping);
     http.authenticationManager(authenticationManager)
-        .csrf(
-            csrf ->
-                csrf.requireCsrfProtectionMatcher(
-                    request ->
-                        flowProtection.matches(request)
-                            && !consoleProtection.allowsConsoleRequest(request)))
+        .csrf(csrf ->
+            csrf.requireCsrfProtectionMatcher(request ->
+                flowProtection.matches(request)
+                    && !consoleProtection.allowsConsoleRequest(request)))
         .headers(headers -> headers.frameOptions(FrameOptionsConfig::sameOrigin))
         .addFilterBefore(consoleProtection, CsrfFilter.class)
         .addFilterBefore(
             new FlowUiRecoveryFilter(vaadinServletMapping, admissions, maintenance),
             CsrfFilter.class)
         .authorizeHttpRequests(
-            auth ->
-                auth.requestMatchers(consoleProtection::isConsoleRequest)
-                    .access((authentication, context) -> new AuthorizationDecision(exposeH2Console))
-                    .requestMatchers(
-                        "/VAADIN/**",
-                        "/HILLA/**",
-                        "/themes/**",
-                        "/custom-theme/**",
-                        "/lumo/**",
-                        "/frontend/**",
-                        "/favicon.ico",
-                        "/manifest.webmanifest",
-                        "/sw.js",
-                        "/sw-runtime-resources-precache.js",
-                        "/offline.html",
-                        "/icons/**",
-                        "/images/**",
-                        "/line-awesome/**",
-                        "/webjars/**",
-                        "/error")
-                    .permitAll()
-                    .requestMatchers(
-                        AppRoute.BASE.getSecurityRoute(),
-                        AppRoute.HOME.getSecurityRoute(),
-                        AppRoute.LOGIN.getSecurityRoute(),
-                        AppRoute.MAINTENANCE.getSecurityRoute(),
-                        AppRoute.REGISTRATION.getSecurityRoute(),
-                        AppRoute.VERIFICATION.getSecurityRoute(),
-                        AppRoute.FORGOT_PASSWORD.getSecurityRoute(),
-                        AppRoute.RESET_PASSWORD.getSecurityRoute(),
-                        AppRoute.EMAIL_CHANGE.getSecurityRoute())
-                    .permitAll()
-                    .requestMatchers(
-                        "/oauth2/authorization/google",
-                        "/oauth2/authorization/microsoft",
-                        "/login/oauth2/code/google",
-                        "/login/oauth2/code/microsoft",
-                        "/external-registration")
-                    .permitAll()
-                    .requestMatchers(
-                        AppRoute.H2.getSecurityRoute(), AppRoute.H2.getSecurityRoute() + "/**")
-                    .access((authentication, context) -> new AuthorizationDecision(exposeH2Console))
-                    .requestMatchers(AppRoute.ADMIN.getSecurityRoute())
-                    .hasRole(RoleType.ROLE_ADMIN.getName())
-                    .anyRequest()
-                    .authenticated())
-        .exceptionHandling(
-            exceptionHandling ->
-                exceptionHandling
-                    .authenticationEntryPoint(
-                        (request, response, authException) -> commenceLogin(request, response))
-                    .accessDeniedHandler(this::handleAccessDenied))
+            requests -> configureRequestAuthorization(requests, consoleProtection))
+        .exceptionHandling(exceptionHandling ->
+            exceptionHandling
+                .authenticationEntryPoint(
+                    (request, response, authException) -> commenceLogin(request, response))
+                .accessDeniedHandler(this::handleAccessDenied))
         .addFilterAfter(new LoginCsrfTokenFilter(), RememberMeAuthenticationFilter.class)
         .addFilterBefore(vaadinSecurityFilter, AuthorizationFilter.class)
         .addFilterAfter(new MaintenanceHttpFilter(maintenance), VaadinSecurityFilter.class)
@@ -262,56 +215,48 @@ public class SecurityConfig {
         .sessionManagement(session -> session.sessionFixation().changeSessionId())
         .securityContext(
             securityContext -> securityContext.securityContextRepository(contextRepository))
-        .formLogin(
-            login -> {
-              login.addObjectPostProcessor(
-                  new ObjectPostProcessor<UsernamePasswordAuthenticationFilter>() {
-                    @Override
-                    public <O extends UsernamePasswordAuthenticationFilter> O postProcess(
-                        O filter) {
-                      filter.setSessionAuthenticationStrategy(admissions);
-                      return filter;
-                    }
-                  });
-              login
-                  .loginPage(AppRoute.LOGIN.getSecurityRoute())
-                  .defaultSuccessUrl(AppRoute.ADMIN.getSecurityRoute(), true)
-                  .successHandler(
-                      (request, response, authentication) ->
-                          completeFormLogin(
-                              request, response, authentication, rememberMeServices, twoFactor))
-                  .failureHandler(
-                      (request, response, failure) -> {
-                        AuthenticationException result =
-                            recoverSessionLimit(
-                                request, failure, rememberMeServices, sessionManagement);
-                        response.sendRedirect(
-                            AppRoute.LOGIN.getSecurityRoute()
-                                + LOGIN_ERROR_QUERY
-                                + authenticationFailureCode(result));
-                      })
-                  .permitAll();
-            })
-        .logout(
-            logout ->
-                logout
-                    .logoutUrl(AppRoute.LOGOUT.getSecurityRoute())
-                    .logoutSuccessUrl(AppRoute.LOGIN.getSecurityRoute())
-                    .invalidateHttpSession(true)
-                    .deleteCookies("JSESSIONID", "remember-me"))
-        .rememberMe(
-            rememberMe ->
-                rememberMe
-                    .rememberMeServices(rememberMeServices)
-                    .addObjectPostProcessor(
-                        new ObjectPostProcessor<RememberMeAuthenticationFilter>() {
-                          @Override
-                          public <O extends RememberMeAuthenticationFilter> O postProcess(
-                              O filter) {
-                            filter.setSessionAuthenticationStrategy(admissions);
-                            return filter;
-                          }
-                        }));
+        .formLogin(login -> {
+          login.addObjectPostProcessor(
+              new ObjectPostProcessor<UsernamePasswordAuthenticationFilter>() {
+                @Override
+                public <O extends UsernamePasswordAuthenticationFilter> O postProcess(O filter) {
+                  filter.setSessionAuthenticationStrategy(admissions);
+                  return filter;
+                }
+              });
+          login
+              .loginPage(AppRoute.LOGIN.getSecurityRoute())
+              .defaultSuccessUrl(AppRoute.ADMIN.getSecurityRoute(), true)
+              .successHandler((request, response, authentication) ->
+                  completeFormLogin(
+                      request, response, authentication, rememberMeServices, twoFactor))
+              .failureHandler((request, response, failure) -> {
+                AuthenticationException result =
+                    recoverSessionLimit(request, failure, rememberMeServices, sessionManagement);
+                response.sendRedirect(
+                    AppRoute.LOGIN.getSecurityRoute()
+                        + LOGIN_ERROR_QUERY
+                        + authenticationFailureCode(result));
+              })
+              .permitAll();
+        })
+        .logout(logout ->
+            logout
+                .logoutUrl(AppRoute.LOGOUT.getSecurityRoute())
+                .logoutSuccessUrl(AppRoute.LOGIN.getSecurityRoute())
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID", "remember-me"))
+        .rememberMe(rememberMe ->
+            rememberMe
+                .rememberMeServices(rememberMeServices)
+                .addObjectPostProcessor(
+                    new ObjectPostProcessor<RememberMeAuthenticationFilter>() {
+                      @Override
+                      public <O extends RememberMeAuthenticationFilter> O postProcess(O filter) {
+                        filter.setSessionAuthenticationStrategy(admissions);
+                        return filter;
+                      }
+                    }));
 
     logger.debug("🔧 SecurityConfig loaded!");
 
@@ -320,6 +265,57 @@ public class SecurityConfig {
       external.configure(http);
     }
     return http.build();
+  }
+
+  private void configureRequestAuthorization(
+      AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry
+          requests,
+      H2ConsoleOriginFilter consoleProtection) {
+    requests
+        .requestMatchers(consoleProtection::isConsoleRequest)
+        .access((authentication, context) -> new AuthorizationDecision(exposeH2Console))
+        .requestMatchers(
+            "/VAADIN/**",
+            "/HILLA/**",
+            "/themes/**",
+            "/custom-theme/**",
+            "/lumo/**",
+            "/frontend/**",
+            "/favicon.ico",
+            "/manifest.webmanifest",
+            "/sw.js",
+            "/sw-runtime-resources-precache.js",
+            "/offline.html",
+            "/icons/**",
+            "/images/**",
+            "/line-awesome/**",
+            "/webjars/**",
+            "/error")
+        .permitAll()
+        .requestMatchers(
+            AppRoute.BASE.getSecurityRoute(),
+            AppRoute.HOME.getSecurityRoute(),
+            AppRoute.LOGIN.getSecurityRoute(),
+            AppRoute.MAINTENANCE.getSecurityRoute(),
+            AppRoute.REGISTRATION.getSecurityRoute(),
+            AppRoute.VERIFICATION.getSecurityRoute(),
+            AppRoute.FORGOT_PASSWORD.getSecurityRoute(),
+            AppRoute.RESET_PASSWORD.getSecurityRoute(),
+            AppRoute.EMAIL_CHANGE.getSecurityRoute())
+        .permitAll()
+        .requestMatchers(
+            "/oauth2/authorization/google",
+            "/oauth2/authorization/microsoft",
+            "/login/oauth2/code/google",
+            "/login/oauth2/code/microsoft",
+            "/external-registration")
+        .permitAll()
+        .requestMatchers(AppRoute.H2.getSecurityRoute(), AppRoute.H2.getSecurityRoute() + "/**")
+        .access((authentication, context) -> new AuthorizationDecision(exposeH2Console))
+        .requestMatchers(AppRoute.ADMIN.getSecurityRoute())
+        .hasRole(RoleType.ROLE_ADMIN.getName())
+        .anyRequest()
+        .authenticated();
   }
 
   private void commenceLogin(HttpServletRequest request, HttpServletResponse response)

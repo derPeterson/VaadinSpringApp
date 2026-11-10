@@ -103,7 +103,7 @@ final class MailVisualPreview {
               .email("alex@example.invalid")
               .preferredLocale(locale)
               .build();
-      MessageProperties texts = renderer.texts(user);
+      MessageProperties texts = renderer.messagePropertiesForRecipient(user);
       examples.add(
           html(
               renderer,
@@ -184,7 +184,8 @@ final class MailVisualPreview {
 
             Error message: Example SMTP failure
             Email type: VERIFICATION
-            Sending time: 2026-01-01T12:00:00""",
+            Sending time: 2026-01-01T12:00:00\
+            """,
             false));
     return examples;
   }

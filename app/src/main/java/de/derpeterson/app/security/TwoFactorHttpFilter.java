@@ -25,11 +25,12 @@ public final class TwoFactorHttpFilter implements Filter {
               + Pattern.quote(RecoveryCodeDownload.RESOURCE_NAME));
 
   private final SecurityService security;
-  private final TwoFactorAuthorization authorization;
+  private final TwoFactorAuthorization twoFactorAuthorization;
 
-  public TwoFactorHttpFilter(SecurityService security, TwoFactorAuthorization authorization) {
+  public TwoFactorHttpFilter(
+      SecurityService security, TwoFactorAuthorization twoFactorAuthorization) {
     this.security = security;
-    this.authorization = authorization;
+    this.twoFactorAuthorization = twoFactorAuthorization;
   }
 
   @Override
@@ -80,9 +81,9 @@ public final class TwoFactorHttpFilter implements Filter {
   }
 
   private boolean confirmed(HttpServletRequest request, String path, boolean protocol) {
-    return authorization.sessionConfirmed(request)
+    return twoFactorAuthorization.sessionConfirmed(request)
         && (!("/admin".equals(path) || protocol && TwoFactorTransport.administrativeUi(request))
-            || authorization.administrationConfirmed(request));
+            || twoFactorAuthorization.administrationConfirmed(request));
   }
 
   private boolean permitted(

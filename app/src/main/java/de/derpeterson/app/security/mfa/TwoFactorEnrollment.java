@@ -39,7 +39,7 @@ public class TwoFactorEnrollment {
   private static final String ENROLLMENT_PREFIX = "enrollment:";
   // Die Codeausgabe endet mit der Sitzung oder Bestätigung, nicht mit einer Bestätigungsfrist.
   private static final Instant SESSION_BOUND_OUTPUT = Instant.parse("9999-12-31T23:59:59Z");
-  private final TwoFactorAuthorization authorization;
+  private final TwoFactorAuthorization twoFactorAuthorization;
   private final TwoFactorStore factors;
   private final TwoFactorSecrets secrets;
   private final TwoFactorChallengeRepository challenges;
@@ -57,7 +57,7 @@ public class TwoFactorEnrollment {
 
   @Autowired
   public TwoFactorEnrollment(
-      TwoFactorAuthorization authorization,
+      TwoFactorAuthorization twoFactorAuthorization,
       TwoFactorStore factors,
       TwoFactorSecrets secrets,
       TwoFactorChallengeRepository challenges,
@@ -67,7 +67,7 @@ public class TwoFactorEnrollment {
       TwoFactorMail mail,
       PlatformTransactionManager transactions) {
     this(
-        authorization,
+        twoFactorAuthorization,
         factors,
         secrets,
         challenges,
@@ -80,7 +80,7 @@ public class TwoFactorEnrollment {
   }
 
   TwoFactorEnrollment(
-      TwoFactorAuthorization authorization,
+      TwoFactorAuthorization twoFactorAuthorization,
       TwoFactorStore factors,
       TwoFactorSecrets secrets,
       TwoFactorChallengeRepository challenges,
@@ -90,7 +90,7 @@ public class TwoFactorEnrollment {
       TwoFactorMail mail,
       PlatformTransactionManager transactions,
       Clock clock) {
-    this.authorization = authorization;
+    this.twoFactorAuthorization = twoFactorAuthorization;
     this.factors = factors;
     this.secrets = secrets;
     this.challenges = challenges;
@@ -111,7 +111,7 @@ public class TwoFactorEnrollment {
     if (!available()) {
       throw new IllegalStateException("TOTP encryption key is not configured");
     }
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     String digest = TwoFactorSecrets.recoveryDigest(owner.id(), code);
     Pending pending =
         factors.locked(
@@ -132,18 +132,18 @@ public class TwoFactorEnrollment {
     if (pending == null) {
       throw factors.invalidConfirmation(owner.id());
     }
-    authorization.clearSessionProof(request);
+    twoFactorAuthorization.clearSessionProof(request);
     return pending;
   }
 
   Pending beginReplacement(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
-    TwoFactorAuthorization.State expected = authorization.state(owner);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
+    TwoFactorAuthorization.State expected = twoFactorAuthorization.state(owner);
     if (!expected.enrolled()) {
       throw new AccessDeniedException("Existing factor required");
     }
     // Ein echter TOTP-/Ersatzcode ist auch bei abgeschalteter Rollenregel notwendig.
-    authorization.authorizeFactorGrant(request, TwoFactorAction.MANAGE_FACTOR, true);
+    twoFactorAuthorization.authorizeFactorGrant(request, TwoFactorAction.MANAGE_FACTOR, true);
     return factors.locked(
         owner.id(),
         owner.accessVersion(),
@@ -160,11 +160,11 @@ public class TwoFactorEnrollment {
   }
 
   public Pending beginPassword(HttpServletRequest request, String password) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     passwords
         .getObject()
         .authenticate(UsernamePasswordAuthenticationToken.unauthenticated(owner.email(), password));
-    TwoFactorAuthorization.Owner current = authorization.owner(request);
+    TwoFactorAuthorization.Owner current = twoFactorAuthorization.owner(request);
     if (!current.id().equals(owner.id())
         || !current.accessVersion().equals(owner.accessVersion())) {
       throw new AccessDeniedException("Account access changed");
@@ -173,19 +173,19 @@ public class TwoFactorEnrollment {
   }
 
   public boolean canBeginFromPasswordLogin(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
-    TwoFactorAuthorization.State state = authorization.state(owner);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
+    TwoFactorAuthorization.State state = twoFactorAuthorization.state(owner);
     return !state.enrolled()
         && !state.previouslyEnrolled()
         && !state.operatorEnrollment()
-        && (authorization.requires(request, TwoFactorAction.LOGIN)
-            || authorization.requires(request, TwoFactorAction.ADMINISTRATION))
-        && authorization.hasFreshPasswordLogin(request);
+        && (twoFactorAuthorization.requires(request, TwoFactorAction.LOGIN)
+            || twoFactorAuthorization.requires(request, TwoFactorAction.ADMINISTRATION))
+        && twoFactorAuthorization.hasFreshPasswordLogin(request);
   }
 
   /** Die frische Passwortanmeldung gilt ausschließlich für die verpflichtende Ersteinrichtung. */
   public Pending beginFromPasswordLogin(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     if (!canBeginFromPasswordLogin(request)) {
       throw new AccessDeniedException("Fresh password sign-in for initial enrollment required");
     }
@@ -201,14 +201,14 @@ public class TwoFactorEnrollment {
     if (!available()) {
       throw new IllegalStateException("TOTP encryption key is not configured");
     }
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     if (confirmation == null
         || !confirmation.matches(
             owner.id(), owner.accessVersion(), request.getSession(false), clock.instant())) {
       throw new AccessDeniedException("Verified provider enrollment required");
     }
     String provider = confirmation.provider();
-    TwoFactorAuthorization.State state = authorization.state(owner);
+    TwoFactorAuthorization.State state = twoFactorAuthorization.state(owner);
     if (state.operatorEnrollment()) {
       return begin(request, owner, SetupProof.OPERATOR);
     }
@@ -282,7 +282,7 @@ public class TwoFactorEnrollment {
   }
 
   public Pending confirmEmail(HttpServletRequest request, UUID id, String code) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     Pending result =
         factors.locked(
             owner.id(),
@@ -324,7 +324,7 @@ public class TwoFactorEnrollment {
   }
 
   public UUID complete(HttpServletRequest request, UUID id, String firstCode) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     CompletedEnrollment completed =
         factors.locked(
             owner.id(),
@@ -377,36 +377,33 @@ public class TwoFactorEnrollment {
     }
     // Ein konkurrierender Faktorwechsel nach dem Commit darf nicht nachträglich als von
     // dieser Einrichtung bestätigt gelten.
-    authorization.markSession(request, owner, completed.factorRevision());
+    twoFactorAuthorization.markSession(request, owner, completed.factorRevision());
     sessions.getObject().revokeOthers(request);
     return completed.outputId();
   }
 
   /** Ausschließlich für einen sitzungsgebundenen, nicht gecachten internen Dokument-Endpunkt. */
   public byte[] pendingSecret(HttpServletRequest request, UUID id) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
-    return transaction.execute(
-        status -> {
-          TwoFactorChallengeEntity challenge = locked(request, owner, id, Kind.ENROLLMENT);
-          return secrets.decrypt(
-              owner.id(), ENROLLMENT_PREFIX + id, challenge.getEncryptedPayload());
-        });
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
+    return transaction.execute(status -> {
+      TwoFactorChallengeEntity challenge = locked(request, owner, id, Kind.ENROLLMENT);
+      return secrets.decrypt(owner.id(), ENROLLMENT_PREFIX + id, challenge.getEncryptedPayload());
+    });
   }
 
   public List<String> recoveryOutput(HttpServletRequest request, UUID id) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
-    authorization.requireSession(request);
-    return transaction.execute(
-        status -> {
-          TwoFactorChallengeEntity challenge = locked(request, owner, id, Kind.RECOVERY_OUTPUT);
-          byte[] plaintext =
-              secrets.decrypt(owner.id(), "recovery:" + id, challenge.getEncryptedPayload());
-          try {
-            return List.of(new String(plaintext, StandardCharsets.UTF_8).split("\n"));
-          } finally {
-            Arrays.fill(plaintext, (byte) 0);
-          }
-        });
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
+    twoFactorAuthorization.requireSession(request);
+    return transaction.execute(status -> {
+      TwoFactorChallengeEntity challenge = locked(request, owner, id, Kind.RECOVERY_OUTPUT);
+      byte[] plaintext =
+          secrets.decrypt(owner.id(), "recovery:" + id, challenge.getEncryptedPayload());
+      try {
+        return List.of(new String(plaintext, StandardCharsets.UTF_8).split("\n"));
+      } finally {
+        Arrays.fill(plaintext, (byte) 0);
+      }
+    });
   }
 
   TwoFactorChallengeEntity recoveryOutput(
@@ -425,73 +422,70 @@ public class TwoFactorEnrollment {
    * Bestätigung darf auch nach einer Bereinigung gelingen, solange die Sitzung berechtigt ist.
    */
   public void dismissOutput(HttpServletRequest request, UUID id) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
-    authorization.requireSession(request);
-    transaction.executeWithoutResult(
-        status -> {
-          TwoFactorChallengeEntity challenge = challenges.lock(id).orElse(null);
-          if (challenge == null) {
-            return;
-          }
-          if (challenge.getKind() != Kind.RECOVERY_OUTPUT
-              || !challenge.getUser().getId().equals(owner.id())
-              || !challenge.getAccessVersion().equals(owner.accessVersion())
-              || !challenge
-                  .getSessionDigest()
-                  .equals(TwoFactorAuthorization.sessionDigest(request.getSession(false)))) {
-            throw new AccessDeniedException("Recovery output belongs to another operation");
-          }
-          challenge.setEncryptedPayload(null);
-          challenge.setConsumed(true);
-          challenges.saveAndFlush(challenge);
-        });
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
+    twoFactorAuthorization.requireSession(request);
+    transaction.executeWithoutResult(status -> {
+      TwoFactorChallengeEntity challenge = challenges.lock(id).orElse(null);
+      if (challenge == null) {
+        return;
+      }
+      if (challenge.getKind() != Kind.RECOVERY_OUTPUT
+          || !challenge.getUser().getId().equals(owner.id())
+          || !challenge.getAccessVersion().equals(owner.accessVersion())
+          || !challenge
+              .getSessionDigest()
+              .equals(TwoFactorAuthorization.sessionDigest(request.getSession(false)))) {
+        throw new AccessDeniedException("Recovery output belongs to another operation");
+      }
+      challenge.setEncryptedPayload(null);
+      challenge.setConsumed(true);
+      challenges.saveAndFlush(challenge);
+    });
   }
 
   public Pending pending(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
-    return transaction.execute(
-        status -> {
-          for (Kind kind : List.of(Kind.RECOVERY_OUTPUT, Kind.GOOGLE_EMAIL, Kind.ENROLLMENT)) {
-            List<UUID> ids =
-                challenges.active(
-                    owner.id(),
-                    TwoFactorAuthorization.sessionDigest(request.getSession(false)),
-                    kind,
-                    TwoFactorAction.MANAGE_FACTOR,
-                    clock.instant());
-            if (!ids.isEmpty()) {
-              try {
-                TwoFactorChallengeEntity challenge = locked(request, owner, ids.getFirst(), kind);
-                return new Pending(challenge.getId(), kind, challenge.getSetupProof());
-              } catch (AccessDeniedException _) {
-                /* Ein veralteter Ablauf wird nicht wiederaufgenommen. */
-              }
-            }
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
+    return transaction.execute(status -> {
+      for (Kind kind : List.of(Kind.RECOVERY_OUTPUT, Kind.GOOGLE_EMAIL, Kind.ENROLLMENT)) {
+        List<UUID> ids =
+            challenges.active(
+                owner.id(),
+                TwoFactorAuthorization.sessionDigest(request.getSession(false)),
+                kind,
+                TwoFactorAction.MANAGE_FACTOR,
+                clock.instant());
+        if (!ids.isEmpty()) {
+          try {
+            TwoFactorChallengeEntity challenge = locked(request, owner, ids.getFirst(), kind);
+            return new Pending(challenge.getId(), kind, challenge.getSetupProof());
+          } catch (AccessDeniedException _) {
+            /* Ein veralteter Ablauf wird nicht wiederaufgenommen. */
           }
-          return null;
-        });
+        }
+      }
+      return null;
+    });
   }
 
   /** Ein Abbruch verwirft nur vorbereitete Schritte, niemals bereits ausgegebene Codes. */
   public boolean cancelPreparation(HttpServletRequest request) {
     return Boolean.TRUE.equals(
-        transaction.execute(
-            status -> {
-              Pending current = pending(request);
-              if (current == null) {
-                return true;
-              }
-              if (current.kind() == Kind.RECOVERY_OUTPUT) {
-                return false;
-              }
-              TwoFactorChallengeEntity draft =
-                  locked(request, authorization.owner(request), current.id(), current.kind());
-              draft.setConsumed(true);
-              draft.setEncryptedPayload(null);
-              draft.setVerificationDigest(null);
-              challenges.saveAndFlush(draft);
-              return true;
-            }));
+        transaction.execute(status -> {
+          Pending current = pending(request);
+          if (current == null) {
+            return true;
+          }
+          if (current.kind() == Kind.RECOVERY_OUTPUT) {
+            return false;
+          }
+          TwoFactorChallengeEntity draft =
+              locked(request, twoFactorAuthorization.owner(request), current.id(), current.kind());
+          draft.setConsumed(true);
+          draft.setEncryptedPayload(null);
+          draft.setVerificationDigest(null);
+          challenges.saveAndFlush(draft);
+          return true;
+        }));
   }
 
   private TwoFactorChallengeEntity create(
@@ -528,7 +522,8 @@ public class TwoFactorEnrollment {
             .equals(TwoFactorAuthorization.sessionDigest(request.getSession(false)))
         || kind != Kind.RECOVERY_OUTPUT && !challenge.getExpiresAt().isAfter(clock.instant())
         || challenge.getPolicyRevision() != policies.current().revision()
-        || !Objects.equals(challenge.getFactorRevision(), authorization.state(owner).revision())) {
+        || !Objects.equals(
+            challenge.getFactorRevision(), twoFactorAuthorization.state(owner).revision())) {
       throw new AccessDeniedException("Two-factor challenge expired or changed");
     }
     return challenge;

@@ -74,11 +74,11 @@ class ThreadPoolConfigTest {
     ThreadPoolExecutor initial = new ThreadPoolConfig(config).taskExecutor();
     EmailQueueWorkerPool pool = new EmailQueueWorkerPool(initial, config);
     try {
-      pool.process(List.of(1L), ignored -> {});
+      pool.dispatchEmailBatch(List.of(1L), ignored -> {});
       when(config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE)).thenReturn(2);
       CountDownLatch started = new CountDownLatch(2);
       AtomicInteger concurrentlyStarted = new AtomicInteger();
-      pool.process(
+      pool.dispatchEmailBatch(
           List.of(2L, 3L),
           ignored -> {
             started.countDown();
@@ -111,7 +111,7 @@ class ThreadPoolConfigTest {
           context.getBean("emailTaskExecutor", java.util.concurrent.ThreadPoolExecutor.class);
       context
           .getBean(EmailQueueWorkerPool.class)
-          .process(List.of(1L), id -> thread.set(Thread.currentThread().getName()));
+          .dispatchEmailBatch(List.of(1L), id -> thread.set(Thread.currentThread().getName()));
       assertTrue(thread.get().startsWith("EmailSender-"));
     }
     assertTrue(executor.isTerminated());

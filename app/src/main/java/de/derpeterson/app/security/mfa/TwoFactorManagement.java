@@ -31,7 +31,7 @@ public class TwoFactorManagement {
     NO_INDEPENDENT_ACCESS
   }
 
-  private final TwoFactorAuthorization authorization;
+  private final TwoFactorAuthorization twoFactorAuthorization;
   private final TwoFactorPolicies policies;
   private final TwoFactorStore factors;
   private final TwoFactorEnrollment enrollment;
@@ -51,7 +51,7 @@ public class TwoFactorManagement {
   }
 
   public DisableProblem disableProblem(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
     TwoFactorPolicy policy = policies.current().policy();
     if (Arrays.stream(TwoFactorAction.values())
         .anyMatch(action -> policy.mode(owner.roles(), action) == TwoFactorMode.REQUIRED)) {
@@ -66,15 +66,16 @@ public class TwoFactorManagement {
   }
 
   public long remainingCodes(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
-    authorization.requireSession(request);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
+    twoFactorAuthorization.requireSession(request);
     return recoveryCodes.remaining(owner.id());
   }
 
   public UUID regenerate(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
-    UUID revision = authorization.state(owner).revision();
-    authorization.authorizeFactorGrant(request, TwoFactorAction.MANAGE_RECOVERY_CODES, true);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
+    UUID revision = twoFactorAuthorization.state(owner).revision();
+    twoFactorAuthorization.authorizeFactorGrant(
+        request, TwoFactorAction.MANAGE_RECOVERY_CODES, true);
     UUID renewedRevision = UUID.randomUUID();
     UUID output =
         factors.locked(
@@ -92,15 +93,15 @@ public class TwoFactorManagement {
               AfterCommitLog.info(log, "Recovery codes renewed: accountId={}", owner.id());
               return document.getId();
             });
-    authorization.retainAfterFactorChange(request, revision, renewedRevision);
+    twoFactorAuthorization.retainAfterFactorChange(request, revision, renewedRevision);
     sessions.getObject().revokeOthers(request);
     return output;
   }
 
   public void disable(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = authorization.owner(request);
-    UUID revision = authorization.state(owner).revision();
-    authorization.authorizeFactorGrant(request, TwoFactorAction.MANAGE_FACTOR, true);
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
+    UUID revision = twoFactorAuthorization.state(owner).revision();
+    twoFactorAuthorization.authorizeFactorGrant(request, TwoFactorAction.MANAGE_FACTOR, true);
     factors.locked(
         owner.id(),
         owner.accessVersion(),
@@ -119,7 +120,7 @@ public class TwoFactorManagement {
           AfterCommitLog.info(log, "Authenticator removed: accountId={}", owner.id());
           return null;
         });
-    authorization.clearSessionProof(request);
+    twoFactorAuthorization.clearSessionProof(request);
     sessions.getObject().revokeOthers(request);
   }
 }

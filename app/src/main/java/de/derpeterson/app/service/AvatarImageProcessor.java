@@ -92,17 +92,18 @@ public class AvatarImageProcessor {
   }
 
   public SourceMetadata validate(byte[] data) {
-    return process(data, Crop.centered(), false).metadata();
+    return decodeUploadedAvatar(data, Crop.centered(), false).metadata();
   }
 
   public byte[] normalize(byte[] data, Crop crop) {
-    return process(data, crop, true).normalized();
+    return decodeUploadedAvatar(data, crop, true).normalized();
   }
 
   // Nur Position und Länge im bereits begrenzten Upload; keine Metadatenkopie.
   private record ExifBlock(int offset, int length) {}
 
-  private ProcessedImage process(byte[] data, Crop crop, boolean encode) {
+  private ProcessedImage decodeUploadedAvatar(
+      byte[] data, Crop crop, boolean encodeNormalizedImage) {
     boolean png = requireImageType(data);
     ExifBlock pngExif = png ? inspectPng(data) : null;
     if (!decoders.tryAcquire()) {
@@ -120,7 +121,7 @@ public class AvatarImageProcessor {
                   data.length,
                   image.getWidth(),
                   image.getHeight());
-          if (!encode) {
+          if (!encodeNormalizedImage) {
             return new ProcessedImage(metadata, null);
           }
           int orientation = png ? pngOrientation(data, pngExif) : jpegOrientation(data);

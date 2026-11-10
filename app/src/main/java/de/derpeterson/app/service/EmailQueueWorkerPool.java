@@ -67,7 +67,7 @@ public class EmailQueueWorkerPool {
     }
   }
 
-  public void process(List<Long> ids, LongConsumer dispatch) {
+  public void dispatchEmailBatch(List<Long> pendingEmailIds, LongConsumer dispatchEmail) {
     // Zusätzliche manuelle Läufe überlappen keinen laufenden Batch; offene IDs bleiben in der DB.
     if (stopping || !batch.tryLock()) {
       return;
@@ -75,7 +75,7 @@ public class EmailQueueWorkerPool {
     BatchExecution execution = null;
     try {
       execution = new BatchExecution(executorForBatch());
-      execution.run(ids.iterator(), dispatch);
+      execution.dispatchUntilBatchEnds(pendingEmailIds.iterator(), dispatchEmail);
     } finally {
       batch.unlock();
       if (execution != null && execution.interrupted) {
@@ -112,7 +112,7 @@ public class EmailQueueWorkerPool {
       this.parallelism = batchExecutor.getMaximumPoolSize();
     }
 
-    private void run(Iterator<Long> candidates, LongConsumer dispatch) {
+    private void dispatchUntilBatchEnds(Iterator<Long> candidates, LongConsumer dispatch) {
       while ((refill && !stopping && candidates.hasNext()) || active > 0) {
         submitAvailable(candidates, dispatch);
         if (active == 0) {
@@ -136,7 +136,7 @@ public class EmailQueueWorkerPool {
     }
 
     private void submit(long id, LongConsumer dispatch) {
-      var task =
+      FutureTask<Void> dispatchTask =
           new FutureTask<Void>(
               () -> {
                 if (!stopping) {
@@ -150,12 +150,12 @@ public class EmailQueueWorkerPool {
               completed.add(this);
             }
           };
-      inFlight.add(task);
+      inFlight.add(dispatchTask);
       try {
-        batchExecutor.execute(task);
+        batchExecutor.execute(dispatchTask);
         active++;
       } catch (RejectedExecutionException failure) {
-        inFlight.remove(task);
+        inFlight.remove(dispatchTask);
         refill = false;
         logger.warn(
             "Queue worker rejected entry {}; remaining entries stay pending.",
@@ -170,7 +170,7 @@ public class EmailQueueWorkerPool {
         active--;
         finished.get();
       } catch (InterruptedException _) {
-        // Angenommene Aufgaben erst abwarten; process() stellt den Interrupt danach im finally her.
+        // Angenommene Aufgaben erst abwarten; der Batch stellt den Interrupt im finally wieder her.
         // Sofortiges Wiederherstellen würde das blockierende Abwarten wiederholt unterbrechen.
         interrupted = true;
         refill = false;
