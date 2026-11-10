@@ -233,17 +233,17 @@ class UserAvatarServicePersistenceTest {
         session.setAttribute(UserDetails.class, principal);
         dialog = new AccountAvatarDialog(new MessageProperties(new CustomI18NProvider()), user);
         AccountAvatarEditor editor =
-            spy((AccountAvatarEditor) ReflectionTestUtils.getField(dialog, "editor"));
-        ReflectionTestUtils.setField(dialog, "editor", editor);
+            spy((AccountAvatarEditor) ReflectionTestUtils.getField(dialog, "avatarEditor"));
+        ReflectionTestUtils.setField(dialog, "avatarEditor", editor);
         dialog.configure(service, request);
         ArgumentCaptor<UploadHandler> captured = ArgumentCaptor.forClass(UploadHandler.class);
         verify(editor).setUploadHandler(captured.capture());
         handler = captured.getValue();
-        uploader = (Upload) ReflectionTestUtils.getField(editor, "uploader");
+        uploader = (Upload) ReflectionTestUtils.getField(editor, "avatarUpload");
         ui.add(dialog);
         dialog.open();
         assertTrue(dialog.isOpened());
-        token = (UUID) ReflectionTestUtils.getField(dialog, "draft");
+        token = (UUID) ReflectionTestUtils.getField(dialog, "avatarDraftId");
       } finally {
         session.unlock();
       }

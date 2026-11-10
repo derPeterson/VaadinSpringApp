@@ -31,17 +31,17 @@ import jakarta.servlet.http.HttpServletRequest;
 @PageTitle(AppRouteConstants.MAINTENANCE_PAGE_TITLE)
 @AnonymousAllowed
 public class MaintenanceView extends VerticalLayout implements BeforeEnterObserver {
-  private final transient MaintenanceService maintenance;
-  private final transient HttpServletRequest request;
+  private final transient MaintenanceService maintenanceService;
+  private final transient HttpServletRequest httpRequest;
 
   public MaintenanceView(
       ConfigService config,
       MessageProperties messages,
-      MaintenanceService maintenance,
+      MaintenanceService maintenanceService,
       SecurityService security,
-      HttpServletRequest request) {
-    this.maintenance = maintenance;
-    this.request = request;
+      HttpServletRequest httpRequest) {
+    this.maintenanceService = maintenanceService;
+    this.httpRequest = httpRequest;
     setPadding(false);
     setSpacing(false);
     PublicPageComponent page =
@@ -58,8 +58,8 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
             event ->
                 UI.getCurrent()
                     .getPage()
-                    .setLocation(request.getContextPath() + AppRoute.LOGIN.getSecurityRoute()));
-    boolean authenticated = security.getAuthenticatedUser(request).isPresent();
+                    .setLocation(httpRequest.getContextPath() + AppRoute.LOGIN.getSecurityRoute()));
+    boolean authenticated = security.getAuthenticatedUser(httpRequest).isPresent();
     login.setVisible(!authenticated);
     login.setPrefixComponent(AppIcon.SIGN_IN.create());
     login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -70,7 +70,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
             event ->
                 UI.getCurrent()
                     .getPage()
-                    .setLocation(request.getContextPath() + AppRoute.HOME.getSecurityRoute()));
+                    .setLocation(httpRequest.getContextPath() + AppRoute.HOME.getSecurityRoute()));
     retry.setPrefixComponent(AppIcon.REFRESH.create());
     retry.setWidthFull();
     Button logout =
@@ -80,7 +80,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
               security.logout();
               UI.getCurrent()
                   .getPage()
-                  .setLocation(request.getContextPath() + AppRoute.LOGIN.getSecurityRoute());
+                  .setLocation(httpRequest.getContextPath() + AppRoute.LOGIN.getSecurityRoute());
             });
     logout.setPrefixComponent(AppIcon.SIGN_OUT.create());
     logout.setWidthFull();
@@ -89,7 +89,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
         () -> {
           title.setText(messages.getMaintenanceTitle());
           text.setText(
-              maintenance.state() == MaintenanceService.State.UNAVAILABLE
+              maintenanceService.state() == MaintenanceService.State.UNAVAILABLE
                   ? messages.getMaintenanceUnavailableMessage()
                   : messages.getMaintenanceDescription());
           login.setText(messages.getMaintenanceLoginButton());
@@ -113,7 +113,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
 
   @Override
   public void beforeEnter(BeforeEnterEvent event) {
-    if (!maintenance.blocks(request)) {
+    if (!maintenanceService.blocks(httpRequest)) {
       event.forwardTo(HomeView.class);
     }
   }

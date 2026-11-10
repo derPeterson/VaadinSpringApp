@@ -105,7 +105,7 @@ class AccountSessionsComponentTest {
           revokeOthersCallCount.incrementAndGet();
           sessionsSnapshot.set(new Snapshot(List.of(currentSessionEntry), 1, 7));
         });
-    accountSessionsComponent.reload();
+    accountSessionsComponent.reloadSessionSnapshot();
   }
 
   @AfterEach
@@ -132,7 +132,7 @@ class AccountSessionsComponentTest {
   private void confirmPending() {
     PortalConfirmationDialog confirmation =
         (PortalConfirmationDialog)
-            ReflectionTestUtils.getField(accountSessionsComponent, "confirmation");
+            ReflectionTestUtils.getField(accountSessionsComponent, "sessionConfirmationDialog");
     assertTrue(confirmation.isOpened());
     ((Button) ReflectionTestUtils.getField(confirmation, "confirmButton")).click();
     assertFalse(confirmation.isOpened());
@@ -143,7 +143,7 @@ class AccountSessionsComponentTest {
     button("session-revoke-other-handle").click();
     PortalConfirmationDialog confirmation =
         (PortalConfirmationDialog)
-            ReflectionTestUtils.getField(accountSessionsComponent, "confirmation");
+            ReflectionTestUtils.getField(accountSessionsComponent, "sessionConfirmationDialog");
     assertTrue(confirmation.isOpened());
     assertTrue(revokedSessionIds.isEmpty());
     ((Button) ReflectionTestUtils.getField(confirmation, "cancelButton")).click();
@@ -291,7 +291,7 @@ class AccountSessionsComponentTest {
       button("session-revoke-" + entry.handle()).click();
       PortalConfirmationDialog dialog =
           (PortalConfirmationDialog)
-              ReflectionTestUtils.getField(accountSessionsComponent, "confirmation");
+              ReflectionTestUtils.getField(accountSessionsComponent, "sessionConfirmationDialog");
       assertTrue(dialog.isOpened());
       Button confirm = (Button) ReflectionTestUtils.getField(dialog, "confirmButton");
       assertEquals(
@@ -339,7 +339,7 @@ class AccountSessionsComponentTest {
     button("account-logout-others").click();
     PortalConfirmationDialog dialog =
         (PortalConfirmationDialog)
-            ReflectionTestUtils.getField(accountSessionsComponent, "confirmation");
+            ReflectionTestUtils.getField(accountSessionsComponent, "sessionConfirmationDialog");
     assertEquals(
         messageProperties.getPortalSessionSelection(1, 1),
         ((Span) ReflectionTestUtils.getField(dialog, "dialogDescription")).getText());
@@ -379,7 +379,7 @@ class AccountSessionsComponentTest {
     button("session-revoke-other-handle").click();
     PortalConfirmationDialog dialog =
         (PortalConfirmationDialog)
-            ReflectionTestUtils.getField(accountSessionsComponent, "confirmation");
+            ReflectionTestUtils.getField(accountSessionsComponent, "sessionConfirmationDialog");
     String explanation =
         ((Span) ReflectionTestUtils.getField(dialog, "confirmationExplanation")).getText();
     assertTrue(explanation.contains(messageProperties.getSessionRecoveryLogoutHint()));

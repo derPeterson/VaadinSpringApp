@@ -12,26 +12,27 @@ import de.derpeterson.app.views.AccountView;
 
 /** Gemeinsame Konto-Schnelleinstiege neben dem Avatar; anonym vollständig ausgeblendet. */
 public class AccountHeaderActions extends HorizontalLayout {
-  private final transient MessageProperties messages;
-  private final Button notifications = new Button(AppIcon.PAPERPLANE.create());
-  private final Button settings = new Button(AppIcon.COG.create());
+  private final transient MessageProperties messageProperties;
+  private final Button openNotificationsButton = new Button(AppIcon.PAPERPLANE.create());
+  private final Button openAccountSettingsButton = new Button(AppIcon.COG.create());
 
-  public AccountHeaderActions(MessageProperties messages, boolean authenticated) {
-    this.messages = messages;
+  public AccountHeaderActions(MessageProperties messageProperties, boolean authenticated) {
+    this.messageProperties = messageProperties;
     setSpacing(false);
     setPadding(false);
     addClassName("cosmos-topbar-shortcuts");
     setVisible(authenticated);
-    notifications.setId("account-header-notifications");
-    settings.setId("account-header-settings");
-    for (Button button : new Button[] {notifications, settings}) {
+    openNotificationsButton.setId("account-header-notifications");
+    openAccountSettingsButton.setId("account-header-settings");
+    for (Button button : new Button[] {openNotificationsButton, openAccountSettingsButton}) {
       button.addThemeVariants(LUMO_TERTIARY_INLINE);
       button.addClassNames("cosmos-topbar-shortcut", LumoUtility.TextColor.PRIMARY);
     }
     if (authenticated) {
-      settings.addClickListener(event -> UI.getCurrent().navigate(AccountView.class));
+      openAccountSettingsButton.addClickListener(
+          event -> UI.getCurrent().navigate(AccountView.class));
     }
-    add(notifications, settings);
+    add(openNotificationsButton, openAccountSettingsButton);
     refreshTexts();
   }
 
@@ -51,8 +52,8 @@ public class AccountHeaderActions extends HorizontalLayout {
     if (notificationBell != null) {
       notificationBell.useReferenceStyle();
     }
-    settings.setIcon(AppIcon.COG.create());
-    notifications.setIcon(AppIcon.BELL.create());
+    openAccountSettingsButton.setIcon(AppIcon.COG.create());
+    openNotificationsButton.setIcon(AppIcon.BELL.create());
   }
 
   public void configureNotifications(
@@ -61,8 +62,9 @@ public class AccountHeaderActions extends HorizontalLayout {
     if (!isVisible() || notificationBell != null) {
       return;
     }
-    remove(notifications);
-    notificationBell = new UserNotificationBell(messages, service, request, notifications);
+    remove(openNotificationsButton);
+    notificationBell =
+        new UserNotificationBell(messageProperties, service, request, openNotificationsButton);
     notificationBell.setUnreadCountListener(unreadCountListener);
     if (referenceStyle) {
       notificationBell.useReferenceStyle();
@@ -71,10 +73,10 @@ public class AccountHeaderActions extends HorizontalLayout {
   }
 
   public void refreshTexts() {
-    notifications.setAriaLabel(messages.getBaseNotifications());
-    notifications.setTooltipText(messages.getBaseNotifications());
-    settings.setAriaLabel(messages.getBaseManageAccountButton());
-    settings.setTooltipText(messages.getBaseManageAccountButton());
+    openNotificationsButton.setAriaLabel(messageProperties.getBaseNotifications());
+    openNotificationsButton.setTooltipText(messageProperties.getBaseNotifications());
+    openAccountSettingsButton.setAriaLabel(messageProperties.getBaseManageAccountButton());
+    openAccountSettingsButton.setTooltipText(messageProperties.getBaseManageAccountButton());
     if (notificationBell != null) {
       notificationBell.refreshTexts();
     }

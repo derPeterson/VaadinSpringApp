@@ -35,72 +35,72 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   private static final String ENTRY_DESCRIPTION_CLASS = "account-entry-description";
   private static final String SESSION_BADGE_CLASS = "account-session-badge";
 
-  private final transient MessageProperties messages;
-  private SerializableSupplier<Snapshot> loader;
-  private SerializableConsumer<String> revoke;
+  private final transient MessageProperties messageProperties;
+  private SerializableSupplier<Snapshot> sessionSnapshotSupplier;
+  private SerializableConsumer<String> revokeSessionAction;
   private SerializableRunnable revokeOthers;
   private SerializableRunnable failureAction = () -> {};
-  private Snapshot snapshot;
+  private Snapshot sessionSnapshot;
   private boolean restricted;
-  private final Div rows = new Div();
-  private final Badge count = new Badge();
-  private final Span activity = new Span();
-  private final Badge limit = new Badge();
-  private final Span hint = new Span();
-  private final Button logout = new Button();
-  private final Button refresh = new Button();
-  private final PortalConfirmationDialog confirmation;
+  private final Div sessionRows = new Div();
+  private final Badge activeSessionCountBadge = new Badge();
+  private final Span sessionActivityHint = new Span();
+  private final Badge sessionLimitBadge = new Badge();
+  private final Span sessionFooterHint = new Span();
+  private final Button signOutOtherSessionsButton = new Button();
+  private final Button refreshSessionsButton = new Button();
+  private final PortalConfirmationDialog sessionConfirmationDialog;
 
-  public AccountSessionsComponent(MessageProperties messages, int initialLimit) {
+  public AccountSessionsComponent(MessageProperties messageProperties, int initialLimit) {
     super("account-panel-sessions", AppIcon.DESKTOP);
-    this.messages = messages;
-    confirmation = new PortalConfirmationDialog(messages, "sessions-confirmation");
-    confirmation.addClassName("portal-session-confirmation");
-    add(confirmation);
-    snapshot = new Snapshot(List.of(), 0, initialLimit);
+    this.messageProperties = messageProperties;
+    sessionConfirmationDialog =
+        new PortalConfirmationDialog(messageProperties, "sessions-confirmation");
+    sessionConfirmationDialog.addClassName("portal-session-confirmation");
+    add(sessionConfirmationDialog);
+    sessionSnapshot = new Snapshot(List.of(), 0, initialLimit);
     SvgIcon devices = AppIcon.DEVICES.create();
     devices.addClassName("account-devices-icon");
     devices.getElement().setAttribute("aria-hidden", "true");
     setIcon(devices);
-    count.addClassName("account-session-count");
-    activity.addClassName(ENTRY_DESCRIPTION_CLASS);
-    limit.addClassName(SESSION_BADGE_CLASS);
-    limit.addThemeVariants(BadgeVariant.WARNING);
-    limit.setId("account-sessions-limit");
-    Div summary = new Div(count, activity);
+    activeSessionCountBadge.addClassName("account-session-count");
+    sessionActivityHint.addClassName(ENTRY_DESCRIPTION_CLASS);
+    sessionLimitBadge.addClassName(SESSION_BADGE_CLASS);
+    sessionLimitBadge.addThemeVariants(BadgeVariant.WARNING);
+    sessionLimitBadge.setId("account-sessions-limit");
+    Div summary = new Div(activeSessionCountBadge, sessionActivityHint);
     summary.addClassName("account-session-summary");
-    Div heading = new Div(summary, limit);
+    Div heading = new Div(summary, sessionLimitBadge);
     heading.addClassName("account-session-heading");
-    rows.setId("account-session-entries");
-    getBody().add(heading, rows);
-    logout.setId("account-logout-others");
-    logout.setPrefixComponent(AppIcon.SIGN_OUT.create());
-    logout.addClassName(DELETE_BUTTON);
-    logout.addClickListener(event -> confirmOthers());
-    refresh.setId("account-sessions-refresh");
-    refresh.setPrefixComponent(AppIcon.REFRESH.create());
-    refresh.addClickListener(
-        event -> {
-          if (reload()) {
-            NotificationHelper.getInstance()
-                .showNotification(
-                    messages::getSessionRefreshSuccess,
-                    null,
-                    NotificationHelper.NotificationType.SUCCESS);
-          }
-        });
-    Div actions = new Div(refresh, logout);
+    sessionRows.setId("account-session-entries");
+    getBody().add(heading, sessionRows);
+    signOutOtherSessionsButton.setId("account-logout-others");
+    signOutOtherSessionsButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
+    signOutOtherSessionsButton.addClassName(DELETE_BUTTON);
+    signOutOtherSessionsButton.addClickListener(event -> confirmOthers());
+    refreshSessionsButton.setId("account-sessions-refresh");
+    refreshSessionsButton.setPrefixComponent(AppIcon.REFRESH.create());
+    refreshSessionsButton.addClickListener(event -> {
+      if (reloadSessionSnapshot()) {
+        NotificationHelper.getInstance()
+            .showNotification(
+                messageProperties::getSessionRefreshSuccess,
+                null,
+                NotificationHelper.NotificationType.SUCCESS);
+      }
+    });
+    Div actions = new Div(refreshSessionsButton, signOutOtherSessionsButton);
     actions.addClassName("cosmos-panel-actions");
-    addFooter(hint, actions);
+    addFooter(sessionFooterHint, actions);
     refreshTexts();
   }
 
   public void configure(
-      SerializableSupplier<Snapshot> loader,
-      SerializableConsumer<String> revoke,
+      SerializableSupplier<Snapshot> sessionSnapshotSupplier,
+      SerializableConsumer<String> revokeSessionAction,
       SerializableRunnable revokeOthers) {
-    this.loader = loader;
-    this.revoke = revoke;
+    this.sessionSnapshotSupplier = sessionSnapshotSupplier;
+    this.revokeSessionAction = revokeSessionAction;
     this.revokeOthers = revokeOthers;
     refreshTexts();
   }
@@ -114,16 +114,16 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     failureAction = action;
   }
 
-  public boolean reload() {
-    if (loader == null) {
+  public boolean reloadSessionSnapshot() {
+    if (sessionSnapshotSupplier == null) {
       return false;
     }
     try {
-      snapshot = Objects.requireNonNull(loader.get());
+      sessionSnapshot = Objects.requireNonNull(sessionSnapshotSupplier.get());
       refreshTexts();
       return true;
     } catch (RuntimeException failure) {
-      snapshot = new Snapshot(List.of(), 0, snapshot.limit());
+      sessionSnapshot = new Snapshot(List.of(), 0, sessionSnapshot.limit());
       refreshTexts();
       failed(failure);
       return false;
@@ -131,16 +131,17 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   }
 
   public void refreshTexts() {
-    confirmation.refreshTexts();
+    sessionConfirmationDialog.refreshTexts();
     setHeading(
         restricted
-            ? messages.getSessionRecoveryTitle()
-            : messages.getAccountSettingsSessionsTitle(),
+            ? messageProperties.getSessionRecoveryTitle()
+            : messageProperties.getAccountSettingsSessionsTitle(),
         restricted
-            ? messages.getSessionRecoveryHint()
-            : messages.getAccountSettingsSessionsDescription(),
-        restricted ? "" : messages.getAccountSettingsSessionsMeta());
-    String activeCountText = messages.getPortalSessionActiveCount(snapshot.active());
+            ? messageProperties.getSessionRecoveryHint()
+            : messageProperties.getAccountSettingsSessionsDescription(),
+        restricted ? "" : messageProperties.getAccountSettingsSessionsMeta());
+    String activeCountText =
+        messageProperties.getPortalSessionActiveCount(sessionSnapshot.active());
     // Die DE-/EN-Texte beginnen mit der formatierten Anzahl; der Wortlaut bleibt erhalten.
     int labelStart = activeCountText.indexOf(' ');
     if (labelStart > 0) {
@@ -152,27 +153,35 @@ public class AccountSessionsComponent extends AccountPanelComponent {
       Span label = new Span(activeCountText.substring(labelStart));
       Span content = new Span(value, divider, label);
       content.addClassName("account-session-count-content");
-      count.setContent(content);
+      activeSessionCountBadge.setContent(content);
     } else {
-      count.setText(activeCountText);
+      activeSessionCountBadge.setText(activeCountText);
     }
-    activity.setText(messages.getAccountSettingsSessionsActivity());
-    limit.setText(messages.getAccountSettingsSessionsLimit(snapshot.limit()));
-    hint.setText(
-        restricted ? messages.getSessionRecoveryListHint() : messages.getSessionManagementHint());
-    logout.setText(logoutActionText());
-    refresh.setText(messages.getSessionRefresh());
-    refresh.setEnabled(loader != null);
-    logout.setEnabled(
-        revokeOthers != null && snapshot.entries().stream().anyMatch(entry -> !entry.current()));
-    rows.removeAll();
-    List<Entry> active = snapshot.entries().stream().filter(Entry::active).toList();
-    List<Entry> saved = snapshot.entries().stream().filter(entry -> !entry.active()).toList();
+    sessionActivityHint.setText(messageProperties.getAccountSettingsSessionsActivity());
+    sessionLimitBadge.setText(
+        messageProperties.getAccountSettingsSessionsLimit(sessionSnapshot.limit()));
+    sessionFooterHint.setText(
+        restricted
+            ? messageProperties.getSessionRecoveryListHint()
+            : messageProperties.getSessionManagementHint());
+    signOutOtherSessionsButton.setText(logoutActionText());
+    refreshSessionsButton.setText(messageProperties.getSessionRefresh());
+    refreshSessionsButton.setEnabled(sessionSnapshotSupplier != null);
+    signOutOtherSessionsButton.setEnabled(
+        revokeOthers != null
+            && sessionSnapshot.entries().stream().anyMatch(entry -> !entry.current()));
+    sessionRows.removeAll();
+    List<Entry> active = sessionSnapshot.entries().stream().filter(Entry::active).toList();
+    List<Entry> saved =
+        sessionSnapshot.entries().stream().filter(entry -> !entry.active()).toList();
     if (!active.isEmpty()) {
-      rows.add(sessionGroup("active", messages.getPortalSessionActiveGroup(active.size()), active));
+      sessionRows.add(
+          sessionGroup(
+              "active", messageProperties.getPortalSessionActiveGroup(active.size()), active));
     }
     if (!saved.isEmpty()) {
-      rows.add(sessionGroup("saved", messages.getPortalSessionSavedGroup(saved.size()), saved));
+      sessionRows.add(
+          sessionGroup("saved", messageProperties.getPortalSessionSavedGroup(saved.size()), saved));
     }
   }
 
@@ -216,20 +225,22 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     details.add(
         sessionDetail(
             entry.active()
-                ? messages.getSessionLastActivity()
-                : messages.getPortalSessionLastUsed(),
+                ? messageProperties.getSessionLastActivity()
+                : messageProperties.getPortalSessionLastUsed(),
             formatter.format(entry.lastActivity()),
             detailClass));
     details.add(
         sessionDetail(
-            entry.active() ? messages.getSessionStarted() : messages.getSessionSavedSince(),
+            entry.active()
+                ? messageProperties.getSessionStarted()
+                : messageProperties.getSessionSavedSince(),
             formatter.format(entry.created()),
             detailClass));
     if (entry.active() && entry.signInMethod() != null) {
       Span method =
           sessionDetail(
-              messages.getSessionSignedInViaLabel(),
-              messages.getSignInMethodLabel(entry.signInMethod()),
+              messageProperties.getSessionSignedInViaLabel(),
+              messageProperties.getSignInMethodLabel(entry.signInMethod()),
               detailClass);
       method.addClassName("account-session-sign-in-method");
       details.add(method);
@@ -250,7 +261,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     Div badges = new Div();
     badges.addClassName("account-session-badges");
     if (entry.current()) {
-      Badge badge = new Badge(messages.getAccountSettingsCurrentDevice());
+      Badge badge = new Badge(messageProperties.getAccountSettingsCurrentDevice());
       badge.addClassNames(SESSION_BADGE_CLASS, "account-current-device");
       badge.addThemeVariants(BadgeVariant.SUCCESS);
       badges.add(badge);
@@ -258,13 +269,13 @@ public class AccountSessionsComponent extends AccountPanelComponent {
       Badge state =
           new Badge(
               entry.active()
-                  ? messages.getPortalSessionActive()
-                  : messages.getPortalSessionInactive());
+                  ? messageProperties.getPortalSessionActive()
+                  : messageProperties.getPortalSessionInactive());
       state.addClassNames(SESSION_BADGE_CLASS, "account-session-state");
       state.getElement().setAttribute("data-active", Boolean.toString(entry.active()));
       badges.add(state);
       if (entry.remembered()) {
-        Badge remembered = new Badge(messages.getPortalSessionRemembered());
+        Badge remembered = new Badge(messageProperties.getPortalSessionRemembered());
         remembered.addClassName(SESSION_BADGE_CLASS);
         badges.add(remembered);
       }
@@ -275,11 +286,11 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   private Button sessionAction(Entry entry) {
     String actionLabel;
     if (entry.current()) {
-      actionLabel = messages.getAccountSettingsCurrentSession();
+      actionLabel = messageProperties.getAccountSettingsCurrentSession();
     } else if (entry.active()) {
-      actionLabel = messages.getBaseLogoutButton();
+      actionLabel = messageProperties.getBaseLogoutButton();
     } else {
-      actionLabel = messages.getPortalSessionRevokeAction();
+      actionLabel = messageProperties.getPortalSessionRevokeAction();
     }
     Button action = new Button(actionLabel);
     action.setPrefixComponent(entry.current() ? AppIcon.CHECK.create() : AppIcon.SIGN_OUT.create());
@@ -288,11 +299,11 @@ public class AccountSessionsComponent extends AccountPanelComponent {
       action.addClassName(DELETE_BUTTON);
       action.setAriaLabel(
           entry.active()
-              ? messages.getPortalSessionLogoutAria(deviceName(entry))
-              : messages.getPortalSessionSavedTitle());
+              ? messageProperties.getPortalSessionLogoutAria(deviceName(entry))
+              : messageProperties.getPortalSessionSavedTitle());
       action.setTooltipText(action.getAriaLabel().orElseThrow());
     }
-    action.setEnabled(!entry.current() && revoke != null);
+    action.setEnabled(!entry.current() && revokeSessionAction != null);
     action.setId(entry.current() ? "account-current-session" : "session-revoke-" + entry.handle());
     action.addClickListener(event -> confirmEntry(entry));
     return action;
@@ -305,7 +316,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
             Stream.of(entry.device().system(), entry.device().browser())
                 .filter(value -> !value.isBlank())
                 .toList());
-    return name.isBlank() ? messages.getSessionUnknownDevice() : name;
+    return name.isBlank() ? messageProperties.getSessionUnknownDevice() : name;
   }
 
   private PortalContextCard context(Entry entry) {
@@ -320,65 +331,67 @@ public class AccountSessionsComponent extends AccountPanelComponent {
 
   private String confirmationExplanation(Entry entry) {
     if (restricted) {
-      return messages.getSessionRecoveryLogoutHint();
+      return messageProperties.getSessionRecoveryLogoutHint();
     }
     return entry.active()
-        ? messages.getPortalSessionRetainedHint()
-        : messages.getPortalSessionSavedExplanation();
+        ? messageProperties.getPortalSessionRetainedHint()
+        : messageProperties.getPortalSessionSavedExplanation();
   }
 
   private void confirmEntry(Entry entry) {
-    if (entry.current() || revoke == null) {
+    if (entry.current() || revokeSessionAction == null) {
       return;
     }
-    confirmation.open(
+    sessionConfirmationDialog.open(
         new PortalConfirmationDialog.Prompt(
             entry.active()
-                ? messages::getPortalSessionLogoutTitle
-                : messages::getPortalSessionSavedTitle,
-            messages::getPortalSessionCheckSelection,
+                ? messageProperties::getPortalSessionLogoutTitle
+                : messageProperties::getPortalSessionSavedTitle,
+            messageProperties::getPortalSessionCheckSelection,
             entry.active()
-                ? messages::getPortalSessionLogoutQuestion
-                : messages::getPortalSessionSavedQuestion,
+                ? messageProperties::getPortalSessionLogoutQuestion
+                : messageProperties::getPortalSessionSavedQuestion,
             () -> confirmationExplanation(entry),
             () -> context(entry),
             () -> "",
-            entry.active() ? messages::getBaseLogoutButton : messages::getPortalSessionRevokeAction,
+            entry.active()
+                ? messageProperties::getBaseLogoutButton
+                : messageProperties::getPortalSessionRevokeAction,
             true,
             AppIcon.SIGN_OUT::create),
         () ->
-            perform(
-                () ->
-                    revoke.accept(
-                        entry.savedHandle() == null ? entry.handle() : entry.savedHandle())));
+            perform(() ->
+                revokeSessionAction.accept(
+                    entry.savedHandle() == null ? entry.handle() : entry.savedHandle())));
   }
 
   private String logoutActionText() {
     return restricted
-        ? messages.getSessionRecoveryLogoutAll()
-        : messages.getAccountSettingsLogoutOthers();
+        ? messageProperties.getSessionRecoveryLogoutAll()
+        : messageProperties.getAccountSettingsLogoutOthers();
   }
 
   private void confirmOthers() {
     if (revokeOthers == null) {
       return;
     }
-    List<Entry> selected = snapshot.entries().stream().filter(entry -> !entry.current()).toList();
+    List<Entry> selected =
+        sessionSnapshot.entries().stream().filter(entry -> !entry.current()).toList();
     if (selected.isEmpty()) {
       return;
     }
-    confirmation.open(
+    sessionConfirmationDialog.open(
         new PortalConfirmationDialog.Prompt(
             this::logoutActionText,
             () ->
-                messages.getPortalSessionSelection(
+                messageProperties.getPortalSessionSelection(
                     (int) selected.stream().filter(Entry::active).count(),
                     (int) selected.stream().filter(entry -> !entry.active()).count()),
-            messages::getPortalSessionOthersQuestion,
+            messageProperties::getPortalSessionOthersQuestion,
             () ->
                 restricted
-                    ? messages.getSessionRecoveryLogoutHint()
-                    : messages.getPortalSessionRetainedHint(),
+                    ? messageProperties.getSessionRecoveryLogoutHint()
+                    : messageProperties.getPortalSessionRetainedHint(),
             () -> {
               Div cards = new Div();
               cards.addClassName("portal-context-list");
@@ -402,12 +415,12 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   private void perform(Runnable action) {
     try {
       action.run();
-      snapshot = Objects.requireNonNull(loader.get());
+      sessionSnapshot = Objects.requireNonNull(sessionSnapshotSupplier.get());
       refreshTexts();
       NotificationHelper.getInstance()
           .showNotification(
-              messages::getBaseSuccessTitle,
-              messages::getSessionRevoked,
+              messageProperties::getBaseSuccessTitle,
+              messageProperties::getSessionRevoked,
               NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException failure) {
       failed(failure);
@@ -418,8 +431,8 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     log.warn("Own session management failed", safeFailure(failure));
     NotificationHelper.getInstance()
         .showNotification(
-            messages::getBaseFailedTitle,
-            messages::getSessionManagementFailed,
+            messageProperties::getBaseFailedTitle,
+            messageProperties::getSessionManagementFailed,
             -1,
             NotificationHelper.NotificationType.ERROR);
     failureAction.run();

@@ -317,7 +317,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
   private void showSelectedPanel() {
     panelsBySection.forEach((section, panel) -> panel.setVisible(section == selectedSection));
     if (getSelectedSection() == AccountSection.SESSIONS) {
-      accountSessionsPanel.reload();
+      accountSessionsPanel.reloadSessionSnapshot();
     }
   }
 

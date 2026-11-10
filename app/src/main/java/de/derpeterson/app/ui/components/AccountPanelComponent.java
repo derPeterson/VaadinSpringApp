@@ -14,58 +14,58 @@ import com.vaadin.flow.component.html.Span;
 
 /** Kontopanel verwendet unverändert die vorhandenen Cosmos-Panelbausteine. */
 public class AccountPanelComponent extends CosmosCardComponent {
-  private final H2 title = new H2();
-  private final Span description = new Span();
-  private final Span meta = new Span();
-  private final Div body = new Div();
-  private final Div icon = new Div();
+  private final H2 panelTitle = new H2();
+  private final Span panelDescription = new Span();
+  private final Span panelMetaText = new Span();
+  private final Div panelBody = new Div();
+  private final Div panelIconContainer = new Div();
 
-  public AccountPanelComponent(String id, AppIcon iconType) {
-    setId(id);
+  public AccountPanelComponent(String panelId, AppIcon iconType) {
+    setId(panelId);
     addClassNames(PANEL_CARD, "account-panel");
-    icon.add(iconType.create());
-    icon.addClassName(PANEL_ICON);
-    title.addClassName(PANEL_TITLE);
-    description.addClassName(PANEL_DESCRIPTION);
-    meta.addClassName("cosmos-panel-meta");
-    Div heading = new Div(title, description);
-    heading.addClassName(PANEL_HEADING);
-    Div header = new Div(icon, heading, meta);
-    header.addClassName(PANEL_HEADER);
-    body.addClassName("account-panel-body");
-    add(header, body);
+    panelIconContainer.add(iconType.create());
+    panelIconContainer.addClassName(PANEL_ICON);
+    panelTitle.addClassName(PANEL_TITLE);
+    panelDescription.addClassName(PANEL_DESCRIPTION);
+    panelMetaText.addClassName("cosmos-panel-meta");
+    Div panelHeadingLayout = new Div(panelTitle, panelDescription);
+    panelHeadingLayout.addClassName(PANEL_HEADING);
+    Div panelHeaderLayout = new Div(panelIconContainer, panelHeadingLayout, panelMetaText);
+    panelHeaderLayout.addClassName(PANEL_HEADER);
+    panelBody.addClassName("account-panel-body");
+    add(panelHeaderLayout, panelBody);
   }
 
-  public void setIcon(Component symbol) {
-    icon.removeAll();
-    icon.add(symbol);
+  public void setIcon(Component panelIconComponent) {
+    panelIconContainer.removeAll();
+    panelIconContainer.add(panelIconComponent);
   }
 
   public Div getBody() {
-    return body;
+    return panelBody;
   }
 
-  public void setHeading(String title, String description, String meta) {
-    this.title.setText(title);
-    this.description.setText(description);
-    this.meta.setText(meta);
+  public void setHeading(String panelTitle, String panelDescription, String panelMetaText) {
+    this.panelTitle.setText(panelTitle);
+    this.panelDescription.setText(panelDescription);
+    this.panelMetaText.setText(panelMetaText);
   }
 
-  public void addFooter(Component hint, Component action) {
-    Div info = new Div(AppIcon.INFO_CIRCLE.create(), hint);
-    info.addClassName("cosmos-panel-hint");
-    Div actions = new Div(action);
-    actions.addClassName("cosmos-panel-actions");
-    Div footer = new Div(info, actions);
-    footer.addClassName("cosmos-panel-footer");
-    add(footer);
+  public void addFooter(Component footerHintComponent, Component footerActionComponent) {
+    Div footerHintLayout = new Div(AppIcon.INFO_CIRCLE.create(), footerHintComponent);
+    footerHintLayout.addClassName("cosmos-panel-hint");
+    Div footerActionsLayout = new Div(footerActionComponent);
+    footerActionsLayout.addClassName("cosmos-panel-actions");
+    Div panelFooterLayout = new Div(footerHintLayout, footerActionsLayout);
+    panelFooterLayout.addClassName("cosmos-panel-footer");
+    add(panelFooterLayout);
   }
 
-  public void addActionFooter(Component action) {
-    Div actions = new Div(action);
-    actions.addClassName("cosmos-panel-actions");
-    Div footer = new Div(actions);
-    footer.addClassName("cosmos-panel-footer");
-    add(footer);
+  public void addActionFooter(Component footerActionComponent) {
+    Div footerActionsLayout = new Div(footerActionComponent);
+    footerActionsLayout.addClassName("cosmos-panel-actions");
+    Div panelFooterLayout = new Div(footerActionsLayout);
+    panelFooterLayout.addClassName("cosmos-panel-footer");
+    add(panelFooterLayout);
   }
 }

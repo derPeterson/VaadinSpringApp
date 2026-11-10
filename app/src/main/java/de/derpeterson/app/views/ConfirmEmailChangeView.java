@@ -39,58 +39,61 @@ import lombok.extern.slf4j.Slf4j;
 @AnonymousAllowed
 @Slf4j
 public class ConfirmEmailChangeView extends Div implements HasUrlParameter<String> {
-  private final transient MessageProperties messages;
-  private final transient AccountSecurityService service;
+  private final transient MessageProperties messageProperties;
+  private final transient AccountSecurityService accountSecurityService;
   private final SvgIcon statusIcon = AppIcon.ENVELOPE.create();
-  private final H1 title = new H1();
-  private final Span text = new Span();
+  private final H1 confirmationPageTitle = new H1();
+  private final Span confirmationMessage = new Span();
   private final Span consequenceText = new Span();
-  private final Div consequence = new Div();
-  private final Button confirm = new Button();
-  private final Button login = new Button();
-  private final Div actions = new Div();
+  private final Div accountChangeConsequencePanel = new Div();
+  private final Button confirmEmailChangeButton = new Button();
+  private final Button goToLoginButton = new Button();
+  private final Div confirmationActions = new Div();
   private String token;
-  private Confirmation state = Confirmation.INVALID;
+  private Confirmation confirmationState = Confirmation.INVALID;
   private boolean technicalFailure;
 
   public ConfirmEmailChangeView(
-      MessageProperties messages, AccountSecurityService service, ConfigService config) {
-    this.messages = messages;
-    this.service = service;
+      MessageProperties messageProperties,
+      AccountSecurityService accountSecurityService,
+      ConfigService config) {
+    this.messageProperties = messageProperties;
+    this.accountSecurityService = accountSecurityService;
     setId("account-email-confirmation");
     PublicPageComponent page =
-        new PublicPageComponent(config, messages, PublicPageComponent.Page.EMAIL_CONFIRM);
+        new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.EMAIL_CONFIRM);
     statusIcon.addClassName(STATUS_ICON);
     statusIcon.getElement().setAttribute("aria-hidden", "true");
-    text.addClassName("cosmos-form-text");
-    title.addClassName("cosmos-headline");
-    confirm.setId("account-email-confirm-action");
-    confirm.setPrefixComponent(AppIcon.CHECK.create());
-    confirm.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    confirm.addClickListener(event -> apply());
-    login.setId("account-email-confirm-login");
-    login.setPrefixComponent(AppIcon.SIGN_IN.create());
-    consequence.setId("account-email-confirm-hint");
-    consequence.addClassName("cosmos-panel-hint");
-    consequence.add(AppIcon.INFO_CIRCLE.create(), consequenceText);
-    actions.add(login, confirm);
+    confirmationMessage.addClassName("cosmos-form-text");
+    confirmationPageTitle.addClassName("cosmos-headline");
+    confirmEmailChangeButton.setId("account-email-confirm-action");
+    confirmEmailChangeButton.setPrefixComponent(AppIcon.CHECK.create());
+    confirmEmailChangeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    confirmEmailChangeButton.addClickListener(event -> apply());
+    goToLoginButton.setId("account-email-confirm-login");
+    goToLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
+    accountChangeConsequencePanel.setId("account-email-confirm-hint");
+    accountChangeConsequencePanel.addClassName("cosmos-panel-hint");
+    accountChangeConsequencePanel.add(AppIcon.INFO_CIRCLE.create(), consequenceText);
+    confirmationActions.add(goToLoginButton, confirmEmailChangeButton);
     // Nach der Bestätigung ist die bisherige Sitzung widerrufen. Zur Anmeldung deshalb
     // direkt im Browser wechseln, ohne einen weiteren RPC dieser Sitzung zu benötigen.
-    login.addAttachListener(
-        event ->
-            login
-                .getElement()
-                .executeJs(
-                    "this.onclick = () => window.location.assign(new URL($0, document.baseURI).href)",
-                    AppRoute.LOGIN.getRoute()));
+    goToLoginButton.addAttachListener(event ->
+        goToLoginButton
+            .getElement()
+            .executeJs(
+                "this.onclick = () => window.location.assign(new URL($0, document.baseURI).href)",
+                AppRoute.LOGIN.getRoute()));
     page.getCardContainer()
         .add(
             new PublicPanelComponent(
                 statusIcon,
-                title,
-                messages::getPublicEmailSubtitle,
-                new com.vaadin.flow.component.Component[] {text, consequence},
-                actions));
+                confirmationPageTitle,
+                messageProperties::getPublicEmailSubtitle,
+                new com.vaadin.flow.component.Component[] {
+                  confirmationMessage, accountChangeConsequencePanel
+                },
+                confirmationActions));
     add(page);
     ComponentUtil.addListener(
         UI.getCurrent(),
@@ -108,7 +111,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
     this.token = token;
     technicalFailure = false;
     try {
-      state = service.inspect(token);
+      confirmationState = accountSecurityService.inspect(token);
     } catch (RuntimeException failure) {
       technicalFailure = true;
       log.error("Email change inspection failed", safeFailure(failure));
@@ -117,18 +120,18 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
   }
 
   private void apply() {
-    confirm.setEnabled(false);
+    confirmEmailChangeButton.setEnabled(false);
     try {
       technicalFailure = false;
-      state = service.confirm(token);
+      confirmationState = accountSecurityService.confirm(token);
       refreshTexts();
       NotificationHelper.getInstance()
           .showNotification(
-              state == Confirmation.SUCCESS
-                  ? messages::getBaseSuccessTitle
-                  : messages::getBaseFailedTitle,
+              confirmationState == Confirmation.SUCCESS
+                  ? messageProperties::getBaseSuccessTitle
+                  : messageProperties::getBaseFailedTitle,
               message(),
-              state == Confirmation.SUCCESS
+              confirmationState == Confirmation.SUCCESS
                   ? NotificationHelper.NotificationType.SUCCESS
                   : NotificationHelper.NotificationType.ERROR);
     } catch (RuntimeException failure) {
@@ -137,25 +140,25 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
       refreshTexts();
       NotificationHelper.getInstance()
           .showNotification(
-              messages::getBaseFailedTitle,
-              messages::getAccountEmailConfirmationFailed,
+              messageProperties::getBaseFailedTitle,
+              messageProperties::getAccountEmailConfirmationFailed,
               -1,
               NotificationHelper.NotificationType.ERROR);
     } finally {
-      confirm.setEnabled(true);
+      confirmEmailChangeButton.setEnabled(true);
     }
   }
 
   private Supplier<String> message() {
     if (technicalFailure) {
-      return messages::getAccountEmailConfirmationFailed;
+      return messageProperties::getAccountEmailConfirmationFailed;
     }
-    return switch (state) {
-      case READY -> messages::getAccountEmailConfirmationReady;
-      case SUCCESS -> messages::getAccountEmailConfirmationSuccess;
-      case EXPIRED -> messages::getAccountEmailConfirmationExpired;
-      case CONFLICT -> messages::getAccountEmailConfirmationConflict;
-      case INVALID -> messages::getAccountEmailConfirmationInvalid;
+    return switch (confirmationState) {
+      case READY -> messageProperties::getAccountEmailConfirmationReady;
+      case SUCCESS -> messageProperties::getAccountEmailConfirmationSuccess;
+      case EXPIRED -> messageProperties::getAccountEmailConfirmationExpired;
+      case CONFLICT -> messageProperties::getAccountEmailConfirmationConflict;
+      case INVALID -> messageProperties::getAccountEmailConfirmationInvalid;
     };
   }
 
@@ -163,7 +166,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
     AppIcon icon =
         technicalFailure
             ? AppIcon.WARNING
-            : switch (state) {
+            : switch (confirmationState) {
               case READY -> AppIcon.ENVELOPE;
               case SUCCESS -> AppIcon.CHECK_CIRCLE;
               case EXPIRED, INVALID, CONFLICT -> AppIcon.WARNING;
@@ -171,7 +174,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
     String color =
         technicalFailure
             ? LumoUtility.TextColor.ERROR
-            : switch (state) {
+            : switch (confirmationState) {
               case READY -> LumoUtility.TextColor.PRIMARY;
               case SUCCESS -> LumoUtility.TextColor.SUCCESS;
               case EXPIRED -> LumoUtility.TextColor.WARNING;
@@ -185,38 +188,39 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
         LumoUtility.TextColor.ERROR);
     statusIcon.addClassName(color);
     statusIcon.setClassName(
-        "cosmos-status-icon--warning", state == Confirmation.EXPIRED && !technicalFailure);
+        "cosmos-status-icon--warning",
+        confirmationState == Confirmation.EXPIRED && !technicalFailure);
   }
 
   private String confirmationTitle() {
     if (technicalFailure) {
-      return messages.getBaseFailedTitle();
+      return messageProperties.getBaseFailedTitle();
     }
-    return switch (state) {
-      case READY -> messages.getPublicEmailFormTitle();
-      case SUCCESS -> messages.getPublicEmailSuccessTitle();
-      case EXPIRED -> messages.getPublicEmailExpiredTitle();
-      case INVALID -> messages.getPublicEmailInvalidTitle();
-      case CONFLICT -> messages.getPublicEmailConflictTitle();
+    return switch (confirmationState) {
+      case READY -> messageProperties.getPublicEmailFormTitle();
+      case SUCCESS -> messageProperties.getPublicEmailSuccessTitle();
+      case EXPIRED -> messageProperties.getPublicEmailExpiredTitle();
+      case INVALID -> messageProperties.getPublicEmailInvalidTitle();
+      case CONFLICT -> messageProperties.getPublicEmailConflictTitle();
     };
   }
 
   private void refreshTexts() {
     updateStatusIcon();
-    boolean ready = state == Confirmation.READY && !technicalFailure;
+    boolean ready = confirmationState == Confirmation.READY && !technicalFailure;
     setClassName("public-email-outcome", !ready);
-    title.setText(confirmationTitle());
-    text.setText(message().get());
-    consequenceText.setText(messages.getPublicEmailConfirmationHint());
-    consequence.setVisible(ready);
-    actions.setClassName("public-panel-actions", ready);
-    confirm.setText(messages.getAccountEmailConfirmationAction());
-    confirm.setVisible(ready);
-    login.setText(messages.getBaseLoginButton());
+    confirmationPageTitle.setText(confirmationTitle());
+    confirmationMessage.setText(message().get());
+    consequenceText.setText(messageProperties.getPublicEmailConfirmationHint());
+    accountChangeConsequencePanel.setVisible(ready);
+    confirmationActions.setClassName("public-panel-actions", ready);
+    confirmEmailChangeButton.setText(messageProperties.getAccountEmailConfirmationAction());
+    confirmEmailChangeButton.setVisible(ready);
+    goToLoginButton.setText(messageProperties.getBaseLoginButton());
     if (ready) {
-      login.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      goToLoginButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
     } else {
-      login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      goToLoginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     }
   }
 }

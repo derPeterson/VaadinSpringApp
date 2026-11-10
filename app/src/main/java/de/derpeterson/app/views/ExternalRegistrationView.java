@@ -45,8 +45,8 @@ public final class ExternalRegistrationView extends VerticalLayout
   private final transient ExternalLoginFlow externalLoginFlow;
   private final transient ExternalIdentityService externalIdentityService;
   private final transient MessageProperties messageProperties;
-  private final transient HttpServletRequest request;
-  private final PublicPageComponent page;
+  private final transient HttpServletRequest httpRequest;
+  private final PublicPageComponent externalRegistrationPage;
   private final H2 registrationTitle = new H2();
   private final TextField firstNameField = new TextField();
   private final TextField lastNameField = new TextField();
@@ -62,15 +62,16 @@ public final class ExternalRegistrationView extends VerticalLayout
       MessageProperties messageProperties,
       ExternalLoginFlow externalLoginFlow,
       ExternalIdentityService externalIdentityService,
-      HttpServletRequest request) {
+      HttpServletRequest httpRequest) {
     this.externalLoginFlow = externalLoginFlow;
     this.externalIdentityService = externalIdentityService;
     this.messageProperties = messageProperties;
-    this.request = request;
+    this.httpRequest = httpRequest;
     setPadding(false);
     setSpacing(false);
     setWidthFull();
-    page = new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.REGISTER);
+    externalRegistrationPage =
+        new PublicPageComponent(config, messageProperties, PublicPageComponent.Page.REGISTER);
     registrationTitle.addClassName("cosmos-headline");
     firstNameField.setId("external-register-first");
     lastNameField.setId("external-register-last");
@@ -90,7 +91,7 @@ public final class ExternalRegistrationView extends VerticalLayout
     completeRegistrationButton.addClickListener(event -> register());
     cancelRegistrationButton.setPrefixComponent(AppIcon.CLOSE.create());
     cancelRegistrationButton.addClickListener(event -> {
-      externalLoginFlow.cancel(request);
+      externalLoginFlow.cancel(httpRequest);
       UI.getCurrent().navigate(LoginView.class);
     });
     PublicPanelComponent panel =
@@ -102,8 +103,8 @@ public final class ExternalRegistrationView extends VerticalLayout
             cancelRegistrationButton,
             completeRegistrationButton);
     panel.addClassName("external-registration-panel");
-    page.getCardContainer().add(panel);
-    add(page);
+    externalRegistrationPage.getCardContainer().add(panel);
+    add(externalRegistrationPage);
     ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> refreshTexts());
     refreshTexts();
   }
@@ -142,7 +143,7 @@ public final class ExternalRegistrationView extends VerticalLayout
       return;
     }
     try {
-      ExternalLoginFlow.Registration pending = externalLoginFlow.registration(request);
+      ExternalLoginFlow.Registration pending = externalLoginFlow.registration(httpRequest);
       firstNameField.setValue(value(pending.identity().firstName()));
       lastNameField.setValue(value(pending.identity().lastName()));
       emailField.setValue(value(pending.identity().email()));
@@ -162,7 +163,7 @@ public final class ExternalRegistrationView extends VerticalLayout
     }
     completeRegistrationButton.setEnabled(false);
     try {
-      ExternalLoginFlow.Registration pending = externalLoginFlow.registration(request);
+      ExternalLoginFlow.Registration pending = externalLoginFlow.registration(httpRequest);
       UserEntity user =
           externalIdentityService.register(
               pending.identity(),
@@ -170,13 +171,13 @@ public final class ExternalRegistrationView extends VerticalLayout
               firstNameField.getValue(),
               lastNameField.getValue(),
               VaadinSession.getCurrent().getLocale());
-      externalLoginFlow.cancel(request);
+      externalLoginFlow.cancel(httpRequest);
       if (user.isEnabled()) {
         UI.getCurrent()
             .getPage()
             .setLocation(
                 externalLoginFlow.finishLogin(
-                    request,
+                    httpRequest,
                     (HttpServletResponse) VaadinResponse.getCurrent(),
                     user,
                     pending.identity().provider(),

@@ -345,7 +345,7 @@ class LoginSessionRecoveryTest {
     button("session-revoke-opaque-device").click();
     assertFalse(button("session-recovery-continue").isEnabled());
     Object sessionsPanel = ReflectionTestUtils.getField(view, "recoverySessions");
-    Object dialog = ReflectionTestUtils.getField(sessionsPanel, "confirmation");
+    Object dialog = ReflectionTestUtils.getField(sessionsPanel, "sessionConfirmationDialog");
     when(sessions.recoveryList(request))
         .thenReturn(new SessionManagementService.Snapshot(List.of(), 0, 1));
     ((Button) ReflectionTestUtils.getField(dialog, "confirmButton")).click();
@@ -383,7 +383,8 @@ class LoginSessionRecoveryTest {
     reachedLimit();
     SessionManagementService.Snapshot full =
         (SessionManagementService.Snapshot)
-            ReflectionTestUtils.getField(field("recoverySessions", Component.class), "snapshot");
+            ReflectionTestUtils.getField(
+                field("recoverySessions", Component.class), "sessionSnapshot");
     freeSessionSlot();
     when(sessions.recoveryList(request)).thenReturn(full);
     when(sessions.finishRecovery(request, vaadinResponse)).thenThrow(new SessionLimitException());

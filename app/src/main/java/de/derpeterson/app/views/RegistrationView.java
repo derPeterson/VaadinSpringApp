@@ -86,7 +86,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
               AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>>
       requiredFormComponents;
 
-  private H1 title = null;
+  private H1 registrationPageTitle = null;
   private Span createAccountQuestionText = null;
   private RouterLink loginLink = null;
   private TextField firstNameField = null;
@@ -125,7 +125,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
           VaadinSession.getCurrent().setLocale(event.getNewLocale());
 
           Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
-          Optional.ofNullable(title)
+          Optional.ofNullable(registrationPageTitle)
               .ifPresent(component ->
                   componentTranslationSupplierMap.put(
                       component, this.messageProperties::getRegistrationTitle));
@@ -209,8 +209,8 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
     // Layout
 
-    this.title = new H1(messageProperties.getRegistrationTitle());
-    title.addClassName("cosmos-headline");
+    this.registrationPageTitle = new H1(messageProperties.getRegistrationTitle());
+    registrationPageTitle.addClassName("cosmos-headline");
 
     this.createAccountQuestionText = new Span(messageProperties.getRegistrationLoginQuestion());
 
@@ -248,7 +248,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     CosmosCardComponent registrationCardComponent =
         new PublicPanelComponent(
             AppIcon.USER_PLUS.create(),
-            title,
+            registrationPageTitle,
             messageProperties::getPublicRegisterSubtitle,
             new Component[] {firstLineForm, secondLineForm, thirdLineForm, fourthLineForm},
             cardSecondaryTitleLayout,

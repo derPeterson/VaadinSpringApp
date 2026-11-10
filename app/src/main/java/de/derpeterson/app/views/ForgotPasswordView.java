@@ -54,8 +54,8 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
 
   private final VerticalLayout mainContent;
 
-  private H1 title = null;
-  private Span text = null;
+  private H1 forgotPasswordPageTitle = null;
+  private Span forgotPasswordPageMessage = null;
   private EmailField emailField = null;
   private Button sendButton = null;
   private Button loginButton = null;
@@ -78,11 +78,11 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
           VaadinSession.getCurrent().setLocale(event.getNewLocale());
 
           Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
-          Optional.ofNullable(title)
+          Optional.ofNullable(forgotPasswordPageTitle)
               .ifPresent(component ->
                   componentTranslationSupplierMap.put(
                       component, this.messageProperties::getForgotPasswordTitle));
-          Optional.ofNullable(text)
+          Optional.ofNullable(forgotPasswordPageMessage)
               .ifPresent(component ->
                   componentTranslationSupplierMap.put(
                       component, this.messageProperties::getForgotPasswordText));
@@ -117,11 +117,11 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
 
   private void createPasswordResetCard() {
 
-    this.title = new H1(messageProperties.getForgotPasswordTitle());
-    title.addClassName("cosmos-headline");
+    this.forgotPasswordPageTitle = new H1(messageProperties.getForgotPasswordTitle());
+    forgotPasswordPageTitle.addClassName("cosmos-headline");
 
-    this.text = new Span(messageProperties.getForgotPasswordText());
-    text.addClassName("cosmos-form-text");
+    this.forgotPasswordPageMessage = new Span(messageProperties.getForgotPasswordText());
+    forgotPasswordPageMessage.addClassName("cosmos-form-text");
     this.emailField = new EmailField(messageProperties.getPublicEmailField());
     emailField.setPattern(UserInputRules.EMAIL_REGEX);
     emailField.setRequiredIndicatorVisible(true);
@@ -174,7 +174,7 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
     CosmosCardComponent cardComponent =
         new PublicPanelComponent(
             AppIcon.KEY.create(),
-            title,
+            forgotPasswordPageTitle,
             messageProperties::getPublicForgotSubtitle,
             new Component[] {emailField},
             actions);

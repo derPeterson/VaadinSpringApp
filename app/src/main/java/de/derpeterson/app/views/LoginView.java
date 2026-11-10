@@ -94,8 +94,8 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
   private RouterLink forgotPasswordLink = null;
   private Switch rememberMeSwitch = null;
   private Button loginButton = null;
-  private H1 title = null;
-  private final transient SessionManagementService sessions;
+  private H1 loginPageTitle = null;
+  private final transient SessionManagementService sessionManagementService;
   private final transient HttpServletRequest currentRequest;
   private final transient ExternalLoginFlow externalLogin;
   private PublicPageComponent pageLayout;
@@ -112,12 +112,12 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
       SecurityService securityService,
       HttpServletRequest request,
       ConfigService configService,
-      SessionManagementService sessions,
+      SessionManagementService sessionManagementService,
       ExternalLoginFlow externalLogin) {
     super(securityService, request, new HorizontalLayout());
 
     this.messageProperties = messageProperties;
-    this.sessions = sessions;
+    this.sessionManagementService = sessionManagementService;
     this.currentRequest = request;
     this.externalLogin = externalLogin;
 
@@ -153,8 +153,8 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
         new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.LOGIN);
     VerticalLayout mainContent = pageLayout.getCardContainer();
 
-    this.title = new H1(messageProperties.getLoginTitle());
-    title.addClassName("cosmos-headline");
+    this.loginPageTitle = new H1(messageProperties.getLoginTitle());
+    loginPageTitle.addClassName("cosmos-headline");
 
     this.createAccountQuestionText = new Span(messageProperties.getLoginCreateAccountQuestion());
 
@@ -206,7 +206,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     CosmosCardComponent cardComponent =
         new PublicPanelComponent(
             AppIcon.SIGN_IN.create(),
-            title,
+            loginPageTitle,
             messageProperties::getPublicLoginSubtitle,
             new Component[] {emailField, passwordField, secondaryActionLayout},
             cardSecondaryTitleLayout,
@@ -227,12 +227,13 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     recoverySessions.configure(
         () -> {
           continueLogin.setEnabled(false);
-          SessionManagementService.Snapshot snapshot = sessions.recoveryList(currentRequest);
+          SessionManagementService.Snapshot snapshot =
+              sessionManagementService.recoveryList(currentRequest);
           continueLogin.setEnabled(snapshot.active() < snapshot.limit());
           return snapshot;
         },
-        handle -> sessions.recoveryRevoke(currentRequest, handle),
-        () -> sessions.recoveryRevokeOthers(currentRequest));
+        handle -> sessionManagementService.recoveryRevoke(currentRequest, handle),
+        () -> sessionManagementService.recoveryRevokeOthers(currentRequest));
     recoverySessions.setRestricted(true);
     recoverySessions.setFailureAction(this::hideRecovery);
     continueLogin.setId("session-recovery-continue");
@@ -241,12 +242,12 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     continueLogin.addClickListener(event -> {
       try {
         boolean admin =
-            sessions.finishRecovery(
+            sessionManagementService.finishRecovery(
                 currentRequest, (HttpServletResponse) VaadinResponse.getCurrent());
         Class<? extends Component> target = loginTarget(admin);
         getUI().ifPresent(ui -> ui.navigate(target));
       } catch (SessionLimitException _) {
-        recoverySessions.reload();
+        recoverySessions.reloadSessionSnapshot();
         showLoginFailure(LOGIN_ERROR_SESSIONS);
       } catch (AuthenticationException _) {
         hideRecovery();
@@ -318,7 +319,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getBaseLoginButton));
-    Optional.ofNullable(title)
+    Optional.ofNullable(loginPageTitle)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(component, this.messageProperties::getLoginTitle));
     Optional.ofNullable(createAccountQuestionText)
@@ -389,7 +390,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
   private void startSessionRecovery() {
     try {
-      sessions.startRecovery(
+      sessionManagementService.startRecovery(
           currentRequest,
           emailField.getValue(),
           passwordField.getValue(),
@@ -410,7 +411,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     if (event.hasForwardTarget()) {
       return;
     }
-    if (sessions.hasRecovery(currentRequest)) {
+    if (sessionManagementService.hasRecovery(currentRequest)) {
       showRecovery();
     }
   }
@@ -440,12 +441,12 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     pageLayout.showPage(PublicPageComponent.Page.RECOVERY);
     loginPanels.setVisible(false);
     recoveryArea.setVisible(true);
-    recoverySessions.reload();
+    recoverySessions.reloadSessionSnapshot();
   }
 
   private void hideRecovery() {
     pageLayout.showPage(PublicPageComponent.Page.LOGIN);
-    sessions.cancelRecovery(currentRequest);
+    sessionManagementService.cancelRecovery(currentRequest);
     recoveryArea.setVisible(false);
     continueLogin.setEnabled(false);
     loginPanels.setVisible(true);

@@ -51,31 +51,32 @@ import tools.jackson.databind.JsonNode;
 public class AccountAvatarDialog extends Dialog {
   private static final String ARIA_HIDDEN = "aria-hidden";
 
-  private final transient MessageProperties messages;
-  private final UserEntity user;
-  private final H2 title = new H2();
-  private final Span description = new Span();
+  private final transient MessageProperties messageProperties;
+  private final UserEntity accountUserEntity;
+  private final H2 dialogTitle = new H2();
+  private final Span dialogDescription = new Span();
   private final Span keepHint = new Span();
-  private transient UserAvatarService avatars;
-  private transient HttpServletRequest request;
-  private volatile UUID draft;
-  private UserAvatarService.State original = UserAvatarService.State.initial();
-  private boolean deleteImage;
-  private UUID uploadedImage;
-  private final Button close = new Button(AppIcon.CLOSE_CIRCLE.create(), event -> close());
-  private final Button cancel = new Button("", event -> close());
-  private final Button save = new Button();
-  private final Button delete = new Button();
-  private final RadioButtonGroup<AvatarMode> mode = new RadioButtonGroup<>();
-  private final AccountAvatarEditor editor;
+  private transient UserAvatarService userAvatarService;
+  private transient HttpServletRequest httpRequest;
+  private volatile UUID avatarDraftId;
+  private UserAvatarService.State originalAvatarState = UserAvatarService.State.initial();
+  private boolean deleteImageOnSave;
+  private UUID uploadedImageId;
+  private final Button closeDialogButton =
+      new Button(AppIcon.CLOSE_CIRCLE.create(), event -> close());
+  private final Button cancelAvatarChangesButton = new Button("", event -> close());
+  private final Button saveAvatarButton = new Button();
+  private final Button deleteAvatarButton = new Button();
+  private final RadioButtonGroup<AvatarMode> avatarModeSelector = new RadioButtonGroup<>();
+  private final AccountAvatarEditor avatarEditor;
   private final PortalConfirmationDialog deleteConfirmation;
 
-  public AccountAvatarDialog(MessageProperties messages, UserEntity user) {
-    this.messages = messages;
-    this.user = user;
+  public AccountAvatarDialog(MessageProperties messageProperties, UserEntity accountUserEntity) {
+    this.messageProperties = messageProperties;
+    this.accountUserEntity = accountUserEntity;
     deleteConfirmation =
-        new PortalConfirmationDialog(messages, "account-avatar-delete-confirmation");
-    editor = new AccountAvatarEditor(messages, user);
+        new PortalConfirmationDialog(messageProperties, "account-avatar-delete-confirmation");
+    avatarEditor = new AccountAvatarEditor(messageProperties, accountUserEntity);
     setId("account-avatar-dialog");
     addClassNames("cosmos-theme", "account-change-dialog", "account-avatar-dialog");
     getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
@@ -83,36 +84,36 @@ public class AccountAvatarDialog extends Dialog {
     setModality(ModalityMode.STRICT);
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
-    title.addClassName(PANEL_TITLE);
-    description.addClassName(PANEL_DESCRIPTION);
-    Div heading = new Div(title, description);
+    dialogTitle.addClassName(PANEL_TITLE);
+    dialogDescription.addClassName(PANEL_DESCRIPTION);
+    Div heading = new Div(dialogTitle, dialogDescription);
     heading.addClassName(PANEL_HEADING);
     SvgIcon symbol = AppIcon.PICTURE.create();
     symbol.getElement().setAttribute(ARIA_HIDDEN, "true");
     Div badge = new Div(symbol);
     badge.addClassName(PANEL_ICON);
-    close.setId("account-avatar-close");
-    close.setIcon(AppIcon.CLOSE_CIRCLE.create());
-    close.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
-    close.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    Div header = new Div(badge, heading, close);
+    closeDialogButton.setId("account-avatar-close");
+    closeDialogButton.setIcon(AppIcon.CLOSE_CIRCLE.create());
+    closeDialogButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
+    closeDialogButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    Div header = new Div(badge, heading, closeDialogButton);
     header.addClassName("account-change-dialog-header");
     getHeader().add(header);
 
-    mode.setId("account-avatar-mode");
-    mode.setItems(AvatarMode.values());
-    mode.setItemLabelGenerator(value ->
+    avatarModeSelector.setId("account-avatar-mode");
+    avatarModeSelector.setItems(AvatarMode.values());
+    avatarModeSelector.setItemLabelGenerator(value ->
         value == AvatarMode.INITIALS
-            ? messages.getAccountAvatarInitials()
-            : messages.getAccountAvatarCustom());
-    mode.setRenderer(new ComponentRenderer<>(this::createModeLabel));
-    mode.setValue(AvatarMode.INITIALS);
-    mode.addValueChangeListener(event -> {
+            ? messageProperties.getAccountAvatarInitials()
+            : messageProperties.getAccountAvatarCustom());
+    avatarModeSelector.setRenderer(new ComponentRenderer<>(this::createModeLabel));
+    avatarModeSelector.setValue(AvatarMode.INITIALS);
+    avatarModeSelector.addValueChangeListener(event -> {
       if (event.getValue() != null) {
-        editor.setMode(event.getValue());
+        avatarEditor.setMode(event.getValue());
       }
     });
-    editor
+    avatarEditor
         .getElement()
         .addEventListener(
             "avatar-file-selected",
@@ -120,46 +121,46 @@ public class AccountAvatarDialog extends Dialog {
               if (!isOpened()) {
                 return;
               }
-              mode.setValue(AvatarMode.CUSTOM);
-              deleteImage = false;
-              delete.setVisible(true);
+              avatarModeSelector.setValue(AvatarMode.CUSTOM);
+              deleteImageOnSave = false;
+              deleteAvatarButton.setVisible(true);
             });
-    editor
+    avatarEditor
         .getElement()
         .addEventListener(
             "avatar-file-cleared",
             event -> {
-              mode.setValue(AvatarMode.INITIALS);
-              uploadedImage = null;
-              delete.setVisible(false);
+              avatarModeSelector.setValue(AvatarMode.INITIALS);
+              uploadedImageId = null;
+              deleteAvatarButton.setVisible(false);
             });
-    editor.getElement().addEventListener("avatar-file-cancelled", event -> cancelSelection());
-    editor.addComponentAtIndex(0, mode);
+    avatarEditor.getElement().addEventListener("avatar-file-cancelled", event -> cancelSelection());
+    avatarEditor.addComponentAtIndex(0, avatarModeSelector);
     SvgIcon infoIcon = AppIcon.INFO_CIRCLE.create();
     infoIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     Span infoBadge = new Span(infoIcon);
     infoBadge.addClassName("account-avatar-info-icon");
     Div info = new Div(infoBadge, keepHint);
     info.addClassNames("cosmos-panel-hint", "account-avatar-info");
-    Div body = new Div(editor, info);
+    Div body = new Div(avatarEditor, info);
     body.addClassNames("cosmos-dialog-form", "account-change-dialog-form", "account-avatar-form");
     add(body, deleteConfirmation);
 
-    delete.setId("account-avatar-delete");
-    delete.setPrefixComponent(AppIcon.TRASH.create());
-    delete.addClassName(DELETE_BUTTON);
-    delete.setVisible(false);
-    delete.addClickListener(event -> confirmDeleteImage());
-    cancel.setId("account-avatar-cancel");
-    cancel.setPrefixComponent(AppIcon.CLOSE.create());
-    save.setId("account-avatar-save");
-    save.setPrefixComponent(AppIcon.CHECK.create());
-    save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    save.addClickListener(event -> submit());
-    Div actions = new Div(cancel, save);
+    deleteAvatarButton.setId("account-avatar-delete");
+    deleteAvatarButton.setPrefixComponent(AppIcon.TRASH.create());
+    deleteAvatarButton.addClassName(DELETE_BUTTON);
+    deleteAvatarButton.setVisible(false);
+    deleteAvatarButton.addClickListener(event -> confirmDeleteImage());
+    cancelAvatarChangesButton.setId("account-avatar-cancel");
+    cancelAvatarChangesButton.setPrefixComponent(AppIcon.CLOSE.create());
+    saveAvatarButton.setId("account-avatar-save");
+    saveAvatarButton.setPrefixComponent(AppIcon.CHECK.create());
+    saveAvatarButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    saveAvatarButton.addClickListener(event -> submitAvatarChanges());
+    Div actions = new Div(cancelAvatarChangesButton, saveAvatarButton);
     actions.addClassName("cosmos-dialog-actions");
     EqualButtonWidths.configureEqualButtonWidths(actions);
-    Div footer = new Div(delete, actions);
+    Div footer = new Div(deleteAvatarButton, actions);
     footer.addClassName("account-avatar-footer");
     getFooter().add(footer);
     addOpenedChangeListener(event -> {
@@ -172,33 +173,34 @@ public class AccountAvatarDialog extends Dialog {
   }
 
   private void confirmDeleteImage() {
-    if (!isOpened() || !delete.isVisible() || !delete.isEnabled()) {
+    if (!isOpened() || !deleteAvatarButton.isVisible() || !deleteAvatarButton.isEnabled()) {
       return;
     }
-    UUID selectedDraft = draft;
-    UUID selectedImage = uploadedImage;
+    UUID selectedDraft = avatarDraftId;
+    UUID selectedImage = uploadedImageId;
     deleteConfirmation.open(
         new PortalConfirmationDialog.Prompt(
-            messages::getAccountAvatarDelete,
-            messages::getPortalSessionCheckSelection,
-            messages::getAccountAvatarDeleteQuestion,
-            messages::getAccountAvatarDeleteExplanation,
+            messageProperties::getAccountAvatarDelete,
+            messageProperties::getPortalSessionCheckSelection,
+            messageProperties::getAccountAvatarDeleteQuestion,
+            messageProperties::getAccountAvatarDeleteExplanation,
             () ->
-                new PortalContextCard(AppIcon.PICTURE.create(), messages.getAccountAvatarCustom()),
-            messages::getAccountAvatarDeleteHint,
-            messages::getPortalDeleteAction,
+                new PortalContextCard(
+                    AppIcon.PICTURE.create(), messageProperties.getAccountAvatarCustom()),
+            messageProperties::getAccountAvatarDeleteHint,
+            messageProperties::getPortalDeleteAction,
             true),
         () -> {
           // Ein inzwischen geschlossener oder durch einen Upload geänderter Entwurf bleibt
           // unberührt.
           if (isOpened()
-              && Objects.equals(selectedDraft, draft)
-              && Objects.equals(selectedImage, uploadedImage)) {
-            deleteImage = true;
-            uploadedImage = null;
-            editor.clearImage();
-            mode.setValue(AvatarMode.INITIALS);
-            delete.setVisible(false);
+              && Objects.equals(selectedDraft, avatarDraftId)
+              && Objects.equals(selectedImage, uploadedImageId)) {
+            deleteImageOnSave = true;
+            uploadedImageId = null;
+            avatarEditor.clearImage();
+            avatarModeSelector.setValue(AvatarMode.INITIALS);
+            deleteAvatarButton.setVisible(false);
           }
         });
   }
@@ -207,11 +209,12 @@ public class AccountAvatarDialog extends Dialog {
     if (!isOpened()) {
       return;
     }
-    uploadedImage = null;
-    boolean restore = original.hasImage() && !deleteImage;
-    delete.setVisible(restore);
+    uploadedImageId = null;
+    boolean restore = originalAvatarState.hasImage() && !deleteImageOnSave;
+    deleteAvatarButton.setVisible(restore);
     if (restore) {
-      editor.loadSaved(avatars, user.getId(), original.imageRevision());
+      avatarEditor.loadSaved(
+          userAvatarService, accountUserEntity.getId(), originalAvatarState.imageRevision());
     }
   }
 
@@ -220,16 +223,16 @@ public class AccountAvatarDialog extends Dialog {
         value == AvatarMode.INITIALS ? new Span("Aa") : new Span(AppIcon.PICTURE.create());
     symbol.addClassName("account-avatar-mode-icon");
     symbol.getElement().setAttribute(ARIA_HIDDEN, "true");
-    Span label = new Span(mode.getItemLabelGenerator().apply(value));
+    Span label = new Span(avatarModeSelector.getItemLabelGenerator().apply(value));
     Span content = new Span(symbol, label);
     content.addClassName("account-avatar-mode-label");
     return content;
   }
 
-  public void configure(UserAvatarService avatars, HttpServletRequest request) {
-    this.avatars = avatars;
-    this.request = request;
-    editor.setUploadHandler(
+  public void configure(UserAvatarService userAvatarService, HttpServletRequest httpRequest) {
+    this.userAvatarService = userAvatarService;
+    this.httpRequest = httpRequest;
+    avatarEditor.setUploadHandler(
         new UploadHandler() {
           @Override
           public long getFileSizeMax() {
@@ -248,12 +251,13 @@ public class AccountAvatarDialog extends Dialog {
 
           @Override
           public void handleUploadRequest(UploadEvent event) throws IOException {
-            receiveUpload(event, avatars);
+            receiveUpload(event, userAvatarService);
           }
         });
   }
 
-  private void receiveUpload(UploadEvent event, UserAvatarService avatars) throws IOException {
+  private void receiveUpload(UploadEvent event, UserAvatarService userAvatarService)
+      throws IOException {
     UUID token;
     try {
       token = UUID.fromString(event.getRequest().getHeader("X-Avatar-Draft"));
@@ -261,15 +265,15 @@ public class AccountAvatarDialog extends Dialog {
       event.reject();
       return;
     }
-    if (!Objects.equals(token, draft)) {
+    if (!Objects.equals(token, avatarDraftId)) {
       event.reject();
       return;
     }
     try (InputStream input = event.getInputStream()) {
-      UUID id = avatars.upload((HttpServletRequest) event.getRequest(), token, input);
+      UUID id = userAvatarService.upload((HttpServletRequest) event.getRequest(), token, input);
       event.getResponse().setHeader("X-Avatar-Image", id.toString());
       event.getUI().accessSynchronously(() -> showUploadedImage(token, id));
-      if (!Objects.equals(token, draft)) {
+      if (!Objects.equals(token, avatarDraftId)) {
         event.reject();
       }
     } catch (RuntimeException | IOException failure) {
@@ -278,7 +282,7 @@ public class AccountAvatarDialog extends Dialog {
       event
           .getUI()
           .access(() -> {
-            if (Objects.equals(token, draft) && isOpened()) {
+            if (Objects.equals(token, avatarDraftId) && isOpened()) {
               failure(failure);
             }
           });
@@ -286,32 +290,33 @@ public class AccountAvatarDialog extends Dialog {
   }
 
   private void showUploadedImage(UUID token, UUID id) {
-    if (!Objects.equals(token, draft) || !isOpened()) {
+    if (!Objects.equals(token, avatarDraftId) || !isOpened()) {
       return;
     }
-    uploadedImage = id;
-    editor.getElement().setAttribute("data-image-id", id.toString());
-    deleteImage = false;
-    mode.setValue(AvatarMode.CUSTOM);
-    delete.setVisible(true);
+    uploadedImageId = id;
+    avatarEditor.getElement().setAttribute("data-image-id", id.toString());
+    deleteImageOnSave = false;
+    avatarModeSelector.setValue(AvatarMode.CUSTOM);
+    deleteAvatarButton.setVisible(true);
   }
 
   @Override
   public void open() {
     clearDraft();
-    editor.setIdentity(user);
+    avatarEditor.setIdentity(accountUserEntity);
     try {
-      if (avatars != null) {
-        Open opened = avatars.open(request);
-        original = opened.state();
-        draft = opened.draft();
-        editor.getElement().setAttribute("data-draft-id", draft.toString());
-        if (original.hasImage()) {
-          editor.loadSaved(avatars, user.getId(), original.imageRevision());
+      if (userAvatarService != null) {
+        Open opened = userAvatarService.open(httpRequest);
+        originalAvatarState = opened.state();
+        avatarDraftId = opened.draft();
+        avatarEditor.getElement().setAttribute("data-draft-id", avatarDraftId.toString());
+        if (originalAvatarState.hasImage()) {
+          avatarEditor.loadSaved(
+              userAvatarService, accountUserEntity.getId(), originalAvatarState.imageRevision());
         }
       }
-      mode.setValue(original.mode());
-      delete.setVisible(original.hasImage());
+      avatarModeSelector.setValue(originalAvatarState.mode());
+      deleteAvatarButton.setVisible(originalAvatarState.hasImage());
       super.open();
     } catch (RuntimeException failure) {
       logUnexpected(failure);
@@ -320,19 +325,19 @@ public class AccountAvatarDialog extends Dialog {
     }
   }
 
-  private void submit() {
-    if (avatars == null) {
+  private void submitAvatarChanges() {
+    if (userAvatarService == null) {
       failure(new IllegalStateException("Avatar service required"));
       return;
     }
     busy(true);
-    UUID token = draft;
-    editor
+    UUID token = avatarDraftId;
+    avatarEditor
         .getElement()
         .callJsFunction("getCrop")
         .then(
             data -> {
-              if (!isOpened() || !Objects.equals(token, draft)) {
+              if (!isOpened() || !Objects.equals(token, avatarDraftId)) {
                 busy(false);
                 return;
               }
@@ -360,7 +365,7 @@ public class AccountAvatarDialog extends Dialog {
     }
     boolean local = data.path("local").asBoolean();
     UUID imageId = local ? UUID.fromString(data.path("imageId").asString()) : null;
-    if (local && !Objects.equals(uploadedImage, imageId)) {
+    if (local && !Objects.equals(uploadedImageId, imageId)) {
       throw new InvalidImage(Problem.MISSING);
     }
     Crop crop =
@@ -368,51 +373,59 @@ public class AccountAvatarDialog extends Dialog {
             data.path("zoom").asDouble(Double.NaN),
             data.path("x").asDouble(Double.NaN),
             data.path("y").asDouble(Double.NaN));
-    avatars.save(
-        request,
+    userAvatarService.save(
+        httpRequest,
         new UserAvatarService.Change(
-            original.version(), mode.getValue(), deleteImage, draft, imageId, crop));
+            originalAvatarState.version(),
+            avatarModeSelector.getValue(),
+            deleteImageOnSave,
+            avatarDraftId,
+            imageId,
+            crop));
     close();
     NotificationHelper.getInstance()
         .showNotification(
-            messages::getBaseSuccessTitle,
-            messages::getAccountAvatarSaved,
+            messageProperties::getBaseSuccessTitle,
+            messageProperties::getAccountAvatarSaved,
             NotificationHelper.NotificationType.SUCCESS);
   }
 
   private void busy(boolean value) {
-    save.setEnabled(!value);
-    cancel.setEnabled(!value);
-    close.setEnabled(!value);
-    delete.setEnabled(!value);
-    mode.setEnabled(!value);
-    editor.setUploadEnabled(!value);
+    saveAvatarButton.setEnabled(!value);
+    cancelAvatarChangesButton.setEnabled(!value);
+    closeDialogButton.setEnabled(!value);
+    deleteAvatarButton.setEnabled(!value);
+    avatarModeSelector.setEnabled(!value);
+    avatarEditor.setUploadEnabled(!value);
     setCloseOnEsc(!value);
     setCloseOnOutsideClick(!value);
   }
 
   private void failure(Throwable failure) {
-    Supplier<String> message = messages::getAccountAvatarSaveFailed;
+    Supplier<String> message = messageProperties::getAccountAvatarSaveFailed;
     if (failure instanceof OptimisticLockingFailureException) {
-      message = messages::getAccountAvatarConflict;
+      message = messageProperties::getAccountAvatarConflict;
     }
     if (failure instanceof InvalidImage invalid) {
       message =
           switch (invalid.problem()) {
-            case TYPE -> messages::getAccountAvatarTypeError;
-            case SIZE -> messages::getAccountAvatarSizeError;
-            case OUTPUT -> messages::getAccountAvatarOutputError;
-            case IMAGE -> messages::getAccountAvatarImageError;
-            case DIMENSIONS -> messages::getAccountAvatarDimensionsError;
-            case CROP -> messages::getAccountAvatarCropError;
-            case BUSY -> messages::getAccountAvatarBusy;
-            case EXPIRED -> messages::getAccountAvatarExpired;
-            case MISSING -> messages::getAccountAvatarMissing;
+            case TYPE -> messageProperties::getAccountAvatarTypeError;
+            case SIZE -> messageProperties::getAccountAvatarSizeError;
+            case OUTPUT -> messageProperties::getAccountAvatarOutputError;
+            case IMAGE -> messageProperties::getAccountAvatarImageError;
+            case DIMENSIONS -> messageProperties::getAccountAvatarDimensionsError;
+            case CROP -> messageProperties::getAccountAvatarCropError;
+            case BUSY -> messageProperties::getAccountAvatarBusy;
+            case EXPIRED -> messageProperties::getAccountAvatarExpired;
+            case MISSING -> messageProperties::getAccountAvatarMissing;
           };
     }
     NotificationHelper.getInstance()
         .showNotification(
-            messages::getBaseFailedTitle, message, -1, NotificationHelper.NotificationType.ERROR);
+            messageProperties::getBaseFailedTitle,
+            message,
+            -1,
+            NotificationHelper.NotificationType.ERROR);
   }
 
   private static void logUnexpected(Throwable failure) {
@@ -425,36 +438,36 @@ public class AccountAvatarDialog extends Dialog {
 
   private void clearDraft() {
     deleteConfirmation.close();
-    if (avatars != null) {
-      avatars.release(draft);
+    if (userAvatarService != null) {
+      userAvatarService.release(avatarDraftId);
     }
-    draft = null;
-    uploadedImage = null;
-    deleteImage = false;
-    original = UserAvatarService.State.initial();
-    mode.setValue(AvatarMode.INITIALS);
-    editor.resetDraft();
-    editor.getElement().removeAttribute("data-draft-id");
-    editor.getElement().removeAttribute("data-image-id");
-    delete.setVisible(false);
+    avatarDraftId = null;
+    uploadedImageId = null;
+    deleteImageOnSave = false;
+    originalAvatarState = UserAvatarService.State.initial();
+    avatarModeSelector.setValue(AvatarMode.INITIALS);
+    avatarEditor.resetDraft();
+    avatarEditor.getElement().removeAttribute("data-draft-id");
+    avatarEditor.getElement().removeAttribute("data-image-id");
+    deleteAvatarButton.setVisible(false);
     busy(false);
   }
 
   public void refreshTexts() {
-    title.setText(messages.getAccountSettingsEditPicture());
-    getElement().setProperty("ariaLabel", title.getText());
-    description.setText(messages.getAccountAvatarDescription());
-    close.setAriaLabel(messages.getAdminUsersCloseDialog());
-    mode.setAriaLabel(messages.getAccountAvatarMode());
+    dialogTitle.setText(messageProperties.getAccountSettingsEditPicture());
+    getElement().setProperty("ariaLabel", dialogTitle.getText());
+    dialogDescription.setText(messageProperties.getAccountAvatarDescription());
+    closeDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
+    avatarModeSelector.setAriaLabel(messageProperties.getAccountAvatarMode());
     // Vaadin setzt die Auswahl beim Neuaufbau der Radiolabels zurück.
-    AvatarMode selectedMode = mode.getValue();
-    mode.getDataProvider().refreshAll();
-    mode.setValue(selectedMode == null ? AvatarMode.INITIALS : selectedMode);
-    keepHint.setText(messages.getAccountAvatarKeepHint());
-    delete.setText(messages.getAccountAvatarDelete());
-    cancel.setText(messages.getAdminUsersCancel());
-    save.setText(messages.getAdminUsersSave());
-    editor.refreshTexts();
+    AvatarMode selectedMode = avatarModeSelector.getValue();
+    avatarModeSelector.getDataProvider().refreshAll();
+    avatarModeSelector.setValue(selectedMode == null ? AvatarMode.INITIALS : selectedMode);
+    keepHint.setText(messageProperties.getAccountAvatarKeepHint());
+    deleteAvatarButton.setText(messageProperties.getAccountAvatarDelete());
+    cancelAvatarChangesButton.setText(messageProperties.getAdminUsersCancel());
+    saveAvatarButton.setText(messageProperties.getAdminUsersSave());
+    avatarEditor.refreshTexts();
     deleteConfirmation.refreshTexts();
   }
 
