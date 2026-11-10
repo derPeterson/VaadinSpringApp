@@ -92,11 +92,10 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
             request);
     portalContent.configureNavigationToggle(accountNavigationToggle);
     portalContent.getSidebar().configureStatusSelection(userPopoverMenu.createStatusSelect());
-    accountHeaderActions.setUnreadCountListener(
-        count -> {
-          portalContent.getSidebar().updateUnreadCount(count);
-          homeContent.updateUnreadCount(count);
-        });
+    accountHeaderActions.setUnreadCountListener(count -> {
+      portalContent.getSidebar().updateUnreadCount(count);
+      homeContent.updateUnreadCount(count);
+    });
     setPortalPage(header, portalContent, configService);
   }
 
@@ -131,14 +130,14 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
     }
   }
 
-  private UserPopoverMenu.Actions createPopoverActions() {
+  private UserPopoverMenu.UserPopoverActions createPopoverActions() {
     Runnable manageApplicationAction = null;
 
     if (currentUser != null && currentUser.hasAdministrativeRole()) {
       manageApplicationAction = () -> UI.getCurrent().navigate(AdminView.class);
     }
 
-    return new UserPopoverMenu.Actions(manageApplicationAction, null);
+    return new UserPopoverMenu.UserPopoverActions(manageApplicationAction, null);
   }
 
   @Override
@@ -159,13 +158,12 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
     String errorCode = errorParameters.getFirst();
 
     NavigationErrorCode.fromCode(errorCode)
-        .ifPresent(
-            error ->
-                NotificationHelper.getInstance()
-                    .showNotification(
-                        messageProperties::getBaseFailedTitle,
-                        () -> error.getMessage(messageProperties),
-                        NotificationHelper.NotificationType.ERROR));
+        .ifPresent(error ->
+            NotificationHelper.getInstance()
+                .showNotification(
+                    messageProperties::getBaseFailedTitle,
+                    () -> error.getMessage(messageProperties),
+                    NotificationHelper.NotificationType.ERROR));
 
     UI.getCurrent().getPage().getHistory().replaceState(null, AppRoute.HOME.getSecurityRoute());
   }

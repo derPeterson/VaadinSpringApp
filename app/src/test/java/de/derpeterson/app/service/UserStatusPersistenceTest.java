@@ -791,7 +791,7 @@ class UserStatusPersistenceTest {
             statusService,
             snapshot,
             new Button(),
-            new UserPopoverMenu.Actions(null, null),
+            new UserPopoverMenu.UserPopoverActions(null, null),
             icons::add);
     icons.clear();
     return menu;

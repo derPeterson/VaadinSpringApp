@@ -8,7 +8,7 @@ import com.vaadin.flow.component.html.Span;
 
 /** Lesbare Objektkarte in Bestätigungen, ohne den eigentlichen Inhalt zu duplizieren. */
 public class PortalContextCard extends Div {
-  private final Div copy = new Div();
+  private final Div contextCardCopy = new Div();
 
   public PortalContextCard(Component symbol, String title, String... details) {
     addClassName("portal-context-card");
@@ -17,19 +17,19 @@ public class PortalContextCard extends Div {
     icon.addClassName(PANEL_ICON);
     Span heading = new Span(title);
     heading.addClassName("portal-context-title");
-    copy.add(heading);
-    copy.addClassName("portal-context-copy");
+    contextCardCopy.add(heading);
+    contextCardCopy.addClassName("portal-context-copy");
     for (String value : details) {
       if (value != null && !value.isBlank()) {
         Span detail = new Span(value);
         detail.addClassName("portal-context-detail");
-        copy.add(detail);
+        contextCardCopy.add(detail);
       }
     }
-    add(icon, copy);
+    add(icon, contextCardCopy);
   }
 
   public void addMetadata(Component metadata) {
-    copy.add(metadata);
+    contextCardCopy.add(metadata);
   }
 }

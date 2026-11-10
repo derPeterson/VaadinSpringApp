@@ -61,7 +61,7 @@ public class AdminMailTestSection extends VerticalLayout {
 
   private final transient MessageProperties messageProperties;
   private final transient EmailService emailService;
-  private final transient MaintenanceService maintenance;
+  private final transient MaintenanceService maintenanceService;
   private final VerticalLayout mailLayout;
   private final Div deliveryMeta = new Div();
   private final Tooltip deliveryTooltip = Tooltip.forComponent(deliveryMeta);
@@ -94,11 +94,11 @@ public class AdminMailTestSection extends VerticalLayout {
   public AdminMailTestSection(
       MessageProperties messageProperties,
       EmailService emailService,
-      MaintenanceService maintenance,
+      MaintenanceService maintenanceService,
       UserDetails authenticatedUser) {
     this.messageProperties = messageProperties;
     this.emailService = emailService;
-    this.maintenance = maintenance;
+    this.maintenanceService = maintenanceService;
 
     setPadding(false);
     setSpacing(false);
@@ -212,7 +212,7 @@ public class AdminMailTestSection extends VerticalLayout {
   }
 
   public void refreshDeliveryState() {
-    State state = maintenance.state();
+    State state = maintenanceService.state();
     boolean open = state == MaintenanceService.State.OPEN;
     mailLayout.setEnabled(open);
     mailLayout.getElement().setAttribute("aria-disabled", Boolean.toString(!open));

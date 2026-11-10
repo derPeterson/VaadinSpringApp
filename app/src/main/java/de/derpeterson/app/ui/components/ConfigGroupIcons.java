@@ -6,8 +6,8 @@ import de.derpeterson.app.config.AdminConfigGroup;
 public final class ConfigGroupIcons {
   private ConfigGroupIcons() {}
 
-  public static AppIcon forGroup(AdminConfigGroup group) {
-    return switch (group) {
+  public static AppIcon forGroup(AdminConfigGroup configGroup) {
+    return switch (configGroup) {
       case GENERAL, SMTP -> AppIcon.COG;
       case SECURITY -> AppIcon.LOCK;
       case TWO_FACTOR -> AppIcon.SHIELD_KEYHOLE;

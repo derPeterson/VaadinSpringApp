@@ -36,7 +36,7 @@ class AvatarImageResourceTest {
     VaadinServletService service = mock(VaadinServletService.class);
     VaadinServletRequest request = new VaadinServletRequest(new MockHttpServletRequest(), service);
     MockHttpServletResponse response = new MockHttpServletResponse();
-    AvatarImageResource.handler(avatars, 12L, revision, false)
+    AvatarImageResource.createAvatarImageDownloadHandler(avatars, 12L, revision, false)
         .handleRequest(
             request,
             new VaadinServletResponse(response, service),
@@ -68,7 +68,7 @@ class AvatarImageResourceTest {
     }
     VaadinServletService service = mock(VaadinServletService.class);
     MockHttpServletResponse response = new MockHttpServletResponse();
-    AvatarImageResource.handler(avatars, 12L, revision, false)
+    AvatarImageResource.createAvatarImageDownloadHandler(avatars, 12L, revision, false)
         .handleRequest(
             new VaadinServletRequest(new MockHttpServletRequest(), service),
             new VaadinServletResponse(response, service),

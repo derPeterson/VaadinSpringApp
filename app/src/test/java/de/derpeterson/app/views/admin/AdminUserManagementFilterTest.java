@@ -201,7 +201,8 @@ class AdminUserManagementFilterTest {
 
   @Test
   void navigationSizeChangesAndEmptyResultsRemainConsistent() {
-    ((ComboBox<Integer>) ReflectionTestUtils.getField(field("pagination"), "pageSizeSelector"))
+    ((ComboBox<Integer>)
+            ReflectionTestUtils.getField(field("userTablePagination"), "pageSizeSelector"))
         .setValue(20);
     assertEquals(20, visibleUsers().size());
     paginationButtons()
@@ -305,7 +306,7 @@ class AdminUserManagementFilterTest {
   }
 
   private java.util.stream.Stream<Button> paginationButtons() {
-    return descendants((com.vaadin.flow.component.Component) field("pagination"))
+    return descendants((com.vaadin.flow.component.Component) field("userTablePagination"))
         .filter(Button.class::isInstance)
         .map(Button.class::cast);
   }

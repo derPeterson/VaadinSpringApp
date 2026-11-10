@@ -43,7 +43,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 
 public class UserPopoverMenu {
 
-  public record Actions(Runnable manageApplicationAction, Runnable homeAction) {}
+  public record UserPopoverActions(Runnable manageApplicationAction, Runnable homeAction) {}
 
   private final MessageProperties messageProperties;
   private final SecurityService securityService;
@@ -55,7 +55,7 @@ public class UserPopoverMenu {
   private final Map<UserStatus, Button> statusButtons = new EnumMap<>(UserStatus.class);
   private Span presenceHeading;
   private DetailsToggleButton presenceToggle;
-  private final Actions actions;
+  private final UserPopoverActions userPopoverActions;
   private final Consumer<UserStatus> statusIconConsumer;
   private final Popover userPopover;
 
@@ -76,13 +76,13 @@ public class UserPopoverMenu {
       UserService userService,
       UserEntity currentUser,
       Button targetButton,
-      Actions actions,
+      UserPopoverActions userPopoverActions,
       Consumer<UserStatus> statusIconConsumer) {
     this.messageProperties = messageProperties;
     this.securityService = securityService;
     this.userService = userService;
     this.currentUser = Objects.requireNonNull(currentUser);
-    this.actions = actions;
+    this.userPopoverActions = userPopoverActions;
     this.statusIconConsumer = statusIconConsumer;
     this.currentStatus = currentUser.getStatus();
     this.userPopover = createUserPopover(targetButton);
@@ -208,9 +208,11 @@ public class UserPopoverMenu {
   private Div createFooter() {
     Div footer = new Div();
     footer.addClassName("portal-menu-footer");
-    if (actions.homeAction() != null) {
+    if (userPopoverActions.homeAction() != null) {
       homeButton =
-          new Button(messageProperties.getBaseHomeButton(), event -> actions.homeAction().run());
+          new Button(
+              messageProperties.getBaseHomeButton(),
+              event -> userPopoverActions.homeAction().run());
       homeButton.setPrefixComponent(AppIcon.HOME.create());
       homeButton.addThemeVariants(LUMO_TERTIARY_INLINE);
       homeButton.addClassName(USER_MENU_ACTION);
@@ -280,11 +282,10 @@ public class UserPopoverMenu {
   private void addManageAccountButton(VerticalLayout contentLayout) {
     manageAccountButton = new Button(messageProperties.getBaseManageAccountButton());
     manageAccountButton.setPrefixComponent(AppIcon.COG.create());
-    manageAccountButton.addClickListener(
-        event -> {
-          userPopover.close();
-          UI.getCurrent().navigate(AccountView.class);
-        });
+    manageAccountButton.addClickListener(event -> {
+      userPopover.close();
+      UI.getCurrent().navigate(AccountView.class);
+    });
 
     manageAccountButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     manageAccountButton.addClassName("portal-menu-primary");
@@ -292,14 +293,14 @@ public class UserPopoverMenu {
   }
 
   private void addManageApplicationButton(VerticalLayout contentLayout) {
-    if (actions.manageApplicationAction() == null) {
+    if (userPopoverActions.manageApplicationAction() == null) {
       return;
     }
 
     manageApplicationButton =
         new Button(
             messageProperties.getBaseManageApplicationButton(),
-            clickEvent -> actions.manageApplicationAction().run());
+            clickEvent -> userPopoverActions.manageApplicationAction().run());
     manageApplicationButton.setPrefixComponent(AppIcon.SHIELD_COG.create());
     manageApplicationButton.addClassName(USER_MENU_ACTION);
     contentLayout.add(manageApplicationButton);
@@ -313,12 +314,11 @@ public class UserPopoverMenu {
     select.setItemLabelGenerator(messageProperties::getUserStatusLabel);
     select.setRenderer(new ComponentRenderer<>(this::createUserStatusRenderer));
     select.setValue(currentStatus);
-    select.addValueChangeListener(
-        event -> {
-          if (event.isFromClient()) {
-            handleUserStatusChange(event.getValue());
-          }
-        });
+    select.addValueChangeListener(event -> {
+      if (event.isFromClient()) {
+        handleUserStatusChange(event.getValue());
+      }
+    });
     return select;
   }
 

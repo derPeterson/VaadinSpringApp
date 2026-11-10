@@ -25,7 +25,7 @@ import de.derpeterson.app.helper.ui.ValidationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChange;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
-import de.derpeterson.app.ui.components.AccountSecurityFeedback.Field;
+import de.derpeterson.app.ui.components.AccountSecurityFeedback.RejectedSecurityInput;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BooleanSupplier;
@@ -163,11 +163,12 @@ public class AccountPasswordChangeDialog extends Dialog {
               messageProperties::getAccountSecurityPasswordSuccess,
               NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException failure) {
-      Field field = AccountSecurityFeedback.failure(messageProperties, failure);
-      if (field == AccountSecurityFeedback.Field.CURRENT_PASSWORD) {
+      RejectedSecurityInput rejectedSecurityInput =
+          AccountSecurityFeedback.showSecurityActionFailure(messageProperties, failure);
+      if (rejectedSecurityInput == AccountSecurityFeedback.RejectedSecurityInput.CURRENT_PASSWORD) {
         currentPasswordField.setInvalid(true);
       }
-      if (field == AccountSecurityFeedback.Field.NEW_PASSWORD) {
+      if (rejectedSecurityInput == AccountSecurityFeedback.RejectedSecurityInput.NEW_PASSWORD) {
         newPasswordField.setInvalid(true);
       }
     } finally {

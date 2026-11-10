@@ -47,13 +47,13 @@ final class TwoFactorCodeInput extends VerticalLayout {
       SerializableRunnable closeAction) {
     this.messageProperties = messageProperties;
     appCodeField.setId(fieldPrefix + "-factor");
-    TwoFactorCodeFields.configureOtp(appCodeField, request.getContextPath());
+    TwoFactorCodeFields.configureOtpField(appCodeField, request.getContextPath());
     recoveryCodeField.setId(fieldPrefix + "-recovery-code");
     recoveryCodeField.setWidthFull();
     recoveryCodeField.setManualValidation(true);
     recoveryCodeField.setRequiredIndicatorVisible(true);
     recoveryCodeField.setValueChangeMode(ValueChangeMode.EAGER);
-    TwoFactorCodeFields.configureRecoveryCode(recoveryCodeField);
+    TwoFactorCodeFields.configureRecoveryCodeField(recoveryCodeField);
 
     String inputId = methodPrefix + "-code-input";
     appCodeTab.setId(methodPrefix + "-app-code-tab");

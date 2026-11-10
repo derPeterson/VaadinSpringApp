@@ -25,91 +25,92 @@ import java.util.UUID;
 public class OverlayUserIcon extends Div {
   private static final String ARIA_HIDDEN = "aria-hidden";
 
-  private final transient MessageProperties messages;
+  private final transient MessageProperties messageProperties;
   private final IconSize iconSize;
   private final boolean showStatus;
-  private final Span initials = new Span();
-  private final Div status = new Div();
-  private final Image photo = new Image();
+  private final Span avatarInitialsLabel = new Span();
+  private final Div statusIndicatorContainer = new Div();
+  private final Image avatarPhotoImage = new Image();
   private Long userId;
-  private transient UserAvatarService avatars;
+  private transient UserAvatarService userAvatarService;
   private transient Registration profileRegistration;
   private UUID displayedRevision;
-  private final Tooltip tooltip;
+  private final Tooltip avatarIdentityTooltip;
   private UserStatus userStatus;
   private Select<UserStatus> statusSelection;
-  private String name = "";
+  private String avatarDisplayName = "";
   private String identityTooltipEmail;
   private transient Registration languageRegistration;
 
   public OverlayUserIcon(
-      MessageProperties messages, UserEntity user, UserStatus userStatus, IconSize iconSize) {
-    this(messages, user, userStatus, iconSize, false);
+      MessageProperties messageProperties,
+      UserEntity user,
+      UserStatus userStatus,
+      IconSize iconSize) {
+    this(messageProperties, user, userStatus, iconSize, false);
   }
 
   public OverlayUserIcon(
-      MessageProperties messages,
+      MessageProperties messageProperties,
       UserEntity user,
       UserStatus userStatus,
       IconSize iconSize,
       boolean showStatus) {
-    this.messages = messages;
+    this.messageProperties = messageProperties;
     this.showStatus = showStatus;
     this.iconSize = iconSize;
     addClassName("cosmos-user-avatar");
     getStyle().set("--cosmos-avatar-size", iconSize.getWidth() + iconSize.getUnit().getSymbol());
     getElement().setAttribute("role", "img");
-    initials.addClassName("cosmos-avatar-initials");
-    initials.getElement().setAttribute(ARIA_HIDDEN, "true");
-    photo.addClassName("cosmos-avatar-photo");
-    photo.getElement().setAttribute(ARIA_HIDDEN, "true");
-    photo.setVisible(false);
-    photo
+    avatarInitialsLabel.addClassName("cosmos-avatar-initials");
+    avatarInitialsLabel.getElement().setAttribute(ARIA_HIDDEN, "true");
+    avatarPhotoImage.addClassName("cosmos-avatar-photo");
+    avatarPhotoImage.getElement().setAttribute(ARIA_HIDDEN, "true");
+    avatarPhotoImage.setVisible(false);
+    avatarPhotoImage
         .getElement()
         .addEventListener(
             "error",
             event -> {
-              photo.setVisible(false);
-              initials.setVisible(true);
+              avatarPhotoImage.setVisible(false);
+              avatarInitialsLabel.setVisible(true);
             });
-    Div circle = new Div(initials, photo);
-    circle.addClassName("cosmos-avatar-circle");
-    status.addClassName("cosmos-avatar-status");
-    status.setVisible(showStatus);
-    status.getElement().setAttribute(ARIA_HIDDEN, "true");
-    add(circle, status);
-    tooltip = Tooltip.forComponent(this).withPosition(Tooltip.TooltipPosition.BOTTOM);
+    Div avatarCircleContainer = new Div(avatarInitialsLabel, avatarPhotoImage);
+    avatarCircleContainer.addClassName("cosmos-avatar-circle");
+    statusIndicatorContainer.addClassName("cosmos-avatar-status");
+    statusIndicatorContainer.setVisible(showStatus);
+    statusIndicatorContainer.getElement().setAttribute(ARIA_HIDDEN, "true");
+    add(avatarCircleContainer, statusIndicatorContainer);
+    avatarIdentityTooltip = Tooltip.forComponent(this).withPosition(Tooltip.TooltipPosition.BOTTOM);
     setIdentity(user);
     setUserStatus(userStatus);
-    addAttachListener(
-        event -> {
-          refreshTexts();
-          if (identityTooltipEmail != null) {
-            // Flow hängt freie Tooltips an die UI. Über das native Ziel bleibt der Stil lokal.
-            getElement()
-                .executeJs(
-                    """
-                    const tooltip = Array.from(this.ownerDocument.querySelectorAll('vaadin-tooltip'))
-                        .find(candidate => candidate.target === this);
-                    tooltip?.classList.add('support-identity-tooltip');
-                    """);
-          }
-          listenProfiles();
-          languageRegistration =
-              ComponentUtil.addListener(
-                  event.getUI(), LanguageChangeEvent.class, change -> refreshTexts());
-        });
-    addDetachListener(
-        event -> {
-          if (profileRegistration != null) {
-            profileRegistration.remove();
-            profileRegistration = null;
-          }
-          if (languageRegistration != null) {
-            languageRegistration.remove();
-            languageRegistration = null;
-          }
-        });
+    addAttachListener(event -> {
+      refreshTexts();
+      if (identityTooltipEmail != null) {
+        // Flow hängt freie Tooltips an die UI. Über das native Ziel bleibt der Stil lokal.
+        getElement()
+            .executeJs(
+                """
+                const tooltip = Array.from(this.ownerDocument.querySelectorAll('vaadin-tooltip'))
+                    .find(candidate => candidate.target === this);
+                tooltip?.classList.add('support-identity-tooltip');
+                """);
+      }
+      listenProfiles();
+      languageRegistration =
+          ComponentUtil.addListener(
+              event.getUI(), LanguageChangeEvent.class, change -> refreshTexts());
+    });
+    addDetachListener(event -> {
+      if (profileRegistration != null) {
+        profileRegistration.remove();
+        profileRegistration = null;
+      }
+      if (languageRegistration != null) {
+        languageRegistration.remove();
+        languageRegistration = null;
+      }
+    });
   }
 
   public void setIdentity(UserEntity user) {
@@ -119,19 +120,19 @@ public class OverlayUserIcon extends Div {
 
   public void showIdentityTooltip(String email) {
     identityTooltipEmail = Objects.requireNonNull(email);
-    tooltip.withPosition(Tooltip.TooltipPosition.TOP);
+    avatarIdentityTooltip.withPosition(Tooltip.TooltipPosition.TOP);
     getElement().setAttribute("tabindex", "0");
     refreshTexts();
   }
 
   public void setName(String firstName, String lastName) {
-    name =
+    avatarDisplayName =
         (Objects.toString(firstName, "").strip() + " " + Objects.toString(lastName, "").strip())
             .strip();
-    initials.removeAll();
-    initials.setText(initialsFor(firstName, lastName));
-    if (initials.getText().isEmpty()) {
-      initials.add(AppIcon.USER.create());
+    avatarInitialsLabel.removeAll();
+    avatarInitialsLabel.setText(initialsFor(firstName, lastName));
+    if (avatarInitialsLabel.getText().isEmpty()) {
+      avatarInitialsLabel.add(AppIcon.USER.create());
     }
     refreshTexts();
   }
@@ -141,13 +142,13 @@ public class OverlayUserIcon extends Div {
   }
 
   private static String initial(String value) {
-    String name = Objects.toString(value, "").strip();
-    if (name.isEmpty()) {
+    String avatarDisplayName = Objects.toString(value, "").strip();
+    if (avatarDisplayName.isEmpty()) {
       return "";
     }
     BreakIterator characters = BreakIterator.getCharacterInstance(Locale.ROOT);
-    characters.setText(name);
-    String upper = name.substring(0, characters.next()).toUpperCase(Locale.ROOT);
+    characters.setText(avatarDisplayName);
+    String upper = avatarDisplayName.substring(0, characters.next()).toUpperCase(Locale.ROOT);
     // Auch bei Großschreibung mit mehreren Zeichen (z.B. ß → SS) nur ein Initial anzeigen.
     characters.setText(upper);
     return upper.substring(0, characters.next());
@@ -156,9 +157,9 @@ public class OverlayUserIcon extends Div {
   public void setUserStatus(UserStatus value) {
     userStatus = value == null ? UserStatus.getDefaultStatus() : value;
     getElement().setAttribute("data-status", userStatus.name().toLowerCase(Locale.ROOT));
-    status.removeAll();
+    statusIndicatorContainer.removeAll();
     if (showStatus) {
-      status.add(userStatus.getOutlineComponent(iconSize, true));
+      statusIndicatorContainer.add(userStatus.getOutlineComponent(iconSize, true));
       addClassName("cosmos-avatar-with-status");
       getStyle().set("--cosmos-avatar-status-color", userStatus.getColor());
       getStyle()
@@ -187,7 +188,7 @@ public class OverlayUserIcon extends Div {
   }
 
   public void configureAvatar(UserAvatarService service, UserAvatarService.State metadata) {
-    avatars = service;
+    userAvatarService = service;
     applyState(metadata == null ? service.state(userId) : metadata);
     listenProfiles();
   }
@@ -198,63 +199,70 @@ public class OverlayUserIcon extends Div {
     }
     boolean custom = metadata.mode() == AvatarMode.CUSTOM && metadata.hasImage();
     if (custom && !Objects.equals(displayedRevision, metadata.imageRevision())) {
-      photo.setSrc(AvatarImageResource.handler(avatars, userId, metadata.imageRevision(), false));
+      avatarPhotoImage.setSrc(
+          AvatarImageResource.createAvatarImageDownloadHandler(
+              userAvatarService, userId, metadata.imageRevision(), false));
       displayedRevision = metadata.imageRevision();
     }
     if (!custom) {
       displayedRevision = null;
-      photo.getElement().removeAttribute("src");
+      avatarPhotoImage.getElement().removeAttribute("src");
     }
-    photo.setVisible(custom);
-    initials.setVisible(!custom);
+    avatarPhotoImage.setVisible(custom);
+    avatarInitialsLabel.setVisible(!custom);
   }
 
   private void listenProfiles() {
-    if (avatars == null || userId == null || !isAttached() || profileRegistration != null) {
+    if (userAvatarService == null
+        || userId == null
+        || !isAttached()
+        || profileRegistration != null) {
       return;
     }
     UI ui = getUI().orElseThrow();
     profileRegistration =
-        avatars
+        userAvatarService
             .events()
-            .register(
-                message -> {
-                  if (!Objects.equals(userId, message.userId())) {
-                    return;
-                  }
-                  ui.access(
-                      () -> {
-                        if (!isAttached()) {
-                          return;
-                        }
-                        setName(message.firstName(), message.lastName());
-                        applyState(avatars.state(userId));
-                      });
-                });
+            .register(message -> {
+              if (!Objects.equals(userId, message.userId())) {
+                return;
+              }
+              ui.access(() -> {
+                if (!isAttached()) {
+                  return;
+                }
+                setName(message.firstName(), message.lastName());
+                applyState(userAvatarService.state(userId));
+              });
+            });
   }
 
   public void refreshTexts() {
     String statusLabel =
-        messages.getUserStatusLabel(
+        messageProperties.getUserStatusLabel(
             userStatus == null ? UserStatus.getDefaultStatus() : userStatus);
-    String label = name.isEmpty() ? AppConstants.USER_ICON_ALT : name;
+    String label = avatarDisplayName.isEmpty() ? AppConstants.USER_ICON_ALT : avatarDisplayName;
     getElement()
         .setAttribute(
-            "aria-label", showStatus && !name.isEmpty() ? label + " – " + statusLabel : label);
-    tooltip.setManual(statusSelection != null);
+            "aria-label",
+            showStatus && !avatarDisplayName.isEmpty() ? label + " – " + statusLabel : label);
+    avatarIdentityTooltip.setManual(statusSelection != null);
     String tooltipText = "";
     if (statusSelection == null) {
       if (identityTooltipEmail != null) {
-        tooltipText = name.isEmpty() ? identityTooltipEmail : name + "\n" + identityTooltipEmail;
+        tooltipText =
+            avatarDisplayName.isEmpty()
+                ? identityTooltipEmail
+                : avatarDisplayName + "\n" + identityTooltipEmail;
       } else {
         tooltipText = showStatus ? statusLabel : label;
       }
     }
-    tooltip.setText(tooltipText);
+    avatarIdentityTooltip.setText(tooltipText);
     if (statusSelection != null) {
-      tooltip.setOpened(false);
-      statusSelection.setAriaLabel(messages.getAdminUsersGridStatus());
-      statusSelection.setItemLabelGenerator(messages::getUserStatusLabel);
+      avatarIdentityTooltip.setOpened(false);
+      statusSelection.setAriaLabel(messageProperties.getAdminUsersGridStatus());
+      statusSelection.setItemLabelGenerator(messageProperties::getUserStatusLabel);
       statusSelection.getDataProvider().refreshAll();
       statusSelection.setValue(userStatus);
     }

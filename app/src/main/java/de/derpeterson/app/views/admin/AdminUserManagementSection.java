@@ -119,7 +119,7 @@ public class AdminUserManagementSection extends VerticalLayout {
   private final transient UserService userService;
   private final transient RoleService roleService;
   private final transient SecurityService securityService;
-  private final Clock clock;
+  private final Clock userManagementClock;
 
   private final Span breadcrumb;
   private final Span title;
@@ -133,23 +133,23 @@ public class AdminUserManagementSection extends VerticalLayout {
   private final Grid<UserEntity> userGrid = new Grid<>(UserEntity.class, false);
 
   private final RadioButtonGroup<AdminUserFilters.Enabled> enabledFilter = new RadioButtonGroup<>();
-  private transient UserAvatarService avatars;
-  private transient ExternalIdentityService identities;
+  private transient UserAvatarService userAvatarService;
+  private transient ExternalIdentityService externalIdentityService;
   private Map<Long, UserAvatarService.State> avatarStates = Map.of();
 
-  public void configureAvatars(UserAvatarService avatars) {
-    this.avatars = avatars;
+  public void configureAvatars(UserAvatarService userAvatarService) {
+    this.userAvatarService = userAvatarService;
     updateGridPage();
   }
 
-  public void configureSignInDetails(ExternalIdentityService identities) {
-    this.identities = identities;
+  public void configureSignInDetails(ExternalIdentityService externalIdentityService) {
+    this.externalIdentityService = externalIdentityService;
   }
 
   private final CheckboxGroup<UserStatus> statusFilter = new CheckboxGroup<>();
   private final CheckboxGroup<RoleType> roleFilter = new CheckboxGroup<>();
   private final AdminUserActivityFilter lastActivityFilter;
-  private final CosmosPagination pagination;
+  private final CosmosPagination userTablePagination;
   private final AdminUserFilterBar filterBar;
 
   private Grid.Column<UserEntity> nameColumn;
@@ -183,9 +183,9 @@ public class AdminUserManagementSection extends VerticalLayout {
       UserService userService,
       RoleService roleService,
       SecurityService securityService,
-      Clock clock) {
-    this.clock = Objects.requireNonNull(clock);
-    this.lastActivityFilter = new AdminUserActivityFilter(clock);
+      Clock userManagementClock) {
+    this.userManagementClock = Objects.requireNonNull(userManagementClock);
+    this.lastActivityFilter = new AdminUserActivityFilter(userManagementClock);
     this.messageProperties = messageProperties;
     this.userService = userService;
     this.roleService = roleService;
@@ -225,7 +225,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     refreshButton = new Button(AppIcon.REFRESH.create(), event -> refreshUsersWithFeedback());
     refreshButton.addClassName("admin-user-refresh");
 
-    pagination =
+    userTablePagination =
         new CosmosPagination(
             messageProperties,
             page -> {
@@ -250,7 +250,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                 enabledFilter, statusFilter, roleFilter, lastActivityFilter),
             this::applyFilterInputs);
 
-    Div paginationFooter = new Div(pagination);
+    Div paginationFooter = new Div(userTablePagination);
     paginationFooter.addClassName("cosmos-panel-footer");
     VerticalLayout layout =
         new VerticalLayout(createUsersCardHeader(), filterBar, userGrid, paginationFooter);
@@ -320,7 +320,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             : Locale.getDefault();
     lastActivityFilter.setLocale(locale);
     lastActivityFilter.refreshTexts(messageProperties);
-    pagination.refreshTexts();
+    userTablePagination.refreshTexts();
     filterBar.refreshTexts();
 
     if (nameColumn != null) {
@@ -564,11 +564,11 @@ public class AdminUserManagementSection extends VerticalLayout {
             .orElse((left, right) -> 0);
     List<UserEntity> sortedUsers = filteredUsers.stream().sorted(comparator).toList();
     List<UserEntity> page = sortedUsers.subList(fromIndex, toIndex);
-    if (avatars != null) {
-      avatarStates = avatars.states(page.stream().map(UserEntity::getId).toList());
+    if (userAvatarService != null) {
+      avatarStates = userAvatarService.states(page.stream().map(UserEntity::getId).toList());
     }
     userGrid.setItems(page);
-    pagination.showPage(currentPage, filteredUsers.size(), pageSize);
+    userTablePagination.showPage(currentPage, filteredUsers.size(), pageSize);
     accountCount.removeAll();
     accountCount.add(
         new Span(messageProperties.getAdminUsersAccountsLabel()),
@@ -638,9 +638,10 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     OverlayUserIcon avatar =
         new OverlayUserIcon(messageProperties, user, user.getStatus(), IconSize.PIXEL_32);
-    if (avatars != null) {
+    if (userAvatarService != null) {
       avatar.configureAvatar(
-          avatars, avatarStates.getOrDefault(user.getId(), UserAvatarService.State.initial()));
+          userAvatarService,
+          avatarStates.getOrDefault(user.getId(), UserAvatarService.State.initial()));
     }
     avatar.addClassName("admin-user-table-avatar");
     Span userName = new Span(getFullName(user));
@@ -1130,8 +1131,8 @@ public class AdminUserManagementSection extends VerticalLayout {
       permissionsRow.addClassName("admin-user-permissions");
       VerticalLayout dialogLayout =
           new VerticalLayout(nameRow, emailField, passwordFields, masterDataRow, permissionsRow);
-      if (editMode && identities != null) {
-        identities
+      if (editMode && externalIdentityService != null) {
+        externalIdentityService
             .adminSignInSummary(user.getId())
             .ifPresent(summary -> {
               signInSummary = summary;
@@ -1404,9 +1405,10 @@ public class AdminUserManagementSection extends VerticalLayout {
   private Component createUserIdentity(UserEntity user) {
     OverlayUserIcon avatar =
         new OverlayUserIcon(messageProperties, user, user.getStatus(), IconSize.PIXEL_32);
-    if (avatars != null) {
+    if (userAvatarService != null) {
       avatar.configureAvatar(
-          avatars, avatarStates.getOrDefault(user.getId(), UserAvatarService.State.initial()));
+          userAvatarService,
+          avatarStates.getOrDefault(user.getId(), UserAvatarService.State.initial()));
     }
     avatar.addClassName("admin-user-table-avatar");
     Span name = new Span(getFullName(user));
@@ -1486,7 +1488,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
   private Component createLastActivity(UserEntity user) {
     Instant activity = user.getLastActivity();
-    Instant now = clock.instant();
+    Instant now = userManagementClock.instant();
     String text =
         activity != null && activity.isAfter(now)
             ? formatDateTime(activity)

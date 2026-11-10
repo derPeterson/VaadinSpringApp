@@ -9,26 +9,25 @@ import java.util.Locale;
 @JsModule("./compact-time-input.js")
 public class CompactTimePicker extends TimePicker {
   @Override
-  protected void onAttach(AttachEvent event) {
-    super.onAttach(event);
+  protected void onAttach(AttachEvent attachEvent) {
+    super.onAttach(attachEvent);
     installParser();
   }
 
   @Override
-  public void setLocale(Locale locale) {
-    super.setLocale(locale);
+  public void setLocale(Locale pickerLocale) {
+    super.setLocale(pickerLocale);
     installParser();
   }
 
   private void installParser() {
     getUI()
-        .ifPresent(
-            ui ->
-                ui.beforeClientResponse(
-                    this,
-                    context ->
-                        getElement()
-                            .executeJs(
-                                "requestAnimationFrame(() => window.Vaadin.Flow.compactTimeInput.install(this))")));
+        .ifPresent(attachedUi ->
+            attachedUi.beforeClientResponse(
+                this,
+                attachContext ->
+                    getElement()
+                        .executeJs(
+                            "requestAnimationFrame(() => window.Vaadin.Flow.compactTimeInput.install(this))")));
   }
 }

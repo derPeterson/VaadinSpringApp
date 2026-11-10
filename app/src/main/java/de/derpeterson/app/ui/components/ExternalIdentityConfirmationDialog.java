@@ -350,9 +350,10 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
           httpRequest, passwordField.getValue(), identityConfirmationPurpose);
       return true;
     } catch (RuntimeException failure) {
-      AccountSecurityFeedback.Field field =
-          AccountSecurityFeedback.failure(messageProperties, failure);
-      passwordField.setInvalid(field == AccountSecurityFeedback.Field.CURRENT_PASSWORD);
+      AccountSecurityFeedback.RejectedSecurityInput rejectedSecurityInput =
+          AccountSecurityFeedback.showSecurityActionFailure(messageProperties, failure);
+      passwordField.setInvalid(
+          rejectedSecurityInput == AccountSecurityFeedback.RejectedSecurityInput.CURRENT_PASSWORD);
       refreshTexts();
       return false;
     }

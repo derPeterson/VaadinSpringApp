@@ -15,10 +15,10 @@ import jakarta.servlet.http.HttpSession;
 public final class SupportTicketActivityIndicator extends Badge {
   private final transient MessageProperties messageProperties;
   private final transient SupportTicketService supportTicketService;
-  private final Tooltip tooltip;
-  private transient HttpSession session;
+  private final Tooltip unreadTicketTooltip;
+  private transient HttpSession httpSession;
   private transient volatile Long viewerId;
-  private transient Registration registration;
+  private transient Registration ticketChangeRegistration;
 
   public SupportTicketActivityIndicator(
       MessageProperties messageProperties,
@@ -32,12 +32,12 @@ public final class SupportTicketActivityIndicator extends Badge {
     addThemeVariants(BadgeVariant.ERROR);
     setVisible(false);
     navigation.setSuffixComponent(this);
-    tooltip = Tooltip.forComponent(navigation);
+    unreadTicketTooltip = Tooltip.forComponent(navigation);
     // Am stets angehängten Navigationseintrag registrieren, auch wenn der Punkt unsichtbar ist.
     navigation.addAttachListener(event -> {
       HttpSession attachedSession = request.getSession(false);
-      session = attachedSession;
-      registration =
+      httpSession = attachedSession;
+      ticketChangeRegistration =
           supportTicketService
               .events()
               .register(change -> {
@@ -47,7 +47,7 @@ public final class SupportTicketActivityIndicator extends Badge {
                 event
                     .getUI()
                     .access(() -> {
-                      if (navigation.isAttached() && session == attachedSession) {
+                      if (navigation.isAttached() && httpSession == attachedSession) {
                         refreshUnreadTicketIndicator();
                       }
                     });
@@ -55,18 +55,18 @@ public final class SupportTicketActivityIndicator extends Badge {
       refreshUnreadTicketIndicator();
     });
     navigation.addDetachListener(event -> {
-      if (registration != null) {
-        registration.remove();
-        registration = null;
+      if (ticketChangeRegistration != null) {
+        ticketChangeRegistration.remove();
+        ticketChangeRegistration = null;
       }
-      session = null;
+      httpSession = null;
       viewerId = null;
     });
   }
 
   private void refreshUnreadTicketIndicator() {
     try {
-      Activity state = supportTicketService.activity(session);
+      Activity state = supportTicketService.activity(httpSession);
       viewerId = state.viewerId();
       setVisible(state.unread());
     } catch (RuntimeException _) {
@@ -78,7 +78,7 @@ public final class SupportTicketActivityIndicator extends Badge {
 
   public void refreshTexts() {
     String label = isVisible() ? messageProperties.getSupportNewActivity() : "";
-    tooltip.setText(label);
+    unreadTicketTooltip.setText(label);
     getElement().setAttribute("aria-label", label);
   }
 }

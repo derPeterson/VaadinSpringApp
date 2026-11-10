@@ -219,14 +219,15 @@ class AccountViewTest {
             ReflectionTestUtils.getField(
                 ReflectionTestUtils.getField(view, "userPopoverMenu"), "overlayIcon");
     assertEquals(UserStatus.ABSENT, ReflectionTestUtils.getField(popupAvatar, "userStatus"));
-    assertTrue(((Div) ReflectionTestUtils.getField(popupAvatar, "status")).isVisible());
+    assertTrue(
+        ((Div) ReflectionTestUtils.getField(popupAvatar, "statusIndicatorContainer")).isVisible());
     assertEquals(UserStatus.ABSENT, testAccount.getStatus());
     assertTrue(testAccount.isStatusManuallySet());
     assertEquals(UserStatus.ABSENT, select.getValue());
     Object summary =
         ReflectionTestUtils.getField(
             ReflectionTestUtils.getField(settings(), "accountSidebar"), "accountAvatar");
-    Tooltip tooltip = (Tooltip) ReflectionTestUtils.getField(summary, "tooltip");
+    Tooltip tooltip = (Tooltip) ReflectionTestUtils.getField(summary, "avatarIdentityTooltip");
     assertTrue(tooltip.isManual());
     assertFalse(tooltip.isOpened());
     assertEquals("", tooltip.getText());

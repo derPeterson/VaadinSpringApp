@@ -14,7 +14,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 /** Einheitliche sichere Fehlermeldungen ohne Passwort-, Token- oder SQL-Inhalte in der UI. */
 @Slf4j
 final class AccountSecurityFeedback {
-  enum Field {
+  enum RejectedSecurityInput {
     CURRENT_PASSWORD,
     NEW_PASSWORD,
     EMAIL,
@@ -23,39 +23,44 @@ final class AccountSecurityFeedback {
 
   private AccountSecurityFeedback() {}
 
-  static Field failure(MessageProperties messages, RuntimeException failure) {
-    Supplier<String> text = messages::getAccountSecurityFailed;
-    Field field = Field.NONE;
-    if (failure instanceof LoginThrottledException) {
-      text = messages::getLoginThrottledMessage;
-    } else if (failure instanceof BadCredentialsException) {
-      text = messages::getAccountSecurityWrongPassword;
-      field = Field.CURRENT_PASSWORD;
-    } else if (failure instanceof Rejected rejected) {
-      switch (rejected.problem()) {
+  static RejectedSecurityInput showSecurityActionFailure(
+      MessageProperties messageProperties, RuntimeException securityActionFailure) {
+    Supplier<String> feedbackTextSupplier = messageProperties::getAccountSecurityFailed;
+    RejectedSecurityInput rejectedField = RejectedSecurityInput.NONE;
+    if (securityActionFailure instanceof LoginThrottledException) {
+      feedbackTextSupplier = messageProperties::getLoginThrottledMessage;
+    } else if (securityActionFailure instanceof BadCredentialsException) {
+      feedbackTextSupplier = messageProperties::getAccountSecurityWrongPassword;
+      rejectedField = RejectedSecurityInput.CURRENT_PASSWORD;
+    } else if (securityActionFailure instanceof Rejected rejectedAction) {
+      switch (rejectedAction.problem()) {
         case EMAIL_UNAVAILABLE -> {
-          text = messages::getBaseValidationEmailExistsMessage;
-          field = Field.EMAIL;
+          feedbackTextSupplier = messageProperties::getBaseValidationEmailExistsMessage;
+          rejectedField = RejectedSecurityInput.EMAIL;
         }
         case SAME_EMAIL -> {
-          text = messages::getAccountSecuritySameEmail;
-          field = Field.EMAIL;
+          feedbackTextSupplier = messageProperties::getAccountSecuritySameEmail;
+          rejectedField = RejectedSecurityInput.EMAIL;
         }
         case SAME_PASSWORD -> {
-          text = messages::getAccountSecuritySamePassword;
-          field = Field.NEW_PASSWORD;
+          feedbackTextSupplier = messageProperties::getAccountSecuritySamePassword;
+          rejectedField = RejectedSecurityInput.NEW_PASSWORD;
         }
-        case REQUEST_PENDING -> text = messages::getAccountSecurityRequestPending;
+        case REQUEST_PENDING ->
+            feedbackTextSupplier = messageProperties::getAccountSecurityRequestPending;
       }
-    } else if (EmailConflict.isDuplicate(failure)) {
-      text = messages::getBaseValidationEmailExistsMessage;
-      field = Field.EMAIL;
+    } else if (EmailConflict.isDuplicate(securityActionFailure)) {
+      feedbackTextSupplier = messageProperties::getBaseValidationEmailExistsMessage;
+      rejectedField = RejectedSecurityInput.EMAIL;
     } else {
-      log.error("Account security operation failed", safeFailure(failure));
+      log.error("Account security operation failed", safeFailure(securityActionFailure));
     }
     NotificationHelper.getInstance()
         .showNotification(
-            messages::getBaseFailedTitle, text, -1, NotificationHelper.NotificationType.ERROR);
-    return field;
+            messageProperties::getBaseFailedTitle,
+            feedbackTextSupplier,
+            -1,
+            NotificationHelper.NotificationType.ERROR);
+    return rejectedField;
   }
 }

@@ -11,41 +11,43 @@ final class ExternalProofNotice {
   private ExternalProofNotice() {}
 
   static void showDisconnected(
-      AfterNavigationEvent event, MessageProperties texts, boolean signIn) {
-    if (event
+      AfterNavigationEvent navigationEvent, MessageProperties messageProperties, boolean signIn) {
+    if (navigationEvent
         .getLocation()
         .getQueryParameters()
         .getParameters()
         .containsKey(ExternalLoginFlow.DISCONNECTED_PARAMETER)) {
       NotificationHelper.getInstance()
           .showNotification(
-              texts::getExternalDisconnected,
-              signIn ? texts::getExternalDisconnectedSignIn : texts::getExternalDisconnectedHint,
+              messageProperties::getExternalDisconnected,
+              signIn
+                  ? messageProperties::getExternalDisconnectedSignIn
+                  : messageProperties::getExternalDisconnectedHint,
               NotificationHelper.NotificationType.SUCCESS);
     }
   }
 
-  static void show(AfterNavigationEvent event, MessageProperties messageProperties) {
+  static void show(AfterNavigationEvent navigationEvent, MessageProperties messageProperties) {
     // Erst der angehängte Zielrahmen liefert die Palette für ausgelagerte Meldungen.
-    List<String> values =
-        event
+    List<String> queryParameterValues =
+        navigationEvent
             .getLocation()
             .getQueryParameters()
             .getParameters()
             .get(ExternalLoginFlow.ERROR_PARAMETER);
-    if (values == null) {
+    if (queryParameterValues == null) {
       return;
     }
-    ExternalLoginFlow.ProofProblem problem = ExternalLoginFlow.ProofProblem.UNAVAILABLE;
-    if (values.size() == 1) {
+    ExternalLoginFlow.ProofProblem proofProblem = ExternalLoginFlow.ProofProblem.UNAVAILABLE;
+    if (queryParameterValues.size() == 1) {
       try {
-        problem = ExternalLoginFlow.ProofProblem.valueOf(values.getFirst());
+        proofProblem = ExternalLoginFlow.ProofProblem.valueOf(queryParameterValues.getFirst());
       } catch (IllegalArgumentException _) {
         // Nur bekannte Fehlerarten auswählen, nie Queryinhalte als Meldung ausgeben.
       }
     }
-    Supplier<String> message =
-        switch (problem) {
+    Supplier<String> proofFailureTextSupplier =
+        switch (proofProblem) {
           case FRESH_AUTHENTICATION_REQUIRED -> messageProperties::getExternalProofFreshRequired;
           case IDENTITY_MISMATCH -> messageProperties::getExternalProofIdentityMismatch;
           case UNAVAILABLE -> messageProperties::getExternalError;
@@ -53,7 +55,7 @@ final class ExternalProofNotice {
     NotificationHelper.getInstance()
         .showNotification(
             messageProperties::getBaseFailedTitle,
-            message,
+            proofFailureTextSupplier,
             NotificationHelper.NotificationType.ERROR);
   }
 }

@@ -298,7 +298,8 @@ public class AdminView extends IsAuthenticatedBaseView {
   private HorizontalLayout createNavbar() {
     return createApplicationHeader(
         configService,
-        new UserPopoverMenu.Actions(null, () -> UI.getCurrent().navigate(HomeView.class)));
+        new UserPopoverMenu.UserPopoverActions(
+            null, () -> UI.getCurrent().navigate(HomeView.class)));
   }
 
   private void refreshConfigurationState() {

@@ -9,75 +9,79 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
  * Zeigt die gespeicherte Anleitung als native Schritte, ohne Nachrichtentexte als HTML auszuwerten.
  */
 public final class RecoveryInstructionsComponent extends VerticalLayout {
-  private String heading;
-  private String description;
+  private String instructionHeading;
+  private String instructionDescription;
 
-  public RecoveryInstructionsComponent(String instructions) {
+  public RecoveryInstructionsComponent(String instructionText) {
     setPadding(false);
     setSpacing(false);
     setWidthFull();
     addClassName("support-instruction-guide");
-    setInstructions(instructions);
+    setInstructions(instructionText);
   }
 
   /** Aktualisiert die Vorschau beim Sprachwechsel; gespeicherte Nachrichten bleiben unverändert. */
-  public void setInstructions(String instructions) {
+  public void setInstructions(String instructionText) {
     // Doppelte Zeilenumbrüche trennen Kopf, vier Schritte, Warnung und Grenze der festen Vorlage.
-    String[] sections = instructions.split("\n\n", -1);
-    if (sections.length != 7) {
+    String[] instructionSections = instructionText.split("\n\n", -1);
+    if (instructionSections.length != 7) {
       throw new IllegalArgumentException("Recovery instructions require seven sections");
     }
     removeAll();
-    String[] lead = lines(sections[0]);
-    heading = lead[0];
-    description = lead[1];
+    String[] introSectionLines = splitInstructionSectionLines(instructionSections[0]);
+    instructionHeading = introSectionLines[0];
+    instructionDescription = introSectionLines[1];
     for (int index = 1; index <= 4; index++) {
-      String[] step = lines(sections[index]);
-      Span title = new Span(step[0]);
-      title.addClassName("support-instruction-step-title");
-      VerticalLayout copy = new VerticalLayout(title, new Span(step[1]));
-      copy.setSpacing(false);
-      copy.setPadding(false);
-      Badge number = new Badge(Integer.toString(index));
-      number.addClassName("support-instruction-number");
-      HorizontalLayout row = new HorizontalLayout(number, copy);
-      row.setPadding(false);
-      row.setSpacing(false);
-      row.setAlignItems(Alignment.START);
-      row.addClassName("support-instruction-step");
-      add(row);
+      String[] stepSectionLines = splitInstructionSectionLines(instructionSections[index]);
+      Span stepTitleLabel = new Span(stepSectionLines[0]);
+      stepTitleLabel.addClassName("support-instruction-step-title");
+      VerticalLayout stepCopyLayout =
+          new VerticalLayout(stepTitleLabel, new Span(stepSectionLines[1]));
+      stepCopyLayout.setSpacing(false);
+      stepCopyLayout.setPadding(false);
+      Badge stepNumberBadge = new Badge(Integer.toString(index));
+      stepNumberBadge.addClassName("support-instruction-number");
+      HorizontalLayout stepRowLayout = new HorizontalLayout(stepNumberBadge, stepCopyLayout);
+      stepRowLayout.setPadding(false);
+      stepRowLayout.setSpacing(false);
+      stepRowLayout.setAlignItems(Alignment.START);
+      stepRowLayout.addClassName("support-instruction-step");
+      add(stepRowLayout);
     }
-    String[] warning = lines(sections[5]);
-    Span warningTitle = new Span(warning[0] + " ");
+    String[] warningSectionLines = splitInstructionSectionLines(instructionSections[5]);
+    Span warningTitle = new Span(warningSectionLines[0] + " ");
     warningTitle.addClassName("cosmos-security-warning-label");
-    HorizontalLayout notice =
-        new HorizontalLayout(AppIcon.ERROR.create(), new Span(warningTitle, new Span(warning[1])));
-    notice.setSpacing(false);
-    notice.setPadding(false);
-    notice.setAlignItems(Alignment.START);
-    notice.addClassName("cosmos-security-warning");
-    HorizontalLayout limitation =
-        new HorizontalLayout(AppIcon.INFO_CIRCLE.create(), new Span(sections[6]));
-    limitation.setSpacing(false);
-    limitation.setPadding(false);
-    limitation.setAlignItems(Alignment.CENTER);
-    limitation.addClassName("support-help-notice");
-    add(notice, limitation);
+    HorizontalLayout warningNoticeLayout =
+        new HorizontalLayout(
+            AppIcon.ERROR.create(), new Span(warningTitle, new Span(warningSectionLines[1])));
+    warningNoticeLayout.setSpacing(false);
+    warningNoticeLayout.setPadding(false);
+    warningNoticeLayout.setAlignItems(Alignment.START);
+    warningNoticeLayout.addClassName("cosmos-security-warning");
+    HorizontalLayout limitationNoticeLayout =
+        new HorizontalLayout(AppIcon.INFO_CIRCLE.create(), new Span(instructionSections[6]));
+    limitationNoticeLayout.setSpacing(false);
+    limitationNoticeLayout.setPadding(false);
+    limitationNoticeLayout.setAlignItems(Alignment.CENTER);
+    limitationNoticeLayout.addClassName("support-help-notice");
+    add(warningNoticeLayout, limitationNoticeLayout);
   }
 
   public String getHeading() {
-    return heading;
+    return instructionHeading;
   }
 
   public String getDescription() {
-    return description;
+    return instructionDescription;
   }
 
-  private static String[] lines(String section) {
-    int separator = section.indexOf('\n');
-    if (separator <= 0 || separator == section.length() - 1) {
+  private static String[] splitInstructionSectionLines(String sectionText) {
+    int lineBreakIndex = sectionText.indexOf('\n');
+    if (lineBreakIndex <= 0 || lineBreakIndex == sectionText.length() - 1) {
       throw new IllegalArgumentException("Recovery instruction section requires a title and text");
     }
-    return new String[] {section.substring(0, separator), section.substring(separator + 1)};
+    return new String[] {
+      sectionText.substring(0, lineBreakIndex), sectionText.substring(lineBreakIndex + 1)
+    };
   }
 }

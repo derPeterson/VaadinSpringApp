@@ -217,10 +217,10 @@ class AdminUserActivityFilterTest {
   }
 
   private DatePicker date() {
-    return (DatePicker) ReflectionTestUtils.getField(field, "date");
+    return (DatePicker) ReflectionTestUtils.getField(field, "activityDatePicker");
   }
 
   private TimePicker time() {
-    return (TimePicker) ReflectionTestUtils.getField(field, "time");
+    return (TimePicker) ReflectionTestUtils.getField(field, "activityTimePicker");
   }
 }

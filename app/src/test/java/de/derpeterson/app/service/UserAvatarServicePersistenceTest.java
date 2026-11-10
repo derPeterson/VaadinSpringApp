@@ -286,7 +286,8 @@ class UserAvatarServicePersistenceTest {
       assertEquals(1823, stored.getOriginalHeight());
       assertEquals(Locale.GERMAN, users.findById(user.getId()).orElseThrow().getPreferredLocale());
       DownloadHandler download =
-          AvatarImageResource.handler(service, user.getId(), saved.imageRevision(), false);
+          AvatarImageResource.createAvatarImageDownloadHandler(
+              service, user.getId(), saved.imageRevision(), false);
       MockHttpServletResponse imageResponse = new MockHttpServletResponse();
       download.handleRequest(
           new VaadinServletRequest(request, servlet),

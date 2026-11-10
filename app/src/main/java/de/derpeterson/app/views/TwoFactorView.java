@@ -201,7 +201,7 @@ public final class TwoFactorView extends VerticalLayout
 
   private void configureOtp(OtpField field, String id) {
     field.setId(id);
-    TwoFactorCodeFields.configureOtp(field, httpRequest.getContextPath());
+    TwoFactorCodeFields.configureOtpField(field, httpRequest.getContextPath());
     field.addCompleteListener(event -> {
       if (continueTwoFactorButton.isVisible()
           && continueTwoFactorButton.isEnabled()
@@ -1045,7 +1045,7 @@ public final class TwoFactorView extends VerticalLayout
   private TextField prepareRecoveryCode() {
     additionalProofField.setLabel(messageProperties.getTwoFactorRecoveryCodeLabel());
     additionalProofField.getElement().removeAttribute(INPUT_MODE_ATTRIBUTE);
-    TwoFactorCodeFields.configureRecoveryCode(additionalProofField);
+    TwoFactorCodeFields.configureRecoveryCodeField(additionalProofField);
     return additionalProofField;
   }
 

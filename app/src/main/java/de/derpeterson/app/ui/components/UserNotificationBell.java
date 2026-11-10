@@ -21,8 +21,8 @@ public class UserNotificationBell extends Div {
   private final Button notificationBellButton;
   private final Span unreadCountBadge = new Span();
   private final Popover notificationPopover = new Popover();
-  private transient HttpSession session;
-  private transient Registration registration;
+  private transient HttpSession httpSession;
+  private transient Registration notificationChangeRegistration;
   private UserNotificationsPanel notificationPreviewPanel;
   private SerializableConsumer<Long> unreadCountListener = value -> {};
 
@@ -60,9 +60,9 @@ public class UserNotificationBell extends Div {
       }
     });
     addAttachListener(event -> {
-      session = request.getSession(false);
+      httpSession = request.getSession(false);
       notificationPreviewPanel =
-          new UserNotificationsPanel(messageProperties, userNotificationService, session, true);
+          new UserNotificationsPanel(messageProperties, userNotificationService, httpSession, true);
       if (referenceStyle) {
         notificationPreviewPanel.addClassName(REFERENCE_OVERLAY);
       }
@@ -74,8 +74,8 @@ public class UserNotificationBell extends Div {
       notificationPopover.removeAll();
       notificationPopover.add(notificationPreviewPanel);
       try {
-        Long owner = userNotificationService.ownerId(session);
-        registration =
+        Long owner = userNotificationService.ownerId(httpSession);
+        notificationChangeRegistration =
             userNotificationService
                 .events()
                 .register(ids -> {
@@ -96,11 +96,11 @@ public class UserNotificationBell extends Div {
       refreshNotificationBell();
     });
     addDetachListener(event -> {
-      if (registration != null) {
-        registration.remove();
+      if (notificationChangeRegistration != null) {
+        notificationChangeRegistration.remove();
       }
-      registration = null;
-      session = null;
+      notificationChangeRegistration = null;
+      httpSession = null;
       notificationPopover.close();
     });
   }
@@ -127,7 +127,7 @@ public class UserNotificationBell extends Div {
 
   private void refreshNotificationBell() {
     try {
-      long unread = userNotificationService.unreadCount(session);
+      long unread = userNotificationService.unreadCount(httpSession);
       unreadCountListener.accept(unread);
       notificationBellButton.setEnabled(true);
       unreadCountBadge.setVisible(unread > 0);

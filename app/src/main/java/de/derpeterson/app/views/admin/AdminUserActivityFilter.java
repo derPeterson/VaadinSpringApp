@@ -20,9 +20,9 @@ import java.util.Objects;
 
 /** Berlin calendar input; a date without a time starts at midnight. DST gaps are invalid. */
 final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
-  private final DatePicker date = new DatePicker();
-  private final TimePicker time = new CompactTimePicker();
-  private final Clock clock;
+  private final DatePicker activityDatePicker = new DatePicker();
+  private final TimePicker activityTimePicker = new CompactTimePicker();
+  private final Clock activityClock;
   private boolean presenting;
   private LocalTime placeholderTime = LocalTime.MIDNIGHT;
 
@@ -30,36 +30,38 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
     this(Clock.systemUTC());
   }
 
-  AdminUserActivityFilter(Clock clock) {
+  AdminUserActivityFilter(Clock activityClock) {
     super(null, true);
-    this.clock = Objects.requireNonNull(clock);
-    date.setAutoOpen(false);
-    time.setAutoOpen(false);
-    time.setEnabled(false);
-    time.addClassName("admin-user-activity-time-picker");
-    date.setClearButtonVisible(true);
-    time.setClearButtonVisible(true);
+    this.activityClock = Objects.requireNonNull(activityClock);
+    activityDatePicker.setAutoOpen(false);
+    activityTimePicker.setAutoOpen(false);
+    activityTimePicker.setEnabled(false);
+    activityTimePicker.addClassName("admin-user-activity-time-picker");
+    activityDatePicker.setClearButtonVisible(true);
+    activityTimePicker.setClearButtonVisible(true);
     // Vaadin offers a time dropdown for steps of at least fifteen minutes.
-    time.setStep(Duration.ofMinutes(15));
-    date.setWidthFull();
-    time.setWidthFull();
-    HorizontalLayout fields = new HorizontalLayout(date, time);
+    activityTimePicker.setStep(Duration.ofMinutes(15));
+    activityDatePicker.setWidthFull();
+    activityTimePicker.setWidthFull();
+    HorizontalLayout fields = new HorizontalLayout(activityDatePicker, activityTimePicker);
     fields.setPadding(false);
     fields.setSpacing(false);
     fields.setWidthFull();
     fields.setAlignItems(FlexComponent.Alignment.END);
     fields.addClassName("admin-user-activity-inputs");
     add(fields);
-    date.addValueChangeListener(event -> inputChanged());
-    date.addValidationStatusChangeListener(event -> inputChanged());
-    time.addValueChangeListener(event -> inputChanged());
-    time.addValidationStatusChangeListener(event -> inputChanged());
-    time.addFocusListener(event -> refreshPlaceholders());
-    time.getElement()
+    activityDatePicker.addValueChangeListener(event -> inputChanged());
+    activityDatePicker.addValidationStatusChangeListener(event -> inputChanged());
+    activityTimePicker.addValueChangeListener(event -> inputChanged());
+    activityTimePicker.addValidationStatusChangeListener(event -> inputChanged());
+    activityTimePicker.addFocusListener(event -> refreshPlaceholders());
+    activityTimePicker
+        .getElement()
         .addEventListener(
             "opened-changed",
             event -> {
-              if (event.getEventData().path("event.detail.value").asBoolean() && time.isEmpty()) {
+              if (event.getEventData().path("event.detail.value").asBoolean()
+                  && activityTimePicker.isEmpty()) {
                 scrollToTimePlaceholder();
               }
             })
@@ -67,25 +69,26 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
   }
 
   void setLocale(Locale locale) {
-    date.setLocale(locale);
-    time.setLocale(locale);
+    activityDatePicker.setLocale(locale);
+    activityTimePicker.setLocale(locale);
     refreshPlaceholders();
   }
 
   void refreshTexts(MessageProperties messageProperties) {
-    CompactDateInput.configureDatePickerInput(date, messageProperties);
-    date.setLabel(messageProperties.getAdminUsersFilterActiveSince());
-    date.setAriaLabel(messageProperties.getAdminUsersActivityDate());
-    date.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
+    CompactDateInput.configureDatePickerInput(activityDatePicker, messageProperties);
+    activityDatePicker.setLabel(messageProperties.getAdminUsersFilterActiveSince());
+    activityDatePicker.setAriaLabel(messageProperties.getAdminUsersActivityDate());
+    activityDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
     refreshPlaceholders();
-    time.setAriaLabel(messageProperties.getAdminUsersActivityTimeOptional());
+    activityTimePicker.setAriaLabel(messageProperties.getAdminUsersActivityTimeOptional());
   }
 
   void refreshPlaceholders() {
-    Locale locale = date.getLocale();
+    Locale locale = activityDatePicker.getLocale();
     boolean german = Locale.GERMAN.getLanguage().equals(locale.getLanguage());
-    LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), UserActivityTime.DISPLAY_ZONE);
-    int stepMinutes = Math.toIntExact(time.getStep().toMinutes());
+    LocalDateTime now =
+        LocalDateTime.ofInstant(activityClock.instant(), UserActivityTime.DISPLAY_ZONE);
+    int stepMinutes = Math.toIntExact(activityTimePicker.getStep().toMinutes());
     LocalTime roundedTime =
         now.toLocalTime()
             .withMinute(now.getMinute() / stepMinutes * stepMinutes)
@@ -93,14 +96,16 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
             .withNano(0);
     placeholderTime = roundedTime;
     String timePattern = german ? "HH:mm" : "h:mm a";
-    time.setPlaceholder(roundedTime.format(DateTimeFormatter.ofPattern(timePattern, locale)));
+    activityTimePicker.setPlaceholder(
+        roundedTime.format(DateTimeFormatter.ofPattern(timePattern, locale)));
   }
 
   private void scrollToTimePlaceholder() {
     refreshPlaceholders();
     // Vaadin 25 bietet keine öffentliche Java-Scrollmethode für den TimePicker.
     // Nur die Liste scrollen: Ein fokussierter Eintrag würde beim Schließen übernommen.
-    time.getElement()
+    activityTimePicker
+        .getElement()
         .executeJs(
             """
             requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -122,14 +127,14 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
   }
 
   private void updateTimeAvailability() {
-    boolean validDate = date.getValue() != null && !date.isInvalid();
-    time.setEnabled(validDate);
+    boolean validDate = activityDatePicker.getValue() != null && !activityDatePicker.isInvalid();
+    activityTimePicker.setEnabled(validDate);
     if (!validDate) {
       boolean previousPresenting = presenting;
       presenting = true;
       try {
-        time.clear();
-        time.setInvalid(false);
+        activityTimePicker.clear();
+        activityTimePicker.setInvalid(false);
       } finally {
         presenting = previousPresenting;
       }
@@ -139,15 +144,20 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
   @Override
   protected LocalDateTime generateModelValue() {
     boolean invalid =
-        date.isInvalid()
-            || time.isInvalid()
-            || (date.getValue() == null && time.getValue() != null);
+        activityDatePicker.isInvalid()
+            || activityTimePicker.isInvalid()
+            || (activityDatePicker.getValue() == null && activityTimePicker.getValue() != null);
     setInvalid(invalid);
-    if (invalid || date.getValue() == null) {
+    if (invalid || activityDatePicker.getValue() == null) {
       return null;
     }
     LocalDateTime local =
-        date.getValue().atTime(time.getValue() == null ? LocalTime.MIDNIGHT : time.getValue());
+        activityDatePicker
+            .getValue()
+            .atTime(
+                activityTimePicker.getValue() == null
+                    ? LocalTime.MIDNIGHT
+                    : activityTimePicker.getValue());
     try {
       UserActivityTime.inclusiveCutoff(local);
       return local;
@@ -161,11 +171,11 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
   protected void setPresentationValue(LocalDateTime value) {
     presenting = true;
     try {
-      date.setValue(value == null ? null : value.toLocalDate());
-      time.setValue(value == null ? null : value.toLocalTime());
+      activityDatePicker.setValue(value == null ? null : value.toLocalDate());
+      activityTimePicker.setValue(value == null ? null : value.toLocalTime());
       if (value == null) {
-        date.setInvalid(false);
-        time.setInvalid(false);
+        activityDatePicker.setInvalid(false);
+        activityTimePicker.setInvalid(false);
         setInvalid(false);
       }
       updateTimeAvailability();

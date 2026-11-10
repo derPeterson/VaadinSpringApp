@@ -208,7 +208,8 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
   }
 
   public void loadSaved(UserAvatarService avatars, Long userId, UUID revision) {
-    savedSource.setSrc(AvatarImageResource.handler(avatars, userId, revision, true));
+    savedSource.setSrc(
+        AvatarImageResource.createAvatarImageDownloadHandler(avatars, userId, revision, true));
     getElement().callJsFunction("loadSaved", savedSource.getElement().getAttribute("src"));
   }
 

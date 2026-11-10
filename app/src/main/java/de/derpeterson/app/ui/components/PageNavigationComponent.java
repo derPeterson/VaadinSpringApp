@@ -11,15 +11,15 @@ import java.util.Objects;
 public class PageNavigationComponent extends SideNav {
   private static final String NAVIGATION_SCRIPT =
       """
-                    this.onNavigate = ({originalEvent}) => {
-                      const item = originalEvent.composedPath().find(node =>
-                        node.localName === 'vaadin-side-nav-item');
-                      if (item?.id) this.dispatchEvent(new CustomEvent(
-                        'cosmos-page-navigate', {detail: {id: item.id}}));
-                    };
-                    """;
+      this.onNavigate = ({originalEvent}) => {
+        const item = originalEvent.composedPath().find(node =>
+          node.localName === 'vaadin-side-nav-item');
+        if (item?.id) this.dispatchEvent(new CustomEvent(
+          'cosmos-page-navigate', {detail: {id: item.id}}));
+      };
+      """;
 
-  private final Map<String, SerializableRunnable> actions = new LinkedHashMap<>();
+  private final Map<String, SerializableRunnable> navigationActionsByItemId = new LinkedHashMap<>();
 
   public PageNavigationComponent() {
     addClassName("cosmos-side-navigation");
@@ -30,7 +30,7 @@ public class PageNavigationComponent extends SideNav {
             "cosmos-page-navigate",
             event -> {
               String id = event.getEventData().path("event.detail.id").asString();
-              SerializableRunnable action = actions.get(id);
+              SerializableRunnable action = navigationActionsByItemId.get(id);
               if (action != null) {
                 action.run();
               }
@@ -41,14 +41,14 @@ public class PageNavigationComponent extends SideNav {
 
   public void registerAction(SideNavItem item, SerializableRunnable action) {
     String id = item.getId().orElseThrow();
-    if (actions.putIfAbsent(id, Objects.requireNonNull(action)) != null) {
+    if (navigationActionsByItemId.putIfAbsent(id, Objects.requireNonNull(action)) != null) {
       throw new IllegalArgumentException("Navigation item ID must be unique: " + id);
     }
   }
 
   /** Verwendet denselben Seitenwechsel wie Maus- und Tastaturaktivierung. */
   public void activate(SideNavItem item) {
-    SerializableRunnable action = actions.get(item.getId().orElseThrow());
+    SerializableRunnable action = navigationActionsByItemId.get(item.getId().orElseThrow());
     if (action != null) {
       action.run();
     }

@@ -25,32 +25,32 @@ public final class TwoFactorCodeFields {
 
   private TwoFactorCodeFields() {}
 
-  public static void configureOtp(OtpField field, String contextPath) {
-    field.setLength(6);
-    field.setAutofocus(true);
-    field.setPlaceholder("•");
-    field.setManualValidation(true);
-    field.setRequiredIndicatorVisible(true);
-    field.setValueChangeMode(ValueChangeMode.ON_CHANGE);
-    field.addClassName("two-factor-otp");
+  public static void configureOtpField(OtpField otpField, String contextPath) {
+    otpField.setLength(6);
+    otpField.setAutofocus(true);
+    otpField.setPlaceholder("•");
+    otpField.setManualValidation(true);
+    otpField.setRequiredIndicatorVisible(true);
+    otpField.setValueChangeMode(ValueChangeMode.ON_CHANGE);
+    otpField.addClassName("two-factor-otp");
     String stylesheetPath = contextPath + "/custom-theme/cosmos-mfa-otp.css";
-    field.addAttachListener(
-        event -> field.getElement().executeJs(OTP_STYLESHEET_SCRIPT, stylesheetPath));
+    otpField.addAttachListener(
+        attachEvent -> otpField.getElement().executeJs(OTP_STYLESHEET_SCRIPT, stylesheetPath));
   }
 
-  public static boolean isCurrentCompleteOtp(OtpField field, OtpCompleteEvent event) {
+  public static boolean isCurrentCompleteOtp(OtpField otpField, OtpCompleteEvent otpCompleteEvent) {
     // Genau sechs ASCII-Ziffern und kein veraltetes Ereignis nach Leeren oder Methodenwechsel.
-    return event.isFromClient()
-        && field.isAttached()
-        && field.isVisible()
-        && field.getValue().matches("\\d{6}")
-        && field.getValue().equals(event.getValue());
+    return otpCompleteEvent.isFromClient()
+        && otpField.isAttached()
+        && otpField.isVisible()
+        && otpField.getValue().matches("\\d{6}")
+        && otpField.getValue().equals(otpCompleteEvent.getValue());
   }
 
-  public static void configureRecoveryCode(TextField field) {
-    field.setMaxLength(RECOVERY_CODE_EXAMPLE.length());
-    field.setPlaceholder(RECOVERY_CODE_EXAMPLE);
-    field.setAutocomplete(Autocomplete.OFF);
-    field.addClassName("two-factor-recovery-input");
+  public static void configureRecoveryCodeField(TextField recoveryCodeField) {
+    recoveryCodeField.setMaxLength(RECOVERY_CODE_EXAMPLE.length());
+    recoveryCodeField.setPlaceholder(RECOVERY_CODE_EXAMPLE);
+    recoveryCodeField.setAutocomplete(Autocomplete.OFF);
+    recoveryCodeField.addClassName("two-factor-recovery-input");
   }
 }

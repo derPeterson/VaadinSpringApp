@@ -105,7 +105,7 @@ class UserStatusNotificationTest {
             service,
             user,
             new Button(),
-            new UserPopoverMenu.Actions(null, null),
+            new UserPopoverMenu.UserPopoverActions(null, null),
             status -> {});
     ReflectionTestUtils.invokeMethod(menu, "handleUserStatusChange", UserStatus.EMPLOYED);
     Notification original = currentNotification();
@@ -160,7 +160,7 @@ class UserStatusNotificationTest {
             service,
             user,
             new Button(),
-            new UserPopoverMenu.Actions(null, null),
+            new UserPopoverMenu.UserPopoverActions(null, null),
             status -> {});
     menu.addThemeName("cosmos-reference");
     Map<UserStatus, Button> buttons =

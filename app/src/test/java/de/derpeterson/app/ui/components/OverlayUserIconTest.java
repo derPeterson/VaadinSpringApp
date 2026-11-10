@@ -98,7 +98,7 @@ class OverlayUserIconTest {
     OverlayUserIcon avatar = new OverlayUserIcon(messages, null, null, IconSize.PIXEL_24);
     avatar.setName("Alex", "Beispiel");
     avatar.showIdentityTooltip("alex@example.test");
-    Tooltip tooltip = (Tooltip) ReflectionTestUtils.getField(avatar, "tooltip");
+    Tooltip tooltip = (Tooltip) ReflectionTestUtils.getField(avatar, "avatarIdentityTooltip");
     assertNotNull(tooltip);
     assertEquals("Alex Beispiel\nalex@example.test", tooltip.getText());
     avatar.setName(null, null);
@@ -112,8 +112,8 @@ class OverlayUserIconTest {
         UserEntity.builder().firstName("Christian").lastName("Doebl").version(7L).build();
     OverlayUserIcon avatar = new OverlayUserIcon(messages, user, value, IconSize.PIXEL_48, true);
     ui.add(avatar);
-    Span initials = (Span) ReflectionTestUtils.getField(avatar, "initials");
-    Div status = (Div) ReflectionTestUtils.getField(avatar, "status");
+    Span initials = (Span) ReflectionTestUtils.getField(avatar, "avatarInitialsLabel");
+    Div status = (Div) ReflectionTestUtils.getField(avatar, "statusIndicatorContainer");
     assertEquals("CD", initials.getText());
     assertEquals(1, status.getComponentCount());
     Component mark = status.getComponentAt(0).getChildren().findFirst().orElseThrow();
@@ -143,7 +143,7 @@ class OverlayUserIconTest {
   @Test
   void anonymousAvatarUsesNeutralSymbolAndCanBecomeAnInitialsAvatarWithoutStaleChildren() {
     OverlayUserIcon avatar = new OverlayUserIcon(messages, null, null, IconSize.PIXEL_48);
-    Span initials = (Span) ReflectionTestUtils.getField(avatar, "initials");
+    Span initials = (Span) ReflectionTestUtils.getField(avatar, "avatarInitialsLabel");
     assertEquals(1, initials.getComponentCount());
     assertEquals(AppConstants.USER_ICON_ALT, avatar.getElement().getAttribute("aria-label"));
     avatar.setName("Christian", "Doebl");
@@ -188,12 +188,12 @@ class OverlayUserIconTest {
         new OverlayUserIcon(messages, user, UserStatus.AVAILABLE, IconSize.PIXEL_48);
     avatar.configureAvatar(service, custom);
     ui.add(avatar);
-    Image photo = (Image) ReflectionTestUtils.getField(avatar, "photo");
+    Image photo = (Image) ReflectionTestUtils.getField(avatar, "avatarPhotoImage");
     String first = photo.getSrc();
     assertTrue(photo.isVisible());
     avatar.setUserStatus(UserStatus.ABSENT);
     assertEquals(first, photo.getSrc());
-    Div status = (Div) ReflectionTestUtils.getField(avatar, "status");
+    Div status = (Div) ReflectionTestUtils.getField(avatar, "statusIndicatorContainer");
     assertFalse(status.isVisible());
     assertFalse(avatar.hasClassName("cosmos-avatar-with-status"));
     assertEquals(0, status.getComponentCount());

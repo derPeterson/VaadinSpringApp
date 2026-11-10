@@ -14,60 +14,61 @@ public class PortalPageComponent extends Div {
 
   private static final String FOCUS_NAVIGATION_SCRIPT =
       """
-                    const item = this.querySelector('vaadin-side-nav-item');
-                    const target = item?.shadowRoot?.querySelector('[part=link]')
-                      ?? this.querySelector('vaadin-button');
-                    target?.focus();
-                    """;
+      const item = this.querySelector('vaadin-side-nav-item');
+      const target = item?.shadowRoot?.querySelector('[part=link]')
+        ?? this.querySelector('vaadin-button');
+      target?.focus();
+      """;
 
-  private Component navigation;
+  private Component navigationComponent;
   private Component pageContent;
-  private Button navigationToggle;
+  private Button navigationToggleButton;
 
   public PortalPageComponent() {
     addClassName("account-settings");
     addDetachListener(event -> closeNavigation());
   }
 
-  public PortalPageComponent(Component heading, Component sidebar, Component content) {
+  public PortalPageComponent(
+      Component pageHeadingComponent, Component sidebarComponent, Component pageContentComponent) {
     this();
-    setPortalContent(heading, sidebar, content);
+    setPortalContent(pageHeadingComponent, sidebarComponent, pageContentComponent);
   }
 
-  protected final void setPortalContent(Component heading, Component sidebar, Component content) {
-    navigation = sidebar;
-    pageContent = content;
-    if (sidebar == null) {
-      add(heading, content);
+  protected final void setPortalContent(
+      Component pageHeadingComponent, Component sidebarComponent, Component pageContentComponent) {
+    navigationComponent = sidebarComponent;
+    pageContent = pageContentComponent;
+    if (sidebarComponent == null) {
+      add(pageHeadingComponent, pageContentComponent);
       return;
     }
-    content.getElement().getClassList().add("account-panels");
-    Div columns = new Div(sidebar, content);
+    pageContentComponent.getElement().getClassList().add("account-panels");
+    Div columns = new Div(sidebarComponent, pageContentComponent);
     columns.addClassName("account-columns");
     Div shade = new Div();
     shade.addClassName("account-navigation-shade");
     shade.addClickListener(event -> closeNavigation());
-    add(heading, columns, shade);
+    add(pageHeadingComponent, columns, shade);
   }
 
   public final void configureNavigationToggle(Button toggle) {
-    navigationToggle = toggle;
+    navigationToggleButton = toggle;
     // Escape nur innerhalb der Navigation behandeln. Ein globales Shortcut würde
     // die native Escape-Behandlung von Popovers und Dialogen abfangen.
     Shortcuts.addShortcutListener(this, this::closeNavigation, Key.ESCAPE)
-        .listenOn(navigation, toggle);
-    toggle.getElement().setAttribute("aria-controls", navigation.getId().orElseThrow());
+        .listenOn(navigationComponent, toggle);
+    toggle.getElement().setAttribute("aria-controls", navigationComponent.getId().orElseThrow());
     toggle.getElement().setAttribute(ARIA_EXPANDED, "false");
-    toggle.addClickListener(
-        event -> {
-          boolean open = !hasClassName(ACCOUNT_NAVIGATION_OPEN);
-          setClassName(ACCOUNT_NAVIGATION_OPEN, open);
-          pageContent.getElement().setAttribute("inert", open);
-          toggle.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(open));
-          if (open) {
-            navigation.getElement().executeJs(FOCUS_NAVIGATION_SCRIPT);
-          }
-        });
+    toggle.addClickListener(event -> {
+      boolean open = !hasClassName(ACCOUNT_NAVIGATION_OPEN);
+      setClassName(ACCOUNT_NAVIGATION_OPEN, open);
+      pageContent.getElement().setAttribute("inert", open);
+      toggle.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(open));
+      if (open) {
+        navigationComponent.getElement().executeJs(FOCUS_NAVIGATION_SCRIPT);
+      }
+    });
   }
 
   public final void closeNavigation() {
@@ -76,9 +77,9 @@ public class PortalPageComponent extends Div {
     }
     removeClassName(ACCOUNT_NAVIGATION_OPEN);
     pageContent.getElement().setAttribute("inert", false);
-    if (navigationToggle != null) {
-      navigationToggle.getElement().setAttribute(ARIA_EXPANDED, "false");
-      navigationToggle.focus();
+    if (navigationToggleButton != null) {
+      navigationToggleButton.getElement().setAttribute(ARIA_EXPANDED, "false");
+      navigationToggleButton.focus();
     }
   }
 }

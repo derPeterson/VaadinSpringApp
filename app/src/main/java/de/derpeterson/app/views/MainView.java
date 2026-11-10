@@ -12,7 +12,7 @@ import de.derpeterson.app.config.AppRouteConstants;
 public class MainView extends VerticalLayout implements BeforeEnterObserver {
 
   @Override
-  public void beforeEnter(BeforeEnterEvent event) {
-    event.forwardTo(HomeView.class);
+  public void beforeEnter(BeforeEnterEvent navigationEvent) {
+    navigationEvent.forwardTo(HomeView.class);
   }
 }

@@ -5,26 +5,32 @@ import com.vaadin.flow.component.html.Div;
 
 /** Gemeinsamer Seitenrahmen: fester Servicekopf und gemeinsam scrollender Inhaltsbereich. */
 public class PageFrameComponent extends Div {
-  private final Div header = new Div();
-  private final Div main = new Div();
+  private final Div frameHeaderContainer = new Div();
+  private final Div frameMainContainer = new Div();
 
   public PageFrameComponent() {
     addClassName("cosmos-page-frame");
-    header.addClassName("cosmos-frame-header");
-    main.addClassName("cosmos-app-main");
-    main.getElement().setAttribute("role", "main");
-    add(new CosmosBackgroundComponent(), header, main);
+    frameHeaderContainer.addClassName("cosmos-frame-header");
+    frameMainContainer.addClassName("cosmos-app-main");
+    frameMainContainer.getElement().setAttribute("role", "main");
+    add(new CosmosBackgroundComponent(), frameHeaderContainer, frameMainContainer);
   }
 
-  public PageFrameComponent(Component header, Component content, Component footer) {
+  public PageFrameComponent(
+      Component pageHeaderComponent,
+      Component pageContentComponent,
+      Component pageFooterComponent) {
     this();
-    setFrameContent(header, content, footer);
+    setFrameContent(pageHeaderComponent, pageContentComponent, pageFooterComponent);
   }
 
-  protected final void setFrameContent(Component header, Component content, Component footer) {
-    this.header.removeAll();
-    this.header.add(header);
-    main.removeAll();
-    main.add(content, footer);
+  protected final void setFrameContent(
+      Component pageHeaderComponent,
+      Component pageContentComponent,
+      Component pageFooterComponent) {
+    this.frameHeaderContainer.removeAll();
+    this.frameHeaderContainer.add(pageHeaderComponent);
+    frameMainContainer.removeAll();
+    frameMainContainer.add(pageContentComponent, pageFooterComponent);
   }
 }

@@ -99,8 +99,8 @@ class AdminUserActivityClockSerializationTest {
     if (rebuilt instanceof AdminUserActivityFilter filter) {
       filter.setLocale(Locale.ENGLISH);
       filter.refreshTexts(messageProperties);
-      DatePicker date = (DatePicker) ReflectionTestUtils.getField(filter, "date");
-      TimePicker time = (TimePicker) ReflectionTestUtils.getField(filter, "time");
+      DatePicker date = (DatePicker) ReflectionTestUtils.getField(filter, "activityDatePicker");
+      TimePicker time = (TimePicker) ReflectionTestUtils.getField(filter, "activityTimePicker");
       assertEquals(messageProperties.getRegistrationBirthDatePlaceholder(), date.getPlaceholder());
       assertEquals(
           LocalTime.of(2, 45),
@@ -128,7 +128,10 @@ class AdminUserActivityClockSerializationTest {
   }
 
   private Clock storedClock(Component component) {
-    return (Clock) ReflectionTestUtils.getField(component, "clock");
+    return (Clock)
+        ReflectionTestUtils.getField(
+            component,
+            component instanceof AdminUserActivityFilter ? "activityClock" : "userManagementClock");
   }
 
   private Clock roundTrip(Clock clock) throws Exception {

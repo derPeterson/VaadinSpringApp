@@ -12,29 +12,27 @@ public final class PortalFields {
   private PortalFields() {}
 
   public static <T> void styleChoice(
-      ComboBox<T> field, SerializableFunction<T, String> label, boolean withDot) {
-    field.addClassName("cosmos-reference-choice");
-    field.setClassName("cosmos-choice-dot", withDot);
-    field.setClassNameGenerator(
-        value ->
-            withDot
-                ? "cosmos-reference-option"
-                : "cosmos-reference-option portal-pagination-option");
-    field.setRenderer(
-        new ComponentRenderer<>(
-            value -> {
-              Div row = new Div();
-              row.addClassName("cosmos-reference-option-row");
-              if (withDot) {
-                Span dot = new Span();
-                dot.addClassName("cosmos-reference-option-dot");
-                row.add(dot);
-              }
-              Span copy = new Span(label.apply(value));
-              SvgIcon check = AppIcon.CHECK.create();
-              check.addClassName("cosmos-reference-option-check");
-              row.add(copy, check);
-              return row;
-            }));
+      ComboBox<T> choiceComboBox,
+      SerializableFunction<T, String> itemLabelFunction,
+      boolean withDot) {
+    choiceComboBox.addClassName("cosmos-reference-choice");
+    choiceComboBox.setClassName("cosmos-choice-dot", withDot);
+    choiceComboBox.setClassNameGenerator(choiceValue ->
+        withDot ? "cosmos-reference-option" : "cosmos-reference-option portal-pagination-option");
+    choiceComboBox.setRenderer(
+        new ComponentRenderer<>(choiceValue -> {
+          Div optionRowLayout = new Div();
+          optionRowLayout.addClassName("cosmos-reference-option-row");
+          if (withDot) {
+            Span statusDotLabel = new Span();
+            statusDotLabel.addClassName("cosmos-reference-option-dot");
+            optionRowLayout.add(statusDotLabel);
+          }
+          Span choiceTextLabel = new Span(itemLabelFunction.apply(choiceValue));
+          SvgIcon selectedCheckIcon = AppIcon.CHECK.create();
+          selectedCheckIcon.addClassName("cosmos-reference-option-check");
+          optionRowLayout.add(choiceTextLabel, selectedCheckIcon);
+          return optionRowLayout;
+        }));
   }
 }

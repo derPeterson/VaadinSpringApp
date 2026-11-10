@@ -15,8 +15,8 @@ public class RouteNotFoundHandler extends Div implements HasErrorParameter<NotFo
 
   @Override
   public int setErrorParameter(
-      BeforeEnterEvent event, ErrorParameter<NotFoundException> parameter) {
-    event.forwardTo(
+      BeforeEnterEvent navigationEvent, ErrorParameter<NotFoundException> notFoundErrorParameter) {
+    navigationEvent.forwardTo(
         HomeView.class,
         QueryParameters.simple(Map.of("error", NavigationErrorCode.PATH_NOT_FOUND.getCode())));
     return HttpServletResponse.SC_NOT_FOUND;

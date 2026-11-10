@@ -40,7 +40,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
   private final Button resetFiltersButton = new Button(AppIcon.ROTATE_LEFT.create());
   private final Button cancelFilterChangesButton = new Button(AppIcon.CLOSE.create());
   private final Button applyFiltersButton = new Button(AppIcon.CHECK.create());
-  private SupportTicketFilter applied = SupportTicketFilter.ALL;
+  private SupportTicketFilter appliedTicketFilter = SupportTicketFilter.ALL;
 
   public SupportTicketFilterPanel(
       MessageProperties messageProperties,
@@ -128,7 +128,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
     applyFiltersButton.setId("support-filter-apply");
     applyFiltersButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     applyFiltersButton.addClickListener(event -> {
-      applied =
+      appliedTicketFilter =
           new SupportTicketFilter(
               statusFilter.getValue(), assignmentFilter.getValue(), readingFilter.getValue(), null);
       onApply.run();
@@ -144,9 +144,9 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
   }
 
   public void openWithAppliedFilters() {
-    statusFilter.setValue(applied.statuses());
-    assignmentFilter.setValue(applied.assignment());
-    readingFilter.setValue(applied.reading());
+    statusFilter.setValue(appliedTicketFilter.statuses());
+    assignmentFilter.setValue(appliedTicketFilter.assignment());
+    readingFilter.setValue(appliedTicketFilter.reading());
     ticketNumberField.clear();
     ticketNumberField.setInvalid(false);
     open();
@@ -154,21 +154,21 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
 
   /** Eine ausdrücklich geöffnete Benachrichtigung darf nicht am Listenfilter scheitern. */
   public void resetApplied() {
-    applied = SupportTicketFilter.ALL;
+    appliedTicketFilter = SupportTicketFilter.ALL;
   }
 
   public SupportTicketFilter appliedFilter() {
-    return applied;
+    return appliedTicketFilter;
   }
 
   public int activeCount() {
-    return (applied.statuses().isEmpty() ? 0 : 1)
-        + (applied.assignment() == Assignment.ALL ? 0 : 1)
-        + (applied.reading() == Reading.ALL ? 0 : 1);
+    return (appliedTicketFilter.statuses().isEmpty() ? 0 : 1)
+        + (appliedTicketFilter.assignment() == Assignment.ALL ? 0 : 1)
+        + (appliedTicketFilter.reading() == Reading.ALL ? 0 : 1);
   }
 
   public boolean matches(Ticket ticket, Long administratorId) {
-    if (applied.reading() == Reading.UNREAD && ticket.unreadMessages() == 0) {
+    if (appliedTicketFilter.reading() == Reading.UNREAD && ticket.unreadMessages() == 0) {
       return false;
     }
     return matchesMetadata(ticket, administratorId);
@@ -176,7 +176,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanel {
 
   /** Ein bereits geöffneter Vorgang bleibt nach dem Lesen im Detailbereich erreichbar. */
   public boolean matchesMetadata(Ticket ticket, Long administratorId) {
-    return applied.matchesMetadata(ticket, administratorId);
+    return appliedTicketFilter.matchesMetadata(ticket, administratorId);
   }
 
   public void refreshTexts() {

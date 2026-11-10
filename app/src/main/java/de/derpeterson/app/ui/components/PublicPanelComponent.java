@@ -17,26 +17,28 @@ import java.util.function.Supplier;
 /** Dieselben Panelzonen wie im Konto, mit den echten Eingaben und Aktionen der Besucheransicht. */
 public class PublicPanelComponent extends CosmosCardComponent {
   public PublicPanelComponent(
-      Component icon,
-      Component title,
-      Supplier<String> subtitle,
+      Component panelIconComponent,
+      Component panelTitleComponent,
+      Supplier<String> panelSubtitleSupplier,
       Component[] bodyContent,
-      Component... actions) {
+      Component... panelFooterActions) {
     addClassNames(PANEL_CARD, "public-panel");
-    Div symbol = new Div(icon);
-    symbol.addClassName(PANEL_ICON);
-    Span description = new Span(subtitle.get());
-    description.addClassName(PANEL_DESCRIPTION);
-    Div heading = new Div(title, description);
-    heading.addClassName(PANEL_HEADING);
-    Div header = new Div(symbol, heading);
-    header.addClassName(PANEL_HEADER);
-    Div body = new Div(bodyContent);
-    body.addClassName("public-panel-body");
-    Div footer = new Div(actions);
-    footer.addClassName("public-panel-footer");
-    add(header, body, footer);
+    Div panelIconContainer = new Div(panelIconComponent);
+    panelIconContainer.addClassName(PANEL_ICON);
+    Span panelSubtitleLabel = new Span(panelSubtitleSupplier.get());
+    panelSubtitleLabel.addClassName(PANEL_DESCRIPTION);
+    Div panelHeadingContainer = new Div(panelTitleComponent, panelSubtitleLabel);
+    panelHeadingContainer.addClassName(PANEL_HEADING);
+    Div panelHeaderContainer = new Div(panelIconContainer, panelHeadingContainer);
+    panelHeaderContainer.addClassName(PANEL_HEADER);
+    Div panelBodyContainer = new Div(bodyContent);
+    panelBodyContainer.addClassName("public-panel-body");
+    Div panelFooterContainer = new Div(panelFooterActions);
+    panelFooterContainer.addClassName("public-panel-footer");
+    add(panelHeaderContainer, panelBodyContainer, panelFooterContainer);
     ComponentUtil.addListener(
-        UI.getCurrent(), LanguageChangeEvent.class, event -> description.setText(subtitle.get()));
+        UI.getCurrent(),
+        LanguageChangeEvent.class,
+        attachEvent -> panelSubtitleLabel.setText(panelSubtitleSupplier.get()));
   }
 }

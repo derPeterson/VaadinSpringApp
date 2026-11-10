@@ -146,7 +146,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
             : null;
     return createApplicationHeader(
         config,
-        new UserPopoverMenu.Actions(
+        new UserPopoverMenu.UserPopoverActions(
             administration, () -> UI.getCurrent().navigate(HomeView.class)));
   }
 
@@ -163,7 +163,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
   }
 
   protected final HorizontalLayout createApplicationHeader(
-      ConfigService config, UserPopoverMenu.Actions actions) {
+      ConfigService config, UserPopoverMenu.UserPopoverActions actions) {
     Image logo = new Image("icons/service-logo.svg", "Service Icon");
     boolean referenceAccount = hasClassName(REFERENCE_PORTAL);
     if (referenceAccount) {
@@ -234,7 +234,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     return userIconButton;
   }
 
-  protected void createTrackedUserPopover(UserPopoverMenu.Actions actions) {
+  protected void createTrackedUserPopover(UserPopoverMenu.UserPopoverActions actions) {
     if (userIconButton == null) {
       createTrackedUserButton();
     }

@@ -66,7 +66,7 @@ public class PublicPageComponent extends PageFrameComponent {
   private boolean accountSecurity;
   private SerializableRunnable refreshTexts;
   private final transient MessageProperties messageProperties;
-  private final VerticalLayout cards = new VerticalLayout();
+  private final VerticalLayout pageCardsLayout = new VerticalLayout();
   private final HorizontalLayout securityIdentity = new HorizontalLayout();
 
   public PublicPageComponent(ConfigService config, MessageProperties messageProperties, Page page) {
@@ -131,13 +131,13 @@ public class PublicPageComponent extends PageFrameComponent {
     titleRow.addClassName("public-title-row");
     Div heading = new Div(kicker, titleRow);
     heading.addClassName("public-page-heading");
-    cards.setPadding(false);
-    cards.setSpacing(false);
-    cards.addClassName("public-cards");
+    pageCardsLayout.setPadding(false);
+    pageCardsLayout.setSpacing(false);
+    pageCardsLayout.addClassName("public-cards");
     if (page == Page.HOME) {
-      cards.add(new PublicHomeComponent(messageProperties));
+      pageCardsLayout.add(new PublicHomeComponent(messageProperties));
     }
-    PortalPageComponent main = new PortalPageComponent(heading, null, cards);
+    PortalPageComponent main = new PortalPageComponent(heading, null, pageCardsLayout);
     main.addClassName("public-main");
     setFrameContent(
         header,
@@ -197,7 +197,7 @@ public class PublicPageComponent extends PageFrameComponent {
   }
 
   public VerticalLayout getCardContainer() {
-    return cards;
+    return pageCardsLayout;
   }
 
   public void setAccountSecurity(boolean accountSecurity, UserEntity account) {
