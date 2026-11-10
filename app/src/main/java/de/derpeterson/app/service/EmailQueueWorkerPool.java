@@ -35,31 +35,32 @@ import org.springframework.stereotype.Component;
 public class EmailQueueWorkerPool {
   private static final Logger logger = LoggerFactory.getLogger(EmailQueueWorkerPool.class);
   private static final Duration SHUTDOWN_GRACE = Duration.ofSeconds(30);
-  private ThreadPoolExecutor executor;
+  private ThreadPoolExecutor workerExecutor;
   private final IntSupplier configuredSize;
   private final Duration shutdownGrace;
-  private final ReentrantLock batch = new ReentrantLock();
+  private final ReentrantLock batchLock = new ReentrantLock();
   private final Set<FutureTask<Void>> inFlight = ConcurrentHashMap.newKeySet();
   private final AtomicBoolean shutdownStarted = new AtomicBoolean();
-  private volatile boolean stopping;
+  private volatile boolean workerShutdownInProgress;
 
   @Autowired
   public EmailQueueWorkerPool(
-      @Qualifier("emailTaskExecutor") ThreadPoolExecutor executor, ConfigService config) {
-    this(executor, SHUTDOWN_GRACE, () -> config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE));
+      @Qualifier("emailTaskExecutor") ThreadPoolExecutor workerExecutor, ConfigService config) {
+    this(
+        workerExecutor, SHUTDOWN_GRACE, () -> config.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE));
   }
 
-  public EmailQueueWorkerPool(ThreadPoolExecutor executor) {
-    this(executor, SHUTDOWN_GRACE);
+  public EmailQueueWorkerPool(ThreadPoolExecutor workerExecutor) {
+    this(workerExecutor, SHUTDOWN_GRACE);
   }
 
-  EmailQueueWorkerPool(ThreadPoolExecutor executor, Duration shutdownGrace) {
-    this(executor, shutdownGrace, executor::getMaximumPoolSize);
+  EmailQueueWorkerPool(ThreadPoolExecutor workerExecutor, Duration shutdownGrace) {
+    this(workerExecutor, shutdownGrace, workerExecutor::getMaximumPoolSize);
   }
 
   private EmailQueueWorkerPool(
-      ThreadPoolExecutor executor, Duration shutdownGrace, IntSupplier configuredSize) {
-    this.executor = java.util.Objects.requireNonNull(executor, "executor");
+      ThreadPoolExecutor workerExecutor, Duration shutdownGrace, IntSupplier configuredSize) {
+    this.workerExecutor = java.util.Objects.requireNonNull(workerExecutor, "executor");
     this.configuredSize = configuredSize;
     this.shutdownGrace = java.util.Objects.requireNonNull(shutdownGrace, "shutdownGrace");
     if (shutdownGrace.isNegative()) {
@@ -69,7 +70,7 @@ public class EmailQueueWorkerPool {
 
   public void dispatchEmailBatch(List<Long> pendingEmailIds, LongConsumer dispatchEmail) {
     // Zusätzliche manuelle Läufe überlappen keinen laufenden Batch; offene IDs bleiben in der DB.
-    if (stopping || !batch.tryLock()) {
+    if (workerShutdownInProgress || !batchLock.tryLock()) {
       return;
     }
     BatchExecution execution = null;
@@ -77,69 +78,74 @@ public class EmailQueueWorkerPool {
       execution = new BatchExecution(executorForBatch());
       execution.dispatchUntilBatchEnds(pendingEmailIds.iterator(), dispatchEmail);
     } finally {
-      batch.unlock();
-      if (execution != null && execution.interrupted) {
+      batchLock.unlock();
+      if (execution != null && execution.batchInterrupted) {
         Thread.currentThread().interrupt();
       }
     }
   }
 
   private synchronized ThreadPoolExecutor executorForBatch() {
-    if (!stopping) {
+    if (!workerShutdownInProgress) {
       int size = configuredSize.getAsInt();
-      if (executor.getMaximumPoolSize() != size) {
+      if (workerExecutor.getMaximumPoolSize() != size) {
         // Erst der nächste Batch nutzt die neue Größe. Die bisherige Queue war auf den alten
         // Pool ausgelegt und wird mit ihm beendet.
-        ThreadPoolExecutor previous = executor;
-        executor = ThreadPoolConfig.newExecutor(size);
+        ThreadPoolExecutor previous = workerExecutor;
+        workerExecutor = ThreadPoolConfig.newExecutor(size);
         previous.shutdown();
       }
     }
-    return executor;
+    return workerExecutor;
   }
 
   /** Annahme und Abschluss gehören zu genau diesem Lauf; kein geteilter Koordinatorzustand. */
   private final class BatchExecution {
     private final ThreadPoolExecutor batchExecutor;
-    private final int parallelism;
-    private final BlockingQueue<FutureTask<Void>> completed = new LinkedBlockingQueue<>();
-    private int active;
-    private boolean refill = true;
-    private boolean interrupted;
+    private final int batchParallelism;
+    private final BlockingQueue<FutureTask<Void>> completedDispatchTasks =
+        new LinkedBlockingQueue<>();
+    private int activeDispatchCount;
+    private boolean acceptMoreDispatchTasks = true;
+    private boolean batchInterrupted;
 
     private BatchExecution(ThreadPoolExecutor batchExecutor) {
       this.batchExecutor = batchExecutor;
-      this.parallelism = batchExecutor.getMaximumPoolSize();
+      this.batchParallelism = batchExecutor.getMaximumPoolSize();
     }
 
     private void dispatchUntilBatchEnds(Iterator<Long> candidates, LongConsumer dispatch) {
-      while ((refill && !stopping && candidates.hasNext()) || active > 0) {
+      while ((acceptMoreDispatchTasks && !workerShutdownInProgress && candidates.hasNext())
+          || activeDispatchCount > 0) {
         submitAvailable(candidates, dispatch);
-        if (active == 0) {
+        if (activeDispatchCount == 0) {
           break;
         }
-        awaitCompletion();
+        awaitCompletedDispatchTask();
       }
     }
 
     private void submitAvailable(Iterator<Long> candidates, LongConsumer dispatch) {
-      while (refill && !stopping && active < parallelism && candidates.hasNext()) {
+      while (acceptMoreDispatchTasks
+          && !workerShutdownInProgress
+          && activeDispatchCount < batchParallelism
+          && candidates.hasNext()) {
         // Bereits fertige Futures melden einen Interrupt nicht zwingend über get().
         // Vor jeder Annahme prüfen; zum Abwarten kurz löschen und im finally wiederherstellen.
         if (Thread.interrupted()) {
-          interrupted = true;
-          refill = false;
+          batchInterrupted = true;
+          acceptMoreDispatchTasks = false;
           break;
         }
-        submit(candidates.next(), dispatch);
+        submitEmailDispatchTask(candidates.next(), dispatch);
       }
     }
 
-    private void submit(long id, LongConsumer dispatch) {
+    private void submitEmailDispatchTask(long id, LongConsumer dispatch) {
       FutureTask<Void> dispatchTask =
           new FutureTask<Void>(
               () -> {
-                if (!stopping) {
+                if (!workerShutdownInProgress) {
                   dispatch.accept(id);
                 }
                 return null;
@@ -147,16 +153,16 @@ public class EmailQueueWorkerPool {
             @Override
             protected void done() {
               inFlight.remove(this);
-              completed.add(this);
+              completedDispatchTasks.add(this);
             }
           };
       inFlight.add(dispatchTask);
       try {
         batchExecutor.execute(dispatchTask);
-        active++;
+        activeDispatchCount++;
       } catch (RejectedExecutionException failure) {
         inFlight.remove(dispatchTask);
-        refill = false;
+        acceptMoreDispatchTasks = false;
         logger.warn(
             "Queue worker rejected entry {}; remaining entries stay pending.",
             id,
@@ -164,16 +170,16 @@ public class EmailQueueWorkerPool {
       }
     }
 
-    private void awaitCompletion() {
+    private void awaitCompletedDispatchTask() {
       try {
-        FutureTask<Void> finished = completed.take();
-        active--;
+        FutureTask<Void> finished = completedDispatchTasks.take();
+        activeDispatchCount--;
         finished.get();
       } catch (InterruptedException _) {
         // Angenommene Aufgaben erst abwarten; der Batch stellt den Interrupt im finally wieder her.
         // Sofortiges Wiederherstellen würde das blockierende Abwarten wiederholt unterbrechen.
-        interrupted = true;
-        refill = false;
+        batchInterrupted = true;
+        acceptMoreDispatchTasks = false;
       } catch (ExecutionException failure) {
         logger.error(
             "Queue worker failed; no automatic release of committed claims.",
@@ -186,12 +192,12 @@ public class EmailQueueWorkerPool {
 
   @EventListener
   public void contextClosed(ContextClosedEvent event) {
-    stopping = true;
+    workerShutdownInProgress = true;
   }
 
   @PreDestroy
   public void shutdown() {
-    stopping = true;
+    workerShutdownInProgress = true;
     if (!shutdownStarted.compareAndSet(false, true)) {
       return;
     }

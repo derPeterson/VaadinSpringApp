@@ -31,7 +31,7 @@ public class ConfigService {
 
   private final ConfigRepository configRepository;
   private final PlatformTransactionManager transactionManager;
-  private final Environment environment;
+  private final Environment springEnvironment;
 
   public boolean exists(ConfigEntry configEntry) {
     return configRepository.existsByKey(configEntry.getKey());
@@ -45,38 +45,42 @@ public class ConfigService {
   }
 
   /** Liest zusammengehörige Einstellungen mit einer einzigen Datenbankabfrage. */
-  public Map<ConfigEntry, String> snapshot(List<ConfigEntry> entries) {
-    Map<String, String> stored =
-        configRepository.findByKeyIn(entries.stream().map(ConfigEntry::getKey).toList()).stream()
+  public Map<ConfigEntry, String> snapshot(List<ConfigEntry> configEntries) {
+    Map<String, String> storedValuesByConfigKey =
+        configRepository
+            .findByKeyIn(configEntries.stream().map(ConfigEntry::getKey).toList())
+            .stream()
             .collect(Collectors.toMap(ConfigEntity::getKey, ConfigEntity::getValue));
-    Map<ConfigEntry, String> result = new EnumMap<>(ConfigEntry.class);
-    for (ConfigEntry entry : entries) {
-      String value = stored.get(entry.getKey());
-      result.put(entry, value == null ? getDefaultValue(entry) : value);
+    Map<ConfigEntry, String> configSnapshot = new EnumMap<>(ConfigEntry.class);
+    for (ConfigEntry configEntry : configEntries) {
+      String configValue = storedValuesByConfigKey.get(configEntry.getKey());
+      configSnapshot.put(
+          configEntry, configValue == null ? getDefaultValue(configEntry) : configValue);
     }
-    return result;
+    return configSnapshot;
   }
 
   /** SMTP darf neue Zugangsdaten und Transportoptionen nur als vollständigen Stand sehen. */
-  public void saveSmtpSettings(Map<ConfigEntry, String> values) {
-    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
-    transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-    transaction.executeWithoutResult(
-        status -> {
-          for (Map.Entry<ConfigEntry, String> setting : values.entrySet()) {
-            String key = setting.getKey().getKey();
-            String value = setting.getValue();
-            ConfigEntity entity =
-                configRepository.findByKey(key).orElseGet(() -> new ConfigEntity(null, key, value));
-            update(entity, value);
-          }
-        });
+  public void saveSmtpSettings(Map<ConfigEntry, String> smtpConfigValues) {
+    TransactionTemplate configWriteTransaction = new TransactionTemplate(transactionManager);
+    configWriteTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    configWriteTransaction.executeWithoutResult(transactionStatus -> {
+      for (Map.Entry<ConfigEntry, String> smtpSetting : smtpConfigValues.entrySet()) {
+        String configKey = smtpSetting.getKey().getKey();
+        String configValue = smtpSetting.getValue();
+        ConfigEntity configEntity =
+            configRepository
+                .findByKey(configKey)
+                .orElseGet(() -> new ConfigEntity(null, configKey, configValue));
+        persistConfigEntity(configEntity, configValue);
+      }
+    });
   }
 
   /** Backend-Standard aus app.config.defaults.*, unabhängig vom gespeicherten Wert. */
   public String getDefaultValue(ConfigEntry configEntry) {
     Objects.requireNonNull(configEntry, "configEntry");
-    return environment.getProperty(
+    return springEnvironment.getProperty(
         ConfigurationCatalog.property(configEntry), configEntry.getDefaultValueString());
   }
 
@@ -104,23 +108,23 @@ public class ConfigService {
   }
 
   public boolean getBoolean(ConfigEntry configEntry) {
-    return parseBoolean(configEntry, getString(configEntry));
+    return parseConfigBoolean(configEntry, getString(configEntry));
   }
 
   public boolean getBoolean(ConfigEntry configEntry, boolean defaultValue) {
     return configRepository
         .findByKey(configEntry.getKey())
         .map(ConfigEntity::getValue)
-        .map(value -> parseBoolean(configEntry, value))
+        .map(configValue -> parseConfigBoolean(configEntry, configValue))
         .orElse(defaultValue);
   }
 
   /** Accepts only true/false, case-insensitively, without trimming. */
-  private boolean parseBoolean(ConfigEntry configEntry, String value) {
-    if ("true".equalsIgnoreCase(value)) {
+  private boolean parseConfigBoolean(ConfigEntry configEntry, String configValue) {
+    if ("true".equalsIgnoreCase(configValue)) {
       return true;
     }
-    if ("false".equalsIgnoreCase(value)) {
+    if ("false".equalsIgnoreCase(configValue)) {
       return false;
     }
     throw new IllegalArgumentException(
@@ -133,52 +137,54 @@ public class ConfigService {
    * chooses the insert winner; the loser updates that row in a fresh transaction. The last
    * committed write wins.
    */
-  public void set(ConfigEntry configEntry, String value) {
+  public void set(ConfigEntry configEntry, String configValue) {
     Objects.requireNonNull(configEntry, "configEntry");
-    Objects.requireNonNull(value, "value");
-    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
-    transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-    boolean[] creating = {false};
-    boolean[] changed = {false};
+    Objects.requireNonNull(configValue, "value");
+    TransactionTemplate configWriteTransaction = new TransactionTemplate(transactionManager);
+    configWriteTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    boolean[] insertingConfigEntry = {false};
+    boolean[] configValueChanged = {false};
     try {
-      transaction.executeWithoutResult(
-          status -> {
-            ConfigEntity entity =
-                configRepository
-                    .findByKey(configEntry.getKey())
-                    .orElseGet(
-                        () -> {
-                          creating[0] = true;
-                          return new ConfigEntity(null, configEntry.getKey(), value);
-                        });
-            changed[0] = creating[0] || !Objects.equals(entity.getValue(), value);
-            update(entity, value);
-          });
-    } catch (DataIntegrityViolationException failure) {
-      if (!creating[0]) {
-        throw failure;
+      configWriteTransaction.executeWithoutResult(transactionStatus -> {
+        ConfigEntity configEntity =
+            configRepository
+                .findByKey(configEntry.getKey())
+                .orElseGet(() -> {
+                  insertingConfigEntry[0] = true;
+                  return new ConfigEntity(null, configEntry.getKey(), configValue);
+                });
+        configValueChanged[0] =
+            insertingConfigEntry[0] || !Objects.equals(configEntity.getValue(), configValue);
+        persistConfigEntity(configEntity, configValue);
+      });
+    } catch (DataIntegrityViolationException concurrentInsertFailure) {
+      if (!insertingConfigEntry[0]) {
+        throw concurrentInsertFailure;
       }
       // The failed insert has rolled back before starting this retry.
-      transaction.executeWithoutResult(
-          status -> {
-            ConfigEntity entity =
-                configRepository.findByKey(configEntry.getKey()).orElseThrow(() -> failure);
-            changed[0] = creating[0] || !Objects.equals(entity.getValue(), value);
-            update(entity, value);
-          });
+      configWriteTransaction.executeWithoutResult(transactionStatus -> {
+        ConfigEntity configEntity =
+            configRepository
+                .findByKey(configEntry.getKey())
+                .orElseThrow(() -> concurrentInsertFailure);
+        configValueChanged[0] =
+            insertingConfigEntry[0] || !Objects.equals(configEntity.getValue(), configValue);
+        persistConfigEntity(configEntity, configValue);
+      });
     }
-    if (changed[0]) {
+    if (configValueChanged[0]) {
       if (configEntry == ConfigEntry.MAINTENANCE_MODE
-          && ("true".equalsIgnoreCase(value) || "false".equalsIgnoreCase(value))) {
-        log.info("Maintenance configuration committed: enabled={}", Boolean.parseBoolean(value));
+          && ("true".equalsIgnoreCase(configValue) || "false".equalsIgnoreCase(configValue))) {
+        log.info(
+            "Maintenance configuration committed: enabled={}", Boolean.parseBoolean(configValue));
       } else {
         log.debug("Configuration entry committed: key={}", configEntry.name());
       }
     }
   }
 
-  private void update(ConfigEntity entity, String value) {
-    entity.setValue(value);
-    configRepository.saveAndFlush(entity);
+  private void persistConfigEntity(ConfigEntity configEntity, String configValue) {
+    configEntity.setValue(configValue);
+    configRepository.saveAndFlush(configEntity);
   }
 }

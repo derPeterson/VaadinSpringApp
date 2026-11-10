@@ -74,34 +74,35 @@ public class AvatarDraftStore {
     }
   }
 
-  private final Map<UUID, Draft> drafts = new HashMap<>();
-  private final Semaphore transfers = new Semaphore(2);
-  private final AvatarImageProcessor images;
-  private final Clock clock;
+  private final Map<UUID, Draft> avatarDraftsById = new HashMap<>();
+  private final Semaphore uploadTransferPermits = new Semaphore(2);
+  private final AvatarImageProcessor avatarImageProcessor;
+  private final Clock avatarDraftClock;
 
   @Autowired
-  public AvatarDraftStore(AvatarImageProcessor images) {
-    this(images, Clock.systemUTC());
+  public AvatarDraftStore(AvatarImageProcessor avatarImageProcessor) {
+    this(avatarImageProcessor, Clock.systemUTC());
   }
 
-  AvatarDraftStore(AvatarImageProcessor images, Clock clock) {
-    this.images = images;
-    this.clock = clock;
+  AvatarDraftStore(AvatarImageProcessor avatarImageProcessor, Clock avatarDraftClock) {
+    this.avatarImageProcessor = avatarImageProcessor;
+    this.avatarDraftClock = avatarDraftClock;
   }
 
   public synchronized UUID begin(Long owner) {
     expire();
-    if (drafts.size() >= 16) {
+    if (avatarDraftsById.size() >= 16) {
       throw new InvalidImage(BUSY);
     }
     UUID id = UUID.randomUUID();
-    drafts.put(id, new Draft(owner, clock.instant().plus(Duration.ofMinutes(10))));
+    avatarDraftsById.put(
+        id, new Draft(owner, avatarDraftClock.instant().plus(Duration.ofMinutes(10))));
     return id;
   }
 
   private synchronized Draft require(UUID token, Long owner) {
     expire();
-    Draft draft = drafts.get(token);
+    Draft draft = avatarDraftsById.get(token);
     if (draft == null || !Objects.equals(owner, draft.owner)) {
       throw new InvalidImage(EXPIRED);
     }
@@ -111,21 +112,21 @@ public class AvatarDraftStore {
   public UUID upload(UUID token, Long owner, InputStream input) throws IOException {
     Draft draft = require(token, owner);
     synchronized (this) {
-      if (draft.uploading || !transfers.tryAcquire()) {
+      if (draft.uploading || !uploadTransferPermits.tryAcquire()) {
         throw new InvalidImage(BUSY);
       }
       draft.uploading = true;
     }
     try {
       byte[] bytes = AvatarImageProcessor.readLimited(input);
-      SourceMetadata metadata = images.validate(bytes);
+      SourceMetadata metadata = avatarImageProcessor.validate(bytes);
       synchronized (this) {
         if (require(token, owner) != draft) {
           throw new InvalidImage(EXPIRED);
         }
         draft.bytes = bytes;
         draft.imageId = UUID.randomUUID();
-        draft.uploadedAt = clock.instant();
+        draft.uploadedAt = avatarDraftClock.instant();
         draft.metadata = metadata;
         return draft.imageId;
       }
@@ -133,7 +134,7 @@ public class AvatarDraftStore {
       synchronized (this) {
         draft.uploading = false;
       }
-      transfers.release();
+      uploadTransferPermits.release();
     }
   }
 
@@ -150,12 +151,14 @@ public class AvatarDraftStore {
 
   public synchronized void release(UUID token) {
     if (token != null) {
-      drafts.remove(token);
+      avatarDraftsById.remove(token);
     }
   }
 
   @Scheduled(fixedDelay = 60_000)
   public synchronized void expire() {
-    drafts.values().removeIf(draft -> !clock.instant().isBefore(draft.expires));
+    avatarDraftsById
+        .values()
+        .removeIf(draft -> !avatarDraftClock.instant().isBefore(draft.expires));
   }
 }

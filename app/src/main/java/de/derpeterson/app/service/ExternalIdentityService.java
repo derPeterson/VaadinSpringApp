@@ -41,14 +41,14 @@ import org.springframework.util.Assert;
 @Service
 @RequiredArgsConstructor
 public class ExternalIdentityService {
-  private final ExternalIdentityRepository identities;
-  private final UserRepository users;
-  private final VerificationService verification;
-  private final ConfigService config;
-  private final SessionRegistry sessions;
-  private final DeviceTokenRepository remembered;
-  private final ExternalLoginConfiguration.Registrations clients;
-  private final PlatformTransactionManager transactions;
+  private final ExternalIdentityRepository externalIdentityRepository;
+  private final UserRepository userRepository;
+  private final VerificationService verificationService;
+  private final ConfigService configService;
+  private final SessionRegistry sessionRegistry;
+  private final DeviceTokenRepository deviceTokenRepository;
+  private final ExternalLoginConfiguration.Registrations providerRegistrations;
+  private final PlatformTransactionManager transactionManager;
   private final AdminRolePolicy rolePolicy;
 
   public record SignInSummary(RegistrationChannel registration, Set<SignInMethod> available) {}
@@ -58,15 +58,14 @@ public class ExternalIdentityService {
 
   @Transactional(readOnly = true)
   public Optional<UserEntity> resolve(ExternalIdentityEvidence evidence) {
-    return identities
+    return externalIdentityRepository
         .findByProviderAndIssuerAndSubject(
             evidence.provider(), evidence.issuer(), evidence.subject())
-        .map(
-            identity -> {
-              UserEntity user = identity.getUser();
-              requireEnabled(user);
-              return user;
-            });
+        .map(identity -> {
+          UserEntity user = identity.getUser();
+          requireEnabled(user);
+          return user;
+        });
   }
 
   @Transactional(rollbackFor = IOException.class)
@@ -77,10 +76,10 @@ public class ExternalIdentityService {
       String lastName,
       Locale locale)
       throws IOException {
-    MaintenanceService.requirePublicAccess(config);
+    MaintenanceService.requirePublicAccess(configService);
     // Dieselbe globale Reihenfolge wie die bestehende Anlage. Eindeutige DB-Schlüssel sichern
     // zusätzlich gegen konkurrierende Anbieterzuordnungen und abweichende Aufrufer.
-    users.lockRole(RoleType.ROLE_SUPERADMIN);
+    userRepository.lockRole(RoleType.ROLE_SUPERADMIN);
     Assert.isTrue(UserInputRules.isEmailValid(email), "Invalid email");
     Assert.isTrue(
         UserInputRules.isRequiredTextValid(firstName) && firstName.trim().length() <= 255,
@@ -91,8 +90,8 @@ public class ExternalIdentityService {
     Assert.isTrue(
         Locale.GERMAN.equals(locale) || Locale.ENGLISH.equals(locale), "Unsupported language");
     String canonical = EmailIdentity.canonicalize(email);
-    if (users.findByEmail(canonical).isPresent()
-        || identities
+    if (userRepository.findByEmail(canonical).isPresent()
+        || externalIdentityRepository
             .findByProviderAndIssuerAndSubject(
                 evidence.provider(), evidence.issuer(), evidence.subject())
             .isPresent()) {
@@ -110,11 +109,11 @@ public class ExternalIdentityService {
             .preferredLocale(locale)
             .enabled(verified)
             .verificationPending(!verified)
-            .roleEntities(List.of(users.lockRole(RoleType.ROLE_USER).orElseThrow()))
+            .roleEntities(List.of(userRepository.lockRole(RoleType.ROLE_USER).orElseThrow()))
             .build();
-    users.saveAndFlush(user);
+    userRepository.saveAndFlush(user);
     add(user, evidence);
-    if (!verified && !verification.sendVerificationEmailByUser(user)) {
+    if (!verified && !verificationService.sendVerificationEmailByUser(user)) {
       throw new IllegalStateException("Verification mail could not be queued");
     }
     return user;
@@ -122,10 +121,10 @@ public class ExternalIdentityService {
 
   @Transactional
   public void link(Long userId, String expectedVersion, ExternalIdentityEvidence evidence) {
-    MaintenanceService.requirePublicAccess(config);
+    MaintenanceService.requirePublicAccess(configService);
     UserEntity user = locked(userId, expectedVersion);
-    if (identities.findByUserIdAndProvider(userId, evidence.provider()).isPresent()
-        || identities
+    if (externalIdentityRepository.findByUserIdAndProvider(userId, evidence.provider()).isPresent()
+        || externalIdentityRepository
             .findByProviderAndIssuerAndSubject(
                 evidence.provider(), evidence.issuer(), evidence.subject())
             .isPresent()) {
@@ -139,31 +138,31 @@ public class ExternalIdentityService {
       HttpServletRequest request, Long userId, String expectedVersion, String provider) {
     HttpSession current = request.getSession(false);
     String sessionId = current == null ? null : current.getId();
-    TransactionTemplate transaction = new TransactionTemplate(transactions);
+    TransactionTemplate transaction = new TransactionTemplate(transactionManager);
     transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     Unlinked unlinked =
         Objects.requireNonNull(
             transaction.execute(status -> removeProvider(userId, expectedVersion, provider)));
     boolean kept =
         sessionId != null
-            && sessions instanceof DurableSessionRegistry<?> durable
+            && sessionRegistry instanceof DurableSessionRegistry<?> durable
             && durable.retainAfterProviderUnlink(
                 sessionId,
                 unlinked.identity(),
                 unlinked.previousVersion(),
                 unlinked.newVersion(),
                 unlinked.remaining());
-    sessions.getAllSessions(unlinked.identity(), true).stream()
+    sessionRegistry.getAllSessions(unlinked.identity(), true).stream()
         .filter(session -> !kept || !sessionId.equals(session.getSessionId()))
         .forEach(SessionInformation::expireNow);
     return kept;
   }
 
   private Unlinked removeProvider(Long userId, String expectedVersion, String provider) {
-    MaintenanceService.requirePublicAccess(config);
+    MaintenanceService.requirePublicAccess(configService);
     UserEntity user = locked(userId, expectedVersion);
     ExternalIdentityEntity identity =
-        identities
+        externalIdentityRepository
             .findByUserIdAndProvider(userId, provider)
             .orElseThrow(() -> new AccessDeniedException("Provider unavailable"));
     Set<SignInMethod> remaining = availableMethods(user);
@@ -171,14 +170,14 @@ public class ExternalIdentityService {
     if (remaining.isEmpty()) {
       throw new AccessDeniedException("Last sign-in method must remain");
     }
-    identities.delete(identity);
-    identities.flush();
+    externalIdentityRepository.delete(identity);
+    externalIdentityRepository.flush();
     String previousVersion =
         PortalUserDetails.credentialVersion(user.getAccessVersion(), user.getPassword());
     // Alte Sitzungen und Nachweise verlieren mit dem Commit ihre Zugangsversion.
     user.rotateAccessVersion();
-    users.saveAndFlush(user);
-    remembered.removeUserTokens(user.getEmail());
+    userRepository.saveAndFlush(user);
+    deviceTokenRepository.removeUserTokens(user.getEmail());
     return new Unlinked(
         user.getEmail(),
         previousVersion,
@@ -189,19 +188,19 @@ public class ExternalIdentityService {
   @Transactional(readOnly = true)
   public Set<SignInMethod> availableSignInMethods(Long userId) {
     UserEntity user =
-        users.findById(userId).orElseThrow(() -> new AccessDeniedException("Account unavailable"));
+        userRepository
+            .findById(userId)
+            .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
     return Set.copyOf(availableMethods(user));
   }
 
   @Transactional(readOnly = true)
   public Optional<SignInSummary> adminSignInSummary(Long userId) {
     rolePolicy.authorizeMutation(userId, Set.of());
-    return users
+    return userRepository
         .findById(userId)
-        .map(
-            user ->
-                new SignInSummary(
-                    user.getRegistrationChannel(), Set.copyOf(availableMethods(user))));
+        .map(user ->
+            new SignInSummary(user.getRegistrationChannel(), Set.copyOf(availableMethods(user))));
   }
 
   private Set<SignInMethod> availableMethods(UserEntity user) {
@@ -209,7 +208,7 @@ public class ExternalIdentityService {
     if (user.getPassword() != null) {
       available.add(SignInMethod.PORTAL);
     }
-    List<String> enabledProviders = clients.providers();
+    List<String> enabledProviders = providerRegistrations.providers();
     for (String provider : connectedProviders(user.getId())) {
       if (enabledProviders.contains(provider)) {
         available.add(SignInMethod.provider(provider));
@@ -224,14 +223,14 @@ public class ExternalIdentityService {
   }
 
   private List<String> connectedProviders(Long userId) {
-    return identities.findByUserIdOrderByProvider(userId).stream()
+    return externalIdentityRepository.findByUserIdOrderByProvider(userId).stream()
         .map(ExternalIdentityEntity::getProvider)
         .toList();
   }
 
   @Transactional(readOnly = true)
   public boolean belongsTo(Long userId, ExternalIdentityEvidence evidence) {
-    return identities
+    return externalIdentityRepository
         .findByProviderAndIssuerAndSubject(
             evidence.provider(), evidence.issuer(), evidence.subject())
         .map(identity -> Objects.equals(identity.getUser().getId(), userId))
@@ -240,7 +239,7 @@ public class ExternalIdentityService {
 
   private UserEntity locked(Long id, String version) {
     UserEntity user =
-        users
+        userRepository
             .findByIdForUpdate(id)
             .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
     requireEnabled(user);
@@ -256,7 +255,7 @@ public class ExternalIdentityService {
     identity.setProvider(evidence.provider());
     identity.setIssuer(evidence.issuer());
     identity.setSubject(evidence.subject());
-    identities.saveAndFlush(identity);
+    externalIdentityRepository.saveAndFlush(identity);
   }
 
   private static void requireEnabled(UserEntity user) {

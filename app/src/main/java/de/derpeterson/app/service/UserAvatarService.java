@@ -78,33 +78,33 @@ public class UserAvatarService {
   public record Change(
       Long version, AvatarMode mode, boolean deleteImage, UUID draft, UUID imageId, Crop crop) {}
 
-  private final UserAvatarRepository avatars;
-  private final UserRepository users;
-  private final SecurityService security;
-  private final ConfigService config;
-  private final AvatarImageProcessor processor;
-  private final AvatarDraftStore drafts;
-  private final UserProfileBroadcaster events;
-  private final TransactionTemplate transaction;
+  private final UserAvatarRepository userAvatarRepository;
+  private final UserRepository userRepository;
+  private final SecurityService securityService;
+  private final ConfigService configService;
+  private final AvatarImageProcessor avatarImageProcessor;
+  private final AvatarDraftStore avatarDraftStore;
+  private final UserProfileBroadcaster userProfileBroadcaster;
+  private final TransactionTemplate transactionTemplate;
 
   public UserAvatarService(
-      UserAvatarRepository avatars,
-      UserRepository users,
-      SecurityService security,
-      ConfigService config,
-      AvatarImageProcessor processor,
-      AvatarDraftStore drafts,
-      UserProfileBroadcaster events,
+      UserAvatarRepository userAvatarRepository,
+      UserRepository userRepository,
+      SecurityService securityService,
+      ConfigService configService,
+      AvatarImageProcessor avatarImageProcessor,
+      AvatarDraftStore avatarDraftStore,
+      UserProfileBroadcaster userProfileBroadcaster,
       PlatformTransactionManager manager) {
-    this.avatars = avatars;
-    this.users = users;
-    this.security = security;
-    this.config = config;
-    this.processor = processor;
-    this.drafts = drafts;
-    this.events = events;
-    transaction = new TransactionTemplate(manager);
-    transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    this.userAvatarRepository = userAvatarRepository;
+    this.userRepository = userRepository;
+    this.securityService = securityService;
+    this.configService = configService;
+    this.avatarImageProcessor = avatarImageProcessor;
+    this.avatarDraftStore = avatarDraftStore;
+    this.userProfileBroadcaster = userProfileBroadcaster;
+    transactionTemplate = new TransactionTemplate(manager);
+    transactionTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
   }
 
   // Interne UI-Metadaten, ausdrücklich ohne BLOBs; Grid lädt eine sichtbare Seite gesammelt.
@@ -131,7 +131,7 @@ public class UserAvatarService {
       return Map.of();
     }
     HashMap<Long, State> result = new HashMap<Long, State>();
-    for (Metadata row : avatars.metadata(ids)) {
+    for (Metadata row : userAvatarRepository.metadata(ids)) {
       result.put(
           row.getUserId(),
           new State(row.getVersion(), row.getMode(), row.getHasImage(), row.getImageRevision()));
@@ -140,33 +140,33 @@ public class UserAvatarService {
   }
 
   public Open open(HttpServletRequest request) {
-    return transaction.execute(
-        status -> {
-          UserEntity user = requireUser(request, false);
-          return new Open(readState(user.getId()), drafts.begin(user.getId()));
-        });
+    return transactionTemplate.execute(status -> {
+      UserEntity user = requireUser(request, false);
+      return new Open(readState(user.getId()), avatarDraftStore.begin(user.getId()));
+    });
   }
 
   public UUID upload(HttpServletRequest request, UUID token, InputStream input) throws IOException {
-    Long owner = transaction.execute(status -> requireUser(request, false).getId());
-    return drafts.upload(token, owner, input);
+    Long owner = transactionTemplate.execute(status -> requireUser(request, false).getId());
+    return avatarDraftStore.upload(token, owner, input);
   }
 
   public State save(HttpServletRequest request, Change change) {
     if (change == null || change.mode() == null) {
       throw new InvalidImage(Problem.MISSING);
     }
-    Long owner = transaction.execute(status -> requireUser(request, false).getId());
+    Long owner = transactionTemplate.execute(status -> requireUser(request, false).getId());
     // Original/Decode niemals unter der späteren Kontosperre halten.
     ImageReplacement replacement = prepareReplacement(owner, change);
     State saved =
-        transaction.execute(status -> saveLockedAvatar(request, owner, change, replacement));
+        transactionTemplate.execute(
+            status -> saveLockedAvatar(request, owner, change, replacement));
     log.debug(
         "Account avatar updated: userId={}, mode={}, hasImage={}",
         owner,
         saved.mode(),
         saved.hasImage());
-    drafts.release(change.draft());
+    avatarDraftStore.release(change.draft());
     return saved;
   }
 
@@ -174,8 +174,9 @@ public class UserAvatarService {
     if (change.imageId() == null) {
       return null;
     }
-    AvatarDraftStore.Image original = drafts.image(change.draft(), owner, change.imageId());
-    byte[] normalized = processor.normalize(original.bytes(), change.crop());
+    AvatarDraftStore.Image original =
+        avatarDraftStore.image(change.draft(), owner, change.imageId());
+    byte[] normalized = avatarImageProcessor.normalize(original.bytes(), change.crop());
     return new ImageReplacement(normalized, original.uploadedAt(), original.metadata());
   }
 
@@ -186,7 +187,7 @@ public class UserAvatarService {
     if (!owner.equals(user.getId())) {
       throw new AccessDeniedException("Identity changed");
     }
-    UserAvatarEntity row = avatars.findById(owner).orElse(null);
+    UserAvatarEntity row = userAvatarRepository.findById(owner).orElse(null);
     if (!Objects.equals(change.version(), row == null ? null : row.getVersion())) {
       throw new OptimisticLockingFailureException("Avatar changed; reopen dialog");
     }
@@ -199,8 +200,8 @@ public class UserAvatarService {
       throw new InvalidImage(Problem.MISSING);
     }
     row.setMode(change.mode());
-    avatars.saveAndFlush(row);
-    events.afterCommit(user);
+    userAvatarRepository.saveAndFlush(row);
+    userProfileBroadcaster.afterCommit(user);
     return new State(row.getVersion(), row.getMode(), row.isHasImage(), row.getImageRevision());
   }
 
@@ -230,11 +231,11 @@ public class UserAvatarService {
   }
 
   public void release(UUID token) {
-    drafts.release(token);
+    avatarDraftStore.release(token);
   }
 
   public UserProfileBroadcaster events() {
-    return events;
+    return userProfileBroadcaster;
   }
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
@@ -245,7 +246,7 @@ public class UserAvatarService {
     if (!own && !user.hasAdministrativeRole()) {
       throw new AccessDeniedException("Avatar unavailable");
     }
-    UserAvatarEntity row = avatars.findById(target).orElse(null);
+    UserAvatarEntity row = userAvatarRepository.findById(target).orElse(null);
     if (row == null
         || !row.isHasImage()
         || !Objects.equals(revision, row.getImageRevision())
@@ -256,19 +257,19 @@ public class UserAvatarService {
   }
 
   private UserEntity requireUser(HttpServletRequest request, boolean lock) {
-    if (!security.hasCurrentSessionPrivileges(request)) {
+    if (!securityService.hasCurrentSessionPrivileges(request)) {
       throw new AuthenticationCredentialsNotFoundException("Session revoked");
     }
     UserDetails principal =
-        security
+        securityService
             .getAuthenticatedUser(request)
             .orElseThrow(
                 () -> new AuthenticationCredentialsNotFoundException("Authentication required"));
-    MaintenanceService.requirePublicAccess(config);
+    MaintenanceService.requirePublicAccess(configService);
     UserEntity user =
         (lock
-                ? users.findByEmailForUpdate(principal.getUsername())
-                : users.findByEmail(principal.getUsername()))
+                ? userRepository.findByEmailForUpdate(principal.getUsername())
+                : userRepository.findByEmail(principal.getUsername()))
             .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
     if (!user.isEnabled()) {
       throw new AccessDeniedException("Account disabled");

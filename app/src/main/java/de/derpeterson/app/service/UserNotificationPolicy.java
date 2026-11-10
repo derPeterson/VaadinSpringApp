@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 public class UserNotificationPolicy {
-  private final ConfigService config;
+  private final ConfigService configService;
 
   public OptionalInt retentionDays() {
     return days(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS);
@@ -36,7 +36,7 @@ public class UserNotificationPolicy {
   }
 
   private OptionalInt days(ConfigEntry entry) {
-    String value = config.getString(entry);
+    String value = configService.getString(entry);
     if (value.isBlank()) {
       return OptionalInt.empty();
     }

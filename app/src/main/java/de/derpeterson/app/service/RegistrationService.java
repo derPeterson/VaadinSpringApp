@@ -12,15 +12,15 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 public class RegistrationService {
-  private final UserService users;
-  private final VerificationService verification;
-  private final ConfigService config;
+  private final UserService userService;
+  private final VerificationService verificationService;
+  private final ConfigService configService;
 
   @Transactional(rollbackFor = IOException.class)
   public boolean register(UserEntity user) throws IOException {
-    MaintenanceService.requirePublicAccess(config);
+    MaintenanceService.requirePublicAccess(configService);
     user.setRegistrationChannel(RegistrationChannel.PORTAL);
-    users.saveUser(user);
-    return verification.sendVerificationEmailByUser(user);
+    userService.saveUser(user);
+    return verificationService.sendVerificationEmailByUser(user);
   }
 }

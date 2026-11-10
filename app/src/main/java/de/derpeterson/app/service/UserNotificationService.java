@@ -48,18 +48,18 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public class UserNotificationService {
   public static final int TITLE_LIMIT = 120;
   public static final int BODY_LIMIT = 4000;
-  private final UserNotificationPolicy policy;
+  private final UserNotificationPolicy userNotificationPolicy;
 
   public OptionalInt retentionDays() {
-    return policy.retentionDays();
+    return userNotificationPolicy.retentionDays();
   }
 
-  private final UserNotificationRepository notifications;
-  private final UserNotificationRecipientRepository recipients;
-  private final UserRepository users;
-  private final SecurityService security;
-  private final ConfigService config;
-  private final UserNotificationBroadcaster events;
+  private final UserNotificationRepository userNotificationRepository;
+  private final UserNotificationRecipientRepository userNotificationRecipientRepository;
+  private final UserRepository userRepository;
+  private final SecurityService securityService;
+  private final ConfigService configService;
+  private final UserNotificationBroadcaster userNotificationBroadcaster;
   private final TwoFactorAuthorization twoFactor;
 
   public enum Problem {
@@ -132,7 +132,7 @@ public class UserNotificationService {
   public record Sent(Long id, String title, String body, Instant createdAt, int recipientCount) {}
 
   public MaintenanceService.State deliveryState() {
-    return new MaintenanceService(config).state();
+    return new MaintenanceService(configService).state();
   }
 
   private void requireDeliveryOpen() {
@@ -143,14 +143,14 @@ public class UserNotificationService {
 
   private UserEntity owner(HttpSession session) {
     UserEntity user =
-        security
+        securityService
             .getSessionUser(session)
             .orElseThrow(() -> new AccessDeniedException("Authentication required"));
     if (!user.isEnabled() || user.isVerificationPending()) {
       throw new AccessDeniedException("Account unavailable");
     }
     twoFactor.requireSession(session);
-    State state = new MaintenanceService(config).state();
+    State state = new MaintenanceService(configService).state();
     if (state != MaintenanceService.State.OPEN
         && (state != MaintenanceService.State.ACTIVE || !user.hasAdministrativeRole())) {
       throw new AccessDeniedException("Notifications paused for maintenance");
@@ -191,7 +191,7 @@ public class UserNotificationService {
   }
 
   public UserNotificationBroadcaster events() {
-    return events;
+    return userNotificationBroadcaster;
   }
 
   @Transactional(readOnly = true)
@@ -202,8 +202,12 @@ public class UserNotificationService {
           case READ -> true;
           case UNREAD -> false;
         };
-    return recipients
-        .inbox(owner(session).getId(), read, policy.inboxCutoff(Instant.now()), page(page, size))
+    return userNotificationRecipientRepository
+        .inbox(
+            owner(session).getId(),
+            read,
+            userNotificationPolicy.inboxCutoff(Instant.now()),
+            buildNotificationPageRequest(page, size))
         .map(UserNotificationService::toInboxItem);
   }
 
@@ -230,14 +234,14 @@ public class UserNotificationService {
     }
     // LIKE-Sonderzeichen bleiben wörtlicher Suchtext; ! ist das explizite Escapezeichen.
     String pattern = "%" + term.replace("!", "!!").replace("%", "!%").replace("_", "!_") + "%";
-    return recipients
+    return userNotificationRecipientRepository
         .searchInbox(
             owner(session).getId(),
             read,
-            policy.inboxCutoff(Instant.now()),
+            userNotificationPolicy.inboxCutoff(Instant.now()),
             pattern,
             Set.copyOf(matchingTypes),
-            page(page, size))
+            buildNotificationPageRequest(page, size))
         .map(UserNotificationService::toInboxItem);
   }
 
@@ -255,30 +259,34 @@ public class UserNotificationService {
 
   @Transactional(readOnly = true)
   public Optional<Item> inboxItem(HttpSession session, Long id) {
-    return recipients
-        .visibleItem(owner(session).getId(), id, policy.inboxCutoff(Instant.now()))
+    return userNotificationRecipientRepository
+        .visibleItem(owner(session).getId(), id, userNotificationPolicy.inboxCutoff(Instant.now()))
         .map(UserNotificationService::toInboxItem);
   }
 
   @Transactional(readOnly = true)
   public long inboxCount(HttpSession session) {
-    return recipients.countVisible(owner(session).getId(), policy.inboxCutoff(Instant.now()));
+    return userNotificationRecipientRepository.countVisible(
+        owner(session).getId(), userNotificationPolicy.inboxCutoff(Instant.now()));
   }
 
   @Transactional(readOnly = true)
   public long unreadCount(HttpSession session) {
-    return recipients.countUnread(owner(session).getId(), policy.inboxCutoff(Instant.now()));
+    return userNotificationRecipientRepository.countUnread(
+        owner(session).getId(), userNotificationPolicy.inboxCutoff(Instant.now()));
   }
 
   @Transactional(readOnly = true)
   public long readCount(HttpSession session) {
-    return recipients.countRead(owner(session).getId(), policy.inboxCutoff(Instant.now()));
+    return userNotificationRecipientRepository.countRead(
+        owner(session).getId(), userNotificationPolicy.inboxCutoff(Instant.now()));
   }
 
   @Transactional(readOnly = true)
   public List<Long> unreadSnapshot(HttpSession session) {
     return List.copyOf(
-        recipients.unreadIds(owner(session).getId(), policy.inboxCutoff(Instant.now())));
+        userNotificationRecipientRepository.unreadIds(
+            owner(session).getId(), userNotificationPolicy.inboxCutoff(Instant.now())));
   }
 
   @Transactional
@@ -289,7 +297,7 @@ public class UserNotificationService {
     int changed = 0;
     for (int i = 0; i < snapshot.size(); i += 500) {
       changed +=
-          recipients.markRead(
+          userNotificationRecipientRepository.markRead(
               owner, snapshot.subList(i, Math.min(i + 500, snapshot.size())), Instant.now());
     }
     if (changed > 0) {
@@ -302,7 +310,9 @@ public class UserNotificationService {
   @Transactional
   public void dismiss(HttpSession session, Long id) {
     Long owner = owner(session).getId();
-    if (recipients.dismiss(owner, Objects.requireNonNull(id), Instant.now()) > 0) {
+    if (userNotificationRecipientRepository.dismiss(
+            owner, Objects.requireNonNull(id), Instant.now())
+        > 0) {
       AfterCommitLog.debug(log, "Notification dismissed: userId={}, recipientId={}", owner, id);
       afterCommit(Set.of(owner));
     }
@@ -313,7 +323,9 @@ public class UserNotificationService {
   public void dismissRead(HttpSession session) {
     Long owner = owner(session).getId();
     Instant now = Instant.now();
-    int changed = recipients.dismissRead(owner, policy.inboxCutoff(now), now);
+    int changed =
+        userNotificationRecipientRepository.dismissRead(
+            owner, userNotificationPolicy.inboxCutoff(now), now);
     if (changed > 0) {
       AfterCommitLog.info(log, "Read notifications dismissed: userId={}, count={}", owner, changed);
       afterCommit(Set.of(owner));
@@ -323,17 +335,17 @@ public class UserNotificationService {
   @Transactional(readOnly = true)
   public List<Target> targets(HttpSession session) {
     superadmin(session);
-    return eligible();
+    return findEligibleRecipientTargets();
   }
 
-  private List<Target> eligible() {
-    return users.findNotificationTargets().stream()
+  private List<Target> findEligibleRecipientTargets() {
+    return userRepository.findNotificationTargets().stream()
         .map(u -> new Target(u.getId(), u.getFirstName() + " " + u.getLastName(), u.getEmail()))
         .toList();
   }
 
-  private List<Target> selected(Selection selection) {
-    return eligible().stream()
+  private List<Target> findSelectedRecipientTargets(Selection selection) {
+    return findEligibleRecipientTargets().stream()
         .filter(u -> selection.everyone() || selection.ids().contains(u.id()))
         .toList();
   }
@@ -342,7 +354,7 @@ public class UserNotificationService {
   public Preview preview(HttpSession session, Selection selection) {
     superadmin(session);
     requireDeliveryOpen();
-    List<Target> selected = selected(Objects.requireNonNull(selection));
+    List<Target> selected = findSelectedRecipientTargets(Objects.requireNonNull(selection));
     if (selected.isEmpty()) {
       throw new Rejected(Problem.NO_RECIPIENTS);
     }
@@ -355,52 +367,68 @@ public class UserNotificationService {
 
   @Transactional
   public Sent send(
-      HttpSession session, UUID requestId, String title, String body, Preview preview) {
+      HttpSession httpSession,
+      UUID requestId,
+      String notificationTitle,
+      String notificationBody,
+      Preview preview) {
     Objects.requireNonNull(requestId);
     Objects.requireNonNull(preview);
     // Dieselbe Sperrreihenfolge wie bei Rollen-/Kontomutationen; serialisiert auch Wiederholungen.
-    users
+    userRepository
         .lockRole(RoleType.ROLE_SUPERADMIN)
         .orElseThrow(() -> new IllegalStateException("Superadmin role missing"));
-    UserEntity sender = superadmin(session);
+    UserEntity senderUser = superadmin(httpSession);
     requireDeliveryOpen();
-    title = clean(title, TITLE_LIMIT);
-    body = clean(body, BODY_LIMIT);
-    String key = "admin:" + requestId;
-    Optional<UserNotificationEntity> existing = notifications.findByRequestKey(key);
-    if (existing.isPresent()) {
-      UserNotificationEntity m = existing.get();
-      if (m.getSender() == null
-          || !m.getSender().getId().equals(sender.getId())
-          || !Objects.equals(title, m.getTitle())
-          || !Objects.equals(body, m.getBody())
-          || m.isBroadcast() != preview.selection().everyone()
-          || !recipients.recipientIds(m.getId()).equals(preview.ids())) {
+    notificationTitle = normalizeDraftText(notificationTitle, TITLE_LIMIT);
+    notificationBody = normalizeDraftText(notificationBody, BODY_LIMIT);
+    String requestKey = "admin:" + requestId;
+    Optional<UserNotificationEntity> existingNotification =
+        userNotificationRepository.findByRequestKey(requestKey);
+    if (existingNotification.isPresent()) {
+      UserNotificationEntity notificationEntity = existingNotification.get();
+      if (notificationEntity.getSender() == null
+          || !notificationEntity.getSender().getId().equals(senderUser.getId())
+          || !Objects.equals(notificationTitle, notificationEntity.getTitle())
+          || !Objects.equals(notificationBody, notificationEntity.getBody())
+          || notificationEntity.isBroadcast() != preview.selection().everyone()
+          || !userNotificationRecipientRepository
+              .recipientIds(notificationEntity.getId())
+              .equals(preview.ids())) {
         throw new Rejected(Problem.REQUEST_CONFLICT);
       }
-      log.debug("Notification send reused existing result: notificationId={}", m.getId());
-      return sent(m);
+      log.debug(
+          "Notification send reused existing result: notificationId={}",
+          notificationEntity.getId());
+      return sent(notificationEntity);
     }
-    List<Target> selected = selected(preview.selection());
-    List<Long> ids = selected.stream().map(Target::id).toList();
-    if (!ids.equals(preview.ids()) || ids.isEmpty()) {
+    List<Target> selectedRecipientTargets = findSelectedRecipientTargets(preview.selection());
+    List<Long> recipientIds = selectedRecipientTargets.stream().map(Target::id).toList();
+    if (!recipientIds.equals(preview.ids()) || recipientIds.isEmpty()) {
       throw new Rejected(Problem.RECIPIENTS_CHANGED);
     }
-    UserNotificationEntity m = new UserNotificationEntity();
-    m.setRequestKey(key);
-    m.setType(UserNotificationType.ADMIN_ANNOUNCEMENT);
-    m.setTitle(title);
-    m.setBody(body);
-    m.setSender(sender);
-    m.setBroadcast(preview.selection().everyone());
-    create(m, selected.stream().map(t -> users.getReferenceById(t.id())).toList());
-    return sent(m);
+    UserNotificationEntity notificationEntity = new UserNotificationEntity();
+    notificationEntity.setRequestKey(requestKey);
+    notificationEntity.setType(UserNotificationType.ADMIN_ANNOUNCEMENT);
+    notificationEntity.setTitle(notificationTitle);
+    notificationEntity.setBody(notificationBody);
+    notificationEntity.setSender(senderUser);
+    notificationEntity.setBroadcast(preview.selection().everyone());
+    create(
+        notificationEntity,
+        selectedRecipientTargets.stream()
+            .map(recipientTarget -> userRepository.getReferenceById(recipientTarget.id()))
+            .toList());
+    return sent(notificationEntity);
   }
 
   @Transactional(readOnly = true)
   public Page<Sent> sent(HttpSession session, int page, int size) {
-    return notifications
-        .sent(superadmin(session).getId(), policy.historyCutoff(Instant.now()), page(page, size))
+    return userNotificationRepository
+        .sent(
+            superadmin(session).getId(),
+            userNotificationPolicy.historyCutoff(Instant.now()),
+            buildNotificationPageRequest(page, size))
         .map(this::sent);
   }
 
@@ -408,14 +436,14 @@ public class UserNotificationService {
     return new Sent(m.getId(), m.getTitle(), m.getBody(), m.getCreatedAt(), m.getRecipientCount());
   }
 
-  private static String clean(String value, int max) {
+  private static String normalizeDraftText(String value, int max) {
     if (value == null || value.isBlank() || value.length() > max) {
       throw new Rejected(Problem.INVALID_DRAFT);
     }
     return value.strip();
   }
 
-  private Pageable page(int number, int size) {
+  private Pageable buildNotificationPageRequest(int number, int size) {
     if (number < 0 || size < 1 || size > 100) {
       throw new IllegalArgumentException("Invalid page");
     }
@@ -438,7 +466,7 @@ public class UserNotificationService {
 
   @Transactional(propagation = Propagation.MANDATORY)
   public void recordRecoveryRequest(String ticketNumber, Long replyId) {
-    List<UserEntity> administrators = users.findEnabledAdministrators();
+    List<UserEntity> administrators = userRepository.findEnabledAdministrators();
     if (administrators.isEmpty()) {
       return;
     }
@@ -470,8 +498,10 @@ public class UserNotificationService {
                 UserNotificationType.RECOVERY_REQUEST,
                 UserNotificationType.SUPPORT_REPLY,
                 UserNotificationType.SUPPORT_REQUESTER_CLOSED);
-    List<Long> owners = recipients.ticketRecipients(number, types, relevance);
-    if (!owners.isEmpty() && recipients.retireTicket(number, types, relevance) > 0) {
+    List<Long> owners =
+        userNotificationRecipientRepository.ticketRecipients(number, types, relevance);
+    if (!owners.isEmpty()
+        && userNotificationRecipientRepository.retireTicket(number, types, relevance) > 0) {
       afterCommit(Set.copyOf(owners));
     }
   }
@@ -494,7 +524,9 @@ public class UserNotificationService {
    */
   @Transactional(propagation = Propagation.MANDATORY)
   public boolean markTicketSeen(Long owner, String number, Long replyId, Long version) {
-    if (recipients.markTicketRead(owner, number, replyId, version, Instant.now()) == 0) {
+    if (userNotificationRecipientRepository.markTicketRead(
+            owner, number, replyId, version, Instant.now())
+        == 0) {
       return false;
     }
     afterCommit(Set.of(owner));
@@ -504,16 +536,15 @@ public class UserNotificationService {
   private void create(UserNotificationEntity m, List<UserEntity> selected) {
     m.setCreatedAt(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS));
     m.setRecipientCount(selected.size());
-    notifications.saveAndFlush(m);
-    recipients.saveAllAndFlush(
+    userNotificationRepository.saveAndFlush(m);
+    userNotificationRecipientRepository.saveAllAndFlush(
         selected.stream()
-            .map(
-                u -> {
-                  UserNotificationRecipientEntity r = new UserNotificationRecipientEntity();
-                  r.setNotification(m);
-                  r.setUser(u);
-                  return r;
-                })
+            .map(u -> {
+              UserNotificationRecipientEntity r = new UserNotificationRecipientEntity();
+              r.setNotification(m);
+              r.setUser(u);
+              return r;
+            })
             .toList());
     if (m.getType() == UserNotificationType.ADMIN_ANNOUNCEMENT) {
       AfterCommitLog.info(
@@ -542,7 +573,7 @@ public class UserNotificationService {
           @Override
           public void afterCommit() {
             try {
-              events.publish(ids);
+              userNotificationBroadcaster.publish(ids);
             } catch (RuntimeException failure) {
               org.slf4j.LoggerFactory.getLogger(UserNotificationService.class)
                   .warn("Committed notifications await refresh", safeFailure(failure));

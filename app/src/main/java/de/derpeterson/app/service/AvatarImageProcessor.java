@@ -28,7 +28,7 @@ import org.springframework.stereotype.Component;
 public class AvatarImageProcessor {
   public static final int MAX_UPLOAD = 5 * 1024 * 1024;
   public static final int MAX_RESULT = 1024 * 1024;
-  private final Semaphore decoders = new Semaphore(2);
+  private final Semaphore imageDecoderPermits = new Semaphore(2);
 
   /** Dateigröße und Rastermaße des validierten Originals, vor Ausschnitt und Ausrichtung. */
   public record SourceMetadata(AvatarImageFormat format, long sizeBytes, int width, int height) {}
@@ -106,7 +106,7 @@ public class AvatarImageProcessor {
       byte[] data, Crop crop, boolean encodeNormalizedImage) {
     boolean png = requireImageType(data);
     ExifBlock pngExif = png ? inspectPng(data) : null;
-    if (!decoders.tryAcquire()) {
+    if (!imageDecoderPermits.tryAcquire()) {
       throw new InvalidImage(Problem.BUSY);
     }
     try (MemoryCacheImageInputStream input =
@@ -137,7 +137,7 @@ public class AvatarImageProcessor {
     } catch (IOException | RuntimeException _) {
       throw new InvalidImage(Problem.IMAGE);
     } finally {
-      decoders.release();
+      imageDecoderPermits.release();
     }
   }
 

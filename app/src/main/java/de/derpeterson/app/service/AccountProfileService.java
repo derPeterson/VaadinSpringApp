@@ -28,9 +28,9 @@ import org.springframework.util.Assert;
 @RequiredArgsConstructor
 @Slf4j
 public class AccountProfileService {
-  private final SecurityService security;
-  private final UserRepository users;
-  private final ConfigService config;
+  private final SecurityService securityService;
+  private final UserRepository userRepository;
+  private final ConfigService configService;
   private final UserProfileBroadcaster profileEvents;
 
   // Kein Benutzerbezeichner aus dem Formular: Das Zielkonto kommt immer aus der Anmeldung.
@@ -66,10 +66,10 @@ public class AccountProfileService {
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public Profile save(HttpServletRequest request, Changes changes) {
     UserDetails principal =
-        security
+        securityService
             .getAuthenticatedUser(request)
             .orElseThrow(() -> new AccessDeniedException("Authentication required"));
-    MaintenanceService.requirePublicAccess(config);
+    MaintenanceService.requirePublicAccess(configService);
     Assert.notNull(changes, "Profile must not be null");
     Assert.isTrue(UserInputRules.isRequiredTextValid(changes.firstName()), "Invalid first name");
     Assert.isTrue(UserInputRules.isRequiredTextValid(changes.lastName()), "Invalid last name");
@@ -78,7 +78,7 @@ public class AccountProfileService {
         Locale.GERMAN.equals(changes.language()) || Locale.ENGLISH.equals(changes.language()),
         "Unsupported language");
     UserEntity user =
-        users
+        userRepository
             .findByEmailForUpdate(principal.getUsername())
             .orElseThrow(() -> new AccessDeniedException("Account unavailable"));
     if (!user.isEnabled()) {
@@ -94,7 +94,7 @@ public class AccountProfileService {
     user.setPreferredLocale(changes.language());
     // Keine Übernahme einer UI-Entity: E-Mail, Passwort, Freigabe, Rollen und Tokens bleiben
     // erhalten.
-    users.saveAndFlush(user);
+    userRepository.saveAndFlush(user);
     profileEvents.afterCommit(user);
     AfterCommitLog.debug(log, "Account profile updated: userId={}", user.getId());
     return Profile.from(user);
