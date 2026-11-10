@@ -14,6 +14,19 @@ class PasswordResetTokenLookupImpl implements PasswordResetTokenLookup {
   @Override
   @Transactional
   public Optional<PasswordResetTokenEntity> findByToken(String passwordResetToken) {
+    return loadCurrentResetTokenEntity(passwordResetToken);
+  }
+
+  @Override
+  @Transactional
+  public Optional<PasswordResetTokenEntity> findByTokenAndStatus(
+      String passwordResetToken, TokenStatus tokenStatus) {
+    return loadCurrentResetTokenEntity(passwordResetToken)
+        .filter(resetTokenEntity -> resetTokenEntity.getStatus() == tokenStatus);
+  }
+
+  private Optional<PasswordResetTokenEntity> loadCurrentResetTokenEntity(
+      String passwordResetToken) {
     List<PasswordResetTokenEntity> matchingTokenEntities =
         entityManager
             .createQuery(
@@ -30,13 +43,5 @@ class PasswordResetTokenLookupImpl implements PasswordResetTokenLookup {
     entityManager.flush();
     entityManager.refresh(resetTokenEntity);
     return Optional.of(resetTokenEntity);
-  }
-
-  @Override
-  @Transactional
-  public Optional<PasswordResetTokenEntity> findByTokenAndStatus(
-      String passwordResetToken, TokenStatus tokenStatus) {
-    return findByToken(passwordResetToken)
-        .filter(resetTokenEntity -> resetTokenEntity.getStatus() == tokenStatus);
   }
 }
