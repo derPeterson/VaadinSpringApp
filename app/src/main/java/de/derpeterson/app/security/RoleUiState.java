@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.FactorGrantedAuthority;
 
 /** Jede UI behält ihre ursprünglichen Rechte, bis ein neues Dokument aufgebaut wurde. */
@@ -18,7 +19,7 @@ public record RoleUiState(Set<String> authorities) implements Serializable {
   public static Set<String> extractRoleAuthorities(Authentication authentication) {
     return authentication.getAuthorities().stream()
         .filter(grantedAuthority -> !(grantedAuthority instanceof FactorGrantedAuthority))
-        .map(grantedAuthority -> grantedAuthority.getAuthority())
+        .map(GrantedAuthority::getAuthority)
         .collect(Collectors.toUnmodifiableSet());
   }
 

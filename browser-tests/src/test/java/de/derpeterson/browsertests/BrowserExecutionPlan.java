@@ -1,7 +1,5 @@
 package de.derpeterson.browsertests;
 
-import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
-
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,6 +11,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.TagFilter;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
@@ -75,7 +74,7 @@ final class BrowserExecutionPlan {
   static LauncherDiscoveryRequest request(List<Class<?>> testClasses, String suiteName) {
     LauncherDiscoveryRequestBuilder discoveryRequestBuilder =
         LauncherDiscoveryRequestBuilder.request()
-            .selectors(testClasses.stream().map(testClass -> selectClass(testClass)).toList())
+            .selectors(testClasses.stream().map(DiscoverySelectors::selectClass).toList())
             // Playwright und globale App-Konfiguration bleiben je Worker strikt sequenziell.
             .configurationParameter("junit.jupiter.execution.parallel.enabled", "false");
 
