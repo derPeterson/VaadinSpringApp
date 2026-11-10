@@ -62,34 +62,34 @@ public class AdminMailTestSection extends VerticalLayout {
   private final transient MessageProperties messageProperties;
   private final transient EmailService emailService;
   private final transient MaintenanceService maintenanceService;
-  private final VerticalLayout mailLayout;
-  private final Div deliveryMeta = new Div();
-  private final Tooltip deliveryTooltip = Tooltip.forComponent(deliveryMeta);
-  private transient Registration maintenancePolling;
+  private final VerticalLayout mailCardContentLayout;
+  private final Div deliveryStatusDiv = new Div();
+  private final Tooltip deliveryTooltip = Tooltip.forComponent(deliveryStatusDiv);
+  private transient Registration maintenancePollRegistration;
   private int previousPollInterval;
   private int installedPollInterval;
 
-  private final Span mailTestBreadcrumb;
-  private final Span mailTestTitle;
-  private final H2 mailCardTitle;
-  private final Span mailCardDescription;
-  private final Span mailCardBadge;
-  private final Span mailSendHint;
-  private final Span mailBodyHint = new Span();
-  private final Span mailTestDescription;
+  private final Span mailTestBreadcrumbSpan;
+  private final Span mailTestTitleSpan;
+  private final H2 mailCardTitleH2;
+  private final Span mailCardDescriptionSpan;
+  private final Span mailDeliveryStatusSpan;
+  private final Span mailSendHintSpan;
+  private final Span mailBodyHintSpan = new Span();
+  private final Span mailTestDescriptionSpan;
   private final EmailField testRecipientField;
   private final TextField testSubjectField;
   private final TextArea testBodyField;
   private final Button sendTestMailButton;
   private final Anchor smtpLink =
       new Anchor(AppRoute.ADMIN.getRoute() + "?section=configuration&group=smtp", "");
-  private final Span smtpLinkCaption = new Span();
+  private final Span smtpLinkCaptionSpan = new Span();
   private final ConfigInfoButton recipientInfoButton;
   private final ConfigInfoButton subjectInfoButton;
   private final ConfigInfoButton bodyInfoButton;
-  private final AdminSidePanel helpPanel;
+  private final AdminSidePanel mailFieldHelpPanel;
   private final Button closeHelpButton = new Button(AppIcon.CLOSE.create());
-  private transient FieldHelp selectedHelp;
+  private transient FieldHelp selectedMailFieldHelp;
 
   public AdminMailTestSection(
       MessageProperties messageProperties,
@@ -106,23 +106,24 @@ public class AdminMailTestSection extends VerticalLayout {
     setAlignItems(FlexComponent.Alignment.CENTER);
     addClassNames("cosmos-admin-section", "cosmos-admin-section--mail");
 
-    mailTestBreadcrumb = new Span();
-    mailTestTitle = new Span();
-    mailCardTitle = new H2();
-    mailCardTitle.addClassName(PANEL_TITLE);
-    mailCardDescription = new Span();
-    mailCardDescription.addClassName(PANEL_DESCRIPTION);
-    mailCardBadge = new Span();
-    Span deliveryDot = new Span();
-    deliveryDot.addClassName("cosmos-mail-delivery-dot");
-    deliveryDot.getElement().setAttribute(ARIA_HIDDEN, "true");
-    deliveryMeta.add(deliveryDot, mailCardBadge);
-    deliveryMeta.addClassNames("cosmos-panel-meta", "cosmos-mail-delivery");
-    deliveryMeta.getElement().setAttribute("role", "status");
-    mailSendHint = new Span();
+    mailTestBreadcrumbSpan = new Span();
+    mailTestTitleSpan = new Span();
+    mailCardTitleH2 = new H2();
+    mailCardTitleH2.addClassName(PANEL_TITLE);
+    mailCardDescriptionSpan = new Span();
+    mailCardDescriptionSpan.addClassName(PANEL_DESCRIPTION);
+    mailDeliveryStatusSpan = new Span();
 
-    mailTestDescription = new Span();
-    mailTestDescription.addClassNames(LumoUtility.TextColor.SECONDARY);
+    Span deliveryStatusDotSpan = new Span();
+    deliveryStatusDotSpan.addClassName("cosmos-mail-delivery-dot");
+    deliveryStatusDotSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
+    deliveryStatusDiv.add(deliveryStatusDotSpan, mailDeliveryStatusSpan);
+    deliveryStatusDiv.addClassNames("cosmos-panel-meta", "cosmos-mail-delivery");
+    deliveryStatusDiv.getElement().setAttribute("role", "status");
+    mailSendHintSpan = new Span();
+
+    mailTestDescriptionSpan = new Span();
+    mailTestDescriptionSpan.addClassNames(LumoUtility.TextColor.SECONDARY);
 
     testRecipientField = new EmailField();
     testRecipientField.setPattern(UserInputRules.EMAIL_REGEX);
@@ -143,27 +144,27 @@ public class AdminMailTestSection extends VerticalLayout {
     testBodyField.setRequiredIndicatorVisible(true);
     testBodyField.addClassName("cosmos-mail-body-field");
 
-    helpPanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
-    helpPanel.addClassName("admin-config-help");
-    helpPanel.setId("admin-mail-field-help");
+    mailFieldHelpPanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
+    mailFieldHelpPanel.addClassName("admin-config-help");
+    mailFieldHelpPanel.setId("admin-mail-field-help");
     closeHelpButton.setWidthFull();
-    closeHelpButton.addClickListener(event -> helpPanel.close());
-    helpPanel.getFooter().add(closeHelpButton);
+    closeHelpButton.addClickListener(_ -> mailFieldHelpPanel.close());
+    mailFieldHelpPanel.getFooter().add(closeHelpButton);
 
     recipientInfoButton =
-        createFieldInfo(
+        buildMailFieldInfoButton(
             new FieldHelp(
                 messageProperties::getAdminMailRecipient,
                 messageProperties::getAdminMailRecipientHint,
                 messageProperties::getAdminMailValidationRecipient));
     subjectInfoButton =
-        createFieldInfo(
+        buildMailFieldInfoButton(
             new FieldHelp(
                 messageProperties::getAdminMailSubject,
                 messageProperties::getAdminMailSubjectHint,
                 messageProperties::getAdminMailValidationSubject));
     bodyInfoButton =
-        createFieldInfo(
+        buildMailFieldInfoButton(
             new FieldHelp(
                 messageProperties::getAdminMailBody,
                 messageProperties::getAdminMailBodyHint,
@@ -172,7 +173,8 @@ public class AdminMailTestSection extends VerticalLayout {
     sendTestMailButton = new Button();
     sendTestMailButton.setPrefixComponent(AppIcon.PAPERPLANE.create());
     sendTestMailButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    sendTestMailButton.addClickListener(clickEvent -> sendTestMail());
+    sendTestMailButton.addClickListener(_ -> sendTestMail());
+
     // Enter im Nachrichtentext bleibt ein Zeilenumbruch. Navigation und Info-Buttons
     // dürfen ebenfalls keinen Versand auslösen.
     sendTestMailButton
@@ -180,155 +182,176 @@ public class AdminMailTestSection extends VerticalLayout {
         .listenOn(testRecipientField, testSubjectField)
         .resetFocusOnActiveElement();
 
-    mailLayout = createMailCardContent();
-    CosmosCardComponent mailCard = new CosmosCardComponent(mailLayout);
+    mailCardContentLayout = buildMailCardContentLayout();
+    CosmosCardComponent mailCard = new CosmosCardComponent(mailCardContentLayout);
     mailCard.addClassNames("cosmos-admin-form-card", PANEL_CARD, "cosmos-mail-card");
     add(
-        new CosmosSectionHeaderComponent(mailTestBreadcrumb, mailTestTitle, mailTestDescription),
+        new CosmosSectionHeaderComponent(
+            mailTestBreadcrumbSpan, mailTestTitleSpan, mailTestDescriptionSpan),
         mailCard,
-        helpPanel);
+        mailFieldHelpPanel);
+
     refreshDeliveryState();
-    addAttachListener(e -> startMaintenancePolling(e.getUI()));
-    addDetachListener(e -> stopMaintenancePolling(e.getUI()));
+    addAttachListener(
+        mailSectionAttachEvent -> startMaintenancePolling(mailSectionAttachEvent.getUI()));
+    addDetachListener(
+        mailSectionDetachEvent -> stopMaintenancePolling(mailSectionDetachEvent.getUI()));
   }
 
-  private void startMaintenancePolling(UI ui) {
+  private void startMaintenancePolling(UI mailTestUi) {
     refreshDeliveryState();
-    previousPollInterval = ui.getPollInterval();
+
+    previousPollInterval = mailTestUi.getPollInterval();
     installedPollInterval = previousPollInterval > 0 ? Math.min(previousPollInterval, 5000) : 5000;
-    ui.setPollInterval(installedPollInterval);
-    maintenancePolling = ui.addPollListener(e -> refreshDeliveryState());
+    mailTestUi.setPollInterval(installedPollInterval);
+    maintenancePollRegistration = mailTestUi.addPollListener(_ -> refreshDeliveryState());
   }
 
-  private void stopMaintenancePolling(UI ui) {
-    if (maintenancePolling != null) {
-      maintenancePolling.remove();
+  private void stopMaintenancePolling(UI mailTestUi) {
+    if (maintenancePollRegistration != null) {
+      maintenancePollRegistration.remove();
     }
-    maintenancePolling = null;
+
+    maintenancePollRegistration = null;
     if (installedPollInterval != previousPollInterval
-        && ui.getPollInterval() == installedPollInterval) {
-      ui.setPollInterval(previousPollInterval);
+        && mailTestUi.getPollInterval() == installedPollInterval) {
+      mailTestUi.setPollInterval(previousPollInterval);
     }
   }
 
   public void refreshDeliveryState() {
-    State state = maintenanceService.state();
-    boolean open = state == MaintenanceService.State.OPEN;
-    mailLayout.setEnabled(open);
-    mailLayout.getElement().setAttribute("aria-disabled", Boolean.toString(!open));
-    deliveryMeta.getElement().setAttribute("data-state", state.name().toLowerCase(Locale.ROOT));
-    String status =
-        switch (state) {
+    State deliveryState = maintenanceService.state();
+    boolean isDeliveryAvailable = deliveryState == MaintenanceService.State.OPEN;
+    mailCardContentLayout.setEnabled(isDeliveryAvailable);
+    mailCardContentLayout
+        .getElement()
+        .setAttribute("aria-disabled", Boolean.toString(!isDeliveryAvailable));
+    deliveryStatusDiv
+        .getElement()
+        .setAttribute("data-state", deliveryState.name().toLowerCase(Locale.ROOT));
+
+    String deliveryStatusText =
+        switch (deliveryState) {
           case OPEN -> messageProperties.getMaintenanceStatusAvailable();
           case ACTIVE -> messageProperties.getMaintenanceStatusActive();
           case UNAVAILABLE -> messageProperties.getMaintenanceStatusUnavailable();
         };
-    String description = messageProperties.getAdminMailCardBadge() + ": " + status;
-    deliveryMeta.getElement().setAttribute(ARIA_LABEL, description);
-    deliveryTooltip.setText(description);
+
+    String deliveryDescriptionText =
+        messageProperties.getAdminMailCardBadge() + ": " + deliveryStatusText;
+    deliveryStatusDiv.getElement().setAttribute(ARIA_LABEL, deliveryDescriptionText);
+    deliveryTooltip.setText(deliveryDescriptionText);
   }
 
-  private VerticalLayout createMailCardContent() {
-    SvgIcon envelope = AppIcon.ENVELOPE.create();
-    envelope.getElement().setAttribute(ARIA_HIDDEN, "true");
-    Div iconBadge = new Div(envelope);
-    iconBadge.addClassName(PANEL_ICON);
-    Div heading = new Div(mailCardTitle, mailCardDescription);
-    heading.addClassName(PANEL_HEADING);
-    Div header = new Div(iconBadge, heading, deliveryMeta);
-    header.addClassName(PANEL_HEADER);
+  private VerticalLayout buildMailCardContentLayout() {
+    SvgIcon mailEnvelopeSvgIcon = AppIcon.ENVELOPE.create();
+    mailEnvelopeSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
+    Div mailIconBadgeDiv = new Div(mailEnvelopeSvgIcon);
+    mailIconBadgeDiv.addClassName(PANEL_ICON);
+    Div mailCardHeadingDiv = new Div(mailCardTitleH2, mailCardDescriptionSpan);
+    mailCardHeadingDiv.addClassName(PANEL_HEADING);
+    Div mailCardHeaderDiv = new Div(mailIconBadgeDiv, mailCardHeadingDiv, deliveryStatusDiv);
+    mailCardHeaderDiv.addClassName(PANEL_HEADER);
 
-    VerticalLayout fields =
+    VerticalLayout mailFieldsLayout =
         new VerticalLayout(
-            createMailFieldRow(testRecipientField, recipientInfoButton),
-            createMailFieldRow(testSubjectField, subjectInfoButton),
-            createMailFieldRow(testBodyField, bodyInfoButton));
-    fields.setPadding(false);
-    fields.setSpacing(false);
-    fields.setWidthFull();
-    fields.addClassName("cosmos-mail-fields");
+            buildMailFieldRowDiv(testRecipientField, recipientInfoButton),
+            buildMailFieldRowDiv(testSubjectField, subjectInfoButton),
+            buildMailFieldRowDiv(testBodyField, bodyInfoButton));
+    mailFieldsLayout.setPadding(false);
+    mailFieldsLayout.setSpacing(false);
+    mailFieldsLayout.setWidthFull();
+    mailFieldsLayout.addClassName("cosmos-mail-fields");
 
-    SvgIcon hintIcon = AppIcon.INFO_CIRCLE.create();
-    hintIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
-    Div hintCopy = new Div(mailSendHint, smtpLink);
-    hintCopy.addClassName("admin-mail-hint-copy");
-    Div hint = new Div(hintIcon, hintCopy);
-    hint.addClassName("cosmos-panel-hint");
+    SvgIcon mailHintSvgIcon = AppIcon.INFO_CIRCLE.create();
+    mailHintSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
+    Div mailHintTextDiv = new Div(mailSendHintSpan, smtpLink);
+    mailHintTextDiv.addClassName("admin-mail-hint-copy");
+    Div mailHintDiv = new Div(mailHintSvgIcon, mailHintTextDiv);
+    mailHintDiv.addClassName("cosmos-panel-hint");
     smtpLink.addClassName("admin-smtp-link");
-    smtpLink.add(AppIcon.OPEN_SECTION.create(), smtpLinkCaption);
-    smtpLinkCaption.setText(messageProperties.getAdminConfigGroupSmtp());
+    smtpLink.add(AppIcon.OPEN_SECTION.create(), smtpLinkCaptionSpan);
+    smtpLinkCaptionSpan.setText(messageProperties.getAdminConfigGroupSmtp());
     testBodyField.setHelperText(messageProperties.getAdminMailBodyHint());
-    Div actions = new Div(sendTestMailButton);
-    actions.addClassName("cosmos-panel-actions");
-    Div footer = new Div(hint, actions);
-    footer.addClassName("cosmos-panel-footer");
 
-    VerticalLayout content = new VerticalLayout(header, fields, footer);
-    content.setPadding(false);
-    content.setSpacing(false);
-    content.setWidthFull();
-    content.setAlignItems(Alignment.START);
-    content.addClassName("cosmos-admin-form");
-    return content;
+    Div mailCardActionsDiv = new Div(sendTestMailButton);
+    mailCardActionsDiv.addClassName("cosmos-panel-actions");
+    Div mailCardFooterDiv = new Div(mailHintDiv, mailCardActionsDiv);
+    mailCardFooterDiv.addClassName("cosmos-panel-footer");
+
+    VerticalLayout mailCardLayout =
+        new VerticalLayout(mailCardHeaderDiv, mailFieldsLayout, mailCardFooterDiv);
+    mailCardLayout.setPadding(false);
+    mailCardLayout.setSpacing(false);
+    mailCardLayout.setWidthFull();
+    mailCardLayout.setAlignItems(Alignment.START);
+    mailCardLayout.addClassName("cosmos-admin-form");
+    return mailCardLayout;
   }
 
-  private Div createMailFieldRow(Component input, ConfigInfoButton infoButton) {
-    Div row = new Div(input, infoButton);
-    row.addClassNames("cosmos-config-input-row", "cosmos-mail-field-row");
-    if (input == testBodyField) {
-      row.addClassName("cosmos-mail-body-row");
-      mailBodyHint.addClassName("cosmos-mail-body-hint");
+  private Div buildMailFieldRowDiv(Component mailInputComponent, ConfigInfoButton fieldInfoButton) {
+    Div mailFieldRowDiv = new Div(mailInputComponent, fieldInfoButton);
+    mailFieldRowDiv.addClassNames("cosmos-config-input-row", "cosmos-mail-field-row");
+    if (mailInputComponent == testBodyField) {
+      mailFieldRowDiv.addClassName("cosmos-mail-body-row");
+      mailBodyHintSpan.addClassName("cosmos-mail-body-hint");
       // Die native Hilfsbeschreibung bleibt für assistive Technik am Eingabefeld erhalten.
-      mailBodyHint.getElement().setAttribute(ARIA_HIDDEN, "true");
-      row.add(mailBodyHint);
+      mailBodyHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
+      mailFieldRowDiv.add(mailBodyHintSpan);
     }
-    return row;
+    return mailFieldRowDiv;
   }
 
-  private ConfigInfoButton createFieldInfo(FieldHelp details) {
+  private ConfigInfoButton buildMailFieldInfoButton(FieldHelp fieldHelp) {
     return new ConfigInfoButton(
-        details.description(),
+        fieldHelp.description(),
         () -> {
-          selectedHelp = details;
-          renderHelp(details);
-          helpPanel.open();
+          selectedMailFieldHelp = fieldHelp;
+          renderMailFieldHelp(fieldHelp);
+          mailFieldHelpPanel.open();
         });
   }
 
-  private void renderHelp(FieldHelp details) {
-    helpPanel.removeAll();
-    helpPanel.setHeading(messageProperties.getAdminConfigHelpTitle());
-    helpPanel.setDescription(messageProperties.getAdminConfigHelpDescription());
-    helpPanel.refreshCloseText(messageProperties);
+  private void renderMailFieldHelp(FieldHelp fieldHelp) {
+    mailFieldHelpPanel.removeAll();
+    mailFieldHelpPanel.setHeading(messageProperties.getAdminConfigHelpTitle());
+    mailFieldHelpPanel.setDescription(messageProperties.getAdminConfigHelpDescription());
+    mailFieldHelpPanel.refreshCloseText(messageProperties);
+
     closeHelpButton.setText(messageProperties.getNotificationsClose());
-    Span group = new Span(messageProperties.getAdminMailTitle());
-    group.addClassName("admin-help-group");
-    H3 title = new H3(details.title().get());
-    title.addClassName("admin-help-field-title");
-    Span description = new Span(details.description().get());
-    description.addClassName("admin-help-description");
-    Div rules =
+    Span mailHelpGroupSpan = new Span(messageProperties.getAdminMailTitle());
+    mailHelpGroupSpan.addClassName("admin-help-group");
+
+    H3 fieldHelpTitleH3 = new H3(fieldHelp.title().get());
+    fieldHelpTitleH3.addClassName("admin-help-field-title");
+    Span fieldHelpDescriptionSpan = new Span(fieldHelp.description().get());
+    fieldHelpDescriptionSpan.addClassName("admin-help-description");
+
+    Div fieldHelpRulesDiv =
         new Div(
             new H4(messageProperties.getAdminConfigInputRules()),
-            new UnorderedList(new ListItem(details.rule().get())));
-    rules.addClassName("admin-help-rules");
-    helpPanel.add(group, title, description, rules);
+            new UnorderedList(new ListItem(fieldHelp.rule().get())));
+    fieldHelpRulesDiv.addClassName("admin-help-rules");
+    mailFieldHelpPanel.add(
+        mailHelpGroupSpan, fieldHelpTitleH3, fieldHelpDescriptionSpan, fieldHelpRulesDiv);
   }
 
   public void refreshTexts() {
-    mailTestBreadcrumb.setText(
+    mailTestBreadcrumbSpan.setText(
         messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminMailTitle());
-    mailCardTitle.setText(messageProperties.getAdminMailCardTitle());
-    mailCardDescription.setText(messageProperties.getAdminMailCardDescription());
-    mailCardBadge.setText(messageProperties.getAdminMailCardBadge());
+    mailCardTitleH2.setText(messageProperties.getAdminMailCardTitle());
+    mailCardDescriptionSpan.setText(messageProperties.getAdminMailCardDescription());
+    mailDeliveryStatusSpan.setText(messageProperties.getAdminMailCardBadge());
+
     refreshDeliveryState();
-    mailSendHint.setText(messageProperties.getAdminMailSendHint());
-    smtpLinkCaption.setText(messageProperties.getAdminConfigGroupSmtp());
+    mailSendHintSpan.setText(messageProperties.getAdminMailSendHint());
+    smtpLinkCaptionSpan.setText(messageProperties.getAdminConfigGroupSmtp());
     testBodyField.setHelperText(messageProperties.getAdminMailBodyHint());
-    mailBodyHint.setText(messageProperties.getAdminMailBodyHint());
+    mailBodyHintSpan.setText(messageProperties.getAdminMailBodyHint());
     testRecipientField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
     testSubjectField.setPlaceholder(messageProperties.getAdminMailSubject());
     testBodyField.setPlaceholder(messageProperties.getAdminMailBody());
+
     recipientInfoButton.refreshText();
     subjectInfoButton.refreshText();
     bodyInfoButton.refreshText();
@@ -339,11 +362,12 @@ public class AdminMailTestSection extends VerticalLayout {
         .getElement()
         .setAttribute(ARIA_LABEL, messageProperties.getAdminMailSubject());
     bodyInfoButton.getElement().setAttribute(ARIA_LABEL, messageProperties.getAdminMailBody());
-    if (selectedHelp != null && helpPanel.isOpened()) {
-      renderHelp(selectedHelp);
+    if (selectedMailFieldHelp != null && mailFieldHelpPanel.isOpened()) {
+      renderMailFieldHelp(selectedMailFieldHelp);
     }
-    mailTestTitle.setText(messageProperties.getAdminMailTitle());
-    mailTestDescription.setText(messageProperties.getAdminMailDescription());
+
+    mailTestTitleSpan.setText(messageProperties.getAdminMailTitle());
+    mailTestDescriptionSpan.setText(messageProperties.getAdminMailDescription());
     sendTestMailButton.setText(messageProperties.getAdminMailSend());
 
     testRecipientField.setLabel(messageProperties.getAdminMailRecipient());
@@ -361,14 +385,16 @@ public class AdminMailTestSection extends VerticalLayout {
 
   private void sendTestMail() {
     refreshDeliveryState();
-    if (!mailLayout.isEnabled()) {
+    if (!mailCardContentLayout.isEnabled()) {
       return;
     }
-    String recipient = Optional.ofNullable(testRecipientField.getValue()).orElse("").trim();
-    String subject = Optional.ofNullable(testSubjectField.getValue()).orElse("").trim();
-    String body = Optional.ofNullable(testBodyField.getValue()).orElse("").trim();
 
-    if (!UserInputRules.isEmailValid(recipient)) {
+    String recipientEmailAddress =
+        Optional.ofNullable(testRecipientField.getValue()).orElse("").trim();
+    String mailSubjectText = Optional.ofNullable(testSubjectField.getValue()).orElse("").trim();
+    String mailBodyText = Optional.ofNullable(testBodyField.getValue()).orElse("").trim();
+
+    if (!UserInputRules.isEmailValid(recipientEmailAddress)) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
@@ -379,7 +405,7 @@ public class AdminMailTestSection extends VerticalLayout {
       return;
     }
 
-    if (subject.isBlank()) {
+    if (mailSubjectText.isBlank()) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
@@ -390,7 +416,7 @@ public class AdminMailTestSection extends VerticalLayout {
       return;
     }
 
-    if (body.isBlank()) {
+    if (mailBodyText.isBlank()) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
@@ -406,15 +432,15 @@ public class AdminMailTestSection extends VerticalLayout {
     testBodyField.setInvalid(false);
 
     try {
-      emailService.sendAdminEmail(recipient, subject, body);
+      emailService.sendAdminEmail(recipientEmailAddress, mailSubjectText, mailBodyText);
       logger.info("Test email accepted by transport");
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseSuccessTitle,
               messageProperties::getAdminMailSuccess,
               NotificationHelper.NotificationType.SUCCESS);
-    } catch (MailException ex) {
-      logger.error("Test email dispatch failed", safeFailure(ex));
+    } catch (MailException mailDispatchFailure) {
+      logger.error("Test email dispatch failed", safeFailure(mailDispatchFailure));
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,

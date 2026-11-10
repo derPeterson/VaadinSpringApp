@@ -1955,11 +1955,11 @@ class UserNotificationsUiTest {
     section.activate();
     assertEquals(
         messageProperties.getNotificationsHistoryCount(21),
-        ((Span) field(section, "historyCount")).getText());
+        ((Span) field(section, "historyCountSpan")).getText());
     assertEquals(
         messageProperties.getPortalPaginationRange(1, 5, 21),
         ((Span) field(field(section, "historyPagination"), "totalLabel")).getText());
-    Div history = field(section, "sentNotificationHistory");
+    Div history = field(section, "sentNotificationHistoryDiv");
     List<Details> details =
         tree(history)
             .filter(com.vaadin.flow.component.details.Details.class::isInstance)
@@ -2018,7 +2018,7 @@ class UserNotificationsUiTest {
     assertTrue(
         ((Button) field(field(section, "historyPagination"), "previousPageButton")).isEnabled());
     ((Button) field(field(section, "historyPagination"), "firstPageButton")).click();
-    assertEquals(0, ((Integer) field(section, "page")).intValue());
+    assertEquals(0, ((Integer) field(section, "historyPageIndex")).intValue());
     when(userNotificationService.sent(mockHttpSession, 0, 5)).thenReturn(Page.empty());
     section.activate();
     assertEquals(
@@ -2044,9 +2044,9 @@ class UserNotificationsUiTest {
         messageProperties.getAdminUsersPaginationPerPage(), sizes.getAriaLabel().orElseThrow());
     for (int size : List.of(10, 15, 5)) {
       when(userNotificationService.sent(mockHttpSession, 0, size)).thenReturn(Page.empty());
-      ReflectionTestUtils.setField(section, "page", 3);
+      ReflectionTestUtils.setField(section, "historyPageIndex", 3);
       sizes.setValue(size);
-      assertEquals(0, ((Integer) field(section, "page")).intValue());
+      assertEquals(0, ((Integer) field(section, "historyPageIndex")).intValue());
       verify(userNotificationService, atLeastOnce()).sent(mockHttpSession, 0, size);
       assertEquals(size, ((Integer) field(section, "historyPageSize")).intValue());
     }
@@ -2084,10 +2084,10 @@ class UserNotificationsUiTest {
     Button send = field(section, "sendNotificationButton");
     review.click();
     assertTrue(send.isEnabled());
-    Div meta = field(section, "deliveryMeta");
+    Div meta = field(section, "deliveryStatusDiv");
     assertEquals(
         messageProperties.getNotificationsInternal(),
-        ((Span) field(section, "deliveryLabel")).getText());
+        ((Span) field(section, "deliveryLabelSpan")).getText());
     assertEquals("open", meta.getElement().getAttribute("data-state"));
     com.vaadin.flow.component.shared.Tooltip statusHint = field(section, "deliveryTooltip");
     assertEquals(
@@ -2107,7 +2107,8 @@ class UserNotificationsUiTest {
             + ": "
             + messageProperties.getMaintenanceStatusActive(),
         statusHint.getText());
-    com.vaadin.flow.component.orderedlayout.VerticalLayout form = field(section, "composeForm");
+    com.vaadin.flow.component.orderedlayout.VerticalLayout form =
+        field(section, "notificationComposeLayout");
     assertFalse(form.isEnabled());
     assertEquals("true", form.getElement().getAttribute("aria-disabled"));
     assertFalse(((TextField) field(section, "notificationTitleField")).isEnabled());
@@ -2115,7 +2116,7 @@ class UserNotificationsUiTest {
     assertFalse(((Checkbox) field(section, "sendToEveryoneCheckbox")).isEnabled());
     assertFalse(review.isEnabled());
     assertFalse(send.isEnabled());
-    assertNull(field(section, "preview"));
+    assertNull(field(section, "reviewedRecipientPreview"));
     when(userNotificationService.deliveryState()).thenReturn(MaintenanceService.State.OPEN);
     section.refreshDeliveryState();
     assertTrue(form.isEnabled());
@@ -2143,9 +2144,10 @@ class UserNotificationsUiTest {
     when(userNotificationService.deliveryState()).thenReturn(state);
     ((Button) field(section, "sendNotificationButton")).click();
     assertFalse(
-        ((com.vaadin.flow.component.orderedlayout.VerticalLayout) field(section, "composeForm"))
+        ((com.vaadin.flow.component.orderedlayout.VerticalLayout)
+                field(section, "notificationComposeLayout"))
             .isEnabled());
-    assertNull(field(section, "preview"));
+    assertNull(field(section, "reviewedRecipientPreview"));
     review.click();
     verify(userNotificationService, times(1)).preview(any(), any());
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
@@ -2165,7 +2167,8 @@ class UserNotificationsUiTest {
       when(userNotificationService.deliveryState()).thenReturn(MaintenanceService.State.ACTIVE);
       ComponentUtil.fireEvent(testUi, new PollEvent(testUi, true));
       assertFalse(
-          ((com.vaadin.flow.component.orderedlayout.VerticalLayout) field(section, "composeForm"))
+          ((com.vaadin.flow.component.orderedlayout.VerticalLayout)
+                  field(section, "notificationComposeLayout"))
               .isEnabled());
       assertEquals(1, unrelatedPolls[0]);
       testUi.remove(section);
@@ -2206,7 +2209,7 @@ class UserNotificationsUiTest {
     TextField subject = field(section, "notificationTitleField");
     TextArea message = field(section, "notificationBodyField");
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
-        field(section, "recipientSelector");
+        field(section, "recipientComboBox");
     Button review = field(section, "previewButton");
     Button send = field(section, "sendNotificationButton");
     assertEquals(messageProperties.getNotificationsSend(), send.getText());
@@ -2276,7 +2279,7 @@ class UserNotificationsUiTest {
     ((TextField) field(section, "notificationTitleField")).setValue("Subject");
     ((TextArea) field(section, "notificationBodyField")).setValue("Message");
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
-        field(section, "recipientSelector");
+        field(section, "recipientComboBox");
     recipients.setValue(Set.of(new Target(5L, "Own", "own@example.test")));
     when(userNotificationService.preview(any(), any())).thenThrow(new Rejected(problem));
     ((Button) field(section, "previewButton")).click();
@@ -2298,7 +2301,7 @@ class UserNotificationsUiTest {
     TextField subject = field(section, "notificationTitleField");
     TextArea message = field(section, "notificationBodyField");
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
-        field(section, "recipientSelector");
+        field(section, "recipientComboBox");
     Checkbox all = field(section, "sendToEveryoneCheckbox");
     Button review = field(section, "previewButton");
     Button send = field(section, "sendNotificationButton");
@@ -2318,14 +2321,14 @@ class UserNotificationsUiTest {
       default -> fail("Unknown draft input");
     }
     assertFalse(send.isEnabled());
-    assertNull(field(section, "preview"));
-    assertTrue(((Div) field(section, "previewArea")).isVisible());
+    assertNull(field(section, "reviewedRecipientPreview"));
+    assertTrue(((Div) field(section, "notificationPreviewDiv")).isVisible());
     assertEquals(
         messageProperties.getNotificationsPreviewNeedsReview(),
-        ((Span) field(section, "previewStatus")).getText());
+        ((Span) field(section, "previewStatusSpan")).getText());
     assertEquals(
         "warning",
-        ((Span) field(section, "previewStatus")).getElement().getAttribute("data-state"));
+        ((Span) field(section, "previewStatusSpan")).getElement().getAttribute("data-state"));
     assertFalse(subject.isInvalid());
     assertFalse(message.isInvalid());
     assertFalse(recipients.isInvalid());
@@ -2354,17 +2357,17 @@ class UserNotificationsUiTest {
     assertTrue(send.isEnabled());
     review.click();
     assertFalse(send.isEnabled());
-    assertNull(field(section, "preview"));
-    assertTrue(((Div) field(section, "previewArea")).isVisible());
+    assertNull(field(section, "reviewedRecipientPreview"));
+    assertTrue(((Div) field(section, "notificationPreviewDiv")).isVisible());
     assertEquals(
         messageProperties.getNotificationsPreviewNeedsReview(),
-        ((Span) field(section, "previewStatus")).getText());
+        ((Span) field(section, "previewStatusSpan")).getText());
     assertEquals(
         "warning",
-        ((Span) field(section, "previewStatus")).getElement().getAttribute("data-state"));
+        ((Span) field(section, "previewStatusSpan")).getElement().getAttribute("data-state"));
     assertEquals(
         !problem.equals("UNAVAILABLE"),
-        ((TextField) field(section, "everyoneRecipients")).isInvalid());
+        ((TextField) field(section, "everyoneRecipientsTextField")).isInvalid());
     send.click();
     verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
   }
@@ -2401,18 +2404,18 @@ class UserNotificationsUiTest {
     ((TextArea) field(section, "notificationBodyField")).setValue("Body");
     ((Checkbox) field(section, "sendToEveryoneCheckbox")).setValue(true);
     ((Button) field(section, "previewButton")).click();
-    UUID key = field(section, "requestId");
+    UUID key = field(section, "sendRequestUuid");
     when(userNotificationService.send(mockHttpSession, key, "Title", "Body", preview))
         .thenThrow(new IllegalStateException("response interrupted"))
         .thenReturn(new Sent(1L, "Title", "Body", Instant.now(), 1));
     ((Button) field(section, "sendNotificationButton")).click();
-    assertEquals(key, (UUID) field(section, "requestId"));
+    assertEquals(key, (UUID) field(section, "sendRequestUuid"));
     assertEquals("Title", ((TextField) field(section, "notificationTitleField")).getValue());
     ((Button) field(section, "sendNotificationButton")).click();
     verify(userNotificationService, times(2)).send(mockHttpSession, key, "Title", "Body", preview);
     assertTrue(((TextField) field(section, "notificationTitleField")).isEmpty());
     assertFalse(((Button) field(section, "sendNotificationButton")).isEnabled());
-    assertFalse(((Div) field(section, "previewArea")).isVisible());
+    assertFalse(((Div) field(section, "notificationPreviewDiv")).isVisible());
   }
 
   @ParameterizedTest
@@ -2430,8 +2433,8 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpRequest);
     section.activate();
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
-        field(section, "recipientSelector");
-    Span summary = field(section, "recipientSummary");
+        field(section, "recipientComboBox");
+    Span summary = field(section, "recipientSummarySpan");
     assertEquals(messageProperties.getNotificationsSelectedUsers(0), summary.getText());
     recipients.setValue(Set.of(accounts.getFirst()));
     assertEquals(messageProperties.getNotificationsSelectedUsers(1), summary.getText());
@@ -2463,8 +2466,8 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpRequest);
     section.activate();
     com.vaadin.flow.component.combobox.MultiSelectComboBox<Target> recipients =
-        field(section, "recipientSelector");
-    TextField summary = field(section, "everyoneRecipients");
+        field(section, "recipientComboBox");
+    TextField summary = field(section, "everyoneRecipientsTextField");
     Checkbox all = field(section, "sendToEveryoneCheckbox");
     assertTrue(recipients.isVisible());
     assertTrue(recipients.isEnabled());
@@ -2499,21 +2502,21 @@ class UserNotificationsUiTest {
     TextArea bodyField = field(section, "notificationBodyField");
     assertEquals(
         titleField.getValue().length() + " / " + UserNotificationService.TITLE_LIMIT,
-        ((Span) field(section, "titleCount")).getText());
+        ((Span) field(section, "titleCountSpan")).getText());
     assertEquals(
         bodyField.getValue().length() + " / " + UserNotificationService.BODY_LIMIT,
-        ((Span) field(section, "bodyCount")).getText());
+        ((Span) field(section, "bodyCountSpan")).getText());
     assertEquals(UserNotificationService.TITLE_LIMIT, titleField.getMaxLength());
     assertEquals(UserNotificationService.BODY_LIMIT, bodyField.getMaxLength());
     com.vaadin.flow.component.combobox.MultiSelectComboBox<?> recipients =
-        field(section, "recipientSelector");
+        field(section, "recipientComboBox");
     assertFalse(recipients.isEnabled());
     assertEquals(
         messageProperties.getNotificationsEveryonePlaceholder(4), recipients.getPlaceholder());
     ((Button) field(section, "previewButton")).click();
-    Div area = field(section, "previewArea");
+    Div area = field(section, "notificationPreviewDiv");
     assertTrue(area.isVisible());
-    Span status = field(section, "previewStatus");
+    Span status = field(section, "previewStatusSpan");
     assertTrue(status.isVisible());
     assertEquals(messageProperties.getNotificationsPreviewUpdated(), status.getText());
     assertEquals("success", status.getElement().getAttribute("data-state"));
@@ -2541,7 +2544,7 @@ class UserNotificationsUiTest {
     AdminUserNotificationsSection section = fixture.section();
     List<Target> accounts = fixture.accounts();
     ((Button) field(section, "previewButton")).click();
-    Div area = field(section, "previewArea");
+    Div area = field(section, "notificationPreviewDiv");
     Details details =
         tree(area)
             .filter(com.vaadin.flow.component.details.Details.class::isInstance)
@@ -2590,12 +2593,12 @@ class UserNotificationsUiTest {
     AdminUserNotificationsSection section = fixture.section();
     TextArea bodyField = field(section, "notificationBodyField");
     ((Button) field(section, "previewButton")).click();
-    Div area = field(section, "previewArea");
-    Span status = field(section, "previewStatus");
+    Div area = field(section, "notificationPreviewDiv");
+    Span status = field(section, "previewStatusSpan");
     String checkedBody = bodyField.getValue();
     bodyField.setValue("Changed");
     assertTrue(area.isVisible());
-    assertNull(field(section, "preview"));
+    assertNull(field(section, "reviewedRecipientPreview"));
     assertTrue(status.isVisible());
     assertEquals(messageProperties.getNotificationsPreviewNeedsReview(), status.getText());
     assertEquals("warning", status.getElement().getAttribute("data-state"));
@@ -2607,7 +2610,7 @@ class UserNotificationsUiTest {
     assertFalse(((Button) field(section, "sendNotificationButton")).isEnabled());
     assertEquals(
         "7 / " + UserNotificationService.BODY_LIMIT,
-        ((Span) field(section, "bodyCount")).getText());
+        ((Span) field(section, "bodyCountSpan")).getText());
     ((Button) field(section, "previewButton")).click();
     assertTrue(((Button) field(section, "sendNotificationButton")).isEnabled());
     assertEquals(messageProperties.getNotificationsPreviewUpdated(), status.getText());

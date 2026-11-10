@@ -53,6 +53,7 @@ import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.TwoFactorActionDialog;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
@@ -71,11 +72,11 @@ public class AdminExternalLoginSection extends VerticalLayout {
   private final transient MessageProperties messageProperties;
   private final transient ExternalProviderSettings externalProviderSettings;
   private final transient ConfigService configService;
-  private final List<ProviderForm> forms = new ArrayList<>();
+  private final List<ProviderForm> providerForms = new ArrayList<>();
   private final Span configurationBreadcrumbSpan = new Span();
   private final Span configurationTitleSpan = new Span();
   private final Span configurationDescriptionSpan = new Span();
-  private final H2 panelTitle = new H2();
+  private final H2 providerPanelTitleH2 = new H2();
   private final Span providerPanelDescriptionSpan = new Span();
   private final TabSheet providerTabSheet = new TabSheet();
   private final AdminSidePanel fieldHelpSidePanel;
@@ -83,16 +84,15 @@ public class AdminExternalLoginSection extends VerticalLayout {
   private ProviderForm fieldHelpProviderForm;
   private ProviderField fieldHelpProviderField;
   private transient TwoFactorAuthorization twoFactorAuthorization;
-  private transient jakarta.servlet.http.HttpServletRequest httpRequest;
+  private transient HttpServletRequest httpServletRequest;
   private TwoFactorActionDialog twoFactorConfirmationDialog;
 
   public void configureConfirmation(
-      TwoFactorAuthorization twoFactorAuthorization,
-      jakarta.servlet.http.HttpServletRequest httpRequest) {
+      TwoFactorAuthorization twoFactorAuthorization, HttpServletRequest httpServletRequest) {
     this.twoFactorAuthorization = twoFactorAuthorization;
-    this.httpRequest = httpRequest;
+    this.httpServletRequest = httpServletRequest;
     twoFactorConfirmationDialog =
-        new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, httpRequest);
+        new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, httpServletRequest);
     add(twoFactorConfirmationDialog);
   }
 
@@ -103,12 +103,14 @@ public class AdminExternalLoginSection extends VerticalLayout {
     this.messageProperties = messageProperties;
     this.externalProviderSettings = externalProviderSettings;
     this.configService = configService;
+
     fieldHelpSidePanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
     fieldHelpSidePanel.addClassName("admin-config-help");
     fieldHelpSidePanel.setId("provider-field-help");
     closeFieldHelpButton.setWidthFull();
-    closeFieldHelpButton.addClickListener(event -> fieldHelpSidePanel.close());
+    closeFieldHelpButton.addClickListener(_ -> fieldHelpSidePanel.close());
     fieldHelpSidePanel.getFooter().add(closeFieldHelpButton);
+
     setWidthFull();
     setPadding(false);
     setSpacing(false);
@@ -117,43 +119,49 @@ public class AdminExternalLoginSection extends VerticalLayout {
     add(
         new CosmosSectionHeaderComponent(
             configurationBreadcrumbSpan, configurationTitleSpan, configurationDescriptionSpan));
-    panelTitle.addClassName(PANEL_TITLE);
+
+    providerPanelTitleH2.addClassName(PANEL_TITLE);
     providerPanelDescriptionSpan.addClassName(PANEL_DESCRIPTION);
-    Div heading = new Div(panelTitle, providerPanelDescriptionSpan);
-    heading.addClassName(PANEL_HEADING);
-    Div symbol = new Div(ConfigGroupIcons.forGroup(AdminConfigGroup.EXTERNAL_LOGIN).create());
-    symbol.addClassName(PANEL_ICON);
-    Div statuses = new Div();
-    statuses.addClassName("provider-statuses");
-    Div header = new Div(symbol, heading, statuses);
-    header.addClassNames(PANEL_HEADER, "provider-panel-header");
+    Div providerPanelHeadingDiv = new Div(providerPanelTitleH2, providerPanelDescriptionSpan);
+    providerPanelHeadingDiv.addClassName(PANEL_HEADING);
+    Div providerIconDiv =
+        new Div(ConfigGroupIcons.forGroup(AdminConfigGroup.EXTERNAL_LOGIN).create());
+    providerIconDiv.addClassName(PANEL_ICON);
+    Div providerStatusesDiv = new Div();
+    providerStatusesDiv.addClassName("provider-statuses");
+    Div providerHeaderDiv = new Div(providerIconDiv, providerPanelHeadingDiv, providerStatusesDiv);
+    providerHeaderDiv.addClassNames(PANEL_HEADER, "provider-panel-header");
+
     providerTabSheet.setId("admin-provider-tabs");
     providerTabSheet.addClassName(PANEL_TABS);
     providerTabSheet.setWidthFull();
     providerTabSheet.addThemeVariants(TabSheetVariant.NO_PADDING);
+
     for (String providerId : ExternalProviderSettings.PROVIDERS) {
-      ProviderForm form = new ProviderForm(providerId);
-      forms.add(form);
-      statuses.add(form.providerStatusBadge);
-      String name = providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
-      Image logo = new Image(providerLogo(providerId), "");
-      logo.getElement().setAttribute("aria-hidden", "true");
-      Tab tab = new Tab(logo, new Span(name));
-      tab.setId("provider-tab-" + providerId);
-      providerTabSheet.add(tab, form.providerFormContentDiv);
+      ProviderForm providerForm = new ProviderForm(providerId);
+      providerForms.add(providerForm);
+      providerStatusesDiv.add(providerForm.providerStatusBadge);
+      String providerNameText = providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
+      Image providerLogoImage = new Image(resolveProviderLogoPath(providerId), "");
+      providerLogoImage.getElement().setAttribute("aria-hidden", "true");
+      Tab providerTab = new Tab(providerLogoImage, new Span(providerNameText));
+      providerTab.setId("provider-tab-" + providerId);
+      providerTabSheet.add(providerTab, providerForm.providerFormContentDiv);
     }
-    CosmosCardComponent card = new CosmosCardComponent(header, providerTabSheet);
-    card.addClassNames("cosmos-admin-form-card", PANEL_CARD);
-    add(card, fieldHelpSidePanel);
+
+    CosmosCardComponent providerCardComponent =
+        new CosmosCardComponent(providerHeaderDiv, providerTabSheet);
+    providerCardComponent.addClassNames("cosmos-admin-form-card", PANEL_CARD);
+    add(providerCardComponent, fieldHelpSidePanel);
     refreshTexts();
   }
 
-  private static String providerLogo(String providerId) {
+  private static String resolveProviderLogoPath(String providerId) {
     return "icons/external-login/" + providerId + (providerId.equals(GOOGLE) ? ".png" : ".svg");
   }
 
   public void activate() {
-    for (ProviderForm form : forms) {
+    for (ProviderForm form : providerForms) {
       form.loadProviderSettings();
     }
     refreshTexts();
@@ -164,9 +172,10 @@ public class AdminExternalLoginSection extends VerticalLayout {
         messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminConfigTitle());
     configurationTitleSpan.setText(messageProperties.getAdminConfigTitle());
     configurationDescriptionSpan.setText(messageProperties.getAdminConfigDescription());
-    panelTitle.setText(messageProperties.getProviderSettingsPanelTitle());
+    providerPanelTitleH2.setText(messageProperties.getProviderSettingsPanelTitle());
     providerPanelDescriptionSpan.setText(messageProperties.getProviderSettingsPanelDescription());
-    forms.forEach(ProviderForm::refreshTexts);
+
+    providerForms.forEach(ProviderForm::refreshTexts);
     closeFieldHelpButton.setText(messageProperties.getNotificationsClose());
     if (fieldHelpSidePanel.isOpened()) {
       fieldHelpProviderForm.refreshHelp();
@@ -177,12 +186,12 @@ public class AdminExternalLoginSection extends VerticalLayout {
     private final String providerId;
     private final Div providerFormContentDiv;
     private final Badge providerStatusBadge = new Badge();
-    private final Tooltip statusTooltip = Tooltip.forComponent(providerStatusBadge);
+    private final Tooltip providerStatusTooltip = Tooltip.forComponent(providerStatusBadge);
     private final Span assistantKickerSpan = new Span();
     private final Span assistantKickerTextSpan = new Span();
-    private final H3 assistantTitle = new H3();
+    private final H3 assistantTitleH3 = new H3();
     private final Span assistantDescriptionSpan = new Span();
-    private final List<Span> stepLabels = new ArrayList<>();
+    private final List<Span> setupStepCaptionSpans = new ArrayList<>();
     private final Span providerConsoleGuideSpan = new Span();
     private final Anchor providerConsoleLink;
     private final Span providerConsoleLinkCaptionSpan = new Span();
@@ -195,23 +204,28 @@ public class AdminExternalLoginSection extends VerticalLayout {
     private final Span providerSettingsHintSpan = new Span();
     private final Button reloadProviderSettingsButton = new Button();
     private final Button saveProviderSettingsButton = new Button();
-    private final Map<ProviderField, Span> fieldLabels = new EnumMap<>(ProviderField.class);
-    private final Map<ProviderField, ConfigInfoButton> infoButtons =
+    private final Map<ProviderField, Span> labelSpansByProviderField =
+        new EnumMap<>(ProviderField.class);
+    private final Map<ProviderField, ConfigInfoButton> infoButtonsByProviderField =
         new EnumMap<>(ProviderField.class);
     private ExternalProviderSettings.Settings savedProviderSettings;
 
     private ProviderForm(String providerId) {
       this.providerId = providerId;
+
       assistantKickerSpan.addClassName("provider-assistant-kicker");
       assistantKickerSpan.add(AppIcon.BOT.create(), assistantKickerTextSpan);
-      assistantTitle.addClassName("provider-assistant-title");
+      assistantTitleH3.addClassName("provider-assistant-title");
       assistantDescriptionSpan.addClassName("provider-assistant-description");
-      Div introduction = new Div(assistantKickerSpan, assistantTitle, assistantDescriptionSpan);
-      introduction.addClassName("provider-assistant-intro");
+      Div assistantIntroDiv =
+          new Div(assistantKickerSpan, assistantTitleH3, assistantDescriptionSpan);
+      assistantIntroDiv.addClassName("provider-assistant-intro");
+
       providerStatusBadge.addClassName("provider-status");
       providerStatusBadge.setId(PROVIDER_PREFIX + providerId + "-status");
-      providerStatusBadge.setIcon(new Image(providerLogo(providerId), ""));
+      providerStatusBadge.setIcon(new Image(resolveProviderLogoPath(providerId), ""));
       providerStatusBadge.getElement().setAttribute("tabindex", "0");
+
       providerConsoleLink =
           new Anchor(
               providerId.equals(GOOGLE)
@@ -223,13 +237,15 @@ public class AdminExternalLoginSection extends VerticalLayout {
       providerConsoleLink.addClassName("provider-console-link");
       providerConsoleLink.add(
           AppIcon.EXTERNAL_LINK_TABLER.create(), providerConsoleLinkCaptionSpan);
+
       redirectUriTextField.setReadOnly(true);
       redirectUriTextField.setAutoselect(true);
       redirectUriTextField.setWidthFull();
       redirectUriTextField.setId(PROVIDER_PREFIX + providerId + "-redirect");
+
       copyRedirectUriButton.addClassName("provider-copy");
       copyRedirectUriButton.setPrefixComponent(AppIcon.CLIPBOARD_COPY.create());
-      copyRedirectUriButton.addClickListener(event ->
+      copyRedirectUriButton.addClickListener(_ ->
           redirectUriTextField
               .getElement()
               .executeJs(
@@ -237,70 +253,78 @@ public class AdminExternalLoginSection extends VerticalLayout {
                   redirectUriTextField.getValue())
               .then(
                   Boolean.class,
-                  copied ->
+                  wasRedirectUriCopied ->
                       NotificationHelper.getInstance()
                           .showNotification(
-                              Boolean.TRUE.equals(copied)
+                              Boolean.TRUE.equals(wasRedirectUriCopied)
                                   ? messageProperties::getProviderSettingsCopied
                                   : messageProperties::getProviderSettingsCopyFailed,
                               null,
-                              Boolean.TRUE.equals(copied)
+                              Boolean.TRUE.equals(wasRedirectUriCopied)
                                   ? NotificationType.SUCCESS
                                   : NotificationType.ERROR)));
-      Div address = new Div(redirectUriTextField, copyRedirectUriButton);
-      address.addClassName("provider-redirect");
+      Div redirectUriRowDiv = new Div(redirectUriTextField, copyRedirectUriButton);
+      redirectUriRowDiv.addClassName("provider-redirect");
+
       clientIdTextField.setWidthFull();
       clientIdTextField.setMaxLength(512);
       clientIdTextField.setId(PROVIDER_PREFIX + providerId + "-client-id");
       clientIdTextField.setValueChangeMode(ValueChangeMode.EAGER);
+
       clientSecretPasswordField.setWidthFull();
       clientSecretPasswordField.setMaxLength(2048);
       clientSecretPasswordField.setId(PROVIDER_PREFIX + providerId + "-secret");
       clientSecretPasswordField.getElement().setAttribute("autocomplete", "new-password");
       clientSecretPasswordField.setValueChangeMode(ValueChangeMode.EAGER);
-      Div credentials =
+      Div credentialsDiv =
           new Div(
               fieldWithHelp(clientIdTextField, ProviderField.CLIENT_ID),
               fieldWithHelp(clientSecretPasswordField, ProviderField.SECRET));
-      credentials.addClassName("provider-credentials");
+      credentialsDiv.addClassName("provider-credentials");
+
       providerEnabledSwitch.setId(PROVIDER_PREFIX + providerId + "-enabled");
       providerEnabledSwitch.setWidthFull();
       providerEnabledSwitch.addClassName("cosmos-config-switch");
       providerEnabledSwitch.setLabelComponent(providerEnabledLabelSpan);
-      Div activation = new Div(providerEnabledSwitch);
-      activation.addClassName("provider-activation");
-      Div consoleGuide = new Div(providerConsoleGuideSpan, providerConsoleLink);
-      consoleGuide.addClassName("provider-console-guide");
-      Div setup = new Div(consoleGuide, address);
-      setup.addClassName("provider-step-body");
-      Div fields =
+      Div activationDiv = new Div(providerEnabledSwitch);
+      activationDiv.addClassName("provider-activation");
+
+      Div consoleGuideDiv = new Div(providerConsoleGuideSpan, providerConsoleLink);
+      consoleGuideDiv.addClassName("provider-console-guide");
+      Div providerSetupDiv = new Div(consoleGuideDiv, redirectUriRowDiv);
+      providerSetupDiv.addClassName("provider-step-body");
+      Div providerFieldsDiv =
           new Div(
-              introduction,
-              step(setup),
-              step(credentials),
-              step(fieldWithHelp(activation, ProviderField.ENABLED)));
-      fields.addClassName("provider-fields");
-      Div info = new Div(AppIcon.INFO_CIRCLE.create(), providerSettingsHintSpan);
-      info.addClassName("cosmos-config-save-hint");
+              assistantIntroDiv,
+              buildProviderSetupStepDiv(providerSetupDiv),
+              buildProviderSetupStepDiv(credentialsDiv),
+              buildProviderSetupStepDiv(fieldWithHelp(activationDiv, ProviderField.ENABLED)));
+      providerFieldsDiv.addClassName("provider-fields");
+
+      Div providerSaveHintDiv = new Div(AppIcon.INFO_CIRCLE.create(), providerSettingsHintSpan);
+      providerSaveHintDiv.addClassName("cosmos-config-save-hint");
       reloadProviderSettingsButton.setPrefixComponent(AppIcon.REFRESH.create());
-      reloadProviderSettingsButton.addClickListener(event -> loadProviderSettings());
+      reloadProviderSettingsButton.addClickListener(_ -> loadProviderSettings());
+
       saveProviderSettingsButton.setPrefixComponent(AppIcon.CHECK.create());
       saveProviderSettingsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
       saveProviderSettingsButton.setId(PROVIDER_PREFIX + providerId + "-save");
-      saveProviderSettingsButton.addClickListener(event -> saveProviderSettings());
-      Div actions = new Div(reloadProviderSettingsButton, saveProviderSettingsButton);
-      actions.addClassName("cosmos-config-card-actions");
-      Div footer = new Div(info, actions);
-      footer.addClassName("cosmos-panel-footer");
-      providerFormContentDiv = new Div(fields, footer);
+      saveProviderSettingsButton.addClickListener(_ -> saveProviderSettings());
+      Div providerActionsDiv = new Div(reloadProviderSettingsButton, saveProviderSettingsButton);
+      providerActionsDiv.addClassName("cosmos-config-card-actions");
+      Div providerFooterDiv = new Div(providerSaveHintDiv, providerActionsDiv);
+      providerFooterDiv.addClassName("cosmos-panel-footer");
+      providerFormContentDiv = new Div(providerFieldsDiv, providerFooterDiv);
       providerFormContentDiv.setId(PROVIDER_PREFIX + providerId + "-content");
       providerFormContentDiv.addClassName("provider-content");
-      clientIdTextField.addValueChangeListener(event -> refreshAvailability());
-      clientSecretPasswordField.addValueChangeListener(event -> refreshAvailability());
-      providerEnabledSwitch.addValueChangeListener(event -> refreshAvailability());
+
+      clientIdTextField.addValueChangeListener(_ -> refreshProviderActivationAvailability());
+      clientSecretPasswordField.addValueChangeListener(
+          _ -> refreshProviderActivationAvailability());
+      providerEnabledSwitch.addValueChangeListener(_ -> refreshProviderActivationAvailability());
     }
 
-    private void openHelp(ProviderField field) {
+    private void openProviderFieldHelp(ProviderField field) {
       fieldHelpProviderForm = this;
       fieldHelpProviderField = field;
       fieldHelpProviderForm.refreshHelp();
@@ -316,17 +340,21 @@ public class AdminExternalLoginSection extends VerticalLayout {
       fieldHelpSidePanel.setHeading(messageProperties.getAdminConfigHelpTitle());
       fieldHelpSidePanel.setDescription(messageProperties.getAdminConfigHelpDescription());
       fieldHelpSidePanel.refreshCloseText(messageProperties);
-      Span group = new Span(providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME);
-      group.addClassName("admin-help-group");
-      H3 fieldTitle = new H3(fieldLabel(fieldHelpProviderField));
-      fieldTitle.addClassName("admin-help-field-title");
-      Span explanation = new Span(fieldHelp(fieldHelpProviderField));
-      explanation.addClassName("admin-help-description");
-      UnorderedList rules = new UnorderedList(new ListItem(fieldRule(fieldHelpProviderField)));
-      Div rulesSection = new Div(new H4(messageProperties.getAdminConfigInputRules()), rules);
-      rulesSection.addClassName("admin-help-rules");
-      fieldHelpSidePanel.add(group, fieldTitle, explanation, rulesSection);
-      String timing =
+
+      Span providerNameSpan = new Span(providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME);
+      providerNameSpan.addClassName("admin-help-group");
+      H3 fieldTitleH3 = new H3(fieldLabel(fieldHelpProviderField));
+      fieldTitleH3.addClassName("admin-help-field-title");
+      Span fieldDescriptionSpan = new Span(fieldHelp(fieldHelpProviderField));
+      fieldDescriptionSpan.addClassName("admin-help-description");
+      UnorderedList fieldRulesList =
+          new UnorderedList(new ListItem(fieldRule(fieldHelpProviderField)));
+      Div fieldRulesDiv =
+          new Div(new H4(messageProperties.getAdminConfigInputRules()), fieldRulesList);
+      fieldRulesDiv.addClassName("admin-help-rules");
+      fieldHelpSidePanel.add(providerNameSpan, fieldTitleH3, fieldDescriptionSpan, fieldRulesDiv);
+
+      String effectiveUseText =
           switch (fieldHelpProviderField) {
             case CLIENT_ID -> messageProperties.getAdminConfigEffectiveProviderClient();
             case SECRET -> messageProperties.getAdminConfigEffectiveProviderSecret();
@@ -334,55 +362,57 @@ public class AdminExternalLoginSection extends VerticalLayout {
           };
       fieldHelpSidePanel.addEffectiveUse(
           messageProperties,
-          List.of(timing, messageProperties.getAdminConfigEffectiveProviderExisting()));
+          List.of(effectiveUseText, messageProperties.getAdminConfigEffectiveProviderExisting()));
     }
 
-    private Div step(Component body) {
-      Span label = new Span();
-      label.addClassName("provider-step-label");
-      AppIcon icon =
-          switch (stepLabels.size()) {
+    private Div buildProviderSetupStepDiv(Component stepBodyComponent) {
+      Span stepLabelSpan = new Span();
+      stepLabelSpan.addClassName("provider-step-label");
+      AppIcon stepAppIcon =
+          switch (setupStepCaptionSpans.size()) {
             case 0 -> AppIcon.NUMBER_ONE;
             case 1 -> AppIcon.NUMBER_TWO;
             case 2 -> AppIcon.NUMBER_THREE;
             default -> throw new IllegalStateException("Unsupported provider setup step");
           };
-      label.add(icon.create());
-      Span caption = new Span();
-      label.add(caption);
-      stepLabels.add(caption);
-      Div step = new Div(label, body);
-      step.addClassName("provider-step");
-      return step;
+      stepLabelSpan.add(stepAppIcon.create());
+      Span stepCaptionSpan = new Span();
+      stepLabelSpan.add(stepCaptionSpan);
+      setupStepCaptionSpans.add(stepCaptionSpan);
+      Div setupStepDiv = new Div(stepLabelSpan, stepBodyComponent);
+      setupStepDiv.addClassName("provider-step");
+      return setupStepDiv;
     }
 
-    private Div fieldWithHelp(Component input, ProviderField field) {
-      ConfigInfoButton info = new ConfigInfoButton(() -> fieldHelp(field), () -> openHelp(field));
-      info.setId(
+    private Div fieldWithHelp(Component fieldInputComponent, ProviderField field) {
+      ConfigInfoButton fieldInfoButton =
+          new ConfigInfoButton(() -> fieldHelp(field), () -> openProviderFieldHelp(field));
+      fieldInfoButton.setId(
           PROVIDER_PREFIX
               + providerId
               + "-"
               + field.name().toLowerCase(java.util.Locale.ROOT)
               + "-info");
-      infoButtons.put(field, info);
-      Div row = new Div(input, info);
-      row.addClassNames("cosmos-config-input-row", "provider-help-row");
+      infoButtonsByProviderField.put(field, fieldInfoButton);
+      Div fieldRowDiv = new Div(fieldInputComponent, fieldInfoButton);
+      fieldRowDiv.addClassNames("cosmos-config-input-row", "provider-help-row");
+
       if (field == ProviderField.ENABLED) {
-        row.addClassName("provider-help-toggle");
-        return row;
+        fieldRowDiv.addClassName("provider-help-toggle");
+        return fieldRowDiv;
       }
-      Span label = new Span();
-      label.setId(info.getId().orElseThrow() + "-label");
-      label.addClassNames("provider-field-label", "admin-config-required");
-      fieldLabels.put(field, label);
-      if (input instanceof TextField textField) {
-        textField.setAriaLabelledBy(label.getId().orElseThrow());
-      } else if (input instanceof PasswordField passwordField) {
-        passwordField.setAriaLabelledBy(label.getId().orElseThrow());
+      Span stepLabelSpan = new Span();
+      stepLabelSpan.setId(fieldInfoButton.getId().orElseThrow() + "-label");
+      stepLabelSpan.addClassNames("provider-field-label", "admin-config-required");
+      labelSpansByProviderField.put(field, stepLabelSpan);
+      if (fieldInputComponent instanceof TextField textField) {
+        textField.setAriaLabelledBy(stepLabelSpan.getId().orElseThrow());
+      } else if (fieldInputComponent instanceof PasswordField passwordField) {
+        passwordField.setAriaLabelledBy(stepLabelSpan.getId().orElseThrow());
       }
-      Div wrapper = new Div(label, row);
-      wrapper.addClassNames("cosmos-config-field", "provider-help-field");
-      return wrapper;
+      Div labelledFieldDiv = new Div(stepLabelSpan, fieldRowDiv);
+      labelledFieldDiv.addClassNames("cosmos-config-field", "provider-help-field");
+      return labelledFieldDiv;
     }
 
     private String fieldLabel(ProviderField field) {
@@ -400,30 +430,34 @@ public class AdminExternalLoginSection extends VerticalLayout {
       providerEnabledSwitch.setValue(savedProviderSettings.enabled());
       clientIdTextField.setInvalid(false);
       clientSecretPasswordField.setInvalid(false);
+
       // BASE_URL ist dieselbe vertrauenswürdige öffentliche Adresse wie für Bestätigungslinks.
-      String base = configService.getString(ConfigEntry.BASE_URL);
-      URI origin = URI.create(base);
-      redirectUriTextField.setValue(origin.resolve("/login/oauth2/code/" + providerId).toString());
+      String publicBaseUrl = configService.getString(ConfigEntry.BASE_URL);
+      URI publicBaseUri = URI.create(publicBaseUrl);
+      redirectUriTextField.setValue(
+          publicBaseUri.resolve("/login/oauth2/code/" + providerId).toString());
       refreshTexts();
     }
 
     private void saveProviderSettings() {
       if (twoFactorAuthorization != null
-          && twoFactorAuthorization.requires(httpRequest, TwoFactorAction.SECURITY_CONFIGURATION)) {
+          && twoFactorAuthorization.requires(
+              httpServletRequest, TwoFactorAction.SECURITY_CONFIGURATION)) {
         twoFactorConfirmationDialog.open(
-            TwoFactorAction.SECURITY_CONFIGURATION, this::saveConfirmed);
+            TwoFactorAction.SECURITY_CONFIGURATION, this::persistConfirmedProviderSettings);
       } else {
-        saveConfirmed();
+        persistConfirmedProviderSettings();
       }
     }
 
-    private void saveConfirmed() {
+    private void persistConfirmedProviderSettings() {
       clientIdTextField.setInvalid(
           providerEnabledSwitch.getValue() && clientIdTextField.getValue().isBlank());
       clientSecretPasswordField.setInvalid(
           providerEnabledSwitch.getValue()
               && clientSecretPasswordField.getValue().isBlank()
               && !savedProviderSettings.secretStored());
+
       try {
         savedProviderSettings =
             externalProviderSettings.save(
@@ -432,6 +466,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
                 clientSecretPasswordField.getValue(),
                 providerEnabledSwitch.getValue(),
                 savedProviderSettings.revision());
+
         clientSecretPasswordField.clear();
         refreshTexts();
         NotificationHelper.getInstance()
@@ -454,17 +489,20 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
 
     private void refreshTexts() {
-      fieldLabels.forEach((field, label) -> label.setText(fieldLabel(field)));
-      infoButtons.forEach((field, info) -> {
+      labelSpansByProviderField.forEach((field, label) -> label.setText(fieldLabel(field)));
+
+      infoButtonsByProviderField.forEach((field, info) -> {
         info.refreshText();
         info.setAriaLabel(messageProperties.getAdminConfigHelpTitle() + ": " + fieldLabel(field));
       });
-      String name = providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
+      String providerNameText = providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
       assistantKickerTextSpan.setText(messageProperties.getProviderSettingsAssistantKicker());
-      assistantTitle.setText(messageProperties.getProviderSettingsAssistantTitle(name));
+      assistantTitleH3.setText(
+          messageProperties.getProviderSettingsAssistantTitle(providerNameText));
       assistantDescriptionSpan.setText(messageProperties.getProviderSettingsAssistantDescription());
-      for (int index = 0; index < stepLabels.size(); index++) {
-        stepLabels
+
+      for (int index = 0; index < setupStepCaptionSpans.size(); index++) {
+        setupStepCaptionSpans
             .get(index)
             .setText(
                 switch (index) {
@@ -474,6 +512,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
                   default -> throw new IllegalStateException("Unsupported provider setup step");
                 });
       }
+
       providerConsoleGuideSpan.setText(
           providerId.equals(GOOGLE)
               ? messageProperties.getProviderSettingsGoogleGuide()
@@ -481,6 +520,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
       providerConsoleLinkCaptionSpan.setText(messageProperties.getProviderSettingsOpenConsole());
       redirectUriTextField.setLabel(messageProperties.getProviderSettingsRedirect());
       copyRedirectUriButton.setText(messageProperties.getProviderSettingsCopy());
+
       clientIdTextField.setLabel(messageProperties.getProviderSettingsClientId());
       clientIdTextField.setPlaceholder(messageProperties.getProviderSettingsClientIdPlaceholder());
       clientSecretPasswordField.setLabel(messageProperties.getProviderSettingsSecret());
@@ -489,52 +529,63 @@ public class AdminExternalLoginSection extends VerticalLayout {
               ? messageProperties.getProviderSettingsSecretStored()
               : messageProperties.getProviderSettingsSecretPlaceholder());
       clientSecretPasswordField.setHelperText(messageProperties.getProviderSettingsSecretHint());
+
       providerEnabledLabelSpan.setText(messageProperties.getProviderSettingsEnable());
       providerEnabledSwitch.setAriaLabel(messageProperties.getProviderSettingsEnable());
       providerSettingsHintSpan.setText(messageProperties.getProviderSettingsHint());
       reloadProviderSettingsButton.setText(messageProperties.getAdminConfigReload());
       saveProviderSettingsButton.setText(messageProperties.getAdminConfigSave());
-      refreshAvailability();
-      refreshStatus();
+
+      refreshProviderActivationAvailability();
+      refreshProviderStatusBadge();
     }
 
-    private void refreshAvailability() {
-      boolean credentialsPresent =
+    private void refreshProviderActivationAvailability() {
+      boolean hasProviderCredentials =
           !clientIdTextField.getValue().isBlank()
               && (!clientSecretPasswordField.getValue().isBlank()
                   || savedProviderSettings != null && savedProviderSettings.secretStored());
-      boolean editable = credentialsPresent || providerEnabledSwitch.getValue();
-      providerEnabledSwitch.setEnabled(editable);
+      boolean canChangeProviderActivation =
+          hasProviderCredentials || providerEnabledSwitch.getValue();
+      providerEnabledSwitch.setEnabled(canChangeProviderActivation);
       providerEnabledLabelSpan
           .getElement()
-          .setAttribute("aria-disabled", Boolean.toString(!editable));
+          .setAttribute("aria-disabled", Boolean.toString(!canChangeProviderActivation));
     }
 
-    private void refreshStatus() {
-      boolean configured =
+    private void refreshProviderStatusBadge() {
+      boolean isProviderConfigured =
           savedProviderSettings != null
               && !savedProviderSettings.clientId().isBlank()
               && savedProviderSettings.secretStored();
-      boolean active = configured && savedProviderSettings.enabled();
-      String name = providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
-      String state =
-          active
+      boolean isProviderActive = isProviderConfigured && savedProviderSettings.enabled();
+      String providerNameText = providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
+      String providerStatusText =
+          isProviderActive
               ? messageProperties.getProviderSettingsActive()
               : messageProperties.getProviderSettingsInactive();
-      providerStatusBadge.setText(state);
-      providerStatusBadge.getElement().setAttribute("aria-label", name + ": " + state);
+
+      providerStatusBadge.setText(providerStatusText);
+      providerStatusBadge
+          .getElement()
+          .setAttribute("aria-label", providerNameText + ": " + providerStatusText);
       providerStatusBadge.removeThemeVariants(BadgeVariant.SUCCESS, BadgeVariant.WARNING);
-      providerStatusBadge.addThemeVariants(active ? BadgeVariant.SUCCESS : BadgeVariant.WARNING);
-      providerStatusBadge.getElement().setAttribute("data-state", active ? "active" : "inactive");
-      String explanation;
-      if (!configured) {
-        explanation = messageProperties.getProviderSettingsUnconfiguredHint(name);
-      } else if (active) {
-        explanation = messageProperties.getProviderSettingsActiveHint(name);
+      providerStatusBadge.addThemeVariants(
+          isProviderActive ? BadgeVariant.SUCCESS : BadgeVariant.WARNING);
+      providerStatusBadge
+          .getElement()
+          .setAttribute("data-state", isProviderActive ? "active" : "inactive");
+
+      String statusExplanationText;
+      if (!isProviderConfigured) {
+        statusExplanationText =
+            messageProperties.getProviderSettingsUnconfiguredHint(providerNameText);
+      } else if (isProviderActive) {
+        statusExplanationText = messageProperties.getProviderSettingsActiveHint(providerNameText);
       } else {
-        explanation = messageProperties.getProviderSettingsInactiveHint(name);
+        statusExplanationText = messageProperties.getProviderSettingsInactiveHint(providerNameText);
       }
-      statusTooltip.setText(explanation);
+      providerStatusTooltip.setText(statusExplanationText);
     }
   }
 }

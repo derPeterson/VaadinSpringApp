@@ -108,7 +108,7 @@ class AdminMailTestSectionTest {
     AdminMailTestSection section = section();
     Anchor link = field(section, "smtpLink");
     TextArea body = field(section, "testBodyField");
-    Span bodyHint = field(section, "mailBodyHint");
+    Span bodyHint = field(section, "mailBodyHintSpan");
     assertEquals("admin?section=configuration&group=smtp", link.getHref());
     assertEquals(
         messageProperties.getAdminConfigGroupSmtp(), link.getElement().getTextRecursively());
@@ -130,7 +130,7 @@ class AdminMailTestSectionTest {
     localeReference.set(Locale.forLanguageTag(language));
     AdminMailTestSection section = section();
     ConfigInfoButton info = field(section, "bodyInfoButton");
-    AdminSidePanel help = field(section, "helpPanel");
+    AdminSidePanel help = field(section, "mailFieldHelpPanel");
     TextArea body = field(section, "testBodyField");
     body.setValue("Draft body");
     info.click();
@@ -158,8 +158,8 @@ class AdminMailTestSectionTest {
     TextField subject = field(section, "testSubjectField");
     TextArea body = field(section, "testBodyField");
     Button send = field(section, "sendTestMailButton");
-    VerticalLayout panel = field(section, "mailLayout");
-    Div badge = field(section, "deliveryMeta");
+    VerticalLayout panel = field(section, "mailCardContentLayout");
+    Div badge = field(section, "deliveryStatusDiv");
     subject.setValue("Draft subject");
     body.setValue("Draft body");
     assertTrue(panel.isEnabled());
@@ -172,7 +172,7 @@ class AdminMailTestSectionTest {
         statusHint.getText());
     assertEquals(
         messageProperties.getAdminMailCardBadge(),
-        ((Span) field(section, "mailCardBadge")).getText());
+        ((Span) field(section, "mailDeliveryStatusSpan")).getText());
     when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     section.refreshDeliveryState();
     assertFalse(panel.isEnabled());
@@ -235,10 +235,10 @@ class AdminMailTestSectionTest {
     block(state);
     send.click();
     assertFalse(send.isEnabled());
-    assertFalse(((VerticalLayout) field(section, "mailLayout")).isEnabled());
+    assertFalse(((VerticalLayout) field(section, "mailCardContentLayout")).isEnabled());
     assertEquals(
         state.name().toLowerCase(Locale.ROOT),
-        ((Div) field(section, "deliveryMeta")).getElement().getAttribute("data-state"));
+        ((Div) field(section, "deliveryStatusDiv")).getElement().getAttribute("data-state"));
     verifyNoInteractions(emailService);
   }
 
@@ -249,7 +249,7 @@ class AdminMailTestSectionTest {
   void initiallyBlockedStateNeverEnablesPanel(MaintenanceService.State state) {
     block(state);
     AdminMailTestSection section = section();
-    assertFalse(((VerticalLayout) field(section, "mailLayout")).isEnabled());
+    assertFalse(((VerticalLayout) field(section, "mailCardContentLayout")).isEnabled());
     assertFalse(((Button) field(section, "sendTestMailButton")).isEnabled());
     verifyNoInteractions(emailService);
   }
@@ -267,7 +267,7 @@ class AdminMailTestSectionTest {
           previousInterval > 0 ? Math.min(previousInterval, 5000) : 5000, testUi.getPollInterval());
       when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
       ComponentUtil.fireEvent(testUi, new PollEvent(testUi, true));
-      assertFalse(((VerticalLayout) field(section, "mailLayout")).isEnabled());
+      assertFalse(((VerticalLayout) field(section, "mailCardContentLayout")).isEnabled());
       assertEquals(1, unrelatedPolls[0]);
       testUi.remove(section);
       assertEquals(previousInterval, testUi.getPollInterval());
