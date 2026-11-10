@@ -136,38 +136,36 @@ public class AccountSecurityService {
     Assert.isTrue(Objects.equals(change.newPassword(), change.confirmation()), "Password mismatch");
     String identity =
         reauthenticate(request, change.currentPassword(), ExternalLoginFlow.Purpose.PASSWORD);
-    return transaction(
-        () -> {
-          UserEntity user =
-              lockedAccount(
-                  request, identity, change.currentPassword(), ExternalLoginFlow.Purpose.PASSWORD);
-          if (user.getPassword() != null
-              && encoder.matches(change.newPassword(), user.getPassword())) {
-            throw new Rejected(Problem.SAME_PASSWORD);
-          }
-          String body = mail.render("password_changed", user, Map.of());
-          Long previous = user.getVersion();
-          String previousAccessVersion = user.getAccessVersion();
-          user.setPassword(encoder.encode(change.newPassword()));
-          users.saveAndFlush(user);
-          invalidateEmailChanges(user);
-          invalidateResets(user);
-          queue.addAddressedNotification(
-              user, user.getEmail(), mail.texts(user).getAccountPasswordChangedSubject(), body);
-          userNotifications.recordSecurityEvent(
-              user, de.derpeterson.app.model.enums.UserNotificationType.PASSWORD_CHANGED);
-          remembered.removeUserTokens(identity);
-          HttpSession session = request.getSession(false);
-          revokeAfterCommit(identity, session == null ? null : session.getId());
-          TransactionSynchronizationManager.registerSynchronization(
-              new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                  twoFactor.retainAfterAccessVersionChange(request, previousAccessVersion);
-                }
-              });
-          return new PasswordChanged(previous, user.getVersion());
-        });
+    return transaction(() -> {
+      UserEntity user =
+          lockedAccount(
+              request, identity, change.currentPassword(), ExternalLoginFlow.Purpose.PASSWORD);
+      if (user.getPassword() != null && encoder.matches(change.newPassword(), user.getPassword())) {
+        throw new Rejected(Problem.SAME_PASSWORD);
+      }
+      String body = mail.render("password_changed", user, Map.of());
+      Long previous = user.getVersion();
+      String previousAccessVersion = user.getAccessVersion();
+      user.setPassword(encoder.encode(change.newPassword()));
+      users.saveAndFlush(user);
+      invalidateEmailChanges(user);
+      invalidateResets(user);
+      queue.addAddressedNotification(
+          user, user.getEmail(), mail.texts(user).getAccountPasswordChangedSubject(), body);
+      userNotifications.recordSecurityEvent(
+          user, de.derpeterson.app.model.enums.UserNotificationType.PASSWORD_CHANGED);
+      remembered.removeUserTokens(identity);
+      HttpSession session = request.getSession(false);
+      revokeAfterCommit(identity, session == null ? null : session.getId());
+      TransactionSynchronizationManager.registerSynchronization(
+          new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+              twoFactor.retainAfterAccessVersionChange(request, previousAccessVersion);
+            }
+          });
+      return new PasswordChanged(previous, user.getVersion());
+    });
   }
 
   public void requestEmailChange(HttpServletRequest request, EmailChange change) {
@@ -179,52 +177,51 @@ public class AccountSecurityService {
         "Email mismatch");
     String identity =
         reauthenticate(request, change.currentPassword(), ExternalLoginFlow.Purpose.EMAIL);
-    transaction(
-        () -> {
-          UserEntity user =
-              lockedAccount(
-                  request, identity, change.currentPassword(), ExternalLoginFlow.Purpose.EMAIL);
-          if (user.getEmail().equals(target)) {
-            throw new Rejected(Problem.SAME_EMAIL);
-          }
-          if (users.emailExistsForOtherUser(target, user.getId())) {
-            throw new Rejected(Problem.EMAIL_UNAVAILABLE);
-          }
-          LocalDateTime now = LocalDateTime.now(clock);
-          List<EmailChangeTokenEntity> active =
-              tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
-          if (active.stream().anyMatch(t -> t.getCreatedAt().isAfter(now.minusMinutes(1)))) {
-            throw new Rejected(Problem.REQUEST_PENDING);
-          }
-          Duration duration = duration(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION);
-          byte[] raw = new byte[32];
-          random.nextBytes(raw);
-          String token = Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
-          String link =
-              UriComponentsBuilder.fromUriString(config.getString(ConfigEntry.BASE_URL))
-                  .pathSegment(AppRoute.EMAIL_CHANGE.getRoute(), token)
-                  .toUriString();
-          String body =
-              mail.render(
-                  "email_change_request",
-                  user,
-                  Map.of("CONFIRM_EMAIL_LINK", link, "NEW_EMAIL", target));
-          active.forEach(t -> t.setStatus(TokenStatus.INACTIVE));
-          tokens.saveAll(active);
-          EmailChangeTokenEntity pending = new EmailChangeTokenEntity();
-          pending.setDigest(digest(token));
-          pending.setUserEntity(user);
-          pending.setOldEmail(user.getEmail());
-          pending.setNewEmail(target);
-          pending.setCredentialDigest(digest(user.getAccessVersion()));
-          pending.setCreatedAt(now);
-          pending.setExpiryDate(now.plus(duration));
-          tokens.save(pending);
-          queue.addAddressedNotification(
-              user, target, mail.texts(user).getAccountEmailChangeSubject(), body);
-          AfterCommitLog.info(log, "Email change confirmation queued: userId={}", user.getId());
-          return null;
-        });
+    transaction(() -> {
+      UserEntity user =
+          lockedAccount(
+              request, identity, change.currentPassword(), ExternalLoginFlow.Purpose.EMAIL);
+      if (user.getEmail().equals(target)) {
+        throw new Rejected(Problem.SAME_EMAIL);
+      }
+      if (users.emailExistsForOtherUser(target, user.getId())) {
+        throw new Rejected(Problem.EMAIL_UNAVAILABLE);
+      }
+      LocalDateTime now = LocalDateTime.now(clock);
+      List<EmailChangeTokenEntity> active =
+          tokens.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
+      if (active.stream().anyMatch(t -> t.getCreatedAt().isAfter(now.minusMinutes(1)))) {
+        throw new Rejected(Problem.REQUEST_PENDING);
+      }
+      Duration duration = duration(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION);
+      byte[] raw = new byte[32];
+      random.nextBytes(raw);
+      String token = Base64.getUrlEncoder().withoutPadding().encodeToString(raw);
+      String link =
+          UriComponentsBuilder.fromUriString(config.getString(ConfigEntry.BASE_URL))
+              .pathSegment(AppRoute.EMAIL_CHANGE.getRoute(), token)
+              .toUriString();
+      String body =
+          mail.render(
+              "email_change_request",
+              user,
+              Map.of("CONFIRM_EMAIL_LINK", link, "NEW_EMAIL", target));
+      active.forEach(t -> t.setStatus(TokenStatus.INACTIVE));
+      tokens.saveAll(active);
+      EmailChangeTokenEntity pending = new EmailChangeTokenEntity();
+      pending.setDigest(digest(token));
+      pending.setUserEntity(user);
+      pending.setOldEmail(user.getEmail());
+      pending.setNewEmail(target);
+      pending.setCredentialDigest(digest(user.getAccessVersion()));
+      pending.setCreatedAt(now);
+      pending.setExpiryDate(now.plus(duration));
+      tokens.save(pending);
+      queue.addAddressedNotification(
+          user, target, mail.texts(user).getAccountEmailChangeSubject(), body);
+      AfterCommitLog.info(log, "Email change confirmation queued: userId={}", user.getId());
+      return null;
+    });
   }
 
   public Confirmation inspect(String token) {
@@ -245,44 +242,43 @@ public class AccountSecurityService {
       return Confirmation.INVALID;
     }
     try {
-      return transaction(
-          () -> {
-            UserEntity user =
-                tokens.findUserIdByDigest(hash).flatMap(users::lockVerificationUser).orElse(null);
-            if (user == null) {
-              return Confirmation.INVALID;
-            }
-            EmailChangeTokenEntity pending = tokens.findByDigest(hash).orElseThrow();
-            Confirmation state = state(pending);
-            if (state != Confirmation.READY) {
-              if (state == Confirmation.EXPIRED) {
-                pending.setStatus(TokenStatus.EXPIRED);
-              }
-              return state;
-            }
-            if (users.emailExistsForOtherUser(pending.getNewEmail(), user.getId())) {
-              pending.setStatus(TokenStatus.INACTIVE);
-              return Confirmation.CONFLICT;
-            }
-            String old = user.getEmail();
-            String target = pending.getNewEmail();
-            String body =
-                mail.render("email_changed", user, Map.of("OLD_EMAIL", old, "NEW_EMAIL", target));
-            user.setEmail(target);
-            users.saveAndFlush(user);
-            pending.setStatus(TokenStatus.USED);
-            tokens.save(pending);
-            invalidateEmailChanges(user);
-            invalidateResets(user);
-            String subject = mail.texts(user).getAccountEmailChangedSubject();
-            queue.addAddressedNotification(user, old, subject, body);
-            queue.addAddressedNotification(user, target, subject, body);
-            userNotifications.recordSecurityEvent(
-                user, de.derpeterson.app.model.enums.UserNotificationType.EMAIL_CHANGED);
-            remembered.removeUserTokens(old);
-            revokeAfterCommit(old, null);
-            return Confirmation.SUCCESS;
-          });
+      return transaction(() -> {
+        UserEntity user =
+            tokens.findUserIdByDigest(hash).flatMap(users::lockVerificationUser).orElse(null);
+        if (user == null) {
+          return Confirmation.INVALID;
+        }
+        EmailChangeTokenEntity pending = tokens.findByDigest(hash).orElseThrow();
+        Confirmation state = state(pending);
+        if (state != Confirmation.READY) {
+          if (state == Confirmation.EXPIRED) {
+            pending.setStatus(TokenStatus.EXPIRED);
+          }
+          return state;
+        }
+        if (users.emailExistsForOtherUser(pending.getNewEmail(), user.getId())) {
+          pending.setStatus(TokenStatus.INACTIVE);
+          return Confirmation.CONFLICT;
+        }
+        String old = user.getEmail();
+        String target = pending.getNewEmail();
+        String body =
+            mail.render("email_changed", user, Map.of("OLD_EMAIL", old, "NEW_EMAIL", target));
+        user.setEmail(target);
+        users.saveAndFlush(user);
+        pending.setStatus(TokenStatus.USED);
+        tokens.save(pending);
+        invalidateEmailChanges(user);
+        invalidateResets(user);
+        String subject = mail.texts(user).getAccountEmailChangedSubject();
+        queue.addAddressedNotification(user, old, subject, body);
+        queue.addAddressedNotification(user, target, subject, body);
+        userNotifications.recordSecurityEvent(
+            user, de.derpeterson.app.model.enums.UserNotificationType.EMAIL_CHANGED);
+        remembered.removeUserTokens(old);
+        revokeAfterCommit(old, null);
+        return Confirmation.SUCCESS;
+      });
     } catch (RuntimeException failure) {
       if (EmailConflict.isDuplicate(failure)) {
         return Confirmation.CONFLICT;
@@ -404,7 +400,7 @@ public class AccountSecurityService {
   private Duration duration(ConfigEntry entry) {
     Duration value = Duration.parse(config.getString(entry));
     Assert.isTrue(
-        TokenDurationPolicy.isAtLeast(value, entry.getMinimumTokenDuration()),
+        TokenDurationPolicy.meetsMinimumDuration(value, entry.getMinimumTokenDuration()),
         "Invalid token duration");
     return value;
   }

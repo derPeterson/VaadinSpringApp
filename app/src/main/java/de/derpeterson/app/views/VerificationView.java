@@ -50,7 +50,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Route(AppRouteConstants.VERIFICATION_ROUTE)
-@PageTitle(AppRouteConstants.VERIFICATION_PAGE_TITEL)
+@PageTitle(AppRouteConstants.VERIFICATION_PAGE_TITLE)
 @AnonymousAllowed
 public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     implements HasUrlParameter<String> {
@@ -97,70 +97,57 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
           Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
           Optional.ofNullable(expiredTitle)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getVerificationExpiredTitle));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getVerificationExpiredTitle));
           Optional.ofNullable(notFoundTitle)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getVerificationNotFoundTitle));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getVerificationNotFoundTitle));
           Optional.ofNullable(successTitle)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getVerificationSuccessTitle));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getVerificationSuccessTitle));
           Optional.ofNullable(resendButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getBaseResendButton));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getBaseResendButton));
           Optional.ofNullable(homeButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicHomeAction));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getPublicHomeAction));
           Optional.ofNullable(emailField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicEmailField));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getPublicEmailField));
           Optional.ofNullable(homeButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicHomeAction));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getPublicHomeAction));
           Optional.ofNullable(sendButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getVerificationRequestActivationLink));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getVerificationRequestActivationLink));
           Optional.ofNullable(expiredText1)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getVerificationExpiredText1));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getVerificationExpiredText1));
           Optional.ofNullable(notFoundText1)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getVerificationNotFoundText1));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getVerificationNotFoundText1));
           Optional.ofNullable(notFoundText2)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getVerificationNotFoundText2));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getVerificationNotFoundText2));
           Optional.ofNullable(successText)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getVerificationSuccessText));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getVerificationSuccessText));
           Optional.ofNullable(loginButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getBaseLoginButton));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getBaseLoginButton));
 
           ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
           updateInputPlaceholders();

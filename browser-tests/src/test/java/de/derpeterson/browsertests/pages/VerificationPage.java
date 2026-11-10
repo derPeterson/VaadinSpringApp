@@ -1,7 +1,7 @@
 package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
-import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_PAGE_TITEL;
+import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_PAGE_TITLE;
 import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
@@ -22,7 +22,7 @@ public final class VerificationPage {
   @Step("Aktivierungsseite bestätigt die Verifikation des Kontos")
   public void assertActivated() {
     assertThat(page).hasURL(urlPattern(VERIFICATION_ROUTE, "/[0-9a-f-]+"));
-    assertThat(page).hasTitle(VERIFICATION_PAGE_TITEL);
+    assertThat(page).hasTitle(VERIFICATION_PAGE_TITLE);
     assertThat(
             page.getByRole(
                 AriaRole.HEADING,
@@ -39,7 +39,7 @@ public final class VerificationPage {
   @Step("Aufbewahrter abgelaufener Link zeigt keinen Aktivierungserfolg")
   public void assertExpired() {
     assertThat(page).hasURL(urlPattern(VERIFICATION_ROUTE, "/[0-9a-f-]+"));
-    assertThat(page).hasTitle(VERIFICATION_PAGE_TITEL);
+    assertThat(page).hasTitle(VERIFICATION_PAGE_TITLE);
     assertThat(
             page.getByRole(
                 AriaRole.HEADING,

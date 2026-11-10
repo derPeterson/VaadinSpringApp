@@ -70,7 +70,7 @@ public final class AppRouteConstants {
 
   public static final String VERIFICATION_ROUTE = "verification";
   public static final String VERIFICATION_SECURITY_ROUTE = "/verification/**";
-  public static final String VERIFICATION_PAGE_TITEL = "Verification";
+  public static final String VERIFICATION_PAGE_TITLE = "Verification";
 
   public static final String FORGOT_PASSWORD_ROUTE = "forgot-password";
   public static final String FORGOT_PASSWORD_SECURITY_ROUTE = "/forgot-password";

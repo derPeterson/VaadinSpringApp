@@ -933,7 +933,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     if (!isValidSpringDuration(trimmed)) {
       return messageProperties.getAdminConfigValidationTokenDuration(minimum.toMinutes());
     }
-    return TokenDurationPolicy.isAtLeast(DurationStyle.detectAndParse(trimmed), minimum)
+    return TokenDurationPolicy.meetsMinimumDuration(DurationStyle.detectAndParse(trimmed), minimum)
         ? null
         : messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes());
   }

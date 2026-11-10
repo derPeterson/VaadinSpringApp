@@ -105,7 +105,7 @@ public class VerificationService {
   private Duration positiveDuration(ConfigEntry entry) {
     Duration duration = Duration.parse(configService.getString(entry));
     Duration minimum = entry.getMinimumTokenDuration();
-    if (!TokenDurationPolicy.isAtLeast(duration, minimum)) {
+    if (!TokenDurationPolicy.meetsMinimumDuration(duration, minimum)) {
       throw new IllegalArgumentException(entry + " muss mindestens " + minimum + " betragen.");
     }
     return duration;
@@ -141,11 +141,10 @@ public class VerificationService {
   private void invalidateTokensLocked(UserEntity user) {
     tokenRepository
         .findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE)
-        .forEach(
-            token -> {
-              token.setStatus(TokenStatus.INACTIVE);
-              tokenRepository.save(token);
-            });
+        .forEach(token -> {
+          token.setStatus(TokenStatus.INACTIVE);
+          tokenRepository.save(token);
+        });
   }
 
   @Transactional

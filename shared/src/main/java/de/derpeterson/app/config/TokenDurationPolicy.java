@@ -10,8 +10,9 @@ public final class TokenDurationPolicy {
 
   private TokenDurationPolicy() {}
 
-  public static boolean isAtLeast(Duration duration, Duration minimum) {
-    Objects.requireNonNull(minimum, "Minimum duration required");
-    return duration != null && duration.compareTo(minimum) >= 0;
+  public static boolean meetsMinimumDuration(
+      Duration configuredDuration, Duration minimumDuration) {
+    Objects.requireNonNull(minimumDuration, "Minimum duration required");
+    return configuredDuration != null && configuredDuration.compareTo(minimumDuration) >= 0;
   }
 }

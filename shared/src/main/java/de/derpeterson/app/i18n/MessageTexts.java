@@ -1863,34 +1863,34 @@ public class MessageTexts {
   }
 
   public String getAdminConfigDurationSeconds(Number count) {
-    return durationTranslation("seconds", count);
+    return formatDurationTranslation("seconds", count);
   }
 
   public String getAdminConfigDurationMinutes(Number count) {
-    return durationTranslation("minutes", count);
+    return formatDurationTranslation("minutes", count);
   }
 
   public String getAdminConfigDurationHours(Number count) {
-    return durationTranslation("hours", count);
+    return formatDurationTranslation("hours", count);
   }
 
   public String getAdminConfigDurationDays(Number count) {
-    return durationTranslation("days", count);
+    return formatDurationTranslation("days", count);
   }
 
   protected Locale formattingLocale() {
     return Locale.getDefault();
   }
 
-  private String durationTranslation(String unit, Number count) {
-    BigDecimal number = new BigDecimal(count.toString());
-    NumberFormat format = NumberFormat.getNumberInstance(formattingLocale());
-    format.setMaximumFractionDigits(Math.max(9, number.scale()));
-    String key =
+  private String formatDurationTranslation(String unit, Number count) {
+    BigDecimal durationAmount = new BigDecimal(count.toString());
+    NumberFormat durationNumberFormat = NumberFormat.getNumberInstance(formattingLocale());
+    durationNumberFormat.setMaximumFractionDigits(Math.max(9, durationAmount.scale()));
+    String translationKey =
         "adminView.config.duration."
             + unit
-            + (number.compareTo(BigDecimal.ONE) == 0 ? ".one" : ".many");
-    return getFormattedTranslation(key, format.format(number));
+            + (durationAmount.compareTo(BigDecimal.ONE) == 0 ? ".one" : ".many");
+    return getFormattedTranslation(translationKey, durationNumberFormat.format(durationAmount));
   }
 
   public String getAdminConfigDurationRule(int maximumSeconds) {

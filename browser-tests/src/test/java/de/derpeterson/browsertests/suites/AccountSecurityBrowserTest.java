@@ -3,7 +3,7 @@ package de.derpeterson.browsertests.suites;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
-import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_PAGE_TITEL;
+import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_PAGE_TITLE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
@@ -41,7 +41,7 @@ public class AccountSecurityBrowserTest extends BrowserFixture {
     registration.assertSubmitted(email);
     MailpitInbox inbox = new MailpitInbox(context);
     try (Page activated = inbox.openVerificationLink(inbox.awaitVerificationMail(email))) {
-      assertThat(activated).hasTitle(VERIFICATION_PAGE_TITEL);
+      assertThat(activated).hasTitle(VERIFICATION_PAGE_TITLE);
     }
     LoginPage login = new LoginPage(page);
     login.open();

@@ -55,7 +55,7 @@ public enum AppRoute {
   VERIFICATION(
       AppRouteConstants.VERIFICATION_ROUTE,
       AppRouteConstants.VERIFICATION_SECURITY_ROUTE,
-      AppRouteConstants.VERIFICATION_PAGE_TITEL,
+      AppRouteConstants.VERIFICATION_PAGE_TITLE,
       null),
   FORGOT_PASSWORD(
       AppRouteConstants.FORGOT_PASSWORD_ROUTE,

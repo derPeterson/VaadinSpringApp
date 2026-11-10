@@ -24,8 +24,6 @@ gezielt einsetzen. Jede Datei sichten und konkrete Lesbarkeitshürden beheben.
   die übrigen Views, UI-Komponenten, zugehörige
   UI-Helfer und Texte paketweise sichten. Vaadin-Aufbau, Sprachwechsel und
   Klickabläufe müssen sich in der Klasse leicht finden und nachvollziehen lassen.
-- [ ] **Shared:** Gemeinsame Texte, Konfiguration und Regeln sichten. Bei
-  Umbenennungen die Verwendungsstellen in App und Browser-Testmodul mitprüfen.
 - [ ] **App-Fachlogik und Infrastruktur:** Anmeldung, Berechtigungen, Sitzungen,
   Dienste, Datenzugriff und die übrigen Hauptquellen sichten. Bei Änderungen die
   Aufrufreihenfolge, Fehlerfälle sowie Transaktions- und Sperrgrenzen prüfen.

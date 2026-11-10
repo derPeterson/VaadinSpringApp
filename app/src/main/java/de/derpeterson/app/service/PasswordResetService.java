@@ -117,7 +117,7 @@ public class PasswordResetService {
   private Duration positiveDuration(ConfigEntry entry) {
     Duration duration = Duration.parse(configService.getString(entry));
     Duration minimum = entry.getMinimumTokenDuration();
-    if (!TokenDurationPolicy.isAtLeast(duration, minimum)) {
+    if (!TokenDurationPolicy.meetsMinimumDuration(duration, minimum)) {
       throw new IllegalArgumentException(entry + " muss mindestens " + minimum + " betragen.");
     }
     return duration;
@@ -134,17 +134,16 @@ public class PasswordResetService {
     }
     tokenRepository
         .findByToken(token)
-        .ifPresent(
-            tokenEntity -> {
-              if (tokenEntity.getStatus() == status) {
-                return;
-              }
-              if (tokenEntity.getStatus() != TokenStatus.ACTIVE) {
-                throw new IllegalStateException("Der Token ist bereits abgeschlossen.");
-              }
-              tokenEntity.setStatus(status);
-              tokenRepository.save(tokenEntity);
-            });
+        .ifPresent(tokenEntity -> {
+          if (tokenEntity.getStatus() == status) {
+            return;
+          }
+          if (tokenEntity.getStatus() != TokenStatus.ACTIVE) {
+            throw new IllegalStateException("Der Token ist bereits abgeschlossen.");
+          }
+          tokenEntity.setStatus(status);
+          tokenRepository.save(tokenEntity);
+        });
   }
 
   @Transactional
@@ -155,11 +154,10 @@ public class PasswordResetService {
   private void invalidateTokensLocked(UserEntity user) {
     tokenRepository
         .findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE)
-        .forEach(
-            token -> {
-              token.setStatus(TokenStatus.INACTIVE);
-              tokenRepository.save(token);
-            });
+        .forEach(token -> {
+          token.setStatus(TokenStatus.INACTIVE);
+          tokenRepository.save(token);
+        });
   }
 
   private Optional<UserEntity> lockTokenUser(String token) {
