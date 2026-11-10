@@ -498,20 +498,20 @@ die Aktion und die Art ihres Ziels oder Ergebnisses, etwa `closeAccountDialog()`
 oder `buildAccountHeaderLayout()`. Das soll auch am Aufruf erkennbar sein.
 
 **Namen enthalten Zweck und Typ.** Felder, Konstruktorparameter, andere
-Methodenparameter und lokale Variablen tragen die Bezeichnung ihres konkreten
-Typs oder ihrer fachlichen Art im Namen. Beispiele sind `closeDialogButton`,
-`accountHeaderLayout`, `httpRequest`, `twoFactorStore` und `messageProperties`.
-Die Art muss auch ohne sichtbare Typdeklaration verständlich sein. Bei einfachen
-Werten beschreibt der Name ihre fachliche Art, etwa `unreadNotificationCount`
-für eine Anzahl und `hasActiveSession` für eine Bedingung. Listen heißen im
-Plural, einzelne Objekte im Singular.
+Methodenparameter und lokale Variablen enthalten den Typnamen, etwa
+`closeDialogButton` für einen `Button`, `emailTextField` für ein `TextField`,
+`twoFactorStore` für einen `TwoFactorStore` und `messageProperties` für
+`MessageProperties`. Das gilt auch für Argumente, die beim Aufruf weitergereicht
+werden. Bei einfachen Werten benennt der Name den fachlichen Typ, etwa
+`unreadNotificationCount` für eine Anzahl und `hasActiveSession` für eine
+Bedingung. Sammlungen benennen ihren Elementtyp im Plural, etwa `sessionEntries`.
 
 Bei bewusst typübergreifenden Hilfsmethoden beschreibt der Name die gemeinsame
 Aufgabe oder Rolle, etwa `collectNonBlankNames()` oder `itemToValidate`.
 Extern vorgegebene Namen bleiben bestehen, etwa `run()`, `beforeEnter()` und
 Bezeichner, die direkt an bestehende Konfigurationsschlüssel gebunden sind.
-Ein kurzer Schleifenindex ist in einer unmittelbar überschaubaren Schleife
-zulässig.
+Auch Schleifenindizes benennen ihren Bezug, etwa `ticketIndex` oder
+`columnIndex`.
 
 **Zusammengehörige Namen immer als Block prüfen.** Bei einer Java-Änderung oder
 einem Review die Namen im betroffenen fachlichen Block vollständig prüfen, etwa
