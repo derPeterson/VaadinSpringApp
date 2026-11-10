@@ -21,6 +21,7 @@ public class HtmlHelper {
     if (!Strings.CS.endsWith(htmlInputText, "</p>")) {
       htmlInputText = htmlInputText + "</p>";
     }
+
     return htmlInputText;
   }
 }

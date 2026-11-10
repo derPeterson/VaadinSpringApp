@@ -34,20 +34,20 @@ import java.util.function.BooleanSupplier;
 /** Fordert eine verifizierte Adressänderung an; die bisherige Kontoadresse bleibt erhalten. */
 public class AccountEmailChangeDialog extends Dialog {
   private final transient MessageProperties messageProperties;
-  private final H2 dialogTitle = new H2();
-  private final Span dialogDescription = new Span();
-  private final Span emailChangeHint = new Span();
-  private final Span developmentWarning = new Span();
-  private transient BooleanSupplier developmentException = () -> false;
+  private final H2 dialogTitleHeading = new H2();
+  private final Span dialogDescriptionSpan = new Span();
+  private final Span emailChangeHintSpan = new Span();
+  private final Span developmentWarningSpan = new Span();
+  private transient BooleanSupplier developmentExceptionSupplier = () -> false;
   private final EmailField newEmailField = new EmailField();
   private final EmailField confirmEmailField = new EmailField();
   private final PasswordField currentPasswordField = new PasswordField();
-  private transient BooleanSupplier currentPasswordRequired = () -> true;
+  private transient BooleanSupplier currentPasswordRequiredSupplier = () -> true;
   private final Button closeDialogButton =
       new Button(AppIcon.CLOSE_CIRCLE.create(), event -> close());
   private final Button cancelEmailChangeButton = new Button("", event -> close());
   private final Button requestEmailChangeButton = new Button();
-  private SerializableConsumer<EmailChange> requestAction;
+  private SerializableConsumer<EmailChange> requestEmailChangeConsumer;
 
   public AccountEmailChangeDialog(MessageProperties messageProperties) {
     this.messageProperties = messageProperties;
@@ -61,21 +61,24 @@ public class AccountEmailChangeDialog extends Dialog {
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
 
-    dialogTitle.addClassName(PANEL_TITLE);
-    dialogDescription.addClassName(PANEL_DESCRIPTION);
-    Div heading = new Div(dialogTitle, dialogDescription);
-    heading.addClassName(PANEL_HEADING);
-    SvgIcon icon = AppIcon.ENVELOPE.create();
-    icon.getElement().setAttribute("aria-hidden", "true");
-    Div badge = new Div(icon);
-    badge.addClassName(PANEL_ICON);
+    dialogTitleHeading.addClassName(PANEL_TITLE);
+    dialogDescriptionSpan.addClassName(PANEL_DESCRIPTION);
+
+    Div dialogHeadingDiv = new Div(dialogTitleHeading, dialogDescriptionSpan);
+    dialogHeadingDiv.addClassName(PANEL_HEADING);
+
+    SvgIcon dialogSvgIcon = AppIcon.ENVELOPE.create();
+    dialogSvgIcon.getElement().setAttribute("aria-hidden", "true");
+    Div dialogIconDiv = new Div(dialogSvgIcon);
+    dialogIconDiv.addClassName(PANEL_ICON);
     closeDialogButton.setId("account-email-close");
     closeDialogButton.setIcon(AppIcon.CLOSE_CIRCLE.create());
     closeDialogButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     closeDialogButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    Div header = new Div(badge, heading, closeDialogButton);
-    header.addClassName("account-change-dialog-header");
-    getHeader().add(header);
+
+    Div dialogHeaderDiv = new Div(dialogIconDiv, dialogHeadingDiv, closeDialogButton);
+    dialogHeaderDiv.addClassName("account-change-dialog-header");
+    getHeader().add(dialogHeaderDiv);
 
     newEmailField.setId("account-email-new");
     confirmEmailField.setId("account-email-confirm");
@@ -93,16 +96,19 @@ public class AccountEmailChangeDialog extends Dialog {
     currentPasswordField.setWidthFull();
     currentPasswordField.setRevealButtonVisible(true);
     currentPasswordField.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
-    SvgIcon infoIcon = AppIcon.INFO_CIRCLE.create();
-    infoIcon.getElement().setAttribute("aria-hidden", "true");
-    Div info = new Div(infoIcon, emailChangeHint);
-    info.addClassName("cosmos-panel-hint");
-    Div form = new Div(newEmailField, confirmEmailField, currentPasswordField, info);
-    form.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
-    developmentWarning.addClassName(PANEL_DESCRIPTION);
-    developmentWarning.setVisible(false);
-    form.add(developmentWarning);
-    add(form);
+
+    SvgIcon securityInfoSvgIcon = AppIcon.INFO_CIRCLE.create();
+    securityInfoSvgIcon.getElement().setAttribute("aria-hidden", "true");
+    Div securityInfoDiv = new Div(securityInfoSvgIcon, emailChangeHintSpan);
+    securityInfoDiv.addClassName("cosmos-panel-hint");
+
+    Div changeFormDiv =
+        new Div(newEmailField, confirmEmailField, currentPasswordField, securityInfoDiv);
+    changeFormDiv.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
+    developmentWarningSpan.addClassName(PANEL_DESCRIPTION);
+    developmentWarningSpan.setVisible(false);
+    changeFormDiv.add(developmentWarningSpan);
+    add(changeFormDiv);
 
     cancelEmailChangeButton.setId("account-email-cancel");
     cancelEmailChangeButton.setPrefixComponent(AppIcon.CLOSE.create());
@@ -110,24 +116,26 @@ public class AccountEmailChangeDialog extends Dialog {
     requestEmailChangeButton.setPrefixComponent(AppIcon.CHECK.create());
     requestEmailChangeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     requestEmailChangeButton.addClickListener(event -> submitEmailChangeRequest());
-    Div actions = new Div(cancelEmailChangeButton, requestEmailChangeButton);
-    actions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(actions);
-    getFooter().add(actions);
+
+    Div dialogActionsDiv = new Div(cancelEmailChangeButton, requestEmailChangeButton);
+    dialogActionsDiv.addClassName("cosmos-dialog-actions");
+    EqualButtonWidths.configureEqualButtonWidths(dialogActionsDiv);
+    getFooter().add(dialogActionsDiv);
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {
         clearDraft();
       }
     });
+
     refreshTexts();
   }
 
   public void setRequestAction(SerializableConsumer<EmailChange> action) {
-    requestAction = Objects.requireNonNull(action);
+    requestEmailChangeConsumer = Objects.requireNonNull(action);
   }
 
   public void setCurrentPasswordRequired(BooleanSupplier required) {
-    currentPasswordRequired = Objects.requireNonNull(required);
+    currentPasswordRequiredSupplier = Objects.requireNonNull(required);
   }
 
   private void submitEmailChangeRequest() {
@@ -142,9 +150,11 @@ public class AccountEmailChangeDialog extends Dialog {
             newEmailField, confirmEmailField, messageProperties)) {
       return;
     }
+
     requestEmailChangeButton.setEnabled(false);
+
     try {
-      Objects.requireNonNull(requestAction, "Email change action required")
+      Objects.requireNonNull(requestEmailChangeConsumer, "Email change action required")
           .accept(
               new EmailChange(
                   newEmailField.getValue(),
@@ -173,11 +183,12 @@ public class AccountEmailChangeDialog extends Dialog {
 
   @Override
   public void open() {
-    developmentWarning.setText(messageProperties.getTwoFactorDevelopmentWarning());
-    developmentWarning.setVisible(developmentException.getAsBoolean());
-    boolean required = currentPasswordRequired.getAsBoolean();
+    developmentWarningSpan.setText(messageProperties.getTwoFactorDevelopmentWarning());
+    developmentWarningSpan.setVisible(developmentExceptionSupplier.getAsBoolean());
+    boolean required = currentPasswordRequiredSupplier.getAsBoolean();
     currentPasswordField.setVisible(required);
     currentPasswordField.setRequiredIndicatorVisible(required);
+
     clearDraft();
     super.open();
   }
@@ -192,9 +203,9 @@ public class AccountEmailChangeDialog extends Dialog {
   }
 
   public void refreshTexts() {
-    dialogTitle.setText(messageProperties.getAccountSettingsChangeEmail());
-    getElement().setProperty("ariaLabel", dialogTitle.getText());
-    dialogDescription.setText(messageProperties.getAccountEmailDialogDescription());
+    dialogTitleHeading.setText(messageProperties.getAccountSettingsChangeEmail());
+    getElement().setProperty("ariaLabel", dialogTitleHeading.getText());
+    dialogDescriptionSpan.setText(messageProperties.getAccountEmailDialogDescription());
     closeDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
     newEmailField.setLabel(messageProperties.getAccountEmailDialogNewEmail());
     newEmailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
@@ -202,12 +213,12 @@ public class AccountEmailChangeDialog extends Dialog {
     confirmEmailField.setPlaceholder(messageProperties.getAccountConfirmEmailPlaceholder());
     currentPasswordField.setLabel(messageProperties.getAccountEmailDialogPassword());
     currentPasswordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
-    emailChangeHint.setText(messageProperties.getAccountEmailDialogHint());
+    emailChangeHintSpan.setText(messageProperties.getAccountEmailDialogHint());
     cancelEmailChangeButton.setText(messageProperties.getAdminUsersCancel());
     requestEmailChangeButton.setText(messageProperties.getAccountEmailDialogRequest());
   }
 
   public void setDevelopmentWarning(BooleanSupplier active) {
-    developmentException = Objects.requireNonNull(active);
+    developmentExceptionSupplier = Objects.requireNonNull(active);
   }
 }

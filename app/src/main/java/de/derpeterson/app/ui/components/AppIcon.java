@@ -85,38 +85,39 @@ public enum AppIcon {
   CIRCLE_MINUS("circle-minus"),
   CLOCK("clock");
 
-  private final String name;
+  private final String iconFileName;
   private final Library library;
 
   private enum Library {
     LUCIDE("lucide"),
     TABLER("tabler"),
     MATERIAL_SYMBOLS("material-symbols");
-    private final String directory;
+    private final String iconDirectory;
 
-    Library(String directory) {
-      this.directory = directory;
+    Library(String iconDirectory) {
+      this.iconDirectory = iconDirectory;
     }
   }
 
-  AppIcon(String name) {
-    this(Library.LUCIDE, name);
+  AppIcon(String iconFileName) {
+    this(Library.LUCIDE, iconFileName);
   }
 
-  AppIcon(Library library, String name) {
+  AppIcon(Library library, String iconFileName) {
     this.library = library;
-    this.name = name;
+    this.iconFileName = iconFileName;
   }
 
   public String getSource() {
-    return "icons/" + library.directory + "/" + name + ".svg";
+    return "icons/" + library.iconDirectory + "/" + iconFileName + ".svg";
   }
 
   public SvgIcon create() {
-    SvgIcon icon = new SvgIcon(getSource());
-    icon.addClassName("cosmos-" + library.directory + "-icon");
-    icon.getElement().setAttribute("aria-hidden", "true");
-    icon.getElement().setAttribute("data-" + library.directory, name);
-    return icon;
+    SvgIcon applicationSvgIcon = new SvgIcon(getSource());
+    applicationSvgIcon.addClassName("cosmos-" + library.iconDirectory + "-icon");
+    applicationSvgIcon.getElement().setAttribute("aria-hidden", "true");
+    applicationSvgIcon.getElement().setAttribute("data-" + library.iconDirectory, iconFileName);
+
+    return applicationSvgIcon;
   }
 }

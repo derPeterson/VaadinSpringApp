@@ -37,11 +37,11 @@ public final class ExternalConnectionsComponent extends Div {
   private final transient ExternalIdentityService externalIdentityService;
   private final transient HttpServletRequest request;
   private final transient MessageProperties messageProperties;
-  private final Div providerOverview = new Div();
+  private final Div providerOverviewDiv = new Div();
   private final ExternalIdentityConfirmationDialog identityConfirmationDialog;
-  private SerializableRunnable openPasswordSettings;
-  private SerializableRunnable openEmailSettings;
-  private SerializableRunnable showProviders = () -> {};
+  private SerializableRunnable openPasswordSettingsAction;
+  private SerializableRunnable openEmailSettingsAction;
+  private SerializableRunnable showProvidersAction = () -> {};
 
   public ExternalConnectionsComponent(
       ExternalLoginFlow externalLoginFlow,
@@ -57,21 +57,21 @@ public final class ExternalConnectionsComponent extends Div {
             externalLoginFlow, externalIdentityService, request, messageProperties);
     setId("account-external-connections");
     addClassName("account-external-connections");
-    providerOverview.addClassName("external-connections-overview");
-    EqualButtonWidths.configureEqualButtonWidths(providerOverview);
-    add(providerOverview);
+    providerOverviewDiv.addClassName("external-connections-overview");
+    EqualButtonWidths.configureEqualButtonWidths(providerOverviewDiv);
+    add(providerOverviewDiv);
     ComponentUtil.addListener(
         UI.getCurrent(), LanguageChangeEvent.class, event -> refreshAccount());
     refreshAccount();
   }
 
   public void configureAccountActions(
-      SerializableRunnable openPasswordSettings,
-      SerializableRunnable openEmailSettings,
-      SerializableRunnable showProviders) {
-    this.openPasswordSettings = openPasswordSettings;
-    this.openEmailSettings = openEmailSettings;
-    this.showProviders = showProviders;
+      SerializableRunnable openPasswordSettingsAction,
+      SerializableRunnable openEmailSettingsAction,
+      SerializableRunnable showProvidersAction) {
+    this.openPasswordSettingsAction = openPasswordSettingsAction;
+    this.openEmailSettingsAction = openEmailSettingsAction;
+    this.showProvidersAction = showProvidersAction;
     // Nach der Rückkehr vom Anbieter sichtbar fortsetzen, nie automatisch trennen.
     UI.getCurrent()
         .beforeClientResponse(
@@ -80,7 +80,7 @@ public final class ExternalConnectionsComponent extends Div {
               HttpSession session = request.getSession(false);
               if (session != null && Boolean.TRUE.equals(session.getAttribute(LINK_RETURN))) {
                 session.removeAttribute(LINK_RETURN);
-                showProviders.run();
+                showProvidersAction.run();
               }
               identityConfirmationDialog.consumeProviderReturn().ifPresent(this::requestAction);
             });
@@ -103,29 +103,33 @@ public final class ExternalConnectionsComponent extends Div {
   }
 
   public void refreshAccount() {
-    providerOverview.removeAll();
+    providerOverviewDiv.removeAll();
     UserEntity user = externalLoginFlow.owner(request);
     List<String> connected = externalIdentityService.connected(user.getId());
     List<String> available = externalLoginFlow.providers();
-    providerOverview.setVisible(!available.isEmpty() || !connected.isEmpty());
+    providerOverviewDiv.setVisible(!available.isEmpty() || !connected.isEmpty());
     for (String provider : ExternalProviderSettings.PROVIDERS) {
       if (available.contains(provider) || connected.contains(provider)) {
-        providerOverview.add(providerRow(provider, user, connected, available));
+        providerOverviewDiv.add(providerRow(provider, user, connected, available));
       }
     }
     identityConfirmationDialog.refreshTexts();
   }
 
   private Div providerRow(
-      String provider, UserEntity user, List<String> connected, List<String> available) {
-    boolean linked = connected.contains(provider);
-    String brand = provider.equals(GOOGLE) ? "Google" : "Microsoft";
-    Image logo =
+      String providerName, UserEntity user, List<String> connected, List<String> available) {
+    boolean linked = connected.contains(providerName);
+    String providerBrandText = providerName.equals(GOOGLE) ? "Google" : "Microsoft";
+
+    Image providerLogoImage =
         new Image(
-            "icons/external-login/" + provider + (provider.equals(GOOGLE) ? ".png" : ".svg"), "");
-    logo.getElement().setAttribute("aria-hidden", "true");
-    Div icon = new Div(logo);
-    icon.addClassName("cosmos-panel-icon");
+            "icons/external-login/"
+                + providerName
+                + (providerName.equals(GOOGLE) ? ".png" : ".svg"),
+            "");
+    providerLogoImage.getElement().setAttribute("aria-hidden", "true");
+    Div providerIconDiv = new Div(providerLogoImage);
+    providerIconDiv.addClassName("cosmos-panel-icon");
     Badge state =
         new Badge(
             linked
@@ -134,115 +138,127 @@ public final class ExternalConnectionsComponent extends Div {
     if (linked) {
       state.addThemeVariants(BadgeVariant.SUCCESS);
     }
-    Div heading = new Div(new Span(brand), state);
-    heading.addClassName("external-connection-heading");
+
+    Div providerHeadingDiv = new Div(new Span(providerBrandText), state);
+    providerHeadingDiv.addClassName("external-connection-heading");
     boolean lastMethod =
         linked
             && user.getPassword() == null
             && connected.stream()
-                .noneMatch(other -> !other.equals(provider) && available.contains(other));
-    String detail;
-    if (!available.contains(provider)) {
-      detail = messageProperties.getExternalProviderUnavailable();
+                .noneMatch(other -> !other.equals(providerName) && available.contains(other));
+
+    String providerDetailText;
+    if (!available.contains(providerName)) {
+      providerDetailText = messageProperties.getExternalProviderUnavailable();
     } else if (lastMethod) {
-      detail = messageProperties.getExternalLastMethod();
+      providerDetailText = messageProperties.getExternalLastMethod();
     } else {
-      detail =
+      providerDetailText =
           linked
               ? messageProperties.getExternalConnectedHint()
               : messageProperties.getExternalNotConnectedHint();
     }
-    Span explanation = new Span(detail);
-    explanation.addClassName("account-entry-description");
-    Div copy = new Div(heading, explanation);
-    copy.addClassNames("external-connection-copy", "account-entry-copy");
-    Button action =
+    Span providerExplanationSpan = new Span(providerDetailText);
+    providerExplanationSpan.addClassName("account-entry-description");
+
+    Div providerContentDiv = new Div(providerHeadingDiv, providerExplanationSpan);
+    providerContentDiv.addClassNames("external-connection-copy", "account-entry-copy");
+
+    Button providerActionButton =
         new Button(
             linked
-                ? messageProperties.getExternalDisconnect(brand)
-                : messageProperties.getExternalConnect(brand));
-    action.setId("external-connect-" + provider);
-    action.setPrefixComponent((linked ? AppIcon.SIGN_OUT : AppIcon.SIGN_IN).create());
-    action.setClassName(CosmosClasses.DELETE_BUTTON, linked);
-    action.setEnabled(!lastMethod);
-    action.addClickListener(event ->
+                ? messageProperties.getExternalDisconnect(providerBrandText)
+                : messageProperties.getExternalConnect(providerBrandText));
+    providerActionButton.setId("external-connect-" + providerName);
+    providerActionButton.setPrefixComponent((linked ? AppIcon.SIGN_OUT : AppIcon.SIGN_IN).create());
+    providerActionButton.setClassName(CosmosClasses.DELETE_BUTTON, linked);
+    providerActionButton.setEnabled(!lastMethod);
+    providerActionButton.addClickListener(event ->
         requestAction(
             linked
-                ? ExternalLoginFlow.unlinkPurpose(provider)
-                : ExternalLoginFlow.linkPurpose(provider)));
-    Div row = new Div(icon, copy, action);
-    row.addClassNames("external-connection-row", "account-entry");
-    return row;
+                ? ExternalLoginFlow.unlinkPurpose(providerName)
+                : ExternalLoginFlow.linkPurpose(providerName)));
+
+    Div providerRowDiv = new Div(providerIconDiv, providerContentDiv, providerActionButton);
+    providerRowDiv.addClassNames("external-connection-row", "account-entry");
+
+    return providerRowDiv;
   }
 
-  private void requestAction(Purpose purpose) {
-    SerializableRunnable action =
-        switch (purpose) {
-          case PASSWORD -> openPasswordSettings;
-          case EMAIL -> openEmailSettings;
+  private void requestAction(Purpose requestedPurpose) {
+    SerializableRunnable requestedIdentityAction =
+        switch (requestedPurpose) {
+          case PASSWORD -> openPasswordSettingsAction;
+          case EMAIL -> openEmailSettingsAction;
           case LINK_GOOGLE -> () -> link(GOOGLE);
           case LINK_MICROSOFT -> () -> link("microsoft");
           case UNLINK_GOOGLE -> () -> unlink(GOOGLE);
           case UNLINK_MICROSOFT -> () -> unlink("microsoft");
           case ENROLL_FACTOR -> throw new IllegalArgumentException("Enrollment has its own view");
         };
-    if (action == null) {
+
+    if (requestedIdentityAction == null) {
       return;
     }
-    boolean accountChange = purpose == Purpose.PASSWORD || purpose == Purpose.EMAIL;
-    if (!accountChange) {
-      showProviders.run();
+
+    boolean changesAccountCredentials =
+        requestedPurpose == Purpose.PASSWORD || requestedPurpose == Purpose.EMAIL;
+    if (!changesAccountCredentials) {
+      showProvidersAction.run();
     }
-    boolean confirmed =
-        externalLoginFlow.confirmedPurpose(request).filter(purpose::equals).isPresent();
-    UserEntity user = externalLoginFlow.owner(request);
+
+    boolean requestedPurposeConfirmed =
+        externalLoginFlow.confirmedPurpose(request).filter(requestedPurpose::equals).isPresent();
+    UserEntity accountOwner = externalLoginFlow.owner(request);
     boolean providerProofAvailable =
-        externalIdentityService.connected(user.getId()).stream()
+        externalIdentityService.connected(accountOwner.getId()).stream()
             .anyMatch(provider ->
                 externalLoginFlow.providers().contains(provider)
-                    && externalLoginFlow.canUseProviderProof(request, provider, purpose));
-    if (!confirmed
+                    && externalLoginFlow.canUseProviderProof(request, provider, requestedPurpose));
+
+    if (!requestedPurposeConfirmed
         && !externalLoginFlow.factorEnrolled(request)
-        && (externalLoginFlow.requiresFactor(request, purpose)
-            || user.getPassword() == null && !providerProofAvailable)) {
+        && (externalLoginFlow.requiresFactor(request, requestedPurpose)
+            || accountOwner.getPassword() == null && !providerProofAvailable)) {
       TwoFactorFlow.SETUP.enter(request);
       UI.getCurrent()
           .getPage()
           .setLocation(request.getContextPath() + TwoFactorFlow.SETUP.location());
       return;
     }
-    if (!confirmed
-        && user.getPassword() == null
+    if (!requestedPurposeConfirmed
+        && accountOwner.getPassword() == null
         && !providerProofAvailable
-        && !externalLoginFlow.requiresFactor(request, purpose)) {
+        && !externalLoginFlow.requiresFactor(request, requestedPurpose)) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getExternalProofUnavailable,
               NotificationHelper.NotificationType.WARNING);
       return;
     }
-    if (accountChange
-        && (confirmed
-            || user.getPassword() != null
+
+    if (changesAccountCredentials
+        && (requestedPurposeConfirmed
+            || accountOwner.getPassword() != null
                 && !providerProofAvailable
-                && !externalLoginFlow.requiresFactor(request, purpose))) {
+                && !externalLoginFlow.requiresFactor(request, requestedPurpose))) {
       // Lokale Konten behalten den bestehenden Änderungsdialog mit Passwortprüfung.
-      action.run();
+      requestedIdentityAction.run();
     } else {
-      identityConfirmationDialog.open(purpose, action);
+      identityConfirmationDialog.open(requestedPurpose, requestedIdentityAction);
     }
   }
 
-  private void link(String provider) {
-    String destination =
-        externalLoginFlow.beginLink(request, provider, VaadinSession.getCurrent().getLocale());
+  private void link(String providerName) {
+    String providerRedirectUrl =
+        externalLoginFlow.beginLink(request, providerName, VaadinSession.getCurrent().getLocale());
     // Nur die Ansichtsposition merken, keinen Anmeldenachweis oder eine weitere Aktion.
     request.getSession(false).setAttribute(LINK_RETURN, true);
-    UI.getCurrent().getPage().setLocation(destination);
+    UI.getCurrent().getPage().setLocation(providerRedirectUrl);
   }
 
-  private void unlink(String provider) {
-    boolean retained = externalLoginFlow.disconnect(request, provider);
+  private void unlink(String providerName) {
+    boolean retained = externalLoginFlow.disconnect(request, providerName);
     String destination =
         retained
             ? AppRouteConstants.ACCOUNT_PROVIDERS_LOCATION + "&"

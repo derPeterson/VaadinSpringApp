@@ -8,28 +8,32 @@ import com.vaadin.flow.component.html.Span;
 
 /** Lesbare Objektkarte in Bestätigungen, ohne den eigentlichen Inhalt zu duplizieren. */
 public class PortalContextCard extends Div {
-  private final Div contextCardCopy = new Div();
+  private final Div contextCardContentDiv = new Div();
 
-  public PortalContextCard(Component symbol, String title, String... details) {
+  public PortalContextCard(
+      Component contextIconComponent, String contextTitleText, String... details) {
     addClassName("portal-context-card");
-    symbol.getElement().setAttribute("aria-hidden", "true");
-    Div icon = new Div(symbol);
-    icon.addClassName(PANEL_ICON);
-    Span heading = new Span(title);
-    heading.addClassName("portal-context-title");
-    contextCardCopy.add(heading);
-    contextCardCopy.addClassName("portal-context-copy");
-    for (String value : details) {
-      if (value != null && !value.isBlank()) {
-        Span detail = new Span(value);
-        detail.addClassName("portal-context-detail");
-        contextCardCopy.add(detail);
+    contextIconComponent.getElement().setAttribute("aria-hidden", "true");
+    Div contextIconDiv = new Div(contextIconComponent);
+    contextIconDiv.addClassName(PANEL_ICON);
+
+    Span contextHeadingSpan = new Span(contextTitleText);
+    contextHeadingSpan.addClassName("portal-context-title");
+    contextCardContentDiv.add(contextHeadingSpan);
+    contextCardContentDiv.addClassName("portal-context-copy");
+
+    for (String contextDetailText : details) {
+      if (contextDetailText != null && !contextDetailText.isBlank()) {
+        Span contextDetailSpan = new Span(contextDetailText);
+        contextDetailSpan.addClassName("portal-context-detail");
+        contextCardContentDiv.add(contextDetailSpan);
       }
     }
-    add(icon, contextCardCopy);
+
+    add(contextIconDiv, contextCardContentDiv);
   }
 
-  public void addMetadata(Component metadata) {
-    contextCardCopy.add(metadata);
+  public void addMetadata(Component metadataComponent) {
+    contextCardContentDiv.add(metadataComponent);
   }
 }

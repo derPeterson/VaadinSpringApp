@@ -8,23 +8,23 @@ import com.vaadin.flow.component.html.Span;
 public class CosmosSectionHeaderComponent extends Div {
   /** Gemeinsamer Kopfbereich mit kleiner Bereichs-/Breadcrumbzeile und Akzentpunkt. */
   public CosmosSectionHeaderComponent(
-      Span overviewLabel, Span titleText, Span sectionDescriptionLabel) {
+      Span overviewSpan, Span sectionTitleSpan, Span sectionDescriptionSpan) {
     H1 sectionTitleHeading = new H1();
-    Span headingAccentLabel = new Span(".");
-    headingAccentLabel.addClassName("cosmos-dashboard-accent");
-    headingAccentLabel.getElement().setAttribute("aria-hidden", "true");
-    sectionTitleHeading.add(titleText, headingAccentLabel);
+    Span headingAccentSpan = new Span(".");
+    headingAccentSpan.addClassName("cosmos-dashboard-accent");
+    headingAccentSpan.getElement().setAttribute("aria-hidden", "true");
+    sectionTitleHeading.add(sectionTitleSpan, headingAccentSpan);
     addClassNames("cosmos-section-header", "cosmos-dashboard-introduction");
     sectionTitleHeading.addClassName("cosmos-section-title");
-    overviewLabel.addClassName("cosmos-dashboard-kicker");
-    sectionDescriptionLabel.addClassName("cosmos-dashboard-description");
-    add(overviewLabel, sectionTitleHeading, sectionDescriptionLabel);
+    overviewSpan.addClassName("cosmos-dashboard-kicker");
+    sectionDescriptionSpan.addClassName("cosmos-dashboard-description");
+    add(overviewSpan, sectionTitleHeading, sectionDescriptionSpan);
   }
 
-  public CosmosSectionHeaderComponent(H1 sectionTitleHeading, Span sectionDescriptionLabel) {
+  public CosmosSectionHeaderComponent(H1 sectionTitleHeading, Span sectionDescriptionSpan) {
     addClassName("cosmos-section-header");
     sectionTitleHeading.addClassName("cosmos-section-title");
-    sectionDescriptionLabel.addClassName("cosmos-dashboard-description");
-    add(sectionTitleHeading, sectionDescriptionLabel);
+    sectionDescriptionSpan.addClassName("cosmos-dashboard-description");
+    add(sectionTitleHeading, sectionDescriptionSpan);
   }
 }

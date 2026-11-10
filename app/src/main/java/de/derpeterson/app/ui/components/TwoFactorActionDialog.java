@@ -27,7 +27,7 @@ public final class TwoFactorActionDialog extends Dialog {
   private final transient TwoFactorAuthorization twoFactorAuthorization;
   private final transient HttpServletRequest httpRequest;
   private final TwoFactorCodeInput twoFactorCodeInput;
-  private final H2 dialogTitle = new H2();
+  private final H2 dialogTitleHeading = new H2();
   private final Button cancelButton = new Button();
   private final Button confirmIdentityButton = new Button();
   private final Button closeDialogButton = new Button(AppIcon.CLOSE_CIRCLE.create());
@@ -45,32 +45,35 @@ public final class TwoFactorActionDialog extends Dialog {
     addClassNames("cosmos-theme", CosmosClasses.REFERENCE_OVERLAY, "account-change-dialog");
     getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
     setModality(ModalityMode.STRICT);
-    dialogTitle.addClassName(CosmosClasses.PANEL_TITLE);
-    Div dialogHeading = new Div(dialogTitle);
-    dialogHeading.addClassName(CosmosClasses.PANEL_HEADING);
-    Div dialogIcon = new Div(AppIcon.LOCK.create());
-    dialogIcon.addClassName(CosmosClasses.PANEL_ICON);
+    dialogTitleHeading.addClassName(CosmosClasses.PANEL_TITLE);
+
+    Div dialogHeadingDiv = new Div(dialogTitleHeading);
+    dialogHeadingDiv.addClassName(CosmosClasses.PANEL_HEADING);
+    Div dialogIconDiv = new Div(AppIcon.LOCK.create());
+    dialogIconDiv.addClassName(CosmosClasses.PANEL_ICON);
     closeDialogButton.addClassName("cosmos-overlay-close");
     closeDialogButton.addClickListener(event -> close());
-    Div dialogHeader = new Div(dialogIcon, dialogHeading, closeDialogButton);
-    dialogHeader.addClassName("account-change-dialog-header");
-    getHeader().add(dialogHeader);
+    Div dialogHeaderDiv = new Div(dialogIconDiv, dialogHeadingDiv, closeDialogButton);
+    dialogHeaderDiv.addClassName("account-change-dialog-header");
+    getHeader().add(dialogHeaderDiv);
     twoFactorCodeInput =
         new TwoFactorCodeInput(
             messageProperties, httpRequest, "two-factor-action", "two-factor-action", this::close);
-    Div dialogBody = new Div(twoFactorCodeInput);
-    dialogBody.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
-    add(dialogBody);
+
+    Div dialogBodyDiv = new Div(twoFactorCodeInput);
+    dialogBodyDiv.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
+    add(dialogBodyDiv);
     cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
     cancelButton.addClickListener(event -> close());
     confirmIdentityButton.setId("two-factor-action-confirm");
     confirmIdentityButton.setPrefixComponent(AppIcon.CHECK.create());
     confirmIdentityButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     confirmIdentityButton.addClickListener(event -> confirmProtectedAction());
-    Div dialogActions = new Div(cancelButton, confirmIdentityButton);
-    dialogActions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(dialogActions);
-    getFooter().add(dialogActions);
+
+    Div dialogActionsDiv = new Div(cancelButton, confirmIdentityButton);
+    dialogActionsDiv.addClassName("cosmos-dialog-actions");
+    EqualButtonWidths.configureEqualButtonWidths(dialogActionsDiv);
+    getFooter().add(dialogActionsDiv);
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {
         twoFactorCodeInput.reset();
@@ -91,7 +94,7 @@ public final class TwoFactorActionDialog extends Dialog {
   }
 
   public void refreshTexts() {
-    dialogTitle.setText(messageProperties.getExternalProof());
+    dialogTitleHeading.setText(messageProperties.getExternalProof());
     twoFactorCodeInput.refreshTexts();
     cancelButton.setText(messageProperties.getAdminUsersCancel());
     confirmIdentityButton.setText(messageProperties.getTwoFactorConfirm());
@@ -102,24 +105,29 @@ public final class TwoFactorActionDialog extends Dialog {
     if (twoFactorAction == null || protectedAction == null || !twoFactorCodeInput.validate()) {
       return;
     }
+
     try {
       twoFactorAuthorization.confirmAction(
           httpRequest, twoFactorAction, twoFactorCodeInput.getValue());
-      SerializableRunnable confirmedAction = protectedAction;
-      confirmedAction.run();
+
+      SerializableRunnable confirmedProtectedAction = protectedAction;
+      confirmedProtectedAction.run();
+
       close();
-    } catch (RuntimeException failure) {
+    } catch (RuntimeException protectedActionFailure) {
       twoFactorCodeInput.markInvalid();
-      Supplier<String> message = messageProperties::getTwoFactorFailed;
-      if (failure instanceof LockedException) {
-        message = messageProperties::getTwoFactorThrottled;
-      } else if (failure instanceof BadCredentialsException) {
-        message = messageProperties::getTwoFactorInvalidCode;
+
+      Supplier<String> protectedActionFailureTextSupplier = messageProperties::getTwoFactorFailed;
+      if (protectedActionFailure instanceof LockedException) {
+        protectedActionFailureTextSupplier = messageProperties::getTwoFactorThrottled;
+      } else if (protectedActionFailure instanceof BadCredentialsException) {
+        protectedActionFailureTextSupplier = messageProperties::getTwoFactorInvalidCode;
       }
+
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
-              message,
+              protectedActionFailureTextSupplier,
               NotificationHelper.NotificationType.ERROR);
     } finally {
       twoFactorCodeInput.clear();

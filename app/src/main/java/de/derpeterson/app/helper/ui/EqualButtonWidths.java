@@ -8,6 +8,7 @@ public final class EqualButtonWidths {
 
   public static void configureEqualButtonWidths(Component buttonGroupComponent) {
     buttonGroupComponent.getElement().setAttribute("data-equal-text-widths", "");
+
     buttonGroupComponent.addAttachListener(attachEvent -> {
       attachEvent.getUI().getPage().addJavaScript("context://custom-theme/equal-button-widths.js");
       buttonGroupComponent.getElement().executeJs("window.cosmosEqualButtonWidths.observe(this)");

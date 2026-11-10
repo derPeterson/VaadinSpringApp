@@ -19,6 +19,7 @@ public class RouteNotFoundHandler extends Div implements HasErrorParameter<NotFo
     navigationEvent.forwardTo(
         HomeView.class,
         QueryParameters.simple(Map.of("error", NavigationErrorCode.PATH_NOT_FOUND.getCode())));
+
     return HttpServletResponse.SC_NOT_FOUND;
   }
 }

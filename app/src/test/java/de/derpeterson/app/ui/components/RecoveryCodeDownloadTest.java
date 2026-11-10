@@ -67,7 +67,7 @@ class RecoveryCodeDownloadTest {
     when(recoveryCodeDocument.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any()))
         .thenReturn(bytes);
 
-    recoveryCodeDownload.write(event, id, Locale.GERMAN);
+    recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
 
     assertArrayEquals("%PDF-synthetic".getBytes(StandardCharsets.US_ASCII), output.toByteArray());
     assertArrayEquals(new byte[bytes.length], bytes);
@@ -85,9 +85,9 @@ class RecoveryCodeDownloadTest {
     ByteArrayOutputStream output = new ByteArrayOutputStream();
     when(event.getOutputStream()).thenReturn(output);
 
-    recoveryCodeDownload.write(event, id, Locale.GERMAN);
+    recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
     verify(vaadinResponse).setStatus(500);
-    recoveryCodeDownload.write(event, id, Locale.GERMAN);
+    recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
 
     assertArrayEquals("%PDF-retry".getBytes(StandardCharsets.US_ASCII), output.toByteArray());
     verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
@@ -98,7 +98,7 @@ class RecoveryCodeDownloadTest {
     when(twoFactorEnrollment.recoveryOutput(request, id))
         .thenThrow(new AccessDeniedException("Expired"));
 
-    recoveryCodeDownload.write(event, id, Locale.GERMAN);
+    recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
 
     verify(vaadinResponse).setStatus(403);
     verify(event, never()).setContentLength(anyLong());
@@ -114,7 +114,7 @@ class RecoveryCodeDownloadTest {
     when(recoveryCodeDocument.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any()))
         .thenReturn(bytes);
 
-    recoveryCodeDownload.write(event, id, Locale.GERMAN);
+    recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
 
     verify(vaadinResponse).setStatus(500);
     assertArrayEquals(new byte[bytes.length], bytes);

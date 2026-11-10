@@ -49,6 +49,7 @@ public final class TwoFactorAccountComponent extends Div {
     twoFactorAccountCardDiv.removeAll();
     TwoFactorAuthorization.State twoFactorState =
         twoFactorAuthorization.state(twoFactorAuthorization.owner(httpRequest));
+
     Div twoFactorIconContainerDiv = new Div(AppIcon.SHIELD_KEYHOLE.create());
     twoFactorIconContainerDiv.addClassName(CosmosClasses.PANEL_ICON);
 
@@ -78,6 +79,7 @@ public final class TwoFactorAccountComponent extends Div {
     Div twoFactorDescriptionDiv =
         new Div(new Div(twoFactorTitleSpan, enrollmentBadge), twoFactorHintSpan);
     twoFactorDescriptionDiv.addClassName("account-entry-copy");
+
     return twoFactorDescriptionDiv;
   }
 
@@ -112,6 +114,7 @@ public final class TwoFactorAccountComponent extends Div {
       twoFactorActionsDiv.add(
           replaceAuthenticatorButton, regenerateRecoveryCodesButton, removeAuthenticatorButton);
     }
+
     return twoFactorActionsDiv;
   }
 
@@ -132,22 +135,26 @@ public final class TwoFactorAccountComponent extends Div {
     removeAuthenticatorButton.addClickListener(event ->
         twoFactorConfirmationActionDialog.open(
             TwoFactorAction.MANAGE_FACTOR, this::disableAuthenticator));
+
     return removeAuthenticatorButton;
   }
 
   private void regenerateRecoveryCodes() {
     twoFactorManagement.regenerate(httpRequest);
+
     openAuthenticatorSetup();
   }
 
   private void beginAuthenticatorReplacement() {
     twoFactorManagement.beginReplacement(httpRequest);
+
     openAuthenticatorSetup();
   }
 
   private void disableAuthenticator() {
     twoFactorManagement.disable(httpRequest);
     refreshTwoFactorAccountSection();
+
     NotificationHelper.getInstance()
         .showNotification(
             messageProperties::getTwoFactorDisabled, NotificationHelper.NotificationType.SUCCESS);
@@ -155,6 +162,7 @@ public final class TwoFactorAccountComponent extends Div {
 
   private void openAuthenticatorSetup() {
     TwoFactorFlow.SETUP.enter(httpRequest);
+
     UI.getCurrent()
         .getPage()
         .setLocation(httpRequest.getContextPath() + TwoFactorFlow.SETUP.location());

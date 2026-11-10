@@ -38,16 +38,16 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
   private final Div avatarPreviewContainer = new Div();
   private final Div customAvatarContainer = new Div();
   private final Button chooseAvatarFileButton = new Button();
-  private final Span chooseLabel = new Span();
+  private final Span chooseAvatarFileLabelSpan = new Span();
   private final Upload avatarUpload = new Upload();
-  private final Image savedSource = new Image();
-  private final Span uploadHint = new Span();
-  private final Span cropHint = new Span();
-  private final Span zoomLabel = new Span();
+  private final Image savedAvatarImage = new Image();
+  private final Span avatarUploadHintSpan = new Span();
+  private final Span avatarCropHintSpan = new Span();
+  private final Span avatarZoomLabelSpan = new Span();
   private final Button resetAvatarCropButton = new Button();
   private final Button cancelSelection = new Button();
   private final Input zoomSliderInput = new Input();
-  private final Div cropFrame = new Div();
+  private final Div avatarCropFrameDiv = new Div();
   private String avatarDisplayName = "";
 
   public AccountAvatarEditor(MessageProperties messageProperties, UserEntity accountUserEntity) {
@@ -55,26 +55,33 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     addClassName("account-avatar-editor");
     getElement().setAttribute("data-mode", "INITIALS");
     getElement().setAttribute("data-has-image", "false");
+
     avatarInitialsLabel.addClassNames("account-avatar-initials", "cosmos-avatar-initials");
-    Div circle = new Div(avatarInitialsLabel);
-    circle.addClassNames("account-avatar-circle", "cosmos-avatar-circle");
-    Element imagePreview = canvas("preview");
-    imagePreview.setAttribute(ARIA_HIDDEN, "true");
-    circle.getElement().appendChild(imagePreview);
+
+    Div previewCircleDiv = new Div(avatarInitialsLabel);
+    previewCircleDiv.addClassNames("account-avatar-circle", "cosmos-avatar-circle");
+
+    Element imagePreviewCanvasElement = createAvatarCanvasElement("preview");
+    imagePreviewCanvasElement.setAttribute(ARIA_HIDDEN, "true");
+    previewCircleDiv.getElement().appendChild(imagePreviewCanvasElement);
+
     avatarPreviewContainer.addClassNames("account-avatar-preview", "cosmos-user-avatar");
     avatarPreviewContainer.getStyle().set("--cosmos-avatar-size", "96px");
     avatarPreviewContainer.getElement().setAttribute("role", "img");
-    avatarPreviewContainer.add(circle);
+    avatarPreviewContainer.add(previewCircleDiv);
 
     chooseAvatarFileButton.setId("account-avatar-choose");
-    SvgIcon uploadSymbol = AppIcon.UPLOAD.create();
-    uploadSymbol.getElement().setAttribute(ARIA_HIDDEN, "true");
-    Span uploadBadge = new Span(uploadSymbol);
-    uploadBadge.addClassName("account-avatar-upload-icon");
-    chooseLabel.addClassName("account-avatar-upload-title");
-    Span uploadContent = new Span(uploadBadge, chooseLabel, uploadHint);
-    uploadContent.addClassName("account-avatar-upload-content");
-    chooseAvatarFileButton.getElement().appendChild(uploadContent.getElement());
+
+    SvgIcon uploadSvgIcon = AppIcon.UPLOAD.create();
+    uploadSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
+    Span uploadBadgeSpan = new Span(uploadSvgIcon);
+    uploadBadgeSpan.addClassName("account-avatar-upload-icon");
+    chooseAvatarFileLabelSpan.addClassName("account-avatar-upload-title");
+    Span uploadContentSpan =
+        new Span(uploadBadgeSpan, chooseAvatarFileLabelSpan, avatarUploadHintSpan);
+    uploadContentSpan.addClassName("account-avatar-upload-content");
+    chooseAvatarFileButton.getElement().appendChild(uploadContentSpan.getElement());
+
     avatarUpload.setId("account-avatar-upload");
     avatarUpload.addClassName("account-avatar-upload-control");
     // RAW vermeidet eine vorgelagerte Multipart-Pufferung; tatsächliche Bytes begrenzt der Handler.
@@ -84,97 +91,112 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     avatarUpload.setMaxFiles(1);
     avatarUpload.setMaxFileSize(AvatarImageProcessor.MAX_UPLOAD);
     avatarUpload.addFileRejectedListener(event -> {
-      Supplier<String> error = messageProperties::getAccountAvatarBusy;
+      Supplier<String> uploadErrorTextSupplier = messageProperties::getAccountAvatarBusy;
       if (event.getErrorMessage().equals(messageProperties.getAccountAvatarSizeError())) {
-        error = messageProperties::getAccountAvatarSizeError;
+        uploadErrorTextSupplier = messageProperties::getAccountAvatarSizeError;
       } else if (event.getErrorMessage().equals(messageProperties.getAccountAvatarTypeError())) {
-        error = messageProperties::getAccountAvatarTypeError;
+        uploadErrorTextSupplier = messageProperties::getAccountAvatarTypeError;
       }
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
-              error,
+              uploadErrorTextSupplier,
               -1,
               NotificationHelper.NotificationType.ERROR);
     });
-    avatarUpload.setUploadButton(chooseAvatarFileButton);
-    role(avatarUpload.getElement(), "upload");
-    // Eigene, ruhige Anzeige statt zusätzlicher nativer Dateiliste.
-    Div fileList = new Div();
-    fileList.getElement().setAttribute("slot", "file-list");
-    avatarUpload.getElement().appendChild(fileList.getElement());
-    savedSource.getStyle().set("display", "none");
-    Span filename = new Span();
-    filename.addClassName("account-avatar-filename");
-    role(filename.getElement(), "filename");
-    uploadHint.addClassName("account-avatar-helper");
-    Div upload = new Div(avatarUpload, filename, savedSource);
-    upload.addClassName("account-avatar-upload");
 
-    Span error = new Span();
-    error.addClassName("account-avatar-error");
-    error.getElement().setAttribute("role", "status");
-    error.getElement().setAttribute("aria-live", "polite");
-    role(error.getElement(), "error");
-    cropFrame.addClassName("account-avatar-crop-frame");
-    Element crop = canvas("crop");
-    crop.setAttribute("tabindex", "0");
-    crop.setAttribute("role", "img");
-    role(cropFrame.getElement(), "frame");
-    cropFrame.getElement().appendChild(crop);
-    Div mask = new Div();
-    mask.addClassName("account-avatar-crop-mask");
-    mask.getElement().setAttribute(ARIA_HIDDEN, "true");
-    cropFrame.add(mask);
-    cropHint.addClassName("account-avatar-helper");
+    avatarUpload.setUploadButton(chooseAvatarFileButton);
+    setAvatarElementRole(avatarUpload.getElement(), "upload");
+    // Eigene, ruhige Anzeige statt zusätzlicher nativer Dateiliste.
+    Div uploadedFilesDiv = new Div();
+    uploadedFilesDiv.getElement().setAttribute("slot", "file-list");
+    avatarUpload.getElement().appendChild(uploadedFilesDiv.getElement());
+    savedAvatarImage.getStyle().set("display", "none");
+    Span uploadedFilenameSpan = new Span();
+    uploadedFilenameSpan.addClassName("account-avatar-filename");
+    setAvatarElementRole(uploadedFilenameSpan.getElement(), "filename");
+    avatarUploadHintSpan.addClassName("account-avatar-helper");
+    Div avatarUploadDiv = new Div(avatarUpload, uploadedFilenameSpan, savedAvatarImage);
+    avatarUploadDiv.addClassName("account-avatar-upload");
+
+    Span uploadErrorSpan = new Span();
+    uploadErrorSpan.addClassName("account-avatar-error");
+    uploadErrorSpan.getElement().setAttribute("role", "status");
+    uploadErrorSpan.getElement().setAttribute("aria-live", "polite");
+    setAvatarElementRole(uploadErrorSpan.getElement(), "error");
+
+    avatarCropFrameDiv.addClassName("account-avatar-crop-frame");
+
+    Element cropCanvasElement = createAvatarCanvasElement("crop");
+    cropCanvasElement.setAttribute("tabindex", "0");
+    cropCanvasElement.setAttribute("role", "img");
+    setAvatarElementRole(avatarCropFrameDiv.getElement(), "frame");
+    avatarCropFrameDiv.getElement().appendChild(cropCanvasElement);
+    Div cropMaskDiv = new Div();
+    cropMaskDiv.addClassName("account-avatar-crop-mask");
+    cropMaskDiv.getElement().setAttribute(ARIA_HIDDEN, "true");
+    avatarCropFrameDiv.add(cropMaskDiv);
+    avatarCropHintSpan.addClassName("account-avatar-helper");
+
     zoomSliderInput.setType("range");
     zoomSliderInput.getElement().setAttribute("min", "1");
     zoomSliderInput.getElement().setAttribute("max", "3");
     zoomSliderInput.getElement().setAttribute("step", "0.01");
     zoomSliderInput.setValue("1");
-    role(zoomSliderInput.getElement(), "zoom");
-    Span percent = new Span("100 %");
-    percent.addClassName("account-avatar-zoom-value");
-    role(percent.getElement(), "percent");
-    Div zoomRow = new Div(zoomLabel, zoomSliderInput, percent);
-    zoomRow.addClassName("account-avatar-zoom");
+    setAvatarElementRole(zoomSliderInput.getElement(), "zoom");
+
+    Span zoomPercentSpan = new Span("100 %");
+    zoomPercentSpan.addClassName("account-avatar-zoom-value");
+    setAvatarElementRole(zoomPercentSpan.getElement(), "percent");
+    Div zoomRowDiv = new Div(avatarZoomLabelSpan, zoomSliderInput, zoomPercentSpan);
+    zoomRowDiv.addClassName("account-avatar-zoom");
+
     resetAvatarCropButton.setPrefixComponent(AppIcon.ROTATE_LEFT.create());
-    role(resetAvatarCropButton.getElement(), "reset");
+    setAvatarElementRole(resetAvatarCropButton.getElement(), "reset");
     cancelSelection.setId("account-avatar-cancel-selection");
     cancelSelection.setPrefixComponent(AppIcon.CLOSE.create());
     cancelSelection.addClassName("account-avatar-cancel-selection");
-    role(cancelSelection.getElement(), "cancel");
-    Div controls = new Div(cropFrame, cropHint, zoomRow, resetAvatarCropButton, cancelSelection);
-    controls.addClassName("account-avatar-crop-controls");
+    setAvatarElementRole(cancelSelection.getElement(), "cancel");
+
+    Div cropControlsDiv =
+        new Div(
+            avatarCropFrameDiv,
+            avatarCropHintSpan,
+            zoomRowDiv,
+            resetAvatarCropButton,
+            cancelSelection);
+    cropControlsDiv.addClassName("account-avatar-crop-controls");
+
     customAvatarContainer.addClassName("account-avatar-custom");
-    customAvatarContainer.add(upload, error, controls);
+    customAvatarContainer.add(avatarUploadDiv, uploadErrorSpan, cropControlsDiv);
     add(avatarPreviewContainer, customAvatarContainer);
+
     setIdentity(accountUserEntity);
     refreshTexts();
   }
 
-  private static void role(Element element, String value) {
-    element.setAttribute("data-avatar", value);
+  private static void setAvatarElementRole(Element targetElement, String roleName) {
+    targetElement.setAttribute("data-avatar", roleName);
   }
 
-  private static Element canvas(String value) {
-    Element element = new Element("canvas");
-    role(element, value);
-    return element;
+  private static Element createAvatarCanvasElement(String canvasRole) {
+    Element avatarCanvasElement = new Element("canvas");
+    setAvatarElementRole(avatarCanvasElement, canvasRole);
+    return avatarCanvasElement;
   }
 
   public void setIdentity(UserEntity accountUserEntity) {
-    String first =
+    String firstName =
         accountUserEntity == null || accountUserEntity.getFirstName() == null
             ? ""
             : accountUserEntity.getFirstName().strip();
-    String last =
+    String lastName =
         accountUserEntity == null || accountUserEntity.getLastName() == null
             ? ""
             : accountUserEntity.getLastName().strip();
-    avatarDisplayName = (first + " " + last).strip();
+    avatarDisplayName = (firstName + " " + lastName).strip();
     avatarInitialsLabel.removeAll();
-    avatarInitialsLabel.setText(OverlayUserIcon.initialsFor(first, last));
+    avatarInitialsLabel.setText(OverlayUserIcon.initialsFor(firstName, lastName));
     if (avatarInitialsLabel.getText().isEmpty()) {
       avatarInitialsLabel.add(AppIcon.USER.create());
     }
@@ -188,7 +210,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
   public void resetDraft() {
     setMode(AvatarMode.INITIALS);
     avatarUpload.clearFileList();
-    savedSource.getElement().removeAttribute("src");
+    savedAvatarImage.getElement().removeAttribute("src");
     getElement().callJsFunction("resetDraft");
   }
 
@@ -207,10 +229,12 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
     cancelSelection.setEnabled(enabled);
   }
 
-  public void loadSaved(UserAvatarService avatars, Long userId, UUID revision) {
-    savedSource.setSrc(
-        AvatarImageResource.createAvatarImageDownloadHandler(avatars, userId, revision, true));
-    getElement().callJsFunction("loadSaved", savedSource.getElement().getAttribute("src"));
+  public void loadSaved(
+      UserAvatarService userAvatarService, Long avatarOwnerId, UUID avatarRevision) {
+    savedAvatarImage.setSrc(
+        AvatarImageResource.createAvatarImageDownloadHandler(
+            userAvatarService, avatarOwnerId, avatarRevision, true));
+    getElement().callJsFunction("loadSaved", savedAvatarImage.getElement().getAttribute("src"));
   }
 
   private void updatePreviewLabel() {
@@ -222,7 +246,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
   }
 
   public void refreshTexts() {
-    chooseLabel.setText(messageProperties.getAccountAvatarChoose());
+    chooseAvatarFileLabelSpan.setText(messageProperties.getAccountAvatarChoose());
     chooseAvatarFileButton.setAriaLabel(messageProperties.getAccountAvatarChoose());
     cancelSelection.setText(messageProperties.getAdminUsersCancel());
     cancelSelection.setAriaLabel(
@@ -236,11 +260,11 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
                     .setFileIsTooBig(messageProperties.getAccountAvatarSizeError())
                     .setIncorrectFileType(messageProperties.getAccountAvatarTypeError())
                     .setTooManyFiles(messageProperties.getAccountAvatarBusy())));
-    uploadHint.setText(messageProperties.getAccountAvatarUploadHint());
-    cropHint.setText(messageProperties.getAccountAvatarCropHint());
-    zoomLabel.setText(messageProperties.getAccountAvatarZoom());
+    avatarUploadHintSpan.setText(messageProperties.getAccountAvatarUploadHint());
+    avatarCropHintSpan.setText(messageProperties.getAccountAvatarCropHint());
+    avatarZoomLabelSpan.setText(messageProperties.getAccountAvatarZoom());
     zoomSliderInput.getElement().setAttribute(ARIA_LABEL, messageProperties.getAccountAvatarZoom());
-    cropFrame
+    avatarCropFrameDiv
         .getElement()
         .getChild(0)
         .setAttribute(ARIA_LABEL, messageProperties.getAccountAvatarCropHint());

@@ -28,16 +28,16 @@ final class TwoFactorCodeInput extends VerticalLayout {
   private final transient MessageProperties messageProperties;
   private final OtpField appCodeField = new OtpField();
   private final TextField recoveryCodeField = new TextField();
-  private final Span appCodeLabel = new Span();
-  private final Span recoveryTabLabel = new Span();
-  private final Tab appCodeTab = new Tab(AppIcon.DEVICES.create(), appCodeLabel);
-  private final Tab recoveryTab = new Tab(AppIcon.KEY.create(), recoveryTabLabel);
+  private final Span appCodeLabelSpan = new Span();
+  private final Span recoveryTabLabelSpan = new Span();
+  private final Tab appCodeTab = new Tab(AppIcon.DEVICES.create(), appCodeLabelSpan);
+  private final Tab recoveryTab = new Tab(AppIcon.KEY.create(), recoveryTabLabelSpan);
   private final Tabs codeMethodTabs = new Tabs(appCodeTab, recoveryTab);
-  private final Span codeEntryHint = new Span();
-  private final Span helpPrompt = new Span();
+  private final Span codeEntryHintSpan = new Span();
+  private final Span helpPromptSpan = new Span();
   private final Button openRecoveryHelpButton = new Button();
   private final VerticalLayout codeFieldsLayout =
-      new VerticalLayout(codeEntryHint, appCodeField, recoveryCodeField);
+      new VerticalLayout(codeEntryHintSpan, appCodeField, recoveryCodeField);
 
   TwoFactorCodeInput(
       MessageProperties messageProperties,
@@ -58,6 +58,7 @@ final class TwoFactorCodeInput extends VerticalLayout {
     String inputId = methodPrefix + "-code-input";
     appCodeTab.setId(methodPrefix + "-app-code-tab");
     recoveryTab.setId(methodPrefix + "-recovery-code-tab");
+
     for (Tab tab : List.of(appCodeTab, recoveryTab)) {
       tab.getElement().setAttribute("aria-controls", inputId);
     }
@@ -66,9 +67,9 @@ final class TwoFactorCodeInput extends VerticalLayout {
     codeMethodTabs.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
     codeMethodTabs.addSelectedChangeListener(event -> {
       resetFields();
-      refreshMethod();
+      refreshSelectedCodeInput();
     });
-    codeEntryHint.addClassName(CosmosClasses.PANEL_DESCRIPTION);
+    codeEntryHintSpan.addClassName(CosmosClasses.PANEL_DESCRIPTION);
     codeFieldsLayout.setId(inputId);
     codeFieldsLayout.addClassName("two-factor-confirmation-input");
     codeFieldsLayout.getElement().setAttribute("role", "tabpanel");
@@ -88,31 +89,36 @@ final class TwoFactorCodeInput extends VerticalLayout {
           .getPage()
           .setLocation(request.getContextPath() + TwoFactorFlow.ACCOUNT_HELP.location());
     });
-    HorizontalLayout helpRow = new HorizontalLayout(helpPrompt, openRecoveryHelpButton);
-    helpRow.setAlignItems(Alignment.CENTER);
-    helpRow.addClassName("two-factor-help-row");
-    add(codeMethodTabs, codeFieldsLayout, helpRow);
+
+    HorizontalLayout recoveryHelpRowLayout =
+        new HorizontalLayout(helpPromptSpan, openRecoveryHelpButton);
+    recoveryHelpRowLayout.setAlignItems(Alignment.CENTER);
+    recoveryHelpRowLayout.addClassName("two-factor-help-row");
+    add(codeMethodTabs, codeFieldsLayout, recoveryHelpRowLayout);
     refreshTexts();
   }
 
   void refreshTexts() {
-    appCodeLabel.setText(messageProperties.getTwoFactorConfirmationAppTab());
-    recoveryTabLabel.setText(messageProperties.getTwoFactorRecoveryCodeLabel());
+    appCodeLabelSpan.setText(messageProperties.getTwoFactorConfirmationAppTab());
+    recoveryTabLabelSpan.setText(messageProperties.getTwoFactorRecoveryCodeLabel());
     appCodeField.setLabel(messageProperties.getTwoFactorSetupCodeLabel());
     recoveryCodeField.setLabel(messageProperties.getTwoFactorRecoveryCodeLabel());
-    helpPrompt.setText(messageProperties.getSupportHelpSubtitle());
+    helpPromptSpan.setText(messageProperties.getSupportHelpSubtitle());
     openRecoveryHelpButton.setText(messageProperties.getSupportHelpTitle());
-    refreshMethod();
+    refreshSelectedCodeInput();
   }
 
-  private void refreshMethod() {
-    boolean recovery = codeMethodTabs.getSelectedTab() == recoveryTab;
-    appCodeField.setVisible(!recovery);
-    recoveryCodeField.setVisible(recovery);
-    Tab selected = recovery ? recoveryTab : appCodeTab;
-    codeFieldsLayout.getElement().setAttribute("aria-labelledby", selected.getId().orElseThrow());
-    codeEntryHint.setText(
-        recovery
+  private void refreshSelectedCodeInput() {
+    boolean recoveryCodeSelected = codeMethodTabs.getSelectedTab() == recoveryTab;
+    appCodeField.setVisible(!recoveryCodeSelected);
+    recoveryCodeField.setVisible(recoveryCodeSelected);
+
+    Tab selectedCodeTab = recoveryCodeSelected ? recoveryTab : appCodeTab;
+    codeFieldsLayout
+        .getElement()
+        .setAttribute("aria-labelledby", selectedCodeTab.getId().orElseThrow());
+    codeEntryHintSpan.setText(
+        recoveryCodeSelected
             ? messageProperties.getTwoFactorActionRecoveryHint()
             : messageProperties.getTwoFactorLoginHint());
   }

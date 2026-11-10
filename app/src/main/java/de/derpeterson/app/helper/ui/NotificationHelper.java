@@ -62,10 +62,12 @@ public class NotificationHelper implements Serializable {
     // Kein globaler Helfer darf Hinweise anderer Benutzer schließen oder deren Texte verändern.
     NotificationHelper uiNotificationHelper =
         ComponentUtil.getData(currentUi, NotificationHelper.class);
+
     if (uiNotificationHelper == null) {
       uiNotificationHelper = new NotificationHelper();
       ComponentUtil.setData(currentUi, NotificationHelper.class, uiNotificationHelper);
     }
+
     return uiNotificationHelper;
   }
 
@@ -111,6 +113,7 @@ public class NotificationHelper implements Serializable {
     if (titleSupplier != null) {
       notificationTitle = titleSupplier.get();
     }
+
     String notificationMessage = null;
     if (messageSupplier != null) {
       notificationMessage = messageSupplier.get();
@@ -119,8 +122,8 @@ public class NotificationHelper implements Serializable {
     if (containsClass(UI.getCurrent(), "cosmos-theme")) {
       currentNotification.getElement().getThemeList().add("cosmos");
     }
-    boolean referenceAccount = containsClass(UI.getCurrent(), REFERENCE_PORTAL);
-    if (referenceAccount) {
+    boolean usesReferenceTheme = containsClass(UI.getCurrent(), REFERENCE_PORTAL);
+    if (usesReferenceTheme) {
       currentNotification.getElement().getThemeList().add("cosmos-reference");
       currentNotification
           .getElement()
@@ -130,6 +133,16 @@ public class NotificationHelper implements Serializable {
     currentNotification.setPosition(Notification.Position.TOP_CENTER);
     currentNotification.setDuration(displayDurationMillis);
 
+    buildNotificationContent(
+        notificationTitle, notificationMessage, notificationType, usesReferenceTheme);
+    currentNotification.open();
+  }
+
+  private void buildNotificationContent(
+      String notificationTitle,
+      String notificationMessage,
+      NotificationType notificationType,
+      boolean usesReferenceTheme) {
     this.titleText = null;
     if (StringUtils.isNotEmpty(notificationTitle)) {
       titleText = new Span(notificationTitle);
@@ -137,14 +150,14 @@ public class NotificationHelper implements Serializable {
       currentNotification.add(titleText);
     }
 
-    HorizontalLayout contentLayout = new HorizontalLayout();
-    contentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
-    contentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    contentLayout.setWidthFull();
-    contentLayout.setSpacing(false);
-    contentLayout.addClassNames(LumoUtility.Gap.LARGE);
+    HorizontalLayout notificationContentLayout = new HorizontalLayout();
+    notificationContentLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+    notificationContentLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    notificationContentLayout.setWidthFull();
+    notificationContentLayout.setSpacing(false);
+    notificationContentLayout.addClassNames(LumoUtility.Gap.LARGE);
 
-    addStatusIcon(contentLayout, notificationType, referenceAccount);
+    addStatusIcon(notificationContentLayout, notificationType, usesReferenceTheme);
 
     this.textLayout = new VerticalLayout();
     textLayout.addClassNames(LumoUtility.Padding.SMALL);
@@ -153,58 +166,59 @@ public class NotificationHelper implements Serializable {
 
     createTextLayoutContent(notificationMessage);
 
-    contentLayout.add(textLayout);
+    notificationContentLayout.add(textLayout);
 
-    currentNotification.add(contentLayout);
+    currentNotification.add(notificationContentLayout);
     closeButton = createNotificationCloseButton(currentNotification);
     closeButton.setAriaLabel(localizedCloseLabel());
-    if (referenceAccount) {
+    if (usesReferenceTheme) {
       closeButton.setIcon(AppIcon.CLOSE_CIRCLE.create());
     }
     currentNotification.add(closeButton);
-    currentNotification.open();
   }
 
   private void addStatusIcon(
-      HorizontalLayout contentLayout, NotificationType notificationType, boolean referenceAccount) {
-    SvgIcon statusIcon = null;
+      HorizontalLayout notificationContentLayout,
+      NotificationType notificationType,
+      boolean usesReferenceTheme) {
+    SvgIcon statusSvgIcon = null;
     if (notificationType == NotificationType.ERROR) {
-      statusIcon = AppIcon.ERROR.create();
-      statusIcon.addClassNames(LumoUtility.TextColor.ERROR);
+      statusSvgIcon = AppIcon.ERROR.create();
+      statusSvgIcon.addClassNames(LumoUtility.TextColor.ERROR);
       if (titleText != null) {
         titleText.addClassNames(LumoUtility.TextColor.ERROR);
       }
     } else if (notificationType == NotificationType.SUCCESS) {
-      statusIcon = AppIcon.CHECK_CIRCLE.create();
-      statusIcon.addClassNames(LumoUtility.TextColor.SUCCESS);
+      statusSvgIcon = AppIcon.CHECK_CIRCLE.create();
+      statusSvgIcon.addClassNames(LumoUtility.TextColor.SUCCESS);
       if (titleText != null) {
         titleText.addClassNames(LumoUtility.TextColor.SUCCESS);
       }
     } else if (notificationType == NotificationType.WARNING) {
-      statusIcon = AppIcon.WARNING.create();
-      statusIcon.addClassNames(LumoUtility.TextColor.WARNING);
+      statusSvgIcon = AppIcon.WARNING.create();
+      statusSvgIcon.addClassNames(LumoUtility.TextColor.WARNING);
       if (titleText != null) {
         titleText.addClassNames(LumoUtility.TextColor.WARNING);
       }
     }
 
-    if (statusIcon != null) {
-      statusIcon.addClassName("cosmos-notification-icon");
+    if (statusSvgIcon != null) {
+      statusSvgIcon.addClassName("cosmos-notification-icon");
     }
 
-    if (referenceAccount) {
-      AppIcon statusSymbol =
+    if (usesReferenceTheme) {
+      AppIcon statusAppIcon =
           switch (notificationType) {
             case ERROR -> AppIcon.ERROR;
             case SUCCESS -> AppIcon.CHECK_CIRCLE;
             case WARNING -> AppIcon.WARNING;
             case NORMAL -> AppIcon.INFO_CIRCLE;
           };
-      SvgIcon referenceIcon = statusSymbol.create();
-      referenceIcon.addClassName("cosmos-notification-icon");
-      contentLayout.add(referenceIcon);
-    } else if (statusIcon != null) {
-      contentLayout.add(statusIcon);
+      SvgIcon referenceStatusSvgIcon = statusAppIcon.create();
+      referenceStatusSvgIcon.addClassName("cosmos-notification-icon");
+      notificationContentLayout.add(referenceStatusSvgIcon);
+    } else if (statusSvgIcon != null) {
+      notificationContentLayout.add(statusSvgIcon);
     }
   }
 
@@ -242,6 +256,7 @@ public class NotificationHelper implements Serializable {
       messageText.getStyle().set("max-width", "520px");
       textLayout.add(messageText);
     }
+
     if (detailsSupplier != null) {
       UnorderedList detailsList = new UnorderedList();
       detailsList.addClassNames("cosmos-notification-message", "cosmos-notification-details");
@@ -269,6 +284,7 @@ public class NotificationHelper implements Serializable {
     if (closeButton != null) {
       closeButton.setAriaLabel(localizedCloseLabel());
     }
+
     if (titleText != null && titleSupplier != null) {
       titleText.setText(titleSupplier.get());
     }

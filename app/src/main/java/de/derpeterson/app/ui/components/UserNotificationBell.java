@@ -54,8 +54,8 @@ public class UserNotificationBell extends Div {
     notificationPopover.getThemeNames().add("cosmos");
     notificationPopover.getThemeNames().add("cosmos-notifications");
     notificationPopover.setAriaLabel(messageProperties.getNotificationsTitle());
-    notificationPopover.addOpenedChangeListener(e -> {
-      if (e.isOpened()) {
+    notificationPopover.addOpenedChangeListener(openedChangeEvent -> {
+      if (openedChangeEvent.isOpened()) {
         refreshNotificationBell();
       }
     });
@@ -63,7 +63,8 @@ public class UserNotificationBell extends Div {
       httpSession = request.getSession(false);
       notificationPreviewPanel =
           new UserNotificationsPanel(messageProperties, userNotificationService, httpSession, true);
-      if (referenceStyle) {
+
+      if (usesReferenceStyle) {
         notificationPreviewPanel.addClassName(REFERENCE_OVERLAY);
       }
       notificationPreviewPanel.setCloseAction(notificationPopover::close);
@@ -105,11 +106,12 @@ public class UserNotificationBell extends Div {
     });
   }
 
-  private boolean referenceStyle;
+  private boolean usesReferenceStyle;
 
   public void useReferenceStyle() {
-    referenceStyle = true;
+    usesReferenceStyle = true;
     notificationPopover.getThemeNames().add("cosmos-reference");
+
     if (notificationPreviewPanel != null) {
       notificationPreviewPanel.addClassName(REFERENCE_OVERLAY);
     }
@@ -117,9 +119,11 @@ public class UserNotificationBell extends Div {
 
   public void refreshTexts() {
     notificationPopover.setAriaLabel(messageProperties.getNotificationsTitle());
+
     if (notificationPreviewPanel != null) {
       notificationPreviewPanel.refreshTexts();
     }
+
     if (isAttached()) {
       refreshNotificationBell();
     }
@@ -127,21 +131,26 @@ public class UserNotificationBell extends Div {
 
   private void refreshNotificationBell() {
     try {
-      long unread = userNotificationService.unreadCount(httpSession);
-      unreadCountListener.accept(unread);
+      long unreadNotificationCount = userNotificationService.unreadCount(httpSession);
+      unreadCountListener.accept(unreadNotificationCount);
+
       notificationBellButton.setEnabled(true);
-      unreadCountBadge.setVisible(unread > 0);
-      unreadCountBadge.setText(unread > 99 ? "99+" : Long.toString(unread));
+      unreadCountBadge.setVisible(unreadNotificationCount > 0);
+      unreadCountBadge.setText(
+          unreadNotificationCount > 99 ? "99+" : Long.toString(unreadNotificationCount));
       notificationBellButton.setAriaLabel(
-          messageProperties.getNotificationsTitle() + " (" + unread + ")");
+          messageProperties.getNotificationsTitle() + " (" + unreadNotificationCount + ")");
+
       if (notificationPopover.isOpened() && notificationPreviewPanel != null) {
         notificationPreviewPanel.refreshInbox();
       }
     } catch (RuntimeException _) {
       unreadCountListener.accept(-1L);
+
       unreadCountBadge.setVisible(false);
       notificationBellButton.setEnabled(false);
       notificationPopover.close();
+
       if (notificationPreviewPanel != null) {
         notificationPreviewPanel.unavailable();
       }

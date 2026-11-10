@@ -18,48 +18,63 @@ import de.derpeterson.app.views.RegistrationView;
 public class PublicHomeComponent extends Div {
   public PublicHomeComponent(MessageProperties messageProperties) {
     addClassNames("portal-home-page", "portal-home-card", "public-home");
-    Span kicker = new Span();
-    kicker.addClassName("portal-home-kicker");
-    H2 title = new H2();
-    Span welcome = new Span();
-    title.add(welcome, new Span("."));
-    Paragraph description = new Paragraph();
-    description.addClassName("portal-home-description");
-    Button login =
+
+    Span welcomeKickerSpan = new Span();
+    welcomeKickerSpan.addClassName("portal-home-kicker");
+    H2 welcomeHeading = new H2();
+    Span welcomeTextSpan = new Span();
+    welcomeHeading.add(welcomeTextSpan, new Span("."));
+    Paragraph publicHomeDescriptionParagraph = new Paragraph();
+    publicHomeDescriptionParagraph.addClassName("portal-home-description");
+
+    Button loginButton =
         new Button(
             "", AppIcon.SIGN_IN.create(), event -> UI.getCurrent().navigate(LoginView.class));
-    login.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    Button register =
+    loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+    Button registerButton =
         new Button(
             "",
             AppIcon.USER_PLUS.create(),
             event -> UI.getCurrent().navigate(RegistrationView.class));
-    Div actions = new Div(login, register);
-    actions.addClassName("portal-home-actions");
-    Div copy = new Div(kicker, title, description, actions);
-    copy.addClassName("portal-home-copy");
-    Image planet = new Image("icons/portal-home.svg", "");
-    planet.addClassName("portal-home-planet");
-    Div art = new Div(planet);
-    art.addClassName("portal-home-art");
-    Div layout = new Div(copy, art);
-    layout.addClassName("portal-home-layout");
-    Span notice = new Span();
-    Span star = new Span("✦");
-    star.getElement().setAttribute("aria-hidden", "true");
-    Div footer = new Div(star, notice);
-    footer.addClassName("portal-home-note");
-    add(layout, footer);
-    Runnable translate =
+
+    Div authenticationActionsDiv = new Div(loginButton, registerButton);
+    authenticationActionsDiv.addClassName("portal-home-actions");
+    Div welcomeContentDiv =
+        new Div(
+            welcomeKickerSpan,
+            welcomeHeading,
+            publicHomeDescriptionParagraph,
+            authenticationActionsDiv);
+    welcomeContentDiv.addClassName("portal-home-copy");
+
+    Image planetImage = new Image("icons/portal-home.svg", "");
+    planetImage.addClassName("portal-home-planet");
+    Div planetArtDiv = new Div(planetImage);
+    planetArtDiv.addClassName("portal-home-art");
+    Div welcomeLayoutDiv = new Div(welcomeContentDiv, planetArtDiv);
+    welcomeLayoutDiv.addClassName("portal-home-layout");
+
+    Span publicHomeNoticeSpan = new Span();
+    Span noticeStarSpan = new Span("✦");
+    noticeStarSpan.getElement().setAttribute("aria-hidden", "true");
+    Div publicHomeFooterDiv = new Div(noticeStarSpan, publicHomeNoticeSpan);
+    publicHomeFooterDiv.addClassName("portal-home-note");
+
+    add(welcomeLayoutDiv, publicHomeFooterDiv);
+
+    Runnable refreshHomeTextsAction =
         () -> {
-          kicker.setText(messageProperties.getPublicHomeKicker());
-          welcome.setText(messageProperties.getPortalHomeWelcome());
-          description.setText(messageProperties.getPublicHomeDescription());
-          notice.setText(messageProperties.getPortalHomeNotice());
-          login.setText(messageProperties.getBaseLoginButton());
-          register.setText(messageProperties.getBaseRegistrationButton());
+          welcomeKickerSpan.setText(messageProperties.getPublicHomeKicker());
+          welcomeTextSpan.setText(messageProperties.getPortalHomeWelcome());
+          publicHomeDescriptionParagraph.setText(messageProperties.getPublicHomeDescription());
+          publicHomeNoticeSpan.setText(messageProperties.getPortalHomeNotice());
+          loginButton.setText(messageProperties.getBaseLoginButton());
+          registerButton.setText(messageProperties.getBaseRegistrationButton());
         };
-    translate.run();
-    ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
+
+    refreshHomeTextsAction.run();
+    ComponentUtil.addListener(
+        UI.getCurrent(), LanguageChangeEvent.class, event -> refreshHomeTextsAction.run());
   }
 }

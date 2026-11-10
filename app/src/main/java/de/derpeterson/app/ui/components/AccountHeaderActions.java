@@ -24,10 +24,12 @@ public class AccountHeaderActions extends HorizontalLayout {
     setVisible(authenticated);
     openNotificationsButton.setId("account-header-notifications");
     openAccountSettingsButton.setId("account-header-settings");
-    for (Button button : new Button[] {openNotificationsButton, openAccountSettingsButton}) {
-      button.addThemeVariants(LUMO_TERTIARY_INLINE);
-      button.addClassNames("cosmos-topbar-shortcut", LumoUtility.TextColor.PRIMARY);
+    for (Button accountActionButton :
+        new Button[] {openNotificationsButton, openAccountSettingsButton}) {
+      accountActionButton.addThemeVariants(LUMO_TERTIARY_INLINE);
+      accountActionButton.addClassNames("cosmos-topbar-shortcut", LumoUtility.TextColor.PRIMARY);
     }
+
     if (authenticated) {
       openAccountSettingsButton.addClickListener(
           event -> UI.getCurrent().navigate(AccountView.class));
@@ -40,15 +42,17 @@ public class AccountHeaderActions extends HorizontalLayout {
   private boolean referenceStyle;
   private SerializableConsumer<Long> unreadCountListener = value -> {};
 
-  public void setUnreadCountListener(SerializableConsumer<Long> listener) {
-    unreadCountListener = listener;
+  public void setUnreadCountListener(SerializableConsumer<Long> unreadCountConsumer) {
+    unreadCountListener = unreadCountConsumer;
+
     if (notificationBell != null) {
-      notificationBell.setUnreadCountListener(listener);
+      notificationBell.setUnreadCountListener(unreadCountConsumer);
     }
   }
 
   public void useReferenceIcons() {
     referenceStyle = true;
+
     if (notificationBell != null) {
       notificationBell.useReferenceStyle();
     }
@@ -66,6 +70,7 @@ public class AccountHeaderActions extends HorizontalLayout {
     notificationBell =
         new UserNotificationBell(messageProperties, service, request, openNotificationsButton);
     notificationBell.setUnreadCountListener(unreadCountListener);
+
     if (referenceStyle) {
       notificationBell.useReferenceStyle();
     }
@@ -77,6 +82,7 @@ public class AccountHeaderActions extends HorizontalLayout {
     openNotificationsButton.setTooltipText(messageProperties.getBaseNotifications());
     openAccountSettingsButton.setAriaLabel(messageProperties.getBaseManageAccountButton());
     openAccountSettingsButton.setTooltipText(messageProperties.getBaseManageAccountButton());
+
     if (notificationBell != null) {
       notificationBell.refreshTexts();
     }

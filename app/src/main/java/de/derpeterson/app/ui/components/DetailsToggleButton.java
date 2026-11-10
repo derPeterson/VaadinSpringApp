@@ -14,13 +14,14 @@ public final class DetailsToggleButton extends Button {
     addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     getElement().setAttribute("aria-controls", details.getId().orElseThrow());
     setAriaLabel(topic + ": " + messageProperties.getBaseDetailsButton());
-    updateState(details.isOpened());
+    refreshDetailsToggleState(details.isOpened());
     addClickListener(event -> details.setOpened(!details.isOpened()));
-    details.addOpenedChangeListener(event -> updateState(event.isOpened()));
+
+    details.addOpenedChangeListener(event -> refreshDetailsToggleState(event.isOpened()));
   }
 
-  private void updateState(boolean opened) {
-    setIcon(opened ? AppIcon.ANGLE_DOWN.create() : AppIcon.ANGLE_RIGHT.create());
-    getElement().setAttribute("aria-expanded", Boolean.toString(opened));
+  private void refreshDetailsToggleState(boolean detailsOpened) {
+    setIcon(detailsOpened ? AppIcon.ANGLE_DOWN.create() : AppIcon.ANGLE_RIGHT.create());
+    getElement().setAttribute("aria-expanded", Boolean.toString(detailsOpened));
   }
 }

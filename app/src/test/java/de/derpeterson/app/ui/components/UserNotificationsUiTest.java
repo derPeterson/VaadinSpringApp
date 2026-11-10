@@ -1958,7 +1958,7 @@ class UserNotificationsUiTest {
         ((Span) field(section, "historyCountSpan")).getText());
     assertEquals(
         messageProperties.getPortalPaginationRange(1, 5, 21),
-        ((Span) field(field(section, "historyPagination"), "totalLabel")).getText());
+        ((Span) field(field(section, "historyPagination"), "totalItemsSpan")).getText());
     Div history = field(section, "sentNotificationHistoryDiv");
     List<Details> details =
         tree(history)
@@ -2012,7 +2012,7 @@ class UserNotificationsUiTest {
     ((Button) field(field(section, "historyPagination"), "lastPageButton")).click();
     assertEquals(
         messageProperties.getPortalPaginationRange(21, 21, 21),
-        ((Span) field(field(section, "historyPagination"), "totalLabel")).getText());
+        ((Span) field(field(section, "historyPagination"), "totalItemsSpan")).getText());
     assertFalse(
         ((Button) field(field(section, "historyPagination"), "nextPageButton")).isEnabled());
     assertTrue(
@@ -2023,7 +2023,7 @@ class UserNotificationsUiTest {
     section.activate();
     assertEquals(
         messageProperties.getPortalPaginationRange(0, 0, 0),
-        ((Span) field(field(section, "historyPagination"), "totalLabel")).getText());
+        ((Span) field(field(section, "historyPagination"), "totalItemsSpan")).getText());
     assertFalse(
         ((Button) field(field(section, "historyPagination"), "nextPageButton")).isEnabled());
     assertFalse(

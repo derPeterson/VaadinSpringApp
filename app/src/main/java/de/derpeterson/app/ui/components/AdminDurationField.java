@@ -36,13 +36,13 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   }
 
   private final MessageProperties messageProperties;
-  private final Storage storage;
+  private final Storage durationStorage;
   private final IntegerField durationAmountField = new IntegerField();
   private final BigDecimalField preciseDurationField = new BigDecimalField();
   private final Select<Unit> durationUnitSelector = new Select<>();
   private String defaultValue = "1209600";
-  private boolean loading;
-  private SerializableRunnable changeListener = () -> {};
+  private boolean loadingStoredDuration;
+  private SerializableRunnable durationChangeListener = () -> {};
   private final Button decreaseDurationButton =
       new Button(AppIcon.MINUS.create(), event -> stepDurationValue(-1));
   private final Button increaseDurationButton =
@@ -52,9 +52,9 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     this(messageProperties, Storage.SECONDS);
   }
 
-  public AdminDurationField(MessageProperties messageProperties, Storage storage) {
+  public AdminDurationField(MessageProperties messageProperties, Storage durationStorage) {
     this.messageProperties = messageProperties;
-    this.storage = storage;
+    this.durationStorage = durationStorage;
     addClassName("admin-duration-field");
     getElement().setAttribute("role", "group");
     setWidthFull();
@@ -68,12 +68,14 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     increaseDurationButton.addClassName("admin-duration-step");
     preciseDurationField.setPrefixComponent(decreaseDurationButton);
     preciseDurationField.setSuffixComponent(increaseDurationButton);
-    durationUnitSelector.setItems(storage == Storage.DAYS ? new Unit[] {Unit.DAYS} : Unit.values());
+    durationUnitSelector.setItems(
+        durationStorage == Storage.DAYS ? new Unit[] {Unit.DAYS} : Unit.values());
     durationUnitSelector.setEmptySelectionAllowed(false);
-    durationUnitSelector.setReadOnly(storage == Storage.DAYS);
+    durationUnitSelector.setReadOnly(durationStorage == Storage.DAYS);
     durationUnitSelector.getThemeNames().add("cosmos-reference");
     durationUnitSelector.setValue(Unit.DAYS);
-    if (storage == Storage.DURATION) {
+
+    if (durationStorage == Storage.DURATION) {
       add(preciseDurationField, durationUnitSelector);
     } else {
       add(durationAmountField, durationUnitSelector);
@@ -81,17 +83,18 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     durationAmountField.addValueChangeListener(event -> publishDurationChange());
     preciseDurationField.addValueChangeListener(event -> publishDurationChange());
     durationUnitSelector.addValueChangeListener(event -> {
-      updateLimits();
+      updateDurationMaximumAndPlaceholder();
       publishDurationChange();
     });
     refreshTexts();
-    updateLimits();
+    updateDurationMaximumAndPlaceholder();
   }
 
-  private void stepDurationValue(int direction) {
-    BigDecimal current = preciseDurationField.getValue();
+  private void stepDurationValue(int stepDirection) {
+    BigDecimal currentDurationAmount = preciseDurationField.getValue();
     preciseDurationField.setValue(
-        (current == null ? BigDecimal.ZERO : current).add(BigDecimal.valueOf(direction)));
+        (currentDurationAmount == null ? BigDecimal.ZERO : currentDurationAmount)
+            .add(BigDecimal.valueOf(stepDirection)));
   }
 
   public void setSecondsValue(int seconds) {
@@ -102,14 +105,16 @@ public class AdminDurationField extends Div implements HasAriaLabel {
    * Schränkt nur die angebotenen Einheiten ein; vorhandene Konfigurationsfelder bleiben
    * unverändert.
    */
-  public void setAvailableUnits(Unit... available) {
-    Unit current = durationUnitSelector.getValue();
-    if (available.length == 0 || storage == Storage.DAYS) {
+  public void setAvailableUnits(Unit... availableUnits) {
+    Unit currentDurationUnit = durationUnitSelector.getValue();
+    if (availableUnits.length == 0 || durationStorage == Storage.DAYS) {
       throw new IllegalArgumentException("Selectable duration units required");
     }
-    durationUnitSelector.setItems(available);
+    durationUnitSelector.setItems(availableUnits);
     durationUnitSelector.setValue(
-        Arrays.asList(available).contains(current) ? current : available[0]);
+        Arrays.asList(availableUnits).contains(currentDurationUnit)
+            ? currentDurationUnit
+            : availableUnits[0]);
   }
 
   public void setControlsEnabled(boolean enabled) {
@@ -120,112 +125,136 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     increaseDurationButton.setEnabled(enabled);
   }
 
-  public void setStoredValue(String value) {
-    loading = true;
+  public void setStoredValue(String storedDurationText) {
+    loadingStoredDuration = true;
+
     try {
-      if (storage == Storage.DAYS && value.isBlank()) {
+      if (durationStorage == Storage.DAYS && storedDurationText.isBlank()) {
         durationUnitSelector.setValue(Unit.DAYS);
         durationAmountField.clear();
         return;
       }
-      BigDecimal seconds = parseDurationValue(value);
-      Unit selected = storage == Storage.DAYS ? Unit.DAYS : exactUnit(seconds);
-      durationUnitSelector.setValue(selected);
-      BigDecimal number = seconds.divide(BigDecimal.valueOf(selected.seconds)).stripTrailingZeros();
-      if (storage == Storage.DURATION) {
-        preciseDurationField.setValue(number);
+
+      BigDecimal parsedDurationSeconds = parseDurationValue(storedDurationText);
+
+      Unit selectedDurationUnit =
+          durationStorage == Storage.DAYS ? Unit.DAYS : exactUnit(parsedDurationSeconds);
+      durationUnitSelector.setValue(selectedDurationUnit);
+
+      BigDecimal durationAmount =
+          parsedDurationSeconds
+              .divide(BigDecimal.valueOf(selectedDurationUnit.seconds))
+              .stripTrailingZeros();
+
+      if (durationStorage == Storage.DURATION) {
+        preciseDurationField.setValue(durationAmount);
       } else {
-        durationAmountField.setValue(number.intValueExact());
+        durationAmountField.setValue(durationAmount.intValueExact());
       }
-      updateLimits();
+      updateDurationMaximumAndPlaceholder();
     } finally {
-      loading = false;
+      loadingStoredDuration = false;
     }
   }
 
-  private BigDecimal parseDurationValue(String value) {
-    if (storage != Storage.DURATION) {
-      return new BigDecimal(value)
-          .multiply(BigDecimal.valueOf(storage == Storage.DAYS ? 86400 : 1));
+  private BigDecimal parseDurationValue(String storedDurationText) {
+    if (durationStorage != Storage.DURATION) {
+      return new BigDecimal(storedDurationText)
+          .multiply(BigDecimal.valueOf(durationStorage == Storage.DAYS ? 86400 : 1));
     }
-    Duration duration = DurationStyle.detectAndParse(value);
-    return BigDecimal.valueOf(duration.getSeconds()).add(BigDecimal.valueOf(duration.getNano(), 9));
+    Duration parsedDuration = DurationStyle.detectAndParse(storedDurationText);
+    return BigDecimal.valueOf(parsedDuration.getSeconds())
+        .add(BigDecimal.valueOf(parsedDuration.getNano(), 9));
   }
 
   public String getSecondsValue() {
-    BigDecimal number = readDurationValue();
-    return number == null
+    BigDecimal durationAmount = readDurationValue();
+    return durationAmount == null
         ? ""
-        : number
+        : durationAmount
             .multiply(BigDecimal.valueOf(durationUnitSelector.getValue().seconds))
             .toPlainString();
   }
 
   /** Ungültige Werte erreichen die vorhandene Prüfung und werden niemals zum Standardwert. */
   public String getStoredValue() {
-    BigDecimal current = readDurationValue();
-    if (current == null) {
+    BigDecimal currentDurationAmount = readDurationValue();
+    if (currentDurationAmount == null) {
       return "";
     }
-    if (storage == Storage.SECONDS) {
+    if (durationStorage == Storage.SECONDS) {
       return getSecondsValue();
     }
-    if (storage == Storage.DAYS) {
-      return current.toPlainString();
+    if (durationStorage == Storage.DAYS) {
+      return currentDurationAmount.toPlainString();
     }
+
     try {
-      BigInteger nanos = new BigDecimal(getSecondsValue()).movePointRight(9).toBigIntegerExact();
-      BigInteger[] parts = nanos.divideAndRemainder(BigInteger.valueOf(1_000_000_000));
-      return Duration.ofSeconds(parts[0].longValueExact(), parts[1].longValueExact()).toString();
+      BigInteger durationNanoseconds =
+          new BigDecimal(getSecondsValue()).movePointRight(9).toBigIntegerExact();
+      BigInteger[] durationParts =
+          durationNanoseconds.divideAndRemainder(BigInteger.valueOf(1_000_000_000));
+      return Duration.ofSeconds(
+              durationParts[0].longValueExact(), durationParts[1].longValueExact())
+          .toString();
     } catch (ArithmeticException _) {
       return "invalid";
     }
   }
 
-  public void setDefaultValue(String value) {
-    defaultValue = value;
-    updateLimits();
+  public void setDefaultValue(String defaultDurationText) {
+    defaultValue = defaultDurationText;
+    updateDurationMaximumAndPlaceholder();
   }
 
   public void addChangeListener(SerializableRunnable listener) {
-    changeListener = listener;
+    durationChangeListener = listener;
   }
 
   private void publishDurationChange() {
-    if (!loading) {
-      changeListener.run();
+    if (!loadingStoredDuration) {
+      durationChangeListener.run();
     }
   }
 
   private BigDecimal readDurationValue() {
-    if (storage == Storage.DURATION) {
+    if (durationStorage == Storage.DURATION) {
       return preciseDurationField.getValue();
     }
-    Integer value = durationAmountField.getValue();
-    return value == null ? null : BigDecimal.valueOf(value);
+
+    Integer durationAmount = durationAmountField.getValue();
+    return durationAmount == null ? null : BigDecimal.valueOf(durationAmount);
   }
 
-  private void updateLimits() {
-    Unit selected = durationUnitSelector.getValue();
-    if (selected == null) {
+  private void updateDurationMaximumAndPlaceholder() {
+    Unit selectedDurationUnit = durationUnitSelector.getValue();
+    if (selectedDurationUnit == null) {
       return;
     }
+
     durationAmountField.setMax(
-        storage == Storage.DAYS ? Integer.MAX_VALUE : Integer.MAX_VALUE / selected.seconds);
-    if (storage == Storage.DAYS) {
+        durationStorage == Storage.DAYS
+            ? Integer.MAX_VALUE
+            : Integer.MAX_VALUE / selectedDurationUnit.seconds);
+
+    if (durationStorage == Storage.DAYS) {
       durationAmountField.setPlaceholder(messageProperties.getAdminConfigUnlimited());
       return;
     }
+
     try {
-      BigDecimal placeholder =
+      BigDecimal durationPlaceholderAmount =
           parseDurationValue(defaultValue)
-              .divide(BigDecimal.valueOf(selected.seconds))
+              .divide(BigDecimal.valueOf(selectedDurationUnit.seconds))
               .stripTrailingZeros();
-      if (storage == Storage.DURATION) {
-        preciseDurationField.setPlaceholder(placeholder.toPlainString());
+
+      if (durationStorage == Storage.DURATION) {
+        preciseDurationField.setPlaceholder(durationPlaceholderAmount.toPlainString());
       } else {
         durationAmountField.setPlaceholder(
-            placeholder.scale() <= 0 ? placeholder.toPlainString() : "");
+            durationPlaceholderAmount.scale() <= 0
+                ? durationPlaceholderAmount.toPlainString()
+                : "");
       }
     } catch (IllegalArgumentException | ArithmeticException _) {
       // Während des Aufbaus hat das Feld noch keinen zum Speicherformat passenden Standardwert.
@@ -233,74 +262,83 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     }
   }
 
-  private Unit exactUnit(BigDecimal seconds) {
-    for (Unit candidate : new Unit[] {Unit.DAYS, Unit.HOURS, Unit.MINUTES}) {
-      if (seconds.signum() != 0
-          && seconds.remainder(BigDecimal.valueOf(candidate.seconds)).signum() == 0) {
-        return candidate;
+  private Unit exactUnit(BigDecimal durationSeconds) {
+    for (Unit candidateDurationUnit : new Unit[] {Unit.DAYS, Unit.HOURS, Unit.MINUTES}) {
+      if (durationSeconds.signum() != 0
+          && durationSeconds.remainder(BigDecimal.valueOf(candidateDurationUnit.seconds)).signum()
+              == 0) {
+        return candidateDurationUnit;
       }
     }
+
     return Unit.SECONDS;
   }
 
-  public String displayStoredValue(String value) {
-    if (value.isBlank()) {
+  public String displayStoredValue(String storedDurationText) {
+    if (storedDurationText.isBlank()) {
       return messageProperties.getAdminConfigDefaultEmpty();
     }
-    BigDecimal seconds = parseDurationValue(value);
-    Unit selected = storage == Storage.DAYS ? Unit.DAYS : exactUnit(seconds);
-    return formatDurationValue(seconds.divide(BigDecimal.valueOf(selected.seconds)), selected);
+
+    BigDecimal parsedDurationSeconds = parseDurationValue(storedDurationText);
+    Unit displayDurationUnit =
+        durationStorage == Storage.DAYS ? Unit.DAYS : exactUnit(parsedDurationSeconds);
+    return formatDurationValue(
+        parsedDurationSeconds.divide(BigDecimal.valueOf(displayDurationUnit.seconds)),
+        displayDurationUnit);
   }
 
   public String getDisplayValue() {
-    BigDecimal current = readDurationValue();
-    if (current == null) {
-      if (storage == Storage.DAYS) {
+    BigDecimal currentDurationAmount = readDurationValue();
+    if (currentDurationAmount == null) {
+      if (durationStorage == Storage.DAYS) {
         return messageProperties.getAdminConfigUnlimited();
       }
-      return storage == Storage.SECONDS
+      return durationStorage == Storage.SECONDS
           ? displayStoredValue(defaultValue)
           : messageProperties.getAdminConfigDurationInvalid();
     }
     return validAmount()
-        ? formatDurationValue(current, durationUnitSelector.getValue())
+        ? formatDurationValue(currentDurationAmount, durationUnitSelector.getValue())
         : messageProperties.getAdminConfigDurationInvalid();
   }
 
   public String getEquivalentValue() {
-    if (readDurationValue() == null && storage == Storage.DAYS) {
+    if (readDurationValue() == null && durationStorage == Storage.DAYS) {
       return messageProperties.getAdminConfigUnlimited();
     }
     if (!validAmount()) {
       return messageProperties.getAdminConfigDurationInvalid();
     }
-    BigDecimal seconds =
+    BigDecimal equivalentDurationSeconds =
         readDurationValue() == null
             ? parseDurationValue(defaultValue)
             : new BigDecimal(getSecondsValue());
-    return messageProperties.getAdminConfigDurationSeconds(seconds.stripTrailingZeros());
+    return messageProperties.getAdminConfigDurationSeconds(
+        equivalentDurationSeconds.stripTrailingZeros());
   }
 
   private boolean validAmount() {
-    BigDecimal current = readDurationValue();
-    if (current == null) {
-      return storage != Storage.DURATION;
+    BigDecimal currentDurationAmount = readDurationValue();
+    if (currentDurationAmount == null) {
+      return durationStorage != Storage.DURATION;
     }
-    if (storage == Storage.DURATION) {
+
+    if (durationStorage == Storage.DURATION) {
       return !getStoredValue().equals("invalid");
     }
-    BigDecimal value = storage == Storage.DAYS ? current : new BigDecimal(getSecondsValue());
-    return value.compareTo(BigDecimal.ONE) >= 0
-        && value.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) <= 0;
+    BigDecimal boundedDurationAmount =
+        durationStorage == Storage.DAYS ? currentDurationAmount : new BigDecimal(getSecondsValue());
+    return boundedDurationAmount.compareTo(BigDecimal.ONE) >= 0
+        && boundedDurationAmount.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) <= 0;
   }
 
-  private String formatDurationValue(BigDecimal value, Unit selected) {
-    BigDecimal normalized = value.stripTrailingZeros();
-    return switch (selected) {
-      case SECONDS -> messageProperties.getAdminConfigDurationSeconds(normalized);
-      case MINUTES -> messageProperties.getAdminConfigDurationMinutes(normalized);
-      case HOURS -> messageProperties.getAdminConfigDurationHours(normalized);
-      case DAYS -> messageProperties.getAdminConfigDurationDays(normalized);
+  private String formatDurationValue(BigDecimal durationAmount, Unit displayDurationUnit) {
+    BigDecimal normalizedDurationAmount = durationAmount.stripTrailingZeros();
+    return switch (displayDurationUnit) {
+      case SECONDS -> messageProperties.getAdminConfigDurationSeconds(normalizedDurationAmount);
+      case MINUTES -> messageProperties.getAdminConfigDurationMinutes(normalizedDurationAmount);
+      case HOURS -> messageProperties.getAdminConfigDurationHours(normalizedDurationAmount);
+      case DAYS -> messageProperties.getAdminConfigDurationDays(normalizedDurationAmount);
     };
   }
 
@@ -316,14 +354,14 @@ public class AdminDurationField extends Div implements HasAriaLabel {
         });
     decreaseDurationButton.setAriaLabel(messageProperties.getAdminConfigDurationDecrease());
     increaseDurationButton.setAriaLabel(messageProperties.getAdminConfigDurationIncrease());
-    updateLimits();
+    updateDurationMaximumAndPlaceholder();
   }
 
   @Override
-  public void setAriaLabelledBy(String id) {
-    getElement().setAttribute("aria-labelledby", id);
-    durationAmountField.setAriaLabelledBy(id);
-    preciseDurationField.setAriaLabelledBy(id);
+  public void setAriaLabelledBy(String labelElementId) {
+    getElement().setAttribute("aria-labelledby", labelElementId);
+    durationAmountField.setAriaLabelledBy(labelElementId);
+    preciseDurationField.setAriaLabelledBy(labelElementId);
   }
 
   public void setInvalid(boolean invalid) {
@@ -332,13 +370,13 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   }
 
   public boolean isInvalid() {
-    return storage == Storage.DURATION
+    return durationStorage == Storage.DURATION
         ? preciseDurationField.isInvalid()
         : durationAmountField.isInvalid();
   }
 
-  public void setErrorMessage(String message) {
-    durationAmountField.setErrorMessage(message);
-    preciseDurationField.setErrorMessage(message);
+  public void setErrorMessage(String validationErrorMessage) {
+    durationAmountField.setErrorMessage(validationErrorMessage);
+    preciseDurationField.setErrorMessage(validationErrorMessage);
   }
 }

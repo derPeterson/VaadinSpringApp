@@ -26,6 +26,7 @@ public final class CompactDateInput {
     } else {
       datePickerI18n.setDateFormats("M/d/yyyy", "M/d/yy");
     }
+
     datePicker.setI18n(datePickerI18n);
     datePicker.setFallbackParser(dateInputText ->
         parseCompactDate(
@@ -44,18 +45,22 @@ public final class CompactDateInput {
             .allMatch(digitCodePoint -> digitCodePoint >= '0' && digitCodePoint <= '9')) {
       return Result.error(validationErrorText);
     }
-    int partLength = dateDigitCount == 4 ? 1 : 2;
-    int firstDatePart = Integer.parseInt(dateDigits.substring(0, partLength));
-    int secondDatePart = Integer.parseInt(dateDigits.substring(partLength, partLength * 2));
-    String yearDigits = dateDigits.substring(partLength * 2);
+
+    int datePartLength = dateDigitCount == 4 ? 1 : 2;
+    int firstDatePart = Integer.parseInt(dateDigits.substring(0, datePartLength));
+    int secondDatePart = Integer.parseInt(dateDigits.substring(datePartLength, datePartLength * 2));
+    String yearDigits = dateDigits.substring(datePartLength * 2);
     int parsedYear = Integer.parseInt(yearDigits);
     if (yearDigits.length() == 2) {
       parsedYear += parsedYear >= 50 ? 1900 : 2000;
     }
+
     if (parsedYear == 0) {
       return Result.error(validationErrorText);
     }
+
     boolean usesGermanDateOrder = Locale.GERMAN.getLanguage().equals(dateLocale.getLanguage());
+
     try {
       return Result.ok(
           LocalDate.of(

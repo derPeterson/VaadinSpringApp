@@ -27,44 +27,55 @@ public final class RecoveryInstructionsComponent extends VerticalLayout {
     if (instructionSections.length != 7) {
       throw new IllegalArgumentException("Recovery instructions require seven sections");
     }
+
     removeAll();
     String[] introSectionLines = splitInstructionSectionLines(instructionSections[0]);
     instructionHeading = introSectionLines[0];
     instructionDescription = introSectionLines[1];
-    for (int index = 1; index <= 4; index++) {
-      String[] stepSectionLines = splitInstructionSectionLines(instructionSections[index]);
-      Span stepTitleLabel = new Span(stepSectionLines[0]);
-      stepTitleLabel.addClassName("support-instruction-step-title");
-      VerticalLayout stepCopyLayout =
-          new VerticalLayout(stepTitleLabel, new Span(stepSectionLines[1]));
-      stepCopyLayout.setSpacing(false);
-      stepCopyLayout.setPadding(false);
-      Badge stepNumberBadge = new Badge(Integer.toString(index));
-      stepNumberBadge.addClassName("support-instruction-number");
-      HorizontalLayout stepRowLayout = new HorizontalLayout(stepNumberBadge, stepCopyLayout);
-      stepRowLayout.setPadding(false);
-      stepRowLayout.setSpacing(false);
-      stepRowLayout.setAlignItems(Alignment.START);
-      stepRowLayout.addClassName("support-instruction-step");
-      add(stepRowLayout);
+
+    for (int stepIndex = 1; stepIndex <= 4; stepIndex++) {
+      add(createInstructionStepLayout(stepIndex, instructionSections[stepIndex]));
     }
+
     String[] warningSectionLines = splitInstructionSectionLines(instructionSections[5]);
-    Span warningTitle = new Span(warningSectionLines[0] + " ");
-    warningTitle.addClassName("cosmos-security-warning-label");
+    Span warningTitleSpan = new Span(warningSectionLines[0] + " ");
+    warningTitleSpan.addClassName("cosmos-security-warning-label");
     HorizontalLayout warningNoticeLayout =
         new HorizontalLayout(
-            AppIcon.ERROR.create(), new Span(warningTitle, new Span(warningSectionLines[1])));
+            AppIcon.ERROR.create(), new Span(warningTitleSpan, new Span(warningSectionLines[1])));
     warningNoticeLayout.setSpacing(false);
     warningNoticeLayout.setPadding(false);
     warningNoticeLayout.setAlignItems(Alignment.START);
     warningNoticeLayout.addClassName("cosmos-security-warning");
+
     HorizontalLayout limitationNoticeLayout =
         new HorizontalLayout(AppIcon.INFO_CIRCLE.create(), new Span(instructionSections[6]));
     limitationNoticeLayout.setSpacing(false);
     limitationNoticeLayout.setPadding(false);
     limitationNoticeLayout.setAlignItems(Alignment.CENTER);
     limitationNoticeLayout.addClassName("support-help-notice");
+
     add(warningNoticeLayout, limitationNoticeLayout);
+  }
+
+  private HorizontalLayout createInstructionStepLayout(int stepIndex, String stepSectionText) {
+    String[] stepSectionLines = splitInstructionSectionLines(stepSectionText);
+    Span stepTitleLabel = new Span(stepSectionLines[0]);
+    stepTitleLabel.addClassName("support-instruction-step-title");
+    VerticalLayout stepCopyLayout =
+        new VerticalLayout(stepTitleLabel, new Span(stepSectionLines[1]));
+    stepCopyLayout.setSpacing(false);
+    stepCopyLayout.setPadding(false);
+
+    Badge stepNumberBadge = new Badge(Integer.toString(stepIndex));
+    stepNumberBadge.addClassName("support-instruction-number");
+
+    HorizontalLayout stepRowLayout = new HorizontalLayout(stepNumberBadge, stepCopyLayout);
+    stepRowLayout.setPadding(false);
+    stepRowLayout.setSpacing(false);
+    stepRowLayout.setAlignItems(Alignment.START);
+    stepRowLayout.addClassName("support-instruction-step");
+    return stepRowLayout;
   }
 
   public String getHeading() {
@@ -80,6 +91,7 @@ public final class RecoveryInstructionsComponent extends VerticalLayout {
     if (lineBreakIndex <= 0 || lineBreakIndex == sectionText.length() - 1) {
       throw new IllegalArgumentException("Recovery instruction section requires a title and text");
     }
+
     return new String[] {
       sectionText.substring(0, lineBreakIndex), sectionText.substring(lineBreakIndex + 1)
     };

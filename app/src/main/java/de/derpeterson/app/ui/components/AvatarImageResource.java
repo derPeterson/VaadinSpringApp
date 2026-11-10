@@ -24,6 +24,7 @@ public final class AvatarImageResource {
       downloadEvent
           .getResponse()
           .setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
+
       try {
         Optional<byte[]> avatarImageBytes =
             userAvatarService.image(
@@ -35,6 +36,7 @@ public final class AvatarImageResource {
           downloadEvent.getResponse().setStatus(404);
           return;
         }
+
         downloadEvent.inline("avatar.png");
         downloadEvent.setContentType("image/png");
         downloadEvent.setContentLength(avatarImageBytes.get().length);

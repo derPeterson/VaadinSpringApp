@@ -16,28 +16,37 @@ import java.util.function.BooleanSupplier;
 @StyleSheet("custom-theme/cosmos-external-login.css")
 public final class PublicAuthenticationPanels extends Div {
   public PublicAuthenticationPanels(
-      Component form,
-      ExternalLoginFlow flow,
-      HttpServletRequest request,
+      Component authenticationFormComponent,
+      ExternalLoginFlow externalLoginFlow,
+      HttpServletRequest httpServletRequest,
       MessageProperties messageProperties,
-      BooleanSupplier remember) {
-    super(form);
+      BooleanSupplier rememberLoginSupplier) {
+    super(authenticationFormComponent);
     addClassName("public-auth-panels");
-    ExternalLoginButtons external =
+
+    ExternalLoginButtons externalLoginButtons =
         new ExternalLoginButtons(
-            flow, request, messageProperties, remember, ExternalLoginButtons.Presentation.PANEL);
-    if (!external.isVisible()) {
+            externalLoginFlow,
+            httpServletRequest,
+            messageProperties,
+            rememberLoginSupplier,
+            ExternalLoginButtons.Presentation.PANEL);
+
+    if (!externalLoginButtons.isVisible()) {
       return;
     }
+
     addClassName("public-auth-panels--external");
-    Span alternative = new Span(messageProperties.getExternalOr());
-    Div divider = new Div(alternative);
-    divider.addClassName("external-login-divider");
-    divider.getElement().setAttribute("aria-hidden", "true");
+    Span alternativeLabelSpan = new Span(messageProperties.getExternalOr());
+    Div loginDividerDiv = new Div(alternativeLabelSpan);
+    loginDividerDiv.addClassName("external-login-divider");
+    loginDividerDiv.getElement().setAttribute("aria-hidden", "true");
+
     ComponentUtil.addListener(
         UI.getCurrent(),
         LanguageChangeEvent.class,
-        event -> alternative.setText(messageProperties.getExternalOr()));
-    add(divider, external);
+        event -> alternativeLabelSpan.setText(messageProperties.getExternalOr()));
+
+    add(loginDividerDiv, externalLoginButtons);
   }
 }

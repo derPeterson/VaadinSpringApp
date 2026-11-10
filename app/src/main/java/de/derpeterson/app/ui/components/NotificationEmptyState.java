@@ -9,6 +9,7 @@ public final class NotificationEmptyState extends Div {
     emptyInboxLabel.addClassName("cosmos-notification-empty-title");
     emptyInboxLabel.getElement().setAttribute("role", "heading");
     emptyInboxLabel.getElement().setAttribute("aria-level", "3");
+
     add(AppIcon.BELL.create(), emptyInboxLabel);
     addClassName("cosmos-notification-empty");
   }

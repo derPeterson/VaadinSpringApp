@@ -11,16 +11,18 @@ public class CompactTimePicker extends TimePicker {
   @Override
   protected void onAttach(AttachEvent attachEvent) {
     super.onAttach(attachEvent);
-    installParser();
+
+    installCompactTimeParser();
   }
 
   @Override
   public void setLocale(Locale pickerLocale) {
     super.setLocale(pickerLocale);
-    installParser();
+
+    installCompactTimeParser();
   }
 
-  private void installParser() {
+  private void installCompactTimeParser() {
     getUI()
         .ifPresent(attachedUi ->
             attachedUi.beforeClientResponse(

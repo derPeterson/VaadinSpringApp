@@ -6,14 +6,13 @@ Maßstab ist der [Codestil](../entwicklung.md#codestil).
 
 ## Offene Pakete
 
-- Gemeinsame UI-Komponenten, Layouts und UI-Hilfsklassen
 - App-Fachlogik, Sicherheit, Infrastruktur und Persistenz
 - Gemeinsamer Textkatalog `MessageTexts` in Shared
 - App-Testklassen, Browser-Tests, Page Objects und Runner
 
 Die 16 Klassen direkt in `app.views`, die elf Klassen in `app.views.admin`,
-die zwei Klassen in `app.events` und die vier Konfigurationsklassen im Modul
-Shared sind gesichtet.
+die 63 Klassen in `app.ui` und `app.helper.ui`, die zwei Klassen in `app.events`
+und die vier Konfigurationsklassen im Modul Shared sind gesichtet.
 
 Bei jeder Klasse die Namen, Zuständigkeiten, Aufrufer und relevanten
 Seiteneffekte im Zusammenhang prüfen. Fachverhalten, UI, Transaktionsgrenzen

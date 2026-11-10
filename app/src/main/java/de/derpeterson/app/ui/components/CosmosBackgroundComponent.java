@@ -8,19 +8,19 @@ public class CosmosBackgroundComponent extends Div {
     addClassName("cosmos-sky");
     getElement().setAttribute("aria-hidden", "true");
     add(
-        layer("cosmos-stars", "cosmos-stars--small"),
-        layer("cosmos-stars", "cosmos-stars--far"),
-        layer("cosmos-galaxy"),
-        layer("cosmos-glow", "cosmos-glow--blue"),
-        layer("cosmos-glow", "cosmos-glow--violet"),
-        layer("cosmos-horizon"),
-        layer("cosmos-planet"),
-        layer("cosmos-moon"));
+        createBackgroundLayerDiv("cosmos-stars", "cosmos-stars--small"),
+        createBackgroundLayerDiv("cosmos-stars", "cosmos-stars--far"),
+        createBackgroundLayerDiv("cosmos-galaxy"),
+        createBackgroundLayerDiv("cosmos-glow", "cosmos-glow--blue"),
+        createBackgroundLayerDiv("cosmos-glow", "cosmos-glow--violet"),
+        createBackgroundLayerDiv("cosmos-horizon"),
+        createBackgroundLayerDiv("cosmos-planet"),
+        createBackgroundLayerDiv("cosmos-moon"));
   }
 
-  private static Div layer(String... classes) {
-    Div layer = new Div();
-    layer.addClassNames(classes);
-    return layer;
+  private static Div createBackgroundLayerDiv(String... layerClassNames) {
+    Div backgroundLayerDiv = new Div();
+    backgroundLayerDiv.addClassNames(layerClassNames);
+    return backgroundLayerDiv;
   }
 }

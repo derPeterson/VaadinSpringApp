@@ -20,25 +20,30 @@ public class PublicPanelComponent extends CosmosCardComponent {
       Component panelIconComponent,
       Component panelTitleComponent,
       Supplier<String> panelSubtitleSupplier,
-      Component[] bodyContent,
-      Component... panelFooterActions) {
+      Component[] panelBodyComponents,
+      Component... panelFooterActionComponents) {
     addClassNames(PANEL_CARD, "public-panel");
+
     Div panelIconContainer = new Div(panelIconComponent);
     panelIconContainer.addClassName(PANEL_ICON);
-    Span panelSubtitleLabel = new Span(panelSubtitleSupplier.get());
-    panelSubtitleLabel.addClassName(PANEL_DESCRIPTION);
-    Div panelHeadingContainer = new Div(panelTitleComponent, panelSubtitleLabel);
+    Span panelSubtitleSpan = new Span(panelSubtitleSupplier.get());
+    panelSubtitleSpan.addClassName(PANEL_DESCRIPTION);
+    Div panelHeadingContainer = new Div(panelTitleComponent, panelSubtitleSpan);
     panelHeadingContainer.addClassName(PANEL_HEADING);
     Div panelHeaderContainer = new Div(panelIconContainer, panelHeadingContainer);
     panelHeaderContainer.addClassName(PANEL_HEADER);
-    Div panelBodyContainer = new Div(bodyContent);
+
+    Div panelBodyContainer = new Div(panelBodyComponents);
     panelBodyContainer.addClassName("public-panel-body");
-    Div panelFooterContainer = new Div(panelFooterActions);
+
+    Div panelFooterContainer = new Div(panelFooterActionComponents);
     panelFooterContainer.addClassName("public-panel-footer");
+
     add(panelHeaderContainer, panelBodyContainer, panelFooterContainer);
+
     ComponentUtil.addListener(
         UI.getCurrent(),
         LanguageChangeEvent.class,
-        attachEvent -> panelSubtitleLabel.setText(panelSubtitleSupplier.get()));
+        attachEvent -> panelSubtitleSpan.setText(panelSubtitleSupplier.get()));
   }
 }

@@ -20,11 +20,11 @@ public final class CosmosPagination extends HorizontalLayout {
   }
 
   private final MessageProperties messageProperties;
-  private final SerializableConsumer<Integer> selectPage;
+  private final SerializableConsumer<Integer> selectPageConsumer;
   private final ComboBox<Integer> pageSizeSelector = new ComboBox<>();
-  private final Span rowsLabel = new Span();
-  private final Span totalLabel = new Span();
-  private final HorizontalLayout pageNumberButtons = new HorizontalLayout();
+  private final Span pageSizeLabelSpan = new Span();
+  private final Span totalItemsSpan = new Span();
+  private final HorizontalLayout pageNumberButtonsLayout = new HorizontalLayout();
   private final Button firstPageButton = new Button(AppIcon.ANGLE_DOUBLE_LEFT.create());
   private final Button previousPageButton = new Button(AppIcon.ANGLE_LEFT.create());
   private final Button nextPageButton = new Button(AppIcon.ANGLE_RIGHT.create());
@@ -36,27 +36,27 @@ public final class CosmosPagination extends HorizontalLayout {
 
   public CosmosPagination(
       MessageProperties messageProperties,
-      SerializableConsumer<Integer> selectPage,
+      SerializableConsumer<Integer> selectPageConsumer,
       SerializableConsumer<Integer> selectPageSize) {
-    this(messageProperties, selectPage, selectPageSize, List.of(10, 20, 50));
+    this(messageProperties, selectPageConsumer, selectPageSize, List.of(10, 20, 50));
   }
 
   public CosmosPagination(
       MessageProperties messageProperties,
-      SerializableConsumer<Integer> selectPage,
+      SerializableConsumer<Integer> selectPageConsumer,
       SerializableConsumer<Integer> selectPageSize,
       List<Integer> pageSizes) {
-    this(messageProperties, selectPage, selectPageSize, pageSizes, Mode.NUMBERED);
+    this(messageProperties, selectPageConsumer, selectPageSize, pageSizes, Mode.NUMBERED);
   }
 
   public CosmosPagination(
       MessageProperties messageProperties,
-      SerializableConsumer<Integer> selectPage,
+      SerializableConsumer<Integer> selectPageConsumer,
       SerializableConsumer<Integer> selectPageSize,
       List<Integer> pageSizes,
       Mode mode) {
     this.messageProperties = messageProperties;
-    this.selectPage = selectPage;
+    this.selectPageConsumer = selectPageConsumer;
     this.mode = mode;
     addClassName("admin-user-pagination");
     setWidthFull();
@@ -73,106 +73,136 @@ public final class CosmosPagination extends HorizontalLayout {
         selectPageSize.accept(event.getValue());
       }
     });
-    HorizontalLayout summary = new HorizontalLayout(rowsLabel, pageSizeSelector, totalLabel);
-    summary.addClassName("admin-user-pagination-summary");
-    summary.setAlignItems(Alignment.CENTER);
-    pageNumberButtons.addClassName("admin-user-pagination-numbers");
-    pageNumberButtons.setSpacing(false);
-    pageNumberButtons.setAlignItems(Alignment.CENTER);
-    HorizontalLayout navigation =
+
+    HorizontalLayout paginationSummaryLayout =
+        new HorizontalLayout(pageSizeLabelSpan, pageSizeSelector, totalItemsSpan);
+    paginationSummaryLayout.addClassName("admin-user-pagination-summary");
+    paginationSummaryLayout.setAlignItems(Alignment.CENTER);
+    pageNumberButtonsLayout.addClassName("admin-user-pagination-numbers");
+    pageNumberButtonsLayout.setSpacing(false);
+    pageNumberButtonsLayout.setAlignItems(Alignment.CENTER);
+
+    HorizontalLayout pageNavigationLayout =
         new HorizontalLayout(
-            firstPageButton, previousPageButton, pageNumberButtons, nextPageButton, lastPageButton);
-    navigation.addClassName("admin-user-pagination-nav");
-    navigation.setSpacing(false);
-    navigation.setAlignItems(Alignment.CENTER);
+            firstPageButton,
+            previousPageButton,
+            pageNumberButtonsLayout,
+            nextPageButton,
+            lastPageButton);
+    pageNavigationLayout.addClassName("admin-user-pagination-nav");
+    pageNavigationLayout.setSpacing(false);
+    pageNavigationLayout.setAlignItems(Alignment.CENTER);
     firstPageButton.setVisible(mode == Mode.NUMBERED);
     lastPageButton.setVisible(mode == Mode.NUMBERED);
-    pageNumberButtons.setVisible(mode == Mode.NUMBERED);
+    pageNumberButtonsLayout.setVisible(mode == Mode.NUMBERED);
+
     for (Button button :
         List.of(firstPageButton, previousPageButton, nextPageButton, lastPageButton)) {
       button.addClassName("admin-user-pagination-arrow");
     }
-    firstPageButton.addClickListener(event -> selectPage.accept(0));
-    previousPageButton.addClickListener(event -> selectPage.accept(Math.max(0, currentPage - 1)));
+    firstPageButton.addClickListener(event -> selectPageConsumer.accept(0));
+    previousPageButton.addClickListener(
+        event -> selectPageConsumer.accept(Math.max(0, currentPage - 1)));
     previousPageButton.addClassName("cosmos-pagination-previous");
     nextPageButton.addClassName("cosmos-pagination-next");
     nextPageButton.addClickListener(
-        event -> selectPage.accept(Math.min(totalPages - 1, currentPage + 1)));
-    lastPageButton.addClickListener(event -> selectPage.accept(totalPages - 1));
-    summary.remove(totalLabel);
+        event -> selectPageConsumer.accept(Math.min(totalPages - 1, currentPage + 1)));
+    lastPageButton.addClickListener(event -> selectPageConsumer.accept(totalPages - 1));
+    paginationSummaryLayout.remove(totalItemsSpan);
+
     if (mode == Mode.PREVIOUS_NEXT) {
-      summary.remove(rowsLabel);
-      add(totalLabel, summary, navigation);
+      paginationSummaryLayout.remove(pageSizeLabelSpan);
+      add(totalItemsSpan, paginationSummaryLayout, pageNavigationLayout);
     } else {
-      add(summary, totalLabel, navigation);
+      add(paginationSummaryLayout, totalItemsSpan, pageNavigationLayout);
     }
     refreshTexts();
   }
 
-  public void showPage(int page, long totalItems, int size) {
+  public void showPage(int pageIndex, long totalItems, int pageSize) {
     this.totalItems = totalItems;
-    totalPages = Math.clamp(Math.ceilDiv(totalItems, (long) size), 1, Integer.MAX_VALUE);
-    currentPage = Math.clamp(page, 0, totalPages - 1);
+    totalPages = Math.clamp(Math.ceilDiv(totalItems, (long) pageSize), 1, Integer.MAX_VALUE);
+    currentPage = Math.clamp(pageIndex, 0, totalPages - 1);
+
     refreshTexts();
   }
 
   public void refreshTexts() {
-    rowsLabel.setText(messageProperties.getAdminUsersPaginationPerPage());
+    pageSizeLabelSpan.setText(messageProperties.getAdminUsersPaginationPerPage());
     pageSizeSelector.setAriaLabel(messageProperties.getAdminUsersPaginationPerPage());
+
     if (mode == Mode.PREVIOUS_NEXT) {
       pageSizeSelector.setTooltipText(messageProperties.getAdminUsersPaginationPerPage());
     }
-    int size = pageSizeSelector.getValue();
-    long from = totalItems == 0 ? 0 : (long) currentPage * size + 1;
-    long to = Math.min(((long) currentPage + 1) * size, totalItems);
-    totalLabel.setText(messageProperties.getPortalPaginationRange(from, to, totalItems));
-    totalLabel.addClassName("admin-user-pagination-total");
-    label(firstPageButton, messageProperties.getAdminUsersPaginationFirstPage());
-    label(previousPageButton, messageProperties.getAdminUsersPaginationPreviousPage());
-    label(nextPageButton, messageProperties.getAdminUsersPaginationNextPage());
-    label(lastPageButton, messageProperties.getAdminUsersPaginationLastPage());
+    int selectedPageSize = pageSizeSelector.getValue();
+    long firstDisplayedItemNumber = totalItems == 0 ? 0 : (long) currentPage * selectedPageSize + 1;
+    long lastDisplayedItemNumber =
+        Math.min(((long) currentPage + 1) * selectedPageSize, totalItems);
+    totalItemsSpan.setText(
+        messageProperties.getPortalPaginationRange(
+            firstDisplayedItemNumber, lastDisplayedItemNumber, totalItems));
+    totalItemsSpan.addClassName("admin-user-pagination-total");
+
+    labelPageButton(firstPageButton, messageProperties.getAdminUsersPaginationFirstPage());
+    labelPageButton(previousPageButton, messageProperties.getAdminUsersPaginationPreviousPage());
+    labelPageButton(nextPageButton, messageProperties.getAdminUsersPaginationNextPage());
+    labelPageButton(lastPageButton, messageProperties.getAdminUsersPaginationLastPage());
+
     firstPageButton.setEnabled(currentPage > 0);
     previousPageButton.setEnabled(currentPage > 0);
     nextPageButton.setEnabled(currentPage < totalPages - 1);
     lastPageButton.setEnabled(currentPage < totalPages - 1);
-    pageNumberButtons.removeAll();
+
+    pageNumberButtonsLayout.removeAll();
+
     if (mode == Mode.PREVIOUS_NEXT) {
       return;
     }
-    int preceding = -1;
-    for (int page : pageIndices(currentPage, totalPages)) {
-      if (preceding >= 0 && page - preceding > 1) {
-        Span gap = new Span("…");
-        gap.addClassName("admin-user-pagination-ellipsis");
-        pageNumberButtons.add(gap);
+    int previousPageIndex = -1;
+
+    for (int visiblePageIndex : pageIndices(currentPage, totalPages)) {
+      if (previousPageIndex >= 0 && visiblePageIndex - previousPageIndex > 1) {
+        Span pageGapSpan = new Span("…");
+        pageGapSpan.addClassName("admin-user-pagination-ellipsis");
+        pageNumberButtonsLayout.add(pageGapSpan);
       }
-      Button button = new Button(Integer.toString(page + 1), event -> selectPage.accept(page));
-      button.addClassName("admin-user-pagination-number");
-      button.setAriaLabel(messageProperties.getAdminUsersPaginationPage(page + 1));
-      if (page == currentPage) {
-        button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        button.addClassName("admin-user-pagination-current");
-        button.getElement().setAttribute("aria-current", "page");
+      Button pageNumberButton =
+          new Button(
+              Integer.toString(visiblePageIndex + 1),
+              event -> selectPageConsumer.accept(visiblePageIndex));
+      pageNumberButton.addClassName("admin-user-pagination-number");
+      pageNumberButton.setAriaLabel(
+          messageProperties.getAdminUsersPaginationPage(visiblePageIndex + 1));
+      if (visiblePageIndex == currentPage) {
+        pageNumberButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        pageNumberButton.addClassName("admin-user-pagination-current");
+        pageNumberButton.getElement().setAttribute("aria-current", "page");
       }
-      pageNumberButtons.add(button);
-      preceding = page;
+      pageNumberButtonsLayout.add(pageNumberButton);
+      previousPageIndex = visiblePageIndex;
     }
   }
 
-  private void label(Button button, String text) {
-    button.setAriaLabel(text);
-    button.setTooltipText(text);
+  private void labelPageButton(Button pageNavigationButton, String pageButtonLabel) {
+    pageNavigationButton.setAriaLabel(pageButtonLabel);
+    pageNavigationButton.setTooltipText(pageButtonLabel);
   }
 
-  public static List<Integer> pageIndices(int current, int total) {
-    TreeSet<Integer> pages = new TreeSet<>();
-    pages.add(0);
-    pages.add(total - 1);
-    int start = total <= 7 ? 0 : Math.clamp(current - 1L, 1, total - 4);
-    int end = total <= 7 ? total - 1 : Math.clamp(current + 1L, 3, total - 2);
-    for (int page = start; page <= end; page++) {
-      pages.add(page);
+  public static List<Integer> pageIndices(int currentPageIndex, int totalPageCount) {
+    TreeSet<Integer> visiblePageIndices = new TreeSet<>();
+    visiblePageIndices.add(0);
+    visiblePageIndices.add(totalPageCount - 1);
+    int firstVisiblePageIndex =
+        totalPageCount <= 7 ? 0 : Math.clamp(currentPageIndex - 1L, 1, totalPageCount - 4);
+    int lastVisiblePageIndex =
+        totalPageCount <= 7
+            ? totalPageCount - 1
+            : Math.clamp(currentPageIndex + 1L, 3, totalPageCount - 2);
+
+    for (int pageIndex = firstVisiblePageIndex; pageIndex <= lastVisiblePageIndex; pageIndex++) {
+      visiblePageIndices.add(pageIndex);
     }
-    return List.copyOf(pages);
+
+    return List.copyOf(visiblePageIndices);
   }
 }

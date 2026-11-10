@@ -49,17 +49,17 @@ public class UserPopoverMenu {
   private final SecurityService securityService;
   private final UserService userService;
   private final UserEntity currentUser;
-  private Span profileName;
-  private Span menuPresence;
-  private final Span languageHeading = new Span();
+  private Span profileNameSpan;
+  private Span menuPresenceSpan;
+  private final Span languageHeadingSpan = new Span();
   private final Map<UserStatus, Button> statusButtons = new EnumMap<>(UserStatus.class);
-  private Span presenceHeading;
+  private Span presenceHeadingSpan;
   private DetailsToggleButton presenceToggle;
   private final UserPopoverActions userPopoverActions;
   private final Consumer<UserStatus> statusIconConsumer;
   private final Popover userPopover;
 
-  private Span accountStateText = null;
+  private Span accountStateSpan = null;
   private Button manageAccountButton = null;
   private Button manageApplicationButton = null;
   private Button logoutButton = null;
@@ -99,115 +99,133 @@ public class UserPopoverMenu {
   }
 
   private Popover createUserPopover(Button targetButton) {
-    Popover popover = new Popover();
-    popover.setTarget(targetButton);
-    popover.addClassName("portal-user-menu-popover");
-    popover.setPosition(PopoverPosition.BOTTOM_END);
-    popover.setModal(true);
-    popover.setCloseOnEsc(true);
-    popover.setCloseOnOutsideClick(true);
+    Popover userMenuPopover = new Popover();
+    userMenuPopover.setTarget(targetButton);
+    userMenuPopover.addClassName("portal-user-menu-popover");
+    userMenuPopover.setPosition(PopoverPosition.BOTTOM_END);
+    userMenuPopover.setModal(true);
+    userMenuPopover.setCloseOnEsc(true);
+    userMenuPopover.setCloseOnOutsideClick(true);
 
-    VerticalLayout body = new VerticalLayout();
-    body.addClassNames("user-popover-body", "portal-user-menu-body");
-    body.setWidthFull();
-    body.setSpacing(false);
-    body.setPadding(false);
-    body.add(createIdentity());
-    addManageAccountButton(body);
-    addManageApplicationButton(body);
-    body.add(createStatusOptions(), createLanguageChoice(), createFooter());
+    VerticalLayout menuBodyLayout = new VerticalLayout();
+    menuBodyLayout.addClassNames("user-popover-body", "portal-user-menu-body");
+    menuBodyLayout.setWidthFull();
+    menuBodyLayout.setSpacing(false);
+    menuBodyLayout.setPadding(false);
+    menuBodyLayout.add(createIdentity());
+    addManageAccountButton(menuBodyLayout);
+    addManageApplicationButton(menuBodyLayout);
+    menuBodyLayout.add(createStatusOptions(), createLanguageChoice(), createFooter());
 
-    VerticalLayout outer = new VerticalLayout(body);
-    outer.addClassNames(
+    VerticalLayout menuContentLayout = new VerticalLayout(menuBodyLayout);
+    menuContentLayout.addClassNames(
         "user-popover-content", "cosmos-theme", "cosmos-user-menu", REFERENCE_OVERLAY);
-    outer.setWidth(null);
-    outer.setSpacing(false);
-    outer.setPadding(false);
-    popover.add(outer);
-    return popover;
+    menuContentLayout.setWidth(null);
+    menuContentLayout.setSpacing(false);
+    menuContentLayout.setPadding(false);
+    userMenuPopover.add(menuContentLayout);
+    return userMenuPopover;
   }
 
   private Div createIdentity() {
     overlayIcon =
         new OverlayUserIcon(messageProperties, currentUser, currentStatus, IconSize.PIXEL_96, true);
     overlayIcon.addClassNames("user-popover-avatar", "portal-menu-avatar");
-    profileName = new Span();
-    profileName.addClassName("portal-menu-name");
+
+    profileNameSpan = new Span();
+    profileNameSpan.addClassName("portal-menu-name");
     refreshProfileName();
-    Span emailText = new Span(currentUser.getEmail());
-    emailText.addClassName("portal-menu-email");
-    accountStateText = new Span();
-    accountStateText.addClassName("portal-menu-account-state");
-    menuPresence = new Span();
-    menuPresence.addClassName("portal-menu-presence");
-    Div badges = new Div(accountStateText, menuPresence);
-    badges.addClassName("portal-menu-badges");
-    Div identity = new Div(profileName, emailText, badges);
-    identity.addClassName("portal-menu-identity-copy");
-    Div header = new Div(overlayIcon, identity);
-    header.addClassName("portal-menu-identity");
-    return header;
+
+    Span accountEmailSpan = new Span(currentUser.getEmail());
+    accountEmailSpan.addClassName("portal-menu-email");
+
+    accountStateSpan = new Span();
+    accountStateSpan.addClassName("portal-menu-account-state");
+    menuPresenceSpan = new Span();
+    menuPresenceSpan.addClassName("portal-menu-presence");
+
+    Div accountBadgesDiv = new Div(accountStateSpan, menuPresenceSpan);
+    accountBadgesDiv.addClassName("portal-menu-badges");
+    Div accountIdentityDiv = new Div(profileNameSpan, accountEmailSpan, accountBadgesDiv);
+    accountIdentityDiv.addClassName("portal-menu-identity-copy");
+
+    Div identityHeaderDiv = new Div(overlayIcon, accountIdentityDiv);
+    identityHeaderDiv.addClassName("portal-menu-identity");
+    return identityHeaderDiv;
   }
 
   private VerticalLayout createStatusOptions() {
-    presenceHeading = new Span();
-    presenceHeading.addClassName("portal-menu-section");
-    presenceHeading.setId("portal-menu-presence-heading");
-    VerticalLayout choices = new VerticalLayout();
-    choices.setPadding(false);
-    choices.setSpacing(false);
-    for (UserStatus status : UserStatus.values()) {
-      Button option = new Button();
-      option.addClickListener(event -> handleUserStatusChange(status));
-      option.addClassName("portal-status-option");
-      option.getStyle().set("--portal-option-status-color", status.getColor());
-      option.getElement().setAttribute("data-status", status.name().toLowerCase(Locale.ROOT));
-      statusButtons.put(status, option);
-      choices.add(option);
+    presenceHeadingSpan = new Span();
+    presenceHeadingSpan.addClassName("portal-menu-section");
+    presenceHeadingSpan.setId("portal-menu-presence-heading");
+
+    VerticalLayout statusChoicesLayout = new VerticalLayout();
+    statusChoicesLayout.setPadding(false);
+    statusChoicesLayout.setSpacing(false);
+    for (UserStatus statusChoice : UserStatus.values()) {
+      Button statusChoiceButton = new Button();
+      statusChoiceButton.addClickListener(event -> handleUserStatusChange(statusChoice));
+      statusChoiceButton.addClassName("portal-status-option");
+      statusChoiceButton.getStyle().set("--portal-option-status-color", statusChoice.getColor());
+      statusChoiceButton
+          .getElement()
+          .setAttribute("data-status", statusChoice.name().toLowerCase(Locale.ROOT));
+      statusButtons.put(statusChoice, statusChoiceButton);
+      statusChoicesLayout.add(statusChoiceButton);
     }
-    Details details = new Details("", choices);
-    details.setId("portal-menu-presence-details");
-    details.setOpened(true);
-    details.setWidthFull();
-    details.addClassName("portal-menu-presence-details");
-    details.getElement().setAttribute("aria-labelledby", presenceHeading.getId().orElseThrow());
+
+    Details presenceDetails = new Details("", statusChoicesLayout);
+    presenceDetails.setId("portal-menu-presence-details");
+    presenceDetails.setOpened(true);
+    presenceDetails.setWidthFull();
+    presenceDetails.addClassName("portal-menu-presence-details");
+    presenceDetails
+        .getElement()
+        .setAttribute("aria-labelledby", presenceHeadingSpan.getId().orElseThrow());
     presenceToggle =
         new DetailsToggleButton(
-            messageProperties, details, messageProperties.getPortalPresenceHeading());
+            messageProperties, presenceDetails, messageProperties.getPortalPresenceHeading());
     presenceToggle.setId("portal-menu-presence-toggle");
     presenceToggle.setText("");
-    HorizontalLayout header = new HorizontalLayout(presenceHeading, presenceToggle);
-    header.setWidthFull();
-    header.setPadding(false);
-    header.setSpacing(false);
-    header.setAlignItems(FlexComponent.Alignment.CENTER);
-    header.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
-    header.addClassName("portal-menu-presence-header");
-    VerticalLayout section = new VerticalLayout(header, details);
-    section.setPadding(false);
-    section.setSpacing(false);
-    section.setWidthFull();
-    section.addClassName("portal-menu-status-options");
-    return section;
+
+    HorizontalLayout presenceHeaderLayout =
+        new HorizontalLayout(presenceHeadingSpan, presenceToggle);
+    presenceHeaderLayout.setWidthFull();
+    presenceHeaderLayout.setPadding(false);
+    presenceHeaderLayout.setSpacing(false);
+    presenceHeaderLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+    presenceHeaderLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.BETWEEN);
+    presenceHeaderLayout.addClassName("portal-menu-presence-header");
+
+    VerticalLayout presenceSectionLayout =
+        new VerticalLayout(presenceHeaderLayout, presenceDetails);
+    presenceSectionLayout.setPadding(false);
+    presenceSectionLayout.setSpacing(false);
+    presenceSectionLayout.setWidthFull();
+    presenceSectionLayout.addClassName("portal-menu-status-options");
+    return presenceSectionLayout;
   }
 
   private Div createLanguageChoice() {
     germanLanguageButton = createLanguageButton("DE", "Deutsch", Locale.GERMAN);
     englishLanguageButton = createLanguageButton("EN", "English", Locale.ENGLISH);
-    HorizontalLayout languageButtons =
+
+    HorizontalLayout languageButtonsLayout =
         new HorizontalLayout(germanLanguageButton, englishLanguageButton);
-    languageButtons.addClassName("portal-language-switch");
-    languageHeading.addClassName("portal-menu-section");
-    Div languageLabel = new Div(AppIcon.LANGUAGES.create(), languageHeading);
-    languageLabel.addClassName("portal-menu-language-label");
-    Div language = new Div(languageLabel, languageButtons);
-    language.addClassName("portal-menu-language-row");
-    return language;
+    languageButtonsLayout.addClassName("portal-language-switch");
+    languageHeadingSpan.addClassName("portal-menu-section");
+
+    Div languageLabelDiv = new Div(AppIcon.LANGUAGES.create(), languageHeadingSpan);
+    languageLabelDiv.addClassName("portal-menu-language-label");
+
+    Div languageChoiceDiv = new Div(languageLabelDiv, languageButtonsLayout);
+    languageChoiceDiv.addClassName("portal-menu-language-row");
+    return languageChoiceDiv;
   }
 
   private Div createFooter() {
-    Div footer = new Div();
-    footer.addClassName("portal-menu-footer");
+    Div menuFooterDiv = new Div();
+    menuFooterDiv.addClassName("portal-menu-footer");
     if (userPopoverActions.homeAction() != null) {
       homeButton =
           new Button(
@@ -216,32 +234,36 @@ public class UserPopoverMenu {
       homeButton.setPrefixComponent(AppIcon.HOME.create());
       homeButton.addThemeVariants(LUMO_TERTIARY_INLINE);
       homeButton.addClassName(USER_MENU_ACTION);
-      footer.add(homeButton);
+      menuFooterDiv.add(homeButton);
     }
+
     logoutButton =
         new Button(messageProperties.getBaseLogoutButton(), event -> securityService.logout());
     logoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
     logoutButton.addThemeVariants(LUMO_TERTIARY_INLINE);
     logoutButton.addClassNames(USER_MENU_ACTION, "portal-menu-logout");
-    footer.add(logoutButton);
-    return footer;
+    menuFooterDiv.add(logoutButton);
+
+    return menuFooterDiv;
   }
 
   private void refreshStatusButtons() {
     for (Map.Entry<UserStatus, Button> entry : statusButtons.entrySet()) {
       UserStatus status = entry.getKey();
-      Button button = entry.getValue();
-      Span label = new Span(messageProperties.getUserStatusLabel(status));
-      label.addClassName("portal-status-label");
-      Span description = new Span(messageProperties.getUserStatusDescription(status));
-      description.addClassName("portal-status-description");
-      Div copy = new Div(label, description);
-      copy.addClassName("portal-status-copy");
-      Div content = new Div(status.getSelectionComponent(), copy);
+      Button statusChoiceButton = entry.getValue();
+      Span statusLabelSpan = new Span(messageProperties.getUserStatusLabel(status));
+      statusLabelSpan.addClassName("portal-status-label");
+      Span statusDescriptionSpan = new Span(messageProperties.getUserStatusDescription(status));
+      statusDescriptionSpan.addClassName("portal-status-description");
+      Div statusChoiceTextDiv = new Div(statusLabelSpan, statusDescriptionSpan);
+      statusChoiceTextDiv.addClassName("portal-status-copy");
+      Div content = new Div(status.getSelectionComponent(), statusChoiceTextDiv);
       content.addClassName("portal-status-option-content");
-      button.setPrefixComponent(content);
-      button.setAriaLabel(label.getText());
-      button.getElement().setAttribute("aria-pressed", Boolean.toString(status == currentStatus));
+      statusChoiceButton.setPrefixComponent(content);
+      statusChoiceButton.setAriaLabel(statusLabelSpan.getText());
+      statusChoiceButton
+          .getElement()
+          .setAttribute("aria-pressed", Boolean.toString(status == currentStatus));
     }
   }
 
@@ -256,7 +278,6 @@ public class UserPopoverMenu {
     }
 
     currentStatus = newStatus;
-
     currentUser.setStatus(newStatus);
 
     updateStatusIcons(newStatus);
@@ -270,9 +291,9 @@ public class UserPopoverMenu {
   }
 
   public void refreshProfileName() {
-    if (profileName != null) {
-      profileName.setText(buildFullName());
-      profileName.setVisible(hasUserName());
+    if (profileNameSpan != null) {
+      profileNameSpan.setText(buildFullName());
+      profileNameSpan.setVisible(hasUserName());
     }
     if (overlayIcon != null) {
       overlayIcon.setIdentity(currentUser);
@@ -323,70 +344,73 @@ public class UserPopoverMenu {
   }
 
   private Component createUserStatusRenderer(UserStatus userStatus) {
-    HorizontalLayout contentComboBox = new HorizontalLayout();
-    contentComboBox.addClassName("portal-status-option-content");
-    contentComboBox.getStyle().set("--portal-option-status-color", userStatus.getColor());
-    contentComboBox.setWidthFull();
+    HorizontalLayout statusOptionLayout = new HorizontalLayout();
+    statusOptionLayout.addClassName("portal-status-option-content");
+    statusOptionLayout.getStyle().set("--portal-option-status-color", userStatus.getColor());
+    statusOptionLayout.setWidthFull();
 
-    addStatusVisualComponent(contentComboBox, userStatus);
-    contentComboBox.add(createStatusTextLayout(userStatus));
+    addStatusVisualComponent(statusOptionLayout, userStatus);
+    statusOptionLayout.add(createStatusTextLayout(userStatus));
 
-    return contentComboBox;
+    return statusOptionLayout;
   }
 
-  private void addStatusVisualComponent(HorizontalLayout parent, UserStatus userStatus) {
-    Object statusComponent = userStatus.getSelectionComponent();
+  private void addStatusVisualComponent(
+      HorizontalLayout statusOptionLayout, UserStatus userStatus) {
+    Object statusVisualComponent = userStatus.getSelectionComponent();
 
-    if (statusComponent instanceof SvgIcon statusIcon) {
-      parent.add(createCenteredWrapper(statusIcon));
+    if (statusVisualComponent instanceof SvgIcon statusSvgIcon) {
+      statusOptionLayout.add(createCenteredWrapper(statusSvgIcon));
       return;
     }
 
-    if (statusComponent instanceof Div statusDiv) {
-      parent.add(createCenteredWrapper(statusDiv));
+    if (statusVisualComponent instanceof Div statusIndicatorDiv) {
+      statusOptionLayout.add(createCenteredWrapper(statusIndicatorDiv));
     }
   }
 
-  private VerticalLayout createCenteredWrapper(Component component) {
-    VerticalLayout wrapper = new VerticalLayout();
-    wrapper.setPadding(false);
-    wrapper.setSpacing(false);
-    wrapper.setWidth(null);
-    wrapper.setSizeUndefined();
-    wrapper.setAlignItems(FlexComponent.Alignment.CENTER);
-    wrapper.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
-    wrapper.add(component);
-    return wrapper;
+  private VerticalLayout createCenteredWrapper(Component statusVisualComponent) {
+    VerticalLayout statusVisualWrapperLayout = new VerticalLayout();
+    statusVisualWrapperLayout.setPadding(false);
+    statusVisualWrapperLayout.setSpacing(false);
+    statusVisualWrapperLayout.setWidth(null);
+    statusVisualWrapperLayout.setSizeUndefined();
+    statusVisualWrapperLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+    statusVisualWrapperLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+    statusVisualWrapperLayout.add(statusVisualComponent);
+
+    return statusVisualWrapperLayout;
   }
 
   private VerticalLayout createStatusTextLayout(UserStatus userStatus) {
-    VerticalLayout textLayout = new VerticalLayout();
-    textLayout.setPadding(false);
-    textLayout.setSpacing(false);
-    textLayout.setWidthFull();
-    textLayout.addClassName("portal-status-copy");
+    VerticalLayout statusTextLayout = new VerticalLayout();
+    statusTextLayout.setPadding(false);
+    statusTextLayout.setSpacing(false);
+    statusTextLayout.setWidthFull();
+    statusTextLayout.addClassName("portal-status-copy");
 
-    Span userStatusText = new Span(messageProperties.getUserStatusLabel(userStatus));
-    userStatusText.addClassName("user-popover-status-label");
-    Span userStatusSecondaryText = new Span(messageProperties.getUserStatusDescription(userStatus));
-    userStatusSecondaryText.addClassNames(
+    Span statusNameSpan = new Span(messageProperties.getUserStatusLabel(userStatus));
+    statusNameSpan.addClassName("user-popover-status-label");
+    Span statusDescriptionSpan = new Span(messageProperties.getUserStatusDescription(userStatus));
+    statusDescriptionSpan.addClassNames(
         LumoUtility.FontSize.XXSMALL, LumoUtility.TextColor.SECONDARY);
 
-    textLayout.add(userStatusText);
-    textLayout.add(new Hr());
-    textLayout.add(userStatusSecondaryText);
+    statusTextLayout.add(statusNameSpan);
+    statusTextLayout.add(new Hr());
+    statusTextLayout.add(statusDescriptionSpan);
 
-    return textLayout;
+    return statusTextLayout;
   }
 
   private void handleUserStatusChange(UserStatus userStatus) {
     if (userStatus == null) {
       return;
     }
+
     try {
-      StatusUpdate result = userService.updateUserStatus(currentUser, userStatus, true);
-      currentUser.setStatusManuallySet(result.manuallySet());
-      applyExternalStatus(result.status());
+      StatusUpdate statusUpdate = userService.updateUserStatus(currentUser, userStatus, true);
+      currentUser.setStatusManuallySet(statusUpdate.manuallySet());
+      applyExternalStatus(statusUpdate.status());
     } catch (RuntimeException exception) {
       applyExternalStatus(currentStatus);
       NotificationHelper.getInstance()
@@ -399,11 +423,12 @@ public class UserPopoverMenu {
     }
   }
 
-  private Button createLanguageButton(String label, String accessibleName, Locale targetLocale) {
-    Button button = new Button(label, event -> switchLanguage(targetLocale));
-    button.setId("portal-language-" + targetLocale.getLanguage());
-    button.setAriaLabel(accessibleName);
-    return button;
+  private Button createLanguageButton(
+      String languageLabelText, String accessibleLanguageName, Locale targetLocale) {
+    Button languageButton = new Button(languageLabelText, event -> switchLanguage(targetLocale));
+    languageButton.setId("portal-language-" + targetLocale.getLanguage());
+    languageButton.setAriaLabel(accessibleLanguageName);
+    return languageButton;
   }
 
   private void switchLanguage(Locale locale) {
@@ -414,13 +439,13 @@ public class UserPopoverMenu {
   }
 
   private void refreshTexts() {
-    languageHeading.setText(messageProperties.getPortalLanguageHeading());
-    presenceHeading.setText(messageProperties.getPortalPresenceHeading());
+    languageHeadingSpan.setText(messageProperties.getPortalLanguageHeading());
+    presenceHeadingSpan.setText(messageProperties.getPortalPresenceHeading());
     presenceToggle.setAriaLabel(messageProperties.getPortalPresenceHeading());
     refreshStatusButtons();
-    menuPresence.setText(messageProperties.getUserStatusLabel(currentStatus));
-    menuPresence.getStyle().set("--account-presence-color", currentStatus.getColor());
-    accountStateText.setText(
+    menuPresenceSpan.setText(messageProperties.getUserStatusLabel(currentStatus));
+    menuPresenceSpan.getStyle().set("--account-presence-color", currentStatus.getColor());
+    accountStateSpan.setText(
         currentUser.isEnabled()
             ? messageProperties.getAccountSettingsEnabled()
             : messageProperties.getAccountSettingsDisabled());
@@ -436,20 +461,21 @@ public class UserPopoverMenu {
 
   private void refreshLanguageButtons() {
     Locale selected = VaadinSession.getCurrent().getLocale();
-    for (Button button : new Button[] {germanLanguageButton, englishLanguageButton}) {
-      if (button != null) {
+    for (Button languageButton : new Button[] {germanLanguageButton, englishLanguageButton}) {
+      if (languageButton != null) {
         boolean active =
-            (button == germanLanguageButton ? Locale.GERMAN : Locale.ENGLISH).equals(selected);
-        button.setClassName("portal-language-active", active);
-        button.getElement().setAttribute("aria-pressed", Boolean.toString(active));
+            (languageButton == germanLanguageButton ? Locale.GERMAN : Locale.ENGLISH)
+                .equals(selected);
+        languageButton.setClassName("portal-language-active", active);
+        languageButton.getElement().setAttribute("aria-pressed", Boolean.toString(active));
       }
     }
   }
 
   private void updateStatusIcons(UserStatus userStatus) {
-    if (menuPresence != null) {
-      menuPresence.setText(messageProperties.getUserStatusLabel(userStatus));
-      menuPresence.getStyle().set("--account-presence-color", userStatus.getColor());
+    if (menuPresenceSpan != null) {
+      menuPresenceSpan.setText(messageProperties.getUserStatusLabel(userStatus));
+      menuPresenceSpan.getStyle().set("--account-presence-color", userStatus.getColor());
     }
     if (userStatus == null) {
       return;

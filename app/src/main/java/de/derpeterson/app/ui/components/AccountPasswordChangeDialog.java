@@ -33,20 +33,20 @@ import java.util.function.BooleanSupplier;
 /** Eigene Passwortänderung mit expliziter Validierung erst beim Absenden. */
 public class AccountPasswordChangeDialog extends Dialog {
   private final transient MessageProperties messageProperties;
-  private final H2 dialogTitle = new H2();
-  private final Span dialogDescription = new Span();
-  private final Span passwordChangeHint = new Span();
-  private final Span developmentWarning = new Span();
-  private transient BooleanSupplier developmentException = () -> false;
+  private final H2 dialogTitleHeading = new H2();
+  private final Span dialogDescriptionSpan = new Span();
+  private final Span passwordChangeHintSpan = new Span();
+  private final Span developmentWarningSpan = new Span();
+  private transient BooleanSupplier developmentExceptionSupplier = () -> false;
   private final PasswordField currentPasswordField = new PasswordField();
-  private transient BooleanSupplier currentPasswordRequired = () -> true;
+  private transient BooleanSupplier currentPasswordRequiredSupplier = () -> true;
   private final PasswordField confirmPasswordField = new PasswordField();
   private final PasswordField newPasswordField = new PasswordField();
   private final Button closeDialogButton =
       new Button(AppIcon.CLOSE_CIRCLE.create(), event -> close());
   private final Button cancelPasswordChangeButton = new Button("", event -> close());
   private final Button savePasswordButton = new Button();
-  private SerializableFunction<PasswordChange, PasswordChanged> changeAction;
+  private SerializableFunction<PasswordChange, PasswordChanged> changePasswordFunction;
 
   public AccountPasswordChangeDialog(MessageProperties messageProperties) {
     this.messageProperties = messageProperties;
@@ -58,21 +58,24 @@ public class AccountPasswordChangeDialog extends Dialog {
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
 
-    dialogTitle.addClassName(PANEL_TITLE);
-    dialogDescription.addClassName(PANEL_DESCRIPTION);
-    Div heading = new Div(dialogTitle, dialogDescription);
-    heading.addClassName(PANEL_HEADING);
-    SvgIcon icon = AppIcon.KEY.create();
-    icon.getElement().setAttribute("aria-hidden", "true");
-    Div badge = new Div(icon);
-    badge.addClassName(PANEL_ICON);
+    dialogTitleHeading.addClassName(PANEL_TITLE);
+    dialogDescriptionSpan.addClassName(PANEL_DESCRIPTION);
+
+    Div dialogHeadingDiv = new Div(dialogTitleHeading, dialogDescriptionSpan);
+    dialogHeadingDiv.addClassName(PANEL_HEADING);
+
+    SvgIcon dialogSvgIcon = AppIcon.KEY.create();
+    dialogSvgIcon.getElement().setAttribute("aria-hidden", "true");
+    Div dialogIconDiv = new Div(dialogSvgIcon);
+    dialogIconDiv.addClassName(PANEL_ICON);
     closeDialogButton.setId("account-password-close");
     closeDialogButton.setIcon(AppIcon.CLOSE_CIRCLE.create());
     closeDialogButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     closeDialogButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    Div header = new Div(badge, heading, closeDialogButton);
-    header.addClassName("account-change-dialog-header");
-    getHeader().add(header);
+
+    Div dialogHeaderDiv = new Div(dialogIconDiv, dialogHeadingDiv, closeDialogButton);
+    dialogHeaderDiv.addClassName("account-change-dialog-header");
+    getHeader().add(dialogHeaderDiv);
 
     currentPasswordField.setId("account-password-current");
     confirmPasswordField.setId("account-password-confirm");
@@ -94,17 +97,23 @@ public class AccountPasswordChangeDialog extends Dialog {
     currentPasswordField.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
     newPasswordField.setAutocomplete(Autocomplete.NEW_PASSWORD);
     confirmPasswordField.setAutocomplete(Autocomplete.NEW_PASSWORD);
-    SvgIcon infoIcon = AppIcon.INFO_CIRCLE.create();
-    infoIcon.getElement().setAttribute("aria-hidden", "true");
-    Div info = new Div(infoIcon, passwordChangeHint);
-    info.addClassName("cosmos-panel-hint");
-    developmentWarning.addClassName(PANEL_DESCRIPTION);
-    developmentWarning.setVisible(false);
-    Div form =
+
+    SvgIcon securityInfoSvgIcon = AppIcon.INFO_CIRCLE.create();
+    securityInfoSvgIcon.getElement().setAttribute("aria-hidden", "true");
+    Div securityInfoDiv = new Div(securityInfoSvgIcon, passwordChangeHintSpan);
+    securityInfoDiv.addClassName("cosmos-panel-hint");
+    developmentWarningSpan.addClassName(PANEL_DESCRIPTION);
+    developmentWarningSpan.setVisible(false);
+
+    Div changeFormDiv =
         new Div(
-            newPasswordField, confirmPasswordField, currentPasswordField, info, developmentWarning);
-    form.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
-    add(form);
+            newPasswordField,
+            confirmPasswordField,
+            currentPasswordField,
+            securityInfoDiv,
+            developmentWarningSpan);
+    changeFormDiv.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
+    add(changeFormDiv);
 
     cancelPasswordChangeButton.setId("account-password-cancel");
     cancelPasswordChangeButton.setPrefixComponent(AppIcon.CLOSE.create());
@@ -112,28 +121,30 @@ public class AccountPasswordChangeDialog extends Dialog {
     savePasswordButton.setPrefixComponent(AppIcon.CHECK.create());
     savePasswordButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     savePasswordButton.addClickListener(event -> submitPasswordChange());
-    Div actions = new Div(cancelPasswordChangeButton, savePasswordButton);
-    actions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(actions);
-    getFooter().add(actions);
+
+    Div dialogActionsDiv = new Div(cancelPasswordChangeButton, savePasswordButton);
+    dialogActionsDiv.addClassName("cosmos-dialog-actions");
+    EqualButtonWidths.configureEqualButtonWidths(dialogActionsDiv);
+    getFooter().add(dialogActionsDiv);
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {
         clearDraft();
       }
     });
+
     refreshTexts();
   }
 
   public void setChangeAction(SerializableFunction<PasswordChange, PasswordChanged> action) {
-    changeAction = Objects.requireNonNull(action);
+    changePasswordFunction = Objects.requireNonNull(action);
   }
 
   public void setCurrentPasswordRequired(BooleanSupplier required) {
-    currentPasswordRequired = Objects.requireNonNull(required);
+    currentPasswordRequiredSupplier = Objects.requireNonNull(required);
   }
 
   public void setDevelopmentWarning(BooleanSupplier active) {
-    developmentException = Objects.requireNonNull(active);
+    developmentExceptionSupplier = Objects.requireNonNull(active);
   }
 
   private void submitPasswordChange() {
@@ -148,9 +159,11 @@ public class AccountPasswordChangeDialog extends Dialog {
             newPasswordField, confirmPasswordField, messageProperties)) {
       return;
     }
+
     savePasswordButton.setEnabled(false);
+
     try {
-      Objects.requireNonNull(changeAction, "Password change action required")
+      Objects.requireNonNull(changePasswordFunction, "Password change action required")
           .apply(
               new PasswordChange(
                   currentPasswordField.getValue(),
@@ -178,11 +191,12 @@ public class AccountPasswordChangeDialog extends Dialog {
 
   @Override
   public void open() {
-    developmentWarning.setText(messageProperties.getTwoFactorDevelopmentWarning());
-    developmentWarning.setVisible(developmentException.getAsBoolean());
-    boolean required = currentPasswordRequired.getAsBoolean();
+    developmentWarningSpan.setText(messageProperties.getTwoFactorDevelopmentWarning());
+    developmentWarningSpan.setVisible(developmentExceptionSupplier.getAsBoolean());
+    boolean required = currentPasswordRequiredSupplier.getAsBoolean();
     currentPasswordField.setVisible(required);
     currentPasswordField.setRequiredIndicatorVisible(required);
+
     clearDraft();
     super.open();
   }
@@ -197,9 +211,9 @@ public class AccountPasswordChangeDialog extends Dialog {
   }
 
   public void refreshTexts() {
-    dialogTitle.setText(messageProperties.getAccountSettingsChangePassword());
-    getElement().setProperty("ariaLabel", dialogTitle.getText());
-    dialogDescription.setText(messageProperties.getAccountPasswordDialogDescription());
+    dialogTitleHeading.setText(messageProperties.getAccountSettingsChangePassword());
+    getElement().setProperty("ariaLabel", dialogTitleHeading.getText());
+    dialogDescriptionSpan.setText(messageProperties.getAccountPasswordDialogDescription());
     closeDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
     currentPasswordField.setLabel(messageProperties.getAccountPasswordDialogCurrentPassword());
     currentPasswordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
@@ -208,7 +222,7 @@ public class AccountPasswordChangeDialog extends Dialog {
     newPasswordField.setLabel(messageProperties.getResetPasswordNewPasswordField());
     newPasswordField.setPlaceholder(messageProperties.getAccountNewPasswordPlaceholder());
     newPasswordField.setHelperText(messageProperties.getBaseValidationPasswordInvalidMessage());
-    passwordChangeHint.setText(messageProperties.getAccountPasswordDialogHint());
+    passwordChangeHintSpan.setText(messageProperties.getAccountPasswordDialogHint());
     cancelPasswordChangeButton.setText(messageProperties.getAdminUsersCancel());
     savePasswordButton.setText(messageProperties.getAccountSettingsChangePassword());
   }

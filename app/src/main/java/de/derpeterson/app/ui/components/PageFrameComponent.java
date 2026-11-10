@@ -5,15 +5,15 @@ import com.vaadin.flow.component.html.Div;
 
 /** Gemeinsamer Seitenrahmen: fester Servicekopf und gemeinsam scrollender Inhaltsbereich. */
 public class PageFrameComponent extends Div {
-  private final Div frameHeaderContainer = new Div();
-  private final Div frameMainContainer = new Div();
+  private final Div frameHeaderDiv = new Div();
+  private final Div frameMainDiv = new Div();
 
   public PageFrameComponent() {
     addClassName("cosmos-page-frame");
-    frameHeaderContainer.addClassName("cosmos-frame-header");
-    frameMainContainer.addClassName("cosmos-app-main");
-    frameMainContainer.getElement().setAttribute("role", "main");
-    add(new CosmosBackgroundComponent(), frameHeaderContainer, frameMainContainer);
+    frameHeaderDiv.addClassName("cosmos-frame-header");
+    frameMainDiv.addClassName("cosmos-app-main");
+    frameMainDiv.getElement().setAttribute("role", "main");
+    add(new CosmosBackgroundComponent(), frameHeaderDiv, frameMainDiv);
   }
 
   public PageFrameComponent(
@@ -28,9 +28,10 @@ public class PageFrameComponent extends Div {
       Component pageHeaderComponent,
       Component pageContentComponent,
       Component pageFooterComponent) {
-    this.frameHeaderContainer.removeAll();
-    this.frameHeaderContainer.add(pageHeaderComponent);
-    frameMainContainer.removeAll();
-    frameMainContainer.add(pageContentComponent, pageFooterComponent);
+    this.frameHeaderDiv.removeAll();
+    this.frameHeaderDiv.add(pageHeaderComponent);
+
+    frameMainDiv.removeAll();
+    frameMainDiv.add(pageContentComponent, pageFooterComponent);
   }
 }

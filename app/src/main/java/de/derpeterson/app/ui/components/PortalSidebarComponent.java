@@ -30,7 +30,7 @@ public class PortalSidebarComponent extends Div {
   private final Span accountNameLabel = new Span();
   private final Span presenceLabel = new Span();
   private final Span unreadNotificationCount = new Span();
-  private final List<Runnable> localizedTextUpdates = new ArrayList<>();
+  private final List<Runnable> localizedTextRefreshActions = new ArrayList<>();
   private UserStatus status;
 
   public PortalSidebarComponent(
@@ -51,43 +51,51 @@ public class PortalSidebarComponent extends Div {
     accountAvatar.addClassName("account-summary-avatar");
     accountNameLabel.addClassName("account-summary-name");
     refreshName(user == null ? "" : user.getFirstName(), user == null ? "" : user.getLastName());
-    Span address = new Span(user == null ? "" : Objects.toString(user.getEmail(), ""));
-    address.addClassName("account-summary-email");
-    address.getElement().setAttribute("title", address.getText());
-    Span active =
-        label(
+
+    Span accountEmailSpan = new Span(user == null ? "" : Objects.toString(user.getEmail(), ""));
+    accountEmailSpan.addClassName("account-summary-email");
+    accountEmailSpan.getElement().setAttribute("title", accountEmailSpan.getText());
+
+    Span accountActiveSpan =
+        createLocalizedLabelSpan(
             user != null && user.isEnabled()
                 ? messageProperties::getAccountSettingsEnabled
                 : messageProperties::getAccountSettingsDisabled);
-    active.addClassName("account-summary-status");
-    active
+    accountActiveSpan.addClassName("account-summary-status");
+    accountActiveSpan
         .getElement()
         .getThemeList()
         .addAll(List.of("badge", user != null && user.isEnabled() ? "success" : "error"));
     presenceLabel.addClassName("account-summary-presence");
-    Div badges = new Div(active, presenceLabel);
-    badges.addClassName("account-summary-badges");
-    Div identity = new Div(accountNameLabel, address, badges);
-    identity.addClassName("account-summary-details");
-    Div row = new Div(accountAvatar, identity);
-    row.addClassName("account-summary-row");
-    Button edit =
-        button(AppIcon.EDIT, messageProperties::getAccountSettingsEditPicture, editAvatar);
-    edit.setId("account-avatar-edit");
-    CosmosCardComponent summary = new CosmosCardComponent(row, edit);
-    summary.addClassName("account-summary");
-    Span portalGroup = label(messageProperties::getAccountNavigationPortal);
-    portalGroup.addClassName("account-nav-group");
+
+    Div accountBadgesDiv = new Div(accountActiveSpan, presenceLabel);
+    accountBadgesDiv.addClassName("account-summary-badges");
+    Div accountIdentityDiv = new Div(accountNameLabel, accountEmailSpan, accountBadgesDiv);
+    accountIdentityDiv.addClassName("account-summary-details");
+    Div accountIdentityRowDiv = new Div(accountAvatar, accountIdentityDiv);
+    accountIdentityRowDiv.addClassName("account-summary-row");
+
+    Button editAvatarButton =
+        createLocalizedActionButton(
+            AppIcon.EDIT, messageProperties::getAccountSettingsEditPicture, editAvatar);
+    editAvatarButton.setId("account-avatar-edit");
+
+    CosmosCardComponent accountSummaryCard =
+        new CosmosCardComponent(accountIdentityRowDiv, editAvatarButton);
+    accountSummaryCard.addClassName("account-summary");
+
+    Span portalGroupSpan = createLocalizedLabelSpan(messageProperties::getAccountNavigationPortal);
+    portalGroupSpan.addClassName("account-nav-group");
     PageNavigationComponent portalNavigation = new PageNavigationComponent();
     SideNavItem home = new SideNavItem("", AppRoute.HOME.getSecurityRoute(), AppIcon.HOME.create());
     home.setId("account-nav-home");
-    localizedTextUpdates.add(() -> home.setLabel(messageProperties.getBaseHomeButton()));
+    localizedTextRefreshActions.add(() -> home.setLabel(messageProperties.getBaseHomeButton()));
     portalNavigation.registerAction(home, () -> UI.getCurrent().navigate(HomeView.class));
     PageNavigationComponent.setItemActive(home, selectedRoute == AppRoute.HOME);
     SideNavItem notifications =
         new SideNavItem("", AppRoute.NOTIFICATIONS.getSecurityRoute(), AppIcon.BELL.create());
     notifications.setId("account-nav-notifications");
-    localizedTextUpdates.add(
+    localizedTextRefreshActions.add(
         () -> notifications.setLabel(messageProperties.getNotificationsTitle()));
     portalNavigation.registerAction(
         notifications, () -> UI.getCurrent().navigate(UserNotificationsView.class));
@@ -97,71 +105,77 @@ public class PortalSidebarComponent extends Div {
     unreadNotificationCount.getElement().setAttribute("aria-hidden", "true");
     notifications.setSuffixComponent(unreadNotificationCount);
     portalNavigation.addItem(home, notifications);
-    Span accountGroup = label(messageProperties::getAccountSettingsOverview);
-    accountGroup.addClassName("account-nav-group");
-    add(summary, portalGroup, portalNavigation, accountGroup, accountNavigation);
+
+    Span accountGroupSpan = createLocalizedLabelSpan(messageProperties::getAccountSettingsOverview);
+    accountGroupSpan.addClassName("account-nav-group");
+    add(accountSummaryCard, portalGroupSpan, portalNavigation, accountGroupSpan, accountNavigation);
     refreshTexts();
   }
 
   public static PageNavigationComponent accountLinks(MessageProperties messageProperties) {
-    PageNavigationComponent navigation = new PageNavigationComponent();
-    navigation.setId("account-navigation");
-    navigation
+    PageNavigationComponent accountNavigationComponent = new PageNavigationComponent();
+    accountNavigationComponent.setId("account-navigation");
+    accountNavigationComponent
         .getElement()
         .setAttribute("aria-label", messageProperties.getAccountSettingsOverview());
-    List<AppIcon> icons = List.of(AppIcon.USER, AppIcon.LOCK, AppIcon.DEVICES);
-    List<AccountSection> sections =
+    List<AppIcon> sectionIcons = List.of(AppIcon.USER, AppIcon.LOCK, AppIcon.DEVICES);
+    List<AccountSection> accountSections =
         List.of(AccountSection.PROFILE, AccountSection.SECURITY, AccountSection.SESSIONS);
-    for (int index = 0; index < sections.size(); index++) {
-      AccountSection section = sections.get(index);
-      SideNavItem item =
-          new SideNavItem("", AppRoute.ACCOUNT.getSecurityRoute(), icons.get(index).create());
-      item.setId("account-nav-" + section.urlValue());
-      QueryParameters query = section.queryParameters();
-      item.setQueryParameters(query);
-      navigation.registerAction(item, () -> UI.getCurrent().navigate(AccountView.class, query));
-      navigation.addItem(item);
+
+    for (int sectionIndex = 0; sectionIndex < accountSections.size(); sectionIndex++) {
+      AccountSection accountSection = accountSections.get(sectionIndex);
+      SideNavItem accountSectionItem =
+          new SideNavItem(
+              "", AppRoute.ACCOUNT.getSecurityRoute(), sectionIcons.get(sectionIndex).create());
+      accountSectionItem.setId("account-nav-" + accountSection.urlValue());
+      QueryParameters accountSectionQuery = accountSection.queryParameters();
+      accountSectionItem.setQueryParameters(accountSectionQuery);
+      accountNavigationComponent.registerAction(
+          accountSectionItem,
+          () -> UI.getCurrent().navigate(AccountView.class, accountSectionQuery));
+      accountNavigationComponent.addItem(accountSectionItem);
     }
-    return navigation;
+    return accountNavigationComponent;
   }
 
-  private Span label(Supplier<String> value) {
-    Span label = new Span();
-    localizedTextUpdates.add(() -> label.setText(value.get()));
-    return label;
+  private Span createLocalizedLabelSpan(Supplier<String> labelTextSupplier) {
+    Span localizedLabelSpan = new Span();
+    localizedTextRefreshActions.add(() -> localizedLabelSpan.setText(labelTextSupplier.get()));
+    return localizedLabelSpan;
   }
 
-  private Button button(AppIcon icon, Supplier<String> value, Runnable action) {
-    Button button = new Button();
-    button.setPrefixComponent(icon.create());
-    button.addClickListener(event -> action.run());
-    localizedTextUpdates.add(() -> button.setText(value.get()));
-    return button;
+  private Button createLocalizedActionButton(
+      AppIcon actionAppIcon, Supplier<String> buttonTextSupplier, Runnable buttonAction) {
+    Button localizedActionButton = new Button();
+    localizedActionButton.setPrefixComponent(actionAppIcon.create());
+    localizedActionButton.addClickListener(event -> buttonAction.run());
+    localizedTextRefreshActions.add(() -> localizedActionButton.setText(buttonTextSupplier.get()));
+    return localizedActionButton;
   }
 
-  public void configureAvatars(UserAvatarService avatars) {
-    accountAvatar.configureAvatar(avatars, null);
+  public void configureAvatars(UserAvatarService userAvatarService) {
+    accountAvatar.configureAvatar(userAvatarService, null);
   }
 
-  public void configureStatusSelection(Select<UserStatus> selection) {
-    selection.setId("account-avatar-status");
-    selection.getThemeNames().add("cosmos-reference");
-    Runnable heading =
+  public void configureStatusSelection(Select<UserStatus> userStatusSelect) {
+    userStatusSelect.setId("account-avatar-status");
+    userStatusSelect.getThemeNames().add("cosmos-reference");
+    Runnable refreshStatusSelectHeadingAction =
         () ->
-            selection
+            userStatusSelect
                 .getStyle()
                 .set(
                     "--portal-status-heading",
                     "\"" + messageProperties.getPortalPresenceHeading() + "\"");
-    localizedTextUpdates.add(heading);
-    heading.run();
-    accountAvatar.setStatusSelection(selection);
+    localizedTextRefreshActions.add(refreshStatusSelectHeadingAction);
+    refreshStatusSelectHeadingAction.run();
+    accountAvatar.setStatusSelection(userStatusSelect);
   }
 
-  public void refreshName(String first, String last) {
+  public void refreshName(String firstName, String lastName) {
     accountNameLabel.setText(
-        (Objects.toString(first, "") + " " + Objects.toString(last, "")).trim());
-    accountAvatar.setName(first, last);
+        (Objects.toString(firstName, "") + " " + Objects.toString(lastName, "")).trim());
+    accountAvatar.setName(firstName, lastName);
   }
 
   public void updateStatus(UserStatus newStatus) {
@@ -181,16 +195,21 @@ public class PortalSidebarComponent extends Div {
   }
 
   public void refreshTexts() {
-    localizedTextUpdates.forEach(Runnable::run);
-    List<String> labels =
+    localizedTextRefreshActions.forEach(Runnable::run);
+
+    List<String> sectionLabels =
         List.of(
             messageProperties.getAccountSettingsProfileTab(),
             messageProperties.getAccountSettingsSecurityTab(),
             messageProperties.getAccountSettingsSessionsTab());
-    List<SideNavItem> items = accountNavigation.getItems();
-    for (int index = 0; index < Math.min(labels.size(), items.size()); index++) {
-      items.get(index).setLabel(labels.get(index));
+    List<SideNavItem> accountNavigationItems = accountNavigation.getItems();
+
+    for (int sectionIndex = 0;
+        sectionIndex < Math.min(sectionLabels.size(), accountNavigationItems.size());
+        sectionIndex++) {
+      accountNavigationItems.get(sectionIndex).setLabel(sectionLabels.get(sectionIndex));
     }
+
     accountAvatar.refreshTexts();
     refreshPresence();
   }

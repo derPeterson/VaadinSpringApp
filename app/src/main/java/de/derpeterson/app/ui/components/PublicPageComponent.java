@@ -67,127 +67,154 @@ public class PublicPageComponent extends PageFrameComponent {
   private SerializableRunnable refreshTexts;
   private final transient MessageProperties messageProperties;
   private final VerticalLayout pageCardsLayout = new VerticalLayout();
-  private final HorizontalLayout securityIdentity = new HorizontalLayout();
+  private final HorizontalLayout securityIdentityLayout = new HorizontalLayout();
 
-  public PublicPageComponent(ConfigService config, MessageProperties messageProperties, Page page) {
+  public PublicPageComponent(
+      ConfigService configService, MessageProperties messageProperties, Page page) {
     this.page = page;
     this.messageProperties = messageProperties;
     addClassNames("cosmos-theme", REFERENCE_PORTAL, "cosmos-reference-public");
     getElement().setAttribute("data-public-page", page.name().toLowerCase(Locale.ROOT));
-    String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
-    Image logo = new Image("icons/service-logo.svg", "");
-    boolean restricted = page == Page.TWO_FACTOR || page == Page.RECOVERY_HELP;
-    Component brand =
-        restricted
-            ? new Div(logo, new Span(serviceName))
-            : new Anchor(AppRoute.HOME.getSecurityRoute(), logo, new Span(serviceName));
-    brand.getElement().getClassList().add("public-brand");
-    brand.getElement().setAttribute("aria-label", serviceName);
-    Button home =
+    String serviceNameText = configService.getString(ConfigEntry.SERVICE_NAME);
+
+    Image serviceLogoImage = new Image("icons/service-logo.svg", "");
+    boolean restrictedSecurityPage = page == Page.TWO_FACTOR || page == Page.RECOVERY_HELP;
+    Component brandComponent =
+        restrictedSecurityPage
+            ? new Div(serviceLogoImage, new Span(serviceNameText))
+            : new Anchor(
+                AppRoute.HOME.getSecurityRoute(), serviceLogoImage, new Span(serviceNameText));
+    brandComponent.getElement().getClassList().add("public-brand");
+    brandComponent.getElement().setAttribute("aria-label", serviceNameText);
+
+    Button homeButton =
         new Button("", AppIcon.HOME.create(), event -> UI.getCurrent().navigate(HomeView.class));
-    Button login =
+
+    Button loginButton =
         new Button(
             "", AppIcon.SIGN_IN.create(), event -> UI.getCurrent().navigate(LoginView.class));
-    Button register =
+
+    Button registerButton =
         new Button(
             "",
             AppIcon.USER_PLUS.create(),
             event -> UI.getCurrent().navigate(RegistrationView.class));
-    home.setId("public-nav-home");
-    login.setId("public-nav-login");
-    register.setId("public-nav-register");
-    home.setClassName(ACTIVE_NAVIGATION_CLASS, page == Page.HOME);
-    login.setClassName(
+    homeButton.setId("public-nav-home");
+    loginButton.setId("public-nav-login");
+    registerButton.setId("public-nav-register");
+    homeButton.setClassName(ACTIVE_NAVIGATION_CLASS, page == Page.HOME);
+    loginButton.setClassName(
         ACTIVE_NAVIGATION_CLASS,
         page == Page.LOGIN || page == Page.TWO_FACTOR || page == Page.RECOVERY_HELP);
-    register.setClassName(ACTIVE_NAVIGATION_CLASS, page == Page.REGISTER);
-    Button german = language("DE", Locale.GERMAN);
-    Button english = language("EN", Locale.ENGLISH);
-    Div languages = new Div(german, english);
-    languages.addClassName("public-languages");
-    languages.getElement().setAttribute("role", "group");
-    Div navigation = restricted ? new Div(languages) : new Div(home, login, register, languages);
-    navigation.addClassName("public-navigation");
-    navigation.getElement().setAttribute("role", "navigation");
-    if (restricted) {
-      navigation.addClassName("public-security-navigation");
-      securityIdentity.setId("public-security-identity");
-      securityIdentity.setSpacing(false);
-      securityIdentity.setAlignItems(Alignment.CENTER);
-      securityIdentity.addClassName("public-security-identity");
-      securityIdentity.setVisible(false);
-      navigation.add(securityIdentity);
-    }
-    Div headerInner = new Div(brand, navigation);
-    headerInner.addClassName("public-header-inner");
-    Div header = new Div(headerInner);
-    header.addClassName("public-header");
-    Span kicker = new Span();
-    kicker.addClassName("public-kicker");
-    H1 title = new H1();
-    Span description = new Span();
-    description.addClassName("public-page-description");
-    Div titleRow = new Div(title, description);
-    titleRow.addClassName("public-title-row");
-    Div heading = new Div(kicker, titleRow);
-    heading.addClassName("public-page-heading");
+    registerButton.setClassName(ACTIVE_NAVIGATION_CLASS, page == Page.REGISTER);
+
+    Button germanLanguageButton = language("DE", Locale.GERMAN);
+    Button englishLanguageButton = language("EN", Locale.ENGLISH);
+    Div languageButtonsDiv = new Div(germanLanguageButton, englishLanguageButton);
+    languageButtonsDiv.addClassName("public-languages");
+    languageButtonsDiv.getElement().setAttribute("role", "group");
+
+    Div publicHeaderDiv =
+        restrictedSecurityPage
+            ? createPublicHeader(brandComponent, true, languageButtonsDiv)
+            : createPublicHeader(
+                brandComponent, false, homeButton, loginButton, registerButton, languageButtonsDiv);
+
+    Span pageKickerSpan = new Span();
+    pageKickerSpan.addClassName("public-kicker");
+    H1 pageTitleHeading = new H1();
+    Span pageDescriptionSpan = new Span();
+    pageDescriptionSpan.addClassName("public-page-description");
+
+    Div pageTitleRowDiv = new Div(pageTitleHeading, pageDescriptionSpan);
+    pageTitleRowDiv.addClassName("public-title-row");
+    Div pageHeadingDiv = new Div(pageKickerSpan, pageTitleRowDiv);
+    pageHeadingDiv.addClassName("public-page-heading");
     pageCardsLayout.setPadding(false);
     pageCardsLayout.setSpacing(false);
     pageCardsLayout.addClassName("public-cards");
     if (page == Page.HOME) {
       pageCardsLayout.add(new PublicHomeComponent(messageProperties));
     }
-    PortalPageComponent main = new PortalPageComponent(heading, null, pageCardsLayout);
-    main.addClassName("public-main");
+
+    PortalPageComponent publicPageLayout =
+        new PortalPageComponent(pageHeadingDiv, null, pageCardsLayout);
+    publicPageLayout.addClassName("public-main");
     setFrameContent(
-        header,
-        main,
+        publicHeaderDiv,
+        publicPageLayout,
         new CosmosCopyrightComponent(
-            config, Clock.systemDefaultZone(), messageProperties::getAccountCopyrightTemplate));
-    SerializableRunnable translate =
+            configService,
+            Clock.systemDefaultZone(),
+            messageProperties::getAccountCopyrightTemplate));
+
+    SerializableRunnable refreshPageTextsAction =
         () -> {
-          home.setText(messageProperties.getHomeTitle());
-          home.setAriaLabel(messageProperties.getHomeTitle());
-          login.setAriaLabel(messageProperties.getBaseLoginButton());
-          register.setAriaLabel(messageProperties.getBaseRegistrationButton());
-          login.setText(messageProperties.getBaseLoginButton());
-          register.setText(messageProperties.getBaseRegistrationButton());
-          kicker.setText(
-              restricted
+          homeButton.setText(messageProperties.getHomeTitle());
+          homeButton.setAriaLabel(messageProperties.getHomeTitle());
+          loginButton.setAriaLabel(messageProperties.getBaseLoginButton());
+          registerButton.setAriaLabel(messageProperties.getBaseRegistrationButton());
+          loginButton.setText(messageProperties.getBaseLoginButton());
+          registerButton.setText(messageProperties.getBaseRegistrationButton());
+          pageKickerSpan.setText(
+              restrictedSecurityPage
                   ? messageProperties.getTwoFactorAreaLabel(accountSecurity)
                   : messageProperties.getPublicAreaLabel());
-          title.setText(this.page.title.apply(messageProperties));
-          description.setText(this.page.description.apply(messageProperties));
-          german
+          pageTitleHeading.setText(this.page.title.apply(messageProperties));
+          pageDescriptionSpan.setText(this.page.description.apply(messageProperties));
+          germanLanguageButton
               .getElement()
               .setAttribute(
                   "aria-pressed",
                   Boolean.toString(
                       "de".equals(VaadinSession.getCurrent().getLocale().getLanguage())));
-          english
+          englishLanguageButton
               .getElement()
               .setAttribute(
                   "aria-pressed",
                   Boolean.toString(
                       "en".equals(VaadinSession.getCurrent().getLocale().getLanguage())));
         };
-    refreshTexts = translate;
-    translate.run();
-    ComponentUtil.addListener(UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
+    refreshTexts = refreshPageTextsAction;
+    refreshPageTextsAction.run();
+    ComponentUtil.addListener(
+        UI.getCurrent(), LanguageChangeEvent.class, event -> refreshPageTextsAction.run());
   }
 
-  private Button language(String label, Locale locale) {
-    Button button =
+  private Div createPublicHeader(
+      Component brandComponent, boolean restrictedSecurityPage, Component... navigationComponents) {
+    Div publicNavigationDiv = new Div(navigationComponents);
+    publicNavigationDiv.addClassName("public-navigation");
+    publicNavigationDiv.getElement().setAttribute("role", "navigation");
+    if (restrictedSecurityPage) {
+      publicNavigationDiv.addClassName("public-security-navigation");
+      securityIdentityLayout.setId("public-security-identity");
+      securityIdentityLayout.setSpacing(false);
+      securityIdentityLayout.setAlignItems(Alignment.CENTER);
+      securityIdentityLayout.addClassName("public-security-identity");
+      securityIdentityLayout.setVisible(false);
+      publicNavigationDiv.add(securityIdentityLayout);
+    }
+
+    Div headerInnerDiv = new Div(brandComponent, publicNavigationDiv);
+    headerInnerDiv.addClassName("public-header-inner");
+    Div publicHeaderDiv = new Div(headerInnerDiv);
+    publicHeaderDiv.addClassName("public-header");
+    return publicHeaderDiv;
+  }
+
+  private Button language(String languageLabelText, Locale buttonLocale) {
+    Button languageButton =
         new Button(
-            label,
+            languageLabelText,
             event -> {
-              VaadinSession.getCurrent().setLocale(locale);
-              PublicLanguagePreference.save(locale);
-              LanguageChangeEvent.fire(UI.getCurrent(), locale);
+              VaadinSession.getCurrent().setLocale(buttonLocale);
+              PublicLanguagePreference.save(buttonLocale);
+              LanguageChangeEvent.fire(UI.getCurrent(), buttonLocale);
             });
-    button.getElement().setAttribute("lang", locale.getLanguage());
-    button.setAriaLabel(locale.getDisplayLanguage(locale));
-    return button;
+    languageButton.getElement().setAttribute("lang", buttonLocale.getLanguage());
+    languageButton.setAriaLabel(buttonLocale.getDisplayLanguage(buttonLocale));
+    return languageButton;
   }
 
   public void showPage(Page page) {
@@ -200,18 +227,21 @@ public class PublicPageComponent extends PageFrameComponent {
     return pageCardsLayout;
   }
 
-  public void setAccountSecurity(boolean accountSecurity, UserEntity account) {
+  public void setAccountSecurity(boolean accountSecurity, UserEntity accountUserEntity) {
     this.accountSecurity = accountSecurity;
-    securityIdentity.removeAll();
-    securityIdentity.setVisible(account != null);
-    if (account != null) {
-      OverlayUserIcon avatar =
-          new OverlayUserIcon(messageProperties, account, null, IconSize.PIXEL_32);
-      avatar.getElement().setAttribute("aria-hidden", "true");
-      Span name = new Span((account.getFirstName() + " " + account.getLastName()).strip());
-      Div details = new Div(name, new Span(account.getEmail()));
-      details.addClassName("cosmos-header-identity");
-      securityIdentity.add(avatar, details);
+    securityIdentityLayout.removeAll();
+    securityIdentityLayout.setVisible(accountUserEntity != null);
+
+    if (accountUserEntity != null) {
+      OverlayUserIcon accountAvatarIcon =
+          new OverlayUserIcon(messageProperties, accountUserEntity, null, IconSize.PIXEL_32);
+      accountAvatarIcon.getElement().setAttribute("aria-hidden", "true");
+      Span accountNameSpan =
+          new Span(
+              (accountUserEntity.getFirstName() + " " + accountUserEntity.getLastName()).strip());
+      Div accountDetailsDiv = new Div(accountNameSpan, new Span(accountUserEntity.getEmail()));
+      accountDetailsDiv.addClassName("cosmos-header-identity");
+      securityIdentityLayout.add(accountAvatarIcon, accountDetailsDiv);
     }
     refreshTexts.run();
   }

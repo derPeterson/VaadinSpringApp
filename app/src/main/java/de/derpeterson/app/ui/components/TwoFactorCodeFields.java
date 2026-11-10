@@ -33,6 +33,7 @@ public final class TwoFactorCodeFields {
     otpField.setRequiredIndicatorVisible(true);
     otpField.setValueChangeMode(ValueChangeMode.ON_CHANGE);
     otpField.addClassName("two-factor-otp");
+
     String stylesheetPath = contextPath + "/custom-theme/cosmos-mfa-otp.css";
     otpField.addAttachListener(
         attachEvent -> otpField.getElement().executeJs(OTP_STYLESHEET_SCRIPT, stylesheetPath));

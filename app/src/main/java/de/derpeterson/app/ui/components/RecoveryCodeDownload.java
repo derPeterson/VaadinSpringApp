@@ -37,23 +37,23 @@ public final class RecoveryCodeDownload {
   private final RecoveryCodeDocument recoveryCodeDocument;
 
   /** Ein Fehlerstatus darf im Browser weder eine TXT-Datei noch einen Seitenwechsel auslösen. */
-  public void configure(Button button, Runnable failed) {
-    button.addAttachListener(event ->
+  public void configure(Button downloadCodesButton, Runnable downloadFailedAction) {
+    downloadCodesButton.addAttachListener(event ->
         event.getUI().getPage().addJavaScript("context://custom-theme/recovery-code-download.js"));
-    button.addClickListener(event ->
-        button
+    downloadCodesButton.addClickListener(event ->
+        downloadCodesButton
             .getElement()
             .executeJs("return window.cosmosRecoveryCodeDownload(this)")
             .then(
                 Boolean.class,
                 success -> {
                   if (Boolean.FALSE.equals(success)) {
-                    failed.run();
+                    downloadFailedAction.run();
                   }
                 }));
   }
 
-  public DownloadHandler handler(UUID outputId, Locale locale) {
+  public DownloadHandler handler(UUID recoveryOutputId, Locale locale) {
     return new DownloadHandler() {
       @Override
       public String getUrlPostfix() {
@@ -62,38 +62,43 @@ public final class RecoveryCodeDownload {
 
       @Override
       public void handleDownloadRequest(DownloadEvent event) {
-        write(event, outputId, locale);
+        writeRecoveryCodesPdf(event, recoveryOutputId, locale);
       }
     };
   }
 
-  void write(DownloadEvent event, UUID outputId, Locale locale) {
-    event.getResponse().setHeader("Cache-Control", "no-store");
-    event.getResponse().setHeader("Pragma", "no-cache");
-    event.getResponse().setHeader("X-Content-Type-Options", "nosniff");
-    byte[] bytes = null;
+  void writeRecoveryCodesPdf(DownloadEvent downloadEvent, UUID recoveryOutputId, Locale locale) {
+    downloadEvent.getResponse().setHeader("Cache-Control", "no-store");
+    downloadEvent.getResponse().setHeader("Pragma", "no-cache");
+    downloadEvent.getResponse().setHeader("X-Content-Type-Options", "nosniff");
+
+    byte[] recoveryPdfBytes = null;
     try {
-      HttpServletRequest request = (HttpServletRequest) event.getRequest();
-      List<String> codes = twoFactorEnrollment.recoveryOutput(request, outputId);
-      String serviceName = configService.getString(ConfigEntry.SERVICE_NAME);
-      bytes =
+      HttpServletRequest httpServletRequest = (HttpServletRequest) downloadEvent.getRequest();
+      List<String> recoveryCodes =
+          twoFactorEnrollment.recoveryOutput(httpServletRequest, recoveryOutputId);
+      String serviceNameText = configService.getString(ConfigEntry.SERVICE_NAME);
+      recoveryPdfBytes =
           recoveryCodeDocument.render(
-              serviceName,
-              twoFactorAuthorization.owner(request).email(),
-              codes,
+              serviceNameText,
+              twoFactorAuthorization.owner(httpServletRequest).email(),
+              recoveryCodes,
               Instant.now(),
               locale,
               MessageProperties.forLocale(i18nProvider, locale));
-      event.setFileName(RecoveryCodeDocument.fileName(serviceName));
-      event.setContentType("application/pdf");
-      event.setContentLength(bytes.length);
-      event.getOutputStream().write(bytes);
-    } catch (IOException | RuntimeException failure) {
-      log.warn("Recovery code PDF download failed", LogSafety.safeFailure(failure));
-      event.getResponse().setStatus(failure instanceof AccessDeniedException ? 403 : 500);
+
+      downloadEvent.setFileName(RecoveryCodeDocument.fileName(serviceNameText));
+      downloadEvent.setContentType("application/pdf");
+      downloadEvent.setContentLength(recoveryPdfBytes.length);
+      downloadEvent.getOutputStream().write(recoveryPdfBytes);
+    } catch (IOException | RuntimeException downloadFailure) {
+      log.warn("Recovery code PDF download failed", LogSafety.safeFailure(downloadFailure));
+      downloadEvent
+          .getResponse()
+          .setStatus(downloadFailure instanceof AccessDeniedException ? 403 : 500);
     } finally {
-      if (bytes != null) {
-        Arrays.fill(bytes, (byte) 0);
+      if (recoveryPdfBytes != null) {
+        Arrays.fill(recoveryPdfBytes, (byte) 0);
       }
     }
   }

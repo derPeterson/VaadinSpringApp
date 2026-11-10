@@ -49,30 +49,36 @@ public class ConfigInfoButton extends Button {
   }
 
   public ConfigInfoButton(
-      Supplier<String> helpTextSupplier, com.vaadin.flow.function.SerializableRunnable openHelp) {
+      Supplier<String> helpTextSupplier,
+      com.vaadin.flow.function.SerializableRunnable openHelpAction) {
     this.helpTextSupplier = helpTextSupplier;
-    SvgIcon icon = AppIcon.INFO_CIRCLE.create();
-    icon.addClassName(LumoUtility.TextColor.PRIMARY);
-    setIcon(icon);
+
+    SvgIcon helpSvgIcon = AppIcon.INFO_CIRCLE.create();
+    helpSvgIcon.addClassName(LumoUtility.TextColor.PRIMARY);
+    setIcon(helpSvgIcon);
     addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     addClassName("cosmos-config-info");
     getElement().setAttribute(ARIA_EXPANDED, ARIA_COLLAPSED);
+
     fieldHelpTooltip =
         getTooltip()
             .withText(helpTextSupplier.get())
             .withPosition(Tooltip.TooltipPosition.BOTTOM)
             .withManual(true);
+
     addClickListener(event -> {
-      if (openHelp != null) {
-        openHelp.run();
+      if (openHelpAction != null) {
+        openHelpAction.run();
         return;
       }
-      boolean opened = !fieldHelpTooltip.isOpened();
-      fieldHelpTooltip.setOpened(opened);
-      getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(opened));
+
+      boolean tooltipOpened = !fieldHelpTooltip.isOpened();
+      fieldHelpTooltip.setOpened(tooltipOpened);
+      getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(tooltipOpened));
     });
+
     addDetachListener(event -> closeTooltip());
-    installOutsideClick();
+    installOutsideClickListener();
   }
 
   public void refreshText() {
@@ -84,7 +90,7 @@ public class ConfigInfoButton extends Button {
     getElement().setAttribute(ARIA_EXPANDED, ARIA_COLLAPSED);
   }
 
-  private void installOutsideClick() {
+  private void installOutsideClickListener() {
     Button infoButton = this;
     // Der manuelle Tooltip schließt nicht selbst bei Außenklicks. Das Ereignis
     // meldet die clientseitige Schließung zurück, damit der nächste Klick wieder öffnet.
@@ -96,6 +102,7 @@ public class ConfigInfoButton extends Button {
               fieldHelpTooltip.setOpened(false);
               infoButton.getElement().setAttribute(ARIA_EXPANDED, ARIA_COLLAPSED);
             });
+
     infoButton.addAttachListener(event -> infoButton.getElement().executeJs(OUTSIDE_CLICK_SCRIPT));
   }
 }

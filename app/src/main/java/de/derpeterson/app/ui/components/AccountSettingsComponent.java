@@ -76,18 +76,21 @@ public class AccountSettingsComponent extends PortalPageComponent {
     }
 
     public QueryParameters queryParameters() {
-      QueryParameters query = QueryParameters.of(ACCOUNT_SECTION_PARAMETER, urlValue());
-      return this == SECURITY ? query.merging(ACCOUNT_TAB_PARAMETER, ACCOUNT_PORTAL_TAB) : query;
+      QueryParameters sectionQueryParameters =
+          QueryParameters.of(ACCOUNT_SECTION_PARAMETER, urlValue());
+      return this == SECURITY
+          ? sectionQueryParameters.merging(ACCOUNT_TAB_PARAMETER, ACCOUNT_PORTAL_TAB)
+          : sectionQueryParameters;
     }
   }
 
   private final transient MessageProperties messageProperties;
-  private final List<Runnable> localizedTextUpdates = new ArrayList<>();
+  private final List<Runnable> localizedTextRefreshActions = new ArrayList<>();
 
   // Seitenrahmen und Navigation
-  private final Span pageTitle = new Span();
-  private final Span pageDescription = new Span();
-  private final Div accountSectionContent = new Div();
+  private final Span accountPageTitleSpan = new Span();
+  private final Span accountPageDescriptionSpan = new Span();
+  private final Div accountSectionContentDiv = new Div();
   private final PageNavigationComponent accountNavigation = new PageNavigationComponent();
   private final Map<AccountSection, AccountPanelComponent> panelsBySection = new LinkedHashMap<>();
   private final Map<AccountSection, SideNavItem> navigationItemsBySection = new LinkedHashMap<>();
@@ -102,7 +105,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
   private final DatePicker birthDatePicker = new DatePicker();
   private final ComboBox<Locale> preferredLanguageSelector = new ComboBox<>();
   private final ComboBox<Gender> genderSelector = new ComboBox<>();
-  private final SerializableFunction<Changes, Profile> persistProfile;
+  private final SerializableFunction<Changes, Profile> persistProfileFunction;
   private Long profileVersion;
   private final List<SerializableConsumer<Profile>> profileSavedListeners = new ArrayList<>();
 
@@ -110,12 +113,12 @@ public class AccountSettingsComponent extends PortalPageComponent {
   private final TabSheet securityTabs = new TabSheet();
   private Tab portalAccessTab;
   private Tab providerAccessTab;
-  private final Div providerAccessContent = new Div();
-  private Div portalSecurityCards;
+  private final Div providerAccessContentDiv = new Div();
+  private Div portalSecurityCardsDiv;
   private final AccountEmailChangeDialog emailChangeDialog;
   private final AccountPasswordChangeDialog passwordChangeDialog;
   private ExternalConnectionsComponent externalLoginSettings;
-  private TwoFactorAccountComponent twoFactorAccount;
+  private TwoFactorAccountComponent twoFactorAccountComponent;
 
   // Kontoleiste und Sitzungen
   private final PortalSidebarComponent accountSidebar;
@@ -124,29 +127,31 @@ public class AccountSettingsComponent extends PortalPageComponent {
 
   public AccountSettingsComponent(
       MessageProperties messageProperties,
-      UserEntity user,
-      SerializableFunction<Changes, Profile> persistProfile,
+      UserEntity accountUser,
+      SerializableFunction<Changes, Profile> persistProfileFunction,
       int maxSessionsPerUser) {
     this.messageProperties = messageProperties;
     profileEmailField.setPattern(UserInputRules.EMAIL_REGEX);
     accountSessionsPanel = new AccountSessionsComponent(messageProperties, maxSessionsPerUser);
     emailChangeDialog = new AccountEmailChangeDialog(messageProperties);
     passwordChangeDialog = new AccountPasswordChangeDialog(messageProperties);
-    avatarDialog = new AccountAvatarDialog(messageProperties, user);
-    this.persistProfile = persistProfile;
-    this.profileVersion = user == null ? null : user.getVersion();
+    avatarDialog = new AccountAvatarDialog(messageProperties, accountUser);
+    this.persistProfileFunction = persistProfileFunction;
+    this.profileVersion = accountUser == null ? null : accountUser.getVersion();
 
-    Span breadcrumb = withTextOnRefresh(new Span(), messageProperties::getAccountSettingsOverview);
-    CosmosSectionHeaderComponent header =
-        new CosmosSectionHeaderComponent(breadcrumb, pageTitle, pageDescription);
-    localizedTextUpdates.add(this::refreshSectionHeading);
+    Span accountBreadcrumbSpan =
+        withTextOnRefresh(new Span(), messageProperties::getAccountSettingsOverview);
+    CosmosSectionHeaderComponent accountSectionHeader =
+        new CosmosSectionHeaderComponent(
+            accountBreadcrumbSpan, accountPageTitleSpan, accountPageDescriptionSpan);
+    localizedTextRefreshActions.add(this::refreshSectionHeading);
     accountNavigation.setId("account-navigation");
-    localizedTextUpdates.add(() ->
+    localizedTextRefreshActions.add(() ->
         accountNavigation
             .getElement()
             .setAttribute("aria-label", messageProperties.getAccountSettingsTitle()));
 
-    AccountPanelComponent profilePanel = createProfilePanel(user);
+    AccountPanelComponent profilePanel = createProfilePanel(accountUser);
     addSectionNavigation(
         AccountSection.PROFILE,
         AppIcon.USER.create(),
@@ -156,7 +161,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
         AccountSection.SECURITY,
         AppIcon.LOCK.create(),
         messageProperties::getAccountSettingsSecurityTab,
-        createSecurityPanel(user));
+        createSecurityPanel(accountUser));
     addSectionNavigation(
         AccountSection.SESSIONS,
         devicesIcon(),
@@ -165,9 +170,13 @@ public class AccountSettingsComponent extends PortalPageComponent {
 
     accountSidebar =
         new PortalSidebarComponent(
-            messageProperties, user, AppRoute.ACCOUNT, accountNavigation, avatarDialog::open);
-    accountSectionContent.add(panelsBySection.values().toArray(AccountPanelComponent[]::new));
-    setPortalContent(header, accountSidebar, accountSectionContent);
+            messageProperties,
+            accountUser,
+            AppRoute.ACCOUNT,
+            accountNavigation,
+            avatarDialog::open);
+    accountSectionContentDiv.add(panelsBySection.values().toArray(AccountPanelComponent[]::new));
+    setPortalContent(accountSectionHeader, accountSidebar, accountSectionContentDiv);
     add(emailChangeDialog, passwordChangeDialog, avatarDialog);
 
     refreshTexts();
@@ -175,27 +184,33 @@ public class AccountSettingsComponent extends PortalPageComponent {
   }
 
   /** Registriert den Text für den ersten Aufbau und spätere Sprachwechsel. */
-  private <T extends HasText> T withTextOnRefresh(T component, Supplier<String> localizedText) {
-    localizedTextUpdates.add(() -> component.setText(localizedText.get()));
-    return component;
+  private <T extends HasText> T withTextOnRefresh(
+      T translatedComponent, Supplier<String> localizedTextSupplier) {
+    localizedTextRefreshActions.add(() -> translatedComponent.setText(localizedTextSupplier.get()));
+    return translatedComponent;
   }
 
-  private Button actionButton(AppIcon icon, Supplier<String> label, boolean primary) {
-    Button button = withTextOnRefresh(new Button(), label);
-    button.setPrefixComponent(icon.create());
-    if (primary) {
-      button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+  private Button createAccountActionButton(
+      AppIcon actionAppIcon, Supplier<String> actionLabelSupplier, boolean primaryAction) {
+    Button accountActionButton = withTextOnRefresh(new Button(), actionLabelSupplier);
+    accountActionButton.setPrefixComponent(actionAppIcon.create());
+    if (primaryAction) {
+      accountActionButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     }
-    return button;
+
+    return accountActionButton;
   }
 
-  private Button emailChangeButton(String id) {
+  private Button createChangeEmailButton(String changeEmailButtonId) {
     Button changeEmailButton =
-        actionButton(AppIcon.EDIT, messageProperties::getAccountSettingsChangeAction, false);
-    changeEmailButton.setId(id);
-    localizedTextUpdates.add(
+        createAccountActionButton(
+            AppIcon.EDIT, messageProperties::getAccountSettingsChangeAction, false);
+    changeEmailButton.setId(changeEmailButtonId);
+
+    localizedTextRefreshActions.add(
         () -> changeEmailButton.setAriaLabel(messageProperties.getAccountSettingsChangeEmail()));
     changeEmailButton.addClickListener(event -> startEmailChange());
+
     return changeEmailButton;
   }
 
@@ -207,13 +222,16 @@ public class AccountSettingsComponent extends PortalPageComponent {
     }
   }
 
-  private Button passwordChangeButton() {
+  private Button createChangePasswordButton() {
     Button changePasswordButton =
-        actionButton(AppIcon.EDIT, messageProperties::getAccountSettingsChangeAction, false);
+        createAccountActionButton(
+            AppIcon.EDIT, messageProperties::getAccountSettingsChangeAction, false);
     changePasswordButton.setId("account-password-edit-security");
-    localizedTextUpdates.add(() ->
+
+    localizedTextRefreshActions.add(() ->
         changePasswordButton.setAriaLabel(messageProperties.getAccountSettingsChangePassword()));
     changePasswordButton.addClickListener(event -> startPasswordChange());
+
     return changePasswordButton;
   }
 
@@ -226,85 +244,103 @@ public class AccountSettingsComponent extends PortalPageComponent {
   }
 
   private AccountPanelComponent createAccountPanel(
-      String id,
-      AppIcon icon,
-      Supplier<String> title,
-      Supplier<String> description,
-      Supplier<String> meta) {
-    AccountPanelComponent panel = new AccountPanelComponent("account-panel-" + id, icon);
-    localizedTextUpdates.add(() -> panel.setHeading(title.get(), description.get(), meta.get()));
-    return panel;
+      String sectionId,
+      AppIcon panelAppIcon,
+      Supplier<String> panelTitleSupplier,
+      Supplier<String> panelDescriptionSupplier,
+      Supplier<String> panelMetadataSupplier) {
+    AccountPanelComponent accountPanel =
+        new AccountPanelComponent("account-panel-" + sectionId, panelAppIcon);
+
+    localizedTextRefreshActions.add(() ->
+        accountPanel.setHeading(
+            panelTitleSupplier.get(), panelDescriptionSupplier.get(), panelMetadataSupplier.get()));
+    return accountPanel;
   }
 
   private void addSectionNavigation(
-      AccountSection section,
-      Component symbol,
-      Supplier<String> label,
-      AccountPanelComponent panel) {
-    String id = section.urlValue();
-    symbol.getElement().setAttribute(ARIA_HIDDEN, "true");
-    SideNavItem item = new SideNavItem("", AppRoute.ACCOUNT.getSecurityRoute(), symbol);
-    item.setId("account-tab-" + id);
-    item.setQueryParameters(section.queryParameters());
-    localizedTextUpdates.add(() -> item.setLabel(label.get()));
-    item.getElement().setAttribute("aria-controls", "account-panel-" + id);
-    panel.getElement().setAttribute("role", "region");
-    panel.getElement().setAttribute("aria-labelledby", "account-tab-" + id);
-    panelsBySection.put(section, panel);
-    navigationItemsBySection.put(section, item);
+      AccountSection accountSection,
+      Component navigationIconComponent,
+      Supplier<String> sectionLabelSupplier,
+      AccountPanelComponent sectionPanel) {
+    String sectionId = accountSection.urlValue();
+    navigationIconComponent.getElement().setAttribute(ARIA_HIDDEN, "true");
+    SideNavItem sectionNavItem =
+        new SideNavItem("", AppRoute.ACCOUNT.getSecurityRoute(), navigationIconComponent);
+    sectionNavItem.setId("account-tab-" + sectionId);
+    sectionNavItem.setQueryParameters(accountSection.queryParameters());
+    localizedTextRefreshActions.add(() -> sectionNavItem.setLabel(sectionLabelSupplier.get()));
+
+    sectionNavItem.getElement().setAttribute("aria-controls", "account-panel-" + sectionId);
+    sectionPanel.getElement().setAttribute("role", "region");
+    sectionPanel.getElement().setAttribute("aria-labelledby", "account-tab-" + sectionId);
+
+    panelsBySection.put(accountSection, sectionPanel);
+    navigationItemsBySection.put(accountSection, sectionNavItem);
     accountNavigation.registerAction(
-        item,
-        () -> {
-          if (section == AccountSection.SECURITY && selectedSection == section) {
-            selectSecurityTab(ACCOUNT_PORTAL_TAB);
-            updateSecurityTabLocation();
-            closeNavigation();
-            return;
-          }
-          selectSection(section);
-          closeNavigation();
-          sectionChangeListeners.forEach(listener -> listener.accept(section));
-        });
-    accountNavigation.addItem(item);
+        sectionNavItem, () -> navigateToAccountSection(accountSection));
+    accountNavigation.addItem(sectionNavItem);
+  }
+
+  private void navigateToAccountSection(AccountSection accountSection) {
+    if (accountSection == AccountSection.SECURITY && selectedSection == accountSection) {
+      selectSecurityTab(ACCOUNT_PORTAL_TAB);
+      updateSecurityTabLocation();
+      closeNavigation();
+      return;
+    }
+
+    selectSection(accountSection);
+    closeNavigation();
+    sectionChangeListeners.forEach(
+        sectionChangeListener -> sectionChangeListener.accept(accountSection));
   }
 
   public AccountSection getSelectedSection() {
     return selectedSection;
   }
 
-  public void addSectionChangeListener(SerializableConsumer<AccountSection> listener) {
-    sectionChangeListeners.add(listener);
+  public void addSectionChangeListener(SerializableConsumer<AccountSection> sectionChangeListener) {
+    sectionChangeListeners.add(sectionChangeListener);
   }
 
-  public void selectSection(AccountSection section) {
+  public void selectSection(AccountSection accountSection) {
     // URL-Wiederherstellung darf keinen weiteren Historieneintrag auslösen.
-    selectedSection = Objects.requireNonNull(section);
-    navigationItemsBySection.forEach(
-        (value, item) -> PageNavigationComponent.setItemActive(item, value == section));
-    showSelectedPanel();
+    selectedSection = Objects.requireNonNull(accountSection);
+    navigationItemsBySection.forEach((itemSection, sectionNavItem) ->
+        PageNavigationComponent.setItemActive(sectionNavItem, itemSection == accountSection));
+
+    showSelectedAccountPanel();
+    if (getSelectedSection() == AccountSection.SESSIONS) {
+      accountSessionsPanel.reloadSessionSnapshot();
+    }
+
     refreshSectionHeading();
   }
 
-  public void selectSecurityTab(String tabParameter) {
+  public void selectSecurityTab(String securityTabParameter) {
     securityTabs.setSelectedTab(
-        ACCOUNT_PROVIDERS_TAB.equals(tabParameter) ? providerAccessTab : portalAccessTab);
+        ACCOUNT_PROVIDERS_TAB.equals(securityTabParameter) ? providerAccessTab : portalAccessTab);
   }
 
   private void updateSecurityTabLocation() {
     if (selectedSection != AccountSection.SECURITY) {
       return;
     }
-    String tab =
+
+    String securityTabValue =
         securityTabs.getSelectedTab() == providerAccessTab
             ? ACCOUNT_PROVIDERS_TAB
             : ACCOUNT_PORTAL_TAB;
-    QueryParameters query =
-        AccountSection.SECURITY.queryParameters().merging(ACCOUNT_TAB_PARAMETER, tab);
+    QueryParameters securityQueryParameters =
+        AccountSection.SECURITY.queryParameters().merging(ACCOUNT_TAB_PARAMETER, securityTabValue);
+
     getUI()
         .ifPresent(ui ->
             ui.getPage()
                 .getHistory()
-                .replaceState(null, new Location(AppRouteConstants.ACCOUNT_ROUTE, query)));
+                .replaceState(
+                    null, new Location(AppRouteConstants.ACCOUNT_ROUTE, securityQueryParameters)));
   }
 
   private void selectProvidersTabAndUpdateUrl() {
@@ -314,71 +350,72 @@ public class AccountSettingsComponent extends PortalPageComponent {
     }
   }
 
-  private void showSelectedPanel() {
-    panelsBySection.forEach((section, panel) -> panel.setVisible(section == selectedSection));
-    if (getSelectedSection() == AccountSection.SESSIONS) {
-      accountSessionsPanel.reloadSessionSnapshot();
-    }
+  private void showSelectedAccountPanel() {
+    panelsBySection.forEach(
+        (panelSection, sectionPanel) -> sectionPanel.setVisible(panelSection == selectedSection));
   }
 
   private void refreshSectionHeading() {
-    AccountSection selected = getSelectedSection();
-    pageTitle.setText(
-        switch (selected) {
+    AccountSection selectedAccountSection = getSelectedSection();
+    accountPageTitleSpan.setText(
+        switch (selectedAccountSection) {
           case PROFILE -> messageProperties.getAccountSettingsProfileTitle();
           case SECURITY -> messageProperties.getAccountSettingsSecurityTab();
           case SESSIONS -> messageProperties.getAccountSettingsSessionsTab();
         });
-    pageDescription.setText(
-        switch (selected) {
+    accountPageDescriptionSpan.setText(
+        switch (selectedAccountSection) {
           case PROFILE -> messageProperties.getAccountSettingsDescription();
           case SECURITY -> messageProperties.getAccountSettingsSecurityIntroduction();
           case SESSIONS -> messageProperties.getAccountSettingsSessionsIntroduction();
         });
   }
 
-  public void updateUnreadCount(long count) {
-    accountSidebar.updateUnreadCount(count);
+  public void updateUnreadCount(long unreadNotificationCount) {
+    accountSidebar.updateUnreadCount(unreadNotificationCount);
   }
 
-  private AccountPanelComponent createProfilePanel(UserEntity user) {
-    AccountPanelComponent panel =
+  private AccountPanelComponent createProfilePanel(UserEntity accountUser) {
+    AccountPanelComponent profilePanel =
         createAccountPanel(
             "profile",
             AppIcon.USER,
             messageProperties::getAccountSettingsProfileTitle,
             messageProperties::getAccountSettingsProfileDescription,
             () -> "");
-    panel.setIcon(AppIcon.USER.create());
+    profilePanel.setIcon(AppIcon.USER.create());
+
     configureProfileFields();
-    populateProfileFields(user);
-    registerProfileFieldTexts();
+    populateProfileFields(accountUser);
+    localizedTextRefreshActions.add(this::refreshProfileFieldTexts);
 
     styleChoices(genderSelector, this::genderLabel);
     styleChoices(preferredLanguageSelector, this::languageLabel);
 
-    Div profileEmailGroup = new Div(profileEmailField);
-    profileEmailGroup.addClassName("account-profile-email-group");
-    Span readOnly = withTextOnRefresh(new Span(), messageProperties::getAccountReadOnlyLabel);
-    readOnly.addClassName("account-readonly-label");
-    profileEmailGroup.add(readOnly);
-    Div profileForm =
+    Div profileEmailGroupDiv = new Div(profileEmailField);
+    profileEmailGroupDiv.addClassName("account-profile-email-group");
+    Span readOnlyEmailSpan =
+        withTextOnRefresh(new Span(), messageProperties::getAccountReadOnlyLabel);
+    readOnlyEmailSpan.addClassName("account-readonly-label");
+    profileEmailGroupDiv.add(readOnlyEmailSpan);
+
+    Div profileFormDiv =
         new Div(
             firstNameField,
             lastNameField,
-            profileEmailGroup,
+            profileEmailGroupDiv,
             genderSelector,
             birthDatePicker,
             preferredLanguageSelector);
-    profileForm.addClassName("account-profile-form");
-    panel.getBody().add(profileForm);
+    profileFormDiv.addClassName("account-profile-form");
+    profilePanel.getBody().add(profileFormDiv);
 
     Button saveProfileButton =
-        actionButton(AppIcon.CHECK, messageProperties::getAccountSettingsSave, true);
+        createAccountActionButton(AppIcon.CHECK, messageProperties::getAccountSettingsSave, true);
     saveProfileButton.setId("account-save");
     saveProfileButton.addClickListener(event -> saveProfile());
-    panel.addActionFooter(saveProfileButton);
-    return panel;
+    profilePanel.addActionFooter(saveProfileButton);
+    return profilePanel;
   }
 
   private void configureProfileFields() {
@@ -389,59 +426,69 @@ public class AccountSettingsComponent extends PortalPageComponent {
     birthDatePicker.setId("account-birth-date");
     preferredLanguageSelector.setId("account-language");
     genderSelector.setId("account-gender");
+
     genderSelector.setItems(Gender.values());
     genderSelector.setItemLabelGenerator(this::genderLabel);
     genderSelector.setClearButtonVisible(true);
+
     firstNameField.setRequiredIndicatorVisible(true);
     lastNameField.setRequiredIndicatorVisible(true);
     birthDatePicker.setClearButtonVisible(true);
     preferredLanguageSelector.setRequiredIndicatorVisible(true);
+
     profileEmailField.setReadOnly(true);
     profileEmailField.setSuffixComponent(AppIcon.LOCK.create());
+
     preferredLanguageSelector.setItems(Locale.GERMAN, Locale.ENGLISH);
     preferredLanguageSelector.setItemLabelGenerator(this::languageLabel);
     preferredLanguageSelector.setAllowCustomValue(false);
+
     birthDatePicker.setAutoOpen(false);
     CompactDateInput.configureDatePickerInput(birthDatePicker, messageProperties);
   }
 
-  private void populateProfileFields(UserEntity user) {
-    if (user != null) {
-      firstNameField.setValue(Objects.toString(user.getFirstName(), ""));
-      lastNameField.setValue(Objects.toString(user.getLastName(), ""));
-      profileEmailField.setValue(Objects.toString(user.getEmail(), ""));
-      genderSelector.setValue(user.getGender());
-      birthDatePicker.setValue(user.getBirthDate());
-      if (user.getPreferredLocale() != null) {
-        preferredLanguageSelector.setValue(
-            Locale.GERMAN.getLanguage().equals(user.getPreferredLocale().getLanguage())
-                ? Locale.GERMAN
-                : Locale.ENGLISH);
-      }
+  private void populateProfileFields(UserEntity accountUser) {
+    if (accountUser == null) {
+      return;
+    }
+
+    firstNameField.setValue(Objects.toString(accountUser.getFirstName(), ""));
+    lastNameField.setValue(Objects.toString(accountUser.getLastName(), ""));
+    profileEmailField.setValue(Objects.toString(accountUser.getEmail(), ""));
+    genderSelector.setValue(accountUser.getGender());
+    birthDatePicker.setValue(accountUser.getBirthDate());
+
+    if (accountUser.getPreferredLocale() != null) {
+      preferredLanguageSelector.setValue(
+          Locale.GERMAN.getLanguage().equals(accountUser.getPreferredLocale().getLanguage())
+              ? Locale.GERMAN
+              : Locale.ENGLISH);
     }
   }
 
-  private void registerProfileFieldTexts() {
-    localizedTextUpdates.add(() -> {
-      firstNameField.setLabel(messageProperties.getRegistrationFirstNameField());
-      firstNameField.setPlaceholder(messageProperties.getAccountFirstNamePlaceholder());
-      lastNameField.setLabel(messageProperties.getRegistrationLastNameField());
-      lastNameField.setPlaceholder(messageProperties.getAccountLastNamePlaceholder());
-      profileEmailField.setLabel(messageProperties.getAccountEmailAddressLabel());
-      profileEmailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
-      birthDatePicker.setLabel(messageProperties.getRegistrationBirthDateField());
-      birthDatePicker.setLocale(CustomI18NProvider.getCurrentLocale());
-      CompactDateInput.configureDatePickerInput(birthDatePicker, messageProperties);
-      birthDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
-      birthDatePicker.setHelperText(messageProperties.getAccountBirthDateFormatHint());
-      genderSelector.setLabel(messageProperties.getRegistrationGenderCombobox());
-      genderSelector.setPlaceholder(messageProperties.getAccountGenderPlaceholder());
-      genderSelector.setItemLabelGenerator(this::genderLabel);
-      preferredLanguageSelector.setLabel(messageProperties.getAccountSettingsLanguage());
-      preferredLanguageSelector.setHelperText(messageProperties.getAccountSettingsLanguageHint());
-      // Vaadin aktualisiert dabei auch die separat gehaltene Beschriftung der Auswahl.
-      preferredLanguageSelector.setItemLabelGenerator(this::languageLabel);
-    });
+  private void refreshProfileFieldTexts() {
+    firstNameField.setLabel(messageProperties.getRegistrationFirstNameField());
+    firstNameField.setPlaceholder(messageProperties.getAccountFirstNamePlaceholder());
+    lastNameField.setLabel(messageProperties.getRegistrationLastNameField());
+    lastNameField.setPlaceholder(messageProperties.getAccountLastNamePlaceholder());
+
+    profileEmailField.setLabel(messageProperties.getAccountEmailAddressLabel());
+    profileEmailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+
+    birthDatePicker.setLabel(messageProperties.getRegistrationBirthDateField());
+    birthDatePicker.setLocale(CustomI18NProvider.getCurrentLocale());
+    CompactDateInput.configureDatePickerInput(birthDatePicker, messageProperties);
+    birthDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
+    birthDatePicker.setHelperText(messageProperties.getAccountBirthDateFormatHint());
+
+    genderSelector.setLabel(messageProperties.getRegistrationGenderCombobox());
+    genderSelector.setPlaceholder(messageProperties.getAccountGenderPlaceholder());
+    genderSelector.setItemLabelGenerator(this::genderLabel);
+
+    preferredLanguageSelector.setLabel(messageProperties.getAccountSettingsLanguage());
+    preferredLanguageSelector.setHelperText(messageProperties.getAccountSettingsLanguageHint());
+    // Vaadin aktualisiert dabei auch die separat gehaltene Beschriftung der Auswahl.
+    preferredLanguageSelector.setItemLabelGenerator(this::languageLabel);
   }
 
   private void saveProfile() {
@@ -454,10 +501,11 @@ public class AccountSettingsComponent extends PortalPageComponent {
     if (!ValidationHelper.validateBirthDateBeforeInput(birthDatePicker, messageProperties)) {
       return;
     }
-    Profile saved;
+
+    Profile savedProfile;
     try {
-      saved =
-          persistProfile.apply(
+      savedProfile =
+          persistProfileFunction.apply(
               new Changes(
                   profileVersion,
                   firstNameField.getValue(),
@@ -483,14 +531,11 @@ public class AccountSettingsComponent extends PortalPageComponent {
               NotificationHelper.NotificationType.ERROR);
       return;
     }
-    profileVersion = saved.version();
-    firstNameField.setValue(saved.firstName());
-    lastNameField.setValue(saved.lastName());
-    birthDatePicker.setValue(saved.birthDate());
-    genderSelector.setValue(saved.gender());
-    preferredLanguageSelector.setValue(saved.language());
-    accountSidebar.refreshName(saved.firstName(), saved.lastName());
-    profileSavedListeners.forEach(listener -> listener.accept(saved));
+
+    applySavedProfile(savedProfile);
+    profileSavedListeners.forEach(
+        profileSavedListener -> profileSavedListener.accept(savedProfile));
+
     NotificationHelper.getInstance()
         .showNotification(
             messageProperties::getBaseSuccessTitle,
@@ -498,150 +543,189 @@ public class AccountSettingsComponent extends PortalPageComponent {
             NotificationHelper.NotificationType.SUCCESS);
   }
 
-  private Div actionRow(
-      AppIcon icon, Supplier<String> title, Supplier<String> description, Button action) {
-    Div symbol = new Div((icon == AppIcon.LOCK ? AppIcon.KEY : AppIcon.ENVELOPE).create());
-    symbol.addClassName(PANEL_ICON);
-    Span heading = withTextOnRefresh(new Span(), title);
-    heading.addClassName("account-entry-title");
-    Span detail = withTextOnRefresh(new Span(), description);
-    detail.addClassName("account-entry-description");
-    Div copy = new Div(heading, detail);
-    copy.addClassName("account-entry-copy");
-    Div row = new Div(symbol, copy, action);
-    row.addClassName("account-entry");
-    row.setClassName("account-email-security-entry", icon == AppIcon.ENVELOPE);
-    return row;
+  private void applySavedProfile(Profile savedProfile) {
+    profileVersion = savedProfile.version();
+    firstNameField.setValue(savedProfile.firstName());
+    lastNameField.setValue(savedProfile.lastName());
+    birthDatePicker.setValue(savedProfile.birthDate());
+    genderSelector.setValue(savedProfile.gender());
+    preferredLanguageSelector.setValue(savedProfile.language());
+    accountSidebar.refreshName(savedProfile.firstName(), savedProfile.lastName());
   }
 
-  private AccountPanelComponent createSecurityPanel(UserEntity user) {
-    AccountPanelComponent panel =
+  private Div createSecurityActionRow(
+      AppIcon rowAppIcon,
+      Supplier<String> rowTitleSupplier,
+      Supplier<String> rowDescriptionSupplier,
+      Button rowActionButton) {
+    Div rowIconDiv = new Div(rowAppIcon.create());
+    rowIconDiv.addClassName(PANEL_ICON);
+
+    Span rowTitleSpan = withTextOnRefresh(new Span(), rowTitleSupplier);
+    rowTitleSpan.addClassName("account-entry-title");
+    Span rowDescriptionSpan = withTextOnRefresh(new Span(), rowDescriptionSupplier);
+    rowDescriptionSpan.addClassName("account-entry-description");
+
+    Div rowContentDiv = new Div(rowTitleSpan, rowDescriptionSpan);
+    rowContentDiv.addClassName("account-entry-copy");
+
+    Div accountActionRowDiv = new Div(rowIconDiv, rowContentDiv, rowActionButton);
+    accountActionRowDiv.addClassName("account-entry");
+    accountActionRowDiv.setClassName(
+        "account-email-security-entry", rowAppIcon == AppIcon.ENVELOPE);
+
+    return accountActionRowDiv;
+  }
+
+  private AccountPanelComponent createSecurityPanel(UserEntity accountUser) {
+    AccountPanelComponent securityPanel =
         createAccountPanel(
             "security",
             AppIcon.LOCK,
             messageProperties::getAccountSettingsSecurityTitle,
             messageProperties::getAccountSettingsSecurityDescription,
             messageProperties::getAccountSettingsSecurityTab);
-    panel.setIcon(AppIcon.LOCK.create());
-    Div cards =
+    securityPanel.setIcon(AppIcon.LOCK.create());
+
+    Div portalAccessDiv = createPortalAccessContent(accountUser);
+    configureSecurityTabSheet(portalAccessDiv);
+    securityPanel.getBody().add(securityTabs);
+    return securityPanel;
+  }
+
+  private Div createPortalAccessContent(UserEntity accountUser) {
+    Div securityCardsDiv =
         new Div(
-            actionRow(
-                AppIcon.LOCK,
+            createSecurityActionRow(
+                AppIcon.KEY,
                 messageProperties::getRegistrationPasswordField,
                 messageProperties::getAccountSettingsPasswordHint,
-                passwordChangeButton()),
-            actionRow(
+                createChangePasswordButton()),
+            createSecurityActionRow(
                 AppIcon.ENVELOPE,
                 messageProperties::getAccountEmailAddressLabel,
-                () -> user == null ? "" : Objects.toString(user.getEmail(), ""),
-                emailChangeButton("account-email-edit-security")));
-    cards.addClassName("account-security-cards");
-    portalSecurityCards = cards;
-    Div hint =
+                () -> accountUser == null ? "" : Objects.toString(accountUser.getEmail(), ""),
+                createChangeEmailButton("account-email-edit-security")));
+    securityCardsDiv.addClassName("account-security-cards");
+    portalSecurityCardsDiv = securityCardsDiv;
+
+    Div securityHintDiv =
         new Div(
             AppIcon.INFO_CIRCLE.create(),
             withTextOnRefresh(new Span(), messageProperties::getAccountSettingsAccountHint));
-    hint.addClassNames("cosmos-panel-hint", "account-security-hint");
-    Div portalAccess = new Div(cards, hint);
-    portalAccess.setId("account-security-portal");
-    providerAccessContent.setId("account-security-providers");
-    Span unavailable =
+    securityHintDiv.addClassNames("cosmos-panel-hint", "account-security-hint");
+
+    Div portalAccessDiv = new Div(securityCardsDiv, securityHintDiv);
+    portalAccessDiv.setId("account-security-portal");
+    return portalAccessDiv;
+  }
+
+  private void configureSecurityTabSheet(Div portalAccessDiv) {
+    providerAccessContentDiv.setId("account-security-providers");
+    Span providerUnavailableSpan =
         withTextOnRefresh(new Span(), messageProperties::getAccountSecurityNoProviders);
-    unavailable.addClassNames("cosmos-panel-description", "account-security-empty");
-    providerAccessContent.add(unavailable);
-    Image logo = new Image("icons/service-logo.svg", "");
-    logo.getElement().setAttribute(ARIA_HIDDEN, "true");
+    providerUnavailableSpan.addClassNames("cosmos-panel-description", "account-security-empty");
+    providerAccessContentDiv.add(providerUnavailableSpan);
+
+    Image portalLogoImage = new Image("icons/service-logo.svg", "");
+    portalLogoImage.getElement().setAttribute(ARIA_HIDDEN, "true");
     portalAccessTab =
         new Tab(
-            logo, withTextOnRefresh(new Span(), messageProperties::getAccountSecurityPortalAccess));
+            portalLogoImage,
+            withTextOnRefresh(new Span(), messageProperties::getAccountSecurityPortalAccess));
     portalAccessTab.setId("account-security-tab-portal");
     providerAccessTab =
         new Tab(
             AppIcon.CLOUD_LOCK.create(),
             withTextOnRefresh(new Span(), messageProperties::getProviderSettingsPanelTitle));
     providerAccessTab.setId("account-security-tab-providers");
+
     securityTabs.setId("account-security-tabs");
     securityTabs.setWidthFull();
     securityTabs.addThemeVariants(TabSheetVariant.NO_PADDING);
-    securityTabs.add(portalAccessTab, portalAccess);
-    securityTabs.add(providerAccessTab, providerAccessContent);
+    securityTabs.add(portalAccessTab, portalAccessDiv);
+    securityTabs.add(providerAccessTab, providerAccessContentDiv);
     securityTabs.addSelectedChangeListener(event -> {
       if (event.isFromClient()) {
         updateSecurityTabLocation();
       }
     });
-    panel.getBody().add(securityTabs);
-    return panel;
   }
 
   private SvgIcon devicesIcon() {
-    SvgIcon devices = AppIcon.DEVICES.create();
-    devices.addClassName("account-devices-icon");
-    devices.getElement().setAttribute(ARIA_HIDDEN, "true");
-    return devices;
+    SvgIcon devicesSvgIcon = AppIcon.DEVICES.create();
+    devicesSvgIcon.addClassName("account-devices-icon");
+    devicesSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
+    return devicesSvgIcon;
   }
 
   public void configureSessionActions(
-      SerializableSupplier<Snapshot> loader,
-      SerializableConsumer<String> revoke,
-      SerializableRunnable revokeOthers) {
-    accountSessionsPanel.configure(loader, revoke, revokeOthers);
+      SerializableSupplier<Snapshot> sessionSnapshotSupplier,
+      SerializableConsumer<String> revokeSessionAction,
+      SerializableRunnable revokeOtherSessionsAction) {
+    accountSessionsPanel.configure(
+        sessionSnapshotSupplier, revokeSessionAction, revokeOtherSessionsAction);
     accountSessionsPanel.refreshTexts();
   }
 
-  public void configureTwoFactor(TwoFactorAccountComponent component) {
-    twoFactorAccount = component;
-    portalSecurityCards.add(component);
+  public void configureTwoFactor(TwoFactorAccountComponent accountTwoFactorComponent) {
+    twoFactorAccountComponent = accountTwoFactorComponent;
+    portalSecurityCardsDiv.add(accountTwoFactorComponent);
   }
 
   public void configureSecurityActions(
-      SerializableFunction<PasswordChange, PasswordChanged> passwordAction,
-      SerializableConsumer<EmailChange> emailAction) {
-    passwordChangeDialog.setChangeAction(change -> {
-      PasswordChanged changed = passwordAction.apply(change);
+      SerializableFunction<PasswordChange, PasswordChanged> changePasswordFunction,
+      SerializableConsumer<EmailChange> requestEmailChangeAction) {
+    passwordChangeDialog.setChangeAction(passwordChange -> {
+      PasswordChanged passwordChangeResult = changePasswordFunction.apply(passwordChange);
+
       // Nur den eigenen unveränderten Profilstand fortschreiben; fremde Änderungen bleiben
       // Konflikte.
-      if (Objects.equals(profileVersion, changed.previousVersion())) {
-        profileVersion = changed.version();
+      if (Objects.equals(profileVersion, passwordChangeResult.previousVersion())) {
+        profileVersion = passwordChangeResult.version();
       }
+
       if (externalLoginSettings != null) {
         externalLoginSettings.refreshAccount();
       }
-      return changed;
+      return passwordChangeResult;
     });
-    emailChangeDialog.setRequestAction(emailAction);
+    emailChangeDialog.setRequestAction(requestEmailChangeAction);
   }
 
-  public void addProfileSavedListener(SerializableConsumer<Profile> listener) {
-    profileSavedListeners.add(listener);
+  public void addProfileSavedListener(SerializableConsumer<Profile> profileSavedListener) {
+    profileSavedListeners.add(profileSavedListener);
   }
 
-  public void configureAvatars(UserAvatarService avatars, HttpServletRequest request) {
-    accountSidebar.configureAvatars(avatars);
-    avatarDialog.configure(avatars, request);
+  public void configureAvatars(
+      UserAvatarService userAvatarService, HttpServletRequest httpServletRequest) {
+    accountSidebar.configureAvatars(userAvatarService);
+    avatarDialog.configure(userAvatarService, httpServletRequest);
   }
 
-  public void configureStatusSelection(Select<UserStatus> selection) {
-    accountSidebar.configureStatusSelection(selection);
+  public void configureStatusSelection(Select<UserStatus> userStatusSelect) {
+    accountSidebar.configureStatusSelection(userStatusSelect);
   }
 
-  public void refreshSummaryName(String first, String last) {
-    accountSidebar.refreshName(first, last);
+  public void refreshSummaryName(String firstName, String lastName) {
+    accountSidebar.refreshName(firstName, lastName);
   }
 
   public void updateUserStatus(UserStatus status) {
     accountSidebar.updateStatus(status);
   }
 
-  private <T> void styleChoices(ComboBox<T> field, SerializableFunction<T, String> label) {
-    PortalFields.styleChoice(field, label, true);
+  private <T> void styleChoices(
+      ComboBox<T> profileChoiceComboBox, SerializableFunction<T, String> choiceLabelFunction) {
+    PortalFields.styleChoice(profileChoiceComboBox, choiceLabelFunction, true);
   }
 
-  private String genderLabel(Gender value) {
-    if (value == null) {
+  private String genderLabel(Gender gender) {
+    if (gender == null) {
       return "";
     }
-    return switch (value) {
+
+    return switch (gender) {
       case MALE -> messageProperties.getGenderMale();
       case FEMALE -> messageProperties.getGenderFemale();
       case OTHER -> messageProperties.getGenderOther();
@@ -653,33 +737,40 @@ public class AccountSettingsComponent extends PortalPageComponent {
   }
 
   public void refreshTexts() {
-    localizedTextUpdates.forEach(Runnable::run);
+    localizedTextRefreshActions.forEach(Runnable::run);
+
     genderSelector.getDataProvider().refreshAll();
     preferredLanguageSelector.getDataProvider().refreshAll();
+
     emailChangeDialog.refreshTexts();
     passwordChangeDialog.refreshTexts();
     avatarDialog.refreshTexts();
+
     accountSidebar.refreshTexts();
     accountSessionsPanel.refreshTexts();
-    if (twoFactorAccount != null) {
-      twoFactorAccount.refreshTwoFactorAccountSection();
+    if (twoFactorAccountComponent != null) {
+      twoFactorAccountComponent.refreshTwoFactorAccountSection();
     }
   }
 
   public void configureExternalLogins(
-      ExternalConnectionsComponent connections,
+      ExternalConnectionsComponent externalConnectionsComponent,
       BooleanSupplier passwordChangeRequiresCurrentPassword,
       BooleanSupplier emailChangeRequiresCurrentPassword) {
     passwordChangeDialog.setCurrentPasswordRequired(passwordChangeRequiresCurrentPassword);
     emailChangeDialog.setCurrentPasswordRequired(emailChangeRequiresCurrentPassword);
-    externalLoginSettings = connections;
-    passwordChangeDialog.setDevelopmentWarning(connections::developmentExceptionActive);
-    emailChangeDialog.setDevelopmentWarning(connections::developmentExceptionActive);
+    externalLoginSettings = externalConnectionsComponent;
+    passwordChangeDialog.setDevelopmentWarning(
+        externalConnectionsComponent::developmentExceptionActive);
+    emailChangeDialog.setDevelopmentWarning(
+        externalConnectionsComponent::developmentExceptionActive);
+
     // Der Bestätigungsdialog muss auch vom Portal-Tab aus bedienbar bleiben.
-    add(connections.getConfirmationDialog());
-    connections.configureAccountActions(
+    add(externalConnectionsComponent.getConfirmationDialog());
+    externalConnectionsComponent.configureAccountActions(
         passwordChangeDialog::open, emailChangeDialog::open, this::selectProvidersTabAndUpdateUrl);
-    providerAccessContent.removeAll();
-    providerAccessContent.add(connections);
+
+    providerAccessContentDiv.removeAll();
+    providerAccessContentDiv.add(externalConnectionsComponent);
   }
 }

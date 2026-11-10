@@ -19,7 +19,9 @@ public class CosmosCopyrightComponent extends Span {
   public CosmosCopyrightComponent(
       ConfigService config, Clock clock, Supplier<String> localizedDefaultTemplate) {
     addClassName("cosmos-footer");
+
     String serviceName = config.getString(ConfigEntry.SERVICE_NAME);
+
     String template = config.getString(ConfigEntry.COPYRIGHT_TEXT);
     Runnable updateCopyright =
         () -> {
@@ -31,22 +33,18 @@ public class CosmosCopyrightComponent extends Span {
         };
     updateCopyright.run();
     if (localizedDefaultTemplate != null) {
-      addAttachListener(
-          event -> {
-            updateCopyright.run();
-            languageRegistration =
-                ComponentUtil.addListener(
-                    event.getUI(),
-                    LanguageChangeEvent.class,
-                    languageEvent -> updateCopyright.run());
-          });
-      addDetachListener(
-          event -> {
-            if (languageRegistration != null) {
-              languageRegistration.remove();
-              languageRegistration = null;
-            }
-          });
+      addAttachListener(event -> {
+        updateCopyright.run();
+        languageRegistration =
+            ComponentUtil.addListener(
+                event.getUI(), LanguageChangeEvent.class, languageEvent -> updateCopyright.run());
+      });
+      addDetachListener(event -> {
+        if (languageRegistration != null) {
+          languageRegistration.remove();
+          languageRegistration = null;
+        }
+      });
     }
   }
 }

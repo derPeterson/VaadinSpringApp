@@ -70,9 +70,9 @@ public class PortalConfirmationDialog extends Dialog {
   private transient Prompt prompt;
   private SerializableRunnable pendingConfirmationAction;
 
-  public PortalConfirmationDialog(MessageProperties messageProperties, String id) {
+  public PortalConfirmationDialog(MessageProperties messageProperties, String dialogId) {
     this.messageProperties = messageProperties;
-    setId(id);
+    setId(dialogId);
     addClassNames("cosmos-theme", REFERENCE_OVERLAY, "portal-confirmation-dialog");
     getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
     setModality(ModalityMode.STRICT);
@@ -81,32 +81,37 @@ public class PortalConfirmationDialog extends Dialog {
     dialogTitle.addClassName(PANEL_TITLE);
     dialogDescription.addClassName(PANEL_DESCRIPTION);
     dialogIconContainer.addClassName(PANEL_ICON);
-    Div titles = new Div(dialogTitle, dialogDescription);
-    titles.addClassName(PANEL_HEADING);
+
+    Div dialogTitlesDiv = new Div(dialogTitle, dialogDescription);
+    dialogTitlesDiv.addClassName(PANEL_HEADING);
     closeDialogButton.addClassName("cosmos-overlay-close");
     closeDialogButton.addClickListener(event -> close());
-    Div header = new Div(dialogIconContainer, titles, closeDialogButton);
-    header.addClassName("account-change-dialog-header");
-    getHeader().add(header);
+
+    Div dialogHeaderDiv = new Div(dialogIconContainer, dialogTitlesDiv, closeDialogButton);
+    dialogHeaderDiv.addClassName("account-change-dialog-header");
+    getHeader().add(dialogHeaderDiv);
     confirmationQuestion.addClassName("portal-confirm-question");
     confirmationExplanation.addClassName("portal-confirm-explanation");
-    Div lead = new Div(confirmationQuestion, confirmationExplanation);
-    lead.addClassName("portal-confirm-lead");
+
+    Div confirmationLeadDiv = new Div(confirmationQuestion, confirmationExplanation);
+    confirmationLeadDiv.addClassName("portal-confirm-lead");
     confirmationContext.addClassName("portal-confirm-context");
     confirmationNotice.add(AppIcon.INFO_CIRCLE.create(), confirmationHint);
     confirmationNotice.addClassName("cosmos-panel-hint");
-    Div body = new Div(lead, confirmationContext, confirmationNotice);
-    body.addClassName("portal-confirm-body");
-    add(body);
-    cancelButton.setId(id + "-cancel");
+
+    Div confirmationBodyDiv = new Div(confirmationLeadDiv, confirmationContext, confirmationNotice);
+    confirmationBodyDiv.addClassName("portal-confirm-body");
+    add(confirmationBodyDiv);
+    cancelButton.setId(dialogId + "-cancel");
     cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
     cancelButton.addClickListener(event -> close());
-    confirmButton.setId(id + "-submit");
-    confirmButton.addClickListener(event -> confirmPending());
-    Div actions = new Div(cancelButton, confirmButton);
-    actions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(actions);
-    getFooter().add(actions);
+    confirmButton.setId(dialogId + "-submit");
+    confirmButton.addClickListener(event -> runPendingConfirmationAction());
+
+    Div confirmationActionsDiv = new Div(cancelButton, confirmButton);
+    confirmationActionsDiv.addClassName("cosmos-dialog-actions");
+    EqualButtonWidths.configureEqualButtonWidths(confirmationActionsDiv);
+    getFooter().add(confirmationActionsDiv);
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {
         pendingConfirmationAction = null;
@@ -116,9 +121,9 @@ public class PortalConfirmationDialog extends Dialog {
     });
   }
 
-  public void open(Prompt prompt, SerializableRunnable action) {
+  public void open(Prompt prompt, SerializableRunnable confirmationAction) {
     this.prompt = Objects.requireNonNull(prompt);
-    pendingConfirmationAction = Objects.requireNonNull(action);
+    pendingConfirmationAction = Objects.requireNonNull(confirmationAction);
     setClassName("portal-confirm-destructive", prompt.destructive());
     confirmButton.setClassName(DELETE_BUTTON, prompt.destructive());
     confirmButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -129,19 +134,22 @@ public class PortalConfirmationDialog extends Dialog {
     dialogIconContainer.add(prompt.actionIcon().get());
     confirmButton.setPrefixComponent(prompt.actionIcon().get());
     confirmButton.setEnabled(true);
+
     refreshTexts();
     super.open();
   }
 
-  private void confirmPending() {
-    SerializableRunnable action = pendingConfirmationAction;
-    if (action == null) {
+  private void runPendingConfirmationAction() {
+    SerializableRunnable confirmationAction = pendingConfirmationAction;
+    if (confirmationAction == null) {
       return;
     }
+
     pendingConfirmationAction = null;
     confirmButton.setEnabled(false);
+
     try {
-      action.run();
+      confirmationAction.run();
     } finally {
       close();
       confirmButton.setEnabled(true);

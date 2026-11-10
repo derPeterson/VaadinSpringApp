@@ -19,46 +19,54 @@ import java.util.List;
 
 /** Rechte, modal überlagerte Seitenleiste; native Fokus- und Escape-Bedienung bleibt erhalten. */
 public class AdminSidePanel extends Dialog {
-  private final H2 panelTitle = new H2();
-  private final Span panelDescription = new Span();
+  private final H2 panelTitleHeading = new H2();
+  private final Span panelDescriptionSpan = new Span();
   private final Button closePanelButton = new Button(AppIcon.CLOSE_CIRCLE.create());
 
-  public AdminSidePanel(MessageProperties messageProperties, AppIcon icon) {
+  public AdminSidePanel(MessageProperties messageProperties, AppIcon panelAppIcon) {
     addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-drawer");
     getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
-    panelTitle.addClassName(PANEL_TITLE);
-    panelDescription.addClassName(PANEL_DESCRIPTION);
-    panelDescription.setVisible(false);
-    Div heading = new Div(panelTitle, panelDescription);
-    heading.addClassName(PANEL_HEADING);
-    Div symbol = new Div(icon.create());
-    symbol.addClassName(PANEL_ICON);
+
+    panelTitleHeading.addClassName(PANEL_TITLE);
+    panelDescriptionSpan.addClassName(PANEL_DESCRIPTION);
+    panelDescriptionSpan.setVisible(false);
+    Div panelHeadingDiv = new Div(panelTitleHeading, panelDescriptionSpan);
+    panelHeadingDiv.addClassName(PANEL_HEADING);
+
+    Div panelIconDiv = new Div(panelAppIcon.create());
+    panelIconDiv.addClassName(PANEL_ICON);
+
     closePanelButton.addClassName("cosmos-overlay-close");
     closePanelButton.addClickListener(event -> close());
-    Div header = new Div(symbol, heading, closePanelButton);
-    header.addClassName("admin-reference-drawer-heading");
-    getHeader().add(header);
+
+    Div panelHeaderDiv = new Div(panelIconDiv, panelHeadingDiv, closePanelButton);
+    panelHeaderDiv.addClassName("admin-reference-drawer-heading");
+    getHeader().add(panelHeaderDiv);
+
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
     addOpenedChangeListener(event -> updateBounds());
     refreshCloseText(messageProperties);
   }
 
-  public void setHeading(String text) {
-    panelTitle.setText(text);
+  public void setHeading(String panelTitleText) {
+    panelTitleHeading.setText(panelTitleText);
   }
 
-  public void setDescription(String text) {
-    panelDescription.setText(text);
-    panelDescription.setVisible(!text.isBlank());
+  public void setDescription(String panelDescriptionText) {
+    panelDescriptionSpan.setText(panelDescriptionText);
+    panelDescriptionSpan.setVisible(!panelDescriptionText.isBlank());
   }
 
-  public void addEffectiveUse(MessageProperties messageProperties, List<String> notes) {
-    UnorderedList list = new UnorderedList();
-    notes.forEach(note -> list.add(new ListItem(note)));
-    Div section = new Div(new H4(messageProperties.getAdminConfigEffectiveTitle()), list);
-    section.addClassNames("admin-help-rules", "admin-help-effective-use");
-    add(section);
+  public void addEffectiveUse(MessageProperties messageProperties, List<String> effectiveUseNotes) {
+    UnorderedList effectiveUseList = new UnorderedList();
+    effectiveUseNotes.forEach(
+        effectiveUseNote -> effectiveUseList.add(new ListItem(effectiveUseNote)));
+
+    Div effectiveUseDiv =
+        new Div(new H4(messageProperties.getAdminConfigEffectiveTitle()), effectiveUseList);
+    effectiveUseDiv.addClassNames("admin-help-rules", "admin-help-effective-use");
+    add(effectiveUseDiv);
   }
 
   /** Bindet die Leiste an den Seiteninhalt und hält sichtbaren Kopf/Copyrightbereich frei. */

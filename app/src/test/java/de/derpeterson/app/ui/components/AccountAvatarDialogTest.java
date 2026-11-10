@@ -171,7 +171,7 @@ class AccountAvatarDialogTest {
 
     ReflectionTestUtils.invokeMethod(
         accountAvatarDialog,
-        "save",
+        "saveAvatarCrop",
         new ObjectMapper().readTree("{\"local\":false,\"zoom\":1,\"x\":0,\"y\":0}"));
 
     ArgumentCaptor<Change> change = ArgumentCaptor.forClass(Change.class);
@@ -311,7 +311,7 @@ class AccountAvatarDialogTest {
     JsonNode json =
         new ObjectMapper()
             .readTree("{\"local\":false,\"loading\":false,\"zoom\":1,\"x\":0,\"y\":0}");
-    ReflectionTestUtils.invokeMethod(accountAvatarDialog, "save", json);
+    ReflectionTestUtils.invokeMethod(accountAvatarDialog, "saveAvatarCrop", json);
     ArgumentCaptor<Change> captor = ArgumentCaptor.forClass(UserAvatarService.Change.class);
     verify(userAvatarService).save(any(), captor.capture());
     assertEquals(AvatarMode.INITIALS, captor.getValue().mode());

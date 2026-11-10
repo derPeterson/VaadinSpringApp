@@ -595,6 +595,17 @@ angepassten Aufrufstelle bleibt bis zu ihrer eigenen Prüfung offen. Bei
 Umbenennungen auch vorhandene Tests prüfen, die Bezeichner als Zeichenketten
 referenzieren, und ihre bisherigen Erwartungen erhalten.
 
+Bei mehreren Klassen den Arbeitsstand pro Klasse erst nach einem Durchgang durch
+den vollständigen neuen Code abhaken. Der Diff allein reicht dafür nicht. Auch
+Methoden ohne Änderung und kurze Methoden mit mehreren Anweisungen lesen. Pro
+Ablauf unterscheiden, welche Anweisungen vorbereiten, ausführen, sichtbaren
+Zustand ändern oder andere Teile benachrichtigen. Dabei auch Namen und Aufrufer
+prüfen, wenn ein Methodenaufruf neben dem sichtbaren Ergebnis weitere Arbeit
+auslöst. Zum Beispiel kann eine Methode beim Anzeigen eines Panels auch Sitzungen
+laden. Der Aufruf soll beides erkennen lassen. Solche Befunde im laufenden
+Lesbarkeitsauftrag direkt bearbeiten, sofern sich die Reihenfolge und das Verhalten
+erhalten lassen.
+
 ### Klammern und Kontrollfluss
 
 `if`, `else`, `for`, erweitertes `for`, `while` und `do/while` haben auch bei einer

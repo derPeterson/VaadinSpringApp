@@ -113,13 +113,15 @@ public class OverlayUserIcon extends Div {
     });
   }
 
-  public void setIdentity(UserEntity user) {
-    userId = user == null ? null : user.getId();
-    setName(user == null ? null : user.getFirstName(), user == null ? null : user.getLastName());
+  public void setIdentity(UserEntity avatarUserEntity) {
+    userId = avatarUserEntity == null ? null : avatarUserEntity.getId();
+    setName(
+        avatarUserEntity == null ? null : avatarUserEntity.getFirstName(),
+        avatarUserEntity == null ? null : avatarUserEntity.getLastName());
   }
 
-  public void showIdentityTooltip(String email) {
-    identityTooltipEmail = Objects.requireNonNull(email);
+  public void showIdentityTooltip(String identityEmailAddress) {
+    identityTooltipEmail = Objects.requireNonNull(identityEmailAddress);
     avatarIdentityTooltip.withPosition(Tooltip.TooltipPosition.TOP);
     getElement().setAttribute("tabindex", "0");
     refreshTexts();
@@ -141,21 +143,23 @@ public class OverlayUserIcon extends Div {
     return initial(firstName) + initial(lastName);
   }
 
-  private static String initial(String value) {
-    String avatarDisplayName = Objects.toString(value, "").strip();
+  private static String initial(String nameText) {
+    String avatarDisplayName = Objects.toString(nameText, "").strip();
     if (avatarDisplayName.isEmpty()) {
       return "";
     }
     BreakIterator characters = BreakIterator.getCharacterInstance(Locale.ROOT);
     characters.setText(avatarDisplayName);
-    String upper = avatarDisplayName.substring(0, characters.next()).toUpperCase(Locale.ROOT);
+
+    String uppercaseName =
+        avatarDisplayName.substring(0, characters.next()).toUpperCase(Locale.ROOT);
     // Auch bei Großschreibung mit mehreren Zeichen (z.B. ß → SS) nur ein Initial anzeigen.
-    characters.setText(upper);
-    return upper.substring(0, characters.next());
+    characters.setText(uppercaseName);
+    return uppercaseName.substring(0, characters.next());
   }
 
-  public void setUserStatus(UserStatus value) {
-    userStatus = value == null ? UserStatus.getDefaultStatus() : value;
+  public void setUserStatus(UserStatus newUserStatus) {
+    userStatus = newUserStatus == null ? UserStatus.getDefaultStatus() : newUserStatus;
     getElement().setAttribute("data-status", userStatus.name().toLowerCase(Locale.ROOT));
     statusIndicatorContainer.removeAll();
     if (showStatus) {
@@ -167,6 +171,7 @@ public class OverlayUserIcon extends Div {
               "--cosmos-avatar-status-shadow",
               "var(--cosmos-avatar-" + userStatus.name().toLowerCase(Locale.ROOT) + "-shadow)");
     }
+
     if (statusSelection != null) {
       statusSelection.setValue(userStatus);
     }
@@ -187,29 +192,33 @@ public class OverlayUserIcon extends Div {
     refreshTexts();
   }
 
-  public void configureAvatar(UserAvatarService service, UserAvatarService.State metadata) {
-    userAvatarService = service;
-    applyState(metadata == null ? service.state(userId) : metadata);
+  public void configureAvatar(
+      UserAvatarService avatarService, UserAvatarService.State avatarState) {
+    userAvatarService = avatarService;
+    applyAvatarImageState(avatarState == null ? avatarService.state(userId) : avatarState);
     listenProfiles();
   }
 
-  private void applyState(UserAvatarService.State metadata) {
-    if (metadata == null) {
-      metadata = UserAvatarService.State.initial();
+  private void applyAvatarImageState(UserAvatarService.State avatarState) {
+    if (avatarState == null) {
+      avatarState = UserAvatarService.State.initial();
     }
-    boolean custom = metadata.mode() == AvatarMode.CUSTOM && metadata.hasImage();
-    if (custom && !Objects.equals(displayedRevision, metadata.imageRevision())) {
+
+    boolean hasCustomAvatarImage =
+        avatarState.mode() == AvatarMode.CUSTOM && avatarState.hasImage();
+    if (hasCustomAvatarImage && !Objects.equals(displayedRevision, avatarState.imageRevision())) {
       avatarPhotoImage.setSrc(
           AvatarImageResource.createAvatarImageDownloadHandler(
-              userAvatarService, userId, metadata.imageRevision(), false));
-      displayedRevision = metadata.imageRevision();
+              userAvatarService, userId, avatarState.imageRevision(), false));
+      displayedRevision = avatarState.imageRevision();
     }
-    if (!custom) {
+    if (!hasCustomAvatarImage) {
       displayedRevision = null;
       avatarPhotoImage.getElement().removeAttribute("src");
     }
-    avatarPhotoImage.setVisible(custom);
-    avatarInitialsLabel.setVisible(!custom);
+
+    avatarPhotoImage.setVisible(hasCustomAvatarImage);
+    avatarInitialsLabel.setVisible(!hasCustomAvatarImage);
   }
 
   private void listenProfiles() {
@@ -232,7 +241,7 @@ public class OverlayUserIcon extends Div {
                   return;
                 }
                 setName(message.firstName(), message.lastName());
-                applyState(userAvatarService.state(userId));
+                applyAvatarImageState(userAvatarService.state(userId));
               });
             });
   }
@@ -241,12 +250,16 @@ public class OverlayUserIcon extends Div {
     String statusLabel =
         messageProperties.getUserStatusLabel(
             userStatus == null ? UserStatus.getDefaultStatus() : userStatus);
-    String label = avatarDisplayName.isEmpty() ? AppConstants.USER_ICON_ALT : avatarDisplayName;
+    String avatarLabelText =
+        avatarDisplayName.isEmpty() ? AppConstants.USER_ICON_ALT : avatarDisplayName;
     getElement()
         .setAttribute(
             "aria-label",
-            showStatus && !avatarDisplayName.isEmpty() ? label + " – " + statusLabel : label);
+            showStatus && !avatarDisplayName.isEmpty()
+                ? avatarLabelText + " – " + statusLabel
+                : avatarLabelText);
     avatarIdentityTooltip.setManual(statusSelection != null);
+
     String tooltipText = "";
     if (statusSelection == null) {
       if (identityTooltipEmail != null) {
@@ -255,10 +268,11 @@ public class OverlayUserIcon extends Div {
                 ? identityTooltipEmail
                 : avatarDisplayName + "\n" + identityTooltipEmail;
       } else {
-        tooltipText = showStatus ? statusLabel : label;
+        tooltipText = showStatus ? statusLabel : avatarLabelText;
       }
     }
     avatarIdentityTooltip.setText(tooltipText);
+
     if (statusSelection != null) {
       avatarIdentityTooltip.setOpened(false);
       statusSelection.setAriaLabel(messageProperties.getAdminUsersGridStatus());

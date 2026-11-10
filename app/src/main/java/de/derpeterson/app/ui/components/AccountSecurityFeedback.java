@@ -61,6 +61,7 @@ final class AccountSecurityFeedback {
             feedbackTextSupplier,
             -1,
             NotificationHelper.NotificationType.ERROR);
+
     return rejectedField;
   }
 }

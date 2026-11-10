@@ -120,12 +120,12 @@ public abstract class UserActivityAwareView extends AppLayout {
   private void registerUserStatusBroadcaster() {
     userStatusBroadcasterRegistration =
         userStatusBroadcaster.register(userStatusMessage -> {
-          Optional<UserEntity> currentUserOpt = getTrackedCurrentUser();
-          if (currentUserOpt.isEmpty()) {
+          Optional<UserEntity> trackedUserOptional = getTrackedCurrentUser();
+          if (trackedUserOptional.isEmpty()) {
             return;
           }
 
-          UserEntity currentUser = currentUserOpt.get();
+          UserEntity currentUser = trackedUserOptional.get();
           if (!userStatusMessage.userId().equals(currentUser.getId())) {
             return;
           }
@@ -156,8 +156,8 @@ public abstract class UserActivityAwareView extends AppLayout {
       return;
     }
 
-    Optional<UserEntity> currentUserOpt = securityService.getCurrentUser();
-    currentUserOpt.ifPresent(trackedUserEntity -> {
+    Optional<UserEntity> trackedUserOptional = securityService.getCurrentUser();
+    trackedUserOptional.ifPresent(trackedUserEntity -> {
       userService.updateLastActivity(trackedUserEntity.getId());
     });
   }

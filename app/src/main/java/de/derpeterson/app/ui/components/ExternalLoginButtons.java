@@ -27,45 +27,55 @@ public final class ExternalLoginButtons extends Div {
   }
 
   public ExternalLoginButtons(
-      ExternalLoginFlow flow,
-      HttpServletRequest request,
+      ExternalLoginFlow externalLoginFlow,
+      HttpServletRequest httpServletRequest,
       MessageProperties messageProperties,
-      BooleanSupplier remember) {
-    this(flow, request, messageProperties, remember, Presentation.INLINE);
+      BooleanSupplier rememberLoginSupplier) {
+    this(
+        externalLoginFlow,
+        httpServletRequest,
+        messageProperties,
+        rememberLoginSupplier,
+        Presentation.INLINE);
   }
 
   public ExternalLoginButtons(
-      ExternalLoginFlow flow,
-      HttpServletRequest request,
+      ExternalLoginFlow externalLoginFlow,
+      HttpServletRequest httpServletRequest,
       MessageProperties messageProperties,
-      BooleanSupplier remember,
+      BooleanSupplier rememberLoginSupplier,
       Presentation presentation) {
     setClassName("external-login-buttons");
-    List<String> providers = flow.providers();
-    if (providers.isEmpty()) {
+
+    List<String> providerNames = externalLoginFlow.providers();
+    if (providerNames.isEmpty()) {
       setVisible(false);
       return;
     }
+
     if (presentation == Presentation.PANEL) {
       addClassName("external-login-panel");
-      Span kicker = new Span();
-      kicker.addClassName("external-login-kicker");
-      H2 title = new H2();
-      title.setId("external-login-title");
+      Span panelKickerSpan = new Span();
+      panelKickerSpan.addClassName("external-login-kicker");
+
+      H2 panelTitleHeading = new H2();
+      panelTitleHeading.setId("external-login-title");
       getElement().setAttribute("role", "region");
       getElement().setAttribute("aria-labelledby", "external-login-title");
-      Paragraph hint = new Paragraph();
-      hint.addClassName("external-login-hint");
-      Runnable translate =
+
+      Paragraph panelHintParagraph = new Paragraph();
+      panelHintParagraph.addClassName("external-login-hint");
+
+      Runnable refreshLoginTextsAction =
           () -> {
-            kicker.setText(messageProperties.getExternalPanelKicker());
-            title.setText(messageProperties.getExternalPanelTitle());
-            hint.setText(messageProperties.getExternalPanelHint());
+            panelKickerSpan.setText(messageProperties.getExternalPanelKicker());
+            panelTitleHeading.setText(messageProperties.getExternalPanelTitle());
+            panelHintParagraph.setText(messageProperties.getExternalPanelHint());
           };
-      translate.run();
+      refreshLoginTextsAction.run();
       ComponentUtil.addListener(
-          UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
-      add(kicker, title, hint);
+          UI.getCurrent(), LanguageChangeEvent.class, event -> refreshLoginTextsAction.run());
+      add(panelKickerSpan, panelTitleHeading, panelHintParagraph);
     }
     Supplier<String> googleText =
         presentation == Presentation.PANEL
@@ -75,46 +85,76 @@ public final class ExternalLoginButtons extends Div {
         presentation == Presentation.PANEL
             ? messageProperties::getExternalContinueMicrosoft
             : messageProperties::getExternalMicrosoft;
-    Div actions = new Div();
-    actions.addClassName("external-provider-actions");
-    for (String provider : providers) {
-      Button button = new Button();
-      button.setId("external-login-" + provider);
-      button.setWidthFull();
-      button.addClassName("external-provider-button");
-      Image brand =
-          new Image(
-              "icons/external-login/"
-                  + (provider.equals("google") ? "google.png" : "microsoft.svg"),
-              "");
-      brand.addClassName("external-provider-mark");
-      brand.getElement().setAttribute("aria-hidden", "true");
-      button.setPrefixComponent(brand);
-      Runnable translate =
-          () -> button.setText(provider.equals("google") ? googleText.get() : microsoftText.get());
-      translate.run();
-      ComponentUtil.addListener(
-          UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
-      button.addClickListener(event ->
-          UI.getCurrent()
-              .getPage()
-              .setLocation(
-                  flow.beginLogin(
-                      request,
-                      provider,
-                      remember.getAsBoolean(),
-                      VaadinSession.getCurrent().getLocale())));
-      actions.add(button);
+
+    Div providerActionsDiv = new Div();
+    providerActionsDiv.addClassName("external-provider-actions");
+
+    for (String providerName : providerNames) {
+      providerActionsDiv.add(
+          createProviderLoginButton(
+              providerName,
+              googleText,
+              microsoftText,
+              externalLoginFlow,
+              httpServletRequest,
+              rememberLoginSupplier));
     }
-    add(actions);
+
+    add(providerActionsDiv);
+
     if (presentation == Presentation.INLINE) {
-      Span alternative = new Span();
-      alternative.addClassName("external-login-alternative");
-      Runnable translate = () -> alternative.setText(messageProperties.getExternalOr());
-      translate.run();
+      Span alternativeLabelSpan = new Span();
+      alternativeLabelSpan.addClassName("external-login-alternative");
+
+      Runnable refreshLoginTextsAction =
+          () -> alternativeLabelSpan.setText(messageProperties.getExternalOr());
+      refreshLoginTextsAction.run();
       ComponentUtil.addListener(
-          UI.getCurrent(), LanguageChangeEvent.class, event -> translate.run());
-      add(alternative);
+          UI.getCurrent(), LanguageChangeEvent.class, event -> refreshLoginTextsAction.run());
+      add(alternativeLabelSpan);
     }
+  }
+
+  private Button createProviderLoginButton(
+      String providerName,
+      Supplier<String> googleLabelSupplier,
+      Supplier<String> microsoftLabelSupplier,
+      ExternalLoginFlow externalLoginFlow,
+      HttpServletRequest httpServletRequest,
+      BooleanSupplier rememberLoginSupplier) {
+    Button providerButton = new Button();
+    providerButton.setId("external-login-" + providerName);
+    providerButton.setWidthFull();
+    providerButton.addClassName("external-provider-button");
+
+    Image providerLogoImage =
+        new Image(
+            "icons/external-login/"
+                + (providerName.equals("google") ? "google.png" : "microsoft.svg"),
+            "");
+    providerLogoImage.addClassName("external-provider-mark");
+    providerLogoImage.getElement().setAttribute("aria-hidden", "true");
+    providerButton.setPrefixComponent(providerLogoImage);
+
+    Runnable refreshProviderButtonText =
+        () ->
+            providerButton.setText(
+                providerName.equals("google")
+                    ? googleLabelSupplier.get()
+                    : microsoftLabelSupplier.get());
+    refreshProviderButtonText.run();
+    ComponentUtil.addListener(
+        UI.getCurrent(), LanguageChangeEvent.class, event -> refreshProviderButtonText.run());
+    providerButton.addClickListener(event ->
+        UI.getCurrent()
+            .getPage()
+            .setLocation(
+                externalLoginFlow.beginLogin(
+                    httpServletRequest,
+                    providerName,
+                    rememberLoginSupplier.getAsBoolean(),
+                    VaadinSession.getCurrent().getLocale())));
+
+    return providerButton;
   }
 }

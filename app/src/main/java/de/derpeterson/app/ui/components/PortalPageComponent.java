@@ -21,7 +21,7 @@ public class PortalPageComponent extends Div {
       """;
 
   private Component navigationComponent;
-  private Component pageContent;
+  private Component portalContentComponent;
   private Button navigationToggleButton;
 
   public PortalPageComponent() {
@@ -38,34 +38,44 @@ public class PortalPageComponent extends Div {
   protected final void setPortalContent(
       Component pageHeadingComponent, Component sidebarComponent, Component pageContentComponent) {
     navigationComponent = sidebarComponent;
-    pageContent = pageContentComponent;
+    portalContentComponent = pageContentComponent;
+
     if (sidebarComponent == null) {
       add(pageHeadingComponent, pageContentComponent);
       return;
     }
+
     pageContentComponent.getElement().getClassList().add("account-panels");
-    Div columns = new Div(sidebarComponent, pageContentComponent);
-    columns.addClassName("account-columns");
-    Div shade = new Div();
-    shade.addClassName("account-navigation-shade");
-    shade.addClickListener(event -> closeNavigation());
-    add(pageHeadingComponent, columns, shade);
+    Div portalColumnsDiv = new Div(sidebarComponent, pageContentComponent);
+    portalColumnsDiv.addClassName("account-columns");
+
+    Div navigationShadeDiv = new Div();
+    navigationShadeDiv.addClassName("account-navigation-shade");
+    navigationShadeDiv.addClickListener(event -> closeNavigation());
+
+    add(pageHeadingComponent, portalColumnsDiv, navigationShadeDiv);
   }
 
-  public final void configureNavigationToggle(Button toggle) {
-    navigationToggleButton = toggle;
+  public final void configureNavigationToggle(Button portalNavigationButton) {
+    navigationToggleButton = portalNavigationButton;
     // Escape nur innerhalb der Navigation behandeln. Ein globales Shortcut würde
     // die native Escape-Behandlung von Popovers und Dialogen abfangen.
     Shortcuts.addShortcutListener(this, this::closeNavigation, Key.ESCAPE)
-        .listenOn(navigationComponent, toggle);
-    toggle.getElement().setAttribute("aria-controls", navigationComponent.getId().orElseThrow());
-    toggle.getElement().setAttribute(ARIA_EXPANDED, "false");
-    toggle.addClickListener(event -> {
-      boolean open = !hasClassName(ACCOUNT_NAVIGATION_OPEN);
-      setClassName(ACCOUNT_NAVIGATION_OPEN, open);
-      pageContent.getElement().setAttribute("inert", open);
-      toggle.getElement().setAttribute(ARIA_EXPANDED, Boolean.toString(open));
-      if (open) {
+        .listenOn(navigationComponent, portalNavigationButton);
+    portalNavigationButton
+        .getElement()
+        .setAttribute("aria-controls", navigationComponent.getId().orElseThrow());
+    portalNavigationButton.getElement().setAttribute(ARIA_EXPANDED, "false");
+
+    portalNavigationButton.addClickListener(event -> {
+      boolean navigationOpened = !hasClassName(ACCOUNT_NAVIGATION_OPEN);
+      setClassName(ACCOUNT_NAVIGATION_OPEN, navigationOpened);
+      portalContentComponent.getElement().setAttribute("inert", navigationOpened);
+      portalNavigationButton
+          .getElement()
+          .setAttribute(ARIA_EXPANDED, Boolean.toString(navigationOpened));
+
+      if (navigationOpened) {
         navigationComponent.getElement().executeJs(FOCUS_NAVIGATION_SCRIPT);
       }
     });
@@ -75,8 +85,10 @@ public class PortalPageComponent extends Div {
     if (!hasClassName(ACCOUNT_NAVIGATION_OPEN)) {
       return;
     }
+
     removeClassName(ACCOUNT_NAVIGATION_OPEN);
-    pageContent.getElement().setAttribute("inert", false);
+    portalContentComponent.getElement().setAttribute("inert", false);
+
     if (navigationToggleButton != null) {
       navigationToggleButton.getElement().setAttribute(ARIA_EXPANDED, "false");
       navigationToggleButton.focus();

@@ -48,18 +48,18 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
   private final transient ExternalIdentityService externalIdentityService;
   private final transient HttpServletRequest httpRequest;
   private final transient MessageProperties messageProperties;
-  private final H2 dialogTitle = new H2();
-  private final Div providerIconContainer = new Div();
+  private final H2 dialogTitleHeading = new H2();
+  private final Div providerIconContainerDiv = new Div();
   private final Span dialogDescription = new Span();
   private final Span identityProofExplanation = new Span();
-  private final Span providerReadyHint = new Span();
+  private final Span providerReadyHintSpan = new Span();
   private final PasswordField passwordField = new PasswordField();
   private final TwoFactorCodeInput twoFactorCodeInput;
-  private final Span proofSeparator = new Span();
+  private final Span proofSeparatorSpan = new Span();
   private final Div proofAlternativesLayout = new Div();
   private final Div proofNoticeContainer = new Div();
   private final Span proofWarningText = new Span();
-  private final Span developmentWarning = new Span();
+  private final Span developmentWarningSpan = new Span();
   private final Button cancelButton = new Button();
   private final Button closeDialogButton = new Button(AppIcon.CLOSE_CIRCLE.create());
   private final Button confirmIdentityButton = new Button();
@@ -82,17 +82,19 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     setModality(ModalityMode.STRICT);
     setCloseOnEsc(true);
     setCloseOnOutsideClick(true);
-    dialogTitle.addClassName(PANEL_TITLE);
+    dialogTitleHeading.addClassName(PANEL_TITLE);
     dialogDescription.addClassName(PANEL_DESCRIPTION);
-    Div heading = new Div(dialogTitle, dialogDescription);
-    heading.addClassName(PANEL_HEADING);
-    providerIconContainer.add(AppIcon.LOCK.create());
-    providerIconContainer.addClassName(PANEL_ICON);
+
+    Div dialogHeadingDiv = new Div(dialogTitleHeading, dialogDescription);
+    dialogHeadingDiv.addClassName(PANEL_HEADING);
+    providerIconContainerDiv.add(AppIcon.LOCK.create());
+    providerIconContainerDiv.addClassName(PANEL_ICON);
     closeDialogButton.addClassName("cosmos-overlay-close");
     closeDialogButton.addClickListener(event -> close());
-    Div header = new Div(providerIconContainer, heading, closeDialogButton);
-    header.addClassName("account-change-dialog-header");
-    getHeader().add(header);
+
+    Div dialogHeaderDiv = new Div(providerIconContainerDiv, dialogHeadingDiv, closeDialogButton);
+    dialogHeaderDiv.addClassName("account-change-dialog-header");
+    getHeader().add(dialogHeaderDiv);
     passwordField.setId("external-confirm-password");
     passwordField.setWidthFull();
     passwordField.setAutocomplete(Autocomplete.CURRENT_PASSWORD);
@@ -116,35 +118,37 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
         confirmExternalIdentityAction();
       }
     });
-    proofSeparator.addClassName("external-proof-separator");
+    proofSeparatorSpan.addClassName("external-proof-separator");
     proofAlternativesLayout.addClassName("external-proof-alternatives");
     identityProofExplanation.addClassName(PANEL_DESCRIPTION);
-    providerReadyHint.setId("external-security-result");
-    providerReadyHint.addClassName("external-proof-ready");
+    providerReadyHintSpan.setId("external-security-result");
+    providerReadyHintSpan.addClassName("external-proof-ready");
     proofNoticeContainer.add(AppIcon.INFO_CIRCLE.create(), proofWarningText);
     proofNoticeContainer.addClassName("cosmos-panel-hint");
-    developmentWarning.addClassName("cosmos-panel-description");
-    Div body =
+    developmentWarningSpan.addClassName("cosmos-panel-description");
+
+    Div dialogBodyDiv =
         new Div(
             identityProofExplanation,
-            providerReadyHint,
+            providerReadyHintSpan,
             passwordField,
             twoFactorCodeInput,
-            proofSeparator,
+            proofSeparatorSpan,
             proofAlternativesLayout,
             proofNoticeContainer,
-            developmentWarning);
-    body.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
-    add(body);
+            developmentWarningSpan);
+    dialogBodyDiv.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
+    add(dialogBodyDiv);
     cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
     cancelButton.addClickListener(event -> close());
     cancelButton.setId("external-proof-cancel");
     confirmIdentityButton.setId("external-confirm-local");
     confirmIdentityButton.addClickListener(event -> confirmExternalIdentityAction());
-    Div actions = new Div(cancelButton, confirmIdentityButton);
-    actions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(actions);
-    getFooter().add(actions);
+
+    Div dialogActionsDiv = new Div(cancelButton, confirmIdentityButton);
+    dialogActionsDiv.addClassName("cosmos-dialog-actions");
+    EqualButtonWidths.configureEqualButtonWidths(dialogActionsDiv);
+    getFooter().add(dialogActionsDiv);
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {
         passwordField.clear();
@@ -182,16 +186,16 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     boolean hasPassword = externalLoginFlow.owner(httpRequest).getPassword() != null;
     boolean needsFactor =
         externalLoginFlow.requiresFactor(httpRequest, identityConfirmationPurpose);
-    developmentWarning.setText(messageProperties.getTwoFactorDevelopmentWarning());
-    developmentWarning.setVisible(externalLoginFlow.developmentExceptionActive());
+    developmentWarningSpan.setText(messageProperties.getTwoFactorDevelopmentWarning());
+    developmentWarningSpan.setVisible(externalLoginFlow.developmentExceptionActive());
     refreshHeader();
     identityProofExplanation.setText(
         needsFactor
             ? messageProperties.getTwoFactorActionHint()
             : messageProperties.getExternalProofHint());
     identityProofExplanation.setVisible(!needsFactor || confirmed);
-    providerReadyHint.setText(messageProperties.getExternalProofReady());
-    providerReadyHint.setVisible(confirmed);
+    providerReadyHintSpan.setText(messageProperties.getExternalProofReady());
+    providerReadyHintSpan.setVisible(confirmed);
     passwordField.setLabel(messageProperties.getAccountPasswordDialogCurrentPassword());
     passwordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
     passwordField.setVisible(hasPassword && !confirmed && !needsFactor);
@@ -202,56 +206,60 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     if (!confirmed && !hasPassword && !proofAlternativesLayout.isVisible() && !needsFactor) {
       identityProofExplanation.setText(messageProperties.getExternalProofUnavailable());
     }
-    proofSeparator.setText(messageProperties.getExternalOr());
-    proofSeparator.setVisible(passwordField.isVisible() && proofAlternativesLayout.isVisible());
+    proofSeparatorSpan.setText(messageProperties.getExternalOr());
+    proofSeparatorSpan.setVisible(passwordField.isVisible() && proofAlternativesLayout.isVisible());
     refreshActions(confirmed || hasPassword || needsFactor);
   }
 
   private void refreshHeader() {
-    dialogTitle.setText(actionTitle());
-    providerIconContainer.removeAll();
-    String headerProvider =
+    dialogTitleHeading.setText(actionTitle());
+    providerIconContainerDiv.removeAll();
+
+    String headerProviderName =
         switch (identityConfirmationPurpose) {
           case LINK_GOOGLE, UNLINK_GOOGLE -> GOOGLE;
           case LINK_MICROSOFT, UNLINK_MICROSOFT -> "microsoft";
           default -> null;
         };
-    if (headerProvider == null) {
-      providerIconContainer.add(AppIcon.LOCK.create());
+    if (headerProviderName == null) {
+      providerIconContainerDiv.add(AppIcon.LOCK.create());
     } else {
-      Image mark =
+      Image headerProviderLogoImage =
           new Image(
               "icons/external-login/"
-                  + headerProvider
-                  + (headerProvider.equals(GOOGLE) ? ".png" : ".svg"),
+                  + headerProviderName
+                  + (headerProviderName.equals(GOOGLE) ? ".png" : ".svg"),
               "");
-      mark.addClassName("external-proof-heading-mark");
-      providerIconContainer.add(mark);
+      headerProviderLogoImage.addClassName("external-proof-heading-mark");
+      providerIconContainerDiv.add(headerProviderLogoImage);
     }
-    getElement().setProperty("ariaLabel", dialogTitle.getText());
+    getElement().setProperty("ariaLabel", dialogTitleHeading.getText());
     dialogDescription.setText(messageProperties.getExternalProof());
   }
 
   private void refreshAlternatives(boolean confirmed) {
     proofAlternativesLayout.removeAll();
     if (!confirmed) {
-      for (String provider :
+      for (String providerName :
           externalIdentityService.connected(externalLoginFlow.owner(httpRequest).getId())) {
-        if (externalLoginFlow.providers().contains(provider)
+        if (externalLoginFlow.providers().contains(providerName)
             && externalLoginFlow.canUseProviderProof(
-                httpRequest, provider, identityConfirmationPurpose)) {
-          Button proof = new Button(messageProperties.getExternalProofWith(brand(provider)));
-          proof.setId("external-confirm-" + provider);
+                httpRequest, providerName, identityConfirmationPurpose)) {
+          Button providerProofButton =
+              new Button(messageProperties.getExternalProofWith(brand(providerName)));
+          providerProofButton.setId("external-confirm-" + providerName);
           Image mark =
               new Image(
-                  "icons/external-login/" + provider + (provider.equals(GOOGLE) ? ".png" : ".svg"),
+                  "icons/external-login/"
+                      + providerName
+                      + (providerName.equals(GOOGLE) ? ".png" : ".svg"),
                   "");
           mark.addClassName("external-proof-provider-mark");
           mark.getElement().setAttribute("aria-hidden", "true");
-          proof.setPrefixComponent(mark);
-          proof.addClassName("external-proof-provider");
-          proof.addClickListener(event -> beginProviderProof(provider));
-          proofAlternativesLayout.add(proof);
+          providerProofButton.setPrefixComponent(mark);
+          providerProofButton.addClassName("external-proof-provider");
+          providerProofButton.addClickListener(event -> beginProviderProof(providerName));
+          proofAlternativesLayout.add(providerProofButton);
         }
       }
     }
@@ -285,6 +293,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     if (identityConfirmationPurpose == null || confirmedIdentityAction == null) {
       return;
     }
+
     try {
       if (externalLoginFlow
               .confirmedPurpose(httpRequest)
@@ -293,6 +302,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
           && !confirmLocalProof()) {
         return;
       }
+
       confirmedIdentityAction.run();
       close();
     } catch (RuntimeException _) {
@@ -313,6 +323,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     }
     showExternalFailure();
     refreshTexts();
+
     return false;
   }
 
@@ -320,6 +331,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     if (!twoFactorCodeInput.validate()) {
       return false;
     }
+
     try {
       externalLoginFlow.confirmFactor(
           httpRequest, twoFactorCodeInput.getValue(), identityConfirmationPurpose);
@@ -337,6 +349,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
               messageProperties::getBaseFailedTitle,
               message,
               NotificationHelper.NotificationType.ERROR);
+
       return false;
     }
   }
@@ -345,6 +358,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     if (!ValidationHelper.validateRequiredInputs(List.of(passwordField), messageProperties)) {
       return false;
     }
+
     try {
       externalLoginFlow.confirmPassword(
           httpRequest, passwordField.getValue(), identityConfirmationPurpose);
@@ -355,6 +369,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
       passwordField.setInvalid(
           rejectedSecurityInput == AccountSecurityFeedback.RejectedSecurityInput.CURRENT_PASSWORD);
       refreshTexts();
+
       return false;
     }
   }
@@ -367,18 +382,18 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
             NotificationHelper.NotificationType.ERROR);
   }
 
-  private void beginProviderProof(String provider) {
+  private void beginProviderProof(String providerName) {
     try {
-      String destination =
+      String providerProofRedirectUrl =
           externalLoginFlow.beginProof(
               httpRequest,
-              provider,
+              providerName,
               identityConfirmationPurpose,
               VaadinSession.getCurrent().getLocale());
       httpRequest.getSession(false).setAttribute(RETURN_ACTION, identityConfirmationPurpose);
-      UI.getCurrent().getPage().setLocation(destination);
+      UI.getCurrent().getPage().setLocation(providerProofRedirectUrl);
     } catch (RuntimeException _) {
-      if (!externalLoginFlow.providers().contains(provider)) {
+      if (!externalLoginFlow.providers().contains(providerName)) {
         close();
         NotificationHelper.getInstance()
             .showNotification(

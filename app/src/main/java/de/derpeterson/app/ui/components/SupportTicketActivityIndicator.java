@@ -77,8 +77,9 @@ public final class SupportTicketActivityIndicator extends Badge {
   }
 
   public void refreshTexts() {
-    String label = isVisible() ? messageProperties.getSupportNewActivity() : "";
-    unreadTicketTooltip.setText(label);
-    getElement().setAttribute("aria-label", label);
+    String ticketActivityLabelText = isVisible() ? messageProperties.getSupportNewActivity() : "";
+
+    unreadTicketTooltip.setText(ticketActivityLabelText);
+    getElement().setAttribute("aria-label", ticketActivityLabelText);
   }
 }
