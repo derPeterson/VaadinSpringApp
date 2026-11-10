@@ -15,19 +15,20 @@ auf `main`.
 | Isolierter Start des frischen JARs | Anmeldeseite lieferte HTTP 200 mit flüchtiger H2-Datenbank |
 | Browser DE | 262 von 262 bestanden |
 | Browser EN | 262 von 262 bestanden |
-| SonarQube auf `6b156cc9` | Sechs offene Findings, null Hotspots, Quality Gate rot |
+| SonarQube auf `66b00fe6` | Null offene Findings im Gesamtprojekt und im neuen Code, null Hotspots, Quality Gate grün |
 
 Die beiden Browserläufe nutzten jeweils vier getrennte Anwendungs-, H2- und
 Mailpit-Umgebungen mit dem Image
 `sha256:f8ce06933b301fed2ed08f871de1809e288e60e2924f334d81214fba7fffbba4`.
 Aufbau und Abbau waren erfolgreich.
 
-Der Sonar-Nachscan `4d9cc89c-982f-44fb-95b4-26f6a32bdf08` bestätigt die
-Behebung des Transaktions-Findings. Die verbleibenden Befunde betreffen die
-Ausgabekanäle und Fehlerbereinigung des IDE-HTTPS-Supervisors, die Uhr der
-Vaadin-Benutzerfilterung, den Rollen-Broadcaster und die begrenzte
-CSRF-Konfiguration. Die technische Testrunde ist vollständig bestanden.
-Die [Entscheidung zu den Sonar-Befunden](planung/java-lesbarkeit.md) bleibt offen.
+Die transaktionalen Passwort-Reset-Abfragen wurden im Code korrigiert.
+Die sechs übrigen Sonar-Befunde wurden einzeln geprüft und direkt am
+Finding begründet. Die beiden Caddy-Prozesskanäle sind Fehlalarme.
+Die Fehlerbereinigung des IDE-HTTPS-Starts, die Uhr der Benutzerfilterung,
+der Rollen-Broadcaster und die begrenzte CSRF-Konfiguration sind
+akzeptierte Ausnahmen. Der vollständige Nachscan
+`2f2c9ffa-7f1d-49c1-8501-0461eebf1eb2` bestätigt den grünen Stand.
 
 Offene automatisierte Szenarien und menschliche Sonderprüfungen werden im
 [Testbedarf](testbedarf.md) und im [manuellen Prüfkatalog](manual-tests/README.md)
