@@ -47,7 +47,7 @@ class ConfigServiceConfiguredDefaultsTest {
     configure(ConfigEntry.MAIL_SMTP_SSL_ENABLE, "false");
     configure(ConfigEntry.REMEMBER_ME_SECRET_KEY, "fixture-only-key");
 
-    ConnectionAwareJavaMailSender sender = new MailConfig(service).configuredSender();
+    ConnectionAwareJavaMailSender sender = new MailConfig(service).createConfiguredMailSender();
 
     assertEquals("mailpit", sender.getHost());
     assertEquals(1025, sender.getPort());

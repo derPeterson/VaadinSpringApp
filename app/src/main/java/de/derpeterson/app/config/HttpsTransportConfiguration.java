@@ -26,59 +26,60 @@ public class HttpsTransportConfiguration {
   @Bean
   public WebServerFactoryCustomizer<TomcatServletWebServerFactory> httpsProxy(
       @Value("${app.https.proxy-host:127.0.0.1}") String proxyHost) throws UnknownHostException {
-    String addresses =
+    String trustedProxyAddressPattern =
         Arrays.stream(InetAddress.getAllByName(proxyHost))
             .map(InetAddress::getHostAddress)
             .map(Pattern::quote)
             .collect(Collectors.joining("|"));
-    RemoteIpValve proxy = new RemoteIpValve();
+    RemoteIpValve remoteIpValve = new RemoteIpValve();
     // Ausschließlich die aufgelösten wörtlichen IP-Adressen, getrennt mit Regex-ODER.
     // Pattern.quote schützt insbesondere Punkte und IPv6-Sonderzeichen vor Regex-Auswertung.
-    proxy.setInternalProxies(addresses);
-    proxy.setRemoteIpHeader("X-Forwarded-For");
-    proxy.setProtocolHeader("X-Forwarded-Proto");
-    proxy.setHostHeader("X-Forwarded-Host");
-    proxy.setPortHeader("X-Forwarded-Port");
-    return factory -> factory.addEngineValves(proxy);
+    remoteIpValve.setInternalProxies(trustedProxyAddressPattern);
+    remoteIpValve.setRemoteIpHeader("X-Forwarded-For");
+    remoteIpValve.setProtocolHeader("X-Forwarded-Proto");
+    remoteIpValve.setHostHeader("X-Forwarded-Host");
+    remoteIpValve.setPortHeader("X-Forwarded-Port");
+    return tomcatServerFactory -> tomcatServerFactory.addEngineValves(remoteIpValve);
   }
 
   @Bean
   public FilterRegistrationBean<Filter> httpsOrigin(
       @Value("${app.https.origin}") String configuredOrigin) {
-    URI origin = URI.create(configuredOrigin);
-    if (!"https".equals(origin.getScheme())
-        || origin.getHost() == null
-        || origin.getUserInfo() != null
-        || origin.getQuery() != null
-        || origin.getFragment() != null
-        || !(origin.getPath().isEmpty() || "/".equals(origin.getPath()))) {
+    URI httpsOriginUri = URI.create(configuredOrigin);
+    if (!"https".equals(httpsOriginUri.getScheme())
+        || httpsOriginUri.getHost() == null
+        || httpsOriginUri.getUserInfo() != null
+        || httpsOriginUri.getQuery() != null
+        || httpsOriginUri.getFragment() != null
+        || !(httpsOriginUri.getPath().isEmpty() || "/".equals(httpsOriginUri.getPath()))) {
       throw new IllegalArgumentException("HTTPS origin must be an absolute HTTPS origin");
     }
-    int port = origin.getPort() == -1 ? 443 : origin.getPort();
-    Filter filter =
-        (request, response, chain) -> {
-          HttpServletRequest incoming = (HttpServletRequest) request;
-          HttpServletResponse outgoing = (HttpServletResponse) response;
+    int httpsOriginPort = httpsOriginUri.getPort() == -1 ? 443 : httpsOriginUri.getPort();
+    Filter httpsOriginFilter =
+        (servletRequest, servletResponse, filterChain) -> {
+          HttpServletRequest httpRequest = (HttpServletRequest) servletRequest;
+          HttpServletResponse httpResponse = (HttpServletResponse) servletResponse;
           // Nur der interne harmlose Livenessabruf darf ohne TLS zur Anwendung gelangen.
-          if (!incoming.isSecure()
-              && "/internal/health".equals(incoming.getRequestURI())
-              && "GET".equals(incoming.getMethod())
-              && incoming.getQueryString() == null) {
-            outgoing.setContentType("text/plain");
-            outgoing.getWriter().write("OK");
+          if (!httpRequest.isSecure()
+              && "/internal/health".equals(httpRequest.getRequestURI())
+              && "GET".equals(httpRequest.getMethod())
+              && httpRequest.getQueryString() == null) {
+            httpResponse.setContentType("text/plain");
+            httpResponse.getWriter().write("OK");
             return;
           }
-          if (!incoming.isSecure()
-              || !origin.getHost().equalsIgnoreCase(incoming.getServerName())
-              || port != incoming.getServerPort()) {
-            outgoing.sendError(HttpServletResponse.SC_FORBIDDEN);
+          if (!httpRequest.isSecure()
+              || !httpsOriginUri.getHost().equalsIgnoreCase(httpRequest.getServerName())
+              || httpsOriginPort != httpRequest.getServerPort()) {
+            httpResponse.sendError(HttpServletResponse.SC_FORBIDDEN);
             return;
           }
-          chain.doFilter(request, response);
+          filterChain.doFilter(servletRequest, servletResponse);
         };
-    FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>(filter);
-    registration.setName("httpsOrigin");
-    registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
-    return registration;
+    FilterRegistrationBean<Filter> httpsFilterRegistration =
+        new FilterRegistrationBean<>(httpsOriginFilter);
+    httpsFilterRegistration.setName("httpsOrigin");
+    httpsFilterRegistration.setOrder(Ordered.HIGHEST_PRECEDENCE);
+    return httpsFilterRegistration;
   }
 }

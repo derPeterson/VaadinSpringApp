@@ -14,44 +14,46 @@ public class DevelopmentCssConfiguration {
 
   @Bean
   public StaticFileHandlerFactory staticFileHandlerFactory() {
-    return service -> {
-      StaticFileServer fileServer = new StaticFileServer(service);
-      if (service.getDeploymentConfiguration().isProductionMode()) {
+    return vaadinService -> {
+      StaticFileServer fileServer = new StaticFileServer(vaadinService);
+      if (vaadinService.getDeploymentConfiguration().isProductionMode()) {
         return fileServer;
       }
 
-      return (request, response) -> {
-        String path = request.getRequestURI().substring(request.getContextPath().length());
-        if (path.startsWith("/custom-theme/") && path.endsWith(".css")) {
+      return (httpRequest, httpResponse) -> {
+        String resourcePath =
+            httpRequest.getRequestURI().substring(httpRequest.getContextPath().length());
+        if (resourcePath.startsWith("/custom-theme/") && resourcePath.endsWith(".css")) {
           // Die IDE aktualisiert die CSS-Datei, aber keine gepackten Kopien
           // aus früheren Produktionsbuilds. Vaadin soll hier die CSS-Datei lesen.
-          return fileServer.serveStaticResource(new UncompressedCssRequest(request), response);
+          return fileServer.serveStaticResource(
+              new UncompressedCssRequest(httpRequest), httpResponse);
         }
-        return fileServer.serveStaticResource(request, response);
+        return fileServer.serveStaticResource(httpRequest, httpResponse);
       };
     };
   }
 
   private static final class UncompressedCssRequest extends HttpServletRequestWrapper {
 
-    private UncompressedCssRequest(HttpServletRequest request) {
-      super(request);
+    private UncompressedCssRequest(HttpServletRequest httpRequest) {
+      super(httpRequest);
     }
 
     @Override
-    public String getHeader(String name) {
-      if ("Accept-Encoding".equalsIgnoreCase(name)) {
+    public String getHeader(String headerName) {
+      if ("Accept-Encoding".equalsIgnoreCase(headerName)) {
         return "identity";
       }
-      return super.getHeader(name);
+      return super.getHeader(headerName);
     }
 
     @Override
-    public Enumeration<String> getHeaders(String name) {
-      if ("Accept-Encoding".equalsIgnoreCase(name)) {
+    public Enumeration<String> getHeaders(String headerName) {
+      if ("Accept-Encoding".equalsIgnoreCase(headerName)) {
         return Collections.enumeration(Collections.singletonList("identity"));
       }
-      return super.getHeaders(name);
+      return super.getHeaders(headerName);
     }
   }
 }

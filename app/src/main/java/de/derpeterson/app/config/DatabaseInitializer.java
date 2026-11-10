@@ -37,78 +37,88 @@ public class DatabaseInitializer {
   private final RoleRepository roleRepository;
   private final ConfigService configService;
   private final PasswordEncoder passwordEncoder;
-  private final Environment environment;
-  private final BootstrapAccountsProperties bootstrap;
+  private final Environment springEnvironment;
+  private final BootstrapAccountsProperties bootstrapAccountsProperties;
   private final PlatformTransactionManager transactionManager;
-  private final ExternalProviderSettings providers;
+  private final ExternalProviderSettings externalProviderSettings;
 
   @Bean
   public CommandLineRunner initDatabase() {
-    return args -> {
+    return applicationArguments -> {
       createDefaultConfigSettings();
-      providers.initializeDefaults();
+      externalProviderSettings.initializeDefaults();
       createDefaultRolesAndAccounts();
     };
   }
 
   private void createDefaultRolesAndAccounts() {
     // Vor irgendeiner Benutzeranlage alle Gruppen prüfen; Fehler nennen keine Zugangsdaten.
-    List<Entry> entries = bootstrap.validatedEntries();
+    List<Entry> validatedBootstrapEntries = bootstrapAccountsProperties.validatedEntries();
     new TransactionTemplate(transactionManager)
-        .executeWithoutResult(
-            status -> {
-              EnumMap<RoleType, RoleEntity> roles =
-                  new EnumMap<RoleType, RoleEntity>(RoleType.class);
-              for (RoleType role : RoleType.values()) {
-                roles.put(
-                    role,
-                    roleRepository
-                        .findByName(role)
-                        .orElseGet(
-                            () -> roleRepository.save(RoleEntity.builder().name(role).build())));
-              }
-              if (!bootstrap.isEnabled()) {
-                logger.info("Bootstrap account creation is disabled.");
-                return;
-              }
-              for (Entry entry : entries) {
-                Account account = entry.account();
-                if (userRepository.findByEmail(account.getEmail()).isPresent()) {
-                  continue;
-                }
-                UserEntity user =
-                    UserEntity.builder()
-                        .firstName(account.getFirstName().strip())
-                        .lastName(account.getLastName().strip())
-                        .email(account.getEmail())
-                        .password(passwordEncoder.encode(account.getPassword()))
-                        .birthDate(account.getBirthDate())
-                        .gender(account.getGender())
-                        .preferredLocale(account.getPreferredLocale())
-                        .roleEntities(Set.of(roles.get(entry.role())))
-                        .enabled(true)
-                        .build();
-                userRepository.save(user);
-                AfterCommitLog.info(logger, "Bootstrap account created with role {}", entry.role());
-              }
-              userRepository.flush();
-            });
+        .executeWithoutResult(_ -> {
+          EnumMap<RoleType, RoleEntity> roleEntitiesByType = createMissingRoleEntities();
+          if (!bootstrapAccountsProperties.isEnabled()) {
+            logger.info("Bootstrap account creation is disabled.");
+            return;
+          }
+          createMissingBootstrapAccounts(validatedBootstrapEntries, roleEntitiesByType);
+        });
+  }
+
+  private EnumMap<RoleType, RoleEntity> createMissingRoleEntities() {
+    EnumMap<RoleType, RoleEntity> roleEntitiesByType =
+        new EnumMap<RoleType, RoleEntity>(RoleType.class);
+    for (RoleType roleType : RoleType.values()) {
+      roleEntitiesByType.put(
+          roleType,
+          roleRepository
+              .findByName(roleType)
+              .orElseGet(() -> roleRepository.save(RoleEntity.builder().name(roleType).build())));
+    }
+    return roleEntitiesByType;
+  }
+
+  private void createMissingBootstrapAccounts(
+      List<Entry> validatedBootstrapEntries, EnumMap<RoleType, RoleEntity> roleEntitiesByType) {
+    for (Entry bootstrapEntry : validatedBootstrapEntries) {
+      Account bootstrapAccount = bootstrapEntry.account();
+      if (userRepository.findByEmail(bootstrapAccount.getEmail()).isPresent()) {
+        continue;
+      }
+      UserEntity newUserEntity =
+          UserEntity.builder()
+              .firstName(bootstrapAccount.getFirstName().strip())
+              .lastName(bootstrapAccount.getLastName().strip())
+              .email(bootstrapAccount.getEmail())
+              .password(passwordEncoder.encode(bootstrapAccount.getPassword()))
+              .birthDate(bootstrapAccount.getBirthDate())
+              .gender(bootstrapAccount.getGender())
+              .preferredLocale(bootstrapAccount.getPreferredLocale())
+              .roleEntities(Set.of(roleEntitiesByType.get(bootstrapEntry.role())))
+              .enabled(true)
+              .build();
+      userRepository.save(newUserEntity);
+      AfterCommitLog.info(logger, "Bootstrap account created with role {}", bootstrapEntry.role());
+    }
+    userRepository.flush();
   }
 
   private void createDefaultConfigSettings() {
-    int created = 0;
+    int createdSettingCount = 0;
     for (ConfigEntry configEntry : ConfigEntry.values()) {
       if (!configService.exists(configEntry)) {
         configService.set(configEntry, resolveDefaultValue(configEntry));
-        created++;
+        createdSettingCount++;
       }
     }
     logger.info(
-        "Configuration initialized: entries={}, created={}", ConfigEntry.values().length, created);
+        "Configuration initialized: entries={}, created={}",
+        ConfigEntry.values().length,
+        createdSettingCount);
   }
 
   private String resolveDefaultValue(ConfigEntry configEntry) {
     String propertyKey = ConfigurationCatalog.property(configEntry);
-    return environment.getProperty(propertyKey, configEntry.getDefaultValueString());
+    return springEnvironment.getProperty(propertyKey, configEntry.getDefaultValueString());
   }
 }

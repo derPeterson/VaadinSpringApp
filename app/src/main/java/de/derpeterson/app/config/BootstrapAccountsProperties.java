@@ -48,38 +48,46 @@ public class BootstrapAccountsProperties {
     if (!enabled) {
       return List.of();
     }
-    ArrayList<Entry> entries = new ArrayList<Entry>();
-    HashSet<String> emails = new HashSet<String>();
-    add(entries, emails, RoleType.ROLE_SUPERADMIN, superadmins);
-    add(entries, emails, RoleType.ROLE_ADMIN, admins);
-    add(entries, emails, RoleType.ROLE_USER, users);
-    add(entries, emails, RoleType.ROLE_GUEST, guests);
-    return List.copyOf(entries);
+    ArrayList<Entry> validatedBootstrapEntries = new ArrayList<Entry>();
+    HashSet<String> seenEmailAddresses = new HashSet<String>();
+    appendValidatedAccountsForRole(
+        validatedBootstrapEntries, seenEmailAddresses, RoleType.ROLE_SUPERADMIN, superadmins);
+    appendValidatedAccountsForRole(
+        validatedBootstrapEntries, seenEmailAddresses, RoleType.ROLE_ADMIN, admins);
+    appendValidatedAccountsForRole(
+        validatedBootstrapEntries, seenEmailAddresses, RoleType.ROLE_USER, users);
+    appendValidatedAccountsForRole(
+        validatedBootstrapEntries, seenEmailAddresses, RoleType.ROLE_GUEST, guests);
+    return List.copyOf(validatedBootstrapEntries);
   }
 
-  private void add(List<Entry> entries, Set<String> emails, RoleType role, List<Account> group) {
-    if (group == null) {
-      throw new IllegalArgumentException("Bootstrap list required: " + role);
+  private void appendValidatedAccountsForRole(
+      List<Entry> validatedBootstrapEntries,
+      Set<String> seenEmailAddresses,
+      RoleType roleType,
+      List<Account> accountsForRole) {
+    if (accountsForRole == null) {
+      throw new IllegalArgumentException("Bootstrap list required: " + roleType);
     }
-    for (int i = 0; i < group.size(); i++) {
-      Account account = group.get(i);
-      if (account == null
-          || !UserInputRules.isEmailValid(account.email)
-          || !UserInputRules.isPasswordSecure(account.password)
-          || !UserInputRules.isRequiredTextValid(account.firstName)
-          || !UserInputRules.isRequiredTextValid(account.lastName)
-          || !UserInputRules.isBirthDateValid(account.birthDate)
-          || account.preferredLocale == null
-          || !Set.of("de", "en").contains(account.preferredLocale.getLanguage())) {
+    for (int i = 0; i < accountsForRole.size(); i++) {
+      Account bootstrapAccount = accountsForRole.get(i);
+      if (bootstrapAccount == null
+          || !UserInputRules.isEmailValid(bootstrapAccount.email)
+          || !UserInputRules.isPasswordSecure(bootstrapAccount.password)
+          || !UserInputRules.isRequiredTextValid(bootstrapAccount.firstName)
+          || !UserInputRules.isRequiredTextValid(bootstrapAccount.lastName)
+          || !UserInputRules.isBirthDateValid(bootstrapAccount.birthDate)
+          || bootstrapAccount.preferredLocale == null
+          || !Set.of("de", "en").contains(bootstrapAccount.preferredLocale.getLanguage())) {
         throw new IllegalArgumentException(
-            "Invalid bootstrap account in " + role + " at index " + i);
+            "Invalid bootstrap account in " + roleType + " at index " + i);
       }
-      String email = EmailIdentity.canonicalize(account.email);
-      if (!emails.add(email)) {
+      String canonicalEmailAddress = EmailIdentity.canonicalize(bootstrapAccount.email);
+      if (!seenEmailAddresses.add(canonicalEmailAddress)) {
         throw new IllegalArgumentException(
-            "Duplicate bootstrap account in " + role + " at index " + i);
+            "Duplicate bootstrap account in " + roleType + " at index " + i);
       }
-      entries.add(new Entry(role, account));
+      validatedBootstrapEntries.add(new Entry(roleType, bootstrapAccount));
     }
   }
 }

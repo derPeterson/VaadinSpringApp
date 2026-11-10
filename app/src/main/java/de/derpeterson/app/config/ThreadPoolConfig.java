@@ -26,7 +26,7 @@ public class ThreadPoolConfig {
     }
     // Keine vererbten Aufruferkontexte; blockierende Fremdbibliotheken dürfen das JVM-Ende nicht
     // verhindern.
-    ThreadFactory threads =
+    ThreadFactory workerThreadFactory =
         Thread.ofPlatform()
             .name("EmailSender-", 1)
             .daemon(true)
@@ -39,7 +39,7 @@ public class ThreadPoolConfig {
         0,
         TimeUnit.MILLISECONDS,
         new LinkedBlockingQueue<>(poolSize),
-        threads,
+        workerThreadFactory,
         new ThreadPoolExecutor.AbortPolicy());
   }
 }

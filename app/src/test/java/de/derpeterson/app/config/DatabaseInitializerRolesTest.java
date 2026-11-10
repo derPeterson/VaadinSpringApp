@@ -45,12 +45,11 @@ class DatabaseInitializerRolesTest {
     when(roles.findByName(any()))
         .thenAnswer(call -> Optional.ofNullable(stored.get(call.getArgument(0))));
     when(roles.save(any()))
-        .thenAnswer(
-            call -> {
-              RoleEntity role = call.getArgument(0);
-              stored.put(role.getName(), role);
-              return role;
-            });
+        .thenAnswer(call -> {
+          RoleEntity role = call.getArgument(0);
+          stored.put(role.getName(), role);
+          return role;
+        });
     DatabaseInitializer initializer =
         new DatabaseInitializer(
             users,
@@ -123,7 +122,7 @@ class DatabaseInitializerRolesTest {
     account.setEmail("isolated-bootstrap@example.test");
     account.setPassword("OnlyATestPassword!");
     bootstrap.setSuperadmins(java.util.List.of(account));
-    ReflectionTestUtils.setField(initializer, "bootstrap", bootstrap);
+    ReflectionTestUtils.setField(initializer, "bootstrapAccountsProperties", bootstrap);
     initializer.initDatabase().run();
     ArgumentCaptor<UserEntity> created = ArgumentCaptor.forClass(UserEntity.class);
     verify(users).save(created.capture());

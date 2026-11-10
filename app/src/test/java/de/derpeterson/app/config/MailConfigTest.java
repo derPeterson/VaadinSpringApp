@@ -36,7 +36,7 @@ class MailConfigTest {
     MailConfig mail = new MailConfig(config);
     ConnectionAwareJavaMailSender live =
         assertInstanceOf(ConnectionAwareJavaMailSender.class, mail.javaMailSender());
-    ConnectionAwareJavaMailSender sender = mail.configuredSender();
+    ConnectionAwareJavaMailSender sender = mail.createConfiguredMailSender();
     assertEquals("UTF-8", new MimeMessageHelper(live.createMimeMessage()).getEncoding());
     assertEquals("UTF-8", sender.getDefaultEncoding());
     assertEquals("UTF-8", new MimeMessageHelper(sender.createMimeMessage()).getEncoding());

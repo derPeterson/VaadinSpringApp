@@ -18,46 +18,51 @@ public class MailConfig {
 
   private static final List<ConfigEntry> SMTP_SETTINGS =
       Arrays.stream(ConfigEntry.values())
-          .filter(entry -> ConfigurationCatalog.group(entry) == AdminConfigGroup.SMTP)
+          .filter(configEntry -> ConfigurationCatalog.group(configEntry) == AdminConfigGroup.SMTP)
           .toList();
   private final ConfigService configService;
 
   @Bean
   public JavaMailSender javaMailSender() {
-    ConnectionAwareJavaMailSender sender =
-        new ConnectionAwareJavaMailSender(this::configuredSender);
-    sender.setDefaultEncoding(StandardCharsets.UTF_8.name());
-    return sender;
+    ConnectionAwareJavaMailSender connectionAwareMailSender =
+        new ConnectionAwareJavaMailSender(this::createConfiguredMailSender);
+    connectionAwareMailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
+    return connectionAwareMailSender;
   }
 
   /** Erstellt einen Transport für einen festen SMTP-Stand, etwa für die manuelle Mailvorschau. */
-  public ConnectionAwareJavaMailSender configuredSender() {
-    Map<ConfigEntry, String> settings = configService.snapshot(SMTP_SETTINGS);
+  public ConnectionAwareJavaMailSender createConfiguredMailSender() {
+    Map<ConfigEntry, String> smtpSettings = configService.snapshot(SMTP_SETTINGS);
     ConnectionAwareJavaMailSender mailSender = new ConnectionAwareJavaMailSender();
     mailSender.setDefaultEncoding(StandardCharsets.UTF_8.name());
-    mailSender.setHost(settings.get(ConfigEntry.MAIL_HOST));
-    mailSender.setPort(Integer.parseInt(settings.get(ConfigEntry.MAIL_PORT)));
-    mailSender.setUsername(settings.get(ConfigEntry.MAIL_USERNAME));
-    mailSender.setPassword(settings.get(ConfigEntry.MAIL_PASSWORD));
+    mailSender.setHost(smtpSettings.get(ConfigEntry.MAIL_HOST));
+    mailSender.setPort(Integer.parseInt(smtpSettings.get(ConfigEntry.MAIL_PORT)));
+    mailSender.setUsername(smtpSettings.get(ConfigEntry.MAIL_USERNAME));
+    mailSender.setPassword(smtpSettings.get(ConfigEntry.MAIL_PASSWORD));
 
-    Properties props = mailSender.getJavaMailProperties();
-    putBoolean(props, settings, ConfigEntry.MAIL_SMTP_AUTH);
-    putBoolean(props, settings, ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE);
-    putBoolean(props, settings, ConfigEntry.MAIL_SMTP_SSL_ENABLE);
-    props.setProperty(
+    Properties javaMailProperties = mailSender.getJavaMailProperties();
+    putSmtpBooleanProperty(javaMailProperties, smtpSettings, ConfigEntry.MAIL_SMTP_AUTH);
+    putSmtpBooleanProperty(javaMailProperties, smtpSettings, ConfigEntry.MAIL_SMTP_STARTTLS_ENABLE);
+    putSmtpBooleanProperty(javaMailProperties, smtpSettings, ConfigEntry.MAIL_SMTP_SSL_ENABLE);
+    javaMailProperties.setProperty(
         ConfigEntry.MAIL_SMTP_SSL_TRUST.getKey(),
-        settings.get(ConfigEntry.MAIL_SMTP_SSL_TRUST).replace(',', ' '));
-    props.setProperty(ConfigEntry.MAIL_DEBUG.getKey(), settings.get(ConfigEntry.MAIL_DEBUG));
+        smtpSettings.get(ConfigEntry.MAIL_SMTP_SSL_TRUST).replace(',', ' '));
+    javaMailProperties.setProperty(
+        ConfigEntry.MAIL_DEBUG.getKey(), smtpSettings.get(ConfigEntry.MAIL_DEBUG));
 
     return mailSender;
   }
 
-  private static void putBoolean(
-      Properties properties, Map<ConfigEntry, String> settings, ConfigEntry entry) {
-    String value = settings.get(entry);
-    if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) {
-      throw new IllegalArgumentException("Invalid boolean for configuration key " + entry.getKey());
+  private static void putSmtpBooleanProperty(
+      Properties javaMailProperties,
+      Map<ConfigEntry, String> smtpSettings,
+      ConfigEntry configEntry) {
+    String configuredBooleanValue = smtpSettings.get(configEntry);
+    if (!"true".equalsIgnoreCase(configuredBooleanValue)
+        && !"false".equalsIgnoreCase(configuredBooleanValue)) {
+      throw new IllegalArgumentException(
+          "Invalid boolean for configuration key " + configEntry.getKey());
     }
-    properties.put(entry.getKey(), Boolean.valueOf(value));
+    javaMailProperties.put(configEntry.getKey(), Boolean.valueOf(configuredBooleanValue));
   }
 }

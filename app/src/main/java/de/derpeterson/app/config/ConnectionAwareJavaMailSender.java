@@ -11,47 +11,50 @@ import org.springframework.mail.javamail.JavaMailSenderImpl;
 /** Records failure at the connection boundary, not from exception text or cause type. */
 public class ConnectionAwareJavaMailSender extends JavaMailSenderImpl {
 
-  private final Supplier<ConnectionAwareJavaMailSender> connectionSettings;
+  private final Supplier<ConnectionAwareJavaMailSender> configuredMailSenderSupplier;
 
   public ConnectionAwareJavaMailSender() {
-    connectionSettings = null;
+    configuredMailSenderSupplier = null;
   }
 
-  ConnectionAwareJavaMailSender(Supplier<ConnectionAwareJavaMailSender> connectionSettings) {
-    this.connectionSettings = connectionSettings;
+  ConnectionAwareJavaMailSender(
+      Supplier<ConnectionAwareJavaMailSender> configuredMailSenderSupplier) {
+    this.configuredMailSenderSupplier = configuredMailSenderSupplier;
   }
 
   @Override
   protected Transport connectTransport() throws MessagingException {
-    if (connectionSettings != null) {
+    if (configuredMailSenderSupplier != null) {
       try {
-        ConnectionAwareJavaMailSender sender = connectionSettings.get();
-        sender.getJavaMailProperties().putAll(getJavaMailProperties());
-        return sender.connectTransport();
-      } catch (RuntimeException failure) {
-        throw new ConnectionFailure(new MessagingException("SMTP settings unavailable", failure));
+        ConnectionAwareJavaMailSender configuredMailSender = configuredMailSenderSupplier.get();
+        configuredMailSender.getJavaMailProperties().putAll(getJavaMailProperties());
+        return configuredMailSender.connectTransport();
+      } catch (RuntimeException mailConnectionFailure) {
+        throw new ConnectionFailure(
+            new MessagingException("SMTP settings unavailable", mailConnectionFailure));
       }
     }
     try {
       return super.connectTransport();
-    } catch (AuthenticationFailedException e) {
+    } catch (AuthenticationFailedException authenticationFailure) {
       // Preserve Spring's existing MailAuthenticationException contract.
-      throw e;
-    } catch (MessagingException e) {
-      throw new ConnectionFailure(e);
+      throw authenticationFailure;
+    } catch (MessagingException transportFailure) {
+      throw new ConnectionFailure(transportFailure);
     }
   }
 
   /** Only the single message passed by EmailService is eligible for safe retry. */
-  public static boolean failedBeforeSending(MailSendException failure, MimeMessage message) {
-    return failure.getCause() instanceof ConnectionFailure
-        && failure.getFailedMessages().size() == 1
-        && failure.getFailedMessages().get(message) == failure.getCause();
+  public static boolean failedBeforeSending(
+      MailSendException mailSendFailure, MimeMessage mimeMessage) {
+    return mailSendFailure.getCause() instanceof ConnectionFailure
+        && mailSendFailure.getFailedMessages().size() == 1
+        && mailSendFailure.getFailedMessages().get(mimeMessage) == mailSendFailure.getCause();
   }
 
   private static final class ConnectionFailure extends MessagingException {
-    private ConnectionFailure(MessagingException cause) {
-      super("Mail connection failed before sending", cause);
+    private ConnectionFailure(MessagingException messagingCause) {
+      super("Mail connection failed before sending", messagingCause);
     }
   }
 }

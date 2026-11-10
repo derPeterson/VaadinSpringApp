@@ -508,7 +508,8 @@ Plural, einzelne Objekte im Singular.
 
 Bei bewusst typübergreifenden Hilfsmethoden beschreibt der Name die gemeinsame
 Aufgabe oder Rolle, etwa `collectNonBlankNames()` oder `itemToValidate`.
-Extern vorgegebene Methodennamen wie `run()` und `beforeEnter()` bleiben bestehen.
+Extern vorgegebene Namen bleiben bestehen, etwa `run()`, `beforeEnter()` und
+Bezeichner, die direkt an bestehende Konfigurationsschlüssel gebunden sind.
 Ein kurzer Schleifenindex ist in einer unmittelbar überschaubaren Schleife
 zulässig.
 

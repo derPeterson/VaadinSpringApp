@@ -34,11 +34,11 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 public class Application implements AppShellConfigurator {
 
   @Override
-  public void configurePage(AppShellSettings settings) {
-    settings.addFavIcon("icon", "icons/service-logo.svg", "any");
+  public void configurePage(AppShellSettings appShellSettings) {
+    appShellSettings.addFavIcon("icon", "icons/service-logo.svg", "any");
   }
 
-  static void main(String[] args) {
-    SpringApplication.run(Application.class, args);
+  static void main(String[] applicationArguments) {
+    SpringApplication.run(Application.class, applicationArguments);
   }
 }

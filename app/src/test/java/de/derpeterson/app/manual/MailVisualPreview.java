@@ -214,7 +214,7 @@ final class MailVisualPreview {
   }
 
   JavaMailSenderImpl createSender() {
-    JavaMailSenderImpl sender = new MailConfig(configuration).configuredSender();
+    JavaMailSenderImpl sender = new MailConfig(configuration).createConfiguredMailSender();
     sender.getJavaMailProperties().remove(ConfigEntry.MAIL_SMTP_SSL_TRUST.getKey());
     sender.getJavaMailProperties().setProperty("mail.smtp.connectiontimeout", "10000");
     sender.getJavaMailProperties().setProperty("mail.smtp.timeout", "10000");

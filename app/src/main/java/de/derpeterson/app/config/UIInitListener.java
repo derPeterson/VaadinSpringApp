@@ -23,36 +23,37 @@ public class UIInitListener implements VaadinServiceInitListener {
   private final transient SecurityService securityService;
   private final transient UserService userService;
 
-  private final transient HttpServletRequest request;
+  private final transient HttpServletRequest httpRequest;
 
   @Override
-  public void serviceInit(ServiceInitEvent event) {
-    event
+  public void serviceInit(ServiceInitEvent serviceInitEvent) {
+    serviceInitEvent
         .getSource()
-        .addSessionInitListener(
-            init -> PublicLanguagePreference.restore(init.getRequest(), init.getSession()));
-    event
+        .addSessionInitListener(sessionInitEvent ->
+            PublicLanguagePreference.restore(
+                sessionInitEvent.getRequest(), sessionInitEvent.getSession()));
+    serviceInitEvent
         .getSource()
-        .addUIInitListener(
-            uiInitEvent -> {
-              UI ui = uiInitEvent.getUI();
+        .addUIInitListener(uiInitEvent -> {
+          UI initializedUi = uiInitEvent.getUI();
 
-              if (VaadinSession.getCurrent() != null
-                  && VaadinSession.getCurrent().getAttribute("locale-set") == null) {
-                Optional<UserDetails> userOpt = securityService.getAuthenticatedUser(request);
-                userOpt.ifPresent(
-                    user -> {
-                      Optional<UserEntity> userEntity = userService.findByEmail(user.getUsername());
-                      if (userEntity.isPresent()) {
-                        Locale userLocale = userEntity.get().getPreferredLocale();
-                        VaadinSession.getCurrent().setLocale(userLocale);
-                        VaadinSession.getCurrent().setAttribute("locale-set", true);
-                      }
-                    });
+          if (VaadinSession.getCurrent() != null
+              && VaadinSession.getCurrent().getAttribute("locale-set") == null) {
+            Optional<UserDetails> authenticatedUserDetailsOption =
+                securityService.getAuthenticatedUser(httpRequest);
+            authenticatedUserDetailsOption.ifPresent(authenticatedUserDetails -> {
+              Optional<UserEntity> userEntityOption =
+                  userService.findByEmail(authenticatedUserDetails.getUsername());
+              if (userEntityOption.isPresent()) {
+                Locale userLocale = userEntityOption.get().getPreferredLocale();
+                VaadinSession.getCurrent().setLocale(userLocale);
+                VaadinSession.getCurrent().setAttribute("locale-set", true);
               }
-
-              ui.addBeforeEnterListener(
-                  e -> NotificationHelper.getInstance().closeAndClearAllNotifications());
             });
+          }
+
+          initializedUi.addBeforeEnterListener(
+              e -> NotificationHelper.getInstance().closeAndClearAllNotifications());
+        });
   }
 }
