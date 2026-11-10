@@ -297,13 +297,12 @@ public class AdminUserManagementSection extends VerticalLayout {
     refreshButton.setAriaLabel(messageProperties.getAdminUsersRefreshTooltip());
     enabledFilter.setLabel(messageProperties.getAdminUsersGridEnabled());
 
-    enabledFilter.setItemLabelGenerator(
-        enabled ->
-            switch (enabled) {
-              case ALL -> messageProperties.getAdminUsersFilterAll();
-              case YES -> messageProperties.getAdminUsersYes();
-              case NO -> messageProperties.getAdminUsersNo();
-            });
+    enabledFilter.setItemLabelGenerator(enabled ->
+        switch (enabled) {
+          case ALL -> messageProperties.getAdminUsersFilterAll();
+          case YES -> messageProperties.getAdminUsersYes();
+          case NO -> messageProperties.getAdminUsersNo();
+        });
     statusFilter.setLabel(messageProperties.getAdminUsersGridStatus());
 
     statusFilter.setItemLabelGenerator(messageProperties::getUserStatusLabel);
@@ -436,11 +435,10 @@ public class AdminUserManagementSection extends VerticalLayout {
             .setAutoWidth(true)
             .setFlexGrow(0);
 
-    userGrid.addSortListener(
-        event -> {
-          currentPage = 0;
-          updateGridPage();
-        });
+    userGrid.addSortListener(event -> {
+      currentPage = 0;
+      updateGridPage();
+    });
     userGrid.setWidthFull();
     userGrid.setAllRowsVisible(true);
     refreshEmptyState();
@@ -482,16 +480,13 @@ public class AdminUserManagementSection extends VerticalLayout {
 
   private void refreshStatusChoices() {
     statusFilter.setRenderer(
-        new com.vaadin.flow.data.renderer.ComponentRenderer<>(
-            status -> {
-              Component symbol = status.getOutlineComponent(IconSize.PIXEL_16, false);
-              Div label = new Div(symbol, new Span(messageProperties.getUserStatusLabel(status)));
-              label.addClassName("admin-filter-status-label");
-              label
-                  .getElement()
-                  .setAttribute("data-status", status.name().toLowerCase(Locale.ROOT));
-              return label;
-            }));
+        new com.vaadin.flow.data.renderer.ComponentRenderer<>(status -> {
+          Component symbol = status.getOutlineComponent(IconSize.PIXEL_16, false);
+          Div label = new Div(symbol, new Span(messageProperties.getUserStatusLabel(status)));
+          label.addClassName("admin-filter-status-label");
+          label.getElement().setAttribute("data-status", status.name().toLowerCase(Locale.ROOT));
+          return label;
+        }));
     lastActivityFilter.addClassName("admin-user-activity-filter");
   }
 
@@ -563,9 +558,8 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     Comparator<UserEntity> comparator =
         userGrid.getSortOrder().stream()
-            .map(
-                order ->
-                    (Comparator<UserEntity>) order.getSorted().getComparator(order.getDirection()))
+            .map(order ->
+                (Comparator<UserEntity>) order.getSorted().getComparator(order.getDirection()))
             .reduce(Comparator::thenComparing)
             .orElse((left, right) -> 0);
     List<UserEntity> sortedUsers = filteredUsers.stream().sorted(comparator).toList();
@@ -685,7 +679,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     HorizontalLayout footer = new HorizontalLayout(cancelButton, confirmButton);
     footer.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configure(footer);
+    EqualButtonWidths.configureEqualButtonWidths(footer);
     footer.setWidthFull();
     footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
@@ -708,12 +702,11 @@ public class AdminUserManagementSection extends VerticalLayout {
           confirmButton.setText(messageProperties.getPortalDeleteAction());
         };
     dialogErrorRefreshers.add(refreshTexts);
-    dialog.addOpenedChangeListener(
-        event -> {
-          if (!event.isOpened()) {
-            dialogErrorRefreshers.remove(refreshTexts);
-          }
-        });
+    dialog.addOpenedChangeListener(event -> {
+      if (!event.isOpened()) {
+        dialogErrorRefreshers.remove(refreshTexts);
+      }
+    });
     dialog.addDetachListener(event -> dialogErrorRefreshers.remove(refreshTexts));
     dialog.open();
   }
@@ -869,7 +862,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
       birthDatePicker.setAutoOpen(false);
-      CompactDateInput.configure(birthDatePicker, messageProperties);
+      CompactDateInput.configureDatePickerInput(birthDatePicker, messageProperties);
       refreshBirthDate();
       birthDatePicker.setWidthFull();
       birthDatePicker.setClearButtonVisible(true);
@@ -920,7 +913,7 @@ public class AdminUserManagementSection extends VerticalLayout {
           VaadinSession.getCurrent() != null
               ? VaadinSession.getCurrent().getLocale()
               : Locale.getDefault());
-      CompactDateInput.configure(birthDatePicker, messageProperties);
+      CompactDateInput.configureDatePickerInput(birthDatePicker, messageProperties);
       birthDatePicker.setLabel(messageProperties.getRegistrationBirthDateField());
       birthDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
     }
@@ -949,21 +942,19 @@ public class AdminUserManagementSection extends VerticalLayout {
           .withValidator(
               ValidationHelper::isEmailValid,
               context -> messageProperties.getBaseValidationEmailInvalidMessage())
-          .withValidator(
-              (email, context) -> {
-                emailCheckFailed.set(false);
-                try {
-                  return userService.emailExistsForOtherUser(
-                          ValidationHelper.normalize(email), formData.getId())
-                      ? ValidationResult.error(
-                          messageProperties.getBaseValidationEmailExistsMessage())
-                      : ValidationResult.ok();
-                } catch (RuntimeException exception) {
-                  log.error("E-Mail-Vorprüfung fehlgeschlagen", safeFailure(exception));
-                  emailCheckFailed.set(true);
-                  return ValidationResult.error(messageProperties.getAdminUsersErrorSaveFailed());
-                }
-              })
+          .withValidator((email, context) -> {
+            emailCheckFailed.set(false);
+            try {
+              return userService.emailExistsForOtherUser(
+                      ValidationHelper.normalize(email), formData.getId())
+                  ? ValidationResult.error(messageProperties.getBaseValidationEmailExistsMessage())
+                  : ValidationResult.ok();
+            } catch (RuntimeException exception) {
+              log.error("E-Mail-Vorprüfung fehlgeschlagen", safeFailure(exception));
+              emailCheckFailed.set(true);
+              return ValidationResult.error(messageProperties.getAdminUsersErrorSaveFailed());
+            }
+          })
           .bind(AdminUserFormData::getEmail, AdminUserFormData::setEmail);
 
       bindPasswordFields();
@@ -999,12 +990,11 @@ public class AdminUserManagementSection extends VerticalLayout {
       passwordBinding =
           binder
               .forField(passwordField)
-              .withValidationStatusHandler(
-                  status -> {
-                    boolean showError = showPasswordErrors.get() && status.isError();
-                    passwordField.setErrorMessage(showError ? status.getMessage().orElse("") : "");
-                    passwordField.setInvalid(showError);
-                  })
+              .withValidationStatusHandler(status -> {
+                boolean showError = showPasswordErrors.get() && status.isError();
+                passwordField.setErrorMessage(showError ? status.getMessage().orElse("") : "");
+                passwordField.setInvalid(showError);
+              })
               .withValidator(
                   value -> ValidationHelper.isPasswordSecure(value, editMode),
                   context ->
@@ -1016,13 +1006,12 @@ public class AdminUserManagementSection extends VerticalLayout {
       confirmPasswordBinding =
           binder
               .forField(confirmPasswordField)
-              .withValidationStatusHandler(
-                  status -> {
-                    boolean showError = showConfirmPasswordErrors.get() && status.isError();
-                    confirmPasswordField.setErrorMessage(
-                        showError ? status.getMessage().orElse("") : "");
-                    confirmPasswordField.setInvalid(showError);
-                  })
+              .withValidationStatusHandler(status -> {
+                boolean showError = showConfirmPasswordErrors.get() && status.isError();
+                confirmPasswordField.setErrorMessage(
+                    showError ? status.getMessage().orElse("") : "");
+                confirmPasswordField.setInvalid(showError);
+              })
               .withValidator(
                   value ->
                       !ValidationHelper.isRequiredTextValid(passwordField.getValue())
@@ -1037,42 +1026,37 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private void configurePasswordFeedback() {
-      passwordField.addValueChangeListener(
-          event -> {
-            boolean passwordEntered = ValidationHelper.isRequiredTextValid(event.getValue());
-            refreshPasswordHint();
-            confirmPasswordField.setEnabled(passwordEntered);
-            confirmPasswordField.setRequiredIndicatorVisible(passwordEntered);
-            if (!passwordEntered) {
-              showConfirmPasswordErrors.set(false);
-              confirmPasswordField.clear();
-            }
-            confirmPasswordBinding.validate();
-          });
+      passwordField.addValueChangeListener(event -> {
+        boolean passwordEntered = ValidationHelper.isRequiredTextValid(event.getValue());
+        refreshPasswordHint();
+        confirmPasswordField.setEnabled(passwordEntered);
+        confirmPasswordField.setRequiredIndicatorVisible(passwordEntered);
+        if (!passwordEntered) {
+          showConfirmPasswordErrors.set(false);
+          confirmPasswordField.clear();
+        }
+        confirmPasswordBinding.validate();
+      });
 
       // Sofort prüfen, aber Fehlermeldungen erst nach dem Verlassen des Feldes anzeigen.
-      passwordField.addFocusListener(
-          event -> {
-            showPasswordErrors.set(false);
-            passwordField.setInvalid(false);
-            passwordField.setErrorMessage("");
-          });
-      passwordField.addBlurListener(
-          event -> {
-            showPasswordErrors.set(true);
-            passwordBinding.validate();
-          });
-      confirmPasswordField.addFocusListener(
-          event -> {
-            showConfirmPasswordErrors.set(false);
-            confirmPasswordField.setInvalid(false);
-            confirmPasswordField.setErrorMessage("");
-          });
-      confirmPasswordField.addBlurListener(
-          event -> {
-            showConfirmPasswordErrors.set(true);
-            confirmPasswordBinding.validate();
-          });
+      passwordField.addFocusListener(event -> {
+        showPasswordErrors.set(false);
+        passwordField.setInvalid(false);
+        passwordField.setErrorMessage("");
+      });
+      passwordField.addBlurListener(event -> {
+        showPasswordErrors.set(true);
+        passwordBinding.validate();
+      });
+      confirmPasswordField.addFocusListener(event -> {
+        showConfirmPasswordErrors.set(false);
+        confirmPasswordField.setInvalid(false);
+        confirmPasswordField.setErrorMessage("");
+      });
+      confirmPasswordField.addBlurListener(event -> {
+        showConfirmPasswordErrors.set(true);
+        confirmPasswordBinding.validate();
+      });
     }
 
     private void refreshPasswordHint() {
@@ -1123,7 +1107,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       HorizontalLayout footer = new HorizontalLayout();
       footer.addClassName("cosmos-dialog-actions");
-      EqualButtonWidths.configure(footer);
+      EqualButtonWidths.configureEqualButtonWidths(footer);
       footer.setWidthFull();
       footer.setAlignItems(Alignment.CENTER);
       if (editMode) {
@@ -1149,11 +1133,10 @@ public class AdminUserManagementSection extends VerticalLayout {
       if (editMode && identities != null) {
         identities
             .adminSignInSummary(user.getId())
-            .ifPresent(
-                summary -> {
-                  signInSummary = summary;
-                  dialogLayout.add(signInDetails());
-                });
+            .ifPresent(summary -> {
+              signInSummary = summary;
+              dialogLayout.add(signInDetails());
+            });
       }
       Div footerSection = new Div(securityNote, footer);
       footerSection.addClassName("admin-user-editor-footer");
@@ -1215,12 +1198,11 @@ public class AdminUserManagementSection extends VerticalLayout {
         signInSummary.available().stream()
             .sorted()
             .map(messageProperties::getSignInMethodLabel)
-            .forEach(
-                label -> {
-                  Badge badge = new Badge(label);
-                  badge.addThemeVariants(BadgeVariant.SUCCESS);
-                  availableMethods.add(badge);
-                });
+            .forEach(label -> {
+              Badge badge = new Badge(label);
+              badge.addThemeVariants(BadgeVariant.SUCCESS);
+              availableMethods.add(badge);
+            });
       }
     }
 
@@ -1265,22 +1247,20 @@ public class AdminUserManagementSection extends VerticalLayout {
                     : messageProperties.getAdminUsersTechnicalInfoCreate());
             if (binder
                 .getFields()
-                .anyMatch(
-                    field ->
-                        field
-                                instanceof
-                                com.vaadin.flow.component.shared.HasValidationProperties validation
-                            && validation.isInvalid())) {
+                .anyMatch(field ->
+                    field
+                            instanceof
+                            com.vaadin.flow.component.shared.HasValidationProperties validation
+                        && validation.isInvalid())) {
               binder.validate();
             }
           };
       dialogErrorRefreshers.add(refreshErrors);
-      dialog.addOpenedChangeListener(
-          event -> {
-            if (!event.isOpened()) {
-              dialogErrorRefreshers.remove(refreshErrors);
-            }
-          });
+      dialog.addOpenedChangeListener(event -> {
+        if (!event.isOpened()) {
+          dialogErrorRefreshers.remove(refreshErrors);
+        }
+      });
       dialog.addDetachListener(event -> dialogErrorRefreshers.remove(refreshErrors));
     }
 
@@ -1481,12 +1461,11 @@ public class AdminUserManagementSection extends VerticalLayout {
         .map(RoleEntity::getName)
         .map(this::formatRoleType)
         .sorted(String.CASE_INSENSITIVE_ORDER)
-        .forEach(
-            roleName -> {
-              Span badge = new Span(roleName);
-              badge.addClassName("cosmos-admin-role-chip");
-              badges.add(badge);
-            });
+        .forEach(roleName -> {
+          Span badge = new Span(roleName);
+          badge.addClassName("cosmos-admin-role-chip");
+          badges.add(badge);
+        });
     return badges;
   }
 

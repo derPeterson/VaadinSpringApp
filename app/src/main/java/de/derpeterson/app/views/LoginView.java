@@ -139,12 +139,11 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
         new RouterLink(messageProperties.getLoginForgotPasswordLink(), ForgotPasswordView.class);
     this.rememberMeSwitch = new Switch(messageProperties.getLoginRememberMeCheckbox());
     restoreRememberChoice(request.getCookies());
-    rememberMeSwitch.addValueChangeListener(
-        event -> {
-          if (event.isFromClient()) {
-            saveRememberChoice(event.getValue());
-          }
-        });
+    rememberMeSwitch.addValueChangeListener(event -> {
+      if (event.isFromClient()) {
+        saveRememberChoice(event.getValue());
+      }
+    });
     this.loginButton =
         new Button(
             messageProperties.getBaseLoginButton(),
@@ -239,30 +238,29 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     continueLogin.setId("session-recovery-continue");
     continueLogin.setPrefixComponent(AppIcon.SIGN_IN.create());
     continueLogin.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    continueLogin.addClickListener(
-        event -> {
-          try {
-            boolean admin =
-                sessions.finishRecovery(
-                    currentRequest, (HttpServletResponse) VaadinResponse.getCurrent());
-            Class<? extends Component> target = loginTarget(admin);
-            getUI().ifPresent(ui -> ui.navigate(target));
-          } catch (SessionLimitException _) {
-            recoverySessions.reload();
-            showLoginFailure(LOGIN_ERROR_SESSIONS);
-          } catch (AuthenticationException _) {
-            hideRecovery();
-            NotificationHelper.getInstance()
-                .showNotification(
-                    messageProperties::getBaseFailedTitle,
-                    messageProperties::getSessionRecoveryExpired,
-                    -1,
-                    NotificationHelper.NotificationType.ERROR);
-          } catch (RuntimeException unavailable) {
-            logger.warn("Restricted login completion failed", safeFailure(unavailable));
-            showLoginFailure(LOGIN_ERROR_UNAVAILABLE);
-          }
-        });
+    continueLogin.addClickListener(event -> {
+      try {
+        boolean admin =
+            sessions.finishRecovery(
+                currentRequest, (HttpServletResponse) VaadinResponse.getCurrent());
+        Class<? extends Component> target = loginTarget(admin);
+        getUI().ifPresent(ui -> ui.navigate(target));
+      } catch (SessionLimitException _) {
+        recoverySessions.reload();
+        showLoginFailure(LOGIN_ERROR_SESSIONS);
+      } catch (AuthenticationException _) {
+        hideRecovery();
+        NotificationHelper.getInstance()
+            .showNotification(
+                messageProperties::getBaseFailedTitle,
+                messageProperties::getSessionRecoveryExpired,
+                -1,
+                NotificationHelper.NotificationType.ERROR);
+      } catch (RuntimeException unavailable) {
+        logger.warn("Restricted login completion failed", safeFailure(unavailable));
+        showLoginFailure(LOGIN_ERROR_UNAVAILABLE);
+      }
+    });
     cancelRecovery = new Button();
     cancelRecovery.setId("session-recovery-cancel");
     cancelRecovery.setPrefixComponent(AppIcon.CLOSE.create());
@@ -297,47 +295,38 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
     Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
     Optional.ofNullable(createAccountLink)
-        .ifPresent(
-            component ->
-                componentTranslationSupplierMap.put(
-                    component, this.messageProperties::getLoginCreateAccountLink));
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getLoginCreateAccountLink));
     Optional.ofNullable(emailField)
-        .ifPresent(
-            component ->
-                componentTranslationSupplierMap.put(
-                    component, this.messageProperties::getPublicEmailField));
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getPublicEmailField));
     Optional.ofNullable(passwordField)
-        .ifPresent(
-            component ->
-                componentTranslationSupplierMap.put(
-                    component, this.messageProperties::getLoginPasswordField));
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getLoginPasswordField));
     Optional.ofNullable(forgotPasswordLink)
-        .ifPresent(
-            component ->
-                componentTranslationSupplierMap.put(
-                    component, this.messageProperties::getLoginForgotPasswordLink));
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getLoginForgotPasswordLink));
     Optional.ofNullable(rememberMeSwitch)
-        .ifPresent(
-            component ->
-                componentTranslationSupplierMap.put(
-                    component, this.messageProperties::getLoginRememberMeCheckbox));
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getLoginRememberMeCheckbox));
     Optional.ofNullable(loginButton)
-        .ifPresent(
-            component ->
-                componentTranslationSupplierMap.put(
-                    component, this.messageProperties::getBaseLoginButton));
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getBaseLoginButton));
     Optional.ofNullable(title)
-        .ifPresent(
-            component ->
-                componentTranslationSupplierMap.put(
-                    component, this.messageProperties::getLoginTitle));
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(component, this.messageProperties::getLoginTitle));
     Optional.ofNullable(createAccountQuestionText)
-        .ifPresent(
-            component ->
-                componentTranslationSupplierMap.put(
-                    component, this.messageProperties::getLoginCreateAccountQuestion));
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getLoginCreateAccountQuestion));
 
-    ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+    ComponentTextUpdateHelper.updateComponentTexts(componentTranslationSupplierMap);
     updateInputPlaceholders();
     refreshRecoveryTexts();
     NotificationHelper.getInstance().updateText();

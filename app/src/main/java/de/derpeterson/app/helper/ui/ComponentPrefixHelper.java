@@ -12,23 +12,25 @@ public class ComponentPrefixHelper {
 
   private static final String PREFIX_SLOT_NAME = "prefix";
 
-  private static Stream<Element> getElementsInSlot(HasElement target, String slot) {
-    return target
+  private static Stream<Element> getElementsInSlot(HasElement targetComponent, String slotName) {
+    return targetComponent
         .getElement()
         .getChildren()
-        .filter(child -> slot.equals(child.getAttribute("slot")));
+        .filter(childElement -> slotName.equals(childElement.getAttribute("slot")));
   }
 
-  public static void setPrefixComponent(Component target, Component component) {
-    clearSlot(target, PREFIX_SLOT_NAME);
+  public static void setPrefixComponent(Component targetComponent, Component prefixComponent) {
+    clearSlot(targetComponent, PREFIX_SLOT_NAME);
 
-    if (component != null) {
-      component.getElement().setAttribute("slot", PREFIX_SLOT_NAME);
-      target.getElement().appendChild(component.getElement());
+    if (prefixComponent != null) {
+      prefixComponent.getElement().setAttribute("slot", PREFIX_SLOT_NAME);
+      targetComponent.getElement().appendChild(prefixComponent.getElement());
     }
   }
 
-  public static void clearSlot(Component target, String slot) {
-    getElementsInSlot(target, slot).toList().forEach(target.getElement()::removeChild);
+  public static void clearSlot(Component targetComponent, String slotName) {
+    getElementsInSlot(targetComponent, slotName)
+        .toList()
+        .forEach(targetComponent.getElement()::removeChild);
   }
 }

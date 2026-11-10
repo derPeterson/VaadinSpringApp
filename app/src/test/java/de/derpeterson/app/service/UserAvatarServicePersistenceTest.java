@@ -50,7 +50,7 @@ import de.derpeterson.app.ui.components.AccountAvatarDialog;
 import de.derpeterson.app.ui.components.AccountAvatarEditor;
 import de.derpeterson.app.ui.components.AvatarImageResource;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
-import de.derpeterson.app.websocket.UserProfileBroadcaster.Message;
+import de.derpeterson.app.websocket.UserProfileBroadcaster.UserProfileChangeMessage;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.io.ByteArrayInputStream;
@@ -137,20 +137,19 @@ class UserAvatarServicePersistenceTest {
     SecurityContextHolder.clearContext();
     reset(config, avatarUploadClock);
     when(avatarUploadClock.instant()).thenReturn(START);
-    tx.executeWithoutResult(
-        status -> {
-          avatars.deleteAll();
-          users.deleteAll();
-          users.flush();
-          em.createQuery("delete from RoleEntity").executeUpdate();
-          RoleEntity role = new RoleEntity();
-          role.setName(RoleType.ROLE_USER);
-          em.persist(role);
-          user = newUser("avatar@example.test", role);
-          other = newUser("other-avatar@example.test", role);
-          em.persist(user);
-          em.persist(other);
-        });
+    tx.executeWithoutResult(status -> {
+      avatars.deleteAll();
+      users.deleteAll();
+      users.flush();
+      em.createQuery("delete from RoleEntity").executeUpdate();
+      RoleEntity role = new RoleEntity();
+      role.setName(RoleType.ROLE_USER);
+      em.persist(role);
+      user = newUser("avatar@example.test", role);
+      other = newUser("other-avatar@example.test", role);
+      em.persist(user);
+      em.persist(other);
+    });
     authenticate(user);
   }
 
@@ -452,17 +451,17 @@ class UserAvatarServicePersistenceTest {
     assertNull(deletedRow.getOriginalHeight());
     assertEquals(profileVersion, users.findById(user.getId()).orElseThrow().getVersion());
     uploadAndSave();
-    tx.executeWithoutResult(
-        status -> {
-          users.deleteById(user.getId());
-          users.flush();
-        });
+    tx.executeWithoutResult(status -> {
+      users.deleteById(user.getId());
+      users.flush();
+    });
     assertEquals(0, avatars.count());
   }
 
   @Test
   void staleDialogAndRollbackCannotReplaceANewerImageOrPublishPrematureEvents() throws Exception {
-    ArrayList<Message> messages = new ArrayList<UserProfileBroadcaster.Message>();
+    ArrayList<UserProfileChangeMessage> messages =
+        new ArrayList<UserProfileBroadcaster.UserProfileChangeMessage>();
     Registration registration = events.register(messages::add);
     try {
       Open old = service.open(request);
@@ -473,11 +472,10 @@ class UserAvatarServicePersistenceTest {
       assertThrows(OptimisticLockingFailureException.class, () -> service.save(request, draftId));
       assertEquals(saved, service.state(user.getId()));
       assertEquals(1, messages.size());
-      tx.executeWithoutResult(
-          status -> {
-            events.afterCommit(user);
-            status.setRollbackOnly();
-          });
+      tx.executeWithoutResult(status -> {
+        events.afterCommit(user);
+        status.setRollbackOnly();
+      });
       assertEquals(1, messages.size());
     } finally {
       registration.remove();
@@ -506,18 +504,17 @@ class UserAvatarServicePersistenceTest {
   void everyRoleCanSaveOwnImageAndOnlyAdministratorsCanReadAnotherImage(RoleType role)
       throws Exception {
     State target = uploadAndSave();
-    tx.executeWithoutResult(
-        status -> {
-          RoleEntity r = new RoleEntity();
-          r.setName(role);
-          if (role == RoleType.ROLE_USER) {
-            r = em.find(RoleEntity.class, user.getRoleEntities().iterator().next().getId());
-          } else {
-            em.persist(r);
-          }
-          UserEntity account = users.findById(other.getId()).orElseThrow();
-          account.setRoleEntities(new ArrayList<>(List.of(r)));
-        });
+    tx.executeWithoutResult(status -> {
+      RoleEntity r = new RoleEntity();
+      r.setName(role);
+      if (role == RoleType.ROLE_USER) {
+        r = em.find(RoleEntity.class, user.getRoleEntities().iterator().next().getId());
+      } else {
+        em.persist(r);
+      }
+      UserEntity account = users.findById(other.getId()).orElseThrow();
+      account.setRoleEntities(new ArrayList<>(List.of(r)));
+    });
     authenticate(other);
     State own = uploadAndSave();
     assertTrue(own.hasImage());
@@ -555,34 +552,32 @@ class UserAvatarServicePersistenceTest {
 
   @Test
   void repositoryDefaultMethodRetainsTheIndependentSecurityRead() {
-    tx.executeWithoutResult(
-        status -> {
-          UserEntity pending = users.findById(user.getId()).orElseThrow();
-          pending.setEnabled(false);
-          em.flush();
+    tx.executeWithoutResult(status -> {
+      UserEntity pending = users.findById(user.getId()).orElseThrow();
+      pending.setEnabled(false);
+      em.flush();
 
-          assertTrue(users.findSecurityUser(user.getEmail()).getFirst().isEnabled());
+      assertTrue(users.findSecurityUser(user.getEmail()).getFirst().isEnabled());
 
-          status.setRollbackOnly();
-        });
+      status.setRollbackOnly();
+    });
     assertTrue(users.findById(user.getId()).orElseThrow().isEnabled());
   }
 
   @Test
   void singleMetadataReadIsIndependentOfPendingOuterChanges() throws Exception {
     State committed = uploadAndSave();
-    tx.executeWithoutResult(
-        status -> {
-          de.derpeterson.app.model.UserAvatarEntity pending =
-              avatars.findById(user.getId()).orElseThrow();
-          pending.setMode(AvatarMode.INITIALS);
-          em.flush();
+    tx.executeWithoutResult(status -> {
+      de.derpeterson.app.model.UserAvatarEntity pending =
+          avatars.findById(user.getId()).orElseThrow();
+      pending.setMode(AvatarMode.INITIALS);
+      em.flush();
 
-          assertEquals(committed, service.state(user.getId()));
-          assertEquals(committed, service.states(List.of(user.getId())).get(user.getId()));
+      assertEquals(committed, service.state(user.getId()));
+      assertEquals(committed, service.states(List.of(user.getId())).get(user.getId()));
 
-          status.setRollbackOnly();
-        });
+      status.setRollbackOnly();
+    });
     assertEquals(committed, service.state(user.getId()));
   }
 

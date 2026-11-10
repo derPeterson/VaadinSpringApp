@@ -48,7 +48,7 @@ public class PortalHomeComponent extends Div {
     openAccountButton.addClassName("portal-button");
     Div actions = new Div(openNotificationsButton, openAccountButton);
     actions.addClassName("portal-home-actions");
-    EqualButtonWidths.configure(actions);
+    EqualButtonWidths.configureEqualButtonWidths(actions);
     Div copy = new Div(welcomeEyebrow, welcomeTitle, portalDescription, actions);
     copy.addClassName("portal-home-copy");
     Image planet = new Image("icons/portal-home.svg", "");

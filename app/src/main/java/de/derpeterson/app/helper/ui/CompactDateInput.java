@@ -13,45 +13,57 @@ import java.util.Locale;
 public final class CompactDateInput {
   private CompactDateInput() {}
 
-  public static void configure(DatePicker picker, MessageProperties messages) {
-    DatePickerI18n i18n =
-        picker.getI18n() == null ? new DatePicker.DatePickerI18n() : picker.getI18n();
-    i18n.setReferenceDate(LocalDate.of(2000, Month.JANUARY, 1));
+  public static void configureDatePickerInput(
+      DatePicker datePicker, MessageProperties messageProperties) {
+    DatePickerI18n datePickerI18n =
+        datePicker.getI18n() == null ? new DatePicker.DatePickerI18n() : datePicker.getI18n();
+    datePickerI18n.setReferenceDate(LocalDate.of(2000, Month.JANUARY, 1));
     // Die Ausgabe entspricht dem sichtbaren DE-Beispiel; kurze getrennte Eingaben bleiben erlaubt.
-    boolean german = Locale.GERMAN.getLanguage().equals(picker.getLocale().getLanguage());
-    if (german) {
-      i18n.setDateFormats("dd.MM.yyyy", "d.M.yyyy", "dd.MM.yy", "d.M.yy");
+    boolean usesGermanDateOrder =
+        Locale.GERMAN.getLanguage().equals(datePicker.getLocale().getLanguage());
+    if (usesGermanDateOrder) {
+      datePickerI18n.setDateFormats("dd.MM.yyyy", "d.M.yyyy", "dd.MM.yy", "d.M.yy");
     } else {
-      i18n.setDateFormats("M/d/yyyy", "M/d/yy");
+      datePickerI18n.setDateFormats("M/d/yyyy", "M/d/yy");
     }
-    picker.setI18n(i18n);
-    picker.setFallbackParser(
-        input -> parse(input, picker.getLocale(), messages.getBaseValidationDateInvalidMessage()));
+    datePicker.setI18n(datePickerI18n);
+    datePicker.setFallbackParser(dateInputText ->
+        parseCompactDate(
+            dateInputText,
+            datePicker.getLocale(),
+            messageProperties.getBaseValidationDateInvalidMessage()));
   }
 
-  static Result<LocalDate> parse(String input, Locale locale, String error) {
-    String digits = input == null ? "" : input.strip();
-    int length = digits.length();
-    if ((length != 4 && length != 6 && length != 8)
-        || !digits.chars().allMatch(c -> c >= '0' && c <= '9')) {
-      return Result.error(error);
+  static Result<LocalDate> parseCompactDate(
+      String dateInputText, Locale dateLocale, String validationErrorText) {
+    String dateDigits = dateInputText == null ? "" : dateInputText.strip();
+    int dateDigitCount = dateDigits.length();
+    if ((dateDigitCount != 4 && dateDigitCount != 6 && dateDigitCount != 8)
+        || !dateDigits
+            .chars()
+            .allMatch(digitCodePoint -> digitCodePoint >= '0' && digitCodePoint <= '9')) {
+      return Result.error(validationErrorText);
     }
-    int partLength = length == 4 ? 1 : 2;
-    int first = Integer.parseInt(digits.substring(0, partLength));
-    int second = Integer.parseInt(digits.substring(partLength, partLength * 2));
-    String yearDigits = digits.substring(partLength * 2);
-    int year = Integer.parseInt(yearDigits);
+    int partLength = dateDigitCount == 4 ? 1 : 2;
+    int firstDatePart = Integer.parseInt(dateDigits.substring(0, partLength));
+    int secondDatePart = Integer.parseInt(dateDigits.substring(partLength, partLength * 2));
+    String yearDigits = dateDigits.substring(partLength * 2);
+    int parsedYear = Integer.parseInt(yearDigits);
     if (yearDigits.length() == 2) {
-      year += year >= 50 ? 1900 : 2000;
+      parsedYear += parsedYear >= 50 ? 1900 : 2000;
     }
-    if (year == 0) {
-      return Result.error(error);
+    if (parsedYear == 0) {
+      return Result.error(validationErrorText);
     }
-    boolean german = Locale.GERMAN.getLanguage().equals(locale.getLanguage());
+    boolean usesGermanDateOrder = Locale.GERMAN.getLanguage().equals(dateLocale.getLanguage());
     try {
-      return Result.ok(LocalDate.of(year, german ? second : first, german ? first : second));
+      return Result.ok(
+          LocalDate.of(
+              parsedYear,
+              usesGermanDateOrder ? secondDatePart : firstDatePart,
+              usesGermanDateOrder ? firstDatePart : secondDatePart));
     } catch (DateTimeException _) {
-      return Result.error(error);
+      return Result.error(validationErrorText);
     }
   }
 }

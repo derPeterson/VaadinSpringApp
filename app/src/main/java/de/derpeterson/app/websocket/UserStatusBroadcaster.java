@@ -13,31 +13,31 @@ import org.springframework.stereotype.Component;
 @Slf4j
 public class UserStatusBroadcaster {
 
-  private final List<Consumer<UserStatusMessage>> listeners = new ArrayList<>();
+  private final List<Consumer<UserStatusMessage>> userStatusListeners = new ArrayList<>();
 
   public record UserStatusMessage(Long userId, String oldStatus, String newStatus) {}
 
   // UI-Komponenten registrieren, die den Status empfangen sollen
-  public synchronized Registration register(Consumer<UserStatusMessage> listener) {
-    listeners.add(listener);
+  public synchronized Registration register(Consumer<UserStatusMessage> userStatusListener) {
+    userStatusListeners.add(userStatusListener);
     return () -> {
       synchronized (UserStatusBroadcaster.this) {
-        listeners.remove(listener);
+        userStatusListeners.remove(userStatusListener);
       }
     };
   }
 
   // Nachricht an alle registrierten Listener senden
-  public synchronized void broadcast(UserStatusMessage message) {
+  public synchronized void broadcast(UserStatusMessage userStatusMessage) {
     // A snapshot also permits listeners to unregister themselves during delivery.
-    for (Consumer<UserStatusMessage> listener : new ArrayList<>(listeners)) {
+    for (Consumer<UserStatusMessage> userStatusListener : new ArrayList<>(userStatusListeners)) {
       try {
-        listener.accept(message);
-      } catch (RuntimeException exception) {
+        userStatusListener.accept(userStatusMessage);
+      } catch (RuntimeException listenerFailure) {
         log.error(
             "Status-Listener fehlgeschlagen für Benutzer {}",
-            message.userId(),
-            safeFailure(exception));
+            userStatusMessage.userId(),
+            safeFailure(listenerFailure));
       }
     }
   }

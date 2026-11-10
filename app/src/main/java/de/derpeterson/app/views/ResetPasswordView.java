@@ -147,7 +147,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         .ifPresent(
             component -> componentTranslationSupplierMap.put(component, this::linkProblemText));
 
-    ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+    ComponentTextUpdateHelper.updateComponentTexts(componentTranslationSupplierMap);
     updateInputPlaceholders();
     NotificationHelper.getInstance().updateText();
   }

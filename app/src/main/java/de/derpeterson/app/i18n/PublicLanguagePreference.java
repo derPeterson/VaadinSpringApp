@@ -13,37 +13,37 @@ public final class PublicLanguagePreference {
 
   private PublicLanguagePreference() {}
 
-  public static void restore(VaadinRequest request, VaadinSession session) {
-    Cookie[] cookies = request.getCookies();
-    if (cookies == null) {
+  public static void restore(VaadinRequest vaadinRequest, VaadinSession vaadinSession) {
+    Cookie[] requestCookies = vaadinRequest.getCookies();
+    if (requestCookies == null) {
       return;
     }
-    for (Cookie cookie : cookies) {
-      if (COOKIE_NAME.equals(cookie.getName())) {
-        String language = cookie.getValue();
-        if ("de".equals(language)) {
-          session.setLocale(Locale.GERMAN);
-        } else if ("en".equals(language)) {
-          session.setLocale(Locale.ENGLISH);
+    for (Cookie languageCookie : requestCookies) {
+      if (COOKIE_NAME.equals(languageCookie.getName())) {
+        String languageTag = languageCookie.getValue();
+        if ("de".equals(languageTag)) {
+          vaadinSession.setLocale(Locale.GERMAN);
+        } else if ("en".equals(languageTag)) {
+          vaadinSession.setLocale(Locale.ENGLISH);
         }
         return;
       }
     }
   }
 
-  public static void save(Locale locale) {
-    VaadinRequest request = VaadinRequest.getCurrent();
-    VaadinResponse response = VaadinResponse.getCurrent();
-    if (request == null || response == null) {
+  public static void save(Locale selectedLocale) {
+    VaadinRequest vaadinRequest = VaadinRequest.getCurrent();
+    VaadinResponse vaadinResponse = VaadinResponse.getCurrent();
+    if (vaadinRequest == null || vaadinResponse == null) {
       return;
     }
-    Cookie cookie = new Cookie(COOKIE_NAME, locale.getLanguage());
-    String contextPath = request.getContextPath();
-    cookie.setPath(contextPath.isEmpty() ? "/" : contextPath);
-    cookie.setHttpOnly(true);
-    cookie.setSecure(request.isSecure());
-    cookie.setAttribute("SameSite", "Lax");
-    cookie.setMaxAge(MAX_AGE_SECONDS);
-    response.addCookie(cookie);
+    Cookie languageCookie = new Cookie(COOKIE_NAME, selectedLocale.getLanguage());
+    String contextPath = vaadinRequest.getContextPath();
+    languageCookie.setPath(contextPath.isEmpty() ? "/" : contextPath);
+    languageCookie.setHttpOnly(true);
+    languageCookie.setSecure(vaadinRequest.isSecure());
+    languageCookie.setAttribute("SameSite", "Lax");
+    languageCookie.setMaxAge(MAX_AGE_SECONDS);
+    vaadinResponse.addCookie(languageCookie);
   }
 }

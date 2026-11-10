@@ -182,7 +182,7 @@ public final class TwoFactorView extends VerticalLayout
     actions.setPadding(false);
     actions.setSpacing(false);
     actions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configure(actions);
+    EqualButtonWidths.configureEqualButtonWidths(actions);
     stepNavigationLayout.setPadding(false);
     stepNavigationLayout.setSpacing(false);
     stepNavigationLayout.addClassName("two-factor-footer-navigation");

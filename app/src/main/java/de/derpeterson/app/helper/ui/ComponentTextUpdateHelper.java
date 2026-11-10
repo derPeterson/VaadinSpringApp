@@ -14,28 +14,27 @@ import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ComponentTextUpdateHelper {
-  public static void updateComponents(
+  public static void updateComponentTexts(
       Map<Component, Supplier<String>> componentTranslationSupplierMap) {
-    componentTranslationSupplierMap.forEach(
-        (component, translationSupplier) -> {
-          if (component instanceof HasText hasTextComponent) {
-            hasTextComponent.setText(translationSupplier.get());
-          }
-          if (component instanceof HasLabel hasLabelComponent) {
-            hasLabelComponent.setLabel(translationSupplier.get());
-          }
-          if (component instanceof EmailField emailFieldComponent) {
-            emailFieldComponent.setLabel(translationSupplier.get());
-          }
-          if (component instanceof PasswordField passwordFieldComponent) {
-            passwordFieldComponent.setLabel(translationSupplier.get());
-          }
-          if (component instanceof Checkbox checkBoxComponent) {
-            checkBoxComponent.setLabel(translationSupplier.get());
-          }
-          if (component instanceof DatePicker datePickerComponent) {
-            datePickerComponent.setLabel(translationSupplier.get());
-          }
-        });
+    componentTranslationSupplierMap.forEach((translatedComponent, translationSupplier) -> {
+      if (translatedComponent instanceof HasText hasTextComponent) {
+        hasTextComponent.setText(translationSupplier.get());
+      }
+      if (translatedComponent instanceof HasLabel hasLabelComponent) {
+        hasLabelComponent.setLabel(translationSupplier.get());
+      }
+      if (translatedComponent instanceof EmailField emailFieldComponent) {
+        emailFieldComponent.setLabel(translationSupplier.get());
+      }
+      if (translatedComponent instanceof PasswordField passwordFieldComponent) {
+        passwordFieldComponent.setLabel(translationSupplier.get());
+      }
+      if (translatedComponent instanceof Checkbox checkBoxComponent) {
+        checkBoxComponent.setLabel(translationSupplier.get());
+      }
+      if (translatedComponent instanceof DatePicker datePickerComponent) {
+        datePickerComponent.setLabel(translationSupplier.get());
+      }
+    });
   }
 }

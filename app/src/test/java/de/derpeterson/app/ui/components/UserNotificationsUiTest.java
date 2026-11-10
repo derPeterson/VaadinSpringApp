@@ -174,7 +174,8 @@ class UserNotificationsUiTest {
     SupportTicketService support = mock(SupportTicketService.class);
     SupportTicketBroadcaster changes = mock(SupportTicketBroadcaster.class);
     when(support.events()).thenReturn(changes);
-    AtomicReference<Consumer<SupportTicketBroadcaster.Change>> listener = new AtomicReference<>();
+    AtomicReference<Consumer<SupportTicketBroadcaster.SupportTicketChangeMessage>> listener =
+        new AtomicReference<>();
     when(changes.register(any()))
         .thenAnswer(call -> {
           listener.set(call.getArgument(0));
@@ -193,16 +194,16 @@ class UserNotificationsUiTest {
     assertEquals(
         messageProperties.getSupportNewActivity(), Tooltip.forComponent(navigation).getText());
 
-    listener.get().accept(new SupportTicketBroadcaster.Change(null, 77L));
+    listener.get().accept(new SupportTicketBroadcaster.SupportTicketChangeMessage(null, 77L));
     verify(support, times(1)).activity(http);
 
     when(ticket.unreadMessages()).thenReturn(0L);
-    listener.get().accept(new SupportTicketBroadcaster.Change(null, 5L));
+    listener.get().accept(new SupportTicketBroadcaster.SupportTicketChangeMessage(null, 5L));
     assertFalse(indicator.isVisible());
     assertEquals("", Tooltip.forComponent(navigation).getText());
 
     when(ticket.unreadMessages()).thenReturn(1L);
-    listener.get().accept(new SupportTicketBroadcaster.Change(8L, null));
+    listener.get().accept(new SupportTicketBroadcaster.SupportTicketChangeMessage(8L, null));
     assertTrue(indicator.isVisible());
     locale.set(language.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     indicator.refreshTexts();
@@ -210,7 +211,7 @@ class UserNotificationsUiTest {
         messageProperties.getSupportNewActivity(), Tooltip.forComponent(navigation).getText());
 
     when(support.activity(http)).thenThrow(new AccessDeniedException("Access revoked"));
-    listener.get().accept(new SupportTicketBroadcaster.Change(null, 5L));
+    listener.get().accept(new SupportTicketBroadcaster.SupportTicketChangeMessage(null, 5L));
     assertFalse(indicator.isVisible());
     assertEquals("", Tooltip.forComponent(navigation).getText());
     ui.remove(navigation);
@@ -654,7 +655,7 @@ class UserNotificationsUiTest {
       assertEquals(
           messageProperties.getNotificationsOpen()
               + ": "
-              + UserNotificationTexts.title(messageProperties, item),
+              + UserNotificationTexts.getNotificationTitleText(messageProperties, item),
           button.getAriaLabel().orElseThrow());
       assertFalse(button.getThemeNames().contains("tertiary-inline"));
     }
@@ -732,7 +733,7 @@ class UserNotificationsUiTest {
     assertEquals(
         messageProperties.getNotificationsDismiss()
             + ": "
-            + UserNotificationTexts.title(messageProperties, item),
+            + UserNotificationTexts.getNotificationTitleText(messageProperties, item),
         dismiss.getAriaLabel().orElseThrow());
     when(service.inbox(eq(http), any(ReadFilter.class), anyInt(), anyInt()))
         .thenReturn(Page.empty());
@@ -944,7 +945,10 @@ class UserNotificationsUiTest {
         tree(dialog)
             .filter(H3.class::isInstance)
             .map(H3.class::cast)
-            .filter(h -> h.getText().equals(UserNotificationTexts.title(messageProperties, item)))
+            .filter(h ->
+                h.getText()
+                    .equals(
+                        UserNotificationTexts.getNotificationTitleText(messageProperties, item)))
             .count());
     assertTrue(
         tree(dialog)
@@ -959,7 +963,9 @@ class UserNotificationsUiTest {
             .map(Span.class::cast)
             .anyMatch(span ->
                 span.getText()
-                    .equals(UserNotificationTexts.time(item.createdAt(), ui.getLocale()))));
+                    .equals(
+                        UserNotificationTexts.formatNotificationTimestamp(
+                            item.createdAt(), ui.getLocale()))));
   }
 
   @ParameterizedTest
@@ -1651,8 +1657,10 @@ class UserNotificationsUiTest {
         tree(row)
             .filter(Div.class::isInstance)
             .map(Div.class::cast)
-            .anyMatch(
-                div -> div.getText().equals(UserNotificationTexts.body(messageProperties, item))));
+            .anyMatch(div ->
+                div.getText()
+                    .equals(
+                        UserNotificationTexts.getNotificationBodyText(messageProperties, item))));
     Element element = row.getElement();
     ElementListenerMap listeners =
         element.getNode().getFeature(com.vaadin.flow.internal.nodefeature.ElementListenerMap.class);
@@ -1789,15 +1797,19 @@ class UserNotificationsUiTest {
     locale.set(Locale.forLanguageTag(language));
     for (UserNotificationType type : UserNotificationType.values()) {
       Item message = new Item(1L, type, "Original title", "Original body", Instant.now(), false);
-      assertFalse(UserNotificationTexts.title(messageProperties, message).isBlank());
-      assertFalse(UserNotificationTexts.body(messageProperties, message).isBlank());
+      assertFalse(
+          UserNotificationTexts.getNotificationTitleText(messageProperties, message).isBlank());
+      assertFalse(
+          UserNotificationTexts.getNotificationBodyText(messageProperties, message).isBlank());
       if (type == UserNotificationType.ADMIN_ANNOUNCEMENT) {
-        assertEquals("Original body", UserNotificationTexts.body(messageProperties, message));
+        assertEquals(
+            "Original body",
+            UserNotificationTexts.getNotificationBodyText(messageProperties, message));
       }
     }
     assertEquals(
         language.equals("de") ? "Passwort geändert" : "Password changed",
-        UserNotificationTexts.title(messageProperties, item));
+        UserNotificationTexts.getNotificationTitleText(messageProperties, item));
   }
 
   @Test

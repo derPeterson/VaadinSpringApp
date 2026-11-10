@@ -126,82 +126,67 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
           Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
           Optional.ofNullable(title)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getRegistrationTitle));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getRegistrationTitle));
           Optional.ofNullable(createAccountQuestionText)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getRegistrationLoginQuestion));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getRegistrationLoginQuestion));
           Optional.ofNullable(loginLink)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getRegistrationLoginLink));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getRegistrationLoginLink));
           Optional.ofNullable(firstNameField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getRegistrationFirstNameField));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getRegistrationFirstNameField));
           Optional.ofNullable(lastNameField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getRegistrationLastNameField));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getRegistrationLastNameField));
           Optional.ofNullable(emailField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicEmailField));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getPublicEmailField));
           Optional.ofNullable(confirmEmailField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicConfirmEmailField));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getPublicConfirmEmailField));
           Optional.ofNullable(passwordField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getRegistrationPasswordField));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getRegistrationPasswordField));
           Optional.ofNullable(confirmPasswordField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicConfirmPasswordField));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getPublicConfirmPasswordField));
           Optional.ofNullable(genderComboBox)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getRegistrationGenderCombobox));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getRegistrationGenderCombobox));
           Optional.ofNullable(birthDatePicker)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getRegistrationBirthDateField));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getRegistrationBirthDateField));
           Optional.ofNullable(registrationButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getBaseRegistrationButton));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getBaseRegistrationButton));
 
-          ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+          ComponentTextUpdateHelper.updateComponentTexts(componentTranslationSupplierMap);
           updateInputPlaceholders();
           Optional.ofNullable(birthDatePicker)
-              .ifPresent(
-                  picker -> {
-                    picker.setLocale(event.getNewLocale());
-                    CompactDateInput.configure(picker, messageProperties);
-                    picker.setPlaceholder(
-                        this.messageProperties.getRegistrationBirthDatePlaceholder());
-                  });
+              .ifPresent(picker -> {
+                picker.setLocale(event.getNewLocale());
+                CompactDateInput.configureDatePickerInput(picker, messageProperties);
+                picker.setPlaceholder(this.messageProperties.getRegistrationBirthDatePlaceholder());
+              });
           Optional.ofNullable(genderComboBox)
-              .ifPresent(
-                  comboBox -> {
-                    comboBox.setItemLabelGenerator(this::formatGender);
-                    comboBox.getDataProvider().refreshAll();
-                  });
+              .ifPresent(comboBox -> {
+                comboBox.setItemLabelGenerator(this::formatGender);
+                comboBox.getDataProvider().refreshAll();
+              });
           NotificationHelper.getInstance().updateText();
         });
 
@@ -463,7 +448,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     this.birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
     birthDatePicker.setAutoOpen(false);
     birthDatePicker.setLocale(CustomI18NProvider.getCurrentLocale());
-    CompactDateInput.configure(birthDatePicker, messageProperties);
+    CompactDateInput.configureDatePickerInput(birthDatePicker, messageProperties);
     birthDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
     birthDatePicker.setClearButtonVisible(true);
     birthDatePicker.setWidthFull();

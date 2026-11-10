@@ -432,7 +432,8 @@ public class UserNotificationsPanel extends Div {
         httpSession,
         selectedFilter(),
         notificationSearchField.getValue(),
-        UserNotificationTexts.matchingTypes(messageProperties, notificationSearchField.getValue()),
+        UserNotificationTexts.findMatchingNotificationTypes(
+            messageProperties, notificationSearchField.getValue()),
         page,
         selectedPageSize());
   }
@@ -593,7 +594,8 @@ public class UserNotificationsPanel extends Div {
   private Div row(Item item) {
     Button title =
         new Button(
-            UserNotificationTexts.title(messageProperties, item), e -> action(() -> open(item)));
+            UserNotificationTexts.getNotificationTitleText(messageProperties, item),
+            e -> action(() -> open(item)));
     title.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     title.addClassName("cosmos-notification-title");
     if (compact) {
@@ -607,7 +609,7 @@ public class UserNotificationsPanel extends Div {
     open.setAriaLabel(
         messageProperties.getNotificationsOpen()
             + ": "
-            + UserNotificationTexts.title(messageProperties, item));
+            + UserNotificationTexts.getNotificationTitleText(messageProperties, item));
     Button mark = new Button(AppIcon.CHECK.create(), e -> confirmMarkRead(item));
     mark.setVisible(item.unread());
     mark.addClassNames("cosmos-notification-inbox-mark-read", COSMOS_NOTIFICATION_ROW_ACTION_CLASS);
@@ -615,13 +617,13 @@ public class UserNotificationsPanel extends Div {
     mark.setAriaLabel(
         messageProperties.getNotificationsMarkRead()
             + ": "
-            + UserNotificationTexts.title(messageProperties, item));
+            + UserNotificationTexts.getNotificationTitleText(messageProperties, item));
     Div actions = new Div(open, mark, dismissButton(item));
     actions.addClassName("cosmos-notification-inbox-actions");
     Div top = new Div(meta, actions);
     top.addClassName("cosmos-notification-inbox-row-header");
     Div body = new Div();
-    body.setText(UserNotificationTexts.body(messageProperties, item));
+    body.setText(UserNotificationTexts.getNotificationBodyText(messageProperties, item));
     body.addClassNames(COSMOS_NOTIFICATION_BODY_CLASS, "cosmos-notification-inbox-message");
     Div content = new Div(title, body);
     content.addClassName("cosmos-notification-inbox-content");
@@ -644,7 +646,7 @@ public class UserNotificationsPanel extends Div {
     dismiss.setAriaLabel(
         messageProperties.getNotificationsDismiss()
             + ": "
-            + UserNotificationTexts.title(messageProperties, item));
+            + UserNotificationTexts.getNotificationTitleText(messageProperties, item));
     return dismiss;
   }
 
@@ -652,13 +654,13 @@ public class UserNotificationsPanel extends Div {
     Div meta = messageMetadata(item);
     meta.addClassName("cosmos-notification-preview-meta");
     Div body = new Div();
-    body.setText(UserNotificationTexts.body(messageProperties, item));
+    body.setText(UserNotificationTexts.getNotificationBodyText(messageProperties, item));
     body.addClassNames(COSMOS_NOTIFICATION_BODY_CLASS, "cosmos-notification-preview-message");
     Button open = new Button(AppIcon.EYE.create(), e -> action(() -> open(item)));
     open.setAriaLabel(
         messageProperties.getNotificationsOpen()
             + ": "
-            + UserNotificationTexts.title(messageProperties, item));
+            + UserNotificationTexts.getNotificationTitleText(messageProperties, item));
     open.addClassNames(COSMOS_NOTIFICATION_ROW_ACTION_CLASS, "cosmos-notification-row-open");
     open.setTooltipText(messageProperties.getNotificationsOpen());
     Button markRead = new Button(AppIcon.CHECK.create(), e -> confirmMarkRead(item));
@@ -669,7 +671,7 @@ public class UserNotificationsPanel extends Div {
     markRead.setAriaLabel(
         messageProperties.getNotificationsMarkRead()
             + ": "
-            + UserNotificationTexts.title(messageProperties, item));
+            + UserNotificationTexts.getNotificationTitleText(messageProperties, item));
     Div actions = new Div(open, markRead, dismissButton(item));
     actions.addClassName("cosmos-notification-preview-actions");
     Div row = new Div(title, body, meta, actions);
@@ -733,7 +735,8 @@ public class UserNotificationsPanel extends Div {
   private PortalContextCard context(Item item) {
     PortalContextCard card =
         new PortalContextCard(
-            AppIcon.BELL.create(), UserNotificationTexts.title(messageProperties, item));
+            AppIcon.BELL.create(),
+            UserNotificationTexts.getNotificationTitleText(messageProperties, item));
     card.addMetadata(messageMetadata(item));
     return card;
   }
@@ -860,16 +863,21 @@ public class UserNotificationsPanel extends Div {
     origin.addClassNames(
         "cosmos-notification-preview-source",
         administration ? "portal-notification-source-admin" : "portal-notification-source-system");
-    Span time = new Span(UserNotificationTexts.time(item.createdAt(), UI.getCurrent().getLocale()));
+    Span time =
+        new Span(
+            UserNotificationTexts.formatNotificationTimestamp(
+                item.createdAt(), UI.getCurrent().getLocale()));
     time.addClassName("cosmos-notification-message-time");
-    Span state = new Span(UserNotificationTexts.relevance(messageProperties, item));
+    Span state =
+        new Span(UserNotificationTexts.getNotificationRelevanceText(messageProperties, item));
     state.getElement().setAttribute(THEME_ATTRIBUTE, BADGE_THEME);
     state.getElement().setAttribute("data-read", Boolean.toString(item.read()));
     state.addClassName("cosmos-notification-preview-state");
     state.addClassNames(stateClasses);
     Component status = state;
     if (item.relevance() != UserNotificationRelevance.ACTIVE) {
-      Badge retired = new Badge(UserNotificationTexts.relevance(messageProperties, item));
+      Badge retired =
+          new Badge(UserNotificationTexts.getNotificationRelevanceText(messageProperties, item));
       retired.addClassNames("cosmos-notification-preview-state");
       retired.addClassNames(stateClasses);
       retired.getElement().setAttribute("data-relevance", item.relevance().name());
@@ -893,7 +901,8 @@ public class UserNotificationsPanel extends Div {
     notificationDetailDialog.removeAll();
     notificationDetailDialog.getHeader().removeAll();
     notificationDetailDialog.getFooter().removeAll();
-    String subject = UserNotificationTexts.title(messageProperties, openedNotification);
+    String subject =
+        UserNotificationTexts.getNotificationTitleText(messageProperties, openedNotification);
     buildNotificationDetailHeader(subject);
     Div notificationMessage = buildNotificationDetailContent(subject);
     buildNotificationDetailActions(notificationMessage);
@@ -930,7 +939,8 @@ public class UserNotificationsPanel extends Div {
     Div contentMeta = messageMetadata(openedNotification, "cosmos-notification-detail-state");
     contentMeta.addClassName("cosmos-notification-detail-meta");
     Div body = new Div();
-    body.setText(UserNotificationTexts.body(messageProperties, openedNotification));
+    body.setText(
+        UserNotificationTexts.getNotificationBodyText(messageProperties, openedNotification));
     body.addClassNames(COSMOS_NOTIFICATION_BODY_CLASS, "cosmos-notification-detail-body");
     Div message = new Div(titleRow, contentMeta, body);
     message.addClassName("cosmos-notification-detail-message");

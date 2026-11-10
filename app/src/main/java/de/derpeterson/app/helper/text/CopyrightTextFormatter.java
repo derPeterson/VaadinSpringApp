@@ -13,7 +13,7 @@ public final class CopyrightTextFormatter {
   public static String format(
       String configuredTemplate,
       String serviceName,
-      Clock clock,
+      Clock copyrightClock,
       Supplier<String> localizedDefaultTemplate) {
     // Nur der unveränderte Standard wird übersetzt; eigene DB-Texte bleiben unangetastet.
     String displayTemplate =
@@ -22,7 +22,7 @@ public final class CopyrightTextFormatter {
             ? localizedDefaultTemplate.get()
             : configuredTemplate;
     return displayTemplate
-        .replace("{year}", String.valueOf(Year.now(clock).getValue()))
+        .replace("{year}", String.valueOf(Year.now(copyrightClock).getValue()))
         .replace("{serviceName}", serviceName);
   }
 }

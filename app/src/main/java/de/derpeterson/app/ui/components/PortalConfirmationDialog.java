@@ -105,7 +105,7 @@ public class PortalConfirmationDialog extends Dialog {
     confirmButton.addClickListener(event -> confirmPending());
     Div actions = new Div(cancelButton, confirmButton);
     actions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configure(actions);
+    EqualButtonWidths.configureEqualButtonWidths(actions);
     getFooter().add(actions);
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {

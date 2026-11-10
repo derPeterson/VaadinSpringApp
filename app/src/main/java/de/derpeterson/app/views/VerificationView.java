@@ -149,7 +149,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
                   componentTranslationSupplierMap.put(
                       component, this.messageProperties::getBaseLoginButton));
 
-          ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+          ComponentTextUpdateHelper.updateComponentTexts(componentTranslationSupplierMap);
           updateInputPlaceholders();
           NotificationHelper.getInstance().updateText();
         });

@@ -11,8 +11,8 @@ public class ImageHelper {
 
   /** Liest eine Bildressource auch aus einem JAR und schließt den Classpath-Stream. */
   public static byte[] readImageBytes(String resourcePath) throws IOException {
-    try (InputStream input = new ClassPathResource(resourcePath).getInputStream()) {
-      return input.readAllBytes();
+    try (InputStream imageInputStream = new ClassPathResource(resourcePath).getInputStream()) {
+      return imageInputStream.readAllBytes();
     }
   }
 }

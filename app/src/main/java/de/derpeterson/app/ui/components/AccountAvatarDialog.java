@@ -101,19 +101,17 @@ public class AccountAvatarDialog extends Dialog {
 
     mode.setId("account-avatar-mode");
     mode.setItems(AvatarMode.values());
-    mode.setItemLabelGenerator(
-        value ->
-            value == AvatarMode.INITIALS
-                ? messages.getAccountAvatarInitials()
-                : messages.getAccountAvatarCustom());
+    mode.setItemLabelGenerator(value ->
+        value == AvatarMode.INITIALS
+            ? messages.getAccountAvatarInitials()
+            : messages.getAccountAvatarCustom());
     mode.setRenderer(new ComponentRenderer<>(this::createModeLabel));
     mode.setValue(AvatarMode.INITIALS);
-    mode.addValueChangeListener(
-        event -> {
-          if (event.getValue() != null) {
-            editor.setMode(event.getValue());
-          }
-        });
+    mode.addValueChangeListener(event -> {
+      if (event.getValue() != null) {
+        editor.setMode(event.getValue());
+      }
+    });
     editor
         .getElement()
         .addEventListener(
@@ -160,16 +158,15 @@ public class AccountAvatarDialog extends Dialog {
     save.addClickListener(event -> submit());
     Div actions = new Div(cancel, save);
     actions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configure(actions);
+    EqualButtonWidths.configureEqualButtonWidths(actions);
     Div footer = new Div(delete, actions);
     footer.addClassName("account-avatar-footer");
     getFooter().add(footer);
-    addOpenedChangeListener(
-        event -> {
-          if (!event.isOpened()) {
-            clearDraft();
-          }
-        });
+    addOpenedChangeListener(event -> {
+      if (!event.isOpened()) {
+        clearDraft();
+      }
+    });
     addDetachListener(event -> clearDraft());
     refreshTexts();
   }
@@ -280,12 +277,11 @@ public class AccountAvatarDialog extends Dialog {
       event.reject();
       event
           .getUI()
-          .access(
-              () -> {
-                if (Objects.equals(token, draft) && isOpened()) {
-                  failure(failure);
-                }
-              });
+          .access(() -> {
+            if (Objects.equals(token, draft) && isOpened()) {
+              failure(failure);
+            }
+          });
     }
   }
 

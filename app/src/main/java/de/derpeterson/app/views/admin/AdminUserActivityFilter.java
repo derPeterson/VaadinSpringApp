@@ -73,7 +73,7 @@ final class AdminUserActivityFilter extends CustomField<LocalDateTime> {
   }
 
   void refreshTexts(MessageProperties messageProperties) {
-    CompactDateInput.configure(date, messageProperties);
+    CompactDateInput.configureDatePickerInput(date, messageProperties);
     date.setLabel(messageProperties.getAdminUsersFilterActiveSince());
     date.setAriaLabel(messageProperties.getAdminUsersActivityDate());
     date.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());

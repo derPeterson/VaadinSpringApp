@@ -8,19 +8,19 @@ import org.apache.commons.lang3.Strings;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class HtmlHelper {
 
-  public static String ensureParagraphTags(String input) {
-    if (StringUtils.isBlank(input)) {
+  public static String ensureParagraphTags(String htmlInputText) {
+    if (StringUtils.isBlank(htmlInputText)) {
       return "<p></p>";
     }
 
-    input = StringUtils.trim(input);
+    htmlInputText = StringUtils.trim(htmlInputText);
 
-    if (!Strings.CS.startsWith(input, "<p>")) {
-      input = "<p>" + input;
+    if (!Strings.CS.startsWith(htmlInputText, "<p>")) {
+      htmlInputText = "<p>" + htmlInputText;
     }
-    if (!Strings.CS.endsWith(input, "</p>")) {
-      input = input + "</p>";
+    if (!Strings.CS.endsWith(htmlInputText, "</p>")) {
+      htmlInputText = htmlInputText + "</p>";
     }
-    return input;
+    return htmlInputText;
   }
 }

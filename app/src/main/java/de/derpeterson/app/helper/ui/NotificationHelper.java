@@ -54,18 +54,19 @@ public class NotificationHelper implements Serializable {
   private Notification currentNotification = new Notification();
 
   public static NotificationHelper getInstance() {
-    UI ui = UI.getCurrent();
-    if (ui == null) {
+    UI currentUi = UI.getCurrent();
+    if (currentUi == null) {
       throw new IllegalStateException("Notifications require a current UI");
     }
     // Meldungen gehören zum einzelnen Browserfenster, auch bei mehreren Tabs derselben Sitzung.
     // Kein globaler Helfer darf Hinweise anderer Benutzer schließen oder deren Texte verändern.
-    NotificationHelper helper = ComponentUtil.getData(ui, NotificationHelper.class);
-    if (helper == null) {
-      helper = new NotificationHelper();
-      ComponentUtil.setData(ui, NotificationHelper.class, helper);
+    NotificationHelper uiNotificationHelper =
+        ComponentUtil.getData(currentUi, NotificationHelper.class);
+    if (uiNotificationHelper == null) {
+      uiNotificationHelper = new NotificationHelper();
+      ComponentUtil.setData(currentUi, NotificationHelper.class, uiNotificationHelper);
     }
-    return helper;
+    return uiNotificationHelper;
   }
 
   public void showNotification(Supplier<String> messageSupplier) {
@@ -88,16 +89,17 @@ public class NotificationHelper implements Serializable {
   public void showNotification(
       Supplier<String> titleSupplier,
       Supplier<String> messageSupplier,
-      Integer duration,
+      Integer displayDurationMillis,
       NotificationType notificationType) {
-    showNotificationWithDetails(titleSupplier, messageSupplier, null, duration, notificationType);
+    showNotificationWithDetails(
+        titleSupplier, messageSupplier, null, displayDurationMillis, notificationType);
   }
 
   public void showNotificationWithDetails(
       Supplier<String> titleSupplier,
       Supplier<String> messageSupplier,
       Supplier<List<String>> detailsSupplier,
-      Integer duration,
+      Integer displayDurationMillis,
       NotificationType notificationType) {
     closeAndClearAllNotifications();
 
@@ -105,13 +107,13 @@ public class NotificationHelper implements Serializable {
     this.messageSupplier = messageSupplier;
     this.detailsSupplier = detailsSupplier;
 
-    String title = null;
+    String notificationTitle = null;
     if (titleSupplier != null) {
-      title = titleSupplier.get();
+      notificationTitle = titleSupplier.get();
     }
-    String message = null;
+    String notificationMessage = null;
     if (messageSupplier != null) {
-      message = messageSupplier.get();
+      notificationMessage = messageSupplier.get();
     }
 
     if (containsClass(UI.getCurrent(), "cosmos-theme")) {
@@ -126,11 +128,11 @@ public class NotificationHelper implements Serializable {
           .add("cosmos-reference-" + notificationType.name().toLowerCase(Locale.ROOT));
     }
     currentNotification.setPosition(Notification.Position.TOP_CENTER);
-    currentNotification.setDuration(duration);
+    currentNotification.setDuration(displayDurationMillis);
 
     this.titleText = null;
-    if (StringUtils.isNotEmpty(title)) {
-      titleText = new Span(title);
+    if (StringUtils.isNotEmpty(notificationTitle)) {
+      titleText = new Span(notificationTitle);
       titleText.addClassNames("cosmos-toast-title", LumoUtility.FontWeight.SEMIBOLD);
       currentNotification.add(titleText);
     }
@@ -149,7 +151,7 @@ public class NotificationHelper implements Serializable {
     textLayout.setSpacing(false);
     textLayout.setWidth(null);
 
-    createTextLayoutContent(message);
+    createTextLayoutContent(notificationMessage);
 
     contentLayout.add(textLayout);
 
@@ -165,84 +167,86 @@ public class NotificationHelper implements Serializable {
 
   private void addStatusIcon(
       HorizontalLayout contentLayout, NotificationType notificationType, boolean referenceAccount) {
-    SvgIcon icon = null;
+    SvgIcon statusIcon = null;
     if (notificationType == NotificationType.ERROR) {
-      icon = AppIcon.ERROR.create();
-      icon.addClassNames(LumoUtility.TextColor.ERROR);
+      statusIcon = AppIcon.ERROR.create();
+      statusIcon.addClassNames(LumoUtility.TextColor.ERROR);
       if (titleText != null) {
         titleText.addClassNames(LumoUtility.TextColor.ERROR);
       }
     } else if (notificationType == NotificationType.SUCCESS) {
-      icon = AppIcon.CHECK_CIRCLE.create();
-      icon.addClassNames(LumoUtility.TextColor.SUCCESS);
+      statusIcon = AppIcon.CHECK_CIRCLE.create();
+      statusIcon.addClassNames(LumoUtility.TextColor.SUCCESS);
       if (titleText != null) {
         titleText.addClassNames(LumoUtility.TextColor.SUCCESS);
       }
     } else if (notificationType == NotificationType.WARNING) {
-      icon = AppIcon.WARNING.create();
-      icon.addClassNames(LumoUtility.TextColor.WARNING);
+      statusIcon = AppIcon.WARNING.create();
+      statusIcon.addClassNames(LumoUtility.TextColor.WARNING);
       if (titleText != null) {
         titleText.addClassNames(LumoUtility.TextColor.WARNING);
       }
     }
 
-    if (icon != null) {
-      icon.addClassName("cosmos-notification-icon");
+    if (statusIcon != null) {
+      statusIcon.addClassName("cosmos-notification-icon");
     }
 
     if (referenceAccount) {
-      AppIcon symbol =
+      AppIcon statusSymbol =
           switch (notificationType) {
             case ERROR -> AppIcon.ERROR;
             case SUCCESS -> AppIcon.CHECK_CIRCLE;
             case WARNING -> AppIcon.WARNING;
             case NORMAL -> AppIcon.INFO_CIRCLE;
           };
-      SvgIcon referenceIcon = symbol.create();
+      SvgIcon referenceIcon = statusSymbol.create();
       referenceIcon.addClassName("cosmos-notification-icon");
       contentLayout.add(referenceIcon);
-    } else if (icon != null) {
-      contentLayout.add(icon);
+    } else if (statusIcon != null) {
+      contentLayout.add(statusIcon);
     }
   }
 
   /** Auch verschachtelte Seitenrahmen bestimmen die Palette der ausgelagerten Meldung. */
-  private static boolean containsClass(Component component, String className) {
-    return component != null
-        && (component.getElement().getClassList().contains(className)
-            || component.getChildren().anyMatch(child -> containsClass(child, className)));
+  private static boolean containsClass(Component rootComponent, String className) {
+    return rootComponent != null
+        && (rootComponent.getElement().getClassList().contains(className)
+            || rootComponent
+                .getChildren()
+                .anyMatch(childComponent -> containsClass(childComponent, className)));
   }
 
   private static String localizedCloseLabel() {
     return new MessageProperties(new CustomI18NProvider()).getNotificationsClose();
   }
 
-  private static Button createNotificationCloseButton(Notification notification) {
+  private static Button createNotificationCloseButton(Notification targetNotification) {
     Button closeButton =
-        new Button(AppIcon.CLOSE_CIRCLE.create(), clickEvent -> notification.close());
+        new Button(AppIcon.CLOSE_CIRCLE.create(), clickEvent -> targetNotification.close());
     closeButton.addClassNames(LumoUtility.TextColor.PRIMARY);
     closeButton.addThemeVariants(LUMO_TERTIARY_INLINE);
 
     return closeButton;
   }
 
-  private void createTextLayoutContent(String message) {
+  private void createTextLayoutContent(String notificationMessage) {
     textLayout.removeAll();
     if (titleText != null) {
       textLayout.add(titleText);
     }
     messageText = null;
-    if (StringUtils.isNotBlank(message)) {
-      messageText = new Html(HtmlHelper.ensureParagraphTags(message));
+    if (StringUtils.isNotBlank(notificationMessage)) {
+      messageText = new Html(HtmlHelper.ensureParagraphTags(notificationMessage));
       messageText.addClassNames("cosmos-notification-message", LumoUtility.Margin.NONE);
       messageText.getStyle().set("max-width", "520px");
       textLayout.add(messageText);
     }
     if (detailsSupplier != null) {
-      UnorderedList details = new UnorderedList();
-      details.addClassNames("cosmos-notification-message", "cosmos-notification-details");
-      detailsSupplier.get().forEach(detail -> details.add(new ListItem(detail)));
-      textLayout.add(details);
+      UnorderedList detailsList = new UnorderedList();
+      detailsList.addClassNames("cosmos-notification-message", "cosmos-notification-details");
+      detailsSupplier.get().forEach(detailText -> detailsList.add(new ListItem(detailText)));
+      textLayout.add(detailsList);
     }
   }
 

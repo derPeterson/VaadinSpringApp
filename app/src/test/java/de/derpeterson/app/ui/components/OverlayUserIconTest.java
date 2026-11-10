@@ -58,11 +58,10 @@ class OverlayUserIconTest {
     when(session.hasLock()).thenReturn(true);
     when(session.getResourceRegistry()).thenReturn(new StreamResourceRegistry(session));
     when(session.access(any()))
-        .thenAnswer(
-            call -> {
-              ((Command) call.getArgument(0)).execute();
-              return CompletableFuture.completedFuture(null);
-            });
+        .thenAnswer(call -> {
+          ((Command) call.getArgument(0)).execute();
+          return CompletableFuture.completedFuture(null);
+        });
     when(session.getLocale()).thenAnswer(call -> locale.get());
     VaadinSession.setCurrent(session);
     ui.getInternals().setSession(session);
@@ -199,15 +198,15 @@ class OverlayUserIconTest {
     assertFalse(avatar.hasClassName("cosmos-avatar-with-status"));
     assertEquals(0, status.getComponentCount());
     assertEquals("Christian Doebl", avatar.getElement().getAttribute("aria-label"));
-    events.broadcast(new UserProfileBroadcaster.Message(12L, "New", "Name"));
+    events.broadcast(new UserProfileBroadcaster.UserProfileChangeMessage(12L, "New", "Name"));
     assertFalse(photo.isVisible());
-    events.broadcast(new UserProfileBroadcaster.Message(12L, "New", "Name"));
+    events.broadcast(new UserProfileBroadcaster.UserProfileChangeMessage(12L, "New", "Name"));
     assertTrue(photo.isVisible());
     assertNotEquals(first, photo.getSrc());
     assertEquals("New Name", avatar.getElement().getAttribute("aria-label"));
     assertFalse(status.isVisible());
     ui.remove(avatar);
-    events.broadcast(new UserProfileBroadcaster.Message(12L, "Detached", "Name"));
+    events.broadcast(new UserProfileBroadcaster.UserProfileChangeMessage(12L, "Detached", "Name"));
     verify(service, times(2)).state(12L);
   }
 }

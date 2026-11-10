@@ -37,7 +37,7 @@ import de.derpeterson.app.ui.components.PortalPageComponent;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.AdminView;
 import de.derpeterson.app.views.HomeView;
-import de.derpeterson.app.websocket.UserProfileBroadcaster.Message;
+import de.derpeterson.app.websocket.UserProfileBroadcaster.UserProfileChangeMessage;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Clock;
@@ -76,13 +76,12 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     this.currentUser = securityService.getCurrentUser(request).orElse(null);
     this.accountHeaderActions = new AccountHeaderActions(messageProperties, currentUser != null);
     addAttachListener(event -> registerProfileUpdates(event.getUI()));
-    addDetachListener(
-        event -> {
-          if (profileRegistration != null) {
-            profileRegistration.remove();
-            profileRegistration = null;
-          }
-        });
+    addDetachListener(event -> {
+      if (profileRegistration != null) {
+        profileRegistration.remove();
+        profileRegistration = null;
+      }
+    });
 
     ComponentUtil.addListener(
         UI.getCurrent(),
@@ -109,15 +108,14 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     profileRegistration =
         avatars
             .events()
-            .register(
-                message -> {
-                  if (Objects.equals(currentUser.getId(), message.userId())) {
-                    ui.access(() -> applyProfileUpdate(message));
-                  }
-                });
+            .register(message -> {
+              if (Objects.equals(currentUser.getId(), message.userId())) {
+                ui.access(() -> applyProfileUpdate(message));
+              }
+            });
   }
 
-  private void applyProfileUpdate(Message message) {
+  private void applyProfileUpdate(UserProfileChangeMessage message) {
     if (!isAttached()) {
       return;
     }

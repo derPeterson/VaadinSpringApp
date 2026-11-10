@@ -8,25 +8,25 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 public final class AfterCommitLog {
   private AfterCommitLog() {}
 
-  public static void info(Logger logger, String message, Object... arguments) {
-    Object[] snapshot = arguments.clone();
-    afterCommit(() -> logger.info(message, snapshot));
+  public static void info(Logger eventLogger, String logMessage, Object... logArguments) {
+    Object[] logArgumentSnapshot = logArguments.clone();
+    runLogActionAfterCommit(() -> eventLogger.info(logMessage, logArgumentSnapshot));
   }
 
-  public static void debug(Logger logger, String message, Object... arguments) {
-    Object[] snapshot = arguments.clone();
-    afterCommit(() -> logger.debug(message, snapshot));
+  public static void debug(Logger eventLogger, String logMessage, Object... logArguments) {
+    Object[] logArgumentSnapshot = logArguments.clone();
+    runLogActionAfterCommit(() -> eventLogger.debug(logMessage, logArgumentSnapshot));
   }
 
-  public static void warn(Logger logger, String message, Object... arguments) {
-    Object[] snapshot = arguments.clone();
-    afterCommit(() -> logger.warn(message, snapshot));
+  public static void warn(Logger eventLogger, String logMessage, Object... logArguments) {
+    Object[] logArgumentSnapshot = logArguments.clone();
+    runLogActionAfterCommit(() -> eventLogger.warn(logMessage, logArgumentSnapshot));
   }
 
-  private static void afterCommit(Runnable event) {
+  private static void runLogActionAfterCommit(Runnable logAction) {
     if (!TransactionSynchronizationManager.isActualTransactionActive()) {
       // Bereits unabhängig abgeschlossene Repository-/Template-Operationen.
-      event.run();
+      logAction.run();
       return;
     }
     if (!TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -37,7 +37,7 @@ public final class AfterCommitLog {
         new TransactionSynchronization() {
           @Override
           public void afterCommit() {
-            event.run();
+            logAction.run();
           }
         });
   }

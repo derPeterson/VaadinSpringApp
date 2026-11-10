@@ -402,7 +402,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
     preferredLanguageSelector.setItemLabelGenerator(this::languageLabel);
     preferredLanguageSelector.setAllowCustomValue(false);
     birthDatePicker.setAutoOpen(false);
-    CompactDateInput.configure(birthDatePicker, messageProperties);
+    CompactDateInput.configureDatePickerInput(birthDatePicker, messageProperties);
   }
 
   private void populateProfileFields(UserEntity user) {
@@ -431,7 +431,7 @@ public class AccountSettingsComponent extends PortalPageComponent {
       profileEmailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
       birthDatePicker.setLabel(messageProperties.getRegistrationBirthDateField());
       birthDatePicker.setLocale(CustomI18NProvider.getCurrentLocale());
-      CompactDateInput.configure(birthDatePicker, messageProperties);
+      CompactDateInput.configureDatePickerInput(birthDatePicker, messageProperties);
       birthDatePicker.setPlaceholder(messageProperties.getRegistrationBirthDatePlaceholder());
       birthDatePicker.setHelperText(messageProperties.getAccountBirthDateFormatHint());
       genderSelector.setLabel(messageProperties.getRegistrationGenderCombobox());

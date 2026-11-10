@@ -12,21 +12,22 @@ import org.springframework.stereotype.Component;
 /** Nur lokale Invalidierung nach Commit; die Datenbank bleibt die Nachrichtenquelle. */
 @Component
 public class UserNotificationBroadcaster {
-  private final CopyOnWriteArrayList<Consumer<Set<Long>>> listeners = new CopyOnWriteArrayList<>();
+  private final CopyOnWriteArrayList<Consumer<Set<Long>>> notificationChangeListeners =
+      new CopyOnWriteArrayList<>();
 
-  public Registration register(Consumer<Set<Long>> listener) {
-    listeners.add(listener);
-    return () -> listeners.remove(listener);
+  public Registration register(Consumer<Set<Long>> notificationChangeListener) {
+    notificationChangeListeners.add(notificationChangeListener);
+    return () -> notificationChangeListeners.remove(notificationChangeListener);
   }
 
   public void publish(Set<Long> userIds) {
-    Set<Long> immutable = Set.copyOf(userIds);
-    for (Consumer<Set<Long>> listener : listeners) {
+    Set<Long> affectedUserIdsSnapshot = Set.copyOf(userIds);
+    for (Consumer<Set<Long>> notificationChangeListener : notificationChangeListeners) {
       try {
-        listener.accept(immutable);
-      } catch (RuntimeException failure) {
+        notificationChangeListener.accept(affectedUserIdsSnapshot);
+      } catch (RuntimeException listenerFailure) {
         LoggerFactory.getLogger(getClass())
-            .warn("Notification refresh deferred until next request", safeFailure(failure));
+            .warn("Notification refresh deferred until next request", safeFailure(listenerFailure));
       }
     }
   }

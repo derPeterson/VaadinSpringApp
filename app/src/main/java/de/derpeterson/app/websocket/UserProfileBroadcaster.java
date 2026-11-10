@@ -15,17 +15,22 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Component
 @Slf4j
 public class UserProfileBroadcaster {
-  public record Message(Long userId, String firstName, String lastName) {}
+  public record UserProfileChangeMessage(Long userId, String firstName, String lastName) {}
 
-  private final CopyOnWriteArrayList<Consumer<Message>> listeners = new CopyOnWriteArrayList<>();
+  private final CopyOnWriteArrayList<Consumer<UserProfileChangeMessage>> profileChangeListeners =
+      new CopyOnWriteArrayList<>();
 
-  public Registration register(Consumer<Message> listener) {
-    listeners.add(listener);
-    return () -> listeners.remove(listener);
+  public Registration register(Consumer<UserProfileChangeMessage> profileChangeListener) {
+    profileChangeListeners.add(profileChangeListener);
+    return () -> profileChangeListeners.remove(profileChangeListener);
   }
 
-  public void afterCommit(UserEntity user) {
-    Message message = new Message(user.getId(), user.getFirstName(), user.getLastName());
+  public void afterCommit(UserEntity updatedUserEntity) {
+    UserProfileChangeMessage profileChangeMessage =
+        new UserProfileChangeMessage(
+            updatedUserEntity.getId(),
+            updatedUserEntity.getFirstName(),
+            updatedUserEntity.getLastName());
     if (!TransactionSynchronizationManager.isSynchronizationActive()) {
       return;
     }
@@ -33,20 +38,20 @@ public class UserProfileBroadcaster {
         new TransactionSynchronization() {
           @Override
           public void afterCommit() {
-            broadcast(message);
+            broadcast(profileChangeMessage);
           }
         });
   }
 
-  public void broadcast(Message message) {
-    for (Consumer<Message> listener : listeners) {
+  public void broadcast(UserProfileChangeMessage profileChangeMessage) {
+    for (Consumer<UserProfileChangeMessage> profileChangeListener : profileChangeListeners) {
       try {
-        listener.accept(message);
-      } catch (RuntimeException failure) {
+        profileChangeListener.accept(profileChangeMessage);
+      } catch (RuntimeException listenerFailure) {
         log.warn(
             "Profilanzeige konnte nicht aktualisiert werden: {}",
-            message.userId(),
-            safeFailure(failure));
+            profileChangeMessage.userId(),
+            safeFailure(listenerFailure));
       }
     }
   }

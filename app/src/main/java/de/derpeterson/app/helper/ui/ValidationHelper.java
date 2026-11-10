@@ -45,32 +45,33 @@ public class ValidationHelper {
       requiredInputs.stream()
           .filter(ValidationHelper::isRequiredInputInvalid)
           .map(HasValidationProperties.class::cast)
-          .forEach(field -> field.setInvalid(true));
+          .forEach(inputField -> inputField.setInvalid(true));
 
       requiredInputs.stream()
-          .filter(field -> !isRequiredInputInvalid(field))
+          .filter(inputField -> !isRequiredInputInvalid(inputField))
           .map(HasValidationProperties.class::cast)
-          .forEach(field -> field.setInvalid(false));
+          .forEach(inputField -> inputField.setInvalid(false));
 
       return false;
     }
 
     requiredInputs.stream()
         .map(HasValidationProperties.class::cast)
-        .forEach(field -> field.setInvalid(false));
+        .forEach(inputField -> inputField.setInvalid(false));
 
     return true;
   }
 
-  private static boolean isRequiredInputInvalid(AbstractField<?, ?> field) {
-    return field.getValue() instanceof String text
-        ? !UserInputRules.isRequiredTextValid(text)
-        : field.isEmpty();
+  private static boolean isRequiredInputInvalid(AbstractField<?, ?> inputField) {
+    return inputField.getValue() instanceof String inputText
+        ? !UserInputRules.isRequiredTextValid(inputText)
+        : inputField.isEmpty();
   }
 
   public static boolean validatePasswordSecureInputs(
       List<PasswordField> passwordFields, MessageProperties messageProperties) {
-    if (passwordFields.stream().anyMatch(field -> !isPasswordSecure(field.getValue()))) {
+    if (passwordFields.stream()
+        .anyMatch(passwordField -> !isPasswordSecure(passwordField.getValue()))) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
@@ -78,17 +79,18 @@ public class ValidationHelper {
               -1,
               NotificationHelper.NotificationType.ERROR);
 
-      passwordFields.forEach(field -> field.setInvalid(!isPasswordSecure(field.getValue())));
+      passwordFields.forEach(
+          passwordField -> passwordField.setInvalid(!isPasswordSecure(passwordField.getValue())));
       return false;
     }
 
-    passwordFields.forEach(field -> field.setInvalid(false));
+    passwordFields.forEach(passwordField -> passwordField.setInvalid(false));
     return true;
   }
 
   public static boolean validateEmailValidInputs(
       List<EmailField> emailFields, MessageProperties messageProperties) {
-    if (emailFields.stream().anyMatch(field -> !isEmailValid(field.getValue()))) {
+    if (emailFields.stream().anyMatch(emailField -> !isEmailValid(emailField.getValue()))) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
@@ -96,17 +98,20 @@ public class ValidationHelper {
               -1,
               NotificationHelper.NotificationType.ERROR);
 
-      emailFields.forEach(field -> field.setInvalid(!isEmailValid(field.getValue())));
+      emailFields.forEach(
+          emailField -> emailField.setInvalid(!isEmailValid(emailField.getValue())));
       return false;
     }
 
-    emailFields.forEach(field -> field.setInvalid(false));
+    emailFields.forEach(emailField -> emailField.setInvalid(false));
     return true;
   }
 
   public static boolean validatePasswordConfirmInputs(
-      PasswordField input, PasswordField confirmInput, MessageProperties messageProperties) {
-    if (!Strings.CS.equals(input.getValue(), confirmInput.getValue())) {
+      PasswordField passwordField,
+      PasswordField confirmationPasswordField,
+      MessageProperties messageProperties) {
+    if (!Strings.CS.equals(passwordField.getValue(), confirmationPasswordField.getValue())) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
@@ -114,19 +119,21 @@ public class ValidationHelper {
               -1,
               NotificationHelper.NotificationType.ERROR);
 
-      input.setInvalid(true);
-      confirmInput.setInvalid(true);
+      passwordField.setInvalid(true);
+      confirmationPasswordField.setInvalid(true);
       return false;
     }
 
-    input.setInvalid(false);
-    confirmInput.setInvalid(false);
+    passwordField.setInvalid(false);
+    confirmationPasswordField.setInvalid(false);
     return true;
   }
 
   public static boolean validateEmailConfirmInputs(
-      EmailField input, EmailField confirmInput, MessageProperties messageProperties) {
-    if (!Strings.CS.equals(input.getValue(), confirmInput.getValue())) {
+      EmailField emailField,
+      EmailField confirmationEmailField,
+      MessageProperties messageProperties) {
+    if (!Strings.CS.equals(emailField.getValue(), confirmationEmailField.getValue())) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
@@ -134,13 +141,13 @@ public class ValidationHelper {
               -1,
               NotificationHelper.NotificationType.ERROR);
 
-      input.setInvalid(true);
-      confirmInput.setInvalid(true);
+      emailField.setInvalid(true);
+      confirmationEmailField.setInvalid(true);
       return false;
     }
 
-    input.setInvalid(false);
-    confirmInput.setInvalid(false);
+    emailField.setInvalid(false);
+    confirmationEmailField.setInvalid(false);
     return true;
   }
 
@@ -191,27 +198,27 @@ public class ValidationHelper {
     return true;
   }
 
-  public static boolean isPasswordSecure(String password) {
-    return UserInputRules.isPasswordSecure(password);
+  public static boolean isPasswordSecure(String passwordText) {
+    return UserInputRules.isPasswordSecure(passwordText);
   }
 
-  public static boolean isPasswordSecure(String password, boolean allowBlank) {
-    return UserInputRules.isPasswordSecure(password, allowBlank);
+  public static boolean isPasswordSecure(String passwordText, boolean allowBlank) {
+    return UserInputRules.isPasswordSecure(passwordText, allowBlank);
   }
 
-  public static boolean isEmailValid(String email) {
-    return UserInputRules.isEmailValid(email);
+  public static boolean isEmailValid(String emailAddress) {
+    return UserInputRules.isEmailValid(emailAddress);
   }
 
   public static boolean isBirthDateValid(LocalDate birthDate) {
     return UserInputRules.isBirthDateValid(birthDate);
   }
 
-  public static boolean isRequiredTextValid(String value) {
-    return UserInputRules.isRequiredTextValid(value);
+  public static boolean isRequiredTextValid(String inputValue) {
+    return UserInputRules.isRequiredTextValid(inputValue);
   }
 
-  public static String normalize(String value) {
-    return UserInputRules.normalize(value);
+  public static String normalize(String inputValue) {
+    return UserInputRules.normalize(inputValue);
   }
 }

@@ -15,11 +15,12 @@ public class CustomI18NProvider implements I18NProvider {
   private static final List<Locale> SUPPORTED_LOCALES = List.of(Locale.ENGLISH, Locale.GERMAN);
   private static final Locale DEFAULT_LOCALE = Locale.ENGLISH;
 
-  private final Map<Locale, ResourceBundle> bundles = new HashMap<>();
+  private final Map<Locale, ResourceBundle> messageBundlesByLocale = new HashMap<>();
 
   public CustomI18NProvider() {
-    for (Locale locale : SUPPORTED_LOCALES) {
-      bundles.put(locale, ResourceBundle.getBundle("i18n/messages", locale));
+    for (Locale translationLocale : SUPPORTED_LOCALES) {
+      messageBundlesByLocale.put(
+          translationLocale, ResourceBundle.getBundle("i18n/messages", translationLocale));
     }
   }
 
@@ -29,16 +30,19 @@ public class CustomI18NProvider implements I18NProvider {
   }
 
   @Override
-  public String getTranslation(String key, Locale locale, Object... params) {
-    ResourceBundle bundle = bundles.getOrDefault(locale, bundles.get(DEFAULT_LOCALE));
-    if (bundle.containsKey(key)) {
-      return MessageFormat.format(bundle.getString(key), params);
+  public String getTranslation(
+      String translationKey, Locale translationLocale, Object... formatArguments) {
+    ResourceBundle messageBundle =
+        messageBundlesByLocale.getOrDefault(
+            translationLocale, messageBundlesByLocale.get(DEFAULT_LOCALE));
+    if (messageBundle.containsKey(translationKey)) {
+      return MessageFormat.format(messageBundle.getString(translationKey), formatArguments);
     }
-    return key;
+    return translationKey;
   }
 
-  public String getTranslation(String key, Object... params) {
-    return getTranslation(key, getCurrentLocale(), params);
+  public String getTranslation(String translationKey, Object... formatArguments) {
+    return getTranslation(translationKey, getCurrentLocale(), formatArguments);
   }
 
   public static Locale getCurrentLocale() {

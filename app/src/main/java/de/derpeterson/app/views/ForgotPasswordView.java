@@ -79,32 +79,27 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
 
           Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
           Optional.ofNullable(title)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getForgotPasswordTitle));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getForgotPasswordTitle));
           Optional.ofNullable(text)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getForgotPasswordText));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getForgotPasswordText));
           Optional.ofNullable(emailField)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicEmailField));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getPublicEmailField));
           Optional.ofNullable(sendButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getPublicRequestLink));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getPublicRequestLink));
           Optional.ofNullable(loginButton)
-              .ifPresent(
-                  component ->
-                      componentTranslationSupplierMap.put(
-                          component, this.messageProperties::getBaseLoginButton));
+              .ifPresent(component ->
+                  componentTranslationSupplierMap.put(
+                      component, this.messageProperties::getBaseLoginButton));
 
-          ComponentTextUpdateHelper.updateComponents(componentTranslationSupplierMap);
+          ComponentTextUpdateHelper.updateComponentTexts(componentTranslationSupplierMap);
           updateInputPlaceholders();
           NotificationHelper.getInstance().updateText();
         });

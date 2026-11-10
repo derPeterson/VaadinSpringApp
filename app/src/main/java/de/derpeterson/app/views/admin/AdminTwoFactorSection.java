@@ -256,7 +256,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     savePolicyButton.addClickListener(event -> saveRequested());
     Div actions = new Div(reloadPolicyButton, savePolicyButton);
     actions.addClassName("cosmos-config-card-actions");
-    EqualButtonWidths.configure(actions);
+    EqualButtonWidths.configureEqualButtonWidths(actions);
     Div footer = new Div(info, actions);
     footer.addClassName("cosmos-panel-footer");
     CosmosCardComponent card = new CosmosCardComponent(header, body, footer);

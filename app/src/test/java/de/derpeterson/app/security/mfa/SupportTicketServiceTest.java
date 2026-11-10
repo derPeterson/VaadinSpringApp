@@ -607,7 +607,7 @@ class SupportTicketServiceTest {
   @Test
   void liveRefreshOnlyPublishesCommittedChanges() {
     Ticket ticket = service.createRecovery(owner, "Hilfe bitte.");
-    List<SupportTicketBroadcaster.Change> changes = new ArrayList<>();
+    List<SupportTicketBroadcaster.SupportTicketChangeMessage> changes = new ArrayList<>();
     Registration listener = service.events().register(changes::add);
     try {
       transaction.executeWithoutResult(status -> {
@@ -617,7 +617,9 @@ class SupportTicketServiceTest {
       });
       assertTrue(changes.isEmpty());
       service.reply(owner, ticket.id(), ticket.version(), "Gespeichert.", false, false);
-      assertEquals(List.of(new SupportTicketBroadcaster.Change(user.getId(), null)), changes);
+      assertEquals(
+          List.of(new SupportTicketBroadcaster.SupportTicketChangeMessage(user.getId(), null)),
+          changes);
 
       Reply latest = service.conversation(owner, ticket.id(), false).getLast();
       assertTrue(
@@ -628,7 +630,7 @@ class SupportTicketServiceTest {
               latest.id(),
               ticketFor(administrator, ticket.id(), true).version()));
       assertEquals(2, changes.size());
-      SupportTicketBroadcaster.Change read = changes.getLast();
+      SupportTicketBroadcaster.SupportTicketChangeMessage read = changes.getLast();
       assertTrue(read.affects(user.getId(), false));
       assertFalse(read.affects(service.administratorId(administrator), true));
     } finally {

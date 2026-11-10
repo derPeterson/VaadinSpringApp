@@ -69,7 +69,7 @@ public final class TwoFactorActionDialog extends Dialog {
     confirmIdentityButton.addClickListener(event -> confirmProtectedAction());
     Div dialogActions = new Div(cancelButton, confirmIdentityButton);
     dialogActions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configure(dialogActions);
+    EqualButtonWidths.configureEqualButtonWidths(dialogActions);
     getFooter().add(dialogActions);
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {

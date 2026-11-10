@@ -7,20 +7,22 @@ import org.hibernate.exception.ConstraintViolationException;
 public final class EmailConflict {
   private EmailConflict() {}
 
-  public static boolean isDuplicate(Throwable failure) {
-    for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
-      if (cause instanceof ConstraintViolationException violation) {
-        String name = violation.getConstraintName();
-        if ("23505".equals(violation.getSQLState()) && name != null) {
+  public static boolean isDuplicate(Throwable operationFailure) {
+    for (Throwable failureCause = operationFailure;
+        failureCause != null;
+        failureCause = failureCause.getCause()) {
+      if (failureCause instanceof ConstraintViolationException constraintViolation) {
+        String constraintName = constraintViolation.getConstraintName();
+        if ("23505".equals(constraintViolation.getSQLState()) && constraintName != null) {
           // H2 exposes the constraint plus backing index/table; other dialects
           // may expose the exact constraint name. Do not match message text.
-          String normalized = name.toLowerCase(Locale.ROOT);
-          if (normalized.equals("uk_users_email")
+          String normalizedConstraintName = constraintName.toLowerCase(Locale.ROOT);
+          if (normalizedConstraintName.equals("uk_users_email")
               // Optionaler Schema-Präfix (?:...)?; dann exakt uk_users_email index, Indexname und
               // optionaler Tabellenzusatz.
               // Erkennt nur die benannte Constraint in H2-Metadaten, keine beliebigen
               // Fehlermeldungen.
-              || normalized.matches(
+              || normalizedConstraintName.matches(
                   "(?:[a-z0-9_]+\\.)?uk_users_email index [a-z0-9_.]+(?: on .*)?")) {
             return true;
           }

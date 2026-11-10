@@ -32,16 +32,17 @@ public final class UserInputRules {
 
   private static final Pattern EMAIL_PATTERN = Pattern.compile(EMAIL_REGEX);
 
-  public static boolean isPasswordSecure(String password) {
-    return StringUtils.isNotBlank(password) && password.trim().matches(PASSWORD_REGEX);
+  public static boolean isPasswordSecure(String passwordText) {
+    return StringUtils.isNotBlank(passwordText) && passwordText.trim().matches(PASSWORD_REGEX);
   }
 
-  public static boolean isPasswordSecure(String password, boolean allowBlank) {
-    return StringUtils.isBlank(password) ? allowBlank : isPasswordSecure(password);
+  public static boolean isPasswordSecure(String passwordText, boolean allowBlank) {
+    return StringUtils.isBlank(passwordText) ? allowBlank : isPasswordSecure(passwordText);
   }
 
-  public static boolean isEmailValid(String email) {
-    return StringUtils.isNotBlank(email) && EMAIL_PATTERN.matcher(email.trim()).matches();
+  public static boolean isEmailValid(String emailAddress) {
+    return StringUtils.isNotBlank(emailAddress)
+        && EMAIL_PATTERN.matcher(emailAddress.trim()).matches();
   }
 
   public static boolean isBirthDateValid(LocalDate birthDate) {
@@ -49,11 +50,11 @@ public final class UserInputRules {
     return birthDate == null || birthDate.isBefore(LocalDate.now(ZoneId.systemDefault()));
   }
 
-  public static boolean isRequiredTextValid(String value) {
-    return StringUtils.isNotBlank(value);
+  public static boolean isRequiredTextValid(String inputValue) {
+    return StringUtils.isNotBlank(inputValue);
   }
 
-  public static String normalize(String value) {
-    return StringUtils.defaultString(EmailIdentity.canonicalize(value));
+  public static String normalize(String inputValue) {
+    return StringUtils.defaultString(EmailIdentity.canonicalize(inputValue));
   }
 }

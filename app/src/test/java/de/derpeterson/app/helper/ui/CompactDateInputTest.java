@@ -44,7 +44,7 @@ class CompactDateInputTest {
     messages = new MessageProperties(new CustomI18NProvider());
     field = new DatePicker();
     field.setLocale(Locale.GERMAN);
-    CompactDateInput.configure(field, messages);
+    CompactDateInput.configureDatePickerInput(field, messages);
   }
 
   @AfterEach
@@ -133,11 +133,10 @@ class CompactDateInputTest {
   @Test
   void actualDatePickerFallbackCommitsAClientValueAndRetainsItsRangeValidation() {
     List<LocalDate> changes = new ArrayList<>();
-    field.addValueChangeListener(
-        event -> {
-          assertTrue(event.isFromClient());
-          changes.add(event.getValue());
-        });
+    field.addValueChangeListener(event -> {
+      assertTrue(event.isFromClient());
+      changes.add(event.getValue());
+    });
     field.setMax(LocalDate.of(2026, 10, 18));
     commit(" 260486 ");
     assertEquals(LocalDate.of(1986, 4, 26), field.getValue());
@@ -182,12 +181,12 @@ class CompactDateInputTest {
     assertEquals(
         List.of("dd.MM.yyyy", "d.M.yyyy", "dd.MM.yy", "d.M.yy"), field.getI18n().getDateFormats());
     field.setLocale(Locale.ENGLISH);
-    CompactDateInput.configure(field, messages);
+    CompactDateInput.configureDatePickerInput(field, messages);
     assertEquals(List.of("M/d/yyyy", "M/d/yy"), field.getI18n().getDateFormats());
     assertEquals(LocalDate.of(1986, 5, 4), field.getValue());
     assertEquals(LocalDate.of(2026, 10, 18), field.getMax());
     field.setLocale(Locale.GERMAN);
-    CompactDateInput.configure(field, messages);
+    CompactDateInput.configureDatePickerInput(field, messages);
     assertEquals(
         List.of("dd.MM.yyyy", "d.M.yyyy", "dd.MM.yy", "d.M.yy"), field.getI18n().getDateFormats());
     assertEquals(LocalDate.of(2000, 1, 1), field.getI18n().getReferenceDate());

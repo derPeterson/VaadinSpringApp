@@ -14,40 +14,43 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Component
 @Slf4j
 public class SupportTicketBroadcaster {
-  public record Change(Long requesterId, Long viewerId) {
-    public boolean affects(Long currentViewer, boolean administration) {
+  public record SupportTicketChangeMessage(Long requesterId, Long viewerId) {
+    public boolean affects(Long currentViewerId, boolean hasAdministrativeAccess) {
       if (viewerId != null) {
-        return viewerId.equals(currentViewer);
+        return viewerId.equals(currentViewerId);
       }
-      return administration || requesterId != null && requesterId.equals(currentViewer);
+      return hasAdministrativeAccess || requesterId != null && requesterId.equals(currentViewerId);
     }
   }
 
-  private final CopyOnWriteArrayList<Consumer<Change>> listeners = new CopyOnWriteArrayList<>();
+  private final CopyOnWriteArrayList<Consumer<SupportTicketChangeMessage>> ticketChangeListeners =
+      new CopyOnWriteArrayList<>();
 
-  public Registration register(Consumer<Change> listener) {
-    listeners.add(listener);
-    return () -> listeners.remove(listener);
+  public Registration register(Consumer<SupportTicketChangeMessage> ticketChangeListener) {
+    ticketChangeListeners.add(ticketChangeListener);
+    return () -> ticketChangeListeners.remove(ticketChangeListener);
   }
 
   public void ticketChanged(Long requesterId) {
-    afterCommit(new Change(requesterId, null));
+    afterCommit(new SupportTicketChangeMessage(requesterId, null));
   }
 
   public void viewerChanged(Long viewerId) {
-    afterCommit(new Change(null, viewerId));
+    afterCommit(new SupportTicketChangeMessage(null, viewerId));
   }
 
-  private void afterCommit(Change change) {
+  private void afterCommit(SupportTicketChangeMessage ticketChangeMessage) {
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override
           public void afterCommit() {
-            for (Consumer<Change> listener : listeners) {
+            for (Consumer<SupportTicketChangeMessage> ticketChangeListener :
+                ticketChangeListeners) {
               try {
-                listener.accept(change);
-              } catch (RuntimeException failure) {
-                log.warn("Ticket refresh deferred until next request", safeFailure(failure));
+                ticketChangeListener.accept(ticketChangeMessage);
+              } catch (RuntimeException listenerFailure) {
+                log.warn(
+                    "Ticket refresh deferred until next request", safeFailure(listenerFailure));
               }
             }
           }

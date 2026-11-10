@@ -589,7 +589,9 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     Span source = new Span(messageProperties.getNotificationsSourceAdministration());
     source.addClassNames("cosmos-notification-preview-source", "portal-notification-source-admin");
     Span time =
-        new Span(UserNotificationTexts.time(java.time.Instant.now(), UI.getCurrent().getLocale()));
+        new Span(
+            UserNotificationTexts.formatNotificationTimestamp(
+                java.time.Instant.now(), UI.getCurrent().getLocale()));
     Div contentLabel = new Div(source, time);
     contentLabel.addClassNames(
         "cosmos-notification-message-meta", "admin-notification-preview-meta");
@@ -705,7 +707,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     subject.addClassName("cosmos-notification-sent-title");
     Span metadata =
         new Span(
-            UserNotificationTexts.time(item.createdAt(), UI.getCurrent().getLocale())
+            UserNotificationTexts.formatNotificationTimestamp(
+                    item.createdAt(), UI.getCurrent().getLocale())
                 + " · "
                 + messageProperties.getNotificationsHistoryRecipients(item.recipientCount()));
     metadata.addClassName("cosmos-notification-sent-meta");

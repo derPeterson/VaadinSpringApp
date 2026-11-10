@@ -111,14 +111,13 @@ public class AccountEmailChangeDialog extends Dialog {
     request.addClickListener(event -> submit());
     Div actions = new Div(cancel, request);
     actions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configure(actions);
+    EqualButtonWidths.configureEqualButtonWidths(actions);
     getFooter().add(actions);
-    addOpenedChangeListener(
-        event -> {
-          if (!event.isOpened()) {
-            clearDraft();
-          }
-        });
+    addOpenedChangeListener(event -> {
+      if (!event.isOpened()) {
+        clearDraft();
+      }
+    });
     refreshTexts();
   }
 

@@ -952,24 +952,29 @@ class UserNotificationServicePersistenceTest {
         adminSession, UUID.randomUUID(), "Original notice", "Original manual body", everyone());
     String title = messageProperties.getNotificationsPasswordChangedTitle();
     Set<UserNotificationType> types =
-        de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(messageProperties, title);
+        de.derpeterson.app.i18n.UserNotificationTexts.findMatchingNotificationTypes(
+            messageProperties, title);
     assertTrue(types.contains(UserNotificationType.PASSWORD_CHANGED));
     assertEquals(
         1,
         service.searchInbox(userSession, ReadFilter.ALL, title, types, 0, 20).getTotalElements());
     String body = messageProperties.getNotificationsPasswordChangedBody().substring(0, 25);
-    types = de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(messageProperties, body);
+    types =
+        de.derpeterson.app.i18n.UserNotificationTexts.findMatchingNotificationTypes(
+            messageProperties, body);
     assertEquals(
         1, service.searchInbox(userSession, ReadFilter.ALL, body, types, 0, 20).getTotalElements());
     String system = messageProperties.getNotificationsSourceSystem();
-    types = de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(messageProperties, system);
+    types =
+        de.derpeterson.app.i18n.UserNotificationTexts.findMatchingNotificationTypes(
+            messageProperties, system);
     assertEquals(
         1,
         service.searchInbox(userSession, ReadFilter.ALL, system, types, 0, 20).getTotalElements());
     assertTrue(service.searchInbox(adminSession, ReadFilter.ALL, system, types, 0, 20).isEmpty());
     String administration = messageProperties.getNotificationsSourceAdministration();
     types =
-        de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(
+        de.derpeterson.app.i18n.UserNotificationTexts.findMatchingNotificationTypes(
             messageProperties, administration);
     assertEquals(
         UserNotificationType.ADMIN_ANNOUNCEMENT,
@@ -979,7 +984,8 @@ class UserNotificationServicePersistenceTest {
             .getFirst()
             .type());
     assertTrue(
-        de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(messageProperties, "   ")
+        de.derpeterson.app.i18n.UserNotificationTexts.findMatchingNotificationTypes(
+                messageProperties, "   ")
             .isEmpty());
   }
 
@@ -991,7 +997,8 @@ class UserNotificationServicePersistenceTest {
     tx.executeWithoutResult(status -> service.recordRequesterClosed("#10001", 1L, List.of(sender)));
     String query = messageProperties.getSupportTicketNumber("").strip();
     Set<UserNotificationType> types =
-        de.derpeterson.app.i18n.UserNotificationTexts.matchingTypes(messageProperties, query);
+        de.derpeterson.app.i18n.UserNotificationTexts.findMatchingNotificationTypes(
+            messageProperties, query);
     assertTrue(types.contains(UserNotificationType.SUPPORT_REQUESTER_CLOSED));
     assertEquals(
         1,

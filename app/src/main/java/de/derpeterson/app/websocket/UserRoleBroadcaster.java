@@ -10,19 +10,21 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class UserRoleBroadcaster {
-  private final CopyOnWriteArrayList<Consumer<Long>> listeners = new CopyOnWriteArrayList<>();
+  private final CopyOnWriteArrayList<Consumer<Long>> roleChangeListeners =
+      new CopyOnWriteArrayList<>();
 
-  public Registration register(Consumer<Long> listener) {
-    listeners.add(listener);
-    return () -> listeners.remove(listener);
+  public Registration register(Consumer<Long> roleChangeListener) {
+    roleChangeListeners.add(roleChangeListener);
+    return () -> roleChangeListeners.remove(roleChangeListener);
   }
 
   public void publish(Long userId) {
-    for (Consumer<Long> listener : listeners) {
+    for (Consumer<Long> roleChangeListener : roleChangeListeners) {
       try {
-        listener.accept(userId);
-      } catch (RuntimeException failure) {
-        LoggerFactory.getLogger(getClass()).warn("Role UI refresh deferred", safeFailure(failure));
+        roleChangeListener.accept(userId);
+      } catch (RuntimeException listenerFailure) {
+        LoggerFactory.getLogger(getClass())
+            .warn("Role UI refresh deferred", safeFailure(listenerFailure));
       }
     }
   }

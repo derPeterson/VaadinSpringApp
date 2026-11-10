@@ -7,35 +7,40 @@ import java.util.IdentityHashMap;
 public final class LogSafety {
   private LogSafety() {}
 
-  public static Throwable safeFailure(Throwable original) {
-    return copy(original, new IdentityHashMap<>(), 0);
+  public static Throwable safeFailure(Throwable originalFailure) {
+    return copy(originalFailure, new IdentityHashMap<>(), 0);
   }
 
   private static Throwable copy(
-      Throwable original, IdentityHashMap<Throwable, Throwable> seen, int depth) {
-    if (original == null) {
+      Throwable originalFailure,
+      IdentityHashMap<Throwable, Throwable> logSafeFailuresByOriginal,
+      int causeDepth) {
+    if (originalFailure == null) {
       return null;
     }
-    Throwable known = seen.get(original);
-    if (known != null) {
-      return known;
+    Throwable cachedSafeFailure = logSafeFailuresByOriginal.get(originalFailure);
+    if (cachedSafeFailure != null) {
+      return cachedSafeFailure;
     }
-    RuntimeException safe = new RuntimeException(original.getClass().getName());
-    StackTraceElement[] frames = original.getStackTrace();
-    safe.setStackTrace(Arrays.copyOf(frames, Math.min(frames.length, 128)));
-    if (depth >= 8 || seen.size() >= 32) {
-      return safe;
+    RuntimeException logSafeFailure = new RuntimeException(originalFailure.getClass().getName());
+    StackTraceElement[] stackTraceFrames = originalFailure.getStackTrace();
+    logSafeFailure.setStackTrace(
+        Arrays.copyOf(stackTraceFrames, Math.min(stackTraceFrames.length, 128)));
+    if (causeDepth >= 8 || logSafeFailuresByOriginal.size() >= 32) {
+      return logSafeFailure;
     }
-    seen.put(original, safe);
-    if (original.getCause() != null && original.getCause() != original) {
-      safe.initCause(copy(original.getCause(), seen, depth + 1));
+    logSafeFailuresByOriginal.put(originalFailure, logSafeFailure);
+    if (originalFailure.getCause() != null && originalFailure.getCause() != originalFailure) {
+      logSafeFailure.initCause(
+          copy(originalFailure.getCause(), logSafeFailuresByOriginal, causeDepth + 1));
     }
-    Throwable[] suppressed = original.getSuppressed();
-    for (int i = 0; i < Math.min(suppressed.length, 8); i++) {
-      if (suppressed[i] != original) {
-        safe.addSuppressed(copy(suppressed[i], seen, depth + 1));
+    Throwable[] suppressedFailures = originalFailure.getSuppressed();
+    for (int i = 0; i < Math.min(suppressedFailures.length, 8); i++) {
+      if (suppressedFailures[i] != originalFailure) {
+        logSafeFailure.addSuppressed(
+            copy(suppressedFailures[i], logSafeFailuresByOriginal, causeDepth + 1));
       }
     }
-    return safe;
+    return logSafeFailure;
   }
 }

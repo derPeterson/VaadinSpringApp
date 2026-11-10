@@ -23,14 +23,14 @@ public class MessageProperties extends MessageTexts implements Serializable {
   private final Locale fixedLocale;
 
   @Autowired
-  public MessageProperties(CustomI18NProvider provider) {
-    super(provider::getTranslation);
+  public MessageProperties(CustomI18NProvider i18nProvider) {
+    super(i18nProvider::getTranslation);
     fixedLocale = null;
   }
 
-  private MessageProperties(UnaryOperator<String> lookup, Locale locale) {
-    super(lookup);
-    fixedLocale = locale;
+  private MessageProperties(UnaryOperator<String> translationLookup, Locale translationLocale) {
+    super(translationLookup);
+    fixedLocale = translationLocale;
   }
 
   @Serial
@@ -39,23 +39,26 @@ public class MessageProperties extends MessageTexts implements Serializable {
   }
 
   @Serial
-  private void readObject(ObjectInputStream input) throws InvalidObjectException {
+  private void readObject(ObjectInputStream serializedMessageInput) throws InvalidObjectException {
     throw new InvalidObjectException("Message serialization proxy required");
   }
 
   private record SerializedMessages(Locale locale) implements Serializable {
     @Serial
     private Object readResolve() {
-      CustomI18NProvider provider = new CustomI18NProvider();
-      return locale == null ? new MessageProperties(provider) : forLocale(provider, locale);
+      CustomI18NProvider i18nProvider = new CustomI18NProvider();
+      return locale == null ? new MessageProperties(i18nProvider) : forLocale(i18nProvider, locale);
     }
   }
 
   /** Fixed locale for explicit translations; does not read or change the Vaadin session. */
-  public static MessageProperties forLocale(CustomI18NProvider provider, Locale locale) {
-    Objects.requireNonNull(provider, "Translation provider required.");
-    Objects.requireNonNull(locale, "Locale required.");
-    return new MessageProperties(key -> provider.getTranslation(key, locale), locale);
+  public static MessageProperties forLocale(
+      CustomI18NProvider i18nProvider, Locale translationLocale) {
+    Objects.requireNonNull(i18nProvider, "Translation provider required.");
+    Objects.requireNonNull(translationLocale, "Locale required.");
+    return new MessageProperties(
+        translationKey -> i18nProvider.getTranslation(translationKey, translationLocale),
+        translationLocale);
   }
 
   @Override
@@ -63,8 +66,8 @@ public class MessageProperties extends MessageTexts implements Serializable {
     return fixedLocale == null ? CustomI18NProvider.getCurrentLocale() : fixedLocale;
   }
 
-  public String getUserStatusLabel(UserStatus status) {
-    return switch (status) {
+  public String getUserStatusLabel(UserStatus userStatus) {
+    return switch (userStatus) {
       case AVAILABLE -> getUserStatusAvailable();
       case EMPLOYED -> getUserStatusEmployed();
       case ABSENT -> getUserStatusAbsent();
@@ -72,8 +75,8 @@ public class MessageProperties extends MessageTexts implements Serializable {
     };
   }
 
-  public String getRegistrationChannelLabel(RegistrationChannel channel) {
-    return switch (channel) {
+  public String getRegistrationChannelLabel(RegistrationChannel registrationChannel) {
+    return switch (registrationChannel) {
       case null -> getSignInAccountCreated();
       case PORTAL -> getSignInPortal();
       case GOOGLE -> getExternalGoogle();
@@ -81,8 +84,8 @@ public class MessageProperties extends MessageTexts implements Serializable {
     };
   }
 
-  public String getSignInMethodLabel(SignInMethod method) {
-    return switch (method) {
+  public String getSignInMethodLabel(SignInMethod signInMethod) {
+    return switch (signInMethod) {
       case null -> getSignInUnknown();
       case PORTAL -> getSignInPortalPassword();
       case GOOGLE -> getExternalGoogle();
@@ -91,8 +94,8 @@ public class MessageProperties extends MessageTexts implements Serializable {
     };
   }
 
-  public String getUserStatusDescription(UserStatus status) {
-    return switch (status) {
+  public String getUserStatusDescription(UserStatus userStatus) {
+    return switch (userStatus) {
       case AVAILABLE -> getUserStatusAvailableDescription();
       case EMPLOYED -> getUserStatusEmployedDescription();
       case ABSENT -> getUserStatusAbsentDescription();
@@ -100,8 +103,8 @@ public class MessageProperties extends MessageTexts implements Serializable {
     };
   }
 
-  public List<String> getAdminConfigEffectiveUse(ConfigEntry entry) {
-    return switch (entry) {
+  public List<String> getAdminConfigEffectiveUse(ConfigEntry configEntry) {
+    return switch (configEntry) {
       case SERVICE_NAME -> List.of(getAdminConfigEffectiveServiceName());
       case COPYRIGHT_TEXT -> List.of(getAdminConfigEffectiveCopyright());
       case BASE_URL -> List.of(getAdminConfigEffectiveBaseUrl());

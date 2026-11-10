@@ -58,7 +58,7 @@ public final class ExternalConnectionsComponent extends Div {
     setId("account-external-connections");
     addClassName("account-external-connections");
     providerOverview.addClassName("external-connections-overview");
-    EqualButtonWidths.configure(providerOverview);
+    EqualButtonWidths.configureEqualButtonWidths(providerOverview);
     add(providerOverview);
     ComponentUtil.addListener(
         UI.getCurrent(), LanguageChangeEvent.class, event -> refreshAccount());

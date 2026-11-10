@@ -143,7 +143,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     confirmIdentityButton.addClickListener(event -> confirmExternalIdentityAction());
     Div actions = new Div(cancelButton, confirmIdentityButton);
     actions.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configure(actions);
+    EqualButtonWidths.configureEqualButtonWidths(actions);
     getFooter().add(actions);
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {

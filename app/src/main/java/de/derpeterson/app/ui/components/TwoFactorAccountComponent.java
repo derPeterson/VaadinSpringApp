@@ -82,7 +82,7 @@ public final class TwoFactorAccountComponent extends Div {
   private Div createTwoFactorActions(boolean authenticatorEnrolled) {
     Div twoFactorActions = new Div();
     twoFactorActions.addClassName("two-factor-account-actions");
-    EqualButtonWidths.configure(twoFactorActions);
+    EqualButtonWidths.configureEqualButtonWidths(twoFactorActions);
 
     if (!authenticatorEnrolled) {
       Button setupAuthenticatorButton =
