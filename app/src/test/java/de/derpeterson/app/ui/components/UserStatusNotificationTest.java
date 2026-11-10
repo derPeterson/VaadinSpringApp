@@ -35,6 +35,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,36 +43,42 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.test.util.ReflectionTestUtils;
 
-/** Real translations, notification components and existing language event; no browser. */
+/** Prüft echte Übersetzungen und Statusmeldungen über das vorhandene Sprachereignis. */
 class UserStatusNotificationTest {
   private UI testUi;
   private VaadinSession vaadinSession;
-  private TrackedUserAppLayout layout;
-  private final CustomI18NProvider i18nProvider = new CustomI18NProvider();
-  private final MessageProperties messageProperties = new MessageProperties(i18nProvider);
+
+  // Seitenrahmen, der das Sprachereignis verarbeitet
+  private TrackedUserAppLayout trackedUserAppLayout;
+
+  private final CustomI18NProvider customI18NProvider = new CustomI18NProvider();
+  private final MessageProperties messageProperties = new MessageProperties(customI18NProvider);
 
   @BeforeEach
-  void setup() {
+  void createStatusNotificationEnvironment() {
     testUi = new UI();
     vaadinSession = mock(VaadinSession.class);
-    AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.ENGLISH);
-    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    AtomicReference<Locale> activeLocaleReference = new AtomicReference<>(Locale.ENGLISH);
+    when(vaadinSession.getLocale()).thenAnswer(mockInvocation -> activeLocaleReference.get());
     when(vaadinSession.hasLock()).thenReturn(true);
     doAnswer(
-            call -> {
-              localeReference.set(call.getArgument(0));
+            mockInvocation -> {
+              activeLocaleReference.set(mockInvocation.getArgument(0));
               return null;
             })
         .when(vaadinSession)
         .setLocale(any());
+
     UI.setCurrent(testUi);
     VaadinSession.setCurrent(vaadinSession);
-    SecurityService security = mock(SecurityService.class);
-    when(security.getCurrentUser(any(HttpServletRequest.class))).thenReturn(Optional.empty());
-    layout =
+
+    SecurityService securityService = mock(SecurityService.class);
+    when(securityService.getCurrentUser(any(HttpServletRequest.class)))
+        .thenReturn(Optional.empty());
+    trackedUserAppLayout =
         new TrackedUserAppLayout(
             messageProperties,
-            security,
+            securityService,
             mock(UserService.class),
             new UserStatusBroadcaster(),
             mock(HttpServletRequest.class),
@@ -79,23 +86,26 @@ class UserStatusNotificationTest {
   }
 
   @AfterEach
-  void cleanup() {
+  void clearStatusNotificationEnvironment() {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
+
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
-    layout = null;
+
+    trackedUserAppLayout = null;
     testUi = null;
     vaadinSession = null;
   }
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  void visiblePopoverFailureAndNewFailureTranslateImmediatelyIncludingTitle(boolean conflict) {
+  void visiblePopoverFailureAndNewFailureTranslateImmediatelyIncludingTitle(
+      boolean hasVersionConflict) {
     UserEntity testUserEntity = UserEntity.builder().id(7L).status(UserStatus.OFFLINE).build();
     UserService userService = mock(UserService.class);
     when(userService.updateUserStatus(testUserEntity, UserStatus.EMPLOYED, true))
         .thenThrow(
-            conflict
+            hasVersionConflict
                 ? new OptimisticLockingFailureException("conflict")
                 : new IllegalStateException("failed"));
     UserPopoverMenu userPopoverMenu =
@@ -106,52 +116,58 @@ class UserStatusNotificationTest {
             testUserEntity,
             new Button(),
             new UserPopoverMenu.UserPopoverActions(null, null),
-            status -> {});
+            userStatus -> {});
     ReflectionTestUtils.invokeMethod(
         userPopoverMenu, "handleUserStatusChange", UserStatus.EMPLOYED);
-    Notification original = currentNotification();
-    assertText(Locale.ENGLISH, conflict);
+    Notification originalNotification = readCurrentNotification();
+    assertLocalizedFailureNotification(Locale.ENGLISH, hasVersionConflict);
+
     LanguageChangeEvent.fire(testUi, Locale.GERMAN);
 
-    assertSame(original, currentNotification());
-    assertText(Locale.GERMAN, conflict);
+    assertSame(originalNotification, readCurrentNotification());
+    assertLocalizedFailureNotification(Locale.GERMAN, hasVersionConflict);
+
     ReflectionTestUtils.invokeMethod(
         userPopoverMenu, "handleUserStatusChange", UserStatus.EMPLOYED);
 
-    assertNotSame(original, currentNotification());
-    assertText(Locale.GERMAN, conflict);
+    assertNotSame(originalNotification, readCurrentNotification());
+    assertLocalizedFailureNotification(Locale.GERMAN, hasVersionConflict);
+
     LanguageChangeEvent.fire(testUi, Locale.ENGLISH);
-    assertText(Locale.ENGLISH, conflict);
+    assertLocalizedFailureNotification(Locale.ENGLISH, hasVersionConflict);
 
     assertEquals(UserStatus.OFFLINE, testUserEntity.getStatus());
   }
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  void adminConflictSupplierUsesCurrentSessionLanguageAndUpdatesVisibleTitle(boolean startGerman) {
-    LanguageChangeEvent.fire(testUi, startGerman ? Locale.GERMAN : Locale.ENGLISH);
-    AdminUserManagementSection admin =
+  void adminConflictSupplierUsesCurrentSessionLanguageAndUpdatesVisibleTitle(
+      boolean startsInGerman) {
+    LanguageChangeEvent.fire(testUi, startsInGerman ? Locale.GERMAN : Locale.ENGLISH);
+    AdminUserManagementSection adminUserManagementSection =
         new AdminUserManagementSection(
             messageProperties,
             mock(UserService.class),
             mock(RoleService.class),
             mock(SecurityService.class));
     ReflectionTestUtils.invokeMethod(
-        admin,
+        adminUserManagementSection,
         "showError",
-        (java.util.function.Supplier<String>) messageProperties::getBaseUserUpdateConflict);
-    assertText(startGerman ? Locale.GERMAN : Locale.ENGLISH, true);
-    LanguageChangeEvent.fire(testUi, startGerman ? Locale.ENGLISH : Locale.GERMAN);
-    assertText(startGerman ? Locale.ENGLISH : Locale.GERMAN, true);
+        (Supplier<String>) messageProperties::getBaseUserUpdateConflict);
+    assertLocalizedFailureNotification(startsInGerman ? Locale.GERMAN : Locale.ENGLISH, true);
+
+    LanguageChangeEvent.fire(testUi, startsInGerman ? Locale.ENGLISH : Locale.GERMAN);
+    assertLocalizedFailureNotification(startsInGerman ? Locale.ENGLISH : Locale.GERMAN, true);
   }
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   @SuppressWarnings("unchecked")
-  void statusButtonsPersistThroughTheExistingServiceAndKeepFailuresUnselected(boolean fail) {
+  void statusButtonsPersistThroughTheExistingServiceAndKeepFailuresUnselected(
+      boolean shouldStatusUpdateFail) {
     UserEntity testUserEntity = UserEntity.builder().id(7L).status(UserStatus.OFFLINE).build();
     UserService userService = mock(UserService.class);
-    if (fail) {
+    if (shouldStatusUpdateFail) {
       when(userService.updateUserStatus(testUserEntity, UserStatus.EMPLOYED, true))
           .thenThrow(new OptimisticLockingFailureException("conflict"));
     } else {
@@ -166,57 +182,64 @@ class UserStatusNotificationTest {
             testUserEntity,
             new Button(),
             new UserPopoverMenu.UserPopoverActions(null, null),
-            status -> {});
+            userStatus -> {});
     userPopoverMenu.addThemeName("cosmos-reference");
-    Map<UserStatus, Button> buttons =
+    Map<UserStatus, Button> statusButtonsByUserStatus =
         (Map<UserStatus, Button>) ReflectionTestUtils.getField(userPopoverMenu, "statusButtons");
 
-    assertEquals(UserStatus.values().length, buttons.size());
-    buttons.get(UserStatus.EMPLOYED).click();
-    UserStatus expected = fail ? UserStatus.OFFLINE : UserStatus.EMPLOYED;
+    assertEquals(UserStatus.values().length, statusButtonsByUserStatus.size());
+    statusButtonsByUserStatus.get(UserStatus.EMPLOYED).click();
+    UserStatus expectedUserStatus =
+        shouldStatusUpdateFail ? UserStatus.OFFLINE : UserStatus.EMPLOYED;
 
-    assertEquals(expected, testUserEntity.getStatus());
-    for (UserStatus status : UserStatus.values()) {
+    assertEquals(expectedUserStatus, testUserEntity.getStatus());
+    for (UserStatus userStatus : UserStatus.values()) {
       assertEquals(
-          Boolean.toString(status == expected),
-          buttons.get(status).getElement().getAttribute("aria-pressed"));
+          Boolean.toString(userStatus == expectedUserStatus),
+          statusButtonsByUserStatus.get(userStatus).getElement().getAttribute("aria-pressed"));
     }
+
     vaadinSession.setLocale(Locale.GERMAN);
     userPopoverMenu.refreshForLanguageChange();
 
     assertEquals(
         messageProperties.getUserStatusLabel(UserStatus.EMPLOYED),
-        buttons.get(UserStatus.EMPLOYED).getAriaLabel().orElseThrow());
+        statusButtonsByUserStatus.get(UserStatus.EMPLOYED).getAriaLabel().orElseThrow());
     verify(userService).updateUserStatus(testUserEntity, UserStatus.EMPLOYED, true);
   }
 
-  private Notification currentNotification() {
+  private Notification readCurrentNotification() {
     return (Notification)
         ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
   }
 
-  private void assertText(Locale locale, boolean conflict) {
-    NotificationHelper helper = NotificationHelper.getInstance();
+  private void assertLocalizedFailureNotification(
+      Locale expectedLocale, boolean hasVersionConflict) {
+    NotificationHelper notificationHelper = NotificationHelper.getInstance();
 
-    assertTrue(currentNotification().isOpened());
-    Span titleSpan = (Span) ReflectionTestUtils.getField(helper, "titleText");
-    Html messageHtml = (Html) ReflectionTestUtils.getField(helper, "messageText");
-    MessageProperties expectedTexts = MessageProperties.forLocale(i18nProvider, locale);
-    MessageProperties otherTexts =
+    assertTrue(readCurrentNotification().isOpened());
+    Span titleSpan = (Span) ReflectionTestUtils.getField(notificationHelper, "titleText");
+    Html messageHtml = (Html) ReflectionTestUtils.getField(notificationHelper, "messageText");
+    MessageProperties expectedMessageProperties =
+        MessageProperties.forLocale(customI18NProvider, expectedLocale);
+    MessageProperties alternateLocaleMessageProperties =
         MessageProperties.forLocale(
-            i18nProvider, locale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
-    String expectedTitle = expectedTexts.getBaseFailedTitle();
-    String expectedMessage =
-        conflict
-            ? expectedTexts.getBaseUserUpdateConflict()
-            : expectedTexts.getBaseUserStatusFailed();
+            customI18NProvider,
+            expectedLocale.equals(Locale.GERMAN) ? Locale.ENGLISH : Locale.GERMAN);
+    String expectedTitleText = expectedMessageProperties.getBaseFailedTitle();
+    String expectedMessageText =
+        hasVersionConflict
+            ? expectedMessageProperties.getBaseUserUpdateConflict()
+            : expectedMessageProperties.getBaseUserStatusFailed();
 
-    assertNotEquals(otherTexts.getBaseFailedTitle(), expectedTitle);
+    assertNotEquals(alternateLocaleMessageProperties.getBaseFailedTitle(), expectedTitleText);
     assertNotEquals(
-        conflict ? otherTexts.getBaseUserUpdateConflict() : otherTexts.getBaseUserStatusFailed(),
-        expectedMessage);
-    assertEquals(expectedTitle, titleSpan.getText());
+        hasVersionConflict
+            ? alternateLocaleMessageProperties.getBaseUserUpdateConflict()
+            : alternateLocaleMessageProperties.getBaseUserStatusFailed(),
+        expectedMessageText);
+    assertEquals(expectedTitleText, titleSpan.getText());
     assertEquals("p", messageHtml.getElement().getTag());
-    assertEquals(expectedMessage, messageHtml.getElement().getProperty("innerHTML"));
+    assertEquals(expectedMessageText, messageHtml.getElement().getProperty("innerHTML"));
   }
 }

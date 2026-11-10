@@ -22,22 +22,25 @@ class AccountHeaderActionsTest {
   private final UI testUi = spy(new UI());
   private final MessageProperties messageProperties = mock(MessageProperties.class);
 
-  private AccountHeaderActions create(boolean authenticated) {
+  private AccountHeaderActions createAccountHeaderActions(boolean isAuthenticated) {
     UI.setCurrent(testUi);
+
     when(messageProperties.getBaseNotifications()).thenReturn("Benachrichtigungen");
     when(messageProperties.getBaseManageAccountButton()).thenReturn("Konto verwalten");
-    return new AccountHeaderActions(messageProperties, authenticated);
+
+    return new AccountHeaderActions(messageProperties, isAuthenticated);
   }
 
   @AfterEach
-  void cleanup() {
+  void clearCurrentUi() {
     UI.setCurrent(null);
   }
 
-  private Button button(AccountHeaderActions actions, String id) {
-    return actions
+  private Button findHeaderActionButton(
+      AccountHeaderActions accountHeaderActions, String buttonId) {
+    return accountHeaderActions
         .getChildren()
-        .filter(component -> component.getId().orElse("").equals(id))
+        .filter(candidateComponent -> candidateComponent.getId().orElse("").equals(buttonId))
         .map(Button.class::cast)
         .findFirst()
         .orElseThrow();
@@ -45,37 +48,47 @@ class AccountHeaderActionsTest {
 
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
-  void shortcutsAreOnlyVisibleForAuthenticatedAccounts(boolean authenticated) {
-    assertEquals(authenticated, create(authenticated).isVisible());
+  void shortcutsAreOnlyVisibleForAuthenticatedAccounts(boolean isAuthenticated) {
+    assertEquals(isAuthenticated, createAccountHeaderActions(isAuthenticated).isVisible());
   }
 
   @Test
   void settingsOpensTheAccountDirectlyWithoutUsingTheBell() {
-    AccountHeaderActions actions = create(true);
+    AccountHeaderActions accountHeaderActions = createAccountHeaderActions(true);
     doReturn(Optional.empty()).when(testUi).navigate(AccountView.class);
-    button(actions, "account-header-notifications").click();
+
+    findHeaderActionButton(accountHeaderActions, "account-header-notifications").click();
 
     verify(testUi, never()).navigate(AccountView.class);
-    button(actions, "account-header-settings").click();
+
+    findHeaderActionButton(accountHeaderActions, "account-header-settings").click();
 
     verify(testUi).navigate(AccountView.class);
   }
 
   @Test
   void accessibleLabelsFollowLanguageChanges() {
-    AccountHeaderActions actions = create(true);
+    AccountHeaderActions accountHeaderActions = createAccountHeaderActions(true);
 
     assertEquals(
         "Benachrichtigungen",
-        button(actions, "account-header-notifications").getAriaLabel().orElseThrow());
+        findHeaderActionButton(accountHeaderActions, "account-header-notifications")
+            .getAriaLabel()
+            .orElseThrow());
+
     when(messageProperties.getBaseNotifications()).thenReturn("Notifications");
     when(messageProperties.getBaseManageAccountButton()).thenReturn("Manage account");
-    actions.refreshTexts();
+    accountHeaderActions.refreshTexts();
 
     assertEquals(
         "Notifications",
-        button(actions, "account-header-notifications").getAriaLabel().orElseThrow());
+        findHeaderActionButton(accountHeaderActions, "account-header-notifications")
+            .getAriaLabel()
+            .orElseThrow());
     assertEquals(
-        "Manage account", button(actions, "account-header-settings").getAriaLabel().orElseThrow());
+        "Manage account",
+        findHeaderActionButton(accountHeaderActions, "account-header-settings")
+            .getAriaLabel()
+            .orElseThrow());
   }
 }

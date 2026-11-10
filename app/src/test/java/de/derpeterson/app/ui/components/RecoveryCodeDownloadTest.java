@@ -42,83 +42,93 @@ class RecoveryCodeDownloadTest {
           configService,
           new CustomI18NProvider(),
           recoveryCodeDocument);
-  private final DownloadEvent event = mock(DownloadEvent.class);
-  private final VaadinServletRequest request = mock(VaadinServletRequest.class);
+
+  // Anfrage und temporäre Ersatzcode-Ausgabe
+  private final DownloadEvent downloadEvent = mock(DownloadEvent.class);
+  private final VaadinServletRequest vaadinServletRequest = mock(VaadinServletRequest.class);
   private final VaadinResponse vaadinResponse = mock(VaadinResponse.class);
-  private final UUID id = UUID.randomUUID();
-  private final List<String> codes = List.of("SYNTHETIC-RECOVERY-CODE");
+  private final UUID recoveryOutputUuid = UUID.randomUUID();
+  private final List<String> recoveryCodes = List.of("SYNTHETIC-RECOVERY-CODE");
 
   @BeforeEach
-  void prepare() {
+  void prepareRecoveryCodeDownload() {
     when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("My / Service");
-    when(event.getRequest()).thenReturn(request);
-    when(event.getResponse()).thenReturn(vaadinResponse);
-    when(twoFactorEnrollment.recoveryOutput(request, id)).thenReturn(codes);
-    TwoFactorAuthorization.Owner owner = mock(TwoFactorAuthorization.Owner.class);
-    when(twoFactorAuthorization.owner(request)).thenReturn(owner);
-    when(owner.email()).thenReturn("fixture@example.test");
+    when(downloadEvent.getRequest()).thenReturn(vaadinServletRequest);
+    when(downloadEvent.getResponse()).thenReturn(vaadinResponse);
+    when(twoFactorEnrollment.recoveryOutput(vaadinServletRequest, recoveryOutputUuid))
+        .thenReturn(recoveryCodes);
+
+    TwoFactorAuthorization.Owner twoFactorOwner = mock(TwoFactorAuthorization.Owner.class);
+    when(twoFactorAuthorization.owner(vaadinServletRequest)).thenReturn(twoFactorOwner);
+    when(twoFactorOwner.email()).thenReturn("fixture@example.test");
   }
 
   @Test
   void successDownloadsPdfWithoutConsumingCodesAndClearsTemporaryBytes() {
-    byte[] bytes = "%PDF-synthetic".getBytes(StandardCharsets.US_ASCII);
-    ByteArrayOutputStream output = new ByteArrayOutputStream();
-    when(event.getOutputStream()).thenReturn(output);
-    when(recoveryCodeDocument.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any()))
-        .thenReturn(bytes);
+    byte[] pdfBytes = "%PDF-synthetic".getBytes(StandardCharsets.US_ASCII);
+    ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream();
+    when(downloadEvent.getOutputStream()).thenReturn(pdfOutputStream);
+    when(recoveryCodeDocument.render(
+            any(), any(), eq(recoveryCodes), any(), eq(Locale.GERMAN), any()))
+        .thenReturn(pdfBytes);
 
-    recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
+    recoveryCodeDownload.writeRecoveryCodesPdf(downloadEvent, recoveryOutputUuid, Locale.GERMAN);
 
-    assertArrayEquals("%PDF-synthetic".getBytes(StandardCharsets.US_ASCII), output.toByteArray());
-    assertArrayEquals(new byte[bytes.length], bytes);
-    verify(event).setFileName("My-Service-recovery-codes.pdf");
-    verify(event).setContentType("application/pdf");
+    assertArrayEquals(
+        "%PDF-synthetic".getBytes(StandardCharsets.US_ASCII), pdfOutputStream.toByteArray());
+    assertArrayEquals(new byte[pdfBytes.length], pdfBytes);
+    verify(downloadEvent).setFileName("My-Service-recovery-codes.pdf");
+    verify(downloadEvent).setContentType("application/pdf");
     verify(vaadinResponse).setHeader("Cache-Control", "no-store");
     verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
   }
 
   @Test
   void generationFailureKeepsOutputAvailableForRetry() {
-    when(recoveryCodeDocument.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any()))
+    when(recoveryCodeDocument.render(
+            any(), any(), eq(recoveryCodes), any(), eq(Locale.GERMAN), any()))
         .thenThrow(new IllegalStateException("Synthetic renderer failure"))
         .thenReturn("%PDF-retry".getBytes(StandardCharsets.US_ASCII));
-    ByteArrayOutputStream output = new ByteArrayOutputStream();
-    when(event.getOutputStream()).thenReturn(output);
+    ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream();
+    when(downloadEvent.getOutputStream()).thenReturn(pdfOutputStream);
 
-    recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
+    recoveryCodeDownload.writeRecoveryCodesPdf(downloadEvent, recoveryOutputUuid, Locale.GERMAN);
 
     verify(vaadinResponse).setStatus(500);
-    recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
 
-    assertArrayEquals("%PDF-retry".getBytes(StandardCharsets.US_ASCII), output.toByteArray());
+    recoveryCodeDownload.writeRecoveryCodesPdf(downloadEvent, recoveryOutputUuid, Locale.GERMAN);
+
+    assertArrayEquals(
+        "%PDF-retry".getBytes(StandardCharsets.US_ASCII), pdfOutputStream.toByteArray());
     verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
   }
 
   @Test
   void expiredOrRevokedOutputRemainsDenied() {
-    when(twoFactorEnrollment.recoveryOutput(request, id))
+    when(twoFactorEnrollment.recoveryOutput(vaadinServletRequest, recoveryOutputUuid))
         .thenThrow(new AccessDeniedException("Expired"));
 
-    recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
+    recoveryCodeDownload.writeRecoveryCodesPdf(downloadEvent, recoveryOutputUuid, Locale.GERMAN);
 
     verify(vaadinResponse).setStatus(403);
-    verify(event, never()).setContentLength(anyLong());
+    verify(downloadEvent, never()).setContentLength(anyLong());
     verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
   }
 
   @Test
   void transportFailureReportsErrorWithoutDismissingCodes() throws IOException {
-    byte[] bytes = "%PDF-synthetic".getBytes(StandardCharsets.US_ASCII);
-    OutputStream output = mock(OutputStream.class);
-    doThrow(new IOException("Synthetic disconnected client")).when(output).write(bytes);
-    when(event.getOutputStream()).thenReturn(output);
-    when(recoveryCodeDocument.render(any(), any(), eq(codes), any(), eq(Locale.GERMAN), any()))
-        .thenReturn(bytes);
+    byte[] pdfBytes = "%PDF-synthetic".getBytes(StandardCharsets.US_ASCII);
+    OutputStream pdfOutputStream = mock(OutputStream.class);
+    doThrow(new IOException("Synthetic disconnected client")).when(pdfOutputStream).write(pdfBytes);
+    when(downloadEvent.getOutputStream()).thenReturn(pdfOutputStream);
+    when(recoveryCodeDocument.render(
+            any(), any(), eq(recoveryCodes), any(), eq(Locale.GERMAN), any()))
+        .thenReturn(pdfBytes);
 
-    recoveryCodeDownload.writeRecoveryCodesPdf(event, id, Locale.GERMAN);
+    recoveryCodeDownload.writeRecoveryCodesPdf(downloadEvent, recoveryOutputUuid, Locale.GERMAN);
 
     verify(vaadinResponse).setStatus(500);
-    assertArrayEquals(new byte[bytes.length], bytes);
+    assertArrayEquals(new byte[pdfBytes.length], pdfBytes);
     verify(twoFactorEnrollment, never()).dismissOutput(any(), any());
   }
 }

@@ -15,35 +15,42 @@ import org.w3c.dom.Element;
 class AppIconResourceTest {
   @Test
   void everyApplicationIconHasALocalSvgAndDecorativeSemantics() throws Exception {
-    DocumentBuilderFactory parser = DocumentBuilderFactory.newInstance();
-    parser.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-    for (AppIcon type : AppIcon.values()) {
-      SvgIcon icon = type.create();
+    DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+    documentBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
 
-      assertEquals(type.getSource(), icon.getSrc());
-      assertEquals("true", icon.getElement().getAttribute("aria-hidden"));
-      String library = type.getSource().split("/")[1];
+    for (AppIcon appIcon : AppIcon.values()) {
+      SvgIcon svgIcon = appIcon.create();
 
-      assertTrue(icon.hasClassName("cosmos-" + library + "-icon"), type.name());
-      try (InputStream stream = resource(type.getSource())) {
-        Element svg = parser.newDocumentBuilder().parse(stream).getDocumentElement();
+      assertEquals(appIcon.getSource(), svgIcon.getSrc());
+      assertEquals("true", svgIcon.getElement().getAttribute("aria-hidden"));
+      String iconLibraryName = appIcon.getSource().split("/")[1];
 
-        assertEquals("svg", svg.getTagName(), type.name());
-        switch (library) {
+      assertTrue(svgIcon.hasClassName("cosmos-" + iconLibraryName + "-icon"), appIcon.name());
+
+      try (InputStream resourceInputStream = openClasspathResource(appIcon.getSource())) {
+        Element svgElement =
+            documentBuilderFactory
+                .newDocumentBuilder()
+                .parse(resourceInputStream)
+                .getDocumentElement();
+
+        assertEquals("svg", svgElement.getTagName(), appIcon.name());
+
+        switch (iconLibraryName) {
           case "lucide", "tabler" -> {
-            assertEquals("0 0 24 24", svg.getAttribute("viewBox"), type.name());
-            assertEquals("none", svg.getAttribute("fill"), type.name());
-            assertEquals("currentColor", svg.getAttribute("stroke"), type.name());
-            assertEquals("2", svg.getAttribute("stroke-width"), type.name());
+            assertEquals("0 0 24 24", svgElement.getAttribute("viewBox"), appIcon.name());
+            assertEquals("none", svgElement.getAttribute("fill"), appIcon.name());
+            assertEquals("currentColor", svgElement.getAttribute("stroke"), appIcon.name());
+            assertEquals("2", svgElement.getAttribute("stroke-width"), appIcon.name());
           }
           case "material-symbols" -> {
-            assertEquals("0 -960 960 960", svg.getAttribute("viewBox"), type.name());
-            Element shape = (Element) svg.getElementsByTagName("path").item(0);
+            assertEquals("0 -960 960 960", svgElement.getAttribute("viewBox"), appIcon.name());
+            Element pathElement = (Element) svgElement.getElementsByTagName("path").item(0);
 
-            assertNotNull(shape, type.name());
-            assertEquals("currentColor", shape.getAttribute("fill"), type.name());
+            assertNotNull(pathElement, appIcon.name());
+            assertEquals("currentColor", pathElement.getAttribute("fill"), appIcon.name());
           }
-          default -> throw new AssertionError("Unknown local icon library: " + library);
+          default -> throw new AssertionError("Unknown local icon library: " + iconLibraryName);
         }
       }
     }
@@ -51,22 +58,25 @@ class AppIconResourceTest {
 
   @Test
   void licenseIsAvailableFromClasspath() throws Exception {
-    try (InputStream stream = resource("icons/lucide/LICENSE")) {
-      String license = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
+    try (InputStream resourceInputStream = openClasspathResource("icons/lucide/LICENSE")) {
+      String licenseText = new String(resourceInputStream.readAllBytes(), StandardCharsets.UTF_8);
 
-      assertTrue(license.contains("ISC"));
-      assertTrue(license.contains("Lucide"));
+      assertTrue(licenseText.contains("ISC"));
+      assertTrue(licenseText.contains("Lucide"));
     }
-    try (InputStream stream = resource("icons/tabler/LICENSE")) {
-      String license = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
 
-      assertTrue(license.contains("MIT License"));
-      assertTrue(license.contains("Kuna"));
+    try (InputStream resourceInputStream = openClasspathResource("icons/tabler/LICENSE")) {
+      String licenseText = new String(resourceInputStream.readAllBytes(), StandardCharsets.UTF_8);
+
+      assertTrue(licenseText.contains("MIT License"));
+      assertTrue(licenseText.contains("Kuna"));
     }
-    try (InputStream stream = resource("icons/material-symbols/LICENSE")) {
-      String license = new String(stream.readAllBytes(), StandardCharsets.UTF_8);
 
-      assertTrue(license.contains("Apache License"));
+    try (InputStream resourceInputStream =
+        openClasspathResource("icons/material-symbols/LICENSE")) {
+      String licenseText = new String(resourceInputStream.readAllBytes(), StandardCharsets.UTF_8);
+
+      assertTrue(licenseText.contains("Apache License"));
     }
   }
 
@@ -76,10 +86,12 @@ class AppIconResourceTest {
     assertEquals("icons/tabler/cloud-lock.svg", AppIcon.CLOUD_LOCK.getSource());
   }
 
-  private InputStream resource(String path) {
-    InputStream stream = getClass().getResourceAsStream("/META-INF/resources/" + path);
+  private InputStream openClasspathResource(String resourcePath) {
+    InputStream resourceInputStream =
+        getClass().getResourceAsStream("/META-INF/resources/" + resourcePath);
 
-    assertNotNull(stream, path);
-    return stream;
+    assertNotNull(resourceInputStream, resourcePath);
+
+    return resourceInputStream;
   }
 }

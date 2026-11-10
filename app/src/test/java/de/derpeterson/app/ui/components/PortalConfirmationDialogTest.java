@@ -20,22 +20,25 @@ import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class PortalConfirmationDialogTest {
-  private PortalConfirmationDialog dialog;
-  private PortalConfirmationDialog.Prompt prompt;
+  private PortalConfirmationDialog confirmationDialog;
+  private PortalConfirmationDialog.Prompt confirmationPrompt;
 
   @BeforeEach
-  void setup() {
+  void createConfirmationDialogEnvironment() {
     VaadinSession vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.hasLock()).thenReturn(true);
     when(vaadinSession.getLocale()).thenReturn(Locale.GERMAN);
     VaadinSession.setCurrent(vaadinSession);
-    UI ui = new UI();
-    ui.getInternals().setSession(vaadinSession);
-    UI.setCurrent(ui);
+
+    UI testUi = new UI();
+    testUi.getInternals().setSession(vaadinSession);
+    UI.setCurrent(testUi);
+
     MessageProperties messageProperties = new MessageProperties(new CustomI18NProvider());
-    dialog = new PortalConfirmationDialog(messageProperties, "test-confirmation");
-    ui.add(dialog);
-    prompt =
+    confirmationDialog = new PortalConfirmationDialog(messageProperties, "test-confirmation");
+    testUi.add(confirmationDialog);
+
+    confirmationPrompt =
         new PortalConfirmationDialog.Prompt(
             () -> "Titel",
             () -> "Beschreibung",
@@ -48,57 +51,60 @@ class PortalConfirmationDialogTest {
   }
 
   @AfterEach
-  void cleanup() {
+  void clearConfirmationDialogEnvironment() {
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
   }
 
-  private Button button(String field) {
-    return (Button) ReflectionTestUtils.getField(dialog, field);
+  private Button readConfirmationButton(String buttonFieldName) {
+    return (Button) ReflectionTestUtils.getField(confirmationDialog, buttonFieldName);
   }
 
   @Test
   void cancellingAndClosingNeverExecuteOrRetainTheAction() {
-    AtomicInteger callCount = new AtomicInteger();
-    dialog.open(prompt, callCount::incrementAndGet);
-    button("cancelButton").click();
-    button("confirmButton").click();
-    dialog.open(prompt, callCount::incrementAndGet);
-    button("closeDialogButton").click();
-    button("confirmButton").click();
+    AtomicInteger actionCallCounter = new AtomicInteger();
+    confirmationDialog.open(confirmationPrompt, actionCallCounter::incrementAndGet);
+    readConfirmationButton("cancelButton").click();
+    readConfirmationButton("confirmButton").click();
 
-    assertEquals(0, callCount.get());
-    assertFalse(dialog.isOpened());
+    confirmationDialog.open(confirmationPrompt, actionCallCounter::incrementAndGet);
+    readConfirmationButton("closeDialogButton").click();
+    readConfirmationButton("confirmButton").click();
+
+    assertEquals(0, actionCallCounter.get());
+    assertFalse(confirmationDialog.isOpened());
   }
 
   @Test
   void confirmingConsumesOnlyTheCurrentActionOnce() {
-    AtomicInteger callCount = new AtomicInteger();
-    dialog.open(prompt, () -> callCount.addAndGet(100));
-    dialog.close();
-    dialog.open(prompt, callCount::incrementAndGet);
-    button("confirmButton").click();
-    button("confirmButton").click();
+    AtomicInteger actionCallCounter = new AtomicInteger();
+    confirmationDialog.open(confirmationPrompt, () -> actionCallCounter.addAndGet(100));
+    confirmationDialog.close();
 
-    assertEquals(1, callCount.get());
-    assertFalse(dialog.isOpened());
+    confirmationDialog.open(confirmationPrompt, actionCallCounter::incrementAndGet);
+    readConfirmationButton("confirmButton").click();
+    readConfirmationButton("confirmButton").click();
+
+    assertEquals(1, actionCallCounter.get());
+    assertFalse(confirmationDialog.isOpened());
   }
 
   @Test
   void aFailedActionCannotBeReplayed() {
-    AtomicInteger callCount = new AtomicInteger();
-    dialog.open(
-        prompt,
+    AtomicInteger actionCallCounter = new AtomicInteger();
+    confirmationDialog.open(
+        confirmationPrompt,
         () -> {
-          callCount.incrementAndGet();
+          actionCallCounter.incrementAndGet();
           throw new IllegalStateException("Test failure");
         });
-    Button confirm = button("confirmButton");
+    Button confirmActionButton = readConfirmationButton("confirmButton");
 
-    assertThrows(IllegalStateException.class, confirm::click);
-    button("confirmButton").click();
+    assertThrows(IllegalStateException.class, confirmActionButton::click);
 
-    assertEquals(1, callCount.get());
-    assertFalse(dialog.isOpened());
+    readConfirmationButton("confirmButton").click();
+
+    assertEquals(1, actionCallCounter.get());
+    assertFalse(confirmationDialog.isOpened());
   }
 }

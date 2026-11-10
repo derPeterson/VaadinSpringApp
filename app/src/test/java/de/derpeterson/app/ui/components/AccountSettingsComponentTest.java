@@ -36,6 +36,7 @@ import de.derpeterson.app.service.AccountProfileService.Changes;
 import de.derpeterson.app.service.AccountProfileService.Profile;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
@@ -52,23 +53,26 @@ import org.springframework.test.util.ReflectionTestUtils;
 import tools.jackson.databind.JsonNode;
 
 class AccountSettingsComponentTest {
-  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
-  private final CustomI18NProvider i18nProvider = new CustomI18NProvider();
+  private final AtomicReference<Locale> activeLocaleReference =
+      new AtomicReference<>(Locale.GERMAN);
+  private final CustomI18NProvider customI18NProvider = new CustomI18NProvider();
   private UI testUi;
   private UserEntity testUserEntity;
-  private SerializableFunction<Changes, Profile> saver;
+  private SerializableFunction<Changes, Profile> saveProfileFunction;
   private AccountSettingsComponent accountSettingsComponent;
 
   @BeforeEach
-  void setup() {
+  void createAccountSettingsEnvironment() {
     testUi = new UI();
     UI.setCurrent(testUi);
+
     VaadinSession vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.hasLock()).thenReturn(true);
-    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    when(vaadinSession.getLocale()).thenAnswer(mockInvocation -> activeLocaleReference.get());
     VaadinSession.setCurrent(vaadinSession);
     testUi.getInternals().setSession(vaadinSession);
-    saver = mock(SerializableFunction.class);
+
+    saveProfileFunction = mock(SerializableFunction.class);
     testUserEntity =
         UserEntity.builder()
             .version(3L)
@@ -81,36 +85,47 @@ class AccountSettingsComponentTest {
             .preferredLocale(Locale.GERMAN)
             .build();
     accountSettingsComponent =
-        new AccountSettingsComponent(new MessageProperties(i18nProvider), testUserEntity, saver, 7);
+        new AccountSettingsComponent(
+            new MessageProperties(customI18NProvider), testUserEntity, saveProfileFunction, 7);
   }
 
   @AfterEach
-  void cleanup() {
+  void clearAccountSettingsEnvironment() {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
+
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
   }
 
-  private Stream<Component> tree(Component component) {
-    if (component instanceof TabSheet tabs) {
+  private Stream<Component> streamComponentTree(Component candidateComponent) {
+    if (candidateComponent instanceof TabSheet securityTabSheet) {
       return Stream.concat(
-          Stream.of(tabs),
-          IntStream.range(0, tabs.getTabCount())
-              .mapToObj(tabs::getTabAt)
-              .flatMap(tab -> Stream.concat(tree(tab), tree(tabs.getComponent(tab)))));
+          Stream.of(securityTabSheet),
+          IntStream.range(0, securityTabSheet.getTabCount())
+              .mapToObj(securityTabSheet::getTabAt)
+              .flatMap(securityTab ->
+                  Stream.concat(
+                      streamComponentTree(securityTab),
+                      streamComponentTree(securityTabSheet.getComponent(securityTab)))));
     }
-    return Stream.concat(Stream.of(component), component.getChildren().flatMap(this::tree));
+
+    return Stream.concat(
+        Stream.of(candidateComponent),
+        candidateComponent.getChildren().flatMap(this::streamComponentTree));
   }
 
-  private void navigateTo(AccountSection section) {
-    PageNavigationComponent navigation = (PageNavigationComponent) byId("account-navigation");
-    navigation.activate(
-        (SideNavItem) byId("account-tab-" + section.name().toLowerCase(Locale.ROOT)));
+  private void selectAccountSection(AccountSection accountSection) {
+    PageNavigationComponent accountPageNavigationComponent =
+        (PageNavigationComponent) findAccountComponentById("account-navigation");
+    accountPageNavigationComponent.activate(
+        (SideNavItem)
+            findAccountComponentById(
+                "account-tab-" + accountSection.name().toLowerCase(Locale.ROOT)));
   }
 
-  private Component byId(String id) {
-    return tree(accountSettingsComponent)
-        .filter(component -> component.getId().orElse("").equals(id))
+  private Component findAccountComponentById(String componentId) {
+    return streamComponentTree(accountSettingsComponent)
+        .filter(candidateComponent -> candidateComponent.getId().orElse("").equals(componentId))
         .findFirst()
         .orElseThrow();
   }
@@ -124,96 +139,124 @@ class AccountSettingsComponentTest {
   })
   @SuppressWarnings("unchecked")
   void languageNamesFollowTheInterfaceWithoutChangingThePreference(
-      String language, String preference, String german, String english) {
-    ComboBox<Locale> choice = (ComboBox<Locale>) byId("account-language");
-    Locale selected = Locale.forLanguageTag(preference);
-    choice.setValue(selected);
-    localeReference.set(Locale.forLanguageTag(language));
+      String languageTag,
+      String preferredLanguageTag,
+      String germanLanguageLabel,
+      String englishLanguageLabel) {
+    ComboBox<Locale> languageComboBox =
+        (ComboBox<Locale>) findAccountComponentById("account-language");
+    Locale preferredLocale = Locale.forLanguageTag(preferredLanguageTag);
+    languageComboBox.setValue(preferredLocale);
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
     accountSettingsComponent.refreshTexts();
 
-    assertEquals(german, choice.getItemLabelGenerator().apply(Locale.GERMAN));
-    assertEquals(english, choice.getItemLabelGenerator().apply(Locale.ENGLISH));
-    JsonNode presentation =
-        assertInstanceOf(JsonNode.class, choice.getElement().getPropertyRaw("selectedItem"));
+    assertEquals(
+        germanLanguageLabel, languageComboBox.getItemLabelGenerator().apply(Locale.GERMAN));
+    assertEquals(
+        englishLanguageLabel, languageComboBox.getItemLabelGenerator().apply(Locale.ENGLISH));
+    JsonNode selectedLanguageJsonNode =
+        assertInstanceOf(
+            JsonNode.class, languageComboBox.getElement().getPropertyRaw("selectedItem"));
 
-    assertEquals(preference.equals("de") ? german : english, presentation.path("label").asText());
-    assertEquals(selected, choice.getValue());
-    verifyNoInteractions(saver);
+    assertEquals(
+        preferredLanguageTag.equals("de") ? germanLanguageLabel : englishLanguageLabel,
+        selectedLanguageJsonNode.path("label").asText());
+    assertEquals(preferredLocale, languageComboBox.getValue());
+    verifyNoInteractions(saveProfileFunction);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void sessionsShowConfiguredLimitWithoutPresentingSampleCountAsReal(String language) {
-    localeReference.set(Locale.forLanguageTag(language));
+  void sessionsShowConfiguredLimitWithoutPresentingSampleCountAsReal(String languageTag) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
     accountSettingsComponent.refreshTexts();
     MessageProperties messageProperties =
-        MessageProperties.forLocale(i18nProvider, localeReference.get());
+        MessageProperties.forLocale(customI18NProvider, activeLocaleReference.get());
 
     assertEquals(
         messageProperties.getAccountSettingsSessionsLimit(7),
-        ((Badge) byId("account-sessions-limit")).getText());
-    String panel = byId("account-panel-sessions").getElement().getTextRecursively();
+        ((Badge) findAccountComponentById("account-sessions-limit")).getText());
+    String sessionPanelText =
+        findAccountComponentById("account-panel-sessions").getElement().getTextRecursively();
 
-    assertTrue(panel.contains(messageProperties.getPortalSessionActiveCount(0)));
-    assertTrue(panel.contains(messageProperties.getAccountSettingsSessionsActivity()));
-    verifyNoInteractions(saver);
+    assertTrue(sessionPanelText.contains(messageProperties.getPortalSessionActiveCount(0)));
+    assertTrue(sessionPanelText.contains(messageProperties.getAccountSettingsSessionsActivity()));
+    verifyNoInteractions(saveProfileFunction);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void securityHeadingAndActionNamesRefreshWithoutChangingTheDraft(String language) {
-    localeReference.set(Locale.forLanguageTag(language));
-    navigateTo(AccountSection.SECURITY);
+  void securityHeadingAndActionNamesRefreshWithoutChangingTheDraft(String languageTag) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
+    selectAccountSection(AccountSection.SECURITY);
     accountSettingsComponent.refreshTexts();
     MessageProperties messageProperties =
-        MessageProperties.forLocale(i18nProvider, localeReference.get());
-    String heading =
-        tree(accountSettingsComponent)
+        MessageProperties.forLocale(customI18NProvider, activeLocaleReference.get());
+    String securityHeadingText =
+        streamComponentTree(accountSettingsComponent)
             .filter(CosmosSectionHeaderComponent.class::isInstance)
             .findFirst()
             .orElseThrow()
             .getElement()
             .getTextRecursively();
 
-    assertTrue(heading.contains(messageProperties.getAccountSettingsSecurityIntroduction()));
-    assertFalse(heading.contains(messageProperties.getAccountSettingsSecurityDescription()));
-    Button emailAction = (Button) byId("account-email-edit-security");
+    assertTrue(
+        securityHeadingText.contains(messageProperties.getAccountSettingsSecurityIntroduction()));
+    assertFalse(
+        securityHeadingText.contains(messageProperties.getAccountSettingsSecurityDescription()));
+    Button changeEmailButton = (Button) findAccountComponentById("account-email-edit-security");
 
-    assertEquals(messageProperties.getAccountSettingsChangeAction(), emailAction.getText());
+    assertEquals(messageProperties.getAccountSettingsChangeAction(), changeEmailButton.getText());
     assertEquals(
         messageProperties.getAccountSettingsChangeEmail(),
-        emailAction.getAriaLabel().orElseThrow());
-    TabSheet tabs = (TabSheet) byId("account-security-tabs");
+        changeEmailButton.getAriaLabel().orElseThrow());
+    TabSheet securityTabSheet = (TabSheet) findAccountComponentById("account-security-tabs");
 
-    assertEquals(byId("account-security-tab-portal"), tabs.getSelectedTab());
+    assertEquals(
+        findAccountComponentById("account-security-tab-portal"), securityTabSheet.getSelectedTab());
     assertEquals(
         messageProperties.getAccountSecurityPortalAccess(),
-        byId("account-security-tab-portal").getElement().getTextRecursively());
-    tabs.setSelectedTab((Tab) byId("account-security-tab-providers"));
+        findAccountComponentById("account-security-tab-portal").getElement().getTextRecursively());
+
+    securityTabSheet.setSelectedTab(
+        (Tab) findAccountComponentById("account-security-tab-providers"));
     accountSettingsComponent.refreshTexts();
 
-    assertEquals(byId("account-security-tab-providers"), tabs.getSelectedTab());
+    assertEquals(
+        findAccountComponentById("account-security-tab-providers"),
+        securityTabSheet.getSelectedTab());
     assertEquals(
         messageProperties.getProviderSettingsPanelTitle(),
-        byId("account-security-tab-providers").getElement().getTextRecursively());
-    assertEquals("Alex", ((TextField) byId("account-first-name")).getValue());
-    verifyNoInteractions(saver);
+        findAccountComponentById("account-security-tab-providers")
+            .getElement()
+            .getTextRecursively());
+    assertEquals("Alex", ((TextField) findAccountComponentById("account-first-name")).getValue());
+    verifyNoInteractions(saveProfileFunction);
   }
 
   @Test
-  void tabChangesPreserveDraftsAndNeverChangeTheAccount() {
-    TextField first = (TextField) byId("account-first-name");
-    first.setValue("Draft");
-    for (int index : new int[] {1, 2, 0}) {
-      navigateTo(AccountSection.values()[index]);
+  void sideNavigationPreservesProfileDraftAndSavedAccount() {
+    TextField firstNameTextField = (TextField) findAccountComponentById("account-first-name");
+    firstNameTextField.setValue("Draft");
 
-      assertEquals(index == 0, byId("account-panel-profile").isVisible());
-      assertEquals(index == 1, byId("account-panel-security").isVisible());
-      assertEquals(index == 2, byId("account-panel-sessions").isVisible());
+    for (AccountSection accountSection :
+        List.of(AccountSection.SECURITY, AccountSection.SESSIONS, AccountSection.PROFILE)) {
+      selectAccountSection(accountSection);
+
+      assertEquals(
+          accountSection == AccountSection.PROFILE,
+          findAccountComponentById("account-panel-profile").isVisible());
+      assertEquals(
+          accountSection == AccountSection.SECURITY,
+          findAccountComponentById("account-panel-security").isVisible());
+      assertEquals(
+          accountSection == AccountSection.SESSIONS,
+          findAccountComponentById("account-panel-sessions").isVisible());
     }
-    ((ComboBox<?>) byId("account-language")).clear();
 
-    assertEquals("Draft", first.getValue());
+    ((ComboBox<?>) findAccountComponentById("account-language")).clear();
+
+    assertEquals("Draft", firstNameTextField.getValue());
     assertEquals("Alex", testUserEntity.getFirstName());
     assertEquals(Locale.GERMAN, testUserEntity.getPreferredLocale());
     assertEquals("own-account@example.test", testUserEntity.getEmail());
@@ -222,13 +265,13 @@ class AccountSettingsComponentTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void languageRefreshKeepsSelectedTabAndInputsAndTranslatesSessions(String language) {
-    ((TextField) byId("account-first-name")).setValue("Unsaved");
-    navigateTo(AccountSection.SESSIONS);
-    localeReference.set(Locale.forLanguageTag(language));
+  void languageRefreshKeepsSelectedTabAndInputsAndTranslatesSessions(String languageTag) {
+    ((TextField) findAccountComponentById("account-first-name")).setValue("Unsaved");
+    selectAccountSection(AccountSection.SESSIONS);
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
     accountSettingsComponent.refreshTexts();
     MessageProperties messageProperties =
-        MessageProperties.forLocale(i18nProvider, localeReference.get());
+        MessageProperties.forLocale(customI18NProvider, activeLocaleReference.get());
 
     assertTrue(
         accountSettingsComponent
@@ -236,17 +279,18 @@ class AccountSettingsComponentTest {
             .getTextRecursively()
             .contains(messageProperties.getAccountSettingsTitle()));
     assertTrue(
-        byId("account-tab-sessions")
+        findAccountComponentById("account-tab-sessions")
             .getElement()
             .getTextRecursively()
             .contains(messageProperties.getAccountSettingsSessionsTab()));
     assertTrue(
-        byId("account-panel-sessions")
+        findAccountComponentById("account-panel-sessions")
             .getElement()
             .getTextRecursively()
             .contains(messageProperties.getAccountSettingsSessionsActivity()));
     assertEquals(AccountSection.SESSIONS, accountSettingsComponent.getSelectedSection());
-    assertEquals("Unsaved", ((TextField) byId("account-first-name")).getValue());
+    assertEquals(
+        "Unsaved", ((TextField) findAccountComponentById("account-first-name")).getValue());
     assertEquals("Alex", testUserEntity.getFirstName());
   }
 
@@ -254,211 +298,234 @@ class AccountSettingsComponentTest {
   void regionalSavedLanguageMapsToASupportedOptionWithoutChangingTheUser() {
     testUserEntity.setPreferredLocale(Locale.GERMANY);
     accountSettingsComponent =
-        new AccountSettingsComponent(new MessageProperties(i18nProvider), testUserEntity, saver, 7);
+        new AccountSettingsComponent(
+            new MessageProperties(customI18NProvider), testUserEntity, saveProfileFunction, 7);
 
-    assertEquals(Locale.GERMAN, ((ComboBox<?>) byId("account-language")).getValue());
+    assertEquals(
+        Locale.GERMAN, ((ComboBox<?>) findAccountComponentById("account-language")).getValue());
     assertEquals(Locale.GERMANY, testUserEntity.getPreferredLocale());
   }
 
   @Test
   void profileImagePreviewDoesNotSaveOrChangeProfileDrafts() {
-    Button picture =
-        tree(accountSettingsComponent)
+    Button editProfilePictureButton =
+        streamComponentTree(accountSettingsComponent)
             .filter(Button.class::isInstance)
             .map(Button.class::cast)
-            .filter(button ->
-                button
+            .filter(candidateButton ->
+                candidateButton
                     .getText()
                     .equals(
-                        MessageProperties.forLocale(i18nProvider, localeReference.get())
+                        MessageProperties.forLocale(customI18NProvider, activeLocaleReference.get())
                             .getAccountSettingsEditPicture()))
             .findFirst()
             .orElseThrow();
 
-    assertTrue(picture.isEnabled());
-    ((TextField) byId("account-first-name")).setValue("Unsaved draft");
-    picture.click();
+    assertTrue(editProfilePictureButton.isEnabled());
+    ((TextField) findAccountComponentById("account-first-name")).setValue("Unsaved draft");
+    editProfilePictureButton.click();
 
-    verifyNoInteractions(saver);
-    assertEquals("Unsaved draft", ((TextField) byId("account-first-name")).getValue());
+    verifyNoInteractions(saveProfileFunction);
+    assertEquals(
+        "Unsaved draft", ((TextField) findAccountComponentById("account-first-name")).getValue());
     assertEquals("Alex", testUserEntity.getFirstName());
     assertEquals("own-account@example.test", testUserEntity.getEmail());
     assertEquals(Locale.GERMAN, testUserEntity.getPreferredLocale());
   }
 
-  private void save() {
-    ((Button) byId("account-save")).click();
+  private void clickSaveProfileButton() {
+    ((Button) findAccountComponentById("account-save")).click();
   }
 
-  private void assertNotification(String expected, boolean error) {
-    NotificationHelper helper = NotificationHelper.getInstance();
-    Supplier<String> message =
-        (Supplier<String>) ReflectionTestUtils.getField(helper, "messageSupplier");
+  private void assertProfileSaveNotification(
+      String expectedMessageText, boolean isErrorNotification) {
+    NotificationHelper notificationHelper = NotificationHelper.getInstance();
+    Supplier<String> notificationMessageSupplier =
+        (Supplier<String>) ReflectionTestUtils.getField(notificationHelper, "messageSupplier");
 
-    assertEquals(expected, message.get());
+    assertEquals(expectedMessageText, notificationMessageSupplier.get());
     Notification notification =
-        (Notification) ReflectionTestUtils.getField(helper, "currentNotification");
+        (Notification) ReflectionTestUtils.getField(notificationHelper, "currentNotification");
 
     assertTrue(notification.isOpened());
-    Span titleSpan = (Span) ReflectionTestUtils.getField(helper, "titleText");
+    Span titleSpan = (Span) ReflectionTestUtils.getField(notificationHelper, "titleText");
 
     assertTrue(
         titleSpan.hasClassName(
-            error ? LumoUtility.TextColor.ERROR : LumoUtility.TextColor.SUCCESS));
+            isErrorNotification ? LumoUtility.TextColor.ERROR : LumoUtility.TextColor.SUCCESS));
     assertTrue(
-        tree(notification)
-            .anyMatch(component ->
-                component.getElement().getAttribute("src") != null
-                    && component
+        streamComponentTree(notification)
+            .anyMatch(candidateComponent ->
+                candidateComponent.getElement().getAttribute("src") != null
+                    && candidateComponent
                         .getElement()
                         .getAttribute("src")
                         .equals(
-                            error
+                            isErrorNotification
                                 ? "icons/lucide/triangle-alert.svg"
                                 : "icons/lucide/circle-check.svg")));
   }
 
+  // Profilvalidierung und Speichern
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void requiredFieldsAreMarkedOnlyOnSaveAndNothingIsWritten(String language) {
-    localeReference.set(Locale.forLanguageTag(language));
+  void requiredFieldsAreMarkedOnlyOnSaveAndNothingIsWritten(String languageTag) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
     accountSettingsComponent.refreshTexts();
-    TextField first = (TextField) byId("account-first-name");
-    TextField last = (TextField) byId("account-last-name");
-    DatePicker birth = (DatePicker) byId("account-birth-date");
-    ComboBox<?> choice = (ComboBox<?>) byId("account-language");
-    ComboBox<?> gender = (ComboBox<?>) byId("account-gender");
-    first.setValue("   ");
-    last.clear();
-    birth.clear();
-    choice.clear();
-    gender.clear();
+    TextField firstNameTextField = (TextField) findAccountComponentById("account-first-name");
+    TextField lastNameTextField = (TextField) findAccountComponentById("account-last-name");
+    DatePicker birthDatePicker = (DatePicker) findAccountComponentById("account-birth-date");
+    ComboBox<?> languageComboBox = (ComboBox<?>) findAccountComponentById("account-language");
+    ComboBox<?> genderComboBox = (ComboBox<?>) findAccountComponentById("account-gender");
 
-    assertFalse(first.isInvalid());
-    save();
+    firstNameTextField.setValue("   ");
+    lastNameTextField.clear();
+    birthDatePicker.clear();
+    languageComboBox.clear();
+    genderComboBox.clear();
 
-    assertTrue(first.isInvalid());
-    assertTrue(last.isInvalid());
-    assertFalse(birth.isInvalid());
-    assertTrue(choice.isInvalid());
-    assertFalse(gender.isInvalid());
-    verifyNoInteractions(saver);
-    assertNotification(
-        new MessageProperties(i18nProvider).getBaseValidationRequiredMessage(), true);
+    assertFalse(firstNameTextField.isInvalid());
+
+    clickSaveProfileButton();
+
+    assertTrue(firstNameTextField.isInvalid());
+    assertTrue(lastNameTextField.isInvalid());
+    assertFalse(birthDatePicker.isInvalid());
+    assertTrue(languageComboBox.isInvalid());
+    assertFalse(genderComboBox.isInvalid());
+    verifyNoInteractions(saveProfileFunction);
+    assertProfileSaveNotification(
+        new MessageProperties(customI18NProvider).getBaseValidationRequiredMessage(), true);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void todayAndFutureBirthDatesAreRejectedAndCorrectionCanBeSaved(String language) {
-    localeReference.set(Locale.forLanguageTag(language));
-    DatePicker birth = (DatePicker) byId("account-birth-date");
-    for (LocalDate date : new LocalDate[] {LocalDate.now(), LocalDate.now().plusDays(1)}) {
-      birth.setValue(date);
-      save();
+  void todayAndFutureBirthDatesAreRejectedAndCorrectionCanBeSaved(String languageTag) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
+    DatePicker birthDatePicker = (DatePicker) findAccountComponentById("account-birth-date");
+    for (LocalDate birthDate : new LocalDate[] {LocalDate.now(), LocalDate.now().plusDays(1)}) {
+      birthDatePicker.setValue(birthDate);
+      clickSaveProfileButton();
 
-      assertTrue(birth.isInvalid());
-      assertNotification(
-          new MessageProperties(i18nProvider).getBaseValidationBirthDatePastMessage(), true);
+      assertTrue(birthDatePicker.isInvalid());
+      assertProfileSaveNotification(
+          new MessageProperties(customI18NProvider).getBaseValidationBirthDatePastMessage(), true);
     }
-    verifyNoInteractions(saver);
-    LocalDate date = LocalDate.of(1990, 2, 1);
-    birth.setValue(date);
-    when(saver.apply(any()))
-        .thenReturn(new Profile(4L, "Alex", "Weber", date, Locale.GERMAN, Gender.OTHER));
-    save();
+    verifyNoInteractions(saveProfileFunction);
 
-    assertFalse(birth.isInvalid());
-    verify(saver).apply(any());
+    LocalDate birthDate = LocalDate.of(1990, 2, 1);
+    birthDatePicker.setValue(birthDate);
+    when(saveProfileFunction.apply(any()))
+        .thenReturn(new Profile(4L, "Alex", "Weber", birthDate, Locale.GERMAN, Gender.OTHER));
+    clickSaveProfileButton();
+
+    assertFalse(birthDatePicker.isInvalid());
+    verify(saveProfileFunction).apply(any());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void successUsesReturnedDataAndNewVersionForTheNextSave(String language) {
-    localeReference.set(Locale.forLanguageTag(language));
-    ((TextField) byId("account-first-name")).setValue(" New ");
-    LocalDate date = LocalDate.of(1992, 3, 4);
-    ((DatePicker) byId("account-birth-date")).setValue(date);
-    when(saver.apply(any()))
-        .thenReturn(new Profile(4L, "New", "Weber", date, Locale.ENGLISH, Gender.OTHER));
-    save();
+  void successUsesReturnedDataAndNewVersionForTheNextSave(String languageTag) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
+    ((TextField) findAccountComponentById("account-first-name")).setValue(" New ");
+    LocalDate birthDate = LocalDate.of(1992, 3, 4);
+    ((DatePicker) findAccountComponentById("account-birth-date")).setValue(birthDate);
+    when(saveProfileFunction.apply(any()))
+        .thenReturn(new Profile(4L, "New", "Weber", birthDate, Locale.ENGLISH, Gender.OTHER));
+    clickSaveProfileButton();
 
-    verify(saver).apply(new Changes(3L, " New ", "Weber", date, Locale.GERMAN, Gender.OTHER));
+    verify(saveProfileFunction)
+        .apply(new Changes(3L, " New ", "Weber", birthDate, Locale.GERMAN, Gender.OTHER));
     assertTrue(accountSettingsComponent.getElement().getTextRecursively().contains("New Weber"));
-    assertEquals("New", ((TextField) byId("account-first-name")).getValue());
-    assertEquals(Locale.ENGLISH, ((ComboBox<?>) byId("account-language")).getValue());
-    assertNotification(new MessageProperties(i18nProvider).getAccountSettingsSaveSuccess(), false);
-    save();
+    assertEquals("New", ((TextField) findAccountComponentById("account-first-name")).getValue());
+    assertEquals(
+        Locale.ENGLISH, ((ComboBox<?>) findAccountComponentById("account-language")).getValue());
+    assertProfileSaveNotification(
+        new MessageProperties(customI18NProvider).getAccountSettingsSaveSuccess(), false);
+    clickSaveProfileButton();
 
-    verify(saver).apply(new Changes(4L, "New", "Weber", date, Locale.ENGLISH, Gender.OTHER));
+    verify(saveProfileFunction)
+        .apply(new Changes(4L, "New", "Weber", birthDate, Locale.ENGLISH, Gender.OTHER));
     assertEquals("Alex", testUserEntity.getFirstName());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void failedAndConflictingSavesKeepDraftsAndShowTranslatedErrors(String language) {
-    localeReference.set(Locale.forLanguageTag(language));
-    ((TextField) byId("account-first-name")).setValue("Keep draft");
-    when(saver.apply(any())).thenThrow(new OptimisticLockingFailureException("changed"));
-    save();
-    assertNotification(new MessageProperties(i18nProvider).getBaseUserUpdateConflict(), true);
-    doThrow(new IllegalStateException("Unavailable")).when(saver).apply(any());
-    save();
-    assertNotification(new MessageProperties(i18nProvider).getAccountSettingsSaveFailed(), true);
+  void failedAndConflictingSavesKeepDraftsAndShowTranslatedErrors(String languageTag) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
+    ((TextField) findAccountComponentById("account-first-name")).setValue("Keep draft");
+    when(saveProfileFunction.apply(any()))
+        .thenThrow(new OptimisticLockingFailureException("changed"));
+    clickSaveProfileButton();
+    assertProfileSaveNotification(
+        new MessageProperties(customI18NProvider).getBaseUserUpdateConflict(), true);
 
-    assertEquals("Keep draft", ((TextField) byId("account-first-name")).getValue());
+    doThrow(new IllegalStateException("Unavailable")).when(saveProfileFunction).apply(any());
+    clickSaveProfileButton();
+    assertProfileSaveNotification(
+        new MessageProperties(customI18NProvider).getAccountSettingsSaveFailed(), true);
+
+    assertEquals(
+        "Keep draft", ((TextField) findAccountComponentById("account-first-name")).getValue());
     assertEquals("Alex", testUserEntity.getFirstName());
   }
 
+  // E-Mail-Anzeige und Sicherheitsdialoge
   @Test
-  void emailIsVisibleAndReadOnlyWithoutBeingDisabled() {
-    EmailField field = (EmailField) byId("account-email");
+  void profileEmailIsReadOnlyAndHasNoEditAction() {
+    EmailField accountEmailField = (EmailField) findAccountComponentById("account-email");
 
-    assertTrue(field.isEnabled());
-    assertTrue(field.isReadOnly());
-    assertEquals(testUserEntity.getEmail(), field.getValue());
-    assertTrue(field.getHelperText() == null || field.getHelperText().isBlank());
+    assertTrue(accountEmailField.isEnabled());
+    assertTrue(accountEmailField.isReadOnly());
+    assertEquals(testUserEntity.getEmail(), accountEmailField.getValue());
+    assertTrue(
+        accountEmailField.getHelperText() == null || accountEmailField.getHelperText().isBlank());
     assertFalse(
-        tree(accountSettingsComponent)
-            .anyMatch(
-                component -> component.getId().orElse("").equals("account-email-edit-profile")));
+        streamComponentTree(accountSettingsComponent)
+            .anyMatch(candidateComponent ->
+                candidateComponent.getId().orElse("").equals("account-email-edit-profile")));
     assertFalse(
-        tree(byId("account-panel-security"))
-            .anyMatch(
-                component -> component.getElement().getClassList().contains("account-info-text")));
+        streamComponentTree(findAccountComponentById("account-panel-security"))
+            .anyMatch(candidateComponent ->
+                candidateComponent.getElement().getClassList().contains("account-info-text")));
   }
 
   @Test
   void securityPasswordButtonOpensOnlyItsDialogAndPreservesProfileDraft() {
-    ((TextField) byId("account-first-name")).setValue("Unsaved");
-    AccountPasswordChangeDialog passwordDialog =
-        (AccountPasswordChangeDialog) byId("account-password-change-dialog");
-    AccountEmailChangeDialog emailDialog =
-        (AccountEmailChangeDialog) byId("account-email-change-dialog");
-    ((Button) byId("account-password-edit-security")).click();
+    ((TextField) findAccountComponentById("account-first-name")).setValue("Unsaved");
+    AccountPasswordChangeDialog passwordChangeDialog =
+        (AccountPasswordChangeDialog) findAccountComponentById("account-password-change-dialog");
+    AccountEmailChangeDialog emailChangeDialog =
+        (AccountEmailChangeDialog) findAccountComponentById("account-email-change-dialog");
+    ((Button) findAccountComponentById("account-password-edit-security")).click();
 
-    assertTrue(passwordDialog.isOpened());
-    assertFalse(emailDialog.isOpened());
-    passwordDialog.close();
+    assertTrue(passwordChangeDialog.isOpened());
+    assertFalse(emailChangeDialog.isOpened());
 
-    assertEquals("Unsaved", ((TextField) byId("account-first-name")).getValue());
+    passwordChangeDialog.close();
+
+    assertEquals(
+        "Unsaved", ((TextField) findAccountComponentById("account-first-name")).getValue());
     assertEquals("Alex", testUserEntity.getFirstName());
-    verifyNoInteractions(saver);
+    verifyNoInteractions(saveProfileFunction);
   }
 
   @Test
   void securityEmailButtonOpensTheDraftDialogWithoutChangingProfileFields() {
-    ((TextField) byId("account-first-name")).setValue("Unsaved");
-    AccountEmailChangeDialog dialog =
-        (AccountEmailChangeDialog) byId("account-email-change-dialog");
+    ((TextField) findAccountComponentById("account-first-name")).setValue("Unsaved");
+    AccountEmailChangeDialog emailChangeDialog =
+        (AccountEmailChangeDialog) findAccountComponentById("account-email-change-dialog");
 
-    assertFalse(dialog.isOpened());
-    ((Button) byId("account-email-edit-security")).click();
+    assertFalse(emailChangeDialog.isOpened());
+    ((Button) findAccountComponentById("account-email-edit-security")).click();
 
-    assertTrue(dialog.isOpened());
-    dialog.close();
+    assertTrue(emailChangeDialog.isOpened());
 
-    assertEquals("Unsaved", ((TextField) byId("account-first-name")).getValue());
+    emailChangeDialog.close();
+
+    assertEquals(
+        "Unsaved", ((TextField) findAccountComponentById("account-first-name")).getValue());
     assertEquals("own-account@example.test", testUserEntity.getEmail());
-    verifyNoInteractions(saver);
+    verifyNoInteractions(saveProfileFunction);
   }
 }

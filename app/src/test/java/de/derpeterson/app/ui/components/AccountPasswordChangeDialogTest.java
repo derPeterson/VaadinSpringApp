@@ -34,225 +34,254 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.security.authentication.BadCredentialsException;
 
 class AccountPasswordChangeDialogTest {
+  private static final String[] PASSWORD_FIELD_ID_SUFFIXES = {"current", "new", "confirm"};
+
   private UI testUi;
-  private AccountPasswordChangeDialog dialog;
-  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
+  private AccountPasswordChangeDialog passwordChangeDialog;
+  private final AtomicReference<Locale> activeLocaleReference =
+      new AtomicReference<>(Locale.GERMAN);
 
   @BeforeEach
-  void setup() {
+  void createPasswordChangeDialogEnvironment() {
     testUi = new UI();
     UI.setCurrent(testUi);
+
     VaadinSession vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.hasLock()).thenReturn(true);
-    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    when(vaadinSession.getLocale()).thenAnswer(mockInvocation -> activeLocaleReference.get());
     VaadinSession.setCurrent(vaadinSession);
     testUi.getInternals().setSession(vaadinSession);
-    dialog = new AccountPasswordChangeDialog(new MessageProperties(new CustomI18NProvider()));
-    testUi.add(dialog);
+
+    passwordChangeDialog =
+        new AccountPasswordChangeDialog(new MessageProperties(new CustomI18NProvider()));
+    testUi.add(passwordChangeDialog);
   }
 
   @AfterEach
-  void cleanup() {
-    dialog.close();
+  void clearPasswordChangeDialogEnvironment() {
+    passwordChangeDialog.close();
     NotificationHelper.getInstance().closeAndClearAllNotifications();
+
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
   }
 
-  private Stream<Component> tree(Component root) {
-    return Stream.concat(Stream.of(root), root.getChildren().flatMap(this::tree));
+  private Stream<Component> streamComponentTree(Component rootComponent) {
+    return Stream.concat(
+        Stream.of(rootComponent), rootComponent.getChildren().flatMap(this::streamComponentTree));
   }
 
-  private Stream<Component> slot(Element root) {
-    return root.getChildren()
-        .flatMap(element -> element.getComponent().stream())
-        .flatMap(this::tree);
+  private Stream<Component> streamSlottedComponents(Element slotRootElement) {
+    return slotRootElement
+        .getChildren()
+        .flatMap(childElement -> childElement.getComponent().stream())
+        .flatMap(this::streamComponentTree);
   }
 
-  private Component byId(String id) {
+  private Component findDialogComponentById(String componentId) {
     return Stream.of(
-            tree(dialog),
-            slot(dialog.getHeader().getElement()),
-            slot(dialog.getFooter().getElement()))
-        .flatMap(stream -> stream)
-        .filter(component -> component.getId().orElse("").equals(id))
+            streamComponentTree(passwordChangeDialog),
+            streamSlottedComponents(passwordChangeDialog.getHeader().getElement()),
+            streamSlottedComponents(passwordChangeDialog.getFooter().getElement()))
+        .flatMap(childComponentStream -> childComponentStream)
+        .filter(candidateComponent -> candidateComponent.getId().orElse("").equals(componentId))
         .findFirst()
         .orElseThrow();
   }
 
-  private PasswordField field(String suffix) {
-    return (PasswordField) byId("account-password-" + suffix);
+  private PasswordField findPasswordField(String passwordFieldIdSuffix) {
+    return (PasswordField) findDialogComponentById("account-password-" + passwordFieldIdSuffix);
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void localizedFieldsUsePasswordManagerSemanticsAndNativeDismissal(String language) {
-    localeReference.set(Locale.forLanguageTag(language));
-    dialog.refreshTexts();
-    dialog.open();
+  void localizedFieldsUsePasswordManagerSemanticsAndNativeDismissal(String languageTag) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
+    passwordChangeDialog.refreshTexts();
+    passwordChangeDialog.open();
     MessageProperties messageProperties =
-        MessageProperties.forLocale(new CustomI18NProvider(), localeReference.get());
+        MessageProperties.forLocale(new CustomI18NProvider(), activeLocaleReference.get());
 
     assertEquals(
         messageProperties.getAccountSettingsChangePassword(),
-        dialog.getElement().getProperty("ariaLabel"));
+        passwordChangeDialog.getElement().getProperty("ariaLabel"));
     assertEquals(
-        messageProperties.getAccountPasswordDialogCurrentPassword(), field("current").getLabel());
-    assertEquals(messageProperties.getResetPasswordNewPasswordField(), field("new").getLabel());
+        messageProperties.getAccountPasswordDialogCurrentPassword(),
+        findPasswordField("current").getLabel());
     assertEquals(
-        messageProperties.getAccountPasswordDialogConfirmPassword(), field("confirm").getLabel());
+        messageProperties.getResetPasswordNewPasswordField(), findPasswordField("new").getLabel());
     assertEquals(
-        messageProperties.getAccountPasswordPlaceholder(), field("current").getPlaceholder());
+        messageProperties.getAccountPasswordDialogConfirmPassword(),
+        findPasswordField("confirm").getLabel());
     assertEquals(
-        messageProperties.getAccountNewPasswordPlaceholder(), field("new").getPlaceholder());
+        messageProperties.getAccountPasswordPlaceholder(),
+        findPasswordField("current").getPlaceholder());
+    assertEquals(
+        messageProperties.getAccountNewPasswordPlaceholder(),
+        findPasswordField("new").getPlaceholder());
     assertEquals(
         messageProperties.getAccountConfirmPasswordPlaceholder(),
-        field("confirm").getPlaceholder());
-    assertEquals(Autocomplete.CURRENT_PASSWORD, field("current").getAutocomplete());
-    assertEquals(Autocomplete.NEW_PASSWORD, field("new").getAutocomplete());
-    assertEquals(Autocomplete.NEW_PASSWORD, field("confirm").getAutocomplete());
+        findPasswordField("confirm").getPlaceholder());
+
+    assertEquals(Autocomplete.CURRENT_PASSWORD, findPasswordField("current").getAutocomplete());
+    assertEquals(Autocomplete.NEW_PASSWORD, findPasswordField("new").getAutocomplete());
+    assertEquals(Autocomplete.NEW_PASSWORD, findPasswordField("confirm").getAutocomplete());
     assertEquals(
         messageProperties.getAdminUsersCloseDialog(),
-        ((Button) byId("account-password-close")).getAriaLabel().orElseThrow());
+        ((Button) findDialogComponentById("account-password-close")).getAriaLabel().orElseThrow());
     assertTrue(
-        tree(dialog)
-            .anyMatch(component ->
-                component
+        streamComponentTree(passwordChangeDialog)
+            .anyMatch(candidateComponent ->
+                candidateComponent
                     .getElement()
                     .getTextRecursively()
                     .contains(messageProperties.getAccountPasswordDialogHint())));
     assertTrue(
-        slot(dialog.getHeader().getElement())
-            .anyMatch(component ->
-                component instanceof SvgIcon icon
-                    && "icons/lucide/key-round.svg".equals(icon.getSrc())));
-    assertEquals(ModalityMode.STRICT, dialog.getModality());
-    assertTrue(dialog.isCloseOnEsc());
-    assertTrue(dialog.isCloseOnOutsideClick());
-    for (String suffix : new String[] {"current", "new", "confirm"}) {
-      assertTrue(field(suffix).isRequiredIndicatorVisible());
-      assertTrue(field(suffix).isRevealButtonVisible());
-      assertEquals(ValueChangeMode.EAGER, field(suffix).getValueChangeMode());
+        streamSlottedComponents(passwordChangeDialog.getHeader().getElement())
+            .anyMatch(candidateComponent ->
+                candidateComponent instanceof SvgIcon headerSvgIcon
+                    && "icons/lucide/key-round.svg".equals(headerSvgIcon.getSrc())));
+    assertEquals(ModalityMode.STRICT, passwordChangeDialog.getModality());
+    assertTrue(passwordChangeDialog.isCloseOnEsc());
+    assertTrue(passwordChangeDialog.isCloseOnOutsideClick());
+    for (String passwordFieldIdSuffix : PASSWORD_FIELD_ID_SUFFIXES) {
+      assertTrue(findPasswordField(passwordFieldIdSuffix).isRequiredIndicatorVisible());
+      assertTrue(findPasswordField(passwordFieldIdSuffix).isRevealButtonVisible());
+      assertEquals(
+          ValueChangeMode.EAGER, findPasswordField(passwordFieldIdSuffix).getValueChangeMode());
     }
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"account-password-close", "account-password-cancel", "native-close"})
-  void closingDiscardsAllSecretsAndInvalidStatesImmediately(String action) {
-    dialog.open();
-    for (String suffix : new String[] {"current", "new", "confirm"}) {
-      field(suffix).setValue("Local-test-secret");
-      field(suffix).setInvalid(true);
+  void closingDiscardsAllSecretsAndInvalidStatesImmediately(String closeActionName) {
+    passwordChangeDialog.open();
+    for (String passwordFieldIdSuffix : PASSWORD_FIELD_ID_SUFFIXES) {
+      findPasswordField(passwordFieldIdSuffix).setValue("Local-test-secret");
+      findPasswordField(passwordFieldIdSuffix).setInvalid(true);
     }
-    if (action.equals("native-close")) {
-      dialog.setOpened(false);
+
+    if (closeActionName.equals("native-close")) {
+      passwordChangeDialog.setOpened(false);
     } else {
-      ((Button) byId(action)).click();
+      ((Button) findDialogComponentById(closeActionName)).click();
     }
-    assertFalse(dialog.isOpened());
-    for (String suffix : new String[] {"current", "new", "confirm"}) {
-      assertTrue(field(suffix).isEmpty());
-      assertFalse(field(suffix).isInvalid());
+
+    assertFalse(passwordChangeDialog.isOpened());
+    for (String passwordFieldIdSuffix : PASSWORD_FIELD_ID_SUFFIXES) {
+      assertTrue(findPasswordField(passwordFieldIdSuffix).isEmpty());
+      assertFalse(findPasswordField(passwordFieldIdSuffix).isInvalid());
     }
   }
 
   @Test
   void languageRefreshPreservesDraftsAndDoesNotValidateWhileTyping() {
-    dialog.open();
-    for (String suffix : new String[] {"current", "new", "confirm"}) {
-      field(suffix).setValue("Local-" + suffix);
+    passwordChangeDialog.open();
+    for (String passwordFieldIdSuffix : PASSWORD_FIELD_ID_SUFFIXES) {
+      findPasswordField(passwordFieldIdSuffix).setValue("Local-" + passwordFieldIdSuffix);
     }
-    localeReference.set(Locale.ENGLISH);
-    dialog.refreshTexts();
-    Button save = (Button) byId("account-password-save");
+
+    activeLocaleReference.set(Locale.ENGLISH);
+    passwordChangeDialog.refreshTexts();
+    Button savePasswordButton = (Button) findDialogComponentById("account-password-save");
 
     assertEquals(
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)
             .getAccountSettingsChangePassword(),
-        save.getText());
-    assertTrue(save.isEnabled());
-    assertTrue(dialog.isOpened());
-    for (String suffix : new String[] {"current", "new", "confirm"}) {
-      assertEquals("Local-" + suffix, field(suffix).getValue());
-      assertFalse(field(suffix).isInvalid());
+        savePasswordButton.getText());
+    assertTrue(savePasswordButton.isEnabled());
+    assertTrue(passwordChangeDialog.isOpened());
+    for (String passwordFieldIdSuffix : PASSWORD_FIELD_ID_SUFFIXES) {
+      assertEquals(
+          "Local-" + passwordFieldIdSuffix, findPasswordField(passwordFieldIdSuffix).getValue());
+      assertFalse(findPasswordField(passwordFieldIdSuffix).isInvalid());
     }
   }
 
   @Test
   void reopeningAlsoDiscardsLateClientSynchronization() {
-    dialog.open();
-    dialog.close();
-    for (String suffix : new String[] {"current", "new", "confirm"}) {
-      field(suffix).setValue("Late-draft");
+    passwordChangeDialog.open();
+    passwordChangeDialog.close();
+    for (String passwordFieldIdSuffix : PASSWORD_FIELD_ID_SUFFIXES) {
+      findPasswordField(passwordFieldIdSuffix).setValue("Late-draft");
     }
-    dialog.open();
-    for (String suffix : new String[] {"current", "new", "confirm"}) {
-      assertTrue(field(suffix).isEmpty());
+
+    passwordChangeDialog.open();
+    for (String passwordFieldIdSuffix : PASSWORD_FIELD_ID_SUFFIXES) {
+      assertTrue(findPasswordField(passwordFieldIdSuffix).isEmpty());
     }
   }
 
+  // Absenden und serverseitige Fehlerfälle
   @Test
   void successfulSubmissionCallsActionClosesAndClearsAllSecrets() {
-    ArrayList<PasswordChange> calls = new ArrayList<PasswordChange>();
-    dialog.setChangeAction(change -> {
-      calls.add(change);
+    ArrayList<PasswordChange> requestedPasswordChanges = new ArrayList<PasswordChange>();
+    passwordChangeDialog.setChangeAction(passwordChange -> {
+      requestedPasswordChanges.add(passwordChange);
       return new PasswordChanged(1L, 2L);
     });
-    dialog.open();
-    field("current").setValue("Old-secret!");
-    field("new").setValue("New-secret!");
-    field("confirm").setValue("New-secret!");
-    ((Button) byId("account-password-save")).click();
+    passwordChangeDialog.open();
+    findPasswordField("current").setValue("Old-secret!");
+    findPasswordField("new").setValue("New-secret!");
+    findPasswordField("confirm").setValue("New-secret!");
 
-    assertEquals(1, calls.size());
-    assertEquals("Old-secret!", calls.getFirst().currentPassword());
-    assertEquals("New-secret!", calls.getFirst().newPassword());
-    assertFalse(dialog.isOpened());
-    for (String suffix : new String[] {"current", "new", "confirm"}) {
-      assertTrue(field(suffix).isEmpty());
+    ((Button) findDialogComponentById("account-password-save")).click();
+
+    assertEquals(1, requestedPasswordChanges.size());
+    assertEquals("Old-secret!", requestedPasswordChanges.getFirst().currentPassword());
+    assertEquals("New-secret!", requestedPasswordChanges.getFirst().newPassword());
+    assertFalse(passwordChangeDialog.isOpened());
+    for (String passwordFieldIdSuffix : PASSWORD_FIELD_ID_SUFFIXES) {
+      assertTrue(findPasswordField(passwordFieldIdSuffix).isEmpty());
     }
   }
 
   @Test
   void invalidAndMismatchedPasswordsNeverInvokeTheAction() {
-    AtomicInteger callCount = new AtomicInteger();
-    dialog.setChangeAction(change -> {
-      callCount.incrementAndGet();
+    AtomicInteger passwordChangeCallCounter = new AtomicInteger();
+    passwordChangeDialog.setChangeAction(passwordChange -> {
+      passwordChangeCallCounter.incrementAndGet();
       return null;
     });
-    dialog.open();
-    ((Button) byId("account-password-save")).click();
+    passwordChangeDialog.open();
 
-    assertTrue(field("current").isInvalid());
-    field("current").setValue("Old-secret!");
-    field("new").setValue("a");
-    field("confirm").setValue("a");
-    ((Button) byId("account-password-save")).click();
+    ((Button) findDialogComponentById("account-password-save")).click();
 
-    assertTrue(field("new").isInvalid());
-    field("new").setValue("New-secret!");
-    field("confirm").setValue("Other-secret!");
-    ((Button) byId("account-password-save")).click();
+    assertTrue(findPasswordField("current").isInvalid());
 
-    assertTrue(field("confirm").isInvalid());
-    assertEquals(0, callCount.get());
+    findPasswordField("current").setValue("Old-secret!");
+    findPasswordField("new").setValue("a");
+    findPasswordField("confirm").setValue("a");
+
+    ((Button) findDialogComponentById("account-password-save")).click();
+
+    assertTrue(findPasswordField("new").isInvalid());
+
+    findPasswordField("new").setValue("New-secret!");
+    findPasswordField("confirm").setValue("Other-secret!");
+
+    ((Button) findDialogComponentById("account-password-save")).click();
+
+    assertTrue(findPasswordField("confirm").isInvalid());
+    assertEquals(0, passwordChangeCallCounter.get());
   }
 
   @Test
   void wrongCurrentPasswordMarksOnlyThatFieldAndKeepsDialogOpen() {
-    dialog.setChangeAction(change -> {
+    passwordChangeDialog.setChangeAction(passwordChange -> {
       throw new BadCredentialsException("invalid");
     });
-    dialog.open();
-    field("current").setValue("Wrong-secret!");
-    field("new").setValue("New-secret!");
-    field("confirm").setValue("New-secret!");
-    ((Button) byId("account-password-save")).click();
+    passwordChangeDialog.open();
+    findPasswordField("current").setValue("Wrong-secret!");
+    findPasswordField("new").setValue("New-secret!");
+    findPasswordField("confirm").setValue("New-secret!");
 
-    assertTrue(dialog.isOpened());
-    assertTrue(field("current").isInvalid());
-    assertFalse(field("new").isInvalid());
-    assertFalse(field("confirm").isInvalid());
-    assertTrue(((Button) byId("account-password-save")).isEnabled());
+    ((Button) findDialogComponentById("account-password-save")).click();
+
+    assertTrue(passwordChangeDialog.isOpened());
+    assertTrue(findPasswordField("current").isInvalid());
+    assertFalse(findPasswordField("new").isInvalid());
+    assertFalse(findPasswordField("confirm").isInvalid());
+    assertTrue(((Button) findDialogComponentById("account-password-save")).isEnabled());
   }
 }

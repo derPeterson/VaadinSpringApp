@@ -37,12 +37,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 class AccountSessionsComponentTest {
-  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
+  private final AtomicReference<Locale> activeLocaleReference =
+      new AtomicReference<>(Locale.GERMAN);
   private UI testUi;
   private VaadinSession vaadinSession;
   private MessageProperties messageProperties;
-  private CustomI18NProvider i18nProvider;
+  private CustomI18NProvider customI18NProvider;
   private AccountSessionsComponent accountSessionsComponent;
+
+  // Aktuelle, weitere aktive und ausschließlich gespeicherte Anmeldung
   private final Instant sessionTimestamp = Instant.parse("2026-10-17T02:00:00Z");
   private final Entry currentSessionEntry =
       new Entry(
@@ -75,203 +78,230 @@ class AccountSessionsComponentTest {
           false,
           false,
           true);
-  private final AtomicReference<Snapshot> sessionsSnapshot = new AtomicReference<>();
+
+  // Veränderbarer Servicezustand und protokollierte Widerrufe
+  private final AtomicReference<Snapshot> sessionSnapshotReference = new AtomicReference<>();
   private final List<String> revokedSessionIds = new ArrayList<>();
-  private final AtomicInteger revokeOthersCallCount = new AtomicInteger();
+  private final AtomicInteger revokeOtherSessionsCallCounter = new AtomicInteger();
 
   @BeforeEach
-  void setup() {
+  void createSessionPanelEnvironment() {
     testUi = new UI();
     UI.setCurrent(testUi);
+
     vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.hasLock()).thenReturn(true);
-    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    when(vaadinSession.getLocale()).thenAnswer(mockInvocation -> activeLocaleReference.get());
     VaadinSession.setCurrent(vaadinSession);
     testUi.getInternals().setSession(vaadinSession);
-    i18nProvider = new CustomI18NProvider();
-    messageProperties = new MessageProperties(i18nProvider);
-    sessionsSnapshot.set(
+
+    customI18NProvider = new CustomI18NProvider();
+    messageProperties = new MessageProperties(customI18NProvider);
+
+    sessionSnapshotReference.set(
         new Snapshot(
             List.of(currentSessionEntry, otherSessionEntry, rememberedSessionEntry), 2, 7));
     accountSessionsComponent = new AccountSessionsComponent(messageProperties, 7);
     accountSessionsComponent.configure(
-        sessionsSnapshot::get,
-        handle -> {
-          revokedSessionIds.add(handle);
-          sessionsSnapshot.set(
+        sessionSnapshotReference::get,
+        sessionHandle -> {
+          revokedSessionIds.add(sessionHandle);
+          sessionSnapshotReference.set(
               new Snapshot(List.of(currentSessionEntry, rememberedSessionEntry), 1, 7));
         },
         () -> {
-          revokeOthersCallCount.incrementAndGet();
-          sessionsSnapshot.set(new Snapshot(List.of(currentSessionEntry), 1, 7));
+          revokeOtherSessionsCallCounter.incrementAndGet();
+          sessionSnapshotReference.set(new Snapshot(List.of(currentSessionEntry), 1, 7));
         });
+
     accountSessionsComponent.reloadSessionSnapshot();
   }
 
   @AfterEach
-  void cleanup() {
+  void clearSessionPanelEnvironment() {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
+
     VaadinSession.setCurrent(null);
     UI.setCurrent(null);
     testUi = null;
     vaadinSession = null;
   }
 
-  private Stream<Component> tree(Component root) {
-    return Stream.concat(Stream.of(root), root.getChildren().flatMap(this::tree));
+  private Stream<Component> streamComponentTree(Component rootComponent) {
+    return Stream.concat(
+        Stream.of(rootComponent), rootComponent.getChildren().flatMap(this::streamComponentTree));
   }
 
-  private Button button(String id) {
-    return tree(accountSessionsComponent)
-        .filter(item -> item.getId().orElse("").equals(id))
+  private Button findSessionActionButton(String buttonId) {
+    return streamComponentTree(accountSessionsComponent)
+        .filter(candidateComponent -> candidateComponent.getId().orElse("").equals(buttonId))
         .map(Button.class::cast)
         .findFirst()
         .orElseThrow();
   }
 
-  private void confirmPending() {
-    PortalConfirmationDialog confirmation = getSessionConfirmationDialog();
+  private void confirmPendingSessionAction() {
+    PortalConfirmationDialog sessionConfirmationDialog = getSessionConfirmationDialog();
 
-    assertTrue(confirmation.isOpened());
-    ((Button) ReflectionTestUtils.getField(confirmation, "confirmButton")).click();
+    assertTrue(sessionConfirmationDialog.isOpened());
+    ((Button) ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmButton")).click();
 
-    assertFalse(confirmation.isOpened());
+    assertFalse(sessionConfirmationDialog.isOpened());
   }
 
   @Test
   void cancelDoesNotRevokeAndKeepsTheSelectedEntry() {
-    button("session-revoke-other-handle").click();
-    PortalConfirmationDialog confirmation = getSessionConfirmationDialog();
+    findSessionActionButton("session-revoke-other-handle").click();
+    PortalConfirmationDialog sessionConfirmationDialog = getSessionConfirmationDialog();
 
-    assertTrue(confirmation.isOpened());
+    assertTrue(sessionConfirmationDialog.isOpened());
     assertTrue(revokedSessionIds.isEmpty());
-    getCancelSessionConfirmationButton(confirmation).click();
+
+    getCancelSessionConfirmationButton(sessionConfirmationDialog).click();
 
     assertTrue(revokedSessionIds.isEmpty());
-    assertTrue(button("session-revoke-other-handle").isEnabled());
-    assertEquals(0, revokeOthersCallCount.get());
+    assertTrue(findSessionActionButton("session-revoke-other-handle").isEnabled());
+    assertEquals(0, revokeOtherSessionsCallCounter.get());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void realRowsDistinguishCurrentActiveAndSavedSignInsAndTranslate(String language) {
-    localeReference.set(Locale.forLanguageTag(language));
+  void realRowsDistinguishCurrentActiveAndSavedSignInsAndTranslate(String languageTag) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
     accountSessionsComponent.refreshTexts();
-    MessageProperties expected = MessageProperties.forLocale(i18nProvider, localeReference.get());
-    String content = accountSessionsComponent.getElement().getTextRecursively();
+    MessageProperties expectedMessageProperties =
+        MessageProperties.forLocale(customI18NProvider, activeLocaleReference.get());
+    String sessionPanelText = accountSessionsComponent.getElement().getTextRecursively();
 
-    assertTrue(content.contains(expected.getPortalSessionActiveCount(2)));
-    Component countValue =
-        tree(accountSessionsComponent)
-            .filter(
-                item -> item.getElement().getClassList().contains("account-session-count-value"))
+    assertTrue(sessionPanelText.contains(expectedMessageProperties.getPortalSessionActiveCount(2)));
+    Component activeSessionCountComponent =
+        streamComponentTree(accountSessionsComponent)
+            .filter(candidateComponent ->
+                candidateComponent
+                    .getElement()
+                    .getClassList()
+                    .contains("account-session-count-value"))
             .findFirst()
             .orElseThrow();
 
-    assertEquals("2", countValue.getElement().getText());
-    assertTrue(content.contains(expected.getAccountSettingsSessionsLimit(7)));
-    assertTrue(content.contains(expected.getPortalSessionRemembered()));
-    assertTrue(content.contains(expected.getSessionUnknownDevice()));
+    assertEquals("2", activeSessionCountComponent.getElement().getText());
+    assertTrue(
+        sessionPanelText.contains(expectedMessageProperties.getAccountSettingsSessionsLimit(7)));
+    assertTrue(sessionPanelText.contains(expectedMessageProperties.getPortalSessionRemembered()));
+    assertTrue(sessionPanelText.contains(expectedMessageProperties.getSessionUnknownDevice()));
     assertEquals(
         List.of(
-            expected.getSessionSignedInVia(expected.getExternalGoogle()),
-            expected.getSessionSignedInVia(expected.getSignInPortalPassword())),
-        tree(accountSessionsComponent)
-            .filter(
-                item -> item.getElement().getClassList().contains("account-session-sign-in-method"))
-            .map(item -> item.getElement().getTextRecursively())
+            expectedMessageProperties.getSessionSignedInVia(
+                expectedMessageProperties.getExternalGoogle()),
+            expectedMessageProperties.getSessionSignedInVia(
+                expectedMessageProperties.getSignInPortalPassword())),
+        streamComponentTree(accountSessionsComponent)
+            .filter(candidateComponent ->
+                candidateComponent
+                    .getElement()
+                    .getClassList()
+                    .contains("account-session-sign-in-method"))
+            .map(candidateComponent -> candidateComponent.getElement().getTextRecursively())
             .toList());
-    assertFalse(button("account-current-session").isEnabled());
-    assertTrue(button("session-revoke-other-handle").isEnabled());
-    assertFalse(button("account-current-session").hasClassName("cosmos-delete-button"));
-    assertTrue(button("session-revoke-other-handle").hasClassName("cosmos-delete-button"));
-    assertTrue(button("session-revoke-saved-handle").hasClassName("cosmos-delete-button"));
+    assertFalse(findSessionActionButton("account-current-session").isEnabled());
+    assertTrue(findSessionActionButton("session-revoke-other-handle").isEnabled());
+    assertFalse(
+        findSessionActionButton("account-current-session").hasClassName("cosmos-delete-button"));
+    assertTrue(
+        findSessionActionButton("session-revoke-other-handle")
+            .hasClassName("cosmos-delete-button"));
+    assertTrue(
+        findSessionActionButton("session-revoke-saved-handle")
+            .hasClassName("cosmos-delete-button"));
     assertEquals(
-        expected.getPortalSessionRevokeAction(), button("session-revoke-saved-handle").getText());
-    assertFalse(content.contains("Laptop · Edge"));
+        expectedMessageProperties.getPortalSessionRevokeAction(),
+        findSessionActionButton("session-revoke-saved-handle").getText());
+    assertFalse(sessionPanelText.contains("Laptop · Edge"));
     assertTrue(revokedSessionIds.isEmpty());
   }
 
   @Test
   void selectedLogoutReloadsRowsAndShowsSuccessOnlyAfterActionSucceeded() {
-    button("session-revoke-other-handle").click();
-    confirmPending();
+    findSessionActionButton("session-revoke-other-handle").click();
+    confirmPendingSessionAction();
 
     assertEquals(List.of("other-handle"), revokedSessionIds);
     assertFalse(
-        tree(accountSessionsComponent)
-            .anyMatch(item -> item.getId().orElse("").equals("session-revoke-other-handle")));
+        streamComponentTree(accountSessionsComponent)
+            .anyMatch(candidateComponent ->
+                candidateComponent.getId().orElse("").equals("session-revoke-other-handle")));
     assertTrue(
         accountSessionsComponent
             .getElement()
             .getTextRecursively()
             .contains(messageProperties.getPortalSessionActiveCount(1)));
-    Supplier<String> supplier =
+    Supplier<String> notificationMessageSupplier =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
 
-    assertEquals(messageProperties.getSessionRevoked(), supplier.get());
+    assertEquals(messageProperties.getSessionRevoked(), notificationMessageSupplier.get());
   }
 
   @Test
   void logoutOthersKeepsCurrentMarkerAndDisablesActionWhenNothingElseRemains() {
-    button("account-logout-others").click();
-    confirmPending();
+    findSessionActionButton("account-logout-others").click();
+    confirmPendingSessionAction();
 
-    assertEquals(1, revokeOthersCallCount.get());
-    assertFalse(button("account-logout-others").isEnabled());
-    assertFalse(button("account-current-session").isEnabled());
+    assertEquals(1, revokeOtherSessionsCallCounter.get());
+    assertFalse(findSessionActionButton("account-logout-others").isEnabled());
+    assertFalse(findSessionActionButton("account-current-session").isEnabled());
     assertTrue(revokedSessionIds.isEmpty());
   }
 
   @Test
   void failedActionHasErrorNotificationAndDoesNotPretendRowWasRemoved() {
     accountSessionsComponent.configure(
-        sessionsSnapshot::get,
-        handle -> {
+        sessionSnapshotReference::get,
+        sessionHandle -> {
           throw new IllegalStateException("internal database secret");
         },
         () -> {});
-    button("session-revoke-other-handle").click();
-    confirmPending();
+    findSessionActionButton("session-revoke-other-handle").click();
+    confirmPendingSessionAction();
 
-    assertTrue(button("session-revoke-other-handle").isEnabled());
-    Supplier<String> supplier =
+    assertTrue(findSessionActionButton("session-revoke-other-handle").isEnabled());
+    Supplier<String> notificationMessageSupplier =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
 
-    assertEquals(messageProperties.getSessionManagementFailed(), supplier.get());
-    assertFalse(supplier.get().contains("internal database secret"));
+    assertEquals(messageProperties.getSessionManagementFailed(), notificationMessageSupplier.get());
+    assertFalse(notificationMessageSupplier.get().contains("internal database secret"));
   }
 
   @Test
   void refreshDropsStaleRowsOnExpiredAccessAndRunsTheRecoveryExitAction() {
-    AtomicInteger exited = new AtomicInteger();
-    accountSessionsComponent.setFailureAction(exited::incrementAndGet);
+    AtomicInteger recoveryExitCallCounter = new AtomicInteger();
+    accountSessionsComponent.setFailureAction(recoveryExitCallCounter::incrementAndGet);
     accountSessionsComponent.configure(
         () -> {
           throw new IllegalStateException("expired");
         },
-        handle -> {},
+        sessionHandle -> {},
         () -> {});
-    button("account-sessions-refresh").click();
+    findSessionActionButton("account-sessions-refresh").click();
 
-    assertEquals(1, exited.get());
-    Supplier<String> failureText =
+    assertEquals(1, recoveryExitCallCounter.get());
+    Supplier<String> failureMessageSupplier =
         (Supplier<String>)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageSupplier");
 
-    assertEquals(messageProperties.getSessionManagementFailed(), failureText.get());
+    assertEquals(messageProperties.getSessionManagementFailed(), failureMessageSupplier.get());
     assertFalse(
-        tree(accountSessionsComponent)
-            .anyMatch(item -> item.getId().orElse("").equals("account-current-session")));
-    assertFalse(button("account-logout-others").isEnabled());
+        streamComponentTree(accountSessionsComponent)
+            .anyMatch(candidateComponent ->
+                candidateComponent.getId().orElse("").equals("account-current-session")));
+    assertFalse(findSessionActionButton("account-logout-others").isEnabled());
   }
 
   @Test
-  void refreshReflectsChangedSessionLimitAndLatestActivityWithoutMutations() {
-    sessionsSnapshot.set(new Snapshot(List.of(currentSessionEntry), 1, 11));
-    button("account-sessions-refresh").click();
+  void refreshShowsChangedSessionLimitAndLocalizedSuccessWithoutMutations() {
+    sessionSnapshotReference.set(new Snapshot(List.of(currentSessionEntry), 1, 11));
+    findSessionActionButton("account-sessions-refresh").click();
 
     assertTrue(
         accountSessionsComponent
@@ -279,105 +309,98 @@ class AccountSessionsComponentTest {
             .getTextRecursively()
             .contains(messageProperties.getAccountSettingsSessionsLimit(11)));
     assertTrue(revokedSessionIds.isEmpty());
-    assertEquals(0, revokeOthersCallCount.get());
-    NotificationHelper helper = NotificationHelper.getInstance();
-    Supplier<String> successText =
-        (Supplier<String>) ReflectionTestUtils.getField(helper, "titleSupplier");
+    assertEquals(0, revokeOtherSessionsCallCounter.get());
+    NotificationHelper notificationHelper = NotificationHelper.getInstance();
+    Supplier<String> successTitleSupplier =
+        (Supplier<String>) ReflectionTestUtils.getField(notificationHelper, "titleSupplier");
 
-    assertEquals(messageProperties.getSessionRefreshSuccess(), successText.get());
-    assertNull(ReflectionTestUtils.getField(helper, "messageSupplier"));
-    localeReference.set(Locale.ENGLISH);
-    helper.updateText();
+    assertEquals(messageProperties.getSessionRefreshSuccess(), successTitleSupplier.get());
+    assertNull(ReflectionTestUtils.getField(notificationHelper, "messageSupplier"));
+
+    activeLocaleReference.set(Locale.ENGLISH);
+    notificationHelper.updateText();
 
     assertEquals(
         messageProperties.getSessionRefreshSuccess(),
-        ((Span) ReflectionTestUtils.getField(helper, "titleText")).getText());
+        ((Span) ReflectionTestUtils.getField(notificationHelper, "titleText")).getText());
   }
 
+  // Gerätebestätigung und Wiederherstellungsansicht
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void everyDeviceConfirmationKeepsItsReferenceIconAndCompleteContext(String language) {
-    localeReference.set(Locale.forLanguageTag(language));
+  void everyDeviceConfirmationKeepsItsReferenceIconAndCompleteContext(String languageTag) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
     accountSessionsComponent.refreshTexts();
-    for (Entry entry : List.of(otherSessionEntry, rememberedSessionEntry)) {
-      button("session-revoke-" + entry.handle()).click();
-      PortalConfirmationDialog dialog = getSessionConfirmationDialog();
 
-      assertTrue(dialog.isOpened());
-      Button confirm = (Button) ReflectionTestUtils.getField(dialog, "confirmButton");
+    for (Entry sessionEntry : List.of(otherSessionEntry, rememberedSessionEntry)) {
+      findSessionActionButton("session-revoke-" + sessionEntry.handle()).click();
+      PortalConfirmationDialog sessionConfirmationDialog = getSessionConfirmationDialog();
+
+      assertTrue(sessionConfirmationDialog.isOpened());
+      Button confirmSessionButton =
+          (Button) ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmButton");
 
       assertEquals(
           "icons/lucide/log-out.svg",
-          tree(confirm)
+          streamComponentTree(confirmSessionButton)
               .filter(SvgIcon.class::isInstance)
               .findFirst()
               .orElseThrow()
               .getElement()
               .getAttribute("src"));
       assertEquals(
-          entry.active()
+          sessionEntry.active()
               ? messageProperties.getBaseLogoutButton()
               : messageProperties.getPortalSessionRevokeAction(),
-          confirm.getText());
-      Div symbol = (Div) ReflectionTestUtils.getField(dialog, "dialogIconContainer");
+          confirmSessionButton.getText());
+      Div dialogIconDiv =
+          (Div) ReflectionTestUtils.getField(sessionConfirmationDialog, "dialogIconContainer");
 
       assertEquals(
-          "icons/lucide/log-out.svg", symbol.getComponentAt(0).getElement().getAttribute("src"));
+          "icons/lucide/log-out.svg",
+          dialogIconDiv.getComponentAt(0).getElement().getAttribute("src"));
       assertEquals(
           messageProperties.getPortalSessionCheckSelection(),
-          getSessionConfirmationDescriptionSpan(dialog).getText());
-      Component context = (Component) ReflectionTestUtils.getField(dialog, "confirmationContext");
-      String metadata = context.getElement().getTextRecursively();
+          getSessionConfirmationDescriptionSpan(sessionConfirmationDialog).getText());
 
-      assertTrue(
-          metadata.contains(
-              entry.active()
-                  ? messageProperties.getSessionLastActivity()
-                  : messageProperties.getPortalSessionLastUsed()));
-      assertTrue(
-          metadata.contains(
-              entry.active()
-                  ? messageProperties.getSessionStarted()
-                  : messageProperties.getSessionSavedSince()));
-      assertTrue(
-          metadata.contains(
-              entry.active()
-                  ? messageProperties.getPortalSessionActive()
-                  : messageProperties.getPortalSessionInactive()));
-      assertTrue(metadata.contains(messageProperties.getPortalSessionRemembered()));
-      assertFalse(
-          ((Component) ReflectionTestUtils.getField(dialog, "confirmationNotice")).isVisible());
-      getCancelSessionConfirmationButton(dialog).click();
+      assertSessionConfirmationContext(sessionConfirmationDialog, sessionEntry);
+
+      getCancelSessionConfirmationButton(sessionConfirmationDialog).click();
 
       assertTrue(revokedSessionIds.isEmpty());
     }
-    button("account-logout-others").click();
-    PortalConfirmationDialog dialog = getSessionConfirmationDialog();
+
+    findSessionActionButton("account-logout-others").click();
+    PortalConfirmationDialog sessionConfirmationDialog = getSessionConfirmationDialog();
 
     assertEquals(
         messageProperties.getPortalSessionSelection(1, 1),
-        getSessionConfirmationDescriptionSpan(dialog).getText());
-    Component context = (Component) ReflectionTestUtils.getField(dialog, "confirmationContext");
+        getSessionConfirmationDescriptionSpan(sessionConfirmationDialog).getText());
+    Component confirmationContextComponent =
+        (Component) ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmationContext");
 
-    assertEquals(2, context.getChildren().findFirst().orElseThrow().getChildren().count());
-    getCancelSessionConfirmationButton(dialog).click();
+    assertEquals(
+        2,
+        confirmationContextComponent.getChildren().findFirst().orElseThrow().getChildren().count());
+    getCancelSessionConfirmationButton(sessionConfirmationDialog).click();
 
-    assertEquals(0, revokeOthersCallCount.get());
+    assertEquals(0, revokeOtherSessionsCallCounter.get());
   }
 
   @Test
   void restrictedPanelUsesReferenceCopyWithoutChangingTheNormalAccountPanel() {
-    for (Locale language : List.of(Locale.GERMAN, Locale.ENGLISH)) {
-      localeReference.set(language);
+    for (Locale displayLocale : List.of(Locale.GERMAN, Locale.ENGLISH)) {
+      activeLocaleReference.set(displayLocale);
       accountSessionsComponent.setRestricted(true);
-      String restrictedCopy = accountSessionsComponent.getElement().getTextRecursively();
+      String restrictedPanelText = accountSessionsComponent.getElement().getTextRecursively();
 
-      assertTrue(restrictedCopy.contains(messageProperties.getSessionRecoveryTitle()));
-      assertTrue(restrictedCopy.contains(messageProperties.getSessionRecoveryHint()));
-      assertTrue(restrictedCopy.contains(messageProperties.getSessionRecoveryListHint()));
+      assertTrue(restrictedPanelText.contains(messageProperties.getSessionRecoveryTitle()));
+      assertTrue(restrictedPanelText.contains(messageProperties.getSessionRecoveryHint()));
+      assertTrue(restrictedPanelText.contains(messageProperties.getSessionRecoveryListHint()));
       assertEquals(
           messageProperties.getSessionRecoveryLogoutAll(),
-          button("account-logout-others").getText());
+          findSessionActionButton("account-logout-others").getText());
+
       accountSessionsComponent.setRestricted(false);
 
       assertTrue(
@@ -387,24 +410,53 @@ class AccountSessionsComponentTest {
               .contains(messageProperties.getAccountSettingsSessionsTitle()));
       assertEquals(
           messageProperties.getAccountSettingsLogoutOthers(),
-          button("account-logout-others").getText());
+          findSessionActionButton("account-logout-others").getText());
     }
   }
 
   @Test
   void restrictedConfirmationDoesNotClaimAnExistingSignedInSession() {
     accountSessionsComponent.setRestricted(true);
-    button("session-revoke-other-handle").click();
+    findSessionActionButton("session-revoke-other-handle").click();
     PortalConfirmationDialog portalConfirmationDialog = getSessionConfirmationDialog();
-    String explanation =
+    String confirmationExplanationText =
         ((Span) ReflectionTestUtils.getField(portalConfirmationDialog, "confirmationExplanation"))
             .getText();
 
-    assertTrue(explanation.contains(messageProperties.getSessionRecoveryLogoutHint()));
-    assertFalse(explanation.contains(messageProperties.getPortalSessionRetainedHint()));
+    assertTrue(
+        confirmationExplanationText.contains(messageProperties.getSessionRecoveryLogoutHint()));
+    assertFalse(
+        confirmationExplanationText.contains(messageProperties.getPortalSessionRetainedHint()));
     getCancelSessionConfirmationButton(portalConfirmationDialog).click();
 
     assertTrue(revokedSessionIds.isEmpty());
+  }
+
+  private void assertSessionConfirmationContext(
+      PortalConfirmationDialog sessionConfirmationDialog, Entry sessionEntry) {
+    Component confirmationContextComponent =
+        (Component) ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmationContext");
+    String sessionMetadataText = confirmationContextComponent.getElement().getTextRecursively();
+
+    assertTrue(
+        sessionMetadataText.contains(
+            sessionEntry.active()
+                ? messageProperties.getSessionLastActivity()
+                : messageProperties.getPortalSessionLastUsed()));
+    assertTrue(
+        sessionMetadataText.contains(
+            sessionEntry.active()
+                ? messageProperties.getSessionStarted()
+                : messageProperties.getSessionSavedSince()));
+    assertTrue(
+        sessionMetadataText.contains(
+            sessionEntry.active()
+                ? messageProperties.getPortalSessionActive()
+                : messageProperties.getPortalSessionInactive()));
+    assertTrue(sessionMetadataText.contains(messageProperties.getPortalSessionRemembered()));
+    assertFalse(
+        ((Component) ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmationNotice"))
+            .isVisible());
   }
 
   private PortalConfirmationDialog getSessionConfirmationDialog() {

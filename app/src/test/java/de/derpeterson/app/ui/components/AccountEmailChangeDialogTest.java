@@ -35,89 +35,94 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 class AccountEmailChangeDialogTest {
   private UI testUi;
-  private AccountEmailChangeDialog dialog;
-  private final AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);
+  private AccountEmailChangeDialog emailChangeDialog;
+  private final AtomicReference<Locale> activeLocaleReference =
+      new AtomicReference<>(Locale.GERMAN);
 
   @BeforeEach
-  void setup() {
+  void createEmailChangeDialogEnvironment() {
     testUi = new UI();
     UI.setCurrent(testUi);
+
     VaadinSession vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.hasLock()).thenReturn(true);
-    when(vaadinSession.getLocale()).thenAnswer(call -> localeReference.get());
+    when(vaadinSession.getLocale()).thenAnswer(mockInvocation -> activeLocaleReference.get());
     VaadinSession.setCurrent(vaadinSession);
     testUi.getInternals().setSession(vaadinSession);
-    dialog = new AccountEmailChangeDialog(new MessageProperties(new CustomI18NProvider()));
-    testUi.add(dialog);
+
+    emailChangeDialog =
+        new AccountEmailChangeDialog(new MessageProperties(new CustomI18NProvider()));
+    testUi.add(emailChangeDialog);
   }
 
   @AfterEach
-  void cleanup() {
-    dialog.close();
+  void clearEmailChangeDialogEnvironment() {
+    emailChangeDialog.close();
     NotificationHelper.getInstance().closeAndClearAllNotifications();
+
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
   }
 
-  private Stream<Component> tree(Component root) {
-    return Stream.concat(Stream.of(root), root.getChildren().flatMap(this::tree));
+  private Stream<Component> streamComponentTree(Component rootComponent) {
+    return Stream.concat(
+        Stream.of(rootComponent), rootComponent.getChildren().flatMap(this::streamComponentTree));
   }
 
-  private Stream<Component> slottedTree(Element root) {
-    return root.getChildren()
-        .flatMap(element -> element.getComponent().stream())
-        .flatMap(this::tree);
+  private Stream<Component> streamSlottedComponents(Element slotRootElement) {
+    return slotRootElement
+        .getChildren()
+        .flatMap(childElement -> childElement.getComponent().stream())
+        .flatMap(this::streamComponentTree);
   }
 
-  private Component byId(String id) {
+  private Component findDialogComponentById(String componentId) {
     return Stream.of(
-            tree(dialog),
-            slottedTree(dialog.getHeader().getElement()),
-            slottedTree(dialog.getFooter().getElement()))
-        .flatMap(stream -> stream)
-        .filter(component -> component.getId().orElse("").equals(id))
+            streamComponentTree(emailChangeDialog),
+            streamSlottedComponents(emailChangeDialog.getHeader().getElement()),
+            streamSlottedComponents(emailChangeDialog.getFooter().getElement()))
+        .flatMap(childComponentStream -> childComponentStream)
+        .filter(candidateComponent -> candidateComponent.getId().orElse("").equals(componentId))
         .findFirst()
         .orElseThrow();
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void fieldsAndHeaderUseTheSelectedLanguageAndNativeModalDismissal(String language) {
-    localeReference.set(Locale.forLanguageTag(language));
-    dialog.refreshTexts();
-    dialog.open();
+  void fieldsAndHeaderUseTheSelectedLanguageAndNativeModalDismissal(String languageTag) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
+    emailChangeDialog.refreshTexts();
+    emailChangeDialog.open();
     MessageProperties messageProperties =
-        MessageProperties.forLocale(new CustomI18NProvider(), localeReference.get());
+        MessageProperties.forLocale(new CustomI18NProvider(), activeLocaleReference.get());
 
-    assertTrue(dialog.isOpened());
-    assertEquals(ModalityMode.STRICT, dialog.getModality());
-    assertTrue(dialog.isCloseOnEsc());
-    assertTrue(dialog.isCloseOnOutsideClick());
+    assertTrue(emailChangeDialog.isOpened());
+    assertEquals(ModalityMode.STRICT, emailChangeDialog.getModality());
+    assertTrue(emailChangeDialog.isCloseOnEsc());
+    assertTrue(emailChangeDialog.isCloseOnOutsideClick());
     assertEquals(
         messageProperties.getAccountSettingsChangeEmail(),
-        dialog.getElement().getProperty("ariaLabel"));
+        emailChangeDialog.getElement().getProperty("ariaLabel"));
+    assertEquals(messageProperties.getAccountEmailDialogNewEmail(), findNewEmailField().getLabel());
     assertEquals(
-        messageProperties.getAccountEmailDialogNewEmail(),
-        ((EmailField) byId("account-email-new")).getLabel());
-    assertEquals(
-        messageProperties.getAccountEmailDialogConfirmEmail(),
-        ((EmailField) byId("account-email-confirm")).getLabel());
-    PasswordField password = (PasswordField) byId("account-email-password");
+        messageProperties.getAccountEmailDialogConfirmEmail(), findConfirmEmailField().getLabel());
+    PasswordField currentPasswordField = findCurrentPasswordField();
 
-    assertEquals(messageProperties.getAccountEmailDialogPassword(), password.getLabel());
-    assertEquals(Autocomplete.CURRENT_PASSWORD, password.getAutocomplete());
+    assertEquals(
+        messageProperties.getAccountEmailDialogPassword(), currentPasswordField.getLabel());
+    assertEquals(Autocomplete.CURRENT_PASSWORD, currentPasswordField.getAutocomplete());
     assertEquals(
         messageProperties.getAdminUsersCloseDialog(),
-        ((Button) byId("account-email-close")).getAriaLabel().orElseThrow());
+        ((Button) findDialogComponentById("account-email-close")).getAriaLabel().orElseThrow());
     assertTrue(
-        slottedTree(dialog.getHeader().getElement())
-            .anyMatch(component ->
-                component instanceof SvgIcon icon
-                    && "icons/lucide/mail.svg".equals(icon.getSrc())));
+        streamSlottedComponents(emailChangeDialog.getHeader().getElement())
+            .anyMatch(candidateComponent ->
+                candidateComponent instanceof SvgIcon headerSvgIcon
+                    && "icons/lucide/mail.svg".equals(headerSvgIcon.getSrc())));
     assertTrue(
-        tree(dialog)
-            .anyMatch(component ->
-                component
+        streamComponentTree(emailChangeDialog)
+            .anyMatch(candidateComponent ->
+                candidateComponent
                     .getElement()
                     .getTextRecursively()
                     .contains(messageProperties.getAccountEmailDialogHint())));
@@ -125,98 +130,119 @@ class AccountEmailChangeDialogTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"account-email-close", "account-email-cancel", "native-close"})
-  void allClosePathsDiscardEmailDraftAndPassword(String action) {
-    dialog.open();
-    ((EmailField) byId("account-email-new")).setValue("new@example.test");
-    ((EmailField) byId("account-email-confirm")).setValue("new@example.test");
-    ((PasswordField) byId("account-email-password")).setValue("Only-a-local-draft");
-    if (action.equals("native-close")) {
-      dialog.setOpened(false);
-    } else {
-      ((Button) byId(action)).click();
-    }
-    assertFalse(dialog.isOpened());
-    dialog.open();
+  void allClosePathsDiscardEmailDraftAndPassword(String closeActionName) {
+    emailChangeDialog.open();
+    findNewEmailField().setValue("new@example.test");
+    findConfirmEmailField().setValue("new@example.test");
+    findCurrentPasswordField().setValue("Only-a-local-draft");
 
-    assertTrue(((EmailField) byId("account-email-new")).isEmpty());
-    assertTrue(((EmailField) byId("account-email-confirm")).isEmpty());
-    assertTrue(((PasswordField) byId("account-email-password")).isEmpty());
+    if (closeActionName.equals("native-close")) {
+      emailChangeDialog.setOpened(false);
+    } else {
+      ((Button) findDialogComponentById(closeActionName)).click();
+    }
+
+    assertFalse(emailChangeDialog.isOpened());
+
+    emailChangeDialog.open();
+
+    assertTrue(findNewEmailField().isEmpty());
+    assertTrue(findConfirmEmailField().isEmpty());
+    assertTrue(findCurrentPasswordField().isEmpty());
   }
 
   @Test
   void languageRefreshPreservesDraftsAndIncompleteSubmissionKeepsTheDialogOpen() {
-    dialog.open();
-    ((EmailField) byId("account-email-new")).setValue("draft@example.test");
-    localeReference.set(Locale.ENGLISH);
-    dialog.refreshTexts();
+    emailChangeDialog.open();
+    findNewEmailField().setValue("draft@example.test");
 
-    assertEquals("draft@example.test", ((EmailField) byId("account-email-new")).getValue());
-    Button request = (Button) byId("account-email-request");
+    activeLocaleReference.set(Locale.ENGLISH);
+    emailChangeDialog.refreshTexts();
+
+    assertEquals("draft@example.test", findNewEmailField().getValue());
+    Button requestEmailChangeButton = (Button) findDialogComponentById("account-email-request");
 
     assertEquals(
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.ENGLISH)
             .getAccountEmailDialogRequest(),
-        request.getText());
-    assertTrue(request.isEnabled());
-    request.click();
+        requestEmailChangeButton.getText());
+    assertTrue(requestEmailChangeButton.isEnabled());
 
-    assertTrue(dialog.isOpened());
-    assertEquals("draft@example.test", ((EmailField) byId("account-email-new")).getValue());
+    requestEmailChangeButton.click();
+
+    assertTrue(emailChangeDialog.isOpened());
+    assertEquals("draft@example.test", findNewEmailField().getValue());
   }
 
   @Test
   void unfinishedClientDraftsAreSynchronizedAndOpeningStartsWithEmptyFields() {
-    dialog.open();
-    EmailField email = (EmailField) byId("account-email-new");
-    EmailField confirm = (EmailField) byId("account-email-confirm");
-    PasswordField password = (PasswordField) byId("account-email-password");
+    emailChangeDialog.open();
+    EmailField newEmailField = findNewEmailField();
+    EmailField confirmEmailField = findConfirmEmailField();
+    PasswordField currentPasswordField = findCurrentPasswordField();
 
-    assertEquals(ValueChangeMode.EAGER, email.getValueChangeMode());
-    assertEquals(ValueChangeMode.EAGER, confirm.getValueChangeMode());
-    assertEquals(ValueChangeMode.EAGER, password.getValueChangeMode());
-    dialog.close();
+    assertEquals(ValueChangeMode.EAGER, newEmailField.getValueChangeMode());
+    assertEquals(ValueChangeMode.EAGER, confirmEmailField.getValueChangeMode());
+    assertEquals(ValueChangeMode.EAGER, currentPasswordField.getValueChangeMode());
+
+    emailChangeDialog.close();
+
     // Nachlaufende Feldsynchronisierung darf beim nächsten Öffnen nichts wiederherstellen.
-    email.setValue("late@example.test");
-    confirm.setValue("late@example.test");
-    password.setValue("late-draft");
-    dialog.open();
+    newEmailField.setValue("late@example.test");
+    confirmEmailField.setValue("late@example.test");
+    currentPasswordField.setValue("late-draft");
+    emailChangeDialog.open();
 
-    assertTrue(email.isEmpty());
-    assertTrue(confirm.isEmpty());
-    assertTrue(password.isEmpty());
+    assertTrue(newEmailField.isEmpty());
+    assertTrue(confirmEmailField.isEmpty());
+    assertTrue(currentPasswordField.isEmpty());
   }
 
   @Test
   void successfulRequestPassesConfirmedAddressAndClearsTheDraft() {
-    ArrayList<EmailChange> calls = new ArrayList<EmailChange>();
-    dialog.setRequestAction(calls::add);
-    dialog.open();
-    ((EmailField) byId("account-email-new")).setValue("new@example.test");
-    ((EmailField) byId("account-email-confirm")).setValue("new@example.test");
-    ((PasswordField) byId("account-email-password")).setValue("Old-secret!");
-    ((Button) byId("account-email-request")).click();
+    ArrayList<EmailChange> requestedEmailChanges = new ArrayList<EmailChange>();
+    emailChangeDialog.setRequestAction(requestedEmailChanges::add);
+    emailChangeDialog.open();
+    findNewEmailField().setValue("new@example.test");
+    findConfirmEmailField().setValue("new@example.test");
+    findCurrentPasswordField().setValue("Old-secret!");
 
-    assertEquals(1, calls.size());
-    assertEquals("new@example.test", calls.getFirst().newEmail());
-    assertFalse(dialog.isOpened());
-    assertTrue(((EmailField) byId("account-email-new")).isEmpty());
-    assertTrue(((PasswordField) byId("account-email-password")).isEmpty());
+    ((Button) findDialogComponentById("account-email-request")).click();
+
+    assertEquals(1, requestedEmailChanges.size());
+    assertEquals("new@example.test", requestedEmailChanges.getFirst().newEmail());
+    assertFalse(emailChangeDialog.isOpened());
+    assertTrue(findNewEmailField().isEmpty());
+    assertTrue(findCurrentPasswordField().isEmpty());
   }
 
   @Test
   void conflictingAddressMarksBothEmailFieldsAndKeepsTheCurrentPasswordUnmarked() {
-    dialog.setRequestAction(change -> {
+    emailChangeDialog.setRequestAction(emailChange -> {
       throw new Rejected(Problem.EMAIL_UNAVAILABLE);
     });
-    dialog.open();
-    ((EmailField) byId("account-email-new")).setValue("taken@example.test");
-    ((EmailField) byId("account-email-confirm")).setValue("taken@example.test");
-    ((PasswordField) byId("account-email-password")).setValue("Old-secret!");
-    ((Button) byId("account-email-request")).click();
+    emailChangeDialog.open();
+    findNewEmailField().setValue("taken@example.test");
+    findConfirmEmailField().setValue("taken@example.test");
+    findCurrentPasswordField().setValue("Old-secret!");
 
-    assertTrue(dialog.isOpened());
-    assertTrue(((EmailField) byId("account-email-new")).isInvalid());
-    assertTrue(((EmailField) byId("account-email-confirm")).isInvalid());
-    assertFalse(((PasswordField) byId("account-email-password")).isInvalid());
+    ((Button) findDialogComponentById("account-email-request")).click();
+
+    assertTrue(emailChangeDialog.isOpened());
+    assertTrue(findNewEmailField().isInvalid());
+    assertTrue(findConfirmEmailField().isInvalid());
+    assertFalse(findCurrentPasswordField().isInvalid());
+  }
+
+  private EmailField findNewEmailField() {
+    return (EmailField) findDialogComponentById("account-email-new");
+  }
+
+  private EmailField findConfirmEmailField() {
+    return (EmailField) findDialogComponentById("account-email-confirm");
+  }
+
+  private PasswordField findCurrentPasswordField() {
+    return (PasswordField) findDialogComponentById("account-email-password");
   }
 }

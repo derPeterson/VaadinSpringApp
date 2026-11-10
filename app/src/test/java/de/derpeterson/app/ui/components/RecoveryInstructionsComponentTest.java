@@ -18,48 +18,72 @@ import org.junit.jupiter.params.provider.ValueSource;
 class RecoveryInstructionsComponentTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void localizedInstructionsKeepFourStepsAndEverySentWord(String language) {
+  void localizedInstructionsKeepFourStepsAndEverySentWord(String languageTag) {
     MessageProperties messageProperties =
-        MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
-    String snapshot = messageProperties.getSupportRecoveryInstructions();
-    RecoveryInstructionsComponent guide = new RecoveryInstructionsComponent(snapshot);
+        MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(languageTag));
+    String instructionSnapshotText = messageProperties.getSupportRecoveryInstructions();
+    RecoveryInstructionsComponent recoveryInstructionsComponent =
+        new RecoveryInstructionsComponent(instructionSnapshotText);
 
-    assertTrue(snapshot.length() <= SupportTicketService.MESSAGE_LIMIT);
-    assertEquals(4, tree(guide).filter(Badge.class::isInstance).count());
-    String rendered =
-        guide.getHeading() + guide.getDescription() + guide.getElement().getTextRecursively();
-    for (String paragraph : snapshot.lines().filter(line -> !line.isBlank()).toList()) {
-      assertTrue(rendered.contains(paragraph), paragraph);
-    }
+    assertTrue(instructionSnapshotText.length() <= SupportTicketService.MESSAGE_LIMIT);
     assertEquals(
-        1, tree(guide).filter(part -> part.hasClassName("cosmos-security-warning")).count());
-    assertEquals(1, tree(guide).filter(part -> part.hasClassName("support-help-notice")).count());
+        4,
+        streamComponentTree(recoveryInstructionsComponent).filter(Badge.class::isInstance).count());
+
+    String renderedInstructionsText =
+        recoveryInstructionsComponent.getHeading()
+            + recoveryInstructionsComponent.getDescription()
+            + recoveryInstructionsComponent.getElement().getTextRecursively();
+    for (String instructionParagraph :
+        instructionSnapshotText
+            .lines()
+            .filter(instructionLine -> !instructionLine.isBlank())
+            .toList()) {
+      assertTrue(renderedInstructionsText.contains(instructionParagraph), instructionParagraph);
+    }
+
+    assertEquals(
+        1,
+        streamComponentTree(recoveryInstructionsComponent)
+            .filter(
+                candidateComponent -> candidateComponent.hasClassName("cosmos-security-warning"))
+            .count());
+    assertEquals(
+        1,
+        streamComponentTree(recoveryInstructionsComponent)
+            .filter(candidateComponent -> candidateComponent.hasClassName("support-help-notice"))
+            .count());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
-  void sharedDetailsButtonKeepsArrowAndExpandedStateSynchronized(String language) {
+  void sharedDetailsButtonSynchronizesExpandedStateAndKeepsItsLabel(String languageTag) {
     MessageProperties messageProperties =
-        MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
-    Details details = new Details();
-    details.setId("instruction-details");
-    DetailsToggleButton toggle = new DetailsToggleButton(messageProperties, details, "Guide");
+        MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(languageTag));
+    Details instructionDetails = new Details();
+    instructionDetails.setId("instruction-details");
+    DetailsToggleButton detailsToggleButton =
+        new DetailsToggleButton(messageProperties, instructionDetails, "Guide");
 
-    assertEquals("false", toggle.getElement().getAttribute("aria-expanded"));
-    toggle.click();
+    assertEquals("false", detailsToggleButton.getElement().getAttribute("aria-expanded"));
 
-    assertTrue(details.isOpened());
-    assertEquals("true", toggle.getElement().getAttribute("aria-expanded"));
-    toggle.click();
+    detailsToggleButton.click();
 
-    assertFalse(details.isOpened());
-    assertEquals("false", toggle.getElement().getAttribute("aria-expanded"));
-    assertEquals(messageProperties.getBaseDetailsButton(), toggle.getText());
+    assertTrue(instructionDetails.isOpened());
+    assertEquals("true", detailsToggleButton.getElement().getAttribute("aria-expanded"));
+
+    detailsToggleButton.click();
+
+    assertFalse(instructionDetails.isOpened());
+    assertEquals("false", detailsToggleButton.getElement().getAttribute("aria-expanded"));
+    assertEquals(messageProperties.getBaseDetailsButton(), detailsToggleButton.getText());
   }
 
-  private static Stream<Component> tree(Component component) {
+  private static Stream<Component> streamComponentTree(Component rootComponent) {
     return Stream.concat(
-        Stream.of(component),
-        component.getChildren().flatMap(RecoveryInstructionsComponentTest::tree));
+        Stream.of(rootComponent),
+        rootComponent
+            .getChildren()
+            .flatMap(RecoveryInstructionsComponentTest::streamComponentTree));
   }
 }

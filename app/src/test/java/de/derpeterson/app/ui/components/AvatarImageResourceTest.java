@@ -28,16 +28,19 @@ import org.springframework.security.authentication.AuthenticationCredentialsNotF
 
 class AvatarImageResourceTest {
   @Test
-  void imageResponseHasFixedTypePrivateCacheAndNoOriginalFilename() throws Exception {
-    UserAvatarService avatars = mock(UserAvatarService.class);
-    UUID revision = UUID.randomUUID();
-    when(avatars.image(any(), eq(12L), eq(revision), eq(false)))
+  void imageResponseUsesPngPrivateCacheAndInlineDisposition() throws Exception {
+    UserAvatarService userAvatarService = mock(UserAvatarService.class);
+    UUID avatarRevisionUuid = UUID.randomUUID();
+    when(userAvatarService.image(any(), eq(12L), eq(avatarRevisionUuid), eq(false)))
         .thenReturn(Optional.of(new byte[] {1, 2, 3}));
+
     VaadinServletService vaadinServletService = mock(VaadinServletService.class);
     VaadinServletRequest vaadinServletRequest =
         new VaadinServletRequest(new MockHttpServletRequest(), vaadinServletService);
     MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
-    AvatarImageResource.createAvatarImageDownloadHandler(avatars, 12L, revision, false)
+
+    AvatarImageResource.createAvatarImageDownloadHandler(
+            userAvatarService, 12L, avatarRevisionUuid, false)
         .handleRequest(
             vaadinServletRequest,
             new VaadinServletResponse(mockHttpResponse, vaadinServletService),
@@ -54,30 +57,33 @@ class AvatarImageResourceTest {
 
   @ParameterizedTest
   @ValueSource(ints = {401, 403, 404, 503})
-  void deniedOrOldResourcesReturnNoImageAndRemainUncacheable(int code) throws Exception {
-    UserAvatarService avatars = mock(UserAvatarService.class);
-    UUID revision = UUID.randomUUID();
-    if (code == 404) {
-      when(avatars.image(any(), any(), any(), anyBoolean())).thenReturn(Optional.empty());
+  void deniedOrOldResourcesReturnNoImageAndRemainUncacheable(int httpStatusCode) throws Exception {
+    UserAvatarService userAvatarService = mock(UserAvatarService.class);
+    UUID avatarRevisionUuid = UUID.randomUUID();
+    if (httpStatusCode == 404) {
+      when(userAvatarService.image(any(), any(), any(), anyBoolean())).thenReturn(Optional.empty());
     } else {
-      when(avatars.image(any(), any(), any(), anyBoolean()))
+      when(userAvatarService.image(any(), any(), any(), anyBoolean()))
           .thenThrow(
-              switch (code) {
+              switch (httpStatusCode) {
                 case 401 -> new AuthenticationCredentialsNotFoundException("revoked");
                 case 503 -> new MaintenanceAccessException("maintenance");
                 default -> new AccessDeniedException("forbidden");
               });
     }
+
     VaadinServletService vaadinServletService = mock(VaadinServletService.class);
     MockHttpServletResponse mockHttpResponse = new MockHttpServletResponse();
-    AvatarImageResource.createAvatarImageDownloadHandler(avatars, 12L, revision, false)
+
+    AvatarImageResource.createAvatarImageDownloadHandler(
+            userAvatarService, 12L, avatarRevisionUuid, false)
         .handleRequest(
             new VaadinServletRequest(new MockHttpServletRequest(), vaadinServletService),
             new VaadinServletResponse(mockHttpResponse, vaadinServletService),
             mock(VaadinSession.class),
             new Element("img"));
 
-    assertEquals(code, mockHttpResponse.getStatus());
+    assertEquals(httpStatusCode, mockHttpResponse.getStatus());
     assertEquals(0, mockHttpResponse.getContentAsByteArray().length);
     assertEquals("private, no-store", mockHttpResponse.getHeader("Cache-Control"));
   }

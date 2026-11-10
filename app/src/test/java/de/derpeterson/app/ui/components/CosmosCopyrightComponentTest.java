@@ -14,32 +14,36 @@ import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 
 class CosmosCopyrightComponentTest {
-  private static final Clock CLOCK =
+  private static final Clock COPYRIGHT_CLOCK =
       Clock.fixed(Instant.parse("2031-01-01T12:00:00Z"), ZoneOffset.UTC);
 
-  private CosmosCopyrightComponent copyright(String text) {
+  private CosmosCopyrightComponent createCopyrightComponent(String copyrightTemplateText) {
     ConfigService configService = mock(ConfigService.class);
     when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Example & Company");
-    when(configService.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn(text);
-    return new CosmosCopyrightComponent(configService, CLOCK, null);
+    when(configService.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn(copyrightTemplateText);
+
+    return new CosmosCopyrightComponent(configService, COPYRIGHT_CLOCK, null);
   }
 
   @Test
   void configuredCopyrightUsesTheInjectedYearAndServiceName() {
-    assertEquals("© 2031 Example & Company", copyright("© {year} {serviceName}").getText());
+    assertEquals(
+        "© 2031 Example & Company", createCopyrightComponent("© {year} {serviceName}").getText());
   }
 
   @Test
   void configurationIsRenderedAsPlainTextWithoutHtmlElements() {
-    CosmosCopyrightComponent footer = copyright("<b>{serviceName}</b> & <script>alert(1)</script>");
+    CosmosCopyrightComponent copyrightComponent =
+        createCopyrightComponent("<b>{serviceName}</b> & <script>alert(1)</script>");
 
-    assertEquals("<b>Example & Company</b> & <script>alert(1)</script>", footer.getText());
-    assertEquals(1, footer.getElement().getChildCount());
-    assertTrue(footer.getElement().getChild(0).isTextNode());
+    assertEquals(
+        "<b>Example & Company</b> & <script>alert(1)</script>", copyrightComponent.getText());
+    assertEquals(1, copyrightComponent.getElement().getChildCount());
+    assertTrue(copyrightComponent.getElement().getChild(0).isTextNode());
   }
 
   @Test
   void blankCopyrightHidesTheFooter() {
-    assertFalse(copyright("  ").isVisible());
+    assertFalse(createCopyrightComponent("  ").isVisible());
   }
 }
