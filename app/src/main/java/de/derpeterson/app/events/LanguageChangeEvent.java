@@ -11,12 +11,12 @@ public class LanguageChangeEvent extends ComponentEvent<UI> {
 
   private final Locale newLocale;
 
-  public LanguageChangeEvent(UI source, Locale newLocale) {
-    super(source, false);
+  public LanguageChangeEvent(UI sourceUi, Locale newLocale) {
+    super(sourceUi, false);
     this.newLocale = newLocale;
   }
 
-  public static void fire(UI ui, Locale newLocale) {
-    ComponentUtil.fireEvent(ui, new LanguageChangeEvent(ui, newLocale));
+  public static void fire(UI targetUi, Locale newLocale) {
+    ComponentUtil.fireEvent(targetUi, new LanguageChangeEvent(targetUi, newLocale));
   }
 }

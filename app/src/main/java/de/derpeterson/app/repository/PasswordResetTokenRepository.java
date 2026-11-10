@@ -19,7 +19,7 @@ public interface PasswordResetTokenRepository
 
   // Resolve the account without loading a token/user before acquiring its lock.
   @Query("select t.userEntity.id from PasswordResetTokenEntity t where t.token = :token")
-  Optional<Long> findUserIdByToken(@Param("token") String token);
+  Optional<Long> findUserIdByToken(@Param("token") String passwordResetToken);
 
   Optional<PasswordResetTokenEntity> findByTokenAndStatus(String token, TokenStatus status);
 

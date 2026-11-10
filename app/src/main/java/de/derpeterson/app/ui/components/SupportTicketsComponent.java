@@ -376,7 +376,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     claimTicketButton.addClickListener(event ->
         perform(
             () ->
-                supportTicketService.claim(
+                supportTicketService.claimTicket(
                     httpRequest, selectedTicket.id(), selectedTicket.version()),
             messageProperties::getSupportSaved,
             false));
@@ -387,7 +387,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
         boolean privateNote = administration && isInternalNote();
         perform(
             () ->
-                supportTicketService.reply(
+                supportTicketService.replyToTicket(
                     httpRequest,
                     selectedTicket.id(),
                     selectedTicket.version(),
@@ -406,9 +406,9 @@ public final class SupportTicketsComponent extends VerticalLayout {
         perform(
             () ->
                 administration
-                    ? supportTicketService.close(
+                    ? supportTicketService.closeTicketAsAdministrator(
                         httpRequest, selectedTicket.id(), selectedTicket.version())
-                    : supportTicketService.closeOwn(
+                    : supportTicketService.closeOwnTicket(
                         httpRequest, selectedTicket.id(), selectedTicket.version()),
             messageProperties::getSupportSaved,
             true));
@@ -802,7 +802,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   private boolean openTicket(String number, boolean directJump) {
     List<Ticket> ticketsToDisplay =
-        administration ? List.of() : supportTicketService.list(httpRequest, false);
+        administration ? List.of() : supportTicketService.listTicketsForViewer(httpRequest, false);
     Ticket matchingTicket =
         administration
             ? supportTicketService.findForAdministration(httpRequest, number)
@@ -825,11 +825,12 @@ public final class SupportTicketsComponent extends VerticalLayout {
     if (administration) {
       if (matchingTicket != null) {
         currentPage =
-            supportTicketService.pageFor(
+            supportTicketService.findTicketPageIndex(
                 httpRequest, matchingTicket.id(), inboxQuery().filter(), pageSize);
       }
       selectedTicket = matchingTicket;
-      applyInbox(supportTicketService.inbox(httpRequest, selectedTicketId(), inboxQuery()));
+      applyInbox(
+          supportTicketService.loadTicketInbox(httpRequest, selectedTicketId(), inboxQuery()));
       if (matchingTicket == null) {
         failed(messageProperties::getSupportTicketUnavailable);
       }
@@ -961,9 +962,11 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private void refreshTicketWorkspace(boolean notifySuccess) {
     try {
       if (administration) {
-        applyInbox(supportTicketService.inbox(httpRequest, selectedTicketId(), inboxQuery()));
+        applyInbox(
+            supportTicketService.loadTicketInbox(httpRequest, selectedTicketId(), inboxQuery()));
       } else {
-        List<Ticket> ticketsToDisplay = supportTicketService.list(httpRequest, false);
+        List<Ticket> ticketsToDisplay =
+            supportTicketService.listTicketsForViewer(httpRequest, false);
         applyTickets(
             ticketsToDisplay,
             SupportTicketService.selectTicket(ticketsToDisplay, selectedTicketId(), false));
@@ -1153,7 +1156,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
     List<Reply> messages =
         selectedTicket == null
             ? List.of()
-            : supportTicketService.conversation(httpRequest, selectedTicket.id(), administration);
+            : supportTicketService.loadTicketConversation(
+                httpRequest, selectedTicket.id(), administration);
     UserIdentity requester =
         !administration && !messages.isEmpty()
             ? supportTicketService.requesterIdentity(httpRequest)
@@ -1597,7 +1601,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
               AppIcon.ENVELOPE::create),
           () -> {
             try {
-              supportTicketService.sendInstructions(httpRequest, target.id(), target.version());
+              supportTicketService.sendTicketRecoveryInstructions(
+                  httpRequest, target.id(), target.version());
               refreshTicketWorkspace();
               NotificationHelper.getInstance()
                   .showNotification(

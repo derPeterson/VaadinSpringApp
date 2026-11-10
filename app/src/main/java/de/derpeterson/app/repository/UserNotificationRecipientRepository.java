@@ -70,9 +70,9 @@ public interface UserNotificationRecipientRepository
   @Query(
       "select r.id as id, m.type as type, m.title as title, m.body as body, m.supportTicketNumber as supportTicketNumber, m.createdAt as createdAt, r.readAt as readAt, r.relevance as relevance from UserNotificationRecipientEntity r join r.notification m where r.user.id = :owner and r.dismissedAt is null and (:cutoff is null or m.createdAt >= :cutoff) and (:read is null or (:read = true and r.readAt is not null) or (:read = false and r.readAt is null and r.relevance = de.derpeterson.app.model.enums.UserNotificationRelevance.ACTIVE)) order by r.id desc")
   Page<InboxRow> inbox(
-      @Param("owner") Long owner,
+      @Param("owner") Long ownerUserId,
       @Param("read") Boolean read,
-      @Param("cutoff") Instant cutoff,
+      @Param("cutoff") Instant inboxCutoffTime,
       Pageable page);
 
   @Query(
@@ -89,45 +89,52 @@ public interface UserNotificationRecipientRepository
   @Query(
       "select r.id as id, m.type as type, m.title as title, m.body as body, m.supportTicketNumber as supportTicketNumber, m.createdAt as createdAt, r.readAt as readAt, r.relevance as relevance from UserNotificationRecipientEntity r join r.notification m where r.user.id = :owner and r.dismissedAt is null and (:cutoff is null or m.createdAt >= :cutoff) and (:read is null or (:read = true and r.readAt is not null) or (:read = false and r.readAt is null and r.relevance = de.derpeterson.app.model.enums.UserNotificationRelevance.ACTIVE)) and (lower(coalesce(m.title, '')) like :pattern escape '!' or lower(coalesce(m.body, '')) like :pattern escape '!' or lower(coalesce(m.supportTicketNumber, '')) like :pattern escape '!' or m.type in :matchingTypes) order by r.id desc")
   Page<InboxRow> searchInbox(
-      @Param("owner") Long owner,
+      @Param("owner") Long ownerUserId,
       @Param("read") Boolean read,
-      @Param("cutoff") Instant cutoff,
+      @Param("cutoff") Instant inboxCutoffTime,
       @Param("pattern") String pattern,
       @Param("matchingTypes") Collection<UserNotificationType> matchingTypes,
       Pageable page);
 
   @Query(
       "select count(r) from UserNotificationRecipientEntity r where r.user.id = :owner and r.dismissedAt is null and (:cutoff is null or r.notification.createdAt >= :cutoff)")
-  long countVisible(@Param("owner") Long owner, @Param("cutoff") Instant cutoff);
+  long countVisible(@Param("owner") Long ownerUserId, @Param("cutoff") Instant inboxCutoffTime);
 
   @Query(
       "select count(r) from UserNotificationRecipientEntity r where r.user.id = :owner and r.dismissedAt is null and r.readAt is null and r.relevance = de.derpeterson.app.model.enums.UserNotificationRelevance.ACTIVE and (:cutoff is null or r.notification.createdAt >= :cutoff)")
-  long countUnread(@Param("owner") Long owner, @Param("cutoff") Instant cutoff);
+  long countUnread(@Param("owner") Long ownerUserId, @Param("cutoff") Instant inboxCutoffTime);
 
   @Query(
       "select count(r) from UserNotificationRecipientEntity r where r.user.id = :owner and r.dismissedAt is null and r.readAt is not null and (:cutoff is null or r.notification.createdAt >= :cutoff)")
-  long countRead(@Param("owner") Long owner, @Param("cutoff") Instant cutoff);
+  long countRead(@Param("owner") Long ownerUserId, @Param("cutoff") Instant inboxCutoffTime);
 
   @Query(
       "select r.id from UserNotificationRecipientEntity r where r.user.id = :owner and r.dismissedAt is null and r.readAt is null and r.relevance = de.derpeterson.app.model.enums.UserNotificationRelevance.ACTIVE and (:cutoff is null or r.notification.createdAt >= :cutoff)")
-  List<Long> unreadIds(@Param("owner") Long owner, @Param("cutoff") Instant cutoff);
+  List<Long> unreadIds(@Param("owner") Long ownerUserId, @Param("cutoff") Instant inboxCutoffTime);
 
   @Modifying
   @Query(
       "update UserNotificationRecipientEntity r set r.readAt = :now where r.user.id = :owner and r.id in :ids and r.dismissedAt is null and r.readAt is null")
   int markRead(
-      @Param("owner") Long owner, @Param("ids") Collection<Long> ids, @Param("now") Instant now);
+      @Param("owner") Long ownerUserId,
+      @Param("ids") Collection<Long> notificationIds,
+      @Param("now") Instant currentTime);
 
   @Modifying
   @Query(
       "update UserNotificationRecipientEntity r set r.dismissedAt = :now where r.user.id = :owner and r.id = :id and r.dismissedAt is null")
-  int dismiss(@Param("owner") Long owner, @Param("id") Long id, @Param("now") Instant now);
+  int dismiss(
+      @Param("owner") Long ownerUserId,
+      @Param("id") Long notificationId,
+      @Param("now") Instant currentTime);
 
   @Modifying
   @Query(
       "update UserNotificationRecipientEntity r set r.dismissedAt = :now where r.user.id = :owner and r.dismissedAt is null and r.readAt is not null and (:cutoff is null or r.notification.id in (select n.id from UserNotificationEntity n where n.createdAt >= :cutoff))")
   int dismissRead(
-      @Param("owner") Long owner, @Param("cutoff") Instant cutoff, @Param("now") Instant now);
+      @Param("owner") Long ownerUserId,
+      @Param("cutoff") Instant inboxCutoffTime,
+      @Param("now") Instant currentTime);
 
   @Query(
       "select r.user.id from UserNotificationRecipientEntity r where r.notification.id = :notification order by r.user.id")

@@ -44,8 +44,9 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   private boolean loading;
   private SerializableRunnable changeListener = () -> {};
   private final Button decreaseDurationButton =
-      new Button(AppIcon.MINUS.create(), event -> step(-1));
-  private final Button increaseDurationButton = new Button(AppIcon.PLUS.create(), event -> step(1));
+      new Button(AppIcon.MINUS.create(), event -> stepDurationValue(-1));
+  private final Button increaseDurationButton =
+      new Button(AppIcon.PLUS.create(), event -> stepDurationValue(1));
 
   public AdminDurationField(MessageProperties messageProperties) {
     this(messageProperties, Storage.SECONDS);
@@ -77,17 +78,17 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     } else {
       add(durationAmountField, durationUnitSelector);
     }
-    durationAmountField.addValueChangeListener(event -> changed());
-    preciseDurationField.addValueChangeListener(event -> changed());
+    durationAmountField.addValueChangeListener(event -> publishDurationChange());
+    preciseDurationField.addValueChangeListener(event -> publishDurationChange());
     durationUnitSelector.addValueChangeListener(event -> {
       updateLimits();
-      changed();
+      publishDurationChange();
     });
     refreshTexts();
     updateLimits();
   }
 
-  private void step(int direction) {
+  private void stepDurationValue(int direction) {
     BigDecimal current = preciseDurationField.getValue();
     preciseDurationField.setValue(
         (current == null ? BigDecimal.ZERO : current).add(BigDecimal.valueOf(direction)));
@@ -127,7 +128,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
         durationAmountField.clear();
         return;
       }
-      BigDecimal seconds = decode(value);
+      BigDecimal seconds = parseDurationValue(value);
       Unit selected = storage == Storage.DAYS ? Unit.DAYS : exactUnit(seconds);
       durationUnitSelector.setValue(selected);
       BigDecimal number = seconds.divide(BigDecimal.valueOf(selected.seconds)).stripTrailingZeros();
@@ -142,7 +143,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     }
   }
 
-  private BigDecimal decode(String value) {
+  private BigDecimal parseDurationValue(String value) {
     if (storage != Storage.DURATION) {
       return new BigDecimal(value)
           .multiply(BigDecimal.valueOf(storage == Storage.DAYS ? 86400 : 1));
@@ -152,7 +153,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   }
 
   public String getSecondsValue() {
-    BigDecimal number = number();
+    BigDecimal number = readDurationValue();
     return number == null
         ? ""
         : number
@@ -162,7 +163,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
 
   /** Ungültige Werte erreichen die vorhandene Prüfung und werden niemals zum Standardwert. */
   public String getStoredValue() {
-    BigDecimal current = number();
+    BigDecimal current = readDurationValue();
     if (current == null) {
       return "";
     }
@@ -190,13 +191,13 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     changeListener = listener;
   }
 
-  private void changed() {
+  private void publishDurationChange() {
     if (!loading) {
       changeListener.run();
     }
   }
 
-  private BigDecimal number() {
+  private BigDecimal readDurationValue() {
     if (storage == Storage.DURATION) {
       return preciseDurationField.getValue();
     }
@@ -217,7 +218,9 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     }
     try {
       BigDecimal placeholder =
-          decode(defaultValue).divide(BigDecimal.valueOf(selected.seconds)).stripTrailingZeros();
+          parseDurationValue(defaultValue)
+              .divide(BigDecimal.valueOf(selected.seconds))
+              .stripTrailingZeros();
       if (storage == Storage.DURATION) {
         preciseDurationField.setPlaceholder(placeholder.toPlainString());
       } else {
@@ -244,13 +247,13 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     if (value.isBlank()) {
       return messageProperties.getAdminConfigDefaultEmpty();
     }
-    BigDecimal seconds = decode(value);
+    BigDecimal seconds = parseDurationValue(value);
     Unit selected = storage == Storage.DAYS ? Unit.DAYS : exactUnit(seconds);
-    return format(seconds.divide(BigDecimal.valueOf(selected.seconds)), selected);
+    return formatDurationValue(seconds.divide(BigDecimal.valueOf(selected.seconds)), selected);
   }
 
   public String getDisplayValue() {
-    BigDecimal current = number();
+    BigDecimal current = readDurationValue();
     if (current == null) {
       if (storage == Storage.DAYS) {
         return messageProperties.getAdminConfigUnlimited();
@@ -260,24 +263,26 @@ public class AdminDurationField extends Div implements HasAriaLabel {
           : messageProperties.getAdminConfigDurationInvalid();
     }
     return validAmount()
-        ? format(current, durationUnitSelector.getValue())
+        ? formatDurationValue(current, durationUnitSelector.getValue())
         : messageProperties.getAdminConfigDurationInvalid();
   }
 
   public String getEquivalentValue() {
-    if (number() == null && storage == Storage.DAYS) {
+    if (readDurationValue() == null && storage == Storage.DAYS) {
       return messageProperties.getAdminConfigUnlimited();
     }
     if (!validAmount()) {
       return messageProperties.getAdminConfigDurationInvalid();
     }
     BigDecimal seconds =
-        number() == null ? decode(defaultValue) : new BigDecimal(getSecondsValue());
+        readDurationValue() == null
+            ? parseDurationValue(defaultValue)
+            : new BigDecimal(getSecondsValue());
     return messageProperties.getAdminConfigDurationSeconds(seconds.stripTrailingZeros());
   }
 
   private boolean validAmount() {
-    BigDecimal current = number();
+    BigDecimal current = readDurationValue();
     if (current == null) {
       return storage != Storage.DURATION;
     }
@@ -289,7 +294,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
         && value.compareTo(BigDecimal.valueOf(Integer.MAX_VALUE)) <= 0;
   }
 
-  private String format(BigDecimal value, Unit selected) {
+  private String formatDurationValue(BigDecimal value, Unit selected) {
     BigDecimal normalized = value.stripTrailingZeros();
     return switch (selected) {
       case SECONDS -> messageProperties.getAdminConfigDurationSeconds(normalized);

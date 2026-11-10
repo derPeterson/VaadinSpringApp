@@ -15,23 +15,26 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 @Component
 @RequiredArgsConstructor
 public class UserRoleChanges {
-  private final UserNotificationService notifications;
-  private final UserRepository users;
-  private final UserRoleBroadcaster events;
+  private final UserNotificationService userNotificationService;
+  private final UserRepository userRepository;
+  private final UserRoleBroadcaster userRoleBroadcaster;
 
   @EventListener
   @Transactional(propagation = Propagation.MANDATORY)
-  public void changed(UserRolesChanged change) {
-    if (change.before().equals(change.after())) {
+  public void changed(UserRolesChanged userRolesChangedEvent) {
+    if (userRolesChangedEvent
+        .rolesBeforeChange()
+        .equals(userRolesChangedEvent.rolesAfterChange())) {
       return;
     }
-    notifications.recordSecurityEvent(
-        users.getReferenceById(change.userId()), UserNotificationType.ROLES_CHANGED);
+    userNotificationService.recordSecurityEvent(
+        userRepository.getReferenceById(userRolesChangedEvent.userId()),
+        UserNotificationType.ROLES_CHANGED);
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override
           public void afterCommit() {
-            events.publish(change.userId());
+            userRoleBroadcaster.publish(userRolesChangedEvent.userId());
           }
         });
   }

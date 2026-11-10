@@ -35,10 +35,15 @@ public final class LogSafety {
           copy(originalFailure.getCause(), logSafeFailuresByOriginal, causeDepth + 1));
     }
     Throwable[] suppressedFailures = originalFailure.getSuppressed();
-    for (int i = 0; i < Math.min(suppressedFailures.length, 8); i++) {
-      if (suppressedFailures[i] != originalFailure) {
+    for (int suppressedFailureIndex = 0;
+        suppressedFailureIndex < Math.min(suppressedFailures.length, 8);
+        suppressedFailureIndex++) {
+      if (suppressedFailures[suppressedFailureIndex] != originalFailure) {
         logSafeFailure.addSuppressed(
-            copy(suppressedFailures[i], logSafeFailuresByOriginal, causeDepth + 1));
+            copy(
+                suppressedFailures[suppressedFailureIndex],
+                logSafeFailuresByOriginal,
+                causeDepth + 1));
       }
     }
     return logSafeFailure;

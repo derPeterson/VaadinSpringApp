@@ -295,10 +295,16 @@ public class UserNotificationService {
     List<Long> snapshot = List.copyOf(ids);
     // Kleine IN-Blöcke statt einer datenbankabhängigen Obergrenze bei langen Historien.
     int changed = 0;
-    for (int i = 0; i < snapshot.size(); i += 500) {
+    for (int recipientBatchStartIndex = 0;
+        recipientBatchStartIndex < snapshot.size();
+        recipientBatchStartIndex += 500) {
       changed +=
           userNotificationRecipientRepository.markRead(
-              owner, snapshot.subList(i, Math.min(i + 500, snapshot.size())), Instant.now());
+              owner,
+              snapshot.subList(
+                  recipientBatchStartIndex,
+                  Math.min(recipientBatchStartIndex + 500, snapshot.size())),
+              Instant.now());
     }
     if (changed > 0) {
       AfterCommitLog.debug(log, "Notifications marked read: userId={}, count={}", owner, changed);
@@ -414,7 +420,7 @@ public class UserNotificationService {
     notificationEntity.setBody(notificationBody);
     notificationEntity.setSender(senderUser);
     notificationEntity.setBroadcast(preview.selection().everyone());
-    create(
+    persistNotificationAndRecipients(
         notificationEntity,
         selectedRecipientTargets.stream()
             .map(recipientTarget -> userRepository.getReferenceById(recipientTarget.id()))
@@ -461,7 +467,7 @@ public class UserNotificationService {
     UserNotificationEntity m = new UserNotificationEntity();
     m.setRequestKey("security:" + UUID.randomUUID());
     m.setType(type);
-    create(m, List.of(user));
+    persistNotificationAndRecipients(m, List.of(user));
   }
 
   @Transactional(propagation = Propagation.MANDATORY)
@@ -475,7 +481,7 @@ public class UserNotificationService {
     event.setType(UserNotificationType.RECOVERY_REQUEST);
     event.setSupportTicketNumber(ticketNumber);
     event.setSupportReplyId(replyId);
-    create(event, administrators);
+    persistNotificationAndRecipients(event, administrators);
   }
 
   @Transactional(propagation = Propagation.MANDATORY)
@@ -485,7 +491,7 @@ public class UserNotificationService {
     event.setType(UserNotificationType.SUPPORT_REPLY);
     event.setSupportTicketNumber(ticketNumber);
     event.setSupportReplyId(replyId);
-    create(event, viewers);
+    persistNotificationAndRecipients(event, viewers);
   }
 
   /** Der Ticketdienst hält die Vorgangssperre; Zustandswechsel und Hinweise committen gemeinsam. */
@@ -516,7 +522,7 @@ public class UserNotificationService {
     event.setType(UserNotificationType.SUPPORT_REQUESTER_CLOSED);
     event.setSupportTicketNumber(number);
     event.setSupportTicketVersion(version);
-    create(event, viewers);
+    persistNotificationAndRecipients(event, viewers);
   }
 
   /**
@@ -533,7 +539,8 @@ public class UserNotificationService {
     return true;
   }
 
-  private void create(UserNotificationEntity m, List<UserEntity> selected) {
+  private void persistNotificationAndRecipients(
+      UserNotificationEntity m, List<UserEntity> selected) {
     m.setCreatedAt(Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MILLIS));
     m.setRecipientCount(selected.size());
     userNotificationRepository.saveAndFlush(m);

@@ -32,7 +32,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   }
 
   @Query("select u from UserEntity u where u.email = :email")
-  Optional<UserEntity> findByCanonicalEmail(@Param("email") String email);
+  Optional<UserEntity> findByCanonicalEmail(@Param("email") String canonicalEmailAddress);
 
   default boolean emailExistsForOtherUser(String email, Long id) {
     return canonicalEmailExistsForOtherUser(EmailIdentity.canonicalize(email), id);
@@ -41,18 +41,19 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   @Query(
       "select count(u) > 0 from UserEntity u where u.email = :email and (:id is null or u.id <> :id)")
   @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
-  boolean canonicalEmailExistsForOtherUser(@Param("email") String email, @Param("id") Long id);
+  boolean canonicalEmailExistsForOtherUser(
+      @Param("email") String canonicalEmailAddress, @Param("id") Long userId);
 
   // A single existing, unique role row serializes privilege mutations across
   // application instances. Do not flush already edited managed users first.
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select r from RoleEntity r where r.name = :role")
   @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
-  Optional<RoleEntity> lockRole(@Param("role") RoleType role);
+  Optional<RoleEntity> lockRole(@Param("role") RoleType roleType);
 
   @Query("select r.name from UserEntity u join u.roleEntities r where u.id = :id")
   @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
-  List<RoleType> findExplicitRoles(@Param("id") Long id);
+  List<RoleType> findExplicitRoles(@Param("id") Long userId);
 
   interface NotificationTargetRow {
     Long getId();
@@ -114,16 +115,16 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
   @Query(SECURITY_USER_QUERY)
-  List<SecurityUserRow> findCanonicalSecurityUser(@Param("email") String email);
+  List<SecurityUserRow> findCanonicalSecurityUser(@Param("email") String canonicalEmailAddress);
 
   // The password guard already owns a fresh independent transaction. Reuse its connection
   // instead of exhausting the pool with a second connection for each locked login row.
   @Transactional(readOnly = true, propagation = Propagation.MANDATORY)
   @Query(SECURITY_USER_QUERY)
-  List<SecurityUserRow> findPasswordSecurityUser(@Param("email") String email);
+  List<SecurityUserRow> findPasswordSecurityUser(@Param("email") String canonicalEmailAddress);
 
   @Query("select count(i) > 0 from ExternalIdentityEntity i where i.user.id = :id")
-  boolean hasExternalSignIn(@Param("id") Long id);
+  boolean hasExternalSignIn(@Param("id") Long userId);
 
   default Optional<UserEntity> findByEmailForUpdate(String email) {
     return findByCanonicalEmailForUpdate(EmailIdentity.canonicalize(email));
@@ -131,18 +132,18 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select u from UserEntity u where u.email = :email")
-  Optional<UserEntity> findByCanonicalEmailForUpdate(@Param("email") String email);
+  Optional<UserEntity> findByCanonicalEmailForUpdate(@Param("email") String canonicalEmailAddress);
 
   @Lock(LockModeType.PESSIMISTIC_WRITE)
   @Query("select u from UserEntity u where u.id = :id")
   @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
-  Optional<UserEntity> findByIdForUpdate(@Param("id") Long id);
+  Optional<UserEntity> findByIdForUpdate(@Param("id") Long userId);
 
   // Bulk update deliberately bypasses entity version checks/increments. Flush any
   // pending login status first; do not clear unrelated managed entities.
   @Modifying(flushAutomatically = true)
   @Query("update UserEntity u set u.lastActivity = :activity where u.id = :id")
-  int updateLastActivity(@Param("id") Long id, @Param("activity") Instant activity);
+  int updateLastActivity(@Param("id") Long userId, @Param("activity") Instant lastActivityTime);
 
   @Override
   @EntityGraph(attributePaths = "roleEntities")
@@ -153,7 +154,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   @Query(
       "select distinct u.id from UserEntity u join u.roleEntities r where u.enabled = true and r.name = :role")
   @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
-  List<Long> findEnabledUserIdsByRole(@Param("role") RoleType role);
+  List<Long> findEnabledUserIdsByRole(@Param("role") RoleType roleType);
 
   List<UserEntity> findByLastActivityBeforeAndStatus(Instant lastActivity, UserStatus status);
 

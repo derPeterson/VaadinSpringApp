@@ -249,7 +249,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     info.addClassName("cosmos-config-save-hint");
     reloadPolicyButton.setId("two-factor-reload");
     reloadPolicyButton.setPrefixComponent(AppIcon.REFRESH.create());
-    reloadPolicyButton.addClickListener(event -> reload());
+    reloadPolicyButton.addClickListener(event -> reloadTwoFactorPolicy());
     savePolicyButton.setId("two-factor-save");
     savePolicyButton.setPrefixComponent(AppIcon.CHECK.create());
     savePolicyButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -395,7 +395,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     developmentGoogle.setValue(twoFactorPolicySnapshot.policy().developmentGoogleConfirmation());
   }
 
-  private void reload() {
+  private void reloadTwoFactorPolicy() {
     try {
       activate();
       NotificationHelper.getInstance()
@@ -403,7 +403,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
               messageProperties::getAdminConfigReloadSuccess,
               NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException failure) {
-      failure(failure);
+      showTwoFactorPolicyFailure(failure);
     }
   }
 
@@ -434,27 +434,27 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       long revision = twoFactorPolicySnapshot.revision();
       if (twoFactorAuthorization.requires(httpRequest, TwoFactorAction.SECURITY_CONFIGURATION)) {
         twoFactorConfirmationDialog.open(
-            TwoFactorAction.SECURITY_CONFIGURATION, () -> save(revision, desired));
+            TwoFactorAction.SECURITY_CONFIGURATION, () -> saveTwoFactorPolicy(revision, desired));
       } else {
-        save(revision, desired);
+        saveTwoFactorPolicy(revision, desired);
       }
     } catch (RuntimeException failure) {
-      failure(failure);
+      showTwoFactorPolicyFailure(failure);
     }
   }
 
-  private void save(long revision, TwoFactorPolicy desired) {
+  private void saveTwoFactorPolicy(long revision, TwoFactorPolicy desired) {
     try {
       twoFactorPolicySnapshot = twoFactorPolicies.save(httpRequest, revision, desired);
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getTwoFactorSaved, NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException failure) {
-      failure(failure);
+      showTwoFactorPolicyFailure(failure);
     }
   }
 
-  private void failure(RuntimeException failure) {
+  private void showTwoFactorPolicyFailure(RuntimeException failure) {
     NotificationHelper.getInstance()
         .showNotification(
             messageProperties::getBaseFailedTitle,

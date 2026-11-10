@@ -15,7 +15,7 @@ import org.springframework.stereotype.Repository;
 public interface VerificationTokenRepository extends JpaRepository<VerificationTokenEntity, Long> {
 
   @Query("select t.userEntity.id from VerificationTokenEntity t where t.token = :token")
-  Optional<Long> findUserIdByToken(@Param("token") String token);
+  Optional<Long> findUserIdByToken(@Param("token") String verificationToken);
 
   Optional<VerificationTokenEntity> findByToken(String token);
 

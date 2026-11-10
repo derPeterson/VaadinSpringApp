@@ -16,7 +16,9 @@ public interface UserNotificationRepository extends JpaRepository<UserNotificati
   @Query(
       "select m from UserNotificationEntity m where m.sender.id = :sender and (:cutoff is null or m.createdAt >= :cutoff) order by m.id desc")
   Page<UserNotificationEntity> sent(
-      @Param("sender") Long sender, @Param("cutoff") Instant cutoff, Pageable page);
+      @Param("sender") Long senderUserId,
+      @Param("cutoff") Instant historyCutoffTime,
+      Pageable page);
 
   @Modifying
   @Query(

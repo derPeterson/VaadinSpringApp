@@ -66,7 +66,7 @@ public final class SupportTicketActivityIndicator extends Badge {
 
   private void refreshUnreadTicketIndicator() {
     try {
-      Activity state = supportTicketService.activity(httpSession);
+      Activity state = supportTicketService.loadTicketActivity(httpSession);
       viewerId = state.viewerId();
       setVisible(state.unread());
     } catch (RuntimeException _) {

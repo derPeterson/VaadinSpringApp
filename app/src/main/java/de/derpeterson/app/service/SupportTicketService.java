@@ -134,8 +134,8 @@ public class SupportTicketService {
   }
 
   @Transactional(readOnly = true)
-  public UserIdentity requesterIdentity(HttpServletRequest request) {
-    return requesterIdentity(twoFactorAuthorization.owner(request).id());
+  public UserIdentity requesterIdentity(HttpServletRequest httpRequest) {
+    return requesterIdentity(twoFactorAuthorization.owner(httpRequest).id());
   }
 
   private UserIdentity requesterIdentity(Long id) {
@@ -147,22 +147,25 @@ public class SupportTicketService {
   }
 
   @Transactional(readOnly = true)
-  public List<Ticket> list(HttpServletRequest request, boolean administration) {
+  public List<Ticket> listTicketsForViewer(HttpServletRequest httpRequest, boolean administration) {
     Owner owner =
-        administration ? requireAdministrator(request) : twoFactorAuthorization.owner(request);
-    return list(owner, administration);
+        administration
+            ? requireAdministrator(httpRequest)
+            : twoFactorAuthorization.owner(httpRequest);
+    return listTicketsForViewer(owner, administration);
   }
 
-  private List<Ticket> list(Owner owner, boolean administration) {
+  private List<Ticket> listTicketsForViewer(Owner owner, boolean administration) {
     return administration
         ? inboxView(owner, null, InboxQuery.all()).visibleTickets()
-        : views(owner, supportTicketRepository.own(owner.id(), PageRequest.of(0, 20)), false);
+        : buildTicketViews(
+            owner, supportTicketRepository.own(owner.id(), PageRequest.of(0, 20)), false);
   }
 
   /** Direkter Zugriff bleibt auf berechtigte Admins beschränkt, auch außerhalb der letzten 100. */
   @Transactional(readOnly = true)
-  public Ticket findForAdministration(HttpServletRequest request, String number) {
-    Owner owner = requireAdministrator(request);
+  public Ticket findForAdministration(HttpServletRequest httpRequest, String number) {
+    Owner owner = requireAdministrator(httpRequest);
     // Nur die sichtbare Dezimalnummer ohne Raute, Leerzeichen oder weitere URL-Anteile zulassen.
     if (number == null || !number.matches("\\d{1,19}")) {
       return null;
@@ -186,11 +189,11 @@ public class SupportTicketService {
     }
     return supportTicketRepository
         .findById(id)
-        .map(ticket -> views(owner, List.of(ticket), administration).getFirst())
+        .map(ticket -> buildTicketViews(owner, List.of(ticket), administration).getFirst())
         .orElse(null);
   }
 
-  private List<Ticket> views(
+  private List<Ticket> buildTicketViews(
       Owner owner, List<SupportTicketEntity> visible, boolean administration) {
     if (visible.isEmpty()) {
       return List.of();
@@ -205,7 +208,7 @@ public class SupportTicketService {
             : Set.of();
     return visible.stream()
         .map(ticket ->
-            view(
+            buildTicketView(
                 ticket,
                 administration ? ticket.getUpdatedAt() : ticket.getPublicUpdatedAt(),
                 unreadVisible(owner, ticket, administration, subscribed)
@@ -231,20 +234,20 @@ public class SupportTicketService {
         || subscribed.contains(ticket.getId()) && owner.roles().contains(RoleType.ROLE_SUPERADMIN);
   }
 
-  public Long administratorId(HttpServletRequest request) {
-    return requireAdministrator(request).id();
+  public Long administratorId(HttpServletRequest httpRequest) {
+    return requireAdministrator(httpRequest).id();
   }
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
-  public LiveView liveView(HttpSession session, boolean administration, Long selectedId) {
+  public LiveView liveView(HttpSession httpSession, boolean administration, Long selectedId) {
     return liveView(
-        liveViewer(session, administration), administration, selectedId, InboxQuery.all());
+        liveViewer(httpSession, administration), administration, selectedId, InboxQuery.all());
   }
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
   public LiveView liveView(
-      HttpSession session, boolean administration, Long selectedId, InboxQuery query) {
-    return liveView(liveViewer(session, administration), administration, selectedId, query);
+      HttpSession httpSession, boolean administration, Long selectedId, InboxQuery query) {
+    return liveView(liveViewer(httpSession, administration), administration, selectedId, query);
   }
 
   private LiveView liveView(
@@ -252,31 +255,35 @@ public class SupportTicketService {
     if (administration) {
       return inboxView(owner, selectedId, query);
     }
-    List<Ticket> values = list(owner, false);
+    List<Ticket> values = listTicketsForViewer(owner, false);
     Ticket selected = selectTicket(values, selectedId, false);
-    List<Reply> messages = selected == null ? List.of() : conversation(selected.id(), false);
+    List<Reply> messages =
+        selected == null ? List.of() : loadTicketConversation(selected.id(), false);
     UserIdentity requester = messages.isEmpty() ? null : requesterIdentity(owner.id());
     return new LiveView(owner.id(), values, selected, messages, requester, values.size(), 0, 20);
   }
 
   @Transactional(readOnly = true)
-  public LiveView inbox(HttpServletRequest request, Long selectedId, InboxQuery query) {
-    return inboxView(requireAdministrator(request), selectedId, query);
+  public LiveView loadTicketInbox(
+      HttpServletRequest httpRequest, Long selectedId, InboxQuery query) {
+    return inboxView(requireAdministrator(httpRequest), selectedId, query);
   }
 
-  private Specification<SupportTicketEntity> matching(Owner owner, SupportTicketFilter filter) {
-    return SupportTicketSpecifications.matching(
+  private Specification<SupportTicketEntity> buildViewerTicketSpecification(
+      Owner owner, SupportTicketFilter filter) {
+    return SupportTicketSpecifications.buildTicketFilterSpecification(
         filter, owner.id(), owner.roles().contains(RoleType.ROLE_SUPERADMIN));
   }
 
   private LiveView inboxView(Owner owner, Long selectedId, InboxQuery query) {
-    Specification<SupportTicketEntity> filter = matching(owner, query.filter());
+    Specification<SupportTicketEntity> filter =
+        buildViewerTicketSpecification(owner, query.filter());
     Sort order = Sort.by(Sort.Direction.DESC, UPDATED_AT, "id");
     long total = supportTicketRepository.count(filter);
     int page = (int) Math.clamp(query.page(), 0, Math.max(0, (total - 1) / query.size()));
     Page<SupportTicketEntity> result =
         supportTicketRepository.findAll(filter, PageRequest.of(page, query.size(), order));
-    List<Ticket> values = views(owner, result.getContent(), true);
+    List<Ticket> values = buildTicketViews(owner, result.getContent(), true);
     Ticket selected =
         values.stream().filter(ticket -> ticket.id().equals(selectedId)).findFirst().orElse(null);
     if (selected == null) {
@@ -285,7 +292,8 @@ public class SupportTicketService {
     if (selected != null && !query.filter().matchesMetadata(selected, owner.id())) {
       selected = null;
     }
-    List<Reply> messages = selected == null ? List.of() : conversation(selected.id(), true);
+    List<Reply> messages =
+        selected == null ? List.of() : loadTicketConversation(selected.id(), true);
     return new LiveView(
         owner.id(),
         values,
@@ -301,8 +309,9 @@ public class SupportTicketService {
    * Ermittelt die Listenseite eines berechtigten Vorgangs unter denselben Filter-/Sortierregeln.
    */
   @Transactional(readOnly = true)
-  public int pageFor(HttpServletRequest request, Long id, SupportTicketFilter filter, int size) {
-    Owner owner = requireAdministrator(request);
+  public int findTicketPageIndex(
+      HttpServletRequest httpRequest, Long id, SupportTicketFilter filter, int size) {
+    Owner owner = requireAdministrator(httpRequest);
     new InboxQuery(filter, 0, size);
     SupportTicketEntity selected =
         supportTicketRepository
@@ -316,16 +325,18 @@ public class SupportTicketService {
                     cb.equal(ticket.get(UPDATED_AT), selected.getUpdatedAt()),
                     cb.greaterThan(ticket.get("id"), id)));
     return Math.toIntExact(
-        supportTicketRepository.count(matching(owner, filter).and(preceding)) / size);
+        supportTicketRepository.count(buildViewerTicketSpecification(owner, filter).and(preceding))
+            / size);
   }
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
-  public Activity activity(HttpSession session) {
-    Owner owner = liveViewer(session, true);
+  public Activity loadTicketActivity(HttpSession httpSession) {
+    Owner owner = liveViewer(httpSession, true);
     SupportTicketFilter unread =
         new SupportTicketFilter(
             Set.of(), SupportTicketFilter.Assignment.ALL, SupportTicketFilter.Reading.UNREAD, null);
-    return new Activity(owner.id(), supportTicketRepository.exists(matching(owner, unread)));
+    return new Activity(
+        owner.id(), supportTicketRepository.exists(buildViewerTicketSpecification(owner, unread)));
   }
 
   public static Ticket selectTicket(List<Ticket> values, Long selectedId, boolean administration) {
@@ -341,25 +352,29 @@ public class SupportTicketService {
   }
 
   @Transactional
-  public void setSubscription(HttpServletRequest request, Long id, boolean subscribed) {
-    Owner owner = requireAdministrator(request);
-    SupportTicketEntity ticket = lock(id);
+  public void setSubscription(HttpServletRequest httpRequest, Long id, boolean subscribed) {
+    Owner owner = requireAdministrator(httpRequest);
+    SupportTicketEntity ticket = lockTicketEntity(id);
     if (!canSubscribe(owner, ticket)) {
       throw new AccessDeniedException("Subscription unavailable for this ticket");
     }
-    SupportTicketViewerEntity viewer = viewer(id, owner.id());
-    if (viewer.isSubscribed() != subscribed) {
-      viewer.setSubscribed(subscribed);
-      supportTicketViewerRepository.save(viewer);
+    SupportTicketViewerEntity ticketViewerEntity = findOrBuildTicketViewerEntity(id, owner.id());
+    if (ticketViewerEntity.isSubscribed() != subscribed) {
+      ticketViewerEntity.setSubscribed(subscribed);
+      supportTicketViewerRepository.save(ticketViewerEntity);
       supportTicketBroadcaster.viewerChanged(owner.id());
     }
   }
 
   @Transactional
   public boolean markSeen(
-      HttpSession session, boolean administration, Long id, Long replyId, Long displayedVersion) {
-    Owner owner = liveViewer(session, administration);
-    SupportTicketEntity ticket = lock(id);
+      HttpSession httpSession,
+      boolean administration,
+      Long id,
+      Long replyId,
+      Long displayedVersion) {
+    Owner owner = liveViewer(httpSession, administration);
+    SupportTicketEntity ticket = lockTicketEntity(id);
     requireTicketAccess(owner, ticket, administration);
     SupportReplyEntity reply = supportReplyRepository.findById(replyId).orElse(null);
     if (reply == null
@@ -367,17 +382,19 @@ public class SupportTicketService {
         || !administration && reply.isInternal()) {
       return false;
     }
-    SupportTicketViewerEntity viewer = viewer(id, owner.id());
+    SupportTicketViewerEntity ticketViewerEntity = findOrBuildTicketViewerEntity(id, owner.id());
     long previous =
-        administration ? viewer.getAdminReadThrough() : viewer.getRequesterReadThrough();
+        administration
+            ? ticketViewerEntity.getAdminReadThrough()
+            : ticketViewerEntity.getRequesterReadThrough();
     boolean changed = replyId > previous;
     if (changed) {
       if (administration) {
-        viewer.setAdminReadThrough(replyId);
+        ticketViewerEntity.setAdminReadThrough(replyId);
       } else {
-        viewer.setRequesterReadThrough(replyId);
+        ticketViewerEntity.setRequesterReadThrough(replyId);
       }
-      supportTicketViewerRepository.save(viewer);
+      supportTicketViewerRepository.save(ticketViewerEntity);
       supportTicketBroadcaster.viewerChanged(owner.id());
     }
     boolean notificationRead =
@@ -390,7 +407,7 @@ public class SupportTicketService {
     return changed || notificationRead;
   }
 
-  private SupportTicketViewerEntity viewer(Long ticketId, Long userId) {
+  private SupportTicketViewerEntity findOrBuildTicketViewerEntity(Long ticketId, Long userId) {
     return supportTicketViewerRepository
         .findByTicketIdAndUserId(ticketId, userId)
         .orElseGet(() -> {
@@ -407,8 +424,8 @@ public class SupportTicketService {
             || ticket.getAssignee() != null && owner.id().equals(ticket.getAssignee().getId()));
   }
 
-  private Owner liveViewer(HttpSession session, boolean administration) {
-    Owner owner = twoFactorAuthorization.owner(session);
+  private Owner liveViewer(HttpSession httpSession, boolean administration) {
+    Owner owner = twoFactorAuthorization.owner(httpSession);
     boolean administrator = owner.roles().stream().anyMatch(RoleType::isAdministrative);
     MaintenanceService.State state = maintenanceService.state();
     if (!owner.verifiedContact()
@@ -416,15 +433,15 @@ public class SupportTicketService {
         || state == MaintenanceService.State.ACTIVE && !administrator
         || administration
             && (!administrator
-                || !twoFactorAuthorization.administrationConfirmed(owner, session))) {
+                || !twoFactorAuthorization.administrationConfirmed(owner, httpSession))) {
       throw new AccessDeniedException("Ticket view unavailable");
     }
     return owner;
   }
 
   @Transactional
-  public Ticket createRecovery(HttpServletRequest request, String description) {
-    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
+  public Ticket createRecovery(HttpServletRequest httpRequest, String description) {
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(httpRequest);
     UserEntity user = userRepository.findByIdForUpdate(owner.id()).orElseThrow();
     entityManager.refresh(user);
     if (!user.isEnabled()
@@ -437,7 +454,7 @@ public class SupportTicketService {
             >= 3) {
       throw new IllegalStateException("Recovery request already open or rate limited");
     }
-    String body = bounded(description, MESSAGE_LIMIT);
+    String body = validateTicketMessageText(description, MESSAGE_LIMIT);
     SupportTicketEntity ticket = new SupportTicketEntity();
     ticket.setOwner(user);
     ticket.setSubject(
@@ -448,23 +465,24 @@ public class SupportTicketService {
     supportTicketRepository.saveAndFlush(ticket);
     appendHistory(ticket, user, Kind.TICKET_CREATED, null, Status.OPEN);
     SupportReplyEntity firstReply =
-        append(ticket, user, body, ReplyAuthor.REQUESTER, false, Kind.MESSAGE);
+        appendTicketReply(ticket, user, body, ReplyAuthor.REQUESTER, false, Kind.MESSAGE);
     userNotificationService.recordRecoveryRequest(ticketNumber(ticket.getId()), firstReply.getId());
     AfterCommitLog.info(
         log,
         "Recovery support request created: ticketId={}, accountId={}",
         ticket.getId(),
         owner.id());
-    return view(ticket, false);
+    return buildTicketView(ticket, false);
   }
 
   @Transactional(readOnly = true)
-  public List<Reply> conversation(HttpServletRequest request, Long id, boolean administration) {
-    accessible(request, id, administration);
-    return conversation(id, administration);
+  public List<Reply> loadTicketConversation(
+      HttpServletRequest httpRequest, Long id, boolean administration) {
+    requireAccessibleTicketEntity(httpRequest, id, administration);
+    return loadTicketConversation(id, administration);
   }
 
-  private List<Reply> conversation(Long id, boolean administration) {
+  private List<Reply> loadTicketConversation(Long id, boolean administration) {
     return supportReplyRepository.visible(id, administration).stream()
         .map(reply ->
             new Reply(
@@ -486,9 +504,9 @@ public class SupportTicketService {
   }
 
   @Transactional
-  public Ticket claim(HttpServletRequest request, Long id, Long version) {
-    TwoFactorAuthorization.Owner administrator = requireAdministrator(request);
-    SupportTicketEntity ticket = locked(id, version);
+  public Ticket claimTicket(HttpServletRequest httpRequest, Long id, Long version) {
+    TwoFactorAuthorization.Owner administrator = requireAdministrator(httpRequest);
+    SupportTicketEntity ticket = lockTicketEntityAtVersion(id, version);
     if (!ticket.getStatus().acceptsMessages()) {
       throw new AccessDeniedException("Closed ticket cannot be claimed");
     }
@@ -508,40 +526,40 @@ public class SupportTicketService {
     userNotificationService.retireTicketNotifications(
         ticketNumber(ticket.getId()), UserNotificationRelevance.TICKET_ASSIGNED);
     supportTicketBroadcaster.ticketChanged(ticket.getOwner().getId());
-    return view(ticket, true);
+    return buildTicketView(ticket, true);
   }
 
   @Transactional
-  public Ticket reply(
-      HttpServletRequest request,
+  public Ticket replyToTicket(
+      HttpServletRequest httpRequest,
       Long id,
       Long version,
       String text,
       boolean internal,
       boolean administration) {
-    TwoFactorAuthorization.Owner actor = twoFactorAuthorization.owner(request);
-    accessible(request, id, administration);
-    SupportTicketEntity ticket = locked(id, version);
+    TwoFactorAuthorization.Owner actor = twoFactorAuthorization.owner(httpRequest);
+    requireAccessibleTicketEntity(httpRequest, id, administration);
+    SupportTicketEntity ticket = lockTicketEntityAtVersion(id, version);
     if (!ticket.getStatus().acceptsMessages() || !administration && internal) {
       throw new AccessDeniedException("Reply is not permitted");
     }
     if (administration) {
       requireAssignee(ticket, actor);
     }
-    append(
+    appendTicketReply(
         ticket,
         userRepository.getReferenceById(actor.id()),
-        bounded(text, MESSAGE_LIMIT),
+        validateTicketMessageText(text, MESSAGE_LIMIT),
         administration ? ReplyAuthor.SUPPORT : ReplyAuthor.REQUESTER,
         internal,
         Kind.MESSAGE);
-    return view(ticket, administration);
+    return buildTicketView(ticket, administration);
   }
 
   @Transactional
-  public Ticket close(HttpServletRequest request, Long id, Long version) {
-    TwoFactorAuthorization.Owner actor = requireAdministrator(request);
-    SupportTicketEntity ticket = locked(id, version);
+  public Ticket closeTicketAsAdministrator(HttpServletRequest httpRequest, Long id, Long version) {
+    TwoFactorAuthorization.Owner actor = requireAdministrator(httpRequest);
+    SupportTicketEntity ticket = lockTicketEntityAtVersion(id, version);
     if (ticket.getStatus() == Status.CLOSED) {
       throw new AccessDeniedException("Ticket already closed");
     }
@@ -554,9 +572,9 @@ public class SupportTicketService {
   }
 
   @Transactional
-  public Ticket closeOwn(HttpServletRequest request, Long id, Long version) {
-    accessible(request, id, false);
-    SupportTicketEntity ticket = locked(id, version);
+  public Ticket closeOwnTicket(HttpServletRequest httpRequest, Long id, Long version) {
+    requireAccessibleTicketEntity(httpRequest, id, false);
+    SupportTicketEntity ticket = lockTicketEntityAtVersion(id, version);
     if (!ticket.getStatus().acceptsMessages()) {
       throw new AccessDeniedException("Ticket already closed");
     }
@@ -590,21 +608,22 @@ public class SupportTicketService {
             ? UserNotificationRelevance.TICKET_CLOSED
             : UserNotificationRelevance.REQUESTER_CLOSED);
     supportTicketBroadcaster.ticketChanged(ticket.getOwner().getId());
-    return view(ticket, administration);
+    return buildTicketView(ticket, administration);
   }
 
   @Transactional(readOnly = true)
-  public void validateInstructionPreview(HttpServletRequest request, Long id) {
-    SupportTicketEntity ticket = accessible(request, id, true);
+  public void validateInstructionPreview(HttpServletRequest httpRequest, Long id) {
+    SupportTicketEntity ticket = requireAccessibleTicketEntity(httpRequest, id, true);
     if (!ticket.getStatus().acceptsMessages()) {
       throw new AccessDeniedException("Instruction delivery unavailable");
     }
   }
 
   @Transactional
-  public Ticket sendInstructions(HttpServletRequest request, Long id, Long version) {
-    TwoFactorAuthorization.Owner actor = requireAdministrator(request);
-    SupportTicketEntity ticket = locked(id, version);
+  public Ticket sendTicketRecoveryInstructions(
+      HttpServletRequest httpRequest, Long id, Long version) {
+    TwoFactorAuthorization.Owner actor = requireAdministrator(httpRequest);
+    SupportTicketEntity ticket = lockTicketEntityAtVersion(id, version);
     requireAssignee(ticket, actor);
     UserEntity recipient = ticket.getOwner();
     entityManager.refresh(recipient);
@@ -633,7 +652,7 @@ public class SupportTicketService {
                 "",
                 "NOTICE",
                 messageProperties.getSupportNoUnlock())));
-    append(
+    appendTicketReply(
         ticket,
         userRepository.getReferenceById(actor.id()),
         body,
@@ -643,14 +662,14 @@ public class SupportTicketService {
     ticket.setInstructionSentAt(Instant.now());
     supportTicketRepository.saveAndFlush(ticket);
     AfterCommitLog.info(log, "Recovery instructions queued: ticketId={}", id);
-    return view(ticket, true);
+    return buildTicketView(ticket, true);
   }
 
-  private SupportTicketEntity accessible(
-      HttpServletRequest request, Long id, boolean administration) {
-    TwoFactorAuthorization.Owner actor = twoFactorAuthorization.owner(request);
+  private SupportTicketEntity requireAccessibleTicketEntity(
+      HttpServletRequest httpRequest, Long id, boolean administration) {
+    TwoFactorAuthorization.Owner actor = twoFactorAuthorization.owner(httpRequest);
     if (administration) {
-      requireAdministrator(request);
+      requireAdministrator(httpRequest);
     }
     SupportTicketEntity ticket =
         supportTicketRepository
@@ -667,24 +686,24 @@ public class SupportTicketService {
     }
   }
 
-  private TwoFactorAuthorization.Owner requireAdministrator(HttpServletRequest request) {
-    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(request);
+  private TwoFactorAuthorization.Owner requireAdministrator(HttpServletRequest httpRequest) {
+    TwoFactorAuthorization.Owner owner = twoFactorAuthorization.owner(httpRequest);
     if (owner.roles().stream().noneMatch(de.derpeterson.app.model.enums.RoleType::isAdministrative)
-        || !twoFactorAuthorization.administrationConfirmed(request)) {
+        || !twoFactorAuthorization.administrationConfirmed(httpRequest)) {
       throw new AccessDeniedException("Fully authenticated administrator required");
     }
     return owner;
   }
 
-  private SupportTicketEntity locked(Long id, Long version) {
-    SupportTicketEntity ticket = lock(id);
+  private SupportTicketEntity lockTicketEntityAtVersion(Long id, Long version) {
+    SupportTicketEntity ticket = lockTicketEntity(id);
     if (!Objects.equals(ticket.getVersion(), version)) {
       throw new org.springframework.dao.OptimisticLockingFailureException("Ticket changed");
     }
     return ticket;
   }
 
-  private SupportTicketEntity lock(Long id) {
+  private SupportTicketEntity lockTicketEntity(Long id) {
     SupportTicketEntity ticket =
         supportTicketRepository
             .lock(id)
@@ -699,7 +718,7 @@ public class SupportTicketService {
     }
   }
 
-  private SupportReplyEntity append(
+  private SupportReplyEntity appendTicketReply(
       SupportTicketEntity ticket,
       UserEntity author,
       String body,
@@ -758,11 +777,11 @@ public class SupportTicketService {
     supportReplyRepository.saveAndFlush(event);
   }
 
-  private Ticket view(SupportTicketEntity ticket, boolean administration) {
-    return view(ticket, ticket.getUpdatedAt(), 0L, false, false, administration);
+  private Ticket buildTicketView(SupportTicketEntity ticket, boolean administration) {
+    return buildTicketView(ticket, ticket.getUpdatedAt(), 0L, false, false, administration);
   }
 
-  private Ticket view(
+  private Ticket buildTicketView(
       SupportTicketEntity ticket,
       Instant updatedAt,
       long unread,
@@ -798,7 +817,7 @@ public class SupportTicketService {
         requesterIdentity);
   }
 
-  private static String bounded(String text, int maximum) {
+  private static String validateTicketMessageText(String text, int maximum) {
     if (text == null || text.isBlank() || text.length() > maximum) {
       throw new IllegalArgumentException("Support text length invalid");
     }

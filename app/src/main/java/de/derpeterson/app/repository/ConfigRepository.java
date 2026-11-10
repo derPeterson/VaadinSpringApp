@@ -8,9 +8,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ConfigRepository extends JpaRepository<ConfigEntity, Long> {
 
-  boolean existsByKey(String key);
+  boolean existsByKey(String configKey);
 
-  Optional<ConfigEntity> findByKey(String key);
+  Optional<ConfigEntity> findByKey(String configKey);
 
-  List<ConfigEntity> findByKeyIn(Collection<String> keys);
+  List<ConfigEntity> findByKeyIn(Collection<String> configKeys);
 }

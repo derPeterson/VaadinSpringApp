@@ -263,9 +263,9 @@ public class UserNotificationsPanel extends Div {
     inboxDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div titles = new Div(inboxHeading, inboxDescription);
     titles.addClassName(COSMOS_PANEL_HEADING_CLASS);
-    Div unreadStat = stat(unreadLabel, unreadCount);
+    Div unreadStat = buildNotificationStatRow(unreadLabel, unreadCount);
     unreadStat.addClassName("cosmos-notification-inbox-stat-unread");
-    Div counts = new Div(stat(totalLabel, totalCount), unreadStat);
+    Div counts = new Div(buildNotificationStatRow(totalLabel, totalCount), unreadStat);
     counts.addClassName("cosmos-notification-inbox-counts");
     totalCount.setId("notifications-inbox-total");
     unreadCount.setId("notifications-inbox-unread-total");
@@ -323,7 +323,7 @@ public class UserNotificationsPanel extends Div {
     add(header, toolbar, notificationRows, footer);
   }
 
-  private Div stat(Span label, Span value) {
+  private Div buildNotificationStatRow(Span label, Span value) {
     label.addClassName("cosmos-notification-inbox-stat-label");
     value.addClassName("cosmos-notification-inbox-stat-value");
     Div stat = new Div(label, value);
@@ -531,7 +531,7 @@ public class UserNotificationsPanel extends Div {
                   : messageProperties.getNotificationsEmpty()));
     }
     for (Item item : result) {
-      notificationRows.add(row(item));
+      notificationRows.add(buildNotificationRow(item));
     }
   }
 
@@ -591,11 +591,11 @@ public class UserNotificationsPanel extends Div {
     }
   }
 
-  private Div row(Item item) {
+  private Div buildNotificationRow(Item item) {
     Button title =
         new Button(
             UserNotificationTexts.getNotificationTitleText(messageProperties, item),
-            e -> action(() -> open(item)));
+            e -> runNotificationAction(() -> openNotificationDetails(item)));
     title.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     title.addClassName("cosmos-notification-title");
     if (compact) {
@@ -603,7 +603,9 @@ public class UserNotificationsPanel extends Div {
     }
     Div meta = messageMetadata(item);
     meta.addClassName("cosmos-notification-inbox-meta");
-    Button open = new Button(AppIcon.EYE.create(), e -> action(() -> open(item)));
+    Button open =
+        new Button(
+            AppIcon.EYE.create(), e -> runNotificationAction(() -> openNotificationDetails(item)));
     open.addClassNames(COSMOS_NOTIFICATION_ROW_ACTION_CLASS, "cosmos-notification-row-open");
     open.setTooltipText(messageProperties.getNotificationsOpen());
     open.setAriaLabel(
@@ -633,7 +635,7 @@ public class UserNotificationsPanel extends Div {
     row.setClassName("cosmos-notification-row--unread", item.unread());
     // Buttons behalten ihre eigene Aktion; die restliche Karte öffnet per einfachem Klick.
     row.getElement()
-        .addEventListener("click", e -> action(() -> open(item)))
+        .addEventListener("click", e -> runNotificationAction(() -> openNotificationDetails(item)))
         .setFilter("!event.composedPath().some(node => node.localName === 'vaadin-button')");
     return row;
   }
@@ -656,7 +658,9 @@ public class UserNotificationsPanel extends Div {
     Div body = new Div();
     body.setText(UserNotificationTexts.getNotificationBodyText(messageProperties, item));
     body.addClassNames(COSMOS_NOTIFICATION_BODY_CLASS, "cosmos-notification-preview-message");
-    Button open = new Button(AppIcon.EYE.create(), e -> action(() -> open(item)));
+    Button open =
+        new Button(
+            AppIcon.EYE.create(), e -> runNotificationAction(() -> openNotificationDetails(item)));
     open.setAriaLabel(
         messageProperties.getNotificationsOpen()
             + ": "
@@ -682,12 +686,12 @@ public class UserNotificationsPanel extends Div {
     }
     // Buttons behalten ihre eigene Aktion; die restliche Karte öffnet per einfachem Klick.
     row.getElement()
-        .addEventListener("click", e -> action(() -> open(item)))
+        .addEventListener("click", e -> runNotificationAction(() -> openNotificationDetails(item)))
         .setFilter("!event.composedPath().some(node => node.localName === 'vaadin-button')");
     return row;
   }
 
-  private void action(Runnable action) {
+  private void runNotificationAction(Runnable action) {
     try {
       action.run();
       refreshInbox();
@@ -703,7 +707,7 @@ public class UserNotificationsPanel extends Div {
     }
   }
 
-  private void open(Item item) {
+  private void openNotificationDetails(Item item) {
     userNotificationService.ownerId(httpSession);
     if (notificationDetailDialog != null) {
       notificationDetailDialog.close();
@@ -732,7 +736,7 @@ public class UserNotificationsPanel extends Div {
             || notificationDetailDialog != null && notificationDetailDialog.isOpened());
   }
 
-  private PortalContextCard context(Item item) {
+  private PortalContextCard buildNotificationContextCard(Item item) {
     PortalContextCard card =
         new PortalContextCard(
             AppIcon.BELL.create(),
@@ -748,11 +752,11 @@ public class UserNotificationsPanel extends Div {
             messageProperties::getPortalNotificationSelectionHint,
             messageProperties::getPortalMarkReadQuestion,
             messageProperties::getPortalMarkReadExplanation,
-            () -> context(item),
+            () -> buildNotificationContextCard(item),
             messageProperties::getPortalNotificationSyncHint,
             messageProperties::getPortalConfirmAction,
             false),
-        () -> action(() -> markRead(item)));
+        () -> runNotificationAction(() -> markRead(item)));
   }
 
   private void confirmMarkAll() {
@@ -775,7 +779,7 @@ public class UserNotificationsPanel extends Div {
             false,
             AppIcon.CHECK_CHECK::create),
         () ->
-            action(() -> {
+            runNotificationAction(() -> {
               boolean includesOpened =
                   openedNotification != null && selected.contains(openedNotification.id());
               userNotificationService.markRead(httpSession, selected);
@@ -792,12 +796,12 @@ public class UserNotificationsPanel extends Div {
             messageProperties::getPortalNotificationSelectionHint,
             messageProperties::getPortalDeleteNotificationQuestion,
             messageProperties::getPortalDeleteNotificationExplanation,
-            () -> context(item),
+            () -> buildNotificationContextCard(item),
             messageProperties::getPortalDeleteNotificationHint,
             messageProperties::getPortalDeleteAction,
             true),
         () ->
-            action(() -> {
+            runNotificationAction(() -> {
               userNotificationService.dismiss(httpSession, item.id());
               if (notificationDetailDialog != null
                   && openedNotification != null
@@ -808,7 +812,7 @@ public class UserNotificationsPanel extends Div {
   }
 
   private void confirmDismissRead() {
-    action(() ->
+    runNotificationAction(() ->
         notificationActionConfirmation.open(
             new PortalConfirmationDialog.Prompt(
                 messageProperties::getNotificationsDismissRead,
@@ -824,7 +828,7 @@ public class UserNotificationsPanel extends Div {
                 messageProperties::getPortalDeleteAction,
                 true),
             () ->
-                action(() -> {
+                runNotificationAction(() -> {
                   userNotificationService.dismissRead(httpSession);
                   if (notificationDetailDialog != null
                       && openedNotification != null
@@ -859,7 +863,7 @@ public class UserNotificationsPanel extends Div {
 
   private Div messageMetadata(Item item, String... stateClasses) {
     boolean administration = item.type() == UserNotificationType.ADMIN_ANNOUNCEMENT;
-    Span origin = new Span(source(item));
+    Span origin = new Span(resolveNotificationSourceText(item));
     origin.addClassNames(
         "cosmos-notification-preview-source",
         administration ? "portal-notification-source-admin" : "portal-notification-source-system");
@@ -888,7 +892,7 @@ public class UserNotificationsPanel extends Div {
     return metadata;
   }
 
-  private String source(Item item) {
+  private String resolveNotificationSourceText(Item item) {
     return item.type() == UserNotificationType.ADMIN_ANNOUNCEMENT
         ? messageProperties.getNotificationsSourceAdministration()
         : messageProperties.getNotificationsSourceSystem();

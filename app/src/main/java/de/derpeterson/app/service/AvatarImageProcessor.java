@@ -370,8 +370,8 @@ public class AvatarImageProcessor {
       return 1;
     }
     int count = Short.toUnsignedInt(b.getShort((int) offset));
-    for (int i = 0; i < count; i++) {
-      long pos = offset + 2 + (long) i * 12;
+    for (int directoryEntryIndex = 0; directoryEntryIndex < count; directoryEntryIndex++) {
+      long pos = offset + 2 + (long) directoryEntryIndex * 12;
       if (pos > length - 12) {
         return 1;
       }

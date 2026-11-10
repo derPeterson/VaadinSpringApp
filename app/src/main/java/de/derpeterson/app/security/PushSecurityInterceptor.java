@@ -73,11 +73,11 @@ public class PushSecurityInterceptor
   }
 
   private boolean refreshRoleUi(UI ui, Authentication authentication, String contextPath) {
-    if (!RoleUiState.changed(ui, authentication)) {
+    if (!RoleUiState.hasUiRoleStateChanged(ui, authentication)) {
       return false;
     }
     ui.access(() -> {
-      RoleUiState.refresh(ui, authentication, contextPath);
+      RoleUiState.refreshUiAfterRoleChange(ui, authentication, contextPath);
       if (ui.getPushConfiguration().getPushMode().isEnabled()) {
         ui.push();
       }

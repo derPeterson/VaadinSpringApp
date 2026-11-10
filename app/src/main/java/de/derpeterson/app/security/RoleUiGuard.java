@@ -60,7 +60,8 @@ public class RoleUiGuard implements VaadinServiceInitListener {
             UI ui = session.getService().findUI(request);
             if (ui == null
                 || auth.isEmpty()
-                || !RoleUiState.refresh(ui, auth.get(), servlet.getContextPath())) {
+                || !RoleUiState.refreshUiAfterRoleChange(
+                    ui, auth.get(), servlet.getContextPath())) {
               return false;
             }
             // Framework-Writer statt selbstgebautem UIDL. Der alte Request wird nicht an RPC
@@ -91,7 +92,7 @@ public class RoleUiGuard implements VaadinServiceInitListener {
     if (auth.isEmpty()) {
       return;
     }
-    RoleUiState.changed(ui, auth.get());
+    RoleUiState.hasUiRoleStateChanged(ui, auth.get());
     String marker = RoleUiGuard.class.getName() + ".subscribed";
     if (com.vaadin.flow.component.ComponentUtil.getData(ui, marker) != null) {
       return;
@@ -116,7 +117,8 @@ public class RoleUiGuard implements VaadinServiceInitListener {
                 securityServiceReference
                     .get()
                     .refreshSessionAuthentication(http)
-                    .ifPresent(fresh -> RoleUiState.refresh(ui, fresh, contextPath));
+                    .ifPresent(
+                        fresh -> RoleUiState.refreshUiAfterRoleChange(ui, fresh, contextPath));
               });
             });
     ui.addDetachListener(detach -> registration.remove());

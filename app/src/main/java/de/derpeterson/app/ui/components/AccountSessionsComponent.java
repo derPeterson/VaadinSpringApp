@@ -125,7 +125,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     } catch (RuntimeException failure) {
       sessionSnapshot = new Snapshot(List.of(), 0, sessionSnapshot.limit());
       refreshTexts();
-      failed(failure);
+      showSessionActionFailure(failure);
       return false;
     }
   }
@@ -193,11 +193,11 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     group.getElement().setAttribute("data-session-group", state);
     group.getElement().setAttribute("aria-labelledby", heading.getId().orElseThrow());
     group.add(heading);
-    entries.forEach(entry -> group.add(row(entry)));
+    entries.forEach(entry -> group.add(buildSessionEntryRow(entry)));
     return group;
   }
 
-  private Div row(Entry entry) {
+  private Div buildSessionEntryRow(Entry entry) {
     Div symbol = new Div((entry.device().mobile() ? AppIcon.MOBILE : AppIcon.DESKTOP).create());
     symbol.addClassName(PANEL_ICON);
     Span title = new Span(deviceName(entry));
@@ -319,7 +319,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     return name.isBlank() ? messageProperties.getSessionUnknownDevice() : name;
   }
 
-  private PortalContextCard context(Entry entry) {
+  private PortalContextCard buildSessionContextCard(Entry entry) {
     PortalContextCard card =
         new PortalContextCard(
             (entry.device().mobile() ? AppIcon.MOBILE : AppIcon.DESKTOP).create(),
@@ -352,7 +352,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
                 ? messageProperties::getPortalSessionLogoutQuestion
                 : messageProperties::getPortalSessionSavedQuestion,
             () -> confirmationExplanation(entry),
-            () -> context(entry),
+            () -> buildSessionContextCard(entry),
             () -> "",
             entry.active()
                 ? messageProperties::getBaseLogoutButton
@@ -360,7 +360,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
             true,
             AppIcon.SIGN_OUT::create),
         () ->
-            perform(() ->
+            runSessionAction(() ->
                 revokeSessionAction.accept(
                     entry.savedHandle() == null ? entry.handle() : entry.savedHandle())));
   }
@@ -395,14 +395,14 @@ public class AccountSessionsComponent extends AccountPanelComponent {
             () -> {
               Div cards = new Div();
               cards.addClassName("portal-context-list");
-              selected.forEach(entry -> cards.add(context(entry)));
+              selected.forEach(entry -> cards.add(buildSessionContextCard(entry)));
               return cards;
             },
             () -> "",
             this::logoutActionText,
             true,
             AppIcon.SIGN_OUT::create),
-        () -> perform(() -> revokeOthers.run()));
+        () -> runSessionAction(() -> revokeOthers.run()));
   }
 
   private String sessionState(Entry entry) {
@@ -412,7 +412,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     return entry.active() ? "active" : "saved";
   }
 
-  private void perform(Runnable action) {
+  private void runSessionAction(Runnable action) {
     try {
       action.run();
       sessionSnapshot = Objects.requireNonNull(sessionSnapshotSupplier.get());
@@ -423,11 +423,11 @@ public class AccountSessionsComponent extends AccountPanelComponent {
               messageProperties::getSessionRevoked,
               NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException failure) {
-      failed(failure);
+      showSessionActionFailure(failure);
     }
   }
 
-  private void failed(RuntimeException failure) {
+  private void showSessionActionFailure(RuntimeException failure) {
     log.warn("Own session management failed", safeFailure(failure));
     NotificationHelper.getInstance()
         .showNotification(

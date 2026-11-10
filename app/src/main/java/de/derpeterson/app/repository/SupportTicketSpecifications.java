@@ -23,72 +23,84 @@ public final class SupportTicketSpecifications {
 
   private SupportTicketSpecifications() {}
 
-  public static Specification<SupportTicketEntity> matching(
-      SupportTicketFilter filter, Long viewer, boolean superadmin) {
-    return (ticket, query, cb) -> {
-      List<Predicate> conditions = new ArrayList<>();
-      if (!filter.statuses().isEmpty()) {
-        conditions.add(ticket.get(STATUS).in(filter.statuses()));
+  public static Specification<SupportTicketEntity> buildTicketFilterSpecification(
+      SupportTicketFilter ticketFilter, Long viewerUserId, boolean isSuperadmin) {
+    return (ticketRoot, criteriaQuery, criteriaBuilder) -> {
+      List<Predicate> ticketPredicates = new ArrayList<>();
+      if (!ticketFilter.statuses().isEmpty()) {
+        ticketPredicates.add(ticketRoot.get(STATUS).in(ticketFilter.statuses()));
       }
-      if (filter.type() != null) {
-        conditions.add(cb.equal(ticket.get("type"), filter.type()));
+      if (ticketFilter.type() != null) {
+        ticketPredicates.add(criteriaBuilder.equal(ticketRoot.get("type"), ticketFilter.type()));
       }
-      switch (filter.assignment()) {
+      switch (ticketFilter.assignment()) {
         case ALL -> {
           // Ohne Zuständigkeitsfilter bleibt die Auswahl unverändert.
         }
-        case MINE -> conditions.add(cb.equal(ticket.get(ASSIGNEE).get("id"), viewer));
-        case UNASSIGNED -> conditions.add(cb.isNull(ticket.get(ASSIGNEE)));
+        case MINE ->
+            ticketPredicates.add(
+                criteriaBuilder.equal(ticketRoot.get(ASSIGNEE).get("id"), viewerUserId));
+        case UNASSIGNED -> ticketPredicates.add(criteriaBuilder.isNull(ticketRoot.get(ASSIGNEE)));
       }
-      if (filter.reading() == Reading.UNREAD) {
-        conditions.add(unread(ticket, query, cb, viewer, superadmin));
+      if (ticketFilter.reading() == Reading.UNREAD) {
+        ticketPredicates.add(
+            buildUnreadTicketPredicate(
+                ticketRoot, criteriaQuery, criteriaBuilder, viewerUserId, isSuperadmin));
       }
-      return cb.and(conditions.toArray(Predicate[]::new));
+      return criteriaBuilder.and(ticketPredicates.toArray(Predicate[]::new));
     };
   }
 
-  private static Predicate unread(
-      Root<SupportTicketEntity> ticket,
-      CriteriaQuery<?> query,
-      CriteriaBuilder cb,
-      Long viewer,
-      boolean superadmin) {
-    Subquery<Long> subscription = query.subquery(Long.class);
-    Root<SupportTicketViewerEntity> watcher = subscription.from(SupportTicketViewerEntity.class);
-    subscription
-        .select(watcher.get("id"))
+  private static Predicate buildUnreadTicketPredicate(
+      Root<SupportTicketEntity> ticketRoot,
+      CriteriaQuery<?> criteriaQuery,
+      CriteriaBuilder criteriaBuilder,
+      Long viewerUserId,
+      boolean isSuperadmin) {
+    Subquery<Long> subscriptionSubquery = criteriaQuery.subquery(Long.class);
+    Root<SupportTicketViewerEntity> watcherRoot =
+        subscriptionSubquery.from(SupportTicketViewerEntity.class);
+    subscriptionSubquery
+        .select(watcherRoot.get("id"))
         .where(
-            cb.equal(watcher.get("ticketId"), ticket.get("id")),
-            cb.equal(watcher.get("userId"), viewer),
-            cb.isTrue(watcher.get("subscribed")));
-    Predicate relevant =
-        cb.or(
-            cb.equal(ticket.get(STATUS), Status.OPEN),
-            cb.and(
-                cb.equal(ticket.get(STATUS), Status.CLOSED_BY_REQUESTER),
-                cb.isNull(ticket.get(ASSIGNEE))),
-            cb.equal(ticket.get(ASSIGNEE).get("id"), viewer),
-            superadmin ? cb.exists(subscription) : cb.disjunction());
+            criteriaBuilder.equal(watcherRoot.get("ticketId"), ticketRoot.get("id")),
+            criteriaBuilder.equal(watcherRoot.get("userId"), viewerUserId),
+            criteriaBuilder.isTrue(watcherRoot.get("subscribed")));
+    Predicate relevantTicketPredicate =
+        criteriaBuilder.or(
+            criteriaBuilder.equal(ticketRoot.get(STATUS), Status.OPEN),
+            criteriaBuilder.and(
+                criteriaBuilder.equal(ticketRoot.get(STATUS), Status.CLOSED_BY_REQUESTER),
+                criteriaBuilder.isNull(ticketRoot.get(ASSIGNEE))),
+            criteriaBuilder.equal(ticketRoot.get(ASSIGNEE).get("id"), viewerUserId),
+            isSuperadmin
+                ? criteriaBuilder.exists(subscriptionSubquery)
+                : criteriaBuilder.disjunction());
 
-    Subquery<Long> readThrough = query.subquery(Long.class);
-    Root<SupportTicketViewerEntity> state = readThrough.from(SupportTicketViewerEntity.class);
-    readThrough
-        .select(state.get("adminReadThrough"))
+    Subquery<Long> readThroughSubquery = criteriaQuery.subquery(Long.class);
+    Root<SupportTicketViewerEntity> viewerStateRoot =
+        readThroughSubquery.from(SupportTicketViewerEntity.class);
+    readThroughSubquery
+        .select(viewerStateRoot.get("adminReadThrough"))
         .where(
-            cb.equal(state.get("ticketId"), ticket.get("id")),
-            cb.equal(state.get("userId"), viewer));
-    Subquery<Long> messages = query.subquery(Long.class);
-    Root<SupportReplyEntity> message = messages.from(SupportReplyEntity.class);
-    messages
-        .select(message.get("id"))
+            criteriaBuilder.equal(viewerStateRoot.get("ticketId"), ticketRoot.get("id")),
+            criteriaBuilder.equal(viewerStateRoot.get("userId"), viewerUserId));
+    Subquery<Long> unreadMessagesSubquery = criteriaQuery.subquery(Long.class);
+    Root<SupportReplyEntity> messageRoot = unreadMessagesSubquery.from(SupportReplyEntity.class);
+    unreadMessagesSubquery
+        .select(messageRoot.get("id"))
         .where(
-            cb.equal(message.get("ticket"), ticket),
-            message.get("kind").in(Kind.MESSAGE, Kind.RECOVERY_INSTRUCTIONS),
-            cb.or(
-                cb.isFalse(message.get("supportAuthor")),
-                cb.isNull(message.get("author")),
-                cb.notEqual(message.get("author").get("id"), viewer)),
-            cb.greaterThan(message.get("id"), cb.coalesce(readThrough, 0L)));
-    return cb.and(cb.notEqual(ticket.get(STATUS), Status.CLOSED), relevant, cb.exists(messages));
+            criteriaBuilder.equal(messageRoot.get("ticket"), ticketRoot),
+            messageRoot.get("kind").in(Kind.MESSAGE, Kind.RECOVERY_INSTRUCTIONS),
+            criteriaBuilder.or(
+                criteriaBuilder.isFalse(messageRoot.get("supportAuthor")),
+                criteriaBuilder.isNull(messageRoot.get("author")),
+                criteriaBuilder.notEqual(messageRoot.get("author").get("id"), viewerUserId)),
+            criteriaBuilder.greaterThan(
+                messageRoot.get("id"), criteriaBuilder.coalesce(readThroughSubquery, 0L)));
+    return criteriaBuilder.and(
+        criteriaBuilder.notEqual(ticketRoot.get(STATUS), Status.CLOSED),
+        relevantTicketPredicate,
+        criteriaBuilder.exists(unreadMessagesSubquery));
   }
 }

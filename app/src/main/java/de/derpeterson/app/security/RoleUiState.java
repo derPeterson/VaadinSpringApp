@@ -15,42 +15,48 @@ import org.springframework.security.core.authority.FactorGrantedAuthority;
 public record RoleUiState(Set<String> authorities) implements Serializable {
   private static final String HOME_PATH = AppRouteConstants.HOME_SECURITY_ROUTE;
 
-  public static Set<String> roles(Authentication auth) {
-    return auth.getAuthorities().stream()
+  public static Set<String> extractRoleAuthorities(Authentication authentication) {
+    return authentication.getAuthorities().stream()
         .filter(a -> !(a instanceof FactorGrantedAuthority))
         .map(a -> a.getAuthority())
         .collect(Collectors.toUnmodifiableSet());
   }
 
-  public static boolean changed(UI ui, Authentication authentication) {
-    RoleUiState state = ComponentUtil.getData(ui, RoleUiState.class);
-    if (state == null) {
-      ComponentUtil.setData(ui, RoleUiState.class, new RoleUiState(roles(authentication)));
+  public static boolean hasUiRoleStateChanged(UI vaadinUi, Authentication authentication) {
+    RoleUiState roleUiState = ComponentUtil.getData(vaadinUi, RoleUiState.class);
+    if (roleUiState == null) {
+      ComponentUtil.setData(
+          vaadinUi, RoleUiState.class, new RoleUiState(extractRoleAuthorities(authentication)));
       return false;
     }
-    return !state.authorities().equals(roles(authentication));
+    return !roleUiState.authorities().equals(extractRoleAuthorities(authentication));
   }
 
-  public static String target(UI ui, Authentication auth, String contextPath) {
-    Location location = ui.getInternals().getActiveViewLocation();
-    if (location == null) {
+  public static String resolveRoleRefreshLocation(
+      UI vaadinUi, Authentication authentication, String contextPath) {
+    Location activeViewLocation = vaadinUi.getInternals().getActiveViewLocation();
+    if (activeViewLocation == null) {
       return contextPath + HOME_PATH;
     }
-    String path = location.getPath();
-    if (path.equals(AppRoute.ADMIN.getRoute()) && !roles(auth).contains("ROLE_ADMIN")) {
+    String routePath = activeViewLocation.getPath();
+    if (routePath.equals(AppRoute.ADMIN.getRoute())
+        && !extractRoleAuthorities(authentication).contains("ROLE_ADMIN")) {
       return contextPath + HOME_PATH;
     }
-    if (!Set.of("home", "account", "notifications", "admin").contains(path)) {
+    if (!Set.of("home", "account", "notifications", "admin").contains(routePath)) {
       return contextPath + HOME_PATH;
     }
-    return contextPath + "/" + location.getPathWithQueryParameters();
+    return contextPath + "/" + activeViewLocation.getPathWithQueryParameters();
   }
 
-  public static boolean refresh(UI ui, Authentication auth, String contextPath) {
-    if (!changed(ui, auth)) {
+  public static boolean refreshUiAfterRoleChange(
+      UI vaadinUi, Authentication authentication, String contextPath) {
+    if (!hasUiRoleStateChanged(vaadinUi, authentication)) {
       return false;
     }
-    ui.getPage().setLocation(target(ui, auth, contextPath));
+    vaadinUi
+        .getPage()
+        .setLocation(resolveRoleRefreshLocation(vaadinUi, authentication, contextPath));
     return true;
   }
 }

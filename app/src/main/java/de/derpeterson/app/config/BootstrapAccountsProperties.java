@@ -69,8 +69,10 @@ public class BootstrapAccountsProperties {
     if (accountsForRole == null) {
       throw new IllegalArgumentException("Bootstrap list required: " + roleType);
     }
-    for (int i = 0; i < accountsForRole.size(); i++) {
-      Account bootstrapAccount = accountsForRole.get(i);
+    for (int bootstrapAccountIndex = 0;
+        bootstrapAccountIndex < accountsForRole.size();
+        bootstrapAccountIndex++) {
+      Account bootstrapAccount = accountsForRole.get(bootstrapAccountIndex);
       if (bootstrapAccount == null
           || !UserInputRules.isEmailValid(bootstrapAccount.email)
           || !UserInputRules.isPasswordSecure(bootstrapAccount.password)
@@ -80,12 +82,12 @@ public class BootstrapAccountsProperties {
           || bootstrapAccount.preferredLocale == null
           || !Set.of("de", "en").contains(bootstrapAccount.preferredLocale.getLanguage())) {
         throw new IllegalArgumentException(
-            "Invalid bootstrap account in " + roleType + " at index " + i);
+            "Invalid bootstrap account in " + roleType + " at index " + bootstrapAccountIndex);
       }
       String canonicalEmailAddress = EmailIdentity.canonicalize(bootstrapAccount.email);
       if (!seenEmailAddresses.add(canonicalEmailAddress)) {
         throw new IllegalArgumentException(
-            "Duplicate bootstrap account in " + roleType + " at index " + i);
+            "Duplicate bootstrap account in " + roleType + " at index " + bootstrapAccountIndex);
       }
       validatedBootstrapEntries.add(new Entry(roleType, bootstrapAccount));
     }
