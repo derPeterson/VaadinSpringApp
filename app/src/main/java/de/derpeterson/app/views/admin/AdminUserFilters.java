@@ -41,27 +41,31 @@ record AdminUserFilters(
       Set<UserStatus> statuses,
       Set<RoleType> roles,
       boolean hasActivity) {
-    return (normalize(search).isEmpty() ? 0 : 1)
+    return (normalizeSearchText(search).isEmpty() ? 0 : 1)
         + (enabled == null ? 0 : 1)
         + (statuses.isEmpty() ? 0 : 1)
         + (roles.isEmpty() ? 0 : 1)
         + (hasActivity ? 1 : 0);
   }
 
-  boolean matches(UserEntity user) {
-    String query = normalize(search);
-    String fullName = normalize(user.getFirstName()) + " " + normalize(user.getLastName());
-    return (query.isEmpty()
-            || fullName.contains(query)
-            || normalize(user.getEmail()).contains(query))
-        && (enabled == null || user.isEnabled() == enabled)
-        && (statuses.isEmpty() || statuses.contains(user.getStatus()))
-        && (roles.isEmpty() || roles.stream().anyMatch(user::hasRole))
+  boolean matches(UserEntity userEntity) {
+    String normalizedSearchText = normalizeSearchText(search);
+    String normalizedFullName =
+        normalizeSearchText(userEntity.getFirstName())
+            + " "
+            + normalizeSearchText(userEntity.getLastName());
+    return (normalizedSearchText.isEmpty()
+            || normalizedFullName.contains(normalizedSearchText)
+            || normalizeSearchText(userEntity.getEmail()).contains(normalizedSearchText))
+        && (enabled == null || userEntity.isEnabled() == enabled)
+        && (statuses.isEmpty() || statuses.contains(userEntity.getStatus()))
+        && (roles.isEmpty() || roles.stream().anyMatch(userEntity::hasRole))
         && (activeSince == null
-            || user.getLastActivity() != null && !user.getLastActivity().isBefore(activeSince));
+            || userEntity.getLastActivity() != null
+                && !userEntity.getLastActivity().isBefore(activeSince));
   }
 
-  private static String normalize(String value) {
-    return value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
+  private static String normalizeSearchText(String searchValue) {
+    return searchValue == null ? "" : searchValue.trim().toLowerCase(Locale.ROOT);
   }
 }

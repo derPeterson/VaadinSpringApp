@@ -25,108 +25,145 @@ import org.springframework.security.core.userdetails.UserDetails;
 /** Abgestimmter Einstieg mit echten Schnellzugriffen, ohne erfundene Kennzahlen. */
 public class AdminDashboardSection extends VerticalLayout {
   private final MessageProperties messageProperties;
-  private final List<SerializableRunnable> translations = new ArrayList<>();
+  private final List<SerializableRunnable> textRefreshActions = new ArrayList<>();
 
   public AdminDashboardSection(MessageProperties messageProperties, UserDetails authenticatedUser) {
     this.messageProperties = messageProperties;
+
     setPadding(false);
     setSpacing(false);
     setWidthFull();
     addClassNames("cosmos-admin-section", "cosmos-admin-section--dashboard");
-    Span overview = copy(messageProperties::getAdminHeaderTitle);
-    Span title = copy(messageProperties::getAdminDashboardTitle);
-    Span description = copy(messageProperties::getAdminDashboardDescription);
-    Div eyebrow = new Div(copy(messageProperties::getAdminDashboardHeroEyebrow));
-    eyebrow.addClassName("admin-dashboard-eyebrow");
-    H2 welcome = new H2();
-    translations.add(() -> welcome.setText(messageProperties.getAdminDashboardHeroTitle() + "."));
-    Div copy = new Div(eyebrow, welcome, copy(messageProperties::getAdminDashboardHeroDescription));
-    copy.addClassName("admin-dashboard-copy");
-    Image picture = new Image("images/admin-dashboard.jpg", "");
-    picture.addClassName("admin-dashboard-image");
-    Div intro = new Div(copy, picture);
-    intro.addClassName("admin-dashboard-intro");
-    Div hint =
-        new Div(AppIcon.INFO_CIRCLE.create(), copy(messageProperties::getAdminDashboardFutureHint));
-    hint.addClassName("admin-dashboard-hint");
-    Div hero = new Div(intro, hint);
-    hero.addClassName("admin-dashboard-hero");
-    H2 shortcuts = new H2();
-    translations.add(() -> shortcuts.setText(messageProperties.getAdminDashboardShortcuts()));
-    Div grid = new Div();
-    grid.addClassName("admin-dashboard-shortcuts");
-    grid.add(
-        shortcut(
+
+    Span overviewSpan = createTranslatedSpan(messageProperties::getAdminHeaderTitle);
+    Span dashboardTitleSpan = createTranslatedSpan(messageProperties::getAdminDashboardTitle);
+    Span dashboardDescriptionSpan =
+        createTranslatedSpan(messageProperties::getAdminDashboardDescription);
+
+    Div dashboardHeroDiv = buildDashboardHeroDiv();
+
+    H2 shortcutsH2 = new H2();
+    textRefreshActions.add(
+        () -> shortcutsH2.setText(messageProperties.getAdminDashboardShortcuts()));
+    Div shortcutGridDiv = new Div();
+    shortcutGridDiv.addClassName("admin-dashboard-shortcuts");
+    shortcutGridDiv.add(
+        buildShortcutCardDiv(
             AppIcon.USERS,
             messageProperties::getAdminUsersTitle,
             messageProperties::getAdminUsersDescription,
             "user_management"),
-        shortcut(
+        buildShortcutCardDiv(
             AppIcon.COGS,
             messageProperties::getAdminNavConfiguration,
             messageProperties::getAdminConfigDescription,
             "configuration"),
-        shortcut(
+        buildShortcutCardDiv(
             AppIcon.ENVELOPE,
             messageProperties::getAdminMailTitle,
             messageProperties::getAdminMailDescription,
             "mail_test"),
-        shortcut(
+        buildShortcutCardDiv(
             AppIcon.MESSAGES,
             messageProperties::getSupportTitle,
             messageProperties::getSupportShortcutDescription,
             "support"));
-    boolean canSend =
+
+    boolean canSendNotifications =
         authenticatedUser != null
             && authenticatedUser.getAuthorities().stream()
                 .anyMatch(authority -> authority.getAuthority().equals("ROLE_SUPERADMIN"));
-    if (canSend) {
-      grid.add(
-          shortcut(
+    if (canSendNotifications) {
+      shortcutGridDiv.add(
+          buildShortcutCardDiv(
               AppIcon.BELL,
               messageProperties::getNotificationsTitle,
               messageProperties::getNotificationsAdminPageDescription,
               "notifications"));
     }
-    Div accessHeading = new Div(shortcuts, copy(messageProperties::getAdminDashboardShortcutsHint));
-    accessHeading.addClassName("admin-dashboard-access-heading");
-    add(new CosmosSectionHeaderComponent(overview, title, description), hero, accessHeading, grid);
+
+    Div shortcutHeadingDiv =
+        new Div(
+            shortcutsH2, createTranslatedSpan(messageProperties::getAdminDashboardShortcutsHint));
+    shortcutHeadingDiv.addClassName("admin-dashboard-access-heading");
+    add(
+        new CosmosSectionHeaderComponent(
+            overviewSpan, dashboardTitleSpan, dashboardDescriptionSpan),
+        dashboardHeroDiv,
+        shortcutHeadingDiv,
+        shortcutGridDiv);
     refreshTexts();
   }
 
-  private Span copy(SerializableSupplier<String> source) {
-    Span span = new Span();
-    translations.add(() -> span.setText(source.get()));
-    return span;
+  private Div buildDashboardHeroDiv() {
+    Div heroEyebrowDiv =
+        new Div(createTranslatedSpan(messageProperties::getAdminDashboardHeroEyebrow));
+    heroEyebrowDiv.addClassName("admin-dashboard-eyebrow");
+    H2 welcomeH2 = new H2();
+    textRefreshActions.add(
+        () -> welcomeH2.setText(messageProperties.getAdminDashboardHeroTitle() + "."));
+    Div heroTextDiv =
+        new Div(
+            heroEyebrowDiv,
+            welcomeH2,
+            createTranslatedSpan(messageProperties::getAdminDashboardHeroDescription));
+    heroTextDiv.addClassName("admin-dashboard-copy");
+
+    Image dashboardImage = new Image("images/admin-dashboard.jpg", "");
+    dashboardImage.addClassName("admin-dashboard-image");
+    Div heroIntroDiv = new Div(heroTextDiv, dashboardImage);
+    heroIntroDiv.addClassName("admin-dashboard-intro");
+
+    Div heroHintDiv =
+        new Div(
+            AppIcon.INFO_CIRCLE.create(),
+            createTranslatedSpan(messageProperties::getAdminDashboardFutureHint));
+    heroHintDiv.addClassName("admin-dashboard-hint");
+
+    Div dashboardHeroDiv = new Div(heroIntroDiv, heroHintDiv);
+    dashboardHeroDiv.addClassName("admin-dashboard-hero");
+    return dashboardHeroDiv;
   }
 
-  private Div shortcut(
-      AppIcon icon,
-      SerializableSupplier<String> name,
-      SerializableSupplier<String> description,
-      String section) {
-    Div symbol = new Div(icon.create());
-    symbol.addClassName(PANEL_ICON);
-    H3 title = new H3();
-    translations.add(() -> title.setText(name.get()));
-    Div copy = new Div(title, copy(description));
-    Button open =
+  private Span createTranslatedSpan(SerializableSupplier<String> textSupplier) {
+    Span translatedSpan = new Span();
+    textRefreshActions.add(() -> translatedSpan.setText(textSupplier.get()));
+    return translatedSpan;
+  }
+
+  private Div buildShortcutCardDiv(
+      AppIcon shortcutAppIcon,
+      SerializableSupplier<String> shortcutNameSupplier,
+      SerializableSupplier<String> descriptionTextSupplier,
+      String targetSectionKey) {
+    Div shortcutIconDiv = new Div(shortcutAppIcon.create());
+    shortcutIconDiv.addClassName(PANEL_ICON);
+
+    H3 shortcutTitleH3 = new H3();
+    textRefreshActions.add(() -> shortcutTitleH3.setText(shortcutNameSupplier.get()));
+    Div shortcutTextDiv = new Div(shortcutTitleH3, createTranslatedSpan(descriptionTextSupplier));
+
+    Button openSectionButton =
         new Button(
             "",
             AppIcon.OPEN_SECTION.create(),
-            event ->
+            _ ->
                 UI.getCurrent()
-                    .navigate(AdminView.class, QueryParameters.simple(Map.of("section", section))));
-    translations.add(() -> {
-      open.setText(messageProperties.getAdminDashboardOpen());
-      open.setAriaLabel(name.get() + ": " + messageProperties.getAdminDashboardOpen());
+                    .navigate(
+                        AdminView.class,
+                        QueryParameters.simple(Map.of("section", targetSectionKey))));
+    textRefreshActions.add(() -> {
+      openSectionButton.setText(messageProperties.getAdminDashboardOpen());
+      openSectionButton.setAriaLabel(
+          shortcutNameSupplier.get() + ": " + messageProperties.getAdminDashboardOpen());
     });
-    Div card = new Div(symbol, copy, open);
-    card.addClassName("admin-dashboard-shortcut");
-    return card;
+
+    Div shortcutCardDiv = new Div(shortcutIconDiv, shortcutTextDiv, openSectionButton);
+    shortcutCardDiv.addClassName("admin-dashboard-shortcut");
+    return shortcutCardDiv;
   }
 
   public void refreshTexts() {
-    translations.forEach(SerializableRunnable::run);
+    textRefreshActions.forEach(SerializableRunnable::run);
   }
 }

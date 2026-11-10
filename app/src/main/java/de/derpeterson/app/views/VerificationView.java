@@ -94,6 +94,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     getContent().setPadding(false);
     getContent().removeAll();
     setSpacing(false);
+
     PublicPageComponent verificationPageComponent =
         new PublicPageComponent(
             configService, messageProperties, PublicPageComponent.Page.VERIFICATION);
@@ -220,6 +221,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     try {
       boolean verificationRequestAccepted =
           verificationService.sendVerificationEmailByToken(verificationToken);
+
       showVerificationRequestResult(
           verificationRequestAccepted, messageProperties::getVerificationExpiredSuccessMessage);
     } catch (IOException verificationRequestIOException) {
@@ -284,6 +286,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     try {
       boolean verificationRequestAccepted =
           verificationService.sendVerificationEmailByEmail(verificationEmailField.getValue());
+
       showVerificationRequestResult(
           verificationRequestAccepted, messageProperties::getVerificationNotFoundSuccessMessage);
     } catch (IOException verificationRequestIOException) {

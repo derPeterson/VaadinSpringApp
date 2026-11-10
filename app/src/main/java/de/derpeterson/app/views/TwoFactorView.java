@@ -303,7 +303,7 @@ public final class TwoFactorView extends VerticalLayout
         : TwoFactorFlow.LOGIN;
   }
 
-  public boolean isCurrent(TwoFactorFlow activeTwoFactorFlow) {
+  public boolean matchesActiveTwoFactorFlow(TwoFactorFlow activeTwoFactorFlow) {
     return twoFactorFlow == activeTwoFactorFlow;
   }
 

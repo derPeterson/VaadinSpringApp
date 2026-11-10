@@ -41,6 +41,7 @@ final class ExternalProofNotice {
     if (proofErrorParameterValues == null) {
       return;
     }
+
     ExternalLoginFlow.ProofProblem proofProblem = ExternalLoginFlow.ProofProblem.UNAVAILABLE;
     if (proofErrorParameterValues.size() == 1) {
       try {
@@ -49,12 +50,14 @@ final class ExternalProofNotice {
         // Nur bekannte Fehlerarten auswählen, nie Queryinhalte als Meldung ausgeben.
       }
     }
+
     Supplier<String> proofFailureTextSupplier =
         switch (proofProblem) {
           case FRESH_AUTHENTICATION_REQUIRED -> messageProperties::getExternalProofFreshRequired;
           case IDENTITY_MISMATCH -> messageProperties::getExternalProofIdentityMismatch;
           case UNAVAILABLE -> messageProperties::getExternalError;
         };
+
     NotificationHelper.getInstance()
         .showNotification(
             messageProperties::getBaseFailedTitle,

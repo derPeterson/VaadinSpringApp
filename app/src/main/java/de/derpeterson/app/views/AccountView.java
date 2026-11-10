@@ -23,6 +23,8 @@ import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.IsAuthenticatedBaseView;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionManagementService;
+import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
+import de.derpeterson.app.security.mfa.TwoFactorManagement;
 import de.derpeterson.app.service.AccountProfileService;
 import de.derpeterson.app.service.AccountProfileService.Profile;
 import de.derpeterson.app.service.AccountSecurityService;
@@ -34,6 +36,7 @@ import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import de.derpeterson.app.ui.components.ExternalConnectionsComponent;
+import de.derpeterson.app.ui.components.TwoFactorAccountComponent;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
@@ -41,6 +44,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import org.springframework.beans.factory.annotation.Autowired;
 
 @Route(AppRouteConstants.ACCOUNT_ROUTE)
 @PageTitle(AppRouteConstants.ACCOUNT_PAGE_TITLE)
@@ -51,13 +55,13 @@ import java.util.Objects;
 public class AccountView extends IsAuthenticatedBaseView implements AfterNavigationObserver {
   private final AccountSettingsComponent accountSettingsComponent;
 
-  @org.springframework.beans.factory.annotation.Autowired
+  @Autowired
   void configureTwoFactor(
-      de.derpeterson.app.security.mfa.TwoFactorAuthorization twoFactorAuthorization,
-      de.derpeterson.app.security.mfa.TwoFactorManagement twoFactorManagement,
+      TwoFactorAuthorization twoFactorAuthorization,
+      TwoFactorManagement twoFactorManagement,
       HttpServletRequest httpServletRequest) {
     accountSettingsComponent.configureTwoFactor(
-        new de.derpeterson.app.ui.components.TwoFactorAccountComponent(
+        new TwoFactorAccountComponent(
             messageProperties, twoFactorAuthorization, twoFactorManagement, httpServletRequest));
   }
 
@@ -81,6 +85,7 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
         userStatusBroadcaster,
         httpServletRequest,
         userAvatarService);
+
     addClassNames(
         "cosmos-page", "cosmos-theme", "cosmos-app-shell", "cosmos-account", REFERENCE_PORTAL);
     HorizontalLayout applicationHeaderHorizontalLayout = createApplicationHeader(configService);
@@ -91,10 +96,12 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
             currentUser,
             profileChanges -> accountProfileService.save(httpServletRequest, profileChanges),
             configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
+
     accountSettingsComponent.configureNavigationToggle(accountNavigationToggle);
     accountHeaderActions.setUnreadCountListener(accountSettingsComponent::updateUnreadCount);
     accountSettingsComponent.configureAvatars(userAvatarService, httpServletRequest);
     accountSettingsComponent.configureStatusSelection(userPopoverMenu.createStatusSelect());
+
     accountSettingsComponent.configureSecurityActions(
         passwordChange -> {
           PasswordChanged passwordChangeResult =
@@ -105,13 +112,16 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
           return passwordChangeResult;
         },
         emailChange -> accountSecurityService.requestEmailChange(httpServletRequest, emailChange));
+
     accountSettingsComponent.configureSessionActions(
         () -> sessionManagementService.list(httpServletRequest),
         sessionHandle -> sessionManagementService.revoke(httpServletRequest, sessionHandle),
         () -> sessionManagementService.revokeOthers(httpServletRequest));
+
     accountSettingsComponent.addSectionChangeListener(selectedAccountSection ->
         UI.getCurrent().navigate(AccountView.class, selectedAccountSection.queryParameters()));
     accountSettingsComponent.addProfileSavedListener(this::applySavedProfileToPortal);
+
     setPortalPage(applicationHeaderHorizontalLayout, accountSettingsComponent, configService);
     configureExternalLogins(
         externalLoginFlow, externalIdentityService, httpServletRequest, messageProperties);
@@ -125,8 +135,10 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
     currentUser.setGender(savedProfile.gender());
     currentUser.setPreferredLocale(savedProfile.language());
     currentUser.setVersion(savedProfile.version());
+
     userPopoverMenu.refreshProfileName();
     refreshTrackedUserAvatar();
+
     if (!savedProfile.language().equals(VaadinSession.getCurrent().getLocale())) {
       LanguageChangeEvent.fire(UI.getCurrent(), savedProfile.language());
     }
@@ -138,15 +150,18 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
     if (navigationEvent.hasForwardTarget()) {
       return;
     }
+
     Map<String, List<String>> accountQueryParameters =
         navigationEvent.getLocation().getQueryParameters().getParameters();
     List<String> accountTabParameterValues =
         accountQueryParameters.getOrDefault(ACCOUNT_TAB_PARAMETER, List.of());
+
     // Alte Direktlinks verwenden „tab“ noch für den Seitenbereich.
     AccountSection selectedAccountSection =
         parseAccountSection(
             accountQueryParameters.getOrDefault(
                 ACCOUNT_SECTION_PARAMETER, accountTabParameterValues));
+
     accountSettingsComponent.selectSection(selectedAccountSection);
     accountSettingsComponent.selectSecurityTab(
         selectedAccountSection == AccountSection.SECURITY
@@ -206,6 +221,7 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
             && externalIdentityService.connected(currentUser.getId()).isEmpty()) {
       return;
     }
+
     accountSettingsComponent.configureExternalLogins(
         new ExternalConnectionsComponent(
             externalLoginFlow, externalIdentityService, httpServletRequest, messageProperties),

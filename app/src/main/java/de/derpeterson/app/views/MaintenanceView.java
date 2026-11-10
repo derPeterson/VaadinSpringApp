@@ -42,17 +42,21 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
       HttpServletRequest httpServletRequest) {
     this.maintenanceService = maintenanceService;
     this.httpServletRequest = httpServletRequest;
+
     setPadding(false);
     setSpacing(false);
+
     PublicPageComponent maintenancePageComponent =
         new PublicPageComponent(
             configService, messageProperties, PublicPageComponent.Page.MAINTENANCE);
+
     SvgIcon maintenanceSvgIcon = AppIcon.WRENCH.create();
     maintenanceSvgIcon.addClassName(STATUS_ICON);
     H1 maintenanceTitleH1 = new H1();
     maintenanceTitleH1.addClassName("cosmos-headline");
     Span maintenanceMessageSpan = new Span();
     maintenanceMessageSpan.addClassName("cosmos-form-text");
+
     Button maintenanceLoginButton =
         new Button(
             "",
@@ -67,6 +71,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
     maintenanceLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
     maintenanceLoginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     maintenanceLoginButton.setWidthFull();
+
     Button retryHomeButton =
         new Button(
             "",
@@ -77,6 +82,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
                         httpServletRequest.getContextPath() + AppRoute.HOME.getSecurityRoute()));
     retryHomeButton.setPrefixComponent(AppIcon.REFRESH.create());
     retryHomeButton.setWidthFull();
+
     Button maintenanceLogoutButton =
         new Button(
             "",
@@ -90,6 +96,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
     maintenanceLogoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
     maintenanceLogoutButton.setWidthFull();
     maintenanceLogoutButton.setVisible(isAuthenticatedUser);
+
     Runnable refreshMaintenanceTextsAction =
         () -> {
           maintenanceTitleH1.setText(messageProperties.getMaintenanceTitle());
@@ -104,6 +111,7 @@ public class MaintenanceView extends VerticalLayout implements BeforeEnterObserv
     refreshMaintenanceTextsAction.run();
     ComponentUtil.addListener(
         UI.getCurrent(), LanguageChangeEvent.class, _ -> refreshMaintenanceTextsAction.run());
+
     maintenancePageComponent
         .getCardContainer()
         .add(

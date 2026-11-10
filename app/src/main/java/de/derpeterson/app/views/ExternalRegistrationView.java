@@ -67,13 +67,16 @@ public final class ExternalRegistrationView extends VerticalLayout
     this.externalIdentityService = externalIdentityService;
     this.messageProperties = messageProperties;
     this.httpServletRequest = httpServletRequest;
+
     setPadding(false);
     setSpacing(false);
     setWidthFull();
     externalRegistrationPageComponent =
         new PublicPageComponent(
             configService, messageProperties, PublicPageComponent.Page.REGISTER);
+
     registrationTitleH2.addClassName("cosmos-headline");
+
     firstNameField.setId("external-register-first");
     lastNameField.setId("external-register-last");
     registrationEmailField.setId("external-register-email");
@@ -86,12 +89,15 @@ public final class ExternalRegistrationView extends VerticalLayout
     firstNameField.setWidthFull();
     lastNameField.setWidthFull();
     registrationEmailField.setWidthFull();
+
     completeRegistrationButton.setId("external-register-submit");
     completeRegistrationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     completeRegistrationButton.setPrefixComponent(AppIcon.USER_PLUS.create());
     completeRegistrationButton.addClickListener(_ -> completeExternalRegistration());
+
     cancelRegistrationButton.setPrefixComponent(AppIcon.CLOSE.create());
     cancelRegistrationButton.addClickListener(_ -> cancelExternalRegistration());
+
     PublicPanelComponent externalRegistrationPanelComponent =
         new PublicPanelComponent(
             AppIcon.USER_PLUS.create(),
@@ -105,6 +111,7 @@ public final class ExternalRegistrationView extends VerticalLayout
     externalRegistrationPanelComponent.addClassName("external-registration-panel");
     externalRegistrationPageComponent.getCardContainer().add(externalRegistrationPanelComponent);
     add(externalRegistrationPageComponent);
+
     ComponentUtil.addListener(
         UI.getCurrent(), LanguageChangeEvent.class, _ -> refreshExternalRegistrationTexts());
     refreshExternalRegistrationTexts();
@@ -123,8 +130,10 @@ public final class ExternalRegistrationView extends VerticalLayout
     firstNameField.setPlaceholder(messageProperties.getAccountFirstNamePlaceholder());
     lastNameField.setPlaceholder(messageProperties.getAccountLastNamePlaceholder());
     registrationEmailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+
     completeRegistrationButton.setText(messageProperties.getBaseRegistrationButton());
     cancelRegistrationButton.setText(messageProperties.getAdminUsersCancel());
+
     if (registrationNoticeSpan.isVisible()) {
       registrationNoticeSpan.setText(resolveRegistrationNoticeText());
     }
@@ -148,6 +157,7 @@ public final class ExternalRegistrationView extends VerticalLayout
       registrationNoticeSpan.setVisible(true);
       return;
     }
+
     try {
       ExternalLoginFlow.Registration pendingExternalRegistration =
           externalLoginFlow.registration(httpServletRequest);
@@ -172,6 +182,7 @@ public final class ExternalRegistrationView extends VerticalLayout
             List.of(registrationEmailField), messageProperties)) {
       return;
     }
+
     completeRegistrationButton.setEnabled(false);
     try {
       ExternalLoginFlow.Registration pendingExternalRegistration =
@@ -183,6 +194,7 @@ public final class ExternalRegistrationView extends VerticalLayout
               firstNameField.getValue(),
               lastNameField.getValue(),
               VaadinSession.getCurrent().getLocale());
+
       externalLoginFlow.cancel(httpServletRequest);
       if (registeredUserEntity.isEnabled()) {
         UI.getCurrent()

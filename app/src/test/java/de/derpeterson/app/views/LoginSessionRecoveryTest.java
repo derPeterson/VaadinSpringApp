@@ -208,7 +208,7 @@ class LoginSessionRecoveryTest {
     AfterNavigationEvent after = mock(AfterNavigationEvent.class);
     when(after.getLocation()).thenReturn(location);
     view.afterNavigation(after);
-    assertTrue(field("recoveryArea", Div.class).isVisible());
+    assertTrue(field("sessionRecoveryDiv", Div.class).isVisible());
     Notification notice =
         (Notification)
             ReflectionTestUtils.getField(NotificationHelper.getInstance(), "currentNotification");
@@ -229,8 +229,8 @@ class LoginSessionRecoveryTest {
   }
 
   private void reachedLimit() {
-    field("emailField", EmailField.class).setValue("own@example.test");
-    field("passwordField", PasswordField.class).setValue("Secret!Password8");
+    field("loginEmailField", EmailField.class).setValue("own@example.test");
+    field("loginPasswordField", PasswordField.class).setValue("Secret!Password8");
     field("rememberMeSwitch", Switch.class).setValue(true);
     field("loginButton", Button.class).click();
   }
@@ -240,8 +240,8 @@ class LoginSessionRecoveryTest {
     reachedLimit();
     verify(sessions).startRecovery(mockHttpRequest, "own@example.test", "Secret!Password8", true);
     verify(sessions).recoveryList(mockHttpRequest);
-    assertTrue(field("recoveryArea", Div.class).isVisible());
-    Div recovery = field("recoveryArea", Div.class);
+    assertTrue(field("sessionRecoveryDiv", Div.class).isVisible());
+    Div recovery = field("sessionRecoveryDiv", Div.class);
     assertEquals(1, recovery.getChildren().count());
     assertTrue(
         recovery
@@ -261,8 +261,8 @@ class LoginSessionRecoveryTest {
     Component panel = recovery.getChildren().findFirst().orElseThrow();
     assertTrue(tree(panel).anyMatch(item -> item == button("session-recovery-cancel")));
     assertTrue(tree(panel).anyMatch(item -> item == button("session-recovery-continue")));
-    assertFalse(field("loginPanels", Component.class).isVisible());
-    assertTrue(field("passwordField", PasswordField.class).isEmpty());
+    assertFalse(field("loginAuthenticationPanels", Component.class).isVisible());
+    assertTrue(field("loginPasswordField", PasswordField.class).isEmpty());
     assertNull(ui.target);
     assertFalse(button("session-recovery-continue").isEnabled());
   }
@@ -276,8 +276,8 @@ class LoginSessionRecoveryTest {
     doNothing()
         .when(securityService)
         .storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
-    field("emailField", EmailField.class).setValue("own@example.test");
-    field("passwordField", PasswordField.class).setValue("Secret!Password8");
+    field("loginEmailField", EmailField.class).setValue("own@example.test");
+    field("loginPasswordField", PasswordField.class).setValue("Secret!Password8");
 
     field("loginButton", Button.class).click();
 
@@ -293,8 +293,8 @@ class LoginSessionRecoveryTest {
     view = createView();
 
     assertEquals(expected, field("rememberMeSwitch", Switch.class).getValue());
-    assertTrue(field("emailField", EmailField.class).isEmpty());
-    assertTrue(field("passwordField", PasswordField.class).isEmpty());
+    assertTrue(field("loginEmailField", EmailField.class).isEmpty());
+    assertTrue(field("loginPasswordField", PasswordField.class).isEmpty());
     assertEquals(0, mockHttpResponse.getCookies().length);
     verifyNoInteractions(authentication, securityService, sessions);
   }
@@ -330,8 +330,8 @@ class LoginSessionRecoveryTest {
         .thenThrow(new BadCredentialsException("secret diagnostic"));
     reachedLimit();
     verifyNoInteractions(sessions);
-    assertFalse(field("recoveryArea", Div.class).isVisible());
-    assertTrue(field("loginPanels", Component.class).isVisible());
+    assertFalse(field("sessionRecoveryDiv", Div.class).isVisible());
+    assertTrue(field("loginAuthenticationPanels", Component.class).isVisible());
     verify(securityService, never()).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
     Supplier<String> text =
         (Supplier<String>)
@@ -344,9 +344,9 @@ class LoginSessionRecoveryTest {
     reachedLimit();
     button("session-recovery-cancel").click();
     verify(sessions).cancelRecovery(mockHttpRequest);
-    assertFalse(field("recoveryArea", Div.class).isVisible());
-    assertTrue(field("loginPanels", Component.class).isVisible());
-    assertTrue(field("passwordField", PasswordField.class).isEmpty());
+    assertFalse(field("sessionRecoveryDiv", Div.class).isVisible());
+    assertTrue(field("loginAuthenticationPanels", Component.class).isVisible());
+    assertTrue(field("loginPasswordField", PasswordField.class).isEmpty());
   }
 
   private void freeSessionSlot() {
@@ -362,7 +362,7 @@ class LoginSessionRecoveryTest {
     assertFalse(button("session-recovery-continue").isEnabled());
     button("session-revoke-opaque-device").click();
     assertFalse(button("session-recovery-continue").isEnabled());
-    Object sessionsPanel = ReflectionTestUtils.getField(view, "recoverySessions");
+    Object sessionsPanel = ReflectionTestUtils.getField(view, "sessionRecoveryComponent");
     Object dialog = ReflectionTestUtils.getField(sessionsPanel, "sessionConfirmationDialog");
     when(sessions.recoveryList(mockHttpRequest))
         .thenReturn(new SessionManagementService.Snapshot(List.of(), 0, 1));
@@ -402,13 +402,13 @@ class LoginSessionRecoveryTest {
     SessionManagementService.Snapshot full =
         (SessionManagementService.Snapshot)
             ReflectionTestUtils.getField(
-                field("recoverySessions", Component.class), "sessionSnapshot");
+                field("sessionRecoveryComponent", Component.class), "sessionSnapshot");
     freeSessionSlot();
     when(sessions.recoveryList(mockHttpRequest)).thenReturn(full);
     when(sessions.finishRecovery(mockHttpRequest, vaadinResponse))
         .thenThrow(new SessionLimitException());
     button("session-recovery-continue").click();
-    assertTrue(field("recoveryArea", Div.class).isVisible());
+    assertTrue(field("sessionRecoveryDiv", Div.class).isVisible());
     assertFalse(button("session-recovery-continue").isEnabled());
     assertNull(ui.target);
     Supplier<String> text =
@@ -424,8 +424,8 @@ class LoginSessionRecoveryTest {
     when(sessions.finishRecovery(mockHttpRequest, vaadinResponse))
         .thenThrow(new AuthenticationCredentialsNotFoundException("expired"));
     button("session-recovery-continue").click();
-    assertTrue(field("loginPanels", Component.class).isVisible());
-    assertFalse(field("recoveryArea", Div.class).isVisible());
+    assertTrue(field("loginAuthenticationPanels", Component.class).isVisible());
+    assertFalse(field("sessionRecoveryDiv", Div.class).isVisible());
     assertNull(ui.target);
     Supplier<String> text =
         (Supplier<String>)

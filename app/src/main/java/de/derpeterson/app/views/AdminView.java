@@ -2,6 +2,7 @@ package de.derpeterson.app.views;
 
 import static de.derpeterson.app.ui.components.CosmosClasses.REFERENCE_PORTAL;
 
+import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
@@ -35,9 +36,11 @@ import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.SupportTicketService;
 import de.derpeterson.app.service.UserAvatarService;
+import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
+import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.PageNavigationComponent;
 import de.derpeterson.app.ui.components.PortalPageComponent;
 import de.derpeterson.app.ui.components.SupportTicketActivityIndicator;
@@ -51,6 +54,7 @@ import de.derpeterson.app.views.admin.AdminExternalLoginSection;
 import de.derpeterson.app.views.admin.AdminMailTestSection;
 import de.derpeterson.app.views.admin.AdminTwoFactorSection;
 import de.derpeterson.app.views.admin.AdminUserManagementSection;
+import de.derpeterson.app.views.admin.AdminUserNotificationsSection;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.servlet.http.HttpServletRequest;
@@ -60,6 +64,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 
 @StyleSheet("custom-theme/admin-users.css")
@@ -71,7 +76,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 public class AdminView extends IsAuthenticatedBaseView {
   private static final String SECTION_PARAMETER = "section";
   private static final String ARIA_CURRENT = "aria-current";
-  private boolean restoringTicketNavigation;
 
   private enum AdminSection {
     DASHBOARD,
@@ -83,108 +87,68 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   private final transient ConfigService configService;
+  private transient UserNotificationService userNotificationService;
 
-  private final Div pageHeading = new Div();
-  private final Map<AdminSection, com.vaadin.flow.component.Component> pageHeadings =
+  private final Div adminHeadingDiv = new Div();
+  private final Map<AdminSection, Component> headingsByAdminSection =
       new EnumMap<>(AdminSection.class);
-  private final Map<AdminConfigGroup, com.vaadin.flow.component.Component>
-      specialConfigurationHeadings = new EnumMap<>(AdminConfigGroup.class);
-  private PageNavigationComponent sideNavigation;
-  private final Span administrationHeading = new Span();
-  private final Span portalHeading = new Span();
-  private final SideNavItem portalHome = new SideNavItem("");
+  private final Map<AdminConfigGroup, Component> headingsByConfigurationGroup =
+      new EnumMap<>(AdminConfigGroup.class);
+  private PageNavigationComponent adminPageNavigationComponent;
+  private final Span administrationHeadingSpan = new Span();
+  private final Span portalHeadingSpan = new Span();
+  private final SideNavItem portalHomeNavItem = new SideNavItem("");
   private SideNavItem dashboardNavItem;
   private SideNavItem configurationNavItem;
   private SideNavItem mailTestNavItem;
   private SideNavItem userManagementNavItem;
   private SideNavItem notificationsNavItem;
-  private de.derpeterson.app.views.admin.AdminUserNotificationsSection notificationsSection;
-  private transient de.derpeterson.app.service.UserNotificationService notificationsService;
-  private SupportTicketsComponent supportSection;
+  private AdminUserNotificationsSection notificationsSection;
+  private SupportTicketsComponent supportTicketsComponent;
   private SideNavItem supportNavItem;
-  private SupportTicketActivityIndicator supportActivity;
+  private SupportTicketActivityIndicator supportTicketActivityIndicator;
   private Tooltip twoFactorNavigationTooltip;
 
-  @org.springframework.beans.factory.annotation.Autowired
-  void configureSupport(SupportTicketService support) {
-    supportNavItem = createNavigationItem(AppIcon.MESSAGES, AdminSection.SUPPORT, null);
-    supportNavItem.setLabel(messageProperties.getSupportTitle());
-    supportActivity =
-        new SupportTicketActivityIndicator(messageProperties, support, request, supportNavItem);
-    sideNavigation.addItem(supportNavItem);
-    supportSection = new SupportTicketsComponent(messageProperties, support, request, true);
-    supportSection.setNavigationListener(this::updateTicketLocation);
-  }
-
-  @org.springframework.beans.factory.annotation.Autowired
-  public void configureAdminNotifications(
-      de.derpeterson.app.service.UserNotificationService service) {
-    notificationsService = service;
-    notificationsNavItem = createNavigationItem(AppIcon.BELL, AdminSection.NOTIFICATIONS, null);
-    notificationsNavItem.setLabel(messageProperties.getNotificationsTitle());
-    notificationsNavItem.setVisible(service.canSend(request.getSession(false)));
-    sideNavigation.addItem(notificationsNavItem);
-    notificationsSection =
-        new de.derpeterson.app.views.admin.AdminUserNotificationsSection(
-            messageProperties, service, request);
-  }
-
-  private final Map<AdminConfigGroup, SideNavItem> configurationSubmenuItems =
+  private final Map<AdminConfigGroup, SideNavItem> configurationSubmenuNavItems =
       new LinkedHashMap<>();
 
-  private VerticalLayout sectionLayout = null;
-  private PortalPageComponent page;
+  private VerticalLayout adminSectionContentLayout = null;
+  private PortalPageComponent adminPortalPageComponent;
   private AdminDashboardSection dashboardSection = null;
   private AdminConfigurationSection configurationSection = null;
   private AdminExternalLoginSection externalLoginSection;
   private AdminTwoFactorSection twoFactorSection;
 
-  @org.springframework.beans.factory.annotation.Autowired
-  public void configureExternalProviders(
-      ExternalProviderSettings settings, TwoFactorAuthorization twoFactorAuthorization) {
-    if (canConfigureSecurity()) {
-      externalLoginSection =
-          new AdminExternalLoginSection(messageProperties, settings, configService);
-      externalLoginSection.configureConfirmation(twoFactorAuthorization, request);
-    }
-  }
-
-  @org.springframework.beans.factory.annotation.Autowired
-  public void configureTwoFactor(
-      TwoFactorPolicies policies, TwoFactorAuthorization twoFactorAuthorization) {
-    if (canConfigureSecurity()) {
-      twoFactorSection =
-          new AdminTwoFactorSection(messageProperties, policies, twoFactorAuthorization, request);
-    }
-  }
-
-  private boolean canConfigureSecurity() {
-    return securityService.getAuthenticatedUser(request).stream()
-        .flatMap(user -> user.getAuthorities().stream())
-        .anyMatch(authority -> "ROLE_SUPERADMIN".equals(authority.getAuthority()));
-  }
-
   private AdminMailTestSection mailTestSection = null;
   private AdminUserManagementSection userManagementSection = null;
 
-  private AdminSection activeSection = AdminSection.DASHBOARD;
+  // Aktiver Bereich und Wiederherstellung aus der URL
+  private boolean isRestoringTicketNavigation;
+  private AdminSection activeAdminSection = AdminSection.DASHBOARD;
   private AdminConfigGroup activeConfigurationGroup = null;
 
   public AdminView(
       MessageProperties messageProperties,
       SecurityService securityService,
       ConfigService configService,
-      MaintenanceService maintenance,
+      MaintenanceService maintenanceService,
       EmailService emailService,
       UserService userService,
       RoleService roleService,
-      HttpServletRequest request,
+      HttpServletRequest httpServletRequest,
       UserStatusBroadcaster userStatusBroadcaster,
-      UserAvatarService avatars,
-      ExternalIdentityService identities) {
-    super(messageProperties, securityService, userService, userStatusBroadcaster, request, avatars);
+      UserAvatarService userAvatarService,
+      ExternalIdentityService externalIdentityService) {
+    super(
+        messageProperties,
+        securityService,
+        userService,
+        userStatusBroadcaster,
+        httpServletRequest,
+        userAvatarService);
 
     this.configService = configService;
+
     addClassNames(
         "admin-view",
         "cosmos-page",
@@ -194,99 +158,174 @@ public class AdminView extends IsAuthenticatedBaseView {
         REFERENCE_PORTAL,
         "cosmos-reference-admin");
 
-    UserDetails authenticatedUser = securityService.getAuthenticatedUser(request).orElse(null);
+    UserDetails authenticatedUser =
+        securityService.getAuthenticatedUser(httpServletRequest).orElse(null);
 
-    HorizontalLayout header = createNavbar();
-    pageHeading.addClassName("admin-reference-page-heading");
-    VerticalLayout sidebar = createSideNavigation();
+    HorizontalLayout adminHeaderLayout = createAdminHeaderLayout();
+    adminHeadingDiv.addClassName("admin-reference-page-heading");
+    VerticalLayout adminSidebarLayout = createAdminSidebarLayout();
 
-    sectionLayout = new VerticalLayout();
-    sectionLayout.setWidthFull();
-    sectionLayout.setPadding(false);
-    sectionLayout.setSpacing(false);
-    sectionLayout.addClassName("cosmos-admin-sections");
+    adminSectionContentLayout = new VerticalLayout();
+    adminSectionContentLayout.setWidthFull();
+    adminSectionContentLayout.setPadding(false);
+    adminSectionContentLayout.setSpacing(false);
+    adminSectionContentLayout.addClassName("cosmos-admin-sections");
 
     dashboardSection = new AdminDashboardSection(messageProperties, authenticatedUser);
     configurationSection =
         new AdminConfigurationSection(
             messageProperties, configService, this::refreshConfigurationState);
     mailTestSection =
-        new AdminMailTestSection(messageProperties, emailService, maintenance, authenticatedUser);
+        new AdminMailTestSection(
+            messageProperties, emailService, maintenanceService, authenticatedUser);
     userManagementSection =
         new AdminUserManagementSection(
             messageProperties, userService, roleService, securityService);
-    userManagementSection.configureAvatars(avatars);
-    userManagementSection.configureSignInDetails(identities);
+    userManagementSection.configureAvatars(userAvatarService);
+    userManagementSection.configureSignInDetails(externalIdentityService);
 
-    page = new PortalPageComponent(pageHeading, sidebar, sectionLayout);
-    page.addClassName("admin-reference-frame");
-    page.configureNavigationToggle(accountNavigationToggle);
-    setPortalPage(header, page, configService);
+    adminPortalPageComponent =
+        new PortalPageComponent(adminHeadingDiv, adminSidebarLayout, adminSectionContentLayout);
+    adminPortalPageComponent.addClassName("admin-reference-frame");
+    adminPortalPageComponent.configureNavigationToggle(accountNavigationToggle);
+    setPortalPage(adminHeaderLayout, adminPortalPageComponent, configService);
 
     selectSection(AdminSection.DASHBOARD, null);
-    refreshTexts();
+
+    refreshAdminViewTexts();
     configurationSection.loadConfigValues();
   }
 
-  @Override
-  public void beforeEnter(BeforeEnterEvent event) {
-    super.beforeEnter(event);
-    if (event.hasForwardTarget()) {
-      return;
-    }
+  @Autowired
+  void configureSupport(SupportTicketService supportTicketService) {
+    supportNavItem = createNavigationItem(AppIcon.MESSAGES, AdminSection.SUPPORT, null);
+    supportNavItem.setLabel(messageProperties.getSupportTitle());
 
-    QueryParameters parameters = event.getLocation().getQueryParameters();
-    AdminSection section =
-        parameter(parameters, SECTION_PARAMETER, AdminSection.class, AdminSection.DASHBOARD);
-    AdminConfigGroup group =
-        section == AdminSection.CONFIGURATION
-            ? parameter(parameters, "group", AdminConfigGroup.class, AdminConfigGroup.GENERAL)
-            : null;
-    restoringTicketNavigation = true;
-    try {
-      selectSection(section, group);
-      if (activeSection == AdminSection.SUPPORT) {
-        Category category = parameter(parameters, "tab", Category.class, Category.ALL);
-        List<String> numbers = parameters.getParameters().get("ticket");
-        String number = numbers != null && numbers.size() == 1 ? numbers.getFirst() : null;
-        supportSection.restoreNavigation(category, number);
-      }
-    } finally {
-      restoringTicketNavigation = false;
+    supportTicketActivityIndicator =
+        new SupportTicketActivityIndicator(
+            messageProperties, supportTicketService, request, supportNavItem);
+    adminPageNavigationComponent.addItem(supportNavItem);
+
+    supportTicketsComponent =
+        new SupportTicketsComponent(messageProperties, supportTicketService, request, true);
+    supportTicketsComponent.setNavigationListener(this::updateTicketLocation);
+  }
+
+  @Autowired
+  public void configureAdminNotifications(UserNotificationService userNotificationService) {
+    this.userNotificationService = userNotificationService;
+
+    notificationsNavItem = createNavigationItem(AppIcon.BELL, AdminSection.NOTIFICATIONS, null);
+    notificationsNavItem.setLabel(messageProperties.getNotificationsTitle());
+    notificationsNavItem.setVisible(userNotificationService.canSend(request.getSession(false)));
+    adminPageNavigationComponent.addItem(notificationsNavItem);
+
+    notificationsSection =
+        new AdminUserNotificationsSection(messageProperties, userNotificationService, request);
+  }
+
+  @Autowired
+  public void configureExternalProviders(
+      ExternalProviderSettings externalProviderSettings,
+      TwoFactorAuthorization twoFactorAuthorization) {
+    if (canConfigureSecurity()) {
+      externalLoginSection =
+          new AdminExternalLoginSection(messageProperties, externalProviderSettings, configService);
+      externalLoginSection.configureConfirmation(twoFactorAuthorization, request);
     }
   }
 
-  private void updateTicketLocation(NavigationState state) {
-    if (restoringTicketNavigation || activeSection != AdminSection.SUPPORT) {
+  @Autowired
+  public void configureTwoFactor(
+      TwoFactorPolicies twoFactorPolicies, TwoFactorAuthorization twoFactorAuthorization) {
+    if (canConfigureSecurity()) {
+      twoFactorSection =
+          new AdminTwoFactorSection(
+              messageProperties, twoFactorPolicies, twoFactorAuthorization, request);
+    }
+  }
+
+  private boolean canConfigureSecurity() {
+    return securityService.getAuthenticatedUser(request).stream()
+        .flatMap(user -> user.getAuthorities().stream())
+        .anyMatch(authority -> "ROLE_SUPERADMIN".equals(authority.getAuthority()));
+  }
+
+  @Override
+  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+    super.beforeEnter(beforeEnterEvent);
+    if (beforeEnterEvent.hasForwardTarget()) {
       return;
     }
-    Map<String, String> parameters = new LinkedHashMap<>();
-    parameters.put(SECTION_PARAMETER, "support");
-    parameters.put("tab", state.category().name().toLowerCase(Locale.ROOT));
-    if (state.ticketNumber() != null) {
-      parameters.put("ticket", state.ticketNumber());
+
+    QueryParameters adminQueryParameters = beforeEnterEvent.getLocation().getQueryParameters();
+    AdminSection requestedAdminSection =
+        parseEnumQueryParameter(
+            adminQueryParameters, SECTION_PARAMETER, AdminSection.class, AdminSection.DASHBOARD);
+    AdminConfigGroup requestedConfigurationGroup =
+        requestedAdminSection == AdminSection.CONFIGURATION
+            ? parseEnumQueryParameter(
+                adminQueryParameters, "group", AdminConfigGroup.class, AdminConfigGroup.GENERAL)
+            : null;
+
+    isRestoringTicketNavigation = true;
+    try {
+      selectSection(requestedAdminSection, requestedConfigurationGroup);
+      if (activeAdminSection == AdminSection.SUPPORT) {
+        Category requestedTicketCategory =
+            parseEnumQueryParameter(adminQueryParameters, "tab", Category.class, Category.ALL);
+        List<String> ticketNumberParameterValues =
+            adminQueryParameters.getParameters().get("ticket");
+        String requestedTicketNumber =
+            ticketNumberParameterValues != null && ticketNumberParameterValues.size() == 1
+                ? ticketNumberParameterValues.getFirst()
+                : null;
+        supportTicketsComponent.restoreNavigation(requestedTicketCategory, requestedTicketNumber);
+      }
+    } finally {
+      isRestoringTicketNavigation = false;
     }
+  }
+
+  private void updateTicketLocation(NavigationState ticketNavigationState) {
+    if (isRestoringTicketNavigation || activeAdminSection != AdminSection.SUPPORT) {
+      return;
+    }
+
+    Map<String, String> ticketQueryParameters = new LinkedHashMap<>();
+    ticketQueryParameters.put(SECTION_PARAMETER, "support");
+    ticketQueryParameters.put(
+        "tab", ticketNavigationState.category().name().toLowerCase(Locale.ROOT));
+    if (ticketNavigationState.ticketNumber() != null) {
+      ticketQueryParameters.put("ticket", ticketNavigationState.ticketNumber());
+    }
+
     getUI()
-        .ifPresent(ui ->
-            ui.getPage()
+        .ifPresent(adminUi ->
+            adminUi
+                .getPage()
                 .getHistory()
                 .replaceState(
                     null,
                     new Location(
-                        AppRouteConstants.ADMIN_ROUTE, QueryParameters.simple(parameters))));
+                        AppRouteConstants.ADMIN_ROUTE,
+                        QueryParameters.simple(ticketQueryParameters))));
   }
 
-  private static <E extends Enum<E>> E parameter(
-      QueryParameters parameters, String key, Class<E> type, E fallback) {
-    List<String> values = parameters.getParameters().get(key);
+  private static <E extends Enum<E>> E parseEnumQueryParameter(
+      QueryParameters queryParameters,
+      String parameterName,
+      Class<E> enumType,
+      E defaultEnumValue) {
+    List<String> parameterValues = queryParameters.getParameters().get(parameterName);
     // Fehlende, mehrdeutige oder veraltete Links bekommen einen festen Standard.
-    if (values == null || values.size() != 1) {
-      return fallback;
+    if (parameterValues == null || parameterValues.size() != 1) {
+      return defaultEnumValue;
     }
     try {
-      return Enum.valueOf(type, values.getFirst().toUpperCase(Locale.ROOT));
+      return Enum.valueOf(enumType, parameterValues.getFirst().toUpperCase(Locale.ROOT));
     } catch (IllegalArgumentException _) {
-      return fallback;
+      return defaultEnumValue;
     }
   }
 
@@ -295,7 +334,7 @@ public class AdminView extends IsAuthenticatedBaseView {
     return hasRole(authenticatedUser, AppRoute.ADMIN.getRoles());
   }
 
-  private HorizontalLayout createNavbar() {
+  private HorizontalLayout createAdminHeaderLayout() {
     return createApplicationHeader(
         configService,
         new UserPopoverMenu.UserPopoverActions(
@@ -314,140 +353,170 @@ public class AdminView extends IsAuthenticatedBaseView {
     refreshApplicationServiceName(configService.getString(ConfigEntry.SERVICE_NAME));
   }
 
-  private VerticalLayout createSideNavigation() {
-    sideNavigation = new PageNavigationComponent();
-    sideNavigation.setWidthFull();
-    sideNavigation.setAutoExpand(false);
+  private VerticalLayout createAdminSidebarLayout() {
+    adminPageNavigationComponent = new PageNavigationComponent();
+    adminPageNavigationComponent.setWidthFull();
+    adminPageNavigationComponent.setAutoExpand(false);
 
     dashboardNavItem = createNavigationItem(AppIcon.DASHBOARD, AdminSection.DASHBOARD, null);
+
     // Ohne Zielpfad klappt SideNav diesen Elternpunkt ausschließlich auf und zu.
     configurationNavItem = new SideNavItem("");
     configurationNavItem.setPrefixComponent(AppIcon.COGS.create());
     configurationNavItem.getElement().getClassList().add("admin-nav-item");
+
     mailTestNavItem = createNavigationItem(AppIcon.ENVELOPE, AdminSection.MAIL_TEST, null);
     userManagementNavItem = createNavigationItem(AppIcon.USERS, AdminSection.USER_MANAGEMENT, null);
 
-    for (AdminConfigGroup group : AdminConfigGroup.values()) {
-      SideNavItem submenuItem =
-          createNavigationItem(ConfigGroupIcons.forGroup(group), AdminSection.CONFIGURATION, group);
-      submenuItem.getElement().getClassList().add("cosmos-nav-item--sub");
-      configurationSubmenuItems.put(group, submenuItem);
-      configurationNavItem.addItem(submenuItem);
-      if (group == AdminConfigGroup.TWO_FACTOR) {
-        twoFactorNavigationTooltip = Tooltip.forComponent(submenuItem);
+    for (AdminConfigGroup configurationGroup : AdminConfigGroup.values()) {
+      SideNavItem configurationGroupNavItem =
+          createNavigationItem(
+              ConfigGroupIcons.forGroup(configurationGroup),
+              AdminSection.CONFIGURATION,
+              configurationGroup);
+      configurationGroupNavItem.getElement().getClassList().add("cosmos-nav-item--sub");
+      configurationSubmenuNavItems.put(configurationGroup, configurationGroupNavItem);
+      configurationNavItem.addItem(configurationGroupNavItem);
+      if (configurationGroup == AdminConfigGroup.TWO_FACTOR) {
+        twoFactorNavigationTooltip = Tooltip.forComponent(configurationGroupNavItem);
       }
     }
 
-    sideNavigation.addItem(
+    adminPageNavigationComponent.addItem(
         dashboardNavItem, userManagementNavItem, configurationNavItem, mailTestNavItem);
 
-    Span portalLabel = portalHeading;
-    administrationHeading.addClassName("admin-portal-label");
-    portalLabel.addClassName("admin-portal-label");
-    SideNavItem portal = portalHome;
-    portal.setId("admin-nav-home");
-    portal.setPath(AppRoute.HOME.getSecurityRoute());
-    portal.setPrefixComponent(AppIcon.HOME.create());
-    PageNavigationComponent portalNavigation = new PageNavigationComponent();
-    portalNavigation.registerAction(portal, () -> UI.getCurrent().navigate(HomeView.class));
-    portalNavigation.addItem(portal);
-    VerticalLayout drawerContent =
-        new VerticalLayout(administrationHeading, sideNavigation, portalLabel, portalNavigation);
-    drawerContent.setPadding(false);
-    drawerContent.setSpacing(false);
-    drawerContent.setWidthFull();
-    drawerContent.setAlignItems(FlexComponent.Alignment.STRETCH);
-    drawerContent.setId("admin-sidebar");
-    drawerContent.addClassNames("cosmos-sidebar", "account-sidebar");
+    administrationHeadingSpan.addClassName("admin-portal-label");
+    portalHeadingSpan.addClassName("admin-portal-label");
+    portalHomeNavItem.setId("admin-nav-home");
+    portalHomeNavItem.setPath(AppRoute.HOME.getSecurityRoute());
+    portalHomeNavItem.setPrefixComponent(AppIcon.HOME.create());
+    PageNavigationComponent portalPageNavigationComponent = new PageNavigationComponent();
+    portalPageNavigationComponent.registerAction(
+        portalHomeNavItem, () -> UI.getCurrent().navigate(HomeView.class));
+    portalPageNavigationComponent.addItem(portalHomeNavItem);
+
+    VerticalLayout adminSidebarLayout =
+        new VerticalLayout(
+            administrationHeadingSpan,
+            adminPageNavigationComponent,
+            portalHeadingSpan,
+            portalPageNavigationComponent);
+    adminSidebarLayout.setPadding(false);
+    adminSidebarLayout.setSpacing(false);
+    adminSidebarLayout.setWidthFull();
+    adminSidebarLayout.setAlignItems(FlexComponent.Alignment.STRETCH);
+    adminSidebarLayout.setId("admin-sidebar");
+    adminSidebarLayout.addClassNames("cosmos-sidebar", "account-sidebar");
+
     updateNavigationState();
-    return drawerContent;
+    return adminSidebarLayout;
   }
 
   private SideNavItem createNavigationItem(
-      AppIcon iconType, AdminSection section, AdminConfigGroup group) {
-    Map<String, String> parameters = new LinkedHashMap<>();
-    parameters.put(SECTION_PARAMETER, section.name().toLowerCase(Locale.ROOT));
-    if (group != null) {
-      parameters.put("group", group.name().toLowerCase(Locale.ROOT));
+      AppIcon navigationAppIcon,
+      AdminSection targetAdminSection,
+      AdminConfigGroup targetConfigurationGroup) {
+    Map<String, String> navigationQueryParameters = new LinkedHashMap<>();
+    navigationQueryParameters.put(
+        SECTION_PARAMETER, targetAdminSection.name().toLowerCase(Locale.ROOT));
+    if (targetConfigurationGroup != null) {
+      navigationQueryParameters.put(
+          "group", targetConfigurationGroup.name().toLowerCase(Locale.ROOT));
     }
-    SideNavItem item = new SideNavItem("", AdminView.class);
-    item.setId(
+
+    SideNavItem adminSideNavItem = new SideNavItem("", AdminView.class);
+    adminSideNavItem.setId(
         "admin-nav-"
-            + section.name().toLowerCase(Locale.ROOT)
-            + (group == null ? "" : "-" + group.name().toLowerCase(Locale.ROOT)));
+            + targetAdminSection.name().toLowerCase(Locale.ROOT)
+            + (targetConfigurationGroup == null
+                ? ""
+                : "-" + targetConfigurationGroup.name().toLowerCase(Locale.ROOT)));
     // SideNavItem entfernt Query-Anteile aus setPath; deshalb die vorgesehene API nutzen.
-    item.setQueryParameters(QueryParameters.simple(parameters));
-    if (iconType != null) {
-      item.setPrefixComponent(iconType.create());
+    adminSideNavItem.setQueryParameters(QueryParameters.simple(navigationQueryParameters));
+    if (navigationAppIcon != null) {
+      adminSideNavItem.setPrefixComponent(navigationAppIcon.create());
     }
-    item.getElement().getClassList().add("admin-nav-item");
-    sideNavigation.registerAction(
-        item, () -> UI.getCurrent().navigate(AdminView.class, QueryParameters.simple(parameters)));
-    return item;
+    adminSideNavItem.getElement().getClassList().add("admin-nav-item");
+
+    adminPageNavigationComponent.registerAction(
+        adminSideNavItem,
+        () ->
+            UI.getCurrent()
+                .navigate(AdminView.class, QueryParameters.simple(navigationQueryParameters)));
+    return adminSideNavItem;
   }
 
-  private void selectSection(AdminSection section, AdminConfigGroup configurationGroup) {
-    AdminConfigGroup requestedGroup =
+  private void selectSection(
+      AdminSection requestedAdminSection, AdminConfigGroup configurationGroup) {
+    AdminConfigGroup requestedConfigurationGroup =
         configurationGroup == null ? activeConfigurationGroup : configurationGroup;
-    if (section == AdminSection.CONFIGURATION
-        && requestedGroup != null
-        && requestedGroup.isSuperadminOnly()
+    if (requestedAdminSection == AdminSection.CONFIGURATION
+        && requestedConfigurationGroup != null
+        && requestedConfigurationGroup.isSuperadminOnly()
         && !canConfigureSecurity()) {
       configurationGroup = AdminConfigGroup.GENERAL;
     }
+
     mailTestSection.refreshDeliveryState();
-    boolean canSend =
-        notificationsService != null && notificationsService.canSend(request.getSession(false));
+    boolean canSendNotifications =
+        userNotificationService != null
+            && userNotificationService.canSend(request.getSession(false));
     if (notificationsNavItem != null) {
-      notificationsNavItem.setVisible(canSend);
+      notificationsNavItem.setVisible(canSendNotifications);
     }
-    if (section == AdminSection.NOTIFICATIONS && !canSend) {
-      section = AdminSection.DASHBOARD;
+
+    if (requestedAdminSection == AdminSection.NOTIFICATIONS && !canSendNotifications) {
+      requestedAdminSection = AdminSection.DASHBOARD;
     }
-    activeSection = section;
+    activeAdminSection = requestedAdminSection;
 
-    selectConfigurationGroup(section, configurationGroup);
+    selectConfigurationGroup(requestedAdminSection, configurationGroup);
 
-    if (sectionLayout == null) {
+    if (adminSectionContentLayout == null) {
       return;
     }
 
-    sectionLayout.removeAll();
+    adminSectionContentLayout.removeAll();
 
-    switch (section) {
+    showAdminSectionContent(requestedAdminSection);
+
+    updatePageHeading();
+    adminPortalPageComponent.closeNavigation();
+    updateNavigationState();
+  }
+
+  private void showAdminSectionContent(AdminSection requestedAdminSection) {
+    switch (requestedAdminSection) {
       case CONFIGURATION -> {
         if (activeConfigurationGroup == AdminConfigGroup.TWO_FACTOR && twoFactorSection != null) {
           twoFactorSection.activate();
-          sectionLayout.add(twoFactorSection);
+          adminSectionContentLayout.add(twoFactorSection);
         } else if (activeConfigurationGroup == AdminConfigGroup.EXTERNAL_LOGIN
             && externalLoginSection != null) {
           externalLoginSection.activate();
-          sectionLayout.add(externalLoginSection);
+          adminSectionContentLayout.add(externalLoginSection);
         } else {
-          sectionLayout.add(configurationSection);
+          adminSectionContentLayout.add(configurationSection);
           configurationSection.showGroup(activeConfigurationGroup);
         }
       }
       case NOTIFICATIONS -> {
-        sectionLayout.add(notificationsSection);
+        adminSectionContentLayout.add(notificationsSection);
         notificationsSection.activate();
       }
       case SUPPORT -> {
-        sectionLayout.add(supportSection);
-        supportSection.refreshTicketWorkspace();
+        adminSectionContentLayout.add(supportTicketsComponent);
+        supportTicketsComponent.refreshTicketWorkspace();
       }
-      case MAIL_TEST -> sectionLayout.add(mailTestSection);
-      case USER_MANAGEMENT -> sectionLayout.add(userManagementSection);
-      default -> sectionLayout.add(dashboardSection);
+      case MAIL_TEST -> adminSectionContentLayout.add(mailTestSection);
+      case USER_MANAGEMENT -> adminSectionContentLayout.add(userManagementSection);
+      default -> adminSectionContentLayout.add(dashboardSection);
     }
-
-    updatePageHeading();
-    page.closeNavigation();
-    updateNavigationState();
   }
 
-  private void selectConfigurationGroup(AdminSection section, AdminConfigGroup configurationGroup) {
-    if (section == AdminSection.CONFIGURATION) {
+  private void selectConfigurationGroup(
+      AdminSection requestedAdminSection, AdminConfigGroup configurationGroup) {
+    if (requestedAdminSection == AdminSection.CONFIGURATION) {
       configurationNavItem.setExpanded(true);
       if (configurationGroup != null) {
         activeConfigurationGroup = configurationGroup;
@@ -460,73 +529,79 @@ public class AdminView extends IsAuthenticatedBaseView {
   }
 
   private void updatePageHeading() {
-    VerticalLayout selected =
-        (VerticalLayout) sectionLayout.getChildren().findFirst().orElseThrow();
-    selected
+    VerticalLayout selectedSectionLayout =
+        (VerticalLayout) adminSectionContentLayout.getChildren().findFirst().orElseThrow();
+    selectedSectionLayout
         .getChildren()
-        .filter(de.derpeterson.app.ui.components.CosmosSectionHeaderComponent.class::isInstance)
+        .filter(CosmosSectionHeaderComponent.class::isInstance)
         .findFirst()
-        .ifPresent(header -> {
-          if (activeSection == AdminSection.CONFIGURATION
+        .ifPresent(sectionHeaderComponent -> {
+          if (activeAdminSection == AdminSection.CONFIGURATION
               && activeConfigurationGroup != null
               && activeConfigurationGroup.isSuperadminOnly()) {
-            specialConfigurationHeadings.put(activeConfigurationGroup, header);
+            headingsByConfigurationGroup.put(activeConfigurationGroup, sectionHeaderComponent);
           } else {
-            pageHeadings.put(activeSection, header);
+            headingsByAdminSection.put(activeAdminSection, sectionHeaderComponent);
           }
-          selected.remove(header);
+          selectedSectionLayout.remove(sectionHeaderComponent);
         });
-    pageHeading.removeAll();
-    com.vaadin.flow.component.Component heading =
-        activeSection == AdminSection.CONFIGURATION
+
+    adminHeadingDiv.removeAll();
+    Component activeHeadingComponent =
+        activeAdminSection == AdminSection.CONFIGURATION
                 && activeConfigurationGroup != null
                 && activeConfigurationGroup.isSuperadminOnly()
-            ? specialConfigurationHeadings.get(activeConfigurationGroup)
-            : pageHeadings.get(activeSection);
-    if (heading != null) {
-      pageHeading.add(heading);
+            ? headingsByConfigurationGroup.get(activeConfigurationGroup)
+            : headingsByAdminSection.get(activeAdminSection);
+    if (activeHeadingComponent != null) {
+      adminHeadingDiv.add(activeHeadingComponent);
     }
   }
 
   private void updateNavigationState() {
-    applyNavigationItemState(supportNavItem, activeSection == AdminSection.SUPPORT);
-    applyNavigationItemState(notificationsNavItem, activeSection == AdminSection.NOTIFICATIONS);
-    applyNavigationItemState(dashboardNavItem, activeSection == AdminSection.DASHBOARD);
-    applyNavigationItemState(configurationNavItem, activeSection == AdminSection.CONFIGURATION);
-    applyNavigationItemState(mailTestNavItem, activeSection == AdminSection.MAIL_TEST);
-    applyNavigationItemState(userManagementNavItem, activeSection == AdminSection.USER_MANAGEMENT);
+    applyNavigationItemState(supportNavItem, activeAdminSection == AdminSection.SUPPORT);
+    applyNavigationItemState(
+        notificationsNavItem, activeAdminSection == AdminSection.NOTIFICATIONS);
+    applyNavigationItemState(dashboardNavItem, activeAdminSection == AdminSection.DASHBOARD);
+    applyNavigationItemState(
+        configurationNavItem, activeAdminSection == AdminSection.CONFIGURATION);
+    applyNavigationItemState(mailTestNavItem, activeAdminSection == AdminSection.MAIL_TEST);
+    applyNavigationItemState(
+        userManagementNavItem, activeAdminSection == AdminSection.USER_MANAGEMENT);
 
     // Der Elternpunkt klappt nur auf; die aktive Seite ist der Unterpunkt.
     if (configurationNavItem != null) {
       configurationNavItem.getElement().removeAttribute(ARIA_CURRENT);
     }
 
-    configurationSubmenuItems.forEach((group, item) -> {
-      item.setVisible(!group.isSuperadminOnly() || canConfigureSecurity());
+    configurationSubmenuNavItems.forEach((configurationGroup, configurationGroupNavItem) -> {
+      configurationGroupNavItem.setVisible(
+          !configurationGroup.isSuperadminOnly() || canConfigureSecurity());
       boolean isActive =
-          activeSection == AdminSection.CONFIGURATION
-              && Objects.equals(activeConfigurationGroup, group);
-      applyNavigationItemState(item, isActive);
+          activeAdminSection == AdminSection.CONFIGURATION
+              && Objects.equals(activeConfigurationGroup, configurationGroup);
+      applyNavigationItemState(configurationGroupNavItem, isActive);
     });
   }
 
-  private void applyNavigationItemState(SideNavItem item, boolean active) {
-    if (item == null) {
+  private void applyNavigationItemState(SideNavItem sectionNavItem, boolean isSectionActive) {
+    if (sectionNavItem == null) {
       return;
     }
 
-    PageNavigationComponent.setItemActive(item, active);
+    PageNavigationComponent.setItemActive(sectionNavItem, isSectionActive);
   }
 
-  private void refreshTexts() {
+  private void refreshAdminViewTexts() {
     if (supportNavItem != null) {
       supportNavItem.setLabel(messageProperties.getSupportTitle());
-      supportActivity.refreshTexts();
-      supportSection.refreshTexts();
+      supportTicketActivityIndicator.refreshTexts();
+      supportTicketsComponent.refreshTexts();
     }
-    administrationHeading.setText(messageProperties.getAdminHeaderTitle());
-    portalHeading.setText(messageProperties.getAccountNavigationPortal());
-    portalHome.setLabel(messageProperties.getHomeTitle());
+
+    administrationHeadingSpan.setText(messageProperties.getAdminHeaderTitle());
+    portalHeadingSpan.setText(messageProperties.getAccountNavigationPortal());
+    portalHomeNavItem.setLabel(messageProperties.getHomeTitle());
     mailTestSection.refreshDeliveryState();
 
     if (notificationsNavItem != null) {
@@ -535,19 +610,23 @@ public class AdminView extends IsAuthenticatedBaseView {
     if (notificationsSection != null) {
       notificationsSection.refreshTexts();
     }
+
     dashboardNavItem.setLabel(messageProperties.getAdminNavDashboard());
     configurationNavItem.setLabel(messageProperties.getAdminNavConfiguration());
     mailTestNavItem.setLabel(messageProperties.getAdminNavMailTest());
     userManagementNavItem.setLabel(messageProperties.getAdminUsersTitle());
 
-    configurationSubmenuItems.forEach((group, item) ->
-        item.setLabel(
-            group == AdminConfigGroup.TWO_FACTOR
+    configurationSubmenuNavItems.forEach((configurationGroup, configurationGroupNavItem) ->
+        configurationGroupNavItem.setLabel(
+            configurationGroup == AdminConfigGroup.TWO_FACTOR
                 ? messageProperties.getTwoFactorNavigationLabel()
-                : messageProperties.getAdminConfigGroupLabel(group)));
+                : messageProperties.getAdminConfigGroupLabel(configurationGroup)));
     twoFactorNavigationTooltip.setText(messageProperties.getTwoFactorSettingsTitle());
-    sideNavigation.getElement().setAttribute("aria-label", messageProperties.getAdminHeaderTitle());
-    sideNavigation.setI18n(
+
+    adminPageNavigationComponent
+        .getElement()
+        .setAttribute("aria-label", messageProperties.getAdminHeaderTitle());
+    adminPageNavigationComponent.setI18n(
         new SideNav.SideNavI18n().setToggle(messageProperties.getAdminNavToggleChildren()));
 
     if (dashboardSection != null) {
@@ -572,6 +651,6 @@ public class AdminView extends IsAuthenticatedBaseView {
 
   @Override
   protected void onTrackedUserLanguageChanged() {
-    refreshTexts();
+    refreshAdminViewTexts();
   }
 }

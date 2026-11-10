@@ -11,33 +11,33 @@ import java.time.temporal.ChronoUnit;
 final class AdminUserActivityText {
   private AdminUserActivityText() {}
 
-  static String format(Instant activity, Instant now, MessageTexts texts) {
-    if (activity == null) {
+  static String format(Instant activityInstant, Instant currentInstant, MessageTexts messageTexts) {
+    if (activityInstant == null) {
       return "-";
     }
-    Duration age = Duration.between(activity, now);
-    if (age.toMinutes() < 1) {
-      return texts.getAdminUsersActivityNow();
+    Duration activityAgeDuration = Duration.between(activityInstant, currentInstant);
+    if (activityAgeDuration.toMinutes() < 1) {
+      return messageTexts.getAdminUsersActivityNow();
     }
-    if (age.toHours() < 1) {
-      return texts.getAdminUsersActivityMinutes(age.toMinutes());
+    if (activityAgeDuration.toHours() < 1) {
+      return messageTexts.getAdminUsersActivityMinutes(activityAgeDuration.toMinutes());
     }
-    if (age.toDays() < 1) {
-      return texts.getAdminUsersActivityHours(age.toHours());
+    if (activityAgeDuration.toDays() < 1) {
+      return messageTexts.getAdminUsersActivityHours(activityAgeDuration.toHours());
     }
-    if (age.toDays() < 7) {
-      return texts.getAdminUsersActivityDays(age.toDays());
+    if (activityAgeDuration.toDays() < 7) {
+      return messageTexts.getAdminUsersActivityDays(activityAgeDuration.toDays());
     }
-    ZonedDateTime localActivity = activity.atZone(UserActivityTime.DISPLAY_ZONE);
-    ZonedDateTime localNow = now.atZone(UserActivityTime.DISPLAY_ZONE);
-    long months = ChronoUnit.MONTHS.between(localActivity, localNow);
-    if (months < 1) {
-      return texts.getAdminUsersActivityWeeks(age.toDays() / 7);
+    ZonedDateTime activityZonedDateTime = activityInstant.atZone(UserActivityTime.DISPLAY_ZONE);
+    ZonedDateTime currentZonedDateTime = currentInstant.atZone(UserActivityTime.DISPLAY_ZONE);
+    long elapsedMonths = ChronoUnit.MONTHS.between(activityZonedDateTime, currentZonedDateTime);
+    if (elapsedMonths < 1) {
+      return messageTexts.getAdminUsersActivityWeeks(activityAgeDuration.toDays() / 7);
     }
-    long years = ChronoUnit.YEARS.between(localActivity, localNow);
-    if (years < 1) {
-      return texts.getAdminUsersActivityMonths(months);
+    long elapsedYears = ChronoUnit.YEARS.between(activityZonedDateTime, currentZonedDateTime);
+    if (elapsedYears < 1) {
+      return messageTexts.getAdminUsersActivityMonths(elapsedMonths);
     }
-    return texts.getAdminUsersActivityYears(years);
+    return messageTexts.getAdminUsersActivityYears(elapsedYears);
   }
 }

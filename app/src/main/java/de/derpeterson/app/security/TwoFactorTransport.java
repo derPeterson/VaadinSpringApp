@@ -27,16 +27,18 @@ public final class TwoFactorTransport {
         ui ->
             ui.getInternals().getActiveRouterTargetsChain().isEmpty()
                 || ui.getInternals().getActiveRouterTargetsChain().stream()
-                    .anyMatch(
-                        view -> {
-                          TwoFactorFlow flow = TwoFactorFlow.current(request);
-                          if (flow == null) {
-                            return view instanceof TwoFactorView
-                                || view instanceof RecoveryHelpView;
-                          }
-                          return view instanceof TwoFactorView factor && factor.isCurrent(flow)
-                              || view instanceof RecoveryHelpView help && help.isCurrent(flow);
-                        }),
+                    .anyMatch(activeRouteComponent -> {
+                      TwoFactorFlow activeTwoFactorFlow = TwoFactorFlow.current(request);
+                      if (activeTwoFactorFlow == null) {
+                        return activeRouteComponent instanceof TwoFactorView
+                            || activeRouteComponent instanceof RecoveryHelpView;
+                      }
+
+                      return activeRouteComponent instanceof TwoFactorView twoFactorView
+                              && twoFactorView.matchesActiveTwoFactorFlow(activeTwoFactorFlow)
+                          || activeRouteComponent instanceof RecoveryHelpView recoveryHelpView
+                              && recoveryHelpView.matchesActiveTwoFactorFlow(activeTwoFactorFlow);
+                    }),
         false);
   }
 
@@ -44,13 +46,12 @@ public final class TwoFactorTransport {
     MaintenanceTransport.withUi(
         request,
         ui -> {
-          ui.access(
-              () -> {
-                ui.getPage().setLocation(destination(request));
-                if (ui.getPushConfiguration().getPushMode().isEnabled()) {
-                  ui.push();
-                }
-              });
+          ui.access(() -> {
+            ui.getPage().setLocation(destination(request));
+            if (ui.getPushConfiguration().getPushMode().isEnabled()) {
+              ui.push();
+            }
+          });
           return true;
         },
         false);

@@ -94,6 +94,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     getContent().setPadding(false);
     getContent().removeAll();
     setSpacing(false);
+
     PublicPageComponent resetPageComponent =
         new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.RESET);
     resetPageContentLayout = resetPageComponent.getCardContainer();
@@ -124,6 +125,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getBaseLoginButton));
+
     Optional.ofNullable(returnHomeButton)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
@@ -132,6 +134,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getPublicRequestNewLink));
+
     Optional.ofNullable(resetSuccessTitleH1)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
@@ -140,6 +143,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getResetPasswordSuccessMessage));
+
     Optional.ofNullable(resetLinkProblemTitleH1)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(component, this::resolveResetLinkProblemTitleText));
@@ -158,6 +162,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     if (passwordResetToken != null && !passwordResetToken.isEmpty()) {
       resetPageContentLayout.removeAll();
       hasResetLinkInspectionFailure = false;
+
       try {
         resetLinkState = passwordResetService.inspectToken(passwordResetToken);
         if (resetLinkState == LinkState.VALID) {
@@ -177,7 +182,6 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
   }
 
   private void showResetPasswordFormPanel(String passwordResetToken) {
-
     this.resetPasswordTitleH1 = new H1(messageProperties.getPublicResetFormTitle());
     resetPasswordTitleH1.addClassName(COSMOS_HEADLINE_CLASS);
 
@@ -206,6 +210,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         new Button(
             messageProperties.getBaseLoginButton(), _ -> UI.getCurrent().navigate(LoginView.class));
     goToLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
+
     Div resetFormActionsDiv = new Div(goToLoginButton, saveNewPasswordButton);
     resetFormActionsDiv.addClassName("public-panel-actions");
 
@@ -239,8 +244,10 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     try {
       boolean wasPasswordReset =
           passwordResetService.resetPassword(passwordResetToken, newPasswordField.getValue());
+
       if (wasPasswordReset) {
         showPasswordResetSuccessPanel();
+
         NotificationHelper.getInstance()
             .showNotification(
                 messageProperties::getBaseSuccessTitle,
@@ -252,7 +259,9 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         if (resetLinkState == LinkState.VALID) {
           resetLinkState = LinkState.INVALID;
         }
+
         showResetLinkProblemPanel();
+
         NotificationHelper.getInstance()
             .showNotification(
                 messageProperties::getBaseFailedTitle,
@@ -283,12 +292,12 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
 
     this.resetSuccessMessageSpan = new Span(messageProperties.getResetPasswordSuccessMessage());
     resetSuccessMessageSpan.addClassName("cosmos-form-text");
-    VerticalLayout cardTextLayout = new VerticalLayout(resetSuccessMessageSpan);
-    cardTextLayout.addClassName("cosmos-intro");
-    cardTextLayout.setWidthFull();
-    cardTextLayout.setPadding(false);
-    cardTextLayout.setSpacing(false);
-    cardTextLayout.setAlignItems(FlexComponent.Alignment.START);
+    VerticalLayout resetSuccessMessageLayout = new VerticalLayout(resetSuccessMessageSpan);
+    resetSuccessMessageLayout.addClassName("cosmos-intro");
+    resetSuccessMessageLayout.setWidthFull();
+    resetSuccessMessageLayout.setPadding(false);
+    resetSuccessMessageLayout.setSpacing(false);
+    resetSuccessMessageLayout.setAlignItems(FlexComponent.Alignment.START);
 
     this.returnHomeButton =
         new Button(
@@ -302,7 +311,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
             resetSuccessSvgIcon,
             resetSuccessTitleH1,
             messageProperties::getPublicOutcomeSubtitle,
-            new Component[] {cardTextLayout},
+            new Component[] {resetSuccessMessageLayout},
             returnHomeButton));
   }
 
@@ -320,7 +329,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     this.resetLinkProblemTitleH1 = new H1(resolveResetLinkProblemTitleText());
     resetLinkProblemTitleH1.addClassName(COSMOS_HEADLINE_CLASS);
 
-    VerticalLayout cardTextLayout = buildResetLinkProblemMessageLayout();
+    VerticalLayout resetLinkProblemMessageLayout = buildResetLinkProblemMessageLayout();
 
     Button resetLinkProblemActionButton;
     if (hasResetLinkInspectionFailure) {
@@ -341,15 +350,15 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     }
     resetLinkProblemActionButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-    CosmosCardComponent resetFormPanelComponent =
+    CosmosCardComponent resetLinkProblemPanelComponent =
         new PublicPanelComponent(
             resetLinkProblemSvgIcon,
             resetLinkProblemTitleH1,
             messageProperties::getPublicOutcomeSubtitle,
-            new Component[] {cardTextLayout},
+            new Component[] {resetLinkProblemMessageLayout},
             resetLinkProblemActionButton);
 
-    resetPageContentLayout.add(resetFormPanelComponent);
+    resetPageContentLayout.add(resetLinkProblemPanelComponent);
   }
 
   private void clearResetPasswordFormReferences() {
@@ -363,15 +372,16 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
   private VerticalLayout buildResetLinkProblemMessageLayout() {
     this.resetLinkProblemMessageSpan = new Span(resolveResetLinkProblemMessageText());
     resetLinkProblemMessageSpan.addClassName("cosmos-form-text");
-    VerticalLayout cardTextLayout = new VerticalLayout();
-    cardTextLayout.addClassName("cosmos-intro");
-    cardTextLayout.setWidthFull();
-    cardTextLayout.setPadding(false);
-    cardTextLayout.setSpacing(false);
-    cardTextLayout.setAlignItems(FlexComponent.Alignment.START);
-    cardTextLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-    cardTextLayout.add(resetLinkProblemMessageSpan);
-    return cardTextLayout;
+
+    VerticalLayout resetLinkProblemMessageLayout = new VerticalLayout();
+    resetLinkProblemMessageLayout.addClassName("cosmos-intro");
+    resetLinkProblemMessageLayout.setWidthFull();
+    resetLinkProblemMessageLayout.setPadding(false);
+    resetLinkProblemMessageLayout.setSpacing(false);
+    resetLinkProblemMessageLayout.setAlignItems(FlexComponent.Alignment.START);
+    resetLinkProblemMessageLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
+    resetLinkProblemMessageLayout.add(resetLinkProblemMessageSpan);
+    return resetLinkProblemMessageLayout;
   }
 
   private String resolveResetLinkProblemTitleText() {

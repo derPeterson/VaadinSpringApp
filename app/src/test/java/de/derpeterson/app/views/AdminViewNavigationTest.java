@@ -221,7 +221,7 @@ class AdminViewNavigationTest {
         });
     view.configureSupport(mockSupportTicketService);
     enter(query);
-    Component support = (Component) ReflectionTestUtils.getField(view, "supportSection");
+    Component support = (Component) ReflectionTestUtils.getField(view, "supportTicketsComponent");
     Grid<?> grid = (Grid<?>) ReflectionTestUtils.getField(support, "ticketGrid");
     assertEquals(List.of(ticket), List.copyOf(grid.getSelectedItems()));
     Tabs categories = (Tabs) ReflectionTestUtils.getField(support, "ticketCategories");
@@ -237,14 +237,15 @@ class AdminViewNavigationTest {
 
     enter("?section=support&ticket=99999");
     assertTrue(grid.getSelectedItems().isEmpty());
-    assertEquals("SUPPORT", ReflectionTestUtils.getField(view, "activeSection").toString());
+    assertEquals("SUPPORT", ReflectionTestUtils.getField(view, "activeAdminSection").toString());
   }
 
   @Test
   void sharedFrameKeepsHeadingAndNavigationInContentAndClosesMobileNavigationOnSelection() {
     assertInstanceOf(PageFrameComponent.class, view.getContent());
-    PortalPageComponent page = (PortalPageComponent) ReflectionTestUtils.getField(view, "page");
-    Component heading = (Component) ReflectionTestUtils.getField(view, "pageHeading");
+    PortalPageComponent page =
+        (PortalPageComponent) ReflectionTestUtils.getField(view, "adminPortalPageComponent");
+    Component heading = (Component) ReflectionTestUtils.getField(view, "adminHeadingDiv");
     assertSame(page, heading.getParent().orElseThrow());
     assertFalse(heading.getElement().hasAttribute("slot"));
     Button toggle = (Button) ReflectionTestUtils.getField(view, "accountNavigationToggle");
@@ -265,7 +266,7 @@ class AdminViewNavigationTest {
     enter("?section=notifications");
     assertFalse(
         ((SideNavItem) ReflectionTestUtils.getField(view, "notificationsNavItem")).isVisible());
-    assertEquals("DASHBOARD", ReflectionTestUtils.getField(view, "activeSection").toString());
+    assertEquals("DASHBOARD", ReflectionTestUtils.getField(view, "activeAdminSection").toString());
     verify(notifications, never()).targets(any());
   }
 
@@ -295,12 +296,13 @@ class AdminViewNavigationTest {
       context.getAutowireCapableBeanFactory().autowireBean(view);
     }
     enter("?section=notifications");
-    assertEquals("NOTIFICATIONS", ReflectionTestUtils.getField(view, "activeSection").toString());
+    assertEquals(
+        "NOTIFICATIONS", ReflectionTestUtils.getField(view, "activeAdminSection").toString());
     assertTrue(
         ((SideNavItem) ReflectionTestUtils.getField(view, "notificationsNavItem")).isVisible());
     when(notifications.canSend(any())).thenReturn(false);
     enter("?section=notifications");
-    assertEquals("DASHBOARD", ReflectionTestUtils.getField(view, "activeSection").toString());
+    assertEquals("DASHBOARD", ReflectionTestUtils.getField(view, "activeAdminSection").toString());
   }
 
   @ParameterizedTest
@@ -315,7 +317,8 @@ class AdminViewNavigationTest {
   })
   void urlsSelectExactlyOnePanelAndItsNavigationItem(String query, String section, String item) {
     enter(query);
-    VerticalLayout layout = (VerticalLayout) ReflectionTestUtils.getField(view, "sectionLayout");
+    VerticalLayout layout =
+        (VerticalLayout) ReflectionTestUtils.getField(view, "adminSectionContentLayout");
     assertEquals(1, layout.getComponentCount());
     assertSame(ReflectionTestUtils.getField(view, section), layout.getComponentAt(0));
     SideNavItem nav = (SideNavItem) ReflectionTestUtils.getField(view, item);
@@ -329,20 +332,23 @@ class AdminViewNavigationTest {
     assertEquals(group, ReflectionTestUtils.getField(view, "activeConfigurationGroup"));
     Object section = ReflectionTestUtils.getField(view, "configurationSection");
     if (group == AdminConfigGroup.EXTERNAL_LOGIN) {
-      VerticalLayout layout = (VerticalLayout) ReflectionTestUtils.getField(view, "sectionLayout");
+      VerticalLayout layout =
+          (VerticalLayout) ReflectionTestUtils.getField(view, "adminSectionContentLayout");
       assertSame(
           ReflectionTestUtils.getField(view, "externalLoginSection"), layout.getComponentAt(0));
       verify(externalProviderSettings).load("google");
       verify(externalProviderSettings).load("microsoft");
     } else if (group == AdminConfigGroup.TWO_FACTOR) {
-      VerticalLayout layout = (VerticalLayout) ReflectionTestUtils.getField(view, "sectionLayout");
+      VerticalLayout layout =
+          (VerticalLayout) ReflectionTestUtils.getField(view, "adminSectionContentLayout");
       assertSame(ReflectionTestUtils.getField(view, "twoFactorSection"), layout.getComponentAt(0));
     } else {
       assertEquals(group, ReflectionTestUtils.getField(section, "selectedGroup"));
     }
     SideNavItem parent = (SideNavItem) ReflectionTestUtils.getField(view, "configurationNavItem");
     assertTrue(parent.isExpanded());
-    Map<?, ?> items = (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuItems");
+    Map<?, ?> items =
+        (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuNavItems");
     assertEquals(
         "page", ((SideNavItem) items.get(group)).getElement().getAttribute("aria-current"));
   }
@@ -350,7 +356,7 @@ class AdminViewNavigationTest {
   @Test
   void providerConfigurationAndGeneralConfigurationKeepTheirOwnHeadingsWhenSwitchingBack() {
     enter("?section=configuration&group=general");
-    Component heading = (Component) ReflectionTestUtils.getField(view, "pageHeading");
+    Component heading = (Component) ReflectionTestUtils.getField(view, "adminHeadingDiv");
     Component general = heading.getChildren().findFirst().orElseThrow();
     enter("?section=configuration&group=external_login");
     Component external = heading.getChildren().findFirst().orElseThrow();
@@ -376,8 +382,10 @@ class AdminViewNavigationTest {
         .when(testUi)
         .navigate(eq(AdminView.class), any(QueryParameters.class));
     PageNavigationComponent navigation =
-        (PageNavigationComponent) ReflectionTestUtils.getField(view, "sideNavigation");
-    Map<?, ?> items = (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuItems");
+        (PageNavigationComponent)
+            ReflectionTestUtils.getField(view, "adminPageNavigationComponent");
+    Map<?, ?> items =
+        (Map<?, ?>) ReflectionTestUtils.getField(view, "configurationSubmenuNavItems");
     SideNavItem item = (SideNavItem) items.get(AdminConfigGroup.SECURITY);
     navigation.activate(item);
     verify(testUi)

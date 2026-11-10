@@ -219,7 +219,7 @@ class UiSerializationContractTest {
     restored.component().refreshTexts();
     ((Button) ReflectionTestUtils.getField(restored.component(), "applyFiltersButton")).click();
     assertEquals(1, restored.probe().actions);
-    ((Button) ReflectionTestUtils.getField(restored.component(), "clearFilters")).click();
+    ((Button) ReflectionTestUtils.getField(restored.component(), "clearFiltersButton")).click();
     assertEquals(1, restored.probe().actions);
   }
 

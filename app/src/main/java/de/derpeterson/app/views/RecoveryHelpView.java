@@ -52,21 +52,25 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
     this.securityService = securityService;
     this.twoFactorAuthorization = twoFactorAuthorization;
     this.messageProperties = messageProperties;
+
     setPadding(false);
     setSpacing(false);
     setWidthFull();
+
     recoveryHelpPageComponent =
         new PublicPageComponent(
             configService, messageProperties, PublicPageComponent.Page.RECOVERY_HELP);
     SupportTicketsComponent recoveryHelpTicketsComponent =
         new SupportTicketsComponent(
             messageProperties, supportTicketService, httpServletRequest, false);
+
     returnFromRecoveryHelpButton =
         new Button(messageProperties.getTwoFactorReturnToCode(), _ -> returnFromRecoveryHelp());
     returnFromRecoveryHelpButton.setId("support-back");
     returnFromRecoveryHelpButton.setPrefixComponent(AppIcon.ANGLE_LEFT.create());
     returnFromRecoveryHelpButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     recoveryHelpTicketsComponent.addBackAction(returnFromRecoveryHelpButton);
+
     recoveryHelpLogoutButton =
         new Button(
             messageProperties.getBaseLogoutButton(),
@@ -78,8 +82,10 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
     recoveryHelpLogoutButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
     recoveryHelpLogoutButton.addClassName(CosmosClasses.DELETE_BUTTON);
     recoveryHelpTicketsComponent.addUserFooterAction(recoveryHelpLogoutButton);
+
     recoveryHelpPageComponent.getCardContainer().add(recoveryHelpTicketsComponent);
     add(recoveryHelpPageComponent);
+
     ComponentUtil.addListener(
         UI.getCurrent(),
         LanguageChangeEvent.class,
@@ -99,16 +105,18 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
               : TwoFactorFlow.LOGIN_HELP;
       twoFactorFlow.enter(httpServletRequest);
     }
+
     if (!twoFactorFlow.help()) {
       beforeEnterEvent.forwardTo(TwoFactorView.class);
       return;
     }
+
     recoveryHelpPageComponent.setAccountSecurity(
         twoFactorFlow.account(), securityService.getCurrentUser(httpServletRequest).orElse(null));
     refreshRecoveryHelpActions();
   }
 
-  public boolean isCurrent(TwoFactorFlow activeTwoFactorFlow) {
+  public boolean matchesActiveTwoFactorFlow(TwoFactorFlow activeTwoFactorFlow) {
     return twoFactorFlow == activeTwoFactorFlow;
   }
 
@@ -118,6 +126,7 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
         isAccountRecoveryHelp
             ? messageProperties.getTwoFactorBack()
             : messageProperties.getTwoFactorReturnToCode());
+
     recoveryHelpLogoutButton.setText(messageProperties.getBaseLogoutButton());
     recoveryHelpLogoutButton.setVisible(!isAccountRecoveryHelp);
   }
@@ -133,6 +142,7 @@ public final class RecoveryHelpView extends VerticalLayout implements BeforeEnte
       nextTwoFactorFlow.enter(httpServletRequest);
       destinationLocation = nextTwoFactorFlow.location();
     }
+
     UI.getCurrent()
         .getPage()
         .setLocation(httpServletRequest.getContextPath() + destinationLocation);

@@ -86,8 +86,8 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
               AbstractSinglePropertyField<? extends HasAllowedCharPattern, ? extends Serializable>>
       requiredFormComponents;
 
-  private H1 registrationPageTitle = null;
-  private Span createAccountQuestionText = null;
+  private H1 registrationTitleH1 = null;
+  private Span existingAccountQuestionSpan = null;
   private RouterLink loginLink = null;
   private TextField firstNameField = null;
   private TextField lastNameField = null;
@@ -106,11 +106,11 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
       PasswordEncoder passwordEncoder,
       RegistrationService registrationService,
       SecurityService securityService,
-      HttpServletRequest request,
+      HttpServletRequest httpServletRequest,
       ConfigService configService,
-      ExternalLoginFlow externalLogin) {
+      ExternalLoginFlow externalLoginFlow) {
 
-    super(securityService, request, new HorizontalLayout());
+    super(securityService, httpServletRequest, new HorizontalLayout());
 
     this.messageProperties = messageProperties;
     this.userService = userService;
@@ -119,76 +119,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     this.registrationService = registrationService;
 
     ComponentUtil.addListener(
-        UI.getCurrent(),
-        LanguageChangeEvent.class,
-        event -> {
-          VaadinSession.getCurrent().setLocale(event.getNewLocale());
-
-          Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
-          Optional.ofNullable(registrationPageTitle)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getRegistrationTitle));
-          Optional.ofNullable(createAccountQuestionText)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getRegistrationLoginQuestion));
-          Optional.ofNullable(loginLink)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getRegistrationLoginLink));
-          Optional.ofNullable(firstNameField)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getRegistrationFirstNameField));
-          Optional.ofNullable(lastNameField)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getRegistrationLastNameField));
-          Optional.ofNullable(emailField)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getPublicEmailField));
-          Optional.ofNullable(confirmEmailField)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getPublicConfirmEmailField));
-          Optional.ofNullable(passwordField)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getRegistrationPasswordField));
-          Optional.ofNullable(confirmPasswordField)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getPublicConfirmPasswordField));
-          Optional.ofNullable(genderComboBox)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getRegistrationGenderCombobox));
-          Optional.ofNullable(birthDatePicker)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getRegistrationBirthDateField));
-          Optional.ofNullable(registrationButton)
-              .ifPresent(component ->
-                  componentTranslationSupplierMap.put(
-                      component, this.messageProperties::getBaseRegistrationButton));
-
-          ComponentTextUpdateHelper.updateComponentTexts(componentTranslationSupplierMap);
-          updateInputPlaceholders();
-          Optional.ofNullable(birthDatePicker)
-              .ifPresent(picker -> {
-                picker.setLocale(event.getNewLocale());
-                CompactDateInput.configureDatePickerInput(picker, messageProperties);
-                picker.setPlaceholder(this.messageProperties.getRegistrationBirthDatePlaceholder());
-              });
-          Optional.ofNullable(genderComboBox)
-              .ifPresent(comboBox -> {
-                comboBox.setItemLabelGenerator(this::formatGender);
-                comboBox.getDataProvider().refreshAll();
-              });
-          NotificationHelper.getInstance().updateText();
-        });
+        UI.getCurrent(), LanguageChangeEvent.class, this::applyRegistrationPageLanguage);
 
     getContent().setWidthFull();
     getContent().setPadding(false);
@@ -200,88 +131,173 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
     formComponents = createFormComponents();
     requiredFormComponents = createRequiredFormComponents();
-    Button registerButton = createRegisterButton();
+    Button submitRegistrationButton = buildRegistrationButton();
 
-    PublicPageComponent pageLayout =
+    PublicPageComponent registrationPageComponent =
         new PublicPageComponent(
             configService, messageProperties, PublicPageComponent.Page.REGISTER);
-    VerticalLayout mainContent = pageLayout.getCardContainer();
+    VerticalLayout registrationContentLayout = registrationPageComponent.getCardContainer();
 
-    // Layout
+    this.registrationTitleH1 = new H1(messageProperties.getRegistrationTitle());
+    registrationTitleH1.addClassName("cosmos-headline");
 
-    this.registrationPageTitle = new H1(messageProperties.getRegistrationTitle());
-    registrationPageTitle.addClassName("cosmos-headline");
+    this.existingAccountQuestionSpan = new Span(messageProperties.getRegistrationLoginQuestion());
 
-    this.createAccountQuestionText = new Span(messageProperties.getRegistrationLoginQuestion());
+    HorizontalLayout existingAccountLinkLayout = new HorizontalLayout();
+    existingAccountLinkLayout.addClassNames("cosmos-intro", "cosmos-form-text");
+    existingAccountLinkLayout.setWidthFull();
+    existingAccountLinkLayout.setSpacing(false);
+    existingAccountLinkLayout.setPadding(false);
+    existingAccountLinkLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
+    existingAccountLinkLayout.addClassNames(LumoUtility.Gap.SMALL, "cosmos-form-links");
+    existingAccountLinkLayout.add(existingAccountQuestionSpan);
+    existingAccountLinkLayout.add(formComponents.loginLink);
 
-    HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();
-    cardSecondaryTitleLayout.addClassNames("cosmos-intro", "cosmos-form-text");
-    cardSecondaryTitleLayout.setWidthFull();
-    cardSecondaryTitleLayout.setSpacing(false);
-    cardSecondaryTitleLayout.setPadding(false);
-    cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-    cardSecondaryTitleLayout.addClassNames(LumoUtility.Gap.SMALL, "cosmos-form-links");
-    cardSecondaryTitleLayout.add(createAccountQuestionText);
-    cardSecondaryTitleLayout.add(formComponents.loginLink);
-
-    HorizontalLayout firstLineForm =
+    HorizontalLayout nameFieldsLayout =
         new HorizontalLayout(formComponents.firstNameField, formComponents.lastNameField);
-    firstLineForm.setWidthFull();
-    firstLineForm.setSpacing(false);
-    firstLineForm.addClassName(COSMOS_FORM_ROW_CLASS);
-    HorizontalLayout secondLineForm =
+    nameFieldsLayout.setWidthFull();
+    nameFieldsLayout.setSpacing(false);
+    nameFieldsLayout.addClassName(COSMOS_FORM_ROW_CLASS);
+
+    HorizontalLayout emailFieldsLayout =
         new HorizontalLayout(formComponents.emailField, formComponents.confirmEmailField);
-    secondLineForm.setWidthFull();
-    secondLineForm.setSpacing(false);
-    secondLineForm.addClassName(COSMOS_FORM_ROW_CLASS);
-    HorizontalLayout thirdLineForm =
+    emailFieldsLayout.setWidthFull();
+    emailFieldsLayout.setSpacing(false);
+    emailFieldsLayout.addClassName(COSMOS_FORM_ROW_CLASS);
+
+    HorizontalLayout passwordFieldsLayout =
         new HorizontalLayout(formComponents.passwordField, formComponents.confirmPasswordField);
-    thirdLineForm.setWidthFull();
-    thirdLineForm.setSpacing(false);
-    thirdLineForm.addClassName(COSMOS_FORM_ROW_CLASS);
-    HorizontalLayout fourthLineForm =
+    passwordFieldsLayout.setWidthFull();
+    passwordFieldsLayout.setSpacing(false);
+    passwordFieldsLayout.addClassName(COSMOS_FORM_ROW_CLASS);
+
+    HorizontalLayout personalDetailsLayout =
         new HorizontalLayout(formComponents.genderComboBox, formComponents.birthDatePicker);
-    fourthLineForm.setWidthFull();
-    fourthLineForm.setSpacing(false);
-    fourthLineForm.addClassName(COSMOS_FORM_ROW_CLASS);
+    personalDetailsLayout.setWidthFull();
+    personalDetailsLayout.setSpacing(false);
+    personalDetailsLayout.addClassName(COSMOS_FORM_ROW_CLASS);
 
     CosmosCardComponent registrationCardComponent =
         new PublicPanelComponent(
             AppIcon.USER_PLUS.create(),
-            registrationPageTitle,
+            registrationTitleH1,
             messageProperties::getPublicRegisterSubtitle,
-            new Component[] {firstLineForm, secondLineForm, thirdLineForm, fourthLineForm},
-            cardSecondaryTitleLayout,
-            registerButton);
+            new Component[] {
+              nameFieldsLayout, emailFieldsLayout, passwordFieldsLayout, personalDetailsLayout
+            },
+            existingAccountLinkLayout,
+            submitRegistrationButton);
 
     PublicAuthenticationPanels registrationPanels =
         new PublicAuthenticationPanels(
-            registrationCardComponent, externalLogin, request, messageProperties, () -> false);
+            registrationCardComponent,
+            externalLoginFlow,
+            httpServletRequest,
+            messageProperties,
+            () -> false);
     registrationPanels.addClassName("public-auth-panels--register");
-    mainContent.add(registrationPanels);
+    registrationContentLayout.add(registrationPanels);
 
-    updateInputPlaceholders();
-    add(pageLayout);
+    updateRegistrationFieldPlaceholders();
+    add(registrationPageComponent);
   }
 
-  private Button createRegisterButton() {
+  private void applyRegistrationPageLanguage(LanguageChangeEvent languageChangeEvent) {
+    VaadinSession.getCurrent().setLocale(languageChangeEvent.getNewLocale());
+
+    Map<Component, Supplier<String>> textSuppliersByComponent = new HashMap<>();
+    Optional.ofNullable(registrationTitleH1)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getRegistrationTitle));
+    Optional.ofNullable(existingAccountQuestionSpan)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getRegistrationLoginQuestion));
+    Optional.ofNullable(loginLink)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getRegistrationLoginLink));
+
+    Optional.ofNullable(firstNameField)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getRegistrationFirstNameField));
+    Optional.ofNullable(lastNameField)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getRegistrationLastNameField));
+
+    Optional.ofNullable(emailField)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getPublicEmailField));
+    Optional.ofNullable(confirmEmailField)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getPublicConfirmEmailField));
+    Optional.ofNullable(passwordField)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getRegistrationPasswordField));
+    Optional.ofNullable(confirmPasswordField)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getPublicConfirmPasswordField));
+
+    Optional.ofNullable(genderComboBox)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getRegistrationGenderCombobox));
+
+    Optional.ofNullable(birthDatePicker)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getRegistrationBirthDateField));
+    Optional.ofNullable(registrationButton)
+        .ifPresent(translatedComponent ->
+            textSuppliersByComponent.put(
+                translatedComponent, this.messageProperties::getBaseRegistrationButton));
+
+    ComponentTextUpdateHelper.updateComponentTexts(textSuppliersByComponent);
+    updateRegistrationFieldPlaceholders();
+
+    Optional.ofNullable(birthDatePicker)
+        .ifPresent(registrationBirthDatePicker -> {
+          registrationBirthDatePicker.setLocale(languageChangeEvent.getNewLocale());
+          CompactDateInput.configureDatePickerInput(registrationBirthDatePicker, messageProperties);
+          registrationBirthDatePicker.setPlaceholder(
+              this.messageProperties.getRegistrationBirthDatePlaceholder());
+        });
+
+    Optional.ofNullable(genderComboBox)
+        .ifPresent(registrationGenderComboBox -> {
+          registrationGenderComboBox.setItemLabelGenerator(this::formatGenderLabel);
+          registrationGenderComboBox.getDataProvider().refreshAll();
+        });
+
+    NotificationHelper.getInstance().updateText();
+  }
+
+  private Button buildRegistrationButton() {
     this.registrationButton = new Button(messageProperties.getBaseRegistrationButton());
     registrationButton.setPrefixComponent(AppIcon.USER_PLUS.create());
     registrationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     registrationButton.setWidthFull();
     registrationButton.addClassName("cosmos-submit");
-    registrationButton.addClickListener(event -> handleRegistration());
+    registrationButton.addClickListener(_ -> submitRegistrationForm());
     return registrationButton;
   }
 
-  private void handleRegistration() {
-    if (!validateInputs()) {
+  private void submitRegistrationForm() {
+    if (!validateRegistrationInputs()) {
       return;
     }
-    saveUserAndSendEmail();
+
+    registerAccountAndRequestVerificationEmail();
   }
 
-  private boolean validateInputs() {
+  private boolean validateRegistrationInputs() {
     return validateRequiredInputs()
         && validateEmailInputs()
         && validatePasswordInputs()
@@ -317,9 +333,9 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     return ValidationHelper.validateRequiredInputs(requiredFormComponents, messageProperties);
   }
 
-  private void saveUserAndSendEmail() {
-    Optional<RoleEntity> userRole = roleService.findByName(RoleType.ROLE_USER);
-    if (userRole.isEmpty()) {
+  private void registerAccountAndRequestVerificationEmail() {
+    Optional<RoleEntity> portalUserRole = roleService.findByName(RoleType.ROLE_USER);
+    if (portalUserRole.isEmpty()) {
       logger.error(
           "Registration aborted: required role ROLE_USER is missing from the role repository.");
       NotificationHelper.getInstance()
@@ -341,16 +357,16 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
             .birthDate(formComponents.birthDatePicker.getValue())
             .enabled(false)
             .preferredLocale(CustomI18NProvider.getCurrentLocale())
-            .roleEntities(List.of(userRole.get()))
+            .roleEntities(List.of(portalUserRole.get()))
             .build();
 
-    boolean emailSent;
+    boolean wasVerificationEmailQueued;
     try {
-      emailSent = registrationService.register(userEntity);
+      wasVerificationEmailQueued = registrationService.register(userEntity);
     } catch (IllegalArgumentException failure) {
       // Only handle invalid form values. Configuration/encoder/service
       // errors must not be relabelled as input errors.
-      if (validateInputs()) {
+      if (validateRegistrationInputs()) {
         throw failure;
       }
       return;
@@ -378,7 +394,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
       return;
     }
 
-    if (emailSent) {
+    if (wasVerificationEmailQueued) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseSuccessTitle,
@@ -418,33 +434,41 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
   private FormComponents createFormComponents() {
     this.loginLink = new RouterLink(messageProperties.getRegistrationLoginLink(), LoginView.class);
     loginLink.addClassNames("underline");
+
     this.firstNameField = new TextField(messageProperties.getRegistrationFirstNameField());
     firstNameField.setClearButtonVisible(true);
     firstNameField.setWidthFull();
+
     this.lastNameField = new TextField(messageProperties.getRegistrationLastNameField());
     lastNameField.setClearButtonVisible(true);
     lastNameField.setWidthFull();
+
     this.emailField = new EmailField(messageProperties.getPublicEmailField());
     emailField.setPattern(UserInputRules.EMAIL_REGEX);
     emailField.setClearButtonVisible(true);
     emailField.setWidthFull();
+
     this.confirmEmailField = new EmailField(messageProperties.getPublicConfirmEmailField());
     confirmEmailField.setPattern(UserInputRules.EMAIL_REGEX);
     confirmEmailField.setClearButtonVisible(true);
     confirmEmailField.setWidthFull();
+
     this.passwordField = new PasswordField(messageProperties.getRegistrationPasswordField());
     passwordField.setClearButtonVisible(true);
     passwordField.setWidthFull();
+
     this.confirmPasswordField =
         new PasswordField(messageProperties.getPublicConfirmPasswordField());
     confirmPasswordField.setClearButtonVisible(true);
     confirmPasswordField.setWidthFull();
+
     this.genderComboBox = new ComboBox<>(messageProperties.getRegistrationGenderCombobox());
     genderComboBox.setClearButtonVisible(true);
     genderComboBox.setWidthFull();
     genderComboBox.setItems(Gender.MALE, Gender.FEMALE, Gender.OTHER);
-    genderComboBox.setItemLabelGenerator(this::formatGender);
-    PortalFields.styleChoice(genderComboBox, this::formatGender, true);
+    genderComboBox.setItemLabelGenerator(this::formatGenderLabel);
+    PortalFields.styleChoice(genderComboBox, this::formatGenderLabel, true);
+
     this.birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
     birthDatePicker.setAutoOpen(false);
     birthDatePicker.setLocale(CustomI18NProvider.getCurrentLocale());
@@ -465,7 +489,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
         birthDatePicker);
   }
 
-  private String formatGender(Gender gender) {
+  private String formatGenderLabel(Gender gender) {
     if (gender == null) {
       return "-";
     }
@@ -488,7 +512,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
       ComboBox<Gender> genderComboBox,
       DatePicker birthDatePicker) {}
 
-  private void updateInputPlaceholders() {
+  private void updateRegistrationFieldPlaceholders() {
     if (firstNameField != null) {
       firstNameField.setPlaceholder(messageProperties.getAccountFirstNamePlaceholder());
     }

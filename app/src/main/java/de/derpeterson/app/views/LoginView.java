@@ -87,102 +87,111 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
   private static final Logger logger = LoggerFactory.getLogger(LoginView.class);
 
   private final transient MessageProperties messageProperties;
+  private final transient SessionManagementService sessionManagementService;
+  private final transient HttpServletRequest loginHttpServletRequest;
+  private final transient ExternalLoginFlow externalLoginFlow;
 
-  private RouterLink createAccountLink = null;
-  private EmailField emailField = null;
-  private PasswordField passwordField = null;
-  private RouterLink forgotPasswordLink = null;
+  // Anmeldeformular und Links zum Konto
+  private PublicPageComponent loginPageComponent;
+  private PublicAuthenticationPanels loginAuthenticationPanels;
+  private RouterLink createAccountRouterLink = null;
+  private EmailField loginEmailField = null;
+  private PasswordField loginPasswordField = null;
+  private RouterLink forgotPasswordRouterLink = null;
   private Switch rememberMeSwitch = null;
   private Button loginButton = null;
-  private H1 loginPageTitle = null;
-  private final transient SessionManagementService sessionManagementService;
-  private final transient HttpServletRequest currentRequest;
-  private final transient ExternalLoginFlow externalLogin;
-  private PublicPageComponent pageLayout;
-  private Div loginPanels;
-  private Div recoveryArea;
-  private AccountSessionsComponent recoverySessions;
-  private Button continueLogin;
-  private Button cancelRecovery;
-  private Span createAccountQuestionText = null;
+  private H1 loginTitleH1 = null;
+  private Span createAccountQuestionSpan = null;
+
+  // Sitzungsverwaltung bei erreichtem Anmeldelimit
+  private Div sessionRecoveryDiv;
+  private AccountSessionsComponent sessionRecoveryComponent;
+  private Button continueLoginButton;
+  private Button cancelSessionRecoveryButton;
 
   public LoginView(
       MessageProperties messageProperties,
       AuthenticationManager authenticationManager,
       SecurityService securityService,
-      HttpServletRequest request,
+      HttpServletRequest httpServletRequest,
       ConfigService configService,
       SessionManagementService sessionManagementService,
-      ExternalLoginFlow externalLogin) {
-    super(securityService, request, new HorizontalLayout());
+      ExternalLoginFlow externalLoginFlow) {
+    super(securityService, httpServletRequest, new HorizontalLayout());
 
     this.messageProperties = messageProperties;
     this.sessionManagementService = sessionManagementService;
-    this.currentRequest = request;
-    this.externalLogin = externalLogin;
+    this.loginHttpServletRequest = httpServletRequest;
+    this.externalLoginFlow = externalLoginFlow;
 
     ComponentUtil.addListener(
-        UI.getCurrent(), LanguageChangeEvent.class, event -> refreshLanguage(event.getNewLocale()));
+        UI.getCurrent(),
+        LanguageChangeEvent.class,
+        languageChangeEvent -> applyLoginPageLocale(languageChangeEvent.getNewLocale()));
 
     getContent().setWidthFull();
     getContent().setPadding(false);
     setSpacing(false);
     getContent().removeAll();
 
-    // UI Elements
-    this.createAccountLink =
+    this.createAccountRouterLink =
         new RouterLink(messageProperties.getLoginCreateAccountLink(), RegistrationView.class);
-    this.emailField = new EmailField(messageProperties.getPublicEmailField());
-    emailField.setPattern(UserInputRules.EMAIL_REGEX);
-    this.passwordField = new PasswordField(messageProperties.getLoginPasswordField());
-    this.forgotPasswordLink =
+
+    this.loginEmailField = new EmailField(messageProperties.getPublicEmailField());
+    loginEmailField.setPattern(UserInputRules.EMAIL_REGEX);
+
+    this.loginPasswordField = new PasswordField(messageProperties.getLoginPasswordField());
+
+    this.forgotPasswordRouterLink =
         new RouterLink(messageProperties.getLoginForgotPasswordLink(), ForgotPasswordView.class);
+
     this.rememberMeSwitch = new Switch(messageProperties.getLoginRememberMeCheckbox());
-    restoreRememberChoice(request.getCookies());
-    rememberMeSwitch.addValueChangeListener(event -> {
-      if (event.isFromClient()) {
-        saveRememberChoice(event.getValue());
+    restoreRememberChoiceFromCookies(httpServletRequest.getCookies());
+    rememberMeSwitch.addValueChangeListener(rememberChoiceChangeEvent -> {
+      if (rememberChoiceChangeEvent.isFromClient()) {
+        saveRememberChoiceCookie(rememberChoiceChangeEvent.getValue());
       }
     });
+
     this.loginButton =
         new Button(
             messageProperties.getBaseLoginButton(),
-            event -> authenticate(authenticationManager, securityService));
+            _ -> submitPasswordLogin(authenticationManager, securityService));
 
-    pageLayout =
+    loginPageComponent =
         new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.LOGIN);
-    VerticalLayout mainContent = pageLayout.getCardContainer();
+    VerticalLayout loginContentLayout = loginPageComponent.getCardContainer();
 
-    this.loginPageTitle = new H1(messageProperties.getLoginTitle());
-    loginPageTitle.addClassName("cosmos-headline");
+    this.loginTitleH1 = new H1(messageProperties.getLoginTitle());
+    loginTitleH1.addClassName("cosmos-headline");
 
-    this.createAccountQuestionText = new Span(messageProperties.getLoginCreateAccountQuestion());
+    this.createAccountQuestionSpan = new Span(messageProperties.getLoginCreateAccountQuestion());
 
-    HorizontalLayout cardSecondaryTitleLayout = new HorizontalLayout();
-    cardSecondaryTitleLayout.addClassNames("cosmos-intro", COSMOS_FORM_TEXT_CLASS);
-    cardSecondaryTitleLayout.setWidthFull();
-    cardSecondaryTitleLayout.setPadding(false);
-    cardSecondaryTitleLayout.setSpacing(false);
-    cardSecondaryTitleLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
-    cardSecondaryTitleLayout.addClassNames(
+    HorizontalLayout createAccountLinkLayout = new HorizontalLayout();
+    createAccountLinkLayout.addClassNames("cosmos-intro", COSMOS_FORM_TEXT_CLASS);
+    createAccountLinkLayout.setWidthFull();
+    createAccountLinkLayout.setPadding(false);
+    createAccountLinkLayout.setSpacing(false);
+    createAccountLinkLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.START);
+    createAccountLinkLayout.addClassNames(
         LumoUtility.Gap.SMALL, "cosmos-form-links", COSMOS_FORM_TEXT_CLASS);
-    cardSecondaryTitleLayout.add(createAccountQuestionText);
-    cardSecondaryTitleLayout.add(createAccountLink);
+    createAccountLinkLayout.add(createAccountQuestionSpan);
+    createAccountLinkLayout.add(createAccountRouterLink);
 
-    emailField.setWidthFull();
-    emailField.setClearButtonVisible(true);
-    emailField.setRequiredIndicatorVisible(true);
+    loginEmailField.setWidthFull();
+    loginEmailField.setClearButtonVisible(true);
+    loginEmailField.setRequiredIndicatorVisible(true);
 
-    passwordField.setWidthFull();
-    passwordField.setClearButtonVisible(true);
-    passwordField.setRequiredIndicatorVisible(true);
+    loginPasswordField.setWidthFull();
+    loginPasswordField.setClearButtonVisible(true);
+    loginPasswordField.setRequiredIndicatorVisible(true);
 
     loginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
     loginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     loginButton.setWidthFull();
 
-    emailField.addKeyPressListener(Key.ENTER, event -> loginButton.click());
-    passwordField.addKeyPressListener(Key.ENTER, event -> loginButton.click());
+    loginEmailField.addKeyPressListener(Key.ENTER, _ -> loginButton.click());
+    loginPasswordField.addKeyPressListener(Key.ENTER, _ -> loginButton.click());
 
     HorizontalLayout rememberMeLayout = new HorizontalLayout();
     rememberMeLayout.addClassName("cosmos-remember");
@@ -194,120 +203,134 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     forgotPasswordLayout.addClassName("cosmos-forgot");
     forgotPasswordLayout.setAlignItems(FlexComponent.Alignment.CENTER);
     forgotPasswordLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-    forgotPasswordLayout.add(forgotPasswordLink);
+    forgotPasswordLayout.add(forgotPasswordRouterLink);
 
-    HorizontalLayout secondaryActionLayout = new HorizontalLayout();
-    secondaryActionLayout.setWidthFull();
-    secondaryActionLayout.addClassName("cosmos-options");
-    secondaryActionLayout.setAlignItems(FlexComponent.Alignment.CENTER);
+    HorizontalLayout loginOptionsLayout = new HorizontalLayout();
+    loginOptionsLayout.setWidthFull();
+    loginOptionsLayout.addClassName("cosmos-options");
+    loginOptionsLayout.setAlignItems(FlexComponent.Alignment.CENTER);
 
-    secondaryActionLayout.add(rememberMeLayout, forgotPasswordLayout);
+    loginOptionsLayout.add(rememberMeLayout, forgotPasswordLayout);
 
-    CosmosCardComponent cardComponent =
+    CosmosCardComponent loginPanelComponent =
         new PublicPanelComponent(
             AppIcon.SIGN_IN.create(),
-            loginPageTitle,
+            loginTitleH1,
             messageProperties::getPublicLoginSubtitle,
-            new Component[] {emailField, passwordField, secondaryActionLayout},
-            cardSecondaryTitleLayout,
+            new Component[] {loginEmailField, loginPasswordField, loginOptionsLayout},
+            createAccountLinkLayout,
             loginButton);
 
-    loginPanels =
+    loginAuthenticationPanels =
         new PublicAuthenticationPanels(
-            cardComponent,
-            externalLogin,
-            request,
+            loginPanelComponent,
+            externalLoginFlow,
+            httpServletRequest,
             messageProperties,
             () -> rememberMeSwitch.getValue());
-    recoverySessions =
-        new AccountSessionsComponent(
-            messageProperties, configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
-    continueLogin = new Button();
-    continueLogin.setEnabled(false);
-    recoverySessions.configure(
-        () -> {
-          continueLogin.setEnabled(false);
-          SessionManagementService.Snapshot snapshot =
-              sessionManagementService.recoveryList(currentRequest);
-          continueLogin.setEnabled(snapshot.active() < snapshot.limit());
-          return snapshot;
-        },
-        handle -> sessionManagementService.recoveryRevoke(currentRequest, handle),
-        () -> sessionManagementService.recoveryRevokeOthers(currentRequest));
-    recoverySessions.setRestricted(true);
-    recoverySessions.setFailureAction(this::hideRecovery);
-    continueLogin.setId("session-recovery-continue");
-    continueLogin.setPrefixComponent(AppIcon.SIGN_IN.create());
-    continueLogin.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    continueLogin.addClickListener(event -> {
-      try {
-        boolean admin =
-            sessionManagementService.finishRecovery(
-                currentRequest, (HttpServletResponse) VaadinResponse.getCurrent());
-        Class<? extends Component> target = loginTarget(admin);
-        getUI().ifPresent(ui -> ui.navigate(target));
-      } catch (SessionLimitException _) {
-        recoverySessions.reloadSessionSnapshot();
-        showLoginFailure(LOGIN_ERROR_SESSIONS);
-      } catch (AuthenticationException _) {
-        hideRecovery();
-        NotificationHelper.getInstance()
-            .showNotification(
-                messageProperties::getBaseFailedTitle,
-                messageProperties::getSessionRecoveryExpired,
-                -1,
-                NotificationHelper.NotificationType.ERROR);
-      } catch (RuntimeException unavailable) {
-        logger.warn("Restricted login completion failed", safeFailure(unavailable));
-        showLoginFailure(LOGIN_ERROR_UNAVAILABLE);
-      }
-    });
-    cancelRecovery = new Button();
-    cancelRecovery.setId("session-recovery-cancel");
-    cancelRecovery.setPrefixComponent(AppIcon.CLOSE.create());
-    cancelRecovery.addClickListener(event -> hideRecovery());
-    Div actions = new Div(cancelRecovery, continueLogin);
-    actions.addClassName("public-panel-actions");
-    recoverySessions.addActionFooter(actions);
-    recoveryArea = new Div(recoverySessions);
-    recoveryArea.setId("session-recovery");
-    recoveryArea.addClassName("cosmos-account");
-    recoveryArea.setVisible(false);
-    mainContent.add(loginPanels, recoveryArea);
 
-    updateInputPlaceholders();
-    refreshRecoveryTexts();
-    add(pageLayout);
+    configureSessionRecoveryPanel(configService);
+    loginContentLayout.add(loginAuthenticationPanels, sessionRecoveryDiv);
+
+    updateLoginFieldPlaceholders();
+    refreshSessionRecoveryTexts();
+    add(loginPageComponent);
   }
 
-  private void restoreRememberChoice(Cookie[] cookies) {
-    if (cookies != null) {
-      for (Cookie cookie : cookies) {
-        if (REMEMBER_CHOICE_COOKIE.equals(cookie.getName())) {
-          rememberMeSwitch.setValue("true".equals(cookie.getValue()));
+  private void configureSessionRecoveryPanel(ConfigService configService) {
+    sessionRecoveryComponent =
+        new AccountSessionsComponent(
+            messageProperties, configService.getInteger(ConfigEntry.MAX_SESSIONS_PER_USER));
+    continueLoginButton = new Button();
+    continueLoginButton.setEnabled(false);
+    sessionRecoveryComponent.configure(
+        () -> {
+          continueLoginButton.setEnabled(false);
+          SessionManagementService.Snapshot recoverySessionSnapshot =
+              sessionManagementService.recoveryList(loginHttpServletRequest);
+          continueLoginButton.setEnabled(
+              recoverySessionSnapshot.active() < recoverySessionSnapshot.limit());
+          return recoverySessionSnapshot;
+        },
+        sessionHandle ->
+            sessionManagementService.recoveryRevoke(loginHttpServletRequest, sessionHandle),
+        () -> sessionManagementService.recoveryRevokeOthers(loginHttpServletRequest));
+    sessionRecoveryComponent.setRestricted(true);
+    sessionRecoveryComponent.setFailureAction(this::cancelAndHideSessionRecovery);
+
+    continueLoginButton.setId("session-recovery-continue");
+    continueLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
+    continueLoginButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+    continueLoginButton.addClickListener(_ -> completeSessionRecovery());
+
+    cancelSessionRecoveryButton = new Button();
+    cancelSessionRecoveryButton.setId("session-recovery-cancel");
+    cancelSessionRecoveryButton.setPrefixComponent(AppIcon.CLOSE.create());
+    cancelSessionRecoveryButton.addClickListener(_ -> cancelAndHideSessionRecovery());
+
+    Div recoveryActionsDiv = new Div(cancelSessionRecoveryButton, continueLoginButton);
+    recoveryActionsDiv.addClassName("public-panel-actions");
+    sessionRecoveryComponent.addActionFooter(recoveryActionsDiv);
+
+    sessionRecoveryDiv = new Div(sessionRecoveryComponent);
+    sessionRecoveryDiv.setId("session-recovery");
+    sessionRecoveryDiv.addClassName("cosmos-account");
+    sessionRecoveryDiv.setVisible(false);
+  }
+
+  private void completeSessionRecovery() {
+    try {
+      boolean hasAdministrativeRole =
+          sessionManagementService.finishRecovery(
+              loginHttpServletRequest, (HttpServletResponse) VaadinResponse.getCurrent());
+
+      navigateAfterSuccessfulLogin(hasAdministrativeRole);
+    } catch (SessionLimitException _) {
+      sessionRecoveryComponent.reloadSessionSnapshot();
+      showLoginFailureNotification(LOGIN_ERROR_SESSIONS);
+    } catch (AuthenticationException _) {
+      cancelAndHideSessionRecovery();
+
+      NotificationHelper.getInstance()
+          .showNotification(
+              messageProperties::getBaseFailedTitle,
+              messageProperties::getSessionRecoveryExpired,
+              -1,
+              NotificationHelper.NotificationType.ERROR);
+    } catch (RuntimeException sessionRecoveryFailure) {
+      logger.warn("Restricted login completion failed", safeFailure(sessionRecoveryFailure));
+      showLoginFailureNotification(LOGIN_ERROR_UNAVAILABLE);
+    }
+  }
+
+  private void restoreRememberChoiceFromCookies(Cookie[] loginRequestCookies) {
+    if (loginRequestCookies != null) {
+      for (Cookie requestCookie : loginRequestCookies) {
+        if (REMEMBER_CHOICE_COOKIE.equals(requestCookie.getName())) {
+          rememberMeSwitch.setValue("true".equals(requestCookie.getValue()));
           break;
         }
       }
     }
   }
 
-  private void refreshLanguage(Locale locale) {
+  private void applyLoginPageLocale(Locale locale) {
     VaadinSession.getCurrent().setLocale(locale);
 
     Map<Component, Supplier<String>> componentTranslationSupplierMap = new HashMap<>();
-    Optional.ofNullable(createAccountLink)
+    Optional.ofNullable(createAccountRouterLink)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getLoginCreateAccountLink));
-    Optional.ofNullable(emailField)
+    Optional.ofNullable(loginEmailField)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getPublicEmailField));
-    Optional.ofNullable(passwordField)
+    Optional.ofNullable(loginPasswordField)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getLoginPasswordField));
-    Optional.ofNullable(forgotPasswordLink)
+    Optional.ofNullable(forgotPasswordRouterLink)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getLoginForgotPasswordLink));
@@ -319,33 +342,33 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getBaseLoginButton));
-    Optional.ofNullable(loginPageTitle)
+    Optional.ofNullable(loginTitleH1)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(component, this.messageProperties::getLoginTitle));
-    Optional.ofNullable(createAccountQuestionText)
+    Optional.ofNullable(createAccountQuestionSpan)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getLoginCreateAccountQuestion));
 
     ComponentTextUpdateHelper.updateComponentTexts(componentTranslationSupplierMap);
-    updateInputPlaceholders();
-    refreshRecoveryTexts();
+    updateLoginFieldPlaceholders();
+    refreshSessionRecoveryTexts();
     NotificationHelper.getInstance().updateText();
   }
 
-  private void authenticate(
+  private void submitPasswordLogin(
       AuthenticationManager authenticationManager, SecurityService securityService) {
     try {
-      Authentication authentication =
+      Authentication passwordAuthentication =
           authenticationManager.authenticate(
               new UsernamePasswordAuthenticationToken(
-                  emailField.getValue(), passwordField.getValue()));
+                  loginEmailField.getValue(), loginPasswordField.getValue()));
 
-      if (authentication.getPrincipal() instanceof UserDetails) {
+      if (passwordAuthentication.getPrincipal() instanceof UserDetails) {
         securityService.storeVerifiedAuthentication(
             (HttpServletRequest) VaadinRequest.getCurrent(),
             (HttpServletResponse) VaadinResponse.getCurrent(),
-            authentication,
+            passwordAuthentication,
             rememberMeSwitch.getValue());
 
       } else {
@@ -353,113 +376,129 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
             "⚠️ Principal is not an instance of UserDetails, save and handle of login could not be performed.");
       }
 
-      Class<? extends Component> target = loginTarget(hasAdminRole(authentication));
-      getUI().ifPresent(ui -> ui.navigate(target));
-    } catch (AuthenticationException e) {
-      if (e instanceof SessionLimitException) {
+      navigateAfterSuccessfulLogin(hasAdminRole(passwordAuthentication));
+    } catch (AuthenticationException authenticationFailure) {
+      if (authenticationFailure instanceof SessionLimitException) {
         startSessionRecovery();
         return;
       }
-      showLoginFailure(authenticationFailureCode(e));
+
+      showLoginFailureNotification(authenticationFailureCode(authenticationFailure));
     }
   }
 
-  private Class<? extends Component> loginTarget(boolean admin) {
-    if (!externalLogin.loginConfirmed(currentRequest)) {
-      return TwoFactorView.class;
+  private void navigateAfterSuccessfulLogin(boolean hasAdministrativeRole) {
+    if (!externalLoginFlow.loginConfirmed(loginHttpServletRequest)) {
+      getUI().ifPresent(loginUi -> loginUi.navigate(TwoFactorView.class));
+      return;
     }
+
     NotificationHelper.getInstance()
         .showNotification(
             messageProperties::getBaseSuccessTitle,
             messageProperties::getLoginSuccessMessage,
             NotificationHelper.NotificationType.SUCCESS);
-    return admin ? AdminView.class : HomeView.class;
+
+    Class<? extends Component> destinationViewClass =
+        hasAdministrativeRole ? AdminView.class : HomeView.class;
+    getUI().ifPresent(loginUi -> loginUi.navigate(destinationViewClass));
   }
 
-  private void saveRememberChoice(boolean remember) {
+  private void saveRememberChoiceCookie(boolean rememberLoginChoice) {
     // Nur eine UI-Vorliebe. Der Remember-me-Zugang entsteht erst nach erfolgreicher Anmeldung.
-    Cookie cookie = new Cookie(REMEMBER_CHOICE_COOKIE, Boolean.toString(remember));
-    cookie.setPath(
-        currentRequest.getContextPath().isEmpty() ? "/" : currentRequest.getContextPath());
-    cookie.setHttpOnly(true);
-    cookie.setSecure(currentRequest.isSecure());
-    cookie.setAttribute("SameSite", "Lax");
-    cookie.setMaxAge(Math.toIntExact(Duration.ofDays(365).toSeconds()));
-    VaadinResponse.getCurrent().addCookie(cookie);
+    Cookie rememberChoiceCookie =
+        new Cookie(REMEMBER_CHOICE_COOKIE, Boolean.toString(rememberLoginChoice));
+    rememberChoiceCookie.setPath(
+        loginHttpServletRequest.getContextPath().isEmpty()
+            ? "/"
+            : loginHttpServletRequest.getContextPath());
+    rememberChoiceCookie.setHttpOnly(true);
+    rememberChoiceCookie.setSecure(loginHttpServletRequest.isSecure());
+    rememberChoiceCookie.setAttribute("SameSite", "Lax");
+    rememberChoiceCookie.setMaxAge(Math.toIntExact(Duration.ofDays(365).toSeconds()));
+
+    VaadinResponse.getCurrent().addCookie(rememberChoiceCookie);
   }
 
   private void startSessionRecovery() {
     try {
       sessionManagementService.startRecovery(
-          currentRequest,
-          emailField.getValue(),
-          passwordField.getValue(),
+          loginHttpServletRequest,
+          loginEmailField.getValue(),
+          loginPasswordField.getValue(),
           rememberMeSwitch.getValue());
-      passwordField.clear();
-      showRecovery();
-    } catch (AuthenticationException rejected) {
-      showLoginFailure(restrictedLoginFailureCode(rejected));
-    } catch (RuntimeException unavailable) {
-      logger.warn("Restricted session management unavailable", safeFailure(unavailable));
-      showLoginFailure(LOGIN_ERROR_UNAVAILABLE);
+
+      loginPasswordField.clear();
+      showSessionRecoveryPanel();
+    } catch (AuthenticationException rejectedAuthentication) {
+      showLoginFailureNotification(restrictedLoginFailureCode(rejectedAuthentication));
+    } catch (RuntimeException sessionRecoveryFailure) {
+      logger.warn("Restricted session management unavailable", safeFailure(sessionRecoveryFailure));
+      showLoginFailureNotification(LOGIN_ERROR_UNAVAILABLE);
     }
   }
 
   @Override
-  public void beforeEnter(BeforeEnterEvent event) {
-    super.beforeEnter(event);
-    if (event.hasForwardTarget()) {
+  public void beforeEnter(BeforeEnterEvent beforeEnterEvent) {
+    super.beforeEnter(beforeEnterEvent);
+    if (beforeEnterEvent.hasForwardTarget()) {
       return;
     }
-    if (sessionManagementService.hasRecovery(currentRequest)) {
-      showRecovery();
+
+    if (sessionManagementService.hasRecovery(loginHttpServletRequest)) {
+      showSessionRecoveryPanel();
     }
   }
 
   @Override
-  public void afterNavigation(AfterNavigationEvent event) {
+  public void afterNavigation(AfterNavigationEvent afterNavigationEvent) {
     // Auch Fehler aus externen Anmeldungen benötigen den bereits angehängten Public-Rahmen.
-    if (recoveryArea.isVisible()) {
+    if (sessionRecoveryDiv.isVisible()) {
       return;
     }
-    ExternalProofNotice.showExternalDisconnectNotice(event, messageProperties, true);
-    List<String> errors = event.getLocation().getQueryParameters().getParameters().get("error");
-    if (errors != null
-        && errors.size() == 1
+
+    ExternalProofNotice.showExternalDisconnectNotice(afterNavigationEvent, messageProperties, true);
+    List<String> loginErrorParameterValues =
+        afterNavigationEvent.getLocation().getQueryParameters().getParameters().get("error");
+    if (loginErrorParameterValues != null
+        && loginErrorParameterValues.size() == 1
         && Set.of(
                 LOGIN_ERROR_MAINTENANCE,
                 LOGIN_ERROR_SESSIONS,
                 LOGIN_ERROR_THROTTLED,
                 LOGIN_ERROR_UNAVAILABLE,
                 LOGIN_ERROR_INVALID)
-            .contains(errors.getFirst())) {
-      showLoginFailure(errors.getFirst());
+            .contains(loginErrorParameterValues.getFirst())) {
+      showLoginFailureNotification(loginErrorParameterValues.getFirst());
     }
   }
 
-  private void showRecovery() {
-    pageLayout.showPage(PublicPageComponent.Page.RECOVERY);
-    loginPanels.setVisible(false);
-    recoveryArea.setVisible(true);
-    recoverySessions.reloadSessionSnapshot();
+  private void showSessionRecoveryPanel() {
+    loginPageComponent.showPage(PublicPageComponent.Page.RECOVERY);
+    loginAuthenticationPanels.setVisible(false);
+    sessionRecoveryDiv.setVisible(true);
+
+    sessionRecoveryComponent.reloadSessionSnapshot();
   }
 
-  private void hideRecovery() {
-    pageLayout.showPage(PublicPageComponent.Page.LOGIN);
-    sessionManagementService.cancelRecovery(currentRequest);
-    recoveryArea.setVisible(false);
-    continueLogin.setEnabled(false);
-    loginPanels.setVisible(true);
-    passwordField.clear();
+  private void cancelAndHideSessionRecovery() {
+    loginPageComponent.showPage(PublicPageComponent.Page.LOGIN);
+    sessionManagementService.cancelRecovery(loginHttpServletRequest);
+
+    sessionRecoveryDiv.setVisible(false);
+    continueLoginButton.setEnabled(false);
+    loginAuthenticationPanels.setVisible(true);
+    loginPasswordField.clear();
   }
 
-  private void refreshRecoveryTexts() {
-    if (recoveryArea == null) {
+  private void refreshSessionRecoveryTexts() {
+    if (sessionRecoveryDiv == null) {
       return;
     }
-    continueLogin.setText(messageProperties.getSessionContinueLogin());
-    cancelRecovery.setText(messageProperties.getAdminUsersCancel());
-    recoverySessions.refreshTexts();
+
+    continueLoginButton.setText(messageProperties.getSessionContinueLogin());
+    cancelSessionRecoveryButton.setText(messageProperties.getAdminUsersCancel());
+    sessionRecoveryComponent.refreshTexts();
   }
 
   private String restrictedLoginFailureCode(AuthenticationException failure) {
@@ -488,29 +527,30 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     return LOGIN_ERROR_INVALID;
   }
 
-  private void showLoginFailure(String reason) {
-    Supplier<String> text =
-        switch (reason) {
+  private void showLoginFailureNotification(String loginFailureCode) {
+    Supplier<String> loginFailureTextSupplier =
+        switch (loginFailureCode) {
           case LOGIN_ERROR_MAINTENANCE -> messageProperties::getMaintenanceLoginMessage;
           case LOGIN_ERROR_SESSIONS -> messageProperties::getLoginSessionLimitMessage;
           case LOGIN_ERROR_THROTTLED -> messageProperties::getLoginThrottledMessage;
           case LOGIN_ERROR_UNAVAILABLE -> messageProperties::getLoginUnavailableMessage;
           default -> messageProperties::getLoginFailedMessage;
         };
+
     NotificationHelper.getInstance()
         .showNotification(
             messageProperties::getBaseFailedTitle,
-            text,
+            loginFailureTextSupplier,
             -1,
             NotificationHelper.NotificationType.ERROR);
   }
 
-  private void updateInputPlaceholders() {
-    if (emailField != null) {
-      emailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
+  private void updateLoginFieldPlaceholders() {
+    if (loginEmailField != null) {
+      loginEmailField.setPlaceholder(messageProperties.getAccountEmailPlaceholder());
     }
-    if (passwordField != null) {
-      passwordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
+    if (loginPasswordField != null) {
+      loginPasswordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());
     }
   }
 }

@@ -284,7 +284,7 @@ class AdminUserManagementFilterTest {
   private Button filterButton(String label) {
     Object bar = field("filterBar");
     return List.of(
-            "filterButton", "applyFiltersButton", "clearFilters", "cancelFilterChangesButton")
+            "filterButton", "applyFiltersButton", "clearFiltersButton", "cancelFilterChangesButton")
         .stream()
         .map(name -> (Button) ReflectionTestUtils.getField(bar, name))
         .filter(button -> button.getText().equals(label))

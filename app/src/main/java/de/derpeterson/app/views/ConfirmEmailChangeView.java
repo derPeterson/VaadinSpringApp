@@ -60,24 +60,30 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
       ConfigService configService) {
     this.messageProperties = messageProperties;
     this.accountSecurityService = accountSecurityService;
+
     setId("account-email-confirmation");
     PublicPageComponent emailConfirmationPageComponent =
         new PublicPageComponent(
             configService, messageProperties, PublicPageComponent.Page.EMAIL_CONFIRM);
+
     confirmationStatusSvgIcon.addClassName(STATUS_ICON);
     confirmationStatusSvgIcon.getElement().setAttribute("aria-hidden", "true");
     confirmationMessageSpan.addClassName("cosmos-form-text");
     confirmationTitleH1.addClassName("cosmos-headline");
+
     confirmEmailChangeButton.setId("account-email-confirm-action");
     confirmEmailChangeButton.setPrefixComponent(AppIcon.CHECK.create());
     confirmEmailChangeButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     confirmEmailChangeButton.addClickListener(_ -> confirmEmailChange());
+
     goToLoginButton.setId("account-email-confirm-login");
     goToLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
+
     accountChangeConsequenceDiv.setId("account-email-confirm-hint");
     accountChangeConsequenceDiv.addClassName("cosmos-panel-hint");
     accountChangeConsequenceDiv.add(AppIcon.INFO_CIRCLE.create(), accountChangeConsequenceSpan);
     confirmationActionsDiv.add(goToLoginButton, confirmEmailChangeButton);
+
     // Nach der Bestätigung ist die bisherige Sitzung widerrufen. Zur Anmeldung deshalb
     // direkt im Browser wechseln, ohne einen weiteren RPC dieser Sitzung zu benötigen.
     goToLoginButton.addAttachListener(_ ->
@@ -86,6 +92,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
             .executeJs(
                 "this.onclick = () => window.location.assign(new URL($0, document.baseURI).href)",
                 AppRoute.LOGIN.getRoute()));
+
     emailConfirmationPageComponent
         .getCardContainer()
         .add(
@@ -96,6 +103,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
                 new Component[] {confirmationMessageSpan, accountChangeConsequenceDiv},
                 confirmationActionsDiv));
     add(emailConfirmationPageComponent);
+
     ComponentUtil.addListener(
         UI.getCurrent(),
         LanguageChangeEvent.class,
@@ -111,21 +119,26 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
   public void setParameter(BeforeEvent beforeEvent, @OptionalParameter String emailChangeToken) {
     this.emailChangeToken = emailChangeToken;
     hasConfirmationTechnicalFailure = false;
+
     try {
       confirmationState = accountSecurityService.inspect(emailChangeToken);
     } catch (RuntimeException confirmationFailure) {
       hasConfirmationTechnicalFailure = true;
       log.error("Email change inspection failed", safeFailure(confirmationFailure));
     }
+
     refreshConfirmationPanel();
   }
 
   private void confirmEmailChange() {
     confirmEmailChangeButton.setEnabled(false);
+
     try {
       hasConfirmationTechnicalFailure = false;
       confirmationState = accountSecurityService.confirm(emailChangeToken);
+
       refreshConfirmationPanel();
+
       NotificationHelper.getInstance()
           .showNotification(
               confirmationState == Confirmation.SUCCESS
@@ -138,7 +151,9 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
     } catch (RuntimeException confirmationFailure) {
       hasConfirmationTechnicalFailure = true;
       log.error("Email change confirmation failed", safeFailure(confirmationFailure));
+
       refreshConfirmationPanel();
+
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,
@@ -181,6 +196,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
               case EXPIRED -> LumoUtility.TextColor.WARNING;
               case INVALID, CONFLICT -> LumoUtility.TextColor.ERROR;
             };
+
     confirmationStatusSvgIcon.setSrc(confirmationAppIcon.getSource());
     confirmationStatusSvgIcon.removeClassNames(
         LumoUtility.TextColor.PRIMARY,
@@ -210,11 +226,13 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
     updateConfirmationStatusSvgIcon();
     boolean canConfirmEmailChange =
         confirmationState == Confirmation.READY && !hasConfirmationTechnicalFailure;
+
     setClassName("public-email-outcome", !canConfirmEmailChange);
     confirmationTitleH1.setText(resolveConfirmationTitleText());
     confirmationMessageSpan.setText(resolveConfirmationMessageSupplier().get());
     accountChangeConsequenceSpan.setText(messageProperties.getPublicEmailConfirmationHint());
     accountChangeConsequenceDiv.setVisible(canConfirmEmailChange);
+
     confirmationActionsDiv.setClassName("public-panel-actions", canConfirmEmailChange);
     confirmEmailChangeButton.setText(messageProperties.getAccountEmailConfirmationAction());
     confirmEmailChangeButton.setVisible(canConfirmEmailChange);

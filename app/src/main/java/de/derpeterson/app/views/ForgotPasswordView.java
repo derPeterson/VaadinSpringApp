@@ -118,12 +118,12 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
   }
 
   private void createPasswordResetCard() {
-
     this.forgotPasswordH1 = new H1(messageProperties.getForgotPasswordTitle());
     forgotPasswordH1.addClassName("cosmos-headline");
 
     this.forgotPasswordMessageSpan = new Span(messageProperties.getForgotPasswordText());
     forgotPasswordMessageSpan.addClassName("cosmos-form-text");
+
     this.passwordResetEmailField = new EmailField(messageProperties.getPublicEmailField());
     passwordResetEmailField.setPattern(UserInputRules.EMAIL_REGEX);
     passwordResetEmailField.setRequiredIndicatorVisible(true);
@@ -147,6 +147,7 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
             loginClickEvent -> UI.getCurrent().navigate(LoginView.class));
     returnToLoginButton.setPrefixComponent(AppIcon.SIGN_IN.create());
     returnToLoginButton.setWidthFull();
+
     Div forgotPasswordActionsDiv = new Div(returnToLoginButton, requestPasswordResetButton);
     forgotPasswordActionsDiv.addClassName("public-panel-actions");
 
@@ -178,6 +179,7 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
           "Password reset request could not be processed",
           safeFailure(passwordResetRequestException));
     }
+
     // Auch bei kontobezogenen Fehlern bleibt die Rückmeldung gleich, damit sie kein Konto verrät.
     NotificationHelper.getInstance()
         .showNotification(

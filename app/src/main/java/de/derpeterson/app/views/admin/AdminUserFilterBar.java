@@ -17,23 +17,25 @@ import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.ui.components.AdminSidePanel;
 import de.derpeterson.app.ui.components.AppIcon;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 
 /** Filterentwurf im Overlay; Anwenden übernimmt, Abbrechen verwirft die Eingaben. */
 final class AdminUserFilterBar extends VerticalLayout {
   private final MessageProperties messageProperties;
   private final TextField userSearchField;
-  private final FilterControls controls;
-  private final Button clearFilters = new Button();
+  private final FilterControls filterControls;
+  private final Button clearFiltersButton = new Button();
   private final Button filterButton = new Button();
   private final Button applyFiltersButton = new Button();
   private final Button cancelFilterChangesButton = new Button();
   private final Span activeFilterCountBadge = new Span();
-  private final Span filterHint = new Span();
+  private final Span filterHintSpan = new Span();
   private final AdminSidePanel filterSidePanel;
   private int activeFilterCount;
-  private boolean applied;
-  private SerializableRunnable restoreDraft = () -> {};
+  private boolean wereFiltersApplied;
+  private SerializableRunnable restoreFilterDraftAction = () -> {};
 
   record FilterControls(
       RadioButtonGroup<AdminUserFilters.Enabled> enabled,
@@ -45,92 +47,108 @@ final class AdminUserFilterBar extends VerticalLayout {
   AdminUserFilterBar(
       MessageProperties messageProperties,
       TextField userSearchField,
-      Button refresh,
-      Button addUser,
-      FilterControls controls,
-      SerializableRunnable applyFilters) {
+      Button refreshUsersButton,
+      Button addUserButton,
+      FilterControls filterControls,
+      SerializableRunnable applyFiltersAction) {
     this.messageProperties = messageProperties;
     this.userSearchField = userSearchField;
-    this.controls = controls;
-    controls.enabled().setItems(AdminUserFilters.Enabled.values());
-    controls.enabled().setValue(AdminUserFilters.Enabled.ALL);
+    this.filterControls = filterControls;
+
+    filterControls.enabled().setItems(AdminUserFilters.Enabled.values());
+    filterControls.enabled().setValue(AdminUserFilters.Enabled.ALL);
     setPadding(false);
     setSpacing(false);
     setWidthFull();
     addClassName("admin-user-filter-bar");
+
     filterSidePanel = new AdminSidePanel(messageProperties, AppIcon.FILTER);
     filterSidePanel.setId("admin-user-filter-panel");
     filterSidePanel.addClassName("admin-user-filter-drawer");
+
     filterButton.setPrefixComponent(AppIcon.FILTER.create());
     filterButton.addClassName("admin-user-filter-button");
-    filterButton.addClickListener(event -> {
-      String query = userSearchField.getValue();
-      AdminUserFilters.Enabled enabled = controls.enabled().getValue();
-      java.util.Set<UserStatus> statuses = controls.status().getValue();
-      java.util.Set<RoleType> roles = controls.role().getValue();
-      java.time.LocalDateTime since = controls.activity().getValue();
-      restoreDraft =
-          () -> {
-            userSearchField.setValue(query);
-            controls.enabled().setValue(enabled);
-            controls.status().setValue(statuses);
-            controls.role().setValue(roles);
-            controls.activity().setValue(since);
-          };
-      applied = false;
-      controls.activity().refreshPlaceholders();
-      filterSidePanel.open();
-    });
-    filterSidePanel.addOpenedChangeListener(event -> {
-      filterButton.getElement().setAttribute("aria-expanded", Boolean.toString(event.isOpened()));
-      if (!event.isOpened() && !applied) {
-        restoreDraft.run();
+    filterButton.addClickListener(_ -> openFilterDraft());
+
+    filterSidePanel.addOpenedChangeListener(filterOpenedChangeEvent -> {
+      filterButton
+          .getElement()
+          .setAttribute("aria-expanded", Boolean.toString(filterOpenedChangeEvent.isOpened()));
+      if (!filterOpenedChangeEvent.isOpened() && !wereFiltersApplied) {
+        restoreFilterDraftAction.run();
       }
     });
     filterButton.getElement().setAttribute("aria-controls", "admin-user-filter-panel");
+
     activeFilterCountBadge.addClassName("admin-user-active-filter-count");
-    clearFilters.setPrefixComponent(AppIcon.ROTATE_LEFT.create());
-    clearFilters.addClassNames(DELETE_BUTTON, "admin-user-filter-reset");
-    clearFilters.addClickListener(event -> clearAllFilters());
-    Div tools = new Div(activeFilterCountBadge, clearFilters);
-    tools.addClassName("admin-filter-tools");
-    Div fields =
+    clearFiltersButton.setPrefixComponent(AppIcon.ROTATE_LEFT.create());
+    clearFiltersButton.addClassNames(DELETE_BUTTON, "admin-user-filter-reset");
+    clearFiltersButton.addClickListener(_ -> clearAllFilters());
+
+    Div filterToolsDiv = new Div(activeFilterCountBadge, clearFiltersButton);
+    filterToolsDiv.addClassName("admin-filter-tools");
+    Div filterFieldsDiv =
         new Div(
             userSearchField,
-            controls.enabled(),
-            controls.status(),
-            controls.role(),
-            controls.activity());
-    fields.addClassName("admin-user-filters");
-    Div hint = new Div(AppIcon.INFO_CIRCLE.create(), filterHint);
-    hint.addClassName("admin-filter-hint");
-    filterSidePanel.add(tools, fields, hint);
+            filterControls.enabled(),
+            filterControls.status(),
+            filterControls.role(),
+            filterControls.activity());
+    filterFieldsDiv.addClassName("admin-user-filters");
+    Div filterHintDiv = new Div(AppIcon.INFO_CIRCLE.create(), filterHintSpan);
+    filterHintDiv.addClassName("admin-filter-hint");
+    filterSidePanel.add(filterToolsDiv, filterFieldsDiv, filterHintDiv);
+
     cancelFilterChangesButton.setPrefixComponent(AppIcon.CLOSE.create());
-    cancelFilterChangesButton.addClickListener(event -> filterSidePanel.close());
+    cancelFilterChangesButton.addClickListener(_ -> filterSidePanel.close());
+
     applyFiltersButton.setPrefixComponent(AppIcon.CHECK.create());
     applyFiltersButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    applyFiltersButton.addClickListener(event -> {
-      if (controls.activity().isInvalid()) {
+    applyFiltersButton.addClickListener(_ -> {
+      if (filterControls.activity().isInvalid()) {
         return;
       }
-      applyFilters.run();
-      applied = true;
+      applyFiltersAction.run();
+      wereFiltersApplied = true;
       filterSidePanel.close();
     });
-    Div footer = new Div(cancelFilterChangesButton, applyFiltersButton);
-    footer.addClassName("admin-drawer-actions");
-    filterSidePanel.getFooter().add(footer);
-    Div actions = new Div(refresh, addUser);
-    actions.addClassName("admin-user-toolbar-actions");
-    Div toolbar = new Div(filterButton, actions);
-    toolbar.addClassName("admin-user-toolbar");
-    add(toolbar, filterSidePanel);
-    userSearchField.addValueChangeListener(event -> refreshDraftCount());
-    controls.enabled().addValueChangeListener(event -> refreshDraftCount());
-    controls.status().addValueChangeListener(event -> refreshDraftCount());
-    controls.role().addValueChangeListener(event -> refreshDraftCount());
-    controls.activity().addValueChangeListener(event -> refreshDraftCount());
+    Div filterFooterDiv = new Div(cancelFilterChangesButton, applyFiltersButton);
+    filterFooterDiv.addClassName("admin-drawer-actions");
+    filterSidePanel.getFooter().add(filterFooterDiv);
+
+    Div toolbarActionsDiv = new Div(refreshUsersButton, addUserButton);
+    toolbarActionsDiv.addClassName("admin-user-toolbar-actions");
+    Div filterToolbarDiv = new Div(filterButton, toolbarActionsDiv);
+    filterToolbarDiv.addClassName("admin-user-toolbar");
+    add(filterToolbarDiv, filterSidePanel);
+
+    userSearchField.addValueChangeListener(_ -> refreshDraftCount());
+    filterControls.enabled().addValueChangeListener(_ -> refreshDraftCount());
+    filterControls.status().addValueChangeListener(_ -> refreshDraftCount());
+    filterControls.role().addValueChangeListener(_ -> refreshDraftCount());
+    filterControls.activity().addValueChangeListener(_ -> refreshDraftCount());
     refreshTexts();
+  }
+
+  private void openFilterDraft() {
+    String previousSearchText = userSearchField.getValue();
+    AdminUserFilters.Enabled previousEnabledFilter = filterControls.enabled().getValue();
+    Set<UserStatus> previousUserStatuses = filterControls.status().getValue();
+    Set<RoleType> previousRoles = filterControls.role().getValue();
+    LocalDateTime previousActivityDateTime = filterControls.activity().getValue();
+
+    restoreFilterDraftAction =
+        () -> {
+          userSearchField.setValue(previousSearchText);
+          filterControls.enabled().setValue(previousEnabledFilter);
+          filterControls.status().setValue(previousUserStatuses);
+          filterControls.role().setValue(previousRoles);
+          filterControls.activity().setValue(previousActivityDateTime);
+        };
+
+    wereFiltersApplied = false;
+    filterControls.activity().refreshActivityTimePlaceholder();
+    filterSidePanel.open();
   }
 
   void refreshTexts() {
@@ -142,32 +160,34 @@ final class AdminUserFilterBar extends VerticalLayout {
         messageProperties.getAdminUsersActiveFilterCount(activeFilterCount));
     applyFiltersButton.setText(messageProperties.getAdminUsersApplyFilters());
     cancelFilterChangesButton.setText(messageProperties.getAdminUsersCancel());
-    filterHint.setText(messageProperties.getAdminUsersFilterTimeHint());
-    clearFilters.setText(messageProperties.getAdminUsersClearFilters());
+    filterHintSpan.setText(messageProperties.getAdminUsersFilterTimeHint());
+    clearFiltersButton.setText(messageProperties.getAdminUsersClearFilters());
     userSearchField.setLabel(messageProperties.getAdminUsersSearchLabel());
   }
 
-  void showActiveCount(int count) {
-    activeFilterCount = count;
-    activeFilterCountBadge.setText(messageProperties.getAdminUsersActiveFilterCount(count));
+  void showActiveCount(int activeGroupCount) {
+    activeFilterCount = activeGroupCount;
+    activeFilterCountBadge.setText(
+        messageProperties.getAdminUsersActiveFilterCount(activeGroupCount));
   }
 
   private void refreshDraftCount() {
-    int count =
+    int activeGroupCount =
         AdminUserFilters.countActiveGroups(
             userSearchField.getValue(),
-            controls.enabled().getValue().value(),
-            controls.status().getValue(),
-            controls.role().getValue(),
-            !controls.activity().isEmpty());
-    showActiveCount(count);
+            filterControls.enabled().getValue().value(),
+            filterControls.status().getValue(),
+            filterControls.role().getValue(),
+            !filterControls.activity().isEmpty());
+    showActiveCount(activeGroupCount);
   }
 
   private void clearAllFilters() {
     userSearchField.clear();
-    controls.enabled().setValue(AdminUserFilters.Enabled.ALL);
-    for (HasValue<?, ?> field : List.of(controls.status(), controls.role(), controls.activity())) {
-      field.clear();
+    filterControls.enabled().setValue(AdminUserFilters.Enabled.ALL);
+    for (HasValue<?, ?> filterInput :
+        List.of(filterControls.status(), filterControls.role(), filterControls.activity())) {
+      filterInput.clear();
     }
   }
 }

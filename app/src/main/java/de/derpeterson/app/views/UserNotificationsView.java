@@ -64,6 +64,7 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
 
     addClassNames("cosmos-page", "cosmos-theme", "cosmos-app-shell", REFERENCE_PORTAL);
     HorizontalLayout applicationHeaderHorizontalLayout = createApplicationHeader(configService);
+
     HttpSession inboxHttpSession = httpServletRequest.getSession(false);
     notificationInboxPanel =
         new UserNotificationsPanel(
@@ -83,12 +84,14 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
             inboxCardComponent,
             userAvatarService,
             httpServletRequest);
+
     notificationsPortalContentComponent.configureNavigationToggle(accountNavigationToggle);
     notificationsPortalContentComponent
         .getSidebar()
         .configureStatusSelection(userPopoverMenu.createStatusSelect());
     accountHeaderActions.setUnreadCountListener(
         notificationsPortalContentComponent.getSidebar()::updateUnreadCount);
+
     setPortalPage(
         applicationHeaderHorizontalLayout, notificationsPortalContentComponent, configService);
 
@@ -96,6 +99,7 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
         subscribeAndRefreshNotificationInbox(
             inboxAttachEvent, userNotificationService, inboxHttpSession));
     addDetachListener(_ -> unsubscribeFromNotificationInboxUpdates());
+
     onTrackedUserLanguageChanged();
   }
 
@@ -113,6 +117,7 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
                   inboxAttachEvent.getUI().access(this::refreshNotificationInboxIfAttached);
                 }
               });
+
       notificationInboxPanel.refreshInbox();
     } catch (AccessDeniedException _) {
       notificationInboxPanel.unavailable();
@@ -152,6 +157,7 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     portalBreadcrumbSpan.setText(messageProperties.getAccountNavigationPortal());
     notificationsTitleSpan.setText(messageProperties.getNotificationsTitle());
     notificationsDescriptionSpan.setText(messageProperties.getNotificationsPageDescription());
+
     if (notificationInboxPanel != null) {
       notificationInboxPanel.refreshTexts();
     }

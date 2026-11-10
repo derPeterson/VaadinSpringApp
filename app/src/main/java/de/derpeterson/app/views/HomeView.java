@@ -72,12 +72,14 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
     if (currentUser != null) {
       addClassName(REFERENCE_PORTAL);
     }
+
     if (currentUser == null) {
       setContent(
           new PublicPageComponent(configService, messageProperties, PublicPageComponent.Page.HOME));
     } else {
       showAuthenticatedHomePage();
     }
+
     refreshHomePageTexts();
   }
 
@@ -97,14 +99,17 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
             portalHomeComponent,
             userAvatarService,
             request);
+
     homePortalContentComponent.configureNavigationToggle(accountNavigationToggle);
     homePortalContentComponent
         .getSidebar()
         .configureStatusSelection(userPopoverMenu.createStatusSelect());
+
     accountHeaderActions.setUnreadCountListener(unreadNotificationCount -> {
       homePortalContentComponent.getSidebar().updateUnreadCount(unreadNotificationCount);
       portalHomeComponent.updateUnreadCount(unreadNotificationCount);
     });
+
     setPortalPage(applicationHeaderHorizontalLayout, homePortalContentComponent, configService);
   }
 
@@ -118,6 +123,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
         currentUser == null
             ? messageProperties.getHomeOverview()
             : messageProperties.getAccountNavigationPortal());
+
     if (homePortalContentComponent != null) {
       homePortalContentComponent.refreshTexts();
       portalHomeComponent.refreshTexts();
