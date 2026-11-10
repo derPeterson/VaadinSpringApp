@@ -51,7 +51,7 @@ public class EmailQueueService {
   private final EmailService emailService;
   private final UserRepository userRepository;
   private final PlatformTransactionManager transactionManager;
-  private final Clock clock;
+  private final Clock emailQueueClock;
   private final AdminNotificationAttemptRepository adminNotificationAttemptRepository;
   private final EmailQueueWorkerPool emailQueueWorkerPool;
 
@@ -82,7 +82,7 @@ public class EmailQueueService {
       UserRepository userRepository,
       PlatformTransactionManager transactionManager,
       AdminNotificationAttemptRepository adminNotificationAttemptRepository,
-      Clock clock,
+      Clock emailQueueClock,
       EmailQueueWorkerPool emailQueueWorkerPool) {
     this.emailQueueWorkerPool = Objects.requireNonNull(emailQueueWorkerPool, "workers");
     this.configService = configService;
@@ -90,7 +90,7 @@ public class EmailQueueService {
     this.emailService = emailService;
     this.userRepository = userRepository;
     this.transactionManager = transactionManager;
-    this.clock = Objects.requireNonNull(clock, "clock");
+    this.emailQueueClock = Objects.requireNonNull(emailQueueClock, "clock");
     this.adminNotificationAttemptRepository =
         Objects.requireNonNull(adminNotificationAttemptRepository, "adminAttempts");
   }
@@ -137,7 +137,7 @@ public class EmailQueueService {
     email.setBody(body);
     email.setEmailType(emailType);
     email.setStatus(EmailStatus.PENDING);
-    email.setCreatedAt(LocalDateTime.now(clock));
+    email.setCreatedAt(LocalDateTime.now(emailQueueClock));
     emailQueueRepository.save(email);
     AfterCommitLog.debug(
         logger,
@@ -166,7 +166,7 @@ public class EmailQueueService {
     email.setBody(Objects.requireNonNull(body));
     email.setEmailType(EmailType.NOTIFICATION);
     email.setStatus(EmailStatus.PENDING);
-    email.setCreatedAt(LocalDateTime.now(clock));
+    email.setCreatedAt(LocalDateTime.now(emailQueueClock));
     emailQueueRepository.save(email);
     AfterCommitLog.debug(
         logger,
@@ -200,7 +200,7 @@ public class EmailQueueService {
       throw new IllegalArgumentException("Email queue retry delay must be positive.");
     }
     Duration retryDelay = Duration.ofSeconds(retryDelaySeconds);
-    LocalDateTime retryCutoff = LocalDateTime.now(clock).minus(retryDelay);
+    LocalDateTime retryCutoff = LocalDateTime.now(emailQueueClock).minus(retryDelay);
     List<Long> pendingIds =
         transaction.execute(status ->
             emailQueueRepository
@@ -223,7 +223,9 @@ public class EmailQueueService {
               return null;
             }
             if (email.getLastRetryAt() != null
-                && email.getLastRetryAt().isAfter(LocalDateTime.now(clock).minus(retryDelay))) {
+                && email
+                    .getLastRetryAt()
+                    .isAfter(LocalDateTime.now(emailQueueClock).minus(retryDelay))) {
               return null;
             }
             // Empfänger im frischen Worker-Claim initialisieren, SMTP außerhalb der
@@ -306,7 +308,7 @@ public class EmailQueueService {
     if (failure == null) {
       email.setStatus(EmailStatus.SENT);
     } else {
-      email.setLastRetryAt(LocalDateTime.now(clock));
+      email.setLastRetryAt(LocalDateTime.now(emailQueueClock));
       if (email.getRetryCount() < maxRetry) {
         email.setRetryCount(email.getRetryCount() + 1);
         email.setStatus(EmailStatus.PENDING);
@@ -329,7 +331,7 @@ public class EmailQueueService {
     if (retention.isZero() || retention.isNegative()) {
       throw new IllegalArgumentException("Email queue retention must be positive.");
     }
-    LocalDateTime liveDateTime = LocalDateTime.now(clock).minus(retention);
+    LocalDateTime liveDateTime = LocalDateTime.now(emailQueueClock).minus(retention);
     int deleted =
         emailQueueRepository.deleteByStatusAndCreatedAtBefore(EmailStatus.SENT, liveDateTime);
     String formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
@@ -342,7 +344,7 @@ public class EmailQueueService {
   @Transactional
   @Scheduled(cron = "0 0 3 ? * SUN")
   public void deleteFailedEmails() {
-    LocalDateTime cutoff = LocalDateTime.now(clock).minusDays(30);
+    LocalDateTime cutoff = LocalDateTime.now(emailQueueClock).minusDays(30);
     int deleted =
         emailQueueRepository.deleteByStatusAndLastRetryAtBefore(EmailStatus.FAILED, cutoff);
     if (deleted > 0) {
@@ -361,7 +363,7 @@ public class EmailQueueService {
         transaction.execute(status -> {
           AdminNotificationAttemptEntity audit = new AdminNotificationAttemptEntity();
           audit.setQueueId(failedEmail.getId());
-          audit.setStartedAt(LocalDateTime.now(clock));
+          audit.setStartedAt(LocalDateTime.now(emailQueueClock));
           return adminNotificationAttemptRepository.saveAndFlush(audit).getId();
         });
     AdminNotificationStatus outcome = AdminNotificationStatus.NOT_SENT;
@@ -409,7 +411,7 @@ public class EmailQueueService {
             "Admin notification attempt no longer matches the stored state.");
       }
       audit.setStatus(finalOutcome);
-      audit.setCompletedAt(LocalDateTime.now(clock));
+      audit.setCompletedAt(LocalDateTime.now(emailQueueClock));
       adminNotificationAttemptRepository.saveAndFlush(audit);
     });
   }

@@ -51,7 +51,7 @@ public class VerificationService {
   private final ConfigService configService;
 
   private final EmailQueueService emailQueueService;
-  private final Clock clock;
+  private final Clock verificationTokenClock;
 
   @Autowired
   public VerificationService(
@@ -88,7 +88,7 @@ public class VerificationService {
 
   private String createTokenLocked(UserEntity user) {
     LocalDateTime expiryDate =
-        LocalDateTime.now(clock)
+        LocalDateTime.now(verificationTokenClock)
             .plus(positiveDuration(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION));
     invalidateTokensLocked(user);
 
@@ -162,7 +162,7 @@ public class VerificationService {
         tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
     // The validity interval is exclusive at expiryDate: equality is already expired.
     if (tokenEntity.isPresent()
-        && !tokenEntity.get().getExpiryDate().isAfter(LocalDateTime.now(clock))) {
+        && !tokenEntity.get().getExpiryDate().isAfter(LocalDateTime.now(verificationTokenClock))) {
       tokenEntity.get().setStatus(TokenStatus.EXPIRED);
       tokenRepository.save(tokenEntity.get());
       return false;
@@ -264,7 +264,7 @@ public class VerificationService {
                     CopyrightTextFormatter.format(
                         configService.getString(ConfigEntry.COPYRIGHT_TEXT),
                         serviceName,
-                        clock,
+                        verificationTokenClock,
                         messageProperties::getAccountCopyrightTemplate)),
             "FIRST_NAME", HtmlUtils.htmlEscape(user.getFirstName()),
             "LAST_NAME", HtmlUtils.htmlEscape(user.getLastName()),
@@ -292,7 +292,7 @@ public class VerificationService {
   @Scheduled(cron = "0 0 3 ? * SUN")
   public void deleteExpiredTokens() {
     LocalDateTime liveDateTime =
-        LocalDateTime.now(clock)
+        LocalDateTime.now(verificationTokenClock)
             .minus(positiveDuration(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION));
     int deleted = tokenRepository.deleteByExpiryDateBefore(liveDateTime);
     String formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);

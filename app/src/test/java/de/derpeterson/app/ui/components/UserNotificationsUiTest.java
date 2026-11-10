@@ -390,9 +390,9 @@ class UserNotificationsUiTest {
         tree(header)
             .filter(H1.class::isInstance)
             .anyMatch(h -> h.hasClassName("cosmos-section-title")));
-    Span overview = field(view, "overview");
-    Span title = field(view, "title");
-    Span description = field(view, "description");
+    Span overview = field(view, "portalBreadcrumbSpan");
+    Span title = field(view, "notificationsTitleSpan");
+    Span description = field(view, "notificationsDescriptionSpan");
     assertTrue(overview.hasClassName("cosmos-dashboard-kicker"));
     assertTrue(description.hasClassName("cosmos-dashboard-description"));
     assertEquals(messageProperties.getAccountNavigationPortal(), overview.getText());
@@ -864,12 +864,12 @@ class UserNotificationsUiTest {
     panel.refreshInbox();
     assertEquals(
         messageProperties.getNotificationsRetentionUnlimited(),
-        ((Span) field(panel, "retention")).getText());
+        ((Span) field(panel, "notificationRetentionSpan")).getText());
     when(userNotificationService.retentionDays()).thenReturn(OptionalInt.of(14));
     panel.refreshInbox();
     assertEquals(
         messageProperties.getNotificationsRetention(14),
-        ((Span) field(panel, "retention")).getText());
+        ((Span) field(panel, "notificationRetentionSpan")).getText());
   }
 
   @ParameterizedTest

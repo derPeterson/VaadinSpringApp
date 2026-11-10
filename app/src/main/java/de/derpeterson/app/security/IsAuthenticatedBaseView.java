@@ -23,8 +23,14 @@ public abstract class IsAuthenticatedBaseView extends TrackedUserAppLayout
       UserService userService,
       UserStatusBroadcaster userStatusBroadcaster,
       HttpServletRequest request,
-      UserAvatarService avatars) {
-    super(messageProperties, securityService, userService, userStatusBroadcaster, request, avatars);
+      UserAvatarService userAvatarService) {
+    super(
+        messageProperties,
+        securityService,
+        userService,
+        userStatusBroadcaster,
+        request,
+        userAvatarService);
   }
 
   @Override

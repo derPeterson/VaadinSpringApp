@@ -58,7 +58,7 @@ public class PasswordResetService {
   private final EmailQueueService emailQueueService;
   private final LoginAttemptService loginAttemptService;
   private final UserNotificationService userNotifications;
-  @NonNull private final Clock clock;
+  @NonNull private final Clock passwordResetClock;
 
   @Autowired
   public PasswordResetService(
@@ -100,7 +100,7 @@ public class PasswordResetService {
 
   private String createTokenLocked(UserEntity user) {
     LocalDateTime expiryDate =
-        LocalDateTime.now(clock)
+        LocalDateTime.now(passwordResetClock)
             .plus(positiveDuration(ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION));
     invalidateTokensLocked(user);
 
@@ -189,7 +189,7 @@ public class PasswordResetService {
     if (resetToken.getStatus() != TokenStatus.ACTIVE) {
       return LinkState.INVALID;
     }
-    if (!resetToken.getExpiryDate().isAfter(LocalDateTime.now(clock))) {
+    if (!resetToken.getExpiryDate().isAfter(LocalDateTime.now(passwordResetClock))) {
       resetToken.setStatus(TokenStatus.EXPIRED);
       tokenRepository.save(resetToken);
       return LinkState.EXPIRED;
@@ -209,7 +209,7 @@ public class PasswordResetService {
     Optional<PasswordResetTokenEntity> tokenEntity =
         tokenRepository.findByTokenAndStatus(token, TokenStatus.ACTIVE);
     if (tokenEntity.isPresent()
-        && !tokenEntity.get().getExpiryDate().isAfter(LocalDateTime.now(clock))) {
+        && !tokenEntity.get().getExpiryDate().isAfter(LocalDateTime.now(passwordResetClock))) {
       tokenEntity.get().setStatus(TokenStatus.EXPIRED);
       tokenRepository.save(tokenEntity.get());
       return false;
@@ -238,7 +238,7 @@ public class PasswordResetService {
   @Scheduled(cron = "0 0 3 1/3 * ?")
   public void deleteExpiredTokens() {
     LocalDateTime liveDateTime =
-        LocalDateTime.now(clock)
+        LocalDateTime.now(passwordResetClock)
             .minus(positiveDuration(ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION));
     int deleted = tokenRepository.deleteByExpiryDateBefore(liveDateTime);
     String formattedLiveDateTime = liveDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
@@ -297,7 +297,7 @@ public class PasswordResetService {
                     CopyrightTextFormatter.format(
                         configService.getString(ConfigEntry.COPYRIGHT_TEXT),
                         serviceName,
-                        clock,
+                        passwordResetClock,
                         messageProperties::getAccountCopyrightTemplate)),
             "RESET_PASSWORD_LINK",
                 UriComponentsBuilder.fromUriString(configService.getString(ConfigEntry.BASE_URL))

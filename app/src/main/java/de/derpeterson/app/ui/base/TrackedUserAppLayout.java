@@ -52,7 +52,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
   protected final transient UserEntity currentUser;
 
   protected final AccountHeaderActions accountHeaderActions;
-  protected final transient UserAvatarService avatars;
+  protected final transient UserAvatarService userAvatarService;
   private transient Registration profileRegistration;
   protected Button userIconButton;
   protected transient UserPopoverMenu userPopoverMenu;
@@ -67,12 +67,12 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
       UserService userService,
       UserStatusBroadcaster userStatusBroadcaster,
       HttpServletRequest request,
-      UserAvatarService avatars) {
+      UserAvatarService userAvatarService) {
     super(securityService, userService, userStatusBroadcaster);
 
     this.messageProperties = messageProperties;
     this.request = request;
-    this.avatars = avatars;
+    this.userAvatarService = userAvatarService;
     this.currentUser = securityService.getCurrentUser(request).orElse(null);
     this.accountHeaderActions = new AccountHeaderActions(messageProperties, currentUser != null);
     addAttachListener(event -> registerProfileUpdates(event.getUI()));
@@ -106,7 +106,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
       return;
     }
     profileRegistration =
-        avatars
+        userAvatarService
             .events()
             .register(message -> {
               if (Objects.equals(currentUser.getId(), message.userId())) {
@@ -226,7 +226,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
                 hasClassName(REFERENCE_PORTAL) ? IconSize.PIXEL_32 : IconSize.PIXEL_48,
                 true));
 
-    ((OverlayUserIcon) userIconButton.getIcon()).configureAvatar(avatars, null);
+    ((OverlayUserIcon) userIconButton.getIcon()).configureAvatar(userAvatarService, null);
     refreshHeaderIdentity();
     userIconButton.addClassNames("tracked-user-button");
     userIconButton.addThemeVariants(LUMO_TERTIARY_INLINE);
@@ -249,7 +249,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
             actions,
             this::updateHeaderStatusIcon);
 
-    userPopoverMenu.configureAvatars(avatars);
+    userPopoverMenu.configureAvatars(userAvatarService);
     Popover userPopover = userPopoverMenu.getPopover();
     userIconButton.addClickListener(buttonClickEvent -> userPopover.setOpened(true));
   }

@@ -20,18 +20,6 @@ gezielt einsetzen. Jede Datei sichten und konkrete Lesbarkeitshürden beheben.
 
 ## Offene Arbeitspakete
 
-- [ ] **App-Oberfläche:** Views, Komponenten, UI-Helfer und Texte erneut
-  vollständig sichten. Fachliche Blöcke einschließlich ihrer Felder,
-  Konstruktorparameter, Methoden und Verwendungsstellen gemeinsam prüfen.
-- [ ] **App-Fachlogik und Infrastruktur:** Alle übrigen Hauptquellen erneut
-  sichten. Namen und Abläufe im Zusammenhang prüfen. Prüfungen,
-  Ausführungsreihenfolge und Transaktions- sowie Sperrgrenzen erhalten.
-- [ ] **App-Tests:** Alle Testquellen paketweise sichten. Testnamen, Vorbereitung,
-  Ausführung und Erwartungen sollen das jeweilige Szenario erkennen lassen.
-- [ ] **Browser-Tests:** Java-Tests, Page Objects und Hilfscode sichten. Szenarien,
-  Selektoren, Wartebedingungen und Assertions bei der Überarbeitung erhalten.
-- [ ] **Gesamtreview:** Abdeckung aller drei Module mit der Liste der versionierten
-  Java-Dateien abgleichen und aussagekräftige Vorher-nachher-Stellen vorlegen.
 - [ ] **Integration:** Den vollständig geprüften Branch lokal nach `main` mergen.
 - [ ] **Sonar:** Auf `main` analysieren, berechtigte Findings beheben und committen.
   Einen vollständigen Nachscan auswerten.

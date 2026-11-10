@@ -60,14 +60,14 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       Long.toString(DEFAULT_POLICY.inactivity().toSeconds());
 
   private record FieldHelp(
-      Supplier<String> group,
-      Supplier<String> title,
-      Supplier<String> description,
-      Supplier<String> defaultValue,
-      Supplier<List<String>> rules,
-      Supplier<String> effectiveUse) {
+      Supplier<String> groupTextSupplier,
+      Supplier<String> titleTextSupplier,
+      Supplier<String> descriptionTextSupplier,
+      Supplier<String> defaultValueTextSupplier,
+      Supplier<List<String>> ruleTextsSupplier,
+      Supplier<String> effectiveUseTextSupplier) {
     String tooltip() {
-      return description.get() + " " + String.join(" ", rules.get());
+      return descriptionTextSupplier.get() + " " + String.join(" ", ruleTextsSupplier.get());
     }
   }
 
@@ -80,11 +80,11 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   private final Map<RoleType, Tab> roleTabs = new EnumMap<>(RoleType.class);
   private final List<Runnable> fieldTextUpdates = new ArrayList<>();
   private final List<ConfigInfoButton> infoButtons = new ArrayList<>();
-  private final Span breadcrumb = new Span();
+  private final Span configurationBreadcrumbSpan = new Span();
   private final Span pageTitle = new Span();
   private final Span pageHint = new Span();
-  private final H2 title = new H2();
-  private final Span hint = new Span();
+  private final H2 twoFactorPolicyHeading = new H2();
+  private final Span twoFactorPolicyDescriptionSpan = new Span();
   private final Span saveHint = new Span();
   private final Switch reconfirmAfterInactivitySwitch = new Switch();
   private final Span durationLabel = new Span();
@@ -115,7 +115,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     setSpacing(false);
     addClassNames("cosmos-admin-section", "cosmos-provider-settings", "cosmos-mfa-settings");
     setId("admin-two-factor-settings");
-    add(new CosmosSectionHeaderComponent(breadcrumb, pageTitle, pageHint));
+    add(new CosmosSectionHeaderComponent(configurationBreadcrumbSpan, pageTitle, pageHint));
     twoFactorConfirmationDialog =
         new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, httpRequest);
     fieldHelpPanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
@@ -125,9 +125,9 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     closeFieldHelpButton.setPrefixComponent(AppIcon.CLOSE.create());
     closeFieldHelpButton.addClickListener(event -> fieldHelpPanel.close());
     fieldHelpPanel.getFooter().add(closeFieldHelpButton);
-    title.addClassName(CosmosClasses.PANEL_TITLE);
-    hint.addClassName(CosmosClasses.PANEL_DESCRIPTION);
-    Div heading = new Div(title, hint);
+    twoFactorPolicyHeading.addClassName(CosmosClasses.PANEL_TITLE);
+    twoFactorPolicyDescriptionSpan.addClassName(CosmosClasses.PANEL_DESCRIPTION);
+    Div heading = new Div(twoFactorPolicyHeading, twoFactorPolicyDescriptionSpan);
     heading.addClassName(CosmosClasses.PANEL_HEADING);
     Div icon = new Div(AppIcon.SHIELD_KEYHOLE.create());
     icon.addClassName(CosmosClasses.PANEL_ICON);
@@ -363,14 +363,16 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   }
 
   private HorizontalLayout guideItem(
-      AppIcon icon, Supplier<String> title, Supplier<String> description) {
+      AppIcon icon,
+      Supplier<String> guideTitleTextSupplier,
+      Supplier<String> guideDescriptionTextSupplier) {
     Span heading = new Span();
     heading.addClassName("mfa-guide-item-title");
     Span copy = new Span();
     copy.addClassName(CosmosClasses.PANEL_DESCRIPTION);
     fieldTextUpdates.add(() -> {
-      heading.setText(title.get());
-      copy.setText(description.get());
+      heading.setText(guideTitleTextSupplier.get());
+      copy.setText(guideDescriptionTextSupplier.get());
     });
     VerticalLayout text = new VerticalLayout(heading, copy);
     text.setPadding(false);
@@ -464,12 +466,12 @@ public final class AdminTwoFactorSection extends VerticalLayout {
             NotificationHelper.NotificationType.ERROR);
   }
 
-  private Div withHelp(Component field, FieldHelp details) {
+  private Div withHelp(Component field, FieldHelp fieldHelp) {
     ConfigInfoButton button =
         new ConfigInfoButton(
-            details::tooltip,
+            fieldHelp::tooltip,
             () -> {
-              refreshHelp = () -> renderHelp(details);
+              refreshHelp = () -> renderHelp(fieldHelp);
               refreshHelp.run();
               fieldHelpPanel.open();
             });
@@ -478,13 +480,15 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     infoButtons.add(button);
     fieldTextUpdates.add(() ->
         button.setAriaLabel(
-            messageProperties.getAdminConfigHelpTitle() + " – " + details.title().get()));
+            messageProperties.getAdminConfigHelpTitle()
+                + " – "
+                + fieldHelp.titleTextSupplier().get()));
     if (field instanceof ComboBox<?> modeField) {
       Span caption = new Span();
       caption.setId(field.getId().orElseThrow() + "-label");
       caption.addClassName("provider-field-label");
       modeField.setAriaLabelledBy(caption.getId().orElseThrow());
-      fieldTextUpdates.add(() -> caption.setText(details.title().get()));
+      fieldTextUpdates.add(() -> caption.setText(fieldHelp.titleTextSupplier().get()));
       Div wrapper = new Div(caption, row);
       wrapper.addClassName("provider-help-field");
       return wrapper;
@@ -492,22 +496,22 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     return row;
   }
 
-  private void renderHelp(FieldHelp details) {
+  private void renderHelp(FieldHelp fieldHelp) {
     fieldHelpPanel.setHeading(messageProperties.getAdminConfigHelpTitle());
     fieldHelpPanel.setDescription(messageProperties.getAdminConfigHelpDescription());
-    Span group = new Span(details.group().get());
+    Span group = new Span(fieldHelp.groupTextSupplier().get());
     group.addClassName("admin-help-group");
-    H3 fieldTitle = new H3(details.title().get());
+    H3 fieldTitle = new H3(fieldHelp.titleTextSupplier().get());
     fieldTitle.addClassName("admin-help-field-title");
-    Span description = new Span(details.description().get());
+    Span description = new Span(fieldHelp.descriptionTextSupplier().get());
     description.addClassName("admin-help-description");
     Div defaultValue =
         new Div(
             new Span(messageProperties.getAdminConfigDefault()),
-            new Span(details.defaultValue().get()));
+            new Span(fieldHelp.defaultValueTextSupplier().get()));
     defaultValue.addClassName("admin-help-default");
     UnorderedList rulesList = new UnorderedList();
-    details.rules().get().forEach(rule -> rulesList.add(new ListItem(rule)));
+    fieldHelp.ruleTextsSupplier().get().forEach(rule -> rulesList.add(new ListItem(rule)));
     Div rulesSection = new Div(new H4(messageProperties.getAdminConfigInputRules()), rulesList);
     rulesSection.addClassName("admin-help-rules");
     fieldHelpPanel.removeAll();
@@ -515,17 +519,17 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     fieldHelpPanel.addEffectiveUse(
         messageProperties,
         List.of(
-            details.effectiveUse().get(),
+            fieldHelp.effectiveUseTextSupplier().get(),
             messageProperties.getAdminConfigEffectiveTwoFactorExisting()));
   }
 
   public void refreshTexts() {
-    breadcrumb.setText(
+    configurationBreadcrumbSpan.setText(
         messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminConfigTitle());
     pageTitle.setText(messageProperties.getAdminConfigTitle());
     pageHint.setText(messageProperties.getTwoFactorSettingsPageHint());
-    title.setText(messageProperties.getTwoFactorSettingsTitle());
-    hint.setText(messageProperties.getTwoFactorSettingsHint());
+    twoFactorPolicyHeading.setText(messageProperties.getTwoFactorSettingsTitle());
+    twoFactorPolicyDescriptionSpan.setText(messageProperties.getTwoFactorSettingsHint());
     roleTabs.forEach((role, tab) -> {
       tab.removeAll();
       tab.add(new Span(roleLabel(role)));

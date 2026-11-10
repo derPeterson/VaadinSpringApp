@@ -24,8 +24,8 @@ public final class TwoFactorAccountComponent extends Div {
   private final transient TwoFactorManagement twoFactorManagement;
   private final transient HttpServletRequest httpRequest;
 
-  private final Div twoFactorAccountCard = new Div();
-  private final TwoFactorActionDialog twoFactorConfirmationDialog;
+  private final Div twoFactorAccountCardDiv = new Div();
+  private final TwoFactorActionDialog twoFactorConfirmationActionDialog;
 
   public TwoFactorAccountComponent(
       MessageProperties messageProperties,
@@ -38,30 +38,31 @@ public final class TwoFactorAccountComponent extends Div {
     this.httpRequest = httpRequest;
 
     setId("account-two-factor");
-    twoFactorConfirmationDialog =
+    twoFactorConfirmationActionDialog =
         new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, httpRequest);
-    add(twoFactorAccountCard, twoFactorConfirmationDialog);
+    add(twoFactorAccountCardDiv, twoFactorConfirmationActionDialog);
 
     refreshTwoFactorAccountSection();
   }
 
   void refreshTwoFactorAccountSection() {
-    twoFactorAccountCard.removeAll();
+    twoFactorAccountCardDiv.removeAll();
     TwoFactorAuthorization.State twoFactorState =
         twoFactorAuthorization.state(twoFactorAuthorization.owner(httpRequest));
-    Div twoFactorIcon = new Div(AppIcon.SHIELD_KEYHOLE.create());
-    twoFactorIcon.addClassName(CosmosClasses.PANEL_ICON);
+    Div twoFactorIconContainerDiv = new Div(AppIcon.SHIELD_KEYHOLE.create());
+    twoFactorIconContainerDiv.addClassName(CosmosClasses.PANEL_ICON);
 
-    Div twoFactorDescription = createTwoFactorDescription(twoFactorState.enrolled());
-    Div twoFactorActions = createTwoFactorActions(twoFactorState.enrolled());
-    twoFactorAccountCard.add(twoFactorIcon, twoFactorDescription, twoFactorActions);
-    twoFactorAccountCard.addClassNames("account-entry", "two-factor-account-entry");
-    twoFactorConfirmationDialog.refreshTexts();
+    Div twoFactorDescriptionDiv = createTwoFactorDescriptionDiv(twoFactorState.enrolled());
+    Div twoFactorActionsDiv = createTwoFactorActionsDiv(twoFactorState.enrolled());
+    twoFactorAccountCardDiv.add(
+        twoFactorIconContainerDiv, twoFactorDescriptionDiv, twoFactorActionsDiv);
+    twoFactorAccountCardDiv.addClassNames("account-entry", "two-factor-account-entry");
+    twoFactorConfirmationActionDialog.refreshTexts();
   }
 
-  private Div createTwoFactorDescription(boolean authenticatorEnrolled) {
-    Span twoFactorTitle = new Span(messageProperties.getTwoFactorSettingsTitle());
-    twoFactorTitle.addClassName("account-entry-title");
+  private Div createTwoFactorDescriptionDiv(boolean authenticatorEnrolled) {
+    Span twoFactorTitleSpan = new Span(messageProperties.getTwoFactorSettingsTitle());
+    twoFactorTitleSpan.addClassName("account-entry-title");
 
     Badge enrollmentBadge =
         new Badge(
@@ -72,45 +73,46 @@ public final class TwoFactorAccountComponent extends Div {
       enrollmentBadge.addThemeVariants(BadgeVariant.SUCCESS);
     }
 
-    Span twoFactorHint = new Span(messageProperties.getTwoFactorAccountHint());
-    twoFactorHint.addClassName("account-entry-description");
-    Div twoFactorDescription = new Div(new Div(twoFactorTitle, enrollmentBadge), twoFactorHint);
-    twoFactorDescription.addClassName("account-entry-copy");
-    return twoFactorDescription;
+    Span twoFactorHintSpan = new Span(messageProperties.getTwoFactorAccountHint());
+    twoFactorHintSpan.addClassName("account-entry-description");
+    Div twoFactorDescriptionDiv =
+        new Div(new Div(twoFactorTitleSpan, enrollmentBadge), twoFactorHintSpan);
+    twoFactorDescriptionDiv.addClassName("account-entry-copy");
+    return twoFactorDescriptionDiv;
   }
 
-  private Div createTwoFactorActions(boolean authenticatorEnrolled) {
-    Div twoFactorActions = new Div();
-    twoFactorActions.addClassName("two-factor-account-actions");
-    EqualButtonWidths.configureEqualButtonWidths(twoFactorActions);
+  private Div createTwoFactorActionsDiv(boolean authenticatorEnrolled) {
+    Div twoFactorActionsDiv = new Div();
+    twoFactorActionsDiv.addClassName("two-factor-account-actions");
+    EqualButtonWidths.configureEqualButtonWidths(twoFactorActionsDiv);
 
     if (!authenticatorEnrolled) {
       Button setupAuthenticatorButton =
           new Button(messageProperties.getTwoFactorSetupAction(), AppIcon.LOCK.create());
       setupAuthenticatorButton.setId("account-two-factor-setup");
       setupAuthenticatorButton.addClickListener(event -> openAuthenticatorSetup());
-      twoFactorActions.add(setupAuthenticatorButton);
+      twoFactorActionsDiv.add(setupAuthenticatorButton);
     } else {
       Button regenerateRecoveryCodesButton =
           new Button(
               messageProperties.getTwoFactorRegenerateAction(), AppIcon.CLIPBOARD_COPY.create());
       regenerateRecoveryCodesButton.setId("account-two-factor-renew");
       regenerateRecoveryCodesButton.addClickListener(event ->
-          twoFactorConfirmationDialog.open(
+          twoFactorConfirmationActionDialog.open(
               TwoFactorAction.MANAGE_RECOVERY_CODES, this::regenerateRecoveryCodes));
 
       Button replaceAuthenticatorButton =
           new Button(messageProperties.getTwoFactorReplaceAction(), AppIcon.EDIT.create());
       replaceAuthenticatorButton.setId("account-two-factor-replace");
       replaceAuthenticatorButton.addClickListener(event ->
-          twoFactorConfirmationDialog.open(
+          twoFactorConfirmationActionDialog.open(
               TwoFactorAction.MANAGE_FACTOR, this::beginAuthenticatorReplacement));
 
       Button removeAuthenticatorButton = createRemoveAuthenticatorButton();
-      twoFactorActions.add(
+      twoFactorActionsDiv.add(
           replaceAuthenticatorButton, regenerateRecoveryCodesButton, removeAuthenticatorButton);
     }
-    return twoFactorActions;
+    return twoFactorActionsDiv;
   }
 
   private Button createRemoveAuthenticatorButton() {
@@ -119,15 +121,16 @@ public final class TwoFactorAccountComponent extends Div {
     removeAuthenticatorButton.setId("account-two-factor-remove");
     removeAuthenticatorButton.addClassName(CosmosClasses.DELETE_BUTTON);
 
-    TwoFactorManagement.DisableProblem disableProblem =
+    TwoFactorManagement.DisableProblem authenticatorDisableProblem =
         twoFactorManagement.disableProblem(httpRequest);
-    removeAuthenticatorButton.setEnabled(disableProblem == TwoFactorManagement.DisableProblem.NONE);
+    removeAuthenticatorButton.setEnabled(
+        authenticatorDisableProblem == TwoFactorManagement.DisableProblem.NONE);
     removeAuthenticatorButton.setTooltipText(
-        disableProblem == TwoFactorManagement.DisableProblem.NO_INDEPENDENT_ACCESS
+        authenticatorDisableProblem == TwoFactorManagement.DisableProblem.NO_INDEPENDENT_ACCESS
             ? messageProperties.getTwoFactorIndependentAccessRequired()
             : messageProperties.getTwoFactorDisableHint());
     removeAuthenticatorButton.addClickListener(event ->
-        twoFactorConfirmationDialog.open(
+        twoFactorConfirmationActionDialog.open(
             TwoFactorAction.MANAGE_FACTOR, this::disableAuthenticator));
     return removeAuthenticatorButton;
   }

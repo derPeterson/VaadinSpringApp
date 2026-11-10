@@ -72,27 +72,27 @@ public class AdminExternalLoginSection extends VerticalLayout {
   private final transient ExternalProviderSettings externalProviderSettings;
   private final transient ConfigService configService;
   private final List<ProviderForm> forms = new ArrayList<>();
-  private final Span breadcrumb = new Span();
-  private final Span title = new Span();
-  private final Span description = new Span();
+  private final Span configurationBreadcrumbSpan = new Span();
+  private final Span configurationTitleSpan = new Span();
+  private final Span configurationDescriptionSpan = new Span();
   private final H2 panelTitle = new H2();
-  private final Span panelDescription = new Span();
-  private final TabSheet providerTabs = new TabSheet();
-  private final AdminSidePanel helpPanel;
+  private final Span providerPanelDescriptionSpan = new Span();
+  private final TabSheet providerTabSheet = new TabSheet();
+  private final AdminSidePanel fieldHelpSidePanel;
   private final Button closeFieldHelpButton = new Button(AppIcon.CLOSE.create());
-  private ProviderForm helpForm;
-  private ProviderField helpField;
+  private ProviderForm fieldHelpProviderForm;
+  private ProviderField fieldHelpProviderField;
   private transient TwoFactorAuthorization twoFactorAuthorization;
-  private transient jakarta.servlet.http.HttpServletRequest request;
+  private transient jakarta.servlet.http.HttpServletRequest httpRequest;
   private TwoFactorActionDialog twoFactorConfirmationDialog;
 
   public void configureConfirmation(
       TwoFactorAuthorization twoFactorAuthorization,
-      jakarta.servlet.http.HttpServletRequest request) {
+      jakarta.servlet.http.HttpServletRequest httpRequest) {
     this.twoFactorAuthorization = twoFactorAuthorization;
-    this.request = request;
+    this.httpRequest = httpRequest;
     twoFactorConfirmationDialog =
-        new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, request);
+        new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, httpRequest);
     add(twoFactorConfirmationDialog);
   }
 
@@ -103,21 +103,23 @@ public class AdminExternalLoginSection extends VerticalLayout {
     this.messageProperties = messageProperties;
     this.externalProviderSettings = externalProviderSettings;
     this.configService = configService;
-    helpPanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
-    helpPanel.addClassName("admin-config-help");
-    helpPanel.setId("provider-field-help");
+    fieldHelpSidePanel = new AdminSidePanel(messageProperties, AppIcon.INFO_CIRCLE);
+    fieldHelpSidePanel.addClassName("admin-config-help");
+    fieldHelpSidePanel.setId("provider-field-help");
     closeFieldHelpButton.setWidthFull();
-    closeFieldHelpButton.addClickListener(event -> helpPanel.close());
-    helpPanel.getFooter().add(closeFieldHelpButton);
+    closeFieldHelpButton.addClickListener(event -> fieldHelpSidePanel.close());
+    fieldHelpSidePanel.getFooter().add(closeFieldHelpButton);
     setWidthFull();
     setPadding(false);
     setSpacing(false);
     addClassNames("cosmos-admin-section", "cosmos-provider-settings");
     setId("admin-provider-settings");
-    add(new CosmosSectionHeaderComponent(breadcrumb, title, description));
+    add(
+        new CosmosSectionHeaderComponent(
+            configurationBreadcrumbSpan, configurationTitleSpan, configurationDescriptionSpan));
     panelTitle.addClassName(PANEL_TITLE);
-    panelDescription.addClassName(PANEL_DESCRIPTION);
-    Div heading = new Div(panelTitle, panelDescription);
+    providerPanelDescriptionSpan.addClassName(PANEL_DESCRIPTION);
+    Div heading = new Div(panelTitle, providerPanelDescriptionSpan);
     heading.addClassName(PANEL_HEADING);
     Div symbol = new Div(ConfigGroupIcons.forGroup(AdminConfigGroup.EXTERNAL_LOGIN).create());
     symbol.addClassName(PANEL_ICON);
@@ -125,113 +127,114 @@ public class AdminExternalLoginSection extends VerticalLayout {
     statuses.addClassName("provider-statuses");
     Div header = new Div(symbol, heading, statuses);
     header.addClassNames(PANEL_HEADER, "provider-panel-header");
-    providerTabs.setId("admin-provider-tabs");
-    providerTabs.addClassName(PANEL_TABS);
-    providerTabs.setWidthFull();
-    providerTabs.addThemeVariants(TabSheetVariant.NO_PADDING);
-    for (String provider : ExternalProviderSettings.PROVIDERS) {
-      ProviderForm form = new ProviderForm(provider);
+    providerTabSheet.setId("admin-provider-tabs");
+    providerTabSheet.addClassName(PANEL_TABS);
+    providerTabSheet.setWidthFull();
+    providerTabSheet.addThemeVariants(TabSheetVariant.NO_PADDING);
+    for (String providerId : ExternalProviderSettings.PROVIDERS) {
+      ProviderForm form = new ProviderForm(providerId);
       forms.add(form);
-      statuses.add(form.status);
-      String name = provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
-      Image logo = new Image(providerLogo(provider), "");
+      statuses.add(form.providerStatusBadge);
+      String name = providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
+      Image logo = new Image(providerLogo(providerId), "");
       logo.getElement().setAttribute("aria-hidden", "true");
       Tab tab = new Tab(logo, new Span(name));
-      tab.setId("provider-tab-" + provider);
-      providerTabs.add(tab, form.content);
+      tab.setId("provider-tab-" + providerId);
+      providerTabSheet.add(tab, form.providerFormContentDiv);
     }
-    CosmosCardComponent card = new CosmosCardComponent(header, providerTabs);
+    CosmosCardComponent card = new CosmosCardComponent(header, providerTabSheet);
     card.addClassNames("cosmos-admin-form-card", PANEL_CARD);
-    add(card, helpPanel);
+    add(card, fieldHelpSidePanel);
     refreshTexts();
   }
 
-  private static String providerLogo(String provider) {
-    return "icons/external-login/" + provider + (provider.equals(GOOGLE) ? ".png" : ".svg");
+  private static String providerLogo(String providerId) {
+    return "icons/external-login/" + providerId + (providerId.equals(GOOGLE) ? ".png" : ".svg");
   }
 
   public void activate() {
     for (ProviderForm form : forms) {
-      form.load();
+      form.loadProviderSettings();
     }
     refreshTexts();
   }
 
   public void refreshTexts() {
-    breadcrumb.setText(
+    configurationBreadcrumbSpan.setText(
         messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminConfigTitle());
-    title.setText(messageProperties.getAdminConfigTitle());
-    description.setText(messageProperties.getAdminConfigDescription());
+    configurationTitleSpan.setText(messageProperties.getAdminConfigTitle());
+    configurationDescriptionSpan.setText(messageProperties.getAdminConfigDescription());
     panelTitle.setText(messageProperties.getProviderSettingsPanelTitle());
-    panelDescription.setText(messageProperties.getProviderSettingsPanelDescription());
+    providerPanelDescriptionSpan.setText(messageProperties.getProviderSettingsPanelDescription());
     forms.forEach(ProviderForm::refreshTexts);
     closeFieldHelpButton.setText(messageProperties.getNotificationsClose());
-    if (helpPanel.isOpened()) {
-      helpForm.refreshHelp();
+    if (fieldHelpSidePanel.isOpened()) {
+      fieldHelpProviderForm.refreshHelp();
     }
   }
 
   private final class ProviderForm implements Serializable {
-    private final String provider;
-    private final Div content;
-    private final Badge status = new Badge();
-    private final Tooltip statusTooltip = Tooltip.forComponent(status);
-    private final Span assistantKicker = new Span();
-    private final Span assistantKickerText = new Span();
+    private final String providerId;
+    private final Div providerFormContentDiv;
+    private final Badge providerStatusBadge = new Badge();
+    private final Tooltip statusTooltip = Tooltip.forComponent(providerStatusBadge);
+    private final Span assistantKickerSpan = new Span();
+    private final Span assistantKickerTextSpan = new Span();
     private final H3 assistantTitle = new H3();
-    private final Span assistantDescription = new Span();
+    private final Span assistantDescriptionSpan = new Span();
     private final List<Span> stepLabels = new ArrayList<>();
-    private final Span guide = new Span();
-    private final Anchor console;
-    private final Span consoleCaption = new Span();
-    private final TextField redirect = new TextField();
-    private final Button copy = new Button();
-    private final TextField clientId = new TextField();
-    private final PasswordField secret = new PasswordField();
-    private final Switch enabled = new Switch();
-    private final Span enabledLabel = new Span();
-    private final Span hint = new Span();
-    private final Button reload = new Button();
-    private final Button save = new Button();
+    private final Span providerConsoleGuideSpan = new Span();
+    private final Anchor providerConsoleLink;
+    private final Span providerConsoleLinkCaptionSpan = new Span();
+    private final TextField redirectUriTextField = new TextField();
+    private final Button copyRedirectUriButton = new Button();
+    private final TextField clientIdTextField = new TextField();
+    private final PasswordField clientSecretPasswordField = new PasswordField();
+    private final Switch providerEnabledSwitch = new Switch();
+    private final Span providerEnabledLabelSpan = new Span();
+    private final Span providerSettingsHintSpan = new Span();
+    private final Button reloadProviderSettingsButton = new Button();
+    private final Button saveProviderSettingsButton = new Button();
     private final Map<ProviderField, Span> fieldLabels = new EnumMap<>(ProviderField.class);
     private final Map<ProviderField, ConfigInfoButton> infoButtons =
         new EnumMap<>(ProviderField.class);
-    private ExternalProviderSettings.Settings stored;
+    private ExternalProviderSettings.Settings savedProviderSettings;
 
-    private ProviderForm(String provider) {
-      this.provider = provider;
-      assistantKicker.addClassName("provider-assistant-kicker");
-      assistantKicker.add(AppIcon.BOT.create(), assistantKickerText);
+    private ProviderForm(String providerId) {
+      this.providerId = providerId;
+      assistantKickerSpan.addClassName("provider-assistant-kicker");
+      assistantKickerSpan.add(AppIcon.BOT.create(), assistantKickerTextSpan);
       assistantTitle.addClassName("provider-assistant-title");
-      assistantDescription.addClassName("provider-assistant-description");
-      Div introduction = new Div(assistantKicker, assistantTitle, assistantDescription);
+      assistantDescriptionSpan.addClassName("provider-assistant-description");
+      Div introduction = new Div(assistantKickerSpan, assistantTitle, assistantDescriptionSpan);
       introduction.addClassName("provider-assistant-intro");
-      status.addClassName("provider-status");
-      status.setId(PROVIDER_PREFIX + provider + "-status");
-      status.setIcon(new Image(providerLogo(provider), ""));
-      status.getElement().setAttribute("tabindex", "0");
-      console =
+      providerStatusBadge.addClassName("provider-status");
+      providerStatusBadge.setId(PROVIDER_PREFIX + providerId + "-status");
+      providerStatusBadge.setIcon(new Image(providerLogo(providerId), ""));
+      providerStatusBadge.getElement().setAttribute("tabindex", "0");
+      providerConsoleLink =
           new Anchor(
-              provider.equals(GOOGLE)
+              providerId.equals(GOOGLE)
                   ? "https://console.cloud.google.com/auth/clients"
                   : "https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade",
               "");
-      console.setTarget("_blank");
-      console.getElement().setAttribute("rel", "noopener noreferrer");
-      console.addClassName("provider-console-link");
-      console.add(AppIcon.EXTERNAL_LINK_TABLER.create(), consoleCaption);
-      redirect.setReadOnly(true);
-      redirect.setAutoselect(true);
-      redirect.setWidthFull();
-      redirect.setId(PROVIDER_PREFIX + provider + "-redirect");
-      copy.addClassName("provider-copy");
-      copy.setPrefixComponent(AppIcon.CLIPBOARD_COPY.create());
-      copy.addClickListener(event ->
-          redirect
+      providerConsoleLink.setTarget("_blank");
+      providerConsoleLink.getElement().setAttribute("rel", "noopener noreferrer");
+      providerConsoleLink.addClassName("provider-console-link");
+      providerConsoleLink.add(
+          AppIcon.EXTERNAL_LINK_TABLER.create(), providerConsoleLinkCaptionSpan);
+      redirectUriTextField.setReadOnly(true);
+      redirectUriTextField.setAutoselect(true);
+      redirectUriTextField.setWidthFull();
+      redirectUriTextField.setId(PROVIDER_PREFIX + providerId + "-redirect");
+      copyRedirectUriButton.addClassName("provider-copy");
+      copyRedirectUriButton.setPrefixComponent(AppIcon.CLIPBOARD_COPY.create());
+      copyRedirectUriButton.addClickListener(event ->
+          redirectUriTextField
               .getElement()
               .executeJs(
                   "return navigator.clipboard ? navigator.clipboard.writeText($0).then(() => true, () => false) : Promise.resolve(false)",
-                  redirect.getValue())
+                  redirectUriTextField.getValue())
               .then(
                   Boolean.class,
                   copied ->
@@ -244,29 +247,29 @@ public class AdminExternalLoginSection extends VerticalLayout {
                               Boolean.TRUE.equals(copied)
                                   ? NotificationType.SUCCESS
                                   : NotificationType.ERROR)));
-      Div address = new Div(redirect, copy);
+      Div address = new Div(redirectUriTextField, copyRedirectUriButton);
       address.addClassName("provider-redirect");
-      clientId.setWidthFull();
-      clientId.setMaxLength(512);
-      clientId.setId(PROVIDER_PREFIX + provider + "-client-id");
-      clientId.setValueChangeMode(ValueChangeMode.EAGER);
-      secret.setWidthFull();
-      secret.setMaxLength(2048);
-      secret.setId(PROVIDER_PREFIX + provider + "-secret");
-      secret.getElement().setAttribute("autocomplete", "new-password");
-      secret.setValueChangeMode(ValueChangeMode.EAGER);
+      clientIdTextField.setWidthFull();
+      clientIdTextField.setMaxLength(512);
+      clientIdTextField.setId(PROVIDER_PREFIX + providerId + "-client-id");
+      clientIdTextField.setValueChangeMode(ValueChangeMode.EAGER);
+      clientSecretPasswordField.setWidthFull();
+      clientSecretPasswordField.setMaxLength(2048);
+      clientSecretPasswordField.setId(PROVIDER_PREFIX + providerId + "-secret");
+      clientSecretPasswordField.getElement().setAttribute("autocomplete", "new-password");
+      clientSecretPasswordField.setValueChangeMode(ValueChangeMode.EAGER);
       Div credentials =
           new Div(
-              fieldWithHelp(clientId, ProviderField.CLIENT_ID),
-              fieldWithHelp(secret, ProviderField.SECRET));
+              fieldWithHelp(clientIdTextField, ProviderField.CLIENT_ID),
+              fieldWithHelp(clientSecretPasswordField, ProviderField.SECRET));
       credentials.addClassName("provider-credentials");
-      enabled.setId(PROVIDER_PREFIX + provider + "-enabled");
-      enabled.setWidthFull();
-      enabled.addClassName("cosmos-config-switch");
-      enabled.setLabelComponent(enabledLabel);
-      Div activation = new Div(enabled);
+      providerEnabledSwitch.setId(PROVIDER_PREFIX + providerId + "-enabled");
+      providerEnabledSwitch.setWidthFull();
+      providerEnabledSwitch.addClassName("cosmos-config-switch");
+      providerEnabledSwitch.setLabelComponent(providerEnabledLabelSpan);
+      Div activation = new Div(providerEnabledSwitch);
       activation.addClassName("provider-activation");
-      Div consoleGuide = new Div(guide, console);
+      Div consoleGuide = new Div(providerConsoleGuideSpan, providerConsoleLink);
       consoleGuide.addClassName("provider-console-guide");
       Div setup = new Div(consoleGuide, address);
       setup.addClassName("provider-step-body");
@@ -277,31 +280,31 @@ public class AdminExternalLoginSection extends VerticalLayout {
               step(credentials),
               step(fieldWithHelp(activation, ProviderField.ENABLED)));
       fields.addClassName("provider-fields");
-      Div info = new Div(AppIcon.INFO_CIRCLE.create(), hint);
+      Div info = new Div(AppIcon.INFO_CIRCLE.create(), providerSettingsHintSpan);
       info.addClassName("cosmos-config-save-hint");
-      reload.setPrefixComponent(AppIcon.REFRESH.create());
-      reload.addClickListener(event -> load());
-      save.setPrefixComponent(AppIcon.CHECK.create());
-      save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-      save.setId(PROVIDER_PREFIX + provider + "-save");
-      save.addClickListener(event -> save());
-      Div actions = new Div(reload, save);
+      reloadProviderSettingsButton.setPrefixComponent(AppIcon.REFRESH.create());
+      reloadProviderSettingsButton.addClickListener(event -> loadProviderSettings());
+      saveProviderSettingsButton.setPrefixComponent(AppIcon.CHECK.create());
+      saveProviderSettingsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      saveProviderSettingsButton.setId(PROVIDER_PREFIX + providerId + "-save");
+      saveProviderSettingsButton.addClickListener(event -> saveProviderSettings());
+      Div actions = new Div(reloadProviderSettingsButton, saveProviderSettingsButton);
       actions.addClassName("cosmos-config-card-actions");
       Div footer = new Div(info, actions);
       footer.addClassName("cosmos-panel-footer");
-      content = new Div(fields, footer);
-      content.setId(PROVIDER_PREFIX + provider + "-content");
-      content.addClassName("provider-content");
-      clientId.addValueChangeListener(event -> refreshAvailability());
-      secret.addValueChangeListener(event -> refreshAvailability());
-      enabled.addValueChangeListener(event -> refreshAvailability());
+      providerFormContentDiv = new Div(fields, footer);
+      providerFormContentDiv.setId(PROVIDER_PREFIX + providerId + "-content");
+      providerFormContentDiv.addClassName("provider-content");
+      clientIdTextField.addValueChangeListener(event -> refreshAvailability());
+      clientSecretPasswordField.addValueChangeListener(event -> refreshAvailability());
+      providerEnabledSwitch.addValueChangeListener(event -> refreshAvailability());
     }
 
     private void openHelp(ProviderField field) {
-      helpForm = this;
-      helpField = field;
-      helpForm.refreshHelp();
-      helpPanel.open();
+      fieldHelpProviderForm = this;
+      fieldHelpProviderField = field;
+      fieldHelpProviderForm.refreshHelp();
+      fieldHelpSidePanel.open();
     }
 
     private String fieldRule(ProviderField field) {
@@ -309,27 +312,27 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
 
     private void refreshHelp() {
-      helpPanel.removeAll();
-      helpPanel.setHeading(messageProperties.getAdminConfigHelpTitle());
-      helpPanel.setDescription(messageProperties.getAdminConfigHelpDescription());
-      helpPanel.refreshCloseText(messageProperties);
-      Span group = new Span(provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME);
+      fieldHelpSidePanel.removeAll();
+      fieldHelpSidePanel.setHeading(messageProperties.getAdminConfigHelpTitle());
+      fieldHelpSidePanel.setDescription(messageProperties.getAdminConfigHelpDescription());
+      fieldHelpSidePanel.refreshCloseText(messageProperties);
+      Span group = new Span(providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME);
       group.addClassName("admin-help-group");
-      H3 fieldTitle = new H3(fieldLabel(helpField));
+      H3 fieldTitle = new H3(fieldLabel(fieldHelpProviderField));
       fieldTitle.addClassName("admin-help-field-title");
-      Span explanation = new Span(fieldHelp(helpField));
+      Span explanation = new Span(fieldHelp(fieldHelpProviderField));
       explanation.addClassName("admin-help-description");
-      UnorderedList rules = new UnorderedList(new ListItem(fieldRule(helpField)));
+      UnorderedList rules = new UnorderedList(new ListItem(fieldRule(fieldHelpProviderField)));
       Div rulesSection = new Div(new H4(messageProperties.getAdminConfigInputRules()), rules);
       rulesSection.addClassName("admin-help-rules");
-      helpPanel.add(group, fieldTitle, explanation, rulesSection);
+      fieldHelpSidePanel.add(group, fieldTitle, explanation, rulesSection);
       String timing =
-          switch (helpField) {
+          switch (fieldHelpProviderField) {
             case CLIENT_ID -> messageProperties.getAdminConfigEffectiveProviderClient();
             case SECRET -> messageProperties.getAdminConfigEffectiveProviderSecret();
             case ENABLED -> messageProperties.getAdminConfigEffectiveProviderEnabled();
           };
-      helpPanel.addEffectiveUse(
+      fieldHelpSidePanel.addEffectiveUse(
           messageProperties,
           List.of(timing, messageProperties.getAdminConfigEffectiveProviderExisting()));
     }
@@ -357,7 +360,7 @@ public class AdminExternalLoginSection extends VerticalLayout {
       ConfigInfoButton info = new ConfigInfoButton(() -> fieldHelp(field), () -> openHelp(field));
       info.setId(
           PROVIDER_PREFIX
-              + provider
+              + providerId
               + "-"
               + field.name().toLowerCase(java.util.Locale.ROOT)
               + "-info");
@@ -387,26 +390,26 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
 
     private String fieldHelp(ProviderField field) {
-      return field.description(messageProperties, provider);
+      return field.description(messageProperties, providerId);
     }
 
-    private void load() {
-      stored = externalProviderSettings.load(provider);
-      clientId.setValue(stored.clientId());
-      secret.clear();
-      enabled.setValue(stored.enabled());
-      clientId.setInvalid(false);
-      secret.setInvalid(false);
+    private void loadProviderSettings() {
+      savedProviderSettings = externalProviderSettings.load(providerId);
+      clientIdTextField.setValue(savedProviderSettings.clientId());
+      clientSecretPasswordField.clear();
+      providerEnabledSwitch.setValue(savedProviderSettings.enabled());
+      clientIdTextField.setInvalid(false);
+      clientSecretPasswordField.setInvalid(false);
       // BASE_URL ist dieselbe vertrauenswürdige öffentliche Adresse wie für Bestätigungslinks.
       String base = configService.getString(ConfigEntry.BASE_URL);
       URI origin = URI.create(base);
-      redirect.setValue(origin.resolve("/login/oauth2/code/" + provider).toString());
+      redirectUriTextField.setValue(origin.resolve("/login/oauth2/code/" + providerId).toString());
       refreshTexts();
     }
 
-    private void save() {
+    private void saveProviderSettings() {
       if (twoFactorAuthorization != null
-          && twoFactorAuthorization.requires(request, TwoFactorAction.SECURITY_CONFIGURATION)) {
+          && twoFactorAuthorization.requires(httpRequest, TwoFactorAction.SECURITY_CONFIGURATION)) {
         twoFactorConfirmationDialog.open(
             TwoFactorAction.SECURITY_CONFIGURATION, this::saveConfirmed);
       } else {
@@ -415,18 +418,21 @@ public class AdminExternalLoginSection extends VerticalLayout {
     }
 
     private void saveConfirmed() {
-      clientId.setInvalid(enabled.getValue() && clientId.getValue().isBlank());
-      secret.setInvalid(
-          enabled.getValue() && secret.getValue().isBlank() && !stored.secretStored());
+      clientIdTextField.setInvalid(
+          providerEnabledSwitch.getValue() && clientIdTextField.getValue().isBlank());
+      clientSecretPasswordField.setInvalid(
+          providerEnabledSwitch.getValue()
+              && clientSecretPasswordField.getValue().isBlank()
+              && !savedProviderSettings.secretStored());
       try {
-        stored =
+        savedProviderSettings =
             externalProviderSettings.save(
-                provider,
-                clientId.getValue(),
-                secret.getValue(),
-                enabled.getValue(),
-                stored.revision());
-        secret.clear();
+                providerId,
+                clientIdTextField.getValue(),
+                clientSecretPasswordField.getValue(),
+                providerEnabledSwitch.getValue(),
+                savedProviderSettings.revision());
+        clientSecretPasswordField.clear();
         refreshTexts();
         NotificationHelper.getInstance()
             .showNotification(
@@ -453,10 +459,10 @@ public class AdminExternalLoginSection extends VerticalLayout {
         info.refreshText();
         info.setAriaLabel(messageProperties.getAdminConfigHelpTitle() + ": " + fieldLabel(field));
       });
-      String name = provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
-      assistantKickerText.setText(messageProperties.getProviderSettingsAssistantKicker());
+      String name = providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
+      assistantKickerTextSpan.setText(messageProperties.getProviderSettingsAssistantKicker());
       assistantTitle.setText(messageProperties.getProviderSettingsAssistantTitle(name));
-      assistantDescription.setText(messageProperties.getProviderSettingsAssistantDescription());
+      assistantDescriptionSpan.setText(messageProperties.getProviderSettingsAssistantDescription());
       for (int index = 0; index < stepLabels.size(); index++) {
         stepLabels
             .get(index)
@@ -468,52 +474,58 @@ public class AdminExternalLoginSection extends VerticalLayout {
                   default -> throw new IllegalStateException("Unsupported provider setup step");
                 });
       }
-      guide.setText(
-          provider.equals(GOOGLE)
+      providerConsoleGuideSpan.setText(
+          providerId.equals(GOOGLE)
               ? messageProperties.getProviderSettingsGoogleGuide()
               : messageProperties.getProviderSettingsMicrosoftGuide());
-      consoleCaption.setText(messageProperties.getProviderSettingsOpenConsole());
-      redirect.setLabel(messageProperties.getProviderSettingsRedirect());
-      copy.setText(messageProperties.getProviderSettingsCopy());
-      clientId.setLabel(messageProperties.getProviderSettingsClientId());
-      clientId.setPlaceholder(messageProperties.getProviderSettingsClientIdPlaceholder());
-      secret.setLabel(messageProperties.getProviderSettingsSecret());
-      secret.setPlaceholder(
-          stored != null && stored.secretStored()
+      providerConsoleLinkCaptionSpan.setText(messageProperties.getProviderSettingsOpenConsole());
+      redirectUriTextField.setLabel(messageProperties.getProviderSettingsRedirect());
+      copyRedirectUriButton.setText(messageProperties.getProviderSettingsCopy());
+      clientIdTextField.setLabel(messageProperties.getProviderSettingsClientId());
+      clientIdTextField.setPlaceholder(messageProperties.getProviderSettingsClientIdPlaceholder());
+      clientSecretPasswordField.setLabel(messageProperties.getProviderSettingsSecret());
+      clientSecretPasswordField.setPlaceholder(
+          savedProviderSettings != null && savedProviderSettings.secretStored()
               ? messageProperties.getProviderSettingsSecretStored()
               : messageProperties.getProviderSettingsSecretPlaceholder());
-      secret.setHelperText(messageProperties.getProviderSettingsSecretHint());
-      enabledLabel.setText(messageProperties.getProviderSettingsEnable());
-      enabled.setAriaLabel(messageProperties.getProviderSettingsEnable());
-      hint.setText(messageProperties.getProviderSettingsHint());
-      reload.setText(messageProperties.getAdminConfigReload());
-      save.setText(messageProperties.getAdminConfigSave());
+      clientSecretPasswordField.setHelperText(messageProperties.getProviderSettingsSecretHint());
+      providerEnabledLabelSpan.setText(messageProperties.getProviderSettingsEnable());
+      providerEnabledSwitch.setAriaLabel(messageProperties.getProviderSettingsEnable());
+      providerSettingsHintSpan.setText(messageProperties.getProviderSettingsHint());
+      reloadProviderSettingsButton.setText(messageProperties.getAdminConfigReload());
+      saveProviderSettingsButton.setText(messageProperties.getAdminConfigSave());
       refreshAvailability();
       refreshStatus();
     }
 
     private void refreshAvailability() {
       boolean credentialsPresent =
-          !clientId.getValue().isBlank()
-              && (!secret.getValue().isBlank() || stored != null && stored.secretStored());
-      boolean editable = credentialsPresent || enabled.getValue();
-      enabled.setEnabled(editable);
-      enabledLabel.getElement().setAttribute("aria-disabled", Boolean.toString(!editable));
+          !clientIdTextField.getValue().isBlank()
+              && (!clientSecretPasswordField.getValue().isBlank()
+                  || savedProviderSettings != null && savedProviderSettings.secretStored());
+      boolean editable = credentialsPresent || providerEnabledSwitch.getValue();
+      providerEnabledSwitch.setEnabled(editable);
+      providerEnabledLabelSpan
+          .getElement()
+          .setAttribute("aria-disabled", Boolean.toString(!editable));
     }
 
     private void refreshStatus() {
-      boolean configured = stored != null && !stored.clientId().isBlank() && stored.secretStored();
-      boolean active = configured && stored.enabled();
-      String name = provider.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
+      boolean configured =
+          savedProviderSettings != null
+              && !savedProviderSettings.clientId().isBlank()
+              && savedProviderSettings.secretStored();
+      boolean active = configured && savedProviderSettings.enabled();
+      String name = providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
       String state =
           active
               ? messageProperties.getProviderSettingsActive()
               : messageProperties.getProviderSettingsInactive();
-      status.setText(state);
-      status.getElement().setAttribute("aria-label", name + ": " + state);
-      status.removeThemeVariants(BadgeVariant.SUCCESS, BadgeVariant.WARNING);
-      status.addThemeVariants(active ? BadgeVariant.SUCCESS : BadgeVariant.WARNING);
-      status.getElement().setAttribute("data-state", active ? "active" : "inactive");
+      providerStatusBadge.setText(state);
+      providerStatusBadge.getElement().setAttribute("aria-label", name + ": " + state);
+      providerStatusBadge.removeThemeVariants(BadgeVariant.SUCCESS, BadgeVariant.WARNING);
+      providerStatusBadge.addThemeVariants(active ? BadgeVariant.SUCCESS : BadgeVariant.WARNING);
+      providerStatusBadge.getElement().setAttribute("data-state", active ? "active" : "inactive");
       String explanation;
       if (!configured) {
         explanation = messageProperties.getProviderSettingsUnconfiguredHint(name);

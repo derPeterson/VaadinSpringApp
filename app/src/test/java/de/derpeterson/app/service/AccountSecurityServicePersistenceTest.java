@@ -226,7 +226,7 @@ class AccountSecurityServicePersistenceTest {
             sessionRegistry
                 .getAllSessions(principal, true)
                 .forEach(info -> sessionRegistry.removeSessionInformation(info.getSessionId())));
-    ReflectionTestUtils.setField(accountSecurityService, "clock", FIXED);
+    ReflectionTestUtils.setField(accountSecurityService, "accountSecurityClock", FIXED);
     transactionTemplate.executeWithoutResult(status -> {
       entityManager.createQuery("delete from UserNotificationRecipientEntity").executeUpdate();
       entityManager.createQuery("delete from UserNotificationEntity").executeUpdate();
@@ -537,7 +537,9 @@ class AccountSecurityServicePersistenceTest {
         assertThrows(Rejected.class, () -> requestChange("second@example.test")).problem());
     assertEquals(1, emailQueueRepository.count());
     ReflectionTestUtils.setField(
-        accountSecurityService, "clock", Clock.offset(FIXED, Duration.ofSeconds(61)));
+        accountSecurityService,
+        "accountSecurityClock",
+        Clock.offset(FIXED, Duration.ofSeconds(61)));
     requestChange("second@example.test");
     String second = linkToken();
     assertNotEquals(first, second);

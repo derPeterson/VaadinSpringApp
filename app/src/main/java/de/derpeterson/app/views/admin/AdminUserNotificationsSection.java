@@ -64,7 +64,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final transient MessageProperties messageProperties;
   private final transient UserNotificationService userNotificationService;
   private final transient HttpServletRequest httpRequest;
-  private final Span breadcrumb = new Span();
+  private final Span notificationAdminBreadcrumbSpan = new Span();
   private final Span pageTitle = new Span();
   private final Span pageDescription = new Span();
   private final H2 composeHeading = new H2();
@@ -99,7 +99,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final H2 previewTitle = new H2();
   private final Span previewDescription = new Span();
   private final Span previewBeforeSendHint = new Span();
-  private final Span hint = new Span();
+  private final Span recipientRecheckHintSpan = new Span();
   private final H2 historyTitle = new H2();
   private final Span historyDescription = new Span();
   private final Span historyCount = new Span();
@@ -137,7 +137,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     Div columns = new Div(formCard, previewCard);
     columns.addClassName("admin-notification-columns");
     add(
-        new CosmosSectionHeaderComponent(breadcrumb, pageTitle, pageDescription),
+        new CosmosSectionHeaderComponent(
+            notificationAdminBreadcrumbSpan, pageTitle, pageDescription),
         columns,
         sentCard);
     refreshTexts();
@@ -236,7 +237,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     selection.addClassName("cosmos-notification-compose-selection");
     previewArea.addClassName("cosmos-notification-compose-preview");
     previewArea.setVisible(false);
-    Div footerHint = new Div(decorativeIcon(AppIcon.INFO_CIRCLE), hint);
+    Div footerHint = new Div(decorativeIcon(AppIcon.INFO_CIRCLE), recipientRecheckHintSpan);
     footerHint.addClassName("cosmos-panel-hint");
     previewTitle.addClassName(PANEL_TITLE);
     previewDescription.addClassName(PANEL_DESCRIPTION);
@@ -761,7 +762,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
-    breadcrumb.setText(
+    notificationAdminBreadcrumbSpan.setText(
         messageProperties.getAdminHeaderTitle()
             + " / "
             + messageProperties.getNotificationsTitle());
@@ -790,7 +791,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     notificationBodyField.setErrorMessage(messageProperties.getNotificationsInvalidBody());
     previewButton.setText(messageProperties.getNotificationsPreview());
     sendNotificationButton.setText(messageProperties.getNotificationsSend());
-    hint.setText(messageProperties.getNotificationsRecheckHint());
+    recipientRecheckHintSpan.setText(messageProperties.getNotificationsRecheckHint());
     historyTitle.setText(messageProperties.getNotificationsSentHistory());
     historyDescription.setText(messageProperties.getNotificationsHistoryDescription());
     historyPagination.refreshTexts();

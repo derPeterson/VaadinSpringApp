@@ -100,7 +100,7 @@ public class UserNotificationsPanel extends Div {
   private final Span unreadCount = new Span("0");
   private final Span unreadLabel = new Span();
   private int totalPages = 1;
-  private final Span retention = new Span();
+  private final Span notificationRetentionSpan = new Span();
   private final Span previewHint = new Span();
   private List<Long> unreadIds = List.of();
   private int page;
@@ -136,7 +136,7 @@ public class UserNotificationsPanel extends Div {
     paging.addClassName("cosmos-notifications-actions");
     paging.setVisible(!compact);
     openHistoryButton.setVisible(compact);
-    retention.addClassName("cosmos-notifications-secondary");
+    notificationRetentionSpan.addClassName("cosmos-notifications-secondary");
     if (compact) {
       buildPreview(toolbar);
     } else {
@@ -248,7 +248,7 @@ public class UserNotificationsPanel extends Div {
     content.addClassName("cosmos-notification-preview-content");
     openHistoryButton.setIcon(AppIcon.EYE.create());
     openHistoryButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    Div note = new Div(AppIcon.INFO_CIRCLE.create(), retention);
+    Div note = new Div(AppIcon.INFO_CIRCLE.create(), notificationRetentionSpan);
     note.addClassName("cosmos-notification-preview-retention");
     Div footer = new Div(openHistoryButton, note);
     footer.addClassName("cosmos-notification-preview-footer");
@@ -316,7 +316,7 @@ public class UserNotificationsPanel extends Div {
     summary.addClassName("cosmos-notification-inbox-page-summary");
     Div paginationRow = new Div(summary, pageTotal, paging);
     paginationRow.addClassName("cosmos-notification-inbox-pagination-row");
-    Div retentionNote = new Div(AppIcon.INFO_CIRCLE.create(), retention);
+    Div retentionNote = new Div(AppIcon.INFO_CIRCLE.create(), notificationRetentionSpan);
     retentionNote.addClassName("cosmos-notification-inbox-retention");
     Div footer = new Div(paginationRow, retentionNote);
     footer.addClassName("cosmos-notification-inbox-footer");
@@ -391,7 +391,7 @@ public class UserNotificationsPanel extends Div {
 
   private void refreshRetention() {
     OptionalInt days = userNotificationService.retentionDays();
-    retention.setText(
+    notificationRetentionSpan.setText(
         days.isPresent()
             ? messageProperties.getNotificationsRetention(days.getAsInt())
             : messageProperties.getNotificationsRetentionUnlimited());

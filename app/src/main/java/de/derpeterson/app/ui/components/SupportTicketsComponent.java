@@ -147,7 +147,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private RecoveryInstructionsComponent instructionPreview;
   private final AccountPanelComponent ticketWorkspacePanel =
       new AccountPanelComponent("support-panel", AppIcon.INFO_CIRCLE);
-  private final Span warning = new Span();
+  private final Span securityWarningSpan = new Span();
   private final Span userWarningLabel = new Span();
   private final Span emptyText = new Span();
   private final Span queueEmptyTitle = new Span();
@@ -291,7 +291,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private HorizontalLayout sensitiveNotice() {
     userWarningLabel.addClassName("cosmos-security-warning-label");
     HorizontalLayout notice =
-        new HorizontalLayout(AppIcon.ERROR.create(), new Span(userWarningLabel, warning));
+        new HorizontalLayout(
+            AppIcon.ERROR.create(), new Span(userWarningLabel, securityWarningSpan));
     notice.setPadding(false);
     notice.setSpacing(false);
     notice.setAlignItems(Alignment.START);
@@ -729,7 +730,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
           .setAttribute(ARIA_LABEL, messageProperties.getSupportExistingRequests());
     }
     userWarningLabel.setText(messageProperties.getSupportSecurityNoticeLabel() + " ");
-    warning.setText(messageProperties.getSupportSecurityNotice());
+    securityWarningSpan.setText(messageProperties.getSupportSecurityNotice());
     ticketMessageInput.setLabel(
         administration
             ? messageProperties.getSupportReply()
@@ -772,7 +773,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private void updateAdminComposerLabels() {
     boolean privateNote = isInternalNote();
     adminEditor.getElement().setAttribute("data-internal", Boolean.toString(privateNote));
-    warning.setText(
+    securityWarningSpan.setText(
         privateNote
             ? messageProperties.getSupportInternalSecurityNotice()
             : messageProperties.getSupportSecurityNotice());

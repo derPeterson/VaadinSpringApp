@@ -57,8 +57,14 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
       ConfigService configService,
       UserService userService,
       UserStatusBroadcaster userStatusBroadcaster,
-      UserAvatarService avatars) {
-    super(messageProperties, securityService, userService, userStatusBroadcaster, request, avatars);
+      UserAvatarService userAvatarService) {
+    super(
+        messageProperties,
+        securityService,
+        userService,
+        userStatusBroadcaster,
+        request,
+        userAvatarService);
 
     this.configService = configService;
 
@@ -88,7 +94,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
             AppRoute.HOME,
             introduction,
             homeContent,
-            avatars,
+            userAvatarService,
             request);
     portalContent.configureNavigationToggle(accountNavigationToggle);
     portalContent.getSidebar().configureStatusSelection(userPopoverMenu.createStatusSelect());

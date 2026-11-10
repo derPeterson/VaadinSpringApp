@@ -124,7 +124,7 @@ public class AccountSecurityService {
   private final PersistentTokenRepository rememberMeTokenRepository;
   private final SessionRegistry sessionRegistry;
   private final PlatformTransactionManager transactionManager;
-  private final Clock clock = Clock.systemDefaultZone();
+  private final Clock accountSecurityClock = Clock.systemDefaultZone();
   private final SecureRandom secureRandom = new SecureRandom();
 
   private final ObjectProvider<ExternalLoginFlow> externalLoginFlowProvider;
@@ -193,7 +193,7 @@ public class AccountSecurityService {
       if (userRepository.emailExistsForOtherUser(target, user.getId())) {
         throw new Rejected(Problem.EMAIL_UNAVAILABLE);
       }
-      LocalDateTime now = LocalDateTime.now(clock);
+      LocalDateTime now = LocalDateTime.now(accountSecurityClock);
       List<EmailChangeTokenEntity> active =
           emailChangeTokenRepository.findAllByUserEntityAndStatus(user, TokenStatus.ACTIVE);
       if (active.stream().anyMatch(t -> t.getCreatedAt().isAfter(now.minusMinutes(1)))) {
@@ -309,7 +309,7 @@ public class AccountSecurityService {
     if (token.getStatus() != TokenStatus.ACTIVE) {
       return Confirmation.INVALID;
     }
-    if (!token.getExpiryDate().isAfter(LocalDateTime.now(clock))) {
+    if (!token.getExpiryDate().isAfter(LocalDateTime.now(accountSecurityClock))) {
       return Confirmation.EXPIRED;
     }
     UserEntity user = token.getUserEntity();
@@ -428,7 +428,8 @@ public class AccountSecurityService {
   @Scheduled(cron = "0 0 3 1/3 * ?")
   public void deleteExpiredTokens() {
     LocalDateTime cutoff =
-        LocalDateTime.now(clock).minus(duration(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION));
+        LocalDateTime.now(accountSecurityClock)
+            .minus(duration(ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION));
     transaction(() -> emailChangeTokenRepository.deleteByExpiryDateBefore(cutoff));
   }
 

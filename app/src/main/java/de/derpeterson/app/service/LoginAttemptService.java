@@ -46,7 +46,7 @@ public class LoginAttemptService {
   private final LoginAttemptGuardRepository loginAttemptGuardRepository;
   private final ConfigService configService;
   private final TransactionTemplate independentTransactionTemplate;
-  private final Clock clock;
+  private final Clock loginAttemptClock;
   private final int loginAttemptCapacity;
 
   @Autowired
@@ -69,12 +69,12 @@ public class LoginAttemptService {
       LoginAttemptGuardRepository loginAttemptGuardRepository,
       ConfigService configService,
       PlatformTransactionManager manager,
-      Clock clock,
+      Clock loginAttemptClock,
       int loginAttemptCapacity) {
     this.loginAttemptRepository = loginAttemptRepository;
     this.loginAttemptGuardRepository = loginAttemptGuardRepository;
     this.configService = configService;
-    this.clock = Objects.requireNonNull(clock);
+    this.loginAttemptClock = Objects.requireNonNull(loginAttemptClock);
     if (loginAttemptCapacity < 1) {
       throw new IllegalArgumentException("Login identity capacity must be positive");
     }
@@ -117,7 +117,7 @@ public class LoginAttemptService {
   }
 
   private Outcome checkLocked(LoginAttemptEntity row, Supplier<Authentication> checkPassword) {
-    Instant now = clock.instant();
+    Instant now = loginAttemptClock.instant();
     int limit = positiveLimit();
     if (row.getBlockedUntil() != null && now.isBefore(row.getBlockedUntil())) {
       return new Outcome(null, new LoginThrottledException());
@@ -143,11 +143,11 @@ public class LoginAttemptService {
         throw new AuthenticationServiceException(
             "Password provider returned no authenticated principal");
       }
-      reset(row, clock.instant());
+      reset(row, loginAttemptClock.instant());
       loginAttemptRepository.save(row);
       return new Outcome(authenticated, null);
     } catch (BadCredentialsException | UsernameNotFoundException | AccountStatusException failure) {
-      Instant completed = clock.instant();
+      Instant completed = loginAttemptClock.instant();
       row.setFailures(row.getFailures() + 1);
       row.setLastActivity(completed);
       if (row.getFailures() >= limit) {
@@ -184,7 +184,7 @@ public class LoginAttemptService {
       }
       LoginAttemptEntity row = new LoginAttemptEntity();
       row.setIdentityHash(key);
-      reset(row, clock.instant());
+      reset(row, loginAttemptClock.instant());
       loginAttemptRepository.saveAndFlush(row);
     });
   }
@@ -209,14 +209,14 @@ public class LoginAttemptService {
     loginAttemptRepository
         .lockIdentity(identityKey(identity))
         .ifPresent(row -> {
-          reset(row, clock.instant());
+          reset(row, loginAttemptClock.instant());
           loginAttemptRepository.save(row);
         });
   }
 
   @Scheduled(fixedDelay = 3_600_000)
   public void deleteExpiredAttempts() {
-    Instant now = clock.instant();
+    Instant now = loginAttemptClock.instant();
     Instant cutoff = now.minus(RETENTION);
     List<String> keys =
         independentTransactionTemplate.execute(

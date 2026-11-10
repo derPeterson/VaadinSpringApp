@@ -37,9 +37,9 @@ import jakarta.servlet.http.HttpSession;
 public class UserNotificationsView extends IsAuthenticatedBaseView {
   private final UserNotificationsPanel notificationInbox;
   private final PortalContentComponent portalContent;
-  private final Span overview = new Span();
-  private final Span title = new Span();
-  private final Span description = new Span();
+  private final Span portalBreadcrumbSpan = new Span();
+  private final Span notificationsTitleSpan = new Span();
+  private final Span notificationsDescriptionSpan = new Span();
   private transient Registration registration;
 
   public UserNotificationsView(
@@ -57,7 +57,8 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
     HttpSession session = request.getSession(false);
     notificationInbox = new UserNotificationsPanel(texts, notifications, session, false);
     CosmosSectionHeaderComponent sectionHeader =
-        new CosmosSectionHeaderComponent(overview, title, description);
+        new CosmosSectionHeaderComponent(
+            portalBreadcrumbSpan, notificationsTitleSpan, notificationsDescriptionSpan);
     CosmosCardComponent card = new CosmosCardComponent(notificationInbox);
     card.addClassNames(PANEL_CARD, "cosmos-notification-inbox-card");
     portalContent =
@@ -114,9 +115,9 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
 
   @Override
   protected void onTrackedUserLanguageChanged() {
-    overview.setText(messageProperties.getAccountNavigationPortal());
-    title.setText(messageProperties.getNotificationsTitle());
-    description.setText(messageProperties.getNotificationsPageDescription());
+    portalBreadcrumbSpan.setText(messageProperties.getAccountNavigationPortal());
+    notificationsTitleSpan.setText(messageProperties.getNotificationsTitle());
+    notificationsDescriptionSpan.setText(messageProperties.getNotificationsPageDescription());
     if (notificationInbox != null) {
       notificationInbox.refreshTexts();
     }

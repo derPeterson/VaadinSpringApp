@@ -54,8 +54,8 @@ public class UserService {
   private final PasswordEncoder passwordEncoder;
   private final UserProfileBroadcaster profileEvents;
   private final AdminRolePolicy rolePolicy;
-  private final ApplicationEventPublisher events;
-  private final Clock clock;
+  private final ApplicationEventPublisher applicationEventPublisher;
+  private final Clock userServiceClock;
 
   @Autowired
   public UserService(
@@ -64,14 +64,14 @@ public class UserService {
       PasswordEncoder passwordEncoder,
       UserProfileBroadcaster profileEvents,
       AdminRolePolicy rolePolicy,
-      ApplicationEventPublisher events) {
+      ApplicationEventPublisher applicationEventPublisher) {
     this(
         userRepository,
         userStatusBroadcaster,
         passwordEncoder,
         profileEvents,
         rolePolicy,
-        events,
+        applicationEventPublisher,
         Clock.systemUTC());
   }
 
@@ -81,15 +81,15 @@ public class UserService {
       PasswordEncoder passwordEncoder,
       UserProfileBroadcaster profileEvents,
       AdminRolePolicy rolePolicy,
-      ApplicationEventPublisher events,
-      Clock clock) {
+      ApplicationEventPublisher applicationEventPublisher,
+      Clock userServiceClock) {
     this.userRepository = userRepository;
     this.userStatusBroadcaster = userStatusBroadcaster;
     this.passwordEncoder = passwordEncoder;
     this.profileEvents = profileEvents;
     this.rolePolicy = rolePolicy;
-    this.events = events;
-    this.clock = Objects.requireNonNull(clock);
+    this.applicationEventPublisher = applicationEventPublisher;
+    this.userServiceClock = Objects.requireNonNull(userServiceClock);
   }
 
   private Set<RoleType> roleTypes(Collection<RoleEntity> roles) {
@@ -124,13 +124,12 @@ public class UserService {
   public void recordLogin(String email) {
     userRepository
         .findByEmailForUpdate(EmailIdentity.canonicalize(email))
-        .ifPresent(
-            user -> {
-              if (!user.isStatusManuallySet()) {
-                updateUserStatus(user, UserStatus.AVAILABLE, false);
-              }
-              updateLastActivity(user.getId());
-            });
+        .ifPresent(user -> {
+          if (!user.isStatusManuallySet()) {
+            updateUserStatus(user, UserStatus.AVAILABLE, false);
+          }
+          updateLastActivity(user.getId());
+        });
   }
 
   public Optional<UserEntity> findByEmail(String email) {
@@ -177,7 +176,7 @@ public class UserService {
           log, "Account roles changed: userId={}, roles={}", user.getId(), Set.copyOf(desired));
     }
     if (previousRoles != null && !previousRoles.equals(roleTypes(user.getRoleEntities()))) {
-      events.publishEvent(
+      applicationEventPublisher.publishEvent(
           new de.derpeterson.app.events.UserRolesChanged(
               user.getId(), previousRoles, roleTypes(user.getRoleEntities())));
     }
@@ -188,11 +187,10 @@ public class UserService {
     Assert.isTrue(UserInputRules.isEmailValid(email), "Invalid email");
     validateLocale(locale);
     Optional<UserEntity> userOptional = findByEmail(email);
-    userOptional.ifPresent(
-        user -> {
-          user.setPreferredLocale(locale);
-          save(user);
-        });
+    userOptional.ifPresent(user -> {
+      user.setPreferredLocale(locale);
+      save(user);
+    });
   }
 
   public record StatusUpdate(UserStatus status, boolean manuallySet) {}
@@ -271,7 +269,7 @@ public class UserService {
   @Transactional
   public void updateLastActivity(Long userId) {
     Assert.notNull(userId, USER_ID_REQUIRED_MESSAGE);
-    if (userRepository.updateLastActivity(userId, clock.instant()) == 0) {
+    if (userRepository.updateLastActivity(userId, userServiceClock.instant()) == 0) {
       throw new IllegalStateException("Der Benutzer ist nicht mehr vorhanden.");
     }
   }
@@ -313,10 +311,8 @@ public class UserService {
     UserEntity stored =
         userRepository
             .findByIdForUpdate(edited.getId())
-            .orElseThrow(
-                () ->
-                    new OptimisticLockingFailureException(
-                        "Der Benutzer wurde inzwischen gelöscht."));
+            .orElseThrow(() ->
+                new OptimisticLockingFailureException("Der Benutzer wurde inzwischen gelöscht."));
     if (expectedVersion == null || !Objects.equals(expectedVersion, stored.getVersion())) {
       throw new OptimisticLockingFailureException(
           "Der Benutzer wurde inzwischen geändert. Bitte das Formular neu öffnen und die Änderungen prüfen.");
@@ -350,7 +346,7 @@ public class UserService {
         Set.copyOf(nextRoles),
         rawPassword != null && !rawPassword.isBlank());
     if (!previousRoles.equals(nextRoles)) {
-      events.publishEvent(
+      applicationEventPublisher.publishEvent(
           new de.derpeterson.app.events.UserRolesChanged(stored.getId(), previousRoles, nextRoles));
     }
   }

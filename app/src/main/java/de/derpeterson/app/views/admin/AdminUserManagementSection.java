@@ -121,12 +121,12 @@ public class AdminUserManagementSection extends VerticalLayout {
   private final transient SecurityService securityService;
   private final Clock userManagementClock;
 
-  private final Span breadcrumb;
-  private final Span title;
+  private final Span userManagementBreadcrumbSpan;
+  private final Span userManagementTitleSpan;
   private final H2 cardTitle;
   private final Span cardDescription;
   private final Span accountCount;
-  private final Span description;
+  private final Span userManagementDescriptionSpan;
   private final Button addUserButton;
   private final TextField searchField;
   private final Button refreshButton;
@@ -197,8 +197,8 @@ public class AdminUserManagementSection extends VerticalLayout {
     setAlignItems(FlexComponent.Alignment.CENTER);
     addClassNames("cosmos-admin-section", "cosmos-admin-section--users");
 
-    breadcrumb = new Span();
-    title = new Span();
+    userManagementBreadcrumbSpan = new Span();
+    userManagementTitleSpan = new Span();
     cardTitle = new H2();
     cardTitle.addClassName(COSMOS_PANEL_TITLE_CLASS);
     cardDescription = new Span();
@@ -206,8 +206,8 @@ public class AdminUserManagementSection extends VerticalLayout {
     accountCount = new Span();
     accountCount.addClassNames("cosmos-panel-meta", "admin-accounts-metric");
 
-    description = new Span();
-    description.addClassNames(LumoUtility.TextColor.SECONDARY);
+    userManagementDescriptionSpan = new Span();
+    userManagementDescriptionSpan.addClassNames(LumoUtility.TextColor.SECONDARY);
 
     addUserButton = new Button();
     addUserButton.setPrefixComponent(AppIcon.USER_PLUS.create());
@@ -262,7 +262,10 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     CosmosCardComponent card = new CosmosCardComponent(layout);
     card.addClassNames("cosmos-admin-users-card", PANEL_CARD);
-    add(new CosmosSectionHeaderComponent(breadcrumb, title, description), card);
+    add(
+        new CosmosSectionHeaderComponent(
+            userManagementBreadcrumbSpan, userManagementTitleSpan, userManagementDescriptionSpan),
+        card);
 
     refreshTexts();
     refreshGrid();
@@ -281,12 +284,12 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
-    breadcrumb.setText(
+    userManagementBreadcrumbSpan.setText(
         messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminUsersTitle());
     cardTitle.setText(messageProperties.getAdminUsersCardTitle());
     cardDescription.setText(messageProperties.getAdminUsersCardDescription());
-    title.setText(messageProperties.getAdminUsersTitle());
-    description.setText(messageProperties.getAdminUsersDescription());
+    userManagementTitleSpan.setText(messageProperties.getAdminUsersTitle());
+    userManagementDescriptionSpan.setText(messageProperties.getAdminUsersDescription());
     addUserButton.setText(messageProperties.getAdminUsersAdd());
 
     searchField.setLabel(messageProperties.getAdminUsersSearchLabel());
@@ -598,13 +601,13 @@ public class AdminUserManagementSection extends VerticalLayout {
       return;
     }
 
-    Dialog dialog = new Dialog();
-    dialog.addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-dialog");
-    dialog.getThemeNames().add("cosmos-reference");
-    dialog.getElement().getThemeList().add("cosmos");
-    dialog.addClassName("admin-user-delete-dialog");
-    dialog.setCloseOnEsc(true);
-    dialog.setCloseOnOutsideClick(true);
+    Dialog deleteUserDialog = new Dialog();
+    deleteUserDialog.addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-dialog");
+    deleteUserDialog.getThemeNames().add("cosmos-reference");
+    deleteUserDialog.getElement().getThemeList().add("cosmos");
+    deleteUserDialog.addClassName("admin-user-delete-dialog");
+    deleteUserDialog.setCloseOnEsc(true);
+    deleteUserDialog.setCloseOnOutsideClick(true);
 
     H2 dialogTitle = new H2(messageProperties.getAdminUsersDeleteDialogTitle());
     dialogTitle.addClassName(COSMOS_PANEL_TITLE_CLASS);
@@ -612,16 +615,18 @@ public class AdminUserManagementSection extends VerticalLayout {
     dialogDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
     Div dialogHeading = new Div(dialogTitle, dialogDescription);
     dialogHeading.addClassName(COSMOS_PANEL_HEADING_CLASS);
-    Button closeButton = new Button(AppIcon.CLOSE_CIRCLE.create(), event -> dialog.close());
-    closeButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
-    closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-    closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
+    Button closeDeleteUserDialogButton =
+        new Button(AppIcon.CLOSE_CIRCLE.create(), event -> deleteUserDialog.close());
+    closeDeleteUserDialogButton.addClassNames(
+        "cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
+    closeDeleteUserDialogButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+    closeDeleteUserDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
     Div deleteIcon = new Div(AppIcon.TRASH.create());
     deleteIcon.addClassNames(PANEL_ICON, "cosmos-delete-accent");
-    Div dialogHeader = new Div(deleteIcon, dialogHeading, closeButton);
+    Div dialogHeader = new Div(deleteIcon, dialogHeading, closeDeleteUserDialogButton);
     dialogHeader.addClassName("admin-user-dialog-header");
-    dialog.getHeader().add(dialogHeader);
-    dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
+    deleteUserDialog.getHeader().add(dialogHeader);
+    deleteUserDialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
 
     SvgIcon warningIcon = AppIcon.TRASH.create();
     warningIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
@@ -654,7 +659,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     userIdentity.addClassName("admin-user-delete-identity");
 
     Button cancelButton =
-        new Button(messageProperties.getAdminUsersCancel(), event -> dialog.close());
+        new Button(messageProperties.getAdminUsersCancel(), event -> deleteUserDialog.close());
     cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
     Button confirmButton =
         new Button(
@@ -662,7 +667,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             event -> {
               try {
                 userService.deleteUser(user);
-                dialog.close();
+                deleteUserDialog.close();
                 afterDelete.run();
                 refreshGrid();
                 NotificationHelper.getInstance()
@@ -684,32 +689,32 @@ public class AdminUserManagementSection extends VerticalLayout {
     footer.setWidthFull();
     footer.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
 
-    dialog.getFooter().add(footer);
+    deleteUserDialog.getFooter().add(footer);
     VerticalLayout dialogLayout = new VerticalLayout(warning, userIdentity);
     dialogLayout.setPadding(false);
     dialogLayout.setSpacing(false);
     dialogLayout.addClassName("cosmos-dialog-form");
 
-    dialog.add(dialogLayout);
+    deleteUserDialog.add(dialogLayout);
     Runnable refreshTexts =
         () -> {
           dialogTitle.setText(messageProperties.getAdminUsersDeleteDialogTitle());
-          dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
+          deleteUserDialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
           dialogDescription.setText(messageProperties.getAdminUsersDeleteDialogDescription());
-          closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
+          closeDeleteUserDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
           warningTitle.setText(messageProperties.getAdminUsersDeleteDialogQuestion());
           warningText.setText(messageProperties.getAdminUsersDeleteDialogWarning());
           cancelButton.setText(messageProperties.getAdminUsersCancel());
           confirmButton.setText(messageProperties.getPortalDeleteAction());
         };
     dialogErrorRefreshers.add(refreshTexts);
-    dialog.addOpenedChangeListener(event -> {
+    deleteUserDialog.addOpenedChangeListener(event -> {
       if (!event.isOpened()) {
         dialogErrorRefreshers.remove(refreshTexts);
       }
     });
-    dialog.addDetachListener(event -> dialogErrorRefreshers.remove(refreshTexts));
-    dialog.open();
+    deleteUserDialog.addDetachListener(event -> dialogErrorRefreshers.remove(refreshTexts));
+    deleteUserDialog.open();
   }
 
   private void openDialog(UserEntity user) {
@@ -722,10 +727,10 @@ public class AdminUserManagementSection extends VerticalLayout {
     private final boolean editMode;
     private final AdminUserFormData formData;
     private final Long expectedVersion;
-    private Dialog dialog;
+    private Dialog editUserDialog;
     private H2 dialogTitle;
     private Span dialogDescription;
-    private Button closeButton;
+    private Button closeEditUserDialogButton;
     private Binder<AdminUserFormData> binder;
     private TextField firstNameField;
     private TextField lastNameField;
@@ -772,19 +777,19 @@ public class AdminUserManagementSection extends VerticalLayout {
       configureActions();
       composeLayout();
       registerTextRefresh();
-      dialog.open();
+      editUserDialog.open();
     }
 
     private void configureHeader() {
-      dialog = new Dialog();
-      dialog.addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-dialog");
-      dialog.getThemeNames().add("cosmos-reference");
-      dialog.getElement().getThemeList().add("cosmos");
-      dialog.setCloseOnEsc(true);
-      dialog.setCloseOnOutsideClick(true);
-      dialog.setDraggable(false);
-      dialog.setResizable(false);
-      dialog.addClassName("admin-user-dialog");
+      editUserDialog = new Dialog();
+      editUserDialog.addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-dialog");
+      editUserDialog.getThemeNames().add("cosmos-reference");
+      editUserDialog.getElement().getThemeList().add("cosmos");
+      editUserDialog.setCloseOnEsc(true);
+      editUserDialog.setCloseOnOutsideClick(true);
+      editUserDialog.setDraggable(false);
+      editUserDialog.setResizable(false);
+      editUserDialog.addClassName("admin-user-dialog");
       dialogTitle =
           new H2(
               editMode
@@ -799,14 +804,16 @@ public class AdminUserManagementSection extends VerticalLayout {
       userIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
       Div iconBadge = new Div(userIcon);
       iconBadge.addClassName(PANEL_ICON);
-      closeButton = new Button(AppIcon.CLOSE_CIRCLE.create(), event -> dialog.close());
-      closeButton.addClassNames("cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
-      closeButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
-      closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
-      Div dialogHeader = new Div(iconBadge, dialogHeading, closeButton);
+      closeEditUserDialogButton =
+          new Button(AppIcon.CLOSE_CIRCLE.create(), event -> editUserDialog.close());
+      closeEditUserDialogButton.addClassNames(
+          "cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
+      closeEditUserDialogButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
+      closeEditUserDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
+      Div dialogHeader = new Div(iconBadge, dialogHeading, closeEditUserDialogButton);
       dialogHeader.addClassName("admin-user-dialog-header");
-      dialog.getHeader().add(dialogHeader);
-      dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
+      editUserDialog.getHeader().add(dialogHeader);
+      editUserDialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
     }
 
     private void configureFields() {
@@ -1079,7 +1086,8 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       saveButton.addClickListener(event -> saveUser());
 
-      cancelButton = new Button(messageProperties.getAdminUsersCancel(), e -> dialog.close());
+      cancelButton =
+          new Button(messageProperties.getAdminUsersCancel(), e -> editUserDialog.close());
       cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
     }
 
@@ -1116,7 +1124,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             new Button(
                 messageProperties.getAdminUsersDelete(),
                 AppIcon.TRASH.create(),
-                event -> deleteUser(user, dialog::close));
+                event -> deleteUser(user, editUserDialog::close));
         deleteButton.addThemeVariants(ButtonVariant.LUMO_ERROR);
         deleteButton.addClassName(DELETE_BUTTON);
         deleteButton.setEnabled(!isCurrentUser(user));
@@ -1141,12 +1149,12 @@ public class AdminUserManagementSection extends VerticalLayout {
       }
       Div footerSection = new Div(securityNote, footer);
       footerSection.addClassName("admin-user-editor-footer");
-      dialog.getFooter().add(footerSection);
+      editUserDialog.getFooter().add(footerSection);
       dialogLayout.setPadding(false);
       dialogLayout.setSpacing(false);
       dialogLayout.addClassName("cosmos-dialog-form");
 
-      dialog.add(dialogLayout);
+      editUserDialog.add(dialogLayout);
     }
 
     private HorizontalLayout signInDetails() {
@@ -1221,9 +1229,9 @@ public class AdminUserManagementSection extends VerticalLayout {
                 editMode
                     ? messageProperties.getAdminUsersEditDialogTitle()
                     : messageProperties.getAdminUsersCreateDialogTitle());
-            dialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
+            editUserDialog.getElement().setProperty(ARIA_LABEL_PROPERTY, dialogTitle.getText());
             dialogDescription.setText(messageProperties.getAdminUsersDialogDescription());
-            closeButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
+            closeEditUserDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
             confirmPasswordField.setLabel(messageProperties.getPublicConfirmPasswordField());
             confirmPasswordHint.setText(messageProperties.getAdminUsersPasswordConfirmHelper());
             confirmPasswordField.setPlaceholder(
@@ -1257,12 +1265,12 @@ public class AdminUserManagementSection extends VerticalLayout {
             }
           };
       dialogErrorRefreshers.add(refreshErrors);
-      dialog.addOpenedChangeListener(event -> {
+      editUserDialog.addOpenedChangeListener(event -> {
         if (!event.isOpened()) {
           dialogErrorRefreshers.remove(refreshErrors);
         }
       });
-      dialog.addDetachListener(event -> dialogErrorRefreshers.remove(refreshErrors));
+      editUserDialog.addDetachListener(event -> dialogErrorRefreshers.remove(refreshErrors));
     }
 
     private void saveUser() {
@@ -1349,7 +1357,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       } else {
         userService.createAdminUser(edited, formData.getPassword());
       }
-      dialog.close();
+      editUserDialog.close();
       refreshGrid();
 
       NotificationHelper.getInstance()
