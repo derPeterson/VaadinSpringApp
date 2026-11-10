@@ -1,40 +1,18 @@
-# Java-Code projektweit lesbarer machen
+# Offene Sonar-Befunde zur Java-Lesbarkeit
 
-Branch `codex/java-lesbarkeit`, angelegt vom lokalen `main` bei `84ee175e`.
-Freigegeben sind alle Arbeitspakete mit Zwischencommits, das Gesamtreview,
-der lokale Merge nach `main`, Sonar mit Behebung und Nachscan sowie die große
-Testrunde auf dem bereinigten Stand.
+Der lokale Nachscan auf `main` bei `6b156cc9` meldet sechs offene Findings.
+Die bestandene große Testrunde steht im [Prüfstatus](../status.md).
 
-## Ziel und Umfang
+| Regel | Betroffene Stelle | Zu klärender Vertrag |
+| --- | --- | --- |
+| S106 (zweimal) | `IdeHttpsProxy` | stdout überträgt das Startsignal, stderr die unveränderte Ausgabe des eigenen Caddy-Prozesses. |
+| S1181 | `HttpsDevelopmentApplication` | Bei einem Startfehler wird der eigene Proxy abgebaut und der ursprüngliche Fehler weitergegeben. |
+| S1948 | `AdminUserActivityFilter` | Die verwendete Systemuhr und die feste Testuhr sind nachweislich serialisierbar. |
+| S4276 | `UserRoleBroadcaster` | Der bestehende Listenervertrag verwendet eine Benutzer-ID als `Long`. Eine Umstellung auf `long` ändert den Umgang mit `null`. |
+| S4502 | `SecurityConfig` | Spring-CSRF bleibt für reguläre HTTP-Änderungen aktiv. Die Ausnahmen betreffen erkannte Flow-Transporte und die lokal begrenzte H2-Konsole mit eigenem Ursprungsschutz. |
 
-Den versionierten Java-Code in `app`, `shared` und `browser-tests` einschließlich
-Testcode vollständig sichten. Auf dem Ausgangsstand sind das 522 Java-Dateien.
-Die App enthält 283 Haupt- und 149 Testdateien, Shared enthält 5 Dateien und das
-Browser-Testmodul 85. Der [Codestil](../entwicklung.md#codestil) ist der Maßstab.
-
-Klassen, Methoden und Variablen so benennen, dass ihre Aufgabe auch an der
-Verwendungsstelle erkennbar ist. Zusammengehörige Felder und Schritte in Blöcken
-anordnen. Lange Abläufe dort gliedern, wo die Aufgabe wechselt oder eine benannte
-Teilmethode einen fachlichen Fall klarer macht. Kommentare und Sichtbarkeit
-gezielt einsetzen. Jede Datei sichten und konkrete Lesbarkeitshürden beheben.
-
-## Offene Arbeitspakete
-
-- [ ] **Integration:** Den vollständig geprüften Branch lokal nach `main` mergen.
-- [ ] **Sonar:** Auf `main` analysieren, berechtigte Findings beheben und committen.
-  Einen vollständigen Nachscan auswerten.
-- [ ] **Große Testrunde:** Den bereinigten Stand vollständig prüfen, notwendige
-  Korrekturen committen und die betroffenen Prüfungen wiederholen.
-
-## Prüfung und Abnahme
-
-Pro Paket den Diff auf Aufrufer, Framework-Einstiege, Fallunterscheidungen,
-Ausführungsreihenfolge und Seiteneffekte prüfen. Die vorgeschriebenen Java-Stilchecks
-zentral ausführen. Umgegliederte Abläufe mit passenden vorhandenen Tests absichern.
-Für reine Namens- und Blockänderungen sind Diff und Stilchecks der Nachweis.
-Browserläufe, Sonar-Scans und Commits richten sich nach dem jeweiligen Auftrag.
-
-Die Modulgrenzen und das fachliche Verhalten bleiben Maßstab für jede Änderung.
-Grundlegende Architektur- oder Verhaltensänderungen separat zur Entscheidung
-vorlegen und unabhängige Lesbarkeitsarbeiten fortsetzen. Den Plan während der
-Umsetzung auf die jeweils offenen Pakete reduzieren.
+Die fachlich begründeten Ausnahmen in Sonar abstimmen. Die automatische
+Freigabe hat den Versuch abgelehnt, einen der Prozesskanäle als Fehlalarm
+zu kennzeichnen. Danach den aktuellen Gate-Status verifizieren. Bei einer
+Codekorrektur die betroffenen Tests und den vollständigen Sonar-Nachscan
+auf dem neuen Stand ausführen.
