@@ -558,7 +558,7 @@ class AdminUserErrorNotificationTest {
     verify(userService, never()).updateAdminUser(any(), any(), any());
     dialog.close();
     assertTrue(
-        ((List<?>) ReflectionTestUtils.getField(userManagementSection, "dialogErrorRefreshers"))
+        ((List<?>) ReflectionTestUtils.getField(userManagementSection, "dialogTextRefreshActions"))
             .isEmpty());
   }
 
