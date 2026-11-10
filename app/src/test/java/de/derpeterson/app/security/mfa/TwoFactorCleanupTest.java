@@ -70,8 +70,9 @@ class TwoFactorCleanupTest {
 
     new ResourceDatabasePopulator(new ClassPathResource("db/durable-sessions-h2.sql"))
         .execute(source);
-    transaction.executeWithoutResult(
-        status -> new TwoFactorCleanup(challenges, tickets, new JdbcTemplate(source)).cleanup());
+    transaction.executeWithoutResult(status ->
+        new TwoFactorCleanup(challenges, tickets, new JdbcTemplate(source))
+            .purgeExpiredRecoveryData());
 
     TwoFactorChallengeEntity cleared = challenges.findById(expired.getId()).orElseThrow();
     assertTrue(cleared.isConsumed());
@@ -124,7 +125,7 @@ class TwoFactorCleanupTest {
         output(user, UUID.randomUUID().toString(), now.minusSeconds(7200), false);
     TwoFactorChallengeEntity saved = output(user, sessionId, now.minusSeconds(7200), true);
     transaction.executeWithoutResult(
-        status -> new TwoFactorCleanup(challenges, tickets, jdbc).cleanup());
+        status -> new TwoFactorCleanup(challenges, tickets, jdbc).purgeExpiredRecoveryData());
     assertEquals(
         "synthetic encrypted payload",
         challenges.findById(active.getId()).orElseThrow().getEncryptedPayload());
@@ -134,7 +135,7 @@ class TwoFactorCleanupTest {
     assertFalse(challenges.existsById(saved.getId()));
     jdbc.update("delete from SPRING_SESSION where SESSION_ID = ?", sessionId);
     transaction.executeWithoutResult(
-        status -> new TwoFactorCleanup(challenges, tickets, jdbc).cleanup());
+        status -> new TwoFactorCleanup(challenges, tickets, jdbc).purgeExpiredRecoveryData());
     assertFalse(challenges.existsById(active.getId()));
   }
 

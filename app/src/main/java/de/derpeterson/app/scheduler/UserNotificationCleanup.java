@@ -14,18 +14,21 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Slf4j
 public class UserNotificationCleanup {
-  private final UserNotificationRepository notifications;
-  private final UserNotificationPolicy policy;
+  private final UserNotificationRepository userNotificationRepository;
+  private final UserNotificationPolicy userNotificationPolicy;
 
   @Scheduled(cron = "0 20 3 * * *")
   @Transactional
-  public int cleanup() {
-    Instant now = Instant.now();
+  public int purgeRetiredNotifications() {
+    Instant cleanupTime = Instant.now();
     // Inhalte erst löschen, wenn sie weder in einer Inbox noch in der Historie gebraucht werden.
-    int deleted = notifications.deleteRetired(policy.inboxCutoff(now), policy.historyCutoff(now));
-    if (deleted > 0) {
-      AfterCommitLog.info(log, "Retired notifications deleted: count={}", deleted);
+    int deletedNotificationCount =
+        userNotificationRepository.deleteRetired(
+            userNotificationPolicy.inboxCutoff(cleanupTime),
+            userNotificationPolicy.historyCutoff(cleanupTime));
+    if (deletedNotificationCount > 0) {
+      AfterCommitLog.info(log, "Retired notifications deleted: count={}", deletedNotificationCount);
     }
-    return deleted;
+    return deletedNotificationCount;
   }
 }

@@ -26,128 +26,131 @@ public final class HttpsDevelopmentApplication {
 
   private HttpsDevelopmentApplication() {}
 
-  public static void main(String[] args) throws IOException, InterruptedException {
+  public static void main(String[] applicationArguments) throws IOException, InterruptedException {
     if (Runtime.version().feature() != 25 || !System.getProperty("os.name").startsWith("Windows")) {
       throw new IllegalStateException("The HTTPS IDE launcher requires Windows and Java 25");
     }
-    Path repo = Path.of("").toAbsolutePath().normalize();
-    Path module = requireApplicationModule(repo);
+    Path repositoryPath = Path.of("").toAbsolutePath().normalize();
+    Path applicationModulePath = requireApplicationModule(repositoryPath);
     // Laufzeitdaten bleiben im Root; Vaadin muss die Quellen im app-Modul finden.
-    System.getProperties().putIfAbsent("vaadin.project.basedir", module.toString());
-    Path caddy =
-        repo.resolve(System.getProperty("https.dev.caddy", "data/https/tools/caddy.exe"))
+    System.getProperties().putIfAbsent("vaadin.project.basedir", applicationModulePath.toString());
+    Path caddyExecutablePath =
+        repositoryPath
+            .resolve(System.getProperty("https.dev.caddy", "data/https/tools/caddy.exe"))
             .normalize();
-    verifyCaddy(caddy);
+    verifyCaddy(caddyExecutablePath);
     requireFreePorts(8080, 8081, 8443);
-    String host = "localhost";
-    Path caddyfile = repo.resolve("scripts/https/Caddyfile.ide");
+    String bindHostName = "localhost";
+    Path caddyfilePath = repositoryPath.resolve("scripts/https/Caddyfile.ide");
     String lanHost = System.getProperty("https.dev.lan-host");
     if (lanHost != null) {
-      InetAddress address = privateIpv4(lanHost);
-      if (NetworkInterface.getByInetAddress(address) == null) {
+      InetAddress bindAddress = privateIpv4(lanHost);
+      if (NetworkInterface.getByInetAddress(bindAddress) == null) {
         throw new IOException("The LAN IPv4 address is not assigned to this computer");
       }
-      requireFreePort(address, 8443);
-      host = address.getHostAddress();
-      caddyfile = repo.resolve("scripts/https/Caddyfile.ide-lan");
-      System.setProperty("app.https.origin", "https://" + host + ":8443");
+      requireFreePort(bindAddress, 8443);
+      bindHostName = bindAddress.getHostAddress();
+      caddyfilePath = repositoryPath.resolve("scripts/https/Caddyfile.ide-lan");
+      System.setProperty("app.https.origin", "https://" + bindHostName + ":8443");
       System.setProperty("server.address", "127.0.0.1");
     }
     // Ein DevTools-Neustart des Main würde einen zweiten Proxy starten. Java-Debugging bleibt
     // aktiv.
     System.setProperty("spring.devtools.restart.enabled", "false");
-    IdeHttpsProxy proxy =
-        IdeHttpsProxy.start(
-            repo,
+    IdeHttpsProxy httpsProxy =
+        IdeHttpsProxy.startHttpsProxy(
+            repositoryPath,
             List.of(
-                caddy.toString(),
+                caddyExecutablePath.toString(),
                 "run",
                 "--config",
-                caddyfile.toString(),
+                caddyfilePath.toString(),
                 "--adapter",
                 "caddyfile"),
             Map.of(
                 "APP_HTTPS_CA_DIR",
-                repo.resolve("data/https/ide").toString().replace('\\', '/'),
+                repositoryPath.resolve("data/https/ide").toString().replace('\\', '/'),
                 "APP_HTTPS_IDE_LAN_HOST",
-                host));
-    Runtime.getRuntime().addShutdownHook(new Thread(proxy::close, "ide-https-cleanup"));
-    proxy.failApplicationOnUnexpectedExit();
+                bindHostName));
+    Runtime.getRuntime().addShutdownHook(new Thread(httpsProxy::close, "ide-https-cleanup"));
+    httpsProxy.failApplicationOnUnexpectedExit();
     try {
-      SpringApplication application = new SpringApplication(Application.class);
-      application.setAdditionalProfiles("https");
-      application.run(args);
-      log.info("HTTPS development access: https://{}:8443", host);
-    } catch (Throwable failure) {
+      SpringApplication springApplication = new SpringApplication(Application.class);
+      springApplication.setAdditionalProfiles("https");
+      springApplication.run(applicationArguments);
+      log.info("HTTPS development access: https://{}:8443", bindHostName);
+    } catch (Throwable startupFailure) {
       // Auch Linkage-/VM-Startfehler beenden nur den eigenen Proxy; kein Wiederherstellungsversuch.
       try {
-        proxy.close();
+        httpsProxy.close();
       } catch (RuntimeException cleanupFailure) {
-        failure.addSuppressed(cleanupFailure);
+        startupFailure.addSuppressed(cleanupFailure);
       }
-      throw failure;
+      throw startupFailure;
     }
   }
 
-  static Path requireApplicationModule(Path repository) throws IOException {
-    Path root = repository.toAbsolutePath().normalize();
-    Path module = root.resolve("app");
-    if (!Files.isRegularFile(module.resolve("pom.xml"))
-        || !Files.isRegularFile(root.resolve("scripts/https/Caddyfile.ide"))) {
+  static Path requireApplicationModule(Path repositoryDirectory) throws IOException {
+    Path repositoryRoot = repositoryDirectory.toAbsolutePath().normalize();
+    Path applicationModulePath = repositoryRoot.resolve("app");
+    if (!Files.isRegularFile(applicationModulePath.resolve("pom.xml"))
+        || !Files.isRegularFile(repositoryRoot.resolve("scripts/https/Caddyfile.ide"))) {
       throw new IOException(
           "Start Application HTTPS with the repository root as working directory; app/pom.xml and scripts/https/Caddyfile.ide are required.");
     }
-    return module;
+    return applicationModulePath;
   }
 
-  static void verifyCaddy(Path executable) throws IOException, InterruptedException {
-    if (!Files.isRegularFile(executable)) {
+  static void verifyCaddy(Path caddyExecutable) throws IOException, InterruptedException {
+    if (!Files.isRegularFile(caddyExecutable)) {
       throw new IOException(
           "Caddy is missing. Place "
               + CADDY_VERSION
               + " in data/https/tools/caddy.exe or set -Dhttps.dev.caddy=<path>");
     }
-    Process version =
-        new ProcessBuilder(executable.toString(), "version").redirectErrorStream(true).start();
+    Process versionProcess =
+        new ProcessBuilder(caddyExecutable.toString(), "version").redirectErrorStream(true).start();
     try {
-      if (!version.waitFor(5, TimeUnit.SECONDS)) {
+      if (!versionProcess.waitFor(5, TimeUnit.SECONDS)) {
         throw new IOException("Caddy version check timed out");
       }
-      String output = new String(version.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
-      if (version.exitValue() != 0 || !output.startsWith(CADDY_VERSION + " ")) {
+      String versionOutput =
+          new String(versionProcess.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
+      if (versionProcess.exitValue() != 0 || !versionOutput.startsWith(CADDY_VERSION + " ")) {
         throw new IOException("Caddy " + CADDY_VERSION + " is required");
       }
     } finally {
-      IdeHttpsProxy.stopOwnedProcess(version);
+      IdeHttpsProxy.stopOwnedProcess(versionProcess);
     }
   }
 
-  static void requireFreePorts(int... ports) throws IOException {
-    for (int port : ports) {
-      requireFreePort(InetAddress.ofLiteral("127.0.0.1"), port);
+  static void requireFreePorts(int... requiredPorts) throws IOException {
+    for (int requiredPort : requiredPorts) {
+      requireFreePort(InetAddress.ofLiteral("127.0.0.1"), requiredPort);
     }
   }
 
-  static InetAddress privateIpv4(String value) {
-    InetAddress address = InetAddress.ofLiteral(value.strip());
-    if (!(address instanceof Inet4Address) || !address.isSiteLocalAddress()) {
+  static InetAddress privateIpv4(String hostAddressText) {
+    InetAddress bindAddress = InetAddress.ofLiteral(hostAddressText.strip());
+    if (!(bindAddress instanceof Inet4Address) || !bindAddress.isSiteLocalAddress()) {
       throw new IllegalArgumentException("The HTTPS LAN launcher requires a private IPv4 address");
     }
-    return address;
+    return bindAddress;
   }
 
-  private static void requireFreePort(InetAddress address, int port) throws IOException {
-    try (ServerSocket socket = new ServerSocket()) {
-      socket.setReuseAddress(false);
-      socket.bind(new InetSocketAddress(address, port));
-    } catch (IOException failure) {
+  private static void requireFreePort(InetAddress bindAddress, int requiredPort)
+      throws IOException {
+    try (ServerSocket portProbeSocket = new ServerSocket()) {
+      portProbeSocket.setReuseAddress(false);
+      portProbeSocket.bind(new InetSocketAddress(bindAddress, requiredPort));
+    } catch (IOException startupFailure) {
       throw new IOException(
           "HTTPS IDE address "
-              + address.getHostAddress()
+              + bindAddress.getHostAddress()
               + ":"
-              + port
+              + requiredPort
               + " is unavailable. Stop the previous application or BAT-started Caddy first.",
-          failure);
+          startupFailure);
     }
   }
 }

@@ -16,24 +16,28 @@ final class FlowCsrfRequestMatcher implements RequestMatcher {
   }
 
   @Override
-  public boolean matches(HttpServletRequest request) {
-    if (!CsrfFilter.DEFAULT_CSRF_MATCHER.matches(request)) {
+  public boolean matches(HttpServletRequest httpRequest) {
+    if (!CsrfFilter.DEFAULT_CSRF_MATCHER.matches(httpRequest)) {
       return false;
     }
-    String path = HandlerHelper.getRequestPathInsideContext(request);
-    Optional<String> inside = HandlerHelper.getPathIfInsideServlet(servletMapping, path);
-    if (inside.isEmpty() || !HandlerHelper.isFrameworkInternalRequest(servletMapping, request)) {
+    String requestPath = HandlerHelper.getRequestPathInsideContext(httpRequest);
+    Optional<String> applicationPath =
+        HandlerHelper.getPathIfInsideServlet(servletMapping, requestPath);
+    if (applicationPath.isEmpty()
+        || !HandlerHelper.isFrameworkInternalRequest(servletMapping, httpRequest)) {
       return true;
     }
-    String relative = inside.get();
-    if (relative.isEmpty() || "/".equals(relative)) {
-      String type = request.getParameter("v-r");
+    String vaadinRelativePath = applicationPath.get();
+    if (vaadinRelativePath.isEmpty() || "/".equals(vaadinRelativePath)) {
+      String vaadinRequestType = httpRequest.getParameter("v-r");
       return Arrays.stream(HandlerHelper.RequestType.values())
-          .noneMatch(known -> known.getIdentifier().equals(type));
+          .noneMatch(
+              knownRequestType -> knownRequestType.getIdentifier().equals(vaadinRequestType));
     }
     // HandlerHelper additionally validates dynamic-resource paths against traversal.
     // Their upload security key and UIDL/Push tokens are checked by the Flow handlers.
-    boolean push = "VAADIN/push".equals(relative) && "push".equals(request.getParameter("v-r"));
-    return !push && !relative.startsWith("VAADIN/dynamic/resource/");
+    boolean pushRequest =
+        "VAADIN/push".equals(vaadinRelativePath) && "push".equals(httpRequest.getParameter("v-r"));
+    return !pushRequest && !vaadinRelativePath.startsWith("VAADIN/dynamic/resource/");
   }
 }

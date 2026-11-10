@@ -16,31 +16,31 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 @RequiredArgsConstructor
 public class TwoFactorCleanup {
-  private final TwoFactorChallengeRepository challenges;
-  private final SupportTicketRepository tickets;
-  private final JdbcOperations sessions;
+  private final TwoFactorChallengeRepository twoFactorChallengeRepository;
+  private final SupportTicketRepository supportTicketRepository;
+  private final JdbcOperations sessionJdbcOperations;
 
   @Scheduled(fixedDelay = 60_000)
   @Transactional
-  public void cleanup() {
-    Instant now = Instant.now();
+  public void purgeExpiredRecoveryData() {
+    Instant cleanupTime = Instant.now();
     // Derselbe Sessionbestand wie bei der Anmeldung; Klartext oder rohe IDs werden nicht
     // gespeichert.
     List<String> activeSessions =
-        sessions
+        sessionJdbcOperations
             .queryForList(
                 "select s.SESSION_ID from SPRING_SESSION s where s.EXPIRY_TIME > ? and not exists (select 1 from SPRING_SESSION_ATTRIBUTES a where a.SESSION_PRIMARY_ID = s.PRIMARY_ID and a.ATTRIBUTE_NAME = ?)",
                 String.class,
-                now.toEpochMilli(),
+                cleanupTime.toEpochMilli(),
                 DurableSessionRepository.EXPIRED)
             .stream()
             .map(TwoFactorAuthorization::sessionDigest)
             .toList();
-    challenges.deleteClosedRecoveryOutputs(activeSessions, now);
-    challenges.clearExpiredSecrets(now);
+    twoFactorChallengeRepository.deleteClosedRecoveryOutputs(activeSessions, cleanupTime);
+    twoFactorChallengeRepository.clearExpiredSecrets(cleanupTime);
     // Metadaten kurz für das kontoweite Mail-Versuchslimit erhalten, niemals Ausgabewerte.
-    challenges.deleteExpired(now.minusSeconds(3600));
-    tickets.deleteClosedBefore(
-        now.minusSeconds(180L * 86400), List.of(Status.CLOSED, Status.CLOSED_BY_REQUESTER));
+    twoFactorChallengeRepository.deleteExpired(cleanupTime.minusSeconds(3600));
+    supportTicketRepository.deleteClosedBefore(
+        cleanupTime.minusSeconds(180L * 86400), List.of(Status.CLOSED, Status.CLOSED_BY_REQUESTER));
   }
 }

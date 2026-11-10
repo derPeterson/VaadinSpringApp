@@ -26,7 +26,7 @@ public class UserStatusScheduler {
   private final UserRepository userRepository;
   private final UserService userService;
   private final ConfigService configService;
-  private final Clock clock;
+  private final Clock statusUpdateClock;
 
   @Autowired
   public UserStatusScheduler(
@@ -38,52 +38,56 @@ public class UserStatusScheduler {
       UserRepository userRepository,
       UserService userService,
       ConfigService configService,
-      Clock clock) {
+      Clock statusUpdateClock) {
     this.userRepository = userRepository;
     this.userService = userService;
     this.configService = configService;
-    this.clock = Objects.requireNonNull(clock);
+    this.statusUpdateClock = Objects.requireNonNull(statusUpdateClock);
   }
 
   @Scheduled(fixedRate = 10000)
   public void checkInactiveAvailableUsers() {
-    Instant timeout =
-        clock
+    Instant inactivityCutoff =
+        statusUpdateClock
             .instant()
             .minus(Duration.parse(configService.getString(ConfigEntry.USER_AUTO_ABSENT_TIMEOUT)));
 
     List<UserEntity> inactiveAvailableUsers =
-        userRepository.findByLastActivityBeforeAndStatus(timeout, UserStatus.AVAILABLE);
+        userRepository.findByLastActivityBeforeAndStatus(inactivityCutoff, UserStatus.AVAILABLE);
 
     if (!inactiveAvailableUsers.isEmpty()) {
-      for (UserEntity user : inactiveAvailableUsers) {
-        updateCandidate(user, UserStatus.ABSENT, timeout);
+      for (UserEntity candidateUserEntity : inactiveAvailableUsers) {
+        updateCandidate(candidateUserEntity, UserStatus.ABSENT, inactivityCutoff);
       }
     }
   }
 
   @Scheduled(fixedRate = 1000)
   public void checkRecentlyActiveAbsentUsers() {
-    Instant recentActivity = clock.instant().minusSeconds(5);
+    Instant recentActivity = statusUpdateClock.instant().minusSeconds(5);
 
     List<UserEntity> activeAbsentUsers =
         userRepository.findByLastActivityAfterAndStatusAndStatusManuallySetFalse(
             recentActivity, UserStatus.ABSENT);
 
     if (!activeAbsentUsers.isEmpty()) {
-      for (UserEntity user : activeAbsentUsers) {
-        updateCandidate(user, UserStatus.AVAILABLE, recentActivity);
+      for (UserEntity candidateUserEntity : activeAbsentUsers) {
+        updateCandidate(candidateUserEntity, UserStatus.AVAILABLE, recentActivity);
       }
     }
   }
 
-  private void updateCandidate(UserEntity user, UserStatus target, Instant cutoff) {
+  private void updateCandidate(
+      UserEntity candidateUserEntity, UserStatus targetUserStatus, Instant activityCutoff) {
     try {
-      userService.updateScheduledStatus(user.getId(), target, cutoff);
-    } catch (ConcurrencyFailureException exception) {
+      userService.updateScheduledStatus(
+          candidateUserEntity.getId(), targetUserStatus, activityCutoff);
+    } catch (ConcurrencyFailureException concurrentStatusUpdateFailure) {
       // The next scan reselects this candidate; other users still get processed.
       log.warn(
-          "Automatischer Statuskonflikt für Benutzer {}", user.getId(), safeFailure(exception));
+          "Automatischer Statuskonflikt für Benutzer {}",
+          candidateUserEntity.getId(),
+          safeFailure(concurrentStatusUpdateFailure));
     }
   }
 }

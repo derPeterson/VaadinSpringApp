@@ -56,9 +56,9 @@ class IdeHttpsProxyTest {
   void launcherArgumentsArePrivateFromCreationUntilCleanup() throws Exception {
     Path file;
     Path folder;
-    try (IdeHttpsArguments arguments = IdeHttpsArguments.create(directory)) {
-      file = arguments.path();
-      folder = arguments.directory();
+    try (IdeHttpsArguments arguments = IdeHttpsArguments.createPrivateArgumentFile(directory)) {
+      file = arguments.argumentFilePath();
+      folder = arguments.argumentDirectory();
       UserPrincipal owner =
           directory
               .getFileSystem()
@@ -71,9 +71,8 @@ class IdeHttpsProxyTest {
           assertFalse(entries.isEmpty());
           assertTrue(
               entries.stream()
-                  .allMatch(
-                      entry ->
-                          entry.type() == AclEntryType.ALLOW && entry.principal().equals(owner)),
+                  .allMatch(entry ->
+                      entry.type() == AclEntryType.ALLOW && entry.principal().equals(owner)),
               entries::toString);
         } else {
           assertEquals(
@@ -92,7 +91,7 @@ class IdeHttpsProxyTest {
   void ownedProxyCanStartStopAndRestartWithPathsContainingSpaces() throws Exception {
     Path work = Files.createDirectories(directory.resolve("test project"));
     for (int attempt = 0; attempt < 2; attempt++) {
-      IdeHttpsProxy proxy = IdeHttpsProxy.start(work, fakeCommand("ready"), Map.of());
+      IdeHttpsProxy proxy = IdeHttpsProxy.startHttpsProxy(work, fakeCommand("ready"), Map.of());
       assertNoLauncherArguments(work);
       ProcessHandle child = ProcessHandle.of(proxy.proxyPid()).orElseThrow();
       ProcessHandle supervisor = ProcessHandle.of(proxy.supervisorPid()).orElseThrow();
@@ -109,7 +108,8 @@ class IdeHttpsProxyTest {
     for (String mode : List.of("fail", "wrong")) {
       Path pidFile = directory.resolve(mode + ".pid");
       List<String> command = fakeCommand(mode, pidFile.toString());
-      assertThrows(IOException.class, () -> IdeHttpsProxy.start(directory, command, Map.of()));
+      assertThrows(
+          IOException.class, () -> IdeHttpsProxy.startHttpsProxy(directory, command, Map.of()));
       assertNoLauncherArguments(directory);
       ProcessHandle child =
           ProcessHandle.of(Long.parseLong(Files.readString(pidFile))).orElse(null);
@@ -121,7 +121,8 @@ class IdeHttpsProxyTest {
   void missingStartupConfirmationTimesOutAndStopsTheOwnedChild() throws Exception {
     Path pidFile = directory.resolve("timeout.pid");
     List<String> command = fakeCommand("stall", pidFile.toString());
-    assertThrows(IOException.class, () -> IdeHttpsProxy.start(directory, command, Map.of()));
+    assertThrows(
+        IOException.class, () -> IdeHttpsProxy.startHttpsProxy(directory, command, Map.of()));
     assertNoLauncherArguments(directory);
     ProcessHandle child = ProcessHandle.of(Long.parseLong(Files.readString(pidFile))).orElse(null);
     assertTrue(child == null || !child.isAlive());
@@ -143,20 +144,19 @@ class IdeHttpsProxyTest {
     ProcessHandle supervisor = null;
     try {
       CompletableFuture<String> ready =
-          CompletableFuture.supplyAsync(
-              () -> {
-                try {
-                  String line;
-                  while ((line = owner.inputReader().readLine()) != null) {
-                    if (line.startsWith("CHILD ")) {
-                      return line;
-                    }
-                  }
-                  throw new IllegalStateException("Owner exited before setup");
-                } catch (IOException failure) {
-                  throw new IllegalStateException(failure);
+          CompletableFuture.supplyAsync(() -> {
+            try {
+              String line;
+              while ((line = owner.inputReader().readLine()) != null) {
+                if (line.startsWith("CHILD ")) {
+                  return line;
                 }
-              });
+              }
+              throw new IllegalStateException("Owner exited before setup");
+            } catch (IOException failure) {
+              throw new IllegalStateException(failure);
+            }
+          });
       String[] pids = ready.get(20, TimeUnit.SECONDS).split(" ");
       child = ProcessHandle.of(Long.parseLong(pids[1])).orElseThrow();
       supervisor = ProcessHandle.of(Long.parseLong(pids[2])).orElseThrow();
@@ -397,7 +397,7 @@ class IdeHttpsProxyTest {
             + " {\nbind 127.0.0.1\ntls internal\nrespond OK\n}\n");
     long childPid;
     try (IdeHttpsProxy proxy =
-        IdeHttpsProxy.start(
+        IdeHttpsProxy.startHttpsProxy(
             directory,
             List.of(
                 caddy.toString(), "run", "--config", config.toString(), "--adapter", "caddyfile"),
@@ -524,7 +524,7 @@ class IdeHttpsProxyTest {
   public static class Owner {
     public static void main(String[] args) throws Exception {
       IdeHttpsProxy proxy =
-          IdeHttpsProxy.start(
+          IdeHttpsProxy.startHttpsProxy(
               Path.of(args[0]), List.of(IdeHttpsProxy.javaExecutable(), "@" + args[1]), Map.of());
       Runtime.getRuntime().addShutdownHook(new Thread(proxy::close));
       proxy.failApplicationOnUnexpectedExit();

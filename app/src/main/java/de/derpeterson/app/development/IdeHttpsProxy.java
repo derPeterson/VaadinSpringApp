@@ -26,53 +26,53 @@ import org.slf4j.LoggerFactory;
 /** Eigene Prozessaufsicht überlebt auch einen harten IDE-Abbruch des Anwendungsprozesses. */
 public final class IdeHttpsProxy implements AutoCloseable {
   private static final Logger log = LoggerFactory.getLogger(IdeHttpsProxy.class);
-  private final Process supervisor;
+  private final Process supervisorProcess;
   private final long proxyPid;
-  private final AtomicBoolean closing = new AtomicBoolean();
+  private final AtomicBoolean proxyClosing = new AtomicBoolean();
 
-  private IdeHttpsProxy(Process supervisor, long proxyPid) {
-    this.supervisor = supervisor;
+  private IdeHttpsProxy(Process supervisorProcess, long proxyPid) {
+    this.supervisorProcess = supervisorProcess;
     this.proxyPid = proxyPid;
   }
 
-  static IdeHttpsProxy start(Path directory, List<String> command, Map<String, String> environment)
+  static IdeHttpsProxy startHttpsProxy(
+      Path workingDirectory, List<String> caddyCommand, Map<String, String> processEnvironment)
       throws IOException, InterruptedException {
     List<String> javaArguments =
         new ArrayList<>(
             List.of("-cp", System.getProperty("java.class.path"), IdeHttpsProxy.class.getName()));
-    javaArguments.addAll(command);
-    Process supervisor = null;
-    try (IdeHttpsArguments arguments = IdeHttpsArguments.create(directory)) {
+    javaArguments.addAll(caddyCommand);
+    Process supervisorProcess = null;
+    try (IdeHttpsArguments launcherArguments =
+        IdeHttpsArguments.createPrivateArgumentFile(workingDirectory)) {
       Files.write(
-          arguments.path(),
+          launcherArguments.argumentFilePath(),
           javaArguments.stream().map(IdeHttpsProxy::quoteArgument).toList(),
           StandardCharsets.UTF_8);
-      ProcessBuilder builder =
-          new ProcessBuilder(javaExecutable(), "@" + arguments.path())
-              .directory(directory.toFile())
+      ProcessBuilder supervisorProcessBuilder =
+          new ProcessBuilder(javaExecutable(), "@" + launcherArguments.argumentFilePath())
+              .directory(workingDirectory.toFile())
               .redirectError(ProcessBuilder.Redirect.INHERIT);
-      builder.environment().putAll(environment);
-      supervisor = builder.start();
-      Process started = supervisor;
-      CompletableFuture<String> confirmation =
-          CompletableFuture.supplyAsync(
-              () -> {
-                try {
-                  return started.inputReader(StandardCharsets.UTF_8).readLine();
-                } catch (IOException failure) {
-                  throw new IllegalStateException(
-                      "Cannot read Caddy startup confirmation", failure);
-                }
-              });
-      String ready = awaitSupervisorConfirmation(confirmation);
-      if (ready == null || !ready.startsWith("READY ")) {
+      supervisorProcessBuilder.environment().putAll(processEnvironment);
+      supervisorProcess = supervisorProcessBuilder.start();
+      Process startedSupervisorProcess = supervisorProcess;
+      CompletableFuture<String> startupConfirmation =
+          CompletableFuture.supplyAsync(() -> {
+            try {
+              return startedSupervisorProcess.inputReader(StandardCharsets.UTF_8).readLine();
+            } catch (IOException failure) {
+              throw new IllegalStateException("Cannot read Caddy startup confirmation", failure);
+            }
+          });
+      String readySignal = awaitSupervisorConfirmation(startupConfirmation);
+      if (readySignal == null || !readySignal.startsWith("READY ")) {
         throw new IOException("Caddy could not start. See the preceding proxy diagnostic.");
       }
-      return new IdeHttpsProxy(supervisor, Long.parseLong(ready.substring(6)));
+      return new IdeHttpsProxy(supervisorProcess, Long.parseLong(readySignal.substring(6)));
     } catch (IOException | InterruptedException | RuntimeException failure) {
-      if (supervisor != null) {
+      if (supervisorProcess != null) {
         try {
-          stopSupervisor(supervisor);
+          stopSupervisor(supervisorProcess);
         } catch (RuntimeException cleanupFailure) {
           failure.addSuppressed(cleanupFailure);
         }
@@ -81,10 +81,10 @@ public final class IdeHttpsProxy implements AutoCloseable {
     }
   }
 
-  private static String awaitSupervisorConfirmation(CompletableFuture<String> confirmation)
+  private static String awaitSupervisorConfirmation(CompletableFuture<String> startupConfirmation)
       throws IOException, InterruptedException {
     try {
-      return confirmation.get(20, TimeUnit.SECONDS);
+      return startupConfirmation.get(20, TimeUnit.SECONDS);
     } catch (ExecutionException | TimeoutException failure) {
       throw new IOException("Cannot confirm HTTPS supervisor startup", failure);
     }
@@ -98,8 +98,8 @@ public final class IdeHttpsProxy implements AutoCloseable {
         .toString();
   }
 
-  static String quoteArgument(String value) {
-    return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
+  static String quoteArgument(String argumentText) {
+    return "\"" + argumentText.replace("\\", "\\\\").replace("\"", "\\\"") + "\"";
   }
 
   long proxyPid() {
@@ -107,35 +107,33 @@ public final class IdeHttpsProxy implements AutoCloseable {
   }
 
   long supervisorPid() {
-    return supervisor.pid();
+    return supervisorProcess.pid();
   }
 
   void failApplicationOnUnexpectedExit() {
-    supervisor
+    supervisorProcess
         .onExit()
-        .thenRun(
-            () -> {
-              if (!closing.get()) {
-                log.error(
-                    "HTTPS proxy stopped unexpectedly; stopping the development application.");
-                System.exit(1);
-              }
-            });
+        .thenRun(() -> {
+          if (!proxyClosing.get()) {
+            log.error("HTTPS proxy stopped unexpectedly; stopping the development application.");
+            System.exit(1);
+          }
+        });
   }
 
   @Override
   public void close() {
-    if (!closing.compareAndSet(false, true)) {
+    if (!proxyClosing.compareAndSet(false, true)) {
       return;
     }
-    stopSupervisor(supervisor);
+    stopSupervisor(supervisorProcess);
   }
 
-  private static void stopSupervisor(Process supervisor) {
+  private static void stopSupervisor(Process supervisorProcess) {
     try {
       // EOF ist der normale Stopauftrag; kein Kill fremder Prozesse über Namen oder Ports.
-      supervisor.getOutputStream().close();
-      if (!supervisor.waitFor(8, TimeUnit.SECONDS)) {
+      supervisorProcess.getOutputStream().close();
+      if (!supervisorProcess.waitFor(8, TimeUnit.SECONDS)) {
         throw new IllegalStateException("HTTPS supervisor did not finish its owned proxy cleanup");
       }
     } catch (IOException failure) {
@@ -146,12 +144,12 @@ public final class IdeHttpsProxy implements AutoCloseable {
     }
   }
 
-  static void stopOwnedProcess(Process process) throws InterruptedException {
-    if (process.isAlive()) {
-      process.destroy();
-      if (!process.waitFor(2, TimeUnit.SECONDS)) {
-        process.destroyForcibly();
-        if (!process.waitFor(3, TimeUnit.SECONDS)) {
+  static void stopOwnedProcess(Process ownedProcess) throws InterruptedException {
+    if (ownedProcess.isAlive()) {
+      ownedProcess.destroy();
+      if (!ownedProcess.waitFor(2, TimeUnit.SECONDS)) {
+        ownedProcess.destroyForcibly();
+        if (!ownedProcess.waitFor(3, TimeUnit.SECONDS)) {
           throw new IllegalStateException("Owned HTTPS child process did not stop");
         }
       }
@@ -162,68 +160,76 @@ public final class IdeHttpsProxy implements AutoCloseable {
    * Separater JVM-Prozess: stdout ist ausschließlich das Startprotokoll, Caddy-Ausgaben gehen an
    * stderr.
    */
-  public static void main(String[] args) throws IOException, InterruptedException {
-    ProcessHandle owner = ProcessHandle.current().parent().orElseThrow();
+  public static void main(String[] supervisorArguments) throws IOException, InterruptedException {
+    ProcessHandle ownerProcessHandle = ProcessHandle.current().parent().orElseThrow();
     CompletableFuture<Void> stopRequested =
-        CompletableFuture.runAsync(
-            () -> {
-              try {
-                System.in.read();
-              } catch (IOException _) {
-                // Auch eine unterbrochene Steuerleitung verlangt den Abbau des eigenen Proxys.
-              }
-            });
-    byte[] challenge = new byte[32];
-    new SecureRandom().nextBytes(challenge);
-    try (ServerSocket callback = new ServerSocket()) {
-      callback.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
-      callback.setSoTimeout(250);
-      List<String> command = new ArrayList<>(List.of(args));
-      command.addAll(List.of("--pingback", "127.0.0.1:" + callback.getLocalPort()));
-      Process child =
-          new ProcessBuilder(command).redirectError(ProcessBuilder.Redirect.INHERIT).start();
+        CompletableFuture.runAsync(() -> {
+          try {
+            System.in.read();
+          } catch (IOException _) {
+            // Auch eine unterbrochene Steuerleitung verlangt den Abbau des eigenen Proxys.
+          }
+        });
+    byte[] startupChallengeBytes = new byte[32];
+    new SecureRandom().nextBytes(startupChallengeBytes);
+    try (ServerSocket callbackServerSocket = new ServerSocket()) {
+      callbackServerSocket.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
+      callbackServerSocket.setSoTimeout(250);
+      List<String> caddyCommand = new ArrayList<>(List.of(supervisorArguments));
+      caddyCommand.addAll(
+          List.of("--pingback", "127.0.0.1:" + callbackServerSocket.getLocalPort()));
+      Process caddyProcess =
+          new ProcessBuilder(caddyCommand).redirectError(ProcessBuilder.Redirect.INHERIT).start();
       Thread.ofVirtual()
-          .start(
-              () -> {
-                try {
-                  child.getInputStream().transferTo(System.err);
-                } catch (IOException _) {
-                  // Der Prozessabbau kann den Ausgabestrom schließen.
-                }
-              });
+          .start(() -> {
+            try {
+              caddyProcess.getInputStream().transferTo(System.err);
+            } catch (IOException _) {
+              // Der Prozessabbau kann den Ausgabestrom schließen.
+            }
+          });
       try {
         // Caddy bestätigt erst nach erfolgreichem Laden der Konfiguration diese Zufallsbytes.
-        child.getOutputStream().write(challenge);
-        child.getOutputStream().close();
-        awaitConfirmation(callback, challenge, owner, child, stopRequested);
-        System.out.println("READY " + child.pid());
+        caddyProcess.getOutputStream().write(startupChallengeBytes);
+        caddyProcess.getOutputStream().close();
+        awaitConfirmation(
+            callbackServerSocket,
+            startupChallengeBytes,
+            ownerProcessHandle,
+            caddyProcess,
+            stopRequested);
+        System.out.println("READY " + caddyProcess.pid());
         System.out.flush();
-        CompletableFuture.anyOf(owner.onExit(), stopRequested, child.onExit()).join();
-        if (child.isAlive() || !owner.isAlive() || stopRequested.isDone()) {
+        CompletableFuture.anyOf(ownerProcessHandle.onExit(), stopRequested, caddyProcess.onExit())
+            .join();
+        if (caddyProcess.isAlive() || !ownerProcessHandle.isAlive() || stopRequested.isDone()) {
           return;
         }
-        throw new IOException("Owned Caddy process exited unexpectedly: " + child.exitValue());
+        throw new IOException(
+            "Owned Caddy process exited unexpectedly: " + caddyProcess.exitValue());
       } finally {
-        stopOwnedProcess(child);
+        stopOwnedProcess(caddyProcess);
       }
     }
   }
 
   private static void awaitConfirmation(
-      ServerSocket callback,
-      byte[] expected,
-      ProcessHandle owner,
-      Process child,
+      ServerSocket callbackServerSocket,
+      byte[] expectedChallengeBytes,
+      ProcessHandle ownerProcessHandle,
+      Process caddyProcess,
       CompletableFuture<Void> stopRequested)
       throws IOException {
-    Instant deadline = Instant.now().plusSeconds(15);
-    while (owner.isAlive()
-        && child.isAlive()
+    Instant startupDeadline = Instant.now().plusSeconds(15);
+    while (ownerProcessHandle.isAlive()
+        && caddyProcess.isAlive()
         && !stopRequested.isDone()
-        && Instant.now().isBefore(deadline)) {
-      try (Socket confirmation = callback.accept()) {
-        confirmation.setSoTimeout(1000);
-        if (Arrays.equals(expected, confirmation.getInputStream().readNBytes(expected.length))) {
+        && Instant.now().isBefore(startupDeadline)) {
+      try (Socket startupConfirmationSocket = callbackServerSocket.accept()) {
+        startupConfirmationSocket.setSoTimeout(1000);
+        if (Arrays.equals(
+            expectedChallengeBytes,
+            startupConfirmationSocket.getInputStream().readNBytes(expectedChallengeBytes.length))) {
           return;
         }
       } catch (SocketTimeoutException _) {

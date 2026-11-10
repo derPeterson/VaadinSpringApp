@@ -1174,12 +1174,12 @@ class UserNotificationServicePersistenceTest {
             .setParameter("old", Instant.now().minus(366, java.time.temporal.ChronoUnit.DAYS))
             .setParameter("id", old.id())
             .executeUpdate());
-    assertEquals(1, cleanup.cleanup());
+    assertEquals(1, cleanup.purgeRetiredNotifications());
     assertFalse(notifications.existsById(old.id()));
     assertTrue(notifications.existsById(fresh.id()));
     assertEquals(3, recipients.count());
     tx.executeWithoutResult(s -> recipients.deleteAll());
-    assertEquals(0, cleanup.cleanup());
+    assertEquals(0, cleanup.purgeRetiredNotifications());
     assertTrue(notifications.existsById(fresh.id()));
   }
 
@@ -1200,17 +1200,17 @@ class UserNotificationServicePersistenceTest {
     assertEquals(0, service.unreadCount(userSession));
     assertTrue(service.unreadSnapshot(userSession).isEmpty());
     assertEquals(1, service.sent(adminSession, 0, 5).getTotalElements());
-    assertEquals(0, cleanup.cleanup());
+    assertEquals(0, cleanup.purgeRetiredNotifications());
     assertEquals(3, recipients.count());
     when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("365");
     when(config.getString(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS)).thenReturn("90");
     assertEquals(1, service.inbox(userSession, ReadFilter.ALL, 0, 20).getTotalElements());
     assertEquals(1, service.unreadCount(userSession));
     assertTrue(service.sent(adminSession, 0, 5).isEmpty());
-    assertEquals(0, cleanup.cleanup());
+    assertEquals(0, cleanup.purgeRetiredNotifications());
     assertTrue(notifications.existsById(sent.id()));
     when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("90");
-    assertEquals(1, cleanup.cleanup());
+    assertEquals(1, cleanup.purgeRetiredNotifications());
     assertFalse(notifications.existsById(sent.id()));
     assertEquals(0, recipients.count());
   }
@@ -1229,7 +1229,7 @@ class UserNotificationServicePersistenceTest {
     assertEquals(inboxLimited ? 0 : 1, service.unreadCount(userSession));
     assertEquals(inboxLimited ? 0 : 1, service.unreadSnapshot(userSession).size());
     assertEquals(historyLimited ? 0 : 1, service.sent(adminSession, 0, 5).getTotalElements());
-    assertEquals(inboxLimited && historyLimited ? 1 : 0, cleanup.cleanup());
+    assertEquals(inboxLimited && historyLimited ? 1 : 0, cleanup.purgeRetiredNotifications());
     assertEquals(!(inboxLimited && historyLimited), notifications.existsById(sent.id()));
   }
 
@@ -1242,9 +1242,9 @@ class UserNotificationServicePersistenceTest {
     UserNotificationEntity automatic = notifications.findAll().getFirst();
     createdAt(automatic.getId(), Instant.now().minus(400, java.time.temporal.ChronoUnit.DAYS));
     assertEquals(1, service.inbox(userSession, ReadFilter.ALL, 0, 20).getTotalElements());
-    assertEquals(0, cleanup.cleanup());
+    assertEquals(0, cleanup.purgeRetiredNotifications());
     when(config.getString(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS)).thenReturn("180");
-    assertEquals(1, cleanup.cleanup());
+    assertEquals(1, cleanup.purgeRetiredNotifications());
   }
 
   @Test
@@ -1254,7 +1254,7 @@ class UserNotificationServicePersistenceTest {
             users.findById(ordinary.getId()).orElseThrow(), UserNotificationType.PASSWORD_CHANGED));
     UserNotificationEntity automatic = notifications.findAll().getFirst();
     createdAt(automatic.getId(), Instant.now().minus(181, java.time.temporal.ChronoUnit.DAYS));
-    assertEquals(1, cleanup.cleanup());
+    assertEquals(1, cleanup.purgeRetiredNotifications());
     assertEquals(0, notificationCount());
     assertEquals(0, recipients.count());
   }

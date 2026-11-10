@@ -27,50 +27,59 @@ import org.springframework.transaction.support.TransactionTemplate;
 public class SessionPersistenceConfiguration {
   @Bean
   public JdbcIndexedSessionRepository durableJdbcSessions(
-      DataSource source, PlatformTransactionManager manager, ConfigService config) {
-    Duration startupTimeout = sessionTimeout(config);
+      DataSource sessionDataSource,
+      PlatformTransactionManager transactionManager,
+      ConfigService configService) {
+    Duration startupTimeout = sessionTimeout(configService);
     // Projektvertrag: H2; feste idempotente DDL, keine fremden Tabellen oder Inhalte verändern.
     new ResourceDatabasePopulator(new ClassPathResource("db/durable-sessions-h2.sql"))
-        .execute(source);
-    TransactionTemplate transaction = new TransactionTemplate(manager);
-    transaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
-    JdbcIndexedSessionRepository backend =
-        new JdbcIndexedSessionRepository(new JdbcTemplate(source), transaction);
-    backend.setDefaultMaxInactiveInterval(startupTimeout);
-    SessionAttributeCodec codec = new SessionAttributeCodec();
-    GenericConversionService conversions = new GenericConversionService();
-    conversions.addConverter(Object.class, byte[].class, codec::encode);
-    conversions.addConverter(byte[].class, Object.class, codec::decode);
-    backend.setConversionService(conversions);
-    return backend;
+        .execute(sessionDataSource);
+    TransactionTemplate sessionTransactionTemplate = new TransactionTemplate(transactionManager);
+    sessionTransactionTemplate.setPropagationBehavior(
+        TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    JdbcIndexedSessionRepository jdbcSessionRepository =
+        new JdbcIndexedSessionRepository(
+            new JdbcTemplate(sessionDataSource), sessionTransactionTemplate);
+    jdbcSessionRepository.setDefaultMaxInactiveInterval(startupTimeout);
+    SessionAttributeCodec sessionAttributeCodec = new SessionAttributeCodec();
+    GenericConversionService sessionConversionService = new GenericConversionService();
+    sessionConversionService.addConverter(
+        Object.class, byte[].class, sessionAttributeCodec::encode);
+    sessionConversionService.addConverter(
+        byte[].class, Object.class, sessionAttributeCodec::decode);
+    jdbcSessionRepository.setConversionService(sessionConversionService);
+    return jdbcSessionRepository;
   }
 
   @Bean
   @Primary
   // JdbcSession ist paketprivat; der Wildcard hält den Backendtyp ohne Rawtype/Cast gekapselt.
   public DurableSessionRepository<?> sessionRepository(
-      @Qualifier("durableJdbcSessions") JdbcIndexedSessionRepository backend,
-      CustomUserDetailsService users,
-      ObjectProvider<DeviceRememberMeServices> remembered,
-      ConfigService config) {
+      @Qualifier("durableJdbcSessions") JdbcIndexedSessionRepository jdbcSessionRepository,
+      CustomUserDetailsService customUserDetailsService,
+      ObjectProvider<DeviceRememberMeServices> deviceRememberMeServicesProvider,
+      ConfigService configService) {
     return new DurableSessionRepository<>(
-        backend, users, () -> remembered.getObject().getKey(), () -> sessionTimeout(config));
+        jdbcSessionRepository,
+        customUserDetailsService,
+        () -> deviceRememberMeServicesProvider.getObject().getKey(),
+        () -> sessionTimeout(configService));
   }
 
-  static Duration sessionTimeout(ConfigService config) {
-    int seconds = config.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS);
-    if (seconds < 1) {
+  static Duration sessionTimeout(ConfigService configService) {
+    int sessionTimeoutSeconds = configService.getInteger(ConfigEntry.SESSION_TIMEOUT_SECONDS);
+    if (sessionTimeoutSeconds < 1) {
       throw new IllegalArgumentException("Session timeout must be positive");
     }
-    return Duration.ofSeconds(seconds);
+    return Duration.ofSeconds(sessionTimeoutSeconds);
   }
 
   @Bean
   public DefaultCookieSerializer cookieSerializer() {
-    DefaultCookieSerializer cookie = new DefaultCookieSerializer();
-    cookie.setCookieName("JSESSIONID");
-    cookie.setUseHttpOnlyCookie(true);
-    cookie.setSameSite("Lax");
-    return cookie;
+    DefaultCookieSerializer sessionCookieSerializer = new DefaultCookieSerializer();
+    sessionCookieSerializer.setCookieName("JSESSIONID");
+    sessionCookieSerializer.setUseHttpOnlyCookie(true);
+    sessionCookieSerializer.setSameSite("Lax");
+    return sessionCookieSerializer;
   }
 }

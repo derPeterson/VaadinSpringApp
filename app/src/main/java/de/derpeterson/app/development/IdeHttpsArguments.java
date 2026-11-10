@@ -13,37 +13,42 @@ import java.util.EnumSet;
 import java.util.List;
 
 /** Eigene kurzlebige Java-Argumentdatei, schon bei der Anlage auf den Benutzer beschränkt. */
-record IdeHttpsArguments(Path directory, Path path) implements AutoCloseable {
-  static IdeHttpsArguments create(Path project) throws IOException {
-    FileAttribute<?> directoryPermissions = ownerPermissions(project, true);
-    Path parent =
-        Files.createDirectories(project.resolve("data/https/ide-launcher"), directoryPermissions);
-    Path directory = Files.createTempDirectory(parent, "start-", directoryPermissions);
+record IdeHttpsArguments(Path argumentDirectory, Path argumentFilePath) implements AutoCloseable {
+  static IdeHttpsArguments createPrivateArgumentFile(Path projectDirectory) throws IOException {
+    FileAttribute<?> directoryPermissions = ownerPermissions(projectDirectory, true);
+    Path launcherParentDirectory =
+        Files.createDirectories(
+            projectDirectory.resolve("data/https/ide-launcher"), directoryPermissions);
+    Path argumentDirectory =
+        Files.createTempDirectory(launcherParentDirectory, "start-", directoryPermissions);
     try {
-      Path file =
-          Files.createFile(directory.resolve("launcher.args"), ownerPermissions(directory, false));
-      return new IdeHttpsArguments(directory, file);
-    } catch (IOException | RuntimeException failure) {
+      Path argumentFilePath =
+          Files.createFile(
+              argumentDirectory.resolve("launcher.args"),
+              ownerPermissions(argumentDirectory, false));
+      return new IdeHttpsArguments(argumentDirectory, argumentFilePath);
+    } catch (IOException | RuntimeException argumentFileCreationFailure) {
       try {
-        Files.delete(directory);
+        Files.delete(argumentDirectory);
       } catch (IOException cleanupFailure) {
-        failure.addSuppressed(cleanupFailure);
+        argumentFileCreationFailure.addSuppressed(cleanupFailure);
       }
-      throw failure;
+      throw argumentFileCreationFailure;
     }
   }
 
-  private static FileAttribute<?> ownerPermissions(Path base, boolean directory)
-      throws IOException {
-    if (Files.getFileStore(base).supportsFileAttributeView("acl")) {
-      UserPrincipal owner =
-          base.getFileSystem()
+  private static FileAttribute<?> ownerPermissions(
+      Path permissionReferencePath, boolean forDirectory) throws IOException {
+    if (Files.getFileStore(permissionReferencePath).supportsFileAttributeView("acl")) {
+      UserPrincipal ownerPrincipal =
+          permissionReferencePath
+              .getFileSystem()
               .getUserPrincipalLookupService()
               .lookupPrincipalByName(System.getProperty("user.name"));
-      AclEntry access =
+      AclEntry ownerAclEntry =
           AclEntry.newBuilder()
               .setType(AclEntryType.ALLOW)
-              .setPrincipal(owner)
+              .setPrincipal(ownerPrincipal)
               .setPermissions(EnumSet.allOf(AclEntryPermission.class))
               .build();
       return new FileAttribute<List<AclEntry>>() {
@@ -54,18 +59,18 @@ record IdeHttpsArguments(Path directory, Path path) implements AutoCloseable {
 
         @Override
         public List<AclEntry> value() {
-          return List.of(access);
+          return List.of(ownerAclEntry);
         }
       };
     }
     // Ohne sichere initiale Rechte scheitert die Anlage; kein ungeschützter Fallback.
     return PosixFilePermissions.asFileAttribute(
-        PosixFilePermissions.fromString(directory ? "rwx------" : "rw-------"));
+        PosixFilePermissions.fromString(forDirectory ? "rwx------" : "rw-------"));
   }
 
   @Override
   public void close() throws IOException {
-    Files.deleteIfExists(path);
-    Files.deleteIfExists(directory);
+    Files.deleteIfExists(argumentFilePath);
+    Files.deleteIfExists(argumentDirectory);
   }
 }
