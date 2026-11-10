@@ -7,6 +7,7 @@
 
 ## Entwicklungsablauf
 
+- [ ] [Java-Code projektweit lesbarer machen](docs/planung/java-lesbarkeit.md).
 - [ ] Codex später gemeinsam in IntelliJ über JetBrains Air ausprobieren.
   Den Chat „Allgemeine Entwicklung“ öffnen und an einer kleinen Aufgabe
   testen, wie sich markierter Code als Kontext mitgeben und der Diff direkt

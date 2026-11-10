@@ -224,7 +224,8 @@ class AccountViewTest {
     assertTrue(user.isStatusManuallySet());
     assertEquals(UserStatus.ABSENT, select.getValue());
     Object summary =
-        ReflectionTestUtils.getField(ReflectionTestUtils.getField(settings(), "sidebar"), "avatar");
+        ReflectionTestUtils.getField(
+            ReflectionTestUtils.getField(settings(), "accountSidebar"), "avatar");
     Tooltip tooltip = (Tooltip) ReflectionTestUtils.getField(summary, "tooltip");
     assertTrue(tooltip.isManual());
     assertFalse(tooltip.isOpened());

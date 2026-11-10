@@ -485,6 +485,11 @@ Testbefehle stehen in der [Testanleitung](tests.md).
 Diese Regeln gelten beim Schreiben, Ändern und Prüfen von Java-Code. Die Beispiele
 illustrieren Schreibweise und Lesbarkeit, ohne neue fachliche Anforderungen einzuführen.
 
+Der Projekt-Codestil baut auf dem [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html),
+Fowlers Beispielen zu [Extract Function](https://refactoring.com/catalog/extractFunction.html)
+und [Decompose Conditional](https://refactoring.com/catalog/decomposeConditional.html)
+sowie Oracles [Leitfaden zur Sichtbarkeit](https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html) auf.
+
 ### Namen und Methodenaufgaben
 
 Klassennamen benennen die fachliche Zuständigkeit, zum Beispiel `ResetPasswordView`
@@ -540,11 +545,6 @@ sie erhält. Bei größeren Feld- oder Methodenblöcken hilft ein kurzer Komment
 `// E-Mail ändern` als Orientierung beim Überfliegen. Der Aufbau der Passwortfelder
 in [ResetPasswordView](../app/src/main/java/de/derpeterson/app/views/ResetPasswordView.java)
 zeigt diese Gliederung im Projekt.
-
-Grundlagen dazu stehen im [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html),
-in Fowlers Beispielen zu [Extract Function](https://refactoring.com/catalog/extractFunction.html)
-und [Decompose Conditional](https://refactoring.com/catalog/decomposeConditional.html)
-sowie in Oracles [Leitfaden zur Sichtbarkeit](https://docs.oracle.com/javase/tutorial/java/javaOO/accesscontrol.html).
 
 ### Klammern und Kontrollfluss
 

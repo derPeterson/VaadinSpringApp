@@ -19,107 +19,141 @@ import jakarta.servlet.http.HttpServletRequest;
 /** Eigener Authenticator im bestehenden Portalzugang, ohne Geheimnisse im Komponentenbaum. */
 @StyleSheet("custom-theme/cosmos-mfa.css")
 public final class TwoFactorAccountComponent extends Div {
-  private final transient MessageProperties texts;
-  private final transient TwoFactorAuthorization authorization;
-  private final transient TwoFactorManagement management;
-  private final transient HttpServletRequest request;
-  private final Div entry = new Div();
-  private final TwoFactorActionDialog confirmation;
+  private final transient MessageProperties messageProperties;
+  private final transient TwoFactorAuthorization twoFactorAuthorization;
+  private final transient TwoFactorManagement twoFactorManagement;
+  private final transient HttpServletRequest httpRequest;
+
+  private final Div twoFactorAccountEntry = new Div();
+  private final TwoFactorActionDialog twoFactorConfirmationDialog;
 
   public TwoFactorAccountComponent(
-      MessageProperties texts,
-      TwoFactorAuthorization authorization,
-      TwoFactorManagement management,
-      HttpServletRequest request) {
-    this.texts = texts;
-    this.authorization = authorization;
-    this.management = management;
-    this.request = request;
+      MessageProperties messageProperties,
+      TwoFactorAuthorization twoFactorAuthorization,
+      TwoFactorManagement twoFactorManagement,
+      HttpServletRequest httpRequest) {
+    this.messageProperties = messageProperties;
+    this.twoFactorAuthorization = twoFactorAuthorization;
+    this.twoFactorManagement = twoFactorManagement;
+    this.httpRequest = httpRequest;
+
     setId("account-two-factor");
-    confirmation = new TwoFactorActionDialog(texts, authorization, request);
-    add(entry, confirmation);
-    refresh();
+    twoFactorConfirmationDialog =
+        new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, httpRequest);
+    add(twoFactorAccountEntry, twoFactorConfirmationDialog);
+
+    refreshTwoFactorAccountSection();
   }
 
-  public void refresh() {
-    entry.removeAll();
-    TwoFactorAuthorization.State state = authorization.state(authorization.owner(request));
-    Div icon = new Div(AppIcon.SHIELD_KEYHOLE.create());
-    icon.addClassName(CosmosClasses.PANEL_ICON);
-    Span title = new Span(texts.getTwoFactorSettingsTitle());
-    title.addClassName("account-entry-title");
-    Badge badge =
+  void refreshTwoFactorAccountSection() {
+    twoFactorAccountEntry.removeAll();
+    TwoFactorAuthorization.State twoFactorState =
+        twoFactorAuthorization.state(twoFactorAuthorization.owner(httpRequest));
+    Div twoFactorIcon = new Div(AppIcon.SHIELD_KEYHOLE.create());
+    twoFactorIcon.addClassName(CosmosClasses.PANEL_ICON);
+
+    Div twoFactorDescription = createTwoFactorDescription(twoFactorState.enrolled());
+    Div twoFactorActions = createTwoFactorActions(twoFactorState.enrolled());
+    twoFactorAccountEntry.add(twoFactorIcon, twoFactorDescription, twoFactorActions);
+    twoFactorAccountEntry.addClassNames("account-entry", "two-factor-account-entry");
+    twoFactorConfirmationDialog.refreshTexts();
+  }
+
+  private Div createTwoFactorDescription(boolean authenticatorEnrolled) {
+    Span twoFactorTitle = new Span(messageProperties.getTwoFactorSettingsTitle());
+    twoFactorTitle.addClassName("account-entry-title");
+
+    Badge enrollmentBadge =
         new Badge(
-            state.enrolled() ? texts.getTwoFactorEnrolled() : texts.getTwoFactorNotEnrolled());
-    if (state.enrolled()) {
-      badge.addThemeVariants(BadgeVariant.SUCCESS);
+            authenticatorEnrolled
+                ? messageProperties.getTwoFactorEnrolled()
+                : messageProperties.getTwoFactorNotEnrolled());
+    if (authenticatorEnrolled) {
+      enrollmentBadge.addThemeVariants(BadgeVariant.SUCCESS);
     }
-    Span description = new Span(texts.getTwoFactorAccountHint());
-    description.addClassName("account-entry-description");
-    Div copy = new Div(new Div(title, badge), description);
-    copy.addClassName("account-entry-copy");
-    Div actions = new Div();
-    actions.addClassName("two-factor-account-actions");
-    EqualButtonWidths.configure(actions);
-    if (!state.enrolled()) {
-      Button setup = new Button(texts.getTwoFactorSetupAction(), AppIcon.LOCK.create());
-      setup.setId("account-two-factor-setup");
-      setup.addClickListener(event -> openSetup());
-      actions.add(setup);
-    } else {
-      Button renew =
-          new Button(texts.getTwoFactorRegenerateAction(), AppIcon.CLIPBOARD_COPY.create());
-      renew.setId("account-two-factor-renew");
-      renew.addClickListener(
-          event ->
-              confirmation.open(
-                  TwoFactorAction.MANAGE_RECOVERY_CODES,
-                  () -> {
-                    management.regenerate(request);
-                    openSetup();
-                  }));
-      Button change = new Button(texts.getTwoFactorReplaceAction(), AppIcon.EDIT.create());
-      change.setId("account-two-factor-replace");
-      change.addClickListener(
-          event ->
-              confirmation.open(
-                  TwoFactorAction.MANAGE_FACTOR,
-                  () -> {
-                    management.beginReplacement(request);
-                    openSetup();
-                  }));
-      Button remove = new Button(texts.getTwoFactorDisableAction(), AppIcon.TRASH.create());
-      remove.setId("account-two-factor-remove");
-      remove.addClassName(CosmosClasses.DELETE_BUTTON);
-      TwoFactorManagement.DisableProblem reason = management.disableProblem(request);
-      remove.setEnabled(reason == TwoFactorManagement.DisableProblem.NONE);
-      remove.setTooltipText(
-          reason == TwoFactorManagement.DisableProblem.NO_INDEPENDENT_ACCESS
-              ? texts.getTwoFactorIndependentAccessRequired()
-              : texts.getTwoFactorDisableHint());
-      remove.addClickListener(
-          event ->
-              confirmation.open(
-                  TwoFactorAction.MANAGE_FACTOR,
-                  () -> {
-                    management.disable(request);
-                    refresh();
-                    NotificationHelper.getInstance()
-                        .showNotification(
-                            texts::getTwoFactorDisabled,
-                            NotificationHelper.NotificationType.SUCCESS);
-                  }));
-      actions.add(change, renew, remove);
-    }
-    entry.add(icon, copy, actions);
-    entry.addClassNames("account-entry", "two-factor-account-entry");
-    confirmation.refreshTexts();
+
+    Span twoFactorHint = new Span(messageProperties.getTwoFactorAccountHint());
+    twoFactorHint.addClassName("account-entry-description");
+    Div twoFactorDescription = new Div(new Div(twoFactorTitle, enrollmentBadge), twoFactorHint);
+    twoFactorDescription.addClassName("account-entry-copy");
+    return twoFactorDescription;
   }
 
-  private void openSetup() {
-    TwoFactorFlow.SETUP.enter(request);
+  private Div createTwoFactorActions(boolean authenticatorEnrolled) {
+    Div twoFactorActions = new Div();
+    twoFactorActions.addClassName("two-factor-account-actions");
+    EqualButtonWidths.configure(twoFactorActions);
+
+    if (!authenticatorEnrolled) {
+      Button setupAuthenticatorButton =
+          new Button(messageProperties.getTwoFactorSetupAction(), AppIcon.LOCK.create());
+      setupAuthenticatorButton.setId("account-two-factor-setup");
+      setupAuthenticatorButton.addClickListener(event -> openAuthenticatorSetup());
+      twoFactorActions.add(setupAuthenticatorButton);
+    } else {
+      Button regenerateRecoveryCodesButton =
+          new Button(
+              messageProperties.getTwoFactorRegenerateAction(), AppIcon.CLIPBOARD_COPY.create());
+      regenerateRecoveryCodesButton.setId("account-two-factor-renew");
+      regenerateRecoveryCodesButton.addClickListener(event ->
+          twoFactorConfirmationDialog.open(
+              TwoFactorAction.MANAGE_RECOVERY_CODES, this::regenerateRecoveryCodes));
+
+      Button replaceAuthenticatorButton =
+          new Button(messageProperties.getTwoFactorReplaceAction(), AppIcon.EDIT.create());
+      replaceAuthenticatorButton.setId("account-two-factor-replace");
+      replaceAuthenticatorButton.addClickListener(event ->
+          twoFactorConfirmationDialog.open(
+              TwoFactorAction.MANAGE_FACTOR, this::beginAuthenticatorReplacement));
+
+      Button removeAuthenticatorButton = createRemoveAuthenticatorButton();
+      twoFactorActions.add(
+          replaceAuthenticatorButton, regenerateRecoveryCodesButton, removeAuthenticatorButton);
+    }
+    return twoFactorActions;
+  }
+
+  private Button createRemoveAuthenticatorButton() {
+    Button removeAuthenticatorButton =
+        new Button(messageProperties.getTwoFactorDisableAction(), AppIcon.TRASH.create());
+    removeAuthenticatorButton.setId("account-two-factor-remove");
+    removeAuthenticatorButton.addClassName(CosmosClasses.DELETE_BUTTON);
+
+    TwoFactorManagement.DisableProblem disableProblem =
+        twoFactorManagement.disableProblem(httpRequest);
+    removeAuthenticatorButton.setEnabled(disableProblem == TwoFactorManagement.DisableProblem.NONE);
+    removeAuthenticatorButton.setTooltipText(
+        disableProblem == TwoFactorManagement.DisableProblem.NO_INDEPENDENT_ACCESS
+            ? messageProperties.getTwoFactorIndependentAccessRequired()
+            : messageProperties.getTwoFactorDisableHint());
+    removeAuthenticatorButton.addClickListener(event ->
+        twoFactorConfirmationDialog.open(
+            TwoFactorAction.MANAGE_FACTOR, this::disableAuthenticator));
+    return removeAuthenticatorButton;
+  }
+
+  private void regenerateRecoveryCodes() {
+    twoFactorManagement.regenerate(httpRequest);
+    openAuthenticatorSetup();
+  }
+
+  private void beginAuthenticatorReplacement() {
+    twoFactorManagement.beginReplacement(httpRequest);
+    openAuthenticatorSetup();
+  }
+
+  private void disableAuthenticator() {
+    twoFactorManagement.disable(httpRequest);
+    refreshTwoFactorAccountSection();
+    NotificationHelper.getInstance()
+        .showNotification(
+            messageProperties::getTwoFactorDisabled, NotificationHelper.NotificationType.SUCCESS);
+  }
+
+  private void openAuthenticatorSetup() {
+    TwoFactorFlow.SETUP.enter(httpRequest);
     UI.getCurrent()
         .getPage()
-        .setLocation(request.getContextPath() + TwoFactorFlow.SETUP.location());
+        .setLocation(httpRequest.getContextPath() + TwoFactorFlow.SETUP.location());
   }
 }
