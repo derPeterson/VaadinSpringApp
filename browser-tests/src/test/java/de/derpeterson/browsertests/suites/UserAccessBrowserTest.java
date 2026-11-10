@@ -36,12 +36,12 @@ public class UserAccessBrowserTest extends BrowserFixture {
   @DisplayName("USER-07A: Kontosperre verweigert Anmeldung; gezielte Freigabe erhält das Passwort")
   @Description(
       """
-        1. Eigenes aktives Konto im Adminformular anlegen; Freigabe entfernen und speichern.
-        2. In einem unabhängigen Browserkontext anmelden: verständliche Ablehnung.
-        3. Konto als Admin erneut freigeben und Formular neu öffnen: Aktiv markiert.
-        4. Mit unverändertem Passwort anmelden: eigenes normales Konto ohne Adminrechte.
-        **Erwartet:** Gespeicherte Sperre und Freigabe wirken tatsächlich auf neue Anmeldungen.
-        """)
+      1. Eigenes aktives Konto im Adminformular anlegen; Freigabe entfernen und speichern.
+      2. In einem unabhängigen Browserkontext anmelden: verständliche Ablehnung.
+      3. Konto als Admin erneut freigeben und Formular neu öffnen: Aktiv markiert.
+      4. Mit unverändertem Passwort anmelden: eigenes normales Konto ohne Adminrechte.
+      **Erwartet:** Gespeicherte Sperre und Freigabe wirken tatsächlich auf neue Anmeldungen.
+      """)
   void disableAndEnableAUserControlsTheActualLogin() {
     AdminUsersPage users = admin();
     String email = email("enable");
@@ -49,9 +49,9 @@ public class UserAccessBrowserTest extends BrowserFixture {
     AdminUserDialog form = users.openEdit(email);
     form.setEnabled(false);
     form.save();
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      new LoginPage(actor.page).assertRejected();
+      new LoginPage(actor.browserPage).assertRejected();
     }
     form = users.openEdit(email);
     assertThat(form.enabled()).not().isChecked();
@@ -68,12 +68,12 @@ public class UserAccessBrowserTest extends BrowserFixture {
       "USER-07B: Administratorrolle wird gespeichert; Entzug verhindert neuen Adminzugriff")
   @Description(
       """
-        1. Eigenes normales Konto anlegen, Administratorrolle zusätzlich vergeben und neu öffnen.
-        2. In unabhängiger Sitzung anmelden: Dashboard und Adminzugriff vorhanden.
-        3. Abmelden; als ursprünglicher Admin Rolle entziehen, normale Rolle behalten.
-        4. Neu anmelden: Startseite/eigenes Konto; direkter Adminaufruf bleibt ausgeschlossen.
-        **Erwartet:** Die gespeicherten Rollen bestimmen neue Anmeldungen; aktuelle Sitzungen sind ein eigener Fall.
-        """)
+      1. Eigenes normales Konto anlegen, Administratorrolle zusätzlich vergeben und neu öffnen.
+      2. In unabhängiger Sitzung anmelden: Dashboard und Adminzugriff vorhanden.
+      3. Abmelden; als ursprünglicher Admin Rolle entziehen, normale Rolle behalten.
+      4. Neu anmelden: Startseite/eigenes Konto; direkter Adminaufruf bleibt ausgeschlossen.
+      **Erwartet:** Die gespeicherten Rollen bestimmen neue Anmeldungen; aktuelle Sitzungen sind ein eigener Fall.
+      """)
   void roleGrantAndRemovalDetermineNewLogins() {
     AdminUsersPage users = admin();
     String email = email("role");
@@ -84,9 +84,9 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form = users.openEdit(email);
     assertThat(form.administrator()).hasAttribute("aria-selected", "true");
     form.cancel();
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.loginAdmin(email, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(actor.page).signOut();
+      new UserMenu(actor.browserPage).signOut();
     }
     form = users.openEdit(email);
     form.setAdministrator(false);
@@ -94,15 +94,15 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form = users.openEdit(email);
     assertThat(form.administrator()).hasAttribute("aria-selected", "false");
     form.cancel();
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
-      new UserMenu(actor.page).selectTestLanguage();
-      new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
-      actor.page.navigate(path(ADMIN_ROUTE));
+      assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      new UserMenu(actor.browserPage).selectTestLanguage();
+      new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
+      actor.browserPage.navigate(path(ADMIN_ROUTE));
       assertThat(
-              actor.page.getByText(
-                  texts.getBaseErrorAdminAccessDenied(),
+              actor.browserPage.getByText(
+                  uiTexts.getBaseErrorAdminAccessDenied(),
                   new Page.GetByTextOptions().setExact(true)))
           .isVisible();
     }
@@ -113,22 +113,22 @@ public class UserAccessBrowserTest extends BrowserFixture {
       "USER-07C: Ein unverifiziertes Konto wird nur durch ausdrückliche Adminfreigabe aktiviert")
   @Description(
       """
-        1. Eigenes Konto registrieren und echte Verifikationsmail erfassen, deren Link nicht verwenden.
-        2. Neue Anmeldung wird abgewiesen. Als Admin genau dieses Konto öffnen: Aktiv nicht markiert.
-        3. Aktiv ausdrücklich markieren und speichern; in unabhängiger Sitzung anmelden.
-        **Erwartet:** Sichtbare Adminfreigabe ermöglicht Anmeldung ohne versehentliches Verwenden des Mailtokens.
-        """)
+      1. Eigenes Konto registrieren und echte Verifikationsmail erfassen, deren Link nicht verwenden.
+      2. Neue Anmeldung wird abgewiesen. Als Admin genau dieses Konto öffnen: Aktiv nicht markiert.
+      3. Aktiv ausdrücklich markieren und speichern; in unabhängiger Sitzung anmelden.
+      **Erwartet:** Sichtbare Adminfreigabe ermöglicht Anmeldung ohne versehentliches Verwenden des Mailtokens.
+      """)
   void administratorCanExplicitlyEnableAnUnverifiedAccount() {
     String email = email("pending");
-    RegistrationPage register = new RegistrationPage(page);
+    RegistrationPage register = new RegistrationPage(browserPage);
     register.open();
     register.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
     register.submit();
     register.assertSubmitted(email);
-    new MailpitInbox(context).awaitVerificationMail(email);
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    new MailpitInbox(browserContext).awaitVerificationMail(email);
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      new LoginPage(actor.page).assertRejected();
+      new LoginPage(actor.browserPage).assertRejected();
     }
     AdminUsersPage users = admin();
     AdminUserDialog form = users.openEdit(email);
@@ -142,18 +142,18 @@ public class UserAccessBrowserTest extends BrowserFixture {
   @DisplayName("USER-07D: Zwei geöffnete Adminformulare überschreiben keine neuere Änderung")
   @Description(
       """
-        1. Eigenes Zielkonto und zweites Administratorkonto über UI anlegen.
-        2. Beide Administratoren öffnen gleichzeitig das Zielkonto in getrennten Kontexten.
-        3. Erstes Formular speichert einen neuen Vornamen; zweites versucht einen anderen Nachnamen.
-        4. Erwarteter Speicherhinweis hält das alte Formular offen; abbrechen und neu öffnen.
-        **Erwartet:** Der erste Vorname bleibt gespeichert, der veraltete Nachname wird nicht übernommen.
-        """)
+      1. Eigenes Zielkonto und zweites Administratorkonto über UI anlegen.
+      2. Beide Administratoren öffnen gleichzeitig das Zielkonto in getrennten Kontexten.
+      3. Erstes Formular speichert einen neuen Vornamen; zweites versucht einen anderen Nachnamen.
+      4. Erwarteter Speicherhinweis hält das alte Formular offen; abbrechen und neu öffnen.
+      **Erwartet:** Der erste Vorname bleibt gespeichert, der veraltete Nachname wird nicht übernommen.
+      """)
   void twoOpenEditorsRejectTheStaleMutation() {
     AdminUsersPage users = admin();
     String target = email("version"), second = email("second-admin");
     users.createActiveUser(target, BrowserTestAccounts.USER_PASSWORD);
     users.createUser(second, BrowserTestAccounts.USER_PASSWORD, true, true);
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       AdminUsersPage other = actor.loginAdmin(second, BrowserTestAccounts.USER_PASSWORD);
       AdminUserDialog stale = other.openEdit(target);
       AdminUserDialog current = users.openEdit(target);
@@ -161,12 +161,13 @@ public class UserAccessBrowserTest extends BrowserFixture {
       current.save();
       stale.lastName().fill("Stale");
       stale.firstName().click();
-      stale.expectSaveError(texts.getBaseUserUpdateConflict());
+      stale.expectSaveError(uiTexts.getBaseUserUpdateConflict());
       stale.cancel();
       AdminUserDialog stored = users.openEdit(target);
       assertThat(stored.firstName()).hasValue("Winner");
       assertThat(stored.lastName()).hasValue("Testuser");
-      AllurePlaywright.attachScreenshot("Neuere Daten nach abgewiesenem alten Formular", page);
+      AllurePlaywright.attachScreenshot(
+          "Neuere Daten nach abgewiesenem alten Formular", browserPage);
       stored.cancel();
     }
   }
@@ -176,20 +177,20 @@ public class UserAccessBrowserTest extends BrowserFixture {
       "USER-07E: Eigene Sperre und eigener Adminrollenentzug werden verständlich abgewiesen")
   @Description(
       """
-        1. Eigenes Administratorformular öffnen; Aktiv entfernen und Speichern versuchen.
-        2. Lokalisierter Selbstsperrhinweis; Aktiv korrigieren und eigene Adminrolle entfernen.
-        3. Lokalisierter Rollenhinweis; abbrechen, neu öffnen und erhaltene Freigabe/Rolle prüfen.
-        **Erwartet:** Administrativer Selbstschutz ist über die echte Oberfläche wirksam; globale DB-Rennen bleiben technische Tests.
-        """)
+      1. Eigenes Administratorformular öffnen; Aktiv entfernen und Speichern versuchen.
+      2. Lokalisierter Selbstsperrhinweis; Aktiv korrigieren und eigene Adminrolle entfernen.
+      3. Lokalisierter Rollenhinweis; abbrechen, neu öffnen und erhaltene Freigabe/Rolle prüfen.
+      **Erwartet:** Administrativer Selbstschutz ist über die echte Oberfläche wirksam; globale DB-Rennen bleiben technische Tests.
+      """)
   void ownDisableAndAdminRoleRemovalAreRejected() {
     AdminUsersPage users = admin();
     AdminUserDialog form = users.openEdit(BrowserTestAccounts.ADMIN_EMAIL);
     form.setEnabled(false);
-    form.expectSaveError(texts.getAdminUsersErrorDisableOwnUser());
+    form.expectSaveError(uiTexts.getAdminUsersErrorDisableOwnUser());
     form.setEnabled(true);
-    form.setRole(texts.getRoleUser(), true);
+    form.setRole(uiTexts.getRoleUser(), true);
     form.setAdministrator(false);
-    form.expectSaveError(texts.getAdminUsersErrorRemoveOwnAdminRole());
+    form.expectSaveError(uiTexts.getAdminUsersErrorRemoveOwnAdminRole());
     form.cancel();
     form = users.openEdit(BrowserTestAccounts.ADMIN_EMAIL);
     assertThat(form.enabled()).isChecked();
@@ -201,50 +202,50 @@ public class UserAccessBrowserTest extends BrowserFixture {
   @DisplayName("USER-07F: Superadmin allein erhält Adminzugriff und die Adminaktion auf Home")
   @Description(
       """
-        1. Eigenes aktives Konto über die UI anlegen; ausschließlich Superadmin zuweisen.
-        2. Formular neu öffnen: Superadmin gespeichert, Administrator/Benutzer/Gast nicht zugewiesen.
-        3. In einer unabhängigen Sitzung anmelden: Admin-Dashboard erreichbar.
-        4. Home öffnen und über die sichtbare Verwaltungsaktion zurück in den Adminbereich wechseln.
-        5. Eigenes Formular ohne zweite Adminrolle bearbeiten und speichern.
-        **Erwartet:** Superadmin erbt Adminrechte ohne zusätzliche gespeicherte Administratorrolle.
-        """)
+      1. Eigenes aktives Konto über die UI anlegen; ausschließlich Superadmin zuweisen.
+      2. Formular neu öffnen: Superadmin gespeichert, Administrator/Benutzer/Gast nicht zugewiesen.
+      3. In einer unabhängigen Sitzung anmelden: Admin-Dashboard erreichbar.
+      4. Home öffnen und über die sichtbare Verwaltungsaktion zurück in den Adminbereich wechseln.
+      5. Eigenes Formular ohne zweite Adminrolle bearbeiten und speichern.
+      **Erwartet:** Superadmin erbt Adminrechte ohne zusätzliche gespeicherte Administratorrolle.
+      """)
   void superadminAloneHasAdminNavigationAndCanSaveItsOwnAccount() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
+    new UserMenu(browserPage).selectTestLanguage();
     login.assertAdminSignedIn(BrowserTestAccounts.SUPERADMIN_EMAIL);
-    AdminUsersPage users = new AdminUsersPage(page);
+    AdminUsersPage users = new AdminUsersPage(browserPage);
     String email = email("superadmin");
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     AdminUserDialog form = users.openEdit(email);
-    form.setRole(texts.getRoleUser(), false);
-    form.setRole(texts.getRoleSuperadmin(), true);
+    form.setRole(uiTexts.getRoleUser(), false);
+    form.setRole(uiTexts.getRoleSuperadmin(), true);
     form.save();
     form = users.openEdit(email);
-    assertThat(form.role(texts.getRoleSuperadmin())).hasAttribute("aria-selected", "true");
-    assertThat(form.role(texts.getRoleAdmin())).hasAttribute("aria-selected", "false");
-    assertThat(form.role(texts.getRoleUser())).hasAttribute("aria-selected", "false");
-    assertThat(form.role(texts.getRoleGuest())).hasAttribute("aria-selected", "false");
+    assertThat(form.role(uiTexts.getRoleSuperadmin())).hasAttribute("aria-selected", "true");
+    assertThat(form.role(uiTexts.getRoleAdmin())).hasAttribute("aria-selected", "false");
+    assertThat(form.role(uiTexts.getRoleUser())).hasAttribute("aria-selected", "false");
+    assertThat(form.role(uiTexts.getRoleGuest())).hasAttribute("aria-selected", "false");
     form.cancel();
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.loginAdmin(email, BrowserTestAccounts.USER_PASSWORD);
-      actor.page.navigate(path(HOME_ROUTE));
-      assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
-      new UserMenu(actor.page).open();
+      actor.browserPage.navigate(path(HOME_ROUTE));
+      assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      new UserMenu(actor.browserPage).open();
       actor
-          .page
+          .browserPage
           .getByRole(
               com.microsoft.playwright.options.AriaRole.BUTTON,
               new Page.GetByRoleOptions()
-                  .setName(texts.getBaseManageApplicationButton())
+                  .setName(uiTexts.getBaseManageApplicationButton())
                   .setExact(true))
           .click();
-      assertThat(actor.page).hasURL(urlPattern(ADMIN_ROUTE));
-      AdminUserDialog own = new AdminUsersPage(actor.page).openEdit(email);
+      assertThat(actor.browserPage).hasURL(urlPattern(ADMIN_ROUTE));
+      AdminUserDialog own = new AdminUsersPage(actor.browserPage).openEdit(email);
       own.firstName().fill("Superadmin");
       own.save();
-      own = new AdminUsersPage(actor.page).openEdit(email);
+      own = new AdminUsersPage(actor.browserPage).openEdit(email);
       assertThat(own.firstName()).hasValue("Superadmin");
       own.cancel();
     }
@@ -254,36 +255,36 @@ public class UserAccessBrowserTest extends BrowserFixture {
   @DisplayName("USER-07G: Gastrolle allein erlaubt Home, aber keinen Adminbereich")
   @Description(
       """
-        1. Eigenes aktives Konto über die UI anlegen; ausschließlich Gast zuweisen.
-        2. Formular neu öffnen: Gast gespeichert, Benutzer/Administrator/Superadmin nicht zugewiesen.
-        3. In unabhängiger Sitzung anmelden: Home und eigenes Benutzermenü erreichbar.
-        4. Admin direkt aufrufen: lokalisierte Zugriffsverweigerung auf Home.
-        **Erwartet:** Gast kann sich wie Benutzer anmelden und Home nutzen; keine Adminrechte.
-        """)
+      1. Eigenes aktives Konto über die UI anlegen; ausschließlich Gast zuweisen.
+      2. Formular neu öffnen: Gast gespeichert, Benutzer/Administrator/Superadmin nicht zugewiesen.
+      3. In unabhängiger Sitzung anmelden: Home und eigenes Benutzermenü erreichbar.
+      4. Admin direkt aufrufen: lokalisierte Zugriffsverweigerung auf Home.
+      **Erwartet:** Gast kann sich wie Benutzer anmelden und Home nutzen; keine Adminrechte.
+      """)
   void guestAloneCanSignInAndUseHomeWithoutAdminAccess() {
     AdminUsersPage users = admin();
     String email = email("guest-role");
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     AdminUserDialog form = users.openEdit(email);
-    form.setRole(texts.getRoleUser(), false);
-    form.setRole(texts.getRoleGuest(), true);
+    form.setRole(uiTexts.getRoleUser(), false);
+    form.setRole(uiTexts.getRoleGuest(), true);
     form.save();
     form = users.openEdit(email);
-    assertThat(form.role(texts.getRoleGuest())).hasAttribute("aria-selected", "true");
-    assertThat(form.role(texts.getRoleUser())).hasAttribute("aria-selected", "false");
-    assertThat(form.role(texts.getRoleAdmin())).hasAttribute("aria-selected", "false");
-    assertThat(form.role(texts.getRoleSuperadmin())).hasCount(0);
+    assertThat(form.role(uiTexts.getRoleGuest())).hasAttribute("aria-selected", "true");
+    assertThat(form.role(uiTexts.getRoleUser())).hasAttribute("aria-selected", "false");
+    assertThat(form.role(uiTexts.getRoleAdmin())).hasAttribute("aria-selected", "false");
+    assertThat(form.role(uiTexts.getRoleSuperadmin())).hasCount(0);
     form.cancel();
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
-      new UserMenu(actor.page).selectTestLanguage();
-      new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
-      new UserMenu(actor.page).close();
-      actor.page.navigate(path(ADMIN_ROUTE));
+      assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      new UserMenu(actor.browserPage).selectTestLanguage();
+      new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
+      new UserMenu(actor.browserPage).close();
+      actor.browserPage.navigate(path(ADMIN_ROUTE));
       assertThat(
-              actor.page.getByText(
-                  texts.getBaseErrorAdminAccessDenied(),
+              actor.browserPage.getByText(
+                  uiTexts.getBaseErrorAdminAccessDenied(),
                   new Page.GetByTextOptions().setExact(true)))
           .isVisible();
     }
@@ -305,61 +306,60 @@ public class UserAccessBrowserTest extends BrowserFixture {
     AdminUsersPage users = admin();
     String email = email("live-role");
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(actor.page).selectTestLanguage();
-      UserMenu menu = new UserMenu(actor.page);
+      new UserMenu(actor.browserPage).selectTestLanguage();
+      UserMenu menu = new UserMenu(actor.browserPage);
       menu.assertUserSignedInWithoutAdminAction(email);
       menu.close();
       String sessionId =
-          actor.context.cookies().stream()
+          actor.browserContext.cookies().stream()
               .filter(c -> c.name.equals("JSESSIONID"))
               .findFirst()
               .orElseThrow()
               .value;
       AtomicInteger loginPosts = new java.util.concurrent.atomic.AtomicInteger();
-      actor.page.onRequest(
-          request -> {
-            if (request.method().equals("POST") && request.url().endsWith(path(LOGIN_ROUTE))) {
-              loginPosts.incrementAndGet();
-            }
-          });
+      actor.browserPage.onRequest(request -> {
+        if (request.method().equals("POST") && request.url().endsWith(path(LOGIN_ROUTE))) {
+          loginPosts.incrementAndGet();
+        }
+      });
       AdminUserDialog change = users.openEdit(email);
       change.setAdministrator(true);
       change.save();
       // Der 2FA-Pfad darf seine aktuelle Phase zusätzlich als Query enthalten.
-      assertThat(actor.page).hasURL(java.util.regex.Pattern.compile(".*/two-factor.*"));
-      TwoFactorPage.completeIfRequired(actor.page, email, BrowserTestAccounts.USER_PASSWORD);
+      assertThat(actor.browserPage).hasURL(java.util.regex.Pattern.compile(".*/two-factor.*"));
+      TwoFactorPage.completeIfRequired(actor.browserPage, email, BrowserTestAccounts.USER_PASSWORD);
       // Die verpflichtende Einrichtung führt bereits ins nun zugängliche Admin-Dashboard.
       // Den Wechsel aus dem Portal weiterhin über die echte Menüaktion prüfen.
-      actor.page.navigate(path(HOME_ROUTE));
+      actor.browserPage.navigate(path(HOME_ROUTE));
       menu.open();
       Locator manage =
-          actor.page.getByRole(
+          actor.browserPage.getByRole(
               com.microsoft.playwright.options.AriaRole.BUTTON,
               new Page.GetByRoleOptions()
-                  .setName(texts.getBaseManageApplicationButton())
+                  .setName(uiTexts.getBaseManageApplicationButton())
                   .setExact(true));
       assertThat(manage).isVisible();
       manage.click();
-      assertThat(actor.page).hasURL(urlPattern(ADMIN_ROUTE));
-      AdminUsersPage actorUsers = new AdminUsersPage(actor.page);
+      assertThat(actor.browserPage).hasURL(urlPattern(ADMIN_ROUTE));
+      AdminUsersPage actorUsers = new AdminUsersPage(actor.browserPage);
       actorUsers.open();
       actorUsers.openCreate();
       change = users.openEdit(email);
       change.setAdministrator(false);
       change.save();
-      assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
-      assertThat(actor.page.locator("vaadin-dialog-overlay[opened]")).hasCount(0);
+      assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      assertThat(actor.browserPage.locator("vaadin-dialog-overlay[opened]")).hasCount(0);
       menu.assertUserSignedInWithoutAdminAction(email);
       menu.close();
-      actor.page.navigate(path(NOTIFICATIONS_ROUTE));
-      assertThat(actor.page.locator("#notifications-inbox"))
-          .containsText(texts.getNotificationsRolesChangedTitle());
+      actor.browserPage.navigate(path(NOTIFICATIONS_ROUTE));
+      assertThat(actor.browserPage.locator("#notifications-inbox"))
+          .containsText(uiTexts.getNotificationsRolesChangedTitle());
       org.junit.jupiter.api.Assertions.assertEquals(0, loginPosts.get());
       org.junit.jupiter.api.Assertions.assertEquals(
           sessionId,
-          actor.context.cookies().stream()
+          actor.browserContext.cookies().stream()
               .filter(c -> c.name.equals("JSESSIONID"))
               .findFirst()
               .orElseThrow()
@@ -368,20 +368,20 @@ public class UserAccessBrowserTest extends BrowserFixture {
   }
 
   private AdminUsersPage admin() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
+    new UserMenu(browserPage).selectTestLanguage();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
-    return new AdminUsersPage(page);
+    return new AdminUsersPage(browserPage);
   }
 
   private void ordinaryLogin(String email) {
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
-      new UserMenu(actor.page).selectTestLanguage();
-      new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
+      assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      new UserMenu(actor.browserPage).selectTestLanguage();
+      new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
     }
   }
 

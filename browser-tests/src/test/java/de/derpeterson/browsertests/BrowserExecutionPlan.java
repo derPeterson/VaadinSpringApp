@@ -66,11 +66,9 @@ final class BrowserExecutionPlan {
 
   static List<Class<?>> classes(String suite) {
     return BrowserSuites.select(suite).stream()
-        .filter(
-            type ->
-                !suite.equals("fast")
-                    || Arrays.stream(type.getDeclaredMethods())
-                        .anyMatch(BrowserExecutionPlan::fast))
+        .filter(type ->
+            !suite.equals("fast")
+                || Arrays.stream(type.getDeclaredMethods()).anyMatch(BrowserExecutionPlan::fast))
         .toList();
   }
 
@@ -144,7 +142,7 @@ final class BrowserExecutionPlan {
     int count = Math.min(workers, classes.size());
     List<List<Class<?>>> groups = new ArrayList<>();
     double[] costs = new double[count];
-    for (int i = 0; i < count; i++) {
+    for (int workerGroupIndex = 0; workerGroupIndex < count; workerGroupIndex++) {
       groups.add(new ArrayList<>());
     }
     ArrayList<Class<?>> sorted = new ArrayList<>(classes);
@@ -154,9 +152,9 @@ final class BrowserExecutionPlan {
             .thenComparing(Class::getSimpleName));
     for (Class<?> type : sorted) {
       int target = 0;
-      for (int i = 1; i < count; i++) {
-        if (costs[i] < costs[target]) {
-          target = i;
+      for (int workerGroupIndex = 1; workerGroupIndex < count; workerGroupIndex++) {
+        if (costs[workerGroupIndex] < costs[target]) {
+          target = workerGroupIndex;
         }
       }
       groups.get(target).add(type);

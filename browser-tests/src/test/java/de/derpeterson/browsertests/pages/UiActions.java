@@ -15,18 +15,18 @@ import com.microsoft.playwright.options.BoundingBox;
 /** Wartet nach echten UI-Aktionen auf die Vaadin-Serverantwort vor Navigation/Gegenaktionen. */
 public final class UiActions {
   /** Führt eine Chromium-Touchgeste aus; der Inhalt muss tatsächlich scrollen. */
-  public static void swipeUp(Page page, Locator scroller) {
-    page.bringToFront();
+  public static void swipeUp(Page browserPage, Locator scroller) {
+    browserPage.bringToFront();
     BoundingBox bounds = scroller.boundingBox();
     double top = Math.max(bounds.y, 0);
-    double bottom = Math.min(bounds.y + bounds.height, page.viewportSize().height);
+    double bottom = Math.min(bounds.y + bounds.height, browserPage.viewportSize().height);
     double distance = (bottom - top) * 0.55;
     boolean document =
         (Boolean) scroller.evaluate("element => element === document.scrollingElement");
     // Am Seitenrand übernimmt kein verschachtelter Scroller die Dokumentgeste.
     double x = bounds.x + (document ? 8 : bounds.width / 2);
     double y = bottom - 12;
-    CDPSession session = page.context().newCDPSession(page);
+    CDPSession session = browserPage.context().newCDPSession(browserPage);
     JsonObject touch = new JsonObject();
     touch.addProperty("enabled", true);
     try {
@@ -61,26 +61,27 @@ public final class UiActions {
 
   private UiActions() {}
 
-  public static void complete(Page page, Runnable action) {
-    page.waitForResponse(UiActions::isUiResponse, action).finished();
+  public static void complete(Page browserPage, Runnable action) {
+    browserPage.waitForResponse(UiActions::isUiResponse, action).finished();
   }
 
-  public static void completeValueChange(Page page, Runnable action) {
+  public static void completeValueChange(Page browserPage, Runnable action) {
     // Dropdown-Öffnen und Auswahl können getrennte Antworten erzeugen. Erst die
     // Antwort auf die tatsächlich übermittelte Wertänderung bestätigt deren Verarbeitung.
-    page.waitForResponse(response -> isUiResponse(response) && carriesValueChange(response), action)
+    browserPage
+        .waitForResponse(response -> isUiResponse(response) && carriesValueChange(response), action)
         .finished();
   }
 
   /** Prüft den echten CSS-Ziehgriff, ohne Höhen oder Feldwerte per JavaScript zu setzen. */
-  public static void resizeTextArea(Page page, Locator field) {
-    com.microsoft.playwright.options.ViewportSize viewport = page.viewportSize();
+  public static void resizeTextArea(Page browserPage, Locator field) {
+    com.microsoft.playwright.options.ViewportSize viewport = browserPage.viewportSize();
     // Für den Ziehweg mehr Höhe bereitstellen; die tatsächlich geprüfte Breite bleibt gleich.
-    page.setViewportSize(viewport.width, 1800);
+    browserPage.setViewportSize(viewport.width, 1800);
     try {
       field.scrollIntoViewIfNeeded();
       BoundingBox original = field.boundingBox();
-      dragCorner(page, original, 260);
+      dragCorner(browserPage, original, 260);
       org.junit.jupiter.api.Assertions.assertTrue(
           field.boundingBox().height > original.height + 220);
       org.junit.jupiter.api.Assertions.assertEquals(original.width, field.boundingBox().width, 1);
@@ -93,23 +94,24 @@ public final class UiActions {
       double grown = field.boundingBox().height;
       field.locator("textarea").fill("Resize regression");
       org.junit.jupiter.api.Assertions.assertEquals(grown, field.boundingBox().height, 1);
-      dragCorner(page, field.boundingBox(), -200);
+      dragCorner(browserPage, field.boundingBox(), -200);
       org.junit.jupiter.api.Assertions.assertTrue(field.boundingBox().height < grown - 160);
       field.locator("textarea").clear();
     } finally {
-      page.setViewportSize(viewport.width, viewport.height);
+      browserPage.setViewportSize(viewport.width, viewport.height);
     }
   }
 
-  private static void dragCorner(Page page, BoundingBox bounds, double delta) {
-    page.mouse().move(bounds.x + bounds.width - 3, bounds.y + bounds.height - 3);
-    page.mouse().down();
-    page.mouse()
+  private static void dragCorner(Page browserPage, BoundingBox bounds, double delta) {
+    browserPage.mouse().move(bounds.x + bounds.width - 3, bounds.y + bounds.height - 3);
+    browserPage.mouse().down();
+    browserPage
+        .mouse()
         .move(
             bounds.x + bounds.width - 3,
             bounds.y + bounds.height - 3 + delta,
             new com.microsoft.playwright.Mouse.MoveOptions().setSteps(12));
-    page.mouse().up();
+    browserPage.mouse().up();
   }
 
   private static boolean isUiResponse(Response response) {

@@ -12,36 +12,38 @@ import java.util.regex.Pattern;
 
 /** Configuration through visible groups and inputs; no application API access. */
 public final class ConfigurationPage {
-  private final Page page;
-  private final UiTexts texts = UiTexts.selected();
+  private final Page browserPage;
+  private final UiTexts uiTexts = UiTexts.selected();
 
-  public ConfigurationPage(Page page) {
-    this.page = page;
+  public ConfigurationPage(Page browserPage) {
+    this.browserPage = browserPage;
   }
 
   @Step("Gewählte Konfigurationsgruppe über das Adminmenü öffnen")
   public void open(AdminConfigGroup group) {
-    new AdminNavigation(page).openGroup(group);
-    assertThat(button(texts.getAdminConfigSave())).isVisible();
+    new AdminNavigation(browserPage).openGroup(group);
+    assertThat(button(uiTexts.getAdminConfigSave())).isVisible();
   }
 
   public Locator input(String label) {
-    return page.getByLabel(label, new Page.GetByLabelOptions().setExact(true))
-        .and(page.locator("input"));
+    return browserPage
+        .getByLabel(label, new Page.GetByLabelOptions().setExact(true))
+        .and(browserPage.locator("input"));
   }
 
   public Locator info(String label) {
-    return page.getByLabel(label, new Page.GetByLabelOptions().setExact(true))
-        .and(page.locator("vaadin-button.cosmos-config-info"));
+    return browserPage
+        .getByLabel(label, new Page.GetByLabelOptions().setExact(true))
+        .and(browserPage.locator("vaadin-button.cosmos-config-info"));
   }
 
   public Locator helpPanel() {
-    return page.locator("#admin-config-help[opened]");
+    return browserPage.locator("#admin-config-help[opened]");
   }
 
-  public static void assertEffectiveUse(Locator help, UiTexts texts, String... notes) {
+  public static void assertEffectiveUse(Locator help, UiTexts uiTexts, String... notes) {
     Locator section = help.locator(".admin-help-effective-use");
-    assertThat(section.getByRole(AriaRole.HEADING)).hasText(texts.getAdminConfigEffectiveTitle());
+    assertThat(section.getByRole(AriaRole.HEADING)).hasText(uiTexts.getAdminConfigEffectiveTitle());
     Locator items = section.locator("li");
     if (notes.length == 0) {
       assertThat(items.first()).hasText(Pattern.compile("\\S"));
@@ -59,13 +61,13 @@ public final class ConfigurationPage {
     for (String rule : rules) {
       assertThat(helpPanel()).containsText(rule);
     }
-    assertThat(helpPanel()).containsText(texts.getAdminConfigInputRules());
+    assertThat(helpPanel()).containsText(uiTexts.getAdminConfigInputRules());
     closeHelp();
     assertThat(helpPanel()).hasCount(0);
   }
 
   public void closeHelp() {
-    closeHelp(texts.getNotificationsClose());
+    closeHelp(uiTexts.getNotificationsClose());
   }
 
   public void closeHelp(String label) {
@@ -77,7 +79,8 @@ public final class ConfigurationPage {
   }
 
   public Locator duration(String label) {
-    return page.locator(".admin-duration-field")
+    return browserPage
+        .locator(".admin-duration-field")
         .filter(new Locator.FilterOptions().setHas(input(label)));
   }
 
@@ -85,15 +88,15 @@ public final class ConfigurationPage {
     Locator field = duration(label);
     String selected = field.locator("vaadin-select-value-button").innerText().trim();
     int factor;
-    if (selected.equals(texts.getAdminConfigDurationUnitDays())) {
+    if (selected.equals(uiTexts.getAdminConfigDurationUnitDays())) {
       factor = 86400;
-    } else if (selected.equals(texts.getAdminConfigDurationUnitHours())) {
+    } else if (selected.equals(uiTexts.getAdminConfigDurationUnitHours())) {
       factor = 3600;
-    } else if (selected.equals(texts.getAdminConfigDurationUnitMinutes())) {
+    } else if (selected.equals(uiTexts.getAdminConfigDurationUnitMinutes())) {
       factor = 60;
     } else {
       assertThat(field.locator("vaadin-select-value-button"))
-          .hasText(texts.getAdminConfigDurationUnitSeconds());
+          .hasText(uiTexts.getAdminConfigDurationUnitSeconds());
       factor = 1;
     }
     return new java.math.BigDecimal(input(label).inputValue().replace(",", "."))
@@ -102,14 +105,15 @@ public final class ConfigurationPage {
 
   public void enterSeconds(String label, java.math.BigDecimal value) {
     duration(label).locator("vaadin-select").click();
-    page.getByRole(
+    browserPage
+        .getByRole(
             AriaRole.OPTION,
             new Page.GetByRoleOptions()
-                .setName(texts.getAdminConfigDurationUnitSeconds())
+                .setName(uiTexts.getAdminConfigDurationUnitSeconds())
                 .setExact(true))
         .click();
     String number = value.toPlainString();
-    input(label).fill(texts.language().equals("de") ? number.replace('.', ',') : number);
+    input(label).fill(uiTexts.language().equals("de") ? number.replace('.', ',') : number);
     input(label).press("Tab");
   }
 
@@ -126,30 +130,31 @@ public final class ConfigurationPage {
   @Step("Konfiguration speichern und Erfolgshinweis schließen")
   public void save() {
     submit();
-    notice(texts.getAdminConfigSaveSuccess());
+    notice(uiTexts.getAdminConfigSaveSuccess());
   }
 
   public void submit() {
-    button(texts.getAdminConfigSave()).click();
+    button(uiTexts.getAdminConfigSave()).click();
   }
 
   @Step("Gespeicherte Konfiguration erneut laden")
   public void reload() {
-    button(texts.getAdminConfigReload()).click();
-    notice(texts.getAdminConfigReloadSuccess());
+    button(uiTexts.getAdminConfigReload()).click();
+    notice(uiTexts.getAdminConfigReloadSuccess());
   }
 
   @Step("Ungültiges Feld und verständlichen Hinweis prüfen")
   public void reject(String component, String message) {
-    button(texts.getAdminConfigSave()).click();
-    assertThat(page.locator(component + "[invalid]")).hasCount(1);
-    assertThat(page.locator(component + "[invalid]")).hasJSProperty("errorMessage", message);
-    notice(texts.getAdminConfigValidationInvalidFields());
+    button(uiTexts.getAdminConfigSave()).click();
+    assertThat(browserPage.locator(component + "[invalid]")).hasCount(1);
+    assertThat(browserPage.locator(component + "[invalid]")).hasJSProperty("errorMessage", message);
+    notice(uiTexts.getAdminConfigValidationInvalidFields());
   }
 
   private void notice(String expected) {
     Locator notice =
-        page.locator("vaadin-notification-card:not([closing])")
+        browserPage
+            .locator("vaadin-notification-card:not([closing])")
             .filter(new Locator.FilterOptions().setHasText(expected));
     assertThat(notice).isVisible();
     notice.getByRole(AriaRole.BUTTON).click();
@@ -157,7 +162,7 @@ public final class ConfigurationPage {
   }
 
   private Locator button(String name) {
-    return page.getByRole(
+    return browserPage.getByRole(
         AriaRole.BUTTON, new Page.GetByRoleOptions().setName(name).setExact(true));
   }
 }

@@ -10,25 +10,25 @@ import io.qameta.allure.Step;
 
 /** The four visible token settings; no database or service access. */
 public final class TokenConfigurationPage {
-  private final Page page;
-  private final UiTexts texts = UiTexts.selected();
+  private final Page browserPage;
+  private final UiTexts uiTexts = UiTexts.selected();
 
-  public TokenConfigurationPage(Page page) {
-    this.page = page;
+  public TokenConfigurationPage(Page browserPage) {
+    this.browserPage = browserPage;
   }
 
   @Step("Token-Laufzeiten über die Adminnavigation öffnen")
   public void open() {
-    new ConfigurationPage(page).open(de.derpeterson.app.config.AdminConfigGroup.TOKENS);
-    assertThat(button(texts.getAdminConfigSave())).isVisible();
+    new ConfigurationPage(browserPage).open(de.derpeterson.app.config.AdminConfigGroup.TOKENS);
+    assertThat(button(uiTexts.getAdminConfigSave())).isVisible();
   }
 
   public Locator field(String label) {
-    return new ConfigurationPage(page).duration(label).locator("vaadin-big-decimal-field");
+    return new ConfigurationPage(browserPage).duration(label).locator("vaadin-big-decimal-field");
   }
 
   public String value(String label) {
-    java.math.BigDecimal seconds = new ConfigurationPage(page).seconds(label);
+    java.math.BigDecimal seconds = new ConfigurationPage(browserPage).seconds(label);
     java.math.BigInteger[] parts =
         seconds
             .movePointRight(9)
@@ -47,40 +47,40 @@ public final class TokenConfigurationPage {
     java.math.BigDecimal seconds =
         java.math.BigDecimal.valueOf(duration.getSeconds())
             .add(java.math.BigDecimal.valueOf(duration.getNano(), 9));
-    new ConfigurationPage(page).enterSeconds(label, seconds);
+    new ConfigurationPage(browserPage).enterSeconds(label, seconds);
   }
 
   @Step("Dauer ablehnen und lokalisierten Feldfehler prüfen")
   public void reject(String label, String error) {
-    button(texts.getAdminConfigSave()).click();
+    button(uiTexts.getAdminConfigSave()).click();
     assertThat(field(label)).hasAttribute("invalid", "");
     assertThat(field(label)).hasJSProperty("errorMessage", error);
-    assertThat(notice()).containsText(texts.getAdminConfigValidationInvalidFields());
+    assertThat(notice()).containsText(uiTexts.getAdminConfigValidationInvalidFields());
     dismiss();
   }
 
   @Step("Konfiguration speichern")
   public void save() {
-    button(texts.getAdminConfigSave()).click();
-    assertThat(notice()).containsText(texts.getAdminConfigSaveSuccess());
+    button(uiTexts.getAdminConfigSave()).click();
+    assertThat(notice()).containsText(uiTexts.getAdminConfigSaveSuccess());
     dismiss();
   }
 
   @Step("Gespeicherte Konfiguration erneut laden")
   public void reload() {
-    button(texts.getAdminConfigReload()).click();
-    assertThat(notice()).containsText(texts.getAdminConfigReloadSuccess());
+    button(uiTexts.getAdminConfigReload()).click();
+    assertThat(notice()).containsText(uiTexts.getAdminConfigReloadSuccess());
     dismiss();
   }
 
   @Step("Mindestdauer und Erklärung im neuen Klick-Tooltip prüfen")
   public void explain(String label, long minutes, String explanation) {
-    new ConfigurationPage(page)
-        .explain(label, explanation, texts.getAdminConfigValidationDurationMinimum(minutes));
+    new ConfigurationPage(browserPage)
+        .explain(label, explanation, uiTexts.getAdminConfigValidationDurationMinimum(minutes));
   }
 
   private Locator notice() {
-    return page.locator("vaadin-notification-card:not([closing])");
+    return browserPage.locator("vaadin-notification-card:not([closing])");
   }
 
   private void dismiss() {
@@ -89,7 +89,7 @@ public final class TokenConfigurationPage {
   }
 
   private Locator button(String name) {
-    return page.getByRole(
+    return browserPage.getByRole(
         AriaRole.BUTTON, new Page.GetByRoleOptions().setName(name).setExact(true));
   }
 }

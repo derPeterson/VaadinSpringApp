@@ -33,13 +33,13 @@ public class AuthenticationBrowserTest extends BrowserFixture {
   @Story("Admin-Anmeldung")
   @Description(
       """
-            1. In einer frischen Browsersitzung das Loginformular öffnen.
-            2. Mit dem aktiven Bootstrap-Testadmin anmelden.
-            3. Dashboard und angezeigte Konto-E-Mail prüfen.
+      1. In einer frischen Browsersitzung das Loginformular öffnen.
+      2. Mit dem aktiven Bootstrap-Testadmin anmelden.
+      3. Dashboard und angezeigte Konto-E-Mail prüfen.
 
-            **Erwartet:** Erfolgreiche Anmeldung; Admin-Dashboard und korrektes Konto sichtbar.
-            Prüft keine nachträgliche Vergabe einer Adminrolle.
-            """)
+      **Erwartet:** Erfolgreiche Anmeldung; Admin-Dashboard und korrektes Konto sichtbar.
+      Prüft keine nachträgliche Vergabe einer Adminrolle.
+      """)
   void adminCanSignIn() {
     signInAsAdmin();
   }
@@ -50,18 +50,18 @@ public class AuthenticationBrowserTest extends BrowserFixture {
   @Story("Abgelehnte Anmeldung")
   @Description(
       """
-            1. In einer frischen Browsersitzung das Loginformular öffnen.
-            2. Die bekannte Admin-E-Mail mit einem falschen Passwort absenden.
-            3. Fehlermeldung prüfen und anschließend /admin direkt aufrufen.
+      1. In einer frischen Browsersitzung das Loginformular öffnen.
+      2. Die bekannte Admin-E-Mail mit einem falschen Passwort absenden.
+      3. Fehlermeldung prüfen und anschließend /admin direkt aufrufen.
 
-            **Erwartet:** Allgemeiner Anmeldefehler; keine Anmeldung und kein Adminzugriff.
-            """)
+      **Erwartet:** Allgemeiner Anmeldefehler; keine Anmeldung und kein Adminzugriff.
+      """)
   void wrongPasswordIsRejected() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, "DefinitelyWrong1!");
     login.assertRejected();
-    page.navigate(path(ADMIN_ROUTE));
+    browserPage.navigate(path(ADMIN_ROUTE));
     login.assertFormVisible();
   }
 
@@ -71,18 +71,18 @@ public class AuthenticationBrowserTest extends BrowserFixture {
   @Story("Abgelehnte Anmeldung")
   @Description(
       """
-            1. In einer frischen Browsersitzung das Loginformular öffnen.
-            2. Eine syntaktisch gültige, nicht angelegte Testadresse absenden.
-            3. Allgemeine Fehlermeldung und fehlenden Adminzugriff prüfen.
+      1. In einer frischen Browsersitzung das Loginformular öffnen.
+      2. Eine syntaktisch gültige, nicht angelegte Testadresse absenden.
+      3. Allgemeine Fehlermeldung und fehlenden Adminzugriff prüfen.
 
-            **Erwartet:** Derselbe verständliche Fehler wie bei falschem Passwort; keine Anmeldung.
-            """)
+      **Erwartet:** Derselbe verständliche Fehler wie bei falschem Passwort; keine Anmeldung.
+      """)
   void unknownUserIsRejected() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn("unknown-" + UUID.randomUUID() + "@example.test", "UnknownUser1!");
     login.assertRejected();
-    page.navigate(path(ADMIN_ROUTE));
+    browserPage.navigate(path(ADMIN_ROUTE));
     login.assertFormVisible();
   }
 
@@ -92,18 +92,20 @@ public class AuthenticationBrowserTest extends BrowserFixture {
   @Story("Anonymer Zugriff")
   @Description(
       """
-            1. Ohne Anmeldung /admin direkt öffnen.
-            2. Loginformular und Abwesenheit des Admin-Dashboards prüfen.
+      1. Ohne Anmeldung /admin direkt öffnen.
+      2. Loginformular und Abwesenheit des Admin-Dashboards prüfen.
 
-            **Erwartet:** Weiterleitung zur Anmeldung; keine Admininhalte.
-            """)
+      **Erwartet:** Weiterleitung zur Anmeldung; keine Admininhalte.
+      """)
   void anonymousUserCannotOpenAdmin() {
-    page.navigate(path(ADMIN_ROUTE));
-    new LoginPage(page).assertFormVisible();
+    browserPage.navigate(path(ADMIN_ROUTE));
+    new LoginPage(browserPage).assertFormVisible();
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
-                new Page.GetByRoleOptions().setName(texts.getAdminDashboardTitle()).setExact(true)))
+                new Page.GetByRoleOptions()
+                    .setName(uiTexts.getAdminDashboardTitle())
+                    .setExact(true)))
         .hasCount(0);
   }
 
@@ -130,18 +132,18 @@ public class AuthenticationBrowserTest extends BrowserFixture {
             + "c".repeat(63)
             + "."
             + "d".repeat(62);
-    new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
-    new UserMenu(page).signOut();
-    LoginPage login = new LoginPage(page);
+    new AdminUsersPage(browserPage).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    new UserMenu(browserPage).signOut();
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-    assertThat(page).hasURL(urlPattern(HOME_ROUTE));
-    new UserMenu(page).assertUserSignedInWithoutAdminAction(email);
-    page.reload();
-    assertThat(page).hasURL(urlPattern(HOME_ROUTE));
-    new UserMenu(page).assertUserSignedInWithoutAdminAction(email);
-    new UserMenu(page).requestSignOut();
-    page.navigate(path(ACCOUNT_ROUTE));
+    assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
+    new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);
+    browserPage.reload();
+    assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
+    new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);
+    new UserMenu(browserPage).requestSignOut();
+    browserPage.navigate(path(ACCOUNT_ROUTE));
     login.assertFormVisible();
   }
 
@@ -151,21 +153,21 @@ public class AuthenticationBrowserTest extends BrowserFixture {
   @Story("Abmeldung und bestehende Tabs")
   @Description(
       """
-            1. Als Testadmin anmelden und /admin in einem zweiten Tab derselben Sitzung öffnen.
-            2. Im ersten Tab über das Benutzermenü abmelden.
-            3. Im zweiten Tab eine Navigation auslösen; anschließend /admin neu laden.
-            4. Im ersten Tab Browser-Zurück und anschließend /admin erneut öffnen.
+      1. Als Testadmin anmelden und /admin in einem zweiten Tab derselben Sitzung öffnen.
+      2. Im ersten Tab über das Benutzermenü abmelden.
+      3. Im zweiten Tab eine Navigation auslösen; anschließend /admin neu laden.
+      4. Im ersten Tab Browser-Zurück und anschließend /admin erneut öffnen.
 
-            **Erwartet:** Nach Logout kein neuer Adminzugriff; beide Tabs benötigen Anmeldung.
-            Eine gecachte Ansicht zählt nicht als Zugriff. Mutationen aus einem alten offenen
-            Formular und Rollenentzug über Push werden damit noch nicht vollständig geprüft.
-            """)
+      **Erwartet:** Nach Logout kein neuer Adminzugriff; beide Tabs benötigen Anmeldung.
+      Eine gecachte Ansicht zählt nicht als Zugriff. Mutationen aus einem alten offenen
+      Formular und Rollenentzug über Push werden damit noch nicht vollständig geprüft.
+      """)
   void logoutEndsAccessInBothTabs() {
     signInAsAdmin();
-    Page otherTab = context.newPage();
+    Page otherTab = browserContext.newPage();
     otherTab.navigate(path(ADMIN_ROUTE));
     new LoginPage(otherTab).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
-    new UserMenu(page).signOut();
+    new UserMenu(browserPage).signOut();
     com.microsoft.playwright.Locator staleMenu =
         otherTab.getByRole(
             AriaRole.BUTTON, new Page.GetByRoleOptions().setName(USER_ICON_ALT).setExact(true));
@@ -177,10 +179,10 @@ public class AuthenticationBrowserTest extends BrowserFixture {
     }
     otherTab.navigate(path(ADMIN_ROUTE));
     new LoginPage(otherTab).assertFormVisible();
-    page.goBack();
-    new LoginPage(page).assertFormVisible();
-    page.navigate(path(ADMIN_ROUTE));
-    new LoginPage(page).assertFormVisible();
+    browserPage.goBack();
+    new LoginPage(browserPage).assertFormVisible();
+    browserPage.navigate(path(ADMIN_ROUTE));
+    new LoginPage(browserPage).assertFormVisible();
     otherTab.close();
   }
 
@@ -190,45 +192,48 @@ public class AuthenticationBrowserTest extends BrowserFixture {
   @Story("Zugriffsrechte normaler Benutzer")
   @Description(
       """
-            1. Als Admin ein aktives Testkonto nur mit Benutzerrolle über die Oberfläche anlegen.
-            2. Abmelden und das neue Konto über das Loginformular anmelden.
-            3. Angemeldetes Konto und fehlende Adminaktion im Menü prüfen.
-            4. /admin direkt aufrufen und Zugriffsverweigerung prüfen.
+      1. Als Admin ein aktives Testkonto nur mit Benutzerrolle über die Oberfläche anlegen.
+      2. Abmelden und das neue Konto über das Loginformular anmelden.
+      3. Angemeldetes Konto und fehlende Adminaktion im Menü prüfen.
+      4. /admin direkt aufrufen und Zugriffsverweigerung prüfen.
 
-            **Erwartet:** Normale Anmeldung funktioniert; Adminbereich bleibt gesperrt und
-            zeigt einen verständlichen Hinweis. Benutzeranlage dient der Testvorbereitung;
-            die vollständige Benutzerverwaltung wird noch nicht geprüft.
-            """)
+      **Erwartet:** Normale Anmeldung funktioniert; Adminbereich bleibt gesperrt und
+      zeigt einen verständlichen Hinweis. Benutzeranlage dient der Testvorbereitung;
+      die vollständige Benutzerverwaltung wird noch nicht geprüft.
+      """)
   void ordinaryUserHasNoAdminAccess() {
     String email = "browser-user-" + UUID.randomUUID() + "@example.test";
     signInAsAdmin();
-    new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
-    new UserMenu(page).signOut();
-    LoginPage login = new LoginPage(page);
+    new AdminUsersPage(browserPage).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    new UserMenu(browserPage).signOut();
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-    assertThat(page).hasURL(urlPattern(HOME_ROUTE));
-    new UserMenu(page).selectTestLanguage();
-    new UserMenu(page).assertUserSignedInWithoutAdminAction(email);
-    page.navigate(path(ADMIN_ROUTE));
-    assertThat(page).hasURL(urlPattern(HOME_ROUTE));
+    assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
+    new UserMenu(browserPage).selectTestLanguage();
+    new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);
+    browserPage.navigate(path(ADMIN_ROUTE));
+    assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     assertThat(
-            page.getByText(
-                texts.getBaseErrorAdminAccessDenied(), new Page.GetByTextOptions().setExact(true)))
+            browserPage.getByText(
+                uiTexts.getBaseErrorAdminAccessDenied(),
+                new Page.GetByTextOptions().setExact(true)))
         .isVisible();
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
-                new Page.GetByRoleOptions().setName(texts.getAdminDashboardTitle()).setExact(true)))
+                new Page.GetByRoleOptions()
+                    .setName(uiTexts.getAdminDashboardTitle())
+                    .setExact(true)))
         .hasCount(0);
   }
 
   private void signInAsAdmin() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));
-    new UserMenu(page).selectTestLanguage();
+    assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
+    new UserMenu(browserPage).selectTestLanguage();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
   }
 }

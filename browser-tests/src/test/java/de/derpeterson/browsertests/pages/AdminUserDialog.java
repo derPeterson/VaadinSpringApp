@@ -11,44 +11,44 @@ import java.time.LocalDate;
 
 /** Only the currently open create/edit form, including its native footer. */
 public final class AdminUserDialog {
-  private final Page page;
-  private final UiTexts texts;
+  private final Page browserPage;
+  private final UiTexts uiTexts;
 
-  public AdminUserDialog(Page page, UiTexts texts) {
-    this.page = page;
-    this.texts = texts;
+  public AdminUserDialog(Page browserPage, UiTexts uiTexts) {
+    this.browserPage = browserPage;
+    this.uiTexts = uiTexts;
   }
 
   public Locator root() {
-    return page.locator("vaadin-dialog.admin-user-dialog[opened]");
+    return browserPage.locator("vaadin-dialog.admin-user-dialog[opened]");
   }
 
   public Locator firstName() {
-    return field(texts.getAdminUsersFieldFirstName());
+    return field(uiTexts.getAdminUsersFieldFirstName());
   }
 
   public Locator lastName() {
-    return field(texts.getAdminUsersFieldLastName());
+    return field(uiTexts.getAdminUsersFieldLastName());
   }
 
   public Locator email() {
-    return field(texts.getAdminUsersFieldEmail());
+    return field(uiTexts.getAdminUsersFieldEmail());
   }
 
   public Locator password() {
-    return field(texts.getAdminUsersFieldPassword());
+    return field(uiTexts.getAdminUsersFieldPassword());
   }
 
   public Locator confirmPassword() {
-    return field(texts.getPublicConfirmPasswordField());
+    return field(uiTexts.getPublicConfirmPasswordField());
   }
 
   public Locator saveButton() {
-    return button(texts.getAdminUsersSave());
+    return button(uiTexts.getAdminUsersSave());
   }
 
   public Locator deleteButton() {
-    return button(texts.getAdminUsersDelete());
+    return button(uiTexts.getAdminUsersDelete());
   }
 
   @Step("Gültige Stammdaten und normale Benutzerrolle im echten Formular eingeben")
@@ -59,28 +59,29 @@ public final class AdminUserDialog {
     this.password().fill(password);
     assertThat(confirmPassword()).isEnabled();
     confirmPassword().fill(password);
-    field(texts.getRegistrationGenderCombobox()).click();
-    page.getByRole(
+    field(uiTexts.getRegistrationGenderCombobox()).click();
+    browserPage
+        .getByRole(
             AriaRole.OPTION,
-            new Page.GetByRoleOptions().setName(texts.getGenderOther()).setExact(true))
+            new Page.GetByRoleOptions().setName(uiTexts.getGenderOther()).setExact(true))
         .click();
-    Locator birthday = field(texts.getRegistrationBirthDateField());
-    assertThat(birthday).hasAttribute("placeholder", texts.getRegistrationBirthDatePlaceholder());
+    Locator birthday = field(uiTexts.getRegistrationBirthDateField());
+    assertThat(birthday).hasAttribute("placeholder", uiTexts.getRegistrationBirthDatePlaceholder());
     birthday.click();
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
-    birthday.fill(texts.dateInput(LocalDate.of(1990, 1, 1)));
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+    birthday.fill(uiTexts.dateInput(LocalDate.of(1990, 1, 1)));
     // A real focus change commits the birthday; no Enter or popup cancellation.
     firstName().click();
     assertThat(root().locator("vaadin-date-picker")).hasJSProperty("value", "1990-01-01");
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
-    check(texts.getAdminUsersFieldEnabled(), enabled);
-    setRole(texts.getRoleUser(), true);
-    setRole(texts.getRoleAdmin(), administrator);
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+    check(uiTexts.getAdminUsersFieldEnabled(), enabled);
+    setRole(uiTexts.getRoleUser(), true);
+    setRole(uiTexts.getRoleAdmin(), administrator);
   }
 
   @Step("Freigabe im Benutzerformular ändern")
   public void setEnabled(boolean enabled) {
-    check(texts.getAdminUsersFieldEnabled(), enabled);
+    check(uiTexts.getAdminUsersFieldEnabled(), enabled);
   }
 
   public Locator enabled() {
@@ -88,17 +89,17 @@ public final class AdminUserDialog {
         .getByRole(
             AriaRole.CHECKBOX,
             new Locator.GetByRoleOptions()
-                .setName(texts.getAdminUsersFieldEnabled())
+                .setName(uiTexts.getAdminUsersFieldEnabled())
                 .setExact(true));
   }
 
   @Step("Administratorrolle im Benutzerformular vergeben oder entziehen")
   public void setAdministrator(boolean selected) {
-    setRole(texts.getRoleAdmin(), selected);
+    setRole(uiTexts.getRoleAdmin(), selected);
   }
 
   public Locator administrator() {
-    return role(texts.getRoleAdmin());
+    return role(uiTexts.getRoleAdmin());
   }
 
   @Step("Explizite Rolle im Benutzerformular vergeben oder entziehen")
@@ -116,7 +117,7 @@ public final class AdminUserDialog {
     if (!"true".equals(input.getAttribute("aria-expanded"))) {
       input.click();
     }
-    return page.getByRole(
+    return browserPage.getByRole(
         AriaRole.OPTION, new Page.GetByRoleOptions().setName(translatedRole).setExact(true));
   }
 
@@ -128,9 +129,10 @@ public final class AdminUserDialog {
   public void expectSaveError(String message) {
     assertThat(saveButton()).isEnabled();
     saveButton().click();
-    assertThat(page.locator("vaadin-notification-card:not([closing])")).containsText(message);
+    assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+        .containsText(message);
     assertThat(root()).hasCount(1);
-    Locator notice = page.locator("vaadin-notification-card:not([closing])");
+    Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
     notice.getByRole(AriaRole.BUTTON).click();
     assertThat(notice).not().isVisible();
   }
@@ -146,7 +148,7 @@ public final class AdminUserDialog {
   @Step("Benutzerformular ohne Speicherung abbrechen")
   public void cancel() {
     closeRoleOptions();
-    button(texts.getAdminUsersCancel()).click();
+    button(uiTexts.getAdminUsersCancel()).click();
     assertThat(root()).hasCount(0);
   }
 
@@ -154,7 +156,7 @@ public final class AdminUserDialog {
   public AdminUserDeleteDialog requestDelete() {
     assertThat(deleteButton()).isEnabled();
     deleteButton().click();
-    AdminUserDeleteDialog confirmation = new AdminUserDeleteDialog(page, texts);
+    AdminUserDeleteDialog confirmation = new AdminUserDeleteDialog(browserPage, uiTexts);
     assertThat(confirmation.root()).hasCount(1);
     assertThat(
             confirmation
@@ -162,7 +164,7 @@ public final class AdminUserDialog {
                 .getByRole(
                     AriaRole.HEADING,
                     new Locator.GetByRoleOptions()
-                        .setName(texts.getAdminUsersDeleteDialogTitle())
+                        .setName(uiTexts.getAdminUsersDeleteDialogTitle())
                         .setExact(true)))
         .isVisible();
     return confirmation;

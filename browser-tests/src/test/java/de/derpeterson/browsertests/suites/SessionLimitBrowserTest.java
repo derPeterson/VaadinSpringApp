@@ -39,33 +39,33 @@ public class SessionLimitBrowserTest extends BrowserFixture {
 
   @BeforeEach
   void prepare() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    settings = new ConfigurationPage(page);
+    new UserMenu(browserPage).selectTestLanguage();
+    settings = new ConfigurationPage(browserPage);
     settings.open(AdminConfigGroup.SECURITY);
-    original = settings.value(texts.getAdminConfigEntryMaxSessionsPerUser());
+    original = settings.value(uiTexts.getAdminConfigEntryMaxSessionsPerUser());
   }
 
   @AfterEach
   void restore() {
     if (original != null) {
       settings.open(AdminConfigGroup.SECURITY);
-      settings.enter(texts.getAdminConfigEntryMaxSessionsPerUser(), original);
+      settings.enter(uiTexts.getAdminConfigEntryMaxSessionsPerUser(), original);
       settings.save();
     }
   }
 
   private String user() {
     String email = "session-limit-" + UUID.randomUUID() + "@example.test";
-    new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    new AdminUsersPage(browserPage).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     return email;
   }
 
   private void limit(int value) {
     settings.open(AdminConfigGroup.SECURITY);
-    settings.enter(texts.getAdminConfigEntryMaxSessionsPerUser(), String.valueOf(value));
+    settings.enter(uiTexts.getAdminConfigEntryMaxSessionsPerUser(), String.valueOf(value));
     settings.save();
   }
 
@@ -79,33 +79,34 @@ public class SessionLimitBrowserTest extends BrowserFixture {
   @DisplayName("SESSION-LIMIT-01: Zusätzliche Tabs zählen einmal; Logout gibt den Platz frei")
   @Description(
       """
-        1. Eigenes aktives Konto anlegen; Sitzungslimit 1 im Adminformular speichern.
-        2. In unabhängigem Kontext anmelden, dann einen weiteren Tab desselben Kontextes öffnen.
-        3. Zweiten Kontext mit richtigem Passwort und Remember-me anmelden: ausschließlich Sitzungsverwaltung anzeigen.
-        4. Erste Sitzung über das Menü abmelden; die eingeschränkte Verwaltung abbrechen und im bisher abgewiesenen Kontext erneut anmelden.
-        **Erwartet:** Tabs teilen einen Platz, bestehende Sitzung bleibt erhalten, abgewiesener Login erhält kein Remember-me-Cookie.
-        """)
+      1. Eigenes aktives Konto anlegen; Sitzungslimit 1 im Adminformular speichern.
+      2. In unabhängigem Kontext anmelden, dann einen weiteren Tab desselben Kontextes öffnen.
+      3. Zweiten Kontext mit richtigem Passwort und Remember-me anmelden: ausschließlich Sitzungsverwaltung anzeigen.
+      4. Erste Sitzung über das Menü abmelden; die eingeschränkte Verwaltung abbrechen und im bisher abgewiesenen Kontext erneut anmelden.
+      **Erwartet:** Tabs teilen einen Platz, bestehende Sitzung bleibt erhalten, abgewiesener Login erhält kein Remember-me-Cookie.
+      """)
   void tabsShareOneSlotAndLogoutMakesRoom() {
     String email = user();
     limit(1);
-    try (BrowserActor first = new BrowserActor(browser);
-        BrowserActor second = new BrowserActor(browser)) {
+    try (BrowserActor first = new BrowserActor(testBrowser);
+        BrowserActor second = new BrowserActor(testBrowser)) {
       first.login(email, BrowserTestAccounts.USER_PASSWORD);
-      signedIn(first.page, email);
-      Page tab = first.context.newPage();
+      signedIn(first.browserPage, email);
+      Page tab = first.browserContext.newPage();
       tab.navigate(path(HOME_ROUTE));
       signedIn(tab, email);
       second.login(email, BrowserTestAccounts.USER_PASSWORD, true);
-      LoginPage login = new LoginPage(second.page);
+      LoginPage login = new LoginPage(second.browserPage);
       login.assertRestrictedManagement();
       assertFalse(
-          second.context.cookies().stream().anyMatch(cookie -> cookie.name.equals("remember-me")));
-      first.page.reload();
-      signedIn(first.page, email);
-      new UserMenu(first.page).requestSignOut();
+          second.browserContext.cookies().stream()
+              .anyMatch(cookie -> cookie.name.equals("remember-me")));
+      first.browserPage.reload();
+      signedIn(first.browserPage, email);
+      new UserMenu(first.browserPage).requestSignOut();
       login.cancelRecovery();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-      signedIn(second.page, email);
+      signedIn(second.browserPage, email);
       tab.close();
     }
   }
@@ -114,33 +115,33 @@ public class SessionLimitBrowserTest extends BrowserFixture {
   @DisplayName("SESSION-LIMIT-02: Reduzierung erhält bestehende Sitzungen; Erhöhung wirkt sofort")
   @Description(
       """
-        1. Eigenes Konto anlegen; Limit 3 speichern und zwei unabhängige Sitzungen anmelden.
-        2. Limit auf 1 reduzieren: beide offenen Sitzungen bleiben nach Neuladen angemeldet.
-        3. Dritte Anmeldung öffnet nur die eingeschränkte Verwaltung. Limit auf 3 erhöhen, Verwaltung abbrechen und Login erneut absenden.
-        **Erwartet:** Konfiguration gilt ohne Neustart für neue Zulassungen, bestehende Geräte werden nicht verdrängt.
-        """)
+      1. Eigenes Konto anlegen; Limit 3 speichern und zwei unabhängige Sitzungen anmelden.
+      2. Limit auf 1 reduzieren: beide offenen Sitzungen bleiben nach Neuladen angemeldet.
+      3. Dritte Anmeldung öffnet nur die eingeschränkte Verwaltung. Limit auf 3 erhöhen, Verwaltung abbrechen und Login erneut absenden.
+      **Erwartet:** Konfiguration gilt ohne Neustart für neue Zulassungen, bestehende Geräte werden nicht verdrängt.
+      """)
   void changesApplyWithoutEvictingExistingDevices() {
     String email = user();
     limit(3);
-    try (BrowserActor first = new BrowserActor(browser);
-        BrowserActor second = new BrowserActor(browser);
-        BrowserActor third = new BrowserActor(browser)) {
+    try (BrowserActor first = new BrowserActor(testBrowser);
+        BrowserActor second = new BrowserActor(testBrowser);
+        BrowserActor third = new BrowserActor(testBrowser)) {
       first.login(email, BrowserTestAccounts.USER_PASSWORD);
-      signedIn(first.page, email);
+      signedIn(first.browserPage, email);
       second.login(email, BrowserTestAccounts.USER_PASSWORD);
-      signedIn(second.page, email);
+      signedIn(second.browserPage, email);
       limit(1);
-      first.page.reload();
-      signedIn(first.page, email);
-      second.page.reload();
-      signedIn(second.page, email);
+      first.browserPage.reload();
+      signedIn(first.browserPage, email);
+      second.browserPage.reload();
+      signedIn(second.browserPage, email);
       third.login(email, BrowserTestAccounts.USER_PASSWORD);
-      LoginPage login = new LoginPage(third.page);
+      LoginPage login = new LoginPage(third.browserPage);
       login.assertRestrictedManagement();
       limit(3);
       login.cancelRecovery();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-      signedIn(third.page, email);
+      signedIn(third.browserPage, email);
     }
   }
 
@@ -148,23 +149,24 @@ public class SessionLimitBrowserTest extends BrowserFixture {
   @DisplayName("SESSION-LIMIT-03: Browserschließen ohne Logout gibt den Platz nicht sofort frei")
   @Description(
       """
-        1. Eigenes Konto anlegen; Limit 1 speichern.
-        2. Mit eigenem temporären Chromium-Profil ohne Remember-me anmelden und den Prozess schließen.
-        3. In einem unabhängigen Browserprofil mit richtigem Passwort anmelden.
-        **Erwartet:** Der Server hat noch keinen Logout oder Timeout erkannt und weist die neue Sitzung ab.
-        """)
+      1. Eigenes Konto anlegen; Limit 1 speichern.
+      2. Mit eigenem temporären Chromium-Profil ohne Remember-me anmelden und den Prozess schließen.
+      3. In einem unabhängigen Browserprofil mit richtigem Passwort anmelden.
+      **Erwartet:** Der Server hat noch keinen Logout oder Timeout erkannt und weist die neue Sitzung ab.
+      """)
   void closingBrowserDoesNotPretendToBeLogout() {
     String email = user();
     limit(1);
-    try (PersistentBrowserActor persistent = new PersistentBrowserActor(playwright, profile)) {
-      LoginPage login = new LoginPage(persistent.page);
+    try (PersistentBrowserActor persistent =
+        new PersistentBrowserActor(playwrightRuntime, profile)) {
+      LoginPage login = new LoginPage(persistent.browserPage);
       login.open();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-      signedIn(persistent.page, email);
+      signedIn(persistent.browserPage, email);
     }
-    try (BrowserActor next = new BrowserActor(browser)) {
+    try (BrowserActor next = new BrowserActor(testBrowser)) {
       next.login(email, BrowserTestAccounts.USER_PASSWORD);
-      new LoginPage(next.page).assertRestrictedManagement();
+      new LoginPage(next.browserPage).assertRestrictedManagement();
     }
   }
 
@@ -173,48 +175,49 @@ public class SessionLimitBrowserTest extends BrowserFixture {
       "SESSION-LIMIT-04: Automatisches Remember-me respektiert die Grenze ohne Login-Schleife")
   @Description(
       """
-        1. Eigenes Konto anlegen; Limit 2 speichern und in temporärem Chromium-Profil mit Remember-me anmelden.
-        2. Browserprozess schließen; zweite unabhängige Sitzung anmelden, sodass beide Plätze belegt sind.
-        3. Chromium mit demselben Profil neu starten: automatische Anmeldung wird mit Sitzungsgrenze abgewiesen.
-        4. Bestehende zweite Sitzung bleibt nutzbar; Limit erhöhen und im abgewiesenen Profil normal anmelden.
-        **Erwartet:** Automatische Anmeldung umgeht das Limit nicht, Cookie wird im betroffenen Browser entfernt; kein Redirect-Loop.
-        """)
+      1. Eigenes Konto anlegen; Limit 2 speichern und in temporärem Chromium-Profil mit Remember-me anmelden.
+      2. Browserprozess schließen; zweite unabhängige Sitzung anmelden, sodass beide Plätze belegt sind.
+      3. Chromium mit demselben Profil neu starten: automatische Anmeldung wird mit Sitzungsgrenze abgewiesen.
+      4. Bestehende zweite Sitzung bleibt nutzbar; Limit erhöhen und im abgewiesenen Profil normal anmelden.
+      **Erwartet:** Automatische Anmeldung umgeht das Limit nicht, Cookie wird im betroffenen Browser entfernt; kein Redirect-Loop.
+      """)
   void rememberMeCannotBypassTheLimit() {
     String email = user();
     limit(2);
-    try (PersistentBrowserActor persistent = new PersistentBrowserActor(playwright, profile)) {
-      LoginPage login = new LoginPage(persistent.page);
+    try (PersistentBrowserActor persistent =
+        new PersistentBrowserActor(playwrightRuntime, profile)) {
+      LoginPage login = new LoginPage(persistent.browserPage);
       login.open();
       persistent
-          .page
+          .browserPage
           .getByRole(
               AriaRole.SWITCH,
               new Page.GetByRoleOptions()
-                  .setName(texts.getLoginRememberMeCheckbox())
+                  .setName(uiTexts.getLoginRememberMeCheckbox())
                   .setExact(true))
           .check();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-      signedIn(persistent.page, email);
+      signedIn(persistent.browserPage, email);
       assertTrue(
-          persistent.context.cookies().stream()
+          persistent.browserContext.cookies().stream()
               .anyMatch(cookie -> cookie.name.equals("remember-me")));
     }
-    try (BrowserActor existing = new BrowserActor(browser)) {
+    try (BrowserActor existing = new BrowserActor(testBrowser)) {
       existing.login(email, BrowserTestAccounts.USER_PASSWORD);
-      signedIn(existing.page, email);
+      signedIn(existing.browserPage, email);
       try (PersistentBrowserActor persistent =
-          new PersistentBrowserActor(playwright, profile, LOGIN_ROUTE)) {
-        LoginPage login = new LoginPage(persistent.page);
+          new PersistentBrowserActor(playwrightRuntime, profile, LOGIN_ROUTE)) {
+        LoginPage login = new LoginPage(persistent.browserPage);
         login.assertSessionLimit();
         assertFalse(
-            persistent.context.cookies().stream()
+            persistent.browserContext.cookies().stream()
                 .anyMatch(cookie -> cookie.name.equals("remember-me")));
-        existing.page.reload();
-        signedIn(existing.page, email);
+        existing.browserPage.reload();
+        signedIn(existing.browserPage, email);
         limit(3);
         login.dismissFailure();
         login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-        signedIn(persistent.page, email);
+        signedIn(persistent.browserPage, email);
       }
     }
   }

@@ -18,20 +18,20 @@ import java.util.Map;
 
 /** User list and optional filters; form/confirmation actions have their own small helpers. */
 public final class AdminUsersPage {
-  private final Page page;
-  private final UiTexts texts;
+  private final Page browserPage;
+  private final UiTexts uiTexts;
 
-  public AdminUsersPage(Page page) {
-    this(page, UiTexts.selected());
+  public AdminUsersPage(Page browserPage) {
+    this(browserPage, UiTexts.selected());
   }
 
-  public AdminUsersPage(Page page, UiTexts texts) {
-    this.page = page;
-    this.texts = texts;
+  public AdminUsersPage(Page browserPage, UiTexts uiTexts) {
+    this.browserPage = browserPage;
+    this.uiTexts = uiTexts;
   }
 
   public Locator grid() {
-    return page.locator(".admin-users-grid");
+    return browserPage.locator(".admin-users-grid");
   }
 
   @Step("Aktives Testkonto ausschließlich mit normaler Benutzerrolle anlegen")
@@ -56,14 +56,14 @@ public final class AdminUsersPage {
 
   @Step("Benutzerverwaltung öffnen")
   public void open() {
-    new AdminNavigation(page, texts).openSection(texts.getAdminUsersTitle());
+    new AdminNavigation(browserPage, uiTexts).openSection(uiTexts.getAdminUsersTitle());
     assertThat(grid()).isVisible();
   }
 
   @Step("Neues Benutzerformular öffnen")
   public AdminUserDialog openCreate() {
-    button(texts.getAdminUsersAdd()).click();
-    AdminUserDialog form = new AdminUserDialog(page, texts);
+    button(uiTexts.getAdminUsersAdd()).click();
+    AdminUserDialog form = new AdminUserDialog(browserPage, uiTexts);
     // Vaadin's host has no visible box; assert real rendered fields instead.
     assertThat(form.root()).hasCount(1);
     assertThat(form.firstName()).isVisible();
@@ -75,7 +75,7 @@ public final class AdminUsersPage {
     open();
     // Login/logout and other users may have changed the stored row version.
     // Use the offered refresh action before opening a new snapshot; open forms remain untouched.
-    button(texts.getAdminUsersRefreshTooltip()).click();
+    button(uiTexts.getAdminUsersRefreshTooltip()).click();
     search(email);
     assertThat(emailCells(email)).hasCount(1);
     assertThat(emailCells(email)).hasText(email);
@@ -84,7 +84,7 @@ public final class AdminUsersPage {
             .locator("vaadin-button:visible")
             .filter(
                 new Locator.FilterOptions()
-                    .setHas(page.locator("vaadin-icon[src='icons/lucide/square-pen.svg']")));
+                    .setHas(browserPage.locator("vaadin-icon[src='icons/lucide/square-pen.svg']")));
     // No first-row assumption: filtering must yield one visible account and action.
     assertThat(edit).hasCount(1);
     // Finish the grid's native focus/scroll movement before the mouse click.
@@ -93,7 +93,7 @@ public final class AdminUsersPage {
     edit.focus();
     edit.hover();
     edit.click();
-    AdminUserDialog form = new AdminUserDialog(page, texts);
+    AdminUserDialog form = new AdminUserDialog(browserPage, uiTexts);
     // Vaadin's host has no visible box; assert real rendered fields instead.
     assertThat(form.root()).hasCount(1);
     assertThat(form.firstName()).isVisible();
@@ -110,25 +110,25 @@ public final class AdminUsersPage {
   }
 
   public Locator searchField() {
-    return page.getByLabel(
-        texts.getAdminUsersSearchLabel(), new Page.GetByLabelOptions().setExact(true));
+    return browserPage.getByLabel(
+        uiTexts.getAdminUsersSearchLabel(), new Page.GetByLabelOptions().setExact(true));
   }
 
   @Step("Filterpanel bei Bedarf öffnen; alle Filter bleiben dauerhaft vorhanden")
   public void openFilters() {
-    Locator toggle = button(texts.getAdminUsersAddFilter());
+    Locator toggle = button(uiTexts.getAdminUsersAddFilter());
     if (!"true".equals(toggle.getAttribute("aria-expanded"))) {
-      UiActions.complete(page, toggle::click);
+      UiActions.complete(browserPage, toggle::click);
     }
     assertThat(toggle).hasAttribute("aria-expanded", "true");
-    assertThat(button(texts.getAdminUsersApplyFilters())).isVisible();
+    assertThat(button(uiTexts.getAdminUsersApplyFilters())).isVisible();
   }
 
   @Step("Filterentwurf auswählen, ohne ihn bereits anzuwenden")
   public void selectDraftFilter(String label, String option) {
     openFilters();
     Locator group = filterField(label);
-    if (label.equals(texts.getAdminUsersGridEnabled())) {
+    if (label.equals(uiTexts.getAdminUsersGridEnabled())) {
       group.getByText(option, new Locator.GetByTextOptions().setExact(true)).click();
       assertThat(
               group.getByRole(
@@ -157,18 +157,19 @@ public final class AdminUsersPage {
 
   @Step("Filterentwürfe über Filter anwenden übernehmen")
   public void applyFilters() {
-    UiActions.complete(page, () -> button(texts.getAdminUsersApplyFilters()).click());
-    assertThat(page.locator("#admin-user-filter-panel[opened]")).hasCount(0);
+    UiActions.complete(browserPage, () -> button(uiTexts.getAdminUsersApplyFilters()).click());
+    assertThat(browserPage.locator("#admin-user-filter-panel[opened]")).hasCount(0);
   }
 
   @Step("Eine Filtergruppe im Overlay zurücksetzen und anwenden")
   public void removeFilter(String label) {
     openFilters();
-    if (label.equals(texts.getAdminUsersGridEnabled())) {
+    if (label.equals(uiTexts.getAdminUsersGridEnabled())) {
       filterField(label)
-          .getByText(texts.getAdminUsersFilterAll(), new Locator.GetByTextOptions().setExact(true))
+          .getByText(
+              uiTexts.getAdminUsersFilterAll(), new Locator.GetByTextOptions().setExact(true))
           .click();
-    } else if (label.equals(texts.getAdminUsersFilterActiveSince())) {
+    } else if (label.equals(uiTexts.getAdminUsersFilterActiveSince())) {
       activityDate().clear();
       activityDate().press("Tab");
     } else {
@@ -188,13 +189,13 @@ public final class AdminUsersPage {
     if (activityTime().isEnabled()) {
       activityTime().fill("");
     }
-    activityDate().fill(texts.dateInput(date));
-    assertThat(activityDate()).hasValue(texts.dateInput(date));
+    activityDate().fill(uiTexts.dateInput(date));
+    assertThat(activityDate()).hasValue(uiTexts.dateInput(date));
     // Vaadin may remove leading zeroes on blur. Verify the exact parsed date below.
     // Focus another real field to commit; do not open or cancel the calendar.
     searchField().click();
     assertThat(activityPicker()).hasJSProperty("value", date.toString());
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     assertThat(activityTime()).hasValue("");
     applyFilters();
   }
@@ -206,7 +207,7 @@ public final class AdminUsersPage {
       activityTime().fill("");
     }
     activityDate().click();
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     // The public value property is read only; selection itself uses ordinary UI actions.
     Object value = activityPicker().evaluate("element => element.value");
     LocalDate base =
@@ -215,12 +216,14 @@ public final class AdminUsersPage {
             : LocalDate.now(ZoneId.of("Europe/Berlin"));
     LocalDate selected = LocalDate.now(ZoneId.of("Europe/Berlin")).plusDays(daysFromToday);
     activityPicker().locator("[part~='toggle-button']").click();
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).isVisible();
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).isVisible();
     // Vaadin projects the calendar content into its overlay; its DOM remains with the picker.
     // Match the accessible calendar cell by its public date part, excluding user-grid cells.
     // Desktop opening marks the current date with tabindex=0, before keyboard focus.
     Locator currentDay =
-        page.getByRole(AriaRole.GRIDCELL).and(page.locator("[part~='date'][tabindex='0']"));
+        browserPage
+            .getByRole(AriaRole.GRIDCELL)
+            .and(browserPage.locator("[part~='date'][tabindex='0']"));
     assertThat(currentDay).hasCount(1);
     long delta = ChronoUnit.DAYS.between(base, selected);
     for (long step = 0; step < Math.abs(delta); step++) {
@@ -229,15 +232,17 @@ public final class AdminUsersPage {
     // Am Monatswechsel bewegt sich das Gitter noch. Die bereits per Tastatur fokussierte
     // Zelle mit Enter bestätigen, statt während dieser Bewegung eine Mauskoordinate zu wählen.
     currentDay.press("Enter");
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     assertThat(activityPicker()).hasJSProperty("value", selected.toString());
     assertThat(activityTime()).hasValue("");
     activityPicker().locator("[part~='toggle-button']").click();
     Locator selectedDay =
-        page.getByRole(AriaRole.GRIDCELL).and(page.locator("[part~='date'][aria-selected='true']"));
+        browserPage
+            .getByRole(AriaRole.GRIDCELL)
+            .and(browserPage.locator("[part~='date'][aria-selected='true']"));
     assertThat(selectedDay).hasCount(1);
     selectedDay.click();
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     assertThat(activityPicker()).hasJSProperty("value", selected.toString());
     applyFilters();
     return selected;
@@ -246,22 +251,24 @@ public final class AdminUsersPage {
   @Step("Optionale Uhrzeit über den angebotenen Dropdown auswählen")
   public void activityTimeUsingDropdown(LocalTime time) {
     activityTime().click();
-    assertThat(page.locator("vaadin-time-picker-overlay[opened]")).hasCount(0);
-    page.locator(".admin-user-activity-filter vaadin-time-picker")
+    assertThat(browserPage.locator("vaadin-time-picker-overlay[opened]")).hasCount(0);
+    browserPage
+        .locator(".admin-user-activity-filter vaadin-time-picker")
         .locator("[part~='toggle-button']")
         .click();
-    Locator overlay = page.locator("vaadin-time-picker-overlay[opened]");
+    Locator overlay = browserPage.locator("vaadin-time-picker-overlay[opened]");
     assertThat(overlay).isVisible();
-    Locator options = page.getByRole(AriaRole.OPTION).and(page.locator("vaadin-time-picker-item"));
+    Locator options =
+        browserPage.getByRole(AriaRole.OPTION).and(browserPage.locator("vaadin-time-picker-item"));
     Locator target =
-        page.getByRole(
+        browserPage.getByRole(
             AriaRole.OPTION,
-            new Page.GetByRoleOptions().setName(texts.timeInput(time)).setExact(true));
+            new Page.GetByRoleOptions().setName(uiTexts.timeInput(time)).setExact(true));
     // Die Liste hält unsichtbare Pufferzeilen vor. Das Mausrad muss über dem
     // sichtbaren Overlay liegen, nicht über dessen erstem DOM-Puffereintrag.
     BoundingBox bounds = overlay.locator("[part~='overlay']").boundingBox();
-    page.mouse().move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
-    Locator scroller = page.locator("vaadin-time-picker-scroller:visible");
+    browserPage.mouse().move(bounds.x + bounds.width / 2, bounds.y + bounds.height / 2);
+    Locator scroller = browserPage.locator("vaadin-time-picker-scroller:visible");
     for (int step = 0; step < 24 && target.count() == 0; step++) {
       // Vaadin hält auch eine unsichtbare Mitternachtszeile im DOM. Sie ist kein
       // Maß für die Scrollrichtung: maßgeblich ist die erste tatsächlich sichtbare Zeile.
@@ -284,23 +291,23 @@ public final class AdminUsersPage {
           LocalTime.parse(
               firstVisible,
               DateTimeFormatter.ofPattern(
-                  texts.language().equals("de") ? "HH:mm" : "h:mm a",
-                  Locale.forLanguageTag(texts.language())));
+                  uiTexts.language().equals("de") ? "HH:mm" : "h:mm a",
+                  Locale.forLanguageTag(uiTexts.language())));
       Object previousScroll = scroller.evaluate("element => element.scrollTop");
-      page.mouse().wheel(0, time.isBefore(firstTime) ? -240 : 240);
+      browserPage.mouse().wheel(0, time.isBefore(firstTime) ? -240 : 240);
       assertThat(scroller).not().hasJSProperty("scrollTop", previousScroll);
     }
     assertThat(target).hasCount(1);
     target.click();
-    assertThat(activityTime()).hasValue(texts.timeInput(time));
+    assertThat(activityTime()).hasValue(uiTexts.timeInput(time));
     applyFilters();
   }
 
   @Step("Optionale Uhrzeit für den bestehenden Aktivitätsfilter ergänzen")
   public void activityTime(LocalTime time) {
-    activityTime().fill(texts.timeInput(time));
+    activityTime().fill(uiTexts.timeInput(time));
     activityTime().press("Tab");
-    assertThat(activityTime()).hasValue(texts.timeInput(time));
+    assertThat(activityTime()).hasValue(uiTexts.timeInput(time));
     applyFilters();
   }
 
@@ -315,14 +322,15 @@ public final class AdminUsersPage {
   @Step("Suche, Entwürfe und aktive Badges über Alle zurücksetzen leeren")
   public void clearAllFilters() {
     openFilters();
-    button(texts.getAdminUsersClearFilters()).click();
+    button(uiTexts.getAdminUsersClearFilters()).click();
     assertThat(searchField()).hasValue("");
-    assertThat(page.locator(".admin-user-active-filter-chip:visible")).hasCount(0);
+    assertThat(browserPage.locator(".admin-user-active-filter-chip:visible")).hasCount(0);
     assertThat(activityTime()).isDisabled();
   }
 
   public Locator filterField(String label) {
-    return page.locator(".admin-user-filters")
+    return browserPage
+        .locator(".admin-user-filters")
         .getByLabel(label, new Locator.GetByLabelOptions().setExact(true));
   }
 
@@ -337,37 +345,39 @@ public final class AdminUsersPage {
     openFilters();
     assertThat(activityDate()).isVisible();
     assertThat(activityDate())
-        .hasAttribute("placeholder", texts.getRegistrationBirthDatePlaceholder());
-    assertThat(page.locator("#admin-user-filter-panel .admin-filter-hint"))
-        .containsText(texts.getAdminUsersFilterTimeHint());
+        .hasAttribute("placeholder", uiTexts.getRegistrationBirthDatePlaceholder());
+    assertThat(browserPage.locator("#admin-user-filter-panel .admin-filter-hint"))
+        .containsText(uiTexts.getAdminUsersFilterTimeHint());
   }
 
   private Locator activityPicker() {
-    return page.locator(".admin-user-activity-filter vaadin-date-picker");
+    return browserPage.locator(".admin-user-activity-filter vaadin-date-picker");
   }
 
   public Locator activityDate() {
     openFilters();
-    return page.locator(".admin-user-activity-filter")
+    return browserPage
+        .locator(".admin-user-activity-filter")
         .getByRole(
             AriaRole.COMBOBOX,
             new Locator.GetByRoleOptions()
-                .setName(texts.getAdminUsersActivityDate())
+                .setName(uiTexts.getAdminUsersActivityDate())
                 .setExact(true));
   }
 
   public Locator activityTime() {
     openFilters();
-    return page.locator(".admin-user-activity-filter")
+    return browserPage
+        .locator(".admin-user-activity-filter")
         .getByRole(
             AriaRole.COMBOBOX,
             new Locator.GetByRoleOptions()
-                .setName(texts.getAdminUsersActivityTimeOptional())
+                .setName(uiTexts.getAdminUsersActivityTimeOptional())
                 .setExact(true));
   }
 
   private Locator button(String name) {
-    return page.getByRole(
+    return browserPage.getByRole(
         AriaRole.BUTTON, new Page.GetByRoleOptions().setName(name).setExact(true));
   }
 }

@@ -36,53 +36,57 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
   @Tag("ticket-browser-detail")
   @DisplayName("MFA-24: Ticketpunkt erscheint und verschwindet außerhalb des Ticketsystems")
   void ticketActivityChangesWhileTheDashboardStaysOpen() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
+    new UserMenu(browserPage).selectTestLanguage();
     String suffix = UUID.randomUUID() + "@example.test";
     String observerEmail = "ticket-activity-admin-" + suffix;
     String requesterEmail = "ticket-activity-user-" + suffix;
-    AdminUsersPage users = new AdminUsersPage(page);
+    AdminUsersPage users = new AdminUsersPage(browserPage);
     users.createUser(observerEmail, BrowserTestAccounts.USER_PASSWORD, true, true);
     users.createActiveUser(requesterEmail, BrowserTestAccounts.USER_PASSWORD);
-    try (BrowserActor observer = new BrowserActor(browser);
-        BrowserActor requester = new BrowserActor(browser)) {
+    try (BrowserActor observer = new BrowserActor(testBrowser);
+        BrowserActor requester = new BrowserActor(testBrowser)) {
       observer.login(observerEmail, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(observer.page).selectTestLanguage();
-      observer.page.navigate("/admin");
-      assertThat(observer.page.locator("#admin-nav-support")).isVisible();
-      if (observer.page.locator("#admin-nav-support-activity").isVisible()) {
-        clearObserverUnreadTickets(observer.page);
+      new UserMenu(observer.browserPage).selectTestLanguage();
+      observer.browserPage.navigate("/admin");
+      assertThat(observer.browserPage.locator("#admin-nav-support")).isVisible();
+      if (observer.browserPage.locator("#admin-nav-support-activity").isVisible()) {
+        clearObserverUnreadTickets(observer.browserPage);
       }
-      try (Page mobile = observer.context.newPage()) {
+      try (Page mobile = observer.browserContext.newPage()) {
         mobile.setViewportSize(390, 900);
-        observer.page.navigate("/admin");
+        observer.browserPage.navigate("/admin");
         mobile.navigate("/admin");
         UiActions.complete(mobile, () -> mobile.locator("#account-navigation-toggle").click());
-        for (Page view : List.of(observer.page, mobile)) {
+        for (Page view : List.of(observer.browserPage, mobile)) {
           assertThat(view.locator("#admin-nav-support")).isVisible();
           assertThat(view.locator("#admin-nav-support-activity")).isHidden();
         }
         requester.login(requesterEmail, BrowserTestAccounts.USER_PASSWORD);
-        requester.page.navigate("/recovery-help");
-        requester.page.locator("#support-reply textarea").fill("Fresh dashboard ticket activity.");
-        UiActions.complete(requester.page, () -> requester.page.locator("#support-create").click());
+        requester.browserPage.navigate("/recovery-help");
+        requester
+            .browserPage
+            .locator("#support-reply textarea")
+            .fill("Fresh dashboard ticket activity.");
+        UiActions.complete(
+            requester.browserPage, () -> requester.browserPage.locator("#support-create").click());
         String number =
             requester
-                .page
+                .browserPage
                 .locator("#support-ticket-grid")
                 .getByText(Pattern.compile("^#[0-9]+$"))
                 .first()
                 .innerText();
-        for (Page view : List.of(observer.page, mobile)) {
+        for (Page view : List.of(observer.browserPage, mobile)) {
           assertThat(view.locator("#admin-nav-support-activity")).isVisible();
           view.locator("#admin-nav-support").hover();
-          assertThat(ticketActivityTooltip(view)).hasText(texts.getSupportNewActivity());
+          assertThat(ticketActivityTooltip(view)).hasText(uiTexts.getSupportNewActivity());
         }
-        page.navigate("/admin?section=support&ticket=" + number.substring(1));
-        UiActions.complete(page, () -> page.locator("#support-claim").click());
-        for (Page view : List.of(observer.page, mobile)) {
+        browserPage.navigate("/admin?section=support&ticket=" + number.substring(1));
+        UiActions.complete(browserPage, () -> browserPage.locator("#support-claim").click());
+        for (Page view : List.of(observer.browserPage, mobile)) {
           assertThat(view.locator("#admin-nav-support-activity")).isHidden();
           assertThat(view.locator("#support-ticket-categories")).hasCount(0);
           Locator activityTooltip = ticketActivityTooltip(view);
@@ -93,15 +97,15 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
           view.waitForTimeout(700);
           assertFalse(activityTooltip.isVisible());
         }
-        UiActions.complete(page, () -> page.locator("#support-close").click());
+        UiActions.complete(browserPage, () -> browserPage.locator("#support-close").click());
       }
-      new UserMenu(observer.page).signOut();
+      new UserMenu(observer.browserPage).signOut();
     }
   }
 
   private Locator ticketActivityTooltip(Page view) {
     return view.getByRole(AriaRole.TOOLTIP)
-        .filter(new Locator.FilterOptions().setHasText(texts.getSupportNewActivity()));
+        .filter(new Locator.FilterOptions().setHasText(uiTexts.getSupportNewActivity()));
   }
 
   private void clearObserverUnreadTickets(Page observer) {
@@ -114,7 +118,8 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
       Locator panel = observer.locator("#support-filter-panel");
       panel
           .locator("#support-filter-reading")
-          .getByText(texts.getNotificationsUnread(), new Locator.GetByTextOptions().setExact(true))
+          .getByText(
+              uiTexts.getNotificationsUnread(), new Locator.GetByTextOptions().setExact(true))
           .click();
       UiActions.complete(observer, () -> panel.locator("#support-filter-apply").click());
       if (cards.count() == 0) {
@@ -125,7 +130,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
           seen.add(number), "Ticket bleibt ungelesen: " + number);
       observer.navigate(route + "&ticket=" + number.substring(1));
       assertThat(observer.locator("#support-ticket-panel .support-ticket-number"))
-          .hasText(texts.getSupportTicketNumber(number));
+          .hasText(uiTexts.getSupportTicketNumber(number));
       assertThat(
               cards
                   .filter(new Locator.FilterOptions().setHasText(number))
@@ -139,51 +144,56 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
   @DisplayName(
       "MFA-13: Nur echte Eingaben verlängern 2FA; abgelaufene Vorschauen erhalten keine Push-Inhalte")
   void inactivityAlsoProtectsServerSideNotificationUpdates(int width) {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
+    new UserMenu(browserPage).selectTestLanguage();
     String email = "push-mfa-" + UUID.randomUUID() + "@example.test";
-    new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
-    try (BrowserActor user = new BrowserActor(browser)) {
-      user.page.setViewportSize(width, 900);
+    new AdminUsersPage(browserPage).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    try (BrowserActor user = new BrowserActor(testBrowser)) {
+      user.browserPage.setViewportSize(width, 900);
       user.login(email, BrowserTestAccounts.USER_PASSWORD);
-      user.page.navigate("/account?section=security&tab=portal");
-      user.page.locator("#account-two-factor-setup").click();
-      user.page.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
-      user.page.locator("#two-factor-submit").click();
-      TwoFactorPage.enrollCurrent(user.page, email);
-      assertThat(user.page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
+      user.browserPage.navigate("/account?section=security&tab=portal");
+      user.browserPage.locator("#account-two-factor-setup").click();
+      user.browserPage
+          .locator("#two-factor-password input")
+          .fill(BrowserTestAccounts.USER_PASSWORD);
+      user.browserPage.locator("#two-factor-submit").click();
+      TwoFactorPage.enrollCurrent(user.browserPage, email);
+      assertThat(user.browserPage)
+          .hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
       try {
         configureInactivity(true);
-        user.page.navigate("/home");
-        TwoFactorPage.completeIfRequired(user.page, email, BrowserTestAccounts.USER_PASSWORD);
-        user.page.navigate("/home");
-        NotificationInboxPage inbox = new NotificationInboxPage(user.page);
+        user.browserPage.navigate("/home");
+        TwoFactorPage.completeIfRequired(
+            user.browserPage, email, BrowserTestAccounts.USER_PASSWORD);
+        user.browserPage.navigate("/home");
+        NotificationInboxPage inbox = new NotificationInboxPage(user.browserPage);
         inbox.openPreview();
-        user.page.waitForTimeout(35_000);
+        user.browserPage.waitForTimeout(35_000);
         // Playwright-Tastatur erzeugt einen echten isTrusted-Keydown, kein synthetisches DOM-Event.
-        user.page.keyboard().press("Shift");
-        user.page.waitForTimeout(35_000);
+        user.browserPage.keyboard().press("Shift");
+        user.browserPage.waitForTimeout(35_000);
         String first = "Still confirmed " + UUID.randomUUID();
         send(email, first);
         assertThat(inbox.row(inbox.preview(), first)).isVisible();
         // Hintergrund-GETs dürfen den Nachweis nicht erneuern. Keine Benutzerinteraktion.
-        user.page.waitForTimeout(30_000);
-        user.page.evaluate("async () => { await fetch('/home', {cache:'no-store'}); }");
-        user.page.waitForTimeout(35_000);
+        user.browserPage.waitForTimeout(30_000);
+        user.browserPage.evaluate("async () => { await fetch('/home', {cache:'no-store'}); }");
+        user.browserPage.waitForTimeout(35_000);
         String denied = "Must remain hidden " + UUID.randomUUID();
         send(email, denied);
         assertThat(inbox.preview()).isHidden();
         // Das Schließen des nativen Popovers meldet dessen Zustand zurück. Der alte RPC wird
         // ebenfalls gesperrt und führt die ganze Ansicht unmittelbar zur erneuten Bestätigung.
-        assertThat(user.page).hasURL(Pattern.compile(".*/two-factor.*"));
-        assertThat(user.page.getByText(denied, new Page.GetByTextOptions().setExact(true)))
+        assertThat(user.browserPage).hasURL(Pattern.compile(".*/two-factor.*"));
+        assertThat(user.browserPage.getByText(denied, new Page.GetByTextOptions().setExact(true)))
             .hasCount(0);
         AllurePlaywright.attachScreenshot(
-            "Abgelaufene 2FA sperrt serverseitige Vorschau", user.page);
-        TwoFactorPage.completeIfRequired(user.page, email, BrowserTestAccounts.USER_PASSWORD);
-        user.page.navigate("/home");
+            "Abgelaufene 2FA sperrt serverseitige Vorschau", user.browserPage);
+        TwoFactorPage.completeIfRequired(
+            user.browserPage, email, BrowserTestAccounts.USER_PASSWORD);
+        user.browserPage.navigate("/home");
         inbox.openPreview();
         assertThat(inbox.row(inbox.preview(), denied)).isVisible();
       } finally {
@@ -196,99 +206,107 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
     String location = "/admin?section=configuration&group=two_factor";
     // Eine vom alten Prüftab bereits ausgelöste Weiterleitung darf den neuen Abruf nicht abbrechen.
     // Die getrennte Nutzersitzung mit der alten Benachrichtigungsvorschau bleibt geöffnet.
-    Page next = context.newPage();
-    page.close();
-    page = next;
-    page.navigate(location);
+    Page next = browserContext.newPage();
+    browserPage.close();
+    browserPage = next;
+    browserPage.navigate(location);
     TwoFactorPage.completeIfRequired(
-        page, BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-    if (!page.url().endsWith(location)) {
-      page.navigate(location);
+        browserPage, BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    if (!browserPage.url().endsWith(location)) {
+      browserPage.navigate(location);
     }
-    assertThat(page.locator("#two-factor-save")).isVisible();
+    assertThat(browserPage.locator("#two-factor-save")).isVisible();
   }
 
   private void configureInactivity(boolean enabled) {
     openConfiguration();
-    page.getByRole(
+    browserPage
+        .getByRole(
             AriaRole.SWITCH,
             new Page.GetByRoleOptions()
-                .setName(texts.getTwoFactorInactivityEnabled())
+                .setName(uiTexts.getTwoFactorInactivityEnabled())
                 .setExact(true))
         .setChecked(true);
-    Locator duration = page.locator("#two-factor-inactivity-duration");
+    Locator duration = browserPage.locator("#two-factor-inactivity-duration");
     duration.locator("vaadin-select").click();
     String unit =
         enabled
-            ? texts.getAdminConfigDurationUnitMinutes()
-            : texts.getAdminConfigDurationUnitHours();
-    page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(unit).setExact(true))
+            ? uiTexts.getAdminConfigDurationUnitMinutes()
+            : uiTexts.getAdminConfigDurationUnitHours();
+    browserPage
+        .getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(unit).setExact(true))
         .click();
     duration.locator("vaadin-integer-field input").fill(enabled ? "1" : "12");
-    page.locator("#two-factor-inactivity-label").click();
-    page.getByRole(
+    browserPage.locator("#two-factor-inactivity-label").click();
+    browserPage
+        .getByRole(
             AriaRole.SWITCH,
             new Page.GetByRoleOptions()
-                .setName(texts.getTwoFactorInactivityEnabled())
+                .setName(uiTexts.getTwoFactorInactivityEnabled())
                 .setExact(true))
         .setChecked(enabled);
-    page.locator("#two-factor-save").click();
+    browserPage.locator("#two-factor-save").click();
     TwoFactorPage.enterActionCode(
-        page, TwoFactorPage.nextCode(page, BrowserTestAccounts.SUPERADMIN_EMAIL));
-    UiActions.complete(page, () -> page.locator("#two-factor-action-confirm").click());
-    page.waitForCondition(
-        () ->
-            java.net.URI.create(page.url()).getPath().equals("/two-factor")
-                || page.locator("vaadin-notification-card:not([closing])")
-                    .filter(new Locator.FilterOptions().setHasText(texts.getTwoFactorSaved()))
-                    .isVisible());
+        browserPage, TwoFactorPage.nextCode(browserPage, BrowserTestAccounts.SUPERADMIN_EMAIL));
+    UiActions.complete(
+        browserPage, () -> browserPage.locator("#two-factor-action-confirm").click());
+    browserPage.waitForCondition(() ->
+        java.net.URI.create(browserPage.url()).getPath().equals("/two-factor")
+            || browserPage
+                .locator("vaadin-notification-card:not([closing])")
+                .filter(new Locator.FilterOptions().setHasText(uiTexts.getTwoFactorSaved()))
+                .isVisible());
     openConfiguration();
-    assertThat(page.locator("#two-factor-inactivity-enabled")).hasJSProperty("checked", enabled);
-    assertThat(page.locator("#two-factor-inactivity-duration vaadin-integer-field input"))
+    assertThat(browserPage.locator("#two-factor-inactivity-enabled"))
+        .hasJSProperty("checked", enabled);
+    assertThat(browserPage.locator("#two-factor-inactivity-duration vaadin-integer-field input"))
         .hasValue(enabled ? "1" : "12");
     if (!enabled) {
-      assertThat(page.locator("#two-factor-inactivity-duration vaadin-integer-field input"))
+      assertThat(browserPage.locator("#two-factor-inactivity-duration vaadin-integer-field input"))
           .isDisabled();
       // Ausschalten erhält den Entwurf. Neuladen stellt den gespeicherten Stundenwert wieder her.
-      page.getByRole(
+      browserPage
+          .getByRole(
               AriaRole.SWITCH,
               new Page.GetByRoleOptions()
-                  .setName(texts.getTwoFactorInactivityEnabled())
+                  .setName(uiTexts.getTwoFactorInactivityEnabled())
                   .setExact(true))
           .setChecked(true);
-      duration = page.locator("#two-factor-inactivity-duration");
+      duration = browserPage.locator("#two-factor-inactivity-duration");
       duration.locator("vaadin-select").click();
-      page.getByRole(
+      browserPage
+          .getByRole(
               AriaRole.OPTION,
               new Page.GetByRoleOptions()
-                  .setName(texts.getAdminConfigDurationUnitDays())
+                  .setName(uiTexts.getAdminConfigDurationUnitDays())
                   .setExact(true))
           .click();
-      page.getByRole(
+      browserPage
+          .getByRole(
               AriaRole.SWITCH,
               new Page.GetByRoleOptions()
-                  .setName(texts.getTwoFactorInactivityEnabled())
+                  .setName(uiTexts.getTwoFactorInactivityEnabled())
                   .setExact(true))
           .setChecked(false);
       assertThat(duration.locator("vaadin-integer-field input")).hasValue("12");
       assertThat(duration.locator("vaadin-select"))
-          .containsText(texts.getAdminConfigDurationUnitDays());
-      page.locator("#two-factor-reload").click();
+          .containsText(uiTexts.getAdminConfigDurationUnitDays());
+      browserPage.locator("#two-factor-reload").click();
       assertThat(duration.locator("vaadin-integer-field input")).hasValue("12");
       assertThat(duration.locator("vaadin-select"))
-          .containsText(texts.getAdminConfigDurationUnitHours());
+          .containsText(uiTexts.getAdminConfigDurationUnitHours());
     }
   }
 
   private void send(String email, String title) {
-    page.navigate("/admin?section=notifications");
+    browserPage.navigate("/admin?section=notifications");
     TwoFactorPage.completeIfRequired(
-        page, BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-    NotificationComposePage compose = new NotificationComposePage(page);
+        browserPage, BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    NotificationComposePage compose = new NotificationComposePage(browserPage);
     compose.open();
     compose.select(email);
     compose.draft(title, "Own isolated notification for the second-factor boundary.");
     compose.send().click();
-    compose.notice(texts.getNotificationsSent());
+    compose.notice(uiTexts.getNotificationsSent());
   }
 }

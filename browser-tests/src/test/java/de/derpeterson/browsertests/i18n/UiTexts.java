@@ -15,7 +15,7 @@ import java.util.function.UnaryOperator;
 
 /** Reads the application's original translation resources, without Spring or a Vaadin session. */
 public final class UiTexts extends MessageTexts {
-  private final Locale locale;
+  private final Locale uiLocale;
 
   public UiTexts(String language) {
     this(
@@ -26,13 +26,13 @@ public final class UiTexts extends MessageTexts {
         });
   }
 
-  private UiTexts(Locale locale) {
-    super(lookup(locale));
-    this.locale = locale;
+  private UiTexts(Locale uiLocale) {
+    super(lookup(uiLocale));
+    this.uiLocale = uiLocale;
   }
 
-  private static UnaryOperator<String> lookup(Locale locale) {
-    String resource = "/i18n/messages_" + locale.getLanguage() + ".properties";
+  private static UnaryOperator<String> lookup(Locale uiLocale) {
+    String resource = "/i18n/messages_" + uiLocale.getLanguage() + ".properties";
     final PropertyResourceBundle messages;
     try (InputStream input =
         Objects.requireNonNull(
@@ -46,7 +46,7 @@ public final class UiTexts extends MessageTexts {
       String pattern = messages.containsKey(key) ? messages.getString(key) : null;
       if (pattern == null || pattern.isBlank()) {
         throw new IllegalArgumentException(
-            "Missing or empty translation: " + locale.getLanguage() + "/" + key);
+            "Missing or empty translation: " + uiLocale.getLanguage() + "/" + key);
       }
       // Same translation/formatting sequence as CustomI18NProvider + MessageProperties.
       return MessageFormat.format(pattern, new Object[0]);
@@ -58,12 +58,12 @@ public final class UiTexts extends MessageTexts {
   }
 
   public String language() {
-    return locale.getLanguage();
+    return uiLocale.getLanguage();
   }
 
   @Override
   protected Locale formattingLocale() {
-    return locale;
+    return uiLocale;
   }
 
   public String browserLocale() {
@@ -81,11 +81,11 @@ public final class UiTexts extends MessageTexts {
 
   public String timeInput(LocalTime time) {
     return time.format(
-        DateTimeFormatter.ofPattern(language().equals("de") ? "HH:mm" : "h:mm a", locale));
+        DateTimeFormatter.ofPattern(language().equals("de") ? "HH:mm" : "h:mm a", uiLocale));
   }
 
   public String dateInput(LocalDate date) {
     return date.format(
-        DateTimeFormatter.ofPattern(language().equals("de") ? "dd.MM.uuuu" : "M/d/uuuu", locale));
+        DateTimeFormatter.ofPattern(language().equals("de") ? "dd.MM.uuuu" : "M/d/uuuu", uiLocale));
   }
 }

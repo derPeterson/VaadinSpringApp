@@ -9,38 +9,38 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
 
 public final class AccountSessionsPage {
-  private final Page page;
+  private final Page browserPage;
   private final UiTexts uiTexts = UiTexts.selected();
 
-  public AccountSessionsPage(Page page) {
-    this.page = page;
+  public AccountSessionsPage(Page browserPage) {
+    this.browserPage = browserPage;
   }
 
   @Step("Eigene Sitzungsliste im Konto öffnen")
   public void open() {
-    new AccountPage(page).open();
-    new AccountPage(page).section("account-tab-sessions");
-    assertThat(page.locator("#account-panel-sessions")).isVisible();
+    new AccountPage(browserPage).open();
+    new AccountPage(browserPage).section("account-tab-sessions");
+    assertThat(browserPage.locator("#account-panel-sessions")).isVisible();
   }
 
   public Locator rows(String state) {
-    return page.locator("#account-session-entries [data-session-state='" + state + "']");
+    return browserPage.locator("#account-session-entries [data-session-state='" + state + "']");
   }
 
   @Step("Aktive Anzahl, andere Sitzungen und gespeicherte Zugänge prüfen")
   public void assertCounts(int active, int other, int saved) {
-    assertThat(page.locator("#account-panel-sessions vaadin-badge.account-session-count"))
+    assertThat(browserPage.locator("#account-panel-sessions vaadin-badge.account-session-count"))
         .hasText(uiTexts.getPortalSessionActiveCount(active));
     assertThat(rows("current")).hasCount(1);
-    assertThat(page.locator("#account-current-session")).isDisabled();
+    assertThat(browserPage.locator("#account-current-session")).isDisabled();
     assertThat(rows("active")).hasCount(other);
     assertThat(rows("saved")).hasCount(saved);
     assertGroups(active, saved);
   }
 
   public void assertGroups(int active, int saved) {
-    Locator activeGroup = page.locator("#account-session-group-active");
-    Locator savedGroup = page.locator("#account-session-group-saved");
+    Locator activeGroup = browserPage.locator("#account-session-group-active");
+    Locator savedGroup = browserPage.locator("#account-session-group-saved");
     assertThat(activeGroup).hasText(uiTexts.getPortalSessionActiveGroup(active));
     assertThat(activeGroup).hasCSS("text-transform", "uppercase");
     assertThat(activeGroup).hasCSS("color", "rgb(56, 189, 248)");
@@ -54,7 +54,7 @@ public final class AccountSessionsPage {
   }
 
   public void assertSummaryAlignment() {
-    Locator heading = page.locator(".account-session-heading");
+    Locator heading = browserPage.locator(".account-session-heading");
     assertThat(heading.locator(".account-session-summary")).hasCSS("row-gap", "6px");
     assertTrue(
         (Boolean)
@@ -70,7 +70,7 @@ public final class AccountSessionsPage {
   }
 
   public void assertConfirmationDetails() {
-    Locator card = page.locator("#sessions-confirmation .portal-context-card");
+    Locator card = browserPage.locator("#sessions-confirmation .portal-context-card");
     Locator method = card.locator(".account-session-sign-in-method .account-session-detail-value");
     assertThat(method).hasText(uiTexts.getSignInPortalPassword());
     assertThat(method).hasCSS("font-weight", "700");
@@ -84,33 +84,36 @@ public final class AccountSessionsPage {
 
   @Step("Andere Sitzung gezielt abmelden")
   public void revokeOther(int index) {
-    UiActions.complete(page, () -> rows("active").nth(index).locator("vaadin-button").click());
+    UiActions.complete(
+        browserPage, () -> rows("active").nth(index).locator("vaadin-button").click());
     confirmDeviceRevocation();
   }
 
   @Step("Gespeicherten Zugang widerrufen")
   public void revokeSaved(int index) {
-    UiActions.complete(page, () -> rows("saved").nth(index).locator("vaadin-button").click());
+    UiActions.complete(
+        browserPage, () -> rows("saved").nth(index).locator("vaadin-button").click());
     confirmDeviceRevocation();
   }
 
   @Step("Alle anderen Sitzungen abmelden")
   public void revokeOthers() {
-    UiActions.complete(page, () -> page.locator("#account-logout-others").click());
+    UiActions.complete(browserPage, () -> browserPage.locator("#account-logout-others").click());
     confirmDeviceRevocation();
   }
 
   public void confirmDeviceRevocation() {
     assertThat(
-            page.locator(
+            browserPage.locator(
                 "#sessions-confirmation[opened] vaadin-dialog-overlay > [part~='overlay']"))
         .isVisible();
-    UiActions.complete(page, () -> page.locator("#sessions-confirmation-submit").click());
-    assertThat(page.locator("#sessions-confirmation[opened]")).hasCount(0);
+    UiActions.complete(
+        browserPage, () -> browserPage.locator("#sessions-confirmation-submit").click());
+    assertThat(browserPage.locator("#sessions-confirmation[opened]")).hasCount(0);
   }
 
   @Step("Sitzungsliste über Aktualisieren neu laden")
   public void refreshSessionList() {
-    UiActions.complete(page, () -> page.locator("#account-sessions-refresh").click());
+    UiActions.complete(browserPage, () -> browserPage.locator("#account-sessions-refresh").click());
   }
 }

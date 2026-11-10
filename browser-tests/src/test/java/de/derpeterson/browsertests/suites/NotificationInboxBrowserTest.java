@@ -31,11 +31,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Feature("Fertiges Benachrichtigungsdesign: Vorschau, Inbox und Archiv")
 public class NotificationInboxBrowserTest extends BrowserFixture {
   private String prepareRecipient() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    AdminUsersPage users = new AdminUsersPage(page);
+    new UserMenu(browserPage).selectTestLanguage();
+    AdminUsersPage users = new AdminUsersPage(browserPage);
     users.open();
     String email = "inbox-" + UUID.randomUUID() + "@example.test";
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
@@ -43,12 +43,12 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
   }
 
   private void send(String recipient, String subject, String body) {
-    NotificationComposePage compose = new NotificationComposePage(page);
+    NotificationComposePage compose = new NotificationComposePage(browserPage);
     compose.open();
     compose.select(recipient);
     compose.draft(subject, body);
     compose.send().click();
-    compose.notice(texts.getNotificationsSent());
+    compose.notice(uiTexts.getNotificationsSent());
     assertThat(compose.send()).isDisabled();
   }
 
@@ -72,24 +72,26 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
     send(recipient, prefix + " first", "First body");
     send(recipient, prefix + " second", "Second body");
     send(recipient, subject, body);
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.login(recipient, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(actor.page).selectTestLanguage();
-      actor.page.setViewportSize(width, 1000);
-      NotificationInboxPage inbox = new NotificationInboxPage(actor.page);
+      new UserMenu(actor.browserPage).selectTestLanguage();
+      actor.browserPage.setViewportSize(width, 1000);
+      NotificationInboxPage inbox = new NotificationInboxPage(actor.browserPage);
       inbox.open();
-      assertThat(actor.page.locator(".cosmos-topbar-logo")).isVisible();
+      assertThat(actor.browserPage.locator(".cosmos-topbar-logo")).isVisible();
       assertTrue(
           (Boolean)
               actor
-                  .page
+                  .browserPage
                   .locator(".cosmos-topbar-logo")
                   .evaluate("el => el.complete && el.naturalWidth > 0"));
-      assertThat(actor.page.locator("#account-nav-notifications"))
+      assertThat(actor.browserPage.locator("#account-nav-notifications"))
           .hasClass(java.util.regex.Pattern.compile(".*cosmos-nav-item--active.*"));
-      new de.derpeterson.browsertests.pages.AccountPage(actor.page).section("account-nav-profile");
-      assertThat(actor.page.locator("#account-tab-profile")).hasAttribute("aria-current", "page");
-      new de.derpeterson.browsertests.pages.AccountPage(actor.page)
+      new de.derpeterson.browsertests.pages.AccountPage(actor.browserPage)
+          .section("account-nav-profile");
+      assertThat(actor.browserPage.locator("#account-tab-profile"))
+          .hasAttribute("aria-current", "page");
+      new de.derpeterson.browsertests.pages.AccountPage(actor.browserPage)
           .section("account-nav-notifications");
       assertThat(inbox.rows(inbox.inbox())).hasCount(3);
       inbox.openPreview();
@@ -97,64 +99,65 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       inbox.assertRowLayout(inbox.preview(), true);
       inbox.openDetail(inbox.preview(), subject, body, true);
       inbox.closeDetail();
-      inbox.filter(inbox.preview(), texts.getNotificationsRead());
+      inbox.filter(inbox.preview(), uiTexts.getNotificationsRead());
       assertThat(inbox.rows(inbox.preview())).hasCount(0);
-      inbox.filter(inbox.preview(), texts.getNotificationsUnread());
+      inbox.filter(inbox.preview(), uiTexts.getNotificationsUnread());
       assertThat(inbox.rows(inbox.preview())).hasCount(3);
-      inbox.button(inbox.preview(), texts.getNotificationsHistory()).click();
+      inbox.button(inbox.preview(), uiTexts.getNotificationsHistory()).click();
       assertThat(inbox.inbox()).isVisible();
       assertThat(inbox.preview()).not().isVisible();
       inbox.assertRowLayout(inbox.inbox(), false);
       inbox.openDetail(inbox.inbox(), subject, body, false);
       inbox.closeDetail();
-      assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("3");
+      assertThat(actor.browserPage.locator("#notifications-inbox-unread-total")).hasText("3");
       inbox.row(inbox.inbox(), subject).locator(".cosmos-notification-inbox-mark-read").click();
       inbox.confirm();
-      assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("2");
-      inbox.filter(inbox.inbox(), texts.getNotificationsRead());
+      assertThat(actor.browserPage.locator("#notifications-inbox-unread-total")).hasText("2");
+      inbox.filter(inbox.inbox(), uiTexts.getNotificationsRead());
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);
-      inbox.filter(inbox.inbox(), texts.getNotificationsAll());
-      inbox.button(inbox.inbox(), texts.getNotificationsDismissRead()).click();
+      inbox.filter(inbox.inbox(), uiTexts.getNotificationsAll());
+      inbox.button(inbox.inbox(), uiTexts.getNotificationsDismissRead()).click();
       inbox.confirm();
       assertThat(inbox.rows(inbox.inbox())).hasCount(2);
       assertThat(inbox.row(inbox.inbox(), subject)).hasCount(0);
-      assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("2");
-      assertThat(inbox.button(inbox.inbox(), texts.getNotificationsDismissRead())).isDisabled();
+      assertThat(actor.browserPage.locator("#notifications-inbox-unread-total")).hasText("2");
+      assertThat(inbox.button(inbox.inbox(), uiTexts.getNotificationsDismissRead())).isDisabled();
       inbox.openDetail(inbox.inbox(), prefix + " first", "First body", false);
-      inbox.button(inbox.dialog(), texts.getNotificationsMoreActions()).click();
+      inbox.button(inbox.dialog(), uiTexts.getNotificationsMoreActions()).click();
       actor
-          .page
+          .browserPage
           .locator(".cosmos-notification-detail-tools:visible .cosmos-notification-detail-delete")
           .click();
       inbox.confirm();
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);
       assertThat(inbox.dialog()).hasCount(0);
-      inbox.button(inbox.inbox(), texts.getNotificationsMarkAll()).click();
+      inbox.button(inbox.inbox(), uiTexts.getNotificationsMarkAll()).click();
       inbox.confirm();
-      assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("0");
-      assertThat(inbox.button(inbox.inbox(), texts.getNotificationsMarkAll())).isDisabled();
-      inbox.button(inbox.inbox(), texts.getNotificationsDismissRead()).click();
+      assertThat(actor.browserPage.locator("#notifications-inbox-unread-total")).hasText("0");
+      assertThat(inbox.button(inbox.inbox(), uiTexts.getNotificationsMarkAll())).isDisabled();
+      inbox.button(inbox.inbox(), uiTexts.getNotificationsDismissRead()).click();
       inbox.confirm();
       assertThat(inbox.rows(inbox.inbox())).hasCount(0);
       assertThat(inbox.inbox().locator(".cosmos-notification-empty"))
-          .containsText(texts.getNotificationsEmpty());
-      actor.page.reload();
-      assertThat(actor.page.locator("#notifications-inbox-total")).hasText("0");
+          .containsText(uiTexts.getNotificationsEmpty());
+      actor.browserPage.reload();
+      assertThat(actor.browserPage.locator("#notifications-inbox-total")).hasText("0");
       AllurePlaywright.attachScreenshot(
-          "Leere Inbox nach ausdrücklichen Löschaktionen", actor.page);
+          "Leere Inbox nach ausdrücklichen Löschaktionen", actor.browserPage);
     }
     // Der privilegierte Header muss auch von der Inbox aus zum Adminbereich führen.
-    NotificationInboxPage own = new NotificationInboxPage(page);
+    NotificationInboxPage own = new NotificationInboxPage(browserPage);
     own.open();
-    UserMenu menu = new UserMenu(page);
+    UserMenu menu = new UserMenu(browserPage);
     menu.open();
-    page.getByRole(
+    browserPage
+        .getByRole(
             AriaRole.BUTTON,
             new Page.GetByRoleOptions()
-                .setName(texts.getBaseManageApplicationButton())
+                .setName(uiTexts.getBaseManageApplicationButton())
                 .setExact(true))
         .click();
-    assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));
+    assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
   }
 
   @Test
@@ -175,7 +178,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
     for (int index = 0; index < 11; index++) {
       send(recipient, prefix + " item " + index, "Archive body " + index);
     }
-    Locator archive = page.locator("#admin-notifications-sent");
+    Locator archive = browserPage.locator("#admin-notifications-sent");
     assertThat(archive.locator(".cosmos-notification-sent-row")).hasCount(5);
     Locator latest = archive.locator(".cosmos-notification-sent-row").first();
     assertThat(latest).containsText(prefix + " item 10");
@@ -187,52 +190,53 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
         .getByRole(
             AriaRole.BUTTON,
             new Locator.GetByRoleOptions()
-                .setName(texts.getAdminUsersPaginationNextPage())
+                .setName(uiTexts.getAdminUsersPaginationNextPage())
                 .setExact(true))
         .click();
     assertThat(archive.locator(".cosmos-notification-sent-row").first())
         .containsText(prefix + " item 5");
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.login(recipient, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(actor.page).selectTestLanguage();
-      NotificationInboxPage inbox = new NotificationInboxPage(actor.page);
+      new UserMenu(actor.browserPage).selectTestLanguage();
+      NotificationInboxPage inbox = new NotificationInboxPage(actor.browserPage);
       inbox.open();
       assertThat(inbox.rows(inbox.inbox())).hasCount(10);
-      assertThat(actor.page.locator("#notifications-inbox-total")).hasText("11");
-      assertEquals(64, actor.page.locator("#notifications-inbox-page-size").boundingBox().width, 1);
-      inbox.button(inbox.inbox(), texts.getNotificationsNext()).click();
+      assertThat(actor.browserPage.locator("#notifications-inbox-total")).hasText("11");
+      assertEquals(
+          64, actor.browserPage.locator("#notifications-inbox-page-size").boundingBox().width, 1);
+      inbox.button(inbox.inbox(), uiTexts.getNotificationsNext()).click();
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);
       assertThat(inbox.row(inbox.inbox(), prefix + " item 0")).hasCount(1);
-      assertThat(inbox.button(inbox.inbox(), texts.getNotificationsNext())).isDisabled();
+      assertThat(inbox.button(inbox.inbox(), uiTexts.getNotificationsNext())).isDisabled();
       for (String size : new String[] {"20", "50"}) {
         inbox.pageSize(inbox.inbox(), size);
         assertThat(inbox.rows(inbox.inbox())).hasCount(11);
       }
       inbox.search(prefix + " item 10");
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);
-      inbox.filter(inbox.inbox(), texts.getNotificationsRead());
+      inbox.filter(inbox.inbox(), uiTexts.getNotificationsRead());
       assertThat(inbox.rows(inbox.inbox())).hasCount(0);
-      inbox.filter(inbox.inbox(), texts.getNotificationsUnread());
+      inbox.filter(inbox.inbox(), uiTexts.getNotificationsUnread());
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);
-      inbox.filter(inbox.inbox(), texts.getNotificationsAll());
+      inbox.filter(inbox.inbox(), uiTexts.getNotificationsAll());
       assertThat(inbox.rows(inbox.inbox())).hasCount(1);
       inbox.search("no-result-" + UUID.randomUUID());
       assertThat(inbox.rows(inbox.inbox())).hasCount(0);
       assertThat(inbox.inbox().locator(".cosmos-notification-empty"))
-          .containsText(texts.getNotificationsSearchEmpty());
+          .containsText(uiTexts.getNotificationsSearchEmpty());
       inbox.search("");
       assertThat(inbox.rows(inbox.inbox())).hasCount(11);
       inbox.openPreview();
       assertThat(inbox.rows(inbox.preview())).hasCount(5);
-      inbox.button(inbox.preview(), texts.getNotificationsMarkAll()).click();
+      inbox.button(inbox.preview(), uiTexts.getNotificationsMarkAll()).click();
       inbox.confirm();
-      assertThat(inbox.button(inbox.preview(), texts.getNotificationsMarkAll())).isDisabled();
-      inbox.button(inbox.preview(), texts.getNotificationsHistory()).click();
-      assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("0");
-      actor.page.reload();
-      assertThat(actor.page.locator("#notifications-inbox-unread-total")).hasText("0");
-      assertThat(actor.page.locator("#notifications-inbox-total")).hasText("11");
-      AllurePlaywright.attachScreenshot("Persistente Inbox und Pagination", actor.page);
+      assertThat(inbox.button(inbox.preview(), uiTexts.getNotificationsMarkAll())).isDisabled();
+      inbox.button(inbox.preview(), uiTexts.getNotificationsHistory()).click();
+      assertThat(actor.browserPage.locator("#notifications-inbox-unread-total")).hasText("0");
+      actor.browserPage.reload();
+      assertThat(actor.browserPage.locator("#notifications-inbox-unread-total")).hasText("0");
+      assertThat(actor.browserPage.locator("#notifications-inbox-total")).hasText("11");
+      AllurePlaywright.attachScreenshot("Persistente Inbox und Pagination", actor.browserPage);
     }
   }
 }

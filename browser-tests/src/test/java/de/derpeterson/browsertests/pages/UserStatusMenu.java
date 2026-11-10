@@ -8,32 +8,34 @@ import io.qameta.allure.Step;
 
 /** Matches the visible selected value separately from options and their descriptions. */
 public final class UserStatusMenu {
-  private final Page page;
+  private final Page browserPage;
 
-  public UserStatusMenu(Page page) {
-    this.page = page;
+  public UserStatusMenu(Page browserPage) {
+    this.browserPage = browserPage;
   }
 
   public Locator current() {
-    return page.locator(".user-popover-body .portal-status-option[aria-pressed=true]");
+    return browserPage.locator(".user-popover-body .portal-status-option[aria-pressed=true]");
   }
 
   @Step("Ausgewählten Benutzerstatus im geöffneten Menü prüfen")
   public void expect(String label) {
-    new UserMenu(page).open();
+    new UserMenu(browserPage).open();
     assertThat(current()).containsText(label);
   }
 
   @Step("Manuellen Status über die tatsächlich angebotene Option auswählen")
   public void select(String label) {
-    new UserMenu(page).open();
+    new UserMenu(browserPage).open();
     Locator option =
-        page.locator(".user-popover-body .portal-status-option")
+        browserPage
+            .locator(".user-popover-body .portal-status-option")
             .filter(
                 new Locator.FilterOptions()
-                    .setHas(page.getByText(label, new Page.GetByTextOptions().setExact(true))));
+                    .setHas(
+                        browserPage.getByText(label, new Page.GetByTextOptions().setExact(true))));
     assertThat(option).hasCount(1);
-    UiActions.complete(page, option::click);
+    UiActions.complete(browserPage, option::click);
     assertThat(current()).containsText(label);
   }
 }

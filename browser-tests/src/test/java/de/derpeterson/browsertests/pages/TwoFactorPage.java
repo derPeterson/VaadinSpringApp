@@ -30,74 +30,75 @@ public final class TwoFactorPage {
 
   private TwoFactorPage() {}
 
-  public static void completeIfRequired(Page page, String email, String password) {
-    if (!URI.create(page.url()).getPath().equals("/two-factor")) {
+  public static void completeIfRequired(Page browserPage, String email, String password) {
+    if (!URI.create(browserPage.url()).getPath().equals("/two-factor")) {
       return;
     }
-    selectTestLanguageIfNeeded(page);
-    page.waitForCondition(
-        () ->
-            page.locator("#two-factor-introduction-title").isVisible()
-                || page.locator("#two-factor-password").isVisible()
-                || page.locator("#two-factor-code").isVisible()
-                || page.locator("#two-factor-recovery-toggle").isVisible());
-    if (page.locator("#two-factor-introduction-title").isVisible()) {
-      page.locator("#two-factor-submit").click();
-      page.waitForCondition(
-          () ->
-              page.locator("#two-factor-qr").isVisible()
-                  || page.locator("#two-factor-password").isVisible());
+    selectTestLanguageIfNeeded(browserPage);
+    browserPage.waitForCondition(() ->
+        browserPage.locator("#two-factor-introduction-title").isVisible()
+            || browserPage.locator("#two-factor-password").isVisible()
+            || browserPage.locator("#two-factor-code").isVisible()
+            || browserPage.locator("#two-factor-recovery-toggle").isVisible());
+    if (browserPage.locator("#two-factor-introduction-title").isVisible()) {
+      browserPage.locator("#two-factor-submit").click();
+      browserPage.waitForCondition(() ->
+          browserPage.locator("#two-factor-qr").isVisible()
+              || browserPage.locator("#two-factor-password").isVisible());
     }
-    if (page.locator("#two-factor-qr").isVisible()) {
-      enrollCurrent(page, email);
-    } else if (page.locator("#two-factor-password").isVisible()) {
-      page.locator("#two-factor-password input").fill(password);
-      page.locator("#two-factor-submit").click();
-      enrollCurrent(page, email);
+    if (browserPage.locator("#two-factor-qr").isVisible()) {
+      enrollCurrent(browserPage, email);
+    } else if (browserPage.locator("#two-factor-password").isVisible()) {
+      browserPage.locator("#two-factor-password input").fill(password);
+      browserPage.locator("#two-factor-submit").click();
+      enrollCurrent(browserPage, email);
     } else {
-      String value = nextCode(page, email);
-      enterCode(page, value);
+      String value = nextCode(browserPage, email);
+      enterCode(browserPage, value);
       if (value.length() > 6) {
-        page.locator("#two-factor-submit").click();
+        browserPage.locator("#two-factor-submit").click();
       }
     }
-    page.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
+    browserPage.waitForURL(url -> !URI.create(url).getPath().equals("/two-factor"));
   }
 
-  public static void selectTestLanguageIfNeeded(Page page) {
+  public static void selectTestLanguageIfNeeded(Page browserPage) {
     String language = UiTexts.selected().language();
-    Locator button = page.locator(".public-languages vaadin-button[lang='" + language + "']");
+    Locator button =
+        browserPage.locator(".public-languages vaadin-button[lang='" + language + "']");
     assertThat(button).isVisible();
     // Ein erneuter Klick auf die aktive Sprache baut die 2FA-Ansicht erneut auf.
     if (!"true".equals(button.getAttribute("aria-pressed"))) {
-      new UserMenu(page).selectTestLanguage();
+      new UserMenu(browserPage).selectTestLanguage();
     }
   }
 
   /** Die sichtbare Methode wählen; Ersatzcodes werden nicht in das sechsstellige Feld gekürzt. */
-  public static void enterCode(Page page, String value) {
-    Locator recovery = page.locator("#two-factor-recovery-tab");
+  public static void enterCode(Page browserPage, String value) {
+    Locator recovery = browserPage.locator("#two-factor-recovery-tab");
     if (recovery.isVisible()) {
       boolean recoveryCode = value.length() > 6;
-      Locator method = recoveryCode ? recovery : page.locator("#two-factor-authenticator-tab");
+      Locator method =
+          recoveryCode ? recovery : browserPage.locator("#two-factor-authenticator-tab");
       if (method.getAttribute("selected") == null) {
-        UiActions.complete(page, method::click);
+        UiActions.complete(browserPage, method::click);
       }
       String field = recoveryCode ? "vaadin-text-field" : "fc-otp-field";
-      assertThat(page.locator(field + "#two-factor-code")).isVisible();
+      assertThat(browserPage.locator(field + "#two-factor-code")).isVisible();
     }
-    page.locator("#two-factor-code input").fill(value);
+    browserPage.locator("#two-factor-code input").fill(value);
   }
 
-  public static void enrollCurrent(Page page, String email) {
-    confirmEnrollment(page, email);
-    page.locator("#two-factor-codes-saved input").setChecked(true);
-    page.locator("#two-factor-submit").click();
+  public static void enrollCurrent(Page browserPage, String email) {
+    confirmEnrollment(browserPage, email);
+    browserPage.locator("#two-factor-codes-saved input").setChecked(true);
+    browserPage.locator("#two-factor-submit").click();
   }
 
-  public static void openLoginHelp(Page page) {
-    Locator details = page.locator("#two-factor-login-help");
-    UiActions.complete(page, () -> page.locator("#two-factor-login-help-toggle").click());
+  public static void openLoginHelp(Page browserPage) {
+    Locator details = browserPage.locator("#two-factor-login-help");
+    UiActions.complete(
+        browserPage, () -> browserPage.locator("#two-factor-login-help-toggle").click());
     assertThat(details).hasAttribute("opened", "");
   }
 
@@ -105,19 +106,20 @@ public final class TwoFactorPage {
    * Ersten TOTP bestätigen, die geschützte einmalige Ausgabe aber für weitere UI-Prüfungen offen
    * lassen.
    */
-  public static void confirmEnrollment(Page page, String email) {
-    rememberEnrollment(page, email);
-    page.locator("#two-factor-enrollment-code input").fill(totp(page, email));
-    captureCodes(page, email);
+  public static void confirmEnrollment(Page browserPage, String email) {
+    rememberEnrollment(browserPage, email);
+    browserPage.locator("#two-factor-enrollment-code input").fill(totp(browserPage, email));
+    captureCodes(browserPage, email);
   }
 
   /** Liest nur den regulär freigegebenen Schlüssel der eigenen laufenden Testeinrichtung. */
-  public static void rememberEnrollment(Page page, String email) {
-    assertThat(page.locator("#two-factor-qr")).isVisible();
-    String href = page.locator("#two-factor-qr").getAttribute("src").replace("/qr.png", "/key");
+  public static void rememberEnrollment(Page browserPage, String email) {
+    assertThat(browserPage.locator("#two-factor-qr")).isVisible();
+    String href =
+        browserPage.locator("#two-factor-qr").getAttribute("src").replace("/qr.png", "/key");
     String key =
         (String)
-            page.evaluate(
+            browserPage.evaluate(
                 "async url => { const response = await fetch(url, {cache:'no-store'}); if (!response.ok) throw new Error('Protected setup key unavailable'); return response.text(); }",
                 href);
     String previous = SEEDS.put(email, key);
@@ -126,32 +128,33 @@ public final class TwoFactorPage {
     }
   }
 
-  public static void captureCodes(Page page, String email) {
-    assertThat(page.locator("#two-factor-recovery-toggle")).isVisible();
-    if (page.locator("#two-factor-recovery-details").getAttribute("opened") == null) {
-      page.locator("#two-factor-recovery-toggle").click();
+  public static void captureCodes(Page browserPage, String email) {
+    assertThat(browserPage.locator("#two-factor-recovery-toggle")).isVisible();
+    if (browserPage.locator("#two-factor-recovery-details").getAttribute("opened") == null) {
+      browserPage.locator("#two-factor-recovery-toggle").click();
     }
-    assertThat(page.locator("#two-factor-recovery-codes")).isVisible();
-    CODES.put(email, new ArrayDeque<>(recoveryCodeValues(page)));
+    assertThat(browserPage.locator("#two-factor-recovery-codes")).isVisible();
+    CODES.put(email, new ArrayDeque<>(recoveryCodeValues(browserPage)));
     if (CODES.get(email).size() != 10) {
       throw new AssertionError("Ten issued recovery codes required");
     }
   }
 
-  public static List<String> recoveryCodeValues(Page page) {
-    assertThat(page.locator("#two-factor-copy-codes")).isEnabled();
-    assertThat(page.locator("#two-factor-recovery-codes vaadin-text-field")).hasCount(10);
+  public static List<String> recoveryCodeValues(Page browserPage) {
+    assertThat(browserPage.locator("#two-factor-copy-codes")).isEnabled();
+    assertThat(browserPage.locator("#two-factor-recovery-codes vaadin-text-field")).hasCount(10);
     @SuppressWarnings("unchecked")
     List<String> values =
         (List<String>)
-            page.locator("#two-factor-recovery-codes input")
+            browserPage
+                .locator("#two-factor-recovery-codes input")
                 .evaluateAll("inputs => inputs.map(input => input.value)");
     return values;
   }
 
   /** Simuliert nur eine verweigerte Clipboard-API; Klick und Sicherheitsablauf bleiben echt. */
-  public static void assertCopyFailure(Page page, Locator copy, String expectedMessage) {
-    page.evaluate(
+  public static void assertCopyFailure(Page browserPage, Locator copy, String expectedMessage) {
+    browserPage.evaluate(
         """
         () => {
         window.mfaOriginalClipboardWrite = navigator.clipboard.writeText;
@@ -162,11 +165,12 @@ public final class TwoFactorPage {
     try {
       copy.click();
       assertThat(
-              page.locator("vaadin-notification-card:not([closing])")
+              browserPage
+                  .locator("vaadin-notification-card:not([closing])")
                   .filter(new Locator.FilterOptions().setHasText(expectedMessage)))
           .isVisible();
     } finally {
-      page.evaluate(
+      browserPage.evaluate(
           """
           () => {
           navigator.clipboard.writeText = window.mfaOriginalClipboardWrite;
@@ -176,20 +180,21 @@ public final class TwoFactorPage {
     }
   }
 
-  public static String nextCode(Page page, String email) {
+  public static String nextCode(Page browserPage, String email) {
     ArrayDeque<String> codes = CODES.get(email);
-    return codes != null && !codes.isEmpty() ? codes.removeFirst() : totp(page, email);
+    return codes != null && !codes.isEmpty() ? codes.removeFirst() : totp(browserPage, email);
   }
 
-  public static void enterActionCode(Page page, String value) {
+  public static void enterActionCode(Page browserPage, String value) {
     boolean recovery = value.length() > 6;
     Locator method =
-        page.locator(
+        browserPage.locator(
             recovery ? "#two-factor-action-recovery-code-tab" : "#two-factor-action-app-code-tab");
     if (method.getAttribute("selected") == null) {
-      UiActions.complete(page, method::click);
+      UiActions.complete(browserPage, method::click);
     }
-    page.locator(
+    browserPage
+        .locator(
             recovery ? "#two-factor-action-recovery-code input" : "#two-factor-action-factor input")
         .fill(value);
   }
@@ -199,12 +204,12 @@ public final class TwoFactorPage {
     return codes == null ? 0 : codes.size();
   }
 
-  public static String totp(Page page, String email) {
+  public static String totp(Page browserPage, String email) {
     String base32 = SEEDS.get(email);
     if (base32 == null) {
       throw new AssertionError("Test account must complete real authenticator setup first");
     }
-    page.waitForCondition(
+    browserPage.waitForCondition(
         () -> Instant.now().getEpochSecond() / 30 > LAST_STEP.getOrDefault(email, -1L),
         new Page.WaitForConditionOptions().setTimeout(35_000));
     long step = Instant.now().getEpochSecond() / 30;

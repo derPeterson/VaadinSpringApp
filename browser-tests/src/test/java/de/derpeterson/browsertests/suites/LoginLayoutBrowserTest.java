@@ -42,37 +42,39 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
   @Story("Schmale und niedrige Fenster")
   @Description(
       """
-        1. Login bei der angegebenen Fenstergröße öffnen; ohne Welcome-Bild und mit dekorativem CSS-Hintergrund.
-        2. Formular, Felder und Links auf horizontale Erreichbarkeit prüfen; kurze Fenster dürfen vertikal scrollen.
-        3. Remember-me tatsächlich auswählen und abwählen, mit falschem Passwort anmelden; Fehlermeldung prüfen.
-        4. Passwort korrigieren und bei kleiner Größe anmelden; danach Dashboard bei Desktopbreite bestätigen.
-        **Erwartet:** Kein horizontales Abschneiden, echte Bedienung und unveränderter Anmeldeablauf.
-        Kleine Fenster simulieren wenig Platz/Zoom/Tastatur, keinen echten Geräte- oder Performancebenchmark.
-        """)
+      1. Login bei der angegebenen Fenstergröße öffnen; ohne Welcome-Bild und mit dekorativem CSS-Hintergrund.
+      2. Formular, Felder und Links auf horizontale Erreichbarkeit prüfen; kurze Fenster dürfen vertikal scrollen.
+      3. Remember-me tatsächlich auswählen und abwählen, mit falschem Passwort anmelden; Fehlermeldung prüfen.
+      4. Passwort korrigieren und bei kleiner Größe anmelden; danach Dashboard bei Desktopbreite bestätigen.
+      **Erwartet:** Kein horizontales Abschneiden, echte Bedienung und unveränderter Anmeldeablauf.
+      Kleine Fenster simulieren wenig Platz/Zoom/Tastatur, keinen echten Geräte- oder Performancebenchmark.
+      """)
   void loginRemainsUsable(String id, int width, int height) {
-    page.setViewportSize(width, height);
-    LoginPage login = new LoginPage(page);
+    browserPage.setViewportSize(width, height);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
-    assertThat(page.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");
-    assertThat(page.locator(".public-brand img")).isVisible();
-    assertThat(page.locator(".cosmos-sky img, .public-panel img")).hasCount(0);
+    assertThat(browserPage.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");
+    assertThat(browserPage.locator(".public-brand img")).isVisible();
+    assertThat(browserPage.locator(".cosmos-sky img, .public-panel img")).hasCount(0);
     assertTrue(
-        (Boolean) page.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"));
+        (Boolean)
+            browserPage.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"));
     for (Locator control :
         new Locator[] {
-          page.locator(".public-panel"),
-          page.getByLabel(texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)),
-          page.getByLabel(
-              texts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true)),
-          page.getByRole(
+          browserPage.locator(".public-panel"),
+          browserPage.getByLabel(
+              uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)),
+          browserPage.getByLabel(
+              uiTexts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true)),
+          browserPage.getByRole(
               AriaRole.LINK,
               new Page.GetByRoleOptions()
-                  .setName(texts.getLoginCreateAccountLink())
+                  .setName(uiTexts.getLoginCreateAccountLink())
                   .setExact(true)),
-          page.getByRole(
+          browserPage.getByRole(
               AriaRole.LINK,
               new Page.GetByRoleOptions()
-                  .setName(texts.getLoginForgotPasswordLink())
+                  .setName(uiTexts.getLoginForgotPasswordLink())
                   .setExact(true))
         }) {
       assertThat(control).isVisible();
@@ -82,11 +84,13 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
                   "el => { const r=el.getBoundingClientRect(); return r.left >= -1 && r.right <= innerWidth + 1; }"),
           "Formularelement muss innerhalb der Fensterbreite liegen: " + id);
     }
-    AllurePlaywright.attachScreenshot("Login " + width + "×" + height, page);
+    AllurePlaywright.attachScreenshot("Login " + width + "×" + height, browserPage);
     Locator remember =
-        page.getByRole(
+        browserPage.getByRole(
             AriaRole.SWITCH,
-            new Page.GetByRoleOptions().setName(texts.getLoginRememberMeCheckbox()).setExact(true));
+            new Page.GetByRoleOptions()
+                .setName(uiTexts.getLoginRememberMeCheckbox())
+                .setExact(true));
     remember.check();
     assertThat(remember).isChecked();
     remember.uncheck();
@@ -99,15 +103,16 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, "DefinitelyWrong1!");
     login.assertRejected();
     Locator notice =
-        page.locator("vaadin-notification-card:not([closing])")
-            .filter(new Locator.FilterOptions().setHasText(texts.getLoginFailedMessage()));
+        browserPage
+            .locator("vaadin-notification-card:not([closing])")
+            .filter(new Locator.FilterOptions().setHasText(uiTexts.getLoginFailedMessage()));
     notice.getByRole(AriaRole.BUTTON).click();
     assertThat(notice).not().isVisible();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));
+    assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
     // Die anschließende Adminansicht ist kein Teil des responsiven Loginauftrags.
-    page.setViewportSize(1280, 900);
-    new UserMenu(page).selectTestLanguage();
+    browserPage.setViewportSize(1280, 900);
+    new UserMenu(browserPage).selectTestLanguage();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
   }
 
@@ -116,18 +121,19 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
   @Story("Dekoration und reduzierte Bewegung")
   @Description(
       """
-        1. Login öffnen: der alte animierte Hintergrund ist ausgeblendet. Die beiden Referenzebenen sind dekorativ, statisch und nicht klickbar.
-        2. Reduzierte Bewegung emulieren: der statische Hintergrund bleibt unverändert ohne Animation.
-        3. Über den echten Kontoerstellungslink zur Registrierung wechseln.
-        **Erwartet:** Statischer Referenzhintergrund ohne Interaktionsfläche; gemeinsame Darstellung auf Registrierung und Home.
-        """)
+      1. Login öffnen: der alte animierte Hintergrund ist ausgeblendet. Die beiden Referenzebenen sind dekorativ, statisch und nicht klickbar.
+      2. Reduzierte Bewegung emulieren: der statische Hintergrund bleibt unverändert ohne Animation.
+      3. Über den echten Kontoerstellungslink zur Registrierung wechseln.
+      **Erwartet:** Statischer Referenzhintergrund ohne Interaktionsfläche; gemeinsame Darstellung auf Registrierung und Home.
+      """)
   void reducedMotionAndBackgroundScope() {
-    page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.NO_PREFERENCE));
-    new LoginPage(page).open();
-    Locator sky = page.locator(".cosmos-sky");
+    browserPage.emulateMedia(
+        new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.NO_PREFERENCE));
+    new LoginPage(browserPage).open();
+    Locator sky = browserPage.locator(".cosmos-sky");
     assertThat(sky).hasAttribute("aria-hidden", "true");
     assertThat(sky).isHidden();
-    Locator frame = page.locator(".cosmos-page-frame.cosmos-reference-portal");
+    Locator frame = browserPage.locator(".cosmos-page-frame.cosmos-reference-portal");
     for (String pseudo : new String[] {"::before", "::after"}) {
       assertEquals(
           "none",
@@ -141,20 +147,22 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
               .toString()
               .contains("radial-gradient"));
     }
-    page.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
+    browserPage.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
     assertEquals("none", frame.evaluate("el => getComputedStyle(el,'::after').animationName"));
-    AllurePlaywright.attachScreenshot("Referenzhintergrund mit reduzierter Bewegung", page);
-    page.getByRole(
+    AllurePlaywright.attachScreenshot("Referenzhintergrund mit reduzierter Bewegung", browserPage);
+    browserPage
+        .getByRole(
             AriaRole.LINK,
-            new Page.GetByRoleOptions().setName(texts.getLoginCreateAccountLink()).setExact(true))
+            new Page.GetByRoleOptions().setName(uiTexts.getLoginCreateAccountLink()).setExact(true))
         .click();
-    assertThat(page).hasURL(urlPattern(REGISTRATION_ROUTE));
-    assertThat(page.locator(".cosmos-reference-public[data-public-page=register]")).isVisible();
-    page.navigate(path(HOME_ROUTE));
-    assertThat(page).hasTitle(HOME_PAGE_TITLE);
-    assertThat(page.locator(".cosmos-home.cosmos-theme")).isVisible();
-    assertThat(page.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");
-    for (Locator layer : page.locator(".cosmos-stars, .cosmos-galaxy, .cosmos-glow").all()) {
+    assertThat(browserPage).hasURL(urlPattern(REGISTRATION_ROUTE));
+    assertThat(browserPage.locator(".cosmos-reference-public[data-public-page=register]"))
+        .isVisible();
+    browserPage.navigate(path(HOME_ROUTE));
+    assertThat(browserPage).hasTitle(HOME_PAGE_TITLE);
+    assertThat(browserPage.locator(".cosmos-home.cosmos-theme")).isVisible();
+    assertThat(browserPage.locator(".cosmos-sky")).hasAttribute("aria-hidden", "true");
+    for (Locator layer : browserPage.locator(".cosmos-stars, .cosmos-galaxy, .cosmos-glow").all()) {
       assertThat(layer).hasCSS("animation-name", "none");
     }
   }

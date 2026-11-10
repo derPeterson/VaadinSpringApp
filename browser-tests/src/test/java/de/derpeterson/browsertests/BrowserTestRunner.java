@@ -31,11 +31,11 @@ public final class BrowserTestRunner {
   private final Path browserTestModulePath, repositoryPath, runDirectory;
   private final Map<String, Object> runMetadata = new LinkedHashMap<>();
   private final String dockerProjectName;
-  private final String docker;
+  private final String dockerExecutable;
   private final List<String> composeCommand;
-  private final Map<String, String> environment = new HashMap<>(System.getenv());
-  private final boolean build;
-  private final boolean coverage;
+  private final Map<String, String> testEnvironment = new HashMap<>(System.getenv());
+  private final boolean buildImage;
+  private final boolean collectServerCoverage;
   private String appContainer;
   private final List<Class<?>> testClasses;
   private boolean environmentStarted;
@@ -43,27 +43,27 @@ public final class BrowserTestRunner {
   private volatile Process activeCommand;
   private final int workerCount;
   private final boolean worker;
-  private final String suite;
-  private BrowserParallelWorkers parallelWorkers;
+  private final String suiteName;
+  private BrowserParallelWorkers browserParallelWorkers;
   private final Thread shutdownHook;
 
-  private BrowserTestRunner(Path browserTestModulePath, Set<String> options, String suite)
+  private BrowserTestRunner(Path browserTestModulePath, Set<String> options, String suiteName)
       throws Exception {
     this.browserTestModulePath = browserTestModulePath.toAbsolutePath().normalize();
-    this.suite = options.contains("--failure-probe") ? "reporting-probe" : suite;
+    this.suiteName = options.contains("--failure-probe") ? "reporting-probe" : suiteName;
     workerCount = Integer.parseInt(System.getProperty("browser.tests.workers", "1"));
     if (workerCount < 1 || workerCount > 4) {
       throw new IllegalArgumentException("Use 1 to 4 workers.");
     }
     worker = System.getProperty("browser.tests.workerRun") != null;
     repositoryPath = this.browserTestModulePath.getParent();
-    build = !options.contains("--no-build");
-    coverage = options.contains("--coverage");
+    buildImage = !options.contains("--no-build");
+    collectServerCoverage = options.contains("--coverage");
     testClasses =
         options.contains("--failure-probe")
             ? List.of(FailureProbeTest.class)
             : BrowserExecutionPlan.workerClasses(
-                suite, System.getProperty("browser.tests.workerClasses"));
+                suiteName, System.getProperty("browser.tests.workerClasses"));
     String suffix = UUID.randomUUID().toString().substring(0, 8);
     String commit = git("rev-parse", "HEAD");
     // Ersetzt einen Punkt plus Sekundenbruchteil am Ende vor Z durch _UTC; $ verlangt das
@@ -78,17 +78,18 @@ public final class BrowserTestRunner {
         worker
             ? Path.of(System.getProperty("browser.tests.workerRun")).toAbsolutePath().normalize()
             : this.browserTestModulePath.resolve("runs").resolve(runId);
-    environment.put("BROWSER_TEST_TLS_DIRECTORY", runDirectory.resolve("https").toString());
+    testEnvironment.put("BROWSER_TEST_TLS_DIRECTORY", runDirectory.resolve("https").toString());
     // Auch die koordinierende Compose-Prüfung benötigt einen Wert. Jeder Worker erzeugt
     // beim eigenen Start erneut einen getrennten Schlüssel und übernimmt keinen Elternschlüssel.
     byte[] totpKey = new byte[32];
     new java.security.SecureRandom().nextBytes(totpKey);
-    environment.put("BROWSER_TEST_TOTP_KEY", java.util.Base64.getEncoder().encodeToString(totpKey));
+    testEnvironment.put(
+        "BROWSER_TEST_TOTP_KEY", java.util.Base64.getEncoder().encodeToString(totpKey));
     byte[] providerKey = new byte[32];
     new java.security.SecureRandom().nextBytes(providerKey);
-    environment.put(
+    testEnvironment.put(
         "BROWSER_TEST_PROVIDER_KEY", java.util.Base64.getEncoder().encodeToString(providerKey));
-    environment.put("BROWSER_TEST_DEVELOPMENT_OPTIONS_ENABLED", "false");
+    testEnvironment.put("BROWSER_TEST_DEVELOPMENT_OPTIONS_ENABLED", "false");
     if (worker && !runDirectory.startsWith(this.browserTestModulePath.resolve("runs"))) {
       throw new IllegalArgumentException("Worker output must be within runs/.");
     }
@@ -106,15 +107,15 @@ public final class BrowserTestRunner {
         || !dockerProjectName.matches("vaadinspringapp-e2e-java-[a-z0-9-]+")) {
       throw new IllegalArgumentException("Invalid worker project.");
     }
-    docker = dockerExecutable();
+    dockerExecutable = dockerExecutable();
     ArrayList<String> composeArguments =
         new ArrayList<>(
             List.of(
-                docker,
+                dockerExecutable,
                 "compose",
                 "-f",
                 repositoryPath.resolve("compose.browser-tests.yaml").toString()));
-    if (coverage) {
+    if (collectServerCoverage) {
       composeArguments.addAll(
           List.of("-f", BrowserCoverage.prepare(browserTestModulePath, runDirectory).toString()));
     }
@@ -128,11 +129,11 @@ public final class BrowserTestRunner {
     runMetadata.put("branch", git("branch", "--show-current"));
     runMetadata.put("gitStatus", git("status", "--porcelain"));
     runMetadata.put("project", dockerProjectName);
-    runMetadata.put("build", build);
-    runMetadata.put("coverage", coverage ? "pending" : "disabled");
+    runMetadata.put("build", buildImage);
+    runMetadata.put("coverage", collectServerCoverage ? "pending" : "disabled");
     runMetadata.put("failureProbe", options.contains("--failure-probe"));
     runMetadata.put("uiLanguage", System.getProperty("browser.tests.language"));
-    runMetadata.put("suite", options.contains("--failure-probe") ? "reporting-probe" : suite);
+    runMetadata.put("suite", options.contains("--failure-probe") ? "reporting-probe" : suiteName);
     runMetadata.put("setup", "not-started");
     runMetadata.put("tests", "not-started");
     runMetadata.put("cleanup", "not-needed");
@@ -144,7 +145,7 @@ public final class BrowserTestRunner {
               shuttingDown = true;
               try {
                 BrowserHttps.stopBeforeTrustCleanup(activeCommand);
-                if (parallelWorkers != null) {
+                if (browserParallelWorkers != null) {
                   cleanupWorkers();
                 } else {
                   cleanup();
@@ -153,8 +154,8 @@ public final class BrowserTestRunner {
                 runMetadata.put("cleanup", "failed");
                 runMetadata.put("cleanupError", error.toString());
               }
-              if (oidc != null) {
-                oidc.close();
+              if (oidcTestProvider != null) {
+                oidcTestProvider.close();
               }
               runMetadata.put("tests", "interrupted");
               runMetadata.put(
@@ -228,7 +229,7 @@ public final class BrowserTestRunner {
     if (suiteIndex >= 0 && suiteIndex + 1 >= args.length) {
       throw new IllegalArgumentException("Suite name missing.");
     }
-    String suite = suiteIndex >= 0 ? args[suiteIndex + 1] : "all";
+    String suiteName = suiteIndex >= 0 ? args[suiteIndex + 1] : "all";
     int workersIndex = Arrays.asList(args).indexOf("--workers");
     if (workersIndex >= 0 && workersIndex + 1 >= args.length) {
       throw new IllegalArgumentException("Worker count missing.");
@@ -239,13 +240,13 @@ public final class BrowserTestRunner {
     int exit;
     try (var _ = BrowserTestCa.lease(authority, true)) {
       BrowserTestCa.requireTrusted(authority);
-      BrowserTestRunner runner = new BrowserTestRunner(browserTestModulePath, options, suite);
+      BrowserTestRunner runner = new BrowserTestRunner(browserTestModulePath, options, suiteName);
       exit = runner.workerCount > 1 ? runner.executeParallel(options) : runner.execute(options);
     }
     System.exit(exit);
   }
 
-  private OidcTestProvider oidc;
+  private OidcTestProvider oidcTestProvider;
 
   private int execute(Set<String> options) throws Exception {
     Runtime.getRuntime().addShutdownHook(shutdownHook);
@@ -257,9 +258,9 @@ public final class BrowserTestRunner {
       if (appPort == mailPort || appPort == httpPort || mailPort == httpPort) {
         throw new IllegalArgumentException("Test ports must differ.");
       }
-      environment.put("BROWSER_TEST_APP_PORT", String.valueOf(appPort));
-      environment.put("BROWSER_TEST_MAILPIT_PORT", String.valueOf(mailPort));
-      environment.put("BROWSER_TEST_HTTP_PORT", String.valueOf(httpPort));
+      testEnvironment.put("BROWSER_TEST_APP_PORT", String.valueOf(appPort));
+      testEnvironment.put("BROWSER_TEST_MAILPIT_PORT", String.valueOf(mailPort));
+      testEnvironment.put("BROWSER_TEST_HTTP_PORT", String.valueOf(httpPort));
       String appUrl = "https://127.0.0.1:" + appPort;
       String mailUrl = "http://127.0.0.1:" + mailPort;
       if (testClasses.contains(de.derpeterson.browsertests.suites.ExternalLoginBrowserTest.class)
@@ -268,9 +269,9 @@ public final class BrowserTestRunner {
               de.derpeterson.browsertests.suites.TwoFactorLifecycleBrowserTest.class)
           || testClasses.contains(
               de.derpeterson.browsertests.suites.ExternalLoginLayoutBrowserTest.class)) {
-        oidc = new OidcTestProvider(appUrl);
-        oidc.configure(environment);
-        runMetadata.put("oidcFixture", environment.get("BROWSER_TEST_OIDC_GOOGLE_AUTH"));
+        oidcTestProvider = new OidcTestProvider(appUrl);
+        oidcTestProvider.configure(testEnvironment);
+        runMetadata.put("oidcFixture", testEnvironment.get("BROWSER_TEST_OIDC_GOOGLE_AUTH"));
       }
       runMetadata.put("appUrl", appUrl);
       runMetadata.put("mailpitUrl", mailUrl);
@@ -288,17 +289,23 @@ public final class BrowserTestRunner {
       environmentStarted = true;
       command(
           withCompose(
-              "up", "-d", "--wait", "--wait-timeout", "180", build ? "--build" : "--no-build"));
+              "up",
+              "-d",
+              "--wait",
+              "--wait-timeout",
+              "180",
+              buildImage ? "--build" : "--no-build"));
       BrowserHttps.awaitReady(appUrl, certificates.resolve("root.crt"));
       runMetadata.put("setup", "passed");
       runMetadata.put("https", "certificate-chain-and-hostname-verified");
       appContainer = command(withCompose("ps", "-q", "app")).trim();
       runMetadata.put(
           "imageId",
-          command(List.of(docker, "inspect", "--format", "{{.Image}}", appContainer)).trim());
+          command(List.of(dockerExecutable, "inspect", "--format", "{{.Image}}", appContainer))
+              .trim());
       save();
       SummaryGeneratingListener listener = new SummaryGeneratingListener();
-      LauncherDiscoveryRequest request = BrowserExecutionPlan.request(testClasses, suite);
+      LauncherDiscoveryRequest request = BrowserExecutionPlan.request(testClasses, suiteName);
       activeTestRunner = this;
       try {
         LauncherFactory.create().execute(request, listener);
@@ -342,7 +349,7 @@ public final class BrowserTestRunner {
       runMetadata.put("passed".equals(runMetadata.get("setup")) ? "tests" : "setup", "failed");
       System.err.println(error.getMessage());
     } finally {
-      if (coverage) {
+      if (collectServerCoverage) {
         try {
           if (appContainer == null || appContainer.isBlank()) {
             throw new IOException("No test application started; coverage unavailable.");
@@ -351,20 +358,20 @@ public final class BrowserTestRunner {
           Path coverageFolder = runDirectory.resolve("coverage");
           command(
               List.of(
-                  docker,
+                  dockerExecutable,
                   "cp",
                   appContainer + ":/app/logs/browser-jacoco.exec",
                   coverageFolder.resolve("browser-jacoco.exec").toString()));
           if (!worker || Boolean.getBoolean("browser.tests.workerJar")) {
             command(
                 List.of(
-                    docker,
+                    dockerExecutable,
                     "cp",
                     appContainer + ":/app/app.jar",
                     coverageFolder.resolve("app.jar").toString()));
             command(
                 List.of(
-                    docker,
+                    dockerExecutable,
                     "cp",
                     appContainer + ":/app/coverage-sources.jar",
                     coverageFolder.resolve("coverage-sources.jar").toString()));
@@ -417,9 +424,9 @@ public final class BrowserTestRunner {
         runMetadata.put("reportError", error.toString());
         exitCode = 1;
       }
-      if (oidc != null) {
-        oidc.close();
-        oidc = null;
+      if (oidcTestProvider != null) {
+        oidcTestProvider.close();
+        oidcTestProvider = null;
       }
       runMetadata.put("finishedAt", Instant.now().toString());
       save();
@@ -432,28 +439,29 @@ public final class BrowserTestRunner {
   private int executeParallel(Set<String> options) throws Exception {
     Runtime.getRuntime().addShutdownHook(shutdownHook);
     int exitCode = 1;
-    parallelWorkers = new BrowserParallelWorkers();
+    browserParallelWorkers = new BrowserParallelWorkers();
     List<Path> coverageData = new ArrayList<>();
     try {
       command(withCompose("config", "--quiet"));
-      if (build) {
+      if (buildImage) {
         command(withCompose("build", "app"));
       }
       String image =
           command(
                   List.of(
-                      docker,
+                      dockerExecutable,
                       "image",
                       "inspect",
                       "--format",
                       "{{.Id}}",
-                      environment.getOrDefault(
+                      testEnvironment.getOrDefault(
                           "BROWSER_TEST_APP_IMAGE", "vaadinspringapp-browser-tests-app:local")))
               .trim();
       // Alle Worker prüfen exakt dasselbe unveränderliche Image, auch wenn jemand das Tag neu baut.
-      environment.put("BROWSER_TEST_APP_IMAGE", image);
+      testEnvironment.put("BROWSER_TEST_APP_IMAGE", image);
       runMetadata.put("imageId", image);
-      List<List<Class<?>>> groups = BrowserExecutionPlan.partition(testClasses, workerCount, suite);
+      List<List<Class<?>>> groups =
+          BrowserExecutionPlan.partition(testClasses, workerCount, suiteName);
       runMetadata.put("workersActual", groups.size());
       runMetadata.put(
           "workerPlan",
@@ -461,22 +469,22 @@ public final class BrowserTestRunner {
       runMetadata.put("setup", "running");
       runMetadata.put("tests", "running");
       save();
-      parallelWorkers.start(
+      browserParallelWorkers.start(
           browserTestModulePath,
           runDirectory,
-          suite,
+          suiteName,
           System.getProperty("browser.tests.language"),
           groups,
-          environment,
+          testEnvironment,
           dockerProjectName,
           options.contains("--headed"),
-          coverage,
+          collectServerCoverage,
           options.contains("--failure-probe"));
-      parallelWorkers.await();
+      browserParallelWorkers.await();
       boolean passed = true, setupPassed = true;
       long found = 0, succeeded = 0, failed = 0, skipped = 0;
       List<Map<String, Object>> details = new ArrayList<>();
-      for (Worker child : parallelWorkers.workers()) {
+      for (Worker child : browserParallelWorkers.workers()) {
         JsonNode data = JSON.readTree(child.directory().resolve("metadata.json").toFile());
         List<JsonNode> evidence = MarkdownSummary.readAllureResults(child.directory());
         int exit = child.process().exitValue();
@@ -511,7 +519,7 @@ public final class BrowserTestRunner {
                 data.path("finishedAt").asText()));
         BrowserParallelWorkers.collect(
             child.directory().resolve("allure-results"), runDirectory.resolve("allure-results"));
-        if (coverage) {
+        if (collectServerCoverage) {
           if (!data.path("coverage").asText().equals("passed")) {
             throw new IOException("Worker coverage incomplete: " + child.directory());
           }
@@ -542,21 +550,23 @@ public final class BrowserTestRunner {
         }
       }
       passed &=
-          found > 0 && results.size() == found && parallelWorkers.workers().size() == groups.size();
+          found > 0
+              && results.size() == found
+              && browserParallelWorkers.workers().size() == groups.size();
       runMetadata.put("tests", passed ? "passed" : "failed");
       if (!passed) {
         runMetadata.put(
             "error",
             "At least one worker, test or evidence check failed; inspect workers/*/metadata.json and console.log.");
       }
-      if (coverage) {
+      if (collectServerCoverage) {
         Path folder = runDirectory.resolve("coverage");
         Files.createDirectories(folder);
         Files.move(
-            parallelWorkers.workers().getFirst().directory().resolve("coverage/app.jar"),
+            browserParallelWorkers.workers().getFirst().directory().resolve("coverage/app.jar"),
             folder.resolve("app.jar"));
         Files.move(
-            parallelWorkers
+            browserParallelWorkers
                 .workers()
                 .getFirst()
                 .directory()
@@ -581,7 +591,7 @@ public final class BrowserTestRunner {
     } catch (Exception error) {
       runMetadata.put("error", error.toString());
       runMetadata.put("tests", "failed");
-      if (coverage) {
+      if (collectServerCoverage) {
         runMetadata.put("coverage", "failed");
         runMetadata.put("coverageError", error.toString());
       }
@@ -610,18 +620,18 @@ public final class BrowserTestRunner {
   }
 
   private synchronized void cleanupWorkers() throws Exception {
-    if (parallelWorkers == null) {
+    if (browserParallelWorkers == null) {
       return;
     }
-    parallelWorkers.stop();
+    browserParallelWorkers.stop();
     List<String> errors = new ArrayList<>();
-    for (Worker child : parallelWorkers.workers()) {
+    for (Worker child : browserParallelWorkers.workers()) {
       try {
         // Auch nach einem Prozessabbruch nur das eigene, vorher festgelegte Projekt abbauen.
         ArrayList<String> down =
             new ArrayList<>(
                 List.of(
-                    docker,
+                    dockerExecutable,
                     "compose",
                     "-f",
                     repositoryPath.resolve("compose.browser-tests.yaml").toString(),
@@ -709,14 +719,16 @@ public final class BrowserTestRunner {
             .directory(repositoryPath.toFile())
             .redirectErrorStream(true)
             .redirectOutput(temporaryOutput.toFile());
-    builder.environment().putAll(environment);
-    if (Path.of(docker).isAbsolute()) {
+    builder.environment().putAll(testEnvironment);
+    if (Path.of(dockerExecutable).isAbsolute()) {
       builder.environment().keySet().removeIf(key -> key.equalsIgnoreCase("PATH"));
       builder
           .environment()
           .put(
               "Path",
-              Path.of(docker).getParent() + java.io.File.pathSeparator + System.getenv("PATH"));
+              Path.of(dockerExecutable).getParent()
+                  + java.io.File.pathSeparator
+                  + System.getenv("PATH"));
     }
     Process child = builder.start();
     activeCommand = child;
@@ -762,7 +774,7 @@ public final class BrowserTestRunner {
     if (runner == null || !runner.environmentStarted || runner.appContainer == null) {
       throw new IllegalStateException("No owned test application is running");
     }
-    runner.environment.put("BROWSER_TEST_BOOTSTRAP_ENABLED", "false");
+    runner.testEnvironment.put("BROWSER_TEST_BOOTSTRAP_ENABLED", "false");
     runner.command(
         runner.withCompose(
             "up",
@@ -780,7 +792,8 @@ public final class BrowserTestRunner {
   /** Startfreigabe nur für die eigene isolierte Anwendung, mit unverändertem Schlüssel und H2. */
   public static void restartWithDevelopmentOptions(boolean enabled) throws Exception {
     BrowserTestRunner runner = ownedRunner();
-    runner.environment.put("BROWSER_TEST_DEVELOPMENT_OPTIONS_ENABLED", Boolean.toString(enabled));
+    runner.testEnvironment.put(
+        "BROWSER_TEST_DEVELOPMENT_OPTIONS_ENABLED", Boolean.toString(enabled));
     restartTestApplication();
   }
 

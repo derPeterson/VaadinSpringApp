@@ -39,43 +39,44 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       "CONFIG-04A: Dienstname und Basis-URL validieren; Name speichern und wiederherstellen")
   @Description(
       """
-        1. Allgemeine Gruppe öffnen; Originalnamen und URL merken.
-        2. Blanken Namen bzw. ungültige URL versuchen: Feldfehler, Sprachwechsel mit erhaltenem ungültigem Entwurf und unveränderte Werte nach Neuladen.
-        3. Eigenen kurzen Unicode-Dienstnamen speichern und frisch laden: identischer Wert.
-        4. Originalnamen wieder speichern; Basis-URL bleibt unverändert.
-        **Erwartet:** Stringvalidierung und Speicherung sind sichtbar wirksam; kein Neustartnachweis.
-        """)
+      1. Allgemeine Gruppe öffnen; Originalnamen und URL merken.
+      2. Blanken Namen bzw. ungültige URL versuchen: Feldfehler, Sprachwechsel mit erhaltenem ungültigem Entwurf und unveränderte Werte nach Neuladen.
+      3. Eigenen kurzen Unicode-Dienstnamen speichern und frisch laden: identischer Wert.
+      4. Originalnamen wieder speichern; Basis-URL bleibt unverändert.
+      **Erwartet:** Stringvalidierung und Speicherung sind sichtbar wirksam; kein Neustartnachweis.
+      """)
   void stringValidationAndPersistence() {
     ConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.GENERAL);
-    String name = texts.getAdminConfigEntryServiceName(), url = texts.getAdminConfigEntryBaseUrl();
+    String name = uiTexts.getAdminConfigEntryServiceName(),
+        url = uiTexts.getAdminConfigEntryBaseUrl();
     String original = settings.value(name), originalUrl = settings.value(url);
     try {
       settings.enter(name, "");
-      settings.reject("vaadin-text-field", texts.getAdminConfigValidationServiceName());
+      settings.reject("vaadin-text-field", uiTexts.getAdminConfigValidationServiceName());
       settings.reload();
       assertThat(settings.input(name)).hasValue(original);
       settings.enter(url, "invalid");
-      settings.reject("vaadin-text-field", texts.getAdminConfigValidationUrl());
-      UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
+      settings.reject("vaadin-text-field", uiTexts.getAdminConfigValidationUrl());
+      UiTexts other = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
       try {
-        new UserMenu(page).selectLanguage(other.language());
+        new UserMenu(browserPage).selectLanguage(other.language());
         assertThat(settings.input(other.getAdminConfigEntryBaseUrl())).hasValue("invalid");
-        assertThat(page.locator("vaadin-text-field[invalid]"))
+        assertThat(browserPage.locator("vaadin-text-field[invalid]"))
             .hasJSProperty("errorMessage", other.getAdminConfigValidationUrl());
       } finally {
-        new UserMenu(page).selectTestLanguage();
+        new UserMenu(browserPage).selectTestLanguage();
       }
       assertThat(settings.input(url)).hasValue("invalid");
-      assertThat(page.locator("vaadin-text-field[invalid]"))
-          .hasJSProperty("errorMessage", texts.getAdminConfigValidationUrl());
+      assertThat(browserPage.locator("vaadin-text-field[invalid]"))
+          .hasJSProperty("errorMessage", uiTexts.getAdminConfigValidationUrl());
       settings.reload();
       assertThat(settings.input(url)).hasValue(originalUrl);
       settings.enter(name, "Browserprüfung ÄÖÜ");
       settings.save();
       settings.reload();
       assertThat(settings.input(name)).hasValue("Browserprüfung ÄÖÜ");
-      try (Page freshHome = context.newPage()) {
+      try (Page freshHome = browserContext.newPage()) {
         freshHome.navigate(path(HOME_ROUTE));
         assertThat(freshHome).hasTitle(HOME_PAGE_TITLE);
         assertThat(
@@ -94,19 +95,19 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @DisplayName("CONFIG-04B: Boolean umschalten, speichern, neu laden und wiederherstellen")
   @Description(
       """
-        1. Sicherheitsgruppe öffnen und aktuellen Wartungsmodus merken.
-        2. Switch umschalten, speichern und neu laden: exakt geänderter Switchzustand.
-        3. Originalzustand wieder speichern und neu prüfen.
-        **Erwartet:** Boolean-Bedienung und Persistenz; keine Behauptung einer Wartungsfunktion.
-        """)
+      1. Sicherheitsgruppe öffnen und aktuellen Wartungsmodus merken.
+      2. Switch umschalten, speichern und neu laden: exakt geänderter Switchzustand.
+      3. Originalzustand wieder speichern und neu prüfen.
+      **Erwartet:** Boolean-Bedienung und Persistenz; keine Behauptung einer Wartungsfunktion.
+      """)
   void booleanPersistsAcrossReload() {
     ConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.SECURITY);
     Locator checkbox =
-        page.getByRole(
+        browserPage.getByRole(
             AriaRole.SWITCH,
             new Page.GetByRoleOptions()
-                .setName(texts.getAdminConfigEntryMaintenanceMode())
+                .setName(uiTexts.getAdminConfigEntryMaintenanceMode())
                 .setExact(true));
     boolean original = checkbox.isChecked();
     try {
@@ -126,18 +127,19 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @DisplayName("CONFIG-04C: Positive Ganzzahl mit Nullfehler, Speicherung und Wiederherstellung")
   @Description(
       """
-        1. Sicherheitsgruppe öffnen und maximales Sitzungslimit merken.
-        2. Null versuchen: Fehler mindestens eins; nach Neuladen Originalwert.
-        3. Positiven Wert vier speichern, frisch laden und Original wiederherstellen.
-        **Erwartet:** Echter IntegerField-Vertrag; gleichzeitig eingeloggte Konten werden hier nicht verändert.
-        """)
+      1. Sicherheitsgruppe öffnen und maximales Sitzungslimit merken.
+      2. Null versuchen: Fehler mindestens eins; nach Neuladen Originalwert.
+      3. Positiven Wert vier speichern, frisch laden und Original wiederherstellen.
+      **Erwartet:** Echter IntegerField-Vertrag; gleichzeitig eingeloggte Konten werden hier nicht verändert.
+      """)
   void integerValidationAndPersistence() {
     ConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.SECURITY);
-    String label = texts.getAdminConfigEntryMaxSessionsPerUser(), original = settings.value(label);
+    String label = uiTexts.getAdminConfigEntryMaxSessionsPerUser(),
+        original = settings.value(label);
     try {
       settings.enter(label, "0");
-      settings.reject("vaadin-integer-field", texts.getAdminConfigValidationMinOne());
+      settings.reject("vaadin-integer-field", uiTexts.getAdminConfigValidationMinOne());
       settings.reload();
       assertThat(settings.input(label)).hasValue(original);
       settings.enter(label, "4");
@@ -155,18 +157,18 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @DisplayName("CONFIG-05A: SideNav, Sprache, URL, Refresh und Browserhistorie")
   @Description(
       """
-        1. Allgemein über die native Konfigurationshierarchie öffnen und einen ungespeicherten Namen eingeben.
-        2. Elternpunkt per Klick einklappen: Allgemein bleibt sichtbar und die Eingabe erhalten.
-        3. Per Enter öffnen, per Leertaste schließen und erneut öffnen; alle acht freigegebenen Gruppen bleiben erreichbar, die beiden Superadmin-Gruppen fehlen.
-        4. Über das Avatarmenü die andere Sprache wählen und wieder zurück: Gruppe und Eingabe bleiben erhalten.
-        5. Benutzerverwaltung und Security öffnen: URL, Refresh, Zurück/Vorwärts und Direktlink im neuen Tab prüfen.
-        **Erwartet:** Elternpunkt navigiert nicht; Bedienung und Sprache erhalten Entwürfe. URL stellt den gewählten Bereich wieder her.
-        """)
+      1. Allgemein über die native Konfigurationshierarchie öffnen und einen ungespeicherten Namen eingeben.
+      2. Elternpunkt per Klick einklappen: Allgemein bleibt sichtbar und die Eingabe erhalten.
+      3. Per Enter öffnen, per Leertaste schließen und erneut öffnen; alle acht freigegebenen Gruppen bleiben erreichbar, die beiden Superadmin-Gruppen fehlen.
+      4. Über das Avatarmenü die andere Sprache wählen und wieder zurück: Gruppe und Eingabe bleiben erhalten.
+      5. Benutzerverwaltung und Security öffnen: URL, Refresh, Zurück/Vorwärts und Direktlink im neuen Tab prüfen.
+      **Erwartet:** Elternpunkt navigiert nicht; Bedienung und Sprache erhalten Entwürfe. URL stellt den gewählten Bereich wieder her.
+      """)
   void hierarchyTogglePreservesDraftAndSupportsKeyboardAndLanguage() {
     ConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.GENERAL);
-    AdminNavigation navigation = new AdminNavigation(page);
-    String label = texts.getAdminConfigEntryServiceName(),
+    AdminNavigation navigation = new AdminNavigation(browserPage);
+    String label = uiTexts.getAdminConfigEntryServiceName(),
         draft = "Draft " + UUID.randomUUID().toString().substring(0, 8);
     String original = settings.value(label);
     settings.enter(label, draft);
@@ -175,19 +177,19 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     assertThat(parent).hasJSProperty("expanded", false);
     assertThat(settings.input(label)).hasValue(draft);
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
-                    .setName(texts.getAdminConfigGroupGeneral())
+                    .setName(uiTexts.getAdminConfigGroupGeneral())
                     .setLevel(2)
                     .setExact(true)))
         .isVisible();
     toggle.focus();
-    page.keyboard().press("Enter");
+    browserPage.keyboard().press("Enter");
     assertThat(parent).hasJSProperty("expanded", true);
-    page.keyboard().press("Space");
+    browserPage.keyboard().press("Space");
     assertThat(parent).hasJSProperty("expanded", false);
-    page.keyboard().press("Enter");
+    browserPage.keyboard().press("Enter");
     assertThat(parent).hasJSProperty("expanded", true);
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
       Locator groupLink = navigation.groupLink(group);
@@ -198,9 +200,9 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       }
     }
     UiTexts other =
-        new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
+        new de.derpeterson.browsertests.i18n.UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     try {
-      new UserMenu(page).selectLanguage(other.language());
+      new UserMenu(browserPage).selectLanguage(other.language());
       assertThat(settings.input(other.getAdminConfigEntryServiceName())).hasValue(draft);
       assertThat(
               parent.getByRole(
@@ -213,9 +215,9 @@ public class ConfigurationBrowserTest extends BrowserFixture {
                       .setExact(true)))
           .isVisible();
       AllurePlaywright.attachScreenshot(
-          "SideNav und ungespeicherte Eingabe nach Sprachwechsel", page);
+          "SideNav und ungespeicherte Eingabe nach Sprachwechsel", browserPage);
     } finally {
-      new UserMenu(page).selectTestLanguage();
+      new UserMenu(browserPage).selectTestLanguage();
     }
     assertThat(settings.input(label)).hasValue(draft);
     // Neuladen prüft die tatsächliche Persistenz: Enter am Navigationspunkt darf
@@ -227,32 +229,32 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       settings.enter(label, original);
       settings.save();
     }
-    navigation.openSection(texts.getAdminUsersTitle());
+    navigation.openSection(uiTexts.getAdminUsersTitle());
     // Die UI-Antwort kann auch von einem Poll stammen. Auf die echte Ziel-URL warten.
     // Das maskierte Fragezeichen startet genau das feste Querypaar; BrowserRoutes verankert die
     // URL.
-    assertThat(page).hasURL(urlPattern(ADMIN_ROUTE, "\\?section=user_management"));
-    page.reload();
-    assertAdminHeading(page, texts.getAdminUsersTitle(), 1);
-    assertThat(page.locator(".cosmos-nav-item--active[aria-current='page']")).hasCount(1);
+    assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE, "\\?section=user_management"));
+    browserPage.reload();
+    assertAdminHeading(browserPage, uiTexts.getAdminUsersTitle(), 1);
+    assertThat(browserPage.locator(".cosmos-nav-item--active[aria-current='page']")).hasCount(1);
     navigation.openGroup(AdminConfigGroup.SECURITY);
     // Die nichtfangende Alternative erlaubt nur die beiden Reihenfolgen der festen Querypaare.
-    assertThat(page)
+    assertThat(browserPage)
         .hasURL(
             urlPattern(
                 ADMIN_ROUTE,
                 "\\?(?:section=configuration&group=security|group=security&section=configuration)"));
-    String directLink = page.url();
-    page.reload();
-    assertAdminHeading(page, texts.getAdminConfigGroupSecurity(), 2);
+    String directLink = browserPage.url();
+    browserPage.reload();
+    assertAdminHeading(browserPage, uiTexts.getAdminConfigGroupSecurity(), 2);
     assertThat(navigation.configuration()).hasJSProperty("expanded", true);
-    page.goBack();
-    assertAdminHeading(page, texts.getAdminUsersTitle(), 1);
-    page.goForward();
-    assertAdminHeading(page, texts.getAdminConfigGroupSecurity(), 2);
-    try (Page direct = context.newPage()) {
+    browserPage.goBack();
+    assertAdminHeading(browserPage, uiTexts.getAdminUsersTitle(), 1);
+    browserPage.goForward();
+    assertAdminHeading(browserPage, uiTexts.getAdminConfigGroupSecurity(), 2);
+    try (Page direct = browserContext.newPage()) {
       direct.navigate(directLink);
-      assertAdminHeading(direct, texts.getAdminConfigGroupSecurity(), 2);
+      assertAdminHeading(direct, uiTexts.getAdminConfigGroupSecurity(), 2);
     }
   }
 
@@ -270,41 +272,43 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       "CONFIG-05B: Klick-Tooltip mit Backend-Standardwert, Regeln, Außenklick und Sprachwechsel")
   @Description(
       """
-        1. Allgemein öffnen: Dienstname verwendet den tatsächlichen Default der isolierten Umgebung als Platzhalter.
-        2. Ungespeicherte Eingabe setzen und Info-Button anklicken: Beschreibung, Standardwert und 30-Zeichen-Regel.
-        3. Außerhalb klicken, erneut öffnen und per Info-Button schließen; kein Dialog und kein Eingabeverlust.
-        4. Sprache wechseln: Tooltip und Eingabebeschriftung aktualisieren sich, die Eingabe bleibt erhalten.
-        **Erwartet:** Echte manuelle Tooltips im Card-Stil; Öffnen/Schließen speichert keine Konfiguration.
-        """)
+      1. Allgemein öffnen: Dienstname verwendet den tatsächlichen Default der isolierten Umgebung als Platzhalter.
+      2. Ungespeicherte Eingabe setzen und Info-Button anklicken: Beschreibung, Standardwert und 30-Zeichen-Regel.
+      3. Außerhalb klicken, erneut öffnen und per Info-Button schließen; kein Dialog und kein Eingabeverlust.
+      4. Sprache wechseln: Tooltip und Eingabebeschriftung aktualisieren sich, die Eingabe bleibt erhalten.
+      **Erwartet:** Echte manuelle Tooltips im Card-Stil; Öffnen/Schließen speichert keine Konfiguration.
+      """)
   void manualTooltipUsesDefaultAndCanReopenAfterOutsideClick() {
     ConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.GENERAL);
-    String label = texts.getAdminConfigEntryServiceName(), draft = "Tooltip draft";
+    String label = uiTexts.getAdminConfigEntryServiceName(), draft = "Tooltip draft";
     assertThat(settings.input(label)).hasAttribute("placeholder", "VaadinSpringApp (Browser-Test)");
     settings.enter(label, draft);
     settings.info(label).click();
-    Locator overlay = page.locator("#admin-config-help vaadin-dialog-overlay > [part~='overlay']");
+    Locator overlay =
+        browserPage.locator("#admin-config-help vaadin-dialog-overlay > [part~='overlay']");
     assertThat(overlay).isVisible();
     assertThat(overlay).hasCSS("width", "380px");
     assertThat(settings.helpPanel().locator(".admin-help-description")).hasCSS("font-size", "12px");
     assertThat(settings.helpPanel().locator(".admin-help-description"))
         .hasCSS("font-weight", "400");
-    assertThat(settings.helpPanel()).containsText(texts.getAdminConfigEntryServiceNameTooltip());
+    assertThat(settings.helpPanel()).containsText(uiTexts.getAdminConfigEntryServiceNameTooltip());
     assertThat(settings.helpPanel()).containsText("VaadinSpringApp (Browser-Test)");
-    assertThat(settings.helpPanel()).containsText(texts.getAdminConfigHelperServiceNameMax(30));
-    assertThat(page.locator("#admin-config-help[opened]")).hasCount(1);
-    AllurePlaywright.attachScreenshot("Klick-Tooltip mit tatsächlichem Default und Regeln", page);
-    page.mouse().click(4, 90);
+    assertThat(settings.helpPanel()).containsText(uiTexts.getAdminConfigHelperServiceNameMax(30));
+    assertThat(browserPage.locator("#admin-config-help[opened]")).hasCount(1);
+    AllurePlaywright.attachScreenshot(
+        "Klick-Tooltip mit tatsächlichem Default und Regeln", browserPage);
+    browserPage.mouse().click(4, 90);
     assertThat(settings.helpPanel()).hasCount(0);
     settings.explain(
         label,
-        texts.getAdminConfigEntryServiceNameTooltip(),
-        texts.getAdminConfigHelperServiceNameMax(30));
+        uiTexts.getAdminConfigEntryServiceNameTooltip(),
+        uiTexts.getAdminConfigHelperServiceNameMax(30));
     assertThat(settings.input(label)).hasValue(draft);
     UiTexts other =
-        new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
+        new de.derpeterson.browsertests.i18n.UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     try {
-      new UserMenu(page).selectLanguage(other.language());
+      new UserMenu(browserPage).selectLanguage(other.language());
       settings.info(other.getAdminConfigEntryServiceName()).click();
       assertThat(settings.helpPanel()).containsText(other.getAdminConfigEntryServiceNameTooltip());
       assertThat(settings.helpPanel()).containsText(other.getAdminConfigHelperServiceNameMax(30));
@@ -312,10 +316,10 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       settings.closeHelp(other.getNotificationsClose());
     } finally {
       if (settings.helpPanel().count() > 0) {
-        page.keyboard().press("Escape");
+        browserPage.keyboard().press("Escape");
         assertThat(settings.helpPanel()).hasCount(0);
       }
-      new UserMenu(page).selectTestLanguage();
+      new UserMenu(browserPage).selectTestLanguage();
     }
   }
 
@@ -323,31 +327,35 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @DisplayName("CONFIG-05C: Mailqueue-Aufbewahrung lehnt Null ab und akzeptiert positive Sekunden")
   @Description(
       """
-        1. E-Mail-Queue öffnen und ursprüngliche Aufbewahrungsdauer merken.
-        2. PT0S ablehnen: Feldfehler größer als null; nach Neuladen ursprünglicher Wert.
-        3. Eine Sekunde speichern und neu laden: PT1S ohne zusätzliche Minutengrenze.
-        4. Ursprünglichen Wert im finally-Block über die Oberfläche wiederherstellen.
-        **Erwartet:** UI und Backend verlangen dieselbe strikt positive Dauer.
-        """)
+      1. E-Mail-Queue öffnen und ursprüngliche Aufbewahrungsdauer merken.
+      2. PT0S ablehnen: Feldfehler größer als null; nach Neuladen ursprünglicher Wert.
+      3. Eine Sekunde speichern und neu laden: PT1S ohne zusätzliche Minutengrenze.
+      4. Ursprünglichen Wert im finally-Block über die Oberfläche wiederherstellen.
+      **Erwartet:** UI und Backend verlangen dieselbe strikt positive Dauer.
+      """)
   void queueRetentionMustBePositiveWithoutAnInventedMinimum() {
     ConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.QUEUE);
-    String label = texts.getAdminConfigEntryEmailQueueSentLiveDuration(),
-        original = new de.derpeterson.browsertests.pages.TokenConfigurationPage(page).value(label);
+    String label = uiTexts.getAdminConfigEntryEmailQueueSentLiveDuration(),
+        original =
+            new de.derpeterson.browsertests.pages.TokenConfigurationPage(browserPage).value(label);
     try {
       settings.enterSeconds(label, java.math.BigDecimal.ZERO);
-      settings.reject("vaadin-big-decimal-field", texts.getAdminConfigValidationPositiveDuration());
+      settings.reject(
+          "vaadin-big-decimal-field", uiTexts.getAdminConfigValidationPositiveDuration());
       settings.reload();
       assertEquals(
           original,
-          new de.derpeterson.browsertests.pages.TokenConfigurationPage(page).value(label));
+          new de.derpeterson.browsertests.pages.TokenConfigurationPage(browserPage).value(label));
       settings.enterSeconds(label, java.math.BigDecimal.ONE);
       settings.save();
       settings.reload();
       assertEquals(
-          "PT1S", new de.derpeterson.browsertests.pages.TokenConfigurationPage(page).value(label));
+          "PT1S",
+          new de.derpeterson.browsertests.pages.TokenConfigurationPage(browserPage).value(label));
     } finally {
-      new de.derpeterson.browsertests.pages.TokenConfigurationPage(page).enter(label, original);
+      new de.derpeterson.browsertests.pages.TokenConfigurationPage(browserPage)
+          .enter(label, original);
       settings.save();
     }
   }
@@ -359,16 +367,16 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @DisplayName("CONFIG-05D: Normale Admins erreichen alle Feldinfos ihrer acht Gruppen")
   @Description(
       """
-        1. Alle acht für normale Admins freigegebenen Konfigurationsgruppen über die native SideNav öffnen.
-        2. Jede Feldinfo per Klick öffnen: übersetzter Standardwert, Eingaberegeln und Wirksamkeit.
-        3. Nur eine Info gleichzeitig sichtbar; per Info-Button wieder schließen.
-        4. Ein gesetzter Standard-Geheimschlüssel bleibt vertraulich; das leere SMTP-Passwort zeigt ausdrücklich den Leerhinweis.
-        5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder, einschließlich Sitzungs-Timeout.
-        **Erwartet:** Keine Gruppe verliert ihre Bedienung; alle bisherigen Felder erhalten die gemeinsame Info-Funktion.
-        """)
+      1. Alle acht für normale Admins freigegebenen Konfigurationsgruppen über die native SideNav öffnen.
+      2. Jede Feldinfo per Klick öffnen: übersetzter Standardwert, Eingaberegeln und Wirksamkeit.
+      3. Nur eine Info gleichzeitig sichtbar; per Info-Button wieder schließen.
+      4. Ein gesetzter Standard-Geheimschlüssel bleibt vertraulich; das leere SMTP-Passwort zeigt ausdrücklich den Leerhinweis.
+      5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder, einschließlich Sitzungs-Timeout.
+      **Erwartet:** Keine Gruppe verliert ihre Bedienung; alle bisherigen Felder erhalten die gemeinsame Info-Funktion.
+      """)
   void everyConfigurationFieldHasAnAccessibleLocalizedInfo(int width) {
     ConfigurationPage settings = admin();
-    page.setViewportSize(width, 900);
+    browserPage.setViewportSize(width, 900);
     int total = 0;
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
       if (group.isSuperadminOnly()) {
@@ -377,23 +385,23 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         continue;
       }
       settings.open(group);
-      Locator infos = page.locator(".cosmos-config-fields .cosmos-config-info");
+      Locator infos = browserPage.locator(".cosmos-config-fields .cosmos-config-info");
       int count = infos.count();
       assertTrue(count > 0);
-      assertThat(page.locator(".cosmos-config-setting-count"))
-          .hasText(texts.getAdminConfigSettingsCount(count));
+      assertThat(browserPage.locator(".cosmos-config-setting-count"))
+          .hasText(uiTexts.getAdminConfigSettingsCount(count));
       for (Locator info : infos.all()) {
         info.click();
         assertThat(settings.helpPanel()).hasCount(1);
         assertThat(settings.helpPanel().locator("vaadin-dialog-overlay > [part~='overlay']"))
             .isVisible();
         if (group == AdminConfigGroup.NOTIFICATIONS) {
-          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigInitialValue());
-          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigRuleEmptyUnlimited());
+          assertThat(settings.helpPanel()).containsText(uiTexts.getAdminConfigInitialValue());
+          assertThat(settings.helpPanel()).containsText(uiTexts.getAdminConfigRuleEmptyUnlimited());
         } else {
-          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigDefault());
+          assertThat(settings.helpPanel()).containsText(uiTexts.getAdminConfigDefault());
         }
-        assertThat(settings.helpPanel()).containsText(texts.getAdminConfigInputRules());
+        assertThat(settings.helpPanel()).containsText(uiTexts.getAdminConfigInputRules());
         assertTrue(
             settings
                     .helpPanel()
@@ -401,11 +409,12 @@ public class ConfigurationBrowserTest extends BrowserFixture {
                     .count()
                 > 0,
             "Feldinfo hat keine Eingaberegel: " + info.getAttribute("aria-labelledby"));
-        ConfigurationPage.assertEffectiveUse(settings.helpPanel(), texts);
+        ConfigurationPage.assertEffectiveUse(settings.helpPanel(), uiTexts);
         if (info.getAttribute("aria-labelledby").equals("config-label-remember_me_secret_key")) {
-          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigDefaultConfidential());
+          assertThat(settings.helpPanel())
+              .containsText(uiTexts.getAdminConfigDefaultConfidential());
         } else if (info.getAttribute("aria-labelledby").equals("config-label-mail_password")) {
-          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigDefaultEmpty());
+          assertThat(settings.helpPanel()).containsText(uiTexts.getAdminConfigDefaultEmpty());
         }
         settings.closeHelp();
         assertThat(settings.helpPanel()).hasCount(0);
@@ -414,8 +423,8 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     }
     assertEquals(33, total);
     settings.open(AdminConfigGroup.SECURITY);
-    UiTexts other = new UiTexts(texts.language().equals("de") ? "en" : "de");
-    UserMenu menu = new UserMenu(page);
+    UiTexts other = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
+    UserMenu menu = new UserMenu(browserPage);
     try {
       menu.selectLanguage(other.language());
       settings.info(other.getAdminConfigEntrySessionTimeout()).click();
@@ -436,23 +445,24 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       "CONFIG-05E: Enter im Eingabefeld speichert den aktuellen Wert ohne vorherigen Fokuswechsel")
   @Description(
       """
-        1. Allgemein öffnen und den ursprünglichen Servicenamen merken.
-        2. Einen neuen Namen eintippen und direkt im Feld Enter drücken, ohne vorher Tab oder den Speicherbutton.
-        3. Erfolgshinweis schließen und Werte neu laden: die letzte Eingabe wurde gespeichert.
-        4. Originalwert im finally-Block über das Formular wiederherstellen.
-        **Erwartet:** Der auf Eingabefelder begrenzte Shortcut übernimmt auch noch nicht per Blur übertragene Werte.
-        """)
+      1. Allgemein öffnen und den ursprünglichen Servicenamen merken.
+      2. Einen neuen Namen eintippen und direkt im Feld Enter drücken, ohne vorher Tab oder den Speicherbutton.
+      3. Erfolgshinweis schließen und Werte neu laden: die letzte Eingabe wurde gespeichert.
+      4. Originalwert im finally-Block über das Formular wiederherstellen.
+      **Erwartet:** Der auf Eingabefelder begrenzte Shortcut übernimmt auch noch nicht per Blur übertragene Werte.
+      """)
   void fieldEnterSavesTheLatestValueWithoutPriorBlur() {
     ConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.GENERAL);
-    String label = texts.getAdminConfigEntryServiceName(), original = settings.value(label);
+    String label = uiTexts.getAdminConfigEntryServiceName(), original = settings.value(label);
     String changed = "Keyboard " + UUID.randomUUID().toString().substring(0, 8);
     try {
       settings.input(label).fill(changed);
       settings.input(label).press("Enter");
       Locator notice =
-          page.locator("vaadin-notification-card:not([closing])")
-              .filter(new Locator.FilterOptions().setHasText(texts.getAdminConfigSaveSuccess()));
+          browserPage
+              .locator("vaadin-notification-card:not([closing])")
+              .filter(new Locator.FilterOptions().setHasText(uiTexts.getAdminConfigSaveSuccess()));
       assertThat(notice).isVisible();
       notice.getByRole(AriaRole.BUTTON).click();
       assertThat(notice).not().isVisible();
@@ -468,25 +478,27 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @DisplayName("CONFIG-05F: Feldinfo bleibt bei 320×568 innerhalb des mobilen Fensters")
   @Description(
       """
-        1. Als Admin anmelden und das Fenster auf 320×568 verkleinern.
-        2. Allgemein über den echten mobilen Drawer öffnen und diesen wieder schließen.
-        3. Service-Name-Info öffnen: Text lesbar, Breite 288 px und vollständig innerhalb des Fensters.
-        4. Screenshot aufnehmen und die Info wieder über ihren Button schließen.
-        5. Benutzermenü öffnen, bis Abmelden scrollen, seine Position im Fenster prüfen und tatsächlich abmelden.
-        **Erwartet:** Tooltip und Benutzermenü bleiben schmal bedienbar; keine abgeschnittene Abmeldeaktion.
-        """)
+      1. Als Admin anmelden und das Fenster auf 320×568 verkleinern.
+      2. Allgemein über den echten mobilen Drawer öffnen und diesen wieder schließen.
+      3. Service-Name-Info öffnen: Text lesbar, Breite 288 px und vollständig innerhalb des Fensters.
+      4. Screenshot aufnehmen und die Info wieder über ihren Button schließen.
+      5. Benutzermenü öffnen, bis Abmelden scrollen, seine Position im Fenster prüfen und tatsächlich abmelden.
+      **Erwartet:** Tooltip und Benutzermenü bleiben schmal bedienbar; keine abgeschnittene Abmeldeaktion.
+      """)
   void manualInfoRemainsWithinTheMobileViewport() {
     ConfigurationPage settings = admin();
-    page.setViewportSize(320, 568);
-    assertThat(page.locator("#account-navigation-toggle")).isVisible();
-    assertThat(page.locator("#account-navigation-toggle")).hasAttribute("aria-expanded", "false");
+    browserPage.setViewportSize(320, 568);
+    assertThat(browserPage.locator("#account-navigation-toggle")).isVisible();
+    assertThat(browserPage.locator("#account-navigation-toggle"))
+        .hasAttribute("aria-expanded", "false");
     settings.open(AdminConfigGroup.GENERAL);
-    String label = texts.getAdminConfigEntryServiceName();
+    String label = uiTexts.getAdminConfigEntryServiceName();
     settings.info(label).click();
     assertThat(settings.helpPanel().locator("vaadin-dialog-overlay > [part~='overlay']"))
         .isVisible();
-    assertThat(settings.helpPanel()).containsText(texts.getAdminConfigEntryServiceNameTooltip());
-    Locator overlay = page.locator("#admin-config-help vaadin-dialog-overlay > [part~='overlay']");
+    assertThat(settings.helpPanel()).containsText(uiTexts.getAdminConfigEntryServiceNameTooltip());
+    Locator overlay =
+        browserPage.locator("#admin-config-help vaadin-dialog-overlay > [part~='overlay']");
     assertThat(overlay).hasCSS("width", "320px");
     BoundingBox bounds = overlay.boundingBox();
     assertTrue(
@@ -496,18 +508,20 @@ public class ConfigurationBrowserTest extends BrowserFixture {
             && bounds.y + bounds.height <= 569,
         "Feldinfo liegt teilweise außerhalb des mobilen Fensters: " + bounds);
     assertTrue(
-        (Boolean) page.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"));
-    AllurePlaywright.attachScreenshot("Mobiler Klick-Tooltip bei 320×568", page);
+        (Boolean)
+            browserPage.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"));
+    AllurePlaywright.attachScreenshot("Mobiler Klick-Tooltip bei 320×568", browserPage);
     settings.closeHelp();
     assertThat(settings.helpPanel()).hasCount(0);
-    UserMenu menu = new UserMenu(page);
+    UserMenu menu = new UserMenu(browserPage);
     menu.open();
     Locator menuContent =
-        page.locator("vaadin-popover-overlay[opened] > [part~='overlay'] > [part~='content']");
+        browserPage.locator(
+            "vaadin-popover-overlay[opened] > [part~='overlay'] > [part~='content']");
     assertTrue(
         (Boolean) menuContent.evaluate("e => e.scrollWidth <= e.clientWidth + 1"),
         "Das schmale Benutzermenü darf keinen horizontalen Überlauf haben.");
-    Locator status = new UserStatusMenu(page).current();
+    Locator status = new UserStatusMenu(browserPage).current();
     status.scrollIntoViewIfNeeded();
     BoundingBox statusBounds = status.boundingBox();
     assertTrue(
@@ -516,15 +530,16 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     menu.close();
     menu.open();
     Locator logout =
-        page.getByRole(
+        browserPage.getByRole(
             AriaRole.BUTTON,
-            new Page.GetByRoleOptions().setName(texts.getBaseLogoutButton()).setExact(true));
+            new Page.GetByRoleOptions().setName(uiTexts.getBaseLogoutButton()).setExact(true));
     logout.scrollIntoViewIfNeeded();
     BoundingBox logoutBounds = logout.boundingBox();
     assertTrue(
         logoutBounds.y >= 0 && logoutBounds.y + logoutBounds.height <= 569,
         "Abmelden muss im gescrollten Benutzermenü sichtbar bleiben: " + logoutBounds);
-    AllurePlaywright.attachScreenshot("Mobiles Benutzermenü mit erreichbarer Abmeldung", page);
+    AllurePlaywright.attachScreenshot(
+        "Mobiles Benutzermenü mit erreichbarer Abmeldung", browserPage);
     menu.signOut();
   }
 
@@ -535,7 +550,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       "Zeitfelder in Sicherheit, E-Mail-Queue, Benutzerstatus und Benachrichtigungen speichern und neu laden. Sitzungs-Feldhilfe und Neustartwarnung bei unverändertem und geändertem Anmeldeschlüssel prüfen. Originalwerte werden über die UI wiederhergestellt.")
   void remainingDurationFieldsPersistWithoutExposingTheCalculationBelowTheInput(int width) {
     ConfigurationPage settings = admin();
-    page.setViewportSize(width, 844);
+    browserPage.setViewportSize(width, 844);
     assertSessionTimeoutUnitFits(settings);
     assertRestartHelpAndNotice(settings);
     AdminConfigGroup[] groups = {
@@ -547,12 +562,12 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       AdminConfigGroup.NOTIFICATIONS
     };
     String[] labels = {
-      texts.getAdminConfigEntryRememberMeDuration(),
-      texts.getAdminConfigEntryUserAutoAbsentTimeout(),
-      texts.getAdminConfigEntryLoginAttemptWindow(),
-      texts.getAdminConfigEntryEmailQueueRetryDelay(),
-      texts.getAdminConfigEntryNotificationInboxRetention(),
-      texts.getAdminConfigEntryNotificationHistoryRetention()
+      uiTexts.getAdminConfigEntryRememberMeDuration(),
+      uiTexts.getAdminConfigEntryUserAutoAbsentTimeout(),
+      uiTexts.getAdminConfigEntryLoginAttemptWindow(),
+      uiTexts.getAdminConfigEntryEmailQueueRetryDelay(),
+      uiTexts.getAdminConfigEntryNotificationInboxRetention(),
+      uiTexts.getAdminConfigEntryNotificationHistoryRetention()
     };
     for (int index = 0; index < labels.length; index++) {
       settings.open(groups[index]);
@@ -573,7 +588,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         assertThat(settings.duration(label).locator(".admin-help-default")).hasCount(0);
         settings.info(label).click();
         assertThat(settings.helpPanel())
-            .containsText(texts.getAdminConfigDurationSeconds(expected));
+            .containsText(uiTexts.getAdminConfigDurationSeconds(expected));
         settings.closeHelp();
         if (daysOnly) {
           settings.enter(label, "");
@@ -581,7 +596,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
           settings.reload();
           assertThat(settings.input(label)).hasValue("");
           settings.info(label).click();
-          assertThat(settings.helpPanel()).containsText(texts.getAdminConfigUnlimited());
+          assertThat(settings.helpPanel()).containsText(uiTexts.getAdminConfigUnlimited());
           settings.closeHelp();
         }
       } finally {
@@ -606,36 +621,37 @@ public class ConfigurationBrowserTest extends BrowserFixture {
 
   private void assertRestartHelpAndNotice(ConfigurationPage settings) {
     settings.open(AdminConfigGroup.SECURITY);
-    String timeout = texts.getAdminConfigEntrySessionTimeout();
+    String timeout = uiTexts.getAdminConfigEntrySessionTimeout();
     settings.info(timeout).click();
     Locator timing = settings.helpPanel().locator(".admin-help-effective-use");
-    assertThat(timing.getByRole(AriaRole.HEADING)).hasText(texts.getAdminConfigEffectiveTitle());
+    assertThat(timing.getByRole(AriaRole.HEADING)).hasText(uiTexts.getAdminConfigEffectiveTitle());
     assertThat(timing.locator("li"))
         .hasText(
             new String[] {
-              texts.getAdminConfigEffectiveSessionNew(),
-              texts.getAdminConfigEffectiveSessionExisting()
+              uiTexts.getAdminConfigEffectiveSessionNew(),
+              uiTexts.getAdminConfigEffectiveSessionExisting()
             });
     assertThat(settings.helpPanel().locator(".admin-help-restart-warning")).hasCount(0);
     settings.closeHelp();
 
-    String key = texts.getAdminConfigEntryRememberMeSecretKey();
+    String key = uiTexts.getAdminConfigEntryRememberMeSecretKey();
     settings.info(key).click();
     Locator warning =
         settings.helpPanel().locator(".admin-help-restart-warning.cosmos-security-warning");
     assertThat(warning).isVisible();
     assertThat(warning).hasCSS("border-inline-start-width", "4px");
-    assertThat(warning).containsText(texts.getAdminConfigRestartRequired());
-    assertThat(warning).containsText(texts.getAdminConfigRestartDetail());
+    assertThat(warning).containsText(uiTexts.getAdminConfigRestartRequired());
+    assertThat(warning).containsText(uiTexts.getAdminConfigRestartDetail());
     settings.closeHelp();
 
     BigDecimal originalTimeout = settings.seconds(timeout);
     String originalKey = settings.value(key);
     Locator notice =
-        page.locator("vaadin-notification-card:not([closing])")
-            .filter(new Locator.FilterOptions().setHasText(texts.getAdminConfigSaveSuccess()));
+        browserPage
+            .locator("vaadin-notification-card:not([closing])")
+            .filter(new Locator.FilterOptions().setHasText(uiTexts.getAdminConfigSaveSuccess()));
     Locator restartNotice =
-        notice.filter(new Locator.FilterOptions().setHasText(texts.getAdminConfigRestartSaved()));
+        notice.filter(new Locator.FilterOptions().setHasText(uiTexts.getAdminConfigRestartSaved()));
     try {
       settings.enterSeconds(timeout, originalTimeout.add(BigDecimal.ONE));
       settings.submit();
@@ -649,7 +665,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       settings.submit();
       assertThat(restartNotice).isVisible();
       assertThat(restartNotice.locator("p.cosmos-notification-message"))
-          .hasText(texts.getAdminConfigRestartSaved());
+          .hasText(uiTexts.getAdminConfigRestartSaved());
       Locator affectedFields = restartNotice.locator("ul.cosmos-notification-details > li");
       assertThat(affectedFields).hasCount(1);
       assertThat(affectedFields).hasText(key);
@@ -669,11 +685,11 @@ public class ConfigurationBrowserTest extends BrowserFixture {
 
   private void assertSessionTimeoutUnitFits(ConfigurationPage settings) {
     settings.open(AdminConfigGroup.SECURITY);
-    String label = texts.getAdminConfigEntrySessionTimeout();
+    String label = uiTexts.getAdminConfigEntrySessionTimeout();
     settings.enterSeconds(label, java.math.BigDecimal.valueOf(119));
     Locator select = settings.duration(label).locator("vaadin-select");
     Locator selectedUnit = select.locator("vaadin-select-value-button");
-    assertThat(selectedUnit).hasText(texts.getAdminConfigDurationUnitSeconds());
+    assertThat(selectedUnit).hasText(uiTexts.getAdminConfigDurationUnitSeconds());
     assertTrue(
         (Boolean)
             select.evaluate(
@@ -695,12 +711,12 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   }
 
   private ConfigurationPage admin() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
+    new UserMenu(browserPage).selectTestLanguage();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
-    return new ConfigurationPage(page);
+    return new ConfigurationPage(browserPage);
   }
 
   @Test
@@ -716,40 +732,41 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   void offlineSaveHasNoFalseSuccessAndCanBeContinued() {
     ConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.GENERAL);
-    String label = texts.getAdminConfigEntryServiceName();
+    String label = uiTexts.getAdminConfigEntryServiceName();
     String original = settings.value(label);
     String draft = "Offline " + UUID.randomUUID().toString().substring(0, 8);
     java.util.concurrent.atomic.AtomicBoolean failed =
         new java.util.concurrent.atomic.AtomicBoolean();
-    page.onRequestFailed(
-        request -> {
-          if (request.method().equals("POST") && request.url().contains("v-r=uidl")) {
-            failed.set(true);
-          }
-        });
+    browserPage.onRequestFailed(request -> {
+      if (request.method().equals("POST") && request.url().contains("v-r=uidl")) {
+        failed.set(true);
+      }
+    });
     try {
       settings.enter(label, draft);
-      context.setOffline(true);
-      page.getByRole(
+      browserContext.setOffline(true);
+      browserPage
+          .getByRole(
               AriaRole.BUTTON,
-              new Page.GetByRoleOptions().setName(texts.getAdminConfigSave()).setExact(true))
+              new Page.GetByRoleOptions().setName(uiTexts.getAdminConfigSave()).setExact(true))
           .click(new Locator.ClickOptions().setForce(true));
-      context.waitForCondition(failed::get);
+      browserContext.waitForCondition(failed::get);
       assertThat(
-              page.locator("vaadin-notification-card")
+              browserPage
+                  .locator("vaadin-notification-card")
                   .filter(
-                      new Locator.FilterOptions().setHasText(texts.getAdminConfigSaveSuccess())))
+                      new Locator.FilterOptions().setHasText(uiTexts.getAdminConfigSaveSuccess())))
           .hasCount(0);
-      context.setOffline(false);
-      page.reload();
+      browserContext.setOffline(false);
+      browserPage.reload();
       assertThat(settings.input(label)).hasValue(original);
       settings.enter(label, draft);
       settings.save();
       settings.reload();
       assertThat(settings.input(label)).hasValue(draft);
     } finally {
-      context.setOffline(false);
-      page.reload();
+      browserContext.setOffline(false);
+      browserPage.reload();
       settings.enter(label, original);
       settings.save();
     }

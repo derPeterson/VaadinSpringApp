@@ -58,14 +58,14 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
   @Story("Einheitliches responsives Design")
   @Description(
       """
-        1. Login, Registrierung, Passwortanfrage und unbekannte Verifikations-/Resetlinks öffnen.
-        2. Geladenes Service-Logo, mittige Card, Inter-Font, CSS-Hintergrund, Fußtext und übersetzte Platzhalter prüfen.
-        3. Alle Formularfelder/Buttons auf horizontale Erreichbarkeit prüfen und Screenshots je Ansicht aufnehmen.
-        **Erwartet:** Die Card selbst bleibt bei ausreichend Platz in der Bildschirmmitte. Logo/Überschrift stehen darüber; bei wenig Höhe wächst die Seite ohne Abschneidung.
-        Ein simuliertes Fenster ersetzt keine menschliche Beurteilung auf einem echten Gerät.
-        """)
+      1. Login, Registrierung, Passwortanfrage und unbekannte Verifikations-/Resetlinks öffnen.
+      2. Geladenes Service-Logo, mittige Card, Inter-Font, CSS-Hintergrund, Fußtext und übersetzte Platzhalter prüfen.
+      3. Alle Formularfelder/Buttons auf horizontale Erreichbarkeit prüfen und Screenshots je Ansicht aufnehmen.
+      **Erwartet:** Die Card selbst bleibt bei ausreichend Platz in der Bildschirmmitte. Logo/Überschrift stehen darüber; bei wenig Höhe wächst die Seite ohne Abschneidung.
+      Ein simuliertes Fenster ersetzt keine menschliche Beurteilung auf einem echten Gerät.
+      """)
   void accountViewsShareResponsiveDesign(String id, int width, int height) {
-    page.setViewportSize(width, height);
+    browserPage.setViewportSize(width, height);
     for (String route :
         new String[] {
           path(LOGIN_ROUTE),
@@ -74,33 +74,33 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
           path(VERIFICATION_ROUTE) + "/" + UUID.randomUUID(),
           path(RESET_PASSWORD_ROUTE) + "/" + UUID.randomUUID()
         }) {
-      page.navigate(route);
-      checkDesign(page);
-      for (Locator input : page.locator(".public-panel vaadin-email-field").all()) {
+      browserPage.navigate(route);
+      checkDesign(browserPage);
+      for (Locator input : browserPage.locator(".public-panel vaadin-email-field").all()) {
         assertThat(input)
             .hasJSProperty(
                 "placeholder",
-                texts.getPublicConfirmEmailField().equals(input.evaluate("el => el.label"))
-                    ? texts.getAccountConfirmEmailPlaceholder()
-                    : texts.getAccountEmailPlaceholder());
+                uiTexts.getPublicConfirmEmailField().equals(input.evaluate("el => el.label"))
+                    ? uiTexts.getAccountConfirmEmailPlaceholder()
+                    : uiTexts.getAccountEmailPlaceholder());
       }
       if (route.equals(path(LOGIN_ROUTE))) {
-        assertThat(page.locator("vaadin-password-field"))
-            .hasJSProperty("placeholder", texts.getAccountPasswordPlaceholder());
+        assertThat(browserPage.locator("vaadin-password-field"))
+            .hasJSProperty("placeholder", uiTexts.getAccountPasswordPlaceholder());
       }
       if (route.equals(path(REGISTRATION_ROUTE))) {
         assertThat(
-                page.getByLabel(
-                    texts.getRegistrationFirstNameField(),
+                browserPage.getByLabel(
+                    uiTexts.getRegistrationFirstNameField(),
                     new Page.GetByLabelOptions().setExact(true)))
-            .hasJSProperty("placeholder", texts.getAccountFirstNamePlaceholder());
+            .hasJSProperty("placeholder", uiTexts.getAccountFirstNamePlaceholder());
         assertThat(
-                page.getByLabel(
-                    texts.getRegistrationLastNameField(),
+                browserPage.getByLabel(
+                    uiTexts.getRegistrationLastNameField(),
                     new Page.GetByLabelOptions().setExact(true)))
-            .hasJSProperty("placeholder", texts.getAccountLastNamePlaceholder());
+            .hasJSProperty("placeholder", uiTexts.getAccountLastNamePlaceholder());
       }
-      AllurePlaywright.attachScreenshot(id + " " + route.split("/")[1], page);
+      AllurePlaywright.attachScreenshot(id + " " + route.split("/")[1], browserPage);
     }
   }
 
@@ -109,21 +109,21 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
   @Story("Gestaltung der gültigen und erfolgreichen Tokenansichten")
   @Description(
       """
-        1. Bei 390×844 ein eigenes Konto registrieren und seinen echten Mailbutton öffnen.
-        2. Die erfolgreiche Verifikationscard und ihr gemeinsames Design prüfen.
-        3. Passwortanfrage absenden, echten Reset-Mailbutton öffnen und beide Passwort-Platzhalter prüfen.
-        4. Neues Passwort setzen, Cosmos-Erfolgsnotification prüfen und normal anmelden.
-        **Erwartet:** Der vollständige mobile Ablauf bleibt bedienbar, ohne Datenbank-/Service-Abkürzungen.
-        """)
+      1. Bei 390×844 ein eigenes Konto registrieren und seinen echten Mailbutton öffnen.
+      2. Die erfolgreiche Verifikationscard und ihr gemeinsames Design prüfen.
+      3. Passwortanfrage absenden, echten Reset-Mailbutton öffnen und beide Passwort-Platzhalter prüfen.
+      4. Neues Passwort setzen, Cosmos-Erfolgsnotification prüfen und normal anmelden.
+      **Erwartet:** Der vollständige mobile Ablauf bleibt bedienbar, ohne Datenbank-/Service-Abkürzungen.
+      """)
   void mobileActivationAndResetRemainUsable() {
-    page.setViewportSize(390, 844);
+    browserPage.setViewportSize(390, 844);
     String email = "cosmos-" + UUID.randomUUID() + "@example.test";
-    RegistrationPage registration = new RegistrationPage(page);
+    RegistrationPage registration = new RegistrationPage(browserPage);
     registration.open();
     registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
     registration.submit();
     registration.assertSubmitted(email);
-    MailpitInbox inbox = new MailpitInbox(context);
+    MailpitInbox inbox = new MailpitInbox(browserContext);
     Page activated = inbox.openVerificationLink(inbox.awaitVerificationMail(email));
     activated.setViewportSize(390, 844);
     checkDesign(activated);
@@ -138,13 +138,14 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
     checkDesign(resetPage);
     assertThat(
             resetPage.getByLabel(
-                texts.getResetPasswordNewPasswordField(),
+                uiTexts.getResetPasswordNewPasswordField(),
                 new Page.GetByLabelOptions().setExact(true)))
-        .hasJSProperty("placeholder", texts.getAccountNewPasswordPlaceholder());
+        .hasJSProperty("placeholder", uiTexts.getAccountNewPasswordPlaceholder());
     assertThat(
             resetPage.getByLabel(
-                texts.getResetPasswordConfirmField(), new Page.GetByLabelOptions().setExact(true)))
-        .hasJSProperty("placeholder", texts.getAccountConfirmPasswordPlaceholder());
+                uiTexts.getResetPasswordConfirmField(),
+                new Page.GetByLabelOptions().setExact(true)))
+        .hasJSProperty("placeholder", uiTexts.getAccountConfirmPasswordPlaceholder());
     AllurePlaywright.attachScreenshot("Mobiles gültiges Resetformular", resetPage);
     ResetPasswordPage reset = new ResetPasswordPage(resetPage);
     reset.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
@@ -165,19 +166,19 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
   @Story("Persistente Konfiguration des Fußtexts")
   @Description(
       """
-        1. Als Admin anmelden; unter Allgemein den Copyright-Text mit year/serviceName und HTML-Zeichen speichern.
-        2. Neu laden und den gespeicherten Wert bestätigen; abmelden und die Login-Fußzeile prüfen.
-        3. Über Registrierung und Passwortanfrage echte Mails erzeugen; geladenes Inline-Logo und denselben sicheren DB-Fußtext prüfen.
-        4. Ursprünglichen Wert anschließend über die Oberfläche wiederherstellen.
-        **Erwartet:** Platzhalter sind ausgefüllt, HTML bleibt Text, Home/Admin verwenden dieselbe Cosmos-Palette; die globale HTML-Palette bleibt unverändert.
-        """)
+      1. Als Admin anmelden; unter Allgemein den Copyright-Text mit year/serviceName und HTML-Zeichen speichern.
+      2. Neu laden und den gespeicherten Wert bestätigen; abmelden und die Login-Fußzeile prüfen.
+      3. Über Registrierung und Passwortanfrage echte Mails erzeugen; geladenes Inline-Logo und denselben sicheren DB-Fußtext prüfen.
+      4. Ursprünglichen Wert anschließend über die Oberfläche wiederherstellen.
+      **Erwartet:** Platzhalter sind ausgefüllt, HTML bleibt Text, Home/Admin verwenden dieselbe Cosmos-Palette; die globale HTML-Palette bleibt unverändert.
+      """)
   void copyrightCanBeConfiguredThroughTheUi() {
-    String homePrimary = primary(page, "html");
+    String homePrimary = primary(browserPage, "html");
     ConfigurationPage config = adminConfig();
-    assertEquals(homePrimary, primary(page, "html"));
-    assertThat(page.locator(".cosmos-app-shell.cosmos-theme")).isVisible();
-    assertEquals("#38bdf8", primary(page, ".cosmos-page-frame"));
-    String label = texts.getAdminConfigEntryCopyrightText();
+    assertEquals(homePrimary, primary(browserPage, "html"));
+    assertThat(browserPage.locator(".cosmos-app-shell.cosmos-theme")).isVisible();
+    assertEquals("#38bdf8", primary(browserPage, ".cosmos-page-frame"));
+    String label = uiTexts.getAdminConfigEntryCopyrightText();
     String original = config.value(label);
     String template = "© {year} {serviceName} · <b>Browser-Test</b>";
     try {
@@ -185,20 +186,20 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       config.save();
       config.reload();
       assertEquals(template, config.value(label));
-      new UserMenu(page).signOut();
-      Locator footer = page.locator(".cosmos-footer");
+      new UserMenu(browserPage).signOut();
+      Locator footer = browserPage.locator(".cosmos-footer");
       assertThat(footer).containsText("VaadinSpringApp (Browser-Test) · <b>Browser-Test</b>");
       assertFalse(footer.innerText().contains("{year}"));
       assertThat(footer.locator("b")).hasCount(0);
-      AllurePlaywright.attachScreenshot("Konfigurierter sicherer Copyright Text", page);
+      AllurePlaywright.attachScreenshot("Konfigurierter sicherer Copyright Text", browserPage);
       String expectedFooter = footer.innerText();
       String email = "copyright-" + UUID.randomUUID() + "@example.test";
-      RegistrationPage registration = new RegistrationPage(page);
+      RegistrationPage registration = new RegistrationPage(browserPage);
       registration.open();
       registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
       registration.submit();
       registration.assertSubmitted(email);
-      MailpitInbox inbox = new MailpitInbox(context, expectedFooter);
+      MailpitInbox inbox = new MailpitInbox(browserContext, expectedFooter);
       Page activated = inbox.openVerificationLink(inbox.awaitVerificationMail(email));
       ForgotPasswordPage request = new ForgotPasswordPage(activated);
       request.open();
@@ -219,23 +220,24 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
   @Story("Gemeinsames Theme und Notificationgestaltung")
   @Description(
       """
-        1. Home-Farbe erfassen, bei 320×568 eine falsche Anmeldung absenden.
-        2. Cosmos-Notification, gleichen Verlauf wie Card und erreichbaren Schließen-Button prüfen.
-        3. Zur Startseite wechseln und die gemeinsame Palette, Dekoration sowie globale Inter-Schrift bestätigen.
-        **Erwartet:** Konto-Notifications passen zur Card; Home verwendet dieselbe Palette und Dekoration; globale HTML-Variablen bleiben unverändert.
-        """)
+      1. Home-Farbe erfassen, bei 320×568 eine falsche Anmeldung absenden.
+      2. Cosmos-Notification, gleichen Verlauf wie Card und erreichbaren Schließen-Button prüfen.
+      3. Zur Startseite wechseln und die gemeinsame Palette, Dekoration sowie globale Inter-Schrift bestätigen.
+      **Erwartet:** Konto-Notifications passen zur Card; Home verwendet dieselbe Palette und Dekoration; globale HTML-Variablen bleiben unverändert.
+      """)
   void notificationAndHomeShareTheTheme() {
-    String homePrimary = primary(page, "html");
-    page.setViewportSize(320, 568);
-    LoginPage login = new LoginPage(page);
+    String homePrimary = primary(browserPage, "html");
+    browserPage.setViewportSize(320, 568);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
-    assertEquals("#38bdf8", primary(page, ".cosmos-page-frame"));
+    assertEquals("#38bdf8", primary(browserPage, ".cosmos-page-frame"));
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, "DefinitelyWrong1!");
     login.assertRejected();
-    Locator notice = page.locator("vaadin-notification-card:not([closing])");
+    Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
     assertThat(notice).hasAttribute("theme", java.util.regex.Pattern.compile(".*\\bcosmos\\b.*"));
     String cardBackground =
-        page.locator(".public-panel")
+        browserPage
+            .locator(".public-panel")
             .evaluate("el => getComputedStyle(el).backgroundImage")
             .toString();
     assertEquals(
@@ -243,15 +245,16 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
         notice.evaluate(
             "el => getComputedStyle(el.shadowRoot.querySelector('[part=overlay]')).backgroundImage"));
     assertWithinViewport(notice);
-    AllurePlaywright.attachScreenshot("Schmale Cosmos-Fehlermeldung", page);
+    AllurePlaywright.attachScreenshot("Schmale Cosmos-Fehlermeldung", browserPage);
     notice.getByRole(AriaRole.BUTTON).click();
-    page.navigate(path(HOME_ROUTE));
-    assertThat(page).hasTitle(HOME_PAGE_TITLE);
-    assertEquals(homePrimary, primary(page, "html"));
-    assertThat(page.locator(".cosmos-page-frame.cosmos-reference-public")).isVisible();
-    assertEquals("#38bdf8", primary(page, ".cosmos-page-frame"));
+    browserPage.navigate(path(HOME_ROUTE));
+    assertThat(browserPage).hasTitle(HOME_PAGE_TITLE);
+    assertEquals(homePrimary, primary(browserPage, "html"));
+    assertThat(browserPage.locator(".cosmos-page-frame.cosmos-reference-public")).isVisible();
+    assertEquals("#38bdf8", primary(browserPage, ".cosmos-page-frame"));
     assertTrue(
-        page.locator("body")
+        browserPage
+            .locator("body")
             .evaluate("el => getComputedStyle(el).fontFamily")
             .toString()
             .contains("Inter"));
@@ -263,74 +266,76 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
   @Story("App-Kopfzeile und erreichbare Adminnavigation")
   @Description(
       """
-        1. Home bei der angegebenen Fenstergröße öffnen: Logo, Avatar, Fußzeile und fehlenden horizontalen Überlauf prüfen.
-        2. Avatar-Popup öffnen, seine Erreichbarkeit prüfen und über die normale Anmeldung zum Admin wechseln.
-        3. Die echte Navigation öffnen; Dashboard und Allgemein anklicken. Der Drawer darf den Inhalt nur im mobilen Overlaymodus überlagern.
-        4. Benutzerverwaltung über die Navigation öffnen, Add User anklicken und die sichtbaren Formularfelder innerhalb der Fensterbreite prüfen.
-        **Erwartet:** Hintergrund verdeckt keine Navigation. Topbar, Inhalt, Avatar-Popup und Benutzerformular bleiben erreichbar.
-        Die Prüfung beurteilt keine gestalterische Perfektion und ersetzt kein echtes Mobilgerät.
-        """)
+      1. Home bei der angegebenen Fenstergröße öffnen: Logo, Avatar, Fußzeile und fehlenden horizontalen Überlauf prüfen.
+      2. Avatar-Popup öffnen, seine Erreichbarkeit prüfen und über die normale Anmeldung zum Admin wechseln.
+      3. Die echte Navigation öffnen; Dashboard und Allgemein anklicken. Der Drawer darf den Inhalt nur im mobilen Overlaymodus überlagern.
+      4. Benutzerverwaltung über die Navigation öffnen, Add User anklicken und die sichtbaren Formularfelder innerhalb der Fensterbreite prüfen.
+      **Erwartet:** Hintergrund verdeckt keine Navigation. Topbar, Inhalt, Avatar-Popup und Benutzerformular bleiben erreichbar.
+      Die Prüfung beurteilt keine gestalterische Perfektion und ersetzt kein echtes Mobilgerät.
+      """)
   void appShellAndNavigationRemainUsable(String id, int width, int height) {
-    page.setViewportSize(width, height);
-    page.navigate(path(HOME_ROUTE));
+    browserPage.setViewportSize(width, height);
+    browserPage.navigate(path(HOME_ROUTE));
     assertAppShell();
-    assertThat(page.locator(".public-navigation")).isVisible();
-    assertThat(page.locator(".public-languages vaadin-button")).hasCount(2);
-    assertThat(page.locator(".cosmos-topbar-account-menu")).hasCount(0);
-    AllurePlaywright.attachScreenshot(id + " Öffentliche Startseite", page);
-    UserMenu menu = new UserMenu(page);
-    LoginPage login = new LoginPage(page);
+    assertThat(browserPage.locator(".public-navigation")).isVisible();
+    assertThat(browserPage.locator(".public-languages vaadin-button")).hasCount(2);
+    assertThat(browserPage.locator(".cosmos-topbar-account-menu")).hasCount(0);
+    AllurePlaywright.attachScreenshot(id + " Öffentliche Startseite", browserPage);
+    UserMenu menu = new UserMenu(browserPage);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));
+    assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
     menu.selectTestLanguage();
     assertAppShell();
     menu.open();
-    Locator popup = page.locator("vaadin-popover-overlay[opened] > [part~='overlay']");
+    Locator popup = browserPage.locator("vaadin-popover-overlay[opened] > [part~='overlay']");
     assertThat(popup).isVisible();
     assertWithinViewport(popup);
-    AllurePlaywright.attachScreenshot(id + " Admin mit Avatar-Popup", page);
+    AllurePlaywright.attachScreenshot(id + " Admin mit Avatar-Popup", browserPage);
     menu.close();
     openDrawerIfNeeded();
-    Locator drawer = page.locator("#admin-sidebar");
+    Locator drawer = browserPage.locator("#admin-sidebar");
     assertThat(drawer).isVisible();
     assertWithinViewport(drawer);
-    new AdminNavigation(page).openSection(texts.getAdminNavDashboard());
+    new AdminNavigation(browserPage).openSection(uiTexts.getAdminNavDashboard());
     closeOverlayDrawerIfNeeded();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
-    if (!page.locator("#account-navigation-toggle").isVisible()) {
+    if (!browserPage.locator("#account-navigation-toggle").isVisible()) {
       double right =
           ((Number) drawer.evaluate("el => el.getBoundingClientRect().right")).doubleValue();
       double left =
           ((Number)
-                  page.locator(".cosmos-admin-sections")
+                  browserPage
+                      .locator(".cosmos-admin-sections")
                       .evaluate("el => el.getBoundingClientRect().left"))
               .doubleValue();
       assertTrue(left >= right - 1, "Desktopinhalt muss neben der Navigation beginnen.");
     }
-    AllurePlaywright.attachScreenshot(id + " Adminnavigation", page);
+    AllurePlaywright.attachScreenshot(id + " Adminnavigation", browserPage);
     openDrawerIfNeeded();
-    new ConfigurationPage(page).open(AdminConfigGroup.GENERAL);
+    new ConfigurationPage(browserPage).open(AdminConfigGroup.GENERAL);
     closeOverlayDrawerIfNeeded();
-    assertWithinViewport(page.locator(".cosmos-admin-form-card"));
+    assertWithinViewport(browserPage.locator(".cosmos-admin-form-card"));
     assertAppShell();
     openDrawerIfNeeded();
-    AdminUsersPage users = new AdminUsersPage(page);
+    AdminUsersPage users = new AdminUsersPage(browserPage);
     users.open();
     closeOverlayDrawerIfNeeded();
     users.openCreate();
     Locator dialog =
-        page.locator(
+        browserPage.locator(
             "vaadin-dialog.admin-user-dialog vaadin-dialog-overlay[opened] > [part~='overlay']");
     assertThat(dialog).isVisible();
     assertWithinViewport(dialog);
     for (Locator field :
-        page.locator(
+        browserPage
+            .locator(
                 "vaadin-dialog.admin-user-dialog vaadin-text-field, vaadin-dialog.admin-user-dialog vaadin-email-field, vaadin-dialog.admin-user-dialog vaadin-date-picker")
             .all()) {
       assertWithinViewport(field);
     }
-    AllurePlaywright.attachScreenshot(id + " Benutzerformular", page);
+    AllurePlaywright.attachScreenshot(id + " Benutzerformular", browserPage);
   }
 
   @ParameterizedTest(name = "COSMOS-06: Hinweisicons in Konto/Admin bei {0}px vertikal zentriert")
@@ -344,39 +349,42 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
       Erwartet: Ein- und mehrzeilige Texte behalten ein mittig ausgerichtetes Infoicon; keine Datenänderung oder Sendung.
       """)
   void infoIconsStayCenteredAcrossAccountAndAdmin(int width) {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    page.setViewportSize(width, 1000);
-    page.navigate(path(ACCOUNT_ROUTE));
+    new UserMenu(browserPage).selectTestLanguage();
+    browserPage.setViewportSize(width, 1000);
+    browserPage.navigate(path(ACCOUNT_ROUTE));
     for (String section : new String[] {"profile", "security", "sessions"}) {
-      new de.derpeterson.browsertests.pages.AccountPage(page).section("account-tab-" + section);
-      Locator panel = page.locator("#account-panel-" + section);
+      new de.derpeterson.browsertests.pages.AccountPage(browserPage)
+          .section("account-tab-" + section);
+      Locator panel = browserPage.locator("#account-panel-" + section);
       assertThat(panel).isVisible();
       if (section.equals("profile")) {
-        assertThat(page.locator("#account-save")).isVisible();
+        assertThat(browserPage.locator("#account-save")).isVisible();
       } else {
         assertHintCentered(panel.locator(".cosmos-panel-hint:visible"));
       }
     }
-    page.navigate(path(ADMIN_ROUTE));
-    ConfigurationPage settings = new ConfigurationPage(page);
+    browserPage.navigate(path(ADMIN_ROUTE));
+    ConfigurationPage settings = new ConfigurationPage(browserPage);
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
       settings.open(group);
-      for (Locator hint : page.locator(".cosmos-config-save-hint").all()) {
+      for (Locator hint : browserPage.locator(".cosmos-config-save-hint").all()) {
         assertHintCentered(hint);
       }
     }
-    page.navigate(path(ADMIN_ROUTE) + "?section=mail_test");
-    assertHintCentered(page.locator(".cosmos-admin-section--mail .cosmos-panel-hint"));
-    page.navigate(path(ADMIN_ROUTE) + "?section=notifications");
+    browserPage.navigate(path(ADMIN_ROUTE) + "?section=mail_test");
+    assertHintCentered(browserPage.locator(".cosmos-admin-section--mail .cosmos-panel-hint"));
+    browserPage.navigate(path(ADMIN_ROUTE) + "?section=notifications");
     for (Locator hint :
-        page.locator(".cosmos-admin-section--notifications .cosmos-panel-hint:visible").all()) {
+        browserPage
+            .locator(".cosmos-admin-section--notifications .cosmos-panel-hint:visible")
+            .all()) {
       assertHintCentered(hint);
     }
-    assertHintCentered(page.locator(".cosmos-notification-compose-info"));
-    AllurePlaywright.attachScreenshot("Zentrierte Infohinweise", page);
+    assertHintCentered(browserPage.locator(".cosmos-notification-compose-info"));
+    AllurePlaywright.attachScreenshot("Zentrierte Infohinweise", browserPage);
   }
 
   @ParameterizedTest(name = "COSMOS-07: Gemeinsamer Seitenrahmen bei {0}px")
@@ -384,80 +392,80 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
   @Description(
       "Servicekopf bleibt beim Scrollen stehen. Bereichskopf und Seitennavigation scrollen mit dem Inhalt. Feldhilfe und Benutzerfilter bleiben am rechten Inhaltsrand und respektieren den sichtbaren Copyrightfooter.")
   void sharedFrameScrollsContentAndKeepsTheServiceHeader(int width) {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    page.setViewportSize(width, 600);
-    new AdminNavigation(page).openGroup(AdminConfigGroup.SMTP);
+    new UserMenu(browserPage).selectTestLanguage();
+    browserPage.setViewportSize(width, 600);
+    new AdminNavigation(browserPage).openGroup(AdminConfigGroup.SMTP);
     if (width == 390) {
-      Locator toggle = page.locator("#account-navigation-toggle");
+      Locator toggle = browserPage.locator("#account-navigation-toggle");
       toggle.click();
       assertThat(toggle).hasAttribute("aria-expanded", "true");
-      page.keyboard().press("Escape");
+      browserPage.keyboard().press("Escape");
       assertThat(toggle).hasAttribute("aria-expanded", "false");
       assertThat(toggle).isFocused();
     }
-    Locator header = page.locator(".cosmos-frame-header");
-    Locator heading = page.locator(".admin-reference-page-heading");
+    Locator header = browserPage.locator(".cosmos-frame-header");
+    Locator heading = browserPage.locator(".admin-reference-page-heading");
     double headingTop = heading.boundingBox().y;
-    page.mouse().wheel(0, 600);
-    context.waitForCondition(() -> heading.boundingBox().y < headingTop - 20);
+    browserPage.mouse().wheel(0, 600);
+    browserContext.waitForCondition(() -> heading.boundingBox().y < headingTop - 20);
     assertEquals(0, header.boundingBox().y, 1);
     assertTrue(
         heading.boundingBox().y < headingTop - 20,
         "Der Bereichskopf darf nicht in einem eigenen festen Navbarbereich bleiben.");
-    assertThat(page.locator(".cosmos-app-main")).hasCSS("overflow-y", "visible");
+    assertThat(browserPage.locator(".cosmos-app-main")).hasCSS("overflow-y", "visible");
     if (width == 1280) {
       assertTrue(
-          page.locator("#admin-sidebar").boundingBox().y < 189 - 20,
+          browserPage.locator("#admin-sidebar").boundingBox().y < 189 - 20,
           "Auch die Desktopnavigation muss mit dem Seiteninhalt scrollen.");
     }
-    ConfigurationPage settings = new ConfigurationPage(page);
-    settings.info(texts.getAdminConfigEntryMailHost()).click();
-    Locator overlay = page.locator("#admin-config-help vaadin-dialog-overlay > [part~='overlay']");
+    ConfigurationPage settings = new ConfigurationPage(browserPage);
+    settings.info(uiTexts.getAdminConfigEntryMailHost()).click();
+    Locator overlay =
+        browserPage.locator("#admin-config-help vaadin-dialog-overlay > [part~='overlay']");
     assertThat(overlay).isVisible();
     assertDrawerAtContentEdge(overlay, width);
     com.microsoft.playwright.options.BoundingBox bounds = overlay.boundingBox();
     assertTrue(bounds.y >= header.boundingBox().height - 1);
     com.microsoft.playwright.options.BoundingBox footer =
-        page.locator(".cosmos-footer").boundingBox();
+        browserPage.locator(".cosmos-footer").boundingBox();
     if (footer.y < 600 && footer.y + footer.height > 0) {
       assertTrue(
           bounds.y + bounds.height <= footer.y + 1,
           "Die Hilfe darf den sichtbaren Copyrightfooter nicht überdecken.");
     }
     settings.closeHelp();
-    AdminUsersPage users = new AdminUsersPage(page);
+    AdminUsersPage users = new AdminUsersPage(browserPage);
     users.open();
     users.openFilters();
     Locator filter =
-        page.locator("#admin-user-filter-panel vaadin-dialog-overlay > [part~='overlay']");
+        browserPage.locator("#admin-user-filter-panel vaadin-dialog-overlay > [part~='overlay']");
     assertThat(filter).isVisible();
     assertDrawerAtContentEdge(filter, width);
     if (width == 2560) {
-      page.setViewportSize(1280, 600);
+      browserPage.setViewportSize(1280, 600);
       assertDrawerAtContentEdge(filter, 1280);
-      page.setViewportSize(2560, 600);
+      browserPage.setViewportSize(2560, 600);
       assertDrawerAtContentEdge(filter, 2560);
     }
-    page.keyboard().press("Escape");
-    AllurePlaywright.attachScreenshot("Gemeinsamer scrollender Seitenrahmen", page);
+    browserPage.keyboard().press("Escape");
+    AllurePlaywright.attachScreenshot("Gemeinsamer scrollender Seitenrahmen", browserPage);
   }
 
   private void assertDrawerAtContentEdge(Locator overlay, int width) {
-    page.waitForCondition(
-        () -> {
-          com.microsoft.playwright.options.BoundingBox content =
-              page.locator(".cosmos-admin-sections").boundingBox();
-          com.microsoft.playwright.options.BoundingBox drawer = overlay.boundingBox();
-          double right =
-              width >= 1024
-                  ? content.x + content.width
-                  : ((Number) page.evaluate("document.body.getBoundingClientRect().right"))
-                      .doubleValue();
-          return drawer != null && Math.abs(drawer.x + drawer.width - right) < 2;
-        });
+    browserPage.waitForCondition(() -> {
+      com.microsoft.playwright.options.BoundingBox content =
+          browserPage.locator(".cosmos-admin-sections").boundingBox();
+      com.microsoft.playwright.options.BoundingBox drawer = overlay.boundingBox();
+      double right =
+          width >= 1024
+              ? content.x + content.width
+              : ((Number) browserPage.evaluate("document.body.getBoundingClientRect().right"))
+                  .doubleValue();
+      return drawer != null && Math.abs(drawer.x + drawer.width - right) < 2;
+    });
     assertTrue(overlay.boundingBox().x >= 0, "Die Seitenleiste bleibt im sichtbaren Bereich");
   }
 
@@ -473,37 +481,38 @@ public class CosmosDesignBrowserTest extends BrowserFixture {
   }
 
   private void assertAppShell() {
-    assertThat(page.locator(".cosmos-app-shell.cosmos-theme")).isVisible();
-    assertEquals("#38bdf8", primary(page, ".cosmos-page-frame"));
-    if (page.locator(".public-header").isVisible()) {
-      assertWithinViewport(page.locator(".public-header"));
-      assertThat(page.locator(".public-brand img")).isVisible();
+    assertThat(browserPage.locator(".cosmos-app-shell.cosmos-theme")).isVisible();
+    assertEquals("#38bdf8", primary(browserPage, ".cosmos-page-frame"));
+    if (browserPage.locator(".public-header").isVisible()) {
+      assertWithinViewport(browserPage.locator(".public-header"));
+      assertThat(browserPage.locator(".public-brand img")).isVisible();
     } else {
-      assertThat(page.locator(".cosmos-topbar-logo")).isVisible();
-      assertWithinViewport(page.locator(".cosmos-topbar"));
-      assertWithinViewport(page.locator(".cosmos-topbar-account-menu"));
+      assertThat(browserPage.locator(".cosmos-topbar-logo")).isVisible();
+      assertWithinViewport(browserPage.locator(".cosmos-topbar"));
+      assertWithinViewport(browserPage.locator(".cosmos-topbar-account-menu"));
     }
-    assertWithinViewport(page.locator(".cosmos-app-main"));
+    assertWithinViewport(browserPage.locator(".cosmos-app-main"));
     assertTrue(
-        (Boolean) page.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"),
+        (Boolean)
+            browserPage.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"),
         "AppLayout erzeugt horizontalen Überlauf.");
   }
 
   private void openDrawerIfNeeded() {
-    new AdminNavigation(page).openDrawer();
+    new AdminNavigation(browserPage).openDrawer();
   }
 
   private void closeOverlayDrawerIfNeeded() {
-    new AdminNavigation(page).closeOverlayDrawer();
+    new AdminNavigation(browserPage).closeOverlayDrawer();
   }
 
   private ConfigurationPage adminConfig() {
-    page.setViewportSize(1280, 900);
-    LoginPage login = new LoginPage(page);
+    browserPage.setViewportSize(1280, 900);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    ConfigurationPage config = new ConfigurationPage(page);
+    new UserMenu(browserPage).selectTestLanguage();
+    ConfigurationPage config = new ConfigurationPage(browserPage);
     config.open(AdminConfigGroup.GENERAL);
     return config;
   }

@@ -19,32 +19,32 @@ import io.qameta.allure.playwright.TraceSession;
 
 /** A genuinely separate user's context; no cookies or application state are injected. */
 public final class BrowserActor implements AutoCloseable {
-  public final BrowserContext context;
-  public final Page page;
-  private final TraceSession trace;
+  public final BrowserContext browserContext;
+  public final Page browserPage;
+  private final TraceSession traceSession;
 
-  public BrowserActor(Browser browser) {
-    this(browser, HOME_PAGE_TITLE);
+  public BrowserActor(Browser testBrowser) {
+    this(testBrowser, HOME_PAGE_TITLE);
   }
 
-  public BrowserActor(Browser browser, String expectedInitialTitle) {
-    UiTexts texts = UiTexts.selected();
-    context =
-        browser.newContext(
+  public BrowserActor(Browser testBrowser, String expectedInitialTitle) {
+    UiTexts uiTexts = UiTexts.selected();
+    browserContext =
+        testBrowser.newContext(
             new Browser.NewContextOptions()
                 .setBaseURL(System.getProperty("browser.tests.baseUrl"))
                 .setViewportSize(1280, 900)
-                .setLocale(texts.browserLocale())
+                .setLocale(uiTexts.browserLocale())
                 .setTimezoneId("Europe/Berlin")
                 .setServiceWorkers(ServiceWorkerPolicy.BLOCK));
-    context.setDefaultTimeout(15_000);
-    AllurePlaywright.register(context);
-    trace = AllurePlaywright.startTracing(context);
-    page = context.newPage();
-    page.navigate(path(HOME_ROUTE));
-    assertThat(page).hasTitle(expectedInitialTitle);
+    browserContext.setDefaultTimeout(15_000);
+    AllurePlaywright.register(browserContext);
+    traceSession = AllurePlaywright.startTracing(browserContext);
+    browserPage = browserContext.newPage();
+    browserPage.navigate(path(HOME_ROUTE));
+    assertThat(browserPage).hasTitle(expectedInitialTitle);
     if (HOME_PAGE_TITLE.equals(expectedInitialTitle)) {
-      new UserMenu(page).selectTestLanguage();
+      new UserMenu(browserPage).selectTestLanguage();
     }
   }
 
@@ -53,9 +53,10 @@ public final class BrowserActor implements AutoCloseable {
   }
 
   public void login(String email, String password, boolean remember) {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
-    page.getByRole(
+    browserPage
+        .getByRole(
             AriaRole.SWITCH,
             new Page.GetByRoleOptions()
                 .setName(UiTexts.selected().getLoginRememberMeCheckbox())
@@ -70,22 +71,22 @@ public final class BrowserActor implements AutoCloseable {
 
   public AdminUsersPage loginAdmin(String email, String password, boolean remember) {
     login(email, password, remember);
-    new UserMenu(page).selectTestLanguage();
-    new LoginPage(page).assertAdminSignedIn(email);
-    return new AdminUsersPage(page);
+    new UserMenu(browserPage).selectTestLanguage();
+    new LoginPage(browserPage).assertAdminSignedIn(email);
+    return new AdminUsersPage(browserPage);
   }
 
   @Override
   public void close() {
     try {
-      if (!page.isClosed()) {
-        AllurePlaywright.attachScreenshot("Zusätzlicher Benutzerkontext am Testende", page);
+      if (!browserPage.isClosed()) {
+        AllurePlaywright.attachScreenshot("Zusätzlicher Benutzerkontext am Testende", browserPage);
       }
     } finally {
       try {
-        trace.close();
+        traceSession.close();
       } finally {
-        context.close();
+        browserContext.close();
       }
     }
   }

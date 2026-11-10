@@ -32,44 +32,44 @@ import java.util.concurrent.atomic.AtomicReference;
 /** Reads captured SMTP mail only; never creates mail or bypasses the application's UI. */
 public final class MailpitInbox {
   private static final ObjectMapper JSON = new ObjectMapper();
-  private final BrowserContext context;
-  private final de.derpeterson.browsertests.i18n.UiTexts texts;
+  private final BrowserContext browserContext;
+  private final de.derpeterson.browsertests.i18n.UiTexts uiTexts;
   private final String baseUrl = System.getProperty("browser.tests.mailpitUrl");
 
   private final String configuredFooter;
 
-  public MailpitInbox(BrowserContext context) {
-    this(context, null);
+  public MailpitInbox(BrowserContext browserContext) {
+    this(browserContext, null);
   }
 
   /** Erwartung stammt beim Konfigurationstest aus der über die UI gespeicherten Fußzeile. */
-  public MailpitInbox(BrowserContext context, String configuredFooter) {
-    this(context, configuredFooter, de.derpeterson.browsertests.i18n.UiTexts.selected());
+  public MailpitInbox(BrowserContext browserContext, String configuredFooter) {
+    this(browserContext, configuredFooter, de.derpeterson.browsertests.i18n.UiTexts.selected());
   }
 
   public MailpitInbox(
-      BrowserContext context,
+      BrowserContext browserContext,
       String configuredFooter,
-      de.derpeterson.browsertests.i18n.UiTexts texts) {
-    this.context = context;
+      de.derpeterson.browsertests.i18n.UiTexts uiTexts) {
+    this.browserContext = browserContext;
     this.configuredFooter = configuredFooter;
-    this.texts = texts;
+    this.uiTexts = uiTexts;
   }
 
   public record CapturedMail(String id, String recipient, String subject) {}
 
   @Step("Auf die regulär versandte Verifikationsmail an die eigene Testadresse warten")
   public CapturedMail awaitVerificationMail(String recipient) {
-    return awaitMail(recipient, texts.getEmailVerificationSubject());
+    return awaitMail(recipient, uiTexts.getEmailVerificationSubject());
   }
 
   @Step("Auf die regulär versandte Reset-Mail an die eigene Testadresse warten")
   public CapturedMail awaitPasswordResetMail(String recipient) {
-    return awaitMail(recipient, texts.getEmailResetPasswordSubject());
+    return awaitMail(recipient, uiTexts.getEmailResetPasswordSubject());
   }
 
   public CapturedMail awaitVerificationMailAfter(String recipient, CapturedMail previous) {
-    return awaitMail(recipient, texts.getEmailVerificationSubject(), previous.id(), true);
+    return awaitMail(recipient, uiTexts.getEmailVerificationSubject(), previous.id(), true);
   }
 
   public CapturedMail awaitAdminMail(String recipient, String subject) {
@@ -83,7 +83,7 @@ public final class MailpitInbox {
 
   @Step("Einrichtungscode aus der tatsächlich an das eigene Testkonto versandten Mail lesen")
   public String awaitAuthenticatorSetupCode(String recipient) {
-    CapturedMail captured = awaitSecurityMail(recipient, texts.getTwoFactorEmailSubject());
+    CapturedMail captured = awaitSecurityMail(recipient, uiTexts.getTwoFactorEmailSubject());
     String text = getJson("/api/v1/message/" + captured.id()).path("Text").asText();
     // Der achtstellige Code steht als eigener Text in der regulären Einrichtungsmail.
     java.util.regex.Matcher code =
@@ -104,7 +104,7 @@ public final class MailpitInbox {
     for (String secret : forbidden) {
       assertFalse(html.contains(secret), "Passwortinhalt in Sicherheitsmail");
     }
-    Page message = context.newPage();
+    Page message = browserContext.newPage();
     try {
       message.navigate(baseUrl + "/view/" + mail.id() + ".html");
       assertThat(message.locator("body")).containsText("VaadinSpringApp (Browser-Test)");
@@ -155,7 +155,7 @@ public final class MailpitInbox {
   private CapturedMail awaitMail(
       String recipient, String expectedSubject, String previousId, boolean htmlExpected) {
     AtomicReference<JsonNode> found = new AtomicReference<>();
-    context.waitForCondition(
+    browserContext.waitForCondition(
         () -> {
           List<JsonNode> matches = new ArrayList<>();
           for (JsonNode mail : getJson("/api/v1/messages?limit=100").path("messages")) {
@@ -225,7 +225,7 @@ public final class MailpitInbox {
   }
 
   private Page openActionLink(CapturedMail mail, String route, String screenshotName) {
-    Page messagePage = context.newPage();
+    Page messagePage = browserContext.newPage();
     try {
       messagePage.navigate(baseUrl + "/view/" + mail.id() + ".html");
       if (VERIFICATION_ROUTE.equals(route)) {
@@ -252,7 +252,7 @@ public final class MailpitInbox {
           .hasCount(1);
       assertThat(messagePage.locator("body")).not().containsText("{ServiceName}");
       AllurePlaywright.attachScreenshot(screenshotName, messagePage);
-      return context.waitForPage(link::click);
+      return browserContext.waitForPage(link::click);
     } finally {
       messagePage.close();
     }
@@ -267,7 +267,7 @@ public final class MailpitInbox {
     } else {
       templatePrefix = "reset_password_";
     }
-    String resource = "/email/" + templatePrefix + texts.language() + ".html";
+    String resource = "/email/" + templatePrefix + uiTexts.language() + ".html";
     try (InputStream source =
         Objects.requireNonNull(
             MailpitInbox.class.getResourceAsStream(resource), "Mailvorlage fehlt: " + resource)) {
@@ -278,7 +278,7 @@ public final class MailpitInbox {
       String footer =
           configuredFooter != null
               ? configuredFooter
-              : texts
+              : uiTexts
                   .getAccountCopyrightTemplate()
                   .replace(
                       "{year}",
@@ -342,7 +342,7 @@ public final class MailpitInbox {
   }
 
   private JsonNode getJson(String path) {
-    APIResponse response = context.request().get(baseUrl + path);
+    APIResponse response = browserContext.request().get(baseUrl + path);
     try {
       assertTrue(response.ok(), "Mailpit-API nicht erfolgreich: " + response.status());
       return JSON.readTree(response.body());

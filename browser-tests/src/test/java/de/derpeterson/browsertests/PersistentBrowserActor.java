@@ -21,18 +21,18 @@ import java.nio.file.Path;
 
 /** Real separate Chromium process using only its own temporary on-disk profile. */
 public final class PersistentBrowserActor implements AutoCloseable {
-  public final BrowserContext context;
-  public final Page page;
-  private final TraceSession trace;
+  public final BrowserContext browserContext;
+  public final Page browserPage;
+  private final TraceSession traceSession;
 
-  public PersistentBrowserActor(Playwright playwright, Path profile) {
-    this(playwright, profile, HOME_ROUTE);
+  public PersistentBrowserActor(Playwright playwrightRuntime, Path profile) {
+    this(playwrightRuntime, profile, HOME_ROUTE);
   }
 
-  public PersistentBrowserActor(Playwright playwright, Path profile, String expectedRoute) {
-    UiTexts texts = UiTexts.selected();
-    context =
-        playwright
+  public PersistentBrowserActor(Playwright playwrightRuntime, Path profile, String expectedRoute) {
+    UiTexts uiTexts = UiTexts.selected();
+    browserContext =
+        playwrightRuntime
             .chromium()
             .launchPersistentContext(
                 profile,
@@ -40,36 +40,36 @@ public final class PersistentBrowserActor implements AutoCloseable {
                     .setHeadless(!Boolean.getBoolean("browser.tests.headed"))
                     .setBaseURL(System.getProperty("browser.tests.baseUrl"))
                     .setViewportSize(1280, 900)
-                    .setLocale(texts.browserLocale())
+                    .setLocale(uiTexts.browserLocale())
                     .setTimezoneId("Europe/Berlin")
                     .setServiceWorkers(ServiceWorkerPolicy.BLOCK));
-    context.setDefaultTimeout(15_000);
-    AllurePlaywright.register(context);
-    trace = AllurePlaywright.startTracing(context);
-    page = context.newPage();
-    page.navigate(path(HOME_ROUTE));
-    assertThat(page).hasURL(urlPattern(expectedRoute));
-    assertThat(page)
+    browserContext.setDefaultTimeout(15_000);
+    AllurePlaywright.register(browserContext);
+    traceSession = AllurePlaywright.startTracing(browserContext);
+    browserPage = browserContext.newPage();
+    browserPage.navigate(path(HOME_ROUTE));
+    assertThat(browserPage).hasURL(urlPattern(expectedRoute));
+    assertThat(browserPage)
         .hasTitle(
             expectedRoute.equals(LOGIN_ROUTE)
                 ? LOGIN_PAGE_TITLE
                 : expectedRoute.equals("two-factor")
-                    ? texts.getTwoFactorPageTitle()
+                    ? uiTexts.getTwoFactorPageTitle()
                     : HOME_PAGE_TITLE);
     if (expectedRoute.equals(HOME_ROUTE)) {
-      new UserMenu(page).selectTestLanguage();
+      new UserMenu(browserPage).selectTestLanguage();
     }
   }
 
   @Override
   public void close() {
     try {
-      AllurePlaywright.attachScreenshot("Separater Browser vor echtem Prozessende", page);
+      AllurePlaywright.attachScreenshot("Separater Browser vor echtem Prozessende", browserPage);
     } finally {
       try {
-        trace.close();
+        traceSession.close();
       } finally {
-        context.close();
+        browserContext.close();
       }
     }
   }

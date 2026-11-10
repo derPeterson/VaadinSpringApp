@@ -20,92 +20,92 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
 public abstract class BrowserFixture {
-  protected static Playwright playwright;
-  protected static Browser browser;
-  protected BrowserContext context;
-  protected Page page;
-  protected final UiTexts texts = UiTexts.selected();
-  protected TraceSession trace;
+  protected static Playwright playwrightRuntime;
+  protected static Browser testBrowser;
+  protected BrowserContext browserContext;
+  protected Page browserPage;
+  protected final UiTexts uiTexts = UiTexts.selected();
+  protected TraceSession traceSession;
 
   @BeforeAll
-  protected static void launchBrowser() {
+  protected static void launchTestBrowser() {
     if (!Boolean.getBoolean("browser.tests.managed")) {
       throw new IllegalStateException(
           "Use run.ps1: browser tests require a disposable Docker environment.");
     }
-    playwright = Playwright.create();
-    browser =
-        playwright
+    playwrightRuntime = Playwright.create();
+    testBrowser =
+        playwrightRuntime
             .chromium()
             .launch(
                 new BrowserType.LaunchOptions()
                     // Native Scrollleisten müssen auch auf Headless-Screenshots sichtbar bleiben.
                     .setIgnoreDefaultArgs(List.of("--hide-scrollbars"))
                     .setHeadless(!Boolean.getBoolean("browser.tests.headed")));
-    System.setProperty("browser.tests.browserVersion", browser.version());
+    System.setProperty("browser.tests.browserVersion", testBrowser.version());
   }
 
   @BeforeEach
-  protected void openPage() {
-    context =
-        browser.newContext(
+  protected void openIsolatedBrowserPage() {
+    browserContext =
+        testBrowser.newContext(
             new Browser.NewContextOptions()
                 .setBaseURL(System.getProperty("browser.tests.baseUrl"))
                 .setViewportSize(1280, 900)
-                .setLocale(texts.browserLocale())
+                .setLocale(uiTexts.browserLocale())
                 .setTimezoneId("Europe/Berlin")
                 .setServiceWorkers(com.microsoft.playwright.options.ServiceWorkerPolicy.BLOCK));
-    context.setDefaultTimeout(15_000);
-    AllurePlaywright.register(context);
-    trace = AllurePlaywright.startTracing(context);
-    page = context.newPage();
-    page.navigate(path(HOME_ROUTE));
-    com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(page)
+    browserContext.setDefaultTimeout(15_000);
+    AllurePlaywright.register(browserContext);
+    traceSession = AllurePlaywright.startTracing(browserContext);
+    browserPage = browserContext.newPage();
+    browserPage.navigate(path(HOME_ROUTE));
+    com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat(browserPage)
         .hasTitle(HOME_PAGE_TITLE);
-    new UserMenu(page).selectTestLanguage();
+    new UserMenu(browserPage).selectTestLanguage();
   }
 
   @AfterEach
-  protected void closePage() {
+  protected void closeIsolatedBrowserPage() {
     try {
-      if (page != null && !page.isClosed()) {
-        AllurePlaywright.attachScreenshot("Browser am Testende", page);
+      if (browserPage != null && !browserPage.isClosed()) {
+        AllurePlaywright.attachScreenshot("Browser am Testende", browserPage);
         // A closed browser intentionally keeps its server slot until timeout. Explicitly
         // sign out the shared fixture account so independent cases do not consume its limit.
-        page.navigate(path(HOME_ROUTE));
-        page.waitForCondition(
-            () ->
-                page.locator(".public-header, vaadin-button.tracked-user-button")
-                    .first()
-                    .isVisible());
-        if (java.net.URI.create(page.url()).getPath().equals("/two-factor")) {
-          page.locator("#two-factor-cancel").click();
-          page.waitForURL(url -> java.net.URI.create(url).getPath().equals("/login"));
+        browserPage.navigate(path(HOME_ROUTE));
+        browserPage.waitForCondition(() ->
+            browserPage
+                .locator(".public-header, vaadin-button.tracked-user-button")
+                .first()
+                .isVisible());
+        if (java.net.URI.create(browserPage.url()).getPath().equals("/two-factor")) {
+          browserPage.locator("#two-factor-cancel").click();
+          browserPage.waitForURL(url -> java.net.URI.create(url).getPath().equals("/login"));
         }
-        UserMenu menu = new UserMenu(page);
+        UserMenu menu = new UserMenu(browserPage);
         menu.selectTestLanguage();
         // Besucher haben nur die öffentliche Navigation und kein Avatar-Popup.
-        if (!page.locator(".public-header").isVisible()) {
+        if (!browserPage.locator(".public-header").isVisible()) {
           menu.requestSignOut();
         }
       }
     } finally {
       try {
-        if (trace != null) {
-          trace.close();
+        if (traceSession != null) {
+          traceSession.close();
         }
       } finally {
-        if (context != null) {
-          context.close();
+        if (browserContext != null) {
+          browserContext.close();
         }
       }
     }
   }
 
   @AfterAll
-  protected static void closeBrowser() {
-    if (playwright != null) {
-      playwright.close();
+  protected static void closePlaywrightRuntime() {
+    if (playwrightRuntime != null) {
+      playwrightRuntime.close();
     }
   }
 }

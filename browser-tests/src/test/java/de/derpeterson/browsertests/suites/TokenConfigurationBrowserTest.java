@@ -34,9 +34,9 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
       """)
   void verificationValidity() {
     check(
-        texts.getAdminConfigEntryVerificationTokenValidDuration(),
+        uiTexts.getAdminConfigEntryVerificationTokenValidDuration(),
         TokenDurationPolicy.MINIMUM_TOKEN_VALIDITY,
-        texts.getAdminConfigEntryVerificationTokenValidDurationTooltip());
+        uiTexts.getAdminConfigEntryVerificationTokenValidDurationTooltip());
   }
 
   @Test
@@ -51,9 +51,9 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
       """)
   void verificationRetention() {
     check(
-        texts.getAdminConfigEntryVerificationTokenLiveDuration(),
+        uiTexts.getAdminConfigEntryVerificationTokenLiveDuration(),
         TokenDurationPolicy.MINIMUM_TOKEN_RETENTION,
-        texts.getAdminConfigEntryVerificationTokenLiveDurationTooltip());
+        uiTexts.getAdminConfigEntryVerificationTokenLiveDurationTooltip());
   }
 
   @Test
@@ -68,9 +68,9 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
       """)
   void resetValidity() {
     check(
-        texts.getAdminConfigEntryPasswordResetTokenValidDuration(),
+        uiTexts.getAdminConfigEntryPasswordResetTokenValidDuration(),
         TokenDurationPolicy.MINIMUM_TOKEN_VALIDITY,
-        texts.getAdminConfigEntryPasswordResetTokenValidDurationTooltip());
+        uiTexts.getAdminConfigEntryPasswordResetTokenValidDurationTooltip());
   }
 
   @Test
@@ -85,29 +85,29 @@ public class TokenConfigurationBrowserTest extends BrowserFixture {
       """)
   void resetRetention() {
     check(
-        texts.getAdminConfigEntryPasswordResetTokenLiveDuration(),
+        uiTexts.getAdminConfigEntryPasswordResetTokenLiveDuration(),
         TokenDurationPolicy.MINIMUM_TOKEN_RETENTION,
-        texts.getAdminConfigEntryPasswordResetTokenLiveDurationTooltip());
+        uiTexts.getAdminConfigEntryPasswordResetTokenLiveDurationTooltip());
   }
 
   private void check(String label, Duration minimum, String explanation) {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));
-    new UserMenu(page).selectTestLanguage();
-    TokenConfigurationPage settings = new TokenConfigurationPage(page);
+    assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
+    new UserMenu(browserPage).selectTestLanguage();
+    TokenConfigurationPage settings = new TokenConfigurationPage(browserPage);
     settings.open();
     String original = settings.value(label);
     settings.explain(label, minimum.toMinutes(), explanation);
     for (String invalid :
         new String[] {"PT0S", "PT-1S", "PT1S", minimum.minusNanos(1).toString()}) {
       settings.enter(label, invalid);
-      settings.reject(label, texts.getAdminConfigValidationDurationMinimum(minimum.toMinutes()));
+      settings.reject(label, uiTexts.getAdminConfigValidationDurationMinimum(minimum.toMinutes()));
       settings.reload();
       assertEquals(original, settings.value(label));
     }
-    AllurePlaywright.attachScreenshot("Unveränderte Werte nach abgelehnten Dauern", page);
+    AllurePlaywright.attachScreenshot("Unveränderte Werte nach abgelehnten Dauern", browserPage);
     try {
       settings.enter(label, minimum.toMinutes() + "m");
       settings.save();

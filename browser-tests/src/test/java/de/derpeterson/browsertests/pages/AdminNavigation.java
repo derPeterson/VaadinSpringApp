@@ -11,34 +11,34 @@ import io.qameta.allure.Step;
 
 /** Gemeinsame Bedienung der nativen SideNav, einschließlich des mobilen Drawers. */
 public final class AdminNavigation {
-  private final Page page;
-  private final UiTexts texts;
+  private final Page browserPage;
+  private final UiTexts uiTexts;
 
-  public AdminNavigation(Page page) {
-    this(page, UiTexts.selected());
+  public AdminNavigation(Page browserPage) {
+    this(browserPage, UiTexts.selected());
   }
 
-  public AdminNavigation(Page page, UiTexts texts) {
-    this.page = page;
-    this.texts = texts;
+  public AdminNavigation(Page browserPage, UiTexts uiTexts) {
+    this.browserPage = browserPage;
+    this.uiTexts = uiTexts;
   }
 
   public Locator configuration() {
-    return page.locator(
+    return browserPage.locator(
         "#admin-sidebar .cosmos-side-navigation > vaadin-side-nav-item[has-children]");
   }
 
   @Step("Adminnavigation bei Bedarf öffnen")
   public void openDrawer() {
-    Locator toggle = page.locator("#account-navigation-toggle");
+    Locator toggle = browserPage.locator("#account-navigation-toggle");
     // Nach direktem Seitenaufruf erst den Vaadin-Aufbau abwarten. Ein noch nicht
     // vorhandener Schalter ist nicht gleichbedeutend mit Desktopnavigation.
     assertThat(toggle).hasCount(1);
     if (toggle.isVisible() && !"true".equals(toggle.getAttribute("aria-expanded"))) {
-      UiActions.complete(page, toggle::click);
+      UiActions.complete(browserPage, toggle::click);
       assertThat(toggle).hasAttribute("aria-expanded", "true");
     }
-    assertThat(page.locator("#admin-sidebar")).isVisible();
+    assertThat(browserPage.locator("#admin-sidebar")).isVisible();
   }
 
   @Step("Konfigurationsgruppe über das native Untermenü auswählen")
@@ -49,13 +49,13 @@ public final class AdminNavigation {
     }
     assertThat(configuration()).hasJSProperty("expanded", true);
     Locator link = groupLink(group);
-    UiActions.complete(page, link::click);
+    UiActions.complete(browserPage, link::click);
     closeOverlayDrawer();
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
-                    .setName(texts.getAdminConfigGroupLabel(group))
+                    .setName(uiTexts.getAdminConfigGroupLabel(group))
                     .setExact(true)
                     .setLevel(2)))
         .isVisible();
@@ -64,8 +64,8 @@ public final class AdminNavigation {
   public Locator groupLink(AdminConfigGroup group) {
     String label =
         group == AdminConfigGroup.TWO_FACTOR
-            ? texts.getTwoFactorNavigationLabel()
-            : texts.getAdminConfigGroupLabel(group);
+            ? uiTexts.getTwoFactorNavigationLabel()
+            : uiTexts.getAdminConfigGroupLabel(group);
     return configuration()
         .getByRole(AriaRole.LINK, new Locator.GetByRoleOptions().setName(label).setExact(true));
   }
@@ -74,17 +74,18 @@ public final class AdminNavigation {
   public void openSection(String label) {
     openDrawer();
     Locator link =
-        page.locator("#admin-sidebar .cosmos-side-navigation")
+        browserPage
+            .locator("#admin-sidebar .cosmos-side-navigation")
             .first()
             .getByRole(AriaRole.LINK, new Locator.GetByRoleOptions().setName(label).setExact(true));
-    UiActions.complete(page, link::click);
+    UiActions.complete(browserPage, link::click);
     closeOverlayDrawer();
   }
 
   public void closeOverlayDrawer() {
-    Locator toggle = page.locator("#account-navigation-toggle");
+    Locator toggle = browserPage.locator("#account-navigation-toggle");
     if (toggle.isVisible() && "true".equals(toggle.getAttribute("aria-expanded"))) {
-      page.keyboard().press("Escape");
+      browserPage.keyboard().press("Escape");
       assertThat(toggle).hasAttribute("aria-expanded", "false");
     }
   }

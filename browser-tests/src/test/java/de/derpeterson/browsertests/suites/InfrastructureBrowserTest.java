@@ -39,11 +39,11 @@ public class InfrastructureBrowserTest extends BrowserFixture {
       """)
   void httpsIsTrustedAndUnsafeHttpIsRejectedBeforeRedirect() {
     String origin = System.getProperty("browser.tests.baseUrl");
-    assertTrue(page.url().startsWith(origin + "/"));
+    assertTrue(browserPage.url().startsWith(origin + "/"));
     assertTrue(origin.startsWith("https://"));
     String plain = System.getProperty("browser.tests.httpUrl");
     APIResponse navigation =
-        context.request().get(plain + "/login", RequestOptions.create().setMaxRedirects(0));
+        browserContext.request().get(plain + "/login", RequestOptions.create().setMaxRedirects(0));
     try {
       assertEquals(308, navigation.status());
       assertEquals(origin + "/login", navigation.headers().get("location"));
@@ -51,7 +51,7 @@ public class InfrastructureBrowserTest extends BrowserFixture {
       navigation.dispose();
     }
     APIResponse login =
-        context.request().post(plain + "/login", RequestOptions.create().setMaxRedirects(0));
+        browserContext.request().post(plain + "/login", RequestOptions.create().setMaxRedirects(0));
     try {
       assertEquals(403, login.status());
     } finally {
@@ -65,26 +65,26 @@ public class InfrastructureBrowserTest extends BrowserFixture {
   @Story("Startseite und Bilder")
   @Description(
       """
-            1. Die Startseite öffnen und den konfigurierten Servicenamen prüfen.
-            2. Die öffentliche Kopfnavigation und ihre Sprachwahl prüfen.
-            3. Geladenes Service-Logo und die ausdrücklich gewählte Sprache prüfen.
+      1. Die Startseite öffnen und den konfigurierten Servicenamen prüfen.
+      2. Die öffentliche Kopfnavigation und ihre Sprachwahl prüfen.
+      3. Geladenes Service-Logo und die ausdrücklich gewählte Sprache prüfen.
 
-            **Erwartet:** Startseite korrekt gerendert, Logo geladen und Sprachwahl sichtbar. Besucher haben kein Avatar-Popup.
-            Prüft keine vollständige responsive Darstellung, Rollen- oder Tabelleninitialisierung.
-            """)
+      **Erwartet:** Startseite korrekt gerendert, Logo geladen und Sprachwahl sichtbar. Besucher haben kein Avatar-Popup.
+      Prüft keine vollständige responsive Darstellung, Rollen- oder Tabelleninitialisierung.
+      """)
   void homeAndImagesLoad() {
-    page.navigate(path(HOME_ROUTE));
-    assertThat(page).hasTitle(HOME_PAGE_TITLE);
+    browserPage.navigate(path(HOME_ROUTE));
+    assertThat(browserPage).hasTitle(HOME_PAGE_TITLE);
     assertThat(
-            page.getByText(
+            browserPage.getByText(
                 "VaadinSpringApp (Browser-Test)", new Page.GetByTextOptions().setExact(true)))
         .isVisible();
-    assertImageLoaded(page.locator(".public-brand img"));
-    assertThat(page.locator(".public-navigation")).isVisible();
-    assertThat(page.locator(".public-languages vaadin-button")).hasCount(2);
-    assertThat(page.locator(".public-languages vaadin-button[aria-pressed='true']"))
-        .hasText(texts.language().toUpperCase(java.util.Locale.ROOT));
-    assertThat(page.locator(".tracked-user-button")).hasCount(0);
+    assertImageLoaded(browserPage.locator(".public-brand img"));
+    assertThat(browserPage.locator(".public-navigation")).isVisible();
+    assertThat(browserPage.locator(".public-languages vaadin-button")).hasCount(2);
+    assertThat(browserPage.locator(".public-languages vaadin-button[aria-pressed='true']"))
+        .hasText(uiTexts.language().toUpperCase(java.util.Locale.ROOT));
+    assertThat(browserPage.locator(".tracked-user-button")).hasCount(0);
   }
 
   @Tag("fast")
@@ -93,20 +93,21 @@ public class InfrastructureBrowserTest extends BrowserFixture {
   @Story("Loginformular")
   @Description(
       """
-            1. /login öffnen.
-            2. E-Mail-Feld, Passwortfeld und Anmeldebutton prüfen.
+      1. /login öffnen.
+      2. E-Mail-Feld, Passwortfeld und Anmeldebutton prüfen.
 
-            **Erwartet:** Das Loginformular ist sichtbar und bedienbar.
-            Dieser Infrastrukturfall führt noch keine Anmeldung aus.
-            """)
+      **Erwartet:** Das Loginformular ist sichtbar und bedienbar.
+      Dieser Infrastrukturfall führt noch keine Anmeldung aus.
+      """)
   void loginFormLoads() {
-    new de.derpeterson.browsertests.pages.LoginPage(page).open();
+    new de.derpeterson.browsertests.pages.LoginPage(browserPage).open();
     assertThat(
-            page.locator(".public-panel")
+            browserPage
+                .locator(".public-panel")
                 .getByRole(
                     AriaRole.BUTTON,
                     new Locator.GetByRoleOptions()
-                        .setName(texts.getBaseLoginButton())
+                        .setName(uiTexts.getBaseLoginButton())
                         .setExact(true)))
         .isVisible();
   }
@@ -116,15 +117,17 @@ public class InfrastructureBrowserTest extends BrowserFixture {
   @Story("Mailpit-Testumgebung")
   @Description(
       """
-            1. Die Mailpit-API der eigenen Testumgebung aufrufen.
-            2. Erfolgreiche Antwort, Nachrichtenliste und plausible Gesamtzahl prüfen.
+      1. Die Mailpit-API der eigenen Testumgebung aufrufen.
+      2. Erfolgreiche Antwort, Nachrichtenliste und plausible Gesamtzahl prüfen.
 
-            **Erwartet:** Mailpit erreichbar; die Nachrichtenliste ist lesbar, auch nach vorherigen Versandtests.
-            Das beweist noch keinen SMTP-Versand der Anwendung.
-            """)
+      **Erwartet:** Mailpit erreichbar; die Nachrichtenliste ist lesbar, auch nach vorherigen Versandtests.
+      Das beweist noch keinen SMTP-Versand der Anwendung.
+      """)
   void mailpitIsReachable() throws Exception {
     APIResponse response =
-        context.request().get(System.getProperty("browser.tests.mailpitUrl") + "/api/v1/messages");
+        browserContext
+            .request()
+            .get(System.getProperty("browser.tests.mailpitUrl") + "/api/v1/messages");
     assertTrue(response.ok());
     JsonNode inbox = new ObjectMapper().readTree(response.body());
     assertTrue(inbox.path("messages").isArray());
@@ -133,7 +136,7 @@ public class InfrastructureBrowserTest extends BrowserFixture {
 
   private void assertImageLoaded(Locator image) {
     assertThat(image).isVisible();
-    page.waitForFunction(
+    browserPage.waitForFunction(
         "image => image.complete && image.naturalWidth > 0", image.elementHandle());
   }
 }

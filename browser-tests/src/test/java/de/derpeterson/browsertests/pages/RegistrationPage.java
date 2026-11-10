@@ -17,72 +17,74 @@ import java.time.ZoneId;
 
 /** Visible registration form; no service calls or database preparation. */
 public final class RegistrationPage {
-  private final Page page;
-  private final UiTexts texts = UiTexts.selected();
+  private final Page browserPage;
+  private final UiTexts uiTexts = UiTexts.selected();
 
-  public RegistrationPage(Page page) {
-    this.page = page;
+  public RegistrationPage(Page browserPage) {
+    this.browserPage = browserPage;
   }
 
   @Step("Registrierungsformular öffnen")
   public void open() {
-    page.navigate(path(REGISTRATION_ROUTE));
-    assertThat(page).hasTitle(REGISTRATION_PAGE_TITLE);
+    browserPage.navigate(path(REGISTRATION_ROUTE));
+    assertThat(browserPage).hasTitle(REGISTRATION_PAGE_TITLE);
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
-                new Page.GetByRoleOptions().setName(texts.getRegistrationTitle()).setExact(true)))
+                new Page.GetByRoleOptions().setName(uiTexts.getRegistrationTitle()).setExact(true)))
         .isVisible();
-    assertThat(field(texts.getRegistrationBirthDateField()))
-        .hasAttribute("placeholder", texts.getRegistrationBirthDatePlaceholder());
+    assertThat(field(uiTexts.getRegistrationBirthDateField()))
+        .hasAttribute("placeholder", uiTexts.getRegistrationBirthDatePlaceholder());
   }
 
   @Step("Pflichtfelder mit gültigen Testangaben ausfüllen")
   public void fillValid(String email, String password) {
     fillOtherFields(email, password);
-    Locator birthDate = field(texts.getRegistrationBirthDateField());
-    String input = texts.dateInput(LocalDate.of(1990, 1, 1));
+    Locator birthDate = field(uiTexts.getRegistrationBirthDateField());
+    String input = uiTexts.dateInput(LocalDate.of(1990, 1, 1));
     birthDate.fill(input);
     assertThat(birthDate).hasValue(input);
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     // The submit click commits the input naturally; no Enter, Escape or artificial blur.
   }
 
   private void fillOtherFields(String email, String password) {
-    field(texts.getRegistrationFirstNameField()).fill("Browser");
-    field(texts.getRegistrationLastNameField()).fill("Testuser");
+    field(uiTexts.getRegistrationFirstNameField()).fill("Browser");
+    field(uiTexts.getRegistrationLastNameField()).fill("Testuser");
     setEmails(email, email);
     setPasswords(password, password);
-    field(texts.getRegistrationGenderCombobox()).click();
-    page.getByRole(
+    field(uiTexts.getRegistrationGenderCombobox()).click();
+    browserPage
+        .getByRole(
             AriaRole.OPTION,
-            new Page.GetByRoleOptions().setName(texts.getGenderOther()).setExact(true))
+            new Page.GetByRoleOptions().setName(uiTexts.getGenderOther()).setExact(true))
         .click();
   }
 
   @Step("Geburtstag ohne Texteingabe über Kalender-Icon auswählen und erneut öffnen")
   public LocalDate fillValidUsingCalendar(String email, String password) {
     fillOtherFields(email, password);
-    Locator picker = page.locator("vaadin-date-picker");
-    field(texts.getRegistrationBirthDateField()).click();
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+    Locator picker = browserPage.locator("vaadin-date-picker");
+    field(uiTexts.getRegistrationBirthDateField()).click();
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     picker.locator("[part~='toggle-button']").click();
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).isVisible();
-    Locator focusedDay = page.getByRole(AriaRole.GRIDCELL).and(page.locator("[part~='focused']"));
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).isVisible();
+    Locator focusedDay =
+        browserPage.getByRole(AriaRole.GRIDCELL).and(browserPage.locator("[part~='focused']"));
     assertThat(focusedDay).hasCount(1);
     // One ordinary calendar navigation step chooses yesterday, including month/year boundaries.
     LocalDate selected = LocalDate.now(ZoneId.of("Europe/Berlin")).minusDays(1);
     focusedDay.press("ArrowLeft");
     assertThat(focusedDay).hasCount(1);
     clickSettledCalendarDay(focusedDay);
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     assertBirthDateCommitted(selected);
     picker.locator("[part~='toggle-button']").click();
     Locator selectedDay =
-        page.getByRole(AriaRole.GRIDCELL).and(page.locator("[aria-selected='true']"));
+        browserPage.getByRole(AriaRole.GRIDCELL).and(browserPage.locator("[aria-selected='true']"));
     assertThat(selectedDay).hasCount(1);
     clickSettledCalendarDay(selectedDay);
-    assertThat(page.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+    assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
     assertBirthDateCommitted(selected);
     return selected;
   }
@@ -93,85 +95,88 @@ public final class RegistrationPage {
     long[] stableSince = {System.nanoTime()};
     // Die virtuelle mobile Monatsliste scrollt nach Pfeiltasten noch nach. Erst eine
     // über 300 ms stabile sichtbare Position anklicken; keine erzwungenen Events oder Werte.
-    page.waitForCondition(
-        () -> {
-          BoundingBox bounds = day.boundingBox();
-          if (bounds == null) {
-            return false;
-          }
-          if (bounds.x != previous[0] || bounds.y != previous[1]) {
-            previous[0] = bounds.x;
-            previous[1] = bounds.y;
-            stableSince[0] = System.nanoTime();
-            return false;
-          }
-          return System.nanoTime() - stableSince[0] >= java.time.Duration.ofMillis(300).toNanos();
-        });
+    browserPage.waitForCondition(() -> {
+      BoundingBox bounds = day.boundingBox();
+      if (bounds == null) {
+        return false;
+      }
+      if (bounds.x != previous[0] || bounds.y != previous[1]) {
+        previous[0] = bounds.x;
+        previous[1] = bounds.y;
+        stableSince[0] = System.nanoTime();
+        return false;
+      }
+      return System.nanoTime() - stableSince[0] >= java.time.Duration.ofMillis(300).toNanos();
+    });
     day.click();
   }
 
   @Step("Tatsächlich übernommenen Geburtstag prüfen")
   public void assertBirthDateCommitted(LocalDate expected) {
-    assertThat(page.locator("vaadin-date-picker")).hasJSProperty("value", expected.toString());
+    assertThat(browserPage.locator("vaadin-date-picker"))
+        .hasJSProperty("value", expected.toString());
   }
 
   @Step("E-Mail und E-Mail-Bestätigung eingeben")
   public void setEmails(String email, String confirmation) {
-    field(texts.getPublicEmailField()).fill(email);
-    Locator confirm = page.locator("vaadin-email-field").nth(1);
-    assertThat(confirm).hasJSProperty("label", texts.getPublicConfirmEmailField());
+    field(uiTexts.getPublicEmailField()).fill(email);
+    Locator confirm = browserPage.locator("vaadin-email-field").nth(1);
+    assertThat(confirm).hasJSProperty("label", uiTexts.getPublicConfirmEmailField());
     confirm.locator("input").fill(confirmation);
   }
 
   @Step("Passwort und Passwortbestätigung eingeben")
   public void setPasswords(String password, String confirmation) {
-    field(texts.getRegistrationPasswordField()).fill(password);
-    Locator confirm = page.locator("vaadin-password-field").nth(1);
-    assertThat(confirm).hasJSProperty("label", texts.getPublicConfirmPasswordField());
+    field(uiTexts.getRegistrationPasswordField()).fill(password);
+    Locator confirm = browserPage.locator("vaadin-password-field").nth(1);
+    assertThat(confirm).hasJSProperty("label", uiTexts.getPublicConfirmPasswordField());
     confirm.locator("input").fill(confirmation);
   }
 
   @Step("Registrierung über den Button absenden")
   public void submit() {
-    page.locator(".public-panel")
+    browserPage
+        .locator(".public-panel")
         .getByRole(
             AriaRole.BUTTON,
             new Locator.GetByRoleOptions()
-                .setName(texts.getBaseRegistrationButton())
+                .setName(uiTexts.getBaseRegistrationButton())
                 .setExact(true))
         .click();
   }
 
   @Step("Bestätigung nennt die eigene Testadresse und fordert zur Verifikation auf")
   public void assertSubmitted(String email) {
-    assertThat(page).hasURL(urlPattern(REGISTRATION_ROUTE));
+    assertThat(browserPage).hasURL(urlPattern(REGISTRATION_ROUTE));
     Locator notice =
-        page.locator("vaadin-notification-card")
+        browserPage
+            .locator("vaadin-notification-card")
             .filter(new Locator.FilterOptions().setHasText(email));
     assertThat(notice)
-        .containsText(texts.visibleText(page, texts.getRegistrationSuccessMessage(email)));
+        .containsText(
+            uiTexts.visibleText(browserPage, uiTexts.getRegistrationSuccessMessage(email)));
   }
 
   @Step("Pflichtfeldfehler und markierte Felder prüfen")
   public void assertRequiredError() {
-    assertError(texts.getBaseValidationRequiredMessage());
-    assertThat(page.locator("vaadin-text-field[invalid]")).hasCount(2);
-    assertThat(page.locator("vaadin-email-field[invalid]")).hasCount(2);
-    assertThat(page.locator("vaadin-password-field[invalid]")).hasCount(2);
-    assertThat(page.locator("vaadin-combo-box[invalid]")).hasCount(0);
-    assertThat(page.locator("vaadin-date-picker[invalid]")).hasCount(0);
+    assertError(uiTexts.getBaseValidationRequiredMessage());
+    assertThat(browserPage.locator("vaadin-text-field[invalid]")).hasCount(2);
+    assertThat(browserPage.locator("vaadin-email-field[invalid]")).hasCount(2);
+    assertThat(browserPage.locator("vaadin-password-field[invalid]")).hasCount(2);
+    assertThat(browserPage.locator("vaadin-combo-box[invalid]")).hasCount(0);
+    assertThat(browserPage.locator("vaadin-date-picker[invalid]")).hasCount(0);
   }
 
   @Step("Ungültige E-Mail verständlich anzeigen und beide E-Mail-Felder markieren")
   public void assertEmailError() {
-    assertError(texts.getBaseValidationEmailInvalidMessage());
-    assertThat(page.locator("vaadin-email-field[invalid]")).hasCount(2);
+    assertError(uiTexts.getBaseValidationEmailInvalidMessage());
+    assertThat(browserPage.locator("vaadin-email-field[invalid]")).hasCount(2);
   }
 
   @Step("Abweichende Passwortbestätigung verständlich anzeigen und Felder markieren")
   public void assertPasswordConfirmationError() {
-    assertError(texts.getBaseValidationPasswordConfirmMessage());
-    assertThat(page.locator("vaadin-password-field[invalid]")).hasCount(2);
+    assertError(uiTexts.getBaseValidationPasswordConfirmMessage());
+    assertThat(browserPage.locator("vaadin-password-field[invalid]")).hasCount(2);
   }
 
   @Step("Einzelne Registrierungsangabe ändern")
@@ -182,28 +187,30 @@ public final class RegistrationPage {
 
   @Step("Verständlichen Registrierungsfehler ohne Erfolg prüfen")
   public void assertValidationError(String message) {
-    Locator notice = page.locator("vaadin-notification-card:not([closing])");
+    Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
     assertThat(notice).hasCount(1);
-    assertThat(notice).containsText(texts.visibleText(page, message));
-    assertThat(notice).containsText(texts.getBaseFailedTitle());
+    assertThat(notice).containsText(uiTexts.visibleText(browserPage, message));
+    assertThat(notice).containsText(uiTexts.getBaseFailedTitle());
     notice.getByRole(AriaRole.BUTTON).click();
     assertThat(notice).not().isVisible();
   }
 
   private Locator field(String label) {
-    return page.getByLabel(label, new Page.GetByLabelOptions().setExact(true));
+    return browserPage.getByLabel(label, new Page.GetByLabelOptions().setExact(true));
   }
 
   private void assertError(String message) {
-    assertThat(page).hasURL(urlPattern(REGISTRATION_ROUTE));
-    assertThat(page.getByText(message, new Page.GetByTextOptions().setExact(true))).isVisible();
+    assertThat(browserPage).hasURL(urlPattern(REGISTRATION_ROUTE));
+    assertThat(browserPage.getByText(message, new Page.GetByTextOptions().setExact(true)))
+        .isVisible();
     assertThat(
-            page.locator("vaadin-notification-card")
+            browserPage
+                .locator("vaadin-notification-card")
                 .filter(
                     new Locator.FilterOptions()
                         .setHas(
-                            page.getByText(
-                                texts.getBaseSuccessTitle(),
+                            browserPage.getByText(
+                                uiTexts.getBaseSuccessTitle(),
                                 new Page.GetByTextOptions().setExact(true)))))
         .hasCount(0);
   }

@@ -8,23 +8,23 @@ import io.qameta.allure.Step;
 
 /** Sicherheitsdialoge ausschließlich über ihre sichtbaren Felder und Buttons. */
 public final class AccountSecurityPage {
-  private final Page page;
+  private final Page browserPage;
 
-  public AccountSecurityPage(Page page) {
-    this.page = page;
+  public AccountSecurityPage(Page browserPage) {
+    this.browserPage = browserPage;
   }
 
   public Locator input(String id) {
-    return page.locator("#" + id + " input");
+    return browserPage.locator("#" + id + " input");
   }
 
   public Locator host(String id) {
-    return page.locator("#" + id);
+    return browserPage.locator("#" + id);
   }
 
   @Step("Passwortdialog unter Sicherheit öffnen")
   public void openPassword() {
-    new AccountPage(page).section("account-tab-security");
+    new AccountPage(browserPage).section("account-tab-security");
     host("account-password-edit-security").click();
     assertThat(input("account-password-new")).isVisible();
   }
@@ -38,12 +38,12 @@ public final class AccountSecurityPage {
 
   @Step("Passwortänderung bewusst absenden")
   public void savePassword() {
-    UiActions.complete(page, () -> host("account-password-save").click());
+    UiActions.complete(browserPage, () -> host("account-password-save").click());
   }
 
   @Step("E-Mail-Dialog unter Sicherheit öffnen")
   public void openEmail() {
-    new AccountPage(page).openEmail();
+    new AccountPage(browserPage).openEmail();
   }
 
   @Step("Neue Adresse, Bestätigung und aktuelles Passwort eingeben")
@@ -55,6 +55,6 @@ public final class AccountSecurityPage {
 
   @Step("Verifizierungsanfrage über den Dialog absenden")
   public void requestEmail() {
-    UiActions.complete(page, () -> host("account-email-request").click());
+    UiActions.complete(browserPage, () -> host("account-email-request").click());
   }
 }

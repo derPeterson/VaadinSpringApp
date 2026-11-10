@@ -10,27 +10,27 @@ import io.qameta.allure.Step;
 
 /** Separate confirmation; opening it never substitutes for confirming a deletion. */
 public final class AdminUserDeleteDialog {
-  private final Page page;
-  private final UiTexts texts;
+  private final Page browserPage;
+  private final UiTexts uiTexts;
 
-  public AdminUserDeleteDialog(Page page, UiTexts texts) {
-    this.page = page;
-    this.texts = texts;
+  public AdminUserDeleteDialog(Page browserPage, UiTexts uiTexts) {
+    this.browserPage = browserPage;
+    this.uiTexts = uiTexts;
   }
 
   public Locator root() {
-    return page.locator("vaadin-dialog.admin-user-delete-dialog[opened]");
+    return browserPage.locator("vaadin-dialog.admin-user-delete-dialog[opened]");
   }
 
   @Step("Löschbestätigung abbrechen; Konto und Bearbeitungsformular erhalten")
   public void cancel() {
-    button(texts.getAdminUsersCancel()).click();
+    button(uiTexts.getAdminUsersCancel()).click();
     assertThat(root()).hasCount(0);
   }
 
   @Step("Löschung ausschließlich des eigenen wegwerfbaren Testkontos bestätigen")
   public void confirm() {
-    button(texts.getPortalDeleteAction()).click();
+    button(uiTexts.getPortalDeleteAction()).click();
     assertThat(root()).hasCount(0);
   }
 

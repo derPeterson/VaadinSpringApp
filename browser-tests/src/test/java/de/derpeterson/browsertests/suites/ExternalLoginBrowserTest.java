@@ -48,82 +48,85 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @Description(
       "Ein administrativ angelegtes Konto verbindet Google. Zwei aktive Sitzungen zeigen jeweils ihren tatsächlichen Anmeldeweg. Der Bearbeitungsdialog zeigt Herkunft und verfügbare Wege schreibgeschützt.")
   void signInDetailsDistinguishAccountAndSessionMethods(int width) {
-    page.setViewportSize(width, 1000);
+    browserPage.setViewportSize(width, 1000);
     String email = "session-example-" + UUID.randomUUID() + "@example.test";
     String google = "session-provider-" + UUID.randomUUID() + "@gmail.com";
-    try (BrowserActor administrator = new BrowserActor(browser);
-        BrowserActor providerSession = new BrowserActor(browser)) {
-      administrator.page.setViewportSize(width, 1000);
+    try (BrowserActor administrator = new BrowserActor(testBrowser);
+        BrowserActor providerSession = new BrowserActor(testBrowser)) {
+      administrator.browserPage.setViewportSize(width, 1000);
       AdminUsersPage users =
           administrator.loginAdmin(
               BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
       users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
-      LoginPage login = new LoginPage(page);
+      LoginPage login = new LoginPage(browserPage);
       login.open();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(page).selectTestLanguage();
-      page.navigate("/account?section=security&tab=providers");
-      page.locator("#external-connect-google").click();
-      page.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
-      page.locator("#external-confirm-local").click();
+      new UserMenu(browserPage).selectTestLanguage();
+      browserPage.navigate("/account?section=security&tab=providers");
+      browserPage.locator("#external-connect-google").click();
+      browserPage
+          .locator("#external-confirm-password input")
+          .fill(BrowserTestAccounts.USER_PASSWORD);
+      browserPage.locator("#external-confirm-local").click();
       providerIdentity(google, "valid");
-      assertThat(page.locator("#external-connect-google"))
-          .hasText(texts.getExternalDisconnect("Google"));
+      assertThat(browserPage.locator("#external-connect-google"))
+          .hasText(uiTexts.getExternalDisconnect("Google"));
 
-      begin(providerSession.page, "google", google, "valid", true);
-      assertThat(providerSession.page).hasURL(Pattern.compile(".*/home$"));
-      AccountSessionsPage sessions = new AccountSessionsPage(page);
+      begin(providerSession.browserPage, "google", google, "valid", true);
+      assertThat(providerSession.browserPage).hasURL(Pattern.compile(".*/home$"));
+      AccountSessionsPage sessions = new AccountSessionsPage(browserPage);
       sessions.open();
       sessions.assertCounts(2, 1, 0);
       assertThat(sessions.rows("current").locator(".account-session-sign-in-method"))
-          .hasText(texts.getSessionSignedInVia(texts.getSignInPortalPassword()));
+          .hasText(uiTexts.getSessionSignedInVia(uiTexts.getSignInPortalPassword()));
       assertThat(sessions.rows("active").locator(".account-session-sign-in-method"))
-          .hasText(texts.getSessionSignedInVia(texts.getExternalGoogle()));
-      AllurePlaywright.attachScreenshot("Sitzungen über Portalpasswort und Google", page);
+          .hasText(uiTexts.getSessionSignedInVia(uiTexts.getExternalGoogle()));
+      AllurePlaywright.attachScreenshot("Sitzungen über Portalpasswort und Google", browserPage);
 
       AdminUserDialog user = users.openEdit(email);
       Locator title = user.root().locator(".admin-user-sign-in-title");
       Locator registration = user.root().locator("vaadin-badge#admin-user-registered-via");
       Locator methods = user.root().locator("#admin-user-sign-in-methods");
-      assertThat(title).hasText(texts.getSignInDetailsTitle());
+      assertThat(title).hasText(uiTexts.getSignInDetailsTitle());
       assertThat(title).hasCSS("text-transform", "uppercase");
       assertThat(title).hasCSS("color", "rgb(56, 189, 248)");
-      assertThat(registration).hasText(texts.getSignInAccountCreated());
+      assertThat(registration).hasText(uiTexts.getSignInAccountCreated());
       Locator registrationLabel = user.root().locator(".admin-user-registration-label");
-      assertThat(registrationLabel).hasText(texts.getSignInRegisteredVia());
+      assertThat(registrationLabel).hasText(uiTexts.getSignInRegisteredVia());
       assertThat(registrationLabel).hasCSS("text-transform", "none");
       assertThat(registrationLabel).hasCSS("color", "rgb(203, 213, 225)");
       assertThat(registration).hasCSS("color", "rgb(203, 213, 225)");
       assertThat(user.root().locator(".admin-user-methods-label"))
-          .hasText(texts.getSignInAvailableMethods());
+          .hasText(uiTexts.getSignInAvailableMethods());
       assertThat(methods.locator("vaadin-badge[theme~=success]"))
-          .hasText(new String[] {texts.getSignInPortalPassword(), texts.getExternalGoogle()});
+          .hasText(new String[] {uiTexts.getSignInPortalPassword(), uiTexts.getExternalGoogle()});
       assertThat(methods).hasCSS("border-top-width", "0px");
       assertThat(methods.locator("vaadin-badge").first()).hasCSS("border-top-width", "1px");
       assertThat(methods.locator("vaadin-badge").first()).hasCSS("border-top-left-radius", "4px");
       methods.scrollIntoViewIfNeeded();
-      AllurePlaywright.attachScreenshot("Schreibgeschützte Anmeldeangaben", administrator.page);
+      AllurePlaywright.attachScreenshot(
+          "Schreibgeschützte Anmeldeangaben", administrator.browserPage);
       user.cancel();
       assertSelfRegisteredSignInDetails(users);
-      new UserMenu(administrator.page).signOut();
+      new UserMenu(administrator.browserPage).signOut();
     }
   }
 
   private void assertSelfRegisteredSignInDetails(AdminUsersPage users) {
-    new UserMenu(page).signOut();
+    new UserMenu(browserPage).signOut();
     String email = "self-registered-" + UUID.randomUUID() + "@gmail.com";
     begin("google", email, "valid");
-    page.locator("#external-register-first input").fill("Browser");
-    page.locator("#external-register-last input").fill("Testuser");
-    page.locator("#external-register-submit").click();
-    assertThat(page).hasURL(Pattern.compile(".*/home$"));
+    browserPage.locator("#external-register-first input").fill("Browser");
+    browserPage.locator("#external-register-last input").fill("Testuser");
+    browserPage.locator("#external-register-submit").click();
+    assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
 
     AdminUserDialog user = users.openEdit(email);
     Locator panel = user.root().locator(".admin-user-sign-in");
     Locator title = panel.locator(".admin-user-sign-in-title");
     Locator badge = panel.locator("vaadin-badge#admin-user-registered-via");
     assertThat(title).hasCSS("font-size", "13px");
-    assertThat(badge).hasText(texts.getExternalGoogle());
+    assertThat(badge).hasText(uiTexts.getExternalGoogle());
     assertThat(badge).hasCSS("color", "rgb(56, 189, 248)");
     assertTrue(
         (Boolean)
@@ -151,49 +154,49 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @Description(
       "Der eigene Authenticator stellt einen gültigen Ersatzcode aus. Das Eingeben des Codes lässt den Dialog offen. Erst der Aktionsbutton führt zum Testanbieter und verbindet das Konto.")
   void recoveryCodeConnectsProviderOnlyAfterExplicitConfirmation(int width) {
-    page.setViewportSize(width, 900);
+    browserPage.setViewportSize(width, 900);
     String email = "recovery-link-" + UUID.randomUUID() + "@example.test";
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
-    new UserMenu(page).signOut();
+    new UserMenu(browserPage).selectTestLanguage();
+    new AdminUsersPage(browserPage).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    new UserMenu(browserPage).signOut();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    page.navigate("/account?section=security&tab=portal");
-    page.locator("#account-two-factor-setup").click();
-    page.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
-    page.locator("#two-factor-submit").click();
-    TwoFactorPage.enrollCurrent(page, email);
-    page.locator("#account-security-tab-providers").click();
+    new UserMenu(browserPage).selectTestLanguage();
+    browserPage.navigate("/account?section=security&tab=portal");
+    browserPage.locator("#account-two-factor-setup").click();
+    browserPage.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
+    browserPage.locator("#two-factor-submit").click();
+    TwoFactorPage.enrollCurrent(browserPage, email);
+    browserPage.locator("#account-security-tab-providers").click();
 
-    page.locator("#external-connect-google").click();
-    String accountLocation = page.url();
-    page.locator("#external-proof-recovery-code-tab").click();
-    String recoveryCode = TwoFactorPage.nextCode(page, email);
-    Locator input = page.locator("#external-confirm-recovery-code input");
+    browserPage.locator("#external-connect-google").click();
+    String accountLocation = browserPage.url();
+    browserPage.locator("#external-proof-recovery-code-tab").click();
+    String recoveryCode = TwoFactorPage.nextCode(browserPage, email);
+    Locator input = browserPage.locator("#external-confirm-recovery-code input");
     input.fill(recoveryCode);
     input.press("Tab");
-    Locator confirm = page.locator("#external-confirm-local");
+    Locator confirm = browserPage.locator("#external-confirm-local");
     assertThat(confirm).isVisible();
     assertThat(input).hasValue(recoveryCode);
-    assertThat(page).hasURL(accountLocation);
+    assertThat(browserPage).hasURL(accountLocation);
     confirm.click();
     providerIdentity("recovery-link-" + UUID.randomUUID() + "@gmail.com", "valid");
-    assertThat(page.locator("#external-connect-google"))
-        .hasText(texts.getExternalDisconnect("Google"));
+    assertThat(browserPage.locator("#external-connect-google"))
+        .hasText(uiTexts.getExternalDisconnect("Google"));
   }
 
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @DisplayName("OIDC-13: Anmeldefehler nach direktem Rücksprung verwenden den Standardtoast")
   void loginFailureAfterRedirectUsesThePublicTheme(int width) {
-    page.setViewportSize(width, 900);
-    page.navigate("/login?error=unavailable");
-    assertStandardNotification(page, texts.getLoginUnavailableMessage(), "error");
-    new LoginPage(page).assertFormVisible();
-    AllurePlaywright.attachScreenshot("Anmeldefehler nach direktem Rücksprung", page);
+    browserPage.setViewportSize(width, 900);
+    browserPage.navigate("/login?error=unavailable");
+    assertStandardNotification(browserPage, uiTexts.getLoginUnavailableMessage(), "error");
+    new LoginPage(browserPage).assertFormVisible();
+    AllurePlaywright.attachScreenshot("Anmeldefehler nach direktem Rücksprung", browserPage);
   }
 
   @ParameterizedTest
@@ -202,24 +205,24 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @DisplayName(
       "OIDC-12: Deaktivierte Anbieter erhalten Verbindungen und bieten nur nutzbare Bestätigungen")
   void disabledProvidersPreserveExistingAccountAccess(int width, boolean hasPassword) {
-    page.setViewportSize(width, 900);
+    browserPage.setViewportSize(width, 900);
     String email = "disabled-providers-" + UUID.randomUUID() + "@gmail.com";
     begin("google", email, "valid");
-    page.locator("#external-register-submit").click();
-    assertThat(page).hasURL(Pattern.compile(".*/home$"));
+    browserPage.locator("#external-register-submit").click();
+    assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
     if (hasPassword) {
       enrollGoogle(email, "valid");
-      page.navigate("/account?section=security&tab=portal");
-      page.locator("#account-password-edit-security").click();
+      browserPage.navigate("/account?section=security&tab=portal");
+      browserPage.locator("#account-password-edit-security").click();
       confirmFactor(email);
-      page.locator("#account-password-new input").fill("OptionalPortal1!");
-      page.locator("#account-password-confirm input").fill("OptionalPortal1!");
-      page.locator("#account-password-save").click();
-      assertThat(page.locator("vaadin-notification-card:not([closing])"))
-          .containsText(texts.getAccountSecurityPasswordSuccess());
+      browserPage.locator("#account-password-new input").fill("OptionalPortal1!");
+      browserPage.locator("#account-password-confirm input").fill("OptionalPortal1!");
+      browserPage.locator("#account-password-save").click();
+      assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+          .containsText(uiTexts.getAccountSecurityPasswordSuccess());
     }
-    try (BrowserActor administrator = new BrowserActor(browser)) {
-      Page admin = administrator.page;
+    try (BrowserActor administrator = new BrowserActor(testBrowser)) {
+      Page admin = administrator.browserPage;
       admin.navigate("/login");
       new UserMenu(admin).selectTestLanguage();
       LoginPage login = new LoginPage(admin);
@@ -230,49 +233,50 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       try {
         setProviderAvailability(admin, false);
         verifyDisabledConnection(hasPassword);
-        page.locator("#account-security-tab-portal").click();
-        page.locator("#account-password-edit-security").click();
+        browserPage.locator("#account-security-tab-portal").click();
+        browserPage.locator("#account-password-edit-security").click();
         if (hasPassword) {
           confirmFactor(email);
-          assertThat(page.locator("#account-password-new")).isVisible();
-          page.locator("#account-password-cancel").click();
+          assertThat(browserPage.locator("#account-password-new")).isVisible();
+          browserPage.locator("#account-password-cancel").click();
         } else {
-          assertThat(page).hasURL(Pattern.compile(".*/two-factor\\?setup$"));
-          assertThat(page.locator("#two-factor-confirm-google")).hasCount(0);
-          assertThat(page.locator("#two-factor-password")).isHidden();
-          assertThat(page.locator("#two-factor-submit")).isHidden();
-          page.navigate("/account?section=security&tab=portal");
-          assertThat(page).hasURL(Pattern.compile(".*/two-factor\\?setup$"));
-          page.locator("#two-factor-cancel").click();
-          assertThat(page.locator("#account-password-edit-security")).isVisible();
+          assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor\\?setup$"));
+          assertThat(browserPage.locator("#two-factor-confirm-google")).hasCount(0);
+          assertThat(browserPage.locator("#two-factor-password")).isHidden();
+          assertThat(browserPage.locator("#two-factor-submit")).isHidden();
+          browserPage.navigate("/account?section=security&tab=portal");
+          assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor\\?setup$"));
+          browserPage.locator("#two-factor-cancel").click();
+          assertThat(browserPage.locator("#account-password-edit-security")).isVisible();
         }
-        page.locator("#account-email-edit-security").click();
+        browserPage.locator("#account-email-edit-security").click();
         if (hasPassword) {
           confirmFactor(email);
-          assertThat(page.locator("#account-email-new")).isVisible();
-          page.locator("#account-email-cancel").click();
+          assertThat(browserPage.locator("#account-email-new")).isVisible();
+          browserPage.locator("#account-email-cancel").click();
         } else {
-          assertThat(page).hasURL(Pattern.compile(".*/two-factor\\?setup$"));
-          assertThat(page.locator("#two-factor-confirm-google")).hasCount(0);
-          page.locator("#two-factor-cancel").click();
-          assertThat(page.locator("#account-email-edit-security")).isVisible();
+          assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor\\?setup$"));
+          assertThat(browserPage.locator("#two-factor-confirm-google")).hasCount(0);
+          browserPage.locator("#two-factor-cancel").click();
+          assertThat(browserPage.locator("#account-email-edit-security")).isVisible();
         }
-        AllurePlaywright.attachScreenshot("Kontoführung ohne verfügbare Anmeldeanbieter", page);
+        AllurePlaywright.attachScreenshot(
+            "Kontoführung ohne verfügbare Anmeldeanbieter", browserPage);
       } finally {
         setProviderAvailability(admin, true);
         // Das Fenster erst nach der Logout-Weiterleitung schließen, sonst bleibt sein Platz belegt.
         new UserMenu(admin).signOut();
       }
     }
-    page.navigate("/account?section=security&tab=portal");
-    page.locator("#account-password-edit-security").click();
+    browserPage.navigate("/account?section=security&tab=portal");
+    browserPage.locator("#account-password-edit-security").click();
     if (hasPassword) {
-      assertThat(page.locator("#external-confirm-factor")).isVisible();
-      page.locator("#external-proof-cancel").click();
+      assertThat(browserPage.locator("#external-confirm-factor")).isVisible();
+      browserPage.locator("#external-proof-cancel").click();
     } else {
-      assertThat(page.locator("#two-factor-confirm-google")).isVisible();
-      page.locator("#two-factor-cancel").click();
-      assertThat(page.locator("#account-password-edit-security")).isVisible();
+      assertThat(browserPage.locator("#two-factor-confirm-google")).isVisible();
+      browserPage.locator("#two-factor-cancel").click();
+      assertThat(browserPage.locator("#account-password-edit-security")).isVisible();
     }
   }
 
@@ -286,7 +290,9 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       saveProviderSettings(admin, provider);
       assertThat(admin.locator("#provider-" + provider + "-status"))
           .hasText(
-              enabled ? texts.getProviderSettingsActive() : texts.getProviderSettingsInactive());
+              enabled
+                  ? uiTexts.getProviderSettingsActive()
+                  : uiTexts.getProviderSettingsInactive());
     }
   }
 
@@ -300,30 +306,33 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   }
 
   private void confirmFactor(String email) {
-    String code = TwoFactorPage.nextCode(page, email);
+    String code = TwoFactorPage.nextCode(browserPage, email);
     if (code.length() > 6) {
-      page.locator("#external-proof-recovery-code-tab").click();
-      page.locator("#external-confirm-recovery-code input").fill(code);
+      browserPage.locator("#external-proof-recovery-code-tab").click();
+      browserPage.locator("#external-confirm-recovery-code input").fill(code);
     } else {
-      page.locator("#external-confirm-factor input").fill(code);
+      browserPage.locator("#external-confirm-factor input").fill(code);
     }
-    page.locator("#external-confirm-local").click();
+    browserPage.locator("#external-confirm-local").click();
   }
 
   private void enrollGoogle(String email, String mode) {
-    page.navigate("/account?section=security&tab=portal");
-    page.locator("#account-two-factor-setup").click();
-    page.locator("#two-factor-confirm-google").click();
-    assertThat(page.locator("#fixture-authorize-parameters"))
+    browserPage.navigate("/account?section=security&tab=portal");
+    browserPage.locator("#account-two-factor-setup").click();
+    browserPage.locator("#two-factor-confirm-google").click();
+    assertThat(browserPage.locator("#fixture-authorize-parameters"))
         .hasAttribute("data-prompt", "select_account consent");
-    assertThat(page.locator("#fixture-authorize-parameters")).hasAttribute("data-max-age", "");
-    assertThat(page.locator("#fixture-authorize-parameters")).hasAttribute("data-claims", "");
+    assertThat(browserPage.locator("#fixture-authorize-parameters"))
+        .hasAttribute("data-max-age", "");
+    assertThat(browserPage.locator("#fixture-authorize-parameters"))
+        .hasAttribute("data-claims", "");
     providerIdentity(email, mode);
-    page.locator("#two-factor-code input")
-        .fill(new MailpitInbox(context).awaitAuthenticatorSetupCode(email));
-    page.locator("#two-factor-submit").click();
-    TwoFactorPage.enrollCurrent(page, email);
-    assertThat(page).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
+    browserPage
+        .locator("#two-factor-code input")
+        .fill(new MailpitInbox(browserContext).awaitAuthenticatorSetupCode(email));
+    browserPage.locator("#two-factor-submit").click();
+    TwoFactorPage.enrollCurrent(browserPage, email);
+    assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
   }
 
   @ParameterizedTest
@@ -331,66 +340,68 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @DisplayName(
       "OIDC-11: Lokales Konto verbindet Anbieter erst nach kontextbezogener Passwortbestätigung")
   void localAccountConnectsFromContextualDialog(int width) {
-    page.setViewportSize(width, 900);
-    LoginPage login = new LoginPage(page);
+    browserPage.setViewportSize(width, 900);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
+    new UserMenu(browserPage).selectTestLanguage();
     String localEmail = "context-local-" + UUID.randomUUID() + "@example.test";
-    new AdminUsersPage(page).createActiveUser(localEmail, BrowserTestAccounts.USER_PASSWORD);
-    new UserMenu(page).signOut();
+    new AdminUsersPage(browserPage).createActiveUser(localEmail, BrowserTestAccounts.USER_PASSWORD);
+    new UserMenu(browserPage).signOut();
     login.signIn(localEmail, BrowserTestAccounts.USER_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    page.navigate("/account?section=security&tab=portal");
-    page.locator("#account-security-tab-providers").click();
-    assertThat(page.locator("#external-security-action")).hasCount(0);
-    assertThat(page.locator(".external-connection-row")).hasCount(2);
-    assertThat(page.locator("#external-identity-dialog")).hasJSProperty("opened", false);
-    AllurePlaywright.attachScreenshot("Verbundene Anmeldungen: kompakte Anbieterzeilen", page);
-    page.locator("#external-connect-google").click();
-    assertThat(page.locator("#external-confirm-password")).isVisible();
-    assertThat(page.locator("#external-confirm-google")).hasCount(0);
-    page.locator("#external-confirm-local").click();
-    assertThat(page.locator("#external-confirm-password")).hasAttribute("invalid", "");
-    assertStandardNotification(page, texts.getBaseValidationRequiredMessage(), "error");
-    assertThat(page.locator("#external-confirm-password [part=error-message]")).isHidden();
-    page.locator("#external-confirm-password input").fill("wrong-password");
-    page.locator("#external-confirm-local").click();
-    assertStandardNotification(page, texts.getAccountSecurityWrongPassword(), "error");
-    assertThat(page.locator("#external-confirm-password [part=error-message]")).isHidden();
-    page.locator("#external-confirm-password input").fill("unconfirmed-draft");
-    page.locator("#external-proof-cancel").click();
-    page.locator("#external-connect-google").click();
-    assertThat(page.locator("#external-confirm-password input")).hasValue("");
-    page.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
-    AllurePlaywright.attachScreenshot("Kontextbezogene Bestätigung für Google verbinden", page);
-    page.locator("#external-confirm-local").click();
+    new UserMenu(browserPage).selectTestLanguage();
+    browserPage.navigate("/account?section=security&tab=portal");
+    browserPage.locator("#account-security-tab-providers").click();
+    assertThat(browserPage.locator("#external-security-action")).hasCount(0);
+    assertThat(browserPage.locator(".external-connection-row")).hasCount(2);
+    assertThat(browserPage.locator("#external-identity-dialog")).hasJSProperty("opened", false);
+    AllurePlaywright.attachScreenshot(
+        "Verbundene Anmeldungen: kompakte Anbieterzeilen", browserPage);
+    browserPage.locator("#external-connect-google").click();
+    assertThat(browserPage.locator("#external-confirm-password")).isVisible();
+    assertThat(browserPage.locator("#external-confirm-google")).hasCount(0);
+    browserPage.locator("#external-confirm-local").click();
+    assertThat(browserPage.locator("#external-confirm-password")).hasAttribute("invalid", "");
+    assertStandardNotification(browserPage, uiTexts.getBaseValidationRequiredMessage(), "error");
+    assertThat(browserPage.locator("#external-confirm-password [part=error-message]")).isHidden();
+    browserPage.locator("#external-confirm-password input").fill("wrong-password");
+    browserPage.locator("#external-confirm-local").click();
+    assertStandardNotification(browserPage, uiTexts.getAccountSecurityWrongPassword(), "error");
+    assertThat(browserPage.locator("#external-confirm-password [part=error-message]")).isHidden();
+    browserPage.locator("#external-confirm-password input").fill("unconfirmed-draft");
+    browserPage.locator("#external-proof-cancel").click();
+    browserPage.locator("#external-connect-google").click();
+    assertThat(browserPage.locator("#external-confirm-password input")).hasValue("");
+    browserPage.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
+    AllurePlaywright.attachScreenshot(
+        "Kontextbezogene Bestätigung für Google verbinden", browserPage);
+    browserPage.locator("#external-confirm-local").click();
     String google = "context-" + UUID.randomUUID() + "@gmail.com";
     providerIdentity(google, "valid");
-    assertThat(page.locator("#external-connect-google"))
-        .hasText(texts.getExternalDisconnect("Google"));
-    page.locator("#external-connect-google").click();
+    assertThat(browserPage.locator("#external-connect-google"))
+        .hasText(uiTexts.getExternalDisconnect("Google"));
+    browserPage.locator("#external-connect-google").click();
     // Ein neues Google-OIDC allein ersetzt keinen unabhängigen Aktionsnachweis.
-    assertThat(page.locator("#external-confirm-google")).hasCount(0);
-    page.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
-    page.locator("#external-confirm-local").click();
-    assertThat(page.locator("#external-connect-google"))
-        .hasText(texts.getExternalConnect("Google"));
-    assertStandardNotification(page, texts.getExternalDisconnectedHint(), "success");
-    page.locator("#external-connect-google").click();
-    page.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
-    page.locator("#external-confirm-local").click();
+    assertThat(browserPage.locator("#external-confirm-google")).hasCount(0);
+    browserPage.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
+    browserPage.locator("#external-confirm-local").click();
+    assertThat(browserPage.locator("#external-connect-google"))
+        .hasText(uiTexts.getExternalConnect("Google"));
+    assertStandardNotification(browserPage, uiTexts.getExternalDisconnectedHint(), "success");
+    browserPage.locator("#external-connect-google").click();
+    browserPage.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
+    browserPage.locator("#external-confirm-local").click();
     providerIdentity(google, "valid");
-    assertThat(page.locator("#external-connect-google"))
-        .hasText(texts.getExternalDisconnect("Google"));
-    new UserMenu(page).signOut();
+    assertThat(browserPage.locator("#external-connect-google"))
+        .hasText(uiTexts.getExternalDisconnect("Google"));
+    new UserMenu(browserPage).signOut();
     begin("google", google, "valid");
-    page.navigate("/account?section=security&tab=providers");
-    page.locator("#external-connect-google").click();
-    page.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
-    page.locator("#external-confirm-local").click();
-    assertThat(page).hasURL(Pattern.compile(".*/login\\?provider_disconnected$"));
-    assertStandardNotification(page, texts.getExternalDisconnectedSignIn(), "success");
+    browserPage.navigate("/account?section=security&tab=providers");
+    browserPage.locator("#external-connect-google").click();
+    browserPage.locator("#external-confirm-password input").fill(BrowserTestAccounts.USER_PASSWORD);
+    browserPage.locator("#external-confirm-local").click();
+    assertThat(browserPage).hasURL(Pattern.compile(".*/login\\?provider_disconnected$"));
+    assertStandardNotification(browserPage, uiTexts.getExternalDisconnectedSignIn(), "success");
   }
 
   @ParameterizedTest
@@ -399,35 +410,36 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       "OIDC-08: Superadmins bestätigen Anbieteränderungen mit 2FA und Geheimnisse bleiben serverseitig")
   @Tag("provider-settings")
   void administrativeProviderSettings(int width) throws Exception {
-    page.setViewportSize(width, 900);
-    LoginPage login = new LoginPage(page);
+    browserPage.setViewportSize(width, 900);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    page.navigate("/admin?section=configuration&group=external_login");
-    assertThat(page.locator("#admin-provider-settings")).isVisible();
-    AllurePlaywright.attachScreenshot("Anbietereinrichtung mit Google und Microsoft", page);
+    new UserMenu(browserPage).selectTestLanguage();
+    browserPage.navigate("/admin?section=configuration&group=external_login");
+    assertThat(browserPage.locator("#admin-provider-settings")).isVisible();
+    AllurePlaywright.attachScreenshot("Anbietereinrichtung mit Google und Microsoft", browserPage);
     for (String provider : new String[] {"google", "microsoft"}) {
-      page.locator("#provider-tab-" + provider).click();
+      browserPage.locator("#provider-tab-" + provider).click();
       com.microsoft.playwright.Locator enabled =
-          page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH);
+          browserPage.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH);
       com.microsoft.playwright.Locator secret =
-          page.locator("#provider-" + provider + "-secret input");
+          browserPage.locator("#provider-" + provider + "-secret input");
       assertThat(secret).hasValue("");
-      String originalId = page.locator("#provider-" + provider + "-client-id input").inputValue();
-      page.locator("#provider-" + provider + "-client-id input").fill("");
-      saveProviderSettings(page, provider);
-      assertStandardNotification(page, texts.getProviderSettingsIncomplete(), "error");
-      page.locator("#provider-" + provider + "-client-id input").fill(originalId);
-      assertThat(page.locator("#provider-" + provider + "-redirect input"))
+      String originalId =
+          browserPage.locator("#provider-" + provider + "-client-id input").inputValue();
+      browserPage.locator("#provider-" + provider + "-client-id input").fill("");
+      saveProviderSettings(browserPage, provider);
+      assertStandardNotification(browserPage, uiTexts.getProviderSettingsIncomplete(), "error");
+      browserPage.locator("#provider-" + provider + "-client-id input").fill(originalId);
+      assertThat(browserPage.locator("#provider-" + provider + "-redirect input"))
           .hasValue(System.getProperty("browser.tests.baseUrl") + "/login/oauth2/code/" + provider);
       enabled.setChecked(false);
-      saveProviderSettings(page, provider);
-      assertStandardNotification(page, texts.getProviderSettingsSaved(), "success");
-      assertThat(page.locator("#provider-" + provider + "-status"))
-          .hasText(texts.getProviderSettingsInactive());
+      saveProviderSettings(browserPage, provider);
+      assertStandardNotification(browserPage, uiTexts.getProviderSettingsSaved(), "success");
+      assertThat(browserPage.locator("#provider-" + provider + "-status"))
+          .hasText(uiTexts.getProviderSettingsInactive());
       try (com.microsoft.playwright.BrowserContext visitor =
-          browser.newContext(
+          testBrowser.newContext(
               new com.microsoft.playwright.Browser.NewContextOptions()
                   .setBaseURL(System.getProperty("browser.tests.baseUrl")))) {
         Page anonymous = visitor.newPage();
@@ -437,71 +449,74 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       } finally {
         // Neu eingegebene Geheimnisse werden tatsächlich verwendet, aber nie zurückgeladen.
         secret.fill(BrowserTestAccounts.OIDC_CLIENT_SECRET);
-        page.locator("#provider-" + provider + "-client-id input").fill(originalId);
+        browserPage.locator("#provider-" + provider + "-client-id input").fill(originalId);
         enabled.setChecked(true);
-        saveProviderSettings(page, provider);
-        assertThat(page.locator("#provider-" + provider + "-status"))
-            .hasText(texts.getProviderSettingsActive());
+        saveProviderSettings(browserPage, provider);
+        assertThat(browserPage.locator("#provider-" + provider + "-status"))
+            .hasText(uiTexts.getProviderSettingsActive());
       }
-      page.reload();
-      page.locator("#provider-tab-" + provider).click();
+      browserPage.reload();
+      browserPage.locator("#provider-tab-" + provider).click();
       assertThat(secret).hasValue("");
-      assertThat(page.locator("#provider-" + provider + "-status"))
-          .hasText(texts.getProviderSettingsActive());
+      assertThat(browserPage.locator("#provider-" + provider + "-status"))
+          .hasText(uiTexts.getProviderSettingsActive());
     }
     if (width == 1280) {
       verifyRestartWithBothProvidersDisabled();
     }
-    AllurePlaywright.attachScreenshot("Anmeldeanbieter im bestehenden Referenzstyle", page);
+    AllurePlaywright.attachScreenshot("Anmeldeanbieter im bestehenden Referenzstyle", browserPage);
     // Der anschließende echte Code-/Tokenaustausch mit dem eigenen Anbieter prüft die Übernahme.
-    new UserMenu(page).signOut();
+    new UserMenu(browserPage).signOut();
     for (String provider : new String[] {"google", "microsoft"}) {
       String providerEmail = "admin-settings-" + UUID.randomUUID() + "@gmail.com";
       begin(provider, providerEmail, "valid");
-      page.locator("#external-register-first input").fill("Browser");
-      page.locator("#external-register-last input").fill("Testuser");
-      page.locator("#external-register-submit").click();
+      browserPage.locator("#external-register-first input").fill("Browser");
+      browserPage.locator("#external-register-last input").fill("Testuser");
+      browserPage.locator("#external-register-submit").click();
       if (provider.equals("microsoft")) {
         // Der Testanbieter bestätigt diese Kontaktadresse nicht verbindlich.
         // Microsoft-Konten durchlaufen deshalb weiterhin die lokale Mailverifikation.
-        MailpitInbox inbox = new MailpitInbox(context);
+        MailpitInbox inbox = new MailpitInbox(browserContext);
         try (Page activation =
             inbox.openVerificationLink(inbox.awaitVerificationMail(providerEmail))) {
           new de.derpeterson.browsertests.pages.VerificationPage(activation).assertActivated();
         }
         begin(provider, providerEmail, "valid");
       }
-      assertThat(page).hasURL(Pattern.compile(".*/home$"));
-      new UserMenu(page).selectTestLanguage();
-      new UserMenu(page).requestSignOut();
+      assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
+      new UserMenu(browserPage).selectTestLanguage();
+      new UserMenu(browserPage).requestSignOut();
       // Die Startseite ist auch anonym erreichbar. Der geschützte Kontoaufruf
       // muss nach der echten Abmeldung wieder zur Anmeldung führen.
-      page.navigate("/account");
-      new LoginPage(page).assertFormVisible();
+      browserPage.navigate("/account");
+      new LoginPage(browserPage).assertFormVisible();
     }
   }
 
   private void verifyRestartWithBothProvidersDisabled() throws Exception {
     for (String provider : new String[] {"google", "microsoft"}) {
-      page.locator("#provider-tab-" + provider).click();
-      page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH).uncheck();
-      saveProviderSettings(page, provider);
-      assertThat(page.locator("#provider-" + provider + "-status"))
-          .hasText(texts.getProviderSettingsInactive());
+      browserPage.locator("#provider-tab-" + provider).click();
+      browserPage
+          .locator("#provider-" + provider + "-enabled")
+          .getByRole(AriaRole.SWITCH)
+          .uncheck();
+      saveProviderSettings(browserPage, provider);
+      assertThat(browserPage.locator("#provider-" + provider + "-status"))
+          .hasText(uiTexts.getProviderSettingsInactive());
     }
     // Auch mit zwei deaktivierten Anbietern muss der Server ohne OAuth-Neukonfiguration starten.
-    page.navigate("about:blank");
+    browserPage.navigate("about:blank");
     de.derpeterson.browsertests.BrowserTestRunner.restartTestApplication();
-    page.navigate("/admin?section=configuration&group=external_login");
+    browserPage.navigate("/admin?section=configuration&group=external_login");
     for (String provider : new String[] {"google", "microsoft"}) {
-      page.locator("#provider-tab-" + provider).click();
-      assertThat(page.locator("#provider-" + provider + "-status"))
-          .hasText(texts.getProviderSettingsInactive());
-      assertThat(page.locator("#provider-" + provider + "-secret input")).hasValue("");
-      page.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH).check();
-      saveProviderSettings(page, provider);
-      assertThat(page.locator("#provider-" + provider + "-status"))
-          .hasText(texts.getProviderSettingsActive());
+      browserPage.locator("#provider-tab-" + provider).click();
+      assertThat(browserPage.locator("#provider-" + provider + "-status"))
+          .hasText(uiTexts.getProviderSettingsInactive());
+      assertThat(browserPage.locator("#provider-" + provider + "-secret input")).hasValue("");
+      browserPage.locator("#provider-" + provider + "-enabled").getByRole(AriaRole.SWITCH).check();
+      saveProviderSettings(browserPage, provider);
+      assertThat(browserPage.locator("#provider-" + provider + "-status"))
+          .hasText(uiTexts.getProviderSettingsActive());
     }
   }
 
@@ -509,12 +524,12 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @ValueSource(ints = {1280, 390})
   @DisplayName("PROFILE-01: Adminanlage und Bearbeitung erhalten leere freiwillige Profilangaben")
   void administrativeOptionalProfile(int width) {
-    page.setViewportSize(width, 900);
-    LoginPage login = new LoginPage(page);
+    browserPage.setViewportSize(width, 900);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    AdminUsersPage users = new AdminUsersPage(page);
+    new UserMenu(browserPage).selectTestLanguage();
+    AdminUsersPage users = new AdminUsersPage(browserPage);
     users.open();
     AdminUserDialog form = users.openCreate();
     String email = "optional-admin-" + UUID.randomUUID() + "@example.test";
@@ -537,34 +552,34 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
 
   private void verifyDisabledConnection(boolean hasPassword) {
     // Ein direkter Seitenaufruf muss die bestehenden Zuordnungen weiter anzeigen.
-    page.navigate("/account?section=security&tab=portal");
-    page.locator("#account-security-tab-providers").click();
-    assertThat(page.locator(".external-connection-row")).hasCount(1);
-    assertThat(page.locator(".external-connection-heading vaadin-badge"))
-        .hasText(texts.getExternalConnected());
-    assertThat(page.locator(".external-connection-row"))
-        .containsText(texts.getExternalProviderUnavailable());
-    Locator disconnect = page.locator("#external-connect-google");
+    browserPage.navigate("/account?section=security&tab=portal");
+    browserPage.locator("#account-security-tab-providers").click();
+    assertThat(browserPage.locator(".external-connection-row")).hasCount(1);
+    assertThat(browserPage.locator(".external-connection-heading vaadin-badge"))
+        .hasText(uiTexts.getExternalConnected());
+    assertThat(browserPage.locator(".external-connection-row"))
+        .containsText(uiTexts.getExternalProviderUnavailable());
+    Locator disconnect = browserPage.locator("#external-connect-google");
     if (hasPassword) {
       assertThat(disconnect).isEnabled();
       disconnect.click();
-      assertThat(page.locator("#external-confirm-factor")).isVisible();
-      assertThat(page.locator("#external-confirm-password")).isHidden();
-      assertThat(page.locator("#external-confirm-google")).hasCount(0);
-      page.locator("#external-proof-cancel").click();
+      assertThat(browserPage.locator("#external-confirm-factor")).isVisible();
+      assertThat(browserPage.locator("#external-confirm-password")).isHidden();
+      assertThat(browserPage.locator("#external-confirm-google")).hasCount(0);
+      browserPage.locator("#external-proof-cancel").click();
     } else {
       assertThat(disconnect).isDisabled();
     }
     AllurePlaywright.attachScreenshot(
-        "Deaktivierter Anbieter bleibt mit seinem Konto verbunden", page);
+        "Deaktivierter Anbieter bleibt mit seinem Konto verbunden", browserPage);
   }
 
   private void begin(String provider, String email, String mode) {
-    begin(page, provider, email, mode, false);
+    begin(browserPage, provider, email, mode, false);
   }
 
   private void begin(Page target, String provider, String email, String mode, boolean remember) {
-    begin(target, provider, email, mode, remember, texts);
+    begin(target, provider, email, mode, remember, uiTexts);
   }
 
   private void begin(
@@ -583,18 +598,17 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
                 .setExact(true))
         .setChecked(remember);
     assertThat(target.locator("#external-login-" + provider + " img")).isVisible();
-    target.waitForCondition(
-        () ->
-            (Boolean)
-                target
-                    .locator("#external-login-" + provider + " img")
-                    .evaluate("image => image.complete && image.naturalWidth > 0"));
+    target.waitForCondition(() ->
+        (Boolean)
+            target
+                .locator("#external-login-" + provider + " img")
+                .evaluate("image => image.complete && image.naturalWidth > 0"));
     target.locator("#external-login-" + provider).click();
     providerIdentity(target, email, mode);
   }
 
   private void providerIdentity(String email, String mode) {
-    providerIdentity(page, email, mode);
+    providerIdentity(browserPage, email, mode);
   }
 
   private void providerIdentity(Page target, String email, String mode) {
@@ -613,45 +627,46 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @DisplayName(
       "OIDC-04: Verknüpfen und Trennen brauchen einen Aktionsnachweis und erhalten die letzte Anmeldung")
   void connectAndDisconnectWithProviderConfirmation(int width) {
-    page.setViewportSize(width, 900);
+    browserPage.setViewportSize(width, 900);
     String google = "link-" + UUID.randomUUID() + "@gmail.com";
     String microsoft = "link-" + UUID.randomUUID() + "@example.test";
     begin("microsoft", microsoft, "valid");
-    page.locator("#external-register-first input").fill("Browser");
-    page.locator("#external-register-last input").fill("Testuser");
-    page.locator("#external-register-submit").click();
-    MailpitInbox inbox = new MailpitInbox(context);
+    browserPage.locator("#external-register-first input").fill("Browser");
+    browserPage.locator("#external-register-last input").fill("Testuser");
+    browserPage.locator("#external-register-submit").click();
+    MailpitInbox inbox = new MailpitInbox(browserContext);
     try (Page activation = inbox.openVerificationLink(inbox.awaitVerificationMail(microsoft))) {
       new de.derpeterson.browsertests.pages.VerificationPage(activation).assertActivated();
     }
     begin("microsoft", microsoft, "valid");
-    assertThat(page).hasURL(Pattern.compile(".*/home$"));
-    page.navigate("/account?section=security&tab=portal");
-    page.locator("#account-security-tab-providers").click();
-    page.locator("#external-connect-google").click();
-    page.locator("#external-confirm-microsoft").click();
+    assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
+    browserPage.navigate("/account?section=security&tab=portal");
+    browserPage.locator("#account-security-tab-providers").click();
+    browserPage.locator("#external-connect-google").click();
+    browserPage.locator("#external-confirm-microsoft").click();
     providerIdentity(microsoft, "valid");
-    assertThat(page.locator("#external-security-result")).hasText(texts.getExternalProofReady());
-    page.locator("#external-confirm-local").click();
+    assertThat(browserPage.locator("#external-security-result"))
+        .hasText(uiTexts.getExternalProofReady());
+    browserPage.locator("#external-confirm-local").click();
     providerIdentity(google, "valid");
-    assertThat(page.locator("#external-connect-google"))
-        .hasText(texts.getExternalDisconnect("Google"));
-    page.locator("#external-connect-google").click();
-    page.locator("#external-confirm-microsoft").click();
+    assertThat(browserPage.locator("#external-connect-google"))
+        .hasText(uiTexts.getExternalDisconnect("Google"));
+    browserPage.locator("#external-connect-google").click();
+    browserPage.locator("#external-confirm-microsoft").click();
     providerIdentity(microsoft, "valid");
-    page.locator("#external-confirm-local").click();
-    assertThat(page.locator("#external-connect-google"))
-        .hasText(texts.getExternalConnect("Google"));
-    assertStandardNotification(page, texts.getExternalDisconnectedHint(), "success");
-    assertThat(page.locator("#external-connect-microsoft")).isDisabled();
-    page.locator("#account-security-tab-portal").click();
-    page.locator("#account-password-edit-security").click();
-    assertThat(page.locator("#external-confirm-microsoft")).isVisible();
+    browserPage.locator("#external-confirm-local").click();
+    assertThat(browserPage.locator("#external-connect-google"))
+        .hasText(uiTexts.getExternalConnect("Google"));
+    assertStandardNotification(browserPage, uiTexts.getExternalDisconnectedHint(), "success");
+    assertThat(browserPage.locator("#external-connect-microsoft")).isDisabled();
+    browserPage.locator("#account-security-tab-portal").click();
+    browserPage.locator("#account-password-edit-security").click();
+    assertThat(browserPage.locator("#external-confirm-microsoft")).isVisible();
     assertProviderProofIcon("microsoft");
     rejectedPasswordProof(
-        "microsoft", microsoft, "missing-auth-time", texts.getExternalProofFreshRequired());
-    rejectedPasswordProof("microsoft", microsoft, "stale", texts.getExternalProofFreshRequired());
-    AllurePlaywright.attachScreenshot("Letzte externe Anmeldung bleibt geschützt", page);
+        "microsoft", microsoft, "missing-auth-time", uiTexts.getExternalProofFreshRequired());
+    rejectedPasswordProof("microsoft", microsoft, "stale", uiTexts.getExternalProofFreshRequired());
+    AllurePlaywright.attachScreenshot("Letzte externe Anmeldung bleibt geschützt", browserPage);
   }
 
   @ParameterizedTest
@@ -659,36 +674,37 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @DisplayName(
       "OIDC-01: Google registriert ohne Portalpasswort, erhält die gewählte Sprache und meldet erneut an")
   void googleRegistrationAndReturn(int width) {
-    page.setViewportSize(width, 900);
+    browserPage.setViewportSize(width, 900);
     String email = "google-" + UUID.randomUUID() + "@gmail.com";
     begin("google", email, "valid");
-    assertThat(page).hasURL(Pattern.compile(".*/external-registration$"));
-    assertThat(page.locator("vaadin-password-field")).hasCount(0);
-    assertThat(page.locator("#external-register-first input")).hasValue("External");
-    String registrationLanguage = texts.language().equals("de") ? "en" : "de";
-    new UserMenu(page).selectLanguage(registrationLanguage);
-    AllurePlaywright.attachScreenshot("Ergänzende Registrierung ohne Portalpasswort", page);
-    page.locator("#external-register-submit").click();
-    assertThat(page).hasURL(Pattern.compile(".*/home$"));
-    page.navigate("/account?tab=profile");
+    assertThat(browserPage).hasURL(Pattern.compile(".*/external-registration$"));
+    assertThat(browserPage.locator("vaadin-password-field")).hasCount(0);
+    assertThat(browserPage.locator("#external-register-first input")).hasValue("External");
+    String registrationLanguage = uiTexts.language().equals("de") ? "en" : "de";
+    new UserMenu(browserPage).selectLanguage(registrationLanguage);
+    AllurePlaywright.attachScreenshot("Ergänzende Registrierung ohne Portalpasswort", browserPage);
+    browserPage.locator("#external-register-submit").click();
+    assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
+    browserPage.navigate("/account?tab=profile");
     Locale selectedLanguage = Locale.forLanguageTag(registrationLanguage);
-    assertThat(page.locator("#account-language input"))
+    assertThat(browserPage.locator("#account-language input"))
         .hasValue(selectedLanguage.getDisplayLanguage(selectedLanguage));
-    page.reload();
-    assertThat(page.locator("#account-language input"))
+    browserPage.reload();
+    assertThat(browserPage.locator("#account-language input"))
         .hasValue(selectedLanguage.getDisplayLanguage(selectedLanguage));
-    new UserMenu(page).selectTestLanguage();
-    assertThat(page.locator("#account-birth-date input")).hasValue("");
-    assertThat(page.locator("#account-gender input")).hasValue("");
-    page.navigate("/account?section=security&tab=portal");
-    page.locator("#account-security-tab-providers").click();
-    assertThat(page.locator("#external-connect-google")).isDisabled();
-    assertThat(page.locator("#account-external-connections")).isVisible();
-    AllurePlaywright.attachScreenshot("Externes Konto ohne erfundene Profilwerte", page);
-    new UserMenu(page).requestSignOut();
-    begin(page, "google", email, "valid", false, new UiTexts(registrationLanguage));
-    assertThat(page).hasURL(Pattern.compile(".*/home$"));
-    assertTrue((Boolean) page.evaluate("document.documentElement.scrollWidth <= innerWidth"));
+    new UserMenu(browserPage).selectTestLanguage();
+    assertThat(browserPage.locator("#account-birth-date input")).hasValue("");
+    assertThat(browserPage.locator("#account-gender input")).hasValue("");
+    browserPage.navigate("/account?section=security&tab=portal");
+    browserPage.locator("#account-security-tab-providers").click();
+    assertThat(browserPage.locator("#external-connect-google")).isDisabled();
+    assertThat(browserPage.locator("#account-external-connections")).isVisible();
+    AllurePlaywright.attachScreenshot("Externes Konto ohne erfundene Profilwerte", browserPage);
+    new UserMenu(browserPage).requestSignOut();
+    begin(browserPage, "google", email, "valid", false, new UiTexts(registrationLanguage));
+    assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
+    assertTrue(
+        (Boolean) browserPage.evaluate("document.documentElement.scrollWidth <= innerWidth"));
   }
 
   @ParameterizedTest
@@ -696,23 +712,24 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @DisplayName(
       "OIDC-02: Microsoft erfordert eigenen E-Mail-Nachweis und keine zusätzliche Passwortregistrierung")
   void microsoftRequiresContactVerification(int width) {
-    page.setViewportSize(width, 900);
+    browserPage.setViewportSize(width, 900);
     String email = "microsoft-" + UUID.randomUUID() + "@example.test";
     begin("microsoft", email, "valid");
-    assertThat(page).hasURL(Pattern.compile(".*/external-registration$"));
-    page.locator("#external-register-first input").fill("Browser");
-    page.locator("#external-register-last input").fill("Testuser");
-    page.locator("#external-register-submit").click();
-    assertThat(page.locator(".public-panel")).containsText(texts.getExternalVerifyEmail());
-    MailpitInbox inbox = new MailpitInbox(context);
+    assertThat(browserPage).hasURL(Pattern.compile(".*/external-registration$"));
+    browserPage.locator("#external-register-first input").fill("Browser");
+    browserPage.locator("#external-register-last input").fill("Testuser");
+    browserPage.locator("#external-register-submit").click();
+    assertThat(browserPage.locator(".public-panel")).containsText(uiTexts.getExternalVerifyEmail());
+    MailpitInbox inbox = new MailpitInbox(browserContext);
     MailpitInbox.CapturedMail mail = inbox.awaitVerificationMail(email);
-    assertThat(page.locator(".public-header")).isVisible();
-    AllurePlaywright.attachScreenshot("Microsoft: Kontaktbestätigung vor Portalzugang", page);
+    assertThat(browserPage.locator(".public-header")).isVisible();
+    AllurePlaywright.attachScreenshot(
+        "Microsoft: Kontaktbestätigung vor Portalzugang", browserPage);
     try (Page activation = inbox.openVerificationLink(mail)) {
       new de.derpeterson.browsertests.pages.VerificationPage(activation).assertActivated();
     }
     begin("microsoft", email, "valid");
-    assertThat(page).hasURL(Pattern.compile(".*/home$"));
+    assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
   }
 
   @ParameterizedTest
@@ -720,81 +737,82 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @DisplayName(
       "OIDC-05: Google-Ersteinrichtung braucht Kontaktcode und TOTP vor optionalem Portalpasswort")
   void optionalPortalPassword(int width, String confirmationMode) {
-    page.setViewportSize(width, 900);
+    browserPage.setViewportSize(width, 900);
     String email = "password-" + UUID.randomUUID() + "@gmail.com";
     begin("google", email, "valid");
-    page.locator("#external-register-submit").click();
-    assertThat(page).hasURL(Pattern.compile(".*/home$"));
+    browserPage.locator("#external-register-submit").click();
+    assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
     if (width == 1280 && confirmationMode.equals("missing-auth-time")) {
-      rejectedEnrollment(email, "cancel", texts.getExternalError());
+      rejectedEnrollment(email, "cancel", uiTexts.getExternalError());
       rejectedEnrollment(
           "different-" + UUID.randomUUID() + "@gmail.com",
           "valid",
-          texts.getExternalProofIdentityMismatch());
-      rejectedEnrollment(email, "nonce", texts.getExternalError());
-      rejectedEnrollment(email, "audience", texts.getExternalError());
+          uiTexts.getExternalProofIdentityMismatch());
+      rejectedEnrollment(email, "nonce", uiTexts.getExternalError());
+      rejectedEnrollment(email, "audience", uiTexts.getExternalError());
     }
     enrollGoogle(email, confirmationMode);
-    page.locator("#account-password-edit-security").click();
-    assertThat(page.locator("#external-confirm-google")).hasCount(0);
+    browserPage.locator("#account-password-edit-security").click();
+    assertThat(browserPage.locator("#external-confirm-google")).hasCount(0);
     confirmFactor(email);
-    assertThat(page.locator("#account-password-new")).isVisible();
-    assertThat(page.locator("#account-password-current")).isHidden();
-    page.locator("#account-password-new input").fill("OptionalPortal1!");
-    page.locator("#account-password-confirm input").fill("OptionalPortal1!");
-    page.locator("#account-password-save").click();
-    assertStandardNotification(page, texts.getAccountSecurityPasswordSuccess(), "success");
-    page.locator("#account-security-tab-providers").click();
-    assertThat(page.locator("#external-connect-google")).isEnabled();
-    page.locator("#account-security-tab-portal").click();
-    page.locator("#account-password-edit-security").click();
-    assertThat(page.locator("#external-confirm-factor")).isVisible();
-    page.locator("#external-proof-cancel").click();
-    page.locator("#account-email-edit-security").click();
+    assertThat(browserPage.locator("#account-password-new")).isVisible();
+    assertThat(browserPage.locator("#account-password-current")).isHidden();
+    browserPage.locator("#account-password-new input").fill("OptionalPortal1!");
+    browserPage.locator("#account-password-confirm input").fill("OptionalPortal1!");
+    browserPage.locator("#account-password-save").click();
+    assertStandardNotification(browserPage, uiTexts.getAccountSecurityPasswordSuccess(), "success");
+    browserPage.locator("#account-security-tab-providers").click();
+    assertThat(browserPage.locator("#external-connect-google")).isEnabled();
+    browserPage.locator("#account-security-tab-portal").click();
+    browserPage.locator("#account-password-edit-security").click();
+    assertThat(browserPage.locator("#external-confirm-factor")).isVisible();
+    browserPage.locator("#external-proof-cancel").click();
+    browserPage.locator("#account-email-edit-security").click();
     confirmFactor(email);
-    assertThat(page.locator("#account-email-password")).isHidden();
-    page.locator("#account-email-cancel").click();
-    new UserMenu(page).requestSignOut();
-    assertThat(page.locator(".public-header")).isVisible();
-    LoginPage login = new LoginPage(page);
+    assertThat(browserPage.locator("#account-email-password")).isHidden();
+    browserPage.locator("#account-email-cancel").click();
+    new UserMenu(browserPage).requestSignOut();
+    assertThat(browserPage.locator(".public-header")).isVisible();
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(email, "OptionalPortal1!");
-    assertThat(page.locator("vaadin-button.tracked-user-button")).isVisible();
+    assertThat(browserPage.locator("vaadin-button.tracked-user-button")).isVisible();
   }
 
   private void rejectedEnrollment(String email, String mode, String message) {
-    page.navigate("/account?section=security&tab=portal");
-    page.locator("#account-two-factor-setup").click();
-    page.locator("#two-factor-confirm-google").click();
+    browserPage.navigate("/account?section=security&tab=portal");
+    browserPage.locator("#account-two-factor-setup").click();
+    browserPage.locator("#two-factor-confirm-google").click();
     providerIdentity(email, mode);
-    assertThat(page).hasURL(Pattern.compile(".*/two-factor\\?setup&external_error=.*"));
-    assertStandardNotification(page, message, "error");
-    assertThat(page.locator("#two-factor-qr")).hasCount(0);
-    assertThat(page.locator("#two-factor-recovery-codes")).hasCount(0);
-    assertThat(page.locator("#two-factor-confirm-google")).isVisible();
-    page.locator("#two-factor-cancel").click();
-    assertThat(page.locator("#account-two-factor-setup")).isVisible();
+    assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor\\?setup&external_error=.*"));
+    assertStandardNotification(browserPage, message, "error");
+    assertThat(browserPage.locator("#two-factor-qr")).hasCount(0);
+    assertThat(browserPage.locator("#two-factor-recovery-codes")).hasCount(0);
+    assertThat(browserPage.locator("#two-factor-confirm-google")).isVisible();
+    browserPage.locator("#two-factor-cancel").click();
+    assertThat(browserPage.locator("#account-two-factor-setup")).isVisible();
   }
 
   private void rejectedPasswordProof(String provider, String email, String mode, String message) {
-    page.locator("#external-confirm-" + provider).click();
+    browserPage.locator("#external-confirm-" + provider).click();
     if (provider.equals("microsoft")) {
-      assertThat(page.locator("#fixture-authorize-parameters"))
+      assertThat(browserPage.locator("#fixture-authorize-parameters"))
           .hasAttribute("data-prompt", "login");
-      assertThat(page.locator("#fixture-authorize-parameters")).hasAttribute("data-max-age", "0");
-      assertThat(page.locator("#fixture-authorize-parameters"))
+      assertThat(browserPage.locator("#fixture-authorize-parameters"))
+          .hasAttribute("data-max-age", "0");
+      assertThat(browserPage.locator("#fixture-authorize-parameters"))
           .hasAttribute("data-claims", "{\"id_token\":{\"auth_time\":{\"essential\":true}}}");
     }
     providerIdentity(email, mode);
-    assertThat(page)
+    assertThat(browserPage)
         .hasURL(Pattern.compile(".*/account\\?section=security&tab=portal&external_error=.*"));
-    assertStandardNotification(page, message, "error");
+    assertStandardNotification(browserPage, message, "error");
     AllurePlaywright.attachScreenshot(
-        "Abgelehnter Anbieternachweis im Standarddesign: " + mode, page);
-    assertThat(page.locator("#account-password-new")).isHidden();
-    assertThat(page.locator("#external-register-submit")).hasCount(0);
-    page.locator("#account-password-edit-security").click();
-    assertThat(page.locator("#external-confirm-local")).isDisabled();
+        "Abgelehnter Anbieternachweis im Standarddesign: " + mode, browserPage);
+    assertThat(browserPage.locator("#account-password-new")).isHidden();
+    assertThat(browserPage.locator("#external-register-submit")).hasCount(0);
+    browserPage.locator("#account-password-edit-security").click();
+    assertThat(browserPage.locator("#external-confirm-local")).isDisabled();
     assertProviderProofIcon(provider);
   }
 
@@ -832,12 +850,12 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   }
 
   private void assertProviderProofIcon(String provider) {
-    Locator button = page.locator("#external-confirm-" + provider);
+    Locator button = browserPage.locator("#external-confirm-" + provider);
     Locator image = button.locator("img");
     assertThat(image).hasCSS("width", "16px");
     assertThat(image).hasCSS("height", "16px");
     assertThat(button).hasCSS("height", "36px");
-    AllurePlaywright.attachScreenshot("Bestätigungsaktion für " + provider, page);
+    AllurePlaywright.attachScreenshot("Bestätigungsaktion für " + provider, browserPage);
   }
 
   @ParameterizedTest
@@ -846,22 +864,22 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       "OIDC-06: Externe Anmeldung bleibt nur mit bewusster Auswahl nach Browserneustart erhalten")
   void externalRememberChoiceSurvivesOnlyWhenRequested(boolean remember) {
     String email = "remember-" + UUID.randomUUID() + "@gmail.com";
-    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwright, profile)) {
-      begin(actor.page, "google", email, "valid", remember);
-      actor.page.locator("#external-register-submit").click();
-      assertThat(actor.page).hasURL(Pattern.compile(".*/home$"));
+    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwrightRuntime, profile)) {
+      begin(actor.browserPage, "google", email, "valid", remember);
+      actor.browserPage.locator("#external-register-submit").click();
+      assertThat(actor.browserPage).hasURL(Pattern.compile(".*/home$"));
       assertEquals(
           remember,
-          actor.context.cookies().stream()
+          actor.browserContext.cookies().stream()
               .anyMatch(cookie -> cookie.name.equals("remember-me") && cookie.expires > 0));
     }
-    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwright, profile)) {
+    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwrightRuntime, profile)) {
       if (remember) {
-        new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
-        new UserMenu(actor.page).requestSignOut();
+        new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
+        new UserMenu(actor.browserPage).requestSignOut();
       } else {
-        actor.page.navigate("/account");
-        new LoginPage(actor.page).assertFormVisible();
+        actor.browserPage.navigate("/account");
+        new LoginPage(actor.browserPage).assertFormVisible();
       }
     }
   }
@@ -871,39 +889,39 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @DisplayName(
       "OIDC-07: Passwortloses Konto ändert Kontaktadresse mit eigenem Faktor und eigenem Einmallink")
   void passwordlessContactChangeKeepsTheStableProviderIdentity(int width) {
-    page.setViewportSize(width, 900);
+    browserPage.setViewportSize(width, 900);
     String providerEmail = "contact-" + UUID.randomUUID() + "@gmail.com";
     String contact = "changed-" + UUID.randomUUID() + "@example.test";
     begin("google", providerEmail, "valid");
-    page.locator("#external-register-submit").click();
-    assertThat(page).hasURL(Pattern.compile(".*/home$"));
+    browserPage.locator("#external-register-submit").click();
+    assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
     enrollGoogle(providerEmail, "valid");
-    page.navigate("/account?section=security&tab=portal");
-    page.locator("#account-email-edit-security").click();
+    browserPage.navigate("/account?section=security&tab=portal");
+    browserPage.locator("#account-email-edit-security").click();
     confirmFactor(providerEmail);
-    assertThat(page.locator("#account-email-password")).isHidden();
-    page.locator("#account-email-new input").fill(contact);
-    page.locator("#account-email-confirm input").fill(contact);
-    UiActions.complete(page, () -> page.locator("#account-email-request").click());
-    assertThat(page.locator("vaadin-notification-card"))
-        .containsText(texts.getAccountSecurityEmailRequested());
-    MailpitInbox inbox = new MailpitInbox(context);
+    assertThat(browserPage.locator("#account-email-password")).isHidden();
+    browserPage.locator("#account-email-new input").fill(contact);
+    browserPage.locator("#account-email-confirm input").fill(contact);
+    UiActions.complete(browserPage, () -> browserPage.locator("#account-email-request").click());
+    assertThat(browserPage.locator("vaadin-notification-card"))
+        .containsText(uiTexts.getAccountSecurityEmailRequested());
+    MailpitInbox inbox = new MailpitInbox(browserContext);
     try (Page confirmation =
         inbox.openEmailChangeAction(
-            inbox.awaitSecurityMail(contact, texts.getAccountEmailChangeSubject()))) {
+            inbox.awaitSecurityMail(contact, uiTexts.getAccountEmailChangeSubject()))) {
       UiActions.complete(
           confirmation, () -> confirmation.locator("#account-email-confirm-action").click());
       assertThat(confirmation.locator("#account-email-confirmation"))
-          .containsText(texts.getAccountEmailConfirmationSuccess());
-      inbox.awaitSecurityMail(providerEmail, texts.getAccountEmailChangedSubject());
-      inbox.awaitSecurityMail(contact, texts.getAccountEmailChangedSubject());
+          .containsText(uiTexts.getAccountEmailConfirmationSuccess());
+      inbox.awaitSecurityMail(providerEmail, uiTexts.getAccountEmailChangedSubject());
+      inbox.awaitSecurityMail(contact, uiTexts.getAccountEmailChangedSubject());
     }
     begin("google", providerEmail, "valid");
-    assertThat(page).hasURL(Pattern.compile(".*/two-factor$"));
-    TwoFactorPage.completeIfRequired(page, providerEmail, null);
-    assertThat(page).hasURL(Pattern.compile(".*/home$"));
-    page.navigate("/account?tab=profile");
-    assertThat(page.locator("#account-email input")).hasValue(contact);
+    assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor$"));
+    TwoFactorPage.completeIfRequired(browserPage, providerEmail, null);
+    assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
+    browserPage.navigate("/account?tab=profile");
+    assertThat(browserPage.locator("#account-email input")).hasValue(contact);
   }
 
   @ParameterizedTest
@@ -911,10 +929,10 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @DisplayName("OIDC-03: Ungültige Antwort oder Abbruch vergibt keine Portalsitzung")
   void rejectedProviderResponse(String mode) {
     begin("google", "invalid-" + UUID.randomUUID() + "@gmail.com", mode);
-    assertThat(page).hasURL(Pattern.compile(".*/external-registration\\?error=external$"));
-    assertThat(page.locator("#external-register-submit")).isHidden();
-    page.navigate("/account");
-    page.waitForURL(url -> URI.create(url).getPath().endsWith("/login"));
-    assertTrue(URI.create(page.url()).getPath().endsWith("/login"));
+    assertThat(browserPage).hasURL(Pattern.compile(".*/external-registration\\?error=external$"));
+    assertThat(browserPage.locator("#external-register-submit")).isHidden();
+    browserPage.navigate("/account");
+    browserPage.waitForURL(url -> URI.create(url).getPath().endsWith("/login"));
+    assertTrue(URI.create(browserPage.url()).getPath().endsWith("/login"));
   }
 }

@@ -51,17 +51,20 @@ public class SessionManagementBrowserTest extends BrowserFixture {
 
   @BeforeEach
   void prepare() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
-    page.getByRole(
+    browserPage
+        .getByRole(
             AriaRole.SWITCH,
-            new Page.GetByRoleOptions().setName(texts.getLoginRememberMeCheckbox()).setExact(true))
+            new Page.GetByRoleOptions()
+                .setName(uiTexts.getLoginRememberMeCheckbox())
+                .setExact(true))
         .check();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    configuration = new ConfigurationPage(page);
+    new UserMenu(browserPage).selectTestLanguage();
+    configuration = new ConfigurationPage(browserPage);
     configuration.open(AdminConfigGroup.SECURITY);
-    original = configuration.value(texts.getAdminConfigEntryMaxSessionsPerUser());
+    original = configuration.value(uiTexts.getAdminConfigEntryMaxSessionsPerUser());
     limit(5);
   }
 
@@ -69,30 +72,30 @@ public class SessionManagementBrowserTest extends BrowserFixture {
   void restore() {
     if (original != null) {
       // Neustartfälle haben auch das Admin-Fixture verloren: frisches Dokument vor Navigation.
-      page.navigate(path(ADMIN_ROUTE));
-      new UserMenu(page).selectTestLanguage();
+      browserPage.navigate(path(ADMIN_ROUTE));
+      new UserMenu(browserPage).selectTestLanguage();
       configuration.open(AdminConfigGroup.SECURITY);
-      configuration.enter(texts.getAdminConfigEntryMaxSessionsPerUser(), original);
+      configuration.enter(uiTexts.getAdminConfigEntryMaxSessionsPerUser(), original);
       configuration.save();
     }
   }
 
   private void limit(int value) {
     configuration.open(AdminConfigGroup.SECURITY);
-    configuration.enter(texts.getAdminConfigEntryMaxSessionsPerUser(), String.valueOf(value));
+    configuration.enter(uiTexts.getAdminConfigEntryMaxSessionsPerUser(), String.valueOf(value));
     configuration.save();
   }
 
   private String user() {
     String email = "own-sessions-" + UUID.randomUUID() + "@example.test";
-    new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    new AdminUsersPage(browserPage).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     return email;
   }
 
   private void login(BrowserActor actor, String email, boolean remember) {
     actor.login(email, BrowserTestAccounts.USER_PASSWORD, remember);
-    assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
-    new UserMenu(actor.page).selectTestLanguage();
+    assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+    new UserMenu(actor.browserPage).selectTestLanguage();
   }
 
   private void revoked(Page target) {
@@ -115,29 +118,29 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       """)
   void realListCountsTabsOnceAndReadsChangedLimit() {
     String email = user();
-    try (BrowserActor owner = new BrowserActor(browser);
-        BrowserActor other = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(testBrowser);
+        BrowserActor other = new BrowserActor(testBrowser)) {
       login(owner, email, false);
       login(other, email, true);
       // Ein Fehler im ersten Fenster bleibt bestehen, wenn ein anderes Fenster eine Meldung zeigt.
-      AccountPage ownerForm = new AccountPage(owner.page);
+      AccountPage ownerForm = new AccountPage(owner.browserPage);
       ownerForm.open();
       ownerForm.input("account-first-name").fill("");
       ownerForm.save();
-      ownerForm.assertMessage(texts.getBaseValidationRequiredMessage());
-      AccountPage otherForm = new AccountPage(other.page);
+      ownerForm.assertMessage(uiTexts.getBaseValidationRequiredMessage());
+      AccountPage otherForm = new AccountPage(other.browserPage);
       otherForm.open();
-      otherForm.language(texts.language());
+      otherForm.language(uiTexts.language());
       otherForm.save();
-      otherForm.assertMessage(texts.getAccountSettingsSaveSuccess());
-      ownerForm.assertMessage(texts.getBaseValidationRequiredMessage());
+      otherForm.assertMessage(uiTexts.getAccountSettingsSaveSuccess());
+      ownerForm.assertMessage(uiTexts.getBaseValidationRequiredMessage());
       otherForm.closeNotification();
-      ownerForm.assertMessage(texts.getBaseValidationRequiredMessage());
+      ownerForm.assertMessage(uiTexts.getBaseValidationRequiredMessage());
       ownerForm.closeNotification();
-      AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
+      AccountSessionsPage sessions = new AccountSessionsPage(owner.browserPage);
       sessions.open();
       sessions.assertCounts(2, 1, 0);
-      try (Page tab = owner.context.newPage()) {
+      try (Page tab = owner.browserContext.newPage()) {
         tab.navigate(path(HOME_ROUTE));
         new UserMenu(tab).selectTestLanguage();
         sessions.refreshSessionList();
@@ -145,11 +148,12 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       }
       limit(7);
       sessions.refreshSessionList();
-      assertThat(owner.page.locator("#account-sessions-limit"))
-          .hasText(texts.getAccountSettingsSessionsLimit(7));
-      owner.page.reload();
-      assertThat(owner.page).hasURL(urlPattern(ACCOUNT_ROUTE, "\\?section=sessions"));
-      assertThat(owner.page.locator("#account-tab-sessions")).hasAttribute("aria-current", "page");
+      assertThat(owner.browserPage.locator("#account-sessions-limit"))
+          .hasText(uiTexts.getAccountSettingsSessionsLimit(7));
+      owner.browserPage.reload();
+      assertThat(owner.browserPage).hasURL(urlPattern(ACCOUNT_ROUTE, "\\?section=sessions"));
+      assertThat(owner.browserPage.locator("#account-tab-sessions"))
+          .hasAttribute("aria-current", "page");
       sessions.assertCounts(2, 1, 0);
     }
   }
@@ -167,33 +171,36 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       """)
   void selectedRevokeBlocksOldFormAndSavedReturn() {
     String email = user();
-    try (BrowserActor owner = new BrowserActor(browser);
-        BrowserActor other = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(testBrowser);
+        BrowserActor other = new BrowserActor(testBrowser)) {
       login(owner, email, false);
       login(other, email, true);
-      AccountPage stale = new AccountPage(other.page);
+      AccountPage stale = new AccountPage(other.browserPage);
       stale.open();
       String originalName = stale.input("account-first-name").inputValue();
       stale.input("account-first-name").fill("MustNotBeSaved");
-      AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
+      AccountSessionsPage sessions = new AccountSessionsPage(owner.browserPage);
       sessions.open();
       sessions.assertCounts(2, 1, 0);
       sessions.revokeOther(0);
-      new AccountPage(owner.page).assertMessage(texts.getSessionRevoked());
+      new AccountPage(owner.browserPage).assertMessage(uiTexts.getSessionRevoked());
       sessions.assertCounts(1, 0, 0);
       Response denied =
-          other.page.waitForResponse(
+          other.browserPage.waitForResponse(
               response ->
                   response.status() == 401
                       && response.url().startsWith(System.getProperty("browser.tests.baseUrl")),
               () -> stale.host("account-save").click());
       assertEquals(401, denied.status());
-      revoked(other.page);
-      UiActions.complete(owner.page, () -> owner.page.locator("#account-tab-profile").click());
-      assertThat(new AccountPage(owner.page).input("account-first-name")).hasValue(originalName);
-      owner.page.reload();
-      assertThat(new AccountPage(owner.page).input("account-email")).hasValue(email);
-      assertThat(new AccountPage(owner.page).input("account-first-name")).hasValue(originalName);
+      revoked(other.browserPage);
+      UiActions.complete(
+          owner.browserPage, () -> owner.browserPage.locator("#account-tab-profile").click());
+      assertThat(new AccountPage(owner.browserPage).input("account-first-name"))
+          .hasValue(originalName);
+      owner.browserPage.reload();
+      assertThat(new AccountPage(owner.browserPage).input("account-email")).hasValue(email);
+      assertThat(new AccountPage(owner.browserPage).input("account-first-name"))
+          .hasValue(originalName);
     }
   }
 
@@ -210,24 +217,25 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       """)
   void logoutOthersKeepsCurrentSessionAndItsSavedSignIn() {
     String email = user();
-    try (BrowserActor owner = new BrowserActor(browser);
-        BrowserActor second = new BrowserActor(browser);
-        BrowserActor third = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(testBrowser);
+        BrowserActor second = new BrowserActor(testBrowser);
+        BrowserActor third = new BrowserActor(testBrowser)) {
       login(owner, email, true);
       login(second, email, true);
       login(third, email, false);
-      AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
+      AccountSessionsPage sessions = new AccountSessionsPage(owner.browserPage);
       sessions.open();
       sessions.assertCounts(3, 2, 0);
       sessions.revokeOthers();
       sessions.assertCounts(1, 0, 0);
-      assertThat(owner.page.locator("#account-logout-others")).isDisabled();
-      revoked(second.page);
-      revoked(third.page);
-      owner.page.reload();
+      assertThat(owner.browserPage.locator("#account-logout-others")).isDisabled();
+      revoked(second.browserPage);
+      revoked(third.browserPage);
+      owner.browserPage.reload();
       sessions.assertCounts(1, 0, 0);
       assertTrue(
-          owner.context.cookies().stream().anyMatch(cookie -> cookie.name.equals("remember-me")));
+          owner.browserContext.cookies().stream()
+              .anyMatch(cookie -> cookie.name.equals("remember-me")));
     }
   }
 
@@ -246,50 +254,52 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       """)
   void activeSignInSurvivesRestartAndItsSavedReturnCanBeRevoked() throws Exception {
     String email = user();
-    try (PersistentBrowserActor persistent = new PersistentBrowserActor(playwright, profile)) {
-      LoginPage login = new LoginPage(persistent.page);
+    try (PersistentBrowserActor persistent =
+        new PersistentBrowserActor(playwrightRuntime, profile)) {
+      LoginPage login = new LoginPage(persistent.browserPage);
       login.open();
       persistent
-          .page
+          .browserPage
           .getByRole(
               AriaRole.SWITCH,
               new Page.GetByRoleOptions()
-                  .setName(texts.getLoginRememberMeCheckbox())
+                  .setName(uiTexts.getLoginRememberMeCheckbox())
                   .setExact(true))
           .check();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-      assertThat(persistent.page).hasURL(urlPattern(HOME_ROUTE));
+      assertThat(persistent.browserPage).hasURL(urlPattern(HOME_ROUTE));
     }
-    try (BrowserActor owner = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(testBrowser)) {
       login(owner, email, true);
       // Dieser Fall prüft den dauerhaften Bestand, SESSIONS-06 den laufenden UI-Reconnect.
       // Alte Push-Redirects dürfen nicht mit dem hier bewusst frisch geöffneten Dokument
       // konkurrieren.
-      owner.page.navigate("about:blank");
+      owner.browserPage.navigate("about:blank");
       BrowserTestRunner.restartTestApplication();
-      owner.page.navigate(path(HOME_ROUTE));
-      assertThat(owner.page).hasURL(urlPattern(HOME_ROUTE));
-      new UserMenu(owner.page).selectTestLanguage();
-      AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
+      owner.browserPage.navigate(path(HOME_ROUTE));
+      assertThat(owner.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      new UserMenu(owner.browserPage).selectTestLanguage();
+      AccountSessionsPage sessions = new AccountSessionsPage(owner.browserPage);
       sessions.open();
       sessions.assertCounts(2, 1, 0);
       sessions.revokeOther(0);
       sessions.assertCounts(1, 0, 0);
-      owner.page.navigate("about:blank");
+      owner.browserPage.navigate("about:blank");
       BrowserTestRunner.restartTestApplication();
-      owner.page.navigate(path(HOME_ROUTE));
+      owner.browserPage.navigate(path(HOME_ROUTE));
       sessions.open();
       sessions.assertCounts(1, 0, 0);
-      try (PersistentBrowserActor persistent = new PersistentBrowserActor(playwright, profile)) {
-        LoginPage login = new LoginPage(persistent.page);
+      try (PersistentBrowserActor persistent =
+          new PersistentBrowserActor(playwrightRuntime, profile)) {
+        LoginPage login = new LoginPage(persistent.browserPage);
         login.open();
         login.assertFormVisible();
       }
     }
     // Auch der Admin hatte einen eigenen gespeicherten Zugang; nur über UI wiederherstellen.
-    page.navigate(path(ADMIN_ROUTE));
-    new UserMenu(page).selectTestLanguage();
-    new LoginPage(page).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
+    browserPage.navigate(path(ADMIN_ROUTE));
+    new UserMenu(browserPage).selectTestLanguage();
+    new LoginPage(browserPage).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
   }
 
   @Test
@@ -301,60 +311,61 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       "Der Admin speichert einen kurzen Sitzungs-Timeout. Eine danach ohne Neustart angelegte Sitzung läuft ab, zwei bestehende Sitzungen bleiben aktiv. Der gespeicherte Zugang bleibt ohne aktuellen Anmeldeweg widerrufbar.")
   void expiredSessionLeavesOnlyItsSavedLogin() {
     String email = user();
-    try (BrowserActor owner = new BrowserActor(browser);
-        BrowserActor other = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(testBrowser);
+        BrowserActor other = new BrowserActor(testBrowser)) {
       login(owner, email, false);
       login(other, email, true);
-      owner.page.navigate("about:blank");
-      other.page.navigate("about:blank");
+      owner.browserPage.navigate("about:blank");
+      other.browserPage.navigate("about:blank");
       configuration.open(AdminConfigGroup.SECURITY);
-      String timeoutLabel = texts.getAdminConfigEntrySessionTimeout();
+      String timeoutLabel = uiTexts.getAdminConfigEntrySessionTimeout();
       BigDecimal originalTimeout = configuration.seconds(timeoutLabel);
       try {
         configuration.enterSeconds(timeoutLabel, BigDecimal.valueOf(12));
         configuration.save();
-        try (BrowserActor expiring = new BrowserActor(browser)) {
+        try (BrowserActor expiring = new BrowserActor(testBrowser)) {
           login(expiring, email, true);
         }
-        owner.page.navigate(path(HOME_ROUTE));
-        AccountSessionsPage sessions = new AccountSessionsPage(owner.page);
+        owner.browserPage.navigate(path(HOME_ROUTE));
+        AccountSessionsPage sessions = new AccountSessionsPage(owner.browserPage);
         sessions.open();
-        owner.page.waitForCondition(
+        owner.browserPage.waitForCondition(
             () -> {
               sessions.refreshSessionList();
               return sessions.rows("saved").count() == 1;
             },
             new Page.WaitForConditionOptions().setTimeout(30_000));
         for (int width : new int[] {1280, 390}) {
-          owner.page.setViewportSize(width, 900);
+          owner.browserPage.setViewportSize(width, 900);
           sessions.assertCounts(2, 1, 1);
           sessions.assertSummaryAlignment();
           String deviceLabel = sessions.rows("current").locator(".account-entry-title").innerText();
           assertThat(sessions.rows("active").locator(".account-entry-title")).hasText(deviceLabel);
           assertThat(sessions.rows("saved").locator(".account-entry-title")).hasText(deviceLabel);
           assertThat(sessions.rows("saved").locator(".account-session-sign-in-method")).hasCount(0);
-          assertThat(sessions.rows("saved")).containsText(texts.getPortalSessionRemembered());
+          assertThat(sessions.rows("saved")).containsText(uiTexts.getPortalSessionRemembered());
           assertThat(sessions.rows("saved").locator("vaadin-button")).isEnabled();
           Locator method =
               sessions
                   .rows("active")
                   .locator(".account-session-sign-in-method .account-session-detail-value");
-          assertThat(method).hasText(texts.getSignInPortalPassword());
+          assertThat(method).hasText(uiTexts.getSignInPortalPassword());
           assertThat(method).hasCSS("font-weight", "700");
           assertThat(method).hasCSS("color", "rgb(255, 255, 255)");
           AllurePlaywright.attachScreenshot(
-              "Geräte und Sitzungen bei " + width + " px", owner.page);
+              "Geräte und Sitzungen bei " + width + " px", owner.browserPage);
           UiActions.complete(
-              owner.page, () -> sessions.rows("active").locator("vaadin-button").click());
+              owner.browserPage, () -> sessions.rows("active").locator("vaadin-button").click());
           sessions.assertConfirmationDetails();
           AllurePlaywright.attachScreenshot(
-              "Abmeldedialog im Konto bei " + width + " px", owner.page);
+              "Abmeldedialog im Konto bei " + width + " px", owner.browserPage);
           UiActions.complete(
-              owner.page, () -> owner.page.locator("#sessions-confirmation-cancel").click());
+              owner.browserPage,
+              () -> owner.browserPage.locator("#sessions-confirmation-cancel").click());
         }
       } finally {
-        owner.page.navigate("about:blank");
-        page.navigate(path(ADMIN_ROUTE));
+        owner.browserPage.navigate("about:blank");
+        browserPage.navigate(path(ADMIN_ROUTE));
         configuration.open(AdminConfigGroup.SECURITY);
         configuration.enterSeconds(timeoutLabel, originalTimeout);
         configuration.save();
@@ -376,30 +387,31 @@ public class SessionManagementBrowserTest extends BrowserFixture {
   void restartRebuildsUiWithoutReplayingDraftsOrLosingTheSlot() throws Exception {
     String email = user();
     limit(1);
-    try (BrowserActor owner = new BrowserActor(browser);
-        BrowserActor next = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(testBrowser);
+        BrowserActor next = new BrowserActor(testBrowser)) {
       login(owner, email, false);
-      AccountPage form = new AccountPage(owner.page);
+      AccountPage form = new AccountPage(owner.browserPage);
       form.open();
       String originalName = form.input("account-first-name").inputValue();
       form.input("account-first-name").fill("MustNotSurviveRestart");
       BrowserTestRunner.restartTestApplication();
       form.host("account-save").click();
-      assertThat(owner.page).hasURL(urlPattern(HOME_ROUTE));
+      assertThat(owner.browserPage).hasURL(urlPattern(HOME_ROUTE));
       form.open();
       assertThat(form.input("account-first-name")).hasValue(originalName);
       next.login(email, BrowserTestAccounts.USER_PASSWORD);
-      LoginPage recovery = new LoginPage(next.page);
+      LoginPage recovery = new LoginPage(next.browserPage);
       recovery.assertRestrictedManagement();
       recovery.revokeRecoverySession(0);
-      UiActions.complete(next.page, () -> next.page.locator("#session-recovery-continue").click());
-      assertThat(next.page).hasURL(urlPattern(HOME_ROUTE));
+      UiActions.complete(
+          next.browserPage, () -> next.browserPage.locator("#session-recovery-continue").click());
+      assertThat(next.browserPage).hasURL(urlPattern(HOME_ROUTE));
       BrowserTestRunner.restartTestApplication();
-      next.page.reload();
-      AccountSessionsPage sessions = new AccountSessionsPage(next.page);
+      next.browserPage.reload();
+      AccountSessionsPage sessions = new AccountSessionsPage(next.browserPage);
       sessions.open();
       sessions.assertCounts(1, 0, 0);
-      revoked(owner.page);
+      revoked(owner.browserPage);
     }
   }
 
@@ -418,51 +430,57 @@ public class SessionManagementBrowserTest extends BrowserFixture {
   void reachedLimitCanBeResolvedWithoutGrantingNormalAccessEarly() {
     String email = user();
     limit(1);
-    try (BrowserActor owner = new BrowserActor(browser);
-        BrowserActor next = new BrowserActor(browser)) {
+    try (BrowserActor owner = new BrowserActor(testBrowser);
+        BrowserActor next = new BrowserActor(testBrowser)) {
       login(owner, email, true);
       next.login(email, BrowserTestAccounts.USER_PASSWORD, true);
-      LoginPage login = new LoginPage(next.page);
+      LoginPage login = new LoginPage(next.browserPage);
       login.assertRestrictedManagement();
       assertFalse(
-          next.context.cookies().stream().anyMatch(cookie -> cookie.name.equals("remember-me")));
-      next.page.navigate(path(ACCOUNT_ROUTE));
+          next.browserContext.cookies().stream()
+              .anyMatch(cookie -> cookie.name.equals("remember-me")));
+      next.browserPage.navigate(path(ACCOUNT_ROUTE));
       login.assertRestrictedManagement();
-      assertThat(next.page.locator("#account-session-entries [data-session-state='active']"))
+      assertThat(next.browserPage.locator("#account-session-entries [data-session-state='active']"))
           .hasCount(1);
-      assertThat(next.page.locator("#account-session-entries [data-session-state='current']"))
+      assertThat(
+              next.browserPage.locator("#account-session-entries [data-session-state='current']"))
           .hasCount(0);
-      AccountSessionsPage recovery = new AccountSessionsPage(next.page);
+      AccountSessionsPage recovery = new AccountSessionsPage(next.browserPage);
       for (int width : new int[] {1280, 390}) {
-        next.page.setViewportSize(width, 900);
+        next.browserPage.setViewportSize(width, 900);
         recovery.assertGroups(1, 0);
         recovery.assertSummaryAlignment();
         Locator method =
             recovery
                 .rows("active")
                 .locator(".account-session-sign-in-method .account-session-detail-value");
-        assertThat(method).hasText(texts.getSignInPortalPassword());
+        assertThat(method).hasText(uiTexts.getSignInPortalPassword());
         assertThat(method).hasCSS("font-weight", "700");
-        AllurePlaywright.attachScreenshot("Sitzungslimit bei " + width + " px", next.page);
+        AllurePlaywright.attachScreenshot("Sitzungslimit bei " + width + " px", next.browserPage);
         UiActions.complete(
-            next.page, () -> recovery.rows("active").locator("vaadin-button").click());
+            next.browserPage, () -> recovery.rows("active").locator("vaadin-button").click());
         recovery.assertConfirmationDetails();
-        AllurePlaywright.attachScreenshot("Abmeldedialog am Limit bei " + width + " px", next.page);
+        AllurePlaywright.attachScreenshot(
+            "Abmeldedialog am Limit bei " + width + " px", next.browserPage);
         if (width == 1280) {
           UiActions.complete(
-              next.page, () -> next.page.locator("#sessions-confirmation-cancel").click());
+              next.browserPage,
+              () -> next.browserPage.locator("#sessions-confirmation-cancel").click());
         }
       }
       recovery.confirmDeviceRevocation();
-      assertThat(next.page.locator("#account-session-entries [data-session-state='active']"))
+      assertThat(next.browserPage.locator("#account-session-entries [data-session-state='active']"))
           .hasCount(0);
-      UiActions.complete(next.page, () -> next.page.locator("#session-recovery-continue").click());
-      assertThat(next.page).hasURL(urlPattern(HOME_ROUTE));
-      new UserMenu(next.page).selectTestLanguage();
+      UiActions.complete(
+          next.browserPage, () -> next.browserPage.locator("#session-recovery-continue").click());
+      assertThat(next.browserPage).hasURL(urlPattern(HOME_ROUTE));
+      new UserMenu(next.browserPage).selectTestLanguage();
       assertTrue(
-          next.context.cookies().stream().anyMatch(cookie -> cookie.name.equals("remember-me")));
-      revoked(owner.page);
-      AccountSessionsPage sessions = new AccountSessionsPage(next.page);
+          next.browserContext.cookies().stream()
+              .anyMatch(cookie -> cookie.name.equals("remember-me")));
+      revoked(owner.browserPage);
+      AccountSessionsPage sessions = new AccountSessionsPage(next.browserPage);
       sessions.open();
       sessions.assertCounts(1, 0, 0);
     }

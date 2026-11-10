@@ -29,24 +29,24 @@ final class OidcTestProvider implements AutoCloseable {
   private record Code(
       String provider, Map<String, String> authorization, String email, String mode) {}
 
-  private final ObjectMapper json = new ObjectMapper();
-  private final HttpServer server;
-  private final KeyPair key;
-  private final Map<String, Code> codes = new ConcurrentHashMap<>();
+  private final ObjectMapper responseJsonMapper = new ObjectMapper();
+  private final HttpServer oidcHttpServer;
+  private final KeyPair signingKeyPair;
+  private final Map<String, Code> authorizationCodes = new ConcurrentHashMap<>();
   private final String appUrl;
   private static final String CLIENT = "own-browser-client";
   private static final String TENANT = "9188040d-6c67-4c5b-b112-36a304b66dad";
 
   OidcTestProvider(String appUrl) throws Exception {
     this.appUrl = appUrl;
-    key = KeyPairGenerator.getInstance("RSA").generateKeyPair();
-    server = HttpServer.create(new InetSocketAddress("0.0.0.0", 0), 0);
-    server.createContext("/", this::handle);
-    server.start();
+    signingKeyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair();
+    oidcHttpServer = HttpServer.create(new InetSocketAddress("0.0.0.0", 0), 0);
+    oidcHttpServer.createContext("/", this::handle);
+    oidcHttpServer.start();
   }
 
   void configure(Map<String, String> environment) {
-    int port = server.getAddress().getPort();
+    int port = oidcHttpServer.getAddress().getPort();
     for (String provider : List.of("GOOGLE", "MICROSOFT")) {
       String prefix = "BROWSER_TEST_OIDC_" + provider + "_";
       String path = provider.toLowerCase(java.util.Locale.ROOT);
@@ -64,12 +64,12 @@ final class OidcTestProvider implements AutoCloseable {
     try {
       String path = exchange.getRequestURI().getPath();
       if (path.equals("/keys")) {
-        RSAPublicKey rsa = (RSAPublicKey) key.getPublic();
+        RSAPublicKey rsa = (RSAPublicKey) signingKeyPair.getPublic();
         send(
             exchange,
             200,
             "application/json",
-            json.writeValueAsString(
+            responseJsonMapper.writeValueAsString(
                 Map.of(
                     "keys",
                     List.of(
@@ -134,7 +134,7 @@ final class OidcTestProvider implements AutoCloseable {
       target = callback + "?error=access_denied&state=" + encode(authorization.get("state"));
     } else {
       String code = UUID.randomUUID().toString();
-      codes.put(
+      authorizationCodes.put(
           code,
           new Code(
               provider, authorization, input.get("email"), input.getOrDefault("mode", "valid")));
@@ -148,7 +148,7 @@ final class OidcTestProvider implements AutoCloseable {
   private void token(HttpExchange exchange, String provider) throws Exception {
     Map<String, String> input =
         form(new String(exchange.getRequestBody().readNBytes(8192), StandardCharsets.UTF_8));
-    Code code = codes.remove(input.get("code"));
+    Code code = authorizationCodes.remove(input.get("code"));
     if (code == null
         || !provider.equals(code.provider())
         || !CLIENT.equals(input.get("client_id"))
@@ -187,18 +187,20 @@ final class OidcTestProvider implements AutoCloseable {
     claims.put("family_name", "Browser");
     claims.put("tid", TENANT);
     String content =
-        base64(json.writeValueAsBytes(Map.of("alg", "RS256", "kid", "own-browser-key")))
+        base64(
+                responseJsonMapper.writeValueAsBytes(
+                    Map.of("alg", "RS256", "kid", "own-browser-key")))
             + "."
-            + base64(json.writeValueAsBytes(claims));
+            + base64(responseJsonMapper.writeValueAsBytes(claims));
     Signature signature = Signature.getInstance("SHA256withRSA");
-    signature.initSign(key.getPrivate());
+    signature.initSign(signingKeyPair.getPrivate());
     signature.update(content.getBytes(StandardCharsets.US_ASCII));
     String jwt = content + "." + base64(signature.sign());
     send(
         exchange,
         200,
         "application/json",
-        json.writeValueAsString(
+        responseJsonMapper.writeValueAsString(
             Map.of(
                 "access_token",
                 "own-discarded-access-token",
@@ -258,7 +260,7 @@ final class OidcTestProvider implements AutoCloseable {
 
   @Override
   public void close() {
-    server.stop(0);
-    codes.clear();
+    oidcHttpServer.stop(0);
+    authorizationCodes.clear();
   }
 }

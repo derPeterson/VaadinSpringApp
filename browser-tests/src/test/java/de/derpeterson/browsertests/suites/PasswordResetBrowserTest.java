@@ -40,36 +40,40 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       """)
   void anonymousResetMailsFollowCurrentSessionLanguage() {
     String email = activateAccount();
-    ForgotPasswordPage request = new ForgotPasswordPage(page);
+    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
     request.open();
     request.enterEmail(email);
     request.submit();
     request.requestedResponse();
-    MailpitInbox firstInbox = new MailpitInbox(context);
+    MailpitInbox firstInbox = new MailpitInbox(browserContext);
     MailpitInbox.CapturedMail first = firstInbox.awaitPasswordResetMail(email);
-    try (Page oldMail = context.newPage()) {
+    try (Page oldMail = browserContext.newPage()) {
       oldMail.navigate(
           System.getProperty("browser.tests.mailpitUrl") + "/view/" + first.id() + ".html");
       String original = oldMail.locator("body").innerText();
       de.derpeterson.browsertests.i18n.UiTexts other =
-          new de.derpeterson.browsertests.i18n.UiTexts(texts.language().equals("de") ? "en" : "de");
-      page.navigate(path(HOME_ROUTE));
-      new UserMenu(page).selectLanguage(other.language());
-      page.navigate(path(de.derpeterson.app.config.AppRouteConstants.FORGOT_PASSWORD_ROUTE));
-      page.getByLabel(other.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
+          new de.derpeterson.browsertests.i18n.UiTexts(
+              uiTexts.language().equals("de") ? "en" : "de");
+      browserPage.navigate(path(HOME_ROUTE));
+      new UserMenu(browserPage).selectLanguage(other.language());
+      browserPage.navigate(path(de.derpeterson.app.config.AppRouteConstants.FORGOT_PASSWORD_ROUTE));
+      browserPage
+          .getByLabel(other.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
           .fill(email);
-      page.getByRole(
+      browserPage
+          .getByRole(
               com.microsoft.playwright.options.AriaRole.BUTTON,
               new Page.GetByRoleOptions().setName(other.getPublicRequestLink()).setExact(true))
           .click();
       MailpitInbox.CapturedMail second =
-          new MailpitInbox(context, null, other).awaitPasswordResetMail(email);
+          new MailpitInbox(browserContext, null, other).awaitPasswordResetMail(email);
       org.junit.jupiter.api.Assertions.assertNotEquals(first.id(), second.id());
-      try (Page target = new MailpitInbox(context, null, other).openPasswordResetAction(second)) {
+      try (Page target =
+          new MailpitInbox(browserContext, null, other).openPasswordResetAction(second)) {
         org.junit.jupiter.api.Assertions.assertTrue(
             target.url().startsWith(System.getProperty("browser.tests.baseUrl")));
       }
-      try (Page newMail = context.newPage()) {
+      try (Page newMail = browserContext.newPage()) {
         newMail.navigate(
             System.getProperty("browser.tests.mailpitUrl") + "/view/" + second.id() + ".html");
         org.junit.jupiter.api.Assertions.assertNotEquals(
@@ -78,8 +82,8 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       oldMail.reload();
       assertEquals(original, oldMail.locator("body").innerText());
     } finally {
-      page.navigate(path(HOME_ROUTE));
-      new UserMenu(page).selectTestLanguage();
+      browserPage.navigate(path(HOME_ROUTE));
+      new UserMenu(browserPage).selectTestLanguage();
     }
   }
 
@@ -89,24 +93,24 @@ public class PasswordResetBrowserTest extends BrowserFixture {
   @Story("Vom vergessenen Passwort zur erneuten Anmeldung")
   @Description(
       """
-            1. Ein eigenes Konto über Registrierung und echten Verifikationsmailbutton aktivieren.
-            2. Im Loginformular Passwort vergessen öffnen und seine E-Mail absenden.
-            3. Neutralen Anfragehinweis und die eigene tatsächlich versandte Reset-Mail prüfen.
-            4. Den sichtbaren Mailbutton anklicken, neues Passwort samt Bestätigung absenden.
-            5. Mit dem alten Passwort anmelden: verständliche Ablehnung prüfen.
-            6. Mit dem neuen Passwort anmelden: Startseite und eigenes Konto ohne Adminrechte prüfen.
+      1. Ein eigenes Konto über Registrierung und echten Verifikationsmailbutton aktivieren.
+      2. Im Loginformular Passwort vergessen öffnen und seine E-Mail absenden.
+      3. Neutralen Anfragehinweis und die eigene tatsächlich versandte Reset-Mail prüfen.
+      4. Den sichtbaren Mailbutton anklicken, neues Passwort samt Bestätigung absenden.
+      5. Mit dem alten Passwort anmelden: verständliche Ablehnung prüfen.
+      6. Mit dem neuen Passwort anmelden: Startseite und eigenes Konto ohne Adminrechte prüfen.
 
-            **Erwartet:** Der Reset-Mailbutton bleibt auf dem exakten Testserver. Nur das neue
-            Passwort ermöglicht die Anmeldung. Keine externe SMTP-/Mailclient-Prüfung.
-            """)
+      **Erwartet:** Der Reset-Mailbutton bleibt auf dem exakten Testserver. Nur das neue
+      Passwort ermöglicht die Anmeldung. Keine externe SMTP-/Mailclient-Prüfung.
+      """)
   void realResetMailChangesTheLoginPassword() {
     String email = activateAccount();
     ResetPasswordPage reset = openResetForm(email);
     reset.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
     reset.submit();
     reset.assertChanged();
-    AllurePlaywright.attachScreenshot("Bestätigte Passwortänderung", page);
-    LoginPage login = new LoginPage(page);
+    AllurePlaywright.attachScreenshot("Bestätigte Passwortänderung", browserPage);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
     login.assertRejected();
@@ -118,29 +122,29 @@ public class PasswordResetBrowserTest extends BrowserFixture {
   @Story("Anfrageformular validieren")
   @Description(
       """
-            1. Ein eigenes Konto registrieren und über seine Verifikationsmail aktivieren.
-            2. Passwort vergessen öffnen und die leere Anfrage absenden.
-            3. Pflichtfeldhinweis prüfen; ungültige E-Mail eingeben und erneut absenden.
-            4. E-Mail-Hinweis und Markierung prüfen; eigene gültige Adresse eingeben und absenden.
-            5. Neutralen Anfragehinweis und Eingang der eigenen Reset-Mail prüfen.
+      1. Ein eigenes Konto registrieren und über seine Verifikationsmail aktivieren.
+      2. Passwort vergessen öffnen und die leere Anfrage absenden.
+      3. Pflichtfeldhinweis prüfen; ungültige E-Mail eingeben und erneut absenden.
+      4. E-Mail-Hinweis und Markierung prüfen; eigene gültige Adresse eingeben und absenden.
+      5. Neutralen Anfragehinweis und Eingang der eigenen Reset-Mail prüfen.
 
-            **Erwartet:** Ungültige Eingaben zeigen keinen Anfrageerfolg. Nach Korrektur wird
-            die gültige Anfrage über die Oberfläche angenommen und ihre Mail tatsächlich erfasst.
-            """)
+      **Erwartet:** Ungültige Eingaben zeigen keinen Anfrageerfolg. Nach Korrektur wird
+      die gültige Anfrage über die Oberfläche angenommen und ihre Mail tatsächlich erfasst.
+      """)
   void requestEmailCanBeCorrected() {
     String email = activateAccount();
-    ForgotPasswordPage request = new ForgotPasswordPage(page);
+    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
     request.open();
     request.submit();
     request.assertRequiredError();
     request.enterEmail("not-an-email");
     request.submit();
     request.assertEmailError();
-    AllurePlaywright.attachScreenshot("Ungültige Reset-Anfrage", page);
+    AllurePlaywright.attachScreenshot("Ungültige Reset-Anfrage", browserPage);
     request.enterEmail(email);
     request.submit();
     request.requestedResponse();
-    new MailpitInbox(context).awaitPasswordResetMail(email);
+    new MailpitInbox(browserContext).awaitPasswordResetMail(email);
   }
 
   @Test
@@ -149,15 +153,15 @@ public class PasswordResetBrowserTest extends BrowserFixture {
   @Story("Tokengebundenes Formular validieren")
   @Description(
       """
-            1. Eigenes Konto über UI und echte Mail aktivieren; Reset-Mail über Passwort vergessen anfordern.
-            2. Ihren Mailbutton öffnen und die leeren Passwortfelder absenden; Pflichtfeldhinweis prüfen.
-            3. Zwei ungültige Passwörter absenden; Passwortregel und Feldmarkierungen prüfen.
-            4. Zwei gültige, aber verschiedene Passwörter absenden; Bestätigungshinweis prüfen.
-            5. Beide Felder gültig und identisch füllen; Änderung und neue Anmeldung prüfen.
+      1. Eigenes Konto über UI und echte Mail aktivieren; Reset-Mail über Passwort vergessen anfordern.
+      2. Ihren Mailbutton öffnen und die leeren Passwortfelder absenden; Pflichtfeldhinweis prüfen.
+      3. Zwei ungültige Passwörter absenden; Passwortregel und Feldmarkierungen prüfen.
+      4. Zwei gültige, aber verschiedene Passwörter absenden; Bestätigungshinweis prüfen.
+      5. Beide Felder gültig und identisch füllen; Änderung und neue Anmeldung prüfen.
 
-            **Erwartet:** Alle drei Fehler bleiben korrigierbar. Derselbe Mail-Link ermöglicht
-            danach die Passwortänderung; technische Tokenzustände werden nicht per SQL geprüft.
-            """)
+      **Erwartet:** Alle drei Fehler bleiben korrigierbar. Derselbe Mail-Link ermöglicht
+      danach die Passwortänderung; technische Tokenzustände werden nicht per SQL geprüft.
+      """)
   void passwordErrorsCanBeCorrectedUsingTheSameLink() {
     String email = activateAccount();
     ResetPasswordPage reset = openResetForm(email);
@@ -169,7 +173,7 @@ public class PasswordResetBrowserTest extends BrowserFixture {
     reset.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, "DifferentPassword3!");
     reset.submit();
     reset.assertConfirmationError();
-    AllurePlaywright.attachScreenshot("Abweichende Passwortbestätigung", page);
+    AllurePlaywright.attachScreenshot("Abweichende Passwortbestätigung", browserPage);
     reset.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
     reset.submit();
     reset.assertChanged();
@@ -181,24 +185,24 @@ public class PasswordResetBrowserTest extends BrowserFixture {
   @Story("Keine Kontoauskunft im sichtbaren Anfrageergebnis")
   @Description(
       """
-            1. Ein eigenes Konto über Registrierung und Verifikationsmail aktivieren.
-            2. Reset-Anfrage für dieses Konto absenden, sichtbare Antwort erfassen und eigene Mail abwarten.
-            3. Die Bestätigung über ihren Schließen-Button schließen.
-            4. Formular erneut öffnen, eine andere neue UUID-Adresse absenden und Antwort erfassen.
-            5. Sichtbaren Titel und Nachricht mit der ersten Antwort vergleichen.
+      1. Ein eigenes Konto über Registrierung und Verifikationsmail aktivieren.
+      2. Reset-Anfrage für dieses Konto absenden, sichtbare Antwort erfassen und eigene Mail abwarten.
+      3. Die Bestätigung über ihren Schließen-Button schließen.
+      4. Formular erneut öffnen, eine andere neue UUID-Adresse absenden und Antwort erfassen.
+      5. Sichtbaren Titel und Nachricht mit der ersten Antwort vergleichen.
 
-            **Erwartet:** Beide Antworten sind identisch und neutral. Die unbekannte Adresse
-            verrät kein Konto. Timing-Unterschiede, technische Fehler und dauerhafte Mailabwesenheit
-            werden durch diesen UI-Fall nicht nachgewiesen.
-            """)
+      **Erwartet:** Beide Antworten sind identisch und neutral. Die unbekannte Adresse
+      verrät kein Konto. Timing-Unterschiede, technische Fehler und dauerhafte Mailabwesenheit
+      werden durch diesen UI-Fall nicht nachgewiesen.
+      """)
   void unknownEmailHasTheSameVisibleResponse() {
     String email = activateAccount();
-    ForgotPasswordPage request = new ForgotPasswordPage(page);
+    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
     request.open();
     request.enterEmail(email);
     request.submit();
     String knownResponse = request.requestedResponse();
-    new MailpitInbox(context).awaitPasswordResetMail(email);
+    new MailpitInbox(browserContext).awaitPasswordResetMail(email);
     request.dismissRequestedNotice();
     request.open();
     request.enterEmail("unknown-reset-" + UUID.randomUUID() + "@example.test");
@@ -212,23 +216,23 @@ public class PasswordResetBrowserTest extends BrowserFixture {
   @Story("Ungültiger oder fehlender Reset-Link")
   @Description(
       """
-            1. /reset-password mit einem neuen, nicht vergebenen UUID-Token öffnen.
-            2. Neutralen Fehlerhinweis und fehlendes Passwortformular prüfen.
-            3. /reset-password ohne Token öffnen.
-            4. Tatsächlichen Startseiteninhalt, URL und Titel prüfen.
+      1. /reset-password mit einem neuen, nicht vergebenen UUID-Token öffnen.
+      2. Neutralen Fehlerhinweis und fehlendes Passwortformular prüfen.
+      3. /reset-password ohne Token öffnen.
+      4. Tatsächlichen Startseiteninhalt, URL und Titel prüfen.
 
-            **Erwartet:** Unbekannte Links erlauben keine Passwortänderung. Ohne Token
-            erscheint die vollständige Startseite. Exakte Ablaufgrenzen bleiben JUnit-Aufgabe.
-            """)
+      **Erwartet:** Unbekannte Links erlauben keine Passwortänderung. Ohne Token
+      erscheint die vollständige Startseite. Exakte Ablaufgrenzen bleiben JUnit-Aufgabe.
+      """)
   void unknownAndMissingTokensHaveDefinedUiBehavior() {
-    page.navigate(path(RESET_PASSWORD_ROUTE) + "/" + UUID.randomUUID());
-    new ResetPasswordPage(page).assertInvalid();
-    AllurePlaywright.attachScreenshot("Ungültiger Reset-Link", page);
-    page.navigate(path(RESET_PASSWORD_ROUTE));
-    assertThat(page).hasURL(urlPattern(HOME_ROUTE));
-    assertThat(page).hasTitle(HOME_PAGE_TITLE);
+    browserPage.navigate(path(RESET_PASSWORD_ROUTE) + "/" + UUID.randomUUID());
+    new ResetPasswordPage(browserPage).assertInvalid();
+    AllurePlaywright.attachScreenshot("Ungültiger Reset-Link", browserPage);
+    browserPage.navigate(path(RESET_PASSWORD_ROUTE));
+    assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
+    assertThat(browserPage).hasTitle(HOME_PAGE_TITLE);
     assertThat(
-            page.getByText(
+            browserPage.getByText(
                 "VaadinSpringApp (Browser-Test)", new Page.GetByTextOptions().setExact(true)))
         .isVisible();
   }
@@ -238,53 +242,53 @@ public class PasswordResetBrowserTest extends BrowserFixture {
   @Story("Einmalige sichtbare Verwendung")
   @Description(
       """
-            1. Eigenes Konto über UI aktivieren; seine echte Reset-Mail anfordern und ihren Button öffnen.
-            2. Ein neues Passwort samt Bestätigung setzen und den Erfolg prüfen.
-            3. Dieselbe tokengebundene Seite neu laden.
-            4. Neutralen Ablehnungshinweis und fehlendes Passwortformular prüfen.
+      1. Eigenes Konto über UI aktivieren; seine echte Reset-Mail anfordern und ihren Button öffnen.
+      2. Ein neues Passwort samt Bestätigung setzen und den Erfolg prüfen.
+      3. Dieselbe tokengebundene Seite neu laden.
+      4. Neutralen Ablehnungshinweis und fehlendes Passwortformular prüfen.
 
-            **Erwartet:** Nach einem erfolgreichen Reset lässt sich der Link nicht erneut
-            zur Passwortänderung verwenden. Paralleler Verbrauch bleibt in Persistenztests.
-            """)
+      **Erwartet:** Nach einem erfolgreichen Reset lässt sich der Link nicht erneut
+      zur Passwortänderung verwenden. Paralleler Verbrauch bleibt in Persistenztests.
+      """)
   void usedResetLinkCannotBeUsedAgain() {
     String email = activateAccount();
     ResetPasswordPage reset = openResetForm(email);
     reset.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
     reset.submit();
     reset.assertChanged();
-    page.reload();
+    browserPage.reload();
     reset.assertInvalid();
   }
 
   private String activateAccount() {
     String email = "reset-" + UUID.randomUUID() + "@example.test";
-    RegistrationPage registration = new RegistrationPage(page);
+    RegistrationPage registration = new RegistrationPage(browserPage);
     registration.open();
     registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
     registration.submit();
     registration.assertSubmitted(email);
-    MailpitInbox inbox = new MailpitInbox(context);
-    page = inbox.openVerificationLink(inbox.awaitVerificationMail(email));
+    MailpitInbox inbox = new MailpitInbox(browserContext);
+    browserPage = inbox.openVerificationLink(inbox.awaitVerificationMail(email));
     return email;
   }
 
   private ResetPasswordPage openResetForm(String email) {
-    ForgotPasswordPage request = new ForgotPasswordPage(page);
+    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
     request.open();
     request.enterEmail(email);
     request.submit();
     request.requestedResponse();
-    MailpitInbox inbox = new MailpitInbox(context);
-    page = inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email));
-    return new ResetPasswordPage(page);
+    MailpitInbox inbox = new MailpitInbox(browserContext);
+    browserPage = inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email));
+    return new ResetPasswordPage(browserPage);
   }
 
   private void assertNewPasswordLogin(String email) {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(email, BrowserTestAccounts.RESET_PASSWORD);
-    assertThat(page).hasURL(urlPattern(HOME_ROUTE));
-    new UserMenu(page).selectTestLanguage();
-    new UserMenu(page).assertUserSignedInWithoutAdminAction(email);
+    assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
+    new UserMenu(browserPage).selectTestLanguage();
+    new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);
   }
 }

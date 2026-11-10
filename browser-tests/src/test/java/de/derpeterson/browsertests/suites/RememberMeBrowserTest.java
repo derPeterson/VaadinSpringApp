@@ -36,21 +36,22 @@ public class RememberMeBrowserTest extends BrowserFixture {
   @DisplayName("AUTH-07A: Ohne Remember-me bleibt nach Prozessneustart keine Anmeldung erhalten")
   @Description(
       """
-        1. Eigenes aktives Konto über das Adminformular anlegen.
-        2. In eigenem temporären Chromium-Profil anmelden, Remember-me nicht markieren.
-        3. Identität prüfen und den gesamten separaten Browserprozess schließen.
-        4. Denselben Profilordner mit neuem Browserprozess öffnen: Gastmenü ohne eigene Identität.
-        **Erwartet:** Kein dauerhaftes Remember-me-Cookie und keine wiederhergestellte Anmeldung.
-        """)
+      1. Eigenes aktives Konto über das Adminformular anlegen.
+      2. In eigenem temporären Chromium-Profil anmelden, Remember-me nicht markieren.
+      3. Identität prüfen und den gesamten separaten Browserprozess schließen.
+      4. Denselben Profilordner mit neuem Browserprozess öffnen: Gastmenü ohne eigene Identität.
+      **Erwartet:** Kein dauerhaftes Remember-me-Cookie und keine wiederhergestellte Anmeldung.
+      """)
   void ordinarySessionDoesNotSurviveBrowserRestart() {
     String email = createUser();
-    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwright, profile)) {
+    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwrightRuntime, profile)) {
       signIn(actor, email, false);
       assertTrue(
-          actor.context.cookies().stream().noneMatch(cookie -> cookie.name.equals("remember-me")));
+          actor.browserContext.cookies().stream()
+              .noneMatch(cookie -> cookie.name.equals("remember-me")));
     }
-    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwright, profile)) {
-      assertAnonymous(actor.page, email);
+    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwrightRuntime, profile)) {
+      assertAnonymous(actor.browserPage, email);
     }
   }
 
@@ -58,43 +59,40 @@ public class RememberMeBrowserTest extends BrowserFixture {
   @DisplayName("AUTH-07B: Remember-me überlebt Browserneustart; Logout beendet es dauerhaft")
   @Description(
       """
-        1. Eigenes Konto im separaten temporären Chromium-Profil mit Checkbox Remember-me anmelden.
-        2. Dauerhaftes Cookie nur auf Namen/Laufzeit prüfen; Prozess vollständig schließen.
-        3. Echten neuen Prozess mit demselben Profil öffnen: eigene normale Identität wiederhergestellt.
-        4. Über die Oberfläche abmelden, Prozess schließen und nochmals starten: Gast.
-        **Erwartet:** Anmelden und Abmelden wirken über echte Neustarts; keine Cookie-/Storage-Injektion.
-        """)
+      1. Eigenes Konto im separaten temporären Chromium-Profil mit Checkbox Remember-me anmelden.
+      2. Dauerhaftes Cookie nur auf Namen/Laufzeit prüfen; Prozess vollständig schließen.
+      3. Echten neuen Prozess mit demselben Profil öffnen: eigene normale Identität wiederhergestellt.
+      4. Über die Oberfläche abmelden, Prozess schließen und nochmals starten: Gast.
+      **Erwartet:** Anmelden und Abmelden wirken über echte Neustarts; keine Cookie-/Storage-Injektion.
+      """)
   void rememberMeSurvivesRestartUntilLogout() {
     String email = createUser();
-    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwright, profile)) {
+    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwrightRuntime, profile)) {
       signIn(actor, email, true);
       assertTrue(
-          actor.context.cookies().stream()
-              .anyMatch(
-                  cookie ->
-                      cookie.name.equals("remember-me")
-                          && cookie.secure
-                          && cookie.httpOnly
-                          && cookie.sameSite
-                              == com.microsoft.playwright.options.SameSiteAttribute.LAX
-                          && cookie.expires > System.currentTimeMillis() / 1000.0),
+          actor.browserContext.cookies().stream()
+              .anyMatch(cookie ->
+                  cookie.name.equals("remember-me")
+                      && cookie.secure
+                      && cookie.httpOnly
+                      && cookie.sameSite == com.microsoft.playwright.options.SameSiteAttribute.LAX
+                      && cookie.expires > System.currentTimeMillis() / 1000.0),
           "Dauerhaftes Remember-me-Cookie fehlt.");
     }
-    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwright, profile)) {
-      new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
-      new UserMenu(actor.page).requestSignOut();
-      actor.context.waitForCondition(
-          () ->
-              actor.context.cookies().stream()
-                  .noneMatch(cookie -> cookie.name.equals("remember-me")));
+    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwrightRuntime, profile)) {
+      new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
+      new UserMenu(actor.browserPage).requestSignOut();
+      actor.browserContext.waitForCondition(() ->
+          actor.browserContext.cookies().stream()
+              .noneMatch(cookie -> cookie.name.equals("remember-me")));
       // A normal user's public Home may remain the logout destination; prove anonymous access
       // instead.
-      actor.page.navigate(path(HOME_ROUTE));
-      new UserMenu(actor.page).selectTestLanguage();
-      assertAnonymous(actor.page, email);
+      actor.browserPage.navigate(path(HOME_ROUTE));
+      new UserMenu(actor.browserPage).selectTestLanguage();
+      assertAnonymous(actor.browserPage, email);
     }
-    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwright, profile)) {
-      assertAnonymous(actor.page, email);
+    try (PersistentBrowserActor actor = new PersistentBrowserActor(playwrightRuntime, profile)) {
+      assertAnonymous(actor.browserPage, email);
     }
   }
 
@@ -112,71 +110,76 @@ public class RememberMeBrowserTest extends BrowserFixture {
       """)
   void serverRestartRestoresBothLoginKinds(boolean remember, String caseId) throws Exception {
     String email = createUser();
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.login(email, BrowserTestAccounts.USER_PASSWORD, remember);
-      new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
-      Page second = actor.context.newPage();
+      new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
+      Page second = actor.browserContext.newPage();
       second.navigate(path(HOME_ROUTE));
       new UserMenu(second).assertUserSignedInWithoutAdminAction(email);
       BrowserTestRunner.restartTestApplication();
-      actor.page.reload();
+      actor.browserPage.reload();
       second.reload();
-      new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
+      new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
       new UserMenu(second).assertUserSignedInWithoutAdminAction(email);
       if (remember) {
         assertTrue(
-            actor.context.cookies().stream().anyMatch(cookie -> cookie.name.equals("remember-me")));
+            actor.browserContext.cookies().stream()
+                .anyMatch(cookie -> cookie.name.equals("remember-me")));
       }
-      new UserMenu(actor.page).requestSignOut();
+      new UserMenu(actor.browserPage).requestSignOut();
       BrowserTestRunner.restartTestApplication();
-      actor.page.navigate(path(HOME_ROUTE));
+      actor.browserPage.navigate(path(HOME_ROUTE));
       second.navigate(path(HOME_ROUTE));
-      new UserMenu(actor.page).selectTestLanguage();
-      assertAnonymous(actor.page, email);
+      new UserMenu(actor.browserPage).selectTestLanguage();
+      assertAnonymous(actor.browserPage, email);
       assertAnonymous(second, email);
     }
   }
 
   private void signIn(PersistentBrowserActor actor, String email, boolean remember) {
-    LoginPage login = new LoginPage(actor.page);
+    LoginPage login = new LoginPage(actor.browserPage);
     login.open();
     actor
-        .page
+        .browserPage
         .getByRole(
             AriaRole.SWITCH,
-            new Page.GetByRoleOptions().setName(texts.getLoginRememberMeCheckbox()).setExact(true))
+            new Page.GetByRoleOptions()
+                .setName(uiTexts.getLoginRememberMeCheckbox())
+                .setExact(true))
         .setChecked(remember);
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-    assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
-    new UserMenu(actor.page).selectTestLanguage();
-    new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
+    assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+    new UserMenu(actor.browserPage).selectTestLanguage();
+    new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
   }
 
-  private void assertAnonymous(Page page, String email) {
-    assertThat(page.locator(".public-header")).isVisible();
-    assertThat(page.getByText(email, new Page.GetByTextOptions().setExact(true))).hasCount(0);
+  private void assertAnonymous(Page browserPage, String email) {
+    assertThat(browserPage.locator(".public-header")).isVisible();
+    assertThat(browserPage.getByText(email, new Page.GetByTextOptions().setExact(true)))
+        .hasCount(0);
     assertThat(
-            page.locator(".public-navigation")
+            browserPage
+                .locator(".public-navigation")
                 .getByRole(
                     AriaRole.BUTTON,
                     new com.microsoft.playwright.Locator.GetByRoleOptions()
-                        .setName(texts.getBaseLoginButton())
+                        .setName(uiTexts.getBaseLoginButton())
                         .setExact(true)))
         .isVisible();
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.BUTTON,
-                new Page.GetByRoleOptions().setName(texts.getBaseLogoutButton()).setExact(true)))
+                new Page.GetByRoleOptions().setName(uiTexts.getBaseLogoutButton()).setExact(true)))
         .hasCount(0);
   }
 
   private String createUser() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
+    new UserMenu(browserPage).selectTestLanguage();
     String email = "remember-" + UUID.randomUUID() + "@example.test";
-    new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    new AdminUsersPage(browserPage).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     return email;
   }
 }

@@ -34,11 +34,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Feature("Benachrichtigungen: Verfassen, eigene Inbox und Wartung")
 public class UserNotificationsBrowserTest extends BrowserFixture {
   private AdminUsersPage admin() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    return new AdminUsersPage(page);
+    new UserMenu(browserPage).selectTestLanguage();
+    return new AdminUsersPage(browserPage);
   }
 
   @ParameterizedTest(name = "NOTIFY-01: Verfassen, Validierung und Vorschau bei {0}px")
@@ -54,15 +54,15 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       """)
   void composeValidationAndReviewAtBothWidths(int width) {
     admin();
-    page.setViewportSize(width, 1000);
-    NotificationComposePage compose = new NotificationComposePage(page);
+    browserPage.setViewportSize(width, 1000);
+    NotificationComposePage compose = new NotificationComposePage(browserPage);
     compose.open();
     de.derpeterson.browsertests.pages.UiActions.resizeTextArea(
-        page, page.locator("#admin-notifications-body"));
+        browserPage, browserPage.locator("#admin-notifications-body"));
     compose.assertEmptyReview();
     compose.select(BrowserTestAccounts.ADMIN_EMAIL);
     compose.everyone().setChecked(true);
-    Locator all = page.locator("#admin-notifications-everyone-recipients");
+    Locator all = browserPage.locator("#admin-notifications-everyone-recipients");
     assertThat(all).hasAttribute("disabled", "");
     assertThat(all.locator("input")).isDisabled();
     String summary = (String) all.evaluate("el => el.value");
@@ -70,22 +70,23 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     assertTrue(left >= 0 && right > left);
     int count = Integer.parseInt(summary.substring(left + 1, right));
     assertTrue(count >= 2);
-    assertEquals(texts.getNotificationsEveryonePlaceholder(count), summary);
+    assertEquals(uiTexts.getNotificationsEveryonePlaceholder(count), summary);
     compose.draft("Preview " + UUID.randomUUID(), "Original draft");
-    page.locator("#admin-notifications-preview-details").click();
-    assertThat(page.locator("#admin-notifications-preview-recipients")).hasAttribute("opened", "");
-    assertThat(page.locator("#admin-notifications-preview-recipients"))
+    browserPage.locator("#admin-notifications-preview-details").click();
+    assertThat(browserPage.locator("#admin-notifications-preview-recipients"))
+        .hasAttribute("opened", "");
+    assertThat(browserPage.locator("#admin-notifications-preview-recipients"))
         .containsText(BrowserTestAccounts.SUPERADMIN_EMAIL);
-    page.locator("#admin-notifications-preview-details").click();
-    assertThat(page.locator("#admin-notifications-preview-details"))
+    browserPage.locator("#admin-notifications-preview-details").click();
+    assertThat(browserPage.locator("#admin-notifications-preview-details"))
         .hasAttribute("aria-expanded", "false");
     compose.body().fill("Changed draft");
     assertThat(compose.send()).isDisabled();
-    assertThat(compose.status()).hasText(texts.getNotificationsPreviewNeedsReview());
+    assertThat(compose.status()).hasText(uiTexts.getNotificationsPreviewNeedsReview());
     compose.review().click();
     assertThat(compose.send()).isEnabled();
     Locator content =
-        page.locator(
+        browserPage.locator(
             ".admin-notification-preview-card .cosmos-notification-compose-preview-content");
     assertThat(content).containsText("Changed draft");
     assertThat(content).hasCSS("gap", "8px");
@@ -94,18 +95,18 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     if (width == 1280) {
       assertEquals(
           compose.root().boundingBox().y,
-          page.locator(".admin-notification-preview-card").boundingBox().y,
+          browserPage.locator(".admin-notification-preview-card").boundingBox().y,
           1.0);
     }
     assertTrue(compose.root().boundingBox().x >= 0);
     assertTrue(compose.root().boundingBox().x + compose.root().boundingBox().width <= width + 1);
     compose.review().focus();
     compose.review().press("Tab");
-    assertThat(page.locator("#admin-notifications-preview-details")).isFocused();
-    page.locator("#admin-notifications-preview-details").press("Tab");
+    assertThat(browserPage.locator("#admin-notifications-preview-details")).isFocused();
+    browserPage.locator("#admin-notifications-preview-details").press("Tab");
     assertThat(compose.send()).isFocused();
     assertThat(compose.send()).hasCSS("outline-style", "solid");
-    AllurePlaywright.attachScreenshot("Geprüftes Verfassenpanel", page);
+    AllurePlaywright.attachScreenshot("Geprüftes Verfassenpanel", browserPage);
   }
 
   @ParameterizedTest(
@@ -129,7 +130,7 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     users.createActiveUser(second, BrowserTestAccounts.USER_PASSWORD);
     String subject = "Notification " + UUID.randomUUID(),
         message = "Own persistent notification ÄÖÜ";
-    NotificationComposePage compose = new NotificationComposePage(page);
+    NotificationComposePage compose = new NotificationComposePage(browserPage);
     compose.open();
     if (everyone) {
       compose.everyone().setChecked(true);
@@ -138,22 +139,22 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     }
     compose.draft(subject, message);
     compose.send().click();
-    compose.notice(texts.getNotificationsSent());
+    compose.notice(uiTexts.getNotificationsSent());
     assertThat(compose.send()).isDisabled();
-    try (BrowserActor actor = new BrowserActor(browser);
-        BrowserActor other = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser);
+        BrowserActor other = new BrowserActor(testBrowser)) {
       actor.login(first, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(actor.page).selectTestLanguage();
-      NotificationComposePage.readOwn(actor.page, subject, message);
+      new UserMenu(actor.browserPage).selectTestLanguage();
+      NotificationComposePage.readOwn(actor.browserPage, subject, message);
       other.login(second, BrowserTestAccounts.USER_PASSWORD);
-      new UserMenu(other.page).selectTestLanguage();
+      new UserMenu(other.browserPage).selectTestLanguage();
       if (everyone) {
-        NotificationComposePage.readOwn(other.page, subject, message);
+        NotificationComposePage.readOwn(other.browserPage, subject, message);
       } else {
-        other.page.navigate(path(NOTIFICATIONS_ROUTE));
+        other.browserPage.navigate(path(NOTIFICATIONS_ROUTE));
         assertThat(
                 other
-                    .page
+                    .browserPage
                     .locator("#notifications-inbox .cosmos-notification-title")
                     .filter(new Locator.FilterOptions().setHasText(subject)))
             .hasCount(0);
@@ -174,20 +175,20 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       """)
   void maintenanceUpdatesBothOpenPanelsAndPreservesDrafts() {
     admin();
-    NotificationComposePage compose = new NotificationComposePage(page);
+    NotificationComposePage compose = new NotificationComposePage(browserPage);
     compose.open();
     compose.everyone().setChecked(true);
     compose.draft("Maintenance draft", "Preserved draft");
-    Page mailPage = context.newPage(), settingsPage = context.newPage();
+    Page mailPage = browserContext.newPage(), settingsPage = browserContext.newPage();
     AdminMailPage mail = new AdminMailPage(mailPage);
     ConfigurationPage settings = new ConfigurationPage(settingsPage);
     try {
       mailPage.navigate(path(ADMIN_ROUTE) + "?section=mail_test");
       settingsPage.navigate(path(ADMIN_ROUTE));
       settings.open(AdminConfigGroup.SECURITY);
-      mail.input(texts.getAdminMailSubject()).fill("Mail draft");
-      mail.input(texts.getAdminMailBody()).fill("Preserved mail draft");
-      Locator internal = page.locator(".cosmos-notification-delivery"),
+      mail.input(uiTexts.getAdminMailSubject()).fill("Mail draft");
+      mail.input(uiTexts.getAdminMailBody()).fill("Preserved mail draft");
+      Locator internal = browserPage.locator(".cosmos-notification-delivery"),
           smtp = mailPage.locator(".cosmos-mail-delivery");
       assertThat(internal).hasAttribute("data-state", "open");
       assertThat(smtp).hasAttribute("data-state", "open");
@@ -196,7 +197,7 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
               .locator(".cosmos-notification-delivery-dot")
               .evaluate("el => getComputedStyle(el).backgroundColor")
               .toString();
-      settings.input(texts.getAdminConfigEntryMaintenanceMode()).setChecked(true);
+      settings.input(uiTexts.getAdminConfigEntryMaintenanceMode()).setChecked(true);
       settings.save();
       assertThat(internal).hasAttribute("data-state", "active");
       assertThat(smtp).hasAttribute("data-state", "active");
@@ -210,12 +211,12 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       assertThat(compose.everyone()).isDisabled();
       assertThat(compose.review()).isDisabled();
       assertThat(compose.send()).isDisabled();
-      assertThat(mail.input(texts.getAdminMailRecipient())).isDisabled();
-      assertThat(mail.input(texts.getAdminMailSubject())).isDisabled();
-      assertThat(mail.input(texts.getAdminMailBody())).isDisabled();
+      assertThat(mail.input(uiTexts.getAdminMailRecipient())).isDisabled();
+      assertThat(mail.input(uiTexts.getAdminMailSubject())).isDisabled();
+      assertThat(mail.input(uiTexts.getAdminMailBody())).isDisabled();
       assertThat(mailPage.locator(".cosmos-mail-card vaadin-button.cosmos-config-info").first())
           .isDisabled();
-      settings.input(texts.getAdminConfigEntryMaintenanceMode()).setChecked(false);
+      settings.input(uiTexts.getAdminConfigEntryMaintenanceMode()).setChecked(false);
       settings.save();
       assertThat(internal).hasAttribute("data-state", "open");
       assertThat(smtp).hasAttribute("data-state", "open");
@@ -223,13 +224,13 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       assertThat(compose.body()).hasValue("Preserved draft");
       assertThat(compose.review()).isEnabled();
       assertThat(compose.send()).isDisabled();
-      assertThat(mail.input(texts.getAdminMailSubject())).hasValue("Mail draft");
-      assertThat(mail.input(texts.getAdminMailBody())).hasValue("Preserved mail draft");
+      assertThat(mail.input(uiTexts.getAdminMailSubject())).hasValue("Mail draft");
+      assertThat(mail.input(uiTexts.getAdminMailBody())).hasValue("Preserved mail draft");
       compose.review().click();
       assertThat(compose.send()).isEnabled();
     } finally {
       settings.open(AdminConfigGroup.SECURITY);
-      settings.input(texts.getAdminConfigEntryMaintenanceMode()).setChecked(false);
+      settings.input(uiTexts.getAdminConfigEntryMaintenanceMode()).setChecked(false);
       settings.save();
       mailPage.close();
       settingsPage.close();

@@ -15,19 +15,19 @@ import io.qameta.allure.playwright.AllurePlaywright;
 
 /** Echte UI-Aktionen für persönliche Inbox und Header-Vorschau, ohne Backendzugriff. */
 public final class NotificationInboxPage {
-  private final Page page;
-  private final UiTexts texts = UiTexts.selected();
+  private final Page browserPage;
+  private final UiTexts uiTexts = UiTexts.selected();
 
-  public NotificationInboxPage(Page page) {
-    this.page = page;
+  public NotificationInboxPage(Page browserPage) {
+    this.browserPage = browserPage;
   }
 
   public Locator inbox() {
-    return page.locator("#notifications-inbox");
+    return browserPage.locator("#notifications-inbox");
   }
 
   public Locator preview() {
-    return page.locator("#notifications-preview");
+    return browserPage.locator("#notifications-preview");
   }
 
   public Locator rows(Locator root) {
@@ -44,25 +44,25 @@ public final class NotificationInboxPage {
   }
 
   public Locator dialog() {
-    return page.locator("vaadin-dialog.cosmos-notification-dialog[opened]");
+    return browserPage.locator("vaadin-dialog.cosmos-notification-dialog[opened]");
   }
 
   @Step("Persönliche Inbox direkt öffnen")
   public void open() {
-    page.navigate(path(NOTIFICATIONS_ROUTE));
+    browserPage.navigate(path(NOTIFICATIONS_ROUTE));
     assertThat(inbox()).isVisible();
   }
 
   @Step("Benachrichtigungsvorschau über den gemeinsamen Header öffnen")
   public void openPreview() {
-    page.locator("#account-header-notifications").click();
+    browserPage.locator("#account-header-notifications").click();
     assertThat(preview()).isVisible();
     assertThat(
             preview()
                 .getByRole(
                     AriaRole.BUTTON,
                     new Locator.GetByRoleOptions()
-                        .setName(texts.getNotificationsDismissRead())
+                        .setName(uiTexts.getNotificationsDismissRead())
                         .setExact(true)))
         .hasCount(0);
   }
@@ -82,7 +82,7 @@ public final class NotificationInboxPage {
   @Step("Nach Betreff suchen und die tatsächliche Wertänderung abwarten")
   public void search(String query) {
     UiActions.completeValueChange(
-        page, () -> page.locator("#notifications-inbox-search input").fill(query));
+        browserPage, () -> browserPage.locator("#notifications-inbox-search input").fill(query));
   }
 
   @Step("Seitengröße im nativen Menü wählen")
@@ -90,10 +90,11 @@ public final class NotificationInboxPage {
     root.getByRole(
             AriaRole.COMBOBOX,
             new Locator.GetByRoleOptions()
-                .setName(texts.getAdminUsersPaginationPerPage())
+                .setName(uiTexts.getAdminUsersPaginationPerPage())
                 .setExact(true))
         .click();
-    page.getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(value).setExact(true))
+    browserPage
+        .getByRole(AriaRole.OPTION, new Page.GetByRoleOptions().setName(value).setExact(true))
         .click();
   }
 
@@ -103,7 +104,7 @@ public final class NotificationInboxPage {
     assertThat(dialog().locator(".cosmos-notification-detail-title")).hasText(subject);
     assertThat(dialog().locator(".cosmos-notification-detail-body")).hasText(body);
     assertThat(dialog().locator(".cosmos-notification-detail-state"))
-        .hasText(texts.getNotificationsUnread());
+        .hasText(uiTexts.getNotificationsUnread());
     assertThat(
             dialog()
                 .locator(
@@ -115,9 +116,10 @@ public final class NotificationInboxPage {
                 .locator(".cosmos-notification-detail-actions")
                 .evaluate("el => el.scrollWidth <= el.clientWidth + 1"),
         "Die beschrifteten Footeraktionen dürfen nicht horizontal überlaufen");
-    AllurePlaywright.attachScreenshot("Benachrichtigungsdetail mit beschrifteten Aktionen", page);
-    button(dialog(), texts.getNotificationsMoreActions()).click();
-    Locator menu = page.locator(".cosmos-notification-detail-tools:visible");
+    AllurePlaywright.attachScreenshot(
+        "Benachrichtigungsdetail mit beschrifteten Aktionen", browserPage);
+    button(dialog(), uiTexts.getNotificationsMoreActions()).click();
+    Locator menu = browserPage.locator(".cosmos-notification-detail-tools:visible");
     assertThat(menu).isVisible();
     if (fromPreview) {
       assertThat(menu.locator(".cosmos-notification-detail-history")).isVisible();
@@ -125,7 +127,7 @@ public final class NotificationInboxPage {
       assertThat(menu.locator(".cosmos-notification-detail-history")).hasCount(0);
     }
     assertThat(menu.locator(".cosmos-notification-detail-delete")).isVisible();
-    page.keyboard().press("Escape");
+    browserPage.keyboard().press("Escape");
     assertThat(menu).hasCount(0);
     // Vaadin zeigt den Dialoginhalt im Overlay; der Flow-Host selbst hat keine sichtbare Fläche.
     assertThat(dialog().locator(".cosmos-notification-detail-title")).isVisible();
@@ -133,14 +135,15 @@ public final class NotificationInboxPage {
 
   @Step("Die ausdrücklich ausgewählte Nachrichtenaktion bestätigen")
   public void confirm() {
-    Locator confirmation = page.locator(".portal-confirmation-dialog[opened]");
+    Locator confirmation = browserPage.locator(".portal-confirmation-dialog[opened]");
     assertThat(confirmation.locator("vaadin-dialog-overlay > [part~='overlay']")).isVisible();
-    UiActions.complete(page, () -> confirmation.locator("vaadin-button[id$='-submit']").click());
-    assertThat(page.locator(".portal-confirmation-dialog[opened]")).hasCount(0);
+    UiActions.complete(
+        browserPage, () -> confirmation.locator("vaadin-button[id$='-submit']").click());
+    assertThat(browserPage.locator(".portal-confirmation-dialog[opened]")).hasCount(0);
   }
 
   public void closeDetail() {
-    button(dialog(), texts.getNotificationsClose()).last().click();
+    button(dialog(), uiTexts.getNotificationsClose()).last().click();
     assertThat(dialog()).hasCount(0);
   }
 
@@ -168,12 +171,12 @@ public final class NotificationInboxPage {
     Locator firstRow = rows(root).first();
     Locator open = firstRow.locator(".cosmos-notification-row-open");
     Locator mark = firstRow.locator(".cosmos-notification-row-action").nth(1);
-    Locator tooltip = page.getByRole(AriaRole.TOOLTIP);
+    Locator tooltip = browserPage.getByRole(AriaRole.TOOLTIP);
     open.hover();
-    assertThat(tooltip).hasText(texts.getNotificationsOpen());
+    assertThat(tooltip).hasText(uiTexts.getNotificationsOpen());
     mark.hover();
-    assertThat(tooltip).hasText(texts.getNotificationsMarkRead());
-    page.mouse().move(0, 0);
+    assertThat(tooltip).hasText(uiTexts.getNotificationsMarkRead());
+    browserPage.mouse().move(0, 0);
     open.focus();
     open.press("Tab");
     assertThat(mark).isFocused();
@@ -181,7 +184,8 @@ public final class NotificationInboxPage {
         (Boolean) root.evaluate("el => el.scrollWidth <= el.clientWidth + 1"),
         "Kein horizontaler Überlauf im Panel");
     assertTrue(
-        (Boolean) page.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"),
+        (Boolean)
+            browserPage.evaluate("() => document.documentElement.scrollWidth <= innerWidth + 1"),
         "Kein horizontaler Seitenüberlauf");
   }
 }

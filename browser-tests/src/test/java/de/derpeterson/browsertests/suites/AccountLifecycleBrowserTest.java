@@ -35,44 +35,47 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
   @Story("Einzelne Registrierungsfehler")
   @Description(
       """
-        1. Gültige Registrierung vorbereiten, Vorname und Nachname einzeln blank setzen und absenden.
-        2. Jeweils Pflichtfeldhinweis prüfen und den Namen korrigieren.
-        3. Heutigen und morgigen Geburtstag einzeln absenden: Vergangenheitsregel prüfen.
-        4. Vergangenen Geburtstag wiederherstellen und gültig registrieren; echte Mail abwarten.
-        **Erwartet:** Fehler erlauben keinen sichtbaren Erfolg; nach Korrektur normaler Mailablauf.
-        """)
+      1. Gültige Registrierung vorbereiten, Vorname und Nachname einzeln blank setzen und absenden.
+      2. Jeweils Pflichtfeldhinweis prüfen und den Namen korrigieren.
+      3. Heutigen und morgigen Geburtstag einzeln absenden: Vergangenheitsregel prüfen.
+      4. Vergangenen Geburtstag wiederherstellen und gültig registrieren; echte Mail abwarten.
+      **Erwartet:** Fehler erlauben keinen sichtbaren Erfolg; nach Korrektur normaler Mailablauf.
+      """)
   void namesAndBirthDateCanBeCorrected() {
     String email = unique();
-    RegistrationPage form = new RegistrationPage(page);
+    RegistrationPage form = new RegistrationPage(browserPage);
     form.open();
     form.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
-    form.change(texts.getRegistrationFirstNameField(), " ");
+    form.change(uiTexts.getRegistrationFirstNameField(), " ");
     form.submit();
-    form.assertValidationError(texts.getBaseValidationRequiredMessage());
-    form.change(texts.getRegistrationFirstNameField(), "Browser");
-    form.change(texts.getRegistrationLastNameField(), " ");
+    form.assertValidationError(uiTexts.getBaseValidationRequiredMessage());
+    form.change(uiTexts.getRegistrationFirstNameField(), "Browser");
+    form.change(uiTexts.getRegistrationLastNameField(), " ");
     form.submit();
-    form.assertValidationError(texts.getBaseValidationRequiredMessage());
-    form.change(texts.getRegistrationLastNameField(), "Testuser");
+    form.assertValidationError(uiTexts.getBaseValidationRequiredMessage());
+    form.change(uiTexts.getRegistrationLastNameField(), "Testuser");
     for (LocalDate date :
         new LocalDate[] {
           LocalDate.now(java.time.ZoneId.of("Europe/Berlin")),
           LocalDate.now(java.time.ZoneId.of("Europe/Berlin")).plusDays(1)
         }) {
-      form.change(texts.getRegistrationBirthDateField(), texts.dateInput(date));
-      page.getByLabel(
-              texts.getRegistrationBirthDateField(), new Page.GetByLabelOptions().setExact(true))
+      form.change(uiTexts.getRegistrationBirthDateField(), uiTexts.dateInput(date));
+      browserPage
+          .getByLabel(
+              uiTexts.getRegistrationBirthDateField(), new Page.GetByLabelOptions().setExact(true))
           .press("Enter");
       form.submit();
-      form.assertValidationError(texts.getBaseValidationBirthDatePastMessage());
+      form.assertValidationError(uiTexts.getBaseValidationBirthDatePastMessage());
     }
-    form.change(texts.getRegistrationBirthDateField(), texts.dateInput(LocalDate.of(1990, 1, 1)));
-    page.getByLabel(
-            texts.getRegistrationBirthDateField(), new Page.GetByLabelOptions().setExact(true))
+    form.change(
+        uiTexts.getRegistrationBirthDateField(), uiTexts.dateInput(LocalDate.of(1990, 1, 1)));
+    browserPage
+        .getByLabel(
+            uiTexts.getRegistrationBirthDateField(), new Page.GetByLabelOptions().setExact(true))
         .press("Enter");
     form.submit();
     form.assertSubmitted(email);
-    new MailpitInbox(context).awaitVerificationMail(email);
+    new MailpitInbox(browserContext).awaitVerificationMail(email);
   }
 
   @Test
@@ -80,29 +83,29 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
   @Story("Passwort und Bestätigung")
   @Description(
       """
-        1. Gültiges Formular vorbereiten; zu kurzes Passwort, fehlenden Großbuchstaben und fehlendes Sonderzeichen einzeln versuchen.
-        2. Jeweils Passwortregel prüfen und korrigieren; abweichende E-Mail-Bestätigung versuchen.
-        3. Nach vollständig gültiger Korrektur Registrierungsbestätigung und echte Mail prüfen.
-        **Erwartet:** Kein Erfolg aus einer ungültigen Variante; alle Varianten bleiben korrigierbar.
-        """)
+      1. Gültiges Formular vorbereiten; zu kurzes Passwort, fehlenden Großbuchstaben und fehlendes Sonderzeichen einzeln versuchen.
+      2. Jeweils Passwortregel prüfen und korrigieren; abweichende E-Mail-Bestätigung versuchen.
+      3. Nach vollständig gültiger Korrektur Registrierungsbestätigung und echte Mail prüfen.
+      **Erwartet:** Kein Erfolg aus einer ungültigen Variante; alle Varianten bleiben korrigierbar.
+      """)
   void passwordRulesAndEmailConfirmation() {
     String email = unique();
-    RegistrationPage form = new RegistrationPage(page);
+    RegistrationPage form = new RegistrationPage(browserPage);
     form.open();
     form.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
     for (String password : new String[] {"Abc!", "browseruser1!", "BrowserUser1"}) {
       form.setPasswords(password, password);
       form.submit();
-      form.assertValidationError(texts.getBaseValidationPasswordInvalidMessage());
+      form.assertValidationError(uiTexts.getBaseValidationPasswordInvalidMessage());
     }
     form.setPasswords(BrowserTestAccounts.USER_PASSWORD, BrowserTestAccounts.USER_PASSWORD);
     form.setEmails(email, unique());
     form.submit();
-    form.assertValidationError(texts.getBaseValidationEmailConfirmMessage());
+    form.assertValidationError(uiTexts.getBaseValidationEmailConfirmMessage());
     form.setEmails(email, email);
     form.submit();
     form.assertSubmitted(email);
-    new MailpitInbox(context).awaitVerificationMail(email);
+    new MailpitInbox(browserContext).awaitVerificationMail(email);
   }
 
   @Test
@@ -111,30 +114,30 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
   @Story("E-Mail-Dubletten")
   @Description(
       """
-        1. Eigenes Konto über Registrierung und echten Mailbutton aktivieren.
-        2. Dieselbe Adresse sowie Großschreibung mit äußeren Leerzeichen erneut registrieren; anderes Passwort verwenden.
-        3. Jeweils Dublettenhinweis statt Erfolg prüfen.
-        4. Anmeldung mit ursprünglichem Passwort prüfen; ersetzendes Passwort wird abgelehnt.
-        **Erwartet:** Kein Überschreiben der Identität oder des Passworts. SQL-Eindeutigkeit bleibt Persistenzprüfung.
-        """)
+      1. Eigenes Konto über Registrierung und echten Mailbutton aktivieren.
+      2. Dieselbe Adresse sowie Großschreibung mit äußeren Leerzeichen erneut registrieren; anderes Passwort verwenden.
+      3. Jeweils Dublettenhinweis statt Erfolg prüfen.
+      4. Anmeldung mit ursprünglichem Passwort prüfen; ersetzendes Passwort wird abgelehnt.
+      **Erwartet:** Kein Überschreiben der Identität oder des Passworts. SQL-Eindeutigkeit bleibt Persistenzprüfung.
+      """)
   void duplicateRegistrationPreservesOriginalAccount() {
     String email = activate();
-    RegistrationPage form = new RegistrationPage(page);
+    RegistrationPage form = new RegistrationPage(browserPage);
     for (String address :
         new String[] {email, " " + email.toUpperCase(java.util.Locale.ROOT) + " "}) {
       form.open();
       form.fillValid(address, BrowserTestAccounts.RESET_PASSWORD);
       form.submit();
-      form.assertValidationError(texts.getBaseValidationEmailExistsMessage());
+      form.assertValidationError(uiTexts.getBaseValidationEmailExistsMessage());
     }
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(email, BrowserTestAccounts.RESET_PASSWORD);
     login.assertRejected();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-    assertThat(page).hasURL(urlPattern(HOME_ROUTE));
-    new UserMenu(page).selectTestLanguage();
-    new UserMenu(page).assertUserSignedInWithoutAdminAction(email);
+    assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
+    new UserMenu(browserPage).selectTestLanguage();
+    new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);
   }
 
   @Test
@@ -143,15 +146,15 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
   @Story("Keine sichtbare Kontoauskunft")
   @Description(
       """
-        1. Eigenes Konto registrieren, dessen echte Verifikationsmail nicht öffnen.
-        2. Reset für die unverifizierte Adresse anfordern und sichtbare Antwort erfassen.
-        3. Hinweis schließen; unbekannte Adresse anfordern und identische Antwort prüfen.
-        **Erwartet:** Keine Auskunft zum Verifikationszustand; keine Timing- oder Mailabwesenheitsbehauptung.
-        """)
+      1. Eigenes Konto registrieren, dessen echte Verifikationsmail nicht öffnen.
+      2. Reset für die unverifizierte Adresse anfordern und sichtbare Antwort erfassen.
+      3. Hinweis schließen; unbekannte Adresse anfordern und identische Antwort prüfen.
+      **Erwartet:** Keine Auskunft zum Verifikationszustand; keine Timing- oder Mailabwesenheitsbehauptung.
+      """)
   void unverifiedRequestIsNeutral() {
     String email = register();
-    new MailpitInbox(context).awaitVerificationMail(email);
-    ForgotPasswordPage request = new ForgotPasswordPage(page);
+    new MailpitInbox(browserContext).awaitVerificationMail(email);
+    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
     request.open();
     request.enterEmail(email);
     request.submit();
@@ -169,28 +172,28 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
   @Story("Zwei getrennte Reset-Sitzungen")
   @Description(
       """
-        1. Eigenes Konto aktivieren und echte Reset-Mail anfordern; Formular in Sitzung A öffnen.
-        2. Denselben tatsächlich erhaltenen Link in einer getrennten anonymen Sitzung B öffnen.
-        3. In B ein neues Passwort setzen; im alten offenen Formular A ein anderes Passwort versuchen.
-        4. Neutrale Ablehnung in A prüfen; Anmeldung nur mit Passwort aus B, nicht aus A.
-        **Erwartet:** Zweiter veralteter Formularsubmit überschreibt nicht das erfolgreich gesetzte Passwort.
-        """)
+      1. Eigenes Konto aktivieren und echte Reset-Mail anfordern; Formular in Sitzung A öffnen.
+      2. Denselben tatsächlich erhaltenen Link in einer getrennten anonymen Sitzung B öffnen.
+      3. In B ein neues Passwort setzen; im alten offenen Formular A ein anderes Passwort versuchen.
+      4. Neutrale Ablehnung in A prüfen; Anmeldung nur mit Passwort aus B, nicht aus A.
+      **Erwartet:** Zweiter veralteter Formularsubmit überschreibt nicht das erfolgreich gesetzte Passwort.
+      """)
   void staleResetFormCannotOverwritePassword() {
     String email = activate();
-    ForgotPasswordPage request = new ForgotPasswordPage(page);
+    ForgotPasswordPage request = new ForgotPasswordPage(browserPage);
     request.open();
     request.enterEmail(email);
     request.submit();
     request.requestedResponse();
-    MailpitInbox inbox = new MailpitInbox(context);
-    page = inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email));
-    ResetPasswordPage first = new ResetPasswordPage(page);
-    String link = page.url();
+    MailpitInbox inbox = new MailpitInbox(browserContext);
+    browserPage = inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email));
+    ResetPasswordPage first = new ResetPasswordPage(browserPage);
+    String link = browserPage.url();
     try (BrowserContext other =
-        browser.newContext(
+        testBrowser.newContext(
             new Browser.NewContextOptions()
                 .setBaseURL(System.getProperty("browser.tests.baseUrl"))
-                .setLocale(texts.browserLocale())
+                .setLocale(uiTexts.browserLocale())
                 .setTimezoneId("Europe/Berlin"))) {
       AllurePlaywright.register(other);
       try (var _ = AllurePlaywright.startTracing(other)) {
@@ -207,15 +210,15 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
         AllurePlaywright.attachScreenshot("Erfolgreicher erster Verbrauch", second);
         first.fillPasswords("OtherReset3!", "OtherReset3!");
         first.submit();
-        assertThat(page.locator("vaadin-notification-card:not([closing])"))
-            .containsText(texts.visibleText(page, texts.getResetPasswordInvalidText()));
-        AllurePlaywright.attachScreenshot("Abgelehntes veraltetes Formular", page);
-        LoginPage login = new LoginPage(page);
+        assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+            .containsText(uiTexts.visibleText(browserPage, uiTexts.getResetPasswordInvalidText()));
+        AllurePlaywright.attachScreenshot("Abgelehntes veraltetes Formular", browserPage);
+        LoginPage login = new LoginPage(browserPage);
         login.open();
         login.signIn(email, "OtherReset3!");
         login.assertRejected();
         login.signIn(email, BrowserTestAccounts.RESET_PASSWORD);
-        assertThat(page).hasURL(urlPattern(HOME_ROUTE));
+        assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
       }
     }
   }
@@ -226,7 +229,7 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
 
   private String register() {
     String email = unique();
-    RegistrationPage form = new RegistrationPage(page);
+    RegistrationPage form = new RegistrationPage(browserPage);
     form.open();
     form.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
     form.submit();
@@ -236,8 +239,8 @@ public class AccountLifecycleBrowserTest extends BrowserFixture {
 
   private String activate() {
     String email = register();
-    MailpitInbox inbox = new MailpitInbox(context);
-    page = inbox.openVerificationLink(inbox.awaitVerificationMail(email));
+    MailpitInbox inbox = new MailpitInbox(browserContext);
+    browserPage = inbox.openVerificationLink(inbox.awaitVerificationMail(email));
     return email;
   }
 }

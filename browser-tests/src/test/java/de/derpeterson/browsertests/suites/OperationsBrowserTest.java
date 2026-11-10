@@ -53,15 +53,15 @@ public class OperationsBrowserTest extends BrowserFixture {
       """)
   void persistedConfigurationAndAccountsSurviveRestartWithoutBootstrap() throws Exception {
     ConfigurationPage settings = admin();
-    AdminUsersPage users = new AdminUsersPage(page);
+    AdminUsersPage users = new AdminUsersPage(browserPage);
     users.open();
     String email = "restart-" + UUID.randomUUID() + "@example.test";
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     settings.open(AdminConfigGroup.GENERAL);
-    String nameLabel = texts.getAdminConfigEntryServiceName();
+    String nameLabel = uiTexts.getAdminConfigEntryServiceName();
     String originalName = settings.value(nameLabel);
     settings.open(AdminConfigGroup.SMTP);
-    String hostLabel = texts.getAdminConfigEntryMailHost();
+    String hostLabel = uiTexts.getAdminConfigEntryMailHost();
     String originalHost = settings.value(hostLabel);
     try {
       sendAndAssertTarget(false);
@@ -73,18 +73,18 @@ public class OperationsBrowserTest extends BrowserFixture {
       settings.enter(nameLabel, "Restart proof");
       settings.save();
       BrowserTestRunner.restartTestApplication();
-      page.navigate(
+      browserPage.navigate(
           de.derpeterson.browsertests.BrowserRoutes.path(
               de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE));
-      new LoginPage(page).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
+      new LoginPage(browserPage).assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
       settings.open(AdminConfigGroup.GENERAL);
       assertThat(settings.input(nameLabel)).hasValue("Restart proof");
       settings.open(AdminConfigGroup.SMTP);
       assertThat(settings.input(hostLabel)).hasValue("mailpit-secondary");
       sendAndAssertTarget(true);
-      try (BrowserActor actor = new BrowserActor(browser)) {
+      try (BrowserActor actor = new BrowserActor(testBrowser)) {
         actor.login(email, BrowserTestAccounts.USER_PASSWORD, false);
-        new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
+        new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
       }
     } finally {
       settings.open(AdminConfigGroup.GENERAL);
@@ -112,7 +112,7 @@ public class OperationsBrowserTest extends BrowserFixture {
   void realConnectionFailureRecoversOnceOrRemainsTerminal(boolean recover) throws Exception {
     ConfigurationPage settings = admin();
     settings.open(AdminConfigGroup.QUEUE);
-    String label = texts.getAdminConfigEntryEmailQueueMaxRetry();
+    String label = uiTexts.getAdminConfigEntryEmailQueueMaxRetry();
     String original = settings.value(label);
     settings.enter(label, "1");
     settings.save();
@@ -125,9 +125,9 @@ public class OperationsBrowserTest extends BrowserFixture {
       earlierQueues.add(earlier.group(1));
     }
     try {
-      new UserMenu(page).requestSignOut();
+      new UserMenu(browserPage).requestSignOut();
       BrowserTestRunner.setTestMailpitAvailable(false);
-      RegistrationPage registration = new RegistrationPage(page);
+      RegistrationPage registration = new RegistrationPage(browserPage);
       registration.open();
       registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
       registration.submit();
@@ -155,7 +155,7 @@ public class OperationsBrowserTest extends BrowserFixture {
       BrowserTestRunner.setTestMailpitAvailable(true);
       if (recover) {
         awaitCondition(() -> countMessages(email, false) == 1, 90_000);
-        MailpitInbox inbox = new MailpitInbox(context);
+        MailpitInbox inbox = new MailpitInbox(browserContext);
         try (com.microsoft.playwright.Page activation =
             inbox.openVerificationLink(inbox.awaitVerificationMail(email))) {
           assertTrue(activation.url().startsWith(System.getProperty("browser.tests.baseUrl")));
@@ -164,13 +164,13 @@ public class OperationsBrowserTest extends BrowserFixture {
         BrowserTestRunner.restartTestApplication();
       }
       Instant retryPeriodEnds = Instant.now().plusSeconds(66);
-      context.waitForCondition(
+      browserContext.waitForCondition(
           () -> Instant.now().isAfter(retryPeriodEnds),
           new BrowserContext.WaitForConditionOptions().setTimeout(75_000));
       assertEquals(recover ? 1 : 0, countMessages(email, false));
     } finally {
       BrowserTestRunner.setTestMailpitAvailable(true);
-      page.navigate(de.derpeterson.browsertests.BrowserRoutes.path(""));
+      browserPage.navigate(de.derpeterson.browsertests.BrowserRoutes.path(""));
       settings = admin();
       settings.open(AdminConfigGroup.QUEUE);
       settings.enter(label, original);
@@ -181,13 +181,13 @@ public class OperationsBrowserTest extends BrowserFixture {
   private void sendAndAssertTarget(boolean secondary) throws Exception {
     String email = "smtp-target-" + UUID.randomUUID() + "@example.test";
     String subject = "SMTP target " + UUID.randomUUID();
-    AdminMailPage mail = new AdminMailPage(page);
+    AdminMailPage mail = new AdminMailPage(browserPage);
     mail.open();
-    mail.input(texts.getAdminMailRecipient()).fill(email);
-    mail.input(texts.getAdminMailSubject()).fill(subject);
-    mail.input(texts.getAdminMailBody()).fill("Own SMTP target proof");
+    mail.input(uiTexts.getAdminMailRecipient()).fill(email);
+    mail.input(uiTexts.getAdminMailSubject()).fill(subject);
+    mail.input(uiTexts.getAdminMailBody()).fill("Own SMTP target proof");
     mail.send();
-    mail.notice(texts.getAdminMailSuccess());
+    mail.notice(uiTexts.getAdminMailSuccess());
     awaitCondition(() -> countMessages(email, secondary) == 1, 15_000);
     assertEquals(0, countMessages(email, !secondary));
   }
@@ -211,7 +211,7 @@ public class OperationsBrowserTest extends BrowserFixture {
 
   private void awaitCondition(CheckedCondition condition, double timeout) {
     Instant[] nextCheck = {Instant.MIN};
-    context.waitForCondition(
+    browserContext.waitForCondition(
         () -> {
           if (Instant.now().isBefore(nextCheck[0])) {
             return false;
@@ -227,11 +227,11 @@ public class OperationsBrowserTest extends BrowserFixture {
   }
 
   private ConfigurationPage admin() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
+    new UserMenu(browserPage).selectTestLanguage();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
-    return new ConfigurationPage(page);
+    return new ConfigurationPage(browserPage);
   }
 }

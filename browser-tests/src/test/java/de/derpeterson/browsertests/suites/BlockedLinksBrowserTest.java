@@ -35,21 +35,21 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
   @CsvSource({"SEC-LINK-01A,false", "SEC-LINK-01B,true"})
   @Description(
       """
-        1. Eigenes Konto registrieren; echten Mailbutton entweder unbenutzt lassen oder zur Aktivierung nutzen.
-        2. Als Admin genau dieses Konto ausdrücklich deaktivieren und speichern.
-        3. Alten echten Mailbutton erneut öffnen und erneuten Versand versuchen: kein Aktivierungserfolg.
-        4. In unabhängiger Sitzung anmelden: Konto bleibt gesperrt.
-        **Erwartet:** Alte unbenutzte wie bereits genutzte Links heben eine Adminsperre nicht auf.
-        """)
+      1. Eigenes Konto registrieren; echten Mailbutton entweder unbenutzt lassen oder zur Aktivierung nutzen.
+      2. Als Admin genau dieses Konto ausdrücklich deaktivieren und speichern.
+      3. Alten echten Mailbutton erneut öffnen und erneuten Versand versuchen: kein Aktivierungserfolg.
+      4. In unabhängiger Sitzung anmelden: Konto bleibt gesperrt.
+      **Erwartet:** Alte unbenutzte wie bereits genutzte Links heben eine Adminsperre nicht auf.
+      """)
   void verificationCannotUndoAnAdminBlock(String caseId, boolean previouslyActivated) {
     String account = email("old-verification");
-    try (BrowserActor actor = new BrowserActor(browser)) {
-      RegistrationPage registration = new RegistrationPage(actor.page);
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
+      RegistrationPage registration = new RegistrationPage(actor.browserPage);
       registration.open();
       registration.fillValid(account, BrowserTestAccounts.USER_PASSWORD);
       registration.submit();
       registration.assertSubmitted(account);
-      MailpitInbox inbox = new MailpitInbox(actor.context);
+      MailpitInbox inbox = new MailpitInbox(actor.browserContext);
       CapturedMail mail = inbox.awaitVerificationMail(account);
       if (previouslyActivated) {
         inbox.openVerificationLink(mail).close();
@@ -62,29 +62,29 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
                 result.getByRole(
                     AriaRole.HEADING,
                     new Page.GetByRoleOptions()
-                        .setName(texts.getVerificationExpiredTitle())
+                        .setName(uiTexts.getVerificationExpiredTitle())
                         .setExact(true)))
             .isVisible();
         assertThat(
                 result.getByRole(
                     AriaRole.HEADING,
                     new Page.GetByRoleOptions()
-                        .setName(texts.getVerificationSuccessTitle())
+                        .setName(uiTexts.getVerificationSuccessTitle())
                         .setExact(true)))
             .hasCount(0);
         result
             .getByRole(
                 AriaRole.BUTTON,
-                new Page.GetByRoleOptions().setName(texts.getBaseResendButton()).setExact(true))
+                new Page.GetByRoleOptions().setName(uiTexts.getBaseResendButton()).setExact(true))
             .click();
         assertThat(result.locator("vaadin-notification-card:not([closing])"))
-            .containsText(texts.visibleText(result, texts.getBaseFailedMessage()));
+            .containsText(uiTexts.visibleText(result, uiTexts.getBaseFailedMessage()));
       }
-      AdminUserDialog stored = new AdminUsersPage(page).openEdit(account);
+      AdminUserDialog stored = new AdminUsersPage(browserPage).openEdit(account);
       assertThat(stored.enabled()).not().isChecked();
       stored.cancel();
       actor.login(account, BrowserTestAccounts.USER_PASSWORD);
-      new LoginPage(actor.page).assertRejected();
+      new LoginPage(actor.browserPage).assertRejected();
     }
   }
 
@@ -92,23 +92,23 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
   @CsvSource({"SEC-LINK-02A,disable", "SEC-LINK-02B,delete"})
   @Description(
       """
-        1. Eigenes aktives Konto im Adminformular anlegen; separat Reset anfordern und SMTP-Mail erfassen.
-        2. Konto als Admin sperren oder mit Bestätigung löschen.
-        3. Alten echten Mailbutton öffnen: neutraler Fehler ohne Passwortformular; Anmeldung abgewiesen.
-        4. Nur beim gesperrten Konto wieder freigeben: ursprüngliches Passwort funktioniert weiterhin.
-        **Erwartet:** Alte Resetlinks ändern weder gesperrte noch gelöschte Konten.
-        """)
+      1. Eigenes aktives Konto im Adminformular anlegen; separat Reset anfordern und SMTP-Mail erfassen.
+      2. Konto als Admin sperren oder mit Bestätigung löschen.
+      3. Alten echten Mailbutton öffnen: neutraler Fehler ohne Passwortformular; Anmeldung abgewiesen.
+      4. Nur beim gesperrten Konto wieder freigeben: ursprüngliches Passwort funktioniert weiterhin.
+      **Erwartet:** Alte Resetlinks ändern weder gesperrte noch gelöschte Konten.
+      """)
   void resetCannotChangeABlockedOrDeletedAccount(String caseId, String change) {
     AdminUsersPage users = admin();
     String account = email("old-reset");
     users.createActiveUser(account, BrowserTestAccounts.USER_PASSWORD);
-    try (BrowserActor actor = new BrowserActor(browser)) {
-      ForgotPasswordPage forgot = new ForgotPasswordPage(actor.page);
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
+      ForgotPasswordPage forgot = new ForgotPasswordPage(actor.browserPage);
       forgot.open();
       forgot.enterEmail(account);
       forgot.submit();
       forgot.requestedResponse();
-      MailpitInbox inbox = new MailpitInbox(actor.context);
+      MailpitInbox inbox = new MailpitInbox(actor.browserContext);
       CapturedMail mail = inbox.awaitPasswordResetMail(account);
       AdminUserDialog form = users.openEdit(account);
       if (change.equals("delete")) {
@@ -121,15 +121,15 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
         new ResetPasswordPage(result).assertInvalid();
       }
       actor.login(account, BrowserTestAccounts.USER_PASSWORD);
-      new LoginPage(actor.page).assertRejected();
+      new LoginPage(actor.browserPage).assertRejected();
       if (change.equals("disable")) {
         form = users.openEdit(account);
         form.setEnabled(true);
         form.save();
         actor.login(account, BrowserTestAccounts.USER_PASSWORD);
-        assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
-        new UserMenu(actor.page).selectTestLanguage();
-        new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(account);
+        assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+        new UserMenu(actor.browserPage).selectTestLanguage();
+        new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(account);
       } else {
         users.open();
         users.search(account);
@@ -143,11 +143,11 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
       "RESET-03C: Administrativ gesperrte und unbekannte Adresse erhalten denselben Anfragehinweis")
   @Description(
       """
-        1. Eigenes Konto anlegen und als Admin ausdrücklich sperren.
-        2. In separatem anonymem Kontext Reset anfordern und sichtbaren Hinweis erfassen.
-        3. Hinweis schließen und unbekannte eigene Adresse anfragen: exakt derselbe Hinweis.
-        **Erwartet:** Keine sichtbare Kontoauskunft; keine Aussage zu Timing oder Mailabwesenheit.
-        """)
+      1. Eigenes Konto anlegen und als Admin ausdrücklich sperren.
+      2. In separatem anonymem Kontext Reset anfordern und sichtbaren Hinweis erfassen.
+      3. Hinweis schließen und unbekannte eigene Adresse anfragen: exakt derselbe Hinweis.
+      **Erwartet:** Keine sichtbare Kontoauskunft; keine Aussage zu Timing oder Mailabwesenheit.
+      """)
   void blockedResetRequestIsNeutral() {
     AdminUsersPage users = admin();
     String account = email("neutral-blocked");
@@ -155,8 +155,8 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
     AdminUserDialog form = users.openEdit(account);
     form.setEnabled(false);
     form.save();
-    try (BrowserActor actor = new BrowserActor(browser)) {
-      ForgotPasswordPage forgot = new ForgotPasswordPage(actor.page);
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
+      ForgotPasswordPage forgot = new ForgotPasswordPage(actor.browserPage);
       forgot.open();
       forgot.enterEmail(account);
       forgot.submit();
@@ -169,12 +169,12 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
   }
 
   private AdminUsersPage admin() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
+    new UserMenu(browserPage).selectTestLanguage();
     login.assertAdminSignedIn(BrowserTestAccounts.ADMIN_EMAIL);
-    return new AdminUsersPage(page);
+    return new AdminUsersPage(browserPage);
   }
 
   private String email(String purpose) {

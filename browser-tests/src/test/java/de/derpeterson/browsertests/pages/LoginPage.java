@@ -15,61 +15,64 @@ import io.qameta.allure.Step;
 
 /** Only the visible login form; does not bypass the application's authentication. */
 public final class LoginPage {
-  private final Page page;
+  private final Page browserPage;
   private final UiTexts uiTexts = UiTexts.selected();
 
-  public LoginPage(Page page) {
-    this.page = page;
+  public LoginPage(Page browserPage) {
+    this.browserPage = browserPage;
   }
 
   @Step("Loginformular öffnen")
   public void open() {
-    page.navigate(path(LOGIN_ROUTE));
+    browserPage.navigate(path(LOGIN_ROUTE));
     assertFormVisible();
   }
 
   @Step("E-Mail und Passwort eingeben und Anmeldung absenden")
   public void signIn(String email, String password) {
     signInFirstFactor(email, password);
-    TwoFactorPage.completeIfRequired(page, email, password);
+    TwoFactorPage.completeIfRequired(browserPage, email, password);
   }
 
   public void signInFirstFactor(String email, String password) {
-    for (Locator notice : page.locator("vaadin-notification-card:not([closing])").all()) {
+    for (Locator notice : browserPage.locator("vaadin-notification-card:not([closing])").all()) {
       notice.getByRole(AriaRole.BUTTON).click();
     }
-    page.getByLabel(uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
+    browserPage
+        .getByLabel(uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
         .fill(email);
-    page.getByLabel(uiTexts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true))
+    browserPage
+        .getByLabel(uiTexts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true))
         .fill(password);
     Locator submit =
-        page.locator(".public-panel")
+        browserPage
+            .locator(".public-panel")
             .getByRole(
                 AriaRole.BUTTON,
                 new Locator.GetByRoleOptions()
                     .setName(uiTexts.getBaseLoginButton())
                     .setExact(true));
-    UiActions.complete(page, submit::click);
-    page.waitForCondition(() ->
-        !java.net.URI.create(page.url()).getPath().equals(path(LOGIN_ROUTE))
-            || page.locator("vaadin-notification-card:not([closing])").isVisible()
-            || page.locator("#session-recovery").isVisible());
+    UiActions.complete(browserPage, submit::click);
+    browserPage.waitForCondition(() ->
+        !java.net.URI.create(browserPage.url()).getPath().equals(path(LOGIN_ROUTE))
+            || browserPage.locator("vaadin-notification-card:not([closing])").isVisible()
+            || browserPage.locator("#session-recovery").isVisible());
   }
 
   @Step("Loginformular ist in der ausgewählten Sprache sichtbar")
   public void assertFormVisible() {
-    assertThat(page).hasURL(urlPattern(LOGIN_ROUTE));
-    assertThat(page).hasTitle(LOGIN_PAGE_TITLE);
+    assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
+    assertThat(browserPage).hasTitle(LOGIN_PAGE_TITLE);
     assertThat(
-            page.getByLabel(
+            browserPage.getByLabel(
                 uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)))
         .isVisible();
     assertThat(
-            page.getByLabel(
+            browserPage.getByLabel(
                 uiTexts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true)))
         .isVisible();
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions().setName(uiTexts.getLoginTitle()).setExact(true)))
         .isVisible();
@@ -79,12 +82,13 @@ public final class LoginPage {
   public void assertRejected() {
     assertFormVisible();
     assertThat(
-            page.locator("vaadin-notification-card:not([closing])")
+            browserPage
+                .locator("vaadin-notification-card:not([closing])")
                 .getByText(
                     uiTexts.getLoginFailedMessage(), new Locator.GetByTextOptions().setExact(true)))
         .isVisible();
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
                     .setName(uiTexts.getAdminDashboardTitle())
@@ -97,19 +101,20 @@ public final class LoginPage {
   public void assertSessionLimit() {
     assertFormVisible();
     assertThat(
-            page.getByText(
+            browserPage.getByText(
                 uiTexts.getLoginSessionLimitMessage(), new Page.GetByTextOptions().setExact(true)))
         .isVisible();
   }
 
   @Step("Nach Passwortprüfung nur die eingeschränkte Sitzungsverwaltung anzeigen")
   public void assertRestrictedManagement() {
-    assertThat(page).hasURL(urlPattern(LOGIN_ROUTE));
-    assertThat(page.locator("#session-recovery")).isVisible();
-    assertThat(page.locator("#session-recovery")).containsText(uiTexts.getSessionRecoveryHint());
-    assertThat(page.locator("#session-recovery-continue")).isVisible();
+    assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
+    assertThat(browserPage.locator("#session-recovery")).isVisible();
+    assertThat(browserPage.locator("#session-recovery"))
+        .containsText(uiTexts.getSessionRecoveryHint());
+    assertThat(browserPage.locator("#session-recovery-continue")).isVisible();
     assertThat(
-            page.getByLabel(
+            browserPage.getByLabel(
                 uiTexts.getLoginPasswordField(), new Page.GetByLabelOptions().setExact(true)))
         .not()
         .isVisible();
@@ -118,17 +123,18 @@ public final class LoginPage {
   @Step("Eine bestehende Sitzung in der eingeschränkten Anmeldung widerrufen")
   public void revokeRecoverySession(int index) {
     UiActions.complete(
-        page,
+        browserPage,
         () ->
-            page.locator("#account-session-entries [data-session-state='active'] vaadin-button")
+            browserPage
+                .locator("#account-session-entries [data-session-state='active'] vaadin-button")
                 .nth(index)
                 .click());
-    new AccountSessionsPage(page).confirmDeviceRevocation();
+    new AccountSessionsPage(browserPage).confirmDeviceRevocation();
   }
 
   @Step("Eingeschränkte Verwaltung abbrechen und zur normalen Anmeldung zurückkehren")
   public void cancelRecovery() {
-    UiActions.complete(page, () -> page.locator("#session-recovery-cancel").click());
+    UiActions.complete(browserPage, () -> browserPage.locator("#session-recovery-cancel").click());
     assertFormVisible();
   }
 
@@ -136,14 +142,14 @@ public final class LoginPage {
   public void assertThrottled() {
     assertFormVisible();
     assertThat(
-            page.getByText(
+            browserPage.getByText(
                 uiTexts.getLoginThrottledMessage(), new Page.GetByTextOptions().setExact(true)))
         .isVisible();
   }
 
   @Step("Vorhandenen Fehlerhinweis vor dem nächsten Anmeldeversuch schließen")
   public void dismissFailure() {
-    Locator notice = page.locator("vaadin-notification-card:not([closing])");
+    Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
     assertThat(notice).hasCount(1);
     notice.getByRole(AriaRole.BUTTON).click();
     assertThat(notice).not().isVisible();
@@ -151,18 +157,18 @@ public final class LoginPage {
 
   @Step("Admin-Dashboard und angemeldetes Konto sind sichtbar")
   public void assertAdminSignedIn(String email) {
-    assertThat(page).hasURL(urlPattern(ADMIN_ROUTE));
+    assertThat(browserPage).hasURL(urlPattern(ADMIN_ROUTE));
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
                     .setName(uiTexts.getAdminDashboardTitle())
                     .setExact(true)
                     .setLevel(1)))
         .isVisible();
-    UserMenu menu = new UserMenu(page);
+    UserMenu menu = new UserMenu(browserPage);
     menu.open();
-    assertThat(page.locator(".user-popover-body")).containsText(email);
+    assertThat(browserPage.locator(".user-popover-body")).containsText(email);
     menu.close();
   }
 }

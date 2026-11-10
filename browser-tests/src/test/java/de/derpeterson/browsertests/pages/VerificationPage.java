@@ -12,43 +12,43 @@ import io.qameta.allure.Step;
 
 /** Assertions on the actual activation page, including its existing idempotent success contract. */
 public final class VerificationPage {
-  private final Page page;
+  private final Page browserPage;
   private final UiTexts uiTexts = UiTexts.selected();
 
-  public VerificationPage(Page page) {
-    this.page = page;
+  public VerificationPage(Page browserPage) {
+    this.browserPage = browserPage;
   }
 
   @Step("Aktivierungsseite bestätigt die Verifikation des Kontos")
   public void assertActivated() {
-    assertThat(page).hasURL(urlPattern(VERIFICATION_ROUTE, "/[0-9a-f-]+"));
-    assertThat(page).hasTitle(VERIFICATION_PAGE_TITLE);
+    assertThat(browserPage).hasURL(urlPattern(VERIFICATION_ROUTE, "/[0-9a-f-]+"));
+    assertThat(browserPage).hasTitle(VERIFICATION_PAGE_TITLE);
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
                     .setName(uiTexts.getVerificationSuccessTitle())
                     .setExact(true)))
         .isVisible();
     assertThat(
-            page.getByText(
+            browserPage.getByText(
                 uiTexts.getVerificationSuccessText(), new Page.GetByTextOptions().setExact(true)))
         .isVisible();
   }
 
   @Step("Aufbewahrter abgelaufener Link zeigt keinen Aktivierungserfolg")
   public void assertExpired() {
-    assertThat(page).hasURL(urlPattern(VERIFICATION_ROUTE, "/[0-9a-f-]+"));
-    assertThat(page).hasTitle(VERIFICATION_PAGE_TITLE);
+    assertThat(browserPage).hasURL(urlPattern(VERIFICATION_ROUTE, "/[0-9a-f-]+"));
+    assertThat(browserPage).hasTitle(VERIFICATION_PAGE_TITLE);
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
                     .setName(uiTexts.getVerificationExpiredTitle())
                     .setExact(true)))
         .isVisible();
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
                     .setName(uiTexts.getVerificationSuccessTitle())
@@ -59,25 +59,25 @@ public final class VerificationPage {
   @Step("Unbekannter Verifikationslink zeigt einen verständlichen Fehler")
   public void assertUnknownToken() {
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
                     .setName(uiTexts.getVerificationNotFoundTitle())
                     .setExact(true)))
         .isVisible();
     assertThat(
-            page.getByText(
+            browserPage.getByText(
                 uiTexts.getVerificationNotFoundText1(), new Page.GetByTextOptions().setExact(true)))
         .isVisible();
     assertThat(
-            page.getByRole(
+            browserPage.getByRole(
                 AriaRole.HEADING,
                 new Page.GetByRoleOptions()
                     .setName(uiTexts.getVerificationSuccessTitle())
                     .setExact(true)))
         .hasCount(0);
     assertThat(
-            page.getByLabel(
+            browserPage.getByLabel(
                 uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true)))
         .isVisible();
   }

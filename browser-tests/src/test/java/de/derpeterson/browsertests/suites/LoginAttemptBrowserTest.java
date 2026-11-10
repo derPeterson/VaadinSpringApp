@@ -37,20 +37,20 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
 
   @BeforeEach
   void configureLimit() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    settings = new ConfigurationPage(page);
+    new UserMenu(browserPage).selectTestLanguage();
+    settings = new ConfigurationPage(browserPage);
     settings.open(AdminConfigGroup.SECURITY);
-    original = settings.value(texts.getAdminConfigEntryLoginAttemptsLimit());
+    original = settings.value(uiTexts.getAdminConfigEntryLoginAttemptsLimit());
   }
 
   @AfterEach
   void restoreLimit() {
     if (original != null) {
       settings.open(AdminConfigGroup.SECURITY);
-      settings.enter(texts.getAdminConfigEntryLoginAttemptsLimit(), original);
+      settings.enter(uiTexts.getAdminConfigEntryLoginAttemptsLimit(), original);
       settings.save();
     }
   }
@@ -59,21 +59,21 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
   @DisplayName("AUTH-LIMIT-01: Passwortsperre erhält eine bereits angemeldete Sitzung")
   @Description(
       """
-        1. Eigenes aktives Benutzerkonto über das Adminformular anlegen; Versuchslimit 2 speichern.
-        2. In einem unabhängigen Kontext mit dem richtigen Passwort anmelden.
-        3. In einem weiteren Kontext zweimal falsch anmelden; dritter Versuch mit richtigem Passwort wird gedrosselt.
-        4. Ohne Anmeldung und Remember-me-Cookie bleiben; bestehende Sitzung nach Neuladen weiterhin angemeldet.
-        **Erwartet:** Serverseitige Sperre nach dem gespeicherten Limit; keine nachträgliche Sperre des aktiven Geräts.
-        """)
+      1. Eigenes aktives Benutzerkonto über das Adminformular anlegen; Versuchslimit 2 speichern.
+      2. In einem unabhängigen Kontext mit dem richtigen Passwort anmelden.
+      3. In einem weiteren Kontext zweimal falsch anmelden; dritter Versuch mit richtigem Passwort wird gedrosselt.
+      4. Ohne Anmeldung und Remember-me-Cookie bleiben; bestehende Sitzung nach Neuladen weiterhin angemeldet.
+      **Erwartet:** Serverseitige Sperre nach dem gespeicherten Limit; keine nachträgliche Sperre des aktiven Geräts.
+      """)
   void blockedPasswordDoesNotInvalidateAnExistingSession() {
     String email = createUser();
     limit(2);
-    try (BrowserActor existing = new BrowserActor(browser);
-        BrowserActor attacker = new BrowserActor(browser)) {
+    try (BrowserActor existing = new BrowserActor(testBrowser);
+        BrowserActor attacker = new BrowserActor(testBrowser)) {
       existing.login(email, BrowserTestAccounts.USER_PASSWORD, true);
-      assertThat(existing.page).hasURL(urlPattern(HOME_ROUTE));
+      assertThat(existing.browserPage).hasURL(urlPattern(HOME_ROUTE));
       attacker.login(email, "WrongPassword!", true);
-      LoginPage login = new LoginPage(attacker.page);
+      LoginPage login = new LoginPage(attacker.browserPage);
       login.assertRejected();
       login.dismissFailure();
       login.signIn(email, "WrongPassword!");
@@ -82,13 +82,13 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       login.assertThrottled();
       assertFalse(
-          attacker.context.cookies().stream()
+          attacker.browserContext.cookies().stream()
               .anyMatch(cookie -> cookie.name.equals("remember-me")));
-      attacker.page.navigate(path(LOGIN_ROUTE) + "?error=throttled");
+      attacker.browserPage.navigate(path(LOGIN_ROUTE) + "?error=throttled");
       login.assertThrottled();
-      existing.page.reload();
-      new UserMenu(existing.page).selectTestLanguage();
-      new UserMenu(existing.page).assertUserSignedInWithoutAdminAction(email);
+      existing.browserPage.reload();
+      new UserMenu(existing.browserPage).selectTestLanguage();
+      new UserMenu(existing.browserPage).assertUserSignedInWithoutAdminAction(email);
     }
   }
 
@@ -97,24 +97,24 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
       "AUTH-LIMIT-02: Gespeichertes kleineres Limit gilt sofort für bekannte und unbekannte Kennungen")
   @Description(
       """
-        1. Eigenes Konto anlegen und Versuchslimit 3 über die Oberfläche speichern.
-        2. Für dieses Konto und eine neue unbekannte Adresse je einen falschen Versuch absenden.
-        3. Im weiterhin angemeldeten Adminkontext das Limit auf 1 reduzieren.
-        4. Erneute Versuche erhalten dieselbe neutrale Sperrmeldung, ohne Kontoauskunft.
-        **Erwartet:** Änderung wirkt ohne Neustart, auch ein richtiges Passwort umgeht die bestehende Grenze nicht.
-        """)
+      1. Eigenes Konto anlegen und Versuchslimit 3 über die Oberfläche speichern.
+      2. Für dieses Konto und eine neue unbekannte Adresse je einen falschen Versuch absenden.
+      3. Im weiterhin angemeldeten Adminkontext das Limit auf 1 reduzieren.
+      4. Erneute Versuche erhalten dieselbe neutrale Sperrmeldung, ohne Kontoauskunft.
+      **Erwartet:** Änderung wirkt ohne Neustart, auch ein richtiges Passwort umgeht die bestehende Grenze nicht.
+      """)
   void lowerLimitAppliesImmediatelyAndDoesNotExposeAccountExistence() {
     String email = createUser();
     String unknown = "unknown-limit-" + UUID.randomUUID() + "@example.test";
     limit(3);
-    try (BrowserActor known = new BrowserActor(browser);
-        BrowserActor missing = new BrowserActor(browser)) {
+    try (BrowserActor known = new BrowserActor(testBrowser);
+        BrowserActor missing = new BrowserActor(testBrowser)) {
       known.login(email, "WrongPassword!");
-      LoginPage first = new LoginPage(known.page);
+      LoginPage first = new LoginPage(known.browserPage);
       first.assertRejected();
       first.dismissFailure();
       missing.login(unknown, "WrongPassword!");
-      LoginPage second = new LoginPage(missing.page);
+      LoginPage second = new LoginPage(missing.browserPage);
       second.assertRejected();
       second.dismissFailure();
       limit(1);
@@ -130,30 +130,30 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
       "AUTH-LIMIT-03: Erst der abgeschlossene echte Passwortreset hebt die Anmeldesperre auf")
   @Description(
       """
-        1. Eigenes aktives Konto anlegen; Versuchslimit 1 speichern und Passwortanmeldung sperren.
-        2. Über Passwort vergessen eine echte Resetmail anfordern. Richtiger Login bleibt gesperrt.
-        3. Sichtbaren Link der eigenen Mailpit-Mail öffnen und neues Passwort samt Bestätigung speichern.
-        4. Mit dem neuen Passwort über das sichtbare Formular anmelden.
-        **Erwartet:** Anfrage allein entsperrt nicht; erfolgreicher Token-/Passwortwechsel setzt den Zähler zurück.
-        """)
+      1. Eigenes aktives Konto anlegen; Versuchslimit 1 speichern und Passwortanmeldung sperren.
+      2. Über Passwort vergessen eine echte Resetmail anfordern. Richtiger Login bleibt gesperrt.
+      3. Sichtbaren Link der eigenen Mailpit-Mail öffnen und neues Passwort samt Bestätigung speichern.
+      4. Mit dem neuen Passwort über das sichtbare Formular anmelden.
+      **Erwartet:** Anfrage allein entsperrt nicht; erfolgreicher Token-/Passwortwechsel setzt den Zähler zurück.
+      """)
   void completedMailPasswordResetClearsTheBlock() {
     String email = createUser();
     limit(1);
-    try (BrowserActor actor = new BrowserActor(browser)) {
+    try (BrowserActor actor = new BrowserActor(testBrowser)) {
       actor.login(email, "WrongPassword!");
-      LoginPage login = new LoginPage(actor.page);
+      LoginPage login = new LoginPage(actor.browserPage);
       login.assertRejected();
       login.dismissFailure();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
       login.assertThrottled();
       login.dismissFailure();
-      ForgotPasswordPage request = new ForgotPasswordPage(actor.page);
+      ForgotPasswordPage request = new ForgotPasswordPage(actor.browserPage);
       request.open();
       request.enterEmail(email);
       request.submit();
       request.requestedResponse();
       request.dismissRequestedNotice();
-      MailpitInbox inbox = new MailpitInbox(actor.context);
+      MailpitInbox inbox = new MailpitInbox(actor.browserContext);
       CapturedMail mail = inbox.awaitPasswordResetMail(email);
       login.open();
       login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
@@ -175,13 +175,13 @@ public class LoginAttemptBrowserTest extends BrowserFixture {
 
   private String createUser() {
     String email = "attempt-" + UUID.randomUUID() + "@example.test";
-    new AdminUsersPage(page).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    new AdminUsersPage(browserPage).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
     return email;
   }
 
   private void limit(int value) {
     settings.open(AdminConfigGroup.SECURITY);
-    settings.enter(texts.getAdminConfigEntryLoginAttemptsLimit(), String.valueOf(value));
+    settings.enter(uiTexts.getAdminConfigEntryLoginAttemptsLimit(), String.valueOf(value));
     settings.save();
   }
 }

@@ -22,10 +22,10 @@ final class BrowserParallelWorkers {
   record Worker(
       Path directory, String project, List<Class<?>> classes, Process process, Instant startedAt) {}
 
-  private final List<Worker> workers = new ArrayList<>();
+  private final List<Worker> workerProcesses = new ArrayList<>();
 
   synchronized List<Worker> workers() {
-    return List.copyOf(workers);
+    return List.copyOf(workerProcesses);
   }
 
   synchronized void start(
@@ -44,10 +44,10 @@ final class BrowserParallelWorkers {
     // bei einer externen Kollision scheitert Compose, bevor ein Browser startet.
     List<ServerSocket> sockets = reservePorts(groups.size());
     try {
-      for (int i = 0; i < groups.size(); i++) {
-        Path directory = run.resolve("workers/" + (i + 1));
+      for (int workerGroupIndex = 0; workerGroupIndex < groups.size(); workerGroupIndex++) {
+        Path directory = run.resolve("workers/" + (workerGroupIndex + 1));
         Files.createDirectories(directory);
-        String workerProject = project + "-w" + (i + 1);
+        String workerProject = project + "-w" + (workerGroupIndex + 1);
         List<String> command =
             new ArrayList<>(
                 List.of(
@@ -56,9 +56,12 @@ final class BrowserParallelWorkers {
                     "-Dbrowser.tests.workerRun=" + directory,
                     "-Dbrowser.tests.workerClasses="
                         + String.join(
-                            ",", groups.get(i).stream().map(Class::getSimpleName).toList()),
+                            ",",
+                            groups.get(workerGroupIndex).stream()
+                                .map(Class::getSimpleName)
+                                .toList()),
                     "-Dbrowser.tests.workerProject=" + workerProject,
-                    "-Dbrowser.tests.workerJar=" + (i == 0),
+                    "-Dbrowser.tests.workerJar=" + (workerGroupIndex == 0),
                     "-javaagent:" + module.resolve("target/tools/aspectjweaver.jar"),
                     "-cp",
                     System.getProperty("java.class.path"),
@@ -86,24 +89,31 @@ final class BrowserParallelWorkers {
         builder.environment().putAll(environment);
         builder
             .environment()
-            .put("BROWSER_TEST_APP_PORT", String.valueOf(sockets.get(i * 3).getLocalPort()));
+            .put(
+                "BROWSER_TEST_APP_PORT",
+                String.valueOf(sockets.get(workerGroupIndex * 3).getLocalPort()));
         builder
             .environment()
             .put(
-                "BROWSER_TEST_MAILPIT_PORT", String.valueOf(sockets.get(i * 3 + 1).getLocalPort()));
+                "BROWSER_TEST_MAILPIT_PORT",
+                String.valueOf(sockets.get(workerGroupIndex * 3 + 1).getLocalPort()));
         builder
             .environment()
-            .put("BROWSER_TEST_HTTP_PORT", String.valueOf(sockets.get(i * 3 + 2).getLocalPort()));
-        sockets.get(i * 3).close();
-        sockets.get(i * 3 + 1).close();
-        sockets.get(i * 3 + 2).close();
+            .put(
+                "BROWSER_TEST_HTTP_PORT",
+                String.valueOf(sockets.get(workerGroupIndex * 3 + 2).getLocalPort()));
+        sockets.get(workerGroupIndex * 3).close();
+        sockets.get(workerGroupIndex * 3 + 1).close();
+        sockets.get(workerGroupIndex * 3 + 2).close();
         Process process = builder.start();
-        workers.add(new Worker(directory, workerProject, groups.get(i), process, Instant.now()));
+        workerProcesses.add(
+            new Worker(
+                directory, workerProject, groups.get(workerGroupIndex), process, Instant.now()));
         System.out.println(
             "Worker "
-                + (i + 1)
+                + (workerGroupIndex + 1)
                 + " gestartet: "
-                + groups.get(i).stream().map(Class::getSimpleName).toList());
+                + groups.get(workerGroupIndex).stream().map(Class::getSimpleName).toList());
       }
     } finally {
       for (ServerSocket socket : sockets) {
@@ -112,10 +122,12 @@ final class BrowserParallelWorkers {
     }
   }
 
-  static List<ServerSocket> reservePorts(int workers) throws IOException {
+  static List<ServerSocket> reservePorts(int workerProcesses) throws IOException {
     List<ServerSocket> sockets = new ArrayList<>();
     try {
-      for (int i = 0; i < workers * 3; i++) {
+      for (int portReservationIndex = 0;
+          portReservationIndex < workerProcesses * 3;
+          portReservationIndex++) {
         ServerSocket socket = new ServerSocket();
         sockets.add(socket);
         socket.bind(new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0));
@@ -135,8 +147,8 @@ final class BrowserParallelWorkers {
 
   void await() throws InterruptedException, IOException {
     Set<Process> reported = new HashSet<>();
-    while (reported.size() < workers.size()) {
-      for (Worker worker : workers) {
+    while (reported.size() < workerProcesses.size()) {
+      for (Worker worker : workerProcesses) {
         if (reported.contains(worker.process())) {
           continue;
         }
@@ -155,7 +167,7 @@ final class BrowserParallelWorkers {
   }
 
   synchronized void stop() {
-    for (Worker worker : workers) {
+    for (Worker worker : workerProcesses) {
       if (worker.process().isAlive()) {
         // Auch laufende Compose-/Browser-Kindprozesse beenden, bevor Compose down läuft.
         try {

@@ -15,8 +15,8 @@ class FailureProbeTest extends BrowserFixture {
   @Test
   @DisplayName("REPORTING-PROBE: Absichtlicher Fehler zum Vergleich von Screenshot und Trace")
   void deliberateFailure() {
-    page.navigate(path(HOME_ROUTE));
-    assertThat(page)
+    browserPage.navigate(path(HOME_ROUTE));
+    assertThat(browserPage)
         .hasTitle(
             "ABSICHTLICHER REPORTER-PROBEFEHLER",
             new PageAssertions.HasTitleOptions().setTimeout(1000));

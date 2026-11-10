@@ -37,46 +37,46 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
   @DisplayName("VER-03A: Abgelaufener Mailbutton, erneuter Versand und tatsächliche Aktivierung")
   @Description(
       """
-        1. Verifikationsgültigkeit als Admin vorübergehend auf die echte Mindestdauer eine Minute setzen.
-        2. Eigenes Konto registrieren und reguläre SMTP-Mail einschließlich ersetztem Branding-Footer erfassen.
-        3. 65 Sekunden tatsächlich abwarten, alten Mailbutton öffnen: abgelaufen, kein Aktivierungserfolg.
-        4. Erneut senden anklicken; nur neue Mail-ID erfassen, deren echten Button nutzen und anmelden.
-        5. Originaldauer über Adminoberfläche wiederherstellen.
-        **Erwartet:** Ablauf und erneuter Versand funktionieren ohne künstliche Zeit-/Tokenmanipulation.
-        """)
+      1. Verifikationsgültigkeit als Admin vorübergehend auf die echte Mindestdauer eine Minute setzen.
+      2. Eigenes Konto registrieren und reguläre SMTP-Mail einschließlich ersetztem Branding-Footer erfassen.
+      3. 65 Sekunden tatsächlich abwarten, alten Mailbutton öffnen: abgelaufen, kein Aktivierungserfolg.
+      4. Erneut senden anklicken; nur neue Mail-ID erfassen, deren echten Button nutzen und anmelden.
+      5. Originaldauer über Adminoberfläche wiederherstellen.
+      **Erwartet:** Ablauf und erneuter Versand funktionieren ohne künstliche Zeit-/Tokenmanipulation.
+      """)
   void expiredVerificationCanBeResentAndActivated() {
     TokenConfigurationPage config = admin();
-    String label = texts.getAdminConfigEntryVerificationTokenValidDuration();
+    String label = uiTexts.getAdminConfigEntryVerificationTokenValidDuration();
     String original = config.value(label);
     try {
       config.enter(label, "PT1M");
       config.save();
-      try (BrowserActor actor = new BrowserActor(browser)) {
+      try (BrowserActor actor = new BrowserActor(testBrowser)) {
         String email = email();
-        RegistrationPage registration = new RegistrationPage(actor.page);
+        RegistrationPage registration = new RegistrationPage(actor.browserPage);
         registration.open();
         registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
         registration.submit();
         registration.assertSubmitted(email);
-        MailpitInbox inbox = new MailpitInbox(actor.context);
+        MailpitInbox inbox = new MailpitInbox(actor.browserContext);
         CapturedMail old = inbox.awaitVerificationMail(email);
-        waitForExpiry(actor.context);
+        waitForExpiry(actor.browserContext);
         try (Page expired = inbox.openVerificationAction(old)) {
           assertThat(
                   expired.getByRole(
                       AriaRole.HEADING,
                       new Page.GetByRoleOptions()
-                          .setName(texts.getVerificationExpiredTitle())
+                          .setName(uiTexts.getVerificationExpiredTitle())
                           .setExact(true)))
               .isVisible();
           expired
               .getByRole(
                   AriaRole.BUTTON,
-                  new Page.GetByRoleOptions().setName(texts.getBaseResendButton()).setExact(true))
+                  new Page.GetByRoleOptions().setName(uiTexts.getBaseResendButton()).setExact(true))
               .click();
           assertThat(expired.locator("vaadin-notification-card:not([closing])"))
               .containsText(
-                  texts.visibleText(expired, texts.getVerificationExpiredSuccessMessage()));
+                  uiTexts.visibleText(expired, uiTexts.getVerificationExpiredSuccessMessage()));
           CapturedMail fresh = inbox.awaitVerificationMailAfter(email, old);
           assertNotEquals(old.id(), fresh.id());
           inbox.openVerificationLink(fresh).close();
@@ -85,9 +85,9 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
           }
         }
         actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-        assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
-        new UserMenu(actor.page).selectTestLanguage();
-        new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
+        assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+        new UserMenu(actor.browserPage).selectTestLanguage();
+        new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
       }
     } finally {
       config.open();
@@ -101,52 +101,52 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
       "RESET-06A: Bereits geöffnetes Resetformular akzeptiert keinen inzwischen abgelaufenen Token")
   @Description(
       """
-        1. Resetgültigkeit vorübergehend auf eine Minute setzen; eigenes Konto registrieren und aktivieren.
-        2. Passwort vergessen über UI anfordern; echte Mail mit Branding-Footer öffnen: Formular sichtbar.
-        3. 65 Sekunden tatsächlich abwarten; neues gültiges Passwort absenden: neutraler Ablaufhinweis.
-        4. Ursprüngliches Passwort funktioniert weiterhin; Originaldauer wiederherstellen.
-        **Erwartet:** Auch ein zuvor gültiges offenes Formular verlängert den Token nicht.
-        """)
+      1. Resetgültigkeit vorübergehend auf eine Minute setzen; eigenes Konto registrieren und aktivieren.
+      2. Passwort vergessen über UI anfordern; echte Mail mit Branding-Footer öffnen: Formular sichtbar.
+      3. 65 Sekunden tatsächlich abwarten; neues gültiges Passwort absenden: neutraler Ablaufhinweis.
+      4. Ursprüngliches Passwort funktioniert weiterhin; Originaldauer wiederherstellen.
+      **Erwartet:** Auch ein zuvor gültiges offenes Formular verlängert den Token nicht.
+      """)
   void openResetFormCannotExtendItsToken() {
     TokenConfigurationPage config = admin();
-    String label = texts.getAdminConfigEntryPasswordResetTokenValidDuration();
+    String label = uiTexts.getAdminConfigEntryPasswordResetTokenValidDuration();
     String original = config.value(label);
     try {
       config.enter(label, "PT1M");
       config.save();
-      try (BrowserActor actor = new BrowserActor(browser)) {
+      try (BrowserActor actor = new BrowserActor(testBrowser)) {
         String email = email();
-        RegistrationPage registration = new RegistrationPage(actor.page);
+        RegistrationPage registration = new RegistrationPage(actor.browserPage);
         registration.open();
         registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
         registration.submit();
         registration.assertSubmitted(email);
-        MailpitInbox inbox = new MailpitInbox(actor.context);
+        MailpitInbox inbox = new MailpitInbox(actor.browserContext);
         inbox.openVerificationLink(inbox.awaitVerificationMail(email)).close();
-        ForgotPasswordPage forgot = new ForgotPasswordPage(actor.page);
+        ForgotPasswordPage forgot = new ForgotPasswordPage(actor.browserPage);
         forgot.open();
         forgot.enterEmail(email);
         forgot.submit();
         forgot.requestedResponse();
         try (Page reset = inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email))) {
-          waitForExpiry(actor.context);
+          waitForExpiry(actor.browserContext);
           ResetPasswordPage form = new ResetPasswordPage(reset);
           form.fillPasswords("ChangedPassword!", "ChangedPassword!");
           form.submit();
           assertThat(reset.locator("vaadin-notification-card:not([closing])"))
-              .containsText(texts.getResetPasswordExpiredText());
+              .containsText(uiTexts.getResetPasswordExpiredText());
           assertThat(reset.locator("vaadin-notification-card:not([closing])"))
               .not()
-              .containsText(texts.getBaseSuccessTitle());
+              .containsText(uiTexts.getBaseSuccessTitle());
           reset.reload();
           new ResetPasswordPage(reset).assertExpired();
         }
         actor.login(email, "ChangedPassword!");
-        new LoginPage(actor.page).assertRejected();
+        new LoginPage(actor.browserPage).assertRejected();
         actor.login(email, BrowserTestAccounts.USER_PASSWORD);
-        assertThat(actor.page).hasURL(urlPattern(HOME_ROUTE));
-        new UserMenu(actor.page).selectTestLanguage();
-        new UserMenu(actor.page).assertUserSignedInWithoutAdminAction(email);
+        assertThat(actor.browserPage).hasURL(urlPattern(HOME_ROUTE));
+        new UserMenu(actor.browserPage).selectTestLanguage();
+        new UserMenu(actor.browserPage).assertUserSignedInWithoutAdminAction(email);
       }
     } finally {
       config.open();
@@ -160,64 +160,66 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
       "VER-02B: Verifikationsanfrage mit Pflichtfeld, Syntaxfehler und korrigierter echter Mail")
   @Description(
       """
-        1. Eigenes unverifiziertes Konto registrieren, echte Mail erfassen und nicht aktivieren.
-        2. Unbekannten Verifikationslink öffnen; angebotenes Anfrageformular leer absenden: Pflichtfeldfehler.
-        3. Ungültige Adresse versuchen: Syntaxfehler; echte eigene Adresse korrigieren und senden.
-        4. Neue reguläre Mail-ID erfassen und deren echten Button zur Aktivierung nutzen.
-        **Erwartet:** Korrigierbares Formular mit lokalisierten Fehlern; erneuter Versand über echte UI.
-        """)
+      1. Eigenes unverifiziertes Konto registrieren, echte Mail erfassen und nicht aktivieren.
+      2. Unbekannten Verifikationslink öffnen; angebotenes Anfrageformular leer absenden: Pflichtfeldfehler.
+      3. Ungültige Adresse versuchen: Syntaxfehler; echte eigene Adresse korrigieren und senden.
+      4. Neue reguläre Mail-ID erfassen und deren echten Button zur Aktivierung nutzen.
+      **Erwartet:** Korrigierbares Formular mit lokalisierten Fehlern; erneuter Versand über echte UI.
+      """)
   void verificationRequestValidatesAndCanBeCorrected() {
     String email = email();
-    RegistrationPage registration = new RegistrationPage(page);
+    RegistrationPage registration = new RegistrationPage(browserPage);
     registration.open();
     registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
     registration.submit();
     registration.assertSubmitted(email);
-    MailpitInbox inbox = new MailpitInbox(context);
+    MailpitInbox inbox = new MailpitInbox(browserContext);
     CapturedMail old = inbox.awaitVerificationMail(email);
-    page.navigate(path(VERIFICATION_ROUTE) + "/" + UUID.randomUUID());
-    new VerificationPage(page).assertUnknownToken();
+    browserPage.navigate(path(VERIFICATION_ROUTE) + "/" + UUID.randomUUID());
+    new VerificationPage(browserPage).assertUnknownToken();
     Locator input =
-        page.getByLabel(texts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true));
+        browserPage.getByLabel(
+            uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true));
     Locator send =
-        page.getByRole(
+        browserPage.getByRole(
             AriaRole.BUTTON,
             new Page.GetByRoleOptions()
-                .setName(texts.getVerificationRequestActivationLink())
+                .setName(uiTexts.getVerificationRequestActivationLink())
                 .setExact(true));
     send.click();
-    checkRequestError(texts.getBaseValidationRequiredMessage());
+    checkRequestError(uiTexts.getBaseValidationRequiredMessage());
     input.fill("invalid");
     send.click();
-    checkRequestError(texts.getBaseValidationEmailInvalidMessage());
+    checkRequestError(uiTexts.getBaseValidationEmailInvalidMessage());
     input.fill(email);
     send.click();
-    assertThat(page.locator("vaadin-notification-card:not([closing])"))
-        .containsText(texts.visibleText(page, texts.getVerificationNotFoundSuccessMessage()));
+    assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+        .containsText(
+            uiTexts.visibleText(browserPage, uiTexts.getVerificationNotFoundSuccessMessage()));
     inbox.openVerificationLink(inbox.awaitVerificationMailAfter(email, old)).close();
   }
 
   private void checkRequestError(String message) {
-    Locator notice = page.locator("vaadin-notification-card:not([closing])");
-    assertThat(notice).containsText(texts.visibleText(page, message));
-    assertThat(page.locator("vaadin-email-field[invalid]")).hasCount(1);
+    Locator notice = browserPage.locator("vaadin-notification-card:not([closing])");
+    assertThat(notice).containsText(uiTexts.visibleText(browserPage, message));
+    assertThat(browserPage.locator("vaadin-email-field[invalid]")).hasCount(1);
     notice.getByRole(AriaRole.BUTTON).click();
     assertThat(notice).not().isVisible();
   }
 
   private TokenConfigurationPage admin() {
-    LoginPage login = new LoginPage(page);
+    LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
-    new UserMenu(page).selectTestLanguage();
-    TokenConfigurationPage config = new TokenConfigurationPage(page);
+    new UserMenu(browserPage).selectTestLanguage();
+    TokenConfigurationPage config = new TokenConfigurationPage(browserPage);
     config.open();
     return config;
   }
 
-  private void waitForExpiry(BrowserContext context) {
+  private void waitForExpiry(BrowserContext browserContext) {
     long end = System.nanoTime() + java.time.Duration.ofSeconds(65).toNanos();
-    context.waitForCondition(
+    browserContext.waitForCondition(
         () -> System.nanoTime() >= end,
         new BrowserContext.WaitForConditionOptions().setTimeout(70_000));
   }
