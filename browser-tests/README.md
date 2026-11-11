@@ -88,7 +88,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `two-factor-setup` | Verpflichtender Einstieg, QR/manueller Schlüssel, native OTP-Eingabe mit Einfügen und Tastatur sowie Kopierfehler auf Desktop/Smartphone | 2 |
 | `two-factor-recovery-output` | Gezielter Ersatzcode-/PDF-Nachtest auf Desktop und Smartphone: fehlgeschlagener Abruf ohne Fehlerdatei, echter Download ohne Navigation und ausdrückliche Sicherungsbestätigung; auf Desktop zusätzlich echter Ablauf der fünfminütigen Sicherheitsfrist bei weiterhin verfügbaren Codes und PDF | 2 |
 | `two-factor-lifecycle` | Sprachwechsel während Mailcode/QR/Codeausgabe/Hilfe, Entzug der Superadminrolle bei zwei offenen Konfigurationen sowie Startfreigabe und Neustart mit gespeicherten Entwicklungsausnahmen | 5 |
-| `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbieter- und Kontosicherheitstabs, Desktop/schmal, Tastaturbedienung, Footerumbrüche, Erhalt ungespeicherter Eingaben und Kontobestätigungsdialoge. Ohne Registrierung, Speicherung oder Versand | 8 |
+| `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbieter- und Kontosicherheitstabs, Desktop/schmal, Tastaturbedienung, Footerumbrüche, Erhalt ungespeicherter Eingaben und Kontobestätigungsdialoge. Ohne Registrierung, Speicherung oder Versand | 10 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
 | `verification` | Tatsächliche Aktivierungsmail, gültige, verbrauchte und ungültige Links | 3 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |
@@ -96,7 +96,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `session-persistence` | Gezielte Neustartabnahme: Sitzungs-/Loginfälle, Wartung und eigene Kontosicherheit | 51 |
 | `session-management` | Eigene Sitzungen, Einzel-/Sammelwiderruf, dauerhafte Anmeldung, UI-Neuaufbau, abgelaufene Sitzung mit gespeichertem Zugang und eingeschränkter Login | 7 |
 | `sign-in-session-layout` | Anmeldeinformationen im Benutzerformular, Sitzungsgruppen, Anmeldewege und Abmeldebestätigungen im Konto und am Sitzungslimit, Desktop und Smartphone | 4 |
-| `account-settings` | Profil/Sprachen/E-Mail-Dialog, persistente Profilbilder Desktop/schmal, kompakte Geburtstage und Status am Kontobild | 12 |
+| `account-settings` | Profil/Sprachen/E-Mail-Dialog, persistente Profilbilder, kompakte Geburtstage, Status am Kontobild, Formularschutz und eigene Kontodeaktivierung/Reaktivierung/Löschung auf Desktop und Smartphone | 20 |
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
@@ -109,7 +109,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `remember-me` | Echter Chromium- und Anwendungsneustart mit/ohne Remember-me und nach Logout | 4 |
 | `user-status` | Manuelle Wahl, Live-Anzeige in zweitem Tab, Abwesenheit/Rückkehr | 2 |
 | `configuration` | String-, Boolean- und Dauerwerte, Sprachwechsel mit Feldfehlern, Offline-Speichern, native SideNav, Klick-Infos und Enter-Bedienung | 13 |
-| `configuration-follow-up` | Feldhilfen, Zeitfelder und Neustartwarnung auf Desktop und Smartphone, bestehende und neue Sitzungsfristen sowie SMTP-Wechsel | 6 |
+| `configuration-follow-up` | Feldhilfen, Zeitfelder und Formularschutz einschließlich Anbieter-/2FA-Entwürfen auf Desktop und Smartphone, bestehende und neue Sitzungsfristen sowie SMTP-Wechsel | 10 |
 | `configuration-field-help` | Wirksamkeit in den allgemeinen Feldhilfen, bei beiden Anmeldeanbietern und in den 2FA-Regeln auf Desktop und Smartphone | 6 |
 | `operations` | Persistenz ohne Bootstrap, zwei eigene SMTP-Ziele und echte begrenzte Transportausfälle mit Wiederanlauf | 3 |
 | `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |

@@ -60,24 +60,27 @@ public final class AdminUserDialog {
 
     assertThat(confirmPassword()).isEnabled();
     confirmPassword().fill(password);
+
     field(uiTexts.getRegistrationGenderCombobox()).click();
     browserPage
         .getByRole(
             AriaRole.OPTION,
             new Page.GetByRoleOptions().setName(uiTexts.getGenderOther()).setExact(true))
         .click();
-    Locator birthday = field(uiTexts.getRegistrationBirthDateField());
+    Locator birthDateInputLocator = field(uiTexts.getRegistrationBirthDateField());
 
-    assertThat(birthday).hasAttribute("placeholder", uiTexts.getRegistrationBirthDatePlaceholder());
-    birthday.click();
+    assertThat(birthDateInputLocator)
+        .hasAttribute("placeholder", uiTexts.getRegistrationBirthDatePlaceholder());
+    birthDateInputLocator.click();
 
     assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
-    birthday.fill(uiTexts.dateInput(LocalDate.of(1990, 1, 1)));
+    birthDateInputLocator.fill(uiTexts.dateInput(LocalDate.of(1990, 1, 1)));
     // A real focus change commits the birthday; no Enter or popup cancellation.
     firstName().click();
 
     assertThat(root().locator("vaadin-date-picker")).hasJSProperty("value", "1990-01-01");
     assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
+
     check(uiTexts.getAdminUsersFieldEnabled(), enabled);
     setRole(uiTexts.getRoleUser(), true);
     setRole(uiTexts.getRoleAdmin(), administrator);
@@ -158,7 +161,8 @@ public final class AdminUserDialog {
   public void cancel() {
     closeRoleOptions();
     UiActions.complete(browserPage, button(uiTexts.getAdminUsersCancel())::click);
-    new UnsavedChangesPrompt(browserPage, uiTexts).discardIfShown();
+    new UnsavedChangesPrompt(browserPage, uiTexts)
+        .discardAfterActionIfNeeded(() -> root().count() == 0);
 
     assertThat(root()).hasCount(0);
   }
@@ -167,11 +171,12 @@ public final class AdminUserDialog {
   public AdminUserDeleteDialog requestDelete() {
     assertThat(deleteButton()).isEnabled();
     deleteButton().click();
-    AdminUserDeleteDialog confirmation = new AdminUserDeleteDialog(browserPage, uiTexts);
+    AdminUserDeleteDialog deleteConfirmationDialog =
+        new AdminUserDeleteDialog(browserPage, uiTexts);
 
-    assertThat(confirmation.root()).hasCount(1);
+    assertThat(deleteConfirmationDialog.root()).hasCount(1);
     assertThat(
-            confirmation
+            deleteConfirmationDialog
                 .root()
                 .getByRole(
                     AriaRole.HEADING,
@@ -179,7 +184,7 @@ public final class AdminUserDialog {
                         .setName(uiTexts.getAdminUsersDeleteDialogTitle())
                         .setExact(true)))
         .isVisible();
-    return confirmation;
+    return deleteConfirmationDialog;
   }
 
   private Locator field(String label) {

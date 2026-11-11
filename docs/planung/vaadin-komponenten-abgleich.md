@@ -35,12 +35,12 @@ Ihr erster Einsatz sind „Gesamt“ und „Ungelesen“ im Postfach. Die neutra
 die hervorgehobene Variante werden auf Desktop und Mobil mit der bestehenden
 Darstellung verglichen.
 
-## Weitere Arbeitspakete auf diesem Branch
+## Offene Abnahme der Portalpakete
 
-Die Pakete werden nacheinander auf `codex/vaadin-komponentenanpassungen` bearbeitet.
-Jedes Paket erhält ein Review mit Einzelprüfung der geänderten Klassen auf
-Lesbarkeit und einen eigenen Commit. Nach den Paketen folgt die große isolierte
-Testrunde. Der [Testbedarf](../testbedarf.md) führt offene automatisierte Prüfungen.
+Zur gemeinsamen Sichtung gehören die folgenden drei Pakete auf
+`codex/vaadin-komponentenanpassungen`. Der automatisierte Nachweis steht im
+[Prüfstand](../status.md). Der [Testbedarf](../testbedarf.md) führt offene
+automatisierte Prüfungen.
 
 ### Auswahlfelder und Kalender
 
@@ -67,7 +67,7 @@ Testrunde. Der [Testbedarf](../testbedarf.md) führt offene automatisierte Prüf
   diese Aktionen zuerst einen Authenticator oder ein Portalpasswort.
 - Das erweiterte H2-Schema wird mit frischen isolierten Testdaten geprüft.
   Für die lokale Sichtung wird ebenfalls eine frische Entwicklungsdatenbank benötigt.
-- Die große Testrunde und die gemeinsame Sichtung bleiben offen.
+- Die gemeinsame Sichtung bleibt offen.
 
 ## Bestandsaufnahme
 

@@ -119,6 +119,11 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 2. Benutzer bearbeiten und Löschbestätigung öffnen, ohne zu löschen. Tabelle, Filter, Overlays und Dialogkopf/-fuß zusammen beurteilen.
 3. Lesbarkeit, Kontraste, Abstände, Ausrichtung, Iconwirkung und verständliche Hervorhebung aktiver/gefährlicher Aktionen bewerten. Auffälligkeiten konkret benennen.
 
+Zur Sichtung des Komponentenpakets gehören die Auswahlfelder und Kalender,
+der Formularschutz sowie „Mein Konto → Sicherheit → Konto verwalten“.
+Die beiden Deaktivierungsfristen und ihre Feldhilfen stehen unter
+„Konfiguration → Sicherheit & Sitzungen“.
+
 **Erwartet:** Die Oberfläche wirkt zusammengehörig und ruhig; relevante Texte/Aktionen sind gut lesbar und eindeutig. Rein persönlicher Änderungswunsch wird von einem Bedienhindernis unterschieden.
 
 <a id="hum-02"></a>
@@ -184,6 +189,9 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 **Einordnung:** Menschliche Abnahme.
 
 **Voraussetzung:** Beispiele aus dem JUnit-Sichttest oder eigene tatsächlich erzeugte Testmails; Mailprogramm benennen. EML-Import nur falls unterstützt; technische Zustellung getrennt unter AUTO-08.
+
+Deaktivierung, Erinnerung und Löschbestätigung über eigene Testkonten erzeugen.
+Diese Kontomails sind nicht Teil des opt-in Mailbeispielversands.
 
 1. Alle vorhandenen Mailvorlagen in den tatsächlich genutzten Clients öffnen; breite/schmale Ansicht und hell/dunkel soweit verfügbar vergleichen.
 2. Logo, Abstände, Text, Footer und erkennbare Link-/Buttonbeschriftung beurteilen. Verhalten bei blockierten Bildern ansehen.

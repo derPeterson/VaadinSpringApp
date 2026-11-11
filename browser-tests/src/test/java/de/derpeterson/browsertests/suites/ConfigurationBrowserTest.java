@@ -31,14 +31,79 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("browser")
 @Feature("Weitere sichtbare Konfigurationsverträge")
 public class ConfigurationBrowserTest extends BrowserFixture {
-  @Test
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("configuration-follow-up")
+  @DisplayName("Anbieter- und 2FA-Entwürfe werden erst nach ausdrücklicher Zustimmung verworfen")
+  void providerAndFactorDraftsRequireExplicitDiscard(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 1000);
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(browserPage).selectTestLanguage();
+    loginPage.assertAdminSignedIn(BrowserTestAccounts.SUPERADMIN_EMAIL);
+
+    AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
+    AdminNavigation adminNavigation = new AdminNavigation(browserPage);
+    UnsavedChangesPrompt unsavedChangesPrompt = new UnsavedChangesPrompt(browserPage, uiTexts);
+
+    for (AdminConfigGroup configGroup :
+        new AdminConfigGroup[] {AdminConfigGroup.EXTERNAL_LOGIN, AdminConfigGroup.TWO_FACTOR}) {
+      configurationPage.open(configGroup);
+      Locator draftInputLocator;
+      String savedClientId = null;
+      boolean savedInactivityEnabled = false;
+      if (configGroup == AdminConfigGroup.EXTERNAL_LOGIN) {
+        draftInputLocator = browserPage.locator("#provider-google-client-id input");
+        savedClientId = draftInputLocator.inputValue();
+        draftInputLocator.fill("own-unsaved-provider-draft");
+      } else {
+        draftInputLocator =
+            browserPage.getByRole(
+                AriaRole.SWITCH,
+                new Page.GetByRoleOptions()
+                    .setName(uiTexts.getTwoFactorInactivityEnabled())
+                    .setExact(true));
+        savedInactivityEnabled = draftInputLocator.isChecked();
+        draftInputLocator.setChecked(!savedInactivityEnabled);
+      }
+
+      adminNavigation.openDrawer();
+      adminNavigation.groupLink(AdminConfigGroup.GENERAL).click();
+      unsavedChangesPrompt.keepEditing();
+
+      assertThat(draftInputLocator).isVisible();
+      if (configGroup == AdminConfigGroup.EXTERNAL_LOGIN) {
+        assertThat(draftInputLocator).hasValue("own-unsaved-provider-draft");
+      } else {
+        assertThat(draftInputLocator).hasJSProperty("checked", !savedInactivityEnabled);
+      }
+      adminNavigation.openDrawer();
+      adminNavigation.groupLink(AdminConfigGroup.GENERAL).click();
+      unsavedChangesPrompt.discard();
+
+      configurationPage.open(configGroup);
+      if (configGroup == AdminConfigGroup.EXTERNAL_LOGIN) {
+        assertThat(browserPage.locator("#provider-google-client-id input")).hasValue(savedClientId);
+      } else {
+        assertThat(browserPage.locator("#two-factor-inactivity-enabled"))
+            .hasJSProperty("checked", savedInactivityEnabled);
+      }
+    }
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
   @Tag("configuration-follow-up")
   @DisplayName("Konfigurationsentwurf bleibt beim Weiterbearbeiten erhalten")
-  void changingConfigurationGroupRequiresDiscardingTheDraft() {
+  void changingConfigurationGroupRequiresDiscardingTheDraft(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 1000);
     AdminConfigurationPage configurationPage = admin();
     AdminNavigation adminNavigation = new AdminNavigation(browserPage);
     UnsavedChangesPrompt unsavedChangesPrompt = new UnsavedChangesPrompt(browserPage, uiTexts);
@@ -423,7 +488,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       2. Jede Feldinfo per Klick öffnen: übersetzter Standardwert, Eingaberegeln und Wirksamkeit.
       3. Nur eine Info gleichzeitig sichtbar; per Info-Button wieder schließen.
       4. Ein gesetzter Standard-Geheimschlüssel bleibt vertraulich; das leere SMTP-Passwort zeigt ausdrücklich den Leerhinweis.
-      5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder, einschließlich Sitzungs-Timeout.
+      5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder, einschließlich Sitzungs-Timeout und der beiden Fristen zur Kontodeaktivierung.
       **Erwartet:** Keine Gruppe verliert ihre Bedienung; alle bisherigen Felder erhalten die gemeinsame Info-Funktion.
       """)
   void everyConfigurationFieldHasAnAccessibleLocalizedInfo(int width) {
@@ -476,7 +541,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       }
       total += count;
     }
-    assertEquals(33, total);
+    assertEquals(35, total);
     settings.open(AdminConfigGroup.SECURITY);
     UiTexts other = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     UserMenu userMenu = new UserMenu(browserPage);

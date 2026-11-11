@@ -1,35 +1,75 @@
-# Große Testrunde vom 10.11.2026
+# Große Testrunde vom 11.11.2026
 
-Geprüft wurde `main` auf `9c0d53e8` gegenüber dem letzten vollständigen
-Teststand `6b156cc9`. Seitdem wurden Java-Klassen in App, Shared und Browsertests
-lesbarer gegliedert, Klassen und ihre Verweise umbenannt und die Prüfungen für
-Statusauswahl, Avatar-Rücksetzung und Seitenüberschriften präzisiert. Die vorhandenen
-Tests deckten die betroffenen Abläufe ab. Die Runde ergab keinen Korrektur- oder
-Ergänzungsbedarf.
+Geprüft wurde der Stand dieses Commits auf
+`codex/vaadin-komponentenanpassungen` gegenüber dem letzten vollständigen
+Prüfstand auf `main`, `9c0d53e8`. Der Umfang enthält die Vaadin-Badges,
+Auswahlfelder und Kalender, den Schutz ungespeicherter Formulare sowie die
+eigene Kontodeaktivierung, Reaktivierung und endgültige Löschung. Die drei
+Umsetzungspakete wurden getrennt committet. Die Abschlusskorrekturen und
+Prüfnachweise gehören zu diesem Stand.
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| Optimierter Maven-Reactor, JDK 25, Maven-Modell und Coverage-Prüfer | Bestanden |
-| Spotless und Checkstyle | Bestanden |
-| Anwendungstests | 2.794 bestanden, zwei optionale Caddy-Tests übersprungen |
-| Browser-Helfer und Frontend | 98 und 20 bestanden |
+| Optimierter Maven-Reactor mit Java 25 und Coverage | Bestanden |
+| Spotless, Checkstyle und Diff-Prüfung | Bestanden |
+| Anwendungstests | 2.816 bestanden, zwei optionale Caddy-Tests übersprungen |
+| Browser-Helfertests | 98 bestanden |
+| Frontend-Offlinetests | 20 bestanden |
 | Coverage- und Sonar-Offlineprüfungen | 18 und 47 bestanden |
-| Isolierter Start des frischen JARs | `/login` lieferte HTTP 200 mit flüchtiger H2-Datenbank |
-| Browser `all` DE | 262 von 262 bestanden |
-| Browser `all` EN | 262 von 262 bestanden |
-| SonarQube auf `9c0d53e8` | 0 offene Findings im Gesamtprojekt und im neuen Code, 0 Security Hotspots, Quality Gate grün |
+| Wirksames Maven-Modell und Coverage-Prüfer | Bestanden, App rund 84,9 %, Shared 100 % Zeilenabdeckung |
+| Browser `all` DE | 274 von 274 bestanden, keine Fehler oder Skips |
+| Browser `all` EN | 274 von 274 bestanden, keine Fehler oder Skips |
+| SonarQube-Analysestand | Nicht bestätigt, authentifizierte Anbindung hier nicht verfügbar |
 
-Die beiden Browserläufe nutzten jeweils vier getrennte Anwendungs-, H2- und
-Mailpit-Umgebungen mit demselben Image
-`sha256:897365897184dae1aea50b280c46bf80e74086e92beb880d5875bbea0381d317`.
-Aufbau und Abbau waren erfolgreich. Der isolierte Prozess für die Startprüfung
-wurde ebenfalls beendet.
+Beide vollständigen Browserläufe verwendeten je vier getrennte Anwendungs-,
+H2-, HTTPS- und Mailpit-Umgebungen mit demselben unveränderten Image
+`sha256:d6992f888e037f71573cf5f000e4bcc99c5dd2d0309fcb6a0384bd83a39d60e9`.
+Aufbau und Abbau waren erfolgreich. Die Anwendungsstarts und das erweiterte
+Schema wurden dabei mit frischen isolierten Daten geprüft. Bestehende
+Entwicklerdaten und Dienste dienten nicht als Testfixture.
 
-Die SonarQube-Analyse `7ea67210-41a7-4114-be6e-f0c73d7ae846` gehört zum
-geprüften Commit. Sie bestätigt die Behebung der beiden Befunde zur
-Rollenauswertung und Browsertest-Auswahl durch Methodenreferenzen. Die drei
-weiteren Befunde sind direkt in SonarQube als zwei Fehlalarme und eine
-akzeptierte TOTP-Ausnahme begründet.
+## Korrekturen und ergänzte Abdeckung
+
+Die erste Beschriftung von „Konto verwalten“ fehlte, weil der Tab erst nach dem
+gesammelten Textaufbau ergänzt wird. Er erhält seinen übersetzten Text jetzt
+sofort und behält die Aktualisierung bei Sprachwechseln. Der Deaktivierungsdialog
+verwendet den vorhandenen Cosmos-Dialograhmen und den gemeinsamen Textgrößen-Token.
+Der native Bestätigungsdialog zum Verwerfen von Änderungen übernimmt ebenfalls
+die bestehenden Flächen, Abstände, Schriftwerte und Buttonvarianten. Der sichere
+Anfangsfokus bleibt auf „Weiter bearbeiten“.
+
+Die Browserfälle prüfen Profilentwürfe, allgemeine Konfiguration sowie Anbieter-
+und 2FA-Entwürfe bei Desktop- und Smartphonebreite. Die Kontoverwaltung ist mit
+falschem und richtigem Portalpasswort, Ersatzcode, empfangener Reaktivierungsmail
+und Löschbestätigung abgedeckt. Die JUnit-Persistenztests prüfen unter anderem
+festgeschriebene Fristen, einmalige Erinnerung, Ablauf, Admin-Sperre,
+Superadmin-Schutz und die Bereinigung zugehöriger Daten und Sitzungen.
+
+Veraltete Testannahmen zur Tabanzahl, Feldanzahl, Badgefarbe und zum Verlassen
+bearbeiteter Formulare wurden an die vereinbarten Verträge angepasst. Die
+Wartelogik erkennt den tatsächlichen Aktionsabschluss oder den Schutzdialog.
+Ein Anbieterfall tippte vor dem vollständigen Öffnen des Dialogs. Er wartet jetzt
+auf Ende der Öffnungsanimation und den initialen Fokus. Die korrigierten Abläufe
+sind in beiden vollständigen Sprachläufen erfolgreich. Die geänderten Klassen
+wurden einzeln auf Lesbarkeit geprüft.
+
+## Grenzen und offene Abnahme
+
+SonarQube ist erreichbar. Die ausschließlich lesenden Abfragen für Analyse,
+Findings und Quality Gate erhielten ohne verfügbare authentifizierte Verbindung
+HTTP 401. Es wurde kein neuer Scan und keine Statusänderung ausgeführt. Die
+vorherige bestätigte Analyse auf `main` deckt diese neuen Pakete nicht ab.
+Die Funktionstests sind vollständig erfolgreich, ein aktuelles Sonar-Gate wird
+damit nicht behauptet.
+
+Der Formularschutz greift bei interner Navigation, den Neu-laden-Aktionen der
+Konfiguration und dem Schließen der Benutzerformulare. Ein Browser-Refresh oder
+das Schließen des Browser-Tabs wird davon nicht abgefangen. Die Browsernachweise
+verwenden Chromium mit Desktop- und Smartphonebreiten.
 
 Der [Testbedarf](testbedarf.md) enthält keine offenen automatisierten Fälle.
-Menschliche Sonderprüfungen stehen im [manuellen Prüfkatalog](manual-tests/README.md).
+Die gemeinsame Sichtung der drei Pakete steht im
+[Komponentenplan](planung/vaadin-komponenten-abgleich.md#offene-abnahme-der-portalpakete).
+Menschliche Geräte-, Darstellungs- und Mailclientprüfungen bleiben im
+[manuellen Katalog](manual-tests/README.md). Für die lokale Sichtung des erweiterten
+Datenmodells sind eine frische Entwicklungsdatenbank und ein Anwendungsneustart nötig.

@@ -10,6 +10,7 @@ import de.derpeterson.browsertests.suites.AccountSettingsBrowserTest;
 import de.derpeterson.browsertests.suites.AuthenticationBrowserTest;
 import de.derpeterson.browsertests.suites.ExternalLoginBrowserTest;
 import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
+import de.derpeterson.browsertests.suites.NotificationInboxBrowserTest;
 import de.derpeterson.browsertests.suites.SessionManagementBrowserTest;
 import de.derpeterson.browsertests.suites.UserNotificationsBrowserTest;
 import java.lang.reflect.Method;
@@ -44,21 +45,23 @@ class BrowserExecutionPlanTest {
         "configuration-field-help",
         "external-login-settings"
       })
-  void focusedSuitesSelectOnlyTheirExistingJourneys(String suite) {
-    TestPlan plan =
+  void focusedSuitesSelectOnlyTheirExistingJourneys(String suiteName) {
+    TestPlan browserTestPlan =
         LauncherFactory.create()
-            .discover(BrowserExecutionPlan.request(BrowserSuites.select(suite), suite));
-    Set<String> methods = new HashSet<>();
-    for (TestIdentifier root : plan.getRoots()) {
-      for (TestIdentifier test : plan.getDescendants(root)) {
-        test.getSource()
+            .discover(BrowserExecutionPlan.request(BrowserSuites.select(suiteName), suiteName));
+    Set<String> selectedMethodNames = new HashSet<>();
+    for (TestIdentifier rootTestIdentifier : browserTestPlan.getRoots()) {
+      for (TestIdentifier testIdentifier : browserTestPlan.getDescendants(rootTestIdentifier)) {
+        testIdentifier
+            .getSource()
             .filter(MethodSource.class::isInstance)
             .map(MethodSource.class::cast)
-            .ifPresent(method -> methods.add(method.getMethodName()));
+            .ifPresent(
+                testMethodSource -> selectedMethodNames.add(testMethodSource.getMethodName()));
       }
     }
-    Set<String> expected =
-        switch (suite) {
+    Set<String> expectedMethodNames =
+        switch (suiteName) {
           case "two-factor-setup" ->
               Set.of("requiredIntroductionReusesFreshPasswordWithoutGrantingPortalAccess");
           case "two-factor-confirmation" -> Set.of("confirmationRecoveryAndHelpUseNativeControls");
@@ -77,6 +80,8 @@ class BrowserExecutionPlanTest {
               Set.of("globalScrollbarsPreserveNativeScrollingAndLocalChatSpacing");
           case "configuration-follow-up" ->
               Set.of(
+                  "changingConfigurationGroupRequiresDiscardingTheDraft",
+                  "providerAndFactorDraftsRequireExplicitDiscard",
                   "everyConfigurationFieldHasAnAccessibleLocalizedInfo",
                   "remainingDurationFieldsPersistWithoutExposingTheCalculationBelowTheInput",
                   "expiredSessionLeavesOnlyItsSavedLogin",
@@ -96,107 +101,112 @@ class BrowserExecutionPlanTest {
                   "disabledProvidersPreserveExistingAccountAccess");
         };
 
-    assertEquals(expected, methods);
+    assertEquals(expectedMethodNames, selectedMethodNames);
   }
 
   @Test
   void externalSuiteKeepsTheLongProviderClassOnItsOwnWorker() {
-    List<List<Class<?>>> groups =
+    List<List<Class<?>>> workerClassGroups =
         BrowserExecutionPlan.partition(BrowserSuites.select("external-login"), 3, "external-login");
 
     assertEquals(
         List.of(ExternalLoginBrowserTest.class),
-        groups.stream()
-            .filter(group -> group.contains(ExternalLoginBrowserTest.class))
+        workerClassGroups.stream()
+            .filter(workerClasses -> workerClasses.contains(ExternalLoginBrowserTest.class))
             .findFirst()
             .orElseThrow());
   }
 
   @Test
   void notificationCasesAreInAllAndKeepTheFastSelectionUnchanged() {
-    Class<UserNotificationsBrowserTest> type =
-        de.derpeterson.browsertests.suites.UserNotificationsBrowserTest.class;
+    Class<UserNotificationsBrowserTest> testClass = UserNotificationsBrowserTest.class;
 
-    assertTrue(BrowserSuites.select("all").contains(type));
-    assertFalse(BrowserExecutionPlan.classes("fast").contains(type));
-    int cases = 0;
-    for (Method method : type.getDeclaredMethods()) {
-      if (!method.isAnnotationPresent(Test.class)
-          && !method.isAnnotationPresent(ParameterizedTest.class)) {
+    assertTrue(BrowserSuites.select("all").contains(testClass));
+    assertFalse(BrowserExecutionPlan.classes("fast").contains(testClass));
+    int testCaseCount = 0;
+    for (Method testMethod : testClass.getDeclaredMethods()) {
+      if (!testMethod.isAnnotationPresent(Test.class)
+          && !testMethod.isAnnotationPresent(ParameterizedTest.class)) {
         continue;
       }
-      assertFalse(method.isAnnotationPresent(Disabled.class));
-      ValueSource values =
-          method.getAnnotation(org.junit.jupiter.params.provider.ValueSource.class);
-      cases += values == null ? 1 : values.ints().length + values.booleans().length;
+      assertFalse(testMethod.isAnnotationPresent(Disabled.class));
+      ValueSource valueSource = testMethod.getAnnotation(ValueSource.class);
+      testCaseCount +=
+          valueSource == null ? 1 : valueSource.ints().length + valueSource.booleans().length;
     }
-    assertEquals(5, cases);
-    assertTrue(
-        BrowserSuites.select("all")
-            .contains(de.derpeterson.browsertests.suites.NotificationInboxBrowserTest.class));
+    assertEquals(5, testCaseCount);
+    assertTrue(BrowserSuites.select("all").contains(NotificationInboxBrowserTest.class));
     assertEquals(2, BrowserSuites.select("notifications").size());
-    assertFalse(
-        BrowserExecutionPlan.classes("fast")
-            .contains(de.derpeterson.browsertests.suites.NotificationInboxBrowserTest.class));
+    assertFalse(BrowserExecutionPlan.classes("fast").contains(NotificationInboxBrowserTest.class));
   }
 
   @Test
   void fastUsesOnlyExplicitlyMarkedExistingCases() {
-    List<Class<?>> selected = BrowserExecutionPlan.classes("fast");
+    List<Class<?>> selectedTestClasses = BrowserExecutionPlan.classes("fast");
 
-    assertFalse(selected.isEmpty());
-    assertTrue(BrowserSuites.select("all").containsAll(selected));
-    TestPlan plan =
-        LauncherFactory.create().discover(BrowserExecutionPlan.request(selected, "fast"));
-    Set<String> discovered = new HashSet<>();
-    for (TestIdentifier root : plan.getRoots()) {
-      for (TestIdentifier test : plan.getDescendants(root)) {
-        test.getSource()
+    assertFalse(selectedTestClasses.isEmpty());
+    assertTrue(BrowserSuites.select("all").containsAll(selectedTestClasses));
+    TestPlan browserTestPlan =
+        LauncherFactory.create()
+            .discover(BrowserExecutionPlan.request(selectedTestClasses, "fast"));
+    Set<String> discoveredMethodNames = new HashSet<>();
+    for (TestIdentifier rootTestIdentifier : browserTestPlan.getRoots()) {
+      for (TestIdentifier testIdentifier : browserTestPlan.getDescendants(rootTestIdentifier)) {
+        testIdentifier
+            .getSource()
             .filter(MethodSource.class::isInstance)
             .map(MethodSource.class::cast)
-            .ifPresent(
-                method -> discovered.add(method.getClassName() + "#" + method.getMethodName()));
+            .ifPresent(testMethodSource ->
+                discoveredMethodNames.add(
+                    testMethodSource.getClassName() + "#" + testMethodSource.getMethodName()));
       }
     }
-    Set<String> marked = new HashSet<>();
-    for (Class<?> type : BrowserSuites.select("all")) {
-      for (Method method : type.getDeclaredMethods()) {
-        if (BrowserExecutionPlan.fast(method)) {
-          marked.add(type.getName() + "#" + method.getName());
+    Set<String> fastTaggedMethodNames = new HashSet<>();
+    for (Class<?> testClass : BrowserSuites.select("all")) {
+      for (Method testMethod : testClass.getDeclaredMethods()) {
+        if (BrowserExecutionPlan.fast(testMethod)) {
+          fastTaggedMethodNames.add(testClass.getName() + "#" + testMethod.getName());
         }
       }
     }
-    assertEquals(marked, discovered);
-    assertTrue(discovered.stream().anyMatch(name -> name.contains("AuthenticationBrowserTest")));
-    assertTrue(discovered.stream().anyMatch(name -> name.contains("UserFiltersBrowserTest")));
-    assertTrue(discovered.stream().anyMatch(name -> name.contains("CosmosDesignBrowserTest")));
+    assertEquals(fastTaggedMethodNames, discoveredMethodNames);
     assertTrue(
-        discovered.stream()
-            .noneMatch(name ->
-                name.contains("TokenExpiryBrowserTest") || name.contains("UserStatusBrowserTest")));
+        discoveredMethodNames.stream()
+            .anyMatch(methodName -> methodName.contains("AuthenticationBrowserTest")));
+    assertTrue(
+        discoveredMethodNames.stream()
+            .anyMatch(methodName -> methodName.contains("UserFiltersBrowserTest")));
+    assertTrue(
+        discoveredMethodNames.stream()
+            .anyMatch(methodName -> methodName.contains("CosmosDesignBrowserTest")));
+    assertTrue(
+        discoveredMethodNames.stream()
+            .noneMatch(methodName ->
+                methodName.contains("TokenExpiryBrowserTest")
+                    || methodName.contains("UserStatusBrowserTest")));
   }
 
   @Test
   void fastCaseCountMatchesDocumentedSelectionIncludingAllCsvVariants() {
-    int cases = 0;
-    for (Class<?> type : BrowserExecutionPlan.classes("fast")) {
-      for (Method method : type.getDeclaredMethods()) {
-        if (!BrowserExecutionPlan.fast(method)) {
+    int testCaseCount = 0;
+    for (Class<?> testClass : BrowserExecutionPlan.classes("fast")) {
+      for (Method testMethod : testClass.getDeclaredMethods()) {
+        if (!BrowserExecutionPlan.fast(testMethod)) {
           continue;
         }
-        CsvSource csv = method.getAnnotation(CsvSource.class);
-        cases += csv == null ? 1 : csv.value().length;
+        CsvSource csvSource = testMethod.getAnnotation(CsvSource.class);
+        testCaseCount += csvSource == null ? 1 : csvSource.value().length;
 
-        assertFalse(method.isAnnotationPresent(Disabled.class));
+        assertFalse(testMethod.isAnnotationPresent(Disabled.class));
       }
     }
     assertEquals(
-        34, cases, "Update the documented selection deliberately when changing fast tags.");
+        34, testCaseCount, "Update the documented selection deliberately when changing fast tags.");
   }
 
   @Test
   void partitionsCoverEveryClassOnceForAllSupportedWorkerCounts() {
-    for (String suite :
+    for (String suiteName :
         List.of(
             "all",
             "fast",
@@ -206,29 +216,33 @@ class BrowserExecutionPlanTest {
             "session-persistence",
             "maintenance",
             "user-management")) {
-      List<Class<?>> selected = BrowserExecutionPlan.classes(suite);
-      for (int workers = 1; workers <= 4; workers++) {
-        List<List<Class<?>>> groups = BrowserExecutionPlan.partition(selected, workers, suite);
-        List<Class<?>> flattened = groups.stream().flatMap(List::stream).toList();
+      List<Class<?>> selectedTestClasses = BrowserExecutionPlan.classes(suiteName);
+      for (int workerCount = 1; workerCount <= 4; workerCount++) {
+        List<List<Class<?>>> workerClassGroups =
+            BrowserExecutionPlan.partition(selectedTestClasses, workerCount, suiteName);
+        List<Class<?>> flattenedTestClasses =
+            workerClassGroups.stream().flatMap(List::stream).toList();
 
-        assertEquals(selected.size(), flattened.size());
-        assertEquals(new HashSet<>(selected), new HashSet<>(flattened));
-        assertEquals(Math.min(workers, selected.size()), groups.size());
-        assertTrue(groups.stream().noneMatch(List::isEmpty));
-        assertEquals(groups, BrowserExecutionPlan.partition(selected, workers, suite));
+        assertEquals(selectedTestClasses.size(), flattenedTestClasses.size());
+        assertEquals(new HashSet<>(selectedTestClasses), new HashSet<>(flattenedTestClasses));
+        assertEquals(Math.min(workerCount, selectedTestClasses.size()), workerClassGroups.size());
+        assertTrue(workerClassGroups.stream().noneMatch(List::isEmpty));
+        assertEquals(
+            workerClassGroups,
+            BrowserExecutionPlan.partition(selectedTestClasses, workerCount, suiteName));
       }
     }
   }
 
   @Test
   void persistenceAcceptanceCombinesSessionMaintenanceAndAccountSecurityWithoutDuplicates() {
-    List<Class<?>> selected = BrowserSuites.select("session-persistence");
+    List<Class<?>> selectedTestClasses = BrowserSuites.select("session-persistence");
 
-    assertEquals(9, selected.size());
-    assertEquals(selected.size(), new HashSet<>(selected).size());
-    assertTrue(selected.containsAll(BrowserSuites.select("session-limits")));
-    assertTrue(selected.containsAll(BrowserSuites.select("maintenance")));
-    assertTrue(selected.containsAll(BrowserSuites.select("account-security")));
+    assertEquals(9, selectedTestClasses.size());
+    assertEquals(selectedTestClasses.size(), new HashSet<>(selectedTestClasses).size());
+    assertTrue(selectedTestClasses.containsAll(BrowserSuites.select("session-limits")));
+    assertTrue(selectedTestClasses.containsAll(BrowserSuites.select("maintenance")));
+    assertTrue(selectedTestClasses.containsAll(BrowserSuites.select("account-security")));
   }
 
   @Test
@@ -241,15 +255,18 @@ class BrowserExecutionPlanTest {
         () ->
             BrowserExecutionPlan.workerClasses(
                 "all", "AuthenticationBrowserTest,AuthenticationBrowserTest"));
-    List<Class<?>> empty = List.of();
-    List<Class<?>> all = BrowserExecutionPlan.classes("all");
+    List<Class<?>> emptyTestClasses = List.of();
+    List<Class<?>> allTestClasses = BrowserExecutionPlan.classes("all");
 
     assertThrows(
-        IllegalArgumentException.class, () -> BrowserExecutionPlan.partition(empty, 2, "all"));
+        IllegalArgumentException.class,
+        () -> BrowserExecutionPlan.partition(emptyTestClasses, 2, "all"));
     assertThrows(
-        IllegalArgumentException.class, () -> BrowserExecutionPlan.partition(all, 0, "all"));
+        IllegalArgumentException.class,
+        () -> BrowserExecutionPlan.partition(allTestClasses, 0, "all"));
     assertThrows(
-        IllegalArgumentException.class, () -> BrowserExecutionPlan.partition(all, 5, "all"));
+        IllegalArgumentException.class,
+        () -> BrowserExecutionPlan.partition(allTestClasses, 5, "all"));
     assertEquals(
         List.of(AuthenticationBrowserTest.class),
         BrowserExecutionPlan.workerClasses("all", "AuthenticationBrowserTest"));
@@ -257,21 +274,21 @@ class BrowserExecutionPlanTest {
 
   @Test
   void maintenanceCasesAreIncludedInAllButNotImplicitlyInFast() {
-    List<Class<?>> classes = BrowserSuites.select("maintenance");
+    List<Class<?>> selectedTestClasses = BrowserSuites.select("maintenance");
 
-    assertEquals(List.of(MaintenanceBrowserTest.class), classes);
-    assertTrue(BrowserSuites.select("all").containsAll(classes));
-    int cases = 0;
-    for (Method method : classes.getFirst().getDeclaredMethods()) {
-      if (!method.isAnnotationPresent(Test.class)
-          && !method.isAnnotationPresent(ParameterizedTest.class)) {
+    assertEquals(List.of(MaintenanceBrowserTest.class), selectedTestClasses);
+    assertTrue(BrowserSuites.select("all").containsAll(selectedTestClasses));
+    int testCaseCount = 0;
+    for (Method testMethod : selectedTestClasses.getFirst().getDeclaredMethods()) {
+      if (!testMethod.isAnnotationPresent(Test.class)
+          && !testMethod.isAnnotationPresent(ParameterizedTest.class)) {
         continue;
       }
-      assertFalse(BrowserExecutionPlan.fast(method));
-      CsvSource csv = method.getAnnotation(CsvSource.class);
-      cases += csv == null ? 1 : csv.value().length;
+      assertFalse(BrowserExecutionPlan.fast(testMethod));
+      CsvSource csvSource = testMethod.getAnnotation(CsvSource.class);
+      testCaseCount += csvSource == null ? 1 : csvSource.value().length;
     }
-    assertEquals(9, cases);
+    assertEquals(9, testCaseCount);
   }
 
   @Test
@@ -279,8 +296,8 @@ class BrowserExecutionPlanTest {
     assertEquals(
         List.of(AccountSettingsBrowserTest.class), BrowserSuites.select("account-settings"));
     assertTrue(BrowserSuites.select("all").contains(AccountSettingsBrowserTest.class));
-    for (Method method : AccountSettingsBrowserTest.class.getDeclaredMethods()) {
-      assertFalse(BrowserExecutionPlan.fast(method));
+    for (Method testMethod : AccountSettingsBrowserTest.class.getDeclaredMethods()) {
+      assertFalse(BrowserExecutionPlan.fast(testMethod));
     }
     assertThrows(IllegalStateException.class, BrowserTestRunner::restartTestApplication);
   }
@@ -291,21 +308,22 @@ class BrowserExecutionPlanTest {
         List.of(AccountSecurityBrowserTest.class), BrowserSuites.select("account-security"));
     assertEquals(
         List.of(SessionManagementBrowserTest.class), BrowserSuites.select("session-management"));
-    for (Class<? extends BrowserFixture> type :
+    for (Class<? extends BrowserFixture> testClass :
         List.of(AccountSecurityBrowserTest.class, SessionManagementBrowserTest.class)) {
-      assertEquals(1, BrowserSuites.select("all").stream().filter(item -> item == type).count());
-      assertFalse(BrowserExecutionPlan.classes("fast").contains(type));
+      assertEquals(
+          1, BrowserSuites.select("all").stream().filter(item -> item == testClass).count());
+      assertFalse(BrowserExecutionPlan.classes("fast").contains(testClass));
     }
     assertTrue(BrowserSuites.select("session-limits").contains(SessionManagementBrowserTest.class));
     assertEquals(
         4,
         Arrays.stream(AccountSecurityBrowserTest.class.getDeclaredMethods())
-            .filter(method -> method.isAnnotationPresent(Test.class))
+            .filter(testMethod -> testMethod.isAnnotationPresent(Test.class))
             .count());
     assertEquals(
         7,
         Arrays.stream(SessionManagementBrowserTest.class.getDeclaredMethods())
-            .filter(method -> method.isAnnotationPresent(Test.class))
+            .filter(testMethod -> testMethod.isAnnotationPresent(Test.class))
             .count());
   }
 }

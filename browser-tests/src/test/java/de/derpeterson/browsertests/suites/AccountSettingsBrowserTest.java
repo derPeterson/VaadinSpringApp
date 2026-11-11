@@ -27,6 +27,7 @@ import de.derpeterson.browsertests.pages.UserMenu;
 import de.derpeterson.browsertests.pages.UserStatusMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
+import io.qameta.allure.playwright.AllurePlaywright;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
@@ -60,6 +61,12 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     String accountEmail = account();
     openAccountLifecycleTab();
     browserPage.locator("#account-deactivate").click();
+    assertThat(browserPage.locator("#account-lifecycle-password input")).isVisible();
+    assertThat(browserPage.locator("#account-lifecycle-proof")).not().hasAttribute("opening", "");
+    assertThat(browserPage.locator("#account-lifecycle-proof .cosmos-panel-description"))
+        .hasCSS("font-size", "12px");
+    AllurePlaywright.attachScreenshot(
+        "Kontodeaktivierung bei " + viewportWidth + " px", browserPage);
     confirmLifecycleWithPortalPassword();
 
     assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
@@ -166,10 +173,12 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     return email;
   }
 
-  @Test
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
   @DisplayName(
       "Beim Wechsel des Kontobereichs kann ein Profilentwurf behalten oder verworfen werden")
-  void profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard() {
+  void profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 900);
     account();
     AccountPage accountPage = new AccountPage(browserPage);
     UnsavedChangesPrompt unsavedChangesPrompt = new UnsavedChangesPrompt(browserPage, uiTexts);
@@ -179,6 +188,24 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     firstNameInputLocator.fill("Temporary draft");
 
     accountPage.section("account-tab-security");
+    assertThat(unsavedChangesPrompt.root()).not().hasAttribute("opening", "");
+    assertThat(unsavedChangesPrompt.root().locator("[part=overlay]"))
+        .hasCSS("background-color", "rgb(5, 8, 17)");
+    assertThat(unsavedChangesPrompt.root().locator("[part=header]"))
+        .hasCSS("margin-inline-start", "0px");
+    assertThat(unsavedChangesPrompt.root().locator("[part=header]")).hasCSS("font-size", "18px");
+    assertThat(unsavedChangesPrompt.root().locator("[part=content]")).hasCSS("font-size", "12px");
+    assertThat(
+            unsavedChangesPrompt
+                .root()
+                .getByRole(
+                    AriaRole.BUTTON,
+                    new Locator.GetByRoleOptions()
+                        .setName(uiTexts.getUnsavedChangesKeepEditing())
+                        .setExact(true)))
+        .isFocused();
+    AllurePlaywright.attachScreenshot(
+        "Formularschutz im Konto bei " + viewportWidth + " px", browserPage);
     unsavedChangesPrompt.keepEditing();
     assertThat(firstNameInputLocator).hasValue("Temporary draft");
 
@@ -351,21 +378,24 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       "ACCOUNT-04A–D: E-Mail-Dialog öffnen, schließen und ohne sensible Entwürfe wiederöffnen")
   @Description(
       """
-      1. Eigenes Konto öffnen und ungespeicherten Profilnamen eingeben; Tabs wechseln.
+      1. Eigenes Konto öffnen, Profilnamen bearbeiten und Navigation zunächst abbrechen. Profil speichern und Tabs wechseln.
       2. Fehlenden Profil-Ändern-Button prüfen; E-Mail-Dialog unter Sicherheit öffnen: lokalisierte Felder, Bestätigung, Passwort, Info und Blur prüfen.
       3. Erfundenen E-Mail-/Passwortentwurf eingeben; per Icon, Abbrechen, Escape oder Außenklick schließen.
-      4. Unter Sicherheit erneut öffnen: beide E-Mail-Felder und Passwort leer, Profilentwurf unverändert.
+      4. Unter Sicherheit erneut öffnen: beide E-Mail-Felder und Passwort leer, gespeicherter Profilname unverändert.
       **Erwartet:** Sicherheit öffnet den Dialog; Schließen verwirft nur Dialogeingaben. Kein echter E-Mail-Wechsel.
       """)
-  void emailDraftClosesWithoutChangingTheProfile(String close, String caseId) {
+  void emailDraftClosesWithoutChangingTheProfile(String closeAction, String caseId) {
     String email = account();
     AccountPage form = new AccountPage(browserPage);
     form.open();
     form.input("account-first-name").fill("Draft");
     form.host("account-tab-security").click();
-    form.host("account-tab-profile").click();
+    new UnsavedChangesPrompt(browserPage, uiTexts).keepEditing();
 
     assertThat(form.input("account-first-name")).hasValue("Draft");
+    form.save();
+    form.assertMessage(uiTexts.getAccountSettingsSaveSuccess());
+    form.closeNotification();
     assertThat(form.host("account-email-edit-profile")).hasCount(0);
     form.openEmail();
 
@@ -388,7 +418,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.input("account-email-new").fill("draft@example.test");
     form.input("account-email-confirm").fill("draft@example.test");
     form.input("account-email-password").fill("Local-Draft-Only!");
-    form.closeEmail(close);
+    form.closeEmail(closeAction);
     form.openEmail();
 
     assertThat(form.input("account-email-new")).hasValue("");

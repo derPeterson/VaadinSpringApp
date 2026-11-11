@@ -28,6 +28,7 @@ import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UiActions;
+import de.derpeterson.browsertests.pages.UnsavedChangesPrompt;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -112,7 +113,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       """
       1. Eigenes Konto anlegen und in zwei unabhängigen Browserkontexten anmelden.
       2. Feldfehler im ersten Fenster und Speichererfolg im zweiten prüfen: Hinweise beeinflussen sich nicht.
-      3. Kontositzungen öffnen: genau zwei aktive Zeilen, aktuelle Sitzung deaktiviert.
+      3. Den ungültigen Profilentwurf ausdrücklich verwerfen und Kontositzungen öffnen: genau zwei aktive Zeilen, aktuelle Sitzung deaktiviert.
       4. Weiteren Tab im selben Kontext öffnen: kein zusätzlicher Platz.
       5. Limit im Adminformular ändern und Sitzungsliste aktualisieren; Sitzungs-Tab per Reload erhalten.
       **Erwartet:** Echte Daten, keine Beispielgeräte, sofort aktuelles Limit und eine gemeinsame Tabsitzung.
@@ -138,8 +139,9 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       otherForm.closeNotification();
       ownerForm.assertMessage(uiTexts.getBaseValidationRequiredMessage());
       ownerForm.closeNotification();
+      ownerForm.section("account-tab-sessions");
+      new UnsavedChangesPrompt(owner.browserPage, uiTexts).discard();
       AccountSessionsPage sessions = new AccountSessionsPage(owner.browserPage);
-      sessions.open();
       sessions.assertCounts(2, 1, 0);
       try (Page tab = owner.browserContext.newPage()) {
         tab.navigate(path(HOME_ROUTE));

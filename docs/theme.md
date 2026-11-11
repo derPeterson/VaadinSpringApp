@@ -12,6 +12,14 @@ erfolgreich gespeicherten Stand. Die Warnung greift bei der internen Navigation
 in Kontoprofil und Konfiguration, beim erneuten Laden der Konfiguration über ihre
 Schaltfläche und beim Schließen der Benutzerformulare. Filter haben eigene,
 unveränderte Bedienabläufe.
+Die lokale Klasse `cosmos-unsaved-changes-dialog` in `cosmos-admin.css` überträgt
+die bestehenden Cosmos-Flächen, Schriftwerte und Abstände über öffentliche Parts.
+Die Aktionen sind native Vaadin-Buttons mit den vorhandenen Primär- und Löschstilen.
+
+Die Bestätigung der eigenen Kontodeaktivierung oder Löschung verwendet denselben
+nativen Cosmos-Dialograhmen wie die übrigen Kontoaktionen. Die lokale Klasse
+`account-lifecycle-explanation` in `cosmos-account.css` hält den Erklärungstext
+auf der gemeinsamen Textgröße `--cosmos-font-size-s`.
 
 Die laufende Vaadin-Anwendung ist die verbindliche Vorlage für Besucherbereich,
 Portal und Administration. Für Stitch kann die betroffene Ansicht in einer

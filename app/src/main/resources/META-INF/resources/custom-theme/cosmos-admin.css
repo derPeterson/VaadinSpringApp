@@ -565,6 +565,68 @@ vaadin-app-layout.cosmos-admin {
 
 /* 7. DIALOGE / gemeinsame Innenabstände und Aktionsleisten */
 
+/* Der native Formularschutz übernimmt die vorhandenen Dialogflächen und Buttonregeln. */
+vaadin-confirm-dialog.cosmos-unsaved-changes-dialog {
+    --vaadin-confirm-dialog-min-width: 0;
+    --vaadin-confirm-dialog-max-width: min(var(--cosmos-dialog-width-account), calc(100vw - 32px));
+    --vaadin-dialog-title-font-size: var(--cosmos-font-size-title);
+    --vaadin-dialog-title-font-weight: var(--cosmos-font-weight-semibold);
+    --vaadin-dialog-title-color: var(--cosmos-reference-white);
+}
+
+vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(overlay) {
+    box-sizing: border-box;
+    width: min(var(--cosmos-dialog-width-account), calc(100vw - 32px));
+    padding: 0;
+    border: var(--cosmos-border-width) solid var(--cosmos-reference-control-border);
+    border-radius: var(--cosmos-overlay-radius);
+    background: var(--cosmos-reference-page);
+    color: var(--cosmos-reference-text);
+    box-shadow: var(--cosmos-overlay-shadow);
+}
+
+vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(backdrop) {
+    background: var(--cosmos-reference-backdrop);
+    -webkit-backdrop-filter: blur(var(--cosmos-dialog-backdrop-blur));
+    backdrop-filter: blur(var(--cosmos-dialog-backdrop-blur));
+}
+
+vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(header) {
+    margin: 0;
+    padding: var(--cosmos-dialog-chrome-padding);
+    border-bottom: var(--cosmos-border-width) solid var(--cosmos-reference-border);
+    border-radius: calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width)) calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width)) 0 0;
+    background: var(--cosmos-reference-dialog);
+    color: var(--vaadin-dialog-title-color);
+    font: var(--vaadin-dialog-title-font-weight) var(--vaadin-dialog-title-font-size)/1.5 Inter, sans-serif;
+}
+
+vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(content) {
+    padding: var(--cosmos-dialog-content-padding);
+    color: var(--cosmos-reference-secondary);
+    font: var(--cosmos-font-weight-regular) var(--cosmos-font-size-s)/20px Inter, sans-serif;
+}
+
+vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(footer) {
+    flex-wrap: wrap;
+    gap: var(--cosmos-space-s);
+    padding: var(--cosmos-dialog-compact-padding) var(--cosmos-space-2xl);
+    border-top: var(--cosmos-border-width) solid var(--cosmos-reference-border);
+    border-radius: 0 0 calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width)) calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width));
+    background: var(--cosmos-reference-dialog);
+}
+
+vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(confirm-button),
+vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(reject-button) {
+    flex: 1 1 160px;
+    margin: 0;
+}
+
+vaadin-confirm-dialog.cosmos-unsaved-changes-dialog > vaadin-button {
+    width: 100%;
+    margin: 0;
+}
+
 /* Nur den Hintergrund außerhalb des Dialogs weichzeichnen. Der native Backdrop
  * übernimmt weiterhin den Außenklick; der Dialoginhalt bleibt scharf. */
 

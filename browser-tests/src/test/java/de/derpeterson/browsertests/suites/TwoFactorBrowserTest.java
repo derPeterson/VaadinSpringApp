@@ -1129,7 +1129,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(ticketCard(browserPage, number).locator(".support-assignee-self")).hasCount(0);
     assertThat(own.locator(".support-assignee-self")).hasText(uiTexts.getSupportYou());
     assertThat(own.locator(".support-assignee-self"))
-        .hasCSS("border-top-color", "rgba(16, 185, 129, 0.2)");
+        .hasCSS("border-top-color", "color(srgb 0.203922 0.827451 0.6 / 0.25)");
     assertThat(own.locator(".support-assignee-self")).hasCSS("border-top-width", "1px");
     assertThat(ticketCard(assignee, number).locator(".support-assignee-self"))
         .hasText(uiTexts.getSupportYou());
@@ -1916,6 +1916,11 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     if (!provider.equals("password")) {
       browserPage.locator("#account-security-tab-providers").click();
       browserPage.locator("#external-connect-" + provider).click();
+
+      assertThat(browserPage.locator("#external-identity-dialog"))
+          .not()
+          .hasAttribute("opening", "");
+      assertThat(browserPage.locator("#external-confirm-factor input")).isFocused();
       browserPage
           .locator("#external-confirm-factor input")
           .pressSequentially(TwoFactorPage.totp(browserPage, email));

@@ -5,8 +5,12 @@ import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertTha
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.Duration;
 
 /** The four visible token settings; no database or service access. */
 public final class TokenConfigurationPage {
@@ -19,90 +23,100 @@ public final class TokenConfigurationPage {
 
   @Step("Token-Laufzeiten über die Adminnavigation öffnen")
   public void open() {
-    new AdminConfigurationPage(browserPage).open(de.derpeterson.app.config.AdminConfigGroup.TOKENS);
+    new AdminConfigurationPage(browserPage).open(AdminConfigGroup.TOKENS);
 
-    assertThat(button(uiTexts.getAdminConfigSave())).isVisible();
+    assertThat(findActionButtonLocator(uiTexts.getAdminConfigSave())).isVisible();
   }
 
-  public Locator field(String label) {
+  public Locator field(String fieldLabelText) {
     return new AdminConfigurationPage(browserPage)
-        .duration(label)
+        .duration(fieldLabelText)
         .locator("vaadin-big-decimal-field");
   }
 
-  public String value(String label) {
-    java.math.BigDecimal tokenDurationSeconds =
-        new AdminConfigurationPage(browserPage).seconds(label);
-    java.math.BigInteger[] secondsAndNanoseconds =
+  public String value(String fieldLabelText) {
+    BigDecimal tokenDurationSeconds =
+        new AdminConfigurationPage(browserPage).seconds(fieldLabelText);
+    BigInteger[] secondsAndNanoseconds =
         tokenDurationSeconds
             .movePointRight(9)
             .toBigIntegerExact()
-            .divideAndRemainder(java.math.BigInteger.valueOf(1_000_000_000));
+            .divideAndRemainder(BigInteger.valueOf(1_000_000_000));
 
-    return java.time.Duration.ofSeconds(
+    return Duration.ofSeconds(
             secondsAndNanoseconds[0].longValueExact(), secondsAndNanoseconds[1].longValueExact())
         .toString();
   }
 
   @Step("Dauer als Zahl und Einheit eingeben")
-  public void enter(String label, String tokenDurationText) {
-    java.time.Duration tokenDuration =
+  public void enter(String fieldLabelText, String tokenDurationText) {
+    Duration tokenDuration =
         tokenDurationText.startsWith("P")
-            ? java.time.Duration.parse(tokenDurationText)
-            : java.time.Duration.ofMinutes(
+            ? Duration.parse(tokenDurationText)
+            : Duration.ofMinutes(
                 Long.parseLong(tokenDurationText.substring(0, tokenDurationText.length() - 1)));
-    java.math.BigDecimal tokenDurationSeconds =
-        java.math.BigDecimal.valueOf(tokenDuration.getSeconds())
-            .add(java.math.BigDecimal.valueOf(tokenDuration.getNano(), 9));
+    BigDecimal tokenDurationSeconds =
+        BigDecimal.valueOf(tokenDuration.getSeconds())
+            .add(BigDecimal.valueOf(tokenDuration.getNano(), 9));
 
-    new AdminConfigurationPage(browserPage).enterSeconds(label, tokenDurationSeconds);
+    new AdminConfigurationPage(browserPage).enterSeconds(fieldLabelText, tokenDurationSeconds);
   }
 
   @Step("Dauer ablehnen und lokalisierten Feldfehler prüfen")
-  public void reject(String label, String error) {
-    button(uiTexts.getAdminConfigSave()).click();
+  public void reject(String fieldLabelText, String expectedErrorText) {
+    findActionButtonLocator(uiTexts.getAdminConfigSave()).click();
 
-    assertThat(field(label)).hasAttribute("invalid", "");
-    assertThat(field(label)).hasJSProperty("errorMessage", error);
-    assertThat(notice()).containsText(uiTexts.getAdminConfigValidationInvalidFields());
-    dismiss();
+    assertThat(field(fieldLabelText)).hasAttribute("invalid", "");
+    assertThat(field(fieldLabelText)).hasJSProperty("errorMessage", expectedErrorText);
+    assertThat(notificationCardLocator())
+        .containsText(uiTexts.getAdminConfigValidationInvalidFields());
+    dismissNotificationCard();
   }
 
   @Step("Konfiguration speichern")
   public void save() {
-    button(uiTexts.getAdminConfigSave()).click();
+    findActionButtonLocator(uiTexts.getAdminConfigSave()).click();
 
-    assertThat(notice()).containsText(uiTexts.getAdminConfigSaveSuccess());
-    dismiss();
+    assertThat(notificationCardLocator()).containsText(uiTexts.getAdminConfigSaveSuccess());
+    dismissNotificationCard();
   }
 
   @Step("Gespeicherte Konfiguration erneut laden")
   public void reload() {
-    UiActions.complete(browserPage, button(uiTexts.getAdminConfigReload())::click);
-    new UnsavedChangesPrompt(browserPage, uiTexts).discardIfShown();
+    Locator reloadSuccessNoticeLocator =
+        notificationCardLocator()
+            .filter(new Locator.FilterOptions().setHasText(uiTexts.getAdminConfigReloadSuccess()));
 
-    assertThat(notice()).containsText(uiTexts.getAdminConfigReloadSuccess());
-    dismiss();
+    UiActions.complete(browserPage, findActionButtonLocator(uiTexts.getAdminConfigReload())::click);
+    new UnsavedChangesPrompt(browserPage, uiTexts)
+        .discardAfterActionIfNeeded(() -> reloadSuccessNoticeLocator.count() > 0);
+
+    assertThat(notificationCardLocator()).containsText(uiTexts.getAdminConfigReloadSuccess());
+    dismissNotificationCard();
   }
 
   @Step("Mindestdauer und Erklärung im neuen Klick-Tooltip prüfen")
-  public void explain(String label, long minutes, String explanation) {
+  public void explain(
+      String fieldLabelText, long minimumDurationMinutes, String helpDescriptionText) {
     new AdminConfigurationPage(browserPage)
-        .explain(label, explanation, uiTexts.getAdminConfigValidationDurationMinimum(minutes));
+        .explain(
+            fieldLabelText,
+            helpDescriptionText,
+            uiTexts.getAdminConfigValidationDurationMinimum(minimumDurationMinutes));
   }
 
-  private Locator notice() {
+  private Locator notificationCardLocator() {
     return browserPage.locator("vaadin-notification-card:not([closing])");
   }
 
-  private void dismiss() {
-    notice().getByRole(AriaRole.BUTTON).click();
+  private void dismissNotificationCard() {
+    notificationCardLocator().getByRole(AriaRole.BUTTON).click();
 
-    assertThat(notice()).not().isVisible();
+    assertThat(notificationCardLocator()).not().isVisible();
   }
 
-  private Locator button(String name) {
+  private Locator findActionButtonLocator(String buttonLabelText) {
     return browserPage.getByRole(
-        AriaRole.BUTTON, new Page.GetByRoleOptions().setName(name).setExact(true));
+        AriaRole.BUTTON, new Page.GetByRoleOptions().setName(buttonLabelText).setExact(true));
   }
 }

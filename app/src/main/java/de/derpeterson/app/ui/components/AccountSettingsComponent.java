@@ -186,7 +186,7 @@ public class AccountSettingsComponent extends PageContentLayout {
     selectSection(AccountSection.PROFILE);
   }
 
-  /** Registriert den Text für den ersten Aufbau und spätere Sprachwechsel. */
+  /** Registriert den Text für den gesammelten Textaufbau und spätere Sprachwechsel. */
   private <T extends HasText> T withTextOnRefresh(
       T translatedComponent, Supplier<String> localizedTextSupplier) {
     localizedTextRefreshActions.add(() -> translatedComponent.setText(localizedTextSupplier.get()));
@@ -696,10 +696,13 @@ public class AccountSettingsComponent extends PageContentLayout {
   }
 
   public void addAccountLifecycleTab(AccountLifecycleComponent accountLifecycleComponent) {
+    // Die nachträgliche Ergänzung liegt hinter dem ersten gesammelten Textaufbau.
     lifecycleTab =
         new Tab(
             AppIcon.LOCK.create(),
-            withTextOnRefresh(new Span(), messageProperties::getAccountLifecycleTab));
+            withTextOnRefresh(
+                new Span(messageProperties.getAccountLifecycleTab()),
+                messageProperties::getAccountLifecycleTab));
     lifecycleTab.setId("account-security-tab-lifecycle");
     securityTabs.add(lifecycleTab, accountLifecycleComponent);
     localizedTextRefreshActions.add(accountLifecycleComponent::refreshLifecycleTexts);

@@ -139,6 +139,10 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     flex-direction: column;
 }
 
+.account-change-dialog.cosmos-reference-overlay .account-lifecycle-explanation {
+    font-size: var(--cosmos-font-size-s);
+}
+
 /* Der gemeinsame Hinweis ist in anderen Panels ein flexibles Footer-Element.
  * Im senkrechten Formular braucht er keine feste Mindesthöhe. */
 

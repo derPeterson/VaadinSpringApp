@@ -2,12 +2,7 @@
 
 ## Browser-Tests
 
-- Kontoverwaltung und Formularschutz, offen bis zur abschließenden Gesamtrunde.
-  Deaktivieren, Reaktivierung über die empfangene E-Mail und sofortige Löschung
-  mit Portalpasswort sowie Ersatzcode in DE/EN auf Desktop und Smartphone prüfen.
-  Den nach einem falschen Passwort weiterhin geöffneten Dialog an seinen
-  sichtbaren Eingabefeldern prüfen. Die übrigen Speicherformulare einschließlich
-  Anbieter- und 2FA-Konfiguration auf den Bestätigungsdialog nachprüfen.
+Aktuell keine offenen Ergänzungen.
 
 ## JUnit-Tests
 

@@ -94,12 +94,14 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     browserPage.navigate("/account?section=security&tab=portal");
     Locator securityTabs = browserPage.locator("#account-security-tabs");
 
-    assertThat(securityTabs.getByRole(AriaRole.TAB)).hasCount(2);
+    assertThat(securityTabs.getByRole(AriaRole.TAB)).hasCount(3);
     Locator portalTab = browserPage.locator("#account-security-tab-portal");
     Locator providersTab = browserPage.locator("#account-security-tab-providers");
+    Locator lifecycleTabLocator = browserPage.locator("#account-security-tab-lifecycle");
 
     assertThat(portalTab).hasText(uiTexts.getAccountSecurityPortalAccess());
     assertThat(providersTab).hasText(uiTexts.getProviderSettingsPanelTitle());
+    assertThat(lifecycleTabLocator).hasText(uiTexts.getAccountLifecycleTab());
     assertThat(portalTab).hasAttribute("selected", "");
     assertThat(browserPage.locator("#account-security-portal .account-security-hint")).isVisible();
     assertThat(browserPage.locator("#account-password-edit-security")).isVisible();
@@ -126,6 +128,8 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     portalTab.focus();
     portalTab.press("End");
 
+    assertThat(lifecycleTabLocator).isFocused();
+    lifecycleTabLocator.press("ArrowLeft");
     assertThat(providersTab).isFocused();
     providersTab.press("Space");
 

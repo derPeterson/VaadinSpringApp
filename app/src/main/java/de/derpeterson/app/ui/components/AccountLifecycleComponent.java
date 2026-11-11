@@ -2,6 +2,7 @@ package de.derpeterson.app.ui.components;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.DELETE_BUTTON;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_DESCRIPTION;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADING;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
@@ -32,6 +33,7 @@ import de.derpeterson.app.service.AccountLifecycleService.LastSuperadminExceptio
 import de.derpeterson.app.service.AccountLifecycleService.ProofMethod;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.Serializable;
+import java.util.List;
 import java.util.function.Supplier;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
@@ -114,14 +116,16 @@ public final class AccountLifecycleComponent extends VerticalLayout {
     proofDialog.setId("account-lifecycle-proof");
     proofDialog.setModality(ModalityMode.STRICT);
     proofDialog.addClassNames("cosmos-theme", REFERENCE_OVERLAY, "account-change-dialog");
-    proofDialog.getThemeNames().add("cosmos-reference");
+    proofDialog.getThemeNames().addAll(List.of("cosmos", "cosmos-reference"));
     proofDialog.setWidth("min(580px, calc(100vw - 24px))");
     addProofDialogHeader(proofDialog, accountActionLabel);
 
     VerticalLayout proofFieldsLayout = new VerticalLayout();
     proofFieldsLayout.setPadding(false);
     ProofEntry proofEntry = createProofEntry(proofMethod, proofDialog);
-    proofFieldsLayout.add(new Span(accountActionExplanation), proofEntry.proofInputComponent());
+    Span accountActionExplanationSpan = new Span(accountActionExplanation);
+    accountActionExplanationSpan.addClassNames(PANEL_DESCRIPTION, "account-lifecycle-explanation");
+    proofFieldsLayout.add(accountActionExplanationSpan, proofEntry.proofInputComponent());
     Div proofFormDiv = new Div(proofFieldsLayout);
     proofFormDiv.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
     proofDialog.add(proofFormDiv);
