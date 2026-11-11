@@ -2,6 +2,24 @@
 
 ## Browser-Tests
 
+- E-Mail-Bestätigungsseite nach Stitch-Variante A, **offen, noch kein Browserlauf beauftragt**:
+  Bestehende Suite `email-verification` in DE/EN bei Desktop- und Smartphonebreite
+  nutzen. Vollständigen Seitenkopf mit Bereichszeile, Seitentitel und Beschreibung
+  sowie die normale Panelposition wie auf den anderen öffentlichen Seiten erhalten.
+  Die Seitenbeschreibung erklärt den Zweck der Bestätigung, der Paneluntertitel
+  das erneute Anfordern des Links. Beide Texte folgen dem Sprachwechsel.
+  Service-Logo und Sprachwechsel, Adresse
+  samt Status-Badge, gelben Link-/Spamhinweis und statischen Wartezeithinweis prüfen.
+  Der Linkhinweis und der ergänzende Spamhinweis stehen in zwei Absätzen.
+  „Spam- oder Junkordner“ ist in beiden Sprachen fett hervorgehoben und folgt
+  dem Sprachwechsel ebenso wie der übrige Text.
+  Lange Adressen und Aktionsbeschriftungen müssen vollständig sichtbar bleiben.
+  Beide gleich breiten Footerbuttons stehen rechtsbündig: „Abmelden“ rot mit
+  Sign-out-Icon und „Senden“ blau mit Paperplane, auch nach Sprachwechsel.
+  Abmelden mit Rückkehr zur Anmeldung, erneuten Versand mit tatsächlicher Wartezeit und die
+  bestehende Portal-/Adminsperre einschließlich Refresh und Sprachwechsel erhalten.
+  Keine unbestätigten Versand- oder Zustellungszeitpunkte anzeigen.
+
 - Anmeldungsbereich im Benutzer-Bearbeitungsdialog, **offen, noch kein Browserlauf beauftragt**:
   In DE/EN auf Desktop und Smartphone Informationen mit bestehenden Status-Badges
   oberhalb der Trennlinie prüfen. Darunter stehen Bestätigungsmail und Passwortreset

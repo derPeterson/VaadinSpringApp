@@ -114,7 +114,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     browserPage
         .getByRole(
             AriaRole.BUTTON,
-            new Page.GetByRoleOptions().setName(uiTexts.getEmailVerificationBack()).setExact(true))
+            new Page.GetByRoleOptions().setName(uiTexts.getBaseLogoutButton()).setExact(true))
         .click();
     loginPage.assertFormVisible();
     browserPage.navigate("/verify-email");

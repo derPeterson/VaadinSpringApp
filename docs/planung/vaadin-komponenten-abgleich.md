@@ -70,7 +70,8 @@ Entwicklerdaten und laufende Anwendung bleiben unverändert.
 Die synthetischen Originalaufnahmen und unveränderten Stitch-HTML-Exporte liegen
 im Projekt [Cosmos – Anmeldung und E-Mail-Bestätigung](https://stitch.google.com/projects/14127199108737824760).
 Der Anmeldungsbereich des Benutzerdialogs ist zur strukturellen Übernahme freigegeben.
-Die drei E-Mail-Seiten bleiben Vorschläge zur Auswahl:
+Für die E-Mail-Bestätigungsseite ist Variante A zur Übernahme mit Cosmos-Stilen und
+nativen Vaadin-Komponenten freigegeben. Die gemeinsame Sichtung bleibt offen:
 
 - [Benutzer bearbeiten: Anmeldung](https://stitch.google.com/projects/14127199108737824760?node-id=11269844840653526231):
   Informationen und bestehende Badges stehen über der Trennlinie, die beiden
@@ -80,8 +81,12 @@ Die drei E-Mail-Seiten bleiben Vorschläge zur Auswahl:
   Aussage, jeder Passwortreset erfordere eine verifizierte E-Mail, passt nicht
   zum gültigen Vertrag: ausdrücklich ungeprüfte, freigegebene Konten sind ebenfalls zulässig.
 - [E-Mail bestätigen, A: kompakte Karte](https://stitch.google.com/projects/14127199108737824760?node-id=12215867726124644583).
-- [E-Mail bestätigen, B: ruhiger Postfach-Fokus](https://stitch.google.com/projects/14127199108737824760?node-id=15525309655067582313).
-- [E-Mail bestätigen, C: gegliederte Schritte](https://stitch.google.com/projects/14127199108737824760?node-id=17986316830186091687).
+  Bestehendes Panel in der normalen Seitenanordnung mit Adresse und Status-Badge in einem Informationsblock,
+  gelbem Link-/Spamhinweis und kurzem Hinweis zur bestehenden Versandwartezeit.
+  Vollständiger Seitenkopf, Service-Logo, Sprachwechsel, Nachweissperre und beide vorhandenen Aktionen bleiben
+  erhalten. Unbestätigte Versandzeitpunkte und Zustellungsbehauptungen werden nicht angezeigt.
+  Der Footer folgt 2FA mit zwei gleich breiten, gemeinsam rechtsbündigen Buttons:
+  Abmelden im bestehenden roten Stil und Senden mit Paperplane als Primäraktion.
 
 Bei der Auswahl bleiben die echten Funktionen maßgeblich: kein Portalzugriff
 ohne erforderlichen Nachweis, genau die vorhandenen Aktionen Rückkehr und erneuter

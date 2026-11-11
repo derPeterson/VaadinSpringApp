@@ -4428,16 +4428,28 @@ public class MessageTexts {
     return getTranslation("email.verification.intro");
   }
 
+  public String getEmailVerificationPanelHint() {
+    return getTranslation("email.verification.panelHint");
+  }
+
   public String getEmailVerificationSpamHint() {
     return getTranslation("email.verification.spamHint");
   }
 
-  public String getEmailVerificationResend() {
-    return getTranslation("email.verification.resend");
+  public String getEmailVerificationInstructions() {
+    return getTranslation("email.verification.instructions");
   }
 
-  public String getEmailVerificationBack() {
-    return getTranslation("email.verification.back");
+  public String getEmailVerificationSpamFolderLabel() {
+    return getTranslation("email.verification.spamFolderLabel");
+  }
+
+  public String getEmailVerificationResendHint() {
+    return getTranslation("email.verification.resendHint");
+  }
+
+  public String getEmailVerificationResend() {
+    return getTranslation("email.verification.resend");
   }
 
   public String getEmailVerificationQueued() {

@@ -538,6 +538,26 @@ lokale Kosmosmotiv. `PublicPanelComponent` verwendet die Cosmos-Panelklassen mit
 getrenntem Kopf, Inhalt und Aktionsfooter; seine Inhalte bleiben echte native
 Formularfelder und die bisherigen Aktionen der jeweiligen View.
 
+Die ausstehende E-Mail-Bestätigung verwendet die kompakte Stitch-Variante A im
+bestehenden `PublicPageComponent`-/`PublicPanelComponent`-Rahmen. Bereichszeile,
+Seitentitel, Beschreibung und Panelposition folgen unverändert den übrigen
+öffentlichen Seiten. Die Panelüberschrift bleibt der Seitenüberschrift untergeordnet.
+Native `HorizontalLayout`-/`VerticalLayout`-Container ordnen Adresse und gelbes
+`EmailVerificationBadge`, Warnhinweis und Versandwartezeit. Lange Adressen können
+umbrechen. Der Warnhinweis enthält zwei getrennte Absätze mit neutraler Linkanweisung
+und ergänzendem Spamhinweis. „Spam- oder Junkordner“ beziehungsweise die englische
+Entsprechung ist als native `Span` hervorgehoben, ohne HTML aus Übersetzungen einzusetzen.
+Die Texte einschließlich der Hervorhebung folgen dem Sprachwechsel. Die
+beiden Footeraktionen stehen als gleich breite Gruppe rechtsbündig: „Abmelden“
+im bestehenden roten Stil mit Sign-out-Icon und „Senden“ als Primäraktion mit
+Paperplane. Die native Aktionszeile verwendet `EqualButtonWidths` wie bei 2FA
+und bricht bei Platzmangel unter Erhalt von Reihenfolge und Rechtsausrichtung um.
+Abmelden verwirft weiterhin den vorläufigen Nachweis und führt zur Anmeldung.
+Das konfigurierte Service-Logo und der eingeschränkte Kopf mit
+Sprachwechsel bleiben erhalten. Die lokale Gestaltung liegt ausschließlich in
+`cosmos-email-verification.css` an `PendingEmailVerificationView`. Es werden keine
+erfundenen Versandzeitpunkte oder Zustellungsbestätigungen dargestellt.
+
 „Anmeldung fortsetzen“ zentriert die eingeschränkte Sitzungsliste im öffentlichen
 Inhaltsrahmen. Das Panel heißt „Sitzungsgrenze erreicht“ und verwendet den kurzen
 Referenzuntertitel. Der Listenhinweis und die beiden Anmeldeaktionen stehen im

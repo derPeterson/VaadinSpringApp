@@ -2,13 +2,17 @@ package de.derpeterson.app.views;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.BeforeEnterObserver;
@@ -18,6 +22,7 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
+import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
@@ -35,6 +40,7 @@ import java.util.Optional;
 /** Eine ausstehende Bestätigung erhält weder einen SecurityContext noch Portalrechte. */
 @Route(AppRouteConstants.PENDING_EMAIL_VERIFICATION_ROUTE)
 @AnonymousAllowed
+@StyleSheet("custom-theme/cosmos-email-verification.css")
 public class PendingEmailVerificationView extends VerticalLayout
     implements BeforeEnterObserver, HasDynamicTitle {
   private final transient MessageProperties messageProperties;
@@ -44,11 +50,15 @@ public class PendingEmailVerificationView extends VerticalLayout
 
   // Bestätigungshinweis und zugehörige Aktionen
   private final EmailVerificationBadge verificationStatusBadge;
-  private final H2 verificationTitleHeading = new H2();
+  private final H2 verificationTitleH2 = new H2();
+  private final Span pendingAddressLabelSpan = new Span();
   private final Span pendingAddressSpan = new Span();
   private final Span verificationInstructionsSpan = new Span();
+  private final Span verificationSpamHintSpan = new Span();
+  private final Span spamFolderEmphasisSpan = new Span();
+  private final Span resendDelayHintSpan = new Span();
   private final Button resendVerificationButton = new Button();
-  private final Button returnToLoginButton = new Button();
+  private final Button cancelVerificationButton = new Button();
 
   public PendingEmailVerificationView(
       MessageProperties messageProperties,
@@ -69,15 +79,20 @@ public class PendingEmailVerificationView extends VerticalLayout
     verificationStatusBadge =
         new EmailVerificationBadge(messageProperties, EmailVerificationStatus.PENDING);
     pendingAddressSpan.setId("pending-verification-email");
+    pendingAddressLabelSpan.addClassName("pending-verification-address-label");
+    verificationTitleH2.addClassName("cosmos-headline");
     verificationInstructionsSpan.addClassName("cosmos-form-text");
+    verificationSpamHintSpan.addClassName("pending-verification-spam-hint");
+    spamFolderEmphasisSpan.addClassName("pending-verification-folder-emphasis");
 
     resendVerificationButton.setId("resend-verification-email");
-    resendVerificationButton.setPrefixComponent(AppIcon.ENVELOPE.create());
+    resendVerificationButton.setPrefixComponent(AppIcon.PAPERPLANE.create());
     resendVerificationButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     resendVerificationButton.addClickListener(event -> resendVerificationEmail());
 
-    returnToLoginButton.setPrefixComponent(AppIcon.ANGLE_LEFT.create());
-    returnToLoginButton.addClickListener(event -> {
+    cancelVerificationButton.setPrefixComponent(AppIcon.SIGN_OUT.create());
+    cancelVerificationButton.addClassName("cosmos-delete-button");
+    cancelVerificationButton.addClickListener(event -> {
       PendingEmailVerificationFlow.cancel(httpRequest);
       UI.getCurrent().navigate(LoginView.class);
     });
@@ -113,35 +128,104 @@ public class PendingEmailVerificationView extends VerticalLayout
 
   private void refreshVerificationTexts() {
     UI.getCurrent().getPage().setTitle(getPageTitle());
-    verificationTitleHeading.setText(messageProperties.getEmailVerificationTitle());
-    verificationInstructionsSpan.setText(messageProperties.getEmailVerificationSpamHint());
+    verificationTitleH2.setText(messageProperties.getEmailVerificationTitle());
+    pendingAddressLabelSpan.setText(messageProperties.getPublicEmailField());
+    refreshVerificationParagraphs();
+    resendDelayHintSpan.setText(messageProperties.getEmailVerificationResendHint());
     resendVerificationButton.setText(messageProperties.getEmailVerificationResend());
-    returnToLoginButton.setText(messageProperties.getEmailVerificationBack());
+    cancelVerificationButton.setText(messageProperties.getBaseLogoutButton());
     verificationStatusBadge.setText(messageProperties.getEmailVerificationPending());
   }
 
+  private void refreshVerificationParagraphs() {
+    verificationInstructionsSpan.setText(messageProperties.getEmailVerificationInstructions());
+    String spamHintText = messageProperties.getEmailVerificationSpamHint();
+    String spamFolderLabelText = messageProperties.getEmailVerificationSpamFolderLabel();
+    int folderLabelStartIndex = spamHintText.indexOf(spamFolderLabelText);
+    verificationSpamHintSpan.removeAll();
+
+    // Auch ohne passende Hervorhebung bleibt der vollständige übersetzte Hinweis sichtbar.
+    if (folderLabelStartIndex < 0) {
+      verificationSpamHintSpan.setText(spamHintText);
+      return;
+    }
+
+    spamFolderEmphasisSpan.setText(spamFolderLabelText);
+    verificationSpamHintSpan.add(
+        new Text(spamHintText.substring(0, folderLabelStartIndex)),
+        spamFolderEmphasisSpan,
+        new Text(spamHintText.substring(folderLabelStartIndex + spamFolderLabelText.length())));
+  }
+
   private void composeVerificationPanel() {
-    SvgIcon warningSvgIcon = AppIcon.ENVELOPE.create();
-    warningSvgIcon.addClassName("cosmos-status-icon--warning");
+    VerticalLayout verificationWarningTextLayout =
+        new VerticalLayout(verificationInstructionsSpan, verificationSpamHintSpan);
+    verificationWarningTextLayout.setPadding(false);
+    verificationWarningTextLayout.setSpacing(false);
+    verificationWarningTextLayout.addClassName("pending-verification-warning-text");
 
-    Div verificationWarningDiv = new Div(AppIcon.ERROR.create(), verificationInstructionsSpan);
-    verificationWarningDiv.addClassName("cosmos-security-warning");
+    HorizontalLayout verificationWarningLayout =
+        new HorizontalLayout(AppIcon.ERROR.create(), verificationWarningTextLayout);
+    verificationWarningLayout.setWidthFull();
+    verificationWarningLayout.setPadding(false);
+    verificationWarningLayout.setSpacing(false);
+    verificationWarningLayout.setAlignItems(Alignment.CENTER);
+    verificationWarningLayout.addClassName("cosmos-security-warning");
 
-    VerticalLayout instructionsLayout =
-        new VerticalLayout(verificationStatusBadge, pendingAddressSpan, verificationWarningDiv);
-    instructionsLayout.setPadding(false);
+    SvgIcon resendDelaySvgIcon = AppIcon.CLOCK.create();
+    resendDelaySvgIcon.getElement().setAttribute("aria-hidden", "true");
+    HorizontalLayout resendDelayHintLayout =
+        new HorizontalLayout(resendDelaySvgIcon, resendDelayHintSpan);
+    resendDelayHintLayout.setWidthFull();
+    resendDelayHintLayout.setPadding(false);
+    resendDelayHintLayout.setSpacing(false);
+    resendDelayHintLayout.setAlignItems(Alignment.CENTER);
+    resendDelayHintLayout.addClassName("pending-verification-resend-hint");
+
+    VerticalLayout verificationContentLayout =
+        new VerticalLayout(
+            createPendingAddressLayout(), verificationWarningLayout, resendDelayHintLayout);
+    verificationContentLayout.setPadding(false);
+    verificationContentLayout.setSpacing(false);
+    verificationContentLayout.addClassName("pending-verification-content");
+
+    HorizontalLayout verificationActionsLayout =
+        new HorizontalLayout(cancelVerificationButton, resendVerificationButton);
+    verificationActionsLayout.setWidthFull();
+    verificationActionsLayout.setPadding(false);
+    verificationActionsLayout.setSpacing(false);
+    verificationActionsLayout.setJustifyContentMode(JustifyContentMode.END);
+    verificationActionsLayout.addClassName("pending-verification-actions");
+    EqualButtonWidths.configureEqualButtonWidths(verificationActionsLayout);
 
     publicPageComponent.getCardContainer().removeAll();
     publicPageComponent
         .getCardContainer()
         .add(
             new PublicPanelComponent(
-                warningSvgIcon,
-                verificationTitleHeading,
-                messageProperties::getEmailVerificationIntro,
-                new Component[] {instructionsLayout},
-                returnToLoginButton,
-                resendVerificationButton));
+                AppIcon.ENVELOPE.create(),
+                verificationTitleH2,
+                messageProperties::getEmailVerificationPanelHint,
+                new Component[] {verificationContentLayout},
+                verificationActionsLayout));
+  }
+
+  private HorizontalLayout createPendingAddressLayout() {
+    VerticalLayout addressDetailsLayout =
+        new VerticalLayout(pendingAddressLabelSpan, pendingAddressSpan);
+    addressDetailsLayout.setPadding(false);
+    addressDetailsLayout.setSpacing(false);
+    addressDetailsLayout.addClassName("pending-verification-address-details");
+
+    HorizontalLayout pendingAddressLayout =
+        new HorizontalLayout(addressDetailsLayout, verificationStatusBadge);
+    pendingAddressLayout.setWidthFull();
+    pendingAddressLayout.setPadding(false);
+    pendingAddressLayout.setSpacing(false);
+    pendingAddressLayout.setAlignItems(Alignment.CENTER);
+    pendingAddressLayout.expand(addressDetailsLayout);
+    pendingAddressLayout.addClassName("pending-verification-address");
+    return pendingAddressLayout;
   }
 
   private void resendVerificationEmail() {

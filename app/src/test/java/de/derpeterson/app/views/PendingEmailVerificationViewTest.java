@@ -36,13 +36,17 @@ class PendingEmailVerificationViewTest {
   private final HttpServletRequest httpRequest = mock(HttpServletRequest.class);
   private MessageProperties messageProperties;
 
+  // Vaadin hält die aktuelle UI nur schwach. Das Fixture hält sie bis zum Testende fest.
+  private UI testUi;
+  private VaadinSession vaadinSession;
+
   private PendingEmailVerificationView createVerificationView(String languageCode) {
-    VaadinSession vaadinSession = mock(VaadinSession.class);
+    vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.hasLock()).thenReturn(true);
     when(vaadinSession.getConfiguration()).thenReturn(mock(DeploymentConfiguration.class));
     when(vaadinSession.getLocale()).thenReturn(Locale.forLanguageTag(languageCode));
     VaadinSession.setCurrent(vaadinSession);
-    UI testUi = new UI();
+    testUi = new UI();
     UI.setCurrent(testUi);
     testUi.getInternals().setSession(vaadinSession);
 
@@ -59,6 +63,8 @@ class PendingEmailVerificationViewTest {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
+    testUi = null;
+    vaadinSession = null;
   }
 
   private Stream<Component> componentTree(Component rootComponent) {
@@ -102,8 +108,24 @@ class PendingEmailVerificationViewTest {
         componentTree(verificationView)
             .filter(Span.class::isInstance)
             .map(Span.class::cast)
-            .anyMatch(
-                span -> span.getText().equals(messageProperties.getEmailVerificationSpamHint())));
+            .anyMatch(span ->
+                span.getText().equals(messageProperties.getEmailVerificationInstructions())));
+    assertTrue(
+        componentTree(verificationView)
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(span ->
+                span.getElement()
+                    .getTextRecursively()
+                    .equals(messageProperties.getEmailVerificationSpamHint())));
+    assertEquals(
+        messageProperties.getEmailVerificationSpamFolderLabel(),
+        componentTree(verificationView)
+            .filter(component -> component.hasClassName("pending-verification-folder-emphasis"))
+            .map(Span.class::cast)
+            .findFirst()
+            .orElseThrow()
+            .getText());
     assertEquals(
         1,
         componentTree(verificationView)

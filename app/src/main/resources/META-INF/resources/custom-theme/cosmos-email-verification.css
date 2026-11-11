@@ -1,0 +1,75 @@
+/* Variante A bleibt auf die ausstehende E-Mail-Bestätigung begrenzt. */
+.pending-email-verification-view .pending-verification-content {
+    gap: var(--cosmos-space-xl);
+}
+
+.pending-email-verification-view .pending-verification-warning-text {
+    min-width: 0;
+    gap: var(--cosmos-space-m);
+}
+
+.pending-email-verification-view .pending-verification-spam-hint {
+    color: var(--cosmos-reference-secondary);
+}
+
+.pending-email-verification-view .pending-verification-folder-emphasis {
+    color: var(--cosmos-reference-text);
+    font-weight: var(--cosmos-font-weight-bold);
+}
+
+.pending-email-verification-view .pending-verification-address {
+    box-sizing: border-box;
+    flex-wrap: wrap;
+    gap: var(--cosmos-space-m);
+    padding: var(--cosmos-info-box-padding);
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: var(--cosmos-control-radius);
+    background: var(--cosmos-reference-input);
+}
+
+.pending-email-verification-view .pending-verification-address-details {
+    min-width: 0;
+    flex-basis: 180px;
+    gap: var(--cosmos-space-xs);
+}
+
+.pending-email-verification-view .pending-verification-address-label {
+    color: var(--cosmos-reference-secondary);
+    font-size: var(--cosmos-font-size-s);
+    line-height: var(--cosmos-line-height-copy);
+}
+
+.pending-email-verification-view #pending-verification-email {
+    max-width: 100%;
+    color: var(--cosmos-reference-text);
+    font-family: 'Space Mono', ui-monospace, Consolas, monospace;
+    font-size: var(--cosmos-font-size-m);
+    font-weight: var(--cosmos-font-weight-semibold);
+    line-height: var(--cosmos-line-height-copy);
+    overflow-wrap: anywhere;
+}
+
+.pending-email-verification-view .pending-verification-resend-hint {
+    gap: var(--cosmos-info-box-gap);
+    color: var(--cosmos-reference-secondary);
+    font-size: var(--cosmos-font-size-s);
+    line-height: var(--cosmos-line-height-copy);
+}
+
+.pending-email-verification-view .pending-verification-resend-hint > vaadin-icon {
+    width: var(--cosmos-icon-size-xs);
+    height: var(--cosmos-icon-size-xs);
+    flex: none;
+    color: var(--cosmos-reference-accent);
+}
+
+.pending-email-verification-view .pending-verification-actions {
+    max-width: 100%;
+    flex-wrap: wrap;
+    gap: var(--cosmos-space-s);
+}
+
+.pending-email-verification-view .pending-verification-actions > vaadin-button {
+    max-width: 100%;
+    --vaadin-button-label-wrap: normal;
+}
