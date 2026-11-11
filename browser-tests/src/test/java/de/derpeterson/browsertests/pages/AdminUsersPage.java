@@ -2,11 +2,14 @@ package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 
+import com.microsoft.playwright.Browser;
+import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.browsertests.i18n.UiTexts;
+import de.derpeterson.browsertests.mail.MailpitInbox;
 import io.qameta.allure.Step;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -43,7 +46,7 @@ public final class AdminUsersPage {
     createUser(email, password, enabled, false);
   }
 
-  @Step("Testkonto mit gewählter Freigabe und Rollen über das echte Formular anlegen")
+  @Step("Testkonto mit gewählten Rollen anlegen und bei aktiver Freigabe per E-Mail bestätigen")
   public void createUser(String email, String password, boolean enabled, boolean administrator) {
     open();
     AdminUserDialog form = openCreate();
@@ -53,6 +56,28 @@ public final class AdminUsersPage {
 
     assertThat(emailCells(email)).hasCount(1);
     assertThat(emailCells(email)).hasText(email);
+
+    if (enabled) {
+      verifyCreatedAccount(email);
+    }
+  }
+
+  /** Der Mailnachweis läuft getrennt von der angemeldeten Adminsitzung. */
+  private void verifyCreatedAccount(String emailAddress) {
+    try (BrowserContext verificationBrowserContext =
+        browserPage
+            .context()
+            .browser()
+            .newContext(
+                new Browser.NewContextOptions()
+                    .setBaseURL(System.getProperty("browser.tests.baseUrl"))
+                    .setLocale(uiTexts.browserLocale()))) {
+      MailpitInbox mailpitInbox = new MailpitInbox(verificationBrowserContext);
+      try (Page verificationPage =
+          mailpitInbox.openVerificationLink(mailpitInbox.awaitVerificationMail(emailAddress))) {
+        assertThat(verificationPage.locator(".public-panel")).isVisible();
+      }
+    }
   }
 
   @Step("Benutzerverwaltung öffnen")

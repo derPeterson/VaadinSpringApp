@@ -3,29 +3,296 @@ package de.derpeterson.browsertests.suites;
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.PENDING_EMAIL_VERIFICATION_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.AriaRole;
+import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
+import de.derpeterson.browsertests.pages.AdminUserDialog;
+import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import de.derpeterson.browsertests.pages.VerificationPage;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
+import io.qameta.allure.playwright.AllurePlaywright;
+import java.time.Instant;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("browser")
+@Tag("email-verification")
 @Feature("Verifikation")
 public class VerificationBrowserTest extends BrowserFixture {
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName(
+      "VER-03: Nur ein korrekter erster Nachweis öffnet die eingeschränkte Bestätigungsseite")
+  void pendingVerificationKeepsPortalAccessBlocked(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 900);
+    String emailAddress = newVerificationEmailAddress();
+    MailpitInbox mailpitInbox = new MailpitInbox(browserContext);
+    MailpitInbox.CapturedMail verificationMail =
+        registerAccountAndAwaitVerificationMail(emailAddress, mailpitInbox);
+    Instant verificationResendAllowedInstant = Instant.now().plusSeconds(61);
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signInFirstFactor(emailAddress, "WrongPassword1!");
+    loginPage.assertRejected();
+
+    loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    assertPendingVerificationPage(emailAddress);
+    assertPendingProofSurvivesRefreshAndLanguageChange(emailAddress);
+    assertImmediateResendIsThrottled();
+    AllurePlaywright.attachScreenshot(
+        "Ausstehende E-Mail-Bestätigung bei " + viewportWidth + " px", browserPage);
+
+    assertPendingPortalAccessAndCancellation(emailAddress, loginPage);
+    if (viewportWidth == 1280) {
+      verificationMail =
+          resendVerificationMailAfterCooldownOnMobile(
+              emailAddress, mailpitInbox, verificationMail, verificationResendAllowedInstant);
+      browserPage.setViewportSize(viewportWidth, 900);
+    }
+
+    try (Page activatedPage = mailpitInbox.openVerificationLink(verificationMail)) {
+      assertOrdinaryLogin(activatedPage, emailAddress);
+      activatedPage.navigate("/account?section=security");
+      assertThat(activatedPage.locator("#email-verification-status"))
+          .hasText(uiTexts.getEmailVerified());
+      assertThat(activatedPage.locator("#account-password-status"))
+          .hasText(uiTexts.getAccountPasswordConfigured());
+      AllurePlaywright.attachScreenshot(
+          "Verifizierte Adresse und eingerichtetes Passwort", activatedPage);
+    }
+  }
+
+  private void assertPendingProofSurvivesRefreshAndLanguageChange(String emailAddress) {
+    browserPage.reload();
+    assertPendingVerificationPage(emailAddress);
+    UiTexts alternateUiTexts = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
+    new UserMenu(browserPage).selectLanguage(alternateUiTexts.language());
+    assertThat(browserPage).hasTitle(alternateUiTexts.getEmailVerificationTitle());
+    assertThat(browserPage.locator("#pending-verification-email")).hasText(emailAddress);
+    assertThat(browserPage.locator("#resend-verification-email"))
+        .hasText(alternateUiTexts.getEmailVerificationResend());
+    new UserMenu(browserPage).selectTestLanguage();
+  }
+
+  private void assertImmediateResendIsThrottled() {
+    browserPage.locator("#resend-verification-email").click();
+    assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+        .containsText(uiTexts.getEmailVerificationWait());
+    browserPage
+        .locator("vaadin-notification-card:not([closing])")
+        .getByRole(AriaRole.BUTTON)
+        .click();
+  }
+
+  private void assertPendingPortalAccessAndCancellation(String emailAddress, LoginPage loginPage) {
+    browserPage.navigate("/account?section=security");
+    assertThat(browserPage.locator("#account-panel-security")).hasCount(0);
+    browserPage.navigate("/admin");
+    assertThat(browserPage.locator(".admin-users-grid")).hasCount(0);
+    loginPage.open();
+    loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    browserPage
+        .getByRole(
+            AriaRole.BUTTON,
+            new Page.GetByRoleOptions().setName(uiTexts.getEmailVerificationBack()).setExact(true))
+        .click();
+    loginPage.assertFormVisible();
+    browserPage.navigate("/verify-email");
+    loginPage.assertFormVisible();
+  }
+
+  private MailpitInbox.CapturedMail resendVerificationMailAfterCooldownOnMobile(
+      String emailAddress,
+      MailpitInbox mailpitInbox,
+      MailpitInbox.CapturedMail previousVerificationMail,
+      Instant verificationResendAllowedInstant) {
+    new LoginPage(browserPage).signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    browserPage.setViewportSize(390, 900);
+    browserPage.waitForCondition(
+        () -> Instant.now().isAfter(verificationResendAllowedInstant),
+        new Page.WaitForConditionOptions().setTimeout(65_000));
+    UiActions.complete(
+        browserPage, () -> browserPage.locator("#resend-verification-email").click());
+    assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+        .containsText(uiTexts.getEmailVerificationQueued());
+    AllurePlaywright.attachScreenshot(
+        "Erneuter Versand nach echter Wartezeit auf Smartphonebreite", browserPage);
+    return mailpitInbox.awaitVerificationMailAfter(emailAddress, previousVerificationMail);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName(
+      "VER-04: Normale administrative Anlage erfordert Bestätigung und bewahrt Mailaktionsentwürfe")
+  void administrativeCreationRequiresMailProof(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 1000);
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+    new UserMenu(browserPage).selectTestLanguage();
+    AdminUsersPage adminUsersPage = new AdminUsersPage(browserPage);
+    adminUsersPage.open();
+    AdminUserDialog createUserDialog = adminUsersPage.openCreate();
+    assertThat(createUserDialog.root().locator("#admin-email-verification-required")).hasCount(0);
+    String emailAddress = newVerificationEmailAddress();
+    createUserDialog.fillNewUser(emailAddress, BrowserTestAccounts.USER_PASSWORD, true, false);
+    createUserDialog.save();
+    new MailpitInbox(browserContext).awaitVerificationMail(emailAddress);
+
+    AdminUserDialog editUserDialog = adminUsersPage.openEdit(emailAddress);
+    assertThat(editUserDialog.root().locator("#admin-user-registered-via"))
+        .hasText(uiTexts.getRegistrationAdministration());
+    assertThat(editUserDialog.root().locator("#email-verification-status"))
+        .hasText(uiTexts.getEmailVerificationPending());
+    assertThat(editUserDialog.root().locator("#admin-resend-verification-mail")).isEnabled();
+    assertThat(editUserDialog.root().locator("#admin-send-password-reset")).isDisabled();
+    editUserDialog.root().locator(".admin-user-sign-in").scrollIntoViewIfNeeded();
+    AllurePlaywright.attachScreenshot("Anmeldebereich mit ausstehendem Nachweis", browserPage);
+    Locator firstNameInputLocator = editUserDialog.firstName();
+    firstNameInputLocator.fill("Unsaved draft");
+    UiActions.complete(browserPage, () -> firstNameInputLocator.press("Tab"));
+    Locator resendMailButtonLocator =
+        editUserDialog.root().locator("#admin-resend-verification-mail");
+    resendMailButtonLocator.scrollIntoViewIfNeeded();
+    resendMailButtonLocator.focus();
+    UiActions.complete(browserPage, resendMailButtonLocator::click);
+    assertThat(editUserDialog.firstName()).hasValue("Unsaved draft");
+    assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+        .containsText(uiTexts.getEmailVerificationWait());
+    browserPage
+        .locator("vaadin-notification-card:not([closing])")
+        .getByRole(AriaRole.BUTTON)
+        .click();
+    editUserDialog.cancel();
+
+    try (BrowserActor pendingUserActor = new BrowserActor(testBrowser)) {
+      pendingUserActor.browserPage.setViewportSize(viewportWidth, 900);
+      pendingUserActor.login(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+      assertThat(pendingUserActor.browserPage.locator("#pending-verification-email"))
+          .hasText(emailAddress);
+      MailpitInbox mailpitInbox = new MailpitInbox(pendingUserActor.browserContext);
+      try (Page activatedPage =
+          mailpitInbox.openVerificationLink(mailpitInbox.awaitVerificationMail(emailAddress))) {
+        assertOrdinaryLogin(activatedPage, emailAddress);
+      }
+    }
+
+    editUserDialog = adminUsersPage.openEdit(emailAddress);
+    assertThat(editUserDialog.firstName()).hasValue("Browser");
+    assertThat(editUserDialog.root().locator("#email-verification-status"))
+        .hasText(uiTexts.getEmailVerified());
+    assertThat(editUserDialog.root().locator("#admin-resend-verification-mail")).isDisabled();
+    editUserDialog.root().locator("#admin-send-password-reset").click();
+    new MailpitInbox(browserContext).awaitPasswordResetMail(emailAddress);
+    assertThat(editUserDialog.root()).hasCount(1);
+    editUserDialog.cancel();
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName(
+      "VER-05: Nur der Superadmin kann die standardmäßig ausgewählte Verifikation abwählen")
+  void superadminCanExplicitlyCreateUncheckedAccount(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 1000);
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(browserPage).selectTestLanguage();
+    browserPage.navigate("/account?section=security");
+    assertThat(browserPage.locator("#email-verification-status"))
+        .hasText(uiTexts.getEmailNotChecked());
+
+    browserPage.navigate("/admin?section=users");
+    AdminUsersPage adminUsersPage = new AdminUsersPage(browserPage);
+    adminUsersPage.open();
+    AdminUserDialog createUserDialog = adminUsersPage.openCreate();
+    Locator verificationCheckboxLocator =
+        createUserDialog
+            .root()
+            .locator("#admin-email-verification-required")
+            .getByRole(AriaRole.CHECKBOX);
+    assertThat(verificationCheckboxLocator).isChecked();
+    assertThat(
+            createUserDialog
+                .root()
+                .getByText(
+                    uiTexts.getAdminEmailVerificationHint(),
+                    new Locator.GetByTextOptions().setExact(true)))
+        .isVisible();
+    String emailAddress = newVerificationEmailAddress();
+    createUserDialog.fillNewUser(emailAddress, BrowserTestAccounts.USER_PASSWORD, true, false);
+    verificationCheckboxLocator.uncheck();
+    AllurePlaywright.attachScreenshot("Verifikation bei der Kontoanlage", browserPage);
+    createUserDialog.save();
+    AdminUserDialog editUserDialog = adminUsersPage.openEdit(emailAddress);
+    assertThat(editUserDialog.root().locator("#email-verification-status"))
+        .hasText(uiTexts.getEmailNotChecked());
+    assertThat(editUserDialog.root().locator("#admin-user-registered-via"))
+        .hasText(uiTexts.getRegistrationAdministration());
+    editUserDialog.cancel();
+    new UserMenu(browserPage).signOut();
+
+    loginPage.open();
+    loginPage.signIn(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    browserPage.navigate("/account?section=security");
+    assertThat(browserPage.locator("#email-verification-status"))
+        .hasText(uiTexts.getEmailNotChecked());
+    assertThat(browserPage.locator("#account-password-status"))
+        .hasText(uiTexts.getAccountPasswordConfigured());
+    AllurePlaywright.attachScreenshot("Ungeprüfte Adresse neben der Überschrift", browserPage);
+  }
+
+  private void assertPendingVerificationPage(String emailAddress) {
+    assertThat(browserPage).hasURL(urlPattern(PENDING_EMAIL_VERIFICATION_ROUTE));
+    assertThat(browserPage.locator("#pending-verification-email")).hasText(emailAddress);
+    assertThat(browserPage.locator(".cosmos-security-warning"))
+        .containsText(uiTexts.getEmailVerificationSpamHint());
+    assertThat(browserPage.locator("vaadin-button.tracked-user-button")).hasCount(0);
+    assertThat(browserPage.locator("#email-verification-status"))
+        .hasText(uiTexts.getEmailVerificationPending());
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName(
+      "VER-06: Ein Startkonto mit ausdrücklicher Verifikationspflicht erhält eine echte Bestätigungsmail")
+  void bootstrapAccountCanRequireVerification(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 900);
+    String emailAddress = "bootstrap-verification-" + viewportWidth + "@example.test";
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    assertPendingVerificationPage(emailAddress);
+
+    // Die Startkonfiguration dieses Fixtures verwendet ausdrücklich die Standardsprache Englisch.
+    MailpitInbox mailpitInbox = new MailpitInbox(browserContext, null, new UiTexts("en"));
+    try (Page activatedPage =
+        mailpitInbox.openVerificationLink(mailpitInbox.awaitVerificationMail(emailAddress))) {
+      new UserMenu(activatedPage).selectTestLanguage();
+      assertOrdinaryLogin(activatedPage, emailAddress);
+    }
+  }
+
   @Tag("fast")
   @Test
   @DisplayName(
@@ -44,9 +311,10 @@ public class VerificationBrowserTest extends BrowserFixture {
       Keine Bewertung der Darstellung in externen Mailprogrammen.
       """)
   void realMailAllowsActivationAndLogin() {
-    String email = newEmail();
+    String email = newVerificationEmailAddress();
     MailpitInbox inbox = new MailpitInbox(browserContext);
-    Page activated = inbox.openVerificationLink(registerAndReceive(email, inbox));
+    Page activated =
+        inbox.openVerificationLink(registerAccountAndAwaitVerificationMail(email, inbox));
     assertOrdinaryLogin(activated, email);
   }
 
@@ -63,9 +331,10 @@ public class VerificationBrowserTest extends BrowserFixture {
       idempotent sichtbar. Eine nachträgliche Adminsperre wird in diesem Fall nicht geprüft.
       """)
   void usedLinkRemainsSuccessfulForActiveAccount() {
-    String email = newEmail();
+    String email = newVerificationEmailAddress();
     MailpitInbox inbox = new MailpitInbox(browserContext);
-    Page activated = inbox.openVerificationLink(registerAndReceive(email, inbox));
+    Page activated =
+        inbox.openVerificationLink(registerAccountAndAwaitVerificationMail(email, inbox));
     activated.reload();
     new VerificationPage(activated).assertActivated();
     assertOrdinaryLogin(activated, email);
@@ -97,26 +366,28 @@ public class VerificationBrowserTest extends BrowserFixture {
     assertThat(browserPage).hasTitle(HOME_PAGE_TITLE);
   }
 
-  private MailpitInbox.CapturedMail registerAndReceive(String email, MailpitInbox inbox) {
-    RegistrationPage registration = new RegistrationPage(browserPage);
-    registration.open();
-    registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
-    registration.submit();
-    registration.assertSubmitted(email);
-    return inbox.awaitVerificationMail(email);
+  private MailpitInbox.CapturedMail registerAccountAndAwaitVerificationMail(
+      String emailAddress, MailpitInbox mailpitInbox) {
+    RegistrationPage registrationPage = new RegistrationPage(browserPage);
+    registrationPage.open();
+    registrationPage.fillValid(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    registrationPage.submit();
+    registrationPage.assertSubmitted(emailAddress);
+
+    return mailpitInbox.awaitVerificationMail(emailAddress);
   }
 
-  private void assertOrdinaryLogin(Page target, String email) {
-    LoginPage login = new LoginPage(target);
-    login.open();
-    login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+  private void assertOrdinaryLogin(Page targetPage, String emailAddress) {
+    LoginPage loginPage = new LoginPage(targetPage);
+    loginPage.open();
+    loginPage.signIn(emailAddress, BrowserTestAccounts.USER_PASSWORD);
 
-    assertThat(target).hasURL(urlPattern(HOME_ROUTE));
-    new UserMenu(target).selectTestLanguage();
-    new UserMenu(target).assertUserSignedInWithoutAdminAction(email);
+    assertThat(targetPage).hasURL(urlPattern(HOME_ROUTE));
+    new UserMenu(targetPage).selectTestLanguage();
+    new UserMenu(targetPage).assertUserSignedInWithoutAdminAction(emailAddress);
   }
 
-  private static String newEmail() {
+  private static String newVerificationEmailAddress() {
     return "verification-" + UUID.randomUUID() + "@example.test";
   }
 }

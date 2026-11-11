@@ -69,17 +69,6 @@ Die gezielten JUnit-Fälle bestätigen in DE/EN: Ohne Änderung schließt der Ed
 direkt; echte Eingaben werden weiter vor dem Verwerfen geschützt und können
 zurückgenommen werden. Das tatsächliche Browser-Autofill bleibt gesondert zu prüfen.
 
-### Offener MultiSelect-Darstellungsfehler
-
-Nach der Testrunde wurde bei mehreren ausgewählten Empfängern bestätigt, dass
-der blaue Rahmen nur teilweise sichtbar ist. Reproduktion: Empfängerauswahl im
-Benachrichtigungsversand öffnen und zwei Einträge markieren. Dasselbe gemeinsame
-Styling gilt für die Rollenauswahl. Erwartet ist ein vollständiger Rahmen auf
-allen vier Seiten mit 2 px Abstand zwischen den markierten Flächen.
-Die Rahmenfläche wurde im Quellcode nach innen verlegt; die erfolgreiche
-Nachprüfung steht noch aus. Der Benutzer übernimmt zunächst die Sichtprüfung.
-Der automatisierte Nachtest bleibt im [Testbedarf](testbedarf.md) offen.
-
 ### Weitere Grenzen
 
 SonarQube ist erreichbar. Die ausschließlich lesenden Abfragen für Analyse,

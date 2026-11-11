@@ -53,7 +53,8 @@ final class BrowserExecutionPlan {
           Map.entry("PresentationBrowserTest", 29),
           Map.entry("AuthenticationBrowserTest", 26),
           Map.entry("LoginLayoutBrowserTest", 25),
-          Map.entry("VerificationBrowserTest", 20),
+          // Zusätzliche Nachweisfälle mit echter Versandwartezeit, zunächst geschätzt.
+          Map.entry("VerificationBrowserTest", 300),
           Map.entry("AdminMailBrowserTest", 19),
           Map.entry("RegistrationBrowserTest", 16),
           Map.entry("InfrastructureBrowserTest", 7));
@@ -112,6 +113,8 @@ final class BrowserExecutionPlan {
       discoveryRequestBuilder.filters(TagFilter.includeTags("configuration-follow-up"));
     } else if (suiteName.equals("form-details")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("form-details"));
+    } else if (suiteName.equals("email-verification")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("email-verification"));
     } else if (suiteName.equals("configuration-field-help")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("configuration-field-help"));
     }

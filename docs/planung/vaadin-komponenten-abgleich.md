@@ -39,10 +39,9 @@ Darstellung verglichen.
 
 ### E-Mail-Nachweis und administrative Kontoanlage
 
-Freigegeben auf dem bestehenden Branch. Der Benutzer hat die gezielte isolierte
-Browserprüfung in DE/EN bei Desktop- und Smartphonebreite zurückgestellt und
-beauftragt sie später gesondert. Entwicklerdaten und
-laufende Anwendung bleiben unverändert; das neue Schema wird frisch geprüft.
+Umgesetzt auf dem bestehenden Branch. Die gemeinsame Sichtung bleibt offen.
+Die automatisierten Nachweise laufen mit frischen isolierten Testdaten;
+Entwicklerdaten und laufende Anwendung bleiben unverändert.
 
 - Anlageweg, E-Mail-Nachweis und Kontofreigabe getrennt speichern. Selbstregistrierung
   und normale administrative Anlage benötigen Bestätigung. Startkonten und eine
@@ -61,11 +60,32 @@ laufende Anwendung bleiben unverändert; das neue Schema wird frisch geprüft.
 - Adminaktionen zum erneuten Versand der Verifikationsmail und zum Passwortreset
   ergänzen. Rechte und gespeicherte Adresse frisch prüfen, keine Entwürfe verwenden.
   Bestehende Versandbegrenzungen, Tokenrotation, Transaktionen und MFA erhalten.
-- Offen bleiben der zurückgestellte Browsernachtest und die gemeinsame Sichtung
+- Offen bleibt die gemeinsame Sichtung
   der neuen Bestätigungsseite, der Konto-/Admin-Badges, der Superadmin-Ausnahme
-  und der administrativen Mailaktionen. Beim Start beide Varianten der Option
-  mit frischen Testkonten prüfen. Die vorhandenen Browserhilfen zur Adminanlage
-  an den neuen Bestätigungsweg anpassen, bevor abhängige Journeys laufen.
+  und der administrativen Mailaktionen. Die Browserhilfen bestätigen regulär
+  angelegte freigegebene Testkonten über ihre echte Testmail.
+
+### Stitch-Entwürfe zur gemeinsamen Auswahl
+
+Die synthetischen Originalaufnahmen und unveränderten Stitch-HTML-Exporte liegen
+im Projekt [Cosmos – Anmeldung und E-Mail-Bestätigung](https://stitch.google.com/projects/14127199108737824760).
+Die Entwürfe sind noch nicht zur Übernahme freigegeben:
+
+- [Benutzer bearbeiten: Anmeldung](https://stitch.google.com/projects/14127199108737824760?node-id=11269844840653526231):
+  Metadaten und Versandaktionen klarer trennen, gespeicherte Daten als Ziel nennen
+  und deaktivierte Aktionen erklären. Andere Formularbereiche bleiben gesetzt.
+  Verfügbare Anmeldewege bleiben bei einer Übernahme grün. Die vorgeschlagene
+  Aussage, jeder Passwortreset erfordere eine verifizierte E-Mail, passt nicht
+  zum gültigen Vertrag: ausdrücklich ungeprüfte, freigegebene Konten sind ebenfalls zulässig.
+- [E-Mail bestätigen, A: kompakte Karte](https://stitch.google.com/projects/14127199108737824760?node-id=12215867726124644583).
+- [E-Mail bestätigen, B: ruhiger Postfach-Fokus](https://stitch.google.com/projects/14127199108737824760?node-id=15525309655067582313).
+- [E-Mail bestätigen, C: gegliederte Schritte](https://stitch.google.com/projects/14127199108737824760?node-id=17986316830186091687).
+
+Bei der Auswahl bleiben die echten Funktionen maßgeblich: kein Portalzugriff
+ohne erforderlichen Nachweis, genau die vorhandenen Aktionen Rückkehr und erneuter
+Versand, keine zusätzliche Codeeingabe. Versandbehauptungen dürfen nur den tatsächlich
+bestätigten Queue-/SMTP-Zustand beschreiben. Der zusätzliche grüne Punkt in Variante C
+und neue Badgefarben aus den Entwürfen werden nicht automatisch übernommen.
 
 Die noch nicht erfolgreich ausgeführten automatisierten Prüfungen stehen zentral
 im [Testbedarf](../testbedarf.md).
@@ -80,20 +100,18 @@ automatisierte Prüfungen.
 - **Weitere freigegebene Verfeinerung:** Gemeinsamer Hoverwert anwendungsweit,
   getrennt von unveränderten Auswahlfarben. Passwort- und Ersatzcode-Hinweise in
   der Anbieterbestätigung folgen dem kurzen Eingabehinweis mit Doppelpunkt.
-  Die gemeinsame Sichtung und der automatisierte Nachtest bleiben offen.
+  Die gemeinsame Sichtung bleibt offen.
 
 - **Aktuelle Verfeinerung:** Blauer Optionshover, 2 px Abstand im MultiSelect,
   breitere Pagination-Auswahlliste und feste Tage im nativen Zahlenfeld-Suffix.
   Der Formularschutz nutzt eine Variante von `PortalConfirmationDialog` mit
   gelbem Tabler-Icon `file-diff` samt Warnrahmen und dezenter Warnfläche im Kopf,
   Standard-Schließen und gleich breiten Buttons in gleichbleibender
-  Reihenfolge. Die gemeinsame Sichtung und die Browsernachtests der aktuellen
-  Verfeinerungen bleiben im [Testbedarf](../testbedarf.md) offen.
+  Reihenfolge. Die gemeinsame Sichtung der aktuellen Verfeinerungen bleibt offen.
   Die nachträglich gewünschte inhaltsabhängige gemeinsame Buttonbreite und
   die Verteilung an die beiden Footerränder sind umgesetzt.
   Die Quellkorrektur für den abgeschnittenen MultiSelect-Rahmen und die
-  Tages-Einheit hinter dem Plus ist ebenfalls umgesetzt. Der Benutzer prüft
-  diese Darstellung zunächst selbst; der automatisierte Nachtest bleibt offen.
+  Tages-Einheit hinter dem Plus ist ebenfalls umgesetzt.
 
 - **Abnahme:** Geschlecht in Konto, Registrierung und Benutzerverwaltung sowie
   Sprache, Dauerfelder und Pagination ansehen. Je einen Eintrag auswählen,

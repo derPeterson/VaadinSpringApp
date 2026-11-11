@@ -23,14 +23,17 @@ import de.derpeterson.browsertests.pages.AdminNavigation;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.NotificationComposePage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -40,6 +43,7 @@ import org.junit.jupiter.api.Test;
 public class CosmosComponentsBrowserTest extends BrowserFixture {
   @Test
   @Tag("scrollbar-style")
+  @Tag("form-details")
   @DisplayName("COMPONENT-06: Globale Scrollleisten teilen Stil und erhalten die native Bedienung")
   @Description(
       "Synthetische native Komponenten in der isolierten Anwendung prüfen: Dokument, Chat-Scroller, Grid, TextArea und Dialog erhalten dieselbe Scrollgestaltung. Chatabstände bleiben lokal; horizontales und vertikales Scrollen sowie Systemkontrast bleiben bedienbar.")
@@ -185,21 +189,32 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   @DisplayName("COMPONENT-01: Rollenfilter erhält Auswahl und Anzahl in Anlage und Bearbeitung")
   @Tag("form-details")
   @Description(
-      "Auf Desktop und Smartphone in beiden Dialogen eine ausgewählte Rolle erhalten, nach einer anderen Rolle tippen und sie ergänzen. Eine erfolglose Suche und das Leeren des Suchtexts ändern die zwei ausgewählten Rollen nicht. Nach Wiederöffnen sind beide Optionen ausgewählt; Abbrechen speichert nichts.")
+      "Auf Desktop und Smartphone in beiden Dialogen eine ausgewählte Rolle erhalten, nach einer anderen Rolle tippen und sie ergänzen. Eine erfolglose Suche und das Leeren des Suchtexts ändern die zwei ausgewählten Rollen nicht. Nach Wiederöffnen sind beide Optionen ausgewählt; Abbrechen speichert nichts. Bei Rollen und zweizeiligen Empfängern bleiben die vollständigen Rahmen mit 2 px Abstand sichtbar.")
   void roleSearchPreservesSelectedRolesInBothDialogs() {
-    signIn();
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(browserPage).selectTestLanguage();
+
     AdminUsersPage adminUsersPage = new AdminUsersPage(browserPage);
     String testUserEmail = "role-search-" + UUID.randomUUID() + "@example.test";
     adminUsersPage.createActiveUser(testUserEmail, BrowserTestAccounts.USER_PASSWORD);
 
     for (int viewportWidth : new int[] {1280, 390}) {
       browserPage.setViewportSize(viewportWidth, 900);
+      adminUsersPage.open();
       assertRoleSearchPreservesSelection(adminUsersPage.openCreate());
       assertRoleSearchPreservesSelection(adminUsersPage.openEdit(testUserEmail));
+      assertRecipientSelectionFramesAndSpacing(viewportWidth);
     }
   }
 
   private void assertRoleSearchPreservesSelection(AdminUserDialog adminUserDialog) {
+    if (adminUserDialog.deleteButton().isVisible()) {
+      adminUserDialog.deleteButton().hover();
+      assertThat(adminUserDialog.deleteButton()).hasCSS("color", "rgb(252, 165, 165)");
+      assertThat(adminUserDialog.deleteButton()).hasCSS("border-color", "rgba(248, 113, 113, 0.4)");
+    }
     adminUserDialog.setRole(uiTexts.getRoleUser(), true);
     Locator roleSearchInputLocator = adminUserDialog.root().locator(".admin-user-roles input");
     Locator roleSummaryLocator = adminUserDialog.root().locator(".admin-user-role-summary");
@@ -230,31 +245,53 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     assertThat(userOptionLocator).hasAttribute("aria-selected", "true");
     assertThat(administratorOptionLocator).hasAttribute("aria-selected", "true");
     assertThat(roleSummaryLocator).hasText(uiTexts.getAdminUsersSelectedRoles(2));
-    assertSelectedRoleFramesAndSpacing(administratorOptionLocator, userOptionLocator);
+    assertSelectedOptionFramesAndSpacing(administratorOptionLocator, userOptionLocator);
 
     AllurePlaywright.attachScreenshot("Rollen nach Suche und Wiederöffnen", browserPage);
     adminUserDialog.cancel();
   }
 
-  private void assertSelectedRoleFramesAndSpacing(
-      Locator administratorOptionLocator, Locator userOptionLocator) {
-    BoundingBox administratorBounds = administratorOptionLocator.boundingBox();
-    BoundingBox userBounds = userOptionLocator.boundingBox();
+  private void assertRecipientSelectionFramesAndSpacing(int viewportWidth) {
+    NotificationComposePage notificationComposePage = new NotificationComposePage(browserPage);
+    notificationComposePage.open();
+    Locator recipientSearchInputLocator = notificationComposePage.recipients().locator("input");
+    recipientSearchInputLocator.click();
+    Locator recipientOptionsLocator =
+        browserPage.locator("vaadin-multi-select-combo-box-item:visible");
+    assertThat(recipientOptionsLocator.nth(1)).isVisible();
+    recipientOptionsLocator.nth(0).click();
+    recipientOptionsLocator.nth(1).click();
+
+    Locator selectedRecipientOptionsLocator =
+        browserPage.locator("vaadin-multi-select-combo-box-item[aria-selected=true]:visible");
+    assertThat(selectedRecipientOptionsLocator).hasCount(2);
+    assertSelectedOptionFramesAndSpacing(
+        selectedRecipientOptionsLocator.nth(0), selectedRecipientOptionsLocator.nth(1));
+    AllurePlaywright.attachScreenshot(
+        "Vollständige Empfängerrahmen bei " + viewportWidth + " px", browserPage);
+    recipientSearchInputLocator.press("Escape");
+  }
+
+  private void assertSelectedOptionFramesAndSpacing(
+      Locator firstSelectedOptionLocator, Locator secondSelectedOptionLocator) {
+    assertThat(browserPage.locator("vaadin-multi-select-combo-box-overlay[opening]")).hasCount(0);
+    BoundingBox firstOptionBounds = firstSelectedOptionLocator.boundingBox();
+    BoundingBox secondOptionBounds = secondSelectedOptionLocator.boundingBox();
     double paintedBottomOffset =
         ((Number)
-                administratorOptionLocator.evaluate(
+                firstSelectedOptionLocator.evaluate(
                     "element => parseFloat(getComputedStyle(element, '::after').bottom) + parseFloat(getComputedStyle(element).borderBottomWidth)"))
             .doubleValue();
     double paintedTopOffset =
         ((Number)
-                userOptionLocator.evaluate(
+                secondSelectedOptionLocator.evaluate(
                     "element => parseFloat(getComputedStyle(element, '::after').top) + parseFloat(getComputedStyle(element).borderTopWidth)"))
             .doubleValue();
-    for (Locator selectedRoleOptionLocator :
-        List.of(administratorOptionLocator, userOptionLocator)) {
+    for (Locator selectedOptionLocator :
+        List.of(firstSelectedOptionLocator, secondSelectedOptionLocator)) {
       assertTrue(
           (Boolean)
-              selectedRoleOptionLocator.evaluate(
+              selectedOptionLocator.evaluate(
                   """
                   element => {
                     const frame = getComputedStyle(element, '::after');
@@ -265,9 +302,9 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     }
     assertEquals(
         2,
-        userBounds.y
-            - administratorBounds.y
-            - administratorBounds.height
+        secondOptionBounds.y
+            - firstOptionBounds.y
+            - firstOptionBounds.height
             + paintedBottomOffset
             + paintedTopOffset,
         0.5);
@@ -288,6 +325,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     for (int viewportWidth : new int[] {1280, 390}) {
       browserPage.setViewportSize(viewportWidth, 900);
       adminUsersPage.open();
+      assertActionAndGridHoverColors(adminUsersPage);
       assertPaginationOverlayContainsSelection(viewportWidth);
 
       assertChoiceHoverUsesSharedColor(adminUsersPage.openCreate(), viewportWidth);
@@ -297,6 +335,30 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       AllurePlaywright.attachScreenshot(
           "Feste Tage im nativen Zahlenfeld bei " + viewportWidth + " px", browserPage);
     }
+  }
+
+  private void assertActionAndGridHoverColors(AdminUsersPage adminUsersPage) {
+    Locator createUserButtonLocator =
+        browserPage.getByRole(
+            AriaRole.BUTTON,
+            new Page.GetByRoleOptions().setName(uiTexts.getAdminUsersAdd()).setExact(true));
+    createUserButtonLocator.hover();
+    assertThat(createUserButtonLocator).hasCSS("background-color", "rgb(0, 120, 180)");
+
+    Locator refreshUsersButtonLocator =
+        browserPage.getByRole(
+            AriaRole.BUTTON,
+            new Page.GetByRoleOptions()
+                .setName(uiTexts.getAdminUsersRefreshTooltip())
+                .setExact(true));
+    refreshUsersButtonLocator.hover();
+    assertThat(refreshUsersButtonLocator).hasCSS("background-color", "rgb(21, 34, 56)");
+
+    Locator firstUserCellLocator =
+        adminUsersPage.grid().locator("[part~=body-cell]:visible").first();
+    firstUserCellLocator.hover();
+    // Im Benutzergrid zeichnet die ganze Zeile den Hover; ihre Zellen sind transparent.
+    assertThat(firstUserCellLocator.locator("..")).hasCSS("background-color", "rgb(21, 34, 56)");
   }
 
   private void assertPaginationOverlayContainsSelection(int viewportWidth) {
@@ -329,7 +391,62 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     assertThat(hoveredChoiceRowLocator).hasCSS("background-color", "rgb(21, 34, 56)");
     AllurePlaywright.attachScreenshot("Blauer Hover bei " + viewportWidth + " px", browserPage);
     genderComboBoxLocator.locator("input").press("Escape");
+    Locator firstNameInputSurfaceLocator =
+        adminUserDialog.root().locator("vaadin-text-field").first().locator("[part=input-field]");
+    adminUserDialog.firstName().hover();
+    assertThat(firstNameInputSurfaceLocator).hasCSS("background-color", "rgb(21, 34, 56)");
+    assertCalendarHoverPreservesSelectedDate(adminUserDialog);
     adminUserDialog.cancel();
+  }
+
+  private void assertCalendarHoverPreservesSelectedDate(AdminUserDialog adminUserDialog) {
+    Locator birthdayInputLocator =
+        adminUserDialog
+            .root()
+            .getByLabel(
+                uiTexts.getRegistrationBirthDateField(),
+                new Locator.GetByLabelOptions().setExact(true));
+    birthdayInputLocator.fill(uiTexts.dateInput(LocalDate.of(2020, 6, 15)));
+    adminUserDialog.firstName().click();
+    adminUserDialog.root().locator("vaadin-date-picker [part~=toggle-button]").click();
+    Locator selectedMonthLocator =
+        browserPage
+            .locator("vaadin-month-calendar")
+            .filter(
+                new Locator.FilterOptions()
+                    .setHas(browserPage.locator("[part~=date][part~=selected]")));
+    Locator selectedDateLocator = selectedMonthLocator.locator("[part~=date][part~=selected]");
+    assertThat(selectedDateLocator).hasText("15");
+    String selectedDateBackgroundColor =
+        (String)
+            selectedDateLocator.evaluate(
+                "element => getComputedStyle(element, '::after').backgroundColor");
+
+    // Exakt der benachbarte Tag; keine andere Zahl aus den gerenderten Monatszeilen.
+    Locator unselectedDateLocator =
+        selectedMonthLocator
+            .locator("[part~=date]:not([part~=selected])")
+            .filter(new Locator.FilterOptions().setHasText(Pattern.compile("^14$")));
+    unselectedDateLocator.hover();
+    assertEquals(
+        "rgb(21, 34, 56)",
+        unselectedDateLocator.evaluate(
+            "element => getComputedStyle(element, '::after').backgroundColor"));
+    assertEquals(
+        selectedDateBackgroundColor,
+        selectedDateLocator.evaluate(
+            "element => getComputedStyle(element, '::after').backgroundColor"));
+    AllurePlaywright.attachScreenshot("Kalenderhover mit unveränderter Datumauswahl", browserPage);
+    Locator calendarDialogLocator =
+        browserPage.getByRole(
+            AriaRole.DIALOG,
+            new Page.GetByRoleOptions().setName(uiTexts.getDatePickerCalendar()).setExact(true));
+    calendarDialogLocator
+        .getByRole(
+            AriaRole.BUTTON,
+            new Locator.GetByRoleOptions().setName(uiTexts.getDatePickerCancel()).setExact(true))
+        .click();
+    assertThat(calendarDialogLocator).not().isVisible();
   }
 
   private void assertFixedDaySuffixesRemainInsideFields(AdminConfigurationPage configurationPage) {
@@ -352,6 +469,16 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       assertTrue(suffixBounds.x > inputBounds.x);
       assertTrue(suffixBounds.x >= increaseButtonBounds.x + increaseButtonBounds.width);
       assertTrue(suffixBounds.x + suffixBounds.width <= inputBounds.x + inputBounds.width);
+      dayFieldLocator.locator("vaadin-integer-field input").focus();
+      assertThat(unitSuffixLocator).hasCSS("color", "rgb(255, 255, 255)");
+      browserPage
+          .getByRole(
+              AriaRole.HEADING,
+              new Page.GetByRoleOptions()
+                  .setName(uiTexts.getAdminConfigGroupLabel(AdminConfigGroup.NOTIFICATIONS))
+                  .setExact(true))
+          .click();
+      assertThat(unitSuffixLocator).hasCSS("color", "rgb(148, 163, 184)");
     }
   }
 
@@ -438,6 +565,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   @Test
   @DisplayName(
       "COMPONENT-03: SideNav-Hover verschiebt nichts; aktive Haupt- und Unterpunkte bleiben blau")
+  @Tag("form-details")
   @Description(
       "Portal und Admin bei 1280/390px prüfen. Handzeiger, linke Icon-/Textausrichtung, vertikale Mitte und stabile Klickfläche bei Hover. Aktive Hauptpunkte sind 600 statt 500, Unterpunkte 500 statt 400. Hover erhält die aktive blaue Fläche.")
   void navigationStatesAreConsistentInPortalAndAdministration() {

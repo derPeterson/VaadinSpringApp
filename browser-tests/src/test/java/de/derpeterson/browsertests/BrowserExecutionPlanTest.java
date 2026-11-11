@@ -42,6 +42,7 @@ class BrowserExecutionPlanTest {
         "two-factor-ticket-panel",
         "cosmos-scrollbars",
         "form-details",
+        "email-verification",
         "configuration-follow-up",
         "configuration-field-help",
         "external-login-settings"
@@ -81,9 +82,23 @@ class BrowserExecutionPlanTest {
               Set.of("globalScrollbarsPreserveNativeScrollingAndLocalChatSpacing");
           case "form-details" ->
               Set.of(
+                  "globalScrollbarsPreserveNativeScrollingAndLocalChatSpacing",
+                  "navigationStatesAreConsistentInPortalAndAdministration",
                   "roleSearchPreservesSelectedRolesInBothDialogs",
                   "choiceHoverPaginationAndDaySuffixUseTheSharedFieldStyle",
                   "profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard");
+          case "email-verification" ->
+              Set.of(
+                  "pendingVerificationKeepsPortalAccessBlocked",
+                  "administrativeCreationRequiresMailProof",
+                  "superadminCanExplicitlyCreateUncheckedAccount",
+                  "bootstrapAccountCanRequireVerification",
+                  "realMailAllowsActivationAndLogin",
+                  "usedLinkRemainsSuccessfulForActiveAccount",
+                  "invalidAndMissingTokensHaveDefinedUiBehavior",
+                  "signInDetailsDistinguishAccountAndSessionMethods",
+                  "microsoftRequiresContactVerification",
+                  "optionalPortalPassword");
           case "configuration-follow-up" ->
               Set.of(
                   "changingConfigurationGroupRequiresDiscardingTheDraft",

@@ -432,7 +432,7 @@ Inhaltsbereich und Footer für den Formularschutz. Das Tabler-Icon `file-diff`
 steht im Kopf in einer Warnbox: Icon, Rahmen und dezente Hintergrundfläche
 verwenden die vorhandenen `--cosmos-security-warning-*`-Werte. Der
 Standard-Schließen-Button bleibt erhalten. Der Erklärungstext verwendet die
-normale helle Textfarbe `--cosmos-reference-text` bei 12 px und Schriftgewicht 400.
+dezente Textfarbe `--cosmos-reference-secondary` bei 12 px und Schriftgewicht 400.
 „Änderungen verwerfen“ steht zuerst als gelber Warnbutton mit Tabler `file-x`.
 „Weiter bearbeiten“ bleibt blau und verwendet Lucide `chevron-right`.
 Verwerfen steht ganz links und Weiterbearbeiten ganz rechts im Footer; der freie

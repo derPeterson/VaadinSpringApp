@@ -33,6 +33,17 @@ services:
       APP_BOOTSTRAP_ADMINS_0_PASSWORD: "BrowserAdmin1!"
       APP_BOOTSTRAP_SUPERADMINS_0_EMAIL: "browser-superadmin@example.test"
       APP_BOOTSTRAP_SUPERADMINS_0_PASSWORD: "BrowserSuperadmin1!"
+      # Zwei getrennte Konten für den expliziten Mailnachweis bei beiden Bildschirmbreiten.
+      APP_BOOTSTRAP_USERS_0_EMAIL: "bootstrap-verification-1280@example.test"
+      APP_BOOTSTRAP_USERS_0_PASSWORD: "BrowserUser1!"
+      APP_BOOTSTRAP_USERS_0_FIRST_NAME: "Browser"
+      APP_BOOTSTRAP_USERS_0_LAST_NAME: "Testuser"
+      APP_BOOTSTRAP_USERS_0_EMAIL_VERIFICATION_REQUIRED: "true"
+      APP_BOOTSTRAP_USERS_1_EMAIL: "bootstrap-verification-390@example.test"
+      APP_BOOTSTRAP_USERS_1_PASSWORD: "BrowserUser1!"
+      APP_BOOTSTRAP_USERS_1_FIRST_NAME: "Browser"
+      APP_BOOTSTRAP_USERS_1_LAST_NAME: "Testuser"
+      APP_BOOTSTRAP_USERS_1_EMAIL_VERIFICATION_REQUIRED: "true"
 
   proxy:
     extends:

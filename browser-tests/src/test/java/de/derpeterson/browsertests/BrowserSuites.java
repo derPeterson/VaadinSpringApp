@@ -171,6 +171,8 @@ final class BrowserSuites {
       case "authentication" -> List.of(AuthenticationBrowserTest.class);
       case "registration" -> List.of(RegistrationBrowserTest.class);
       case "verification" -> List.of(VerificationBrowserTest.class);
+      case "email-verification" ->
+          List.of(VerificationBrowserTest.class, ExternalLoginBrowserTest.class);
       case "password-reset" -> List.of(PasswordResetBrowserTest.class);
       case "account-lifecycle" -> List.of(AccountLifecycleBrowserTest.class);
       case "presentation" -> List.of(PresentationBrowserTest.class);

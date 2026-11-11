@@ -196,6 +196,10 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
         .hasAttribute("src", "icons/tabler/file-diff.svg");
     assertThat(unsavedChangesPrompt.root().locator(".portal-confirm-explanation"))
         .hasCSS("font-size", "12px");
+    assertThat(unsavedChangesPrompt.root().locator(".portal-confirm-explanation"))
+        .hasCSS("font-weight", "400");
+    assertThat(unsavedChangesPrompt.root().locator(".portal-confirm-explanation"))
+        .hasCSS("color", "rgb(148, 163, 184)");
     Locator discardButtonLocator = unsavedChangesPrompt.root().locator(".cosmos-warning-button");
     Locator keepEditingButtonLocator =
         unsavedChangesPrompt.root().locator("vaadin-button[theme~=primary]");
@@ -218,6 +222,10 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
         .isFocused();
     AllurePlaywright.attachScreenshot(
         "Formularschutz im Konto bei " + viewportWidth + " px", browserPage);
+    discardButtonLocator.hover();
+    assertThat(discardButtonLocator).hasCSS("border-color", "rgb(245, 158, 11)");
+    keepEditingButtonLocator.hover();
+    assertThat(keepEditingButtonLocator).hasCSS("background-color", "rgb(0, 120, 180)");
     unsavedChangesPrompt.keepEditing();
     assertThat(firstNameInputLocator).hasValue("Temporary draft");
 

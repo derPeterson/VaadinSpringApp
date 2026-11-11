@@ -44,6 +44,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @ValueSource(ints = {1280, 390})
   @Tag("follow-up-regression")
   @Tag("sign-in-session-layout")
+  @Tag("email-verification")
   @DisplayName("OIDC-14: Benutzerdetails und aktive Sitzungen unterscheiden Anmeldewege")
   @Description(
       "Ein administrativ angelegtes Konto verbindet Google. Zwei aktive Sitzungen zeigen jeweils ihren tatsächlichen Anmeldeweg. Der Bearbeitungsdialog zeigt Herkunft und verfügbare Wege schreibgeschützt.")
@@ -64,6 +65,12 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       new UserMenu(browserPage).selectTestLanguage();
       browserPage.navigate("/account?section=security&tab=providers");
       browserPage.locator("#external-connect-google").click();
+      assertThat(
+              browserPage.getByText(
+                  uiTexts.getExternalPasswordProofHint(),
+                  new Page.GetByTextOptions().setExact(true)))
+          .isVisible();
+      assertTrue(uiTexts.getExternalPasswordProofHint().endsWith(":"));
       browserPage
           .locator("#external-confirm-password input")
           .fill(BrowserTestAccounts.USER_PASSWORD);
@@ -94,13 +101,13 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       assertThat(title).hasText(uiTexts.getSignInDetailsTitle());
       assertThat(title).hasCSS("text-transform", "uppercase");
       assertThat(title).hasCSS("color", "rgb(56, 189, 248)");
-      assertThat(registration).hasText(uiTexts.getSignInAccountCreated());
+      assertThat(registration).hasText(uiTexts.getRegistrationAdministration());
       Locator registrationLabel = user.root().locator(".admin-user-registration-label");
 
       assertThat(registrationLabel).hasText(uiTexts.getSignInRegisteredVia());
       assertThat(registrationLabel).hasCSS("text-transform", "none");
       assertThat(registrationLabel).hasCSS("color", "rgb(203, 213, 225)");
-      assertThat(registration).hasCSS("color", "rgb(203, 213, 225)");
+      assertThat(registration).hasCSS("color", "rgb(56, 189, 248)");
       assertThat(user.root().locator(".admin-user-methods-label"))
           .hasText(uiTexts.getSignInAvailableMethods());
       assertThat(methods.locator("vaadin-badge[theme~=success]"))
@@ -326,6 +333,24 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   }
 
   private void confirmFactor(String email) {
+    assertThat(
+            browserPage
+                .locator("#external-proof-code-input")
+                .getByText(
+                    uiTexts.getTwoFactorLoginHint(), new Locator.GetByTextOptions().setExact(true)))
+        .isVisible();
+    assertTrue(uiTexts.getTwoFactorLoginHint().endsWith(":"));
+    browserPage.locator("#external-proof-recovery-code-tab").click();
+    assertThat(
+            browserPage
+                .locator("#external-proof-code-input")
+                .getByText(
+                    uiTexts.getTwoFactorActionRecoveryHint(),
+                    new Locator.GetByTextOptions().setExact(true)))
+        .isVisible();
+    assertTrue(uiTexts.getTwoFactorActionRecoveryHint().endsWith(":"));
+    browserPage.locator("#external-proof-app-code-tab").click();
+
     String code = TwoFactorPage.nextCode(browserPage, email);
     if (code.length() > 6) {
       browserPage.locator("#external-proof-recovery-code-tab").click();
@@ -771,6 +796,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @ValueSource(ints = {1280, 390})
   @DisplayName(
       "OIDC-02: Microsoft erfordert eigenen E-Mail-Nachweis und keine zusätzliche Passwortregistrierung")
+  @Tag("email-verification")
   void microsoftRequiresContactVerification(int width) {
     browserPage.setViewportSize(width, 900);
     String email = "microsoft-" + UUID.randomUUID() + "@example.test";
@@ -788,6 +814,10 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator(".public-header")).isVisible();
     AllurePlaywright.attachScreenshot(
         "Microsoft: Kontaktbestätigung vor Portalzugang", browserPage);
+    begin("microsoft", email, "valid");
+    assertThat(browserPage.locator("#pending-verification-email")).hasText(email);
+    assertThat(browserPage.locator("#email-verification-status"))
+        .hasText(uiTexts.getEmailVerificationPending());
     try (Page activation = inbox.openVerificationLink(mail)) {
       new de.derpeterson.browsertests.pages.VerificationPage(activation).assertActivated();
     }
@@ -800,6 +830,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
   @CsvSource({"1280, missing-auth-time", "390, missing-auth-time", "1280, stale", "390, stale"})
   @DisplayName(
       "OIDC-05: Google-Ersteinrichtung braucht Kontaktcode und TOTP vor optionalem Portalpasswort")
+  @Tag("email-verification")
   void optionalPortalPassword(int width, String confirmationMode) {
     browserPage.setViewportSize(width, 900);
     String email = "password-" + UUID.randomUUID() + "@gmail.com";
@@ -807,6 +838,11 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     browserPage.locator("#external-register-submit").click();
 
     assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
+    browserPage.navigate("/account?section=security&tab=portal");
+    assertThat(browserPage.locator("#account-password-status"))
+        .hasText(uiTexts.getAccountPasswordNotConfigured());
+    assertThat(browserPage.locator("#email-verification-status"))
+        .hasText(uiTexts.getEmailVerified());
     if (width == 1280 && confirmationMode.equals("missing-auth-time")) {
       rejectedEnrollment(email, "cancel", uiTexts.getExternalError());
       rejectedEnrollment(
@@ -828,6 +864,8 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     browserPage.locator("#account-password-confirm input").fill("OptionalPortal1!");
     browserPage.locator("#account-password-save").click();
     assertStandardNotification(browserPage, uiTexts.getAccountSecurityPasswordSuccess(), "success");
+    assertThat(browserPage.locator("#account-password-status"))
+        .hasText(uiTexts.getAccountPasswordConfigured());
     browserPage.locator("#account-security-tab-providers").click();
 
     assertThat(browserPage.locator("#external-connect-google")).isEnabled();
