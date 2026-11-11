@@ -544,6 +544,8 @@ class AdminConfigurationGroupTest {
             ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS,
             ConfigEntry.MAX_SESSIONS_PER_USER,
             ConfigEntry.SESSION_TIMEOUT_SECONDS,
+            ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS,
+            ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS,
             ConfigEntry.MAINTENANCE_MODE);
 
     assertEquals(securityEntries, visibleEntries());

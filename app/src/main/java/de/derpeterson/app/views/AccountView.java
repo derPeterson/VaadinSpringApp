@@ -27,6 +27,7 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionManagementService;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorManagement;
+import de.derpeterson.app.service.AccountLifecycleService;
 import de.derpeterson.app.service.AccountProfileService;
 import de.derpeterson.app.service.AccountProfileService.Profile;
 import de.derpeterson.app.service.AccountSecurityService;
@@ -35,6 +36,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.components.AccountLifecycleComponent;
 import de.derpeterson.app.ui.components.AccountSettingsComponent;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import de.derpeterson.app.ui.components.ExternalConnectionsComponent;
@@ -58,6 +60,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 public class AccountView extends IsAuthenticatedBaseView
     implements BeforeLeaveObserver, AfterNavigationObserver {
   private final AccountSettingsComponent accountSettingsComponent;
+
+  @Autowired
+  void configureAccountLifecycle(
+      AccountLifecycleService accountLifecycleService,
+      SecurityService securityService,
+      HttpServletRequest httpRequest) {
+    if (accountSettingsComponent != null) {
+      accountSettingsComponent.addAccountLifecycleTab(
+          new AccountLifecycleComponent(
+              messageProperties, accountLifecycleService, securityService, httpRequest));
+    }
+  }
 
   @Autowired
   void configureTwoFactor(

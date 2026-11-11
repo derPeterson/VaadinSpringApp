@@ -30,6 +30,9 @@ public interface EmailQueueRepository extends JpaRepository<EmailQueueEntity, Lo
   boolean existsByUserEntityAndEmailTypeAndStatusIn(
       UserEntity userEntity, EmailType emailType, Collection<EmailStatus> statuses);
 
+  void deleteByUserEntityAndEmailTypeAndStatus(
+      UserEntity userEntity, EmailType emailType, EmailStatus emailStatus);
+
   int deleteByStatusAndCreatedAtBefore(EmailStatus status, LocalDateTime date);
 
   int deleteByStatusAndLastRetryAtBefore(EmailStatus status, LocalDateTime date);

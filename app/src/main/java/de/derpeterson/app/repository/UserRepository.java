@@ -11,6 +11,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.hibernate.jpa.HibernateHints;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
@@ -138,6 +139,26 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   @Query("select u from UserEntity u where u.id = :id")
   @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
   Optional<UserEntity> findByIdForUpdate(@Param("id") Long userId);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query(
+      """
+      SELECT u FROM UserEntity u
+      WHERE NOT u.enabled AND (
+        u.accountDeactivation.initialTokenDigest = :tokenDigest
+        OR u.accountDeactivation.reminderTokenDigest = :tokenDigest
+        OR u.accountDeactivation.requestedTokenDigest = :tokenDigest
+      )
+      """)
+  Optional<UserEntity> lockByAccountReactivationToken(String tokenDigest);
+
+  @Query(
+      """
+      SELECT u.id FROM UserEntity u WHERE NOT u.enabled
+        AND (u.accountDeactivation.deletionAt <= :now OR u.accountDeactivation.reminderAt <= :now)
+      ORDER BY u.accountDeactivation.deletionAt, u.id
+      """)
+  List<Long> findAccountLifecycleDueIds(Instant now, Pageable page);
 
   // Bulk update deliberately bypasses entity version checks/increments. Flush any
   // pending login status first; do not clear unrelated managed entities.

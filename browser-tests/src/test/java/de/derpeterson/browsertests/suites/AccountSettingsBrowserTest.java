@@ -1,6 +1,8 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -13,9 +15,12 @@ import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
+import de.derpeterson.browsertests.mail.MailpitInbox;
+import de.derpeterson.browsertests.mail.MailpitInbox.CapturedMail;
 import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UnsavedChangesPrompt;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -35,10 +40,118 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("browser")
 @Feature("Kontoverwaltung: Profil und E-Mail-Dialogentwurf")
 public class AccountSettingsBrowserTest extends BrowserFixture {
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName("Selbst deaktiviertes Konto lässt sich über die empfangene E-Mail reaktivieren")
+  @Description(
+      """
+      1. Eigenes Testkonto über die normale Oberfläche anlegen und anmelden.
+      2. Deaktivierung mit dem Portalpasswort bestätigen und Abmeldung prüfen.
+      3. Tatsächlich zugestellte E-Mail öffnen und ihre Reaktivierung ausdrücklich bestätigen.
+      4. Mit dem bisherigen Passwort wieder anmelden.
+      """)
+  void accountDeactivationSendsAUsableReactivationLink(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 900);
+    String accountEmail = account();
+    openAccountLifecycleTab();
+    browserPage.locator("#account-deactivate").click();
+    confirmLifecycleWithPortalPassword();
+
+    assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
+    MailpitInbox mailpitInbox = new MailpitInbox(browserContext);
+    CapturedMail deactivationMail =
+        mailpitInbox.awaitSecurityMail(accountEmail, uiTexts.getAccountDeactivatedMailSubject());
+    try (Page reactivationPage = mailpitInbox.openAccountReactivationAction(deactivationMail)) {
+      reactivationPage.setViewportSize(viewportWidth, 900);
+      reactivationPage.locator("#account-reactivation-submit").click();
+      assertThat(reactivationPage.getByText(uiTexts.getAccountReactivateSuccess())).isVisible();
+    }
+
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.signIn(accountEmail, BrowserTestAccounts.USER_PASSWORD);
+    assertThat(browserPage.locator(".portal-home-page")).isVisible();
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName("Endgültige Kontolöschung erfordert einen Nachweis und verschickt eine Bestätigung")
+  @Description(
+      """
+      1. Eigenes Testkonto öffnen und endgültige Löschung wählen.
+      2. Falsches Portalpasswort eingeben und den abgewiesenen Versuch prüfen.
+      3. Mit dem richtigen Passwort bestätigen und Abmeldung prüfen.
+      4. Die tatsächliche Bestätigungsmail des isolierten Maildienstes abwarten.
+      """)
+  void accountDeletionRejectsWrongPasswordAndSendsConfirmation(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 900);
+    String accountEmail = account();
+    openAccountLifecycleTab();
+    browserPage.locator("#account-delete").click();
+    browserPage.locator("#account-lifecycle-password input").fill("wrong-password");
+    browserPage.locator("#account-lifecycle-submit").click();
+    assertThat(browserPage.getByText(uiTexts.getAccountLifecycleInvalidProof())).isVisible();
+    assertThat(browserPage.locator("#account-lifecycle-proof")).hasAttribute("opened", "");
+    assertThat(browserPage.locator("#account-lifecycle-password input")).isVisible();
+
+    confirmLifecycleWithPortalPassword();
+    assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
+    new MailpitInbox(browserContext)
+        .awaitSecurityMail(accountEmail, uiTexts.getAccountDeletedMailSubject());
+  }
+
+  private void openAccountLifecycleTab() {
+    AccountPage accountPage = new AccountPage(browserPage);
+    accountPage.open();
+    accountPage.section("account-tab-security");
+    browserPage.locator("#account-security-tab-lifecycle").click();
+    assertThat(browserPage.locator("#account-delete")).isVisible();
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName("Ein eingerichteter Authenticator bestätigt die Kontolöschung per Ersatzcode")
+  @Description(
+      """
+      1. Ein eigenes Testkonto anlegen und über die Oberfläche einen Authenticator einrichten.
+      2. Endgültige Löschung wählen und die gemeinsame App-Code-/Ersatzcode-Eingabe prüfen.
+      3. Einen während der Einrichtung gesicherten Ersatzcode eingeben und bewusst bestätigen.
+      4. Abmeldung und tatsächliche Löschbestätigung prüfen.
+      """)
+  void enrolledAccountCanBeDeletedWithARecoveryCode(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 900);
+    String accountEmail = account();
+    browserPage.navigate("/account?section=security&tab=portal");
+    browserPage.locator("#account-two-factor-setup").click();
+    browserPage.locator("#two-factor-password input").fill(BrowserTestAccounts.USER_PASSWORD);
+    browserPage.locator("#two-factor-submit").click();
+    TwoFactorPage.enrollCurrent(browserPage, accountEmail);
+
+    openAccountLifecycleTab();
+    browserPage.locator("#account-delete").click();
+    assertThat(browserPage.locator("#account-lifecycle-password")).hasCount(0);
+    browserPage.locator("#account-lifecycle-recovery-code-tab").click();
+    browserPage
+        .locator("#account-lifecycle-recovery-code input")
+        .fill(TwoFactorPage.nextCode(browserPage, accountEmail));
+    browserPage.locator("#account-lifecycle-submit").click();
+
+    assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
+    new MailpitInbox(browserContext)
+        .awaitSecurityMail(accountEmail, uiTexts.getAccountDeletedMailSubject());
+  }
+
+  private void confirmLifecycleWithPortalPassword() {
+    browserPage
+        .locator("#account-lifecycle-password input")
+        .fill(BrowserTestAccounts.USER_PASSWORD);
+    browserPage.locator("#account-lifecycle-submit").click();
+  }
+
   private String account() {
     LoginPage login = new LoginPage(browserPage);
     login.open();

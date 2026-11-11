@@ -48,6 +48,8 @@ public class PublicPageComponent extends PageFrameComponent {
         MessageTexts::getPublicVerificationTitle, MessageTexts::getPublicVerificationIntroduction),
     EMAIL_CONFIRM(
         MessageTexts::getAccountEmailConfirmationTitle, MessageTexts::getPublicEmailIntroduction),
+    ACCOUNT_REACTIVATION(
+        MessageTexts::getAccountReactivateAction, MessageTexts::getAccountReactivateIntro),
     RECOVERY(MessageTexts::getPublicRecoveryTitle, MessageTexts::getPublicRecoveryIntroduction),
     TWO_FACTOR(MessageTexts::getTwoFactorPageTitle, MessageTexts::getTwoFactorPageHint),
     RECOVERY_HELP(MessageTexts::getSupportHelpTitle, MessageTexts::getSupportHelpPageHint),

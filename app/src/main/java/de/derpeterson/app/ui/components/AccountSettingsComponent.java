@@ -1,5 +1,6 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_LIFECYCLE_TAB;
 import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_PORTAL_TAB;
 import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_PROVIDERS_TAB;
 import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_SECTION_PARAMETER;
@@ -114,6 +115,7 @@ public class AccountSettingsComponent extends PageContentLayout {
   private final TabSheet securityTabs = new TabSheet();
   private Tab portalAccessTab;
   private Tab providerAccessTab;
+  private Tab lifecycleTab;
   private final Div providerAccessContentDiv = new Div();
   private Div portalSecurityCardsDiv;
   private final AccountEmailChangeDialog emailChangeDialog;
@@ -323,8 +325,13 @@ public class AccountSettingsComponent extends PageContentLayout {
   }
 
   public void selectSecurityTab(String securityTabParameter) {
-    securityTabs.setSelectedTab(
-        ACCOUNT_PROVIDERS_TAB.equals(securityTabParameter) ? providerAccessTab : portalAccessTab);
+    Tab requestedSecurityTab =
+        switch (securityTabParameter) {
+          case ACCOUNT_PROVIDERS_TAB -> providerAccessTab;
+          case ACCOUNT_LIFECYCLE_TAB -> lifecycleTab == null ? portalAccessTab : lifecycleTab;
+          case null, default -> portalAccessTab;
+        };
+    securityTabs.setSelectedTab(requestedSecurityTab);
   }
 
   private void updateSecurityTabLocation() {
@@ -332,10 +339,13 @@ public class AccountSettingsComponent extends PageContentLayout {
       return;
     }
 
-    String securityTabValue =
-        securityTabs.getSelectedTab() == providerAccessTab
-            ? ACCOUNT_PROVIDERS_TAB
-            : ACCOUNT_PORTAL_TAB;
+    Tab selectedSecurityTab = securityTabs.getSelectedTab();
+    String securityTabValue = ACCOUNT_PORTAL_TAB;
+    if (selectedSecurityTab == providerAccessTab) {
+      securityTabValue = ACCOUNT_PROVIDERS_TAB;
+    } else if (selectedSecurityTab == lifecycleTab) {
+      securityTabValue = ACCOUNT_LIFECYCLE_TAB;
+    }
     QueryParameters securityQueryParameters =
         AccountSection.SECURITY.queryParameters().merging(ACCOUNT_TAB_PARAMETER, securityTabValue);
 
@@ -683,6 +693,16 @@ public class AccountSettingsComponent extends PageContentLayout {
     devicesSvgIcon.addClassName("account-devices-icon");
     devicesSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
     return devicesSvgIcon;
+  }
+
+  public void addAccountLifecycleTab(AccountLifecycleComponent accountLifecycleComponent) {
+    lifecycleTab =
+        new Tab(
+            AppIcon.LOCK.create(),
+            withTextOnRefresh(new Span(), messageProperties::getAccountLifecycleTab));
+    lifecycleTab.setId("account-security-tab-lifecycle");
+    securityTabs.add(lifecycleTab, accountLifecycleComponent);
+    localizedTextRefreshActions.add(accountLifecycleComponent::refreshLifecycleTexts);
   }
 
   public void configureSessionActions(

@@ -157,6 +157,8 @@ public final class ConfigurationCatalog {
           LOGIN_ATTEMPT_WINDOW_SECONDS,
           MAX_SESSIONS_PER_USER,
           SESSION_TIMEOUT_SECONDS,
+          SELF_DEACTIVATION_RETENTION_DAYS,
+          SELF_DEACTIVATION_REMINDER_DAYS,
           MAINTENANCE_MODE ->
           AdminConfigGroup.SECURITY;
       case VERIFICATION_TOKEN_VALID_DURATION,

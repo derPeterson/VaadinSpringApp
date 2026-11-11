@@ -19,6 +19,41 @@ Versuch. Das Fenster beträgt standardmäßig 15 Minuten und kann bis zu 24 Stun
 betragen. Die Sperre dauert 15 Minuten. Bereits verhängte Sperren behalten ihr Ende.
 Ein erfolgreicher Passwortreset setzt den zugehörigen Schutz kontrolliert zurück.
 
+## Eigenes Konto deaktivieren und löschen
+
+Unter „Mein Konto → Sicherheit → Konto verwalten“ kann der Kontoinhaber das Konto
+vorübergehend deaktivieren oder endgültig löschen. Ein eingerichteter Authenticator
+hat Vorrang. Ohne Authenticator bestätigt das aktuelle Portalpasswort die Aktion.
+Ein ausschließlich extern angemeldetes Konto kann zuvor ein Portalpasswort oder
+einen Authenticator einrichten. Die Aktion ist an die aktuelle Sitzung und den
+nachgewiesenen Kontostand gebunden. Der letzte aktive Superadmin bleibt geschützt.
+
+Die Selbstdeaktivierung widerruft Sitzungen und gespeicherte Anmeldungen. Sie
+reserviert ein Löschdatum und verschickt einen Reaktivierungslink an die
+Kontoadresse. Unter „Konfiguration → Sicherheit & Sitzungen“ werden die
+Aufbewahrung und der Vorlauf der Erinnerung in ganzen Tagen eingestellt. Die
+Standardwerte betragen 30 und 7 Tage. Ein Vorlauf von null deaktiviert die
+Erinnerung. Der tatsächliche Vorlauf lässt mindestens einen Tag nach der
+Deaktivierung frei. Bereits festgelegte Termine ändern sich durch spätere
+Konfigurationsänderungen nicht.
+
+Der Link aktiviert das Konto erst nach einer ausdrücklichen Bestätigung und ist
+bis zum Löschdatum gültig. Eine erfolgreiche Aktivierung macht alle bisherigen
+Links dieses Vorgangs ungültig. Über die Anmeldeseite lässt sich bei Bedarf ein
+weiterer Link anfordern. Die Oberfläche meldet denselben Ausgang unabhängig
+vom Kontostatus. Eine durch einen Admin veranlasste Kontosperre kann über diesen
+Weg nicht aufgehoben werden.
+
+Die Löschung wird direkt bestätigt oder nach Ablauf der Deaktivierungsfrist
+automatisch ausgeführt. Sie entfernt das Konto, Anmeldeverknüpfungen,
+gespeicherte Nachweise, Profilbild, eigene Vorgänge und verfasste Inhalte.
+Fremde Vorgänge bleiben erhalten. Noch laufende Zuweisungen werden gelöst.
+Die Bestätigungsmail entsteht in derselben Transaktion wie die Löschung. Nur
+der Mailauftrag hält die Zieladresse bis zum Versand oder endgültigen
+Versandfehler. Bei unklarem SMTP-Ausgang bleibt der Auftrag entsprechend dem
+Mailqueue-Vertrag zur Klärung erhalten. Bereits zugestellte externe E-Mails
+können nicht zurückgerufen werden.
+
 ## Externe Identitäten
 
 Google und Microsoft ergänzen die lokale Anmeldung. Anbieter, Issuer und Subject

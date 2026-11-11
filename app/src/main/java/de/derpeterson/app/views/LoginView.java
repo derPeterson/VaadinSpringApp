@@ -98,6 +98,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
   private EmailField loginEmailField = null;
   private PasswordField loginPasswordField = null;
   private RouterLink forgotPasswordRouterLink = null;
+  private RouterLink reactivateAccountRouterLink;
   private Switch rememberMeSwitch = null;
   private Button loginButton = null;
   private H1 loginTitleH1 = null;
@@ -144,6 +145,8 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
     this.forgotPasswordRouterLink =
         new RouterLink(messageProperties.getLoginForgotPasswordLink(), ForgotPasswordView.class);
+    this.reactivateAccountRouterLink =
+        new RouterLink(messageProperties.getAccountReactivateAction(), ReactivateAccountView.class);
 
     this.rememberMeSwitch = new Switch(messageProperties.getLoginRememberMeCheckbox());
     restoreRememberChoiceFromCookies(httpServletRequest.getCookies());
@@ -203,7 +206,8 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     forgotPasswordLayout.addClassName("cosmos-forgot");
     forgotPasswordLayout.setAlignItems(FlexComponent.Alignment.CENTER);
     forgotPasswordLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-    forgotPasswordLayout.add(forgotPasswordRouterLink);
+    forgotPasswordLayout.getStyle().set("flex-wrap", "wrap");
+    forgotPasswordLayout.add(forgotPasswordRouterLink, reactivateAccountRouterLink);
 
     HorizontalLayout loginOptionsLayout = new HorizontalLayout();
     loginOptionsLayout.setWidthFull();
@@ -334,6 +338,10 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getLoginForgotPasswordLink));
+    Optional.ofNullable(reactivateAccountRouterLink)
+        .ifPresent(component ->
+            componentTranslationSupplierMap.put(
+                component, this.messageProperties::getAccountReactivateAction));
     Optional.ofNullable(rememberMeSwitch)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(

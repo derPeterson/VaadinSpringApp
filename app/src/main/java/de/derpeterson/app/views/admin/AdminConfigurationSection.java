@@ -537,7 +537,10 @@ public class AdminConfigurationSection extends VerticalLayout {
     configIntegerField.setWidthFull();
     configIntegerField.setStepButtonsVisible(true);
     configIntegerField.setClearButtonVisible(true);
-    configIntegerField.setMin(configEntry == ConfigEntry.EMAIL_QUEUE_MAX_RETRY ? 0 : 1);
+    boolean allowsZero =
+        configEntry == ConfigEntry.EMAIL_QUEUE_MAX_RETRY
+            || configEntry == ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS;
+    configIntegerField.setMin(allowsZero ? 0 : 1);
 
     if (configEntry == ConfigEntry.MAIL_PORT) {
       configIntegerField.setMax(65535);
@@ -730,6 +733,7 @@ public class AdminConfigurationSection extends VerticalLayout {
               messageProperties.getAdminConfigRuleEmptyUsesDefault());
       case LOGIN_ATTEMPTS_LIMIT,
           MAX_SESSIONS_PER_USER,
+          SELF_DEACTIVATION_RETENTION_DAYS,
           EMAIL_QUEUE_POOL_SIZE,
           EMAIL_QUEUE_CAPACITY ->
           List.of(
@@ -739,7 +743,7 @@ public class AdminConfigurationSection extends VerticalLayout {
           List.of(
               messageProperties.getAdminConfigRuleInteger(1, Integer.MAX_VALUE),
               messageProperties.getAdminConfigRuleEmptyUnlimited());
-      case EMAIL_QUEUE_MAX_RETRY ->
+      case EMAIL_QUEUE_MAX_RETRY, SELF_DEACTIVATION_REMINDER_DAYS ->
           List.of(
               messageProperties.getAdminConfigRuleInteger(0, Integer.MAX_VALUE),
               messageProperties.getAdminConfigRuleEmptyUsesDefault());
@@ -956,6 +960,7 @@ public class AdminConfigurationSection extends VerticalLayout {
           validateTokenDuration(configEntry, trimmedConfigValue);
       case LOGIN_ATTEMPTS_LIMIT,
           MAX_SESSIONS_PER_USER,
+          SELF_DEACTIVATION_RETENTION_DAYS,
           EMAIL_QUEUE_POOL_SIZE,
           EMAIL_QUEUE_CAPACITY,
           USER_NOTIFICATIONS_INBOX_RETENTION_DAYS,
@@ -963,7 +968,7 @@ public class AdminConfigurationSection extends VerticalLayout {
           isInvalidPositiveInteger(trimmedConfigValue)
               ? messageProperties.getAdminConfigValidationMinOne()
               : null;
-      case EMAIL_QUEUE_MAX_RETRY ->
+      case EMAIL_QUEUE_MAX_RETRY, SELF_DEACTIVATION_REMINDER_DAYS ->
           !isValidNonNegativeInteger(trimmedConfigValue)
               ? messageProperties.getAdminConfigValidationNonNegative()
               : null;

@@ -1,9 +1,9 @@
 # Offene Aufgaben
 
-## Separate spätere Umsetzung: Vaadin-Komponenten
+## Laufende Umsetzung
 
-- [ ] [Vaadin-Badges und weitere Komponenten](docs/planung/vaadin-komponenten-abgleich.md)
-  als eigene Umsetzung starten, Pakete priorisieren und deren Umfang freigeben.
+- [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
+  gemeinsam abnehmen. Weitere Komponenten folgen als eigene Pakete.
 
 ## Entwicklungsablauf
 

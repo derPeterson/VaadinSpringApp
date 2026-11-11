@@ -132,7 +132,7 @@ class EmailQueueServiceTest {
   }
 
   @ParameterizedTest
-  @EnumSource(EmailType.class)
+  @EnumSource(value = EmailType.class, names = "ACCOUNT_DELETED", mode = EnumSource.Mode.EXCLUDE)
   void enqueueLocksAndUsesFreshAccountAndPreservesContent(EmailType type) {
     UserEntity stale =
         UserEntity.builder()
@@ -166,7 +166,7 @@ class EmailQueueServiceTest {
   }
 
   @ParameterizedTest
-  @EnumSource(EmailType.class)
+  @EnumSource(value = EmailType.class, names = "ACCOUNT_DELETED", mode = EnumSource.Mode.EXCLUDE)
   void openDuplicateDoesNotOverwriteOrInsert(EmailType type) {
     when(userRepository.lockVerificationUser(12L)).thenReturn(Optional.of(testUserEntity));
     when(emailQueueRepository.existsByUserEntityAndEmailTypeAndStatusIn(
@@ -189,7 +189,10 @@ class EmailQueueServiceTest {
   }
 
   @ParameterizedTest
-  @EnumSource(value = EmailType.class, names = "VERIFICATION", mode = EnumSource.Mode.EXCLUDE)
+  @EnumSource(
+      value = EmailType.class,
+      names = {"VERIFICATION", "ACCOUNT_DELETED"},
+      mode = EnumSource.Mode.EXCLUDE)
   void nonVerificationQueueDoesNotAddItsOwnEligibilityRule(EmailType type) {
     testUserEntity.setEnabled(false);
     when(userRepository.lockVerificationUser(12L)).thenReturn(Optional.of(testUserEntity));
@@ -197,6 +200,39 @@ class EmailQueueServiceTest {
 
     verify(emailQueueRepository)
         .save(argThat(e -> e.getSubject().isEmpty() && e.getBody().isEmpty()));
+  }
+
+  @Test
+  void deletionConfirmationIsQueuedWithoutAnAccountReference() {
+    emailQueueService.addAccountDeletionConfirmation(
+        "former@example.test", "Deleted", "<p>Done</p>");
+    verify(emailQueueRepository)
+        .save(
+            argThat(confirmationQueueEntry ->
+                confirmationQueueEntry.getUserEntity() == null
+                    && confirmationQueueEntry.getEmailType() == EmailType.ACCOUNT_DELETED
+                    && "former@example.test".equals(confirmationQueueEntry.getRecipient())));
+    verifyNoInteractions(userRepository, emailService);
+    assertThrows(
+        IllegalArgumentException.class,
+        () ->
+            emailQueueService.addEmailToQueue(
+                testUserEntity, "subject", "body", EmailType.ACCOUNT_DELETED));
+  }
+
+  @Test
+  void successfulDeletionConfirmationRemovesItsRemainingRecipientData() throws Exception {
+    EmailQueueEntity confirmationQueueEntry = item(EmailStatus.PENDING, 0);
+    confirmationQueueEntry.setEmailType(EmailType.ACCOUNT_DELETED);
+    confirmationQueueEntry.setUserEntity(null);
+    confirmationQueueEntry.setRecipient("former@example.test");
+    batch(confirmationQueueEntry);
+
+    emailQueueService.processQueue();
+
+    verify(emailService).sendEmailTo("former@example.test", "subject", "body");
+    verify(emailQueueRepository).delete(confirmationQueueEntry);
+    assertEquals(EmailStatus.SENT, confirmationQueueEntry.getStatus());
   }
 
   @Test

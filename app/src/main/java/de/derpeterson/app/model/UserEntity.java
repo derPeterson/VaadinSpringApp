@@ -6,6 +6,7 @@ import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import jakarta.persistence.CheckConstraint;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -120,6 +121,8 @@ public class UserEntity {
   @Setter(AccessLevel.NONE)
   private boolean verificationPending = true;
 
+  @Embedded private AccountDeactivation accountDeactivation;
+
   @Column(nullable = false)
   @Builder.Default
   // JPA erzeugt Instanzen auch bei Uploads ohne UI-Sperre. Die UI setzt die gewählte Sprache
@@ -156,6 +159,7 @@ public class UserEntity {
   public void setEnabled(boolean enabled) {
     this.enabled = enabled;
     this.verificationPending = false;
+    this.accountDeactivation = null;
   }
 
   @PrePersist

@@ -56,6 +56,122 @@ public class MessageTexts {
     return getTranslation("base.unsavedChanges.keepEditing");
   }
 
+  public String getAccountLifecycleTab() {
+    return getTranslation("account.lifecycle.tab");
+  }
+
+  public String getAccountLifecycleIntro() {
+    return getTranslation("account.lifecycle.intro");
+  }
+
+  public String getAccountDeactivateAction() {
+    return getTranslation("account.lifecycle.deactivate");
+  }
+
+  public String getAccountDeleteAction() {
+    return getTranslation("account.lifecycle.delete");
+  }
+
+  public String getAccountDeactivateExplanation() {
+    return getTranslation("account.lifecycle.deactivateExplanation");
+  }
+
+  public String getAccountDeleteExplanation() {
+    return getTranslation("account.lifecycle.deleteExplanation");
+  }
+
+  public String getAccountLifecyclePassword() {
+    return getTranslation("account.lifecycle.password");
+  }
+
+  public String getAccountLifecycleProofUnavailable() {
+    return getTranslation("account.lifecycle.proofUnavailable");
+  }
+
+  public String getAccountLifecycleInvalidProof() {
+    return getTranslation("account.lifecycle.invalidProof");
+  }
+
+  public String getAccountLifecycleLastSuperadmin() {
+    return getTranslation("account.lifecycle.lastSuperadmin");
+  }
+
+  public String getAccountLifecycleFailure() {
+    return getTranslation("account.lifecycle.failure");
+  }
+
+  public String getAccountReactivateAction() {
+    return getTranslation("account.lifecycle.reactivate");
+  }
+
+  public String getAccountReactivateIntro() {
+    return getTranslation("account.lifecycle.reactivateIntro");
+  }
+
+  public String getAccountReactivateConfirm() {
+    return getTranslation("account.lifecycle.reactivateConfirm");
+  }
+
+  public String getAccountReactivateRequest() {
+    return getTranslation("account.lifecycle.requestLink");
+  }
+
+  public String getAccountReactivateRequested() {
+    return getTranslation("account.lifecycle.requested");
+  }
+
+  public String getAccountReactivateSuccess() {
+    return getTranslation("account.lifecycle.reactivated");
+  }
+
+  public String getAccountReactivateInvalid() {
+    return getTranslation("account.lifecycle.invalidLink");
+  }
+
+  public String getAccountDeactivatedMailSubject() {
+    return getTranslation("account.lifecycle.deactivatedSubject");
+  }
+
+  public String getAccountDeactivatedMailBody(String deletionDateText) {
+    return getFormattedTranslation("account.lifecycle.deactivatedBody", deletionDateText);
+  }
+
+  public String getAccountDeletionReminderSubject() {
+    return getTranslation("account.lifecycle.reminderSubject");
+  }
+
+  public String getAccountDeletionReminderBody(String deletionDateText) {
+    return getFormattedTranslation("account.lifecycle.reminderBody", deletionDateText);
+  }
+
+  public String getAccountDeletedMailSubject() {
+    return getTranslation("account.lifecycle.deletedSubject");
+  }
+
+  public String getAccountDeletedMailBody() {
+    return getTranslation("account.lifecycle.deletedBody");
+  }
+
+  public String getAccountDeactivationRetentionLabel() {
+    return getTranslation("account.lifecycle.retentionLabel");
+  }
+
+  public String getAccountDeactivationRetentionHelp() {
+    return getTranslation("account.lifecycle.retentionHelp");
+  }
+
+  public String getAccountDeactivationReminderLabel() {
+    return getTranslation("account.lifecycle.reminderLabel");
+  }
+
+  public String getAccountDeactivationReminderHelp() {
+    return getTranslation("account.lifecycle.reminderHelp");
+  }
+
+  public String getAccountDeactivationEffective() {
+    return getTranslation("account.lifecycle.effective");
+  }
+
   // Support-Tickets und Posteingang
   public String getSupportTitle() {
     return getTranslation("support.title");

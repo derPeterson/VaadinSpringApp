@@ -35,7 +35,7 @@ public class EmailQueueEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @OnDelete(action = OnDeleteAction.CASCADE)
-  @JoinColumn(name = "user_id", nullable = false)
+  @JoinColumn(name = "user_id")
   private UserEntity userEntity;
 
   // Sicherheitsmails fixieren ihre Zieladresse; andere Mailaufträge verwenden die Kontoadresse.

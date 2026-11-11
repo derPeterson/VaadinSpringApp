@@ -22,6 +22,8 @@ public enum ConfigEntry {
   LOGIN_ATTEMPT_WINDOW_SECONDS("login.attempt.window.seconds", 900),
   MAX_SESSIONS_PER_USER("max.sessions.per.user", 3),
   SESSION_TIMEOUT_SECONDS("session.timeout.seconds", 1800),
+  SELF_DEACTIVATION_RETENTION_DAYS("account.self-deactivation.retention.days", 30),
+  SELF_DEACTIVATION_REMINDER_DAYS("account.self-deactivation.reminder.days", 7),
   MAINTENANCE_MODE("maintenance.mode", false),
   EMAIL_FROM("email.from", "no-reply@example.com"),
   EMAIL_ADMIN("email.admin", "admin@example.com"),

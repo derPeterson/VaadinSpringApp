@@ -138,7 +138,7 @@ class EmailQueueServicePersistenceTest {
   }
 
   @ParameterizedTest
-  @EnumSource(EmailType.class)
+  @EnumSource(value = EmailType.class, names = "ACCOUNT_DELETED", mode = EnumSource.Mode.EXCLUDE)
   void twoDirectProducersCommitOnlyOneOpenMailPerUserAndType(EmailType type) throws Exception {
     CyclicBarrier barrier = new CyclicBarrier(2);
     doAnswer(

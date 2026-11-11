@@ -59,24 +59,15 @@ Testrunde. Der [Testbedarf](../testbedarf.md) führt offene automatisierte Prüf
 
 ### Eigenes Konto deaktivieren oder löschen
 
-- Beide Aktionen unter „Mein Konto → Sicherheit“ mit eigener Bestätigung und
-  erneutem Identitätsnachweis anbieten. Vorhandene 2FA und Portalpasswort
-  berücksichtigen. Den Nachweis für Konten mit ausschließlich einem externen
-  Anmeldeanbieter und den Schutz des letzten Superadmins bei der Umsetzung prüfen.
-- Bei Selbstdeaktivierung Sitzungen widerrufen und per E-Mail über die Frist
-  informieren. Frist und Erinnerungsvorlauf in der Anwendungskonfiguration
-  anbieten. Standardwerte sind 30 und 7 Tage. Neue Werte gelten für künftige
-  Deaktivierungen. Bereits mitgeteilte Termine bleiben bestehen.
-  Rechtzeitige Reaktivierung über einen befristeten E-Mail-Link beendet die Frist.
-  Eine Admin-Sperre kann über diesen Weg nicht aufgehoben werden.
-- Endgültiges Löschen räumt kontobezogene Daten auf. Verknüpfungen zu Daten anderer
-  Benutzer und bereits eingeplante Mails vor der Umsetzung anhand der tatsächlichen
-  Datenbeziehungen prüfen. Die direkte Löschung erfolgt sofort und wird erst
-  nach erfolgreicher Löschung per E-Mail bestätigt. Ein Export gehört nicht
-  zu diesem Paket.
-- **Abnahme:** Identitätsbestätigung, Selbstdeaktivierung mit E-Mail,
+- **Abnahme:** Unter „Mein Konto → Sicherheit → Konto verwalten“ die
+  Identitätsbestätigung, Selbstdeaktivierung mit E-Mail,
   Reaktivierung, Admin-Sperre, Erinnerung und Löschung mit isolierten Testdaten
-  durchgehen.
+  ansehen. Unter „Konfiguration → Sicherheit & Sitzungen“ die beiden Fristen
+  und ihre Feldhilfen ansehen. Ein ausschließlich externes Konto braucht für
+  diese Aktionen zuerst einen Authenticator oder ein Portalpasswort.
+- Das erweiterte H2-Schema wird mit frischen isolierten Testdaten geprüft.
+  Für die lokale Sichtung wird ebenfalls eine frische Entwicklungsdatenbank benötigt.
+- Die große Testrunde und die gemeinsame Sichtung bleiben offen.
 
 ## Bestandsaufnahme
 

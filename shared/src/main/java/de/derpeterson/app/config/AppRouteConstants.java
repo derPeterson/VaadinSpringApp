@@ -23,6 +23,8 @@ public final class AppRouteConstants {
   public static final String ACCOUNT_SECURITY_SECTION = "security";
   public static final String ACCOUNT_PORTAL_TAB = "portal";
   public static final String ACCOUNT_PROVIDERS_TAB = "providers";
+  public static final String ACCOUNT_LIFECYCLE_TAB = "lifecycle";
+  public static final String ACCOUNT_REACTIVATION_ROUTE = "reactivate-account";
   public static final String ACCOUNT_PORTAL_LOCATION =
       ACCOUNT_SECURITY_ROUTE
           + "?"

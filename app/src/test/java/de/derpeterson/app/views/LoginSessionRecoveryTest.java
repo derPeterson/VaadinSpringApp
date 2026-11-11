@@ -102,6 +102,7 @@ class LoginSessionRecoveryTest {
     var registry = new ApplicationRouteRegistry(mock(VaadinContext.class)) {};
     registry.setRoute("registration", RegistrationView.class, List.of());
     registry.setRoute("forgot-password", ForgotPasswordView.class, List.of());
+    registry.setRoute("reactivate-account", ReactivateAccountView.class, List.of());
     TestService service = mock(TestService.class);
     when(service.getRouter()).thenReturn(new Router(registry));
     when(service.getRouteRegistry()).thenReturn(registry);

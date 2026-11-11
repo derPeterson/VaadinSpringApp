@@ -159,6 +159,12 @@ public class AvatarDraftStore {
     }
   }
 
+  public synchronized void releaseForUser(Long accountUserId) {
+    avatarDraftsById
+        .values()
+        .removeIf(avatarDraft -> Objects.equals(avatarDraft.owner, accountUserId));
+  }
+
   @Scheduled(fixedDelay = 60_000)
   public synchronized void expire() {
     avatarDraftsById

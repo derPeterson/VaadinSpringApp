@@ -115,6 +115,9 @@ public class EmailQueueService {
   public void addEmailToQueue(
       UserEntity userEntity, String subject, String body, EmailType emailType) {
     requireUserAndType(userEntity, emailType);
+    if (emailType == EmailType.ACCOUNT_DELETED) {
+      throw new IllegalArgumentException("Deletion confirmations must not reference an account");
+    }
     Objects.requireNonNull(subject, "subject");
     Objects.requireNonNull(body, "body");
     userEntity =
@@ -176,6 +179,22 @@ public class EmailQueueService {
         email.getEmailType());
   }
 
+  @Transactional
+  public void addAccountDeletionConfirmation(
+      String recipientEmail, String confirmationSubject, String confirmationBody) {
+    if (!UserInputRules.isEmailValid(recipientEmail)) {
+      throw new IllegalArgumentException("Invalid confirmation recipient");
+    }
+
+    EmailQueueEntity confirmationQueueEntry = new EmailQueueEntity();
+    confirmationQueueEntry.setRecipient(EmailIdentity.canonicalize(recipientEmail));
+    confirmationQueueEntry.setSubject(Objects.requireNonNull(confirmationSubject));
+    confirmationQueueEntry.setBody(Objects.requireNonNull(confirmationBody));
+    confirmationQueueEntry.setEmailType(EmailType.ACCOUNT_DELETED);
+    confirmationQueueEntry.setCreatedAt(LocalDateTime.now(emailQueueClock));
+    emailQueueRepository.save(confirmationQueueEntry);
+  }
+
   /**
    * Claim and outcome commit independently, with no database transaction during SMTP. IN_PROGRESS
    * is durable before sending and is never automatically reclaimed: a crash or an unknown
@@ -235,7 +254,9 @@ public class EmailQueueService {
             }
             // Empfänger im frischen Worker-Claim initialisieren, SMTP außerhalb der
             // Transaktion.
-            pendingEmailEntity.getUserEntity().getEmail();
+            if (pendingEmailEntity.getRecipient() == null) {
+              pendingEmailEntity.getUserEntity().getEmail();
+            }
             pendingEmailEntity.setStatus(EmailStatus.IN_PROGRESS);
             emailQueueRepository.save(pendingEmailEntity);
             return pendingEmailEntity;
@@ -308,7 +329,9 @@ public class EmailQueueService {
           completed.getId(),
           sendAttemptNumber,
           safeFailure(failure));
-      sendAdminNotification(dispatchTransactionTemplate, completed, failure, sendAttemptNumber);
+      if (completed.getEmailType() != EmailType.ACCOUNT_DELETED) {
+        sendAdminNotification(dispatchTransactionTemplate, completed, failure, sendAttemptNumber);
+      }
     }
   }
 
@@ -331,8 +354,15 @@ public class EmailQueueService {
         email.setStatus(EmailStatus.FAILED);
       }
     }
-    emailQueueRepository.save(email);
-    email.getUserEntity().getEmail();
+    if (email.getEmailType() == EmailType.ACCOUNT_DELETED
+        && email.getStatus() != EmailStatus.PENDING) {
+      emailQueueRepository.delete(email);
+    } else {
+      emailQueueRepository.save(email);
+      if (email.getRecipient() == null) {
+        email.getUserEntity().getEmail();
+      }
+    }
     return email;
   }
 

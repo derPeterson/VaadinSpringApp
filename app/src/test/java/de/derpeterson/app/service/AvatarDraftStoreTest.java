@@ -28,6 +28,30 @@ import org.junit.jupiter.api.Test;
 
 class AvatarDraftStoreTest {
   @Test
+  void accountRemovalReleasesOnlyThatAccountsDrafts() throws Exception {
+    AvatarDraftStore avatarDraftStore = new AvatarDraftStore(new AvatarImageProcessor());
+    UUID removedAccountDraftId = avatarDraftStore.begin(1L);
+    UUID retainedAccountDraftId = avatarDraftStore.begin(2L);
+    byte[] uploadedImageBytes = AvatarImageProcessorTest.image("png", 10, 10);
+    UUID removedAccountImageId =
+        avatarDraftStore.upload(
+            removedAccountDraftId, 1L, new ByteArrayInputStream(uploadedImageBytes));
+    UUID retainedAccountImageId =
+        avatarDraftStore.upload(
+            retainedAccountDraftId, 2L, new ByteArrayInputStream(uploadedImageBytes));
+
+    avatarDraftStore.releaseForUser(1L);
+
+    assertEquals(
+        Problem.EXPIRED,
+        assertThrows(
+                InvalidImage.class,
+                () -> avatarDraftStore.image(removedAccountDraftId, 1L, removedAccountImageId))
+            .problem());
+    assertNotNull(avatarDraftStore.image(retainedAccountDraftId, 2L, retainedAccountImageId));
+  }
+
+  @Test
   void expiryOwnershipAndCapacityBoundTemporaryOriginals() throws Exception {
     AtomicReference<Instant> now = new AtomicReference<>(Instant.parse("2026-10-17T12:00:00Z"));
     Clock clock =

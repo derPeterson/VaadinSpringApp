@@ -320,6 +320,7 @@ public class SecurityConfig {
             AppRoute.VERIFICATION.getSecurityRoute(),
             AppRoute.FORGOT_PASSWORD.getSecurityRoute(),
             AppRoute.RESET_PASSWORD.getSecurityRoute(),
+            "/" + AppRouteConstants.ACCOUNT_REACTIVATION_ROUTE,
             AppRoute.EMAIL_CHANGE.getSecurityRoute())
         .permitAll()
         .requestMatchers(

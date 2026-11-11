@@ -370,6 +370,13 @@ public class TwoFactorAuthorization {
     markSession(request, owner, verified.revision(), verified.recoveryCode());
   }
 
+  /** Der Nachweis gilt nur für die unmittelbar folgende Kontoaktion. */
+  public UUID verifyAccountLifecycleCode(Owner accountOwner, String authenticatorCode) {
+    return twoFactorStore
+        .verify(accountOwner.id(), accountOwner.accessVersion(), authenticatorCode)
+        .revision();
+  }
+
   void markSession(HttpServletRequest request, Owner owner, UUID revision) {
     markSession(request, owner, revision, false);
   }

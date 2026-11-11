@@ -1,6 +1,7 @@
 package de.derpeterson.browsertests.mail;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_REACTIVATION_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.EMAIL_CHANGE_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.RESET_PASSWORD_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.VERIFICATION_ROUTE;
@@ -130,6 +131,21 @@ public final class MailpitInbox {
   @Step("Verifizierungsbutton der eigenen E-Mail-Änderungsmail öffnen")
   public Page openEmailChangeAction(CapturedMail mail) {
     return openActionLink(mail, EMAIL_CHANGE_ROUTE, "E-Mail-Änderungsanfrage über SMTP");
+  }
+
+  public Page openAccountReactivationAction(CapturedMail capturedMail) {
+    try (Page messagePage = browserContext.newPage()) {
+      messagePage.navigate(baseUrl + "/view/" + capturedMail.id() + ".html");
+      Locator reactivationLinkLocator =
+          messagePage.locator("a[href*='" + path(ACCOUNT_REACTIVATION_ROUTE) + "?token=']");
+      assertThat(reactivationLinkLocator).hasCount(1);
+      assertThat(reactivationLinkLocator).isVisible();
+      URI reactivationUri = URI.create(reactivationLinkLocator.getAttribute("href"));
+      assertEquals(
+          URI.create(System.getProperty("browser.tests.baseUrl")).getAuthority(),
+          reactivationUri.getAuthority());
+      return browserContext.waitForPage(reactivationLinkLocator::click);
+    }
   }
 
   @Step("Unicode-Betreff und echten Textinhalt der Adminmail prüfen")

@@ -110,6 +110,8 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case BASE_URL -> List.of(getAdminConfigEffectiveBaseUrl());
       case SESSION_TIMEOUT_SECONDS ->
           List.of(getAdminConfigEffectiveSessionNew(), getAdminConfigEffectiveSessionExisting());
+      case SELF_DEACTIVATION_RETENTION_DAYS, SELF_DEACTIVATION_REMINDER_DAYS ->
+          List.of(getAccountDeactivationEffective());
       case LOGIN_ATTEMPTS_LIMIT, LOGIN_ATTEMPT_WINDOW_SECONDS ->
           List.of(getAdminConfigEffectiveLoginAttempt(), getAdminConfigEffectiveLoginBlock());
       case MAX_SESSIONS_PER_USER ->
@@ -171,6 +173,8 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case LOGIN_ATTEMPT_WINDOW_SECONDS -> getAdminConfigEntryLoginAttemptWindow();
       case MAX_SESSIONS_PER_USER -> getAdminConfigEntryMaxSessionsPerUser();
       case SESSION_TIMEOUT_SECONDS -> getAdminConfigEntrySessionTimeout();
+      case SELF_DEACTIVATION_RETENTION_DAYS -> getAccountDeactivationRetentionLabel();
+      case SELF_DEACTIVATION_REMINDER_DAYS -> getAccountDeactivationReminderLabel();
       case MAINTENANCE_MODE -> getAdminConfigEntryMaintenanceMode();
 
       case EMAIL_FROM -> getAdminConfigEntryEmailFrom();
@@ -218,6 +222,8 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case LOGIN_ATTEMPT_WINDOW_SECONDS -> getAdminConfigEntryLoginAttemptWindowTooltip();
       case MAX_SESSIONS_PER_USER -> getAdminConfigEntryMaxSessionsPerUserTooltip();
       case SESSION_TIMEOUT_SECONDS -> getAdminConfigEntrySessionTimeoutTooltip();
+      case SELF_DEACTIVATION_RETENTION_DAYS -> getAccountDeactivationRetentionHelp();
+      case SELF_DEACTIVATION_REMINDER_DAYS -> getAccountDeactivationReminderHelp();
       case MAINTENANCE_MODE -> getAdminConfigEntryMaintenanceModeTooltip();
 
       case EMAIL_FROM -> getAdminConfigEntryEmailFromTooltip();
