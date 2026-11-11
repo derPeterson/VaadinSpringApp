@@ -3,7 +3,8 @@
 ## Laufende Umsetzung
 
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
-  gemeinsam abnehmen. Weitere Komponenten folgen als eigene Pakete.
+  gemeinsam abnehmen. Offene Ergänzungen zum Formularschutz und der fehlende
+  Sonar-Nachweis stehen im Plan. Weitere Komponenten folgen als eigene Pakete.
 
 ## Entwicklungsablauf
 

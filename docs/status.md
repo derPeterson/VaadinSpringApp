@@ -67,7 +67,8 @@ Konfiguration und dem Schließen der Benutzerformulare. Ein Browser-Refresh oder
 das Schließen des Browser-Tabs wird davon nicht abgefangen. Die Browsernachweise
 verwenden Chromium mit Desktop- und Smartphonebreiten.
 
-Der [Testbedarf](testbedarf.md) enthält keine offenen automatisierten Fälle.
+Der [Testbedarf](testbedarf.md) führt den Nachtest der noch nicht umgesetzten
+Erweiterung des Formularschutzes auf Browseraktionen als wartend auf.
 Die gemeinsame Sichtung der drei Pakete steht im
 [Komponentenplan](planung/vaadin-komponenten-abgleich.md#offene-abnahme-der-portalpakete).
 Menschliche Geräte-, Darstellungs- und Mailclientprüfungen bleiben im

@@ -52,6 +52,13 @@ automatisierte Prüfungen.
 
 ### Ungespeicherte Formularänderungen
 
+- **Offene Ergänzung:** Ungespeicherte Eingaben auch beim Browser-Refresh
+  (F5, Strg+R und Aktualisieren-Schaltfläche), beim Schließen eines Tabs oder
+  Browserfensters sowie beim Verlassen über die Adresszeile oder externe
+  Navigation schützen. Der bisherige Schutz erfasst diese Browseraktionen nicht.
+  Vor der Umsetzung die passende öffentliche Vaadin-/Browseranbindung prüfen.
+  Der dazugehörige automatisierte Nachtest steht zentral im
+  [Testbedarf](../testbedarf.md#browser-tests).
 - **Abnahme:** Persönliche Daten und eine Konfigurationsgruppe bearbeiten,
   Navigation abbrechen und danach bewusst verwerfen. „Neu laden“ in der
   Konfiguration und „Abbrechen“ im Benutzerformular ausprobieren. Auch nach
@@ -68,6 +75,14 @@ automatisierte Prüfungen.
 - Das erweiterte H2-Schema wird mit frischen isolierten Testdaten geprüft.
   Für die lokale Sichtung wird ebenfalls eine frische Entwicklungsdatenbank benötigt.
 - Die gemeinsame Sichtung bleibt offen.
+
+### Offener Sonar-Nachweis
+
+- Eine authentifizierte Sonar-Anbindung für die Prüfung verfügbar machen und den
+  aktuellen Analysestand für die neuen Pakete nachweisen. Die letzte bestätigte
+  Analyse auf `main` deckt diese Änderungen nicht ab. Den bestehenden
+  Sonar-Ablauf und seine Branch-Grenzen beachten. Der bisherige Prüfstand
+  beschreibt die fehlende Bestätigung ausdrücklich.
 
 ## Bestandsaufnahme
 
