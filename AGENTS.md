@@ -73,6 +73,9 @@
 - Vor Codearbeiten den Abschnitt [Codestil samt Beispielen](docs/entwicklung.md#codestil)
   lesen und bei Umsetzung sowie Review anwenden. Die Beispiele zeigen Schreibprinzipien,
   keine neuen Fachverträge; sie passend zur Aufgabe verwenden, nicht blind kopieren.
+- Bei jedem Änderungsreview alle geänderten Klassen einzeln auf Lesbarkeit prüfen.
+  Namen, Methodenzuständigkeiten, Absätze und Kommentare mit dem Codestil abgleichen
+  und Befunde im beauftragten Umfang vor dem Commit korrigieren.
 - Für Menschen schreiben: verständliche Namen, klar abgegrenzte Methodenaufgaben,
   wenig Verschachtelung und keine bedeutungslosen Hilfsmethoden oder starren Zeilenlimits.
 - Kontrollblöcke immer mit geschweiften Klammern; `try`/`catch`/`finally` übersichtlich

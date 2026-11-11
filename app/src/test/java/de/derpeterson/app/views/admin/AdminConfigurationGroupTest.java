@@ -16,8 +16,8 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -249,10 +249,10 @@ class AdminConfigurationGroupTest {
       assertEquals("PT2562047788015215H30M7.999999999S", adminDurationField.getStoredValue());
       adminDurationField.setStoredValue("PT2H");
       @SuppressWarnings("unchecked")
-      Select<AdminDurationField.Unit> units =
-          (Select<AdminDurationField.Unit>)
-              ReflectionTestUtils.getField(adminDurationField, "durationUnitSelector");
-      units.setValue(AdminDurationField.Unit.MINUTES);
+      ComboBox<AdminDurationField.Unit> durationUnitComboBox =
+          (ComboBox<AdminDurationField.Unit>)
+              ReflectionTestUtils.getField(adminDurationField, "durationUnitComboBox");
+      durationUnitComboBox.setValue(AdminDurationField.Unit.MINUTES);
 
       assertEquals("PT2M", adminDurationField.getStoredValue());
       BigDecimalField amount =
@@ -419,19 +419,19 @@ class AdminConfigurationGroupTest {
     IntegerField amount =
         (IntegerField) ReflectionTestUtils.getField(adminDurationField, "durationAmountField");
     @SuppressWarnings("unchecked")
-    Select<AdminDurationField.Unit> unit =
-        (Select<AdminDurationField.Unit>)
-            ReflectionTestUtils.getField(adminDurationField, "durationUnitSelector");
+    ComboBox<AdminDurationField.Unit> durationUnitComboBox =
+        (ComboBox<AdminDurationField.Unit>)
+            ReflectionTestUtils.getField(adminDurationField, "durationUnitComboBox");
 
     assertEquals(14, amount.getValue());
-    assertEquals(AdminDurationField.Unit.DAYS, unit.getValue());
+    assertEquals(AdminDurationField.Unit.DAYS, durationUnitComboBox.getValue());
     for (int seconds : new int[] {61, 3600, 1209600, Integer.MAX_VALUE}) {
       adminDurationField.setSecondsValue(seconds);
 
       assertEquals(String.valueOf(seconds), adminDurationField.getSecondsValue());
     }
     adminDurationField.setSecondsValue(1209600);
-    unit.setValue(AdminDurationField.Unit.HOURS);
+    durationUnitComboBox.setValue(AdminDurationField.Unit.HOURS);
 
     assertEquals("50400", adminDurationField.getSecondsValue());
     amount.setValue(999999);

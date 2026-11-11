@@ -322,6 +322,10 @@ vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay),
     backdrop-filter: blur(var(--cosmos-surface-blur));
 }
 
+.cosmos-theme :is(vaadin-combo-box, vaadin-multi-select-combo-box)::part(overlay) {
+    background: var(--vaadin-input-field-background, var(--cosmos-reference-input));
+}
+
 /* ComboBox- und Uhrzeit-Einträge passen zur 13px-Schrift der Eingabefelder. */
 
 .cosmos-notification-compose vaadin-multi-select-combo-box::part(content),
@@ -510,7 +514,7 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
 }
 .cosmos-reference-portal .cosmos-avatar-status > div { transform: translate(50%, 50%) !important; bottom: var(--cosmos-avatar-status-anchor) !important; right: var(--cosmos-avatar-status-anchor) !important; box-shadow: 0 0 0 2px var(--cosmos-reference-panel); }
 .cosmos-reference-portal .cosmos-avatar-circle { border: 2px solid var(--cosmos-reference-border); background: var(--cosmos-reference-input); box-shadow: none; }
-.cosmos-reference-portal :is(.cosmos-notification-count, .account-nav-count, .portal-home-unread) { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 22px; height: 20px; padding: 0 6px; background: var(--cosmos-reference-badge); border: 1px solid var(--cosmos-reference-badge-border); border-radius: 999px; color: var(--cosmos-reference-white); font: 700 11px/1 Inter, sans-serif; }
+.cosmos-reference-portal :is(.cosmos-notification-count, .account-nav-count, .portal-home-unread) { box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; min-width: 22px; height: 20px; margin: 0; padding: 0 6px; background: var(--cosmos-reference-badge); border: 1px solid var(--cosmos-reference-badge-border); border-radius: 999px; color: var(--cosmos-reference-white); font: 700 11px/1 Inter, sans-serif; }
 .cosmos-reference-portal .cosmos-notification-count { top: 0; right: -4px; box-shadow: 0 0 0 2px var(--cosmos-reference-page); }
 @media (max-width: 1023px) and (min-width: 640px) { .cosmos-reference-portal .cosmos-topbar { padding-inline: 24px; } }
 @media (max-width: 639px) {
@@ -607,11 +611,18 @@ vaadin-popover[theme~=cosmos-reference]::part(content) { padding: 0; }
 .cosmos-reference-overlay.cosmos-user-menu { width: 100%; padding: 16px; }
 .portal-user-menu-body > * { min-width: 0; }
 .portal-user-menu-body .portal-menu-avatar { margin: 0; width: 48px; height: 48px; --cosmos-avatar-size: 48px !important; }
-.portal-menu-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
-.portal-menu-badges > span { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border: 1px solid var(--cosmos-reference-success-border); border-radius: 4px; font: 500 10px/15px Inter, sans-serif; }
-.portal-menu-account-state { color: var(--cosmos-reference-success); background: var(--cosmos-reference-success-surface); }
-.portal-menu-presence { color: var(--account-presence-color); background: var(--cosmos-reference-hover); }
-.portal-menu-badges > span::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.portal-menu-badges { display: flex; margin-top: 5px; }
+vaadin-badge:is(.account-summary-presence, .portal-menu-presence) {
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    min-height: 21px;
+    margin: 0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: var(--account-presence-color);
+    font: 500 10px/15px Inter, sans-serif;
+}
 
 .cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action { display: flex; justify-content: center; width: calc(100% - 24px); margin: 0 12px 12px; border: 1px solid var(--cosmos-reference-control-border); background: var(--cosmos-reference-input); color: var(--cosmos-reference-white); padding: 0 13px; font-weight: 600; }
 .cosmos-reference-overlay .portal-user-menu-body > .portal-menu-action::part(label) { flex: initial; justify-content: center; text-align: center; }

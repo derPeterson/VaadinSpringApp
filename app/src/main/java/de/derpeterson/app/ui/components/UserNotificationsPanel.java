@@ -9,7 +9,6 @@ import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLAY;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
@@ -64,8 +63,6 @@ public class UserNotificationsPanel extends Div {
       "cosmos-notification-row-action";
   private static final String COSMOS_PANEL_DESCRIPTION_CLASS = PANEL_DESCRIPTION;
   private static final String COSMOS_PANEL_HEADING_CLASS = PANEL_HEADING;
-  private static final String BADGE_THEME = "badge";
-  private static final String THEME_ATTRIBUTE = "theme";
   private static final String COSMOS_NOTIFICATION_BODY_CLASS = "cosmos-notification-body";
 
   private static final int PREVIEW_LIMIT = 5;
@@ -170,12 +167,12 @@ public class UserNotificationsPanel extends Div {
     readFilter.setRenderer(
         new com.vaadin.flow.data.renderer.ComponentRenderer<>(filter -> {
           Span filterLabelSpan = new Span(filterLabel(filter));
-          Span filterCountSpan = new Span();
-          filterCountSpan.addClassName("portal-filter-count");
-          filterCountSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
+          Badge filterCountBadge = new Badge();
+          filterCountBadge.addClassName("portal-filter-count");
+          filterCountBadge.getElement().setAttribute(ARIA_HIDDEN, "true");
           long total = totalItems;
           long unread = unreadIds.size();
-          filterCountSpan.setText(
+          filterCountBadge.setText(
               Long.toString(
                   switch (filter) {
                     case ALL -> total;
@@ -183,7 +180,7 @@ public class UserNotificationsPanel extends Div {
                     case READ -> Math.max(0, total - unread);
                   }));
 
-          Div filterOptionDiv = new Div(filterLabelSpan, filterCountSpan);
+          Div filterOptionDiv = new Div(filterLabelSpan, filterCountBadge);
           filterOptionDiv.addClassName("portal-read-filter-option");
           return filterOptionDiv;
         }));
@@ -240,8 +237,7 @@ public class UserNotificationsPanel extends Div {
     closeInboxButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
     closeInboxButton.addClassName("cosmos-overlay-close");
     closeInboxButton.addClickListener(e -> closeAction.run());
-    unreadCount.addClassName("portal-preview-unread-count");
-    Div previewHeaderDiv = new Div(previewIconDiv, previewTitlesDiv, unreadCount, closeInboxButton);
+    Div previewHeaderDiv = new Div(previewIconDiv, previewTitlesDiv, closeInboxButton);
     previewHeaderDiv.addClassName("cosmos-notification-preview-header");
     previewToolbarDiv.addClassName("cosmos-notification-preview-toolbar");
     refreshInboxButton.setIcon(AppIcon.REFRESH.create());
@@ -314,7 +310,7 @@ public class UserNotificationsPanel extends Div {
     inboxPagingDiv.addClassName("cosmos-notification-inbox-pagination");
     pageSize.setId("notifications-inbox-page-size");
     pageSize.addClassName("portal-page-size");
-    CosmosComboBoxStyling.styleChoice(pageSize, Object::toString, false);
+    CosmosComboBoxStyling.styleChoice(pageSize, Object::toString, true);
     pageSize.setItems(10, 20, 50);
     pageSize.setValue(10);
     pageSize.setAllowCustomValue(false);
@@ -913,8 +909,8 @@ public class UserNotificationsPanel extends Div {
 
   private Div messageMetadata(Item item, String... stateClasses) {
     boolean administration = item.type() == UserNotificationType.ADMIN_ANNOUNCEMENT;
-    Span notificationSourceSpan = new Span(resolveNotificationSourceText(item));
-    notificationSourceSpan.addClassNames(
+    Badge notificationSourceBadge = new Badge(resolveNotificationSourceText(item));
+    notificationSourceBadge.addClassNames(
         "cosmos-notification-preview-source",
         administration ? "portal-notification-source-admin" : "portal-notification-source-system");
     Span notificationTimeSpan =
@@ -922,24 +918,19 @@ public class UserNotificationsPanel extends Div {
             UserNotificationTexts.formatNotificationTimestamp(
                 item.createdAt(), UI.getCurrent().getLocale()));
     notificationTimeSpan.addClassName("cosmos-notification-message-time");
-    Span notificationStateSpan =
-        new Span(UserNotificationTexts.getNotificationRelevanceText(messageProperties, item));
-    notificationStateSpan.getElement().setAttribute(THEME_ATTRIBUTE, BADGE_THEME);
-    notificationStateSpan.getElement().setAttribute("data-read", Boolean.toString(item.read()));
-    notificationStateSpan.addClassName("cosmos-notification-preview-state");
-    notificationStateSpan.addClassNames(stateClasses);
-    Component notificationStatusComponent = notificationStateSpan;
-    if (item.relevance() != UserNotificationRelevance.ACTIVE) {
-      Badge retired =
-          new Badge(UserNotificationTexts.getNotificationRelevanceText(messageProperties, item));
-      retired.addClassNames("cosmos-notification-preview-state");
-      retired.addClassNames(stateClasses);
-      retired.getElement().setAttribute("data-relevance", item.relevance().name());
-      notificationStatusComponent = retired;
+    Badge notificationStatusBadge =
+        new Badge(UserNotificationTexts.getNotificationRelevanceText(messageProperties, item));
+    notificationStatusBadge.addClassName("cosmos-notification-preview-state");
+    notificationStatusBadge.addClassNames(stateClasses);
+
+    if (item.relevance() == UserNotificationRelevance.ACTIVE) {
+      notificationStatusBadge.getElement().setAttribute("data-read", Boolean.toString(item.read()));
+    } else {
+      notificationStatusBadge.getElement().setAttribute("data-relevance", item.relevance().name());
     }
 
     Div notificationMetadataDiv =
-        new Div(notificationSourceSpan, notificationTimeSpan, notificationStatusComponent);
+        new Div(notificationSourceBadge, notificationTimeSpan, notificationStatusBadge);
     notificationMetadataDiv.addClassName("cosmos-notification-message-meta");
     return notificationMetadataDiv;
   }

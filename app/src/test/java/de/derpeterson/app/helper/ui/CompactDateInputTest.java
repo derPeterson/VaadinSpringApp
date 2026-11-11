@@ -53,6 +53,25 @@ class CompactDateInputTest {
     VaadinSession.setCurrent(null);
   }
 
+  @Test
+  void calendarTextsAndWeekStartFollowTheLanguageSwitch() {
+    assertEquals("Oktober", field.getI18n().getMonthNames().get(9));
+    assertEquals("Montag", field.getI18n().getWeekdays().get(1));
+    assertEquals(1, field.getI18n().getFirstDayOfWeek());
+    assertEquals("Heute", field.getI18n().getToday());
+    assertEquals("Abbrechen", field.getI18n().getCancel());
+
+    localeReference.set(Locale.ENGLISH);
+    field.setLocale(Locale.ENGLISH);
+    CompactDateInput.configureDatePickerInput(field, messageProperties);
+
+    assertEquals("October", field.getI18n().getMonthNames().get(9));
+    assertEquals("Monday", field.getI18n().getWeekdays().get(1));
+    assertEquals(0, field.getI18n().getFirstDayOfWeek());
+    assertEquals("Today", field.getI18n().getToday());
+    assertEquals("Cancel", field.getI18n().getCancel());
+  }
+
   @ParameterizedTest
   @CsvSource({
     "de,260486,1986-04-26",

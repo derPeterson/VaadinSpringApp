@@ -3,6 +3,7 @@ package de.derpeterson.app.views.admin;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.DELETE_BUTTON;
 
 import com.vaadin.flow.component.HasValue;
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
@@ -30,7 +31,7 @@ final class AdminUserFilterBar extends VerticalLayout {
   private final Button filterButton = new Button();
   private final Button applyFiltersButton = new Button();
   private final Button cancelFilterChangesButton = new Button();
-  private final Span activeFilterCountBadge = new Span();
+  private final Badge activeFilterCountBadge = new Badge();
   private final Span filterHintSpan = new Span();
   private final AdminSidePanelDialog filterSidePanel;
   private int activeFilterCount;

@@ -304,7 +304,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       ruleModeComboBox.setWidthFull();
       ruleModeComboBox.setItems(TwoFactorMode.values());
       ruleModeComboBox.setAllowCustomValue(false);
-      CosmosComboBoxStyling.styleChoice(ruleModeComboBox, this::modeLabel, false);
+      CosmosComboBoxStyling.styleChoice(ruleModeComboBox, this::modeLabel, true);
       ruleModeComboBox.addValueChangeListener(event -> {
         if (event.getValue() == null && event.getOldValue() != null) {
           ruleModeComboBox.setValue(event.getOldValue());

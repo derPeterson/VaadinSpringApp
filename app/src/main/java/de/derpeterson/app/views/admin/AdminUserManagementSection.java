@@ -911,7 +911,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       genderComboBox = new ComboBox<>(messageProperties.getRegistrationGenderCombobox());
       genderComboBox.setItems(Gender.values());
       CosmosComboBoxStyling.styleChoice(
-          genderComboBox, AdminUserManagementSection.this::formatGender, true);
+          genderComboBox, AdminUserManagementSection.this::formatGender, false);
       genderComboBox.setPlaceholder(messageProperties.getAccountGenderPlaceholder());
       genderComboBox.setWidthFull();
       genderComboBox.setClearButtonVisible(true);
@@ -1481,17 +1481,15 @@ public class AdminUserManagementSection extends VerticalLayout {
 
   private Component createEnabledBadge(UserEntity userEntity) {
     boolean accountEnabled = userEntity.isEnabled();
-    Span accountEnabledBadgeSpan =
-        new Span(
+    Badge accountEnabledBadge =
+        new Badge(
             accountEnabled
                 ? messageProperties.getAdminUsersYes()
                 : messageProperties.getAdminUsersNo());
-    accountEnabledBadgeSpan
-        .getElement()
-        .getThemeList()
-        .add("badge " + (accountEnabled ? "success" : "error"));
-    accountEnabledBadgeSpan.addClassName("admin-user-table-enabled");
-    return accountEnabledBadgeSpan;
+    accountEnabledBadge.addThemeVariants(
+        accountEnabled ? BadgeVariant.SUCCESS : BadgeVariant.ERROR);
+    accountEnabledBadge.addClassName("admin-user-table-enabled");
+    return accountEnabledBadge;
   }
 
   private Component createUserIdentity(UserEntity userEntity) {
@@ -1509,9 +1507,10 @@ public class AdminUserManagementSection extends VerticalLayout {
     tableUserNameSpan.addClassName("admin-user-table-name");
     Div tableUserLabelsDiv = new Div(tableUserNameSpan);
     if (isCurrentUser(userEntity)) {
-      Span currentUserLabelSpan = new Span(messageProperties.getAdminUsersSelf());
-      currentUserLabelSpan.addClassName("admin-user-self");
-      tableUserLabelsDiv.add(currentUserLabelSpan);
+      Badge currentUserBadge = new Badge(messageProperties.getAdminUsersSelf());
+      currentUserBadge.addThemeVariants(BadgeVariant.SUCCESS);
+      currentUserBadge.addClassName("admin-user-self");
+      tableUserLabelsDiv.add(currentUserBadge);
     }
 
     HorizontalLayout tableUserIdentityLayout =
@@ -1525,19 +1524,19 @@ public class AdminUserManagementSection extends VerticalLayout {
 
   private Component createStatusBadge(UserEntity userEntity) {
     UserStatus userStatus = userEntity.getStatus();
-    Span userStatusBadgeSpan =
-        new Span(userStatus == null ? "-" : messageProperties.getUserStatusLabel(userStatus));
-    String statusThemeVariant =
+    Badge userStatusBadge =
+        new Badge(userStatus == null ? "-" : messageProperties.getUserStatusLabel(userStatus));
+    BadgeVariant statusBadgeVariant =
         userStatus == null
-            ? "contrast"
+            ? BadgeVariant.CONTRAST
             : switch (userStatus) {
-              case AVAILABLE -> "success";
-              case ABSENT -> "warning";
-              case EMPLOYED -> "error";
-              case OFFLINE -> "contrast";
+              case AVAILABLE -> BadgeVariant.SUCCESS;
+              case ABSENT -> BadgeVariant.WARNING;
+              case EMPLOYED -> BadgeVariant.ERROR;
+              case OFFLINE -> BadgeVariant.CONTRAST;
             };
-    userStatusBadgeSpan.getElement().getThemeList().add("badge " + statusThemeVariant);
-    userStatusBadgeSpan.addClassName("admin-user-table-status");
+    userStatusBadge.addThemeVariants(statusBadgeVariant);
+    userStatusBadge.addClassName("admin-user-table-status");
 
     if (userStatus != null) {
       AppIcon statusAppIcon =
@@ -1549,10 +1548,10 @@ public class AdminUserManagementSection extends VerticalLayout {
           };
       SvgIcon statusSvgIcon = statusAppIcon.create();
       statusSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
-      userStatusBadgeSpan.addComponentAtIndex(0, statusSvgIcon);
+      userStatusBadge.setIcon(statusSvgIcon);
     }
 
-    return userStatusBadgeSpan;
+    return userStatusBadge;
   }
 
   private Component createRoleBadges(UserEntity userEntity) {
@@ -1563,9 +1562,9 @@ public class AdminUserManagementSection extends VerticalLayout {
         .map(this::formatRoleType)
         .sorted(String.CASE_INSENSITIVE_ORDER)
         .forEach(roleName -> {
-          Span roleBadgeSpan = new Span(roleName);
-          roleBadgeSpan.addClassName("cosmos-admin-role-chip");
-          roleBadgesDiv.add(roleBadgeSpan);
+          Badge roleBadge = new Badge(roleName);
+          roleBadge.addClassName("cosmos-admin-role-chip");
+          roleBadgesDiv.add(roleBadge);
         });
     return roleBadgesDiv;
   }

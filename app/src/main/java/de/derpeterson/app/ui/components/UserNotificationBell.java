@@ -2,9 +2,9 @@ package de.derpeterson.app.ui.components;
 
 import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLAY;
 
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.function.SerializableConsumer;
@@ -19,7 +19,7 @@ public class UserNotificationBell extends Div {
   private final transient MessageProperties messageProperties;
   private final transient UserNotificationService userNotificationService;
   private final Button notificationBellButton;
-  private final Span unreadCountBadge = new Span();
+  private final Badge unreadCountBadge = new Badge();
   private final Popover notificationPopover = new Popover();
   private transient HttpSession httpSession;
   private transient Registration notificationChangeRegistration;

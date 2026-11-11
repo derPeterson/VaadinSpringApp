@@ -5,6 +5,7 @@ import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasAriaLabel;
 import com.vaadin.flow.component.Key;
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Switch;
@@ -107,7 +108,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private final H2 currentGroupTitle;
   private final SvgIcon currentGroupSvgIcon;
   private final Span currentGroupDescriptionSpan;
-  private final Span currentGroupSettingCountSpan;
+  private final Badge currentGroupSettingCountBadge;
   private final Span configurationSaveHintSpan;
   private final VerticalLayout configFieldsLayout;
 
@@ -149,8 +150,8 @@ public class AdminConfigurationSection extends VerticalLayout {
     currentGroupSvgIcon.getElement().setAttribute("aria-hidden", "true");
     currentGroupDescriptionSpan = new Span();
     currentGroupDescriptionSpan.addClassName("cosmos-config-group-description");
-    currentGroupSettingCountSpan = new Span();
-    currentGroupSettingCountSpan.addClassName("cosmos-config-setting-count");
+    currentGroupSettingCountBadge = new Badge();
+    currentGroupSettingCountBadge.addClassName("cosmos-config-setting-count");
     configurationSaveHintSpan = new Span();
 
     configFieldsLayout = new VerticalLayout();
@@ -203,7 +204,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     Div configGroupHeadingDiv = new Div(currentGroupTitle, currentGroupDescriptionSpan);
     configGroupHeadingDiv.addClassName("cosmos-config-group-heading");
     Div configCardHeaderDiv =
-        new Div(configGroupIconBadgeDiv, configGroupHeadingDiv, currentGroupSettingCountSpan);
+        new Div(configGroupIconBadgeDiv, configGroupHeadingDiv, currentGroupSettingCountBadge);
     configCardHeaderDiv.addClassName("cosmos-config-card-header");
 
     SvgIcon saveHintSvgIcon = AppIcon.INFO_CIRCLE.create();
@@ -374,7 +375,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       currentGroupTitle.setText(groupLabelText);
       currentGroupDescriptionSpan.setText(
           messageProperties.getAdminConfigGroupDescription(selectedGroup));
-      currentGroupSettingCountSpan.setText(
+      currentGroupSettingCountBadge.setText(
           messageProperties.getAdminConfigSettingsCount(getVisibleConfigEntries().size()));
       currentGroupSvgIcon.setSrc(ConfigGroupIcons.forGroup(selectedGroup).getSource());
       breadcrumbText += " / " + groupLabelText;
@@ -603,7 +604,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       addCopyrightPlaceholderHelp();
     }
     if (configInputs.get(configEntry) instanceof AdminDurationField durationField) {
-      addDurationValueHelp(durationField);
+      addDurationValueHelp(durationField, !isNotificationRetention(configEntry));
     }
 
     helpPanel.add(defaultValueDiv, inputRulesDiv);
@@ -633,18 +634,22 @@ public class AdminConfigurationSection extends VerticalLayout {
     helpPanel.add(copyrightPlaceholdersDiv);
   }
 
-  private void addDurationValueHelp(AdminDurationField durationField) {
+  private void addDurationValueHelp(
+      AdminDurationField durationField, boolean showEquivalentSeconds) {
     Div currentDurationDiv =
         new Div(
             new Span(messageProperties.getAdminConfigDurationCurrent()),
             new Span(durationField.getDisplayValue()));
-    Div equivalentDurationDiv =
-        new Div(
-            new Span(messageProperties.getAdminConfigDurationEquivalent()),
-            new Span(durationField.getEquivalentValue()));
     currentDurationDiv.addClassName(HELP_DEFAULT_CLASS);
-    equivalentDurationDiv.addClassName(HELP_DEFAULT_CLASS);
-    helpPanel.add(currentDurationDiv, equivalentDurationDiv);
+    helpPanel.add(currentDurationDiv);
+    if (showEquivalentSeconds) {
+      Div equivalentDurationDiv =
+          new Div(
+              new Span(messageProperties.getAdminConfigDurationEquivalent()),
+              new Span(durationField.getEquivalentValue()));
+      equivalentDurationDiv.addClassName(HELP_DEFAULT_CLASS);
+      helpPanel.add(equivalentDurationDiv);
+    }
   }
 
   private void addRestartHelp() {

@@ -1,6 +1,7 @@
 package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
@@ -28,8 +29,8 @@ public class PortalSidebarComponent extends Div {
   private final OverlayUserIcon accountAvatar;
   private final PageNavigationComponent accountNavigation;
   private final Span accountNameLabel = new Span();
-  private final Span presenceLabel = new Span();
-  private final Span unreadNotificationCount = new Span();
+  private final Badge presenceBadge = new Badge();
+  private final Badge unreadNotificationCountBadge = new Badge();
   private final List<Runnable> localizedTextRefreshActions = new ArrayList<>();
   private UserStatus status;
 
@@ -56,19 +57,9 @@ public class PortalSidebarComponent extends Div {
     accountEmailSpan.addClassName("account-summary-email");
     accountEmailSpan.getElement().setAttribute("title", accountEmailSpan.getText());
 
-    Span accountActiveSpan =
-        createLocalizedLabelSpan(
-            user != null && user.isEnabled()
-                ? messageProperties::getAccountSettingsEnabled
-                : messageProperties::getAccountSettingsDisabled);
-    accountActiveSpan.addClassName("account-summary-status");
-    accountActiveSpan
-        .getElement()
-        .getThemeList()
-        .addAll(List.of("badge", user != null && user.isEnabled() ? "success" : "error"));
-    presenceLabel.addClassName("account-summary-presence");
+    presenceBadge.addClassName("account-summary-presence");
 
-    Div accountBadgesDiv = new Div(accountActiveSpan, presenceLabel);
+    Div accountBadgesDiv = new Div(presenceBadge);
     accountBadgesDiv.addClassName("account-summary-badges");
     Div accountIdentityDiv = new Div(accountNameLabel, accountEmailSpan, accountBadgesDiv);
     accountIdentityDiv.addClassName("account-summary-details");
@@ -100,10 +91,10 @@ public class PortalSidebarComponent extends Div {
     portalNavigation.registerAction(
         notifications, () -> UI.getCurrent().navigate(UserNotificationsView.class));
     PageNavigationComponent.setItemActive(notifications, selectedRoute == AppRoute.NOTIFICATIONS);
-    unreadNotificationCount.addClassName("account-nav-count");
-    unreadNotificationCount.setVisible(false);
-    unreadNotificationCount.getElement().setAttribute("aria-hidden", "true");
-    notifications.setSuffixComponent(unreadNotificationCount);
+    unreadNotificationCountBadge.addClassName("account-nav-count");
+    unreadNotificationCountBadge.setVisible(false);
+    unreadNotificationCountBadge.getElement().setAttribute("aria-hidden", "true");
+    notifications.setSuffixComponent(unreadNotificationCountBadge);
     portalNavigation.addItem(home, notifications);
 
     Span accountGroupSpan = createLocalizedLabelSpan(messageProperties::getAccountSettingsOverview);
@@ -185,13 +176,13 @@ public class PortalSidebarComponent extends Div {
   }
 
   private void refreshPresence() {
-    presenceLabel.setText(messageProperties.getUserStatusLabel(status));
-    presenceLabel.getStyle().set("--account-presence-color", status.getColor());
+    presenceBadge.setText(messageProperties.getUserStatusLabel(status));
+    presenceBadge.getStyle().set("--account-presence-color", status.getColor());
   }
 
   public void updateUnreadCount(long count) {
-    unreadNotificationCount.setVisible(count > 0);
-    unreadNotificationCount.setText(count > 99 ? "99+" : Long.toString(Math.max(0, count)));
+    unreadNotificationCountBadge.setVisible(count > 0);
+    unreadNotificationCountBadge.setText(count > 99 ? "99+" : Long.toString(Math.max(0, count)));
   }
 
   public void refreshTexts() {

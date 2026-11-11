@@ -13,9 +13,9 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.PollEvent;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -163,12 +163,12 @@ class AdminMailTestSectionTest {
     TextArea body = field(section, "testBodyField");
     Button send = field(section, "sendTestMailButton");
     VerticalLayout panel = field(section, "mailCardContentLayout");
-    Div badge = field(section, "deliveryStatusDiv");
+    Badge deliveryStatusBadge = field(section, "deliveryStatusBadge");
     subject.setValue("Draft subject");
     body.setValue("Draft body");
 
     assertTrue(panel.isEnabled());
-    assertEquals("open", badge.getElement().getAttribute("data-state"));
+    assertEquals("open", deliveryStatusBadge.getElement().getAttribute("data-state"));
     com.vaadin.flow.component.shared.Tooltip statusHint = field(section, "deliveryTooltip");
 
     assertEquals(
@@ -176,9 +176,7 @@ class AdminMailTestSectionTest {
             + ": "
             + messageProperties.getMaintenanceStatusAvailable(),
         statusHint.getText());
-    assertEquals(
-        messageProperties.getAdminMailCardBadge(),
-        ((Span) field(section, "mailDeliveryStatusSpan")).getText());
+    assertEquals(messageProperties.getAdminMailCardBadge(), deliveryStatusBadge.getText());
     when(configService.getBoolean(ConfigEntry.MAINTENANCE_MODE)).thenReturn(true);
     section.refreshDeliveryState();
 
@@ -193,9 +191,9 @@ class AdminMailTestSectionTest {
             .filter(ConfigInfoButton.class::isInstance)
             .map(ConfigInfoButton.class::cast)
             .noneMatch(ConfigInfoButton::isEnabled));
-    assertEquals("active", badge.getElement().getAttribute("data-state"));
+    assertEquals("active", deliveryStatusBadge.getElement().getAttribute("data-state"));
     assertTrue(
-        badge
+        deliveryStatusBadge
             .getElement()
             .getAttribute("aria-label")
             .contains(messageProperties.getMaintenanceStatusActive()));
@@ -211,7 +209,7 @@ class AdminMailTestSectionTest {
     assertTrue(panel.isEnabled());
     assertTrue(send.isEnabled());
     assertEquals("false", panel.getElement().getAttribute("aria-disabled"));
-    assertEquals("open", badge.getElement().getAttribute("data-state"));
+    assertEquals("open", deliveryStatusBadge.getElement().getAttribute("data-state"));
     assertEquals("Draft subject", subject.getValue());
     assertEquals("Draft body", body.getValue());
     assertEquals(
@@ -249,7 +247,7 @@ class AdminMailTestSectionTest {
     assertFalse(((VerticalLayout) field(section, "mailCardContentLayout")).isEnabled());
     assertEquals(
         state.name().toLowerCase(Locale.ROOT),
-        ((Div) field(section, "deliveryStatusDiv")).getElement().getAttribute("data-state"));
+        ((Badge) field(section, "deliveryStatusBadge")).getElement().getAttribute("data-state"));
     verifyNoInteractions(emailService);
   }
 

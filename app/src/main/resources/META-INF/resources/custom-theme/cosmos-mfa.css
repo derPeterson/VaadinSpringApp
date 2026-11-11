@@ -87,8 +87,8 @@
  .two-factor-account-actions:has(> vaadin-button:only-child) { grid-column:3; grid-row:1; align-self:center; }
 }
 .two-factor-account-entry .account-entry-copy > div { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
-.two-factor-account-entry vaadin-badge { box-sizing:border-box; margin:0; padding:2px 6px; border:1px solid var(--vaadin-badge-border-color); border-radius:4px; font:500 10px/15px Inter,sans-serif; --vaadin-badge-text-color:var(--cosmos-reference-accent); --vaadin-badge-background:var(--cosmos-reference-selection); --vaadin-badge-border-color:var(--cosmos-reference-icon-border); }
-.two-factor-account-entry vaadin-badge[theme~=success] { --vaadin-badge-text-color:var(--cosmos-reference-success); --vaadin-badge-background:var(--cosmos-reference-success-surface); --vaadin-badge-border-color:var(--cosmos-reference-success-border); }
+.two-factor-account-entry vaadin-badge { box-sizing:border-box; margin:0; padding:2px 6px; border-radius:4px; font:500 10px/15px Inter,sans-serif; --vaadin-badge-text-color:var(--cosmos-reference-accent); }
+.two-factor-account-entry vaadin-badge[theme~=success] { --vaadin-badge-text-color:var(--cosmos-reference-success); }
 @media (max-width:650px) { .two-factor-account-actions { grid-column:1 / -1; } }
 .support-tickets .account-panel-body { display:flex; flex-direction:column; gap:16px; }
 .support-tickets .cosmos-dialog-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; width:100%; }

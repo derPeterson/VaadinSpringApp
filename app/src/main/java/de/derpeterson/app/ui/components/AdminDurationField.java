@@ -2,8 +2,9 @@ package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.HasAriaLabel;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.function.SerializableRunnable;
@@ -39,7 +40,8 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   private final Storage durationStorage;
   private final IntegerField durationAmountField = new IntegerField();
   private final BigDecimalField preciseDurationField = new BigDecimalField();
-  private final Select<Unit> durationUnitSelector = new Select<>();
+  private final ComboBox<Unit> durationUnitComboBox = new ComboBox<>();
+  private final Span fixedDurationUnitSpan = new Span();
   private String defaultValue = "1209600";
   private boolean loadingStoredDuration;
   private SerializableRunnable durationChangeListener = () -> {};
@@ -68,24 +70,28 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     increaseDurationButton.addClassName("admin-duration-step");
     preciseDurationField.setPrefixComponent(decreaseDurationButton);
     preciseDurationField.setSuffixComponent(increaseDurationButton);
-    durationUnitSelector.setItems(
-        durationStorage == Storage.DAYS ? new Unit[] {Unit.DAYS} : Unit.values());
-    durationUnitSelector.setEmptySelectionAllowed(false);
-    durationUnitSelector.setReadOnly(durationStorage == Storage.DAYS);
-    durationUnitSelector.getThemeNames().add("cosmos-reference");
-    durationUnitSelector.setValue(Unit.DAYS);
-
-    if (durationStorage == Storage.DURATION) {
-      add(preciseDurationField, durationUnitSelector);
+    add(durationStorage == Storage.DURATION ? preciseDurationField : durationAmountField);
+    if (durationStorage == Storage.DAYS) {
+      addClassName("admin-duration-fixed-unit");
+      fixedDurationUnitSpan.addClassName("admin-duration-unit-label");
+      add(fixedDurationUnitSpan);
     } else {
-      add(durationAmountField, durationUnitSelector);
+      durationUnitComboBox.setItems(Unit.values());
+      durationUnitComboBox.setValue(Unit.DAYS);
+      CosmosComboBoxStyling.styleChoice(durationUnitComboBox, this::formatDurationUnitLabel, true);
+      durationUnitComboBox.addValueChangeListener(event -> {
+        if (event.isFromClient() && event.getValue() == null && event.getOldValue() != null) {
+          durationUnitComboBox.setValue(event.getOldValue());
+          return;
+        }
+
+        updateDurationMaximumAndPlaceholder();
+        publishDurationChange();
+      });
+      add(durationUnitComboBox);
     }
     durationAmountField.addValueChangeListener(event -> publishDurationChange());
     preciseDurationField.addValueChangeListener(event -> publishDurationChange());
-    durationUnitSelector.addValueChangeListener(event -> {
-      updateDurationMaximumAndPlaceholder();
-      publishDurationChange();
-    });
     refreshTexts();
     updateDurationMaximumAndPlaceholder();
   }
@@ -106,12 +112,12 @@ public class AdminDurationField extends Div implements HasAriaLabel {
    * unverändert.
    */
   public void setAvailableUnits(Unit... availableUnits) {
-    Unit currentDurationUnit = durationUnitSelector.getValue();
+    Unit currentDurationUnit = durationUnitComboBox.getValue();
     if (availableUnits.length == 0 || durationStorage == Storage.DAYS) {
       throw new IllegalArgumentException("Selectable duration units required");
     }
-    durationUnitSelector.setItems(availableUnits);
-    durationUnitSelector.setValue(
+    durationUnitComboBox.setItems(availableUnits);
+    durationUnitComboBox.setValue(
         Arrays.asList(availableUnits).contains(currentDurationUnit)
             ? currentDurationUnit
             : availableUnits[0]);
@@ -120,7 +126,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   public void setControlsEnabled(boolean enabled) {
     durationAmountField.setEnabled(enabled);
     preciseDurationField.setEnabled(enabled);
-    durationUnitSelector.setEnabled(enabled);
+    durationUnitComboBox.setEnabled(enabled);
     decreaseDurationButton.setEnabled(enabled);
     increaseDurationButton.setEnabled(enabled);
   }
@@ -130,7 +136,6 @@ public class AdminDurationField extends Div implements HasAriaLabel {
 
     try {
       if (durationStorage == Storage.DAYS && storedDurationText.isBlank()) {
-        durationUnitSelector.setValue(Unit.DAYS);
         durationAmountField.clear();
         return;
       }
@@ -139,7 +144,9 @@ public class AdminDurationField extends Div implements HasAriaLabel {
 
       Unit selectedDurationUnit =
           durationStorage == Storage.DAYS ? Unit.DAYS : exactUnit(parsedDurationSeconds);
-      durationUnitSelector.setValue(selectedDurationUnit);
+      if (durationStorage != Storage.DAYS) {
+        durationUnitComboBox.setValue(selectedDurationUnit);
+      }
 
       BigDecimal durationAmount =
           parsedDurationSeconds
@@ -172,7 +179,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     return durationAmount == null
         ? ""
         : durationAmount
-            .multiply(BigDecimal.valueOf(durationUnitSelector.getValue().seconds))
+            .multiply(BigDecimal.valueOf(getSelectedDurationUnit().seconds))
             .toPlainString();
   }
 
@@ -227,7 +234,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   }
 
   private void updateDurationMaximumAndPlaceholder() {
-    Unit selectedDurationUnit = durationUnitSelector.getValue();
+    Unit selectedDurationUnit = getSelectedDurationUnit();
     if (selectedDurationUnit == null) {
       return;
     }
@@ -260,6 +267,10 @@ public class AdminDurationField extends Div implements HasAriaLabel {
       // Während des Aufbaus hat das Feld noch keinen zum Speicherformat passenden Standardwert.
       preciseDurationField.setPlaceholder("");
     }
+  }
+
+  private Unit getSelectedDurationUnit() {
+    return durationStorage == Storage.DAYS ? Unit.DAYS : durationUnitComboBox.getValue();
   }
 
   private Unit exactUnit(BigDecimal durationSeconds) {
@@ -298,7 +309,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
           : messageProperties.getAdminConfigDurationInvalid();
     }
     return validAmount()
-        ? formatDurationValue(currentDurationAmount, durationUnitSelector.getValue())
+        ? formatDurationValue(currentDurationAmount, getSelectedDurationUnit())
         : messageProperties.getAdminConfigDurationInvalid();
   }
 
@@ -344,17 +355,25 @@ public class AdminDurationField extends Div implements HasAriaLabel {
 
   public void refreshTexts() {
     preciseDurationField.setLocale(CustomI18NProvider.getCurrentLocale());
-    durationUnitSelector.setAriaLabel(messageProperties.getAdminConfigDurationUnit());
-    durationUnitSelector.setItemLabelGenerator(value ->
-        switch (value) {
-          case SECONDS -> messageProperties.getAdminConfigDurationUnitSeconds();
-          case MINUTES -> messageProperties.getAdminConfigDurationUnitMinutes();
-          case HOURS -> messageProperties.getAdminConfigDurationUnitHours();
-          case DAYS -> messageProperties.getAdminConfigDurationUnitDays();
-        });
+    if (durationStorage == Storage.DAYS) {
+      fixedDurationUnitSpan.setText(messageProperties.getAdminConfigDurationUnitDays());
+      durationAmountField.setAriaDescribedBy(fixedDurationUnitSpan);
+    } else {
+      durationUnitComboBox.setAriaLabel(messageProperties.getAdminConfigDurationUnit());
+      durationUnitComboBox.setItemLabelGenerator(this::formatDurationUnitLabel);
+    }
     decreaseDurationButton.setAriaLabel(messageProperties.getAdminConfigDurationDecrease());
     increaseDurationButton.setAriaLabel(messageProperties.getAdminConfigDurationIncrease());
     updateDurationMaximumAndPlaceholder();
+  }
+
+  private String formatDurationUnitLabel(Unit durationUnit) {
+    return switch (durationUnit) {
+      case SECONDS -> messageProperties.getAdminConfigDurationUnitSeconds();
+      case MINUTES -> messageProperties.getAdminConfigDurationUnitMinutes();
+      case HOURS -> messageProperties.getAdminConfigDurationUnitHours();
+      case DAYS -> messageProperties.getAdminConfigDurationUnitDays();
+    };
   }
 
   @Override

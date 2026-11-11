@@ -11,6 +11,7 @@ import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Anchor;
@@ -63,8 +64,8 @@ public class AdminMailTestSection extends VerticalLayout {
   private final transient EmailService emailService;
   private final transient MaintenanceService maintenanceService;
   private final VerticalLayout mailCardContentLayout;
-  private final Div deliveryStatusDiv = new Div();
-  private final Tooltip deliveryTooltip = Tooltip.forComponent(deliveryStatusDiv);
+  private final Badge deliveryStatusBadge = new Badge();
+  private final Tooltip deliveryTooltip = Tooltip.forComponent(deliveryStatusBadge);
   private transient Registration maintenancePollRegistration;
   private int previousPollInterval;
   private int installedPollInterval;
@@ -73,7 +74,6 @@ public class AdminMailTestSection extends VerticalLayout {
   private final Span mailTestTitleSpan;
   private final H2 mailCardTitleH2;
   private final Span mailCardDescriptionSpan;
-  private final Span mailDeliveryStatusSpan;
   private final Span mailSendHintSpan;
   private final Span mailBodyHintSpan = new Span();
   private final Span mailTestDescriptionSpan;
@@ -112,14 +112,8 @@ public class AdminMailTestSection extends VerticalLayout {
     mailCardTitleH2.addClassName(PANEL_TITLE);
     mailCardDescriptionSpan = new Span();
     mailCardDescriptionSpan.addClassName(PANEL_DESCRIPTION);
-    mailDeliveryStatusSpan = new Span();
-
-    Span deliveryStatusDotSpan = new Span();
-    deliveryStatusDotSpan.addClassName("cosmos-mail-delivery-dot");
-    deliveryStatusDotSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
-    deliveryStatusDiv.add(deliveryStatusDotSpan, mailDeliveryStatusSpan);
-    deliveryStatusDiv.addClassNames("cosmos-panel-meta", "cosmos-mail-delivery");
-    deliveryStatusDiv.getElement().setAttribute("role", "status");
+    deliveryStatusBadge.addClassNames("cosmos-panel-meta", "cosmos-mail-delivery");
+    deliveryStatusBadge.setAriaRole("status");
     mailSendHintSpan = new Span();
 
     mailTestDescriptionSpan = new Span();
@@ -226,7 +220,7 @@ public class AdminMailTestSection extends VerticalLayout {
     mailCardContentLayout
         .getElement()
         .setAttribute("aria-disabled", Boolean.toString(!isDeliveryAvailable));
-    deliveryStatusDiv
+    deliveryStatusBadge
         .getElement()
         .setAttribute("data-state", deliveryState.name().toLowerCase(Locale.ROOT));
 
@@ -239,7 +233,7 @@ public class AdminMailTestSection extends VerticalLayout {
 
     String deliveryDescriptionText =
         messageProperties.getAdminMailCardBadge() + ": " + deliveryStatusText;
-    deliveryStatusDiv.getElement().setAttribute(ARIA_LABEL, deliveryDescriptionText);
+    deliveryStatusBadge.getElement().setAttribute(ARIA_LABEL, deliveryDescriptionText);
     deliveryTooltip.setText(deliveryDescriptionText);
   }
 
@@ -250,7 +244,7 @@ public class AdminMailTestSection extends VerticalLayout {
     mailIconBadgeDiv.addClassName(PANEL_ICON);
     Div mailCardHeadingDiv = new Div(mailCardTitleH2, mailCardDescriptionSpan);
     mailCardHeadingDiv.addClassName(PANEL_HEADING);
-    Div mailCardHeaderDiv = new Div(mailIconBadgeDiv, mailCardHeadingDiv, deliveryStatusDiv);
+    Div mailCardHeaderDiv = new Div(mailIconBadgeDiv, mailCardHeadingDiv, deliveryStatusBadge);
     mailCardHeaderDiv.addClassName(PANEL_HEADER);
 
     VerticalLayout mailFieldsLayout =
@@ -341,7 +335,7 @@ public class AdminMailTestSection extends VerticalLayout {
         messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminMailTitle());
     mailCardTitleH2.setText(messageProperties.getAdminMailCardTitle());
     mailCardDescriptionSpan.setText(messageProperties.getAdminMailCardDescription());
-    mailDeliveryStatusSpan.setText(messageProperties.getAdminMailCardBadge());
+    deliveryStatusBadge.setText(messageProperties.getAdminMailCardBadge());
 
     refreshDeliveryState();
     mailSendHintSpan.setText(messageProperties.getAdminMailSendHint());

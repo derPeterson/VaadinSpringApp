@@ -370,7 +370,10 @@ class UserNotificationsUiTest {
             .contains(messageProperties.getNotificationsUnavailable()));
     assertFalse(
         failureMessageHtml.getInnerHtml().contains(messageProperties.getNotificationsRefreshed()));
-    assertEquals("–", ((Span) readComponentField(notificationsPanel, "unreadCount")).getText());
+    if (!isCompactPreview) {
+      Span unreadCountSpan = readComponentField(notificationsPanel, "unreadCount");
+      assertEquals("–", unreadCountSpan.getText());
+    }
   }
 
   @ParameterizedTest
@@ -570,6 +573,12 @@ class UserNotificationsUiTest {
     assertEquals(
         messageProperties.getNotificationsClose(), closePreviewButton.getAriaLabel().orElseThrow());
     assertTrue(closePreviewButton.hasClassName("cosmos-overlay-close"));
+    assertTrue(
+        closePreviewButton
+            .getParent()
+            .orElseThrow()
+            .getChildren()
+            .noneMatch(Badge.class::isInstance));
 
     closePreviewButton.click();
 
@@ -696,10 +705,10 @@ class UserNotificationsUiTest {
     assertTrue(streamComponentTree(notificationsPanel).noneMatch(Html.class::isInstance));
     assertTrue(
         streamComponentTree(notificationsPanel)
-            .filter(Span.class::isInstance)
-            .map(Span.class::cast)
-            .anyMatch(candidateSpan ->
-                candidateSpan
+            .filter(Badge.class::isInstance)
+            .map(Badge.class::cast)
+            .anyMatch(candidateBadge ->
+                candidateBadge
                     .getText()
                     .equals(messageProperties.getNotificationsSourceAdministration())));
     Button markPreviewReadButton =
@@ -874,7 +883,7 @@ class UserNotificationsUiTest {
         isNotificationRead
             ? messageProperties.getNotificationsRead()
             : messageProperties.getNotificationsUnread(),
-        findDetailReadStateSpan(notificationDetailDialog).getText());
+        findDetailReadStateBadge(notificationDetailDialog).getText());
     verify(userNotificationService, never()).markRead(any(), any());
 
     notificationDetailDialog.close();
@@ -973,16 +982,17 @@ class UserNotificationsUiTest {
 
     assertTrue(notificationDetailDialog.isOpened());
     verify(userNotificationService, never()).markRead(any(), any());
-    Span readStateSpan = findDetailReadStateSpan(notificationDetailDialog);
+    Badge readStateBadge = findDetailReadStateBadge(notificationDetailDialog);
 
     assertEquals(
         isNotificationRead
             ? messageProperties.getNotificationsRead()
             : messageProperties.getNotificationsUnread(),
-        readStateSpan.getText());
-    assertEquals("badge", readStateSpan.getElement().getAttribute("theme"));
+        readStateBadge.getText());
+    assertEquals("vaadin-badge", readStateBadge.getElement().getTag());
     assertEquals(
-        Boolean.toString(isNotificationRead), readStateSpan.getElement().getAttribute("data-read"));
+        Boolean.toString(isNotificationRead),
+        readStateBadge.getElement().getAttribute("data-read"));
     assertEquals(
         !isNotificationRead,
         streamComponentTree(notificationDetailDialog)
@@ -1037,11 +1047,11 @@ class UserNotificationsUiTest {
             .count());
     assertTrue(
         streamComponentTree(notificationDetailDialog)
-            .filter(Span.class::isInstance)
-            .map(Span.class::cast)
-            .anyMatch(candidateSpan ->
-                candidateSpan.getText().equals(messageProperties.getNotificationsSourceSystem())
-                    && candidateSpan.hasClassName("portal-notification-source-system")));
+            .filter(Badge.class::isInstance)
+            .map(Badge.class::cast)
+            .anyMatch(candidateBadge ->
+                candidateBadge.getText().equals(messageProperties.getNotificationsSourceSystem())
+                    && candidateBadge.hasClassName("portal-notification-source-system")));
     assertTrue(
         streamComponentTree(notificationDetailDialog)
             .filter(Span.class::isInstance)
@@ -1097,14 +1107,16 @@ class UserNotificationsUiTest {
       assertTrue(notificationDetailDialog.isOpened());
       assertEquals(
           messageProperties.getNotificationsRead(),
-          findDetailReadStateSpan(notificationDetailDialog).getText());
+          findDetailReadStateBadge(notificationDetailDialog).getText());
       assertTrue(
           streamComponentTree(notificationDetailDialog)
               .noneMatch(candidateComponent ->
                   candidateComponent.hasClassName("cosmos-notification-detail-message--unread")));
       assertEquals(
           "true",
-          findDetailReadStateSpan(notificationDetailDialog).getElement().getAttribute("data-read"));
+          findDetailReadStateBadge(notificationDetailDialog)
+              .getElement()
+              .getAttribute("data-read"));
       assertFalse(
           findDetailActionButton(notificationDetailDialog, "cosmos-notification-detail-mark-read")
               .isVisible());
@@ -1119,7 +1131,7 @@ class UserNotificationsUiTest {
 
     assertEquals(
         messageProperties.getNotificationsRead(),
-        findDetailReadStateSpan(readComponentField(notificationsPanel, "notificationDetailDialog"))
+        findDetailReadStateBadge(readComponentField(notificationsPanel, "notificationDetailDialog"))
             .getText());
   }
 
@@ -1414,7 +1426,7 @@ class UserNotificationsUiTest {
 
     assertEquals(
         messageProperties.getNotificationsUnread(),
-        findDetailReadStateSpan(notificationDetailDialog).getText());
+        findDetailReadStateBadge(notificationDetailDialog).getText());
     assertEquals(
         messageProperties.getNotificationsMarkRead(),
         findDetailActionButton(notificationDetailDialog, "cosmos-notification-detail-mark-read")
@@ -1426,10 +1438,10 @@ class UserNotificationsUiTest {
             .anyMatch(candidateDiv -> candidateDiv.getText().equals(inboxNotificationItem.body())));
     assertTrue(
         streamComponentTree(notificationDetailDialog)
-            .filter(Span.class::isInstance)
-            .map(Span.class::cast)
-            .anyMatch(candidateSpan ->
-                candidateSpan
+            .filter(Badge.class::isInstance)
+            .map(Badge.class::cast)
+            .anyMatch(candidateBadge ->
+                candidateBadge
                     .getText()
                     .contains(messageProperties.getNotificationsSourceAdministration())));
     assertFalse(
@@ -1457,7 +1469,7 @@ class UserNotificationsUiTest {
     assertTrue(notificationDetailDialog.isOpened());
     assertEquals(
         messageProperties.getNotificationsUnread(),
-        findDetailReadStateSpan(notificationDetailDialog).getText());
+        findDetailReadStateBadge(notificationDetailDialog).getText());
     assertTrue(
         findDetailActionButton(notificationDetailDialog, "cosmos-notification-detail-mark-read")
             .isVisible());
@@ -1489,7 +1501,7 @@ class UserNotificationsUiTest {
     assertTrue(notificationPopover.isOpened());
     assertEquals(
         messageProperties.getNotificationsRead(),
-        findDetailReadStateSpan(notificationDetailDialog).getText());
+        findDetailReadStateBadge(notificationDetailDialog).getText());
     assertFalse(
         findDetailActionButton(notificationDetailDialog, "cosmos-notification-detail-mark-read")
             .isVisible());
@@ -1559,11 +1571,11 @@ class UserNotificationsUiTest {
         .orElseThrow();
   }
 
-  private Span findDetailReadStateSpan(Dialog notificationDetailDialog) {
+  private Badge findDetailReadStateBadge(Dialog notificationDetailDialog) {
     return streamComponentTree(notificationDetailDialog)
-        .filter(Span.class::isInstance)
-        .map(Span.class::cast)
-        .filter(candidateSpan -> candidateSpan.hasClassName("cosmos-notification-detail-state"))
+        .filter(Badge.class::isInstance)
+        .map(Badge.class::cast)
+        .filter(candidateBadge -> candidateBadge.hasClassName("cosmos-notification-detail-state"))
         .findFirst()
         .orElseThrow();
   }
@@ -2132,7 +2144,7 @@ class UserNotificationsUiTest {
         isNotificationRead
             ? messageProperties.getNotificationsRead()
             : messageProperties.getNotificationsUnread(),
-        findDetailReadStateSpan(notificationDetailDialog).getText());
+        findDetailReadStateBadge(notificationDetailDialog).getText());
     verify(userNotificationService, never()).markRead(any(), any());
 
     notificationDetailDialog.close();
@@ -2401,7 +2413,7 @@ class UserNotificationsUiTest {
 
     assertEquals(
         messageProperties.getNotificationsHistoryCount(21),
-        ((Span) readComponentField(adminNotificationsSection, "historyCountSpan")).getText());
+        ((Badge) readComponentField(adminNotificationsSection, "historyCountBadge")).getText());
     assertEquals(messageProperties.getPortalPaginationRange(1, 5, 21), totalItemsSpan.getText());
     Div sentNotificationHistoryDiv =
         readComponentField(adminNotificationsSection, "sentNotificationHistoryDiv");
@@ -2574,12 +2586,11 @@ class UserNotificationsUiTest {
     reviewDraftButton.click();
 
     assertTrue(sendNotificationButton.isEnabled());
-    Div deliveryStatusDiv = readComponentField(adminNotificationsSection, "deliveryStatusDiv");
+    Badge deliveryStatusBadge =
+        readComponentField(adminNotificationsSection, "deliveryStatusBadge");
 
-    assertEquals(
-        messageProperties.getNotificationsInternal(),
-        ((Span) readComponentField(adminNotificationsSection, "deliveryLabelSpan")).getText());
-    assertEquals("open", deliveryStatusDiv.getElement().getAttribute("data-state"));
+    assertEquals(messageProperties.getNotificationsInternal(), deliveryStatusBadge.getText());
+    assertEquals("open", deliveryStatusBadge.getElement().getAttribute("data-state"));
     Tooltip deliveryTooltip = readComponentField(adminNotificationsSection, "deliveryTooltip");
 
     assertEquals(
@@ -2591,9 +2602,9 @@ class UserNotificationsUiTest {
     when(userNotificationService.deliveryState()).thenReturn(MaintenanceService.State.ACTIVE);
     adminNotificationsSection.refreshDeliveryState();
 
-    assertEquals("active", deliveryStatusDiv.getElement().getAttribute("data-state"));
+    assertEquals("active", deliveryStatusBadge.getElement().getAttribute("data-state"));
     assertTrue(
-        deliveryStatusDiv
+        deliveryStatusBadge
             .getElement()
             .getAttribute("aria-label")
             .contains(messageProperties.getMaintenanceStatusActive()));
@@ -2624,7 +2635,7 @@ class UserNotificationsUiTest {
     adminNotificationsSection.refreshDeliveryState();
 
     assertTrue(notificationComposeLayout.isEnabled());
-    assertEquals("open", deliveryStatusDiv.getElement().getAttribute("data-state"));
+    assertEquals("open", deliveryStatusBadge.getElement().getAttribute("data-state"));
     assertEquals(
         "Subject",
         ((TextField) readComponentField(adminNotificationsSection, "notificationTitleField"))
@@ -2888,10 +2899,10 @@ class UserNotificationsUiTest {
             .isVisible());
     assertEquals(
         messageProperties.getNotificationsPreviewNeedsReview(),
-        ((Span) readComponentField(adminNotificationsSection, "previewStatusSpan")).getText());
+        ((Badge) readComponentField(adminNotificationsSection, "previewStatusBadge")).getText());
     assertEquals(
         "warning",
-        ((Span) readComponentField(adminNotificationsSection, "previewStatusSpan"))
+        ((Badge) readComponentField(adminNotificationsSection, "previewStatusBadge"))
             .getElement()
             .getAttribute("data-state"));
     assertFalse(notificationTitleTextField.isInvalid());
@@ -2938,10 +2949,10 @@ class UserNotificationsUiTest {
             .isVisible());
     assertEquals(
         messageProperties.getNotificationsPreviewNeedsReview(),
-        ((Span) readComponentField(adminNotificationsSection, "previewStatusSpan")).getText());
+        ((Badge) readComponentField(adminNotificationsSection, "previewStatusBadge")).getText());
     assertEquals(
         "warning",
-        ((Span) readComponentField(adminNotificationsSection, "previewStatusSpan"))
+        ((Badge) readComponentField(adminNotificationsSection, "previewStatusBadge"))
             .getElement()
             .getAttribute("data-state"));
     assertEquals(
@@ -3220,13 +3231,13 @@ class UserNotificationsUiTest {
         readComponentField(adminNotificationsSection, "notificationPreviewDiv");
 
     assertTrue(notificationPreviewDiv.isVisible());
-    Span previewStatusSpan = readComponentField(adminNotificationsSection, "previewStatusSpan");
+    Badge previewStatusBadge = readComponentField(adminNotificationsSection, "previewStatusBadge");
 
-    assertTrue(previewStatusSpan.isVisible());
-    assertEquals(messageProperties.getNotificationsPreviewUpdated(), previewStatusSpan.getText());
-    assertEquals("success", previewStatusSpan.getElement().getAttribute("data-state"));
+    assertTrue(previewStatusBadge.isVisible());
+    assertEquals(messageProperties.getNotificationsPreviewUpdated(), previewStatusBadge.getText());
+    assertEquals("success", previewStatusBadge.getElement().getAttribute("data-state"));
     assertTrue(
-        previewStatusSpan
+        previewStatusBadge
             .getParent()
             .orElseThrow()
             .hasClassName("cosmos-notification-compose-preview-header"));
@@ -3321,16 +3332,16 @@ class UserNotificationsUiTest {
     ((Button) readComponentField(adminNotificationsSection, "previewButton")).click();
     Div notificationPreviewDiv =
         readComponentField(adminNotificationsSection, "notificationPreviewDiv");
-    Span previewStatusSpan = readComponentField(adminNotificationsSection, "previewStatusSpan");
+    Badge previewStatusBadge = readComponentField(adminNotificationsSection, "previewStatusBadge");
     String reviewedBodyText = notificationBodyTextArea.getValue();
     notificationBodyTextArea.setValue("Changed");
 
     assertTrue(notificationPreviewDiv.isVisible());
     assertNull(readComponentField(adminNotificationsSection, "reviewedRecipientPreview"));
-    assertTrue(previewStatusSpan.isVisible());
+    assertTrue(previewStatusBadge.isVisible());
     assertEquals(
-        messageProperties.getNotificationsPreviewNeedsReview(), previewStatusSpan.getText());
-    assertEquals("warning", previewStatusSpan.getElement().getAttribute("data-state"));
+        messageProperties.getNotificationsPreviewNeedsReview(), previewStatusBadge.getText());
+    assertEquals("warning", previewStatusBadge.getElement().getAttribute("data-state"));
     assertTrue(
         streamComponentTree(notificationPreviewDiv)
             .filter(Div.class::isInstance)
@@ -3347,8 +3358,8 @@ class UserNotificationsUiTest {
     assertTrue(
         ((Button) readComponentField(adminNotificationsSection, "sendNotificationButton"))
             .isEnabled());
-    assertEquals(messageProperties.getNotificationsPreviewUpdated(), previewStatusSpan.getText());
-    assertEquals("success", previewStatusSpan.getElement().getAttribute("data-state"));
+    assertEquals(messageProperties.getNotificationsPreviewUpdated(), previewStatusBadge.getText());
+    assertEquals("success", previewStatusBadge.getElement().getAttribute("data-state"));
     assertTrue(
         streamComponentTree(notificationPreviewDiv)
             .filter(Div.class::isInstance)

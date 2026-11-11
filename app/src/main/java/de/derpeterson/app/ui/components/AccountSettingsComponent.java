@@ -717,7 +717,7 @@ public class AccountSettingsComponent extends PageContentLayout {
 
   private <T> void styleChoices(
       ComboBox<T> profileChoiceComboBox, SerializableFunction<T, String> choiceLabelFunction) {
-    CosmosComboBoxStyling.styleChoice(profileChoiceComboBox, choiceLabelFunction, true);
+    CosmosComboBoxStyling.styleChoice(profileChoiceComboBox, choiceLabelFunction, false);
   }
 
   private String genderLabel(Gender gender) {

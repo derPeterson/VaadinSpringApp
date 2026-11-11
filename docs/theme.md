@@ -158,6 +158,28 @@ im Einsatz. Die [Bestandsaufnahme und offene Planung](planung/vaadin-komponenten
 ordnet die noch lokalen Anzeigen ein und schlägt die Reihenfolge für eine spätere
 Umstellung vor.
 
+Neue und umgestellte Badges mit Beschriftung erhalten keinen zusätzlichen
+Statuspunkt. Text und Farbe zeigen den Zustand. Beim Badge-Abgleich entfällt
+der Punkt auch bei bestehenden Beschriftungen, sobald das jeweilige Badge
+umgestellt wird. Eigenständige Statusanzeigen wie der Avatar-Status oder der
+Aktivitätspunkt am Ticketsystem behalten ihre Funktion.
+
+Gerahmte Status-Badges erhalten Rahmen und dezenten Hintergrund zentral aus
+`cosmos-theme.css`. Der Rahmen verwendet 25 % und die Fläche 10 % der
+jeweiligen Schriftfarbe. Die fachliche Farbe kommt aus dem jeweiligen Bereich.
+Die ausgewählte Ticket-Statusoption verwendet dieselbe Palette wie das Badge.
+Systemkennzeichnungen verwenden die abgestimmten `--cosmos-system-*`-Tokens.
+Zähler, der Aktivitätspunkt und flache Statusanzeigen in der Benutzertabelle
+verwenden ihre eigenen Varianten.
+
+In der Administration verwenden Benutzerliste, Benutzerfilter und
+Konfigurationskopf native Badges. Die Aktiv- und Anwesenheitsangaben in der
+Benutzertabelle bleiben flach. Mailtest und Benachrichtigungsversand zeigen
+den Versandzustand über Badge-Farbe und Tooltip. Die Quelle der
+Versandvorschau nutzt dieselbe Gestaltung wie die Quelle im persönlichen
+Postfach. Die lokalen Admin-Varianten stehen in `cosmos-admin-reference.css`,
+die gemeinsame Quellendarstellung in `cosmos-notifications.css`.
+
 ## Übernahme des angemeldeten Benutzerportals
 
 `HomeView` für angemeldete Benutzer, `UserNotificationsView` und `AccountView`
@@ -194,6 +216,10 @@ ihrem jeweiligen Baustein.
 Notification-Cards; `cosmos-shell.css` Header, Startseite, Benutzermenü und
 portalisierte Dialoge; `cosmos-account.css` Konto, Profilbild und Sitzungsliste;
 `cosmos-notifications.css` Vorschau, Postfach, Detail und Pagination.
+In `cosmos-shell.css` übernehmen die Auswahllisten von ComboBox und MultiSelectComboBox
+die Grundfarbe ihres Eingabefelds. Ausgewählte Einträge verwenden in `cosmos-theme.css`
+die Akzentfläche mit blauem Rahmen und Häkchen am rechten Rand. Im geschlossenen
+Feld steht der Wert ohne Auswahlmarkierung.
 `cosmos-background.css` enthält die Portal-Dekoration. Alle ausdrücklich gesetzten Anwendungsicons
 kommen nach ausdrücklicher Freigabe aus Lucide. Als ausdrücklich gewählte Ausnahme
 verwendet die Anbieterkonfiguration Tablers `cloud-lock` in Panelkopf und SideNav.
@@ -202,8 +228,8 @@ SVG und MIT-Lizenz liegen unter `icons/tabler/`, die Lucide-Dateien weiterhin un
 für beide native `SvgIcon`-Komponenten. Es wird keine zusätzliche Iconbibliothek eingebunden.
 
 Feldlabels erfassen nur Feldhosts, keine Buttonlabels. `CosmosComboBoxStyling` erhält
-native ComboBox-Bedienung und ergänzt die Referenzdarstellung von Punkt und Haken;
-Seitengrößen erhalten keinen dekorativen Punkt.
+die native ComboBox-Bedienung. Seitengrößen und kompakte Felder verwenden dieselbe
+Auswahlmarkierung in kleineren Zeilen.
 
 Sekundäre Aktionsbuttons und Schließen-Buttons nutzen die Eingabefläche, bei Hover
 `--cosmos-reference-button-hover` (#152238). Die allgemeine dezente Hoverfläche
@@ -227,11 +253,11 @@ Die Hoverfläche
 ist `--cosmos-reference-button-hover` (#152238). Die aktive blaue Fläche bleibt
 bei Hover erhalten; Hauptpunkte tragen die freigegebene seitliche Akzentmarkierung.
 
-Header und SideNav teilen die
-Zählerform und Schriftstärke. „Verfügbar“ zeigt ausdrücklich grünen Text und Punkt;
-andere Zustände folgen ihrer Statusfarbe. Kontostatus bleibt ein eigener Badge.
-Der Startseitenbutton verwendet denselben roten Ungelesen-Zähler wie Header und
-SideNav. Avatarflächen in Header, Kontokarte und Benutzermenü verwenden die dunkle
+Header und SideNav teilen Zählerform und Schriftstärke. „Verfügbar“ erscheint
+in Grün, weitere Anwesenheitszustände verwenden ihre jeweilige Statusfarbe.
+Die Anwesenheit steht als natives Badge ohne Punkt in der Kontokarte und im
+Benutzermenü. Der Startseitenbutton verwendet denselben roten nativen
+Ungelesen-Zähler wie Header und SideNav. Avatarflächen in Header, Kontokarte und Benutzermenü verwenden die dunkle
 Eingabefläche mit dezentem Rahmen wie in der Referenz. Alle Avatarstatus sind
 gefüllte Punkte: verfügbar grün, beschäftigt rot, abwesend gelb und offline grau.
 Die Farben folgen `--cosmos-reference-avatar-presence`; Kontursymbole erscheinen
@@ -248,6 +274,11 @@ mit tatsächlichen Zählern, Suche, Pagination und getrennte Metadaten/Aktionen.
 Suchlupe und Eingabetext haben einen eigenen Abstand. Die Pagination verwendet
 kompakte Seitengrößen- und Zahlencontrols; ihr Hinweis steht mit Infoicon zentriert.
 Die Zähler übernehmen auch die blaue Ungelesen-Beschriftung der Referenz.
+Der Glockenzähler verwendet ein natives `Badge` mit `.cosmos-notification-count`.
+Die positionierte Variante in `cosmos-notifications.css` gleicht den
+Standard-Außenabstand des Badges aus. Bei null blendet sich der Zähler aus,
+über 99 zeigt er `99+`.
+Die zugängliche Beschriftung der Glocke nennt die tatsächliche Anzahl.
 Leere Benachrichtigungslisten verwenden im Postfach, in der Glockenvorschau und
 im Admin-Versandverlauf denselben
 Baustein `.cosmos-notification-empty`: zentriertes blaues Glocken-Icon (32 px),
@@ -262,8 +293,11 @@ Gridabstand entfällt. Kompakte Seitengrößenfelder reservieren keinen Leerraum
 nicht vorhandene Feldlabels.
 Die native ComboBox behält ihre Bedienung und Platzierungslogik. Ihr Menü verwendet
 kompakte Optionen ohne zusätzliche blaue Auswahlumrandung.
-Nachrichtenmetadaten werden in Liste, Detail und Bestätigung gemeinsam aufgebaut:
-Administration blau, System violett, Ungelesen mit Punkt und abgerundetem Rahmen.
+Nachrichtenmetadaten werden in Liste, Detail und Bestätigung gemeinsam aufgebaut.
+Quelle und Lesestatus verwenden native Badges mit abgerundetem Rahmen. Die
+Administration erscheint in Blau, das System in Violett und „Ungelesen“ in Blau
+ohne Punkt. Die Zahlen neben den Lesefiltern sind ebenfalls native Badges.
+Die rote Zahl an der Glocke zeigt die Anzahl ungelesener Nachrichten.
 Die Glockenvorschau verwendet kompakte Karten mit Aktionen rechts, gemeinsamem
 Metadatenbaustein, eigenem Scrollbereich sowie festem Kopf und Footer.
 Gelesene Karten nutzen die Panelfläche, ungelesene die Eingabefläche mit blauer
@@ -301,8 +335,7 @@ Beide Statusauswahlen verwenden `.portal-status-symbol`: 20-px-Kreise mit
 Die Darstellung stammt aus `UserStatus.getSelectionComponent()` und
 `cosmos-shell.css`; Avatarpunkte und die übrigen Kontursymbole bleiben getrennt.
 Profilbildbearbeitung bleibt am vorhandenen Avatarzugang; das Benutzermenü hat
-keinen zweiten Bearbeitungsbutton. Kontostatus und Anwesenheitsbadge bleiben erhalten,
-die alten Verbunden-/Nicht-verbunden-Texte und deren Katalogeinträge sind entfernt.
+keinen zweiten Bearbeitungsbutton. Das Anwesenheitsbadge zeigt die aktuelle Präsenz.
 Der Menüpunkt Administration wird nur mit der vorhandenen Adminberechtigung angeboten;
 die Zugriffsprüfung des Adminbereichs bleibt maßgeblich.
 Einzelbestätigungen enthalten dieselben tatsächlichen Metadaten, Sammelbestätigungen
@@ -386,10 +419,10 @@ oder Migration. Profil-E-Mail bleibt nur lesbar und fokussierbar; die E-Mail in 
 Sicherheitskarte ist weiß. Sicherheits-, Versions- und Eingabeprüfungen bleiben in
 den bestehenden Diensten. Die tatsächlichen Abläufe prüfen die isolierten Browsertests.
 
-Die Statuspunkte bei „SMTP Test“ und „Intern“ zeigen die Freigabe der Funktion
-an. Verfügbar bedeutet ausgeschalteten Wartungsmodus. Bei aktivem Wartungsmodus
-oder nicht lesbarer Wartungskonfiguration sind die Aktionen gesperrt. Der Punkt
-bestätigt keine erfolgreiche SMTP-Verbindung. Die Zustandsbeschreibung steht als
+Die Badges „SMTP Test“ und „Intern“ zeigen die Versandfreigabe mit grüner Schrift
+und grünem Rahmen. Bei aktivem Wartungsmodus oder nicht lesbarer
+Wartungskonfiguration sind die Aktionen gesperrt und die Badges rot. Den
+SMTP-Verbindungstest löst die Versandaktion aus. Die Zustandsbeschreibung steht als
 ARIA-Label und nativer Tooltip im gemeinsamen Tooltipstil zur Verfügung und folgt
 Sprache und aktuellem Wartungszustand. `MaintenanceService` und die bestehenden
 fachlichen Versandprüfungen bestimmen weiterhin die Freigabe.
@@ -549,7 +582,8 @@ vorhandenen Superadminberechtigung; Dienste prüfen Rechte weiterhin unabhängig
 Die Benutzerverwaltung verwendet weiterhin das native Grid und seine Sortierung.
 Ihre lokale Referenzgestaltung in `cosmos-admin-reference.css` übernimmt die
 kompakte Werkzeugleiste ohne zusätzlichen oberen Abstand, einmalige Zellinnenabstände,
-Referenzzeilenfarben sowie Punkt-/Iconstatus ohne Badgekästen. Die sieben Spalten
+Referenzzeilenfarben sowie flache Statusbadges mit Text und gegebenenfalls
+Anwesenheitsicon. Die sieben Spalten
 reservieren ausreichend Platz für die vollständigen Aktionen und Sortierköpfe;
 die E-Mail-Spalte nimmt den verbleibenden Platz ein. Die lokale Palette gilt nur
 für dieses Grid.
@@ -565,8 +599,8 @@ Das Benutzerformular übernimmt Kopf, Feldhöhen, Typografie und Abschnittsabst�
 aus der Admin-HTML. Passworthinweise stehen unter dem zugehörigen Feld, Rollen
 und Sicherheitshinweis sind durch einzelne Linien getrennt. Die normalen
 Formularaktionen stehen am Desktop kompakt rechts und mobil nebeneinander.
-Die Geschlechtsauswahl verwendet auch im ausgelagerten Benutzerformular den
-Punkt, die dunkle Auswahlliste und die Leerenaktion der Registrierung/Kontodaten.
+Die Geschlechtsauswahl verwendet im Benutzerformular, in der Registrierung und
+in den Kontodaten dieselbe dunkle Auswahlliste und Leerenaktion.
 Native Checkbox-Häkchen werden im Dialog innerhalb der Checkboxfläche zentriert.
 Der Formularhinweis verwendet das lokale Lucide-Icon `shield-check`.
 Im Bearbeitungsmodus nennt der Hinweis bei leerem Passwort sowohl das Beibehalten
@@ -892,12 +926,14 @@ Zeitspanne werden ohne Rundung erhalten, bis zur Nanosekundenpräzision von Dura
 Gültigkeit gespeicherter Anmeldungen, Sitzungs-Timeout, Fehlversuchsfenster und
 Wartezeit für erneuten Versand verwenden bei leerer Eingabe den Standardwert.
 Leere Benachrichtigungs-Aufbewahrung bedeutet weiterhin unbegrenzt. Die beiden
-Benachrichtigungsfelder haben die feste Einheit Tage. Andere Zeitspannen bleiben Pflichtfelder.
+Benachrichtigungsfelder zeigen die feste Einheit Tage als Text. Ihre Feldhilfen
+beschreiben die Eingabe in ganzen Tagen und zeigen den aktuellen Wert in Tagen.
+Andere Zeitspannen bleiben Pflichtfelder.
 
 Die Regeln bleiben lokal in `cosmos-admin-reference.css`: `admin-duration-field`
 hält Eingaben und Einheiten in einer Zeile mit 40 px hohen Flächen. Die Einheitenauswahl
-ist 132 px breit. Der geschlossene Einheitenwert ist normaler Feldtext. Nur das Menü
-markiert die Auswahl.
+ist 132 px breit. Die native ComboBox öffnet am Feldrand und verwendet die
+gemeinsame Auswahlmarkierung.
 `admin-duration-step` gestaltet die Schaltflächen an der präzisen Vaadin-Zahleneingabe.
 Konfigurationsfelder mit externem Label blenden die leere interne Labelzeile aus,
 damit beide Spalten dieselbe Ober- und Unterkante haben.
@@ -922,9 +958,9 @@ Empfängern (Name und E-Mail). Die Anzahl liegt innerhalb der Eingabefläche und
 beim Tippen dem Suchtext. `admin-notification-body-field` erlaubt ausschließlich
 vertikales Vergrößern und behält den Innenabstand der Textarea. Vorschau und
 Eingabepanel beginnen bündig. Ihre Aktionsleisten erhalten vollbreite Trennlinien;
-Metadaten bleiben einfacher Text und der Prüfstatus verwendet ein grünes Häkchen.
+Der Zeitstempel bleibt einfacher Text und der Prüfstatus verwendet ein grünes Häkchen.
 Die Darstellung bleibt lokal in `cosmos-admin-reference.css`.
-Panel-Badges in Admin-HTML und Vaadin verwenden 30 px Höhe und Schrift mit
+Panel-Badges in der Administration verwenden 30 px Höhe und Schrift mit
 10 px, Gewicht 600, 16 px Zeilenhöhe und 1,2 px Zeichenabstand wie
 Konfiguration und Mailtest. Die Empfängeranzahl verwendet Gewicht 600 bei einer
 Auswahl und Gewicht 400 ohne Auswahl. Die weiße Details-Aktion steht rechts neben den Empfängeravataren;
@@ -942,9 +978,10 @@ die Akzentfarbe, Großbuchstaben und den kompakten Abschnittstitelstil.
 HTML und Vaadin zeigen bei individueller Auswahl ausschließlich die Anzahl im
 Feld, einschließlich einer dezenten Nullanzeige. Die letzte Empfängerzeile hat
 keine untere Trennlinie. Der zusätzliche runde Zähler hat eine feste Breite und
-kräftige, zentrierte Ziffern. Der Prüfstatus übernimmt Inter mit 11 px, Gewicht 400
-und 16,5 px Zeilenhöhe. Eine entwertete Vorschau zeigt wie die Referenz eine gelbe
-Glocke. Der Versandverlauf verwendet durchgehende Zeilen statt einzelner Karten.
+kräftige, zentrierte Ziffern. Der Prüfstatus nutzt dasselbe kompakte, gerahmte Badge
+wie „Gesendet“. Eine geprüfte Vorschau zeigt ein grünes Häkchen. Nach einer
+Änderung zeigt das Badge eine gelbe Glocke. Der Versandverlauf verwendet
+durchgehende Zeilen statt einzelner Karten.
 Beim Wechsel zwischen allen Konten und Einzelauswahl liegt der Anzahltext auf
 derselben inneren Textkante des nativen Feldrahmens. Die Details-Beschriftungen
 bei Empfängern und im Verlauf verwenden dieselbe Größe und Stärke. Der Verlauf
@@ -968,10 +1005,10 @@ Die Empfängerüberschrift der Vorschau ergänzt links das vorhandene Gruppenico
 
 Die Benutzerdialoge Anlegen/Bearbeiten verwenden eine native Mehrfachauswahl für
 Rollen neben der Aktiv-Checkbox, mobil untereinander. Im Feld steht die Auswahlanzahl;
-Die Liste verwendet wie die Empfängerauswahl einen dunklen Rahmen, kompakte
-12-px-Optionen und Auswahlkästchen. Der Abstand zum Eingabefeld beträgt unabhängig
-von der Auswahl vier Pixel. Tippen im Feld filtert Rollen, ohne die Auswahl zu
-verändern.
+die Liste verwendet wie die Empfängerauswahl einen dunklen Rahmen und kompakte
+12-px-Optionen. Die Auswahl erscheint mit Akzentfläche, Rahmen und Häkchen rechts.
+Der Abstand zum Eingabefeld beträgt unabhängig von der Auswahl vier Pixel.
+Tippen im Feld filtert Rollen, ohne die Auswahl zu verändern.
 Optionsbeschriftungen und Anzahl folgen dem Sprachwechsel. Mindestens eine Rolle
 bleibt erforderlich. Die Superadminrolle wird nur entsprechend der bestehenden
 Berechtigung angeboten. Der Prüfhinweis steht in einer eigenen Footerzeile über den
@@ -1240,8 +1277,8 @@ Betreff in der aktuellen Oberflächensprache, Aktualisierungszeit und gerahmtem
 Statusbadge. In der Liste steht die Vorgangsnummer links, vertikal mittig neben
 Betreff und Zeitstempel. Die ausgewählte Vorgangsnummer und die Nummer im
 Verlaufskopf sind primärblau. Die übrigen Nummern nutzen die Standardtextfarbe.
-Offene Vorgänge verwenden in Nutzer- und Adminansicht die Bernsteinfarben des
-Sicherheitshinweises (`--cosmos-security-warning-*`). Vorgänge in Bearbeitung
+Offene Vorgänge verwenden in Nutzer- und Adminansicht den Bernsteinton des
+Sicherheitshinweises (`--cosmos-security-warning-accent`). Vorgänge in Bearbeitung
 haben blaue Badges, abgeschlossene graue und vom Nutzer geschlossene grüne.
 Die Liste nutzt denselben Grundton
 wie der Nachrichtenverlauf und die gemeinsame Tabellenfarbe für Hover und Auswahl.
@@ -1346,8 +1383,8 @@ die bisherige zweispaltige Anordnung der Nutzertickets bleibt erhalten.
 Die Bearbeiterinfo der Admin-Karten verwendet denselben `OverlayUserIcon`
 mit 24 px wie die Anfrageansicht; der Detailkopf verwendet 32 px. Der gemeinsame
 Identitätstooltip zeigt oben den Namen und darunter die E-Mail-Adresse. Beim eigenen Bearbeiterkonto
-steht daneben ein grünes natives „Sie“-/„You“-Badge mit Rahmen und den bestehenden
-`--cosmos-reference-success-*`-Farben (`.support-assignee-self`).
+steht daneben ein grünes natives „Sie“-/„You“-Badge mit der Statusfarbe
+`--cosmos-reference-success` (`.support-assignee-self`).
 Unzugewiesene Tickets zeigen „Nicht Zugewiesen“ / „Unassigned“ kursiv.
 Die Identitätsdaten des Bearbeiters
 liefert der Dienst ausschließlich im Adminzugang, niemals in der Nutzeransicht.

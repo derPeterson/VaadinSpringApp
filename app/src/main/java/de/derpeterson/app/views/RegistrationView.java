@@ -467,7 +467,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     genderComboBox.setWidthFull();
     genderComboBox.setItems(Gender.MALE, Gender.FEMALE, Gender.OTHER);
     genderComboBox.setItemLabelGenerator(this::formatGenderLabel);
-    CosmosComboBoxStyling.styleChoice(genderComboBox, this::formatGenderLabel, true);
+    CosmosComboBoxStyling.styleChoice(genderComboBox, this::formatGenderLabel, false);
 
     this.birthDatePicker = new DatePicker(messageProperties.getRegistrationBirthDateField());
     birthDatePicker.setAutoOpen(false);

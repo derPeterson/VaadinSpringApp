@@ -28,6 +28,18 @@ public class MessageTexts {
     return MessageFormat.format(getTranslation(translationKey), formatArguments);
   }
 
+  public String getDatePickerToday() {
+    return getTranslation("base.datePicker.today");
+  }
+
+  public String getDatePickerCancel() {
+    return getTranslation("base.datePicker.cancel");
+  }
+
+  public String getDatePickerCalendar() {
+    return getTranslation("base.datePicker.calendar");
+  }
+
   // Support-Tickets und Posteingang
   public String getSupportTitle() {
     return getTranslation("support.title");
@@ -2956,14 +2968,6 @@ public class MessageTexts {
 
   public String getAccountSettingsSessionsTab() {
     return getTranslation("accountSettings.sessions.tab");
-  }
-
-  public String getAccountSettingsEnabled() {
-    return getTranslation("accountSettings.enabled");
-  }
-
-  public String getAccountSettingsDisabled() {
-    return getTranslation("accountSettings.disabled");
   }
 
   public String getAccountSettingsEditPicture() {

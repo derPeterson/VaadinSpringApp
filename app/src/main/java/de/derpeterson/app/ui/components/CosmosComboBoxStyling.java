@@ -14,20 +14,16 @@ public final class CosmosComboBoxStyling {
   public static <T> void styleChoice(
       ComboBox<T> choiceComboBox,
       SerializableFunction<T, String> itemLabelFunction,
-      boolean withDot) {
+      boolean compactOptions) {
     choiceComboBox.addClassName("cosmos-reference-choice");
-    choiceComboBox.setClassName("cosmos-choice-dot", withDot);
     choiceComboBox.setClassNameGenerator(choiceValue ->
-        withDot ? "cosmos-reference-option" : "cosmos-reference-option portal-pagination-option");
+        compactOptions
+            ? "cosmos-reference-option portal-pagination-option"
+            : "cosmos-reference-option");
     choiceComboBox.setRenderer(
         new ComponentRenderer<>(choiceValue -> {
           Div optionRowLayout = new Div();
           optionRowLayout.addClassName("cosmos-reference-option-row");
-          if (withDot) {
-            Span statusDotLabel = new Span();
-            statusDotLabel.addClassName("cosmos-reference-option-dot");
-            optionRowLayout.add(statusDotLabel);
-          }
           Span choiceTextLabel = new Span(itemLabelFunction.apply(choiceValue));
           SvgIcon selectedCheckIcon = AppIcon.CHECK.create();
           selectedCheckIcon.addClassName("cosmos-reference-option-check");

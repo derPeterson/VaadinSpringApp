@@ -12,6 +12,8 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.avatar.AvatarVariant;
+import com.vaadin.flow.component.badge.Badge;
+import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -72,9 +74,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final Span notificationAdminDescriptionSpan = new Span();
   private final H2 composeHeadingH2 = new H2();
   private final Span composeDescriptionSpan = new Span();
-  private final Span deliveryLabelSpan = new Span();
-  private final Div deliveryStatusDiv = new Div();
-  private final Tooltip deliveryTooltip = Tooltip.forComponent(deliveryStatusDiv);
+  private final Badge deliveryStatusBadge = new Badge();
+  private final Tooltip deliveryTooltip = Tooltip.forComponent(deliveryStatusBadge);
   private final VerticalLayout notificationComposeLayout;
   private MaintenanceService.State maintenanceState;
   private transient Registration maintenancePollRegistration;
@@ -85,7 +86,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final Span everyoneHintSpan = new Span();
   private final Span titleCountSpan = new Span();
   private final Span bodyCountSpan = new Span();
-  private final Span previewStatusSpan = new Span();
+  private final Badge previewStatusBadge = new Badge();
   private List<Target> eligibleTargets = List.of();
   private final Checkbox sendToEveryoneCheckbox = new Checkbox();
   private final MultiSelectComboBox<Target> recipientComboBox = new MultiSelectComboBox<>();
@@ -105,7 +106,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final Span recipientRecheckHintSpan = new Span();
   private final H2 historyTitleH2 = new H2();
   private final Span historyDescriptionSpan = new Span();
-  private final Span historyCountSpan = new Span();
+  private final Badge historyCountBadge = new Badge();
   private final Div sentNotificationHistoryDiv = new Div();
   private final CosmosPagination historyPagination;
   private int historyPageSize = 5;
@@ -228,13 +229,9 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     Div composeHeadingDiv = new Div(composeHeadingH2, composeDescriptionSpan);
     composeHeadingDiv.addClassName(PANEL_HEADING);
 
-    Span deliveryDotSpan = new Span();
-    deliveryDotSpan.addClassName("cosmos-notification-delivery-dot");
-    deliveryDotSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
-    deliveryStatusDiv.add(deliveryDotSpan, deliveryLabelSpan);
-    deliveryStatusDiv.addClassNames(COSMOS_PANEL_META_CLASS, "cosmos-notification-delivery");
-    deliveryStatusDiv.getElement().setAttribute("role", "status");
-    Div composeHeaderDiv = new Div(composeIconDiv, composeHeadingDiv, deliveryStatusDiv);
+    deliveryStatusBadge.addClassNames(COSMOS_PANEL_META_CLASS, "cosmos-notification-delivery");
+    deliveryStatusBadge.setAriaRole("status");
+    Div composeHeaderDiv = new Div(composeIconDiv, composeHeadingDiv, deliveryStatusBadge);
     composeHeaderDiv.addClassName(PANEL_HEADER);
 
     Div deliveryInfoDiv = new Div(createDecorativeSvgIcon(AppIcon.INFO_CIRCLE), deliveryInfoSpan);
@@ -270,9 +267,9 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     Div composeFooterDiv = new Div(deliveryInfoDiv, recipientRecheckHintDiv, previewActionsDiv);
     composeFooterDiv.addClassName("cosmos-panel-footer");
 
-    previewStatusSpan.addClassName("cosmos-notification-compose-status");
-    previewStatusSpan.getElement().setAttribute("role", "status");
-    previewStatusSpan.setVisible(false);
+    previewStatusBadge.addClassName("cosmos-notification-compose-status");
+    previewStatusBadge.setAriaRole("status");
+    previewStatusBadge.setVisible(false);
 
     VerticalLayout composeLayout =
         new VerticalLayout(
@@ -338,8 +335,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     historyDescriptionSpan.addClassName(PANEL_DESCRIPTION);
     Div archiveHeadingDiv = new Div(historyTitleH2, historyDescriptionSpan);
     archiveHeadingDiv.addClassName(PANEL_HEADING);
-    historyCountSpan.addClassName(COSMOS_PANEL_META_CLASS);
-    Div archiveHeaderDiv = new Div(archiveIconDiv, archiveHeadingDiv, historyCountSpan);
+    historyCountBadge.addClassName(COSMOS_PANEL_META_CLASS);
+    Div archiveHeaderDiv = new Div(archiveIconDiv, archiveHeadingDiv, historyCountBadge);
     archiveHeaderDiv.addClassName(PANEL_HEADER);
 
     sentNotificationHistoryDiv.addClassName("cosmos-notification-sent-list");
@@ -386,7 +383,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     notificationComposeLayout
         .getElement()
         .setAttribute("aria-disabled", Boolean.toString(!isDeliveryAvailable));
-    deliveryStatusDiv
+    deliveryStatusBadge
         .getElement()
         .setAttribute(DATA_STATE, deliveryState.name().toLowerCase(Locale.ROOT));
 
@@ -399,7 +396,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
     String deliveryDescriptionText =
         messageProperties.getNotificationsInternal() + ": " + maintenanceStatusText;
-    deliveryStatusDiv.getElement().setAttribute("aria-label", deliveryDescriptionText);
+    deliveryStatusBadge.getElement().setAttribute("aria-label", deliveryDescriptionText);
     deliveryTooltip.setText(deliveryDescriptionText);
   }
 
@@ -435,10 +432,10 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     clearComposeValidationErrors();
     reviewedRecipientPreview = null;
     if (notificationPreviewDiv.isVisible()) {
-      previewStatusSpan.setText(messageProperties.getNotificationsPreviewNeedsReview());
-      previewStatusSpan.addComponentAtIndex(0, createDecorativeSvgIcon(AppIcon.BELL));
-      previewStatusSpan.getElement().setAttribute(DATA_STATE, "warning");
-      previewStatusSpan.setVisible(true);
+      previewStatusBadge.setText(messageProperties.getNotificationsPreviewNeedsReview());
+      previewStatusBadge.setIcon(createDecorativeSvgIcon(AppIcon.BELL));
+      previewStatusBadge.getElement().setAttribute(DATA_STATE, "warning");
+      previewStatusBadge.setVisible(true);
     }
 
     sendNotificationButton.setEnabled(false);
@@ -450,8 +447,9 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     notificationPreviewDiv.removeAll();
     notificationPreviewDiv.setVisible(false);
     emptyPreviewDiv.setVisible(true);
-    previewStatusSpan.setText("");
-    previewStatusSpan.setVisible(false);
+    previewStatusBadge.setText("");
+    previewStatusBadge.setIcon(null);
+    previewStatusBadge.setVisible(false);
   }
 
   private void clearComposeValidationErrors() {
@@ -599,7 +597,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
             createDecorativeSvgIcon(AppIcon.MESSAGE),
             new Span(messageProperties.getNotificationsContentPreview()));
     previewHeadingDiv.addClassName("admin-notification-preview-heading");
-    Div previewHeaderDiv = new Div(previewHeadingDiv, previewStatusSpan);
+    Div previewHeaderDiv = new Div(previewHeadingDiv, previewStatusBadge);
     previewHeaderDiv.addClassName("cosmos-notification-compose-preview-header");
 
     HashSet<Long> selectedRecipientIds = new HashSet<>(reviewedRecipientPreview.ids());
@@ -626,9 +624,9 @@ public class AdminUserNotificationsSection extends VerticalLayout {
           recipientAvatarsDiv.add(recipientAvatar);
         });
     if (selectedRecipientTargets.size() > 3) {
-      Span additionalRecipientCountSpan = new Span("+" + (selectedRecipientTargets.size() - 3));
-      additionalRecipientCountSpan.addClassName("cosmos-notification-compose-recipient-more");
-      recipientAvatarsDiv.add(additionalRecipientCountSpan);
+      Badge additionalRecipientCountBadge = new Badge("+" + (selectedRecipientTargets.size() - 3));
+      additionalRecipientCountBadge.addClassName("cosmos-notification-compose-recipient-more");
+      recipientAvatarsDiv.add(additionalRecipientCountBadge);
     }
 
     Div recipientListDiv = new Div();
@@ -638,14 +636,14 @@ public class AdminUserNotificationsSection extends VerticalLayout {
             new Div(new Span(recipientTarget.name()), new Span(recipientTarget.email()))));
     Details recipientDetails = buildPreviewRecipientDetails(recipientListDiv, recipientAvatarsDiv);
 
-    Span previewSourceSpan = new Span(messageProperties.getNotificationsSourceAdministration());
-    previewSourceSpan.addClassNames(
+    Badge previewSourceBadge = new Badge(messageProperties.getNotificationsSourceAdministration());
+    previewSourceBadge.addClassNames(
         "cosmos-notification-preview-source", "portal-notification-source-admin");
     Span previewTimestampSpan =
         new Span(
             UserNotificationTexts.formatNotificationTimestamp(
                 Instant.now(), UI.getCurrent().getLocale()));
-    Div previewMetadataDiv = new Div(previewSourceSpan, previewTimestampSpan);
+    Div previewMetadataDiv = new Div(previewSourceBadge, previewTimestampSpan);
     previewMetadataDiv.addClassNames(
         "cosmos-notification-message-meta", "admin-notification-preview-meta");
 
@@ -661,10 +659,10 @@ public class AdminUserNotificationsSection extends VerticalLayout {
         previewHeaderDiv, messagePreviewDiv, recipientAvatarsDiv, recipientDetails);
     emptyPreviewDiv.setVisible(false);
     notificationPreviewDiv.setVisible(true);
-    previewStatusSpan.setText(messageProperties.getNotificationsPreviewUpdated());
-    previewStatusSpan.addComponentAtIndex(0, createDecorativeSvgIcon(AppIcon.CHECK));
-    previewStatusSpan.getElement().setAttribute(DATA_STATE, "success");
-    previewStatusSpan.setVisible(true);
+    previewStatusBadge.setText(messageProperties.getNotificationsPreviewUpdated());
+    previewStatusBadge.setIcon(createDecorativeSvgIcon(AppIcon.CHECK));
+    previewStatusBadge.getElement().setAttribute(DATA_STATE, "success");
+    previewStatusBadge.setVisible(true);
   }
 
   private Details buildPreviewRecipientDetails(Div recipientListDiv, Div recipientAvatarsDiv) {
@@ -791,7 +789,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
       sentNotificationHistoryDiv.add(buildSentNotificationRowDiv(sentNotification));
     }
 
-    historyCountSpan.setText(
+    historyCountBadge.setText(
         messageProperties.getNotificationsHistoryCount(sentNotificationsPage.getTotalElements()));
     historyPagination.showPage(
         historyPageIndex,
@@ -816,12 +814,11 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     Div sentHeadingDiv = new Div(notificationTitleH3, notificationMetadataSpan);
     sentHeadingDiv.addClassName("cosmos-notification-sent-heading");
 
-    Span sentStatusSpan =
-        new Span(
-            createDecorativeSvgIcon(AppIcon.CHECK),
-            new Span(messageProperties.getNotificationsSentStatus()));
-    sentStatusSpan.getElement().setAttribute("theme", "badge success");
-    sentStatusSpan.addClassName("cosmos-notification-sent-status");
+    Badge sentStatusBadge =
+        new Badge(
+            messageProperties.getNotificationsSentStatus(), createDecorativeSvgIcon(AppIcon.CHECK));
+    sentStatusBadge.addThemeVariants(BadgeVariant.SUCCESS);
+    sentStatusBadge.addClassName("cosmos-notification-sent-status");
 
     Div sentBodyDiv = new Div();
     sentBodyDiv.setText(sentNotification.body());
@@ -868,7 +865,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
           .setAttribute(ARIA_EXPANDED, Boolean.toString(detailsOpenedChangeEvent.isOpened()));
     });
 
-    Div sentActionsDiv = new Div(sentStatusSpan, toggleDetailsButton);
+    Div sentActionsDiv = new Div(sentStatusBadge, toggleDetailsButton);
     sentActionsDiv.addClassName("cosmos-notification-sent-actions");
     Div sentRowDiv =
         new Div(notificationIconDiv, sentHeadingDiv, sentActionsDiv, sentNotificationDetails);
@@ -891,7 +888,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     previewBeforeSendHintSpan.setText(messageProperties.getNotificationsBeforeSendHint());
 
     composeHeadingH2.setText(messageProperties.getNotificationsComposeTitle());
-    deliveryLabelSpan.setText(messageProperties.getNotificationsInternal());
+    deliveryStatusBadge.setText(messageProperties.getNotificationsInternal());
     refreshDeliveryState();
     deliveryInfoSpan.setText(messageProperties.getNotificationsDeliveryInfo());
     everyoneHintSpan.setText(messageProperties.getNotificationsEveryoneHint());

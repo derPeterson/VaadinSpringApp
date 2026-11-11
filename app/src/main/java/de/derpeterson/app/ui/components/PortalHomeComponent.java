@@ -1,6 +1,7 @@
 package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.html.Div;
@@ -21,7 +22,7 @@ public class PortalHomeComponent extends Div {
   private final Span welcomeTextSpan = new Span();
   private final Paragraph portalDescriptionParagraph = new Paragraph();
   private final Span portalNoticeSpan = new Span();
-  private final Span unreadNotificationCountSpan = new Span();
+  private final Badge unreadNotificationCountBadge = new Badge();
   private final Button openNotificationsButton = new Button();
   private final Button openAccountButton = new Button();
 
@@ -39,9 +40,9 @@ public class PortalHomeComponent extends Div {
     openNotificationsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     openNotificationsButton.addClickListener(
         event -> UI.getCurrent().navigate(UserNotificationsView.class));
-    unreadNotificationCountSpan.addClassName("portal-home-unread");
-    unreadNotificationCountSpan.setVisible(false);
-    openNotificationsButton.setSuffixComponent(unreadNotificationCountSpan);
+    unreadNotificationCountBadge.addClassName("portal-home-unread");
+    unreadNotificationCountBadge.setVisible(false);
+    openNotificationsButton.setSuffixComponent(unreadNotificationCountBadge);
     openAccountButton.setPrefixComponent(AppIcon.USER.create());
     openAccountButton.setId("portal-home-account");
     openAccountButton.addClickListener(event -> UI.getCurrent().navigate(AccountView.class));
@@ -74,8 +75,8 @@ public class PortalHomeComponent extends Div {
   }
 
   public void updateUnreadCount(long unreadCount) {
-    unreadNotificationCountSpan.setVisible(unreadCount > 0);
-    unreadNotificationCountSpan.setText(
+    unreadNotificationCountBadge.setVisible(unreadCount > 0);
+    unreadNotificationCountBadge.setText(
         unreadCount > 99 ? "99+" : Long.toString(Math.max(0, unreadCount)));
   }
 

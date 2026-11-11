@@ -200,26 +200,21 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       settings.open(AdminConfigGroup.SECURITY);
       mail.input(uiTexts.getAdminMailSubject()).fill("Mail draft");
       mail.input(uiTexts.getAdminMailBody()).fill("Preserved mail draft");
-      Locator internal = browserPage.locator(".cosmos-notification-delivery"),
-          smtp = mailPage.locator(".cosmos-mail-delivery");
+      Locator internal = browserPage.locator("vaadin-badge.cosmos-notification-delivery"),
+          smtp = mailPage.locator("vaadin-badge.cosmos-mail-delivery");
 
       assertThat(internal).hasAttribute("data-state", "open");
       assertThat(smtp).hasAttribute("data-state", "open");
-      String green =
-          internal
-              .locator(".cosmos-notification-delivery-dot")
-              .evaluate("el => getComputedStyle(el).backgroundColor")
-              .toString();
+      String availableColor = internal.evaluate("el => getComputedStyle(el).color").toString();
+      assertEquals(availableColor, smtp.evaluate("el => getComputedStyle(el).color"));
       settings.input(uiTexts.getAdminConfigEntryMaintenanceMode()).setChecked(true);
       settings.save();
 
       assertThat(internal).hasAttribute("data-state", "active");
       assertThat(smtp).hasAttribute("data-state", "active");
-      assertNotEquals(
-          green,
-          internal
-              .locator(".cosmos-notification-delivery-dot")
-              .evaluate("el => getComputedStyle(el).backgroundColor"));
+      String unavailableColor = internal.evaluate("el => getComputedStyle(el).color").toString();
+      assertNotEquals(availableColor, unavailableColor);
+      assertEquals(unavailableColor, smtp.evaluate("el => getComputedStyle(el).color"));
       assertThat(compose.title()).isDisabled();
       assertThat(compose.body()).isDisabled();
       assertThat(compose.everyone()).isDisabled();
@@ -234,6 +229,7 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       settings.save();
 
       assertThat(internal).hasAttribute("data-state", "open");
+      assertEquals(availableColor, internal.evaluate("el => getComputedStyle(el).color"));
       assertThat(smtp).hasAttribute("data-state", "open");
       assertThat(compose.title()).hasValue("Maintenance draft");
       assertThat(compose.body()).hasValue("Preserved draft");

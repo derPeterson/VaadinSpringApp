@@ -628,8 +628,19 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         assertThat(settings.duration(label).locator(".admin-help-default")).hasCount(0);
         settings.info(label).click();
 
-        assertThat(settings.helpPanel())
-            .containsText(uiTexts.getAdminConfigDurationSeconds(expected));
+        if (daysOnly) {
+          assertThat(settings.duration(label).locator("vaadin-combo-box")).hasCount(0);
+          assertThat(settings.duration(label).locator(".admin-duration-unit-label"))
+              .hasText(uiTexts.getAdminConfigDurationUnitDays());
+          assertThat(settings.helpPanel())
+              .containsText(uiTexts.getAdminConfigDurationDays(java.math.BigDecimal.TWO));
+          assertThat(settings.helpPanel())
+              .not()
+              .containsText(uiTexts.getAdminConfigDurationEquivalent());
+        } else {
+          assertThat(settings.helpPanel())
+              .containsText(uiTexts.getAdminConfigDurationSeconds(expected));
+        }
         settings.closeHelp();
         if (daysOnly) {
           settings.enter(label, "");
@@ -737,24 +748,20 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     settings.open(AdminConfigGroup.SECURITY);
     String label = uiTexts.getAdminConfigEntrySessionTimeout();
     settings.enterSeconds(label, java.math.BigDecimal.valueOf(119));
-    Locator select = settings.duration(label).locator("vaadin-select");
-    Locator selectedUnit = select.locator("vaadin-select-value-button");
+    Locator durationUnitInput = settings.duration(label).locator("vaadin-combo-box input");
 
-    assertThat(selectedUnit).hasText(uiTexts.getAdminConfigDurationUnitSeconds());
+    assertThat(durationUnitInput).hasValue(uiTexts.getAdminConfigDurationUnitSeconds());
     assertTrue(
         (Boolean)
-            select.evaluate(
+            durationUnitInput.evaluate(
                 """
-                select => {
-                  const value = select.querySelector('vaadin-select-value-button');
-                  const item = value.querySelector('vaadin-select-item');
-                  const toggle = select.shadowRoot.querySelector('[part~="toggle-button"]');
-                  const range = document.createRange();
-                  range.selectNodeContents(item);
-                  const text = range.getBoundingClientRect();
-                  return text.width > 0
-                    && text.right <= value.getBoundingClientRect().right + 1
-                    && text.right <= toggle.getBoundingClientRect().left;
+                input => {
+                  const font = getComputedStyle(input);
+                  const canvas = document.createElement('canvas').getContext('2d');
+                  canvas.font = font.font;
+                  const textWidth = canvas.measureText(input.value).width;
+                  const horizontalPadding = parseFloat(font.paddingLeft) + parseFloat(font.paddingRight);
+                  return textWidth > 0 && textWidth <= input.clientWidth - horizontalPadding;
                 }
                 """),
         "Die ausgeschriebene Zeiteinheit muss vollständig vor dem Auswahlpfeil stehen");

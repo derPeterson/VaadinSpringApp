@@ -6,6 +6,7 @@ import static de.derpeterson.app.ui.components.CosmosCssClasses.USER_MENU_ACTION
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.details.Details;
@@ -50,7 +51,7 @@ public class UserPopoverMenu {
   private final UserService userService;
   private final UserEntity currentUser;
   private Span profileNameSpan;
-  private Span menuPresenceSpan;
+  private Badge menuPresenceBadge;
   private final Span languageHeadingSpan = new Span();
   private final Map<UserStatus, Button> statusButtons = new EnumMap<>(UserStatus.class);
   private Span presenceHeadingSpan;
@@ -59,7 +60,6 @@ public class UserPopoverMenu {
   private final Consumer<UserStatus> statusIconConsumer;
   private final Popover userPopover;
 
-  private Span accountStateSpan = null;
   private Button manageAccountButton = null;
   private Button manageApplicationButton = null;
   private Button logoutButton = null;
@@ -139,12 +139,10 @@ public class UserPopoverMenu {
     Span accountEmailSpan = new Span(currentUser.getEmail());
     accountEmailSpan.addClassName("portal-menu-email");
 
-    accountStateSpan = new Span();
-    accountStateSpan.addClassName("portal-menu-account-state");
-    menuPresenceSpan = new Span();
-    menuPresenceSpan.addClassName("portal-menu-presence");
+    menuPresenceBadge = new Badge();
+    menuPresenceBadge.addClassName("portal-menu-presence");
 
-    Div accountBadgesDiv = new Div(accountStateSpan, menuPresenceSpan);
+    Div accountBadgesDiv = new Div(menuPresenceBadge);
     accountBadgesDiv.addClassName("portal-menu-badges");
     Div accountIdentityDiv = new Div(profileNameSpan, accountEmailSpan, accountBadgesDiv);
     accountIdentityDiv.addClassName("portal-menu-identity-copy");
@@ -443,12 +441,8 @@ public class UserPopoverMenu {
     presenceHeadingSpan.setText(messageProperties.getPortalPresenceHeading());
     presenceToggle.setAriaLabel(messageProperties.getPortalPresenceHeading());
     refreshStatusButtons();
-    menuPresenceSpan.setText(messageProperties.getUserStatusLabel(currentStatus));
-    menuPresenceSpan.getStyle().set("--account-presence-color", currentStatus.getColor());
-    accountStateSpan.setText(
-        currentUser.isEnabled()
-            ? messageProperties.getAccountSettingsEnabled()
-            : messageProperties.getAccountSettingsDisabled());
+    menuPresenceBadge.setText(messageProperties.getUserStatusLabel(currentStatus));
+    menuPresenceBadge.getStyle().set("--account-presence-color", currentStatus.getColor());
     manageAccountButton.setText(messageProperties.getBaseManageAccountButton());
     if (manageApplicationButton != null) {
       manageApplicationButton.setText(messageProperties.getBaseManageApplicationButton());
@@ -473,9 +467,9 @@ public class UserPopoverMenu {
   }
 
   private void updateStatusIcons(UserStatus userStatus) {
-    if (menuPresenceSpan != null) {
-      menuPresenceSpan.setText(messageProperties.getUserStatusLabel(userStatus));
-      menuPresenceSpan.getStyle().set("--account-presence-color", userStatus.getColor());
+    if (menuPresenceBadge != null) {
+      menuPresenceBadge.setText(messageProperties.getUserStatusLabel(userStatus));
+      menuPresenceBadge.getStyle().set("--account-presence-color", userStatus.getColor());
     }
     if (userStatus == null) {
       return;

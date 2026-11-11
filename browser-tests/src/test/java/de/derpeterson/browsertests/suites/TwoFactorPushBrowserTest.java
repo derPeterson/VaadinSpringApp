@@ -237,7 +237,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
                 .setExact(true))
         .setChecked(true);
     Locator duration = browserPage.locator("#two-factor-inactivity-duration");
-    duration.locator("vaadin-select").click();
+    duration.locator("vaadin-combo-box [part~=toggle-button]").click();
     String unit =
         enabled
             ? uiTexts.getAdminConfigDurationUnitMinutes()
@@ -283,7 +283,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
                   .setExact(true))
           .setChecked(true);
       duration = browserPage.locator("#two-factor-inactivity-duration");
-      duration.locator("vaadin-select").click();
+      duration.locator("vaadin-combo-box [part~=toggle-button]").click();
       browserPage
           .getByRole(
               AriaRole.OPTION,
@@ -300,13 +300,13 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
           .setChecked(false);
 
       assertThat(duration.locator("vaadin-integer-field input")).hasValue("12");
-      assertThat(duration.locator("vaadin-select"))
-          .containsText(uiTexts.getAdminConfigDurationUnitDays());
+      assertThat(duration.locator("vaadin-combo-box input"))
+          .hasValue(uiTexts.getAdminConfigDurationUnitDays());
       browserPage.locator("#two-factor-reload").click();
 
       assertThat(duration.locator("vaadin-integer-field input")).hasValue("12");
-      assertThat(duration.locator("vaadin-select"))
-          .containsText(uiTexts.getAdminConfigDurationUnitHours());
+      assertThat(duration.locator("vaadin-combo-box input"))
+          .hasValue(uiTexts.getAdminConfigDurationUnitHours());
     }
   }
 

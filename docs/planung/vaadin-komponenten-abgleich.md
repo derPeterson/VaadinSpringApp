@@ -9,11 +9,81 @@ zusammenfassen, etwa eine Sitzungskarte, einen Ticketfilter oder die Pagination.
 Ein eigener Ersatz für eine Vaadin-Komponente braucht einen konkreten Grund und
 die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#native-vaadin-bausteine-zuerst).
 
-**Einstieg nach Freigabe:** Zwei noch selbst gestaltete Badges auf native
-Basis bringen. Der rote Zähler an der Glocke und die Statusanzeige für aktive
-Benachrichtigungen sind geeignete Gegenstücke. Danach lässt sich entscheiden, welche
-weiteren Anzeigen dieselben Varianten verwenden. Seitenrahmen, Anmeldemasken und
-Ticketverlauf sind deutlich größere Eingriffe und bleiben bei diesem Paket außen vor.
+## Erster Zwischenstand mit dem Glockenzähler
+
+Der Branch `codex/vaadin-komponentenanpassungen` geht von `main` auf `01f7c67d`
+aus. Der rote Glockenzähler ist auf ein natives Vaadin-`Badge` umgestellt und
+wartet auf die gemeinsame Sichtung. Die Vorher-/Nachher-Aufnahmen zeigen `0`,
+`1`, `99` und `99+` in Deutsch und Englisch bei 1280 und 390 px. Die gemessenen
+Maße, Positionen, Farben und Schriftwerte stimmen überein. `99` und `99+` sind
+Darstellungswerte für den Vergleich. Zustellung, Lesen und die zugängliche
+Beschriftung wurden mit einer echten Testbenachrichtigung geprüft.
+
+Die nächste gemeinsame Sichtung umfasst auch die Portal-Badges auf Startseite
+und Seitennavigation, in Profilkarte und Profilmenü sowie in Postfach,
+Glockenvorschau, Detail und Bestätigung. Beschriftete Badges folgen der
+Theme-Regel ohne Statuspunkt. In Profilkarte und Profilmenü steht die Anwesenheit.
+Die Glocke zeigt die ungelesene Anzahl in Rot.
+
+Zur gemeinsamen Sichtung gehören auch die umgestellten Badges der Benutzerliste,
+des Benutzerfilters, der Konfiguration, des Mailtests und des
+Benachrichtigungsversands. Rollen, Status, Quellen und kompakte Zähler nutzen
+native Vaadin-Badges. Kennzahlenkarten bleiben ein eigenes Paket.
+
+Nach den Badges folgt die gemeinsame `CosmosMetricCard` als eigenes Paket.
+Ihr erster Einsatz sind „Gesamt“ und „Ungelesen“ im Postfach. Die neutrale und
+die hervorgehobene Variante werden auf Desktop und Mobil mit der bestehenden
+Darstellung verglichen.
+
+## Weitere Arbeitspakete auf diesem Branch
+
+Die Pakete werden nacheinander auf `codex/vaadin-komponentenanpassungen` bearbeitet.
+Jedes Paket erhält ein Review mit Einzelprüfung der geänderten Klassen auf
+Lesbarkeit und einen eigenen Commit. Nach den Paketen folgt die große isolierte
+Testrunde. Der [Testbedarf](../testbedarf.md) führt offene automatisierte Prüfungen.
+
+### Auswahlfelder und Kalender
+
+- **Abnahme:** Geschlecht in Konto, Registrierung und Benutzerverwaltung sowie
+  Sprache, Dauerfelder und Pagination ansehen. Je einen Eintrag auswählen,
+  bei Rollen und Empfängern mehrere. Die Feldhilfen zur Aufbewahrung prüfen.
+  Die Dauerliste auch auf schmalem Bildschirm öffnen. Kalender und Uhrzeit nach
+  einem Sprachwechsel ansehen.
+
+### Ungespeicherte Formularänderungen
+
+- Bearbeitbare Formulare mit Speicheraktion erfassen. Konfiguration und
+  persönliche Daten sind die vereinbarten Einstiege.
+- Änderungen gegen den geladenen oder zuletzt erfolgreich gespeicherten Stand
+  erkennen. Bei Navigation oder Abbruch einen nativen Bestätigungsdialog anbieten.
+  „Weiter bearbeiten“ erhält die Eingaben, bestätigtes Verlassen verwirft sie.
+  Reine Filter und Auswahlansichten bleiben außerhalb dieses Pakets.
+- **Abnahme:** Je ein Formular bearbeiten, Abbruch der Navigation und Verwerfen
+  ausprobieren, danach erfolgreich speichern und erneut verlassen. Auch einen
+  fehlgeschlagenen Speicherversuch prüfen.
+
+### Eigenes Konto deaktivieren oder löschen
+
+- Beide Aktionen unter „Mein Konto → Sicherheit“ mit eigener Bestätigung und
+  erneutem Identitätsnachweis anbieten. Vorhandene 2FA und Portalpasswort
+  berücksichtigen. Den Nachweis für Konten mit ausschließlich einem externen
+  Anmeldeanbieter und den Schutz des letzten Superadmins bei der Umsetzung prüfen.
+- Bei Selbstdeaktivierung Sitzungen widerrufen und per E-Mail über die Frist
+  informieren. Frist und Erinnerungsvorlauf in der Anwendungskonfiguration
+  anbieten. Standardwerte sind 30 und 7 Tage. Neue Werte gelten für künftige
+  Deaktivierungen. Bereits mitgeteilte Termine bleiben bestehen.
+  Rechtzeitige Reaktivierung über einen befristeten E-Mail-Link beendet die Frist.
+  Eine Admin-Sperre kann über diesen Weg nicht aufgehoben werden.
+- Endgültiges Löschen räumt kontobezogene Daten auf. Verknüpfungen zu Daten anderer
+  Benutzer und bereits eingeplante Mails vor der Umsetzung anhand der tatsächlichen
+  Datenbeziehungen prüfen. Die direkte Löschung erfolgt sofort und wird erst
+  nach erfolgreicher Löschung per E-Mail bestätigt. Ein Export gehört nicht
+  zu diesem Paket.
+- **Abnahme:** Identitätsbestätigung, Selbstdeaktivierung mit E-Mail,
+  Reaktivierung, Admin-Sperre, Erinnerung und Löschung mit isolierten Testdaten
+  durchgehen.
+
+## Bestandsaufnahme
 
 Die Bestandsaufnahme bezieht sich auf main, Stand `1f427fba`. Maßgeblich für
 Vaadin 25.3.5 ist die [Anwendungs-POM](../../app/pom.xml). Erfasst wurden alle 283
@@ -86,8 +156,8 @@ gesamte Ticketkennzeichnung bereits über `Badge`. Der rote Aktivitätspunkt in
 der Admin-Navigation ist ebenfalls ein `Badge` mit `Tooltip`. Die CSS-Variante
 stellt ihn bewusst als Punkt dar.
 
-**Noch lokal.** Diese Liste gruppiert die verbleibenden Anzeigemuster nach
-Verwendung. Eine Stelle kann mehrere Zustände oder Oberflächen bedienen.
+**Ausgangsstand des Badge-Abgleichs.** Eine Stelle kann mehrere Zustände oder
+Oberflächen bedienen. Der Umsetzungsstand steht oben.
 
 | Stelle | Heute | Empfehlung |
 | --- | --- | --- |
@@ -96,7 +166,7 @@ Verwendung. Eine Stelle kann mehrere Zustände oder Oberflächen bedienen.
 | `PortalSidebarComponent` und `UserPopoverMenu` | Konto- und Präsenzangaben im Identitätsblock verwenden Spans mit Lumo- oder lokalen Styles. | Jeweils dieselbe Cosmos-Variante für denselben Kontostatus und dieselbe Präsenz. Die Auswahl der Anwesenheit und der Punkt am Avatar sind getrennte Bedienelemente. |
 | `AdminUserManagementSection` | Rollen und „Dein Benutzer“ sind lokale Chips. Aktiv/Anwesenheit in der Tabelle nutzen alte Badge-Muster und lokale Regeln. Registrierung und Anmeldewege im Formular sind bereits nativ. | Rollen und „Dein Benutzer“ angleichen. Den bewusst flachen Tabellenstatus in seiner Darstellung erhalten. Ob `Badge` ohne sichtbaren Kasten hier einfacher ist, hängt vom Pilot ab. |
 | `AdminUserFilterBar` und `AdminConfigurationSection` | Aktive Filter bzw. Anzahl der Einstellungen als lokale Spans. | Filterzähler mit dem bereits nativen Ticketfilter abgleichen. Einstellungssumme nur übernehmen, wenn dieselbe kleine Anzeigevariante passt. |
-| `AdminMailTestSection` und `AdminUserNotificationsSection` | SMTP-Status mit Punkt, Text, Tooltip und zugänglicher Statusinfo. Versandansicht mit Versandmodus, Quelle der Vorschau, Gesendet-Status und Historienanzahl in eigenen Mustern. | Gesendet und Vorschauquelle als nächste Kandidaten. Beim SMTP-Status sichtbaren Punkt, dynamischen Text und Tooltip beibehalten. Kennzahlen und die Prüfanzeige der Vorschau getrennt beurteilen. |
+| `AdminMailTestSection` und `AdminUserNotificationsSection` | SMTP-Status mit Punkt, Text, Tooltip und zugänglicher Statusinfo. Versandansicht mit Versandmodus, Quelle der Vorschau, Gesendet-Status und Historienanzahl in eigenen Mustern. | Dynamische Statusinfo, Tooltip und bedeutungstragende Icons erhalten. Dekorative Punkte entfallen. |
 
 `Badge` bietet in 25.3.5 unter anderem Text, Zahl, Icon, Komponenteninhalt
 sowie `SUCCESS`, `WARNING`, `ERROR`, `NUMBER_ONLY` und `SMALL`. Für einen
@@ -197,10 +267,10 @@ wenn eine konkrete Funktion fehlt. In dem Fall die geprüfte Alternative,
 den nötigen Eigenanteil und die zu erhaltende Bedienung zur Entscheidung
 vorlegen.
 
-1. **Badge-Pilot.** Glockenzähler und Gelesen/Ungelesen in der
-   Benachrichtigungsansicht wählen. Bestehende native Badges als Referenz
-   verwenden. Die Statusanzeige entsteht an einer gemeinsamen Stelle für Inbox,
-   Glockenvorschau, Detailansicht und Bestätigungskarten. Deshalb alle vier
+1. **Badge-Pilot.** Glockenzähler und die umgestellten Portal-Badges gemeinsam
+   sichten. Bestehende native
+   Badges als Referenz verwenden. Die Statusanzeige entsteht an einer gemeinsamen
+   Stelle für Inbox, Glockenvorschau, Detailansicht und Bestätigungskarten. Deshalb alle vier
    Darstellungen prüfen, einschließlich der Hervorhebung ungelesener Nachrichten
    und der Kennzeichnung nicht mehr relevanter Nachrichten. Beim Glockenzähler
    dynamische Aktualisierung, Zahlenbreite und zugängliche Beschriftung prüfen.

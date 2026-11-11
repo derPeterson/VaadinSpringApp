@@ -134,7 +134,7 @@
     font-size: var(--cosmos-font-size-s);
 }
 
-.admin-user-filter-panel-heading > span:not([theme~="badge"]) {
+.admin-user-filter-panel-heading > span {
     font-weight: var(--cosmos-font-weight-bold);
 }
 
@@ -286,7 +286,6 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     box-sizing: border-box;
     margin: 0;
     padding: 2px 6px;
-    border: 1px solid var(--vaadin-badge-border-color);
     border-radius: 4px;
     font: 500 10px/15px Inter, sans-serif;
 }
@@ -296,20 +295,14 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     max-width: 100%;
     white-space: normal;
     --vaadin-badge-text-color: var(--cosmos-reference-label);
-    --vaadin-badge-background: var(--cosmos-reference-hover);
-    --vaadin-badge-border-color: var(--cosmos-reference-control-border);
 }
 
 .admin-user-dialog #admin-user-registered-via[data-self-registered=true] {
     --vaadin-badge-text-color: var(--cosmos-reference-accent);
-    --vaadin-badge-background: var(--cosmos-reference-selection);
-    --vaadin-badge-border-color: var(--cosmos-reference-icon-border);
 }
 
 .admin-user-dialog #admin-user-sign-in-methods > vaadin-badge {
     --vaadin-badge-text-color: var(--cosmos-reference-success);
-    --vaadin-badge-background: var(--cosmos-reference-success-surface);
-    --vaadin-badge-border-color: var(--cosmos-reference-success-border);
 }
 
 .admin-user-enabled-label > span {
@@ -377,12 +370,6 @@ vaadin-dialog.admin-user-dialog::part(content) {
 
 .admin-users-grid::part(body-cell) {
     color: var(--cosmos-table-body-color);
-}
-
-/* Aktiv- und Statusbadges: derselbe dezente Rahmen in Textfarbe wie im Konto. */
-
-.admin-users-grid [theme~="badge"] {
-    border: var(--cosmos-border-width) solid currentColor;
 }
 
 .admin-users-grid .admin-user-table-name {
