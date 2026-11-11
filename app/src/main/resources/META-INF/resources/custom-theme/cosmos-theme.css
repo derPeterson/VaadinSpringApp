@@ -429,18 +429,24 @@ vaadin-badge:where(
     font-weight: var(--cosmos-badge-font-weight);
 }
 
-/* Gemeinsamer Tabellen-Hover; die Auswahl verwendet dieselbe Farbvariable. */
+/* Gemeinsamer Tabellen-Hover; ausgewählte Zeilen behalten ihre eigene Farbe. */
 
 @media lumo_cosmos_grid_hover {
 
     @media (any-hover: hover) {
 
-        :host .body-row:hover .body-cell {
+        :host .body-row:not([selected]):not([part~=selected-row]):hover .body-cell {
             background-image: linear-gradient(
-                var(--cosmos-table-highlight-background, var(--_cosmos-grid-stripe-fallback, transparent)),
-                var(--cosmos-table-highlight-background, var(--_cosmos-grid-stripe-fallback, transparent))
+                var(--cosmos-hover-background),
+                var(--cosmos-hover-background)
                 );
             background-repeat: repeat;
+        }
+        :host .body-row:is([selected], [part~=selected-row]):hover .body-cell {
+            background-image: linear-gradient(
+                var(--cosmos-table-highlight-background),
+                var(--cosmos-table-highlight-background)
+                );
         }
     }
 }
@@ -552,9 +558,9 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button:not(:has(> [slot="prefix"]))::part(prefix) { margin: 0; }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button > vaadin-icon { width: 16px; height: 16px; padding: 0; color: var(--cosmos-reference-accent); }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[theme~=primary] { color: var(--cosmos-reference-white); background: var(--cosmos-reference-primary); border-color: var(--cosmos-reference-primary); box-shadow: none; }
-:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[theme~=primary]:hover { background: var(--cosmos-reference-primary-hover); }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[theme~=primary]:hover:not([disabled], [aria-pressed="true"], [aria-current], [selected], [checked]) { background: var(--cosmos-reference-primary-hover); }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[theme~=primary] > vaadin-icon { color: var(--cosmos-reference-white); }
-:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button:where(:not([theme~=primary], [theme~=tertiary], [theme~=tertiary-inline], .cosmos-delete-button, .cosmos-topbar-shortcut, .tracked-user-button, .account-navigation-toggle, #account-sidebar > vaadin-button, [aria-pressed], .portal-menu-action, .portal-menu-footer > vaadin-button)):hover:not([disabled]) { background: var(--cosmos-reference-button-hover); border-color: #ffffff38; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button:where(:not([theme~=primary], [theme~=tertiary], [theme~=tertiary-inline], .cosmos-delete-button, .cosmos-warning-button, .cosmos-topbar-shortcut, .tracked-user-button, .account-navigation-toggle, #account-sidebar > vaadin-button, [aria-pressed], .portal-menu-action, .portal-menu-footer > vaadin-button)):hover:not([disabled]) { background: var(--cosmos-reference-button-hover); border-color: #ffffff38; }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-delete-button { color: var(--cosmos-reference-invalid); background: var(--cosmos-reference-danger-surface); border-color: var(--cosmos-reference-danger-border); --vaadin-button-tertiary-background: var(--cosmos-reference-danger-surface); }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-delete-button:hover:not([disabled]) { color: var(--cosmos-reference-danger-hover-text); background: var(--cosmos-reference-danger-hover-surface); border-color: var(--cosmos-reference-danger-hover-border); --vaadin-button-tertiary-background: var(--cosmos-reference-danger-hover-surface); }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-delete-button:focus-visible { outline: 2px solid var(--cosmos-reference-accent); outline-offset: 3px; }
@@ -610,19 +616,40 @@ vaadin-combo-box-item.cosmos-reference-option { box-sizing: border-box; height: 
 vaadin-combo-box-item.cosmos-reference-option::part(checkmark), vaadin-combo-box-item.cosmos-reference-option::before { display: none; }
 .cosmos-reference-option-row { display: flex; align-items: center; gap: 10px; box-sizing: border-box; height: 42px; width: 100%; padding: 10px 12px; border: 1px solid transparent; border-radius: 8px; font: 500 12px/16px Inter, sans-serif; }
 .cosmos-reference-option-check { width: 16px; height: 16px; margin-left: auto; color: var(--cosmos-reference-accent); opacity: 0; }
-:is(.cosmos-reference-option[selected] .cosmos-reference-option-row,
-    .cosmos-theme vaadin-multi-select-combo-box-item[selected]) {
+.cosmos-reference-option[selected] .cosmos-reference-option-row {
     border-color: var(--cosmos-reference-primary);
     background: var(--cosmos-reference-selection);
 }
-:is(.cosmos-reference-option:is(:hover,[focused]):not([selected]) .cosmos-reference-option-row,
-    .cosmos-theme vaadin-multi-select-combo-box-item:is(:hover,[focused]):not([selected])) {
-    background: var(--cosmos-reference-hover);
+.cosmos-reference-option:is(:hover,[focused]):not([selected]) .cosmos-reference-option-row {
+    background: var(--cosmos-reference-button-hover);
 }
 .cosmos-reference-option[selected] .cosmos-reference-option-check { opacity: 1; }
+/* Der native Virtualizer misst keine Außenabstände. Die transparente Host-Border
+   hält zwischen den innen gezeichneten Auswahlflächen zwei Pixel frei. */
 .cosmos-theme vaadin-multi-select-combo-box-item {
+    --cosmos-option-background: transparent;
+    --cosmos-option-border: transparent;
     border: 1px solid transparent;
     border-radius: 8px;
+    background: transparent;
+    z-index: 0;
+}
+.cosmos-theme vaadin-multi-select-combo-box-item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border: 1px solid var(--cosmos-option-border);
+    border-radius: inherit;
+    background: var(--cosmos-option-background);
+    pointer-events: none;
+}
+.cosmos-theme vaadin-multi-select-combo-box-item[selected] {
+    --cosmos-option-background: var(--cosmos-reference-selection);
+    --cosmos-option-border: var(--cosmos-reference-primary);
+}
+.cosmos-theme vaadin-multi-select-combo-box-item:is(:hover,[focused]):not([selected]) {
+    --cosmos-option-background: var(--cosmos-reference-button-hover);
 }
 .cosmos-theme vaadin-multi-select-combo-box-item::part(checkmark) {
     display: grid;
@@ -651,6 +678,7 @@ vaadin-combo-box-item.cosmos-reference-option::part(checkmark), vaadin-combo-box
         forced-color-adjust: none;
     }
 }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) :is(.portal-pagination-size, .portal-page-size)::part(overlay) { min-width: 88px; }
 vaadin-combo-box-item.portal-pagination-option { height: 36px; min-height: 36px; }
 .portal-pagination-option .cosmos-reference-option-row { height: 32px; padding: 6px 8px; }
 .cosmos-reference-portal .portal-page-size::part(input-field) { height: 32px; min-height: 32px; padding-inline: 12px; }
@@ -679,3 +707,39 @@ vaadin-notification-card .cosmos-notification-message.cosmos-notification-detail
 vaadin-notification-card[theme~="cosmos-reference"] vaadin-button { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 36px; min-width: 36px; height: 36px; margin: 0; padding: 0; border: 1px solid var(--cosmos-reference-border); border-radius: 9px; background: var(--cosmos-reference-input); color: var(--cosmos-reference-accent); }
 vaadin-notification-card[theme~="cosmos-reference"] vaadin-button::part(label) { display: flex; align-items: center; justify-content: center; }
 vaadin-notification-card[theme~="cosmos-reference"] vaadin-button vaadin-icon { width: 18px; height: 18px; padding: 0; }
+
+/* Hoverflächen teilen einen Wert. Auswahl, aktive Seitennummern und Disabled bleiben erhalten. */
+.cosmos-theme vaadin-button:hover:not([theme~=primary], .cosmos-delete-button, .cosmos-warning-button, [disabled], [aria-pressed="true"], [aria-current], [selected], [checked]) {
+    background: var(--cosmos-hover-background);
+    --vaadin-button-tertiary-background: var(--cosmos-hover-background);
+}
+.cosmos-theme vaadin-button:hover:not([theme~=primary], .cosmos-delete-button, .cosmos-warning-button, [disabled], [aria-pressed="true"], [aria-current], [selected], [checked])::before {
+    opacity: 0;
+}
+.cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-integer-field,
+    vaadin-number-field, vaadin-big-decimal-field, vaadin-text-area, vaadin-combo-box,
+    vaadin-multi-select-combo-box, vaadin-select, vaadin-date-picker, vaadin-time-picker):hover:not([disabled], [readonly])::part(input-field) {
+    background: var(--cosmos-hover-background);
+    --vaadin-input-field-hover-highlight: transparent;
+    --vaadin-input-field-invalid-hover-highlight: transparent;
+}
+
+.cosmos-theme :is(vaadin-combo-box-item, vaadin-select-item, vaadin-menu-bar-item, vaadin-item):not(.cosmos-reference-option):hover:not([disabled], [selected], [checked]) {
+    background: var(--cosmos-hover-background);
+}
+
+/* Warnaktionen verwenden dieselben nativen Buttonmaße und die gemeinsame Warnpalette. */
+.cosmos-theme vaadin-button.cosmos-warning-button {
+    color: var(--cosmos-security-warning-accent);
+    background: var(--cosmos-security-warning-surface);
+    border-color: var(--cosmos-security-warning-border);
+    --vaadin-button-tertiary-background: var(--cosmos-security-warning-surface);
+}
+.cosmos-theme vaadin-button.cosmos-warning-button > vaadin-icon {
+    color: inherit;
+}
+.cosmos-theme vaadin-button.cosmos-warning-button:hover:not([disabled]) {
+    background: var(--cosmos-warning-button-hover-surface);
+    border-color: var(--cosmos-security-warning-accent);
+    --vaadin-button-tertiary-background: var(--cosmos-warning-button-hover-surface);
+}

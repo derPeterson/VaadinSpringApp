@@ -277,7 +277,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 }
 
 .account-avatar-dialog #account-avatar-mode vaadin-radio-button:hover:not([disabled]):not([checked]) {
-    background: var(--cosmos-table-highlight-background);
+    background: var(--cosmos-hover-background);
 }
 
 .account-avatar-dialog #account-avatar-mode vaadin-radio-button[checked] {
@@ -355,7 +355,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 
 .account-avatar-dialog #account-avatar-choose:hover:not([disabled]) {
     border-color: var(--lumo-primary-text-color);
-    background: var(--cosmos-table-highlight-background);
+    background: var(--cosmos-hover-background);
 }
 
 .account-avatar-dialog .account-avatar-upload-content {

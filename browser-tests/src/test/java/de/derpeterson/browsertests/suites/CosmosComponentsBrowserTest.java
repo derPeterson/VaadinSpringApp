@@ -183,52 +183,176 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
   @Test
   @DisplayName("COMPONENT-01: Rollenfilter erhält Auswahl und Anzahl in Anlage und Bearbeitung")
+  @Tag("form-details")
   @Description(
       "Auf Desktop und Smartphone in beiden Dialogen eine ausgewählte Rolle erhalten, nach einer anderen Rolle tippen und sie ergänzen. Eine erfolglose Suche und das Leeren des Suchtexts ändern die zwei ausgewählten Rollen nicht. Nach Wiederöffnen sind beide Optionen ausgewählt; Abbrechen speichert nichts.")
   void roleSearchPreservesSelectedRolesInBothDialogs() {
     signIn();
-    AdminUsersPage users = new AdminUsersPage(browserPage);
-    String email = "role-search-" + UUID.randomUUID() + "@example.test";
-    users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
-    for (int width : new int[] {1280, 390}) {
-      browserPage.setViewportSize(width, 900);
-      checkRoleSearch(users.openCreate());
-      checkRoleSearch(users.openEdit(email));
+    AdminUsersPage adminUsersPage = new AdminUsersPage(browserPage);
+    String testUserEmail = "role-search-" + UUID.randomUUID() + "@example.test";
+    adminUsersPage.createActiveUser(testUserEmail, BrowserTestAccounts.USER_PASSWORD);
+
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 900);
+      assertRoleSearchPreservesSelection(adminUsersPage.openCreate());
+      assertRoleSearchPreservesSelection(adminUsersPage.openEdit(testUserEmail));
     }
   }
 
-  private void checkRoleSearch(AdminUserDialog dialog) {
-    dialog.setRole(uiTexts.getRoleUser(), true);
-    Locator input = dialog.root().locator(".admin-user-roles input");
-    Locator summary = dialog.root().locator(".admin-user-role-summary");
+  private void assertRoleSearchPreservesSelection(AdminUserDialog adminUserDialog) {
+    adminUserDialog.setRole(uiTexts.getRoleUser(), true);
+    Locator roleSearchInputLocator = adminUserDialog.root().locator(".admin-user-roles input");
+    Locator roleSummaryLocator = adminUserDialog.root().locator(".admin-user-role-summary");
 
-    assertThat(summary).hasText(uiTexts.getAdminUsersSelectedRoles(1));
-    input.fill(uiTexts.getRoleAdmin().substring(0, 4));
-    Locator admin =
+    assertThat(roleSummaryLocator).hasText(uiTexts.getAdminUsersSelectedRoles(1));
+    roleSearchInputLocator.fill(uiTexts.getRoleAdmin().substring(0, 4));
+    Locator administratorOptionLocator =
         browserPage.getByRole(
             AriaRole.OPTION,
             new Page.GetByRoleOptions().setName(uiTexts.getRoleAdmin()).setExact(true));
 
-    assertThat(admin).isVisible();
-    admin.click();
+    assertThat(administratorOptionLocator).isVisible();
+    administratorOptionLocator.click();
 
-    assertThat(summary).hasText(uiTexts.getAdminUsersSelectedRoles(2));
-    input.fill("no-role-matches-this");
+    assertThat(roleSummaryLocator).hasText(uiTexts.getAdminUsersSelectedRoles(2));
+    roleSearchInputLocator.fill("no-role-matches-this");
 
     assertThat(browserPage.locator("vaadin-multi-select-combo-box-item:visible")).hasCount(0);
-    assertThat(summary).hasText(uiTexts.getAdminUsersSelectedRoles(2));
-    input.fill("");
+    assertThat(roleSummaryLocator).hasText(uiTexts.getAdminUsersSelectedRoles(2));
+    roleSearchInputLocator.fill("");
 
-    assertThat(dialog.role(uiTexts.getRoleUser())).hasAttribute("aria-selected", "true");
-    assertThat(admin).hasAttribute("aria-selected", "true");
-    input.press("Escape");
-    input.click();
+    assertThat(adminUserDialog.role(uiTexts.getRoleUser())).hasAttribute("aria-selected", "true");
+    assertThat(administratorOptionLocator).hasAttribute("aria-selected", "true");
+    roleSearchInputLocator.press("Escape");
+    roleSearchInputLocator.click();
 
-    assertThat(dialog.role(uiTexts.getRoleUser())).hasAttribute("aria-selected", "true");
-    assertThat(admin).hasAttribute("aria-selected", "true");
-    assertThat(summary).hasText(uiTexts.getAdminUsersSelectedRoles(2));
+    Locator userOptionLocator = adminUserDialog.role(uiTexts.getRoleUser());
+    assertThat(userOptionLocator).hasAttribute("aria-selected", "true");
+    assertThat(administratorOptionLocator).hasAttribute("aria-selected", "true");
+    assertThat(roleSummaryLocator).hasText(uiTexts.getAdminUsersSelectedRoles(2));
+    assertSelectedRoleFramesAndSpacing(administratorOptionLocator, userOptionLocator);
+
     AllurePlaywright.attachScreenshot("Rollen nach Suche und Wiederöffnen", browserPage);
-    dialog.cancel();
+    adminUserDialog.cancel();
+  }
+
+  private void assertSelectedRoleFramesAndSpacing(
+      Locator administratorOptionLocator, Locator userOptionLocator) {
+    BoundingBox administratorBounds = administratorOptionLocator.boundingBox();
+    BoundingBox userBounds = userOptionLocator.boundingBox();
+    double paintedBottomOffset =
+        ((Number)
+                administratorOptionLocator.evaluate(
+                    "element => parseFloat(getComputedStyle(element, '::after').bottom) + parseFloat(getComputedStyle(element).borderBottomWidth)"))
+            .doubleValue();
+    double paintedTopOffset =
+        ((Number)
+                userOptionLocator.evaluate(
+                    "element => parseFloat(getComputedStyle(element, '::after').top) + parseFloat(getComputedStyle(element).borderTopWidth)"))
+            .doubleValue();
+    for (Locator selectedRoleOptionLocator :
+        List.of(administratorOptionLocator, userOptionLocator)) {
+      assertTrue(
+          (Boolean)
+              selectedRoleOptionLocator.evaluate(
+                  """
+                  element => {
+                    const frame = getComputedStyle(element, '::after');
+                    return ['top', 'right', 'bottom', 'left'].every(side =>
+                      parseFloat(frame[side]) >= 0 && parseFloat(frame.getPropertyValue(`border-${side}-width`)) > 0);
+                  }
+                  """));
+    }
+    assertEquals(
+        2,
+        userBounds.y
+            - administratorBounds.y
+            - administratorBounds.height
+            + paintedBottomOffset
+            + paintedTopOffset,
+        0.5);
+  }
+
+  @Test
+  @Tag("form-details")
+  @DisplayName(
+      "Auswahllisten und feste Tage bleiben auf Desktop und Smartphone vollständig sichtbar")
+  void choiceHoverPaginationAndDaySuffixUseTheSharedFieldStyle() {
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(browserPage).selectTestLanguage();
+    AdminUsersPage adminUsersPage = new AdminUsersPage(browserPage);
+    AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
+
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 900);
+      adminUsersPage.open();
+      assertPaginationOverlayContainsSelection(viewportWidth);
+
+      assertChoiceHoverUsesSharedColor(adminUsersPage.openCreate(), viewportWidth);
+
+      configurationPage.open(AdminConfigGroup.NOTIFICATIONS);
+      assertFixedDaySuffixesRemainInsideFields(configurationPage);
+      AllurePlaywright.attachScreenshot(
+          "Feste Tage im nativen Zahlenfeld bei " + viewportWidth + " px", browserPage);
+    }
+  }
+
+  private void assertPaginationOverlayContainsSelection(int viewportWidth) {
+    Locator pageSizeComboBoxLocator = browserPage.locator(".portal-pagination-size");
+    pageSizeComboBoxLocator.locator("[part~=toggle-button]").click();
+    Locator selectedPageSizeRowLocator =
+        browserPage.locator(
+            "vaadin-combo-box-item.portal-pagination-option[selected] .cosmos-reference-option-row");
+    assertThat(selectedPageSizeRowLocator).isVisible();
+    BoundingBox overlayBounds = pageSizeComboBoxLocator.locator("[part=overlay]").boundingBox();
+    BoundingBox selectionBounds = selectedPageSizeRowLocator.boundingBox();
+    assertTrue(overlayBounds.width >= 88);
+    assertTrue(selectionBounds.x >= overlayBounds.x);
+    assertTrue(selectionBounds.x + selectionBounds.width <= overlayBounds.x + overlayBounds.width);
+    AllurePlaywright.attachScreenshot(
+        "Vollständige Seitengrößenauswahl bei " + viewportWidth + " px", browserPage);
+    pageSizeComboBoxLocator.locator("input").press("Escape");
+  }
+
+  private void assertChoiceHoverUsesSharedColor(
+      AdminUserDialog adminUserDialog, int viewportWidth) {
+    Locator genderComboBoxLocator = adminUserDialog.root().locator("vaadin-combo-box").first();
+    genderComboBoxLocator.locator("[part~=toggle-button]").click();
+    Locator hoveredChoiceRowLocator =
+        browserPage
+            .locator(
+                "vaadin-combo-box-item.cosmos-reference-option:visible:not([selected]) .cosmos-reference-option-row")
+            .first();
+    hoveredChoiceRowLocator.hover();
+    assertThat(hoveredChoiceRowLocator).hasCSS("background-color", "rgb(21, 34, 56)");
+    AllurePlaywright.attachScreenshot("Blauer Hover bei " + viewportWidth + " px", browserPage);
+    genderComboBoxLocator.locator("input").press("Escape");
+    adminUserDialog.cancel();
+  }
+
+  private void assertFixedDaySuffixesRemainInsideFields(AdminConfigurationPage configurationPage) {
+    for (String fieldLabel :
+        List.of(
+            uiTexts.getAdminConfigEntryNotificationInboxRetention(),
+            uiTexts.getAdminConfigEntryNotificationHistoryRetention())) {
+      Locator dayFieldLocator = configurationPage.duration(fieldLabel);
+      Locator unitSuffixLocator =
+          dayFieldLocator.locator("vaadin-integer-field > .admin-duration-unit-label[slot=suffix]");
+      assertThat(unitSuffixLocator).hasText(uiTexts.getAdminConfigDurationUnitDays());
+      assertThat(dayFieldLocator.locator("vaadin-combo-box")).hasCount(0);
+      BoundingBox inputBounds = dayFieldLocator.locator("[part=input-field]").boundingBox();
+      BoundingBox suffixBounds = unitSuffixLocator.boundingBox();
+      BoundingBox increaseButtonBounds =
+          dayFieldLocator
+              .locator("vaadin-integer-field")
+              .locator("[part~=increase-button]")
+              .boundingBox();
+      assertTrue(suffixBounds.x > inputBounds.x);
+      assertTrue(suffixBounds.x >= increaseButtonBounds.x + increaseButtonBounds.width);
+      assertTrue(suffixBounds.x + suffixBounds.width <= inputBounds.x + inputBounds.width);
+    }
   }
 
   @Test

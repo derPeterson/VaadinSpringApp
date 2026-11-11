@@ -34,6 +34,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
+import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -882,6 +883,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       lastNameField.setPlaceholder(messageProperties.getAccountLastNamePlaceholder());
 
       emailField = new EmailField(messageProperties.getAdminUsersFieldEmail());
+      emailField.setAutocomplete(Autocomplete.EMAIL);
       emailField.setPattern(UserInputRules.EMAIL_REGEX);
       emailField.setRequiredIndicatorVisible(true);
       emailField.setWidthFull();
@@ -889,6 +891,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       emailField.setClearButtonVisible(true);
 
       passwordField = new PasswordField(messageProperties.getAdminUsersFieldPassword());
+      passwordField.setAutocomplete(Autocomplete.NEW_PASSWORD);
       passwordField.setWidthFull();
       passwordField.setRevealButtonVisible(true);
       passwordField.setValueChangeMode(ValueChangeMode.EAGER);
@@ -903,6 +906,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       passwordField.setAriaDescribedBy(passwordHintSpan);
 
       confirmPasswordField = new PasswordField(messageProperties.getPublicConfirmPasswordField());
+      confirmPasswordField.setAutocomplete(Autocomplete.NEW_PASSWORD);
       confirmPasswordField.setWidthFull();
       confirmPasswordField.setRevealButtonVisible(true);
       confirmPasswordField.setValueChangeMode(ValueChangeMode.EAGER);

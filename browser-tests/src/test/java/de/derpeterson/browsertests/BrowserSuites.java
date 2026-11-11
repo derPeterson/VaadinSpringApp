@@ -118,6 +118,8 @@ final class BrowserSuites {
       case "sign-in-session-layout" ->
           List.of(ExternalLoginBrowserTest.class, SessionManagementBrowserTest.class);
       case "account-settings" -> List.of(AccountSettingsBrowserTest.class);
+      case "form-details" ->
+          List.of(CosmosComponentsBrowserTest.class, AccountSettingsBrowserTest.class);
       case "maintenance" -> List.of(MaintenanceBrowserTest.class);
       case "cosmos-design" -> List.of(CosmosDesignBrowserTest.class);
       case "cosmos-components", "cosmos-scrollbars" -> List.of(CosmosComponentsBrowserTest.class);

@@ -38,11 +38,29 @@ Darstellung verglichen.
 ## Offene Abnahme der Portalpakete
 
 Zur gemeinsamen Sichtung gehören die folgenden drei Pakete auf
-`codex/vaadin-komponentenanpassungen`. Der automatisierte Nachweis steht im
+`codex/vaadin-komponentenanpassungen`. Die letzte große Testrunde steht im
 [Prüfstand](../status.md). Der [Testbedarf](../testbedarf.md) führt offene
 automatisierte Prüfungen.
 
 ### Auswahlfelder und Kalender
+
+- **Weitere freigegebene Verfeinerung:** Gemeinsamer Hoverwert anwendungsweit,
+  getrennt von unveränderten Auswahlfarben. Passwort- und Ersatzcode-Hinweise in
+  der Anbieterbestätigung folgen dem kurzen Eingabehinweis mit Doppelpunkt.
+  Die gemeinsame Sichtung und der automatisierte Nachtest bleiben offen.
+
+- **Aktuelle Verfeinerung:** Blauer Optionshover, 2 px Abstand im MultiSelect,
+  breitere Pagination-Auswahlliste und feste Tage im nativen Zahlenfeld-Suffix.
+  Der Formularschutz nutzt eine Variante von `PortalConfirmationDialog` mit
+  gelbem Tabler-Icon `file-diff` samt Warnrahmen und dezenter Warnfläche im Kopf,
+  Standard-Schließen und gleich breiten Buttons in gleichbleibender
+  Reihenfolge. Die gemeinsame Sichtung und die Browsernachtests der aktuellen
+  Verfeinerungen bleiben im [Testbedarf](../testbedarf.md) offen.
+  Die nachträglich gewünschte inhaltsabhängige gemeinsame Buttonbreite und
+  die Verteilung an die beiden Footerränder sind umgesetzt.
+  Die Quellkorrektur für den abgeschnittenen MultiSelect-Rahmen und die
+  Tages-Einheit hinter dem Plus ist ebenfalls umgesetzt. Der Benutzer prüft
+  diese Darstellung zunächst selbst; der automatisierte Nachtest bleibt offen.
 
 - **Abnahme:** Geschlecht in Konto, Registrierung und Benutzerverwaltung sowie
   Sprache, Dauerfelder und Pagination ansehen. Je einen Eintrag auswählen,
@@ -51,6 +69,12 @@ automatisierte Prüfungen.
   einem Sprachwechsel ansehen.
 
 ### Ungespeicherte Formularänderungen
+
+- **Autofill-Korrektur:** Die neuen Passwortfelder in der Benutzerverwaltung
+  verwenden `new-password`, damit der Browser beim eigenen Konto nicht das
+  gespeicherte Anmeldepasswort als Änderung einsetzt. Unverändertes Schließen und
+  echte Änderungen sind gezielt in DE/EN per JUnit geprüft. Die reale Passwortmanager-
+  Nachprüfung bleibt unter [HUM-11](../manual-tests/README.md#hum-11) offen.
 
 - **Offene Ergänzung:** Ungespeicherte Eingaben auch beim Browser-Refresh
   (F5, Strg+R und Aktualisieren-Schaltfläche), beim Schließen eines Tabs oder

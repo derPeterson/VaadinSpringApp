@@ -69,7 +69,8 @@ vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(body-row) { bac
 vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(odd-row) { background:linear-gradient(var(--cosmos-table-alternate-row-background),var(--cosmos-table-alternate-row-background)),var(--cosmos-table-row-background); }
 vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(selected-row) { background:var(--cosmos-table-highlight-background); }
 @media(any-hover:hover) {
-    vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(body-row):hover { background:var(--cosmos-table-highlight-background); }
+    vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(body-row):hover { background:var(--cosmos-hover-background); }
+    vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(selected-row):hover { background:var(--cosmos-table-highlight-background); }
 }
 vaadin-app-layout.cosmos-reference-admin .admin-users-grid::part(body-cell) { min-height:0; padding:14px 12px; border-top:0; border-bottom:1px solid var(--cosmos-reference-border); background:transparent; }
 /* Den Abschluss zeichnet allein die Pagination, nicht zusätzlich die letzte Gridzeile. */
@@ -516,8 +517,12 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card .cosmos-mail-body-fie
 
 /* Dauer: Umrechnung bleibt in der Feldhilfe, im Formular nur Zahl und Einheit. */
 .cosmos-reference-admin .admin-duration-field { display:grid; grid-template-columns:minmax(0,1fr) 132px; gap:8px; align-items:start; min-width:0; }
-.cosmos-reference-admin .admin-duration-field.admin-duration-fixed-unit { grid-template-columns:minmax(0,1fr) auto; gap:10px; }
-.cosmos-reference-admin .admin-duration-unit-label { padding-block:10px; color:var(--cosmos-reference-secondary); font:400 13px/20px Inter,sans-serif; }
+.cosmos-reference-admin .admin-duration-field.admin-duration-fixed-unit { grid-template-columns:minmax(0,1fr); }
+.cosmos-reference-admin .admin-duration-unit-label { order:3; padding-inline:10px 0; border-inline-start:1px solid var(--cosmos-reference-control-border); color:var(--cosmos-reference-secondary); font:400 13px/20px Inter,sans-serif; }
+.cosmos-reference-admin .admin-duration-fixed-unit > vaadin-integer-field[focused] > .admin-duration-unit-label { color:var(--cosmos-reference-white); }
+/* Öffentliche Vaadin-Parts ordnen das feste Suffix nach Löschen und Plus an. */
+.cosmos-reference-admin .admin-duration-fixed-unit > vaadin-integer-field::part(clear-button) { order:1; }
+.cosmos-reference-admin .admin-duration-fixed-unit > vaadin-integer-field::part(increase-button) { order:2; }
 .cosmos-reference-admin .admin-duration-field > :is(vaadin-integer-field,vaadin-big-decimal-field,vaadin-combo-box) { width:100%; min-width:0; padding:0; margin:0; }
 .cosmos-reference-admin .admin-duration-field > :is(vaadin-integer-field,vaadin-big-decimal-field,vaadin-combo-box)::part(label) { display:none; margin:0; padding:0; }
 .cosmos-reference-admin .admin-duration-field > :is(vaadin-integer-field,vaadin-big-decimal-field,vaadin-combo-box)::part(input-field) { box-sizing:border-box; height:40px; min-height:40px; }

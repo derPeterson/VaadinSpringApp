@@ -79,7 +79,7 @@ vaadin-tooltip.support-identity-tooltip > [slot=overlay] {
   padding:2px 6px;
   border:1px solid var(--cosmos-reference-control-border);
   border-radius:4px;
-  background:var(--cosmos-reference-hover);
+  background:var(--cosmos-reference-subtle-surface);
   color:var(--cosmos-reference-label);
   font:500 10px/15px Inter,sans-serif;
 }

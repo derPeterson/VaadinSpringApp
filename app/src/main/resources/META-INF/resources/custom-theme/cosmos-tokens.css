@@ -3,15 +3,17 @@
  * --lumo-* sind Vaadins Farbnamen; --cosmos-* benennen unsere konkreten Bausteine.
  * var(--name) übernimmt einen anderen Wert. So folgt z.B. der Dialogheader zunächst
  * dem Tabellenheader, kann hier aber auch eine eigene Farbe bekommen.
- * Nur Scrollleistenwerte gelten auch am Dokument; die übrigen Theme-Werte bleiben unabhängig.
+ * Hover- und Scrollleistenwerte gelten auch am Dokument; die übrigen Theme-Werte bleiben unabhängig.
  * Popups werden in eigene DOM-Bereiche verschoben und erhalten deshalb dieselben Werte
  * über ihr ausdrücklich gesetztes theme=cosmos. Anleitung: docs/theme.md. */
 
-/* Die Dokument-Scrollleiste liegt außerhalb der Cosmos-Komponenten. */
+/* Gemeinsamer Hover und Dokument-Scrollleiste gelten auch außerhalb einzelner Komponenten. */
 :root {
+    --cosmos-hover-background: #152238;
     --cosmos-scrollbar-size: 6px;
     --cosmos-scrollbar-thumb: #475569;
-    --cosmos-scrollbar-thumb-hover: #38bdf8;
+    --cosmos-scrollbar-thumb-hover: var(--cosmos-hover-background);
+    --cosmos-scrollbar-thumb-active: #38bdf8;
     --cosmos-scrollbar-track: transparent;
 }
 
@@ -27,6 +29,8 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
      * Die einzelnen RGBA-Werte behalten ihre bisherige Deckkraft. */
     --lumo-base-color: #0b1220;
     --lumo-body-text-color: #edf2ff;
+    --vaadin-checkbox-background-hover: var(--cosmos-hover-background);
+    --vaadin-radio-button-background-hover: var(--cosmos-hover-background);
     --lumo-header-text-color: #edf2ff;
     --lumo-secondary-text-color: #a7b7d2;
     --lumo-tertiary-text-color: #899ab8;
@@ -51,6 +55,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     --cosmos-security-warning-accent: #f59e0b;
     --cosmos-security-warning-surface: #1f1a14;
     --cosmos-security-warning-border: #f59e0b40;
+    --cosmos-warning-button-hover-surface: color-mix(in srgb, var(--cosmos-security-warning-accent) 10%, var(--cosmos-security-warning-surface));
     /* Systemkennzeichnung und interne Vermerke; fachliche Statusfarben bleiben separat. */
     --cosmos-system-accent: #a855f7;
     --cosmos-system-surface: #241638;
@@ -243,7 +248,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"] {
     /* 9. NAVIGATION
      * Standardmäßig aus der Palette abgeleitet; für diese Komponente hier separat änderbar. */
     --cosmos-nav-color: var(--lumo-secondary-text-color);
-    --cosmos-nav-hover-background: var(--lumo-contrast-5pct);
+    --cosmos-nav-hover-background: var(--cosmos-hover-background);
     --cosmos-nav-active-color: var(--lumo-body-text-color);
     --cosmos-subnav-color: var(--lumo-tertiary-text-color);
 
@@ -316,8 +321,9 @@ vaadin-notification-card[theme~="cosmos-reference"] {
     --cosmos-reference-success: #34d399;
     --cosmos-reference-success-surface: #10b9811a;
     --cosmos-reference-success-border: #10b98133;
-    --cosmos-reference-hover: #ffffff0a;
-    --cosmos-reference-button-hover: #152238;
+    --cosmos-reference-subtle-surface: #ffffff0a;
+    --cosmos-reference-hover: var(--cosmos-hover-background);
+    --cosmos-reference-button-hover: var(--cosmos-hover-background);
     --cosmos-reference-badge: #b4233b;
     --cosmos-reference-badge-border: #e05a6c55;
     --cosmos-reference-warning: #fbbf24;

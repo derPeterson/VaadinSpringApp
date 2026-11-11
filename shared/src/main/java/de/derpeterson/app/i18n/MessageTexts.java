@@ -1201,6 +1201,10 @@ public class MessageTexts {
     return getTranslation("external.proof.hint");
   }
 
+  public String getExternalPasswordProofHint() {
+    return getTranslation("external.proof.passwordHint");
+  }
+
   public String getExternalProofReady() {
     return getTranslation("external.proof.ready");
   }

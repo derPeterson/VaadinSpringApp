@@ -12,6 +12,7 @@ public final class CosmosCssClasses {
   public static final String PANEL_HEADER = "cosmos-panel-header";
   public static final String PANEL_TABS = "cosmos-panel-tabs";
   public static final String DELETE_BUTTON = "cosmos-delete-button";
+  public static final String WARNING_BUTTON = "cosmos-warning-button";
   public static final String STATUS_ICON = "cosmos-status-icon";
   public static final String USER_MENU_ACTION = "portal-menu-action";
   public static final String ACCOUNT_NAVIGATION_OPEN = "account-navigation-open";

@@ -11,6 +11,7 @@ import com.microsoft.playwright.JSHandle;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
@@ -177,6 +178,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   @ValueSource(ints = {1280, 390})
   @DisplayName(
       "Beim Wechsel des Kontobereichs kann ein Profilentwurf behalten oder verworfen werden")
+  @Tag("form-details")
   void profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 900);
     account();
@@ -188,13 +190,23 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     firstNameInputLocator.fill("Temporary draft");
 
     accountPage.section("account-tab-security");
-    assertThat(unsavedChangesPrompt.root()).not().hasAttribute("opening", "");
-    assertThat(unsavedChangesPrompt.root().locator("[part=overlay]"))
-        .hasCSS("background-color", "rgb(5, 8, 17)");
-    assertThat(unsavedChangesPrompt.root().locator("[part=header]"))
-        .hasCSS("margin-inline-start", "0px");
-    assertThat(unsavedChangesPrompt.root().locator("[part=header]")).hasCSS("font-size", "18px");
-    assertThat(unsavedChangesPrompt.root().locator("[part=content]")).hasCSS("font-size", "12px");
+    assertThat(unsavedChangesPrompt.root().locator("[part=overlay]").first())
+        .hasCSS("background-color", "rgb(14, 23, 38)");
+    assertThat(unsavedChangesPrompt.root().locator(".cosmos-panel-icon vaadin-icon"))
+        .hasAttribute("src", "icons/tabler/file-diff.svg");
+    assertThat(unsavedChangesPrompt.root().locator(".portal-confirm-explanation"))
+        .hasCSS("font-size", "12px");
+    Locator discardButtonLocator = unsavedChangesPrompt.root().locator(".cosmos-warning-button");
+    Locator keepEditingButtonLocator =
+        unsavedChangesPrompt.root().locator("vaadin-button[theme~=primary]");
+    browserPage.waitForCondition(() -> {
+      BoundingBox discardButtonBounds = discardButtonLocator.boundingBox();
+      BoundingBox keepEditingButtonBounds = keepEditingButtonLocator.boundingBox();
+      return Math.abs(discardButtonBounds.width - keepEditingButtonBounds.width) < 1
+          && (viewportWidth > 600
+              ? discardButtonBounds.x < keepEditingButtonBounds.x
+              : discardButtonBounds.y < keepEditingButtonBounds.y);
+    });
     assertThat(
             unsavedChangesPrompt
                 .root()
@@ -207,6 +219,17 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot(
         "Formularschutz im Konto bei " + viewportWidth + " px", browserPage);
     unsavedChangesPrompt.keepEditing();
+    assertThat(firstNameInputLocator).hasValue("Temporary draft");
+
+    accountPage.section("account-tab-security");
+    unsavedChangesPrompt.root().locator(".cosmos-overlay-close").click();
+    assertThat(unsavedChangesPrompt.root()).hasCount(0);
+    assertThat(firstNameInputLocator).hasValue("Temporary draft");
+
+    accountPage.section("account-tab-security");
+    assertThat(unsavedChangesPrompt.root().locator(".cosmos-overlay-close")).isVisible();
+    browserPage.keyboard().press("Escape");
+    assertThat(unsavedChangesPrompt.root()).hasCount(0);
     assertThat(firstNameInputLocator).hasValue("Temporary draft");
 
     accountPage.section("account-tab-security");

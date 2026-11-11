@@ -4,17 +4,18 @@ Vor Gestaltung oder Änderung einer Oberfläche diese Anleitung und die betroffe
 CSS-Quellen lesen und anwenden. Sie beschreibt den aktuellen gemeinsamen Standard
 und wird bei jeder ausdrücklich freigegebenen Erweiterung im selben Arbeitsstand gepflegt.
 
-Bearbeitbare Formulare verwenden für den Verlust eines Entwurfs den nativen
-`ConfirmDialog` über `UnsavedChangesDialog`. „Weiter bearbeiten“ erhält die Eingaben
+Bearbeitbare Formulare verwenden für den Verlust eines Entwurfs die Variante
+`UNSAVED_CHANGES` des nativen `PortalConfirmationDialog` über `UnsavedChangesDialog`.
+„Weiter bearbeiten“ erhält die Eingaben
 und erhält den initialen Fokus. „Änderungen verwerfen“ setzt die bestätigte
 Navigation oder Aktion fort. Verglichen wird mit dem geladenen oder zuletzt
 erfolgreich gespeicherten Stand. Die Warnung greift bei der internen Navigation
 in Kontoprofil und Konfiguration, beim erneuten Laden der Konfiguration über ihre
 Schaltfläche und beim Schließen der Benutzerformulare. Filter haben eigene,
 unveränderte Bedienabläufe.
-Die lokale Klasse `cosmos-unsaved-changes-dialog` in `cosmos-admin.css` überträgt
-die bestehenden Cosmos-Flächen, Schriftwerte und Abstände über öffentliche Parts.
-Die Aktionen sind native Vaadin-Buttons mit den vorhandenen Primär- und Löschstilen.
+Die lokale Klasse `cosmos-unsaved-changes-dialog` in `cosmos-admin.css` ergänzt
+die gemeinsamen Dialogregeln um die Aktionsanordnung und die Textgröße.
+Die Aktionen sind native Vaadin-Buttons mit dem gemeinsamen Primär- und Warnstil.
 
 Die Bestätigung der eigenen Kontodeaktivierung oder Löschung verwendet denselben
 nativen Cosmos-Dialograhmen wie die übrigen Kontoaktionen. Die lokale Klasse
@@ -27,9 +28,9 @@ isolierten Instanz mit synthetischen Daten als temporärer HTML-Abzug erfasst we
 Der frühere Bestand statischer Referenzen liegt im Git-Tag `archiv/html-referenzen`.
 
 Scrollleisten verwenden anwendungsweit `cosmos-scrollbars.css`: transparente Bahn,
-gedeckter runder Griff, bei Hover und Ziehen Cyan, ohne Richtungspfeile. Die zentralen
+gedeckter runder Griff, bei Hover die gemeinsame blaue Fläche und beim Ziehen Cyan, ohne Richtungspfeile. Die zentralen
 `--cosmos-scrollbar-*`-Tokens in `cosmos-tokens.css` gelten auch am Dokument:
-Breite/Höhe 6 px, Griff `#475569`, Hover `#38bdf8`, Bahn transparent. Browser ohne
+Breite/Höhe 6 px, Griff `#475569`, Hover `--cosmos-hover-background`, aktiv beim Ziehen `#38bdf8`, Bahn transparent. Browser ohne
 WebKit-Scrollselektoren verwenden die native schmale Breite und dieselben Farben.
 Im erzwungenen Systemkontrast bleiben native Farben und Breite erhalten.
 `cosmos-theme.css` importiert die gemeinsame Quelle für Dokument, normale
@@ -228,7 +229,16 @@ Der Halter enthält ausschließlich Klassenbezeichner. Gestaltung, Farben, Grö�
 und Zustände bleiben in den bestehenden CSS-Quellen; lokale Klassen bleiben bei
 ihrem jeweiligen Baustein.
 
-`--cosmos-reference-*` in `cosmos-tokens.css` begrenzen die akzeptierten Werte.
+`--cosmos-hover-background` in `cosmos-tokens.css` ist der gemeinsame Hoverwert
+`#152238`. Er gilt für neutrale Buttons und sonstige Hoverflächen, Tabellen,
+Navigation, Auswahllisten, Eingabeflächen, Kalender und ungeprüfte native Checkboxen/
+Radiobuttons sowie Scrollleistengriffe. Auswahlfarben und Zustandsmarkierungen
+bleiben davon getrennt; ausgewählte Einträge und aktive Seitennummern behalten
+beim Hover ihre bestehende Gestaltung. Dauerhafte dezente Flächen verwenden
+`--cosmos-reference-subtle-surface` und ändern sich nicht mit der Hoverfarbe.
+Primär-, Lösch- und Warnbuttons verwenden ihre eigenen semantischen Hoverfarben.
+Die neutralen Hover-Bezeichner verweisen auf den gemeinsamen Wert.
+`--cosmos-reference-*` in `cosmos-tokens.css` begrenzen die übrigen akzeptierten Werte.
 `cosmos-theme.css` gestaltet markierte native Controls, ComboBox-Optionen und
 Notification-Cards; `cosmos-shell.css` Header, Startseite, Benutzermenü und
 portalisierte Dialoge; `cosmos-account.css` Konto, Profilbild und Sitzungsliste;
@@ -236,10 +246,17 @@ portalisierte Dialoge; `cosmos-account.css` Konto, Profilbild und Sitzungsliste;
 In `cosmos-shell.css` übernehmen die Auswahllisten von ComboBox und MultiSelectComboBox
 die Grundfarbe ihres Eingabefelds. Ausgewählte Einträge verwenden in `cosmos-theme.css`
 die Akzentfläche mit blauem Rahmen und Häkchen am rechten Rand. Im geschlossenen
-Feld steht der Wert ohne Auswahlmarkierung.
+Feld steht der Wert ohne Auswahlmarkierung. Nicht ausgewählte Optionen verwenden
+bei Hover die blaue Fläche `--cosmos-reference-button-hover`. Zwischen den
+MultiSelect-Optionen liegen 2 px Abstand. Die Rahmenfläche liegt vollständig
+innerhalb des nativen Eintrags, damit alle vier Seiten sichtbar bleiben.
+Die transparenten Außenrahmen schaffen den Abstand; das native Inhaltspadding bleibt bestehen.
+Die Pagination-Auswahllisten haben
+eine Mindestbreite von 88 px, damit Auswahlrahmen und Häkchen vollständig bleiben.
 `cosmos-background.css` enthält die Portal-Dekoration. Alle ausdrücklich gesetzten Anwendungsicons
 kommen nach ausdrücklicher Freigabe aus Lucide. Als ausdrücklich gewählte Ausnahme
-verwendet die Anbieterkonfiguration Tablers `cloud-lock` in Panelkopf und SideNav.
+verwendet die Anbieterkonfiguration Tablers `cloud-lock` in Panelkopf und SideNav;
+der Formularschutz nutzt Tablers `file-diff` und `file-x`.
 SVG und MIT-Lizenz liegen unter `icons/tabler/`, die Lucide-Dateien weiterhin unter
 `icons/lucide/`. Der gemeinsame Baustein `AppIcon` kennt die Herkunft und liefert
 für beide native `SvgIcon`-Komponenten. Es wird keine zusätzliche Iconbibliothek eingebunden.
@@ -249,15 +266,20 @@ die native ComboBox-Bedienung. Seitengrößen und kompakte Felder verwenden dies
 Auswahlmarkierung in kleineren Zeilen.
 
 Sekundäre Aktionsbuttons und Schließen-Buttons nutzen die Eingabefläche, bei Hover
-`--cosmos-reference-button-hover` (#152238). Die allgemeine dezente Hoverfläche
-anderer Komponenten bleibt davon getrennt. Schließen-Buttons setzen auch Vaadins native Variable
+`--cosmos-reference-button-hover` als Verweis auf die gemeinsame Hoverfarbe.
+Die übrigen Hoverflächen verwenden denselben zentralen Wert. Schließen-Buttons setzen auch Vaadins native Variable
 `--vaadin-button-tertiary-background`, damit `tertiary-inline` die Fläche nicht
 transparent überschreibt. Navigation und Menüoptionen behalten ihre jeweiligen Zustände.
 Destruktive Buttons verwenden gemeinsam `.cosmos-delete-button`: rotes Icon und
-Text, 5 % rote Fläche und 25 % roter Rahmen; bei Hover 10 % rote Fläche, 40 %
-roter Rahmen und helleres Rot. Die Werte liegen in `cosmos-tokens.css` unter
+Text, 5 % rote Fläche und 25 % roter Rahmen; bei Hover 10 % rote Fläche,
+40 % roter Rahmen und helleres Rot. Die Werte liegen in `cosmos-tokens.css` unter
 `--cosmos-reference-danger-*`, die Grundregeln in `cosmos-theme.css`.
 Das gilt für einzelne und gesammelte Lösch-/Geräteaktionen sowie Bestätigungen.
+Warnaktionen nutzen zentral `.cosmos-warning-button`: gelbes Icon und gelber Text,
+Warnrahmen und dezente Warnfläche. Der Hover bleibt in der Warnpalette über
+`--cosmos-warning-button-hover-surface`. Maße, Fokus und Disabled-Zustände kommen
+weiterhin aus dem gemeinsamen nativen Buttonstil. Primärbuttons behalten ihren
+bisherigen blauen Hover, System-Primäraktionen ihren violetten Hover.
 Deaktivierte Buttons bleiben gedämpft ohne Hover; der Tastaturfokus bleibt cyan.
 Die aktuelle Sitzung bleibt eine deaktivierte Statusanzeige ohne Gefahrenstil.
 Die Seitennavigation bleibt linksbündig. Hauptzeilen verwenden 12 px bei Gewicht
@@ -383,6 +405,25 @@ in 6 px Abstand unter der Sitzungsanzahl.
 Auf sehr schmalen Displays stehen auch die Badges untereinander.
 Der ausführliche DE-/EN-Hinweis einschließlich des Widerrufs zugehöriger
 gespeicherter Anmeldungen bleibt erhalten.
+
+`PortalConfirmationDialog.Variant.UNSAVED_CHANGES` verwendet denselben Dialogkopf,
+Inhaltsbereich und Footer für den Formularschutz. Das Tabler-Icon `file-diff`
+steht im Kopf in einer Warnbox: Icon, Rahmen und dezente Hintergrundfläche
+verwenden die vorhandenen `--cosmos-security-warning-*`-Werte. Der
+Standard-Schließen-Button bleibt erhalten. Der Erklärungstext verwendet die
+normale helle Textfarbe `--cosmos-reference-text` bei 12 px und Schriftgewicht 400.
+„Änderungen verwerfen“ steht zuerst als gelber Warnbutton mit Tabler `file-x`.
+„Weiter bearbeiten“ bleibt blau und verwendet Lucide `chevron-right`.
+Verwerfen steht ganz links und Weiterbearbeiten ganz rechts im Footer; der freie
+Platz liegt zwischen den Buttons. Beide sind nach der längeren Beschriftung
+gleich breit und füllen den Footer nicht aus.
+Unter 600 px stehen die Buttons in derselben Reihenfolge untereinander und
+behalten ihre inhaltsabhängige gemeinsame Breite. Der Anfangsfokus liegt auf „Weiter bearbeiten“.
+Schließen und Escape behalten den Entwurf und lösen eine aufgeschobene Navigation
+abbrechend auf. Nur die ausdrückliche Verwerfen-Aktion führt die Navigation fort.
+Die Variante verwendet dafür den vorhandenen `EqualButtonWidths`-Baustein und
+eine über die Footerbreite verteilte Aktionszeile. `UnsavedChangesDialog` vermittelt ausschließlich die Fach- und
+Navigationscallbacks. Browser-Refresh und Tab-Schließen sind davon nicht abgedeckt.
 
 `PortalConfirmationDialog` ist der gemeinsame native Bestätigungsbaustein für
 Lesen, Löschen und Geräteaktionen. Kontextkarten zeigen den tatsächlich betroffenen
@@ -612,6 +653,11 @@ Der Benutzer-Löschdialog übernimmt dieselbe neutrale Avatarfläche, auch auße
 des Seitenrahmens. Hinterlegte Profilbilder bleiben in Vaadin erhalten.
 Der Löschdialog übernimmt lokal auch Breite, Kopf-/Inhaltsabstände, Textgrößen
 und gleich breite Aktionen der HTML-Bestätigung; der Bearbeitungsdialog bleibt separat.
+Die Passwortfelder im administrativen Benutzerformular sind mit `new-password`
+als neue Passwörter gekennzeichnet, die E-Mail mit `email`. Der Browser soll hier
+keine gespeicherten aktuellen Anmeldedaten einsetzen, auch beim eigenen Konto.
+Der Änderungsvergleich bleibt unverändert und schützt weiterhin echte Eingaben.
+
 Das Benutzerformular übernimmt Kopf, Feldhöhen, Typografie und Abschnittsabstände
 aus der Admin-HTML. Passworthinweise stehen unter dem zugehörigen Feld, Rollen
 und Sicherheitshinweis sind durch einzelne Linien getrennt. Die normalen
@@ -773,12 +819,12 @@ Alle Cosmos-Grids verwenden dieselben vier zentralen Variablen:
 | --cosmos-table-header-background | #223353b3 |
 | --cosmos-table-row-background | #101a2a73 |
 | --cosmos-table-alternate-row-background | #18213681 |
-| --cosmos-table-highlight-background | #1B2B42 für Hover und Auswahl |
+| --cosmos-table-highlight-background | #1B2B42 für Auswahl |
 
 Zeilenwechsel gilt im Cosmos-Theme automatisch; keine zusätzliche ROW_STRIPES-
 Variante oder benutzerverwaltungsspezifische Klasse nötig. Eine neue Tabelle übernimmt
-die gemeinsame Palette über die vorhandenen Gridregeln. Hover und Auswahl verwenden
-dieselbe Hervorhebung. Keine eigene Tabellenpalette pro View hinzufügen.
+die gemeinsame Palette über die vorhandenen Gridregeln. Hover verwendet den
+zentralen Wert `--cosmos-hover-background`, Auswahl behält `--cosmos-table-highlight-background`. Keine eigene Tabellenpalette pro View hinzufügen.
 Tastaturfokus, native Lumo-Zustände und die vorhandenen responsiven Gridregeln erhalten.
 Die benannten `@media lumo_cosmos_grid_colors`-/`lumo_cosmos_grid_hover`-Blöcke und
 ihre `--_lumo-...`-Zuordnungen sind Vaadin-/Lumo-Einschübe, keine Bildschirmbreakpoints;
@@ -943,7 +989,12 @@ Zeitspanne werden ohne Rundung erhalten, bis zur Nanosekundenpräzision von Dura
 Gültigkeit gespeicherter Anmeldungen, Sitzungs-Timeout, Fehlversuchsfenster und
 Wartezeit für erneuten Versand verwenden bei leerer Eingabe den Standardwert.
 Leere Benachrichtigungs-Aufbewahrung bedeutet weiterhin unbegrenzt. Die beiden
-Benachrichtigungsfelder zeigen die feste Einheit Tage als Text. Ihre Feldhilfen
+Benachrichtigungsfelder zeigen die feste Einheit Tage im nativen Suffix des
+`IntegerField`. Über die öffentlichen Parts `clear-button` und `increase-button`
+steht das feste Suffix ganz rechts hinter Löschen und Plus. Ein dezenter Trenner
+grenzt es von den Bedienelementen ab. Bei fokussiertem Zahlenfeld wird die Einheit
+wie die Eingabe weiß, ohne Fokus bleibt sie in der sekundären Textfarbe.
+Eine Einheitenauswahl gibt es für diese Tageswerte nicht. Ihre Feldhilfen
 beschreiben die Eingabe in ganzen Tagen und zeigen den aktuellen Wert in Tagen.
 Andere Zeitspannen bleiben Pflichtfelder.
 
@@ -1542,7 +1593,8 @@ die volle Breite der manuellen Ansicht; die Schlüsselzeilen sind horizontal
 zentriert. Das Label verwendet wie die bestehenden Formularfelder 12 px / 500;
 der Feldrahmen ist wie bei schreibgeschützten Textfeldern gestrichelt.
 Das Kopiericon ist in Ruhe neutral, bei Hover heller und bei Feldfokus
-wie andere Feldaktionen blau. Es bekommt keine eigene Hoverfläche oder Umrandung.
+wie andere Feldaktionen blau. Seine Hoverfläche folgt dem gemeinsamen Hoverwert;
+eine zusätzliche Umrandung entfällt.
 Nur der Schlüsseltext verwendet Space Mono Regular mit 14 px / 20 px. Die Datei
 `custom-theme/fonts/SpaceMono-Regular.ttf` und `SpaceMono-LICENSE.txt` liegen neben
 Inter.
@@ -1642,8 +1694,8 @@ erleichtert das Ablesen. Die Schrift ist am Eingabe-Part und am nativen Eingabet
 festgelegt. Die PDF bettet Inter für ihre normalen Texte und Space Mono für die Codes
 aus den mitgelieferten Schriftdateien ein. Die Codefelder sind 36 px hoch und stehen mit 6 px Abstand
 untereinander; der Rahmen folgt dem vorhandenen Eingabestandard.
-Die Kopiericons sind neutral, bei Hover heller und bei Feldfokus blau, ohne eigene
-Hoverfläche. Ein geschützter No-Store-Abruf setzt die Werte ausschließlich in die
+Die Kopiericons sind neutral, bei Hover heller und bei Feldfokus blau. Ihre
+Hoverfläche folgt ebenfalls dem gemeinsamen Hoverwert. Ein geschützter No-Store-Abruf setzt die Werte ausschließlich in die
 öffentlichen `inputElement`-Eingaben. Hostwerte und gespeicherter Flow-Zustand bleiben leer.
 
 Die Kontomails deklarieren Inter in allen MJML-Vorlagen und den daraus erzeugten

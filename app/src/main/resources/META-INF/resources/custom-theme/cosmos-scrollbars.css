@@ -59,18 +59,21 @@
         }
 
         :where(*)::-webkit-scrollbar-thumb:hover,
-        :where(*)::-webkit-scrollbar-thumb:active,
         :where(*)::part(content)::-webkit-scrollbar-thumb:hover,
-        :where(*)::part(content)::-webkit-scrollbar-thumb:active,
         :where(*)::part(overlay)::-webkit-scrollbar-thumb:hover,
-        :where(*)::part(overlay)::-webkit-scrollbar-thumb:active,
         :where(*)::part(drawer)::-webkit-scrollbar-thumb:hover,
-        :where(*)::part(drawer)::-webkit-scrollbar-thumb:active,
         :where(*)::part(items)::-webkit-scrollbar-thumb:hover,
-        :where(*)::part(items)::-webkit-scrollbar-thumb:active,
-        :where(vaadin-text-area)::part(input-field)::-webkit-scrollbar-thumb:hover,
-        :where(vaadin-text-area)::part(input-field)::-webkit-scrollbar-thumb:active {
+        :where(vaadin-text-area)::part(input-field)::-webkit-scrollbar-thumb:hover {
             background: var(--cosmos-scrollbar-thumb-hover);
+        }
+
+        :where(*)::-webkit-scrollbar-thumb:active,
+        :where(*)::part(content)::-webkit-scrollbar-thumb:active,
+        :where(*)::part(overlay)::-webkit-scrollbar-thumb:active,
+        :where(*)::part(drawer)::-webkit-scrollbar-thumb:active,
+        :where(*)::part(items)::-webkit-scrollbar-thumb:active,
+        :where(vaadin-text-area)::part(input-field)::-webkit-scrollbar-thumb:active {
+            background: var(--cosmos-scrollbar-thumb-active);
         }
 
         :where(*)::-webkit-scrollbar-button,

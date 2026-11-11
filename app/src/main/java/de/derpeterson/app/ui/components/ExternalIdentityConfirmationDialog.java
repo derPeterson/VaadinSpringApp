@@ -189,10 +189,13 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     developmentWarningSpan.setText(messageProperties.getTwoFactorDevelopmentWarning());
     developmentWarningSpan.setVisible(externalLoginFlow.developmentExceptionActive());
     refreshHeader();
-    identityProofExplanation.setText(
-        needsFactor
-            ? messageProperties.getTwoFactorActionHint()
-            : messageProperties.getExternalProofHint());
+    if (needsFactor) {
+      identityProofExplanation.setText(messageProperties.getTwoFactorActionHint());
+    } else if (hasPassword) {
+      identityProofExplanation.setText(messageProperties.getExternalPasswordProofHint());
+    } else {
+      identityProofExplanation.setText(messageProperties.getExternalProofHint());
+    }
     identityProofExplanation.setVisible(!needsFactor || confirmed);
     providerReadyHintSpan.setText(messageProperties.getExternalProofReady());
     providerReadyHintSpan.setVisible(confirmed);

@@ -176,7 +176,7 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
 }
 
 :is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button:hover:not([disabled]):not([checked]) {
-    background: var(--cosmos-table-highlight-background);
+    background: var(--cosmos-hover-background);
 }
 
 :is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button[checked] {
@@ -2166,7 +2166,7 @@ vaadin-dialog.cosmos-notification-dialog[theme~=cosmos-reference]::part(footer) 
     box-sizing: border-box;
     border: 1px solid var(--cosmos-reference-border);
     border-radius: 999px;
-    background: var(--cosmos-reference-hover);
+    background: var(--cosmos-reference-subtle-surface);
     color: var(--cosmos-reference-text);
     font: 600 10px/1 Inter, sans-serif;
 }
@@ -2199,7 +2199,7 @@ vaadin-radio-button[checked] .portal-filter-count {
 }
 
 .cosmos-reference-portal .portal-page-size::part(overlay) {
-    min-width: 76px;
+    min-width: 88px;
     border: 1px solid #ffffff26;
     border-radius: 8px;
     background: var(--cosmos-reference-input);
@@ -2232,7 +2232,7 @@ vaadin-combo-box-item.portal-pagination-option {
 }
 
 .portal-pagination-option[focused]:not([selected]) .cosmos-reference-option-row {
-    background: var(--cosmos-reference-hover);
+    background: var(--cosmos-reference-button-hover);
     color: var(--cosmos-reference-white);
 }
 

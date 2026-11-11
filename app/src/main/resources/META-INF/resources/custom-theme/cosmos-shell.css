@@ -338,6 +338,7 @@ vaadin-menu-bar-submenu[theme~="cosmos"]::part(overlay),
  * Die explizite Wochentaggröße wird auch für die Scroller-Höhenberechnung verwendet. */
 
 .cosmos-theme vaadin-date-picker::part(content) {
+    --lumo-primary-color-10pct: var(--cosmos-hover-background);
     --lumo-font-size-m: var(--cosmos-font-size-m);
     --lumo-font-size-s: var(--cosmos-font-size-xs);
     --vaadin-date-picker-month-header-font-size: var(--cosmos-font-size-xl);
@@ -474,14 +475,17 @@ vaadin-select[theme~="cosmos"] {
 }
 
 /* Auswahlhaken nur in Statuslisten ausblenden. Auswahlzustand und Tastatursteuerung
- * bleiben nativ; Hover, Fokus und gewählter Eintrag verwenden dieselbe Fläche. */
+ * bleiben nativ; die Auswahlfläche ist vom gemeinsamen Hover getrennt. */
 
 vaadin-select[theme~="cosmos-status"] vaadin-select-item::part(checkmark) {
     display: none;
 }
 
-vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-item:is([selected], [focused], :hover) {
+vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-item[selected] {
     background: var(--cosmos-status-option-background);
+}
+vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-item:not([selected]):is([focused], :hover) {
+    background: var(--cosmos-hover-background);
 }
 
 /* Etwas Luft vor den Symbolen, nur in den geöffneten Statuslisten. */
@@ -815,7 +819,7 @@ vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var
     gap: 4px;
     border: 1px solid var(--cosmos-reference-border);
     border-radius: 6px;
-    background: var(--cosmos-reference-hover);
+    background: var(--cosmos-reference-subtle-surface);
 }
 
 .cosmos-reference-overlay .portal-user-menu-body .portal-menu-language-row .portal-language-switch > vaadin-button[aria-pressed] {

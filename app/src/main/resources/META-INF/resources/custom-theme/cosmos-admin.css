@@ -565,66 +565,36 @@ vaadin-app-layout.cosmos-admin {
 
 /* 7. DIALOGE / gemeinsame Innenabstände und Aktionsleisten */
 
-/* Der native Formularschutz übernimmt die vorhandenen Dialogflächen und Buttonregeln. */
-vaadin-confirm-dialog.cosmos-unsaved-changes-dialog {
-    --vaadin-confirm-dialog-min-width: 0;
-    --vaadin-confirm-dialog-max-width: min(var(--cosmos-dialog-width-account), calc(100vw - 32px));
-    --vaadin-dialog-title-font-size: var(--cosmos-font-size-title);
-    --vaadin-dialog-title-font-weight: var(--cosmos-font-weight-semibold);
-    --vaadin-dialog-title-color: var(--cosmos-reference-white);
+/* Formularschutz als Variante des gemeinsamen nativen Bestätigungsdialogs. */
+.cosmos-unsaved-changes-dialog.cosmos-reference-overlay .account-change-dialog-header > .cosmos-panel-icon {
+    color: var(--cosmos-security-warning-accent);
+    border-color: var(--cosmos-security-warning-border);
+    background: var(--cosmos-security-warning-surface);
 }
-
-vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(overlay) {
-    box-sizing: border-box;
-    width: min(var(--cosmos-dialog-width-account), calc(100vw - 32px));
-    padding: 0;
-    border: var(--cosmos-border-width) solid var(--cosmos-reference-control-border);
-    border-radius: var(--cosmos-overlay-radius);
-    background: var(--cosmos-reference-page);
-    color: var(--cosmos-reference-text);
-    box-shadow: var(--cosmos-overlay-shadow);
-}
-
-vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(backdrop) {
-    background: var(--cosmos-reference-backdrop);
-    -webkit-backdrop-filter: blur(var(--cosmos-dialog-backdrop-blur));
-    backdrop-filter: blur(var(--cosmos-dialog-backdrop-blur));
-}
-
-vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(header) {
-    margin: 0;
-    padding: var(--cosmos-dialog-chrome-padding);
-    border-bottom: var(--cosmos-border-width) solid var(--cosmos-reference-border);
-    border-radius: calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width)) calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width)) 0 0;
-    background: var(--cosmos-reference-dialog);
-    color: var(--vaadin-dialog-title-color);
-    font: var(--vaadin-dialog-title-font-weight) var(--vaadin-dialog-title-font-size)/1.5 Inter, sans-serif;
-}
-
-vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(content) {
-    padding: var(--cosmos-dialog-content-padding);
-    color: var(--cosmos-reference-secondary);
-    font: var(--cosmos-font-weight-regular) var(--cosmos-font-size-s)/20px Inter, sans-serif;
-}
-
-vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(footer) {
-    flex-wrap: wrap;
-    gap: var(--cosmos-space-s);
-    padding: var(--cosmos-dialog-compact-padding) var(--cosmos-space-2xl);
-    border-top: var(--cosmos-border-width) solid var(--cosmos-reference-border);
-    border-radius: 0 0 calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width)) calc(var(--cosmos-overlay-radius) - var(--cosmos-border-width));
-    background: var(--cosmos-reference-dialog);
-}
-
-vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(confirm-button),
-vaadin-confirm-dialog.cosmos-unsaved-changes-dialog::part(reject-button) {
-    flex: 1 1 160px;
-    margin: 0;
-}
-
-vaadin-confirm-dialog.cosmos-unsaved-changes-dialog > vaadin-button {
+.cosmos-unsaved-changes-dialog.cosmos-reference-overlay .cosmos-dialog-actions {
+    display: flex;
+    justify-content: space-between;
     width: 100%;
+    max-width: 100%;
     margin: 0;
+}
+.cosmos-unsaved-changes-dialog.cosmos-reference-overlay .cosmos-dialog-actions > vaadin-button {
+    margin: 0;
+}
+.cosmos-unsaved-changes-dialog.cosmos-reference-overlay .cosmos-dialog-actions > vaadin-button:last-child {
+    margin-inline-start: auto;
+}
+.cosmos-unsaved-changes-dialog.cosmos-reference-overlay .portal-confirm-explanation {
+    color: var(--cosmos-reference-text);
+    font-size: var(--cosmos-font-size-s);
+    font-weight: var(--cosmos-font-weight-regular);
+    line-height: 20px;
+}
+@media (max-width: 600px) {
+    .cosmos-unsaved-changes-dialog.cosmos-reference-overlay .cosmos-dialog-actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 
 /* Nur den Hintergrund außerhalb des Dialogs weichzeichnen. Der native Backdrop

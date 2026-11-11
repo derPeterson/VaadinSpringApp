@@ -74,7 +74,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     if (durationStorage == Storage.DAYS) {
       addClassName("admin-duration-fixed-unit");
       fixedDurationUnitSpan.addClassName("admin-duration-unit-label");
-      add(fixedDurationUnitSpan);
+      durationAmountField.setSuffixComponent(fixedDurationUnitSpan);
     } else {
       durationUnitComboBox.setItems(Unit.values());
       durationUnitComboBox.setValue(Unit.DAYS);

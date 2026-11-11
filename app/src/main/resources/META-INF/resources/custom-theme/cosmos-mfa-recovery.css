@@ -36,7 +36,7 @@
 .two-factor-view vaadin-text-field.two-factor-recovery-code > input[slot=input] { font:400 12px/20px 'Space Mono',ui-monospace,Consolas,monospace; }
 .two-factor-recovery-code .two-factor-recovery-copy { flex:none; width:24px; min-width:24px; height:24px; margin:0; padding:0; border:0; background:transparent; color:var(--cosmos-reference-secondary); }
 .two-factor-recovery-code .two-factor-recovery-copy vaadin-icon { width:16px; height:16px; color:inherit; }
-.two-factor-recovery-code .two-factor-recovery-copy:hover { color:var(--cosmos-reference-text); background:transparent; box-shadow:none; }
+.two-factor-recovery-code .two-factor-recovery-copy:hover { color:var(--cosmos-reference-text); background:var(--cosmos-hover-background); box-shadow:none; }
 .two-factor-recovery-code .two-factor-recovery-copy:active { background:transparent; box-shadow:none; }
 .two-factor-recovery-copy::before { display:none; }
 .two-factor-recovery-code .two-factor-recovery-copy:focus-visible,

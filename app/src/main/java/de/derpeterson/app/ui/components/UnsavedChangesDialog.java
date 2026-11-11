@@ -1,11 +1,5 @@
 package de.derpeterson.app.ui.components;
 
-import static de.derpeterson.app.ui.components.CosmosCssClasses.DELETE_BUTTON;
-import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLAY;
-
-import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.function.SerializableRunnable;
 import com.vaadin.flow.router.BeforeLeaveEvent;
 import com.vaadin.flow.router.BeforeLeaveEvent.ContinueNavigationAction;
@@ -38,24 +32,11 @@ public final class UnsavedChangesDialog {
       MessageProperties messageProperties,
       SerializableRunnable discardChangesAction,
       SerializableRunnable keepEditingAction) {
-    ConfirmDialog discardChangesDialog = new ConfirmDialog();
-    discardChangesDialog.setId("unsaved-changes-confirmation");
-    discardChangesDialog.addClassNames(
-        "cosmos-theme", REFERENCE_OVERLAY, "cosmos-unsaved-changes-dialog");
-    discardChangesDialog.setHeader(messageProperties.getUnsavedChangesTitle());
-    discardChangesDialog.setText(messageProperties.getUnsavedChangesDescription());
-    Button keepEditingButton = new Button(messageProperties.getUnsavedChangesKeepEditing());
-    keepEditingButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    discardChangesDialog.setConfirmButton(keepEditingButton);
-    discardChangesDialog.addConfirmListener(confirmEvent -> keepEditingAction.run());
-
-    discardChangesDialog.setRejectable(true);
-    Button discardChangesButton = new Button(messageProperties.getUnsavedChangesDiscard());
-    discardChangesButton.addClassName(DELETE_BUTTON);
-    discardChangesDialog.setRejectButton(discardChangesButton);
-    discardChangesDialog.addRejectListener(rejectEvent -> discardChangesAction.run());
-    discardChangesDialog.addCancelListener(cancelEvent -> keepEditingAction.run());
-
-    discardChangesDialog.open();
+    PortalConfirmationDialog discardChangesDialog =
+        new PortalConfirmationDialog(
+            messageProperties,
+            "unsaved-changes-confirmation",
+            PortalConfirmationDialog.Variant.UNSAVED_CHANGES);
+    discardChangesDialog.openDiscardChanges(discardChangesAction, keepEditingAction);
   }
 }

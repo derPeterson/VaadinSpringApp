@@ -37,6 +37,8 @@ public enum AppIcon {
   EDIT("square-pen"),
   ENVELOPE("mail"),
   EYE("eye"),
+  FILE_DIFF(Library.TABLER, "file-diff"),
+  FILE_X(Library.TABLER, "file-x"),
   FILTER("list-filter"),
   FONT("type"),
   HOME("house"),

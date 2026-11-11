@@ -6,6 +6,7 @@ import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_HEADING;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
 import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLAY;
+import static de.derpeterson.app.ui.components.CosmosCssClasses.WARNING_BUTTON;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ModalityMode;
@@ -23,6 +24,11 @@ import java.util.function.Supplier;
 
 /** Gemeinsame Bestätigung; nur die aufrufende Fachkomponente führt die Aktion aus. */
 public class PortalConfirmationDialog extends Dialog {
+  public enum Variant {
+    ACTION,
+    UNSAVED_CHANGES
+  }
+
   public record Prompt(
       Supplier<String> dialogTitle,
       Supplier<String> dialogDescription,
@@ -56,83 +62,171 @@ public class PortalConfirmationDialog extends Dialog {
   }
 
   private final MessageProperties messageProperties;
-  private final H2 dialogTitle = new H2();
-  private final Span dialogDescription = new Span();
-  private final Span confirmationQuestion = new Span();
-  private final Span confirmationExplanation = new Span();
-  private final Span confirmationHint = new Span();
-  private final Div confirmationContext = new Div();
-  private final Div dialogIconContainer = new Div();
-  private final Div confirmationNotice = new Div();
+  private final Variant dialogVariant;
+
+  private final H2 dialogTitleHeading = new H2();
+  private final Span dialogDescriptionSpan = new Span();
+  private final Div dialogIconDiv = new Div();
+  private final Button closeDialogButton = new Button(AppIcon.CLOSE_CIRCLE.create());
+
+  private final Span confirmationQuestionSpan = new Span();
+  private final Span confirmationExplanationSpan = new Span();
+  private final Span confirmationHintSpan = new Span();
+  private final Div confirmationContextDiv = new Div();
+  private final Div confirmationNoticeDiv = new Div();
+
   private final Button cancelButton = new Button();
   private final Button confirmButton = new Button();
-  private final Button closeDialogButton = new Button(AppIcon.CLOSE_CIRCLE.create());
-  private transient Prompt prompt;
+
+  private transient Prompt confirmationPrompt;
   private SerializableRunnable pendingConfirmationAction;
+  private SerializableRunnable pendingKeepEditingAction;
 
   public PortalConfirmationDialog(MessageProperties messageProperties, String dialogId) {
+    this(messageProperties, dialogId, Variant.ACTION);
+  }
+
+  public PortalConfirmationDialog(
+      MessageProperties messageProperties, String dialogId, Variant dialogVariant) {
     this.messageProperties = messageProperties;
+    this.dialogVariant = Objects.requireNonNull(dialogVariant);
     setId(dialogId);
     addClassNames("cosmos-theme", REFERENCE_OVERLAY, "portal-confirmation-dialog");
     getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
     setModality(ModalityMode.STRICT);
     setCloseOnEsc(true);
-    setCloseOnOutsideClick(true);
-    dialogTitle.addClassName(PANEL_TITLE);
-    dialogDescription.addClassName(PANEL_DESCRIPTION);
-    dialogIconContainer.addClassName(PANEL_ICON);
+    setCloseOnOutsideClick(dialogVariant == Variant.ACTION);
 
-    Div dialogTitlesDiv = new Div(dialogTitle, dialogDescription);
-    dialogTitlesDiv.addClassName(PANEL_HEADING);
-    closeDialogButton.addClassName("cosmos-overlay-close");
-    closeDialogButton.addClickListener(event -> close());
+    configureDialogHeader();
+    configureConfirmationBody();
+    configureDialogActions(dialogId);
 
-    Div dialogHeaderDiv = new Div(dialogIconContainer, dialogTitlesDiv, closeDialogButton);
-    dialogHeaderDiv.addClassName("account-change-dialog-header");
-    getHeader().add(dialogHeaderDiv);
-    confirmationQuestion.addClassName("portal-confirm-question");
-    confirmationExplanation.addClassName("portal-confirm-explanation");
-
-    Div confirmationLeadDiv = new Div(confirmationQuestion, confirmationExplanation);
-    confirmationLeadDiv.addClassName("portal-confirm-lead");
-    confirmationContext.addClassName("portal-confirm-context");
-    confirmationNotice.add(AppIcon.INFO_CIRCLE.create(), confirmationHint);
-    confirmationNotice.addClassName("cosmos-panel-hint");
-
-    Div confirmationBodyDiv = new Div(confirmationLeadDiv, confirmationContext, confirmationNotice);
-    confirmationBodyDiv.addClassName("portal-confirm-body");
-    add(confirmationBodyDiv);
-    cancelButton.setId(dialogId + "-cancel");
-    cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
-    cancelButton.addClickListener(event -> close());
-    confirmButton.setId(dialogId + "-submit");
-    confirmButton.addClickListener(event -> runPendingConfirmationAction());
-
-    Div confirmationActionsDiv = new Div(cancelButton, confirmButton);
-    confirmationActionsDiv.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(confirmationActionsDiv);
-    getFooter().add(confirmationActionsDiv);
     addOpenedChangeListener(event -> {
       if (!event.isOpened()) {
-        pendingConfirmationAction = null;
-        prompt = null;
-        confirmationContext.removeAll();
+        clearPendingActionsAndKeepDraft();
+      } else if (dialogVariant == Variant.UNSAVED_CHANGES) {
+        confirmButton.focus();
       }
     });
   }
 
-  public void open(Prompt prompt, SerializableRunnable confirmationAction) {
-    this.prompt = Objects.requireNonNull(prompt);
+  private void configureDialogHeader() {
+    dialogTitleHeading.addClassName(PANEL_TITLE);
+    dialogDescriptionSpan.addClassName(PANEL_DESCRIPTION);
+    dialogIconDiv.addClassName(PANEL_ICON);
+
+    Div dialogTitlesDiv = new Div(dialogTitleHeading, dialogDescriptionSpan);
+    dialogTitlesDiv.addClassName(PANEL_HEADING);
+    closeDialogButton.addClassName("cosmos-overlay-close");
+    closeDialogButton.addClickListener(event -> close());
+
+    Div dialogHeaderDiv = new Div(dialogIconDiv, dialogTitlesDiv, closeDialogButton);
+    dialogHeaderDiv.addClassName("account-change-dialog-header");
+    getHeader().add(dialogHeaderDiv);
+  }
+
+  private void configureConfirmationBody() {
+    confirmationQuestionSpan.addClassName("portal-confirm-question");
+    confirmationExplanationSpan.addClassName("portal-confirm-explanation");
+
+    Div confirmationLeadDiv = new Div(confirmationQuestionSpan, confirmationExplanationSpan);
+    confirmationLeadDiv.addClassName("portal-confirm-lead");
+    confirmationContextDiv.addClassName("portal-confirm-context");
+    confirmationNoticeDiv.add(AppIcon.INFO_CIRCLE.create(), confirmationHintSpan);
+    confirmationNoticeDiv.addClassName("cosmos-panel-hint");
+
+    Div confirmationBodyDiv =
+        new Div(confirmationLeadDiv, confirmationContextDiv, confirmationNoticeDiv);
+    confirmationBodyDiv.addClassName("portal-confirm-body");
+    add(confirmationBodyDiv);
+  }
+
+  private void configureDialogActions(String dialogId) {
+    cancelButton.setId(dialogId + "-cancel");
+    cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
+    cancelButton.addClickListener(event -> {
+      if (dialogVariant == Variant.UNSAVED_CHANGES) {
+        runPendingConfirmationAction();
+      } else {
+        close();
+      }
+    });
+
+    confirmButton.setId(dialogId + "-submit");
+    confirmButton.addClickListener(event -> {
+      if (dialogVariant == Variant.UNSAVED_CHANGES) {
+        close();
+      } else {
+        runPendingConfirmationAction();
+      }
+    });
+
+    Div confirmationActionsDiv = new Div(cancelButton, confirmButton);
+    confirmationActionsDiv.addClassName("cosmos-dialog-actions");
+    if (dialogVariant == Variant.UNSAVED_CHANGES) {
+      addClassName("cosmos-unsaved-changes-dialog");
+      cancelButton.addClassName(WARNING_BUTTON);
+      cancelButton.setPrefixComponent(AppIcon.FILE_X.create());
+      confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+      confirmButton.setPrefixComponent(AppIcon.ANGLE_RIGHT.create());
+      confirmButton.getElement().setAttribute("autofocus", true);
+    }
+
+    EqualButtonWidths.configureEqualButtonWidths(confirmationActionsDiv);
+    getFooter().add(confirmationActionsDiv);
+  }
+
+  /** Schließen und Escape behalten den Entwurf; ausschließlich die linke Aktion verwirft ihn. */
+  public void openDiscardChanges(
+      SerializableRunnable discardChangesAction, SerializableRunnable keepEditingAction) {
+    if (dialogVariant != Variant.UNSAVED_CHANGES) {
+      throw new IllegalStateException("Unsaved changes variant required");
+    }
+
+    pendingConfirmationAction = Objects.requireNonNull(discardChangesAction);
+    pendingKeepEditingAction = Objects.requireNonNull(keepEditingAction);
+
+    dialogIconDiv.removeAll();
+    dialogIconDiv.add(AppIcon.FILE_DIFF.create());
+    dialogDescriptionSpan.setVisible(false);
+    confirmationQuestionSpan.setVisible(false);
+    confirmationContextDiv.setVisible(false);
+    confirmationNoticeDiv.setVisible(false);
+
+    refreshTexts();
+    super.open();
+  }
+
+  private void clearPendingActionsAndKeepDraft() {
+    SerializableRunnable keepEditingAction = pendingKeepEditingAction;
+    pendingKeepEditingAction = null;
+    pendingConfirmationAction = null;
+    confirmationPrompt = null;
+    confirmationContextDiv.removeAll();
+
+    if (keepEditingAction != null) {
+      keepEditingAction.run();
+    }
+  }
+
+  public void open(Prompt confirmationPrompt, SerializableRunnable confirmationAction) {
+    if (dialogVariant != Variant.ACTION) {
+      throw new IllegalStateException("Action variant required");
+    }
+
+    this.confirmationPrompt = Objects.requireNonNull(confirmationPrompt);
     pendingConfirmationAction = Objects.requireNonNull(confirmationAction);
-    setClassName("portal-confirm-destructive", prompt.destructive());
-    confirmButton.setClassName(DELETE_BUTTON, prompt.destructive());
+
+    setClassName("portal-confirm-destructive", confirmationPrompt.destructive());
+    confirmButton.setClassName(DELETE_BUTTON, confirmationPrompt.destructive());
     confirmButton.removeThemeVariants(ButtonVariant.LUMO_PRIMARY);
-    if (!prompt.destructive()) {
+    if (!confirmationPrompt.destructive()) {
       confirmButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
     }
-    dialogIconContainer.removeAll();
-    dialogIconContainer.add(prompt.actionIcon().get());
-    confirmButton.setPrefixComponent(prompt.actionIcon().get());
+
+    dialogIconDiv.removeAll();
+    dialogIconDiv.add(confirmationPrompt.actionIcon().get());
+    confirmButton.setPrefixComponent(confirmationPrompt.actionIcon().get());
     confirmButton.setEnabled(true);
 
     refreshTexts();
@@ -146,6 +240,7 @@ public class PortalConfirmationDialog extends Dialog {
     }
 
     pendingConfirmationAction = null;
+    pendingKeepEditingAction = null;
     confirmButton.setEnabled(false);
 
     try {
@@ -157,20 +252,30 @@ public class PortalConfirmationDialog extends Dialog {
   }
 
   public void refreshTexts() {
-    cancelButton.setText(messageProperties.getAdminUsersCancel());
     closeDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
-    if (prompt == null) {
+    if (dialogVariant == Variant.UNSAVED_CHANGES) {
+      dialogTitleHeading.setText(messageProperties.getUnsavedChangesTitle());
+      getElement().setProperty("ariaLabel", dialogTitleHeading.getText());
+      confirmationExplanationSpan.setText(messageProperties.getUnsavedChangesDescription());
+      cancelButton.setText(messageProperties.getUnsavedChangesDiscard());
+      confirmButton.setText(messageProperties.getUnsavedChangesKeepEditing());
       return;
     }
-    dialogTitle.setText(prompt.dialogTitle().get());
-    getElement().setProperty("ariaLabel", dialogTitle.getText());
-    dialogDescription.setText(prompt.dialogDescription().get());
-    confirmationQuestion.setText(prompt.confirmationQuestion().get());
-    confirmationExplanation.setText(prompt.confirmationExplanation().get());
-    confirmationHint.setText(prompt.confirmationHint().get());
-    confirmationNotice.setVisible(!confirmationHint.getText().isBlank());
-    confirmButton.setText(prompt.actionLabel().get());
-    confirmationContext.removeAll();
-    confirmationContext.add(prompt.confirmationContext().get());
+
+    cancelButton.setText(messageProperties.getAdminUsersCancel());
+    if (confirmationPrompt == null) {
+      return;
+    }
+
+    dialogTitleHeading.setText(confirmationPrompt.dialogTitle().get());
+    getElement().setProperty("ariaLabel", dialogTitleHeading.getText());
+    dialogDescriptionSpan.setText(confirmationPrompt.dialogDescription().get());
+    confirmationQuestionSpan.setText(confirmationPrompt.confirmationQuestion().get());
+    confirmationExplanationSpan.setText(confirmationPrompt.confirmationExplanation().get());
+    confirmationHintSpan.setText(confirmationPrompt.confirmationHint().get());
+    confirmationNoticeDiv.setVisible(!confirmationHintSpan.getText().isBlank());
+    confirmButton.setText(confirmationPrompt.actionLabel().get());
+    confirmationContextDiv.removeAll();
+    confirmationContextDiv.add(confirmationPrompt.confirmationContext().get());
   }
 }

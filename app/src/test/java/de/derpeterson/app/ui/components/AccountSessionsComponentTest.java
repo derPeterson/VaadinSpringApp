@@ -354,7 +354,7 @@ class AccountSessionsComponentTest {
               : messageProperties.getPortalSessionRevokeAction(),
           confirmSessionButton.getText());
       Div dialogIconDiv =
-          (Div) ReflectionTestUtils.getField(sessionConfirmationDialog, "dialogIconContainer");
+          (Div) ReflectionTestUtils.getField(sessionConfirmationDialog, "dialogIconDiv");
 
       assertEquals(
           "icons/lucide/log-out.svg",
@@ -377,7 +377,8 @@ class AccountSessionsComponentTest {
         messageProperties.getPortalSessionSelection(1, 1),
         getSessionConfirmationDescriptionSpan(sessionConfirmationDialog).getText());
     Component confirmationContextComponent =
-        (Component) ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmationContext");
+        (Component)
+            ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmationContextDiv");
 
     assertEquals(
         2,
@@ -420,7 +421,9 @@ class AccountSessionsComponentTest {
     findSessionActionButton("session-revoke-other-handle").click();
     PortalConfirmationDialog portalConfirmationDialog = getSessionConfirmationDialog();
     String confirmationExplanationText =
-        ((Span) ReflectionTestUtils.getField(portalConfirmationDialog, "confirmationExplanation"))
+        ((Span)
+                ReflectionTestUtils.getField(
+                    portalConfirmationDialog, "confirmationExplanationSpan"))
             .getText();
 
     assertTrue(
@@ -435,7 +438,8 @@ class AccountSessionsComponentTest {
   private void assertSessionConfirmationContext(
       PortalConfirmationDialog sessionConfirmationDialog, Entry sessionEntry) {
     Component confirmationContextComponent =
-        (Component) ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmationContext");
+        (Component)
+            ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmationContextDiv");
     String sessionMetadataText = confirmationContextComponent.getElement().getTextRecursively();
 
     assertTrue(
@@ -455,7 +459,8 @@ class AccountSessionsComponentTest {
                 : messageProperties.getPortalSessionInactive()));
     assertTrue(sessionMetadataText.contains(messageProperties.getPortalSessionRemembered()));
     assertFalse(
-        ((Component) ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmationNotice"))
+        ((Component)
+                ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmationNoticeDiv"))
             .isVisible());
   }
 
@@ -469,6 +474,6 @@ class AccountSessionsComponentTest {
   }
 
   private Span getSessionConfirmationDescriptionSpan(PortalConfirmationDialog confirmationDialog) {
-    return (Span) ReflectionTestUtils.getField(confirmationDialog, "dialogDescription");
+    return (Span) ReflectionTestUtils.getField(confirmationDialog, "dialogDescriptionSpan");
   }
 }

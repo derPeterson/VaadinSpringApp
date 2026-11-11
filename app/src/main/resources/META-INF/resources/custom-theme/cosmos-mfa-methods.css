@@ -20,7 +20,7 @@
 .two-factor-view vaadin-text-area.two-factor-manual-input > textarea { text-align:center; font:400 14px/20px 'Space Mono',ui-monospace,Consolas,monospace; }
 .two-factor-manual-input #two-factor-copy-key { flex:none; width:24px; min-width:24px; height:24px; margin:0; padding:0; border:0; background:transparent; color:var(--cosmos-reference-secondary); }
 .two-factor-manual-input #two-factor-copy-key vaadin-icon { width:16px; height:16px; color:inherit; }
-.two-factor-manual-input #two-factor-copy-key:hover { color:var(--cosmos-reference-text); background:transparent; box-shadow:none; }
+.two-factor-manual-input #two-factor-copy-key:hover { color:var(--cosmos-reference-text); background:var(--cosmos-hover-background); box-shadow:none; }
 .two-factor-manual-input #two-factor-copy-key:active { background:transparent; box-shadow:none; }
 .two-factor-manual-input #two-factor-copy-key::before { display:none; }
 .two-factor-manual-input #two-factor-copy-key:focus-visible { color:var(--cosmos-reference-accent); }

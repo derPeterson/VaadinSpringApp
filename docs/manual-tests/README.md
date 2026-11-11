@@ -329,3 +329,17 @@ Anschließend im tatsächlichen Kontrastmodus des Geräts ein langes Auswahlmen�
 öffnen. Die Scrollleiste, der Tastaturfokus und der ausgewählte Eintrag müssen
 erkennbar bleiben. Pro Gerät Betriebssystem, Browser und die verwendeten
 Systemeinstellungen festhalten.
+
+<a id="hum-11"></a>
+
+### HUM-11 · Passwortmanager beim eigenen Benutzerformular
+
+**Offene Browserprüfung.** In der eigenen Testumgebung mit einem Browserprofil,
+das die Portal-Anmeldedaten gespeichert hat, als Admin das eigene Konto über
+Benutzerverwaltung → Bearbeiten öffnen. Die Felder für neues Passwort und
+Bestätigung müssen leer bleiben. Unverändertes Schließen darf keinen
+Verwerfen-Dialog zeigen. Anschließend einen Namen ändern, beim Schließen den
+Entwurf behalten und danach die Änderung zurücknehmen: Nun muss direktes
+Schließen wieder möglich sein. Die explizite Eingabe eines neuen Passworts
+muss weiterhin als Änderung geschützt werden. Mit tatsächlich verwendetem
+Browser/Passwortmanager in DE/EN prüfen und das Ergebnis festhalten.

@@ -55,6 +55,33 @@ wurden einzeln auf Lesbarkeit geprüft.
 
 ## Grenzen und offene Abnahme
 
+### Autofill beim Bearbeiten des eigenen Kontos
+
+Reproduktion: Mit gespeichertem Browserpasswort in der Benutzerverwaltung das
+Eigene-Konto-Formular öffnen und ohne Eingabe schließen. Der Benutzer bestätigte,
+dass das Passwortfeld bereits beim Öffnen gefüllt ist. Deshalb erkennt der
+Änderungsschutz tatsächlich einen neuen Formularwert. Die Passwortfelder waren
+bisher nicht als neue Passwörter gekennzeichnet. Sie verwenden jetzt
+`autocomplete="new-password"`, das E-Mail-Feld `email`. Die echten
+Änderungs- und Sicherheitsprüfungen bleiben erhalten. Der Nachtest mit dem
+normalen Passwortmanager steht unter [HUM-11](manual-tests/README.md#hum-11) aus.
+Die gezielten JUnit-Fälle bestätigen in DE/EN: Ohne Änderung schließt der Editor
+direkt; echte Eingaben werden weiter vor dem Verwerfen geschützt und können
+zurückgenommen werden. Das tatsächliche Browser-Autofill bleibt gesondert zu prüfen.
+
+### Offener MultiSelect-Darstellungsfehler
+
+Nach der Testrunde wurde bei mehreren ausgewählten Empfängern bestätigt, dass
+der blaue Rahmen nur teilweise sichtbar ist. Reproduktion: Empfängerauswahl im
+Benachrichtigungsversand öffnen und zwei Einträge markieren. Dasselbe gemeinsame
+Styling gilt für die Rollenauswahl. Erwartet ist ein vollständiger Rahmen auf
+allen vier Seiten mit 2 px Abstand zwischen den markierten Flächen.
+Die Rahmenfläche wurde im Quellcode nach innen verlegt; die erfolgreiche
+Nachprüfung steht noch aus. Der Benutzer übernimmt zunächst die Sichtprüfung.
+Der automatisierte Nachtest bleibt im [Testbedarf](testbedarf.md) offen.
+
+### Weitere Grenzen
+
 SonarQube ist erreichbar. Die ausschließlich lesenden Abfragen für Analyse,
 Findings und Quality Gate erhielten ohne verfügbare authentifizierte Verbindung
 HTTP 401. Es wurde kein neuer Scan und keine Statusänderung ausgeführt. Die

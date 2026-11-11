@@ -61,6 +61,38 @@ class PortalConfirmationDialogTest {
   }
 
   @Test
+  void draftVariantKeepsTheDraftOnCloseAndOnlyDiscardsExplicitlyOnce() {
+    MessageProperties messageProperties = new MessageProperties(new CustomI18NProvider());
+    confirmationDialog =
+        new PortalConfirmationDialog(
+            messageProperties,
+            "draft-confirmation",
+            PortalConfirmationDialog.Variant.UNSAVED_CHANGES);
+    UI.getCurrent().add(confirmationDialog);
+    AtomicInteger discardCallCounter = new AtomicInteger();
+    AtomicInteger keepEditingCallCounter = new AtomicInteger();
+
+    for (String buttonFieldName : new String[] {"closeDialogButton", "confirmButton"}) {
+      confirmationDialog.openDiscardChanges(
+          discardCallCounter::incrementAndGet, keepEditingCallCounter::incrementAndGet);
+      readConfirmationButton(buttonFieldName).click();
+      readConfirmationButton("cancelButton").click();
+    }
+    assertEquals(0, discardCallCounter.get());
+    assertEquals(2, keepEditingCallCounter.get());
+
+    confirmationDialog.openDiscardChanges(
+        discardCallCounter::incrementAndGet, keepEditingCallCounter::incrementAndGet);
+    readConfirmationButton("cancelButton").click();
+    readConfirmationButton("cancelButton").click();
+    readConfirmationButton("closeDialogButton").click();
+
+    assertEquals(1, discardCallCounter.get());
+    assertEquals(2, keepEditingCallCounter.get());
+    assertFalse(confirmationDialog.isOpened());
+  }
+
+  @Test
   void cancellingAndClosingNeverExecuteOrRetainTheAction() {
     AtomicInteger actionCallCounter = new AtomicInteger();
     confirmationDialog.open(confirmationPrompt, actionCallCounter::incrementAndGet);

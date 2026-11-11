@@ -41,6 +41,7 @@ class BrowserExecutionPlanTest {
         "two-factor-ticket-layout",
         "two-factor-ticket-panel",
         "cosmos-scrollbars",
+        "form-details",
         "configuration-follow-up",
         "configuration-field-help",
         "external-login-settings"
@@ -78,6 +79,11 @@ class BrowserExecutionPlanTest {
               Set.of("administrativeTicketLayoutKeepsTabsAndCardsUnclipped");
           case "cosmos-scrollbars" ->
               Set.of("globalScrollbarsPreserveNativeScrollingAndLocalChatSpacing");
+          case "form-details" ->
+              Set.of(
+                  "roleSearchPreservesSelectedRolesInBothDialogs",
+                  "choiceHoverPaginationAndDaySuffixUseTheSharedFieldStyle",
+                  "profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard");
           case "configuration-follow-up" ->
               Set.of(
                   "changingConfigurationGroupRequiresDiscardingTheDraft",
