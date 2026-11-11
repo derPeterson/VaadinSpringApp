@@ -1,5 +1,10 @@
 # Offene Fehler
 
+- Bei der Registrierung setzt der Browser gespeicherte Anmeldedaten in die
+  E-Mail-Bestätigung und das Passwortfeld ein. Autofill-Hinweise der E-Mail- und
+  Passwortfelder korrigiert, realer Nachtest steht aus.
+  [Reproduktion und Nachtest](docs/manual-tests/README.md#hum-11).
+
 - Beim Bearbeiten des eigenen Kontos setzt der Browser das gespeicherte Passwort
   ein und löst dadurch beim unveränderten Schließen den Änderungsschutz aus.
   Autofill-Kennzeichnung korrigiert, realer Browsernachtest steht aus.

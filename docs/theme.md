@@ -553,6 +553,11 @@ Tokenzustände, Fehlerverträge, Enumeration-Schutz und eingeschränkte Anmeldun
 verwenden weiterhin die vorhandenen Dienste. Neue neutrale Überschriften und
 Seitenbeschreibungen liegen im gemeinsamen typisierten DE-/EN-Katalog.
 
+Die Registrierung setzt beide E-Mail-Felder auf `autocomplete="off"` und beide
+Passwortfelder auf `new-password`. Gespeicherte Portal-Anmeldedaten sollen dadurch
+nicht als neue Registrierungsdaten eingesetzt werden. Browser und Passwortmanager
+können diese Hinweise übergehen; eine ausdrückliche manuelle Auswahl bleibt möglich.
+
 Die Anmeldezeile „Passwort vergessen?“ hat wie die Referenz keine dauerhafte
 Unterstreichung. Im Aktionsfooter bleibt der Kontohinweis normal gewichtet und
 in Secondary. Die Footerlinks zur Anmeldung beziehungsweise Registrierung verwenden

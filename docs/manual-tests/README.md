@@ -332,7 +332,7 @@ Systemeinstellungen festhalten.
 
 <a id="hum-11"></a>
 
-### HUM-11 · Passwortmanager beim eigenen Benutzerformular
+### HUM-11 · Passwortmanager bei Benutzerformular und Registrierung
 
 **Offene Browserprüfung.** In der eigenen Testumgebung mit einem Browserprofil,
 das die Portal-Anmeldedaten gespeichert hat, als Admin das eigene Konto über
@@ -343,3 +343,11 @@ Entwurf behalten und danach die Änderung zurücknehmen: Nun muss direktes
 Schließen wieder möglich sein. Die explizite Eingabe eines neuen Passworts
 muss weiterhin als Änderung geschützt werden. Mit tatsächlich verwendetem
 Browser/Passwortmanager in DE/EN prüfen und das Ergebnis festhalten.
+
+Nach dem Abmelden die Registrierung mit demselben Browserprofil frisch öffnen. Beide E-Mail-Felder
+und beide Passwortfelder sollen ohne automatische Übernahme der gespeicherten
+Portal-Anmeldedaten starten. Besonders die E-Mail-Bestätigung darf nicht als
+Anmeldefeld behandelt werden. Manuelle Eingaben, Passwortgenerierung und eine
+bewusste Auswahl im Passwortmanager bleiben möglich. Nach einem Sprachwechsel
+müssen selbst eingegebene Werte erhalten bleiben. Der reale Autofill-Nachtest
+dieser Kennzeichnung steht aus.

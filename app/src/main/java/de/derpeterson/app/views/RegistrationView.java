@@ -16,6 +16,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.shared.HasAllowedCharPattern;
+import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -444,21 +445,25 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     lastNameField.setWidthFull();
 
     this.emailField = new EmailField(messageProperties.getPublicEmailField());
+    emailField.setAutocomplete(Autocomplete.OFF);
     emailField.setPattern(UserInputRules.EMAIL_REGEX);
     emailField.setClearButtonVisible(true);
     emailField.setWidthFull();
 
     this.confirmEmailField = new EmailField(messageProperties.getPublicConfirmEmailField());
+    confirmEmailField.setAutocomplete(Autocomplete.OFF);
     confirmEmailField.setPattern(UserInputRules.EMAIL_REGEX);
     confirmEmailField.setClearButtonVisible(true);
     confirmEmailField.setWidthFull();
 
     this.passwordField = new PasswordField(messageProperties.getRegistrationPasswordField());
+    passwordField.setAutocomplete(Autocomplete.NEW_PASSWORD);
     passwordField.setClearButtonVisible(true);
     passwordField.setWidthFull();
 
     this.confirmPasswordField =
         new PasswordField(messageProperties.getPublicConfirmPasswordField());
+    confirmPasswordField.setAutocomplete(Autocomplete.NEW_PASSWORD);
     confirmPasswordField.setClearButtonVisible(true);
     confirmPasswordField.setWidthFull();
 
