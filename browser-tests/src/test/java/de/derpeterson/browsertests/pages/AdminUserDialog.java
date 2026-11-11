@@ -157,7 +157,8 @@ public final class AdminUserDialog {
   @Step("Benutzerformular ohne Speicherung abbrechen")
   public void cancel() {
     closeRoleOptions();
-    button(uiTexts.getAdminUsersCancel()).click();
+    UiActions.complete(browserPage, button(uiTexts.getAdminUsersCancel())::click);
+    new UnsavedChangesPrompt(browserPage, uiTexts).discardIfShown();
 
     assertThat(root()).hasCount(0);
   }

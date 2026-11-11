@@ -52,15 +52,10 @@ Testrunde. Der [Testbedarf](../testbedarf.md) führt offene automatisierte Prüf
 
 ### Ungespeicherte Formularänderungen
 
-- Bearbeitbare Formulare mit Speicheraktion erfassen. Konfiguration und
-  persönliche Daten sind die vereinbarten Einstiege.
-- Änderungen gegen den geladenen oder zuletzt erfolgreich gespeicherten Stand
-  erkennen. Bei Navigation oder Abbruch einen nativen Bestätigungsdialog anbieten.
-  „Weiter bearbeiten“ erhält die Eingaben, bestätigtes Verlassen verwirft sie.
-  Reine Filter und Auswahlansichten bleiben außerhalb dieses Pakets.
-- **Abnahme:** Je ein Formular bearbeiten, Abbruch der Navigation und Verwerfen
-  ausprobieren, danach erfolgreich speichern und erneut verlassen. Auch einen
-  fehlgeschlagenen Speicherversuch prüfen.
+- **Abnahme:** Persönliche Daten und eine Konfigurationsgruppe bearbeiten,
+  Navigation abbrechen und danach bewusst verwerfen. „Neu laden“ in der
+  Konfiguration und „Abbrechen“ im Benutzerformular ausprobieren. Auch nach
+  einem erfolgreichen und einem fehlgeschlagenen Speicherversuch prüfen.
 
 ### Eigenes Konto deaktivieren oder löschen
 

@@ -14,6 +14,8 @@ import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.QueryParameters;
@@ -47,6 +49,7 @@ import de.derpeterson.app.ui.components.SupportTicketActivityIndicator;
 import de.derpeterson.app.ui.components.SupportTicketsComponent;
 import de.derpeterson.app.ui.components.SupportTicketsComponent.Category;
 import de.derpeterson.app.ui.components.SupportTicketsComponent.NavigationState;
+import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.admin.AdminConfigurationSection;
 import de.derpeterson.app.views.admin.AdminDashboardSection;
@@ -73,7 +76,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @UIScope
 @PageTitle(AppRouteConstants.ADMIN_PAGE_TITLE)
 @RolesAllowed(AppRouteConstants.ADMIN_ROUTE_ROLES)
-public class AdminView extends IsAuthenticatedBaseView {
+public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObserver {
   private static final String SECTION_PARAMETER = "section";
   private static final String ARIA_CURRENT = "aria-current";
 
@@ -250,6 +253,29 @@ public class AdminView extends IsAuthenticatedBaseView {
     return securityService.getAuthenticatedUser(request).stream()
         .flatMap(user -> user.getAuthorities().stream())
         .anyMatch(authority -> "ROLE_SUPERADMIN".equals(authority.getAuthority()));
+  }
+
+  @Override
+  public void beforeLeave(BeforeLeaveEvent beforeLeaveEvent) {
+    if (activeAdminSection != AdminSection.CONFIGURATION || activeConfigurationGroup == null) {
+      return;
+    }
+
+    if (activeConfigurationGroup == AdminConfigGroup.TWO_FACTOR && twoFactorSection != null) {
+      if (twoFactorSection.hasUnsavedChanges()) {
+        UnsavedChangesDialog.confirmNavigation(
+            beforeLeaveEvent, messageProperties, twoFactorSection::activate);
+      }
+    } else if (activeConfigurationGroup == AdminConfigGroup.EXTERNAL_LOGIN
+        && externalProviderSettingsSection != null) {
+      if (externalProviderSettingsSection.hasUnsavedChanges()) {
+        UnsavedChangesDialog.confirmNavigation(
+            beforeLeaveEvent, messageProperties, externalProviderSettingsSection::activate);
+      }
+    } else if (configurationSection.hasUnsavedChanges()) {
+      UnsavedChangesDialog.confirmNavigation(
+          beforeLeaveEvent, messageProperties, configurationSection::loadConfigValues);
+    }
   }
 
   @Override

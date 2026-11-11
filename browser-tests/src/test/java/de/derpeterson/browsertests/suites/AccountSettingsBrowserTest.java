@@ -17,6 +17,7 @@ import de.derpeterson.browsertests.pages.AccountPage;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UiActions;
+import de.derpeterson.browsertests.pages.UnsavedChangesPrompt;
 import de.derpeterson.browsertests.pages.UserMenu;
 import de.derpeterson.browsertests.pages.UserStatusMenu;
 import io.qameta.allure.Description;
@@ -50,6 +51,28 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
     return email;
+  }
+
+  @Test
+  @DisplayName(
+      "Beim Wechsel des Kontobereichs kann ein Profilentwurf behalten oder verworfen werden")
+  void profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard() {
+    account();
+    AccountPage accountPage = new AccountPage(browserPage);
+    UnsavedChangesPrompt unsavedChangesPrompt = new UnsavedChangesPrompt(browserPage, uiTexts);
+    accountPage.open();
+    Locator firstNameInputLocator = accountPage.input("account-first-name");
+    String savedFirstName = firstNameInputLocator.inputValue();
+    firstNameInputLocator.fill("Temporary draft");
+
+    accountPage.section("account-tab-security");
+    unsavedChangesPrompt.keepEditing();
+    assertThat(firstNameInputLocator).hasValue("Temporary draft");
+
+    accountPage.section("account-tab-security");
+    unsavedChangesPrompt.discard();
+    accountPage.section("account-tab-profile");
+    assertThat(firstNameInputLocator).hasValue(savedFirstName);
   }
 
   @Test

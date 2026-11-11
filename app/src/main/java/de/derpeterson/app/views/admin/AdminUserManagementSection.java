@@ -69,6 +69,7 @@ import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
+import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import de.derpeterson.app.validation.EmailConflict;
 import de.derpeterson.app.validation.UserInputRules;
 import java.io.IOException;
@@ -795,6 +796,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     private Binding<AdminUserFormData, String> confirmPasswordBinding;
     private Button saveUserButton;
     private Button cancelUserEditButton;
+    private List<Object> loadedUserFormValues;
 
     // Anmeldeinformationen eines vorhandenen Kontos
     private SignInSummary signInSummary;
@@ -815,6 +817,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       configureEditorDialogHeader();
       configureUserFormFields();
       bindUserFormFields();
+      loadedUserFormValues = readUserFormValues();
       configurePasswordFeedback();
 
       configureEditorButtons();
@@ -831,6 +834,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       editUserDialog.getElement().getThemeList().add("cosmos");
       editUserDialog.setCloseOnEsc(true);
       editUserDialog.setCloseOnOutsideClick(true);
+      editUserDialog.addDialogCloseActionListener(closeEvent -> requestCloseUserEditor());
       editUserDialog.setDraggable(false);
       editUserDialog.setResizable(false);
       editUserDialog.addClassName("admin-user-dialog");
@@ -852,7 +856,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       userIconBadgeDiv.addClassName(PANEL_ICON);
 
       closeEditUserDialogButton =
-          new Button(AppIcon.CLOSE_CIRCLE.create(), event -> editUserDialog.close());
+          new Button(AppIcon.CLOSE_CIRCLE.create(), event -> requestCloseUserEditor());
       closeEditUserDialogButton.addClassNames(
           "cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
       closeEditUserDialogButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
@@ -1145,8 +1149,21 @@ public class AdminUserManagementSection extends VerticalLayout {
       saveUserButton.addClickListener(event -> saveUser());
 
       cancelUserEditButton =
-          new Button(messageProperties.getAdminUsersCancel(), e -> editUserDialog.close());
+          new Button(messageProperties.getAdminUsersCancel(), event -> requestCloseUserEditor());
       cancelUserEditButton.setPrefixComponent(AppIcon.CLOSE.create());
+    }
+
+    private List<Object> readUserFormValues() {
+      return userFormBinder.getFields().map(field -> (Object) field.getValue()).toList();
+    }
+
+    private void requestCloseUserEditor() {
+      if (loadedUserFormValues.equals(readUserFormValues()) && !birthDatePicker.isInvalid()) {
+        editUserDialog.close();
+        return;
+      }
+
+      UnsavedChangesDialog.confirmDiscard(messageProperties, editUserDialog::close);
     }
 
     private void composeEditorDialogLayout() {

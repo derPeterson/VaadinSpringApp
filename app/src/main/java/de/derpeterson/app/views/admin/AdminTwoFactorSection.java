@@ -39,6 +39,7 @@ import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.TwoFactorActionDialog;
+import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -266,7 +267,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
 
     reloadPolicyButton.setId("two-factor-reload");
     reloadPolicyButton.setPrefixComponent(AppIcon.REFRESH.create());
-    reloadPolicyButton.addClickListener(_ -> reloadTwoFactorPolicy());
+    reloadPolicyButton.addClickListener(_ -> requestTwoFactorPolicyReload());
 
     savePolicyButton.setId("two-factor-save");
     savePolicyButton.setPrefixComponent(AppIcon.CHECK.create());
@@ -428,6 +429,26 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     developmentPauseSwitch.setValue(twoFactorPolicySnapshot.policy().developmentPause());
     developmentGoogleConfirmationSwitch.setValue(
         twoFactorPolicySnapshot.policy().developmentGoogleConfirmation());
+  }
+
+  public boolean hasUnsavedChanges() {
+    if (twoFactorPolicySnapshot == null) {
+      return false;
+    }
+
+    try {
+      return !twoFactorPolicySnapshot.policy().equals(readTwoFactorPolicyDraft());
+    } catch (IllegalArgumentException _) {
+      return true;
+    }
+  }
+
+  private void requestTwoFactorPolicyReload() {
+    if (hasUnsavedChanges()) {
+      UnsavedChangesDialog.confirmDiscard(messageProperties, this::reloadTwoFactorPolicy);
+    } else {
+      reloadTwoFactorPolicy();
+    }
   }
 
   private void reloadTwoFactorPolicy() {

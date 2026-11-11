@@ -78,7 +78,8 @@ public final class TokenConfigurationPage {
 
   @Step("Gespeicherte Konfiguration erneut laden")
   public void reload() {
-    button(uiTexts.getAdminConfigReload()).click();
+    UiActions.complete(browserPage, button(uiTexts.getAdminConfigReload())::click);
+    new UnsavedChangesPrompt(browserPage, uiTexts).discardIfShown();
 
     assertThat(notice()).containsText(uiTexts.getAdminConfigReloadSuccess());
     dismiss();

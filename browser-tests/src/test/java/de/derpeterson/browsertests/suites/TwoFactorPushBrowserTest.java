@@ -15,6 +15,7 @@ import de.derpeterson.browsertests.pages.NotificationComposePage;
 import de.derpeterson.browsertests.pages.NotificationInboxPage;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
+import de.derpeterson.browsertests.pages.UnsavedChangesPrompt;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.util.HashSet;
@@ -303,6 +304,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
       assertThat(duration.locator("vaadin-combo-box input"))
           .hasValue(uiTexts.getAdminConfigDurationUnitDays());
       browserPage.locator("#two-factor-reload").click();
+      new UnsavedChangesPrompt(browserPage, uiTexts).discard();
 
       assertThat(duration.locator("vaadin-integer-field input")).hasValue("12");
       assertThat(duration.locator("vaadin-combo-box input"))

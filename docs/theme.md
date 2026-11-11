@@ -4,6 +4,15 @@ Vor Gestaltung oder Änderung einer Oberfläche diese Anleitung und die betroffe
 CSS-Quellen lesen und anwenden. Sie beschreibt den aktuellen gemeinsamen Standard
 und wird bei jeder ausdrücklich freigegebenen Erweiterung im selben Arbeitsstand gepflegt.
 
+Bearbeitbare Formulare verwenden für den Verlust eines Entwurfs den nativen
+`ConfirmDialog` über `UnsavedChangesDialog`. „Weiter bearbeiten“ erhält die Eingaben
+und erhält den initialen Fokus. „Änderungen verwerfen“ setzt die bestätigte
+Navigation oder Aktion fort. Verglichen wird mit dem geladenen oder zuletzt
+erfolgreich gespeicherten Stand. Die Warnung greift bei der internen Navigation
+in Kontoprofil und Konfiguration, beim erneuten Laden der Konfiguration über ihre
+Schaltfläche und beim Schließen der Benutzerformulare. Filter haben eigene,
+unveränderte Bedienabläufe.
+
 Die laufende Vaadin-Anwendung ist die verbindliche Vorlage für Besucherbereich,
 Portal und Administration. Für Stitch kann die betroffene Ansicht in einer
 isolierten Instanz mit synthetischen Daten als temporärer HTML-Abzug erfasst werden.

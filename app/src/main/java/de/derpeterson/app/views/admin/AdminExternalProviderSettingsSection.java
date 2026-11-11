@@ -53,6 +53,7 @@ import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.TwoFactorActionDialog;
+import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.Serializable;
 import java.net.URI;
@@ -166,6 +167,10 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       form.loadProviderSettings();
     }
     refreshTexts();
+  }
+
+  public boolean hasUnsavedChanges() {
+    return providerForms.stream().anyMatch(ProviderForm::hasUnsavedChanges);
   }
 
   public void refreshTexts() {
@@ -305,7 +310,7 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       Div providerSaveHintDiv = new Div(AppIcon.INFO_CIRCLE.create(), providerSettingsHintSpan);
       providerSaveHintDiv.addClassName("cosmos-config-save-hint");
       reloadProviderSettingsButton.setPrefixComponent(AppIcon.REFRESH.create());
-      reloadProviderSettingsButton.addClickListener(_ -> loadProviderSettings());
+      reloadProviderSettingsButton.addClickListener(_ -> requestProviderSettingsReload());
 
       saveProviderSettingsButton.setPrefixComponent(AppIcon.CHECK.create());
       saveProviderSettingsButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
@@ -424,6 +429,21 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       return field.description(messageProperties, providerId);
     }
 
+    private boolean hasUnsavedChanges() {
+      return savedProviderSettings != null
+          && (!savedProviderSettings.clientId().equals(clientIdTextField.getValue())
+              || !clientSecretPasswordField.isEmpty()
+              || savedProviderSettings.enabled() != providerEnabledSwitch.getValue());
+    }
+
+    private void requestProviderSettingsReload() {
+      if (hasUnsavedChanges()) {
+        UnsavedChangesDialog.confirmDiscard(messageProperties, this::loadProviderSettings);
+      } else {
+        loadProviderSettings();
+      }
+    }
+
     private void loadProviderSettings() {
       savedProviderSettings = externalProviderSettings.load(providerId);
       clientIdTextField.setValue(savedProviderSettings.clientId());
@@ -468,6 +488,7 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
                 providerEnabledSwitch.getValue(),
                 savedProviderSettings.revision());
 
+        clientIdTextField.setValue(savedProviderSettings.clientId());
         clientSecretPasswordField.clear();
         refreshTexts();
         NotificationHelper.getInstance()

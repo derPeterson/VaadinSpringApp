@@ -40,6 +40,22 @@ public class MessageTexts {
     return getTranslation("base.datePicker.calendar");
   }
 
+  public String getUnsavedChangesTitle() {
+    return getTranslation("base.unsavedChanges.title");
+  }
+
+  public String getUnsavedChangesDescription() {
+    return getTranslation("base.unsavedChanges.description");
+  }
+
+  public String getUnsavedChangesDiscard() {
+    return getTranslation("base.unsavedChanges.discard");
+  }
+
+  public String getUnsavedChangesKeepEditing() {
+    return getTranslation("base.unsavedChanges.keepEditing");
+  }
+
   // Support-Tickets und Posteingang
   public String getSupportTitle() {
     return getTranslation("support.title");

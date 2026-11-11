@@ -20,6 +20,7 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminNavigation;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.UnsavedChangesPrompt;
 import de.derpeterson.browsertests.pages.UserMenu;
 import de.derpeterson.browsertests.pages.UserStatusMenu;
 import io.qameta.allure.Description;
@@ -34,6 +35,32 @@ import org.junit.jupiter.api.Test;
 @Tag("browser")
 @Feature("Weitere sichtbare Konfigurationsverträge")
 public class ConfigurationBrowserTest extends BrowserFixture {
+  @Test
+  @Tag("configuration-follow-up")
+  @DisplayName("Konfigurationsentwurf bleibt beim Weiterbearbeiten erhalten")
+  void changingConfigurationGroupRequiresDiscardingTheDraft() {
+    AdminConfigurationPage configurationPage = admin();
+    AdminNavigation adminNavigation = new AdminNavigation(browserPage);
+    UnsavedChangesPrompt unsavedChangesPrompt = new UnsavedChangesPrompt(browserPage, uiTexts);
+    String serviceNameLabel = uiTexts.getAdminConfigEntryServiceName();
+    configurationPage.open(AdminConfigGroup.GENERAL);
+    String savedServiceName = configurationPage.value(serviceNameLabel);
+    configurationPage.enter(serviceNameLabel, "Temporary draft");
+
+    adminNavigation.openDrawer();
+    adminNavigation.groupLink(AdminConfigGroup.SECURITY).click();
+    unsavedChangesPrompt.keepEditing();
+
+    assertThat(configurationPage.input(serviceNameLabel)).hasValue("Temporary draft");
+    adminNavigation.openDrawer();
+    adminNavigation.groupLink(AdminConfigGroup.SECURITY).click();
+    unsavedChangesPrompt.discard();
+
+    configurationPage.open(AdminConfigGroup.GENERAL);
+    assertThat(configurationPage.input(serviceNameLabel)).hasValue(savedServiceName);
+    assertThat(unsavedChangesPrompt.root()).hasCount(0);
+  }
+
   @Test
   @DisplayName(
       "CONFIG-04A: Dienstname und Basis-URL validieren; Name speichern und wiederherstellen")

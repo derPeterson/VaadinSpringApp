@@ -10,6 +10,8 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.AfterNavigationEvent;
 import com.vaadin.flow.router.AfterNavigationObserver;
 import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeLeaveEvent;
+import com.vaadin.flow.router.BeforeLeaveObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.VaadinSession;
@@ -37,6 +39,7 @@ import de.derpeterson.app.ui.components.AccountSettingsComponent;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import de.derpeterson.app.ui.components.ExternalConnectionsComponent;
 import de.derpeterson.app.ui.components.TwoFactorAccountComponent;
+import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.annotation.security.PermitAll;
 import jakarta.servlet.http.HttpServletRequest;
@@ -52,7 +55,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 @StyleSheet("custom-theme/cosmos-external-login.css")
 @UIScope
 @PermitAll
-public class AccountView extends IsAuthenticatedBaseView implements AfterNavigationObserver {
+public class AccountView extends IsAuthenticatedBaseView
+    implements BeforeLeaveObserver, AfterNavigationObserver {
   private final AccountSettingsComponent accountSettingsComponent;
 
   @Autowired
@@ -141,6 +145,14 @@ public class AccountView extends IsAuthenticatedBaseView implements AfterNavigat
 
     if (!savedProfile.language().equals(VaadinSession.getCurrent().getLocale())) {
       LanguageChangeEvent.fire(UI.getCurrent(), savedProfile.language());
+    }
+  }
+
+  @Override
+  public void beforeLeave(BeforeLeaveEvent beforeLeaveEvent) {
+    if (accountSettingsComponent != null && accountSettingsComponent.hasUnsavedProfileChanges()) {
+      UnsavedChangesDialog.confirmNavigation(
+          beforeLeaveEvent, messageProperties, accountSettingsComponent::discardProfileChanges);
     }
   }
 

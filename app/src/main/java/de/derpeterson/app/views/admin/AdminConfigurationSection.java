@@ -39,6 +39,7 @@ import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -94,6 +95,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private final transient Runnable configurationChangedAction;
 
   private final EnumMap<ConfigEntry, Component> configInputs = new EnumMap<>(ConfigEntry.class);
+  private final EnumMap<ConfigEntry, String> loadedConfigValues = new EnumMap<>(ConfigEntry.class);
   private final EnumMap<ConfigEntry, VerticalLayout> configInputWrappers =
       new EnumMap<>(ConfigEntry.class);
   private final EnumMap<ConfigEntry, Span> configLabelSpans = new EnumMap<>(ConfigEntry.class);
@@ -178,7 +180,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     reloadConfigButton = new Button();
     reloadConfigButton.setPrefixComponent(AppIcon.REFRESH.create());
-    reloadConfigButton.addClickListener(clickEvent -> reloadConfigValues());
+    reloadConfigButton.addClickListener(clickEvent -> requestConfigReload());
 
     VerticalLayout configLayout = createConfigurationCardContent();
 
@@ -243,6 +245,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   public void loadConfigValues() {
+    loadedConfigValues.clear();
     for (ConfigEntry configEntry : getVisibleConfigEntries()) {
       Component configInputComponent = configInputs.get(configEntry);
       if (configInputComponent == null) {
@@ -251,9 +254,16 @@ public class AdminConfigurationSection extends VerticalLayout {
 
       String storedConfigValue = getSafeConfigValue(configEntry);
       applyConfigValue(configInputComponent, configEntry, storedConfigValue);
+      loadedConfigValues.put(configEntry, extractInputValue(configEntry));
     }
 
     clearValidationStatesForVisibleInputs();
+  }
+
+  public boolean hasUnsavedChanges() {
+    return loadedConfigValues.entrySet().stream()
+        .anyMatch(loadedConfigEntry ->
+            !loadedConfigEntry.getValue().equals(extractInputValue(loadedConfigEntry.getKey())));
   }
 
   private String getSafeConfigValue(ConfigEntry configEntry) {
@@ -305,6 +315,14 @@ public class AdminConfigurationSection extends VerticalLayout {
     selectedGroup = configGroup;
     renderSelectedGroup();
     loadConfigValues();
+  }
+
+  private void requestConfigReload() {
+    if (hasUnsavedChanges()) {
+      UnsavedChangesDialog.confirmDiscard(messageProperties, this::reloadConfigValues);
+    } else {
+      reloadConfigValues();
+    }
   }
 
   private void reloadConfigValues() {

@@ -107,6 +107,7 @@ public class AccountSettingsComponent extends PageContentLayout {
   private final ComboBox<Gender> genderSelector = new ComboBox<>();
   private final SerializableFunction<Changes, Profile> persistProfileFunction;
   private Long profileVersion;
+  private Changes savedProfileFields;
   private final List<SerializableConsumer<Profile>> profileSavedListeners = new ArrayList<>();
 
   // Sicherheit und Anmeldeanbieter
@@ -290,8 +291,11 @@ public class AccountSettingsComponent extends PageContentLayout {
       return;
     }
 
-    selectSection(accountSection);
     closeNavigation();
+    if (sectionChangeListeners.isEmpty()) {
+      selectSection(accountSection);
+      return;
+    }
     sectionChangeListeners.forEach(
         sectionChangeListener -> sectionChangeListener.accept(accountSection));
   }
@@ -387,6 +391,7 @@ public class AccountSettingsComponent extends PageContentLayout {
 
     configureProfileFields();
     populateProfileFields(accountUser);
+    savedProfileFields = readProfileChanges(null);
     localizedTextRefreshActions.add(this::refreshProfileFieldTexts);
 
     styleChoices(genderSelector, this::genderLabel);
@@ -504,15 +509,7 @@ public class AccountSettingsComponent extends PageContentLayout {
 
     Profile savedProfile;
     try {
-      savedProfile =
-          persistProfileFunction.apply(
-              new Changes(
-                  profileVersion,
-                  firstNameField.getValue(),
-                  lastNameField.getValue(),
-                  birthDatePicker.getValue(),
-                  preferredLanguageSelector.getValue(),
-                  genderSelector.getValue()));
+      savedProfile = persistProfileFunction.apply(readProfileChanges(profileVersion));
     } catch (OptimisticLockingFailureException _) {
       NotificationHelper.getInstance()
           .showNotification(
@@ -550,7 +547,36 @@ public class AccountSettingsComponent extends PageContentLayout {
     birthDatePicker.setValue(savedProfile.birthDate());
     genderSelector.setValue(savedProfile.gender());
     preferredLanguageSelector.setValue(savedProfile.language());
+    savedProfileFields = readProfileChanges(null);
     accountSidebar.refreshName(savedProfile.firstName(), savedProfile.lastName());
+  }
+
+  private Changes readProfileChanges(Long expectedProfileVersion) {
+    return new Changes(
+        expectedProfileVersion,
+        firstNameField.getValue(),
+        lastNameField.getValue(),
+        birthDatePicker.getValue(),
+        preferredLanguageSelector.getValue(),
+        genderSelector.getValue());
+  }
+
+  public boolean hasUnsavedProfileChanges() {
+    return selectedSection == AccountSection.PROFILE
+        && (!readProfileChanges(null).equals(savedProfileFields) || birthDatePicker.isInvalid());
+  }
+
+  public void discardProfileChanges() {
+    firstNameField.setValue(savedProfileFields.firstName());
+    lastNameField.setValue(savedProfileFields.lastName());
+    birthDatePicker.setValue(savedProfileFields.birthDate());
+    preferredLanguageSelector.setValue(savedProfileFields.language());
+    genderSelector.setValue(savedProfileFields.gender());
+
+    firstNameField.setInvalid(false);
+    lastNameField.setInvalid(false);
+    birthDatePicker.setInvalid(false);
+    preferredLanguageSelector.setInvalid(false);
   }
 
   private Div createSecurityActionRow(
