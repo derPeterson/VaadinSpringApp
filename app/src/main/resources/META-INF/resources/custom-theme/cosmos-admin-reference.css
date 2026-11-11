@@ -226,12 +226,12 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~=cosmos-reference]:
 .admin-user-dialog.admin-reference-dialog vaadin-password-field[disabled]::part(label) { -webkit-text-fill-color:currentColor; }
 .admin-user-dialog.admin-reference-dialog vaadin-password-field[disabled] input[slot=input] { opacity:1; }
 .admin-user-dialog.admin-reference-dialog vaadin-password-field[disabled] input::placeholder { color:var(--cosmos-reference-muted); -webkit-text-fill-color:var(--cosmos-reference-muted); opacity:1; }
-.admin-user-dialog.admin-reference-dialog .admin-user-enabled-checkbox { padding:2px 0 0; margin:0; }
+.admin-user-dialog.admin-reference-dialog .admin-user-option-checkbox { padding:2px 0 0; margin:0; }
 .admin-user-dialog.admin-reference-dialog vaadin-checkbox::part(checkbox) { box-sizing:border-box; width:17px; height:17px; margin:0; align-self:center; }
 .admin-user-dialog.admin-reference-dialog vaadin-checkbox::part(checkbox)::after { top:50%; left:50%; transform:translate(-50%,-50%); }
 .admin-user-dialog.admin-reference-dialog vaadin-checkbox>label { padding:0 0 0 9px; }
-.admin-user-dialog .admin-user-enabled-label>span:first-child { font:500 12px/18px Inter,sans-serif; }
-.admin-user-dialog .admin-user-enabled-label>.admin-user-enabled-hint { margin:0; font:400 11px/1.7 Inter,sans-serif; }
+.admin-user-dialog .admin-user-option-label>span:first-child { font:500 12px/18px Inter,sans-serif; }
+.admin-user-dialog .admin-user-option-label>.admin-user-option-hint { margin:0; font:400 11px/1.7 Inter,sans-serif; }
 .admin-user-dialog .admin-user-permissions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; width:100%; align-items:start; }
 .admin-user-dialog .admin-user-permissions>.admin-user-enabled-checkbox { margin-top:24px; }
 .admin-user-dialog .admin-user-role-field { position:relative; min-width:0; }

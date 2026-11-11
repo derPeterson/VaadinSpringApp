@@ -32,6 +32,7 @@ import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorPolicies;
+import de.derpeterson.app.service.AdminAccountMailService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.ExternalIdentityService;
@@ -212,6 +213,11 @@ public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObs
     supportTicketsComponent =
         new SupportTicketsComponent(messageProperties, supportTicketService, request, true);
     supportTicketsComponent.setNavigationListener(this::updateTicketLocation);
+  }
+
+  @Autowired
+  public void configureAccountMailActions(AdminAccountMailService adminAccountMailService) {
+    userManagementSection.configureAccountMailActions(adminAccountMailService);
   }
 
   @Autowired

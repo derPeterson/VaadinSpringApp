@@ -12,6 +12,7 @@ import de.derpeterson.app.model.VerificationTokenEntity;
 import de.derpeterson.app.model.enums.AppRoute;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.EmailType;
+import de.derpeterson.app.model.enums.EmailVerificationStatus;
 import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.repository.VerificationTokenRepository;
@@ -177,6 +178,7 @@ public class VerificationService {
     }
 
     if (tokenEntity.isPresent()) {
+      user.markEmailVerified();
       user.setEnabled(true);
       userRepository.save(user);
       tokenEntity.get().setStatus(TokenStatus.USED);
@@ -185,9 +187,10 @@ public class VerificationService {
       return true;
     }
 
-    // Idempotent success only for a consumed link and a still-enabled account.
+    // Ein verbrauchter Link meldet nur Erfolg, solange die aktuelle Adresse bestätigt ist.
     // No catch: unrelated persistence/locking errors must remain visible.
     return user.isEnabled()
+        && user.getEmailVerificationStatus() == EmailVerificationStatus.VERIFIED
         && tokenRepository.findByTokenAndStatus(token, TokenStatus.USED).isPresent();
   }
 
@@ -226,7 +229,7 @@ public class VerificationService {
   }
 
   private boolean canVerify(UserEntity user) {
-    return !user.isEnabled() && user.isVerificationPending();
+    return user.requiresEmailVerification();
   }
 
   private boolean sendVerificationEmailByUserId(Long id) throws IOException {
@@ -237,8 +240,16 @@ public class VerificationService {
         return true;
       }
 
+      if (user.getVerificationMailRequestedAt() != null
+          && verificationTokenClock
+              .instant()
+              .isBefore(user.getVerificationMailRequestedAt().plusSeconds(60))) {
+        return false;
+      }
+
       String newToken = createTokenLocked(user);
       sendVerificationEmail(user, newToken);
+      user.setVerificationMailRequestedAt(verificationTokenClock.instant());
       return true;
     }
 

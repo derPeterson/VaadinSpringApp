@@ -6,12 +6,16 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.config.BootstrapAccountsProperties;
 import de.derpeterson.app.config.BootstrapAccountsProperties.Account;
 import de.derpeterson.app.config.DatabaseInitializer;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.EmailVerificationStatus;
+import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.RoleRepository;
 import de.derpeterson.app.repository.UserRepository;
@@ -120,8 +124,46 @@ class BootstrapAccountsPersistenceTest {
               .collect(java.util.stream.Collectors.toSet()));
       assertTrue(user.isEnabled());
       assertFalse(user.isVerificationPending());
+      assertEquals(EmailVerificationStatus.NOT_CHECKED, user.getEmailVerificationStatus());
+      assertEquals(RegistrationChannel.APPLICATION_START, user.getRegistrationChannel());
       assertTrue(new BCryptPasswordEncoder().matches("OnlyForTests!", user.getPassword()));
     }
+  }
+
+  @Test
+  void optionalVerificationAppliesOnlyToNewExplicitlyConfiguredAccounts() throws Exception {
+    Account realUserAccount = account("real@example.test");
+    realUserAccount.setEmailVerificationRequired(true);
+    settings.setUsers(List.of(realUserAccount, account("unchecked@example.test")));
+    VerificationService verificationService = mock(VerificationService.class);
+    when(verificationService.sendVerificationEmailByUser(any())).thenReturn(true);
+    DatabaseInitializer databaseInitializer = initializer(new BCryptPasswordEncoder(4));
+    databaseInitializer.configureVerificationMail(verificationService);
+
+    databaseInitializer.initDatabase().run();
+    databaseInitializer.initDatabase().run();
+
+    UserEntity pendingUserEntity = userRepository.findByEmail("real@example.test").orElseThrow();
+    UserEntity uncheckedUserEntity =
+        userRepository.findByEmail("unchecked@example.test").orElseThrow();
+    assertEquals(EmailVerificationStatus.PENDING, pendingUserEntity.getEmailVerificationStatus());
+    assertTrue(pendingUserEntity.requiresEmailVerification());
+    assertEquals(RegistrationChannel.APPLICATION_START, pendingUserEntity.getRegistrationChannel());
+    assertFalse(uncheckedUserEntity.requiresEmailVerification());
+    verify(verificationService, times(1)).sendVerificationEmailByUser(any());
+  }
+
+  @Test
+  void missingInitialVerificationMailRollsBackAllBootstrapAccounts() throws Exception {
+    Account realUserAccount = account("real@example.test");
+    realUserAccount.setEmailVerificationRequired(true);
+    settings.setUsers(List.of(account("unchecked@example.test"), realUserAccount));
+    DatabaseInitializer databaseInitializer = initializer(new BCryptPasswordEncoder(4));
+    databaseInitializer.configureVerificationMail(mock(VerificationService.class));
+
+    assertThrows(IllegalStateException.class, () -> databaseInitializer.initDatabase().run());
+    assertEquals(0, userRepository.count());
+    assertEquals(0, roleRepository.count());
   }
 
   @Test
@@ -208,6 +250,7 @@ class BootstrapAccountsPersistenceTest {
     values.put("app.bootstrap.superadmins[0].first-name", "Test");
     values.put("app.bootstrap.superadmins[0].birth-date", "1986-04-26");
     values.put("app.bootstrap.superadmins[0].preferred-locale", "de");
+    values.put("app.bootstrap.users[0].email-verification-required", "true");
     BootstrapAccountsProperties bound =
         new Binder(new MapConfigurationPropertySource(values))
             .bind("app.bootstrap", Bindable.of(BootstrapAccountsProperties.class))
@@ -216,6 +259,8 @@ class BootstrapAccountsPersistenceTest {
     assertEquals(4, bound.validatedEntries().size());
     assertEquals("Test", bound.getSuperadmins().getFirst().getFirstName());
     assertEquals(Locale.GERMAN, bound.getSuperadmins().getFirst().getPreferredLocale());
+    assertTrue(bound.getUsers().getFirst().isEmailVerificationRequired());
+    assertFalse(bound.getSuperadmins().getFirst().isEmailVerificationRequired());
     assertFalse(bound.getSuperadmins().getFirst().toString().contains("OnlyForTests"));
   }
 

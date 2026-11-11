@@ -291,6 +291,7 @@ public class AccountSecurityService {
                 Map.of("OLD_EMAIL", previousEmailAddress, "NEW_EMAIL", newEmailAddress));
 
         lockedUserEntity.setEmail(newEmailAddress);
+        lockedUserEntity.markEmailVerified();
         userRepository.saveAndFlush(lockedUserEntity);
         emailChangeTokenEntity.setStatus(TokenStatus.USED);
         emailChangeTokenRepository.save(emailChangeTokenEntity);

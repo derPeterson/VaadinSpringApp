@@ -228,11 +228,11 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     flex-shrink: 0;
 }
 
-.admin-user-dialog vaadin-checkbox.admin-user-enabled-checkbox::part(checkbox) {
+.admin-user-dialog vaadin-checkbox.admin-user-option-checkbox::part(checkbox) {
     align-self: center;
 }
 
-.admin-user-dialog .admin-user-enabled-checkbox::part(label),
+.admin-user-dialog .admin-user-option-checkbox::part(label),
 .admin-user-dialog vaadin-checkbox-group vaadin-checkbox::part(label) {
     font-size: var(--cosmos-font-size-m);
     font-weight: var(--cosmos-font-weight-bold);
@@ -305,11 +305,11 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     --vaadin-badge-text-color: var(--cosmos-reference-success);
 }
 
-.admin-user-enabled-label > span {
+.admin-user-option-label > span {
     display: block;
 }
 
-.admin-user-enabled-hint {
+.admin-user-option-hint {
     margin-top: var(--lumo-space-xs);
     color: var(--lumo-secondary-text-color);
     font-size: var(--cosmos-font-size-xs);

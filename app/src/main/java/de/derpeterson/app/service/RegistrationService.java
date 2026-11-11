@@ -1,6 +1,7 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.EmailVerificationStatus;
 import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.security.MaintenanceService;
 import java.io.IOException;
@@ -21,6 +22,7 @@ public class RegistrationService {
     MaintenanceService.requirePublicAccess(configService);
 
     registeredUserEntity.setRegistrationChannel(RegistrationChannel.PORTAL);
+    registeredUserEntity.setEmailVerificationStatus(EmailVerificationStatus.PENDING);
     userService.saveUser(registeredUserEntity);
 
     return verificationService.sendVerificationEmailByUser(registeredUserEntity);

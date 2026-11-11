@@ -6,6 +6,8 @@ import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.EmailVerificationStatus;
+import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.repository.UserRepository;
@@ -101,14 +103,31 @@ public class UserService {
   }
 
   @Transactional
-  public void createAdminUser(UserEntity user, String password) {
-    Assert.notNull(user, ENTITY_REQUIRED_MESSAGE);
-    Assert.isNull(user.getId(), "New account must not have an ID");
-    validateUserFields(user);
+  public void createAdminUser(UserEntity accountUserEntity, String rawPortalPassword) {
+    createAdminUser(accountUserEntity, rawPortalPassword, false);
+  }
+
+  @Transactional
+  public void createAdminUser(
+      UserEntity accountUserEntity, String rawPortalPassword, boolean skipEmailVerification) {
+    Assert.notNull(accountUserEntity, ENTITY_REQUIRED_MESSAGE);
+    Assert.isNull(accountUserEntity.getId(), "New account must not have an ID");
+    validateUserFields(accountUserEntity);
     lockAndReadSuperadmins();
-    rolePolicy.authorizeMutation(null, roleTypes(user.getRoleEntities()));
-    updatePassword(user, password);
-    save(user);
+    rolePolicy.authorizeMutation(null, roleTypes(accountUserEntity.getRoleEntities()));
+
+    if (skipEmailVerification) {
+      rolePolicy.requireSuperadmin();
+    }
+
+    accountUserEntity.setRegistrationChannel(RegistrationChannel.ADMINISTRATION);
+    accountUserEntity.setEmailVerificationStatus(
+        skipEmailVerification
+            ? EmailVerificationStatus.NOT_CHECKED
+            : EmailVerificationStatus.PENDING);
+
+    updatePassword(accountUserEntity, rawPortalPassword);
+    save(accountUserEntity);
   }
 
   @Transactional
@@ -327,7 +346,16 @@ public class UserService {
     ensureSuperadminChangeAllowed(stored.getId(), isEnabledSuperadmin(edited), superadmins);
     stored.setFirstName(edited.getFirstName());
     stored.setLastName(edited.getLastName());
+    boolean emailAddressChanged = !Objects.equals(stored.getEmail(), edited.getEmail());
     stored.setEmail(edited.getEmail());
+    if (emailAddressChanged) {
+      userRepository.invalidateVerificationTokensForAddressChange(stored.getId());
+      userRepository.invalidatePasswordResetTokensForAddressChange(stored.getId());
+      userRepository.deletePendingAddressMails(stored.getId());
+      stored.setVerificationMailRequestedAt(null);
+      stored.setPasswordResetMailRequestedAt(null);
+      stored.rotateAccessVersion();
+    }
     stored.setGender(edited.getGender());
     stored.setBirthDate(edited.getBirthDate());
     stored.setEnabled(edited.isEnabled());
@@ -442,7 +470,10 @@ public class UserService {
   }
 
   private boolean isEnabledSuperadmin(UserEntity user) {
-    return user != null && user.isEnabled() && user.hasRole(RoleType.ROLE_SUPERADMIN);
+    return user != null
+        && user.isEnabled()
+        && !user.requiresEmailVerification()
+        && user.hasRole(RoleType.ROLE_SUPERADMIN);
   }
 
   private boolean hasSuperadminRole(Collection<RoleEntity> roleEntities) {

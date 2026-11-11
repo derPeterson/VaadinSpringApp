@@ -509,6 +509,10 @@ public class ExternalLoginFlow {
       String provider,
       boolean remember) {
     requireProvider(provider);
+    if (user.requiresEmailVerification()) {
+      PendingEmailVerificationFlow.startForProviderAccount(request, user);
+      return AppRouteConstants.PENDING_EMAIL_VERIFICATION_LOCATION;
+    }
     ExternalAuthenticationToken authentication =
         new ExternalAuthenticationToken(
             customUserDetailsService.loadUserByUsername(user.getEmail()), provider);

@@ -77,9 +77,37 @@ separate Startfreigabe und erzeugen keinen echten MFA-Nachweis.
 
 ## Verifikation, Passwortreset und E-Mail-Änderung
 
-Nur eine deaktivierte, noch ausdrücklich ausstehende Registrierung darf per
-Verifikationslink aktiviert werden. Eine administrative Freigabe oder Sperre beendet
-diesen ausstehenden Zustand. Ein alter Link darf keine Adminentscheidung aufheben.
+Anlageweg, administrative Kontofreigabe und Nachweis der aktuellen E-Mail-Adresse
+sind getrennte Eigenschaften. Der Nachweis ist `VERIFIED`, `PENDING` oder
+`NOT_CHECKED`. Selbstregistrierung und normale administrative Anlage erfordern
+Bestätigung. Superadmins können neue Konten ausdrücklich ohne Nachweis bereitstellen.
+Startkonten sind standardmäßig ungeprüft nutzbar. Die Option
+`email-verification-required=true` verlangt auch dort den normalen Nachweis.
+
+Eine administrative Freigabe ersetzt keinen E-Mail-Nachweis. Eine administrative
+Sperre oder Selbstdeaktivierung verhindert dagegen die Bestätigung und den erneuten
+Versand. Alte Links dürfen diese Entscheidungen nicht aufheben. Ein erfolgreicher
+Link setzt den Nachweis für die aktuelle Adresse auf `VERIFIED`.
+
+Erst nach korrektem Passwort beziehungsweise einem gültigen verbundenen Anbieterbeweis
+zeigt `/verify-email` die ausstehende Bestätigung. Der zehn Minuten gültige Nachweis
+enthält weder Rollen noch einen authentifizierten SecurityContext. Er ist an Konto,
+Adresse und Zugangsversion gebunden. Portal, Administration, Remember-me und der zweite
+Faktor werden erst nach dem E-Mail-Nachweis zugänglich. Falsche Zugangsdaten bleiben
+allgemein. Die Seite erlaubt nur Hinweise, erneuten Versand und Rückkehr zur Anmeldung.
+
+Administrativer Mailversand prüft aktuelle Rechte und den gespeicherten Kontostand
+unter Kontosperre. Ein Formularentwurf wird niemals zur Zieladresse. Passwortreset
+wird dort nur für freigegebene Konten mit Portalpasswort und ohne ausstehende
+E-Mail-Bestätigung angeboten. Der Versand ändert das Passwort nicht. Neue
+Bestätigungsmails und administrative Resetanfragen sind pro Konto auf eine Minute
+begrenzt. Bereits offene Bestätigungsmails werden dedupliziert.
+
+Eine administrative Adressänderung verlangt einen neuen Nachweis, widerruft aktive
+Bestätigungs-/Resetlinks und die Zugangsversion und entfernt noch wartende
+Bestätigungs-/Resetmails. Bereits laufende Mailaufträge werden nicht erneut gestartet.
+Eine bestätigte eigene Adressänderung trägt ihren Nachweis dagegen auf die neue
+Adresse ein. Der Schutz des letzten nutzbaren Superadmins bleibt bestehen.
 
 Tokens sind begrenzt gültig und werden bei Verwendung verbraucht. Statuswechsel
 verlaufen aus ACTIVE in einen terminalen Zustand; verbrauchte/abgelaufene Tokens

@@ -13,6 +13,15 @@ import org.springframework.security.core.userdetails.UserDetails;
 /** Lokale Kontorechte und Zugangsversion unabhängig von einem vorhandenen Portalpasswort. */
 public final class PortalUserDetails extends User {
   private final String credentialVersion;
+  private Long pendingVerificationUserId;
+
+  public Long getPendingVerificationUserId() {
+    return pendingVerificationUserId;
+  }
+
+  public void requireEmailVerification(Long userId) {
+    pendingVerificationUserId = java.util.Objects.requireNonNull(userId);
+  }
 
   public PortalUserDetails(
       String email,

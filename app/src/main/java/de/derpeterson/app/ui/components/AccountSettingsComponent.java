@@ -11,6 +11,8 @@ import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_ICON;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.HasText;
+import com.vaadin.flow.component.badge.Badge;
+import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -19,6 +21,8 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.component.tabs.Tab;
@@ -122,6 +126,9 @@ public class AccountSettingsComponent extends PageContentLayout {
   private final AccountPasswordChangeDialog passwordChangeDialog;
   private ExternalConnectionsComponent externalLoginSettings;
   private TwoFactorAccountComponent twoFactorAccountComponent;
+  private boolean portalPasswordConfigured;
+  private final Badge passwordStatusBadge = new Badge();
+  private Button passwordActionButton;
 
   // Kontoleiste und Sitzungen
   private final PortalSidebarComponent accountSidebar;
@@ -134,6 +141,10 @@ public class AccountSettingsComponent extends PageContentLayout {
       SerializableFunction<Changes, Profile> persistProfileFunction,
       int maxSessionsPerUser) {
     this.messageProperties = messageProperties;
+    portalPasswordConfigured =
+        accountUser != null
+            && accountUser.getPassword() != null
+            && !accountUser.getPassword().isBlank();
     profileEmailField.setPattern(UserInputRules.EMAIL_REGEX);
     accountSessionsPanel = new AccountSessionsComponent(messageProperties, maxSessionsPerUser);
     emailChangeDialog = new AccountEmailChangeDialog(messageProperties);
@@ -226,16 +237,41 @@ public class AccountSettingsComponent extends PageContentLayout {
   }
 
   private Button createChangePasswordButton() {
-    Button changePasswordButton =
-        createAccountActionButton(
-            AppIcon.EDIT, messageProperties::getAccountSettingsChangeAction, false);
-    changePasswordButton.setId("account-password-edit-security");
+    passwordActionButton = new Button();
+    passwordActionButton.setPrefixComponent(AppIcon.EDIT.create());
+    passwordActionButton.setId("account-password-edit-security");
+    passwordActionButton.addClickListener(event -> startPasswordChange());
 
-    localizedTextRefreshActions.add(() ->
-        changePasswordButton.setAriaLabel(messageProperties.getAccountSettingsChangePassword()));
-    changePasswordButton.addClickListener(event -> startPasswordChange());
+    return passwordActionButton;
+  }
 
-    return changePasswordButton;
+  private Badge createPasswordStatusBadge() {
+    passwordStatusBadge.setId("account-password-status");
+    passwordStatusBadge.addClassName("account-password-status");
+    localizedTextRefreshActions.add(this::refreshPasswordConfiguration);
+    refreshPasswordConfiguration();
+    return passwordStatusBadge;
+  }
+
+  private void refreshPasswordConfiguration() {
+    passwordStatusBadge.setText(
+        portalPasswordConfigured
+            ? messageProperties.getAccountPasswordConfigured()
+            : messageProperties.getAccountPasswordNotConfigured());
+    if (portalPasswordConfigured) {
+      passwordStatusBadge.addThemeVariants(BadgeVariant.SUCCESS);
+    } else {
+      passwordStatusBadge.removeThemeVariants(BadgeVariant.SUCCESS);
+    }
+
+    passwordActionButton.setText(
+        portalPasswordConfigured
+            ? messageProperties.getAccountSettingsChangeAction()
+            : messageProperties.getAccountPasswordSetupAction());
+    passwordActionButton.setAriaLabel(
+        portalPasswordConfigured
+            ? messageProperties.getAccountSettingsChangePassword()
+            : messageProperties.getAccountPasswordSetupAction());
   }
 
   private void startPasswordChange() {
@@ -593,7 +629,8 @@ public class AccountSettingsComponent extends PageContentLayout {
       AppIcon rowAppIcon,
       Supplier<String> rowTitleSupplier,
       Supplier<String> rowDescriptionSupplier,
-      Button rowActionButton) {
+      Button rowActionButton,
+      Component rowStatusComponent) {
     Div rowIconDiv = new Div(rowAppIcon.create());
     rowIconDiv.addClassName(PANEL_ICON);
 
@@ -602,7 +639,15 @@ public class AccountSettingsComponent extends PageContentLayout {
     Span rowDescriptionSpan = withTextOnRefresh(new Span(), rowDescriptionSupplier);
     rowDescriptionSpan.addClassName("account-entry-description");
 
-    Div rowContentDiv = new Div(rowTitleSpan, rowDescriptionSpan);
+    HorizontalLayout rowHeadingLayout = new HorizontalLayout(rowTitleSpan);
+    rowHeadingLayout.setSpacing(false);
+    rowHeadingLayout.setAlignItems(Alignment.CENTER);
+    rowHeadingLayout.addClassName("account-security-heading");
+    if (rowStatusComponent != null) {
+      rowHeadingLayout.add(rowStatusComponent);
+    }
+
+    Div rowContentDiv = new Div(rowHeadingLayout, rowDescriptionSpan);
     rowContentDiv.addClassName("account-entry-copy");
 
     Div accountActionRowDiv = new Div(rowIconDiv, rowContentDiv, rowActionButton);
@@ -636,12 +681,22 @@ public class AccountSettingsComponent extends PageContentLayout {
                 AppIcon.KEY,
                 messageProperties::getRegistrationPasswordField,
                 messageProperties::getAccountSettingsPasswordHint,
-                createChangePasswordButton()),
+                createChangePasswordButton(),
+                createPasswordStatusBadge()),
             createSecurityActionRow(
                 AppIcon.ENVELOPE,
                 messageProperties::getAccountEmailAddressLabel,
                 () -> accountUser == null ? "" : Objects.toString(accountUser.getEmail(), ""),
-                createChangeEmailButton("account-email-edit-security")));
+                createChangeEmailButton("account-email-edit-security"),
+                withTextOnRefresh(
+                    new EmailVerificationBadge(
+                        messageProperties, accountUser.getEmailVerificationStatus()),
+                    () ->
+                        switch (accountUser.getEmailVerificationStatus()) {
+                          case VERIFIED -> messageProperties.getEmailVerified();
+                          case PENDING -> messageProperties.getEmailVerificationPending();
+                          case NOT_CHECKED -> messageProperties.getEmailNotChecked();
+                        })));
     securityCardsDiv.addClassName("account-security-cards");
     portalSecurityCardsDiv = securityCardsDiv;
 
@@ -727,6 +782,9 @@ public class AccountSettingsComponent extends PageContentLayout {
       SerializableConsumer<EmailChange> requestEmailChangeAction) {
     passwordChangeDialog.setChangeAction(passwordChange -> {
       PasswordChanged passwordChangeResult = changePasswordFunction.apply(passwordChange);
+
+      portalPasswordConfigured = true;
+      refreshPasswordConfiguration();
 
       // Nur den eigenen unveränderten Profilstand fortschreiben; fremde Änderungen bleiben
       // Konflikte.

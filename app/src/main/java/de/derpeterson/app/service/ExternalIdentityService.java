@@ -3,6 +3,7 @@ package de.derpeterson.app.service;
 import de.derpeterson.app.model.EmailIdentity;
 import de.derpeterson.app.model.ExternalIdentityEntity;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.EmailVerificationStatus;
 import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.ExternalIdentityRepository;
@@ -63,7 +64,10 @@ public class ExternalIdentityService {
             evidence.provider(), evidence.issuer(), evidence.subject())
         .map(identity -> {
           UserEntity user = identity.getUser();
-          requireEnabled(user);
+          // Der gültige Anbieterbeweis erlaubt nur die eingeschränkte Bestätigungsseite.
+          if (!user.requiresEmailVerification()) {
+            requireEnabled(user);
+          }
           return user;
         });
   }
@@ -109,6 +113,8 @@ public class ExternalIdentityService {
             .preferredLocale(locale)
             .enabled(verified)
             .verificationPending(!verified)
+            .emailVerificationStatus(
+                verified ? EmailVerificationStatus.VERIFIED : EmailVerificationStatus.PENDING)
             .roleEntities(List.of(userRepository.lockRole(RoleType.ROLE_USER).orElseThrow()))
             .build();
     userRepository.saveAndFlush(user);
@@ -261,7 +267,7 @@ public class ExternalIdentityService {
   }
 
   private static void requireEnabled(UserEntity user) {
-    if (!user.isEnabled() || user.isVerificationPending()) {
+    if (!user.isEnabled() || user.requiresEmailVerification()) {
       throw new DisabledException("Account not available for sign-in");
     }
   }

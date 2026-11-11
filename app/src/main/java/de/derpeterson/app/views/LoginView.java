@@ -35,10 +35,12 @@ import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.security.EmailVerificationRequiredException;
 import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.LoginThrottledException;
 import de.derpeterson.app.security.MaintenanceAuthenticationException;
+import de.derpeterson.app.security.PendingEmailVerificationFlow;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionLimitException;
 import de.derpeterson.app.security.SessionManagementService;
@@ -386,6 +388,13 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
       navigateAfterSuccessfulLogin(hasAdminRole(passwordAuthentication));
     } catch (AuthenticationException authenticationFailure) {
+      if (authenticationFailure
+          instanceof EmailVerificationRequiredException verificationRequiredException) {
+        PendingEmailVerificationFlow.start(loginHttpServletRequest, verificationRequiredException);
+        loginPasswordField.clear();
+        getUI().ifPresent(loginUi -> loginUi.navigate(PendingEmailVerificationView.class));
+        return;
+      }
       if (authenticationFailure instanceof SessionLimitException) {
         startSessionRecovery();
         return;

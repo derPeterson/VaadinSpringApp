@@ -17,12 +17,14 @@ import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.server.VaadinSession;
@@ -34,6 +36,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.service.AccountProfileService.Changes;
 import de.derpeterson.app.service.AccountProfileService.Profile;
+import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
 import de.derpeterson.app.ui.components.AccountSettingsComponent.AccountSection;
 import java.time.LocalDate;
 import java.util.List;
@@ -109,9 +112,21 @@ class AccountSettingsComponentTest {
                       streamComponentTree(securityTabSheet.getComponent(securityTab)))));
     }
 
+    Stream<Component> childComponents = candidateComponent.getChildren();
+    if (candidateComponent instanceof Dialog dialog) {
+      // Native Dialog-Footer gehören nicht zu Dialog.getChildren().
+      childComponents =
+          Stream.concat(
+              childComponents,
+              dialog
+                  .getFooter()
+                  .getElement()
+                  .getChildren()
+                  .flatMap(element -> element.getComponent().stream()));
+    }
+
     return Stream.concat(
-        Stream.of(candidateComponent),
-        candidateComponent.getChildren().flatMap(this::streamComponentTree));
+        Stream.of(candidateComponent), childComponents.flatMap(this::streamComponentTree));
   }
 
   private void selectAccountSection(AccountSection accountSection) {
@@ -471,6 +486,66 @@ class AccountSettingsComponentTest {
   }
 
   // E-Mail-Anzeige und Sicherheitsdialoge
+  @ParameterizedTest
+  @CsvSource({"de,true", "de,false", "en,true", "en,false"})
+  void passwordStatusReflectsTheLocalPasswordAndUsesTheCurrentLanguage(
+      String languageTag, boolean hasPortalPassword) {
+    testUserEntity.setPassword(hasPortalPassword ? "encoded-password" : null);
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
+    MessageProperties messageProperties = new MessageProperties(customI18NProvider);
+    accountSettingsComponent =
+        new AccountSettingsComponent(messageProperties, testUserEntity, saveProfileFunction, 7);
+
+    Badge passwordStatusBadge = (Badge) findAccountComponentById("account-password-status");
+    Button passwordActionButton =
+        (Button) findAccountComponentById("account-password-edit-security");
+
+    assertEquals(
+        hasPortalPassword
+            ? messageProperties.getAccountPasswordConfigured()
+            : messageProperties.getAccountPasswordNotConfigured(),
+        passwordStatusBadge.getText());
+    assertEquals(hasPortalPassword, passwordStatusBadge.getThemeNames().contains("success"));
+    assertEquals(
+        hasPortalPassword
+            ? messageProperties.getAccountSettingsChangeAction()
+            : messageProperties.getAccountPasswordSetupAction(),
+        passwordActionButton.getText());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void passwordStatusChangesOnlyAfterSuccessfulPasswordSetup(boolean setupSucceeds) {
+    accountSettingsComponent.configureSecurityActions(
+        passwordChange -> {
+          if (!setupSucceeds) {
+            throw new IllegalStateException("Isolated password save failure");
+          }
+          return new PasswordChanged(3L, 4L);
+        },
+        emailChange -> {});
+    AccountPasswordChangeDialog passwordChangeDialog =
+        (AccountPasswordChangeDialog) findAccountComponentById("account-password-change-dialog");
+    passwordChangeDialog.setCurrentPasswordRequired(() -> false);
+    ((Button) findAccountComponentById("account-password-edit-security")).click();
+    ((PasswordField) findAccountComponentById("account-password-new")).setValue("NewPassword!");
+    ((PasswordField) findAccountComponentById("account-password-confirm")).setValue("NewPassword!");
+
+    ((Button) findAccountComponentById("account-password-save")).click();
+
+    MessageProperties messageProperties = new MessageProperties(customI18NProvider);
+    assertEquals(
+        setupSucceeds
+            ? messageProperties.getAccountPasswordConfigured()
+            : messageProperties.getAccountPasswordNotConfigured(),
+        ((Badge) findAccountComponentById("account-password-status")).getText());
+    assertEquals(
+        setupSucceeds
+            ? messageProperties.getAccountSettingsChangeAction()
+            : messageProperties.getAccountPasswordSetupAction(),
+        ((Button) findAccountComponentById("account-password-edit-security")).getText());
+  }
+
   @Test
   void profileEmailIsReadOnlyAndHasNoEditAction() {
     EmailField accountEmailField = (EmailField) findAccountComponentById("account-email");

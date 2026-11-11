@@ -6,17 +6,23 @@ import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.EmailVerificationStatus;
+import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.RoleRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.VerificationService;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -41,6 +47,12 @@ public class DatabaseInitializer {
   private final BootstrapAccountsProperties bootstrapAccountsProperties;
   private final PlatformTransactionManager platformTransactionManager;
   private final ExternalProviderSettings externalProviderSettings;
+  private VerificationService verificationService;
+
+  @Autowired
+  public void configureVerificationMail(VerificationService verificationService) {
+    this.verificationService = verificationService;
+  }
 
   @Bean
   public CommandLineRunner initDatabase() {
@@ -101,9 +113,24 @@ public class DatabaseInitializer {
               .preferredLocale(bootstrapAccount.getPreferredLocale())
               .roleEntities(Set.of(roleEntitiesByType.get(bootstrapEntry.role())))
               .enabled(true)
+              .emailVerificationStatus(
+                  bootstrapAccount.isEmailVerificationRequired()
+                      ? EmailVerificationStatus.PENDING
+                      : EmailVerificationStatus.NOT_CHECKED)
+              .registrationChannel(RegistrationChannel.APPLICATION_START)
               .build();
 
       userRepository.save(newUserEntity);
+      if (bootstrapAccount.isEmailVerificationRequired()) {
+        try {
+          if (!verificationService.sendVerificationEmailByUser(newUserEntity)) {
+            throw new IllegalStateException("Bootstrap verification mail could not be queued");
+          }
+        } catch (IOException failure) {
+          throw new UncheckedIOException(
+              "Bootstrap verification mail could not be prepared", failure);
+        }
+      }
       AfterCommitLog.info(logger, "Bootstrap account created with role {}", bootstrapEntry.role());
     }
 

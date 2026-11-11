@@ -59,6 +59,7 @@ import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.AdminAccountMailService;
 import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.ExternalIdentityService.SignInSummary;
 import de.derpeterson.app.service.RoleService;
@@ -69,6 +70,7 @@ import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.EmailVerificationBadge;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import de.derpeterson.app.validation.EmailConflict;
@@ -100,6 +102,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 
 @Slf4j
 public class AdminUserManagementSection extends VerticalLayout {
@@ -164,6 +167,12 @@ public class AdminUserManagementSection extends VerticalLayout {
   private Map<Long, UserAvatarService.State> userAvatarStates = Map.of();
 
   private transient ExternalIdentityService externalIdentityService;
+  private transient AdminAccountMailService adminAccountMailService;
+
+  public void configureAccountMailActions(AdminAccountMailService adminAccountMailService) {
+    this.adminAccountMailService = adminAccountMailService;
+  }
+
   private final List<Runnable> dialogTextRefreshActions = new ArrayList<>();
 
   public AdminUserManagementSection(
@@ -784,6 +793,9 @@ public class AdminUserManagementSection extends VerticalLayout {
     private Checkbox enabledCheckbox;
     private Span enabledCaptionSpan;
     private Span enabledHintSpan;
+    private final Checkbox emailVerificationRequiredCheckbox = new Checkbox();
+    private final Span emailVerificationCaptionSpan = new Span();
+    private final Span emailVerificationHintSpan = new Span();
     private MultiSelectComboBox<RoleType> rolesComboBox;
     private Span rolesSummarySpan;
     private Span technicalInfoSpan;
@@ -806,6 +818,9 @@ public class AdminUserManagementSection extends VerticalLayout {
     private final Badge registeredViaBadge = new Badge();
     private final Span signInMethodsLabelSpan = new Span();
     private final Div availableSignInMethodsDiv = new Div();
+    private final VerticalLayout verificationDetailsLayout = new VerticalLayout();
+    private final Button resendVerificationMailButton = new Button();
+    private final Button sendPasswordResetMailButton = new Button();
 
     private UserEditor(UserEntity editedUserEntity) {
       this.editedUserEntity = editedUserEntity;
@@ -871,6 +886,8 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     private void configureUserFormFields() {
       userFormBinder = new Binder<>(AdminUserFormData.class);
+      resendVerificationMailButton.addClickListener(event -> requestAdministrativeMail(true));
+      sendPasswordResetMailButton.addClickListener(event -> requestAdministrativeMail(false));
 
       firstNameField = new TextField(messageProperties.getAdminUsersFieldFirstName());
       firstNameField.setRequiredIndicatorVisible(true);
@@ -934,15 +951,17 @@ public class AdminUserManagementSection extends VerticalLayout {
       birthDatePicker.setMax(LocalDate.now(ZoneId.systemDefault()));
 
       enabledCheckbox = new Checkbox();
-      enabledCheckbox.addClassName("admin-user-enabled-checkbox");
+      enabledCheckbox.addClassNames("admin-user-option-checkbox", "admin-user-enabled-checkbox");
       enabledCaptionSpan = new Span(messageProperties.getAdminUsersFieldEnabled());
       enabledHintSpan = new Span(messageProperties.getAdminUsersEnabledHint());
-      enabledHintSpan.addClassName("admin-user-enabled-hint");
+      enabledHintSpan.addClassName("admin-user-option-hint");
       enabledHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
       Div enabledLabelDiv = new Div(enabledCaptionSpan, enabledHintSpan);
-      enabledLabelDiv.addClassName("admin-user-enabled-label");
+      enabledLabelDiv.addClassName("admin-user-option-label");
       enabledCheckbox.setLabelComponent(enabledLabelDiv);
       enabledCheckbox.setAriaDescribedBy(enabledHintSpan);
+
+      configureEmailVerificationCheckbox();
 
       rolesComboBox = new MultiSelectComboBox<>(messageProperties.getAdminUsersFieldRoles());
       rolesComboBox.addClassName("admin-user-roles");
@@ -971,6 +990,21 @@ public class AdminUserManagementSection extends VerticalLayout {
       securitySvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
       securityNoteDiv = new Div(securitySvgIcon, technicalInfoSpan);
       securityNoteDiv.addClassNames("cosmos-panel-hint", "admin-user-security-note");
+    }
+
+    private void configureEmailVerificationCheckbox() {
+      emailVerificationRequiredCheckbox.setId("admin-email-verification-required");
+      emailVerificationRequiredCheckbox.setValue(true);
+      emailVerificationRequiredCheckbox.addClassName("admin-user-option-checkbox");
+
+      emailVerificationCaptionSpan.setText(messageProperties.getAdminEmailVerificationRequired());
+      emailVerificationHintSpan.setText(messageProperties.getAdminEmailVerificationHint());
+      emailVerificationHintSpan.addClassName("admin-user-option-hint");
+      emailVerificationHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
+      Div verificationLabelDiv = new Div(emailVerificationCaptionSpan, emailVerificationHintSpan);
+      verificationLabelDiv.addClassName("admin-user-option-label");
+      emailVerificationRequiredCheckbox.setLabelComponent(verificationLabelDiv);
+      emailVerificationRequiredCheckbox.setAriaDescribedBy(emailVerificationHintSpan);
     }
 
     private void refreshBirthDatePicker() {
@@ -1158,7 +1192,11 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private List<Object> readUserFormValues() {
-      return userFormBinder.getFields().map(field -> (Object) field.getValue()).toList();
+      List<Object> currentFormValues =
+          new ArrayList<>(
+              userFormBinder.getFields().map(field -> (Object) field.getValue()).toList());
+      currentFormValues.add(emailVerificationRequiredCheckbox.getValue());
+      return currentFormValues;
     }
 
     private void requestCloseUserEditor() {
@@ -1226,6 +1264,9 @@ public class AdminUserManagementSection extends VerticalLayout {
               passwordFieldsDiv,
               personalDetailsRowLayout,
               permissionsRowDiv);
+      if (!editMode && userService.canManageSuperadmins()) {
+        editorFormLayout.add(emailVerificationRequiredCheckbox);
+      }
       if (editMode && externalIdentityService != null) {
         externalIdentityService
             .adminSignInSummary(editedUserEntity.getId())
@@ -1260,7 +1301,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       signInDetailsRowLayout.addClassName(COSMOS_FORM_ROW_CLASS);
       signInDetailsRowLayout.expand(registrationDetailDiv, signInMethodsDetailDiv);
       VerticalLayout signInDetailsContentLayout =
-          new VerticalLayout(signInTitleH3, signInDetailsRowLayout);
+          new VerticalLayout(signInTitleH3, signInDetailsRowLayout, verificationDetailsLayout);
       signInDetailsContentLayout.setPadding(false);
       signInDetailsContentLayout.setMinWidth("0");
       SvgIcon signInInfoSvgIcon = AppIcon.INFO_CIRCLE.create();
@@ -1282,6 +1323,7 @@ public class AdminUserManagementSection extends VerticalLayout {
         return;
       }
       signInTitleH3.setText(messageProperties.getSignInDetailsTitle());
+      refreshVerificationDetails();
       registrationLabelSpan.setText(messageProperties.getSignInRegisteredVia());
       registeredViaBadge.setText(
           messageProperties.getRegistrationChannelLabel(signInSummary.registration()));
@@ -1305,6 +1347,60 @@ public class AdminUserManagementSection extends VerticalLayout {
       }
     }
 
+    private void refreshVerificationDetails() {
+      verificationDetailsLayout.removeAll();
+      verificationDetailsLayout.setPadding(false);
+      verificationDetailsLayout.setSpacing(false);
+      verificationDetailsLayout.add(
+          new Span(messageProperties.getEmailVerificationLabel()),
+          new EmailVerificationBadge(
+              messageProperties, editedUserEntity.getEmailVerificationStatus()));
+      if (adminAccountMailService == null) {
+        return;
+      }
+
+      resendVerificationMailButton.setId("admin-resend-verification-mail");
+      resendVerificationMailButton.setText(messageProperties.getEmailVerificationResend());
+      resendVerificationMailButton.setPrefixComponent(AppIcon.ENVELOPE.create());
+      resendVerificationMailButton.setEnabled(editedUserEntity.requiresEmailVerification());
+      sendPasswordResetMailButton.setId("admin-send-password-reset");
+      sendPasswordResetMailButton.setText(messageProperties.getAdminPasswordResetMail());
+      sendPasswordResetMailButton.setPrefixComponent(AppIcon.KEY.create());
+      sendPasswordResetMailButton.setEnabled(
+          editedUserEntity.isEnabled()
+              && !editedUserEntity.requiresEmailVerification()
+              && editedUserEntity.getPassword() != null
+              && !editedUserEntity.getPassword().isBlank());
+
+      HorizontalLayout mailActionsLayout =
+          new HorizontalLayout(resendVerificationMailButton, sendPasswordResetMailButton);
+      mailActionsLayout.getStyle().set("flex-wrap", "wrap");
+      verificationDetailsLayout.add(mailActionsLayout);
+    }
+
+    private void requestAdministrativeMail(boolean verificationMail) {
+      try {
+        boolean mailRequestAccepted =
+            verificationMail
+                ? adminAccountMailService.resendVerification(
+                    editedUserEntity.getId(), editedUserEntity.getEmail())
+                : adminAccountMailService.sendPasswordReset(
+                    editedUserEntity.getId(), editedUserEntity.getEmail());
+        NotificationHelper.getInstance()
+            .showNotification(
+                messageProperties::getSignInDetailsTitle,
+                mailRequestAccepted
+                    ? messageProperties::getEmailVerificationQueued
+                    : messageProperties::getEmailVerificationWait,
+                mailRequestAccepted
+                    ? NotificationHelper.NotificationType.SUCCESS
+                    : NotificationHelper.NotificationType.WARNING);
+      } catch (IOException | RuntimeException failure) {
+        log.warn("Administrative account mail request failed", safeFailure(failure));
+        showError(messageProperties::getBaseFailedMessage);
+      }
+    }
+
     private void refreshRolesSummaryText() {
       String selectedRolesSummaryText =
           messageProperties.getAdminUsersSelectedRoles(rolesComboBox.getValue().size());
@@ -1325,6 +1421,8 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private void refreshEditorTexts() {
+      emailVerificationCaptionSpan.setText(messageProperties.getAdminEmailVerificationRequired());
+      emailVerificationHintSpan.setText(messageProperties.getAdminEmailVerificationHint());
       refreshBirthDatePicker();
       editorTitleH2.setText(
           editMode
@@ -1453,7 +1551,19 @@ public class AdminUserManagementSection extends VerticalLayout {
         userService.updateAdminUser(
             updatedUserEntity, expectedUserVersion, userFormData.getPassword());
       } else {
-        userService.createAdminUser(updatedUserEntity, userFormData.getPassword());
+        if (adminAccountMailService != null) {
+          try {
+            adminAccountMailService.createUser(
+                updatedUserEntity,
+                userFormData.getPassword(),
+                !emailVerificationRequiredCheckbox.getValue());
+          } catch (IOException failure) {
+            throw new IllegalStateException(
+                "Initial verification mail could not be prepared", failure);
+          }
+        } else {
+          userService.createAdminUser(updatedUserEntity, userFormData.getPassword());
+        }
       }
       editUserDialog.close();
 
@@ -1676,7 +1786,7 @@ public class AdminUserManagementSection extends VerticalLayout {
   private void showMutationError(RuntimeException exception, boolean deleting) {
     log.error(
         "Benutzer {} fehlgeschlagen", deleting ? "löschen" : "speichern", safeFailure(exception));
-    if (exception instanceof org.springframework.security.access.AccessDeniedException) {
+    if (exception instanceof AccessDeniedException) {
       showError(messageProperties::getRolesPermissionDenied);
     } else if (exception instanceof OptimisticLockingFailureException) {
       showError(messageProperties::getBaseUserUpdateConflict);
@@ -1745,7 +1855,8 @@ public class AdminUserManagementSection extends VerticalLayout {
       userFormData.confirmPassword = "";
       userFormData.gender = userEntity.getGender();
       userFormData.birthDate = userEntity.getBirthDate();
-      userFormData.enabled = userEntity.isEnabled();
+      // Eine noch ausstehende Bestätigung ist keine administrative Kontosperre.
+      userFormData.enabled = userEntity.isEnabled() || userEntity.isVerificationPending();
       userFormData.roles =
           Optional.ofNullable(userEntity.getRoleEntities()).orElseGet(Set::of).stream()
               .map(RoleEntity::getName)

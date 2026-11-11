@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.authentication.CredentialsExpiredException;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.RememberMeAuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -82,6 +83,15 @@ public class SecurityConfig {
     DaoAuthenticationProvider provider =
         new DaoAuthenticationProvider(userDetailsService::loadPasswordUserByUsername);
     provider.setPasswordEncoder(encoder);
+    provider.setPostAuthenticationChecks(userDetails -> {
+      if (!userDetails.isCredentialsNonExpired()) {
+        throw new CredentialsExpiredException("Credentials expired");
+      }
+      if (userDetails instanceof PortalUserDetails portalUserDetails
+          && portalUserDetails.getPendingVerificationUserId() != null) {
+        throw new EmailVerificationRequiredException(portalUserDetails);
+      }
+    });
     return new ProviderManager(
         List.of(
             new LoginAuthenticationService(provider, attempts),
@@ -248,6 +258,12 @@ public class SecurityConfig {
                       rememberMeServices,
                       twoFactorAuthorization))
               .failureHandler((request, response, failure) -> {
+                if (failure
+                    instanceof EmailVerificationRequiredException verificationRequiredException) {
+                  PendingEmailVerificationFlow.start(request, verificationRequiredException);
+                  response.sendRedirect(AppRouteConstants.PENDING_EMAIL_VERIFICATION_LOCATION);
+                  return;
+                }
                 AuthenticationException result =
                     recoverSessionLimit(
                         request, failure, rememberMeServices, sessionManagementServiceProvider);
@@ -318,6 +334,7 @@ public class SecurityConfig {
             AppRoute.MAINTENANCE.getSecurityRoute(),
             AppRoute.REGISTRATION.getSecurityRoute(),
             AppRoute.VERIFICATION.getSecurityRoute(),
+            AppRouteConstants.PENDING_EMAIL_VERIFICATION_LOCATION,
             AppRoute.FORGOT_PASSWORD.getSecurityRoute(),
             AppRoute.RESET_PASSWORD.getSecurityRoute(),
             "/" + AppRouteConstants.ACCOUNT_REACTIVATION_ROUTE,
@@ -462,6 +479,7 @@ public class SecurityConfig {
         || requestUri.equals(AppRoute.NOTIFICATIONS.getSecurityRoute())
         || requestUri.equals(AppRoute.ADMIN.getSecurityRoute())
         || requestUri.equals(AppRoute.LOGIN.getSecurityRoute())
+        || requestUri.equals(AppRouteConstants.PENDING_EMAIL_VERIFICATION_LOCATION)
         || requestUri.equals(AppRoute.MAINTENANCE.getSecurityRoute())
         || requestUri.equals(AppRoute.LOGOUT.getSecurityRoute())
         || requestUri.equals(AppRoute.REGISTRATION.getSecurityRoute())

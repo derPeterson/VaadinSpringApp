@@ -124,8 +124,7 @@ public class EmailQueueService {
         userRepository
             .lockVerificationUser(userEntity.getId())
             .orElseThrow(() -> new IllegalStateException("Der Benutzer ist nicht mehr vorhanden."));
-    if (emailType == EmailType.VERIFICATION
-        && (userEntity.isEnabled() || !userEntity.isVerificationPending())) {
+    if (emailType == EmailType.VERIFICATION && !userEntity.requiresEmailVerification()) {
       return;
     }
     if (hasOpenEmailForUserAndType(userEntity, emailType)) {

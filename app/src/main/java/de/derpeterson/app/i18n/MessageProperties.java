@@ -81,6 +81,8 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case PORTAL -> getSignInPortal();
       case GOOGLE -> getExternalGoogle();
       case MICROSOFT -> getExternalMicrosoft();
+      case ADMINISTRATION -> getRegistrationAdministration();
+      case APPLICATION_START -> getRegistrationApplicationStart();
     };
   }
 

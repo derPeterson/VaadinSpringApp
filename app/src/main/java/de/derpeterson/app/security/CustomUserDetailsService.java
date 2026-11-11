@@ -36,10 +36,15 @@ public class CustomUserDetailsService implements UserDetailsService {
       throw new UsernameNotFoundException("Password sign-in unavailable");
     }
 
-    return toUserDetails(securityUserRows);
+    return toUserDetails(securityUserRows, true);
   }
 
   private UserDetails toUserDetails(List<UserRepository.SecurityUserRow> securityUserRows) {
+    return toUserDetails(securityUserRows, false);
+  }
+
+  private UserDetails toUserDetails(
+      List<UserRepository.SecurityUserRow> securityUserRows, boolean passwordLogin) {
     if (securityUserRows.isEmpty()) {
       throw new UsernameNotFoundException("User not found");
     }
@@ -55,11 +60,17 @@ public class CustomUserDetailsService implements UserDetailsService {
             .map(SimpleGrantedAuthority::new)
             .collect(Collectors.toList());
 
-    return new PortalUserDetails(
-        accountSecurityRow.getEmail(),
-        accountSecurityRow.getPassword(),
-        accountSecurityRow.getAccessVersion(),
-        accountSecurityRow.isEnabled(),
-        grantedAuthorities);
+    boolean pendingVerification = passwordLogin && accountSecurityRow.getPendingEmailVerification();
+    PortalUserDetails portalUserDetails =
+        new PortalUserDetails(
+            accountSecurityRow.getEmail(),
+            accountSecurityRow.getPassword(),
+            accountSecurityRow.getAccessVersion(),
+            accountSecurityRow.isEnabled() || pendingVerification,
+            grantedAuthorities);
+    if (pendingVerification) {
+      portalUserDetails.requireEmailVerification(accountSecurityRow.getId());
+    }
+    return portalUserDetails;
   }
 }

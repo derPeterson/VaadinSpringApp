@@ -182,6 +182,20 @@ der Punkt auch bei bestehenden Beschriftungen, sobald das jeweilige Badge
 umgestellt wird. Eigenständige Statusanzeigen wie der Avatar-Status oder der
 Aktivitätspunkt am Ticketsystem behalten ihre Funktion.
 
+`EmailVerificationBadge` zeigt den E-Mail-Nachweis im Konto und in den
+Benutzerdetails sowie auf der ausstehenden Bestätigungsseite als native
+`Badge`-Komponente ohne Punkt. Erfolg ist grün, ausstehende Bestätigung gelb,
+ausdrücklich ungeprüfte Bereitstellung grau. `.email-verification-badge` in
+`cosmos-account.css` verwendet die vorhandenen Schrift-, Rahmen- und Farbregeln.
+Im Konto steht es neben der Überschrift „E-Mail-Adresse“ in einem nativen
+`HorizontalLayout`, entsprechend der Kennzeichnung der Zwei-Faktor-Authentifizierung.
+Die Adresse selbst steht darunter. Auf schmalen Displays darf die Überschriftenzeile umbrechen.
+Auch das Portalpasswort zeigt seinen Einrichtungszustand als natives Badge neben
+der Überschrift: Grün für eingerichtet, Blau für nicht eingerichtet. Die lokale
+Klasse `.account-password-status` verwendet dieselben kompakten Badge-Maße.
+`PendingEmailVerificationView` nutzt den reduzierten öffentlichen Seitenrahmen,
+`PublicPanelComponent`, die gemeinsame gelbe Warnbox und native Buttons.
+
 Gerahmte Status-Badges erhalten Rahmen und dezenten Hintergrund zentral aus
 `cosmos-theme.css`. Der Rahmen verwendet 25 % und die Fläche 10 % der
 jeweiligen Schriftfarbe. Die fachliche Farbe kommt aus dem jeweiligen Bereich.
@@ -197,6 +211,13 @@ den Versandzustand über Badge-Farbe und Tooltip. Die Quelle der
 Versandvorschau nutzt dieselbe Gestaltung wie die Quelle im persönlichen
 Postfach. Die lokalen Admin-Varianten stehen in `cosmos-admin-reference.css`,
 die gemeinsame Quellendarstellung in `cosmos-notifications.css`.
+
+Im Benutzerformular teilen „Aktiv“ und „Verifikation“ die native Checkbox-
+Gestaltung mit `.admin-user-option-checkbox`, `.admin-user-option-label` und
+`.admin-user-option-hint` in `admin-users.css`: Beschriftung und dezenter
+Erklärungstext stehen untereinander, die Checkbox ist daneben vertikal zentriert.
+„Verifikation“ ist bei der Kontoanlage standardmäßig ausgewählt und kann nur von
+Superadmins abgewählt werden.
 
 ## Übernahme des angemeldeten Benutzerportals
 

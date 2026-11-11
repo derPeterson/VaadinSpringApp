@@ -46,6 +46,8 @@ public class PublicPageComponent extends PageFrameComponent {
     RESET(MessageTexts::getResetPasswordTitle, MessageTexts::getPublicResetIntroduction),
     VERIFICATION(
         MessageTexts::getPublicVerificationTitle, MessageTexts::getPublicVerificationIntroduction),
+    EMAIL_VERIFICATION_PENDING(
+        MessageTexts::getEmailVerificationTitle, MessageTexts::getEmailVerificationIntro),
     EMAIL_CONFIRM(
         MessageTexts::getAccountEmailConfirmationTitle, MessageTexts::getPublicEmailIntroduction),
     ACCOUNT_REACTIVATION(
@@ -80,7 +82,10 @@ public class PublicPageComponent extends PageFrameComponent {
     String serviceNameText = configService.getString(ConfigEntry.SERVICE_NAME);
 
     Image serviceLogoImage = new Image("icons/service-logo.svg", "");
-    boolean restrictedSecurityPage = page == Page.TWO_FACTOR || page == Page.RECOVERY_HELP;
+    boolean restrictedSecurityPage =
+        page == Page.TWO_FACTOR
+            || page == Page.RECOVERY_HELP
+            || page == Page.EMAIL_VERIFICATION_PENDING;
     Component brandComponent =
         restrictedSecurityPage
             ? new Div(serviceLogoImage, new Span(serviceNameText))

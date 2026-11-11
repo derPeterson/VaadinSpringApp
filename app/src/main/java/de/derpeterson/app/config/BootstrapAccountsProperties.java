@@ -30,6 +30,7 @@ public class BootstrapAccountsProperties {
   public static class Account {
     private String email;
     private String password;
+    private boolean emailVerificationRequired;
     private String firstName = "John";
     private String lastName = "Doe";
     private LocalDate birthDate;

@@ -120,6 +120,13 @@ Bootstrap ist standardmäßig aus. Die optionalen Listen `app.bootstrap.superadm
 `admins`, `users` und `guests` legen explizite lokale Testkonten mit genau ihrer
 vorgesehenen Rolle an. Alle Einträge werden vor der ersten Anlage geprüft; die
 Anlage ist transaktional und überschreibt keine schon vorhandenen Konten.
+Pro Eintrag steuert `email-verification-required` den E-Mail-Nachweis.
+Standard `false`: Das Konto ist ohne Bestätigung nutzbar und als „Nicht geprüft“
+gekennzeichnet. Bei `true` wird die erste Bestätigungsmail in derselben Transaktion
+vorgemerkt. Bis zur Bestätigung entsteht kein vollständiger Portalzugang.
+Der Anlageweg bleibt in beiden Fällen „Beim Anwendungsstart angelegt“.
+Neustarts ändern weder bestehende Konten noch deren Nachweis und erzeugen keine
+weiteren Initialmails. Ein Pflicht-Mailfehler rollt die gesamte Kontoanlage zurück.
 [Beispiel](bootstrap-accounts.example.properties).
 
 `db/application-schema-h2.sql` beschreibt das aktuelle Anwendungsschema.
@@ -134,6 +141,30 @@ Kontoadresse, Remember-me und dauerhafte Sessionidentität unterstützen 255 Zei
 Die normale lokale H2-Datei liegt unter `data/`; Docker und der Browserrunner haben
 getrennte Datenbanken. Dateien aus `data/`, `logs/`, `.env` und Browserläufen nicht
 als Build-Eingaben oder Dokumentationsarchiv übernehmen.
+
+### E-Mail-Bestätigung für Startkonten
+
+In [`.env.example`](../.env.example) steht die Option direkt beim vollständigen
+Beispielbenutzer. Die benötigten Beispielzeilen in die lokale `.env` übernehmen,
+deren führendes `#` entfernen und eigene Kontodaten einsetzen. Die Kontoanlage muss mit
+`APP_BOOTSTRAP_ENABLED=true` eingeschaltet sein. Beispiel für den ersten Benutzer:
+
+```properties
+app.bootstrap.users[0].email-verification-required=false
+```
+
+- `false` oder weggelassen: ohne E-Mail-Bestätigung nutzbar, Anzeige „Nicht geprüft“.
+  Es wird keine Bestätigungsmail vorgemerkt.
+- `true`: Bei der ersten Anlage wird eine Bestätigungsmail vorgemerkt. Erst nach
+  erfolgreicher Bestätigung kann das Konto das Portal nutzen. Für die Zustellung
+  müssen Mailkonfiguration und Versand eingerichtet sein.
+
+Die Option gehört jeweils zum Konto mit demselben Listenindex. Sie gilt genauso
+für `superadmins`, `admins` und `guests`, beispielsweise
+`app.bootstrap.admins[0].email-verification-required=true`. Sie ändert weder Rolle
+noch Anlageweg des Kontos. Änderungen an diesen Startvorgaben werden beim nächsten
+Anwendungsstart gelesen und gelten nur für neu angelegte Konten. Eine bereits
+vorhandene Adresse wird übersprungen, auch wenn die Option inzwischen geändert wurde.
 
 ## Build und Änderungen übernehmen
 

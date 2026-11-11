@@ -188,7 +188,12 @@ class ExternalIdentityServicePersistenceTest {
     assertTrue(testUserEntity.isVerificationPending());
     ExternalIdentityEvidence pendingIdentity = evidence("microsoft", "subject-two", false);
 
-    assertThrows(DisabledException.class, () -> externalIdentityService.resolve(pendingIdentity));
+    assertTrue(
+        externalIdentityService.resolve(pendingIdentity).orElseThrow().requiresEmailVerification());
+    assertFalse(
+        new CustomUserDetailsService(userRepository)
+            .loadUserByUsername(testUserEntity.getEmail())
+            .isEnabled());
     Long userId = testUserEntity.getId();
     String version = testUserEntity.getAccessVersion();
     ExternalIdentityEvidence additionalIdentity = evidence("google", "other", true);

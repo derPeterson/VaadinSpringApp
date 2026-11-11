@@ -177,8 +177,9 @@ class VerificationServiceTest {
 
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
-  void consumedExpiredLinkOnlyConfirmsAnEnabledAccountWithoutWrites(boolean enabled) {
+  void consumedExpiredLinkOnlyConfirmsAnEnabledVerifiedAccountWithoutWrites(boolean enabled) {
     testUserEntity.setEnabled(enabled);
+    testUserEntity.markEmailVerified();
     when(verificationTokenRepository.findByTokenAndStatus("token", TokenStatus.ACTIVE))
         .thenReturn(Optional.empty());
     if (enabled) {

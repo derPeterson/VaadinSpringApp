@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLockRepository {
 
   @Query(
-      "select distinct u from UserEntity u join u.roleEntities r where u.enabled = true and u.verificationPending = false and r.name in (de.derpeterson.app.model.enums.RoleType.ROLE_ADMIN, de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN)")
+      "select distinct u from UserEntity u join u.roleEntities r where u.enabled = true and u.verificationPending = false and u.emailVerificationStatus <> de.derpeterson.app.model.enums.EmailVerificationStatus.PENDING and r.name in (de.derpeterson.app.model.enums.RoleType.ROLE_ADMIN, de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN)")
   List<UserEntity> findEnabledAdministrators();
 
   default Optional<UserEntity> findByEmail(String email) {
@@ -68,10 +68,14 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
 
   // Keine veralteten OSIV-Entities für die aktuelle Versandberechtigung der Empfänger auswerten.
   @Query(
-      "select u.id as id, u.firstName as firstName, u.lastName as lastName, u.email as email from UserEntity u where u.enabled = true and u.verificationPending = false order by u.id")
+      "select u.id as id, u.firstName as firstName, u.lastName as lastName, u.email as email from UserEntity u where u.enabled = true and u.verificationPending = false and u.emailVerificationStatus <> de.derpeterson.app.model.enums.EmailVerificationStatus.PENDING order by u.id")
   List<NotificationTargetRow> findNotificationTargets();
 
   interface SecurityUserRow {
+    Long getId();
+
+    boolean getPendingEmailVerification();
+
     String getEmail();
 
     String getPassword();
@@ -82,6 +86,21 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
 
     RoleType getRole();
   }
+
+  @Modifying
+  @Query(
+      "update VerificationTokenEntity t set t.status = de.derpeterson.app.model.enums.TokenStatus.INACTIVE where t.userEntity.id = :userId and t.status = de.derpeterson.app.model.enums.TokenStatus.ACTIVE")
+  void invalidateVerificationTokensForAddressChange(Long userId);
+
+  @Modifying
+  @Query(
+      "update PasswordResetTokenEntity t set t.status = de.derpeterson.app.model.enums.TokenStatus.INACTIVE where t.userEntity.id = :userId and t.status = de.derpeterson.app.model.enums.TokenStatus.ACTIVE")
+  void invalidatePasswordResetTokensForAddressChange(Long userId);
+
+  @Modifying
+  @Query(
+      "delete from EmailQueueEntity e where e.userEntity.id = :userId and e.status = de.derpeterson.app.model.enums.EmailStatus.PENDING and e.emailType in (de.derpeterson.app.model.enums.EmailType.VERIFICATION, de.derpeterson.app.model.enums.EmailType.PASSWORD_RESET)")
+  void deletePendingAddressMails(Long userId);
 
   interface TwoFactorAccessRow {
     Long getId();
@@ -101,7 +120,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
   @Query(
-      "select u.id as id, u.email as email, u.accessVersion as accessVersion, u.enabled as enabled, u.verificationPending as verificationPending, (u.password is not null) as hasPassword, r.name as role from UserEntity u left join u.roleEntities r where u.email = :email")
+      "select u.id as id, u.email as email, u.accessVersion as accessVersion, (u.enabled = true and u.emailVerificationStatus <> de.derpeterson.app.model.enums.EmailVerificationStatus.PENDING) as enabled, (u.verificationPending = true or (u.enabled = true and u.emailVerificationStatus = de.derpeterson.app.model.enums.EmailVerificationStatus.PENDING)) as verificationPending, (u.password is not null) as hasPassword, r.name as role from UserEntity u left join u.roleEntities r where u.email = :email")
   List<TwoFactorAccessRow> findTwoFactorAccess(String email);
 
   // Scalar projections bypass stale managed entities/collections (including
@@ -111,7 +130,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   }
 
   String SECURITY_USER_QUERY =
-      "select u.email as email, u.password as password, u.accessVersion as accessVersion, u.enabled as enabled, r.name as role "
+      "select u.id as id, u.email as email, u.password as password, u.accessVersion as accessVersion, "
+          + "(u.enabled = true and u.emailVerificationStatus <> de.derpeterson.app.model.enums.EmailVerificationStatus.PENDING) as enabled, "
+          + "(u.verificationPending = true or (u.enabled = true and u.emailVerificationStatus = de.derpeterson.app.model.enums.EmailVerificationStatus.PENDING)) as pendingEmailVerification, r.name as role "
           + "from UserEntity u left join u.roleEntities r where u.email = :email";
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
@@ -173,7 +194,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   // Read stored IDs, not possibly already edited entities from the persistence context.
   // Do not auto-flush a pending demotion before the service has checked it.
   @Query(
-      "select distinct u.id from UserEntity u join u.roleEntities r where u.enabled = true and r.name = :role")
+      "select distinct u.id from UserEntity u join u.roleEntities r where u.enabled = true and u.emailVerificationStatus <> de.derpeterson.app.model.enums.EmailVerificationStatus.PENDING and r.name = :role")
   @QueryHints(@QueryHint(name = HibernateHints.HINT_FLUSH_MODE, value = "COMMIT"))
   List<Long> findEnabledUserIdsByRole(@Param("role") RoleType roleType);
 

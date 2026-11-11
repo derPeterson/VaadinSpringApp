@@ -226,8 +226,11 @@ und dessen erforderliche Aktionsbestätigung werden durch keinen anderen Anmelde
 
 Die ursprüngliche Registrierung bestimmt die Anmeldewege nicht dauerhaft.
 Maßgeblich sind die aktuell gespeicherten und freigegebenen Zugänge. Das Konto
-speichert den Kanal seiner Selbstregistrierung (Portal, Google oder Microsoft).
-Bei administrativ oder beim Start angelegten Konten bleibt dieses Feld leer.
+speichert seinen Anlageweg: Portal, Google, Microsoft, Administration oder
+Anwendungsstart. Der Anlageweg sagt nichts über den Nachweis der aktuellen
+E-Mail-Adresse aus. Der Nachweis wird getrennt gespeichert. Ein bereits
+verbundener Anbieter ohne ausreichenden Adressnachweis führt bei ausstehender
+Bestätigung zunächst zur eingeschränkten Seite `/verify-email`.
 Der tatsächliche Anmeldeweg der Sitzung ist separat in ihrer dauerhaften
 Authentifizierung hinterlegt. Die heute nutzbaren Wege ergeben sich aus
 Portalpasswort, Verknüpfungen und freigegebenen Anbietern.

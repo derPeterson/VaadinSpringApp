@@ -43,6 +43,11 @@
     overflow-wrap: anywhere;
 }
 
+.cosmos-account .account-security-heading {
+    gap: var(--cosmos-space-s);
+    flex-wrap: wrap;
+}
+
 .cosmos-account .account-entry-title,
 .cosmos-account .account-entry-description {
     display: block;
@@ -710,6 +715,29 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 }
 .account-session-badge[theme~=success] {
     --vaadin-badge-text-color: var(--cosmos-reference-success);
+}
+
+/* E-Mail-Nachweis im Konto, in den Benutzerdetails und beim Bestätigungshinweis. */
+.email-verification-badge,
+.account-password-status {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font: 500 10px/15px Inter, sans-serif;
+    --vaadin-badge-text-color: var(--cosmos-reference-label);
+    border: 1px solid var(--cosmos-status-badge-border);
+    background-color: var(--cosmos-status-badge-surface);
+}
+.email-verification-badge[theme~=success],
+.account-password-status[theme~=success] {
+    --vaadin-badge-text-color: var(--cosmos-reference-success);
+}
+.email-verification-badge[theme~=warning] {
+    --vaadin-badge-text-color: var(--cosmos-reference-warning);
+}
+.account-password-status:not([theme~=success]) {
+    --vaadin-badge-text-color: var(--cosmos-reference-accent);
 }
 .account-session-badge#account-sessions-limit {
     height: auto;

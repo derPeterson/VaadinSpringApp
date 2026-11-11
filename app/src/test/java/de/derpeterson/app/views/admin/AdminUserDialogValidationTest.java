@@ -19,8 +19,10 @@ import com.vaadin.flow.component.FocusNotifier;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -35,6 +37,7 @@ import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SignInMethod;
+import de.derpeterson.app.service.AdminAccountMailService;
 import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.ExternalIdentityService.SignInSummary;
 import de.derpeterson.app.service.RoleService;
@@ -50,6 +53,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -99,6 +103,39 @@ class AdminUserDialogValidationTest {
     userManagementSection = null;
     vaadinSession = null;
     testUi = null;
+  }
+
+  @ParameterizedTest
+  @CsvSource({"de,true", "de,false", "en,true", "en,false"})
+  void verificationChoiceDefaultsToRequiredAndPassesTheCorrectExemption(
+      String languageTag, boolean requireVerification) throws Exception {
+    when(userService.canManageSuperadmins()).thenReturn(true);
+    AdminAccountMailService adminAccountMailService = mock(AdminAccountMailService.class);
+    userManagementSection.configureAccountMailActions(adminAccountMailService);
+    openUserDialog(languageTag, true);
+    Checkbox verificationCheckbox =
+        streamDescendantComponents(userDialog)
+            .filter(component ->
+                component.getId().orElse("").equals("admin-email-verification-required"))
+            .map(Checkbox.class::cast)
+            .findFirst()
+            .orElseThrow();
+
+    assertTrue(verificationCheckbox.getValue());
+    assertTrue(
+        streamDescendantComponents(verificationCheckbox)
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(
+                span -> span.getText().equals(messageProperties.getAdminEmailVerificationHint())));
+    verificationCheckbox.setValue(requireVerification);
+    findNewPasswordField().setValue("CreatedPassword!");
+    findPasswordConfirmationField().setValue("CreatedPassword!");
+
+    findSaveUserButton().click();
+
+    verify(adminAccountMailService)
+        .createUser(any(), eq("CreatedPassword!"), eq(!requireVerification));
   }
 
   @ParameterizedTest

@@ -3139,6 +3139,18 @@ public class MessageTexts {
     return getTranslation("accountSettings.password.hint");
   }
 
+  public String getAccountPasswordConfigured() {
+    return getTranslation("accountSettings.password.configured");
+  }
+
+  public String getAccountPasswordNotConfigured() {
+    return getTranslation("accountSettings.password.notConfigured");
+  }
+
+  public String getAccountPasswordSetupAction() {
+    return getTranslation("accountSettings.password.setupAction");
+  }
+
   public String getAccountSettingsAccountHint() {
     return getTranslation("accountSettings.account.hint");
   }
@@ -4390,5 +4402,73 @@ public class MessageTexts {
 
   public String getProviderSettingsFailed() {
     return getTranslation("admin.providers.failed");
+  }
+
+  public String getEmailVerified() {
+    return getTranslation("email.verification.verified");
+  }
+
+  public String getEmailVerificationPending() {
+    return getTranslation("email.verification.pending");
+  }
+
+  public String getEmailNotChecked() {
+    return getTranslation("email.verification.notChecked");
+  }
+
+  public String getEmailNotCheckedHint() {
+    return getTranslation("email.verification.notCheckedHint");
+  }
+
+  public String getEmailVerificationTitle() {
+    return getTranslation("email.verification.title");
+  }
+
+  public String getEmailVerificationIntro() {
+    return getTranslation("email.verification.intro");
+  }
+
+  public String getEmailVerificationSpamHint() {
+    return getTranslation("email.verification.spamHint");
+  }
+
+  public String getEmailVerificationResend() {
+    return getTranslation("email.verification.resend");
+  }
+
+  public String getEmailVerificationBack() {
+    return getTranslation("email.verification.back");
+  }
+
+  public String getEmailVerificationQueued() {
+    return getTranslation("email.verification.queued");
+  }
+
+  public String getEmailVerificationWait() {
+    return getTranslation("email.verification.wait");
+  }
+
+  public String getAdminEmailVerificationRequired() {
+    return getTranslation("email.verification.required");
+  }
+
+  public String getAdminEmailVerificationHint() {
+    return getTranslation("email.verification.requiredHint");
+  }
+
+  public String getAdminPasswordResetMail() {
+    return getTranslation("email.verification.reset");
+  }
+
+  public String getRegistrationAdministration() {
+    return getTranslation("registration.channel.administration");
+  }
+
+  public String getRegistrationApplicationStart() {
+    return getTranslation("registration.channel.start");
+  }
+
+  public String getEmailVerificationLabel() {
+    return getTranslation("email.verification.label");
   }
 }

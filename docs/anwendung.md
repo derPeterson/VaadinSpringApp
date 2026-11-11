@@ -17,6 +17,19 @@
 - Passwortreset über einen zeitlich begrenzten Einmallink. Anfragen geben keine Konten preis.
 - Oberfläche und Systemmails unterstützen Deutsch und Englisch; die Kontosprache ist gespeichert.
 
+Bei korrekter Anmeldung und noch ausstehender E-Mail-Bestätigung erscheint eine
+eigene Hinweisseite. Sie nennt die Adresse, den Spamordner und die Möglichkeit,
+die Bestätigung erneut anzufordern oder zur Anmeldung zurückzukehren. Bis zur
+Bestätigung öffnet sich das Benutzerportal nicht.
+
+Die Benutzerverwaltung legt Konten standardmäßig mit Bestätigungsmail an.
+Die Checkbox „Verifikation“ ist standardmäßig ausgewählt und erklärt den Ablauf
+mit einem Hilfetext. Nur Superadmins können sie bei der Anlage abwählen und das
+Konto ausdrücklich ohne E-Mail-Nachweis bereitstellen. In den Benutzerdetails stehen Anlageweg und E-Mail-Nachweis
+getrennt. Berechtigte Admins können dort Bestätigungsmails und für geeignete Konten
+Passwortresetmails an die gespeicherte Adresse anfordern. Eine geänderte Adresse
+muss zuvor gespeichert werden. Ein Mailauftrag ist keine Zustellbestätigung.
+
 ## Mein Konto
 
 Angemeldete Startseite, Postfach und Konto teilen Header, Identitätskarte und
@@ -46,11 +59,23 @@ an der neuen Adresse ausdrücklich bestätigt; ein bloßer Linkaufruf übernimmt
 nicht. Danach sind neue Anmeldung und die Sicherheitsmails an die betroffenen
 Adressen vorgesehen. Die Details stehen unter [Sicherheit](sicherheit.md).
 
+Neben der E-Mail-Adresse zeigt ein natives Badge ihren Nachweis: „Verifiziert“
+in Grün, „Bestätigung ausstehend“ in Gelb oder „Nicht geprüft“ in Grau. Der graue
+Zustand bezeichnet ausdrücklich ohne Nachweis bereitgestellte Konten und erklärt
+dies im Tooltip. Dieselben Angaben stehen in den administrativen Benutzerdetails.
+
 Im Tab **Portalzugang** lässt sich ein Authenticator einrichten, wechseln oder
 entfernen. Neue Ersatzcodes werden einmalig zum Kopieren und als druckbare PDF
 angeboten. Eine verpflichtende Einrichtung bzw. Bestätigung erfolgt vor dem
 vollständigen Kontozugriff. Auch eine gespeicherte Anmeldung überspringt diesen
 Schritt nicht. Details: [Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md).
+
+Beim Passwort zeigt ein natives Badge „Eingerichtet“ in Grün oder „Nicht eingerichtet“
+in Blau. Ein ausschließlich über Google oder Microsoft angelegtes Konto hat zunächst
+kein Portalpasswort. Die Aktion heißt dann „Einrichten“, sonst „Ändern“. Sie führt
+durch den bestehenden zweckgebundenen Identitätsnachweis. Das Passwort beim Anbieter
+wird dadurch nicht verändert. Erst nach erfolgreichem Speichern wechseln Badge und
+Aktion zum eingerichteten Zustand.
 
 Geräte und Sitzungen zeigen aktive Zugänge und gespeicherte Anmeldungen mit
 Gerätebeschreibung. Einzelne oder alle anderen Zugänge können widerrufen werden.

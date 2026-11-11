@@ -46,6 +46,7 @@ import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.ExternalProviderSettings;
 import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.AdminAccountMailService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.ExternalIdentityService;
@@ -294,6 +295,8 @@ class AdminViewNavigationTest {
       context.registerBean(
           de.derpeterson.app.service.UserNotificationService.class, () -> notifications);
       context.registerBean(ExternalProviderSettings.class, () -> externalProviderSettings);
+      context.registerBean(
+          AdminAccountMailService.class, () -> mock(AdminAccountMailService.class));
       context.registerBean(
           de.derpeterson.app.security.mfa.TwoFactorAuthorization.class,
           () -> mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class));

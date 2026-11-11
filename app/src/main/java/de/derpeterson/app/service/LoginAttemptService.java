@@ -7,6 +7,7 @@ import de.derpeterson.app.model.LoginAttemptGuardEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.LoginAttemptGuardRepository;
 import de.derpeterson.app.repository.LoginAttemptRepository;
+import de.derpeterson.app.security.EmailVerificationRequiredException;
 import de.derpeterson.app.security.LoginThrottledException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -146,6 +147,10 @@ public class LoginAttemptService {
       reset(row, loginAttemptClock.instant());
       loginAttemptRepository.save(row);
       return new Outcome(authenticated, null);
+    } catch (EmailVerificationRequiredException verificationRequiredException) {
+      reset(row, loginAttemptClock.instant());
+      loginAttemptRepository.save(row);
+      return new Outcome(null, verificationRequiredException);
     } catch (BadCredentialsException | UsernameNotFoundException | AccountStatusException failure) {
       Instant completed = loginAttemptClock.instant();
       row.setFailures(row.getFailures() + 1);

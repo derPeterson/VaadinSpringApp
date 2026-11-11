@@ -3,5 +3,7 @@ package de.derpeterson.app.model.enums;
 public enum RegistrationChannel {
   PORTAL,
   GOOGLE,
-  MICROSOFT
+  MICROSOFT,
+  ADMINISTRATION,
+  APPLICATION_START
 }

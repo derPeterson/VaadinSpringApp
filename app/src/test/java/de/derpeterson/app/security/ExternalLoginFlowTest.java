@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.EmailVerificationStatus;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.ExternalLoginFlow.ProofProblem;
@@ -128,6 +130,18 @@ class ExternalLoginFlowTest {
   @AfterEach
   void cleanup() {
     SecurityContextHolder.clearContext();
+  }
+
+  @Test
+  void pendingEmailStopsBeforeSessionAdmissionAndSecondFactor() {
+    ownerUserEntity.setEmailVerificationStatus(EmailVerificationStatus.PENDING);
+
+    assertEquals(
+        "/verify-email",
+        externalLoginFlow.finishLogin(
+            mockHttpRequest, mockHttpResponse, ownerUserEntity, "google", true));
+    verify(securityService, never()).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
+    verify(twoFactor, never()).sessionConfirmed(any());
   }
 
   @Test

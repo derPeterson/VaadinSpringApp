@@ -1,5 +1,6 @@
 package de.derpeterson.app.model;
 
+import de.derpeterson.app.model.enums.EmailVerificationStatus;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.RoleType;
@@ -115,11 +116,20 @@ public class UserEntity {
   @Builder.Default
   private boolean enabled = false;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "email_verification_status", nullable = false)
+  @Builder.Default
+  private EmailVerificationStatus emailVerificationStatus = EmailVerificationStatus.NOT_CHECKED;
+
   /** Only a new, still-pending registration may be activated by an email link. */
   @Column(name = "verification_pending", nullable = false)
   @Builder.Default
   @Setter(AccessLevel.NONE)
   private boolean verificationPending = true;
+
+  @Column private Instant verificationMailRequestedAt;
+
+  @Column private Instant passwordResetMailRequestedAt;
 
   @Embedded private AccountDeactivation accountDeactivation;
 
@@ -152,7 +162,20 @@ public class UserEntity {
   private Collection<RoleEntity> roleEntities;
 
   public void setEmail(String email) {
-    this.email = EmailIdentity.canonicalize(email);
+    String canonicalEmailAddress = EmailIdentity.canonicalize(email);
+    if (this.email != null && !this.email.equals(canonicalEmailAddress)) {
+      emailVerificationStatus = EmailVerificationStatus.PENDING;
+    }
+    this.email = canonicalEmailAddress;
+  }
+
+  public boolean requiresEmailVerification() {
+    return !enabled && verificationPending
+        || enabled && emailVerificationStatus == EmailVerificationStatus.PENDING;
+  }
+
+  public void markEmailVerified() {
+    emailVerificationStatus = EmailVerificationStatus.VERIFIED;
   }
 
   /** Explicit account decisions (including admin disable) end link-based activation. */

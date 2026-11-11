@@ -37,6 +37,39 @@ Darstellung verglichen.
 
 ## Offene Abnahme der Portalpakete
 
+### E-Mail-Nachweis und administrative Kontoanlage
+
+Freigegeben auf dem bestehenden Branch. Der Benutzer hat die gezielte isolierte
+Browserprüfung in DE/EN bei Desktop- und Smartphonebreite zurückgestellt und
+beauftragt sie später gesondert. Entwicklerdaten und
+laufende Anwendung bleiben unverändert; das neue Schema wird frisch geprüft.
+
+- Anlageweg, E-Mail-Nachweis und Kontofreigabe getrennt speichern. Selbstregistrierung
+  und normale administrative Anlage benötigen Bestätigung. Startkonten und eine
+  ausdrücklich gewählte, serverseitig auf Superadmins begrenzte Ausnahme bleiben
+  ohne E-Mail-Nachweis benutzbar. Die Ausnahme ändert den tatsächlichen Anlageweg nicht.
+  Pro Startkonto ist `email-verification-required` auswählbar; Standard false.
+  Bei true gilt der normale Bestätigungsweg mit initialer Mail. Bestehende Konten
+  werden beim Neustart weder überschrieben noch erneut angeschrieben.
+- Nach korrektem erstem Anmeldenachweis bei ausstehender Bestätigung eine eigene
+  gelbe Bestätigungsseite ohne Portalrechte anbieten. Adresse, Spamhinweis,
+  erneuten Versand und Rückkehr zur Anmeldung anzeigen. Falsche Zugangsdaten
+  bleiben allgemein; Sperren und Selbstdeaktivierung werden nicht aufgehoben.
+- Native Badges für Verifiziert (grün), Bestätigung ausstehend (gelb) und
+  Nicht geprüft (grau) im Konto und in den administrativen Benutzerdetails anzeigen.
+  Änderungen der aktuellen Adresse dürfen keinen alten Nachweis übernehmen.
+- Adminaktionen zum erneuten Versand der Verifikationsmail und zum Passwortreset
+  ergänzen. Rechte und gespeicherte Adresse frisch prüfen, keine Entwürfe verwenden.
+  Bestehende Versandbegrenzungen, Tokenrotation, Transaktionen und MFA erhalten.
+- Offen bleiben der zurückgestellte Browsernachtest und die gemeinsame Sichtung
+  der neuen Bestätigungsseite, der Konto-/Admin-Badges, der Superadmin-Ausnahme
+  und der administrativen Mailaktionen. Beim Start beide Varianten der Option
+  mit frischen Testkonten prüfen. Die vorhandenen Browserhilfen zur Adminanlage
+  an den neuen Bestätigungsweg anpassen, bevor abhängige Journeys laufen.
+
+Die noch nicht erfolgreich ausgeführten automatisierten Prüfungen stehen zentral
+im [Testbedarf](../testbedarf.md).
+
 Zur gemeinsamen Sichtung gehören die folgenden drei Pakete auf
 `codex/vaadin-komponentenanpassungen`. Die letzte große Testrunde steht im
 [Prüfstand](../status.md). Der [Testbedarf](../testbedarf.md) führt offene
