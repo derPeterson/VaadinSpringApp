@@ -149,6 +149,17 @@ Tooltips fangen keine Mausereignisse ab und ändern den Mauszeiger des auslösen
 Elements nicht. Reine Identitätsavatare und Anbieterstatus behalten den normalen
 Zeiger; Avatare innerhalb nativer Buttons erben dessen Mauszeiger. Eingabefelder
 behalten ihren Textzeiger.
+Bedienbare native Komponenten verwenden zentral den Handzeiger über
+`--lumo-clickable-cursor` und `--vaadin-clickable-cursor` in `cosmos-tokens.css`.
+Das gilt auch für Iconbuttons, Tabs, Pagination und native Auswahlaktionen.
+Bei Checkboxen und Radiobuttons ergänzt `cosmos-theme.css` die ausdrücklich von
+Lumo auf den Pfeil gesetzte äußere Fläche und den Label-Part. Eigene Labelinhalte
+wie die Filterbeschriftung mit Zähler erben den Cursor. Disabled und Readonly
+sind von dieser Ergänzung ausgenommen.
+Deaktivierte Komponenten behalten ihren nativen Disabled-Zeiger. Eine pauschale
+Cursorregel auf allen Buttons wird deshalb nicht verwendet.
+Reine Avatare bleiben Anzeigeelemente; in Buttons, Links und Tabs erben sie den
+Zeiger ihres bedienbaren Containers. Die Avatarregeln stehen in `cosmos-shell.css`.
 Die rechte Feldhilfe ist ein eigener Baustein und bleibt von Tooltips getrennt.
 
 ## Native Vaadin-Bausteine zuerst
@@ -413,6 +424,18 @@ Unter der normalen Feldbeschriftung steht der Registrierungsweg als kompaktes
 Vaadin-Badge. Ohne Selbstregistrierung ist es grau, bei Selbstregistrierung cyan.
 Die verfügbaren Anmeldewege stehen nebeneinander als kompakte grüne Vaadin-Badges
 mit jeweils eigenem Rahmen im Stil der Sitzungsstatus-Badges.
+Die Informationen einschließlich E-Mail-Verifizierung stehen über einer nativen
+`Hr`-Trennlinie. Darunter folgen „Verifikationslink senden“ und „Passwort-Reset senden“
+in einem umbrechenden `HorizontalLayout`. Ein blaues Info-Icon steht neben dem
+dezenten Erklärungstext zu beiden Aktionen und ihrer gespeicherten Zieladresse.
+Die lokale Anordnung verwendet native `VerticalLayout`-/`HorizontalLayout`-Container
+und die Klassen `.admin-user-sign-in-*` beziehungsweise `.admin-user-mail-*`
+in `admin-users.css`. Bestehende Badge- und Buttonvarianten bleiben erhalten.
+Der Profilmenü-Auslöser `.tracked-user-button` im Header bleibt auch bei Hover
+transparent und ist von der allgemeinen Button-Hoverfläche ausgenommen.
+Der Logo-Link `.cosmos-topbar-home` bleibt ohne Unterstrich und zeigt den Handzeiger.
+Menübedienung und sichtbarer Tastaturfokus bleiben erhalten; die Regeln liegen in
+`cosmos-shell.css` und der gemeinsamen Buttonregel in `cosmos-theme.css`.
 Die Sitzungsübersicht verwendet native Vaadin-Badges für Anzahl, Limit und
 Sitzungsstatus. Statusbadges haben einen kompakten Rahmen und keinen Punkt.
 Das Badge `.account-session-count` verbindet Zahl und übersetzte Einheit

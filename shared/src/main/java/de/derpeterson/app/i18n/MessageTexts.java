@@ -4471,4 +4471,12 @@ public class MessageTexts {
   public String getEmailVerificationLabel() {
     return getTranslation("email.verification.label");
   }
+
+  public String getAdminAccountMailActionsHint() {
+    return getTranslation("admin.users.accountMailActionsHint");
+  }
+
+  public String getAdminSendVerificationLink() {
+    return getTranslation("admin.users.sendVerificationLink");
+  }
 }

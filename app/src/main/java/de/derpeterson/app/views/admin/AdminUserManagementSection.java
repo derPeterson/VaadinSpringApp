@@ -28,6 +28,7 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -819,6 +820,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     private final Span signInMethodsLabelSpan = new Span();
     private final Div availableSignInMethodsDiv = new Div();
     private final VerticalLayout verificationDetailsLayout = new VerticalLayout();
+    private final VerticalLayout administrativeMailActionsLayout = new VerticalLayout();
     private final Button resendVerificationMailButton = new Button();
     private final Button sendPasswordResetMailButton = new Button();
 
@@ -1285,8 +1287,16 @@ public class AdminUserManagementSection extends VerticalLayout {
       editUserDialog.add(editorFormLayout);
     }
 
-    private HorizontalLayout createSignInDetailsLayout() {
+    private VerticalLayout createSignInDetailsLayout() {
       signInTitleH3.addClassNames(COSMOS_PANEL_TITLE_CLASS, "admin-user-sign-in-title");
+      SvgIcon signInInfoSvgIcon = AppIcon.INFO_CIRCLE.create();
+      signInInfoSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
+      HorizontalLayout signInHeadingLayout = new HorizontalLayout(signInInfoSvgIcon, signInTitleH3);
+      signInHeadingLayout.setPadding(false);
+      signInHeadingLayout.setSpacing(false);
+      signInHeadingLayout.setAlignItems(Alignment.CENTER);
+      signInHeadingLayout.addClassName("admin-user-sign-in-heading");
+
       registeredViaBadge.setId("admin-user-registered-via");
       availableSignInMethodsDiv.setId("admin-user-sign-in-methods");
       registrationLabelSpan.addClassName("admin-user-registration-label");
@@ -1300,20 +1310,19 @@ public class AdminUserManagementSection extends VerticalLayout {
       signInDetailsRowLayout.setWidthFull();
       signInDetailsRowLayout.addClassName(COSMOS_FORM_ROW_CLASS);
       signInDetailsRowLayout.expand(registrationDetailDiv, signInMethodsDetailDiv);
-      VerticalLayout signInDetailsContentLayout =
-          new VerticalLayout(signInTitleH3, signInDetailsRowLayout, verificationDetailsLayout);
-      signInDetailsContentLayout.setPadding(false);
-      signInDetailsContentLayout.setMinWidth("0");
-      SvgIcon signInInfoSvgIcon = AppIcon.INFO_CIRCLE.create();
-      signInInfoSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
-      HorizontalLayout signInDetailsLayout =
-          new HorizontalLayout(signInInfoSvgIcon, signInDetailsContentLayout);
+
+      VerticalLayout signInDetailsLayout =
+          new VerticalLayout(
+              signInHeadingLayout,
+              signInDetailsRowLayout,
+              verificationDetailsLayout,
+              administrativeMailActionsLayout);
       signInDetailsLayout.setWidthFull();
       signInDetailsLayout.setPadding(false);
       signInDetailsLayout.setSpacing(false);
-      signInDetailsLayout.setAlignItems(Alignment.START);
-      signInDetailsLayout.expand(signInDetailsContentLayout);
+      signInDetailsLayout.setAlignItems(Alignment.STRETCH);
       signInDetailsLayout.addClassNames("cosmos-panel-hint", "admin-user-sign-in");
+
       refreshSignInDetails();
       return signInDetailsLayout;
     }
@@ -1324,6 +1333,8 @@ public class AdminUserManagementSection extends VerticalLayout {
       }
       signInTitleH3.setText(messageProperties.getSignInDetailsTitle());
       refreshVerificationDetails();
+      refreshAdministrativeMailActions();
+
       registrationLabelSpan.setText(messageProperties.getSignInRegisteredVia());
       registeredViaBadge.setText(
           messageProperties.getRegistrationChannelLabel(signInSummary.registration()));
@@ -1351,16 +1362,28 @@ public class AdminUserManagementSection extends VerticalLayout {
       verificationDetailsLayout.removeAll();
       verificationDetailsLayout.setPadding(false);
       verificationDetailsLayout.setSpacing(false);
+      verificationDetailsLayout.setAlignItems(Alignment.START);
+      verificationDetailsLayout.addClassName("admin-user-verification-detail");
+      Span verificationLabelSpan = new Span(messageProperties.getEmailVerificationLabel());
+      verificationLabelSpan.addClassName("admin-user-verification-label");
       verificationDetailsLayout.add(
-          new Span(messageProperties.getEmailVerificationLabel()),
+          verificationLabelSpan,
           new EmailVerificationBadge(
               messageProperties, editedUserEntity.getEmailVerificationStatus()));
+    }
+
+    private void refreshAdministrativeMailActions() {
+      administrativeMailActionsLayout.removeAll();
+      administrativeMailActionsLayout.setPadding(false);
+      administrativeMailActionsLayout.setSpacing(false);
+      administrativeMailActionsLayout.setVisible(adminAccountMailService != null);
+      administrativeMailActionsLayout.addClassName("admin-user-mail-actions");
       if (adminAccountMailService == null) {
         return;
       }
 
       resendVerificationMailButton.setId("admin-resend-verification-mail");
-      resendVerificationMailButton.setText(messageProperties.getEmailVerificationResend());
+      resendVerificationMailButton.setText(messageProperties.getAdminSendVerificationLink());
       resendVerificationMailButton.setPrefixComponent(AppIcon.ENVELOPE.create());
       resendVerificationMailButton.setEnabled(editedUserEntity.requiresEmailVerification());
       sendPasswordResetMailButton.setId("admin-send-password-reset");
@@ -1374,8 +1397,27 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       HorizontalLayout mailActionsLayout =
           new HorizontalLayout(resendVerificationMailButton, sendPasswordResetMailButton);
-      mailActionsLayout.getStyle().set("flex-wrap", "wrap");
-      verificationDetailsLayout.add(mailActionsLayout);
+      mailActionsLayout.setWidthFull();
+      mailActionsLayout.setPadding(false);
+      mailActionsLayout.setSpacing(false);
+      mailActionsLayout.addClassName("admin-user-mail-action-buttons");
+
+      Hr mailActionsDividerHr = new Hr();
+      mailActionsDividerHr.addClassName("admin-user-mail-actions-divider");
+
+      Span mailActionsHintSpan = new Span(messageProperties.getAdminAccountMailActionsHint());
+      SvgIcon mailActionsInfoSvgIcon = AppIcon.INFO_CIRCLE.create();
+      mailActionsInfoSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
+      HorizontalLayout mailActionsHintLayout =
+          new HorizontalLayout(mailActionsInfoSvgIcon, mailActionsHintSpan);
+      mailActionsHintLayout.setWidthFull();
+      mailActionsHintLayout.setPadding(false);
+      mailActionsHintLayout.setSpacing(false);
+      mailActionsHintLayout.setAlignItems(Alignment.CENTER);
+      mailActionsHintLayout.addClassName("admin-user-mail-actions-hint");
+
+      administrativeMailActionsLayout.add(
+          mailActionsDividerHr, mailActionsLayout, mailActionsHintLayout);
     }
 
     private void requestAdministrativeMail(boolean verificationMail) {

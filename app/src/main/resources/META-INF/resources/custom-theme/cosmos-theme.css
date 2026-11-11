@@ -7,6 +7,16 @@
 @import url("./cosmos-scrollbars.css");
 @import url("./cosmos-scrollbars.css") lumo_cosmos_scrollbars;
 
+/* Lumo setzt die äußere Checkbox-/Radiofläche unabhängig vom Klick-Cursor auf default. */
+.cosmos-theme :is(vaadin-checkbox, vaadin-radio-button):not([disabled], [readonly]),
+.cosmos-theme :is(vaadin-checkbox, vaadin-radio-button):not([disabled], [readonly])::part(label) {
+    cursor: var(--vaadin-clickable-cursor);
+}
+
+.cosmos-theme :is(vaadin-checkbox, vaadin-radio-button):not([disabled], [readonly]) > [slot="label"] {
+    cursor: inherit;
+}
+
 .cosmos-security-warning {
     box-sizing: border-box;
     width: 100%;
@@ -537,7 +547,6 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
 
 /* Gemeinsame native Controls im angemeldeten Portal und seinen ausgelagerten Overlays. */
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button:where(:not(.cosmos-topbar-shortcut, .tracked-user-button, .account-navigation-toggle, #account-sidebar > vaadin-button)) {
-    cursor: pointer;
     margin: 0;
     height: 36px;
     padding: 0 13px;
@@ -709,11 +718,11 @@ vaadin-notification-card[theme~="cosmos-reference"] vaadin-button::part(label) {
 vaadin-notification-card[theme~="cosmos-reference"] vaadin-button vaadin-icon { width: 18px; height: 18px; padding: 0; }
 
 /* Hoverflächen teilen einen Wert. Auswahl, aktive Seitennummern und Disabled bleiben erhalten. */
-.cosmos-theme vaadin-button:hover:not([theme~=primary], .cosmos-delete-button, .cosmos-warning-button, [disabled], [aria-pressed="true"], [aria-current], [selected], [checked]) {
+.cosmos-theme vaadin-button:hover:not([theme~=primary], .cosmos-delete-button, .cosmos-warning-button, .tracked-user-button, [disabled], [aria-pressed="true"], [aria-current], [selected], [checked]) {
     background: var(--cosmos-hover-background);
     --vaadin-button-tertiary-background: var(--cosmos-hover-background);
 }
-.cosmos-theme vaadin-button:hover:not([theme~=primary], .cosmos-delete-button, .cosmos-warning-button, [disabled], [aria-pressed="true"], [aria-current], [selected], [checked])::before {
+.cosmos-theme vaadin-button:hover:not([theme~=primary], .cosmos-delete-button, .cosmos-warning-button, .tracked-user-button, [disabled], [aria-pressed="true"], [aria-current], [selected], [checked])::before {
     opacity: 0;
 }
 .cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-integer-field,

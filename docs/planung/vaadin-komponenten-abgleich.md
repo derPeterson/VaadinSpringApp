@@ -69,12 +69,14 @@ Entwicklerdaten und laufende Anwendung bleiben unverändert.
 
 Die synthetischen Originalaufnahmen und unveränderten Stitch-HTML-Exporte liegen
 im Projekt [Cosmos – Anmeldung und E-Mail-Bestätigung](https://stitch.google.com/projects/14127199108737824760).
-Die Entwürfe sind noch nicht zur Übernahme freigegeben:
+Der Anmeldungsbereich des Benutzerdialogs ist zur strukturellen Übernahme freigegeben.
+Die drei E-Mail-Seiten bleiben Vorschläge zur Auswahl:
 
 - [Benutzer bearbeiten: Anmeldung](https://stitch.google.com/projects/14127199108737824760?node-id=11269844840653526231):
-  Metadaten und Versandaktionen klarer trennen, gespeicherte Daten als Ziel nennen
-  und deaktivierte Aktionen erklären. Andere Formularbereiche bleiben gesetzt.
-  Verfügbare Anmeldewege bleiben bei einer Übernahme grün. Die vorgeschlagene
+  Informationen und bestehende Badges stehen über der Trennlinie, die beiden
+  Versandaktionen darunter. Ein kurzer Hinweis nennt die gespeicherte E-Mail-Adresse
+  als Ziel. Andere Formularbereiche bleiben gesetzt, verfügbare Anmeldewege grün.
+  Die gemeinsame Sichtung der Umsetzung bleibt offen. Die vorgeschlagene
   Aussage, jeder Passwortreset erfordere eine verifizierte E-Mail, passt nicht
   zum gültigen Vertrag: ausdrücklich ungeprüfte, freigegebene Konten sind ebenfalls zulässig.
 - [E-Mail bestätigen, A: kompakte Karte](https://stitch.google.com/projects/14127199108737824760?node-id=12215867726124644583).
@@ -118,6 +120,23 @@ automatisierte Prüfungen.
   bei Rollen und Empfängern mehrere. Die Feldhilfen zur Aufbewahrung prüfen.
   Die Dauerliste auch auf schmalem Bildschirm öffnen. Kalender und Uhrzeit nach
   einem Sprachwechsel ansehen.
+
+### Segmentierte Benachrichtigungsfilter vereinheitlichen
+
+- **Offen, nur geplant:** „Alle / Ungelesen / Gelesen“ im Posteingang und in der
+  Glockenvorschau an den vorhandenen App-Code-/Ersatzcode-Umschalter angleichen.
+  Die Filter verwenden derzeit bereits eine native `RadioButtonGroup`, die
+  als Segmentleiste gestaltet ist. Vorgesehen ist die Umstellung auf native
+  `Tabs` und `Tab`, wie in `TwoFactorCodeInput` und `TwoFactorView`.
+- Die vorhandene segmentierte Tab-Gestaltung als gemeinsame Grundlage verwenden,
+  ohne den fachlichen Code-Eingabebaustein für einen Nachrichtenfilter zu benutzen.
+  Die Zahlen bleiben native Vaadin-Badges. Farben, Maße und responsive Darstellung
+  anhand eines Vorher-/Nachher-Vergleichs erhalten.
+- Filterwirkung, Zähleraktualisierung, Auswahl, Seitenwechsel und Sprachwechsel
+  erhalten. Eine reine Aktualisierung der Beschriftungen darf keinen Filterwechsel
+  auslösen. Tastaturbedienung, zugängliche Beschriftungen und Handzeiger auf Fläche,
+  Text und Badge gehören zur gezielten DE-/EN-Prüfung auf Desktop und Smartphone.
+  Der Nachtest steht bis zur Umsetzung im [Testbedarf](../testbedarf.md).
 
 ### Ungespeicherte Formularänderungen
 

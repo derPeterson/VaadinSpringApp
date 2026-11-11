@@ -7,8 +7,10 @@
  * Popups werden in eigene DOM-Bereiche verschoben und erhalten deshalb dieselben Werte
  * über ihr ausdrücklich gesetztes theme=cosmos. Anleitung: docs/theme.md. */
 
-/* Gemeinsamer Hover und Dokument-Scrollleiste gelten auch außerhalb einzelner Komponenten. */
+/* Cursor, Hover und Dokument-Scrollleiste gelten auch außerhalb einzelner Komponenten. */
 :root {
+    --lumo-clickable-cursor: pointer;
+    --vaadin-clickable-cursor: var(--lumo-clickable-cursor);
     --cosmos-hover-background: #152238;
     --cosmos-scrollbar-size: 6px;
     --cosmos-scrollbar-thumb: #475569;

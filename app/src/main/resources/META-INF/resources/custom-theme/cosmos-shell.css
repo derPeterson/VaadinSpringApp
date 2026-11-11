@@ -133,6 +133,7 @@ vaadin-app-layout.cosmos-app-shell {
     margin: 0;
     padding: 0;
     background: transparent;
+    --vaadin-button-tertiary-background: transparent;
 }
 
 /* Initialen entstehen als Text, ohne Bilddatei oder Datenbankeintrag.
@@ -149,7 +150,11 @@ vaadin-app-layout.cosmos-app-shell {
     line-height: 1;
 }
 
-vaadin-button .cosmos-user-avatar {
+vaadin-avatar {
+    cursor: default;
+}
+
+:is(vaadin-button, a[href], vaadin-tab) :is(.cosmos-user-avatar, vaadin-avatar) {
     cursor: inherit;
 }
 
@@ -495,7 +500,8 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
 }
 
 /* Kontoheader der freigegebenen Referenz; andere App-Köpfe behalten ihre Maße. */
-.cosmos-topbar-home { display: flex; align-items: center; gap: var(--cosmos-space-m); color: inherit; text-decoration: none; min-width: 0; }
+.cosmos-topbar-home { display: flex; align-items: center; gap: var(--cosmos-space-m); color: inherit; text-decoration: none; min-width: 0; cursor: pointer; }
+.cosmos-topbar .cosmos-topbar-home:is(:hover, :focus, :active) { color: inherit; text-decoration: none; }
 .cosmos-reference-portal::part(navbar) { background: var(--cosmos-reference-page); border-bottom: 1px solid var(--cosmos-reference-border); }
 .cosmos-reference-portal .cosmos-topbar { height: 64px; min-height: 64px; width: 100%; max-width: 1240px; margin: auto; padding: 0 32px; border: 0; box-shadow: none; background: var(--cosmos-reference-page); gap: 16px; }
 .cosmos-reference-portal .cosmos-topbar-home { gap: 10px; }

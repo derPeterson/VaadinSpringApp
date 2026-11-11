@@ -372,7 +372,6 @@ vaadin-app-layout.cosmos-admin {
     padding: 0;
     flex-shrink: 0;
     color: var(--lumo-primary-text-color);
-    cursor: pointer;
 }
 
 .cosmos-config-input-row {
