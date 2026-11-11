@@ -66,6 +66,20 @@ public class PendingEmailVerificationFlow {
 
   @Transactional(propagation = Propagation.REQUIRES_NEW)
   public Optional<UserEntity> currentAccount(HttpServletRequest httpRequest) {
+    return findCurrentAccountInTransaction(httpRequest);
+  }
+
+  @Transactional(rollbackFor = IOException.class)
+  public boolean resendVerification(HttpServletRequest httpRequest) throws IOException {
+    UserEntity pendingUserEntity =
+        findCurrentAccountInTransaction(httpRequest)
+            .orElseThrow(() -> new AccessDeniedException("Verification proof expired"));
+
+    return verificationService.sendVerificationEmailByUser(pendingUserEntity);
+  }
+
+  // Beim erneuten Versand gehören Nachweisprüfung, Kontosperre und Queueaufnahme zusammen.
+  private Optional<UserEntity> findCurrentAccountInTransaction(HttpServletRequest httpRequest) {
     HttpSession httpSession = httpRequest.getSession(false);
     if (httpSession == null
         || !(httpSession.getAttribute(SESSION_KEY) instanceof PendingProof pendingProof)
@@ -88,13 +102,5 @@ public class PendingEmailVerificationFlow {
       cancel(httpRequest);
     }
     return pendingUserEntity;
-  }
-
-  @Transactional(rollbackFor = IOException.class)
-  public boolean resendVerification(HttpServletRequest httpRequest) throws IOException {
-    UserEntity pendingUserEntity =
-        currentAccount(httpRequest)
-            .orElseThrow(() -> new AccessDeniedException("Verification proof expired"));
-    return verificationService.sendVerificationEmailByUser(pendingUserEntity);
   }
 }

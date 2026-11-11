@@ -1,5 +1,11 @@
 # Offene Fehler
 
+- Beim erneuten Anfordern einer Verifikationsmail wird auch ein bereits offener
+  Versandauftrag als Erfolg gemeldet. Ein Auftrag mit unklarem Transportergebnis
+  bleibt auf `IN_PROGRESS` und verhindert dadurch weitere Anforderungen an dieselbe Adresse.
+  Die sichere Behandlung solcher Aufträge und eine eindeutige UI-Rückmeldung sind offen.
+  [Versandzustände und Grenzen](docs/mailqueue.md#ergebnisse-und-wiederholung).
+
 - Bei der Registrierung setzt der Browser gespeicherte Anmeldedaten in die
   E-Mail-Bestätigung und das Passwortfeld ein. Autofill-Hinweise der E-Mail- und
   Passwortfelder korrigiert, realer Nachtest steht aus.

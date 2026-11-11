@@ -7,6 +7,13 @@ sperren den Kontodatensatz während der Transaktion; offene gleichartige Aufträ
 Sicherheitsereignisse mit fester Zieladresse werden vollständig angelegt.
 Eine Queuezusage ist keine SMTP-Zustellbestätigung.
 
+Verifikations- und Passwortresetmails halten die Zieladresse bei der Queueaufnahme fest.
+Bei einer administrativen Adressänderung werden alte Links ungültig und noch wartende
+Adressmails entfernt. Bereits beanspruchte Aufträge behalten ihr ursprüngliches Ziel
+und ihren Zustand. Sie werden nicht erneut freigegeben und blockieren keinen Auftrag
+für die neue Adresse. Änderungen am Konto und der automatische Verifikationsauftrag
+für die neue Adresse werden gemeinsam gespeichert oder gemeinsam zurückgerollt.
+
 Der Scheduler wählt fällige PENDING-IDs nach Erstellungszeit und ID. Pro Lauf gilt
 die konfigurierte Kapazität; der Workerpool nimmt höchstens seine konfigurierte
 Parallelität an. Jeder Worker lädt und beansprucht seinen Auftrag in einer eigenen

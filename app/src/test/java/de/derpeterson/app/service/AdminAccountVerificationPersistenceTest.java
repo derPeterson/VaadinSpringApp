@@ -6,13 +6,17 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.EmailQueueEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.EmailStatus;
 import de.derpeterson.app.model.enums.EmailVerificationStatus;
 import de.derpeterson.app.model.enums.RegistrationChannel;
 import de.derpeterson.app.model.enums.TokenStatus;
@@ -26,6 +30,10 @@ import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.MockedStatic;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -199,6 +207,149 @@ class AdminAccountVerificationPersistenceTest {
             .orElseThrow()
             .getEmailVerificationStatus());
     assertFalse(userRepository.findSecurityUser("replacement@example.test").getFirst().isEnabled());
+  }
+
+  @ParameterizedTest
+  @CsvSource({
+    "PENDING,ADMINISTRATION",
+    "VERIFIED,PORTAL",
+    "VERIFIED,GOOGLE",
+    "NOT_CHECKED,APPLICATION_START",
+    "NOT_CHECKED,ADMINISTRATION"
+  })
+  void addressChangeQueuesProofUnlessTheStoredAccountIsExempt(
+      EmailVerificationStatus originalVerificationStatus, RegistrationChannel registrationChannel)
+      throws IOException {
+    UserEntity accountUserEntity = newAccount();
+    boolean verificationExempt = originalVerificationStatus == EmailVerificationStatus.NOT_CHECKED;
+    accountUserEntity.setRegistrationChannel(registrationChannel);
+    accountUserEntity.setEmailVerificationStatus(originalVerificationStatus);
+    accountUserEntity.setPassword("isolated-fixture-hash");
+    userService.saveUser(accountUserEntity);
+    if (originalVerificationStatus == EmailVerificationStatus.PENDING) {
+      assertTrue(verificationService.sendVerificationEmailByUser(accountUserEntity));
+    }
+    UserEntity editedUserEntity = readEditableAccount(accountUserEntity.getId());
+    editedUserEntity.setEmail("replacement@example.test");
+
+    adminAccountMailService.updateUser(editedUserEntity, editedUserEntity.getVersion(), "");
+
+    UserEntity storedUserEntity = userRepository.findById(accountUserEntity.getId()).orElseThrow();
+    assertEquals("replacement@example.test", storedUserEntity.getEmail());
+    assertEquals(registrationChannel, storedUserEntity.getRegistrationChannel());
+    assertEquals(
+        verificationExempt ? EmailVerificationStatus.NOT_CHECKED : EmailVerificationStatus.PENDING,
+        storedUserEntity.getEmailVerificationStatus());
+    assertEquals(verificationExempt ? 0 : 1, emailQueueRepository.count());
+    assertEquals(
+        verificationExempt,
+        userRepository.findSecurityUser(storedUserEntity.getEmail()).getFirst().isEnabled());
+    if (!verificationExempt) {
+      assertEquals(
+          "replacement@example.test", emailQueueRepository.findAll().getFirst().getRecipient());
+      assertTrue(
+          adminAccountMailService.resendVerification(
+              storedUserEntity.getId(), storedUserEntity.getEmail()));
+      assertEquals(1, emailQueueRepository.count());
+    }
+  }
+
+  @Test
+  void unrelatedEditDoesNotRequestAnotherVerificationMail() throws IOException {
+    UserEntity accountUserEntity = newAccount();
+    adminAccountMailService.createUser(accountUserEntity, "KnownPassword!", false);
+    UserEntity editedUserEntity = readEditableAccount(accountUserEntity.getId());
+    editedUserEntity.setFirstName("Updated");
+    editedUserEntity.setEmail("PENDING@EXAMPLE.TEST");
+    long previousTokenCount = verificationTokenRepository.count();
+
+    adminAccountMailService.updateUser(editedUserEntity, editedUserEntity.getVersion(), "");
+
+    assertEquals(1, emailQueueRepository.count());
+    assertEquals(previousTokenCount, verificationTokenRepository.count());
+    assertEquals(
+        "Updated", userRepository.findById(accountUserEntity.getId()).orElseThrow().getFirstName());
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  void unresolvedOldAddressMailDoesNotBlockTheReplacementAddress(boolean hasFixedRecipient)
+      throws IOException {
+    UserEntity accountUserEntity = newAccount();
+    adminAccountMailService.createUser(accountUserEntity, "KnownPassword!", false);
+    Long unresolvedQueueId =
+        transactionTemplate.execute(transactionStatus -> {
+          EmailQueueEntity queuedEmailEntity = emailQueueRepository.findAll().getFirst();
+          queuedEmailEntity.setStatus(EmailStatus.IN_PROGRESS);
+          if (!hasFixedRecipient) {
+            queuedEmailEntity.setRecipient(null);
+          }
+          return emailQueueRepository.saveAndFlush(queuedEmailEntity).getId();
+        });
+    UserEntity editedUserEntity = readEditableAccount(accountUserEntity.getId());
+    editedUserEntity.setEmail("replacement@example.test");
+
+    adminAccountMailService.updateUser(editedUserEntity, editedUserEntity.getVersion(), "");
+
+    EmailQueueEntity unresolvedEmailEntity =
+        emailQueueRepository.findById(unresolvedQueueId).orElseThrow();
+    assertEquals(EmailStatus.IN_PROGRESS, unresolvedEmailEntity.getStatus());
+    assertEquals("pending@example.test", unresolvedEmailEntity.getRecipient());
+    assertEquals(2, emailQueueRepository.count());
+    EmailQueueEntity replacementEmailEntity =
+        emailQueueRepository.findAll().stream()
+            .filter(queueEntry -> !queueEntry.getId().equals(unresolvedQueueId))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(EmailStatus.PENDING, replacementEmailEntity.getStatus());
+    assertEquals("replacement@example.test", replacementEmailEntity.getRecipient());
+  }
+
+  @Test
+  void mailPreparationFailureRollsBackAddressTokensAndQueueTogether() throws IOException {
+    UserEntity accountUserEntity = newAccount();
+    adminAccountMailService.createUser(accountUserEntity, "KnownPassword!", false);
+    String previousVerificationToken = verificationTokenRepository.findAll().getFirst().getToken();
+    UserEntity editedUserEntity = readEditableAccount(accountUserEntity.getId());
+    editedUserEntity.setEmail("replacement@example.test");
+
+    // Die fehlende Sprachressource erzeugt eine echte IOException vor der Queueaufnahme.
+    try (MockedStatic<CustomI18NProvider> localeProvider = mockStatic(CustomI18NProvider.class)) {
+      localeProvider
+          .when(CustomI18NProvider::getCurrentLocale)
+          .thenReturn(Locale.forLanguageTag("zz"));
+      assertThrows(
+          IOException.class,
+          () ->
+              adminAccountMailService.updateUser(
+                  editedUserEntity, editedUserEntity.getVersion(), ""));
+    }
+
+    assertEquals(
+        "pending@example.test",
+        userRepository.findById(accountUserEntity.getId()).orElseThrow().getEmail());
+    assertEquals(1, emailQueueRepository.count());
+    assertEquals(1, verificationTokenRepository.count());
+    assertEquals(
+        TokenStatus.ACTIVE,
+        verificationTokenRepository
+            .findByToken(previousVerificationToken)
+            .orElseThrow()
+            .getStatus());
+  }
+
+  @Test
+  void changingTheAddressOfABlockedAccountDoesNotQueueAnActivation() throws IOException {
+    UserEntity accountUserEntity = newAccount();
+    adminAccountMailService.createUser(accountUserEntity, "KnownPassword!", false);
+    UserEntity editedUserEntity = readEditableAccount(accountUserEntity.getId());
+    editedUserEntity.setEmail("replacement@example.test");
+    editedUserEntity.setEnabled(false);
+
+    adminAccountMailService.updateUser(editedUserEntity, editedUserEntity.getVersion(), "");
+
+    assertEquals(0, emailQueueRepository.count());
+    assertFalse(userRepository.findById(accountUserEntity.getId()).orElseThrow().isEnabled());
   }
 
   @Test

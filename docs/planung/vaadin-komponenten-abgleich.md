@@ -60,6 +60,10 @@ Entwicklerdaten und laufende Anwendung bleiben unverändert.
 - Adminaktionen zum erneuten Versand der Verifikationsmail und zum Passwortreset
   ergänzen. Rechte und gespeicherte Adresse frisch prüfen, keine Entwürfe verwenden.
   Bestehende Versandbegrenzungen, Tokenrotation, Transaktionen und MFA erhalten.
+  Eine gespeicherte Adressänderung fordert automatisch einen neuen Verifikationslink
+  an. Die Ausnahme „Nicht geprüft“ bleibt erhalten und löst keinen Versand aus.
+  Alte ungeklärte Versandaufträge behalten Ziel und Zustand, ohne die neue Adresse
+  zu blockieren. Die gemeinsame Sichtung dieses Ablaufs bleibt offen.
 - Offen bleibt die gemeinsame Sichtung
   der neuen Bestätigungsseite, der Konto-/Admin-Badges, der Superadmin-Ausnahme
   und der administrativen Mailaktionen. Die Browserhilfen bestätigen regulär

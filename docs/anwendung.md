@@ -27,8 +27,12 @@ Die Checkbox „Verifikation“ ist standardmäßig ausgewählt und erklärt den
 mit einem Hilfetext. Nur Superadmins können sie bei der Anlage abwählen und das
 Konto ausdrücklich ohne E-Mail-Nachweis bereitstellen. In den Benutzerdetails stehen Anlageweg und E-Mail-Nachweis
 getrennt. Berechtigte Admins können dort Bestätigungsmails und für geeignete Konten
-Passwortresetmails an die gespeicherte Adresse anfordern. Eine geänderte Adresse
-muss zuvor gespeichert werden. Ein Mailauftrag ist keine Zustellbestätigung.
+Passwortresetmails an die gespeicherte Adresse anfordern. Beim Speichern einer
+geänderten Adresse fordert die Benutzerverwaltung automatisch einen neuen
+Verifikationslink an. Konten mit „Nicht geprüft“ behalten ihre Ausnahme und erhalten
+keine Verifikationsmail; administrative Sperren bleiben wirksam. Unveränderte Adressen
+lösen keinen Versand aus. Der manuelle Button verwendet weiterhin die gespeicherte
+Adresse. Ein Mailauftrag ist keine Zustellbestätigung.
 
 ## Mein Konto
 

@@ -1590,8 +1590,18 @@ public class AdminUserManagementSection extends VerticalLayout {
               .roleEntities(roleEntities)
               .build();
       if (editMode) {
-        userService.updateAdminUser(
-            updatedUserEntity, expectedUserVersion, userFormData.getPassword());
+        if (adminAccountMailService != null) {
+          try {
+            adminAccountMailService.updateUser(
+                updatedUserEntity, expectedUserVersion, userFormData.getPassword());
+          } catch (IOException failure) {
+            throw new IllegalStateException(
+                "Verification mail for the changed address could not be prepared", failure);
+          }
+        } else {
+          userService.updateAdminUser(
+              updatedUserEntity, expectedUserVersion, userFormData.getPassword());
+        }
       } else {
         if (adminAccountMailService != null) {
           try {

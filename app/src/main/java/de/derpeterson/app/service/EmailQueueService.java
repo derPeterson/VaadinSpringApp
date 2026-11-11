@@ -107,7 +107,7 @@ public class EmailQueueService {
 
   public boolean hasOpenEmailForUserAndType(UserEntity userEntity, EmailType emailType) {
     requireUserAndType(userEntity, emailType);
-    return emailQueueRepository.existsByUserEntityAndEmailTypeAndStatusIn(
+    return emailQueueRepository.existsOpenEmailForCurrentAddress(
         userEntity, emailType, OPEN_STATUSES);
   }
 
@@ -135,6 +135,9 @@ public class EmailQueueService {
 
     EmailQueueEntity email = new EmailQueueEntity();
     email.setUserEntity(userEntity);
+    if (emailType == EmailType.VERIFICATION || emailType == EmailType.PASSWORD_RESET) {
+      email.setRecipient(userEntity.getEmail());
+    }
     email.setSubject(subject);
     email.setBody(body);
     email.setEmailType(emailType);

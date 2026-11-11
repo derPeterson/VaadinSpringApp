@@ -320,63 +320,93 @@ public class UserService {
 
   /**
    * Requires ID/form-open version; null/blank password means unchanged. Stale/deleted snapshots
-   * raise OptimisticLockingFailureException.
+   * raise OptimisticLockingFailureException. Returns whether the canonical email address changed.
    */
   @Transactional
-  public void updateAdminUser(UserEntity edited, Long expectedVersion, String rawPassword) {
-    Assert.notNull(edited, ENTITY_REQUIRED_MESSAGE);
-    Assert.notNull(edited.getId(), USER_ID_REQUIRED_MESSAGE);
-    List<Long> superadmins = lockAndReadSuperadmins();
-    UserEntity stored =
+  public boolean updateAdminUser(
+      UserEntity editedUserEntity, Long expectedUserVersion, String rawPortalPassword) {
+    Assert.notNull(editedUserEntity, ENTITY_REQUIRED_MESSAGE);
+    Assert.notNull(editedUserEntity.getId(), USER_ID_REQUIRED_MESSAGE);
+    List<Long> enabledSuperadminIds = lockAndReadSuperadmins();
+    UserEntity storedUserEntity =
         userRepository
-            .findByIdForUpdate(edited.getId())
+            .findByIdForUpdate(editedUserEntity.getId())
             .orElseThrow(() ->
                 new OptimisticLockingFailureException("Der Benutzer wurde inzwischen gelöscht."));
-    if (expectedVersion == null || !Objects.equals(expectedVersion, stored.getVersion())) {
+    if (expectedUserVersion == null
+        || !Objects.equals(expectedUserVersion, storedUserEntity.getVersion())) {
       throw new OptimisticLockingFailureException(
           "Der Benutzer wurde inzwischen geändert. Bitte das Formular neu öffnen und die Änderungen prüfen.");
     }
-    validateUserFields(edited);
-    if (rawPassword != null && !rawPassword.isBlank()) {
-      Assert.isTrue(UserInputRules.isPasswordSecure(rawPassword), "Invalid password");
+
+    validateUserFields(editedUserEntity);
+    if (rawPortalPassword != null && !rawPortalPassword.isBlank()) {
+      Assert.isTrue(UserInputRules.isPasswordSecure(rawPortalPassword), "Invalid password");
     }
-    Set<RoleType> previousRoles = Set.copyOf(userRepository.findExplicitRoles(stored.getId()));
-    Set<RoleType> nextRoles = roleTypes(edited.getRoleEntities());
-    rolePolicy.authorizeMutation(stored.getId(), nextRoles);
-    ensureSuperadminChangeAllowed(stored.getId(), isEnabledSuperadmin(edited), superadmins);
-    stored.setFirstName(edited.getFirstName());
-    stored.setLastName(edited.getLastName());
-    boolean emailAddressChanged = !Objects.equals(stored.getEmail(), edited.getEmail());
-    stored.setEmail(edited.getEmail());
-    if (emailAddressChanged) {
-      userRepository.invalidateVerificationTokensForAddressChange(stored.getId());
-      userRepository.invalidatePasswordResetTokensForAddressChange(stored.getId());
-      userRepository.deletePendingAddressMails(stored.getId());
-      stored.setVerificationMailRequestedAt(null);
-      stored.setPasswordResetMailRequestedAt(null);
-      stored.rotateAccessVersion();
+
+    Set<RoleType> previousRoleTypes =
+        Set.copyOf(userRepository.findExplicitRoles(storedUserEntity.getId()));
+    Set<RoleType> nextRoleTypes = roleTypes(editedUserEntity.getRoleEntities());
+    rolePolicy.authorizeMutation(storedUserEntity.getId(), nextRoleTypes);
+    ensureSuperadminChangeAllowed(
+        storedUserEntity.getId(), isEnabledSuperadmin(editedUserEntity), enabledSuperadminIds);
+
+    storedUserEntity.setFirstName(editedUserEntity.getFirstName());
+    storedUserEntity.setLastName(editedUserEntity.getLastName());
+    boolean emailAddressChanged =
+        updateAdminEmailAddress(storedUserEntity, editedUserEntity.getEmail());
+    storedUserEntity.setGender(editedUserEntity.getGender());
+    storedUserEntity.setBirthDate(editedUserEntity.getBirthDate());
+    storedUserEntity.setEnabled(editedUserEntity.isEnabled());
+    storedUserEntity.setRoleEntities(new ArrayList<>(editedUserEntity.getRoleEntities()));
+
+    if (rawPortalPassword != null && !rawPortalPassword.isBlank()) {
+      updatePassword(storedUserEntity, rawPortalPassword);
     }
-    stored.setGender(edited.getGender());
-    stored.setBirthDate(edited.getBirthDate());
-    stored.setEnabled(edited.isEnabled());
-    stored.setRoleEntities(new ArrayList<>(edited.getRoleEntities()));
-    if (rawPassword != null && !rawPassword.isBlank()) {
-      updatePassword(stored, rawPassword);
-    }
-    userRepository.saveAndFlush(stored);
-    profileEvents.afterCommit(stored);
-    ensureSuperadminsRemain(superadmins);
+
+    userRepository.saveAndFlush(storedUserEntity);
+    profileEvents.afterCommit(storedUserEntity);
+    ensureSuperadminsRemain(enabledSuperadminIds);
+
     AfterCommitLog.info(
         log,
         "Admin account update committed: userId={}, enabled={}, roles={}, passwordChanged={}",
-        stored.getId(),
-        stored.isEnabled(),
-        Set.copyOf(nextRoles),
-        rawPassword != null && !rawPassword.isBlank());
-    if (!previousRoles.equals(nextRoles)) {
+        storedUserEntity.getId(),
+        storedUserEntity.isEnabled(),
+        Set.copyOf(nextRoleTypes),
+        rawPortalPassword != null && !rawPortalPassword.isBlank());
+    if (!previousRoleTypes.equals(nextRoleTypes)) {
       applicationEventPublisher.publishEvent(
-          new de.derpeterson.app.events.UserRolesChanged(stored.getId(), previousRoles, nextRoles));
+          new de.derpeterson.app.events.UserRolesChanged(
+              storedUserEntity.getId(), previousRoleTypes, nextRoleTypes));
     }
+
+    return emailAddressChanged;
+  }
+
+  private boolean updateAdminEmailAddress(UserEntity storedUserEntity, String updatedEmailAddress) {
+    String canonicalEmailAddress = EmailIdentity.canonicalize(updatedEmailAddress);
+    if (Objects.equals(storedUserEntity.getEmail(), canonicalEmailAddress)) {
+      return false;
+    }
+
+    // Ein bereits beanspruchter Auftrag behält sein altes Ziel und wird nicht erneut freigegeben.
+    userRepository.preserveClaimedAddressMailRecipients(
+        storedUserEntity.getId(), storedUserEntity.getEmail());
+    boolean emailVerificationExempt =
+        storedUserEntity.getEmailVerificationStatus() == EmailVerificationStatus.NOT_CHECKED;
+    storedUserEntity.setEmail(canonicalEmailAddress);
+    if (emailVerificationExempt) {
+      storedUserEntity.setEmailVerificationStatus(EmailVerificationStatus.NOT_CHECKED);
+    }
+
+    userRepository.invalidateVerificationTokensForAddressChange(storedUserEntity.getId());
+    userRepository.invalidatePasswordResetTokensForAddressChange(storedUserEntity.getId());
+    userRepository.deletePendingAddressMails(storedUserEntity.getId());
+    storedUserEntity.setVerificationMailRequestedAt(null);
+    storedUserEntity.setPasswordResetMailRequestedAt(null);
+    storedUserEntity.rotateAccessVersion();
+    return true;
   }
 
   public List<UserEntity> findAllUsers() {

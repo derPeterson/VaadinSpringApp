@@ -35,6 +35,25 @@ public class AdminAccountMailService {
   }
 
   @Transactional(rollbackFor = IOException.class)
+  public void updateUser(
+      UserEntity editedUserEntity, Long expectedUserVersion, String rawPortalPassword)
+      throws IOException {
+    boolean emailAddressChanged =
+        userService.updateAdminUser(editedUserEntity, expectedUserVersion, rawPortalPassword);
+    if (!emailAddressChanged) {
+      return;
+    }
+
+    UserEntity storedUserEntity =
+        userRepository.lockVerificationUser(editedUserEntity.getId()).orElseThrow();
+    if (storedUserEntity.requiresEmailVerification()
+        && !verificationService.sendVerificationEmailByUser(storedUserEntity)) {
+      throw new IllegalStateException(
+          "Verification mail for the changed address could not be queued");
+    }
+  }
+
+  @Transactional(rollbackFor = IOException.class)
   public boolean resendVerification(Long userId, String expectedEmail) throws IOException {
     UserEntity storedUserEntity = lockAuthorizedUser(userId, expectedEmail);
     return storedUserEntity.requiresEmailVerification()

@@ -102,6 +102,11 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
       "delete from EmailQueueEntity e where e.userEntity.id = :userId and e.status = de.derpeterson.app.model.enums.EmailStatus.PENDING and e.emailType in (de.derpeterson.app.model.enums.EmailType.VERIFICATION, de.derpeterson.app.model.enums.EmailType.PASSWORD_RESET)")
   void deletePendingAddressMails(Long userId);
 
+  @Modifying
+  @Query(
+      "update EmailQueueEntity e set e.recipient = :previousEmailAddress where e.userEntity.id = :userId and e.recipient is null and e.status = de.derpeterson.app.model.enums.EmailStatus.IN_PROGRESS and e.emailType in (de.derpeterson.app.model.enums.EmailType.VERIFICATION, de.derpeterson.app.model.enums.EmailType.PASSWORD_RESET)")
+  void preserveClaimedAddressMailRecipients(Long userId, String previousEmailAddress);
+
   interface TwoFactorAccessRow {
     Long getId();
 

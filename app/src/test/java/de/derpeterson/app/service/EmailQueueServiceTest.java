@@ -122,8 +122,7 @@ class EmailQueueServiceTest {
   @EnumSource(EmailType.class)
   void openQueryUsesExactlyPendingAndInProgressForTheRequestedType(EmailType type) {
     List<EmailStatus> statuses = List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS);
-    when(emailQueueRepository.existsByUserEntityAndEmailTypeAndStatusIn(
-            testUserEntity, type, statuses))
+    when(emailQueueRepository.existsOpenEmailForCurrentAddress(testUserEntity, type, statuses))
         .thenReturn(true, false);
 
     assertTrue(emailQueueService.hasOpenEmailForUserAndType(testUserEntity, type));
@@ -146,7 +145,7 @@ class EmailQueueServiceTest {
     order.verify(userRepository).lockVerificationUser(12L);
     order
         .verify(emailQueueRepository)
-        .existsByUserEntityAndEmailTypeAndStatusIn(
+        .existsOpenEmailForCurrentAddress(
             testUserEntity, type, List.of(EmailStatus.PENDING, EmailStatus.IN_PROGRESS));
     ArgumentCaptor<EmailQueueEntity> captor = ArgumentCaptor.forClass(EmailQueueEntity.class);
     order.verify(emailQueueRepository).save(captor.capture());
@@ -169,7 +168,7 @@ class EmailQueueServiceTest {
   @EnumSource(value = EmailType.class, names = "ACCOUNT_DELETED", mode = EnumSource.Mode.EXCLUDE)
   void openDuplicateDoesNotOverwriteOrInsert(EmailType type) {
     when(userRepository.lockVerificationUser(12L)).thenReturn(Optional.of(testUserEntity));
-    when(emailQueueRepository.existsByUserEntityAndEmailTypeAndStatusIn(
+    when(emailQueueRepository.existsOpenEmailForCurrentAddress(
             eq(testUserEntity), eq(type), anyCollection()))
         .thenReturn(true);
     emailQueueService.addEmailToQueue(testUserEntity, "new", "new", type);

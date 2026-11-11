@@ -28,6 +28,9 @@
   Buttons und lange Beschriftungen müssen bei Platzmangel sauber umbrechen.
   Die vorhandene Suite `email-verification` für ausstehenden, bestätigten und
   ausdrücklich ungeprüften Nachweis sowie Konten ohne Portalpasswort verwenden.
+  Beim Speichern einer neuen E-Mail-Adresse automatisch eine Verifikationsmail an
+  genau diese Adresse erwarten. „Nicht geprüft“ bleibt ohne Versand erhalten;
+  unveränderte Adressen erzeugen keine neue Mail. Den manuellen Versand weiter prüfen.
 
 - Headerlinks, **offen, noch kein Browserlauf beauftragt**:
   In Portal und Administration in DE/EN bei Desktop- und Smartphonebreite prüfen,

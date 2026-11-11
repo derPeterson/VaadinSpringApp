@@ -42,6 +42,7 @@ import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.ExternalIdentityService.SignInSummary;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
@@ -266,6 +267,20 @@ class AdminUserDialogValidationTest {
     findSaveUserButton().click();
 
     verify(userService).updateAdminUser(any(), eq(3L), eq(""));
+    assertFalse(userDialog.isOpened());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void savingAnEditUsesTheTransactionalMailWorkflow(String languageTag) throws IOException {
+    AdminAccountMailService adminAccountMailService = mock(AdminAccountMailService.class);
+    userManagementSection.configureAccountMailActions(adminAccountMailService);
+    openUserDialog(languageTag, false);
+
+    findSaveUserButton().click();
+
+    verify(adminAccountMailService).updateUser(any(), eq(3L), eq(""));
+    verify(userService, never()).updateAdminUser(any(), any(), any());
     assertFalse(userDialog.isOpened());
   }
 

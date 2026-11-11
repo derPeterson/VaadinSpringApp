@@ -3,6 +3,7 @@ package de.derpeterson.app.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -30,6 +31,7 @@ import de.derpeterson.app.model.enums.TokenStatus;
 import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.repository.VerificationTokenRepository;
+import de.derpeterson.app.security.PendingEmailVerificationFlow;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.persistence.EntityManagerFactory;
@@ -67,9 +69,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -82,6 +86,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 class VerificationQueueConcurrencyTest {
   @Autowired private VerificationService verification;
+  @Autowired private PendingEmailVerificationFlow pendingEmailVerificationFlow;
   @Autowired private EmailQueueService mailQueue;
   @Autowired private UserService admin;
   @Autowired private UserRepository userRepository;
@@ -118,6 +123,59 @@ class VerificationQueueConcurrencyTest {
           new VerificationTokenEntity(
               null, "old", testUserEntity, LocalDateTime.now().plusDays(1), TokenStatus.ACTIVE));
     });
+  }
+
+  @Test
+  void restrictedProofResendCommitsOneMailAndRotatesTheToken() throws IOException {
+    MockHttpServletRequest httpRequest = requestWithPendingVerificationProof();
+
+    assertTrue(pendingEmailVerificationFlow.currentAccount(httpRequest).isPresent());
+    assertTrue(pendingEmailVerificationFlow.resendVerification(httpRequest));
+
+    assertCoherentQueue();
+    assertEquals(TokenStatus.INACTIVE, tokenStatus("old"));
+    assertNotNull(snapshot().getVerificationMailRequestedAt());
+  }
+
+  @Test
+  void restrictedProofResendDoesNotReplaceAnUnresolvedTransportAttempt() throws IOException {
+    MockHttpServletRequest httpRequest = requestWithPendingVerificationProof();
+    assertTrue(pendingEmailVerificationFlow.resendVerification(httpRequest));
+    tx.executeWithoutResult(transactionStatus -> {
+      EmailQueueEntity unresolvedEmailQueueEntity = emailQueueRepository.findAll().getFirst();
+      unresolvedEmailQueueEntity.setStatus(EmailStatus.IN_PROGRESS);
+      emailQueueRepository.saveAndFlush(unresolvedEmailQueueEntity);
+    });
+    long verificationTokenCount = verificationTokenRepository.count();
+
+    assertTrue(pendingEmailVerificationFlow.resendVerification(httpRequest));
+
+    assertEquals(1, emailQueueRepository.count());
+    assertEquals(EmailStatus.IN_PROGRESS, emailQueueRepository.findAll().getFirst().getStatus());
+    assertEquals(verificationTokenCount, verificationTokenRepository.count());
+  }
+
+  @Test
+  void invalidatedRestrictedProofCannotQueueAMail() {
+    MockHttpServletRequest httpRequest = requestWithPendingVerificationProof();
+    tx.executeWithoutResult(transactionStatus -> {
+      UserEntity storedUserEntity = userRepository.findById(id).orElseThrow();
+      storedUserEntity.setAccessVersion("changed-after-first-factor");
+      userRepository.saveAndFlush(storedUserEntity);
+    });
+
+    assertThrows(
+        AccessDeniedException.class,
+        () -> pendingEmailVerificationFlow.resendVerification(httpRequest));
+
+    assertEquals(0, emailQueueRepository.count());
+    assertEquals(TokenStatus.ACTIVE, tokenStatus("old"));
+  }
+
+  private MockHttpServletRequest requestWithPendingVerificationProof() {
+    MockHttpServletRequest httpRequest = new MockHttpServletRequest();
+    PendingEmailVerificationFlow.startForProviderAccount(httpRequest, snapshot());
+    return httpRequest;
   }
 
   @ParameterizedTest
@@ -551,6 +609,12 @@ class VerificationQueueConcurrencyTest {
   @EnableTransactionManagement
   @EnableJpaRepositories(basePackageClasses = UserRepository.class)
   static class Config {
+    @Bean
+    PendingEmailVerificationFlow pendingEmailVerificationFlow(
+        Probes probes, VerificationService verificationService) {
+      return new PendingEmailVerificationFlow(probes.userRepository(), verificationService);
+    }
+
     @Bean
     DataSource dataSource() {
       return new DriverManagerDataSource(
