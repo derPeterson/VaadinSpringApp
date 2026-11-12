@@ -20,6 +20,7 @@ import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
@@ -87,6 +88,7 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
@@ -407,7 +409,8 @@ public class AdminUserManagementSection extends VerticalLayout {
             .setHeader(messageProperties.getAdminUsersGridEnabled())
             .setAutoWidth(true)
             .setSortable(true)
-            .setComparator(Comparator.comparing(UserEntity::isEnabled));
+            .setComparator(
+                Comparator.comparing(userEntity -> !userEntity.isAdministrativelyBlocked()));
 
     statusColumn =
         userGrid
@@ -792,9 +795,9 @@ public class AdminUserManagementSection extends VerticalLayout {
     private PasswordField confirmPasswordField;
     private ComboBox<Gender> genderComboBox;
     private DatePicker birthDatePicker;
-    private Checkbox enabledCheckbox;
-    private Span enabledCaptionSpan;
-    private Span enabledHintSpan;
+    private Checkbox administrativelyBlockedCheckbox;
+    private Span blockedCaptionSpan;
+    private Span blockedHintSpan;
     private final Checkbox emailVerificationRequiredCheckbox = new Checkbox();
     private final Span emailVerificationCaptionSpan = new Span();
     private final Span emailVerificationHintSpan = new Span();
@@ -819,6 +822,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     // Anmeldeinformationen eines vorhandenen Kontos
     private SignInSummary signInSummary;
     private final H3 signInTitleH3 = new H3();
+    private final VerticalLayout lifecycleStatusLayout = new VerticalLayout();
     private final Span registrationLabelSpan = new Span();
     private final Badge registeredViaBadge = new Badge();
     private final Span signInMethodsLabelSpan = new Span();
@@ -966,16 +970,17 @@ public class AdminUserManagementSection extends VerticalLayout {
       birthDatePicker.setClearButtonVisible(true);
       birthDatePicker.setMax(LocalDate.now(ZoneId.systemDefault()));
 
-      enabledCheckbox = new Checkbox();
-      enabledCheckbox.addClassNames("admin-user-option-checkbox", "admin-user-enabled-checkbox");
-      enabledCaptionSpan = new Span(messageProperties.getAdminUsersFieldEnabled());
-      enabledHintSpan = new Span(messageProperties.getAdminUsersEnabledHint());
-      enabledHintSpan.addClassName("admin-user-option-hint");
-      enabledHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
-      Div enabledLabelDiv = new Div(enabledCaptionSpan, enabledHintSpan);
-      enabledLabelDiv.addClassName("admin-user-option-label");
-      enabledCheckbox.setLabelComponent(enabledLabelDiv);
-      enabledCheckbox.setAriaDescribedBy(enabledHintSpan);
+      administrativelyBlockedCheckbox = new Checkbox();
+      administrativelyBlockedCheckbox.addClassNames(
+          "admin-user-option-checkbox", "admin-user-enabled-checkbox");
+      blockedCaptionSpan = new Span(messageProperties.getAdminUsersFieldBlocked());
+      blockedHintSpan = new Span(messageProperties.getAdminUsersBlockedHint());
+      blockedHintSpan.addClassName("admin-user-option-hint");
+      blockedHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
+      Div blockedLabelDiv = new Div(blockedCaptionSpan, blockedHintSpan);
+      blockedLabelDiv.addClassName("admin-user-option-label");
+      administrativelyBlockedCheckbox.setLabelComponent(blockedLabelDiv);
+      administrativelyBlockedCheckbox.setAriaDescribedBy(blockedHintSpan);
 
       configureEmailVerificationCheckbox();
 
@@ -1081,8 +1086,10 @@ public class AdminUserManagementSection extends VerticalLayout {
           .bind(AdminUserFormData::getBirthDate, AdminUserFormData::setBirthDate);
 
       userFormBinder
-          .forField(enabledCheckbox)
-          .bind(AdminUserFormData::isEnabled, AdminUserFormData::setEnabled);
+          .forField(administrativelyBlockedCheckbox)
+          .bind(
+              AdminUserFormData::isAdministrativelyBlocked,
+              AdminUserFormData::setAdministrativelyBlocked);
 
       userFormBinder
           .forField(rolesComboBox)
@@ -1288,7 +1295,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       Div roleSelectionDiv = new Div(rolesComboBox, rolesSummarySpan);
       roleSelectionDiv.addClassName("admin-user-role-field");
-      Div permissionsRowDiv = new Div(roleSelectionDiv, enabledCheckbox);
+      Div permissionsRowDiv = new Div(roleSelectionDiv, administrativelyBlockedCheckbox);
       permissionsRowDiv.addClassName("admin-user-permissions");
       VerticalLayout editorFormLayout =
           new VerticalLayout(
@@ -1305,7 +1312,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             .adminSignInSummary(editedUserEntity.getId())
             .ifPresent(summary -> {
               signInSummary = summary;
-              editorFormLayout.add(createSignInDetailsLayout());
+              editorFormLayout.add(createSignInDetails());
             });
       }
       Div editorFooterDiv = new Div(securityNoteDiv, editorActionsLayout);
@@ -1318,7 +1325,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       editUserDialog.add(editorFormLayout);
     }
 
-    private VerticalLayout createSignInDetailsLayout() {
+    private Details createSignInDetails() {
       signInTitleH3.addClassNames(COSMOS_PANEL_TITLE_CLASS, "admin-user-sign-in-title");
       SvgIcon signInInfoSvgIcon = AppIcon.INFO_CIRCLE.create();
       signInInfoSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
@@ -1359,18 +1366,24 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       VerticalLayout signInDetailsLayout =
           new VerticalLayout(
-              signInHeadingLayout,
               signInDetailsRowLayout,
               signInStatusRowLayout,
+              lifecycleStatusLayout,
               administrativeMailActionsLayout);
       signInDetailsLayout.setWidthFull();
       signInDetailsLayout.setPadding(false);
       signInDetailsLayout.setSpacing(false);
       signInDetailsLayout.setAlignItems(Alignment.STRETCH);
-      signInDetailsLayout.addClassNames("cosmos-panel-hint", "admin-user-sign-in");
+      signInDetailsLayout.addClassName("admin-user-sign-in-content");
+
+      Details signInDetails = new Details(signInHeadingLayout, signInDetailsLayout);
+      signInDetails.setId("admin-user-sign-in-details");
+      signInDetails.setWidthFull();
+      signInDetails.setOpened(false);
+      signInDetails.addClassNames("cosmos-panel-hint", "admin-user-sign-in");
 
       refreshSignInDetails();
-      return signInDetailsLayout;
+      return signInDetails;
     }
 
     private void refreshSignInDetails() {
@@ -1384,6 +1397,7 @@ public class AdminUserManagementSection extends VerticalLayout {
               ? messageProperties.getDevelopmentAccountLabel()
               : messageProperties.getStandardAccountLabel());
       refreshVerificationDetails();
+      refreshLifecycleStatus();
       refreshAdministrativeMailActions();
 
       registrationLabelSpan.setText(messageProperties.getSignInRegisteredVia());
@@ -1407,6 +1421,33 @@ public class AdminUserManagementSection extends VerticalLayout {
               availableSignInMethodsDiv.add(signInMethodBadge);
             });
       }
+    }
+
+    private void refreshLifecycleStatus() {
+      lifecycleStatusLayout.removeAll();
+      lifecycleStatusLayout.setPadding(false);
+      lifecycleStatusLayout.setSpacing(false);
+      lifecycleStatusLayout.setAlignItems(Alignment.START);
+      lifecycleStatusLayout.addClassName("admin-user-lifecycle-status");
+      boolean selfDeactivated = editedUserEntity.getAccountDeactivation() != null;
+      lifecycleStatusLayout.setVisible(selfDeactivated);
+      if (!selfDeactivated) {
+        return;
+      }
+
+      Badge selfDeactivationBadge = new Badge(messageProperties.getAdminUserSelfDeactivated());
+      selfDeactivationBadge.setId("admin-user-self-deactivation");
+      selfDeactivationBadge.addThemeVariants(BadgeVariant.WARNING);
+      String deletionDateText =
+          DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                  .withLocale(CustomI18NProvider.getCurrentLocale())
+                  .withZone(ZoneOffset.UTC)
+                  .format(editedUserEntity.getAccountDeactivation().deletionAt())
+              + " UTC";
+      Span deletionDeadlineSpan =
+          new Span(messageProperties.getAdminUserScheduledDeletion(deletionDateText));
+      deletionDeadlineSpan.setId("admin-user-deletion-deadline");
+      lifecycleStatusLayout.add(selfDeactivationBadge, deletionDeadlineSpan);
     }
 
     private void refreshVerificationDetails() {
@@ -1546,8 +1587,8 @@ public class AdminUserManagementSection extends VerticalLayout {
       refreshRolesSummaryText();
 
       refreshSignInDetails();
-      enabledCaptionSpan.setText(messageProperties.getAdminUsersFieldEnabled());
-      enabledHintSpan.setText(messageProperties.getAdminUsersEnabledHint());
+      blockedCaptionSpan.setText(messageProperties.getAdminUsersFieldBlocked());
+      blockedHintSpan.setText(messageProperties.getAdminUsersBlockedHint());
 
       passwordField.setPlaceholder(
           editMode
@@ -1614,7 +1655,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private boolean validateAccountChange(Set<RoleEntity> roleEntities) {
-      if (isCurrentUser(editedUserEntity) && !userFormData.isEnabled()) {
+      if (isCurrentUser(editedUserEntity) && userFormData.isAdministrativelyBlocked()) {
         showError(messageProperties::getAdminUsersErrorDisableOwnUser);
         return false;
       }
@@ -1626,7 +1667,10 @@ public class AdminUserManagementSection extends VerticalLayout {
       }
 
       if (userService.wouldRemoveLastEnabledSuperadmin(
-          userFormData.getId(), userFormData.isEnabled(), roleEntities)) {
+          userFormData.getId(),
+          !userFormData.isAdministrativelyBlocked()
+              && editedUserEntity.getAccountDeactivation() == null,
+          roleEntities)) {
         showError(messageProperties::getAdminUsersErrorLastActiveSuperadmin);
         return false;
       }
@@ -1643,7 +1687,8 @@ public class AdminUserManagementSection extends VerticalLayout {
               .email(trimOptionalText(userFormData.getEmail()))
               .gender(userFormData.getGender())
               .birthDate(userFormData.getBirthDate())
-              .enabled(userFormData.isEnabled())
+              .enabled(true)
+              .administrativelyBlocked(userFormData.isAdministrativelyBlocked())
               .verificationPending(false)
               .developmentAccount(!editMode && developmentAccountCheckbox.getValue())
               .preferredLocale(CustomI18NProvider.getCurrentLocale())
@@ -1723,7 +1768,7 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private Component createEnabledBadge(UserEntity userEntity) {
-    boolean accountEnabled = userEntity.isEnabled();
+    boolean accountEnabled = !userEntity.isAdministrativelyBlocked();
     Badge accountEnabledBadge =
         new Badge(
             accountEnabled
@@ -1954,7 +1999,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     private String confirmPassword;
     private Gender gender;
     private LocalDate birthDate;
-    private boolean enabled;
+    private boolean administrativelyBlocked;
     private Set<RoleType> roles;
 
     private static AdminUserFormData fromUser(UserEntity userEntity) {
@@ -1967,8 +2012,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       userFormData.confirmPassword = "";
       userFormData.gender = userEntity.getGender();
       userFormData.birthDate = userEntity.getBirthDate();
-      // Eine noch ausstehende Bestätigung ist keine administrative Kontosperre.
-      userFormData.enabled = userEntity.isEnabled() || userEntity.isVerificationPending();
+      userFormData.administrativelyBlocked = userEntity.isAdministrativelyBlocked();
       userFormData.roles =
           Optional.ofNullable(userEntity.getRoleEntities()).orElseGet(Set::of).stream()
               .map(RoleEntity::getName)

@@ -20,7 +20,8 @@ public interface SupportTicketViewerRepository
       select distinct u from SupportTicketViewerEntity v join UserEntity u on u.id = v.userId
       join u.roleEntities role
       where v.ticketId = :ticket and v.subscribed = true and u.id <> :sender
-        and u.enabled = true and u.verificationPending = false
+        and u.enabled = true and u.administrativelyBlocked = false
+        and u.accountDeactivation.deletionAt is null and u.verificationPending = false
         and (role.name = de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN
           or (u.id = :assignee and role.name = de.derpeterson.app.model.enums.RoleType.ROLE_ADMIN))
       """)
@@ -29,7 +30,8 @@ public interface SupportTicketViewerRepository
   @Query(
       """
       select distinct u from UserEntity u join u.roleEntities role
-      where u.enabled = true and u.verificationPending = false and u.id <> :sender
+      where u.enabled = true and u.administrativelyBlocked = false
+        and u.accountDeactivation.deletionAt is null and u.verificationPending = false and u.id <> :sender
         and role.name in (de.derpeterson.app.model.enums.RoleType.ROLE_ADMIN,
           de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN)
         and (:assignee is null or u.id = :assignee

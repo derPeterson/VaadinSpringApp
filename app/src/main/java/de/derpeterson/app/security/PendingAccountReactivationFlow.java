@@ -100,7 +100,8 @@ public class PendingAccountReactivationFlow {
   }
 
   public static boolean canReactivate(UserEntity accountUser) {
-    return !accountUser.isEnabled()
+    return !accountUser.isAdministrativelyBlocked()
+        && !accountUser.isEnabled()
         && accountUser.getAccountDeactivation() != null
         && accountUser.getAccountDeactivation().deletionAt().isAfter(Instant.now());
   }

@@ -2,6 +2,15 @@
 
 ## Browser-Tests
 
+- Administrative Sperre und Selbstdeaktivierung, **offen**: In DE/EN auf Desktop
+  und Smartphone den Schalter „Zugang gesperrt“ sowie den standardmäßig eingeklappten
+  nativen Anmeldungsbereich prüfen. Aufklappen allein löst keinen Änderungsschutz aus.
+  Selbstdeaktivierung und Löschtermin sind lesbar. Speichern einer Namensänderung,
+  Sperren und Entsperren erhalten die Löschvormerkung. Gesperrte Konten erhalten
+  weder Portalzugang noch Selbstreaktivierung, auch mit vorhandenem Link.
+  Nach Entsperren bleibt die Selbstdeaktivierung bis zur Benutzerreaktivierung bestehen.
+  Die vorhandenen Page Objects sind angepasst; der Browserlauf steht aus.
+
 - Reaktivierungs- und Verifikationshinweis, **offen**: In DE/EN auf Desktop und
   Smartphone die gelben Header-Iconboxen prüfen. Die Reaktivierungsseite zeigt
   dieselbe E-Mail-Beschriftung und den gerahmten Badge-Stil wie die Verifikationsseite,

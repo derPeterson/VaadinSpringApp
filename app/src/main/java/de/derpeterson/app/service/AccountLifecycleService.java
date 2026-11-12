@@ -199,7 +199,6 @@ public class AccountLifecycleService {
             ? null
             : deletionAt.minus(effectiveReminderDays, ChronoUnit.DAYS);
     String reactivationToken = UUID.randomUUID().toString();
-    lockedAccountUser.setEnabled(false);
     lockedAccountUser.rotateAccessVersion();
     lockedAccountUser.setAccountDeactivation(
         new AccountDeactivation(
@@ -238,7 +237,7 @@ public class AccountLifecycleService {
                 return false;
               }
 
-              lockedAccountUser.setEnabled(true);
+              lockedAccountUser.setAccountDeactivation(null);
               lockedAccountUser.rotateAccessVersion();
               emailQueueRepository.deleteByUserEntityAndEmailTypeAndStatus(
                   lockedAccountUser, EmailType.ACCOUNT_REACTIVATION, EmailStatus.PENDING);
@@ -327,7 +326,8 @@ public class AccountLifecycleService {
     AccountDeactivation accountDeactivation = lockedAccountUser.getAccountDeactivation();
     if (!accountDeactivation.deletionAt().isAfter(processingTime)) {
       deleteAccount(lockedAccountUser, "");
-    } else if (accountDeactivation.reminderAt() != null
+    } else if (!lockedAccountUser.isAdministrativelyBlocked()
+        && accountDeactivation.reminderAt() != null
         && !accountDeactivation.reminderAt().isAfter(processingTime)
         && !emailQueueService.hasOpenEmailForUserAndType(
             lockedAccountUser, EmailType.ACCOUNT_REACTIVATION)) {

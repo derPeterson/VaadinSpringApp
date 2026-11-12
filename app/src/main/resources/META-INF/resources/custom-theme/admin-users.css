@@ -240,6 +240,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 }
 
 .admin-user-dialog .cosmos-panel-hint.admin-user-sign-in {
+    display: block;
     box-sizing: border-box;
     flex: none;
     margin: 0;
@@ -249,6 +250,25 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 
 .admin-user-dialog .admin-user-sign-in-heading {
     gap: var(--cosmos-info-box-gap);
+}
+
+.admin-user-dialog vaadin-details.admin-user-sign-in > vaadin-details-summary {
+    padding: 0;
+    color: var(--cosmos-reference-accent);
+}
+
+.admin-user-dialog vaadin-details.admin-user-sign-in::part(content) {
+    padding: var(--cosmos-space-m) 0 0;
+}
+
+.admin-user-dialog .admin-user-sign-in-content {
+    gap: var(--cosmos-space-m);
+}
+
+.admin-user-dialog .admin-user-lifecycle-status {
+    gap: var(--cosmos-space-xs);
+    color: var(--cosmos-reference-secondary);
+    font: 400 12px/1.75 Inter, sans-serif;
 }
 
 .admin-user-dialog .admin-user-sign-in-heading > vaadin-icon {
@@ -329,12 +349,19 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 
 .admin-user-dialog #admin-user-registered-via,
 .admin-user-dialog #admin-user-account-type,
+.admin-user-dialog #admin-user-self-deactivation,
 .admin-user-dialog #admin-user-sign-in-methods > vaadin-badge {
     box-sizing: border-box;
     margin: 0;
     padding: 2px 6px;
     border-radius: 4px;
     font: 500 10px/15px Inter, sans-serif;
+}
+
+.admin-user-dialog #admin-user-self-deactivation {
+    --vaadin-badge-text-color: var(--cosmos-reference-warning);
+    border: 1px solid var(--cosmos-status-badge-border);
+    background: var(--cosmos-status-badge-surface);
 }
 
 .admin-user-dialog #admin-user-registered-via,

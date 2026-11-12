@@ -163,6 +163,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     new MailpitInbox(browserContext).awaitVerificationMail(emailAddress);
 
     AdminUserDialog editUserDialog = adminUsersPage.openEdit(emailAddress);
+    editUserDialog.openSignInDetails();
     assertThat(editUserDialog.root().locator("#admin-user-registered-via"))
         .hasText(uiTexts.getRegistrationAdministration());
     assertThat(editUserDialog.root().locator("#email-verification-status"))
@@ -202,6 +203,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     }
 
     editUserDialog = adminUsersPage.openEdit(emailAddress);
+    editUserDialog.openSignInDetails();
     assertThat(editUserDialog.firstName()).hasValue("Browser");
     assertThat(editUserDialog.root().locator("#email-verification-status"))
         .hasText(uiTexts.getEmailVerified());
@@ -249,6 +251,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Verifikation bei der Kontoanlage", browserPage);
     createUserDialog.save();
     AdminUserDialog editUserDialog = adminUsersPage.openEdit(emailAddress);
+    editUserDialog.openSignInDetails();
     assertThat(editUserDialog.root().locator("#email-verification-status"))
         .hasText(uiTexts.getEmailNotChecked());
     assertThat(editUserDialog.root().locator("#admin-user-registered-via"))
@@ -297,6 +300,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     createUserDialog.save();
 
     AdminUserDialog editUserDialog = adminUsersPage.openEdit(developmentEmail);
+    editUserDialog.openSignInDetails();
     assertThat(editUserDialog.root().locator("#admin-user-account-type"))
         .hasText(uiTexts.getDevelopmentAccountLabel());
     assertThat(editUserDialog.root().locator("#admin-resend-verification-mail")).isDisabled();

@@ -81,23 +81,32 @@ public final class AdminUserDialog {
     assertThat(root().locator("vaadin-date-picker")).hasJSProperty("value", "1990-01-01");
     assertThat(browserPage.locator("vaadin-date-picker-overlay[opened]")).hasCount(0);
 
-    check(uiTexts.getAdminUsersFieldEnabled(), enabled);
+    check(uiTexts.getAdminUsersFieldBlocked(), !enabled);
     setRole(uiTexts.getRoleUser(), true);
     setRole(uiTexts.getRoleAdmin(), administrator);
   }
 
   @Step("Freigabe im Benutzerformular ändern")
   public void setEnabled(boolean enabled) {
-    check(uiTexts.getAdminUsersFieldEnabled(), enabled);
+    check(uiTexts.getAdminUsersFieldBlocked(), !enabled);
   }
 
-  public Locator enabled() {
+  public Locator administrativeBlockCheckbox() {
     return root()
         .getByRole(
             AriaRole.CHECKBOX,
             new Locator.GetByRoleOptions()
-                .setName(uiTexts.getAdminUsersFieldEnabled())
+                .setName(uiTexts.getAdminUsersFieldBlocked())
                 .setExact(true));
+  }
+
+  @Step("Anmeldedetails im Benutzerformular aufklappen")
+  public void openSignInDetails() {
+    Locator signInDetailsLocator = root().locator("vaadin-details#admin-user-sign-in-details");
+    if (signInDetailsLocator.getAttribute("opened") == null) {
+      signInDetailsLocator.locator("vaadin-details-summary").click();
+    }
+    assertThat(signInDetailsLocator).hasAttribute("opened", "");
   }
 
   @Step("Administratorrolle im Benutzerformular vergeben oder entziehen")

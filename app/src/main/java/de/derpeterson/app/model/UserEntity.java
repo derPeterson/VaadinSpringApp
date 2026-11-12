@@ -120,6 +120,10 @@ public class UserEntity {
   @Builder.Default
   private boolean enabled = false;
 
+  @Column(name = "administratively_blocked", nullable = false)
+  @Builder.Default
+  private boolean administrativelyBlocked = false;
+
   @Enumerated(EnumType.STRING)
   @Column(name = "email_verification_status", nullable = false)
   @Builder.Default
@@ -174,19 +178,25 @@ public class UserEntity {
   }
 
   public boolean requiresEmailVerification() {
-    return !enabled && verificationPending
-        || enabled && emailVerificationStatus == EmailVerificationStatus.PENDING;
+    return !administrativelyBlocked
+        && accountDeactivation == null
+        && (!enabled && verificationPending
+            || enabled && emailVerificationStatus == EmailVerificationStatus.PENDING);
+  }
+
+  /** Der technische Kontozugang berücksichtigt Freigabe, Sperre und Selbstdeaktivierung. */
+  public boolean isEnabled() {
+    return enabled && !administrativelyBlocked && accountDeactivation == null;
   }
 
   public void markEmailVerified() {
     emailVerificationStatus = EmailVerificationStatus.VERIFIED;
   }
 
-  /** Explicit account decisions (including admin disable) end link-based activation. */
+  /** Bestätigung der Kontoanlage verändert weder die administrative Sperre noch Löschtermine. */
   public void setEnabled(boolean enabled) {
     this.enabled = enabled;
     this.verificationPending = false;
-    this.accountDeactivation = null;
   }
 
   @PrePersist

@@ -381,7 +381,7 @@ class AdminAccountVerificationPersistenceTest {
     adminAccountMailService.createUser(accountUserEntity, "KnownPassword!", false);
     UserEntity editedUserEntity = readEditableAccount(accountUserEntity.getId());
     editedUserEntity.setEmail("replacement@example.test");
-    editedUserEntity.setEnabled(false);
+    editedUserEntity.setAdministrativelyBlocked(true);
 
     adminAccountMailService.updateUser(editedUserEntity, editedUserEntity.getVersion(), "");
 
@@ -395,7 +395,7 @@ class AdminAccountVerificationPersistenceTest {
     adminAccountMailService.createUser(accountUserEntity, "KnownPassword!", false);
     String verificationToken = verificationTokenRepository.findAll().getFirst().getToken();
     UserEntity editedUserEntity = readEditableAccount(accountUserEntity.getId());
-    editedUserEntity.setEnabled(false);
+    editedUserEntity.setAdministrativelyBlocked(true);
     userService.updateAdminUser(editedUserEntity, editedUserEntity.getVersion(), "");
 
     assertFalse(verificationService.validateToken(verificationToken));

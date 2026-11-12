@@ -57,7 +57,7 @@ record AdminUserFilters(
     return (normalizedSearchText.isEmpty()
             || normalizedFullName.contains(normalizedSearchText)
             || normalizeSearchText(userEntity.getEmail()).contains(normalizedSearchText))
-        && (enabled == null || userEntity.isEnabled() == enabled)
+        && (enabled == null || !userEntity.isAdministrativelyBlocked() == enabled)
         && (statuses.isEmpty() || statuses.contains(userEntity.getStatus()))
         && (roles.isEmpty() || roles.stream().anyMatch(userEntity::hasRole))
         && (activeSince == null

@@ -362,7 +362,11 @@ public class UserService {
         updateAdminEmailAddress(storedUserEntity, editedUserEntity.getEmail());
     storedUserEntity.setGender(editedUserEntity.getGender());
     storedUserEntity.setBirthDate(editedUserEntity.getBirthDate());
-    storedUserEntity.setEnabled(editedUserEntity.isEnabled());
+    if (storedUserEntity.isAdministrativelyBlocked()
+        != editedUserEntity.isAdministrativelyBlocked()) {
+      storedUserEntity.setAdministrativelyBlocked(editedUserEntity.isAdministrativelyBlocked());
+      storedUserEntity.rotateAccessVersion();
+    }
     storedUserEntity.setRoleEntities(new ArrayList<>(editedUserEntity.getRoleEntities()));
 
     if (rawPortalPassword != null && !rawPortalPassword.isBlank()) {

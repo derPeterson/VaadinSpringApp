@@ -2729,12 +2729,20 @@ public class MessageTexts {
     return getTranslation("admin.users.field.password");
   }
 
-  public String getAdminUsersFieldEnabled() {
-    return getTranslation("admin.users.field.enabled");
+  public String getAdminUsersFieldBlocked() {
+    return getTranslation("admin.users.field.blocked");
   }
 
-  public String getAdminUsersEnabledHint() {
-    return getTranslation("admin.users.field.enabled_hint");
+  public String getAdminUsersBlockedHint() {
+    return getTranslation("admin.users.field.blocked_hint");
+  }
+
+  public String getAdminUserSelfDeactivated() {
+    return getTranslation("admin.users.selfDeactivated");
+  }
+
+  public String getAdminUserScheduledDeletion(String deletionDateText) {
+    return getFormattedTranslation("admin.users.scheduledDeletion", deletionDateText);
   }
 
   public String getAdminUsersFieldRoles() {

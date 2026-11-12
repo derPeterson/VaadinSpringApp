@@ -94,6 +94,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
       AllurePlaywright.attachScreenshot("Sitzungen über Portalpasswort und Google", browserPage);
 
       AdminUserDialog user = users.openEdit(email);
+      user.openSignInDetails();
       Locator title = user.root().locator(".admin-user-sign-in-title");
       Locator registration = user.root().locator("vaadin-badge#admin-user-registered-via");
       Locator methods = user.root().locator("#admin-user-sign-in-methods");
@@ -163,6 +164,7 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
     assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
 
     AdminUserDialog user = users.openEdit(email);
+    user.openSignInDetails();
     Locator panel = user.root().locator(".admin-user-sign-in");
     Locator title = panel.locator(".admin-user-sign-in-title");
     Locator badge = panel.locator("vaadin-badge#admin-user-registered-via");

@@ -121,6 +121,10 @@ die jeweilige Aktion erlauben:
   löschen. Ein selbst deaktiviertes Konto kann innerhalb seiner Frist über den
   gültigen Link reaktiviert werden. Administrative Sperren eröffnen diesen Weg
   nicht. Der letzte aktive Superadmin ist von gefährdenden Selbstaktionen ausgeschlossen.
+  Nur der Kontoinhaber veranlasst eine Selbstdeaktivierung oder deren Reaktivierung.
+  Die administrative Sperre ist unabhängig: Auch ein Admin oder Superadmin hebt
+  durch Entsperren keine Selbstdeaktivierung auf. Eine vorhandene Löschfrist bleibt
+  erhalten; Selbstreaktivierung ist während der Sperre ausgeschlossen.
 - Bei Zugangsproblemen die eigenen Wiederherstellungsanfragen über den
   vorgesehenen Hilfsablauf anlegen, lesen, beantworten und schließen. Das ist
   derzeit kein allgemeines Supportformular für beliebige Anliegen.

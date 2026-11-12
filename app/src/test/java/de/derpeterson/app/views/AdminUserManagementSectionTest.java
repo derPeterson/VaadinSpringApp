@@ -31,6 +31,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -41,11 +42,13 @@ import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.AccountDeactivation;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.security.SecurityService;
+import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
@@ -54,11 +57,13 @@ import de.derpeterson.app.views.admin.AdminUserManagementSection;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 import org.hibernate.exception.ConstraintViolationException;
@@ -207,6 +212,53 @@ class AdminUserManagementSectionTest {
         .enabled(true)
         .roleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_ADMIN).build()))
         .build();
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void signInDetailsStartCollapsedAndShowSelfDeactivationWithoutChangingTheForm(
+      String languageTag) {
+    LanguageChangeEvent.fire(testUi, Locale.forLanguageTag(languageTag));
+    UserEntity deactivatedUserEntity = user(false);
+    deactivatedUserEntity.setAccountDeactivation(
+        new AccountDeactivation(
+            Instant.now().plusSeconds(3600), null, "test-digest", null, null, null));
+    ExternalIdentityService externalIdentityService = mock(ExternalIdentityService.class);
+    when(externalIdentityService.adminSignInSummary(deactivatedUserEntity.getId()))
+        .thenReturn(Optional.of(new ExternalIdentityService.SignInSummary(null, Set.of())));
+    userManagementSection.configureSignInDetails(externalIdentityService);
+    ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", deactivatedUserEntity);
+    Dialog editorDialog = dialog();
+    Details signInDetails =
+        descendants(editorDialog)
+            .filter(Details.class::isInstance)
+            .map(Details.class::cast)
+            .filter(details -> details.getId().orElse("").equals("admin-user-sign-in-details"))
+            .findFirst()
+            .orElseThrow();
+
+    assertFalse(signInDetails.isOpened());
+    assertTrue(
+        signInDetails
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getAdminUserSelfDeactivated()));
+    assertTrue(signInDetails.getElement().getTextRecursively().contains("UTC"));
+    Checkbox administrativeBlockCheckbox =
+        descendants(editorDialog)
+            .filter(Checkbox.class::isInstance)
+            .map(Checkbox.class::cast)
+            .filter(checkbox -> checkbox.hasClassName("admin-user-enabled-checkbox"))
+            .findFirst()
+            .orElseThrow();
+    assertFalse(administrativeBlockCheckbox.getValue());
+
+    signInDetails.setOpened(true);
+    signInDetails.setOpened(false);
+    ComponentUtil.fireEvent(editorDialog, new Dialog.DialogCloseActionEvent(editorDialog, true));
+
+    assertFalse(editorDialog.isOpened());
+    verify(userService, never()).updateAdminUser(any(), any(), any());
   }
 
   @ParameterizedTest
@@ -520,7 +572,7 @@ class AdminUserManagementSectionTest {
       when(roles.findByName(any())).thenReturn(Optional.empty());
     }
     if (guard.equals("disable")) {
-      testUserEntity.setEnabled(false);
+      testUserEntity.setAdministrativelyBlocked(true);
     }
     if (guard.equals("remove-admin")) {
       testUserEntity.setRoleEntities(
@@ -799,7 +851,7 @@ class AdminUserManagementSectionTest {
         .filter(field -> field.hasClassName("admin-user-enabled-checkbox"))
         .findFirst()
         .orElseThrow()
-        .setValue(false);
+        .setValue(true);
     Button save =
         descendants(dialog)
             .filter(Button.class::isInstance)

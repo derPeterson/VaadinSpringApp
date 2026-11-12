@@ -89,6 +89,10 @@ Identitätsnachweis. Nach erfolgreichem Abschluss erscheint auf der Anmeldeseite
 eine einmalige Rückmeldung. Für selbst deaktivierte Konten führt eine gültige
 Anmeldung stattdessen zur Reaktivierungshilfe mit festem Löschdatum. Administrative
 Sperren erlauben keine Selbstreaktivierung.
+In der Benutzerverwaltung heißt der unabhängige administrative Schalter
+„Zugang gesperrt“. Unter dem standardmäßig eingeklappten Bereich „Anmeldung“
+zeigen selbst deaktivierte Konten ein Status-Badge und ihren endgültigen Löschtermin.
+Die Anzeige ist schreibgeschützt. Aufklappen verändert keine Formulardaten.
 Fristen, Mailversand und Löschumfang stehen unter
 [Kontodeaktivierung und Löschung](sicherheit.md#eigenes-konto-deaktivieren-und-löschen).
 

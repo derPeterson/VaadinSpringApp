@@ -2,6 +2,7 @@ package de.derpeterson.app.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -40,6 +41,7 @@ import jakarta.persistence.EntityManagerFactory;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -58,6 +60,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -266,7 +269,7 @@ class AccountLifecycleServicePersistenceTest {
         () -> accountLifecycleService.requestReactivationLink(accountUser.getId(), "old-proof"));
 
     UserEntity disabledAccount = userRepository.findById(accountUser.getId()).orElseThrow();
-    disabledAccount.setEnabled(false);
+    disabledAccount.setAdministrativelyBlocked(true);
     userRepository.saveAndFlush(disabledAccount);
     assertFalse(
         userRepository.findSecurityUser(accountUser.getEmail()).getFirst().getSelfDeactivated());
@@ -480,6 +483,140 @@ class AccountLifecycleServicePersistenceTest {
         countRows(
             accountJdbcTemplate, "verification_token", "user_id", deletedAccountUser.getId()));
     verifyNoInteractions(sessionRegistry);
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void adminProfileChangesPreserveSelfDeactivationAndDeletionDeadline(
+      boolean administrativelyBlocked) {
+    UserEntity accountUser = createAccountUser(true);
+    accountLifecycleService.changeOwnAccount(
+        authenticatedAccountRequest(accountUser), AccountAction.DEACTIVATE, "correct-password");
+    UserEntity editedAccountUser = userRepository.findById(accountUser.getId()).orElseThrow();
+    AccountDeactivation originalDeactivation = editedAccountUser.getAccountDeactivation();
+    assertFalse(editedAccountUser.isAdministrativelyBlocked());
+    editedAccountUser.setFirstName("Updated profile");
+    editedAccountUser.setAdministrativelyBlocked(administrativelyBlocked);
+
+    updateAdministrativeAccount(editedAccountUser);
+
+    UserEntity storedAccountUser = userRepository.findById(accountUser.getId()).orElseThrow();
+    assertEquals("Updated profile", storedAccountUser.getFirstName());
+    assertEquals(administrativelyBlocked, storedAccountUser.isAdministrativelyBlocked());
+    assertEquals(originalDeactivation, storedAccountUser.getAccountDeactivation());
+    assertFalse(storedAccountUser.isEnabled());
+    assertEquals(
+        !administrativelyBlocked,
+        userRepository.findSecurityUser(accountUser.getEmail()).getFirst().getSelfDeactivated());
+    assertFalse(userRepository.findSecurityUser(accountUser.getEmail()).getFirst().isEnabled());
+    assertFalse(userRepository.findTwoFactorAccess(accountUser.getEmail()).getFirst().getEnabled());
+  }
+
+  @Test
+  void administrativeBlockCannotBeLiftedByReactivationAndUnblockingKeepsDeletionPending() {
+    UserEntity accountUser = createAccountUser(true);
+    accountLifecycleService.changeOwnAccount(
+        authenticatedAccountRequest(accountUser), AccountAction.DEACTIVATE, "correct-password");
+    ArgumentCaptor<String> emailBodyCaptor = ArgumentCaptor.forClass(String.class);
+    verify(emailQueueService)
+        .addEmailToQueue(
+            any(), any(), emailBodyCaptor.capture(), eq(EmailType.ACCOUNT_REACTIVATION));
+    String reactivationUrl =
+        Jsoup.parse(emailBodyCaptor.getValue()).select(".cosmos-email-button a").attr("href");
+    String reactivationToken =
+        java.net.URI.create(reactivationUrl).getQuery().substring("token=".length());
+    UserEntity blockedAccountUser = userRepository.findById(accountUser.getId()).orElseThrow();
+    AccountDeactivation originalDeactivation = blockedAccountUser.getAccountDeactivation();
+    blockedAccountUser.setAdministrativelyBlocked(true);
+    updateAdministrativeAccount(blockedAccountUser);
+
+    assertFalse(accountLifecycleService.reactivateAccount(reactivationToken));
+    UserEntity unblockedAccountUser = userRepository.findById(accountUser.getId()).orElseThrow();
+    assertTrue(unblockedAccountUser.isAdministrativelyBlocked());
+    assertEquals(originalDeactivation, unblockedAccountUser.getAccountDeactivation());
+    unblockedAccountUser.setAdministrativelyBlocked(false);
+    updateAdministrativeAccount(unblockedAccountUser);
+
+    UserEntity stillDeactivatedAccountUser =
+        userRepository.findById(accountUser.getId()).orElseThrow();
+    assertFalse(stillDeactivatedAccountUser.isEnabled());
+    assertEquals(originalDeactivation, stillDeactivatedAccountUser.getAccountDeactivation());
+    assertTrue(accountLifecycleService.reactivateAccount(reactivationToken));
+    assertTrue(userRepository.findById(accountUser.getId()).orElseThrow().isEnabled());
+  }
+
+  @Test
+  void administrativeBlockDoesNotCancelScheduledDeletion() {
+    UserEntity accountUser = createAccountUser(true);
+    accountUser.setAccountDeactivation(
+        new AccountDeactivation(
+            Instant.now().plusSeconds(3600),
+            Instant.now().minusSeconds(1),
+            "initial",
+            null,
+            null,
+            null));
+    accountUser.setAdministrativelyBlocked(true);
+    accountUser = userRepository.saveAndFlush(accountUser);
+    assertFalse(
+        userRepository
+            .findAccountLifecycleDueIds(Instant.now(), PageRequest.ofSize(50))
+            .contains(accountUser.getId()));
+    accountUser.setAccountDeactivation(
+        new AccountDeactivation(Instant.now().minusSeconds(1), null, "expired", null, null, null));
+    userRepository.saveAndFlush(accountUser);
+
+    accountLifecycleService.processDueDeactivations();
+
+    assertFalse(userRepository.existsById(accountUser.getId()));
+  }
+
+  @Test
+  void administrativeBlockDeniesLoginAndUnblockingDoesNotRestoreOldSessionProofs() {
+    UserEntity accountUser = createAccountUser(true);
+    String previousAccessVersion = accountUser.getAccessVersion();
+    accountUser.setAdministrativelyBlocked(true);
+    updateAdministrativeAccount(accountUser);
+
+    UserEntity blockedAccountUser = userRepository.findById(accountUser.getId()).orElseThrow();
+    assertFalse(blockedAccountUser.isEnabled());
+    assertNull(blockedAccountUser.getAccountDeactivation());
+    assertNotEquals(previousAccessVersion, blockedAccountUser.getAccessVersion());
+    UserRepository.SecurityUserRow blockedSecurityRow =
+        userRepository.findSecurityUser(accountUser.getEmail()).getFirst();
+    assertFalse(blockedSecurityRow.isEnabled());
+    assertFalse(blockedSecurityRow.getSelfDeactivated());
+    assertFalse(blockedSecurityRow.getPendingEmailVerification());
+    assertFalse(userRepository.findTwoFactorAccess(accountUser.getEmail()).getFirst().getEnabled());
+    String blockedAccessVersion = blockedAccountUser.getAccessVersion();
+    blockedAccountUser.setAdministrativelyBlocked(false);
+    updateAdministrativeAccount(blockedAccountUser);
+
+    UserEntity unblockedAccountUser = userRepository.findById(accountUser.getId()).orElseThrow();
+    assertTrue(unblockedAccountUser.isEnabled());
+    assertNull(unblockedAccountUser.getAccountDeactivation());
+    assertNotEquals(blockedAccessVersion, unblockedAccountUser.getAccessVersion());
+    assertTrue(userRepository.findSecurityUser(accountUser.getEmail()).getFirst().isEnabled());
+  }
+
+  private void updateAdministrativeAccount(UserEntity editedAccountUser) {
+    UserService administrativeUserService =
+        new UserService(
+            userRepository,
+            mock(UserStatusBroadcaster.class),
+            passwordEncoder,
+            mock(UserProfileBroadcaster.class),
+            mock(AdminRolePolicy.class),
+            mock(ApplicationEventPublisher.class),
+            accountDeletionService);
+    new TransactionTemplate(transactionManager)
+        .executeWithoutResult(transactionStatus -> {
+          UserEntity storedAccountUser =
+              userRepository.findById(editedAccountUser.getId()).orElseThrow();
+          editedAccountUser.setRoleEntities(new ArrayList<>(storedAccountUser.getRoleEntities()));
+          administrativeUserService.updateAdminUser(
+              editedAccountUser, editedAccountUser.getVersion(), "");
+        });
   }
 
   private void usePersistentDeletionQueue() {

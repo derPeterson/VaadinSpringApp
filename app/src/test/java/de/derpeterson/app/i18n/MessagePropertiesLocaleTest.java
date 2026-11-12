@@ -52,6 +52,20 @@ class MessagePropertiesLocaleTest {
     assertEquals(expected, messages.getAdminConfigDurationSeconds(new BigDecimal("1.23456789")));
   }
 
+  @org.junit.jupiter.params.ParameterizedTest
+  @org.junit.jupiter.params.provider.CsvSource({
+    "de, Endgültige Löschung am 31.12.2026 UTC",
+    "en, Permanent deletion on 31.12.2026 UTC"
+  })
+  void scheduledDeletionLabelPreservesUmlautsAndInsertsTheDeadline(
+      String languageTag, String expectedLabelText) {
+    MessageProperties messageProperties =
+        MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(languageTag));
+
+    assertEquals(
+        expectedLabelText, messageProperties.getAdminUserScheduledDeletion("31.12.2026 UTC"));
+  }
+
   @Test
   void normalGettersFollowTheSessionLanguageWithoutRecreatingTheBean() {
     AtomicReference<Locale> localeReference = new AtomicReference<>(Locale.GERMAN);

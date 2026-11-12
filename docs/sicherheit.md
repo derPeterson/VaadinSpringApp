@@ -40,6 +40,20 @@ Erinnerung. Der tatsächliche Vorlauf lässt mindestens einen Tag nach der
 Deaktivierung frei. Bereits festgelegte Termine ändern sich durch spätere
 Konfigurationsänderungen nicht.
 
+Die administrative Sperre (`administrativelyBlocked`) ist davon unabhängig.
+„Zugang gesperrt“ in der Benutzerverwaltung verhindert Anmeldung, Bestätigungsmails
+und Selbstreaktivierung. Das Aufheben dieser Sperre beendet keine Selbstdeaktivierung.
+Reaktivierungslinks heben keine administrative Sperre auf. Profiländerungen lassen
+beide Zustände und den bestehenden Löschtermin unverändert. Eine bereits vorgemerkte
+Löschung wird auch bei zusätzlicher administrativer Sperre fristgerecht ausgeführt;
+während der Sperre werden keine neuen Reaktivierungs-Erinnerungen vorgemerkt.
+Sperren und Entsperren erneuern die Zugriffskennung, damit alte Sitzungsnachweise
+nach einer Entsperrung nicht wieder gültig werden.
+Das technische `enabled`-Feld bleibt für die Freigabe der Kontoanlage bestehen.
+Der effektive Kontozugang berücksichtigt zusätzlich die administrative Sperre und
+eine vorhandene Selbstdeaktivierung. Ein ausstehender E-Mail-Nachweis bleibt eine
+weitere, getrennte Zugangsvoraussetzung.
+
 Der Link aktiviert das Konto erst nach einer ausdrücklichen Bestätigung und ist
 bis zum Löschdatum gültig. Eine erfolgreiche Aktivierung macht alle bisherigen
 Links dieses Vorgangs ungültig. Ein gültiges Portalpasswort oder ein bestätigter

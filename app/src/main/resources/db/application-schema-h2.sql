@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS roles (
 CREATE TABLE IF NOT EXISTS users (
     birth_date date,
     enabled boolean not null,
+    administratively_blocked boolean default false not null,
     status_manually_set boolean not null,
     verification_pending boolean not null,
     development_account boolean default false not null,
@@ -76,7 +77,7 @@ CREATE TABLE IF NOT EXISTS users (
     constraint uk_users_email unique (email),
     constraint ck_users_self_deactivation check (
       (self_deactivation_delete_at is null and self_deactivation_initial_digest is null)
-      or (not enabled and self_deactivation_delete_at is not null and self_deactivation_initial_digest is not null)
+      or (self_deactivation_delete_at is not null and self_deactivation_initial_digest is not null)
     ),
     constraint ck_users_canonical_email check (email = lower(trim(email)) and length(email) > 0 and ascii(left(email, 1)) > 32 and ascii(right(email, 1)) > 32)
 );

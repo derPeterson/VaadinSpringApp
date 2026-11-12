@@ -50,9 +50,10 @@ class PendingAccountReactivationFlowTest {
   void administrativeBlockingDeadlineAndCancellationInvalidateTheProof() {
     UserEntity accountUser = selfDeactivatedAccount();
     PendingAccountReactivationFlow.startForProviderAccount(httpRequest, accountUser);
-    accountUser.setAccountDeactivation(null);
+    accountUser.setAdministrativelyBlocked(true);
     assertTrue(reactivationFlow.currentAccount(httpRequest).isEmpty());
 
+    accountUser.setAdministrativelyBlocked(false);
     accountUser.setAccountDeactivation(
         new AccountDeactivation(Instant.now().minusSeconds(1), null, "expired", null, null, null));
     PendingAccountReactivationFlow.startForProviderAccount(httpRequest, accountUser);
@@ -68,7 +69,7 @@ class PendingAccountReactivationFlowTest {
     UserEntity accountUser =
         UserEntity.builder()
             .id(8L)
-            .enabled(false)
+            .enabled(true)
             .email("reactivate@example.test")
             .password("encoded-password")
             .build();

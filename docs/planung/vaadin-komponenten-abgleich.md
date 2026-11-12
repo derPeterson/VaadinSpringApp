@@ -68,32 +68,28 @@ unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
   echte Änderungen sind gezielt in DE/EN per JUnit geprüft. Die reale Passwortmanager-
   Nachprüfung bleibt unter [HUM-11](../manual-tests/README.md#hum-11) offen.
 
-### Eigenes Konto deaktivieren oder löschen
+### Administrative Sperre und Selbstdeaktivierung
 
-- **Variante A umgesetzt, Sichtung offen:** Die gelbe Gesamtfläche ist durch
-  zwei native Aktionszeilen in den bestehenden Sicherheitskarten untereinander
-  ersetzt. Cardfläche, Rahmen und Abstände entsprechen Passwort und E-Mail.
-  Alle Sicherheitsreiter verwenden den bestehenden Footerhinweis mit blauem
-  Info-Icon; die Portal-/Anbietertexte sind aktualisiert. Header, Tabs und die bisherigen
-  Tabler-Icons bleiben erhalten, die Aktionsicons verwenden Gelb und Rot.
-  Die ausführlichen DE-/EN-Texte bleiben erhalten. Der Löschtext nennt alle
-  zugehörigen Kontodaten. Die Deaktivierung wird erst nach Bestätigung zugesagt;
-  Entwicklerkonten erhalten keinen falschen Hinweis auf eine Reaktivierung per Mail.
-  Entwürfe auf dem Canvas:
-  [A – Aktionszeilen](https://stitch.google.com/projects/6772441582530509710?node-id=1460581112803085427)
-  und [B – Aktionskarten](https://stitch.google.com/projects/6772441582530509710?node-id=5988840849361148389).
-  Die Umsetzung von A ist ausdrücklich freigegeben. Die gemeinsame Sichtung und
-  der visuelle Nachtest stehen noch aus; siehe [Testbedarf](../testbedarf.md).
+Die Kontoaktions-Cards samt Footer (Punkt 6), Kontomails (Punkt 7),
+Löschintegrität mit JUnit (Punkt 9) und Konfigurationsfristen (Punkt 10) sind
+vom Benutzer abgenommen. Offene automatisierte Nachtests bleiben im
+[Testbedarf](../testbedarf.md).
 
-- **Abnahme:** Unter „Mein Konto → Sicherheit → Konto verwalten“ die
-  Identitätsbestätigung, Selbstdeaktivierung mit E-Mail,
-  Reaktivierung, Admin-Sperre, Erinnerung und Löschung mit isolierten Testdaten
-  ansehen. Unter „Konfiguration → Kontoverwaltung“ die beiden Fristen
-  und ihre Feldhilfen ansehen. Ein ausschließlich externes Konto braucht für
-  diese Aktionen zuerst einen Authenticator oder ein Portalpasswort.
-- Das erweiterte H2-Schema wird mit frischen isolierten Testdaten geprüft.
-  Für die lokale Sichtung wird ebenfalls eine frische Entwicklungsdatenbank benötigt.
-- Die gemeinsame Sichtung bleibt offen.
+- **Korrektur zu Punkt 8 umgesetzt, Sichtung offen:** Administrative Sperre und
+  Selbstdeaktivierung werden unabhängig gespeichert. Profiländerungen, Sperren und
+  Entsperren dürfen weder Löschfrist noch Reaktivierungsnachweise entfernen.
+  Gesperrte Konten erhalten keinen Portalzugang und keine Selbstreaktivierung.
+  Eine vorhandene Löschvormerkung bleibt wirksam.
+- **Benutzereditor:** „Zugang gesperrt“ ersetzt den bisherigen Aktiv-Schalter.
+  „Anmeldung“ mit nativen Vaadin-Details standardmäßig einklappen. Darin
+  Selbstdeaktivierung und endgültigen Löschtermin nur lesbar anzeigen.
+  Alle Angaben und Sprachwechsel in DE/EN, bestehende Styles und Badges verwenden.
+- **Prüfung und Sichtung:** Gezielte Persistenz-, Zugriffs- und Formularregressionen
+  sichern die Trennung ab. Die neue Darstellung anschließend gemeinsam sichten. Für den
+  isolierten Browsernachtest ist noch eine auftragsbezogene Freigabe nötig.
+- Das zusätzliche Sperrmerkmal gehört zum aktuellen H2-Schema. Die technische
+  Prüfung verwendet frische isolierte Testdaten; eine bestehende lokale
+  Entwicklungsdatenbank muss vor dem nächsten Anwendungsstart neu aufgesetzt werden.
 
 ### Integrierte Einheiten und einheitliche Seitenpfade
 

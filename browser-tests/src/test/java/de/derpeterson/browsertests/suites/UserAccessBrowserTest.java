@@ -56,12 +56,12 @@ public class UserAccessBrowserTest extends BrowserFixture {
     }
     form = users.openEdit(email);
 
-    assertThat(form.enabled()).not().isChecked();
+    assertThat(form.administrativeBlockCheckbox()).isChecked();
     form.setEnabled(true);
     form.save();
     form = users.openEdit(email);
 
-    assertThat(form.enabled()).isChecked();
+    assertThat(form.administrativeBlockCheckbox()).not().isChecked();
     form.cancel();
     ordinaryLogin(email);
   }
@@ -142,7 +142,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
     AdminUsersPage adminUsersPage = admin();
     AdminUserDialog adminUserDialog = adminUsersPage.openEdit(emailAddress);
 
-    assertThat(adminUserDialog.enabled()).isChecked();
+    assertThat(adminUserDialog.administrativeBlockCheckbox()).not().isChecked();
     adminUserDialog.setEnabled(false);
     adminUserDialog.save();
     try (BrowserActor blockedBrowserActor = new BrowserActor(testBrowser)) {
@@ -151,7 +151,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
     }
 
     adminUserDialog = adminUsersPage.openEdit(emailAddress);
-    assertThat(adminUserDialog.enabled()).not().isChecked();
+    assertThat(adminUserDialog.administrativeBlockCheckbox()).isChecked();
     adminUserDialog.setEnabled(true);
     adminUserDialog.save();
 
@@ -228,7 +228,7 @@ public class UserAccessBrowserTest extends BrowserFixture {
     form.cancel();
     form = users.openEdit(BrowserTestAccounts.ADMIN_EMAIL);
 
-    assertThat(form.enabled()).isChecked();
+    assertThat(form.administrativeBlockCheckbox()).not().isChecked();
     assertThat(form.administrator()).hasAttribute("aria-selected", "true");
     form.cancel();
   }

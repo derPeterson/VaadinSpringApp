@@ -56,6 +56,12 @@ der Verifikation (`pending-reactivation-status-badge` in `cosmos-account.css`).
 Hervorhebung des Spam-/Junkordners; Versandhinweise bleiben kurz und dürfen auf
 schmalen Ansichten natürlich umbrechen.
 
+Der Anmeldungsbereich im Benutzereditor verwendet native Vaadin-`Details`
+(`#admin-user-sign-in-details`) und startet eingeklappt. Die blaue Überschrift und
+das Info-Icon bleiben im Summary sichtbar. Die gemeinsame lokale Gestaltung liegt
+in `admin-users.css`; darunter erscheinen die bisherigen Angaben, Mailaktionen und
+bei Selbstdeaktivierung ein gelbes Badge samt schreibgeschütztem UTC-Löschtermin.
+
 Die Bestätigung der eigenen Kontodeaktivierung oder Löschung verwendet denselben
 nativen Cosmos-Dialograhmen wie die übrigen Kontoaktionen. Die lokale Klasse
 `account-lifecycle-explanation` in `cosmos-account.css` hält den Erklärungstext
