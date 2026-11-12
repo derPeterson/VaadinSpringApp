@@ -91,24 +91,9 @@ zentral im [Testbedarf](../testbedarf.md).
 
 ## 3. Zahlenfeld mit integrierter Einheitenauswahl analysieren
 
-- [ ] Die bisherigen Dauerfelder und die feste Tagesanzeige in der
-  Benachrichtigungskonfiguration als Ausgangspunkt verwenden. Ziel ist ein
-  zusammenhängendes Feld: Zahlenwert links, rechts die aktuelle Einheit mit
-  Aufklappsymbol und einer integrierten Auswahl statt einer separaten ComboBox.
-- [ ] Zuerst die öffentlichen APIs und Gestaltungsmöglichkeiten der tatsächlich
-  verwendeten Vaadin-Version prüfen: natives Zahlenfeld, Suffix sowie native
-  Auswahlkomponenten und deren Zusammensetzung. Keine eigene Eingabekomponente
-  bauen, bevor die konkrete Lücke und die geprüften Alternativen feststehen.
-- [ ] Fokus, Tastaturbedienung, Zahlenfeldaktionen, Overlay-Platzierung, gemeinsame
-  Feldhöhe und Darstellung auf schmalen Bildschirmen in den Vorschlag einbeziehen.
-  Die Gestaltung soll an die bereits abgenommene Tagesanzeige anschließen.
-- [ ] Pro Einstellung klären, welche Einheiten fachlich zulässig sind und wie
-  eine Umrechnung ohne Wertverlust funktioniert. Die bisher ausschließlich in
-  Tagen gespeicherten Aufbewahrungswerte nicht nur optisch auf Sekunden umstellen.
-  Nötige Änderungen an Genauigkeit, Grenzen oder Speicherung gesondert benennen.
-- [ ] Eine konkrete Empfehlung mit Aufwand und Grenzen vorlegen. Einen eventuell
-  nötigen Eigenanteil erläutern. Für einen anschließenden Umbau gelten die
-  [Bedingungen zur optionalen Umsetzung](#optionale-umsetzung-von-punkt-3-und-4).
+Analyse abgeschlossen: [Empfehlung, Feldzuordnung und offene Umsetzung](einheitenauswahl.md).
+Native Zahlenfelder mit Select im Suffix genügen als Zusammensetzung. Tagesfelder
+behalten ihre fachliche Einschränkung. Noch keine optionale UI-Umsetzung begonnen.
 
 ## 4. Einheitliche Seitenpfade und Breadcrumb-Navigation analysieren
 
