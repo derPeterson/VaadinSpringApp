@@ -37,6 +37,8 @@ import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("browser")
 @Feature("Gemeinsame Cosmos-Komponenten")
@@ -825,6 +827,61 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
     assertTrue(bounds.width <= 221);
     assertTrue(bounds.x >= 0 && bounds.x + bounds.width <= browserPage.viewportSize().width + 1);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName(
+      "COMPONENT-12: Headeraktionen und Benachrichtigungsfilter zeigen eindeutige Mauszeiger")
+  void headerActionsAndReadFiltersUsePointerWithoutProfileHover(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 900);
+    signIn();
+    for (String route : new String[] {"/home", "/admin"}) {
+      browserPage.navigate(route);
+      Locator profileButtonLocator = browserPage.locator("vaadin-button.tracked-user-button");
+      assertThat(profileButtonLocator).hasCSS("cursor", "pointer");
+      profileButtonLocator.hover();
+      assertThat(profileButtonLocator).hasCSS("background-color", "rgba(0, 0, 0, 0)");
+      assertThat(profileButtonLocator.locator(".cosmos-avatar-initials"))
+          .hasCSS("cursor", "pointer");
+      for (String buttonId :
+          new String[] {"account-header-notifications", "account-header-settings"}) {
+        assertThat(browserPage.locator("#" + buttonId)).hasCSS("cursor", "pointer");
+      }
+      Locator homeLinkLocator = browserPage.locator(".cosmos-topbar-home");
+      homeLinkLocator.hover();
+      assertThat(homeLinkLocator).hasCSS("text-decoration-line", "none");
+      assertThat(homeLinkLocator).hasCSS("cursor", "pointer");
+
+      profileButtonLocator.focus();
+      profileButtonLocator.press("Enter");
+      assertThat(browserPage.locator("vaadin-popover-overlay[opened]")).isVisible();
+      new UserMenu(browserPage).close();
+      AllurePlaywright.attachScreenshot("Headeraktionen " + route, browserPage);
+    }
+
+    browserPage.navigate("/notifications");
+    assertReadFilterPointers(browserPage.locator("#notifications-inbox-filter"));
+    for (Locator pageButtonLocator :
+        browserPage.locator(".admin-user-pagination vaadin-button").all()) {
+      assertThat(pageButtonLocator)
+          .hasCSS("cursor", pageButtonLocator.isEnabled() ? "pointer" : "default");
+    }
+    assertThat(browserPage.locator("#notifications-inbox-search input")).hasCSS("cursor", "text");
+    browserPage.locator("#account-header-notifications").click();
+    assertReadFilterPointers(browserPage.locator("#notifications-preview-filter"));
+    AllurePlaywright.attachScreenshot("Benachrichtigungsfilter mit Handzeiger", browserPage);
+  }
+
+  private void assertReadFilterPointers(Locator filterGroupLocator) {
+    assertThat(filterGroupLocator).isVisible();
+    assertThat(filterGroupLocator.locator("vaadin-radio-button")).hasCount(3);
+    for (Locator filterOptionLocator : filterGroupLocator.locator("vaadin-radio-button").all()) {
+      assertThat(filterOptionLocator).hasCSS("cursor", "pointer");
+      assertThat(filterOptionLocator.locator(".portal-read-filter-option"))
+          .hasCSS("cursor", "pointer");
+      assertThat(filterOptionLocator.locator(".portal-filter-count")).hasCSS("cursor", "pointer");
+    }
   }
 
   private void signIn() {

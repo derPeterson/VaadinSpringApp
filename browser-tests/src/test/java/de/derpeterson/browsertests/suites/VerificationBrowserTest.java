@@ -156,6 +156,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     adminUsersPage.open();
     AdminUserDialog createUserDialog = adminUsersPage.openCreate();
     assertThat(createUserDialog.root().locator("#admin-email-verification-required")).hasCount(0);
+    assertThat(createUserDialog.root().locator("#admin-development-account")).hasCount(0);
     String emailAddress = newVerificationEmailAddress();
     createUserDialog.fillNewUser(emailAddress, BrowserTestAccounts.USER_PASSWORD, true, false);
     createUserDialog.save();
@@ -263,6 +264,59 @@ public class VerificationBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator("#account-password-status"))
         .hasText(uiTexts.getAccountPasswordConfigured());
     AllurePlaywright.attachScreenshot("Ungeprüfte Adresse neben der Überschrift", browserPage);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName("Entwicklungskonten sind ausdrücklich gekennzeichnet und senden keine Kontomails")
+  void developmentAccountIsExplicitAndDoesNotSendAccountMail(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 1000);
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(browserPage).selectTestLanguage();
+    AdminUsersPage adminUsersPage = new AdminUsersPage(browserPage);
+    adminUsersPage.open();
+    AdminUserDialog createUserDialog = adminUsersPage.openCreate();
+    Locator developmentCheckbox =
+        createUserDialog.root().locator("#admin-development-account").getByRole(AriaRole.CHECKBOX);
+    Locator verificationCheckbox =
+        createUserDialog
+            .root()
+            .locator("#admin-email-verification-required")
+            .getByRole(AriaRole.CHECKBOX);
+    assertThat(developmentCheckbox).not().isChecked();
+    assertThat(verificationCheckbox).isChecked();
+    String developmentEmail = newVerificationEmailAddress();
+    createUserDialog.fillNewUser(developmentEmail, BrowserTestAccounts.USER_PASSWORD, true, false);
+    developmentCheckbox.check();
+    assertThat(verificationCheckbox).not().isChecked();
+    assertThat(verificationCheckbox).isDisabled();
+    AllurePlaywright.attachScreenshot(
+        "Entwicklungskonto anlegen bei " + viewportWidth + " px", browserPage);
+    createUserDialog.save();
+
+    AdminUserDialog editUserDialog = adminUsersPage.openEdit(developmentEmail);
+    assertThat(editUserDialog.root().locator("#admin-user-development-account"))
+        .hasText(uiTexts.getDevelopmentAccountLabel());
+    assertThat(editUserDialog.root().locator("#admin-resend-verification-mail")).isDisabled();
+    assertThat(editUserDialog.root().locator("#admin-send-password-reset")).isDisabled();
+    assertThat(editUserDialog.root()).containsText(uiTexts.getDevelopmentAccountMailUnavailable());
+    AllurePlaywright.attachScreenshot(
+        "Entwicklungskonto bearbeiten bei " + viewportWidth + " px", browserPage);
+    editUserDialog.cancel();
+    new UserMenu(browserPage).signOut();
+
+    loginPage.signIn(developmentEmail, BrowserTestAccounts.USER_PASSWORD);
+    browserPage.navigate("/account?section=security&tab=lifecycle");
+    browserPage.locator("#account-delete").click();
+    browserPage
+        .locator("#account-lifecycle-password input")
+        .fill(BrowserTestAccounts.USER_PASSWORD);
+    browserPage.locator("#account-lifecycle-submit").click();
+    assertThat(browserPage.getByText(uiTexts.getAccountDeletedSuccess())).isVisible();
+    assertThat(browserPage.getByText(uiTexts.getAccountLifecycleMailQueued())).hasCount(0);
+    new MailpitInbox(browserContext).assertNoMailFor(developmentEmail);
   }
 
   private void assertPendingVerificationPage(String emailAddress) {

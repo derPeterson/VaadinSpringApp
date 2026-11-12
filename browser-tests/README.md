@@ -90,8 +90,8 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `two-factor-lifecycle` | Sprachwechsel während Mailcode/QR/Codeausgabe/Hilfe, Entzug der Superadminrolle bei zwei offenen Konfigurationen sowie Startfreigabe und Neustart mit gespeicherten Entwicklungsausnahmen | 5 |
 | `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbieter- und Kontosicherheitstabs, Desktop/schmal, Tastaturbedienung, Footerumbrüche, Erhalt ungespeicherter Eingaben und Kontobestätigungsdialoge. Ohne Registrierung, Speicherung oder Versand | 10 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
-| `verification` | Tatsächliche Aktivierungsmail und Links, eingeschränkte Bestätigungsseite, normale Adminanlage, Superadmin-Ausnahme und Startkonten mit Verifikationspflicht auf Desktop/Smartphone | 11 |
-| `email-verification` | `verification` plus Google-/Microsoft-Nachweis, Herkunft und verfügbare Anmeldewege sowie Passwortstatus vor/nach Einrichtung auf Desktop/Smartphone | 19 |
+| `verification` | Tatsächliche Aktivierungsmail und Links, eingeschränkte Bestätigungsseite, normale Adminanlage, Superadmin-Ausnahme und Startkonten mit Verifikationspflicht auf Desktop/Smartphone | 15 |
+| `email-verification` | `verification` plus Google-/Microsoft-Nachweis, Herkunft und verfügbare Anmeldewege sowie Passwortstatus vor/nach Einrichtung auf Desktop/Smartphone | 21 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |
 | `account-security` | Passwortvalidierung/-wechsel mit SMTP-Mail und verifizierte E-Mail-Änderung mit beiden Sicherheitsmails | 4 |
 | `session-persistence` | Gezielte Neustartabnahme: Sitzungs-/Loginfälle, Wartung und eigene Kontosicherheit | 51 |
@@ -109,14 +109,14 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `security-journeys` | Sitzungs- und Maillinkfälle gemeinsam | 10 |
 | `remember-me` | Echter Chromium- und Anwendungsneustart mit/ohne Remember-me und nach Logout | 4 |
 | `user-status` | Manuelle Wahl, Live-Anzeige in zweitem Tab, Abwesenheit/Rückkehr | 2 |
-| `configuration` | String-, Boolean- und Dauerwerte, Sprachwechsel mit Feldfehlern, Offline-Speichern, native SideNav, Klick-Infos und Enter-Bedienung | 13 |
-| `configuration-follow-up` | Feldhilfen, Zeitfelder und Formularschutz einschließlich Anbieter-/2FA-Entwürfen auf Desktop und Smartphone, bestehende und neue Sitzungsfristen sowie SMTP-Wechsel | 10 |
-| `configuration-field-help` | Wirksamkeit in den allgemeinen Feldhilfen, bei beiden Anmeldeanbietern und in den 2FA-Regeln auf Desktop und Smartphone | 6 |
+| `configuration` | String-, Boolean- und Dauerwerte, Sprachwechsel mit Feldfehlern, Offline-Speichern, native SideNav, Klick-Infos und Enter-Bedienung | 15 |
+| `configuration-follow-up` | Feldhilfen, Zeitfelder und Formularschutz einschließlich Anbieter-/2FA-Entwürfen auf Desktop und Smartphone, bestehende und neue Sitzungsfristen sowie SMTP-Wechsel | 12 |
+| `configuration-field-help` | Wirksamkeit in den allgemeinen Feldhilfen, bei beiden Anmeldeanbietern und in den 2FA-Regeln auf Desktop und Smartphone | 8 |
 | `operations` | Persistenz ohne Bootstrap, zwei eigene SMTP-Ziele und echte begrenzte Transportausfälle mit Wiederanlauf | 3 |
 | `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
-| `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 19 |
-| `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 25 |
+| `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 21 |
+| `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 27 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 22 |
 | `cosmos-design` | Kontoansichten, mobiler Mailablauf, Copyright, Theme, Navigation, Infoicon-Ausrichtung und gemeinsamer Seitenrahmen mit Feldhilfe/Benutzerfilter bei breitem Desktop, Desktop und Smartphone | 16 |
@@ -124,7 +124,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
 | `form-details` | Gemeinsame Hoverflächen in Navigation, Tabelle, Eingaben, Auswahllisten, Kalender und Buttons; Scrollleisten, MultiSelect-Rahmen/Abstand, Pagination-Breite, Tages-Suffixe und Formularschutz mit Fokus, Schließen/Escape, native Neuladehinweise und Verwerfen auf Desktop/Smartphone | 12 |
-| `cosmos-components` | Rollensuche, Auswahldetails/Tages-Suffixe, Konfigurations-Switches, SideNav-Zustände, Tooltips, Benutzermenü und native Scrollleisten | 7 |
+| `cosmos-components` | Rollensuche, Auswahldetails/Tages-Suffixe, Konfigurations-Switches, SideNav-Zustände, Tooltips, Benutzermenü, Header-/Filter-Mauszeiger und native Scrollleisten | 9 |
 | `cosmos-scrollbars` | Nur globale Scrollleisten: Dokument, Chat, Grid, TextArea und Dialog auf Desktop/Smartphone, Scrollbedienung und Systemkontrast | 1 |
 | `all` | Alle Browserfälle einschließlich der Fast-Fälle | alle |
 

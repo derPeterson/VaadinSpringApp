@@ -95,6 +95,7 @@ class BrowserExecutionPlanTest {
                   "pendingVerificationKeepsPortalAccessBlocked",
                   "administrativeCreationRequiresMailProof",
                   "superadminCanExplicitlyCreateUncheckedAccount",
+                  "developmentAccountIsExplicitAndDoesNotSendAccountMail",
                   "bootstrapAccountCanRequireVerification",
                   "realMailAllowsActivationAndLogin",
                   "usedLinkRemainsSuccessfulForActiveAccount",
@@ -104,6 +105,7 @@ class BrowserExecutionPlanTest {
                   "optionalPortalPassword");
           case "configuration-follow-up" ->
               Set.of(
+                  "accountRetentionUsesFixedDaysAndIsRestrictedToSuperadmins",
                   "changingConfigurationGroupRequiresDiscardingTheDraft",
                   "providerAndFactorDraftsRequireExplicitDiscard",
                   "everyConfigurationFieldHasAnAccessibleLocalizedInfo",
@@ -112,6 +114,7 @@ class BrowserExecutionPlanTest {
                   "persistedConfigurationAndAccountsSurviveRestartWithoutBootstrap");
           case "configuration-field-help" ->
               Set.of(
+                  "accountRetentionUsesFixedDaysAndIsRestrictedToSuperadmins",
                   "everyConfigurationFieldHasAnAccessibleLocalizedInfo",
                   "providerTabsKeepIndependentDrafts",
                   "superadminOnlyConfiguration");

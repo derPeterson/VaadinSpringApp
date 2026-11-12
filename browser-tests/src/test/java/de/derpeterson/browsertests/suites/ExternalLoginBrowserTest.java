@@ -120,8 +120,36 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
           "Schreibgeschützte Anmeldeangaben", administrator.browserPage);
       user.cancel();
       assertSelfRegisteredSignInDetails(users);
+      assertProviderLoginRequiresReactivation(providerSession.browserPage, email, google);
       new UserMenu(administrator.browserPage).signOut();
     }
+  }
+
+  private void assertProviderLoginRequiresReactivation(
+      Page providerPage, String accountEmail, String providerEmail) {
+    providerPage.navigate("/account?section=security&tab=lifecycle");
+    providerPage.locator("#account-deactivate").click();
+    providerPage
+        .locator("#account-lifecycle-password input")
+        .fill(BrowserTestAccounts.USER_PASSWORD);
+    providerPage.locator("#account-lifecycle-submit").click();
+    assertThat(providerPage).hasURL(Pattern.compile(".*/login.*"));
+
+    begin(providerPage, "google", providerEmail, "valid", true);
+    assertThat(providerPage.locator("#pending-reactivation-email")).hasText(accountEmail);
+    providerPage.reload();
+    assertThat(providerPage.locator("#pending-reactivation-email")).hasText(accountEmail);
+    providerPage.navigate("/admin");
+    assertThat(providerPage.locator("#pending-reactivation-email")).hasText(accountEmail);
+    assertThat(providerPage.locator(".admin-users-grid")).hasCount(0);
+    AllurePlaywright.attachScreenshot("Anbieteranmeldung verlangt Reaktivierung", providerPage);
+
+    providerPage
+        .getByRole(
+            AriaRole.BUTTON,
+            new Page.GetByRoleOptions().setName(uiTexts.getBaseLogoutButton()).setExact(true))
+        .click();
+    new LoginPage(providerPage).assertFormVisible();
   }
 
   private void assertSelfRegisteredSignInDetails(AdminUsersPage users) {

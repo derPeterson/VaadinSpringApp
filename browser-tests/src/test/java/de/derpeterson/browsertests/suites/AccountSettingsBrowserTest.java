@@ -62,6 +62,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     String accountEmail = account();
     openAccountLifecycleTab();
     browserPage.locator("#account-deactivate").click();
+    assertLifecycleDialogStyle(false);
     assertThat(browserPage.locator("#account-lifecycle-password input")).isVisible();
     assertThat(browserPage.locator("#account-lifecycle-proof")).not().hasAttribute("opening", "");
     assertThat(browserPage.locator("#account-lifecycle-proof .cosmos-panel-description"))
@@ -96,6 +97,9 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       assertThat(reactivationPage.getByText(uiTexts.getAccountReactivateSuccess())).isVisible();
     }
 
+    mailpitInbox.assertAccountConfirmationWithoutAction(
+        mailpitInbox.awaitSecurityMail(accountEmail, uiTexts.getAccountReactivatedMailSubject()));
+
     LoginPage loginPage = new LoginPage(browserPage);
     loginPage.open();
     loginPage.signIn(accountEmail, BrowserTestAccounts.USER_PASSWORD);
@@ -117,6 +121,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     String accountEmail = account();
     openAccountLifecycleTab();
     browserPage.locator("#account-delete").click();
+    assertLifecycleDialogStyle(true);
     browserPage.locator("#account-lifecycle-password input").fill("wrong-password");
     browserPage.locator("#account-lifecycle-submit").click();
     assertThat(browserPage.getByText(uiTexts.getAccountLifecycleInvalidProof())).isVisible();
@@ -126,8 +131,9 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     confirmLifecycleWithPortalPassword();
     assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
     assertThat(browserPage.getByText(uiTexts.getAccountDeletedSuccess())).isVisible();
-    new MailpitInbox(browserContext)
-        .awaitSecurityMail(accountEmail, uiTexts.getAccountDeletedMailSubject());
+    MailpitInbox mailpitInbox = new MailpitInbox(browserContext);
+    mailpitInbox.assertAccountConfirmationWithoutAction(
+        mailpitInbox.awaitSecurityMail(accountEmail, uiTexts.getAccountDeletedMailSubject()));
   }
 
   private void openAccountLifecycleTab() {
@@ -158,7 +164,12 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     TwoFactorPage.enrollCurrent(browserPage, accountEmail);
 
     openAccountLifecycleTab();
+    browserPage.locator("#account-deactivate").click();
+    assertLifecycleDialogStyle(false);
+    assertThat(browserPage.locator("#account-lifecycle-password")).hasCount(0);
+    browserPage.locator("#account-lifecycle-proof .cosmos-overlay-close").click();
     browserPage.locator("#account-delete").click();
+    assertLifecycleDialogStyle(true);
     assertThat(browserPage.locator("#account-lifecycle-password")).hasCount(0);
     browserPage.locator("#account-lifecycle-recovery-code-tab").click();
     browserPage
@@ -177,6 +188,20 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
         .locator("#account-lifecycle-password input")
         .fill(BrowserTestAccounts.USER_PASSWORD);
     browserPage.locator("#account-lifecycle-submit").click();
+  }
+
+  private void assertLifecycleDialogStyle(boolean deletingAccount) {
+    Locator proofDialogLocator = browserPage.locator("#account-lifecycle-proof[opened]");
+    assertThat(proofDialogLocator.locator(".cosmos-panel-description"))
+        .hasText(uiTexts.getExternalProof());
+    String expectedAccentColor = deletingAccount ? "rgb(239, 164, 177)" : "rgb(245, 158, 11)";
+    assertThat(proofDialogLocator.locator(".cosmos-security-warning-label"))
+        .hasCSS("color", expectedAccentColor);
+    assertThat(proofDialogLocator.locator(".cosmos-panel-icon"))
+        .hasCSS("color", expectedAccentColor);
+    assertThat(proofDialogLocator.locator("#account-lifecycle-submit vaadin-icon")).isVisible();
+    AllurePlaywright.attachScreenshot(
+        deletingAccount ? "Kontolöschung" : "Kontodeaktivierung", browserPage);
   }
 
   private String account() {

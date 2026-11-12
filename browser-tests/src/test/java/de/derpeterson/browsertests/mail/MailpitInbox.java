@@ -59,6 +59,23 @@ public final class MailpitInbox {
 
   public record CapturedMail(String id, String recipient, String subject) {}
 
+  public void assertNoMailFor(String recipientEmail) {
+    for (JsonNode capturedMessage : getJson("/api/v1/messages?limit=1000").path("messages")) {
+      assertFalse(
+          addressedTo(capturedMessage, recipientEmail), "Entwicklungskonto hat eine Mail erhalten");
+    }
+  }
+
+  public void assertAccountConfirmationWithoutAction(CapturedMail capturedMail) {
+    try (Page mailPage = browserContext.newPage()) {
+      mailPage.navigate(baseUrl + "/view/" + capturedMail.id() + ".html");
+      assertThat(mailPage.locator(".cosmos-email-button")).hasCount(0);
+      assertThat(mailPage.locator(".cosmos-email-copy-link")).hasCount(0);
+      assertThat(mailPage.locator("body")).containsText("VaadinSpringApp (Browser-Test)");
+      assertMailAtBothWidths(mailPage, "Kontobestätigung ohne Aktion");
+    }
+  }
+
   @Step("Auf die regulär versandte Verifikationsmail an die eigene Testadresse warten")
   public CapturedMail awaitVerificationMail(String recipient) {
     return awaitMail(recipient, uiTexts.getEmailVerificationSubject());
@@ -122,7 +139,7 @@ public final class MailpitInbox {
           "image => image.complete && image.naturalWidth > 0", logo.elementHandle());
 
       assertThat(message.locator("body")).containsText(expectedFooter(EMAIL_CHANGE_ROUTE));
-      AllurePlaywright.attachScreenshot("Tatsächlich empfangene Sicherheitsmail", message);
+      assertMailAtBothWidths(message, "Tatsächlich empfangene Sicherheitsmail");
     } finally {
       message.close();
     }
@@ -296,10 +313,21 @@ public final class MailpitInbox {
                   expectedFooter(route), new Page.GetByTextOptions().setExact(true)))
           .hasCount(1);
       assertThat(messagePage.locator("body")).not().containsText("{ServiceName}");
-      AllurePlaywright.attachScreenshot(screenshotName, messagePage);
+      assertMailAtBothWidths(messagePage, screenshotName);
       return browserContext.waitForPage(link::click);
     } finally {
       messagePage.close();
+    }
+  }
+
+  private void assertMailAtBothWidths(Page mailPage, String screenshotName) {
+    for (int viewportWidth : new int[] {1280, 390}) {
+      mailPage.setViewportSize(viewportWidth, 900);
+      assertTrue(
+          Boolean.TRUE.equals(
+              mailPage.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")),
+          "Mailinhalt läuft horizontal über");
+      AllurePlaywright.attachScreenshot(screenshotName + " bei " + viewportWidth + " px", mailPage);
     }
   }
 

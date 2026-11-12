@@ -414,7 +414,10 @@ class AccountLifecycleServicePersistenceTest {
         seedMixedContent(accountJdbcTemplate, deletedAccountUser, controlAccountUser);
     usePersistentDeletionQueue();
 
-    deleteThroughRequestedPath(deletionPath, deletedAccountUser);
+    // Wie ein frisch geöffnetes Benutzerformular den Stand nach der Rollenanlage verwenden.
+    UserEntity currentAccountUser =
+        userRepository.findById(deletedAccountUser.getId()).orElseThrow();
+    deleteThroughRequestedPath(deletionPath, currentAccountUser);
 
     assertAccountCredentialsRemoved(accountJdbcTemplate, deletedAccountUser);
     assertEquals(
