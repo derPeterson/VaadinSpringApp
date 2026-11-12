@@ -106,6 +106,28 @@ class PendingEmailVerificationAuthenticationTest {
   }
 
   @Test
+  void selfDeactivatedAccountNeedsCorrectPasswordAndNeverReceivesPortalAuthentication() {
+    PortalUserDetails portalUserDetails = passwordUser(true, false);
+    portalUserDetails.requireAccountReactivation(19L);
+    assertThrows(
+        BadCredentialsException.class,
+        () ->
+            authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken.unauthenticated(
+                    accountEmail, "WrongPassword!")));
+    AccountReactivationRequiredException requiredException =
+        assertThrows(
+            AccountReactivationRequiredException.class,
+            () ->
+                authenticationManager.authenticate(
+                    UsernamePasswordAuthenticationToken.unauthenticated(
+                        accountEmail, "KnownPassword!")));
+    assertEquals(19L, requiredException.getUserId());
+    assertEquals(portalUserDetails.credentialVersion(), requiredException.getCredentialVersion());
+    assertNull(SecurityContextHolder.getContext().getAuthentication());
+  }
+
+  @Test
   void disabledAccountDoesNotReceiveVerificationProof() {
     passwordUser(false, false);
 

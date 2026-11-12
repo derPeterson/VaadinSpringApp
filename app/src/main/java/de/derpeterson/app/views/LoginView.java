@@ -36,11 +36,13 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.security.AccountActionNotice;
+import de.derpeterson.app.security.AccountReactivationRequiredException;
 import de.derpeterson.app.security.EmailVerificationRequiredException;
 import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
 import de.derpeterson.app.security.LoginThrottledException;
 import de.derpeterson.app.security.MaintenanceAuthenticationException;
+import de.derpeterson.app.security.PendingAccountReactivationFlow;
 import de.derpeterson.app.security.PendingEmailVerificationFlow;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionLimitException;
@@ -102,7 +104,6 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
   private EmailField loginEmailField = null;
   private PasswordField loginPasswordField = null;
   private RouterLink forgotPasswordRouterLink = null;
-  private RouterLink reactivateAccountRouterLink;
   private Switch rememberMeSwitch = null;
   private Button loginButton = null;
   private H1 loginTitleH1 = null;
@@ -149,8 +150,6 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
     this.forgotPasswordRouterLink =
         new RouterLink(messageProperties.getLoginForgotPasswordLink(), ForgotPasswordView.class);
-    this.reactivateAccountRouterLink =
-        new RouterLink(messageProperties.getAccountReactivateAction(), ReactivateAccountView.class);
 
     this.rememberMeSwitch = new Switch(messageProperties.getLoginRememberMeCheckbox());
     restoreRememberChoiceFromCookies(httpServletRequest.getCookies());
@@ -211,7 +210,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     forgotPasswordLayout.setAlignItems(FlexComponent.Alignment.CENTER);
     forgotPasswordLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
     forgotPasswordLayout.getStyle().set("flex-wrap", "wrap");
-    forgotPasswordLayout.add(forgotPasswordRouterLink, reactivateAccountRouterLink);
+    forgotPasswordLayout.add(forgotPasswordRouterLink);
 
     HorizontalLayout loginOptionsLayout = new HorizontalLayout();
     loginOptionsLayout.setWidthFull();
@@ -342,10 +341,6 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
                 component, this.messageProperties::getLoginForgotPasswordLink));
-    Optional.ofNullable(reactivateAccountRouterLink)
-        .ifPresent(component ->
-            componentTranslationSupplierMap.put(
-                component, this.messageProperties::getAccountReactivateAction));
     Optional.ofNullable(rememberMeSwitch)
         .ifPresent(component ->
             componentTranslationSupplierMap.put(
@@ -390,6 +385,14 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
       navigateAfterSuccessfulLogin(hasAdminRole(passwordAuthentication));
     } catch (AuthenticationException authenticationFailure) {
+      if (authenticationFailure
+          instanceof AccountReactivationRequiredException reactivationRequiredException) {
+        PendingAccountReactivationFlow.start(
+            loginHttpServletRequest, reactivationRequiredException);
+        loginPasswordField.clear();
+        getUI().ifPresent(loginUi -> loginUi.navigate(PendingAccountReactivationView.class));
+        return;
+      }
       if (authenticationFailure
           instanceof EmailVerificationRequiredException verificationRequiredException) {
         PendingEmailVerificationFlow.start(loginHttpServletRequest, verificationRequiredException);

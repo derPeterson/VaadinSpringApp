@@ -13,6 +13,7 @@ import de.derpeterson.app.security.DeviceTokenRepository;
 import de.derpeterson.app.security.ExternalIdentityEvidence;
 import de.derpeterson.app.security.ExternalLoginConfiguration;
 import de.derpeterson.app.security.MaintenanceService;
+import de.derpeterson.app.security.PendingAccountReactivationFlow;
 import de.derpeterson.app.security.PortalUserDetails;
 import de.derpeterson.app.security.SignInMethod;
 import de.derpeterson.app.security.session.DurableSessionRegistry;
@@ -65,7 +66,8 @@ public class ExternalIdentityService {
         .map(identity -> {
           UserEntity user = identity.getUser();
           // Der gültige Anbieterbeweis erlaubt nur die eingeschränkte Bestätigungsseite.
-          if (!user.requiresEmailVerification()) {
+          if (!user.requiresEmailVerification()
+              && !PendingAccountReactivationFlow.canReactivate(user)) {
             requireEnabled(user);
           }
           return user;

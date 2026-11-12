@@ -2,6 +2,7 @@ package de.derpeterson.app.security;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -15,6 +16,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import de.derpeterson.app.model.AccountDeactivation;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.EmailVerificationStatus;
 import de.derpeterson.app.model.enums.RoleType;
@@ -142,6 +144,21 @@ class ExternalLoginFlowTest {
             mockHttpRequest, mockHttpResponse, ownerUserEntity, "google", true));
     verify(securityService, never()).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
     verify(twoFactor, never()).sessionConfirmed(any());
+  }
+
+  @Test
+  void selfDeactivationStopsProviderLoginBeforeSessionAdmissionAndSecondFactor() {
+    ownerUserEntity.setEnabled(false);
+    ownerUserEntity.setAccountDeactivation(
+        new AccountDeactivation(
+            Instant.now().plusSeconds(3600), null, "test-digest", null, null, null));
+    assertEquals(
+        "/account-deactivated",
+        externalLoginFlow.finishLogin(
+            mockHttpRequest, mockHttpResponse, ownerUserEntity, "google", true));
+    verify(securityService, never()).storeVerifiedAuthentication(any(), any(), any(), anyBoolean());
+    verify(twoFactor, never()).sessionConfirmed(any());
+    assertNull(SecurityContextHolder.getContext().getAuthentication());
   }
 
   @Test

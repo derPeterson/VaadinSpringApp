@@ -76,6 +76,8 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
 
     boolean getPendingEmailVerification();
 
+    boolean getSelfDeactivated();
+
     String getEmail();
 
     String getPassword();
@@ -137,6 +139,7 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   String SECURITY_USER_QUERY =
       "select u.id as id, u.email as email, u.password as password, u.accessVersion as accessVersion, "
           + "(u.enabled = true and u.emailVerificationStatus <> de.derpeterson.app.model.enums.EmailVerificationStatus.PENDING) as enabled, "
+          + "case when u.enabled = false and u.accountDeactivation.deletionAt > CURRENT_TIMESTAMP then true else false end as selfDeactivated, "
           + "(u.verificationPending = true or (u.enabled = true and u.emailVerificationStatus = de.derpeterson.app.model.enums.EmailVerificationStatus.PENDING)) as pendingEmailVerification, r.name as role "
           + "from UserEntity u left join u.roleEntities r where u.email = :email";
 

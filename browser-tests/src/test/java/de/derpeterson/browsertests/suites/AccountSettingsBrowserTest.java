@@ -73,6 +73,20 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
     assertThat(browserPage.getByText(uiTexts.getAccountDeactivatedSuccess())).isVisible();
     assertThat(browserPage.getByText(uiTexts.getAccountLifecycleMailQueued())).isVisible();
+    LoginPage restrictedLoginPage = new LoginPage(browserPage);
+    restrictedLoginPage.signInFirstFactor(accountEmail, BrowserTestAccounts.USER_PASSWORD);
+    assertThat(browserPage.locator("#pending-reactivation-email")).hasText(accountEmail);
+    browserPage.reload();
+    assertThat(browserPage.locator("#pending-reactivation-email")).hasText(accountEmail);
+    browserPage.navigate(de.derpeterson.browsertests.BrowserRoutes.path("account"));
+    assertThat(browserPage.locator("#pending-reactivation-email")).hasText(accountEmail);
+    browserPage.locator("#resend-reactivation-email").click();
+    assertThat(
+            browserPage
+                .locator("vaadin-notification-card:not([closing])")
+                .getByText(uiTexts.getAccountReactivationPendingWait()))
+        .isVisible();
+    AllurePlaywright.attachScreenshot("Reaktivierung bei " + viewportWidth + " px", browserPage);
     MailpitInbox mailpitInbox = new MailpitInbox(browserContext);
     CapturedMail deactivationMail =
         mailpitInbox.awaitSecurityMail(accountEmail, uiTexts.getAccountDeactivatedMailSubject());
@@ -83,6 +97,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     }
 
     LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
     loginPage.signIn(accountEmail, BrowserTestAccounts.USER_PASSWORD);
     assertThat(browserPage.locator(".portal-home-page")).isVisible();
   }

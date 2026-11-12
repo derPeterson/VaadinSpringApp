@@ -61,15 +61,19 @@ public class CustomUserDetailsService implements UserDetailsService {
             .collect(Collectors.toList());
 
     boolean pendingVerification = passwordLogin && accountSecurityRow.getPendingEmailVerification();
+    boolean pendingReactivation = passwordLogin && accountSecurityRow.getSelfDeactivated();
     PortalUserDetails portalUserDetails =
         new PortalUserDetails(
             accountSecurityRow.getEmail(),
             accountSecurityRow.getPassword(),
             accountSecurityRow.getAccessVersion(),
-            accountSecurityRow.isEnabled() || pendingVerification,
+            accountSecurityRow.isEnabled() || pendingVerification || pendingReactivation,
             grantedAuthorities);
     if (pendingVerification) {
       portalUserDetails.requireEmailVerification(accountSecurityRow.getId());
+    }
+    if (pendingReactivation) {
+      portalUserDetails.requireAccountReactivation(accountSecurityRow.getId());
     }
     return portalUserDetails;
   }

@@ -120,6 +120,26 @@ public class MessageTexts {
     return getTranslation("account.lifecycle.outcomeUnknown");
   }
 
+  public String getAccountReactivationPendingTitle() {
+    return getTranslation("account.reactivationPending.title");
+  }
+
+  public String getAccountReactivationPendingIntro() {
+    return getTranslation("account.reactivationPending.intro");
+  }
+
+  public String getAccountReactivationPendingHint() {
+    return getTranslation("account.reactivationPending.hint");
+  }
+
+  public String getAccountReactivationPendingWait() {
+    return getTranslation("account.reactivationPending.wait");
+  }
+
+  public String getAccountReactivationPendingInstructions(String deletionDateText) {
+    return getFormattedTranslation("account.reactivationPending.instructions", deletionDateText);
+  }
+
   public String getAccountReactivateAction() {
     return getTranslation("account.lifecycle.reactivate");
   }

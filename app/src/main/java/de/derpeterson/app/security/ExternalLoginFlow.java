@@ -509,6 +509,10 @@ public class ExternalLoginFlow {
       String provider,
       boolean remember) {
     requireProvider(provider);
+    if (PendingAccountReactivationFlow.canReactivate(user)) {
+      PendingAccountReactivationFlow.startForProviderAccount(request, user);
+      return AppRouteConstants.PENDING_ACCOUNT_REACTIVATION_LOCATION;
+    }
     if (user.requiresEmailVerification()) {
       PendingEmailVerificationFlow.startForProviderAccount(request, user);
       return AppRouteConstants.PENDING_EMAIL_VERIFICATION_LOCATION;

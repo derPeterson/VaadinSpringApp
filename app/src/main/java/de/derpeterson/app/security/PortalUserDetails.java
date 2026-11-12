@@ -14,6 +14,15 @@ import org.springframework.security.core.userdetails.UserDetails;
 public final class PortalUserDetails extends User {
   private final String credentialVersion;
   private Long pendingVerificationUserId;
+  private Long pendingReactivationUserId;
+
+  public Long getPendingReactivationUserId() {
+    return pendingReactivationUserId;
+  }
+
+  public void requireAccountReactivation(Long userId) {
+    pendingReactivationUserId = java.util.Objects.requireNonNull(userId);
+  }
 
   public Long getPendingVerificationUserId() {
     return pendingVerificationUserId;

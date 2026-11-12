@@ -42,10 +42,17 @@ Konfigurationsänderungen nicht.
 
 Der Link aktiviert das Konto erst nach einer ausdrücklichen Bestätigung und ist
 bis zum Löschdatum gültig. Eine erfolgreiche Aktivierung macht alle bisherigen
-Links dieses Vorgangs ungültig. Über die Anmeldeseite lässt sich bei Bedarf ein
-weiterer Link anfordern. Die Oberfläche meldet denselben Ausgang unabhängig
-vom Kontostatus. Eine durch einen Admin veranlasste Kontosperre kann über diesen
-Weg nicht aufgehoben werden.
+Links dieses Vorgangs ungültig. Ein gültiges Portalpasswort oder ein bestätigter
+verbundener Anmeldeanbieter führt bei Selbstdeaktivierung auf eine eigene gelbe
+Hinweisseite mit Löschdatum. Ihr erster Nachweis gilt zehn Minuten und erteilt
+weder Portalrechte noch Remember-me oder eine 2FA-Bestätigung. Refresh und direkte
+Seitennavigation bleiben auf diesen Hinweis beschränkt. „Abmelden“ verwirft den
+Nachweis, „Senden“ fordert an die gespeicherte Adresse einen weiteren Link an.
+Zwischen Anforderungen liegen mindestens fünf Minuten, beginnend bei der
+Deaktivierung; ein offener Versandauftrag verhindert zusätzliche Anforderungen.
+Administrativ gesperrte Konten, abgelaufene Fristen und veränderte Kontonachweise
+lassen diesen Weg nicht zu. Entwicklungskonten zeigen keine Versandzusage und
+haben keinen Mailversand. Nach Linkbestätigung ist eine reguläre Anmeldung nötig.
 
 Die Löschung wird direkt bestätigt oder nach Ablauf der Deaktivierungsfrist
 automatisch ausgeführt. Sie entfernt das Konto, Anmeldeverknüpfungen,

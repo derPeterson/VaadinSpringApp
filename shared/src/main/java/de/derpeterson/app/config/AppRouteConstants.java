@@ -25,6 +25,9 @@ public final class AppRouteConstants {
   public static final String ACCOUNT_PROVIDERS_TAB = "providers";
   public static final String ACCOUNT_LIFECYCLE_TAB = "lifecycle";
   public static final String ACCOUNT_REACTIVATION_ROUTE = "reactivate-account";
+  public static final String PENDING_ACCOUNT_REACTIVATION_ROUTE = "account-deactivated";
+  public static final String PENDING_ACCOUNT_REACTIVATION_LOCATION =
+      "/" + PENDING_ACCOUNT_REACTIVATION_ROUTE;
   public static final String ACCOUNT_PORTAL_LOCATION =
       ACCOUNT_SECURITY_ROUTE
           + "?"

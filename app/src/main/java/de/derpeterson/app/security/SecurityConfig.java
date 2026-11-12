@@ -88,6 +88,10 @@ public class SecurityConfig {
         throw new CredentialsExpiredException("Credentials expired");
       }
       if (userDetails instanceof PortalUserDetails portalUserDetails
+          && portalUserDetails.getPendingReactivationUserId() != null) {
+        throw new AccountReactivationRequiredException(portalUserDetails);
+      }
+      if (userDetails instanceof PortalUserDetails portalUserDetails
           && portalUserDetails.getPendingVerificationUserId() != null) {
         throw new EmailVerificationRequiredException(portalUserDetails);
       }
@@ -258,6 +262,11 @@ public class SecurityConfig {
                       rememberMeServices,
                       twoFactorAuthorization))
               .failureHandler((request, response, failure) -> {
+                if (failure instanceof AccountReactivationRequiredException requiredException) {
+                  PendingAccountReactivationFlow.start(request, requiredException);
+                  response.sendRedirect(AppRouteConstants.PENDING_ACCOUNT_REACTIVATION_LOCATION);
+                  return;
+                }
                 if (failure
                     instanceof EmailVerificationRequiredException verificationRequiredException) {
                   PendingEmailVerificationFlow.start(request, verificationRequiredException);
@@ -335,6 +344,7 @@ public class SecurityConfig {
             AppRoute.REGISTRATION.getSecurityRoute(),
             AppRoute.VERIFICATION.getSecurityRoute(),
             AppRouteConstants.PENDING_EMAIL_VERIFICATION_LOCATION,
+            AppRouteConstants.PENDING_ACCOUNT_REACTIVATION_LOCATION,
             AppRoute.FORGOT_PASSWORD.getSecurityRoute(),
             AppRoute.RESET_PASSWORD.getSecurityRoute(),
             "/" + AppRouteConstants.ACCOUNT_REACTIVATION_ROUTE,
@@ -480,6 +490,7 @@ public class SecurityConfig {
         || requestUri.equals(AppRoute.ADMIN.getSecurityRoute())
         || requestUri.equals(AppRoute.LOGIN.getSecurityRoute())
         || requestUri.equals(AppRouteConstants.PENDING_EMAIL_VERIFICATION_LOCATION)
+        || requestUri.equals(AppRouteConstants.PENDING_ACCOUNT_REACTIVATION_LOCATION)
         || requestUri.equals(AppRoute.MAINTENANCE.getSecurityRoute())
         || requestUri.equals(AppRoute.LOGOUT.getSecurityRoute())
         || requestUri.equals(AppRoute.REGISTRATION.getSecurityRoute())

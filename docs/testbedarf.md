@@ -26,7 +26,7 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
   bestehende Termine. Die Felder stehen in der freigegebenen eigenen Rubrik
   „Kontoverwaltung“; nur Superadmins haben Zugriff, Admins und normale Benutzer nicht.
 
-- Reaktivierungshinweis nach Anmeldung, **wartend auf die Umsetzung** von
+- Reaktivierungshinweis nach Anmeldung, **offen, Umsetzung vorhanden** von
   [Nachtaufgabe 8](planung/nachtaufgaben.md#8-selbst-deaktivierte-konten-nach-der-anmeldung-gezielt-zur-reaktivierung-führen):
   In DE/EN auf Desktop und Smartphone den entfernten Link im Loginformular und
   die eigene gelbe Hinweisseite nach gültigem ersten Anmeldenachweis prüfen.

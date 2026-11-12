@@ -15,6 +15,8 @@ import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.DeviceTokenRepository;
 import de.derpeterson.app.security.MaintenanceService;
+import de.derpeterson.app.security.PendingAccountReactivationFlow;
+import de.derpeterson.app.security.PortalUserDetails;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization.Owner;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization.State;
@@ -202,7 +204,7 @@ public class AccountLifecycleService {
     lockedAccountUser.rotateAccessVersion();
     lockedAccountUser.setAccountDeactivation(
         new AccountDeactivation(
-            deletionAt, reminderAt, tokenDigest(reactivationToken), null, null, null));
+            deletionAt, reminderAt, tokenDigest(reactivationToken), null, null, deactivationTime));
     userRepository.saveAndFlush(lockedAccountUser);
 
     MessageProperties accountMessageProperties = createAccountMessageProperties(lockedAccountUser);
@@ -248,45 +250,53 @@ public class AccountLifecycleService {
             }));
   }
 
-  public void requestReactivationLink(String accountEmail) {
+  public boolean requestReactivationLink(Long accountUserId, String credentialVersion) {
     MaintenanceService.requirePublicAccess(configService);
-    newAccountTransaction()
-        .executeWithoutResult(transactionStatus -> {
-          UserEntity lockedAccountUser =
-              userRepository.findByEmailForUpdate(accountEmail).orElse(null);
-          Instant requestedAt = Instant.now();
-          if (lockedAccountUser == null
-              || lockedAccountUser.isDevelopmentAccount()
-              || lockedAccountUser.isEnabled()
-              || lockedAccountUser.getAccountDeactivation() == null) {
-            return;
-          }
+    return Boolean.TRUE.equals(
+        newAccountTransaction()
+            .execute(transactionStatus -> {
+              UserEntity lockedAccountUser =
+                  userRepository.findByIdForUpdate(accountUserId).orElse(null);
+              Instant requestedAt = Instant.now();
+              if (lockedAccountUser == null
+                  || !PendingAccountReactivationFlow.canReactivate(lockedAccountUser)
+                  || !Objects.equals(
+                      credentialVersion,
+                      PortalUserDetails.credentialVersion(
+                          lockedAccountUser.getAccessVersion(), lockedAccountUser.getPassword()))) {
+                throw new AccessDeniedException("Reactivation proof changed");
+              }
+              if (lockedAccountUser.isDevelopmentAccount()) {
+                return false;
+              }
 
-          AccountDeactivation accountDeactivation = lockedAccountUser.getAccountDeactivation();
-          if (!accountDeactivation.deletionAt().isAfter(requestedAt)
-              || accountDeactivation.reactivationRequestedAt() != null
-                  && accountDeactivation
-                      .reactivationRequestedAt()
-                      .plus(REACTIVATION_REQUEST_INTERVAL)
-                      .isAfter(requestedAt)
-              || emailQueueService.hasOpenEmailForUserAndType(
-                  lockedAccountUser, EmailType.ACCOUNT_REACTIVATION)) {
-            return;
-          }
+              AccountDeactivation accountDeactivation = lockedAccountUser.getAccountDeactivation();
+              if (!accountDeactivation.deletionAt().isAfter(requestedAt)
+                  || accountDeactivation.reactivationRequestedAt() != null
+                      && accountDeactivation
+                          .reactivationRequestedAt()
+                          .plus(REACTIVATION_REQUEST_INTERVAL)
+                          .isAfter(requestedAt)
+                  || emailQueueService.hasOpenEmailForUserAndType(
+                      lockedAccountUser, EmailType.ACCOUNT_REACTIVATION)) {
+                return false;
+              }
 
-          String reactivationToken = UUID.randomUUID().toString();
-          lockedAccountUser.setAccountDeactivation(
-              accountDeactivation.withRequestedLink(tokenDigest(reactivationToken), requestedAt));
-          MessageProperties accountMessageProperties =
-              createAccountMessageProperties(lockedAccountUser);
-          queueReactivationNotice(
-              lockedAccountUser,
-              "account_deactivated",
-              accountMessageProperties.getAccountDeactivatedMailSubject(),
-              accountMessageProperties.getAccountDeactivatedMailBody(
-                  formatDeletionDate(lockedAccountUser, accountDeactivation.deletionAt())),
-              reactivationToken);
-        });
+              String reactivationToken = UUID.randomUUID().toString();
+              lockedAccountUser.setAccountDeactivation(
+                  accountDeactivation.withRequestedLink(
+                      tokenDigest(reactivationToken), requestedAt));
+              MessageProperties accountMessageProperties =
+                  createAccountMessageProperties(lockedAccountUser);
+              queueReactivationNotice(
+                  lockedAccountUser,
+                  "account_deactivated",
+                  accountMessageProperties.getAccountDeactivatedMailSubject(),
+                  accountMessageProperties.getAccountDeactivatedMailBody(
+                      formatDeletionDate(lockedAccountUser, accountDeactivation.deletionAt())),
+                  reactivationToken);
+              return true;
+            }));
   }
 
   @Scheduled(fixedDelay = 60_000)

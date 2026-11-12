@@ -138,38 +138,12 @@ und die anschließende Gesamtprüfung bleiben im [Testbedarf](../testbedarf.md).
 Echte Mailclient-Abnahmen bleiben im manuellen Katalog, nicht als Browsererfolg.
 ## 8. Selbst deaktivierte Konten nach der Anmeldung gezielt zur Reaktivierung führen
 
-- [ ] Den zusätzlichen Link „Konto reaktivieren“ aus dem Anmeldeformular
-  entfernen. Stattdessen nach gültigem erstem Anmeldenachweis für ein selbst
-  deaktiviertes Konto eine eigene Hinweisseite öffnen. Die Gestaltung der
-  bestehenden Seite für ausstehende E-Mail-Bestätigung übernehmen: gemeinsamer
-  Seitenrahmen, gelber Status und Hinweis, native Vaadin-/Cosmos-Komponenten.
-  Keine Vermischung der fachlichen Zustände Verifikation und Deaktivierung.
-- [ ] Erklären, dass das Konto deaktiviert ist und über den Link in der
-  Deaktivierungs-E-Mail rechtzeitig reaktiviert werden kann. Das tatsächliche
-  Löschdatum anzeigen und auf Spam-/Junkordner hinweisen. Die Aktionen sind
-  „Abmelden“ und „Senden“, gemeinsam rechtsbündig und gleich
-  breit wie auf der E-Mail-Bestätigungsseite. Texte und Zustände in DE/EN pflegen.
-- [ ] Erneuten Versand an die gespeicherte Kontoadresse mit den vorhandenen
-  Wartezeit-, Deduplizierungs- und Tokenregeln ermöglichen. Keine automatische
-  Mail bei jedem Anmeldeversuch und keine frei änderbare Empfängeradresse auf
-  der Hinweisseite. Queueaufnahme und Versandfehler ehrlich rückmelden.
-  Die Mailvorlage aus Nachtaufgabe 7 und den kopierbaren Link aus Punkt 2 nutzen.
-- [ ] Die Weiterleitung für Portalpasswort und verbundene Anmeldeanbieter
-  berücksichtigen. Kontostatus erst nach erfolgreichem Nachweis offenlegen;
-  eine bekannte E-Mail-Adresse allein genügt nicht. Der beschränkte Zustand
-  erlaubt keine normale Konto-/Adminnutzung, keine Remember-me-Anmeldung und
-  keine Umgehung der 2FA. Refresh und direkte URLs dürfen ihn nicht freischalten.
-- [ ] Administrativ deaktivierte Konten weiterhin von der Selbstreaktivierung
-  ausschließen. Gelöschte Konten und abgelaufene Reaktivierungsfristen eröffnen
-  keinen Reaktivierungsweg. Entwicklungskonten bleiben gemäß Nachtaufgabe 1
-  vom Mailversand ausgeschlossen; keine falsche Versandzusage anzeigen.
-- [ ] Den bestehenden Reaktivierungslink und seine bewusste Bestätigung erhalten.
-  Erst nach gültiger Bestätigung wird das Konto wieder aktiv; die Hinweisseite
-  oder eine erneute Linkanforderung allein aktiviert es nicht. Anschließend
-  regulär anmelden und die vorhandenen Sicherheitsprüfungen durchlaufen.
-- [ ] Passende Regressionen ergänzen und in der abschließenden Testrunde
-  isoliert in DE/EN auf Desktop und Smartphone prüfen. Offene automatische
-  Prüfungen zentral im [Testbedarf](../testbedarf.md) erhalten. Noch keine Umsetzung.
+Umgesetzt: Der Loginlink entfällt. Gültiges Portalpasswort oder Anbieterbeweis
+führen auf eine separate gelbe Hinweisseite mit Frist, Abmelden und Senden.
+Der zeitlich begrenzte Nachweis erteilt keine Portalrechte. Sperren, Fristablauf,
+Kontorevision, Versandwartezeit und offene Queueaufträge werden serverseitig geprüft.
+Die bestehenden Linkbestätigungen bleiben ausdrücklich. Browserprüfung folgt
+gezielt und in der Gesamtrunde; der offene Umfang steht im [Testbedarf](../testbedarf.md).
 
 ## 9. Vollständige Kontolöschung mit umfangreich verknüpften Testkonten absichern
 

@@ -1,4 +1,4 @@
-/* Variante A bleibt auf die ausstehende E-Mail-Bestätigung begrenzt. */
+/* Gemeinsame Darstellung für ausstehende Verifikation und Konto-Reaktivierung. */
 .pending-email-verification-view .pending-verification-content {
     gap: var(--cosmos-space-xl);
 }
@@ -39,7 +39,8 @@
     line-height: var(--cosmos-line-height-copy);
 }
 
-.pending-email-verification-view #pending-verification-email {
+.pending-email-verification-view #pending-verification-email,
+.pending-email-verification-view #pending-reactivation-email {
     max-width: 100%;
     color: var(--cosmos-reference-text);
     font-family: 'Space Mono', ui-monospace, Consolas, monospace;

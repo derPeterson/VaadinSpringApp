@@ -50,6 +50,9 @@ public class PublicPageComponent extends PageFrameComponent {
         MessageTexts::getEmailVerificationTitle, MessageTexts::getEmailVerificationIntro),
     EMAIL_CONFIRM(
         MessageTexts::getAccountEmailConfirmationTitle, MessageTexts::getPublicEmailIntroduction),
+    ACCOUNT_REACTIVATION_PENDING(
+        MessageTexts::getAccountReactivationPendingTitle,
+        MessageTexts::getAccountReactivationPendingIntro),
     ACCOUNT_REACTIVATION(
         MessageTexts::getAccountReactivateAction, MessageTexts::getAccountReactivateIntro),
     RECOVERY(MessageTexts::getPublicRecoveryTitle, MessageTexts::getPublicRecoveryIntroduction),
@@ -85,7 +88,8 @@ public class PublicPageComponent extends PageFrameComponent {
     boolean restrictedSecurityPage =
         page == Page.TWO_FACTOR
             || page == Page.RECOVERY_HELP
-            || page == Page.EMAIL_VERIFICATION_PENDING;
+            || page == Page.EMAIL_VERIFICATION_PENDING
+            || page == Page.ACCOUNT_REACTIVATION_PENDING;
     Component brandComponent =
         restrictedSecurityPage
             ? new Div(serviceLogoImage, new Span(serviceNameText))

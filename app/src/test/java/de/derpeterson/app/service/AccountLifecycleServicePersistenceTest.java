@@ -23,6 +23,7 @@ import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.repository.RoleRepository;
 import de.derpeterson.app.repository.UserRepository;
 import de.derpeterson.app.security.DeviceTokenRepository;
+import de.derpeterson.app.security.PortalUserDetails;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization.Owner;
 import de.derpeterson.app.security.mfa.TwoFactorAuthorization.State;
@@ -56,6 +57,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.session.SessionRegistry;
@@ -198,6 +200,56 @@ class AccountLifecycleServicePersistenceTest {
                     : "Your account was reactivated"),
             any(),
             eq(EmailType.NOTIFICATION));
+  }
+
+  @Test
+  void resendRequiresCurrentProofAndRespectsDelayAndOpenMail() {
+    UserEntity accountUser = createAccountUser(false);
+    Instant deletionDeadline = Instant.now().plus(30, ChronoUnit.DAYS);
+    accountUser.setAccountDeactivation(
+        new AccountDeactivation(
+            deletionDeadline, null, "initial-digest", null, null, Instant.now()));
+    userRepository.saveAndFlush(accountUser);
+    String credentialVersion =
+        PortalUserDetails.credentialVersion(
+            accountUser.getAccessVersion(), accountUser.getPassword());
+    assertTrue(
+        userRepository.findSecurityUser(accountUser.getEmail()).getFirst().getSelfDeactivated());
+    assertFalse(
+        accountLifecycleService.requestReactivationLink(accountUser.getId(), credentialVersion));
+    verifyNoInteractions(emailQueueService);
+
+    UserEntity delayedAccountUser = userRepository.findById(accountUser.getId()).orElseThrow();
+    delayedAccountUser.setAccountDeactivation(
+        new AccountDeactivation(
+            deletionDeadline, null, "initial-digest", null, null, Instant.now().minusSeconds(301)));
+    userRepository.saveAndFlush(delayedAccountUser);
+    when(emailQueueService.hasOpenEmailForUserAndType(any(), eq(EmailType.ACCOUNT_REACTIVATION)))
+        .thenReturn(true);
+    assertFalse(
+        accountLifecycleService.requestReactivationLink(accountUser.getId(), credentialVersion));
+    when(emailQueueService.hasOpenEmailForUserAndType(any(), eq(EmailType.ACCOUNT_REACTIVATION)))
+        .thenReturn(false);
+    assertTrue(
+        accountLifecycleService.requestReactivationLink(accountUser.getId(), credentialVersion));
+    verify(emailQueueService)
+        .addEmailToQueue(any(), any(), any(), eq(EmailType.ACCOUNT_REACTIVATION));
+    assertFalse(
+        accountLifecycleService.requestReactivationLink(accountUser.getId(), credentialVersion));
+    assertThrows(
+        AccessDeniedException.class,
+        () -> accountLifecycleService.requestReactivationLink(accountUser.getId(), "old-proof"));
+
+    UserEntity disabledAccount = userRepository.findById(accountUser.getId()).orElseThrow();
+    disabledAccount.setEnabled(false);
+    userRepository.saveAndFlush(disabledAccount);
+    assertFalse(
+        userRepository.findSecurityUser(accountUser.getEmail()).getFirst().getSelfDeactivated());
+    assertThrows(
+        AccessDeniedException.class,
+        () ->
+            accountLifecycleService.requestReactivationLink(
+                accountUser.getId(), credentialVersion));
   }
 
   @Test
@@ -439,9 +491,12 @@ class AccountLifecycleServicePersistenceTest {
 
     accountLifecycleService.changeOwnAccount(
         developmentAccountRequest, AccountAction.DEACTIVATE, "correct-password");
-    accountLifecycleService.requestReactivationLink(developmentUserEntity.getEmail());
     UserEntity deactivatedUserEntity =
         userRepository.findById(developmentUserEntity.getId()).orElseThrow();
+    accountLifecycleService.requestReactivationLink(
+        deactivatedUserEntity.getId(),
+        PortalUserDetails.credentialVersion(
+            deactivatedUserEntity.getAccessVersion(), deactivatedUserEntity.getPassword()));
     deactivatedUserEntity.setAccountDeactivation(
         new AccountDeactivation(
             Instant.now().minusSeconds(1), null, "expired-test-token", null, null, null));
