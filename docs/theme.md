@@ -4,6 +4,20 @@ Vor Gestaltung oder Änderung einer Oberfläche diese Anleitung und die betroffe
 CSS-Quellen lesen und anwenden. Sie beschreibt den aktuellen gemeinsamen Standard
 und wird bei jeder ausdrücklich freigegebenen Erweiterung im selben Arbeitsstand gepflegt.
 
+Die blaue Bereichszeile ist der gemeinsame `CosmosBreadcrumbsComponent` auf Basis
+nativer Vaadin-`Breadcrumbs` im manuellen Modus. `ParentPath` definiert die fachlichen
+Elternstufen unabhängig von Übersetzungen: Portal, Mein Konto, Sicherheit sowie
+Administration und Konfiguration. Die große Überschrift nennt die aktuelle Seite;
+bei Konfiguration ist dies die ausgewählte Gruppe. Panelüberschriften bleiben erhalten.
+`cosmos-breadcrumbs.css` übernimmt die vorhandene blaue Großschreibung und die
+Trennung mit `/`, ohne die Headerpositionen zu ändern. Elternlinks behalten den
+nativen Tastaturfokus, den Handzeiger und den responsiven Überlauf. Der Überlaufknopf
+und das Navigationslabel sind übersetzt. Konfiguration führt zur ersten allgemein
+zugänglichen Gruppe, nicht zu einer Superadmin-Gruppe.
+In gesperrten 2FA-, Wiederherstellungs-, Hilfe-, Verifikations- und Reaktivierungsabläufen
+haben alle Pfaditems keinen Navigationspfad. Die Serverprüfungen und die expliziten
+Zurück-/Abmeldeaktionen bleiben erhalten. Sprachwechsel aktualisieren die Labels.
+
 Bearbeitbare Formulare verwenden für den Verlust eines Entwurfs die Variante
 `UNSAVED_CHANGES` des nativen `PortalConfirmationDialog` über `UnsavedChangesDialog`.
 „Weiter bearbeiten“ erhält die Eingaben

@@ -17,6 +17,7 @@ import com.microsoft.playwright.options.ForcedColors;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
 import de.derpeterson.browsertests.pages.AdminNavigation;
@@ -25,6 +26,7 @@ import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
 import de.derpeterson.browsertests.pages.UiActions;
+import de.derpeterson.browsertests.pages.UnsavedChangesPrompt;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
@@ -46,6 +48,207 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Tag("browser")
 @Feature("Gemeinsame Cosmos-Komponenten")
 public class CosmosComponentsBrowserTest extends BrowserFixture {
+  @Test
+  @Tag("breadcrumbs")
+  @DisplayName(
+      "COMPONENT-11: Seitenpfade navigieren einheitlich und respektieren Sicherheitssperren")
+  void pageBreadcrumbsFollowHierarchyAndKeepSecurityFlowsLocked() {
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 900);
+      for (String publicRoute : List.of("login", "registration", "forgot-password")) {
+        browserPage.navigate(path(publicRoute));
+        assertBreadcrumbPath(List.of(uiTexts.getAccountNavigationPortal()), List.of("/home"));
+        attachBreadcrumbScreenshot(publicRoute, viewportWidth);
+      }
+    }
+
+    LoginPage superadminLoginPage = new LoginPage(browserPage);
+    superadminLoginPage.open();
+    superadminLoginPage.signIn(
+        BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(browserPage).selectTestLanguage();
+
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 900);
+      assertPortalAndAdminPagePaths(viewportWidth);
+      assertConfigurationGroupPaths(viewportWidth);
+      assertBreadcrumbNavigationProtectsProfileDraft();
+      assertSecurityFlowBreadcrumbsStayUnlinked(viewportWidth);
+    }
+
+    new UserMenu(browserPage).signOut();
+    signIn();
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 900);
+      browserPage.navigate(path("admin?section=configuration&group=security"));
+      assertBreadcrumbPath(
+          List.of(uiTexts.getAdminHeaderTitle(), uiTexts.getAdminConfigTitle()),
+          List.of("/admin", "/admin?section=configuration&group=general"));
+      attachBreadcrumbScreenshot("admin-security-comparison", viewportWidth);
+      breadcrumbLink(1).click();
+      assertThat(browserPage)
+          .hasURL(Pattern.compile(".*/admin\\?section=configuration&group=general$"));
+      assertThat(browserPage.locator(".cosmos-section-title"))
+          .hasText(uiTexts.getAdminConfigGroupGeneral() + ".");
+    }
+  }
+
+  private void assertPortalAndAdminPagePaths(int viewportWidth) {
+    for (String portalRoute :
+        List.of(
+            "home",
+            "notifications",
+            "account?section=profile",
+            "account?section=security&tab=portal",
+            "account?section=sessions")) {
+      browserPage.navigate(path(portalRoute));
+      boolean isAccountPage = portalRoute.startsWith("account");
+      assertBreadcrumbPath(
+          isAccountPage
+              ? List.of(uiTexts.getAccountNavigationPortal(), uiTexts.getAccountSettingsOverview())
+              : List.of(uiTexts.getAccountNavigationPortal()),
+          isAccountPage ? List.of("/home", "/account?section=profile") : List.of("/home"));
+      attachBreadcrumbScreenshot(portalRoute, viewportWidth);
+    }
+
+    for (String adminSection :
+        List.of("dashboard", "user_management", "support", "notifications", "mail_test")) {
+      browserPage.navigate(path("admin?section=" + adminSection));
+      assertBreadcrumbPath(List.of(uiTexts.getAdminHeaderTitle()), List.of("/admin"));
+      attachBreadcrumbScreenshot(adminSection, viewportWidth);
+    }
+  }
+
+  private void assertConfigurationGroupPaths(int viewportWidth) {
+    for (AdminConfigGroup configGroup : AdminConfigGroup.values()) {
+      browserPage.navigate(
+          path("admin?section=configuration&group=" + configGroup.name().toLowerCase(Locale.ROOT)));
+      assertBreadcrumbPath(
+          List.of(uiTexts.getAdminHeaderTitle(), uiTexts.getAdminConfigTitle()),
+          List.of("/admin", "/admin?section=configuration&group=general"));
+      assertThat(browserPage.locator(".cosmos-section-title"))
+          .hasText(uiTexts.getAdminConfigGroupLabel(configGroup) + ".");
+      attachBreadcrumbScreenshot("configuration-" + configGroup.name(), viewportWidth);
+    }
+
+    String otherLanguageTag = uiTexts.language().equals("de") ? "en" : "de";
+    UiTexts otherUiTexts = new UiTexts(otherLanguageTag);
+    new UserMenu(browserPage).selectLanguage(otherLanguageTag);
+    assertBreadcrumbPath(
+        List.of(otherUiTexts.getAdminHeaderTitle(), otherUiTexts.getAdminConfigTitle()),
+        List.of("/admin", "/admin?section=configuration&group=general"));
+    assertThat(browserPage.locator(".cosmos-section-title"))
+        .hasText(otherUiTexts.getAdminConfigGroupLabel(AdminConfigGroup.QUEUE) + ".");
+    new UserMenu(browserPage).selectTestLanguage();
+
+    assertBreadcrumbOverflowMenu();
+
+    breadcrumbLink(1).focus();
+    assertThat(breadcrumbLink(1)).isFocused();
+    breadcrumbLink(1).press("Enter");
+    assertThat(browserPage.locator(".cosmos-section-title"))
+        .hasText(uiTexts.getAdminConfigGroupGeneral() + ".");
+  }
+
+  private void assertBreadcrumbOverflowMenu() {
+    Locator pageBreadcrumbsLocator = browserPage.locator(".cosmos-breadcrumbs");
+    pageBreadcrumbsLocator.evaluate("element => element.style.maxWidth = '160px'");
+    assertThat(pageBreadcrumbsLocator).hasAttribute("has-overflow", "");
+    Locator overflowButtonLocator = pageBreadcrumbsLocator.locator("[part=overflow-button]");
+    assertThat(overflowButtonLocator).hasAttribute("aria-label", uiTexts.getPageBreadcrumbsMore());
+    overflowButtonLocator.click();
+    assertThat(overflowButtonLocator).hasAttribute("aria-expanded", "true");
+    assertThat(pageBreadcrumbsLocator.locator("vaadin-breadcrumbs-item[slot=overlay] a"))
+        .hasAttribute("href", "/admin");
+    overflowButtonLocator.press("Escape");
+    assertThat(overflowButtonLocator).hasAttribute("aria-expanded", "false");
+    pageBreadcrumbsLocator.evaluate("element => element.style.removeProperty('max-width')");
+    assertThat(pageBreadcrumbsLocator).not().hasAttribute("has-overflow", "");
+  }
+
+  private void assertBreadcrumbNavigationProtectsProfileDraft() {
+    browserPage.navigate(path("account?section=profile"));
+    Locator firstNameInputLocator = browserPage.locator("#account-first-name input");
+    String savedFirstName = firstNameInputLocator.inputValue();
+    firstNameInputLocator.fill("Breadcrumb draft");
+    breadcrumbLink(0).click();
+    UnsavedChangesPrompt unsavedChangesPrompt = new UnsavedChangesPrompt(browserPage, uiTexts);
+    assertThat(unsavedChangesPrompt.root()).hasAttribute("opened", "");
+    unsavedChangesPrompt.keepEditing();
+    assertThat(firstNameInputLocator).hasValue("Breadcrumb draft");
+    breadcrumbLink(0).click();
+    unsavedChangesPrompt.discard();
+    assertThat(browserPage).hasURL(Pattern.compile(".*/home$"));
+
+    browserPage.navigate(path("account?section=profile"));
+    assertThat(firstNameInputLocator).hasValue(savedFirstName);
+    breadcrumbLink(1).click();
+    assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=profile$"));
+  }
+
+  private void assertSecurityFlowBreadcrumbsStayUnlinked(int viewportWidth) {
+    browserPage.navigate(path("two-factor?recover"));
+    assertLockedAccountBreadcrumbs(uiTexts);
+    String otherLanguageTag = uiTexts.language().equals("de") ? "en" : "de";
+    new UserMenu(browserPage).selectLanguage(otherLanguageTag);
+    assertLockedAccountBreadcrumbs(new UiTexts(otherLanguageTag));
+    new UserMenu(browserPage).selectTestLanguage();
+    attachBreadcrumbScreenshot("two-factor-locked", viewportWidth);
+    browserPage.navigate(path("admin"));
+    assertLockedAccountBreadcrumbs(uiTexts);
+    assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor(?:\\?.*)?$"));
+    UiActions.complete(browserPage, () -> browserPage.locator("#two-factor-cancel").click());
+    assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
+    browserPage.navigate(path("recovery-help"));
+    assertLockedAccountBreadcrumbs(uiTexts);
+    attachBreadcrumbScreenshot("recovery-help-locked", viewportWidth);
+    browserPage.navigate(path("home"));
+    assertLockedAccountBreadcrumbs(uiTexts);
+    assertThat(browserPage).hasURL(Pattern.compile(".*/recovery-help$"));
+    UiActions.complete(browserPage, () -> browserPage.locator("#support-back").click());
+    assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
+  }
+
+  private void assertLockedAccountBreadcrumbs(UiTexts expectedUiTexts) {
+    Locator breadcrumbItemsLocator =
+        browserPage.locator(".cosmos-breadcrumbs > vaadin-breadcrumbs-item");
+    assertThat(breadcrumbItemsLocator)
+        .hasText(
+            new String[] {
+              expectedUiTexts.getAccountNavigationPortal(),
+              expectedUiTexts.getAccountSettingsOverview(),
+              expectedUiTexts.getAccountSettingsSecurityTab()
+            });
+    assertThat(browserPage.locator(".cosmos-breadcrumbs a")).hasCount(0);
+  }
+
+  private void assertBreadcrumbPath(
+      List<String> breadcrumbLabels, List<String> breadcrumbLocations) {
+    Locator breadcrumbItemsLocator =
+        browserPage.locator(".cosmos-breadcrumbs > vaadin-breadcrumbs-item");
+    assertThat(breadcrumbItemsLocator).hasText(breadcrumbLabels.toArray(String[]::new));
+    for (int itemIndex = 0; itemIndex < breadcrumbLocations.size(); itemIndex++) {
+      assertThat(breadcrumbLink(itemIndex))
+          .hasAttribute("href", breadcrumbLocations.get(itemIndex));
+      assertThat(breadcrumbLink(itemIndex)).hasCSS("cursor", "pointer");
+    }
+    assertThat(browserPage.locator(".cosmos-breadcrumbs")).hasCSS("text-transform", "uppercase");
+    assertThat(browserPage.locator(".cosmos-breadcrumbs")).hasCSS("color", "rgb(56, 189, 248)");
+    assertTrue(
+        (Boolean) browserPage.evaluate("() => document.documentElement.scrollWidth <= innerWidth"));
+  }
+
+  private Locator breadcrumbLink(int itemIndex) {
+    return browserPage
+        .locator(".cosmos-breadcrumbs > vaadin-breadcrumbs-item")
+        .nth(itemIndex)
+        .locator("a");
+  }
+
+  private void attachBreadcrumbScreenshot(String pageName, int viewportWidth) {
+    AllurePlaywright.attachScreenshot(pageName + " nachher " + viewportWidth, browserPage);
+  }
+
   @Test
   @Tag("duration-field")
   @DisplayName("COMPONENT-10: Integrierte Zeiteinheit bleibt mittig innerhalb der Zahlenfläche")

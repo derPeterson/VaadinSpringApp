@@ -71,6 +71,7 @@ public class PublicPageComponent extends PageFrameComponent {
 
   private Page page;
   private boolean accountSecurity;
+  private final CosmosBreadcrumbsComponent pageBreadcrumbsComponent;
   private SerializableRunnable refreshTexts;
   private final transient MessageProperties messageProperties;
   private final VerticalLayout pageCardsLayout = new VerticalLayout();
@@ -131,15 +132,20 @@ public class PublicPageComponent extends PageFrameComponent {
             : createPublicHeader(
                 brandComponent, false, homeButton, loginButton, registerButton, languageButtonsDiv);
 
-    Span pageKickerSpan = new Span();
-    pageKickerSpan.addClassName("public-kicker");
+    pageBreadcrumbsComponent =
+        new CosmosBreadcrumbsComponent(
+            messageProperties,
+            CosmosBreadcrumbsComponent.ParentPath.PORTAL,
+            !isSecurityFlowPage(page));
+    pageBreadcrumbsComponent.addClassName("public-kicker");
+
     H1 pageTitleHeading = new H1();
     Span pageDescriptionSpan = new Span();
     pageDescriptionSpan.addClassName("public-page-description");
 
     Div pageTitleRowDiv = new Div(pageTitleHeading, pageDescriptionSpan);
     pageTitleRowDiv.addClassName("public-title-row");
-    Div pageHeadingDiv = new Div(pageKickerSpan, pageTitleRowDiv);
+    Div pageHeadingDiv = new Div(pageBreadcrumbsComponent, pageTitleRowDiv);
     pageHeadingDiv.addClassName("public-page-heading");
     pageCardsLayout.setPadding(false);
     pageCardsLayout.setSpacing(false);
@@ -167,12 +173,15 @@ public class PublicPageComponent extends PageFrameComponent {
           registerButton.setAriaLabel(messageProperties.getBaseRegistrationButton());
           loginButton.setText(messageProperties.getBaseLoginButton());
           registerButton.setText(messageProperties.getBaseRegistrationButton());
-          pageKickerSpan.setText(
-              restrictedSecurityPage
-                  ? messageProperties.getTwoFactorAreaLabel(accountSecurity)
-                  : messageProperties.getPublicAreaLabel());
+
+          pageBreadcrumbsComponent.setParentPath(
+              accountSecurity
+                  ? CosmosBreadcrumbsComponent.ParentPath.ACCOUNT_SECURITY
+                  : CosmosBreadcrumbsComponent.ParentPath.PORTAL,
+              !isSecurityFlowPage(this.page));
           pageTitleHeading.setText(this.page.title.apply(messageProperties));
           pageDescriptionSpan.setText(this.page.description.apply(messageProperties));
+
           germanLanguageButton
               .getElement()
               .setAttribute(
@@ -190,6 +199,21 @@ public class PublicPageComponent extends PageFrameComponent {
     refreshPageTextsAction.run();
     ComponentUtil.addListener(
         UI.getCurrent(), LanguageChangeEvent.class, event -> refreshPageTextsAction.run());
+  }
+
+  private static boolean isSecurityFlowPage(Page page) {
+    return switch (page) {
+      case TWO_FACTOR,
+          RECOVERY_HELP,
+          RECOVERY,
+          VERIFICATION,
+          EMAIL_CONFIRM,
+          EMAIL_VERIFICATION_PENDING,
+          ACCOUNT_REACTIVATION_PENDING,
+          ACCOUNT_REACTIVATION ->
+          true;
+      default -> false;
+    };
   }
 
   private Div createPublicHeader(

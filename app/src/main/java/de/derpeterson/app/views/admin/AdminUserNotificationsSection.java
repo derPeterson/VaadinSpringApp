@@ -44,6 +44,7 @@ import de.derpeterson.app.service.UserNotificationService.Selection;
 import de.derpeterson.app.service.UserNotificationService.Sent;
 import de.derpeterson.app.service.UserNotificationService.Target;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
@@ -69,7 +70,6 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final transient MessageProperties messageProperties;
   private final transient UserNotificationService userNotificationService;
   private final transient HttpServletRequest httpServletRequest;
-  private final Span notificationAdminBreadcrumbSpan = new Span();
   private final Span notificationAdminTitleSpan = new Span();
   private final Span notificationAdminDescriptionSpan = new Span();
   private final H2 composeHeadingH2 = new H2();
@@ -145,7 +145,8 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     notificationColumnsDiv.addClassName("admin-notification-columns");
     add(
         new CosmosSectionHeaderComponent(
-            notificationAdminBreadcrumbSpan,
+            messageProperties,
+            ParentPath.ADMINISTRATION,
             notificationAdminTitleSpan,
             notificationAdminDescriptionSpan),
         notificationColumnsDiv,
@@ -874,10 +875,6 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
-    notificationAdminBreadcrumbSpan.setText(
-        messageProperties.getAdminHeaderTitle()
-            + " / "
-            + messageProperties.getNotificationsTitle());
     notificationAdminTitleSpan.setText(messageProperties.getNotificationsTitle());
     notificationAdminDescriptionSpan.setText(
         messageProperties.getNotificationsAdminPageDescription());

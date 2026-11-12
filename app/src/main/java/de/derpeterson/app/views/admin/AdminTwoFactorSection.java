@@ -20,6 +20,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.TabSheetVariant;
+import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.config.ConfigurationCatalog;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -34,6 +35,7 @@ import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
+import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosCssClasses;
@@ -84,7 +86,6 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   private final Map<RoleType, Tab> tabsByRole = new EnumMap<>(RoleType.class);
   private final List<Runnable> fieldTextRefreshActions = new ArrayList<>();
   private final List<ConfigInfoButton> fieldInfoButtons = new ArrayList<>();
-  private final Span configurationBreadcrumbSpan = new Span();
   private final Span configurationTitleSpan = new Span();
   private final Span configurationHintSpan = new Span();
   private final H2 twoFactorPolicyHeadingH2 = new H2();
@@ -122,7 +123,10 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     setId("admin-two-factor-settings");
     add(
         new CosmosSectionHeaderComponent(
-            configurationBreadcrumbSpan, configurationTitleSpan, configurationHintSpan));
+            messageProperties,
+            ParentPath.CONFIGURATION,
+            configurationTitleSpan,
+            configurationHintSpan));
 
     twoFactorConfirmationDialog =
         new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, httpServletRequest);
@@ -610,9 +614,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
-    configurationBreadcrumbSpan.setText(
-        messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminConfigTitle());
-    configurationTitleSpan.setText(messageProperties.getAdminConfigTitle());
+    configurationTitleSpan.setText(
+        messageProperties.getAdminConfigGroupLabel(AdminConfigGroup.TWO_FACTOR));
     configurationHintSpan.setText(messageProperties.getTwoFactorSettingsPageHint());
     twoFactorPolicyHeadingH2.setText(messageProperties.getTwoFactorSettingsTitle());
     twoFactorPolicyDescriptionSpan.setText(messageProperties.getTwoFactorSettingsHint());

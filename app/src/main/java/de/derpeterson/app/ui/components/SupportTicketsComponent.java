@@ -43,6 +43,7 @@ import de.derpeterson.app.service.SupportTicketService.Reply;
 import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.SupportTicketService.UserIdentity;
+import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import java.io.Serializable;
@@ -103,7 +104,6 @@ public final class SupportTicketsComponent extends VerticalLayout {
       new Tab(AppIcon.LOCK_QUESTION.create(), recoveryTicketsLabelSpan);
   private final Tabs ticketCategories = new Tabs(allTickets, recoveryTickets);
   private final H3 queueHeading = new H3();
-  private final Span adminBreadcrumbSpan = new Span();
   private final Span adminPageTitleSpan = new Span();
   private final Span adminPageDescriptionSpan = new Span();
   private final H3 noSelectionTitle = new H3();
@@ -464,11 +464,14 @@ public final class SupportTicketsComponent extends VerticalLayout {
   private void buildAdminWorkspace(HorizontalLayout sensitiveNotice) {
     addClassName("support-admin-workspace");
     ticketWorkspacePanel.getBody().setWidthFull();
-    CosmosSectionHeaderComponent heading =
+    CosmosSectionHeaderComponent ticketSectionHeaderComponent =
         new CosmosSectionHeaderComponent(
-            adminBreadcrumbSpan, adminPageTitleSpan, adminPageDescriptionSpan);
-    heading.setId("support-page-header");
-    add(heading);
+            messageProperties,
+            ParentPath.ADMINISTRATION,
+            adminPageTitleSpan,
+            adminPageDescriptionSpan);
+    ticketSectionHeaderComponent.setId("support-page-header");
+    add(ticketSectionHeaderComponent);
     ticketWorkspacePanel.setIcon(AppIcon.MESSAGES.create());
     ticketCategories.setId("support-ticket-categories");
     ticketCategories.addClassName(CosmosCssClasses.PANEL_TABS);
@@ -756,8 +759,6 @@ public final class SupportTicketsComponent extends VerticalLayout {
     userExplanationSpan.setText(messageProperties.getSupportNoUnlock());
     ticketMessageInput.setPlaceholder(messageProperties.getSupportRequestPlaceholder());
     if (administration) {
-      adminBreadcrumbSpan.setText(
-          messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getSupportTitle());
       adminPageTitleSpan.setText(messageProperties.getSupportTitle());
       adminPageDescriptionSpan.setText(messageProperties.getSupportPageDescription());
       queueHeading.setText(messageProperties.getSupportCases());

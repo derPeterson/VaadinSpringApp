@@ -594,10 +594,6 @@ public class MessageTexts {
     return getTranslation("mfa.page.title");
   }
 
-  public String getTwoFactorAreaLabel(boolean isAccountArea) {
-    return getTranslation(isAccountArea ? "mfa.area.account" : "mfa.area.login");
-  }
-
   public String getTwoFactorPageHint() {
     return getTranslation("mfa.page.hint");
   }
@@ -3125,6 +3121,14 @@ public class MessageTexts {
   }
 
   // Kontonavigation und Kontoeinstellungen
+  public String getPageBreadcrumbsLabel() {
+    return getTranslation("page.breadcrumbs.label");
+  }
+
+  public String getPageBreadcrumbsMore() {
+    return getTranslation("page.breadcrumbs.more");
+  }
+
   public String getAccountNavigationPortal() {
     return getTranslation("account.navigation.portal");
   }
@@ -4160,10 +4164,6 @@ public class MessageTexts {
   }
 
   // Öffentliche Seiten und Kontoabläufe
-  public String getPublicAreaLabel() {
-    return getTranslation("public.area");
-  }
-
   public String getPublicHomeIntroduction() {
     return getTranslation("public.home.introduction");
   }

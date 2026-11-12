@@ -69,6 +69,7 @@ import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
+import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosPagination;
@@ -132,7 +133,6 @@ public class AdminUserManagementSection extends VerticalLayout {
   private final Clock userManagementClock;
 
   // Seitenkopf und Tabelle
-  private final Span userManagementBreadcrumbSpan;
   private final Span userManagementTitleSpan;
   private final H2 usersCardTitleH2;
   private final Span usersCardDescriptionSpan;
@@ -207,7 +207,6 @@ public class AdminUserManagementSection extends VerticalLayout {
     setAlignItems(FlexComponent.Alignment.CENTER);
     addClassNames("cosmos-admin-section", "cosmos-admin-section--users");
 
-    userManagementBreadcrumbSpan = new Span();
     userManagementTitleSpan = new Span();
     usersCardTitleH2 = new H2();
     usersCardTitleH2.addClassName(COSMOS_PANEL_TITLE_CLASS);
@@ -274,7 +273,10 @@ public class AdminUserManagementSection extends VerticalLayout {
     usersCardComponent.addClassNames("cosmos-admin-users-card", PANEL_CARD);
     add(
         new CosmosSectionHeaderComponent(
-            userManagementBreadcrumbSpan, userManagementTitleSpan, userManagementDescriptionSpan),
+            messageProperties,
+            ParentPath.ADMINISTRATION,
+            userManagementTitleSpan,
+            userManagementDescriptionSpan),
         usersCardComponent);
 
     refreshTexts();
@@ -303,8 +305,6 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
-    userManagementBreadcrumbSpan.setText(
-        messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminUsersTitle());
     usersCardTitleH2.setText(messageProperties.getAdminUsersCardTitle());
     usersCardDescriptionSpan.setText(messageProperties.getAdminUsersCardDescription());
     userManagementTitleSpan.setText(messageProperties.getAdminUsersTitle());

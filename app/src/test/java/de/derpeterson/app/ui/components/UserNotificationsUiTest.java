@@ -31,6 +31,7 @@ import com.vaadin.flow.component.PollEvent;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.badge.Badge;
+import com.vaadin.flow.component.breadcrumbs.BreadcrumbsItem;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
@@ -421,14 +422,27 @@ class UserNotificationsUiTest {
         streamComponentTree(notificationHeaderComponent)
             .filter(H1.class::isInstance)
             .anyMatch(headingComponent -> headingComponent.hasClassName("cosmos-section-title")));
-    Span portalBreadcrumbSpan = readComponentField(notificationsView, "portalBreadcrumbSpan");
+    CosmosBreadcrumbsComponent portalBreadcrumbsComponent =
+        notificationHeaderComponent
+            .getChildren()
+            .filter(CosmosBreadcrumbsComponent.class::isInstance)
+            .map(CosmosBreadcrumbsComponent.class::cast)
+            .findFirst()
+            .orElseThrow();
     Span notificationsTitleSpan = readComponentField(notificationsView, "notificationsTitleSpan");
     Span notificationsDescriptionSpan =
         readComponentField(notificationsView, "notificationsDescriptionSpan");
 
-    assertTrue(portalBreadcrumbSpan.hasClassName("cosmos-dashboard-kicker"));
+    assertTrue(portalBreadcrumbsComponent.hasClassName("cosmos-dashboard-kicker"));
     assertTrue(notificationsDescriptionSpan.hasClassName("cosmos-dashboard-description"));
-    assertEquals(messageProperties.getAccountNavigationPortal(), portalBreadcrumbSpan.getText());
+    assertEquals(
+        messageProperties.getAccountNavigationPortal(),
+        portalBreadcrumbsComponent
+            .getChildren()
+            .map(BreadcrumbsItem.class::cast)
+            .findFirst()
+            .orElseThrow()
+            .getText());
     assertEquals(messageProperties.getNotificationsTitle(), notificationsTitleSpan.getText());
     assertEquals(
         messageProperties.getNotificationsPageDescription(),
@@ -436,8 +450,16 @@ class UserNotificationsUiTest {
 
     activeLocaleReference.set(languageTag.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     notificationsView.refreshTrackedUserLanguage();
+    portalBreadcrumbsComponent.refreshTexts();
 
-    assertEquals(messageProperties.getAccountNavigationPortal(), portalBreadcrumbSpan.getText());
+    assertEquals(
+        messageProperties.getAccountNavigationPortal(),
+        portalBreadcrumbsComponent
+            .getChildren()
+            .map(BreadcrumbsItem.class::cast)
+            .findFirst()
+            .orElseThrow()
+            .getText());
     assertEquals(messageProperties.getNotificationsTitle(), notificationsTitleSpan.getText());
     assertEquals(
         messageProperties.getNotificationsPageDescription(),

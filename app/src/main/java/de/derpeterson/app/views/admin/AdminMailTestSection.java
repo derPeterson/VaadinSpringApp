@@ -40,6 +40,7 @@ import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
+import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.validation.UserInputRules;
@@ -70,7 +71,6 @@ public class AdminMailTestSection extends VerticalLayout {
   private int previousPollInterval;
   private int installedPollInterval;
 
-  private final Span mailTestBreadcrumbSpan;
   private final Span mailTestTitleSpan;
   private final H2 mailCardTitleH2;
   private final Span mailCardDescriptionSpan;
@@ -106,7 +106,6 @@ public class AdminMailTestSection extends VerticalLayout {
     setAlignItems(FlexComponent.Alignment.CENTER);
     addClassNames("cosmos-admin-section", "cosmos-admin-section--mail");
 
-    mailTestBreadcrumbSpan = new Span();
     mailTestTitleSpan = new Span();
     mailCardTitleH2 = new H2();
     mailCardTitleH2.addClassName(PANEL_TITLE);
@@ -181,7 +180,10 @@ public class AdminMailTestSection extends VerticalLayout {
     mailCard.addClassNames("cosmos-admin-form-card", PANEL_CARD, "cosmos-mail-card");
     add(
         new CosmosSectionHeaderComponent(
-            mailTestBreadcrumbSpan, mailTestTitleSpan, mailTestDescriptionSpan),
+            messageProperties,
+            ParentPath.ADMINISTRATION,
+            mailTestTitleSpan,
+            mailTestDescriptionSpan),
         mailCard,
         mailFieldHelpPanel);
 
@@ -331,8 +333,6 @@ public class AdminMailTestSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
-    mailTestBreadcrumbSpan.setText(
-        messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminMailTitle());
     mailCardTitleH2.setText(messageProperties.getAdminMailCardTitle());
     mailCardDescriptionSpan.setText(messageProperties.getAdminMailCardDescription());
     deliveryStatusBadge.setText(messageProperties.getAdminMailCardBadge());

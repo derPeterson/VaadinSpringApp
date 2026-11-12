@@ -37,6 +37,7 @@ import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
+import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosDurationField;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
@@ -107,7 +108,6 @@ public class AdminConfigurationSection extends VerticalLayout {
   private final Map<AdminConfigGroup, Predicate<ConfigEntry>> configGroupFilters =
       new LinkedHashMap<>();
 
-  private final Span configurationBreadcrumbSpan;
   private final Span configurationTitleSpan;
   private final Span configurationDescriptionSpan;
   private final H2 currentGroupTitle;
@@ -143,7 +143,6 @@ public class AdminConfigurationSection extends VerticalLayout {
     helpPanel.setId("admin-config-help");
     add(helpPanel);
 
-    configurationBreadcrumbSpan = new Span();
     configurationTitleSpan = new Span();
 
     configurationDescriptionSpan = new Span();
@@ -192,7 +191,10 @@ public class AdminConfigurationSection extends VerticalLayout {
     configCard.addClassNames("cosmos-admin-form-card", "cosmos-config-card");
     add(
         new CosmosSectionHeaderComponent(
-            configurationBreadcrumbSpan, configurationTitleSpan, configurationDescriptionSpan),
+            messageProperties,
+            ParentPath.CONFIGURATION,
+            configurationTitleSpan,
+            configurationDescriptionSpan),
         configCard);
 
     if (!configGroupFilters.isEmpty()) {
@@ -232,7 +234,6 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
-    configurationTitleSpan.setText(messageProperties.getAdminConfigTitle());
     configurationDescriptionSpan.setText(messageProperties.getAdminConfigDescription());
     saveConfigButton.setText(messageProperties.getAdminConfigSave());
     reloadConfigButton.setText(messageProperties.getAdminConfigReload());
@@ -391,8 +392,6 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private void refreshCurrentGroupTitle() {
-    String breadcrumbText =
-        messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminConfigTitle();
     if (selectedGroup != null) {
       String groupLabelText = messageProperties.getAdminConfigGroupLabel(selectedGroup);
       currentGroupTitle.setText(groupLabelText);
@@ -401,10 +400,8 @@ public class AdminConfigurationSection extends VerticalLayout {
       currentGroupSettingCountBadge.setText(
           messageProperties.getAdminConfigSettingsCount(getVisibleConfigEntries().size()));
       currentGroupSvgIcon.setSrc(ConfigGroupIcons.forGroup(selectedGroup).getSource());
-      breadcrumbText += " / " + groupLabelText;
+      configurationTitleSpan.setText(groupLabelText);
     }
-
-    configurationBreadcrumbSpan.setText(breadcrumbText);
   }
 
   private void refreshInputLabels() {

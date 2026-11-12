@@ -21,6 +21,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserService;
+import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.PortalSidebarPageLayout;
@@ -39,7 +40,6 @@ import org.springframework.security.access.AccessDeniedException;
 public class UserNotificationsView extends IsAuthenticatedBaseView {
   private final UserNotificationsPanel notificationInboxPanel;
   private final PortalSidebarPageLayout notificationsPortalContentComponent;
-  private final Span portalBreadcrumbSpan = new Span();
   private final Span notificationsTitleSpan = new Span();
   private final Span notificationsDescriptionSpan = new Span();
 
@@ -72,7 +72,10 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
 
     CosmosSectionHeaderComponent notificationsSectionHeaderComponent =
         new CosmosSectionHeaderComponent(
-            portalBreadcrumbSpan, notificationsTitleSpan, notificationsDescriptionSpan);
+            messageProperties,
+            ParentPath.PORTAL,
+            notificationsTitleSpan,
+            notificationsDescriptionSpan);
     CosmosCardComponent inboxCardComponent = new CosmosCardComponent(notificationInboxPanel);
     inboxCardComponent.addClassNames(PANEL_CARD, "cosmos-notification-inbox-card");
     notificationsPortalContentComponent =
@@ -154,7 +157,6 @@ public class UserNotificationsView extends IsAuthenticatedBaseView {
 
   @Override
   protected void onTrackedUserLanguageChanged() {
-    portalBreadcrumbSpan.setText(messageProperties.getAccountNavigationPortal());
     notificationsTitleSpan.setText(messageProperties.getNotificationsTitle());
     notificationsDescriptionSpan.setText(messageProperties.getNotificationsPageDescription());
 

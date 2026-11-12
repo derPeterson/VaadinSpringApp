@@ -23,6 +23,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.base.TrackedUserAppLayout;
+import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.PortalHomeComponent;
 import de.derpeterson.app.ui.components.PortalSidebarPageLayout;
@@ -47,7 +48,6 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
 
   private final Span homeTitleSpan = new Span();
   private final Span homeDescriptionSpan = new Span();
-  private final Span homeOverviewSpan = new Span();
 
   @Autowired
   public HomeView(
@@ -87,7 +87,8 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
     HorizontalLayout applicationHeaderHorizontalLayout =
         createApplicationHeader(configService, createHomePopoverActions());
     CosmosSectionHeaderComponent homeSectionHeaderComponent =
-        new CosmosSectionHeaderComponent(homeOverviewSpan, homeTitleSpan, homeDescriptionSpan);
+        new CosmosSectionHeaderComponent(
+            messageProperties, ParentPath.PORTAL, homeTitleSpan, homeDescriptionSpan);
 
     portalHomeComponent = new PortalHomeComponent(messageProperties);
     homePortalContentComponent =
@@ -119,10 +120,6 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
         currentUser == null
             ? messageProperties.getHomeDescription()
             : messageProperties.getPortalHomeIntroduction());
-    homeOverviewSpan.setText(
-        currentUser == null
-            ? messageProperties.getHomeOverview()
-            : messageProperties.getAccountNavigationPortal());
 
     if (homePortalContentComponent != null) {
       homePortalContentComponent.refreshTexts();

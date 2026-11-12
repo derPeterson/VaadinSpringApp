@@ -121,9 +121,18 @@ Die integrierte Einheitenauswahl wurde anschließend als `CosmosDurationField`
 umgesetzt und vom Benutzer abgenommen; ihr geltender Aufbau steht im
 [Theme-Standard](theme.md). Das ersetzt keinen neuen Gesamtnachweis. Offene
 Variantenprüfungen und die beim späteren Testimage-Build aufgetretenen JUnit-Fehler
-stehen im [Testbedarf](testbedarf.md). Die Analyse zu
-[einheitlichen Seitenpfaden](planung/seitenpfade.md) ist fertig, ihre Umsetzung
-noch nicht begonnen. Die übrigen zurückgestellten Komponentenpakete bleiben
+stehen im [Testbedarf](testbedarf.md). Die
+[einheitlichen Seitenpfade](planung/seitenpfade.md) sind anschließend umgesetzt
+und gezielt in DE/EN auf Desktop und Smartphone geprüft: jeweils drei erfolgreiche
+Browserfälle auf demselben Vorschauimage, einschließlich Formularschutz und
+eingeschränkter Sicherheitsabläufe. Vorher-/Nachheraufnahmen sind verglichen; die
+gemeinsame Sichtung bleibt offen. Ergänzend sind 246 gezielte Anwendungstests
+und 26 Tests der Browserauswahl sowie Stil-/Ressourcenprüfungen erfolgreich.
+Das versionierte `app/src/main/bundles/prod.bundle`
+wurde für die neuen nativen Breadcrumbs-Imports vom Build aktualisiert. Wegen der
+neun bekannten JUnit-Fehler wurde nur für diese UI-Prüfung ein Vorschauimage ohne
+vollständige JUnit-Ausführung verwendet. Das ersetzt keinen neuen Gesamtprüfstand.
+Die übrigen zurückgestellten Komponentenpakete bleiben
 im [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
 
 Browsernachweise verwenden Chromium bei Desktop- und Smartphonebreite; echte

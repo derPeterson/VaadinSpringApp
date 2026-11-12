@@ -53,6 +53,7 @@ import de.derpeterson.app.service.AccountSecurityService.EmailChange;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChange;
 import de.derpeterson.app.service.AccountSecurityService.PasswordChanged;
 import de.derpeterson.app.service.UserAvatarService;
+import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.validation.UserInputRules;
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -157,11 +158,12 @@ public class AccountSettingsComponent extends PageContentLayout {
     this.persistProfileFunction = persistProfileFunction;
     this.profileVersion = accountUser == null ? null : accountUser.getVersion();
 
-    Span accountBreadcrumbSpan =
-        withTextOnRefresh(new Span(), messageProperties::getAccountSettingsOverview);
-    CosmosSectionHeaderComponent accountSectionHeader =
+    CosmosSectionHeaderComponent accountSectionHeaderComponent =
         new CosmosSectionHeaderComponent(
-            accountBreadcrumbSpan, accountPageTitleSpan, accountPageDescriptionSpan);
+            messageProperties,
+            ParentPath.ACCOUNT,
+            accountPageTitleSpan,
+            accountPageDescriptionSpan);
     localizedTextRefreshActions.add(this::refreshSectionHeading);
     accountNavigation.setId("account-navigation");
     localizedTextRefreshActions.add(() ->
@@ -196,7 +198,7 @@ public class AccountSettingsComponent extends PageContentLayout {
             accountNavigation,
             avatarDialog::open);
     accountSectionContentDiv.add(panelsBySection.values().toArray(AccountPanelComponent[]::new));
-    setPageContent(accountSectionHeader, accountSidebar, accountSectionContentDiv);
+    setPageContent(accountSectionHeaderComponent, accountSidebar, accountSectionContentDiv);
     add(emailChangeDialog, passwordChangeDialog, avatarDialog);
 
     refreshTexts();

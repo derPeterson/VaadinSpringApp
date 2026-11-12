@@ -90,8 +90,8 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `two-factor-lifecycle` | Sprachwechsel während Mailcode/QR/Codeausgabe/Hilfe, Entzug der Superadminrolle bei zwei offenen Konfigurationen sowie Startfreigabe und Neustart mit gespeicherten Entwicklungsausnahmen | 5 |
 | `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbieter- und Kontosicherheitstabs, Desktop/schmal, Tastaturbedienung, Footerumbrüche, Erhalt ungespeicherter Eingaben und Kontobestätigungsdialoge. Ohne Registrierung, Speicherung oder Versand | 10 |
 | `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
-| `verification` | Tatsächliche Aktivierungsmail und Links, eingeschränkte Bestätigungsseite, normale Adminanlage, Superadmin-Ausnahme und Startkonten mit Verifikationspflicht auf Desktop/Smartphone | 15 |
-| `email-verification` | `verification` plus Google-/Microsoft-Nachweis, Herkunft und verfügbare Anmeldewege sowie Passwortstatus vor/nach Einrichtung auf Desktop/Smartphone | 21 |
+| `verification` | Tatsächliche Aktivierungsmail und Links, eingeschränkte Bestätigungsseite, normale Adminanlage, Superadmin-Ausnahme und Startkonten mit Verifikationspflicht auf Desktop/Smartphone | 17 |
+| `email-verification` | `verification` plus Google-/Microsoft-Nachweis, Herkunft und verfügbare Anmeldewege sowie Passwortstatus vor/nach Einrichtung auf Desktop/Smartphone | 23 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |
 | `account-security` | Passwortvalidierung/-wechsel mit SMTP-Mail und verifizierte E-Mail-Änderung mit beiden Sicherheitsmails | 4 |
 | `session-persistence` | Gezielte Neustartabnahme: Sitzungs-/Loginfälle, Wartung und eigene Kontosicherheit | 51 |
@@ -124,7 +124,8 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
 | `form-details` | Gemeinsame Hoverflächen in Navigation, Tabelle, Eingaben, Auswahllisten, Kalender und Buttons; Scrollleisten, MultiSelect-Rahmen/Abstand, Pagination-Breite, Tages-Suffixe und Formularschutz mit Fokus, Schließen/Escape, native Neuladehinweise und Verwerfen auf Desktop/Smartphone | 12 |
-| `cosmos-components` | Rollensuche, Auswahldetails/Tages-Suffixe, Konfigurations-Switches, SideNav-Zustände, Tooltips, Benutzermenü, Header-/Filter-Mauszeiger und native Scrollleisten sowie integriertes Zeitfeld | 10 |
+| `cosmos-components` | Rollensuche, Auswahldetails/Tages-Suffixe, Konfigurations-Switches, SideNav-Zustände, Tooltips, Benutzermenü, Header-/Filter-Mauszeiger und native Scrollleisten sowie integriertes Zeitfeld und Seitenpfade | 11 |
+| `breadcrumbs` | Native Elternpfade in Besucherbereich, Portal und Administration; alle Konfigurationsgruppen und gruppenspezifische Titel, Elternnavigation per Tastatur, Profilentwurfsschutz und gesperrte 2FA-/Hilfe-/Verifikations-/Reaktivierungspfade auf Desktop/Smartphone | 3 |
 | `duration-field` | Nur die integrierte Zeiteinheit: vertikale Ausrichtung von Fläche, Text und Pfeil sowie freier Feldrahmen auf Desktop/Smartphone | 1 |
 | `cosmos-scrollbars` | Nur globale Scrollleisten: Dokument, Chat, Grid, TextArea und Dialog auf Desktop/Smartphone, Scrollbedienung und Systemkontrast | 1 |
 | `all` | Alle Browserfälle einschließlich der Fast-Fälle | alle |

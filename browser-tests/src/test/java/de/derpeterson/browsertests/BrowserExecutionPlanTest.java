@@ -42,6 +42,7 @@ class BrowserExecutionPlanTest {
         "two-factor-ticket-panel",
         "cosmos-scrollbars",
         "duration-field",
+        "breadcrumbs",
         "form-details",
         "email-verification",
         "configuration-follow-up",
@@ -79,6 +80,10 @@ class BrowserExecutionPlanTest {
               Set.of("recoverySupportRemainsContactInsteadOfFactorReset");
           case "two-factor-ticket-panel" ->
               Set.of("administrativeTicketLayoutKeepsTabsAndCardsUnclipped");
+          case "breadcrumbs" ->
+              Set.of(
+                  "pageBreadcrumbsFollowHierarchyAndKeepSecurityFlowsLocked",
+                  "verificationAndReactivationBreadcrumbsStayUnlinked");
           case "duration-field" -> Set.of("durationUnitIsCenteredInsideNumericField");
           case "cosmos-scrollbars" ->
               Set.of("globalScrollbarsPreserveNativeScrollingAndLocalChatSpacing");
@@ -95,6 +100,7 @@ class BrowserExecutionPlanTest {
           case "email-verification" ->
               Set.of(
                   "pendingVerificationKeepsPortalAccessBlocked",
+                  "verificationAndReactivationBreadcrumbsStayUnlinked",
                   "administrativeCreationRequiresMailProof",
                   "superadminCanExplicitlyCreateUncheckedAccount",
                   "developmentAccountIsExplicitAndDoesNotSendAccountMail",

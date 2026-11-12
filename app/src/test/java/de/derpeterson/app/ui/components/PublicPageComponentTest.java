@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.breadcrumbs.BreadcrumbsItem;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H1;
@@ -144,6 +145,29 @@ class PublicPageComponentTest {
     when(configService.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
     PublicPageComponent publicPageComponent =
         new PublicPageComponent(configService, messageProperties, publicPageType);
+    CosmosBreadcrumbsComponent pageBreadcrumbsComponent =
+        streamComponentTree(publicPageComponent)
+            .filter(CosmosBreadcrumbsComponent.class::isInstance)
+            .map(CosmosBreadcrumbsComponent.class::cast)
+            .findFirst()
+            .orElseThrow();
+    boolean hasLockedBreadcrumbs =
+        switch (publicPageType) {
+          case TWO_FACTOR,
+              RECOVERY_HELP,
+              RECOVERY,
+              VERIFICATION,
+              EMAIL_CONFIRM,
+              EMAIL_VERIFICATION_PENDING,
+              ACCOUNT_REACTIVATION_PENDING,
+              ACCOUNT_REACTIVATION ->
+              true;
+          default -> false;
+        };
+    BreadcrumbsItem portalBreadcrumbItem =
+        (BreadcrumbsItem) pageBreadcrumbsComponent.getChildren().findFirst().orElseThrow();
+    assertEquals(hasLockedBreadcrumbs ? null : "/home", portalBreadcrumbItem.getPath());
+
     Button panelActionButton = new Button("Action");
     AtomicReference<Boolean> actionClickedReference = new AtomicReference<>(false);
     panelActionButton.addClickListener(clickEvent -> actionClickedReference.set(true));
@@ -178,6 +202,10 @@ class PublicPageComponentTest {
 
     assertEquals(Locale.ENGLISH, activeLocaleReference.get());
     assertEquals("true", englishLanguageButton.getElement().getAttribute("aria-pressed"));
+    assertEquals(
+        messageProperties.getAccountNavigationPortal(),
+        ((BreadcrumbsItem) pageBreadcrumbsComponent.getChildren().findFirst().orElseThrow())
+            .getText());
     if (publicPageType == PublicPageComponent.Page.HOME) {
       assertTrue(
           streamComponentTree(publicPageComponent)

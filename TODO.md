@@ -9,7 +9,7 @@
   Pakete bleiben bis zu einer späteren Freigabe offen.
 
 - [ ] [Einheitliche Seitenpfade](docs/planung/seitenpfade.md) nach der
-  abgeschlossenen Analyse gemeinsam sichten und die Umsetzung freigeben.
+  freigegebenen Umsetzung gemeinsam sichten.
 
 ## Künftige Anwendungsfunktionen
 

@@ -77,10 +77,9 @@ Gestaltungsregeln stehen im [Theme-Standard](../theme.md).
 Noch offene automatisierte Nachtests und die beim Testimage-Build gefundenen
 JUnit-Fehler bleiben im [Testbedarf](../testbedarf.md).
 
-Für [Seitenpfade](seitenpfade.md) ist die native Breadcrumbs-Komponente im
-manuellen Modus vorgesehen. Gesperrte Sicherheitsabläufe erhalten keine Links.
-Die Analyse ist fertig; die Umsetzung von Punkt 4 bleibt bis zum eigenen
-Auftrag offen.
+Die [Seitenpfade](seitenpfade.md) sind mit nativen Breadcrumbs im manuellen Modus
+umgesetzt und gezielt in DE/EN auf Desktop und Smartphone geprüft. Gesperrte
+Sicherheitsabläufe erhalten keine Links. Offen ist die gemeinsame Sichtung.
 
 ### Offener Sonar-Nachweis
 

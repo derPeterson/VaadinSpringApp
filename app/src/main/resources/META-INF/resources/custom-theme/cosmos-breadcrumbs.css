@@ -1,0 +1,60 @@
+/* Nativer Elternpfad in der bisherigen blauen Bereichszeile, ohne aktuelle H1 zu duplizieren. */
+vaadin-breadcrumbs.cosmos-breadcrumbs {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    color: var(--cosmos-reference-accent);
+    font: 600 12px/16px Inter, sans-serif;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    --vaadin-breadcrumbs-font-size: inherit;
+    --vaadin-breadcrumbs-font-weight: inherit;
+    --vaadin-breadcrumbs-line-height: 16px;
+    --vaadin-breadcrumbs-link-color: var(--cosmos-reference-accent);
+    --vaadin-breadcrumbs-text-color: var(--cosmos-reference-accent);
+    --vaadin-breadcrumbs-gap: 6px;
+}
+
+vaadin-breadcrumbs.cosmos-breadcrumbs::part(list) {
+    min-height: 16px;
+}
+
+.cosmos-breadcrumbs vaadin-breadcrumbs-item {
+    color: inherit;
+    font: inherit;
+    letter-spacing: inherit;
+    --vaadin-padding-block-container: 0px;
+    --vaadin-padding-inline-container: 0px;
+}
+
+.cosmos-breadcrumbs vaadin-breadcrumbs-item::part(link),
+.cosmos-breadcrumbs vaadin-breadcrumbs-item::part(nolink) {
+    color: inherit;
+    font: inherit;
+    text-decoration: none;
+}
+
+.cosmos-breadcrumbs vaadin-breadcrumbs-item::part(link) {
+    cursor: pointer;
+}
+
+.cosmos-breadcrumbs vaadin-breadcrumbs-item::after {
+    content: "/" / "";
+    width: auto;
+    height: auto;
+    background: none;
+    mask: none;
+    opacity: 1;
+}
+
+vaadin-breadcrumbs.cosmos-breadcrumbs::part(overflow-button) {
+    color: inherit;
+    cursor: pointer;
+}
+
+vaadin-breadcrumbs.cosmos-breadcrumbs::part(overlay) {
+    background: var(--cosmos-reference-panel);
+    color: var(--cosmos-reference-accent);
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: var(--cosmos-control-radius);
+}

@@ -1,6 +1,6 @@
 # Einheitliche Seitenpfade
 
-## Bestandsaufnahme und Entscheidungsvorschlag
+## Freigegebene Zuordnung
 
 Vaadin 25.3.5 enthält `Breadcrumbs` und `BreadcrumbsItem` bereits im eingebundenen
 Flow-JAR. Die Quell-API wurde geprüft: `Mode.MANUAL`, `add`, `setText` und
@@ -8,23 +8,23 @@ Flow-JAR. Die Quell-API wurde geprüft: `Mode.MANUAL`, `add`, `setText` und
 klickbar. Kein Add-on und kein selbst gebauter Breadcrumb-Ersatz sind nötig.
 [Offizielle Dokumentation](https://vaadin.com/docs/latest/components/breadcrumbs).
 
-`CosmosSectionHeaderComponent` erhält bisher einen einzelnen `Span` für den Pfad.
-`PublicPageComponent` baut den öffentlichen beziehungsweise eingeschränkten
-Kontext separat auf. Beide sollen künftig denselben fachlichen Pfadbaustein mit
-nativen Breadcrumbs verwenden. **Manueller Modus** ist nötig, weil Abschnitte und
+`CosmosSectionHeaderComponent` und `PublicPageComponent` behalten ihre
+vorhandenen Headerpositionen. Beide verwenden denselben fachlichen `CosmosBreadcrumbsComponent` mit
+nativen Breadcrumbs. **Manueller Modus** ist nötig, weil Abschnitte und
 Tabs über Queryparameter wechseln und nicht jeweils eigene Flow-Routen sind.
 
-| Bereich | Derzeit | Vorgeschlagener blauer Elternpfad / große Überschrift |
+| Bereich | Blauer Elternpfad | Große Überschrift |
 | --- | --- | --- |
-| Besucher: Anmeldung, Registrierung, Reset | „Portal · Besucherbereich“ | `PORTAL` / aktueller Seitentitel |
-| Portal-Startseite | Freier Begrüßungskontext | `PORTAL` / Startseite |
-| Persönliche Daten, Sicherheit, Geräte | „Mein Konto“, ohne wiederholte aktuelle Seite | `PORTAL / MEIN KONTO` / Persönliche Daten, Sicherheit oder Geräte & Sitzungen |
-| Eigene Benachrichtigungen | „Portal“ | `PORTAL` / Benachrichtigungen |
-| Admin-Benutzer, Tickets, Benachrichtigungen | Administration plus wiederholte aktuelle Seite | `ADMINISTRATION` / jeweiliger Seitentitel |
-| Konfigurationsgruppen | Administration / Konfiguration / Gruppe, H1 nochmals Konfiguration | `ADMINISTRATION / KONFIGURATION` / gewählte Gruppe |
-| Mailtest | Eigene Kontextkombination | `ADMINISTRATION` / Mailtest |
-| 2FA nach Kontoeinstieg | „Mein Konto · Sicherheit“, andere Schreibweise | `PORTAL / MEIN KONTO / SICHERHEIT` / aktueller Schritt |
-| 2FA beim Login, Verifikation, Reaktivierung | „Portal · Sichere Anmeldung“ | `PORTAL` / aktueller Schritt |
+| Besucherseiten einschließlich öffentlicher Startseite, Anmeldung, Registrierung und Reset | `PORTAL` | Aktueller Seitentitel |
+| Angemeldete Startseite | `PORTAL` | Startseite |
+| Persönliche Daten, Sicherheit, Geräte & Sitzungen | `PORTAL / MEIN KONTO` | Jeweiliger Seitentitel |
+| Eigene Benachrichtigungen | `PORTAL` | Benachrichtigungen |
+| Admin-Dashboard, Benutzerverwaltung, Tickets und Benachrichtigungen | `ADMINISTRATION` | Jeweiliger Seitentitel |
+| Sämtliche Konfigurationsgruppen einschließlich Anmeldeanbieter und 2FA | `ADMINISTRATION / KONFIGURATION` | Gewählte Gruppe |
+| Mailtest | `ADMINISTRATION` | Mail Test |
+| 2FA, Wiederherstellung und Hilfe aus dem Konto | `PORTAL / MEIN KONTO / SICHERHEIT` | Aktueller Schritt |
+| 2FA beim Login, ausstehende Verifikation und Reaktivierung | `PORTAL` | Aktueller Schritt |
+| Verifikations-, E-Mail-Änderungs- und Reaktivierungslinks | `PORTAL` | Aktueller Seitentitel |
 
 Die große Überschrift nennt den Ort; der blaue Pfad wiederholt ihn nicht. Die
 vorhandenen Panelüberschriften bleiben erhalten. Einheitlich Großschreibung und
@@ -46,15 +46,30 @@ dem Textkatalog, nicht aus zusammengestellten deutschen Strings.
   Reaktivierungsablauf **alle** Kontextitems ohne Pfad ausgeben. Die bestehenden
   expliziten Zurück-/Abmeldeaktionen und serverseitigen Sperren bleiben maßgeblich.
 
-## Noch auszuführen
+## Noch offen
 
-- [ ] Gemeinsame fachliche Pfaddefinition mit nativen Breadcrumbs einführen,
-  bestehende Headerpositionen und Stylewerte erhalten.
-- [ ] Öffentliche und angemeldete Header sowie Admin-Gruppen mit obiger Zuordnung
-  anbinden. Keine automatische Ableitung aus sichtbaren Übersetzungstexten.
-- [ ] Linkziele, Rechte, Queryparameter, Sprachwechsel und gesperrte Abläufe prüfen.
-- [ ] Vorher-/Nachhervergleich DE/EN Desktop/Smartphone, Fokus und Überlauf prüfen.
+- [ ] Gemeinsame Sichtung der Seitenpfade und Überschriften durch den Benutzer.
 
-Dies ist ein seitenübergreifender Umbau, größer als die Einheitenauswahl. Die
-native API ist vorhanden, die optische Angleichung aber noch nicht implementiert
-oder im Browser geprüft. Die Pflichtpakete der Nacht haben Vorrang.
+Der neue Baustein und die Anbindung aller Header sind umgesetzt. Die geltende
+Gestaltung steht in der [Theme-Anleitung](../theme.md). Die gezielte Suite
+`breadcrumbs` ist in DE und EN mit jeweils drei erfolgreichen Browserfällen
+abgeschlossen: Desktop und Smartphone, alle Konfigurationsgruppen, zulässige
+Elternziele auch für gewöhnliche Admins, Profilentwurfsschutz, Sprachwechsel,
+Tastaturfokus und natives Überlaufmenü. 2FA, Hilfe, ausstehende E-Mail-Bestätigung,
+Verifikationslink und Reaktivierung haben keine Pfadlinks; die bestehenden
+Direktaufrufsperren bleiben erhalten. Vorher-/Nachheraufnahmen wurden verglichen.
+Beide Sprachläufe verwenden dasselbe unveränderte Vorschauimage. Zusätzlich sind
+246 gezielte Anwendungstests und 26 Browser-Auswahltests erfolgreich, einschließlich
+Textkatalog und Sprachwechsel. Spotless, Checkstyle, CSS- und Diffprüfung sind
+erfolgreich; die geänderten Bereiche wurden auf Lesbarkeit geprüft.
+
+Ein gezielter Test ersetzt keine große Testrunde. Die neun bereits offenen
+JUnit-Fehler des regulären Testimage-Builds bleiben gesondert im
+[Testbedarf](../testbedarf.md). Für die isolierte UI-Prüfung wurde deshalb ein
+Vorschauimage ohne erneute vollständige JUnit-Ausführung gebaut. Keine
+bestehenden Anwendungsdaten oder laufenden Anwendungen wurden verwendet.
+
+Nach Build und Anwendungsneustart ist die Änderung sichtbar; eine Datenbankänderung
+ist nicht erforderlich. Bei der gemeinsamen Sichtung Portal/Konto, Admin-Konfiguration
+und einen eingeschränkten Sicherheitsablauf ansehen. Weitere Entscheidungen sind
+für die technische Umsetzung nicht offen.

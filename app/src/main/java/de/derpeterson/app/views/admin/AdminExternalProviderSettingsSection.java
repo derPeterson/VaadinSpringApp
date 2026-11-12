@@ -51,6 +51,7 @@ import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
+import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.TwoFactorActionDialog;
@@ -78,7 +79,6 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
   private final transient ExternalProviderSettings externalProviderSettings;
   private final transient ConfigService configService;
   private final List<ProviderForm> providerForms = new ArrayList<>();
-  private final Span configurationBreadcrumbSpan = new Span();
   private final Span configurationTitleSpan = new Span();
   private final Span configurationDescriptionSpan = new Span();
   private final H2 providerPanelTitleH2 = new H2();
@@ -123,7 +123,10 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
     setId("admin-provider-settings");
     add(
         new CosmosSectionHeaderComponent(
-            configurationBreadcrumbSpan, configurationTitleSpan, configurationDescriptionSpan));
+            messageProperties,
+            ParentPath.CONFIGURATION,
+            configurationTitleSpan,
+            configurationDescriptionSpan));
 
     providerPanelTitleH2.addClassName(PANEL_TITLE);
     providerPanelDescriptionSpan.addClassName(PANEL_DESCRIPTION);
@@ -178,9 +181,8 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
-    configurationBreadcrumbSpan.setText(
-        messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getAdminConfigTitle());
-    configurationTitleSpan.setText(messageProperties.getAdminConfigTitle());
+    configurationTitleSpan.setText(
+        messageProperties.getAdminConfigGroupLabel(AdminConfigGroup.EXTERNAL_LOGIN));
     configurationDescriptionSpan.setText(messageProperties.getAdminConfigDescription());
     providerPanelTitleH2.setText(messageProperties.getProviderSettingsPanelTitle());
     providerPanelDescriptionSpan.setText(messageProperties.getProviderSettingsPanelDescription());

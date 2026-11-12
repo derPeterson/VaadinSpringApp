@@ -15,6 +15,7 @@ import com.vaadin.flow.function.SerializableSupplier;
 import com.vaadin.flow.router.QueryParameters;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.views.AdminView;
 import java.util.ArrayList;
@@ -35,7 +36,6 @@ public class AdminDashboardSection extends VerticalLayout {
     setWidthFull();
     addClassNames("cosmos-admin-section", "cosmos-admin-section--dashboard");
 
-    Span overviewSpan = createTranslatedSpan(messageProperties::getAdminHeaderTitle);
     Span dashboardTitleSpan = createTranslatedSpan(messageProperties::getAdminDashboardTitle);
     Span dashboardDescriptionSpan =
         createTranslatedSpan(messageProperties::getAdminDashboardDescription);
@@ -88,7 +88,10 @@ public class AdminDashboardSection extends VerticalLayout {
     shortcutHeadingDiv.addClassName("admin-dashboard-access-heading");
     add(
         new CosmosSectionHeaderComponent(
-            overviewSpan, dashboardTitleSpan, dashboardDescriptionSpan),
+            messageProperties,
+            ParentPath.ADMINISTRATION,
+            dashboardTitleSpan,
+            dashboardDescriptionSpan),
         dashboardHeroDiv,
         shortcutHeadingDiv,
         shortcutGridDiv);

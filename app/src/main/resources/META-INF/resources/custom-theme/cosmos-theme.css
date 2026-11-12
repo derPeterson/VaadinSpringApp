@@ -6,6 +6,7 @@
 /* Dieselbe Quelle gestaltet Dokument/öffentliche Parts und den vorhandenen Grid-Einschub. */
 @import url("./cosmos-scrollbars.css");
 @import url("./cosmos-duration-field.css");
+@import url("./cosmos-breadcrumbs.css");
 @import url("./cosmos-scrollbars.css") lumo_cosmos_scrollbars;
 
 /* Lumo setzt die äußere Checkbox-/Radiofläche unabhängig vom Klick-Cursor auf default. */

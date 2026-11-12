@@ -41,6 +41,63 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Feature("Verifikation")
 public class VerificationBrowserTest extends BrowserFixture {
   @ParameterizedTest
+  @Tag("breadcrumbs")
+  @ValueSource(ints = {1280, 390})
+  @DisplayName("Verifikations- und Reaktivierungspfade bleiben ohne Navigationslinks")
+  void verificationAndReactivationBreadcrumbsStayUnlinked(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 900);
+    String emailAddress = newVerificationEmailAddress();
+    MailpitInbox mailpitInbox = new MailpitInbox(browserContext);
+    MailpitInbox.CapturedMail verificationMail =
+        registerAccountAndAwaitVerificationMail(emailAddress, mailpitInbox);
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    assertPendingVerificationPage(emailAddress);
+    assertUnlinkedPortalBreadcrumb(browserPage);
+    AllurePlaywright.attachScreenshot("Verifikationspfad " + viewportWidth, browserPage);
+
+    try (Page activatedPage = mailpitInbox.openVerificationLink(verificationMail)) {
+      activatedPage.setViewportSize(viewportWidth, 900);
+      assertUnlinkedPortalBreadcrumb(activatedPage);
+      assertOrdinaryLogin(activatedPage, emailAddress);
+      activatedPage.navigate("/account?section=security&tab=lifecycle");
+      activatedPage.locator("#account-deactivate").click();
+      activatedPage
+          .locator("#account-lifecycle-password input")
+          .fill(BrowserTestAccounts.USER_PASSWORD);
+      activatedPage.locator("#account-lifecycle-submit").click();
+      assertThat(activatedPage.getByText(uiTexts.getAccountDeactivatedSuccess())).isVisible();
+    }
+
+    loginPage.open();
+    loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    assertThat(browserPage.locator("#pending-reactivation-email")).hasText(emailAddress);
+    assertUnlinkedPortalBreadcrumb(browserPage);
+    AllurePlaywright.attachScreenshot("Reaktivierungspfad " + viewportWidth, browserPage);
+    browserPage.navigate("/account?section=profile");
+    assertThat(browserPage.locator("#pending-reactivation-email")).hasText(emailAddress);
+    assertUnlinkedPortalBreadcrumb(browserPage);
+
+    MailpitInbox.CapturedMail deactivationMail =
+        mailpitInbox.awaitSecurityMail(emailAddress, uiTexts.getAccountDeactivatedMailSubject());
+    try (Page reactivationPage = mailpitInbox.openAccountReactivationAction(deactivationMail)) {
+      reactivationPage.setViewportSize(viewportWidth, 900);
+      assertUnlinkedPortalBreadcrumb(reactivationPage);
+      AllurePlaywright.attachScreenshot(
+          "Reaktivierungslinkpfad " + viewportWidth, reactivationPage);
+    }
+  }
+
+  private void assertUnlinkedPortalBreadcrumb(Page currentBrowserPage) {
+    assertThat(currentBrowserPage.locator(".cosmos-breadcrumbs > vaadin-breadcrumbs-item"))
+        .hasText(new String[] {uiTexts.getAccountNavigationPortal()});
+    assertThat(currentBrowserPage.locator(".cosmos-breadcrumbs a")).hasCount(0);
+    assertThat(currentBrowserPage.locator(".cosmos-breadcrumbs"))
+        .hasCSS("text-transform", "uppercase");
+  }
+
+  @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @DisplayName(
       "VER-03: Nur ein korrekter erster Nachweis öffnet die eingeschränkte Bestätigungsseite")
