@@ -13,9 +13,10 @@
   Markierung und Häkchen stehen wie im Cosmos-Standard. Tab, Pfeiltasten, Enter,
   Escape, sichtbarer Tastaturfokus, Disabled-/Fehlerzustände und Sprachwechsel
   prüfen. Einheitenwechsel erhält die Zahl und ändert den Zeitraum; gespeicherte
-  Werte, Genauigkeit und Formularschutz bleiben erhalten. Vorher-/Nachhervergleich
-  und gemeinsame Designabnahme des gesamten Bausteins stehen aus. Der gezielte
-  Ausrichtungsnachtest am Feld für gespeicherte Anmeldungen ist auf Desktop und
+  Werte, Genauigkeit und Formularschutz bleiben erhalten. Die Umsetzung ist
+  vom Benutzer abgenommen; die automatisierte Varianten-/Bedienprüfung bleibt
+  unabhängig davon offen. Der gezielte Ausrichtungsnachtest am Feld für gespeicherte
+  Anmeldungen ist auf Desktop und
   Smartphone abgedeckt, einschließlich Overlay-Grundgestaltung und vollständiger
   Zeilenhöhe des Einheitenwerts; die übrigen Varianten und Bedienzustände bleiben offen.
   Bestehende Page Objects sind angepasst.

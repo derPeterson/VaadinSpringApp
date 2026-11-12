@@ -117,10 +117,14 @@ passt nicht zum aktuellen Feature-Branch. Kein neuer Scan oder Statuswechsel
 wurde ausgeführt; ein grünes Gate für den Nachtstand ist damit nicht belegt.
 Die aktuelle QA-Arbeitsablage bleibt deshalb getrennt von der alten Erfolgsbaseline.
 
-Die Analysen zur [integrierten Einheitenauswahl](planung/einheitenauswahl.md) und
-zu [einheitlichen Seitenpfaden](planung/seitenpfade.md) sind fertig. Ihre optionale
-Umsetzung wurde nicht begonnen. Die übrigen zurückgestellten Komponentenpakete
-bleiben im [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
+Die integrierte Einheitenauswahl wurde anschließend als `CosmosDurationField`
+umgesetzt und vom Benutzer abgenommen; ihr geltender Aufbau steht im
+[Theme-Standard](theme.md). Das ersetzt keinen neuen Gesamtnachweis. Offene
+Variantenprüfungen und die beim späteren Testimage-Build aufgetretenen JUnit-Fehler
+stehen im [Testbedarf](testbedarf.md). Die Analyse zu
+[einheitlichen Seitenpfaden](planung/seitenpfade.md) ist fertig, ihre Umsetzung
+noch nicht begonnen. Die übrigen zurückgestellten Komponentenpakete bleiben
+im [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
 
 Browsernachweise verwenden Chromium bei Desktop- und Smartphonebreite; echte
 Mobilgeräte, Passwortmanager und Mailprogramme bleiben im

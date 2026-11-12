@@ -1130,6 +1130,9 @@ Löschen und Plus, durch die bestehende senkrechte Linie getrennt. Beim präzise
 `BigDecimalField` verbindet ein natives `HorizontalLayout` Plusbutton und Auswahl.
 Aktueller Wert, Umrechnung und Standardwert stehen nur in der Feldhilfe.
 Sekunden, ISO-Zeitspanne und ganze Tage behalten ihr jeweiliges Speicherformat.
+Die 2FA-Inaktivitätsregel verwendet denselben Baustein mit Minuten, Stunden und
+Tagen als verfügbaren Einheiten. Ganzzahlige Sekundenfelder, präzise Zeitspannen
+und feste Tageswerte bleiben fachlich getrennt.
 Die bestehenden Mindestdauern und Bereichsgrenzen bleiben erhalten. Beim Laden
 wird die größte ganzzahlig passende Einheit gewählt. Einheitenwechsel erhält
 die Zahl, die Schaltflächen ändern sie um eins. Bestehende Nachkommastellen einer

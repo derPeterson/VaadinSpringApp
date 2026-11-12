@@ -68,38 +68,19 @@ unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
   echte Änderungen sind gezielt in DE/EN per JUnit geprüft. Die reale Passwortmanager-
   Nachprüfung bleibt unter [HUM-11](../manual-tests/README.md#hum-11) offen.
 
-### Administrative Sperre und Selbstdeaktivierung
+### Ausstehende Seitenpfade und Nachtests
 
-Die Kontoaktions-Cards samt Footer (Punkt 6), Kontomails (Punkt 7),
-Löschintegrität mit JUnit (Punkt 9) und Konfigurationsfristen (Punkt 10) sind
-vom Benutzer abgenommen. Offene automatisierte Nachtests bleiben im
-[Testbedarf](../testbedarf.md).
+Die umgesetzten Nachtpakete einschließlich der Trennung von administrativer Sperre und
+Selbstdeaktivierung (Punkt 8) sowie die integrierte Einheitenauswahl (Punkt 3)
+sind vom Benutzer abgenommen. `CosmosDurationField`, feste Tageswerte und
+Gestaltungsregeln stehen im [Theme-Standard](../theme.md).
+Noch offene automatisierte Nachtests und die beim Testimage-Build gefundenen
+JUnit-Fehler bleiben im [Testbedarf](../testbedarf.md).
 
-- **Korrektur zu Punkt 8 umgesetzt, Sichtung offen:** Administrative Sperre und
-  Selbstdeaktivierung werden unabhängig gespeichert. Profiländerungen, Sperren und
-  Entsperren dürfen weder Löschfrist noch Reaktivierungsnachweise entfernen.
-  Gesperrte Konten erhalten keinen Portalzugang und keine Selbstreaktivierung.
-  Eine vorhandene Löschvormerkung bleibt wirksam.
-- **Benutzereditor:** „Zugang gesperrt“ ersetzt den bisherigen Aktiv-Schalter.
-  „Anmeldung“ mit nativen Vaadin-Details standardmäßig einklappen. Darin
-  Selbstdeaktivierung und endgültigen Löschtermin nur lesbar anzeigen.
-  Alle Angaben und Sprachwechsel in DE/EN, bestehende Styles und Badges verwenden.
-- **Prüfung und Sichtung:** Gezielte Persistenz-, Zugriffs- und Formularregressionen
-  sichern die Trennung ab. Die neue Darstellung anschließend gemeinsam sichten. Für den
-  isolierten Browsernachtest ist noch eine auftragsbezogene Freigabe nötig.
-- Das zusätzliche Sperrmerkmal gehört zum aktuellen H2-Schema. Die technische
-  Prüfung verwendet frische isolierte Testdaten; eine bestehende lokale
-  Entwicklungsdatenbank muss vor dem nächsten Anwendungsstart neu aufgesetzt werden.
-
-### Integrierte Einheiten und einheitliche Seitenpfade
-
-- Die [Einheitenauswahl](einheitenauswahl.md) verwendet nun den wiederverwendbaren
-  `CosmosDurationField` mit nativen Zahlenfeldern und Select im Suffix.
-  Fachliche Tagesgrenzen bleiben erhalten; Browservergleich und Abnahme sind offen.
-- Für [Seitenpfade](seitenpfade.md) ist die native Breadcrumbs-Komponente im
-  manuellen Modus vorgesehen. Gesperrte Sicherheitsabläufe erhalten keine Links.
-- Die Seitenpfad-Analyse ist fertig; ihre Umsetzung bleibt bis zum eigenen Auftrag
-  offen. Die Einheitenauswahl ist das aktuell freigegebene Komponentenpaket.
+Für [Seitenpfade](seitenpfade.md) ist die native Breadcrumbs-Komponente im
+manuellen Modus vorgesehen. Gesperrte Sicherheitsabläufe erhalten keine Links.
+Die Analyse ist fertig; die Umsetzung von Punkt 4 bleibt bis zum eigenen
+Auftrag offen.
 
 ### Offener Sonar-Nachweis
 

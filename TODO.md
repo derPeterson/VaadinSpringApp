@@ -3,13 +3,11 @@
 ## Laufende Umsetzung
 
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
-  weiterführen. Konto deaktivieren/löschen und die noch offenen Komponenten
-  gemeinsam ansehen. Der fehlende aktuelle Sonar-Nachweis steht im Plan.
+  weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise
+  nach Freigabe umsetzen. Der fehlende aktuelle Sonar-Nachweis steht im Plan.
   Die ausdrücklich zurückgestellten
   Pakete bleiben bis zu einer späteren Freigabe offen.
 
-- [ ] [Integrierte Einheitenauswahl](docs/planung/einheitenauswahl.md) nach der
-  abgeschlossenen Analyse gemeinsam sichten und die Umsetzung freigeben.
 - [ ] [Einheitliche Seitenpfade](docs/planung/seitenpfade.md) nach der
   abgeschlossenen Analyse gemeinsam sichten und die Umsetzung freigeben.
 
