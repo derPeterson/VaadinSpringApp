@@ -35,6 +35,7 @@
         background-image: linear-gradient(115deg, #3a538d, #526ebc) !important;
       }
     </mj-style>
+    <mj-include path="./partials/action-link.css" type="css" css-inline="inline" />
   </mj-head>
   <mj-body width="520px" background-color="#040710">
     <mj-wrapper full-width="full-width" background-color="#040710" css-class="cosmos-email-sky" padding="36px 16px">
@@ -50,6 +51,8 @@
           <mj-text color="#edf2ff" font-size="26px" font-weight="600" line-height="34px" padding="0 12px 16px">Your email address has been changed</mj-text>
           <mj-text>Your account email address was changed from <a href="mailto:{{OLD_EMAIL}}" class="cosmos-email-address"><span>{{OLD_EMAIL}}</span></a> to <a href="mailto:{{NEW_EMAIL}}" class="cosmos-email-address"><span>{{NEW_EMAIL}}</span></a>.</mj-text>
           <mj-button href="{{LOGIN_LINK}}" css-class="cosmos-email-button">SIGN IN</mj-button>
+          <mj-include path="./partials/action-link-hint_en.mjml" />
+          <mj-text css-class="cosmos-email-copy-link" font-size="12px" line-height="20px" padding="0 12px 20px"><a href="{{LOGIN_LINK}}">{{LOGIN_LINK}}</a></mj-text>
           <mj-text color="#899ab8" font-size="12px" line-height="20px" padding="0 12px 8px">All sessions and remembered sign-ins have ended. Sign in with your new address. This security notification is sent to both addresses. If you did not make this change, contact the administrator immediately.</mj-text>
         </mj-column>
       </mj-section>

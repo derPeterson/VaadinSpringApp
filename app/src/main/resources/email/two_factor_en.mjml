@@ -30,6 +30,7 @@
         background-image: linear-gradient(115deg, #3a538d, #526ebc) !important;
       }
     </mj-style>
+    <mj-include path="./partials/action-link.css" type="css" css-inline="inline" />
   </mj-head>
   <mj-body width="520px" background-color="#040710">
     <mj-wrapper full-width="full-width" background-color="#040710" css-class="cosmos-email-sky" padding="36px 16px">
@@ -47,6 +48,8 @@
           <mj-text font-family="monospace" font-size="26px" font-weight="600" color="#edf2ff" padding="12px">{{CODE}}</mj-text>
           <mj-text color="#899ab8" font-size="12px" line-height="20px" padding="0 12px 8px">{{NOTICE}}</mj-text>
           <mj-button href="{{LOGIN_LINK}}" css-class="cosmos-email-button">SIGN IN</mj-button>
+          <mj-include path="./partials/action-link-hint_en.mjml" />
+          <mj-text css-class="cosmos-email-copy-link" font-size="12px" line-height="20px" padding="0 12px 20px"><a href="{{LOGIN_LINK}}">{{LOGIN_LINK}}</a></mj-text>
         </mj-column>
       </mj-section>
       <mj-section padding="20px 0 0">

@@ -84,26 +84,10 @@ steht zentral im [Testbedarf](../testbedarf.md) für die abschließende Testrund
 
 ## 2. Vollständige Aktionslinks in E-Mails zum Kopieren anbieten
 
-- [ ] Alle E-Mail-Vorlagen mit Aktionslink durchgehen, etwa Verifikation,
-  Passwortreset, E-Mail-Änderung und Kontoreaktivierung. Unter jedem Aktionsbutton
-  die vollständige Original-URL als auswählbaren Text anbieten.
-- [ ] Einen kurzen erklärenden Hinweis auf Deutsch und Englisch ergänzen:
-  Falls der Button nicht funktioniert, den vollständigen Link in die Adresszeile
-  des Browsers kopieren. Kein zusätzlicher JavaScript-Kopierbutton in der Mail.
-- [ ] Button und sichtbarer Link verwenden dieselbe Zieladresse und denselben
-  bestehenden Token. Gültigkeit, Sicherheitsprüfungen und bisherige Funktionen
-  erhalten; URLs weder kürzen noch mit Auslassungspunkten abschneiden.
-- [ ] Den Zusatz in das bestehende gemeinsame E-Mail-Design einpassen:
-  vorhandene Farben und Schriftgestaltung übernehmen, den Hinweis dezent halten
-  und einen gut lesbaren Abstand unter dem Button vorsehen. Lange URLs auf
-  Smartphonebreite sauber umbrechen lassen, ohne ihren kopierten Inhalt zu verändern.
-- [ ] Gemeinsame Vorlagenbausteine wiederverwenden und einheitliche Darstellung
-  in allen betroffenen Mails sicherstellen. Mails ohne Aktionslink erhalten keinen
-  leeren Zusatzbereich. Eine gegebenenfalls vorhandene Textalternative ebenfalls
-  berücksichtigen.
-- [ ] In der abschließenden Testrunde die tatsächlichen Testmails in DE/EN auf
-  Desktop- und Smartphonebreite prüfen und kontrollieren, dass sichtbare URL und
-  Buttonziel übereinstimmen. Nur isolierte Testmails verwenden.
+Die vorhandenen sechs Vorlagenpaare enthalten gemeinsame DE/EN-Kopierhinweise
+und dieselbe vollständige URL wie ihr Button. 160 gezielte Tests sind erfolgreich.
+Die Kontostatus-Vorlagen folgen in Paket 7. Der visuelle Mailpit-Nachtest bleibt
+zentral im [Testbedarf](../testbedarf.md).
 
 ## 3. Zahlenfeld mit integrierter Einheitenauswahl analysieren
 

@@ -836,6 +836,12 @@ Bei Arbeiten an diesen Bereichen die folgenden Hinweise lesen und anwenden.
   davon von Hand weiterentwickeln. Zur Laufzeit die HTML-Vorlage über den
   bestehenden Vorlagenweg aus dem Classpath laden und vorgesehene Platzhalter
   sicher mit den fachlichen Daten befüllen; keine MJML-Kompilierung im Mailversand.
+- Gemeinsame Kopierhinweise und Linkgestaltung liegen unter `email/partials/`.
+  Aktionsbuttons haben darunter dieselbe vollständige URL als sichtbaren Link.
+  HTML aus dem Projektroot mit `npx.cmd --yes mjml@5.4.1 'app/src/main/resources/email/*.mjml' --config.allowIncludes true --config.fonts '{}' --config.validationLevel strict -o app/src/main/resources/email/`
+  erzeugen. Die leere Fontliste verhindert zusätzliche externe Standardschriften;
+  Inter bleibt über den vorhandenen lokalen Platzhalter eingebunden. Abschließend
+  nur nachlaufende Leerzeichen und Leerzeilen im erzeugten HTML entfernen.
 - Java-Dienste steuern Fachaktion, Daten und Versandauftrag. Keine vollständigen
   Mailinhalte durch HTML-Strings, Tag-Verkettungen oder eigene Inline-Styles im
   Java-Code zusammenbauen. Bei einer Vorlagenumstellung den ersetzten HTML-Aufbau

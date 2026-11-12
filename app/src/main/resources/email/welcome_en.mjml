@@ -30,6 +30,7 @@
         background-image: linear-gradient(115deg, #3a538d, #526ebc) !important;
       }
     </mj-style>
+    <mj-include path="./partials/action-link.css" type="css" css-inline="inline" />
   </mj-head>
   <mj-body width="520px" background-color="#040710">
     <mj-wrapper full-width="full-width" background-color="#040710" css-class="cosmos-email-sky" padding="36px 16px">
@@ -46,6 +47,8 @@
           <mj-text>Thank you for registering with our service.</mj-text>
           <mj-text>Please confirm your email address to activate your account.</mj-text>
           <mj-button href="{{VERIFICATION_LINK}}" css-class="cosmos-email-button">VERIFY EMAIL</mj-button>
+          <mj-include path="./partials/action-link-hint_en.mjml" />
+          <mj-text css-class="cosmos-email-copy-link" font-size="12px" line-height="20px" padding="0 12px 20px"><a href="{{VERIFICATION_LINK}}">{{VERIFICATION_LINK}}</a></mj-text>
           <mj-text color="#899ab8" font-size="12px" line-height="20px" padding="0 12px 8px">If you have not registered, ignore this email.</mj-text>
         </mj-column>
       </mj-section>

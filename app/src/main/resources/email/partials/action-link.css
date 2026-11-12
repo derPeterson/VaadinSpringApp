@@ -1,0 +1,6 @@
+.cosmos-email-copy-link a {
+  color: #a9c0fb;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  text-decoration: underline;
+}
