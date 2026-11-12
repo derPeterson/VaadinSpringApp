@@ -244,6 +244,22 @@ class AdminUserManagementSectionTest {
             .getTextRecursively()
             .contains(messageProperties.getAdminUserSelfDeactivated()));
     assertTrue(signInDetails.getElement().getTextRecursively().contains("UTC"));
+    Span selfDeactivationLabelSpan =
+        descendants(signInDetails)
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .filter(span -> span.getId().orElse("").equals("admin-user-self-deactivation"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(
+        messageProperties.getAdminUserSelfDeactivated() + ": ",
+        selfDeactivationLabelSpan.getText());
+    assertTrue(selfDeactivationLabelSpan.hasClassName("cosmos-security-warning-label"));
+    assertEquals(
+        1,
+        descendants(signInDetails)
+            .filter(component -> component.hasClassName("cosmos-security-warning"))
+            .count());
     Checkbox administrativeBlockCheckbox =
         descendants(editorDialog)
             .filter(Checkbox.class::isInstance)
@@ -253,8 +269,18 @@ class AdminUserManagementSectionTest {
             .orElseThrow();
     assertFalse(administrativeBlockCheckbox.getValue());
 
-    signInDetails.setOpened(true);
-    signInDetails.setOpened(false);
+    Button signInDetailsToggleButton =
+        descendants(editorDialog)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .filter(button -> button.getId().orElse("").equals("admin-user-sign-in-toggle"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals(messageProperties.getBaseDetailsButton(), signInDetailsToggleButton.getText());
+    signInDetailsToggleButton.click();
+    assertTrue(signInDetails.isOpened());
+    signInDetailsToggleButton.click();
+    assertFalse(signInDetails.isOpened());
     ComponentUtil.fireEvent(editorDialog, new Dialog.DialogCloseActionEvent(editorDialog, true));
 
     assertFalse(editorDialog.isOpened());

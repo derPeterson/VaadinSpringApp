@@ -73,6 +73,7 @@ import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.DetailsToggleButton;
 import de.derpeterson.app.ui.components.EmailVerificationBadge;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.ui.components.UnsavedChangesDialog;
@@ -822,6 +823,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     // Anmeldeinformationen eines vorhandenen Kontos
     private SignInSummary signInSummary;
     private final H3 signInTitleH3 = new H3();
+    private DetailsToggleButton signInDetailsToggleButton;
     private final VerticalLayout lifecycleStatusLayout = new VerticalLayout();
     private final Span registrationLabelSpan = new Span();
     private final Badge registeredViaBadge = new Badge();
@@ -1312,7 +1314,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             .adminSignInSummary(editedUserEntity.getId())
             .ifPresent(summary -> {
               signInSummary = summary;
-              editorFormLayout.add(createSignInDetails());
+              editorFormLayout.add(createSignInDetailsLayout());
             });
       }
       Div editorFooterDiv = new Div(securityNoteDiv, editorActionsLayout);
@@ -1325,7 +1327,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       editUserDialog.add(editorFormLayout);
     }
 
-    private Details createSignInDetails() {
+    private VerticalLayout createSignInDetailsLayout() {
       signInTitleH3.addClassNames(COSMOS_PANEL_TITLE_CLASS, "admin-user-sign-in-title");
       SvgIcon signInInfoSvgIcon = AppIcon.INFO_CIRCLE.create();
       signInInfoSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
@@ -1376,14 +1378,28 @@ public class AdminUserManagementSection extends VerticalLayout {
       signInDetailsLayout.setAlignItems(Alignment.STRETCH);
       signInDetailsLayout.addClassName("admin-user-sign-in-content");
 
-      Details signInDetails = new Details(signInHeadingLayout, signInDetailsLayout);
+      Details signInDetails = new Details("", signInDetailsLayout);
       signInDetails.setId("admin-user-sign-in-details");
       signInDetails.setWidthFull();
       signInDetails.setOpened(false);
-      signInDetails.addClassNames("cosmos-panel-hint", "admin-user-sign-in");
+      signInDetails.addClassName("admin-user-sign-in-content-details");
+
+      signInDetailsToggleButton =
+          new DetailsToggleButton(
+              messageProperties, signInDetails, messageProperties.getSignInDetailsTitle());
+      signInDetailsToggleButton.setId("admin-user-sign-in-toggle");
+      signInHeadingLayout.setWidthFull();
+      signInHeadingLayout.expand(signInTitleH3);
+      signInHeadingLayout.add(signInDetailsToggleButton);
+
+      VerticalLayout signInPanelLayout = new VerticalLayout(signInHeadingLayout, signInDetails);
+      signInPanelLayout.setWidthFull();
+      signInPanelLayout.setPadding(false);
+      signInPanelLayout.setSpacing(false);
+      signInPanelLayout.addClassNames("cosmos-panel-hint", "admin-user-sign-in");
 
       refreshSignInDetails();
-      return signInDetails;
+      return signInPanelLayout;
     }
 
     private void refreshSignInDetails() {
@@ -1391,6 +1407,11 @@ public class AdminUserManagementSection extends VerticalLayout {
         return;
       }
       signInTitleH3.setText(messageProperties.getSignInDetailsTitle());
+      signInDetailsToggleButton.setText(messageProperties.getBaseDetailsButton());
+      signInDetailsToggleButton.setAriaLabel(
+          messageProperties.getSignInDetailsTitle()
+              + ": "
+              + messageProperties.getBaseDetailsButton());
       accountTypeLabelSpan.setText(messageProperties.getAccountTypeLabel());
       accountTypeBadge.setText(
           editedUserEntity.isDevelopmentAccount()
@@ -1427,6 +1448,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       lifecycleStatusLayout.removeAll();
       lifecycleStatusLayout.setPadding(false);
       lifecycleStatusLayout.setSpacing(false);
+      lifecycleStatusLayout.setWidthFull();
       lifecycleStatusLayout.setAlignItems(Alignment.START);
       lifecycleStatusLayout.addClassName("admin-user-lifecycle-status");
       boolean selfDeactivated = editedUserEntity.getAccountDeactivation() != null;
@@ -1435,9 +1457,10 @@ public class AdminUserManagementSection extends VerticalLayout {
         return;
       }
 
-      Badge selfDeactivationBadge = new Badge(messageProperties.getAdminUserSelfDeactivated());
-      selfDeactivationBadge.setId("admin-user-self-deactivation");
-      selfDeactivationBadge.addThemeVariants(BadgeVariant.WARNING);
+      Span selfDeactivationLabelSpan =
+          new Span(messageProperties.getAdminUserSelfDeactivated() + ": ");
+      selfDeactivationLabelSpan.setId("admin-user-self-deactivation");
+      selfDeactivationLabelSpan.addClassName("cosmos-security-warning-label");
       String deletionDateText =
           DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
                   .withLocale(CustomI18NProvider.getCurrentLocale())
@@ -1447,7 +1470,17 @@ public class AdminUserManagementSection extends VerticalLayout {
       Span deletionDeadlineSpan =
           new Span(messageProperties.getAdminUserScheduledDeletion(deletionDateText));
       deletionDeadlineSpan.setId("admin-user-deletion-deadline");
-      lifecycleStatusLayout.add(selfDeactivationBadge, deletionDeadlineSpan);
+      Span deactivationWarningTextSpan = new Span(selfDeactivationLabelSpan, deletionDeadlineSpan);
+      SvgIcon deactivationWarningSvgIcon = AppIcon.ERROR.create();
+      deactivationWarningSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
+      HorizontalLayout deactivationWarningLayout =
+          new HorizontalLayout(deactivationWarningSvgIcon, deactivationWarningTextSpan);
+      deactivationWarningLayout.setId("admin-user-self-deactivation-warning");
+      deactivationWarningLayout.setPadding(false);
+      deactivationWarningLayout.setSpacing(false);
+      deactivationWarningLayout.setAlignItems(Alignment.START);
+      deactivationWarningLayout.addClassName("cosmos-security-warning");
+      lifecycleStatusLayout.add(deactivationWarningLayout);
     }
 
     private void refreshVerificationDetails() {

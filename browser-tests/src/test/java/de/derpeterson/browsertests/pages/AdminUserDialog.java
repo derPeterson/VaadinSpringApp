@@ -104,7 +104,7 @@ public final class AdminUserDialog {
   public void openSignInDetails() {
     Locator signInDetailsLocator = root().locator("vaadin-details#admin-user-sign-in-details");
     if (signInDetailsLocator.getAttribute("opened") == null) {
-      signInDetailsLocator.locator("vaadin-details-summary").click();
+      root().locator("vaadin-button#admin-user-sign-in-toggle").click();
     }
     assertThat(signInDetailsLocator).hasAttribute("opened", "");
   }

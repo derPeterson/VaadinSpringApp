@@ -58,9 +58,22 @@ schmalen Ansichten natürlich umbrechen.
 
 Der Anmeldungsbereich im Benutzereditor verwendet native Vaadin-`Details`
 (`#admin-user-sign-in-details`) und startet eingeklappt. Die blaue Überschrift und
-das Info-Icon bleiben im Summary sichtbar. Die gemeinsame lokale Gestaltung liegt
+das Info-Icon stehen links, rechts der gemeinsame `DetailsToggleButton` wie bei 2FA.
+Der native Summary ist ausgeblendet. Die gemeinsame lokale Gestaltung liegt
 in `admin-users.css`; darunter erscheinen die bisherigen Angaben, Mailaktionen und
-bei Selbstdeaktivierung ein gelbes Badge samt schreibgeschütztem UTC-Löschtermin.
+bei Selbstdeaktivierung der gemeinsame gelbe Warnhinweis mit oben ausgerichtetem
+Icon: „Selbst deaktiviert:“ fett in Gelb, der schreibgeschützte UTC-Löschtermin
+direkt anschließend in normaler Textschrift. Eine Trennlinie oberhalb grenzt den
+Hinweis ab; Linie und Abstand erscheinen nur mit dem sichtbaren Hinweis.
+Ein separates Status-Badge entfällt.
+
+Details-Schalter bleiben anwendungsweit bei Hover in ihrer Grundgestaltung.
+`cosmos-theme.css` nimmt `.two-factor-details-toggle`,
+`.cosmos-notification-compose-details-toggle` und `.cosmos-notification-sent-toggle`
+von den allgemeinen Button-Hoverregeln aus und unterdrückt deren Interaktionsflächen.
+Das gilt für 2FA, Benutzereditor, Anwesenheitsmenü, Ticketanleitung sowie
+Empfängervorschau und Versandhistorie. Handzeiger, Pfeilwechsel und sichtbarer
+Tastaturfokus bleiben erhalten.
 
 Die Bestätigung der eigenen Kontodeaktivierung oder Löschung verwendet denselben
 nativen Cosmos-Dialograhmen wie die übrigen Kontoaktionen. Die lokale Klasse

@@ -559,7 +559,8 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
     --vaadin-button-label-wrap: nowrap;
 }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.two-factor-details-toggle { flex:none; margin:0; padding:0; min-height:28px; height:auto; border:0; background:transparent; box-shadow:none; color:var(--cosmos-reference-text); font:600 12px/16.8px Inter,sans-serif; }
-.two-factor-details-toggle::before,.two-factor-details-toggle::after { display:none; }
+:is(.two-factor-details-toggle, .cosmos-notification-compose-details-toggle, .cosmos-notification-sent-toggle)::before,
+:is(.two-factor-details-toggle, .cosmos-notification-compose-details-toggle, .cosmos-notification-sent-toggle)::after { display:none; }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.two-factor-details-toggle:focus:not([focus-ring]) { outline:none; }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button::part(label) { display: inline-flex; align-items: center; justify-content: center; padding: 0; margin: 0; color: inherit; font: inherit; }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button::part(prefix) { display: inline-flex; align-items: center; padding: 0; margin-right: 8px; }
@@ -569,7 +570,7 @@ vaadin-notification-card[theme~="cosmos"] .cosmos-notification-message {
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[theme~=primary] { color: var(--cosmos-reference-white); background: var(--cosmos-reference-primary); border-color: var(--cosmos-reference-primary); box-shadow: none; }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[theme~=primary]:hover:not([disabled], [aria-pressed="true"], [aria-current], [selected], [checked]) { background: var(--cosmos-reference-primary-hover); }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button[theme~=primary] > vaadin-icon { color: var(--cosmos-reference-white); }
-:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button:where(:not([theme~=primary], [theme~=tertiary], [theme~=tertiary-inline], .cosmos-delete-button, .cosmos-warning-button, .cosmos-topbar-shortcut, .tracked-user-button, .account-navigation-toggle, #account-sidebar > vaadin-button, [aria-pressed], .portal-menu-action, .portal-menu-footer > vaadin-button)):hover:not([disabled]) { background: var(--cosmos-reference-button-hover); border-color: #ffffff38; }
+:is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button:where(:not([theme~=primary], [theme~=tertiary], [theme~=tertiary-inline], .cosmos-delete-button, .cosmos-warning-button, .cosmos-topbar-shortcut, .tracked-user-button, .two-factor-details-toggle, .cosmos-notification-compose-details-toggle, .cosmos-notification-sent-toggle, .account-navigation-toggle, #account-sidebar > vaadin-button, [aria-pressed], .portal-menu-action, .portal-menu-footer > vaadin-button)):hover:not([disabled]) { background: var(--cosmos-reference-button-hover); border-color: #ffffff38; }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-delete-button { color: var(--cosmos-reference-invalid); background: var(--cosmos-reference-danger-surface); border-color: var(--cosmos-reference-danger-border); --vaadin-button-tertiary-background: var(--cosmos-reference-danger-surface); }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-delete-button:hover:not([disabled]) { color: var(--cosmos-reference-danger-hover-text); background: var(--cosmos-reference-danger-hover-surface); border-color: var(--cosmos-reference-danger-hover-border); --vaadin-button-tertiary-background: var(--cosmos-reference-danger-hover-surface); }
 :is(.cosmos-reference-portal, .cosmos-reference-overlay) vaadin-button.cosmos-delete-button:focus-visible { outline: 2px solid var(--cosmos-reference-accent); outline-offset: 3px; }
@@ -718,11 +719,11 @@ vaadin-notification-card[theme~="cosmos-reference"] vaadin-button::part(label) {
 vaadin-notification-card[theme~="cosmos-reference"] vaadin-button vaadin-icon { width: 18px; height: 18px; padding: 0; }
 
 /* Hoverflächen teilen einen Wert. Auswahl, aktive Seitennummern und Disabled bleiben erhalten. */
-.cosmos-theme vaadin-button:hover:not([theme~=primary], .cosmos-delete-button, .cosmos-warning-button, .tracked-user-button, [disabled], [aria-pressed="true"], [aria-current], [selected], [checked]) {
+.cosmos-theme vaadin-button:hover:not([theme~=primary], .cosmos-delete-button, .cosmos-warning-button, .tracked-user-button, .two-factor-details-toggle, .cosmos-notification-compose-details-toggle, .cosmos-notification-sent-toggle, [disabled], [aria-pressed="true"], [aria-current], [selected], [checked]) {
     background: var(--cosmos-hover-background);
     --vaadin-button-tertiary-background: var(--cosmos-hover-background);
 }
-.cosmos-theme vaadin-button:hover:not([theme~=primary], .cosmos-delete-button, .cosmos-warning-button, .tracked-user-button, [disabled], [aria-pressed="true"], [aria-current], [selected], [checked])::before {
+.cosmos-theme vaadin-button:hover:not([theme~=primary], .cosmos-delete-button, .cosmos-warning-button, .tracked-user-button, .two-factor-details-toggle, .cosmos-notification-compose-details-toggle, .cosmos-notification-sent-toggle, [disabled], [aria-pressed="true"], [aria-current], [selected], [checked])::before {
     opacity: 0;
 }
 .cosmos-theme :is(vaadin-text-field, vaadin-email-field, vaadin-password-field, vaadin-integer-field,

@@ -2,10 +2,19 @@
 
 ## Browser-Tests
 
+- Details-Schalter ohne Hoverfläche, **offen**: In DE/EN auf Desktop und Smartphone
+  2FA-Hilfe/Ersatzcodes, Benutzereditor, Anwesenheitsmenü, Ticketanleitung sowie
+  Empfängervorschau und Versandhistorie prüfen. Beim Hover bleibt die Grundfläche
+  unverändert; Handzeiger, Pfeilwechsel, Tastaturfokus und Auf-/Zuklappen bleiben
+  bedienbar. Auf Touch-Geräten keine zurückbleibende Hoverfläche.
+
 - Administrative Sperre und Selbstdeaktivierung, **offen**: In DE/EN auf Desktop
   und Smartphone den Schalter „Zugang gesperrt“ sowie den standardmäßig eingeklappten
-  nativen Anmeldungsbereich prüfen. Aufklappen allein löst keinen Änderungsschutz aus.
-  Selbstdeaktivierung und Löschtermin sind lesbar. Speichern einer Namensänderung,
+  nativen Anmeldungsbereich prüfen. „Details“ steht wie bei 2FA rechts mit blauem
+  Pfeil, ohne zusätzlichen linken Aufklapppfeil. Aufklappen allein löst keinen Änderungsschutz aus.
+  Der gelbe Warnhinweis zeigt „Selbst deaktiviert:“ fett mit anschließendem
+  Löschtermin in normaler Schrift und korrekt lesbaren Umlauten. Die Trennlinie
+  oberhalb erscheint nur mit dem Hinweis. Speichern einer Namensänderung,
   Sperren und Entsperren erhalten die Löschvormerkung. Gesperrte Konten erhalten
   weder Portalzugang noch Selbstreaktivierung, auch mit vorhandenem Link.
   Nach Entsperren bleibt die Selbstdeaktivierung bis zur Benutzerreaktivierung bestehen.
