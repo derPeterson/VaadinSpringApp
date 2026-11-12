@@ -120,8 +120,8 @@ public class UserAccessBrowserTest extends BrowserFixture {
   @Description(
       """
       1. Eigenes Konto registrieren und echte Verifikationsmail erfassen, deren Link nicht verwenden.
-      2. Gültige Zugangsdaten führen nur zur ausstehenden E-Mail-Verifikation. Als Admin das Konto öffnen: Aktiv nicht markiert.
-      3. Aktiv ausdrücklich markieren und speichern; eine neue Anmeldung verlangt weiterhin den Mailnachweis.
+      2. Gültige Zugangsdaten führen nur zur ausstehenden E-Mail-Verifikation. Als Admin sperren und die abgewiesene Anmeldung prüfen.
+      3. Das Konto wieder freigeben; eine neue Anmeldung verlangt weiterhin den Mailnachweis.
       4. Erst den echten Verifikationslink verwenden und anschließend erfolgreich anmelden.
       **Erwartet:** Administrative Freigabe und Nachweis der E-Mail-Adresse sind unabhängige Voraussetzungen.
       """)
@@ -142,6 +142,15 @@ public class UserAccessBrowserTest extends BrowserFixture {
     AdminUsersPage adminUsersPage = admin();
     AdminUserDialog adminUserDialog = adminUsersPage.openEdit(emailAddress);
 
+    assertThat(adminUserDialog.enabled()).isChecked();
+    adminUserDialog.setEnabled(false);
+    adminUserDialog.save();
+    try (BrowserActor blockedBrowserActor = new BrowserActor(testBrowser)) {
+      blockedBrowserActor.login(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+      new LoginPage(blockedBrowserActor.browserPage).assertRejected();
+    }
+
+    adminUserDialog = adminUsersPage.openEdit(emailAddress);
     assertThat(adminUserDialog.enabled()).not().isChecked();
     adminUserDialog.setEnabled(true);
     adminUserDialog.save();
@@ -152,7 +161,10 @@ public class UserAccessBrowserTest extends BrowserFixture {
       loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
       assertThat(browserActor.browserPage).hasURL(urlPattern(PENDING_EMAIL_VERIFICATION_ROUTE));
       browserActor.browserPage.navigate(path(HOME_ROUTE));
-      assertThat(browserActor.browserPage).hasURL(urlPattern(PENDING_EMAIL_VERIFICATION_ROUTE));
+      assertThat(browserActor.browserPage.locator(".portal-home-page")).hasCount(0);
+      browserActor.browserPage.navigate(path(PENDING_EMAIL_VERIFICATION_ROUTE));
+      assertThat(browserActor.browserPage.locator("#pending-verification-email"))
+          .hasText(emailAddress);
     }
 
     adminUsersPage.verifyCreatedAccount(emailAddress);

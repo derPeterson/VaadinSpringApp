@@ -327,6 +327,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 }
 
 .admin-user-dialog #admin-user-registered-via,
+.admin-user-dialog #admin-user-development-account,
 .admin-user-dialog #admin-user-sign-in-methods > vaadin-badge {
     box-sizing: border-box;
     margin: 0;
@@ -335,11 +336,16 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     font: 500 10px/15px Inter, sans-serif;
 }
 
-.admin-user-dialog #admin-user-registered-via {
+.admin-user-dialog #admin-user-registered-via,
+.admin-user-dialog #admin-user-development-account {
     justify-self: start;
     max-width: 100%;
     white-space: normal;
     --vaadin-badge-text-color: var(--cosmos-reference-label);
+}
+
+.admin-user-dialog #admin-user-development-account {
+    align-self: flex-start;
 }
 
 .admin-user-dialog #admin-user-registered-via[data-self-registered=true] {

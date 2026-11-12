@@ -50,6 +50,9 @@ Seitennavigation bleiben auf diesen Hinweis beschränkt. „Abmelden“ verwirft
 Nachweis, „Senden“ fordert an die gespeicherte Adresse einen weiteren Link an.
 Zwischen Anforderungen liegen mindestens fünf Minuten, beginnend bei der
 Deaktivierung; ein offener Versandauftrag verhindert zusätzliche Anforderungen.
+Ein erneut angeforderter Link ersetzt den vorherigen zusätzlich angeforderten
+Link. Der ursprüngliche Deaktivierungslink und ein bereits zugestellter
+Erinnerungslink bleiben bis zur Reaktivierung beziehungsweise Löschfrist gültig.
 Administrativ gesperrte Konten, abgelaufene Fristen und veränderte Kontonachweise
 lassen diesen Weg nicht zu. Entwicklungskonten zeigen keine Versandzusage und
 haben keinen Mailversand. Nach Linkbestätigung ist eine reguläre Anmeldung nötig.

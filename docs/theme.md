@@ -433,6 +433,9 @@ Unter der normalen Feldbeschriftung steht der Registrierungsweg als kompaktes
 Vaadin-Badge. Ohne Selbstregistrierung ist es grau, bei Selbstregistrierung cyan.
 Die verfügbaren Anmeldewege stehen nebeneinander als kompakte grüne Vaadin-Badges
 mit jeweils eigenem Rahmen im Stil der Sitzungsstatus-Badges.
+Das native Kennzeichen „Entwicklungskonto“ verwendet dieselben kompakten Maße
+und die neutrale graue Palette. Es bleibt links an seinem Inhalt ausgerichtet
+und dehnt sich nicht über die gesamte Info-Box aus.
 Die Informationen einschließlich E-Mail-Verifizierung stehen über einer nativen
 `Hr`-Trennlinie. Darunter folgen „Verifikationslink senden“ und „Passwort-Reset senden“
 in einem umbrechenden `HorizontalLayout`. Ein blaues Info-Icon steht neben dem

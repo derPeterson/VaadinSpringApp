@@ -3,7 +3,7 @@
 ## Laufende Umsetzung
 
 - [ ] [Gesammelte Entwicklungsaufgaben für die Nacht](docs/planung/nachtaufgaben.md).
-  Zunächst nur sammeln; Umsetzung erst nach ausdrücklichem Startsignal.
+  Pflichtpakete sind umgesetzt; die abschließende große Testrunde läuft.
 
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Konto deaktivieren/löschen und die noch offenen Komponenten

@@ -55,8 +55,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       """
       1. Eigenes Testkonto über die normale Oberfläche anlegen und anmelden.
       2. Deaktivierung mit dem Portalpasswort bestätigen und Abmeldung prüfen.
-      3. Nach der echten Wartezeit erneut senden und den alten Link als ungültig prüfen.
-      4. Mit dem neuen Mail-Link reaktivieren und mit dem bisherigen Passwort wieder anmelden.
+      3. Nach der echten Wartezeit erneut senden und mit dem neuen Mail-Link reaktivieren.
+      4. Beide Links nach der Reaktivierung als verbraucht prüfen und wieder anmelden.
       """)
   void accountDeactivationSendsAUsableReactivationLink(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 900);
@@ -96,16 +96,17 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     CapturedMail resentReactivationMail =
         resendReactivationMailAfterCooldown(
             mailpitInbox, deactivationMail, reactivationResendAllowedInstant);
-    try (Page oldReactivationPage = mailpitInbox.openAccountReactivationAction(deactivationMail)) {
-      oldReactivationPage.locator("#account-reactivation-submit").click();
-      assertThat(oldReactivationPage.getByText(uiTexts.getAccountReactivateInvalid())).isVisible();
-    }
     try (Page reactivationPage =
         mailpitInbox.openAccountReactivationAction(resentReactivationMail)) {
       reactivationPage.setViewportSize(viewportWidth, 900);
       reactivationPage.locator("#account-reactivation-submit").click();
       assertThat(reactivationPage.getByText(uiTexts.getAccountReactivateSuccess())).isVisible();
     }
+
+    // Die ursprüngliche Mail bleibt bis zur Reaktivierung gültig. Danach sind alle Links
+    // verbraucht.
+    assertReactivationLinkConsumed(mailpitInbox, deactivationMail);
+    assertReactivationLinkConsumed(mailpitInbox, resentReactivationMail);
 
     mailpitInbox.assertAccountConfirmationWithoutAction(
         mailpitInbox.awaitSecurityMail(accountEmail, uiTexts.getAccountReactivatedMailSubject()));
@@ -114,6 +115,16 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     loginPage.open();
     loginPage.signIn(accountEmail, BrowserTestAccounts.USER_PASSWORD);
     assertThat(browserPage.locator(".portal-home-page")).isVisible();
+  }
+
+  private void assertReactivationLinkConsumed(
+      MailpitInbox mailpitInbox, CapturedMail reactivationMail) {
+    try (Page consumedReactivationPage =
+        mailpitInbox.openAccountReactivationAction(reactivationMail)) {
+      consumedReactivationPage.locator("#account-reactivation-submit").click();
+      assertThat(consumedReactivationPage.getByText(uiTexts.getAccountReactivateInvalid()))
+          .isVisible();
+    }
   }
 
   private CapturedMail resendReactivationMailAfterCooldown(

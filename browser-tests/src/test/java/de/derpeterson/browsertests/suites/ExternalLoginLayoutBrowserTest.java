@@ -663,14 +663,16 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
 
     assertThat(rememberSwitchLocator).hasCount(1);
     assertThat(rememberSwitchLocator).not().isChecked();
-    UiActions.completeValueChange(browserPage, rememberSwitchLocator::check);
+    rememberSwitchLocator.check();
+    waitForRememberChoiceCookie(true);
 
     assertThat(rememberSwitchLocator).isChecked();
     browserPage.reload();
 
     assertThat(rememberSwitchLocator).isChecked();
     rememberSwitchLocator.focus();
-    UiActions.completeValueChange(browserPage, () -> rememberSwitchLocator.press("Space"));
+    rememberSwitchLocator.press("Space");
+    waitForRememberChoiceCookie(false);
 
     assertThat(rememberSwitchLocator).not().isChecked();
     browserPage.reload();
@@ -687,6 +689,15 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
                 }
                 """),
         "Schalterbahn hat die vereinbarten kompakten Abmessungen");
+  }
+
+  private void waitForRememberChoiceCookie(boolean rememberLoginChoice) {
+    // Erst das echte Antwort-Cookie belegt, dass die Wahl einen anschließenden Reload überlebt.
+    browserPage.waitForCondition(() ->
+        browserContext.cookies().stream()
+            .anyMatch(browserCookie ->
+                browserCookie.name.equals("login-remember-choice")
+                    && browserCookie.value.equals(Boolean.toString(rememberLoginChoice))));
   }
 
   private void attachPanels(String title) {

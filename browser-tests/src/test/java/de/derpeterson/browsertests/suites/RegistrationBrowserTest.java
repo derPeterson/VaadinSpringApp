@@ -2,6 +2,7 @@ package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
 import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.PENDING_EMAIL_VERIFICATION_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
@@ -53,8 +54,12 @@ public class RegistrationBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator("#pending-verification-email")).hasText(emailAddress);
 
     browserPage.navigate(path(ACCOUNT_ROUTE));
-    assertThat(browserPage).hasURL(urlPattern(PENDING_EMAIL_VERIFICATION_ROUTE));
+    // Der HTTP-Zugriff auf Kontoseiten verlangt bereits vor dem Vaadin-Routing eine Anmeldung.
+    assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
     assertThat(browserPage.locator("#account-panel-security")).hasCount(0);
+
+    browserPage.navigate(path(PENDING_EMAIL_VERIFICATION_ROUTE));
+    assertThat(browserPage.locator("#pending-verification-email")).hasText(emailAddress);
   }
 
   @Tag("fast")

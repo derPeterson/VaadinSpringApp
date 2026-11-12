@@ -22,6 +22,7 @@ import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -79,7 +80,10 @@ public class BlockedLinksBrowserTest extends BrowserFixture {
             .click();
 
         assertThat(result.locator("vaadin-notification-card:not([closing])"))
-            .containsText(uiTexts.visibleText(result, uiTexts.getBaseFailedMessage()));
+            .containsText(uiTexts.visibleText(result, uiTexts.getEmailVerificationWait()));
+        // Die Warnvariante muss gesetzt sein; weitere gemeinsame Themevarianten sind erlaubt.
+        assertThat(result.locator("vaadin-notification-card:not([closing])"))
+            .hasAttribute("theme", Pattern.compile(".*cosmos-reference-warning.*"));
       }
       AdminUserDialog stored = new AdminUsersPage(browserPage).openEdit(account);
 

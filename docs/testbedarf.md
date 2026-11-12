@@ -140,36 +140,8 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
 
 ## JUnit-Tests
 
-- Entwicklungskonten und Mailunterdrückung, **offen, Umsetzung vorhanden**:
-  Speicherung, Bootstrap-Vorgaben und Superadmin-Prüfung absichern. Kontobezogene
-  Versandwege einschließlich manueller Aktionen, 2FA, Fristen und Löschbestätigung
-  erzeugen für Entwicklungskonten keine Mailaufträge. Reguläre Konten mit
-  „Nicht geprüft“ und allgemeiner Mailtest bleiben davon getrennt.
-
-- Kopierbare Mail-Links, **offen, alle Vorlagen umgesetzt**: In allen betroffenen
-  DE-/EN-Vorlagen nach Platzhalterersetzung identisches Buttonziel und sichtbare
-  vollständige URL prüfen, einschließlich sicherer HTML-Kodierung. Kein neuer
-  Token, keine gekürzten Ziele und kein Zusatzblock bei Mails ohne Aktion.
-
-- Beschränkter Anmeldezustand selbst deaktivierter Konten, **wartend auf Nachtaufgabe 8**:
-  Erstnachweis vor Statusanzeige, Portal-/Anbieteranmeldung, fehlende normale
-  Berechtigungen und Remember-me-Freigabe sowie saubere Abmeldung absichern.
-  Administrative Sperren, falsche Anmeldedaten und abgelaufene Fristen abdecken.
-  Erneuten Versand und gültige/ungültige Linkbestätigung mit vorhandenen
-  Kontofristen, Token- und Versandregeln prüfen.
-
-- Kontostatus-Mailvorlagen und Reaktivierungsbestätigung, **wartend auf Nachtaufgabe 7**:
-  Lokalisierte vollständige HTML-Vorlagen und korrekte Ziel-URLs/Fristdaten für
-  alle vier Ereignisse prüfen. Löschbestätigung bei sofortiger und automatischer
-  Löschung sowie erneute Linkanforderung abdecken. Reaktivierungsbestätigung nur
-  nach erfolgreicher Kontoänderung einreihen; ungültige Links, zurückgerollte
-  Änderungen und Entwicklungskonten erzeugen keine solche Mail.
-
-- Rückmeldungen nach Kontodeaktivierung/-löschung, **wartend auf Nachtaufgabe 6**:
-  Bestätigten Transaktionserfolg, Rollback und unklaren Ausgang unterscheiden.
-  Ein Mailproblem nach bestätigter Kontoänderung darf diese nicht als gescheitert
-  darstellen. Einmalige Meldungsübergabe über Logout und die Anmeldung sowie
-  unterdrückte Mailhinweise bei Entwicklungskonten gezielt absichern.
+Keine offenen Ergänzungen aus den vereinbarten Nachtpaketen. Die Fach-,
+Persistenz-, Vorlagen- und Rückmeldungstests sind im vollständigen Reactor bestanden.
 
 Menschliche Abnahmen bleiben im
 [manuellen Katalog](manual-tests/README.md).
