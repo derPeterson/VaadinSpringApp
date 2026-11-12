@@ -2,6 +2,11 @@
 
 ## Browser-Tests
 
+- Erklärungstext im Anmeldeanbieter-Bestätigungsdialog, **offen, noch kein Browserlauf beauftragt**:
+  In DE/EN auf Desktop und Smartphone prüfen, dass der einleitende Passwort-/
+  Identitätshinweis die Standardtextgröße mit regulärem Schriftgewicht verwendet.
+  Der Untertitel im Dialogkopf bleibt unverändert.
+
 - E-Mail-Bestätigungsseite nach Stitch-Variante A, **offen, noch kein Browserlauf beauftragt**:
   Bestehende Suite `email-verification` in DE/EN bei Desktop- und Smartphonebreite
   nutzen. Vollständigen Seitenkopf mit Bereichszeile, Seitentitel und Beschreibung

@@ -2,6 +2,9 @@
 
 ## Laufende Umsetzung
 
+- [ ] [Gesammelte Entwicklungsaufgaben für die Nacht](docs/planung/nachtaufgaben.md).
+  Zunächst nur sammeln; Umsetzung erst nach ausdrücklichem Startsignal.
+
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   gemeinsam abnehmen. Offene Ergänzungen zum Formularschutz und der fehlende
   Sonar-Nachweis stehen im Plan. Weitere Komponenten folgen als eigene Pakete.

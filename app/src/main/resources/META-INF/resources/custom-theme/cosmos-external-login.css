@@ -20,6 +20,10 @@
 .external-proof-provider { width:100%;height:36px;min-height:36px; }
 .external-proof-provider-mark { display:block;width:16px;height:16px;flex:0 0 16px;object-fit:contain; }
 .external-proof-heading-mark { display:block;width:20px;height:20px;object-fit:contain; }
+.external-identity-dialog .account-change-dialog-form > .cosmos-panel-description:first-child {
+    font-size: var(--cosmos-font-size-s);
+    font-weight: var(--cosmos-font-weight-regular);
+}
 .external-proof-separator { display:flex;align-items:center;gap:12px;color:var(--cosmos-reference-secondary);font:600 10px/18px Inter,sans-serif; }
 .external-proof-separator::before,.external-proof-separator::after { content:"";flex:1;border-top:1px solid var(--cosmos-reference-border); }
 .external-proof-ready { color:var(--cosmos-reference-success);font:500 12px/20px Inter,sans-serif; }

@@ -1392,6 +1392,11 @@ App-Code-Stelle. Beide Felder verwenden Space Mono. Ein vollständiger App-Code
 bestätigt nur beim Verbinden eines Anmeldeanbieters automatisch. Ersatzcodes und
 alle übrigen Dialogaktionen erfordern den jeweiligen Bestätigungsbutton.
 
+Der einleitende Erklärungstext im `ExternalIdentityConfirmationDialog` verwendet
+die reguläre Textgröße und das reguläre Schriftgewicht über `--cosmos-font-size-s`
+und `--cosmos-font-weight-regular`. Die lokale Regel in `cosmos-external-login.css`
+gilt für den Text im Formularbereich, nicht für den Untertitel im Dialogkopf.
+
 Vaadin `Details` ist anfangs geschlossen. Die Anmeldung und die Ersatzcode-Ausgabe
 verwenden denselben nativen Vaadin-Button und dieselbe Gestaltung in `cosmos-mfa.css`.
 Die Schalter bleiben bei Hover und Mausklick neutral. Der Tastaturfokus ist sichtbar.
