@@ -97,39 +97,9 @@ behalten ihre fachliche Einschränkung. Noch keine optionale UI-Umsetzung begonn
 
 ## 4. Einheitliche Seitenpfade und Breadcrumb-Navigation analysieren
 
-- [ ] Das abgenommene Erscheinungsbild erhalten: blaue Kontextzeile, große
-  Seitenüberschrift, bestehende Farben, Größen, Abstände und Positionen.
-  Auch native Vaadin-Komponenten müssen diese vorhandene Gestaltung übernehmen.
-  Geändert werden die einheitliche Benennungslogik und die Navigation.
-- [ ] Die blauen Kontextzeilen und Seitenüberschriften in Besucherbereich,
-  angemeldetem Portal, Administration, Konfiguration samt Untergruppen und Tabs,
-  Ticketsystem sowie 2FA-Einrichtung, Anmeldung und Wiederherstellung vergleichen.
-  Unterschiedliche Hierarchietiefen, doppelte Angaben und wechselnde Trennzeichen
-  beziehungsweise Großschreibung konkret erfassen.
-- [ ] Prüfen, ob die verwendete Vaadin-Version einen passenden nativen
-  Breadcrumb-Baustein bietet. Dessen Vorhandensein nicht voraussetzen; alternativ
-  eine fachlich passende Zusammensetzung vorhandener nativer Komponenten bewerten.
-- [ ] Überall dieselbe Zuordnung verwenden: Die blaue Zeile zeigt die
-  übergeordneten Bereiche, die große Überschrift den aktuellen Ort. Die aktuelle
-  Seite nicht zusätzlich im blauen Pfad wiederholen. Einheitliche Bezeichnungen
-  für dieselben Ziele verwenden; freie Beschreibungen gehören nicht in den
-  Navigationspfad. Die Regel gilt für Besucherbereich, Benutzerportal,
-  Administration und geschützte Zwischenschritte gleichermaßen.
-- [ ] Schreibweise und Trennzeichen konsistent aus dem vorhandenen Design
-  ableiten. Die konkrete Zuordnung von Bereichen, Unterseiten und Tabs anhand
-  der Bestandsaufnahme zur gemeinsamen Sichtung vorlegen.
-- [ ] Übergeordnete Ebenen sollen außerhalb gesperrter Abläufe als echte
-  Navigationslinks dienen. Aktuelle Position, Zielseiten sowie erforderliche
-  Abschnitts-/Tabparameter eindeutig festlegen. Tastatur, Fokus und schmale
-  Bildschirmbreiten berücksichtigen; DE/EN gemeinsam planen.
-- [ ] In den eingeschränkten 2FA-/Wiederherstellungs-/Hilfsabläufen keine
-  Navigation anbieten, mit der die bestehende Sitzungssperre verlassen wird.
-  Die serverseitige Sperre bleibt erhalten; auch ein normal dargestellter
-  Kontextpfad erteilt keine zusätzlichen Navigationsrechte.
-- [ ] Beispiele für die betroffenen Seiten und eine konkrete Empfehlung
-  zur gemeinsamen Sichtung vorlegen. Für einen anschließenden Umbau gelten die
-  [Bedingungen zur optionalen Umsetzung](#optionale-umsetzung-von-punkt-3-und-4);
-  keine globale Umgestaltung während der Bestandsaufnahme.
+Analyse abgeschlossen: [Bestandsaufnahme, native API und Zielzuordnung](seitenpfade.md).
+Vaadin 25.3.5 enthält Breadcrumbs. Empfohlen ist der manuelle Modus für unsere
+Queryparameter. Gesperrte Abläufe bleiben ohne Links. Noch keine Umsetzung begonnen.
 
 ## 5. Formularschutz um Browseraktionen erweitern
 
