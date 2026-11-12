@@ -817,6 +817,28 @@ Bei Arbeiten an diesen Bereichen die folgenden Hinweise lesen und anwenden.
   keine eigene DE-/EN-Textliste und keine Erwartung „eine von beiden Sprachen“.
   Details: [Browser-Testanleitung](../browser-tests/README.md).
 
+### E-Mail-Vorlagen und Cosmos-Design
+
+- Neue und überarbeitete Anwendungs-E-Mails verwenden verbindlich das bestehende
+  Cosmos-Maildesign. Für jede Vorlage deutsche und englische MJML-Quelldateien
+  unter `app/src/main/resources/email/` pflegen und daraus die zugehörigen
+  HTML-Dateien erzeugen. Die Gestaltung folgt den bestehenden Kontomails und der
+  [Theme-Anleitung](theme.md); keine parallelen Maildesigns einführen.
+- MJML ist die bearbeitbare Gestaltungsquelle. Das erzeugte HTML nicht unabhängig
+  davon von Hand weiterentwickeln. Zur Laufzeit die HTML-Vorlage über den
+  bestehenden Vorlagenweg aus dem Classpath laden und vorgesehene Platzhalter
+  sicher mit den fachlichen Daten befüllen; keine MJML-Kompilierung im Mailversand.
+- Java-Dienste steuern Fachaktion, Daten und Versandauftrag. Keine vollständigen
+  Mailinhalte durch HTML-Strings, Tag-Verkettungen oder eigene Inline-Styles im
+  Java-Code zusammenbauen. Bei einer Vorlagenumstellung den ersetzten HTML-Aufbau
+  und ausschließlich dafür benötigte Hilfen vollständig entfernen; keinen alten
+  Parallel- oder Fallbackpfad behalten. Weiter benötigte Sicherheits- und
+  Versandprüfungen bleiben erhalten.
+- Bei jedem E-Mail-Auftrag diese Regeln auch im Review prüfen: MJML und erzeugtes
+  HTML stimmen überein, DE/EN sind vorhanden und die Mail übernimmt Logo,
+  Typografie, Farben, Aufbau und Footer des gemeinsamen Cosmos-Maildesigns.
+  Eine ergänzende Klartextalternative ersetzt die gestaltete HTML-Mail nicht.
+
 ### Ressourcen im gepackten JAR
 
 Serverseitige Dateien über Classpath-Streams laden, beispielsweise mit

@@ -13,6 +13,9 @@ Löschung, Rollenänderung und Sessionwiderruf werden auch bei bereits geöffnet
 Ansichten wirksam. Der letzte aktive Superadmin ist durch eine gemeinsame
 Datenbanksperre geschützt, auch bei konkurrierenden Änderungen verschiedener Konten.
 
+Die [Rollenübersicht](rollen.md) beschreibt die zusätzlichen Befugnisse jeder
+Rolle, gemeinsame Kontofunktionen und die Grenzen der Rollenvererbung im Detail.
+
 Fehlversuche werden je kanonisierter Identität unter einem Hash gespeichert.
 Versuchslimit und Zeitfenster sind konfigurierbar und gelten ab dem nächsten
 Versuch. Das Fenster beträgt standardmäßig 15 Minuten und kann bis zu 24 Stunden

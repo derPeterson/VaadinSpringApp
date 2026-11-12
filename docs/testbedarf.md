@@ -2,7 +2,67 @@
 
 ## Browser-Tests
 
-- Erklärungstexte bei Identitätsbestätigungen, **offen, noch kein Browserlauf beauftragt**:
+Die Prüfung der offenen Fälle im freigegebenen Umfang gehört zur abschließenden
+Nacht-Testrunde. Der Auftrag wartet weiterhin auf das ausdrückliche Startsignal;
+die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
+
+- Entwicklungskonten, **wartend auf Nachtaufgabe 1**: In DE/EN auf Desktop und
+  Smartphone Superadmin-Schalter, Standardwerte, deaktivierte Verifikationsoption,
+  Badge und Hinweise bei mailabhängigen Aktionen prüfen. Normale Admins können
+  das Merkmal nicht setzen. Keine Versandzusage oder echte Mail für Testkonten
+  mit diesem Merkmal; reguläre ungeprüfte Konten behalten ihre eigene Behandlung.
+
+- Kopierbare Aktionslinks, **wartend auf Nachtaufgabe 2**: Die betroffenen Mails
+  in DE/EN isoliert in Mailpit auf Desktop-/Smartphonebreite öffnen. Original-URL
+  unter dem Button lesbar und vollständig kopierbar, korrektes Ziel, kein Überlauf
+  und keine leeren Linkbereiche in Mails ohne Aktion. Keine echten E-Mails senden.
+
+- Deaktivierungsfristen in der Konfiguration, **wartend auf die Umsetzung** von
+  [Nachtaufgabe 10](planung/nachtaufgaben.md#10-konfigurationsfelder-für-deaktivierungsfristen-vereinheitlichen):
+  In DE/EN auf Desktop und Smartphone kurze Beschriftungen ohne Klammerzusätze,
+  rechts integriertes Tages-Suffix wie bei Benachrichtigungen und die Feldhilfen
+  prüfen. Erinnerung erklärt den Abstand vor dem Löschdatum und 0 als aus;
+  „Wann gilt die Änderung?“ nennt künftige Selbstdeaktivierungen und unveränderte
+  bestehende Termine. Die Felder stehen in der freigegebenen eigenen Rubrik
+  „Kontoverwaltung“; nur Superadmins haben Zugriff, Admins und normale Benutzer nicht.
+
+- Reaktivierungshinweis nach Anmeldung, **wartend auf die Umsetzung** von
+  [Nachtaufgabe 8](planung/nachtaufgaben.md#8-selbst-deaktivierte-konten-nach-der-anmeldung-gezielt-zur-reaktivierung-führen):
+  In DE/EN auf Desktop und Smartphone den entfernten Link im Loginformular und
+  die eigene gelbe Hinweisseite nach gültigem ersten Anmeldenachweis prüfen.
+  Löschdatum, Aktionen, erneuten Versand mit Wartezeit und Mailpit-Linkbestätigung
+  abdecken. Passwort-/Anbieterwege, Refresh und direkte URLs prüfen: kein Zugriff
+  auf geschützte Seiten und keine Aktivierung ohne gültigen Link. Administrative
+  Sperren und abgelaufene Fristen erlauben keine Selbstreaktivierung.
+
+- Kontostatus-E-Mails im Cosmos-Design, **wartend auf die Umsetzung** von
+  [Nachtaufgabe 7](planung/nachtaufgaben.md#7-kontostatus-e-mails-in-das-bestehende-cosmos-maildesign-überführen):
+  Deaktivierung, Löschwarnung, endgültige Löschung und erfolgreiche Reaktivierung
+  isoliert in Mailpit auf Deutsch und Englisch bei Desktop-/Smartphonebreite
+  prüfen. Erwartet sind der gemeinsame Mailstil, lesbare konkrete Fristen,
+  Reaktivierungsbuttons bei Deaktivierung/Erinnerung sowie kopierbare Ziel-URLs
+  ohne Überlauf. Löschbestätigungen bieten keine Reaktivierung an. Erneut
+  angeforderte Links verwenden ebenfalls die neue Vorlage. Keine echten Mails.
+
+- Konto deaktivieren/löschen – Übersicht und Bestätigungsdialoge, **wartend auf die Umsetzung**
+  von [Nachtaufgabe 6](planung/nachtaufgaben.md#6-dialoge-zum-deaktivieren-und-endgültigen-löschen-angleichen):
+  In DE/EN auf Desktop und Smartphone jeweils Passwort- und 2FA-Variante prüfen.
+  In der Übersicht Tabler `user-cog` am Tab und die gelbe Warnhinweisfläche mit
+  beiden gemeinsam rechtsbündig angeordneten Aktionen prüfen. Deaktivierung
+  verwendet gelbe, Löschung rote Buttons und Icons; die jeweiligen Kopf-Icons
+  im Dialog erhalten passende Rahmen und
+  dezente Hintergründe bei unveränderten übrigen Dialogflächen.
+  Erwartet sind der Untertitel zur Identitätsbestätigung, Tabler-Personen-Icons
+  im Kopf und Bestätigungsbutton sowie die vollständigen Folgen der Aktion in
+  der gelben beziehungsweise roten Hinweisbox. Der Passwort-Eingabehinweis endet
+  mit einem Doppelpunkt und verwendet die regulären Textwerte. Abbrechen erhält
+  das Konto; die Kontoaktion erfolgt weiterhin erst nach expliziter Bestätigung.
+  Nach erfolgreicher Aktion erscheint auf der Anmeldeseite einmalig die richtige
+  Erfolgsnotification. Technische Fehler zeigen dort eine Fehlernotification,
+  keinen falschen Erfolg. Mailhinweise unterscheiden Queueaufnahme, Fehler und
+  unterdrückten Versand bei Entwicklungskonten; Eingabefehler bleiben im Dialog.
+
+- Erklärungstexte bei Identitätsbestätigungen, **offen, Prüfung mit der Nacht-Testrunde freigegeben**:
   In DE/EN auf Desktop und Smartphone prüfen, dass der einleitende Passwort-/
   Identitätshinweis die Standardtextgröße mit regulärem Schriftgewicht verwendet.
   Der Untertitel im Dialogkopf bleibt unverändert.
@@ -11,7 +71,7 @@
   der Text über dem Feld zur Passworteingabe auf und endet mit einem Doppelpunkt.
   Die übergeordnete Seitenbeschreibung behält den allgemeinen Zweck der 2FA.
 
-- E-Mail-Bestätigungsseite nach Stitch-Variante A, **offen, noch kein Browserlauf beauftragt**:
+- E-Mail-Bestätigungsseite nach Stitch-Variante A, **offen, Prüfung mit der Nacht-Testrunde freigegeben**:
   Bestehende Suite `email-verification` in DE/EN bei Desktop- und Smartphonebreite
   nutzen. Vollständigen Seitenkopf mit Bereichszeile, Seitentitel und Beschreibung
   sowie die normale Panelposition wie auf den anderen öffentlichen Seiten erhalten.
@@ -29,7 +89,7 @@
   bestehende Portal-/Adminsperre einschließlich Refresh und Sprachwechsel erhalten.
   Keine unbestätigten Versand- oder Zustellungszeitpunkte anzeigen.
 
-- Anmeldungsbereich im Benutzer-Bearbeitungsdialog, **offen, noch kein Browserlauf beauftragt**:
+- Anmeldungsbereich im Benutzer-Bearbeitungsdialog, **offen, Prüfung mit der Nacht-Testrunde freigegeben**:
   In DE/EN auf Desktop und Smartphone Informationen mit bestehenden Status-Badges
   oberhalb der Trennlinie prüfen. Darunter stehen Bestätigungsmail und Passwortreset
   mit unveränderten Freigaben sowie ein blaues Info-Icon mit kurzer Erklärung
@@ -41,7 +101,7 @@
   genau diese Adresse erwarten. „Nicht geprüft“ bleibt ohne Versand erhalten;
   unveränderte Adressen erzeugen keine neue Mail. Den manuellen Versand weiter prüfen.
 
-- Headerlinks, **offen, noch kein Browserlauf beauftragt**:
+- Headerlinks, **offen, Prüfung mit der Nacht-Testrunde freigegeben**:
   In Portal und Administration in DE/EN bei Desktop- und Smartphonebreite prüfen,
   dass der Profilbereich bei Hover transparent bleibt. Menü per Klick und Tastatur
   öffnen, sichtbaren Tastaturfokus erhalten und Menüaktionen weiterhin bedienen.
@@ -71,11 +131,62 @@
   Schließen und Verlassen über Adresszeile oder externe Navigation.
   Erwartung: Eine Warnung erlaubt das Abbrechen mit erhaltenem Entwurf oder
   bewusstes Verlassen. Unveränderte und erfolgreich gespeicherte Formulare
-  warnen nicht. Gezielt in DE/EN bei Desktop- und Smartphonebreite prüfen.
+  warnen nicht. Nach vollständigem Zurücknehmen der Änderungen ebenfalls nicht
+  warnen; nach fehlgeschlagenem Speichern bei weiterhin geändertem Formular schon.
+  Doppelte Warnungen beim anwendungsinternen Verwerfen oder Schließen vermeiden.
+  Gezielt in DE/EN bei Desktop- und Smartphonebreite prüfen. Die Umsetzung ist
+  als [Nachtaufgabe 5](planung/nachtaufgaben.md#5-formularschutz-um-browseraktionen-erweitern)
+  vorgemerkt und noch nicht gestartet.
 
 ## JUnit-Tests
 
-Aktuell keine offenen Ergänzungen.
+- Entwicklungskonten und Mailunterdrückung, **wartend auf Nachtaufgabe 1**:
+  Speicherung, Bootstrap-Vorgaben und Superadmin-Prüfung absichern. Kontobezogene
+  Versandwege einschließlich manueller Aktionen, 2FA, Fristen und Löschbestätigung
+  erzeugen für Entwicklungskonten keine Mailaufträge. Reguläre Konten mit
+  „Nicht geprüft“ und allgemeiner Mailtest bleiben davon getrennt.
+
+- Kopierbare Mail-Links, **wartend auf Nachtaufgabe 2**: In allen betroffenen
+  DE-/EN-Vorlagen nach Platzhalterersetzung identisches Buttonziel und sichtbare
+  vollständige URL prüfen, einschließlich sicherer HTML-Kodierung. Kein neuer
+  Token, keine gekürzten Ziele und kein Zusatzblock bei Mails ohne Aktion.
+
+- Superadmin-Konfiguration der Kontofristen, **wartend auf Nachtaufgabe 10**:
+  Speichern durch Superadmins erlauben; direkte Dienstaufrufe durch Admins,
+  normale Benutzer und nicht angemeldete Aufrufer verweigern. Verweigerte
+  Änderungen lassen die gespeicherten Fristen unverändert.
+
+- Vollständige Kontolöschung mit komplexen Verknüpfungen, **wartend auf
+  [Nachtaufgabe 9](planung/nachtaufgaben.md#9-vollständige-kontolöschung-mit-umfangreich-verknüpften-testkonten-absichern)**:
+  Bestehenden partiellen Persistenznachweis um reale Kontoverknüpfungen im
+  aktuellen Schema erweitern. Selbstlöschung, Fristablauf und Adminlöschung nach
+  Commit aus frischem Lesekontext prüfen, einschließlich Token/2FA, Avatar,
+  Anmeldewegen, gespeicherten Anmeldungen, Sitzungen, Mail-/Benachrichtigungsdaten
+  und gemischt eigenen/fremden Ticketdaten. Auch Beziehungen ohne Fremdschlüssel,
+  unveränderte Kontrollkonten, verweigerte alte Zugriffe und Rollback abdecken.
+  Temporären Löschbestätigungsauftrag samt Entfernung und unklarem Versandausgang
+  getrennt nachweisen. Gefundene Löschlücken beheben und verbleibende Grenzen
+  sichtbar erhalten; keine Vollständigkeit allein aus Cascades oder Mocks ableiten.
+
+- Beschränkter Anmeldezustand selbst deaktivierter Konten, **wartend auf Nachtaufgabe 8**:
+  Erstnachweis vor Statusanzeige, Portal-/Anbieteranmeldung, fehlende normale
+  Berechtigungen und Remember-me-Freigabe sowie saubere Abmeldung absichern.
+  Administrative Sperren, falsche Anmeldedaten und abgelaufene Fristen abdecken.
+  Erneuten Versand und gültige/ungültige Linkbestätigung mit vorhandenen
+  Kontofristen, Token- und Versandregeln prüfen.
+
+- Kontostatus-Mailvorlagen und Reaktivierungsbestätigung, **wartend auf Nachtaufgabe 7**:
+  Lokalisierte vollständige HTML-Vorlagen und korrekte Ziel-URLs/Fristdaten für
+  alle vier Ereignisse prüfen. Löschbestätigung bei sofortiger und automatischer
+  Löschung sowie erneute Linkanforderung abdecken. Reaktivierungsbestätigung nur
+  nach erfolgreicher Kontoänderung einreihen; ungültige Links, zurückgerollte
+  Änderungen und Entwicklungskonten erzeugen keine solche Mail.
+
+- Rückmeldungen nach Kontodeaktivierung/-löschung, **wartend auf Nachtaufgabe 6**:
+  Bestätigten Transaktionserfolg, Rollback und unklaren Ausgang unterscheiden.
+  Ein Mailproblem nach bestätigter Kontoänderung darf diese nicht als gescheitert
+  darstellen. Einmalige Meldungsübergabe über Logout und die Anmeldung sowie
+  unterdrückte Mailhinweise bei Entwicklungskonten gezielt absichern.
 
 Menschliche Abnahmen bleiben im
 [manuellen Katalog](manual-tests/README.md).

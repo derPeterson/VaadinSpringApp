@@ -159,6 +159,9 @@ zusätzlich Superadmins, den internen Mitteilungsversand, Anmeldeanbieter und di
 rollenbezogenen Zwei-Faktor-Regeln. Die letzte aktive
 Superadminberechtigung ist geschützt; ein Admin darf sich keine höheren Rechte geben.
 
+Die vollständige Einordnung steht unter [Rollen und Berechtigungen](rollen.md):
+zusätzliche Rechte pro Rolle, gemeinsame Kontofunktionen und geltende Ausnahmen.
+
 **Wiederherstellungsanfragen** bieten eine kleine gemeinsame Vorgangsliste mit
 Übernahme, öffentlichen Antworten, internen Vermerken und vorbereiteter Anleitung.
 Nach dem ersten Anmeldenachweis können ausgesperrte Benutzer ausschließlich ihre

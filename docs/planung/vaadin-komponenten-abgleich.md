@@ -68,16 +68,20 @@ unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
   echte Änderungen sind gezielt in DE/EN per JUnit geprüft. Die reale Passwortmanager-
   Nachprüfung bleibt unter [HUM-11](../manual-tests/README.md#hum-11) offen.
 
-- **Vorerst zurückgestellte Ergänzung:** Ungespeicherte Eingaben auch beim Browser-Refresh
+- **Für die Nachtarbeit freigegebene Ergänzung:** Ungespeicherte Eingaben auch beim Browser-Refresh
   (F5, Strg+R und Aktualisieren-Schaltfläche), beim Schließen eines Tabs oder
   Browserfensters sowie beim Verlassen über die Adresszeile oder externe
   Navigation schützen. Der bisherige Schutz erfasst diese Browseraktionen nicht.
   Vor der Umsetzung die passende öffentliche Vaadin-/Browseranbindung prüfen.
+  Umfang und Grenzen stehen in [Nachtaufgabe 5](nachtaufgaben.md#5-formularschutz-um-browseraktionen-erweitern).
   Der dazugehörige automatisierte Nachtest steht zentral im
   [Testbedarf](../testbedarf.md#browser-tests).
 
 ### Eigenes Konto deaktivieren oder löschen
 
+- Die freigegebenen Darstellungsanpassungen an beiden Bestätigungsdialogen stehen
+  in [Nachtaufgabe 6](nachtaufgaben.md#6-dialoge-zum-deaktivieren-und-endgültigen-löschen-angleichen).
+  Sie werden erst nach dem Startsignal für die Nachtarbeit umgesetzt.
 - **Abnahme:** Unter „Mein Konto → Sicherheit → Konto verwalten“ die
   Identitätsbestätigung, Selbstdeaktivierung mit E-Mail,
   Reaktivierung, Admin-Sperre, Erinnerung und Löschung mit isolierten Testdaten

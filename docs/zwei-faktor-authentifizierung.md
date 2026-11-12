@@ -257,6 +257,10 @@ sieht den Zähler auch ohne aktiviertes „Beobachten“. Ein neuer Admin kann �
 Nachrichten als ungelesen sehen, sofern der aktuelle Ticketstatus und seine
 Zuständigkeit beziehungsweise Beobachtung das vorsehen.
 
+Die [Rollenübersicht](rollen.md) ordnet die administrativen Zusatzrechte und die
+gemeinsamen Kontofunktionen ein. Die folgenden Ticketregeln präzisieren deren
+Verhalten für Zuständigkeit und Benachrichtigungen.
+
 | Ereignis | Glockenhinweis und Empfänger |
 | --- | --- |
 | Neues Ticket | Alle aktivierten, bestätigten Admins und Superadmins erhalten einen Hinweis mit „Zum Ticket“ |

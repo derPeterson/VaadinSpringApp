@@ -13,6 +13,7 @@ Sie wird ausschließlich auf der Entwicklungsmaschine mit austauschbaren Testdat
 | die Codex-Arbeitsabläufe nutzen | [Arbeiten mit Codex](docs/codex-skills.md) |
 | die Docker-Testumgebung mit Mailpit verwenden | [Docker](docs/docker/README.md) |
 | Anmeldung, Rechte und Sitzungen verstehen | [Sicherheit](docs/sicherheit.md) |
+| Befugnisse je Rolle nachschlagen | [Rollen und Berechtigungen](docs/rollen.md) |
 | Authenticator, Ersatzcodes und Wiederherstellung einrichten | [Zwei-Faktor-Authentifizierung](docs/zwei-faktor-authentifizierung.md) |
 | Ticketzustände, Ungelesen-Zähler und Glockenhinweise nachschlagen | [Ticketregeln](docs/zwei-faktor-authentifizierung.md#ticketzustände-zähler-und-glocke) |
 | Farben, Komponenten oder das Theme anpassen | [Theme](docs/theme.md) |
