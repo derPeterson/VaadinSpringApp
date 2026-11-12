@@ -100,12 +100,12 @@ class UserActivityTimePersistenceTest {
           .unwrap(Session.class)
           .doWork(connection -> {
             try (ResultSet columns =
-                connection.getMetaData().getColumns(null, null, "USERS", "LASTACTIVITY")) {
+                connection.getMetaData().getColumns(null, null, "USERS", "LAST_ACTIVITY")) {
               assertTrue(columns.next());
               assertEquals(java.sql.Types.TIMESTAMP_WITH_TIMEZONE, columns.getInt("DATA_TYPE"));
             }
             try (PreparedStatement statement =
-                connection.prepareStatement("select lastActivity from users where id = ?")) {
+                connection.prepareStatement("select last_activity from users where id = ?")) {
               statement.setLong(1, secondId);
               try (ResultSet values = statement.executeQuery()) {
                 assertTrue(values.next());
