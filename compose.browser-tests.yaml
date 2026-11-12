@@ -66,6 +66,9 @@ services:
     extends:
       file: compose.yaml
       service: mailpit
+    environment:
+      # Nur die isolierte Testfixture: ohne explizite API-Konfiguration keine Fehler.
+      MP_ENABLE_CHAOS: "true"
     ports: !override
       - "127.0.0.1:${BROWSER_TEST_MAILPIT_PORT:-18026}:8025"
 

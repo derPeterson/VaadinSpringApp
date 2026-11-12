@@ -181,6 +181,9 @@ public final class ConfigurationCatalog {
           MAIL_DEBUG ->
           AdminConfigGroup.SMTP;
       case EMAIL_QUEUE_POOL_SIZE,
+          EMAIL_QUEUE_CLEANUP_ENABLED,
+          EMAIL_QUEUE_CLEANUP_INTERVAL,
+          EMAIL_QUEUE_CLEANUP_MINIMUM_AGE,
           EMAIL_QUEUE_CAPACITY,
           EMAIL_QUEUE_MAX_RETRY,
           EMAIL_QUEUE_RETRY_DELAY_SECONDS,
@@ -200,6 +203,20 @@ public final class ConfigurationCatalog {
       case MANAGE_FACTOR -> messageProperties.getTwoFactorRuleFactor();
       case MANAGE_RECOVERY_CODES -> messageProperties.getTwoFactorRuleRecovery();
       case SECURITY_CONFIGURATION -> messageProperties.getTwoFactorRuleConfiguration();
+    };
+  }
+
+  public static boolean isSuperadminOnly(ConfigEntry configEntry) {
+    return group(configEntry).isSuperadminOnly() || isMailCleanupSetting(configEntry);
+  }
+
+  public static boolean isMailCleanupSetting(ConfigEntry configEntry) {
+    return switch (configEntry) {
+      case EMAIL_QUEUE_CLEANUP_ENABLED,
+          EMAIL_QUEUE_CLEANUP_INTERVAL,
+          EMAIL_QUEUE_CLEANUP_MINIMUM_AGE ->
+          true;
+      default -> false;
     };
   }
 

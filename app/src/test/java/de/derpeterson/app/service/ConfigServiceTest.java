@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.argThat;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -22,6 +23,7 @@ import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
 import de.derpeterson.app.security.AdminRolePolicy;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -39,6 +41,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 
@@ -57,6 +60,36 @@ class ConfigServiceTest {
             transactionManager,
             new MockEnvironment(),
             mock(AdminRolePolicy.class));
+  }
+
+  @Test
+  void cleanupSettingsRequireSuperadminForReadingAndWriting() {
+    AdminRolePolicy rolePolicy = mock(AdminRolePolicy.class);
+    doThrow(new AccessDeniedException("Denied")).when(rolePolicy).requireSuperadmin();
+    ConfigService protectedConfigService =
+        new ConfigService(configRepository, transactionManager, new MockEnvironment(), rolePolicy);
+    for (ConfigEntry configEntry :
+        List.of(
+            ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED,
+            ConfigEntry.EMAIL_QUEUE_CLEANUP_INTERVAL,
+            ConfigEntry.EMAIL_QUEUE_CLEANUP_MINIMUM_AGE)) {
+      assertThrows(
+          AccessDeniedException.class,
+          () -> protectedConfigService.getForAdministration(configEntry));
+      assertThrows(
+          AccessDeniedException.class,
+          () -> protectedConfigService.set(configEntry, configEntry.getDefaultValueString()));
+    }
+    verifyNoInteractions(configRepository, transactionManager);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"PT0S", "PT59S", "PT-1S"})
+  void cleanupDurationsBelowOneMinuteAreRejectedBeforeWriting(String durationValue) {
+    assertThrows(
+        IllegalArgumentException.class,
+        () -> configService.set(ConfigEntry.EMAIL_QUEUE_CLEANUP_MINIMUM_AGE, durationValue));
+    verifyNoInteractions(configRepository, transactionManager);
   }
 
   @ParameterizedTest

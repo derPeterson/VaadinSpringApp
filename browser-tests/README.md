@@ -113,6 +113,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `configuration-follow-up` | Feldhilfen, Zeitfelder und Formularschutz einschließlich Anbieter-/2FA-Entwürfen auf Desktop und Smartphone, bestehende und neue Sitzungsfristen sowie SMTP-Wechsel | 12 |
 | `configuration-field-help` | Wirksamkeit in den allgemeinen Feldhilfen, bei beiden Anmeldeanbietern und in den 2FA-Regeln auf Desktop und Smartphone | 8 |
 | `operations` | Persistenz ohne Bootstrap, zwei eigene SMTP-Ziele und echte begrenzte Transportausfälle mit Wiederanlauf | 3 |
+| `mail-queue-resolution` | Echte SMTP-Ablehnung und Verbindungsabbruch nach DATA; Superadminrechte, Mindestalter, manuelle/automatische Bereinigung ohne Wiederholung und neuer Verifikationslink; Feldhilfen auf Desktop/Smartphone | 3 |
 | `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
 | `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 21 |
@@ -191,6 +192,15 @@ Die Suite `operations` verwendet zusätzlich ein zweites eigenes Mailpit ohne
 Hostports. Sie prüft den Wechsel der SMTP-Konfiguration ohne Neustart sowie echte
 Verbindungsfehler mit Retry und terminalem Ende. Anwendungsneustarts verwenden
 dieselbe eigene Datenbank und deaktivieren Bootstrap ausdrücklich.
+
+`mail-queue-resolution` verwendet einen eigenen kurzlebigen SMTP-Testdienst, der
+nach DATA ohne finale Antwort schließt. So entsteht ein tatsächlich ungeklärter
+Ausgang. Ein getrennter Fall erzeugt über die offizielle
+[Mailpit-Chaos-API](https://mailpit.axllent.org/docs/integration/chaos/) eine klare
+451-Ablehnung. Ohne ausdrückliche Fehlerkonfiguration bleiben alle Wahrscheinlichkeiten
+null; der Test setzt sie im `finally` zurück. Die Anwendung wird ausschließlich über
+die UI bedient, ohne Queuezeilen zu injizieren. Die Mindestalter-/Intervallgrenzen und
+die Minutenfrist vor einer neuen Verifikationsanforderung werden tatsächlich abgewartet.
 
 Der Elternrunner kompiliert Shared-/Browserquellen und baut das Anwendungsimage
 einmal vor der Verteilung. Alle Worker verwenden dieselbe unveränderliche Image-ID.

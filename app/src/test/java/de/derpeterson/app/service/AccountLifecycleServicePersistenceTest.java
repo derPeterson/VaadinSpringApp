@@ -628,7 +628,8 @@ class AccountLifecycleServicePersistenceTest {
             userRepository,
             transactionManager,
             mock(AdminNotificationAttemptRepository.class),
-            mock(EmailQueueWorkerPool.class));
+            mock(EmailQueueWorkerPool.class),
+            new EmailQueueDispatchGuard(null));
     createLifecycleService();
   }
 

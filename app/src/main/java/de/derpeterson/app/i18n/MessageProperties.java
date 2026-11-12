@@ -128,6 +128,13 @@ public class MessageProperties extends MessageTexts implements Serializable {
               getAdminConfigEffectiveNextQueueRun(), getAdminConfigEffectiveQueueCurrentBatch());
       case EMAIL_QUEUE_RETRY_DELAY_SECONDS ->
           List.of(getAdminConfigEffectiveNextQueueRun(), getAdminConfigEffectiveWaitingRetries());
+      case EMAIL_QUEUE_CLEANUP_ENABLED,
+          EMAIL_QUEUE_CLEANUP_INTERVAL,
+          EMAIL_QUEUE_CLEANUP_MINIMUM_AGE ->
+          List.of(
+              getAdminQueueCleanupEffectiveNextRun(),
+              getAdminQueueCleanupEffectiveExisting(),
+              getAdminQueueCleanupEffectiveRunning());
       case EMAIL_QUEUE_SENT_LIVE_DURATION -> List.of(getAdminConfigEffectiveCleanupExisting());
       case REMEMBER_ME_DURATION ->
           List.of(
@@ -203,6 +210,9 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case EMAIL_QUEUE_CAPACITY -> getAdminConfigEntryEmailQueueCapacity();
       case EMAIL_QUEUE_MAX_RETRY -> getAdminConfigEntryEmailQueueMaxRetry();
       case EMAIL_QUEUE_RETRY_DELAY_SECONDS -> getAdminConfigEntryEmailQueueRetryDelay();
+      case EMAIL_QUEUE_CLEANUP_ENABLED -> getAdminQueueCleanupEnabled();
+      case EMAIL_QUEUE_CLEANUP_INTERVAL -> getAdminQueueCleanupInterval();
+      case EMAIL_QUEUE_CLEANUP_MINIMUM_AGE -> getAdminQueueCleanupMinimumAge();
       case EMAIL_QUEUE_SENT_LIVE_DURATION -> getAdminConfigEntryEmailQueueSentLiveDuration();
     };
   }
@@ -254,6 +264,9 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case EMAIL_QUEUE_CAPACITY -> getAdminConfigEntryEmailQueueCapacityTooltip();
       case EMAIL_QUEUE_MAX_RETRY -> getAdminConfigEntryEmailQueueMaxRetryTooltip();
       case EMAIL_QUEUE_RETRY_DELAY_SECONDS -> getAdminConfigEntryEmailQueueRetryDelayTooltip();
+      case EMAIL_QUEUE_CLEANUP_ENABLED -> getAdminQueueCleanupEnabledHelp();
+      case EMAIL_QUEUE_CLEANUP_INTERVAL -> getAdminQueueCleanupIntervalHelp();
+      case EMAIL_QUEUE_CLEANUP_MINIMUM_AGE -> getAdminQueueCleanupMinimumAgeHelp();
       case EMAIL_QUEUE_SENT_LIVE_DURATION -> getAdminConfigEntryEmailQueueSentLiveDurationTooltip();
     };
   }

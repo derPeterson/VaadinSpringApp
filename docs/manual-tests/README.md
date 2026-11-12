@@ -207,10 +207,15 @@ Aktionen mit eigenen isolierten Testkonten ausführen.
 
 **Einordnung:** Menschliche Abnahme.
 
-**Voraussetzung:** Nur eine Schreibtischübung mit erfundenen Versandbelegen; Recovery-Vertrag: docs/mailqueue.md im Projekt.
+**Voraussetzung:** Nur eine Schreibtischübung mit erfundenen Versandbelegen;
+[Mailqueue-Vertrag](../mailqueue.md#ergebnisse-und-wiederholung).
 
 1. Szenario A: SMTP-Annahme belegt, Datenbank-Ergebnis fehlt. Szenario B: nur Timeout/fehlende Postfachmail. Szenario C: Nichtversand positiv belegt.
-2. Je Szenario Entscheidung begründen: kein erneuter Versand bei Annahme; bei unklarem Ausgang Quarantäne/Eskalation; bei belegtem Nichtversand erst autorisierte und kontrollierte Wiederfreigabe prüfen.
+2. Je Szenario Entscheidung begründen: keine automatische Wiederholung. Ein
+   Superadmin kann eine manuelle Sammelbereinigung bestätigen oder eine automatische
+   Regel freigeben. Beide beenden nur alte, nicht mehr laufende Versuche ohne Versand.
+   Das Ergebnis bleibt ungeklärt; eine spätere neue Anforderung ist eine eigene Aktion und kann bei
+   bereits angenommener alter Mail eine weitere Nachricht verursachen.
 3. Benötigte Queue-ID, Versandfenster, beendete Worker, Providerbelege und Tokenzustand benennen. Einen widersprechenden oder fehlenden Beleg bewusst berücksichtigen.
 
 **Erwartet:** Entscheidung und Begründung folgen dem Recovery-Vertrag. Fehlende Mail und alter Claim gelten nicht als Nichtversandbeweis. Diese Übung verändert keine Daten und führt keinen Retry aus.
@@ -336,20 +341,15 @@ Systemeinstellungen festhalten.
 
 ### HUM-11 · Passwortmanager bei Benutzerformular und Registrierung
 
-**Offene Browserprüfung.** In der eigenen Testumgebung mit einem Browserprofil,
-das die Portal-Anmeldedaten gespeichert hat, als Admin das eigene Konto über
-Benutzerverwaltung → Bearbeiten öffnen. Die Felder für neues Passwort und
-Bestätigung müssen leer bleiben. Unverändertes Schließen darf keinen
-Verwerfen-Dialog zeigen. Anschließend einen Namen ändern, beim Schließen den
-Entwurf behalten und danach die Änderung zurücknehmen: Nun muss direktes
-Schließen wieder möglich sein. Die explizite Eingabe eines neuen Passworts
-muss weiterhin als Änderung geschützt werden. Mit tatsächlich verwendetem
-Browser/Passwortmanager in DE/EN prüfen und das Ergebnis festhalten.
+**Vom Benutzer geprüft und abgenommen.** Beim Bearbeiten des eigenen Kontos tritt
+die ungewollte Passwortvorbelegung mit anschließender Verwerfen-Warnung nicht mehr auf.
+Bei späteren Änderungen am Formular mit dem tatsächlich verwendeten Browserprofil
+prüfen: Neue Passwortfelder starten leer, unverändertes Schließen zeigt keinen
+Verwerfen-Dialog. Eigene Passworteingaben und echte Formularänderungen bleiben geschützt.
 
-Nach dem Abmelden die Registrierung mit demselben Browserprofil frisch öffnen. Beide E-Mail-Felder
-und beide Passwortfelder sollen ohne automatische Übernahme der gespeicherten
-Portal-Anmeldedaten starten. Besonders die E-Mail-Bestätigung darf nicht als
-Anmeldefeld behandelt werden. Manuelle Eingaben, Passwortgenerierung und eine
-bewusste Auswahl im Passwortmanager bleiben möglich. Nach einem Sprachwechsel
-müssen selbst eingegebene Werte erhalten bleiben. Der reale Autofill-Nachtest
-dieser Kennzeichnung steht aus.
+Bei der Selbstregistrierung ist die automatische Übernahme bekannter Kontaktdaten
+erwünscht. Auch Passwortgenerierung und die bewusste Auswahl im Passwortmanager
+bleiben möglich. Das ist kein offener Autofill-Fehler. Der native Hinweis
+`new-password` kennzeichnet die beiden Felder für das neu anzulegende Passwort.
+Beide E-Mail-Felder verwenden den nativen Hinweis `email`. Welche Angaben der
+Browser tatsächlich anbietet oder einsetzt, entscheidet dessen gespeichertes Profil.

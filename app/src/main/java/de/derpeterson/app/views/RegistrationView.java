@@ -445,13 +445,13 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     lastNameField.setWidthFull();
 
     this.emailField = new EmailField(messageProperties.getPublicEmailField());
-    emailField.setAutocomplete(Autocomplete.OFF);
+    emailField.setAutocomplete(Autocomplete.EMAIL);
     emailField.setPattern(UserInputRules.EMAIL_REGEX);
     emailField.setClearButtonVisible(true);
     emailField.setWidthFull();
 
     this.confirmEmailField = new EmailField(messageProperties.getPublicConfirmEmailField());
-    confirmEmailField.setAutocomplete(Autocomplete.OFF);
+    confirmEmailField.setAutocomplete(Autocomplete.EMAIL);
     confirmEmailField.setPattern(UserInputRules.EMAIL_REGEX);
     confirmEmailField.setClearButtonVisible(true);
     confirmEmailField.setWidthFull();

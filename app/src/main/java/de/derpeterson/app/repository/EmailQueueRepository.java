@@ -28,6 +28,10 @@ public interface EmailQueueRepository extends JpaRepository<EmailQueueEntity, Lo
   Optional<EmailQueueEntity> lockById(Long id);
 
   @Query(
+      "select e from EmailQueueEntity e where e.status = 'IN_PROGRESS' and e.processingStartedAt <= :cutoff order by e.processingStartedAt, e.id")
+  List<EmailQueueEntity> findUnresolvedBefore(LocalDateTime cutoff, Pageable pageable);
+
+  @Query(
       "select count(e) > 0 from EmailQueueEntity e where e.userEntity = :userEntity and e.emailType = :emailType and e.status in :statuses and (e.recipient is null or e.recipient = e.userEntity.email)")
   boolean existsOpenEmailForCurrentAddress(
       UserEntity userEntity, EmailType emailType, Collection<EmailStatus> statuses);

@@ -716,3 +716,6 @@ vaadin-dialog[theme~="cosmos"].admin-user-dialog::part(overlay) {
         backdrop-filter: none;
     }
 }
+
+/* Separate Verwaltungsaktion, ueber beide Konfigurationsspalten. */
+.admin-mail-queue-resolution { grid-column: 1 / -1; }

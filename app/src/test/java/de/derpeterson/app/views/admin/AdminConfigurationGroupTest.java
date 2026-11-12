@@ -64,6 +64,7 @@ class AdminConfigurationGroupTest {
     when(vaadinSession.hasLock()).thenReturn(true);
     VaadinSession.setCurrent(vaadinSession);
     configService = mock(ConfigService.class);
+    when(configService.canAdminister(any(ConfigEntry.class))).thenReturn(true);
     when(configService.getForAdministration(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     configurationSection =
@@ -77,6 +78,31 @@ class AdminConfigurationGroupTest {
     configurationSection = null;
     testUi = null;
     vaadinSession = null;
+  }
+
+  @Test
+  void cleanupSettingsAreVisibleOnlyWithTheirAdministrativePermission() {
+    configurationSection.showGroup(AdminConfigGroup.QUEUE);
+    assertTrue(
+        visibleEntries()
+            .containsAll(
+                List.of(
+                    ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED,
+                    ConfigEntry.EMAIL_QUEUE_CLEANUP_INTERVAL,
+                    ConfigEntry.EMAIL_QUEUE_CLEANUP_MINIMUM_AGE)));
+
+    when(configService.canAdminister(any(ConfigEntry.class))).thenReturn(false);
+    configurationSection.showGroup(AdminConfigGroup.GENERAL);
+    configurationSection.showGroup(AdminConfigGroup.QUEUE);
+
+    assertEquals(
+        List.of(
+            ConfigEntry.EMAIL_QUEUE_POOL_SIZE,
+            ConfigEntry.EMAIL_QUEUE_CAPACITY,
+            ConfigEntry.EMAIL_QUEUE_MAX_RETRY,
+            ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS,
+            ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION),
+        visibleEntries());
   }
 
   @Test

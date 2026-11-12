@@ -90,24 +90,61 @@ entsprechend der ausdrücklich begrenzten Nachtfreigabe.
 
 ## Grenzen und offene Arbeiten
 
-### Autofill beim Bearbeiten des eigenen Kontos
+### Autofill bei Benutzerformularen
 
-Reproduktion: Mit gespeichertem Browserpasswort in der Benutzerverwaltung das eigene
-Konto öffnen und ohne Eingabe schließen. Der Browser hatte das Passwortfeld schon
-gefüllt, sodass der Änderungsschutz einen tatsächlich geänderten Formularwert sah.
-Die Kennzeichnung ist auf `autocomplete="new-password"` korrigiert, das E-Mail-Feld
-verwendet `email`. Unverändertes Schließen, echte Eingaben und Zurücknehmen sind
-gezielt per JUnit abgesichert. Der Nachtest mit dem echten Passwortmanager bleibt
-unter [HUM-11](manual-tests/README.md#hum-11) offen, ebenso das dort beschriebene
-Autofill bei der Registrierung. Ein isoliertes leeres Testprofil ersetzt ihn nicht.
+Die Passwortfelder im Benutzereditor sind als `new-password` gekennzeichnet.
+Der Benutzer hat bestätigt, dass die frühere automatische Passwortvorbelegung und
+die dadurch ausgelöste Verwerfen-Warnung nicht mehr auftreten. Dieser Nachtest ist
+abgenommen. Die gezielten JUnit-Prüfungen für unverändertes Schließen, echte Eingaben
+und Zurücknehmen bleiben erhalten. Bei der Selbstregistrierung ist Autofill für
+Kontaktdaten und die bewusste Passwortmanager-Nutzung erwünscht; dies ist kein Fehler.
+Die Hinweise für spätere Formularänderungen stehen unter
+[HUM-11](manual-tests/README.md#hum-11).
 
 ### Versand mit unklarem Ergebnis
 
-Ein Auftrag mit unklarem SMTP-Ausgang bleibt bewusst auf `IN_PROGRESS`. Die erneute
-Anforderung wird jetzt ehrlich abgelehnt, statt einen neuen Versand zu behaupten.
-Eine sichere administrative Auflösung bleibt offen; ein möglicherweise laufender
-Versand wird nicht automatisch zurückgesetzt. Details stehen in
-[BUGS](../BUGS.md) und im [Mailqueue-Vertrag](mailqueue.md#ergebnisse-und-wiederholung).
+Klare SMTP-Ablehnungen werden anhand der typisierten Transportantwort eingeordnet:
+4xx nutzt die begrenzten Wiederholungen, 5xx führt unmittelbar zu `FAILED`.
+Ein verlorener Abschluss nach DATA bleibt dagegen `IN_PROGRESS`; ein neuer
+Versand wird dadurch nicht fälschlich zugesagt. Die gemeinsame manuelle und
+optionale automatische Bereinigung beendet alte Claims ohne erneuten Versand
+als `UNKNOWN`. Laufende SMTP-Versuche bleiben geschützt, auch in einer zweiten
+lokalen JVM. Die Bestätigungsmail eines bereits gelöschten Kontos behält nach
+der Bereinigung keine Queueinhalte. Der [Mailqueue-Vertrag](mailqueue.md)
+beschreibt Mindestalter, Intervalle und Grenzen.
+
+334 gezielte JUnit-Prüfungen und anschließend 84 Nachprüfungen nach den
+Namens-/Gliederungskorrekturen sind erfolgreich; diese Gruppen überlappen.
+Geprüft sind Transportklassifizierung, Alter des letzten Claims einschließlich
+Grenzwert, abgeschaltete Automatik, Intervall, begrenzte Menge, frische Rechte,
+Rollback und Sperrfreigabe einschließlich eigenem Kindprozess. Der gespeicherte
+Laufstand bleibt beim Erzeugen einer neuen Dienstinstanz in derselben H2-Datenbank
+erhalten. Ein kompletter Anwendungsneustart für diesen Laufstand wurde nicht
+zusätzlich im Browser ausgeführt. 105 Browser-Helfertests, Spotless und Checkstyle
+sind erfolgreich. Der reguläre optimierte Anwendungsbuild samt Anwendungstests
+und der isolierte Start sind erfolgreich.
+
+Die Suite `mail-queue-resolution` ist mit **je drei erfolgreichen Fällen in DE und
+EN** bei 1280 und 390 px auf demselben unveränderten Image
+`sha256:b93973d6960fd0dd5f3a823d8ab21b11aaa73d01845b8e107c7d678280732865`
+geprüft. Abgedeckt sind Superadmin-/Adminsicht, native Felder und Feldhilfen,
+Bestätigung/Abbrechen, noch zu junge Claims, manuelle und automatische Bereinigung,
+Ergebnisanzeige und genau ein ursprünglicher Versandversuch. Danach wird ein neuer
+Verifikationslink ausdrücklich angefordert, in Mailpit empfangen und erfolgreich
+verwendet. Ein eigener SMTP-Testdienst verliert die finale Antwort nach DATA;
+eine echte 451-Ablehnung aus Mailpit erreicht dagegen das konfigurierte Retrylimit.
+Die Screenshots in beiden Breiten und Sprachen wurden gesichtet. Ein zunächst in
+die schließende Feldhilfe fallender Screenshot wartet nun auf das tatsächliche
+Verschwinden des Overlays. Beide abschließenden Läufe enthalten diese Testkorrektur.
+Aufbau und Abbau beider isolierter Umgebungen sind erfolgreich. Ein vorangegangener
+Versuch konnte wegen beendetem Docker Desktop noch keine Tests starten; er zählt
+nicht als erfolgreicher Nachweis.
+
+Die Registrierung weist beide E-Mail-Felder als `email` aus; beide Passwortfelder
+bleiben `new-password`. Ein echtes gespeichertes Browserprofil wurde dabei nicht
+benutzt. Bestehende Daten und die laufende Entwicklungsanwendung bleiben unberührt.
+Das geänderte aktuelle Schema benötigt eine frische Entwicklungsdatenbank.
+Diese gezielten Nachprüfungen ersetzen keine große Testrunde des gesamten Branches.
 
 ### Sonar, optionale Umbauten und menschliche Sichtung
 
@@ -118,8 +155,9 @@ wurde ausgeführt; ein grünes Gate für den Nachtstand ist damit nicht belegt.
 Die aktuelle QA-Arbeitsablage bleibt deshalb getrennt von der alten Erfolgsbaseline.
 
 Die integrierte Einheitenauswahl und die einheitlichen Seitenpfade sind umgesetzt.
-Die Gestaltung steht im [Theme-Standard](theme.md); die gemeinsame Sichtung der
-[Seitenpfade](planung/seitenpfade.md) bleibt offen. Ihre gezielte Suite
+Die Gestaltung steht im [Theme-Standard](theme.md). Die Badge-Darstellungen und
+[Seitenpfade](theme.md#seitenpfade-und-navigationsziele) sind vom Benutzer abgenommen.
+Die gezielte Suite
 `breadcrumbs` ist in DE/EN mit jeweils drei erfolgreichen Browserfällen geprüft,
 einschließlich Formularschutz, Sprachwechsel und gesperrter Sicherheitsabläufe.
 
@@ -167,8 +205,8 @@ noch einen eigenen vollständigen SMTP-Gesamtlauf für jede Vorlage.
 Aufbau und Abbau der isolierten Umgebungen sind erfolgreich; die laufende
 Entwicklungsanwendung und ihre Daten blieben unverändert. Dies ersetzt keinen neuen
 vollständigen Browser-Gesamtlauf oder Sonar-Scan. Erledigter automatisierter
-[Testbedarf](testbedarf.md) ist entfernt; die gemeinsame Sichtung und die übrigen
-zurückgestellten Pakete bleiben im
+[Testbedarf](testbedarf.md) ist entfernt; die gemeinsame Sichtung der segmentierten
+Umschalter und die übrigen zurückgestellten Pakete bleiben im
 [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
 
 Browsernachweise verwenden Chromium bei Desktop- und Smartphonebreite; echte
@@ -176,5 +214,5 @@ Mobilgeräte, Passwortmanager und Mailprogramme bleiben im
 [manuellen Katalog](manual-tests/README.md). Der native Formularschutz ist kein
 Autosave und schützt nicht zuverlässig vor Absturz oder erzwungenem Prozessende.
 Für die aktuellen Umschalter sind Build, Anwendungsneustart und Browser-Refresh
-nötig; sie benötigen keine Datenbankänderung. Die gemeinsame Sichtung der neuen
-Komponenten bleibt offen.
+nötig; sie benötigen keine Datenbankänderung. Die gemeinsame Sichtung der
+segmentierten Umschalter bleibt offen.

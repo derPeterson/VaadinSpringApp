@@ -1437,6 +1437,44 @@ DE „Deutsch/Englisch“, EN „German/English“. Die gespeicherte Locale blei
 Beim Sprachwechsel wird auch der native Beschriftungsgeber neu gesetzt, damit
 Vaadin den bereits ausgewählten Feldwert ebenso aktualisiert wie die Auswahlliste.
 
+## Seitenpfade und Navigationsziele
+
+Die blauen Elternpfade und der große aktuelle Seitentitel sind wie folgt zugeordnet.
+Untertabs bleiben Tabs und werden nicht zusätzlich als Breadcrumb oder Seitentitel
+wiederholt. Alle Beschriftungen folgen dem gemeinsamen DE-/EN-Textkatalog.
+Der manuelle Breadcrumb-Modus berücksichtigt die vorhandenen Queryparameter.
+
+| Bereich | Blauer Elternpfad | Große Überschrift |
+| --- | --- | --- |
+| Besucherseiten einschließlich öffentlicher Startseite, Anmeldung, Registrierung und Reset | `PORTAL` | Aktueller Seitentitel |
+| Angemeldete Startseite | `PORTAL` | Startseite |
+| Persönliche Daten, Sicherheit, Geräte & Sitzungen | `PORTAL / MEIN KONTO` | Jeweiliger Seitentitel |
+| Eigene Benachrichtigungen | `PORTAL` | Benachrichtigungen |
+| Admin-Dashboard, Benutzerverwaltung, Tickets und Benachrichtigungen | `ADMINISTRATION` | Jeweiliger Seitentitel |
+| Sämtliche Konfigurationsgruppen einschließlich Anmeldeanbieter und 2FA | `ADMINISTRATION / KONFIGURATION` | Gewählte Gruppe |
+| Mailtest | `ADMINISTRATION` | Mail Test |
+| 2FA, Wiederherstellung und Hilfe aus dem Konto | `PORTAL / MEIN KONTO / SICHERHEIT` | Aktueller Schritt |
+| 2FA beim Login, ausstehende Verifikation und Reaktivierung | `PORTAL` | Aktueller Schritt |
+| Verifikations-, E-Mail-Änderungs- und Reaktivierungslinks | `PORTAL` | Aktueller Seitentitel |
+
+
+Portal führt zur Startseite, Mein Konto zu `account?section=profile` und Sicherheit
+zu `account?section=security&tab=portal`. Administration führt zum Dashboard,
+Konfiguration zur ersten für den Benutzer zulässigen Gruppe. In eingeschränkten
+Sicherheitsabläufen bleiben alle Pfaditems ohne Navigationsziel; die expliziten
+Zurück-/Abmeldeaktionen und serverseitigen Sperren bleiben maßgeblich.
+
+## Administrative Mailqueue-Bereinigung
+
+`AdminMailQueueCleanupComponent` ergänzt ausschließlich für Superadmins die
+Gruppe Mailqueue. Sie kombiniert native Vaadin-Layouts, die Standardwarnbox,
+Standardbuttons und eine dezente Ergebniszeile. Die Zeitfelder verwenden
+`CosmosDurationField`, der Schalter die vorhandene Checkbox-/Switch-Gestaltung.
+`PortalConfirmationDialog` übernimmt die ausdrückliche Bestätigung. Die lokale
+Klasse `.admin-mail-queue-resolution` in `cosmos-admin.css` spannt den Bereich
+über beide Konfigurationsspalten. Die Aktion ist unabhängig vom Speichern des
+Konfigurationsentwurfs. Der [Mailqueue-Vertrag](mailqueue.md) beschreibt ihre Grenzen.
+
 ## Segmentierte Auswahl mit nativen Tabs
 
 `CosmosSegmentedTabs<T>` verbindet einen typisierten Vaadin-`CustomField` mit nativen

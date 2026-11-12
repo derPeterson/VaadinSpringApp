@@ -34,6 +34,7 @@ import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorPolicies;
 import de.derpeterson.app.service.AdminAccountMailService;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.EmailQueueCleanupService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.RoleService;
@@ -213,6 +214,11 @@ public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObs
     supportTicketsComponent =
         new SupportTicketsComponent(messageProperties, supportTicketService, request, true);
     supportTicketsComponent.setNavigationListener(this::updateTicketLocation);
+  }
+
+  @Autowired
+  public void configureMailQueueCleanup(EmailQueueCleanupService emailQueueCleanupService) {
+    configurationSection.configureMailQueueCleanup(emailQueueCleanupService);
   }
 
   @Autowired

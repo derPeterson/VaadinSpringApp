@@ -28,6 +28,7 @@ import static org.mockito.Mockito.when;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
+import de.derpeterson.app.config.SmtpRejectionException;
 import de.derpeterson.app.model.AdminNotificationAttemptEntity;
 import de.derpeterson.app.model.EmailQueueEntity;
 import de.derpeterson.app.model.UserEntity;
@@ -37,14 +38,20 @@ import de.derpeterson.app.model.enums.EmailType;
 import de.derpeterson.app.repository.AdminNotificationAttemptRepository;
 import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.repository.UserRepository;
+import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Properties;
+import org.eclipse.angus.mail.smtp.SMTPSendFailedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -343,6 +350,7 @@ class EmailQueueServiceTest {
     doAnswer(
             call -> {
               assertEquals(EmailStatus.IN_PROGRESS, emailQueueEntry.getStatus());
+              assertEquals(LocalDateTime.now(clock), emailQueueEntry.getProcessingStartedAt());
               return null;
             })
         .when(emailService)
@@ -388,6 +396,38 @@ class EmailQueueServiceTest {
     } else {
       verify(emailService, never()).sendAdminEmail(any(), any(), any());
     }
+  }
+
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void explicitServerRejectionIsRetriedOnlyWhenTemporary(boolean temporaryRejection)
+      throws Exception {
+    EmailQueueEntity queueEntry = item(EmailStatus.PENDING, 0);
+    batch(queueEntry);
+    MimeMessage mimeMessage = new MimeMessage(Session.getInstance(new Properties()));
+    mimeMessage.setRecipients(Message.RecipientType.TO, "recipient@example.test");
+    SMTPSendFailedException smtpFailure =
+        new SMTPSendFailedException(
+            "DATA",
+            temporaryRejection ? 451 : 550,
+            "Synthetic rejection",
+            null,
+            null,
+            mimeMessage.getAllRecipients(),
+            null);
+    SmtpRejectionException rejection =
+        SmtpRejectionException.classify(
+            new MailSendException(Map.of(mimeMessage, smtpFailure)), mimeMessage);
+    if (!temporaryRejection) {
+      when(configService.getString(ConfigEntry.EMAIL_ADMIN)).thenReturn("admin@example.test");
+    }
+    doThrow(rejection).when(emailService).sendEmail(testUserEntity, "subject", "body");
+
+    emailQueueService.processQueue();
+
+    assertEquals(
+        temporaryRejection ? EmailStatus.PENDING : EmailStatus.FAILED, queueEntry.getStatus());
+    assertEquals(temporaryRejection ? 1 : 0, queueEntry.getRetryCount());
   }
 
   @Test
@@ -860,6 +900,16 @@ class EmailQueueServiceTest {
     verify(emailQueueRepository)
         .deleteByStatusAndLastRetryAtBefore(
             EmailStatus.FAILED, LocalDateTime.now(clock).minusDays(30));
+    verifyNoInteractions(configService, emailService, adminAttempts);
+  }
+
+  @Test
+  void unknownCleanupOnlyTargetsExplicitlyClosedEntriesOlderThanThirtyDays() {
+    emailQueueService.deleteResolvedUnknownEmails();
+
+    verify(emailQueueRepository)
+        .deleteByStatusAndCreatedAtBefore(
+            EmailStatus.UNKNOWN, LocalDateTime.now(clock).minusDays(30));
     verifyNoInteractions(configService, emailService, adminAttempts);
   }
 

@@ -24,6 +24,10 @@ Der Superadmin erhält zusätzlich zu den Adminrechten folgende Befugnisse:
 - Unter „Konfiguration → Kontoverwaltung“ die anwendungsweiten Aufbewahrungs-
   und Erinnerungsfristen für selbst deaktivierte Konten sehen und ändern.
   Direkte URLs und Speicherdienstaufrufe bleiben für andere Rollen gesperrt.
+- Unter „Konfiguration → Mailqueue“ ungeklärte Versandaufträge nach ausdrücklicher
+  Bestätigung ohne erneuten Versand beenden. Laufende Queueversände verhindern
+  die Bereinigung. Automatik, Intervall und Mindestalter sind ebenfalls nur für
+  Superadmins sichtbar und änderbar. [Vertrag und Grenzen](mailqueue.md#ergebnisse-und-wiederholung).
 - Rollenbezogene Zwei-Faktor-Regeln und die gemeinsamen Einstellungen dieser
   2FA-Konfiguration ändern. Dazu gehören auch ausdrücklich vorgesehene
   Entwicklungsoptionen; die normalen Identitätsnachweise werden dadurch nicht

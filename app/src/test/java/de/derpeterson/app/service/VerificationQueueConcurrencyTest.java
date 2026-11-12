@@ -695,7 +695,8 @@ class VerificationQueueConcurrencyTest {
           probes.userRepository(),
           manager,
           mock(de.derpeterson.app.repository.AdminNotificationAttemptRepository.class),
-          QueueTestWorkers.inline());
+          QueueTestWorkers.inline(),
+          new EmailQueueDispatchGuard(null));
     }
 
     @Bean

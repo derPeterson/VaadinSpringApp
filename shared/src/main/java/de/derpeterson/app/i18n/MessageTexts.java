@@ -4590,4 +4590,92 @@ public class MessageTexts {
   public String getAccountReactivatedMailBody() {
     return getTranslation("account.lifecycle.reactivatedBody");
   }
+
+  public String getAdminQueueResolutionTitle() {
+    return getTranslation("admin.queueResolution.title");
+  }
+
+  public String getAdminQueueResolutionDescription() {
+    return getTranslation("admin.queueResolution.description");
+  }
+
+  public String getAdminQueueResolutionConfirm() {
+    return getTranslation("admin.queueResolution.confirm");
+  }
+
+  public String getAdminQueueResolutionConsequence() {
+    return getTranslation("admin.queueResolution.consequence");
+  }
+
+  public String getAdminQueueResolutionBusy() {
+    return getTranslation("admin.queueResolution.busy");
+  }
+
+  public String getAdminQueueResolutionFailure() {
+    return getTranslation("admin.queueResolution.failure");
+  }
+
+  public String getAdminQueueCleanupEnabled() {
+    return getTranslation("admin.queueCleanup.enabled");
+  }
+
+  public String getAdminQueueCleanupEnabledHelp() {
+    return getTranslation("admin.queueCleanup.enabled.help");
+  }
+
+  public String getAdminQueueCleanupInterval() {
+    return getTranslation("admin.queueCleanup.interval");
+  }
+
+  public String getAdminQueueCleanupIntervalHelp() {
+    return getTranslation("admin.queueCleanup.interval.help");
+  }
+
+  public String getAdminQueueCleanupMinimumAge() {
+    return getTranslation("admin.queueCleanup.minimumAge");
+  }
+
+  public String getAdminQueueCleanupMinimumAgeHelp() {
+    return getTranslation("admin.queueCleanup.minimumAge.help");
+  }
+
+  public String getAdminQueueCleanupMinimumRule() {
+    return getTranslation("admin.queueCleanup.minimumRule");
+  }
+
+  public String getAdminQueueCleanupRun() {
+    return getTranslation("admin.queueCleanup.run");
+  }
+
+  public String getAdminQueueCleanupNeverRun() {
+    return getTranslation("admin.queueCleanup.neverRun");
+  }
+
+  public String getAdminQueueCleanupResult() {
+    return getTranslation("admin.queueCleanup.result");
+  }
+
+  public String getAdminQueueCleanupBusyResult() {
+    return getTranslation("admin.queueCleanup.busyResult");
+  }
+
+  public String getAdminQueueCleanupLimit() {
+    return getTranslation("admin.queueCleanup.limit");
+  }
+
+  public String getAdminQueueCleanupCompleted() {
+    return getTranslation("admin.queueCleanup.completed");
+  }
+
+  public String getAdminQueueCleanupEffectiveNextRun() {
+    return getTranslation("admin.queueCleanup.effective.nextRun");
+  }
+
+  public String getAdminQueueCleanupEffectiveExisting() {
+    return getTranslation("admin.queueCleanup.effective.existing");
+  }
+
+  public String getAdminQueueCleanupEffectiveRunning() {
+    return getTranslation("admin.queueCleanup.effective.running");
+  }
 }

@@ -8,9 +8,6 @@
   Die ausdrücklich zurückgestellten
   Pakete bleiben bis zu einer späteren Freigabe offen.
 
-- [ ] [Einheitliche Seitenpfade](docs/planung/seitenpfade.md) nach der
-  freigegebenen Umsetzung gemeinsam sichten.
-
 ## Künftige Anwendungsfunktionen
 
 - [ ] Nutzen und Aufwand der Rolle GUEST bei späteren Funktionserweiterungen

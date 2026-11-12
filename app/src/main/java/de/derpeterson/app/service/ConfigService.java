@@ -6,6 +6,7 @@ import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
 import de.derpeterson.app.security.AdminRolePolicy;
+import java.time.Duration;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -46,9 +47,14 @@ public class ConfigService {
   }
 
   private void requireAdministrativeAccess(ConfigEntry configEntry) {
-    if (ConfigurationCatalog.group(configEntry).isSuperadminOnly()) {
+    if (ConfigurationCatalog.isSuperadminOnly(configEntry)) {
       adminRolePolicy.requireSuperadmin();
     }
+  }
+
+  public boolean canAdminister(ConfigEntry configEntry) {
+    return !ConfigurationCatalog.isSuperadminOnly(configEntry)
+        || adminRolePolicy.canManageSuperadmins();
   }
 
   /** Nur die einmalige Startanlage: existierende Werte werden niemals verändert. */
@@ -180,6 +186,13 @@ public class ConfigService {
     Objects.requireNonNull(configEntry, "configEntry");
     Objects.requireNonNull(configValue, "value");
     requireAdministrativeAccess(configEntry);
+    if (ConfigurationCatalog.isMailCleanupSetting(configEntry)) {
+      if (configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED) {
+        parseConfigBoolean(configEntry, configValue);
+      } else if (Duration.parse(configValue).compareTo(Duration.ofMinutes(1)) < 0) {
+        throw new IllegalArgumentException("Mail cleanup durations must be at least one minute");
+      }
+    }
 
     if (ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT) {
       int configuredDays = Integer.parseInt(configValue);

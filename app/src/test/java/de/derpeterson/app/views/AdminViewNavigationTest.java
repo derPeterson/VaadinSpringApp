@@ -301,6 +301,9 @@ class AdminViewNavigationTest {
       context.registerBean(
           AdminAccountMailService.class, () -> mock(AdminAccountMailService.class));
       context.registerBean(
+          de.derpeterson.app.service.EmailQueueCleanupService.class,
+          () -> mock(de.derpeterson.app.service.EmailQueueCleanupService.class));
+      context.registerBean(
           de.derpeterson.app.security.mfa.TwoFactorAuthorization.class,
           () -> mock(de.derpeterson.app.security.mfa.TwoFactorAuthorization.class));
       context.registerBean(

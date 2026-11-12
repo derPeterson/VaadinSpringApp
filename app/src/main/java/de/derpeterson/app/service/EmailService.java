@@ -1,6 +1,7 @@
 package de.derpeterson.app.service;
 
 import de.derpeterson.app.config.ConnectionAwareJavaMailSender;
+import de.derpeterson.app.config.SmtpRejectionException;
 import de.derpeterson.app.helper.email.EmailLogo;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
@@ -92,6 +93,10 @@ public class EmailService {
     } catch (MailSendException e) {
       if (ConnectionAwareJavaMailSender.failedBeforeSending(e, mimeMessage)) {
         throw new MailPreparationException("Connection failed before this message was sent", e);
+      }
+      SmtpRejectionException smtpRejection = SmtpRejectionException.classify(e, mimeMessage);
+      if (smtpRejection != null) {
+        throw smtpRejection;
       }
       throw e;
     }

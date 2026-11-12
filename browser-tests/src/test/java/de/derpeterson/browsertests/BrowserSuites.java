@@ -15,6 +15,7 @@ import de.derpeterson.browsertests.suites.ExternalLoginLayoutBrowserTest;
 import de.derpeterson.browsertests.suites.InfrastructureBrowserTest;
 import de.derpeterson.browsertests.suites.LoginAttemptBrowserTest;
 import de.derpeterson.browsertests.suites.LoginLayoutBrowserTest;
+import de.derpeterson.browsertests.suites.MailQueueResolutionBrowserTest;
 import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
 import de.derpeterson.browsertests.suites.NotificationInboxBrowserTest;
 import de.derpeterson.browsertests.suites.PasswordResetBrowserTest;
@@ -52,6 +53,7 @@ final class BrowserSuites {
               NotificationInboxBrowserTest.class,
               InfrastructureBrowserTest.class,
               RestartAndSmtpBrowserTest.class,
+              MailQueueResolutionBrowserTest.class,
               AuthenticationBrowserTest.class,
               RegistrationBrowserTest.class,
               ExternalLoginBrowserTest.class,
@@ -95,6 +97,7 @@ final class BrowserSuites {
               UserFiltersBrowserTest.class,
               UserManagementBrowserTest.class);
       case "segmented-selection" -> List.of(SegmentedSelectionBrowserTest.class);
+      case "mail-queue-resolution" -> List.of(MailQueueResolutionBrowserTest.class);
       case "external-login-flow" -> List.of(ExternalLoginBrowserTest.class);
       case "external-login-settings" -> List.of(ExternalLoginBrowserTest.class);
       case "follow-up-regressions" ->

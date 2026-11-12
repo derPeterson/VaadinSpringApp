@@ -2,6 +2,7 @@ package de.derpeterson.app.service;
 
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 
+import de.derpeterson.app.config.SmtpRejectionException;
 import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.model.AdminNotificationAttemptEntity;
 import de.derpeterson.app.model.EmailIdentity;
@@ -54,6 +55,7 @@ public class EmailQueueService {
   private final Clock emailQueueClock;
   private final AdminNotificationAttemptRepository adminNotificationAttemptRepository;
   private final EmailQueueWorkerPool emailQueueWorkerPool;
+  private final EmailQueueDispatchGuard emailQueueDispatchGuard;
 
   @Autowired
   public EmailQueueService(
@@ -63,7 +65,8 @@ public class EmailQueueService {
       UserRepository userRepository,
       PlatformTransactionManager transactionManager,
       AdminNotificationAttemptRepository adminNotificationAttemptRepository,
-      EmailQueueWorkerPool emailQueueWorkerPool) {
+      EmailQueueWorkerPool emailQueueWorkerPool,
+      EmailQueueDispatchGuard emailQueueDispatchGuard) {
     this(
         configService,
         emailQueueRepository,
@@ -72,7 +75,8 @@ public class EmailQueueService {
         transactionManager,
         adminNotificationAttemptRepository,
         Clock.systemDefaultZone(),
-        emailQueueWorkerPool);
+        emailQueueWorkerPool,
+        emailQueueDispatchGuard);
   }
 
   public EmailQueueService(
@@ -84,6 +88,29 @@ public class EmailQueueService {
       AdminNotificationAttemptRepository adminNotificationAttemptRepository,
       Clock emailQueueClock,
       EmailQueueWorkerPool emailQueueWorkerPool) {
+    this(
+        configService,
+        emailQueueRepository,
+        emailService,
+        userRepository,
+        transactionManager,
+        adminNotificationAttemptRepository,
+        emailQueueClock,
+        emailQueueWorkerPool,
+        new EmailQueueDispatchGuard(null));
+  }
+
+  public EmailQueueService(
+      ConfigService configService,
+      EmailQueueRepository emailQueueRepository,
+      EmailService emailService,
+      UserRepository userRepository,
+      PlatformTransactionManager transactionManager,
+      AdminNotificationAttemptRepository adminNotificationAttemptRepository,
+      Clock emailQueueClock,
+      EmailQueueWorkerPool emailQueueWorkerPool,
+      EmailQueueDispatchGuard emailQueueDispatchGuard) {
+    this.emailQueueDispatchGuard = Objects.requireNonNull(emailQueueDispatchGuard);
     this.emailQueueWorkerPool = Objects.requireNonNull(emailQueueWorkerPool, "workers");
     this.configService = configService;
     this.emailQueueRepository = emailQueueRepository;
@@ -236,7 +263,10 @@ public class EmailQueueService {
                 .map(EmailQueueEntity::getId)
                 .toList());
     emailQueueWorkerPool.dispatchEmailBatch(
-        pendingIds, id -> processCandidate(id, maxRetry, retryDelay));
+        pendingIds,
+        queueEntryId ->
+            emailQueueDispatchGuard.runDispatch(
+                () -> processCandidate(queueEntryId, maxRetry, retryDelay)));
   }
 
   private void processCandidate(long queueEntryId, int maxRetry, Duration retryDelay) {
@@ -266,6 +296,7 @@ public class EmailQueueService {
               pendingEmailEntity.getUserEntity().getEmail();
             }
             pendingEmailEntity.setStatus(EmailStatus.IN_PROGRESS);
+            pendingEmailEntity.setProcessingStartedAt(LocalDateTime.now(emailQueueClock));
             emailQueueRepository.save(pendingEmailEntity);
             return pendingEmailEntity;
           });
@@ -305,7 +336,8 @@ public class EmailQueueService {
       if (!(e instanceof MessagingException
           || e instanceof MailAuthenticationException
           || e instanceof MailPreparationException
-          || e instanceof MailParseException)) {
+          || e instanceof MailParseException
+          || e instanceof SmtpRejectionException)) {
         logger.error(
             "❌ Transport outcome for queue entry {} is unknown; IN_PROGRESS retained.",
             claimedEmailEntity.getId(),
@@ -355,7 +387,9 @@ public class EmailQueueService {
       email.setStatus(EmailStatus.SENT);
     } else {
       email.setLastRetryAt(LocalDateTime.now(emailQueueClock));
-      if (email.getRetryCount() < maxRetry) {
+      boolean permanentRejection =
+          failure instanceof SmtpRejectionException rejection && !rejection.isTemporaryRejection();
+      if (!permanentRejection && email.getRetryCount() < maxRetry) {
         email.setRetryCount(email.getRetryCount() + 1);
         email.setStatus(EmailStatus.PENDING);
       } else {
@@ -391,6 +425,21 @@ public class EmailQueueService {
     if (deleted > 0) {
       AfterCommitLog.info(
           logger, "Sent emails deleted: count={}, cutoff={}", deleted, formattedLiveDateTime);
+    }
+  }
+
+  @Transactional
+  @Scheduled(cron = "0 0 3 ? * SUN")
+  public void deleteResolvedUnknownEmails() {
+    LocalDateTime retentionCutoff = LocalDateTime.now(emailQueueClock).minusDays(30);
+    int deletedEmailCount =
+        emailQueueRepository.deleteByStatusAndCreatedAtBefore(EmailStatus.UNKNOWN, retentionCutoff);
+    if (deletedEmailCount > 0) {
+      AfterCommitLog.info(
+          logger,
+          "Administratively resolved mail entries deleted: count={}, cutoff={}",
+          deletedEmailCount,
+          retentionCutoff.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
     }
   }
 

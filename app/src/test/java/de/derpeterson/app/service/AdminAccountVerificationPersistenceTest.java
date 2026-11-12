@@ -459,7 +459,8 @@ class AdminAccountVerificationPersistenceTest {
           userRepository,
           transactionManager,
           mock(AdminNotificationAttemptRepository.class),
-          QueueTestWorkers.inline());
+          QueueTestWorkers.inline(),
+          new EmailQueueDispatchGuard(null));
     }
 
     @Bean

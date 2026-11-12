@@ -39,19 +39,59 @@ Batches derselben Instanz werden nicht zusätzlich gestartet.
 | --- | --- |
 | SMTP-Annahme und Ergebniscommit erfolgreich | SENT |
 | Eindeutig vor Transport gescheitert | Begrenzte Wiederholung; initialer Versuch plus konfigurierte Retries |
+| Explizite SMTP-Ablehnung für den einzelnen Empfänger | 4xx begrenzt wiederholen, 5xx sofort FAILED |
 | Fälligkeit nach Fehler | Frühestens eine Minute nach lastRetryAt; Gleichheit ist fällig |
 | Retrylimit erreicht | FAILED mit Fehlerzeitpunkt |
 | Transportausgang oder anschließender Commit unklar | IN_PROGRESS bleibt bestehen; kein automatischer erneuter Versand |
+| Manuell oder automatisch bereinigt, Versand nicht mehr aktiv | UNKNOWN; keine Zustellbehauptung und kein erneuter Versand |
 
 `ConnectionAwareJavaMailSender` markiert den eindeutig vor sendMessage fehlgeschlagenen
 Verbindungsaufbau. Ein beliebiger Fehlertext oder eine allgemeine MailSendException
-ist kein sicherer Nachweis der Nichtzustellung. SMTP-Annahme und Datenbankcommit sind
-nicht atomar; es gibt keine Exactly-once-Garantie.
+ist kein sicherer Nachweis der Nichtzustellung. Explizite negative Antworten des
+verwendeten Angus-Transports werden nur für die einzelne Nachricht mit genau einem
+Empfänger und ohne Teilversand eingeordnet. Fehlende Antworten bleiben unklar.
+SMTP-Annahme und Datenbankcommit sind nicht atomar; es gibt keine Exactly-once-Garantie.
 
-Bei einem unklaren Claim zunächst den Worker beenden bzw. seinen Stillstand sicherstellen
-und anhand Auftrag, Zeit und Mailpit-/SMTP-Ergebnis entscheiden. Nicht blind auf
-PENDING zurücksetzen: Das kann eine bereits angenommene Mail erneut versenden.
-Eine komfortable Recovery-Oberfläche ist derzeit nicht vorhanden.
+Unter **Konfiguration → Mailqueue → Ungeklärte Mailaufträge** können ausschließlich
+Superadmins eine gemeinsame Bereinigung ausdrücklich bestätigen. Es gibt keine
+Auswahl einzelner Empfänger. Abbrechen verändert nichts. Pro Lauf werden höchstens
+100 ausreichend alte Claims beendet: maßgeblich ist `processingStartedAt` des
+letzten Versandversuchs, nicht das Erstellungsdatum. Das Ergebnis ist `UNKNOWN`,
+ohne Zustellbehauptung und ohne erneuten Versand. Danach ist eine ausdrücklich
+neue Anforderung möglich; die normalen Versandwartezeiten gelten weiter. Eine
+zuvor angenommene Mail kann weiterhin eintreffen. Deshalb keinen Auftrag blind
+auf `PENDING` zurücksetzen.
+
+Die automatische Bereinigung ist standardmäßig ausgeschaltet. Nur Superadmins
+können sie einschalten oder Prüfintervall (Vorgabe 15 Minuten) und Mindestalter
+(Vorgabe 30 Minuten) ändern. Beide Dauern müssen mindestens eine Minute betragen.
+Der Scheduler prüft alle zehn Sekunden die gespeicherten Einstellungen; das
+Intervall zählt seit dem letzten manuellen oder automatischen Versuch, auch wenn
+laufendes SMTP ihn verhindert hat. Manuell lässt sich unabhängig vom Intervall
+prüfen. Ein Lauf arbeitet mit seinem gelesenen Einstellungsstand, der nächste
+berücksichtigt Änderungen ohne Neustart auch bei vorhandenen Claims.
+
+Letzter Versuch, Anzahl und eine mögliche Blockierung durch laufenden Versand
+werden gemeinsam mit dem Abschluss gespeichert und bleiben nach Neustart erhalten.
+Die Anzeige lädt den Stand beim Öffnen und über „Aktualisieren“, ohne laufendes
+Polling. Es wird keine Empfänger- oder Mailinhaltshistorie angelegt. Weitere
+passende Aufträge bleiben nach der begrenzten Menge für den nächsten Lauf erhalten.
+
+Der Dienst prüft für manuelle Aktionen die Superadminrolle frisch und sperrt die
+betroffenen Datensätze. Eine gemeinsame lokale Dateisperre je H2-Datenbank verhindert
+die Bereinigung, solange noch irgendein Queueversand läuft. Sie gilt auch für weitere
+lokale JVMs mit demselben Datenbankpfad. Bei laufender Bereinigung warten neue Worker
+mit ihrem Claim bis zum Ende des Datenbankabschlusses. SMTP hält keine
+Datenbanktransaktion offen. Ein Abbruchsignal an einen nicht unterbrechbaren Worker
+gilt nicht als tatsächliches Versandende. Eine echte Prozessunterbrechung oder eine
+fehlende finale SMTP-Antwort kann weiterhin einen ungeklärten Ausgang verursachen.
+
+Die Sperrdatei liegt neben der H2-Datei (`*.email-dispatch.lock`); sie nicht bei
+laufenden Instanzen löschen. Das Betriebssystem gibt die Sperre bei Prozessende frei.
+Die Koordination ist auf den gemeinsamen lokalen H2-Dateipfad begrenzt, kein
+verteiltes Mehrserverprotokoll. Fehler beim Sperren verhindern die Auflösung.
+Das aktuelle Schema enthält `UNKNOWN`, den Claim-Zeitstempel und den Bereinigungsstand.
+Für einen älteren lokalen Entwicklungsstand ist eine frische Datenbank erforderlich.
 
 ## Konfiguration und Bereinigung
 
@@ -64,6 +104,9 @@ Eine komfortable Recovery-Oberfläche ist derzeit nicht vorhanden.
   der SMTP-Einstellungen. Bereits verbundene Transporte behalten ihre Einstellungen.
 - SENT-Aufbewahrung folgt createdAt und einer positiven Dauer; die Löschgrenze ist strikt.
 - FAILED-Einträge werden nach mehr als 30 Tagen seit lastRetryAt bereinigt.
+- Bewusst beendete UNKNOWN-Einträge werden nach mehr als 30 Tagen seit createdAt
+  bereinigt. Bei der Bestätigungsmail eines bereits gelöschten Kontos werden die
+  verbliebenen Queueinhalte direkt mit dem bewussten Abschluss entfernt.
 - PENDING und IN_PROGRESS werden durch diese Aufbewahrungsjobs nicht gelöscht.
 - Admin-Versandbeobachtung unterscheidet SENT, NOT_SENT und UNKNOWN; Wiederholungen
   derselben Beobachtung erzeugen keine doppelten Erfolgsmeldungen.

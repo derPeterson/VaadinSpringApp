@@ -24,6 +24,8 @@ final class BrowserExecutionPlan {
   private static final Map<String, Integer> SECONDS =
       Map.ofEntries(
           Map.entry("RestartAndSmtpBrowserTest", 320),
+          // Zwei reguläre Minutenfristen, zunächst geschätztes Verteilungsgewicht.
+          Map.entry("MailQueueResolutionBrowserTest", 180),
           Map.entry("SegmentedSelectionBrowserTest", 60),
           Map.entry("EmailActionLinkBrowserTest", 30),
           // Eine zusätzliche echte Minute prüft die erneute Verifikationsanforderung.

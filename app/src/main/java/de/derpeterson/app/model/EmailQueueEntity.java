@@ -61,6 +61,9 @@ public class EmailQueueEntity {
 
   @Column private LocalDateTime lastRetryAt;
 
+  // Zeitpunkt des letzten Claims, unabhängig vom möglicherweise viel älteren Erstellungsdatum.
+  @Column private LocalDateTime processingStartedAt;
+
   @Column(nullable = false)
   // Die Mailqueue verwendet lokale Serverzeit; Aktivitätszeiten sind absolute Instant-Werte.
   private LocalDateTime createdAt = LocalDateTime.now(ZoneId.systemDefault());

@@ -9,39 +9,34 @@ zusammenfassen, etwa eine Sitzungskarte, einen Ticketfilter oder die Pagination.
 Ein eigener Ersatz für eine Vaadin-Komponente braucht einen konkreten Grund und
 die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#native-vaadin-bausteine-zuerst).
 
-## Erster Zwischenstand mit dem Glockenzähler
+## Offene Komponentenpakete
 
 Der Branch `codex/vaadin-komponentenanpassungen` geht von `main` auf `01f7c67d`
-aus. Der rote Glockenzähler ist auf ein natives Vaadin-`Badge` umgestellt und
-wartet auf die gemeinsame Sichtung. Die Vorher-/Nachher-Aufnahmen zeigen `0`,
-`1`, `99` und `99+` in Deutsch und Englisch bei 1280 und 390 px. Die gemessenen
-Maße, Positionen, Farben und Schriftwerte stimmen überein. `99` und `99+` sind
-Darstellungswerte für den Vergleich. Zustellung, Lesen und die zugängliche
-Beschriftung wurden mit einer echten Testbenachrichtigung geprüft.
-
-Die nächste gemeinsame Sichtung umfasst auch die Portal-Badges auf Startseite
-und Seitennavigation, in Profilkarte und Profilmenü sowie in Postfach,
-Glockenvorschau, Detail und Bestätigung. Beschriftete Badges folgen der
-Theme-Regel ohne Statuspunkt. In Profilkarte und Profilmenü steht die Anwesenheit.
-Die Glocke zeigt die ungelesene Anzahl in Rot.
-
-Zur gemeinsamen Sichtung gehören auch die umgestellten Badges der Benutzerliste,
-des Benutzerfilters, der Konfiguration, des Mailtests und des
-Benachrichtigungsversands. Rollen, Status, Quellen und kompakte Zähler nutzen
-native Vaadin-Badges. Kennzahlenkarten bleiben ein eigenes Paket.
+aus. Die Badge-Darstellungen und einheitlichen Seitenpfade sind vom Benutzer
+abgenommen. Ihre geltenden Regeln stehen im [Theme-Standard](../theme.md).
 
 Die gemeinsame `CosmosMetricCard` bleibt als eigenes Paket vorerst zurückgestellt.
 Ihr erster Einsatz sind „Gesamt“ und „Ungelesen“ im Postfach. Die neutrale und
 die hervorgehobene Variante werden auf Desktop und Mobil mit der bestehenden
 Darstellung verglichen.
 
-## Offene Abnahme der Portalpakete
+## Verbleibende Sichtung und Prüfungen
 
 Die abgenommenen Auswahlfelder, die bestehende Formularwarnung und die E-Mail-/
 Benutzerverwaltungsoberflächen sind keine offenen Abnahmepunkte mehr. Ihre
 Funktionen stehen in der aktuellen [Anwendungsdokumentation](../anwendung.md)
 und im [Theme-Standard](../theme.md). Offene automatisierte Nachtests bleiben
 unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
+
+### Gemeinsame Sichtung: Mailqueue-Bereinigung
+
+Die gemeinsame manuelle und optionale automatische Bereinigung ist umgesetzt.
+Der [Mailqueue-Vertrag](../mailqueue.md#ergebnisse-und-wiederholung) beschreibt
+SMTP-Ablehnungen, ungeklärte Ausgänge, Mindestalter, Intervalle und Grenzen.
+Offen bleibt die gemeinsame Sichtung von Schalter, Zeitfeldern, Bestätigung und
+Ergebnisanzeige in der Mailqueue-Konfiguration. Automatisierte Nachweise und
+verbleibender Testbedarf stehen im [Prüfstand](../status.md) und im
+[Testbedarf](../testbedarf.md). Kein Commit ohne entsprechenden Auftrag.
 
 ### Segmentierte Auswahl vereinheitlichen
 
@@ -57,14 +52,6 @@ unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
   Sprachwechsel, Tastatur und Handzeiger ist in DE/EN auf Desktop und Smartphone
   erfolgreich. Nachweis und Grenzen stehen im [Prüfstand](../status.md).
 
-### Ungespeicherte Formularänderungen
-
-- **Autofill-Korrektur:** Die neuen Passwortfelder in der Benutzerverwaltung
-  verwenden `new-password`, damit der Browser beim eigenen Konto nicht das
-  gespeicherte Anmeldepasswort als Änderung einsetzt. Unverändertes Schließen und
-  echte Änderungen sind gezielt in DE/EN per JUnit geprüft. Die reale Passwortmanager-
-  Nachprüfung bleibt unter [HUM-11](../manual-tests/README.md#hum-11) offen.
-
 ### Gemeinsame Sichtung und Prüfstand
 
 Die umgesetzten Nachtpakete einschließlich der Trennung von administrativer Sperre und
@@ -76,9 +63,9 @@ erfolgreich; auch der reguläre Build einschließlich aller Anwendungstests ist
 erfolgreich. Nachweise und Grenzen stehen im [Prüfstand](../status.md).
 Offene zukünftige Prüfungen werden zentral im [Testbedarf](../testbedarf.md) geführt.
 
-Die [Seitenpfade](seitenpfade.md) sind mit nativen Breadcrumbs im manuellen Modus
-umgesetzt und gezielt in DE/EN auf Desktop und Smartphone geprüft. Gesperrte
-Sicherheitsabläufe erhalten keine Links. Offen ist die gemeinsame Sichtung.
+Die [Seitenpfade](../theme.md#seitenpfade-und-navigationsziele) sind abgenommen.
+Die gezielten DE-/EN-Prüfungen einschließlich gesperrter Sicherheitsabläufe sind
+erfolgreich; der erledigte Einzelplan ist entfernt.
 
 ### Offener Sonar-Nachweis
 
@@ -147,39 +134,6 @@ hier Teil der vorgesehenen Flow-API.
 [FlowingCode OTP Field](https://vaadin.com/directory/component/otp-field-add-on).
 
 ## Wo ein Umbau tatsächlich etwas bringt
-
-### Badges, Zahlen und Status
-
-**Schon nativ.** Die zehn Dateien sind `AccountSessionsComponent`,
-`AdminExternalProviderSettingsSection`, `AdminUserManagementSection`,
-`ExternalConnectionsComponent`, `RecoveryInstructionsComponent`,
-`SupportTicketActivityIndicator`, `SupportTicketFilterPanel`,
-`SupportTicketsComponent`, `TwoFactorAccountComponent` und
-`UserNotificationsPanel`. Damit laufen unter anderem Sitzungsstatus, Angaben
-zur Anmeldung im Benutzerformular, Anbieterstatus, 2FA-Status und fast die
-gesamte Ticketkennzeichnung bereits über `Badge`. Der rote Aktivitätspunkt in
-der Admin-Navigation ist ebenfalls ein `Badge` mit `Tooltip`. Die CSS-Variante
-stellt ihn bewusst als Punkt dar.
-
-**Ausgangsstand des Badge-Abgleichs.** Eine Stelle kann mehrere Zustände oder
-Oberflächen bedienen. Der Umsetzungsstand steht oben.
-
-| Stelle | Heute | Empfehlung |
-| --- | --- | --- |
-| [UserNotificationBell](../../app/src/main/java/de/derpeterson/app/ui/components/UserNotificationBell.java), `PortalHomeComponent`, `PortalSidebarComponent` | Drei lokale rote Zahl-Spans für denselben Benachrichtigungszähler. Bei der Glocke steht die Anzahl im zugänglichen Namen des Buttons. In der Sidebar ist der Zähler als dekorativer Zusatz ausgeblendet. | Glocke zuerst. Danach dieselbe visuelle Badge-Variante in Startseite und Sidebar. Sichtbarkeit bei null, Text `99+` und die bestehende zugängliche Beschriftung prüfen. Der Punkt beim Ticketsystem ist ein anderer Fachzustand. |
-| [UserNotificationsPanel](../../app/src/main/java/de/derpeterson/app/ui/components/UserNotificationsPanel.java) | Quelle, Filterzähler und Overlay-Kopfzähler als lokale Spans. Gelesen/Ungelesen als alter Lumo-Badge-Span, nicht mehr relevante Nachricht schon als `Badge`. | Den aktiven Nachrichtenstatus zuerst angleichen. Quelle und Zähler nach ihrer Gestaltung einzeln zuordnen. Die Kennzahlen der Inbox bleiben ein eigener Anzeigetyp. |
-| `PortalSidebarComponent` und `UserPopoverMenu` | Konto- und Präsenzangaben im Identitätsblock verwenden Spans mit Lumo- oder lokalen Styles. | Jeweils dieselbe Cosmos-Variante für denselben Kontostatus und dieselbe Präsenz. Die Auswahl der Anwesenheit und der Punkt am Avatar sind getrennte Bedienelemente. |
-| `AdminUserManagementSection` | Rollen und „Dein Benutzer“ sind lokale Chips. Aktiv/Anwesenheit in der Tabelle nutzen alte Badge-Muster und lokale Regeln. Registrierung und Anmeldewege im Formular sind bereits nativ. | Rollen und „Dein Benutzer“ angleichen. Den bewusst flachen Tabellenstatus in seiner Darstellung erhalten. Ob `Badge` ohne sichtbaren Kasten hier einfacher ist, hängt vom Pilot ab. |
-| `AdminUserFilterBar` und `AdminConfigurationSection` | Aktive Filter bzw. Anzahl der Einstellungen als lokale Spans. | Filterzähler mit dem bereits nativen Ticketfilter abgleichen. Einstellungssumme nur übernehmen, wenn dieselbe kleine Anzeigevariante passt. |
-| `AdminMailTestSection` und `AdminUserNotificationsSection` | SMTP-Status mit Punkt, Text, Tooltip und zugänglicher Statusinfo. Versandansicht mit Versandmodus, Quelle der Vorschau, Gesendet-Status und Historienanzahl in eigenen Mustern. | Dynamische Statusinfo, Tooltip und bedeutungstragende Icons erhalten. Dekorative Punkte entfallen. |
-
-`Badge` bietet in 25.3.5 unter anderem Text, Zahl, Icon, Komponenteninhalt
-sowie `SUCCESS`, `WARNING`, `ERROR`, `NUMBER_ONLY` und `SMALL`. Für einen
-Zähler, der exakt `99+` zeigen soll, zuerst die Textvariante prüfen. Die Palette
-für System, neutrale Status und Akzent bleibt im Cosmos-Theme. Farbe, Größe und
-Dichte können als zentrale Varianten sichtbar verschieden sein. Wo eine
-Theme-Klasse reicht, ist kein neuer Java-Wrapper erforderlich.
-[Vaadin Badge](https://vaadin.com/docs/latest/components/badge).
 
 ### Avatare und Identität
 
@@ -272,25 +226,14 @@ wenn eine konkrete Funktion fehlt. In dem Fall die geprüfte Alternative,
 den nötigen Eigenanteil und die zu erhaltende Bedienung zur Entscheidung
 vorlegen.
 
-1. **Badge-Pilot.** Glockenzähler und die umgestellten Portal-Badges gemeinsam
-   sichten. Bestehende native
-   Badges als Referenz verwenden. Die Statusanzeige entsteht an einer gemeinsamen
-   Stelle für Inbox, Glockenvorschau, Detailansicht und Bestätigungskarten. Deshalb alle vier
-   Darstellungen prüfen, einschließlich der Hervorhebung ungelesener Nachrichten
-   und der Kennzeichnung nicht mehr relevanter Nachrichten. Beim Glockenzähler
-   dynamische Aktualisierung, Zahlenbreite und zugängliche Beschriftung prüfen.
-2. **Badge-Varianten vereinheitlichen.** Freigegebene Varianten an die weiteren
-   Fundstellen übertragen. Status, Rolle, Zahl und Punkt nach fachlicher Bedeutung
-   auseinanderhalten. Lokale Selektoren erst entfernen, wenn die letzten
-   Aufrufer umgestellt sind. Bereits passende native Badges direkt weiterverwenden.
-3. **Avatar-Kern und kleine Formulare.** In getrennten Piloten einen Avatar und
+1. **Avatar-Kern und kleine Formulare.** In getrennten Piloten einen Avatar und
    ein einfaches responsives Formular umstellen. Danach getrennt entscheiden,
    ob der Nutzen eine Übernahme in die gemeinsamen Bausteine rechtfertigt.
-4. **Karten und einfache Bestätigungen.** Je eine Oberfläche mit `Card` bzw.
+2. **Karten und einfache Bestätigungen.** Je eine Oberfläche mit `Card` bzw.
    `ConfirmDialog` vergleichen. Bestehende Kopf-, Fuß- und Fokusverträge
    sind Abnahmekriterien. Der gemeinsame Kartenrahmen hat viele Verbraucher
    und ist deshalb erst nach einem lokalen Vergleich dran.
-5. **Weiterführende Struktur.** `MasterDetailLayout`, mobile Navigation,
+3. **Weiterführende Struktur.** `MasterDetailLayout`, mobile Navigation,
    Anwesenheitsauswahl und Inbox-Pagination nur einzeln betrachten, wenn
    die Änderung Bedienelemente, Code oder Wartung konkret vereinfacht.
    Bereits passende Bausteine wie native Switches, Tabs, Eingaben, Grids,
@@ -301,9 +244,8 @@ vorlegen.
 - Layout und Bedienung in DE/EN auf Desktop und Smartphone vergleichen.
   Dazu lange Übersetzungen, kleine Breiten, Tastaturfokus, zugängliche Namen,
   Tooltips, Hover, Disabled und Live-Updates prüfen.
-- Beim Badge-Paket `0`, `1`, `99` und `99+` sowie Lesen, Archivieren und obsolet
-  gewordene Benachrichtigungen abdecken. Bei Avataren Bild vorhanden, Initialen,
-  fehlerhaftes Bild, Bildwechsel und ein langer Name mit E-Mail prüfen.
+- Bei Avataren Bild vorhanden, Initialen, fehlerhaftes Bild, Bildwechsel und
+  einen langen Namen mit E-Mail prüfen.
 - Bei Layout und Dialogen auf echte Fachabläufe prüfen. Beispiele sind Fehler
   beim Speichern, Escape und Rückfokus, Sitzungswiderruf, geschützte Navigation,
   Ticketfilter, direkter Ticketsprung, Refresh und interner Vermerk.

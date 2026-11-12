@@ -32,6 +32,7 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.EmailQueueCleanupService;
 import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
@@ -90,7 +91,9 @@ public class AdminConfigurationSection extends VerticalLayout {
           ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION,
           ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION,
           ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION,
-          ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION);
+          ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION,
+          ConfigEntry.EMAIL_QUEUE_CLEANUP_INTERVAL,
+          ConfigEntry.EMAIL_QUEUE_CLEANUP_MINIMUM_AGE);
 
   private final transient MessageProperties messageProperties;
   private final BrowserUnsavedChangesGuard browserChangesGuard =
@@ -123,6 +126,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private final AdminSidePanelDialog helpPanel;
   private ConfigEntry openHelpConfigEntry;
   private AdminConfigGroup selectedGroup = null;
+  private AdminMailQueueCleanupComponent mailQueueCleanupComponent;
 
   public AdminConfigurationSection(
       MessageProperties messageProperties,
@@ -234,6 +238,9 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
+    if (mailQueueCleanupComponent != null) {
+      mailQueueCleanupComponent.refreshTexts();
+    }
     configurationDescriptionSpan.setText(messageProperties.getAdminConfigDescription());
     saveConfigButton.setText(messageProperties.getAdminConfigSave());
     reloadConfigButton.setText(messageProperties.getAdminConfigReload());
@@ -323,6 +330,14 @@ public class AdminConfigurationSection extends VerticalLayout {
     loadConfigValues();
   }
 
+  public void configureMailQueueCleanup(EmailQueueCleanupService emailQueueCleanupService) {
+    if (emailQueueCleanupService.canManageCleanup()) {
+      mailQueueCleanupComponent =
+          new AdminMailQueueCleanupComponent(messageProperties, emailQueueCleanupService);
+      renderSelectedGroup();
+    }
+  }
+
   private void requestConfigReload() {
     if (hasUnsavedChanges()) {
       UnsavedChangesDialog.confirmDiscard(messageProperties, this::reloadConfigValues);
@@ -358,7 +373,9 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     for (ConfigEntry configEntry : ConfigEntry.values()) {
-      if (!selectedGroupFilter.test(configEntry)) {
+      if (!selectedGroupFilter.test(configEntry)
+          || ConfigurationCatalog.isMailCleanupSetting(configEntry)
+              && !configService.canAdminister(configEntry)) {
         continue;
       }
 
@@ -366,6 +383,11 @@ public class AdminConfigurationSection extends VerticalLayout {
       if (configFieldLayout != null) {
         configFieldsLayout.add(configFieldLayout);
       }
+    }
+    if (selectedGroup == AdminConfigGroup.QUEUE
+        && mailQueueCleanupComponent != null
+        && mailQueueCleanupComponent.canManageCleanup()) {
+      configFieldsLayout.add(mailQueueCleanupComponent);
     }
   }
 
@@ -379,7 +401,12 @@ public class AdminConfigurationSection extends VerticalLayout {
       return List.of();
     }
 
-    return Arrays.stream(ConfigEntry.values()).filter(selectedGroupFilter).toList();
+    return Arrays.stream(ConfigEntry.values())
+        .filter(selectedGroupFilter)
+        .filter(configEntry ->
+            !ConfigurationCatalog.isMailCleanupSetting(configEntry)
+                || configService.canAdminister(configEntry))
+        .toList();
   }
 
   private void clearValidationStatesForVisibleInputs() {
@@ -759,6 +786,7 @@ public class AdminConfigurationSection extends VerticalLayout {
               messageProperties.getAdminConfigRuleInteger(1, 65535),
               messageProperties.getAdminConfigRuleEmptyUsesDefault());
       case MAINTENANCE_MODE,
+          EMAIL_QUEUE_CLEANUP_ENABLED,
           MAIL_SMTP_AUTH,
           MAIL_SMTP_STARTTLS_ENABLE,
           MAIL_SMTP_SSL_ENABLE,
@@ -772,6 +800,10 @@ public class AdminConfigurationSection extends VerticalLayout {
               messageProperties.getAdminConfigDurationNumberRule(),
               messageProperties.getAdminConfigDurationUnitHint(),
               messageProperties.getAdminConfigRuleDurationNoMinimum());
+      case EMAIL_QUEUE_CLEANUP_INTERVAL, EMAIL_QUEUE_CLEANUP_MINIMUM_AGE ->
+          List.of(
+              messageProperties.getAdminQueueCleanupMinimumRule(),
+              messageProperties.getAdminConfigDurationUnitHint());
       case EMAIL_QUEUE_SENT_LIVE_DURATION ->
           List.of(
               messageProperties.getAdminConfigDurationNumberRule(),
@@ -959,6 +991,10 @@ public class AdminConfigurationSection extends VerticalLayout {
           !isValidSpringDuration(trimmedConfigValue)
               ? messageProperties.getAdminConfigValidationDuration()
               : null;
+      case EMAIL_QUEUE_CLEANUP_INTERVAL, EMAIL_QUEUE_CLEANUP_MINIMUM_AGE ->
+          isValidCleanupDuration(trimmedConfigValue)
+              ? null
+              : messageProperties.getAdminQueueCleanupMinimumRule();
       case EMAIL_QUEUE_SENT_LIVE_DURATION -> validateQueueRetention(trimmedConfigValue);
       case VERIFICATION_TOKEN_VALID_DURATION,
           VERIFICATION_TOKEN_LIVE_DURATION,
@@ -1217,6 +1253,14 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     return false;
+  }
+
+  private boolean isValidCleanupDuration(String durationValue) {
+    try {
+      return Duration.parse(durationValue).compareTo(Duration.ofMinutes(1)) >= 0;
+    } catch (RuntimeException invalidDuration) {
+      return false;
+    }
   }
 
   private boolean isBooleanLikeEntry(ConfigEntry configEntry, Object defaultValue) {

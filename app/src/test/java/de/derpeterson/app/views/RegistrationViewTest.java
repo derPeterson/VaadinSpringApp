@@ -31,6 +31,7 @@ import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
@@ -172,6 +173,18 @@ public class RegistrationViewTest {
 
   private void click() {
     field("registrationButton", Button.class).click();
+  }
+
+  @Test
+  void registrationAllowsContactAutofillAndDeclaresBothPasswordsAsNew() {
+    assertEquals(Autocomplete.EMAIL, field("emailField", EmailField.class).getAutocomplete());
+    assertEquals(
+        Autocomplete.EMAIL, field("confirmEmailField", EmailField.class).getAutocomplete());
+    assertEquals(
+        Autocomplete.NEW_PASSWORD, field("passwordField", PasswordField.class).getAutocomplete());
+    assertEquals(
+        Autocomplete.NEW_PASSWORD,
+        field("confirmPasswordField", PasswordField.class).getAutocomplete());
   }
 
   @ParameterizedTest

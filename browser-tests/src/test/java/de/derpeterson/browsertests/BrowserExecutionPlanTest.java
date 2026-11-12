@@ -43,6 +43,7 @@ class BrowserExecutionPlanTest {
         "cosmos-scrollbars",
         "duration-field",
         "segmented-selection",
+        "mail-queue-resolution",
         "component-follow-up",
         "breadcrumbs",
         "form-details",
@@ -87,6 +88,10 @@ class BrowserExecutionPlanTest {
                   "pageBreadcrumbsFollowHierarchyAndKeepSecurityFlowsLocked",
                   "verificationAndReactivationBreadcrumbsStayUnlinked");
           case "segmented-selection" -> Set.of("segmentSelectorsPreserveTheirSurroundingViews");
+          case "mail-queue-resolution" ->
+              Set.of(
+                  "unresolvedRequestNeedsExplicitResolutionBeforeAnotherVerificationMail",
+                  "explicitSmtpRejectionReachesItsRetryLimitInsteadOfQuarantine");
           case "component-follow-up" ->
               Set.of(
                   "durationUnitIsCenteredInsideNumericField",

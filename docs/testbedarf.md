@@ -2,11 +2,11 @@
 
 ## Browser-Tests
 
-Keine offenen automatisierten Browser-Nachtests.
+Keine offenen gezielten Ergänzungen für den aktuellen Umfang.
 
 ## JUnit-Tests
 
-Keine offenen JUnit-Nachtests.
+Keine offenen gezielten Ergänzungen für den aktuellen Umfang.
 
 Die Ergebnisse der letzten großen Testrunde und der anschließenden gezielten
 Nachprüfungen einschließlich ihrer Grenzen stehen im [Prüfstand](status.md).
