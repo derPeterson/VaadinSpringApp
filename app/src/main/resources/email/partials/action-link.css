@@ -1,3 +1,10 @@
+.cosmos-email-copy-link > div {
+  background-color: #091120;
+  border: 1px solid #2c3751;
+  border-radius: 8px;
+  padding: 12px;
+}
+
 .cosmos-email-copy-link a {
   color: #a9c0fb;
   overflow-wrap: anywhere;

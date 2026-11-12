@@ -2,6 +2,12 @@
 
 ## Browser-Tests
 
+- Eingerahmte Aktionslinks in E-Mails, **offen**: Die gemeinsame Linkbox in
+  DE/EN auf Desktop und Smartphone isoliert in Mailpit prüfen. Alle acht
+  Aktionsvorlagen verwenden Cosmos-Fläche und Rahmen; lange URLs bleiben
+  vollständig sichtbar und kopierbar. Hinweistext und Buttonziel bleiben
+  unverändert. Mails ohne Aktionslink erhalten keine leere Linkbox.
+
 - Kontotyp im Benutzereditor, **offen**: In DE/EN auf Desktop und Smartphone
   den beschrifteten Kontotyp neben dem E-Mail-Nachweis prüfen. Standardkonto ist
   blau, Entwicklerkonto verwendet die Systemfarbe für Schrift, Rahmen und Fläche.

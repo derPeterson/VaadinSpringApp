@@ -1804,6 +1804,13 @@ erreichbar sein; eine lokale Entwicklungsadresse ist außerhalb des Rechners ung
 Beim MJML-Erzeugen `fonts: {}` setzen: Die `mj-font`-Deklaration liefert Inter,
 automatische MJML-Standardimporte von Google Fonts werden damit vermieden.
 
+Die vollständigen Aktionslinks unter den Mailbuttons erhalten über
+`email/partials/action-link.css` eine gemeinsame Cosmos-Linkbox: Eingabefläche
+`#091120`, Rahmen `1px solid #2c3751`, Radius 8 px und Innenabstand 12 px.
+Der vorhandene DE-/EN-Kopierhinweis bleibt erhalten. Die URL bleibt vollständig
+markierbar und bricht bei langen Werten um. Kein Clipboard-Button oder JavaScript
+wird in die Mail eingebaut; die Gestaltung wird in das erzeugte HTML eingebettet.
+
 Der Rollenbereich übernimmt die bestehende Anbietertabform, stellt
 Regeln zweispaltig dar und wechselt unter 650 px auf eine Spalte. Neue lokale
 Details bleiben bis zur gemeinsamen Designabnahme lokal.
