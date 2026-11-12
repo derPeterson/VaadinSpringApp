@@ -4,6 +4,7 @@ package de.derpeterson.app.config;
 public enum AdminConfigGroup {
   GENERAL,
   SECURITY,
+  ACCOUNT_MANAGEMENT,
   EXTERNAL_LOGIN,
   TWO_FACTOR,
   TOKENS,
@@ -14,6 +15,6 @@ public enum AdminConfigGroup {
   QUEUE;
 
   public boolean isSuperadminOnly() {
-    return this == EXTERNAL_LOGIN || this == TWO_FACTOR;
+    return this == EXTERNAL_LOGIN || this == TWO_FACTOR || this == ACCOUNT_MANAGEMENT;
   }
 }

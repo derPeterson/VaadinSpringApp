@@ -127,6 +127,8 @@ class AdminViewNavigationTest {
     configService = mock(ConfigService.class);
     when(configService.getString(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
+    when(configService.getForAdministration(any(ConfigEntry.class)))
+        .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     userAvatarService = mock(UserAvatarService.class);
     when(userAvatarService.events()).thenReturn(new UserProfileBroadcaster());
     adminView = createView();
@@ -389,6 +391,30 @@ class AdminViewNavigationTest {
     enter("?section=configuration&group=external_login");
 
     assertSame(external, heading.getChildren().findFirst().orElseThrow());
+
+    enter("?section=configuration&group=account_management");
+    assertSame(general, heading.getChildren().findFirst().orElseThrow());
+    enter("?section=configuration&group=security");
+    assertSame(general, heading.getChildren().findFirst().orElseThrow());
+  }
+
+  @Test
+  void normalAdminCannotOpenAccountManagementByDirectLink() {
+    when(securityService.getAuthenticatedUser(mockHttpRequest))
+        .thenReturn(
+            Optional.of(
+                User.withUsername("admin@example.test").password("unused").roles("ADMIN").build()));
+
+    enter("?section=configuration&group=account_management");
+
+    assertEquals(
+        AdminConfigGroup.GENERAL,
+        ReflectionTestUtils.getField(adminView, "activeConfigurationGroup"));
+    Map<?, ?> configurationNavItems =
+        (Map<?, ?>) ReflectionTestUtils.getField(adminView, "configurationSubmenuNavItems");
+    SideNavItem accountManagementNavItem =
+        (SideNavItem) configurationNavItems.get(AdminConfigGroup.ACCOUNT_MANAGEMENT);
+    assertFalse(accountManagementNavItem.isVisible());
   }
 
   @ParameterizedTest

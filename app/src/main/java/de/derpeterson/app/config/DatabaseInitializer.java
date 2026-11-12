@@ -142,7 +142,7 @@ public class DatabaseInitializer {
     int createdSettingCount = 0;
     for (ConfigEntry configEntry : ConfigEntry.values()) {
       if (!configService.exists(configEntry)) {
-        configService.set(configEntry, resolveDefaultValue(configEntry));
+        configService.initializeIfMissing(configEntry, resolveDefaultValue(configEntry));
         createdSettingCount++;
       }
     }

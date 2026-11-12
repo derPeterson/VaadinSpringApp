@@ -1947,6 +1947,8 @@ public class MessageTexts {
     return switch (configGroup) {
       case GENERAL -> getAdminConfigGroupGeneralDescription();
       case SECURITY -> getAdminConfigGroupSecurityDescription();
+      case ACCOUNT_MANAGEMENT ->
+          getTranslation("adminView.config.group.account_management.description");
       case EXTERNAL_LOGIN -> getProviderSettingsDescription();
       case TWO_FACTOR -> getTwoFactorSettingsHint();
       case TOKENS -> getAdminConfigGroupTokensDescription();
@@ -3048,6 +3050,7 @@ public class MessageTexts {
     return switch (configGroup) {
       case GENERAL -> getAdminConfigGroupGeneral();
       case SECURITY -> getAdminConfigGroupSecurity();
+      case ACCOUNT_MANAGEMENT -> getTranslation("adminView.config.group.account_management");
       case EXTERNAL_LOGIN -> getProviderSettingsTitle();
       case TWO_FACTOR -> getTwoFactorSettingsTitle();
       case TOKENS -> getAdminConfigGroupTokens();

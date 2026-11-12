@@ -44,6 +44,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   private final Span fixedDurationUnitSpan = new Span();
   private String defaultValue = "1209600";
   private boolean loadingStoredDuration;
+  private boolean emptyDaysAllowed = true;
   private SerializableRunnable durationChangeListener = () -> {};
   private final Button decreaseDurationButton =
       new Button(AppIcon.MINUS.create(), event -> stepDurationValue(-1));
@@ -101,6 +102,16 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     preciseDurationField.setValue(
         (currentDurationAmount == null ? BigDecimal.ZERO : currentDurationAmount)
             .add(BigDecimal.valueOf(stepDirection)));
+  }
+
+  /** Pflichtfristen unterscheiden sich von leeren, unbegrenzten Aufbewahrungswerten. */
+  public void requireWholeDays(int minimumDays) {
+    if (durationStorage != Storage.DAYS || minimumDays < 0) {
+      throw new IllegalArgumentException("Non-negative minimum for fixed days required");
+    }
+    emptyDaysAllowed = false;
+    durationAmountField.setMin(minimumDays);
+    updateDurationMaximumAndPlaceholder();
   }
 
   public void setSecondsValue(int seconds) {
@@ -245,7 +256,8 @@ public class AdminDurationField extends Div implements HasAriaLabel {
             : Integer.MAX_VALUE / selectedDurationUnit.seconds);
 
     if (durationStorage == Storage.DAYS) {
-      durationAmountField.setPlaceholder(messageProperties.getAdminConfigUnlimited());
+      durationAmountField.setPlaceholder(
+          emptyDaysAllowed ? messageProperties.getAdminConfigUnlimited() : defaultValue);
       return;
     }
 

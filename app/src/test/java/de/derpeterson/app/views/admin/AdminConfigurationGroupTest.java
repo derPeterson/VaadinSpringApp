@@ -64,7 +64,7 @@ class AdminConfigurationGroupTest {
     when(vaadinSession.hasLock()).thenReturn(true);
     VaadinSession.setCurrent(vaadinSession);
     configService = mock(ConfigService.class);
-    when(configService.getString(any(ConfigEntry.class)))
+    when(configService.getForAdministration(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     configurationSection =
         new AdminConfigurationSection(new MessageProperties(i18nProvider), configService, () -> {});
@@ -116,13 +116,43 @@ class AdminConfigurationGroupTest {
     de.derpeterson.app.helper.ui.NotificationHelper.getInstance().closeAndClearAllNotifications();
   }
 
+  @Test
+  void accountManagementUsesFixedDayFieldsAndKeepsZeroReminderValid() {
+    configurationSection.showGroup(AdminConfigGroup.ACCOUNT_MANAGEMENT);
+    assertEquals(
+        List.of(
+            ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS,
+            ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS),
+        visibleEntries());
+    Map<?, ?> configInputsByEntry = getConfigInputsByEntry();
+    AdminDurationField retentionDurationField =
+        (AdminDurationField) configInputsByEntry.get(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS);
+    AdminDurationField reminderDurationField =
+        (AdminDurationField) configInputsByEntry.get(ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS);
+    IntegerField retentionIntegerField =
+        (IntegerField) ReflectionTestUtils.getField(retentionDurationField, "durationAmountField");
+    IntegerField reminderIntegerField =
+        (IntegerField) ReflectionTestUtils.getField(reminderDurationField, "durationAmountField");
+    assertTrue(retentionDurationField.hasClassName("admin-duration-fixed-unit"));
+    assertEquals(1, retentionIntegerField.getMin());
+    assertEquals(0, reminderIntegerField.getMin());
+    assertEquals("Tage", retentionIntegerField.getSuffixComponent().getElement().getText());
+    assertNotEquals("Unbegrenzt", retentionIntegerField.getPlaceholder());
+
+    reminderDurationField.setStoredValue("0");
+    ReflectionTestUtils.invokeMethod(configurationSection, "saveConfigValues");
+    verify(configService).set(ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS, "0");
+    assertFalse(reminderDurationField.isInvalid());
+    NotificationHelper.getInstance().closeAndClearAllNotifications();
+  }
+
   @org.junit.jupiter.params.ParameterizedTest
   @org.junit.jupiter.params.provider.ValueSource(strings = {"de", "en"})
   void emptyNotificationRetentionStaysEmptyAfterSaveReloadAndLanguageChange(String language) {
     localeReference.set(Locale.forLanguageTag(language));
     EnumMap<ConfigEntry, String> stored =
         new java.util.EnumMap<ConfigEntry, String>(ConfigEntry.class);
-    when(configService.getString(any()))
+    when(configService.getForAdministration(any()))
         .thenAnswer(call -> {
           ConfigEntry entry = call.getArgument(0);
           return stored.getOrDefault(entry, entry.getDefaultValueString());
@@ -544,8 +574,6 @@ class AdminConfigurationGroupTest {
             ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS,
             ConfigEntry.MAX_SESSIONS_PER_USER,
             ConfigEntry.SESSION_TIMEOUT_SECONDS,
-            ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS,
-            ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS,
             ConfigEntry.MAINTENANCE_MODE);
 
     assertEquals(securityEntries, visibleEntries());
@@ -637,7 +665,7 @@ class AdminConfigurationGroupTest {
         (AdminSidePanelDialog) ReflectionTestUtils.getField(configurationSection, "helpPanel");
     int checkedFields = 0;
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
-      if (group.isSuperadminOnly()) {
+      if (group == AdminConfigGroup.EXTERNAL_LOGIN || group == AdminConfigGroup.TWO_FACTOR) {
         // Anbieter haben ein eigenes Panel ohne die generischen ConfigEntry-Feldhilfen.
         continue;
       }

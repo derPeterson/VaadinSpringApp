@@ -162,37 +162,14 @@ Fehler zur administrativen Klärung offen; keine automatische Wiederholung.
 
 ## 10. Konfigurationsfelder für Deaktivierungsfristen vereinheitlichen
 
-- [ ] Die Beschriftungen auf „Aufbewahrung nach Deaktivierung“ und
-  „Löscherinnerung“ kürzen, ohne Klammerzusätze. Beide Zahlenfelder wie die
-  Aufbewahrungsfelder unter Benachrichtigungen mit dem vorhandenen nativen
-  Feld-/Suffixbaustein gestalten: Einheit „Tage“ rechts im Feld mit Trennlinie.
-  „Tage vorher“ nicht als zusätzliche Feldbeschriftung oder Suffix verwenden;
-  der Bezug der Erinnerung zum Löschtermin steht in der Feldhilfe. DE/EN pflegen.
-- [ ] Beide Feldhilfen in den gemeinsamen Aufbau bringen beziehungsweise darauf
-  prüfen. Ganze Tage, tatsächliche Grenzen, 0 als abgeschaltete Erinnerung und
-  den effektiven Vorlauf bei kurzen Aufbewahrungsfristen verständlich erklären.
-  Unter „Wann gilt die Änderung?“ festhalten: ohne Neustart für künftige
-  Selbstdeaktivierungen; bereits festgelegte Lösch-/Erinnerungstermine bleiben
-  erhalten. Keine abweichenden Fristberechnungen allein für die Darstellung.
-- [ ] Wie freigegeben eine eigene Konfigurationsrubrik „Kontoverwaltung“ anlegen
-  und die beiden Fristfelder aus „Sicherheit & Sitzungen“ dorthin verschieben.
-  Vorhandene Gruppen-/Navigationsmechanik und den typisierten Konfigurationskatalog
-  verwenden; zugehörige aktuelle Dokumentationsverweise nachziehen. „Benutzerstatus“
-  bleibt für Anwesenheit/Abwesenheit zuständig.
-- [ ] Die neue Konfigurationsrubrik ausdrücklich auf Superadmins beschränken:
-  Nur sie dürfen die anwendungsweiten Fristen sehen und ändern. Admins und
-  normale Benutzer erhalten keinen Zugriff, auch nicht über direkte URLs oder
-  direkte Aufrufe der zuständigen Speicherdienste. Passende serverseitige
-  Berechtigungsprüfungen und Regressionen ergänzen.
-  Die neue Konfigurationsrubrik nicht mit „Mein Konto → Sicherheit → Konto
-  verwalten“ verwechseln; dort verwaltet jeder berechtigte Kontoinhaber nur sein
-  eigenes Konto. Keine Ausweitung der Kontozugriffe durch die neue Rubrik.
-  Die [Rollenübersicht](../rollen.md) nach Umsetzung vom geplanten auf den
-  tatsächlich geltenden Stand aktualisieren.
-- [ ] Die freigegebenen Feld- und Hilfetextänderungen in der abschließenden
-  isolierten Testrunde in DE/EN auf Desktop und Smartphone prüfen. Native
-  Zahlenfeldbedienung, Suffix, Fokusdarstellung und unveränderte Wertebereiche
-  berücksichtigen. Offene Prüfungen im [Testbedarf](../testbedarf.md) führen.
+Umgesetzt: Die eigene Rubrik „Kontoverwaltung“ verwendet die vorhandenen nativen
+Tagesfelder mit Suffix und kurzen Beschriftungen. Feldhilfen erklären ganze Tage,
+Grenzen, ausgeschaltete Erinnerung und unveränderte bereits festgelegte Termine.
+Nur Superadmins sehen und ändern die Fristen. Die Dienstprüfung lädt aktuelle
+Rollen; die einmalige Startanlage kann vorhandene Werte nicht überschreiben.
+Navigation, Speichern, Rollenentzug und die Feldhilfen sind gezielt geprüft.
+Die ergänzten Browserfälle werden in der abschließenden Testrunde ausgeführt;
+der offene Nachweis bleibt im [Testbedarf](../testbedarf.md).
 
 ## Vorerst zurückgestellt
 

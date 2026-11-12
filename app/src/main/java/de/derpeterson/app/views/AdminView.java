@@ -569,9 +569,7 @@ public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObs
         .filter(CosmosSectionHeaderComponent.class::isInstance)
         .findFirst()
         .ifPresent(sectionHeaderComponent -> {
-          if (activeAdminSection == AdminSection.CONFIGURATION
-              && activeConfigurationGroup != null
-              && activeConfigurationGroup.isSuperadminOnly()) {
+          if (hasDedicatedConfigurationHeading()) {
             headingsByConfigurationGroup.put(activeConfigurationGroup, sectionHeaderComponent);
           } else {
             headingsByAdminSection.put(activeAdminSection, sectionHeaderComponent);
@@ -581,14 +579,18 @@ public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObs
 
     adminHeadingDiv.removeAll();
     Component activeHeadingComponent =
-        activeAdminSection == AdminSection.CONFIGURATION
-                && activeConfigurationGroup != null
-                && activeConfigurationGroup.isSuperadminOnly()
+        hasDedicatedConfigurationHeading()
             ? headingsByConfigurationGroup.get(activeConfigurationGroup)
             : headingsByAdminSection.get(activeAdminSection);
     if (activeHeadingComponent != null) {
       adminHeadingDiv.add(activeHeadingComponent);
     }
+  }
+
+  private boolean hasDedicatedConfigurationHeading() {
+    return activeAdminSection == AdminSection.CONFIGURATION
+        && (activeConfigurationGroup == AdminConfigGroup.TWO_FACTOR
+            || activeConfigurationGroup == AdminConfigGroup.EXTERNAL_LOGIN);
   }
 
   private void updateNavigationState() {

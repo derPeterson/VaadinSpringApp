@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -15,6 +16,7 @@ import de.derpeterson.app.config.MailConfig;
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
+import de.derpeterson.app.security.AdminRolePolicy;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +37,9 @@ class ConfigServiceConfiguredDefaultsTest {
   @BeforeEach
   void setUp() {
     environment = new MockEnvironment();
-    configService = new ConfigService(configRepository, transactionManager, environment);
+    configService =
+        new ConfigService(
+            configRepository, transactionManager, environment, mock(AdminRolePolicy.class));
   }
 
   @Test

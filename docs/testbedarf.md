@@ -17,7 +17,7 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
   unter dem Button lesbar und vollständig kopierbar, korrektes Ziel, kein Überlauf
   und keine leeren Linkbereiche in Mails ohne Aktion. Keine echten E-Mails senden.
 
-- Deaktivierungsfristen in der Konfiguration, **wartend auf die Umsetzung** von
+- Deaktivierungsfristen in der Konfiguration, **offen, Umsetzung vorhanden** von
   [Nachtaufgabe 10](planung/nachtaufgaben.md#10-konfigurationsfelder-für-deaktivierungsfristen-vereinheitlichen):
   In DE/EN auf Desktop und Smartphone kurze Beschriftungen ohne Klammerzusätze,
   rechts integriertes Tages-Suffix wie bei Benachrichtigungen und die Feldhilfen
@@ -150,11 +150,6 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
   DE-/EN-Vorlagen nach Platzhalterersetzung identisches Buttonziel und sichtbare
   vollständige URL prüfen, einschließlich sicherer HTML-Kodierung. Kein neuer
   Token, keine gekürzten Ziele und kein Zusatzblock bei Mails ohne Aktion.
-
-- Superadmin-Konfiguration der Kontofristen, **wartend auf Nachtaufgabe 10**:
-  Speichern durch Superadmins erlauben; direkte Dienstaufrufe durch Admins,
-  normale Benutzer und nicht angemeldete Aufrufer verweigern. Verweigerte
-  Änderungen lassen die gespeicherten Fristen unverändert.
 
 - Beschränkter Anmeldezustand selbst deaktivierter Konten, **wartend auf Nachtaufgabe 8**:
   Erstnachweis vor Statusanzeige, Portal-/Anbieteranmeldung, fehlende normale

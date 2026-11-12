@@ -272,7 +272,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private String getSafeConfigValue(ConfigEntry configEntry) {
-    String storedConfigValue = configService.getString(configEntry);
+    String storedConfigValue = configService.getForAdministration(configEntry);
     return storedConfigValue == null ? "" : storedConfigValue;
   }
 
@@ -493,9 +493,14 @@ public class AdminConfigurationSection extends VerticalLayout {
       configInputComponent = emailField;
     } else if (usesSecondsDuration(configEntry)
         || DURATION_ENTRIES.contains(configEntry)
-        || isNotificationRetention(configEntry)) {
-      configInputComponent =
+        || isFixedDayDuration(configEntry)) {
+      AdminDurationField durationField =
           new AdminDurationField(messageProperties, durationStorage(configEntry));
+      if (ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT) {
+        durationField.requireWholeDays(
+            configEntry == ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS ? 0 : 1);
+      }
+      configInputComponent = durationField;
     } else if (defaultValue instanceof Integer) {
       configInputComponent = createIntegerInput(configEntry);
     } else if (configEntry == ConfigEntry.REMEMBER_ME_SECRET_KEY
@@ -530,7 +535,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       return AdminDurationField.Storage.DURATION;
     }
 
-    if (isNotificationRetention(configEntry)) {
+    if (isFixedDayDuration(configEntry)) {
       return AdminDurationField.Storage.DAYS;
     }
 
@@ -630,7 +635,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       addCopyrightPlaceholderHelp();
     }
     if (configInputs.get(configEntry) instanceof AdminDurationField durationField) {
-      addDurationValueHelp(durationField, !isNotificationRetention(configEntry));
+      addDurationValueHelp(durationField, !isFixedDayDuration(configEntry));
     }
 
     helpPanel.add(defaultValueDiv, inputRulesDiv);
@@ -834,7 +839,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     Map<ConfigEntry, String> smtpSettings = new LinkedHashMap<>();
     for (ConfigEntry configEntry : getVisibleConfigEntries()) {
       String submittedConfigValue = normalizeValue(configEntry, extractInputValue(configEntry));
-      String previousConfigValue = configService.getString(configEntry);
+      String previousConfigValue = configService.getForAdministration(configEntry);
 
       if (selectedGroup == AdminConfigGroup.SMTP) {
         smtpSettings.put(configEntry, submittedConfigValue);
@@ -1090,6 +1095,11 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private boolean isSecretEntry(ConfigEntry configEntry) {
     return ConfigurationCatalog.secret(configEntry);
+  }
+
+  private boolean isFixedDayDuration(ConfigEntry configEntry) {
+    return isNotificationRetention(configEntry)
+        || ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT;
   }
 
   private boolean isNotificationRetention(ConfigEntry configEntry) {

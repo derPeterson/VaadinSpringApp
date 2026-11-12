@@ -33,8 +33,8 @@ nachgewiesenen Kontostand gebunden. Der letzte aktive Superadmin bleibt geschüt
 
 Die Selbstdeaktivierung widerruft Sitzungen und gespeicherte Anmeldungen. Sie
 reserviert ein Löschdatum und verschickt einen Reaktivierungslink an die
-Kontoadresse. Unter „Konfiguration → Sicherheit & Sitzungen“ werden die
-Aufbewahrung und der Vorlauf der Erinnerung in ganzen Tagen eingestellt. Die
+Kontoadresse. Unter „Konfiguration → Kontoverwaltung“ stellen ausschließlich
+Superadmins die Aufbewahrung und den Vorlauf der Erinnerung in ganzen Tagen ein. Die
 Standardwerte betragen 30 und 7 Tage. Ein Vorlauf von null deaktiviert die
 Erinnerung. Der tatsächliche Vorlauf lässt mindestens einen Tag nach der
 Deaktivierung frei. Bereits festgelegte Termine ändern sich durch spätere

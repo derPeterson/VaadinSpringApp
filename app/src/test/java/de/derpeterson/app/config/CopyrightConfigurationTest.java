@@ -31,7 +31,7 @@ class CopyrightConfigurationTest {
     ReflectionTestUtils.invokeMethod(
         initializer(configService, environment), "createDefaultConfigSettings");
 
-    verify(configService).set(ConfigEntry.COPYRIGHT_TEXT, "© {year} {serviceName}");
+    verify(configService).initializeIfMissing(ConfigEntry.COPYRIGHT_TEXT, "© {year} {serviceName}");
   }
 
   @Test
@@ -42,7 +42,7 @@ class CopyrightConfigurationTest {
     ReflectionTestUtils.invokeMethod(
         initializer(configService, environment), "createDefaultConfigSettings");
 
-    verify(configService, never()).set(any(), any());
+    verify(configService, never()).initializeIfMissing(any(), any());
     verifyNoInteractions(environment);
   }
 

@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
+import de.derpeterson.app.security.AdminRolePolicy;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -21,7 +22,11 @@ class UserNotificationPolicyTest {
   final ConfigRepository configRepository = mock(ConfigRepository.class);
   final MockEnvironment environment = new MockEnvironment();
   final ConfigService configService =
-      new ConfigService(configRepository, mock(PlatformTransactionManager.class), environment);
+      new ConfigService(
+          configRepository,
+          mock(PlatformTransactionManager.class),
+          environment,
+          mock(AdminRolePolicy.class));
   final UserNotificationPolicy policy = new UserNotificationPolicy(configService);
 
   @Test

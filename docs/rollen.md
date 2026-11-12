@@ -9,8 +9,7 @@ der E-Mail-Verifikation für reguläre Konten bleibt ebenfalls Superadmins vorbe
 Diese Übersicht beschreibt die aktuell vorhandenen Rechte von oben nach unten.
 Die gemeinsamen Kontofunktionen stehen einmal im Abschnitt
 [Angemeldete Kontoinhaber](#angemeldete-kontoinhaber). Die Rollenabschnitte nennen
-die darüber hinausgehenden Rechte und ihre Grenzen. Noch nicht umgesetzte
-Entscheidungen sind am Ende ausdrücklich als geplant gekennzeichnet.
+die darüber hinausgehenden Rechte und ihre Grenzen.
 
 ## Superadmin · SUPERADMIN
 
@@ -24,6 +23,9 @@ Der Superadmin erhält zusätzlich zu den Adminrechten folgende Befugnisse:
   und als „Nicht geprüft“ gekennzeichnet. Das ist keine bestätigte E-Mail-Adresse.
 - Google und Microsoft unter „Konfiguration → Anmeldeanbieter“ konfigurieren
   und freigeben, einschließlich der Anbieterzugangsdaten.
+- Unter „Konfiguration → Kontoverwaltung“ die anwendungsweiten Aufbewahrungs-
+  und Erinnerungsfristen für selbst deaktivierte Konten sehen und ändern.
+  Direkte URLs und Speicherdienstaufrufe bleiben für andere Rollen gesperrt.
 - Rollenbezogene Zwei-Faktor-Regeln und die gemeinsamen Einstellungen dieser
   2FA-Konfiguration ändern. Dazu gehören auch ausdrücklich vorgesehene
   Entwicklungsoptionen; die normalen Identitätsnachweise werden dadurch nicht
@@ -72,11 +74,6 @@ Superadmin-Rechte verschaffen. Er darf nicht die Anbieterkonfiguration, die
 rollenbezogenen 2FA-Regeln oder den internen Mitteilungsversand des Superadmins
 übernehmen. Auch bei sichtbaren oder selbst zusammengestellten Aufrufen gelten
 die fachlichen Berechtigungsprüfungen.
-
-**Aktueller Sonderfall:** Die Aufbewahrungs- und Erinnerungsfristen für selbst
-deaktivierte Konten stehen noch unter „Sicherheit & Sitzungen“ und sind damit
-auch für Admins zugänglich. Die beschlossene Einschränkung steht unter
-[Geplante Änderung](#geplante-änderung-kontoverwaltung).
 
 Details zu Bedienung und Grenzen: [Administration](anwendung.md#administration),
 [Mailqueue](mailqueue.md) und [Ticketregeln](zwei-faktor-authentifizierung.md#ticketzustände-zähler-und-glocke).
@@ -163,24 +160,10 @@ Sichtbarkeit eines Buttons. Sperren, Löschung, Rollenänderungen und widerrufen
 Sitzungen müssen auch bei bereits geöffneten Ansichten berücksichtigt werden.
 Die Anmeldung über Google, Microsoft oder Portalpasswort verleiht keine höheren
 Rollen. „Verifiziert“, „Nicht geprüft“ und der Registrierungsweg sind ebenfalls
-keine administrativen Rollen. Ein Entwicklungskonto ist als separates Merkmal
-geplant und soll keine zusätzlichen Rechte verleihen.
+keine administrativen Rollen. Das separate Merkmal Entwicklungskonto verleiht
+ebenfalls keine zusätzlichen Rechte.
 
 Die 2FA-Regeln können sich nach Rolle und Aktion unterscheiden. Mehrere Rollen
 sind deshalb kein Grund, einfach die vermeintlich schwächste Sicherheitsregel
 anzuwenden. Die verbindlichen Regeln und Ausnahmen stehen in der
 [Sicherheitsdokumentation](sicherheit.md) und der [2FA-Dokumentation](zwei-faktor-authentifizierung.md).
-
-## Geplante Änderung: Kontoverwaltung
-
-Freigegeben, **noch nicht umgesetzt**: Die beiden globalen Fristen für
-Aufbewahrung nach Selbstdeaktivierung und Löscherinnerung ziehen in die neue
-Konfigurationsrubrik „Kontoverwaltung“. Nur Superadmins dürfen diese Rubrik
-sehen und ihre Werte ändern. Admins und normale Benutzer dürfen dies auch
-nicht durch direkte URLs oder Dienstaufrufe umgehen.
-
-Die Verwaltung einzelner Konten durch berechtigte Admins und die Verwaltung des
-eigenen Kontos bleiben davon getrennt und behalten ihre bisherigen Rechte.
-Nach Umsetzung diesen Abschnitt in die geltenden Rollenrechte übernehmen und
-den bisherigen Sonderfall bei ADMIN entfernen.
-Arbeitsauftrag: [Nachtaufgabe 10](planung/nachtaufgaben.md#10-konfigurationsfelder-für-deaktivierungsfristen-vereinheitlichen).

@@ -45,7 +45,7 @@ class AdminEmailConfigurationValidationTest {
     VaadinSession.setCurrent(vaadinSession);
     messageProperties = MessageProperties.forLocale(new CustomI18NProvider(), Locale.GERMAN);
     ConfigService configService = mock(ConfigService.class);
-    when(configService.getString(any(ConfigEntry.class)))
+    when(configService.getForAdministration(any(ConfigEntry.class)))
         .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
     configurationSection =
         new AdminConfigurationSection(messageProperties, configService, () -> {});

@@ -10,11 +10,17 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.ConfigRepository;
+import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.repository.UserRepository.SecurityUserRow;
+import de.derpeterson.app.security.AdminRolePolicy;
 import jakarta.persistence.EntityManagerFactory;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,6 +37,8 @@ import org.junit.jupiter.api.RepeatedTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -41,6 +49,11 @@ import org.springframework.mock.env.MockEnvironment;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -52,10 +65,83 @@ class ConfigServicePersistenceTest {
   @Autowired private JpaTransactionManager transactionManager;
   private ConfigService configService;
 
+  @ParameterizedTest
+  @ValueSource(strings = {"ROLE_SUPERADMIN", "ROLE_ADMIN", "ROLE_USER", "ANONYMOUS"})
+  void accountRetentionReadAndWriteRequireFreshSuperadminRole(String roleName) {
+    UserRepository securityUserRepository = mock(UserRepository.class);
+    SecurityUserRow securityUserRow = mock(SecurityUserRow.class);
+    ConfigService securedConfigService =
+        new ConfigService(
+            configRepository,
+            transactionManager,
+            new MockEnvironment(),
+            new AdminRolePolicy(securityUserRepository));
+    securedConfigService.initializeIfMissing(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS, "30");
+    securedConfigService.initializeIfMissing(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS, "999");
+    assertEquals(30, securedConfigService.getInteger(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS));
+
+    try {
+      if (!roleName.equals("ANONYMOUS")) {
+        UserDetails adminUserDetails =
+            User.withUsername("admin@example.test").password("test").authorities(roleName).build();
+        SecurityContextHolder.getContext()
+            .setAuthentication(
+                UsernamePasswordAuthenticationToken.authenticated(
+                    adminUserDetails, null, adminUserDetails.getAuthorities()));
+        when(securityUserRepository.findSecurityUser(adminUserDetails.getUsername()))
+            .thenReturn(List.of(securityUserRow));
+        when(securityUserRow.isEnabled()).thenReturn(true);
+        when(securityUserRow.getRole()).thenReturn(RoleType.valueOf(roleName));
+      }
+      if (roleName.equals("ROLE_SUPERADMIN")) {
+        assertEquals(
+            "30",
+            securedConfigService.getForAdministration(
+                ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS));
+        securedConfigService.set(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS, "60");
+        securedConfigService.set(ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS, "0");
+        assertEquals(
+            60, securedConfigService.getInteger(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS));
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> securedConfigService.set(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS, "0"));
+        assertThrows(
+            IllegalArgumentException.class,
+            () -> securedConfigService.set(ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS, "-1"));
+        // Ein während der Sitzung entzogener Superadminstatus wirkt beim nächsten Dienstaufruf.
+        when(securityUserRow.getRole()).thenReturn(RoleType.ROLE_ADMIN);
+      }
+
+      assertThrows(
+          AccessDeniedException.class,
+          () ->
+              securedConfigService.getForAdministration(
+                  ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS));
+      assertThrows(
+          AccessDeniedException.class,
+          () -> securedConfigService.set(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS, "99"));
+      assertThrows(
+          IllegalArgumentException.class,
+          () ->
+              securedConfigService.saveSmtpSettings(
+                  Map.of(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS, "99")));
+      assertEquals(
+          roleName.equals("ROLE_SUPERADMIN") ? 60 : 30,
+          securedConfigService.getInteger(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS));
+    } finally {
+      SecurityContextHolder.clearContext();
+    }
+  }
+
   @BeforeEach
   void clearDatabase() {
     configRepository.deleteAll();
-    configService = new ConfigService(configRepository, transactionManager, new MockEnvironment());
+    configService =
+        new ConfigService(
+            configRepository,
+            transactionManager,
+            new MockEnvironment(),
+            mock(AdminRolePolicy.class));
   }
 
   @Test
@@ -156,9 +242,12 @@ class ConfigServicePersistenceTest {
         .when(coordinated)
         .saveAndFlush(any());
     // Distinct service instances: no JVM-local lock can hide the DB race.
-    ConfigService first = new ConfigService(coordinated, transactionManager, new MockEnvironment());
+    ConfigService first =
+        new ConfigService(
+            coordinated, transactionManager, new MockEnvironment(), mock(AdminRolePolicy.class));
     ConfigService second =
-        new ConfigService(coordinated, transactionManager, new MockEnvironment());
+        new ConfigService(
+            coordinated, transactionManager, new MockEnvironment(), mock(AdminRolePolicy.class));
     ExecutorService executorService = Executors.newFixedThreadPool(2);
     try {
       Future<?> firstWrite =

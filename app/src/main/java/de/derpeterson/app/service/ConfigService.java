@@ -1,9 +1,11 @@
 package de.derpeterson.app.service;
 
+import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.config.ConfigurationCatalog;
 import de.derpeterson.app.model.ConfigEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.repository.ConfigRepository;
+import de.derpeterson.app.security.AdminRolePolicy;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +34,37 @@ public class ConfigService {
   private final ConfigRepository configRepository;
   private final PlatformTransactionManager transactionManager;
   private final Environment springEnvironment;
+  private final AdminRolePolicy adminRolePolicy;
+
+  /**
+   * UI-Zugriff auf geschützte Konfiguration; interne Laufzeitleser benötigen keine Benutzerrolle.
+   */
+  public String getForAdministration(ConfigEntry configEntry) {
+    requireAdministrativeAccess(configEntry);
+
+    return getString(configEntry);
+  }
+
+  private void requireAdministrativeAccess(ConfigEntry configEntry) {
+    if (ConfigurationCatalog.group(configEntry).isSuperadminOnly()) {
+      adminRolePolicy.requireSuperadmin();
+    }
+  }
+
+  /** Nur die einmalige Startanlage: existierende Werte werden niemals verändert. */
+  public void initializeIfMissing(ConfigEntry configEntry, String initialConfigValue) {
+    Objects.requireNonNull(configEntry, "configEntry");
+    Objects.requireNonNull(initialConfigValue, "initialConfigValue");
+
+    TransactionTemplate initialConfigTransaction = new TransactionTemplate(transactionManager);
+    initialConfigTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+    initialConfigTransaction.executeWithoutResult(transactionStatus -> {
+      if (!configRepository.existsByKey(configEntry.getKey())) {
+        configRepository.saveAndFlush(
+            new ConfigEntity(null, configEntry.getKey(), initialConfigValue));
+      }
+    });
+  }
 
   public boolean exists(ConfigEntry configEntry) {
     return configRepository.existsByKey(configEntry.getKey());
@@ -62,6 +95,11 @@ public class ConfigService {
 
   /** SMTP darf neue Zugangsdaten und Transportoptionen nur als vollständigen Stand sehen. */
   public void saveSmtpSettings(Map<ConfigEntry, String> smtpConfigValues) {
+    if (smtpConfigValues.keySet().stream()
+        .anyMatch(
+            configEntry -> ConfigurationCatalog.group(configEntry) != AdminConfigGroup.SMTP)) {
+      throw new IllegalArgumentException("Only SMTP settings can be saved together");
+    }
     TransactionTemplate configWriteTransaction = new TransactionTemplate(transactionManager);
     configWriteTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     configWriteTransaction.executeWithoutResult(transactionStatus -> {
@@ -132,7 +170,8 @@ public class ConfigService {
   }
 
   /**
-   * Stores a non-null, otherwise unmodified value (empty strings are allowed). Each call commits
+   * Stores a non-null, otherwise unmodified value (empty strings are generally allowed). Account
+   * retention settings require whole days and a current superadmin role. Each call commits
    * independently of an ambient transaction. On concurrent creation the unique key constraint
    * chooses the insert winner; the loser updates that row in a fresh transaction. The last
    * committed write wins.
@@ -140,6 +179,16 @@ public class ConfigService {
   public void set(ConfigEntry configEntry, String configValue) {
     Objects.requireNonNull(configEntry, "configEntry");
     Objects.requireNonNull(configValue, "value");
+    requireAdministrativeAccess(configEntry);
+
+    if (ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT) {
+      int configuredDays = Integer.parseInt(configValue);
+      int minimumDays = configEntry == ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS ? 0 : 1;
+      if (configuredDays < minimumDays) {
+        throw new IllegalArgumentException("Invalid account retention period");
+      }
+    }
+
     TransactionTemplate configWriteTransaction = new TransactionTemplate(transactionManager);
     configWriteTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     boolean[] insertingConfigEntry = {false};

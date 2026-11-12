@@ -40,6 +40,63 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @Tag("configuration-follow-up")
+  @Tag("configuration-field-help")
+  @DisplayName("Kontofristen verwenden Tagesfelder und bleiben Superadmins vorbehalten")
+  void accountRetentionUsesFixedDaysAndIsRestrictedToSuperadmins(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 1000);
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(browserPage).selectTestLanguage();
+    AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
+    configurationPage.open(AdminConfigGroup.ACCOUNT_MANAGEMENT);
+
+    String retentionLabel = uiTexts.getAccountDeactivationRetentionLabel();
+    String reminderLabel = uiTexts.getAccountDeactivationReminderLabel();
+    String originalRetention = configurationPage.value(retentionLabel);
+    String originalReminder = configurationPage.value(reminderLabel);
+    assertThat(browserPage.locator(".cosmos-config-setting-count"))
+        .hasText(uiTexts.getAdminConfigSettingsCount(2));
+    for (String fieldLabel : new String[] {retentionLabel, reminderLabel}) {
+      assertThat(configurationPage.duration(fieldLabel).locator(".admin-duration-unit-label"))
+          .hasText(uiTexts.getAdminConfigDurationUnitDays());
+      assertThat(configurationPage.duration(fieldLabel).locator("vaadin-combo-box")).hasCount(0);
+      configurationPage.info(fieldLabel).click();
+      AdminConfigurationPage.assertEffectiveUse(configurationPage.helpPanel(), uiTexts);
+      assertThat(configurationPage.helpPanel())
+          .containsText(uiTexts.getAccountDeactivationEffective());
+      AllurePlaywright.attachScreenshot(
+          "Kontofristen-Feldhilfe bei " + viewportWidth + " px", browserPage);
+      configurationPage.closeHelp();
+    }
+    try {
+      configurationPage.enter(retentionLabel, "31");
+      configurationPage.enter(reminderLabel, "0");
+      configurationPage.save();
+      browserPage.reload();
+      assertThat(configurationPage.input(retentionLabel)).hasValue("31");
+      assertThat(configurationPage.input(reminderLabel)).hasValue("0");
+      AllurePlaywright.attachScreenshot(
+          "Kontoverwaltung bei " + viewportWidth + " px", browserPage);
+    } finally {
+      configurationPage.enter(retentionLabel, originalRetention);
+      configurationPage.enter(reminderLabel, originalReminder);
+      configurationPage.save();
+    }
+
+    new UserMenu(browserPage).signOut();
+    loginPage.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+    browserPage.navigate(path(ADMIN_ROUTE) + "?section=configuration&group=account_management");
+    assertThat(configurationPage.input(retentionLabel)).hasCount(0);
+    assertThat(configurationPage.input(uiTexts.getAdminConfigEntryServiceName())).isVisible();
+    new AdminNavigation(browserPage).openDrawer();
+    assertThat(new AdminNavigation(browserPage).groupLink(AdminConfigGroup.ACCOUNT_MANAGEMENT))
+        .hasCount(0);
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("configuration-follow-up")
   @Tag("form-details")
   @DisplayName("Anbieter- und 2FA-Entwürfe werden erst nach ausdrücklicher Zustimmung verworfen")
   void providerAndFactorDraftsRequireExplicitDiscard(int viewportWidth) {
@@ -492,7 +549,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       2. Jede Feldinfo per Klick öffnen: übersetzter Standardwert, Eingaberegeln und Wirksamkeit.
       3. Nur eine Info gleichzeitig sichtbar; per Info-Button wieder schließen.
       4. Ein gesetzter Standard-Geheimschlüssel bleibt vertraulich; das leere SMTP-Passwort zeigt ausdrücklich den Leerhinweis.
-      5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder, einschließlich Sitzungs-Timeout und der beiden Fristen zur Kontodeaktivierung.
+      5. Jede Card zeigt die Anzahl ihrer tatsächlichen Felder, einschließlich Sitzungs-Timeout; Kontofristen bleiben Superadmins vorbehalten.
       **Erwartet:** Keine Gruppe verliert ihre Bedienung; alle bisherigen Felder erhalten die gemeinsame Info-Funktion.
       """)
   void everyConfigurationFieldHasAnAccessibleLocalizedInfo(int width) {
@@ -545,7 +602,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
       }
       total += count;
     }
-    assertEquals(35, total);
+    assertEquals(33, total);
     settings.open(AdminConfigGroup.SECURITY);
     UiTexts other = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     UserMenu userMenu = new UserMenu(browserPage);
