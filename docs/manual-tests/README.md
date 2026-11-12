@@ -91,9 +91,10 @@ Alternativ mit denselben lokalen Umgebungsvariablen vom Projektroot starten:
 
 Der Test verwendet den normalen MIME-Versand einschließlich eingebettetem Logo und
 die vorhandenen HTML-Vorlagen: Aktivierung, Passwortreset, Passwort geändert,
-E-Mail-Änderung bestätigen und E-Mail geändert. Dazu kommen die lokalisierte
+E-Mail-Änderung bestätigen, E-Mail geändert, Zwei-Faktor-Code sowie Deaktivierung,
+Löscherinnerung, Löschbestätigung und Reaktivierungsbestätigung. Dazu kommen die lokalisierte
 Admin-Testmail und einmal die technische, auch in der Anwendung englische
-Versandfehlermeldung als Klartext. Ergebnis: **8 Mails bei einer Sprache, 15 bei DE+EN**.
+Versandfehlermeldung als Klartext. Ergebnis: **12 Mails bei einer Sprache, 23 bei DE+EN**.
 Die Zwei-Faktor-Vorlage enthält ausschließlich einen synthetischen Beispielcode.
 Für unveränderte gleiche Inhalte an alter/neuer Adresse gibt es nur ein Beispiel.
 `PROMOTION` ist ein Queue-Typ ohne eigenen Versandablauf oder eigene Vorlage.

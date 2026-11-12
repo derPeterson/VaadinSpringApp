@@ -171,6 +171,48 @@ final class MailVisualPreview {
                   "12345678",
                   "NOTICE",
                   messageProperties.getTwoFactorEmailNotice())));
+      examples.add(
+          html(
+              renderer,
+              user,
+              "account_deactivated",
+              messageProperties.getAccountDeactivatedMailSubject(),
+              Map.of(
+                  "TITLE", messageProperties.getAccountDeactivatedMailSubject(),
+                  "MESSAGE",
+                      messageProperties.getAccountDeactivatedMailBody("20.12.2026, 12:00 UTC"),
+                  "REACTIVATION_LINK",
+                      BASE_URL + "/reactivate-account?token=visual-preview-not-a-real-token")));
+      examples.add(
+          html(
+              renderer,
+              user,
+              "account_deletion_reminder",
+              messageProperties.getAccountDeletionReminderSubject(),
+              Map.of(
+                  "TITLE", messageProperties.getAccountDeletionReminderSubject(),
+                  "MESSAGE",
+                      messageProperties.getAccountDeletionReminderBody("20.12.2026, 12:00 UTC"),
+                  "REACTIVATION_LINK",
+                      BASE_URL + "/reactivate-account?token=visual-preview-not-a-real-token")));
+      examples.add(
+          html(
+              renderer,
+              user,
+              "account_deleted",
+              messageProperties.getAccountDeletedMailSubject(),
+              Map.of(
+                  "TITLE", messageProperties.getAccountDeletedMailSubject(),
+                  "MESSAGE", messageProperties.getAccountDeletedMailBody())));
+      examples.add(
+          html(
+              renderer,
+              user,
+              "account_reactivated",
+              messageProperties.getAccountReactivatedMailSubject(),
+              Map.of(
+                  "TITLE", messageProperties.getAccountReactivatedMailSubject(),
+                  "MESSAGE", messageProperties.getAccountReactivatedMailBody())));
     }
     // Der technische Fehlerhinweis der Queue ist in der Anwendung ausschließlich englisch.
     // Seine Beispieldaten lösen weder einen Queuefehler noch einen erneuten Versandversuch aus.
