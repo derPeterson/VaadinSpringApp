@@ -250,6 +250,7 @@ public class AccountLifecycleService {
               userRepository.findByEmailForUpdate(accountEmail).orElse(null);
           Instant requestedAt = Instant.now();
           if (lockedAccountUser == null
+              || lockedAccountUser.isDevelopmentAccount()
               || lockedAccountUser.isEnabled()
               || lockedAccountUser.getAccountDeactivation() == null) {
             return;
@@ -359,12 +360,14 @@ public class AccountLifecycleService {
         LoginAttemptService.identityKey(recipientEmail));
     userRepository.delete(lockedAccountUser);
     userRepository.flush();
-    emailQueueService.addAccountDeletionConfirmation(
-        recipientEmail,
-        accountMessageProperties.getAccountDeletedMailSubject(),
-        "<p>"
-            + HtmlUtils.htmlEscape(accountMessageProperties.getAccountDeletedMailBody())
-            + "</p>");
+    if (!lockedAccountUser.isDevelopmentAccount()) {
+      emailQueueService.addAccountDeletionConfirmation(
+          recipientEmail,
+          accountMessageProperties.getAccountDeletedMailSubject(),
+          "<p>"
+              + HtmlUtils.htmlEscape(accountMessageProperties.getAccountDeletedMailBody())
+              + "</p>");
+    }
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
           @Override
@@ -395,6 +398,9 @@ public class AccountLifecycleService {
       String emailSubject,
       String emailBody,
       String reactivationToken) {
+    if (lockedAccountUser.isDevelopmentAccount()) {
+      return;
+    }
     String reactivationUrl =
         URI.create(configService.getString(ConfigEntry.BASE_URL))
             .resolve("/" + ACCOUNT_REACTIVATION_ROUTE + "?token=" + reactivationToken)

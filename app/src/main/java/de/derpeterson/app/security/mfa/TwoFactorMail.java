@@ -6,6 +6,7 @@ import de.derpeterson.app.service.AccountSecurityMail;
 import de.derpeterson.app.service.EmailQueueService;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Component;
 
 /** Nur Queueaufnahme. Die vorhandene Mailqueue verantwortet den tatsächlichen Transport. */
@@ -22,6 +23,9 @@ public class TwoFactorMail {
   private final EmailQueueService emailQueueService;
 
   public void setupCode(UserEntity recipientUserEntity, String setupCodeText) {
+    if (recipientUserEntity.isDevelopmentAccount()) {
+      throw new AccessDeniedException("Development accounts cannot receive confirmation codes");
+    }
     MessageProperties messageProperties =
         accountSecurityMail.messagePropertiesForRecipient(recipientUserEntity);
 
@@ -34,6 +38,9 @@ public class TwoFactorMail {
   }
 
   public void securityChange(UserEntity recipientUserEntity, Event securityChangeEvent) {
+    if (recipientUserEntity.isDevelopmentAccount()) {
+      return;
+    }
     MessageProperties messageProperties =
         accountSecurityMail.messagePropertiesForRecipient(recipientUserEntity);
 

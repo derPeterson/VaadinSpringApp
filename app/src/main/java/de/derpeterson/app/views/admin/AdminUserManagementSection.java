@@ -797,6 +797,10 @@ public class AdminUserManagementSection extends VerticalLayout {
     private final Checkbox emailVerificationRequiredCheckbox = new Checkbox();
     private final Span emailVerificationCaptionSpan = new Span();
     private final Span emailVerificationHintSpan = new Span();
+    private final Checkbox developmentAccountCheckbox = new Checkbox();
+    private final Span developmentAccountCaptionSpan = new Span();
+    private final Span developmentAccountHintSpan = new Span();
+    private final Badge developmentAccountBadge = new Badge();
     private MultiSelectComboBox<RoleType> rolesComboBox;
     private Span rolesSummarySpan;
     private Span technicalInfoSpan;
@@ -1007,6 +1011,19 @@ public class AdminUserManagementSection extends VerticalLayout {
       verificationLabelDiv.addClassName("admin-user-option-label");
       emailVerificationRequiredCheckbox.setLabelComponent(verificationLabelDiv);
       emailVerificationRequiredCheckbox.setAriaDescribedBy(emailVerificationHintSpan);
+
+      developmentAccountCheckbox.setId("admin-development-account");
+      developmentAccountCheckbox.addClassName("admin-user-option-checkbox");
+      developmentAccountHintSpan.addClassName("admin-user-option-hint");
+      Div developmentAccountLabelDiv =
+          new Div(developmentAccountCaptionSpan, developmentAccountHintSpan);
+      developmentAccountLabelDiv.addClassName("admin-user-option-label");
+      developmentAccountCheckbox.setLabelComponent(developmentAccountLabelDiv);
+      developmentAccountCheckbox.setAriaDescribedBy(developmentAccountHintSpan);
+      developmentAccountCheckbox.addValueChangeListener(event -> {
+        emailVerificationRequiredCheckbox.setEnabled(!event.getValue());
+        emailVerificationRequiredCheckbox.setValue(!event.getValue());
+      });
     }
 
     private void refreshBirthDatePicker() {
@@ -1198,6 +1215,7 @@ public class AdminUserManagementSection extends VerticalLayout {
           new ArrayList<>(
               userFormBinder.getFields().map(field -> (Object) field.getValue()).toList());
       currentFormValues.add(emailVerificationRequiredCheckbox.getValue());
+      currentFormValues.add(developmentAccountCheckbox.getValue());
       return currentFormValues;
     }
 
@@ -1267,7 +1285,7 @@ public class AdminUserManagementSection extends VerticalLayout {
               personalDetailsRowLayout,
               permissionsRowDiv);
       if (!editMode && userService.canManageSuperadmins()) {
-        editorFormLayout.add(emailVerificationRequiredCheckbox);
+        editorFormLayout.add(emailVerificationRequiredCheckbox, developmentAccountCheckbox);
       }
       if (editMode && externalIdentityService != null) {
         externalIdentityService
@@ -1298,6 +1316,9 @@ public class AdminUserManagementSection extends VerticalLayout {
       signInHeadingLayout.addClassName("admin-user-sign-in-heading");
 
       registeredViaBadge.setId("admin-user-registered-via");
+      developmentAccountBadge.setId("admin-user-development-account");
+      developmentAccountBadge.addThemeVariants(BadgeVariant.CONTRAST);
+      developmentAccountBadge.setVisible(editedUserEntity.isDevelopmentAccount());
       availableSignInMethodsDiv.setId("admin-user-sign-in-methods");
       registrationLabelSpan.addClassName("admin-user-registration-label");
       signInMethodsLabelSpan.addClassName("admin-user-methods-label");
@@ -1315,6 +1336,7 @@ public class AdminUserManagementSection extends VerticalLayout {
           new VerticalLayout(
               signInHeadingLayout,
               signInDetailsRowLayout,
+              developmentAccountBadge,
               verificationDetailsLayout,
               administrativeMailActionsLayout);
       signInDetailsLayout.setWidthFull();
@@ -1332,6 +1354,7 @@ public class AdminUserManagementSection extends VerticalLayout {
         return;
       }
       signInTitleH3.setText(messageProperties.getSignInDetailsTitle());
+      developmentAccountBadge.setText(messageProperties.getDevelopmentAccountLabel());
       refreshVerificationDetails();
       refreshAdministrativeMailActions();
 
@@ -1385,12 +1408,14 @@ public class AdminUserManagementSection extends VerticalLayout {
       resendVerificationMailButton.setId("admin-resend-verification-mail");
       resendVerificationMailButton.setText(messageProperties.getAdminSendVerificationLink());
       resendVerificationMailButton.setPrefixComponent(AppIcon.ENVELOPE.create());
-      resendVerificationMailButton.setEnabled(editedUserEntity.requiresEmailVerification());
+      resendVerificationMailButton.setEnabled(
+          !editedUserEntity.isDevelopmentAccount() && editedUserEntity.requiresEmailVerification());
       sendPasswordResetMailButton.setId("admin-send-password-reset");
       sendPasswordResetMailButton.setText(messageProperties.getAdminPasswordResetMail());
       sendPasswordResetMailButton.setPrefixComponent(AppIcon.KEY.create());
       sendPasswordResetMailButton.setEnabled(
-          editedUserEntity.isEnabled()
+          !editedUserEntity.isDevelopmentAccount()
+              && editedUserEntity.isEnabled()
               && !editedUserEntity.requiresEmailVerification()
               && editedUserEntity.getPassword() != null
               && !editedUserEntity.getPassword().isBlank());
@@ -1405,7 +1430,11 @@ public class AdminUserManagementSection extends VerticalLayout {
       Hr mailActionsDividerHr = new Hr();
       mailActionsDividerHr.addClassName("admin-user-mail-actions-divider");
 
-      Span mailActionsHintSpan = new Span(messageProperties.getAdminAccountMailActionsHint());
+      Span mailActionsHintSpan =
+          new Span(
+              editedUserEntity.isDevelopmentAccount()
+                  ? messageProperties.getDevelopmentAccountMailUnavailable()
+                  : messageProperties.getAdminAccountMailActionsHint());
       SvgIcon mailActionsInfoSvgIcon = AppIcon.INFO_CIRCLE.create();
       mailActionsInfoSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
       HorizontalLayout mailActionsHintLayout =
@@ -1463,6 +1492,8 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private void refreshEditorTexts() {
+      developmentAccountCaptionSpan.setText(messageProperties.getDevelopmentAccountLabel());
+      developmentAccountHintSpan.setText(messageProperties.getDevelopmentAccountHint());
       emailVerificationCaptionSpan.setText(messageProperties.getAdminEmailVerificationRequired());
       emailVerificationHintSpan.setText(messageProperties.getAdminEmailVerificationHint());
       refreshBirthDatePicker();
@@ -1586,6 +1617,7 @@ public class AdminUserManagementSection extends VerticalLayout {
               .birthDate(userFormData.getBirthDate())
               .enabled(userFormData.isEnabled())
               .verificationPending(false)
+              .developmentAccount(!editMode && developmentAccountCheckbox.getValue())
               .preferredLocale(CustomI18NProvider.getCurrentLocale())
               .roleEntities(roleEntities)
               .build();

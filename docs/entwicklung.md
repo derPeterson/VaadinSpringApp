@@ -144,6 +144,14 @@ als Build-Eingaben oder Dokumentationsarchiv übernehmen.
 
 ### E-Mail-Bestätigung für Startkonten
 
+`development-account=true` kennzeichnet ein Startkonto ausdrücklich als Entwicklungskonto.
+Für solche Konten ist sämtlicher kontobezogener Mailversand ausgeschaltet. Deshalb
+ist die Kombination mit `email-verification-required=true` ungültig und wird vor
+der Kontoanlage abgewiesen. Die Beispielkonten setzen den Entwicklungsschalter
+ausdrücklich. Für echte Konten gilt `development-account=false` (auch ohne Angabe).
+Beide Eigenschaften werden nur bei der Anlage übernommen; bestehende Konten
+werden nicht umklassifiziert. Das Kennzeichen erteilt keine Rollen- oder 2FA-Ausnahme.
+
 In [`.env.example`](../.env.example) steht die Option direkt beim vollständigen
 Beispielbenutzer. Die benötigten Beispielzeilen in die lokale `.env` übernehmen,
 deren führendes `#` entfernen und eigene Kontodaten einsetzen. Die Kontoanlage muss mit

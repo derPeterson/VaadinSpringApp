@@ -28,6 +28,7 @@ public class AdminAccountMailService {
     userService.createAdminUser(userEntity, rawPassword, skipEmailVerification);
 
     if (!skipEmailVerification
+        && !userEntity.isDevelopmentAccount()
         && userEntity.isEnabled()
         && !verificationService.sendVerificationEmailByUser(userEntity)) {
       throw new IllegalStateException("Initial verification mail could not be queued");
@@ -63,7 +64,8 @@ public class AdminAccountMailService {
   @Transactional(rollbackFor = IOException.class)
   public boolean sendPasswordReset(Long userId, String expectedEmail) throws IOException {
     UserEntity storedUserEntity = lockAuthorizedUser(userId, expectedEmail);
-    if (!storedUserEntity.isEnabled()
+    if (storedUserEntity.isDevelopmentAccount()
+        || !storedUserEntity.isEnabled()
         || storedUserEntity.requiresEmailVerification()
         || storedUserEntity.getPassword() == null
         || storedUserEntity.getPassword().isBlank()) {

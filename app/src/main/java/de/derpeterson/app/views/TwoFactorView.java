@@ -700,6 +700,10 @@ public final class TwoFactorView extends VerticalLayout
     providerLogoImage.addClassName("external-proof-provider-mark");
     providerProofButton.setPrefixComponent(providerLogoImage);
     providerProofButton.setEnabled(twoFactorEnrollment.available());
+    if (isGoogleProvider && externalLoginFlow.owner(httpServletRequest).isDevelopmentAccount()) {
+      providerProofButton.setEnabled(false);
+      providerProofButton.setTooltipText(messageProperties.getDevelopmentAccountMailUnavailable());
+    }
 
     providerProofButton.addClickListener(_ -> {
       try {

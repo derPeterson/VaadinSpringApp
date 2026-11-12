@@ -397,6 +397,10 @@ class AccountLifecycleServicePersistenceTest {
   }
 
   private UserEntity createAccountUser(boolean enabled) {
+    return createAccountUser(enabled, false);
+  }
+
+  private UserEntity createAccountUser(boolean enabled, boolean developmentAccount) {
     UserEntity accountUser =
         UserEntity.builder()
             .email("lifecycle-" + UUID.randomUUID() + "@example.test")
@@ -405,7 +409,29 @@ class AccountLifecycleServicePersistenceTest {
             .preferredLocale(Locale.ENGLISH)
             .password("test-encoded-password")
             .enabled(enabled)
+            .developmentAccount(developmentAccount)
             .build();
     return userRepository.saveAndFlush(accountUser);
+  }
+
+  @Test
+  void developerDeactivationAndDeletionNeverQueueMailIncludingAfterAccountRemoval() {
+    UserEntity developmentUserEntity = createAccountUser(true, true);
+    MockHttpServletRequest developmentAccountRequest =
+        authenticatedAccountRequest(developmentUserEntity);
+
+    accountLifecycleService.changeOwnAccount(
+        developmentAccountRequest, AccountAction.DEACTIVATE, "correct-password");
+    accountLifecycleService.requestReactivationLink(developmentUserEntity.getEmail());
+    UserEntity deactivatedUserEntity =
+        userRepository.findById(developmentUserEntity.getId()).orElseThrow();
+    deactivatedUserEntity.setAccountDeactivation(
+        new AccountDeactivation(
+            Instant.now().minusSeconds(1), null, "expired-test-token", null, null, null));
+    userRepository.saveAndFlush(deactivatedUserEntity);
+    accountLifecycleService.processDueDeactivations();
+
+    assertFalse(userRepository.existsById(developmentUserEntity.getId()));
+    verifyNoInteractions(emailQueueService);
   }
 }

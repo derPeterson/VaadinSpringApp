@@ -83,6 +83,10 @@ public class UserEntity {
   @Column(updatable = false)
   private RegistrationChannel registrationChannel;
 
+  @Column(name = "development_account", nullable = false, updatable = false)
+  @Builder.Default
+  private boolean developmentAccount = false;
+
   @Column(nullable = false, length = 36)
   @Builder.Default
   private String accessVersion = UUID.randomUUID().toString();

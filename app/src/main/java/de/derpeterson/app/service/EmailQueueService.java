@@ -124,6 +124,9 @@ public class EmailQueueService {
         userRepository
             .lockVerificationUser(userEntity.getId())
             .orElseThrow(() -> new IllegalStateException("Der Benutzer ist nicht mehr vorhanden."));
+    if (userEntity.isDevelopmentAccount()) {
+      return;
+    }
     if (emailType == EmailType.VERIFICATION && !userEntity.requiresEmailVerification()) {
       return;
     }
@@ -164,6 +167,9 @@ public class EmailQueueService {
       throw new IllegalArgumentException("Invalid notification recipient");
     }
     UserEntity stored = userRepository.lockVerificationUser(user.getId()).orElseThrow();
+    if (stored.isDevelopmentAccount()) {
+      return;
+    }
     EmailQueueEntity email = new EmailQueueEntity();
     email.setUserEntity(stored);
     email.setRecipient(EmailIdentity.canonicalize(recipient));

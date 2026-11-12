@@ -2,6 +2,14 @@
 
 ## Auftrag und Versand
 
+Entwicklungskonten besitzen ein eigenes, bei der Anlage festgelegtes Kennzeichen.
+Die Queue unterdrückt ihre Kontomails anhand des frisch gesperrten Kontodatensatzes,
+auch bei festen abweichenden Empfängeradressen. Der Löschablauf berücksichtigt das
+Kennzeichen noch vor Entfernung des Kontos. Verifikations-, Reset-, Sicherheits-,
+Frist- und Löschmails sind gleichermaßen ausgeschlossen. Mailabhängige Nachweise
+werden nicht übersprungen. Der direkte administrative SMTP-Mailtest bleibt unabhängig.
+„Nicht geprüft“ allein ist keine Versandunterdrückung.
+
 Fachaktionen reihen ihre Mails transaktional ein. Verifikation und Passwortreset
 sperren den Kontodatensatz während der Transaktion; offene gleichartige Aufträge werden dedupliziert.
 Sicherheitsereignisse mit fester Zieladresse werden vollständig angelegt.

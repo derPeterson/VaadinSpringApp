@@ -2,7 +2,7 @@
 
 Status: **Umsetzung nach ausdrücklichem Startsignal begonnen.**
 
-Diese Liste wird bis zum ausdrücklichen Startsignal des Benutzers ergänzt.
+Der Benutzer hat den vollständigen Nachtlauf ausdrücklich gestartet.
 Die Aussage, später schlafen zu gehen, startet keine Arbeiten automatisch.
 Die Aufgaben gehören zum bestehenden Branch `codex/vaadin-komponentenanpassungen`.
 Vor dem Start die bestätigten Fehler in [BUGS.md](../../BUGS.md) berücksichtigen.
@@ -77,36 +77,10 @@ Prüfungen abgesichert und besteht noch Zeit, gilt für diesen Nachtlauf:
 
 ## 1. Entwicklungskonten ausdrücklich kennzeichnen
 
-- [ ] Eine eigene gespeicherte Eigenschaft „Entwicklungskonto“ einführen,
-  unabhängig von Registrierungsweg, E-Mail-Nachweis und Berechtigungen.
-- [ ] Bei der Kontoanlage in der Benutzerverwaltung einen Schalter nur für
-  Superadmins anbieten. Standardmäßig ist er ausgeschaltet. Bestehende
-  Vaadin-Komponenten, Cosmos-Stile und deutsche/englische Texte verwenden.
-- [ ] Bei Startkonten die Eigenschaft pro Benutzer mitgeben können. Unsere
-  Beispielkonten ausdrücklich als Entwicklungskonten kennzeichnen; echte
-  Startkonten müssen weiterhin möglich sein. Beispiele und Dokumentation ergänzen.
-- [ ] Bei eingeschaltetem Entwicklungskonto „Verifikation“ abwählen und
-  deaktivieren. Der Hilfetext erklärt: „Für Entwicklung und Tests. Für dieses
-  Konto werden keine E-Mails versendet.“
-- [ ] Den bisherigen Verifikationsschalter für reguläre Konten behalten.
-  Superadmins können damit weiterhin echte Konten ohne Verifikationspflicht
-  bereitstellen. „Nicht geprüft“ bezeichnet den E-Mail-Nachweis und unterdrückt
-  bei solchen regulären Konten keine Sicherheitsmails.
-- [ ] In den Benutzerdetails ein eigenes Badge „Entwicklungskonto“ anzeigen.
-- [ ] Sämtlichen kontobezogenen Mailversand für Entwicklungskonten unterbinden,
-  auch Sicherheitsbenachrichtigungen nach 2FA-Änderungen. Bewusst angeforderte
-  Mails wie Passwortreset und Reaktivierung gehören ebenfalls dazu. Fristmails
-  und Löschbestätigungen berücksichtigen, auch wenn das Konto beim Versand
-  bereits entfernt wurde. Allgemeine Mailtests sind davon getrennt.
-- [ ] Mailabhängige Aktionen verständlich sperren beziehungsweise erklären.
-  Kein scheinbarer Versandserfolg und kein Umgehen eines notwendigen
-  Sicherheitsnachweises. Die konkreten Oberflächen bei der Umsetzung durchgehen.
-- [ ] Bestehende Rollen-, Rechte-, Login- und 2FA-Prüfungen erhalten.
-  „Entwicklungskonto“ gewährt keine zusätzlichen Rechte und keine 2FA-Ausnahme.
-- [ ] Passende isolierte Regressionen ergänzen, Lesbarkeit prüfen und die
-  aktuelle Fachdokumentation nachziehen. Offene automatisierte Prüfungen
-  ausschließlich in [Testbedarf](../testbedarf.md) pflegen. Browserläufe erst
-  mit passender ausdrücklicher Freigabe ausführen.
+Umgesetzt und mit 287 gezielten Tests geprüft. Das Merkmal ist bei der Anlage
+festgelegt und unabhängig von E-Mail-Nachweis und Rollen. Mailabhängige Nachweise
+bleiben gesperrt, statt Sicherheitsprüfungen zu umgehen. Die isolierte UI-Prüfung
+steht zentral im [Testbedarf](../testbedarf.md) für die abschließende Testrunde.
 
 ## 2. Vollständige Aktionslinks in E-Mails zum Kopieren anbieten
 

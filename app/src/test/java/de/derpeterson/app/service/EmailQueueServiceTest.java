@@ -132,6 +132,21 @@ class EmailQueueServiceTest {
 
   @ParameterizedTest
   @EnumSource(value = EmailType.class, names = "ACCOUNT_DELETED", mode = EnumSource.Mode.EXCLUDE)
+  void developmentAccountsNeverQueueAccountMailFromStaleSnapshots(EmailType emailType) {
+    UserEntity staleUserEntity = UserEntity.builder().id(testUserEntity.getId()).build();
+    testUserEntity.setDevelopmentAccount(true);
+    when(userRepository.lockVerificationUser(testUserEntity.getId()))
+        .thenReturn(Optional.of(testUserEntity));
+
+    emailQueueService.addEmailToQueue(staleUserEntity, "Test", "Content", emailType);
+    emailQueueService.addAddressedNotification(
+        staleUserEntity, "new@example.test", "Test", "Content");
+
+    verifyNoInteractions(emailQueueRepository, emailService);
+  }
+
+  @ParameterizedTest
+  @EnumSource(value = EmailType.class, names = "ACCOUNT_DELETED", mode = EnumSource.Mode.EXCLUDE)
   void enqueueLocksAndUsesFreshAccountAndPreservesContent(EmailType type) {
     UserEntity stale =
         UserEntity.builder()

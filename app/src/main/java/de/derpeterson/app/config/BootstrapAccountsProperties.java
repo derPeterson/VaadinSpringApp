@@ -31,6 +31,7 @@ public class BootstrapAccountsProperties {
     private String email;
     private String password;
     private boolean emailVerificationRequired;
+    private boolean developmentAccount;
     private String firstName = "John";
     private String lastName = "Doe";
     private LocalDate birthDate;
@@ -84,6 +85,7 @@ public class BootstrapAccountsProperties {
           || !UserInputRules.isRequiredTextValid(bootstrapAccount.lastName)
           || !UserInputRules.isBirthDateValid(bootstrapAccount.birthDate)
           || bootstrapAccount.preferredLocale == null
+          || bootstrapAccount.developmentAccount && bootstrapAccount.emailVerificationRequired
           || !Set.of("de", "en").contains(bootstrapAccount.preferredLocale.getLanguage())) {
         throw new IllegalArgumentException(
             "Invalid bootstrap account in " + roleType + " at index " + bootstrapAccountIndex);

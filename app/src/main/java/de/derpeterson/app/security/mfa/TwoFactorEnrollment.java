@@ -248,6 +248,7 @@ public class TwoFactorEnrollment {
         twoFactorAccountEntity -> {
           requireNoFactor(twoFactorAccountEntity);
           if (twoFactorAccountEntity.isPreviouslyEnrolled()
+              || twoFactorAccountEntity.getUser().isDevelopmentAccount()
               || twoFactorAccountEntity.isOperatorEnrollment()
               || !twoFactorAccountEntity.getUser().getEmail().equals(owner.email())
               || twoFactorAccountEntity.getUser().isVerificationPending()) {

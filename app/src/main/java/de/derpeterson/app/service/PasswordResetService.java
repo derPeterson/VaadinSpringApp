@@ -267,7 +267,7 @@ public class PasswordResetService {
     userOptional = userOptional.flatMap(user -> userRepository.lockVerificationUser(user.getId()));
     if (userOptional.isPresent()) {
       UserEntity user = userOptional.get();
-      if (user.isEnabled()) {
+      if (user.isEnabled() && !user.isDevelopmentAccount()) {
         if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.PASSWORD_RESET)) {
           logger.debug("Duplicate password reset request skipped: userId={}", user.getId());
           return true;

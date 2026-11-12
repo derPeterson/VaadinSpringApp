@@ -1,5 +1,11 @@
 # Rollen und zusätzliche Berechtigungen
 
+Bei der administrativen Kontoanlage darf ausschließlich ein Superadmin ein
+**Entwicklungskonto** anlegen. Es sendet keine Kontomails, besitzt aber dieselben
+Rollen- und 2FA-Prüfungen wie ein reguläres Konto. Das Kennzeichen wird nach der
+Anlage nicht über die Benutzerbearbeitung geändert. Die separate Ausnahme von
+der E-Mail-Verifikation für reguläre Konten bleibt ebenfalls Superadmins vorbehalten.
+
 Diese Übersicht beschreibt die aktuell vorhandenen Rechte von oben nach unten.
 Die gemeinsamen Kontofunktionen stehen einmal im Abschnitt
 [Angemeldete Kontoinhaber](#angemeldete-kontoinhaber). Die Rollenabschnitte nennen

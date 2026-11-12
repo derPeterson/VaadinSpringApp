@@ -154,6 +154,37 @@ class BootstrapAccountsPersistenceTest {
   }
 
   @Test
+  void developerFlagIsExplicitPersistentAndDoesNotChangeExistingAccounts() throws Exception {
+    Account developmentBootstrapAccount = account("development@example.test");
+    developmentBootstrapAccount.setDevelopmentAccount(true);
+    settings.setUsers(List.of(developmentBootstrapAccount, account("regular@example.test")));
+
+    run();
+    developmentBootstrapAccount.setDevelopmentAccount(false);
+    run();
+
+    UserEntity developmentUserEntity =
+        userRepository.findByEmail("development@example.test").orElseThrow();
+    assertTrue(developmentUserEntity.isDevelopmentAccount());
+    assertFalse(developmentUserEntity.requiresEmailVerification());
+    assertEquals(
+        EmailVerificationStatus.NOT_CHECKED, developmentUserEntity.getEmailVerificationStatus());
+    assertFalse(
+        userRepository.findByEmail("regular@example.test").orElseThrow().isDevelopmentAccount());
+  }
+
+  @Test
+  void contradictoryDeveloperVerificationConfigurationFailsBeforeCreatingAccounts() {
+    Account developmentBootstrapAccount = account("development@example.test");
+    developmentBootstrapAccount.setDevelopmentAccount(true);
+    developmentBootstrapAccount.setEmailVerificationRequired(true);
+    settings.setUsers(List.of(developmentBootstrapAccount));
+
+    assertThrows(IllegalArgumentException.class, this::run);
+    assertEquals(0, userRepository.count());
+  }
+
+  @Test
   void missingInitialVerificationMailRollsBackAllBootstrapAccounts() throws Exception {
     Account realUserAccount = account("real@example.test");
     realUserAccount.setEmailVerificationRequired(true);

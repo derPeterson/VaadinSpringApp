@@ -3,10 +3,10 @@
 ## Browser-Tests
 
 Die Prüfung der offenen Fälle im freigegebenen Umfang gehört zur abschließenden
-Nacht-Testrunde. Der Auftrag wartet weiterhin auf das ausdrückliche Startsignal;
+Nacht-Testrunde. Der Nachtlauf wurde ausdrücklich gestartet;
 die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
 
-- Entwicklungskonten, **wartend auf Nachtaufgabe 1**: In DE/EN auf Desktop und
+- Entwicklungskonten, **offen, Umsetzung vorhanden**: In DE/EN auf Desktop und
   Smartphone Superadmin-Schalter, Standardwerte, deaktivierte Verifikationsoption,
   Badge und Hinweise bei mailabhängigen Aktionen prüfen. Normale Admins können
   das Merkmal nicht setzen. Keine Versandzusage oder echte Mail für Testkonten
@@ -140,7 +140,7 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
 
 ## JUnit-Tests
 
-- Entwicklungskonten und Mailunterdrückung, **wartend auf Nachtaufgabe 1**:
+- Entwicklungskonten und Mailunterdrückung, **offen, Umsetzung vorhanden**:
   Speicherung, Bootstrap-Vorgaben und Superadmin-Prüfung absichern. Kontobezogene
   Versandwege einschließlich manueller Aktionen, 2FA, Fristen und Löschbestätigung
   erzeugen für Entwicklungskonten keine Mailaufträge. Reguläre Konten mit

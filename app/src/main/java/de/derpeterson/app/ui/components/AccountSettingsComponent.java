@@ -129,6 +129,7 @@ public class AccountSettingsComponent extends PageContentLayout {
   private boolean portalPasswordConfigured;
   private final Badge passwordStatusBadge = new Badge();
   private Button passwordActionButton;
+  private final boolean developmentAccount;
 
   // Kontoleiste und Sitzungen
   private final PortalSidebarComponent accountSidebar;
@@ -141,6 +142,7 @@ public class AccountSettingsComponent extends PageContentLayout {
       SerializableFunction<Changes, Profile> persistProfileFunction,
       int maxSessionsPerUser) {
     this.messageProperties = messageProperties;
+    developmentAccount = accountUser != null && accountUser.isDevelopmentAccount();
     portalPasswordConfigured =
         accountUser != null
             && accountUser.getPassword() != null
@@ -220,6 +222,12 @@ public class AccountSettingsComponent extends PageContentLayout {
         createAccountActionButton(
             AppIcon.EDIT, messageProperties::getAccountSettingsChangeAction, false);
     changeEmailButton.setId(changeEmailButtonId);
+    changeEmailButton.setEnabled(!developmentAccount);
+    if (developmentAccount) {
+      localizedTextRefreshActions.add(() ->
+          changeEmailButton.setTooltipText(
+              messageProperties.getDevelopmentAccountMailUnavailable()));
+    }
 
     localizedTextRefreshActions.add(
         () -> changeEmailButton.setAriaLabel(messageProperties.getAccountSettingsChangeEmail()));

@@ -116,13 +116,13 @@ public class UserService {
     lockAndReadSuperadmins();
     rolePolicy.authorizeMutation(null, roleTypes(accountUserEntity.getRoleEntities()));
 
-    if (skipEmailVerification) {
+    if (skipEmailVerification || accountUserEntity.isDevelopmentAccount()) {
       rolePolicy.requireSuperadmin();
     }
 
     accountUserEntity.setRegistrationChannel(RegistrationChannel.ADMINISTRATION);
     accountUserEntity.setEmailVerificationStatus(
-        skipEmailVerification
+        skipEmailVerification || accountUserEntity.isDevelopmentAccount()
             ? EmailVerificationStatus.NOT_CHECKED
             : EmailVerificationStatus.PENDING);
 

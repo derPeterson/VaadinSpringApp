@@ -187,6 +187,9 @@ public class AccountSecurityService {
       UserEntity user =
           lockedAccount(
               request, identity, change.currentPassword(), ExternalLoginFlow.Purpose.EMAIL);
+      if (user.isDevelopmentAccount()) {
+        throw new AccessDeniedException("Email changes require a mail-enabled account");
+      }
       if (user.getEmail().equals(target)) {
         throw new Rejected(Problem.SAME_EMAIL);
       }

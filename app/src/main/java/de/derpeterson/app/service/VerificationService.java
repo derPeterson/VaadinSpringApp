@@ -229,7 +229,7 @@ public class VerificationService {
   }
 
   private boolean canVerify(UserEntity user) {
-    return user.requiresEmailVerification();
+    return !user.isDevelopmentAccount() && user.requiresEmailVerification();
   }
 
   private boolean sendVerificationEmailByUserId(Long id) throws IOException {

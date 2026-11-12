@@ -50,6 +50,7 @@ CREATE TABLE IF NOT EXISTS users (
     enabled boolean not null,
     status_manually_set boolean not null,
     verification_pending boolean not null,
+    development_account boolean default false not null,
     email_verification_status enum ('VERIFIED','PENDING','NOT_CHECKED') default 'PENDING' not null,
     verification_mail_requested_at timestamp(6) with time zone,
     password_reset_mail_requested_at timestamp(6) with time zone,

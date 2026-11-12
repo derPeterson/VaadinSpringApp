@@ -622,9 +622,16 @@ public class SupportTicketService {
   @Transactional(readOnly = true)
   public void validateInstructionPreview(HttpServletRequest httpRequest, Long id) {
     SupportTicketEntity ticket = requireAccessibleTicketEntity(httpRequest, id, true);
-    if (!ticket.getStatus().acceptsMessages()) {
+    if (ticket.getOwner().isDevelopmentAccount() || !ticket.getStatus().acceptsMessages()) {
       throw new AccessDeniedException("Instruction delivery unavailable");
     }
+  }
+
+  @Transactional(readOnly = true)
+  public boolean belongsToDevelopmentAccount(HttpServletRequest httpRequest, Long ticketId) {
+    return requireAccessibleTicketEntity(httpRequest, ticketId, true)
+        .getOwner()
+        .isDevelopmentAccount();
   }
 
   @Transactional
@@ -636,6 +643,7 @@ public class SupportTicketService {
     UserEntity recipient = ticket.getOwner();
     entityManager.refresh(recipient);
     if (ticket.getInstructionSentAt() != null
+        || recipient.isDevelopmentAccount()
         || !ticket.getStatus().acceptsMessages()
         || !recipient.isEnabled()
         || recipient.isVerificationPending()) {

@@ -152,11 +152,48 @@ class AdminAccountVerificationPersistenceTest {
     UserEntity accountUserEntity = newAccount();
     adminAccountMailService.createUser(accountUserEntity, "KnownPassword!", false);
 
-    assertTrue(
+    assertFalse(
         adminAccountMailService.resendVerification(
             accountUserEntity.getId(), accountUserEntity.getEmail()));
     assertEquals(1, emailQueueRepository.count());
     assertEquals(1, verificationTokenRepository.count());
+  }
+
+  @Test
+  void developerCreationRequiresSuperadminAndDisablesMailWithoutGrantingRights()
+      throws IOException {
+    UserEntity developmentUserEntity = newAccount();
+    developmentUserEntity.setDevelopmentAccount(true);
+    adminAccountMailService.createUser(developmentUserEntity, "KnownPassword!", false);
+
+    verify(adminRolePolicy).requireSuperadmin();
+    UserEntity storedUserEntity =
+        userRepository.findById(developmentUserEntity.getId()).orElseThrow();
+    assertTrue(storedUserEntity.isDevelopmentAccount());
+    assertEquals(
+        EmailVerificationStatus.NOT_CHECKED, storedUserEntity.getEmailVerificationStatus());
+    assertFalse(
+        adminAccountMailService.resendVerification(
+            storedUserEntity.getId(), storedUserEntity.getEmail()));
+    assertFalse(
+        adminAccountMailService.sendPasswordReset(
+            storedUserEntity.getId(), storedUserEntity.getEmail()));
+    assertEquals(0, emailQueueRepository.count());
+    assertEquals(0, verificationTokenRepository.count());
+  }
+
+  @Test
+  void ordinaryAdminCannotCreateDeveloperAccountEvenWithVerificationSelected() {
+    doThrow(new AccessDeniedException("Superadmin required"))
+        .when(adminRolePolicy)
+        .requireSuperadmin();
+    UserEntity developmentUserEntity = newAccount();
+    developmentUserEntity.setDevelopmentAccount(true);
+
+    assertThrows(
+        AccessDeniedException.class,
+        () -> adminAccountMailService.createUser(developmentUserEntity, "KnownPassword!", false));
+    assertEquals(0, userRepository.count());
   }
 
   @Test
@@ -247,7 +284,7 @@ class AdminAccountVerificationPersistenceTest {
     if (!verificationExempt) {
       assertEquals(
           "replacement@example.test", emailQueueRepository.findAll().getFirst().getRecipient());
-      assertTrue(
+      assertFalse(
           adminAccountMailService.resendVerification(
               storedUserEntity.getId(), storedUserEntity.getEmail()));
       assertEquals(1, emailQueueRepository.count());

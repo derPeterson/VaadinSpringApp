@@ -113,6 +113,7 @@ public class DatabaseInitializer {
               .preferredLocale(bootstrapAccount.getPreferredLocale())
               .roleEntities(Set.of(roleEntitiesByType.get(bootstrapEntry.role())))
               .enabled(true)
+              .developmentAccount(bootstrapAccount.isDevelopmentAccount())
               .emailVerificationStatus(
                   bootstrapAccount.isEmailVerificationRequired()
                       ? EmailVerificationStatus.PENDING

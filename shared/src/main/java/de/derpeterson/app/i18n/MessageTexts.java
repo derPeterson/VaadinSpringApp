@@ -4468,6 +4468,18 @@ public class MessageTexts {
     return getTranslation("email.verification.required");
   }
 
+  public String getDevelopmentAccountLabel() {
+    return getTranslation("account.development.label");
+  }
+
+  public String getDevelopmentAccountHint() {
+    return getTranslation("account.development.hint");
+  }
+
+  public String getDevelopmentAccountMailUnavailable() {
+    return getTranslation("account.development.mailUnavailable");
+  }
+
   public String getAdminEmailVerificationHint() {
     return getTranslation("email.verification.requiredHint");
   }
