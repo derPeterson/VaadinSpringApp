@@ -767,7 +767,7 @@ public class AccountSettingsComponent extends PageContentLayout {
     // Die nachträgliche Ergänzung liegt hinter dem ersten gesammelten Textaufbau.
     lifecycleTab =
         new Tab(
-            AppIcon.LOCK.create(),
+            AppIcon.USER_COG.create(),
             withTextOnRefresh(
                 new Span(messageProperties.getAccountLifecycleTab()),
                 messageProperties::getAccountLifecycleTab));

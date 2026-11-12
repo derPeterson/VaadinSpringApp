@@ -95,7 +95,7 @@ public class AccountLifecycleService {
     return accountOwner.hasPassword() ? ProofMethod.PORTAL_PASSWORD : ProofMethod.UNAVAILABLE;
   }
 
-  public void changeOwnAccount(
+  public boolean changeOwnAccount(
       HttpServletRequest httpServletRequest, AccountAction accountAction, String enteredProof) {
     Objects.requireNonNull(accountAction, "Account action required");
     MaintenanceService.requirePublicAccess(configService);
@@ -107,24 +107,28 @@ public class AccountLifecycleService {
     UUID provenFactorRevision = verifyAccountProof(accountOwner, enteredProof);
     String currentSessionId = accountSession.getId();
 
-    newAccountTransaction()
-        .executeWithoutResult(transactionStatus -> {
-          userRepository.lockRole(RoleType.ROLE_SUPERADMIN);
-          UserEntity lockedAccountUser = lockProvenAccount(accountOwner, provenFactorRevision);
-          List<Long> enabledSuperadminIds =
-              userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
-          if (enabledSuperadminIds.size() == 1
-              && enabledSuperadminIds.contains(accountOwner.id())) {
-            throw new LastSuperadminException();
-          }
+    boolean mailQueued =
+        Boolean.TRUE.equals(
+            newAccountTransaction()
+                .execute(transactionStatus -> {
+                  userRepository.lockRole(RoleType.ROLE_SUPERADMIN);
+                  UserEntity lockedAccountUser =
+                      lockProvenAccount(accountOwner, provenFactorRevision);
+                  List<Long> enabledSuperadminIds =
+                      userRepository.findEnabledUserIdsByRole(RoleType.ROLE_SUPERADMIN);
+                  if (enabledSuperadminIds.size() == 1
+                      && enabledSuperadminIds.contains(accountOwner.id())) {
+                    throw new LastSuperadminException();
+                  }
 
-          deviceTokenRepository.removeUserTokens(lockedAccountUser.getEmail());
-          if (accountAction == AccountAction.DEACTIVATE) {
-            deactivateAccount(lockedAccountUser);
-          } else {
-            deleteAccount(lockedAccountUser);
-          }
-        });
+                  deviceTokenRepository.removeUserTokens(lockedAccountUser.getEmail());
+                  if (accountAction == AccountAction.DEACTIVATE) {
+                    deactivateAccount(lockedAccountUser);
+                  } else {
+                    deleteAccount(lockedAccountUser);
+                  }
+                  return !lockedAccountUser.isDevelopmentAccount();
+                }));
 
     try {
       avatarDraftStore.releaseForUser(accountOwner.id());
@@ -135,6 +139,7 @@ public class AccountLifecycleService {
           "Account state committed; session cleanup interrupted",
           safeFailure(sessionCleanupFailure));
     }
+    return mailQueued;
   }
 
   private UserEntity lockProvenAccount(Owner accountOwner, UUID provenFactorRevision) {

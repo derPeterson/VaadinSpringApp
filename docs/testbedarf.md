@@ -44,7 +44,7 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
   ohne Überlauf. Löschbestätigungen bieten keine Reaktivierung an. Erneut
   angeforderte Links verwenden ebenfalls die neue Vorlage. Keine echten Mails.
 
-- Konto deaktivieren/löschen – Übersicht und Bestätigungsdialoge, **wartend auf die Umsetzung**
+- Konto deaktivieren/löschen – Übersicht und Bestätigungsdialoge, **offen, Umsetzung vorhanden**
   von [Nachtaufgabe 6](planung/nachtaufgaben.md#6-dialoge-zum-deaktivieren-und-endgültigen-löschen-angleichen):
   In DE/EN auf Desktop und Smartphone jeweils Passwort- und 2FA-Variante prüfen.
   In der Übersicht Tabler `user-cog` am Tab und die gelbe Warnhinweisfläche mit

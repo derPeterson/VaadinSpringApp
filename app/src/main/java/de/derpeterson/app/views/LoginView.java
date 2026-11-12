@@ -35,6 +35,7 @@ import de.derpeterson.app.helper.ui.ComponentTextUpdateHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
+import de.derpeterson.app.security.AccountActionNotice;
 import de.derpeterson.app.security.EmailVerificationRequiredException;
 import de.derpeterson.app.security.ExternalLoginFlow;
 import de.derpeterson.app.security.IsNotAuthenticatedBaseView;
@@ -44,6 +45,7 @@ import de.derpeterson.app.security.PendingEmailVerificationFlow;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.SessionLimitException;
 import de.derpeterson.app.security.SessionManagementService;
+import de.derpeterson.app.service.AccountLifecycleService.AccountAction;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AccountSessionsComponent;
 import de.derpeterson.app.ui.components.AppIcon;
@@ -475,6 +477,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     }
 
     ExternalProofNotice.showExternalDisconnectNotice(afterNavigationEvent, messageProperties, true);
+    AccountActionNotice.consume(loginHttpServletRequest).ifPresent(this::showAccountActionNotice);
     List<String> loginErrorParameterValues =
         afterNavigationEvent.getLocation().getQueryParameters().getParameters().get("error");
     if (loginErrorParameterValues != null
@@ -488,6 +491,29 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
             .contains(loginErrorParameterValues.getFirst())) {
       showLoginFailureNotification(loginErrorParameterValues.getFirst());
     }
+  }
+
+  private void showAccountActionNotice(AccountActionNotice accountActionNotice) {
+    boolean deletingAccount = accountActionNotice.accountAction() == AccountAction.DELETE;
+    NotificationHelper.getInstance()
+        .showNotification(
+            accountActionNotice.committed()
+                ? () ->
+                    deletingAccount
+                        ? messageProperties.getAccountDeletedSuccess()
+                        : messageProperties.getAccountDeactivatedSuccess()
+                : messageProperties::getBaseFailedTitle,
+            () -> {
+              if (!accountActionNotice.committed()) {
+                return messageProperties.getAccountLifecycleOutcomeUnknown();
+              }
+              return accountActionNotice.mailQueued()
+                  ? messageProperties.getAccountLifecycleMailQueued()
+                  : messageProperties.getAccountLifecycleNoMail();
+            },
+            accountActionNotice.committed()
+                ? NotificationHelper.NotificationType.SUCCESS
+                : NotificationHelper.NotificationType.ERROR);
   }
 
   private void showSessionRecoveryPanel() {

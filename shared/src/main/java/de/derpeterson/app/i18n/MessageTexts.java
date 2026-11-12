@@ -100,6 +100,26 @@ public class MessageTexts {
     return getTranslation("account.lifecycle.failure");
   }
 
+  public String getAccountDeletedSuccess() {
+    return getTranslation("account.lifecycle.deletedSuccess");
+  }
+
+  public String getAccountDeactivatedSuccess() {
+    return getTranslation("account.lifecycle.deactivatedSuccess");
+  }
+
+  public String getAccountLifecycleMailQueued() {
+    return getTranslation("account.lifecycle.mailQueued");
+  }
+
+  public String getAccountLifecycleNoMail() {
+    return getTranslation("account.lifecycle.noMail");
+  }
+
+  public String getAccountLifecycleOutcomeUnknown() {
+    return getTranslation("account.lifecycle.outcomeUnknown");
+  }
+
   public String getAccountReactivateAction() {
     return getTranslation("account.lifecycle.reactivate");
   }

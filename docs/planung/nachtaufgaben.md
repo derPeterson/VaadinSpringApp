@@ -114,64 +114,16 @@ Der englische Nachlauf und ergänzende Grenzfälle der großen Runde bleiben im
 abfangbare Browseraktion; es wird kein automatisches Speichern versprochen.
 ## 6. Dialoge zum Deaktivieren und endgültigen Löschen angleichen
 
-- [ ] Im Tab „Konto verwalten“ Tabler `user-cog` verwenden. Den Inhaltsbereich
-  als gelbe Warnhinweisfläche im bestehenden Design gestalten: Erklärung oben,
-  darunter die beiden nativen Aktionsbuttons innerhalb der Fläche gemeinsam
-  rechtsbündig nebeneinander anordnen. Den umgebenden
-  Bereich „Sicherheit & Zugang“ und die übrigen Tabs unverändert lassen.
-- [ ] „Konto deaktivieren“ mit Tabler `user-pause` gelb gestalten, „Konto endgültig
-  löschen“ mit Tabler `user-x` rot. Dies gilt für die Übersicht und die jeweilige
-  Bestätigungsaktion im Dialog. Vorhandene gemeinsame Warn- und Löschbutton-Stile
-  verwenden, keine lokalen Nachbauten ihrer Zustände einführen.
-- [ ] Beide bestehenden Dialoge mit dem Untertitel „Identität bestätigen“ im
-  Kopf ergänzen, wie bei der Anbieterbestätigung. Gestaltung und Aufbau der
-  vorhandenen Dialogbausteine beibehalten; DE/EN berücksichtigen.
-- [ ] Für das Deaktivieren Tabler `user-pause` im Dialogkopf und im
-  Bestätigungsbutton verwenden. Für das endgültige Löschen Tabler `user-x`
-  einsetzen, ebenfalls im Kopf und im Button. Die Personen-Icons stammen aus
-  derselben Familie; keine Mischung mit den runden Lucide-Personen-Icons.
-  Das Kopf-Icon samt seinem Rahmen und dezenten Hintergrund bei Deaktivierung
-  gelb und bei Löschung rot gestalten. Die übrigen Dialogflächen behalten das
-  gemeinsame Design.
-- [ ] Den bestehenden Text zu den Folgen der Aktion aus dem normalen Fließtext
-  in eine gemeinsame Hinweisbox vor der Eingabe übernehmen: Deaktivierung im
-  vorhandenen gelben Sicherheitswarnbox-Design. Für die endgültige Löschung eine
-  rote Farbvariante derselben Box ergänzen, mit identischen Abständen, Formen
-  und Schriftwerten. Icon, fette Einleitung „Sicherheitshinweis:“, Rahmen und
-  dezenter Hintergrund verwenden den jeweiligen Warnfarbton; für Rot die
-  vorhandenen Fehlerfarb-Tokens nutzen. Der restliche Text bleibt normal hell.
-  Abmeldung, Frist und anschließende Löschung beziehungsweise sofortige endgültige
-  Löschung klar benennen. Die vorhandene Regel zur Icon-Ausrichtung beachten.
-- [ ] Dieselben Anpassungen für die Passwort- und die 2FA-Variante verwenden.
-  Über dem Passwortfeld ergänzen: „Geben Sie Ihr aktuelles Portalpasswort ein:“
-  sowie die englische Entsprechung, in regulärer Textfarbe mit 12 px und Gewicht
-  400. Vorhandene App-Code-/Ersatzcode-Hinweise bleiben im gemeinsamen Baustein.
-- [ ] Bestehende Identitäts-, Rechte- und Letzter-Superadmin-Prüfungen erhalten.
-  Die Kontoaktion weiterhin erst durch bewussten Klick auf den Bestätigungsbutton
-  ausführen, auch bei vollständig eingegebenem App-Code.
-- [ ] Nach erfolgreicher Deaktivierung beziehungsweise Löschung auf der
-  Anmeldeseite einmalig eine passende Erfolgsnotification anzeigen:
-  „Ihr Konto wurde erfolgreich deaktiviert.“ beziehungsweise „Ihr Konto wurde
-  endgültig gelöscht.“ Die Rückmeldung über die Abmeldung hinweg erhalten,
-  ohne die alte Sitzung weiterzuverwenden. Erfolg nur nach bestätigtem
-  Transaktionsabschluss melden, nicht allein aufgrund der Weiterleitung.
-- [ ] Den Mailhinweis am tatsächlichen Ergebnis ausrichten: Bei Queueaufnahme
-  „Die Bestätigungs-E-Mail wurde zum Versand vorgemerkt.“ ergänzen, keine
-  erfolgte Zustellung behaupten. Für Entwicklungskonten ohne Mailversand keinen
-  Versandhinweis anzeigen. Einen Versandfehler getrennt vom bereits bestätigten
-  Kontostatus benennen; er macht eine erfolgte Kontoänderung nicht rückgängig.
-- [ ] Bei einem technischen Fehlschlag der Kontoaktion auf der Anmeldeseite eine
-  Fehlernotification anzeigen: „Ihr Konto konnte nicht deaktiviert werden.
-  Bitte wenden Sie sich an die Administration.“ beziehungsweise „Ihr Konto
-  konnte nicht gelöscht werden. Bitte wenden Sie sich an die Administration.“
-  Keine Erfolgsrückmeldung und keine Behauptung einer Kontoänderung ausgeben.
-  Ist der Ausgang unklar, dies ausdrücklich sagen. Falsche Passwörter/Codes und
-  fachliche Ablehnungen weiterhin direkt im Dialog erklären. Alle Meldungen
-  auch auf Englisch und mit den vorhandenen Notification-Bausteinen umsetzen.
-- [ ] Die Darstellungen und Aktionen mit und ohne 2FA in der abschließenden
-  Testrunde isoliert in DE/EN auf Desktop und Smartphone prüfen. Nur eigene
-  Testkonten verwenden; der offene Browsernachtest steht im [Testbedarf](../testbedarf.md).
+Umgesetzt: Tabler-Personenicons, gemeinsam rechts angeordnete Übersichtaktionen,
+gelbe Deaktivierung und rote Löschung, passende Sicherheitswarnboxen sowie der
+Untertitel zur Identitätsbestätigung. Passwort und 2FA bleiben bewusste Klickaktionen.
 
+Nach bestätigtem Commit wird die alte Sitzung beendet. Eine einmalige Rückmeldung
+liegt ausschließlich in einer neuen anonymen Sitzung. Unklarer technischer Ausgang
+wird ausdrücklich nicht als bestätigte Löschung oder Deaktivierung gemeldet.
+Entwicklungskonten erhalten keine Versandzusage. Diese konservative Behandlung
+verhindert eine falsche Aussage bei einem Fehler während des Transaktionsabschlusses.
+Der gezielte Browsernachtest folgt mit den Kontomails; siehe [Testbedarf](../testbedarf.md).
 ## 7. Kontostatus-E-Mails in das bestehende Cosmos-Maildesign überführen
 
 - [ ] Die bisherigen schlichten HTML-Inhalte für Deaktivierung, Löschwarnung

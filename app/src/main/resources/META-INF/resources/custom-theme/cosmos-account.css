@@ -815,3 +815,34 @@ vaadin-dialog.account-change-dialog::part(header-content) {
   #account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab { flex:1;min-width:0;padding-inline:10px; }
   .account-security-cards,.account-security-empty { padding:20px; }
 }
+
+/* Die Kontoaktionen verwenden den gemeinsamen Warnrahmen in ihrer Aktionsfarbe. */
+.account-lifecycle-overview.cosmos-security-warning {
+    padding: var(--cosmos-info-box-padding);
+}
+.account-lifecycle-overview > vaadin-horizontal-layout > vaadin-icon {
+    color: var(--cosmos-security-warning-accent);
+    width: 18px;
+    height: 18px;
+    flex: none;
+}
+.account-lifecycle-deactivate .account-change-dialog-header > .cosmos-panel-icon {
+    color: var(--cosmos-security-warning-accent);
+    border-color: var(--cosmos-security-warning-border);
+    background: var(--cosmos-security-warning-surface);
+}
+.account-lifecycle-delete {
+    --cosmos-security-warning-accent: var(--lumo-error-text-color);
+    --cosmos-security-warning-border: var(--cosmos-reference-danger-border);
+    --cosmos-security-warning-surface: var(--cosmos-reference-danger-surface);
+}
+.account-lifecycle-delete .account-change-dialog-header > .cosmos-panel-icon {
+    color: var(--cosmos-security-warning-accent);
+    border-color: var(--cosmos-security-warning-border);
+    background: var(--cosmos-security-warning-surface);
+}
+.account-lifecycle-password-hint {
+    color: var(--cosmos-reference-text);
+    font-size: var(--cosmos-font-size-s);
+    font-weight: 400;
+}

@@ -71,6 +71,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     confirmLifecycleWithPortalPassword();
 
     assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
+    assertThat(browserPage.getByText(uiTexts.getAccountDeactivatedSuccess())).isVisible();
+    assertThat(browserPage.getByText(uiTexts.getAccountLifecycleMailQueued())).isVisible();
     MailpitInbox mailpitInbox = new MailpitInbox(browserContext);
     CapturedMail deactivationMail =
         mailpitInbox.awaitSecurityMail(accountEmail, uiTexts.getAccountDeactivatedMailSubject());
@@ -108,6 +110,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
     confirmLifecycleWithPortalPassword();
     assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
+    assertThat(browserPage.getByText(uiTexts.getAccountDeletedSuccess())).isVisible();
     new MailpitInbox(browserContext)
         .awaitSecurityMail(accountEmail, uiTexts.getAccountDeletedMailSubject());
   }
@@ -149,6 +152,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     browserPage.locator("#account-lifecycle-submit").click();
 
     assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
+    assertThat(browserPage.getByText(uiTexts.getAccountDeletedSuccess())).isVisible();
     new MailpitInbox(browserContext)
         .awaitSecurityMail(accountEmail, uiTexts.getAccountDeletedMailSubject());
   }
