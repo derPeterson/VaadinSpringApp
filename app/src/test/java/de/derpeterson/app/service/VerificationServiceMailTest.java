@@ -174,7 +174,9 @@ class VerificationServiceMailTest {
             IOException.class,
             () -> verificationService.sendVerificationEmailByUser(testUserEntity));
       } else {
-        assertTrue(verificationService.sendVerificationEmailByUser(testUserEntity));
+        assertEquals(
+            outcome.equals("queued"),
+            verificationService.sendVerificationEmailByUser(testUserEntity));
       }
       assertEquals(
           outcome.equals("queued") ? 1 : 0,

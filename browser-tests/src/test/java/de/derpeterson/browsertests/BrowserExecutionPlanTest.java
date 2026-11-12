@@ -86,7 +86,10 @@ class BrowserExecutionPlanTest {
                   "navigationStatesAreConsistentInPortalAndAdministration",
                   "roleSearchPreservesSelectedRolesInBothDialogs",
                   "choiceHoverPaginationAndDaySuffixUseTheSharedFieldStyle",
-                  "profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard");
+                  "profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard",
+                  "providerAndFactorDraftsRequireExplicitDiscard",
+                  "changingConfigurationGroupRequiresDiscardingTheDraft",
+                  "administrativeCreationRequiresMailProof");
           case "email-verification" ->
               Set.of(
                   "pendingVerificationKeepsPortalAccessBlocked",

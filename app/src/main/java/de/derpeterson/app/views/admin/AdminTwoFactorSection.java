@@ -33,6 +33,7 @@ import de.derpeterson.app.security.mfa.TwoFactorPolicy;
 import de.derpeterson.app.ui.components.AdminDurationField;
 import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
@@ -73,6 +74,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   }
 
   private final transient MessageProperties messageProperties;
+  private final BrowserUnsavedChangesGuard browserChangesGuard =
+      new BrowserUnsavedChangesGuard(this, this::hasUnsavedChanges);
   private final transient TwoFactorPolicies twoFactorPolicies;
   private final transient TwoFactorAuthorization twoFactorAuthorization;
   private final transient HttpServletRequest httpServletRequest;
@@ -179,6 +182,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
                   TwoFactorAction.MANAGE_FACTOR,
                   TwoFactorAction.MANAGE_RECOVERY_CODES)));
       Div roleTabContentDiv = new Div(roleRuleGroupsLayout, roleGuide(role));
+      browserChangesGuard.observeFields(roleTabContentDiv);
       roleTabContentDiv.addClassName("mfa-role-content");
       ruleModeComboBoxesByRole.put(role, modeComboBoxesByAction);
       Tab roleTab = new Tab();
@@ -515,6 +519,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     try {
       twoFactorPolicySnapshot =
           twoFactorPolicies.save(httpServletRequest, loadedPolicyRevision, draftTwoFactorPolicy);
+      browserChangesGuard.refresh();
 
       NotificationHelper.getInstance()
           .showNotification(

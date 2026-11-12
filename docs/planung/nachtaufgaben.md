@@ -103,28 +103,15 @@ Queryparameter. Gesperrte Abläufe bleiben ohne Links. Noch keine Umsetzung bego
 
 ## 5. Formularschutz um Browseraktionen erweitern
 
-- [ ] Den bestehenden Schutz für persönliche Daten, die Speicherformulare der
-  Konfiguration einschließlich Anbieter-/2FA-Einstellungen sowie Benutzer
-  anlegen/bearbeiten um den nativen Browserhinweis ergänzen.
-- [ ] Bei echten ungespeicherten Änderungen auch vor F5/Strg+R, Browser-Refresh,
-  Tab-/Fensterschließen und Verlassen über die Adresszeile beziehungsweise externe
-  Navigation warnen. Der Benutzer kann das Verlassen bewusst bestätigen.
-- [ ] Den Hinweis an die vorhandenen Änderungsvergleiche koppeln. Unveränderte,
-  erfolgreich gespeicherte und vollständig auf den Ausgangsstand zurückgesetzte
-  Formulare warnen nicht. Nach einem fehlgeschlagenen Speichern bleibt der Schutz
-  aktiv, solange die Änderungen noch vorliegen. Beim bewussten Verwerfen und
-  Schließen eines Formulars den zugehörigen Browserhinweis wieder entfernen.
-- [ ] Den browserseitigen Standarddialog verwenden. Bestehende anwendungsinterne
-  Bestätigungen erhalten und doppelte Warnungen für dieselbe Aktion vermeiden.
-  Suchfelder, Filter, Codeeingaben und sonstige Aktionen ohne Speicherformular
-  bleiben außerhalb dieses Schutzes. Kein automatisches Speichern und keine
-  zusätzliche Entwurfswiederherstellung einführen.
-- [ ] Die passende öffentliche Vaadin-/Browseranbindung prüfen und die technische
-  Zuverlässigkeitsgrenze auf mobilen Geräten berücksichtigen. Kein vollständiges
-  Abfangen von Browserabstürzen oder zwangsweisem Beenden versprechen.
-- [ ] Die offenen Browserfälle aus [Testbedarf](../testbedarf.md) in der großen
-  Testrunde ergänzen und isoliert in DE/EN auf Desktop und Smartphone prüfen.
+Umgesetzt: Derselbe Änderungsvergleich schützt persönliche Daten, allgemeine
+Konfiguration, Anbieter-/2FA-Einstellungen und Benutzerformulare auch bei nativen
+Browseraktionen. Ein sauberer oder geschlossener Bereich entfernt nur seinen
+Schutz. Suchfelder, Filter und Codeeingaben bleiben ausgenommen.
 
+Der gezielte deutsche Browserlauf hat alle 12 Fälle auf Desktop/Smartphone bestanden.
+Der englische Nachlauf und ergänzende Grenzfälle der großen Runde bleiben im
+[Testbedarf](../testbedarf.md). Mobile Betriebssystemabbrüche sind keine zuverlässig
+abfangbare Browseraktion; es wird kein automatisches Speichern versprochen.
 ## 6. Dialoge zum Deaktivieren und endgültigen Löschen angleichen
 
 - [ ] Im Tab „Konto verwalten“ Tabler `user-cog` verwenden. Den Inhaltsbereich

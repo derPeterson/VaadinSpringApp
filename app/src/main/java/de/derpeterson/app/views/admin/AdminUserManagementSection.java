@@ -67,6 +67,7 @@ import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserAvatarService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosPagination;
@@ -846,6 +847,14 @@ public class AdminUserManagementSection extends VerticalLayout {
       composeEditorDialogLayout();
 
       registerTextRefresh();
+      BrowserUnsavedChangesGuard browserChangesGuard =
+          new BrowserUnsavedChangesGuard(
+              editUserDialog,
+              () ->
+                  editUserDialog.isOpened()
+                      && (!loadedUserFormValues.equals(readUserFormValues())
+                          || birthDatePicker.isInvalid()));
+      editUserDialog.addOpenedChangeListener(event -> browserChangesGuard.refresh());
       editUserDialog.open();
     }
 

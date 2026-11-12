@@ -123,7 +123,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
 | `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
-| `form-details` | Gemeinsame Hoverflächen in Navigation, Tabelle, Eingaben, Auswahllisten, Kalender und Buttons; Scrollleisten, MultiSelect-Rahmen/Abstand, Pagination-Breite, Tages-Suffixe und Formularschutz mit Fokus, Schließen/Escape und Verwerfen auf Desktop/Smartphone | 6 |
+| `form-details` | Gemeinsame Hoverflächen in Navigation, Tabelle, Eingaben, Auswahllisten, Kalender und Buttons; Scrollleisten, MultiSelect-Rahmen/Abstand, Pagination-Breite, Tages-Suffixe und Formularschutz mit Fokus, Schließen/Escape, native Neuladehinweise und Verwerfen auf Desktop/Smartphone | 12 |
 | `cosmos-components` | Rollensuche, Auswahldetails/Tages-Suffixe, Konfigurations-Switches, SideNav-Zustände, Tooltips, Benutzermenü und native Scrollleisten | 7 |
 | `cosmos-scrollbars` | Nur globale Scrollleisten: Dokument, Chat, Grid, TextArea und Dialog auf Desktop/Smartphone, Scrollbedienung und Systemkontrast | 1 |
 | `all` | Alle Browserfälle einschließlich der Fast-Fälle | alle |

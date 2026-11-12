@@ -257,10 +257,14 @@ public final class MailpitInbox {
         assertThat(messagePage.locator("body")).containsText("Browser Testuser");
       }
       assertThat(messagePage.locator("body")).containsText("VaadinSpringApp (Browser-Test)");
-      Locator link = messagePage.locator("a[href*='" + path(route) + "/']");
+      Locator link = messagePage.locator(".cosmos-email-button a[href*='" + path(route) + "/']");
 
       assertThat(link).hasCount(1);
       assertThat(link).isVisible();
+      Locator copyLink = messagePage.locator(".cosmos-email-copy-link a");
+      assertThat(copyLink).hasCount(1);
+      assertThat(copyLink).hasAttribute("href", link.getAttribute("href"));
+      assertThat(copyLink).hasText(link.getAttribute("href"));
       assertLocalActionLink(link.getAttribute("href"), route);
       Locator logo =
           messagePage.getByRole(

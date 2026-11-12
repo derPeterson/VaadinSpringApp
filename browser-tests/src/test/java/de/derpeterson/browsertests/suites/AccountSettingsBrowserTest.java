@@ -188,6 +188,10 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     Locator firstNameInputLocator = accountPage.input("account-first-name");
     String savedFirstName = firstNameInputLocator.inputValue();
     firstNameInputLocator.fill("Temporary draft");
+    unsavedChangesPrompt.assertBrowserReloadCanBeCancelled();
+    firstNameInputLocator.fill(savedFirstName);
+    unsavedChangesPrompt.assertBrowserReloadHasNoWarning();
+    firstNameInputLocator.fill("Temporary draft");
 
     accountPage.section("account-tab-security");
     assertThat(unsavedChangesPrompt.root().locator("[part=overlay]").first())

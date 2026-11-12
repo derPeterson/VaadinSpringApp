@@ -35,6 +35,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AdminDurationField;
 import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
@@ -91,6 +92,8 @@ public class AdminConfigurationSection extends VerticalLayout {
           ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION);
 
   private final transient MessageProperties messageProperties;
+  private final BrowserUnsavedChangesGuard browserChangesGuard =
+      new BrowserUnsavedChangesGuard(this, this::hasUnsavedChanges);
   private final transient ConfigService configService;
   private final transient Runnable configurationChangedAction;
 
@@ -166,6 +169,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     for (ConfigEntry configEntry : ConfigEntry.values()) {
       configInputWrappers.put(configEntry, createConfigInput(configEntry));
+      browserChangesGuard.observeFields(configInputs.get(configEntry));
     }
 
     saveConfigButton = new Button();
@@ -258,6 +262,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     clearValidationStatesForVisibleInputs();
+    browserChangesGuard.refresh();
   }
 
   public boolean hasUnsavedChanges() {

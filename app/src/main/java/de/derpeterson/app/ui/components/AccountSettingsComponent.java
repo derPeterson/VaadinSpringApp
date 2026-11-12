@@ -113,6 +113,7 @@ public class AccountSettingsComponent extends PageContentLayout {
   private final SerializableFunction<Changes, Profile> persistProfileFunction;
   private Long profileVersion;
   private Changes savedProfileFields;
+  private BrowserUnsavedChangesGuard browserProfileChangesGuard;
   private final List<SerializableConsumer<Profile>> profileSavedListeners = new ArrayList<>();
 
   // Sicherheit und Anmeldeanbieter
@@ -168,6 +169,8 @@ public class AccountSettingsComponent extends PageContentLayout {
             .setAttribute("aria-label", messageProperties.getAccountSettingsTitle()));
 
     AccountPanelComponent profilePanel = createProfilePanel(accountUser);
+    browserProfileChangesGuard =
+        new BrowserUnsavedChangesGuard(profilePanel, this::hasUnsavedProfileChanges);
     addSectionNavigation(
         AccountSection.PROFILE,
         AppIcon.USER.create(),
@@ -366,6 +369,7 @@ public class AccountSettingsComponent extends PageContentLayout {
     }
 
     refreshSectionHeading();
+    browserProfileChangesGuard.refresh();
   }
 
   public void selectSecurityTab(String securityTabParameter) {
@@ -603,6 +607,7 @@ public class AccountSettingsComponent extends PageContentLayout {
     preferredLanguageSelector.setValue(savedProfile.language());
     savedProfileFields = readProfileChanges(null);
     accountSidebar.refreshName(savedProfile.firstName(), savedProfile.lastName());
+    browserProfileChangesGuard.refresh();
   }
 
   private Changes readProfileChanges(Long expectedProfileVersion) {

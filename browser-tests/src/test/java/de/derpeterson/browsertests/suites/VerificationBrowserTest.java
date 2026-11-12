@@ -21,6 +21,7 @@ import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
 import de.derpeterson.browsertests.pages.UiActions;
+import de.derpeterson.browsertests.pages.UnsavedChangesPrompt;
 import de.derpeterson.browsertests.pages.UserMenu;
 import de.derpeterson.browsertests.pages.VerificationPage;
 import io.qameta.allure.Description;
@@ -144,6 +145,7 @@ public class VerificationBrowserTest extends BrowserFixture {
   @ValueSource(ints = {1280, 390})
   @DisplayName(
       "VER-04: Normale administrative Anlage erfordert Bestätigung und bewahrt Mailaktionsentwürfe")
+  @Tag("form-details")
   void administrativeCreationRequiresMailProof(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
     LoginPage loginPage = new LoginPage(browserPage);
@@ -170,6 +172,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Anmeldebereich mit ausstehendem Nachweis", browserPage);
     Locator firstNameInputLocator = editUserDialog.firstName();
     firstNameInputLocator.fill("Unsaved draft");
+    new UnsavedChangesPrompt(browserPage, uiTexts).assertBrowserReloadCanBeCancelled();
     UiActions.complete(browserPage, () -> firstNameInputLocator.press("Tab"));
     Locator resendMailButtonLocator =
         editUserDialog.root().locator("#admin-resend-verification-mail");

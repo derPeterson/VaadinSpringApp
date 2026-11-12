@@ -48,6 +48,7 @@ import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
@@ -72,6 +73,8 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
   private static final Logger logger =
       LoggerFactory.getLogger(AdminExternalProviderSettingsSection.class);
   private final transient MessageProperties messageProperties;
+  private final BrowserUnsavedChangesGuard browserChangesGuard =
+      new BrowserUnsavedChangesGuard(this, this::hasUnsavedChanges);
   private final transient ExternalProviderSettings externalProviderSettings;
   private final transient ConfigService configService;
   private final List<ProviderForm> providerForms = new ArrayList<>();
@@ -142,6 +145,7 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
     for (String providerId : ExternalProviderSettings.PROVIDERS) {
       ProviderForm providerForm = new ProviderForm(providerId);
       providerForms.add(providerForm);
+      browserChangesGuard.observeFields(providerForm.providerFormContentDiv);
       providerStatusesDiv.add(providerForm.providerStatusBadge);
       String providerNameText = providerId.equals(GOOGLE) ? GOOGLE_NAME : MICROSOFT_NAME;
       Image providerLogoImage = new Image(resolveProviderLogoPath(providerId), "");
@@ -490,6 +494,7 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
 
         clientIdTextField.setValue(savedProviderSettings.clientId());
         clientSecretPasswordField.clear();
+        browserChangesGuard.refresh();
         refreshTexts();
         NotificationHelper.getInstance()
             .showNotification(

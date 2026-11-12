@@ -123,7 +123,7 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
   Beschriftungen und Handzeiger über Fläche, Text und Badge.
   [Geplantes Paket](planung/vaadin-komponenten-abgleich.md#segmentierte-benachrichtigungsfilter-vereinheitlichen).
 
-- Formularschutz bei Browseraktionen, **wartend auf die Umsetzung** aus dem
+- Formularschutz bei Browseraktionen, **offen, Umsetzung vorhanden** aus dem
   [Komponentenplan](planung/vaadin-komponenten-abgleich.md#ungespeicherte-formularänderungen).
   Persönliche Daten und die Speicherformulare der Konfiguration einschließlich
   Anbieter-/2FA-Einstellungen sowie das Benutzerformular mit ungespeicherten
@@ -136,7 +136,7 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
   Doppelte Warnungen beim anwendungsinternen Verwerfen oder Schließen vermeiden.
   Gezielt in DE/EN bei Desktop- und Smartphonebreite prüfen. Die Umsetzung ist
   als [Nachtaufgabe 5](planung/nachtaufgaben.md#5-formularschutz-um-browseraktionen-erweitern)
-  vorgemerkt und noch nicht gestartet.
+  umgesetzt; der vollständige DE/EN-Nachweis steht noch aus.
 
 ## JUnit-Tests
 

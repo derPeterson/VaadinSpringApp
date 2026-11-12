@@ -13,6 +13,15 @@ erfolgreich gespeicherten Stand. Die Warnung greift bei der internen Navigation
 in Kontoprofil und Konfiguration, beim erneuten Laden der Konfiguration über ihre
 Schaltfläche und beim Schließen der Benutzerformulare. Filter haben eigene,
 unveränderte Bedienabläufe.
+`BrowserUnsavedChangesGuard` ergänzt dieselben gespeicherten Änderungsvergleiche
+für Neuladen, Schließen und externe Navigation um den nativen Browserdialog.
+Texteingaben werden sofort an den Server übertragen. Speichern, vollständiges
+Zurücksetzen und bewusstes Schließen entfernen den Schutz des jeweiligen Formulars.
+Mehrere offene Formulare beeinflussen sich nicht gegenseitig. Filter, Suchfelder
+und Codeeingaben sind nicht beteiligt. Der Browser bestimmt Text und Darstellung.
+Nach einer Benutzereingabe und dem Serverabgleich greift der Hinweis, nicht jedoch
+zuverlässig bei Verbindungsverlust, Browserabsturz oder erzwungenem Beenden auf
+Mobilgeräten. Es werden keine Entwürfe automatisch gespeichert.
 Die lokale Klasse `cosmos-unsaved-changes-dialog` in `cosmos-admin.css` ergänzt
 die gemeinsamen Dialogregeln um die Aktionsanordnung und die Textgröße.
 Die Aktionen sind native Vaadin-Buttons mit dem gemeinsamen Primär- und Warnstil.

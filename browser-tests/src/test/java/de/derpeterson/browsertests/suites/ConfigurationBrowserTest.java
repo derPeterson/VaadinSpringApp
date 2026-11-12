@@ -40,6 +40,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @Tag("configuration-follow-up")
+  @Tag("form-details")
   @DisplayName("Anbieter- und 2FA-Entwürfe werden erst nach ausdrücklicher Zustimmung verworfen")
   void providerAndFactorDraftsRequireExplicitDiscard(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
@@ -74,6 +75,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         draftInputLocator.setChecked(!savedInactivityEnabled);
       }
 
+      unsavedChangesPrompt.assertBrowserReloadCanBeCancelled();
       adminNavigation.openDrawer();
       adminNavigation.groupLink(AdminConfigGroup.GENERAL).click();
       unsavedChangesPrompt.keepEditing();
@@ -101,6 +103,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @Tag("configuration-follow-up")
+  @Tag("form-details")
   @DisplayName("Konfigurationsentwurf bleibt beim Weiterbearbeiten erhalten")
   void changingConfigurationGroupRequiresDiscardingTheDraft(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
@@ -111,6 +114,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     configurationPage.open(AdminConfigGroup.GENERAL);
     String savedServiceName = configurationPage.value(serviceNameLabel);
     configurationPage.enter(serviceNameLabel, "Temporary draft");
+    unsavedChangesPrompt.assertBrowserReloadCanBeCancelled();
 
     adminNavigation.openDrawer();
     adminNavigation.groupLink(AdminConfigGroup.SECURITY).click();
