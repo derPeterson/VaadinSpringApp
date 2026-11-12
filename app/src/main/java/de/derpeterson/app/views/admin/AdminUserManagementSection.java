@@ -801,7 +801,6 @@ public class AdminUserManagementSection extends VerticalLayout {
     private final Checkbox developmentAccountCheckbox = new Checkbox();
     private final Span developmentAccountCaptionSpan = new Span();
     private final Span developmentAccountHintSpan = new Span();
-    private final Badge developmentAccountBadge = new Badge();
     private MultiSelectComboBox<RoleType> rolesComboBox;
     private Span rolesSummarySpan;
     private Span technicalInfoSpan;
@@ -824,6 +823,8 @@ public class AdminUserManagementSection extends VerticalLayout {
     private final Badge registeredViaBadge = new Badge();
     private final Span signInMethodsLabelSpan = new Span();
     private final Div availableSignInMethodsDiv = new Div();
+    private final Span accountTypeLabelSpan = new Span();
+    private final Badge accountTypeBadge = new Badge();
     private final VerticalLayout verificationDetailsLayout = new VerticalLayout();
     private final VerticalLayout administrativeMailActionsLayout = new VerticalLayout();
     private final Button resendVerificationMailButton = new Button();
@@ -1023,7 +1024,10 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       developmentAccountCheckbox.setId("admin-development-account");
       developmentAccountCheckbox.addClassName("admin-user-option-checkbox");
+      developmentAccountCaptionSpan.setText(messageProperties.getDevelopmentAccountLabel());
+      developmentAccountHintSpan.setText(messageProperties.getDevelopmentAccountHint());
       developmentAccountHintSpan.addClassName("admin-user-option-hint");
+      developmentAccountHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
       Div developmentAccountLabelDiv =
           new Div(developmentAccountCaptionSpan, developmentAccountHintSpan);
       developmentAccountLabelDiv.addClassName("admin-user-option-label");
@@ -1325,9 +1329,15 @@ public class AdminUserManagementSection extends VerticalLayout {
       signInHeadingLayout.addClassName("admin-user-sign-in-heading");
 
       registeredViaBadge.setId("admin-user-registered-via");
-      developmentAccountBadge.setId("admin-user-development-account");
-      developmentAccountBadge.addThemeVariants(BadgeVariant.CONTRAST);
-      developmentAccountBadge.setVisible(editedUserEntity.isDevelopmentAccount());
+      accountTypeBadge.setId("admin-user-account-type");
+      accountTypeBadge
+          .getElement()
+          .setAttribute(
+              "data-development-account",
+              Boolean.toString(editedUserEntity.isDevelopmentAccount()));
+      accountTypeLabelSpan.addClassName("admin-user-account-type-label");
+      Div accountTypeDetailDiv = new Div(accountTypeLabelSpan, accountTypeBadge);
+      accountTypeDetailDiv.addClassName("admin-user-sign-in-detail");
       availableSignInMethodsDiv.setId("admin-user-sign-in-methods");
       registrationLabelSpan.addClassName("admin-user-registration-label");
       signInMethodsLabelSpan.addClassName("admin-user-methods-label");
@@ -1341,12 +1351,17 @@ public class AdminUserManagementSection extends VerticalLayout {
       signInDetailsRowLayout.addClassName(COSMOS_FORM_ROW_CLASS);
       signInDetailsRowLayout.expand(registrationDetailDiv, signInMethodsDetailDiv);
 
+      HorizontalLayout signInStatusRowLayout =
+          new HorizontalLayout(verificationDetailsLayout, accountTypeDetailDiv);
+      signInStatusRowLayout.setWidthFull();
+      signInStatusRowLayout.addClassName(COSMOS_FORM_ROW_CLASS);
+      signInStatusRowLayout.expand(verificationDetailsLayout, accountTypeDetailDiv);
+
       VerticalLayout signInDetailsLayout =
           new VerticalLayout(
               signInHeadingLayout,
               signInDetailsRowLayout,
-              developmentAccountBadge,
-              verificationDetailsLayout,
+              signInStatusRowLayout,
               administrativeMailActionsLayout);
       signInDetailsLayout.setWidthFull();
       signInDetailsLayout.setPadding(false);
@@ -1363,7 +1378,11 @@ public class AdminUserManagementSection extends VerticalLayout {
         return;
       }
       signInTitleH3.setText(messageProperties.getSignInDetailsTitle());
-      developmentAccountBadge.setText(messageProperties.getDevelopmentAccountLabel());
+      accountTypeLabelSpan.setText(messageProperties.getAccountTypeLabel());
+      accountTypeBadge.setText(
+          editedUserEntity.isDevelopmentAccount()
+              ? messageProperties.getDevelopmentAccountLabel()
+              : messageProperties.getStandardAccountLabel());
       refreshVerificationDetails();
       refreshAdministrativeMailActions();
 

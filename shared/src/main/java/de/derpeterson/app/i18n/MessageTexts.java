@@ -4515,6 +4515,14 @@ public class MessageTexts {
     return getTranslation("account.development.label");
   }
 
+  public String getAccountTypeLabel() {
+    return getTranslation("account.type.label");
+  }
+
+  public String getStandardAccountLabel() {
+    return getTranslation("account.type.standard");
+  }
+
   public String getDevelopmentAccountHint() {
     return getTranslation("account.development.hint");
   }

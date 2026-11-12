@@ -141,6 +141,71 @@ class AdminUserDialogValidationTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
+  void developmentAccountOptionShowsTranslatedCaptionAndHintWhenOpened(String languageTag) {
+    when(userService.canManageSuperadmins()).thenReturn(true);
+    openUserDialog(languageTag, true);
+
+    Checkbox developmentAccountCheckbox =
+        (Checkbox) findUserDialogComponent("admin-development-account");
+    List<Span> developmentAccountLabelSpans =
+        streamDescendantComponents(developmentAccountCheckbox)
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .toList();
+
+    assertFalse(messageProperties.getDevelopmentAccountLabel().isBlank());
+    assertFalse(messageProperties.getDevelopmentAccountHint().isBlank());
+    assertEquals(
+        List.of(
+            messageProperties.getDevelopmentAccountLabel(),
+            messageProperties.getDevelopmentAccountHint()),
+        developmentAccountLabelSpans.stream().map(Span::getText).toList());
+    assertTrue(developmentAccountCheckbox.hasClassName("admin-user-option-checkbox"));
+    assertTrue(developmentAccountLabelSpans.get(1).hasClassName("admin-user-option-hint"));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"de,false", "de,true", "en,false", "en,true"})
+  void accountTypeIsLabeledForBothStandardAndDevelopmentAccounts(
+      String languageTag, boolean developmentAccount) {
+    ExternalIdentityService externalIdentityService = mock(ExternalIdentityService.class);
+    when(externalIdentityService.adminSignInSummary(2L))
+        .thenReturn(
+            Optional.of(
+                new SignInSummary(
+                    RegistrationChannel.APPLICATION_START, Set.of(SignInMethod.PORTAL))));
+    userManagementSection.configureSignInDetails(externalIdentityService);
+    openUserDialog(languageTag, false, developmentAccount);
+
+    Badge accountTypeBadge = (Badge) findUserDialogComponent("admin-user-account-type");
+    Component accountTypeDetailComponent = accountTypeBadge.getParent().orElseThrow();
+
+    assertTrue(accountTypeBadge.isVisible());
+    assertEquals(
+        developmentAccount
+            ? messageProperties.getDevelopmentAccountLabel()
+            : messageProperties.getStandardAccountLabel(),
+        accountTypeBadge.getText());
+    assertEquals(
+        Boolean.toString(developmentAccount),
+        accountTypeBadge.getElement().getAttribute("data-development-account"));
+    assertEquals(
+        messageProperties.getAccountTypeLabel(),
+        ((Span) accountTypeDetailComponent.getChildren().findFirst().orElseThrow()).getText());
+
+    Component statusRowComponent = accountTypeDetailComponent.getParent().orElseThrow();
+    assertEquals(2, statusRowComponent.getChildren().count());
+    assertEquals(accountTypeDetailComponent, statusRowComponent.getChildren().toList().get(1));
+    assertTrue(
+        streamDescendantComponents(statusRowComponent.getChildren().findFirst().orElseThrow())
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .anyMatch(
+                span -> span.getText().equals(messageProperties.getEmailVerificationLabel())));
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
   void accountDetailsDistinguishRegistrationFromTheAvailableMethods(String languageTag) {
     ExternalIdentityService externalIdentityService = mock(ExternalIdentityService.class);
     when(externalIdentityService.adminSignInSummary(2L))
@@ -152,9 +217,9 @@ class AdminUserDialogValidationTest {
     userManagementSection.configureSignInDetails(externalIdentityService);
     openUserDialog(languageTag, false);
 
-    Badge registrationChannelBadge = (Badge) findSignInDetailComponent("admin-user-registered-via");
+    Badge registrationChannelBadge = (Badge) findUserDialogComponent("admin-user-registered-via");
     Component availableSignInMethodsComponent =
-        findSignInDetailComponent("admin-user-sign-in-methods");
+        findUserDialogComponent("admin-user-sign-in-methods");
 
     assertEquals(messageProperties.getExternalGoogle(), registrationChannelBadge.getText());
     assertEquals(
@@ -167,7 +232,7 @@ class AdminUserDialogValidationTest {
             .toList());
   }
 
-  private Component findSignInDetailComponent(String componentId) {
+  private Component findUserDialogComponent(String componentId) {
     return streamDescendantComponents(userDialog)
         .filter(candidateComponent ->
             candidateComponent.getId().filter(componentId::equals).isPresent())
@@ -565,6 +630,11 @@ class AdminUserDialogValidationTest {
   }
 
   private void openUserDialog(String languageTag, boolean createNewUser) {
+    openUserDialog(languageTag, createNewUser, false);
+  }
+
+  private void openUserDialog(
+      String languageTag, boolean createNewUser, boolean developmentAccount) {
     Dialog previouslyOpenedDialog = userDialog;
     localeReference.set(Locale.forLanguageTag(languageTag));
     UserEntity testUserEntity =
@@ -577,6 +647,7 @@ class AdminUserDialogValidationTest {
             .birthDate(LocalDate.of(1990, 1, 1))
             .gender(Gender.OTHER)
             .enabled(true)
+            .developmentAccount(developmentAccount)
             .roleEntities(List.of(RoleEntity.builder().name(RoleType.ROLE_USER).build()))
             .build();
     ReflectionTestUtils.invokeMethod(userManagementSection, "openDialog", testUserEntity);

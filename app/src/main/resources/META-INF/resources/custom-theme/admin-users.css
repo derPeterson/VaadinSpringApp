@@ -314,7 +314,8 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 
 .admin-user-dialog .admin-user-registration-label,
 .admin-user-dialog .admin-user-methods-label,
-.admin-user-dialog .admin-user-verification-label {
+.admin-user-dialog .admin-user-verification-label,
+.admin-user-dialog .admin-user-account-type-label {
     color: var(--cosmos-reference-label);
     font: 500 12px/16px Inter, sans-serif;
 }
@@ -327,7 +328,7 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 }
 
 .admin-user-dialog #admin-user-registered-via,
-.admin-user-dialog #admin-user-development-account,
+.admin-user-dialog #admin-user-account-type,
 .admin-user-dialog #admin-user-sign-in-methods > vaadin-badge {
     box-sizing: border-box;
     margin: 0;
@@ -337,15 +338,22 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
 }
 
 .admin-user-dialog #admin-user-registered-via,
-.admin-user-dialog #admin-user-development-account {
+.admin-user-dialog #admin-user-account-type {
     justify-self: start;
     max-width: 100%;
     white-space: normal;
     --vaadin-badge-text-color: var(--cosmos-reference-label);
 }
 
-.admin-user-dialog #admin-user-development-account {
+.admin-user-dialog #admin-user-account-type {
     align-self: flex-start;
+    --vaadin-badge-text-color: var(--cosmos-reference-accent);
+}
+
+.admin-user-dialog #admin-user-account-type[data-development-account=true] {
+    --vaadin-badge-text-color: var(--cosmos-system-text);
+    --cosmos-status-badge-border: var(--cosmos-system-border);
+    --cosmos-status-badge-surface: var(--cosmos-system-surface);
 }
 
 .admin-user-dialog #admin-user-registered-via[data-self-registered=true] {

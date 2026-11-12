@@ -55,6 +55,13 @@ und Text `#d8b4fe`. System-Badges in Benachrichtigungen und interne Ticketvermer
 teilen diese warme Violett-Palette. Die Kennzeichnung ergänzt Text und Icons;
 fachliche Statusfarben, blaue Adminantworten und Statusereignis-Icons bleiben erhalten.
 
+Im Anmeldungsbereich des Benutzereditors steht „Kontotyp“ neben dem E-Mail-Nachweis.
+Beide Angaben verwenden die vorhandene responsive Formularzeile; bei schmaler
+Ansicht stehen sie untereinander. Das native Badge `#admin-user-account-type`
+zeigt Standardkonten in Blau und Entwicklerkonten in der violetten Systempalette.
+Die lokale Gestaltung steht in `admin-users.css`, die gemeinsamen Rahmenregeln
+bleiben in `cosmos-theme.css`.
+
 Textbuttons zusammengehöriger Dialogaktionen verwenden `EqualButtonWidths.configure`
 am vorhandenen nativen Layoutcontainer. `equal-button-widths.js` lädt über den
 Anwendungskontext und misst nur sichtbare Beschriftungen einschließlich Präfix,

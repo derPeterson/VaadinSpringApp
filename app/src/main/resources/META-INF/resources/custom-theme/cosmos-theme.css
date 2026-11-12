@@ -420,7 +420,7 @@ vaadin-badge:where(
     .account-summary-presence, .portal-menu-presence, .account-session-badge,
     .external-connection-heading > vaadin-badge, .two-factor-account-entry vaadin-badge,
     .provider-status, .support-ticket-status, .support-assignee-self, .admin-user-self,
-    #admin-user-registered-via, #admin-user-development-account, #admin-user-sign-in-methods > vaadin-badge,
+    #admin-user-registered-via, #admin-user-account-type, #admin-user-sign-in-methods > vaadin-badge,
     .cosmos-notification-preview-state, .cosmos-notification-compose-status,
     .cosmos-notification-sent-status,
     .cosmos-mail-delivery, .cosmos-notification-delivery

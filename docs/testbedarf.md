@@ -2,6 +2,12 @@
 
 ## Browser-Tests
 
+- Kontotyp im Benutzereditor, **offen**: In DE/EN auf Desktop und Smartphone
+  den beschrifteten Kontotyp neben dem E-Mail-Nachweis prüfen. Standardkonto ist
+  blau, Entwicklerkonto verwendet die Systemfarbe für Schrift, Rahmen und Fläche.
+  Bei schmaler Ansicht sauber untereinander; Sprachwechsel aktualisiert beide
+  Kontotypen. Die vorhandene Suite `email-verification` dafür ergänzen.
+
 Die automatisierten Nachtests zu den vereinbarten Nachtpaketen sind abgedeckt
 und in beiden Sprachen geprüft. Ergebnisse und verbleibende Qualitätsgrenzen
 stehen im [Prüfstand](status.md).
