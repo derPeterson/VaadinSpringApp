@@ -32,13 +32,13 @@ import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
-import de.derpeterson.app.ui.components.AdminDurationField;
 import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
 import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosDurationField;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import java.net.URI;
@@ -280,7 +280,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       Component configInputComponent, ConfigEntry configEntry, String storedConfigValue) {
     switch (configInputComponent) {
       case Switch settingSwitch -> settingSwitch.setValue(Boolean.parseBoolean(storedConfigValue));
-      case AdminDurationField durationField -> {
+      case CosmosDurationField durationField -> {
         try {
           durationField.setStoredValue(storedConfigValue);
         } catch (IllegalArgumentException | ArithmeticException _) {
@@ -416,7 +416,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     configInputs.forEach((configEntry, configInputComponent) ->
         updatePlaceholder(
             configInputComponent,
-            configInputComponent instanceof AdminDurationField
+            configInputComponent instanceof CosmosDurationField
                 ? configuredDefault(configEntry)
                 : buildPlaceholder(configEntry)));
 
@@ -441,7 +441,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       case EmailField emailField -> emailField.setPlaceholder(safePlaceholder);
       case PasswordField passwordField -> passwordField.setPlaceholder(safePlaceholder);
       case IntegerField integerField -> integerField.setPlaceholder(safePlaceholder);
-      case AdminDurationField durationField -> {
+      case CosmosDurationField durationField -> {
         durationField.setDefaultValue(safePlaceholder);
         durationField.refreshTexts();
       }
@@ -467,7 +467,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     updatePlaceholder(
         configInputComponent,
-        configInputComponent instanceof AdminDurationField
+        configInputComponent instanceof CosmosDurationField
             ? configuredDefault(configEntry)
             : buildPlaceholder(configEntry));
     installValidationResetListener(configInputComponent);
@@ -494,8 +494,8 @@ public class AdminConfigurationSection extends VerticalLayout {
     } else if (usesSecondsDuration(configEntry)
         || DURATION_ENTRIES.contains(configEntry)
         || isFixedDayDuration(configEntry)) {
-      AdminDurationField durationField =
-          new AdminDurationField(messageProperties, durationStorage(configEntry));
+      CosmosDurationField durationField =
+          new CosmosDurationField(messageProperties, durationStorage(configEntry));
       if (ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT) {
         durationField.requireWholeDays(
             configEntry == ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS ? 0 : 1);
@@ -530,16 +530,16 @@ public class AdminConfigurationSection extends VerticalLayout {
         || configEntry == ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS;
   }
 
-  private AdminDurationField.Storage durationStorage(ConfigEntry configEntry) {
+  private CosmosDurationField.Storage durationStorage(ConfigEntry configEntry) {
     if (DURATION_ENTRIES.contains(configEntry)) {
-      return AdminDurationField.Storage.DURATION;
+      return CosmosDurationField.Storage.DURATION;
     }
 
     if (isFixedDayDuration(configEntry)) {
-      return AdminDurationField.Storage.DAYS;
+      return CosmosDurationField.Storage.DAYS;
     }
 
-    return AdminDurationField.Storage.SECONDS;
+    return CosmosDurationField.Storage.SECONDS;
   }
 
   private IntegerField createIntegerInput(ConfigEntry configEntry) {
@@ -575,7 +575,7 @@ public class AdminConfigurationSection extends VerticalLayout {
         "admin-config-required",
         !(configInputComponent instanceof Switch)
             && !(configInputComponent instanceof IntegerField)
-            && (!(configInputComponent instanceof AdminDurationField)
+            && (!(configInputComponent instanceof CosmosDurationField)
                 || DURATION_ENTRIES.contains(configEntry))
             && validateValue(configEntry, "") != null);
     configLabelSpans.put(configEntry, configLabelSpan);
@@ -634,7 +634,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     if (configEntry == ConfigEntry.COPYRIGHT_TEXT) {
       addCopyrightPlaceholderHelp();
     }
-    if (configInputs.get(configEntry) instanceof AdminDurationField durationField) {
+    if (configInputs.get(configEntry) instanceof CosmosDurationField durationField) {
       addDurationValueHelp(durationField, !isFixedDayDuration(configEntry));
     }
 
@@ -666,7 +666,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private void addDurationValueHelp(
-      AdminDurationField durationField, boolean showEquivalentSeconds) {
+      CosmosDurationField durationField, boolean showEquivalentSeconds) {
     Div currentDurationDiv =
         new Div(
             new Span(messageProperties.getAdminConfigDurationCurrent()),
@@ -1056,7 +1056,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       return String.valueOf(settingSwitch.getValue());
     }
 
-    if (configInputComponent instanceof AdminDurationField durationField) {
+    if (configInputComponent instanceof CosmosDurationField durationField) {
       String storedDurationValue = durationField.getStoredValue();
       return storedDurationValue.isEmpty() && usesSecondsDuration(configEntry)
           ? configuredDefault(configEntry)
@@ -1134,7 +1134,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private String defaultDisplayValue(ConfigEntry configEntry) {
     String defaultValue = configuredDefault(configEntry);
-    if (configInputs.get(configEntry) instanceof AdminDurationField durationField) {
+    if (configInputs.get(configEntry) instanceof CosmosDurationField durationField) {
       return durationField.displayStoredValue(defaultValue);
     }
 
@@ -1149,7 +1149,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private void installValidationResetListener(Component configInputComponent) {
-    if (configInputComponent instanceof AdminDurationField durationField) {
+    if (configInputComponent instanceof CosmosDurationField durationField) {
       durationField.addChangeListener(() -> clearValidationState(durationField));
     } else if (configInputComponent instanceof EmailField emailField) {
       emailField.addValueChangeListener(event -> clearValidationState(emailField));
@@ -1165,7 +1165,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private void clearValidationState(Component configInputComponent) {
-    if (configInputComponent instanceof AdminDurationField durationField) {
+    if (configInputComponent instanceof CosmosDurationField durationField) {
       durationField.setInvalid(false);
       durationField.setErrorMessage(null);
     } else if (configInputComponent instanceof EmailField emailField) {
@@ -1184,7 +1184,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private void setValidationError(Component configInputComponent, String errorMessage) {
-    if (configInputComponent instanceof AdminDurationField durationField) {
+    if (configInputComponent instanceof CosmosDurationField durationField) {
       durationField.setInvalid(true);
       durationField.setErrorMessage(errorMessage);
     } else if (configInputComponent instanceof EmailField emailField) {
@@ -1203,7 +1203,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private boolean isInputInvalid(Component configInputComponent) {
-    if (configInputComponent instanceof AdminDurationField durationField) {
+    if (configInputComponent instanceof CosmosDurationField durationField) {
       return durationField.isInvalid();
     }
     if (configInputComponent instanceof EmailField emailField) {

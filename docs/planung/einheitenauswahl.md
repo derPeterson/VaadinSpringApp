@@ -1,8 +1,9 @@
 # Integrierte Einheitenauswahl
 
-## Empfehlung
+## Freigegebene Umsetzung
 
-Den vorhandenen `AdminDurationField` weiterverwenden. Die Zahl bleibt ein natives
+Den vorhandenen `AdminDurationField` als gemeinsamen `CosmosDurationField`
+weiterentwickeln. Keine zweite parallele Komponente pflegen. Die Zahl bleibt ein natives
 `IntegerField` beziehungsweise `BigDecimalField`. Rechts im öffentlichen Suffix
 steht ein natives `Select<Unit>` mit eigener zugänglicher Beschriftung „Einheit“.
 Ein `HorizontalLayout` verbindet beim präzisen Feld Plusbutton und Einheit.
@@ -31,17 +32,21 @@ für die reine optische Integration nicht nötig und bleibt deshalb unverändert
 Beim Laden wählt der vorhandene Code bereits eine ohne Rundung darstellbare Einheit.
 Sekundenbruchteile oder Sekunden-Aufbewahrung nicht in Tagesfelder hineininterpretieren.
 
-## Noch auszuführen
+## Offene Prüfung und Abnahme
 
-- [ ] Zusammensetzung zunächst an `AdminDurationField` umsetzen, vorhandene
-  Konfigurationsprüfungen und Listener erhalten.
-- [ ] Suffix rechts hinter Plus/Löschen mit bestehender Trennlinie anordnen.
-  Gemeinsame Feldhöhe und Fokusrahmen erhalten; Select ohne zusätzliche Außenbox,
-  aber mit erkennbarer Tastaturfokussierung und eigenem Einheitenlabel gestalten.
+Der gemeinsame Baustein und seine Konfigurationsaufrufer sind umgestellt. Die
+Gestaltung liegt zentral in `cosmos-duration-field.css`, unabhängig vom Adminlayout.
+Vorhandene Page Objects und Browsererwartungen sind an die native Auswahl angepasst.
+
 - [ ] Tab von Zahl zur Einheit, Pfeiltasten/Enter/Escape, schmale Breiten,
   Disabled-/Fehlerzustände und Overlayposition isoliert prüfen.
-- [ ] Bestehende Dauerfeldtests sowie DE/EN-Vorher-/Nachhervergleich ausführen.
+- [ ] DE/EN-Vorher-/Nachhervergleich auf Desktop und Smartphone sowie gemeinsame
+  Designabnahme durchführen.
 
-Der Umfang ist ein begrenzter Komponentenumbau mit anschließendem Browservergleich.
-Die genaue Suffix-Fokusdarstellung ist noch nicht im Browser geprüft. Die Analyse
-allein behauptet deshalb keine bereits fertige oder visuell abgenommene Lösung.
+Der gezielte Ausrichtungsnachtest am Feld für gespeicherte Anmeldungen prüft
+Auswahlfläche, Text und Pfeil sowie Overlay-Grundgestaltung und Zeilenhöhe auf
+Desktop und Smartphone. Er bestätigt die Korrektur des leeren Label-Abstands,
+der überschriebenen Select-Standardwerte und der abgeschnittenen Unterlängen. Die weitergehende Browserprüfung bleibt
+auf Benutzerwunsch zurückgestellt. Der konkrete Nachtest
+steht zentral in [Testbedarf](../testbedarf.md). Eine visuelle Abnahme liegt noch
+nicht vor. Die weiteren Komponentenpakete und Seitenpfade bleiben unverändert offen.

@@ -103,6 +103,8 @@ final class BrowserExecutionPlan {
       discoveryRequestBuilder.filters(TagFilter.includeTags("ticket-panel-style"));
     } else if (suiteName.equals("cosmos-scrollbars")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("scrollbar-style"));
+    } else if (suiteName.equals("duration-field")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("duration-field"));
     } else if (suiteName.equals("external-login-settings")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("provider-settings"));
     } else if (suiteName.equals("follow-up-regressions")) {

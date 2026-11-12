@@ -1,0 +1,212 @@
+/* Gemeinsames Zeitfeld: Zahl und native Einheit teilen die vorhandene Feldfläche. */
+.cosmos-duration-field {
+    min-width: 0;
+}
+
+.cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field) {
+    width: 100%;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+    --vaadin-input-field-background: var(--cosmos-reference-input);
+    --vaadin-input-field-border-color: var(--cosmos-reference-border);
+    --vaadin-input-field-border-width: 1px;
+    --vaadin-input-field-border-radius: 8px;
+    --vaadin-input-field-value-font-size: 14px;
+    --vaadin-input-field-value-font-weight: 400;
+    --vaadin-input-field-value-color: var(--cosmos-reference-text);
+}
+
+.cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field)::part(label) {
+    display: none;
+    margin: 0;
+    padding: 0;
+}
+
+.cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field)::part(input-field) {
+    box-sizing: border-box;
+    height: 40px;
+    min-height: 40px;
+}
+
+.cosmos-duration-field > vaadin-big-decimal-field::part(input-field) {
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: 8px;
+    background: var(--cosmos-reference-input);
+    padding: 0 14px;
+}
+
+.cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field) input {
+    text-align: center;
+    font: 400 14px/20px Inter, sans-serif;
+}
+
+/* Öffentliche Parts halten die Einheit ganz rechts hinter Löschen und Plus. */
+.cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field)::part(clear-button) {
+    order: 1;
+}
+
+.cosmos-duration-field > vaadin-integer-field::part(increase-button) {
+    order: 2;
+}
+
+.cosmos-duration-field :is(.cosmos-duration-unit-select, .cosmos-duration-unit-label, .cosmos-duration-suffix) {
+    order: 3;
+    flex: none;
+}
+
+.cosmos-duration-unit-label,
+.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select {
+    padding-inline: 10px 0;
+    border-inline-start: 1px solid var(--cosmos-reference-control-border);
+    color: var(--cosmos-reference-secondary);
+    font: 400 13px/20px Inter, sans-serif;
+}
+
+.cosmos-duration-field > vaadin-integer-field[focused] > .cosmos-duration-unit-label {
+    color: var(--cosmos-reference-white);
+}
+
+.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select {
+    position: relative;
+    box-sizing: border-box;
+    width: 100px;
+    min-width: 100px;
+    height: 28px;
+    align-self: center;
+    margin: 0;
+    padding-block: 0;
+    border-inline-start: 0;
+    --vaadin-input-field-height: 28px;
+    --vaadin-input-field-border-width: 0;
+    --vaadin-input-field-value-font-size: 13px;
+}
+
+/* Die Einheit ist per ARIA beschriftet. Die globale Labelregel darf hier keine
+   leere Zeile samt 6px-Unterabstand vor die Auswahlfläche setzen. */
+.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select::part(label) {
+    display: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* ::before gehört Vaadins Grundlinienausrichtung und bleibt unverändert. */
+.cosmos-duration-unit-select::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    inset-inline-start: 0;
+    height: 18px;
+    margin: 0;
+    padding: 0;
+    transform: translateY(-50%);
+    border-inline-start: 1px solid var(--cosmos-reference-control-border);
+    pointer-events: none;
+}
+
+.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select::part(input-field) {
+    box-sizing: border-box;
+    height: 28px;
+    min-height: 28px;
+    padding: 0 2px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    box-shadow: none;
+    outline: none;
+}
+
+/* Auch bei Fokus auf der Einheit bleibt nur die gemeinsame Feldfläche umrandet. */
+.cosmos-theme .cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field):has(.cosmos-duration-unit-select[focused])::part(input-field) {
+    outline: 1px solid var(--cosmos-reference-accent);
+    outline-offset: 2px;
+}
+
+.cosmos-duration-unit-select::part(toggle-button) {
+    color: var(--cosmos-reference-accent);
+}
+
+.cosmos-duration-unit-select vaadin-select-value-button > vaadin-select-item {
+    min-height: 20px;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font: 400 13px/20px Inter, sans-serif;
+}
+
+.cosmos-duration-unit-select vaadin-select-value-button > vaadin-select-item::part(checkmark) {
+    display: none;
+}
+
+.cosmos-duration-unit-select[focused] vaadin-select-value-button > vaadin-select-item {
+    color: var(--cosmos-reference-white);
+}
+
+vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(overlay) {
+    background: var(--cosmos-reference-input);
+    border: 1px solid var(--cosmos-reference-border);
+    border-radius: 10px;
+    min-width: 132px;
+}
+
+vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(content) {
+    padding: 4px 4px 0;
+}
+
+.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box::part(items) {
+    padding: 0;
+}
+
+.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item {
+    box-sizing: border-box;
+    min-height: 32px;
+    padding: 6px 8px;
+    margin: 0 0 4px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    color: var(--cosmos-reference-label);
+    font: 500 12px/16px Inter, sans-serif;
+    --vaadin-selection-color-text: var(--cosmos-reference-accent);
+}
+
+.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item::part(checkmark) {
+    order: 1;
+    flex: none;
+    width: 16px;
+    margin-inline-start: auto;
+    color: var(--cosmos-reference-accent);
+}
+
+.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item::part(checkmark)::before {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    color: var(--cosmos-reference-accent);
+    font-size: 16px;
+}
+
+.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item[selected] {
+    border-color: var(--cosmos-reference-primary);
+    background: var(--cosmos-reference-selection);
+    color: var(--cosmos-reference-accent);
+}
+
+.cosmos-theme .cosmos-duration-field .cosmos-duration-unit-select vaadin-select-list-box > vaadin-select-item:not([selected], [disabled]):is(:hover, [focused]) {
+    background: var(--cosmos-hover-background);
+}
+
+.cosmos-duration-field .cosmos-duration-step {
+    width: 24px;
+    min-width: 24px;
+    height: 28px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    color: var(--cosmos-reference-accent);
+}
+
+.cosmos-duration-field .cosmos-duration-step > vaadin-icon {
+    width: 14px;
+    height: 14px;
+}

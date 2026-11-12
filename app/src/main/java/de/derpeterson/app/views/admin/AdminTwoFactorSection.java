@@ -30,7 +30,6 @@ import de.derpeterson.app.security.mfa.TwoFactorAuthorization;
 import de.derpeterson.app.security.mfa.TwoFactorMode;
 import de.derpeterson.app.security.mfa.TwoFactorPolicies;
 import de.derpeterson.app.security.mfa.TwoFactorPolicy;
-import de.derpeterson.app.ui.components.AdminDurationField;
 import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
@@ -38,6 +37,7 @@ import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosCssClasses;
+import de.derpeterson.app.ui.components.CosmosDurationField;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.TwoFactorActionDialog;
 import de.derpeterson.app.ui.components.UnsavedChangesDialog;
@@ -92,7 +92,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   private final Span policySaveHintSpan = new Span();
   private final Switch reconfirmAfterInactivitySwitch = new Switch();
   private final Span inactivityDurationLabelSpan = new Span();
-  private final AdminDurationField inactivityDurationField;
+  private final CosmosDurationField inactivityDurationField;
   private final Switch developmentPauseSwitch = new Switch();
   private final Switch developmentGoogleConfirmationSwitch = new Switch();
   private final Span developmentOptionsTitleSpan = new Span();
@@ -194,11 +194,11 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     reconfirmAfterInactivitySwitch.addClassName(CONFIG_SWITCH_CLASS);
     reconfirmAfterInactivitySwitch.setWidthFull();
 
-    inactivityDurationField = new AdminDurationField(messageProperties);
+    inactivityDurationField = new CosmosDurationField(messageProperties);
     inactivityDurationField.setAvailableUnits(
-        AdminDurationField.Unit.MINUTES,
-        AdminDurationField.Unit.HOURS,
-        AdminDurationField.Unit.DAYS);
+        CosmosDurationField.Unit.MINUTES,
+        CosmosDurationField.Unit.HOURS,
+        CosmosDurationField.Unit.DAYS);
     inactivityDurationField.setId("two-factor-inactivity-duration");
     inactivityDurationField.setDefaultValue(DEFAULT_INACTIVITY_SECONDS);
     inactivityDurationLabelSpan.setId("two-factor-inactivity-label");

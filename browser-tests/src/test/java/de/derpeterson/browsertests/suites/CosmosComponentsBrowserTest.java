@@ -26,9 +26,12 @@ import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Allure;
+import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.io.ByteArrayInputStream;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
@@ -43,6 +46,122 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Tag("browser")
 @Feature("Gemeinsame Cosmos-Komponenten")
 public class CosmosComponentsBrowserTest extends BrowserFixture {
+  @Test
+  @Tag("duration-field")
+  @DisplayName("COMPONENT-10: Integrierte Zeiteinheit bleibt mittig innerhalb der Zahlenfläche")
+  @Description(
+      "Nur das Zeitfeld für gespeicherte Anmeldungen auf Desktop und Smartphone vermessen: Einheitenfläche, Text und Pfeil sind vertikal mittig, der untere Feldrahmen bleibt frei. Keine Einstellung wird gespeichert.")
+  void durationUnitIsCenteredInsideNumericField() {
+    signIn();
+    AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
+    configurationPage.open(AdminConfigGroup.SECURITY);
+
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 900);
+      Locator durationFieldLocator =
+          configurationPage.duration(uiTexts.getAdminConfigEntryRememberMeDuration());
+      Locator amountSurfaceLocator =
+          durationFieldLocator.locator("vaadin-integer-field [part=input-field]").first();
+      Locator unitSelectLocator = durationFieldLocator.locator("vaadin-select");
+      Locator unitSurfaceLocator = unitSelectLocator.locator("[part=input-field]");
+      Locator unitLabelLocator =
+          unitSelectLocator.locator("vaadin-select-value-button > vaadin-select-item");
+      Locator unitArrowLocator = unitSelectLocator.locator("[part~=toggle-button]");
+      assertThat(unitLabelLocator).hasText(uiTexts.getAdminConfigDurationUnitDays());
+
+      String fieldMeasurementsText =
+          (String)
+              unitSelectLocator.evaluate(
+                  """
+                  select => JSON.stringify(Object.fromEntries([
+                    ['select', select],
+                    ['surface', select.shadowRoot.querySelector('[part=input-field]')],
+                    ['value', select.querySelector('vaadin-select-value-button')],
+                    ['item', select.querySelector('vaadin-select-value-button > vaadin-select-item')],
+                    ['arrow', select.shadowRoot.querySelector('[part~=toggle-button]')]
+                  ].map(([name, element]) => {
+                    const box = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return [name, {top:box.top, height:box.height, bottom:box.bottom,
+                      display:style.display, padding:style.padding, margin:style.margin,
+                      lineHeight:style.lineHeight, minHeight:style.minHeight,
+                      alignItems:style.alignItems, alignSelf:style.alignSelf}];
+                  })), null, 2)
+                  """);
+      Allure.attachment(
+          "Zeitfeldmessung " + viewportWidth, "application/json", fieldMeasurementsText);
+      Allure.attachment(
+          "Zeitfeld " + viewportWidth,
+          "image/png",
+          new ByteArrayInputStream(durationFieldLocator.screenshot()),
+          AttachmentOptions.empty());
+      AllurePlaywright.attachScreenshot("Integrierte Zeiteinheit " + viewportWidth, browserPage);
+
+      BoundingBox amountSurfaceBounds = amountSurfaceLocator.boundingBox();
+      double amountCenterY = amountSurfaceBounds.y + amountSurfaceBounds.height / 2;
+      for (Locator unitPartLocator :
+          List.of(unitSurfaceLocator, unitLabelLocator, unitArrowLocator)) {
+        BoundingBox unitPartBounds = unitPartLocator.boundingBox();
+        assertEquals(
+            amountCenterY, unitPartBounds.y + unitPartBounds.height / 2, 1, fieldMeasurementsText);
+        assertTrue(unitPartBounds.y >= amountSurfaceBounds.y + 1, fieldMeasurementsText);
+        assertTrue(
+            unitPartBounds.y + unitPartBounds.height
+                <= amountSurfaceBounds.y + amountSurfaceBounds.height - 1,
+            fieldMeasurementsText);
+      }
+
+      assertDurationUnitOverlayStyle(unitSelectLocator, viewportWidth);
+      assertThat(unitLabelLocator).hasCSS("line-height", "20px");
+    }
+  }
+
+  private void assertDurationUnitOverlayStyle(Locator unitSelectLocator, int viewportWidth) {
+    unitSelectLocator.click();
+    Locator selectedUnitOptionLocator =
+        browserPage.getByRole(
+            AriaRole.OPTION,
+            new Page.GetByRoleOptions()
+                .setName(uiTexts.getAdminConfigDurationUnitDays())
+                .setExact(true));
+    assertThat(selectedUnitOptionLocator).isVisible();
+    Locator unitOverlayLocator = unitSelectLocator.locator("[part=overlay]");
+    assertThat(unitOverlayLocator).hasCSS("background-color", "rgb(9, 17, 32)");
+    assertThat(unitOverlayLocator).hasCSS("border-radius", "10px");
+    assertThat(unitOverlayLocator).hasCSS("opacity", "1");
+
+    String optionMeasurementsText =
+        (String)
+            selectedUnitOptionLocator.evaluate(
+                """
+                option => {
+                  const ancestry = [];
+                  for (let element = option; element; element = element.parentElement) {
+                    const style = getComputedStyle(element);
+                    ancestry.push({tag:element.localName, classes:element.className,
+                      theme:element.getAttribute('theme'), height:element.getBoundingClientRect().height,
+                      font:style.font, padding:style.padding, border:style.border,
+                      background:style.backgroundColor});
+                  }
+                  return JSON.stringify(ancestry, null, 2);
+                }
+                """);
+    Allure.attachment(
+        "Einheitenoverlay " + viewportWidth, "application/json", optionMeasurementsText);
+    AllurePlaywright.attachScreenshot("Einheitenoverlay " + viewportWidth, browserPage);
+
+    assertThat(selectedUnitOptionLocator).hasCSS("font-size", "12px");
+    assertThat(selectedUnitOptionLocator).hasCSS("font-weight", "500");
+    assertThat(selectedUnitOptionLocator).hasCSS("border-radius", "8px");
+    assertThat(selectedUnitOptionLocator).hasCSS("border-top-width", "1px");
+    assertThat(selectedUnitOptionLocator).hasCSS("border-top-color", "rgb(0, 136, 204)");
+    assertThat(selectedUnitOptionLocator).hasCSS("background-color", "rgb(18, 35, 66)");
+    assertThat(selectedUnitOptionLocator.locator("[part=checkmark]"))
+        .hasCSS("color", "rgb(56, 189, 248)");
+    selectedUnitOptionLocator.press("Escape");
+    assertThat(selectedUnitOptionLocator).not().isVisible();
+  }
+
   @Test
   @Tag("scrollbar-style")
   @Tag("form-details")
@@ -458,9 +577,10 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
             uiTexts.getAdminConfigEntryNotificationHistoryRetention())) {
       Locator dayFieldLocator = configurationPage.duration(fieldLabel);
       Locator unitSuffixLocator =
-          dayFieldLocator.locator("vaadin-integer-field > .admin-duration-unit-label[slot=suffix]");
+          dayFieldLocator.locator(
+              "vaadin-integer-field > .cosmos-duration-unit-label[slot=suffix]");
       assertThat(unitSuffixLocator).hasText(uiTexts.getAdminConfigDurationUnitDays());
-      assertThat(dayFieldLocator.locator("vaadin-combo-box")).hasCount(0);
+      assertThat(dayFieldLocator.locator("vaadin-select")).hasCount(0);
       BoundingBox inputBounds = dayFieldLocator.locator("[part=input-field]").boundingBox();
       BoundingBox suffixBounds = unitSuffixLocator.boundingBox();
       BoundingBox increaseButtonBounds =

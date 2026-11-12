@@ -515,28 +515,9 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card .cosmos-mail-body-fie
 @media(max-width:1100px) { vaadin-app-layout.cosmos-reference-admin .admin-dashboard-intro { gap:22px; padding:24px; } }
 @media(max-width:760px) { vaadin-app-layout.cosmos-reference-admin .admin-dashboard-intro { grid-template-columns:1fr; gap:20px; padding:20px; } vaadin-app-layout.cosmos-reference-admin .admin-dashboard-image { grid-row:1; } }
 
-/* Dauer: Umrechnung bleibt in der Feldhilfe, im Formular nur Zahl und Einheit. */
-.cosmos-reference-admin .admin-duration-field { display:grid; grid-template-columns:minmax(0,1fr) 132px; gap:8px; align-items:start; min-width:0; }
-.cosmos-reference-admin .admin-duration-field.admin-duration-fixed-unit { grid-template-columns:minmax(0,1fr); }
-.cosmos-reference-admin .admin-duration-unit-label { order:3; padding-inline:10px 0; border-inline-start:1px solid var(--cosmos-reference-control-border); color:var(--cosmos-reference-secondary); font:400 13px/20px Inter,sans-serif; }
-.cosmos-reference-admin .admin-duration-fixed-unit > vaadin-integer-field[focused] > .admin-duration-unit-label { color:var(--cosmos-reference-white); }
-/* Öffentliche Vaadin-Parts ordnen das feste Suffix nach Löschen und Plus an. */
-.cosmos-reference-admin .admin-duration-fixed-unit > vaadin-integer-field::part(clear-button) { order:1; }
-.cosmos-reference-admin .admin-duration-fixed-unit > vaadin-integer-field::part(increase-button) { order:2; }
-.cosmos-reference-admin .admin-duration-field > :is(vaadin-integer-field,vaadin-big-decimal-field,vaadin-combo-box) { width:100%; min-width:0; padding:0; margin:0; }
-.cosmos-reference-admin .admin-duration-field > :is(vaadin-integer-field,vaadin-big-decimal-field,vaadin-combo-box)::part(label) { display:none; margin:0; padding:0; }
-.cosmos-reference-admin .admin-duration-field > :is(vaadin-integer-field,vaadin-big-decimal-field,vaadin-combo-box)::part(input-field) { box-sizing:border-box; height:40px; min-height:40px; }
-
 /* Externe Feldlabels: keine zweite unsichtbare Labelzeile innerhalb der Controls. */
 .cosmos-reference-admin .cosmos-config-field .cosmos-config-input-row > :is(vaadin-text-field,vaadin-email-field,vaadin-password-field,vaadin-integer-field)::part(label) { display:none; margin:0; padding:0; }
 .cosmos-reference-admin .cosmos-config-field .cosmos-config-input-row > :is(vaadin-text-field,vaadin-email-field,vaadin-password-field,vaadin-integer-field)::part(input-field) { box-sizing:border-box; height:40px; min-height:40px; }
-
-.cosmos-reference-admin .admin-duration-field > vaadin-big-decimal-field { --vaadin-input-field-background:var(--cosmos-reference-input); --vaadin-input-field-border-color:var(--cosmos-reference-border); --vaadin-input-field-border-width:1px; --vaadin-input-field-border-radius:8px; --vaadin-input-field-value-font-size:14px; --vaadin-input-field-value-font-weight:400; --vaadin-input-field-value-color:var(--cosmos-reference-text); }
-.cosmos-reference-admin .admin-duration-field > vaadin-big-decimal-field::part(input-field) { border:1px solid var(--cosmos-reference-border); border-radius:8px; background:var(--cosmos-reference-input); padding:0 14px; }
-.cosmos-reference-admin .admin-duration-field > vaadin-big-decimal-field input { text-align:center; font:400 14px/20px Inter,sans-serif; }
-.cosmos-reference-admin .admin-duration-field .admin-duration-step { display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; width:24px; min-width:24px; height:28px; padding:0; margin:0; background:transparent; border:0; color:var(--cosmos-reference-accent); }
-.cosmos-reference-admin .admin-duration-field .admin-duration-step > vaadin-icon { width:14px; height:14px; }
-.cosmos-reference-admin .admin-duration-field .admin-duration-step:hover { background:var(--cosmos-reference-hover); }
 
 /* Mobile Navigation verwendet denselben Rahmen wie das Portal. */
 @media (max-width:767px), (max-width:1023px) and (max-height:500px) {

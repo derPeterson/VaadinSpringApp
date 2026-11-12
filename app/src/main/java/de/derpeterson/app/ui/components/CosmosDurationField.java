@@ -2,9 +2,10 @@ package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.HasAriaLabel;
 import com.vaadin.flow.component.button.Button;
-import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.function.SerializableRunnable;
@@ -16,8 +17,12 @@ import java.time.Duration;
 import java.util.Arrays;
 import org.springframework.boot.convert.DurationStyle;
 
-/** Zahl und Einheit ohne Rundung. Das Speicherformat und die Fachprüfung bleiben erhalten. */
-public class AdminDurationField extends Div implements HasAriaLabel {
+/**
+ * Gemeinsames Cosmos-Zeitfeld aus nativer Zahleneingabe und Einheit im Suffix. Einheitenwechsel
+ * erhält die eingegebene Zahl. Vorhandene Speicherformate bleiben erhalten; die fachliche
+ * Validierung bleibt beim Aufrufer.
+ */
+public class CosmosDurationField extends Div implements HasAriaLabel {
   public enum Storage {
     SECONDS,
     DURATION,
@@ -29,77 +34,114 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     MINUTES(60),
     HOURS(3600),
     DAYS(86400);
-    private final int seconds;
+    private final int secondsPerUnit;
 
-    Unit(int seconds) {
-      this.seconds = seconds;
+    Unit(int secondsPerUnit) {
+      this.secondsPerUnit = secondsPerUnit;
     }
   }
 
   private final MessageProperties messageProperties;
   private final Storage durationStorage;
-  private final IntegerField durationAmountField = new IntegerField();
-  private final BigDecimalField preciseDurationField = new BigDecimalField();
-  private final ComboBox<Unit> durationUnitComboBox = new ComboBox<>();
+
+  // Zahleneingabe und Einheit
+  private final IntegerField durationAmountIntegerField = new IntegerField();
+  private final BigDecimalField preciseDurationBigDecimalField = new BigDecimalField();
+  private final Select<Unit> durationUnitSelect = new Select<>();
   private final Span fixedDurationUnitSpan = new Span();
-  private String defaultValue = "1209600";
+
+  // Geladener Zustand und Änderungsbenachrichtigung
+  private String defaultDurationText = "1209600";
   private boolean loadingStoredDuration;
   private boolean emptyDaysAllowed = true;
   private SerializableRunnable durationChangeListener = () -> {};
+
+  // Schrittaktionen für präzise Zeitspannen
   private final Button decreaseDurationButton =
       new Button(AppIcon.MINUS.create(), event -> stepDurationValue(-1));
   private final Button increaseDurationButton =
       new Button(AppIcon.PLUS.create(), event -> stepDurationValue(1));
 
-  public AdminDurationField(MessageProperties messageProperties) {
+  public CosmosDurationField(MessageProperties messageProperties) {
     this(messageProperties, Storage.SECONDS);
   }
 
-  public AdminDurationField(MessageProperties messageProperties, Storage durationStorage) {
+  public CosmosDurationField(MessageProperties messageProperties, Storage durationStorage) {
     this.messageProperties = messageProperties;
     this.durationStorage = durationStorage;
-    addClassName("admin-duration-field");
+    addClassName("cosmos-duration-field");
     getElement().setAttribute("role", "group");
     setWidthFull();
-    durationAmountField.setWidthFull();
-    durationAmountField.setMin(1);
-    durationAmountField.setStepButtonsVisible(true);
-    durationAmountField.setClearButtonVisible(true);
-    preciseDurationField.setWidthFull();
-    preciseDurationField.setClearButtonVisible(true);
-    decreaseDurationButton.addClassName("admin-duration-step");
-    increaseDurationButton.addClassName("admin-duration-step");
-    preciseDurationField.setPrefixComponent(decreaseDurationButton);
-    preciseDurationField.setSuffixComponent(increaseDurationButton);
-    add(durationStorage == Storage.DURATION ? preciseDurationField : durationAmountField);
-    if (durationStorage == Storage.DAYS) {
-      addClassName("admin-duration-fixed-unit");
-      fixedDurationUnitSpan.addClassName("admin-duration-unit-label");
-      durationAmountField.setSuffixComponent(fixedDurationUnitSpan);
-    } else {
-      durationUnitComboBox.setItems(Unit.values());
-      durationUnitComboBox.setValue(Unit.DAYS);
-      CosmosComboBoxStyling.styleChoice(durationUnitComboBox, this::formatDurationUnitLabel, true);
-      durationUnitComboBox.addValueChangeListener(event -> {
-        if (event.isFromClient() && event.getValue() == null && event.getOldValue() != null) {
-          durationUnitComboBox.setValue(event.getOldValue());
-          return;
-        }
 
-        updateDurationMaximumAndPlaceholder();
-        publishDurationChange();
-      });
-      add(durationUnitComboBox);
-    }
-    durationAmountField.addValueChangeListener(event -> publishDurationChange());
-    preciseDurationField.addValueChangeListener(event -> publishDurationChange());
+    configureDurationAmountFields();
+    configureDurationUnitSuffix();
+
+    durationAmountIntegerField.addValueChangeListener(event -> publishDurationChange());
+    preciseDurationBigDecimalField.addValueChangeListener(event -> publishDurationChange());
     refreshTexts();
     updateDurationMaximumAndPlaceholder();
   }
 
+  private void configureDurationAmountFields() {
+    durationAmountIntegerField.setWidthFull();
+    durationAmountIntegerField.setMin(1);
+    durationAmountIntegerField.setStepButtonsVisible(true);
+    durationAmountIntegerField.setClearButtonVisible(true);
+
+    preciseDurationBigDecimalField.setWidthFull();
+    preciseDurationBigDecimalField.setClearButtonVisible(true);
+
+    decreaseDurationButton.addClassName("cosmos-duration-step");
+    increaseDurationButton.addClassName("cosmos-duration-step");
+    preciseDurationBigDecimalField.setPrefixComponent(decreaseDurationButton);
+    preciseDurationBigDecimalField.setSuffixComponent(increaseDurationButton);
+
+    add(
+        durationStorage == Storage.DURATION
+            ? preciseDurationBigDecimalField
+            : durationAmountIntegerField);
+  }
+
+  private void configureDurationUnitSuffix() {
+    if (durationStorage == Storage.DAYS) {
+      addClassName("cosmos-duration-fixed-unit");
+      fixedDurationUnitSpan.addClassName("cosmos-duration-unit-label");
+      durationAmountIntegerField.setSuffixComponent(fixedDurationUnitSpan);
+      return;
+    }
+
+    durationUnitSelect.addClassName("cosmos-duration-unit-select");
+    durationUnitSelect.getElement().getThemeList().add("cosmos");
+    durationUnitSelect.getElement().getThemeList().add("cosmos-duration-unit");
+    durationUnitSelect.setNoVerticalOverlap(true);
+    durationUnitSelect.setItems(Unit.values());
+    durationUnitSelect.setValue(Unit.DAYS);
+    durationUnitSelect.addValueChangeListener(event -> {
+      if (event.isFromClient() && event.getValue() == null && event.getOldValue() != null) {
+        durationUnitSelect.setValue(event.getOldValue());
+        return;
+      }
+
+      updateDurationMaximumAndPlaceholder();
+      publishDurationChange();
+    });
+
+    if (durationStorage == Storage.DURATION) {
+      HorizontalLayout durationSuffixLayout =
+          new HorizontalLayout(increaseDurationButton, durationUnitSelect);
+      durationSuffixLayout.setPadding(false);
+      durationSuffixLayout.setSpacing(false);
+      durationSuffixLayout.setAlignItems(HorizontalLayout.Alignment.CENTER);
+      durationSuffixLayout.addClassName("cosmos-duration-suffix");
+      preciseDurationBigDecimalField.setSuffixComponent(durationSuffixLayout);
+    } else {
+      durationAmountIntegerField.setSuffixComponent(durationUnitSelect);
+    }
+  }
+
   private void stepDurationValue(int stepDirection) {
-    BigDecimal currentDurationAmount = preciseDurationField.getValue();
-    preciseDurationField.setValue(
+    BigDecimal currentDurationAmount = preciseDurationBigDecimalField.getValue();
+    preciseDurationBigDecimalField.setValue(
         (currentDurationAmount == null ? BigDecimal.ZERO : currentDurationAmount)
             .add(BigDecimal.valueOf(stepDirection)));
   }
@@ -109,8 +151,9 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     if (durationStorage != Storage.DAYS || minimumDays < 0) {
       throw new IllegalArgumentException("Non-negative minimum for fixed days required");
     }
+
     emptyDaysAllowed = false;
-    durationAmountField.setMin(minimumDays);
+    durationAmountIntegerField.setMin(minimumDays);
     updateDurationMaximumAndPlaceholder();
   }
 
@@ -119,25 +162,26 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   }
 
   /**
-   * Schränkt nur die angebotenen Einheiten ein; vorhandene Konfigurationsfelder bleiben
-   * unverändert.
+   * Schränkt die angebotenen Einheiten ein. Die aktuelle Einheit bleibt erhalten, sofern sie
+   * weiterhin angeboten wird, sonst wird die erste verfügbare Einheit gewählt.
    */
   public void setAvailableUnits(Unit... availableUnits) {
-    Unit currentDurationUnit = durationUnitComboBox.getValue();
+    Unit currentDurationUnit = durationUnitSelect.getValue();
     if (availableUnits.length == 0 || durationStorage == Storage.DAYS) {
       throw new IllegalArgumentException("Selectable duration units required");
     }
-    durationUnitComboBox.setItems(availableUnits);
-    durationUnitComboBox.setValue(
+
+    durationUnitSelect.setItems(availableUnits);
+    durationUnitSelect.setValue(
         Arrays.asList(availableUnits).contains(currentDurationUnit)
             ? currentDurationUnit
             : availableUnits[0]);
   }
 
   public void setControlsEnabled(boolean enabled) {
-    durationAmountField.setEnabled(enabled);
-    preciseDurationField.setEnabled(enabled);
-    durationUnitComboBox.setEnabled(enabled);
+    durationAmountIntegerField.setEnabled(enabled);
+    preciseDurationBigDecimalField.setEnabled(enabled);
+    durationUnitSelect.setEnabled(enabled);
     decreaseDurationButton.setEnabled(enabled);
     increaseDurationButton.setEnabled(enabled);
   }
@@ -147,27 +191,29 @@ public class AdminDurationField extends Div implements HasAriaLabel {
 
     try {
       if (durationStorage == Storage.DAYS && storedDurationText.isBlank()) {
-        durationAmountField.clear();
+        durationAmountIntegerField.clear();
         return;
       }
 
-      BigDecimal parsedDurationSeconds = parseDurationValue(storedDurationText);
+      BigDecimal parsedDurationSeconds = parseDurationSeconds(storedDurationText);
 
       Unit selectedDurationUnit =
-          durationStorage == Storage.DAYS ? Unit.DAYS : exactUnit(parsedDurationSeconds);
+          durationStorage == Storage.DAYS
+              ? Unit.DAYS
+              : findExactDurationUnit(parsedDurationSeconds);
       if (durationStorage != Storage.DAYS) {
-        durationUnitComboBox.setValue(selectedDurationUnit);
+        durationUnitSelect.setValue(selectedDurationUnit);
       }
 
       BigDecimal durationAmount =
           parsedDurationSeconds
-              .divide(BigDecimal.valueOf(selectedDurationUnit.seconds))
+              .divide(BigDecimal.valueOf(selectedDurationUnit.secondsPerUnit))
               .stripTrailingZeros();
 
       if (durationStorage == Storage.DURATION) {
-        preciseDurationField.setValue(durationAmount);
+        preciseDurationBigDecimalField.setValue(durationAmount);
       } else {
-        durationAmountField.setValue(durationAmount.intValueExact());
+        durationAmountIntegerField.setValue(durationAmount.intValueExact());
       }
       updateDurationMaximumAndPlaceholder();
     } finally {
@@ -175,7 +221,7 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     }
   }
 
-  private BigDecimal parseDurationValue(String storedDurationText) {
+  private BigDecimal parseDurationSeconds(String storedDurationText) {
     if (durationStorage != Storage.DURATION) {
       return new BigDecimal(storedDurationText)
           .multiply(BigDecimal.valueOf(durationStorage == Storage.DAYS ? 86400 : 1));
@@ -186,17 +232,17 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   }
 
   public String getSecondsValue() {
-    BigDecimal durationAmount = readDurationValue();
+    BigDecimal durationAmount = readDurationAmount();
     return durationAmount == null
         ? ""
         : durationAmount
-            .multiply(BigDecimal.valueOf(getSelectedDurationUnit().seconds))
+            .multiply(BigDecimal.valueOf(getSelectedDurationUnit().secondsPerUnit))
             .toPlainString();
   }
 
   /** Ungültige Werte erreichen die vorhandene Prüfung und werden niemals zum Standardwert. */
   public String getStoredValue() {
-    BigDecimal currentDurationAmount = readDurationValue();
+    BigDecimal currentDurationAmount = readDurationAmount();
     if (currentDurationAmount == null) {
       return "";
     }
@@ -221,12 +267,12 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   }
 
   public void setDefaultValue(String defaultDurationText) {
-    defaultValue = defaultDurationText;
+    this.defaultDurationText = defaultDurationText;
     updateDurationMaximumAndPlaceholder();
   }
 
-  public void addChangeListener(SerializableRunnable listener) {
-    durationChangeListener = listener;
+  public void addChangeListener(SerializableRunnable durationChangeListener) {
+    this.durationChangeListener = durationChangeListener;
   }
 
   private void publishDurationChange() {
@@ -235,12 +281,12 @@ public class AdminDurationField extends Div implements HasAriaLabel {
     }
   }
 
-  private BigDecimal readDurationValue() {
+  private BigDecimal readDurationAmount() {
     if (durationStorage == Storage.DURATION) {
-      return preciseDurationField.getValue();
+      return preciseDurationBigDecimalField.getValue();
     }
 
-    Integer durationAmount = durationAmountField.getValue();
+    Integer durationAmount = durationAmountIntegerField.getValue();
     return durationAmount == null ? null : BigDecimal.valueOf(durationAmount);
   }
 
@@ -250,45 +296,47 @@ public class AdminDurationField extends Div implements HasAriaLabel {
       return;
     }
 
-    durationAmountField.setMax(
+    durationAmountIntegerField.setMax(
         durationStorage == Storage.DAYS
             ? Integer.MAX_VALUE
-            : Integer.MAX_VALUE / selectedDurationUnit.seconds);
+            : Integer.MAX_VALUE / selectedDurationUnit.secondsPerUnit);
 
     if (durationStorage == Storage.DAYS) {
-      durationAmountField.setPlaceholder(
-          emptyDaysAllowed ? messageProperties.getAdminConfigUnlimited() : defaultValue);
+      durationAmountIntegerField.setPlaceholder(
+          emptyDaysAllowed ? messageProperties.getAdminConfigUnlimited() : defaultDurationText);
       return;
     }
 
     try {
       BigDecimal durationPlaceholderAmount =
-          parseDurationValue(defaultValue)
-              .divide(BigDecimal.valueOf(selectedDurationUnit.seconds))
+          parseDurationSeconds(defaultDurationText)
+              .divide(BigDecimal.valueOf(selectedDurationUnit.secondsPerUnit))
               .stripTrailingZeros();
 
       if (durationStorage == Storage.DURATION) {
-        preciseDurationField.setPlaceholder(durationPlaceholderAmount.toPlainString());
+        preciseDurationBigDecimalField.setPlaceholder(durationPlaceholderAmount.toPlainString());
       } else {
-        durationAmountField.setPlaceholder(
+        durationAmountIntegerField.setPlaceholder(
             durationPlaceholderAmount.scale() <= 0
                 ? durationPlaceholderAmount.toPlainString()
                 : "");
       }
     } catch (IllegalArgumentException | ArithmeticException _) {
       // Während des Aufbaus hat das Feld noch keinen zum Speicherformat passenden Standardwert.
-      preciseDurationField.setPlaceholder("");
+      preciseDurationBigDecimalField.setPlaceholder("");
     }
   }
 
   private Unit getSelectedDurationUnit() {
-    return durationStorage == Storage.DAYS ? Unit.DAYS : durationUnitComboBox.getValue();
+    return durationStorage == Storage.DAYS ? Unit.DAYS : durationUnitSelect.getValue();
   }
 
-  private Unit exactUnit(BigDecimal durationSeconds) {
+  private Unit findExactDurationUnit(BigDecimal durationSeconds) {
     for (Unit candidateDurationUnit : new Unit[] {Unit.DAYS, Unit.HOURS, Unit.MINUTES}) {
       if (durationSeconds.signum() != 0
-          && durationSeconds.remainder(BigDecimal.valueOf(candidateDurationUnit.seconds)).signum()
+          && durationSeconds
+                  .remainder(BigDecimal.valueOf(candidateDurationUnit.secondsPerUnit))
+                  .signum()
               == 0) {
         return candidateDurationUnit;
       }
@@ -302,46 +350,46 @@ public class AdminDurationField extends Div implements HasAriaLabel {
       return messageProperties.getAdminConfigDefaultEmpty();
     }
 
-    BigDecimal parsedDurationSeconds = parseDurationValue(storedDurationText);
+    BigDecimal parsedDurationSeconds = parseDurationSeconds(storedDurationText);
     Unit displayDurationUnit =
-        durationStorage == Storage.DAYS ? Unit.DAYS : exactUnit(parsedDurationSeconds);
+        durationStorage == Storage.DAYS ? Unit.DAYS : findExactDurationUnit(parsedDurationSeconds);
     return formatDurationValue(
-        parsedDurationSeconds.divide(BigDecimal.valueOf(displayDurationUnit.seconds)),
+        parsedDurationSeconds.divide(BigDecimal.valueOf(displayDurationUnit.secondsPerUnit)),
         displayDurationUnit);
   }
 
   public String getDisplayValue() {
-    BigDecimal currentDurationAmount = readDurationValue();
+    BigDecimal currentDurationAmount = readDurationAmount();
     if (currentDurationAmount == null) {
       if (durationStorage == Storage.DAYS) {
         return messageProperties.getAdminConfigUnlimited();
       }
       return durationStorage == Storage.SECONDS
-          ? displayStoredValue(defaultValue)
+          ? displayStoredValue(defaultDurationText)
           : messageProperties.getAdminConfigDurationInvalid();
     }
-    return validAmount()
+    return hasValidDurationAmount()
         ? formatDurationValue(currentDurationAmount, getSelectedDurationUnit())
         : messageProperties.getAdminConfigDurationInvalid();
   }
 
   public String getEquivalentValue() {
-    if (readDurationValue() == null && durationStorage == Storage.DAYS) {
+    if (readDurationAmount() == null && durationStorage == Storage.DAYS) {
       return messageProperties.getAdminConfigUnlimited();
     }
-    if (!validAmount()) {
+    if (!hasValidDurationAmount()) {
       return messageProperties.getAdminConfigDurationInvalid();
     }
     BigDecimal equivalentDurationSeconds =
-        readDurationValue() == null
-            ? parseDurationValue(defaultValue)
+        readDurationAmount() == null
+            ? parseDurationSeconds(defaultDurationText)
             : new BigDecimal(getSecondsValue());
     return messageProperties.getAdminConfigDurationSeconds(
         equivalentDurationSeconds.stripTrailingZeros());
   }
 
-  private boolean validAmount() {
-    BigDecimal currentDurationAmount = readDurationValue();
+  private boolean hasValidDurationAmount() {
+    BigDecimal currentDurationAmount = readDurationAmount();
     if (currentDurationAmount == null) {
       return durationStorage != Storage.DURATION;
     }
@@ -366,13 +414,13 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   }
 
   public void refreshTexts() {
-    preciseDurationField.setLocale(CustomI18NProvider.getCurrentLocale());
+    preciseDurationBigDecimalField.setLocale(CustomI18NProvider.getCurrentLocale());
     if (durationStorage == Storage.DAYS) {
       fixedDurationUnitSpan.setText(messageProperties.getAdminConfigDurationUnitDays());
-      durationAmountField.setAriaDescribedBy(fixedDurationUnitSpan);
+      durationAmountIntegerField.setAriaDescribedBy(fixedDurationUnitSpan);
     } else {
-      durationUnitComboBox.setAriaLabel(messageProperties.getAdminConfigDurationUnit());
-      durationUnitComboBox.setItemLabelGenerator(this::formatDurationUnitLabel);
+      durationUnitSelect.setAriaLabel(messageProperties.getAdminConfigDurationUnit());
+      durationUnitSelect.setItemLabelGenerator(this::formatDurationUnitLabel);
     }
     decreaseDurationButton.setAriaLabel(messageProperties.getAdminConfigDurationDecrease());
     increaseDurationButton.setAriaLabel(messageProperties.getAdminConfigDurationIncrease());
@@ -391,23 +439,23 @@ public class AdminDurationField extends Div implements HasAriaLabel {
   @Override
   public void setAriaLabelledBy(String labelElementId) {
     getElement().setAttribute("aria-labelledby", labelElementId);
-    durationAmountField.setAriaLabelledBy(labelElementId);
-    preciseDurationField.setAriaLabelledBy(labelElementId);
+    durationAmountIntegerField.setAriaLabelledBy(labelElementId);
+    preciseDurationBigDecimalField.setAriaLabelledBy(labelElementId);
   }
 
   public void setInvalid(boolean invalid) {
-    durationAmountField.setInvalid(invalid);
-    preciseDurationField.setInvalid(invalid);
+    durationAmountIntegerField.setInvalid(invalid);
+    preciseDurationBigDecimalField.setInvalid(invalid);
   }
 
   public boolean isInvalid() {
     return durationStorage == Storage.DURATION
-        ? preciseDurationField.isInvalid()
-        : durationAmountField.isInvalid();
+        ? preciseDurationBigDecimalField.isInvalid()
+        : durationAmountIntegerField.isInvalid();
   }
 
   public void setErrorMessage(String validationErrorMessage) {
-    durationAmountField.setErrorMessage(validationErrorMessage);
-    preciseDurationField.setErrorMessage(validationErrorMessage);
+    durationAmountIntegerField.setErrorMessage(validationErrorMessage);
+    preciseDurationBigDecimalField.setErrorMessage(validationErrorMessage);
   }
 }

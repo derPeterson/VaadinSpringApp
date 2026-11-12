@@ -1119,12 +1119,16 @@ und Lücke sowie Bild vor dem Text. Die gleich breiten HTML-Aktionsbuttons sind
 auf `.ad-config` begrenzt. Der Mailtest bleibt mit natürlicher Buttonbreite
 rechtsbündig, einschließlich Smartphone.
 
-`AdminDurationField` wird in den Zeitfeldern der Konfiguration verwendet. Dazu gehören
+`CosmosDurationField` ist der wiederverwendbare Zeitfeld-Baustein aus nativen
+Vaadin-Zahlenfeldern und einem `Select<Unit>` im öffentlichen Suffix. Er wird in
+den Zeitfeldern der Konfiguration verwendet. Dazu gehören
 die Gültigkeit gespeicherter Anmeldungen, der Sitzungs-Timeout, das Zeitfenster für
 Fehlversuche, vier Tokenfristen, automatische Abwesenheit, zwei
 Benachrichtigungs-Aufbewahrungen sowie Wartezeit und Aufbewahrung der E-Mail-Queue.
-Zahl und Einheit stehen
-nebeneinander. Aktueller Wert, Umrechnung und Standardwert stehen nur in der Feldhilfe.
+Zahl und Einheit teilen eine Feldfläche. Der Einheitenbereich steht rechts hinter
+Löschen und Plus, durch die bestehende senkrechte Linie getrennt. Beim präzisen
+`BigDecimalField` verbindet ein natives `HorizontalLayout` Plusbutton und Auswahl.
+Aktueller Wert, Umrechnung und Standardwert stehen nur in der Feldhilfe.
 Sekunden, ISO-Zeitspanne und ganze Tage behalten ihr jeweiliges Speicherformat.
 Die bestehenden Mindestdauern und Bereichsgrenzen bleiben erhalten. Beim Laden
 wird die größte ganzzahlig passende Einheit gewählt. Einheitenwechsel erhält
@@ -1142,11 +1146,28 @@ Eine Einheitenauswahl gibt es für diese Tageswerte nicht. Ihre Feldhilfen
 beschreiben die Eingabe in ganzen Tagen und zeigen den aktuellen Wert in Tagen.
 Andere Zeitspannen bleiben Pflichtfelder.
 
-Die Regeln bleiben lokal in `cosmos-admin-reference.css`: `admin-duration-field`
-hält Eingaben und Einheiten in einer Zeile mit 40 px hohen Flächen. Die Einheitenauswahl
-ist 132 px breit. Die native ComboBox öffnet am Feldrand und verwendet die
-gemeinsame Auswahlmarkierung.
-`admin-duration-step` gestaltet die Schaltflächen an der präzisen Vaadin-Zahleneingabe.
+Die gemeinsame Gestaltung steht in `cosmos-duration-field.css`, importiert durch
+`cosmos-theme.css`. Sie hängt an `cosmos-duration-field` und benötigt keinen
+Admin-Seitencontainer. Die Zahlenfläche bleibt 40 px hoch. `cosmos-duration-unit-select`
+verwendet ohne eigene Außenbox den vorhandenen Suffix, eine eigene zugängliche
+Beschriftung „Einheit“. Der Einheitenbereich ist 100 px breit und 28 px hoch,
+die mittig ausgerichtete Trennlinie 18 px hoch. Bei Fokus auf der Einheit wird
+die gemeinsame Zahlenfläche markiert; ein zweiter innerer Fokusrahmen entfällt.
+Die innere Auswahl hat nur ihre ARIA-Beschriftung. Ihr leerer `label`-Part bleibt
+ausgeblendet und ohne Außenabstand; die globale Feldlabel-Regel darf hier keine
+zusätzliche Zeile erzeugen und den Inhalt nach unten verschieben.
+Die Trennlinie verwendet `::after`; Vaadins `::before` für die Grundlinienausrichtung
+bleibt unverändert, damit Text und Auswahlfläche vertikal im Zahlenfeld sitzen.
+Die Auswahl öffnet ohne vertikale Überdeckung des Felds. Ihr Overlay verwendet die vorhandenen Cosmos-Farben,
+blauen Hover und die bestehende Auswahlfarbe mit Rahmen und Häkchen rechts.
+Die Optionszeilen verwenden die kompakten Pagination-Maße: 32 px Zeilenhöhe,
+4 px Abstand darunter, 8 px Rundung und 12-px-Schrift mit Gewicht 500. Die
+lokal begrenzten Regeln haben Vorrang vor den allgemeinen Select-Standardwerten.
+Das native Auswahlhäkchen ist 16 px groß und verwendet den Cosmos-Akzent.
+Der geschlossene Einheitenwert hat ausdrücklich 20 px Zeilenhöhe, damit
+Unterlängen wie das „g“ in „Tage“ vollständig sichtbar bleiben.
+`cosmos-duration-step` bezeichnet die Schrittbuttons der präzisen Zahleneingabe,
+`cosmos-duration-unit-label` den festen Tageszusatz.
 Konfigurationsfelder mit externem Label blenden die leere interne Labelzeile aus,
 damit beide Spalten dieselbe Ober- und Unterkante haben.
 Jede Feldhilfe in der Konfiguration verwendet `AdminSidePanelDialog.addEffectiveUse`

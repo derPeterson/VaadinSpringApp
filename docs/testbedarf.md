@@ -2,6 +2,24 @@
 
 ## Browser-Tests
 
+- Integrierte Einheitenauswahl (`CosmosDurationField`), **offen, weitergehende Browserprüfung auf
+  Benutzerwunsch zurückgestellt**: In DE/EN auf Desktop und Smartphone ganze
+  Sekunden, genaue Zeitspannen und feste Tageswerte in der Konfiguration prüfen,
+  einschließlich 2FA-Inaktivität mit eingeschränkten Einheiten. Zahl, Löschen,
+  Plus und Einheit teilen die Feldfläche, Einheit ganz rechts mit Trennlinie.
+  Die Trennlinie bleibt kurz und mittig; auch bei fokussierter Einheit erscheint
+  nur der gemeinsame Feldrahmen, keine zusätzliche innere Box.
+  Overlay liegt außerhalb des Eingabefelds, Text wird nicht abgeschnitten,
+  Markierung und Häkchen stehen wie im Cosmos-Standard. Tab, Pfeiltasten, Enter,
+  Escape, sichtbarer Tastaturfokus, Disabled-/Fehlerzustände und Sprachwechsel
+  prüfen. Einheitenwechsel erhält die Zahl und ändert den Zeitraum; gespeicherte
+  Werte, Genauigkeit und Formularschutz bleiben erhalten. Vorher-/Nachhervergleich
+  und gemeinsame Designabnahme des gesamten Bausteins stehen aus. Der gezielte
+  Ausrichtungsnachtest am Feld für gespeicherte Anmeldungen ist auf Desktop und
+  Smartphone abgedeckt, einschließlich Overlay-Grundgestaltung und vollständiger
+  Zeilenhöhe des Einheitenwerts; die übrigen Varianten und Bedienzustände bleiben offen.
+  Bestehende Page Objects sind angepasst.
+
 - Details-Schalter ohne Hoverfläche, **offen**: In DE/EN auf Desktop und Smartphone
   2FA-Hilfe/Ersatzcodes, Benutzereditor, Anwesenheitsmenü, Ticketanleitung sowie
   Empfängervorschau und Versandhistorie prüfen. Beim Hover bleibt die Grundfläche
@@ -58,9 +76,9 @@
   Bei schmaler Ansicht sauber untereinander; Sprachwechsel aktualisiert beide
   Kontotypen. Die vorhandene Suite `email-verification` dafür ergänzen.
 
-Die automatisierten Nachtests zu den vereinbarten Nachtpaketen sind abgedeckt
-und in beiden Sprachen geprüft. Ergebnisse und verbleibende Qualitätsgrenzen
-stehen im [Prüfstand](status.md).
+Die Ergebnisse der letzten großen Testrunde und deren Qualitätsgrenzen stehen
+im [Prüfstand](status.md). Die hier aufgeführten Nachtests bleiben davon unabhängig
+offen, bis sie passend abgedeckt und erfolgreich ausgeführt wurden.
 
 - Segmentierte Benachrichtigungsfilter, **wartend auf die geplante Umstellung**:
   Nach dem Wechsel von `RadioButtonGroup` zu nativen `Tabs` im Posteingang und
@@ -72,7 +90,15 @@ stehen im [Prüfstand](status.md).
 
 ## JUnit-Tests
 
-Keine offenen Ergänzungen aus den vereinbarten Nachtpaketen. Die Fach-,
-Persistenz-, Vorlagen- und Rückmeldungstests sind im vollständigen Reactor bestanden.
+- Rollen-/Sperrregressionen und Filterrücksetzung, **offen**: Der vollständige
+  Testimage-Build zur isolierten Zeitfelduntersuchung scheiterte mit acht
+  Assertion-Fehlern und einem Fehler in 2935 ausgeführten Tests (zwei übersprungen).
+  `RoleMutationPersistenceTest` (drei Fälle), `VerificationQueueConcurrencyTest`
+  (fünf Fälle) und `AdminUserManagementFilterTest.resetWaitsForApplyAndCancellationRestoresTheAppliedDraft`
+  einzeln untersuchen. Aktuelle Trennung von administrativer Sperre und Selbstdeaktivierung
+  sowie Filtervertrag gegen die Erwartungen prüfen; echte Fehler beheben und
+  ausschließlich veraltete Erwartungen fachlich begründet anpassen. Erfolgreiche
+  gezielte Nachtests und anschließend regulären vollständigen Build nachweisen.
+  Die separate Zeitfeldvorschau ersetzt diesen fehlgeschlagenen Nachweis nicht.
 
 Menschliche Abnahmen bleiben im [manuellen Katalog](manual-tests/README.md).

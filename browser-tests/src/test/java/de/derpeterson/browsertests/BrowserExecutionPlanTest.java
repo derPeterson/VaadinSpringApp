@@ -41,6 +41,7 @@ class BrowserExecutionPlanTest {
         "two-factor-ticket-layout",
         "two-factor-ticket-panel",
         "cosmos-scrollbars",
+        "duration-field",
         "form-details",
         "email-verification",
         "configuration-follow-up",
@@ -78,6 +79,7 @@ class BrowserExecutionPlanTest {
               Set.of("recoverySupportRemainsContactInsteadOfFactorReset");
           case "two-factor-ticket-panel" ->
               Set.of("administrativeTicketLayoutKeepsTabsAndCardsUnclipped");
+          case "duration-field" -> Set.of("durationUnitIsCenteredInsideNumericField");
           case "cosmos-scrollbars" ->
               Set.of("globalScrollbarsPreserveNativeScrollingAndLocalChatSpacing");
           case "form-details" ->

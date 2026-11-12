@@ -58,9 +58,9 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator(".cosmos-config-setting-count"))
         .hasText(uiTexts.getAdminConfigSettingsCount(2));
     for (String fieldLabel : new String[] {retentionLabel, reminderLabel}) {
-      assertThat(configurationPage.duration(fieldLabel).locator(".admin-duration-unit-label"))
+      assertThat(configurationPage.duration(fieldLabel).locator(".cosmos-duration-unit-label"))
           .hasText(uiTexts.getAdminConfigDurationUnitDays());
-      assertThat(configurationPage.duration(fieldLabel).locator("vaadin-combo-box")).hasCount(0);
+      assertThat(configurationPage.duration(fieldLabel).locator("vaadin-select")).hasCount(0);
       configurationPage.info(fieldLabel).click();
       AdminConfigurationPage.assertEffectiveUse(configurationPage.helpPanel(), uiTexts);
       assertThat(configurationPage.helpPanel())
@@ -782,8 +782,8 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         settings.info(label).click();
 
         if (daysOnly) {
-          assertThat(settings.duration(label).locator("vaadin-combo-box")).hasCount(0);
-          assertThat(settings.duration(label).locator(".admin-duration-unit-label"))
+          assertThat(settings.duration(label).locator("vaadin-select")).hasCount(0);
+          assertThat(settings.duration(label).locator(".cosmos-duration-unit-label"))
               .hasText(uiTexts.getAdminConfigDurationUnitDays());
           assertThat(settings.helpPanel())
               .containsText(uiTexts.getAdminConfigDurationDays(java.math.BigDecimal.TWO));
@@ -901,20 +901,21 @@ public class ConfigurationBrowserTest extends BrowserFixture {
     settings.open(AdminConfigGroup.SECURITY);
     String label = uiTexts.getAdminConfigEntrySessionTimeout();
     settings.enterSeconds(label, java.math.BigDecimal.valueOf(119));
-    Locator durationUnitInput = settings.duration(label).locator("vaadin-combo-box input");
+    Locator durationUnitLabel =
+        settings.duration(label).locator("vaadin-select-value-button > vaadin-select-item");
 
-    assertThat(durationUnitInput).hasValue(uiTexts.getAdminConfigDurationUnitSeconds());
+    assertThat(durationUnitLabel).hasText(uiTexts.getAdminConfigDurationUnitSeconds());
     assertTrue(
         (Boolean)
-            durationUnitInput.evaluate(
+            durationUnitLabel.evaluate(
                 """
-                input => {
-                  const font = getComputedStyle(input);
+                label => {
+                  const font = getComputedStyle(label);
                   const canvas = document.createElement('canvas').getContext('2d');
                   canvas.font = font.font;
-                  const textWidth = canvas.measureText(input.value).width;
+                  const textWidth = canvas.measureText(label.textContent.trim()).width;
                   const horizontalPadding = parseFloat(font.paddingLeft) + parseFloat(font.paddingRight);
-                  return textWidth > 0 && textWidth <= input.clientWidth - horizontalPadding;
+                  return textWidth > 0 && textWidth <= label.clientWidth - horizontalPadding;
                 }
                 """),
         "Die ausgeschriebene Zeiteinheit muss vollständig vor dem Auswahlpfeil stehen");

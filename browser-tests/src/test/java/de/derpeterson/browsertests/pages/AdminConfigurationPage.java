@@ -91,17 +91,18 @@ public final class AdminConfigurationPage {
 
   public Locator duration(String fieldLabelText) {
     return browserPage
-        .locator(".admin-duration-field")
+        .locator(".cosmos-duration-field")
         .filter(new Locator.FilterOptions().setHas(input(fieldLabelText)));
   }
 
   public BigDecimal seconds(String durationFieldLabel) {
     Locator durationFieldLocator = duration(durationFieldLabel);
-    Locator durationUnitInput = durationFieldLocator.locator("vaadin-combo-box input");
+    Locator durationUnitLabel =
+        durationFieldLocator.locator("vaadin-select-value-button > vaadin-select-item");
     String selectedDurationUnitText =
-        durationUnitInput.count() == 0
-            ? durationFieldLocator.locator(".admin-duration-unit-label").innerText().trim()
-            : durationUnitInput.inputValue();
+        durationUnitLabel.count() == 0
+            ? durationFieldLocator.locator(".cosmos-duration-unit-label").innerText().trim()
+            : durationUnitLabel.innerText().trim();
     int secondsPerUnit;
     if (selectedDurationUnitText.equals(uiTexts.getAdminConfigDurationUnitDays())) {
       secondsPerUnit = 86400;
@@ -110,7 +111,7 @@ public final class AdminConfigurationPage {
     } else if (selectedDurationUnitText.equals(uiTexts.getAdminConfigDurationUnitMinutes())) {
       secondsPerUnit = 60;
     } else {
-      assertThat(durationUnitInput).hasValue(uiTexts.getAdminConfigDurationUnitSeconds());
+      assertThat(durationUnitLabel).hasText(uiTexts.getAdminConfigDurationUnitSeconds());
       secondsPerUnit = 1;
     }
 
@@ -119,7 +120,7 @@ public final class AdminConfigurationPage {
   }
 
   public void enterSeconds(String fieldLabelText, BigDecimal durationSeconds) {
-    duration(fieldLabelText).locator("vaadin-combo-box [part~=toggle-button]").click();
+    duration(fieldLabelText).locator("vaadin-select").click();
     browserPage
         .getByRole(
             AriaRole.OPTION,

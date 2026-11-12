@@ -22,8 +22,8 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
-import de.derpeterson.app.ui.components.AdminDurationField;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
+import de.derpeterson.app.ui.components.CosmosDurationField;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
@@ -89,7 +89,7 @@ class AdminTokenDurationValidationTest {
     localeReference.set(language);
     configurationSection.refreshTexts();
     Duration minimum = entry.getMinimumTokenDuration();
-    AdminDurationField input = field(entry);
+    CosmosDurationField input = field(entry);
 
     assertEquals(
         "config-label-" + entry.name().toLowerCase(Locale.ROOT),
@@ -181,13 +181,14 @@ class AdminTokenDurationValidationTest {
     verify(configService).set(entry, "PT1S");
   }
 
-  private AdminDurationField field(ConfigEntry entry) {
-    return (AdminDurationField)
+  private CosmosDurationField field(ConfigEntry entry) {
+    return (CosmosDurationField)
         ((Map<?, ?>) ReflectionTestUtils.getField(configurationSection, "configInputs")).get(entry);
   }
 
   private BigDecimalField amount(ConfigEntry entry) {
-    return (BigDecimalField) ReflectionTestUtils.getField(field(entry), "preciseDurationField");
+    return (BigDecimalField)
+        ReflectionTestUtils.getField(field(entry), "preciseDurationBigDecimalField");
   }
 
   private Button saveButton() {
