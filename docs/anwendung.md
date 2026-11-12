@@ -34,6 +34,15 @@ keine Verifikationsmail; administrative Sperren bleiben wirksam. Unveränderte A
 lösen keinen Versand aus. Der manuelle Button verwendet weiterhin die gespeicherte
 Adresse. Ein Mailauftrag ist keine Zustellbestätigung.
 
+Ein **Entwicklungskonto** ist davon unabhängig ausdrücklich gekennzeichnet. Nur
+Superadmins können dieses Merkmal bei der Kontoanlage setzen; beim Anwendungsstart
+ist es je Startkonto konfigurierbar. Es unterdrückt sämtliche kontobezogenen Mails,
+auch Sicherheits- und Löschmails. Es ersetzt keine Rollen- oder Identitätsprüfung.
+Mailabhängige Nachweise bleiben gesperrt. Für vollständige Mailabläufe ein reguläres
+Testkonto verwenden. „Nicht geprüft“ allein unterdrückt diese Mails nicht.
+Details: [Startkonten](entwicklung.md#e-mail-bestätigung-für-startkonten) und
+[Versandvertrag](mailqueue.md#auftrag-und-versand).
+
 ## Mein Konto
 
 Angemeldete Startseite, Postfach und Konto teilen Header, Identitätskarte und
@@ -43,9 +52,9 @@ Schnellzugriffen und ungelesener Nachrichtenanzahl, ohne erfundene Statistiken.
 `/account` bietet persönliche Daten, Sicherheit sowie Geräte und Sitzungen über eine
 seitliche Kontonavigation. Auf Smartphones öffnet sie als Overlay.
 `section=profile`, `section=security` und `section=sessions` halten den ausgewählten
-Bereich in der URL. Unter Sicherheit merkt sich `tab=portal` oder `tab=providers`
-zusätzlich den Reiter, auch nach dem Neuladen. Ohne eindeutige Auswahl öffnen sich
-das Profil beziehungsweise der Portalzugang. Alte Links mit `tab=security` und
+Bereich in der URL. Unter Sicherheit merkt sich `tab=portal`, `tab=providers` oder
+`tab=lifecycle` zusätzlich den Reiter, auch nach dem Neuladen. Ohne eindeutige
+Auswahl öffnen sich das Profil beziehungsweise der Portalzugang. Alte Links mit `tab=security` und
 den anderen bisherigen Bereichswerten bleiben nutzbar.
 
 Im Profil lassen sich Namen, Geschlecht, Geburtstag und Sprache speichern.
@@ -74,6 +83,15 @@ angeboten. Eine verpflichtende Einrichtung bzw. Bestätigung erfolgt vor dem
 vollständigen Kontozugriff. Auch eine gespeicherte Anmeldung überspringt diesen
 Schritt nicht. Details: [Zwei-Faktor-Authentifizierung](zwei-faktor-authentifizierung.md).
 
+Der Tab **Konto verwalten** bietet die vorübergehende Deaktivierung und die
+endgültige Löschung. Beide verlangen einen ausdrücklichen Klick nach dem
+Identitätsnachweis. Nach erfolgreichem Abschluss erscheint auf der Anmeldeseite
+eine einmalige Rückmeldung. Für selbst deaktivierte Konten führt eine gültige
+Anmeldung stattdessen zur Reaktivierungshilfe mit festem Löschdatum. Administrative
+Sperren erlauben keine Selbstreaktivierung.
+Fristen, Mailversand und Löschumfang stehen unter
+[Kontodeaktivierung und Löschung](sicherheit.md#eigenes-konto-deaktivieren-und-löschen).
+
 Beim Passwort zeigt ein natives Badge „Eingerichtet“ in Grün oder „Nicht eingerichtet“
 in Blau. Ein ausschließlich über Google oder Microsoft angelegtes Konto hat zunächst
 kein Portalpasswort. Die Aktion heißt dann „Einrichten“, sonst „Ändern“. Sie führt
@@ -87,6 +105,21 @@ Die jeweilige Bestätigung nennt die betroffene Sitzung beziehungsweise gespeich
 Anmeldung. Abbrechen führt keinen Widerruf aus; die aktuelle Sitzung bleibt geschützt.
 Bei erreichtem Sitzungslimit gibt es nach Passwort- oder Anbieterprüfung einen eingeschränkten
 Verwaltungszugang zum Freigeben eines Platzes; er öffnet keine normalen Fachaktionen.
+
+## Ungespeicherte Formularänderungen
+
+Persönliche Daten, die Speicherformulare der Konfiguration einschließlich
+Anmeldeanbietern und 2FA sowie die Benutzerformulare warnen vor dem Verlust
+geänderter Eingaben. Innerhalb der Anwendung erscheint der gemeinsame
+Bestätigungsdialog. Beim Neuladen, Schließen oder externen Verlassen übernimmt
+der Browser seinen eigenen Warnhinweis. Dessen Wortlaut und Aussehen bestimmt
+der Browser.
+
+Unveränderte, erfolgreich gespeicherte oder vollständig zurückgesetzte Formulare
+warnen nicht. Ein fehlgeschlagener Speicherversuch entfernt den Schutz nicht,
+solange Änderungen bestehen. Suchfelder, Filter und Codeeingaben gehören nicht
+zu diesem Schutz. Er ist kein automatisches Speichern und greift nicht zuverlässig
+bei Browserabsturz, Verbindungsverlust oder erzwungenem Beenden auf Mobilgeräten.
 
 ## Profilbild und Verfügbarkeit
 

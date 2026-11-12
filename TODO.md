@@ -2,14 +2,16 @@
 
 ## Laufende Umsetzung
 
-- [ ] [Gesammelte Entwicklungsaufgaben für die Nacht](docs/planung/nachtaufgaben.md).
-  Pflichtpakete sind umgesetzt; die abschließende große Testrunde läuft.
-
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Konto deaktivieren/löschen und die noch offenen Komponenten
-  gemeinsam ansehen. Ergänzungen zum Formularschutz bei Browseraktionen und
-  der fehlende Sonar-Nachweis stehen im Plan. Die ausdrücklich zurückgestellten
+  gemeinsam ansehen. Der fehlende aktuelle Sonar-Nachweis steht im Plan.
+  Die ausdrücklich zurückgestellten
   Pakete bleiben bis zu einer späteren Freigabe offen.
+
+- [ ] [Integrierte Einheitenauswahl](docs/planung/einheitenauswahl.md) nach der
+  abgeschlossenen Analyse gemeinsam sichten und die Umsetzung freigeben.
+- [ ] [Einheitliche Seitenpfade](docs/planung/seitenpfade.md) nach der
+  abgeschlossenen Analyse gemeinsam sichten und die Umsetzung freigeben.
 
 ## Künftige Anwendungsfunktionen
 

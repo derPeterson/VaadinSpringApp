@@ -68,20 +68,15 @@ unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
   echte Änderungen sind gezielt in DE/EN per JUnit geprüft. Die reale Passwortmanager-
   Nachprüfung bleibt unter [HUM-11](../manual-tests/README.md#hum-11) offen.
 
-- **Umgesetzt, Gesamtprüfung läuft:** Ungespeicherte Eingaben auch beim Browser-Refresh
-  (F5, Strg+R und Aktualisieren-Schaltfläche), beim Schließen eines Tabs oder
-  Browserfensters sowie beim Verlassen über die Adresszeile oder externe
-  Navigation schützen. Die öffentliche Browserwarnung nutzt denselben
-  Änderungsvergleich wie die vorhandene anwendungsinterne Abfrage.
-  Umfang und Grenzen stehen in [Nachtaufgabe 5](nachtaufgaben.md#5-formularschutz-um-browseraktionen-erweitern).
-  Der dazugehörige automatisierte Nachtest steht zentral im
-  [Testbedarf](../testbedarf.md#browser-tests).
+- **Gemeinsame Sichtung der ergänzten Browserwarnung:** Persönliche Daten,
+  Konfiguration und Benutzerformulare mit einem ungespeicherten Entwurf neu laden
+  oder verlassen. Der native Browserhinweis ergänzt den bereits abgenommenen
+  internen Dialog. Umfang und Grenzen stehen in der
+  [Anwendungsdokumentation](../anwendung.md#ungespeicherte-formularänderungen),
+  die automatisierten Ergebnisse im [Prüfstand](../status.md).
 
 ### Eigenes Konto deaktivieren oder löschen
 
-- Die freigegebenen Darstellungsanpassungen an beiden Bestätigungsdialogen stehen
-  in [Nachtaufgabe 6](nachtaufgaben.md#6-dialoge-zum-deaktivieren-und-endgültigen-löschen-angleichen).
-  Sie sind umgesetzt und werden in der großen Testrunde mitgeprüft.
 - **Abnahme:** Unter „Mein Konto → Sicherheit → Konto verwalten“ die
   Identitätsbestätigung, Selbstdeaktivierung mit E-Mail,
   Reaktivierung, Admin-Sperre, Erinnerung und Löschung mit isolierten Testdaten
@@ -91,6 +86,15 @@ unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
 - Das erweiterte H2-Schema wird mit frischen isolierten Testdaten geprüft.
   Für die lokale Sichtung wird ebenfalls eine frische Entwicklungsdatenbank benötigt.
 - Die gemeinsame Sichtung bleibt offen.
+
+### Integrierte Einheiten und einheitliche Seitenpfade
+
+- Die [Einheitenauswahl](einheitenauswahl.md) ist mit nativen Zahlenfeldern und
+  einem Select im Suffix möglich. Fachliche Tagesgrenzen bleiben erhalten.
+- Für [Seitenpfade](seitenpfade.md) ist die native Breadcrumbs-Komponente im
+  manuellen Modus vorgesehen. Gesperrte Sicherheitsabläufe erhalten keine Links.
+- Beide Analysen sind fertig. Die optionale Umsetzung wurde in der Nacht nicht
+  begonnen; vor dem nächsten Paket gemeinsam die Vorschläge sichten.
 
 ### Offener Sonar-Nachweis
 

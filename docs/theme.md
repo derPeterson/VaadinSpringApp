@@ -478,8 +478,12 @@ behalten ihre inhaltsabhängige gemeinsame Breite. Der Anfangsfokus liegt auf �
 Schließen und Escape behalten den Entwurf und lösen eine aufgeschobene Navigation
 abbrechend auf. Nur die ausdrückliche Verwerfen-Aktion führt die Navigation fort.
 Die Variante verwendet dafür den vorhandenen `EqualButtonWidths`-Baustein und
-eine über die Footerbreite verteilte Aktionszeile. `UnsavedChangesDialog` vermittelt ausschließlich die Fach- und
-Navigationscallbacks. Browser-Refresh und Tab-Schließen sind davon nicht abgedeckt.
+eine über die Footerbreite verteilte Aktionszeile. `UnsavedChangesDialog` vermittelt
+ausschließlich die Fach- und Navigationscallbacks innerhalb der Anwendung.
+Bei Browser-Refresh, Tab-Schließen und externer Navigation ergänzt
+`BrowserUnsavedChangesGuard` den nativen Browserhinweis; dafür kann dieser
+Cosmos-Dialog nicht verwendet werden. Umfang und Grenzen stehen unter
+[Ungespeicherte Formularänderungen](anwendung.md#ungespeicherte-formularänderungen).
 
 `PortalConfirmationDialog` ist der gemeinsame native Bestätigungsbaustein für
 Lesen, Löschen und Geräteaktionen. Kontextkarten zeigen den tatsächlich betroffenen
@@ -1375,7 +1379,7 @@ Standardwert aus der 2FA-Standardrichtlinie und die Eingaberegeln als Liste.
 
 Die neue 2FA-Oberfläche verwendet `AccountPanelComponent`, native Vaadin-Eingaben,
 Buttons, `Badge`, `TabSheet`, `ComboBox`, `Switch`, `Grid` und die bestehenden Cosmos-
-Bestätigungsdialoge. Die Kontoverwaltung liegt im Tab „Portalzugang“. Einrichtung
+Bestätigungsdialoge. Die 2FA-Verwaltung liegt im Tab „Portalzugang“. Einrichtung
 und eingeschränkte Anmeldung sowie 2FA-Hilfe verwenden den Seitenrahmen mit
 reduziertem Kopf. Die Marke ist statisch. Rechts stehen Sprachwahl, Trennlinie
 und ab dem ersten erfolgreichen Anmeldenachweis der Initialenavatar mit Name

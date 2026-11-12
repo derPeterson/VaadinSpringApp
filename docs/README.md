@@ -59,5 +59,5 @@ Weitere bewertete Möglichkeiten stehen in der
 [Entscheidungsvorlage für Portal-Erweiterungen](planung/portal-erweiterungen.md).
 Die [Vaadin-Komponentenprüfung](planung/vaadin-komponenten-abgleich.md) enthält die
 aktuelle Bestandsaufnahme der Flow-Oberfläche, geprüfte Standardkomponenten und
-Vorschläge für separate Umbaupakete. Start, Paketumfang und Reihenfolge sind noch
-freizugeben.
+die noch offenen Umbaupakete und Abnahmen. Bereits freigegebene Anpassungen stehen
+im Theme-Standard; zurückgestellte Pakete benötigen einen neuen Umsetzungsauftrag.

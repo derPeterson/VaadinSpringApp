@@ -123,7 +123,7 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 Zur Sichtung des Komponentenpakets gehören die Auswahlfelder und Kalender,
 der Formularschutz sowie „Mein Konto → Sicherheit → Konto verwalten“.
 Die beiden Deaktivierungsfristen und ihre Feldhilfen stehen unter
-„Konfiguration → Sicherheit & Sitzungen“.
+„Konfiguration → Kontoverwaltung“ und sind nur für Superadmins zugänglich.
 
 **Erwartet:** Die Oberfläche wirkt zusammengehörig und ruhig; relevante Texte/Aktionen sind gut lesbar und eindeutig. Rein persönlicher Änderungswunsch wird von einem Bedienhindernis unterschieden.
 
@@ -181,7 +181,7 @@ Die beiden Deaktivierungsfristen und ihre Feldhilfen stehen unter
 2. Beurteilen, ob verständlich ist, was geändert wird, wann ein Neustart nötig ist und wie ein Fehler korrigiert werden kann.
 3. Uneinheitliche Begriffe, irreführende Aussagen und schwer verständliche Sätze mit konkretem Textvorschlag notieren.
 
-**Erwartet:** Die Texte sind konsistent, verständlich und fachlich passend. Eine korrekte Schlüsselauflösung allein genügt nicht. Anonyme Formularseiten besitzen keinen eigenen Sprachschalter; keine künstlichen Sessionereignisse verwenden.
+**Erwartet:** Die Texte sind konsistent, verständlich und fachlich passend. Eine korrekte Schlüsselauflösung allein genügt nicht. Den tatsächlichen Sprachwechsel über die Oberfläche prüfen, keine künstlichen Sessionereignisse verwenden.
 
 <a id="hum-06"></a>
 
@@ -191,8 +191,9 @@ Die beiden Deaktivierungsfristen und ihre Feldhilfen stehen unter
 
 **Voraussetzung:** Beispiele aus dem JUnit-Sichttest oder eigene tatsächlich erzeugte Testmails; Mailprogramm benennen. EML-Import nur falls unterstützt; technische Zustellung getrennt unter AUTO-08.
 
-Deaktivierung, Erinnerung und Löschbestätigung über eigene Testkonten erzeugen.
-Diese Kontomails sind nicht Teil des opt-in Mailbeispielversands.
+Deaktivierung, Erinnerung, Löschbestätigung und Reaktivierungsbestätigung sind
+im opt-in Mailbeispielversand enthalten. Für funktionale Links die jeweiligen
+Aktionen mit eigenen isolierten Testkonten ausführen.
 
 1. Alle vorhandenen Mailvorlagen einschließlich Deaktivierung, Löschwarnung, Löschbestätigung und Reaktivierungsbestätigung in DE/EN in den tatsächlich genutzten Clients öffnen; breite/schmale Ansicht und hell/dunkel soweit verfügbar vergleichen.
 2. Logo, Abstände, Text, Footer und erkennbare Link-/Buttonbeschriftung beurteilen. Verhalten bei blockierten Bildern ansehen.

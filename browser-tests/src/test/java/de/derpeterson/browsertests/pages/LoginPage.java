@@ -25,6 +25,13 @@ public final class LoginPage {
   @Step("Loginformular öffnen")
   public void open() {
     browserPage.navigate(path(LOGIN_ROUTE));
+
+    // Vaadin rendert das Formular erst nach dem HTML-Laden. Vor den Inhaltsprüfungen
+    // auf das sichtbare Eingabefeld warten, auch im frisch gestarteten Browserprozess.
+    browserPage
+        .getByLabel(uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
+        .waitFor();
+
     assertFormVisible();
   }
 
