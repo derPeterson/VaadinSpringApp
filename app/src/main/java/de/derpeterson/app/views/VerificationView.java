@@ -312,7 +312,12 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
               -1,
               NotificationHelper.NotificationType.SUCCESS);
     } else {
-      showVerificationRequestFailure();
+      NotificationHelper.getInstance()
+          .showNotification(
+              messageProperties::getEmailVerificationTitle,
+              messageProperties::getEmailVerificationWait,
+              -1,
+              NotificationHelper.NotificationType.WARNING);
     }
   }
 

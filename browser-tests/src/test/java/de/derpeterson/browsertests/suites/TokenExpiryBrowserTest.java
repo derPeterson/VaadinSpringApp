@@ -25,7 +25,9 @@ import de.derpeterson.browsertests.pages.UserMenu;
 import de.derpeterson.browsertests.pages.VerificationPage;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
+import java.time.Instant;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -168,41 +170,56 @@ public class TokenExpiryBrowserTest extends BrowserFixture {
       1. Eigenes unverifiziertes Konto registrieren, echte Mail erfassen und nicht aktivieren.
       2. Unbekannten Verifikationslink öffnen; angebotenes Anfrageformular leer absenden: Pflichtfeldfehler.
       3. Ungültige Adresse versuchen: Syntaxfehler; echte eigene Adresse korrigieren und senden.
-      4. Neue reguläre Mail-ID erfassen und deren echten Button zur Aktivierung nutzen.
+      4. Vor Ablauf der Minute einen Wartehinweis erwarten, danach erneut senden und den neuen echten Mailbutton zur Aktivierung nutzen.
       **Erwartet:** Korrigierbares Formular mit lokalisierten Fehlern; erneuter Versand über echte UI.
       """)
   void verificationRequestValidatesAndCanBeCorrected() {
-    String email = email();
-    RegistrationPage registration = new RegistrationPage(browserPage);
-    registration.open();
-    registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
-    registration.submit();
-    registration.assertSubmitted(email);
-    MailpitInbox inbox = new MailpitInbox(browserContext);
-    CapturedMail old = inbox.awaitVerificationMail(email);
+    String emailAddress = email();
+    RegistrationPage registrationPage = new RegistrationPage(browserPage);
+    registrationPage.open();
+    registrationPage.fillValid(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    registrationPage.submit();
+    registrationPage.assertSubmitted(emailAddress);
+    Instant resendAllowedInstant = Instant.now().plusSeconds(61);
+    MailpitInbox mailpitInbox = new MailpitInbox(browserContext);
+    CapturedMail previousVerificationMail = mailpitInbox.awaitVerificationMail(emailAddress);
     browserPage.navigate(path(VERIFICATION_ROUTE) + "/" + UUID.randomUUID());
     new VerificationPage(browserPage).assertUnknownToken();
-    Locator input =
+    Locator emailInputLocator =
         browserPage.getByLabel(
             uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true));
-    Locator send =
+    Locator sendButtonLocator =
         browserPage.getByRole(
             AriaRole.BUTTON,
             new Page.GetByRoleOptions()
                 .setName(uiTexts.getVerificationRequestActivationLink())
                 .setExact(true));
-    send.click();
+    sendButtonLocator.click();
     checkRequestError(uiTexts.getBaseValidationRequiredMessage());
-    input.fill("invalid");
-    send.click();
+    emailInputLocator.fill("invalid");
+    sendButtonLocator.click();
     checkRequestError(uiTexts.getBaseValidationEmailInvalidMessage());
-    input.fill(email);
-    send.click();
+    emailInputLocator.fill(emailAddress);
+    sendButtonLocator.click();
+
+    Locator waitNotificationLocator =
+        browserPage.locator("vaadin-notification-card:not([closing])");
+    assertThat(waitNotificationLocator).containsText(uiTexts.getEmailVerificationWait());
+    assertThat(waitNotificationLocator)
+        .hasAttribute("theme", Pattern.compile(".*cosmos-reference-warning.*"));
+    waitNotificationLocator.getByRole(AriaRole.BUTTON).click();
+    browserPage.waitForCondition(
+        () -> Instant.now().isAfter(resendAllowedInstant),
+        new Page.WaitForConditionOptions().setTimeout(65_000));
+    sendButtonLocator.click();
 
     assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
         .containsText(
             uiTexts.visibleText(browserPage, uiTexts.getVerificationNotFoundSuccessMessage()));
-    inbox.openVerificationLink(inbox.awaitVerificationMailAfter(email, old)).close();
+    mailpitInbox
+        .openVerificationLink(
+            mailpitInbox.awaitVerificationMailAfter(emailAddress, previousVerificationMail))
+        .close();
   }
 
   private void checkRequestError(String message) {

@@ -37,6 +37,27 @@ public final class UnsavedChangesPrompt {
   }
 
   public void assertBrowserReloadCanBeCancelled() {
+    assertBrowserLeaveWarning(() -> browserPage.evaluate("() => window.location.reload()"), false);
+  }
+
+  public void assertBrowserTabCloseCanBeCancelled() {
+    assertBrowserLeaveWarning(
+        () -> browserPage.close(new Page.CloseOptions().setRunBeforeUnload(true)), false);
+    assertFalse(browserPage.isClosed(), "Abbrechen muss den Tab mit dem Entwurf erhalten.");
+  }
+
+  public void assertBrowserExternalNavigationCanBeCancelled() {
+    String originalPageUrl = browserPage.url();
+    assertBrowserLeaveWarning(
+        () -> browserPage.evaluate("() => { window.location.href = 'about:blank'; }"), false);
+    assertEquals(originalPageUrl, browserPage.url());
+  }
+
+  public void assertBrowserReloadCanDiscardChanges() {
+    assertBrowserLeaveWarning(() -> browserPage.evaluate("() => window.location.reload()"), true);
+  }
+
+  private void assertBrowserLeaveWarning(Runnable browserLeaveAction, boolean discardChanges) {
     browserPage.waitForCondition(() ->
         Boolean.TRUE.equals(
             browserPage.evaluate("() => (window.cosmosUnsavedForms?.ids.size ?? 0) > 0")));
@@ -45,11 +66,15 @@ public final class UnsavedChangesPrompt {
         dialog -> {
           assertEquals("beforeunload", dialog.type());
           warningObserved.set(true);
-          dialog.dismiss();
+          if (discardChanges) {
+            dialog.accept();
+          } else {
+            dialog.dismiss();
+          }
         };
     browserPage.onDialog(dialogHandler);
     try {
-      browserPage.evaluate("() => window.location.reload()");
+      browserLeaveAction.run();
       browserPage.waitForCondition(warningObserved::get);
     } finally {
       browserPage.offDialog(dialogHandler);

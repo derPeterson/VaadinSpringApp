@@ -64,6 +64,8 @@ import java.util.Set;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -815,6 +817,51 @@ class SupportTicketServiceTest {
     return httpSession;
   }
 
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void liveTicketDataKeepsDevelopmentMailRestrictionWithoutAnotherRequest(
+      boolean developmentAccount) {
+    UserEntity requesterUserEntity = create(RoleType.ROLE_USER, developmentAccount);
+    MockHttpServletRequest requesterHttpRequest =
+        TwoFactorAuthorizationTest.requestFor(requesterUserEntity.getEmail());
+    Ticket createdTicket =
+        supportTicketService.createRecovery(requesterHttpRequest, "Hilfe bitte.");
+    Ticket claimedTicket =
+        supportTicketService.claimTicket(
+            administrator, createdTicket.id(), createdTicket.version());
+    HttpSession administratorHttpSession = bindLiveSession(administrator);
+
+    supportTicketService.replyToTicket(
+        requesterHttpRequest,
+        claimedTicket.id(),
+        claimedTicket.version(),
+        "Neue Information",
+        false,
+        false);
+    SupportTicketService.LiveView liveTicketView =
+        supportTicketService.liveView(administratorHttpSession, true, createdTicket.id());
+
+    assertEquals(developmentAccount, liveTicketView.selected().developmentAccount());
+    assertTrue(
+        liveTicketView.messages().stream()
+            .anyMatch(reply -> reply.body().equals("Neue Information")));
+    if (developmentAccount) {
+      assertThrows(
+          AccessDeniedException.class,
+          () -> supportTicketService.validateInstructionPreview(administrator, createdTicket.id()));
+      assertThrows(
+          AccessDeniedException.class,
+          () ->
+              supportTicketService.sendTicketRecoveryInstructions(
+                  administrator,
+                  liveTicketView.selected().id(),
+                  liveTicketView.selected().version()));
+      verify(emailQueueService, never()).addAddressedNotification(any(), any(), any(), any());
+    } else {
+      supportTicketService.validateInstructionPreview(administrator, createdTicket.id());
+    }
+  }
+
   @Test
   void blankRequestAndBlankReplyDoNotChangeTheTicketVersion() {
     assertThrows(
@@ -1105,18 +1152,22 @@ class SupportTicketServiceTest {
     return mockHttpRequest;
   }
 
-  private UserEntity create(RoleType type) {
-    return transactionTemplate.execute(status -> {
-      RoleEntity role =
+  private UserEntity create(RoleType roleType) {
+    return create(roleType, false);
+  }
+
+  private UserEntity create(RoleType roleType, boolean developmentAccount) {
+    return transactionTemplate.execute(transactionStatus -> {
+      RoleEntity roleEntity =
           entityManager
               .createQuery("select r from RoleEntity r where r.name = :name", RoleEntity.class)
-              .setParameter("name", type)
+              .setParameter("name", roleType)
               .getResultStream()
               .findFirst()
               .orElse(null);
-      if (role == null) {
-        role = RoleEntity.builder().name(type).build();
-        entityManager.persist(role);
+      if (roleEntity == null) {
+        roleEntity = RoleEntity.builder().name(roleType).build();
+        entityManager.persist(roleEntity);
       }
       return userRepository.saveAndFlush(
           UserEntity.builder()
@@ -1125,7 +1176,8 @@ class SupportTicketServiceTest {
               .lastName("Fixture")
               .preferredLocale(Locale.GERMAN)
               .enabled(true)
-              .roleEntities(List.of(role))
+              .developmentAccount(developmentAccount)
+              .roleEntities(List.of(roleEntity))
               .build());
     });
   }

@@ -111,7 +111,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
       2. Leeres Formular und schwaches Passwort blockieren Speichern; lokalisierte Regelbeschreibung prüfen.
       3. Blanken Vornamen, ungültige E-Mail und Dublette korrigieren; jeweils Speichern gesperrt.
       4. Mit ABCDEFG! speichern: acht Zeichen, Großbuchstaben/Sonderzeichen, ohne Zahl/Kleinbuchstaben.
-      5. Mit dem neu angelegten normalen Konto tatsächlich anmelden.
+      5. Die empfangene Verifikationsmail bestätigen und mit dem neuen Konto anmelden.
       **Erwartet:** Gemeinsame UserInputRules greifen; erfolgreicher UI-Ablauf nach Korrektur.
       """)
   void createValidationUsesTheSharedRuleAndAllowsCorrection() {
@@ -153,6 +153,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     users.search(email);
 
     assertThat(users.emailCells(email)).hasCount(1);
+    users.verifyCreatedAccount(email);
     signInAsCreatedUser(email, "ABCDEFG!");
   }
 
@@ -165,7 +166,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
       1. Eigenes Konto anlegen, per E-Mail suchen und genau dessen Editierdialog öffnen.
       2. Namen und E-Mail ändern, Passwort leer lassen, speichern.
       3. Alte Adresse liefert keinen Treffer; neue Adresse findet das Konto und gespeicherte Angaben.
-      4. Dialog abbrechen und mit neuer Adresse plus ursprünglichem Passwort anmelden.
+      4. Dialog abbrechen, neue Adresse verifizieren und mit dem ursprünglichen Passwort anmelden.
       **Erwartet:** Stammdaten dauerhaft gespeichert; leeres Passwort setzt es nicht zurück.
       """)
   void editAndReopenKeepsNamesEmailAndUnchangedPassword() {
@@ -194,6 +195,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot(
         "Gespeicherte Angaben im erneut geöffneten Formular", browserPage);
     form.cancel();
+    users.verifyCreatedAccount(changed, "Edited Account");
     signInAsCreatedUser(changed, BrowserTestAccounts.USER_PASSWORD);
   }
 

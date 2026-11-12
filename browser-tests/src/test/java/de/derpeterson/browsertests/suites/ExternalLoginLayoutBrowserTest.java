@@ -658,27 +658,27 @@ public class ExternalLoginLayoutBrowserTest extends BrowserFixture {
     }
   }
 
-  private void assertRememberSwitch(Locator panel) {
-    Locator remember = panel.getByRole(AriaRole.SWITCH);
+  private void assertRememberSwitch(Locator loginPanelLocator) {
+    Locator rememberSwitchLocator = loginPanelLocator.getByRole(AriaRole.SWITCH);
 
-    assertThat(remember).hasCount(1);
-    assertThat(remember).not().isChecked();
-    remember.check();
+    assertThat(rememberSwitchLocator).hasCount(1);
+    assertThat(rememberSwitchLocator).not().isChecked();
+    UiActions.completeValueChange(browserPage, rememberSwitchLocator::check);
 
-    assertThat(remember).isChecked();
+    assertThat(rememberSwitchLocator).isChecked();
     browserPage.reload();
 
-    assertThat(remember).isChecked();
-    remember.focus();
-    remember.press("Space");
+    assertThat(rememberSwitchLocator).isChecked();
+    rememberSwitchLocator.focus();
+    UiActions.completeValueChange(browserPage, () -> rememberSwitchLocator.press("Space"));
 
-    assertThat(remember).not().isChecked();
+    assertThat(rememberSwitchLocator).not().isChecked();
     browserPage.reload();
 
-    assertThat(remember).not().isChecked();
+    assertThat(rememberSwitchLocator).not().isChecked();
     assertTrue(
         (Boolean)
-            remember.evaluate(
+            rememberSwitchLocator.evaluate(
                 """
                 el => {
                   const track = el.closest('vaadin-switch')?.shadowRoot.querySelector('[part="switch"]') || el;

@@ -175,14 +175,14 @@ public class ExternalLoginBrowserTest extends BrowserFixture {
             panel.evaluate(
                 """
                 panel => {
-                  const [icon, content] = panel.children;
-                  const title = content.firstElementChild.getBoundingClientRect();
-                  const marker = icon.getBoundingClientRect();
+                  const title = panel.querySelector(".admin-user-sign-in-title").getBoundingClientRect();
+                  const marker = panel.querySelector(".admin-user-sign-in-heading > vaadin-icon").getBoundingClientRect();
+                  const actions = panel.querySelector(".admin-user-mail-actions").getBoundingClientRect();
                   const innerBottom = panel.getBoundingClientRect().bottom
                     - parseFloat(getComputedStyle(panel).paddingBottom)
                     - parseFloat(getComputedStyle(panel).borderBottomWidth);
                   return Math.abs((marker.top + marker.bottom - title.top - title.bottom) / 2) <= 2
-                    && Math.abs(innerBottom - content.getBoundingClientRect().bottom) <= 2;
+                    && Math.abs(innerBottom - actions.bottom) <= 2;
                 }
                 """),
         "Die Infobox muss ohne zusätzlichen Leerraum mit Icon auf Höhe des Titels erscheinen");

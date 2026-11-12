@@ -68,11 +68,11 @@ unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
   echte Änderungen sind gezielt in DE/EN per JUnit geprüft. Die reale Passwortmanager-
   Nachprüfung bleibt unter [HUM-11](../manual-tests/README.md#hum-11) offen.
 
-- **Für die Nachtarbeit freigegebene Ergänzung:** Ungespeicherte Eingaben auch beim Browser-Refresh
+- **Umgesetzt, Gesamtprüfung läuft:** Ungespeicherte Eingaben auch beim Browser-Refresh
   (F5, Strg+R und Aktualisieren-Schaltfläche), beim Schließen eines Tabs oder
   Browserfensters sowie beim Verlassen über die Adresszeile oder externe
-  Navigation schützen. Der bisherige Schutz erfasst diese Browseraktionen nicht.
-  Vor der Umsetzung die passende öffentliche Vaadin-/Browseranbindung prüfen.
+  Navigation schützen. Die öffentliche Browserwarnung nutzt denselben
+  Änderungsvergleich wie die vorhandene anwendungsinterne Abfrage.
   Umfang und Grenzen stehen in [Nachtaufgabe 5](nachtaufgaben.md#5-formularschutz-um-browseraktionen-erweitern).
   Der dazugehörige automatisierte Nachtest steht zentral im
   [Testbedarf](../testbedarf.md#browser-tests).
@@ -81,11 +81,11 @@ unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
 
 - Die freigegebenen Darstellungsanpassungen an beiden Bestätigungsdialogen stehen
   in [Nachtaufgabe 6](nachtaufgaben.md#6-dialoge-zum-deaktivieren-und-endgültigen-löschen-angleichen).
-  Sie werden erst nach dem Startsignal für die Nachtarbeit umgesetzt.
+  Sie sind umgesetzt und werden in der großen Testrunde mitgeprüft.
 - **Abnahme:** Unter „Mein Konto → Sicherheit → Konto verwalten“ die
   Identitätsbestätigung, Selbstdeaktivierung mit E-Mail,
   Reaktivierung, Admin-Sperre, Erinnerung und Löschung mit isolierten Testdaten
-  ansehen. Unter „Konfiguration → Sicherheit & Sitzungen“ die beiden Fristen
+  ansehen. Unter „Konfiguration → Kontoverwaltung“ die beiden Fristen
   und ihre Feldhilfen ansehen. Ein ausschließlich externes Konto braucht für
   diese Aktionen zuerst einen Authenticator oder ein Portalpasswort.
 - Das erweiterte H2-Schema wird mit frischen isolierten Testdaten geprüft.
@@ -94,8 +94,8 @@ unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
 
 ### Offener Sonar-Nachweis
 
-- Eine authentifizierte Sonar-Anbindung für die Prüfung verfügbar machen und den
-  aktuellen Analysestand für die neuen Pakete nachweisen. Die letzte bestätigte
+- Die authentifizierte Sonar-Anbindung ist verfügbar. Den aktuellen Analysestand
+  für die neuen Pakete noch nachweisen. Die letzte bestätigte
   Analyse auf `main` deckt diese Änderungen nicht ab. Den bestehenden
   Sonar-Ablauf und seine Branch-Grenzen beachten. Der bisherige Prüfstand
   beschreibt die fehlende Bestätigung ausdrücklich.

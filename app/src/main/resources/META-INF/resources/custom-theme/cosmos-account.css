@@ -831,7 +831,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     border-color: var(--cosmos-security-warning-border);
     background: var(--cosmos-security-warning-surface);
 }
-.account-lifecycle-delete {
+.account-change-dialog.account-lifecycle-delete {
     --cosmos-security-warning-accent: var(--lumo-error-text-color);
     --cosmos-security-warning-border: var(--cosmos-reference-danger-border);
     --cosmos-security-warning-surface: var(--cosmos-reference-danger-surface);

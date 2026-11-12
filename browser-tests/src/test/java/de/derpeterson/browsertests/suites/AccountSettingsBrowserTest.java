@@ -32,6 +32,7 @@ import io.qameta.allure.playwright.AllurePlaywright;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Base64;
@@ -54,8 +55,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       """
       1. Eigenes Testkonto über die normale Oberfläche anlegen und anmelden.
       2. Deaktivierung mit dem Portalpasswort bestätigen und Abmeldung prüfen.
-      3. Tatsächlich zugestellte E-Mail öffnen und ihre Reaktivierung ausdrücklich bestätigen.
-      4. Mit dem bisherigen Passwort wieder anmelden.
+      3. Nach der echten Wartezeit erneut senden und den alten Link als ungültig prüfen.
+      4. Mit dem neuen Mail-Link reaktivieren und mit dem bisherigen Passwort wieder anmelden.
       """)
   void accountDeactivationSendsAUsableReactivationLink(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 900);
@@ -65,11 +66,12 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertLifecycleDialogStyle(false);
     assertThat(browserPage.locator("#account-lifecycle-password input")).isVisible();
     assertThat(browserPage.locator("#account-lifecycle-proof")).not().hasAttribute("opening", "");
-    assertThat(browserPage.locator("#account-lifecycle-proof .cosmos-panel-description"))
+    assertThat(browserPage.locator("#account-lifecycle-proof .account-lifecycle-password-hint"))
         .hasCSS("font-size", "12px");
     AllurePlaywright.attachScreenshot(
         "Kontodeaktivierung bei " + viewportWidth + " px", browserPage);
     confirmLifecycleWithPortalPassword();
+    Instant reactivationResendAllowedInstant = Instant.now().plusSeconds(301);
 
     assertThat(browserPage).hasURL(urlPattern(LOGIN_ROUTE));
     assertThat(browserPage.getByText(uiTexts.getAccountDeactivatedSuccess())).isVisible();
@@ -91,7 +93,15 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     MailpitInbox mailpitInbox = new MailpitInbox(browserContext);
     CapturedMail deactivationMail =
         mailpitInbox.awaitSecurityMail(accountEmail, uiTexts.getAccountDeactivatedMailSubject());
-    try (Page reactivationPage = mailpitInbox.openAccountReactivationAction(deactivationMail)) {
+    CapturedMail resentReactivationMail =
+        resendReactivationMailAfterCooldown(
+            mailpitInbox, deactivationMail, reactivationResendAllowedInstant);
+    try (Page oldReactivationPage = mailpitInbox.openAccountReactivationAction(deactivationMail)) {
+      oldReactivationPage.locator("#account-reactivation-submit").click();
+      assertThat(oldReactivationPage.getByText(uiTexts.getAccountReactivateInvalid())).isVisible();
+    }
+    try (Page reactivationPage =
+        mailpitInbox.openAccountReactivationAction(resentReactivationMail)) {
       reactivationPage.setViewportSize(viewportWidth, 900);
       reactivationPage.locator("#account-reactivation-submit").click();
       assertThat(reactivationPage.getByText(uiTexts.getAccountReactivateSuccess())).isVisible();
@@ -104,6 +114,21 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     loginPage.open();
     loginPage.signIn(accountEmail, BrowserTestAccounts.USER_PASSWORD);
     assertThat(browserPage.locator(".portal-home-page")).isVisible();
+  }
+
+  private CapturedMail resendReactivationMailAfterCooldown(
+      MailpitInbox mailpitInbox, CapturedMail previousMail, Instant resendAllowedInstant) {
+    // Die fachliche Fünf-Minuten-Frist gilt auch im Test; keine Datenbankabkürzung verwenden.
+    browserPage.waitForCondition(
+        () -> Instant.now().isAfter(resendAllowedInstant),
+        new Page.WaitForConditionOptions().setTimeout(310_000));
+    UiActions.complete(
+        browserPage, () -> browserPage.locator("#resend-reactivation-email").click());
+    assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+        .containsText(uiTexts.getEmailVerificationQueued());
+    AllurePlaywright.attachScreenshot(
+        "Reaktivierungslink nach Wartezeit erneut gesendet", browserPage);
+    return mailpitInbox.awaitSecurityMailAfter(previousMail);
   }
 
   @ParameterizedTest
@@ -192,7 +217,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
   private void assertLifecycleDialogStyle(boolean deletingAccount) {
     Locator proofDialogLocator = browserPage.locator("#account-lifecycle-proof[opened]");
-    assertThat(proofDialogLocator.locator(".cosmos-panel-description"))
+    assertThat(
+            proofDialogLocator.locator(".account-change-dialog-header .cosmos-panel-description"))
         .hasText(uiTexts.getExternalProof());
     String expectedAccentColor = deletingAccount ? "rgb(239, 164, 177)" : "rgb(245, 158, 11)";
     assertThat(proofDialogLocator.locator(".cosmos-security-warning-label"))
@@ -233,6 +259,9 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     String savedFirstName = firstNameInputLocator.inputValue();
     firstNameInputLocator.fill("Temporary draft");
     unsavedChangesPrompt.assertBrowserReloadCanBeCancelled();
+    unsavedChangesPrompt.assertBrowserTabCloseCanBeCancelled();
+    unsavedChangesPrompt.assertBrowserExternalNavigationCanBeCancelled();
+    assertThat(firstNameInputLocator).hasValue("Temporary draft");
     firstNameInputLocator.fill(savedFirstName);
     unsavedChangesPrompt.assertBrowserReloadHasNoWarning();
     firstNameInputLocator.fill("Temporary draft");
@@ -292,6 +321,20 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     unsavedChangesPrompt.discard();
     accountPage.section("account-tab-profile");
     assertThat(firstNameInputLocator).hasValue(savedFirstName);
+
+    firstNameInputLocator.fill("");
+    accountPage.save();
+    assertThat(accountPage.host("account-first-name")).hasAttribute("invalid", "");
+    unsavedChangesPrompt.assertBrowserReloadCanBeCancelled();
+
+    firstNameInputLocator.fill("Saved profile");
+    accountPage.save();
+    unsavedChangesPrompt.assertBrowserReloadHasNoWarning();
+    assertThat(firstNameInputLocator).hasValue("Saved profile");
+
+    firstNameInputLocator.fill("Discarded by reload");
+    unsavedChangesPrompt.assertBrowserReloadCanDiscardChanges();
+    assertThat(firstNameInputLocator).hasValue("Saved profile");
   }
 
   @Test

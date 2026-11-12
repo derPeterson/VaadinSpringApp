@@ -24,7 +24,8 @@ final class BrowserExecutionPlan {
   private static final Map<String, Integer> SECONDS =
       Map.ofEntries(
           Map.entry("RestartAndSmtpBrowserTest", 320),
-          Map.entry("TokenExpiryBrowserTest", 209),
+          // Eine zusätzliche echte Minute prüft die erneute Verifikationsanforderung.
+          Map.entry("TokenExpiryBrowserTest", 269),
           Map.entry("UserManagementBrowserTest", 173),
           Map.entry("SessionSecurityBrowserTest", 116),
           Map.entry("UserAccessBrowserTest", 114),
@@ -38,7 +39,8 @@ final class BrowserExecutionPlan {
           Map.entry("UserStatusBrowserTest", 72),
           Map.entry("UserFiltersBrowserTest", 66),
           // Neue Klassen/Rebootfälle: gezielte DE-Messung vom 16.10.2026, grob gerundet.
-          Map.entry("AccountSettingsBrowserTest", 150),
+          // Zusätzliche echte Reaktivierungswartezeit auf beiden Breiten: 2 x 5 Minuten.
+          Map.entry("AccountSettingsBrowserTest", 750),
           // DE-Gesamtlauf vom 03.11.2026: gerundete Verteilungsgewichte einschließlich
           // echter Frist- und Neustartprüfungen, keine Laufzeitgarantie.
           Map.entry("ExternalLoginBrowserTest", 1260),

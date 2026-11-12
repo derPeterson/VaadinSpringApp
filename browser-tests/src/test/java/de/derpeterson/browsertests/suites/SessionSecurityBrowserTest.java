@@ -6,6 +6,7 @@ import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Response;
@@ -40,7 +41,7 @@ public class SessionSecurityBrowserTest extends BrowserFixture {
       1. Eigenes zweites Administratorkonto über die Oberfläche anlegen und separat anmelden.
       2. Dort ein neues Benutzerformular vollständig ausfüllen, noch nicht speichern; Sperre/Löschung auch mit Remember-me.
       3. Als ursprünglicher Admin Rolle entziehen, Konto sperren bzw. löschen.
-      4. Rollenentzug: automatische Weiterleitung auf Home bei erhaltenem Login, altes Formular verschwindet. Bei Sperre/Löschung alten Speichern-Button anklicken: 401 prüfen.
+      4. Rollenentzug: automatische Weiterleitung auf Home bei erhaltenem Login, altes Formular verschwindet. Bei Sperre alten Speichern-Button anklicken: 401. Bei Löschung meldet Vaadin die entfernte Sitzung als abgelaufen.
       5. Bei Sperre/Löschung geschützte Seite neu aufrufen: Login. Als ursprünglicher Admin nach dem Probe-Konto suchen.
       **Erwartet:** Der alte privilegierte Callback wird verweigert, Probe-Konto fehlt tatsächlich.
       Die Neuanmeldung bleibt auch mit gespeichertem Login ohne HTTP-500-Antwort erreichbar.
@@ -90,15 +91,26 @@ public class SessionSecurityBrowserTest extends BrowserFixture {
         assertEquals(0, serverErrors.get(), "Der Rechtewechsel darf keinen Serverfehler auslösen.");
         return;
       }
-      Response denied =
+      Response deniedResponse =
           browserActor.browserPage.waitForResponse(
               response ->
-                  response.status() == 401
-                      && response.url().startsWith(System.getProperty("browser.tests.baseUrl")),
+                  response.url().startsWith(System.getProperty("browser.tests.baseUrl"))
+                      && (change.equals("delete")
+                          ? response.request().method().equals("POST")
+                              && response.url().contains("v-r=uidl")
+                          : response.status() == 401),
               stale.saveButton()::click);
 
-      assertEquals(401, denied.status());
-      // Nach der 401 können alte Push-Anfragen noch auslaufen. Das neue Dokument
+      if (change.equals("delete")) {
+        assertEquals(200, deniedResponse.status());
+        assertTrue(
+            deniedResponse.text().contains("\"sessionExpired\":true"),
+            "Der alte Callback muss die bereits gelöschte Sitzung erkennen.");
+      } else {
+        assertEquals(401, deniedResponse.status());
+      }
+
+      // Nach der Abweisung können alte Push-Anfragen noch auslaufen. Das neue Dokument
       // und die sichtbare Loginmaske belegen die Abwehr, nicht das globale load-Ereignis.
       browserActor.browserPage.navigate(
           path(ADMIN_ROUTE),

@@ -74,6 +74,7 @@ public class SupportTicketService {
       Long assignee,
       UserIdentity assigneeIdentity,
       boolean instructionSent,
+      boolean developmentAccount,
       long unreadMessages,
       boolean subscribed,
       boolean subscriptionAllowed,
@@ -627,13 +628,6 @@ public class SupportTicketService {
     }
   }
 
-  @Transactional(readOnly = true)
-  public boolean belongsToDevelopmentAccount(HttpServletRequest httpRequest, Long ticketId) {
-    return requireAccessibleTicketEntity(httpRequest, ticketId, true)
-        .getOwner()
-        .isDevelopmentAccount();
-  }
-
   @Transactional
   public Ticket sendTicketRecoveryInstructions(
       HttpServletRequest httpRequest, Long id, Long version) {
@@ -827,6 +821,7 @@ public class SupportTicketService {
         ticket.getAssignee() == null ? null : ticket.getAssignee().getId(),
         assigneeIdentity,
         ticket.getInstructionSentAt() != null,
+        ticket.getOwner().isDevelopmentAccount(),
         unread,
         subscribed && allowed,
         allowed,

@@ -1,5 +1,11 @@
 package de.derpeterson.browsertests.suites;
 
+import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.PENDING_EMAIL_VERIFICATION_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
+
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
@@ -28,22 +34,27 @@ public class RegistrationBrowserTest extends BrowserFixture {
       4. Vor dem Öffnen des Aktivierungslinks eine Anmeldung versuchen.
 
       **Erwartet:** Registrierung bestätigt, Mail mit passendem Empfänger und Betreff
-      eingegangen; ohne Verifikation bleibt die Anmeldung verständlich abgelehnt.
+      eingegangen; gültige Zugangsdaten öffnen die Bestätigungsseite, aber keine Kontofunktionen.
       Datenbankzustände werden hier nicht direkt untersucht.
       """)
   void registrationNeedsVerificationBeforeLogin() {
-    String email = "registration-" + UUID.randomUUID() + "@example.test";
-    RegistrationPage registration = new RegistrationPage(browserPage);
-    registration.open();
-    registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
-    registration.submit();
-    registration.assertSubmitted(email);
+    String emailAddress = "registration-" + UUID.randomUUID() + "@example.test";
+    RegistrationPage registrationPage = new RegistrationPage(browserPage);
+    registrationPage.open();
+    registrationPage.fillValid(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    registrationPage.submit();
+    registrationPage.assertSubmitted(emailAddress);
     AllurePlaywright.attachScreenshot("Registrierung bestätigt", browserPage);
-    new MailpitInbox(browserContext).awaitVerificationMail(email);
-    LoginPage login = new LoginPage(browserPage);
-    login.open();
-    login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-    login.assertRejected();
+    new MailpitInbox(browserContext).awaitVerificationMail(emailAddress);
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    assertThat(browserPage).hasURL(urlPattern(PENDING_EMAIL_VERIFICATION_ROUTE));
+    assertThat(browserPage.locator("#pending-verification-email")).hasText(emailAddress);
+
+    browserPage.navigate(path(ACCOUNT_ROUTE));
+    assertThat(browserPage).hasURL(urlPattern(PENDING_EMAIL_VERIFICATION_ROUTE));
+    assertThat(browserPage.locator("#account-panel-security")).hasCount(0);
   }
 
   @Tag("fast")

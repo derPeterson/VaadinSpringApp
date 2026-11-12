@@ -99,6 +99,10 @@ public final class MailpitInbox {
     return awaitMail(recipient, subject);
   }
 
+  public CapturedMail awaitSecurityMailAfter(CapturedMail previousMail) {
+    return awaitMail(previousMail.recipient(), previousMail.subject(), previousMail.id(), true);
+  }
+
   @Step("Einrichtungscode aus der tatsächlich an das eigene Testkonto versandten Mail lesen")
   public String awaitAuthenticatorSetupCode(String recipient) {
     CapturedMail captured = awaitSecurityMail(recipient, uiTexts.getTwoFactorEmailSubject());
@@ -255,11 +259,20 @@ public final class MailpitInbox {
   }
 
   @Step("Empfangene HTML-Mail ansehen und ihren echten Aktivierungsbutton anklicken")
-  public Page openVerificationLink(CapturedMail mail) {
-    Page activation = openVerificationAction(mail);
-    new VerificationPage(activation).assertActivated();
-    AllurePlaywright.attachScreenshot("Aktivierung über den Mailbutton", activation);
-    return activation;
+  public Page openVerificationLink(CapturedMail capturedMail) {
+    return openVerificationLink(capturedMail, "Browser Testuser");
+  }
+
+  public Page openVerificationLink(CapturedMail capturedMail, String recipientDisplayName) {
+    Page verificationPage =
+        openActionLink(
+            capturedMail,
+            VERIFICATION_ROUTE,
+            "Tatsächlich empfangene Verifikationsmail",
+            recipientDisplayName);
+    new VerificationPage(verificationPage).assertActivated();
+    AllurePlaywright.attachScreenshot("Aktivierung über den Mailbutton", verificationPage);
+    return verificationPage;
   }
 
   @Step("Empfangene HTML-Mail ansehen und ihren echten Reset-Button anklicken")
@@ -281,11 +294,17 @@ public final class MailpitInbox {
   }
 
   private Page openActionLink(CapturedMail mail, String route, String screenshotName) {
+    return openActionLink(
+        mail, route, screenshotName, VERIFICATION_ROUTE.equals(route) ? "Browser Testuser" : null);
+  }
+
+  private Page openActionLink(
+      CapturedMail mail, String route, String screenshotName, String recipientDisplayName) {
     Page messagePage = browserContext.newPage();
     try {
       messagePage.navigate(baseUrl + "/view/" + mail.id() + ".html");
-      if (VERIFICATION_ROUTE.equals(route)) {
-        assertThat(messagePage.locator("body")).containsText("Browser Testuser");
+      if (recipientDisplayName != null) {
+        assertThat(messagePage.locator("body")).containsText(recipientDisplayName);
       }
       assertThat(messagePage.locator("body")).containsText("VaadinSpringApp (Browser-Test)");
       Locator link = messagePage.locator(".cosmos-email-button a[href*='" + path(route) + "/']");

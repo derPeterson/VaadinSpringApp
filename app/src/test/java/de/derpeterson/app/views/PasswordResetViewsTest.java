@@ -291,6 +291,41 @@ class PasswordResetViewsTest {
     verifyNoMoreInteractions(verification);
   }
 
+  @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void declinedVerificationRequestShowsTranslatedWaitWarning(boolean expiredToken) {
+    VerificationService verificationService = mock(VerificationService.class);
+    when(verificationService.existsToken("pending-link")).thenReturn(expiredToken);
+    VerificationView verificationView =
+        new VerificationView(
+            messageProperties,
+            verificationService,
+            mock(SecurityService.class),
+            mock(HttpServletRequest.class),
+            accountConfig());
+    verificationView.setParameter(null, "pending-link");
+
+    if (expiredToken) {
+      field(verificationView, "resendVerificationLinkButton", Button.class).click();
+    } else {
+      field(verificationView, "verificationEmailField", EmailField.class)
+          .setValue("pending@example.test");
+      field(verificationView, "requestVerificationLinkButton", Button.class).click();
+    }
+
+    NotificationHelper notificationHelper = NotificationHelper.getInstance();
+    for (Locale notificationLocale : new Locale[] {Locale.ENGLISH, Locale.GERMAN}) {
+      LanguageChangeEvent.fire(testUi, notificationLocale);
+      Span titleSpan = (Span) ReflectionTestUtils.getField(notificationHelper, "titleText");
+      Html messageHtml = (Html) ReflectionTestUtils.getField(notificationHelper, "messageText");
+      assertEquals(messageProperties.getEmailVerificationTitle(), titleSpan.getText());
+      assertTrue(titleSpan.hasClassName("text-warning"));
+      assertEquals(
+          messageProperties.getEmailVerificationWait(),
+          messageHtml.getElement().getProperty("innerHTML"));
+    }
+  }
+
   @Test
   void activationConfirmationUsesTranslatedReferenceTextsAndLoginNavigation() {
     VerificationService verification = mock(VerificationService.class);

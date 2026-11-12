@@ -1283,9 +1283,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
         administration ? canReply || requesterClosed && (unassigned || assignedToMe) : active);
     sendInstructionsButton.setVisible(administration && canReply);
     boolean developmentTicket =
-        administration
-            && selectedTicket != null
-            && supportTicketService.belongsToDevelopmentAccount(httpRequest, selectedTicket.id());
+        administration && selectedTicket != null && selectedTicket.developmentAccount();
     sendInstructionsButton.setEnabled(
         selectedTicket != null && !selectedTicket.instructionSent() && !developmentTicket);
     sendInstructionsButton.setTooltipText(

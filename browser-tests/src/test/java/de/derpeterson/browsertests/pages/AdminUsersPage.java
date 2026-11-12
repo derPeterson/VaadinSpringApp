@@ -63,7 +63,11 @@ public final class AdminUsersPage {
   }
 
   /** Der Mailnachweis läuft getrennt von der angemeldeten Adminsitzung. */
-  private void verifyCreatedAccount(String emailAddress) {
+  public void verifyCreatedAccount(String emailAddress) {
+    verifyCreatedAccount(emailAddress, "Browser Testuser");
+  }
+
+  public void verifyCreatedAccount(String emailAddress, String recipientDisplayName) {
     try (BrowserContext verificationBrowserContext =
         browserPage
             .context()
@@ -74,7 +78,8 @@ public final class AdminUsersPage {
                     .setLocale(uiTexts.browserLocale()))) {
       MailpitInbox mailpitInbox = new MailpitInbox(verificationBrowserContext);
       try (Page verificationPage =
-          mailpitInbox.openVerificationLink(mailpitInbox.awaitVerificationMail(emailAddress))) {
+          mailpitInbox.openVerificationLink(
+              mailpitInbox.awaitVerificationMail(emailAddress), recipientDisplayName)) {
         assertThat(verificationPage.locator(".public-panel")).isVisible();
       }
     }

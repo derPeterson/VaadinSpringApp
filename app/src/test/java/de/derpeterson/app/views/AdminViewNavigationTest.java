@@ -204,6 +204,7 @@ class AdminViewNavigationTest {
             null,
             null,
             false,
+            false,
             0L,
             false,
             false,

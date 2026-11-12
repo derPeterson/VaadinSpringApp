@@ -69,6 +69,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       AdminUserDialog requesterAccount = users.openCreate();
       requesterAccount.fillNewUser(email, BrowserTestAccounts.USER_PASSWORD, true, false);
       requesterAccount.save();
+      users.verifyCreatedAccount(email);
       try (BrowserActor requester = new BrowserActor(testBrowser)) {
         requester.login(email, BrowserTestAccounts.USER_PASSWORD);
         requester.browserPage.navigate("/recovery-help");
@@ -610,6 +611,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assigneeForm.firstName().fill(firstName);
     assigneeForm.lastName().fill(lastName);
     assigneeForm.save();
+    users.verifyCreatedAccount(assigneeEmail, firstName + " " + lastName);
     browserPage.setViewportSize(width, 1000);
     browserPage.navigate("/home");
 
@@ -2941,6 +2943,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     account.firstName().fill(firstName);
     account.lastName().fill(lastName);
     account.save();
+    users.verifyCreatedAccount(email, firstName + " " + lastName);
     new UserMenu(browserPage).signOut();
     login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();

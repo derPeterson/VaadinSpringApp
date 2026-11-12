@@ -10,8 +10,7 @@ Bestehende offene Arbeiten bleiben in ihren bisherigen Plänen.
 
 ## Freigegebener Ablauf nach dem Startsignal
 
-Die folgenden Befugnisse sind für diese Nachtliste erteilt. Sie sind ausdrücklich
-**noch kein Startsignal**; bis dahin nur die vereinbarte Planung pflegen.
+Die folgenden Befugnisse gelten für den ausdrücklich gestarteten Nachtlauf.
 
 - Auf dem bestehenden Branch arbeiten und **nach jedem einzelnen Arbeitspaket**
   Review und einen eigenen Commit mit aussagekräftiger deutscher Message
@@ -108,8 +107,8 @@ Konfiguration, Anbieter-/2FA-Einstellungen und Benutzerformulare auch bei native
 Browseraktionen. Ein sauberer oder geschlossener Bereich entfernt nur seinen
 Schutz. Suchfelder, Filter und Codeeingaben bleiben ausgenommen.
 
-Der gezielte deutsche Browserlauf hat alle 12 Fälle auf Desktop/Smartphone bestanden.
-Der englische Nachlauf und ergänzende Grenzfälle der großen Runde bleiben im
+Die gezielten Browserläufe haben jeweils alle 12 Fälle in DE und EN auf
+Desktop/Smartphone bestanden. Ergänzende Grenzfälle der großen Runde bleiben im
 [Testbedarf](../testbedarf.md). Mobile Betriebssystemabbrüche sind keine zuverlässig
 abfangbare Browseraktion; es wird kein automatisches Speichern versprochen.
 ## 6. Dialoge zum Deaktivieren und endgültigen Löschen angleichen

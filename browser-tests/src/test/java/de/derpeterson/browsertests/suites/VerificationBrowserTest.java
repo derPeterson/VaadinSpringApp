@@ -302,6 +302,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     assertThat(editUserDialog.root().locator("#admin-resend-verification-mail")).isDisabled();
     assertThat(editUserDialog.root().locator("#admin-send-password-reset")).isDisabled();
     assertThat(editUserDialog.root()).containsText(uiTexts.getDevelopmentAccountMailUnavailable());
+    editUserDialog.root().locator("#admin-user-development-account").scrollIntoViewIfNeeded();
     AllurePlaywright.attachScreenshot(
         "Entwicklungskonto bearbeiten bei " + viewportWidth + " px", browserPage);
     editUserDialog.cancel();

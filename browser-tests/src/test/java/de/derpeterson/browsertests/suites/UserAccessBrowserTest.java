@@ -5,6 +5,7 @@ import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.LOGIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.NOTIFICATIONS_ROUTE;
+import static de.derpeterson.app.config.AppRouteConstants.PENDING_EMAIL_VERIFICATION_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 
@@ -115,34 +116,47 @@ public class UserAccessBrowserTest extends BrowserFixture {
   }
 
   @Test
-  @DisplayName(
-      "USER-07C: Ein unverifiziertes Konto wird nur durch ausdrückliche Adminfreigabe aktiviert")
+  @DisplayName("USER-07C: Administrative Freigabe ersetzt nicht die E-Mail-Verifikation")
   @Description(
       """
       1. Eigenes Konto registrieren und echte Verifikationsmail erfassen, deren Link nicht verwenden.
-      2. Neue Anmeldung wird abgewiesen. Als Admin genau dieses Konto öffnen: Aktiv nicht markiert.
-      3. Aktiv ausdrücklich markieren und speichern; in unabhängiger Sitzung anmelden.
-      **Erwartet:** Sichtbare Adminfreigabe ermöglicht Anmeldung ohne versehentliches Verwenden des Mailtokens.
+      2. Gültige Zugangsdaten führen nur zur ausstehenden E-Mail-Verifikation. Als Admin das Konto öffnen: Aktiv nicht markiert.
+      3. Aktiv ausdrücklich markieren und speichern; eine neue Anmeldung verlangt weiterhin den Mailnachweis.
+      4. Erst den echten Verifikationslink verwenden und anschließend erfolgreich anmelden.
+      **Erwartet:** Administrative Freigabe und Nachweis der E-Mail-Adresse sind unabhängige Voraussetzungen.
       """)
-  void administratorCanExplicitlyEnableAnUnverifiedAccount() {
-    String email = email("pending");
-    RegistrationPage register = new RegistrationPage(browserPage);
-    register.open();
-    register.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
-    register.submit();
-    register.assertSubmitted(email);
-    new MailpitInbox(browserContext).awaitVerificationMail(email);
+  void administrativeActivationDoesNotReplaceEmailVerification() {
+    String emailAddress = email("pending");
+    RegistrationPage registrationPage = new RegistrationPage(browserPage);
+    registrationPage.open();
+    registrationPage.fillValid(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    registrationPage.submit();
+    registrationPage.assertSubmitted(emailAddress);
+    new MailpitInbox(browserContext).awaitVerificationMail(emailAddress);
     try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
-      browserActor.login(email, BrowserTestAccounts.USER_PASSWORD);
-      new LoginPage(browserActor.browserPage).assertRejected();
+      LoginPage loginPage = new LoginPage(browserActor.browserPage);
+      loginPage.open();
+      loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+      assertThat(browserActor.browserPage).hasURL(urlPattern(PENDING_EMAIL_VERIFICATION_ROUTE));
     }
-    AdminUsersPage users = admin();
-    AdminUserDialog form = users.openEdit(email);
+    AdminUsersPage adminUsersPage = admin();
+    AdminUserDialog adminUserDialog = adminUsersPage.openEdit(emailAddress);
 
-    assertThat(form.enabled()).not().isChecked();
-    form.setEnabled(true);
-    form.save();
-    ordinaryLogin(email);
+    assertThat(adminUserDialog.enabled()).not().isChecked();
+    adminUserDialog.setEnabled(true);
+    adminUserDialog.save();
+
+    try (BrowserActor browserActor = new BrowserActor(testBrowser)) {
+      LoginPage loginPage = new LoginPage(browserActor.browserPage);
+      loginPage.open();
+      loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+      assertThat(browserActor.browserPage).hasURL(urlPattern(PENDING_EMAIL_VERIFICATION_ROUTE));
+      browserActor.browserPage.navigate(path(HOME_ROUTE));
+      assertThat(browserActor.browserPage).hasURL(urlPattern(PENDING_EMAIL_VERIFICATION_ROUTE));
+    }
+
+    adminUsersPage.verifyCreatedAccount(emailAddress);
+    ordinaryLogin(emailAddress);
   }
 
   @Test
