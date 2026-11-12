@@ -4527,4 +4527,12 @@ public class MessageTexts {
   public String getAdminSendVerificationLink() {
     return getTranslation("admin.users.sendVerificationLink");
   }
+
+  public String getAccountReactivatedMailSubject() {
+    return getTranslation("account.lifecycle.reactivatedSubject");
+  }
+
+  public String getAccountReactivatedMailBody() {
+    return getTranslation("account.lifecycle.reactivatedBody");
+  }
 }

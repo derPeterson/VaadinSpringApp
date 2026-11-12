@@ -4,7 +4,6 @@ import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_REACTIVATION_R
 import static de.derpeterson.app.helper.logging.LogSafety.safeFailure;
 
 import de.derpeterson.app.helper.logging.AfterCommitLog;
-import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.AccountDeactivation;
 import de.derpeterson.app.model.UserEntity;
@@ -33,6 +32,7 @@ import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -52,7 +52,6 @@ import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.web.util.HtmlUtils;
 
 @Service
 @RequiredArgsConstructor
@@ -77,7 +76,7 @@ public class AccountLifecycleService {
   private final EmailQueueRepository emailQueueRepository;
   private final EmailQueueService emailQueueService;
   private final ConfigService configService;
-  private final CustomI18NProvider customI18NProvider;
+  private final AccountSecurityMail accountSecurityMail;
   private final TwoFactorAuthorization twoFactorAuthorization;
   private final LoginAttemptService loginAttemptService;
   private final PasswordEncoder passwordEncoder;
@@ -209,6 +208,7 @@ public class AccountLifecycleService {
     MessageProperties accountMessageProperties = createAccountMessageProperties(lockedAccountUser);
     queueReactivationNotice(
         lockedAccountUser,
+        "account_deactivated",
         accountMessageProperties.getAccountDeactivatedMailSubject(),
         accountMessageProperties.getAccountDeactivatedMailBody(
             formatDeletionDate(lockedAccountUser, deletionAt)),
@@ -242,6 +242,7 @@ public class AccountLifecycleService {
               emailQueueRepository.deleteByUserEntityAndEmailTypeAndStatus(
                   lockedAccountUser, EmailType.ACCOUNT_REACTIVATION, EmailStatus.PENDING);
               userRepository.saveAndFlush(lockedAccountUser);
+              queueReactivatedNotice(lockedAccountUser);
               AfterCommitLog.info(log, "Account reactivated: userId={}", lockedAccountUser.getId());
               return true;
             }));
@@ -280,6 +281,7 @@ public class AccountLifecycleService {
               createAccountMessageProperties(lockedAccountUser);
           queueReactivationNotice(
               lockedAccountUser,
+              "account_deactivated",
               accountMessageProperties.getAccountDeactivatedMailSubject(),
               accountMessageProperties.getAccountDeactivatedMailBody(
                   formatDeletionDate(lockedAccountUser, accountDeactivation.deletionAt())),
@@ -329,6 +331,7 @@ public class AccountLifecycleService {
           createAccountMessageProperties(lockedAccountUser);
       queueReactivationNotice(
           lockedAccountUser,
+          "account_deletion_reminder",
           accountMessageProperties.getAccountDeletionReminderSubject(),
           accountMessageProperties.getAccountDeletionReminderBody(
               formatDeletionDate(lockedAccountUser, accountDeactivation.deletionAt())),
@@ -369,9 +372,14 @@ public class AccountLifecycleService {
       emailQueueService.addAccountDeletionConfirmation(
           recipientEmail,
           accountMessageProperties.getAccountDeletedMailSubject(),
-          "<p>"
-              + HtmlUtils.htmlEscape(accountMessageProperties.getAccountDeletedMailBody())
-              + "</p>");
+          accountSecurityMail.render(
+              "account_deleted",
+              lockedAccountUser,
+              Map.of(
+                  "TITLE",
+                  accountMessageProperties.getAccountDeletedMailSubject(),
+                  "MESSAGE",
+                  accountMessageProperties.getAccountDeletedMailBody())));
     }
     TransactionSynchronizationManager.registerSynchronization(
         new TransactionSynchronization() {
@@ -400,6 +408,7 @@ public class AccountLifecycleService {
 
   private void queueReactivationNotice(
       UserEntity lockedAccountUser,
+      String templateName,
       String emailSubject,
       String emailBody,
       String reactivationToken) {
@@ -410,22 +419,36 @@ public class AccountLifecycleService {
         URI.create(configService.getString(ConfigEntry.BASE_URL))
             .resolve("/" + ACCOUNT_REACTIVATION_ROUTE + "?token=" + reactivationToken)
             .toString();
-    String linkLabel =
-        createAccountMessageProperties(lockedAccountUser).getAccountReactivateAction();
     String emailHtml =
-        "<p>"
-            + HtmlUtils.htmlEscape(emailBody)
-            + "</p><p><a target=\"_blank\" rel=\"noopener noreferrer\" href=\""
-            + HtmlUtils.htmlEscape(reactivationUrl)
-            + "\">"
-            + HtmlUtils.htmlEscape(linkLabel)
-            + "</a></p>";
+        accountSecurityMail.render(
+            templateName,
+            lockedAccountUser,
+            Map.of(
+                "TITLE", emailSubject, "MESSAGE", emailBody, "REACTIVATION_LINK", reactivationUrl));
     emailQueueService.addEmailToQueue(
         lockedAccountUser, emailSubject, emailHtml, EmailType.ACCOUNT_REACTIVATION);
   }
 
+  private void queueReactivatedNotice(UserEntity accountUser) {
+    if (accountUser.isDevelopmentAccount()) {
+      return;
+    }
+    MessageProperties accountMessageProperties = createAccountMessageProperties(accountUser);
+    String subject = accountMessageProperties.getAccountReactivatedMailSubject();
+    String mailHtml =
+        accountSecurityMail.render(
+            "account_reactivated",
+            accountUser,
+            Map.of(
+                "TITLE",
+                subject,
+                "MESSAGE",
+                accountMessageProperties.getAccountReactivatedMailBody()));
+    emailQueueService.addEmailToQueue(accountUser, subject, mailHtml, EmailType.NOTIFICATION);
+  }
+
   private MessageProperties createAccountMessageProperties(UserEntity accountUser) {
-    return MessageProperties.forLocale(customI18NProvider, accountUser.getPreferredLocale());
+    return accountSecurityMail.messagePropertiesForRecipient(accountUser);
   }
 
   private String formatDeletionDate(UserEntity accountUser, Instant deletionAt) {

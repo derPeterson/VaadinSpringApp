@@ -81,3 +81,18 @@ Ein Interrupt des Koordinators stoppt das Nachfüllen und wird nach dem Drain wi
 Der Admin-Mailtest ist ein direkter Einzelversand außerhalb dieser Queue.
 Lokal werden synthetische Mails mit [Mailpit](docker/README.md) aufgefangen.
 Diagnosemeldungen folgen dem [Logging-Vertrag](logging.md).
+
+## Kontostatus-Vorlagen
+
+Deaktivierung, Löschwarnung, endgültige Löschung und erfolgreiche Reaktivierung
+verwenden `account_deactivated`, `account_deletion_reminder`, `account_deleted`
+und `account_reactivated` aus `resources/email`, jeweils als MJML und erzeugtes HTML
+in DE/EN. `AccountSecurityMail` ersetzt die Werte mit HTML-Escaping und verwendet
+die Kontosprache, das gemeinsame Logo, die Basisadresse und den Cosmos-Footer.
+
+Deaktivierung und Erinnerung zeigen den festgelegten Löschtermin sowie denselben
+Reaktivierungslink als Button und kopierbare URL. Die übrigen Bestätigungen haben
+keinen Aktionslink. Das Öffnen eines Reaktivierungslinks erzeugt noch keine Mail:
+Erst die erfolgreiche Bestätigung reiht die Nachricht über die Wiederaktivierung
+in derselben Transaktion ein. Ungültige oder erneut verwendete Links tun das nicht.
+Entwicklungskonten bleiben bei allen vier Ereignissen ohne Versand.

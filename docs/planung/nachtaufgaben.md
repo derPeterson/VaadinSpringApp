@@ -126,50 +126,16 @@ verhindert eine falsche Aussage bei einem Fehler während des Transaktionsabschl
 Der gezielte Browsernachtest folgt mit den Kontomails; siehe [Testbedarf](../testbedarf.md).
 ## 7. Kontostatus-E-Mails in das bestehende Cosmos-Maildesign überführen
 
-- [ ] Die bisherigen schlichten HTML-Inhalte für Deaktivierung, Löschwarnung
-  und Löschbestätigung durch MJML-Vorlagen und daraus erzeugte HTML-Dateien
-  ersetzen. Bestehende Kontomails als Vorlage für Logo, Farben, Typografie,
-  Karten, Buttons, Abstände und Footer verwenden; keine zweite Mailgestaltung
-  einführen. Alle Vorlagen auf Deutsch und Englisch bereitstellen und über den
-  vorhandenen Vorlagen-/Versandweg laden.
-- [ ] Die bisherige HTML-Zusammensetzung in `AccountLifecycleService` vollständig
-  entfernen, einschließlich ausschließlich dafür verwendeter Hilfen/Importe.
-  Keine alten HTML-Strings oder parallelen Versandpfade als Fallback behalten.
-  Den Service selbst mit seiner Fachlogik und den Sicherheits-/Transaktionsgrenzen
-  erhalten. Die feste [E-Mail-Vorgabe](../entwicklung.md#e-mail-vorlagen-und-cosmos-design)
-  bei Umsetzung und Review anwenden.
-- [ ] „Konto deaktiviert“: Den bestätigten Kontostatus, das konkrete Löschdatum
-  und die Möglichkeit zur rechtzeitigen Reaktivierung erklären. Ein Button
-  „Konto reaktivieren“ führt zum vorhandenen geschützten Reaktivierungsablauf.
-  Auch beim erneuten Anfordern eines Reaktivierungslinks dieselbe Vorlage mit
-  passendem Text verwenden.
-- [ ] „Konto wird bald gelöscht“: Erinnerung mit konkretem Löschdatum und
-  Reaktivierungsbutton gestalten. Die bestehenden konfigurierbaren Fristen
-  beibehalten: Standardaufbewahrung 30 Tage und Erinnerung sieben Tage vorher,
-  kein fest im Mailtext versprochener Wochenabstand. Die vorhandene Behandlung
-  kurzer Fristen und einer deaktivierten Erinnerung erhalten.
-- [ ] „Konto endgültig gelöscht“: Die abgeschlossene Löschung bestätigen, sowohl
-  nach bewusster Sofortlöschung als auch nach Ablauf der Deaktivierungsfrist.
-  Kein Reaktivierungsbutton und keine Wiederherstellbarkeit versprechen. Die
-  bestehende Versandmöglichkeit nach Entfernung des Kontodatensatzes erhalten.
-- [ ] „Konto wieder aktiviert“ als zusätzliche Bestätigung nach erfolgreicher
-  Reaktivierung ergänzen. Erst mit bestätigter Kontoänderung einreihen, nicht
-  schon beim Öffnen des Links oder nach ungültigen/abgelaufenen Links. Keine
-  automatische Anmeldung oder Umgehung von Passwort/2FA einführen.
-- [ ] Tatsächliche Kontosprache, konfigurierte Basisadresse und konkrete
-  Fristdaten verwenden. Die Regeln aus Nachtaufgabe 1 für Entwicklungskonten
-  auch bei allen vier Vorlagen beachten; keine Mail für solche Konten senden.
-  Vorhandene Transaktions-, Token-, Queue- und Widerrufsgrenzen erhalten.
-- [ ] Mit Nachtaufgabe 2 abstimmen: Bei vorhandenen Aktionsbuttons die vollständige
-  tatsächliche Ziel-URL darunter zum Kopieren anzeigen. Reine Bestätigungsmails
-  erhalten keine unnötigen Aktionslinks oder leeren Linkbereiche.
-- [ ] Vorlagen-/Versandtests für alle vier Ereignisse ergänzen und die erzeugten
-  Mails in der abschließenden Testrunde isoliert über Mailpit in DE/EN bei
-  Desktop- und Smartphonebreite prüfen. Keine echten E-Mails versenden. Den
-  bestehenden manuellen Mailclient-Katalog um die neuen Vorlagen ergänzen und
-  echte Clientabnahmen als solche offen halten. Ergebnisse und offene Prüfungen
-  im zentralen [Testbedarf](../testbedarf.md) pflegen.
+Vier Vorlagenpaare in MJML/HTML und Kontosprache sind umgesetzt. Der Java-Service
+setzt kein eigenes Mail-HTML mehr zusammen. Deaktivierung und Erinnerung haben
+Reaktivierungsbutton und identische kopierbare URL; Lösch- und
+Reaktivierungsbestätigung bleiben ohne Aktion. Die Reaktivierungsbestätigung
+entsteht erst mit gültigem einmaligem Tokenverbrauch in derselben Transaktion.
+Entwicklungskonten bleiben ohne Mail.
 
+13 gezielte Vorlagen-/Persistenztests sind erfolgreich. Der visuelle Mailpit-Nachtest
+und die anschließende Gesamtprüfung bleiben im [Testbedarf](../testbedarf.md).
+Echte Mailclient-Abnahmen bleiben im manuellen Katalog, nicht als Browsererfolg.
 ## 8. Selbst deaktivierte Konten nach der Anmeldung gezielt zur Reaktivierung führen
 
 - [ ] Den zusätzlichen Link „Konto reaktivieren“ aus dem Anmeldeformular

@@ -12,7 +12,7 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
   das Merkmal nicht setzen. Keine Versandzusage oder echte Mail für Testkonten
   mit diesem Merkmal; reguläre ungeprüfte Konten behalten ihre eigene Behandlung.
 
-- Kopierbare Aktionslinks, **offen, bestehende Vorlagen umgesetzt; Kontostatus folgt in Paket 7**: Die betroffenen Mails
+- Kopierbare Aktionslinks, **offen, alle Vorlagen umgesetzt**: Die betroffenen Mails
   in DE/EN isoliert in Mailpit auf Desktop-/Smartphonebreite öffnen. Original-URL
   unter dem Button lesbar und vollständig kopierbar, korrektes Ziel, kein Überlauf
   und keine leeren Linkbereiche in Mails ohne Aktion. Keine echten E-Mails senden.
@@ -35,7 +35,7 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
   auf geschützte Seiten und keine Aktivierung ohne gültigen Link. Administrative
   Sperren und abgelaufene Fristen erlauben keine Selbstreaktivierung.
 
-- Kontostatus-E-Mails im Cosmos-Design, **wartend auf die Umsetzung** von
+- Kontostatus-E-Mails im Cosmos-Design, **offen, Umsetzung vorhanden** von
   [Nachtaufgabe 7](planung/nachtaufgaben.md#7-kontostatus-e-mails-in-das-bestehende-cosmos-maildesign-überführen):
   Deaktivierung, Löschwarnung, endgültige Löschung und erfolgreiche Reaktivierung
   isoliert in Mailpit auf Deutsch und Englisch bei Desktop-/Smartphonebreite
@@ -146,7 +146,7 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
   erzeugen für Entwicklungskonten keine Mailaufträge. Reguläre Konten mit
   „Nicht geprüft“ und allgemeiner Mailtest bleiben davon getrennt.
 
-- Kopierbare Mail-Links, **offen, bestehende Vorlagen umgesetzt; Kontostatus folgt in Paket 7**: In allen betroffenen
+- Kopierbare Mail-Links, **offen, alle Vorlagen umgesetzt**: In allen betroffenen
   DE-/EN-Vorlagen nach Platzhalterersetzung identisches Buttonziel und sichtbare
   vollständige URL prüfen, einschließlich sicherer HTML-Kodierung. Kein neuer
   Token, keine gekürzten Ziele und kein Zusatzblock bei Mails ohne Aktion.

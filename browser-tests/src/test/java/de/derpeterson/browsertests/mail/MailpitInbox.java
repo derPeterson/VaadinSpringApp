@@ -137,9 +137,23 @@ public final class MailpitInbox {
     try (Page messagePage = browserContext.newPage()) {
       messagePage.navigate(baseUrl + "/view/" + capturedMail.id() + ".html");
       Locator reactivationLinkLocator =
-          messagePage.locator("a[href*='" + path(ACCOUNT_REACTIVATION_ROUTE) + "?token=']");
+          messagePage.locator(
+              ".cosmos-email-button a[href*='" + path(ACCOUNT_REACTIVATION_ROUTE) + "?token=']");
       assertThat(reactivationLinkLocator).hasCount(1);
       assertThat(reactivationLinkLocator).isVisible();
+      Locator copyLinkLocator = messagePage.locator(".cosmos-email-copy-link a");
+      assertThat(copyLinkLocator).hasText(reactivationLinkLocator.getAttribute("href"));
+      assertThat(copyLinkLocator)
+          .hasAttribute("href", reactivationLinkLocator.getAttribute("href"));
+      for (int viewportWidth : new int[] {1280, 390}) {
+        messagePage.setViewportSize(viewportWidth, 900);
+        assertTrue(
+            Boolean.TRUE.equals(
+                messagePage.evaluate(
+                    "() => document.documentElement.scrollWidth <= window.innerWidth")));
+        AllurePlaywright.attachScreenshot(
+            "Kontostatus-Mail bei " + viewportWidth + " px", messagePage);
+      }
       URI reactivationUri = URI.create(reactivationLinkLocator.getAttribute("href"));
       assertEquals(
           URI.create(System.getProperty("browser.tests.baseUrl")).getAuthority(),

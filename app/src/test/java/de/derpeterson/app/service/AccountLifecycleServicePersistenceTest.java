@@ -41,6 +41,8 @@ import javax.sql.DataSource;
 import org.jsoup.Jsoup;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -127,6 +129,8 @@ class AccountLifecycleServicePersistenceTest {
     when(configService.getInteger(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS)).thenReturn(30);
     when(configService.getInteger(ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS)).thenReturn(7);
     when(configService.getString(ConfigEntry.BASE_URL)).thenReturn("https://example.test/");
+    when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Cosmos Test");
+    when(configService.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("Cosmos Test");
     when(passwordEncoder.matches("correct-password", "test-encoded-password")).thenReturn(true);
     when(loginAttemptService.authenticate(any(), any()))
         .thenAnswer(invocation -> {
@@ -139,7 +143,7 @@ class AccountLifecycleServicePersistenceTest {
             emailQueueRepository,
             emailQueueService,
             configService,
-            new CustomI18NProvider(),
+            new AccountSecurityMail(configService, new CustomI18NProvider()),
             twoFactorAuthorization,
             loginAttemptService,
             passwordEncoder,
@@ -150,9 +154,12 @@ class AccountLifecycleServicePersistenceTest {
             mock(AvatarDraftStore.class));
   }
 
-  @Test
-  void reactivationLinkClearsDeletionDeadlineAndCanOnlyBeUsedOnce() {
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void reactivationLinkClearsDeletionDeadlineAndCanOnlyBeUsedOnce(String language) {
     UserEntity accountUser = createAccountUser(true);
+    accountUser.setPreferredLocale(Locale.forLanguageTag(language));
+    userRepository.saveAndFlush(accountUser);
     MockHttpServletRequest accountRequest = authenticatedAccountRequest(accountUser);
     Instant beforeDeactivation = Instant.now();
 
@@ -172,7 +179,8 @@ class AccountLifecycleServicePersistenceTest {
             any(),
             emailBodyCaptor.capture(),
             eq(EmailType.ACCOUNT_REACTIVATION));
-    String reactivationUrl = Jsoup.parse(emailBodyCaptor.getValue()).select("a").attr("href");
+    String reactivationUrl =
+        Jsoup.parse(emailBodyCaptor.getValue()).select(".cosmos-email-button a").attr("href");
     String reactivationToken =
         java.net.URI.create(reactivationUrl).getQuery().substring("token=".length());
 
@@ -181,6 +189,15 @@ class AccountLifecycleServicePersistenceTest {
     UserEntity reactivatedAccountUser = userRepository.findById(accountUser.getId()).orElseThrow();
     assertTrue(reactivatedAccountUser.isEnabled());
     assertNull(reactivatedAccountUser.getAccountDeactivation());
+    verify(emailQueueService)
+        .addEmailToQueue(
+            any(UserEntity.class),
+            eq(
+                language.equals("de")
+                    ? "Ihr Konto wurde wieder aktiviert"
+                    : "Your account was reactivated"),
+            any(),
+            eq(EmailType.NOTIFICATION));
   }
 
   @Test

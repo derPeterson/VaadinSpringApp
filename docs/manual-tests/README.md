@@ -193,7 +193,7 @@ Die beiden Deaktivierungsfristen und ihre Feldhilfen stehen unter
 Deaktivierung, Erinnerung und Löschbestätigung über eigene Testkonten erzeugen.
 Diese Kontomails sind nicht Teil des opt-in Mailbeispielversands.
 
-1. Alle vorhandenen Mailvorlagen in den tatsächlich genutzten Clients öffnen; breite/schmale Ansicht und hell/dunkel soweit verfügbar vergleichen.
+1. Alle vorhandenen Mailvorlagen einschließlich Deaktivierung, Löschwarnung, Löschbestätigung und Reaktivierungsbestätigung in DE/EN in den tatsächlich genutzten Clients öffnen; breite/schmale Ansicht und hell/dunkel soweit verfügbar vergleichen.
 2. Logo, Abstände, Text, Footer und erkennbare Link-/Buttonbeschriftung beurteilen. Verhalten bei blockierten Bildern ansehen.
 3. Prüfen, ob sich der Handlungszweck ohne externe Bilder verstehen lässt. Sichttestbeispiele verwenden bewusst `preview.invalid`; funktionale Testmails müssen zur eigenen Testinstanz führen.
 
