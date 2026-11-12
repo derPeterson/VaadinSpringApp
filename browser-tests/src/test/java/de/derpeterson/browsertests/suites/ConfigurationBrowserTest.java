@@ -42,6 +42,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @Tag("configuration-follow-up")
   @Tag("configuration-field-help")
   @DisplayName("Kontofristen verwenden Tagesfelder und bleiben Superadmins vorbehalten")
+  @Tag("component-follow-up")
   void accountRetentionUsesFixedDaysAndIsRestrictedToSuperadmins(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
     LoginPage loginPage = new LoginPage(browserPage);
@@ -740,6 +741,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   @Tag("configuration-follow-up")
   @Description(
       "Zeitfelder in Sicherheit, E-Mail-Queue, Benutzerstatus und Benachrichtigungen speichern und neu laden. Sitzungs-Feldhilfe und Neustartwarnung bei unverändertem und geändertem Anmeldeschlüssel prüfen. Originalwerte werden über die UI wiederhergestellt.")
+  @Tag("component-follow-up")
   void remainingDurationFieldsPersistWithoutExposingTheCalculationBelowTheInput(int width) {
     AdminConfigurationPage settings = admin();
     browserPage.setViewportSize(width, 844);
@@ -905,6 +907,24 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         settings.duration(label).locator("vaadin-select-value-button > vaadin-select-item");
 
     assertThat(durationUnitLabel).hasText(uiTexts.getAdminConfigDurationUnitSeconds());
+    io.qameta.allure.Allure.attachment(
+        "Einheitentext-Messung",
+        "application/json",
+        durationUnitLabel
+            .evaluate(
+                """
+                label => {
+                  const style = getComputedStyle(label);
+                  const canvas = document.createElement('canvas').getContext('2d');
+                  canvas.font = style.font;
+                  return JSON.stringify({text:label.textContent, width:label.clientWidth,
+                    bounds:label.getBoundingClientRect().toJSON(), padding:style.padding,
+                    font:style.font, measured:canvas.measureText(label.textContent.trim()).width,
+                    selectOpened:label.closest('vaadin-select').opened});
+                }
+                """)
+            .toString());
+
     assertTrue(
         (Boolean)
             durationUnitLabel.evaluate(

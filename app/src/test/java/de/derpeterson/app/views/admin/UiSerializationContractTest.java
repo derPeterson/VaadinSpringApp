@@ -215,7 +215,7 @@ class UiSerializationContractTest {
             new Button(),
             new Button(),
             new AdminUserFilterBar.FilterControls(
-                new com.vaadin.flow.component.radiobutton.RadioButtonGroup<>(),
+                new de.derpeterson.app.ui.components.CosmosSegmentedTabs<>(),
                 new com.vaadin.flow.component.checkbox.CheckboxGroup<>(),
                 new com.vaadin.flow.component.checkbox.CheckboxGroup<>(),
                 new AdminUserActivityFilter()),

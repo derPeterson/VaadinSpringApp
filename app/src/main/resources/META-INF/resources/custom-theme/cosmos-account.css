@@ -195,64 +195,13 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     display: none;
 }
 
-/* Native Radiogruppe mit Komponentenlabels; Auswahl, Pfeiltasten und Fokus bleiben nativ.
- * Öffentliche Vaadin-Parts: radio und group-field, ausgewählter Zustand: checked. */
+/* Native segmentierte Tabs mit Komponentenlabels. */
 
 .account-avatar-dialog #account-avatar-mode {
     width: min(360px, 100%);
     margin-inline: auto;
     padding: 0;
     font-size: var(--cosmos-font-size-m);
-}
-
-.account-avatar-dialog #account-avatar-mode::part(group-field) {
-    display: flex;
-    flex-flow: row nowrap;
-    gap: var(--cosmos-space-xs);
-    padding: var(--cosmos-space-xs);
-    border: var(--cosmos-border-width) solid var(--cosmos-input-border);
-    border-radius: var(--cosmos-segment-radius);
-    background: var(--cosmos-input-background);
-}
-
-.account-avatar-dialog #account-avatar-mode vaadin-radio-button {
-    position: relative;
-    box-sizing: border-box;
-    flex: 1 1 0;
-    min-width: 0;
-    min-height: 44px;
-    margin: 0;
-    padding: 0;
-    grid-template-columns: minmax(0, 1fr);
-    align-items: center;
-    column-gap: 0;
-    border: var(--cosmos-border-width) solid transparent;
-    border-radius: var(--cosmos-segment-radius);
-    color: var(--lumo-primary-text-color);
-    --vaadin-radio-button-label-color: currentColor;
-    --vaadin-radio-button-label-font-size: var(--cosmos-font-size-m);
-    --vaadin-radio-button-label-font-weight: var(--cosmos-font-weight-semibold);
-}
-
-.account-avatar-dialog #account-avatar-mode vaadin-radio-button::part(radio) {
-    display: none;
-}
-
-.account-avatar-dialog #account-avatar-mode vaadin-radio-button > label {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    grid-column: 1;
-    margin: 0;
-    padding: 0;
-    width: auto;
-    cursor: pointer;
-}
-
-.account-avatar-dialog #account-avatar-mode vaadin-radio-button[disabled] > label {
-    cursor: default;
 }
 
 .account-avatar-dialog .account-avatar-mode-label {
@@ -279,26 +228,6 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 .account-avatar-dialog .account-avatar-mode-icon > vaadin-icon {
     width: 18px;
     height: 18px;
-}
-
-.account-avatar-dialog #account-avatar-mode vaadin-radio-button:hover:not([disabled]):not([checked]) {
-    background: var(--cosmos-hover-background);
-}
-
-.account-avatar-dialog #account-avatar-mode vaadin-radio-button[checked] {
-    color: var(--cosmos-button-primary-color);
-    border-color: var(--cosmos-button-primary-border);
-    background: var(--cosmos-primary-background);
-    box-shadow: var(--cosmos-button-primary-shadow);
-}
-
-.account-avatar-dialog #account-avatar-mode vaadin-radio-button[focus-ring] {
-    outline: var(--cosmos-focus-ring-width) solid var(--cosmos-focus-ring-color);
-    outline-offset: 2px;
-}
-
-.account-avatar-dialog #account-avatar-mode vaadin-radio-button[disabled] {
-    opacity: .5;
 }
 
 .account-avatar-dialog .account-avatar-custom {
@@ -433,10 +362,6 @@ vaadin-dialog.account-change-dialog::part(header-content) {
         gap: var(--cosmos-space-xs);
         white-space: normal;
         text-align: center;
-    }
-
-    .account-avatar-dialog #account-avatar-mode vaadin-radio-button {
-        padding-inline: 6px;
     }
 }
 
@@ -774,11 +699,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 /* Profilbild: dieselben ruhigen Auswahlflächen wie in der festen Referenz. */
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-editor { gap: 24px; }
 .account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode { width: 100%; }
-.account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode::part(group-field) { padding: 3px; gap: 3px; border-radius: 9px; background: var(--cosmos-reference-input); }
-.account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode vaadin-radio-button { display: flex; align-items: center; justify-content: center; min-height: 36px; border-radius: 6px; color: var(--cosmos-reference-secondary); font: 500 12px/16px Inter, sans-serif; --vaadin-radio-button-label-font-weight: 500; }
-.account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode vaadin-radio-button[checked] { color: var(--cosmos-reference-text); font-weight: 600; --vaadin-radio-button-label-font-weight: 600; background: var(--cosmos-reference-selection); border-color: var(--cosmos-reference-primary); box-shadow: none; }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-mode-icon { width: 16px; height: 16px; padding: 0; border: 0; background: transparent; color: inherit; }
-.account-avatar-dialog.cosmos-reference-overlay #account-avatar-mode vaadin-radio-button[checked] .account-avatar-mode-icon { color: var(--cosmos-reference-accent); }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-mode-icon > vaadin-icon { width: 16px; height: 16px; }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-mode-label { flex-direction: row; gap: 8px; }
 .account-avatar-dialog.cosmos-reference-overlay .account-avatar-circle { background: var(--cosmos-reference-input); color: var(--cosmos-reference-text); border: 1px solid var(--cosmos-reference-icon-border); box-shadow: 0 0 0 6px var(--cosmos-reference-success-surface); }
@@ -889,3 +810,5 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     font-size: var(--cosmos-font-size-s);
     font-weight: 400;
 }
+
+.account-avatar-dialog #account-avatar-mode vaadin-tab[selected] .account-avatar-mode-icon { color: var(--cosmos-reference-accent); }

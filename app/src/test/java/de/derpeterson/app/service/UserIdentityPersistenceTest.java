@@ -13,6 +13,7 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.router.Router;
 import com.vaadin.flow.server.VaadinContext;
 import com.vaadin.flow.server.VaadinService;
@@ -339,6 +340,9 @@ class UserIdentityPersistenceTest {
     var registry = new ApplicationRouteRegistry(Mockito.mock(VaadinContext.class)) {};
     registry.setRoute("login", LoginView.class, List.of());
     TestService vaadin = Mockito.mock(RegistrationViewTest.TestService.class);
+    DeploymentConfiguration deploymentConfiguration = Mockito.mock(DeploymentConfiguration.class);
+    Mockito.when(deploymentConfiguration.getUrlSafeSchemes()).thenCallRealMethod();
+    Mockito.when(vaadin.getDeploymentConfiguration()).thenReturn(deploymentConfiguration);
     Mockito.when(vaadin.getRouter()).thenReturn(new Router(registry));
     Mockito.when(vaadin.getRouteRegistry()).thenReturn(registry);
     Mockito.when(vaadinSession.getService()).thenReturn(vaadin);

@@ -47,7 +47,6 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.popover.Popover;
-import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -287,12 +286,12 @@ class UserNotificationsUiTest {
             messageProperties, userNotificationService, mockHttpSession, isCompactPreview);
     testUi.add(notificationsPanel);
 
-    RadioButtonGroup<ReadFilter> readFilterRadioButtonGroup =
-        readComponentField(notificationsPanel, "readFilter");
+    CosmosSegmentedTabs<ReadFilter> readFilterTabs =
+        readComponentField(notificationsPanel, "readFilterTabs");
     Div notificationRowsDiv = readComponentField(notificationsPanel, "notificationRows");
 
     for (ReadFilter notificationReadFilter : ReadFilter.values()) {
-      readFilterRadioButtonGroup.setValue(notificationReadFilter);
+      readFilterTabs.setValue(notificationReadFilter);
       notificationsPanel.refreshInbox();
 
       assertEquals(1, notificationRowsDiv.getComponentCount());
@@ -558,36 +557,35 @@ class UserNotificationsUiTest {
     assertEquals(
         messageProperties.getNotificationsLatest(5),
         ((Span) readComponentField(notificationsPanel, "inboxDescription")).getText());
-    RadioButtonGroup<ReadFilter> readFilterRadioButtonGroup =
-        readComponentField(notificationsPanel, "readFilter");
+    CosmosSegmentedTabs<ReadFilter> readFilterTabs =
+        readComponentField(notificationsPanel, "readFilterTabs");
 
-    assertEquals(ReadFilter.ALL, readFilterRadioButtonGroup.getValue());
+    assertEquals(ReadFilter.ALL, readFilterTabs.getValue());
     assertEquals(
         messageProperties.getNotificationsAll(),
-        readFilterRadioButtonGroup.getItemLabelGenerator().apply(ReadFilter.ALL));
+        readFilterTabs.getItemLabelGenerator().apply(ReadFilter.ALL));
     assertEquals(
         messageProperties.getNotificationsRead(),
-        readFilterRadioButtonGroup.getItemLabelGenerator().apply(ReadFilter.READ));
+        readFilterTabs.getItemLabelGenerator().apply(ReadFilter.READ));
     assertEquals(
         messageProperties.getNotificationsUnread(),
-        readFilterRadioButtonGroup.getItemLabelGenerator().apply(ReadFilter.UNREAD));
+        readFilterTabs.getItemLabelGenerator().apply(ReadFilter.UNREAD));
     assertEquals(
-        messageProperties.getNotificationsFilter(),
-        readFilterRadioButtonGroup.getAriaLabel().orElseThrow());
+        messageProperties.getNotificationsFilter(), readFilterTabs.getAriaLabel().orElseThrow());
     assertTrue(streamComponentTree(notificationsPanel).noneMatch(Checkbox.class::isInstance));
     Span previewHintSpan = readComponentField(notificationsPanel, "previewHint");
 
     assertEquals(messageProperties.getNotificationsLatest(5), previewHintSpan.getText());
 
-    readFilterRadioButtonGroup.setValue(ReadFilter.READ);
+    readFilterTabs.setValue(ReadFilter.READ);
 
     assertEquals(messageProperties.getNotificationsLatestRead(5), previewHintSpan.getText());
 
-    readFilterRadioButtonGroup.setValue(ReadFilter.UNREAD);
+    readFilterTabs.setValue(ReadFilter.UNREAD);
 
     assertEquals(messageProperties.getNotificationsLatestUnread(5), previewHintSpan.getText());
 
-    readFilterRadioButtonGroup.setValue(ReadFilter.ALL);
+    readFilterTabs.setValue(ReadFilter.ALL);
 
     assertEquals(messageProperties.getNotificationsLatest(5), previewHintSpan.getText());
     Button closePreviewButton = readComponentField(notificationsPanel, "closeInboxButton");
@@ -637,8 +635,8 @@ class UserNotificationsUiTest {
               notificationItems.size());
         });
     UserNotificationsPanel notificationsPanel = createAndRefreshNotificationsPanel(true);
-    RadioButtonGroup<ReadFilter> readFilterRadioButtonGroup =
-        readComponentField(notificationsPanel, "readFilter");
+    CosmosSegmentedTabs<ReadFilter> readFilterTabs =
+        readComponentField(notificationsPanel, "readFilterTabs");
 
     assertEquals(
         2,
@@ -648,7 +646,7 @@ class UserNotificationsUiTest {
             .count());
 
     ReflectionTestUtils.setField(notificationsPanel, "page", 2);
-    readFilterRadioButtonGroup.setValue(ReadFilter.READ);
+    readFilterTabs.setValue(ReadFilter.READ);
 
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.READ, 0, 5);
     assertEquals(0, (int) readComponentField(notificationsPanel, "page"));
@@ -666,15 +664,15 @@ class UserNotificationsUiTest {
     activeLocaleReference.set(languageTag.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     notificationsPanel.refreshTexts();
 
-    assertEquals(ReadFilter.READ, readFilterRadioButtonGroup.getValue());
+    assertEquals(ReadFilter.READ, readFilterTabs.getValue());
     assertEquals(
         messageProperties.getNotificationsRead(),
-        readFilterRadioButtonGroup.getItemLabelGenerator().apply(ReadFilter.READ));
+        readFilterTabs.getItemLabelGenerator().apply(ReadFilter.READ));
     assertEquals(
         messageProperties.getNotificationsLatestRead(5),
         ((Span) readComponentField(notificationsPanel, "previewHint")).getText());
 
-    readFilterRadioButtonGroup.setValue(ReadFilter.UNREAD);
+    readFilterTabs.setValue(ReadFilter.UNREAD);
 
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.UNREAD, 0, 5);
     notificationRowComponents =
@@ -690,7 +688,7 @@ class UserNotificationsUiTest {
     assertTrue(
         notificationRowComponents.getFirst().hasClassName("cosmos-notification-row--unread"));
 
-    readFilterRadioButtonGroup.setValue(ReadFilter.ALL);
+    readFilterTabs.setValue(ReadFilter.ALL);
 
     assertEquals(
         2,
@@ -749,7 +747,7 @@ class UserNotificationsUiTest {
 
     verify(userNotificationService).markRead(mockHttpSession, List.of(7L));
     assertNull(readComponentField(notificationsPanel, "notificationDetailDialog"));
-    ((RadioButtonGroup<ReadFilter>) readComponentField(notificationsPanel, "readFilter"))
+    ((CosmosSegmentedTabs<ReadFilter>) readComponentField(notificationsPanel, "readFilterTabs"))
         .setValue(ReadFilter.UNREAD);
 
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.UNREAD, 0, 5);
@@ -1765,9 +1763,9 @@ class UserNotificationsUiTest {
     when(userNotificationService.readCount(mockHttpSession)).thenReturn(3L);
     when(userNotificationService.inboxCount(mockHttpSession)).thenReturn(4L);
     notificationsPanel.refreshInbox();
-    RadioButtonGroup<ReadFilter> readFilterRadioButtonGroup =
-        readComponentField(notificationsPanel, "readFilter");
-    readFilterRadioButtonGroup.setValue(ReadFilter.UNREAD);
+    CosmosSegmentedTabs<ReadFilter> readFilterTabs =
+        readComponentField(notificationsPanel, "readFilterTabs");
+    readFilterTabs.setValue(ReadFilter.UNREAD);
     TextField notificationSearchTextField =
         readComponentField(notificationsPanel, "notificationSearchField");
     when(userNotificationService.searchInbox(
@@ -1801,7 +1799,7 @@ class UserNotificationsUiTest {
     assertEquals(List.of(7L), readComponentField(notificationsPanel, "unreadIds"));
     assertFalse(dismissReadNotificationsButton.isEnabled());
     assertTrue(markAllReadButton.isEnabled());
-    assertEquals(ReadFilter.UNREAD, readFilterRadioButtonGroup.getValue());
+    assertEquals(ReadFilter.UNREAD, readFilterTabs.getValue());
     assertNull(readComponentField(notificationsPanel, "notificationDetailDialog"));
     assertEquals("no visible match", notificationSearchTextField.getValue());
     assertEquals("1", ((Span) readComponentField(notificationsPanel, "totalCount")).getText());
@@ -1824,7 +1822,7 @@ class UserNotificationsUiTest {
 
     verify(userNotificationService).markRead(mockHttpSession, List.of(7L));
     verify(userNotificationService, never()).markRead(mockHttpSession, List.of(7L, 9L));
-    ((RadioButtonGroup<ReadFilter>) readComponentField(notificationsPanel, "readFilter"))
+    ((CosmosSegmentedTabs<ReadFilter>) readComponentField(notificationsPanel, "readFilterTabs"))
         .setValue(ReadFilter.UNREAD);
 
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.UNREAD, 0, 10);
@@ -1902,7 +1900,7 @@ class UserNotificationsUiTest {
         .searchInbox(mockHttpSession, ReadFilter.ALL, "alpha", Set.of(), 0, 10);
     assertEquals("6", ((Span) readComponentField(notificationsPanel, "totalCount")).getText());
     assertEquals("2", ((Span) readComponentField(notificationsPanel, "unreadCount")).getText());
-    ((RadioButtonGroup<ReadFilter>) readComponentField(notificationsPanel, "readFilter"))
+    ((CosmosSegmentedTabs<ReadFilter>) readComponentField(notificationsPanel, "readFilterTabs"))
         .setValue(ReadFilter.UNREAD);
 
     verify(userNotificationService)
@@ -1916,7 +1914,7 @@ class UserNotificationsUiTest {
         messageProperties.getNotificationsSearch(), notificationSearchTextField.getPlaceholder());
     assertEquals(
         ReadFilter.UNREAD,
-        ((RadioButtonGroup<ReadFilter>) readComponentField(notificationsPanel, "readFilter"))
+        ((CosmosSegmentedTabs<ReadFilter>) readComponentField(notificationsPanel, "readFilterTabs"))
             .getValue());
 
     when(userNotificationService.searchInbox(
@@ -1984,7 +1982,7 @@ class UserNotificationsUiTest {
     ComboBox<Integer> pageSizeComboBox = readComponentField(notificationsPanel, "pageSize");
     Span pageTotalSpan = readComponentField(notificationsPanel, "pageTotal");
     pageSizeComboBox.setValue(50);
-    ((RadioButtonGroup<ReadFilter>) readComponentField(notificationsPanel, "readFilter"))
+    ((CosmosSegmentedTabs<ReadFilter>) readComponentField(notificationsPanel, "readFilterTabs"))
         .setValue(ReadFilter.UNREAD);
     TextField notificationSearchTextField =
         readComponentField(notificationsPanel, "notificationSearchField");
@@ -2009,7 +2007,7 @@ class UserNotificationsUiTest {
     assertEquals("alpha", notificationSearchTextField.getValue());
     assertEquals(
         ReadFilter.UNREAD,
-        ((RadioButtonGroup<ReadFilter>) readComponentField(notificationsPanel, "readFilter"))
+        ((CosmosSegmentedTabs<ReadFilter>) readComponentField(notificationsPanel, "readFilterTabs"))
             .getValue());
     assertEquals(
         messageProperties.getAdminUsersPaginationPerPage(),
@@ -2038,14 +2036,13 @@ class UserNotificationsUiTest {
             eq(mockHttpSession), any(ReadFilter.class), anyString(), anySet(), anyInt(), anyInt()))
         .thenReturn(new PageImpl<>(List.of(inboxNotificationItem)));
     UserNotificationsPanel notificationsPanel = createAndRefreshNotificationsPanel(false);
-    RadioButtonGroup<ReadFilter> readFilterRadioButtonGroup =
-        readComponentField(notificationsPanel, "readFilter");
+    CosmosSegmentedTabs<ReadFilter> readFilterTabs =
+        readComponentField(notificationsPanel, "readFilterTabs");
 
-    assertEquals("notifications-inbox-filter", readFilterRadioButtonGroup.getId().orElseThrow());
-    assertEquals(ReadFilter.ALL, readFilterRadioButtonGroup.getValue());
+    assertEquals("notifications-inbox-filter", readFilterTabs.getId().orElseThrow());
+    assertEquals(ReadFilter.ALL, readFilterTabs.getValue());
     assertEquals(
-        List.of(ReadFilter.ALL, ReadFilter.UNREAD, ReadFilter.READ),
-        readFilterRadioButtonGroup.getListDataView().getItems().toList());
+        List.of(ReadFilter.ALL, ReadFilter.UNREAD, ReadFilter.READ), readFilterTabs.getItems());
     assertTrue(streamComponentTree(notificationsPanel).noneMatch(Checkbox.class::isInstance));
     assertTrue(
         streamComponentTree(notificationsPanel)
@@ -2064,7 +2061,7 @@ class UserNotificationsUiTest {
     assertEquals(
         messageProperties.getNotificationsMarkAll(), markAllReadButton.getTooltip().getText());
 
-    readFilterRadioButtonGroup.setValue(ReadFilter.READ);
+    readFilterTabs.setValue(ReadFilter.READ);
 
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.READ, 0, 10);
     TextField notificationSearchTextField =
@@ -2076,12 +2073,12 @@ class UserNotificationsUiTest {
         .searchInbox(mockHttpSession, ReadFilter.READ, "alpha", Set.of(), 0, 10);
 
     ReflectionTestUtils.setField(notificationsPanel, "page", 4);
-    readFilterRadioButtonGroup.setValue(ReadFilter.UNREAD);
+    readFilterTabs.setValue(ReadFilter.UNREAD);
 
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.UNREAD, "alpha", Set.of(), 0, 10);
 
-    readFilterRadioButtonGroup.setValue(ReadFilter.ALL);
+    readFilterTabs.setValue(ReadFilter.ALL);
 
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.ALL, "alpha", Set.of(), 0, 10);
@@ -2089,10 +2086,10 @@ class UserNotificationsUiTest {
     activeLocaleReference.set(languageTag.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
     notificationsPanel.refreshTexts();
 
-    assertEquals(ReadFilter.ALL, readFilterRadioButtonGroup.getValue());
+    assertEquals(ReadFilter.ALL, readFilterTabs.getValue());
     assertEquals(
         messageProperties.getNotificationsRead(),
-        readFilterRadioButtonGroup.getItemLabelGenerator().apply(ReadFilter.READ));
+        readFilterTabs.getItemLabelGenerator().apply(ReadFilter.READ));
     assertEquals(
         messageProperties.getNotificationsRefresh(), refreshInboxButton.getTooltip().getText());
     assertEquals(

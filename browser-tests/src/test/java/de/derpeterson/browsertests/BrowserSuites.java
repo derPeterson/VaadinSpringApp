@@ -9,6 +9,7 @@ import de.derpeterson.browsertests.suites.BlockedLinksBrowserTest;
 import de.derpeterson.browsertests.suites.ConfigurationBrowserTest;
 import de.derpeterson.browsertests.suites.CosmosComponentsBrowserTest;
 import de.derpeterson.browsertests.suites.CosmosDesignBrowserTest;
+import de.derpeterson.browsertests.suites.EmailActionLinkBrowserTest;
 import de.derpeterson.browsertests.suites.ExternalLoginBrowserTest;
 import de.derpeterson.browsertests.suites.ExternalLoginLayoutBrowserTest;
 import de.derpeterson.browsertests.suites.InfrastructureBrowserTest;
@@ -21,6 +22,7 @@ import de.derpeterson.browsertests.suites.PresentationBrowserTest;
 import de.derpeterson.browsertests.suites.RegistrationBrowserTest;
 import de.derpeterson.browsertests.suites.RememberMeBrowserTest;
 import de.derpeterson.browsertests.suites.RestartAndSmtpBrowserTest;
+import de.derpeterson.browsertests.suites.SegmentedSelectionBrowserTest;
 import de.derpeterson.browsertests.suites.SessionLimitBrowserTest;
 import de.derpeterson.browsertests.suites.SessionManagementBrowserTest;
 import de.derpeterson.browsertests.suites.SessionSecurityBrowserTest;
@@ -75,9 +77,24 @@ final class BrowserSuites {
               LoginLayoutBrowserTest.class,
               CosmosDesignBrowserTest.class,
               CosmosComponentsBrowserTest.class,
+              SegmentedSelectionBrowserTest.class,
+              EmailActionLinkBrowserTest.class,
               LoginAttemptBrowserTest.class,
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
+      case "component-follow-up" ->
+          List.of(
+              CosmosComponentsBrowserTest.class,
+              VerificationBrowserTest.class,
+              ConfigurationBrowserTest.class,
+              AccountSettingsBrowserTest.class,
+              UserNotificationsBrowserTest.class,
+              TwoFactorBrowserTest.class,
+              NotificationInboxBrowserTest.class,
+              EmailActionLinkBrowserTest.class,
+              UserFiltersBrowserTest.class,
+              UserManagementBrowserTest.class);
+      case "segmented-selection" -> List.of(SegmentedSelectionBrowserTest.class);
       case "external-login-flow" -> List.of(ExternalLoginBrowserTest.class);
       case "external-login-settings" -> List.of(ExternalLoginBrowserTest.class);
       case "follow-up-regressions" ->

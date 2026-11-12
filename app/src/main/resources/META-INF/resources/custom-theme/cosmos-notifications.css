@@ -106,7 +106,7 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     border-bottom: var(--cosmos-border-width) solid var(--cosmos-card-border);
 }
 
-/* Native Radiogruppe wie im Profilbilddialog: Pillen, Auswahl und Tastaturfokus. */
+/* Native segmentierte Tabs wie im Profilbilddialog: Auswahl und Tastaturfokus. */
 
 :is(#notifications-preview-filter, #notifications-inbox-filter) {
     flex: 0 0 auto;
@@ -115,84 +115,6 @@ vaadin-popover[theme~="cosmos-notifications"]::part(content) {
     min-width: 0;
     margin: 0;
     padding: 0;
-}
-
-/* Intrinsische Gridbreite: alle Segmente so breit wie der längste Inhalt. */
-
-:is(#notifications-preview-filter, #notifications-inbox-filter)::part(group-field) {
-    display: inline-grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
-    width: max-content;
-    gap: var(--cosmos-space-xs);
-    padding: 3px;
-    border: var(--cosmos-border-width) solid var(--cosmos-input-border);
-    border-radius: var(--cosmos-segment-radius);
-    background: var(--cosmos-input-background);
-}
-
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button {
-    box-sizing: border-box;
-    min-width: 0;
-    min-height: calc(var(--cosmos-control-height) - var(--cosmos-space-s));
-    height: calc(var(--cosmos-control-height) - var(--cosmos-space-s));
-    margin: 0;
-    padding: 0 var(--cosmos-space-s);
-    display: grid;
-    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
-    align-items: stretch;
-    justify-items: stretch;
-    gap: 0;
-    border: var(--cosmos-border-width) solid transparent;
-    border-radius: var(--cosmos-segment-radius);
-    color: var(--lumo-primary-text-color);
-    --vaadin-radio-button-label-color: currentColor;
-    --vaadin-radio-button-label-font-size: var(--cosmos-font-size-m);
-    --vaadin-radio-button-label-font-weight: var(--cosmos-font-weight-semibold);
-}
-
-/* Die native Baseline-Hilfe wird für das einzeilige Segmentlayout nicht benötigt. */
-
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button::before,
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button::part(radio) {
-    display: none;
-}
-
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button > [slot="label"] {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    place-self: stretch;
-    grid-area: 1 / 1 / 2 / -1;
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    min-width: 0;
-    min-height: 0;
-    text-align: center;
-    white-space: nowrap;
-}
-
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button:hover:not([disabled]):not([checked]) {
-    background: var(--cosmos-hover-background);
-}
-
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button[checked] {
-    color: var(--cosmos-button-primary-color);
-    border-color: var(--cosmos-button-primary-border);
-    background: var(--cosmos-primary-background);
-    box-shadow: var(--cosmos-button-primary-shadow);
-}
-
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button[focus-ring] {
-    outline: var(--cosmos-focus-ring-width) solid var(--cosmos-focus-ring-color);
-    outline-offset: 2px;
-}
-
-:is(#notifications-preview-filter, #notifications-inbox-filter) vaadin-radio-button[disabled] {
-    opacity: .5;
 }
 
 @media (max-width: 400px) {
@@ -2115,38 +2037,6 @@ vaadin-dialog.cosmos-notification-dialog[theme~=cosmos-reference]::part(footer) 
     width: auto;
 }
 
-
-.cosmos-reference-portal #notifications-inbox-filter::part(group-field),
-#notifications-preview.cosmos-reference-overlay #notifications-preview-filter::part(group-field) {
-    box-sizing: border-box;
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: 100%;
-    gap: 3px;
-    padding: 3px;
-    border-radius: 9px;
-    background: var(--cosmos-reference-input);
-}
-
-.cosmos-reference-portal #notifications-inbox-filter vaadin-radio-button,
-#notifications-preview.cosmos-reference-overlay #notifications-preview-filter vaadin-radio-button {
-    min-height: 32px;
-    height: 32px;
-    border-radius: 6px;
-    color: var(--cosmos-reference-secondary);
-    font: 500 12px/16px Inter, sans-serif;
-    --vaadin-radio-button-label-font-size: 12px;
-    --vaadin-radio-button-label-font-weight: 500;
-}
-
-.cosmos-reference-portal #notifications-inbox-filter vaadin-radio-button[checked],
-#notifications-preview.cosmos-reference-overlay #notifications-preview-filter vaadin-radio-button[checked] {
-    color: var(--cosmos-reference-accent);
-    background: var(--cosmos-reference-selection);
-    border-color: var(--cosmos-reference-primary);
-    box-shadow: none;
-}
-
 .portal-read-filter-option {
     display: inline-flex;
     align-items: center;
@@ -2171,7 +2061,7 @@ vaadin-dialog.cosmos-notification-dialog[theme~=cosmos-reference]::part(footer) 
     font: 600 10px/1 Inter, sans-serif;
 }
 
-vaadin-radio-button[checked] .portal-filter-count {
+vaadin-tab[selected] .portal-filter-count {
     color: var(--cosmos-reference-accent);
     border-color: var(--cosmos-reference-icon-border);
     background: var(--cosmos-reference-selection);
@@ -2464,24 +2354,6 @@ vaadin-combo-box-item.portal-pagination-option {
     display: inline-flex;
     align-items: center;
     align-self: center;
-}
-
-#notifications-preview.cosmos-reference-overlay #notifications-preview-filter vaadin-radio-button {
-    height: 28px;
-    min-height: 28px;
-    font-size: 11px;
-    border-radius: 5px;
-    --vaadin-radio-button-label-font-size: 11px;
-}
-
-#notifications-preview.cosmos-reference-overlay #notifications-preview-filter::part(group-field) {
-    box-sizing: border-box;
-    gap: 2px;
-    border-radius: 8px;
-}
-
-#notifications-preview.cosmos-reference-overlay #notifications-preview-filter vaadin-radio-button[checked] {
-    border-color: #0088cc88;
 }
 
 #notifications-preview.cosmos-reference-overlay .cosmos-notification-preview-tools {

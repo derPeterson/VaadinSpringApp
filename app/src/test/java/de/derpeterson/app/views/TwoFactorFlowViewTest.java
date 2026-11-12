@@ -61,6 +61,7 @@ import de.derpeterson.app.service.SupportTicketService.ReplyAuthor;
 import de.derpeterson.app.service.SupportTicketService.Ticket;
 import de.derpeterson.app.service.SupportTicketService.UserIdentity;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.CosmosSegmentedTabs;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
 import de.derpeterson.app.ui.components.RecoveryCodeDownload;
 import de.derpeterson.app.ui.components.RecoveryInstructionsComponent;
@@ -811,9 +812,9 @@ class TwoFactorFlowViewTest {
     SupportTicketFilterPanel filters =
         (SupportTicketFilterPanel) find(component, "support-filter-panel");
     ((Button) find(component, "support-filter")).click();
-    RadioButtonGroup<Reading> reading =
-        (RadioButtonGroup<Reading>) find(filters, "support-filter-reading");
-    reading.setValue(Reading.UNREAD);
+    CosmosSegmentedTabs<Reading> readingFilterTabs =
+        (CosmosSegmentedTabs<Reading>) find(filters, "support-filter-reading");
+    readingFilterTabs.setValue(Reading.UNREAD);
     filterAction(filters, "support-filter-apply").click();
 
     assertEquals(List.of(unread), grid.getListDataView().getItems().toList());
@@ -1001,9 +1002,8 @@ class TwoFactorFlowViewTest {
     assertTrue(pageHeader.hasClassName("cosmos-section-header"));
     String headingText = pageHeader.getElement().getTextRecursively();
 
-    assertTrue(
-        headingText.contains(
-            messageProperties.getAdminHeaderTitle() + " / " + messageProperties.getSupportTitle()));
+    assertTrue(headingText.contains(messageProperties.getSupportTitle()));
+    assertTrue(headingText.contains(messageProperties.getAdminHeaderTitle()));
     assertTrue(headingText.contains(messageProperties.getSupportPageDescription()));
     assertFalse(headingText.contains(messageProperties.getSupportInboxDescription()));
     @SuppressWarnings("unchecked")

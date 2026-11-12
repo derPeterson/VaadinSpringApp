@@ -21,7 +21,6 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.dom.Element;
 import com.vaadin.flow.server.Command;
@@ -102,9 +101,9 @@ class AccountAvatarDialogTest {
   }
 
   @SuppressWarnings("unchecked")
-  private RadioButtonGroup<AvatarMode> readAvatarModeRadioButtonGroup() {
-    return (RadioButtonGroup<AvatarMode>)
-        ReflectionTestUtils.getField(accountAvatarDialog, "avatarModeSelector");
+  private CosmosSegmentedTabs<AvatarMode> readAvatarModeTabs() {
+    return (CosmosSegmentedTabs<AvatarMode>)
+        ReflectionTestUtils.getField(accountAvatarDialog, "avatarModeTabs");
   }
 
   private AccountAvatarEditor readAccountAvatarEditor() {
@@ -164,7 +163,7 @@ class AccountAvatarDialogTest {
 
     assertTrue(accountAvatarDialog.isOpened());
     assertFalse(readAvatarDeletionConfirmationDialog().isOpened());
-    assertEquals(AvatarMode.CUSTOM, readAvatarModeRadioButtonGroup().getValue());
+    assertEquals(AvatarMode.CUSTOM, readAvatarModeTabs().getValue());
     assertEquals(uploadedImageUuid, readUploadedImageUuid());
     verify(userAvatarService, never()).save(any(), any());
   }
@@ -178,7 +177,7 @@ class AccountAvatarDialogTest {
     assertTrue(accountAvatarDialog.isOpened());
     assertFalse(readAvatarDeletionConfirmationDialog().isOpened());
     assertEquals(true, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
-    assertEquals(AvatarMode.INITIALS, readAvatarModeRadioButtonGroup().getValue());
+    assertEquals(AvatarMode.INITIALS, readAvatarModeTabs().getValue());
     assertNull(readUploadedImageUuid());
     verify(userAvatarService, never()).save(any(), any());
 
@@ -254,7 +253,7 @@ class AccountAvatarDialogTest {
     accountAvatarDialog.open();
 
     assertEquals("CD", readAvatarInitialsSpan().getText());
-    assertEquals(AvatarMode.INITIALS, readAvatarModeRadioButtonGroup().getValue());
+    assertEquals(AvatarMode.INITIALS, readAvatarModeTabs().getValue());
     assertTrue(
         readAccountAvatarEditor()
             .getElement()
@@ -277,14 +276,14 @@ class AccountAvatarDialogTest {
   @ValueSource(strings = {"cancelAvatarChangesButton", "closeDialogButton"})
   void closingDiscardsTheSelectedMode(String closeButtonFieldName) {
     accountAvatarDialog.open();
-    readAvatarModeRadioButtonGroup().setValue(AvatarMode.CUSTOM);
+    readAvatarModeTabs().setValue(AvatarMode.CUSTOM);
 
     assertEquals("CUSTOM", readAccountAvatarEditor().getElement().getAttribute("data-mode"));
 
     readAvatarActionButton(closeButtonFieldName).click();
 
     assertFalse(accountAvatarDialog.isOpened());
-    assertEquals(AvatarMode.INITIALS, readAvatarModeRadioButtonGroup().getValue());
+    assertEquals(AvatarMode.INITIALS, readAvatarModeTabs().getValue());
     accountAvatarDialog.open();
 
     assertEquals("INITIALS", readAccountAvatarEditor().getElement().getAttribute("data-mode"));
@@ -295,24 +294,24 @@ class AccountAvatarDialogTest {
   @ValueSource(strings = {"de", "en"})
   void labelsFollowLanguageChangesWithoutLosingTheSelectedMode(String languageTag) {
     accountAvatarDialog.open();
-    readAvatarModeRadioButtonGroup().setValue(AvatarMode.CUSTOM);
+    readAvatarModeTabs().setValue(AvatarMode.CUSTOM);
     activeLocaleReference.set(Locale.forLanguageTag(languageTag));
     accountAvatarDialog.refreshTexts();
 
-    assertEquals(AvatarMode.CUSTOM, readAvatarModeRadioButtonGroup().getValue());
+    assertEquals(AvatarMode.CUSTOM, readAvatarModeTabs().getValue());
     assertEquals(
         messageProperties.getAccountAvatarMode(),
-        readAvatarModeRadioButtonGroup().getAriaLabel().orElseThrow());
+        readAvatarModeTabs().getAriaLabel().orElseThrow());
     assertEquals(
         messageProperties.getAccountAvatarCustom(),
-        readAvatarModeRadioButtonGroup().getItemLabelGenerator().apply(AvatarMode.CUSTOM));
+        readAvatarModeTabs().getItemLabelGenerator().apply(AvatarMode.CUSTOM));
     assertTrue(
-        readAvatarModeRadioButtonGroup()
+        readAvatarModeTabs()
             .getElement()
             .getTextRecursively()
             .contains(messageProperties.getAccountAvatarInitials()));
     assertTrue(
-        readAvatarModeRadioButtonGroup()
+        readAvatarModeTabs()
             .getElement()
             .getTextRecursively()
             .contains(messageProperties.getAccountAvatarCustom()));
@@ -375,13 +374,13 @@ class AccountAvatarDialogTest {
                     7L, AvatarMode.INITIALS, hasSavedImage, avatarRevisionUuid),
                 UUID.randomUUID()));
     accountAvatarDialog.open();
-    readAvatarModeRadioButtonGroup().setValue(AvatarMode.CUSTOM);
+    readAvatarModeTabs().setValue(AvatarMode.CUSTOM);
     ReflectionTestUtils.setField(accountAvatarDialog, "uploadedImageId", UUID.randomUUID());
     readAvatarActionButton("deleteAvatarButton").setVisible(true);
     ReflectionTestUtils.invokeMethod(accountAvatarDialog, "cancelSelection");
 
     assertNull(readUploadedImageUuid());
-    assertEquals(AvatarMode.CUSTOM, readAvatarModeRadioButtonGroup().getValue());
+    assertEquals(AvatarMode.CUSTOM, readAvatarModeTabs().getValue());
     assertTrue(accountAvatarDialog.isOpened());
     assertEquals(hasSavedImage, readAvatarActionButton("deleteAvatarButton").isVisible());
     assertEquals(false, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
@@ -430,7 +429,7 @@ class AccountAvatarDialogTest {
     assertTrue(accountAvatarDialog.isOpened());
     assertNotEquals(avatarDraftUuid, readAvatarDraftUuid());
     assertNull(readUploadedImageUuid());
-    assertEquals(AvatarMode.INITIALS, readAvatarModeRadioButtonGroup().getValue());
+    assertEquals(AvatarMode.INITIALS, readAvatarModeTabs().getValue());
     assertFalse(readAvatarActionButton("deleteAvatarButton").isVisible());
   }
 
@@ -465,7 +464,7 @@ class AccountAvatarDialogTest {
     avatarUploadHandler.handleUploadRequest(uploadEvent);
 
     verify(vaadinResponse).setHeader("X-Avatar-Image", avatarRevisionUuid.toString());
-    assertEquals(AvatarMode.CUSTOM, readAvatarModeRadioButtonGroup().getValue());
+    assertEquals(AvatarMode.CUSTOM, readAvatarModeTabs().getValue());
     assertTrue(readAvatarActionButton("deleteAvatarButton").isVisible());
 
     accountAvatarDialog.close();

@@ -24,6 +24,8 @@ final class BrowserExecutionPlan {
   private static final Map<String, Integer> SECONDS =
       Map.ofEntries(
           Map.entry("RestartAndSmtpBrowserTest", 320),
+          Map.entry("SegmentedSelectionBrowserTest", 60),
+          Map.entry("EmailActionLinkBrowserTest", 30),
           // Eine zusätzliche echte Minute prüft die erneute Verifikationsanforderung.
           Map.entry("TokenExpiryBrowserTest", 269),
           Map.entry("UserManagementBrowserTest", 173),
@@ -105,6 +107,8 @@ final class BrowserExecutionPlan {
       discoveryRequestBuilder.filters(TagFilter.includeTags("scrollbar-style"));
     } else if (suiteName.equals("breadcrumbs")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("breadcrumbs"));
+    } else if (suiteName.equals("component-follow-up")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("component-follow-up"));
     } else if (suiteName.equals("duration-field")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("duration-field"));
     } else if (suiteName.equals("external-login-settings")) {

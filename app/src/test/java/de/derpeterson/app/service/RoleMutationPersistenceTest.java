@@ -222,7 +222,7 @@ class RoleMutationPersistenceTest {
     UserEntity targetUser = form(superadmin);
 
     assertThrows(AccessDeniedException.class, () -> userService.deleteUser(targetUser));
-    edited.setEnabled(false);
+    edited.setAdministrativelyBlocked(true);
 
     assertThrows(AccessDeniedException.class, () -> userService.save(edited));
     assertEquals(0, userNotificationRepository.count());
@@ -274,7 +274,7 @@ class RoleMutationPersistenceTest {
         transactionTemplate.executeWithoutResult(s -> {
           UserEntity a = userRepository.findById(admin.getId()).orElseThrow();
           if (source.equals("disabled-admin")) {
-            a.setEnabled(false);
+            a.setAdministrativelyBlocked(true);
           } else {
             a.setRoleEntities(new ArrayList<>());
           }
@@ -399,7 +399,7 @@ class RoleMutationPersistenceTest {
       if (operation.equals("delete")) {
         assertThrows(IllegalStateException.class, () -> userService.deleteUser(edited));
       } else if (operation.equals("disable")) {
-        edited.setEnabled(false);
+        edited.setAdministrativelyBlocked(true);
         Long editedVersion = edited.getVersion();
 
         assertThrows(
@@ -431,7 +431,7 @@ class RoleMutationPersistenceTest {
       userService.deleteUser(form(superadmin));
     } else if (operation.equals("disable")) {
       UserEntity edited = form(superadmin);
-      edited.setEnabled(false);
+      edited.setAdministrativelyBlocked(true);
       userService.updateAdminUser(edited, edited.getVersion(), "");
     } else {
       assign(superadmin, RoleType.ROLE_ADMIN);
@@ -454,8 +454,11 @@ class RoleMutationPersistenceTest {
       login(superadmin);
     } else {
       // Anfangsbestand ohne Superadmin: normales Admin-Konto bekommt keinen Mindestschutz.
-      transactionTemplate.executeWithoutResult(
-          s -> userRepository.findById(superadmin.getId()).orElseThrow().setEnabled(false));
+      transactionTemplate.executeWithoutResult(s ->
+          userRepository
+              .findById(superadmin.getId())
+              .orElseThrow()
+              .setAdministrativelyBlocked(true));
       login(admin);
     }
     assertTrue(userService.canDeleteUser(form(admin)));
@@ -464,7 +467,7 @@ class RoleMutationPersistenceTest {
       userService.deleteUser(form(admin));
     } else if (operation.equals("disable")) {
       UserEntity edited = form(admin);
-      edited.setEnabled(false);
+      edited.setAdministrativelyBlocked(true);
       userService.updateAdminUser(edited, edited.getVersion(), "");
     } else {
       assign(admin, RoleType.ROLE_USER);

@@ -93,6 +93,9 @@ public final class TwoFactorPage {
 
   public static void enrollCurrent(Page browserPage, String email) {
     confirmEnrollment(browserPage, email);
+    browserPage.locator("#two-factor-recovery-toggle").click();
+    CosmosFollowUpChecks.assertDetailsWithoutHover(
+        browserPage.locator("#two-factor-recovery-toggle"));
     browserPage.locator("#two-factor-codes-saved input").setChecked(true);
     browserPage.locator("#two-factor-submit").click();
   }

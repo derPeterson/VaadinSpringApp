@@ -13,6 +13,7 @@ import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
 import de.derpeterson.browsertests.pages.NotificationInboxPage;
@@ -65,6 +66,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       6. Einzelnes X entfernt einen weiteren Eintrag ohne Detailöffnung; alle als gelesen markieren, Sammellöschen und persistente leere Inbox prüfen.
       Erwartet: Kein Sammellöschen in der Vorschau, kein Statuswechsel allein beim Öffnen, keine verlorenen ungelesenen Nachrichten.
       """)
+  @Tag("component-follow-up")
   void previewInboxFiltersAndDismissalAtBothWidths(int width) {
     String recipient = prepareRecipient();
     String prefix = "Layout " + UUID.randomUUID();
@@ -193,6 +195,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       5. Header-Vorschau begrenzt auf fünf Einträge; Sammellesen markiert alle elf und bleibt nach Reload erhalten.
       Erwartet: Echte persistente Pagination und Suche, Vorschaugrenze fünf, Sammellesen auch jenseits der sichtbaren Seite.
       """)
+  @Tag("component-follow-up")
   void paginationPreviewLimitAndSentArchive() {
     String recipient = prepareRecipient();
     String prefix = "Pages " + UUID.randomUUID();
@@ -205,6 +208,8 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
     Locator latest = archive.locator(".cosmos-notification-sent-row").first();
 
     assertThat(latest).containsText(prefix + " item 10");
+    CosmosFollowUpChecks.assertDetailsWithoutHover(
+        latest.locator(".cosmos-notification-sent-toggle"));
     latest.locator(".cosmos-notification-sent-toggle").click();
 
     assertThat(latest.locator(".cosmos-notification-sent-details")).hasAttribute("opened", "");

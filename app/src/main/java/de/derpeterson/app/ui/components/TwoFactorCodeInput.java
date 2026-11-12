@@ -63,7 +63,7 @@ final class TwoFactorCodeInput extends VerticalLayout {
       tab.getElement().setAttribute("aria-controls", inputId);
     }
     codeMethodTabs.setWidthFull();
-    codeMethodTabs.addClassName("two-factor-method-tabs");
+    codeMethodTabs.addClassName("cosmos-segmented-tabs");
     codeMethodTabs.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
     codeMethodTabs.addSelectedChangeListener(event -> {
       resetFields();

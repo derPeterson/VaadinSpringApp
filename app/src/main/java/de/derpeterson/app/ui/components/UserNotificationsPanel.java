@@ -26,7 +26,6 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.popover.PopoverPosition;
-import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.QueryParameters;
@@ -78,7 +77,7 @@ public class UserNotificationsPanel extends Div {
   private final Button closeInboxButton = new Button(AppIcon.CLOSE_CIRCLE.create());
   private transient Runnable closeAction = () -> {};
   private transient Consumer<Boolean> detailOpenListener = open -> {};
-  private final RadioButtonGroup<ReadFilter> readFilter = new RadioButtonGroup<>();
+  private final CosmosSegmentedTabs<ReadFilter> readFilterTabs = new CosmosSegmentedTabs<>();
   private boolean updatingFilterLabels;
   private final Button markAllReadButton = new Button();
   private final Button dismissReadButton = new Button(AppIcon.TRASH.create());
@@ -133,7 +132,7 @@ public class UserNotificationsPanel extends Div {
     inboxHeading.addClassName(PANEL_TITLE);
 
     configureReadFilter();
-    Div inboxToolbarDiv = new Div(readFilter, refreshInboxButton);
+    Div inboxToolbarDiv = new Div(readFilterTabs, refreshInboxButton);
     inboxToolbarDiv.addClassName("cosmos-notifications-actions");
     configureCommonActions();
 
@@ -161,31 +160,31 @@ public class UserNotificationsPanel extends Div {
   }
 
   private void configureReadFilter() {
-    readFilter.setId(compact ? "notifications-preview-filter" : "notifications-inbox-filter");
-    readFilter.setItems(List.of(ReadFilter.ALL, ReadFilter.UNREAD, ReadFilter.READ));
-    readFilter.setItemLabelGenerator(this::filterLabel);
-    readFilter.setRenderer(
-        new com.vaadin.flow.data.renderer.ComponentRenderer<>(filter -> {
-          Span filterLabelSpan = new Span(filterLabel(filter));
+    readFilterTabs.setId(compact ? "notifications-preview-filter" : "notifications-inbox-filter");
+    readFilterTabs.setItems(List.of(ReadFilter.ALL, ReadFilter.UNREAD, ReadFilter.READ));
+    readFilterTabs.setItemLabelGenerator(this::filterLabel);
+    readFilterTabs.setRenderer(
+        new com.vaadin.flow.data.renderer.ComponentRenderer<>(notificationReadFilter -> {
+          Span filterLabelSpan = new Span(filterLabel(notificationReadFilter));
           Badge filterCountBadge = new Badge();
           filterCountBadge.addClassName("portal-filter-count");
           filterCountBadge.getElement().setAttribute(ARIA_HIDDEN, "true");
-          long total = totalItems;
-          long unread = unreadIds.size();
+          long totalNotificationCount = totalItems;
+          long unreadNotificationCount = unreadIds.size();
           filterCountBadge.setText(
               Long.toString(
-                  switch (filter) {
-                    case ALL -> total;
-                    case UNREAD -> unread;
-                    case READ -> Math.max(0, total - unread);
+                  switch (notificationReadFilter) {
+                    case ALL -> totalNotificationCount;
+                    case UNREAD -> unreadNotificationCount;
+                    case READ -> Math.max(0, totalNotificationCount - unreadNotificationCount);
                   }));
 
           Div filterOptionDiv = new Div(filterLabelSpan, filterCountBadge);
           filterOptionDiv.addClassName("portal-read-filter-option");
           return filterOptionDiv;
         }));
-    readFilter.setValue(ReadFilter.ALL);
-    readFilter.addValueChangeListener(e -> {
+    readFilterTabs.setValue(ReadFilter.ALL);
+    readFilterTabs.addValueChangeListener(e -> {
       if (!updatingFilterLabels) {
         page = 0;
         refreshInbox();
@@ -248,7 +247,7 @@ public class UserNotificationsPanel extends Div {
     Div previewToolsDiv = new Div(refreshInboxButton, markAllReadButton);
     previewToolsDiv.addClassName("cosmos-notification-preview-tools");
     previewToolbarDiv.removeAll();
-    previewToolbarDiv.add(readFilter, previewToolsDiv);
+    previewToolbarDiv.add(readFilterTabs, previewToolsDiv);
     notificationRows.addClassName("cosmos-notification-preview-rows");
     previewHint.addClassName("cosmos-notification-preview-hint");
     previewHint.setVisible(false);
@@ -299,7 +298,7 @@ public class UserNotificationsPanel extends Div {
     markAllReadButton.addClassName(COSMOS_NOTIFICATION_INBOX_TOOL_CLASS);
     dismissReadButton.addClassName(COSMOS_NOTIFICATION_INBOX_TOOL_CLASS);
     inboxToolbarDiv.removeAll();
-    Div inboxControlsDiv = new Div(readFilter, inboxToolsDiv);
+    Div inboxControlsDiv = new Div(readFilterTabs, inboxToolsDiv);
     inboxControlsDiv.addClassName("cosmos-notification-inbox-controls");
     inboxToolbarDiv.add(inboxControlsDiv, notificationSearchField);
     inboxToolbarDiv.addClassName("cosmos-notification-inbox-toolbar");
@@ -362,13 +361,13 @@ public class UserNotificationsPanel extends Div {
     notificationSearchField.setPlaceholder(messageProperties.getNotificationsSearch());
     notificationSearchField.setAriaLabel(messageProperties.getNotificationsSearch());
     closeInboxButton.setAriaLabel(messageProperties.getNotificationsClose());
-    readFilter.setAriaLabel(messageProperties.getNotificationsFilter());
+    readFilterTabs.setAriaLabel(messageProperties.getNotificationsFilter());
 
     updatingFilterLabels = true;
     try {
-      ReadFilter selected = selectedFilter();
-      readFilter.getDataProvider().refreshAll();
-      readFilter.setValue(selected);
+      ReadFilter selectedReadFilter = selectedFilter();
+      readFilterTabs.refreshItems();
+      readFilterTabs.setValue(selectedReadFilter);
     } finally {
       updatingFilterLabels = false;
     }
@@ -410,7 +409,7 @@ public class UserNotificationsPanel extends Div {
   }
 
   private ReadFilter selectedFilter() {
-    return Objects.requireNonNullElse(readFilter.getValue(), ReadFilter.ALL);
+    return Objects.requireNonNullElse(readFilterTabs.getValue(), ReadFilter.ALL);
   }
 
   private String filterLabel(ReadFilter filter) {
@@ -502,8 +501,8 @@ public class UserNotificationsPanel extends Div {
     updatingFilterLabels = true;
     try {
       ReadFilter selectedReadFilter = selectedFilter();
-      readFilter.getDataProvider().refreshAll();
-      readFilter.setValue(selectedReadFilter);
+      readFilterTabs.refreshItems();
+      readFilterTabs.setValue(selectedReadFilter);
     } finally {
       updatingFilterLabels = false;
     }

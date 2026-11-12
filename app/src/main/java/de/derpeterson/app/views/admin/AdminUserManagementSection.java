@@ -35,7 +35,6 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -74,6 +73,7 @@ import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.CosmosSegmentedTabs;
 import de.derpeterson.app.ui.components.DetailsToggleButton;
 import de.derpeterson.app.ui.components.EmailVerificationBadge;
 import de.derpeterson.app.ui.components.OverlayUserIcon;
@@ -144,7 +144,8 @@ public class AdminUserManagementSection extends VerticalLayout {
   private final Grid<UserEntity> userGrid = new Grid<>(UserEntity.class, false);
 
   // Eingaben im Filterpanel
-  private final RadioButtonGroup<AdminUserFilters.Enabled> enabledFilter = new RadioButtonGroup<>();
+  private final CosmosSegmentedTabs<AdminUserFilters.Enabled> enabledFilterTabs =
+      new CosmosSegmentedTabs<>();
   private final CheckboxGroup<UserStatus> statusFilter = new CheckboxGroup<>();
   private final CheckboxGroup<RoleType> roleFilter = new CheckboxGroup<>();
   private final AdminUserActivityFilter lastActivityFilter;
@@ -256,7 +257,7 @@ public class AdminUserManagementSection extends VerticalLayout {
             refreshButton,
             addUserButton,
             new AdminUserFilterBar.FilterControls(
-                enabledFilter, statusFilter, roleFilter, lastActivityFilter),
+                enabledFilterTabs, statusFilter, roleFilter, lastActivityFilter),
             this::applyFilterInputs);
 
     Div paginationFooterDiv = new Div(userTablePagination);
@@ -317,9 +318,9 @@ public class AdminUserManagementSection extends VerticalLayout {
 
     refreshButton.setTooltipText(messageProperties.getAdminUsersRefreshTooltip());
     refreshButton.setAriaLabel(messageProperties.getAdminUsersRefreshTooltip());
-    enabledFilter.setLabel(messageProperties.getAdminUsersGridEnabled());
+    enabledFilterTabs.setLabel(messageProperties.getAdminUsersGridEnabled());
 
-    enabledFilter.setItemLabelGenerator(enabled ->
+    enabledFilterTabs.setItemLabelGenerator(enabled ->
         switch (enabled) {
           case ALL -> messageProperties.getAdminUsersFilterAll();
           case YES -> messageProperties.getAdminUsersYes();
@@ -493,9 +494,9 @@ public class AdminUserManagementSection extends VerticalLayout {
   }
 
   private void configureFilters() {
-    enabledFilter.setItems(AdminUserFilters.Enabled.values());
-    enabledFilter.setValue(AdminUserFilters.Enabled.ALL);
-    enabledFilter.addClassName("admin-filter-enabled");
+    enabledFilterTabs.setItems(AdminUserFilters.Enabled.values());
+    enabledFilterTabs.setValue(AdminUserFilters.Enabled.ALL);
+    enabledFilterTabs.addClassName("admin-filter-enabled");
     statusFilter.setItems(UserStatus.values());
     roleFilter.setItems(RoleType.values());
     statusFilter.addClassName("admin-filter-choices");
@@ -559,7 +560,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     appliedFilters =
         new AdminUserFilters(
             searchField.getValue(),
-            enabledFilter.getValue().value(),
+            enabledFilterTabs.getValue().value(),
             statusFilter.getValue(),
             roleFilter.getValue(),
             UserActivityTime.inclusiveCutoff(lastActivityFilter.getValue()));

@@ -342,6 +342,15 @@ public final class MailpitInbox {
   private void assertMailAtBothWidths(Page mailPage, String screenshotName) {
     for (int viewportWidth : new int[] {1280, 390}) {
       mailPage.setViewportSize(viewportWidth, 900);
+      for (Locator linkFrameLocator : mailPage.locator(".cosmos-email-copy-link > div").all()) {
+        assertThat(linkFrameLocator).hasCSS("border-top-color", "rgb(44, 55, 81)");
+        assertThat(linkFrameLocator).hasCSS("border-top-width", "1px");
+        assertThat(linkFrameLocator).hasCSS("background-color", "rgb(9, 17, 32)");
+        assertTrue(
+            Boolean.TRUE.equals(
+                linkFrameLocator.evaluate(
+                    "element => element.scrollWidth <= element.clientWidth + 1")));
+      }
       assertTrue(
           Boolean.TRUE.equals(
               mailPage.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")),

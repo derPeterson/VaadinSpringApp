@@ -18,6 +18,7 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
 import de.derpeterson.browsertests.pages.UiActions;
@@ -42,6 +43,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 public class VerificationBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @Tag("breadcrumbs")
+  @Tag("component-follow-up")
   @ValueSource(ints = {1280, 390})
   @DisplayName("Verifikations- und Reaktivierungspfade bleiben ohne Navigationslinks")
   void verificationAndReactivationBreadcrumbsStayUnlinked(int viewportWidth) {
@@ -55,6 +57,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
     assertPendingVerificationPage(emailAddress);
     assertUnlinkedPortalBreadcrumb(browserPage);
+    CosmosFollowUpChecks.assertPendingAccountStyle(browserPage, uiTexts);
     AllurePlaywright.attachScreenshot("Verifikationspfad " + viewportWidth, browserPage);
 
     try (Page activatedPage = mailpitInbox.openVerificationLink(verificationMail)) {
@@ -74,6 +77,7 @@ public class VerificationBrowserTest extends BrowserFixture {
     loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
     assertThat(browserPage.locator("#pending-reactivation-email")).hasText(emailAddress);
     assertUnlinkedPortalBreadcrumb(browserPage);
+    CosmosFollowUpChecks.assertPendingAccountStyle(browserPage, uiTexts);
     AllurePlaywright.attachScreenshot("Reaktivierungspfad " + viewportWidth, browserPage);
     browserPage.navigate("/account?section=profile");
     assertThat(browserPage.locator("#pending-reactivation-email")).hasText(emailAddress);
@@ -81,11 +85,78 @@ public class VerificationBrowserTest extends BrowserFixture {
 
     MailpitInbox.CapturedMail deactivationMail =
         mailpitInbox.awaitSecurityMail(emailAddress, uiTexts.getAccountDeactivatedMailSubject());
+    assertAdminBlockPreservesSelfDeactivation(emailAddress, deactivationMail, viewportWidth);
+    loginPage.open();
+    loginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+    assertThat(browserPage.locator("#pending-reactivation-email")).hasText(emailAddress);
+
     try (Page reactivationPage = mailpitInbox.openAccountReactivationAction(deactivationMail)) {
       reactivationPage.setViewportSize(viewportWidth, 900);
       assertUnlinkedPortalBreadcrumb(reactivationPage);
       AllurePlaywright.attachScreenshot(
           "Reaktivierungslinkpfad " + viewportWidth, reactivationPage);
+    }
+  }
+
+  private void assertAdminBlockPreservesSelfDeactivation(
+      String emailAddress, MailpitInbox.CapturedMail deactivationMail, int viewportWidth) {
+    try (BrowserActor administratorActor = new BrowserActor(testBrowser)) {
+      administratorActor.browserPage.setViewportSize(viewportWidth, 1000);
+      AdminUsersPage adminUsersPage =
+          administratorActor.loginAdmin(
+              BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+      AdminUserDialog editUserDialog = adminUsersPage.openEdit(emailAddress);
+      Locator signInDetailsLocator = editUserDialog.root().locator("#admin-user-sign-in-details");
+      assertThat(signInDetailsLocator).not().hasAttribute("opened", "");
+      assertThat(editUserDialog.administrativeBlockCheckbox()).not().isChecked();
+      CosmosFollowUpChecks.assertDetailsWithoutHover(
+          editUserDialog.root().locator("#admin-user-sign-in-toggle"));
+      editUserDialog.openSignInDetails();
+      Locator deactivationWarningLocator =
+          editUserDialog.root().locator("#admin-user-self-deactivation-warning");
+      assertThat(deactivationWarningLocator).isVisible();
+      assertThat(editUserDialog.root().locator(".admin-user-lifecycle-status"))
+          .hasCSS("border-top-width", "1px");
+      assertThat(deactivationWarningLocator).hasCSS("border-inline-start-width", "4px");
+      assertThat(deactivationWarningLocator.locator("#admin-user-self-deactivation"))
+          .hasText(uiTexts.getAdminUserSelfDeactivated() + ": ");
+      assertThat(deactivationWarningLocator.locator("#admin-user-self-deactivation"))
+          .hasCSS("font-weight", "700");
+      String deletionDeadlineText =
+          editUserDialog.root().locator("#admin-user-deletion-deadline").innerText();
+      org.junit.jupiter.api.Assertions.assertTrue(deletionDeadlineText.endsWith(" UTC"));
+      org.junit.jupiter.api.Assertions.assertFalse(deletionDeadlineText.contains("\uFFFD"));
+      AllurePlaywright.attachScreenshot(
+          "Selbstdeaktivierung im Benutzereditor", administratorActor.browserPage);
+
+      editUserDialog.firstName().fill("Updated account");
+      editUserDialog.save();
+      editUserDialog = adminUsersPage.openEdit(emailAddress);
+      editUserDialog.openSignInDetails();
+      assertThat(editUserDialog.root().locator("#admin-user-deletion-deadline"))
+          .hasText(deletionDeadlineText);
+      editUserDialog.setEnabled(false);
+      editUserDialog.save();
+
+      LoginPage blockedLoginPage = new LoginPage(browserPage);
+      blockedLoginPage.open();
+      blockedLoginPage.signInFirstFactor(emailAddress, BrowserTestAccounts.USER_PASSWORD);
+      blockedLoginPage.assertRejected();
+      try (Page blockedReactivationPage =
+          new MailpitInbox(browserContext).openAccountReactivationAction(deactivationMail)) {
+        blockedReactivationPage.locator("#account-reactivation-submit").click();
+        assertThat(blockedReactivationPage.getByText(uiTexts.getAccountReactivateInvalid()))
+            .isVisible();
+      }
+
+      editUserDialog = adminUsersPage.openEdit(emailAddress);
+      editUserDialog.setEnabled(true);
+      editUserDialog.save();
+      editUserDialog = adminUsersPage.openEdit(emailAddress);
+      editUserDialog.openSignInDetails();
+      assertThat(editUserDialog.root().locator("#admin-user-deletion-deadline"))
+          .hasText(deletionDeadlineText);
+      editUserDialog.cancel();
     }
   }
 
@@ -203,6 +274,7 @@ public class VerificationBrowserTest extends BrowserFixture {
   @DisplayName(
       "VER-04: Normale administrative Anlage erfordert Bestätigung und bewahrt Mailaktionsentwürfe")
   @Tag("form-details")
+  @Tag("component-follow-up")
   void administrativeCreationRequiresMailProof(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
     LoginPage loginPage = new LoginPage(browserPage);
@@ -220,7 +292,12 @@ public class VerificationBrowserTest extends BrowserFixture {
     new MailpitInbox(browserContext).awaitVerificationMail(emailAddress);
 
     AdminUserDialog editUserDialog = adminUsersPage.openEdit(emailAddress);
+    CosmosFollowUpChecks.assertDetailsWithoutHover(
+        editUserDialog.root().locator("#admin-user-sign-in-toggle"));
     editUserDialog.openSignInDetails();
+    editUserDialog =
+        inspectAccountTypeInBothLanguagesAndReopenEditor(
+            adminUsersPage, editUserDialog, emailAddress, false);
     assertThat(editUserDialog.root().locator("#admin-user-registered-via"))
         .hasText(uiTexts.getRegistrationAdministration());
     assertThat(editUserDialog.root().locator("#email-verification-status"))
@@ -329,6 +406,7 @@ public class VerificationBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @DisplayName("Entwicklungskonten sind ausdrücklich gekennzeichnet und senden keine Kontomails")
+  @Tag("component-follow-up")
   void developmentAccountIsExplicitAndDoesNotSendAccountMail(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
     LoginPage loginPage = new LoginPage(browserPage);
@@ -358,6 +436,9 @@ public class VerificationBrowserTest extends BrowserFixture {
 
     AdminUserDialog editUserDialog = adminUsersPage.openEdit(developmentEmail);
     editUserDialog.openSignInDetails();
+    editUserDialog =
+        inspectAccountTypeInBothLanguagesAndReopenEditor(
+            adminUsersPage, editUserDialog, developmentEmail, true);
     assertThat(editUserDialog.root().locator("#admin-user-account-type"))
         .hasText(uiTexts.getDevelopmentAccountLabel());
     assertThat(editUserDialog.root().locator("#admin-resend-verification-mail")).isDisabled();
@@ -379,6 +460,32 @@ public class VerificationBrowserTest extends BrowserFixture {
     assertThat(browserPage.getByText(uiTexts.getAccountDeletedSuccess())).isVisible();
     assertThat(browserPage.getByText(uiTexts.getAccountLifecycleMailQueued())).hasCount(0);
     new MailpitInbox(browserContext).assertNoMailFor(developmentEmail);
+  }
+
+  private AdminUserDialog inspectAccountTypeInBothLanguagesAndReopenEditor(
+      AdminUsersPage adminUsersPage,
+      AdminUserDialog editUserDialog,
+      String emailAddress,
+      boolean developmentAccountExpected) {
+    CosmosFollowUpChecks.assertAccountType(
+        editUserDialog.root(), uiTexts, developmentAccountExpected);
+    assertThat(editUserDialog.root().locator(".admin-user-lifecycle-status:visible")).hasCount(0);
+    editUserDialog.cancel();
+
+    UiTexts alternateUiTexts = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
+    new UserMenu(browserPage).selectLanguage(alternateUiTexts.language());
+    AdminUserDialog translatedUserDialog =
+        new AdminUsersPage(browserPage, alternateUiTexts).openEdit(emailAddress);
+    translatedUserDialog.openSignInDetails();
+    CosmosFollowUpChecks.assertAccountType(
+        translatedUserDialog.root(), alternateUiTexts, developmentAccountExpected);
+    AllurePlaywright.attachScreenshot("Kontotyp nach Sprachwechsel", browserPage);
+    translatedUserDialog.cancel();
+    new UserMenu(browserPage).selectTestLanguage();
+
+    AdminUserDialog reopenedUserDialog = adminUsersPage.openEdit(emailAddress);
+    reopenedUserDialog.openSignInDetails();
+    return reopenedUserDialog;
   }
 
   private void assertPendingVerificationPage(String emailAddress) {

@@ -211,8 +211,8 @@ erste Zeilenhöhe an. Bei reinem Fließtext ohne solche Einleitung bleibt das
 Icon mit `Alignment.CENTER` zur gesamten Texthöhe vertikal zentriert. Das gilt
 auch für Hinweise in Bestätigungen. Tooltip- und Notification-Gestaltung bleiben
 unverändert.
-Die Auswahl „Initialen / Eigenes Bild“ bleibt eine native Radiogruppe, deren
-Label die ganze Auswahlfläche abdeckt. Der native Vaadin-Upload unterstützt
+Die Auswahl „Initialen / Eigenes Bild“ verwendet `CosmosSegmentedTabs` mit nativen
+Tabs. Der native Vaadin-Upload unterstützt
 Dateiauswahl und Drag-and-drop im selben Bereich mit derselben Validierung.
 Zwischen Modusauswahl, Profilbildvorschau und Uploadbereich liegen jeweils 24 px.
 Beim Speichern ist auch das Ablegen gesperrt.
@@ -1167,7 +1167,7 @@ Die gemeinsame Gestaltung steht in `cosmos-duration-field.css`, importiert durch
 `cosmos-theme.css`. Sie hängt an `cosmos-duration-field` und benötigt keinen
 Admin-Seitencontainer. Die Zahlenfläche bleibt 40 px hoch. `cosmos-duration-unit-select`
 verwendet ohne eigene Außenbox den vorhandenen Suffix, eine eigene zugängliche
-Beschriftung „Einheit“. Der Einheitenbereich ist 100 px breit und 28 px hoch,
+Beschriftung „Einheit“. Der Einheitenbereich ist 104 px breit und 28 px hoch,
 die mittig ausgerichtete Trennlinie 18 px hoch. Bei Fokus auf der Einheit wird
 die gemeinsame Zahlenfläche markiert; ein zweiter innerer Fokusrahmen entfällt.
 Die innere Auswahl hat nur ihre ARIA-Beschriftung. Ihr leerer `label`-Part bleibt
@@ -1437,6 +1437,28 @@ DE „Deutsch/Englisch“, EN „German/English“. Die gespeicherte Locale blei
 Beim Sprachwechsel wird auch der native Beschriftungsgeber neu gesetzt, damit
 Vaadin den bereits ausgewählten Feldwert ebenso aktualisiert wie die Auswahlliste.
 
+## Segmentierte Auswahl mit nativen Tabs
+
+`CosmosSegmentedTabs<T>` verbindet einen typisierten Vaadin-`CustomField` mit nativen
+`Tabs` und `Tab`. Profilbildmodus, Benachrichtigungsfilter in Inbox/Glockenvorschau,
+Nachrichtenfilter im Ticketsystem und Zugangsfilter der Benutzerverwaltung verwenden
+diesen Baustein. Icons und Zähler bleiben native Komponenten in den Tablabels.
+Beschriftungs- und Zähleraktualisierungen erhalten Wert und Tabinstanz, damit weder
+ein Filterwechsel ausgelöst noch der Tastaturfokus entfernt wird.
+
+Die gemeinsame Gestaltung `.cosmos-segmented-tabs` liegt in
+`cosmos-segmented-tabs.css` und verwendet die vorhandenen Cosmos-Tokens. Sie übernimmt
+den OTP-Stil mit einer Außenhöhe von 42 px und einem gerahmten ausgewählten Segment.
+Die Glockenvorschau behält ihre kompakte Höhe von 36 px. `.cosmos-segmented-field`
+gestaltet ausschließlich die native Feldhülle und ihr gegebenenfalls vorhandenes Label.
+Die bereits nativen App-Code-/Ersatzcode-, QR-Code-/Schlüssel- und
+Antwort-/Vermerk-Umschalter verwenden dieselbe gemeinsame Gestaltung.
+
+Normale Seitenreiter bleiben davon getrennt: die Kontosicherheits-TabSheet,
+Anmeldeanbieter- und 2FA-Rollen-TabSheets sowie die Ticketkategorien behalten ihren
+bisherigen Reiterstil. Gewöhnliche Radioauswahl wie die Ticketzuständigkeit bleibt
+eine RadioButtonGroup.
+
 ## Zwei-Faktor-Bereiche
 
 Die gemeinsame Klasse `cosmos-panel-tabs` (`CosmosCssClasses.PANEL_TABS`) gestaltet
@@ -1652,7 +1674,7 @@ Werkzeugleiste mit dem vorhandenen Aktualisieren-Button rechts, vor dem ersten E
 Links öffnet ein nativer Filterbutton den bestehenden `AdminSidePanelDialog`-Baustein.
 `SupportTicketFilterPanel` übernimmt die vorhandenen Klassen des Benutzerfilters:
 `admin-user-filter-drawer`, `admin-filter-tools`, `admin-user-filters` und
-`admin-filter-choices`. Oben steht die native `RadioButtonGroup` „Alle / Ungelesen“.
+`admin-filter-choices`. Oben steht `CosmosSegmentedTabs` mit nativen Tabs für „Alle / Ungelesen“.
 Darunter zeigen native Checkboxen die Statusmehrfachwahl in zwei Spalten. Bei
 Auswahl übernehmen Rahmen, Fläche und Haken die Farben des jeweiligen Ticket-Badges.
 Die Zuständigkeit unterscheidet alle, eigene und nicht zugewiesene Vorgänge.
@@ -1923,7 +1945,7 @@ Die druckbare PDF verwendet eine eigene Classpath-HTML-/CSS-
 Vorlage unter `pdf/`, das vorhandene Service-Logo und einen hellen Druckhintergrund.
 
 Die administrative Ticketbearbeitung verwendet für die Editorumschaltung native
-`Tabs` mit der vorhandenen Gestaltung `.two-factor-method-tabs`. Die lokalen
+`Tabs` mit der vorhandenen Gestaltung `.cosmos-segmented-tabs`. Die lokalen
 Ergänzungen in `cosmos-mfa-confirmation.css` kennzeichnen interne
 Vermerke und deren Editor mit der gemeinsamen Systempalette (`.support-internal-message`,
 `.support-admin-internal`). Im internen Modus verwendet die Speicheraktion die

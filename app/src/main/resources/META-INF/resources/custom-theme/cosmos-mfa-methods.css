@@ -1,12 +1,5 @@
 /* Native Tabs mit normalem Seiteninhalt. */
 .two-factor-methods { min-width:0; align-self:stretch; display:flex; flex-direction:column; }
-.two-factor-method-tabs { box-sizing:border-box; flex:none; min-width:0; height:42px; min-height:42px; margin:0; padding:0; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-input); box-shadow:none; --vaadin-tabs-border-width:0px; }
-.two-factor-method-tabs::part(tabs) { box-sizing:border-box; width:100%; height:100%; margin:0; padding:3px; gap:0; }
-.two-factor-method-tabs vaadin-tab { box-sizing:border-box; flex:1 1 0; min-width:0; min-height:34px; margin:0; padding:6px 2px; gap:4px; white-space:nowrap; border:1px solid transparent; border-radius:6px; color:var(--cosmos-reference-secondary); font:500 12px/18px Inter,sans-serif; text-align:center; justify-content:center;  }
-.two-factor-method-tabs vaadin-tab vaadin-icon { width:16px; height:16px; flex:none; color:inherit; }
-.two-factor-method-tabs vaadin-tab[selected] { color:var(--cosmos-reference-text); font-weight:600; background:var(--cosmos-reference-selection); border-color:var(--cosmos-reference-primary); }
-.two-factor-method-tabs vaadin-tab[selected] vaadin-icon { color:var(--cosmos-reference-accent); }
-.two-factor-method-tabs vaadin-tab::before,.two-factor-method-tabs vaadin-tab::after { display:none; }
 .two-factor-methods .two-factor-qr-content { box-sizing:border-box; flex:1; min-height:272px; flex-direction:column; align-items:center; justify-content:center; gap:16px; padding:16px 0; }
 .two-factor-qr-hint { width:100%; text-align:center; }
 .two-factor-manual-hint { box-sizing:border-box; width:100%; text-align:center; }

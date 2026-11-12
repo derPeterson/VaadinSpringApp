@@ -20,6 +20,7 @@ import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationInboxPage;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
@@ -1760,7 +1761,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   }
 
   private void assertEnrollmentControls(Page enrollment) {
-    assertThat(enrollment.locator(".two-factor-method-tabs")).hasCSS("height", "42px");
+    assertThat(enrollment.locator(".cosmos-segmented-tabs")).hasCSS("height", "42px");
     assertThat(enrollment.locator(".two-factor-app-links a")).hasCount(3);
     assertThat(enrollment.locator(".two-factor-app-compatibility"))
         .hasText(uiTexts.getTwoFactorAppCompatibility());
@@ -2229,6 +2230,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       "MFA-07: Admin übernimmt eine eingeschränkte Hilfsanfrage und sendet die geprüfte Anleitung")
   @Tag("recovery-instructions")
   @Tag("follow-up-regression")
+  @Tag("component-follow-up")
   void recoverySupportRemainsContactInsteadOfFactorReset(int width) {
     browserPage.setViewportSize(width, 900);
     LoginPage login = new LoginPage(browserPage);
@@ -2398,6 +2400,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     assertThat(guide.locator(".support-instruction-details")).not().hasAttribute("opened", "");
     guide.evaluate("element => element.scrollIntoView({block: 'nearest'})");
     AllurePlaywright.attachScreenshot("Anleitung kompakt im Nachrichtenverlauf", browserPage);
+    CosmosFollowUpChecks.assertDetailsWithoutHover(guide.locator(".support-instruction-toggle"));
     UiActions.complete(browserPage, () -> guide.locator(".support-instruction-toggle").click());
 
     assertThat(guide.locator(".support-instruction-details")).hasAttribute("opened", "");
@@ -2697,7 +2700,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     BoundingBox headerBounds = header.boundingBox();
 
     assertTrue(close.boundingBox().x > headerBounds.x + headerBounds.width / 2);
-    assertThat(dialog.locator(".two-factor-method-tabs")).hasCSS("height", "42px");
+    assertThat(dialog.locator(".cosmos-segmented-tabs")).hasCSS("height", "42px");
     UiActions.complete(
         browserPage, browserPage.locator("#two-factor-action-recovery-code-tab")::click);
 
@@ -2927,6 +2930,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @Tag("confirmation-screens")
   @Tag("follow-up-regression")
   @DisplayName("MFA-18: Codebestätigung, geschützter Faktorwechsel und Hilfe folgen Variante A")
+  @Tag("component-follow-up")
   void confirmationRecoveryAndHelpUseNativeControls(int width) {
     browserPage.setViewportSize(width, 900);
     LoginPage login = new LoginPage(browserPage);
@@ -3001,6 +3005,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   }
 
   private void assertNativeConfirmationFields(UiTexts other) {
+    CosmosFollowUpChecks.assertDetailsWithoutHover(
+        browserPage.locator("#two-factor-login-help-toggle"));
     assertThat(browserPage.locator("#two-factor-code")).hasJSProperty("length", 6);
     assertThat(browserPage.locator("#two-factor-code [part=slot]")).hasCount(6);
     browserPage.locator("#two-factor-code input").fill("12345");

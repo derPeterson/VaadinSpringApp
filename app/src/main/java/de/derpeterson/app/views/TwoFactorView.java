@@ -549,7 +549,7 @@ public final class TwoFactorView extends VerticalLayout
 
     Tabs loginMethodTabs = new Tabs(authenticatorCodeTab, recoveryCodeTab);
     loginMethodTabs.setWidthFull();
-    loginMethodTabs.addClassName("two-factor-method-tabs");
+    loginMethodTabs.addClassName("cosmos-segmented-tabs");
     loginMethodTabs.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
     loginMethodTabs.setSelectedTab(
         isRecoveryCodeLoginSelected ? recoveryCodeTab : authenticatorCodeTab);
@@ -861,7 +861,7 @@ public final class TwoFactorView extends VerticalLayout
 
     Tabs setupMethodTabs = new Tabs(qrSetupTab, manualKeyTab);
     setupMethodTabs.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
-    setupMethodTabs.addClassName("two-factor-method-tabs");
+    setupMethodTabs.addClassName("cosmos-segmented-tabs");
     setupMethodTabs.setWidthFull();
     setupMethodTabs.setSelectedTab(isManualSetupTabSelected ? manualKeyTab : qrSetupTab);
     setupMethodTabs.addSelectedChangeListener(setupMethodChangeEvent -> {

@@ -71,15 +71,11 @@ public final class NotificationInboxPage {
 
   @Step("Nativen Alle-/Gelesen-/Ungelesen-Filter bedienen")
   public void filter(Locator root, String label) {
-    // Das sichtbare native Label bleibt klickbar, während das Segment den Radiokreis ausblendet.
-    root.locator("vaadin-radio-button")
-        .getByText(label, new Locator.GetByTextOptions().setExact(true))
-        .click();
+    Locator filterTabLocator =
+        root.getByRole(AriaRole.TAB, new Locator.GetByRoleOptions().setName(label).setExact(true));
+    UiActions.complete(browserPage, filterTabLocator::click);
 
-    assertThat(
-            root.getByRole(
-                AriaRole.RADIO, new Locator.GetByRoleOptions().setName(label).setExact(true)))
-        .isChecked();
+    assertThat(filterTabLocator).hasAttribute("aria-selected", "true");
   }
 
   @Step("Nach Betreff suchen und die tatsächliche Wertänderung abwarten")

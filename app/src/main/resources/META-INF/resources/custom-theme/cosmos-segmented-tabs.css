@@ -1,0 +1,22 @@
+/* Gemeinsamer OTP-Stil für native segmentierte Tabs; Seitenreiter bleiben unverändert. */
+.cosmos-segmented-tabs { box-sizing:border-box; flex:none; min-width:0; height:var(--cosmos-segment-height,42px); min-height:var(--cosmos-segment-height,42px); margin:0; padding:0; border:1px solid var(--cosmos-reference-border); border-radius:var(--cosmos-control-radius); background:var(--cosmos-reference-input); box-shadow:none; --vaadin-tabs-border-width:0px; }
+.cosmos-segmented-tabs::part(tabs) { box-sizing:border-box; width:100%; height:100%; margin:0; padding:3px; gap:0; }
+.cosmos-segmented-tabs vaadin-tab { box-sizing:border-box; flex:1 1 0; min-width:0; min-height:calc(var(--cosmos-segment-height,42px) - 8px); margin:0; padding:6px 2px; gap:4px; white-space:nowrap; border:1px solid transparent; border-radius:6px; color:var(--cosmos-reference-secondary); font:500 12px/18px Inter,sans-serif; text-align:center; justify-content:center;  }
+.cosmos-segmented-tabs vaadin-tab vaadin-icon { width:16px; height:16px; flex:none; color:inherit; }
+.cosmos-segmented-tabs vaadin-tab[selected] { color:var(--cosmos-reference-text); font-weight:600; background:var(--cosmos-reference-selection); border-color:var(--cosmos-reference-primary); }
+.cosmos-segmented-tabs vaadin-tab[selected] vaadin-icon { color:var(--cosmos-reference-accent); }
+.cosmos-segmented-tabs vaadin-tab::before,.cosmos-segmented-tabs vaadin-tab::after { display:none; }
+
+/* Native CustomField-Hülle liefert den typisierten Wert und bei Filtern das Feldlabel. */
+.cosmos-segmented-field { min-width:0; padding:0; margin:0; }
+.cosmos-segmented-field:not([has-label])::part(label) { display:none; margin:0; padding:0; }
+.cosmos-segmented-field::part(input-fields) { width:100%; min-width:0; gap:0; padding:0; }
+.cosmos-segmented-field::part(label) { margin:0 0 6px; padding:0; color:var(--cosmos-reference-label); font:500 12px/18px Inter,sans-serif; }
+.cosmos-segmented-tabs vaadin-tab { cursor:pointer; }
+.cosmos-segmented-tabs vaadin-tab > * { cursor:inherit; }
+.cosmos-segmented-tabs vaadin-tab:hover:not([selected], [disabled]) { background:var(--cosmos-hover-background); }
+.cosmos-segmented-tabs vaadin-tab[focus-ring] { outline:var(--cosmos-focus-ring-width) solid var(--cosmos-focus-ring-color); outline-offset:-2px; }
+.cosmos-segmented-tabs vaadin-tab[disabled] { opacity:.5; cursor:default; }
+
+#notifications-preview-filter { --cosmos-segment-height:36px; }
+#notifications-preview-filter vaadin-tab { padding-block:3px; font-size:11px; }

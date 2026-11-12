@@ -121,11 +121,6 @@ vaadin-app-layout.cosmos-reference-admin .portal-pagination-size input { font:60
 .admin-reference-drawer :is(vaadin-radio-group,vaadin-checkbox-group)::part(label) { font:500 12px/16px Inter,sans-serif; color:var(--cosmos-reference-label); margin-bottom:8px; padding:0; }
 .admin-reference-drawer .admin-filter-tools { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:24px; }
 .admin-reference-drawer .admin-user-active-filter-count { padding:8px 10px; color:var(--cosmos-reference-accent); background:var(--cosmos-reference-selection); border:1px solid var(--cosmos-reference-icon-border); border-radius:5px; font:500 11px/16px Inter,sans-serif; }
-.admin-reference-drawer .admin-filter-enabled::part(group-field) { display:flex; padding:3px; border:1px solid var(--cosmos-reference-border); border-radius:8px; background:var(--cosmos-reference-input); }
-.admin-reference-drawer .admin-filter-enabled vaadin-radio-button { flex:1; margin:0; }
-.admin-reference-drawer .admin-filter-enabled vaadin-radio-button::part(radio) { display:none; }
-.admin-reference-drawer .admin-filter-enabled vaadin-radio-button>label[slot=label] { display:flex; align-items:center; justify-content:center; padding:6px; margin:0; border:1px solid transparent; border-radius:5px; font:500 11px/16px Inter,sans-serif; }
-.admin-reference-drawer .admin-filter-enabled vaadin-radio-button[checked]>label[slot=label] { color:var(--cosmos-reference-accent); border-color:var(--cosmos-reference-icon-border); background:var(--cosmos-reference-selection); }
 .admin-reference-drawer .admin-filter-choices::part(group-field) { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; }
 .admin-reference-drawer .admin-filter-choices vaadin-checkbox { margin:0; padding:8px 10px; border:1px solid var(--cosmos-reference-control-border); border-radius:9px; background:var(--cosmos-reference-input); }
 .admin-reference-drawer .admin-filter-choices vaadin-checkbox::part(checkbox) { display:none; }
@@ -155,9 +150,6 @@ vaadin-dialog.cosmos-reference-overlay.admin-reference-drawer.admin-user-filter-
 .admin-reference-drawer.admin-user-filter-drawer input[slot=input] { font:400 13px/20px Inter,sans-serif; }
 .admin-reference-drawer.admin-user-filter-drawer vaadin-text-field vaadin-icon { width:14px; height:14px; }
 .admin-reference-drawer.admin-user-filter-drawer vaadin-text-field>[slot=prefix] { margin-inline-end:8px; flex-shrink:0; }
-.admin-reference-drawer.admin-user-filter-drawer .admin-filter-enabled::part(group-field) { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; border-radius:9px; }
-.admin-reference-drawer.admin-user-filter-drawer .admin-filter-enabled vaadin-radio-button { min-width:0; margin:0; padding:0; }
-.admin-reference-drawer.admin-user-filter-drawer .admin-filter-enabled vaadin-radio-button>label[slot=label] { box-sizing:border-box; min-height:30px; padding:5px 6px; border-radius:6px; font:500 11px/18px Inter,sans-serif; }
 .admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices::part(group-field) { gap:8px; }
 .admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox { --filter-choice-color:var(--cosmos-reference-accent); --filter-choice-border:#38bdf866; --filter-choice-background:var(--cosmos-reference-selection); position:relative; box-sizing:border-box; width:100%; min-width:0; height:38px; min-height:38px; margin:0; padding:8px 10px; border-radius:9px; cursor:pointer; }
 .admin-reference-drawer.admin-user-filter-drawer .admin-filter-choices vaadin-checkbox:has([data-status=available]) { --filter-choice-color:var(--cosmos-reference-success); --filter-choice-border:#34d39966; --filter-choice-background:#34d39914; }

@@ -42,6 +42,8 @@ class BrowserExecutionPlanTest {
         "two-factor-ticket-panel",
         "cosmos-scrollbars",
         "duration-field",
+        "segmented-selection",
+        "component-follow-up",
         "breadcrumbs",
         "form-details",
         "email-verification",
@@ -84,6 +86,29 @@ class BrowserExecutionPlanTest {
               Set.of(
                   "pageBreadcrumbsFollowHierarchyAndKeepSecurityFlowsLocked",
                   "verificationAndReactivationBreadcrumbsStayUnlinked");
+          case "segmented-selection" -> Set.of("segmentSelectorsPreserveTheirSurroundingViews");
+          case "component-follow-up" ->
+              Set.of(
+                  "durationUnitIsCenteredInsideNumericField",
+                  "durationVariantsKeepKeyboardAndValidationContracts",
+                  "headerActionsAndReadFiltersUsePointerWithoutProfileHover",
+                  "verificationAndReactivationBreadcrumbsStayUnlinked",
+                  "administrativeCreationRequiresMailProof",
+                  "developmentAccountIsExplicitAndDoesNotSendAccountMail",
+                  "accountRetentionUsesFixedDaysAndIsRestrictedToSuperadmins",
+                  "remainingDurationFieldsPersistWithoutExposingTheCalculationBelowTheInput",
+                  "accountDeletionRejectsWrongPasswordAndSendsConfirmation",
+                  "enrolledAccountCanBeDeletedWithARecoveryCode",
+                  "securityCardsAndLifecycleProofRemainConsistent",
+                  "composeValidationAndReviewAtBothWidths",
+                  "confirmationRecoveryAndHelpUseNativeControls",
+                  "recoverySupportRemainsContactInsteadOfFactorReset",
+                  "previewInboxFiltersAndDismissalAtBothWidths",
+                  "paginationPreviewLimitAndSentArchive",
+                  "everyActionTemplateKeepsItsFullCopyableUrlInsideTheCosmosFrame",
+                  "informationalTemplatesDoNotContainAnEmptyActionFrame",
+                  "combineAndClearTypedFilters",
+                  "languageChangesRetainSelectedFilterAndSearch");
           case "duration-field" -> Set.of("durationUnitIsCenteredInsideNumericField");
           case "cosmos-scrollbars" ->
               Set.of("globalScrollbarsPreserveNativeScrollingAndLocalChatSpacing");

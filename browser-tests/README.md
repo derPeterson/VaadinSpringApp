@@ -119,6 +119,8 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `remaining-coverage` | Remember-me/Status sowie weitere Konfiguration/Mailabläufe gemeinsam | 27 |
 | `login-layout` | Login bei fünf Fenstergrößen, reale Fehler-/Erfolgsanmeldung und reduzierte Bewegung | 6 |
 | `login-checks` | Loginlayout, bestehende Anmeldung/Zugriff, Präsentation/Tastatur und Remember-me gemeinsam | 22 |
+| `segmented-selection` | Profilbild, Inbox/Glockenvorschau und Benutzer-/Ticketfilter: native Tabs, Tastatur, Auswahl und Screenshots bei 1280/390 px | 1 |
+| `component-follow-up` | Gezielte Nachtests für Zeitfelder, Details-Schalter, Kontoaktionen/-typ, Sperre/Selbstdeaktivierung, Verifikations-/Reaktivierungsdarstellung und E-Mail-Linkrahmen; kanonische Mailvorlagen werden ergänzend separat von tatsächlichen Mailpit-Journeys dargestellt | 3 |
 | `cosmos-design` | Kontoansichten, mobiler Mailablauf, Copyright, Theme, Navigation, Infoicon-Ausrichtung und gemeinsamer Seitenrahmen mit Feldhilfe/Benutzerfilter bei breitem Desktop, Desktop und Smartphone | 16 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |

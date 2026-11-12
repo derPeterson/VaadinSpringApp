@@ -320,12 +320,15 @@ class VerificationQueueConcurrencyTest {
   }
 
   @Test
-  void adminGrantThenDisableCannotBeUndoneByAnOldUnusedLinkOrStaleResendUser() throws IOException {
+  void adminUnblockingKeepsMailProofPendingAndBlockingRejectsOldLinks() throws IOException {
     UserEntity stale = snapshot();
-    editEnabled(true);
+    editAdministrativeBlock(false);
 
-    assertFalse(snapshot().isVerificationPending());
-    editEnabled(false);
+    assertTrue(snapshot().isVerificationPending());
+    assertFalse(snapshot().isAdministrativelyBlocked());
+    editAdministrativeBlock(true);
+    assertTrue(snapshot().isAdministrativelyBlocked());
+    assertFalse(snapshot().requiresEmailVerification());
 
     assertFalse(verification.validateToken("old"));
     assertFalse(verification.sendVerificationEmailByToken("old"));
@@ -333,7 +336,7 @@ class VerificationQueueConcurrencyTest {
     assertFalse(verification.sendVerificationEmailByUser(stale));
     assertThrows(IllegalStateException.class, () -> verification.createToken(stale));
     assertFalse(snapshot().isEnabled());
-    assertFalse(snapshot().isVerificationPending());
+    assertTrue(snapshot().isVerificationPending());
     assertEquals(TokenStatus.ACTIVE, tokenStatus("old"));
     assertEquals(1, verificationTokenRepository.count());
     assertEquals(0, emailQueueRepository.count());
@@ -341,9 +344,11 @@ class VerificationQueueConcurrencyTest {
 
   @Test
   void adminDisableAlsoBlocksAnAccountThatWasNeverEnabled() throws IOException {
-    editEnabled(false);
+    editAdministrativeBlock(true);
 
-    assertFalse(snapshot().isVerificationPending());
+    assertTrue(snapshot().isVerificationPending());
+    assertTrue(snapshot().isAdministrativelyBlocked());
+    assertFalse(snapshot().requiresEmailVerification());
     assertFalse(verification.validateToken("old"));
     assertFalse(resend("user"));
     assertEquals(0, emailQueueRepository.count());
@@ -387,10 +392,11 @@ class VerificationQueueConcurrencyTest {
       UserEntity cached = userRepository.findById(id).orElseThrow();
 
       assertTrue(cached.isVerificationPending());
+      assertFalse(cached.isAdministrativelyBlocked());
       try (ExecutorService executorService = Executors.newSingleThreadExecutor()) {
         executorService
             .submit(() -> {
-              editEnabled(false);
+              editAdministrativeBlock(true);
               return null;
             })
             .get(10, TimeUnit.SECONDS);
@@ -398,8 +404,10 @@ class VerificationQueueConcurrencyTest {
         throw new IllegalStateException(failure);
       }
       assertTrue(cached.isVerificationPending());
+      assertFalse(cached.isAdministrativelyBlocked());
       assertFalse(verification.validateToken("old"));
-      assertFalse(cached.isVerificationPending());
+      assertTrue(cached.isVerificationPending());
+      assertTrue(cached.isAdministrativelyBlocked());
     });
 
     assertFalse(snapshot().isEnabled());
@@ -422,7 +430,7 @@ class VerificationQueueConcurrencyTest {
         compete(
             () -> {
               tx.executeWithoutResult(status -> {
-                editEnabled(false);
+                editAdministrativeBlock(true);
                 adminHasWritten.countDown();
                 await(verificationAttempted);
               });
@@ -435,7 +443,8 @@ class VerificationQueueConcurrencyTest {
 
     assertEquals(List.of(true, false), results);
     assertFalse(snapshot().isEnabled());
-    assertFalse(snapshot().isVerificationPending());
+    assertTrue(snapshot().isVerificationPending());
+    assertTrue(snapshot().isAdministrativelyBlocked());
     assertEquals(0, emailQueueRepository.count());
     assertEquals(TokenStatus.ACTIVE, tokenStatus("old"));
   }
@@ -471,7 +480,7 @@ class VerificationQueueConcurrencyTest {
               tx.executeWithoutResult(status -> {
                 UserEntity fresh = probes.userRepository().findByIdForUpdate(id).orElseThrow();
                 Long version = fresh.getVersion();
-                fresh.setEnabled(false);
+                fresh.setAdministrativelyBlocked(true);
                 admin.updateAdminUser(fresh, version, "");
               });
               return true;
@@ -492,13 +501,13 @@ class VerificationQueueConcurrencyTest {
   void staleAdminFormStillFailsInsteadOfOverwritingCommittedVerification() {
     UserEntity stale = snapshot();
     Long version = stale.getVersion();
-    stale.setEnabled(false);
+    stale.setAdministrativelyBlocked(true);
 
     assertTrue(verification.validateToken("old"));
     assertThrows(
         OptimisticLockingFailureException.class, () -> admin.updateAdminUser(stale, version, ""));
     assertTrue(snapshot().isEnabled());
-    editEnabled(false);
+    editAdministrativeBlock(true);
 
     assertFalse(verification.validateToken("old"));
   }
@@ -515,7 +524,7 @@ class VerificationQueueConcurrencyTest {
     assertEquals(List.of(true, true), compete(producer, producer));
     assertEquals(1, emailQueueRepository.count());
     reset(probes.userRepository());
-    editEnabled(false);
+    editAdministrativeBlock(true);
     tx.executeWithoutResult(status -> emailQueueRepository.deleteAll());
     mailQueue.addEmailToQueue(snapshot(), "Subject", "Body", EmailType.VERIFICATION);
 
@@ -578,11 +587,12 @@ class VerificationQueueConcurrencyTest {
     });
   }
 
-  private void editEnabled(boolean enabled) {
-    UserEntity edited = snapshot();
-    Long version = edited.getVersion();
-    edited.setEnabled(enabled);
-    admin.updateAdminUser(edited, version, "");
+  private void editAdministrativeBlock(boolean administrativelyBlocked) {
+    UserEntity editedUserEntity = snapshot();
+    Long expectedUserVersion = editedUserEntity.getVersion();
+    editedUserEntity.setAdministrativelyBlocked(administrativelyBlocked);
+
+    admin.updateAdminUser(editedUserEntity, expectedUserVersion, "");
   }
 
   private TokenStatus tokenStatus(String value) {

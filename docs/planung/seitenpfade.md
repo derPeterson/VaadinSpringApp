@@ -63,11 +63,11 @@ Beide Sprachläufe verwenden dasselbe unveränderte Vorschauimage. Zusätzlich s
 Textkatalog und Sprachwechsel. Spotless, Checkstyle, CSS- und Diffprüfung sind
 erfolgreich; die geänderten Bereiche wurden auf Lesbarkeit geprüft.
 
-Ein gezielter Test ersetzt keine große Testrunde. Die neun bereits offenen
-JUnit-Fehler des regulären Testimage-Builds bleiben gesondert im
-[Testbedarf](../testbedarf.md). Für die isolierte UI-Prüfung wurde deshalb ein
-Vorschauimage ohne erneute vollständige JUnit-Ausführung gebaut. Keine
-bestehenden Anwendungsdaten oder laufenden Anwendungen wurden verwendet.
+Ein gezielter Test ersetzt keine große Testrunde. Der reguläre Testimage-Build
+mit vollständigen Anwendungstests ist inzwischen erfolgreich. Der aktuelle
+Nachweis steht im [Prüfstand](../status.md), verbleibender automatisierter Bedarf
+im [Testbedarf](../testbedarf.md). Bestehende Anwendungsdaten oder laufende
+Anwendungen wurden nicht als Testfixture verwendet.
 
 Nach Build und Anwendungsneustart ist die Änderung sichtbar; eine Datenbankänderung
 ist nicht erforderlich. Bei der gemeinsamen Sichtung Portal/Konto, Admin-Konfiguration

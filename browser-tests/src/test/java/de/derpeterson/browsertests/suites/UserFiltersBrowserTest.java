@@ -21,12 +21,16 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /** Visible user filters, independently runnable without the edit/delete cases. */
 @Tag("browser")
 @Feature("Benutzerverwaltung: Filter")
 public class UserFiltersBrowserTest extends BrowserFixture {
-  @Test
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("component-follow-up")
   @DisplayName(
       "USER-05B: Optionale Filter kombinieren sich; direkte Datumeingabe funktioniert ohne Uhrzeit")
   @Description(
@@ -38,7 +42,8 @@ public class UserFiltersBrowserTest extends BrowserFixture {
       5. Uhrzeit ergänzen und wieder leeren; Datum bleibt wirksam. Alle zurücksetzen leert Suche, Zusatzfilter und aktive Badges.
       **Erwartet:** Alle Bedingungen wirken gemeinsam; keine Uhrzeitpflicht, keine Datenbankvorbereitung.
       """)
-  void combineAndClearTypedFilters() {
+  void combineAndClearTypedFilters(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 1000);
     AdminUsersPage users = login();
     String prefix = unique("filters");
     String active = prefix + "-active@example.test", disabled = prefix + "-disabled@example.test";
@@ -223,11 +228,11 @@ public class UserFiltersBrowserTest extends BrowserFixture {
             users
                 .filterField(uiTexts.getAdminUsersGridEnabled())
                 .getByRole(
-                    AriaRole.RADIO,
+                    AriaRole.TAB,
                     new Locator.GetByRoleOptions()
                         .setName(uiTexts.getAdminUsersFilterAll())
                         .setExact(true)))
-        .isChecked();
+        .hasAttribute("aria-selected", "true");
     users.selectDraftFilter(uiTexts.getAdminUsersGridEnabled(), uiTexts.getAdminUsersNo());
     users.applyFilters();
 

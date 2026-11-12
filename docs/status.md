@@ -117,29 +117,64 @@ passt nicht zum aktuellen Feature-Branch. Kein neuer Scan oder Statuswechsel
 wurde ausgeführt; ein grünes Gate für den Nachtstand ist damit nicht belegt.
 Die aktuelle QA-Arbeitsablage bleibt deshalb getrennt von der alten Erfolgsbaseline.
 
-Die integrierte Einheitenauswahl wurde anschließend als `CosmosDurationField`
-umgesetzt und vom Benutzer abgenommen; ihr geltender Aufbau steht im
-[Theme-Standard](theme.md). Das ersetzt keinen neuen Gesamtnachweis. Offene
-Variantenprüfungen und die beim späteren Testimage-Build aufgetretenen JUnit-Fehler
-stehen im [Testbedarf](testbedarf.md). Die
-[einheitlichen Seitenpfade](planung/seitenpfade.md) sind anschließend umgesetzt
-und gezielt in DE/EN auf Desktop und Smartphone geprüft: jeweils drei erfolgreiche
-Browserfälle auf demselben Vorschauimage, einschließlich Formularschutz und
-eingeschränkter Sicherheitsabläufe. Vorher-/Nachheraufnahmen sind verglichen; die
-gemeinsame Sichtung bleibt offen. Ergänzend sind 246 gezielte Anwendungstests
-und 26 Tests der Browserauswahl sowie Stil-/Ressourcenprüfungen erfolgreich.
-Das versionierte `app/src/main/bundles/prod.bundle`
-wurde für die neuen nativen Breadcrumbs-Imports vom Build aktualisiert. Wegen der
-neun bekannten JUnit-Fehler wurde nur für diese UI-Prüfung ein Vorschauimage ohne
-vollständige JUnit-Ausführung verwendet. Das ersetzt keinen neuen Gesamtprüfstand.
-Die übrigen zurückgestellten Komponentenpakete bleiben
-im [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
+Die integrierte Einheitenauswahl und die einheitlichen Seitenpfade sind umgesetzt.
+Die Gestaltung steht im [Theme-Standard](theme.md); die gemeinsame Sichtung der
+[Seitenpfade](planung/seitenpfade.md) bleibt offen. Ihre gezielte Suite
+`breadcrumbs` ist in DE/EN mit jeweils drei erfolgreichen Browserfällen geprüft,
+einschließlich Formularschutz, Sprachwechsel und gesperrter Sicherheitsabläufe.
+
+### Aktueller gezielter Komponenten-Nachtest
+
+Der reguläre Testimage-Build ist mit **2.940 bestandenen Anwendungstests** und zwei
+bewusst optionalen, übersprungenen Caddy-Tests erfolgreich. Veraltete Testannahmen
+zur administrativen Sperre und E-Mail-Freigabe wurden getrennt korrigiert;
+Sperr-, Konkurrenz- und Mindestrollenprüfungen bleiben erhalten. Fehlende
+Vaadin-Testkontexte und die Erwartung an den getrennten Seitenpfad sind berichtigt.
+**104 Browser-Helfertests**, Spotless und Checkstyle sind erfolgreich.
+Die abschließenden reinen Namens- und Gliederungskorrekturen sind zusätzlich mit
+180 gezielten Anwendungstests und erneut mit den 104 Browser-Helfertests geprüft;
+das im Browser geprüfte fachliche Verhalten bleibt unverändert.
+
+Die Suites `component-follow-up` und `segmented-selection` decken zusammen
+**43 unterschiedliche Browserfälle je Sprache** ab. DE und EN sind erfolgreich
+auf demselben unveränderten Image
+`sha256:e83bf4e59cf2a63f6f2d803355759e4a8708e5f467aced3fb66db749d432fba0`
+geprüft, einschließlich Desktop- und Smartphonebreite. Ein deutscher Test verwendete
+nach dem Sprachwechsel noch die vorherige Feldbeschriftung. Nach Korrektur dieses
+Locators sind alle vier Fälle der betroffenen Klasse erneut erfolgreich; der erste
+DE-Lauf wird dadurch nicht rückwirkend als vollständig grün ausgewiesen.
+
+Abgedeckt sind Zeitfeldvarianten einschließlich Tastatur, Fehlern, Disabled,
+Sprachwechsel und genauer Speicherung, Details ohne Hover, administrative Sperre
+gegenüber Selbstdeaktivierung, Verifikations-/Reaktivierungshinweise, Konto-Cards
+und Footer, sekundäre Passworthinweise sowie beide Kontotypen. Ein echter
+Darstellungsfehler wurde behoben: Die Einheitenauswahl ist vier Pixel breiter,
+damit „Sekunden“ vollständig sichtbar bleibt.
+
+Die segmentierten Umschalter verwenden native Tabs im gemeinsamen OTP-Stil:
+Profilbild, Posteingang, Glockenvorschau sowie Benutzer- und Ticket-Nachrichtenfilter.
+Filterwirkung, Zähler, Auswahl beim Sprachwechsel, Tastatur und Handzeiger sind
+geprüft; Vorher-/Nachheraufnahmen wurden verglichen. Normale Seitenreiter und
+vertikale Radioauswahl bleiben unverändert.
+
+Alle acht Aktionsmailvorlagen sind als kanonische HTML-Vorschau in beiden Sprachen
+und Breiten mit langer vollständig auswählbarer URL geprüft. Die zwei Vorlagen
+ohne Aktion enthalten keine leere Linkbox. Empfangene Mails aus den tatsächlichen
+Verifikations-, Wiederherstellungs- und Kontoabläufen werden zusätzlich über das
+isolierte Mailpit geprüft. Die Vorlagenprüfung ersetzt weder reale Mailprogramme
+noch einen eigenen vollständigen SMTP-Gesamtlauf für jede Vorlage.
+
+Aufbau und Abbau der isolierten Umgebungen sind erfolgreich; die laufende
+Entwicklungsanwendung und ihre Daten blieben unverändert. Dies ersetzt keinen neuen
+vollständigen Browser-Gesamtlauf oder Sonar-Scan. Erledigter automatisierter
+[Testbedarf](testbedarf.md) ist entfernt; die gemeinsame Sichtung und die übrigen
+zurückgestellten Pakete bleiben im
+[Komponentenplan](planung/vaadin-komponenten-abgleich.md).
 
 Browsernachweise verwenden Chromium bei Desktop- und Smartphonebreite; echte
 Mobilgeräte, Passwortmanager und Mailprogramme bleiben im
 [manuellen Katalog](manual-tests/README.md). Der native Formularschutz ist kein
 Autosave und schützt nicht zuverlässig vor Absturz oder erzwungenem Prozessende.
-Für die lokale Sichtung des erweiterten Datenmodells sind eine frische
-Entwicklungsdatenbank sowie Build und Neustart nötig. Die gemeinsame Sichtung
-der neuen Kontooberflächen bleibt offen; automatisierter Restbedarf steht
-in [Testbedarf](testbedarf.md).
+Für die aktuellen Umschalter sind Build, Anwendungsneustart und Browser-Refresh
+nötig; sie benötigen keine Datenbankänderung. Die gemeinsame Sichtung der neuen
+Komponenten bleibt offen.

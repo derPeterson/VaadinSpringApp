@@ -1,7 +1,6 @@
 package de.derpeterson.app.views.admin;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -67,7 +66,8 @@ class AdminUserManagementFilterTest {
                     .firstName(String.format("Name%02d", i))
                     .lastName("Test")
                     .email("user" + i + "@example.test")
-                    .enabled(i % 2 == 0)
+                    .enabled(true)
+                    .administrativelyBlocked(i % 2 != 0)
                     .status(i % 2 == 0 ? UserStatus.AVAILABLE : UserStatus.OFFLINE)
                     .lastActivity(UserActivityTime.inclusiveCutoff(cutoff.plusMinutes(i - 13)))
                     .roleEntities(
@@ -105,11 +105,11 @@ class AdminUserManagementFilterTest {
     assertEquals(
         List.of("user24@example.test"), visibleUsers().stream().map(UserEntity::getEmail).toList());
     assertEquals(0, field("currentPage"));
-    filter("enabledFilter").setValue(AdminUserFilters.Enabled.NO);
+    filter("enabledFilterTabs").setValue(AdminUserFilters.Enabled.NO);
     applyFilters();
 
     assertTrue(visibleUsers().isEmpty());
-    filter("enabledFilter").setValue(AdminUserFilters.Enabled.ALL);
+    filter("enabledFilterTabs").setValue(AdminUserFilters.Enabled.ALL);
     applyFilters();
 
     assertEquals(1, visibleUsers().size());
@@ -118,7 +118,7 @@ class AdminUserManagementFilterTest {
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void enumFiltersAndActivityStaySelectedAcrossLanguageChanges(String language) {
-    filter("enabledFilter").setValue(AdminUserFilters.Enabled.YES);
+    filter("enabledFilterTabs").setValue(AdminUserFilters.Enabled.YES);
     filter("statusFilter").setValue(Set.of(UserStatus.AVAILABLE));
     filter("roleFilter").setValue(Set.of(RoleType.ROLE_USER));
     ((AdminUserActivityFilter) field("lastActivityFilter")).setValue(cutoff);
@@ -128,7 +128,7 @@ class AdminUserManagementFilterTest {
     localeReference.set(Locale.forLanguageTag(language));
     userManagementSection.refreshTexts();
 
-    assertEquals(AdminUserFilters.Enabled.YES, filter("enabledFilter").getValue());
+    assertEquals(AdminUserFilters.Enabled.YES, filter("enabledFilterTabs").getValue());
     assertEquals(Set.of(UserStatus.AVAILABLE), filter("statusFilter").getValue());
     assertEquals(Set.of(RoleType.ROLE_USER), filter("roleFilter").getValue());
     assertEquals(cutoff, ((AdminUserActivityFilter) field("lastActivityFilter")).getValue());
@@ -264,22 +264,22 @@ class AdminUserManagementFilterTest {
 
   @Test
   void resetWaitsForApplyAndCancellationRestoresTheAppliedDraft() {
-    filter("enabledFilter").setValue(AdminUserFilters.Enabled.NO);
+    filter("enabledFilterTabs").setValue(AdminUserFilters.Enabled.NO);
     applyFilters();
 
-    assertFalse(visibleUsers().getFirst().isEnabled());
+    assertTrue(visibleUsers().getFirst().isAdministrativelyBlocked());
     filterButton(messageProperties.getAdminUsersAddFilter()).click();
     filterButton(messageProperties.getAdminUsersClearFilters()).click();
 
-    assertFalse(visibleUsers().getFirst().isEnabled());
+    assertTrue(visibleUsers().getFirst().isAdministrativelyBlocked());
     filterButton(messageProperties.getAdminUsersCancel()).click();
 
-    assertEquals(AdminUserFilters.Enabled.NO, filter("enabledFilter").getValue());
+    assertEquals(AdminUserFilters.Enabled.NO, filter("enabledFilterTabs").getValue());
     filterButton(messageProperties.getAdminUsersAddFilter()).click();
     filterButton(messageProperties.getAdminUsersClearFilters()).click();
     applyFilters();
 
-    assertEquals(AdminUserFilters.Enabled.ALL, filter("enabledFilter").getValue());
+    assertEquals(AdminUserFilters.Enabled.ALL, filter("enabledFilterTabs").getValue());
     assertEquals(25, ((List<?>) field("filteredUsers")).size());
   }
 

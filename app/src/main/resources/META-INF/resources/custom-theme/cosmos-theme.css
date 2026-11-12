@@ -7,6 +7,7 @@
 @import url("./cosmos-scrollbars.css");
 @import url("./cosmos-duration-field.css");
 @import url("./cosmos-breadcrumbs.css");
+@import url("./cosmos-segmented-tabs.css");
 @import url("./cosmos-scrollbars.css") lumo_cosmos_scrollbars;
 
 /* Lumo setzt die äußere Checkbox-/Radiofläche unabhängig vom Klick-Cursor auf default. */

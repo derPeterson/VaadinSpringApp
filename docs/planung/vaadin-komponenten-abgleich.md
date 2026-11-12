@@ -43,22 +43,19 @@ Funktionen stehen in der aktuellen [Anwendungsdokumentation](../anwendung.md)
 und im [Theme-Standard](../theme.md). Offene automatisierte Nachtests bleiben
 unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
 
-### Segmentierte Benachrichtigungsfilter vereinheitlichen
+### Segmentierte Auswahl vereinheitlichen
 
-- **Vorerst zurückgestellt, nur geplant:** „Alle / Ungelesen / Gelesen“ im Posteingang und in der
-  Glockenvorschau an den vorhandenen App-Code-/Ersatzcode-Umschalter angleichen.
-  Die Filter verwenden derzeit bereits eine native `RadioButtonGroup`, die
-  als Segmentleiste gestaltet ist. Vorgesehen ist die Umstellung auf native
-  `Tabs` und `Tab`, wie in `TwoFactorCodeInput` und `TwoFactorView`.
-- Die vorhandene segmentierte Tab-Gestaltung als gemeinsame Grundlage verwenden,
-  ohne den fachlichen Code-Eingabebaustein für einen Nachrichtenfilter zu benutzen.
-  Die Zahlen bleiben native Vaadin-Badges. Farben, Maße und responsive Darstellung
-  anhand eines Vorher-/Nachher-Vergleichs erhalten.
-- Filterwirkung, Zähleraktualisierung, Auswahl, Seitenwechsel und Sprachwechsel
-  erhalten. Eine reine Aktualisierung der Beschriftungen darf keinen Filterwechsel
-  auslösen. Tastaturbedienung, zugängliche Beschriftungen und Handzeiger auf Fläche,
-  Text und Badge gehören zur gezielten DE-/EN-Prüfung auf Desktop und Smartphone.
-  Der Nachtest steht bis zur Umsetzung im [Testbedarf](../testbedarf.md).
+- Native `Tabs`/`Tab` sind über `CosmosSegmentedTabs` in Profilbild, Posteingang,
+  Glockenvorschau, Ticket-Nachrichtenfilter und Zugangsfilter der Benutzerverwaltung
+  umgesetzt. Bestehende native OTP-, QR-/Schlüssel- und Antwort-/Vermerk-Umschalter
+  verwenden dieselbe gemeinsame Gestaltung.
+- Der Benutzer hat die bisherigen Seitenreiter ausdrücklich ausgenommen. Konto-
+  sicherheit, Anbieter-/Rollen-TabSheets und Ticketkategorien behalten ihre Gestaltung.
+  Die normale Zuständigkeitsauswahl bleibt eine native RadioButtonGroup.
+- Offen bleibt die gemeinsame Sichtung der segmentierten Auswahl. Der gezielte
+  Nachtest einschließlich Vorher-/Nachher-Vergleich, Filterwirkung, Zählern,
+  Sprachwechsel, Tastatur und Handzeiger ist in DE/EN auf Desktop und Smartphone
+  erfolgreich. Nachweis und Grenzen stehen im [Prüfstand](../status.md).
 
 ### Ungespeicherte Formularänderungen
 
@@ -68,14 +65,16 @@ unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
   echte Änderungen sind gezielt in DE/EN per JUnit geprüft. Die reale Passwortmanager-
   Nachprüfung bleibt unter [HUM-11](../manual-tests/README.md#hum-11) offen.
 
-### Ausstehende Seitenpfade und Nachtests
+### Gemeinsame Sichtung und Prüfstand
 
 Die umgesetzten Nachtpakete einschließlich der Trennung von administrativer Sperre und
 Selbstdeaktivierung (Punkt 8) sowie die integrierte Einheitenauswahl (Punkt 3)
 sind vom Benutzer abgenommen. `CosmosDurationField`, feste Tageswerte und
 Gestaltungsregeln stehen im [Theme-Standard](../theme.md).
-Noch offene automatisierte Nachtests und die beim Testimage-Build gefundenen
-JUnit-Fehler bleiben im [Testbedarf](../testbedarf.md).
+Die vereinbarten gezielten Nachtests sind in DE/EN auf Desktop und Smartphone
+erfolgreich; auch der reguläre Build einschließlich aller Anwendungstests ist
+erfolgreich. Nachweise und Grenzen stehen im [Prüfstand](../status.md).
+Offene zukünftige Prüfungen werden zentral im [Testbedarf](../testbedarf.md) geführt.
 
 Die [Seitenpfade](seitenpfade.md) sind mit nativen Breadcrumbs im manuellen Modus
 umgesetzt und gezielt in DE/EN auf Desktop und Smartphone geprüft. Gesperrte

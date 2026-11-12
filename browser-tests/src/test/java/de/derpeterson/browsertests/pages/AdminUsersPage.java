@@ -166,8 +166,8 @@ public final class AdminUsersPage {
 
       assertThat(
               filterFieldLocator.getByRole(
-                  AriaRole.RADIO, new Locator.GetByRoleOptions().setName(option).setExact(true)))
-          .isChecked();
+                  AriaRole.TAB, new Locator.GetByRoleOptions().setName(option).setExact(true)))
+          .hasAttribute("aria-selected", "true");
     } else {
       for (Locator choice : filterFieldLocator.locator("vaadin-checkbox").all()) {
         if (choice.getByRole(AriaRole.CHECKBOX).isChecked()) {

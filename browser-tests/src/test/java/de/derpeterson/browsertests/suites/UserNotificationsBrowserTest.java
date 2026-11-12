@@ -17,6 +17,7 @@ import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -52,6 +53,7 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       5. Erneut prüfen: aktualisierter Text und Freigabe; Rahmen, Textgröße, Textabstand, gleiche Buttonhöhe, bündige Panelköpfe und kein Überlauf.
       Erwartet: Native Bedienelemente und sichere Prüf-Freigabe; keine Historien-/Header-Overlay-Prüfung.
       """)
+  @Tag("component-follow-up")
   void composeValidationAndReviewAtBothWidths(int width) {
     admin();
     browserPage.setViewportSize(width, 1000);
@@ -75,6 +77,8 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     assertTrue(count >= 2);
     assertEquals(uiTexts.getNotificationsEveryonePlaceholder(count), summary);
     compose.draft("Preview " + UUID.randomUUID(), "Original draft");
+    CosmosFollowUpChecks.assertDetailsWithoutHover(
+        browserPage.locator("#admin-notifications-preview-details"));
     browserPage.locator("#admin-notifications-preview-details").click();
 
     assertThat(browserPage.locator("#admin-notifications-preview-recipients"))

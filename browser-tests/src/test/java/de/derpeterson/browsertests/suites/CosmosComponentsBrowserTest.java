@@ -23,6 +23,7 @@ import de.derpeterson.browsertests.pages.AdminMailPage;
 import de.derpeterson.browsertests.pages.AdminNavigation;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
 import de.derpeterson.browsertests.pages.UiActions;
@@ -251,6 +252,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
   @Test
   @Tag("duration-field")
+  @Tag("component-follow-up")
   @DisplayName("COMPONENT-10: Integrierte Zeiteinheit bleibt mittig innerhalb der Zahlenfläche")
   @Description(
       "Nur das Zeitfeld für gespeicherte Anmeldungen auf Desktop und Smartphone vermessen: Einheitenfläche, Text und Pfeil sind vertikal mittig, der untere Feldrahmen bleibt frei. Keine Einstellung wird gespeichert.")
@@ -317,6 +319,160 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       assertDurationUnitOverlayStyle(unitSelectLocator, viewportWidth);
       assertThat(unitLabelLocator).hasCSS("line-height", "20px");
     }
+  }
+
+  @Test
+  @Tag("component-follow-up")
+  @DisplayName("Zeitfelder behalten Zahl, Tastaturbedienung und gültige Einheiten")
+  void durationVariantsKeepKeyboardAndValidationContracts() {
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
+    new UserMenu(browserPage).selectTestLanguage();
+    AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
+
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 1000);
+      configurationPage.open(AdminConfigGroup.SECURITY);
+      String durationLabelText = uiTexts.getAdminConfigEntryRememberMeDuration();
+      Locator amountInputLocator = configurationPage.input(durationLabelText);
+      String originalAmountText = amountInputLocator.inputValue();
+
+      assertInvalidDurationCanBeCorrected(configurationPage, durationLabelText, originalAmountText);
+      checkUnitKeyboardSelectionAndRestoreDays(configurationPage, durationLabelText, viewportWidth);
+      checkDurationDraftAcrossLanguagesAndRestore(
+          configurationPage, durationLabelText, originalAmountText);
+      assertPreciseDurationPersistence(configurationPage);
+      assertInactivityControlsAndRestrictedUnits(configurationPage);
+    }
+  }
+
+  private void assertInvalidDurationCanBeCorrected(
+      AdminConfigurationPage configurationPage,
+      String durationLabelText,
+      String originalAmountText) {
+    Locator amountInputLocator = configurationPage.input(durationLabelText);
+    amountInputLocator.fill("0");
+    amountInputLocator.press("Tab");
+    configurationPage.submit();
+    assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+        .containsText(uiTexts.getAdminConfigValidationInvalidFields());
+    browserPage
+        .locator("vaadin-notification-card:not([closing])")
+        .getByRole(AriaRole.BUTTON)
+        .click();
+    assertThat(configurationPage.duration(durationLabelText).locator("vaadin-integer-field"))
+        .hasAttribute("invalid", "");
+    amountInputLocator.fill(originalAmountText);
+    amountInputLocator.press("Tab");
+  }
+
+  private void checkUnitKeyboardSelectionAndRestoreDays(
+      AdminConfigurationPage configurationPage, String durationLabelText, int viewportWidth) {
+    Locator amountInputLocator = configurationPage.input(durationLabelText);
+    String originalAmountText = amountInputLocator.inputValue();
+    Locator unitSelectLocator =
+        configurationPage.duration(durationLabelText).locator("vaadin-select");
+    Locator unitValueButtonLocator = unitSelectLocator.locator("vaadin-select-value-button");
+    unitValueButtonLocator.focus();
+    unitValueButtonLocator.press("Space");
+    Locator firstUnitOptionLocator =
+        browserPage.getByRole(
+            AriaRole.OPTION,
+            new Page.GetByRoleOptions()
+                .setName(uiTexts.getAdminConfigDurationUnitSeconds())
+                .setExact(true));
+    assertThat(firstUnitOptionLocator).isVisible();
+    firstUnitOptionLocator.press("Home");
+    firstUnitOptionLocator.press("Enter");
+    assertThat(amountInputLocator).hasValue(originalAmountText);
+    assertThat(unitSelectLocator.locator("vaadin-select-value-button"))
+        .hasText(uiTexts.getAdminConfigDurationUnitSeconds());
+    unitValueButtonLocator.press("Space");
+    browserPage.keyboard().press("Escape");
+    assertThat(firstUnitOptionLocator).not().isVisible();
+    unitValueButtonLocator.press("Tab");
+    assertThat(unitValueButtonLocator).not().isFocused();
+    AllurePlaywright.attachScreenshot("Zeitfeld per Tastatur " + viewportWidth, browserPage);
+    unitSelectLocator.click();
+    browserPage
+        .getByRole(
+            AriaRole.OPTION,
+            new Page.GetByRoleOptions()
+                .setName(uiTexts.getAdminConfigDurationUnitDays())
+                .setExact(true))
+        .click();
+  }
+
+  private void checkDurationDraftAcrossLanguagesAndRestore(
+      AdminConfigurationPage configurationPage,
+      String durationLabelText,
+      String originalAmountText) {
+    Locator amountInputLocator = configurationPage.input(durationLabelText);
+    String draftAmountText = Integer.toString(Integer.parseInt(originalAmountText) + 1);
+    amountInputLocator.fill(draftAmountText);
+    amountInputLocator.press("Tab");
+    UiTexts alternateUiTexts = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
+    new UserMenu(browserPage).selectLanguage(alternateUiTexts.language());
+    String translatedDurationLabelText = alternateUiTexts.getAdminConfigEntryRememberMeDuration();
+    assertThat(
+            configurationPage
+                .duration(translatedDurationLabelText)
+                .locator("vaadin-select-value-button"))
+        .hasText(alternateUiTexts.getAdminConfigDurationUnitDays());
+    assertThat(configurationPage.input(translatedDurationLabelText)).hasValue(draftAmountText);
+    new UserMenu(browserPage).selectTestLanguage();
+    assertThat(amountInputLocator).hasValue(draftAmountText);
+    amountInputLocator.fill(originalAmountText);
+    amountInputLocator.press("Tab");
+  }
+
+  private void assertPreciseDurationPersistence(AdminConfigurationPage configurationPage) {
+    configurationPage.open(AdminConfigGroup.USER_STATUS);
+    String preciseDurationLabelText = uiTexts.getAdminConfigEntryUserAutoAbsentTimeout();
+    java.math.BigDecimal originalPreciseDurationSeconds =
+        configurationPage.seconds(preciseDurationLabelText);
+    configurationPage.enterSeconds(preciseDurationLabelText, new java.math.BigDecimal("120.125"));
+    assertEquals(
+        0,
+        new java.math.BigDecimal("120.125")
+            .compareTo(configurationPage.seconds(preciseDurationLabelText)));
+    configurationPage.save();
+    configurationPage.reload();
+    assertEquals(
+        0,
+        new java.math.BigDecimal("120.125")
+            .compareTo(configurationPage.seconds(preciseDurationLabelText)));
+    configurationPage.enterSeconds(preciseDurationLabelText, originalPreciseDurationSeconds);
+    configurationPage.save();
+  }
+
+  private void assertInactivityControlsAndRestrictedUnits(
+      AdminConfigurationPage configurationPage) {
+    configurationPage.open(AdminConfigGroup.TWO_FACTOR);
+    Locator inactivitySwitchLocator =
+        browserPage.getByRole(
+            AriaRole.SWITCH,
+            new Page.GetByRoleOptions()
+                .setName(uiTexts.getTwoFactorInactivityEnabled())
+                .setExact(true));
+    boolean wasInactivityEnabled = inactivitySwitchLocator.isChecked();
+    inactivitySwitchLocator.setChecked(false);
+    Locator inactivityUnitLocator = browserPage.locator(".cosmos-duration-field vaadin-select");
+    assertThat(inactivityUnitLocator).hasAttribute("disabled", "");
+    inactivitySwitchLocator.setChecked(true);
+    assertThat(inactivityUnitLocator).not().hasAttribute("disabled", "");
+    inactivityUnitLocator.click();
+    assertThat(browserPage.getByRole(AriaRole.OPTION)).hasCount(3);
+    assertThat(
+            browserPage.getByRole(
+                AriaRole.OPTION,
+                new Page.GetByRoleOptions()
+                    .setName(uiTexts.getAdminConfigDurationUnitSeconds())
+                    .setExact(true)))
+        .hasCount(0);
+    browserPage.keyboard().press("Escape");
+    inactivitySwitchLocator.setChecked(wasInactivityEnabled);
   }
 
   private void assertDurationUnitOverlayStyle(Locator unitSelectLocator, int viewportWidth) {
@@ -1156,6 +1312,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   @ValueSource(ints = {1280, 390})
   @DisplayName(
       "COMPONENT-12: Headeraktionen und Benachrichtigungsfilter zeigen eindeutige Mauszeiger")
+  @Tag("component-follow-up")
   void headerActionsAndReadFiltersUsePointerWithoutProfileHover(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 900);
     signIn();
@@ -1179,6 +1336,11 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       profileButtonLocator.focus();
       profileButtonLocator.press("Enter");
       assertThat(browserPage.locator("vaadin-popover-overlay[opened]")).isVisible();
+      Locator presenceToggleLocator = browserPage.locator("#portal-menu-presence-toggle");
+      if ("true".equals(presenceToggleLocator.getAttribute("aria-expanded"))) {
+        presenceToggleLocator.click();
+      }
+      CosmosFollowUpChecks.assertDetailsWithoutHover(presenceToggleLocator);
       new UserMenu(browserPage).close();
       AllurePlaywright.attachScreenshot("Headeraktionen " + route, browserPage);
     }
@@ -1198,8 +1360,8 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
 
   private void assertReadFilterPointers(Locator filterGroupLocator) {
     assertThat(filterGroupLocator).isVisible();
-    assertThat(filterGroupLocator.locator("vaadin-radio-button")).hasCount(3);
-    for (Locator filterOptionLocator : filterGroupLocator.locator("vaadin-radio-button").all()) {
+    assertThat(filterGroupLocator.locator("vaadin-tab")).hasCount(3);
+    for (Locator filterOptionLocator : filterGroupLocator.locator("vaadin-tab").all()) {
       assertThat(filterOptionLocator).hasCSS("cursor", "pointer");
       assertThat(filterOptionLocator.locator(".portal-read-filter-option"))
           .hasCSS("cursor", "pointer");

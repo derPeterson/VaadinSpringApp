@@ -276,6 +276,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
       4. Ausgangssprache wieder wählen; Suche und Filter bleiben erhalten.
       **Erwartet:** Auswahl ist typisiert, unabhängig von übersetzten Strings und ohne Neuladen erhalten.
       """)
+  @Tag("component-follow-up")
   void languageChangesRetainSelectedFilterAndSearch() {
     AdminUsersPage users = login();
     String prefix = unique("locale"), disabled = prefix + "-disabled@example.test";
@@ -296,9 +297,9 @@ public class UserManagementBrowserTest extends BrowserFixture {
             translated
                 .filterField(other.getAdminUsersGridEnabled())
                 .getByRole(
-                    AriaRole.RADIO,
+                    AriaRole.TAB,
                     new Locator.GetByRoleOptions().setName(other.getAdminUsersNo()).setExact(true)))
-        .isChecked();
+        .hasAttribute("aria-selected", "true");
     assertThat(translated.emailCells(prefix)).hasCount(1);
     assertThat(translated.emailCells(prefix)).hasText(disabled);
     browserPage.keyboard().press("Escape");
@@ -309,11 +310,11 @@ public class UserManagementBrowserTest extends BrowserFixture {
             users
                 .filterField(uiTexts.getAdminUsersGridEnabled())
                 .getByRole(
-                    AriaRole.RADIO,
+                    AriaRole.TAB,
                     new Locator.GetByRoleOptions()
                         .setName(uiTexts.getAdminUsersNo())
                         .setExact(true)))
-        .isChecked();
+        .hasAttribute("aria-selected", "true");
     assertThat(users.emailCells(prefix)).hasCount(1);
     assertThat(users.emailCells(prefix)).hasText(disabled);
     AllurePlaywright.attachScreenshot(

@@ -152,6 +152,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       3. Mit dem richtigen Passwort bestätigen und Abmeldung prüfen.
       4. Die tatsächliche Bestätigungsmail des isolierten Maildienstes abwarten.
       """)
+  @Tag("component-follow-up")
   void accountDeletionRejectsWrongPasswordAndSendsConfirmation(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 900);
     String accountEmail = account();
@@ -172,6 +173,41 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
         mailpitInbox.awaitSecurityMail(accountEmail, uiTexts.getAccountDeletedMailSubject()));
   }
 
+  @Test
+  @Tag("component-follow-up")
+  @DisplayName("Kontoaktionen verwenden vorhandene Cards und kompakte Hinweisfooter")
+  void securityCardsAndLifecycleProofRemainConsistent() {
+    account();
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 1000);
+      for (String securityTab : new String[] {"portal", "providers", "lifecycle"}) {
+        browserPage.navigate("/account?section=security&tab=" + securityTab);
+        Locator hintFooterLocator = browserPage.locator(".account-security-hint:visible");
+        assertThat(hintFooterLocator).hasCount(1);
+        assertThat(hintFooterLocator.locator("vaadin-icon")).hasCSS("color", "rgb(56, 189, 248)");
+        assertTrue(hintFooterLocator.boundingBox().height < (viewportWidth < 600 ? 140 : 80));
+        assertThat(browserPage.locator("vaadin-tabsheet#account-security-tabs")).hasCount(1);
+        AllurePlaywright.attachScreenshot(
+            "Sicherheit " + securityTab + " " + viewportWidth, browserPage);
+        if (!securityTab.equals("lifecycle")) {
+          continue;
+        }
+
+        assertThat(browserPage.locator(".account-lifecycle-overview .account-entry")).hasCount(2);
+        for (String actionName : new String[] {"deactivate", "delete"}) {
+          Locator actionButtonLocator = browserPage.locator("#account-" + actionName);
+          Locator actionCardLocator = actionButtonLocator.locator("..");
+          assertThat(actionCardLocator).hasCSS("border-top-width", "1px");
+          assertThat(actionCardLocator).hasCSS("border-radius", "10px");
+          actionButtonLocator.click();
+          assertLifecycleDialogStyle(actionName.equals("delete"));
+          browserPage.locator("#account-lifecycle-proof .cosmos-overlay-close").click();
+          assertThat(actionButtonLocator).isEnabled();
+        }
+      }
+    }
+  }
+
   private void openAccountLifecycleTab() {
     AccountPage accountPage = new AccountPage(browserPage);
     accountPage.open();
@@ -190,6 +226,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       3. Einen während der Einrichtung gesicherten Ersatzcode eingeben und bewusst bestätigen.
       4. Abmeldung und tatsächliche Löschbestätigung prüfen.
       """)
+  @Tag("component-follow-up")
   void enrolledAccountCanBeDeletedWithARecoveryCode(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 900);
     String accountEmail = account();
@@ -237,6 +274,12 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(proofDialogLocator.locator(".cosmos-panel-icon"))
         .hasCSS("color", expectedAccentColor);
     assertThat(proofDialogLocator.locator("#account-lifecycle-submit vaadin-icon")).isVisible();
+    Locator passwordHintLocator = proofDialogLocator.locator(".account-lifecycle-password-hint");
+    if (passwordHintLocator.count() > 0) {
+      assertThat(passwordHintLocator).hasCSS("font-size", "12px");
+      assertThat(passwordHintLocator).hasCSS("font-weight", "400");
+      assertThat(passwordHintLocator).hasCSS("color", "rgb(148, 163, 184)");
+    }
     AllurePlaywright.attachScreenshot(
         deletingAccount ? "Kontolöschung" : "Kontodeaktivierung", browserPage);
   }
@@ -741,13 +784,13 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   }
 
   private void chooseMode(String label) {
-    Locator radio =
+    Locator avatarModeTabLocator =
         browserPage
-            .locator("#account-avatar-mode vaadin-radio-button")
+            .locator("#account-avatar-mode vaadin-tab")
             .filter(new Locator.FilterOptions().setHasText(label));
 
-    assertThat(radio).isVisible();
-    radio.click(new Locator.ClickOptions().setPosition(radio.boundingBox().width - 3, 3));
+    assertThat(avatarModeTabLocator).isVisible();
+    avatarModeTabLocator.click();
   }
 
   private void uploadAvatar(java.awt.Color color) throws Exception {

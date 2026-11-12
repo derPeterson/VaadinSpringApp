@@ -380,7 +380,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
     internalNoteMode.setId("support-internal-note");
     publicReplyMode.setId("support-public-reply");
     replyMode.setId("support-reply-mode");
-    replyMode.addClassName("two-factor-method-tabs");
+    replyMode.addClassName("cosmos-segmented-tabs");
     replyMode.setVisible(administration);
     if (administration) {
       replyMode.addSelectedChangeListener(event -> updateAdminComposerLabels());

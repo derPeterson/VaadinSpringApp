@@ -10,7 +10,6 @@ import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.radiobutton.RadioButtonGroup;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.SerializableRunnable;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -18,6 +17,7 @@ import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.CosmosSegmentedTabs;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -39,7 +39,7 @@ final class AdminUserFilterBar extends VerticalLayout {
   private SerializableRunnable restoreFilterDraftAction = () -> {};
 
   record FilterControls(
-      RadioButtonGroup<AdminUserFilters.Enabled> enabled,
+      CosmosSegmentedTabs<AdminUserFilters.Enabled> enabled,
       CheckboxGroup<UserStatus> status,
       CheckboxGroup<RoleType> role,
       AdminUserActivityFilter activity)
