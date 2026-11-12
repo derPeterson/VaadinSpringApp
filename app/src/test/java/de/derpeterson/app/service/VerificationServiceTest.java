@@ -353,12 +353,13 @@ class VerificationServiceTest {
 
   @ParameterizedTest
   @ValueSource(strings = {"token", "email", "user"})
-  void openQueueEntryReturnsSuccessWithoutRotatingOrQueuingAgain(String entry) throws IOException {
+  void openQueueEntryRejectsAnotherRequestWithoutRotatingOrQueuingAgain(String entry)
+      throws IOException {
     prepareResend(entry);
     when(emailQueueService.hasOpenEmailForUserAndType(testUserEntity, EmailType.VERIFICATION))
         .thenReturn(true);
 
-    assertTrue(resend(entry));
+    assertFalse(resend(entry));
     verify(verificationTokenRepository, never()).save(any());
     verify(emailQueueService, never()).addEmailToQueue(any(), any(), any(), any());
     verifyMaintenanceOnly(1);

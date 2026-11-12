@@ -148,7 +148,7 @@ class VerificationQueueConcurrencyTest {
     });
     long verificationTokenCount = verificationTokenRepository.count();
 
-    assertTrue(pendingEmailVerificationFlow.resendVerification(httpRequest));
+    assertFalse(pendingEmailVerificationFlow.resendVerification(httpRequest));
 
     assertEquals(1, emailQueueRepository.count());
     assertEquals(EmailStatus.IN_PROGRESS, emailQueueRepository.findAll().getFirst().getStatus());
@@ -183,7 +183,11 @@ class VerificationQueueConcurrencyTest {
   void concurrentResendsCommitOneMailWhoseLinkIsTheOnlyActiveToken(String entry) throws Exception {
     rendezvous();
 
-    assertEquals(List.of(true, true), compete(() -> resend(entry), () -> resend(entry)));
+    assertEquals(
+        1,
+        compete(() -> resend(entry), () -> resend(entry)).stream()
+            .filter(Boolean.TRUE::equals)
+            .count());
     assertCoherentQueue();
 
     assertEquals(TokenStatus.INACTIVE, tokenStatus("old"));
@@ -194,7 +198,11 @@ class VerificationQueueConcurrencyTest {
   void mixedResendEntrypointsAlsoShareTheSameAccountLock() throws Exception {
     rendezvous();
 
-    assertEquals(List.of(true, true), compete(() -> resend("token"), () -> resend("email")));
+    assertEquals(
+        1,
+        compete(() -> resend("token"), () -> resend("email")).stream()
+            .filter(Boolean.TRUE::equals)
+            .count());
     assertCoherentQueue();
   }
 

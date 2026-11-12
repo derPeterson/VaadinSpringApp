@@ -237,7 +237,7 @@ public class VerificationService {
     if (user != null && canVerify(user)) {
       if (emailQueueService.hasOpenEmailForUserAndType(user, EmailType.VERIFICATION)) {
         logger.debug("Duplicate verification request skipped: userId={}", user.getId());
-        return true;
+        return false;
       }
 
       if (user.getVerificationMailRequestedAt() != null

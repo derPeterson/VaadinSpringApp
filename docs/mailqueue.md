@@ -6,6 +6,11 @@ Fachaktionen reihen ihre Mails transaktional ein. Verifikation und Passwortreset
 sperren den Kontodatensatz während der Transaktion; offene gleichartige Aufträge werden dedupliziert.
 Sicherheitsereignisse mit fester Zieladresse werden vollständig angelegt.
 Eine Queuezusage ist keine SMTP-Zustellbestätigung.
+Ein erneuter Verifikationsversand meldet nur dann Erfolg, wenn tatsächlich ein neuer
+Auftrag angelegt wurde. Ein bereits offener Auftrag bleibt unverändert und führt
+zu einer Ablehnung statt einer erneuten Versandzusage. Die eingeschränkte
+Bestätigungsseite erklärt die Wartezeit, offene Aufträge und den Kontakt zur
+Administration bei anhaltender Blockierung.
 
 Verifikations- und Passwortresetmails halten die Zieladresse bei der Queueaufnahme fest.
 Bei einer administrativen Adressänderung werden alte Links ungültig und noch wartende

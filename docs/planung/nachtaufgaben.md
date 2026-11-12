@@ -1,6 +1,6 @@
 # Gesammelte Entwicklungsaufgaben für die Nacht
 
-Status: **Nur gesammelt. Umsetzung noch nicht gestartet.**
+Status: **Umsetzung nach ausdrücklichem Startsignal begonnen.**
 
 Diese Liste wird bis zum ausdrücklichen Startsignal des Benutzers ergänzt.
 Die Aussage, später schlafen zu gehen, startet keine Arbeiten automatisch.
