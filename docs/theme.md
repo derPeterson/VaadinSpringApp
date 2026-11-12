@@ -37,7 +37,8 @@ Sicherheits-Textstile, die Beschreibung die reguläre kleine Textgröße.
 `cosmos-account.css` gestaltet.
 Deaktivierungsicons verwenden die Warnpalette, Löschicons die rote Gefahrpalette.
 Auf schmalen Ansichten rückt der Button unter seinen Text. Header und Tabs
-bleiben unverändert. Entwicklerkonten erhalten keine Zusage eines Reaktivierungslinks.
+bleiben unverändert. Bei Entwicklerkonten nennt die Deaktivierungsbeschreibung nur
+die Folgen der Aktion, ohne technische Kontotypdetails oder Zusage eines Reaktivierungslinks.
 Alle drei Sicherheitsreiter verwenden unten `cosmos-panel-hint` mit
 `account-security-hint`: eigene Footerfläche, obere Trennlinie, blaues Info-Icon
 und sekundärer Text. Portalzugang erklärt die Identitätsbestätigung bei Änderungen,
@@ -46,6 +47,14 @@ die nachfolgende Sicherheitsbestätigung. Die Hinweise folgen dem Sprachwechsel.
 `account-security-hint` verwendet `flex: none`, damit die für seitliche Footer
 gedachte gemeinsame Flex-Basis im senkrechten Aufbau keine hohe Leerfläche erzeugt.
 Die Höhe ergibt sich aus Inhalt und den vorhandenen Footer-Innenabständen.
+
+Die ausstehende E-Mail-Verifikation und die Konto-Reaktivierung verwenden gelbe
+Header-Iconboxen über `cosmos-status-icon--warning`. Die Reaktivierungsseite
+übernimmt die beschriftete E-Mail-Zeile und die kompakte gerahmte Badge-Gestaltung
+der Verifikation (`pending-reactivation-status-badge` in `cosmos-account.css`).
+`cosmos-email-verification.css` hält die gemeinsame Anordnung und die fette
+Hervorhebung des Spam-/Junkordners; Versandhinweise bleiben kurz und dürfen auf
+schmalen Ansichten natürlich umbrechen.
 
 Die Bestätigung der eigenen Kontodeaktivierung oder Löschung verwendet denselben
 nativen Cosmos-Dialograhmen wie die übrigen Kontoaktionen. Die lokale Klasse

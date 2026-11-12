@@ -2,6 +2,7 @@ package de.derpeterson.app.views;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.badge.BadgeVariant;
@@ -10,6 +11,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -41,6 +43,7 @@ import java.util.Optional;
 @Route(AppRouteConstants.PENDING_ACCOUNT_REACTIVATION_ROUTE)
 @AnonymousAllowed
 @StyleSheet("custom-theme/cosmos-email-verification.css")
+@StyleSheet("custom-theme/cosmos-account.css")
 public final class PendingAccountReactivationView extends VerticalLayout
     implements BeforeEnterObserver, HasDynamicTitle {
   private final transient MessageProperties messageProperties;
@@ -49,9 +52,11 @@ public final class PendingAccountReactivationView extends VerticalLayout
 
   private final H2 reactivationTitleH2 = new H2();
   private final Badge deactivatedStatusBadge = new Badge();
+  private final Span accountEmailLabelSpan = new Span();
   private final Span accountEmailSpan = new Span();
   private final Span reactivationInstructionsSpan = new Span();
   private final Span spamHintSpan = new Span();
+  private final Span spamFolderEmphasisSpan = new Span();
   private final Span resendHintSpan = new Span();
   private final Button resendLinkButton = new Button();
   private final Button cancelReactivationButton = new Button();
@@ -78,11 +83,13 @@ public final class PendingAccountReactivationView extends VerticalLayout
             configService,
             messageProperties,
             PublicPageComponent.Page.ACCOUNT_REACTIVATION_PENDING);
+    SvgIcon reactivationHeaderSvgIcon = AppIcon.USER_PAUSE.create();
+    reactivationHeaderSvgIcon.addClassName("cosmos-status-icon--warning");
     publicPageComponent
         .getCardContainer()
         .add(
             new PublicPanelComponent(
-                AppIcon.USER_PAUSE.create(),
+                reactivationHeaderSvgIcon,
                 reactivationTitleH2,
                 messageProperties::getAccountReactivationPendingHint,
                 new Component[] {reactivationContentLayout},
@@ -96,14 +103,24 @@ public final class PendingAccountReactivationView extends VerticalLayout
   private VerticalLayout createReactivationContent() {
     reactivationTitleH2.addClassName("cosmos-headline");
     deactivatedStatusBadge.addThemeVariants(BadgeVariant.WARNING);
+    deactivatedStatusBadge.addClassName("pending-reactivation-status-badge");
     accountEmailSpan.setId("pending-reactivation-email");
+    accountEmailLabelSpan.addClassName("pending-verification-address-label");
     spamHintSpan.addClassName("pending-verification-spam-hint");
+    spamFolderEmphasisSpan.addClassName("pending-verification-folder-emphasis");
+
+    VerticalLayout accountAddressDetailsLayout =
+        new VerticalLayout(accountEmailLabelSpan, accountEmailSpan);
+    accountAddressDetailsLayout.setPadding(false);
+    accountAddressDetailsLayout.setSpacing(false);
+    accountAddressDetailsLayout.addClassName("pending-verification-address-details");
     HorizontalLayout accountAddressLayout =
-        new HorizontalLayout(accountEmailSpan, deactivatedStatusBadge);
+        new HorizontalLayout(accountAddressDetailsLayout, deactivatedStatusBadge);
     accountAddressLayout.setWidthFull();
     accountAddressLayout.setPadding(false);
+    accountAddressLayout.setSpacing(false);
     accountAddressLayout.setAlignItems(Alignment.CENTER);
-    accountAddressLayout.expand(accountEmailSpan);
+    accountAddressLayout.expand(accountAddressDetailsLayout);
     accountAddressLayout.addClassName("pending-verification-address");
 
     VerticalLayout warningTextLayout =
@@ -176,12 +193,10 @@ public final class PendingAccountReactivationView extends VerticalLayout
   private void refreshReactivationTexts() {
     reactivationTitleH2.setText(getPageTitle());
     deactivatedStatusBadge.setText(getPageTitle());
+    accountEmailLabelSpan.setText(messageProperties.getPublicEmailField());
     cancelReactivationButton.setText(messageProperties.getBaseLogoutButton());
     resendLinkButton.setText(messageProperties.getEmailVerificationResend());
-    spamHintSpan.setText(
-        developmentAccount
-            ? messageProperties.getAccountLifecycleNoMail()
-            : messageProperties.getEmailVerificationSpamHint());
+    refreshSpamFolderHint();
     resendHintSpan.setText(messageProperties.getAccountReactivationPendingWait());
     if (deletionDeadline != null) {
       String deletionDateText =
@@ -193,6 +208,28 @@ public final class PendingAccountReactivationView extends VerticalLayout
       reactivationInstructionsSpan.setText(
           messageProperties.getAccountReactivationPendingInstructions(deletionDateText));
     }
+  }
+
+  private void refreshSpamFolderHint() {
+    spamHintSpan.removeAll();
+    if (developmentAccount) {
+      spamHintSpan.setText(messageProperties.getAccountLifecycleNoMail());
+      return;
+    }
+
+    String spamHintText = messageProperties.getEmailVerificationSpamHint();
+    String spamFolderLabelText = messageProperties.getEmailVerificationSpamFolderLabel();
+    int folderLabelStartIndex = spamHintText.indexOf(spamFolderLabelText);
+    if (folderLabelStartIndex < 0) {
+      spamHintSpan.setText(spamHintText);
+      return;
+    }
+
+    spamFolderEmphasisSpan.setText(spamFolderLabelText);
+    spamHintSpan.add(
+        new Text(spamHintText.substring(0, folderLabelStartIndex)),
+        spamFolderEmphasisSpan,
+        new Text(spamHintText.substring(folderLabelStartIndex + spamFolderLabelText.length())));
   }
 
   private void resendReactivationLink() {

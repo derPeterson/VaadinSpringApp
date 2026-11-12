@@ -719,6 +719,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 
 /* E-Mail-Nachweis im Konto, in den Benutzerdetails und beim Bestätigungshinweis. */
 .email-verification-badge,
+.pending-reactivation-status-badge,
 .account-password-status {
     box-sizing: border-box;
     margin: 0;
@@ -733,7 +734,8 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 .account-password-status[theme~=success] {
     --vaadin-badge-text-color: var(--cosmos-reference-success);
 }
-.email-verification-badge[theme~=warning] {
+.email-verification-badge[theme~=warning],
+.pending-reactivation-status-badge[theme~=warning] {
     --vaadin-badge-text-color: var(--cosmos-reference-warning);
 }
 .account-password-status:not([theme~=success]) {

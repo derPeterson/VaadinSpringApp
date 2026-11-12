@@ -199,11 +199,13 @@ public class PendingEmailVerificationView extends VerticalLayout
     EqualButtonWidths.configureEqualButtonWidths(verificationActionsLayout);
 
     publicPageComponent.getCardContainer().removeAll();
+    SvgIcon verificationHeaderSvgIcon = AppIcon.ENVELOPE.create();
+    verificationHeaderSvgIcon.addClassName("cosmos-status-icon--warning");
     publicPageComponent
         .getCardContainer()
         .add(
             new PublicPanelComponent(
-                AppIcon.ENVELOPE.create(),
+                verificationHeaderSvgIcon,
                 verificationTitleH2,
                 messageProperties::getEmailVerificationPanelHint,
                 new Component[] {verificationContentLayout},

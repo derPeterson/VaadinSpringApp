@@ -2,6 +2,13 @@
 
 ## Browser-Tests
 
+- Reaktivierungs- und Verifikationshinweis, **offen**: In DE/EN auf Desktop und
+  Smartphone die gelben Header-Iconboxen prüfen. Die Reaktivierungsseite zeigt
+  dieselbe E-Mail-Beschriftung und den gerahmten Badge-Stil wie die Verifikationsseite,
+  weiterhin mit dem Status „Konto deaktiviert“. Spam-/Junkordner sind im Warnhinweis
+  fett hervorgehoben. Der gekürzte Versandhinweis soll auf Desktop ohne einzelnen
+  Wortüberhang passen und auf Smartphone natürlich umbrechen.
+
 - Kontoaktionen nach Stitch-Variante A, **offen**: In DE/EN bei Desktop- und
   Smartphonebreite die beiden Aktionszeilen in den bestehenden Cards untereinander,
   farbigen Tabler-Iconboxen, zugeordneten Buttons und vollständigen Beschreibungen
@@ -11,8 +18,9 @@
   und Anmeldeanbieter verwenden die neuen DE-/EN-Texte. Der Kontoaktionshinweis
   lautet „Beide Aktionen erfordern eine Bestätigung Ihrer Identität.“ beziehungsweise
   „Both actions require confirmation of your identity.“.
-  Header und Tabs bleiben unverändert. Entwicklerkonten erhalten keine
-  E-Mail-Reaktivierungszusage. Beide Buttons öffnen weiterhin nur die passende
+  Header und Tabs bleiben unverändert. Die Deaktivierungsbeschreibung für
+  Entwicklerkonten bleibt neutral, ohne technische Kontotypdetails oder Zusage
+  eines Reaktivierungslinks. Beide Buttons öffnen weiterhin nur die passende
   Identitätsbestätigung; ohne ausdrückliche Bestätigung keine Kontoänderung.
 
 - Passworthinweise bei Kontoaktionen, **offen**: In den bestehenden
