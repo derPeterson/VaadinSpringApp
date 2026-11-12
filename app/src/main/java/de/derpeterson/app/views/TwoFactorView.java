@@ -648,12 +648,21 @@ public final class TwoFactorView extends VerticalLayout
       return;
     }
 
-    addTwoFactorStepHint(
-        twoFactorEnrollment.available()
-            ? messageProperties.getTwoFactorSetupHint()
-            : messageProperties.getTwoFactorUnavailable());
+    twoFactorPanelComponent.setHeading(
+        messageProperties.getTwoFactorSetupTitle(),
+        messageProperties.getTwoFactorSetupEntrySubtitle(),
+        "");
 
     boolean hasPortalPassword = externalLoginFlow.owner(httpServletRequest).getPassword() != null;
+    String setupIdentityHintText =
+        hasPortalPassword
+            ? messageProperties.getExternalPasswordProofHint()
+            : messageProperties.getTwoFactorSetupHint();
+    addTwoFactorStepHint(
+        twoFactorEnrollment.available()
+            ? setupIdentityHintText
+            : messageProperties.getTwoFactorUnavailable());
+
     if (hasPortalPassword) {
       setupPasswordField.setLabel(messageProperties.getAccountPasswordDialogCurrentPassword());
       setupPasswordField.setPlaceholder(messageProperties.getAccountPasswordPlaceholder());

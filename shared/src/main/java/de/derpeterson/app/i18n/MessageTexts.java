@@ -639,6 +639,10 @@ public class MessageTexts {
     return getTranslation("mfa.setup.hint");
   }
 
+  public String getTwoFactorSetupEntrySubtitle() {
+    return getTranslation("mfa.setup.entrySubtitle");
+  }
+
   public String getTwoFactorSetupSubtitle() {
     return getTranslation("mfa.setup.subtitle");
   }

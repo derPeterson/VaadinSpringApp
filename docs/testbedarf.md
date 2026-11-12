@@ -2,10 +2,14 @@
 
 ## Browser-Tests
 
-- Erklärungstext im Anmeldeanbieter-Bestätigungsdialog, **offen, noch kein Browserlauf beauftragt**:
+- Erklärungstexte bei Identitätsbestätigungen, **offen, noch kein Browserlauf beauftragt**:
   In DE/EN auf Desktop und Smartphone prüfen, dass der einleitende Passwort-/
   Identitätshinweis die Standardtextgröße mit regulärem Schriftgewicht verwendet.
   Der Untertitel im Dialogkopf bleibt unverändert.
+  Beim Einstieg in die Authenticator-Einrichtung erklärt der Paneluntertitel
+  den vorgeschalteten Identitätsnachweis. Bei vorhandenem Portalpasswort fordert
+  der Text über dem Feld zur Passworteingabe auf und endet mit einem Doppelpunkt.
+  Die übergeordnete Seitenbeschreibung behält den allgemeinen Zweck der 2FA.
 
 - E-Mail-Bestätigungsseite nach Stitch-Variante A, **offen, noch kein Browserlauf beauftragt**:
   Bestehende Suite `email-verification` in DE/EN bei Desktop- und Smartphonebreite

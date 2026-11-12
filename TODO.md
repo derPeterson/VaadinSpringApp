@@ -6,8 +6,10 @@
   Zunächst nur sammeln; Umsetzung erst nach ausdrücklichem Startsignal.
 
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
-  gemeinsam abnehmen. Offene Ergänzungen zum Formularschutz und der fehlende
-  Sonar-Nachweis stehen im Plan. Weitere Komponenten folgen als eigene Pakete.
+  weiterführen. Konto deaktivieren/löschen und die noch offenen Komponenten
+  gemeinsam ansehen. Ergänzungen zum Formularschutz bei Browseraktionen und
+  der fehlende Sonar-Nachweis stehen im Plan. Die ausdrücklich zurückgestellten
+  Pakete bleiben bis zu einer späteren Freigabe offen.
 
 ## Entwicklungsablauf
 

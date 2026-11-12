@@ -30,109 +30,22 @@ des Benutzerfilters, der Konfiguration, des Mailtests und des
 Benachrichtigungsversands. Rollen, Status, Quellen und kompakte Zähler nutzen
 native Vaadin-Badges. Kennzahlenkarten bleiben ein eigenes Paket.
 
-Nach den Badges folgt die gemeinsame `CosmosMetricCard` als eigenes Paket.
+Die gemeinsame `CosmosMetricCard` bleibt als eigenes Paket vorerst zurückgestellt.
 Ihr erster Einsatz sind „Gesamt“ und „Ungelesen“ im Postfach. Die neutrale und
 die hervorgehobene Variante werden auf Desktop und Mobil mit der bestehenden
 Darstellung verglichen.
 
 ## Offene Abnahme der Portalpakete
 
-### E-Mail-Nachweis und administrative Kontoanlage
-
-Umgesetzt auf dem bestehenden Branch. Die gemeinsame Sichtung bleibt offen.
-Die automatisierten Nachweise laufen mit frischen isolierten Testdaten;
-Entwicklerdaten und laufende Anwendung bleiben unverändert.
-
-- Anlageweg, E-Mail-Nachweis und Kontofreigabe getrennt speichern. Selbstregistrierung
-  und normale administrative Anlage benötigen Bestätigung. Startkonten und eine
-  ausdrücklich gewählte, serverseitig auf Superadmins begrenzte Ausnahme bleiben
-  ohne E-Mail-Nachweis benutzbar. Die Ausnahme ändert den tatsächlichen Anlageweg nicht.
-  Pro Startkonto ist `email-verification-required` auswählbar; Standard false.
-  Bei true gilt der normale Bestätigungsweg mit initialer Mail. Bestehende Konten
-  werden beim Neustart weder überschrieben noch erneut angeschrieben.
-- Nach korrektem erstem Anmeldenachweis bei ausstehender Bestätigung eine eigene
-  gelbe Bestätigungsseite ohne Portalrechte anbieten. Adresse, Spamhinweis,
-  erneuten Versand und Rückkehr zur Anmeldung anzeigen. Falsche Zugangsdaten
-  bleiben allgemein; Sperren und Selbstdeaktivierung werden nicht aufgehoben.
-- Native Badges für Verifiziert (grün), Bestätigung ausstehend (gelb) und
-  Nicht geprüft (grau) im Konto und in den administrativen Benutzerdetails anzeigen.
-  Änderungen der aktuellen Adresse dürfen keinen alten Nachweis übernehmen.
-- Adminaktionen zum erneuten Versand der Verifikationsmail und zum Passwortreset
-  ergänzen. Rechte und gespeicherte Adresse frisch prüfen, keine Entwürfe verwenden.
-  Bestehende Versandbegrenzungen, Tokenrotation, Transaktionen und MFA erhalten.
-  Eine gespeicherte Adressänderung fordert automatisch einen neuen Verifikationslink
-  an. Die Ausnahme „Nicht geprüft“ bleibt erhalten und löst keinen Versand aus.
-  Alte ungeklärte Versandaufträge behalten Ziel und Zustand, ohne die neue Adresse
-  zu blockieren. Die gemeinsame Sichtung dieses Ablaufs bleibt offen.
-- Offen bleibt die gemeinsame Sichtung
-  der neuen Bestätigungsseite, der Konto-/Admin-Badges, der Superadmin-Ausnahme
-  und der administrativen Mailaktionen. Die Browserhilfen bestätigen regulär
-  angelegte freigegebene Testkonten über ihre echte Testmail.
-
-### Stitch-Entwürfe zur gemeinsamen Auswahl
-
-Die synthetischen Originalaufnahmen und unveränderten Stitch-HTML-Exporte liegen
-im Projekt [Cosmos – Anmeldung und E-Mail-Bestätigung](https://stitch.google.com/projects/14127199108737824760).
-Der Anmeldungsbereich des Benutzerdialogs ist zur strukturellen Übernahme freigegeben.
-Für die E-Mail-Bestätigungsseite ist Variante A zur Übernahme mit Cosmos-Stilen und
-nativen Vaadin-Komponenten freigegeben. Die gemeinsame Sichtung bleibt offen:
-
-- [Benutzer bearbeiten: Anmeldung](https://stitch.google.com/projects/14127199108737824760?node-id=11269844840653526231):
-  Informationen und bestehende Badges stehen über der Trennlinie, die beiden
-  Versandaktionen darunter. Ein kurzer Hinweis nennt die gespeicherte E-Mail-Adresse
-  als Ziel. Andere Formularbereiche bleiben gesetzt, verfügbare Anmeldewege grün.
-  Die gemeinsame Sichtung der Umsetzung bleibt offen. Die vorgeschlagene
-  Aussage, jeder Passwortreset erfordere eine verifizierte E-Mail, passt nicht
-  zum gültigen Vertrag: ausdrücklich ungeprüfte, freigegebene Konten sind ebenfalls zulässig.
-- [E-Mail bestätigen, A: kompakte Karte](https://stitch.google.com/projects/14127199108737824760?node-id=12215867726124644583).
-  Bestehendes Panel in der normalen Seitenanordnung mit Adresse und Status-Badge in einem Informationsblock,
-  gelbem Link-/Spamhinweis und kurzem Hinweis zur bestehenden Versandwartezeit.
-  Vollständiger Seitenkopf, Service-Logo, Sprachwechsel, Nachweissperre und beide vorhandenen Aktionen bleiben
-  erhalten. Unbestätigte Versandzeitpunkte und Zustellungsbehauptungen werden nicht angezeigt.
-  Der Footer folgt 2FA mit zwei gleich breiten, gemeinsam rechtsbündigen Buttons:
-  Abmelden im bestehenden roten Stil und Senden mit Paperplane als Primäraktion.
-
-Bei der Auswahl bleiben die echten Funktionen maßgeblich: kein Portalzugriff
-ohne erforderlichen Nachweis, genau die vorhandenen Aktionen Rückkehr und erneuter
-Versand, keine zusätzliche Codeeingabe. Versandbehauptungen dürfen nur den tatsächlich
-bestätigten Queue-/SMTP-Zustand beschreiben. Der zusätzliche grüne Punkt in Variante C
-und neue Badgefarben aus den Entwürfen werden nicht automatisch übernommen.
-
-Die noch nicht erfolgreich ausgeführten automatisierten Prüfungen stehen zentral
-im [Testbedarf](../testbedarf.md).
-
-Zur gemeinsamen Sichtung gehören die folgenden drei Pakete auf
-`codex/vaadin-komponentenanpassungen`. Die letzte große Testrunde steht im
-[Prüfstand](../status.md). Der [Testbedarf](../testbedarf.md) führt offene
-automatisierte Prüfungen.
-
-### Auswahlfelder und Kalender
-
-- **Weitere freigegebene Verfeinerung:** Gemeinsamer Hoverwert anwendungsweit,
-  getrennt von unveränderten Auswahlfarben. Passwort- und Ersatzcode-Hinweise in
-  der Anbieterbestätigung folgen dem kurzen Eingabehinweis mit Doppelpunkt.
-  Die gemeinsame Sichtung bleibt offen.
-
-- **Aktuelle Verfeinerung:** Blauer Optionshover, 2 px Abstand im MultiSelect,
-  breitere Pagination-Auswahlliste und feste Tage im nativen Zahlenfeld-Suffix.
-  Der Formularschutz nutzt eine Variante von `PortalConfirmationDialog` mit
-  gelbem Tabler-Icon `file-diff` samt Warnrahmen und dezenter Warnfläche im Kopf,
-  Standard-Schließen und gleich breiten Buttons in gleichbleibender
-  Reihenfolge. Die gemeinsame Sichtung der aktuellen Verfeinerungen bleibt offen.
-  Die nachträglich gewünschte inhaltsabhängige gemeinsame Buttonbreite und
-  die Verteilung an die beiden Footerränder sind umgesetzt.
-  Die Quellkorrektur für den abgeschnittenen MultiSelect-Rahmen und die
-  Tages-Einheit hinter dem Plus ist ebenfalls umgesetzt.
-
-- **Abnahme:** Geschlecht in Konto, Registrierung und Benutzerverwaltung sowie
-  Sprache, Dauerfelder und Pagination ansehen. Je einen Eintrag auswählen,
-  bei Rollen und Empfängern mehrere. Die Feldhilfen zur Aufbewahrung prüfen.
-  Die Dauerliste auch auf schmalem Bildschirm öffnen. Kalender und Uhrzeit nach
-  einem Sprachwechsel ansehen.
+Die abgenommenen Auswahlfelder, die bestehende Formularwarnung und die E-Mail-/
+Benutzerverwaltungsoberflächen sind keine offenen Abnahmepunkte mehr. Ihre
+Funktionen stehen in der aktuellen [Anwendungsdokumentation](../anwendung.md)
+und im [Theme-Standard](../theme.md). Offene automatisierte Nachtests bleiben
+unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
 
 ### Segmentierte Benachrichtigungsfilter vereinheitlichen
 
-- **Offen, nur geplant:** „Alle / Ungelesen / Gelesen“ im Posteingang und in der
+- **Vorerst zurückgestellt, nur geplant:** „Alle / Ungelesen / Gelesen“ im Posteingang und in der
   Glockenvorschau an den vorhandenen App-Code-/Ersatzcode-Umschalter angleichen.
   Die Filter verwenden derzeit bereits eine native `RadioButtonGroup`, die
   als Segmentleiste gestaltet ist. Vorgesehen ist die Umstellung auf native
@@ -155,17 +68,13 @@ automatisierte Prüfungen.
   echte Änderungen sind gezielt in DE/EN per JUnit geprüft. Die reale Passwortmanager-
   Nachprüfung bleibt unter [HUM-11](../manual-tests/README.md#hum-11) offen.
 
-- **Offene Ergänzung:** Ungespeicherte Eingaben auch beim Browser-Refresh
+- **Vorerst zurückgestellte Ergänzung:** Ungespeicherte Eingaben auch beim Browser-Refresh
   (F5, Strg+R und Aktualisieren-Schaltfläche), beim Schließen eines Tabs oder
   Browserfensters sowie beim Verlassen über die Adresszeile oder externe
   Navigation schützen. Der bisherige Schutz erfasst diese Browseraktionen nicht.
   Vor der Umsetzung die passende öffentliche Vaadin-/Browseranbindung prüfen.
   Der dazugehörige automatisierte Nachtest steht zentral im
   [Testbedarf](../testbedarf.md#browser-tests).
-- **Abnahme:** Persönliche Daten und eine Konfigurationsgruppe bearbeiten,
-  Navigation abbrechen und danach bewusst verwerfen. „Neu laden“ in der
-  Konfiguration und „Abbrechen“ im Benutzerformular ausprobieren. Auch nach
-  einem erfolgreichen und einem fehlgeschlagenen Speicherversuch prüfen.
 
 ### Eigenes Konto deaktivieren oder löschen
 
