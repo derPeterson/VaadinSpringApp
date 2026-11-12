@@ -56,7 +56,8 @@ class UserInputValidationTest {
             passwordEncoder,
             mock(UserProfileBroadcaster.class),
             mock(de.derpeterson.app.security.AdminRolePolicy.class),
-            mock(org.springframework.context.ApplicationEventPublisher.class));
+            mock(org.springframework.context.ApplicationEventPublisher.class),
+            mock(AccountDeletionService.class));
   }
 
   private UserEntity user() {

@@ -138,6 +138,28 @@ class EmailQueueServicePersistenceTest {
   }
 
   @ParameterizedTest
+  @ValueSource(booleans = {false, true})
+  void deletionConfirmationRemovesRecipientDataAfterSuccessfulOrFinalFailedTransport(
+      boolean transportFails) throws Exception {
+    when(config.getInteger(ConfigEntry.EMAIL_QUEUE_MAX_RETRY)).thenReturn(0);
+    service.addAccountDeletionConfirmation("deleted@example.test", "Deleted", "Confirmation");
+    EmailQueueEntity queuedConfirmation = emailQueueRepository.findAll().getFirst();
+    assertNull(queuedConfirmation.getUserEntity());
+    assertEquals("deleted@example.test", queuedConfirmation.getRecipient());
+    if (transportFails) {
+      doThrow(new MailAuthenticationException("Test SMTP rejection"))
+          .when(mail)
+          .sendEmailTo(eq("deleted@example.test"), eq("Deleted"), eq("Confirmation"));
+    }
+
+    service.processQueue();
+
+    assertFalse(emailQueueRepository.existsById(queuedConfirmation.getId()));
+    assertEquals(0, adminAttempts.count());
+    verify(mail).sendEmailTo(eq("deleted@example.test"), eq("Deleted"), eq("Confirmation"));
+  }
+
+  @ParameterizedTest
   @EnumSource(value = EmailType.class, names = "ACCOUNT_DELETED", mode = EnumSource.Mode.EXCLUDE)
   void twoDirectProducersCommitOnlyOneOpenMailPerUserAndType(EmailType type) throws Exception {
     CyclicBarrier barrier = new CyclicBarrier(2);

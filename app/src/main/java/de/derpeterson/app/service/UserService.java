@@ -58,6 +58,7 @@ public class UserService {
   private final AdminRolePolicy rolePolicy;
   private final ApplicationEventPublisher applicationEventPublisher;
   private final Clock userServiceClock;
+  private final AccountDeletionService accountDeletionService;
 
   @Autowired
   public UserService(
@@ -66,7 +67,8 @@ public class UserService {
       PasswordEncoder passwordEncoder,
       UserProfileBroadcaster profileEvents,
       AdminRolePolicy rolePolicy,
-      ApplicationEventPublisher applicationEventPublisher) {
+      ApplicationEventPublisher applicationEventPublisher,
+      AccountDeletionService accountDeletionService) {
     this(
         userRepository,
         userStatusBroadcaster,
@@ -74,6 +76,7 @@ public class UserService {
         profileEvents,
         rolePolicy,
         applicationEventPublisher,
+        accountDeletionService,
         Clock.systemUTC());
   }
 
@@ -84,6 +87,7 @@ public class UserService {
       UserProfileBroadcaster profileEvents,
       AdminRolePolicy rolePolicy,
       ApplicationEventPublisher applicationEventPublisher,
+      AccountDeletionService accountDeletionService,
       Clock userServiceClock) {
     this.userRepository = userRepository;
     this.userStatusBroadcaster = userStatusBroadcaster;
@@ -92,6 +96,7 @@ public class UserService {
     this.rolePolicy = rolePolicy;
     this.applicationEventPublisher = applicationEventPublisher;
     this.userServiceClock = Objects.requireNonNull(userServiceClock);
+    this.accountDeletionService = accountDeletionService;
   }
 
   private Set<RoleType> roleTypes(Collection<RoleEntity> roles) {
@@ -420,6 +425,7 @@ public class UserService {
     List<Long> superadmins = lockAndReadSuperadmins();
     rolePolicy.authorizeMutation(user.getId(), Set.of());
     ensureSuperadminChangeAllowed(user.getId(), false, superadmins);
+    accountDeletionService.prepareAccountDeletion(user.getId(), "");
     userRepository.delete(user);
     userRepository.flush();
     ensureSuperadminsRemain(superadmins);

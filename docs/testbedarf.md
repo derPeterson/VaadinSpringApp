@@ -156,18 +156,6 @@ die Freigabe allein bedeutet keine bereits ausgeführten Prüfungen.
   normale Benutzer und nicht angemeldete Aufrufer verweigern. Verweigerte
   Änderungen lassen die gespeicherten Fristen unverändert.
 
-- Vollständige Kontolöschung mit komplexen Verknüpfungen, **wartend auf
-  [Nachtaufgabe 9](planung/nachtaufgaben.md#9-vollständige-kontolöschung-mit-umfangreich-verknüpften-testkonten-absichern)**:
-  Bestehenden partiellen Persistenznachweis um reale Kontoverknüpfungen im
-  aktuellen Schema erweitern. Selbstlöschung, Fristablauf und Adminlöschung nach
-  Commit aus frischem Lesekontext prüfen, einschließlich Token/2FA, Avatar,
-  Anmeldewegen, gespeicherten Anmeldungen, Sitzungen, Mail-/Benachrichtigungsdaten
-  und gemischt eigenen/fremden Ticketdaten. Auch Beziehungen ohne Fremdschlüssel,
-  unveränderte Kontrollkonten, verweigerte alte Zugriffe und Rollback abdecken.
-  Temporären Löschbestätigungsauftrag samt Entfernung und unklarem Versandausgang
-  getrennt nachweisen. Gefundene Löschlücken beheben und verbleibende Grenzen
-  sichtbar erhalten; keine Vollständigkeit allein aus Cascades oder Mocks ableiten.
-
 - Beschränkter Anmeldezustand selbst deaktivierter Konten, **wartend auf Nachtaufgabe 8**:
   Erstnachweis vor Statusanzeige, Portal-/Anbieteranmeldung, fehlende normale
   Berechtigungen und Remember-me-Freigabe sowie saubere Abmeldung absichern.

@@ -147,53 +147,18 @@ gezielt und in der Gesamtrunde; der offene Umfang steht im [Testbedarf](../testb
 
 ## 9. Vollständige Kontolöschung mit umfangreich verknüpften Testkonten absichern
 
-- [ ] Vorhandene Löschtests mit dem aktuellen H2-Schema und allen fachlichen
-  Kontoverknüpfungen abgleichen. Der bestehende Persistenztest belegt Teilfälle
-  für Konto, persönliche Queue-/Versanddaten, eine Benachrichtigung und eine
-  gespeicherte Sitzung; er ist kein vollständiger Löschungsnachweis. Eine kurze
-  fachliche Übersicht der Löschregeln in der aktuellen Kontodokumentation pflegen,
-  keinen zusätzlichen dauerhaften QA-Bericht oder Parallelkatalog anlegen.
-- [ ] Vorhandene Persistenztests um ein repräsentatives, umfangreich verknüpftes
-  Konto und unabhängige Kontrollkonten erweitern. Reale isolierte Datenbankdaten
-  für Profil/Avatar, Rollenverknüpfungen, Google-/Microsoft-Identitäten,
-  2FA einschließlich Ersatzcodes und Challenges, Verifikations-/Passwortreset-/
-  E-Mail-Änderungstoken, gespeicherte Anmeldungen, Sitzungen samt Attributen,
-  Anmeldeversuche, Mailqueue/Versandhistorie, Benachrichtigungen/Empfänger und
-  Tickets/Antworten/Beobachter aufbauen, soweit diese Beziehungen existieren.
-  Nicht nur Fremdschlüssel prüfen: auch Verknüpfungen über E-Mail, Hashwerte,
-  Ticketnummern und gespeicherte Momentaufnahmen berücksichtigen.
-- [ ] Sofortige Selbstlöschung, automatische Löschung nach Deaktivierungsfrist
-  und administrative Löschung prüfen. Jeweils nach tatsächlichem Commit in
-  einem frischen Lesekontext die betroffenen Tabellen und Beziehungen abfragen.
-  Die Bereinigung gespeicherter Anmeldungen, Sitzungseinträge und Mailaufträge
-  für diesen Nachweis nicht nur durch simulierte Dienste bestätigen lassen.
-- [ ] Mischfälle mit fremden Daten abdecken: eigene Tickets mit fremden Antworten,
-  eigene Antworten/Vermerke in fremden Tickets, übernommene fremde Vorgänge,
-  ausschließlich persönliche und gemeinsam adressierte Benachrichtigungen.
-  Eigene personenbezogene Daten und Inhalte gemäß vereinbartem Löschvertrag
-  entfernen; fremde Konten und unabhängige Daten erhalten. Freigegebene fremde
-  Vorgänge müssen fachlich konsistent wieder übernehmbar sein. Gemeinsam genutzte
-  Rollen und globale Konfiguration sind keine zu löschenden Kontodaten.
-- [ ] Die bewusst gewünschte Löschbestätigung gesondert prüfen: Ihr minimaler
-  Versandauftrag enthält vorübergehend die Empfängeradresse, obwohl das Konto
-  bereits gelöscht ist. Entfernung nach erfolgreichem Versand beziehungsweise
-  endgültigem Versandfehler prüfen. Den bestehenden Sonderfall eines unklaren
-  Transportausgangs ausdrücklich mit dem offenen Mailqueue-Bug abgleichen und
-  verbleibende Daten ehrlich benennen, nicht als vollständig gelöscht melden.
-- [ ] Alte Sitzungen, Remember-me-Nachweise, Anbieterzuordnungen und Aktionslinks
-  dürfen nach Kontolöschung keinen Zugriff oder eine Wiederherstellung erlauben.
-  Fehlgeschlagene Löschungen und Transaktionsrollback dürfen keine unbemerkte
-  Teilbereinigung oder falsche Erfolgsbestätigung erzeugen. Die zeitlichen Grenzen
-  nachgelagerter Sitzungsbereinigung prüfen und dokumentieren.
-- [ ] Bei den Prüfungen gefundene echte Löschlücken im beauftragten Umfang
-  beheben, mit Regressionen absichern und die geänderten Stellen gemäß der
-  Lesbarkeitsausnahme dieses Nachtauftrags reviewen. Bestehende Tests erweitern
-  statt parallele Testimplementierungen
-  aufzubauen. Passende Löschabläufe in der abschließenden isolierten großen
-  Testrunde mitprüfen. Offene Nachweise im [Testbedarf](../testbedarf.md) führen;
-  für automatische Regressionen ausschließlich eigene isolierte Testkonten nutzen.
-  Eine nötige Reproduktion in der freigegebenen lokalen Entwicklungsanwendung
-  getrennt von diesen Regressionen behandeln.
+Die gemeinsame Bereinigung gilt für Selbstlöschung, Fristablauf und administrative
+Löschung. Die zuvor fehlende zusätzliche administrative Bereinigung sowie die
+Empfängerzahl gemeinsam erhaltener Nachrichten sind korrigiert. Reale isolierte
+Persistenztests decken Anbieter/Avatar/Rollen, 2FA/Token, Remember-me, Sitzungen mit
+Attributen, Anmeldeversuche, Queue/Versandhistorie und eigene/fremde Ticket- und
+Benachrichtigungsdaten ab. Rollback und die Entfernung der minimalen
+Löschbestätigung nach Erfolg beziehungsweise endgültigem Versandfehler sind geprüft.
+Der unklare SMTP-Ausgang bleibt gemäß [Mailqueue](../mailqueue.md) als bestehender
+Fehler zur administrativen Klärung offen; keine automatische Wiederholung.
+
+- [ ] Die passenden Oberflächenabläufe in der abschließenden großen Testrunde
+  mitprüfen. Der dauerhafte Löschvertrag steht in [Sicherheit](../sicherheit.md#eigenes-konto-deaktivieren-und-löschen).
 
 ## 10. Konfigurationsfelder für Deaktivierungsfristen vereinheitlichen
 

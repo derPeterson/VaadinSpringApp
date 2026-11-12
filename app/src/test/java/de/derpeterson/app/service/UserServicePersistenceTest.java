@@ -12,6 +12,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.repository.UserRepository;
+import de.derpeterson.app.security.DeviceTokenRepository;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
@@ -34,11 +35,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
@@ -180,10 +185,16 @@ class UserServicePersistenceTest {
   static class Config {
     @Bean
     DataSource dataSource() {
-      return new DriverManagerDataSource(
-          "jdbc:h2:mem:admin-guard-" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1",
-          "sa",
-          "");
+      DriverManagerDataSource dataSource =
+          new DriverManagerDataSource(
+              "jdbc:h2:mem:admin-guard-" + UUID.randomUUID() + ";MODE=MySQL;DB_CLOSE_DELAY=-1",
+              "sa",
+              "");
+      new ResourceDatabasePopulator(
+              new ClassPathResource("db/application-schema-h2.sql"),
+              new ClassPathResource("db/durable-sessions-h2.sql"))
+          .execute(dataSource);
+      return dataSource;
     }
 
     @Bean
@@ -192,7 +203,14 @@ class UserServicePersistenceTest {
       factory.setDataSource(dataSource);
       factory.setPackagesToScan("de.derpeterson.app.model");
       factory.setJpaVendorAdapter(new HibernateJpaVendorAdapter());
-      factory.setJpaPropertyMap(Map.of("hibernate.hbm2ddl.auto", "create-drop"));
+      factory.setJpaPropertyMap(
+          Map.of(
+              "hibernate.hbm2ddl.auto",
+              "validate",
+              "hibernate.physical_naming_strategy",
+              "org.hibernate.boot.model.naming.PhysicalNamingStrategySnakeCaseImpl",
+              "hibernate.implicit_naming_strategy",
+              "org.springframework.boot.hibernate.SpringImplicitNamingStrategy"));
       return factory;
     }
 
@@ -224,14 +242,34 @@ class UserServicePersistenceTest {
     }
 
     @Bean
+    AccountDeletionService accountDeletionService(
+        UserRepository userRepository,
+        DataSource dataSource,
+        JpaTransactionManager transactionManager) {
+      return new AccountDeletionService(
+          userRepository,
+          new JdbcTemplate(dataSource),
+          new DeviceTokenRepository(dataSource, transactionManager),
+          new SessionRegistryImpl(),
+          mock(AvatarDraftStore.class));
+    }
+
+    @Bean
     UserService userService(
         UserRepository userRepository,
         UserStatusBroadcaster broadcaster,
         UserProfileBroadcaster profiles,
         de.derpeterson.app.security.AdminRolePolicy policy,
-        org.springframework.context.ApplicationEventPublisher publisher) {
+        org.springframework.context.ApplicationEventPublisher publisher,
+        AccountDeletionService accountDeletionService) {
       return new UserService(
-          userRepository, broadcaster, new BCryptPasswordEncoder(), profiles, policy, publisher);
+          userRepository,
+          broadcaster,
+          new BCryptPasswordEncoder(),
+          profiles,
+          policy,
+          publisher,
+          accountDeletionService);
     }
 
     @Bean
@@ -256,7 +294,7 @@ class UserServicePersistenceTest {
                     de.derpeterson.app.model.enums.ConfigEntry.MAX_SESSIONS_PER_USER))
                 .thenReturn(3);
             return new de.derpeterson.app.security.SessionAdmissionService(
-                config, new org.springframework.security.core.session.SessionRegistryImpl());
+                config, new SessionRegistryImpl());
           }));
     }
   }

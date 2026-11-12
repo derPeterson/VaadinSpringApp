@@ -705,7 +705,8 @@ class VerificationQueueConcurrencyTest {
           mock(PasswordEncoder.class),
           mock(UserProfileBroadcaster.class),
           mock(de.derpeterson.app.security.AdminRolePolicy.class),
-          mock(org.springframework.context.ApplicationEventPublisher.class));
+          mock(org.springframework.context.ApplicationEventPublisher.class),
+          mock(AccountDeletionService.class));
     }
   }
 }

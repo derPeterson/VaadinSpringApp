@@ -51,8 +51,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 @Service
@@ -87,6 +85,7 @@ public class AccountLifecycleService {
   private final JdbcTemplate jdbcTemplate;
   private final PlatformTransactionManager platformTransactionManager;
   private final AvatarDraftStore avatarDraftStore;
+  private final AccountDeletionService accountDeletionService;
 
   public ProofMethod proofMethod(HttpServletRequest httpServletRequest) {
     Owner accountOwner = twoFactorAuthorization.owner(httpServletRequest);
@@ -122,11 +121,11 @@ public class AccountLifecycleService {
                     throw new LastSuperadminException();
                   }
 
-                  deviceTokenRepository.removeUserTokens(lockedAccountUser.getEmail());
                   if (accountAction == AccountAction.DEACTIVATE) {
+                    deviceTokenRepository.removeUserTokens(lockedAccountUser.getEmail());
                     deactivateAccount(lockedAccountUser);
                   } else {
-                    deleteAccount(lockedAccountUser);
+                    deleteAccount(lockedAccountUser, currentSessionId);
                   }
                   return !lockedAccountUser.isDevelopmentAccount();
                 }));
@@ -327,9 +326,7 @@ public class AccountLifecycleService {
 
     AccountDeactivation accountDeactivation = lockedAccountUser.getAccountDeactivation();
     if (!accountDeactivation.deletionAt().isAfter(processingTime)) {
-      deviceTokenRepository.removeUserTokens(lockedAccountUser.getEmail());
-      removeOtherSessions(lockedAccountUser.getEmail(), "");
-      deleteAccount(lockedAccountUser);
+      deleteAccount(lockedAccountUser, "");
     } else if (accountDeactivation.reminderAt() != null
         && !accountDeactivation.reminderAt().isAfter(processingTime)
         && !emailQueueService.hasOpenEmailForUserAndType(
@@ -349,33 +346,12 @@ public class AccountLifecycleService {
     }
   }
 
-  private void deleteAccount(UserEntity lockedAccountUser) {
+  private void deleteAccount(UserEntity lockedAccountUser, String preservedSessionId) {
     Long accountUserId = lockedAccountUser.getId();
     String recipientEmail = lockedAccountUser.getEmail();
     MessageProperties accountMessageProperties = createAccountMessageProperties(lockedAccountUser);
 
-    // Eigene Inhalte entfernen; offene Vorgänge anderer Konten wieder zur Übernahme freigeben.
-    jdbcTemplate.update(
-        "DELETE FROM admin_notification_attempt WHERE queue_id IN "
-            + "(SELECT id FROM email_queue WHERE user_id = ?)",
-        accountUserId);
-    jdbcTemplate.update(
-        "DELETE FROM user_notifications WHERE id IN "
-            + "(SELECT notification_id FROM user_notification_recipients WHERE user_id = ?) "
-            + "AND NOT EXISTS (SELECT 1 FROM user_notification_recipients r "
-            + "WHERE r.notification_id = user_notifications.id AND r.user_id <> ?)",
-        accountUserId,
-        accountUserId);
-    deleteAccountTicketNotifications(accountUserId);
-    jdbcTemplate.update("DELETE FROM support_replies WHERE author_id = ?", accountUserId);
-    jdbcTemplate.update(
-        "UPDATE support_tickets SET assignee_id = NULL, status = 'OPEN', version = version + 1 "
-            + "WHERE assignee_id = ? AND status = 'IN_PROGRESS'",
-        accountUserId);
-    jdbcTemplate.update("DELETE FROM user_notifications WHERE sender_id = ?", accountUserId);
-    jdbcTemplate.update(
-        "DELETE FROM login_attempts WHERE identity_hash = ?",
-        LoginAttemptService.identityKey(recipientEmail));
+    accountDeletionService.prepareAccountDeletion(accountUserId, preservedSessionId);
     userRepository.delete(lockedAccountUser);
     userRepository.flush();
     if (!lockedAccountUser.isDevelopmentAccount()) {
@@ -391,29 +367,7 @@ public class AccountLifecycleService {
                   "MESSAGE",
                   accountMessageProperties.getAccountDeletedMailBody())));
     }
-    TransactionSynchronizationManager.registerSynchronization(
-        new TransactionSynchronization() {
-          @Override
-          public void afterCommit() {
-            avatarDraftStore.releaseForUser(accountUserId);
-          }
-        });
     AfterCommitLog.info(log, "Account permanently deleted: userId={}", accountUserId);
-  }
-
-  private void deleteAccountTicketNotifications(Long accountUserId) {
-    jdbcTemplate.update(
-        "DELETE FROM user_notifications WHERE support_reply_id IN "
-            + "(SELECT id FROM support_replies WHERE author_id = ?)",
-        accountUserId);
-    List<Long> ownedTicketIds =
-        jdbcTemplate.queryForList(
-            "SELECT id FROM support_tickets WHERE owner_id = ?", Long.class, accountUserId);
-    for (Long ownedTicketId : ownedTicketIds) {
-      jdbcTemplate.update(
-          "DELETE FROM user_notifications WHERE support_ticket_number = ?",
-          SupportTicketService.ticketNumber(ownedTicketId));
-    }
   }
 
   private void queueReactivationNotice(

@@ -71,7 +71,8 @@ class UserServiceTest {
             passwordEncoder,
             mock(UserProfileBroadcaster.class),
             mock(de.derpeterson.app.security.AdminRolePolicy.class),
-            mock(org.springframework.context.ApplicationEventPublisher.class));
+            mock(org.springframework.context.ApplicationEventPublisher.class),
+            mock(AccountDeletionService.class));
   }
 
   @Test
@@ -100,6 +101,7 @@ class UserServiceTest {
             mock(UserProfileBroadcaster.class),
             mock(de.derpeterson.app.security.AdminRolePolicy.class),
             mock(org.springframework.context.ApplicationEventPublisher.class),
+            mock(AccountDeletionService.class),
             Clock.fixed(now, ZoneId.of(zone)));
     when(userRepository.updateLastActivity(1L, now)).thenReturn(1);
     timed.updateLastActivity(1L);

@@ -160,7 +160,8 @@ class PublicPageComponentTest {
     boolean isSecurityPage =
         publicPageType == PublicPageComponent.Page.TWO_FACTOR
             || publicPageType == PublicPageComponent.Page.RECOVERY_HELP
-            || publicPageType == PublicPageComponent.Page.EMAIL_VERIFICATION_PENDING;
+            || publicPageType == PublicPageComponent.Page.EMAIL_VERIFICATION_PENDING
+            || publicPageType == PublicPageComponent.Page.ACCOUNT_REACTIVATION_PENDING;
 
     assertPublicHeaderNavigation(publicPageComponent, isSecurityPage);
 

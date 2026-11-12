@@ -57,7 +57,21 @@ haben keinen Mailversand. Nach Linkbestätigung ist eine reguläre Anmeldung nö
 Die Löschung wird direkt bestätigt oder nach Ablauf der Deaktivierungsfrist
 automatisch ausgeführt. Sie entfernt das Konto, Anmeldeverknüpfungen,
 gespeicherte Nachweise, Profilbild, eigene Vorgänge und verfasste Inhalte.
-Fremde Vorgänge bleiben erhalten. Noch laufende Zuweisungen werden gelöst.
+Selbstlöschung, Fristablauf und administrative Löschung verwenden dieselbe
+transaktionale Bereinigung. Dazu zählen auch Sitzungseinträge samt Attributen,
+Remember-me-Nachweise, Anmeldeversuche und Versandhistorie ohne Fremdschlüssel.
+Fremde Vorgänge bleiben erhalten. Noch laufende Zuweisungen werden gelöst und
+wieder auf „Offen“ gesetzt. Eigene Antworten in fremden Vorgängen verschwinden,
+fremde Antworten bleiben erhalten. Nur persönlich adressierte sowie selbst
+verfasste Benachrichtigungen werden gelöscht. Gemeinsam empfangene Nachrichten
+bleiben für die anderen Empfänger mit korrigierter Empfängerzahl bestehen.
+Globale Rollen und Konfiguration bleiben erhalten.
+
+Ein Fehler vor dem Commit rollt die gesamte persistente Bereinigung zurück.
+Lokale Avatar-/Sitzungscaches werden erst nach Commit entfernt. Die aktuelle
+Sitzung einer Selbstlöschung bleibt ausschließlich für die abschließende
+UI-Antwort bis zum Logout bestehen; das gelöschte Konto kann keine neue
+Authentifizierung oder Linkbestätigung mehr erhalten.
 Die Bestätigungsmail entsteht in derselben Transaktion wie die Löschung. Nur
 der Mailauftrag hält die Zieladresse bis zum Versand oder endgültigen
 Versandfehler. Bei unklarem SMTP-Ausgang bleibt der Auftrag entsprechend dem
