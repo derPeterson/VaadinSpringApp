@@ -60,8 +60,20 @@ public class MessageTexts {
     return getTranslation("account.lifecycle.tab");
   }
 
-  public String getAccountLifecycleIntro() {
-    return getTranslation("account.lifecycle.intro");
+  public String getAccountDeactivateDescription() {
+    return getTranslation("account.lifecycle.deactivateDescription");
+  }
+
+  public String getAccountDevelopmentDeactivateDescription() {
+    return getTranslation("account.lifecycle.developmentDeactivateDescription");
+  }
+
+  public String getAccountDeleteDescription() {
+    return getTranslation("account.lifecycle.deleteDescription");
+  }
+
+  public String getAccountLifecycleConfirmationHint() {
+    return getTranslation("account.lifecycle.confirmationHint");
   }
 
   public String getAccountDeactivateAction() {
@@ -3200,6 +3212,10 @@ public class MessageTexts {
 
   public String getAccountSettingsAccountHint() {
     return getTranslation("accountSettings.account.hint");
+  }
+
+  public String getAccountSecurityProvidersHint() {
+    return getTranslation("accountSettings.providers.hint");
   }
 
   public String getAccountSettingsSave() {

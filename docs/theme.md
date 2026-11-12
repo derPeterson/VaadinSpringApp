@@ -26,10 +26,34 @@ Die lokale Klasse `cosmos-unsaved-changes-dialog` in `cosmos-admin.css` ergänzt
 die gemeinsamen Dialogregeln um die Aktionsanordnung und die Textgröße.
 Die Aktionen sind native Vaadin-Buttons mit dem gemeinsamen Primär- und Warnstil.
 
+Die Übersicht „Konto verwalten“ verwendet die freigegebene Stitch-Variante A:
+zwei native `HorizontalLayout`-Aktionszeilen untereinander in den bestehenden
+Sicherheitskarten (`account-entry` in `account-security-cards`), jeweils mit
+einer `VerticalLayout`-Textspalte, vorhandenem Tabler-Icon in der gemeinsamen
+Icon-Box und zugehörigem Vaadin-Button rechts. Fläche, Rahmen, Radius und Abstände
+kommen aus derselben Gestaltung wie Passwort und E-Mail. Die Texte übernehmen die bestehenden
+Sicherheits-Textstile, die Beschreibung die reguläre kleine Textgröße.
+`account-lifecycle-overview` und `account-lifecycle-action` sind lokal in
+`cosmos-account.css` gestaltet.
+Deaktivierungsicons verwenden die Warnpalette, Löschicons die rote Gefahrpalette.
+Auf schmalen Ansichten rückt der Button unter seinen Text. Header und Tabs
+bleiben unverändert. Entwicklerkonten erhalten keine Zusage eines Reaktivierungslinks.
+Alle drei Sicherheitsreiter verwenden unten `cosmos-panel-hint` mit
+`account-security-hint`: eigene Footerfläche, obere Trennlinie, blaues Info-Icon
+und sekundärer Text. Portalzugang erklärt die Identitätsbestätigung bei Änderungen,
+Anmeldeanbieter den Erhalt des Anbieterkontos beim Trennen und Kontoverwaltung
+die nachfolgende Sicherheitsbestätigung. Die Hinweise folgen dem Sprachwechsel.
+`account-security-hint` verwendet `flex: none`, damit die für seitliche Footer
+gedachte gemeinsame Flex-Basis im senkrechten Aufbau keine hohe Leerfläche erzeugt.
+Die Höhe ergibt sich aus Inhalt und den vorhandenen Footer-Innenabständen.
+
 Die Bestätigung der eigenen Kontodeaktivierung oder Löschung verwendet denselben
 nativen Cosmos-Dialograhmen wie die übrigen Kontoaktionen. Die lokale Klasse
 `account-lifecycle-explanation` in `cosmos-account.css` hält den Erklärungstext
 auf der gemeinsamen Textgröße `--cosmos-font-size-s`.
+Der Passworthinweis über dem Eingabefeld verwendet in beiden Kontoaktionen
+`.account-lifecycle-password-hint` mit der sekundären Textfarbe, 12 px und Gewicht
+400, entsprechend dem Hinweis bei der OTP-Eingabe.
 
 Die laufende Vaadin-Anwendung ist die verbindliche Vorlage für Besucherbereich,
 Portal und Administration. Für Stitch kann die betroffene Ansicht in einer

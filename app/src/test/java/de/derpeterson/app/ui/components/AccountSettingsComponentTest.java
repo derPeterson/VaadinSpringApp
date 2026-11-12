@@ -232,6 +232,11 @@ class AccountSettingsComponentTest {
     assertEquals(
         messageProperties.getAccountSecurityPortalAccess(),
         findAccountComponentById("account-security-tab-portal").getElement().getTextRecursively());
+    assertTrue(
+        findAccountComponentById("account-security-portal")
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getAccountSettingsAccountHint()));
 
     securityTabSheet.setSelectedTab(
         (Tab) findAccountComponentById("account-security-tab-providers"));
@@ -245,6 +250,11 @@ class AccountSettingsComponentTest {
         findAccountComponentById("account-security-tab-providers")
             .getElement()
             .getTextRecursively());
+    assertTrue(
+        findAccountComponentById("account-security-providers")
+            .getElement()
+            .getTextRecursively()
+            .contains(messageProperties.getAccountSecurityProvidersHint()));
     assertEquals("Alex", ((TextField) findAccountComponentById("account-first-name")).getValue());
     verifyNoInteractions(saveProfileFunction);
   }

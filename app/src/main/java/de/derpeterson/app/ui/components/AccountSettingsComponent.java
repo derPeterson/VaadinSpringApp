@@ -122,6 +122,7 @@ public class AccountSettingsComponent extends PageContentLayout {
   private Tab providerAccessTab;
   private Tab lifecycleTab;
   private final Div providerAccessContentDiv = new Div();
+  private HorizontalLayout providerSecurityHintLayout;
   private Div portalSecurityCardsDiv;
   private final AccountEmailChangeDialog emailChangeDialog;
   private final AccountPasswordChangeDialog passwordChangeDialog;
@@ -713,15 +714,24 @@ public class AccountSettingsComponent extends PageContentLayout {
     securityCardsDiv.addClassName("account-security-cards");
     portalSecurityCardsDiv = securityCardsDiv;
 
-    Div securityHintDiv =
-        new Div(
-            AppIcon.INFO_CIRCLE.create(),
-            withTextOnRefresh(new Span(), messageProperties::getAccountSettingsAccountHint));
-    securityHintDiv.addClassNames("cosmos-panel-hint", "account-security-hint");
+    HorizontalLayout securityHintLayout =
+        createSecurityHintLayout(messageProperties::getAccountSettingsAccountHint);
 
-    Div portalAccessDiv = new Div(securityCardsDiv, securityHintDiv);
+    Div portalAccessDiv = new Div(securityCardsDiv, securityHintLayout);
     portalAccessDiv.setId("account-security-portal");
     return portalAccessDiv;
+  }
+
+  private HorizontalLayout createSecurityHintLayout(Supplier<String> hintTextSupplier) {
+    HorizontalLayout securityHintLayout =
+        new HorizontalLayout(
+            AppIcon.INFO_CIRCLE.create(), withTextOnRefresh(new Span(), hintTextSupplier));
+    securityHintLayout.setWidthFull();
+    securityHintLayout.setPadding(false);
+    securityHintLayout.setSpacing(false);
+    securityHintLayout.setAlignItems(Alignment.CENTER);
+    securityHintLayout.addClassNames("cosmos-panel-hint", "account-security-hint");
+    return securityHintLayout;
   }
 
   private void configureSecurityTabSheet(Div portalAccessDiv) {
@@ -729,7 +739,9 @@ public class AccountSettingsComponent extends PageContentLayout {
     Span providerUnavailableSpan =
         withTextOnRefresh(new Span(), messageProperties::getAccountSecurityNoProviders);
     providerUnavailableSpan.addClassNames("cosmos-panel-description", "account-security-empty");
-    providerAccessContentDiv.add(providerUnavailableSpan);
+    providerSecurityHintLayout =
+        createSecurityHintLayout(messageProperties::getAccountSecurityProvidersHint);
+    providerAccessContentDiv.add(providerUnavailableSpan, providerSecurityHintLayout);
 
     Image portalLogoImage = new Image("icons/service-logo.svg", "");
     portalLogoImage.getElement().setAttribute(ARIA_HIDDEN, "true");
@@ -891,6 +903,6 @@ public class AccountSettingsComponent extends PageContentLayout {
         passwordChangeDialog::open, emailChangeDialog::open, this::selectProvidersTabAndUpdateUrl);
 
     providerAccessContentDiv.removeAll();
-    providerAccessContentDiv.add(externalConnectionsComponent);
+    providerAccessContentDiv.add(externalConnectionsComponent, providerSecurityHintLayout);
   }
 }

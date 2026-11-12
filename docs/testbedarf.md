@@ -2,6 +2,24 @@
 
 ## Browser-Tests
 
+- Kontoaktionen nach Stitch-Variante A, **offen**: In DE/EN bei Desktop- und
+  Smartphonebreite die beiden Aktionszeilen in den bestehenden Cards untereinander,
+  farbigen Tabler-Iconboxen, zugeordneten Buttons und vollständigen Beschreibungen
+  prüfen. Cardfläche, Rahmen, Radius und Abstände entsprechen Passwort/E-Mail.
+  Alle drei Sicherheitsreiter haben den bestehenden Footerstil mit blauem
+  Info-Icon und kompakter Inhaltshöhe ohne gestreckte Leerfläche. Portalzugang
+  und Anmeldeanbieter verwenden die neuen DE-/EN-Texte. Der Kontoaktionshinweis
+  lautet „Beide Aktionen erfordern eine Bestätigung Ihrer Identität.“ beziehungsweise
+  „Both actions require confirmation of your identity.“.
+  Header und Tabs bleiben unverändert. Entwicklerkonten erhalten keine
+  E-Mail-Reaktivierungszusage. Beide Buttons öffnen weiterhin nur die passende
+  Identitätsbestätigung; ohne ausdrückliche Bestätigung keine Kontoänderung.
+
+- Passworthinweise bei Kontoaktionen, **offen**: In den bestehenden
+  Kontodeaktivierungs-/Löschfällen in DE/EN bei Desktop-/Smartphonebreite die
+  sekundäre Textfarbe des Passworthinweises prüfen; 12 px und Gewicht 400 bleiben
+  erhalten. Die OTP-Hinweise behalten ihre bestehende Gestaltung.
+
 - Eingerahmte Aktionslinks in E-Mails, **offen**: Die gemeinsame Linkbox in
   DE/EN auf Desktop und Smartphone isoliert in Mailpit prüfen. Alle acht
   Aktionsvorlagen verwenden Cosmos-Fläche und Rahmen; lange URLs bleiben

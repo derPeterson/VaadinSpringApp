@@ -809,22 +809,63 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 #account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab vaadin-icon { color:var(--cosmos-reference-accent); }
 .account-security-cards { display:grid;gap:16px;padding:24px; }
 .account-security-empty { display:block;padding:24px; }
-#account-panel-security .account-security-hint { margin:0;border-top:1px solid var(--cosmos-reference-border);background:var(--cosmos-reference-panel); }
+#account-panel-security .account-security-hint { flex:none;margin:0;border-top:1px solid var(--cosmos-reference-border);background:var(--cosmos-reference-panel); }
 @media(max-width:600px) {
   #account-security-tabs::part(tabs-container) { padding:0 16px; }
   #account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab { flex:1;min-width:0;padding-inline:10px; }
   .account-security-cards,.account-security-empty { padding:20px; }
 }
 
-/* Die Kontoaktionen verwenden den gemeinsamen Warnrahmen in ihrer Aktionsfarbe. */
-.account-lifecycle-overview.cosmos-security-warning {
-    padding: var(--cosmos-info-box-padding);
+/* Kontoaktionen: bestehende Sicherheitskarten mit nativen Zeilenlayouts. */
+.cosmos-account .account-lifecycle-overview {
+    box-sizing: border-box;
+    padding: 0;
 }
-.account-lifecycle-overview > vaadin-horizontal-layout > vaadin-icon {
-    color: var(--cosmos-security-warning-accent);
-    width: 18px;
-    height: 18px;
-    flex: none;
+.account-lifecycle-action {
+    gap: var(--cosmos-space-m);
+    --account-action-icon-color: var(--cosmos-security-warning-accent);
+    --account-action-icon-border: var(--cosmos-security-warning-border);
+    --account-action-icon-surface: var(--cosmos-security-warning-surface);
+}
+.account-lifecycle-action[data-action=DELETE] {
+    --account-action-icon-color: var(--cosmos-reference-invalid);
+    --account-action-icon-border: var(--cosmos-reference-danger-border);
+    --account-action-icon-surface: var(--cosmos-reference-danger-surface);
+}
+.cosmos-reference-portal #account-panel-security .account-lifecycle-action > .cosmos-panel-icon {
+    width: var(--cosmos-panel-icon-size-small);
+    height: var(--cosmos-panel-icon-size-small);
+    flex-shrink: 0;
+    color: var(--account-action-icon-color);
+    border-color: var(--account-action-icon-border);
+    background: var(--account-action-icon-surface);
+}
+.cosmos-reference-portal #account-panel-security .account-lifecycle-action > .cosmos-panel-icon > vaadin-icon {
+    width: var(--cosmos-panel-icon-symbol-size-small);
+    height: var(--cosmos-panel-icon-symbol-size-small);
+    color: var(--account-action-icon-color);
+}
+.account-lifecycle-copy {
+    min-width: 0;
+}
+.cosmos-account #account-panel-security .account-lifecycle-copy .account-entry-description {
+    font-size: var(--cosmos-font-size-s);
+    color: var(--cosmos-reference-secondary);
+}
+.cosmos-reference-portal #account-panel-security .account-entry.account-lifecycle-action {
+    display: flex;
+}
+.cosmos-reference-portal #account-panel-security .account-entry.account-lifecycle-action > vaadin-button {
+    width: auto;
+    flex-shrink: 0;
+    max-width: 100%;
+}
+@media (max-width: 600px) {
+    .account-lifecycle-action { flex-wrap: wrap; }
+    .account-lifecycle-action > .account-lifecycle-copy {
+        flex-basis: calc(100% - var(--cosmos-panel-icon-size-small) - var(--cosmos-space-m));
+    }
+    .account-lifecycle-action > vaadin-button { margin-inline-start: auto; }
 }
 .account-lifecycle-deactivate .account-change-dialog-header > .cosmos-panel-icon {
     color: var(--cosmos-security-warning-accent);
@@ -842,7 +883,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
     background: var(--cosmos-security-warning-surface);
 }
 .account-lifecycle-password-hint {
-    color: var(--cosmos-reference-text);
+    color: var(--cosmos-reference-secondary);
     font-size: var(--cosmos-font-size-s);
     font-weight: 400;
 }

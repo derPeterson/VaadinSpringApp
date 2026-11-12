@@ -68,14 +68,22 @@ unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
   echte Änderungen sind gezielt in DE/EN per JUnit geprüft. Die reale Passwortmanager-
   Nachprüfung bleibt unter [HUM-11](../manual-tests/README.md#hum-11) offen.
 
-- **Gemeinsame Sichtung der ergänzten Browserwarnung:** Persönliche Daten,
-  Konfiguration und Benutzerformulare mit einem ungespeicherten Entwurf neu laden
-  oder verlassen. Der native Browserhinweis ergänzt den bereits abgenommenen
-  internen Dialog. Umfang und Grenzen stehen in der
-  [Anwendungsdokumentation](../anwendung.md#ungespeicherte-formularänderungen),
-  die automatisierten Ergebnisse im [Prüfstand](../status.md).
-
 ### Eigenes Konto deaktivieren oder löschen
+
+- **Variante A umgesetzt, Sichtung offen:** Die gelbe Gesamtfläche ist durch
+  zwei native Aktionszeilen in den bestehenden Sicherheitskarten untereinander
+  ersetzt. Cardfläche, Rahmen und Abstände entsprechen Passwort und E-Mail.
+  Alle Sicherheitsreiter verwenden den bestehenden Footerhinweis mit blauem
+  Info-Icon; die Portal-/Anbietertexte sind aktualisiert. Header, Tabs und die bisherigen
+  Tabler-Icons bleiben erhalten, die Aktionsicons verwenden Gelb und Rot.
+  Die ausführlichen DE-/EN-Texte bleiben erhalten. Der Löschtext nennt alle
+  zugehörigen Kontodaten. Die Deaktivierung wird erst nach Bestätigung zugesagt;
+  Entwicklerkonten erhalten keinen falschen Hinweis auf eine Reaktivierung per Mail.
+  Entwürfe auf dem Canvas:
+  [A – Aktionszeilen](https://stitch.google.com/projects/6772441582530509710?node-id=1460581112803085427)
+  und [B – Aktionskarten](https://stitch.google.com/projects/6772441582530509710?node-id=5988840849361148389).
+  Die Umsetzung von A ist ausdrücklich freigegeben. Die gemeinsame Sichtung und
+  der visuelle Nachtest stehen noch aus; siehe [Testbedarf](../testbedarf.md).
 
 - **Abnahme:** Unter „Mein Konto → Sicherheit → Konto verwalten“ die
   Identitätsbestätigung, Selbstdeaktivierung mit E-Mail,

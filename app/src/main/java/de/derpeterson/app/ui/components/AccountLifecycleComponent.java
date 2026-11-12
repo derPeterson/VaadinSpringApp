@@ -53,7 +53,11 @@ public final class AccountLifecycleComponent extends VerticalLayout {
   private final transient AccountLifecycleService accountLifecycleService;
   private final transient SecurityService securityService;
   private final transient HttpServletRequest httpServletRequest;
-  private final Span introductionSpan = new Span();
+  private final Span deactivateTitleSpan = new Span();
+  private final Span deactivateDescriptionSpan = new Span();
+  private final Span deleteTitleSpan = new Span();
+  private final Span deleteDescriptionSpan = new Span();
+  private final Span confirmationHintSpan = new Span();
   private final Button deactivateAccountButton =
       new Button(
           AppIcon.USER_PAUSE.create(),
@@ -73,30 +77,84 @@ public final class AccountLifecycleComponent extends VerticalLayout {
     this.httpServletRequest = httpServletRequest;
 
     setWidthFull();
-    addClassName("account-tab-panel-content");
+    setPadding(false);
+    setSpacing(false);
+    addClassNames("account-tab-panel-content", "account-lifecycle-overview");
     deactivateAccountButton.addClassName("cosmos-warning-button");
     deactivateAccountButton.setId("account-deactivate");
     deleteAccountButton.setId("account-delete");
     deleteAccountButton.addClassName(DELETE_BUTTON);
 
-    HorizontalLayout accountActionsLayout =
-        new HorizontalLayout(deactivateAccountButton, deleteAccountButton);
-    accountActionsLayout.setWidthFull();
-    accountActionsLayout.setJustifyContentMode(JustifyContentMode.END);
-    accountActionsLayout.getStyle().set("flex-wrap", "wrap");
-    HorizontalLayout introductionLayout =
-        new HorizontalLayout(AppIcon.ERROR.create(), introductionSpan);
-    introductionLayout.setAlignItems(Alignment.START);
-    introductionLayout.setPadding(false);
-    VerticalLayout warningLayout = new VerticalLayout(introductionLayout, accountActionsLayout);
-    warningLayout.setPadding(false);
-    warningLayout.addClassNames("cosmos-security-warning", "account-lifecycle-overview");
-    add(warningLayout);
+    deactivateDescriptionSpan.setId("account-deactivate-description");
+    deleteDescriptionSpan.setId("account-delete-description");
+    HorizontalLayout deactivateRowLayout =
+        createAccountActionRow(
+            AccountAction.DEACTIVATE,
+            deactivateTitleSpan,
+            deactivateDescriptionSpan,
+            deactivateAccountButton);
+    HorizontalLayout deleteRowLayout =
+        createAccountActionRow(
+            AccountAction.DELETE, deleteTitleSpan, deleteDescriptionSpan, deleteAccountButton);
+
+    VerticalLayout actionCardsLayout = new VerticalLayout(deactivateRowLayout, deleteRowLayout);
+    actionCardsLayout.setPadding(false);
+    actionCardsLayout.setSpacing(false);
+    actionCardsLayout.addClassName("account-security-cards");
+
+    HorizontalLayout confirmationHintLayout =
+        new HorizontalLayout(AppIcon.INFO_CIRCLE.create(), confirmationHintSpan);
+    confirmationHintLayout.setWidthFull();
+    confirmationHintLayout.setPadding(false);
+    confirmationHintLayout.setSpacing(false);
+    confirmationHintLayout.setAlignItems(Alignment.CENTER);
+    confirmationHintLayout.addClassNames("cosmos-panel-hint", "account-security-hint");
+
+    add(actionCardsLayout, confirmationHintLayout);
     refreshLifecycleTexts();
   }
 
+  private HorizontalLayout createAccountActionRow(
+      AccountAction accountAction, Span titleSpan, Span descriptionSpan, Button actionButton) {
+    Div actionIconDiv =
+        new Div(
+            (accountAction == AccountAction.DELETE ? AppIcon.USER_X : AppIcon.USER_PAUSE).create());
+    actionIconDiv.addClassName(PANEL_ICON);
+    actionIconDiv.getElement().setAttribute("aria-hidden", "true");
+    titleSpan.addClassName("account-entry-title");
+    descriptionSpan.addClassName("account-entry-description");
+
+    VerticalLayout actionCopyLayout = new VerticalLayout(titleSpan, descriptionSpan);
+    actionCopyLayout.setPadding(false);
+    actionCopyLayout.setSpacing(false);
+    actionCopyLayout.addClassName("account-lifecycle-copy");
+
+    HorizontalLayout actionRowLayout =
+        new HorizontalLayout(actionIconDiv, actionCopyLayout, actionButton);
+    actionRowLayout.setWidthFull();
+    actionRowLayout.setPadding(false);
+    actionRowLayout.setSpacing(false);
+    actionRowLayout.setAlignItems(Alignment.CENTER);
+    actionRowLayout.expand(actionCopyLayout);
+    actionRowLayout.addClassNames("account-entry", "account-lifecycle-action");
+    actionRowLayout.getElement().setAttribute("data-action", accountAction.name());
+    return actionRowLayout;
+  }
+
   public void refreshLifecycleTexts() {
-    introductionSpan.setText(messageProperties.getAccountLifecycleIntro());
+    boolean developmentAccount =
+        securityService
+            .getCurrentUser()
+            .map(userEntity -> userEntity.isDevelopmentAccount())
+            .orElse(false);
+    deactivateTitleSpan.setText(messageProperties.getAccountDeactivateAction());
+    deactivateDescriptionSpan.setText(
+        developmentAccount
+            ? messageProperties.getAccountDevelopmentDeactivateDescription()
+            : messageProperties.getAccountDeactivateDescription());
+    deleteTitleSpan.setText(messageProperties.getAccountDeleteAction());
+    deleteDescriptionSpan.setText(messageProperties.getAccountDeleteDescription());
+    confirmationHintSpan.setText(messageProperties.getAccountLifecycleConfirmationHint());
     deactivateAccountButton.setText(messageProperties.getAccountDeactivateAction());
     deleteAccountButton.setText(messageProperties.getAccountDeleteAction());
   }
