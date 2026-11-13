@@ -49,6 +49,18 @@ public class CosmosBreadcrumbsComponent extends Breadcrumbs {
       this.labelFunction = labelFunction;
       this.location = location;
     }
+
+    private static String firstAdminConfigurationLocation() {
+      // Allgemein zugängliche Gruppen sind für Admin und Superadmin dasselbe sichere Elternziel.
+      AdminConfigGroup firstConfigurationGroup =
+          Arrays.stream(AdminConfigGroup.values())
+              .filter(configGroup -> !configGroup.isSuperadminOnly())
+              .findFirst()
+              .orElseThrow();
+      return AppRouteConstants.ADMIN_SECURITY_ROUTE
+          + "?section=configuration&group="
+          + firstConfigurationGroup.name().toLowerCase(Locale.ROOT);
+    }
   }
 
   private final MessageProperties messageProperties;
@@ -105,17 +117,5 @@ public class CosmosBreadcrumbsComponent extends Breadcrumbs {
       languageChangeRegistration = null;
     }
     super.onDetach(detachEvent);
-  }
-
-  private static String firstAdminConfigurationLocation() {
-    // Allgemein zugängliche Gruppen sind für Admin und Superadmin dasselbe sichere Elternziel.
-    AdminConfigGroup firstConfigurationGroup =
-        Arrays.stream(AdminConfigGroup.values())
-            .filter(configGroup -> !configGroup.isSuperadminOnly())
-            .findFirst()
-            .orElseThrow();
-    return AppRouteConstants.ADMIN_SECURITY_ROUTE
-        + "?section=configuration&group="
-        + firstConfigurationGroup.name().toLowerCase(Locale.ROOT);
   }
 }

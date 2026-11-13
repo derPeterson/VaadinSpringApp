@@ -428,19 +428,23 @@ public class AdminConfigurationSection extends VerticalLayout {
         continue;
       }
 
-      VerticalLayout configFieldLayout = configInputWrappers.get(configEntry);
-      if (configFieldLayout != null) {
-        if (queueGroupSelected) {
-          if (!ConfigurationCatalog.isMailCleanupSetting(configEntry)) {
-            queueGeneralFieldsLayout.add(configFieldLayout);
-          }
-        } else {
-          configFieldsLayout.add(configFieldLayout);
-        }
-      }
+      addConfigFieldToCurrentGroup(configEntry, queueGroupSelected);
     }
     queueAssistantsTab.setVisible(
         mailQueueCleanupComponent != null && mailQueueCleanupComponent.canManageCleanup());
+  }
+
+  private void addConfigFieldToCurrentGroup(ConfigEntry configEntry, boolean queueGroupSelected) {
+    VerticalLayout configFieldLayout = configInputWrappers.get(configEntry);
+    if (configFieldLayout == null) {
+      return;
+    }
+
+    if (!queueGroupSelected) {
+      configFieldsLayout.add(configFieldLayout);
+    } else if (!ConfigurationCatalog.isMailCleanupSetting(configEntry)) {
+      queueGeneralFieldsLayout.add(configFieldLayout);
+    }
   }
 
   private List<ConfigEntry> getVisibleConfigEntries() {
@@ -571,13 +575,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     Component configInputComponent;
 
     if (isBooleanLikeEntry(configEntry, defaultValue)) {
-      Switch settingSwitch = new Switch();
-      settingSwitch.setWidthFull();
-      settingSwitch.addClassName("cosmos-config-switch");
-      if (configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED) {
-        settingSwitch.addValueChangeListener(event -> updateCleanupFieldsEnabled());
-      }
-      configInputComponent = settingSwitch;
+      configInputComponent = createBooleanSettingSwitch(configEntry);
     } else if (isEmailEntry(configEntry)) {
       EmailField emailField = new EmailField();
       emailField.setPattern(SMTP_EMAIL_REGEX);
@@ -587,14 +585,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     } else if (usesSecondsDuration(configEntry)
         || DURATION_ENTRIES.contains(configEntry)
         || isFixedDayDuration(configEntry)) {
-      CosmosDurationField durationField =
-          new CosmosDurationField(messageProperties, durationStorage(configEntry));
-      if (ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT
-          || configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS) {
-        durationField.requireWholeDays(
-            configEntry == ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS ? 0 : 1);
-      }
-      configInputComponent = durationField;
+      configInputComponent = createDurationSettingField(configEntry);
     } else if (defaultValue instanceof Integer) {
       configInputComponent = createIntegerInput(configEntry);
     } else if (configEntry == ConfigEntry.REMEMBER_ME_SECRET_KEY
@@ -615,6 +606,27 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     return configInputComponent;
+  }
+
+  private Switch createBooleanSettingSwitch(ConfigEntry configEntry) {
+    Switch settingSwitch = new Switch();
+    settingSwitch.setWidthFull();
+    settingSwitch.addClassName("cosmos-config-switch");
+    if (configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED) {
+      settingSwitch.addValueChangeListener(event -> updateCleanupFieldsEnabled());
+    }
+    return settingSwitch;
+  }
+
+  private CosmosDurationField createDurationSettingField(ConfigEntry configEntry) {
+    CosmosDurationField durationField =
+        new CosmosDurationField(messageProperties, durationStorage(configEntry));
+    if (ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT
+        || configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS) {
+      durationField.requireWholeDays(
+          configEntry == ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS ? 0 : 1);
+    }
+    return durationField;
   }
 
   private static boolean usesSecondsDuration(ConfigEntry configEntry) {
@@ -1045,11 +1057,7 @@ public class AdminConfigurationSection extends VerticalLayout {
           !isValidHttpUrl(trimmedConfigValue)
               ? messageProperties.getAdminConfigValidationUrl()
               : null;
-      case LOGIN_ATTEMPT_WINDOW_SECONDS ->
-          isInvalidPositiveInteger(trimmedConfigValue)
-                  || Integer.parseInt(trimmedConfigValue) > 86_400
-              ? messageProperties.getAdminConfigDurationRule(86_400)
-              : null;
+      case LOGIN_ATTEMPT_WINDOW_SECONDS -> validateLoginAttemptWindow(trimmedConfigValue);
       case REMEMBER_ME_DURATION, SESSION_TIMEOUT_SECONDS, EMAIL_QUEUE_RETRY_DELAY_SECONDS ->
           isInvalidPositiveInteger(trimmedConfigValue)
               ? messageProperties.getAdminConfigDurationInvalid()
@@ -1105,6 +1113,13 @@ public class AdminConfigurationSection extends VerticalLayout {
               : null;
       default -> null;
     };
+  }
+
+  private String validateLoginAttemptWindow(String configuredSecondsText) {
+    return isInvalidPositiveInteger(configuredSecondsText)
+            || Integer.parseInt(configuredSecondsText) > 86_400
+        ? messageProperties.getAdminConfigDurationRule(86_400)
+        : null;
   }
 
   private String validateServiceName(String trimmedConfigValue) {
@@ -1331,7 +1346,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private boolean isValidCleanupDuration(String durationValue) {
     try {
       return Duration.parse(durationValue).compareTo(Duration.ofMinutes(1)) >= 0;
-    } catch (RuntimeException invalidDuration) {
+    } catch (RuntimeException _) {
       return false;
     }
   }

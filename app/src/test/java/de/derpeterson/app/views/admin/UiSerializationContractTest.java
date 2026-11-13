@@ -13,6 +13,7 @@ import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinServlet;
@@ -29,6 +30,7 @@ import de.derpeterson.app.security.PushSecurityInterceptor;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.security.session.ServiceReference;
 import de.derpeterson.app.security.session.SessionAttributeCodec;
+import de.derpeterson.app.service.EmailQueueCleanupService.CleanupResult;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserNotificationService;
 import de.derpeterson.app.service.UserNotificationService.Preview;
@@ -37,6 +39,7 @@ import de.derpeterson.app.service.UserNotificationService.Target;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AccountAvatarDialog;
 import de.derpeterson.app.ui.components.CosmosPagination;
+import de.derpeterson.app.ui.components.CosmosSegmentedTabs;
 import de.derpeterson.app.ui.components.PageNavigationComponent;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -48,6 +51,7 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -203,6 +207,35 @@ class UiSerializationContractTest {
   }
 
   private record Filters(AdminUserFilterBar component, Probe probe) implements Serializable {}
+
+  @Test
+  void segmentedSelectionRemainsUsableAfterSerialization() throws Exception {
+    CosmosSegmentedTabs<String> originalFilterTabs = new CosmosSegmentedTabs<>();
+    originalFilterTabs.setItems("all", "unread");
+    originalFilterTabs.setValue("unread");
+
+    CosmosSegmentedTabs<String> restoredFilterTabs = copy(originalFilterTabs);
+    assertEquals(List.of("all", "unread"), restoredFilterTabs.getItems());
+    assertEquals("unread", restoredFilterTabs.getValue());
+
+    Tabs restoredNativeTabs =
+        restoredFilterTabs
+            .getChildren()
+            .filter(Tabs.class::isInstance)
+            .map(Tabs.class::cast)
+            .findFirst()
+            .orElseThrow();
+    restoredNativeTabs.setSelectedIndex(0);
+    assertEquals("all", restoredFilterTabs.getValue());
+  }
+
+  @Test
+  void cleanupStatusRetainsItsTimestampCountAndBusyStateAfterSerialization() throws Exception {
+    CleanupResult latestCleanupResult =
+        new CleanupResult(LocalDateTime.of(2026, 11, 13, 4, 0), 3, true);
+
+    assertEquals(latestCleanupResult, copy(latestCleanupResult));
+  }
 
   @Test
   void filterCallbacksAndDraftResetStillWorkAfterReading() throws Exception {

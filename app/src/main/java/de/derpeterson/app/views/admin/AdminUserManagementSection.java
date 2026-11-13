@@ -118,6 +118,10 @@ public class AdminUserManagementSection extends VerticalLayout {
   private static final String COSMOS_PANEL_HEADING_CLASS = PANEL_HEADING;
   private static final String ARIA_LABEL_PROPERTY = "ariaLabel";
   private static final String COSMOS_FORM_ROW_CLASS = "cosmos-form-row";
+  private static final String OPTION_CHECKBOX_CLASS = "admin-user-option-checkbox";
+  private static final String OPTION_HINT_CLASS = "admin-user-option-hint";
+  private static final String OPTION_LABEL_CLASS = "admin-user-option-label";
+  private static final String SIGN_IN_DETAIL_CLASS = "admin-user-sign-in-detail";
 
   private static final DateTimeFormatter LAST_ACTIVITY_FORMATTER =
       new DateTimeFormatterBuilder()
@@ -975,13 +979,13 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       administrativelyBlockedCheckbox = new Checkbox();
       administrativelyBlockedCheckbox.addClassNames(
-          "admin-user-option-checkbox", "admin-user-enabled-checkbox");
+          OPTION_CHECKBOX_CLASS, "admin-user-enabled-checkbox");
       blockedCaptionSpan = new Span(messageProperties.getAdminUsersFieldBlocked());
       blockedHintSpan = new Span(messageProperties.getAdminUsersBlockedHint());
-      blockedHintSpan.addClassName("admin-user-option-hint");
+      blockedHintSpan.addClassName(OPTION_HINT_CLASS);
       blockedHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
       Div blockedLabelDiv = new Div(blockedCaptionSpan, blockedHintSpan);
-      blockedLabelDiv.addClassName("admin-user-option-label");
+      blockedLabelDiv.addClassName(OPTION_LABEL_CLASS);
       administrativelyBlockedCheckbox.setLabelComponent(blockedLabelDiv);
       administrativelyBlockedCheckbox.setAriaDescribedBy(blockedHintSpan);
 
@@ -1019,26 +1023,26 @@ public class AdminUserManagementSection extends VerticalLayout {
     private void configureEmailVerificationCheckbox() {
       emailVerificationRequiredCheckbox.setId("admin-email-verification-required");
       emailVerificationRequiredCheckbox.setValue(true);
-      emailVerificationRequiredCheckbox.addClassName("admin-user-option-checkbox");
+      emailVerificationRequiredCheckbox.addClassName(OPTION_CHECKBOX_CLASS);
 
       emailVerificationCaptionSpan.setText(messageProperties.getAdminEmailVerificationRequired());
       emailVerificationHintSpan.setText(messageProperties.getAdminEmailVerificationHint());
-      emailVerificationHintSpan.addClassName("admin-user-option-hint");
+      emailVerificationHintSpan.addClassName(OPTION_HINT_CLASS);
       emailVerificationHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
       Div verificationLabelDiv = new Div(emailVerificationCaptionSpan, emailVerificationHintSpan);
-      verificationLabelDiv.addClassName("admin-user-option-label");
+      verificationLabelDiv.addClassName(OPTION_LABEL_CLASS);
       emailVerificationRequiredCheckbox.setLabelComponent(verificationLabelDiv);
       emailVerificationRequiredCheckbox.setAriaDescribedBy(emailVerificationHintSpan);
 
       developmentAccountCheckbox.setId("admin-development-account");
-      developmentAccountCheckbox.addClassName("admin-user-option-checkbox");
+      developmentAccountCheckbox.addClassName(OPTION_CHECKBOX_CLASS);
       developmentAccountCaptionSpan.setText(messageProperties.getDevelopmentAccountLabel());
       developmentAccountHintSpan.setText(messageProperties.getDevelopmentAccountHint());
-      developmentAccountHintSpan.addClassName("admin-user-option-hint");
+      developmentAccountHintSpan.addClassName(OPTION_HINT_CLASS);
       developmentAccountHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
       Div developmentAccountLabelDiv =
           new Div(developmentAccountCaptionSpan, developmentAccountHintSpan);
-      developmentAccountLabelDiv.addClassName("admin-user-option-label");
+      developmentAccountLabelDiv.addClassName(OPTION_LABEL_CLASS);
       developmentAccountCheckbox.setLabelComponent(developmentAccountLabelDiv);
       developmentAccountCheckbox.setAriaDescribedBy(developmentAccountHintSpan);
       developmentAccountCheckbox.addValueChangeListener(event -> {
@@ -1347,14 +1351,14 @@ public class AdminUserManagementSection extends VerticalLayout {
               Boolean.toString(editedUserEntity.isDevelopmentAccount()));
       accountTypeLabelSpan.addClassName("admin-user-account-type-label");
       Div accountTypeDetailDiv = new Div(accountTypeLabelSpan, accountTypeBadge);
-      accountTypeDetailDiv.addClassName("admin-user-sign-in-detail");
+      accountTypeDetailDiv.addClassName(SIGN_IN_DETAIL_CLASS);
       availableSignInMethodsDiv.setId("admin-user-sign-in-methods");
       registrationLabelSpan.addClassName("admin-user-registration-label");
       signInMethodsLabelSpan.addClassName("admin-user-methods-label");
       Div registrationDetailDiv = new Div(registrationLabelSpan, registeredViaBadge);
       Div signInMethodsDetailDiv = new Div(signInMethodsLabelSpan, availableSignInMethodsDiv);
-      registrationDetailDiv.addClassName("admin-user-sign-in-detail");
-      signInMethodsDetailDiv.addClassName("admin-user-sign-in-detail");
+      registrationDetailDiv.addClassName(SIGN_IN_DETAIL_CLASS);
+      signInMethodsDetailDiv.addClassName(SIGN_IN_DETAIL_CLASS);
       HorizontalLayout signInDetailsRowLayout =
           new HorizontalLayout(registrationDetailDiv, signInMethodsDetailDiv);
       signInDetailsRowLayout.setWidthFull();
@@ -1729,32 +1733,9 @@ public class AdminUserManagementSection extends VerticalLayout {
               .roleEntities(roleEntities)
               .build();
       if (editMode) {
-        if (adminAccountMailService != null) {
-          try {
-            adminAccountMailService.updateUser(
-                updatedUserEntity, expectedUserVersion, userFormData.getPassword());
-          } catch (IOException failure) {
-            throw new IllegalStateException(
-                "Verification mail for the changed address could not be prepared", failure);
-          }
-        } else {
-          userService.updateAdminUser(
-              updatedUserEntity, expectedUserVersion, userFormData.getPassword());
-        }
+        updateExistingUser(updatedUserEntity);
       } else {
-        if (adminAccountMailService != null) {
-          try {
-            adminAccountMailService.createUser(
-                updatedUserEntity,
-                userFormData.getPassword(),
-                !emailVerificationRequiredCheckbox.getValue());
-          } catch (IOException failure) {
-            throw new IllegalStateException(
-                "Initial verification mail could not be prepared", failure);
-          }
-        } else {
-          userService.createAdminUser(updatedUserEntity, userFormData.getPassword());
-        }
+        createNewUser(updatedUserEntity);
       }
       editUserDialog.close();
 
@@ -1768,6 +1749,37 @@ public class AdminUserManagementSection extends VerticalLayout {
                       ? messageProperties.getAdminUsersSaveSuccessUpdated()
                       : messageProperties.getAdminUsersSaveSuccessCreated(),
               NotificationHelper.NotificationType.SUCCESS);
+    }
+
+    private void updateExistingUser(UserEntity updatedUserEntity) {
+      if (adminAccountMailService != null) {
+        try {
+          adminAccountMailService.updateUser(
+              updatedUserEntity, expectedUserVersion, userFormData.getPassword());
+        } catch (IOException failure) {
+          throw new IllegalStateException(
+              "Verification mail for the changed address could not be prepared", failure);
+        }
+      } else {
+        userService.updateAdminUser(
+            updatedUserEntity, expectedUserVersion, userFormData.getPassword());
+      }
+    }
+
+    private void createNewUser(UserEntity newUserEntity) {
+      if (adminAccountMailService != null) {
+        try {
+          adminAccountMailService.createUser(
+              newUserEntity,
+              userFormData.getPassword(),
+              !emailVerificationRequiredCheckbox.getValue());
+        } catch (IOException failure) {
+          throw new IllegalStateException(
+              "Initial verification mail could not be prepared", failure);
+        }
+      } else {
+        userService.createAdminUser(newUserEntity, userFormData.getPassword());
+      }
     }
 
     private Set<RoleEntity> resolveSelectedRoleEntities(Set<RoleType> selectedRoles) {

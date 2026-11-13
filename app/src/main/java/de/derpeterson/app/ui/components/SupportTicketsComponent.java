@@ -1282,13 +1282,8 @@ public final class SupportTicketsComponent extends VerticalLayout {
     sendReplyButton.setVisible(canReply);
     closeTicketButton.setVisible(
         administration ? canReply || requesterClosed && (unassigned || assignedToMe) : active);
-    sendInstructionsButton.setVisible(administration && canReply);
-    boolean developmentTicket =
-        administration && selectedTicket != null && selectedTicket.developmentAccount();
-    sendInstructionsButton.setEnabled(
-        selectedTicket != null && !selectedTicket.instructionSent() && !developmentTicket);
-    sendInstructionsButton.setTooltipText(
-        developmentTicket ? messageProperties.getDevelopmentAccountMailUnavailable() : null);
+    updateSendInstructionsButton(canReply);
+
     if (administration) {
       adminTicketTools.setVisible(
           watchTicketSwitch.isVisible()
@@ -1296,6 +1291,16 @@ public final class SupportTicketsComponent extends VerticalLayout {
               || sendInstructionsButton.isVisible());
       adminActionFooter.setVisible(closeTicketButton.isVisible() || sendReplyButton.isVisible());
     }
+  }
+
+  private void updateSendInstructionsButton(boolean canReply) {
+    sendInstructionsButton.setVisible(administration && canReply);
+    boolean developmentTicket =
+        administration && selectedTicket != null && selectedTicket.developmentAccount();
+    sendInstructionsButton.setEnabled(
+        selectedTicket != null && !selectedTicket.instructionSent() && !developmentTicket);
+    sendInstructionsButton.setTooltipText(
+        developmentTicket ? messageProperties.getDevelopmentAccountMailUnavailable() : null);
   }
 
   private void refreshAdminConversation(List<Reply> ticketReplies) {

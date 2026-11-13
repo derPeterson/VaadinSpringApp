@@ -12,6 +12,7 @@ import de.derpeterson.app.repository.EmailQueueCleanupRunRepository;
 import de.derpeterson.app.repository.EmailQueueCleanupStateRepository;
 import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.security.AdminRolePolicy;
+import java.io.Serializable;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -49,7 +50,8 @@ public class EmailQueueCleanupService {
   private final Clock cleanupClock;
   private Instant nextSchedulerAttempt = Instant.MIN;
 
-  public record CleanupResult(LocalDateTime finishedAt, int resolvedCount, boolean busy) {}
+  public record CleanupResult(LocalDateTime finishedAt, int resolvedCount, boolean busy)
+      implements Serializable {}
 
   private record CleanupSettings(
       boolean automaticCleanupEnabled,

@@ -7,6 +7,7 @@ import com.vaadin.flow.component.tabs.Tab;
 import com.vaadin.flow.component.tabs.Tabs;
 import com.vaadin.flow.component.tabs.TabsVariant;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -16,7 +17,9 @@ import java.util.Objects;
 import java.util.Optional;
 
 /** Typisierte Segmentauswahl aus nativen Tabs; Beschriftungsupdates verändern den Wert nicht. */
-public class CosmosSegmentedTabs<T> extends CustomField<T> {
+public class CosmosSegmentedTabs<T extends Serializable> extends CustomField<T> {
+  private static final String ARIA_LABEL_ATTRIBUTE = "aria-label";
+
   private final Tabs selectionTabs = new Tabs();
   private final Map<T, Tab> tabsByValue = new LinkedHashMap<>();
   private List<T> itemValues = List.of();
@@ -104,15 +107,15 @@ public class CosmosSegmentedTabs<T> extends CustomField<T> {
   @Override
   public void setLabel(String label) {
     super.setLabel(label);
-    selectionTabs.getElement().setAttribute("aria-label", label);
+    selectionTabs.getElement().setAttribute(ARIA_LABEL_ATTRIBUTE, label);
   }
 
   public void setAriaLabel(String ariaLabel) {
-    selectionTabs.getElement().setAttribute("aria-label", ariaLabel);
+    selectionTabs.getElement().setAttribute(ARIA_LABEL_ATTRIBUTE, ariaLabel);
   }
 
   public Optional<String> getAriaLabel() {
-    return Optional.ofNullable(selectionTabs.getElement().getAttribute("aria-label"));
+    return Optional.ofNullable(selectionTabs.getElement().getAttribute(ARIA_LABEL_ATTRIBUTE));
   }
 
   @Override

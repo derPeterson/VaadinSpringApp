@@ -244,7 +244,7 @@ public final class PendingAccountReactivationView extends VerticalLayout
               mailQueued
                   ? NotificationHelper.NotificationType.SUCCESS
                   : NotificationHelper.NotificationType.WARNING);
-    } catch (RuntimeException reactivationFailure) {
+    } catch (RuntimeException _) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,

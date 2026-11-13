@@ -498,13 +498,15 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
   private void showAccountActionNotice(AccountActionNotice accountActionNotice) {
     boolean deletingAccount = accountActionNotice.accountAction() == AccountAction.DELETE;
+    Supplier<String> successTitleSupplier =
+        deletingAccount
+            ? messageProperties::getAccountDeletedSuccess
+            : messageProperties::getAccountDeactivatedSuccess;
+
     NotificationHelper.getInstance()
         .showNotification(
             accountActionNotice.committed()
-                ? () ->
-                    deletingAccount
-                        ? messageProperties.getAccountDeletedSuccess()
-                        : messageProperties.getAccountDeactivatedSuccess()
+                ? successTitleSupplier
                 : messageProperties::getBaseFailedTitle,
             () -> {
               if (!accountActionNotice.committed()) {

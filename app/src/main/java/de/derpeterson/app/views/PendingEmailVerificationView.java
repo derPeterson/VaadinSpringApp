@@ -10,8 +10,6 @@ import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
-import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.BeforeEnterEvent;
@@ -242,7 +240,7 @@ public class PendingEmailVerificationView extends VerticalLayout
               mailRequestAccepted
                   ? NotificationHelper.NotificationType.SUCCESS
                   : NotificationHelper.NotificationType.WARNING);
-    } catch (IOException | RuntimeException failure) {
+    } catch (IOException | RuntimeException _) {
       NotificationHelper.getInstance()
           .showNotification(
               messageProperties::getBaseFailedTitle,

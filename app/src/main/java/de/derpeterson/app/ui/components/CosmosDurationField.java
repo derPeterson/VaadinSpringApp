@@ -4,6 +4,7 @@ import com.vaadin.flow.component.HasAriaLabel;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.BigDecimalField;
@@ -130,7 +131,7 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
           new HorizontalLayout(increaseDurationButton, durationUnitSelect);
       durationSuffixLayout.setPadding(false);
       durationSuffixLayout.setSpacing(false);
-      durationSuffixLayout.setAlignItems(HorizontalLayout.Alignment.CENTER);
+      durationSuffixLayout.setAlignItems(FlexComponent.Alignment.CENTER);
       durationSuffixLayout.addClassName("cosmos-duration-suffix");
       preciseDurationBigDecimalField.setSuffixComponent(durationSuffixLayout);
     } else {

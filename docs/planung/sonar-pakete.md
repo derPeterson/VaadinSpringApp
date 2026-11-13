@@ -1,23 +1,12 @@
 # Offene Sonar-Pakete zur Nachtintegration
 
-Grundlage: vollständige Serveranalyse `ae4306b6-9a10-4a49-ab7a-1729ce5ebf43`
-von main `f5e93bd7`. 60 offene Codehinweise, keine Bugs, Schwachstellen oder
-Hotspots. Gate rot wegen neuer Hinweise; neue Coverage 81,3 % und Duplikation
-liegen bereits innerhalb des Gates. Bestehende 46 begründete Ausnahmen unverändert
-lassen. Der vollständige lokale Export liegt ignoriert unter `sonar-findings.json`.
-
-## A. Fachlogik und Transaktionsadapter — 9 Hinweise
-
-- ConfigService: Validierung und Schreiben verständlicher trennen, verschachtelte
-  Verzweigungen reduzieren und wiederholte Nachricht zentral benennen.
-- UserService: öffentliche Transaktionsadapter von gemeinsamem privaten Ablauf
-  trennen. Die Selbstaufrufe verwenden heute dieselbe REQUIRED-Transaktion;
-  keine neue Transaktion, kein neuer Service und keine neue Fehlergrenze einführen.
-- Konto-/Queue-Dienste: wiederholte Texte benennen, ungenutzte Catch-Variablen
-  durch unbenannte Muster ersetzen. PendingProof gezielt dekonstruieren.
-- Nachweise: ConfigService-/Persistenz-, UserService-/Verifikations-, Konto- und
-  Queue-Regressionen; Formatierung, Lesbarkeitsreview der geänderten Bereiche,
-  Commit, Integration und vollständiger main-Nachscan.
+Grundlage: vollständige Serveranalyse `ee430dcd-5c8f-4816-8849-37d348fe0aaa`
+von main `18cd8ba0`. 51 offene Codehinweise vor den beiden begründeten
+Vererbungsentscheidungen, keine Bugs, Schwachstellen oder Hotspots.
+Die neun Fachlogikhinweise sind im Nachscan behoben. Gate bleibt rot wegen neuer
+Hinweise; Coverage und Duplikation liegen innerhalb des Gates. Bestehende
+Ausnahmen unverändert lassen. Der vollständige lokale Export liegt ignoriert
+unter `sonar-findings.json`.
 
 ## B. UI-Bausteine und Gliederung — 22 Hinweise
 
