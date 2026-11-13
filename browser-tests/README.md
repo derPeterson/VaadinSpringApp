@@ -46,6 +46,7 @@ wegen einer Entscheidung wartende Aufgaben dort erhalten.
 | `-Coverage` | Optional serverseitigen Java-Code messen; für reine Funktionsabnahme nicht erforderlich |
 | `-Report` | Letzten Allure-Bericht lokal öffnen, keine Tests starten |
 | `-ReportPath PFAD` | Bestimmten vorhandenen HTML-Bericht öffnen |
+| `-RunsDirectory PFAD` | Stamm für diesen Lauf beziehungsweise `-Report` überschreiben; auch außerhalb des Projekts |
 | `-Trace PFAD` | Gespeicherte Playwright-Trace-ZIP öffnen |
 | `-FailureProbe` | Eigenständiger absichtlich falscher Titelvergleich; Exitcode 1 erwartet |
 | `-SetupHttps` / `-RemoveHttps` | Bewusste einmalige Test-CA-Einrichtung bzw. ausdrücklicher Rückbau, keine Browserfälle |
@@ -113,7 +114,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `configuration-follow-up` | Feldhilfen, Zeitfelder und Formularschutz einschließlich Anbieter-/2FA-Entwürfen auf Desktop und Smartphone, bestehende und neue Sitzungsfristen sowie SMTP-Wechsel | 12 |
 | `configuration-field-help` | Wirksamkeit in den allgemeinen Feldhilfen, bei beiden Anmeldeanbietern und in den 2FA-Regeln auf Desktop und Smartphone | 8 |
 | `operations` | Persistenz ohne Bootstrap, zwei eigene SMTP-Ziele und echte begrenzte Transportausfälle mit Wiederanlauf | 3 |
-| `mail-queue-resolution` | Echte SMTP-Ablehnung und Verbindungsabbruch nach DATA; Superadminrechte, Mindestalter, manuelle/automatische Bereinigung ohne Wiederholung und neuer Verifikationslink; Feldhilfen auf Desktop/Smartphone | 3 |
+| `mail-queue-resolution` | Echte SMTP-Ablehnung und Verbindungsabbruch nach DATA; Superadminrechte, Mindestalter, manuelle/automatische Bereinigung ohne Wiederholung und neuer Verifikationslink; neue Reiter, Entwürfe, Historienfrist und Feldhilfen auf Desktop/Smartphone | 4 |
 | `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
 | `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 21 |
@@ -328,7 +329,57 @@ derselben Implementierungen aus `all`. Bei neuen Fast-Tags die Fallliste oben pf
 
 ## Berichte und Fehlerhilfe
 
-`runs/` enthält pro Lauf `report.md`, `metadata.json`, `runner.log`, Allure-Daten,
+### Ablageort lokal konfigurieren
+
+Ohne Konfiguration bleibt `browser-tests/runs/` der Standard. Für die Entlastung
+der Systemplatte `browser-tests/local.properties.example` nach
+`browser-tests/local.properties` kopieren und den gewünschten Stamm eintragen:
+
+```properties
+runs.directory=D:/VaadinSpringApp/browser-runs
+```
+
+Die lokale Datei ist ignoriert. UTF-8 verwenden, Windows-Pfade mit `/` schreiben;
+Leerzeichen benötigen in dieser Datei keine Anführungszeichen. Relative Pfade
+werden gegen `browser-tests/` aufgelöst. Priorität: `-RunsDirectory` beziehungsweise
+Java-Property `browser.tests.runsDirectory`, dann Umgebungsvariable
+`BROWSER_TEST_RUNS_DIRECTORY`, dann lokale Datei, zuletzt Standard. Eine vorhandene
+Datei ohne `runs.directory`, ein leerer Wert oder ein nicht beschreibbarer Pfad
+führt zum Fehler. Kein stiller Ersatzpfad auf C: und keine automatische Löschung.
+
+Der Zielstamm muss erreichbar sein und für Docker Desktop als Bind-Mount nutzbar
+sein. Der Runner prüft die Schreibbarkeit vor dem Dockerstart; Docker meldet
+zusätzliche Freigabe-/Mountfehler beim Aufbau der eigenen Umgebung. Koordinator
+und Worker verwenden denselben Stamm und getrennte Unterordner. Worker dürfen
+auch über Junctions/Symlinks nicht außerhalb dieses Stamms schreiben. Die gewählte
+Ablage steht in den Laufmetadaten unter `runsRoot`.
+
+Neue Berichte, Screenshots, Traces, Allure-Daten, workerbezogenes TLS-Testmaterial, aus Container-
+Tests eingesammelte Daten und optionale Browser-Coverage liegen dort. Maven-
+`target/`, Maven-/Playwright-Caches und der Docker-VM-Speicher werden damit **nicht**
+verschoben. Auch die bereits bewusst eingerichtete zentrale Test-CA bleibt
+an ihrem bisherigen, im Abschnitt Isolation dokumentierten Ort. Kurzlebige
+Java-/Browser-Werkzeugdateien im System-Tempordner bleiben ebenfalls dort;
+die Konfiguration verlagert die dauerhaften Laufbelege. Der neue Stamm benötigt ausreichenden Platz und passende Zugriffsrechte;
+Belege können Testdaten und Sitzungstoken enthalten.
+
+`-Report` liest `latest.txt` am aktuell konfigurierten Stamm. Vorhandene Läufe am
+alten Ort werden weder verschoben noch gelöscht und bleiben explizit aufrufbar:
+
+```powershell
+.\browser-tests\run.ps1 -ReportPath 'C:\alter Projektpfad\browser-tests\runs\LAUF\html'
+.\browser-tests\run.ps1 -Trace 'D:\VaadinSpringApp\browser-runs\LAUF\allure-results\TRACE.zip'
+.\browser-tests\run.ps1 -RunsDirectory 'D:\Browser Belege' -Suite infrastructure -Language de
+```
+
+Neue `html/open-report.bat` verwenden den absoluten Projektstarter und den eigenen
+Berichtsordner. Sie funktionieren auch außerhalb des Projekts; das ursprüngliche
+Projekt mit seinen Testwerkzeugen muss weiterhin vorhanden sein. Wird das Projekt
+verschoben, den Bericht über `-ReportPath` aus dem neuen Projekt öffnen.
+
+### Inhalt und Diagnose
+
+Der konfigurierte Stamm enthält pro Lauf `report.md`, `metadata.json`, `runner.log`, Allure-Daten,
 Screenshots/Traces und `html/`. Metadaten halten Sprache, Quellstand, Image-ID und
 Aufbau/Abbau fest. Bei Fehlern die erste konkrete Ursache und den Trace ansehen.
 `html/open-report.bat` oder `-Report` verwenden; `index.html` benötigt einen lokalen

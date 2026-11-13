@@ -199,7 +199,9 @@ Vor dem Schreiben, Ändern oder Ausführen von Browserfällen die
 [Browseranleitung](../browser-tests/README.md) lesen und anwenden. Sie beschreibt
 Auswahl, [Worker-Parallelisierung](../browser-tests/README.md#parallelisierung),
 Isolation, Fallgestaltung, Reports und Fehlerdiagnose. Lokale Screenshots/Traces
-unter `browser-tests/runs/` sind temporäre Diagnosedaten. Wichtige aktuelle Ergebnisse werden knapp im Prüfstand festgehalten.
+im konfigurierten Laufverzeichnis (Standard `browser-tests/runs/`) sind temporäre
+Diagnosedaten. Der [Ablageort](../browser-tests/README.md#ablageort-lokal-konfigurieren)
+kann lokal etwa auf D: gesetzt werden. Wichtige aktuelle Ergebnisse werden knapp im Prüfstand festgehalten.
 Browserläufe durch Agenten benötigen eine ausdrückliche Freigabe pro Auftrag.
 
 ## Mailansicht mit eigenem Postfach

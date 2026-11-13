@@ -74,10 +74,14 @@ public final class BrowserTestRunner {
             + commit.substring(0, 8)
             + "__"
             + suffix;
-    runDirectory =
+    Path runsRootPath =
+        BrowserRunPaths.prepareRoot(BrowserRunPaths.configuredRoot(this.browserTestModulePath));
+    Path requestedRunPath =
         worker
-            ? Path.of(System.getProperty("browser.tests.workerRun")).toAbsolutePath().normalize()
-            : this.browserTestModulePath.resolve("runs").resolve(runId);
+            ? Path.of(System.getProperty("browser.tests.workerRun"))
+            : runsRootPath.resolve(runId);
+    runDirectory = BrowserRunPaths.createRunDirectory(runsRootPath, requestedRunPath);
+    testEnvironment.put(BrowserRunPaths.ROOT_ENVIRONMENT, runsRootPath.toString());
     testEnvironment.put("BROWSER_TEST_TLS_DIRECTORY", runDirectory.resolve("https").toString());
     // Auch die koordinierende Compose-Prüfung benötigt einen Wert. Jeder Worker erzeugt
     // beim eigenen Start erneut einen getrennten Schlüssel und übernimmt keinen Elternschlüssel.
@@ -90,12 +94,9 @@ public final class BrowserTestRunner {
     testEnvironment.put(
         "BROWSER_TEST_PROVIDER_KEY", java.util.Base64.getEncoder().encodeToString(providerKey));
     testEnvironment.put("BROWSER_TEST_DEVELOPMENT_OPTIONS_ENABLED", "false");
-    if (worker && !runDirectory.startsWith(this.browserTestModulePath.resolve("runs"))) {
-      throw new IllegalArgumentException("Worker output must be within runs/.");
-    }
     Files.createDirectories(runDirectory.resolve("allure-results"));
     if (!worker) {
-      Files.writeString(this.browserTestModulePath.resolve("runs/latest.txt"), runId);
+      Files.writeString(runsRootPath.resolve("latest.txt"), runId);
     }
     dockerProjectName =
         worker
@@ -122,6 +123,7 @@ public final class BrowserTestRunner {
     composeArguments.addAll(List.of("-p", dockerProjectName));
     composeCommand = List.copyOf(composeArguments);
     runMetadata.put("runId", worker ? runDirectory.getFileName().toString() : runId);
+    runMetadata.put("runsRoot", runsRootPath.toString());
     runMetadata.put("workersRequested", workerCount);
     runMetadata.put("testClasses", testClasses.stream().map(Class::getSimpleName).toList());
     runMetadata.put("startedAt", Instant.now().toString());
@@ -197,13 +199,8 @@ public final class BrowserTestRunner {
         }
         report = Path.of(args[reportPathIndex + 1]).toAbsolutePath().normalize();
       } else {
-        String latest = Files.readString(browserTestModulePath.resolve("runs/latest.txt")).trim();
-        // Erlaubt nur ASCII-Buchstaben/Ziffern/Unterstrich, Punkt und Minus, also keine
-        // Pfadtrenner; mindestens ein Zeichen.
-        if (!latest.matches("[\\w.-]+")) {
-          throw new IllegalArgumentException("Invalid report path.");
-        }
-        report = browserTestModulePath.resolve("runs").resolve(latest).resolve("html");
+        report =
+            BrowserRunPaths.latestReport(BrowserRunPaths.configuredRoot(browserTestModulePath));
       }
       if (!Files.isRegularFile(report.resolve("index.html"))) {
         throw new IOException("HTML report missing: " + report);
@@ -695,7 +692,7 @@ public final class BrowserTestRunner {
             runDirectory.resolve("allure-results").toString(),
             "--output",
             runDirectory.resolve("html").toString()));
-    writeReportLauncher(runDirectory.resolve("html"));
+    writeReportLauncher(runDirectory.resolve("html"), browserTestModulePath);
     runMetadata.put("html", "passed");
   }
 
@@ -918,22 +915,32 @@ public final class BrowserTestRunner {
     return "docker";
   }
 
-  /** Uses the HTML folder itself, so every archived run opens its own report. */
-  static void writeReportLauncher(Path html) throws IOException {
-    String launcher =
+  /** Öffnet auch externe Berichte über den ursprünglichen Projektstarter. */
+  static void writeReportLauncher(Path htmlDirectoryPath, Path browserTestModulePath)
+      throws IOException {
+    String starterPathText =
+        browserTestModulePath.resolve("run.ps1").toAbsolutePath().normalize().toString();
+    String reportCommandText =
+        "& '"
+            + starterPathText.replace("'", "''")
+            + "' -Report -ReportPath $env:BROWSER_REPORT_DIRECTORY; exit $LASTEXITCODE";
+    String encodedCommandText =
+        java.util.Base64.getEncoder()
+            .encodeToString(reportCommandText.getBytes(java.nio.charset.StandardCharsets.UTF_16LE));
+    String launcherText =
         """
         @echo off
-        setlocal
-        pushd "%~dp0..\\..\\..\\.." || exit /b 1
-        powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0..\\..\\..\\run.ps1" -Report -ReportPath "%~dp0."
-        set "reportExit=%errorlevel%"
-        popd
-        if not "%reportExit%"=="0" pause
-        exit /b %reportExit%
-        """;
+        setlocal DisableDelayedExpansion
+        set "BROWSER_REPORT_DIRECTORY=%%~dp0."
+        powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -EncodedCommand %s
+        set "reportExit=%%errorlevel%%"
+        if not "%%reportExit%%"=="0" pause
+        exit /b %%reportExit%%
+        """
+            .formatted(encodedCommandText);
     Files.writeString(
-        html.resolve("open-report.bat"),
-        launcher.replace("\n", "\r\n"),
+        htmlDirectoryPath.resolve("open-report.bat"),
+        launcherText.replace("\n", "\r\n"),
         java.nio.charset.StandardCharsets.US_ASCII);
   }
 

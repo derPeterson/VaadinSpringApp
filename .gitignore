@@ -51,6 +51,7 @@ dev-shell.bat
 /browser-tests/target/
 /coverage-report/target/
 /browser-tests/runs/
+/browser-tests/local.properties
 sonar-findings.json
 
 # Lokaler aktueller QA-Zustand, kein Berichtarchiv

@@ -14,12 +14,16 @@ param(
     [switch]$RemoveHttps,
     [switch]$Report,
     [string]$ReportPath,
+    [string]$RunsDirectory,
     [switch]$InstallBrowsers,
     [string]$Trace
 )
 $ErrorActionPreference = 'Stop'
 if ($SetupHttps -and $RemoveHttps) { throw 'Choose SetupHttps or RemoveHttps, not both.' }
 if ($ReportPath) { $Report = $true }
+if ($PSBoundParameters.ContainsKey('RunsDirectory') -and [string]::IsNullOrWhiteSpace($RunsDirectory)) {
+    throw 'RunsDirectory must not be empty.'
+}
 $modulePath = $PSScriptRoot
 $repoPath = Split-Path $modulePath -Parent
 $rootPomPath = Join-Path $repoPath 'pom.xml'
@@ -52,6 +56,9 @@ if ($Trace) {
     exit $LASTEXITCODE
 }
 $javaArguments = @('-Dfile.encoding=UTF-8', '-cp', $classpath)
+if ($PSBoundParameters.ContainsKey('RunsDirectory')) {
+    $javaArguments = @("-Dbrowser.tests.runsDirectory=$RunsDirectory") + $javaArguments
+}
 if (-not $Report) { $javaArguments += "-javaagent:$targetPath/tools/aspectjweaver.jar" }
 $javaArguments += @('de.derpeterson.browsertests.BrowserTestRunner', $modulePath)
 if (-not $Report) { $javaArguments += @('--suite', $Suite, '--language', $Language, '--workers', [string]$Workers) }

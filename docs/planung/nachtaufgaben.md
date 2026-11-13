@@ -38,6 +38,13 @@ Für Paket 4 liegt die [Planung für öffentlichen Testbetrieb](oeffentlicher-te
 mit Kostenvergleich, Mail/CI und konkreten Vorarbeiten vor. Keine Buchung oder
 Bereitstellung wurde durchgeführt.
 
+Paket 5 ist technisch umgesetzt: `browser-tests/local.properties` wählt den
+Ablagestamm, lokal jetzt `D:/VaadinSpringApp/browser-runs`. 17 Pfad-/Launcherfälle
+und die weiteren gezielten Starter-/Worker-/Auswahlregressionen sind bestanden.
+Die isolierten DE-/EN-Queue-Läufe erzeugten ihre Belege und Berichte auf D:,
+während der alte C:-Stand unberührt blieb. Bestehende Läufe wurden nicht verschoben
+oder gelöscht. Caches und kurzlebige System-Tempdateien sind nicht Teil des Umzugs.
+
 ## Abarbeitungsliste
 
 ### 1. E-Mail-Queue in zwei Tabs gliedern

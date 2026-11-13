@@ -1,0 +1,4 @@
+# Lokale Einstellungen: als browser-tests/local.properties speichern (nicht versioniert).
+# Der Stamm enthaelt alle neuen Laeufe und latest.txt; bestehende Laeufe bleiben erhalten.
+# Windows-Pfade mit / schreiben; Leerzeichen benoetigen hier keine Anfuehrungszeichen.
+runs.directory=D:/VaadinSpringApp/browser-runs
