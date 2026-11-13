@@ -2,7 +2,9 @@
 
 ## Empfehlung und Umfang
 
-Noch nicht umgesetzt. Erst nach gemeinsamer Durchsicht freigeben. Die heutigen
+Die Planung ist vom Benutzer durchgelesen; ihre Umsetzung ist zurückgestellt.
+Ob am Ende der laufenden Gesamtumsetzung ein erster Release erstellt wird,
+wird erst dann entschieden. Noch kein Releaseauftrag; die heutigen
 Projektversionen bleiben unverändert. Ein Release bezeichnet einen geprüften,
 eindeutig wiederherstellbaren Softwarestand, nicht automatisch eine Veröffentlichung
 im Internet. Das Deployment wird getrennt in der Hostingplanung behandelt.

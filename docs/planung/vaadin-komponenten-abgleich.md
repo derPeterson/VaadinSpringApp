@@ -12,7 +12,7 @@ die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#nati
 ## Offene Komponentenpakete
 
 Die begonnene Umsetzung ist lokal nach `main` zwischenintegriert. Weitere
-Arbeiten und die gemeinsame Sichtung laufen auf
+Arbeiten laufen auf
 `codex/vaadin-komponenten-folgearbeiten`. Die Badge-Darstellungen und
 einheitlichen Seitenpfade sind vom Benutzer abgenommen. Ihre geltenden Regeln
 stehen im [Theme-Standard](../theme.md).
@@ -22,7 +22,7 @@ Ihr erster Einsatz sind „Gesamt“ und „Ungelesen“ im Postfach. Die neutra
 die hervorgehobene Variante werden auf Desktop und Mobil mit der bestehenden
 Darstellung verglichen.
 
-## Verbleibende Sichtung und Prüfungen
+## Abgenommene Pakete und Prüfstand
 
 Die abgenommenen Auswahlfelder, die bestehende Formularwarnung und die E-Mail-/
 Benutzerverwaltungsoberflächen sind keine offenen Abnahmepunkte mehr. Ihre
@@ -30,22 +30,23 @@ Funktionen stehen in der aktuellen [Anwendungsdokumentation](../anwendung.md)
 und im [Theme-Standard](../theme.md). Offene automatisierte Nachtests bleiben
 unabhängig davon im [Testbedarf](../testbedarf.md) erhalten.
 
-### Gemeinsame Sichtung: Mailqueue-Bereinigung
+### Mailqueue-Bereinigung
 
-Die gemeinsame manuelle und optionale automatische Bereinigung ist umgesetzt.
+Die gemeinsame manuelle und optionale automatische Bereinigung ist umgesetzt
+und vom Benutzer abgenommen.
 Der [Mailqueue-Vertrag](../mailqueue.md#ergebnisse-und-wiederholung) beschreibt
 SMTP-Ablehnungen, ungeklärte Ausgänge, Mindestalter, Intervalle und Grenzen.
-Offen bleibt die gemeinsame Sichtung von Schalter, Zeitfeldern, Bestätigung und
-Ergebnisanzeige in der Mailqueue-Konfiguration. Automatisierte Nachweise und
-verbleibender Testbedarf stehen im [Prüfstand](../status.md) und im
-[Testbedarf](../testbedarf.md). Kein Commit ohne entsprechenden Auftrag.
+Schalter, Zeitfelder, Bestätigung und Ergebnisanzeige sind gesichtet.
+Der feste Zeilenumbruch der Anzahl bereinigter Aufträge ist auf Desktop und
+Smartphone manuell abgenommen. Automatisierte Nachweise und verbleibender
+Testbedarf stehen im [Prüfstand](../status.md) und im [Testbedarf](../testbedarf.md).
 
 Die abgestimmte Variante A ist als innere Konfigurationskarte unter dem
 Superadmin-Reiter Assistenten umgesetzt. Die fünf allgemeinen Einstellungen
 bleiben im Reiter Allgemein. Der neue Historienwert ist unabhängig von der
-Automatik bedienbar. Die zugehörigen Aufgaben und die noch offene gemeinsame
-Sichtung stehen in der [Nachtliste](nachtaufgaben.md). Die sichtbare Laufhistorie
-bleibt eine spätere Aufgabe in [TODO](../../TODO.md).
+Automatik bedienbar. Auch die konfigurierbare D:-Ablage der Browserläufe ist
+vom Benutzer abgenommen. Die sichtbare Laufhistorie bleibt eine spätere
+Aufgabe in [TODO](../../TODO.md).
 
 ### Segmentierte Auswahl vereinheitlichen
 
@@ -56,16 +57,16 @@ bleibt eine spätere Aufgabe in [TODO](../../TODO.md).
 - Der Benutzer hat die bisherigen Seitenreiter ausdrücklich ausgenommen. Konto-
   sicherheit, Anbieter-/Rollen-TabSheets und Ticketkategorien behalten ihre Gestaltung.
   Die normale Zuständigkeitsauswahl bleibt eine native RadioButtonGroup.
-- Offen bleibt die gemeinsame Sichtung der segmentierten Auswahl. Der gezielte
+- Die bisherige Gestaltung der segmentierten Auswahl ist abgenommen. Der gezielte
   Nachtest einschließlich Vorher-/Nachher-Vergleich, Filterwirkung, Zählern,
   Sprachwechsel, Tastatur und Handzeiger ist in DE/EN auf Desktop und Smartphone
   erfolgreich. Nachweis und Grenzen stehen im [Prüfstand](../status.md).
 
 ### Gemeinsame Sichtung und Prüfstand
 
-Die umgesetzten Nachtpakete einschließlich der Trennung von administrativer Sperre und
-Selbstdeaktivierung (Punkt 8) sowie die integrierte Einheitenauswahl (Punkt 3)
-sind vom Benutzer abgenommen. `CosmosDurationField`, feste Tageswerte und
+Die Trennung von administrativer Sperre und Selbstdeaktivierung sowie die
+integrierte Einheitenauswahl sind vom Benutzer abgenommen.
+`CosmosDurationField`, feste Tageswerte und
 Gestaltungsregeln stehen im [Theme-Standard](../theme.md).
 Die vereinbarten gezielten Nachtests sind in DE/EN auf Desktop und Smartphone
 erfolgreich; auch der reguläre Build einschließlich aller Anwendungstests ist

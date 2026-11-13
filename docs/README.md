@@ -30,16 +30,18 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 ## Offene Arbeiten
 
 Die geplante [Versionierung mit Release-Ablauf](planung/releases.md) und der
-darauf aufbauende [Neuigkeitenbereich](planung/neuigkeiten.md) sind zur gemeinsamen
-Durchsicht ausgearbeitet. Sie sind noch nicht umgesetzt. Der übergreifende
-Arbeitsauftrag steht in der [Nachtliste](planung/nachtaufgaben.md).
+darauf aufbauende [Neuigkeitenbereich](planung/neuigkeiten.md) sind durchgelesen;
+ihre Umsetzung ist zurückgestellt. Ob am Ende der laufenden Gesamtumsetzung ein
+erster Release erstellt wird, wird dann entschieden. Noch kein Releaseauftrag.
 
 Die [Passkey-Analyse](planung/passkeys.md) bewertet die Einbindung in vorhandene
-2FA und empfiehlt vorerst eine Zurückstellung. Eine Umsetzung ist nicht freigegeben.
+2FA und empfiehlt vorerst eine Zurückstellung. Die Planung ist durchgelesen;
+eine Umsetzung ist nicht freigegeben.
 
 Der [öffentliche Testbetrieb](planung/oeffentlicher-testbetrieb.md) ist mit
-Kostenvergleich, konkreten Voraussetzungen und Deploymentvorschlag geplant.
-Domain, Dienste und Datenhaltung sind noch gemeinsam festzulegen.
+Kostenvergleich, konkreten Voraussetzungen und Deploymentvorschlag geplant und
+durchgelesen. Die Umsetzung ist zurückgestellt. Domain, Dienste und Datenhaltung
+sind vor einer späteren Bereitstellung gemeinsam festzulegen.
 
 Die Designübernahme für Besucher, angemeldetes Portal und Administration ist
 umgesetzt und abgenommen. Die freigegebenen Bausteine stehen im [Theme-Standard](theme.md).

@@ -2,9 +2,10 @@
 
 ## Entscheidungsvorlage
 
-Analyseauftrag aus [Nachtpunkt 3](nachtaufgaben.md). **Noch keine Umsetzung
-freigegeben.** Empfehlung: vorerst zurückstellen. Die vorhandene Anmeldung ist
-bereits nutzbar; für den geplanten öffentlichen Testbetrieb bringen zuverlässiger
+Die Analyse ist vom Benutzer durchgelesen; ihre Umsetzung ist zurückgestellt.
+**Noch keine Umsetzung freigegeben.** Empfehlung: vorerst zurückstellen.
+Die vorhandene Anmeldung ist bereits nutzbar; für den geplanten öffentlichen
+Testbetrieb bringen zuverlässiger
 Mailversand und Betriebssicherheit zunächst mehr als ein zusätzlicher Anmeldeweg.
 
 Passkeys bleiben ein sinnvolles späteres Paket: kein abzutippendes Passwort oder

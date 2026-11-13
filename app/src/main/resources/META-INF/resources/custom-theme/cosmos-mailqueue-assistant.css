@@ -7,7 +7,7 @@
 .admin-queue-cleanup-status { width: 100%; box-sizing: border-box; padding: 16px; gap: 14px; border: 1px solid var(--cosmos-reference-border); border-radius: 10px; background: var(--cosmos-reference-panel); }
 .admin-queue-cleanup-status > vaadin-icon { width: 20px; height: 20px; flex: none; color: var(--cosmos-reference-accent); }
 .admin-queue-cleanup-status-title { color: var(--cosmos-reference-secondary); font: 500 11px/18px Inter,sans-serif; text-transform: uppercase; letter-spacing: .5px; }
-.admin-queue-cleanup-output { color: var(--cosmos-reference-text); font: 400 12px/20px Consolas,"Courier New",monospace; overflow-wrap: anywhere; }
+.admin-queue-cleanup-output { color: var(--cosmos-reference-text); font: 400 12px/20px Consolas,"Courier New",monospace; white-space: pre-line; overflow-wrap: anywhere; }
 .admin-queue-cleanup-actions { flex: none; gap: 8px; }
 .admin-queue-cleanup-info { width: 100%; box-sizing: border-box; gap: var(--cosmos-info-box-gap); padding: var(--cosmos-info-box-padding); border: 1px solid var(--cosmos-reference-border); border-radius: var(--cosmos-control-radius); background: var(--cosmos-reference-input); color: var(--cosmos-reference-secondary); font: 400 12px/20px Inter,sans-serif; }
 .admin-queue-cleanup-info > vaadin-icon { width: 16px; height: 16px; flex: none; color: var(--cosmos-reference-accent); }

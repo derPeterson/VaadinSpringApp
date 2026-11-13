@@ -2,7 +2,8 @@
 
 ## Ziel und Empfehlung
 
-Planung aus [Nachtpunkt 4](nachtaufgaben.md), noch keine Bereitstellung oder Buchung.
+Die Planung ist vom Benutzer durchgelesen; ihre Umsetzung ist zurückgestellt.
+Noch keine Bereitstellung oder Buchung.
 Freunde sollen sich regulär registrieren, eine echte Bestätigungsmail erhalten und
 die vorhandenen Anmeldewege benutzen. Keine gemeinsam verwendeten Demokonten.
 

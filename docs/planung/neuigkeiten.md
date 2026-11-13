@@ -2,7 +2,8 @@
 
 ## Empfehlung
 
-Noch nicht umgesetzt. Ein kleiner, bewusst erreichbarer Neuigkeitenbereich passt
+Die Planung ist vom Benutzer durchgelesen; ihre Umsetzung ist zurückgestellt.
+Ein kleiner, bewusst erreichbarer Neuigkeitenbereich passt
 zum Portal und kann seine Entwicklung für Benutzer nachvollziehbar machen. Er
 ersetzt weder Startseite noch Dashboard. Ein automatisches Popup bei jeder
 Anmeldung ist nicht Teil des Vorschlags.

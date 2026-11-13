@@ -1144,6 +1144,8 @@ Panelheader mit `brush-cleaning`, Titel, Sekundärtext und Trennlinie. Ein nativ
 Warnung und dezente Info-Box verwenden die vorhandenen Cosmos-Farben/Abstände.
 Der Statusbereich trägt Tabler `terminal-2`, stellt nur die Ergebnisausgabe in
 Monospace dar und hält Aktualisieren neben der Bereinigungsaktion rechts.
+Die Anzahl bereinigter Aufträge beginnt unabhängig von der verfügbaren Breite
+in einer neuen Zeile unter dem Laufzeitpunkt, auch in der englischen Anzeige.
 Die lokale Anordnung liegt in `cosmos-mailqueue-assistant.css`; normale
 Buttonzustände kommen unverändert aus dem gemeinsamen Theme. Laden und Speichern
 bleiben im äußeren gemeinsamen Footer, nicht in der inneren Karte.

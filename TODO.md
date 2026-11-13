@@ -2,25 +2,24 @@
 
 ## Laufende Umsetzung
 
-- [ ] Die Ergebnisse der [Nachtaufgaben](docs/planung/nachtaufgaben.md) gemeinsam
-  sichten und die weitere Umsetzung festlegen. Die Release-, Passkey- und
-  Hostingpakete umfassen ausschließlich Analyse und Planung.
-- [ ] [Release-Ablauf](docs/planung/releases.md) und [Was ist neu?](docs/planung/neuigkeiten.md)
-  gemeinsam durchlesen und die spätere Umsetzung festlegen. Noch keine
-  Versionsumstellung oder Neuigkeiten-Oberfläche freigegeben.
-
-- [ ] [Passkey-Planung](docs/planung/passkeys.md) gemeinsam bewerten. Eine spätere
-  Umsetzung benötigt einen eigenen Auftrag; vorerst bestehende 2FA beibehalten.
-
-- [ ] [Öffentlichen Testbetrieb](docs/planung/oeffentlicher-testbetrieb.md) gemeinsam
-  planen: Anbieter, Domain, SMTP und Datenhaltung entscheiden. Noch keine
-  Bereitstellung freigegeben.
-
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise
   nach Freigabe umsetzen. Ergebnisse stehen im [Prüfstand](docs/status.md).
   Die ausdrücklich zurückgestellten
   Pakete bleiben bis zu einer späteren Freigabe offen.
+
+## Zurückgestellte Planungen
+
+- [ ] [Release-Ablauf](docs/planung/releases.md) und [Was ist neu?](docs/planung/neuigkeiten.md)
+  später auf eigenen Auftrag umsetzen. Die Planungen sind durchgelesen.
+  Am Ende der laufenden Gesamtumsetzung entscheiden, ob ein erster Release
+  erstellt werden soll; noch kein Releaseauftrag.
+- [ ] [Passkey-Planung](docs/planung/passkeys.md) bei einer späteren Freigabe
+  erneut gegen den aktuellen Stand prüfen und umsetzen. Planung durchgelesen,
+  Umsetzung zurückgestellt; bestehende 2FA beibehalten.
+- [ ] [Öffentlichen Testbetrieb](docs/planung/oeffentlicher-testbetrieb.md) später
+  auf eigenen Auftrag einrichten. Planung durchgelesen; Anbieter, Domain, SMTP
+  und Datenhaltung vor der Bereitstellung entscheiden.
 
 ## Künftige Anwendungsfunktionen
 

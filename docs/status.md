@@ -5,11 +5,17 @@ Die Nachtpakete und die reviewten Sonar-/QA-Korrekturen wurden lokal nach
 `main` zwischenintegriert. Die Browserrunde lief auf
 `codex/vaadin-komponenten-folgearbeiten` mit demselben unveränderten Codestand.
 Vergleichsbasis der letzten vollständig belegten QA ist `9c0d53e8`.
-Die anschließenden Abschlussänderungen betreffen ausschließlich Dokumentation.
+Die nachträglich ergänzte zweizeilige Queue-Statusausgabe ist vom Benutzer auf
+Desktop und Smartphone manuell abgenommen und mit drei erfolgreichen
+Sprachkatalogtests geprüft. Der automatisierte Browsernachtest dieser kleinen
+Änderung bleibt im [Testbedarf](testbedarf.md); die Gesamtläufe unten gehören
+weiterhin zum oben genannten Codestand.
 
 **Der technische Prüfabschluss ist keine Abnahme der laufenden Gesamtumsetzung.**
-Die gemeinsame Sichtung bleibt im [Komponentenplan](planung/vaadin-komponenten-abgleich.md)
-und in den [Nachtaufgaben](planung/nachtaufgaben.md) offen. Kein Push oder Release.
+Die bisherigen UI-Pakete und die externe Browser-Laufablage sind vom Benutzer
+abgenommen. Die Gesamtumsetzung wird auf dem Feature-Branch fortgeführt;
+zurückgestellte Pakete stehen im [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
+Kein Push oder Release.
 
 ## Ergebnisse
 
@@ -104,9 +110,9 @@ UTF-8-Ausgabe und zwei Offline-Regressionen behoben. Das war kein Serverfinding.
 
 ## Grenzen und nächste Sichtung
 
-Aktuell bestehen keine bestätigten offenen Anwendungsfehler oder automatisierten
-Nachtests für diesen Umfang. [BUGS](../BUGS.md) und [Testbedarf](testbedarf.md)
-bleiben die zentralen Stellen für neue Befunde.
+Aktuell bestehen keine bestätigten offenen Anwendungsfehler. Der automatisierte
+Nachtest des nachträglichen Zeilenumbruchs steht im [Testbedarf](testbedarf.md).
+[BUGS](../BUGS.md) und der Testbedarf bleiben die zentralen Stellen für neue Befunde.
 
 Echte Mobilgeräte, Passwortmanager, Screenreader, reale Anmeldeanbieter und
 Mailprogramme bleiben von den isolierten Chromium-/OIDC-/Mailpit-Prüfungen
@@ -121,9 +127,11 @@ Der native Formularschutz ist kein Autosave und schützt nicht zuverlässig
 vor Absturz oder erzwungenem Prozessende.
 
 Die drei Planungsaufgaben sind keine Umsetzung von Releases, Neuigkeiten,
-Passkeys oder Hosting. Die neue Queue-Karte und diese Vorschläge bleiben
-gemeinsam zu sichten. Die sichtbare Bereinigungshistorie und zurückgestellte
-Komponentenpakete bleiben in [TODO](../TODO.md).
+Passkeys oder Hosting. Die Planungen sind durchgelesen und ihre Umsetzungen
+zurückgestellt. Über einen ersten Release wird erst am Ende der laufenden
+Gesamtumsetzung entschieden. Die neue Queue-Karte ist abgenommen.
+Die sichtbare Bereinigungshistorie und zurückgestellte Komponentenpakete
+bleiben in [TODO](../TODO.md).
 
 Für die neue Queue-Oberfläche sind Build, Anwendungsneustart und Browser-Refresh
 nötig. Der Build ist geprüft; die lokale Entwicklungsanwendung wurde nicht
