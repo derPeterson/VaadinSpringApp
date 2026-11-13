@@ -185,6 +185,7 @@ public class AdminConfigurationSection extends VerticalLayout {
     queueTabSheet.addClassName(CosmosCssClasses.PANEL_TABS);
     queueTabSheet.addThemeVariants(TabSheetVariant.NO_PADDING);
     queueTabSheet.setWidthFull();
+    queueTabSheet.addSelectedChangeListener(event -> refreshCurrentGroupTitle());
     queueGeneralFieldsLayout.setPadding(false);
     queueGeneralFieldsLayout.setSpacing(false);
     queueGeneralFieldsLayout.addClassName("cosmos-config-fields");
@@ -481,10 +482,25 @@ public class AdminConfigurationSection extends VerticalLayout {
       currentGroupDescriptionSpan.setText(
           messageProperties.getAdminConfigGroupDescription(selectedGroup));
       currentGroupSettingCountBadge.setText(
-          messageProperties.getAdminConfigSettingsCount(getVisibleConfigEntries().size()));
+          messageProperties.getAdminConfigSettingsCount(countSettingsInActiveTab()));
       currentGroupSvgIcon.setSrc(ConfigGroupIcons.forGroup(selectedGroup).getSource());
       configurationTitleSpan.setText(groupLabelText);
     }
+  }
+
+  private int countSettingsInActiveTab() {
+    List<ConfigEntry> visibleConfigEntries = getVisibleConfigEntries();
+    if (selectedGroup != AdminConfigGroup.QUEUE) {
+      return visibleConfigEntries.size();
+    }
+
+    boolean assistantTabSelected =
+        queueTabSheet.getSelectedTab() == queueAssistantsTab && queueAssistantsTab.isVisible();
+    return (int)
+        visibleConfigEntries.stream()
+            .filter(configEntry ->
+                ConfigurationCatalog.isMailCleanupSetting(configEntry) == assistantTabSelected)
+            .count();
   }
 
   private void refreshInputLabels() {

@@ -1514,6 +1514,11 @@ Zurück-/Abmeldeaktionen und serverseitigen Sperren bleiben maßgeblich.
 
 ## Administrative Mailqueue-Bereinigung
 
+Der Einstellungszähler im Kopf bezieht sich auf den aktiven Queue-Reiter:
+fünf unter „Allgemein“, vier unter „Assistenten“. Deaktivierte Eingabefelder
+zählen mit. Tab- und Sprachwechsel aktualisieren den Zähler; gespeichert
+werden weiterhin die Einstellungen beider Reiter gemeinsam.
+
 `AdminMailQueueCleanupComponent` ergänzt ausschließlich für Superadmins die
 Gruppe Mailqueue. Sie kombiniert native Vaadin-Layouts, die Standardwarnbox,
 Standardbuttons und eine dezente Ergebniszeile. Die Zeitfelder verwenden

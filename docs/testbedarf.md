@@ -2,6 +2,13 @@
 
 ## Browser-Tests
 
+- **Mailqueue / Reiteranschluss — offen:** Nach der lokalen Darstellungskorrektur
+  müssen Header und Tab-Leiste in DE/EN auf Desktop und Smartphone direkt
+  ohne Abstand oder zusätzliche Trennlinie aneinander anschließen.
+  Die Prüfung ist im vorhandenen Queue-Reitertest
+  ergänzt; Browsernachtest für diese Korrektur noch nicht ausgeführt.
+  Der Einstellungszähler muss bei „Allgemein“ fünf und bei „Assistenten“ vier
+  Einstellungen anzeigen, auch nach Tab- und Sprachwechsel.
 - **Mailqueue / Statusausgabe — offen:** Den festen Zeilenumbruch zwischen
   letztem Lauf und Anzahl bereinigter Aufträge in DE/EN auf Desktop- und
   Smartphonebreite prüfen. Die Anzahl muss auch bei ausreichender Breite

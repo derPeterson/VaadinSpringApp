@@ -1,4 +1,7 @@
 /* Lokale Anordnung aus der freigegebenen Mailqueue-Skizze; Controls bleiben Cosmos. */
+/* Header, Reiter und Footer schließen in der Queue ohne äußere Zwischenräume an. */
+.cosmos-config-form:has(> #admin-queue-tabs:not([hidden])) { gap: 0; }
+.cosmos-config-form:has(> #admin-queue-tabs:not([hidden])) > .cosmos-config-card-header { border-bottom: 0; }
 #admin-queue-tabs { align-self: stretch; }
 #admin-queue-tabs .admin-mail-queue-resolution { width: calc(100% - 48px); margin: 24px; }
 .admin-queue-cleanup-content { width: 100%; gap: 20px; padding: 24px; box-sizing: border-box; }

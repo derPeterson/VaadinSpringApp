@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.select.Select;
@@ -47,6 +48,8 @@ import java.util.function.Supplier;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /** Group identity and language-refresh lifecycle; no application, database or browser. */
@@ -150,6 +153,43 @@ class AdminConfigurationGroupTest {
         (TabSheet) ReflectionTestUtils.getField(configurationSection, "queueTabSheet");
     assertEquals(1, queueTabSheet.getTabCount());
     assertEquals(5, visibleEntries().size());
+    assertSettingCountBadge(5);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void settingCountFollowsActiveQueueTabAndLanguageWithoutChangingDrafts(String languageCode) {
+    localeReference.set(Locale.forLanguageTag(languageCode));
+    EmailQueueCleanupService emailQueueCleanupService = mock(EmailQueueCleanupService.class);
+    when(emailQueueCleanupService.canManageCleanup()).thenReturn(true);
+    configurationSection.configureMailQueueCleanup(emailQueueCleanupService);
+    configurationSection.showGroup(AdminConfigGroup.QUEUE);
+    TabSheet queueTabSheet =
+        (TabSheet) ReflectionTestUtils.getField(configurationSection, "queueTabSheet");
+    assertSettingCountBadge(5);
+
+    queueTabSheet.setSelectedIndex(1);
+    assertSettingCountBadge(4);
+    localeReference.set(languageCode.equals("de") ? Locale.ENGLISH : Locale.GERMAN);
+    configurationSection.refreshTexts();
+    assertSettingCountBadge(4);
+    assertFalse(configurationSection.hasUnsavedChanges());
+
+    queueTabSheet.setSelectedIndex(0);
+    assertSettingCountBadge(5);
+    configurationSection.showGroup(AdminConfigGroup.NOTIFICATIONS);
+    assertSettingCountBadge(2);
+    verify(configService, never()).set(any(ConfigEntry.class), anyString());
+  }
+
+  private void assertSettingCountBadge(int expectedSettingCount) {
+    Badge settingCountBadge =
+        (Badge) ReflectionTestUtils.getField(configurationSection, "currentGroupSettingCountBadge");
+    MessageProperties messageProperties =
+        MessageProperties.forLocale(i18nProvider, localeReference.get());
+    assertEquals(
+        messageProperties.getAdminConfigSettingsCount(expectedSettingCount),
+        settingCountBadge.getText());
   }
 
   @Test

@@ -213,6 +213,8 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
     Locator queueTabsLocator = browserPage.locator("#admin-queue-tabs");
     assertThat(queueTabsLocator.getByRole(AriaRole.TAB)).hasCount(1);
     assertThat(browserPage.locator(".cosmos-config-field:visible")).hasCount(5);
+    assertThat(browserPage.locator(".cosmos-config-setting-count"))
+        .hasText(uiTexts.getAdminConfigSettingsCount(5));
     new UserMenu(browserPage).requestSignOut();
 
     signInAdministrator(true);
@@ -239,11 +241,23 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
   private void verifyQueueDraftsAndAssistantLayout(
       AdminConfigurationPage configurationPage, int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
+    assertThat(browserPage.locator(".cosmos-config-card-header"))
+        .hasCSS("border-bottom-width", "0px");
+    BoundingBox queueHeaderBoundingBox =
+        browserPage.locator(".cosmos-config-card-header").boundingBox();
+    BoundingBox queueTabSheetBoundingBox = browserPage.locator("#admin-queue-tabs").boundingBox();
+    assertEquals(
+        queueHeaderBoundingBox.y + queueHeaderBoundingBox.height, queueTabSheetBoundingBox.y, 1);
+
     configurationPage.enter(uiTexts.getAdminConfigEntryEmailQueueMaxRetry(), "4");
+    assertThat(browserPage.locator(".cosmos-config-setting-count"))
+        .hasText(uiTexts.getAdminConfigSettingsCount(5));
     AllurePlaywright.attachScreenshot(
         "Allgemeine Queue-Einstellungen " + viewportWidth, browserPage);
 
     selectCleanupTabAndGetAutomaticSwitch().setChecked(false);
+    assertThat(browserPage.locator(".cosmos-config-setting-count"))
+        .hasText(uiTexts.getAdminConfigSettingsCount(4));
     assertThat(configurationPage.input(uiTexts.getAdminQueueCleanupInterval())).isDisabled();
     assertThat(configurationPage.input(uiTexts.getAdminQueueCleanupMinimumAge())).isDisabled();
     assertThat(configurationPage.input(uiTexts.getAdminQueueCleanupHistoryDays())).isEnabled();
