@@ -73,7 +73,9 @@ schmalen Ansichten natürlich umbrechen.
 Der Anmeldungsbereich im Benutzereditor verwendet native Vaadin-`Details`
 (`#admin-user-sign-in-details`) und startet eingeklappt. Die blaue Überschrift und
 das Info-Icon stehen links, rechts der gemeinsame `DetailsToggleButton` wie bei 2FA.
-Der native Summary ist ausgeblendet. Die gemeinsame lokale Gestaltung liegt
+Der native Summary ist ausgeblendet. Der Details-Host hat innerhalb des kompakten
+Rahmens keinen eigenen Außenabstand; die Inhaltsabstände legt der vorhandene
+Cosmos-Bereich fest. Die gemeinsame lokale Gestaltung liegt
 in `admin-users.css`; darunter erscheinen die bisherigen Angaben, Mailaktionen und
 bei Selbstdeaktivierung der gemeinsame gelbe Warnhinweis mit oben ausgerichtetem
 Icon: „Selbst deaktiviert:“ fett in Gelb, der schreibgeschützte UTC-Löschtermin

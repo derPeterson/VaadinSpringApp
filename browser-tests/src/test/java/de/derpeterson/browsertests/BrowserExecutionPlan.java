@@ -18,52 +18,55 @@ import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 
 /** Selects existing cases and keeps whole classes together in independent JVMs. */
 final class BrowserExecutionPlan {
-  // Bestandsgewichte aus der DE-/EN-Messung vom 15.10.2026; Wartung zunächst geschätzt.
-  // Dies sind Verteilungsgewichte, keine gemessene Dauer oder Laufzeitgarantie neuer Fälle.
-  // Lange Klassen zuerst verteilen; kein Zugriff auf aufbewahrte Run-Ordner nötig.
-  private static final Map<String, Integer> SECONDS =
+  // Gerundete Verteilungsgewichte aus dem DE-Gesamtlauf vom 13.11.2026.
+  // Die langen 2FA-/Feldhilfefälle sind vollständig berücksichtigt. Keine Zeitgarantie.
+  // Bei unterbrochenen Fällen ist die verbleibende Arbeit konservativ geschätzt.
+  // Einzelne Testtimeouts und das Gesamtlimit eines Workers bleiben unverändert.
+  private static final Map<String, Integer> ESTIMATED_TEST_CLASS_SECONDS_MAP =
       Map.ofEntries(
-          Map.entry("RestartAndSmtpBrowserTest", 320),
-          // Zwei reguläre Minutenfristen, zunächst geschätztes Verteilungsgewicht.
-          Map.entry("MailQueueResolutionBrowserTest", 300),
-          Map.entry("SegmentedSelectionBrowserTest", 60),
-          Map.entry("EmailActionLinkBrowserTest", 30),
-          // Eine zusätzliche echte Minute prüft die erneute Verifikationsanforderung.
-          Map.entry("TokenExpiryBrowserTest", 269),
-          Map.entry("UserManagementBrowserTest", 173),
-          Map.entry("SessionSecurityBrowserTest", 116),
-          Map.entry("UserAccessBrowserTest", 114),
-          Map.entry("BlockedLinksBrowserTest", 112),
-          Map.entry("CosmosDesignBrowserTest", 100),
-          Map.entry("MaintenanceBrowserTest", 150),
-          Map.entry("PasswordResetBrowserTest", 93),
-          Map.entry("ConfigurationBrowserTest", 92),
-          Map.entry("TokenConfigurationBrowserTest", 77),
-          Map.entry("AccountLifecycleBrowserTest", 72),
-          Map.entry("UserStatusBrowserTest", 72),
-          Map.entry("UserFiltersBrowserTest", 66),
-          // Neue Klassen/Rebootfälle: gezielte DE-Messung vom 16.10.2026, grob gerundet.
-          // Zusätzliche echte Reaktivierungswartezeit auf beiden Breiten: 2 x 5 Minuten.
-          Map.entry("AccountSettingsBrowserTest", 750),
-          // DE-Gesamtlauf vom 03.11.2026: gerundete Verteilungsgewichte einschließlich
-          // echter Frist- und Neustartprüfungen, keine Laufzeitgarantie.
-          Map.entry("ExternalLoginBrowserTest", 1260),
-          Map.entry("ExternalLoginLayoutBrowserTest", 90),
-          Map.entry("TwoFactorBrowserTest", 1380),
-          Map.entry("TwoFactorLifecycleBrowserTest", 240),
-          Map.entry("TwoFactorPushBrowserTest", 540),
-          // Neue Sicherheits-/Sitzungsjourneys zunächst geschätzt, keine Laufzeitgarantie.
-          Map.entry("AccountSecurityBrowserTest", 120),
-          Map.entry("SessionManagementBrowserTest", 130),
-          Map.entry("RememberMeBrowserTest", 142),
-          Map.entry("PresentationBrowserTest", 29),
-          Map.entry("AuthenticationBrowserTest", 26),
-          Map.entry("LoginLayoutBrowserTest", 25),
-          // Zusätzliche Nachweisfälle mit echter Versandwartezeit, zunächst geschätzt.
-          Map.entry("VerificationBrowserTest", 300),
-          Map.entry("AdminMailBrowserTest", 19),
-          Map.entry("RegistrationBrowserTest", 16),
-          Map.entry("InfrastructureBrowserTest", 7));
+          Map.entry("RestartAndSmtpBrowserTest", 410),
+          Map.entry("MailQueueResolutionBrowserTest", 320),
+          Map.entry("SegmentedSelectionBrowserTest", 70),
+          Map.entry("EmailActionLinkBrowserTest", 20),
+          Map.entry("TokenExpiryBrowserTest", 260),
+          Map.entry("UserManagementBrowserTest", 410),
+          Map.entry("SessionSecurityBrowserTest", 200),
+          Map.entry("UserAccessBrowserTest", 330),
+          Map.entry("BlockedLinksBrowserTest", 150),
+          Map.entry("CosmosDesignBrowserTest", 330),
+          Map.entry("MaintenanceBrowserTest", 280),
+          Map.entry("PasswordResetBrowserTest", 100),
+          // Unterbrochene Teilfälle beziehungsweise noch fehlende Folgeschritte mit Reserve.
+          Map.entry("ConfigurationBrowserTest", 620),
+          Map.entry("TokenConfigurationBrowserTest", 120),
+          Map.entry("AccountLifecycleBrowserTest", 70),
+          Map.entry("UserStatusBrowserTest", 100),
+          Map.entry("UserFiltersBrowserTest", 260),
+          Map.entry("AccountSettingsBrowserTest", 1290),
+          // Unterbrochene Teilfälle beziehungsweise noch fehlende Folgeschritte mit Reserve.
+          Map.entry("ExternalLoginBrowserTest", 1440),
+          Map.entry("ExternalLoginLayoutBrowserTest", 150),
+          Map.entry("TwoFactorBrowserTest", 2400),
+          Map.entry("TwoFactorLifecycleBrowserTest", 260),
+          Map.entry("TwoFactorPushBrowserTest", 510),
+          Map.entry("AccountSecurityBrowserTest", 100),
+          Map.entry("SessionManagementBrowserTest", 430),
+          Map.entry("RememberMeBrowserTest", 190),
+          Map.entry("PresentationBrowserTest", 60),
+          Map.entry("AuthenticationBrowserTest", 70),
+          Map.entry("LoginLayoutBrowserTest", 120),
+          Map.entry("VerificationBrowserTest", 460),
+          // Unterbrochene Teilfälle beziehungsweise noch fehlende Folgeschritte mit Reserve.
+          Map.entry("AdminMailBrowserTest", 120),
+          Map.entry("RegistrationBrowserTest", 20),
+          Map.entry("InfrastructureBrowserTest", 20),
+          // Unterbrochene Teilfälle beziehungsweise noch fehlende Folgeschritte mit Reserve.
+          Map.entry("CosmosComponentsBrowserTest", 430),
+          Map.entry("NotificationInboxBrowserTest", 210),
+          Map.entry("SessionLimitBrowserTest", 160),
+          Map.entry("UserNotificationsBrowserTest", 180),
+          // Im abgebrochenen Worker noch nicht gestartete Klasse, konservativ geschätzt.
+          Map.entry("LoginAttemptBrowserTest", 120));
 
   static boolean fast(Method method) {
     return Arrays.stream(method.getAnnotationsByType(Tag.class))
@@ -208,7 +211,8 @@ final class BrowserExecutionPlan {
       }
     }
 
-    double estimatedClassSeconds = SECONDS.getOrDefault(testClass.getSimpleName(), 10);
+    double estimatedClassSeconds =
+        ESTIMATED_TEST_CLASS_SECONDS_MAP.getOrDefault(testClass.getSimpleName(), 10);
     return suiteName.equals("fast") && totalCaseCount > 0
         ? estimatedClassSeconds * fastCaseCount / totalCaseCount
         : estimatedClassSeconds;

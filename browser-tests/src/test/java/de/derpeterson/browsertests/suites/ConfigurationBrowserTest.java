@@ -556,7 +556,7 @@ public class ConfigurationBrowserTest extends BrowserFixture {
   void everyConfigurationFieldHasAnAccessibleLocalizedInfo(int width) {
     AdminConfigurationPage settings = admin();
     browserPage.setViewportSize(width, 900);
-    int total = 0;
+    int totalVisibleConfigFieldCount = 0;
     for (AdminConfigGroup group : AdminConfigGroup.values()) {
       if (group.isSuperadminOnly()) {
         // Anbieter- und 2FA-Konfiguration bleiben dem Superadmin vorbehalten.
@@ -564,14 +564,15 @@ public class ConfigurationBrowserTest extends BrowserFixture {
         continue;
       }
       settings.open(group);
-      Locator infos = browserPage.locator(".cosmos-config-fields .cosmos-config-info");
-      int count = infos.count();
+      Locator visibleConfigInfoButtonsLocator =
+          browserPage.locator(".cosmos-config-fields:visible .cosmos-config-info");
+      int visibleConfigFieldCount = visibleConfigInfoButtonsLocator.count();
 
-      assertTrue(count > 0);
+      assertTrue(visibleConfigFieldCount > 0);
       assertThat(browserPage.locator(".cosmos-config-setting-count"))
-          .hasText(uiTexts.getAdminConfigSettingsCount(count));
-      for (Locator info : infos.all()) {
-        info.click();
+          .hasText(uiTexts.getAdminConfigSettingsCount(visibleConfigFieldCount));
+      for (Locator infoButtonLocator : visibleConfigInfoButtonsLocator.all()) {
+        infoButtonLocator.click();
 
         assertThat(settings.helpPanel()).hasCount(1);
         assertThat(settings.helpPanel().locator("vaadin-dialog-overlay > [part~='overlay']"))
@@ -589,21 +590,26 @@ public class ConfigurationBrowserTest extends BrowserFixture {
                     .locator(".admin-help-rules:not(.admin-help-effective-use) li")
                     .count()
                 > 0,
-            "Feldinfo hat keine Eingaberegel: " + info.getAttribute("aria-labelledby"));
+            "Feldinfo hat keine Eingaberegel: "
+                + infoButtonLocator.getAttribute("aria-labelledby"));
         AdminConfigurationPage.assertEffectiveUse(settings.helpPanel(), uiTexts);
-        if (info.getAttribute("aria-labelledby").equals("config-label-remember_me_secret_key")) {
+        if (infoButtonLocator
+            .getAttribute("aria-labelledby")
+            .equals("config-label-remember_me_secret_key")) {
           assertThat(settings.helpPanel())
               .containsText(uiTexts.getAdminConfigDefaultConfidential());
-        } else if (info.getAttribute("aria-labelledby").equals("config-label-mail_password")) {
+        } else if (infoButtonLocator
+            .getAttribute("aria-labelledby")
+            .equals("config-label-mail_password")) {
           assertThat(settings.helpPanel()).containsText(uiTexts.getAdminConfigDefaultEmpty());
         }
         settings.closeHelp();
 
         assertThat(settings.helpPanel()).hasCount(0);
       }
-      total += count;
+      totalVisibleConfigFieldCount += visibleConfigFieldCount;
     }
-    assertEquals(33, total);
+    assertEquals(33, totalVisibleConfigFieldCount);
     settings.open(AdminConfigGroup.SECURITY);
     UiTexts other = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     UserMenu userMenu = new UserMenu(browserPage);

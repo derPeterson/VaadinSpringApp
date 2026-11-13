@@ -1053,7 +1053,8 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
               AriaRole.HEADING,
               new Page.GetByRoleOptions()
                   .setName(uiTexts.getAdminConfigGroupLabel(AdminConfigGroup.NOTIFICATIONS))
-                  .setExact(true))
+                  .setExact(true)
+                  .setLevel(2))
           .click();
       assertThat(unitSuffixLocator).hasCSS("color", "rgb(148, 163, 184)");
     }

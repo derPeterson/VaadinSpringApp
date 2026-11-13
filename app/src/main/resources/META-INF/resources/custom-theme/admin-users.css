@@ -252,6 +252,10 @@ vaadin-dialog.admin-user-dialog::part(header-content) {
     gap: var(--cosmos-info-box-gap);
 }
 
+.admin-user-dialog .admin-user-sign-in-content-details {
+    margin: 0;
+}
+
 .admin-user-dialog .admin-user-sign-in-content-details > vaadin-details-summary {
     display: none;
 }
