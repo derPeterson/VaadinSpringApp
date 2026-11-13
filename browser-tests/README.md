@@ -376,6 +376,9 @@ Neue `html/open-report.bat` verwenden den absoluten Projektstarter und den eigen
 Berichtsordner. Sie funktionieren auch außerhalb des Projekts; das ursprüngliche
 Projekt mit seinen Testwerkzeugen muss weiterhin vorhanden sein. Wird das Projekt
 verschoben, den Bericht über `-ReportPath` aus dem neuen Projekt öffnen.
+Die Dokumentationslinks in neuen `report.md` verweisen als lokale Datei-URLs
+auf Anleitung und Abdeckung im ursprünglichen Projekt. Leerzeichen und Umlaute
+werden URL-kodiert; Belege und HTML-Einstieg bleiben relativ zum Laufordner.
 
 ### Inhalt und Diagnose
 

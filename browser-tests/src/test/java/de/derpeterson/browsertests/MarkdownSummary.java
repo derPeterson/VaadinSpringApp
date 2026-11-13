@@ -35,6 +35,7 @@ final class MarkdownSummary {
   }
 
   static String renderRunReport(Map<String, Object> metadata, List<JsonNode> results) {
+    Path browserTestModulePath = Path.of((String) metadata.get("browserTestModulePath"));
     StringBuilder reportMarkdown =
         new StringBuilder(
             "# Automatisierter Browser-Testlauf (Java)\n\n**Status: "
@@ -51,9 +52,12 @@ final class MarkdownSummary {
             "Ein bestandener Lauf belegt nur diese Fälle, keine vollständige Prüfung der Anwendung. ")
         .append("Nicht ausgewählte Suites wurden in diesem Lauf nicht geprüft. ")
         .append(
-            "Die verbleibenden Teilfälle und Betriebsgrenzen stehen in [Abdeckung und offene Punkte](../../abdeckung.md). Ein grüner Lauf bestätigt nur die tatsächlich aufgeführten Schritte.\n\n")
-        .append(
-            "Suites, Testfälle und Grenzen: [Browser-Testanleitung](../../README.md).\n\n## Ergebnisse\n\n");
+            "Die verbleibenden Teilfälle und Betriebsgrenzen stehen in [Abdeckung und offene Punkte](")
+        .append(browserTestModulePath.resolve("abdeckung.md").toUri().toASCIIString())
+        .append("). Ein grüner Lauf bestätigt nur die tatsächlich aufgeführten Schritte.\n\n")
+        .append("Suites, Testfälle und Grenzen: [Browser-Testanleitung](")
+        .append(browserTestModulePath.resolve("README.md").toUri().toASCIIString())
+        .append(").\n\n## Ergebnisse\n\n");
     appendTestResults(reportMarkdown, results);
     appendRunDiagnostics(reportMarkdown, metadata);
     reportMarkdown

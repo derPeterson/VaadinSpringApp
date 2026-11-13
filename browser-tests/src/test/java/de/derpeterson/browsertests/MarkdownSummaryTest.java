@@ -5,13 +5,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class MarkdownSummaryTest {
+  @TempDir Path temporaryDirectoryPath;
+
   private Map<String, Object> successfulRunMetadata() {
     return new HashMap<>(
         Map.of(
@@ -24,7 +29,43 @@ class MarkdownSummaryTest {
             "html",
             "passed",
             "finishedAt",
-            "2026-10-11"));
+            "2026-10-11",
+            "browserTestModulePath",
+            temporaryDirectoryPath.resolve("browser module").toString()));
+  }
+
+  @Test
+  void externalReportLinksToOriginalDocumentationAndKeepsLocalEvidenceRelative() throws Exception {
+    Path browserTestModulePath =
+        Files.createDirectory(temporaryDirectoryPath.resolve("Projekt mit Leerzeichen und Ü"));
+    Files.writeString(browserTestModulePath.resolve("README.md"), "Testanleitung");
+    Files.writeString(browserTestModulePath.resolve("abdeckung.md"), "Prüfgrenzen");
+    Path externalRunPath =
+        Files.createDirectory(temporaryDirectoryPath.resolve("external evidence"));
+    Path allureResultsPath = Files.createDirectory(externalRunPath.resolve("allure-results"));
+    Files.writeString(
+        allureResultsPath.resolve("case-result.json"),
+        "{\"name\":\"Login\",\"status\":\"passed\"}");
+    Map<String, Object> runMetadata = successfulRunMetadata();
+    runMetadata.put("browserTestModulePath", browserTestModulePath.toString());
+
+    MarkdownSummary.writeRunReport(externalRunPath, runMetadata);
+    String reportMarkdown = Files.readString(externalRunPath.resolve("report.md"));
+
+    assertTrue(
+        reportMarkdown.contains(
+            "[Browser-Testanleitung]("
+                + browserTestModulePath.resolve("README.md").toUri().toASCIIString()
+                + ")"));
+    assertTrue(
+        reportMarkdown.contains(
+            "[Abdeckung und offene Punkte]("
+                + browserTestModulePath.resolve("abdeckung.md").toUri().toASCIIString()
+                + ")"));
+    assertFalse(reportMarkdown.contains("../../README.md"));
+    assertFalse(reportMarkdown.contains("../../abdeckung.md"));
+    assertTrue(reportMarkdown.contains("[HTML-Bericht starten](html/open-report.bat)"));
+    assertTrue(reportMarkdown.contains("[Laufdaten und Git-Stand](metadata.json)"));
   }
 
   @Test

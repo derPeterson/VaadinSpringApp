@@ -124,6 +124,7 @@ public final class BrowserTestRunner {
     composeCommand = List.copyOf(composeArguments);
     runMetadata.put("runId", worker ? runDirectory.getFileName().toString() : runId);
     runMetadata.put("runsRoot", runsRootPath.toString());
+    runMetadata.put("browserTestModulePath", this.browserTestModulePath.toString());
     runMetadata.put("workersRequested", workerCount);
     runMetadata.put("testClasses", testClasses.stream().map(Class::getSimpleName).toList());
     runMetadata.put("startedAt", Instant.now().toString());
