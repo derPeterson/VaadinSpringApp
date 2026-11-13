@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.BigDecimalField;
@@ -103,6 +104,32 @@ class CosmosDurationFieldTest {
     assertSame(fixedUnitComponent, durationAmountIntegerField.getSuffixComponent());
     assertEquals(1, durationAmountIntegerField.getMin());
     assertEquals("30", cosmosDurationField.getStoredValue());
+  }
+
+  @ParameterizedTest
+  @CsvSource({"de", "en"})
+  void preciseDurationKeepsItsIncreaseButtonInTheLayoutsDefaultSlot(String language) {
+    MessageProperties messageProperties =
+        MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
+    CosmosDurationField cosmosDurationField =
+        new CosmosDurationField(messageProperties, CosmosDurationField.Storage.DURATION);
+    cosmosDurationField.setStoredValue("PT90.125S");
+    BigDecimalField durationAmountBigDecimalField =
+        assertInstanceOf(
+            BigDecimalField.class, cosmosDurationField.getChildren().findFirst().orElseThrow());
+    HorizontalLayout durationSuffixLayout =
+        assertInstanceOf(
+            HorizontalLayout.class, durationAmountBigDecimalField.getSuffixComponent());
+    List<Component> suffixComponents = durationSuffixLayout.getChildren().toList();
+    Button increaseDurationButton = assertInstanceOf(Button.class, suffixComponents.getFirst());
+
+    assertEquals(2, suffixComponents.size());
+    assertInstanceOf(Select.class, suffixComponents.getLast());
+    // Ein alter slot="suffix" würde den Button im HorizontalLayout unsichtbar machen.
+    assertFalse(increaseDurationButton.getElement().hasAttribute("slot"));
+    increaseDurationButton.click();
+
+    assertEquals("91.125", cosmosDurationField.getSecondsValue());
   }
 
   @SuppressWarnings("unchecked")

@@ -35,9 +35,11 @@ import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.io.ByteArrayInputStream;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
@@ -255,70 +257,163 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
   @Tag("component-follow-up")
   @DisplayName("COMPONENT-10: Integrierte Zeiteinheit bleibt mittig innerhalb der Zahlenfläche")
   @Description(
-      "Nur das Zeitfeld für gespeicherte Anmeldungen auf Desktop und Smartphone vermessen: Einheitenfläche, Text und Pfeil sind vertikal mittig, der untere Feldrahmen bleibt frei. Keine Einstellung wird gespeichert.")
+      "Ganzzahliges und präzises Zeitfeld auf Desktop und Smartphone vergleichen: Einheit bleibt mittig, Minus/X/Plus haben gleiche Größen und Abstände. Schrittaktion, Leeren und erneute Eingabe prüfen, ohne Einstellungen zu speichern.")
   void durationUnitIsCenteredInsideNumericField() {
     signIn();
     AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
-    configurationPage.open(AdminConfigGroup.SECURITY);
 
     for (int viewportWidth : new int[] {1280, 390}) {
       browserPage.setViewportSize(viewportWidth, 900);
-      Locator durationFieldLocator =
-          configurationPage.duration(uiTexts.getAdminConfigEntryRememberMeDuration());
-      Locator amountSurfaceLocator =
-          durationFieldLocator.locator("vaadin-integer-field [part=input-field]").first();
-      Locator unitSelectLocator = durationFieldLocator.locator("vaadin-select");
-      Locator unitSurfaceLocator = unitSelectLocator.locator("[part=input-field]");
-      Locator unitLabelLocator =
-          unitSelectLocator.locator("vaadin-select-value-button > vaadin-select-item");
-      Locator unitArrowLocator = unitSelectLocator.locator("[part~=toggle-button]");
-      assertThat(unitLabelLocator).hasText(uiTexts.getAdminConfigDurationUnitDays());
+      configurationPage.open(AdminConfigGroup.SECURITY);
+      checkDurationFieldGeometryAndActions(
+          configurationPage, uiTexts.getAdminConfigEntryRememberMeDuration(), viewportWidth);
 
-      String fieldMeasurementsText =
-          (String)
-              unitSelectLocator.evaluate(
-                  """
-                  select => JSON.stringify(Object.fromEntries([
-                    ['select', select],
-                    ['surface', select.shadowRoot.querySelector('[part=input-field]')],
-                    ['value', select.querySelector('vaadin-select-value-button')],
-                    ['item', select.querySelector('vaadin-select-value-button > vaadin-select-item')],
-                    ['arrow', select.shadowRoot.querySelector('[part~=toggle-button]')]
-                  ].map(([name, element]) => {
-                    const box = element.getBoundingClientRect();
-                    const style = getComputedStyle(element);
-                    return [name, {top:box.top, height:box.height, bottom:box.bottom,
-                      display:style.display, padding:style.padding, margin:style.margin,
-                      lineHeight:style.lineHeight, minHeight:style.minHeight,
-                      alignItems:style.alignItems, alignSelf:style.alignSelf}];
-                  })), null, 2)
-                  """);
-      Allure.attachment(
-          "Zeitfeldmessung " + viewportWidth, "application/json", fieldMeasurementsText);
-      Allure.attachment(
-          "Zeitfeld " + viewportWidth,
-          "image/png",
-          new ByteArrayInputStream(durationFieldLocator.screenshot()),
-          AttachmentOptions.empty());
-      AllurePlaywright.attachScreenshot("Integrierte Zeiteinheit " + viewportWidth, browserPage);
-
-      BoundingBox amountSurfaceBounds = amountSurfaceLocator.boundingBox();
-      double amountCenterY = amountSurfaceBounds.y + amountSurfaceBounds.height / 2;
-      for (Locator unitPartLocator :
-          List.of(unitSurfaceLocator, unitLabelLocator, unitArrowLocator)) {
-        BoundingBox unitPartBounds = unitPartLocator.boundingBox();
-        assertEquals(
-            amountCenterY, unitPartBounds.y + unitPartBounds.height / 2, 1, fieldMeasurementsText);
-        assertTrue(unitPartBounds.y >= amountSurfaceBounds.y + 1, fieldMeasurementsText);
-        assertTrue(
-            unitPartBounds.y + unitPartBounds.height
-                <= amountSurfaceBounds.y + amountSurfaceBounds.height - 1,
-            fieldMeasurementsText);
-      }
-
-      assertDurationUnitOverlayStyle(unitSelectLocator, viewportWidth);
-      assertThat(unitLabelLocator).hasCSS("line-height", "20px");
+      configurationPage.open(AdminConfigGroup.QUEUE);
+      checkDurationFieldGeometryAndActions(
+          configurationPage,
+          uiTexts.getAdminConfigEntryEmailQueueSentLiveDuration(),
+          viewportWidth);
     }
+  }
+
+  private void checkDurationFieldGeometryAndActions(
+      AdminConfigurationPage configurationPage, String fieldLabelText, int viewportWidth) {
+    Locator durationFieldLocator = configurationPage.duration(fieldLabelText);
+    assertDurationUnitCentered(durationFieldLocator, fieldLabelText, viewportWidth);
+    assertDurationActionGeometry(durationFieldLocator, fieldLabelText, viewportWidth);
+    assertDurationStepAndClear(configurationPage, fieldLabelText);
+    assertDurationUnitOverlayStyle(durationFieldLocator.locator("vaadin-select"), viewportWidth);
+  }
+
+  private void assertDurationUnitCentered(
+      Locator durationFieldLocator, String fieldLabelText, int viewportWidth) {
+    Locator amountSurfaceLocator =
+        durationFieldLocator
+            .locator("vaadin-integer-field, vaadin-big-decimal-field")
+            .locator("[part=input-field]")
+            .first();
+    Locator unitSelectLocator = durationFieldLocator.locator("vaadin-select");
+    Locator unitSurfaceLocator = unitSelectLocator.locator("[part=input-field]");
+    Locator unitLabelLocator =
+        unitSelectLocator.locator("vaadin-select-value-button > vaadin-select-item");
+    Locator unitArrowLocator = unitSelectLocator.locator("[part~=toggle-button]");
+    assertThat(unitLabelLocator).hasText(uiTexts.getAdminConfigDurationUnitDays());
+
+    String fieldMeasurementsText =
+        (String)
+            unitSelectLocator.evaluate(
+                """
+                select => JSON.stringify(Object.fromEntries([
+                  ['select', select],
+                  ['surface', select.shadowRoot.querySelector('[part=input-field]')],
+                  ['value', select.querySelector('vaadin-select-value-button')],
+                  ['item', select.querySelector('vaadin-select-value-button > vaadin-select-item')],
+                  ['arrow', select.shadowRoot.querySelector('[part~=toggle-button]')]
+                ].map(([name, element]) => {
+                  const box = element.getBoundingClientRect();
+                  const style = getComputedStyle(element);
+                  return [name, {top:box.top, height:box.height, bottom:box.bottom,
+                    display:style.display, padding:style.padding, margin:style.margin,
+                    lineHeight:style.lineHeight, minHeight:style.minHeight,
+                    alignItems:style.alignItems, alignSelf:style.alignSelf}];
+                })), null, 2)
+                """);
+    Allure.attachment(
+        "Zeitfeldmessung " + fieldLabelText + " " + viewportWidth,
+        "application/json",
+        fieldMeasurementsText);
+    Allure.attachment(
+        "Zeitfeld " + fieldLabelText + " " + viewportWidth,
+        "image/png",
+        new ByteArrayInputStream(durationFieldLocator.screenshot()),
+        AttachmentOptions.empty());
+    AllurePlaywright.attachScreenshot("Integrierte Zeiteinheit " + viewportWidth, browserPage);
+
+    BoundingBox amountSurfaceBounds = amountSurfaceLocator.boundingBox();
+    double amountCenterY = amountSurfaceBounds.y + amountSurfaceBounds.height / 2;
+    for (Locator unitPartLocator :
+        List.of(unitSurfaceLocator, unitLabelLocator, unitArrowLocator)) {
+      BoundingBox unitPartBounds = unitPartLocator.boundingBox();
+      assertEquals(
+          amountCenterY, unitPartBounds.y + unitPartBounds.height / 2, 1, fieldMeasurementsText);
+      assertTrue(unitPartBounds.y >= amountSurfaceBounds.y + 1, fieldMeasurementsText);
+      assertTrue(
+          unitPartBounds.y + unitPartBounds.height
+              <= amountSurfaceBounds.y + amountSurfaceBounds.height - 1,
+          fieldMeasurementsText);
+    }
+    assertThat(unitLabelLocator).hasCSS("line-height", "20px");
+  }
+
+  private void assertDurationActionGeometry(
+      Locator durationFieldLocator, String fieldLabelText, int viewportWidth) {
+    Locator clearButtonLocator = durationFieldLocator.locator("[part~=clear-button]");
+    Locator increaseButtonLocator = findDurationIncreaseButton(durationFieldLocator);
+    assertThat(clearButtonLocator).isVisible();
+    assertThat(increaseButtonLocator).isVisible();
+    BoundingBox clearButtonBounds = clearButtonLocator.boundingBox();
+    BoundingBox increaseButtonBounds = increaseButtonLocator.boundingBox();
+    BoundingBox unitSelectBounds = durationFieldLocator.locator("vaadin-select").boundingBox();
+    double clearToIncreaseGap =
+        increaseButtonBounds.x - clearButtonBounds.x - clearButtonBounds.width;
+    double increaseToUnitGap =
+        unitSelectBounds.x - increaseButtonBounds.x - increaseButtonBounds.width;
+    String actionMeasurementsText =
+        Map.of(
+                "clear",
+                List.of(clearButtonBounds.width, clearButtonBounds.height),
+                "increase",
+                List.of(increaseButtonBounds.width, increaseButtonBounds.height),
+                "clearToIncreaseGap",
+                clearToIncreaseGap,
+                "increaseToUnitGap",
+                increaseToUnitGap)
+            .toString();
+    Allure.attachment(
+        "Aktionsmessung " + fieldLabelText + " " + viewportWidth, actionMeasurementsText);
+
+    for (Locator actionButtonLocator : List.of(clearButtonLocator, increaseButtonLocator)) {
+      BoundingBox actionButtonBounds = actionButtonLocator.boundingBox();
+      assertEquals(24, actionButtonBounds.width, 0.1, actionMeasurementsText);
+      assertEquals(28, actionButtonBounds.height, 0.1, actionMeasurementsText);
+      if (actionButtonLocator.locator("vaadin-icon").count() > 0) {
+        assertThat(actionButtonLocator.locator("vaadin-icon")).hasCSS("width", "16px");
+        assertThat(actionButtonLocator.locator("vaadin-icon")).hasCSS("height", "16px");
+      } else {
+        assertEquals(
+            "16px",
+            actionButtonLocator.evaluate("button => getComputedStyle(button, '::before').width"));
+        assertEquals(
+            "16px",
+            actionButtonLocator.evaluate("button => getComputedStyle(button, '::before').height"));
+      }
+    }
+    assertEquals(4, clearToIncreaseGap, 0.1, actionMeasurementsText);
+    assertEquals(4, increaseToUnitGap, 0.1, actionMeasurementsText);
+  }
+
+  private Locator findDurationIncreaseButton(Locator durationFieldLocator) {
+    return durationFieldLocator.locator(
+        "[part~=increase-button], .cosmos-duration-suffix .cosmos-duration-step");
+  }
+
+  private void assertDurationStepAndClear(
+      AdminConfigurationPage configurationPage, String fieldLabelText) {
+    Locator durationFieldLocator = configurationPage.duration(fieldLabelText);
+    Locator amountInputLocator = configurationPage.input(fieldLabelText);
+    String originalAmountText = amountInputLocator.inputValue();
+    String increasedAmountText =
+        new BigDecimal(originalAmountText).add(BigDecimal.ONE).toPlainString();
+    findDurationIncreaseButton(durationFieldLocator).click();
+    assertThat(amountInputLocator).hasValue(increasedAmountText);
+
+    Locator clearButtonLocator = durationFieldLocator.locator("[part~=clear-button]");
+    clearButtonLocator.click();
+    assertThat(amountInputLocator).hasValue("");
+    assertThat(clearButtonLocator).not().isVisible();
+    amountInputLocator.fill(originalAmountText);
+    amountInputLocator.press("Tab");
+    assertThat(clearButtonLocator).isVisible();
   }
 
   @Test

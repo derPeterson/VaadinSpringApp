@@ -1142,6 +1142,14 @@ Benachrichtigungs-Aufbewahrungen sowie Wartezeit und Aufbewahrung der E-Mail-Que
 Zahl und Einheit teilen eine Feldfläche. Der Einheitenbereich steht rechts hinter
 Löschen und Plus, durch die bestehende senkrechte Linie getrennt. Beim präzisen
 `BigDecimalField` verbindet ein natives `HorizontalLayout` Plusbutton und Auswahl.
+Der Plusbutton wird direkt in dieses Layout eingefügt. Er erhält zuvor keinen
+eigenen Suffix-Slot, der ihn im Standardslot des Layouts unsichtbar machen würde.
+Native Feldaktionen und die präzisen Schrittbuttons verwenden dieselben
+Lucide-Symbole mit 16 px innerhalb einer 24 × 28 px großen Aktionsfläche.
+Zwischen X, Plus und Einheit gelten jeweils 4 px. Die lokalen Variablen
+`--cosmos-duration-icon-size`, `--cosmos-duration-action-width`,
+`--cosmos-duration-action-height` und `--cosmos-duration-action-gap` stehen in
+`cosmos-duration-field.css`; andere Eingabetypen bleiben davon unberührt.
 Aktueller Wert, Umrechnung und Standardwert stehen nur in der Feldhilfe.
 Sekunden, ISO-Zeitspanne und ganze Tage behalten ihr jeweiliges Speicherformat.
 Die 2FA-Inaktivitätsregel verwendet denselben Baustein mit Minuten, Stunden und

@@ -94,7 +94,6 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
     decreaseDurationButton.addClassName("cosmos-duration-step");
     increaseDurationButton.addClassName("cosmos-duration-step");
     preciseDurationBigDecimalField.setPrefixComponent(decreaseDurationButton);
-    preciseDurationBigDecimalField.setSuffixComponent(increaseDurationButton);
 
     add(
         durationStorage == Storage.DURATION

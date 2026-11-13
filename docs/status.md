@@ -189,6 +189,19 @@ und Footer, sekundäre Passworthinweise sowie beide Kontotypen. Ein echter
 Darstellungsfehler wurde behoben: Die Einheitenauswahl ist vier Pixel breiter,
 damit „Sekunden“ vollständig sichtbar bleibt.
 
+Der gezielte Nachtest `duration-field` prüft die aktuellen Ganzzahl- und
+Präzisionsfelder mit je einem erfolgreichen Browserfall in DE und EN bei
+Desktop- und Smartphonebreite auf demselben Image
+`sha256:503fdaa1e3198ea7f1a58fee824c448e3edf828605d15575e7ae41da001ce4ee`.
+Symbole, Aktionsflächen und Abstände zur Einheit stimmen in beiden Varianten
+messtechnisch und optisch überein. Plus, Leeren und erneute Eingabe sind geprüft;
+die Einheit bleibt mittig und der Rahmen frei. Es wurde keine Einstellung
+gespeichert. Der vorher unsichtbare Plusbutton im Präzisionsfeld behält keine
+fremde Slot-Zuordnung mehr; dafür bestehen acht erfolgreiche JUnit-Fälle.
+Der aktuelle reguläre Imagebuild samt Anwendungstests, der isolierte Start sowie
+Aufbau und Abbau beider Browserumgebungen sind erfolgreich. Die laufende
+Entwicklungsanwendung und ihre Daten blieben unverändert.
+
 Die segmentierten Umschalter verwenden native Tabs im gemeinsamen OTP-Stil:
 Profilbild, Posteingang, Glockenvorschau sowie Benutzer- und Ticket-Nachrichtenfilter.
 Filterwirkung, Zähler, Auswahl beim Sprachwechsel, Tastatur und Handzeiger sind

@@ -1,6 +1,10 @@
 /* Gemeinsames Zeitfeld: Zahl und native Einheit teilen die vorhandene Feldfläche. */
 .cosmos-duration-field {
     min-width: 0;
+    --cosmos-duration-icon-size: 16px;
+    --cosmos-duration-action-width: 24px;
+    --cosmos-duration-action-height: 28px;
+    --cosmos-duration-action-gap: 4px;
 }
 
 .cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field) {
@@ -27,6 +31,51 @@
     box-sizing: border-box;
     height: 40px;
     min-height: 40px;
+    column-gap: var(--cosmos-duration-action-gap);
+}
+
+/* Native Feldaktionen und die präzisen Schrittbuttons teilen dieselbe Geometrie. */
+.cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field)::part(clear-button),
+.cosmos-duration-field > vaadin-integer-field::part(increase-button),
+.cosmos-duration-field > vaadin-integer-field::part(decrease-button) {
+    box-sizing: border-box;
+    width: var(--cosmos-duration-action-width);
+    height: var(--cosmos-duration-action-height);
+    padding: 6px 4px;
+    margin: 0;
+    flex: none;
+    font-size: var(--cosmos-duration-icon-size);
+    line-height: var(--cosmos-duration-icon-size);
+}
+
+.cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field)::part(clear-button)::before,
+.cosmos-duration-field > vaadin-integer-field::part(increase-button)::before,
+.cosmos-duration-field > vaadin-integer-field::part(decrease-button)::before {
+    content: "";
+    display: block;
+    width: var(--cosmos-duration-icon-size);
+    height: var(--cosmos-duration-icon-size);
+    margin: 0;
+    background: currentColor;
+    mask-size: contain;
+    mask-position: center;
+    mask-repeat: no-repeat;
+}
+
+.cosmos-duration-field > :is(vaadin-integer-field, vaadin-big-decimal-field)::part(clear-button)::before {
+    mask-image: url("../icons/lucide/x.svg");
+}
+
+.cosmos-duration-field > vaadin-integer-field::part(increase-button)::before {
+    mask-image: url("../icons/lucide/plus.svg");
+}
+
+.cosmos-duration-field > vaadin-integer-field::part(decrease-button)::before {
+    mask-image: url("../icons/lucide/minus.svg");
+}
+
+.cosmos-duration-field .cosmos-duration-suffix {
+    column-gap: var(--cosmos-duration-action-gap);
 }
 
 .cosmos-duration-field > vaadin-big-decimal-field::part(input-field) {
@@ -196,9 +245,10 @@ vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(c
 }
 
 .cosmos-duration-field .cosmos-duration-step {
-    width: 24px;
-    min-width: 24px;
-    height: 28px;
+    width: var(--cosmos-duration-action-width);
+    min-width: var(--cosmos-duration-action-width);
+    height: var(--cosmos-duration-action-height);
+    min-height: var(--cosmos-duration-action-height);
     padding: 0;
     margin: 0;
     border: 0;
@@ -207,6 +257,6 @@ vaadin-select.cosmos-duration-unit-select[theme~="cosmos-duration-unit"]::part(c
 }
 
 .cosmos-duration-field .cosmos-duration-step > vaadin-icon {
-    width: 14px;
-    height: 14px;
+    width: var(--cosmos-duration-icon-size);
+    height: var(--cosmos-duration-icon-size);
 }
