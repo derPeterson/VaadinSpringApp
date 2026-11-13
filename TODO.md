@@ -12,6 +12,10 @@
 - [ ] [Passkey-Planung](docs/planung/passkeys.md) gemeinsam bewerten. Eine spätere
   Umsetzung benötigt einen eigenen Auftrag; vorerst bestehende 2FA beibehalten.
 
+- [ ] [Öffentlichen Testbetrieb](docs/planung/oeffentlicher-testbetrieb.md) gemeinsam
+  planen: Anbieter, Domain, SMTP und Datenhaltung entscheiden. Noch keine
+  Bereitstellung freigegeben.
+
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise
   nach Freigabe umsetzen. Der fehlende aktuelle Sonar-Nachweis steht im Plan.

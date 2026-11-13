@@ -33,6 +33,10 @@ Für Paket 3 liegt die [Passkey-Planung](passkeys.md) vor. Empfehlung: vorerst
 zurückstellen; eine spätere Alternative muss Anmeldung und sensible Aktionen
 mit den vorhandenen Sicherheitsverträgen verbinden. Noch keine Umsetzung.
 
+Für Paket 4 liegt die [Planung für öffentlichen Testbetrieb](oeffentlicher-testbetrieb.md)
+mit Kostenvergleich, Mail/CI und konkreten Vorarbeiten vor. Keine Buchung oder
+Bereitstellung wurde durchgeführt.
+
 ## Abarbeitungsliste
 
 ### 1. E-Mail-Queue in zwei Tabs gliedern
