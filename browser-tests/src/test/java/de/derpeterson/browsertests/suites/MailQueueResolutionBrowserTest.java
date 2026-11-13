@@ -8,6 +8,7 @@ import com.microsoft.playwright.APIResponse;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.RequestOptions;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserActor;
@@ -70,7 +71,7 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
     BigDecimal previousMinimumAge =
         configurationPage.seconds(uiTexts.getAdminQueueCleanupMinimumAge());
     BigDecimal previousInterval = configurationPage.seconds(uiTexts.getAdminQueueCleanupInterval());
-    Locator automaticSwitch = cleanupSwitch();
+    Locator automaticSwitch = selectCleanupTabAndGetAutomaticSwitch();
     boolean previousAutomatic = automaticSwitch.isChecked();
     automaticSwitch.setChecked(true);
     configurationPage.enterSeconds(
@@ -134,7 +135,7 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
           String automaticCompletionLog =
               "Unresolved mail queue entries closed without resending: count=1, automatic=true";
           long previousAutomaticCount = logCount(automaticCompletionLog);
-          cleanupSwitch().setChecked(true);
+          selectCleanupTabAndGetAutomaticSwitch().setChecked(true);
           configurationPage.save();
           awaitNewLog(automaticCompletionLog, previousAutomaticCount);
         } else {
@@ -169,10 +170,10 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
       }
     } finally {
       configurationPage.open(AdminConfigGroup.QUEUE);
-      cleanupSwitch().setChecked(true);
+      selectCleanupTabAndGetAutomaticSwitch().setChecked(true);
       configurationPage.enterSeconds(uiTexts.getAdminQueueCleanupMinimumAge(), previousMinimumAge);
       configurationPage.enterSeconds(uiTexts.getAdminQueueCleanupInterval(), previousInterval);
-      cleanupSwitch().setChecked(previousAutomatic);
+      selectCleanupTabAndGetAutomaticSwitch().setChecked(previousAutomatic);
       configurationPage.save();
     }
   }
@@ -201,7 +202,102 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
     }
   }
 
-  private Locator cleanupSwitch() {
+  @Test
+  @DisplayName("QUEUE-03: Queue-Reiter, Entwürfe und Bereinigungskarte auf Desktop und Smartphone")
+  @Description(
+      "Allgemeine Felder bleiben für Admins erreichbar; nur Superadmins sehen Assistenten. Entwürfe, Switchabhängigkeiten, Historienfrist, Laden und gemeinsame Speicherung in beiden Breiten prüfen.")
+  void queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants() {
+    signInAdministrator(false);
+    AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
+    configurationPage.open(AdminConfigGroup.QUEUE);
+    Locator queueTabsLocator = browserPage.locator("#admin-queue-tabs");
+    assertThat(queueTabsLocator.getByRole(AriaRole.TAB)).hasCount(1);
+    assertThat(browserPage.locator(".cosmos-config-field:visible")).hasCount(5);
+    new UserMenu(browserPage).requestSignOut();
+
+    signInAdministrator(true);
+    configurationPage.open(AdminConfigGroup.QUEUE);
+    String originalHistoryDaysText =
+        configurationPage.value(uiTexts.getAdminQueueCleanupHistoryDays());
+    String originalRetryCountText =
+        configurationPage.value(uiTexts.getAdminConfigEntryEmailQueueMaxRetry());
+    boolean wasAutomaticCleanupEnabled = selectCleanupTabAndGetAutomaticSwitch().isChecked();
+    try {
+      for (int viewportWidth : new int[] {1280, 390}) {
+        verifyQueueDraftsAndAssistantLayout(configurationPage, viewportWidth);
+      }
+    } finally {
+      configurationPage.enter(uiTexts.getAdminQueueCleanupHistoryDays(), originalHistoryDaysText);
+      configurationPage.enter(
+          uiTexts.getAdminConfigEntryEmailQueueMaxRetry(), originalRetryCountText);
+      selectCleanupTabAndGetAutomaticSwitch().setChecked(wasAutomaticCleanupEnabled);
+      configurationPage.save();
+    }
+  }
+
+  /** Prüft die gespeicherten und ungespeicherten Werte durch die echten Reiter und Aktionen. */
+  private void verifyQueueDraftsAndAssistantLayout(
+      AdminConfigurationPage configurationPage, int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, 1000);
+    configurationPage.enter(uiTexts.getAdminConfigEntryEmailQueueMaxRetry(), "4");
+    AllurePlaywright.attachScreenshot(
+        "Allgemeine Queue-Einstellungen " + viewportWidth, browserPage);
+
+    selectCleanupTabAndGetAutomaticSwitch().setChecked(false);
+    assertThat(configurationPage.input(uiTexts.getAdminQueueCleanupInterval())).isDisabled();
+    assertThat(configurationPage.input(uiTexts.getAdminQueueCleanupMinimumAge())).isDisabled();
+    assertThat(configurationPage.input(uiTexts.getAdminQueueCleanupHistoryDays())).isEnabled();
+    configurationPage.enter(uiTexts.getAdminQueueCleanupHistoryDays(), "31");
+    AllurePlaywright.attachScreenshot("Assistent ausgeschaltet " + viewportWidth, browserPage);
+
+    selectCleanupTabAndGetAutomaticSwitch().setChecked(true);
+    assertThat(configurationPage.input(uiTexts.getAdminQueueCleanupInterval())).isEnabled();
+    assertThat(configurationPage.input(uiTexts.getAdminQueueCleanupMinimumAge())).isEnabled();
+    assertThat(configurationPage.input(uiTexts.getAdminQueueCleanupHistoryDays())).hasValue("31");
+    assertThat(configurationPage.input(uiTexts.getAdminConfigEntryEmailQueueMaxRetry()))
+        .hasValue("4");
+    configurationPage.input(uiTexts.getAdminQueueCleanupHistoryDays());
+    BoundingBox queueTabsBoundingBox = browserPage.locator("#admin-queue-tabs").boundingBox();
+    BoundingBox assistantCardBoundingBox =
+        browserPage.locator("#admin-mail-queue-resolution").boundingBox();
+    assertTrue(assistantCardBoundingBox.x > queueTabsBoundingBox.x);
+    assertTrue(
+        assistantCardBoundingBox.x + assistantCardBoundingBox.width
+            < queueTabsBoundingBox.x + queueTabsBoundingBox.width);
+    assertEquals(
+        assistantCardBoundingBox.x - queueTabsBoundingBox.x,
+        queueTabsBoundingBox.x
+            + queueTabsBoundingBox.width
+            - assistantCardBoundingBox.x
+            - assistantCardBoundingBox.width,
+        2);
+    configurationPage.save();
+    configurationPage.reload();
+    assertThat(configurationPage.input(uiTexts.getAdminQueueCleanupHistoryDays())).hasValue("31");
+    assertThat(configurationPage.input(uiTexts.getAdminConfigEntryEmailQueueMaxRetry()))
+        .hasValue("4");
+    configurationPage.explain(
+        uiTexts.getAdminQueueCleanupHistoryDays(), uiTexts.getAdminQueueCleanupHistoryHelp());
+
+    selectCleanupTabAndGetAutomaticSwitch();
+    browserPage.locator("#admin-mail-queue-refresh").click();
+    Locator reloadNoticeLocator =
+        browserPage
+            .locator("vaadin-notification-card:not([closing])")
+            .filter(
+                new Locator.FilterOptions()
+                    .setHasText(uiTexts.getAdminQueueCleanupRefreshSuccess()));
+    assertThat(reloadNoticeLocator).isVisible();
+    reloadNoticeLocator.getByRole(AriaRole.BUTTON).click();
+    assertThat(browserPage.locator(".admin-queue-cleanup-output"))
+        .hasCSS("font-family", "Consolas, \"Courier New\", monospace");
+    AllurePlaywright.attachScreenshot("Assistent eingeschaltet " + viewportWidth, browserPage);
+    assertTrue(
+        (boolean)
+            browserPage.evaluate("document.documentElement.scrollWidth <= window.innerWidth"));
+  }
+
+  private Locator selectCleanupTabAndGetAutomaticSwitch() {
     browserPage
         .getByRole(
             AriaRole.TAB,

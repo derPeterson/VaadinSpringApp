@@ -91,7 +91,8 @@ class BrowserExecutionPlanTest {
           case "mail-queue-resolution" ->
               Set.of(
                   "unresolvedRequestNeedsExplicitResolutionBeforeAnotherVerificationMail",
-                  "explicitSmtpRejectionReachesItsRetryLimitInsteadOfQuarantine");
+                  "explicitSmtpRejectionReachesItsRetryLimitInsteadOfQuarantine",
+                  "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
           case "component-follow-up" ->
               Set.of(
                   "durationUnitIsCenteredInsideNumericField",

@@ -123,11 +123,9 @@ public final class AdminConfigurationPage {
   public BigDecimal seconds(String durationFieldLabel) {
     Locator durationFieldLocator = duration(durationFieldLabel);
     Locator durationUnitLabel =
-        durationFieldLocator.locator("vaadin-select-value-button > vaadin-select-item");
-    String selectedDurationUnitText =
-        durationUnitLabel.count() == 0
-            ? durationFieldLocator.locator(".cosmos-duration-unit-label").innerText().trim()
-            : durationUnitLabel.innerText().trim();
+        durationFieldLocator.locator(
+            "vaadin-select-value-button > vaadin-select-item, .cosmos-duration-unit-label");
+    String selectedDurationUnitText = durationUnitLabel.innerText().trim();
     int secondsPerUnit;
     if (selectedDurationUnitText.equals(uiTexts.getAdminConfigDurationUnitDays())) {
       secondsPerUnit = 86400;

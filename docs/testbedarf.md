@@ -2,12 +2,7 @@
 
 ## Browser-Tests
 
-- **Mailqueue-Tabs und Bereinigungskarte – offen:** Vorhandene Queue-Fälle für
-  Allgemein/Assistenten, Superadmin-/Adminsicht und neue Feldanordnung auf dem
-  aktuellen Image in DE/EN bei Desktop- und Smartphonebreite ausführen. Erwartet:
-  Switch steuert nur Intervall/Mindestalter, Historienfrist bleibt bedienbar,
-  Entwürfe überleben Tabwechsel, gemeinsame Speicherung, Feldhilfen und Lade-
-  meldungen stimmen. Neue Darstellung mit der abgestimmten Skizze vergleichen.
+Keine offenen gezielten Ergänzungen für den aktuellen Umfang.
 
 ## JUnit-Tests
 

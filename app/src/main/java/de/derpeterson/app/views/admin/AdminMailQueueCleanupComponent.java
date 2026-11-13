@@ -49,6 +49,8 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
     this.emailQueueCleanupService = emailQueueCleanupService;
     setId("admin-mail-queue-resolution");
     addClassNames("admin-mail-queue-resolution", CosmosCssClasses.PANEL_CARD);
+    // Der lokale responsive Kartenrand bestimmt die Breite statt der Basis-Card mit 100 %.
+    setWidth(null);
     queueTitleHeading.addClassName(CosmosCssClasses.PANEL_TITLE);
     assistantDescriptionSpan.addClassName(CosmosCssClasses.PANEL_DESCRIPTION);
     VerticalLayout assistantHeadingVerticalLayout =

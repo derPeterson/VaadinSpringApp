@@ -20,10 +20,11 @@ gebunden. Die Gesamtumsetzung bleibt bis zur gemeinsamen Abnahme offen.
 
 ## Offener Prüf- und Sichtungsstand
 
-Paket 1 ist technisch umgesetzt und durch 62 gezielte JUnit-Fälle sowie
-Browser-Testkompilierung geprüft. Der gezielte Browsernachweis folgt nach
-Einrichtung des neuen Ablageorts aus Paket 5 und steht im zentralen Testbedarf.
-Die gemeinsame Sichtung der fertigen Karte bleibt offen.
+Paket 1 ist technisch umgesetzt. 62 gezielte JUnit-Fälle sowie die erneute
+Konfigurationsregression sind bestanden. Die vier Queue-Browserfälle sind in DE
+und EN auf demselben Image bestanden, einschließlich Desktop/Smartphone und
+frischem Schema. Im Nachtest wurden eine Kartenbreite und die Synchronisierung
+der Zeiteinheiten verbessert. Die gemeinsame Sichtung der fertigen Karte bleibt offen.
 
 Für Paket 2 liegen [Release-Ablauf und Versionierung](releases.md) sowie
 [Was ist neu?](neuigkeiten.md) zur gemeinsamen Durchsicht vor. Versionsnummern,
