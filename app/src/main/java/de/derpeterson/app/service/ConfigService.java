@@ -31,6 +31,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 @Slf4j
 public class ConfigService {
+  private static final String CONFIG_ENTRY_PARAMETER_NAME = "configEntry";
 
   private final ConfigRepository configRepository;
   private final PlatformTransactionManager transactionManager;
@@ -59,7 +60,7 @@ public class ConfigService {
 
   /** Nur die einmalige Startanlage: existierende Werte werden niemals verändert. */
   public void initializeIfMissing(ConfigEntry configEntry, String initialConfigValue) {
-    Objects.requireNonNull(configEntry, "configEntry");
+    Objects.requireNonNull(configEntry, CONFIG_ENTRY_PARAMETER_NAME);
     Objects.requireNonNull(initialConfigValue, "initialConfigValue");
 
     TransactionTemplate initialConfigTransaction = new TransactionTemplate(transactionManager);
@@ -123,7 +124,7 @@ public class ConfigService {
 
   /** Backend-Standard aus app.config.defaults.*, unabhängig vom gespeicherten Wert. */
   public String getDefaultValue(ConfigEntry configEntry) {
-    Objects.requireNonNull(configEntry, "configEntry");
+    Objects.requireNonNull(configEntry, CONFIG_ENTRY_PARAMETER_NAME);
     return springEnvironment.getProperty(
         ConfigurationCatalog.property(configEntry), configEntry.getDefaultValueString());
   }
@@ -183,28 +184,11 @@ public class ConfigService {
    * committed write wins.
    */
   public void set(ConfigEntry configEntry, String configValue) {
-    Objects.requireNonNull(configEntry, "configEntry");
+    Objects.requireNonNull(configEntry, CONFIG_ENTRY_PARAMETER_NAME);
     Objects.requireNonNull(configValue, "value");
     requireAdministrativeAccess(configEntry);
-    if (ConfigurationCatalog.isMailCleanupSetting(configEntry)) {
-      if (configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED) {
-        parseConfigBoolean(configEntry, configValue);
-      } else if (configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS) {
-        if (Integer.parseInt(configValue) < 1) {
-          throw new IllegalArgumentException("Mail cleanup history retention must be positive");
-        }
-      } else if (Duration.parse(configValue).compareTo(Duration.ofMinutes(1)) < 0) {
-        throw new IllegalArgumentException("Mail cleanup durations must be at least one minute");
-      }
-    }
-
-    if (ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT) {
-      int configuredDays = Integer.parseInt(configValue);
-      int minimumDays = configEntry == ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS ? 0 : 1;
-      if (configuredDays < minimumDays) {
-        throw new IllegalArgumentException("Invalid account retention period");
-      }
-    }
+    validateMailCleanupConfigValue(configEntry, configValue);
+    validateAccountRetentionConfigValue(configEntry, configValue);
 
     TransactionTemplate configWriteTransaction = new TransactionTemplate(transactionManager);
     configWriteTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
@@ -245,6 +229,30 @@ public class ConfigService {
             "Maintenance configuration committed: enabled={}", Boolean.parseBoolean(configValue));
       } else {
         log.debug("Configuration entry committed: key={}", configEntry.name());
+      }
+    }
+  }
+
+  private void validateMailCleanupConfigValue(ConfigEntry configEntry, String configValue) {
+    if (ConfigurationCatalog.isMailCleanupSetting(configEntry)) {
+      if (configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED) {
+        parseConfigBoolean(configEntry, configValue);
+      } else if (configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS) {
+        if (Integer.parseInt(configValue) < 1) {
+          throw new IllegalArgumentException("Mail cleanup history retention must be positive");
+        }
+      } else if (Duration.parse(configValue).compareTo(Duration.ofMinutes(1)) < 0) {
+        throw new IllegalArgumentException("Mail cleanup durations must be at least one minute");
+      }
+    }
+  }
+
+  private void validateAccountRetentionConfigValue(ConfigEntry configEntry, String configValue) {
+    if (ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT) {
+      int configuredDays = Integer.parseInt(configValue);
+      int minimumDays = configEntry == ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS ? 0 : 1;
+      if (configuredDays < minimumDays) {
+        throw new IllegalArgumentException("Invalid account retention period");
       }
     }
   }

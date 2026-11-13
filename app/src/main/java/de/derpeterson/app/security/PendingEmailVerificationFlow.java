@@ -82,20 +82,26 @@ public class PendingEmailVerificationFlow {
   private Optional<UserEntity> findCurrentAccountInTransaction(HttpServletRequest httpRequest) {
     HttpSession httpSession = httpRequest.getSession(false);
     if (httpSession == null
-        || !(httpSession.getAttribute(SESSION_KEY) instanceof PendingProof pendingProof)
-        || !Instant.now().isBefore(pendingProof.expiresAt())) {
+        || !(httpSession.getAttribute(SESSION_KEY)
+            instanceof
+            PendingProof(
+                Long pendingUserId,
+                String pendingEmailAddress,
+                String pendingCredentialVersionText,
+                Instant proofExpiresAt))
+        || !Instant.now().isBefore(proofExpiresAt)) {
       cancel(httpRequest);
       return Optional.empty();
     }
 
     Optional<UserEntity> pendingUserEntity =
         userRepository
-            .lockVerificationUser(pendingProof.userId())
+            .lockVerificationUser(pendingUserId)
             .filter(UserEntity::requiresEmailVerification)
-            .filter(userEntity -> Objects.equals(pendingProof.email(), userEntity.getEmail()))
+            .filter(userEntity -> Objects.equals(pendingEmailAddress, userEntity.getEmail()))
             .filter(userEntity ->
                 Objects.equals(
-                    pendingProof.credentialVersion(),
+                    pendingCredentialVersionText,
                     PortalUserDetails.credentialVersion(
                         userEntity.getAccessVersion(), userEntity.getPassword())));
     if (pendingUserEntity.isEmpty()) {

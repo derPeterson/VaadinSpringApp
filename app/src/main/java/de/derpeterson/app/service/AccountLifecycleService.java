@@ -57,6 +57,9 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 @Slf4j
 public class AccountLifecycleService {
+  private static final String MAIL_TITLE_ATTRIBUTE = "TITLE";
+  private static final String MAIL_MESSAGE_ATTRIBUTE = "MESSAGE";
+
   public enum AccountAction {
     DEACTIVATE,
     DELETE
@@ -362,9 +365,9 @@ public class AccountLifecycleService {
               "account_deleted",
               lockedAccountUser,
               Map.of(
-                  "TITLE",
+                  MAIL_TITLE_ATTRIBUTE,
                   accountMessageProperties.getAccountDeletedMailSubject(),
-                  "MESSAGE",
+                  MAIL_MESSAGE_ATTRIBUTE,
                   accountMessageProperties.getAccountDeletedMailBody())));
     }
     AfterCommitLog.info(log, "Account permanently deleted: userId={}", accountUserId);
@@ -388,7 +391,12 @@ public class AccountLifecycleService {
             templateName,
             lockedAccountUser,
             Map.of(
-                "TITLE", emailSubject, "MESSAGE", emailBody, "REACTIVATION_LINK", reactivationUrl));
+                MAIL_TITLE_ATTRIBUTE,
+                emailSubject,
+                MAIL_MESSAGE_ATTRIBUTE,
+                emailBody,
+                "REACTIVATION_LINK",
+                reactivationUrl));
     emailQueueService.addEmailToQueue(
         lockedAccountUser, emailSubject, emailHtml, EmailType.ACCOUNT_REACTIVATION);
   }
@@ -404,9 +412,9 @@ public class AccountLifecycleService {
             "account_reactivated",
             accountUser,
             Map.of(
-                "TITLE",
+                MAIL_TITLE_ATTRIBUTE,
                 subject,
-                "MESSAGE",
+                MAIL_MESSAGE_ATTRIBUTE,
                 accountMessageProperties.getAccountReactivatedMailBody()));
     emailQueueService.addEmailToQueue(accountUser, subject, mailHtml, EmailType.NOTIFICATION);
   }
@@ -458,7 +466,7 @@ public class AccountLifecycleService {
   private static boolean isCanonicalUuid(String reactivationToken) {
     try {
       return UUID.fromString(reactivationToken).toString().equals(reactivationToken);
-    } catch (IllegalArgumentException invalidToken) {
+    } catch (IllegalArgumentException _) {
       return false;
     }
   }

@@ -154,7 +154,7 @@ public class EmailQueueCleanupService {
       return emailQueueDispatchGuard.runWhenIdle(() ->
           cleanupTransactionTemplate.execute(
               transactionStatus -> completeEligibleRequests(automatic, cleanupSettings)));
-    } catch (EmailQueueDispatchGuard.DispatchStillRunningException busyFailure) {
+    } catch (EmailQueueDispatchGuard.DispatchStillRunningException _) {
       return cleanupTransactionTemplate.execute(transactionStatus -> {
         if (!automatic) {
           adminRolePolicy.requireSuperadmin();

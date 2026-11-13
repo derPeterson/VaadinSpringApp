@@ -109,11 +109,16 @@ public class UserService {
 
   @Transactional
   public void createAdminUser(UserEntity accountUserEntity, String rawPortalPassword) {
-    createAdminUser(accountUserEntity, rawPortalPassword, false);
+    createAdminUserInTransaction(accountUserEntity, rawPortalPassword, false);
   }
 
   @Transactional
   public void createAdminUser(
+      UserEntity accountUserEntity, String rawPortalPassword, boolean skipEmailVerification) {
+    createAdminUserInTransaction(accountUserEntity, rawPortalPassword, skipEmailVerification);
+  }
+
+  private void createAdminUserInTransaction(
       UserEntity accountUserEntity, String rawPortalPassword, boolean skipEmailVerification) {
     Assert.notNull(accountUserEntity, ENTITY_REQUIRED_MESSAGE);
     Assert.isNull(accountUserEntity.getId(), "New account must not have an ID");
@@ -132,12 +137,12 @@ public class UserService {
             : EmailVerificationStatus.PENDING);
 
     updatePassword(accountUserEntity, rawPortalPassword);
-    save(accountUserEntity);
+    validateAndPersistUserInTransaction(accountUserEntity);
   }
 
   @Transactional
   public void saveUser(UserEntity userEntity) {
-    save(userEntity);
+    validateAndPersistUserInTransaction(userEntity);
   }
 
   /**
@@ -161,48 +166,64 @@ public class UserService {
   }
 
   @Transactional
-  public void save(UserEntity user) {
-    Assert.notNull(user, ENTITY_REQUIRED_MESSAGE);
-    validateUserFields(user);
+  public void save(UserEntity userEntity) {
+    validateAndPersistUserInTransaction(userEntity);
+  }
+
+  /** Gemeinsamer Ablauf innerhalb der unveränderten öffentlichen Transaktionsgrenzen. */
+  private void validateAndPersistUserInTransaction(UserEntity userEntity) {
+    Assert.notNull(userEntity, ENTITY_REQUIRED_MESSAGE);
+    validateUserFields(userEntity);
     Assert.isTrue(
-        user.getPassword() != null && !user.getPassword().isBlank()
-            || user.getPassword() == null
-                && user.getId() != null
-                && userRepository.hasExternalSignIn(user.getId()),
+        userEntity.getPassword() != null && !userEntity.getPassword().isBlank()
+            || userEntity.getPassword() == null
+                && userEntity.getId() != null
+                && userRepository.hasExternalSignIn(userEntity.getId()),
         "An encoded password or a connected provider is required");
-    validateLocale(user.getPreferredLocale());
-    Assert.notNull(user.getStatus(), "Status must not be null");
-    user.setEmail(user.getEmail());
-    List<Long> superadmins = lockAndReadSuperadmins();
-    boolean creating = user.getId() == null;
-    Set<RoleType> previousRoles =
-        user.getId() == null ? null : Set.copyOf(userRepository.findExplicitRoles(user.getId()));
-    Set<RoleType> desired = roleTypes(user.getRoleEntities());
-    if (previousRoles != null && !previousRoles.equals(desired)
-        || previousRoles == null && !desired.equals(Set.of(RoleType.ROLE_USER))) {
-      rolePolicy.authorizeMutation(user.getId(), desired);
+    validateLocale(userEntity.getPreferredLocale());
+    Assert.notNull(userEntity.getStatus(), "Status must not be null");
+
+    userEntity.setEmail(userEntity.getEmail());
+    List<Long> superadminUserIds = lockAndReadSuperadmins();
+    boolean isNewUser = userEntity.getId() == null;
+    Set<RoleType> previousRoleTypes =
+        userEntity.getId() == null
+            ? null
+            : Set.copyOf(userRepository.findExplicitRoles(userEntity.getId()));
+    Set<RoleType> desiredRoleTypes = roleTypes(userEntity.getRoleEntities());
+    if (previousRoleTypes != null && !previousRoleTypes.equals(desiredRoleTypes)
+        || previousRoleTypes == null && !desiredRoleTypes.equals(Set.of(RoleType.ROLE_USER))) {
+      rolePolicy.authorizeMutation(userEntity.getId(), desiredRoleTypes);
     } else {
-      rolePolicy.authorizeProtectedMutation(user.getId(), desired);
+      rolePolicy.authorizeProtectedMutation(userEntity.getId(), desiredRoleTypes);
     }
-    ensureSuperadminChangeAllowed(user.getId(), isEnabledSuperadmin(user), superadmins);
-    userRepository.save(user);
+    ensureSuperadminChangeAllowed(
+        userEntity.getId(), isEnabledSuperadmin(userEntity), superadminUserIds);
+
+    userRepository.save(userEntity);
     userRepository.flush();
-    ensureSuperadminsRemain(superadmins);
-    if (creating) {
+    ensureSuperadminsRemain(superadminUserIds);
+
+    if (isNewUser) {
       AfterCommitLog.info(
           log,
           "Account created: userId={}, enabled={}, roles={}",
-          user.getId(),
-          user.isEnabled(),
-          Set.copyOf(desired));
-    } else if (!previousRoles.equals(desired)) {
+          userEntity.getId(),
+          userEntity.isEnabled(),
+          Set.copyOf(desiredRoleTypes));
+    } else if (!previousRoleTypes.equals(desiredRoleTypes)) {
       AfterCommitLog.info(
-          log, "Account roles changed: userId={}, roles={}", user.getId(), Set.copyOf(desired));
+          log,
+          "Account roles changed: userId={}, roles={}",
+          userEntity.getId(),
+          Set.copyOf(desiredRoleTypes));
     }
-    if (previousRoles != null && !previousRoles.equals(roleTypes(user.getRoleEntities()))) {
+
+    if (previousRoleTypes != null
+        && !previousRoleTypes.equals(roleTypes(userEntity.getRoleEntities()))) {
       applicationEventPublisher.publishEvent(
           new de.derpeterson.app.events.UserRolesChanged(
-              user.getId(), previousRoles, roleTypes(user.getRoleEntities())));
+              userEntity.getId(), previousRoleTypes, roleTypes(userEntity.getRoleEntities())));
     }
   }
 
@@ -213,7 +234,7 @@ public class UserService {
     Optional<UserEntity> userOptional = findByEmail(email);
     userOptional.ifPresent(user -> {
       user.setPreferredLocale(locale);
-      save(user);
+      validateAndPersistUserInTransaction(user);
     });
   }
 
