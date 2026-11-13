@@ -1,6 +1,7 @@
 """SonarQube für dieses Projekt: MCP-Start, Leseprüfung und abgesicherter main-Scan."""
 
 import argparse
+import io
 import json
 import os
 import re
@@ -529,5 +530,13 @@ def main():
     return 0
 
 
+def configure_console_output():
+    """Auch bei umgeleiteter Windows-Ausgabe Unicode-Diagnosen vollständig ausgeben."""
+    for output_stream in (sys.stdout, sys.stderr):
+        if isinstance(output_stream, io.TextIOWrapper):
+            output_stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 if __name__ == "__main__":
+    configure_console_output()
     sys.exit(main())

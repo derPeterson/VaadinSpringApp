@@ -7,11 +7,38 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import MagicMock, Mock, patch
 from urllib.error import HTTPError, URLError
 
 import credentials
 import sonar
+
+
+class ConsoleOutputTest(unittest.TestCase):
+    def test_redirected_windows_output_accepts_unicode_and_still_redacts_tokens(self):
+        raw_output = io.BytesIO()
+        output_stream = io.TextIOWrapper(raw_output, encoding="cp1252")
+        process = MagicMock()
+        process.stdout = iter(["Diagnostic \ufffd \U0001f512 artificial-test-value\n"])
+        process.wait.return_value = 0
+        with (
+            patch.object(sonar.sys, "stdout", output_stream),
+            patch.object(sonar.sys, "stderr", output_stream),
+            patch.object(sonar.subprocess, "Popen", return_value=process),
+        ):
+            sonar.configure_console_output()
+            sonar.run_maven(["verify"], "artificial-test-value")
+            output_stream.flush()
+            self.assertEqual(
+                "Diagnostic \ufffd \U0001f512 [REDACTED]" + os.linesep,
+                raw_output.getvalue().decode("utf-8"),
+            )
+
+    def test_in_memory_test_output_remains_supported(self):
+        with redirect_stdout(io.StringIO()) as output:
+            sonar.configure_console_output()
+            print("Diagnostic")
+            self.assertEqual("Diagnostic\n", output.getvalue())
 
 
 class PaginationTest(unittest.TestCase):

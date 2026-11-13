@@ -406,6 +406,9 @@ Grundlagen: [Sonar-Maven-Analyseumfang](https://docs.sonarsource.com/sonarqube-s
 ## SonarQube und Codex
 
 Der geschützte Scanner-Helfer baut und prüft den gemeinsamen Modul-/Coverageumfang.
+Sein CLI-Einstieg setzt stdout und stderr auf UTF-8, damit umgeleitete
+Windows-Ausgaben mit Unicode-Diagnosen nicht am lokalen ANSI-Zeichensatz
+abbrechen. Die Maskierung des Sonar-Tokens bleibt dabei erhalten.
 Der Servernachweis umfasst App, Shared und alle Java-Browsertests unter demselben
 Projektkey; das technische Berichtsmodul selbst bleibt ausgeschlossen. Aktuelle
 Revision, Ergebnisse und Analysegrenzen stehen im [Prüfstand](status.md).
