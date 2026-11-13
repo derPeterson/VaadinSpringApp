@@ -189,6 +189,10 @@ public class ConfigService {
     if (ConfigurationCatalog.isMailCleanupSetting(configEntry)) {
       if (configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED) {
         parseConfigBoolean(configEntry, configValue);
+      } else if (configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS) {
+        if (Integer.parseInt(configValue) < 1) {
+          throw new IllegalArgumentException("Mail cleanup history retention must be positive");
+        }
       } else if (Duration.parse(configValue).compareTo(Duration.ofMinutes(1)) < 0) {
         throw new IllegalArgumentException("Mail cleanup durations must be at least one minute");
       }

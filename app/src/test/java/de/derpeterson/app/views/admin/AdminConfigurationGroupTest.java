@@ -16,8 +16,10 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -31,6 +33,7 @@ import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.EmailQueueCleanupService;
 import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosDurationField;
@@ -103,6 +106,50 @@ class AdminConfigurationGroupTest {
             ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS,
             ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION),
         visibleEntries());
+  }
+
+  @Test
+  void queueTabsPreserveDraftAndAutomationOnlyControlsItsTwoTimeFields() {
+    EmailQueueCleanupService cleanupService = mock(EmailQueueCleanupService.class);
+    when(cleanupService.canManageCleanup()).thenReturn(true);
+    configurationSection.configureMailQueueCleanup(cleanupService);
+    configurationSection.showGroup(AdminConfigGroup.QUEUE);
+    TabSheet queueTabSheet =
+        (TabSheet) ReflectionTestUtils.getField(configurationSection, "queueTabSheet");
+    Map<?, ?> inputs = getConfigInputsByEntry();
+    Switch automaticCleanupSwitch = (Switch) inputs.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED);
+    CosmosDurationField intervalField =
+        (CosmosDurationField) inputs.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_INTERVAL);
+    CosmosDurationField historyField =
+        (CosmosDurationField) inputs.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS);
+    BigDecimalField intervalInput =
+        (BigDecimalField) intervalField.getChildren().findFirst().orElseThrow();
+    IntegerField historyInput = (IntegerField) historyField.getChildren().findFirst().orElseThrow();
+
+    assertEquals(2, queueTabSheet.getTabCount());
+    queueTabSheet.setSelectedIndex(1);
+    assertFalse(intervalInput.isEnabled());
+    assertTrue(historyInput.isEnabled());
+    automaticCleanupSwitch.setValue(true);
+    assertTrue(intervalInput.isEnabled());
+    historyField.setStoredValue("45");
+    queueTabSheet.setSelectedIndex(1);
+    queueTabSheet.setSelectedIndex(0);
+    assertEquals("45", historyField.getStoredValue());
+    assertTrue(configurationSection.hasUnsavedChanges());
+    automaticCleanupSwitch.setValue(false);
+    assertFalse(intervalInput.isEnabled());
+    assertEquals("PT15M", intervalField.getStoredValue());
+  }
+
+  @Test
+  void ordinaryAdminHasOnlyTheGeneralQueueTab() {
+    when(configService.canAdminister(any(ConfigEntry.class))).thenReturn(false);
+    configurationSection.showGroup(AdminConfigGroup.QUEUE);
+    TabSheet queueTabSheet =
+        (TabSheet) ReflectionTestUtils.getField(configurationSection, "queueTabSheet");
+    assertEquals(1, queueTabSheet.getTabCount());
+    assertEquals(5, visibleEntries().size());
   }
 
   @Test

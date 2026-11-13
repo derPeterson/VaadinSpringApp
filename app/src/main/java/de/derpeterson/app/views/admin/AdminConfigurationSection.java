@@ -9,6 +9,7 @@ import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Switch;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
@@ -20,6 +21,9 @@ import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.TabSheet;
+import com.vaadin.flow.component.tabs.TabSheetVariant;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -40,6 +44,7 @@ import de.derpeterson.app.ui.components.ConfigGroupIcons;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.CosmosDurationField;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.UnsavedChangesDialog;
@@ -62,6 +67,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.convert.DurationStyle;
 
+@StyleSheet("custom-theme/cosmos-provider-settings.css")
+@StyleSheet("custom-theme/cosmos-mailqueue-assistant.css")
 public class AdminConfigurationSection extends VerticalLayout {
 
   private static final Logger logger = LoggerFactory.getLogger(AdminConfigurationSection.class);
@@ -127,6 +134,12 @@ public class AdminConfigurationSection extends VerticalLayout {
   private ConfigEntry openHelpConfigEntry;
   private AdminConfigGroup selectedGroup = null;
   private AdminMailQueueCleanupComponent mailQueueCleanupComponent;
+  private final TabSheet queueTabSheet = new TabSheet();
+  private final Span queueGeneralTabLabelSpan = new Span();
+  private final Span queueAssistantsTabLabelSpan = new Span();
+  private final Tab queueGeneralTab = new Tab(AppIcon.SLIDERS.create(), queueGeneralTabLabelSpan);
+  private final Tab queueAssistantsTab = new Tab(AppIcon.BOT.create(), queueAssistantsTabLabelSpan);
+  private final VerticalLayout queueGeneralFieldsLayout = new VerticalLayout();
 
   public AdminConfigurationSection(
       MessageProperties messageProperties,
@@ -167,6 +180,16 @@ public class AdminConfigurationSection extends VerticalLayout {
     configFieldsLayout.setSpacing(true);
     configFieldsLayout.setWidthFull();
     configFieldsLayout.addClassName("cosmos-config-fields");
+
+    queueTabSheet.setId("admin-queue-tabs");
+    queueTabSheet.addClassName(CosmosCssClasses.PANEL_TABS);
+    queueTabSheet.addThemeVariants(TabSheetVariant.NO_PADDING);
+    queueTabSheet.setWidthFull();
+    queueGeneralFieldsLayout.setPadding(false);
+    queueGeneralFieldsLayout.setSpacing(false);
+    queueGeneralFieldsLayout.addClassName("cosmos-config-fields");
+    queueTabSheet.add(queueGeneralTab, queueGeneralFieldsLayout);
+    queueTabSheet.setVisible(false);
 
     registerConfigGroups();
 
@@ -229,7 +252,8 @@ public class AdminConfigurationSection extends VerticalLayout {
     configCardFooterDiv.addClassName("cosmos-config-card-footer");
 
     VerticalLayout configCardLayout =
-        new VerticalLayout(configCardHeaderDiv, configFieldsLayout, configCardFooterDiv);
+        new VerticalLayout(
+            configCardHeaderDiv, configFieldsLayout, queueTabSheet, configCardFooterDiv);
     configCardLayout.setPadding(false);
     configCardLayout.setSpacing(false);
     configCardLayout.addClassNames("cosmos-admin-form", "cosmos-config-form");
@@ -238,6 +262,8 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   public void refreshTexts() {
+    queueGeneralTabLabelSpan.setText(messageProperties.getAdminQueueCleanupGeneralTab());
+    queueAssistantsTabLabelSpan.setText(messageProperties.getAdminQueueCleanupAssistantsTab());
     if (mailQueueCleanupComponent != null) {
       mailQueueCleanupComponent.refreshTexts();
     }
@@ -257,6 +283,10 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   public void loadConfigValues() {
+    Map<ConfigEntry, String> valuesToLoad = new EnumMap<>(ConfigEntry.class);
+    for (ConfigEntry configEntry : getVisibleConfigEntries()) {
+      valuesToLoad.put(configEntry, getSafeConfigValue(configEntry));
+    }
     loadedConfigValues.clear();
     for (ConfigEntry configEntry : getVisibleConfigEntries()) {
       Component configInputComponent = configInputs.get(configEntry);
@@ -264,12 +294,13 @@ public class AdminConfigurationSection extends VerticalLayout {
         continue;
       }
 
-      String storedConfigValue = getSafeConfigValue(configEntry);
+      String storedConfigValue = valuesToLoad.get(configEntry);
       applyConfigValue(configInputComponent, configEntry, storedConfigValue);
       loadedConfigValues.put(configEntry, extractInputValue(configEntry));
     }
 
     clearValidationStatesForVisibleInputs();
+    updateCleanupFieldsEnabled();
     browserChangesGuard.refresh();
   }
 
@@ -334,6 +365,12 @@ public class AdminConfigurationSection extends VerticalLayout {
     if (emailQueueCleanupService.canManageCleanup()) {
       mailQueueCleanupComponent =
           new AdminMailQueueCleanupComponent(messageProperties, emailQueueCleanupService);
+      mailQueueCleanupComponent.setSettingsFields(
+          configInputWrappers.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED),
+          configInputWrappers.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS),
+          configInputWrappers.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_INTERVAL),
+          configInputWrappers.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_MINIMUM_AGE));
+      queueTabSheet.add(queueAssistantsTab, mailQueueCleanupComponent);
       renderSelectedGroup();
     }
   }
@@ -347,13 +384,21 @@ public class AdminConfigurationSection extends VerticalLayout {
   }
 
   private void reloadConfigValues() {
-    loadConfigValues();
-
-    NotificationHelper.getInstance()
-        .showNotification(
-            messageProperties::getBaseSuccessTitle,
-            messageProperties::getAdminConfigReloadSuccess,
-            NotificationHelper.NotificationType.SUCCESS);
+    try {
+      loadConfigValues();
+      NotificationHelper.getInstance()
+          .showNotification(
+              messageProperties::getBaseSuccessTitle,
+              messageProperties::getAdminConfigReloadSuccess,
+              NotificationHelper.NotificationType.SUCCESS);
+    } catch (RuntimeException reloadFailure) {
+      logger.error("Configuration reload failed", safeFailure(reloadFailure));
+      NotificationHelper.getInstance()
+          .showNotification(
+              messageProperties::getBaseFailedTitle,
+              messageProperties::getAdminConfigReloadFailed,
+              NotificationHelper.NotificationType.ERROR);
+    }
   }
 
   private void renderSelectedGroup() {
@@ -366,6 +411,10 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     refreshCurrentGroupTitle();
     configFieldsLayout.removeAll();
+    queueGeneralFieldsLayout.removeAll();
+    boolean queueGroupSelected = selectedGroup == AdminConfigGroup.QUEUE;
+    configFieldsLayout.setVisible(!queueGroupSelected);
+    queueTabSheet.setVisible(queueGroupSelected);
 
     Predicate<ConfigEntry> selectedGroupFilter = configGroupFilters.get(selectedGroup);
     if (selectedGroupFilter == null) {
@@ -381,14 +430,17 @@ public class AdminConfigurationSection extends VerticalLayout {
 
       VerticalLayout configFieldLayout = configInputWrappers.get(configEntry);
       if (configFieldLayout != null) {
-        configFieldsLayout.add(configFieldLayout);
+        if (queueGroupSelected) {
+          if (!ConfigurationCatalog.isMailCleanupSetting(configEntry)) {
+            queueGeneralFieldsLayout.add(configFieldLayout);
+          }
+        } else {
+          configFieldsLayout.add(configFieldLayout);
+        }
       }
     }
-    if (selectedGroup == AdminConfigGroup.QUEUE
-        && mailQueueCleanupComponent != null
-        && mailQueueCleanupComponent.canManageCleanup()) {
-      configFieldsLayout.add(mailQueueCleanupComponent);
-    }
+    queueAssistantsTab.setVisible(
+        mailQueueCleanupComponent != null && mailQueueCleanupComponent.canManageCleanup());
   }
 
   private List<ConfigEntry> getVisibleConfigEntries() {
@@ -500,6 +552,20 @@ public class AdminConfigurationSection extends VerticalLayout {
     return createFieldWrapper(configInputComponent, configEntry);
   }
 
+  private void updateCleanupFieldsEnabled() {
+    Component automationInput = configInputs.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED);
+    boolean automaticCleanupEnabled =
+        automationInput instanceof Switch automationSwitch && automationSwitch.getValue();
+    for (ConfigEntry timeSetting :
+        List.of(
+            ConfigEntry.EMAIL_QUEUE_CLEANUP_INTERVAL,
+            ConfigEntry.EMAIL_QUEUE_CLEANUP_MINIMUM_AGE)) {
+      if (configInputs.get(timeSetting) instanceof CosmosDurationField durationField) {
+        durationField.setControlsEnabled(automaticCleanupEnabled);
+      }
+    }
+  }
+
   private Component createInputComponent(ConfigEntry configEntry) {
     Object defaultValue = configEntry.getDefaultValue();
     Component configInputComponent;
@@ -508,6 +574,9 @@ public class AdminConfigurationSection extends VerticalLayout {
       Switch settingSwitch = new Switch();
       settingSwitch.setWidthFull();
       settingSwitch.addClassName("cosmos-config-switch");
+      if (configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED) {
+        settingSwitch.addValueChangeListener(event -> updateCleanupFieldsEnabled());
+      }
       configInputComponent = settingSwitch;
     } else if (isEmailEntry(configEntry)) {
       EmailField emailField = new EmailField();
@@ -520,7 +589,8 @@ public class AdminConfigurationSection extends VerticalLayout {
         || isFixedDayDuration(configEntry)) {
       CosmosDurationField durationField =
           new CosmosDurationField(messageProperties, durationStorage(configEntry));
-      if (ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT) {
+      if (ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT
+          || configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS) {
         durationField.requireWholeDays(
             configEntry == ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS ? 0 : 1);
       }
@@ -768,6 +838,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       case LOGIN_ATTEMPTS_LIMIT,
           MAX_SESSIONS_PER_USER,
           SELF_DEACTIVATION_RETENTION_DAYS,
+          EMAIL_QUEUE_CLEANUP_HISTORY_DAYS,
           EMAIL_QUEUE_POOL_SIZE,
           EMAIL_QUEUE_CAPACITY ->
           List.of(
@@ -1004,6 +1075,7 @@ public class AdminConfigurationSection extends VerticalLayout {
       case LOGIN_ATTEMPTS_LIMIT,
           MAX_SESSIONS_PER_USER,
           SELF_DEACTIVATION_RETENTION_DAYS,
+          EMAIL_QUEUE_CLEANUP_HISTORY_DAYS,
           EMAIL_QUEUE_POOL_SIZE,
           EMAIL_QUEUE_CAPACITY,
           USER_NOTIFICATIONS_INBOX_RETENTION_DAYS,
@@ -1132,6 +1204,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
   private boolean isFixedDayDuration(ConfigEntry configEntry) {
     return isNotificationRetention(configEntry)
+        || configEntry == ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS
         || ConfigurationCatalog.group(configEntry) == AdminConfigGroup.ACCOUNT_MANAGEMENT;
   }
 

@@ -2,11 +2,13 @@ package de.derpeterson.app.service;
 
 import de.derpeterson.app.helper.logging.AfterCommitLog;
 import de.derpeterson.app.helper.logging.LogSafety;
+import de.derpeterson.app.model.EmailQueueCleanupRunEntity;
 import de.derpeterson.app.model.EmailQueueCleanupStateEntity;
 import de.derpeterson.app.model.EmailQueueEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.EmailStatus;
 import de.derpeterson.app.model.enums.EmailType;
+import de.derpeterson.app.repository.EmailQueueCleanupRunRepository;
 import de.derpeterson.app.repository.EmailQueueCleanupStateRepository;
 import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.security.AdminRolePolicy;
@@ -39,6 +41,7 @@ public class EmailQueueCleanupService {
 
   private final EmailQueueRepository emailQueueRepository;
   private final EmailQueueCleanupStateRepository emailQueueCleanupStateRepository;
+  private final EmailQueueCleanupRunRepository emailQueueCleanupRunRepository;
   private final ConfigService configService;
   private final AdminRolePolicy adminRolePolicy;
   private final EmailQueueDispatchGuard emailQueueDispatchGuard;
@@ -57,6 +60,7 @@ public class EmailQueueCleanupService {
   public EmailQueueCleanupService(
       EmailQueueRepository emailQueueRepository,
       EmailQueueCleanupStateRepository emailQueueCleanupStateRepository,
+      EmailQueueCleanupRunRepository emailQueueCleanupRunRepository,
       ConfigService configService,
       AdminRolePolicy adminRolePolicy,
       EmailQueueDispatchGuard emailQueueDispatchGuard,
@@ -64,6 +68,7 @@ public class EmailQueueCleanupService {
     this(
         emailQueueRepository,
         emailQueueCleanupStateRepository,
+        emailQueueCleanupRunRepository,
         configService,
         adminRolePolicy,
         emailQueueDispatchGuard,
@@ -74,6 +79,7 @@ public class EmailQueueCleanupService {
   EmailQueueCleanupService(
       EmailQueueRepository emailQueueRepository,
       EmailQueueCleanupStateRepository emailQueueCleanupStateRepository,
+      EmailQueueCleanupRunRepository emailQueueCleanupRunRepository,
       ConfigService configService,
       AdminRolePolicy adminRolePolicy,
       EmailQueueDispatchGuard emailQueueDispatchGuard,
@@ -81,6 +87,7 @@ public class EmailQueueCleanupService {
       Clock cleanupClock) {
     this.emailQueueRepository = emailQueueRepository;
     this.emailQueueCleanupStateRepository = emailQueueCleanupStateRepository;
+    this.emailQueueCleanupRunRepository = emailQueueCleanupRunRepository;
     this.configService = configService;
     this.adminRolePolicy = adminRolePolicy;
     this.emailQueueDispatchGuard = emailQueueDispatchGuard;
@@ -157,7 +164,7 @@ public class EmailQueueCleanupService {
         if (automatic && !isAutomaticCleanupDue(cleanupState, cleanupSettings, cleanupDateTime)) {
           return null;
         }
-        return saveCleanupResult(cleanupState, cleanupDateTime, 0, true);
+        return saveCleanupResult(cleanupState, cleanupDateTime, 0, true, automatic);
       });
     }
   }
@@ -202,7 +209,7 @@ public class EmailQueueCleanupService {
           resolvedCount,
           automatic);
     }
-    return saveCleanupResult(cleanupState, cleanupDateTime, resolvedCount, false);
+    return saveCleanupResult(cleanupState, cleanupDateTime, resolvedCount, false, automatic);
   }
 
   private boolean isAutomaticCleanupDue(
@@ -218,12 +225,36 @@ public class EmailQueueCleanupService {
       EmailQueueCleanupStateEntity cleanupState,
       LocalDateTime cleanupDateTime,
       int resolvedCount,
-      boolean busy) {
+      boolean busy,
+      boolean automatic) {
+    EmailQueueCleanupRunEntity emailQueueCleanupRunEntity = new EmailQueueCleanupRunEntity();
+    emailQueueCleanupRunEntity.setAttemptedAt(cleanupDateTime);
+    emailQueueCleanupRunEntity.setAutomatic(automatic);
+    emailQueueCleanupRunEntity.setResolvedCount(resolvedCount);
+    emailQueueCleanupRunEntity.setBusy(busy);
+    emailQueueCleanupRunRepository.save(emailQueueCleanupRunEntity);
+
     cleanupState.setLastRunAt(cleanupDateTime);
     cleanupState.setResolvedCount(resolvedCount);
     cleanupState.setBusy(busy);
     emailQueueCleanupStateRepository.saveAndFlush(cleanupState);
     return createCleanupResult(cleanupState);
+  }
+
+  /** Die letzte Statusanzeige und Intervallsteuerung bleiben von der Historienfrist unberührt. */
+  @Scheduled(cron = "0 15 3 * * *")
+  @Transactional
+  public void deleteExpiredRunHistory() {
+    int retentionDays = configService.getInteger(ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS);
+    if (retentionDays < 1) {
+      throw new IllegalArgumentException("Mail cleanup history retention must be positive");
+    }
+    int deletedRunCount =
+        emailQueueCleanupRunRepository.deleteAttemptsBefore(
+            LocalDateTime.now(cleanupClock).minusDays(retentionDays));
+    if (deletedRunCount > 0) {
+      AfterCommitLog.info(logger, "Mail cleanup history expired: count={}", deletedRunCount);
+    }
   }
 
   private CleanupResult createCleanupResult(EmailQueueCleanupStateEntity cleanupState) {

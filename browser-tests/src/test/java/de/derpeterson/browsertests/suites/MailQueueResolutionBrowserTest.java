@@ -72,10 +72,11 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
     BigDecimal previousInterval = configurationPage.seconds(uiTexts.getAdminQueueCleanupInterval());
     Locator automaticSwitch = cleanupSwitch();
     boolean previousAutomatic = automaticSwitch.isChecked();
-    automaticSwitch.setChecked(false);
+    automaticSwitch.setChecked(true);
     configurationPage.enterSeconds(
         uiTexts.getAdminQueueCleanupMinimumAge(), BigDecimal.valueOf(60));
     configurationPage.enterSeconds(uiTexts.getAdminQueueCleanupInterval(), BigDecimal.valueOf(60));
+    automaticSwitch.setChecked(false);
     configurationPage.save();
 
     String recipientEmailAddress = "queue-resolution-" + UUID.randomUUID() + "@example.test";
@@ -168,9 +169,10 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
       }
     } finally {
       configurationPage.open(AdminConfigGroup.QUEUE);
-      cleanupSwitch().setChecked(previousAutomatic);
+      cleanupSwitch().setChecked(true);
       configurationPage.enterSeconds(uiTexts.getAdminQueueCleanupMinimumAge(), previousMinimumAge);
       configurationPage.enterSeconds(uiTexts.getAdminQueueCleanupInterval(), previousInterval);
+      cleanupSwitch().setChecked(previousAutomatic);
       configurationPage.save();
     }
   }
@@ -200,6 +202,13 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
   }
 
   private Locator cleanupSwitch() {
+    browserPage
+        .getByRole(
+            AriaRole.TAB,
+            new Page.GetByRoleOptions()
+                .setName(uiTexts.getAdminQueueCleanupAssistantsTab())
+                .setExact(true))
+        .click();
     return browserPage.getByRole(
         AriaRole.SWITCH,
         new Page.GetByRoleOptions().setName(uiTexts.getAdminQueueCleanupEnabled()).setExact(true));

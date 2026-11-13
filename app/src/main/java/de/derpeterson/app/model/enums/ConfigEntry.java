@@ -54,6 +54,7 @@ public enum ConfigEntry {
   EMAIL_QUEUE_POOL_SIZE("email.queue.pool.size", 5),
   EMAIL_QUEUE_CAPACITY("email.queue.capacity", 50),
   EMAIL_QUEUE_MAX_RETRY("email.queue.max_retry", 3),
+  EMAIL_QUEUE_CLEANUP_HISTORY_DAYS("email.queue.cleanup.history.days", 30),
   EMAIL_QUEUE_CLEANUP_ENABLED("email.queue.cleanup.enabled", false),
   EMAIL_QUEUE_CLEANUP_INTERVAL("email.queue.cleanup.interval", "PT15M"),
   EMAIL_QUEUE_CLEANUP_MINIMUM_AGE("email.queue.cleanup.minimum.age", "PT30M"),

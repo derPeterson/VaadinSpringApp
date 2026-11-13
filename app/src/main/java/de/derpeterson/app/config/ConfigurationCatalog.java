@@ -184,6 +184,7 @@ public final class ConfigurationCatalog {
           EMAIL_QUEUE_CLEANUP_ENABLED,
           EMAIL_QUEUE_CLEANUP_INTERVAL,
           EMAIL_QUEUE_CLEANUP_MINIMUM_AGE,
+          EMAIL_QUEUE_CLEANUP_HISTORY_DAYS,
           EMAIL_QUEUE_CAPACITY,
           EMAIL_QUEUE_MAX_RETRY,
           EMAIL_QUEUE_RETRY_DELAY_SECONDS,
@@ -214,7 +215,8 @@ public final class ConfigurationCatalog {
     return switch (configEntry) {
       case EMAIL_QUEUE_CLEANUP_ENABLED,
           EMAIL_QUEUE_CLEANUP_INTERVAL,
-          EMAIL_QUEUE_CLEANUP_MINIMUM_AGE ->
+          EMAIL_QUEUE_CLEANUP_MINIMUM_AGE,
+          EMAIL_QUEUE_CLEANUP_HISTORY_DAYS ->
           true;
       default -> false;
     };

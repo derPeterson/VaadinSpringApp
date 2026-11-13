@@ -135,6 +135,7 @@ public class MessageProperties extends MessageTexts implements Serializable {
               getAdminQueueCleanupEffectiveNextRun(),
               getAdminQueueCleanupEffectiveExisting(),
               getAdminQueueCleanupEffectiveRunning());
+      case EMAIL_QUEUE_CLEANUP_HISTORY_DAYS -> List.of(getAdminQueueCleanupHistoryEffective());
       case EMAIL_QUEUE_SENT_LIVE_DURATION -> List.of(getAdminConfigEffectiveCleanupExisting());
       case REMEMBER_ME_DURATION ->
           List.of(
@@ -210,6 +211,7 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case EMAIL_QUEUE_CAPACITY -> getAdminConfigEntryEmailQueueCapacity();
       case EMAIL_QUEUE_MAX_RETRY -> getAdminConfigEntryEmailQueueMaxRetry();
       case EMAIL_QUEUE_RETRY_DELAY_SECONDS -> getAdminConfigEntryEmailQueueRetryDelay();
+      case EMAIL_QUEUE_CLEANUP_HISTORY_DAYS -> getAdminQueueCleanupHistoryDays();
       case EMAIL_QUEUE_CLEANUP_ENABLED -> getAdminQueueCleanupEnabled();
       case EMAIL_QUEUE_CLEANUP_INTERVAL -> getAdminQueueCleanupInterval();
       case EMAIL_QUEUE_CLEANUP_MINIMUM_AGE -> getAdminQueueCleanupMinimumAge();
@@ -264,6 +266,7 @@ public class MessageProperties extends MessageTexts implements Serializable {
       case EMAIL_QUEUE_CAPACITY -> getAdminConfigEntryEmailQueueCapacityTooltip();
       case EMAIL_QUEUE_MAX_RETRY -> getAdminConfigEntryEmailQueueMaxRetryTooltip();
       case EMAIL_QUEUE_RETRY_DELAY_SECONDS -> getAdminConfigEntryEmailQueueRetryDelayTooltip();
+      case EMAIL_QUEUE_CLEANUP_HISTORY_DAYS -> getAdminQueueCleanupHistoryHelp();
       case EMAIL_QUEUE_CLEANUP_ENABLED -> getAdminQueueCleanupEnabledHelp();
       case EMAIL_QUEUE_CLEANUP_INTERVAL -> getAdminQueueCleanupIntervalHelp();
       case EMAIL_QUEUE_CLEANUP_MINIMUM_AGE -> getAdminQueueCleanupMinimumAgeHelp();

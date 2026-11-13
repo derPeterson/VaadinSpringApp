@@ -4615,6 +4615,50 @@ public class MessageTexts {
     return getTranslation("admin.queueResolution.failure");
   }
 
+  public String getAdminConfigReloadFailed() {
+    return getTranslation("admin.queueCleanup.reloadFailed");
+  }
+
+  public String getAdminQueueCleanupGeneralTab() {
+    return getTranslation("admin.queueCleanup.generalTab");
+  }
+
+  public String getAdminQueueCleanupAssistantsTab() {
+    return getTranslation("admin.queueCleanup.assistantsTab");
+  }
+
+  public String getAdminQueueCleanupAssistantTitle() {
+    return getTranslation("admin.queueCleanup.assistantTitle");
+  }
+
+  public String getAdminQueueCleanupAssistantDescription() {
+    return getTranslation("admin.queueCleanup.assistantDescription");
+  }
+
+  public String getAdminQueueCleanupStatusTitle() {
+    return getTranslation("admin.queueCleanup.statusTitle");
+  }
+
+  public String getAdminQueueCleanupManualHint() {
+    return getTranslation("admin.queueCleanup.manualHint");
+  }
+
+  public String getAdminQueueCleanupHistoryDays() {
+    return getTranslation("admin.queueCleanup.historyDays");
+  }
+
+  public String getAdminQueueCleanupHistoryHelp() {
+    return getTranslation("admin.queueCleanup.historyHelp");
+  }
+
+  public String getAdminQueueCleanupHistoryEffective() {
+    return getTranslation("admin.queueCleanup.historyEffective");
+  }
+
+  public String getAdminQueueCleanupRefreshSuccess() {
+    return getTranslation("admin.queueCleanup.refreshSuccess");
+  }
+
   public String getAdminQueueCleanupEnabled() {
     return getTranslation("admin.queueCleanup.enabled");
   }

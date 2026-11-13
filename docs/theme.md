@@ -1133,6 +1133,19 @@ und Lücke sowie Bild vor dem Text. Die gleich breiten HTML-Aktionsbuttons sind
 auf `.ad-config` begrenzt. Der Mailtest bleibt mit natürlicher Buttonbreite
 rechtsbündig, einschließlich Smartphone.
 
+Die E-Mail-Queue verwendet native `TabSheet`-/`Tab`-Komponenten mit
+`cosmos-panel-tabs`, wie die Anmeldeanbieter. `Allgemein` trägt `sliders-horizontal`,
+`Assistenten` das bestehende `bot`-Icon und ist nur für Superadmins sichtbar.
+Der innere `CosmosCardComponent` des Bereinigungsassistenten übernimmt den
+Panelheader mit `brush-cleaning`, Titel, Sekundärtext und Trennlinie. Ein natives
+`FormLayout` ordnet Switch und Historienfrist vor den beiden Zeitfeldern an.
+Warnung und dezente Info-Box verwenden die vorhandenen Cosmos-Farben/Abstände.
+Der Statusbereich trägt Tabler `terminal-2`, stellt nur die Ergebnisausgabe in
+Monospace dar und hält Aktualisieren neben der Bereinigungsaktion rechts.
+Die lokale Anordnung liegt in `cosmos-mailqueue-assistant.css`; normale
+Buttonzustände kommen unverändert aus dem gemeinsamen Theme. Laden und Speichern
+bleiben im äußeren gemeinsamen Footer, nicht in der inneren Karte.
+
 `CosmosDurationField` ist der wiederverwendbare Zeitfeld-Baustein aus nativen
 Vaadin-Zahlenfeldern und einem `Select<Unit>` im öffentlichen Suffix. Er wird in
 den Zeitfeldern der Konfiguration verwendet. Dazu gehören

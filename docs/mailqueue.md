@@ -71,10 +71,30 @@ laufendes SMTP ihn verhindert hat. Manuell lässt sich unabhängig vom Intervall
 prüfen. Ein Lauf arbeitet mit seinem gelesenen Einstellungsstand, der nächste
 berücksichtigt Änderungen ohne Neustart auch bei vorhandenen Claims.
 
+Die Queue-Konfiguration hat die Reiter **Allgemein** und **Assistenten** im
+vorhandenen Panelstil. Admins sehen die fünf allgemeinen Einstellungen,
+Superadmins zusätzlich den Bereinigungsassistenten. Seine beiden Zeitfelder
+sind nur bei eingeschalteter Automatik bedienbar, gespeicherte Werte bleiben
+erhalten. Die Historienfrist bleibt unabhängig davon bedienbar. Der gemeinsame
+äußere Footer lädt beziehungsweise speichert beide Reiter. Die manuelle
+Bereinigung ist weiterhin unabhängig vom Automatikschalter möglich und verwendet
+gespeicherte Einstellungen. Bewusstes Aktualisieren meldet Erfolg oder Fehler.
+
 Letzter Versuch, Anzahl und eine mögliche Blockierung durch laufenden Versand
 werden gemeinsam mit dem Abschluss gespeichert und bleiben nach Neustart erhalten.
 Die Anzeige lädt den Stand beim Öffnen und über „Aktualisieren“, ohne laufendes
-Polling. Es wird keine Empfänger- oder Mailinhaltshistorie angelegt. Weitere
+Polling. Zusätzlich wird jeder tatsächlich fällige automatische oder manuelle
+Versuch mit Zeitpunkt, Auslöser, Anzahl und Blockierung als eigener Datensatz in
+`email_queue_cleanup_run` erfasst, auch ein Lauf ohne Treffer. Reine Scheduler-
+Prüfungen ohne fälligen Versuch erzeugen keinen Eintrag. Status und Historie
+werden mit demselben Transaktionsabschluss gespeichert. Es wird keine Empfänger-
+oder Mailinhaltshistorie angelegt. Die neue Einstellung **Aufbewahrung der
+Bereinigungshistorie** ist Superadmins vorbehalten und verlangt mindestens einen
+ganzen Tag, Vorgabe 30 Tage. Täglich um 03:15 Uhr Serverzeit werden ältere Einträge
+entfernt, unabhängig vom Automatikschalter. Änderungen gelten ohne Neustart beim
+nächsten Löschlauf auch für vorhandene Einträge. Letzter Status und Intervall bleiben
+davon unberührt. Eine sichtbare Verlaufsliste ist eine spätere offene Aufgabe.
+Weitere
 passende Aufträge bleiben nach der begrenzten Menge für den nächsten Lauf erhalten.
 
 Der Dienst prüft für manuelle Aktionen die Superadminrolle frisch und sperrt die

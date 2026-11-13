@@ -1,0 +1,20 @@
+/* Lokale Anordnung aus der freigegebenen Mailqueue-Skizze; Controls bleiben Cosmos. */
+#admin-queue-tabs { align-self: stretch; }
+#admin-queue-tabs .admin-mail-queue-resolution { width: calc(100% - 48px); margin: 24px; }
+.admin-queue-cleanup-content { width: 100%; gap: 20px; padding: 24px; box-sizing: border-box; }
+.admin-queue-cleanup-fields { --vaadin-form-layout-column-spacing: 20px; --vaadin-form-layout-row-spacing: 20px; }
+.admin-queue-cleanup-fields .admin-config-switch { justify-content: center; }
+.admin-queue-cleanup-status { width: 100%; box-sizing: border-box; padding: 16px; gap: 14px; border: 1px solid var(--cosmos-reference-border); border-radius: 10px; background: var(--cosmos-reference-panel); }
+.admin-queue-cleanup-status > vaadin-icon { width: 20px; height: 20px; flex: none; color: var(--cosmos-reference-accent); }
+.admin-queue-cleanup-status-title { color: var(--cosmos-reference-secondary); font: 500 11px/18px Inter,sans-serif; text-transform: uppercase; letter-spacing: .5px; }
+.admin-queue-cleanup-output { color: var(--cosmos-reference-text); font: 400 12px/20px Consolas,"Courier New",monospace; overflow-wrap: anywhere; }
+.admin-queue-cleanup-actions { flex: none; gap: 8px; }
+.admin-queue-cleanup-info { width: 100%; box-sizing: border-box; gap: var(--cosmos-info-box-gap); padding: var(--cosmos-info-box-padding); border: 1px solid var(--cosmos-reference-border); border-radius: var(--cosmos-control-radius); background: var(--cosmos-reference-input); color: var(--cosmos-reference-secondary); font: 400 12px/20px Inter,sans-serif; }
+.admin-queue-cleanup-info > vaadin-icon { width: 16px; height: 16px; flex: none; color: var(--cosmos-reference-accent); }
+@media(max-width:700px) {
+    #admin-queue-tabs .admin-mail-queue-resolution { width: calc(100% - 32px); margin: 16px; }
+    .admin-queue-cleanup-content { padding: 16px; }
+    .admin-queue-cleanup-status { flex-wrap: wrap; }
+    .admin-queue-cleanup-status > vaadin-vertical-layout { flex: 1; min-width: 160px; }
+    .admin-queue-cleanup-actions { width: 100%; justify-content: flex-end; }
+}

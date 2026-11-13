@@ -9,6 +9,7 @@ import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /** Configuration through visible groups and inputs; no application API access. */
@@ -27,13 +28,37 @@ public final class AdminConfigurationPage {
     assertThat(findActionButtonLocator(uiTexts.getAdminConfigSave())).isVisible();
   }
 
+  private void selectQueueSettingsTab(String fieldLabelText) {
+    Locator queueTabsLocator = browserPage.locator("#admin-queue-tabs");
+    if (!queueTabsLocator.isVisible()) {
+      return;
+    }
+    boolean cleanupSetting =
+        List.of(
+                uiTexts.getAdminQueueCleanupEnabled(),
+                uiTexts.getAdminQueueCleanupInterval(),
+                uiTexts.getAdminQueueCleanupMinimumAge(),
+                uiTexts.getAdminQueueCleanupHistoryDays())
+            .contains(fieldLabelText);
+    String selectedTabLabel =
+        cleanupSetting
+            ? uiTexts.getAdminQueueCleanupAssistantsTab()
+            : uiTexts.getAdminQueueCleanupGeneralTab();
+    queueTabsLocator
+        .getByRole(
+            AriaRole.TAB, new Locator.GetByRoleOptions().setName(selectedTabLabel).setExact(true))
+        .click();
+  }
+
   public Locator input(String fieldLabelText) {
+    selectQueueSettingsTab(fieldLabelText);
     return browserPage
         .getByLabel(fieldLabelText, new Page.GetByLabelOptions().setExact(true))
         .and(browserPage.locator("input"));
   }
 
   public Locator info(String fieldLabelText) {
+    selectQueueSettingsTab(fieldLabelText);
     return browserPage
         .getByLabel(fieldLabelText, new Page.GetByLabelOptions().setExact(true))
         .and(browserPage.locator("vaadin-button.cosmos-config-info"));

@@ -19,6 +19,7 @@ import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.model.enums.EmailStatus;
 import de.derpeterson.app.model.enums.EmailType;
+import de.derpeterson.app.repository.EmailQueueCleanupRunRepository;
 import de.derpeterson.app.repository.EmailQueueCleanupStateRepository;
 import de.derpeterson.app.repository.EmailQueueRepository;
 import de.derpeterson.app.repository.UserRepository;
@@ -48,6 +49,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 class EmailQueueCleanupPersistenceTest {
   @Autowired private EmailQueueCleanupService emailQueueCleanupService;
   @Autowired private EmailQueueRepository emailQueueRepository;
+  @Autowired private EmailQueueCleanupRunRepository emailQueueCleanupRunRepository;
   @Autowired private EmailQueueCleanupStateRepository emailQueueCleanupStateRepository;
   @Autowired private UserRepository userRepository;
   @Autowired private AdminRolePolicy adminRolePolicy;
@@ -62,6 +64,7 @@ class EmailQueueCleanupPersistenceTest {
     reset(adminRolePolicy, configService);
     cleanupClock.set(Instant.parse("2030-01-01T12:00:00Z"));
     emailQueueRepository.deleteAll();
+    emailQueueCleanupRunRepository.deleteAll();
     emailQueueCleanupStateRepository.deleteAll();
     userRepository.deleteAll();
     emailQueueCleanupStateRepository.saveAndFlush(new EmailQueueCleanupStateEntity());
@@ -128,6 +131,7 @@ class EmailQueueCleanupPersistenceTest {
         new EmailQueueCleanupService(
             emailQueueRepository,
             emailQueueCleanupStateRepository,
+            emailQueueCleanupRunRepository,
             configService,
             adminRolePolicy,
             dispatchGuard,
@@ -167,6 +171,7 @@ class EmailQueueCleanupPersistenceTest {
     assertThrows(AccessDeniedException.class, emailQueueCleanupService::runManually);
     assertEquals(EmailStatus.IN_PROGRESS, storedStatus(queueEntry));
     assertNull(emailQueueCleanupStateRepository.findById(1L).orElseThrow().getLastRunAt());
+    assertEquals(0, emailQueueCleanupRunRepository.count());
   }
 
   @Test
@@ -198,6 +203,7 @@ class EmailQueueCleanupPersistenceTest {
     assertThrows(IllegalStateException.class, emailQueueCleanupService::runManually);
     assertEquals(EmailStatus.IN_PROGRESS, storedStatus(queueEntry));
     assertNull(emailQueueCleanupStateRepository.findById(1L).orElseThrow().getLastRunAt());
+    assertEquals(0, emailQueueCleanupRunRepository.count());
   }
 
   @Test
@@ -219,6 +225,50 @@ class EmailQueueCleanupPersistenceTest {
     assertEquals(100, emailQueueCleanupService.runManually().resolvedCount());
     assertEquals(1, emailQueueCleanupService.runManually().resolvedCount());
     assertEquals(0, emailQueueCleanupService.runManually().resolvedCount());
+  }
+
+  @Test
+  void historyRecordsManualAutomaticAndBusyAttemptsButNotSchedulerChecks() {
+    configureCleanup(true, "PT15M", "PT30M");
+    emailQueueCleanupService.runManually();
+    emailQueueCleanupService.runAutomatically();
+    assertEquals(1, emailQueueCleanupRunRepository.count());
+    assertFalse(emailQueueCleanupRunRepository.findAll().getFirst().isAutomatic());
+
+    cleanupClock.advance(Duration.ofMinutes(15));
+    emailQueueCleanupService.runAutomatically();
+    assertEquals(2, emailQueueCleanupRunRepository.count());
+    assertEquals(
+        1,
+        emailQueueCleanupRunRepository.findAll().stream().filter(run -> run.isAutomatic()).count());
+
+    dispatchGuard.runDispatch(() -> emailQueueCleanupService.runManually());
+    assertEquals(3, emailQueueCleanupRunRepository.count());
+    assertEquals(
+        1, emailQueueCleanupRunRepository.findAll().stream().filter(run -> run.isBusy()).count());
+  }
+
+  @Test
+  void retentionRemovesOnlyOlderRunsAndPreservesLatestState() {
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS)).thenReturn(30);
+    emailQueueCleanupService.runManually();
+    cleanupClock.advance(Duration.ofDays(30));
+    emailQueueCleanupService.deleteExpiredRunHistory();
+    assertEquals(1, emailQueueCleanupRunRepository.count());
+
+    cleanupClock.advance(Duration.ofSeconds(1));
+    emailQueueCleanupService.runManually();
+    EmailQueueCleanupService.CleanupResult latestResult = emailQueueCleanupService.latestResult();
+    emailQueueCleanupService.deleteExpiredRunHistory();
+    assertEquals(1, emailQueueCleanupRunRepository.count());
+    assertEquals(
+        LocalDateTime.now(cleanupClock),
+        emailQueueCleanupRunRepository.findAll().getFirst().getAttemptedAt());
+    assertEquals(latestResult, emailQueueCleanupService.latestResult());
+
+    when(configService.getInteger(ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS)).thenReturn(0);
+    assertThrows(IllegalArgumentException.class, emailQueueCleanupService::deleteExpiredRunHistory);
+    assertEquals(1, emailQueueCleanupRunRepository.count());
   }
 
   private EmailQueueEntity createRequest(EmailStatus status, Duration claimAge) {
@@ -253,6 +303,7 @@ class EmailQueueCleanupPersistenceTest {
     EmailQueueCleanupService emailQueueCleanupService(
         EmailQueueRepository queueRepository,
         EmailQueueCleanupStateRepository stateRepository,
+        EmailQueueCleanupRunRepository emailQueueCleanupRunRepository,
         ConfigService configService,
         AdminRolePolicy adminRolePolicy,
         EmailQueueDispatchGuard dispatchGuard,
@@ -261,6 +312,7 @@ class EmailQueueCleanupPersistenceTest {
       return new EmailQueueCleanupService(
           queueRepository,
           stateRepository,
+          emailQueueCleanupRunRepository,
           configService,
           adminRolePolicy,
           dispatchGuard,

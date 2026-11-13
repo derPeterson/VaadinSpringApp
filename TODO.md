@@ -2,6 +2,9 @@
 
 ## Laufende Umsetzung
 
+- [ ] [Neue Nachtaufgaben](docs/planung/nachtaufgaben.md) sammeln und abstimmen.
+  Umsetzung und Tests erst nach ausdrücklicher Startfreigabe beginnen.
+
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise
   nach Freigabe umsetzen. Der fehlende aktuelle Sonar-Nachweis steht im Plan.
@@ -9,6 +12,12 @@
   Pakete bleiben bis zu einer späteren Freigabe offen.
 
 ## Künftige Anwendungsfunktionen
+
+- [ ] Eine sichtbare Verlaufsliste für Bereinigungsläufe der E-Mail-Queue gemeinsam
+  entwerfen. Darstellung, Umfang und Bedienung vor der Umsetzung abstimmen.
+  Die technische Speicherung und konfigurierbare Aufbewahrung gehören zu den
+  [gesammelten Nachtaufgaben](docs/planung/nachtaufgaben.md), die History-Oberfläche
+  ausdrücklich nicht.
 
 - [ ] Nutzen und Aufwand der Rolle GUEST bei späteren Funktionserweiterungen
   erneut bewerten. Ursprünglich für „Als Gast anmelden“ gedacht, aktuell ohne

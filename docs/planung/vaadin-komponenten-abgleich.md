@@ -38,6 +38,13 @@ Ergebnisanzeige in der Mailqueue-Konfiguration. Automatisierte Nachweise und
 verbleibender Testbedarf stehen im [Prüfstand](../status.md) und im
 [Testbedarf](../testbedarf.md). Kein Commit ohne entsprechenden Auftrag.
 
+Die abgestimmte Variante A ist als innere Konfigurationskarte unter dem
+Superadmin-Reiter Assistenten umgesetzt. Die fünf allgemeinen Einstellungen
+bleiben im Reiter Allgemein. Der neue Historienwert ist unabhängig von der
+Automatik bedienbar. Die zugehörigen Aufgaben und die noch offene gemeinsame
+Sichtung stehen in der [Nachtliste](nachtaufgaben.md). Die sichtbare Laufhistorie
+bleibt eine spätere Aufgabe in [TODO](../../TODO.md).
+
 ### Segmentierte Auswahl vereinheitlichen
 
 - Native `Tabs`/`Tab` sind über `CosmosSegmentedTabs` in Profilbild, Posteingang,
