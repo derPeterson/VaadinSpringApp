@@ -2,8 +2,12 @@
 
 ## Laufende Umsetzung
 
-- [ ] [Neue Nachtaufgaben](docs/planung/nachtaufgaben.md) sammeln und abstimmen.
-  Umsetzung und Tests erst nach ausdrücklicher Startfreigabe beginnen.
+- [ ] [Freigegebene Nachtaufgaben](docs/planung/nachtaufgaben.md) abarbeiten und
+  die gemeinsame Sichtung der Ergebnisse erhalten. Die Release-, Passkey- und
+  Hostingpakete umfassen ausschließlich Analyse und Planung.
+- [ ] [Release-Ablauf](docs/planung/releases.md) und [Was ist neu?](docs/planung/neuigkeiten.md)
+  gemeinsam durchlesen und die spätere Umsetzung festlegen. Noch keine
+  Versionsumstellung oder Neuigkeiten-Oberfläche freigegeben.
 
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise

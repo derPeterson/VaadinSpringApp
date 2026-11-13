@@ -25,6 +25,10 @@ Browser-Testkompilierung geprüft. Der gezielte Browsernachweis folgt nach
 Einrichtung des neuen Ablageorts aus Paket 5 und steht im zentralen Testbedarf.
 Die gemeinsame Sichtung der fertigen Karte bleibt offen.
 
+Für Paket 2 liegen [Release-Ablauf und Versionierung](releases.md) sowie
+[Was ist neu?](neuigkeiten.md) zur gemeinsamen Durchsicht vor. Versionsnummern,
+Skills und Anwendung wurden für diese beiden Planungen nicht verändert.
+
 ## Abarbeitungsliste
 
 ### 1. E-Mail-Queue in zwei Tabs gliedern

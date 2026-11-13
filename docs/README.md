@@ -29,6 +29,11 @@ in der [Browser-Testanleitung](../browser-tests/README.md).
 
 ## Offene Arbeiten
 
+Die geplante [Versionierung mit Release-Ablauf](planung/releases.md) und der
+darauf aufbauende [Neuigkeitenbereich](planung/neuigkeiten.md) sind zur gemeinsamen
+Durchsicht ausgearbeitet. Sie sind noch nicht umgesetzt. Der übergreifende
+Arbeitsauftrag steht in der [Nachtliste](planung/nachtaufgaben.md).
+
 Die Designübernahme für Besucher, angemeldetes Portal und Administration ist
 umgesetzt und abgenommen. Die freigegebenen Bausteine stehen im [Theme-Standard](theme.md).
 Für neue Designaufgaben dient die laufende Vaadin-Oberfläche als Ausgangspunkt.
