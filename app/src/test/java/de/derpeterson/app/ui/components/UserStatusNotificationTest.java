@@ -48,9 +48,6 @@ class UserStatusNotificationTest {
   private UI testUi;
   private VaadinSession vaadinSession;
 
-  // Seitenrahmen, der das Sprachereignis verarbeitet
-  private TrackedUserAppLayout trackedUserAppLayout;
-
   private final CustomI18NProvider customI18NProvider = new CustomI18NProvider();
   private final MessageProperties messageProperties = new MessageProperties(customI18NProvider);
 
@@ -75,14 +72,14 @@ class UserStatusNotificationTest {
     SecurityService securityService = mock(SecurityService.class);
     when(securityService.getCurrentUser(any(HttpServletRequest.class)))
         .thenReturn(Optional.empty());
-    trackedUserAppLayout =
-        new TrackedUserAppLayout(
-            messageProperties,
-            securityService,
-            mock(UserService.class),
-            new UserStatusBroadcaster(),
-            mock(HttpServletRequest.class),
-            mock(UserAvatarService.class)) {};
+    // Der Konstruktor registriert den Sprachlistener; die Test-UI hält ihn und den Seitenrahmen.
+    new TrackedUserAppLayout(
+        messageProperties,
+        securityService,
+        mock(UserService.class),
+        new UserStatusBroadcaster(),
+        mock(HttpServletRequest.class),
+        mock(UserAvatarService.class)) {};
   }
 
   @AfterEach
@@ -92,7 +89,6 @@ class UserStatusNotificationTest {
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
 
-    trackedUserAppLayout = null;
     testUi = null;
     vaadinSession = null;
   }

@@ -321,6 +321,43 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     firstNameInputLocator.fill("Temporary draft");
 
     accountPage.section("account-tab-security");
+    assertUnsavedChangesDialogAppearance(unsavedChangesPrompt, viewportWidth);
+    unsavedChangesPrompt.keepEditing();
+    assertThat(firstNameInputLocator).hasValue("Temporary draft");
+
+    accountPage.section("account-tab-security");
+    unsavedChangesPrompt.root().locator(".cosmos-overlay-close").click();
+    assertThat(unsavedChangesPrompt.root()).hasCount(0);
+    assertThat(firstNameInputLocator).hasValue("Temporary draft");
+
+    accountPage.section("account-tab-security");
+    assertThat(unsavedChangesPrompt.root().locator(".cosmos-overlay-close")).isVisible();
+    browserPage.keyboard().press("Escape");
+    assertThat(unsavedChangesPrompt.root()).hasCount(0);
+    assertThat(firstNameInputLocator).hasValue("Temporary draft");
+
+    accountPage.section("account-tab-security");
+    unsavedChangesPrompt.discard();
+    accountPage.section("account-tab-profile");
+    assertThat(firstNameInputLocator).hasValue(savedFirstName);
+
+    firstNameInputLocator.fill("");
+    accountPage.save();
+    assertThat(accountPage.host("account-first-name")).hasAttribute("invalid", "");
+    unsavedChangesPrompt.assertBrowserReloadCanBeCancelled();
+
+    firstNameInputLocator.fill("Saved profile");
+    accountPage.save();
+    unsavedChangesPrompt.assertBrowserReloadHasNoWarning();
+    assertThat(firstNameInputLocator).hasValue("Saved profile");
+
+    firstNameInputLocator.fill("Discarded by reload");
+    unsavedChangesPrompt.assertBrowserReloadCanDiscardChanges();
+    assertThat(firstNameInputLocator).hasValue("Saved profile");
+  }
+
+  private void assertUnsavedChangesDialogAppearance(
+      UnsavedChangesPrompt unsavedChangesPrompt, int viewportWidth) {
     assertThat(unsavedChangesPrompt.root().locator("[part=overlay]").first())
         .hasCSS("background-color", "rgb(14, 23, 38)");
     assertThat(unsavedChangesPrompt.root().locator(".cosmos-panel-icon vaadin-icon"))
@@ -357,38 +394,6 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(discardButtonLocator).hasCSS("border-color", "rgb(245, 158, 11)");
     keepEditingButtonLocator.hover();
     assertThat(keepEditingButtonLocator).hasCSS("background-color", "rgb(0, 120, 180)");
-    unsavedChangesPrompt.keepEditing();
-    assertThat(firstNameInputLocator).hasValue("Temporary draft");
-
-    accountPage.section("account-tab-security");
-    unsavedChangesPrompt.root().locator(".cosmos-overlay-close").click();
-    assertThat(unsavedChangesPrompt.root()).hasCount(0);
-    assertThat(firstNameInputLocator).hasValue("Temporary draft");
-
-    accountPage.section("account-tab-security");
-    assertThat(unsavedChangesPrompt.root().locator(".cosmos-overlay-close")).isVisible();
-    browserPage.keyboard().press("Escape");
-    assertThat(unsavedChangesPrompt.root()).hasCount(0);
-    assertThat(firstNameInputLocator).hasValue("Temporary draft");
-
-    accountPage.section("account-tab-security");
-    unsavedChangesPrompt.discard();
-    accountPage.section("account-tab-profile");
-    assertThat(firstNameInputLocator).hasValue(savedFirstName);
-
-    firstNameInputLocator.fill("");
-    accountPage.save();
-    assertThat(accountPage.host("account-first-name")).hasAttribute("invalid", "");
-    unsavedChangesPrompt.assertBrowserReloadCanBeCancelled();
-
-    firstNameInputLocator.fill("Saved profile");
-    accountPage.save();
-    unsavedChangesPrompt.assertBrowserReloadHasNoWarning();
-    assertThat(firstNameInputLocator).hasValue("Saved profile");
-
-    firstNameInputLocator.fill("Discarded by reload");
-    unsavedChangesPrompt.assertBrowserReloadCanDiscardChanges();
-    assertThat(firstNameInputLocator).hasValue("Saved profile");
   }
 
   @Test

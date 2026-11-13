@@ -51,7 +51,7 @@ class EmailQueueDispatchGuardTest {
   }
 
   @Test
-  void cancellationDoesNotPretendAnUninterruptibleTransportHasStopped() throws Exception {
+  void cancellationDoesNotPretendAnUninterruptibleTransportHasStopped() {
     EmailQueueDispatchGuard dispatchGuard = createFileDispatchGuard();
     CountDownLatch transportStarted = new CountDownLatch(1);
     CountDownLatch releaseTransport = new CountDownLatch(1);
@@ -65,7 +65,7 @@ class EmailQueueDispatchGuardTest {
                 while (releaseTransport.getCount() != 0) {
                   try {
                     releaseTransport.await();
-                  } catch (InterruptedException ignoredInterrupt) {
+                  } catch (InterruptedException _) {
                     // Modelliert einen SMTP-Aufruf, der trotz Future.cancel weiterläuft.
                   }
                 }

@@ -5,6 +5,7 @@ import static de.derpeterson.app.config.AppRouteConstants.ACCOUNT_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
+import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -199,7 +200,7 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
     attachBreadcrumbScreenshot("two-factor-locked", viewportWidth);
     browserPage.navigate(path("admin"));
     assertLockedAccountBreadcrumbs(uiTexts);
-    assertThat(browserPage).hasURL(Pattern.compile(".*/two-factor(?:\\?.*)?$"));
+    assertThat(browserPage).hasURL(urlPattern("two-factor"));
     UiActions.complete(browserPage, () -> browserPage.locator("#two-factor-cancel").click());
     assertThat(browserPage).hasURL(Pattern.compile(".*/account\\?section=security&tab=portal$"));
     browserPage.navigate(path("recovery-help"));

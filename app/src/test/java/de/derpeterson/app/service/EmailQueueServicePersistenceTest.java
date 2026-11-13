@@ -149,14 +149,14 @@ class EmailQueueServicePersistenceTest {
     if (transportFails) {
       doThrow(new MailAuthenticationException("Test SMTP rejection"))
           .when(mail)
-          .sendEmailTo(eq("deleted@example.test"), eq("Deleted"), eq("Confirmation"));
+          .sendEmailTo("deleted@example.test", "Deleted", "Confirmation");
     }
 
     service.processQueue();
 
     assertFalse(emailQueueRepository.existsById(queuedConfirmation.getId()));
     assertEquals(0, adminAttempts.count());
-    verify(mail).sendEmailTo(eq("deleted@example.test"), eq("Deleted"), eq("Confirmation"));
+    verify(mail).sendEmailTo("deleted@example.test", "Deleted", "Confirmation");
   }
 
   @ParameterizedTest

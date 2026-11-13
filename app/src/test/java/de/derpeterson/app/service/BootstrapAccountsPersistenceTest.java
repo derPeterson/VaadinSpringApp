@@ -185,14 +185,15 @@ class BootstrapAccountsPersistenceTest {
   }
 
   @Test
-  void missingInitialVerificationMailRollsBackAllBootstrapAccounts() throws Exception {
+  void missingInitialVerificationMailRollsBackAllBootstrapAccounts() {
     Account realUserAccount = account("real@example.test");
     realUserAccount.setEmailVerificationRequired(true);
     settings.setUsers(List.of(account("unchecked@example.test"), realUserAccount));
     DatabaseInitializer databaseInitializer = initializer(new BCryptPasswordEncoder(4));
     databaseInitializer.configureVerificationMail(mock(VerificationService.class));
 
-    assertThrows(IllegalStateException.class, () -> databaseInitializer.initDatabase().run());
+    CommandLineRunner initializationRunner = databaseInitializer.initDatabase();
+    assertThrows(IllegalStateException.class, initializationRunner::run);
     assertEquals(0, userRepository.count());
     assertEquals(0, roleRepository.count());
   }

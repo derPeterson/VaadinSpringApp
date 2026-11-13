@@ -219,16 +219,7 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       String unavailableColor = internal.evaluate("el => getComputedStyle(el).color").toString();
       assertNotEquals(availableColor, unavailableColor);
       assertEquals(unavailableColor, smtp.evaluate("el => getComputedStyle(el).color"));
-      assertThat(compose.title()).isDisabled();
-      assertThat(compose.body()).isDisabled();
-      assertThat(compose.everyone()).isDisabled();
-      assertThat(compose.review()).isDisabled();
-      assertThat(compose.send()).isDisabled();
-      assertThat(mail.input(uiTexts.getAdminMailRecipient())).isDisabled();
-      assertThat(mail.input(uiTexts.getAdminMailSubject())).isDisabled();
-      assertThat(mail.input(uiTexts.getAdminMailBody())).isDisabled();
-      assertThat(mailPage.locator(".cosmos-mail-card vaadin-button.cosmos-config-info").first())
-          .isDisabled();
+      assertMailAndNotificationEditorsDisabled(compose, mail, mailPage);
       settings.input(uiTexts.getAdminConfigEntryMaintenanceMode()).setChecked(false);
       settings.save();
 
@@ -251,5 +242,21 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
       mailPage.close();
       settingsPage.close();
     }
+  }
+
+  private void assertMailAndNotificationEditorsDisabled(
+      NotificationComposePage composePage, AdminMailPage mailTestPage, Page mailBrowserPage) {
+    assertThat(composePage.title()).isDisabled();
+    assertThat(composePage.body()).isDisabled();
+    assertThat(composePage.everyone()).isDisabled();
+    assertThat(composePage.review()).isDisabled();
+    assertThat(composePage.send()).isDisabled();
+
+    assertThat(mailTestPage.input(uiTexts.getAdminMailRecipient())).isDisabled();
+    assertThat(mailTestPage.input(uiTexts.getAdminMailSubject())).isDisabled();
+    assertThat(mailTestPage.input(uiTexts.getAdminMailBody())).isDisabled();
+    assertThat(
+            mailBrowserPage.locator(".cosmos-mail-card vaadin-button.cosmos-config-info").first())
+        .isDisabled();
   }
 }

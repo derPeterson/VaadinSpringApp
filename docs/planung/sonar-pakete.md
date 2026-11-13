@@ -1,26 +1,12 @@
 # Offene Sonar-Pakete zur Nachtintegration
 
-Grundlage: vollständige Serveranalyse `ee430dcd-5c8f-4816-8849-37d348fe0aaa`
-von main `18cd8ba0`. 51 offene Codehinweise vor den beiden begründeten
-Vererbungsentscheidungen, keine Bugs, Schwachstellen oder Hotspots.
-Die neun Fachlogikhinweise sind im Nachscan behoben. Gate bleibt rot wegen neuer
-Hinweise; Coverage und Duplikation liegen innerhalb des Gates. Bestehende
-Ausnahmen unverändert lassen. Der vollständige lokale Export liegt ignoriert
-unter `sonar-findings.json`.
-
-## B. UI-Bausteine und Gliederung — 22 Hinweise
-
-- Serialisierbarkeit von Komponentenzustand fachlich prüfen und erhalten.
-- Kognitive Komplexität bei Konfigurationsaufbau/-speicherung, Benutzerformular
-  und Ticketnavigation durch fachliche Teilmethoden reduzieren; keine Prüfungen,
-  Aufrufreihenfolgen oder UI-Zustände entfernen.
-- Gemeinsame Attribute/Literale, lokale Verzweigungen, Imports und Typzugriffe
-  bereinigen; Breadcrumb-Vertrag in den passenden Datentyp legen.
-- Die zwei Hinweise zur Vererbungstiefe von AccountView/AdminView anhand der
-  tatsächlichen Vaadin-Hierarchie prüfen. Keine gemeinsame Architektur nur für
-  eine Kennzahl ersetzen; eine fachlich begründete Ausnahme ausdrücklich dokumentieren.
-- Nachweise: vorhandene betroffene UI-/Service-JUnit-Fälle, gezielte Browserfälle
-  soweit erforderlich und Gesamt-QA; eigener Review/Commit und main-Nachscan.
+Grundlage: vollständige Serveranalyse `544b14d1-1efc-4707-85f5-032db83807a1`
+von main `3fe5f121`. Noch 29 offene Testhinweise, keine offenen Hinweise im
+Anwendungscode, keine Bugs, Schwachstellen oder Hotspots. Die Codekorrekturen
+von Paket A und B sind bestätigt. Die zwei bewussten Ausnahmen zur Vaadin-
+Vererbungstiefe stehen mit konkreter Begründung direkt am jeweiligen Finding.
+Gate bleibt wegen der Testhinweise rot. Der vollständige lokale Export liegt
+ignoriert unter `sonar-findings.json`.
 
 ## C. Tests und Browserhelfer — 29 Hinweise
 

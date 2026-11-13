@@ -43,7 +43,8 @@ class PendingEmailVerificationViewTest {
   private PendingEmailVerificationView createVerificationView(String languageCode) {
     vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.hasLock()).thenReturn(true);
-    when(vaadinSession.getConfiguration()).thenReturn(mock(DeploymentConfiguration.class));
+    DeploymentConfiguration deploymentConfiguration = mock(DeploymentConfiguration.class);
+    when(vaadinSession.getConfiguration()).thenReturn(deploymentConfiguration);
     when(vaadinSession.getLocale()).thenReturn(Locale.forLanguageTag(languageCode));
     VaadinSession.setCurrent(vaadinSession);
     testUi = new UI();

@@ -76,9 +76,10 @@ class ConfigServiceTest {
       assertThrows(
           AccessDeniedException.class,
           () -> protectedConfigService.getForAdministration(configEntry));
+      String defaultConfigValue = configEntry.getDefaultValueString();
       assertThrows(
           AccessDeniedException.class,
-          () -> protectedConfigService.set(configEntry, configEntry.getDefaultValueString()));
+          () -> protectedConfigService.set(configEntry, defaultConfigValue));
     }
     verifyNoInteractions(configRepository, transactionManager);
   }

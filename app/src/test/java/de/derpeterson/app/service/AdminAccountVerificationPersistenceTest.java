@@ -140,9 +140,10 @@ class AdminAccountVerificationPersistenceTest {
         .when(adminRolePolicy)
         .requireSuperadmin();
 
+    UserEntity newAccountUserEntity = newAccount();
     assertThrows(
         AccessDeniedException.class,
-        () -> adminAccountMailService.createUser(newAccount(), "KnownPassword!", true));
+        () -> adminAccountMailService.createUser(newAccountUserEntity, "KnownPassword!", true));
     assertEquals(0, userRepository.count());
     assertEquals(0, emailQueueRepository.count());
   }
@@ -212,11 +213,11 @@ class AdminAccountVerificationPersistenceTest {
         TokenStatus.INACTIVE,
         verificationTokenRepository.findByToken(oldVerificationToken).orElseThrow().getStatus());
     assertEquals(0, emailQueueRepository.count());
+
+    Long accountUserId = accountUserEntity.getId();
     assertThrows(
         AccessDeniedException.class,
-        () ->
-            adminAccountMailService.resendVerification(
-                accountUserEntity.getId(), "pending@example.test"));
+        () -> adminAccountMailService.resendVerification(accountUserId, "pending@example.test"));
     assertTrue(
         adminAccountMailService.resendVerification(accountUserEntity.getId(), "new@example.test"));
     String queuedRecipientEmail =

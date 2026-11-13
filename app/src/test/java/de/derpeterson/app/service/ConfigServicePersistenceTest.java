@@ -120,11 +120,11 @@ class ConfigServicePersistenceTest {
       assertThrows(
           AccessDeniedException.class,
           () -> securedConfigService.set(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS, "99"));
+      Map<ConfigEntry, String> nonSmtpConfigValues =
+          Map.of(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS, "99");
       assertThrows(
           IllegalArgumentException.class,
-          () ->
-              securedConfigService.saveSmtpSettings(
-                  Map.of(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS, "99")));
+          () -> securedConfigService.saveSmtpSettings(nonSmtpConfigValues));
       assertEquals(
           roleName.equals("ROLE_SUPERADMIN") ? 60 : 30,
           securedConfigService.getInteger(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS));

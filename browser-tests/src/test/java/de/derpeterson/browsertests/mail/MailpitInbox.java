@@ -168,10 +168,10 @@ public final class MailpitInbox {
           .hasAttribute("href", reactivationLinkLocator.getAttribute("href"));
       for (int viewportWidth : new int[] {1280, 390}) {
         messagePage.setViewportSize(viewportWidth, 900);
-        assertTrue(
-            Boolean.TRUE.equals(
-                messagePage.evaluate(
-                    "() => document.documentElement.scrollWidth <= window.innerWidth")));
+        assertEquals(
+            Boolean.TRUE,
+            messagePage.evaluate(
+                "() => document.documentElement.scrollWidth <= window.innerWidth"));
         AllurePlaywright.attachScreenshot(
             "Kontostatus-Mail bei " + viewportWidth + " px", messagePage);
       }
@@ -346,14 +346,13 @@ public final class MailpitInbox {
         assertThat(linkFrameLocator).hasCSS("border-top-color", "rgb(44, 55, 81)");
         assertThat(linkFrameLocator).hasCSS("border-top-width", "1px");
         assertThat(linkFrameLocator).hasCSS("background-color", "rgb(9, 17, 32)");
-        assertTrue(
-            Boolean.TRUE.equals(
-                linkFrameLocator.evaluate(
-                    "element => element.scrollWidth <= element.clientWidth + 1")));
+        assertEquals(
+            Boolean.TRUE,
+            linkFrameLocator.evaluate("element => element.scrollWidth <= element.clientWidth + 1"));
       }
-      assertTrue(
-          Boolean.TRUE.equals(
-              mailPage.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth")),
+      assertEquals(
+          Boolean.TRUE,
+          mailPage.evaluate("() => document.documentElement.scrollWidth <= window.innerWidth"),
           "Mailinhalt läuft horizontal über");
       AllurePlaywright.attachScreenshot(screenshotName + " bei " + viewportWidth + " px", mailPage);
     }

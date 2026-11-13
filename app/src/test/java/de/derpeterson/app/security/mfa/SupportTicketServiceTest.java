@@ -846,16 +846,19 @@ class SupportTicketServiceTest {
         liveTicketView.messages().stream()
             .anyMatch(reply -> reply.body().equals("Neue Information")));
     if (developmentAccount) {
+      Long createdTicketId = createdTicket.id();
+      Ticket selectedLiveTicket = liveTicketView.selected();
+      Long selectedTicketId = selectedLiveTicket.id();
+      Long selectedTicketVersion = selectedLiveTicket.version();
+
       assertThrows(
           AccessDeniedException.class,
-          () -> supportTicketService.validateInstructionPreview(administrator, createdTicket.id()));
+          () -> supportTicketService.validateInstructionPreview(administrator, createdTicketId));
       assertThrows(
           AccessDeniedException.class,
           () ->
               supportTicketService.sendTicketRecoveryInstructions(
-                  administrator,
-                  liveTicketView.selected().id(),
-                  liveTicketView.selected().version()));
+                  administrator, selectedTicketId, selectedTicketVersion));
       verify(emailQueueService, never()).addAddressedNotification(any(), any(), any(), any());
     } else {
       supportTicketService.validateInstructionPreview(administrator, createdTicket.id());

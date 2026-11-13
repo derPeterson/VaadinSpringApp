@@ -264,9 +264,10 @@ class AccountLifecycleServicePersistenceTest {
         .addEmailToQueue(any(), any(), any(), eq(EmailType.ACCOUNT_REACTIVATION));
     assertFalse(
         accountLifecycleService.requestReactivationLink(accountUser.getId(), credentialVersion));
+    Long accountUserId = accountUser.getId();
     assertThrows(
         AccessDeniedException.class,
-        () -> accountLifecycleService.requestReactivationLink(accountUser.getId(), "old-proof"));
+        () -> accountLifecycleService.requestReactivationLink(accountUserId, "old-proof"));
 
     UserEntity disabledAccount = userRepository.findById(accountUser.getId()).orElseThrow();
     disabledAccount.setAdministrativelyBlocked(true);
@@ -275,9 +276,7 @@ class AccountLifecycleServicePersistenceTest {
         userRepository.findSecurityUser(accountUser.getEmail()).getFirst().getSelfDeactivated());
     assertThrows(
         AccessDeniedException.class,
-        () ->
-            accountLifecycleService.requestReactivationLink(
-                accountUser.getId(), credentialVersion));
+        () -> accountLifecycleService.requestReactivationLink(accountUserId, credentialVersion));
   }
 
   @Test
@@ -454,13 +453,12 @@ class AccountLifecycleServicePersistenceTest {
         .when(emailQueueService)
         .addAccountDeletionConfirmation(any(), any(), any());
 
+    MockHttpServletRequest deletionHttpRequest = authenticatedAccountRequest(deletedAccountUser);
     assertThrows(
         IllegalStateException.class,
         () ->
             accountLifecycleService.changeOwnAccount(
-                authenticatedAccountRequest(deletedAccountUser),
-                AccountAction.DELETE,
-                "correct-password"));
+                deletionHttpRequest, AccountAction.DELETE, "correct-password"));
 
     assertTrue(userRepository.existsById(deletedAccountUser.getId()));
     assertEquals(
@@ -701,7 +699,7 @@ class AccountLifecycleServicePersistenceTest {
         "INSERT INTO two_factor_challenges (id, version, user_id, session_digest, access_version, factor_revision, policy_revision, action, kind, created_at, expires_at, consumed, attempts, operator_enrollment) VALUES (?, 0, ?, 'test-session', ?, ?, 0, 'LOGIN', 'ACTION', ?, ?, false, 0, false)",
         UUID.randomUUID(),
         accountUserId,
-        accountUser.getAccessVersion().toString(),
+        accountUser.getAccessVersion(),
         UUID.randomUUID(),
         createdAt,
         createdAt.plusSeconds(600));
