@@ -196,7 +196,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
             : accountUserEntity.getLastName().strip();
     avatarDisplayName = (firstName + " " + lastName).strip();
     avatarInitialsLabel.removeAll();
-    avatarInitialsLabel.setText(OverlayUserIcon.initialsFor(firstName, lastName));
+    avatarInitialsLabel.setText(CosmosAvatar.initialsFor(firstName, lastName));
     if (avatarInitialsLabel.getText().isEmpty()) {
       avatarInitialsLabel.add(AppIcon.USER.create());
     }

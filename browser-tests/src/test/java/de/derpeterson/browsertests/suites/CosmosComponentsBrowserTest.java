@@ -1419,7 +1419,9 @@ public class CosmosComponentsBrowserTest extends BrowserFixture {
       assertThat(profileButtonLocator).hasCSS("cursor", "pointer");
       profileButtonLocator.hover();
       assertThat(profileButtonLocator).hasCSS("background-color", "rgba(0, 0, 0, 0)");
-      assertThat(profileButtonLocator.locator(".cosmos-avatar-initials"))
+      assertThat(
+              profileButtonLocator.locator(
+                  ":is(.cosmos-avatar-initials, vaadin-avatar [part=abbr])"))
           .hasCSS("cursor", "pointer");
       for (String buttonId :
           new String[] {"account-header-notifications", "account-header-settings"}) {

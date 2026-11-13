@@ -454,13 +454,6 @@ vaadin-select[theme~="cosmos"] {
     font-size: var(--user-status-label-font-size, var(--lumo-font-size-m));
 }
 
-.cosmos-avatar-circle > .cosmos-avatar-photo {
-    display: block;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
 /* Mittelpunkt bei 45 Grad auf der Rahmenmitte: (1 - 1/sqrt(2))/2 der
  * Avatargröße plus halbe Rahmenstärke entlang der Diagonalen. Die optische
  * Korrektur rückt das Zeichen leicht nach außen. */
@@ -949,7 +942,7 @@ vaadin-select[theme~=cosmos-reference][theme~=cosmos-status] vaadin-select-item 
     width: 100%;
 }
 
-.cosmos-reference-overlay .portal-menu-avatar .cosmos-avatar-initials {
+.cosmos-reference-overlay .portal-menu-avatar .cosmos-avatar-circle {
     color: var(--cosmos-reference-text);
 }
 

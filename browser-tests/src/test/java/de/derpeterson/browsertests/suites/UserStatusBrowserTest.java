@@ -40,6 +40,7 @@ public class UserStatusBrowserTest extends BrowserFixture {
       4. Beschäftigt einstellen, Seite neu laden und gespeicherten aktuellen Wert prüfen.
       **Erwartet:** Ausgewählter Wert, nicht versteckte Optionsliste, zeigt den Status in beiden Tabs.
       """)
+  @Tag("avatars")
   void manualStatusIsStoredAndPushedToAnotherTab() {
     String email = createUser();
     try (BrowserActor browserActor = new BrowserActor(testBrowser)) {

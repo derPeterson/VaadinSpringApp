@@ -20,14 +20,18 @@ import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.AvatarAppearanceChecks;
 import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationInboxPage;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Allure;
+import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Description;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.ArrayDeque;
@@ -593,6 +597,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @Tag("follow-up-regression")
   @Tag("ticket-browser-detail")
   @DisplayName("MFA-20: Ticketzähler und Glocke folgen Zuständigkeit, Beobachtung und Abschluss")
+  @Tag("avatars")
   void ticketUnreadAndNotificationsFollowAssignmentAndClosure(int width) {
     LoginPage login = new LoginPage(browserPage);
     login.open();
@@ -1156,6 +1161,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         "Browser Testuser",
         requesterEmail,
         false);
+    AvatarAppearanceChecks.captureAvatar(
+        requester.locator(".cosmos-user-avatar"),
+        "Avatar Ticket Antragsteller " + browserPage.viewportSize().width);
+    AvatarAppearanceChecks.captureAvatar(
+        foreign.locator(".cosmos-user-avatar"),
+        "Avatar Ticket Bearbeiter " + browserPage.viewportSize().width);
   }
 
   private void assertIdentityTooltip(
@@ -1484,12 +1495,12 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         .hasValue("Dieser Entwurf bleibt beim Vergrößern erhalten.");
     Locator requesterAvatar = ticketPanel.locator("#support-detail-requester .cosmos-user-avatar");
 
-    assertThat(requesterAvatar.locator(".cosmos-avatar-initials")).hasCSS("cursor", "default");
+    assertThat(requesterAvatar.locator(".cosmos-avatar-circle")).hasCSS("cursor", "default");
     requesterAvatar.hover();
 
     assertThat(browserPage.locator("vaadin-tooltip-overlay[opened] [part=overlay]"))
         .hasCSS("pointer-events", "none");
-    assertThat(requesterAvatar.locator(".cosmos-avatar-initials")).hasCSS("cursor", "default");
+    assertThat(requesterAvatar.locator(".cosmos-avatar-circle")).hasCSS("cursor", "default");
     Locator reload = browserPage.locator("#support-reload");
 
     assertThat(reload).hasCSS("cursor", "pointer");
@@ -2931,13 +2942,14 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @Tag("follow-up-regression")
   @DisplayName("MFA-18: Codebestätigung, geschützter Faktorwechsel und Hilfe folgen Variante A")
   @Tag("component-follow-up")
+  @Tag("avatars")
   void confirmationRecoveryAndHelpUseNativeControls(int width) {
     browserPage.setViewportSize(width, 900);
     LoginPage login = new LoginPage(browserPage);
     login.open();
     login.signIn(BrowserTestAccounts.SUPERADMIN_EMAIL, BrowserTestAccounts.SUPERADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
-    String email = "confirmation-long-" + UUID.randomUUID() + "@example.test";
+    String email = "confirmation-long-" + width + "-" + uiTexts.language() + "@example.test";
     String firstName = "Alexandra Maria Elisabeth";
     String lastName = "Beispielmann Sonnenschein";
     AdminUsersPage users = new AdminUsersPage(browserPage);
@@ -3072,6 +3084,50 @@ public class TwoFactorBrowserTest extends BrowserFixture {
 
     assertTrue(languageBounds.x + languageBounds.width <= identityBounds.x);
     assertTrue(identityBounds.x + identityBounds.width <= browserPage.viewportSize().width);
+    if (URI.create(browserPage.url()).getPath().equals("/two-factor")) {
+      attachReducedHeaderAvatarEvidence(identity);
+    }
+  }
+
+  private void attachReducedHeaderAvatarEvidence(Locator headerIdentityLocator) {
+    int viewportWidth = browserPage.viewportSize().width;
+    Locator headerAvatarLocator = headerIdentityLocator.locator(".cosmos-user-avatar");
+    browserPage.locator("#two-factor-code input").focus();
+    assertEquals("vaadin-avatar", headerAvatarLocator.evaluate("avatar => avatar.localName"));
+    assertThat(headerAvatarLocator).hasAttribute("aria-hidden", "true");
+    assertThat(headerAvatarLocator).hasAttribute("tabindex", "-1");
+    assertThat(headerAvatarLocator).hasJSProperty("withTooltip", false);
+    Allure.attachment(
+        "2FA-Avatar " + viewportWidth,
+        "image/png",
+        new ByteArrayInputStream(headerAvatarLocator.screenshot()),
+        AttachmentOptions.empty());
+    Allure.attachment(
+        "2FA-Header " + viewportWidth,
+        "image/png",
+        new ByteArrayInputStream(browserPage.locator(".public-header").screenshot()),
+        AttachmentOptions.empty());
+
+    String avatarMeasurementsJson =
+        (String)
+            headerAvatarLocator.evaluate(
+                """
+                avatar => {
+                  const bounds = avatar.getBoundingClientRect();
+                  const circle = avatar.querySelector('.cosmos-avatar-circle') || avatar;
+                  const style = getComputedStyle(circle);
+                  const initials = avatar.querySelector('.cosmos-avatar-initials')
+                      || circle.shadowRoot.querySelector('[part=abbr]');
+                  const textStyle = getComputedStyle(initials);
+                  return JSON.stringify({width: bounds.width, height: bounds.height,
+                    x: bounds.x, y: bounds.y, border: style.border,
+                    background: style.backgroundColor, radius: style.borderRadius,
+                    color: textStyle.color, weight: textStyle.fontWeight,
+                    initials: initials.textContent.trim()});
+                }
+                """);
+    Allure.attachment(
+        "2FA-Avatar-Messwerte " + viewportWidth, "application/json", avatarMeasurementsJson);
   }
 
   @ParameterizedTest

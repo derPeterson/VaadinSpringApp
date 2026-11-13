@@ -1027,7 +1027,7 @@ für Klassen und Struktur; nicht nur einzelne sichtbare Maße nachbauen.
 | Panels | Vorhandene Cardbasis und `cosmos-panel-card`, Header, Icon, Heading, Titel, Beschreibung, Footer und Aktionen | cosmos-admin.css |
 | Tabellen | Vaadin Grid im Cosmos-Theme, gemeinsame Zeilen-/Header-/Hoverregeln | cosmos-theme.css |
 | Dialoge und Schließen | Bestehende Dialogstruktur, Overlay-/Dialogtokens und `cosmos-overlay-close` | cosmos-theme.css / cosmos-admin.css / cosmos-shell.css |
-| Konto und Avatare | Bestehende Konto-/Profilbild-/Sitzungskomponenten und `cosmos-avatar-*`-Tokens | cosmos-account.css / cosmos-shell.css |
+| Konto und Avatare | `CosmosAvatar` als nativer Bildkern; bestehende Konto-/Profilbild-/Sitzungskomponenten und `cosmos-avatar-*`-Tokens | cosmos-avatar.css / cosmos-account.css / cosmos-shell.css |
 | Benachrichtigungen | Bestehende Vorschau-/Inbox-/Detail-/Versandkomponenten; Controls und Panelteile aus dem gemeinsamen Theme | cosmos-notifications.css |
 
 Für neue Panels die vorhandene Header-/Inhalts-/Footerstruktur samt passenden
@@ -1105,9 +1105,25 @@ Viewportwerte für Mediaqueries; die vorhandenen Breakpoints bleiben wörtlich.
 
 ## Avatare und Overlays
 
-`OverlayUserIcon` verbindet Initialen/Bild mit Statuskontur und Glow. Gemeinsame
-`--cosmos-avatar-*`-Tokens steuern die Flächen. Header, Popup und Kontobild verwenden
-dieselben Statussymbole. Eigene Avatar-/Dialogregeln nicht global auf Buttonicons übertragen.
+`CosmosAvatar` ist der gemeinsame native Vaadin-`Avatar` für Initialen und Bild.
+`OverlayUserIcon` ergänzt ihn um die bisherigen Statuskonturen, Tooltips,
+geschützten Bildressourcen und Profilereignisse. Dadurch verwenden Kopfzeilen,
+Kontokarte, Benutzermenü, Benutzertabelle/-bestätigung und Ticketidentitäten
+denselben nativen Kern, ohne ihre jeweilige Bedienung zu ändern.
+Gemeinsame `--cosmos-avatar-*`-Tokens und `cosmos-shell.css` steuern die bestehenden
+Flächen; `cosmos-avatar.css` passt die öffentlichen Parts `abbr` und `icon` an.
+Die Größenvererbung bleibt beim umgebenden Baustein, damit etwa der Menüavatar
+seine bisherigen lokalen Maße behält. Die native SVG-Schrift hat geringfügig
+andere Kantenglättung als der bisherige HTML-Text. Bei fehlendem Namen erscheint
+das bestehende Lucide-Benutzersymbol; bei einem Bildladefehler übernimmt Vaadin
+den Rückfall auf Initialen.
+
+Der reduzierte 2FA-Header verwendet `CosmosAvatar` direkt mit 32 px. Dieser Header
+lädt wie bisher kein eigenes Profilbild. Name und E-Mail stehen daneben;
+Avatar und Identität bleiben ohne Menü, Statuspunkt oder Tastaturaktion.
+Der Canvas-Bildeditor bleibt die freigegebene Sonderlösung für Bildausschnitt und
+Vorschau. Bereits native Empfängeravatare der Benachrichtigungsvorschau bleiben
+unverändert. Eigene Avatar-/Dialogregeln nicht global auf Buttonicons übertragen.
 Benutzermenü und Vorschau bleiben durch Viewportgrenzen scrollbar und erreichbar.
 „Abmelden“ bleibt im Benutzermenü-Footer rechtsbündig, auch wenn der
 Startseiten-Button auf der bereits geöffneten Startseite entfällt.

@@ -19,7 +19,10 @@ import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.mail.MailpitInbox.CapturedMail;
 import de.derpeterson.browsertests.pages.AccountPage;
+import de.derpeterson.browsertests.pages.AdminUserDeleteDialog;
+import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.AvatarAppearanceChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
@@ -406,6 +409,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       4. Gespeicherte Werte prüfen und eine zweite Änderung speichern; erneut neu laden.
       **Erwartet:** Basisdaten dauerhaft gespeichert, wiederholtes Speichern möglich, E-Mail unverändert.
       """)
+  @Tag("avatars")
   void profilePersistsAndCanBeSavedTwice() {
     String email = account();
     AccountPage form = new AccountPage(browserPage);
@@ -421,10 +425,16 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.assertMessage(uiTexts.getAccountSettingsSaveSuccess());
 
     assertThat(browserPage.locator(".account-summary-name")).hasText("Profile Saved");
-    assertThat(browserPage.locator(".cosmos-topbar .cosmos-avatar-initials")).hasText("PS");
+    assertThat(
+            browserPage.locator(
+                ".cosmos-topbar :is(.cosmos-avatar-initials, vaadin-avatar [part=abbr])"))
+        .hasText("PS");
     new UserMenu(browserPage).open();
 
-    assertThat(browserPage.locator(".user-popover-avatar .cosmos-avatar-initials")).hasText("PS");
+    assertThat(
+            browserPage.locator(
+                ".user-popover-avatar :is(.cosmos-avatar-initials, vaadin-avatar [part=abbr])"))
+        .hasText("PS");
     new UserMenu(browserPage).close();
 
     assertThat(form.host("account-email")).hasJSProperty("readonly", true);
@@ -443,7 +453,10 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     browserPage.reload();
 
     assertThat(form.input("account-first-name")).hasValue("Second");
-    assertThat(browserPage.locator(".cosmos-topbar .cosmos-avatar-initials")).hasText("SS");
+    assertThat(
+            browserPage.locator(
+                ".cosmos-topbar :is(.cosmos-avatar-initials, vaadin-avatar [part=abbr])"))
+        .hasText("SS");
     assertThat(form.host("account-birth-date")).hasJSProperty("value", "1993-04-05");
     assertThat(form.input("account-email")).hasValue(email);
     form.input("account-birth-date").fill("");
@@ -617,11 +630,13 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   @DisplayName("AVATAR-01: Upload, Ausschnitt, Wiederöffnen, Initialen, Ersetzen und Löschen")
   @Description(
       "Eigenes Konto: Bild per Drag-and-drop und Dateiauswahl hochladen, zuschneiden und speichern; Kopfzeile, Popup und Konto prüfen. Die Modusauswahl reagiert auch am Rand der Fläche. Wiederöffnen behält den Bildmodus. Lokales Abbrechen und Footer-Abbrechen verwerfen Entwürfe; Initialen erhalten das Bild, Ersetzen und Löschen werden gespeichert. Desktop und schmale Ansicht.")
+  @Tag("avatars")
   void avatarPersistsAcrossAllModes(int width, int height) throws Exception {
     String email = account();
     browserPage.setViewportSize(width, height);
     AccountPage form = new AccountPage(browserPage);
     form.open();
+    captureAccountAvatars("Initialen");
     openAvatar();
     chooseMode(uiTexts.getAccountAvatarCustom());
     chooseMode(uiTexts.getAccountAvatarInitials());
@@ -649,17 +664,45 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertPhotos();
     browserPage.reload();
     assertPhotos();
+    captureAccountAvatars("Profilbild");
+    assertUnavailableImageFallsBackToInitials();
     try (BrowserActor administrator = new BrowserActor(testBrowser)) {
       AdminUsersPage users =
           administrator.loginAdmin(
               BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+      administrator.browserPage.setViewportSize(width, height);
       users.open();
       users.search(email);
 
       assertThat(users.emailCells(email)).hasCount(1);
-      assertThat(users.grid().locator(".cosmos-avatar-photo:visible")).hasCount(1);
-      assertThat(users.grid().locator(".cosmos-avatar-photo:visible")).isVisible();
+      assertThat(users.grid().locator(".cosmos-avatar-circle img:visible")).hasCount(1);
+      assertThat(users.grid().locator(".cosmos-avatar-circle img:visible")).isVisible();
       assertThat(users.grid().locator(".cosmos-avatar-status")).hasCount(0);
+      AvatarAppearanceChecks.captureAvatar(
+          users
+              .grid()
+              .locator(".admin-user-table-avatar")
+              .filter(
+                  new Locator.FilterOptions()
+                      .setHas(administrator.browserPage.locator("img:visible"))),
+          "Avatar Tabelle Profilbild " + width);
+      AdminUserDialog editUserDialog = users.openEdit(email);
+      AdminUserDeleteDialog deleteUserDialog = editUserDialog.requestDelete();
+      AvatarAppearanceChecks.captureAvatar(
+          deleteUserDialog.root().locator(".admin-user-table-avatar"),
+          "Avatar Benutzerbestätigung Profilbild " + width);
+      deleteUserDialog.cancel();
+      assertThat(
+              administrator
+                  .browserPage
+                  .locator("vaadin-dialog.admin-user-delete-dialog")
+                  .getByRole(
+                      AriaRole.BUTTON,
+                      new Locator.GetByRoleOptions()
+                          .setName(uiTexts.getAdminUsersCancel())
+                          .setExact(true)))
+          .isHidden();
+      editUserDialog.cancel();
       new UserMenu(administrator.browserPage).signOut();
     }
     openAvatar();
@@ -682,7 +725,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     chooseMode(uiTexts.getAccountAvatarInitials());
     saveAvatar();
 
-    assertThat(browserPage.locator(".account-summary-avatar .cosmos-avatar-photo")).isHidden();
+    assertThat(browserPage.locator(".account-summary-avatar .cosmos-avatar-circle img")).isHidden();
     openAvatar();
     chooseMode(uiTexts.getAccountAvatarCustom());
     saveAvatar();
@@ -737,7 +780,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     saveAvatar();
     browserPage.reload();
 
-    assertThat(browserPage.locator(".account-summary-avatar .cosmos-avatar-photo")).isHidden();
+    assertThat(browserPage.locator(".account-summary-avatar .cosmos-avatar-circle img")).isHidden();
     openAvatar();
 
     assertThat(browserPage.locator("#account-avatar-delete")).isHidden();
@@ -755,6 +798,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       **Erwartet:** Ungültige Daten werden abgelehnt; der Dialog bleibt bedienbar,
       nur das anschließend gültige Profilbild wird dauerhaft angezeigt.
       """)
+  @Tag("avatars")
   void corruptAvatarCanBeCorrectedWithoutReopeningDialog() throws Exception {
     account();
     AccountPage form = new AccountPage(browserPage);
@@ -871,7 +915,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       assertThat(navigationToggle).hasAttribute("aria-expanded", "true");
     }
     for (String selector : new String[] {".account-summary-avatar", ".cosmos-topbar"}) {
-      Locator image = browserPage.locator(selector + " .cosmos-avatar-photo");
+      Locator image = browserPage.locator(selector + " .cosmos-avatar-circle img");
 
       assertThat(image).isVisible();
       assertThat(image).hasJSProperty("complete", true);
@@ -884,7 +928,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     }
     new UserMenu(browserPage).open();
 
-    assertThat(browserPage.locator(".user-popover-avatar .cosmos-avatar-photo")).isVisible();
+    assertThat(browserPage.locator(".user-popover-avatar .cosmos-avatar-circle img")).isVisible();
     new UserMenu(browserPage).close();
   }
 
@@ -925,6 +969,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   @DisplayName("STATUS-03: Status direkt am Kontobild mit Kontursymbol und gleichem Rahmen")
   @Description(
       "Am Kontobild jeden Status auswählen; Auswahlhintergrund ohne Haken, Kontursymbol, Rahmen und Glow in Konto, Kopfzeile und Popup prüfen, danach neu laden.")
+  @Tag("avatars")
   void accountAvatarStatusIsSynchronized() {
     account();
     new AccountPage(browserPage).open();
@@ -1005,5 +1050,54 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
     assertThat(browserPage.locator("#account-avatar-status"))
         .containsText(uiTexts.getUserStatusAvailable());
+  }
+
+  private void captureAccountAvatars(String modeLabelText) {
+    int viewportWidth = browserPage.viewportSize().width;
+    AvatarAppearanceChecks.captureAvatar(
+        browserPage.locator(".cosmos-topbar .cosmos-user-avatar"),
+        "Avatar Kopf " + modeLabelText + " " + viewportWidth);
+    Locator navigationToggleButton = browserPage.locator("#account-navigation-toggle");
+    boolean mobileNavigation = navigationToggleButton.isVisible();
+    if (mobileNavigation) {
+      UiActions.complete(browserPage, navigationToggleButton::click);
+    }
+    AvatarAppearanceChecks.captureAvatar(
+        browserPage.locator(".account-summary-avatar"),
+        "Avatar Seitenleiste " + modeLabelText + " " + viewportWidth);
+    if (mobileNavigation) {
+      UiActions.complete(browserPage, navigationToggleButton::click);
+    }
+
+    UserMenu userMenu = new UserMenu(browserPage);
+    userMenu.open();
+    AvatarAppearanceChecks.captureAvatar(
+        browserPage.locator(".user-popover-avatar"),
+        "Avatar Menü " + modeLabelText + " " + viewportWidth);
+    userMenu.close();
+  }
+
+  private void assertUnavailableImageFallsBackToInitials() {
+    String avatarResourcePattern = "**/VAADIN/dynamic/resource/**";
+    browserPage.route(
+        avatarResourcePattern,
+        route ->
+            route.fulfill(
+                new com.microsoft.playwright.Route.FulfillOptions()
+                    .setStatus(404)
+                    .setBody("Missing test image")));
+    try {
+      browserPage.reload();
+      assertThat(browserPage.locator(".cosmos-topbar .cosmos-avatar-circle img")).isHidden();
+      assertThat(
+              browserPage.locator(
+                  ".cosmos-topbar :is(.cosmos-avatar-initials, vaadin-avatar [part=abbr])"))
+          .isVisible();
+      captureAccountAvatars("Bildfehler");
+    } finally {
+      browserPage.unroute(avatarResourcePattern);
+      browserPage.reload();
+    }
+    assertPhotos();
   }
 }

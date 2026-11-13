@@ -4,7 +4,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -14,8 +15,6 @@ import static org.mockito.Mockito.when;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.server.StreamResourceRegistry;
@@ -95,7 +94,13 @@ class OverlayUserIconTest {
   @MethodSource("unicodeNameCases")
   void initialsUseOneUnicodeCharacterPerName(
       String firstName, String lastName, String expectedInitials) {
-    assertEquals(expectedInitials, OverlayUserIcon.initialsFor(firstName, lastName));
+    OverlayUserIcon userAvatarIcon =
+        new OverlayUserIcon(messageProperties, null, null, IconSize.PIXEL_32);
+    userAvatarIcon.setName(firstName, lastName);
+    CosmosAvatar userAvatar =
+        (CosmosAvatar) ReflectionTestUtils.getField(userAvatarIcon, "userAvatar");
+
+    assertEquals(expectedInitials, userAvatar.getAbbreviation());
   }
 
   @Test
@@ -123,12 +128,12 @@ class OverlayUserIconTest {
     OverlayUserIcon userAvatarIcon =
         new OverlayUserIcon(messageProperties, testUserEntity, userStatus, IconSize.PIXEL_48, true);
     testUi.add(userAvatarIcon);
-    Span avatarInitialsSpan =
-        (Span) ReflectionTestUtils.getField(userAvatarIcon, "avatarInitialsLabel");
+    CosmosAvatar userAvatar =
+        (CosmosAvatar) ReflectionTestUtils.getField(userAvatarIcon, "userAvatar");
     Div statusIndicatorDiv =
         (Div) ReflectionTestUtils.getField(userAvatarIcon, "statusIndicatorContainer");
 
-    assertEquals("CD", avatarInitialsSpan.getText());
+    assertEquals("CD", userAvatar.getAbbreviation());
     assertEquals(1, statusIndicatorDiv.getComponentCount());
     Component statusIconComponent =
         statusIndicatorDiv.getComponentAt(0).getChildren().findFirst().orElseThrow();
@@ -151,7 +156,7 @@ class OverlayUserIconTest {
     userAvatarIcon.setUserStatus(UserStatus.ABSENT);
     userAvatarIcon.setName("New", "Name");
 
-    assertEquals("NN", avatarInitialsSpan.getText());
+    assertEquals("NN", userAvatar.getAbbreviation());
     assertEquals(1, statusIndicatorDiv.getComponentCount());
     assertEquals(
         UserStatus.ABSENT.getColor(),
@@ -166,20 +171,22 @@ class OverlayUserIconTest {
   void anonymousAvatarUsesNeutralSymbolAndCanBecomeAnInitialsAvatarWithoutStaleChildren() {
     OverlayUserIcon userAvatarIcon =
         new OverlayUserIcon(messageProperties, null, null, IconSize.PIXEL_48);
-    Span avatarInitialsSpan =
-        (Span) ReflectionTestUtils.getField(userAvatarIcon, "avatarInitialsLabel");
+    CosmosAvatar userAvatar =
+        (CosmosAvatar) ReflectionTestUtils.getField(userAvatarIcon, "userAvatar");
 
-    assertEquals(1, avatarInitialsSpan.getComponentCount());
+    assertEquals("", userAvatar.getAbbreviation());
+    assertEquals("", userAvatar.getName());
     assertEquals(
         AppConstants.USER_ICON_ALT, userAvatarIcon.getElement().getAttribute("aria-label"));
     userAvatarIcon.setName("Christian", "Doebl");
 
-    assertEquals("CD", avatarInitialsSpan.getText());
-    assertEquals(0, avatarInitialsSpan.getComponentCount());
+    assertEquals("CD", userAvatar.getAbbreviation());
+    assertSame(userAvatar, userAvatarIcon.getChildren().findFirst().orElseThrow());
 
     userAvatarIcon.setIdentity(null);
 
-    assertEquals(1, avatarInitialsSpan.getComponentCount());
+    assertEquals("", userAvatar.getAbbreviation());
+    assertSame(userAvatar, userAvatarIcon.getChildren().findFirst().orElseThrow());
   }
 
   @Test
@@ -229,14 +236,14 @@ class OverlayUserIconTest {
             messageProperties, testUserEntity, UserStatus.AVAILABLE, IconSize.PIXEL_48);
     userAvatarIcon.configureAvatar(userAvatarService, customAvatarState);
     testUi.add(userAvatarIcon);
-    Image avatarPhotoImage =
-        (Image) ReflectionTestUtils.getField(userAvatarIcon, "avatarPhotoImage");
-    String initialImageSource = avatarPhotoImage.getSrc();
+    CosmosAvatar userAvatar =
+        (CosmosAvatar) ReflectionTestUtils.getField(userAvatarIcon, "userAvatar");
+    String initialImageSource = userAvatar.getImage();
 
-    assertTrue(avatarPhotoImage.isVisible());
+    assertNotNull(userAvatar.getImage());
     userAvatarIcon.setUserStatus(UserStatus.ABSENT);
 
-    assertEquals(initialImageSource, avatarPhotoImage.getSrc());
+    assertEquals(initialImageSource, userAvatar.getImage());
     Div statusIndicatorDiv =
         (Div) ReflectionTestUtils.getField(userAvatarIcon, "statusIndicatorContainer");
 
@@ -248,13 +255,13 @@ class OverlayUserIconTest {
     userProfileBroadcaster.broadcast(
         new UserProfileBroadcaster.UserProfileChangeMessage(12L, "New", "Name"));
 
-    assertFalse(avatarPhotoImage.isVisible());
+    assertNull(userAvatar.getImage());
 
     userProfileBroadcaster.broadcast(
         new UserProfileBroadcaster.UserProfileChangeMessage(12L, "New", "Name"));
 
-    assertTrue(avatarPhotoImage.isVisible());
-    assertNotEquals(initialImageSource, avatarPhotoImage.getSrc());
+    assertNotNull(userAvatar.getImage());
+    assertNotEquals(initialImageSource, userAvatar.getImage());
     assertEquals("New Name", userAvatarIcon.getElement().getAttribute("aria-label"));
     assertFalse(statusIndicatorDiv.isVisible());
 

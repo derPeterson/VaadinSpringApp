@@ -44,6 +44,7 @@ class BrowserExecutionPlanTest {
         "duration-field",
         "segmented-selection",
         "metric-cards",
+        "avatars",
         "mail-queue-resolution",
         "component-follow-up",
         "breadcrumbs",
@@ -93,6 +94,15 @@ class BrowserExecutionPlanTest {
               Set.of(
                   "accountTotalTracksMutationsButNotFiltersAndFollowsLanguage",
                   "previewInboxFiltersAndDismissalAtBothWidths");
+          case "avatars" ->
+              Set.of(
+                  "avatarPersistsAcrossAllModes",
+                  "corruptAvatarCanBeCorrectedWithoutReopeningDialog",
+                  "profilePersistsAndCanBeSavedTwice",
+                  "accountAvatarStatusIsSynchronized",
+                  "manualStatusIsStoredAndPushedToAnotherTab",
+                  "confirmationRecoveryAndHelpUseNativeControls",
+                  "ticketUnreadAndNotificationsFollowAssignmentAndClosure");
           case "mail-queue-resolution" ->
               Set.of(
                   "unresolvedRequestNeedsExplicitResolutionBeforeAnotherVerificationMail",

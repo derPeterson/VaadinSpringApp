@@ -99,6 +99,11 @@ final class BrowserSuites {
       case "segmented-selection" -> List.of(SegmentedSelectionBrowserTest.class);
       case "metric-cards" ->
           List.of(UserManagementBrowserTest.class, NotificationInboxBrowserTest.class);
+      case "avatars" ->
+          List.of(
+              AccountSettingsBrowserTest.class,
+              UserStatusBrowserTest.class,
+              TwoFactorBrowserTest.class);
       case "mail-queue-resolution" -> List.of(MailQueueResolutionBrowserTest.class);
       case "external-login-flow" -> List.of(ExternalLoginBrowserTest.class);
       case "external-login-settings" -> List.of(ExternalLoginBrowserTest.class);

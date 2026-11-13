@@ -2,6 +2,7 @@ package de.derpeterson.app.ui.components;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doAnswer;
@@ -12,6 +13,7 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.breadcrumbs.BreadcrumbsItem;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Anchor;
@@ -24,6 +26,7 @@ import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.i18n.PublicLanguagePreference;
+import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import jakarta.servlet.http.Cookie;
@@ -275,5 +278,52 @@ class PublicPageComponentTest {
   private Stream<Component> streamComponentTree(Component rootComponent) {
     return Stream.concat(
         Stream.of(rootComponent), rootComponent.getChildren().flatMap(this::streamComponentTree));
+  }
+
+  @ParameterizedTest
+  @EnumSource(
+      value = PublicPageComponent.Page.class,
+      names = {"TWO_FACTOR", "RECOVERY_HELP", "EMAIL_VERIFICATION_PENDING"})
+  void securityHeadersKeepNativeIdentityAvatarsWithoutIntroducingImageDownloads(
+      PublicPageComponent.Page publicPageType) {
+    ConfigService configService = mock(ConfigService.class);
+    when(configService.getString(ConfigEntry.SERVICE_NAME)).thenReturn("Review Service");
+    when(configService.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
+    PublicPageComponent publicPageComponent =
+        new PublicPageComponent(configService, messageProperties, publicPageType);
+    UserEntity accountUserEntity = new UserEntity();
+    accountUserEntity.setFirstName("Alexandra Maria");
+    accountUserEntity.setLastName("Beispielmann Sonnenschein");
+    accountUserEntity.setEmail("avatar@example.test");
+
+    publicPageComponent.setAccountSecurity(true, accountUserEntity);
+    Component securityHeaderAvatarComponent =
+        streamComponentTree(publicPageComponent)
+            .filter(candidateComponent -> candidateComponent.hasClassName("cosmos-user-avatar"))
+            .findFirst()
+            .orElseThrow();
+    assertEquals("true", securityHeaderAvatarComponent.getElement().getAttribute("aria-hidden"));
+    if (publicPageType == PublicPageComponent.Page.TWO_FACTOR) {
+      Avatar nativeSecurityHeaderAvatar = (Avatar) securityHeaderAvatarComponent;
+      assertEquals("AB", nativeSecurityHeaderAvatar.getAbbreviation());
+      assertEquals(
+          "Alexandra Maria Beispielmann Sonnenschein", nativeSecurityHeaderAvatar.getName());
+      assertFalse(nativeSecurityHeaderAvatar.isTooltipEnabled());
+      assertEquals("-1", nativeSecurityHeaderAvatar.getElement().getAttribute("tabindex"));
+      assertNull(nativeSecurityHeaderAvatar.getImage());
+    } else {
+      assertTrue(securityHeaderAvatarComponent instanceof OverlayUserIcon);
+      Avatar wrappedSecurityHeaderAvatar =
+          (Avatar) securityHeaderAvatarComponent.getChildren().findFirst().orElseThrow();
+      assertEquals("AB", wrappedSecurityHeaderAvatar.getAbbreviation());
+      assertFalse(wrappedSecurityHeaderAvatar.isTooltipEnabled());
+      assertNull(wrappedSecurityHeaderAvatar.getImage());
+    }
+
+    publicPageComponent.setAccountSecurity(false, null);
+    assertTrue(
+        streamComponentTree(publicPageComponent)
+            .noneMatch(
+                candidateComponent -> candidateComponent.hasClassName("cosmos-user-avatar")));
   }
 }

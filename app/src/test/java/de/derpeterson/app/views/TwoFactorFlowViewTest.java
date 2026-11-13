@@ -19,6 +19,7 @@ import com.flowingcode.vaadin.addons.otpfield.OtpField;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.details.Details;
@@ -176,16 +177,25 @@ class TwoFactorFlowViewTest {
             .build();
     when(securityService.getCurrentUser(mockHttpRequest))
         .thenReturn(Optional.of(testAccountEntity));
-    TwoFactorView confirmation = openTwoFactorPage("de", false);
-    Component identity = find(confirmation, "public-security-identity");
+    TwoFactorView twoFactorView = openTwoFactorPage("de", false);
+    Component headerIdentityComponent = find(twoFactorView, "public-security-identity");
 
-    assertTrue(identity.isVisible());
-    assertTrue(identity.getElement().getTextRecursively().contains("Portal User"));
-    assertTrue(identity.getElement().getTextRecursively().contains("flow@example.test"));
-    assertFalse(tree(identity).anyMatch(Button.class::isInstance));
+    assertTrue(headerIdentityComponent.isVisible());
+    assertTrue(headerIdentityComponent.getElement().getTextRecursively().contains("Portal User"));
+    assertTrue(
+        headerIdentityComponent.getElement().getTextRecursively().contains("flow@example.test"));
+    assertFalse(tree(headerIdentityComponent).anyMatch(Button.class::isInstance));
+    Avatar headerAvatar =
+        tree(headerIdentityComponent)
+            .filter(Avatar.class::isInstance)
+            .map(Avatar.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals("Portal User", headerAvatar.getName());
+    assertEquals("PU", headerAvatar.getAbbreviation());
 
     TwoFactorFlow.LOGIN_HELP.enter(mockHttpRequest);
-    RecoveryHelpView help =
+    RecoveryHelpView recoveryHelpView =
         new RecoveryHelpView(
             configService,
             messageProperties,
@@ -193,18 +203,38 @@ class TwoFactorFlowViewTest {
             securityService,
             twoFactorAuthorization,
             mockHttpRequest);
-    help.beforeEnter(mock(BeforeEnterEvent.class));
-    Component helpIdentity = find(help, "public-security-identity");
+    recoveryHelpView.beforeEnter(mock(BeforeEnterEvent.class));
+    Component helpIdentityComponent = find(recoveryHelpView, "public-security-identity");
 
-    assertTrue(helpIdentity.isVisible());
+    assertTrue(helpIdentityComponent.isVisible());
+    Component headerDetailsComponent =
+        tree(headerIdentityComponent)
+            .filter(candidateComponent -> candidateComponent.hasClassName("cosmos-header-identity"))
+            .findFirst()
+            .orElseThrow();
+    Component helpDetailsComponent =
+        tree(helpIdentityComponent)
+            .filter(candidateComponent -> candidateComponent.hasClassName("cosmos-header-identity"))
+            .findFirst()
+            .orElseThrow();
     assertEquals(
-        identity.getElement().getTextRecursively(), helpIdentity.getElement().getTextRecursively());
+        "Portal Userflow@example.test", headerDetailsComponent.getElement().getTextRecursively());
+    assertEquals(
+        headerDetailsComponent.getElement().getTextRecursively(),
+        helpDetailsComponent.getElement().getTextRecursively());
+    Avatar helpHeaderAvatar =
+        tree(helpIdentityComponent)
+            .filter(Avatar.class::isInstance)
+            .map(Avatar.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals("PU", helpHeaderAvatar.getAbbreviation());
 
     when(securityService.getCurrentUser(mockHttpRequest)).thenReturn(Optional.empty());
-    help.beforeEnter(mock(BeforeEnterEvent.class));
+    recoveryHelpView.beforeEnter(mock(BeforeEnterEvent.class));
 
-    assertFalse(helpIdentity.isVisible());
-    assertEquals("", helpIdentity.getElement().getTextRecursively());
+    assertFalse(helpIdentityComponent.isVisible());
+    assertEquals("", helpIdentityComponent.getElement().getTextRecursively());
   }
 
   @ParameterizedTest

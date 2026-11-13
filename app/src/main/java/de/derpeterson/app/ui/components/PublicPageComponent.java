@@ -268,16 +268,27 @@ public class PublicPageComponent extends PageFrameComponent {
     securityIdentityLayout.setVisible(accountUserEntity != null);
 
     if (accountUserEntity != null) {
-      OverlayUserIcon accountAvatarIcon =
-          new OverlayUserIcon(messageProperties, accountUserEntity, null, IconSize.PIXEL_32);
-      accountAvatarIcon.getElement().setAttribute("aria-hidden", "true");
+      Component accountAvatarComponent = createSecurityHeaderAvatarComponent(accountUserEntity);
+      accountAvatarComponent.getElement().setAttribute("aria-hidden", "true");
       Span accountNameSpan =
           new Span(
               (accountUserEntity.getFirstName() + " " + accountUserEntity.getLastName()).strip());
       Div accountDetailsDiv = new Div(accountNameSpan, new Span(accountUserEntity.getEmail()));
       accountDetailsDiv.addClassName("cosmos-header-identity");
-      securityIdentityLayout.add(accountAvatarIcon, accountDetailsDiv);
+      securityIdentityLayout.add(accountAvatarComponent, accountDetailsDiv);
     }
     refreshTexts.run();
+  }
+
+  private Component createSecurityHeaderAvatarComponent(UserEntity accountUserEntity) {
+    if (page != Page.TWO_FACTOR) {
+      return new OverlayUserIcon(messageProperties, accountUserEntity, null, IconSize.PIXEL_32);
+    }
+
+    CosmosAvatar securityHeaderAvatar = new CosmosAvatar(IconSize.PIXEL_32);
+    securityHeaderAvatar.setIdentity(
+        accountUserEntity.getFirstName(), accountUserEntity.getLastName());
+    securityHeaderAvatar.addClassName("cosmos-user-avatar");
+    return securityHeaderAvatar;
   }
 }

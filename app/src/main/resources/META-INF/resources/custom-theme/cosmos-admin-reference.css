@@ -280,7 +280,7 @@ vaadin-dialog.admin-user-delete-dialog[theme~=cosmos-reference]::part(content) {
 .admin-user-delete-dialog.admin-reference-dialog .admin-user-dialog-header { align-items:flex-start; gap:14px; padding:20px 24px; }
 .admin-user-delete-dialog .admin-user-dialog-header>.cosmos-panel-icon { box-sizing:border-box; width:40px; height:40px; }
 .admin-user-delete-dialog .cosmos-panel-icon.cosmos-delete-accent { color:var(--cosmos-reference-invalid); border-color:var(--cosmos-reference-danger-border); background:var(--cosmos-reference-danger-surface); }
-.admin-user-delete-dialog .admin-user-table-avatar .cosmos-avatar-initials { font:600 10px/1 Inter,sans-serif; transform:none; }
+.admin-user-delete-dialog .admin-user-table-avatar vaadin-avatar.cosmos-avatar-circle { --cosmos-avatar-initial-font-size:10px; --cosmos-avatar-initial-offset:-1px; }
 .admin-user-delete-dialog .cosmos-panel-heading { display:flex; flex-direction:column; gap:0; }
 .admin-user-delete-dialog .admin-user-dialog-header .cosmos-panel-description { margin:2px 0 0; font:400 12px/16px Inter,sans-serif; }
 .admin-user-delete-dialog.admin-reference-dialog .cosmos-dialog-form { gap:16px; padding:24px; }

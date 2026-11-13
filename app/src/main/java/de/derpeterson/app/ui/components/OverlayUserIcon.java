@@ -3,8 +3,6 @@ package de.derpeterson.app.ui.components;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Image;
-import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.shared.Registration;
@@ -16,7 +14,6 @@ import de.derpeterson.app.model.enums.AvatarMode;
 import de.derpeterson.app.model.enums.IconSize;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.service.UserAvatarService;
-import java.text.BreakIterator;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
@@ -28,9 +25,8 @@ public class OverlayUserIcon extends Div {
   private final transient MessageProperties messageProperties;
   private final IconSize iconSize;
   private final boolean showStatus;
-  private final Span avatarInitialsLabel = new Span();
+  private final CosmosAvatar userAvatar = new CosmosAvatar();
   private final Div statusIndicatorContainer = new Div();
-  private final Image avatarPhotoImage = new Image();
   private Long userId;
   private transient UserAvatarService userAvatarService;
   private transient Registration profileRegistration;
@@ -62,25 +58,10 @@ public class OverlayUserIcon extends Div {
     addClassName("cosmos-user-avatar");
     getStyle().set("--cosmos-avatar-size", iconSize.getWidth() + iconSize.getUnit().getSymbol());
     getElement().setAttribute("role", "img");
-    avatarInitialsLabel.addClassName("cosmos-avatar-initials");
-    avatarInitialsLabel.getElement().setAttribute(ARIA_HIDDEN, "true");
-    avatarPhotoImage.addClassName("cosmos-avatar-photo");
-    avatarPhotoImage.getElement().setAttribute(ARIA_HIDDEN, "true");
-    avatarPhotoImage.setVisible(false);
-    avatarPhotoImage
-        .getElement()
-        .addEventListener(
-            "error",
-            event -> {
-              avatarPhotoImage.setVisible(false);
-              avatarInitialsLabel.setVisible(true);
-            });
-    Div avatarCircleContainer = new Div(avatarInitialsLabel, avatarPhotoImage);
-    avatarCircleContainer.addClassName("cosmos-avatar-circle");
     statusIndicatorContainer.addClassName("cosmos-avatar-status");
     statusIndicatorContainer.setVisible(showStatus);
     statusIndicatorContainer.getElement().setAttribute(ARIA_HIDDEN, "true");
-    add(avatarCircleContainer, statusIndicatorContainer);
+    add(userAvatar, statusIndicatorContainer);
     avatarIdentityTooltip = Tooltip.forComponent(this).withPosition(Tooltip.TooltipPosition.BOTTOM);
     setIdentity(user);
     setUserStatus(userStatus);
@@ -131,31 +112,8 @@ public class OverlayUserIcon extends Div {
     avatarDisplayName =
         (Objects.toString(firstName, "").strip() + " " + Objects.toString(lastName, "").strip())
             .strip();
-    avatarInitialsLabel.removeAll();
-    avatarInitialsLabel.setText(initialsFor(firstName, lastName));
-    if (avatarInitialsLabel.getText().isEmpty()) {
-      avatarInitialsLabel.add(AppIcon.USER.create());
-    }
+    userAvatar.setIdentity(firstName, lastName);
     refreshTexts();
-  }
-
-  static String initialsFor(String firstName, String lastName) {
-    return initial(firstName) + initial(lastName);
-  }
-
-  private static String initial(String nameText) {
-    String avatarDisplayName = Objects.toString(nameText, "").strip();
-    if (avatarDisplayName.isEmpty()) {
-      return "";
-    }
-    BreakIterator characters = BreakIterator.getCharacterInstance(Locale.ROOT);
-    characters.setText(avatarDisplayName);
-
-    String uppercaseName =
-        avatarDisplayName.substring(0, characters.next()).toUpperCase(Locale.ROOT);
-    // Auch bei Großschreibung mit mehreren Zeichen (z.B. ß → SS) nur ein Initial anzeigen.
-    characters.setText(uppercaseName);
-    return uppercaseName.substring(0, characters.next());
   }
 
   public void setUserStatus(UserStatus newUserStatus) {
@@ -207,18 +165,15 @@ public class OverlayUserIcon extends Div {
     boolean hasCustomAvatarImage =
         avatarState.mode() == AvatarMode.CUSTOM && avatarState.hasImage();
     if (hasCustomAvatarImage && !Objects.equals(displayedRevision, avatarState.imageRevision())) {
-      avatarPhotoImage.setSrc(
+      userAvatar.setImageHandler(
           AvatarImageResource.createAvatarImageDownloadHandler(
               userAvatarService, userId, avatarState.imageRevision(), false));
       displayedRevision = avatarState.imageRevision();
     }
     if (!hasCustomAvatarImage) {
       displayedRevision = null;
-      avatarPhotoImage.getElement().removeAttribute("src");
+      userAvatar.setImageHandler(null);
     }
-
-    avatarPhotoImage.setVisible(hasCustomAvatarImage);
-    avatarInitialsLabel.setVisible(!hasCustomAvatarImage);
   }
 
   private void listenProfiles() {

@@ -29,8 +29,26 @@ dezente blaue Metadatenpalette. Gesamtzahl bei Anlage und Löschung,
 Filterunabhängigkeit, Sprachwechsel und zugängliche Beschriftung sind geprüft.
 Die gezielte Suite `metric-cards` hat je Sprache vier erfolgreiche Browserfälle;
 314 gezielte Java-Prüfungen und die Stilprüfungen sind ebenfalls bestanden.
-Weitere Badge-Zähler bleiben unverändert. Offen bleibt die gemeinsame
-Sichtung der Kennzahlkarten.
+Weitere Badge-Zähler bleiben unverändert. Die Kennzahlkarten sind vom Benutzer
+abgenommen.
+
+Der native Avatar-Pilot im reduzierten 2FA-Header ist vom Benutzer abgenommen.
+Die Übernahme in die übrigen Avatarstellen ist freigegeben. Ein gemeinsamer
+nativer `CosmosAvatar` ersetzt den Bild-/Initialenkern von `OverlayUserIcon`.
+Statushülle, Tooltip, Bildberechtigungen und Ereignisaktualisierung bleiben
+erhalten. Der vorhandene Canvas-Bildeditor bleibt eine getrennte Sonderlösung.
+Die native SVG-Schrift hat geringfügig andere Kantenglättung als der bisherige
+HTML-Text. 202 gezielte Java-Prüfungen und die Stilprüfungen sind bestanden.
+Die isolierte Suite `avatars` prüft Header, Sidebar, Menü, Benutzertabelle und
+Bestätigung, Bildmodi/-fehler, Status-/Namenswechsel sowie Ticketidentitäten und
+2FA-Abläufe. Vorher und nachher sind in DE/EN bei 1280 und 390 px jeweils zehn
+Browserfälle erfolgreich. Beide abschließenden Sprachläufe verwenden dasselbe
+unveränderte Image. Alle 56 gepaarten Messwertsätze stimmen hinsichtlich Größe,
+Rahmen, Palette, Statuspositionen und Schriftgröße überein; die
+SVG-Kantenglättung kann geringfügig abweichen. Die 48-px-Initialen in Kontokarte
+und Menü sind auch optisch auf die bisherige Höhe abgeglichen. Der vollständige
+Anwendungsbuild einschließlich regulärer Tests ist erfolgreich. Der Benutzer
+hat auch die Übernahme der übrigen Avatarstellen anhand des Vergleichs abgenommen.
 
 ## Abgenommene Pakete und Prüfstand
 
@@ -150,19 +168,17 @@ hier Teil der vorgesehenen Flow-API.
 ### Avatare und Identität
 
 [OverlayUserIcon](../../app/src/main/java/de/derpeterson/app/ui/components/OverlayUserIcon.java)
-baut den sichtbaren Avatar aus Bild und Initialen. Derselbe Baustein erscheint
+verwendet den nativen `CosmosAvatar` für Bild und Initialen. Derselbe Baustein erscheint
 im angemeldeten Kopf, im reduzierten Sicherheitskopf, im Profilmenü, in der
 Sidebar, der Benutzerverwaltung und bei Ticketidentitäten. Er behandelt auch
 Bildrevisionen, Bildfehler, Tooltips und je nach Aufrufer den Präsenzpunkt
 oder die Präsenzsteuerung. In der Empfängervorschau der Admin-Benachrichtigungen
 werden dagegen schon native `Avatar`-Instanzen eingesetzt.
 
-`Avatar` bietet Name, Kürzel, Bild und `setImageHandler`. **Den Bildkern
-probeweise ersetzen, die Identitätshülle erhalten.** Als Pilot eignet sich
-ein Avatar ohne Statussteuerung, etwa im reduzierten Kopf oder in einer
-Benutzerzeile. Zugriffsschutz des Bildhandlers, Aktualisierung bei Bildwechsel,
-Fallback, Größen und der Tickettooltip mit Name und E-Mail sind eigene
-Abnahmepunkte. `AvatarGroup` ist ein unabhängiger Kandidat für die
+`Avatar` bietet Name, Kürzel, Bild und `setImageHandler`. Die Identitätshülle
+bleibt bei der beauftragten Übernahme erhalten. Zugriffsschutz des Bildhandlers,
+Aktualisierung bei Bildwechsel, Fallback, Größen und der Tickettooltip mit Name
+und E-Mail gehören zur gezielten Prüfung. `AvatarGroup` ist ein unabhängiger Kandidat für die
 Empfängervorschau. Die vorhandene, separate Empfängerliste darf dabei ihre
 Funktion behalten. Der native Überlauf öffnet eine eigene Liste und muss
 deshalb als Bedienentscheidung betrachtet werden.
@@ -238,9 +254,9 @@ wenn eine konkrete Funktion fehlt. In dem Fall die geprüfte Alternative,
 den nötigen Eigenanteil und die zu erhaltende Bedienung zur Entscheidung
 vorlegen.
 
-1. **Avatar-Kern und kleine Formulare.** In getrennten Piloten einen Avatar und
-   ein einfaches responsives Formular umstellen. Danach getrennt entscheiden,
-   ob der Nutzen eine Übernahme in die gemeinsamen Bausteine rechtfertigt.
+1. **Kleine Formulare.** Nach dem Avatar-Paket ein einfaches responsives Formular
+   als getrennten Piloten umstellen. Danach entscheiden, ob der Nutzen eine
+   Übernahme in die gemeinsamen Bausteine rechtfertigt.
 2. **Karten und einfache Bestätigungen.** Je eine Oberfläche mit `Card` bzw.
    `ConfirmDialog` vergleichen. Bestehende Kopf-, Fuß- und Fokusverträge
    sind Abnahmekriterien. Der gemeinsame Kartenrahmen hat viele Verbraucher

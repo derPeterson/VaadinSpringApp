@@ -1,0 +1,46 @@
+/* Gemeinsamer nativer Bildkern; die bestehende Hülle zeichnet Status und Tooltip. */
+vaadin-avatar.cosmos-avatar-circle {
+    --vaadin-avatar-size: var(--cosmos-avatar-size);
+    --vaadin-avatar-outline-width: 0px;
+    --vaadin-avatar-border-width: 0px;
+    --cosmos-avatar-render-border-width: var(--cosmos-avatar-border-width);
+    --cosmos-avatar-initial-font-size: calc(var(--cosmos-avatar-size) / 3);
+    --cosmos-avatar-initial-offset: 0px;
+    display: block;
+    width: var(--cosmos-avatar-size);
+    height: var(--cosmos-avatar-size);
+    margin: 0;
+    background-clip: border-box;
+}
+
+.cosmos-reference-portal vaadin-avatar.cosmos-avatar-circle,
+.cosmos-reference-overlay .portal-menu-avatar vaadin-avatar.cosmos-avatar-circle,
+.admin-reference-dialog .admin-user-table-avatar vaadin-avatar.cosmos-avatar-circle {
+    --cosmos-avatar-render-border-width: 2px;
+}
+
+/* Die bisherigen 48-px-Initialen in Kontokarte und Menü waren optisch einen Pixel abgesenkt. */
+.account-summary-avatar vaadin-avatar.cosmos-avatar-circle,
+.portal-menu-avatar vaadin-avatar.cosmos-avatar-circle {
+    --cosmos-avatar-initial-offset: 1px;
+}
+
+/* Die native SVG-ViewBox hat 100 Einheiten; die Schriftgröße bleibt die bisherige Pixelgröße. */
+vaadin-avatar.cosmos-avatar-circle::part(abbr) {
+    width: 100%;
+    height: 100%;
+    font-family: inherit;
+    font-size: calc(100px * var(--cosmos-avatar-initial-font-size) / (var(--cosmos-avatar-size) - 2 * var(--cosmos-avatar-render-border-width)));
+    font-weight: var(--cosmos-font-weight-semibold);
+    line-height: 1;
+    transform: translateY(var(--cosmos-avatar-initial-offset));
+}
+
+vaadin-avatar.cosmos-avatar-circle::part(icon) {
+    width: 100%;
+    height: 100%;
+    background: currentColor;
+    mask: url('../icons/lucide/user-round.svg') center / calc(var(--cosmos-avatar-size) / 2) calc(var(--cosmos-avatar-size) / 2) no-repeat;
+}
+
+vaadin-avatar.cosmos-avatar-circle::part(icon)::before { content: none; }
