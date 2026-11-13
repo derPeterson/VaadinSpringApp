@@ -34,6 +34,9 @@ darauf aufbauende [Neuigkeitenbereich](planung/neuigkeiten.md) sind zur gemeinsa
 Durchsicht ausgearbeitet. Sie sind noch nicht umgesetzt. Der übergreifende
 Arbeitsauftrag steht in der [Nachtliste](planung/nachtaufgaben.md).
 
+Die [Passkey-Analyse](planung/passkeys.md) bewertet die Einbindung in vorhandene
+2FA und empfiehlt vorerst eine Zurückstellung. Eine Umsetzung ist nicht freigegeben.
+
 Die Designübernahme für Besucher, angemeldetes Portal und Administration ist
 umgesetzt und abgenommen. Die freigegebenen Bausteine stehen im [Theme-Standard](theme.md).
 Für neue Designaufgaben dient die laufende Vaadin-Oberfläche als Ausgangspunkt.

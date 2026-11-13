@@ -9,6 +9,9 @@
   gemeinsam durchlesen und die spätere Umsetzung festlegen. Noch keine
   Versionsumstellung oder Neuigkeiten-Oberfläche freigegeben.
 
+- [ ] [Passkey-Planung](docs/planung/passkeys.md) gemeinsam bewerten. Eine spätere
+  Umsetzung benötigt einen eigenen Auftrag; vorerst bestehende 2FA beibehalten.
+
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise
   nach Freigabe umsetzen. Der fehlende aktuelle Sonar-Nachweis steht im Plan.

@@ -29,6 +29,10 @@ Für Paket 2 liegen [Release-Ablauf und Versionierung](releases.md) sowie
 [Was ist neu?](neuigkeiten.md) zur gemeinsamen Durchsicht vor. Versionsnummern,
 Skills und Anwendung wurden für diese beiden Planungen nicht verändert.
 
+Für Paket 3 liegt die [Passkey-Planung](passkeys.md) vor. Empfehlung: vorerst
+zurückstellen; eine spätere Alternative muss Anmeldung und sensible Aktionen
+mit den vorhandenen Sicherheitsverträgen verbinden. Noch keine Umsetzung.
+
 ## Abarbeitungsliste
 
 ### 1. E-Mail-Queue in zwei Tabs gliedern
