@@ -25,6 +25,7 @@ Anwendungslogs zu lesen:
 | Vorhandenes lokales App-Container-Image | Docker meldet 612 MB; dieser ältere lokale Imagebestand ist ein Größenanhalt, kein frisch vermessenes Hosting-Release. Testimage mit Werkzeugen etwa 1,48 GB, nicht ausliefern. |
 | Laufende Anwendung | Java 25, Vaadin Flow mit serverseitigen Sitzungen, Spring und H2-Dateidatenbank. RAM wächst mit gleichzeitig geöffneten Ansichten und Benutzeraktionen, nicht nur mit Kontenzahl. |
 | VM zum Einstieg | 2 vCPU, 4 GB RAM, etwa 40 GB SSD für wenige gleichzeitige Tester. Planwert, kein belegter Lasttest. |
+| Beobachteter Container-RAM | Rund 1,1 GiB bei einer eigenen lokalen Mailqueue-Browserprüfung mit frischem Image. Einzelmessung mit synthetischen Daten, kein Lasttest oder nachgewiesener Spitzenbedarf. |
 | JVM-Budget | Zunächst etwa 1–1,5 GB maximaler Heap, zusätzlicher nativer Speicher und Reserve für OS, Proxy und DB. Tatsächliches RSS und Startspitzen vor Freigabe messen; Heap ist nicht der gesamte RAM-Bedarf. |
 | Bauen und Testen | Maven, Node/Vaadin-Build und Browser benötigen vorübergehend deutlich mehr Ressourcen. In CI bauen, geprüftes fertiges Image auf die VM ziehen. Keine Browser-Suiten auf dem kleinen Zielserver. |
 | Datenwachstum | H2, Avatare, ausstehende Mails, Ticketnachrichten und Sicherungen; bestehende Aufbewahrungsregeln nutzen. Docker-Images und Logs begrenzen. Keine Gigabyte Browserbelege dort sammeln. |
@@ -95,6 +96,14 @@ zusätzliches Mailpit-Relay im echten Versandweg bringt hier keinen nötigen Nut
 | Login-Missbrauchsgrenzen sind vorhanden; Registrierung/Reset/öffentliche Ressourcen sind zusätzlich erreichbar. | Bestehende Begrenzungen pro Endpunkt prüfen, gemeinsames Missbrauchsbudget am Proxy ergänzen, falls Lücken bestehen. Keine neue Captcha-Pflicht ohne konkreten Bedarf. |
 | H2-Datei, aktuelles SQL-Schema und JPA-Validierung sind für lokale austauschbare Daten ausgelegt. | Vor echten Freundeskonten Datenerhalt ausdrücklich neu entscheiden. Single-Instance-H2 ist technisch möglich; konsistente Sicherung/Wiederherstellung und spätere Schemaänderungen brauchen dann einen verbindlichen Ablauf. PostgreSQL wäre ein eigener bewusst beauftragter Umbau, keine spontane Voraussetzung dieser Planung. |
 | Keine `.github/workflows` im aktuellen Repository vorhanden. | CI und Deployment erst einrichten; vorhandenen Docker-Build und Testbefehle wiederverwenden. |
+
+Für SMTP ist insbesondere zu prüfen beziehungsweise für den öffentlichen Betrieb
+zu ergänzen: `MailConfig` setzt `starttls.enable`, aber kein `starttls.required`.
+Aktiviertes STARTTLS allein erzwingt laut [Angus-Mail-Vertrag](https://eclipse-ee4j.github.io/angus-mail/docs/api/org.eclipse.angus.mail/org/eclipse/angus/mail/smtp/package-summary.html)
+noch keine verschlüsselte Verbindung bei fehlender Serverunterstützung. Bei
+öffentlichem Relay TLS verbindlich verlangen und Zertifikats-/Hostprüfung praktisch
+absichern; den lokalen Wildcard-Vertrauenswert nicht übernehmen. Heute wurde
+dieser Vertrag nur analysiert, nicht verändert.
 
 Damit ist die Anmeldung eine gute fachliche Grundlage, aber **kein ungeprüfter
 Internetfreigabestand**. Öffentliche Konten, Kontaktdaten und Nutzungsbedingungen
