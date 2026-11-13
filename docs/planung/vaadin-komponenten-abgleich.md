@@ -11,9 +11,11 @@ die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#nati
 
 ## Offene Komponentenpakete
 
-Der Branch `codex/vaadin-komponentenanpassungen` geht von `main` auf `01f7c67d`
-aus. Die Badge-Darstellungen und einheitlichen Seitenpfade sind vom Benutzer
-abgenommen. Ihre geltenden Regeln stehen im [Theme-Standard](../theme.md).
+Die begonnene Umsetzung ist lokal nach `main` zwischenintegriert. Weitere
+Arbeiten und die gemeinsame Sichtung laufen auf
+`codex/vaadin-komponenten-folgearbeiten`. Die Badge-Darstellungen und
+einheitlichen Seitenpfade sind vom Benutzer abgenommen. Ihre geltenden Regeln
+stehen im [Theme-Standard](../theme.md).
 
 Die gemeinsame `CosmosMetricCard` bleibt als eigenes Paket vorerst zurückgestellt.
 Ihr erster Einsatz sind „Gesamt“ und „Ungelesen“ im Postfach. Die neutrale und
@@ -73,14 +75,6 @@ Offene zukünftige Prüfungen werden zentral im [Testbedarf](../testbedarf.md) g
 Die [Seitenpfade](../theme.md#seitenpfade-und-navigationsziele) sind abgenommen.
 Die gezielten DE-/EN-Prüfungen einschließlich gesperrter Sicherheitsabläufe sind
 erfolgreich; der erledigte Einzelplan ist entfernt.
-
-### Offener Sonar-Nachweis
-
-- Die authentifizierte Sonar-Anbindung ist verfügbar. Den aktuellen Analysestand
-  für die neuen Pakete noch nachweisen. Die letzte bestätigte
-  Analyse auf `main` deckt diese Änderungen nicht ab. Den bestehenden
-  Sonar-Ablauf und seine Branch-Grenzen beachten. Der bisherige Prüfstand
-  beschreibt die fehlende Bestätigung ausdrücklich.
 
 ## Bestandsaufnahme
 

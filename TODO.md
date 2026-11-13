@@ -2,8 +2,8 @@
 
 ## Laufende Umsetzung
 
-- [ ] [Freigegebene Nachtaufgaben](docs/planung/nachtaufgaben.md) abarbeiten und
-  die gemeinsame Sichtung der Ergebnisse erhalten. Die Release-, Passkey- und
+- [ ] Die Ergebnisse der [Nachtaufgaben](docs/planung/nachtaufgaben.md) gemeinsam
+  sichten und die weitere Umsetzung festlegen. Die Release-, Passkey- und
   Hostingpakete umfassen ausschließlich Analyse und Planung.
 - [ ] [Release-Ablauf](docs/planung/releases.md) und [Was ist neu?](docs/planung/neuigkeiten.md)
   gemeinsam durchlesen und die spätere Umsetzung festlegen. Noch keine
@@ -18,7 +18,7 @@
 
 - [ ] [Vaadin-Komponenten und vereinbarte Portalpakete](docs/planung/vaadin-komponenten-abgleich.md)
   weiterführen. Noch offene Komponentenpakete gemeinsam ansehen beziehungsweise
-  nach Freigabe umsetzen. Der fehlende aktuelle Sonar-Nachweis steht im Plan.
+  nach Freigabe umsetzen. Ergebnisse stehen im [Prüfstand](docs/status.md).
   Die ausdrücklich zurückgestellten
   Pakete bleiben bis zu einer späteren Freigabe offen.
 
@@ -26,9 +26,9 @@
 
 - [ ] Eine sichtbare Verlaufsliste für Bereinigungsläufe der E-Mail-Queue gemeinsam
   entwerfen. Darstellung, Umfang und Bedienung vor der Umsetzung abstimmen.
-  Die technische Speicherung und konfigurierbare Aufbewahrung gehören zu den
-  [gesammelten Nachtaufgaben](docs/planung/nachtaufgaben.md), die History-Oberfläche
-  ausdrücklich nicht.
+  Technische Speicherung und konfigurierbare Aufbewahrung sind bereits vorhanden;
+  siehe [Mailqueue-Vertrag](docs/mailqueue.md#ergebnisse-und-wiederholung).
+  Die History-Oberfläche bleibt eine eigene spätere Umsetzung.
 
 - [ ] Nutzen und Aufwand der Rolle GUEST bei späteren Funktionserweiterungen
   erneut bewerten. Ursprünglich für „Als Gast anmelden“ gedacht, aktuell ohne
