@@ -18,9 +18,12 @@ import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
 import de.derpeterson.browsertests.pages.NotificationInboxPage;
 import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Allure;
+import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.io.ByteArrayInputStream;
 import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -67,6 +70,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       Erwartet: Kein Sammellöschen in der Vorschau, kein Statuswechsel allein beim Öffnen, keine verlorenen ungelesenen Nachrichten.
       """)
   @Tag("component-follow-up")
+  @Tag("metric-cards")
   void previewInboxFiltersAndDismissalAtBothWidths(int width) {
     String recipient = prepareRecipient();
     String prefix = "Layout " + UUID.randomUUID();
@@ -81,6 +85,8 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       browserActor.browserPage.setViewportSize(width, 1000);
       NotificationInboxPage inbox = new NotificationInboxPage(browserActor.browserPage);
       inbox.open();
+
+      attachMetricCardEvidence(browserActor.browserPage, width);
 
       assertThat(browserActor.browserPage.locator(".cosmos-topbar-logo")).isVisible();
       assertTrue(
@@ -286,5 +292,40 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       AllurePlaywright.attachScreenshot(
           "Persistente Inbox und Pagination", browserActor.browserPage);
     }
+  }
+
+  private void attachMetricCardEvidence(Page browserPage, int viewportWidth) {
+    Locator metricCardsLocator = browserPage.locator(".cosmos-notification-inbox-counts");
+    assertThat(metricCardsLocator.locator(":scope > vaadin-card")).hasCount(2);
+    assertThat(browserPage.locator("#notifications-inbox-total")).hasText("3");
+    assertThat(browserPage.locator("#notifications-inbox-unread-total")).hasText("3");
+
+    metricCardsLocator.scrollIntoViewIfNeeded();
+    Allure.attachment(
+        "Kennzahlkarten " + viewportWidth,
+        "image/png",
+        new ByteArrayInputStream(metricCardsLocator.screenshot()),
+        AttachmentOptions.empty());
+
+    String metricStylesJson =
+        (String)
+            metricCardsLocator.evaluate(
+                """
+                group => JSON.stringify([...group.children].map(card => {
+                  const bounds = card.getBoundingClientRect();
+                  const cardStyle = getComputedStyle(card);
+                  const label = card.querySelector('span');
+                  const value = card.querySelector('[id^="notifications-inbox-"]');
+                  const typography = element => {
+                    const style = getComputedStyle(element);
+                    return {text: element.textContent, color: style.color, font: style.font,
+                      letterSpacing: style.letterSpacing, marginTop: style.marginTop};
+                  };
+                  return {width: bounds.width, height: bounds.height,
+                    background: cardStyle.backgroundColor, border: cardStyle.border,
+                    radius: cardStyle.borderRadius, label: typography(label), value: typography(value)};
+                }))
+                """);
+    Allure.attachment("Kennzahl-Messwerte " + viewportWidth, "application/json", metricStylesJson);
   }
 }

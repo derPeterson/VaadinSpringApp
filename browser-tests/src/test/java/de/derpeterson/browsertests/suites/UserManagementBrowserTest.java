@@ -17,9 +17,12 @@ import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Allure;
+import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.io.ByteArrayInputStream;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -27,6 +30,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("browser")
 @Feature("Benutzerverwaltung: Finden, Filtern und Bearbeiten")
@@ -356,9 +361,10 @@ public class UserManagementBrowserTest extends BrowserFixture {
     AllurePlaywright.attachScreenshot("Anmeldung mit geändertem Passwort", browserPage);
   }
 
-  @Test
-  @DisplayName(
-      "USER-10: Gesamtzahl der Konten folgt Anlage/Löschung, nicht Filterung, und wechselt die Sprache")
+  @Tag("metric-cards")
+  @ParameterizedTest(
+      name = "USER-10: Konten-Karte mit Anlage, Löschung und Sprachwechsel bei {0}px")
+  @ValueSource(ints = {1280, 390})
   @Description(
       """
       1. Benutzerverwaltung öffnen und die aktuelle Gesamtanzahl merken.
@@ -368,39 +374,87 @@ public class UserManagementBrowserTest extends BrowserFixture {
       5. Eigenes Konto über den Dialog löschen: Gesamtzahl kehrt zum Ausgangswert zurück.
       **Erwartet:** Der Card-Zähler zeigt die echten gesamten Konten unabhängig von den sichtbaren Treffern.
       """)
-  void accountTotalTracksMutationsButNotFiltersAndFollowsLanguage() {
-    AdminUsersPage users = login();
-    users.open();
-    Locator total =
+  void accountTotalTracksMutationsButNotFiltersAndFollowsLanguage(int viewportWidth) {
+    AdminUsersPage adminUsersPage = login();
+    browserPage.setViewportSize(viewportWidth, 1000);
+    adminUsersPage.open();
+
+    Locator accountMetricLocator =
         browserPage.locator(
             ".cosmos-admin-users-card .cosmos-admin-users-content > .cosmos-panel-header .cosmos-panel-meta");
     // Entfernt alle Nichtziffern; so bleiben auch lokalisierte Zahlentrennzeichen außen vor.
-    int original = Integer.parseInt(total.innerText().replaceAll("\\D", ""));
-    String email = unique("counter") + "@example.test";
-    users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    int originalAccountCount =
+        Integer.parseInt(accountMetricLocator.innerText().replaceAll("\\D", ""));
+    attachAccountMetricEvidence(accountMetricLocator, viewportWidth);
 
-    assertThat(total).hasAttribute("aria-label", uiTexts.getAdminUsersAccountCount(original + 1));
-    String query = unique("no-result");
-    users.search(query);
+    String createdAccountEmailAddress = unique("counter") + "@example.test";
+    adminUsersPage.createActiveUser(createdAccountEmailAddress, BrowserTestAccounts.USER_PASSWORD);
 
-    assertThat(users.emailCells(email)).hasCount(0);
-    assertThat(total).hasAttribute("aria-label", uiTexts.getAdminUsersAccountCount(original + 1));
-    UiTexts other =
+    assertThat(accountMetricLocator)
+        .hasAttribute("aria-label", uiTexts.getAdminUsersAccountCount(originalAccountCount + 1));
+    String filterSearchText = unique("no-result");
+    adminUsersPage.search(filterSearchText);
+
+    assertThat(adminUsersPage.emailCells(createdAccountEmailAddress)).hasCount(0);
+    assertThat(accountMetricLocator)
+        .hasAttribute("aria-label", uiTexts.getAdminUsersAccountCount(originalAccountCount + 1));
+
+    UiTexts otherUiTexts =
         new de.derpeterson.browsertests.i18n.UiTexts(uiTexts.language().equals("de") ? "en" : "de");
     try {
-      new UserMenu(browserPage).selectLanguage(other.language());
+      new UserMenu(browserPage).selectLanguage(otherUiTexts.language());
 
-      assertThat(total).hasAttribute("aria-label", other.getAdminUsersAccountCount(original + 1));
-      assertThat(new AdminUsersPage(browserPage, other).searchField()).hasValue(query);
+      assertThat(accountMetricLocator)
+          .hasAttribute(
+              "aria-label", otherUiTexts.getAdminUsersAccountCount(originalAccountCount + 1));
+      assertThat(new AdminUsersPage(browserPage, otherUiTexts).searchField())
+          .hasValue(filterSearchText);
       AllurePlaywright.attachScreenshot(
           "Gesamtzahl und erhaltener Filter in der anderen Sprache", browserPage);
     } finally {
       new UserMenu(browserPage).selectTestLanguage();
     }
-    AdminUserDialog form = users.openEdit(email);
-    form.requestDelete().confirm();
 
-    assertThat(total).hasAttribute("aria-label", uiTexts.getAdminUsersAccountCount(original));
+    AdminUserDialog editUserDialog = adminUsersPage.openEdit(createdAccountEmailAddress);
+    editUserDialog.requestDelete().confirm();
+
+    assertThat(accountMetricLocator)
+        .hasAttribute("aria-label", uiTexts.getAdminUsersAccountCount(originalAccountCount));
+  }
+
+  private void attachAccountMetricEvidence(Locator accountMetricLocator, int viewportWidth) {
+    assertEquals("vaadin-card", accountMetricLocator.evaluate("card => card.localName"));
+    accountMetricLocator.scrollIntoViewIfNeeded();
+    Allure.attachment(
+        "Konten-Karte " + viewportWidth,
+        "image/png",
+        new ByteArrayInputStream(accountMetricLocator.screenshot()),
+        AttachmentOptions.empty());
+
+    String accountMetricMeasurementsJson =
+        (String)
+            accountMetricLocator.evaluate(
+                """
+                card => {
+                  const bounds = card.getBoundingClientRect();
+                  const cardStyle = getComputedStyle(card);
+                  const spans = card.querySelectorAll('span');
+                  const typography = element => {
+                    const style = getComputedStyle(element);
+                    const box = element.getBoundingClientRect();
+                    return {text: element.textContent, color: style.color, font: style.font,
+                      letterSpacing: style.letterSpacing, x: box.x - bounds.x,
+                      y: box.y - bounds.y, width: box.width, height: box.height};
+                  };
+                  return JSON.stringify({width: bounds.width, height: bounds.height,
+                    x: bounds.x, y: bounds.y, padding: cardStyle.padding,
+                    background: cardStyle.backgroundColor, border: cardStyle.border,
+                    radius: cardStyle.borderRadius, label: typography(spans[0]),
+                    value: typography(spans[1])});
+                }
+                """);
+    Allure.attachment(
+        "Konten-Messwerte " + viewportWidth, "application/json", accountMetricMeasurementsJson);
   }
 
   @Tag("fast")

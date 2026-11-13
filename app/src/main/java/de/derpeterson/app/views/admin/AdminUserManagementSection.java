@@ -71,6 +71,7 @@ import de.derpeterson.app.ui.components.BrowserUnsavedChangesGuard;
 import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
+import de.derpeterson.app.ui.components.CosmosMetricCard;
 import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.CosmosSegmentedTabs;
@@ -140,7 +141,7 @@ public class AdminUserManagementSection extends VerticalLayout {
   private final Span userManagementTitleSpan;
   private final H2 usersCardTitleH2;
   private final Span usersCardDescriptionSpan;
-  private final Span accountCountSpan;
+  private final CosmosMetricCard accountCountMetricCard;
   private final Span userManagementDescriptionSpan;
   private final Button addUserButton;
   private final TextField searchField;
@@ -217,8 +218,8 @@ public class AdminUserManagementSection extends VerticalLayout {
     usersCardTitleH2.addClassName(COSMOS_PANEL_TITLE_CLASS);
     usersCardDescriptionSpan = new Span();
     usersCardDescriptionSpan.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
-    accountCountSpan = new Span();
-    accountCountSpan.addClassNames("cosmos-panel-meta", "admin-accounts-metric");
+    accountCountMetricCard = new CosmosMetricCard();
+    accountCountMetricCard.addClassNames("cosmos-panel-meta", "admin-accounts-metric");
 
     userManagementDescriptionSpan = new Span();
     userManagementDescriptionSpan.addClassNames(LumoUtility.TextColor.SECONDARY);
@@ -304,7 +305,8 @@ public class AdminUserManagementSection extends VerticalLayout {
     usersIconBadgeDiv.addClassName(PANEL_ICON);
     Div usersCardHeadingDiv = new Div(usersCardTitleH2, usersCardDescriptionSpan);
     usersCardHeadingDiv.addClassName(COSMOS_PANEL_HEADING_CLASS);
-    Div usersCardHeaderDiv = new Div(usersIconBadgeDiv, usersCardHeadingDiv, accountCountSpan);
+    Div usersCardHeaderDiv =
+        new Div(usersIconBadgeDiv, usersCardHeadingDiv, accountCountMetricCard);
     usersCardHeaderDiv.addClassName(PANEL_HEADER);
     return usersCardHeaderDiv;
   }
@@ -612,17 +614,13 @@ public class AdminUserManagementSection extends VerticalLayout {
     userGrid.setItems(pageUsers);
     userTablePagination.showPage(currentPage, filteredUsers.size(), pageSize);
 
-    refreshAccountCount();
+    refreshAccountCountMetricCard();
   }
 
-  private void refreshAccountCount() {
-    accountCountSpan.removeAll();
-    accountCountSpan.add(
-        new Span(messageProperties.getAdminUsersAccountsLabel()),
-        new Span(Integer.toString(users.size())));
-    accountCountSpan
-        .getElement()
-        .setAttribute("aria-label", messageProperties.getAdminUsersAccountCount(users.size()));
+  private void refreshAccountCountMetricCard() {
+    accountCountMetricCard.setLabel(messageProperties.getAdminUsersAccountsLabel());
+    accountCountMetricCard.setValue(users.size());
+    accountCountMetricCard.setAriaLabel(messageProperties.getAdminUsersAccountCount(users.size()));
   }
 
   private void deleteUser(UserEntity userEntity) {

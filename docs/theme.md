@@ -429,6 +429,29 @@ mit tatsächlichen Zählern, Suche, Pagination und getrennte Metadaten/Aktionen.
 Suchlupe und Eingabetext haben einen eigenen Abstand. Die Pagination verwendet
 kompakte Seitengrößen- und Zahlencontrols; ihr Hinweis steht mit Infoicon zentriert.
 Die Zähler übernehmen auch die blaue Ungelesen-Beschriftung der Referenz.
+Die beiden Postfach-Kennzahlen „Gesamt“ und „Ungelesen“ verwenden als Pilot
+`CosmosMetricCard`, eine native Vaadin-`Card` mit `VerticalLayout` und zwei
+nativen `Span`-Texten. Die lokale Gestaltung liegt in `cosmos-metric-card.css`:
+96 × 60 px, 9 px Radius, neutrale Eingabefläche; `setHighlighted(true)` wählt
+die bisherige blaue Auswahlfläche samt blauem Text und Rahmen. Die Karte ist
+eine statische Zusammenfassung ohne Klickaktion oder Hoverzustand.
+Der öffentliche `content`-Part wird für den optischen Abgleich mit der bisherigen
+Zeile um 1 px nach unten versetzt; der native Kartenrahmen bleibt unverändert.
+`setLabel(...)` aktualisiert Beschriftung und zugänglichen Gruppennamen,
+`setValue(...)` nimmt Zahlen oder einen Ersatztext bei Ladefehlern entgegen.
+Aufrufer können über `getLabelSpan().getStyle()` und `getValueSpan().getStyle()`
+Schriftgröße, Gewicht, Farbe und weitere native Textstile getrennt festlegen.
+Diese Einstellungen und eine am Wert gesetzte ID bleiben bei Zähler- und
+Sprachaktualisierungen erhalten. Die Inhaltskomponenten nicht ersetzen;
+Texte über die Setter aktualisieren. Auch die Konten-Karte in der
+Benutzerverwaltung verwendet diesen Baustein. Ihr lokaler Abgleich in
+`cosmos-admin-reference.css` erhält die bisherigen 96 × 59 px, die dezente
+blaue Metadatenpalette und blaue Schrift mit 1,2 px Buchstabenabstand.
+Die Texte füllen weiterhin die Inhaltsbreite; der `content`-Part braucht dort
+keinen optischen Versatz. Die Gesamtzahl zählt alle geladenen Konten unabhängig
+von Suche und Filtern. Ihre zugängliche Beschriftung nennt weiterhin Zahl und
+Einheit und folgt dem Sprachwechsel. Kompakte Zähler bei Sitzungen, Navigation,
+Tabs und Filtern bleiben native Badges.
 Der Glockenzähler verwendet ein natives `Badge` mit `.cosmos-notification-count`.
 Die positionierte Variante in `cosmos-notifications.css` gleicht den
 Standard-Außenabstand des Badges aus. Bei null blendet sich der Zähler aus,

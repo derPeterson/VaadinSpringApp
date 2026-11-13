@@ -1,0 +1,42 @@
+/* Gemeinsame Cosmos-Kennzahlkarten auf einer nativen Vaadin-Card. */
+vaadin-card.cosmos-metric-card {
+    --vaadin-card-gap: 0;
+    --vaadin-card-padding: 8px 12px;
+    --vaadin-card-background: var(--cosmos-reference-input);
+    --vaadin-card-border-width: 1px;
+    --vaadin-card-border-color: var(--cosmos-reference-border);
+    --vaadin-card-border-radius: 9px;
+    --vaadin-card-shadow: none;
+    width: 96px;
+    height: 60px;
+    flex: none;
+    justify-content: center;
+    text-align: center;
+}
+
+/* Optischer Abgleich des nativen Content-Slots mit der bisherigen Kennzahlzeile. */
+vaadin-card.cosmos-metric-card::part(content) {
+    transform: translateY(1px);
+}
+
+vaadin-card.cosmos-metric-card--highlighted {
+    --vaadin-card-background: var(--cosmos-reference-selection);
+    --vaadin-card-border-color: #0088cc66;
+}
+
+.cosmos-metric-card-label {
+    color: var(--cosmos-reference-secondary);
+    font: 600 10px/14px Inter, sans-serif;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+}
+
+.cosmos-metric-card-value {
+    margin-top: 3px;
+    color: var(--cosmos-reference-white);
+    font: 700 20px/24px Inter, sans-serif;
+}
+
+.cosmos-metric-card--highlighted :is(.cosmos-metric-card-label, .cosmos-metric-card-value) {
+    color: var(--cosmos-reference-accent);
+}

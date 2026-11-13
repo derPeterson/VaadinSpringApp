@@ -371,8 +371,9 @@ class UserNotificationsUiTest {
     assertFalse(
         failureMessageHtml.getInnerHtml().contains(messageProperties.getNotificationsRefreshed()));
     if (!isCompactPreview) {
-      Span unreadCountSpan = readComponentField(notificationsPanel, "unreadCount");
-      assertEquals("–", unreadCountSpan.getText());
+      CosmosMetricCard unreadNotificationsMetricCard =
+          readComponentField(notificationsPanel, "unreadNotificationsMetricCard");
+      assertEquals("–", unreadNotificationsMetricCard.getValue());
     }
   }
 
@@ -1728,8 +1729,7 @@ class UserNotificationsUiTest {
         streamComponentTree(notificationsPanel)
             .noneMatch(candidateComponent ->
                 candidateComponent.hasClassName("cosmos-notification-inbox-row")));
-    assertEquals("0", ((Span) readComponentField(notificationsPanel, "totalCount")).getText());
-    assertEquals("0", ((Span) readComponentField(notificationsPanel, "unreadCount")).getText());
+    assertNotificationMetricValues(notificationsPanel, "0", "0");
     assertFalse(((Button) readComponentField(notificationsPanel, "markAllReadButton")).isEnabled());
   }
 
@@ -1802,8 +1802,7 @@ class UserNotificationsUiTest {
     assertEquals(ReadFilter.UNREAD, readFilterTabs.getValue());
     assertNull(readComponentField(notificationsPanel, "notificationDetailDialog"));
     assertEquals("no visible match", notificationSearchTextField.getValue());
-    assertEquals("1", ((Span) readComponentField(notificationsPanel, "totalCount")).getText());
-    assertEquals("1", ((Span) readComponentField(notificationsPanel, "unreadCount")).getText());
+    assertNotificationMetricValues(notificationsPanel, "1", "1");
     notificationsPanel.unavailable();
 
     assertFalse(dismissReadNotificationsButton.isEnabled());
@@ -1898,8 +1897,7 @@ class UserNotificationsUiTest {
     assertEquals(0, (int) readComponentField(notificationsPanel, "page"));
     verify(userNotificationService)
         .searchInbox(mockHttpSession, ReadFilter.ALL, "alpha", Set.of(), 0, 10);
-    assertEquals("6", ((Span) readComponentField(notificationsPanel, "totalCount")).getText());
-    assertEquals("2", ((Span) readComponentField(notificationsPanel, "unreadCount")).getText());
+    assertNotificationMetricValues(notificationsPanel, "6", "2");
     ((CosmosSegmentedTabs<ReadFilter>) readComponentField(notificationsPanel, "readFilterTabs"))
         .setValue(ReadFilter.UNREAD);
 
@@ -2201,8 +2199,7 @@ class UserNotificationsUiTest {
       confirmPendingNotificationAction(notificationsPanel);
 
       verify(userNotificationService).markRead(mockHttpSession, List.of(7L));
-      assertEquals("0", ((Span) readComponentField(notificationsPanel, "unreadCount")).getText());
-      assertEquals("1", ((Span) readComponentField(notificationsPanel, "totalCount")).getText());
+      assertNotificationMetricValues(notificationsPanel, "1", "0");
       assertTrue(
           streamComponentTree(notificationsPanel)
               .noneMatch(candidateComponent ->
@@ -2270,6 +2267,23 @@ class UserNotificationsUiTest {
         45);
   }
 
+  private void assertNotificationMetricValues(
+      UserNotificationsPanel notificationsPanel,
+      String expectedTotalCountText,
+      String expectedUnreadCountText) {
+    CosmosMetricCard totalNotificationsMetricCard =
+        readComponentField(notificationsPanel, "totalNotificationsMetricCard");
+    CosmosMetricCard unreadNotificationsMetricCard =
+        readComponentField(notificationsPanel, "unreadNotificationsMetricCard");
+
+    assertEquals(expectedTotalCountText, totalNotificationsMetricCard.getValue());
+    assertEquals(expectedUnreadCountText, unreadNotificationsMetricCard.getValue());
+    assertEquals(
+        messageProperties.getNotificationsTotal(), totalNotificationsMetricCard.getLabel());
+    assertEquals(
+        messageProperties.getNotificationsUnread(), unreadNotificationsMetricCard.getLabel());
+  }
+
   private void assertInboxHeaderAndCounters(UserNotificationsPanel notificationsPanel) {
     assertTrue(
         streamComponentTree(notificationsPanel)
@@ -2279,8 +2293,7 @@ class UserNotificationsUiTest {
     assertEquals(
         messageProperties.getNotificationsInboxDescription(),
         ((Span) readComponentField(notificationsPanel, "inboxDescription")).getText());
-    assertEquals("6", ((Span) readComponentField(notificationsPanel, "totalCount")).getText());
-    assertEquals("2", ((Span) readComponentField(notificationsPanel, "unreadCount")).getText());
+    assertNotificationMetricValues(notificationsPanel, "6", "2");
     assertEquals(
         "icons/lucide/refresh-cw.svg",
         ((SvgIcon)

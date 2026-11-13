@@ -43,6 +43,7 @@ class BrowserExecutionPlanTest {
         "cosmos-scrollbars",
         "duration-field",
         "segmented-selection",
+        "metric-cards",
         "mail-queue-resolution",
         "component-follow-up",
         "breadcrumbs",
@@ -88,6 +89,10 @@ class BrowserExecutionPlanTest {
                   "pageBreadcrumbsFollowHierarchyAndKeepSecurityFlowsLocked",
                   "verificationAndReactivationBreadcrumbsStayUnlinked");
           case "segmented-selection" -> Set.of("segmentSelectorsPreserveTheirSurroundingViews");
+          case "metric-cards" ->
+              Set.of(
+                  "accountTotalTracksMutationsButNotFiltersAndFollowsLanguage",
+                  "previewInboxFiltersAndDismissalAtBothWidths");
           case "mail-queue-resolution" ->
               Set.of(
                   "unresolvedRequestNeedsExplicitResolutionBeforeAnotherVerificationMail",

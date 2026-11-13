@@ -95,10 +95,8 @@ public class UserNotificationsPanel extends Div {
   private final Button lastPageButton = new Button(AppIcon.ANGLE_DOUBLE_RIGHT.create());
   private final Div pageNumbers = new Div();
   private final TextField notificationSearchField = new TextField();
-  private final Span totalLabel = new Span();
-  private final Span totalCount = new Span("0");
-  private final Span unreadCount = new Span("0");
-  private final Span unreadLabel = new Span();
+  private final CosmosMetricCard totalNotificationsMetricCard = new CosmosMetricCard();
+  private final CosmosMetricCard unreadNotificationsMetricCard = new CosmosMetricCard();
   private int totalPages = 1;
   private final Span notificationRetentionSpan = new Span();
   private final Span previewHint = new Span();
@@ -268,18 +266,21 @@ public class UserNotificationsPanel extends Div {
     Div inboxIconDiv = new Div(inboxArchiveSvgIcon);
     inboxIconDiv.addClassName(PANEL_ICON);
     inboxDescription.addClassName(COSMOS_PANEL_DESCRIPTION_CLASS);
-    Div titles = new Div(inboxHeading, inboxDescription);
-    titles.addClassName(COSMOS_PANEL_HEADING_CLASS);
-    Div unreadStatDiv = buildNotificationStatRow(unreadLabel, unreadCount);
-    unreadStatDiv.addClassName("cosmos-notification-inbox-stat-unread");
-    Div inboxCountsDiv = new Div(buildNotificationStatRow(totalLabel, totalCount), unreadStatDiv);
-    inboxCountsDiv.addClassName("cosmos-notification-inbox-counts");
-    totalCount.setId("notifications-inbox-total");
-    unreadCount.setId("notifications-inbox-unread-total");
-    Div inboxHeadingDiv = new Div(inboxIconDiv, titles);
+    Div inboxTitlesDiv = new Div(inboxHeading, inboxDescription);
+    inboxTitlesDiv.addClassName(COSMOS_PANEL_HEADING_CLASS);
+
+    unreadNotificationsMetricCard.setHighlighted(true);
+    totalNotificationsMetricCard.getValueSpan().setId("notifications-inbox-total");
+    unreadNotificationsMetricCard.getValueSpan().setId("notifications-inbox-unread-total");
+    HorizontalLayout inboxCountsLayout =
+        new HorizontalLayout(totalNotificationsMetricCard, unreadNotificationsMetricCard);
+    inboxCountsLayout.setPadding(false);
+    inboxCountsLayout.setSpacing(false);
+    inboxCountsLayout.addClassName("cosmos-notification-inbox-counts");
+    Div inboxHeadingDiv = new Div(inboxIconDiv, inboxTitlesDiv);
     inboxHeadingDiv.addClassName("cosmos-notification-inbox-heading");
 
-    Div inboxHeaderDiv = new Div(inboxHeadingDiv, inboxCountsDiv);
+    Div inboxHeaderDiv = new Div(inboxHeadingDiv, inboxCountsLayout);
     inboxHeaderDiv.addClassNames(PANEL_HEADER, "cosmos-notification-inbox-header");
     refreshInboxButton.setIcon(AppIcon.REFRESH.create());
     notificationSearchField.setId("notifications-inbox-search");
@@ -333,14 +334,6 @@ public class UserNotificationsPanel extends Div {
     add(inboxHeaderDiv, inboxToolbarDiv, notificationRows, inboxFooterDiv);
   }
 
-  private Div buildNotificationStatRow(Span statLabelSpan, Span statValueSpan) {
-    statLabelSpan.addClassName("cosmos-notification-inbox-stat-label");
-    statValueSpan.addClassName("cosmos-notification-inbox-stat-value");
-    Div notificationStatDiv = new Div(statLabelSpan, statValueSpan);
-    notificationStatDiv.addClassName("cosmos-notification-inbox-stat");
-    return notificationStatDiv;
-  }
-
   public void setCloseAction(Runnable closeAction) {
     this.closeAction = Objects.requireNonNull(closeAction);
   }
@@ -356,8 +349,8 @@ public class UserNotificationsPanel extends Div {
         compact
             ? messageProperties.getNotificationsDescription()
             : messageProperties.getNotificationsInboxDescription());
-    totalLabel.setText(messageProperties.getNotificationsTotal());
-    unreadLabel.setText(messageProperties.getNotificationsUnread());
+    totalNotificationsMetricCard.setLabel(messageProperties.getNotificationsTotal());
+    unreadNotificationsMetricCard.setLabel(messageProperties.getNotificationsUnread());
     notificationSearchField.setPlaceholder(messageProperties.getNotificationsSearch());
     notificationSearchField.setAriaLabel(messageProperties.getNotificationsSearch());
     closeInboxButton.setAriaLabel(messageProperties.getNotificationsClose());
@@ -468,8 +461,8 @@ public class UserNotificationsPanel extends Div {
 
       unreadIds = userNotificationService.unreadSnapshot(httpSession);
       totalItems = userNotificationService.inboxCount(httpSession);
-      totalCount.setText(Long.toString(totalItems));
-      unreadCount.setText(Integer.toString(unreadIds.size()));
+      totalNotificationsMetricCard.setValue(totalItems);
+      unreadNotificationsMetricCard.setValue(unreadIds.size());
 
       refreshReadFilterOptions();
 
@@ -576,8 +569,8 @@ public class UserNotificationsPanel extends Div {
     lastPageButton.setEnabled(false);
     pageNumbers.removeAll();
     pageTotal.setText("–");
-    totalCount.setText("–");
-    unreadCount.setText("–");
+    totalNotificationsMetricCard.setValue("–");
+    unreadNotificationsMetricCard.setValue("–");
     if (notificationDetailDialog != null) {
       notificationDetailDialog.close();
     }

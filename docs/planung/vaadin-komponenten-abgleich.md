@@ -17,10 +17,20 @@ Arbeiten laufen auf
 einheitlichen Seitenpfade sind vom Benutzer abgenommen. Ihre geltenden Regeln
 stehen im [Theme-Standard](../theme.md).
 
-Die gemeinsame `CosmosMetricCard` bleibt als eigenes Paket vorerst zurückgestellt.
-Ihr erster Einsatz sind „Gesamt“ und „Ungelesen“ im Postfach. Die neutrale und
-die hervorgehobene Variante werden auf Desktop und Mobil mit der bestehenden
-Darstellung verglichen.
+`CosmosMetricCard` wird für „Gesamt“ und „Ungelesen“ im Postfach sowie die
+Konten-Karte in der Benutzerverwaltung verwendet.
+Eine native Vaadin-`Card` mit nativen Text-/Layoutkomponenten
+übernimmt die bestehende neutrale und blaue Darstellung. Beschriftung, Wert
+und deren Schriftgestaltung sind von außen konfigurierbar.
+Der isolierte Vorher-/Nachher-Vergleich in DE/EN bei 1280 und 390 px ist
+bestanden: Alle acht Kartenausschnitte und ihre gemessenen Stilwerte sind
+identisch. Die Konten-Karte behält ihre Maße von 96 × 59 px und die bisherige
+dezente blaue Metadatenpalette. Gesamtzahl bei Anlage und Löschung,
+Filterunabhängigkeit, Sprachwechsel und zugängliche Beschriftung sind geprüft.
+Die gezielte Suite `metric-cards` hat je Sprache vier erfolgreiche Browserfälle;
+314 gezielte Java-Prüfungen und die Stilprüfungen sind ebenfalls bestanden.
+Weitere Badge-Zähler bleiben unverändert. Offen bleibt die gemeinsame
+Sichtung der Kennzahlkarten.
 
 ## Abgenommene Pakete und Prüfstand
 

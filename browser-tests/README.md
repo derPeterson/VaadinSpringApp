@@ -102,7 +102,8 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
-| `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung und kompakte Zeit | 15 |
+| `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung und kompakte Zeit | 16 |
+| `metric-cards` | Konten-Karte und Postfach-Kennzahlen auf Desktop/Smartphone: Darstellung, Zähleränderungen, Filter und Sprache | 4 |
 | `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset und kompakte Zeit mit Sprachwechsel | 5 |
 | `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug mit und ohne bestehende Sitzung, Superadmin-/Gastzugriff, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 8 |
 | `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |
