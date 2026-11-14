@@ -88,10 +88,6 @@
         padding: var(--cosmos-space-l);
     }
 
-    .cosmos-account .account-profile-form {
-        grid-template-columns: minmax(0, 1fr);
-    }
-
     .cosmos-account .account-entry {
         grid-template-columns: var(--cosmos-panel-icon-size) minmax(0, 1fr);
     }
@@ -551,9 +547,15 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 .cosmos-reference-portal .cosmos-panel-title { font: 600 18px/28px Inter, sans-serif; letter-spacing: -.45px; }
 .cosmos-reference-portal .cosmos-panel-description { margin-top: 2px; font: 400 12px/20px Inter, sans-serif; }
 .cosmos-reference-portal .account-panel-body { width: 100%; box-sizing: border-box; padding: 24px; background: var(--cosmos-reference-page); }
-.account-profile-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 20px; align-items: start; }
-.account-profile-form > * { min-width: 0; width: 100%; }
-.account-profile-email-group { grid-column: 1 / -1; position: relative; }
+/* Native FormLayout-Spalten; die bestehende Bildschirmgrenze bleibt maßgeblich.
+ * Auf kleinen Bildschirmen ist 100vw breiter als der eingerückte Formularinhalt. */
+vaadin-form-layout.account-profile-form {
+    --vaadin-form-layout-column-spacing: 20px;
+    --vaadin-form-layout-row-spacing: 24px;
+    --account-profile-two-column-min-width: 0px;
+}
+.account-profile-form > * { min-width: 0; align-self: flex-start; }
+.account-profile-email-group { position: relative; }
 .account-readonly-label { position: absolute; top: 0; right: 0; color: var(--cosmos-reference-warning); font: 500 11px/16.5px Inter, sans-serif; }
 .cosmos-reference-portal #account-panel-profile > .cosmos-panel-footer { padding: 16px 24px; justify-content: flex-end; background: var(--cosmos-reference-panel); }
 .cosmos-reference-portal .cosmos-footer { align-self: stretch; box-sizing: border-box; width: 100%; margin: 0; padding: 12px 24px; border-top: 1px solid var(--cosmos-reference-border); background: var(--cosmos-reference-page); color: var(--cosmos-reference-muted); font: 400 12px/16px Inter, sans-serif; }
@@ -683,7 +685,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 .cosmos-reference-portal #account-panel-sessions > .cosmos-panel-footer > .cosmos-panel-actions > .cosmos-panel-actions { justify-content: flex-end; width: 100%; }
 
 @media (max-width: 639px) {
-    .account-profile-form { grid-template-columns: minmax(0, 1fr); }
+    vaadin-form-layout.account-profile-form { --account-profile-two-column-min-width: 100vw; }
     .cosmos-reference-portal .account-panel > .cosmos-panel-header { padding: 20px; }
     .cosmos-reference-portal .account-panel-body { padding: 20px; }
     .cosmos-reference-portal #account-panel-profile > .cosmos-panel-footer { padding: 16px 20px; }

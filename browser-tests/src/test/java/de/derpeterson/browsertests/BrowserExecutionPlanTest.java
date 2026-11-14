@@ -45,6 +45,7 @@ class BrowserExecutionPlanTest {
         "segmented-selection",
         "metric-cards",
         "avatars",
+        "profile-form",
         "mail-queue-resolution",
         "component-follow-up",
         "breadcrumbs",
@@ -103,6 +104,12 @@ class BrowserExecutionPlanTest {
                   "manualStatusIsStoredAndPushedToAnotherTab",
                   "confirmationRecoveryAndHelpUseNativeControls",
                   "ticketUnreadAndNotificationsFollowAssignmentAndClosure");
+          case "profile-form" ->
+              Set.of(
+                  "profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard",
+                  "profilePersistsAndCanBeSavedTwice",
+                  "invalidProfileNeverPersists",
+                  "savedLanguageSurvivesNewLogin");
           case "mail-queue-resolution" ->
               Set.of(
                   "unresolvedRequestNeedsExplicitResolutionBeforeAnotherVerificationMail",

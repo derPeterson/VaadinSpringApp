@@ -17,6 +17,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
@@ -465,16 +466,7 @@ public class AccountSettingsComponent extends PageContentLayout {
     readOnlyEmailSpan.addClassName("account-readonly-label");
     profileEmailGroupDiv.add(readOnlyEmailSpan);
 
-    Div profileFormDiv =
-        new Div(
-            firstNameField,
-            lastNameField,
-            profileEmailGroupDiv,
-            genderSelector,
-            birthDatePicker,
-            preferredLanguageSelector);
-    profileFormDiv.addClassName("account-profile-form");
-    profilePanel.getBody().add(profileFormDiv);
+    profilePanel.getBody().add(createProfileFormLayout(profileEmailGroupDiv));
 
     Button saveProfileButton =
         createAccountActionButton(AppIcon.CHECK, messageProperties::getAccountSettingsSave, true);
@@ -482,6 +474,29 @@ public class AccountSettingsComponent extends PageContentLayout {
     saveProfileButton.addClickListener(event -> saveProfile());
     profilePanel.addActionFooter(saveProfileButton);
     return profilePanel;
+  }
+
+  private FormLayout createProfileFormLayout(Div profileEmailGroupDiv) {
+    FormLayout profileFormLayout =
+        new FormLayout(
+            firstNameField,
+            lastNameField,
+            profileEmailGroupDiv,
+            genderSelector,
+            birthDatePicker,
+            preferredLanguageSelector);
+    profileFormLayout.addClassName("account-profile-form");
+    profileFormLayout.setWidthFull();
+    profileFormLayout.setAutoResponsive(false);
+    // Der öffentliche CSS-Längenschritt erhält die bisherige Bildschirmgrenze.
+    profileFormLayout.setResponsiveSteps(
+        new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.TOP),
+        new FormLayout.ResponsiveStep(
+            "var(--account-profile-two-column-min-width)",
+            2,
+            FormLayout.ResponsiveStep.LabelsPosition.TOP));
+    profileFormLayout.setColspan(profileEmailGroupDiv, 2);
+    return profileFormLayout;
   }
 
   private void configureProfileFields() {

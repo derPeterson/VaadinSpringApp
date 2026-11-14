@@ -105,6 +105,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung und kompakte Zeit | 16 |
 | `metric-cards` | Konten-Karte und Postfach-Kennzahlen auf Desktop/Smartphone: Darstellung, Zähleränderungen, Filter und Sprache | 4 |
 | `avatars` | Profilbildmodi und Bildfehler, Header/Sidebar/Menü, Benutzertabelle und Bestätigung, Status-/Namenswechsel, Ticketidentitäten und 2FA-Header auf Desktop/Smartphone | 10 |
+| `profile-form` | Persönliche Daten: Anordnung und Spaltengrenzen auf Desktop/Smartphone, Speichern, Validierung, Formularschutz und Sprachwechsel | 5 |
 | `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset und kompakte Zeit mit Sprachwechsel | 5 |
 | `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug mit und ohne bestehende Sitzung, Superadmin-/Gastzugriff, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 8 |
 | `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |

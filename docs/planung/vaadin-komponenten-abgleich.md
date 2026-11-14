@@ -50,6 +50,24 @@ und Menü sind auch optisch auf die bisherige Höhe abgeglichen. Der vollständi
 Anwendungsbuild einschließlich regulärer Tests ist erfolgreich. Der Benutzer
 hat auch die Übernahme der übrigen Avatarstellen anhand des Vergleichs abgenommen.
 
+### Abgenommener Pilot: Persönliche Daten
+
+Das Profilformular in `AccountSettingsComponent` ist auf natives `FormLayout`
+umgestellt. Bestehende Felder, Reihenfolge, Beschriftungen, E-Mail über die ganze
+Zeile, Speichern, Validierung und Formularschutz bleiben erhalten. Die bisherige
+Bildschirmgrenze zwischen einer und zwei Spalten bleibt ebenfalls erhalten;
+keine gleichzeitige Umstellung weiterer Formulare.
+
+Der isolierte Vorher-/Nachher-Abgleich ist in DE/EN auf Desktop und Smartphone
+mit je fünf Browserfällen erfolgreich. Alle vier Panelaufnahmen sind pixelgleich.
+Auch die Zwischenbreiten 639, 640, 767, 768 und 1024 px behalten ihre Anordnung;
+alle 14 gepaarten Messwertsätze stimmen bis auf browserübliche Rundung unterhalb
+eines Pixels überein. Speichern, Validierung, Sprachwechsel und Formularschutz
+sind geprüft. Die 85 gezielten Java-Prüfungen, Stilprüfungen und der vollständige
+Anwendungsbuild sind bestanden. Die Vorher-/Nachher-Screenshots für beide
+Gerätebreiten wurden im Chat gesichtet; der Benutzer hat den Piloten abgenommen.
+Die beiden offenen Queue-Nachtests bleiben für die Nacht im zentralen Testbedarf.
+
 ## Abgenommene Pakete und Prüfstand
 
 Die abgenommenen Auswahlfelder, die bestehende Formularwarnung und die E-Mail-/
@@ -125,7 +143,7 @@ Darstellungsvergleich und Bedienprüfung im Browser noch aus.
 | Angemeldeter Rahmen | [UserActivityAwareView](../../app/src/main/java/de/derpeterson/app/ui/base/UserActivityAwareView.java) erbt von `AppLayout`. [TrackedUserAppLayout](../../app/src/main/java/de/derpeterson/app/ui/base/TrackedUserAppLayout.java) setzt über `setContent` einen [PageFrameComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PageFrameComponent.java) ein. Der Kopf verwendet unter anderem `HorizontalLayout`, der innere Rahmen Divs für Kopf, Hauptinhalt und Hintergrund. | Der äußere Rahmen ist nativ. Der Cosmos-Rahmen innen ist selbst zusammengesetzt. Ein späterer Wechsel zu den Navbar-/Drawer-Bereichen von `AppLayout` wäre eine Änderung am responsiven Seitenverhalten. Erst bei einem konkreten Gewinn prüfen. |
 | Öffentlich und geschützte Zwischenschritte | [PublicPageComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PublicPageComponent.java) verwendet denselben Rahmen, native Zeilen und Spalten sowie einen eigenen Kopf. Die Gast-Views nutzen unter anderem [IsNotAuthenticatedBaseView](../../app/src/main/java/de/derpeterson/app/security/IsNotAuthenticatedBaseView.java) mit `Composite` und Flow-Layouts. Die 2FA-Views verwenden `VerticalLayout` und je nach Zustand den reduzierten Kopf. | Gemeinsame Hülle erhalten. Visuelle Ausrichtung und serverseitige Ablauf- und Zugriffssperren getrennt betrachten. |
 | Seitennavigation und Inhalt | [PageNavigationComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PageNavigationComponent.java) erweitert `SideNav` und arbeitet mit `SideNavItem`. Ein Browser-Listener verbindet interne Einträge mit Java-Aktionen. [PageContentLayout](../../app/src/main/java/de/derpeterson/app/ui/components/PageContentLayout.java) gruppiert Sidebar und Inhalt in einem responsiven CSS-Raster und steuert die mobile Navigation. `AdminView` verwendet ebenfalls diese Seitennavigation. | Die Menüpunkte und Navigationselemente sind nativ. Der responsive Rahmen und die Anbindung an die abschnittsbasierte Navigation sind eigene Ergänzungen. |
-| Zeilen, Spalten und Formulare | `HorizontalLayout` und `VerticalLayout` kommen durchgängig vor, etwa bei Registrierung, Profilaktionen, Ticketköpfen und Pagination. Das Profilformular nutzt CSS Grid. Die Registrierung und das Admin-Benutzerformular bauen Feldpaare mit `HorizontalLayout`. | Für gewöhnliche Zeilen und Spalten ist die Vaadin-Basis bereits da. `FormLayout` ist eine passende Standardoption für wiederkehrende responsive Feldpaare. In den Anwendungsquellen gibt es aktuell keinen direkten Einsatz. |
+| Zeilen, Spalten und Formulare | `HorizontalLayout` und `VerticalLayout` kommen durchgängig vor, etwa bei Registrierung, Profilaktionen, Ticketköpfen und Pagination. Das Profilformular verwendet im Piloten natives `FormLayout`. Die Registrierung und das Admin-Benutzerformular bauen Feldpaare mit `HorizontalLayout`. | Für gewöhnliche Zeilen und Spalten ist die Vaadin-Basis bereits da. `FormLayout` ist eine passende Standardoption für wiederkehrende responsive Feldpaare. Der Bereinigungsassistent verwendet `FormLayout` bereits; weitere Formularübernahmen folgen erst nach Sichtung des Piloten. |
 | Karten und Panels | [CosmosCardComponent](../../app/src/main/java/de/derpeterson/app/ui/components/CosmosCardComponent.java) erbt von `VerticalLayout`. [PublicPanelComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PublicPanelComponent.java) und [AccountPanelComponent](../../app/src/main/java/de/derpeterson/app/ui/components/AccountPanelComponent.java) setzen Kopf, Inhalt und Aktionen daraus zusammen. [PortalContextCard](../../app/src/main/java/de/derpeterson/app/ui/components/PortalContextCard.java) basiert auf `Div`. Admin-Panels verwenden zusätzlich die gemeinsamen Panelklassen. | Gemeinsame Gestaltung ist vorhanden. Die HTML-Struktur der Karten ist unsere. `Card` ist ein konkreter Pilotkandidat, weil Vaadin dafür eine eigene Komponente anbietet. |
 | Dialoge, Feldhilfe und Filter | Formdialoge basieren auf `Dialog`. [AdminSidePanelDialog](../../app/src/main/java/de/derpeterson/app/ui/components/AdminSidePanelDialog.java) ist ein `Dialog` mit seitlicher Platzierung und eigener Größenanpassung. `Popover` wird etwa für Glocke, Profilmenü und Nachrichtenaktionen verwendet. | Overlay, Modalität und grundlegende Interaktion kommen von Vaadin. Header, Footer und Inhalte sind fachliche Zusammensetzungen. Ein `ConfirmDialog`-Pilot ist für einfache Bestätigungen sinnvoll. |
 

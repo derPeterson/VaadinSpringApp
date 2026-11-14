@@ -248,6 +248,10 @@ Die rechte Feldhilfe ist ein eigener Baustein und bleibt von Tooltips getrennt.
 
 ## Native Vaadin-Bausteine zuerst
 
+Bei Komponenten-Umstellungen Vorher-/Nachher-Aufnahmen für Desktop und Smartphone
+direkt im Chat zeigen. Bei freigegebenen Browserläufen beide Sprachen isoliert
+prüfen; die Aufnahmen bleiben temporäre Vergleichsbelege im Browserlauf.
+
 Vor neuen Oberflächenelementen einschließlich Layouts die tatsächlich verwendete
 Vaadin-Version prüfen. Passende native Flow-Komponenten haben Vorrang und werden mit öffentlichen APIs,
 Theme-Varianten und Parts an Cosmos angepasst. Ein eigener Div-/Span-/JavaScript-
@@ -264,6 +268,15 @@ einfacher umzusetzen sind, beispielsweise mehrere Spalten auf breiten Bildschirm
 und dieselben Bereiche untereinander auf schmalen Displays. Die Unterstützung
 mehrerer Bildschirmgrößen allein rechtfertigt keinen Ersatz der Vaadin-Layouts.
 Diese Regel ist kein Auftrag, bestehende Ansichten nachträglich umzubauen.
+
+Das Profilformular in `AccountSettingsComponent` verwendet natives `FormLayout`.
+Die vorhandenen Eingabekomponenten behalten ihre Beschriftungen und Reihenfolge;
+`setColspan` lässt die E-Mail-Zeile über beide Spalten reichen. Die lokale Klasse
+`account-profile-form` in `cosmos-account.css` setzt die öffentlichen Variablen
+für 20 px Spalten- und 24 px Zeilenabstand. Der öffentliche ResponsiveStep mit
+`--account-profile-two-column-min-width` erhält über die bestehende Medienabfrage
+die bisherige Bildschirmgrenze von 640 px, statt die Spaltenzahl an die schmalere
+Formularinnenbreite zu koppeln. Interne Vaadin-Layoutvariablen werden nicht verändert.
 
 Für neue Status- und Zähler-Badges die native `Badge`-Komponente verwenden.
 Sie ist unter anderem bei Sitzungen, Anmeldeanbietern, 2FA und Tickets bereits

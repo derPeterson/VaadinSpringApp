@@ -24,6 +24,7 @@ import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.AvatarAppearanceChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.ProfileFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UnsavedChangesPrompt;
@@ -288,17 +289,22 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   }
 
   private String account() {
-    LoginPage login = new LoginPage(browserPage);
-    login.open();
-    login.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
+    return createAccountAndSignIn("account-" + UUID.randomUUID() + "@example.test");
+  }
+
+  private String createAccountAndSignIn(String accountEmailAddress) {
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(BrowserTestAccounts.ADMIN_EMAIL, BrowserTestAccounts.ADMIN_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
-    String email = "account-" + UUID.randomUUID() + "@example.test";
-    new AdminUsersPage(browserPage).createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
+    new AdminUsersPage(browserPage)
+        .createActiveUser(accountEmailAddress, BrowserTestAccounts.USER_PASSWORD);
     new UserMenu(browserPage).signOut();
-    login.open();
-    login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+
+    loginPage.open();
+    loginPage.signIn(accountEmailAddress, BrowserTestAccounts.USER_PASSWORD);
     new UserMenu(browserPage).selectTestLanguage();
-    return email;
+    return accountEmailAddress;
   }
 
   @ParameterizedTest
@@ -306,12 +312,23 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   @DisplayName(
       "Beim Wechsel des Kontobereichs kann ein Profilentwurf behalten oder verworfen werden")
   @Tag("form-details")
+  @Tag("profile-form")
   void profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard(int viewportWidth) {
-    browserPage.setViewportSize(viewportWidth, 900);
-    account();
+    browserPage.setViewportSize(viewportWidth, viewportWidth < 640 ? 844 : 900);
+    createAccountAndSignIn(
+        "profile-form-" + viewportWidth + "-" + uiTexts.language() + "@example.test");
     AccountPage accountPage = new AccountPage(browserPage);
     UnsavedChangesPrompt unsavedChangesPrompt = new UnsavedChangesPrompt(browserPage, uiTexts);
     accountPage.open();
+    ProfileFormAppearanceChecks.assertLayoutAndCaptureEvidence(browserPage, true);
+    if (viewportWidth == 1280) {
+      for (int intermediateViewportWidth : new int[] {639, 640, 767, 768, 1024}) {
+        browserPage.setViewportSize(intermediateViewportWidth, 900);
+        ProfileFormAppearanceChecks.assertLayoutAndCaptureEvidence(browserPage, false);
+      }
+      browserPage.setViewportSize(viewportWidth, 900);
+    }
+
     Locator firstNameInputLocator = accountPage.input("account-first-name");
     String savedFirstName = firstNameInputLocator.inputValue();
     firstNameInputLocator.fill("Temporary draft");
@@ -410,6 +427,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       **Erwartet:** Basisdaten dauerhaft gespeichert, wiederholtes Speichern möglich, E-Mail unverändert.
       """)
   @Tag("avatars")
+  @Tag("profile-form")
   void profilePersistsAndCanBeSavedTwice() {
     String email = account();
     AccountPage form = new AccountPage(browserPage);
@@ -479,6 +497,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       3. Jeweils rote Datumsmarkierung und Vergangenheitsregel prüfen; Seite neu laden.
       **Erwartet:** Keine ungültigen Änderungen gespeichert; vorherige Werte bleiben erhalten.
       """)
+  @Tag("profile-form")
   void invalidProfileNeverPersists() {
     account();
     AccountPage form = new AccountPage(browserPage);
@@ -519,6 +538,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       3. Ohne Sprachkorrektur im Test die gespeicherte Sprache im Benutzermenü prüfen.
       **Erwartet:** Speicherung ändert die Sitzungssprache und die nächste Anmeldung übernimmt sie.
       """)
+  @Tag("profile-form")
   void savedLanguageSurvivesNewLogin() {
     String email = account();
     AccountPage form = new AccountPage(browserPage);

@@ -120,6 +120,8 @@ final class BrowserExecutionPlan {
       discoveryRequestBuilder.filters(TagFilter.includeTags("metric-cards"));
     } else if (suiteName.equals("avatars")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("avatars"));
+    } else if (suiteName.equals("profile-form")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("profile-form"));
     } else if (suiteName.equals("external-login-settings")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("provider-settings"));
     } else if (suiteName.equals("follow-up-regressions")) {
