@@ -1,140 +1,130 @@
-# Große Testrunde vom 13.11.2026
+# Große Testrunde vom 14.11.2026
 
-Geprüfter Code: `7d127bcb34d6f0c1152ec58e4683a68f02556aaf`.
-Die Nachtpakete und die reviewten Sonar-/QA-Korrekturen wurden lokal nach
-`main` zwischenintegriert. Die Browserrunde lief auf
-`codex/vaadin-komponenten-folgearbeiten` mit demselben unveränderten Codestand.
-Vergleichsbasis der letzten vollständig belegten QA ist `9c0d53e8`.
-Die nachträglich ergänzte zweizeilige Queue-Statusausgabe ist vom Benutzer auf
-Desktop und Smartphone manuell abgenommen und mit drei erfolgreichen
-Sprachkatalogtests geprüft. Der automatisierte Browsernachtest dieser kleinen
-Änderung bleibt im [Testbedarf](testbedarf.md); die Gesamtläufe unten gehören
-weiterhin zum oben genannten Codestand.
+Die Formularpakete sind auf `codex/vaadin-komponenten-folgearbeiten` umgesetzt,
+jeweils reviewt und separat committed. Vergleichsbasis ist die letzte vollständig
+belegte QA bei `7d127bcb`. Die Anwendungsquellen des aktuellen Testimages entsprechen
+`487f9253`; danach wurden ausschließlich Browsertests und Dokumentation korrigiert.
+Der aktuelle Testcode steht bei `240c1008`.
 
-**Der technische Prüfabschluss ist keine Abnahme der laufenden Gesamtumsetzung.**
-Die bisherigen UI-Pakete und die externe Browser-Laufablage sind vom Benutzer
-abgenommen. Die Gesamtumsetzung wird auf dem Feature-Branch fortgeführt;
-zurückgestellte Pakete stehen im [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
-Kein Push oder Release.
+**Die unten aufgeführten automatisierten Tests sind erfolgreich abgeschlossen.**
+Der aktuelle Feature-Branch hat noch keinen zugeordneten Sonar-Scan.
+Die technische Prüfung ersetzt außerdem nicht die offene menschliche Sichtung
+der übrigen Formulare im [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
+Kein Merge, Push oder Release wurde durchgeführt.
 
 ## Ergebnisse
 
 | Prüfung | Ergebnis |
 | --- | --- |
-| Optimierter vollständiger Maven-Reactor mit Java 25, Produktion und Coverage | Bestanden |
+| Vollständiger Maven-Reactor mit Java 25, Produktion und Coverage | Bestanden |
 | Spotless, Checkstyle, wirksames Maven-Modell und Coverage-Prüfer | Bestanden |
-| Anwendungstests | 2.988 bestanden, zwei bewusst optionale Caddy-Tests übersprungen |
-| Browser-Helfertests | 123 bestanden, keine Fehler oder Skips |
+| Anwendungstests | 3.005 bestanden, zwei bewusst optionale Caddy-Tests übersprungen |
+| Browser-Helfertests | 127 bestanden, keine Fehler oder Skips |
 | Frontend-Offlinetests | 20 bestanden |
 | Coverage-/Sonar-Offlineprüfungen | 18 beziehungsweise 49 bestanden |
-| Browser `all` DE | 312 von 312 bestanden, keine Fehler oder Skips |
-| Browser `all` EN | 312 von 312 bestanden, keine Fehler oder Skips |
-| Aufbau, isolierter Anwendungsstart, HTTPS, Abbau und HTML-Berichte | In beiden Gesamtläufen bestanden |
-| Aktueller Sonar-Scan auf sauberem `main` | Quality Gate OK, null offene Issues und Hotspots |
+| Browser `all` DE | 328 von 328 bestanden, keine Fehler oder Skips |
+| Browser `all` EN | 328 von 328 bestanden, keine Fehler oder Skips |
+| Aufbau, isolierter Start, HTTPS, Abbau und HTML-Berichte | In beiden Gesamtläufen bestanden |
+| Anmeldung und Seitenpfade nach Korrektur der UI-Wartebedingung | Je zehn Fälle DE/EN bestanden |
+| Vorher-/Nachher-Formularvergleich | Je zwölf Fälle vor und nach der Umstellung in DE/EN bestanden |
+| Sonar | Verfügbarer main-Stand lesend geprüft; keine Analyse des aktuellen Feature-Branchs |
 
-Die Offlineprüfungen bleiben dem unveränderten jeweiligen JavaScript-/Pythoncode
-zugeordnet; ihre Quellen wurden durch die anschließenden Java-/CSS- und
-Berichtskorrekturen nicht verändert. Überlappende Paket- und Nachtests werden
-nicht zu den Zahlen des vollständigen Reactors oder der Gesamtläufe addiert.
+Der letzte vollständige Reactor prüfte genau die anschließend als `240c1008`
+committete Testkorrektur. Der deutsche Gesamtlauf gehört zum Testcode `48131d95`;
+die danach geänderte Anmelde-Wartebedingung ist zusätzlich mit den genannten
+DE-/EN-Nachtests belegt. Der abschließende englische Gesamtlauf gehört zu
+`240c1008`. Die Anwendungsquellen blieben dabei unverändert.
+Die Offlineprüfungen gehören zu ihren unveränderten JavaScript-/Pythonquellen.
+Überlappende Paket-, Vergleichs- und Nachtests werden nicht zu den Zahlen des
+Reactors oder der vollständigen Browserläufe addiert.
 
-DE und EN verwendeten dasselbe unveränderte Image:
+Die Browserprüfungen verwenden dasselbe unveränderte Anwendungsimage:
 
-`sha256:471c9262c37ad2973d18ca0c7a1bae6a258a5a3b442b88d7891fc4494d422f07`
+`sha256:c783c1b268be0cebbc891410dbccc05c34cda864a5f03d1a4ceeec440ede002e`
 
-Jeder Lauf hatte vier getrennte JVM-, Browser-, Anwendungs-, H2-, HTTPS- und
-Mailpit-Umgebungen. Die Anwendung startete jeweils mit frischen isolierten
-Daten und dem aktuellen Schema. Alle acht Worker meldeten erfolgreiche Tests
-und erfolgreichen Abbau. Bestehende Entwicklerdaten, gespeicherte Passwörter
-und echte Mailkonten dienten nicht als Fixtures.
+Die Gesamtläufe verwenden jeweils vier getrennte Browser-, Anwendungs-, H2-,
+HTTPS- und Mailpit-Umgebungen mit frischen Daten und aktuellem Schema. Bestehende
+Entwicklerdaten, gespeicherte Passwörter, echte Mailkonten und die laufende
+IntelliJ-Anwendung dienen nicht als Fixtures.
+Alle acht Worker meldeten erfolgreiche Tests und erfolgreichen Abbau.
 
 ## Abdeckung und Korrekturen
 
-Die Gesamtrunde schließt die bestehenden Konto-, Anmelde-, 2FA-, Ticket-,
-Benachrichtigungs- und Administrationsfälle ein. Die UI-Fälle prüfen Deutsch
-und Englisch einschließlich Desktop- und Smartphonebreite.
+Die Gesamtsuite prüft die bestehenden Anmelde-, Konto-, 2FA-, Ticket-,
+Benachrichtigungs- und Administrationsabläufe in DE/EN einschließlich Desktop-
+und Smartphonebreite. Die Vorarbeiten seit dem Vergleichsstand umfassen native
+Kennzahlkarten und Avatare, Formularlayouts, segmentierte Umschalter sowie
+Korrekturen der Mailqueue-Reiter und des Einstellungszählers.
 
-- **Mailqueue:** fünf allgemeine Felder, Superadmin-Assistent mit vier
-  Einstellungen, disabled Zeitfelder bei ausgeschalteter Automatik,
-  unabhängig bedienbare Historienfrist, erhaltene Entwürfe beim Tabwechsel,
-  gemeinsames Speichern/Laden, Feldhilfen und bewusste Statusmeldungen.
-  Monospace-Ausgabe, Aktionen und Kartenbegrenzung sind auf beiden Breiten
-  geprüft; die aktuellen DE-/EN-Screenshots wurden angesehen.
-- **Bereinigungshistorie:** manuelle und automatische Versuche, Nullergebnisse,
-  laufender Versand, Intervallgrenzen, Rechte, Transaktionsabschluss und
-  tägliche Aufbewahrungsbereinigung sind durch gezielte JUnit-Regressionen
-  und den vollständigen Reactor abgedeckt. Keine Empfänger oder Mailinhalte
-  werden in die Historie übernommen.
-- **Externe Laufablage:** Pfadkonfiguration, ungültige Ziele, Pfadbegrenzung,
-  Junctions, Launcher sowie Berichts-/Trace-Auflösung sind geprüft. Beide
-  vollständigen Läufe samt Belegen und Berichten liegen am konfigurierten
-  D:-Stamm. Die neuen Dokumentationslinks zeigen korrekt ins ursprüngliche
-  Projekt; Belege bleiben relativ zum Laufordner. Alte C:-Läufe blieben erhalten.
-  Buildausgaben und Maven-/Browser-/Docker-Caches bleiben an ihren bisherigen Orten.
-- **Bestehender Komponentenstand:** Zeitfelder, segmentierte Auswahl,
-  Seitenpfade, Formularschutz, Kontoaktionen, Verifikation/Reaktivierung,
-  administrative Sperre gegenüber Selbstdeaktivierung sowie Anmeldeinfos
-  sind im vollständigen aktuellen DE-/EN-Nachweis enthalten.
+- **Formulare:** Allgemeine Konfiguration, Google/Microsoft, alle vier
+  2FA-Rollenansichten, Mailtest, öffentliche Formulare und Kontodialoge verwenden
+  passende native FormLayout-, Zeilen- und Spaltenlayouts. Bereits passende
+  native Anordnungen und freigegebene Sonderlösungen bleiben erhalten.
+  Der gemeinsame Feldhilfebaustein bewahrt Eingabebreiten und Hilfe-Ausrichtung.
+  Der Vorher-/Nachher-Abgleich bei 1280 und 390 px enthält 136 Messpaare ohne
+  Maßabweichung. Von 272 Bildpaaren sind 151 pixelidentisch; die übrigen enthalten
+  unter anderem Fokus-, Hintergrundscroll- und Kantenglättungsunterschiede.
+  Nicht alle Bilder sind pixelidentisch.
+- **Regressionen:** Der Formularfall ergänzt vorhandene Speicher-, Rechte-,
+  Fehler-, Fokus- und Sicherheitsprüfungen. Veraltete Feldhilfe-Locatoren wurden
+  an die native Zeilenstruktur angepasst; Inhalts- und Geometrieprüfungen
+  bleiben erhalten. Der feste Zeilenumbruch der Bereinigungsausgabe ist im
+  bestehenden Queue-Test auf beiden Breiten abgesichert. Die gezielten
+  Nachtests für 2FA-Konfiguration, Mailtest und Queue bestanden mit je neun
+  Fällen in DE und EN.
+- **Browserbereitschaft:** LoginPage wartet auf den HTML-Aufbau und anschließend
+  auf das sichtbare Vaadin-Formular. URL-, Titel-, Feld- und Überschriftenprüfungen
+  bleiben erhalten. Weder Assertions noch Timeouts wurden abgeschwächt;
+  automatische Wiederholungen wurden nicht ergänzt.
 
-Der erste deutsche Gesamtlauf war fehlgeschlagen und wird nicht als grüner
-Nachweis gewertet. Er zeigte einen zusätzlichen nativen Details-Außenabstand
-im Benutzereditor, einen mehrdeutigen Überschriften-Locator, das Mitzählen
-versteckter Feldhilfen und eine überlastete Worker-Gruppe. Die lokale
-Details-Regel, die beiden Test-Locatoren und die gemessenen Laufzeitgewichte
-wurden getrennt korrigiert und reviewt. Die vorhandenen Geometrie-/Feldprüfungen,
-Assertions und das 60-Minuten-Gesamtlimit blieben erhalten.
-
-Die gezielten DE-Nachtests bestanden mit 4 Fällen für Anmeldung/Sitzungen,
-12 Komponentenfällen und 8 Feldhilfefällen. Anschließend bestanden beide
-vollständigen Gesamtläufe am finalen Image. Ein weiterer Helfertest sichert
-die Dokumentationslinks externer Berichte mit Leerzeichen und Umlauten ab.
+Die vorherigen fehlgeschlagenen Läufe werden nicht als erfolgreiche Gesamtnachweise
+gewertet. Sie zeigten drei veraltete Feldhilfe-Locatoren, eine durch den eigenen
+Diagnosezugriff verursachte Windows-Dateisperre beim Berichtszusammenbau, einmalig
+ERR_NO_BUFFER_SPACE in Chromium und ein ausbleibendes allgemeines load-Ereignis
+bei bereits sichtbarer Anmeldung. Locatoren und Anmelde-Wartebedingung wurden
+korrigiert; die Anleitung erklärt sperrfreie Diagnosezugriffe. Der betroffene
+Profilfall bestand anschließend gezielt mit fünf Fällen. Eine grundsätzliche
+Ursache des einmaligen Chromium-Netzwerkfehlers ist nicht belegt.
+Der abschließende vollständige EN-Lauf bestand mit korrigierter Wartebedingung
+am unveränderten Image; auch der zuvor betroffene Profilfall ist darin erfolgreich.
 
 ## Sonar
 
-Die vollständige Serveranalyse `83099a65-522a-4179-85b6-b2d8a23dac3b`
-gehört genau zum oben genannten `main`-Code. Die abschließende lesende
-Serverprüfung bestätigt **Quality Gate OK, null offene Issues, Bugs,
-Schwachstellen und Hotspots**. Sonar-Gesamtcoverage: 82,4 %.
-
-Von 60 ursprünglich offenen Hinweisen wurden 58 durch Codeänderungen in drei
-reviewten Paketen behoben. Zwei Vererbungstiefen-Hinweise bei `AccountView`
-und `AdminView` wurden mit fachlicher Begründung als Ausnahmen akzeptiert:
-Die getrennten Sicherheits-, Rahmen- und Aktivitätsverträge sowie die
-Vaadin-Vererbung bleiben erhalten. Diese beiden Fälle sind keine Codebehebungen.
-Der Server führt insgesamt 46 bestehende beziehungsweise begründete Ausnahmen.
-Keine Prüfregel wurde deaktiviert; Analyseumfang und Gate-Grenzen blieben erhalten.
-
-Ein vorheriger Scannerabbruch durch Windows-Konsolencodierung wurde mit
-UTF-8-Ausgabe und zwei Offline-Regressionen behoben. Das war kein Serverfinding.
+Die lesende Serverprüfung bestätigt für die vorhandene **main-Analyse vom
+13.11.2026, 05:37 UTC** weiterhin Quality Gate OK, null offene Issues und Hotspots.
+Diese Analyse gehört zu `7d127bcb`, nicht zu den aktuellen Formularänderungen.
+Ein aktueller Sonar-Nachweis für den Feature-Branch ist daher **nicht bestätigt**.
+Gemäß Projektablauf wurde auf dem Feature-Branch kein Scan hochgeladen und kein
+Ersatzprojekt angelegt. Finding-Status und Regeln blieben unverändert.
 
 [SonarQube-Projekt](http://localhost:9000/dashboard?id=vaadin-spring-app).
 
 ## Grenzen und nächste Sichtung
 
-Aktuell bestehen keine bestätigten offenen Anwendungsfehler. Der automatisierte
-Nachtest des nachträglichen Zeilenumbruchs steht im [Testbedarf](testbedarf.md).
-[BUGS](../BUGS.md) und der Testbedarf bleiben die zentralen Stellen für neue Befunde.
+Für den beauftragten Umfang gibt es keine offenen gezielten Browser- oder
+JUnit-Ergänzungen und keine bestätigten offenen Anwendungsfehler.
+[Testbedarf](testbedarf.md) und [BUGS](../BUGS.md) bleiben die zentralen Listen.
+Die menschliche Sichtung der übrigen Formulare bleibt offen.
+Kennzahlkarten, Avatare, Profil-/Benutzerformulare, segmentierte Umschalter,
+Seitenpfade und die Mailqueue-Karte sind bereits vom Benutzer abgenommen.
 
 Echte Mobilgeräte, Passwortmanager, Screenreader, reale Anmeldeanbieter und
-Mailprogramme bleiben von den isolierten Chromium-/OIDC-/Mailpit-Prüfungen
-getrennt. Die frühere Autofill-Korrektur im Benutzereditor ist vom Benutzer
-abgenommen; Registrierung darf Passwortmanager und Kontaktdaten-Autofill nutzen.
+Mailprogramme bleiben von isolierten Chromium-/OIDC-/Mailpit-Prüfungen getrennt.
+Registrierung darf Passwortmanager und Kontaktdaten-Autofill nutzen; die Korrektur
+im Benutzereditor ist vom Benutzer abgenommen.
 [Manuelle Sonderprüfungen](manual-tests/README.md).
 
-Ein unklarer SMTP-Ausgang ist weiterhin kein sicherer Versandnachweis.
-Die Bereinigung wiederholt solche Aufträge nicht; eine zuvor angenommene Mail
-kann später eintreffen. Es gelten die [Mailqueue-Grenzen](mailqueue.md).
-Der native Formularschutz ist kein Autosave und schützt nicht zuverlässig
-vor Absturz oder erzwungenem Prozessende.
+Ein unklarer SMTP-Ausgang ist kein sicherer Versandnachweis. Die Bereinigung
+wiederholt solche Aufträge nicht; eine zuvor angenommene Mail kann später
+eintreffen. Es gelten die [Mailqueue-Grenzen](mailqueue.md). Der Formularschutz
+ist kein Autosave und schützt nicht zuverlässig vor Absturz oder erzwungenem
+Prozessende.
 
-Die drei Planungsaufgaben sind keine Umsetzung von Releases, Neuigkeiten,
-Passkeys oder Hosting. Die Planungen sind durchgelesen und ihre Umsetzungen
-zurückgestellt. Über einen ersten Release wird erst am Ende der laufenden
-Gesamtumsetzung entschieden. Die neue Queue-Karte ist abgenommen.
-Die sichtbare Bereinigungshistorie und zurückgestellte Komponentenpakete
-bleiben in [TODO](../TODO.md).
+Releases, Neuigkeiten, Passkeys, Hosting, die sichtbare Bereinigungshistorie und
+weitere Komponentenpakete bleiben zurückgestellt; siehe [TODO](../TODO.md).
+Die laufende Gesamtumsetzung ist nicht abgeschlossen. Der öffentliche Betrieb
+benötigt die Vorarbeiten aus der [Hostingplanung](planung/oeffentlicher-testbetrieb.md).
 
-Für die neue Queue-Oberfläche sind Build, Anwendungsneustart und Browser-Refresh
-nötig. Der Build ist geprüft; die lokale Entwicklungsanwendung wurde nicht
-als Testfixture gestartet oder verändert. Der öffentliche Betrieb ist noch
-nicht freigegeben und benötigt die Vorarbeiten aus der
-[Hostingplanung](planung/oeffentlicher-testbetrieb.md).
+Für die Übernahme der Formularänderungen in die lokale Entwicklungsanwendung
+sind Build, Anwendungsneustart und Browser-Refresh nötig. Build und isolierte
+Starts sind geprüft; die laufende Entwicklungsanwendung wurde nicht verändert.
