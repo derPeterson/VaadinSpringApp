@@ -104,12 +104,12 @@ public class AdminMailBrowserTest extends BrowserFixture {
     mail.open();
     for (int width : new int[] {1280, 390}) {
       browserPage.setViewportSize(width, 900);
-      assertInfoIconsCentered();
+      assertMailFieldHelpButtonsAreCentered();
     }
     browserPage.setViewportSize(1280, 900);
     UiActions.resizeTextArea(
         browserPage, browserPage.locator("vaadin-text-area.cosmos-mail-body-field"));
-    assertInfoIconsCentered();
+    assertMailFieldHelpButtonsAreCentered();
     String email = "info-" + UUID.randomUUID() + "@example.test",
         subject = "Unsent subject",
         body = "Unsent message ÄÖÜ";
@@ -185,14 +185,16 @@ public class AdminMailBrowserTest extends BrowserFixture {
     return help;
   }
 
-  private void assertInfoIconsCentered() {
-    for (Locator row : browserPage.locator(".cosmos-mail-field-row").all()) {
-      BoundingBox input = row.locator("[part~='input-field']").first().boundingBox();
-      BoundingBox info = row.locator(":scope > .cosmos-config-info").boundingBox();
+  private void assertMailFieldHelpButtonsAreCentered() {
+    for (Locator mailFieldRowLocator : browserPage.locator(".cosmos-mail-field-row").all()) {
+      BoundingBox inputFieldBoundingBox =
+          mailFieldRowLocator.locator("[part~='input-field']").first().boundingBox();
+      BoundingBox fieldHelpButtonBoundingBox =
+          mailFieldRowLocator.locator(".cosmos-config-info").boundingBox();
 
       assertEquals(
-          input.y + input.height / 2,
-          info.y + info.height / 2,
+          inputFieldBoundingBox.y + inputFieldBoundingBox.height / 2,
+          fieldHelpButtonBoundingBox.y + fieldHelpButtonBoundingBox.height / 2,
           1,
           "Mail-Infoicon muss zur Eingabefläche statt zum Feldlabel zentriert sein");
     }

@@ -130,6 +130,7 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
         String emptyResultSuffix =
             MessageFormat.format(resultFormat.substring(resultFormat.indexOf("{0}") + 3), "", 0);
         assertThat(browserPage.locator("#admin-mail-queue-result")).containsText(emptyResultSuffix);
+        assertCleanupCountStartsOnNewLine();
 
         if (automatic) {
           String automaticCompletionLog =
@@ -175,6 +176,47 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
       configurationPage.enterSeconds(uiTexts.getAdminQueueCleanupInterval(), previousInterval);
       selectCleanupTabAndGetAutomaticSwitch().setChecked(previousAutomatic);
       configurationPage.save();
+    }
+  }
+
+  private void assertCleanupCountStartsOnNewLine() {
+    Locator cleanupResultLocator = browserPage.locator("#admin-mail-queue-result");
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 1000);
+      cleanupResultLocator.scrollIntoViewIfNeeded();
+      assertThat(cleanupResultLocator).hasCSS("white-space", "pre-line");
+
+      // Textbereiche messen, ohne Auswahl, Inhalt oder Layout im Browser zu verändern.
+      boolean countStartsBelowTimestamp =
+          (boolean)
+              cleanupResultLocator.evaluate(
+                  """
+                  element => {
+                    const resultTextNode = element.firstChild;
+                    if (!resultTextNode || resultTextNode.nodeType !== Node.TEXT_NODE) {
+                      return false;
+                    }
+                    const lineBreakIndex = resultTextNode.textContent.indexOf('\\n');
+                    if (lineBreakIndex < 0) {
+                      return false;
+                    }
+                    const timestampRange = document.createRange();
+                    timestampRange.setStart(resultTextNode, 0);
+                    timestampRange.setEnd(resultTextNode, lineBreakIndex);
+                    const countRange = document.createRange();
+                    countRange.setStart(resultTextNode, lineBreakIndex + 1);
+                    countRange.setEnd(resultTextNode, resultTextNode.textContent.length);
+                    const timestampBounds = timestampRange.getBoundingClientRect();
+                    const countBounds = countRange.getBoundingClientRect();
+                    return countBounds.top >= timestampBounds.bottom - 0.5
+                        && Math.abs(countBounds.left - timestampBounds.left) <= 0.5;
+                  }
+                  """);
+      assertTrue(
+          countStartsBelowTimestamp,
+          "Die Anzahl bereinigter Aufträge muss unter dem Laufzeitpunkt am gleichen Rand beginnen");
+      AllurePlaywright.attachScreenshot(
+          "Zweizeiliges Bereinigungsergebnis " + viewportWidth, browserPage);
     }
   }
 

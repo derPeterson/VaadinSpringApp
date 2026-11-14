@@ -2874,30 +2874,50 @@ public class TwoFactorBrowserTest extends BrowserFixture {
     }
   }
 
-  private void assertTwoFactorFieldTiming(Locator tabs, Locator help) {
-    for (Locator tab : tabs.all()) {
-      tab.click();
-      Locator fields = browserPage.locator(".mfa-role-content:visible .cosmos-config-info");
+  private void assertTwoFactorFieldTiming(Locator roleTabsLocator, Locator fieldHelpDialogLocator) {
+    for (Locator roleTabLocator : roleTabsLocator.all()) {
+      roleTabLocator.click();
+      Locator fieldHelpButtonsLocator =
+          browserPage.locator(".mfa-role-content:visible .cosmos-config-info");
 
-      assertThat(fields).hasCount(9);
-      for (Locator info : fields.all()) {
-        info.click();
-        assertTwoFactorTimingAndClose(help, uiTexts.getAdminConfigEffectiveTwoFactorRule());
+      assertThat(fieldHelpButtonsLocator).hasCount(9);
+      for (Locator fieldHelpButtonLocator : fieldHelpButtonsLocator.all()) {
+        fieldHelpButtonLocator.click();
+        assertEffectiveUseHintAndCloseHelp(
+            fieldHelpDialogLocator, uiTexts.getAdminConfigEffectiveTwoFactorRule());
       }
     }
-    browserPage.locator("#two-factor-inactivity-enabled + vaadin-button").click();
-    assertTwoFactorTimingAndClose(help, uiTexts.getAdminConfigEffectiveTwoFactorInactivitySwitch());
-    browserPage.locator("#two-factor-inactivity-duration + vaadin-button").click();
-    assertTwoFactorTimingAndClose(
-        help, uiTexts.getAdminConfigEffectiveTwoFactorInactivityDuration());
+
+    openTwoFactorFieldHelp(uiTexts.getTwoFactorInactivityEnabled());
+    assertEffectiveUseHintAndCloseHelp(
+        fieldHelpDialogLocator, uiTexts.getAdminConfigEffectiveTwoFactorInactivitySwitch());
+
+    openTwoFactorFieldHelp(uiTexts.getTwoFactorInactivityDuration());
+    assertEffectiveUseHintAndCloseHelp(
+        fieldHelpDialogLocator, uiTexts.getAdminConfigEffectiveTwoFactorInactivityDuration());
   }
 
-  private void assertTwoFactorTimingAndClose(Locator help, String timing) {
+  private void openTwoFactorFieldHelp(String fieldLabelText) {
+    browserPage
+        .getByRole(
+            AriaRole.BUTTON,
+            new Page.GetByRoleOptions()
+                .setName(uiTexts.getAdminConfigHelpTitle() + " – " + fieldLabelText)
+                .setExact(true))
+        .click();
+  }
+
+  private void assertEffectiveUseHintAndCloseHelp(
+      Locator fieldHelpDialogLocator, String expectedEffectiveUseText) {
     AdminConfigurationPage.assertEffectiveUse(
-        help, uiTexts, timing, uiTexts.getAdminConfigEffectiveTwoFactorExisting());
+        fieldHelpDialogLocator,
+        uiTexts,
+        expectedEffectiveUseText,
+        uiTexts.getAdminConfigEffectiveTwoFactorExisting());
     browserPage.keyboard().press("Escape");
 
-    assertThat(help.locator("vaadin-dialog-overlay > [part~=overlay]")).isHidden();
+    assertThat(fieldHelpDialogLocator.locator("vaadin-dialog-overlay > [part~=overlay]"))
+        .isHidden();
   }
 
   private void verifyRuleChoice(Locator field) {
