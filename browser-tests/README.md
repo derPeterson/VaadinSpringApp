@@ -110,7 +110,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `registration` | Registrierung auf Desktop/Smartphone, Pflichtfelder und Korrektur ungültiger Eingaben | 4 |
 | `verification` | Tatsächliche Aktivierungsmail und Links, eingeschränkte Bestätigungsseite, normale Adminanlage, Superadmin-Ausnahme und Startkonten mit Verifikationspflicht auf Desktop/Smartphone | 17 |
 | `email-verification` | `verification` plus Google-/Microsoft-Nachweis, Herkunft und verfügbare Anmeldewege sowie Passwortstatus vor/nach Einrichtung auf Desktop/Smartphone | 23 |
-| `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |
+| `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen; Card-Pilot mit Aufnahmen, Messwerten und Fokusfolge bei 1280/390 px | 9 |
 | `account-security` | Passwortvalidierung/-wechsel mit SMTP-Mail und verifizierte E-Mail-Änderung mit beiden Sicherheitsmails | 4 |
 | `session-persistence` | Gezielte Neustartabnahme: Sitzungs-/Loginfälle, Wartung und eigene Kontosicherheit | 51 |
 | `session-management` | Eigene Sitzungen, Einzel-/Sammelwiderruf, dauerhafte Anmeldung, UI-Neuaufbau, abgelaufene Sitzung mit gespeichertem Zugang und eingeschränkter Login | 7 |

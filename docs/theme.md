@@ -315,12 +315,24 @@ Feldhilfezeilen verwenden in beiden Bereichen `FieldHelpRowLayout`, ohne
 Auswahlkomponenten, Switches oder deren Listener zu ersetzen.
 
 Die einspaltigen öffentlichen Formulare nutzen den nativen `VerticalLayout`-
-Inhalt von `PublicPanelComponent`; dies gilt auch für Passwort vergessen,
-Passwort zurücksetzen und die ergänzende Anbieterregistrierung. E-Mail-,
+Inhalt von `PublicPanelComponent`, etwa Passwort zurücksetzen und die ergänzende
+Anbieterregistrierung. E-Mail-,
 Passwort- und Anbieter-Identitätsdialoge verwenden ebenfalls native senkrechte
 Layouts mit den vorhandenen Dialogklassen, Abständen und Aktionen. Der Mailtest
 behält seine native Feldspalte und verwendet `FieldHelpRowLayout` für die
 einzelnen Eingaben; der sichtbare Nachrichtenhinweis steht getrennt darunter.
+
+„Passwort vergessen“ verwendet als Kartenpilot `PublicCardPanelComponent` auf
+nativer Vaadin-`Card`. `setHeader`, der normale Inhalt und `addToFooter` übernehmen
+die vorhandenen Panelzonen. Kopf und Footer sind native `HorizontalLayout`-
+Container, der Inhalt bleibt ein `VerticalLayout`. Die Beschriftung der Card ist
+über `setAriaLabelledBy` mit der bestehenden Überschrift verbunden und folgt
+dadurch deren Sprachwechsel. `cosmos-public-card.css` setzt ausschließlich für
+`.public-card-panel` die nativen Card-Innenabstände und Zwischenräume auf null
+sowie den äußeren Header-Abstand zurück. Die vorhandenen Zonenklassen beziehen
+Farben, Innenabstände, Rahmen, Radien und mobile Anordnung unverändert aus
+`cosmos-public.css` und den gemeinsamen Tokens. Weitere Paneltypen verwenden
+weiterhin ihre bisherige Basis; eine Übernahme erfolgt nach gesonderter Abnahme.
 
 Benachrichtigungen behalten ihre native `VerticalLayout`-Feldfolge. Das kleine
 CSS-Raster für Eingabe und Zeichenzähler überlagert ausschließlich den Zähler

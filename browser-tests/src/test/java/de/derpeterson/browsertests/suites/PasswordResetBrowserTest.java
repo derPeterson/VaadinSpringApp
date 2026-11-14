@@ -1,22 +1,29 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static de.derpeterson.app.config.AppRouteConstants.FORGOT_PASSWORD_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_PAGE_TITLE;
 import static de.derpeterson.app.config.AppRouteConstants.HOME_ROUTE;
 import static de.derpeterson.app.config.AppRouteConstants.RESET_PASSWORD_ROUTE;
 import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.i18n.UiTexts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.ForgotPasswordPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
 import de.derpeterson.browsertests.pages.ResetPasswordPage;
 import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Allure;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
@@ -25,10 +32,90 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("browser")
 @Feature("Passwort-Zurücksetzen")
 public class PasswordResetBrowserTest extends BrowserFixture {
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName(
+      "RESET-06: Anfragekarte erhält Darstellung, Tastaturbedienung und korrigierbare Fehler")
+  @Description(
+      """
+      1. Passwort vergessen über den sichtbaren Anmeldelink auf Desktop/Smartphone öffnen.
+      2. Kopf, Inhalt, Footer, Feld und Aktionen vermessen und als Vergleichsaufnahme erfassen.
+      3. Vom leeren E-Mail-Feld per Tab zur Anmeldung und dann zum Anfordern wechseln.
+      4. Eine leere und anschließend ungültige Anfrage prüfen; Fehlerdarstellung erfassen.
+      5. Über den bestehenden Anmeldebutton zur vollständigen Anmeldung zurückkehren.
+      **Erwartet:** Die Kartenstruktur ändert weder Geometrie noch Fokusfolge oder Validierung.
+      Der tatsächliche Mailversand wird in den übrigen Reset-Fällen geprüft.
+      """)
+  void forgotPasswordCardPreservesLayoutAndKeyboardActions(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
+    ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserPage);
+    forgotPasswordPage.open();
+    captureForgotPasswordCardEvidence("initial", viewportWidth);
+
+    Locator cardPanelLocator = browserPage.locator(".public-panel");
+    Locator emailFieldLocator =
+        cardPanelLocator.getByLabel(
+            uiTexts.getPublicEmailField(), new Locator.GetByLabelOptions().setExact(true));
+    Locator returnToLoginButtonLocator =
+        cardPanelLocator.getByRole(
+            AriaRole.BUTTON,
+            new Locator.GetByRoleOptions().setName(uiTexts.getBaseLoginButton()).setExact(true));
+    Locator requestLinkButtonLocator =
+        cardPanelLocator.getByRole(
+            AriaRole.BUTTON,
+            new Locator.GetByRoleOptions().setName(uiTexts.getPublicRequestLink()).setExact(true));
+
+    emailFieldLocator.focus();
+    browserPage.keyboard().press("Tab");
+    assertThat(returnToLoginButtonLocator).isFocused();
+    browserPage.keyboard().press("Tab");
+    assertThat(requestLinkButtonLocator).isFocused();
+    browserPage.keyboard().press("Enter");
+    forgotPasswordPage.assertRequiredError();
+
+    forgotPasswordPage.enterEmail("not-an-email");
+    forgotPasswordPage.submit();
+    forgotPasswordPage.assertEmailError();
+    captureForgotPasswordCardEvidence("invalid", viewportWidth);
+
+    returnToLoginButtonLocator.click();
+    new LoginPage(browserPage).assertFormVisible();
+  }
+
+  private void captureForgotPasswordCardEvidence(String formStateName, int viewportWidth) {
+    Locator cardPanelLocator = browserPage.locator(".public-panel");
+    browserPage.evaluate("() => document.fonts.ready");
+    browserPage.mouse().move(0, 0);
+
+    String measurementsJson =
+        (String)
+            cardPanelLocator.evaluate(
+                """
+                cardElement => {
+                  const measureElement = element => {
+                    const bounds = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return {x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
+                      font: style.font, color: style.color, background: style.backgroundColor,
+                      border: style.border, padding: style.padding, gap: style.gap};
+                  };
+                  return JSON.stringify({card: measureElement(cardElement), header: measureElement(cardElement.querySelector('.cosmos-panel-header')),
+                    body: measureElement(cardElement.querySelector('.public-panel-body')), footer: measureElement(cardElement.querySelector('.public-panel-footer')),
+                    field: measureElement(cardElement.querySelector('vaadin-email-field')),
+                    buttons: Array.from(cardElement.querySelectorAll('vaadin-button')).map(measureElement)});
+                }
+                """);
+    String evidenceName = "forgot-card-" + formStateName + "-" + viewportWidth;
+    Allure.attachment(evidenceName + " measurements", "application/json", measurementsJson);
+    AllurePlaywright.attachScreenshot(evidenceName, browserPage);
+  }
+
   @Test
   @DisplayName("RESET-05: Neue anonyme Reset-Mails folgen der Sitzungssprache desselben Kontos")
   @Description(
@@ -39,49 +126,60 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       **Erwartet:** Die auslösende anonyme Sitzung bestimmt die Sprache neuer Reset-Mails.
       """)
   void anonymousResetMailsFollowCurrentSessionLanguage() {
-    String email = activateAccount();
+    String email = registerAndVerifyAccountEmail();
     ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserPage);
     forgotPasswordPage.open();
     forgotPasswordPage.enterEmail(email);
     forgotPasswordPage.submit();
     forgotPasswordPage.requestedResponse();
-    MailpitInbox firstInbox = new MailpitInbox(browserContext);
-    MailpitInbox.CapturedMail first = firstInbox.awaitPasswordResetMail(email);
-    try (Page oldMail = browserContext.newPage()) {
-      oldMail.navigate(
-          System.getProperty("browser.tests.mailpitUrl") + "/view/" + first.id() + ".html");
-      String original = oldMail.locator("body").innerText();
-      de.derpeterson.browsertests.i18n.UiTexts other =
-          new de.derpeterson.browsertests.i18n.UiTexts(
-              uiTexts.language().equals("de") ? "en" : "de");
+
+    MailpitInbox firstMailpitInbox = new MailpitInbox(browserContext);
+    MailpitInbox.CapturedMail firstResetMail = firstMailpitInbox.awaitPasswordResetMail(email);
+    try (Page originalMailPage = browserContext.newPage()) {
+      originalMailPage.navigate(
+          System.getProperty("browser.tests.mailpitUrl")
+              + "/view/"
+              + firstResetMail.id()
+              + ".html");
+      String originalMailBodyText = originalMailPage.locator("body").innerText();
+
+      UiTexts otherUiTexts = new UiTexts(uiTexts.language().equals("de") ? "en" : "de");
       browserPage.navigate(path(HOME_ROUTE));
-      new UserMenu(browserPage).selectLanguage(other.language());
-      browserPage.navigate(path(de.derpeterson.app.config.AppRouteConstants.FORGOT_PASSWORD_ROUTE));
+      new UserMenu(browserPage).selectLanguage(otherUiTexts.language());
+
+      browserPage.navigate(path(FORGOT_PASSWORD_ROUTE));
       browserPage
-          .getByLabel(other.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
+          .getByLabel(
+              otherUiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
           .fill(email);
       browserPage
           .getByRole(
-              com.microsoft.playwright.options.AriaRole.BUTTON,
-              new Page.GetByRoleOptions().setName(other.getPublicRequestLink()).setExact(true))
+              AriaRole.BUTTON,
+              new Page.GetByRoleOptions()
+                  .setName(otherUiTexts.getPublicRequestLink())
+                  .setExact(true))
           .click();
-      MailpitInbox.CapturedMail second =
-          new MailpitInbox(browserContext, null, other).awaitPasswordResetMail(email);
-      org.junit.jupiter.api.Assertions.assertNotEquals(first.id(), second.id());
-      try (Page target =
-          new MailpitInbox(browserContext, null, other).openPasswordResetAction(second)) {
-        org.junit.jupiter.api.Assertions.assertTrue(
-            target.url().startsWith(System.getProperty("browser.tests.baseUrl")));
-      }
-      try (Page newMail = browserContext.newPage()) {
-        newMail.navigate(
-            System.getProperty("browser.tests.mailpitUrl") + "/view/" + second.id() + ".html");
-        org.junit.jupiter.api.Assertions.assertNotEquals(
-            original, newMail.locator("body").innerText());
-      }
-      oldMail.reload();
 
-      assertEquals(original, oldMail.locator("body").innerText());
+      MailpitInbox.CapturedMail secondResetMail =
+          new MailpitInbox(browserContext, null, otherUiTexts).awaitPasswordResetMail(email);
+      assertNotEquals(firstResetMail.id(), secondResetMail.id());
+
+      try (Page resetActionPage =
+          new MailpitInbox(browserContext, null, otherUiTexts)
+              .openPasswordResetAction(secondResetMail)) {
+        assertTrue(resetActionPage.url().startsWith(System.getProperty("browser.tests.baseUrl")));
+      }
+      try (Page newMailPage = browserContext.newPage()) {
+        newMailPage.navigate(
+            System.getProperty("browser.tests.mailpitUrl")
+                + "/view/"
+                + secondResetMail.id()
+                + ".html");
+        assertNotEquals(originalMailBodyText, newMailPage.locator("body").innerText());
+      }
+
+      originalMailPage.reload();
+      assertEquals(originalMailBodyText, originalMailPage.locator("body").innerText());
     } finally {
       browserPage.navigate(path(HOME_ROUTE));
       new UserMenu(browserPage).selectTestLanguage();
@@ -105,16 +203,18 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       Passwort ermöglicht die Anmeldung. Keine externe SMTP-/Mailclient-Prüfung.
       """)
   void realResetMailChangesTheLoginPassword() {
-    String email = activateAccount();
-    ResetPasswordPage reset = openResetForm(email);
-    reset.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
-    reset.submit();
-    reset.assertChanged();
+    String email = registerAndVerifyAccountEmail();
+    ResetPasswordPage resetPasswordPage = requestResetMailAndOpenPasswordResetPage(email);
+    resetPasswordPage.fillPasswords(
+        BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
+    resetPasswordPage.submit();
+    resetPasswordPage.assertChanged();
     AllurePlaywright.attachScreenshot("Bestätigte Passwortänderung", browserPage);
-    LoginPage login = new LoginPage(browserPage);
-    login.open();
-    login.signIn(email, BrowserTestAccounts.USER_PASSWORD);
-    login.assertRejected();
+
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(email, BrowserTestAccounts.USER_PASSWORD);
+    loginPage.assertRejected();
     assertNewPasswordLogin(email);
   }
 
@@ -133,15 +233,17 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       die gültige Anfrage über die Oberfläche angenommen und ihre Mail tatsächlich erfasst.
       """)
   void requestEmailCanBeCorrected() {
-    String email = activateAccount();
+    String email = registerAndVerifyAccountEmail();
     ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserPage);
     forgotPasswordPage.open();
     forgotPasswordPage.submit();
     forgotPasswordPage.assertRequiredError();
+
     forgotPasswordPage.enterEmail("not-an-email");
     forgotPasswordPage.submit();
     forgotPasswordPage.assertEmailError();
     AllurePlaywright.attachScreenshot("Ungültige Reset-Anfrage", browserPage);
+
     forgotPasswordPage.enterEmail(email);
     forgotPasswordPage.submit();
     forgotPasswordPage.requestedResponse();
@@ -164,20 +266,24 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       danach die Passwortänderung; technische Tokenzustände werden nicht per SQL geprüft.
       """)
   void passwordErrorsCanBeCorrectedUsingTheSameLink() {
-    String email = activateAccount();
-    ResetPasswordPage reset = openResetForm(email);
-    reset.submit();
-    reset.assertRequiredError();
-    reset.fillPasswords("weak", "weak");
-    reset.submit();
-    reset.assertPasswordError();
-    reset.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, "DifferentPassword3!");
-    reset.submit();
-    reset.assertConfirmationError();
+    String email = registerAndVerifyAccountEmail();
+    ResetPasswordPage resetPasswordPage = requestResetMailAndOpenPasswordResetPage(email);
+    resetPasswordPage.submit();
+    resetPasswordPage.assertRequiredError();
+
+    resetPasswordPage.fillPasswords("weak", "weak");
+    resetPasswordPage.submit();
+    resetPasswordPage.assertPasswordError();
+
+    resetPasswordPage.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, "DifferentPassword3!");
+    resetPasswordPage.submit();
+    resetPasswordPage.assertConfirmationError();
     AllurePlaywright.attachScreenshot("Abweichende Passwortbestätigung", browserPage);
-    reset.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
-    reset.submit();
-    reset.assertChanged();
+
+    resetPasswordPage.fillPasswords(
+        BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
+    resetPasswordPage.submit();
+    resetPasswordPage.assertChanged();
     assertNewPasswordLogin(email);
   }
 
@@ -197,19 +303,20 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       werden durch diesen UI-Fall nicht nachgewiesen.
       """)
   void unknownEmailHasTheSameVisibleResponse() {
-    String email = activateAccount();
+    String email = registerAndVerifyAccountEmail();
     ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserPage);
     forgotPasswordPage.open();
     forgotPasswordPage.enterEmail(email);
     forgotPasswordPage.submit();
-    String knownResponse = forgotPasswordPage.requestedResponse();
+    String knownResponseText = forgotPasswordPage.requestedResponse();
     new MailpitInbox(browserContext).awaitPasswordResetMail(email);
+
     forgotPasswordPage.dismissRequestedNotice();
     forgotPasswordPage.open();
     forgotPasswordPage.enterEmail("unknown-reset-" + UUID.randomUUID() + "@example.test");
     forgotPasswordPage.submit();
 
-    assertEquals(knownResponse, forgotPasswordPage.requestedResponse());
+    assertEquals(knownResponseText, forgotPasswordPage.requestedResponse());
   }
 
   @Test
@@ -230,6 +337,7 @@ public class PasswordResetBrowserTest extends BrowserFixture {
     browserPage.navigate(path(RESET_PASSWORD_ROUTE) + "/" + UUID.randomUUID());
     new ResetPasswordPage(browserPage).assertInvalid();
     AllurePlaywright.attachScreenshot("Ungültiger Reset-Link", browserPage);
+
     browserPage.navigate(path(RESET_PASSWORD_ROUTE));
 
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
@@ -254,45 +362,51 @@ public class PasswordResetBrowserTest extends BrowserFixture {
       zur Passwortänderung verwenden. Paralleler Verbrauch bleibt in Persistenztests.
       """)
   void usedResetLinkCannotBeUsedAgain() {
-    String email = activateAccount();
-    ResetPasswordPage reset = openResetForm(email);
-    reset.fillPasswords(BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
-    reset.submit();
-    reset.assertChanged();
+    String email = registerAndVerifyAccountEmail();
+    ResetPasswordPage resetPasswordPage = requestResetMailAndOpenPasswordResetPage(email);
+    resetPasswordPage.fillPasswords(
+        BrowserTestAccounts.RESET_PASSWORD, BrowserTestAccounts.RESET_PASSWORD);
+    resetPasswordPage.submit();
+    resetPasswordPage.assertChanged();
+
     browserPage.reload();
-    reset.assertInvalid();
+    resetPasswordPage.assertInvalid();
   }
 
-  private String activateAccount() {
-    String email = "reset-" + UUID.randomUUID() + "@example.test";
-    RegistrationPage registration = new RegistrationPage(browserPage);
-    registration.open();
-    registration.fillValid(email, BrowserTestAccounts.USER_PASSWORD);
-    registration.submit();
-    registration.assertSubmitted(email);
-    MailpitInbox inbox = new MailpitInbox(browserContext);
-    browserPage = inbox.openVerificationLink(inbox.awaitVerificationMail(email));
-    return email;
+  private String registerAndVerifyAccountEmail() {
+    String accountEmail = "reset-" + UUID.randomUUID() + "@example.test";
+    RegistrationPage registrationPage = new RegistrationPage(browserPage);
+    registrationPage.open();
+    registrationPage.fillValid(accountEmail, BrowserTestAccounts.USER_PASSWORD);
+    registrationPage.submit();
+    registrationPage.assertSubmitted(accountEmail);
+
+    MailpitInbox mailpitInbox = new MailpitInbox(browserContext);
+    browserPage =
+        mailpitInbox.openVerificationLink(mailpitInbox.awaitVerificationMail(accountEmail));
+    return accountEmail;
   }
 
-  private ResetPasswordPage openResetForm(String email) {
+  private ResetPasswordPage requestResetMailAndOpenPasswordResetPage(String accountEmail) {
     ForgotPasswordPage forgotPasswordPage = new ForgotPasswordPage(browserPage);
     forgotPasswordPage.open();
-    forgotPasswordPage.enterEmail(email);
+    forgotPasswordPage.enterEmail(accountEmail);
     forgotPasswordPage.submit();
     forgotPasswordPage.requestedResponse();
-    MailpitInbox inbox = new MailpitInbox(browserContext);
-    browserPage = inbox.openPasswordResetLink(inbox.awaitPasswordResetMail(email));
+
+    MailpitInbox mailpitInbox = new MailpitInbox(browserContext);
+    browserPage =
+        mailpitInbox.openPasswordResetLink(mailpitInbox.awaitPasswordResetMail(accountEmail));
     return new ResetPasswordPage(browserPage);
   }
 
-  private void assertNewPasswordLogin(String email) {
-    LoginPage login = new LoginPage(browserPage);
-    login.open();
-    login.signIn(email, BrowserTestAccounts.RESET_PASSWORD);
+  private void assertNewPasswordLogin(String accountEmail) {
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(accountEmail, BrowserTestAccounts.RESET_PASSWORD);
 
     assertThat(browserPage).hasURL(urlPattern(HOME_ROUTE));
     new UserMenu(browserPage).selectTestLanguage();
-    new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(email);
+    new UserMenu(browserPage).assertUserSignedInWithoutAdminAction(accountEmail);
   }
 }

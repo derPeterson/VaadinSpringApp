@@ -28,8 +28,8 @@ import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.ui.components.AppIcon;
+import de.derpeterson.app.ui.components.PublicCardPanelComponent;
 import de.derpeterson.app.ui.components.PublicPageComponent;
-import de.derpeterson.app.ui.components.PublicPanelComponent;
 import de.derpeterson.app.validation.UserInputRules;
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
@@ -151,15 +151,15 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
     Div forgotPasswordActionsDiv = new Div(returnToLoginButton, requestPasswordResetButton);
     forgotPasswordActionsDiv.addClassName("public-panel-actions");
 
-    PublicPanelComponent forgotPasswordPanelComponent =
-        new PublicPanelComponent(
+    PublicCardPanelComponent forgotPasswordCardPanelComponent =
+        new PublicCardPanelComponent(
             AppIcon.KEY.create(),
             forgotPasswordH1,
             messageProperties::getPublicForgotSubtitle,
             new Component[] {passwordResetEmailField},
             forgotPasswordActionsDiv);
 
-    passwordResetCardsVerticalLayout.add(forgotPasswordPanelComponent);
+    passwordResetCardsVerticalLayout.add(forgotPasswordCardPanelComponent);
   }
 
   private void requestPasswordResetLink() {

@@ -2,14 +2,15 @@
 
 Die Formularpakete sind auf `codex/vaadin-komponenten-folgearbeiten` umgesetzt,
 jeweils reviewt und separat committed. Vergleichsbasis ist die letzte vollständig
-belegte QA bei `7d127bcb`. Die Anwendungsquellen des aktuellen Testimages entsprechen
-`487f9253`; danach wurden ausschließlich Browsertests und Dokumentation korrigiert.
-Der aktuelle Testcode steht bei `240c1008`.
+belegte QA bei `7d127bcb`. Die Anwendungsquellen des Gesamtlauf-Images entsprechen
+`487f9253`; bis zum Abschluss dieser Gesamtrunde wurden danach ausschließlich
+Browsertests und Dokumentation korrigiert.
+Der Testcode dieser Gesamtrunde steht bei `240c1008`.
 
 **Die unten aufgeführten automatisierten Tests sind erfolgreich abgeschlossen.**
 Der aktuelle Feature-Branch hat noch keinen zugeordneten Sonar-Scan.
-Die technische Prüfung ersetzt außerdem nicht die offene menschliche Sichtung
-der übrigen Formulare im [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
+Die Formularlayouts und der nachfolgende Card-Pilot sind vom Benutzer abgenommen.
+Weitere offene Pakete stehen im [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
 Kein Merge, Push oder Release wurde durchgeführt.
 
 ## Ergebnisse
@@ -48,7 +49,32 @@ Entwicklerdaten, gespeicherte Passwörter, echte Mailkonten und die laufende
 IntelliJ-Anwendung dienen nicht als Fixtures.
 Alle acht Worker meldeten erfolgreiche Tests und erfolgreichen Abbau.
 
-## Abdeckung und Korrekturen
+## Gezielt geprüfter Card-Pilot nach der Gesamtrunde
+
+„Passwort vergessen“ verwendet `PublicCardPanelComponent` auf nativer Vaadin-`Card`.
+Die übrigen Panelbasen und die Reset-Fachlogik bleiben erhalten. Nach dieser
+Anwendungsänderung wurde keine weitere vollständige Gesamtrunde ausgeführt;
+die obigen 328er-Läufe gehören weiterhin zum dort ausgewiesenen Stand.
+
+Die gezielte Prüfung des Piloten besteht aus 25 erfolgreichen Anwendungstests
+(`PasswordResetViewsTest`) sowie je neun erfolgreichen Passwort-Reset-Browserfällen
+in DE und EN. Die Vorher-Prüfung bestand ebenfalls mit je neun Fällen am bisherigen
+Image. Aufbau, Abbau und Berichte waren erfolgreich, ohne Fehler oder Skips.
+Die Nachher-Läufe verwendeten dasselbe neue Image:
+
+`sha256:88d00ed40c19d85317df1b51a9f6e7e98e5a04c6002a4ef6e236b57c3da522bc`
+
+Die vier Normalansichten bei 1280/390 px in DE/EN sind pixelidentisch. In allen
+acht Messpaaren einschließlich Fehlerzuständen stimmen Positionen, Größen,
+Schriften, Farben, Rahmen und Innenabstände überein. Der berechnete Card-Gap
+ist nun ausdrücklich `0px`; zuvor entsprach `normal` im Flexlayout ebenfalls null.
+Drei Fehleraufnahmen enthalten unterschiedliche Phasen der Notification-Animation
+und sind insgesamt nicht pixelidentisch. Fokusfolge, korrigierbare Validierung,
+Rückkehr zur Anmeldung, neutrale Antworten, Mailpit-Versand und tatsächliche
+Passwortänderung sind erfolgreich geprüft. Der Benutzer hat den Piloten abgenommen.
+Der Sonar-Nachweis unten umfasst den Piloten nicht.
+
+## Abdeckung und Korrekturen der Gesamtrunde
 
 Die Gesamtsuite prüft die bestehenden Anmelde-, Konto-, 2FA-, Ticket-,
 Benachrichtigungs- und Administrationsabläufe in DE/EN einschließlich Desktop-
@@ -104,7 +130,7 @@ Ersatzprojekt angelegt. Finding-Status und Regeln blieben unverändert.
 Für den beauftragten Umfang gibt es keine offenen gezielten Browser- oder
 JUnit-Ergänzungen und keine bestätigten offenen Anwendungsfehler.
 [Testbedarf](testbedarf.md) und [BUGS](../BUGS.md) bleiben die zentralen Listen.
-Die menschliche Sichtung der übrigen Formulare bleibt offen.
+Card-Pilot und Formularlayouts sind vom Benutzer abgenommen.
 Kennzahlkarten, Avatare, Profil-/Benutzerformulare, segmentierte Umschalter,
 Seitenpfade und die Mailqueue-Karte sind bereits vom Benutzer abgenommen.
 
@@ -128,3 +154,4 @@ benötigt die Vorarbeiten aus der [Hostingplanung](planung/oeffentlicher-testbet
 Für die Übernahme der Formularänderungen in die lokale Entwicklungsanwendung
 sind Build, Anwendungsneustart und Browser-Refresh nötig. Build und isolierte
 Starts sind geprüft; die laufende Entwicklungsanwendung wurde nicht verändert.
+Dasselbe gilt für den nachfolgenden Card-Piloten.

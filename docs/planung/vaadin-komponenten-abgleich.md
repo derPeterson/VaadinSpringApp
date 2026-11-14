@@ -17,27 +17,11 @@ Arbeiten laufen auf
 einheitlichen Seitenpfade sind vom Benutzer abgenommen. Ihre geltenden Regeln
 stehen im [Theme-Standard](../theme.md).
 
-### Noch gemeinsam zu sichten: übrige Formulare
+Der Card-Pilot „Passwort vergessen“ auf `PublicCardPanelComponent` ist vom Benutzer
+abgenommen. Sein geltender Aufbau steht im [Theme-Standard](../theme.md).
+Die Übernahme weiterer Karten ist ein eigenes, noch zu beauftragendes Paket.
 
-Die Übernahme der gewöhnlichen Formularraster und Zeilen in Konfiguration,
-2FA-Regeln, Anmeldeanbietern, Kontodialogen und öffentlichen Formularen ist
-umgesetzt. Der geltende Aufbau steht im [Theme-Standard](../theme.md).
-Die vier technischen Pakete sind jeweils separat reviewt und committed.
-Offen bleibt die menschliche Sichtung der Vorher-/Nachher-Aufnahmen:
-
-- Allgemeine Konfiguration einschließlich Feldhilfen und Superadmin-Zusatzfeldern.
-- Google-/Microsoft-Konfiguration und die vier 2FA-Rollenansichten.
-- Mailtest, Kontodialoge und öffentliche Formularseiten.
-
-Aussehen, Verhalten, Feldreihenfolge, Rechte und Speichern bleiben die
-Abnahmekriterien der [visuellen Gesamtabnahme HUM-01](../manual-tests/README.md#hum-01).
-Bereits passende native Anordnungen, Zeichenzähler und der
-freigegebene Bildausschnitt bleiben erhalten. Die automatisierten Nachweise und
-verbleibenden Grenzen stehen im [Prüfstand](../status.md); offene automatisierte
-Ergänzungen ausschließlich im [Testbedarf](../testbedarf.md).
-Die abschließenden automatisierten Tests sind erfolgreich; der verfügbare
-Sonar-Nachweis gehört weiterhin zu einem älteren main-Stand, siehe Prüfstand.
-
+Die gewöhnlichen Formularlayouts sind vom Benutzer abgenommen.
 Kennzahlkarten, Avatar-Übernahme, Profil-/Benutzerformulare, segmentierte Auswahl,
 Seitenpfade und die Mailqueue-Karte sind bereits vom Benutzer abgenommen.
 Ihre aktuellen Verträge stehen im [Theme-Standard](../theme.md) und im
@@ -93,7 +77,7 @@ deshalb als Bedienentscheidung betrachtet werden.
 
 | Baustein | Konkreter Startpunkt | Umfang und Grenze |
 | --- | --- | --- |
-| `Card` | Ein öffentlicher Paneltyp wie „Passwort vergessen“. Danach eine Konto- oder Adminkarte mit Kopf-Metadaten und Aktionen vergleichen. | `Card` bietet unter anderem Header, Präfix, Suffix und Footer. Ein kleines Beispiel zeigt, welche bestehenden CSS- und Testselektoren an der aktuellen Wrapperstruktur hängen. Erst danach eine Entscheidung über `CosmosCardComponent` treffen. Die fachlichen Panel-APIs bleiben nützlich. |
+| `Card` | Auf Grundlage des abgenommenen Piloten eine Konto- oder Adminkarte mit Kopf-Metadaten und Aktionen vergleichen. | `Card` bietet unter anderem Header, Präfix, Suffix und Footer. Vor einer Übernahme die bestehenden CSS- und Testselektoren der jeweiligen Wrapperstruktur prüfen. Erst danach eine Entscheidung über `CosmosCardComponent` treffen. Die fachlichen Panel-APIs bleiben nützlich. |
 | `ConfirmDialog` | Ein einfacher Bestätigungsfall im Bereich Benachrichtigungen über [PortalConfirmationDialog](../../app/src/main/java/de/derpeterson/app/ui/components/PortalConfirmationDialog.java). | Komponenten für Header, Text und Aktionen werden unterstützt. Schließen oben rechts, Escape, Anfangsfokus, Warnfarbe und der vereinbarte Footer müssen passen. Benutzerlöschung, Geräteabmeldung, Profilbildlöschung und Anleitungsvorschau haben zusätzlichen Kontext. An die erst nach erfolgreichem Pilot herangehen. |
 | Info-/Warnboxen und Leerzustände | Statische Hinweise in Kontodialogen, Konfiguration und Ticketeditor, außerdem `NotificationEmptyState`. | Native `Notification` ist für vorübergehende Meldungen. Fest eingebettete Hinweise dürfen als gemeinsame Flow-Komposition aus Icon und Text bestehen. Abstände, Hervorhebung und Icon-Ausrichtung zentral halten. Einen bestehenden Baustein erweitern, sobald eine zweite Stelle denselben Aufbau benötigt. |
 | Seitliche Feldhilfe und Filter | `AdminSidePanelDialog` und `ConfigInfoButton` in der Konfiguration, im Mailtest und in den Ticketfiltern. | `Dialog` bleibt die Basis für die seitliche Feldhilfe. Vor einem Wechsel zu `Popover` oder einer anderen Hülle zuerst Anker, Modalität, Fokus, Scrollgrenzen und mobile Bedienung vergleichen. Ein `Tooltip` deckt kurze Zusatztexte ab. |
