@@ -29,7 +29,9 @@ gewöhnliche CSS-Feldraster werden durch native Formular-/Zeilenlayouts ersetzt.
   Quellreview und gezielte Java-Prüfungen sind erfolgreich; der abschließende
   Bild-/Bedienvergleich bleibt Bestandteil von Punkt 4. Die unveränderten
   Vorher-Aufnahmen aller Formulargruppen liegen isoliert in DE/EN vor.
-- [ ] 2. 2FA-Rollenregeln und Google-/Microsoft-Konfiguration prüfen und umstellen.
+- [x] 2. 2FA-Rollenregeln und Google-/Microsoft-Konfiguration prüfen und umstellen.
+  Native Formularpaare und Feldhilfezeilen sind umgesetzt, Quellreview und
+  57 gezielte Java-Prüfungen erfolgreich. Der Bildvergleich folgt in Punkt 4.
 - [ ] 3. Übrige Formularstellen einzeln sichten; sinnvolle native Übernahmen in
   Mailtest, Benachrichtigungen, Kontodialogen und öffentlichen Formularen vornehmen.
   Bereits passende native Anordnungen mit Begründung in der Fachdokumentation einordnen.

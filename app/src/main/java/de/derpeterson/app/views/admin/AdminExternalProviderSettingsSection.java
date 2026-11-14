@@ -18,6 +18,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.dependency.StyleSheet;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
@@ -27,6 +28,7 @@ import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.ListItem;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.html.UnorderedList;
+import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.tabs.Tab;
@@ -54,6 +56,7 @@ import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.FieldHelpRowLayout;
 import de.derpeterson.app.ui.components.TwoFactorActionDialog;
 import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import jakarta.servlet.http.HttpServletRequest;
@@ -275,8 +278,15 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
                               Boolean.TRUE.equals(wasRedirectUriCopied)
                                   ? NotificationType.SUCCESS
                                   : NotificationType.ERROR)));
-      Div redirectUriRowDiv = new Div(redirectUriTextField, copyRedirectUriButton);
-      redirectUriRowDiv.addClassName("provider-redirect");
+      HorizontalLayout redirectUriRowLayout =
+          new HorizontalLayout(redirectUriTextField, copyRedirectUriButton);
+      redirectUriRowLayout.setWidthFull();
+      redirectUriRowLayout.setPadding(false);
+      redirectUriRowLayout.setSpacing(false);
+      redirectUriRowLayout.setAlignItems(Alignment.END);
+      redirectUriRowLayout.setFlexGrow(1, redirectUriTextField);
+      redirectUriRowLayout.setFlexShrink(0, copyRedirectUriButton);
+      redirectUriRowLayout.addClassName("provider-redirect");
 
       clientIdTextField.setWidthFull();
       clientIdTextField.setMaxLength(512);
@@ -288,11 +298,19 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       clientSecretPasswordField.setId(PROVIDER_PREFIX + providerId + "-secret");
       clientSecretPasswordField.getElement().setAttribute("autocomplete", "new-password");
       clientSecretPasswordField.setValueChangeMode(ValueChangeMode.EAGER);
-      Div credentialsDiv =
-          new Div(
-              fieldWithHelp(clientIdTextField, ProviderField.CLIENT_ID),
-              fieldWithHelp(clientSecretPasswordField, ProviderField.SECRET));
-      credentialsDiv.addClassName("provider-credentials");
+      FormLayout credentialsFormLayout =
+          new FormLayout(
+              buildProviderFieldWithHelpComponent(clientIdTextField, ProviderField.CLIENT_ID),
+              buildProviderFieldWithHelpComponent(clientSecretPasswordField, ProviderField.SECRET));
+      credentialsFormLayout.setWidthFull();
+      credentialsFormLayout.setAutoResponsive(false);
+      credentialsFormLayout.addClassName("provider-credentials");
+      credentialsFormLayout.setResponsiveSteps(
+          new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.TOP),
+          new FormLayout.ResponsiveStep(
+              "var(--provider-credentials-two-column-min-width)",
+              2,
+              FormLayout.ResponsiveStep.LabelsPosition.TOP));
 
       providerEnabledSwitch.setId(PROVIDER_PREFIX + providerId + "-enabled");
       providerEnabledSwitch.setWidthFull();
@@ -303,14 +321,15 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
 
       Div consoleGuideDiv = new Div(providerConsoleGuideSpan, providerConsoleLink);
       consoleGuideDiv.addClassName("provider-console-guide");
-      Div providerSetupDiv = new Div(consoleGuideDiv, redirectUriRowDiv);
+      Div providerSetupDiv = new Div(consoleGuideDiv, redirectUriRowLayout);
       providerSetupDiv.addClassName("provider-step-body");
       Div providerFieldsDiv =
           new Div(
               assistantIntroDiv,
               buildProviderSetupStepDiv(providerSetupDiv),
-              buildProviderSetupStepDiv(credentialsDiv),
-              buildProviderSetupStepDiv(fieldWithHelp(activationDiv, ProviderField.ENABLED)));
+              buildProviderSetupStepDiv(credentialsFormLayout),
+              buildProviderSetupStepDiv(
+                  buildProviderFieldWithHelpComponent(activationDiv, ProviderField.ENABLED)));
       providerFieldsDiv.addClassName("provider-fields");
 
       Div providerSaveHintDiv = new Div(AppIcon.INFO_CIRCLE.create(), providerSettingsHintSpan);
@@ -396,7 +415,8 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       return setupStepDiv;
     }
 
-    private Div fieldWithHelp(Component fieldInputComponent, ProviderField field) {
+    private Component buildProviderFieldWithHelpComponent(
+        Component fieldInputComponent, ProviderField field) {
       ConfigInfoButton fieldInfoButton =
           new ConfigInfoButton(() -> fieldHelp(field), () -> openProviderFieldHelp(field));
       fieldInfoButton.setId(
@@ -406,12 +426,13 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
               + field.name().toLowerCase(java.util.Locale.ROOT)
               + "-info");
       infoButtonsByProviderField.put(field, fieldInfoButton);
-      Div fieldRowDiv = new Div(fieldInputComponent, fieldInfoButton);
-      fieldRowDiv.addClassNames("cosmos-config-input-row", "provider-help-row");
+      FieldHelpRowLayout fieldHelpRowLayout =
+          new FieldHelpRowLayout(fieldInputComponent, fieldInfoButton);
+      fieldHelpRowLayout.addClassName("provider-help-row");
 
       if (field == ProviderField.ENABLED) {
-        fieldRowDiv.addClassName("provider-help-toggle");
-        return fieldRowDiv;
+        fieldHelpRowLayout.addClassName("provider-help-toggle");
+        return fieldHelpRowLayout;
       }
       Span stepLabelSpan = new Span();
       stepLabelSpan.setId(fieldInfoButton.getId().orElseThrow() + "-label");
@@ -422,7 +443,7 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       } else if (fieldInputComponent instanceof PasswordField passwordField) {
         passwordField.setAriaLabelledBy(stepLabelSpan.getId().orElseThrow());
       }
-      Div labelledFieldDiv = new Div(stepLabelSpan, fieldRowDiv);
+      Div labelledFieldDiv = new Div(stepLabelSpan, fieldHelpRowLayout);
       labelledFieldDiv.addClassNames("cosmos-config-field", "provider-help-field");
       return labelledFieldDiv;
     }

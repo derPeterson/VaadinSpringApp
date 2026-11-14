@@ -301,6 +301,16 @@ schrumpfen, die Feldhilfe behält ihre feste Breite. Der gemeinsame Abstand
 kommt aus `cosmos-config-input-row`; Beschriftung und Feldhilfe bleiben fachlich
 dem bisherigen Feld zugeordnet. Die Eingabe selbst wird dabei nicht ersetzt.
 
+Die Google-/Microsoft-Zugangsdaten nutzen `FormLayout` mit 20 px Abstand und
+der bisherigen Bildschirmgrenze von 600 px. Die Redirect-Adresse und ihre
+Kopieraktion stehen in einem nativen `HorizontalLayout`, das mobil umbricht.
+Die 2FA-Regelpaare und die Inaktivitätsfelder nutzen ebenfalls `FormLayout`.
+`--mfa-policy-two-column-min-width` erhält die bestehende Containergrenze von
+480 px; `100cqw` bezieht sich auf den umgebenden Konfigurationsinhalt.
+Die erklärende Seitenleiste bleibt eine eigenständige responsive Komposition.
+Feldhilfezeilen verwenden in beiden Bereichen `FieldHelpRowLayout`, ohne
+Auswahlkomponenten, Switches oder deren Listener zu ersetzen.
+
 Für neue Status- und Zähler-Badges die native `Badge`-Komponente verwenden.
 Sie ist unter anderem bei Sitzungen, Anmeldeanbietern, 2FA und Tickets bereits
 im Einsatz. Die [Bestandsaufnahme und offene Planung](planung/vaadin-komponenten-abgleich.md)

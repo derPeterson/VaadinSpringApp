@@ -7,6 +7,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.dependency.StyleSheet;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
@@ -41,6 +42,7 @@ import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.CosmosDurationField;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.FieldHelpRowLayout;
 import de.derpeterson.app.ui.components.TwoFactorActionDialog;
 import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import jakarta.servlet.http.HttpServletRequest;
@@ -211,7 +213,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     Div inactivityDurationDiv =
         new Div(
             inactivityDurationLabelSpan,
-            withHelp(
+            buildPolicyFieldWithHelpComponent(
                 inactivityDurationField,
                 new FieldHelp(
                     messageProperties::getTwoFactorInactivityGroup,
@@ -225,9 +227,9 @@ public final class AdminTwoFactorSection extends VerticalLayout {
                     messageProperties::getAdminConfigEffectiveTwoFactorInactivityDuration)));
     inactivityDurationDiv.addClassName("provider-help-field");
 
-    Div inactivityFieldsDiv =
-        new Div(
-            withHelp(
+    FormLayout inactivityFieldsFormLayout =
+        createPolicyFieldsFormLayout(
+            buildPolicyFieldWithHelpComponent(
                 reconfirmAfterInactivitySwitch,
                 new FieldHelp(
                     messageProperties::getTwoFactorInactivityGroup,
@@ -240,11 +242,10 @@ public final class AdminTwoFactorSection extends VerticalLayout {
                     () -> List.of(messageProperties.getTwoFactorInactivityRange()),
                     messageProperties::getAdminConfigEffectiveTwoFactorInactivitySwitch)),
             inactivityDurationDiv);
-    inactivityFieldsDiv.addClassName("mfa-policy-grid");
     VerticalLayout inactivitySectionLayout =
         new VerticalLayout(
             sectionHeading(AppIcon.NUMBER_FOUR, messageProperties::getTwoFactorInactivityGroup),
-            inactivityFieldsDiv);
+            inactivityFieldsFormLayout);
     inactivitySectionLayout.setSpacing(false);
     inactivitySectionLayout.setPadding(false);
     inactivitySectionLayout.addClassName("mfa-inactivity-section");
@@ -301,8 +302,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       AppIcon sectionAppIcon,
       Supplier<String> sectionTitleTextSupplier,
       List<TwoFactorAction> actions) {
-    Div ruleFieldsDiv = new Div();
-    ruleFieldsDiv.addClassName("mfa-policy-grid");
+    FormLayout ruleFieldsFormLayout = createPolicyFieldsFormLayout();
     for (TwoFactorAction action : actions) {
       ComboBox<TwoFactorMode> ruleModeComboBox = new ComboBox<>();
       ruleModeComboBox.setId(
@@ -320,8 +320,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
         }
       });
       modeComboBoxesByAction.put(action, ruleModeComboBox);
-      ruleFieldsDiv.add(
-          withHelp(
+      ruleFieldsFormLayout.add(
+          buildPolicyFieldWithHelpComponent(
               ruleModeComboBox,
               new FieldHelp(
                   sectionTitleTextSupplier,
@@ -333,10 +333,25 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     }
 
     VerticalLayout ruleGroupLayout =
-        new VerticalLayout(sectionHeading(sectionAppIcon, sectionTitleTextSupplier), ruleFieldsDiv);
+        new VerticalLayout(
+            sectionHeading(sectionAppIcon, sectionTitleTextSupplier), ruleFieldsFormLayout);
     ruleGroupLayout.setPadding(false);
     ruleGroupLayout.setSpacing(false);
     return ruleGroupLayout;
+  }
+
+  private static FormLayout createPolicyFieldsFormLayout(Component... policyFieldComponents) {
+    FormLayout policyFieldsFormLayout = new FormLayout(policyFieldComponents);
+    policyFieldsFormLayout.setWidthFull();
+    policyFieldsFormLayout.setAutoResponsive(false);
+    policyFieldsFormLayout.addClassName("mfa-policy-grid");
+    policyFieldsFormLayout.setResponsiveSteps(
+        new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.TOP),
+        new FormLayout.ResponsiveStep(
+            "var(--mfa-policy-two-column-min-width)",
+            2,
+            FormLayout.ResponsiveStep.LabelsPosition.TOP));
+    return policyFieldsFormLayout;
   }
 
   private H3 sectionHeading(AppIcon headingAppIcon, Supplier<String> headingTextSupplier) {
@@ -543,7 +558,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
             NotificationHelper.NotificationType.ERROR);
   }
 
-  private Div withHelp(Component policyFieldComponent, FieldHelp fieldHelp) {
+  private Component buildPolicyFieldWithHelpComponent(
+      Component policyFieldComponent, FieldHelp fieldHelp) {
     ConfigInfoButton fieldInfoButton =
         new ConfigInfoButton(
             fieldHelp::tooltip,
@@ -553,8 +569,8 @@ public final class AdminTwoFactorSection extends VerticalLayout {
               fieldHelpPanel.open();
             });
 
-    Div fieldRowDiv = new Div(policyFieldComponent, fieldInfoButton);
-    fieldRowDiv.addClassName("cosmos-config-input-row");
+    FieldHelpRowLayout fieldHelpRowLayout =
+        new FieldHelpRowLayout(policyFieldComponent, fieldInfoButton);
     fieldInfoButtons.add(fieldInfoButton);
     fieldTextRefreshActions.add(() ->
         fieldInfoButton.setAriaLabel(
@@ -569,11 +585,11 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       modeComboBox.setAriaLabelledBy(fieldLabelSpan.getId().orElseThrow());
       fieldTextRefreshActions.add(
           () -> fieldLabelSpan.setText(fieldHelp.titleTextSupplier().get()));
-      Div labelledFieldDiv = new Div(fieldLabelSpan, fieldRowDiv);
+      Div labelledFieldDiv = new Div(fieldLabelSpan, fieldHelpRowLayout);
       labelledFieldDiv.addClassName("provider-help-field");
       return labelledFieldDiv;
     }
-    return fieldRowDiv;
+    return fieldHelpRowLayout;
   }
 
   private void renderHelp(FieldHelp fieldHelp) {

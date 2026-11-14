@@ -24,8 +24,8 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-pan
 .cosmos-provider-settings .provider-fields { display:flex; flex-direction:column; gap:24px; padding:24px; }
 .cosmos-provider-settings .provider-fields > span { color:var(--cosmos-reference-secondary); font:400 12px/1.8 Inter,sans-serif; }
 .cosmos-provider-settings .provider-fields a { align-self:flex-start; color:var(--cosmos-reference-accent); font-size:12px; font-weight:500; }
-.cosmos-provider-settings .provider-credentials { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
-.cosmos-provider-settings .provider-redirect { --vaadin-input-field-height:40px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:end; gap:8px; }
+.cosmos-provider-settings .provider-credentials { --vaadin-form-layout-column-spacing:20px; --vaadin-form-layout-row-spacing:20px; --provider-credentials-two-column-min-width:0px; }
+.cosmos-provider-settings .provider-redirect { --vaadin-input-field-height:40px; align-items:end; gap:8px; }
 .cosmos-provider-settings .provider-redirect > vaadin-text-field { padding-bottom:0; }
 .cosmos-provider-settings .provider-redirect > vaadin-text-field::part(input-field) { box-sizing:border-box; height:var(--vaadin-input-field-height); min-height:var(--vaadin-input-field-height); }
 .cosmos-provider-settings vaadin-button.provider-copy { height:var(--vaadin-input-field-height); min-height:var(--vaadin-input-field-height); }
@@ -36,9 +36,10 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-pan
   .cosmos-panel-tabs::part(tabs-container), vaadin-tabs.cosmos-panel-tabs { padding:0 16px; }
   .cosmos-panel-tabs vaadin-tab { flex:1; min-width:0; padding-inline:16px; }
   .cosmos-provider-settings .provider-fields { padding:16px; }
-  .cosmos-provider-settings .provider-credentials { grid-template-columns:1fr; }
-  .cosmos-provider-settings .provider-redirect { grid-template-columns:1fr; }
-  .cosmos-provider-settings .provider-redirect vaadin-button { justify-self:end; }
+  .cosmos-provider-settings .provider-credentials { --provider-credentials-two-column-min-width:100vw; }
+  .cosmos-provider-settings .provider-redirect { flex-wrap:wrap; }
+  .cosmos-provider-settings .provider-redirect > vaadin-text-field { flex-basis:100%; }
+  .cosmos-provider-settings .provider-redirect vaadin-button { margin-inline-start:auto; }
   .cosmos-provider-settings .cosmos-panel-header { flex-wrap:wrap; padding:16px; }
 }
 

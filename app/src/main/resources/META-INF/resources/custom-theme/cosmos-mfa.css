@@ -48,8 +48,8 @@
 .two-factor-otp::part(required-indicator) { position:static; visibility:visible; display:inline-flex; flex:none; width:auto; margin:0; padding:0; font:500 14px/14px Inter,sans-serif; }
 .two-factor-otp::part(required-indicator)::after { content:'•'; color:var(--cosmos-reference-accent); opacity:1; position:static; width:auto; margin-left:0; }
 @media (max-width:760px) { .two-factor-setup-layout { grid-template-columns:minmax(0,1fr); } .two-factor-setup-instructions { padding:24px 0 0; border-left:0; border-top:1px solid var(--cosmos-reference-border); } }
-.cosmos-mfa-settings .mfa-policy-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--cosmos-space-2xl, 24px); width: 100%; }
-.cosmos-mfa-settings .cosmos-config-input-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--cosmos-space-m, 12px); align-items: center; }
+.cosmos-mfa-settings .mfa-policy-grid { --vaadin-form-layout-column-spacing:var(--cosmos-space-2xl,24px); --vaadin-form-layout-row-spacing:var(--cosmos-space-2xl,24px); --mfa-policy-two-column-min-width:0px; width:100%; }
+.cosmos-mfa-settings .cosmos-config-input-row { gap:var(--cosmos-space-m,12px); align-items:center; }
 .cosmos-mfa-settings .cosmos-config-input-row > vaadin-combo-box { min-width:0; margin:0; padding:0; }
 .cosmos-mfa-settings .cosmos-config-input-row > vaadin-combo-box::part(label) { display:none; margin:0; padding:0; }
 .cosmos-mfa-settings .cosmos-config-input-row > vaadin-combo-box::part(input-field) { box-sizing:border-box; height:40px; min-height:40px; }
@@ -73,7 +73,7 @@
   .cosmos-mfa-settings .mfa-role-content { grid-template-columns:minmax(0,1fr); }
 }
 @container (max-width:480px) {
-  .cosmos-mfa-settings .mfa-policy-grid { grid-template-columns:minmax(0,1fr); gap:16px; }
+  .cosmos-mfa-settings .mfa-policy-grid { --mfa-policy-two-column-min-width:100cqw; --vaadin-form-layout-column-spacing:16px; --vaadin-form-layout-row-spacing:16px; }
   .cosmos-mfa-settings .mfa-role-content { padding:16px; }
   .cosmos-mfa-settings .mfa-inactivity-section { padding:0 16px 16px; }
 }
