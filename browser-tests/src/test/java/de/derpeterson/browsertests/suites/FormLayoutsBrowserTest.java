@@ -201,6 +201,7 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
     assertTrue(visibleFieldLocators.count() > 0);
     visibleFieldLocators.first().scrollIntoViewIfNeeded();
     browserPage.mouse().move(0, 0);
+    assertFieldHelpColumnsUseAvailableWidth(formPanelLocator);
 
     String evidenceName = formKey + " " + browserPage.viewportSize().width;
     String measurementsJson =
@@ -228,6 +229,27 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
 
     visibleFieldLocators.last().scrollIntoViewIfNeeded();
     attachViewportScreenshot(evidenceName + " unten");
+  }
+
+  private static void assertFieldHelpColumnsUseAvailableWidth(Locator formPanelLocator) {
+    boolean alignedHelpColumns =
+        (Boolean)
+            formPanelLocator.evaluate(
+                """
+                panel => Array.from(panel.querySelectorAll('.cosmos-config-input-row'))
+                  .filter(row => row.getBoundingClientRect().width > 0).every(row => {
+                    const slot = row.querySelector(':scope > .cosmos-config-help-slot');
+                    if (!slot) return true;
+                    const input = row.firstElementChild.getBoundingClientRect();
+                    const help = slot.getBoundingClientRect();
+                    const bounds = row.getBoundingClientRect();
+                    const gap = parseFloat(getComputedStyle(row).columnGap);
+                    return Math.abs(help.right - bounds.right) < .2
+                      && Math.abs(help.left - input.right - gap) < .2;
+                  })
+                """);
+    assertTrue(
+        alignedHelpColumns, "Feldhilfespalten müssen ohne zusätzliche Leerspalte anschließen");
   }
 
   private void attachViewportScreenshot(String evidenceName) {

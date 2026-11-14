@@ -7,7 +7,9 @@
   isoliert vor/nach der Umstellung in DE/EN bei 1280 und 390 px vergleichen.
   Maße, Umbrüche, Feldhilfe-Ausrichtung, Scrollbereiche, Schaltzustände, Speichern
   und Tastaturbedienung erhalten; vorhandene Fachfälle wiederverwenden.
-  Für den aktuellen Nachtauftrag freigegeben, Umsetzung und Prüfung laufen.
+  Der Vorher-/Nachher-Abgleich ist in DE/EN mit je zwölf Fällen erfolgreich;
+  alle erfassten Formularmaße stimmen überein. Vorhandene Speicher-/Fachabläufe
+  am neuen Stand in der freigegebenen abschließenden großen Testrunde nachprüfen.
 
 - **Mailqueue / Reiteranschluss — offen:** Nach der lokalen Darstellungskorrektur
   müssen Header und Tab-Leiste in DE/EN auf Desktop und Smartphone direkt

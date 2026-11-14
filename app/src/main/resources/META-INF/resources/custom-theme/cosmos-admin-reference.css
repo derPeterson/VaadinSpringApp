@@ -36,6 +36,7 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-config-field { min-width:0; gap
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-field>vaadin-horizontal-layout>span { font:500 12px/16px Inter,sans-serif; color:var(--cosmos-reference-label); }
 vaadin-app-layout.cosmos-reference-admin .admin-config-required::after { content:' •'; color:var(--cosmos-reference-accent); }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-input-row { gap:8px; align-items:center; width:100%; }
+vaadin-app-layout.cosmos-reference-admin .cosmos-config-help-slot { width:28px; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-info { width:28px; min-width:28px; height:28px; padding:0; background:transparent; border:0; }
 /* Gemeinsamer nativer Schalter für alle Konfigurationsgruppen einschließlich Anbieter. */
 vaadin-app-layout.cosmos-reference-admin .admin-config-switch { align-self:end; }
@@ -520,7 +521,8 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-config-card-actions>vaadin-butt
 /* Der sichtbare Hinweis liegt außerhalb des vergrößerbaren Felds. */
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-row { gap:6px; }
 /* 18 px Label plus 6 px Abstand: Infoaktion zur Eingabefläche zentrieren. */
-vaadin-app-layout.cosmos-reference-admin .cosmos-mail-field-row>.cosmos-config-info { margin-top:24px; }
+/* Der Hilfebutton behält seinen bisherigen Überstand über die 28-px-Rasterspalte. */
+vaadin-app-layout.cosmos-reference-admin .cosmos-mail-field-row>.cosmos-config-help-slot { margin-top:24px; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-hint { display:block; width:calc(100% - 36px); color:var(--cosmos-reference-secondary); font:400 11px/18.7px Inter,sans-serif; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card .cosmos-mail-body-field::part(helper-text) { position:absolute; width:1px; height:1px; min-height:0; padding:0; margin:0; overflow:hidden; clip-path:inset(50%); }
 @media(max-width:1100px) { vaadin-app-layout.cosmos-reference-admin .admin-dashboard-intro { gap:22px; padding:24px; } }

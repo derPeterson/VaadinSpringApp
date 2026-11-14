@@ -300,6 +300,9 @@ Bildschirmgrenze von 768 px über `--admin-config-two-column-min-width`.
 schrumpfen, die Feldhilfe behält ihre feste Breite. Der gemeinsame Abstand
 kommt aus `cosmos-config-input-row`; Beschriftung und Feldhilfe bleiben fachlich
 dem bisherigen Feld zugeordnet. Die Eingabe selbst wird dabei nicht ersetzt.
+Die native Hilfespalte `cosmos-config-help-slot` bewahrt das bisherige
+Spaltenbudget von 28 px, auch wenn die Bedienfläche des Hilfebuttons darüber
+hinausragt. Die Eingabebreite bleibt dadurch unabhängig von dessen Bedienfläche.
 
 Die Google-/Microsoft-Zugangsdaten nutzen `FormLayout` mit 20 px Abstand und
 der bisherigen Bildschirmgrenze von 600 px. Die Redirect-Adresse und ihre

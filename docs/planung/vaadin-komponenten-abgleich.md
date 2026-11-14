@@ -40,8 +40,15 @@ gewöhnliche CSS-Feldraster werden durch native Formular-/Zeilenlayouts ersetzt.
   Review einschließlich Lesbarkeit sowie 110 gezielte Java-Prüfungen erfolgreich.
   Die erweiterten Vorher-Aufnahmen mit eigenen normalen Konten und Superadmin-
   Varianten sind in DE/EN mit je zwölf Fällen erfolgreich.
-- [ ] 4. Isolierter Vorher-/Nachher-Vergleich einschließlich Superadmin-Varianten,
+- [x] 4. Isolierter Vorher-/Nachher-Vergleich einschließlich Superadmin-Varianten,
   DE/EN bei Desktop-/Smartphonebreite, Feldhilfen, Bedienung und Regressionen.
+  Je zwölf Browserfälle vorher und nachher erfolgreich. Alle 136 gepaarten
+  Formular-Messwertsätze stimmen überein. 151 von 272 vollständigen
+  Viewport-Aufnahmen sind pixelgleich; übrige Abweichungen betreffen
+  Fokus-/Hintergrund-/Scrollzustände und geringe Kantenglättung. Die Hilfespalten
+  behalten zentral das bisherige Platzbudget und die Button-Bedienflächen.
+  103 gezielte Java-Prüfungen und Stilprüfungen erfolgreich; Speicher-/Fachabläufe
+  folgen zusätzlich in der abschließenden großen Testrunde.
 - [ ] Abschließend große Testrunde mit vollständigem Reactor, Offlineprüfungen,
   Browser `all` DE/EN und lesender Sonar-Einordnung auf dem Feature-Branch.
 

@@ -433,6 +433,8 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
 
       if (field == ProviderField.ENABLED) {
         fieldHelpRowLayout.setAlignItems(Alignment.CENTER);
+        // provider-help-toggle erhält die bisherige halbe Breite und den mobilen Umbruch.
+        fieldHelpRowLayout.setWidth(null);
         fieldHelpRowLayout.addClassName("provider-help-toggle");
         return fieldHelpRowLayout;
       }

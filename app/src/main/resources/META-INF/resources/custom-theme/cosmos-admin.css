@@ -375,8 +375,6 @@ vaadin-app-layout.cosmos-admin {
 }
 
 .cosmos-config-input-row {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 44px;
     align-items: start;
     gap: var(--lumo-space-s);
     width: 100%;
@@ -402,10 +400,6 @@ vaadin-app-layout.cosmos-admin {
     min-height: var(--cosmos-control-height);
     width: var(--cosmos-control-height);
     height: var(--cosmos-control-height);
-}
-
-:is(.cosmos-admin-section--config, .cosmos-admin-section--mail) .cosmos-config-input-row {
-    grid-template-columns: minmax(0, 1fr) var(--lumo-size-m);
 }
 
 :is(.cosmos-admin-section--config, .cosmos-admin-section--mail) .cosmos-config-input-row > vaadin-checkbox {

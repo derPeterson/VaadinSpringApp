@@ -56,6 +56,7 @@ public final class AccountFormAppearanceChecks {
     Locator lastNameFieldLocator = formPanelLocator.locator("vaadin-text-field").nth(1);
     assertThat(firstNameFieldLocator).isVisible();
     browserPage.evaluate("() => document.fonts.ready");
+    firstNameFieldLocator.scrollIntoViewIfNeeded();
     formPanelLocator.locator("h1, h2, h3").first().click();
 
     BoundingBox firstNameFieldBounds = firstNameFieldLocator.boundingBox();

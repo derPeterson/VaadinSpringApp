@@ -18,7 +18,7 @@ import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 
 /** Selects existing cases and keeps whole classes together in independent JVMs. */
 final class BrowserExecutionPlan {
-  // Gerundete Verteilungsgewichte aus dem DE-Gesamtlauf vom 13.11.2026.
+  // Gerundete Verteilungsgewichte aus dem DE-Gesamtlauf und gezielten Folgeprüfungen.
   // Die langen 2FA-/Feldhilfefälle sind vollständig berücksichtigt. Keine Zeitgarantie.
   // Bei unterbrochenen Fällen ist die verbleibende Arbeit konservativ geschätzt.
   // Einzelne Testtimeouts und das Gesamtlimit eines Workers bleiben unverändert.
@@ -59,6 +59,8 @@ final class BrowserExecutionPlan {
           // Unterbrochene Teilfälle beziehungsweise noch fehlende Folgeschritte mit Reserve.
           Map.entry("AdminMailBrowserTest", 120),
           Map.entry("RegistrationBrowserTest", 20),
+          // Zwölf Formularvergleiche benötigen rund 144 Sekunden; mit Laufzeitreserve.
+          Map.entry("FormLayoutsBrowserTest", 180),
           Map.entry("InfrastructureBrowserTest", 20),
           // Unterbrochene Teilfälle beziehungsweise noch fehlende Folgeschritte mit Reserve.
           Map.entry("CosmosComponentsBrowserTest", 430),

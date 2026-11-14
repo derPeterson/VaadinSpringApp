@@ -46,10 +46,11 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-pan
 .cosmos-provider-settings .provider-help-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
 .cosmos-provider-settings .provider-field-label { color:var(--cosmos-reference-label); font:500 12px/20px Inter,sans-serif; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-help-row { align-items:start; }
-.cosmos-provider-settings .provider-help-row > .cosmos-config-info { width:28px; min-width:28px; height:28px; min-height:28px; margin:6px 0 0; }
+.cosmos-provider-settings .provider-help-row > .cosmos-config-help-slot { margin:6px 0 0; }
+.cosmos-provider-settings .provider-help-row .cosmos-config-info { width:28px; min-width:28px; height:28px; min-height:28px; }
 .cosmos-provider-settings .provider-help-row > :is(vaadin-text-field,vaadin-password-field) { padding-top:0; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-help-toggle { align-items:center; width:calc((100% - 20px)/2); }
-.cosmos-provider-settings .provider-help-toggle > .cosmos-config-info { margin:0; }
+.cosmos-provider-settings .provider-help-toggle > .cosmos-config-help-slot { margin:0; }
 @media(max-width:600px) { vaadin-app-layout.cosmos-reference-admin .cosmos-provider-settings .provider-help-toggle { width:100%; } }
 
 .cosmos-provider-settings .provider-assistant-intro { display:flex; flex-direction:column; gap:8px; }
