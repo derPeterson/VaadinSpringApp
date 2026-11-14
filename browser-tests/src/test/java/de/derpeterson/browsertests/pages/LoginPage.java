@@ -10,6 +10,7 @@ import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.WaitUntilState;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
 
@@ -24,10 +25,12 @@ public final class LoginPage {
 
   @Step("Loginformular öffnen")
   public void open() {
-    browserPage.navigate(path(LOGIN_ROUTE));
+    // Das Formular kann schon bedienbar sein, während ein späteres load-Ereignis ausbleibt.
+    // Nach dem HTML-Aufbau warten wir deshalb auf das von Vaadin gerenderte Eingabefeld.
+    browserPage.navigate(
+        path(LOGIN_ROUTE),
+        new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
 
-    // Vaadin rendert das Formular erst nach dem HTML-Laden. Vor den Inhaltsprüfungen
-    // auf das sichtbare Eingabefeld warten, auch im frisch gestarteten Browserprozess.
     browserPage
         .getByLabel(uiTexts.getPublicEmailField(), new Page.GetByLabelOptions().setExact(true))
         .waitFor();

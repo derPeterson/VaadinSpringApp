@@ -16,6 +16,23 @@ Auftrag. Der Auftrag „große Testrunde“ umfasst die vollständigen isolierte
 Läufe; dafür nicht erneut fragen. Das Bearbeiten einer Anleitung oder eines Skills
 ist keine Testfreigabe.
 
+Fortschritt vorzugsweise über die Runnerkonsole verfolgen. Unter Windows können
+gewöhnliche Lesezugriffe wie `Get-Content` auf Worker-Ergebnisdateien deren
+abschließendes Verschieben in den gemeinsamen Bericht blockieren. Notwendige
+Diagnosezugriffe müssen Lesen, Schreiben und Löschen/Verschieben ausdrücklich
+teilen (`FileShare.ReadWrite | FileShare.Delete`) und ihre Handles sofort schließen.
+In der Abschlussphase keine Worker-Ergebnisdateien parallel lesen. Ein dadurch
+abgebrochener Bericht ist kein erfolgreicher Gesamtlauf, auch wenn alle Worker
+grün sind; Metadaten nicht nachträglich als Erfolg umdeuten.
+
+`LoginPage.open()` wartet nach `DOMContentLoaded` auf das sichtbare Vaadin-Formular.
+Die vorhandenen Prüfungen von URL, Titel, Eingaben und Überschrift bleiben erhalten.
+Das allgemeine `load`-Ereignis ist dafür keine zusätzliche Bereitschaftsgarantie;
+ein Seitenwechsel kann bereits die bedienbare Anmeldung zeigen, während dieses
+Ereignis noch aussteht. Keine pauschalen Timeout-Erhöhungen oder Wiederholungen
+als Ersatz für eine passende UI-Wartebedingung verwenden.
+[Playwright: Seitenbereitschaft](https://playwright.dev/java/docs/navigations#when-is-the-page-loaded).
+
 Offene Browserergänzungen stehen zentral im [Testbedarf](../docs/testbedarf.md#browser-tests).
 Vor neuen Fällen vorhandene Abdeckung prüfen; erledigte Einträge erst nach passender
 Implementierung und erfolgreicher DE-/EN-Prüfung entfernen. Nicht erledigte oder
