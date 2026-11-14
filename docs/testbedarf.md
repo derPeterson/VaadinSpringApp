@@ -2,6 +2,13 @@
 
 ## Browser-Tests
 
+- **Übrige native Formularlayouts — offen:** Allgemeine Konfiguration, 2FA-Regeln,
+  Anmeldeanbieter und verbleibende Formularraster inklusive Superadmin-Zusatzfelder
+  isoliert vor/nach der Umstellung in DE/EN bei 1280 und 390 px vergleichen.
+  Maße, Umbrüche, Feldhilfe-Ausrichtung, Scrollbereiche, Schaltzustände, Speichern
+  und Tastaturbedienung erhalten; vorhandene Fachfälle wiederverwenden.
+  Für den aktuellen Nachtauftrag freigegeben, Umsetzung und Prüfung laufen.
+
 - **Mailqueue / Reiteranschluss — offen:** Nach der lokalen Darstellungskorrektur
   müssen Header und Tab-Leiste in DE/EN auf Desktop und Smartphone direkt
   ohne Abstand oder zusätzliche Trennlinie aneinander anschließen.

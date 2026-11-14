@@ -10,6 +10,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.checkbox.Switch;
 import com.vaadin.flow.component.dependency.StyleSheet;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
@@ -47,6 +48,7 @@ import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosCssClasses;
 import de.derpeterson.app.ui.components.CosmosDurationField;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.FieldHelpRowLayout;
 import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -125,7 +127,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private final Span currentGroupDescriptionSpan;
   private final Badge currentGroupSettingCountBadge;
   private final Span configurationSaveHintSpan;
-  private final VerticalLayout configFieldsLayout;
+  private final FormLayout configFieldsFormLayout;
 
   private final Button saveConfigButton;
   private final Button reloadConfigButton;
@@ -139,7 +141,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private final Span queueAssistantsTabLabelSpan = new Span();
   private final Tab queueGeneralTab = new Tab(AppIcon.SLIDERS.create(), queueGeneralTabLabelSpan);
   private final Tab queueAssistantsTab = new Tab(AppIcon.BOT.create(), queueAssistantsTabLabelSpan);
-  private final VerticalLayout queueGeneralFieldsLayout = new VerticalLayout();
+  private final FormLayout queueGeneralFieldsFormLayout = createConfigurationFieldsFormLayout();
 
   public AdminConfigurationSection(
       MessageProperties messageProperties,
@@ -175,21 +177,14 @@ public class AdminConfigurationSection extends VerticalLayout {
     currentGroupSettingCountBadge.addClassName("cosmos-config-setting-count");
     configurationSaveHintSpan = new Span();
 
-    configFieldsLayout = new VerticalLayout();
-    configFieldsLayout.setPadding(false);
-    configFieldsLayout.setSpacing(true);
-    configFieldsLayout.setWidthFull();
-    configFieldsLayout.addClassName("cosmos-config-fields");
+    configFieldsFormLayout = createConfigurationFieldsFormLayout();
 
     queueTabSheet.setId("admin-queue-tabs");
     queueTabSheet.addClassName(CosmosCssClasses.PANEL_TABS);
     queueTabSheet.addThemeVariants(TabSheetVariant.NO_PADDING);
     queueTabSheet.setWidthFull();
     queueTabSheet.addSelectedChangeListener(event -> refreshCurrentGroupTitle());
-    queueGeneralFieldsLayout.setPadding(false);
-    queueGeneralFieldsLayout.setSpacing(false);
-    queueGeneralFieldsLayout.addClassName("cosmos-config-fields");
-    queueTabSheet.add(queueGeneralTab, queueGeneralFieldsLayout);
+    queueTabSheet.add(queueGeneralTab, queueGeneralFieldsFormLayout);
     queueTabSheet.setVisible(false);
 
     registerConfigGroups();
@@ -234,6 +229,20 @@ public class AdminConfigurationSection extends VerticalLayout {
     loadConfigValues();
   }
 
+  private static FormLayout createConfigurationFieldsFormLayout() {
+    FormLayout configurationFieldsFormLayout = new FormLayout();
+    configurationFieldsFormLayout.setWidthFull();
+    configurationFieldsFormLayout.setAutoResponsive(false);
+    configurationFieldsFormLayout.addClassName("cosmos-config-fields");
+    configurationFieldsFormLayout.setResponsiveSteps(
+        new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.TOP),
+        new FormLayout.ResponsiveStep(
+            "var(--admin-config-two-column-min-width)",
+            2,
+            FormLayout.ResponsiveStep.LabelsPosition.TOP));
+    return configurationFieldsFormLayout;
+  }
+
   private @NonNull VerticalLayout createConfigurationCardContent() {
     Div configGroupIconBadgeDiv = new Div(currentGroupSvgIcon);
     configGroupIconBadgeDiv.addClassName("cosmos-config-group-icon");
@@ -254,7 +263,7 @@ public class AdminConfigurationSection extends VerticalLayout {
 
     VerticalLayout configCardLayout =
         new VerticalLayout(
-            configCardHeaderDiv, configFieldsLayout, queueTabSheet, configCardFooterDiv);
+            configCardHeaderDiv, configFieldsFormLayout, queueTabSheet, configCardFooterDiv);
     configCardLayout.setPadding(false);
     configCardLayout.setSpacing(false);
     configCardLayout.addClassNames("cosmos-admin-form", "cosmos-config-form");
@@ -411,10 +420,10 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     refreshCurrentGroupTitle();
-    configFieldsLayout.removeAll();
-    queueGeneralFieldsLayout.removeAll();
+    configFieldsFormLayout.removeAll();
+    queueGeneralFieldsFormLayout.removeAll();
     boolean queueGroupSelected = selectedGroup == AdminConfigGroup.QUEUE;
-    configFieldsLayout.setVisible(!queueGroupSelected);
+    configFieldsFormLayout.setVisible(!queueGroupSelected);
     queueTabSheet.setVisible(queueGroupSelected);
 
     Predicate<ConfigEntry> selectedGroupFilter = configGroupFilters.get(selectedGroup);
@@ -442,9 +451,9 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
 
     if (!queueGroupSelected) {
-      configFieldsLayout.add(configFieldLayout);
+      configFieldsFormLayout.add(configFieldLayout);
     } else if (!ConfigurationCatalog.isMailCleanupSetting(configEntry)) {
-      queueGeneralFieldsLayout.add(configFieldLayout);
+      queueGeneralFieldsFormLayout.add(configFieldLayout);
     }
   }
 
@@ -721,9 +730,9 @@ public class AdminConfigurationSection extends VerticalLayout {
             () -> buildConfigTooltipText(configEntry), () -> openHelp(configEntry));
     configInfoButton.getElement().setAttribute("aria-labelledby", configLabelId);
     configInfoButtons.put(configEntry, configInfoButton);
-    Div configInputRowDiv = new Div(configInputComponent, configInfoButton);
-    configInputRowDiv.addClassName("cosmos-config-input-row");
-    configFieldLayout.add(configInputRowDiv);
+    FieldHelpRowLayout configInputRowLayout =
+        new FieldHelpRowLayout(configInputComponent, configInfoButton);
+    configFieldLayout.add(configInputRowLayout);
     return configFieldLayout;
   }
 

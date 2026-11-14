@@ -12,6 +12,7 @@ import de.derpeterson.browsertests.suites.CosmosDesignBrowserTest;
 import de.derpeterson.browsertests.suites.EmailActionLinkBrowserTest;
 import de.derpeterson.browsertests.suites.ExternalLoginBrowserTest;
 import de.derpeterson.browsertests.suites.ExternalLoginLayoutBrowserTest;
+import de.derpeterson.browsertests.suites.FormLayoutsBrowserTest;
 import de.derpeterson.browsertests.suites.InfrastructureBrowserTest;
 import de.derpeterson.browsertests.suites.LoginAttemptBrowserTest;
 import de.derpeterson.browsertests.suites.LoginLayoutBrowserTest;
@@ -56,6 +57,7 @@ final class BrowserSuites {
               MailQueueResolutionBrowserTest.class,
               AuthenticationBrowserTest.class,
               RegistrationBrowserTest.class,
+              FormLayoutsBrowserTest.class,
               ExternalLoginBrowserTest.class,
               ExternalLoginLayoutBrowserTest.class,
               VerificationBrowserTest.class,
@@ -104,6 +106,7 @@ final class BrowserSuites {
               AccountSettingsBrowserTest.class,
               UserStatusBrowserTest.class,
               TwoFactorBrowserTest.class);
+      case "form-layouts" -> List.of(FormLayoutsBrowserTest.class);
       case "account-forms" ->
           List.of(RegistrationBrowserTest.class, UserManagementBrowserTest.class);
       case "profile-form" -> List.of(AccountSettingsBrowserTest.class);

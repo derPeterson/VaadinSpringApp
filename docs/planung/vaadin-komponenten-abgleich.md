@@ -17,6 +17,35 @@ Arbeiten laufen auf
 einheitlichen Seitenpfade sind vom Benutzer abgenommen. Ihre geltenden Regeln
 stehen im [Theme-Standard](../theme.md).
 
+### Freigegebener Nachtauftrag: übrige Formulare
+
+Branch und Ausgangspunkt: `codex/vaadin-komponenten-folgearbeiten`, `c7b5a356`.
+Aussehen, Verhalten, Feldreihenfolge, Rechte und Speichern bleiben erhalten.
+Vorhandene native Zeilen/Spalten und fachlich passende Sonderbausteine bleiben bestehen;
+gewöhnliche CSS-Feldraster werden durch native Formular-/Zeilenlayouts ersetzt.
+
+- [x] 1. Allgemeine Anwendungskonfiguration einschließlich Mailqueue-Allgemein
+  auf `FormLayout` und native Eingabe-/Feldhilfezeilen übertragen.
+  Quellreview und gezielte Java-Prüfungen sind erfolgreich; der abschließende
+  Bild-/Bedienvergleich bleibt Bestandteil von Punkt 4. Die unveränderten
+  Vorher-Aufnahmen aller Formulargruppen liegen isoliert in DE/EN vor.
+- [ ] 2. 2FA-Rollenregeln und Google-/Microsoft-Konfiguration prüfen und umstellen.
+- [ ] 3. Übrige Formularstellen einzeln sichten; sinnvolle native Übernahmen in
+  Mailtest, Benachrichtigungen, Kontodialogen und öffentlichen Formularen vornehmen.
+  Bereits passende native Anordnungen mit Begründung in der Fachdokumentation einordnen.
+- [ ] 4. Isolierter Vorher-/Nachher-Vergleich einschließlich Superadmin-Varianten,
+  DE/EN bei Desktop-/Smartphonebreite, Feldhilfen, Bedienung und Regressionen.
+- [ ] Abschließend große Testrunde mit vollständigem Reactor, Offlineprüfungen,
+  Browser `all` DE/EN und lesender Sonar-Einordnung auf dem Feature-Branch.
+
+Nach jedem der vier Punkte Review einschließlich Lesbarkeit und separater Commit.
+Für diese Pakete und die abschließende große Testrunde sind isolierte Browserläufe
+freigegeben. Vorher-Aufnahmen am gesicherten unveränderten Ausgangsimage erfassen,
+Nachher DE/EN am selben finalen Image. Eigene Testdaten/-dienste; die laufende
+Entwickleranwendung bleibt unverändert. Kein Merge, Push oder Release beauftragt.
+Die beiden offenen Queue-Nachtests werden in der großen Testrunde mitgeführt.
+Die abschließende menschliche Designabnahme bleibt offen.
+
 `CosmosMetricCard` wird für „Gesamt“ und „Ungelesen“ im Postfach sowie die
 Konten-Karte in der Benutzerverwaltung verwendet.
 Eine native Vaadin-`Card` mit nativen Text-/Layoutkomponenten

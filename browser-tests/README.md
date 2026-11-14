@@ -105,6 +105,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung und kompakte Zeit | 18 |
 | `metric-cards` | Konten-Karte und Postfach-Kennzahlen auf Desktop/Smartphone: Darstellung, Zähleränderungen, Filter und Sprache | 4 |
 | `avatars` | Profilbildmodi und Bildfehler, Header/Sidebar/Menü, Benutzertabelle und Bestätigung, Status-/Namenswechsel, Ticketidentitäten und 2FA-Header auf Desktop/Smartphone | 10 |
+| `form-layouts` | Alle allgemeinen Konfigurationsgruppen für Admin/Superadmin, Anbieter, 2FA-Rollen, Mailtest und Superadmin-Zusatzfelder: Formularmaße und Vergleichsaufnahmen auf Desktop/Smartphone | 8 |
 | `account-forms` | Registrierung sowie Benutzer anlegen/bearbeiten: Vorher-/Nachher-Aufnahmen, Feldmaße, Speichern und Validierung | 8 |
 | `profile-form` | Persönliche Daten: Anordnung und Spaltengrenzen auf Desktop/Smartphone, Speichern, Validierung, Formularschutz und Sprachwechsel | 5 |
 | `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset und kompakte Zeit mit Sprachwechsel | 5 |

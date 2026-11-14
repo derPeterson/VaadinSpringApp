@@ -291,6 +291,16 @@ Lokale Checkboxregeln lassen die nativen FormLayout-Ränder bestehen und ergänz
 nur den bisherigen Versatz zur Rollenbeschriftung. Dialogkopf, Footer, die
 zusätzlichen Superadmin-Optionen und die eingeklappte Anmeldung bleiben erhalten.
 
+Die allgemeinen Konfigurationsgruppen und „E-Mail-Queue / Allgemein“ verwenden
+ebenfalls natives `FormLayout`. `cosmos-config-fields` in
+`cosmos-admin-reference.css` erhält 20 px Feldabstand und die bestehende
+Bildschirmgrenze von 768 px über `--admin-config-two-column-min-width`.
+`FieldHelpRowLayout` verbindet das unveränderte Eingabefeld und seinen
+`ConfigInfoButton` als natives `HorizontalLayout`: Das Feld wächst und darf
+schrumpfen, die Feldhilfe behält ihre feste Breite. Der gemeinsame Abstand
+kommt aus `cosmos-config-input-row`; Beschriftung und Feldhilfe bleiben fachlich
+dem bisherigen Feld zugeordnet. Die Eingabe selbst wird dabei nicht ersetzt.
+
 Für neue Status- und Zähler-Badges die native `Badge`-Komponente verwenden.
 Sie ist unter anderem bei Sitzungen, Anmeldeanbietern, 2FA und Tickets bereits
 im Einsatz. Die [Bestandsaufnahme und offene Planung](planung/vaadin-komponenten-abgleich.md)

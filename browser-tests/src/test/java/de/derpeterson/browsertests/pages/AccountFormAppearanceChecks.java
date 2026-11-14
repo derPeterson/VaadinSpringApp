@@ -44,7 +44,7 @@ public final class AccountFormAppearanceChecks {
     Locator lastFormFieldLocator =
         signInDetailsLocator.count() == 1
             ? signInDetailsLocator
-            : userDialogLocator.locator(".admin-user-enabled-checkbox");
+            : userDialogLocator.locator(".cosmos-dialog-form vaadin-checkbox:visible").last();
     lastFormFieldLocator.scrollIntoViewIfNeeded();
     attachUserDialogScreenshot(browserPage, userDialogLocator, evidenceName + " unten");
     attachDialogScrollMeasurements(userDialogLocator, evidenceName + " Scrollmaße unten");
