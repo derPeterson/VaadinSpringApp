@@ -26,11 +26,7 @@ public final class PublicAuthenticationPanelLayout extends Div {
 
     ExternalLoginButtons externalLoginButtons =
         new ExternalLoginButtons(
-            externalLoginFlow,
-            httpServletRequest,
-            messageProperties,
-            rememberLoginSupplier,
-            ExternalLoginButtons.Presentation.PANEL);
+            externalLoginFlow, httpServletRequest, messageProperties, rememberLoginSupplier);
 
     if (!externalLoginButtons.isVisible()) {
       return;

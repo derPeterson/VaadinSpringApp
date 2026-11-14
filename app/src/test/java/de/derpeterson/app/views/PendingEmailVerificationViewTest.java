@@ -1,12 +1,12 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.ComponentTestTree.streamComponentTree;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Span;
@@ -24,16 +24,15 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 /** Native View und echte Texte, ohne Browser oder laufende Anwendung. */
 class PendingEmailVerificationViewTest {
-  private final PendingEmailVerificationFlow pendingVerificationFlow =
+  private final PendingEmailVerificationFlow pendingEmailVerificationFlow =
       mock(PendingEmailVerificationFlow.class);
-  private final HttpServletRequest httpRequest = mock(HttpServletRequest.class);
+  private final HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
   private MessageProperties messageProperties;
 
   // Vaadin hält die aktuelle UI nur schwach. Das Fixture hält sie bis zum Testende fest.
@@ -56,7 +55,7 @@ class PendingEmailVerificationViewTest {
     when(configService.getString(ConfigEntry.COPYRIGHT_TEXT)).thenReturn("");
     messageProperties = new MessageProperties(new CustomI18NProvider());
     return new PendingEmailVerificationView(
-        messageProperties, pendingVerificationFlow, httpRequest, configService);
+        messageProperties, pendingEmailVerificationFlow, httpServletRequest, configService);
   }
 
   @AfterEach
@@ -68,60 +67,62 @@ class PendingEmailVerificationViewTest {
     vaadinSession = null;
   }
 
-  private Stream<Component> componentTree(Component rootComponent) {
-    return Stream.concat(
-        Stream.of(rootComponent), rootComponent.getChildren().flatMap(this::componentTree));
-  }
-
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void missingProofReturnsToLoginWithoutDisplayingAnAddress(String languageCode) {
-    PendingEmailVerificationView verificationView = createVerificationView(languageCode);
-    when(pendingVerificationFlow.currentAccount(httpRequest)).thenReturn(Optional.empty());
+    PendingEmailVerificationView pendingEmailVerificationView =
+        createVerificationView(languageCode);
+    when(pendingEmailVerificationFlow.currentAccount(httpServletRequest))
+        .thenReturn(Optional.empty());
     BeforeEnterEvent beforeEnterEvent = mock(BeforeEnterEvent.class);
 
-    verificationView.beforeEnter(beforeEnterEvent);
+    pendingEmailVerificationView.beforeEnter(beforeEnterEvent);
 
     verify(beforeEnterEvent).forwardTo(LoginView.class);
-    Span addressSpan =
-        componentTree(verificationView)
+    Span pendingEmailAddressSpan =
+        streamComponentTree(pendingEmailVerificationView)
             .filter(component -> component.getId().orElse("").equals("pending-verification-email"))
             .map(Span.class::cast)
             .findFirst()
             .orElseThrow();
-    assertTrue(addressSpan.getText().isEmpty());
+    assertTrue(pendingEmailAddressSpan.getText().isEmpty());
   }
 
   @ParameterizedTest
   @ValueSource(strings = {"de", "en"})
   void validProofShowsLocalizedWarningAndResendsOnlyForThisProof(String languageCode)
       throws IOException {
-    PendingEmailVerificationView verificationView = createVerificationView(languageCode);
-    when(pendingVerificationFlow.currentAccount(httpRequest))
+    PendingEmailVerificationView pendingEmailVerificationView =
+        createVerificationView(languageCode);
+    when(pendingEmailVerificationFlow.currentAccount(httpServletRequest))
         .thenReturn(Optional.of(UserEntity.builder().email("pending@example.test").build()));
-    when(pendingVerificationFlow.resendVerification(httpRequest)).thenReturn(true);
+    when(pendingEmailVerificationFlow.resendVerification(httpServletRequest)).thenReturn(true);
 
-    verificationView.beforeEnter(mock(BeforeEnterEvent.class));
+    pendingEmailVerificationView.beforeEnter(mock(BeforeEnterEvent.class));
 
-    assertEquals(messageProperties.getEmailVerificationTitle(), verificationView.getPageTitle());
+    assertEquals(
+        messageProperties.getEmailVerificationTitle(), pendingEmailVerificationView.getPageTitle());
 
     assertTrue(
-        componentTree(verificationView)
+        streamComponentTree(pendingEmailVerificationView)
             .filter(Span.class::isInstance)
             .map(Span.class::cast)
-            .anyMatch(span ->
-                span.getText().equals(messageProperties.getEmailVerificationInstructions())));
+            .anyMatch(candidateSpan ->
+                candidateSpan
+                    .getText()
+                    .equals(messageProperties.getEmailVerificationInstructions())));
     assertTrue(
-        componentTree(verificationView)
+        streamComponentTree(pendingEmailVerificationView)
             .filter(Span.class::isInstance)
             .map(Span.class::cast)
-            .anyMatch(span ->
-                span.getElement()
+            .anyMatch(candidateSpan ->
+                candidateSpan
+                    .getElement()
                     .getTextRecursively()
                     .equals(messageProperties.getEmailVerificationSpamHint())));
     assertEquals(
         messageProperties.getEmailVerificationSpamFolderLabel(),
-        componentTree(verificationView)
+        streamComponentTree(pendingEmailVerificationView)
             .filter(component -> component.hasClassName("pending-verification-folder-emphasis"))
             .map(Span.class::cast)
             .findFirst()
@@ -129,16 +130,16 @@ class PendingEmailVerificationViewTest {
             .getText());
     assertEquals(
         1,
-        componentTree(verificationView)
+        streamComponentTree(pendingEmailVerificationView)
             .filter(component -> component.hasClassName("cosmos-security-warning"))
             .count());
     assertEquals(
         0,
-        componentTree(verificationView)
+        streamComponentTree(pendingEmailVerificationView)
             .filter(component -> component.getId().orElse("").startsWith("public-nav-"))
             .count());
     Button resendMailButton =
-        componentTree(verificationView)
+        streamComponentTree(pendingEmailVerificationView)
             .filter(component -> component.getId().orElse("").equals("resend-verification-email"))
             .map(Button.class::cast)
             .findFirst()
@@ -147,6 +148,6 @@ class PendingEmailVerificationViewTest {
 
     resendMailButton.click();
 
-    verify(pendingVerificationFlow).resendVerification(httpRequest);
+    verify(pendingEmailVerificationFlow).resendVerification(httpServletRequest);
   }
 }

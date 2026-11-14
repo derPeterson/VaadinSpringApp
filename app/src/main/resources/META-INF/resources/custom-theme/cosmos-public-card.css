@@ -1,4 +1,4 @@
-/* Lokaler Card-Pilot: Die bestehenden Panelzonen behalten ihre Cosmos-Innenabstände. */
+/* Native öffentliche Cards: Die bestehenden Panelzonen behalten ihre Cosmos-Innenabstände. */
 .cosmos-reference-public vaadin-card.public-card-panel {
     --vaadin-card-padding: 0;
     --vaadin-card-gap: 0;

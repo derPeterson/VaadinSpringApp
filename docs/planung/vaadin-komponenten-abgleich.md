@@ -17,9 +17,12 @@ Arbeiten laufen auf
 einheitlichen Seitenpfade sind vom Benutzer abgenommen. Ihre geltenden Regeln
 stehen im [Theme-Standard](../theme.md).
 
-Der Card-Pilot „Passwort vergessen“ auf `PublicCardPanelComponent` ist vom Benutzer
-abgenommen. Sein geltender Aufbau steht im [Theme-Standard](../theme.md).
-Die Übernahme weiterer Karten ist ein eigenes, noch zu beauftragendes Paket.
+Der abgenommene Card-Pilot „Passwort vergessen“ ist in den gemeinsamen
+`PublicPanelComponent` überführt. Die übrigen öffentlichen Standardpanels und
+die Google-/Microsoft-Nebenkarte sind auf native Cards umgestellt und isoliert
+in DE/EN auf Desktop und Smartphone mit Vorher-/Nachher-Aufnahmen geprüft.
+Das öffentliche Paket ist vom Benutzer abgenommen. 2FA, Wiederherstellungshilfe,
+Sitzungslimit sowie übrige Konto-/Admin-Karten bleiben separate Folgepakete.
 
 Die gewöhnlichen Formularlayouts sind vom Benutzer abgenommen.
 Kennzahlkarten, Avatar-Übernahme, Profil-/Benutzerformulare, segmentierte Auswahl,
@@ -43,7 +46,7 @@ Ansicht prüfen. Aktuelle Bausteine beschreibt der [Theme-Standard](../theme.md)
 | Öffentlich und geschützte Zwischenschritte | [PublicPageComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PublicPageComponent.java) verwendet denselben Rahmen, native Zeilen und Spalten sowie einen eigenen Kopf. Die Gast-Views nutzen unter anderem [IsNotAuthenticatedBaseView](../../app/src/main/java/de/derpeterson/app/security/IsNotAuthenticatedBaseView.java) mit `Composite` und Flow-Layouts. Die 2FA-Views verwenden `VerticalLayout` und je nach Zustand den reduzierten Kopf. | Gemeinsame Hülle erhalten. Visuelle Ausrichtung und serverseitige Ablauf- und Zugriffssperren getrennt betrachten. |
 | Seitennavigation und Inhalt | [PageNavigationComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PageNavigationComponent.java) erweitert `SideNav` und arbeitet mit `SideNavItem`. Ein Browser-Listener verbindet interne Einträge mit Java-Aktionen. [PageContentLayout](../../app/src/main/java/de/derpeterson/app/ui/components/PageContentLayout.java) gruppiert Sidebar und Inhalt in einem responsiven CSS-Raster und steuert die mobile Navigation. `AdminView` verwendet ebenfalls diese Seitennavigation. | Die Menüpunkte und Navigationselemente sind nativ. Der responsive Rahmen und die Anbindung an die abschnittsbasierte Navigation sind eigene Ergänzungen. |
 | Zeilen, Spalten und Formulare | `HorizontalLayout` und `VerticalLayout` kommen durchgängig vor, etwa bei Registrierung, Profilaktionen, Ticketköpfen und Pagination. Profil, Registrierung, Admin-Benutzerformular und die Konfigurationsgruppen verwenden natives `FormLayout`. Einspaltige Formulare und Feldhilfezeilen verwenden native Zeilen und Spalten. | Für gewöhnliche Zeilen und Spalten ist die Vaadin-Basis bereits da. `FormLayout` ist eine passende Standardoption für wiederkehrende responsive Feldpaare. Der Bereinigungsassistent verwendet ebenfalls `FormLayout`. Den aktuellen Formularstand vor weiteren Anordnungsänderungen gemeinsam sichten. |
-| Karten und Panels | [CosmosCardComponent](../../app/src/main/java/de/derpeterson/app/ui/components/CosmosCardComponent.java) erbt von `VerticalLayout`. [PublicPanelComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PublicPanelComponent.java) und [AccountPanelComponent](../../app/src/main/java/de/derpeterson/app/ui/components/AccountPanelComponent.java) setzen Kopf, Inhalt und Aktionen daraus zusammen. [PortalContextCard](../../app/src/main/java/de/derpeterson/app/ui/components/PortalContextCard.java) basiert auf `Div`. Admin-Panels verwenden zusätzlich die gemeinsamen Panelklassen. | Gemeinsame Gestaltung ist vorhanden. Die HTML-Struktur der Karten ist unsere. `Card` ist ein konkreter Pilotkandidat, weil Vaadin dafür eine eigene Komponente anbietet. |
+| Karten und Panels | [PublicPanelComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PublicPanelComponent.java) und `ExternalLoginButtons` verwenden native `Card` mit den bestehenden Cosmos-Zonen. [CosmosCardComponent](../../app/src/main/java/de/derpeterson/app/ui/components/CosmosCardComponent.java) bleibt eine `VerticalLayout`-Basis für andere Karten, unter anderem [AccountPanelComponent](../../app/src/main/java/de/derpeterson/app/ui/components/AccountPanelComponent.java). [PortalContextCard](../../app/src/main/java/de/derpeterson/app/ui/components/PortalContextCard.java) basiert auf `Div`. | Die öffentlichen Standardkarten sind abgenommen. Andere Karten separat vergleichen. Dabei Kopf-Metadaten, Aktionen, vorhandene Selektoren und responsive Anordnung erhalten. |
 | Dialoge, Feldhilfe und Filter | Formdialoge basieren auf `Dialog`. [AdminSidePanelDialog](../../app/src/main/java/de/derpeterson/app/ui/components/AdminSidePanelDialog.java) ist ein `Dialog` mit seitlicher Platzierung und eigener Größenanpassung. `Popover` wird etwa für Glocke, Profilmenü und Nachrichtenaktionen verwendet. | Overlay, Modalität und grundlegende Interaktion kommen von Vaadin. Header, Footer und Inhalte sind fachliche Zusammensetzungen. Ein `ConfirmDialog`-Pilot ist für einfache Bestätigungen sinnvoll. |
 
 `Div`, `Span` und Überschriften sind Java-Klassen aus Flow. Ein `Span` für
@@ -142,8 +145,8 @@ wenn eine konkrete Funktion fehlt. In dem Fall die geprüfte Alternative,
 den nötigen Eigenanteil und die zu erhaltende Bedienung zur Entscheidung
 vorlegen.
 
-1. **Karten und einfache Bestätigungen.** Je eine Oberfläche mit `Card` bzw.
-   `ConfirmDialog` vergleichen. Bestehende Kopf-, Fuß- und Fokusverträge
+1. **Karten und einfache Bestätigungen.** Eine Konto-/Adminkarte bzw. eine einfache
+   Bestätigung mit `ConfirmDialog` vergleichen. Bestehende Kopf-, Fuß- und Fokusverträge
    sind Abnahmekriterien. Der gemeinsame Kartenrahmen hat viele Verbraucher
    und ist deshalb erst nach einem lokalen Vergleich dran.
 2. **Weiterführende Struktur.** `MasterDetailLayout`, mobile Navigation,

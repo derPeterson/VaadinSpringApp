@@ -1,5 +1,6 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.ComponentTestTree.streamComponentTree;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,7 +24,6 @@ import de.derpeterson.app.service.AccountSecurityService;
 import de.derpeterson.app.service.AccountSecurityService.Confirmation;
 import de.derpeterson.app.service.ConfigService;
 import java.util.Locale;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,50 +32,56 @@ import org.junit.jupiter.params.provider.EnumSource;
 
 class ConfirmEmailChangeViewTest {
   private UI testUi;
-  AccountSecurityService accountSecurityService;
-  MessageProperties messageProperties;
-  ConfirmEmailChangeView view;
+  private VaadinSession vaadinSession;
+
+  private AccountSecurityService accountSecurityService;
+  private MessageProperties messageProperties;
+  private ConfirmEmailChangeView emailConfirmationView;
 
   @BeforeEach
-  void setup() {
+  void createEmailConfirmationUi() {
     testUi = new UI();
     UI.setCurrent(testUi);
-    VaadinSession vaadinSession = mock(VaadinSession.class);
+    vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.hasLock()).thenReturn(true);
     when(vaadinSession.getLocale()).thenReturn(Locale.GERMAN);
     VaadinSession.setCurrent(vaadinSession);
     testUi.getInternals().setSession(vaadinSession);
+
     ConfigService configService = mock(ConfigService.class);
     when(configService.getString(any()))
-        .thenAnswer(call -> ((ConfigEntry) call.getArgument(0)).getDefaultValueString());
+        .thenAnswer(mockInvocation ->
+            ((ConfigEntry) mockInvocation.getArgument(0)).getDefaultValueString());
+
     accountSecurityService = mock(AccountSecurityService.class);
     messageProperties = new MessageProperties(new CustomI18NProvider());
-    view = new ConfirmEmailChangeView(messageProperties, accountSecurityService, configService);
+    emailConfirmationView =
+        new ConfirmEmailChangeView(messageProperties, accountSecurityService, configService);
   }
 
   @AfterEach
-  void cleanup() {
+  void clearEmailConfirmationUi() {
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
+    testUi = null;
+    vaadinSession = null;
   }
 
-  Stream<Component> tree(Component root) {
-    return Stream.concat(Stream.of(root), root.getChildren().flatMap(this::tree));
-  }
-
-  Button confirm() {
+  private Button findConfirmEmailButton() {
     return (Button)
-        tree(view)
-            .filter(c -> c.getId().orElse("").equals("account-email-confirm-action"))
+        streamComponentTree(emailConfirmationView)
+            .filter(candidateComponent ->
+                candidateComponent.getId().orElse("").equals("account-email-confirm-action"))
             .findFirst()
             .orElseThrow();
   }
 
-  SvgIcon statusIcon() {
+  private SvgIcon findConfirmationStatusSvgIcon() {
     return (SvgIcon)
-        tree(view)
-            .filter(c -> c.getClassNames().contains("cosmos-status-icon"))
+        streamComponentTree(emailConfirmationView)
+            .filter(candidateComponent ->
+                candidateComponent.getClassNames().contains("cosmos-status-icon"))
             .findFirst()
             .orElseThrow();
   }
@@ -84,35 +90,43 @@ class ConfirmEmailChangeViewTest {
   void openingTheLinkNeverChangesTheAccountAndConfirmationNeedsAnExplicitClick() {
     when(accountSecurityService.inspect("own-token")).thenReturn(Confirmation.READY);
     when(accountSecurityService.confirm("own-token")).thenReturn(Confirmation.SUCCESS);
-    view.setParameter(mock(BeforeEvent.class), "own-token");
+    emailConfirmationView.setParameter(mock(BeforeEvent.class), "own-token");
 
     verify(accountSecurityService, never()).confirm(any());
-    assertTrue(confirm().isVisible());
-    Component hint =
-        tree(view)
-            .filter(c -> c.getId().orElse("").equals("account-email-confirm-hint"))
+    assertTrue(findConfirmEmailButton().isVisible());
+    Component confirmationHintComponent =
+        streamComponentTree(emailConfirmationView)
+            .filter(candidateComponent ->
+                candidateComponent.getId().orElse("").equals("account-email-confirm-hint"))
             .findFirst()
             .orElseThrow();
 
-    assertTrue(hint.isVisible());
+    assertTrue(confirmationHintComponent.isVisible());
     assertTrue(
-        hint.getElement()
+        confirmationHintComponent
+            .getElement()
             .getTextRecursively()
             .contains(messageProperties.getPublicEmailConfirmationHint()));
     assertTrue(
-        view.getElement()
+        emailConfirmationView
+            .getElement()
             .getTextRecursively()
             .contains(messageProperties.getPublicEmailFormTitle()));
-    assertEquals("icons/lucide/mail.svg", statusIcon().getElement().getAttribute("src"));
-    confirm().click();
+    assertEquals(
+        "icons/lucide/mail.svg", findConfirmationStatusSvgIcon().getElement().getAttribute("src"));
+
+    findConfirmEmailButton().click();
 
     verify(accountSecurityService).confirm("own-token");
-    assertFalse(confirm().isVisible());
-    assertFalse(hint.isVisible());
-    assertEquals("icons/lucide/circle-check.svg", statusIcon().getElement().getAttribute("src"));
-    assertTrue(statusIcon().hasClassName("text-success"));
+    assertFalse(findConfirmEmailButton().isVisible());
+    assertFalse(confirmationHintComponent.isVisible());
+    assertEquals(
+        "icons/lucide/circle-check.svg",
+        findConfirmationStatusSvgIcon().getElement().getAttribute("src"));
+    assertTrue(findConfirmationStatusSvgIcon().hasClassName("text-success"));
     assertTrue(
-        view.getElement()
+        emailConfirmationView
+            .getElement()
             .getTextRecursively()
             .contains(messageProperties.getAccountEmailConfirmationSuccess()));
   }
@@ -121,16 +135,21 @@ class ConfirmEmailChangeViewTest {
   @EnumSource(
       value = Confirmation.class,
       names = {"INVALID", "EXPIRED", "CONFLICT"})
-  void unavailableLinksNeverOfferAnAction(Confirmation state) {
-    when(accountSecurityService.inspect(any())).thenReturn(state);
-    view.setParameter(mock(BeforeEvent.class), "own-token");
+  void unavailableLinksNeverOfferAnAction(Confirmation confirmationState) {
+    when(accountSecurityService.inspect(any())).thenReturn(confirmationState);
+    emailConfirmationView.setParameter(mock(BeforeEvent.class), "own-token");
 
-    assertFalse(confirm().isVisible());
-    assertEquals("icons/lucide/circle-alert.svg", statusIcon().getElement().getAttribute("src"));
-    assertTrue(
-        statusIcon().hasClassName(state == Confirmation.EXPIRED ? "text-warning" : "text-error"));
+    assertFalse(findConfirmEmailButton().isVisible());
     assertEquals(
-        state == Confirmation.EXPIRED, statusIcon().hasClassName("cosmos-status-icon--warning"));
+        "icons/lucide/circle-alert.svg",
+        findConfirmationStatusSvgIcon().getElement().getAttribute("src"));
+    assertTrue(
+        findConfirmationStatusSvgIcon()
+            .hasClassName(
+                confirmationState == Confirmation.EXPIRED ? "text-warning" : "text-error"));
+    assertEquals(
+        confirmationState == Confirmation.EXPIRED,
+        findConfirmationStatusSvgIcon().hasClassName("cosmos-status-icon--warning"));
     verify(accountSecurityService, never()).confirm(any());
   }
 
@@ -138,14 +157,17 @@ class ConfirmEmailChangeViewTest {
   void technicalFailureIsLocalizedAndDoesNotExposeBackendDetails() {
     when(accountSecurityService.inspect(any()))
         .thenThrow(new IllegalStateException("secret SQL details"));
-    view.setParameter(mock(BeforeEvent.class), "own-token");
+    emailConfirmationView.setParameter(mock(BeforeEvent.class), "own-token");
 
-    assertFalse(confirm().isVisible());
-    assertEquals("icons/lucide/circle-alert.svg", statusIcon().getElement().getAttribute("src"));
-    assertTrue(statusIcon().hasClassName("text-error"));
-    String text = view.getElement().getTextRecursively();
+    assertFalse(findConfirmEmailButton().isVisible());
+    assertEquals(
+        "icons/lucide/circle-alert.svg",
+        findConfirmationStatusSvgIcon().getElement().getAttribute("src"));
+    assertTrue(findConfirmationStatusSvgIcon().hasClassName("text-error"));
+    String confirmationPageText = emailConfirmationView.getElement().getTextRecursively();
 
-    assertTrue(text.contains(messageProperties.getAccountEmailConfirmationFailed()));
-    assertFalse(text.contains("secret SQL"));
+    assertTrue(
+        confirmationPageText.contains(messageProperties.getAccountEmailConfirmationFailed()));
+    assertFalse(confirmationPageText.contains("secret SQL"));
   }
 }

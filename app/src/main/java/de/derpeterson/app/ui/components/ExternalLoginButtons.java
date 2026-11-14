@@ -3,12 +3,15 @@ package de.derpeterson.app.ui.components;
 import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.card.Card;
 import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -20,32 +23,13 @@ import java.util.function.Supplier;
 
 /** Dieselben Anbieteraktionen in Anmeldung und Registrierung. */
 @StyleSheet("custom-theme/cosmos-external-login.css")
-public final class ExternalLoginButtons extends Div {
-  public enum Presentation {
-    INLINE,
-    PANEL
-  }
-
+public final class ExternalLoginButtons extends Card {
   public ExternalLoginButtons(
       ExternalLoginFlow externalLoginFlow,
       HttpServletRequest httpServletRequest,
       MessageProperties messageProperties,
       BooleanSupplier rememberLoginSupplier) {
-    this(
-        externalLoginFlow,
-        httpServletRequest,
-        messageProperties,
-        rememberLoginSupplier,
-        Presentation.INLINE);
-  }
-
-  public ExternalLoginButtons(
-      ExternalLoginFlow externalLoginFlow,
-      HttpServletRequest httpServletRequest,
-      MessageProperties messageProperties,
-      BooleanSupplier rememberLoginSupplier,
-      Presentation presentation) {
-    setClassName("external-login-buttons");
+    addClassNames("external-login-buttons", "external-login-panel");
 
     List<String> providerNames = externalLoginFlow.providers();
     if (providerNames.isEmpty()) {
@@ -53,38 +37,9 @@ public final class ExternalLoginButtons extends Div {
       return;
     }
 
-    if (presentation == Presentation.PANEL) {
-      addClassName("external-login-panel");
-      Span panelKickerSpan = new Span();
-      panelKickerSpan.addClassName("external-login-kicker");
-
-      H2 panelTitleHeading = new H2();
-      panelTitleHeading.setId("external-login-title");
-      getElement().setAttribute("role", "region");
-      getElement().setAttribute("aria-labelledby", "external-login-title");
-
-      Paragraph panelHintParagraph = new Paragraph();
-      panelHintParagraph.addClassName("external-login-hint");
-
-      Runnable refreshLoginTextsAction =
-          () -> {
-            panelKickerSpan.setText(messageProperties.getExternalPanelKicker());
-            panelTitleHeading.setText(messageProperties.getExternalPanelTitle());
-            panelHintParagraph.setText(messageProperties.getExternalPanelHint());
-          };
-      refreshLoginTextsAction.run();
-      ComponentUtil.addListener(
-          UI.getCurrent(), LanguageChangeEvent.class, event -> refreshLoginTextsAction.run());
-      add(panelKickerSpan, panelTitleHeading, panelHintParagraph);
-    }
-    Supplier<String> googleText =
-        presentation == Presentation.PANEL
-            ? messageProperties::getExternalContinueGoogle
-            : messageProperties::getExternalGoogle;
-    Supplier<String> microsoftText =
-        presentation == Presentation.PANEL
-            ? messageProperties::getExternalContinueMicrosoft
-            : messageProperties::getExternalMicrosoft;
+    setHeader(buildProviderHeaderLayout(messageProperties));
+    Supplier<String> googleLabelSupplier = messageProperties::getExternalContinueGoogle;
+    Supplier<String> microsoftLabelSupplier = messageProperties::getExternalContinueMicrosoft;
 
     Div providerActionsDiv = new Div();
     providerActionsDiv.addClassName("external-provider-actions");
@@ -93,26 +48,44 @@ public final class ExternalLoginButtons extends Div {
       providerActionsDiv.add(
           createProviderLoginButton(
               providerName,
-              googleText,
-              microsoftText,
+              googleLabelSupplier,
+              microsoftLabelSupplier,
               externalLoginFlow,
               httpServletRequest,
               rememberLoginSupplier));
     }
 
     add(providerActionsDiv);
+  }
 
-    if (presentation == Presentation.INLINE) {
-      Span alternativeLabelSpan = new Span();
-      alternativeLabelSpan.addClassName("external-login-alternative");
+  private VerticalLayout buildProviderHeaderLayout(MessageProperties messageProperties) {
+    Span panelKickerSpan = new Span();
+    panelKickerSpan.addClassName("external-login-kicker");
+    H2 panelTitleHeading = new H2();
+    panelTitleHeading.setId("external-login-title");
+    setAriaLabelledBy(panelTitleHeading);
 
-      Runnable refreshLoginTextsAction =
-          () -> alternativeLabelSpan.setText(messageProperties.getExternalOr());
-      refreshLoginTextsAction.run();
-      ComponentUtil.addListener(
-          UI.getCurrent(), LanguageChangeEvent.class, event -> refreshLoginTextsAction.run());
-      add(alternativeLabelSpan);
-    }
+    Paragraph panelHintParagraph = new Paragraph();
+    panelHintParagraph.addClassName("external-login-hint");
+    Runnable refreshLoginTextsAction =
+        () -> {
+          panelKickerSpan.setText(messageProperties.getExternalPanelKicker());
+          panelTitleHeading.setText(messageProperties.getExternalPanelTitle());
+          panelHintParagraph.setText(messageProperties.getExternalPanelHint());
+        };
+    refreshLoginTextsAction.run();
+    ComponentUtil.addListener(
+        UI.getCurrent(),
+        LanguageChangeEvent.class,
+        languageChangeEvent -> refreshLoginTextsAction.run());
+
+    VerticalLayout providerHeaderLayout =
+        new VerticalLayout(panelKickerSpan, panelTitleHeading, panelHintParagraph);
+    providerHeaderLayout.setPadding(false);
+    providerHeaderLayout.setSpacing(false);
+    providerHeaderLayout.setAlignItems(Alignment.STRETCH);
+    providerHeaderLayout.addClassName("external-login-heading");
+    return providerHeaderLayout;
   }
 
   private Button createProviderLoginButton(

@@ -51,7 +51,6 @@ import de.derpeterson.app.service.AccountLifecycleService.AccountAction;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.AccountSessionsComponent;
 import de.derpeterson.app.ui.components.AppIcon;
-import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.PublicAuthenticationPanelLayout;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
@@ -219,7 +218,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
 
     loginOptionsLayout.add(rememberMeLayout, forgotPasswordLayout);
 
-    CosmosCardComponent loginPanelComponent =
+    PublicPanelComponent loginPanelComponent =
         new PublicPanelComponent(
             AppIcon.SIGN_IN.create(),
             loginTitleH1,

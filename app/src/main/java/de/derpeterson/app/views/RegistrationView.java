@@ -47,7 +47,6 @@ import de.derpeterson.app.service.RegistrationService;
 import de.derpeterson.app.service.RoleService;
 import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.AppIcon;
-import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.PublicAuthenticationPanelLayout;
 import de.derpeterson.app.ui.components.PublicPageComponent;
@@ -153,7 +152,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     existingAccountLinkLayout.add(existingAccountQuestionSpan);
     existingAccountLinkLayout.add(formComponents.loginLink);
 
-    CosmosCardComponent registrationCardComponent =
+    PublicPanelComponent registrationCardComponent =
         new PublicPanelComponent(
             AppIcon.USER_PLUS.create(),
             registrationTitleH1,

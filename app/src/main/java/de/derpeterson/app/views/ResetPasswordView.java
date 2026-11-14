@@ -36,7 +36,6 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.PasswordResetService;
 import de.derpeterson.app.service.PasswordResetService.LinkState;
 import de.derpeterson.app.ui.components.AppIcon;
-import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.PublicPageComponent;
 import de.derpeterson.app.ui.components.PublicPanelComponent;
 import jakarta.servlet.http.HttpServletRequest;
@@ -214,7 +213,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     Div resetFormActionsDiv = new Div(goToLoginButton, saveNewPasswordButton);
     resetFormActionsDiv.addClassName("public-panel-actions");
 
-    CosmosCardComponent resetFormPanelComponent =
+    PublicPanelComponent resetFormPanelComponent =
         new PublicPanelComponent(
             AppIcon.KEY.create(),
             resetPasswordTitleH1,
@@ -350,7 +349,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     }
     resetLinkProblemActionButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-    CosmosCardComponent resetLinkProblemPanelComponent =
+    PublicPanelComponent resetLinkProblemPanelComponent =
         new PublicPanelComponent(
             resetLinkProblemSvgIcon,
             resetLinkProblemTitleH1,

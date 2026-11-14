@@ -322,8 +322,9 @@ Layouts mit den vorhandenen Dialogklassen, Abständen und Aktionen. Der Mailtest
 behält seine native Feldspalte und verwendet `FieldHelpRowLayout` für die
 einzelnen Eingaben; der sichtbare Nachrichtenhinweis steht getrennt darunter.
 
-„Passwort vergessen“ verwendet als Kartenpilot `PublicCardPanelComponent` auf
-nativer Vaadin-`Card`. `setHeader`, der normale Inhalt und `addToFooter` übernehmen
+Die öffentlichen Standardpanels verwenden `PublicPanelComponent` auf nativer
+Vaadin-`Card`, einschließlich des abgenommenen Piloten „Passwort vergessen“.
+`setHeader`, der normale Inhalt und `addToFooter` übernehmen
 die vorhandenen Panelzonen. Kopf und Footer sind native `HorizontalLayout`-
 Container, der Inhalt bleibt ein `VerticalLayout`. Die Beschriftung der Card ist
 über `setAriaLabelledBy` mit der bestehenden Überschrift verbunden und folgt
@@ -331,8 +332,13 @@ dadurch deren Sprachwechsel. `cosmos-public-card.css` setzt ausschließlich für
 `.public-card-panel` die nativen Card-Innenabstände und Zwischenräume auf null
 sowie den äußeren Header-Abstand zurück. Die vorhandenen Zonenklassen beziehen
 Farben, Innenabstände, Rahmen, Radien und mobile Anordnung unverändert aus
-`cosmos-public.css` und den gemeinsamen Tokens. Weitere Paneltypen verwenden
-weiterhin ihre bisherige Basis; eine Übernahme erfolgt nach gesonderter Abnahme.
+`cosmos-public.css` und den gemeinsamen Tokens. Anmeldung, Registrierung, externe
+Erstregistrierung, Passwortanfrage/-Reset, Verifikation, ausstehende Verifikation
+und Reaktivierung, Reaktivierungslink, E-Mail-Änderungslink und Wartung nutzen
+diesen Baustein. Die besonderen Konto-/Ticketkarten für 2FA, Wiederherstellungshilfe
+und Sitzungslimit behalten ihre bisherige Basis. In JUnit berücksichtigt
+`ComponentTestTree` die öffentlichen Kopf-/Footer-Slots der nativen Card;
+`Card.getChildren()` allein liefert nur den normalen Inhalt.
 
 Benachrichtigungen behalten ihre native `VerticalLayout`-Feldfolge. Das kleine
 CSS-Raster für Eingabe und Zeichenzähler überlagert ausschließlich den Zähler
@@ -1466,7 +1472,11 @@ und eine begrenzte Abweichung für das Anbieterbranding.
 
 Anmeldung und Registrierung verwenden `PublicAuthenticationPanelLayout` für das lokale
 Formular und den optionalen eigenständigen Schnellzugang. `ExternalLoginButtons`
-liefert in seiner Paneldarstellung Kicker, Überschrift, Erklärung und „Mit … fortfahren“.
+liefert als native `Card` Kicker, Überschrift, Erklärung und „Mit … fortfahren“.
+Der Kopf verwendet `setHeader` mit einem nativen `VerticalLayout`; die vorhandenen
+Anbieterbuttons liegen im normalen Card-Inhalt. Die öffentlichen Padding-/Gap-
+Variablen und der Header-Part erhalten lokal die bisherigen Abstände. Eine ungenutzte
+Inline-Darstellung wird nicht parallel vorgehalten.
 `.public-auth-panels--external` ordnet das lokale Formular, den Trenner und den
 Schnellzugang nebeneinander an. Bei der Anmeldung bleibt das Formular 600 px breit,
 die Zeile höchstens 1048 px. Unter 1024 px stehen die Panels untereinander.

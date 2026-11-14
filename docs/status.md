@@ -9,7 +9,7 @@ Der Testcode dieser Gesamtrunde steht bei `240c1008`.
 
 **Die unten aufgeführten automatisierten Tests sind erfolgreich abgeschlossen.**
 Der aktuelle Feature-Branch hat noch keinen zugeordneten Sonar-Scan.
-Die Formularlayouts und der nachfolgende Card-Pilot sind vom Benutzer abgenommen.
+Die Formularlayouts und die nachfolgende öffentliche Card-Übernahme sind vom Benutzer abgenommen.
 Weitere offene Pakete stehen im [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
 Kein Merge, Push oder Release wurde durchgeführt.
 
@@ -30,7 +30,7 @@ Kein Merge, Push oder Release wurde durchgeführt.
 | Vorher-/Nachher-Formularvergleich | Je zwölf Fälle vor und nach der Umstellung in DE/EN bestanden |
 | Sonar | Verfügbarer main-Stand lesend geprüft; keine Analyse des aktuellen Feature-Branchs |
 
-Der letzte vollständige Reactor prüfte genau die anschließend als `240c1008`
+Der Produktions-/Coverage-Reactor der Gesamtrunde prüfte die anschließend als `240c1008`
 committete Testkorrektur. Der deutsche Gesamtlauf gehört zum Testcode `48131d95`;
 die danach geänderte Anmelde-Wartebedingung ist zusätzlich mit den genannten
 DE-/EN-Nachtests belegt. Der abschließende englische Gesamtlauf gehört zu
@@ -49,30 +49,45 @@ Entwicklerdaten, gespeicherte Passwörter, echte Mailkonten und die laufende
 IntelliJ-Anwendung dienen nicht als Fixtures.
 Alle acht Worker meldeten erfolgreiche Tests und erfolgreichen Abbau.
 
-## Gezielt geprüfter Card-Pilot nach der Gesamtrunde
+## Gezielt geprüfte öffentliche Cards nach der Gesamtrunde
 
-„Passwort vergessen“ verwendet `PublicCardPanelComponent` auf nativer Vaadin-`Card`.
-Die übrigen Panelbasen und die Reset-Fachlogik bleiben erhalten. Nach dieser
-Anwendungsänderung wurde keine weitere vollständige Gesamtrunde ausgeführt;
-die obigen 328er-Läufe gehören weiterhin zum dort ausgewiesenen Stand.
+Die elf öffentlichen Standardseiten verwenden nun gemeinsam `PublicPanelComponent`
+auf nativer Vaadin-`Card`; die Google-/Microsoft-Nebenkarte verwendet ebenfalls
+`Card`. Kopf, Inhalt und Footer bleiben in ihren bisherigen Cosmos-Zonen.
+Der separate Pilotbaustein ist entfallen. Besondere Konto-/Ticketkarten für 2FA,
+Wiederherstellungshilfe und Sitzungslimit sind nicht Teil dieses Pakets.
+Die öffentliche Card-Übernahme ist vom Benutzer abgenommen.
 
-Die gezielte Prüfung des Piloten besteht aus 25 erfolgreichen Anwendungstests
-(`PasswordResetViewsTest`) sowie je neun erfolgreichen Passwort-Reset-Browserfällen
-in DE und EN. Die Vorher-Prüfung bestand ebenfalls mit je neun Fällen am bisherigen
-Image. Aufbau, Abbau und Berichte waren erfolgreich, ohne Fehler oder Skips.
-Die Nachher-Läufe verwendeten dasselbe neue Image:
+Ein vollständiger Reactor-Testlauf bestand mit 3.005 Anwendungstests und 127
+Browser-Helfertests; die zwei ausdrücklich optionalen Caddy-Tests waren übersprungen.
+Die abschließende Ausrichtung der Überschrift-Boxen bestand zusätzlich mit 60
+gezielten Anwendungstests. Der abschließende Änderungsreview bestätigte diese
+60 Tests erneut; Namen und Absätze der betroffenen Testhelfer wurden präzisiert.
+Spotless, Checkstyle und der optimierte Docker-Build
+mit `clean verify` waren erfolgreich. Die vier vorhandenen JUnit-Baumsuchen
+berücksichtigen nun über `ComponentTestTree` auch die öffentlichen Card-Slots;
+keine bisherigen Aktions- oder Sprachwechselprüfungen wurden abgeschwächt.
 
-`sha256:88d00ed40c19d85317df1b51a9f6e7e98e5a04c6002a4ef6e236b57c3da522bc`
+Die Suite `public-panels` bestand vor und nach der Umstellung mit jeweils
+14 Fällen in DE und EN, jeweils bei 1280/390 px. Alle vier Läufe hatten
+erfolgreichen Aufbau, Abbau und HTML-Bericht, keine Fehler oder Skips.
+Die beiden Nachher-Läufe verwendeten dasselbe unveränderte Image:
 
-Die vier Normalansichten bei 1280/390 px in DE/EN sind pixelidentisch. In allen
-acht Messpaaren einschließlich Fehlerzuständen stimmen Positionen, Größen,
-Schriften, Farben, Rahmen und Innenabstände überein. Der berechnete Card-Gap
-ist nun ausdrücklich `0px`; zuvor entsprach `normal` im Flexlayout ebenfalls null.
-Drei Fehleraufnahmen enthalten unterschiedliche Phasen der Notification-Animation
-und sind insgesamt nicht pixelidentisch. Fokusfolge, korrigierbare Validierung,
-Rückkehr zur Anmeldung, neutrale Antworten, Mailpit-Versand und tatsächliche
-Passwortänderung sind erfolgreich geprüft. Der Benutzer hat den Piloten abgenommen.
-Der Sonar-Nachweis unten umfasst den Piloten nicht.
+`sha256:52b822de424b035239783fc1a7cc3390fae5618096a5d77a1a5b8b42a3f831ef`
+
+In allen 68 Messpaaren stimmen Positionen, Größen, Schriften, Farben, Rahmen
+und Innenabstände überein. 64 vollständige Aufnahmepaare sind pixelidentisch.
+Die übrigen vier enthalten ausschließlich unterschiedliche Löschzeitpunkte der
+jeweils neu angelegten selbstdeaktivierten Testkonten. Die Vergleiche umfassen
+Anmeldung, Registrierung samt Anbieterkarten, externe Erstregistrierung,
+Passwortanfrage/-Reset mit Formular- und Linkfehlern, Verifikation, ausstehende
+Verifikation und Reaktivierung, E-Mail-Änderungslink und Wartung.
+Tatsächliche UI-Aktionen und eigene Mailpit-Links belegen die zugehörigen Abläufe.
+
+Diese Nachprüfung ersetzt nicht die obigen vollständigen 328er-Browserläufe.
+Das Ausgangsimage für die Vorher-Aufnahmen war der abgenommene Pilotstand
+`sha256:88d00ed40c19d85317df1b51a9f6e7e98e5a04c6002a4ef6e236b57c3da522bc`.
+Der unten ausgewiesene Sonar-Nachweis umfasst die Card-Übernahme nicht.
 
 ## Abdeckung und Korrekturen der Gesamtrunde
 
@@ -130,7 +145,7 @@ Ersatzprojekt angelegt. Finding-Status und Regeln blieben unverändert.
 Für den beauftragten Umfang gibt es keine offenen gezielten Browser- oder
 JUnit-Ergänzungen und keine bestätigten offenen Anwendungsfehler.
 [Testbedarf](testbedarf.md) und [BUGS](../BUGS.md) bleiben die zentralen Listen.
-Card-Pilot und Formularlayouts sind vom Benutzer abgenommen.
+Formularlayouts und die öffentliche Card-Übernahme sind vom Benutzer abgenommen.
 Kennzahlkarten, Avatare, Profil-/Benutzerformulare, segmentierte Umschalter,
 Seitenpfade und die Mailqueue-Karte sind bereits vom Benutzer abgenommen.
 
@@ -154,4 +169,4 @@ benötigt die Vorarbeiten aus der [Hostingplanung](planung/oeffentlicher-testbet
 Für die Übernahme der Formularänderungen in die lokale Entwicklungsanwendung
 sind Build, Anwendungsneustart und Browser-Refresh nötig. Build und isolierte
 Starts sind geprüft; die laufende Entwicklungsanwendung wurde nicht verändert.
-Dasselbe gilt für den nachfolgenden Card-Piloten.
+Dasselbe gilt für die nachfolgende Übernahme der öffentlichen Cards.

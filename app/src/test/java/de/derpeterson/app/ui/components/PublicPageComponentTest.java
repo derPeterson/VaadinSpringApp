@@ -1,5 +1,6 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ComponentTestTree.streamComponentTree;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -33,7 +34,6 @@ import jakarta.servlet.http.Cookie;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -273,11 +273,6 @@ class PublicPageComponentTest {
             .toList();
     assertEquals(1, pageHeadingH1Components.size());
     assertFalse(pageHeadingH1Components.getFirst().getText().isBlank());
-  }
-
-  private Stream<Component> streamComponentTree(Component rootComponent) {
-    return Stream.concat(
-        Stream.of(rootComponent), rootComponent.getChildren().flatMap(this::streamComponentTree));
   }
 
   @ParameterizedTest

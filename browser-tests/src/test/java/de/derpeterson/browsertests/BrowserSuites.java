@@ -21,6 +21,7 @@ import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
 import de.derpeterson.browsertests.suites.NotificationInboxBrowserTest;
 import de.derpeterson.browsertests.suites.PasswordResetBrowserTest;
 import de.derpeterson.browsertests.suites.PresentationBrowserTest;
+import de.derpeterson.browsertests.suites.PublicPanelsBrowserTest;
 import de.derpeterson.browsertests.suites.RegistrationBrowserTest;
 import de.derpeterson.browsertests.suites.RememberMeBrowserTest;
 import de.derpeterson.browsertests.suites.RestartAndSmtpBrowserTest;
@@ -62,6 +63,7 @@ final class BrowserSuites {
               ExternalLoginLayoutBrowserTest.class,
               VerificationBrowserTest.class,
               PasswordResetBrowserTest.class,
+              PublicPanelsBrowserTest.class,
               AccountLifecycleBrowserTest.class,
               AccountSettingsBrowserTest.class,
               AccountSecurityBrowserTest.class,
@@ -213,6 +215,7 @@ final class BrowserSuites {
       case "verification" -> List.of(VerificationBrowserTest.class);
       case "email-verification" ->
           List.of(VerificationBrowserTest.class, ExternalLoginBrowserTest.class);
+      case "public-panels" -> List.of(PublicPanelsBrowserTest.class);
       case "password-reset" -> List.of(PasswordResetBrowserTest.class);
       case "account-lifecycle" -> List.of(AccountLifecycleBrowserTest.class);
       case "presentation" -> List.of(PresentationBrowserTest.class);

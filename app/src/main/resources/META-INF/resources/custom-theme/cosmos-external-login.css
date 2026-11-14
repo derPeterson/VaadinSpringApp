@@ -67,3 +67,15 @@
 
 .external-proof-separator { text-transform:uppercase;letter-spacing:.06em; }
 .external-identity-dialog .cosmos-panel-icon img { width:20px;height:20px;object-fit:contain; }
+
+/* Native Card-Parts übernehmen die vorhandenen Abstände der Anbieter-Nebenkarte. */
+.cosmos-reference-public vaadin-card.external-login-panel {
+    --vaadin-card-padding: 0;
+    --vaadin-card-gap: 8px;
+}
+.cosmos-reference-public vaadin-card.external-login-panel::part(header) {
+    margin: 0;
+}
+.external-login-panel .external-login-heading {
+    gap: 8px;
+}

@@ -36,6 +36,7 @@ final class BrowserExecutionPlan {
           Map.entry("CosmosDesignBrowserTest", 330),
           Map.entry("MaintenanceBrowserTest", 280),
           Map.entry("PasswordResetBrowserTest", 100),
+          Map.entry("PublicPanelsBrowserTest", 300),
           // Unterbrochene Teilfälle beziehungsweise noch fehlende Folgeschritte mit Reserve.
           Map.entry("ConfigurationBrowserTest", 620),
           Map.entry("TokenConfigurationBrowserTest", 120),
