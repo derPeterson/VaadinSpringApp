@@ -278,6 +278,19 @@ für 20 px Spalten- und 24 px Zeilenabstand. Der öffentliche ResponsiveStep mit
 die bisherige Bildschirmgrenze von 640 px, statt die Spaltenzahl an die schmalere
 Formularinnenbreite zu koppeln. Interne Vaadin-Layoutvariablen werden nicht verändert.
 
+Auch die Registrierung (`RegistrationView`) und Benutzer anlegen/bearbeiten
+(`AdminUserManagementSection`) verwenden natives `FormLayout`. Die lokale Klasse
+`public-registration-form` in `cosmos-public.css` erhält 20 px Zeilen-/Spaltenabstand
+und die bisherige Bildschirmgrenze von 640 px. Im Benutzerformular bleiben
+Passwort und Hinweis als gemeinsame Spalte erhalten. `admin-user-paired-form`
+in `cosmos-admin-reference.css` ordnet die Feldpaare mit 16 px Abstand an;
+der äußere Formularbereich behält über `--admin-user-group-spacing` 18 px
+Gruppenabstand, unabhängig vom Innenabstand verschachtelter FormLayouts.
+Die Medienabfrage und `--admin-user-two-column-min-width` erhalten den Wechsel bei 768 px.
+Lokale Checkboxregeln lassen die nativen FormLayout-Ränder bestehen und ergänzen
+nur den bisherigen Versatz zur Rollenbeschriftung. Dialogkopf, Footer, die
+zusätzlichen Superadmin-Optionen und die eingeklappte Anmeldung bleiben erhalten.
+
 Für neue Status- und Zähler-Badges die native `Badge`-Komponente verwenden.
 Sie ist unter anderem bei Sitzungen, Anmeldeanbietern, 2FA und Tickets bereits
 im Einsatz. Die [Bestandsaufnahme und offene Planung](planung/vaadin-komponenten-abgleich.md)

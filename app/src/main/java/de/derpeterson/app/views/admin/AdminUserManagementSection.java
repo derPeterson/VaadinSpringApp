@@ -22,6 +22,7 @@ import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridSortOrder;
@@ -1254,29 +1255,19 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     private void composeEditorDialogLayout() {
-      HorizontalLayout userNameRowLayout = new HorizontalLayout(firstNameField, lastNameField);
-      userNameRowLayout.setWidthFull();
-      userNameRowLayout.addClassName(COSMOS_FORM_ROW_CLASS);
-      userNameRowLayout.expand(firstNameField, lastNameField);
+      FormLayout userNameFormLayout = createPairedEditorFormLayout(firstNameField, lastNameField);
 
       Div passwordColumnDiv = new Div(passwordField, passwordHintSpan);
       passwordColumnDiv.addClassName("admin-user-password-column");
       Div confirmPasswordColumnDiv = new Div(confirmPasswordField, confirmPasswordHintSpan);
       confirmPasswordColumnDiv.addClassName("admin-user-password-column");
-      HorizontalLayout passwordRowLayout =
-          new HorizontalLayout(passwordColumnDiv, confirmPasswordColumnDiv);
-      passwordRowLayout.setWidthFull();
-      passwordRowLayout.setSpacing(false);
-      passwordRowLayout.addClassName(COSMOS_FORM_ROW_CLASS);
-      passwordRowLayout.expand(passwordColumnDiv, confirmPasswordColumnDiv);
-      Div passwordFieldsDiv = new Div(passwordRowLayout);
+      FormLayout passwordFormLayout =
+          createPairedEditorFormLayout(passwordColumnDiv, confirmPasswordColumnDiv);
+      Div passwordFieldsDiv = new Div(passwordFormLayout);
       passwordFieldsDiv.addClassName("admin-user-password-fields");
 
-      HorizontalLayout personalDetailsRowLayout =
-          new HorizontalLayout(genderComboBox, birthDatePicker);
-      personalDetailsRowLayout.setWidthFull();
-      personalDetailsRowLayout.addClassName(COSMOS_FORM_ROW_CLASS);
-      personalDetailsRowLayout.expand(genderComboBox, birthDatePicker);
+      FormLayout personalDetailsFormLayout =
+          createPairedEditorFormLayout(genderComboBox, birthDatePicker);
 
       HorizontalLayout editorActionsLayout = new HorizontalLayout();
       editorActionsLayout.addClassName("cosmos-dialog-actions");
@@ -1300,15 +1291,16 @@ public class AdminUserManagementSection extends VerticalLayout {
 
       Div roleSelectionDiv = new Div(rolesComboBox, rolesSummarySpan);
       roleSelectionDiv.addClassName("admin-user-role-field");
-      Div permissionsRowDiv = new Div(roleSelectionDiv, administrativelyBlockedCheckbox);
-      permissionsRowDiv.addClassName("admin-user-permissions");
-      VerticalLayout editorFormLayout =
-          new VerticalLayout(
-              userNameRowLayout,
+      FormLayout permissionsFormLayout =
+          createPairedEditorFormLayout(roleSelectionDiv, administrativelyBlockedCheckbox);
+      permissionsFormLayout.addClassName("admin-user-permissions");
+      FormLayout editorFormLayout =
+          new FormLayout(
+              userNameFormLayout,
               emailField,
               passwordFieldsDiv,
-              personalDetailsRowLayout,
-              permissionsRowDiv);
+              personalDetailsFormLayout,
+              permissionsFormLayout);
       if (!editMode && userService.canManageSuperadmins()) {
         editorFormLayout.add(emailVerificationRequiredCheckbox, developmentAccountCheckbox);
       }
@@ -1323,11 +1315,28 @@ public class AdminUserManagementSection extends VerticalLayout {
       Div editorFooterDiv = new Div(securityNoteDiv, editorActionsLayout);
       editorFooterDiv.addClassName("admin-user-editor-footer");
       editUserDialog.getFooter().add(editorFooterDiv);
-      editorFormLayout.setPadding(false);
-      editorFormLayout.setSpacing(false);
+      editorFormLayout.setWidthFull();
+      editorFormLayout.setAutoResponsive(false);
+      editorFormLayout.setResponsiveSteps(
+          new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.TOP));
       editorFormLayout.addClassName("cosmos-dialog-form");
 
       editUserDialog.add(editorFormLayout);
+    }
+
+    private FormLayout createPairedEditorFormLayout(
+        Component firstFieldComponent, Component secondFieldComponent) {
+      FormLayout pairedEditorFormLayout = new FormLayout(firstFieldComponent, secondFieldComponent);
+      pairedEditorFormLayout.addClassName("admin-user-paired-form");
+      pairedEditorFormLayout.setWidthFull();
+      pairedEditorFormLayout.setAutoResponsive(false);
+      pairedEditorFormLayout.setResponsiveSteps(
+          new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.TOP),
+          new FormLayout.ResponsiveStep(
+              "var(--admin-user-two-column-min-width)",
+              2,
+              FormLayout.ResponsiveStep.LabelsPosition.TOP));
+      return pairedEditorFormLayout;
     }
 
     private VerticalLayout createSignInDetailsLayout() {

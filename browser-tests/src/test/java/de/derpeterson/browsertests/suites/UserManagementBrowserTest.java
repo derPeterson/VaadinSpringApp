@@ -12,6 +12,7 @@ import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.i18n.UiTexts;
+import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.AdminUserDeleteDialog;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
@@ -36,6 +37,37 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Tag("browser")
 @Feature("Benutzerverwaltung: Finden, Filtern und Bearbeiten")
 public class UserManagementBrowserTest extends BrowserFixture {
+  @Tag("account-forms")
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName("USER-FORM: Anlage und Bearbeitung behalten Feldanordnung und gespeicherte Angaben")
+  void userFormsPreserveAppearanceAndSavedData(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
+    AdminUsersPage adminUsersPage = login();
+    adminUsersPage.open();
+    AdminUserDialog createUserDialog = adminUsersPage.openCreate();
+    AccountFormAppearanceChecks.captureUserDialog(browserPage, "Benutzer anlegen");
+
+    String accountEmailAddress =
+        "form-layout-" + viewportWidth + "-" + uiTexts.language() + "@example.test";
+    createUserDialog.fillNewUser(
+        accountEmailAddress, BrowserTestAccounts.USER_PASSWORD, true, false);
+    createUserDialog.save();
+
+    AdminUserDialog editUserDialog = adminUsersPage.openEdit(accountEmailAddress);
+    assertThat(editUserDialog.firstName()).hasValue("Browser");
+    assertThat(editUserDialog.email()).hasValue(accountEmailAddress);
+    assertThat(editUserDialog.password()).hasValue("");
+    AccountFormAppearanceChecks.captureUserDialog(browserPage, "Benutzer bearbeiten");
+    editUserDialog.firstName().fill("Edited");
+    editUserDialog.save();
+
+    AdminUserDialog reopenedUserDialog = adminUsersPage.openEdit(accountEmailAddress);
+    assertThat(reopenedUserDialog.firstName()).hasValue("Edited");
+    assertThat(reopenedUserDialog.password()).hasValue("");
+    reopenedUserDialog.cancel();
+  }
+
   @Test
   @DisplayName("USER-05A: Neue Konten bleiben über Suche und nummerierte Seiten erreichbar")
   @Description(
@@ -107,6 +139,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     assertThat(button(uiTexts.getAdminUsersPaginationPreviousPage())).isDisabled();
   }
 
+  @Tag("account-forms")
   @Test
   @DisplayName(
       "USER-06A: Anlage blockiert ungültige Eingaben und verwendet die gemeinsame Passwortregel")
@@ -162,6 +195,7 @@ public class UserManagementBrowserTest extends BrowserFixture {
     signInAsCreatedUser(email, "ABCDEFG!");
   }
 
+  @Tag("account-forms")
   @Tag("fast")
   @Test
   @DisplayName(

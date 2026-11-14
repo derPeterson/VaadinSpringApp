@@ -238,8 +238,14 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~=cosmos-reference]:
 .admin-user-dialog.admin-reference-dialog vaadin-checkbox>label { padding:0 0 0 9px; }
 .admin-user-dialog .admin-user-option-label>span:first-child { font:500 12px/18px Inter,sans-serif; }
 .admin-user-dialog .admin-user-option-label>.admin-user-option-hint { margin:0; font:400 11px/1.7 Inter,sans-serif; }
-.admin-user-dialog .admin-user-permissions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; width:100%; align-items:start; }
-.admin-user-dialog .admin-user-permissions>.admin-user-enabled-checkbox { margin-top:24px; }
+.admin-user-dialog vaadin-form-layout.cosmos-dialog-form { box-sizing:border-box; --admin-user-group-spacing:18px; --vaadin-form-layout-row-spacing:var(--admin-user-group-spacing); }
+/* Verschachtelte Feldpaare dürfen den Außenabstand ihrer Formulargruppe nicht verkürzen. */
+.admin-user-dialog.admin-reference-dialog vaadin-form-layout.cosmos-dialog-form > * { margin-block:calc(.5 * var(--admin-user-group-spacing)); }
+.admin-user-dialog vaadin-form-layout.admin-user-paired-form { --vaadin-form-layout-column-spacing:16px; --vaadin-form-layout-row-spacing:16px; --admin-user-two-column-min-width:0px; }
+.admin-user-dialog vaadin-form-layout > * { min-width:0; align-self:flex-start; }
+.admin-user-dialog .admin-user-permissions { width:100%; }
+.admin-user-dialog.admin-reference-dialog vaadin-form-layout > .admin-user-option-checkbox { margin-block:calc(.5 * var(--vaadin-form-layout-row-spacing)); margin-inline:calc(.5 * var(--vaadin-form-layout-column-spacing)); }
+.admin-user-dialog.admin-reference-dialog .admin-user-permissions>.admin-user-enabled-checkbox { margin-top:calc(24px + .5 * var(--vaadin-form-layout-row-spacing)); }
 .admin-user-dialog .admin-user-role-field { position:relative; min-width:0; }
 .admin-user-dialog .admin-user-roles::part(input-field) { padding:0 14px; border:1px solid var(--cosmos-reference-border); border-radius:8px; background:var(--cosmos-reference-input); }
 .admin-user-dialog .admin-user-roles[focused]::part(input-field) { border-color:var(--cosmos-reference-accent); box-shadow:0 0 0 1px var(--cosmos-reference-accent); }
@@ -267,8 +273,8 @@ vaadin-dialog.admin-user-dialog.admin-reference-dialog[theme~=cosmos-reference]:
     .admin-user-dialog.admin-reference-dialog .admin-user-dialog-header { padding:18px; }
     .admin-user-dialog.admin-reference-dialog .cosmos-dialog-form { padding:20px; }
     .admin-user-dialog.admin-reference-dialog .cosmos-form-row { grid-template-columns:minmax(0,1fr); }
-    .admin-user-dialog .admin-user-permissions { grid-template-columns:minmax(0,1fr); }
-    .admin-user-dialog .admin-user-permissions>.admin-user-enabled-checkbox { margin-top:0; }
+    .admin-user-dialog vaadin-form-layout.admin-user-paired-form { --admin-user-two-column-min-width:100vw; }
+    .admin-user-dialog.admin-reference-dialog .admin-user-permissions>.admin-user-enabled-checkbox { margin-top:calc(.5 * var(--vaadin-form-layout-row-spacing)); }
     .admin-user-dialog.admin-reference-dialog .admin-user-security-note,.admin-user-dialog .admin-user-editor-footer>.cosmos-dialog-actions { padding:16px 20px; }
     .admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions { flex-wrap:wrap; row-gap:12px; }
     .admin-user-dialog.admin-reference-dialog .cosmos-dialog-actions>vaadin-button { flex:1; min-width:0; }

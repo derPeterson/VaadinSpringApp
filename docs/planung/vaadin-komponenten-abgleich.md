@@ -55,8 +55,7 @@ hat auch die Übernahme der übrigen Avatarstellen anhand des Vergleichs abgenom
 Das Profilformular in `AccountSettingsComponent` ist auf natives `FormLayout`
 umgestellt. Bestehende Felder, Reihenfolge, Beschriftungen, E-Mail über die ganze
 Zeile, Speichern, Validierung und Formularschutz bleiben erhalten. Die bisherige
-Bildschirmgrenze zwischen einer und zwei Spalten bleibt ebenfalls erhalten;
-keine gleichzeitige Umstellung weiterer Formulare.
+Bildschirmgrenze zwischen einer und zwei Spalten bleibt ebenfalls erhalten.
 
 Der isolierte Vorher-/Nachher-Abgleich ist in DE/EN auf Desktop und Smartphone
 mit je fünf Browserfällen erfolgreich. Alle vier Panelaufnahmen sind pixelgleich.
@@ -67,6 +66,24 @@ sind geprüft. Die 85 gezielten Java-Prüfungen, Stilprüfungen und der vollstä
 Anwendungsbuild sind bestanden. Die Vorher-/Nachher-Screenshots für beide
 Gerätebreiten wurden im Chat gesichtet; der Benutzer hat den Piloten abgenommen.
 Die beiden offenen Queue-Nachtests bleiben für die Nacht im zentralen Testbedarf.
+
+### Abgenommen: Registrierung und Benutzerformular
+
+Registrierung sowie Benutzer anlegen/bearbeiten verwenden natives `FormLayout`.
+Feldreihenfolge, responsive Umschaltgrenzen, Abstände, Beschriftungen, Validierung,
+Rechte und die bestehende Passwortbehandlung bleiben erhalten. Feldpaare und
+Passworthinweise bleiben fachlich gruppiert; Kopf, Aktionen und Anmeldung unverändert.
+
+Die gezielte Suite `account-forms` ist vorher und nachher in DE/EN bei 1280 und
+390 px mit je acht Browserfällen erfolgreich. Beide abschließenden Sprachläufe
+verwenden dasselbe unveränderte Image. Alle zwölf Feldmesswertsätze stimmen
+überein, ebenso die Scrollbereiche. 18 der 20 gepaarten Aufnahmen sind pixelgleich;
+zwei englische Smartphone-Aufnahmen haben lediglich 13 beziehungsweise 25
+abweichende Kantenpixel an Info-Icon/Panelrundung (ein bis zwei Farbstufen).
+172 gezielte Java-Prüfungen, Stilprüfungen und der vollständige Anwendungsbuild
+sind bestanden. Die Vorher-/Nachher-Vergleiche für Desktop und Smartphone wurden
+im Chat bereitgestellt; der Benutzer hat das Folgepaket abgenommen.
+Die Queue-Nachtests bleiben für die Nacht im zentralen Testbedarf zurückgestellt.
 
 ## Abgenommene Pakete und Prüfstand
 

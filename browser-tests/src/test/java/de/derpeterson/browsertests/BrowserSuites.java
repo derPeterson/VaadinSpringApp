@@ -104,6 +104,8 @@ final class BrowserSuites {
               AccountSettingsBrowserTest.class,
               UserStatusBrowserTest.class,
               TwoFactorBrowserTest.class);
+      case "account-forms" ->
+          List.of(RegistrationBrowserTest.class, UserManagementBrowserTest.class);
       case "profile-form" -> List.of(AccountSettingsBrowserTest.class);
       case "mail-queue-resolution" -> List.of(MailQueueResolutionBrowserTest.class);
       case "external-login-flow" -> List.of(ExternalLoginBrowserTest.class);

@@ -10,6 +10,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -70,8 +71,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @PageTitle(AppRouteConstants.REGISTRATION_PAGE_TITLE)
 @AnonymousAllowed
 public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayout> {
-  private static final String COSMOS_FORM_ROW_CLASS = "cosmos-form-row";
-
   private static final Logger logger = LoggerFactory.getLogger(RegistrationView.class);
 
   private final transient MessageProperties messageProperties;
@@ -154,38 +153,12 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     existingAccountLinkLayout.add(existingAccountQuestionSpan);
     existingAccountLinkLayout.add(formComponents.loginLink);
 
-    HorizontalLayout nameFieldsLayout =
-        new HorizontalLayout(formComponents.firstNameField, formComponents.lastNameField);
-    nameFieldsLayout.setWidthFull();
-    nameFieldsLayout.setSpacing(false);
-    nameFieldsLayout.addClassName(COSMOS_FORM_ROW_CLASS);
-
-    HorizontalLayout emailFieldsLayout =
-        new HorizontalLayout(formComponents.emailField, formComponents.confirmEmailField);
-    emailFieldsLayout.setWidthFull();
-    emailFieldsLayout.setSpacing(false);
-    emailFieldsLayout.addClassName(COSMOS_FORM_ROW_CLASS);
-
-    HorizontalLayout passwordFieldsLayout =
-        new HorizontalLayout(formComponents.passwordField, formComponents.confirmPasswordField);
-    passwordFieldsLayout.setWidthFull();
-    passwordFieldsLayout.setSpacing(false);
-    passwordFieldsLayout.addClassName(COSMOS_FORM_ROW_CLASS);
-
-    HorizontalLayout personalDetailsLayout =
-        new HorizontalLayout(formComponents.genderComboBox, formComponents.birthDatePicker);
-    personalDetailsLayout.setWidthFull();
-    personalDetailsLayout.setSpacing(false);
-    personalDetailsLayout.addClassName(COSMOS_FORM_ROW_CLASS);
-
     CosmosCardComponent registrationCardComponent =
         new PublicPanelComponent(
             AppIcon.USER_PLUS.create(),
             registrationTitleH1,
             messageProperties::getPublicRegisterSubtitle,
-            new Component[] {
-              nameFieldsLayout, emailFieldsLayout, passwordFieldsLayout, personalDetailsLayout
-            },
+            new Component[] {createRegistrationFormLayout(formComponents)},
             existingAccountLinkLayout,
             submitRegistrationButton);
 
@@ -201,6 +174,25 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
     updateRegistrationFieldPlaceholders();
     add(registrationPageComponent);
+  }
+
+  private FormLayout createRegistrationFormLayout(FormComponents formComponents) {
+    FormLayout registrationFormLayout =
+        new FormLayout(
+            formComponents.firstNameField, formComponents.lastNameField,
+            formComponents.emailField, formComponents.confirmEmailField,
+            formComponents.passwordField, formComponents.confirmPasswordField,
+            formComponents.genderComboBox, formComponents.birthDatePicker);
+    registrationFormLayout.addClassName("public-registration-form");
+    registrationFormLayout.setWidthFull();
+    registrationFormLayout.setAutoResponsive(false);
+    registrationFormLayout.setResponsiveSteps(
+        new FormLayout.ResponsiveStep("0", 1, FormLayout.ResponsiveStep.LabelsPosition.TOP),
+        new FormLayout.ResponsiveStep(
+            "var(--registration-two-column-min-width)",
+            2,
+            FormLayout.ResponsiveStep.LabelsPosition.TOP));
+    return registrationFormLayout;
   }
 
   private void applyRegistrationPageLanguage(LanguageChangeEvent languageChangeEvent) {

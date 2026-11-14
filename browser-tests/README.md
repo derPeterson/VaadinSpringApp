@@ -90,7 +90,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `two-factor-recovery-output` | Gezielter Ersatzcode-/PDF-Nachtest auf Desktop und Smartphone: fehlgeschlagener Abruf ohne Fehlerdatei, echter Download ohne Navigation und ausdrückliche Sicherungsbestätigung; auf Desktop zusätzlich echter Ablauf der fünfminütigen Sicherheitsfrist bei weiterhin verfügbaren Codes und PDF | 2 |
 | `two-factor-lifecycle` | Sprachwechsel während Mailcode/QR/Codeausgabe/Hilfe, Entzug der Superadminrolle bei zwei offenen Konfigurationen sowie Startfreigabe und Neustart mit gespeicherten Entwicklungsausnahmen | 5 |
 | `external-login-layout` | Getrennte Panels für Anmeldung und Registrierung sowie Admin-Anbieter- und Kontosicherheitstabs, Desktop/schmal, Tastaturbedienung, Footerumbrüche, Erhalt ungespeicherter Eingaben und Kontobestätigungsdialoge. Ohne Registrierung, Speicherung oder Versand | 10 |
-| `registration` | Registrierung, Pflichtfelder und Korrektur ungültiger Eingaben | 3 |
+| `registration` | Registrierung auf Desktop/Smartphone, Pflichtfelder und Korrektur ungültiger Eingaben | 4 |
 | `verification` | Tatsächliche Aktivierungsmail und Links, eingeschränkte Bestätigungsseite, normale Adminanlage, Superadmin-Ausnahme und Startkonten mit Verifikationspflicht auf Desktop/Smartphone | 17 |
 | `email-verification` | `verification` plus Google-/Microsoft-Nachweis, Herkunft und verfügbare Anmeldewege sowie Passwortstatus vor/nach Einrichtung auf Desktop/Smartphone | 23 |
 | `password-reset` | Tatsächliche Resetmail, Passwortwechsel, Formularfehler, Links und Sprache neuer anonymer Anfragen | 7 |
@@ -102,9 +102,10 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
-| `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung und kompakte Zeit | 16 |
+| `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung und kompakte Zeit | 18 |
 | `metric-cards` | Konten-Karte und Postfach-Kennzahlen auf Desktop/Smartphone: Darstellung, Zähleränderungen, Filter und Sprache | 4 |
 | `avatars` | Profilbildmodi und Bildfehler, Header/Sidebar/Menü, Benutzertabelle und Bestätigung, Status-/Namenswechsel, Ticketidentitäten und 2FA-Header auf Desktop/Smartphone | 10 |
+| `account-forms` | Registrierung sowie Benutzer anlegen/bearbeiten: Vorher-/Nachher-Aufnahmen, Feldmaße, Speichern und Validierung | 8 |
 | `profile-form` | Persönliche Daten: Anordnung und Spaltengrenzen auf Desktop/Smartphone, Speichern, Validierung, Formularschutz und Sprachwechsel | 5 |
 | `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset und kompakte Zeit mit Sprachwechsel | 5 |
 | `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug mit und ohne bestehende Sitzung, Superadmin-/Gastzugriff, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 8 |

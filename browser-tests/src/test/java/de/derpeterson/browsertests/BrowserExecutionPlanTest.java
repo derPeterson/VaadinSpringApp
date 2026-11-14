@@ -46,6 +46,7 @@ class BrowserExecutionPlanTest {
         "metric-cards",
         "avatars",
         "profile-form",
+        "account-forms",
         "mail-queue-resolution",
         "component-follow-up",
         "breadcrumbs",
@@ -104,6 +105,14 @@ class BrowserExecutionPlanTest {
                   "manualStatusIsStoredAndPushedToAnotherTab",
                   "confirmationRecoveryAndHelpUseNativeControls",
                   "ticketUnreadAndNotificationsFollowAssignmentAndClosure");
+          case "account-forms" ->
+              Set.of(
+                  "registrationNeedsVerificationBeforeLogin",
+                  "requiredFieldsCanBeCorrected",
+                  "emailAndPasswordConfirmationCanBeCorrected",
+                  "userFormsPreserveAppearanceAndSavedData",
+                  "createValidationUsesTheSharedRuleAndAllowsCorrection",
+                  "editAndReopenKeepsNamesEmailAndUnchangedPassword");
           case "profile-form" ->
               Set.of(
                   "profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard",

@@ -10,6 +10,7 @@ import static de.derpeterson.browsertests.BrowserRoutes.urlPattern;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
+import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
 import io.qameta.allure.Description;
@@ -20,11 +21,15 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("browser")
 @Feature("Registrierung")
 public class RegistrationBrowserTest extends BrowserFixture {
-  @Test
+  @Tag("account-forms")
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
   @DisplayName("REG-01A: Registrierung bestätigt Mailversand, Anmeldung bleibt zunächst gesperrt")
   @Story("Neues Konto registrieren")
   @Description(
@@ -38,10 +43,12 @@ public class RegistrationBrowserTest extends BrowserFixture {
       eingegangen; gültige Zugangsdaten öffnen die Bestätigungsseite, aber keine Kontofunktionen.
       Datenbankzustände werden hier nicht direkt untersucht.
       """)
-  void registrationNeedsVerificationBeforeLogin() {
+  void registrationNeedsVerificationBeforeLogin(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
     String emailAddress = "registration-" + UUID.randomUUID() + "@example.test";
     RegistrationPage registrationPage = new RegistrationPage(browserPage);
     registrationPage.open();
+    AccountFormAppearanceChecks.captureRegistration(browserPage);
     registrationPage.fillValid(emailAddress, BrowserTestAccounts.USER_PASSWORD);
     registrationPage.submit();
     registrationPage.assertSubmitted(emailAddress);
@@ -62,6 +69,7 @@ public class RegistrationBrowserTest extends BrowserFixture {
     assertThat(browserPage.locator("#pending-verification-email")).hasText(emailAddress);
   }
 
+  @Tag("account-forms")
   @Tag("fast")
   @Test
   @DisplayName("REG-02A: Fehlende Pflichtangaben werden markiert und lassen sich korrigieren")
@@ -90,6 +98,7 @@ public class RegistrationBrowserTest extends BrowserFixture {
     registration.assertSubmitted(email);
   }
 
+  @Tag("account-forms")
   @Tag("fast")
   @Test
   @DisplayName("REG-02B: Ungültige E-Mail und abweichende Passwortbestätigung sind korrigierbar")
