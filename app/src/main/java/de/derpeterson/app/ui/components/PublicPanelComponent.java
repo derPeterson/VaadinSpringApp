@@ -11,6 +11,8 @@ import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import java.util.function.Supplier;
 
@@ -33,13 +35,17 @@ public class PublicPanelComponent extends CosmosCardComponent {
     Div panelHeaderContainer = new Div(panelIconContainer, panelHeadingContainer);
     panelHeaderContainer.addClassName(PANEL_HEADER);
 
-    Div panelBodyContainer = new Div(panelBodyComponents);
-    panelBodyContainer.addClassName("public-panel-body");
+    VerticalLayout panelBodyLayout = new VerticalLayout(panelBodyComponents);
+    panelBodyLayout.setWidthFull();
+    panelBodyLayout.setPadding(false);
+    panelBodyLayout.setSpacing(false);
+    panelBodyLayout.setAlignItems(Alignment.STRETCH);
+    panelBodyLayout.addClassName("public-panel-body");
 
     Div panelFooterContainer = new Div(panelFooterActionComponents);
     panelFooterContainer.addClassName("public-panel-footer");
 
-    add(panelHeaderContainer, panelBodyContainer, panelFooterContainer);
+    add(panelHeaderContainer, panelBodyLayout, panelFooterContainer);
 
     ComponentUtil.addListener(
         UI.getCurrent(),

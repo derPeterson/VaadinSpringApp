@@ -19,6 +19,8 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -127,8 +129,8 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
     proofNoticeContainer.addClassName("cosmos-panel-hint");
     developmentWarningSpan.addClassName("cosmos-panel-description");
 
-    Div dialogBodyDiv =
-        new Div(
+    VerticalLayout identityProofFormLayout =
+        new VerticalLayout(
             identityProofExplanation,
             providerReadyHintSpan,
             passwordField,
@@ -137,8 +139,12 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
             proofAlternativesLayout,
             proofNoticeContainer,
             developmentWarningSpan);
-    dialogBodyDiv.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
-    add(dialogBodyDiv);
+    identityProofFormLayout.setWidthFull();
+    identityProofFormLayout.setPadding(false);
+    identityProofFormLayout.setSpacing(false);
+    identityProofFormLayout.setAlignItems(Alignment.STRETCH);
+    identityProofFormLayout.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
+    add(identityProofFormLayout);
     cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
     cancelButton.addClickListener(event -> close());
     cancelButton.setId("external-proof-cancel");

@@ -270,6 +270,7 @@ public final class BrowserTestRunner {
       String appUrl = "https://127.0.0.1:" + appPort;
       String mailUrl = "http://127.0.0.1:" + mailPort;
       if (testClasses.contains(de.derpeterson.browsertests.suites.ExternalLoginBrowserTest.class)
+          || testClasses.contains(de.derpeterson.browsertests.suites.FormLayoutsBrowserTest.class)
           || testClasses.contains(de.derpeterson.browsertests.suites.TwoFactorBrowserTest.class)
           || testClasses.contains(
               de.derpeterson.browsertests.suites.TwoFactorLifecycleBrowserTest.class)

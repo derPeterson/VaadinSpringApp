@@ -21,7 +21,8 @@
   Smartphonebreite prüfen. Die Anzahl muss auch bei ausreichender Breite
   unter dem Laufzeitpunkt beginnen; schmale Ansichten dürfen weiter natürlich
   umbrechen. Vom Benutzer auf Desktop und Smartphone manuell abgenommen;
-  automatisierter DE-/EN-Nachtest noch nicht freigegeben oder ausgeführt.
+  automatisierter DE-/EN-Nachtest im aktuellen Nachtauftrag freigegeben,
+  Ausführung in der abschließenden großen Testrunde offen.
 
 ## JUnit-Tests
 

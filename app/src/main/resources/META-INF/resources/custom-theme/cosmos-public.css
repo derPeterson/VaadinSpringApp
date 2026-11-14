@@ -38,7 +38,7 @@
 .public-email-outcome .cosmos-reference-public .public-panel .cosmos-panel-description { display:none; }
 .cosmos-reference-public[data-public-page=verification] .public-panel .cosmos-panel-description,
 .cosmos-reference-public[data-public-page=reset] .public-panel:has(.cosmos-status-icon) .cosmos-panel-description { display:none; }
-.cosmos-reference-public .public-panel-body { display:flex;flex-direction:column;gap:20px;padding:24px;background:var(--cosmos-reference-page);color:var(--cosmos-reference-secondary);font:400 13px/1.8 Inter,sans-serif; }
+.cosmos-reference-public .public-panel-body { box-sizing:border-box;gap:20px;padding:24px;background:var(--cosmos-reference-page);color:var(--cosmos-reference-secondary);font:400 13px/1.8 Inter,sans-serif; }
 .cosmos-reference-public .public-panel-body:empty { display:none; }
 .cosmos-reference-public .public-panel-body > .cosmos-panel-hint { display:flex;flex:none;align-items:center;gap:var(--cosmos-info-box-gap);margin:0;padding:var(--cosmos-info-box-padding);border:1px solid var(--cosmos-reference-border);border-radius:9px;background:var(--cosmos-reference-input);color:var(--cosmos-reference-secondary);font:400 11px/1.8 Inter,sans-serif; }
 .cosmos-reference-public .public-panel-body > .cosmos-panel-hint > vaadin-icon { width:16px;height:16px;flex-shrink:0;margin:0;color:var(--cosmos-reference-accent); }

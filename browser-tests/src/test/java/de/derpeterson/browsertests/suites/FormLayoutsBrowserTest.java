@@ -10,13 +10,18 @@ import com.microsoft.playwright.options.ScreenshotAnimations;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
+import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
+import de.derpeterson.browsertests.pages.AccountPage;
+import de.derpeterson.browsertests.pages.AccountSecurityPage;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminMailPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.ForgotPasswordPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
+import de.derpeterson.browsertests.pages.RegistrationPage;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
@@ -114,6 +119,64 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
     AccountFormAppearanceChecks.captureUserDialog(
         browserPage, "Superadmin Benutzer bearbeiten Details");
     editUserDialog.cancel();
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName("Kontodialoge behalten Eingaben, Hinweise und Aktionsbereiche")
+  void accountDialogsKeepTheirArrangement(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
+    String accountEmailAddress = "form-layout-" + viewportWidth + "@example.test";
+    RegistrationPage registrationPage = new RegistrationPage(browserPage);
+    registrationPage.open();
+    registrationPage.fillValid(accountEmailAddress, BrowserTestAccounts.USER_PASSWORD);
+    registrationPage.submit();
+    registrationPage.assertSubmitted(accountEmailAddress);
+    MailpitInbox mailpitInbox = new MailpitInbox(browserContext);
+    try (Page verificationPage =
+        mailpitInbox.openVerificationLink(
+            mailpitInbox.awaitVerificationMail(accountEmailAddress))) {
+      assertThat(verificationPage)
+          .hasTitle(de.derpeterson.app.config.AppRouteConstants.VERIFICATION_PAGE_TITLE);
+    }
+    LoginPage loginPage = new LoginPage(browserPage);
+    loginPage.open();
+    loginPage.signIn(accountEmailAddress, BrowserTestAccounts.USER_PASSWORD);
+    new UserMenu(browserPage).selectTestLanguage();
+    new AccountPage(browserPage).open();
+    AccountSecurityPage accountSecurityPage = new AccountSecurityPage(browserPage);
+    accountSecurityPage.openPassword();
+    captureFormEvidence(
+        "account-password",
+        browserPage.locator("#account-password-change-dialog .cosmos-dialog-form"));
+    browserPage.locator("#account-password-cancel").click();
+
+    accountSecurityPage.openEmail();
+    captureFormEvidence(
+        "account-email", browserPage.locator("#account-email-change-dialog .cosmos-dialog-form"));
+    browserPage.locator("#account-email-cancel").click();
+
+    browserPage.locator("#account-security-tab-providers").click();
+    browserPage.locator("#external-connect-google").click();
+    captureFormEvidence(
+        "account-provider-proof",
+        browserPage.locator("#external-identity-dialog .cosmos-dialog-form"));
+    browserPage.locator("#external-proof-cancel").click();
+  }
+
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @DisplayName("Öffentliche Formularpanels behalten Feldabstände und Hinweise")
+  void publicFormsKeepTheirArrangement(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
+    new LoginPage(browserPage).open();
+    captureFormEvidence("public-login", browserPage.locator(".public-panel-body").first());
+
+    new RegistrationPage(browserPage).open();
+    captureFormEvidence("public-registration", browserPage.locator(".public-panel-body"));
+
+    new ForgotPasswordPage(browserPage).open();
+    captureFormEvidence("public-forgot-password", browserPage.locator(".public-panel-body"));
   }
 
   private void signInForFormInspection(int viewportWidth, boolean superadmin) {

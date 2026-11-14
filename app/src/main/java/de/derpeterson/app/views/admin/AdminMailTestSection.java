@@ -43,6 +43,7 @@ import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
+import de.derpeterson.app.ui.components.FieldHelpRowLayout;
 import de.derpeterson.app.validation.UserInputRules;
 import java.util.Locale;
 import java.util.Optional;
@@ -251,9 +252,9 @@ public class AdminMailTestSection extends VerticalLayout {
 
     VerticalLayout mailFieldsLayout =
         new VerticalLayout(
-            buildMailFieldRowDiv(testRecipientField, recipientInfoButton),
-            buildMailFieldRowDiv(testSubjectField, subjectInfoButton),
-            buildMailFieldRowDiv(testBodyField, bodyInfoButton));
+            buildMailFieldWithHelpComponent(testRecipientField, recipientInfoButton),
+            buildMailFieldWithHelpComponent(testSubjectField, subjectInfoButton),
+            buildMailFieldWithHelpComponent(testBodyField, bodyInfoButton));
     mailFieldsLayout.setPadding(false);
     mailFieldsLayout.setSpacing(false);
     mailFieldsLayout.setWidthFull();
@@ -285,17 +286,23 @@ public class AdminMailTestSection extends VerticalLayout {
     return mailCardLayout;
   }
 
-  private Div buildMailFieldRowDiv(Component mailInputComponent, ConfigInfoButton fieldInfoButton) {
-    Div mailFieldRowDiv = new Div(mailInputComponent, fieldInfoButton);
-    mailFieldRowDiv.addClassNames("cosmos-config-input-row", "cosmos-mail-field-row");
+  private Component buildMailFieldWithHelpComponent(
+      Component mailInputComponent, ConfigInfoButton fieldInfoButton) {
+    FieldHelpRowLayout mailFieldRowLayout =
+        new FieldHelpRowLayout(mailInputComponent, fieldInfoButton);
+    mailFieldRowLayout.addClassName("cosmos-mail-field-row");
     if (mailInputComponent == testBodyField) {
-      mailFieldRowDiv.addClassName("cosmos-mail-body-row");
       mailBodyHintSpan.addClassName("cosmos-mail-body-hint");
       // Die native Hilfsbeschreibung bleibt für assistive Technik am Eingabefeld erhalten.
       mailBodyHintSpan.getElement().setAttribute(ARIA_HIDDEN, "true");
-      mailFieldRowDiv.add(mailBodyHintSpan);
+      VerticalLayout mailBodyFieldLayout = new VerticalLayout(mailFieldRowLayout, mailBodyHintSpan);
+      mailBodyFieldLayout.setWidthFull();
+      mailBodyFieldLayout.setPadding(false);
+      mailBodyFieldLayout.setSpacing(false);
+      mailBodyFieldLayout.addClassName("cosmos-mail-body-row");
+      return mailBodyFieldLayout;
     }
-    return mailFieldRowDiv;
+    return mailFieldRowLayout;
   }
 
   private ConfigInfoButton buildMailFieldInfoButton(FieldHelp fieldHelp) {

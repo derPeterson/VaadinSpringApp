@@ -67,7 +67,7 @@
 .cosmos-mfa-settings .mfa-role-guide > hr { width:100%; height:1px; margin:0; border:0; background:var(--cosmos-reference-border); }
 .cosmos-mfa-settings .mfa-role-scope-name { font-weight:var(--cosmos-font-weight-bold); }
 .cosmos-mfa-settings .mfa-inactivity-section { box-sizing:border-box; padding:0 24px 24px; }
-.cosmos-mfa-settings .mfa-inactivity-section .mfa-policy-grid { align-items:end; }
+.cosmos-mfa-settings .mfa-inactivity-section .mfa-policy-grid > * { align-self:end; }
 .cosmos-mfa-settings .mfa-development-options { display: flex; flex-direction: column; gap: var(--cosmos-space-l, 16px); margin: var(--cosmos-space-2xl, 24px); padding: var(--cosmos-space-l, 16px); border: var(--cosmos-border-width) solid var(--lumo-warning-color); border-radius: var(--cosmos-control-radius); }
 @container (max-width:760px) {
   .cosmos-mfa-settings .mfa-role-content { grid-template-columns:minmax(0,1fr); }

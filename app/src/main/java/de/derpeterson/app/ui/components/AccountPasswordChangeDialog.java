@@ -14,6 +14,8 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -105,15 +107,19 @@ public class AccountPasswordChangeDialog extends Dialog {
     developmentWarningSpan.addClassName(PANEL_DESCRIPTION);
     developmentWarningSpan.setVisible(false);
 
-    Div changeFormDiv =
-        new Div(
+    VerticalLayout changeFormLayout =
+        new VerticalLayout(
             newPasswordField,
             confirmPasswordField,
             currentPasswordField,
             securityInfoDiv,
             developmentWarningSpan);
-    changeFormDiv.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
-    add(changeFormDiv);
+    changeFormLayout.setWidthFull();
+    changeFormLayout.setPadding(false);
+    changeFormLayout.setSpacing(false);
+    changeFormLayout.setAlignItems(Alignment.STRETCH);
+    changeFormLayout.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
+    add(changeFormLayout);
 
     cancelPasswordChangeButton.setId("account-password-cancel");
     cancelPasswordChangeButton.setPrefixComponent(AppIcon.CLOSE.create());

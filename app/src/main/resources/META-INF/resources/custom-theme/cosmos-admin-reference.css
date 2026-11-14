@@ -30,14 +30,12 @@ vaadin-app-layout.cosmos-reference-admin :is(.cosmos-panel-hint,.cosmos-config-s
 vaadin-app-layout.cosmos-reference-admin :is(.cosmos-panel-hint,.cosmos-config-save-hint,.cosmos-notification-compose-info)>vaadin-icon { width:16px; height:16px; flex-shrink:0; color:var(--cosmos-reference-accent); }
 vaadin-app-layout.cosmos-reference-admin :is(.cosmos-panel-actions,.cosmos-config-card-actions) { display:flex; justify-content:flex-end; align-items:center; gap:8px; padding:16px 24px; border-top:1px solid var(--cosmos-reference-border); }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-fields { gap:20px; padding:24px; box-sizing:border-box; }
-vaadin-app-layout.cosmos-reference-admin .cosmos-config-fields:not(vaadin-form-layout) { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
 vaadin-app-layout.cosmos-reference-admin vaadin-form-layout.cosmos-config-fields { --vaadin-form-layout-column-spacing:20px; --vaadin-form-layout-row-spacing:20px; --admin-config-two-column-min-width:0px; }
 vaadin-app-layout.cosmos-reference-admin vaadin-form-layout.cosmos-config-fields > .cosmos-config-field:not(.admin-config-switch) { align-self:stretch; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-field { min-width:0; gap:6px; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-field>vaadin-horizontal-layout>span { font:500 12px/16px Inter,sans-serif; color:var(--cosmos-reference-label); }
 vaadin-app-layout.cosmos-reference-admin .admin-config-required::after { content:' •'; color:var(--cosmos-reference-accent); }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-input-row { gap:8px; align-items:center; width:100%; }
-vaadin-app-layout.cosmos-reference-admin .cosmos-config-input-row:not(vaadin-horizontal-layout) { display:grid; grid-template-columns:minmax(0,1fr) 28px; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-info { width:28px; min-width:28px; height:28px; padding:0; background:transparent; border:0; }
 /* Gemeinsamer nativer Schalter für alle Konfigurationsgruppen einschließlich Anbieter. */
 vaadin-app-layout.cosmos-reference-admin .admin-config-switch { align-self:end; }
@@ -409,7 +407,7 @@ vaadin-app-layout.cosmos-reference-admin .admin-history-note { display:flex; jus
 vaadin-app-layout.cosmos-reference-admin .admin-history-note>span:last-child { margin-left:auto; text-align:right; }
 
 @media(max-width:1100px) { vaadin-app-layout.cosmos-reference-admin .admin-notification-columns { grid-template-columns:1fr; } vaadin-app-layout.cosmos-reference-admin .admin-notification-preview-card { position:static; } }
-@media(max-width:767px) { vaadin-app-layout.cosmos-reference-admin .cosmos-topbar { padding:0 16px; } vaadin-app-layout.cosmos-reference-admin .cosmos-section-header { grid-template-columns:1fr; } vaadin-app-layout.cosmos-reference-admin .cosmos-dashboard-description { grid-column:1; } vaadin-app-layout.cosmos-reference-admin .cosmos-config-fields:not(vaadin-form-layout),vaadin-app-layout.cosmos-reference-admin .admin-dashboard-shortcuts { grid-template-columns:1fr; }  vaadin-app-layout.cosmos-reference-admin .admin-dashboard-shortcut { flex-wrap:wrap; } vaadin-app-layout.cosmos-reference-admin .admin-user-pagination { grid-template-columns:1fr auto; gap:12px; padding:16px; } vaadin-app-layout.cosmos-reference-admin .admin-user-pagination-nav { grid-column:1/-1; justify-self:center; }  vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-row { grid-template-columns:20px minmax(0,1fr); } vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-actions { grid-column:2; justify-content:flex-end; } .admin-reference-dialog .cosmos-form-row { grid-template-columns:1fr; } }
+@media(max-width:767px) { vaadin-app-layout.cosmos-reference-admin .cosmos-topbar { padding:0 16px; } vaadin-app-layout.cosmos-reference-admin .cosmos-section-header { grid-template-columns:1fr; } vaadin-app-layout.cosmos-reference-admin .cosmos-dashboard-description { grid-column:1; } vaadin-app-layout.cosmos-reference-admin .admin-dashboard-shortcuts { grid-template-columns:1fr; }  vaadin-app-layout.cosmos-reference-admin .admin-dashboard-shortcut { flex-wrap:wrap; } vaadin-app-layout.cosmos-reference-admin .admin-user-pagination { grid-template-columns:1fr auto; gap:12px; padding:16px; } vaadin-app-layout.cosmos-reference-admin .admin-user-pagination-nav { grid-column:1/-1; justify-self:center; }  vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-row { grid-template-columns:20px minmax(0,1fr); } vaadin-app-layout.cosmos-reference-admin .cosmos-notification-sent-actions { grid-column:2; justify-content:flex-end; } .admin-reference-dialog .cosmos-form-row { grid-template-columns:1fr; } }
 
 .admin-reference-drawer .admin-filter-status-label { display:flex; align-items:center; gap:8px; }
 .admin-reference-drawer .admin-filter-status-label[data-status=available] { color:var(--cosmos-reference-success); }
@@ -520,10 +518,10 @@ vaadin-app-layout.cosmos-reference-admin .cosmos-config-card-actions>vaadin-butt
 @media(max-width:600px) { vaadin-app-layout.cosmos-reference-admin .cosmos-config-card-actions { grid-template-columns:1fr; padding:16px 20px; } vaadin-app-layout.cosmos-reference-admin .cosmos-config-save-hint { padding:16px 20px; } }
 
 /* Der sichtbare Hinweis liegt außerhalb des vergrößerbaren Felds. */
-vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-row { row-gap:6px; }
+vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-row { gap:6px; }
 /* 18 px Label plus 6 px Abstand: Infoaktion zur Eingabefläche zentrieren. */
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-field-row>.cosmos-config-info { margin-top:24px; }
-vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-hint { grid-column:1; display:block; color:var(--cosmos-reference-secondary); font:400 11px/18.7px Inter,sans-serif; }
+vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-hint { display:block; width:calc(100% - 36px); color:var(--cosmos-reference-secondary); font:400 11px/18.7px Inter,sans-serif; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-card .cosmos-mail-body-field::part(helper-text) { position:absolute; width:1px; height:1px; min-height:0; padding:0; margin:0; overflow:hidden; clip-path:inset(50%); }
 @media(max-width:1100px) { vaadin-app-layout.cosmos-reference-admin .admin-dashboard-intro { gap:22px; padding:24px; } }
 @media(max-width:760px) { vaadin-app-layout.cosmos-reference-admin .admin-dashboard-intro { grid-template-columns:1fr; gap:20px; padding:20px; } vaadin-app-layout.cosmos-reference-admin .admin-dashboard-image { grid-row:1; } }

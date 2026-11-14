@@ -428,9 +428,11 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
       infoButtonsByProviderField.put(field, fieldInfoButton);
       FieldHelpRowLayout fieldHelpRowLayout =
           new FieldHelpRowLayout(fieldInputComponent, fieldInfoButton);
+      fieldHelpRowLayout.setAlignItems(Alignment.START);
       fieldHelpRowLayout.addClassName("provider-help-row");
 
       if (field == ProviderField.ENABLED) {
+        fieldHelpRowLayout.setAlignItems(Alignment.CENTER);
         fieldHelpRowLayout.addClassName("provider-help-toggle");
         return fieldHelpRowLayout;
       }

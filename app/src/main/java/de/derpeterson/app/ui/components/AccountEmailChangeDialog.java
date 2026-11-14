@@ -14,6 +14,8 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.Autocomplete;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -102,13 +104,17 @@ public class AccountEmailChangeDialog extends Dialog {
     Div securityInfoDiv = new Div(securityInfoSvgIcon, emailChangeHintSpan);
     securityInfoDiv.addClassName("cosmos-panel-hint");
 
-    Div changeFormDiv =
-        new Div(newEmailField, confirmEmailField, currentPasswordField, securityInfoDiv);
-    changeFormDiv.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
+    VerticalLayout changeFormLayout =
+        new VerticalLayout(newEmailField, confirmEmailField, currentPasswordField, securityInfoDiv);
+    changeFormLayout.setWidthFull();
+    changeFormLayout.setPadding(false);
+    changeFormLayout.setSpacing(false);
+    changeFormLayout.setAlignItems(Alignment.STRETCH);
+    changeFormLayout.addClassNames("cosmos-dialog-form", "account-change-dialog-form");
     developmentWarningSpan.addClassName(PANEL_DESCRIPTION);
     developmentWarningSpan.setVisible(false);
-    changeFormDiv.add(developmentWarningSpan);
-    add(changeFormDiv);
+    changeFormLayout.add(developmentWarningSpan);
+    add(changeFormLayout);
 
     cancelEmailChangeButton.setId("account-email-cancel");
     cancelEmailChangeButton.setPrefixComponent(AppIcon.CLOSE.create());
