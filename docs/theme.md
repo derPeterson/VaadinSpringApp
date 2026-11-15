@@ -280,6 +280,21 @@ Reine Avatare bleiben Anzeigeelemente; in Buttons, Links und Tabs erben sie den
 Zeiger ihres bedienbaren Containers. Die Avatarregeln stehen in `cosmos-shell.css`.
 Die rechte Feldhilfe ist ein eigener Baustein und bleibt von Tooltips getrennt.
 
+Name und E-Mail im Benutzerkopf, in der Profilkarte, im geöffneten Benutzermenü
+und in der administrativen Löschbestätigung bleiben anhand der verfügbaren
+Breite begrenzt. Der Kopf verwendet maximal `min(220px, 22vw)` für die
+Identitätszeilen; Avatar, Statuspunkt und Pfeil bleiben unverändert.
+Die Angaben bleiben grundsätzlich einzeilig mit Ellipse. Im Smartphone-
+Löschdialog sind bei der bestehenden mobilen Dialogbreite höchstens zwei
+Zeilen je Angabe erlaubt. Gespeicherte Daten werden nicht gekürzt.
+`cosmos-shell.css`, `cosmos-account.css` und `cosmos-admin-reference.css`
+halten die jeweiligen Regeln lokal an den vorhandenen Identitätsklassen.
+Native `Tooltip`-Ziele zeigen die vollständigen Werte per Hover und
+Tastaturfokus; Namensänderungen aktualisieren auch den Tooltip. Der native
+Anfangsfokus des Benutzermenüs bleibt erhalten. Zusätzliche Info-Buttons
+oder eine Touch-Sonderlösung sind nicht eingebaut; der allgemeine Umgang
+mit Smartphone-Tooltips bleibt eine eigene Aufgabe in [TODO](../TODO.md).
+
 ## Native Vaadin-Bausteine zuerst
 
 Reiterleisten behalten ihre freigegebene Gestaltung und nutzen bei Platzmangel

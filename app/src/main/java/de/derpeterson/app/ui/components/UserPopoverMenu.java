@@ -20,6 +20,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.popover.Popover;
 import com.vaadin.flow.component.popover.PopoverPosition;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
@@ -134,10 +135,13 @@ public class UserPopoverMenu {
 
     profileNameSpan = new Span();
     profileNameSpan.addClassName("portal-menu-name");
+    profileNameSpan.getElement().setAttribute("tabindex", "0");
     refreshProfileName();
 
     Span accountEmailSpan = new Span(currentUser.getEmail());
     accountEmailSpan.addClassName("portal-menu-email");
+    accountEmailSpan.getElement().setAttribute("tabindex", "0");
+    Tooltip.forComponent(accountEmailSpan).setText(accountEmailSpan.getText());
 
     menuPresenceBadge = new Badge();
     menuPresenceBadge.addClassName("portal-menu-presence");
@@ -291,6 +295,7 @@ public class UserPopoverMenu {
   public void refreshProfileName() {
     if (profileNameSpan != null) {
       profileNameSpan.setText(buildFullName());
+      Tooltip.forComponent(profileNameSpan).setText(profileNameSpan.getText());
       profileNameSpan.setVisible(hasUserName());
     }
     if (overlayIcon != null) {

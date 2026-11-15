@@ -508,7 +508,8 @@ vaadin-select[theme~="cosmos-status"] vaadin-select-list-box > vaadin-select-ite
 .cosmos-reference-portal .tracked-user-button::part(prefix) { margin-right: 12px; }
 .cosmos-reference-portal .tracked-user-button::before { display: none; }
 .cosmos-reference-portal .tracked-user-button vaadin-icon { width: 16px; height: 16px; color: var(--cosmos-reference-secondary); }
-.cosmos-header-identity { display: grid; text-align: left; gap: 3px; font: 500 12px/16px Inter, sans-serif; color: var(--cosmos-reference-text); }
+.cosmos-header-identity { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; max-width: min(220px, 22vw); text-align: left; gap: 3px; font: 500 12px/16px Inter, sans-serif; color: var(--cosmos-reference-text); }
+.cosmos-header-identity > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cosmos-header-identity span:last-child { color: var(--cosmos-reference-secondary); font: 400 11px/14px Inter, sans-serif; }
 /* 45-Grad-Punkt auf der Mitte des zwei Pixel breiten Avatarrahmens. */
 .cosmos-reference-portal .cosmos-user-avatar,
@@ -685,6 +686,9 @@ vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var
 
 .portal-menu-identity-copy .portal-menu-name {
     display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--cosmos-reference-white);
     font: 600 14px/20px Inter, sans-serif;
 }
@@ -693,6 +697,7 @@ vaadin-select[theme~=cosmos-reference] vaadin-select-item[selected] { color: var
     display: block;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--cosmos-reference-secondary);
     font: 400 12px/18px Inter, sans-serif;
 }

@@ -47,6 +47,7 @@ class BrowserExecutionPlanTest {
         "confirmation-dialog",
         "native-confirmations",
         "tab-overflow",
+        "identity-overflow",
         "avatars",
         "profile-form",
         "account-forms",
@@ -147,6 +148,8 @@ class BrowserExecutionPlanTest {
                   "revokedWaitingCleanupShowsFailureWithoutClaimingSuccess",
                   "queueTabUrlsSurviveReloadAndRejectUnauthorizedAssistantAccess",
                   "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
+          case "identity-overflow" ->
+              Set.of("identitySurfacesKeepFullValuesWithinTheirAvailableSpace");
           case "queue-full-run" ->
               Set.of("fullCleanupWaitsForTransportAndAggregatesMoreThanOneBatch");
           case "queue-cleanup-appearance" ->

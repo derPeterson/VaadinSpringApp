@@ -533,7 +533,7 @@ vaadin-dialog.account-change-dialog::part(header-content) {
 .cosmos-reference-portal .account-summary { padding: 16px; margin-bottom: 20px; border-radius: 12px; gap: 0; box-shadow: none; }
 .account-summary-row { display: flex; align-items: center; width: 100%; gap: 12px; }
 .account-summary-details { min-width: 0; flex: 1; }
-.account-summary-name { display: block; color: var(--cosmos-reference-white); font: 600 14px/19.25px Inter, sans-serif; }
+.account-summary-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--cosmos-reference-white); font: 600 14px/19.25px Inter, sans-serif; }
 .account-summary-email { display: block; color: var(--cosmos-reference-secondary); font: 400 12px/16px Inter, sans-serif; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .account-summary-badges { display: flex; margin-top: 6px; }
 .cosmos-reference-portal #account-avatar-edit { width: 100%; margin-top: 14px; }

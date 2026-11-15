@@ -292,6 +292,7 @@ public abstract class TrackedUserAppLayout extends UserActivityAwareView {
     accountNavigationToggle.setAriaLabel(messageProperties.getAccountOpenNavigation());
 
     if (userIconButton != null) {
+      userIconButton.setTooltipText(accountDisplayName + "\n" + headerAccountEmailSpan.getText());
       userIconButton.setAriaLabel(
           hasClassName(REFERENCE_PORTAL)
               ? messageProperties.getAccountOpenUserMenu(accountDisplayName)

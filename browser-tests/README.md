@@ -91,6 +91,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | Suite | Inhalt | Fälle |
 | --- | --- | ---: |
 | `tab-overflow` | Kontosicherheit, 2FA-Rollen, Anmeldeanbieter und Mailqueue bei 1280/1024/390/320 px: lesbare Beschriftungen, native Überlaufpfeile, Auswahl und gezielte Vergleichsaufnahmen | 4 |
+| `identity-overflow` | Normale und lange Benutzerangaben im Kopf, in Profilkarte und Benutzermenü sowie in der administrativen Löschbestätigung bei 1280/390 px | 4 |
 | `queue-cleanup-appearance` | Nur Assistentenwarnung und manuelle Bereinigungsbestätigung bei 1280/390 px: Gestaltung und alle vier Abbruchwege, ohne Bereinigung auszuführen | 2 |
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit und HTTPS-/HTTP-Grenze | 4 |
 | `https-night` | Infrastruktur und Remember-me: normale Profile, echter Chromium-/Serverneustart; mit zwei Workern gezielter Nachtlaufnachweis | 8 |

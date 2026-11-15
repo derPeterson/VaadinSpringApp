@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.select.Select;
+import com.vaadin.flow.component.shared.Tooltip;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.QueryParameters;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -51,11 +52,13 @@ public class PortalSidebarComponent extends Div {
     accountAvatar = new OverlayUserIcon(messageProperties, user, status, IconSize.PIXEL_48, true);
     accountAvatar.addClassName("account-summary-avatar");
     accountNameLabel.addClassName("account-summary-name");
+    accountNameLabel.getElement().setAttribute("tabindex", "0");
     refreshName(user == null ? "" : user.getFirstName(), user == null ? "" : user.getLastName());
 
     Span accountEmailSpan = new Span(user == null ? "" : Objects.toString(user.getEmail(), ""));
     accountEmailSpan.addClassName("account-summary-email");
-    accountEmailSpan.getElement().setAttribute("title", accountEmailSpan.getText());
+    accountEmailSpan.getElement().setAttribute("tabindex", "0");
+    Tooltip.forComponent(accountEmailSpan).setText(accountEmailSpan.getText());
 
     presenceBadge.addClassName("account-summary-presence");
 
@@ -166,6 +169,7 @@ public class PortalSidebarComponent extends Div {
   public void refreshName(String firstName, String lastName) {
     accountNameLabel.setText(
         (Objects.toString(firstName, "") + " " + Objects.toString(lastName, "")).trim());
+    Tooltip.forComponent(accountNameLabel).setText(accountNameLabel.getText());
     accountAvatar.setName(firstName, lastName);
   }
 

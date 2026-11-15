@@ -96,6 +96,14 @@ Queue-Gesamtlauf in DE/EN bestanden: echter SMTP-Wartezustand und anschließend
 101 bereinigte Aufträge ohne erneuten Versand. Jeder Fall prüft 1280/390 px;
 die Erklärung bleibt am Desktop einzeilig, die Vormerkungs-Notification blau
 mit Info-Icon. Eigene Vergleichsaufnahmen beider Zustände liegen zur Endabnahme vor.
+Die vier vereinbarten Benutzeranzeigen begrenzen lange Namen und E-Mail-Adressen
+und bieten vollständige Werte im nativen Tooltip. 135 vorhandene Komponenten-
+JUnit-Prüfungen, 40 Testauswahlprüfungen und je vier Browserfälle in DE/EN
+bei 1280/390 px sind bestanden. Geprüft wurden normale und lange Angaben,
+maximale Zeilenzahl, Hover und Tastaturfokus, unveränderte Daten nach Abbruch
+sowie aktualisierte Tooltips nach einer Namensänderung. Vorher-/Nachher-
+Aufnahmen liegen vor. Eine allgemeine Touch-Bedienung wird erst separat geplant;
+ein Smartphone-Info-Button ist nicht Teil dieser Änderung.
 Diese Änderungen haben keinen neuen Sonar-Scan; der obige Scan gilt weiterhin für
 `f3c21623`. Die übrigen Nachbearbeitungspunkte bleiben im
 [Komponentenplan](planung/vaadin-komponenten-abgleich.md) offen.

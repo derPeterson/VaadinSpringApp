@@ -297,11 +297,14 @@ vaadin-dialog.admin-user-delete-dialog[theme~=cosmos-reference]::part(content) {
 .admin-user-delete-dialog .admin-user-delete-warning .cosmos-panel-description { margin:6px 0 0; font:400 13px/21px Inter,sans-serif; }
 .admin-user-delete-dialog.admin-reference-dialog .admin-user-delete-identity { gap:12px; padding:14px; border-radius:8px; }
 .admin-user-delete-dialog .admin-user-delete-name { font:500 14px/20px Inter,sans-serif; }
+.admin-user-delete-dialog .admin-user-delete-identity > .cosmos-panel-heading { min-width:0; flex:1; }
+.admin-user-delete-dialog .admin-user-delete-identity :is(.admin-user-delete-name,.cosmos-panel-description) { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .admin-user-delete-dialog .admin-user-delete-identity .cosmos-panel-description { margin:2px 0 0; font:400 12px/18px Inter,sans-serif; }
 .admin-user-delete-dialog.admin-reference-dialog .cosmos-dialog-actions { display:flex; justify-content:flex-end; gap:8px; }
 .admin-user-delete-dialog.admin-reference-dialog .cosmos-dialog-actions>vaadin-button { width:112px; min-width:0; }
 @media(max-width:639px) {
     vaadin-dialog.admin-user-delete-dialog.admin-reference-dialog[theme~=cosmos-reference]::part(overlay) { width:min(540px,calc(100vw - 20px)); max-height:calc(100dvh - 20px); }
+    .admin-user-delete-dialog .admin-user-delete-identity :is(.admin-user-delete-name,.cosmos-panel-description) { display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; white-space:normal; overflow-wrap:anywhere; }
     .admin-user-delete-dialog.admin-reference-dialog .admin-user-dialog-header { padding:20px; gap:12px; }
     .admin-user-delete-dialog.admin-reference-dialog .cosmos-dialog-form { padding:20px; }
     vaadin-dialog.admin-user-delete-dialog[theme~=cosmos-reference]::part(footer) { padding:16px 20px; }

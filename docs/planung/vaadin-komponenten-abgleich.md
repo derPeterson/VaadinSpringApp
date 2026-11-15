@@ -68,35 +68,16 @@ hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
    Auf schmalen Ansichten bleibt normaler Umbruch möglich. Der echte
    SMTP-Wartezustand sowie die blaue Vormerkungs-Notification mit Info-Icon
    sind in DE/EN bei 1280/390 px geprüft; Vergleichsaufnahmen liegen vor.
-5. [ ] **Lange Namen und E-Mail-Adressen in den Benutzerangaben begrenzen:**
-   Betroffen sind der Benutzer-Menüauslöser im Header, die Profilkarte links
-   auf „Mein Konto → Persönliche Daten“, der Identitätskopf im geöffneten
-   Benutzermenü und die Benutzerkarte im administrativen Dialog „Benutzer löschen“.
-   An allen vier Stellen zuerst prüfen, welche Kürzungs- und
-   Tooltiplogik bereits vorhanden ist; nur fehlende Teile ergänzen.
-   Name und E-Mail anhand der verfügbaren Breite begrenzen und grundsätzlich
-   einzeilig mit „…“ darstellen; für die Smartphone-Benutzerkarte im Löschdialog
-   gilt die unten abgestimmte Zwei-Zeilen-Ausnahme. Keine feste Zeichengrenze
-   und keine Änderung der gespeicherten Kontodaten. Avatar, Präsenzpunkt und
-   Aufklapp-Pfeil behalten ihren Platz; lange Werte verbreitern den Header nicht.
-   Vollständigen Namen und vollständige E-Mail-Adresse mit dem nativen Tooltip
-   bei Hover beziehungsweise Tastaturfokus zugänglich machen. Auf ausdrücklichen
-   Benutzerwunsch keinen zusätzlichen Info-Button oder Touch-Ersatz einbauen;
-   die normale native Tooltip-Bedienung bleibt bestehen. Bei der Umsetzung lange Namen,
-   lange E-Mail-Adressen und normale Werte in DE/EN auf Desktop und Smartphone
-   prüfen; vorhandene Kopfzeilenvarianten im betroffenen Baustein berücksichtigen.
-   Im Löschdialog den vorhandenen Platz großzügig nutzen: passende Namen und
-   E-Mail-Adressen vollständig anzeigen, erst bei tatsächlichem Platzmangel
-   kürzen und den vollständigen Wert im Tooltip anbieten. Lange Kontodaten dürfen
-   den Dialog nicht verbreitern. Die bestehende responsive Dialogbreite erhalten;
-   auf Smartphonebreite weder horizontales Überlaufen noch verdrängte Aktionen
-   zulassen. Die eindeutig erkennbare Identität des zu löschenden Kontos erhalten.
-   In der Benutzerkarte des Löschdialogs dürfen auf dem Smartphone Name und
-   E-Mail-Adresse jeweils auf höchstens zwei Zeilen umbrechen. Erst wenn auch
-   diese zwei Zeilen nicht ausreichen, mit „…“ kürzen; keine vier oder fünf
-   Zeilen pro Angabe zulassen. Vollständige Werte bleiben über normale native
-   Tooltips zugänglich; kein zusätzlicher Info-Button. Die Headeranzeige bleibt
-   weiterhin einzeilig.
+5. [ ] **Begrenzte Benutzerangaben – umgesetzt, Endabnahme offen:** Kopf,
+   Profilkarte, Benutzermenü und administrative Löschbestätigung begrenzen
+   Name und E-Mail an der verfügbaren Breite. Auf dem Smartphone darf jede
+   Angabe im Löschdialog höchstens zwei Zeilen belegen; sonst bleibt es
+   bei einer Zeile. Vollständige Werte stehen im nativen Tooltip bei Hover
+   und Tastaturfokus. Kein zusätzlicher Info-Button oder Touch-Ersatz.
+   Normale und lange Werte, Abbruch ohne Datenverlust und aktualisierte
+   Tooltips nach Namensänderung sind bei 1280/390 px in DE/EN geprüft.
+   Vergleichsaufnahmen liegen zur Endabnahme vor. Die allgemeine Smartphone-
+   Tooltip-Frage bleibt als eigene [Aufgabe](../../TODO.md#künftige-anwendungsfunktionen) offen.
 6. [ ] **Smartphone-Footer der gezeigten Bestätigungen:** Ausschließlich im
    Smartphone-Layout der Dialoge „Ungespeicherte Änderungen“ und „Alle anderen
    abmelden“ beide Buttons untereinander über die volle verfügbare Breite innerhalb der bestehenden
