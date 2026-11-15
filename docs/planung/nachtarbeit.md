@@ -1,7 +1,8 @@
 # Geplante Nachtarbeit
 
 **Status: Gesamtpakete 1–3 technisch abgeschlossen und lokal zwischenintegriert;
-abschließender Sonar-Nachscan läuft; die große Testrunde folgt danach.**
+Sonar ist mit null offenen Findings und bestandenem Gate bestätigt;
+die abschließende große Testrunde folgt auf dem neuen Folgebranch.**
 
 Der ausdrückliche Startauftrag umfasst alle fünf folgenden Arbeitspunkte.
 Sie konkretisiert die Nachtpakete der laufenden
@@ -72,26 +73,19 @@ Push, Release und die zurückgestellten Planungen gehören nicht zum Auftrag.
 
 ## Arbeitspunkt 4: Zwischenintegration, Sonar-Bereinigung und Folgebranch
 
-Der geprüfte Stand ist bei `e39189fa` lokal nach `main` übernommen;
-Produktions-/Coverage-Reactor und isolierter Start des frischen Main-JARs sind
-bestanden. Der Quellbranch bleibt erhalten; die gesamte Komponentenübernahme
-ist ausdrücklich nicht abgeschlossen. Weitere Arbeit läuft auf
-`codex/vaadin-komponenten-folgearbeiten-3`.
-
-- [ ] Auf `main` den vollständigen geschützten Sonar-Scan durchführen, alle
-  berechtigten Findings beheben und den Endstand durch einen Nachscan mit null
-  offenen Findings bestätigen. Befunde fachlich prüfen, nichts für die Null
-  unterdrücken. Erforderliche lokale Korrekturcommits und Zwischenbranches sind
-  vom Gesamtauftrag umfasst; keine Pushes. Der Zugang ist wiederhergestellt.
-  Der aktuelle Scan bei `3abb9139` enthält zwölf Codequalitätshinweise ohne
-  Bugs, Sicherheitslücken oder offene Hotspots. Die gezielten Korrekturen sind
-  mit 171 Anwendungstests und 113 Browser-Helfertests bestanden; die bestätigende
-  Analyse folgt gemäß [Sonar-Paket](sonar-pakete.md). Ein Nullstand ist noch
-  nicht bestätigt.
+Der Nachtstand einschließlich Sonar-Korrekturen ist bei `98186b91` lokal auf
+`main` integriert. Der geschützte vollständige Nachscan bestätigt null offene
+Issues und Hotspots sowie Quality Gate OK. Die zwölf neuen Hinweise sind durch
+Code-/Kommentarkorrekturen erledigt; bestehende 46 Ausnahmen bleiben unverändert.
+Produktions-/Coverage-Reactor, 3.086 Anwendungstests, 131 Browser-Helfertests und
+der isolierte Start des frischen Main-JARs sind bestanden. Zwei ausdrücklich
+optionale Caddy-Fälle sind übersprungen. Der Quellbranch bleibt erhalten; die
+gesamte Komponentenübernahme ist ausdrücklich nicht abgeschlossen. Weitere
+Arbeit läuft auf `codex/vaadin-komponenten-folgearbeiten-4`. Kein Push oder Release.
 
 ## Arbeitspunkt 5: Große Testrunde als letzter Schritt
 
-**Status: nach Sonar fortzusetzen.** Die gepflegten Offlineprüfungen und die
+**Status: nach bestandenem Sonar fortgesetzt.** Die gepflegten Offlineprüfungen und die
 gezielten Hintergrundprüfungen sind bestanden. Die vorläufige Gesamtrunde ist
 für die wieder mögliche Sonar-Bereinigung bewusst beendet; sie zählt nicht als
 abgeschlossener Gesamtnachweis. Anschließend beide Sprachen am endgültigen Image
