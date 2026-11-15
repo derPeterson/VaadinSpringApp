@@ -61,11 +61,13 @@ hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
    bestehende rote Gefahrenvariante. Die lokale blaue Ausnahme ist entfernt;
    die Assistentenkarte bleibt blau. Gezielte DE-/EN-Prüfungen bei 1280/390 px
    und Vorher-/Nachher-Aufnahmen sind bestanden beziehungsweise vorhanden.
-4. [ ] **Kürzerer Wartetext:** Die gelbe Erklärung unter „Wartet auf Ausführung“
-   so kürzen, dass sie auf üblicher Desktopbreite in eine Zeile passt.
-   Textvorschlag DE: „Vorgemerkt. Startet automatisch nach Ende des E-Mail-Versands.“
+4. [ ] **Kürzerer Wartetext – umgesetzt, Endabnahme offen:** Die gelbe Erklärung
+   unter „Wartet auf Ausführung“ passt bei geprüften 1280 px in eine Zeile.
+   DE: „Vorgemerkt. Startet automatisch nach Ende des E-Mail-Versands.“
    EN: „Queued. Starts automatically when email delivery finishes.“
-   Auf schmalen Ansichten weiterhin normalen Umbruch zulassen.
+   Auf schmalen Ansichten bleibt normaler Umbruch möglich. Der echte
+   SMTP-Wartezustand sowie die blaue Vormerkungs-Notification mit Info-Icon
+   sind in DE/EN bei 1280/390 px geprüft; Vergleichsaufnahmen liegen vor.
 5. [ ] **Lange Namen und E-Mail-Adressen in den Benutzerangaben begrenzen:**
    Betroffen sind der Benutzer-Menüauslöser im Header, die Profilkarte links
    auf „Mein Konto → Persönliche Daten“, der Identitätskopf im geöffneten

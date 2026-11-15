@@ -43,6 +43,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -67,13 +68,7 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
     assistantWarningLocator.scrollIntoViewIfNeeded();
     assertThat(assistantWarningLocator.locator("vaadin-icon"))
         .hasAttribute("data-lucide", "triangle-alert");
-    Allure.attachment(
-        "Assistentenwarnung",
-        "image/png",
-        new ByteArrayInputStream(
-            assistantWarningLocator.screenshot(
-                new Locator.ScreenshotOptions().setAnimations(ScreenshotAnimations.DISABLED))),
-        AttachmentOptions.empty());
+    captureCleanupComponent("Assistentenwarnung", assistantWarningLocator);
     String originalResult = browserPage.locator("#admin-mail-queue-result").textContent();
     for (String dismissal : new String[] {"cancel", "header", "escape", "outside"}) {
       browserPage.locator("#admin-mail-queue-cleanup").click();
@@ -240,8 +235,44 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
       assertThat(browserPage.locator("#admin-mail-queue-status")).isVisible();
       assertTrue(
           (boolean) browserPage.evaluate("document.documentElement.scrollWidth <= innerWidth"));
+      if ("WAITING"
+          .equals(browserPage.locator("#admin-mail-queue-status").getAttribute("data-status"))) {
+        if (viewportWidth == 1280) {
+          assertTrue(
+              (boolean)
+                  browserPage
+                      .locator("#admin-mail-queue-status-explanation")
+                      .evaluate(
+                          "element => element.getBoundingClientRect().height <= parseFloat(getComputedStyle(element).lineHeight) + 1"),
+              "Die Vormerkung soll bei normaler Desktopbreite in eine Zeile passen.");
+        }
+        captureCleanupComponent(
+            "Wartetext " + viewportWidth, browserPage.locator(".admin-queue-cleanup-status"));
+        Locator queuedNotificationLocator =
+            browserPage
+                .locator("vaadin-notification-card:not([closing])")
+                .filter(
+                    new Locator.FilterOptions()
+                        .setHasText(uiTexts.getAdminQueueCleanupWaitingExplanation()));
+        assertThat(queuedNotificationLocator)
+            .hasAttribute("theme", Pattern.compile(".*cosmos-reference-normal.*"));
+        assertThat(queuedNotificationLocator.locator(".cosmos-notification-icon"))
+            .hasAttribute("data-lucide", "info");
+        captureCleanupComponent(
+            "Vormerkungs-Notification " + viewportWidth, queuedNotificationLocator);
+      }
       AllurePlaywright.attachScreenshot(evidenceName + " " + viewportWidth, browserPage);
     }
+  }
+
+  private void captureCleanupComponent(String evidenceName, Locator componentLocator) {
+    Allure.attachment(
+        evidenceName,
+        "image/png",
+        new ByteArrayInputStream(
+            componentLocator.screenshot(
+                new Locator.ScreenshotOptions().setAnimations(ScreenshotAnimations.DISABLED))),
+        AttachmentOptions.empty());
   }
 
   @Test

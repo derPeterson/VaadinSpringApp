@@ -1749,7 +1749,7 @@ des vorhandenen Dialograhmens. Der äußere Button und der Dialogtitel heißen
 Beide Aktionen und der Dialogkopf verwenden `AppIcon.BRUSH_CLEANING`.
 Die bestehende Großschreibung der Statusüberschrift bleibt erhalten, ihre Farbe
 ist `--cosmos-reference-accent`. Die Kopf-Iconbox des Bestätigungsdialogs verwendet
-ebenfalls die vorhandene blaue Palette; der Bestätigungsbutton behält den
+die vorhandene rote Gefahrenvariante; der Bestätigungsbutton behält den
 gemeinsamen roten Aktionsstil, „Abbrechen“ bleibt unverändert.
 
 Unter der Frage und der kurzen Erklärung stehen zwei native Layoutzeilen:
@@ -1769,6 +1769,10 @@ Die Erklärung übernimmt dieselbe Statusfarbe. Zeit und Gesamtzahl stehen weite
 in getrennten Monospace-Zeilen. Während aktiver Aufträge ist die Startaktion
 deaktiviert; das vorübergehende UI-Polling stellt nach Abschluss oder Abhängen
 den zuvor verwendeten Pollingabstand wieder her.
+Die gelbe Vormerkungserklärung bleibt kurz und passt bei normaler Desktopbreite
+in eine Zeile; auf schmalen Ansichten darf sie umbrechen. Die vorübergehende
+Vormerkungs-Notification verwendet weiterhin das normale blaue Informationsdesign
+mit Info-Icon. Der Wartezustand ist kein Fehler und keine zusätzliche Sicherheitswarnung.
 
 ## Segmentierte Auswahl mit nativen Tabs
 
