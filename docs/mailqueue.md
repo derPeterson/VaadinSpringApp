@@ -62,6 +62,22 @@ neue Anforderung möglich; die normalen Versandwartezeiten gelten weiter. Eine
 zuvor angenommene Mail kann weiterhin eintreffen. Deshalb keinen Auftrag blind
 auf `PENDING` zurücksetzen.
 
+Der äußere Button und der Titel der Bestätigung heißen **Manuelle Bereinigung**,
+die bestätigende Aktion weiterhin **Jetzt bereinigen**. Beide Buttons und der
+Dialogkopf verwenden das Brush-Icon. Die Warnung **Späterer Empfang möglich:**
+stellt die Grenze gegenüber einem bereits annehmenden Mailserver heraus;
+eine separate Infobox nennt gespeicherte Einstellungen, Altersbezug und Laufgrenze.
+Es gibt keine zusätzliche Rollenbeschriftung im Dialog. Die Berechtigungsprüfungen
+bleiben unabhängig von der Darstellung erhalten.
+
+Die Zahl 100 ist als Seitengröße der Datenbankabfrage fest im Dienst gesetzt,
+nicht als administrativer Konfigurationswert. Sie begrenzt die Anzahl der
+Datensätze und der anschließenden Sperr-/Änderungsoperationen innerhalb einer
+Transaktion. Die Verarbeitung ist eine normale Schleife, kein rekursiver Ablauf;
+die Begrenzung ist kein Schutz vor einem Stackoverflow. Eine größere offene Menge
+erfordert weitere manuelle oder fällige automatische Läufe, keinen automatischen
+Neuversand.
+
 Die automatische Bereinigung ist standardmäßig ausgeschaltet. Nur Superadmins
 können sie einschalten oder Prüfintervall (Vorgabe 15 Minuten) und Mindestalter
 (Vorgabe 30 Minuten) ändern. Beide Dauern müssen mindestens eine Minute betragen.
@@ -72,10 +88,18 @@ prüfen. Ein Lauf arbeitet mit seinem gelesenen Einstellungsstand, der nächste
 berücksichtigt Änderungen ohne Neustart auch bei vorhandenen Claims.
 
 Die Queue-Konfiguration hat die Reiter **Allgemein** und **Assistenten** im
-vorhandenen Panelstil. Admins sehen die fünf allgemeinen Einstellungen,
-Superadmins zusätzlich den Bereinigungsassistenten. Seine beiden Zeitfelder
-sind nur bei eingeschalteter Automatik bedienbar, gespeicherte Werte bleiben
-erhalten. Die Historienfrist bleibt unabhängig davon bedienbar. Der gemeinsame
+vorhandenen Panelstil. Ihre Direktlinks sind
+`admin?section=configuration&group=queue&tab=general` beziehungsweise
+`admin?section=configuration&group=queue&tab=assistants`. Ein Reiterwechsel
+aktualisiert die URL ohne Navigation oder erneutes Laden der Formularwerte;
+Neuladen und Direktaufruf stellen die Auswahl aus der URL wieder her.
+Fehlende, unbekannte oder mehrfache `tab`-Werte wählen „Allgemein“.
+Admins sehen die fünf allgemeinen Einstellungen,
+Superadmins zusätzlich den Bereinigungsassistenten. Ein Assistenten-Direktlink
+erteilt keine zusätzlichen Rechte; ohne Berechtigung bleibt „Allgemein“ geöffnet.
+Die beiden Zeitfelder des Assistenten sind nur bei eingeschalteter Automatik
+bedienbar, gespeicherte Werte bleiben erhalten. Die Historienfrist bleibt
+unabhängig davon bedienbar. Der gemeinsame
 äußere Footer lädt beziehungsweise speichert beide Reiter. Die manuelle
 Bereinigung ist weiterhin unabhängig vom Automatikschalter möglich und verwendet
 gespeicherte Einstellungen. Bewusstes Aktualisieren meldet Erfolg oder Fehler.

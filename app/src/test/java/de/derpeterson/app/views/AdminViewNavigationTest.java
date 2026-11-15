@@ -7,22 +7,30 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.page.History;
+import com.vaadin.flow.component.page.Page;
 import com.vaadin.flow.component.sidenav.SideNavItem;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.tabs.Tabs;
+import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.function.DeploymentConfiguration;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.Location;
@@ -48,6 +56,7 @@ import de.derpeterson.app.security.MaintenanceService;
 import de.derpeterson.app.security.SecurityService;
 import de.derpeterson.app.service.AdminAccountMailService;
 import de.derpeterson.app.service.ConfigService;
+import de.derpeterson.app.service.EmailQueueCleanupService;
 import de.derpeterson.app.service.EmailService;
 import de.derpeterson.app.service.ExternalIdentityService;
 import de.derpeterson.app.service.RoleService;
@@ -59,6 +68,8 @@ import de.derpeterson.app.service.UserService;
 import de.derpeterson.app.ui.components.PageContentLayout;
 import de.derpeterson.app.ui.components.PageFrameComponent;
 import de.derpeterson.app.ui.components.PageNavigationComponent;
+import de.derpeterson.app.views.admin.AdminConfigurationSection;
+import de.derpeterson.app.views.admin.AdminConfigurationSection.QueueTab;
 import de.derpeterson.app.websocket.UserProfileBroadcaster;
 import de.derpeterson.app.websocket.UserStatusBroadcaster;
 import jakarta.servlet.http.HttpServletRequest;
@@ -74,6 +85,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.ArgumentCaptor;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -89,7 +101,8 @@ class AdminViewNavigationTest {
 
   @BeforeEach
   void setup() {
-    testUi = spy(new UI());
+    // Der Konstruktor bindet die Vaadin-Interna direkt an dieselbe UI wie der Test.
+    testUi = mock(UI.class, withSettings().useConstructor().defaultAnswer(CALLS_REAL_METHODS));
     UI.setCurrent(testUi);
     VaadinSession vaadinSession = mock(VaadinSession.class);
     when(vaadinSession.hasLock()).thenReturn(true);
@@ -168,6 +181,9 @@ class AdminViewNavigationTest {
 
   @AfterEach
   void cleanup() {
+    if (adminView.isAttached()) {
+      testUi.remove(adminView);
+    }
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
@@ -430,6 +446,148 @@ class AdminViewNavigationTest {
     assertEquals(
         AdminConfigGroup.GENERAL,
         ReflectionTestUtils.getField(adminView, "activeConfigurationGroup"));
+  }
+
+  @ParameterizedTest
+  @CsvSource({"general, GENERAL", "assistants, ASSISTANTS", "ASSISTANTS, ASSISTANTS"})
+  void queueDirectLinksRestoreTheRequestedTab(String tabParameter, QueueTab expectedQueueTab) {
+    configureQueueCleanup(true);
+    String queueQuery = "?section=configuration&group=queue&tab=" + tabParameter;
+    enter(queueQuery);
+
+    assertEquals(expectedQueueTab, getConfigurationSection().getSelectedQueueTab());
+    enter("?section=configuration&group=security");
+    enter(queueQuery);
+
+    assertEquals(expectedQueueTab, getConfigurationSection().getSelectedQueueTab());
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"general", "assistants"})
+  void freshQueueViewSynchronizesTheUrlAfterBeingAttached(String tabParameter) {
+    configureQueueCleanup(true);
+    enter("?section=configuration&group=queue&tab=" + tabParameter);
+
+    // Bei einem frischen Seitenaufruf läuft beforeEnter vor dem Einhängen in die UI.
+    History browserHistory = attachViewWithMockHistory();
+
+    assertQueueTabLocation(browserHistory, tabParameter);
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"", "&tab=", "&tab=unknown", "&tab=assistants&tab=general"})
+  void invalidQueueTabDoesNotReuseThePreviouslySelectedAssistantsTab(String tabSuffix) {
+    configureQueueCleanup(true);
+    enter("?section=configuration&group=queue&tab=assistants");
+
+    enter("?section=configuration&group=queue" + tabSuffix);
+
+    assertEquals(QueueTab.GENERAL, getConfigurationSection().getSelectedQueueTab());
+  }
+
+  @Test
+  void ordinaryAdminCannotRestoreTheAssistantsTabAndReceivesTheGeneralTabUrl() {
+    when(securityService.getAuthenticatedUser(mockHttpRequest))
+        .thenReturn(
+            Optional.of(
+                User.withUsername("admin@example.test").password("unused").roles("ADMIN").build()));
+    configureQueueCleanup(false);
+    History browserHistory = attachViewWithMockHistory();
+
+    enter("?section=configuration&group=queue&tab=assistants");
+
+    assertEquals(QueueTab.GENERAL, getConfigurationSection().getSelectedQueueTab());
+    assertQueueTabLocation(browserHistory, "general");
+  }
+
+  @Test
+  void changingQueueTabsUpdatesTheUrlWithoutNavigationOrReloadingDrafts() {
+    configureQueueCleanup(true);
+    History browserHistory = attachViewWithMockHistory();
+    enter("?section=configuration&group=queue&tab=general");
+    clearInvocations(browserHistory, configService);
+    Map<?, ?> configInputs =
+        (Map<?, ?>) ReflectionTestUtils.getField(getConfigurationSection(), "configInputs");
+    IntegerField queueCapacityIntegerField =
+        (IntegerField) configInputs.get(ConfigEntry.EMAIL_QUEUE_CAPACITY);
+    queueCapacityIntegerField.setValue(73);
+    TabSheet queueTabSheet =
+        (TabSheet) ReflectionTestUtils.getField(getConfigurationSection(), "queueTabSheet");
+
+    queueTabSheet.setSelectedIndex(1);
+
+    assertQueueTabLocation(browserHistory, "assistants");
+    assertEquals(73, queueCapacityIntegerField.getValue());
+    assertTrue(getConfigurationSection().hasUnsavedChanges());
+    verify(configService, never()).getForAdministration(any(ConfigEntry.class));
+    verify(testUi, never()).navigate(eq(AdminView.class), any(QueryParameters.class));
+
+    clearInvocations(browserHistory);
+    queueTabSheet.setSelectedIndex(0);
+
+    assertQueueTabLocation(browserHistory, "general");
+    assertEquals(73, queueCapacityIntegerField.getValue());
+  }
+
+  @Test
+  void restoringQueueTabDoesNotTemporarilyReplaceTheUrlWithThePreviousTab() {
+    configureQueueCleanup(true);
+    History browserHistory = attachViewWithMockHistory();
+    enter("?section=configuration&group=queue&tab=assistants");
+
+    assertQueueTabLocation(browserHistory, "assistants");
+    clearInvocations(browserHistory);
+    enter("?section=configuration&group=queue&tab=general");
+
+    assertQueueTabLocation(browserHistory, "general");
+  }
+
+  @Test
+  void queueTabChangesDoNotRewriteOtherConfigurationGroupUrls() {
+    configureQueueCleanup(true);
+    History browserHistory = attachViewWithMockHistory();
+    enter("?section=configuration&group=security");
+
+    getConfigurationSection().selectQueueTab(QueueTab.ASSISTANTS);
+
+    verify(browserHistory, never()).replaceState(isNull(), any(Location.class));
+    assertEquals(
+        AdminConfigGroup.SECURITY,
+        ReflectionTestUtils.getField(adminView, "activeConfigurationGroup"));
+  }
+
+  private void configureQueueCleanup(boolean canManageCleanup) {
+    EmailQueueCleanupService emailQueueCleanupService = mock(EmailQueueCleanupService.class);
+    when(emailQueueCleanupService.canManageCleanup()).thenReturn(canManageCleanup);
+    adminView.configureMailQueueCleanup(emailQueueCleanupService);
+  }
+
+  private AdminConfigurationSection getConfigurationSection() {
+    return (AdminConfigurationSection)
+        ReflectionTestUtils.getField(adminView, "configurationSection");
+  }
+
+  private History attachViewWithMockHistory() {
+    History browserHistory = mock(History.class);
+    Page browserPage = spy(testUi.getPage());
+    doReturn(browserHistory).when(browserPage).getHistory();
+    doReturn(browserPage).when(testUi).getPage();
+    testUi.add(adminView);
+    return browserHistory;
+  }
+
+  private void assertQueueTabLocation(History browserHistory, String expectedTabParameter) {
+    ArgumentCaptor<Location> queueLocationCaptor = ArgumentCaptor.forClass(Location.class);
+    verify(browserHistory).replaceState(isNull(), queueLocationCaptor.capture());
+    Location queueLocation = queueLocationCaptor.getValue();
+
+    assertEquals(AppRouteConstants.ADMIN_ROUTE, queueLocation.getPath());
+    assertEquals(
+        Map.of(
+            "section", List.of("configuration"),
+            "group", List.of("queue"),
+            "tab", List.of(expectedTabParameter)),
+        queueLocation.getQueryParameters().getParameters());
   }
 
   @Test

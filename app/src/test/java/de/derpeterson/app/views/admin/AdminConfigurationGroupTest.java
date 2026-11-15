@@ -38,6 +38,7 @@ import de.derpeterson.app.service.EmailQueueCleanupService;
 import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
 import de.derpeterson.app.ui.components.CosmosDurationField;
+import de.derpeterson.app.views.admin.AdminConfigurationSection.QueueTab;
 import java.math.BigDecimal;
 import java.util.EnumMap;
 import java.util.List;
@@ -154,6 +155,24 @@ class AdminConfigurationGroupTest {
     assertEquals(1, queueTabSheet.getTabCount());
     assertEquals(5, visibleEntries().size());
     assertSettingCountBadge(5);
+  }
+
+  @Test
+  void revokedCleanupPermissionPreventsRestoringTheAssistantsTab() {
+    EmailQueueCleanupService emailQueueCleanupService = mock(EmailQueueCleanupService.class);
+    when(emailQueueCleanupService.canManageCleanup()).thenReturn(true);
+    configurationSection.configureMailQueueCleanup(emailQueueCleanupService);
+    configurationSection.showGroup(AdminConfigGroup.QUEUE);
+    configurationSection.selectQueueTab(QueueTab.ASSISTANTS);
+    assertEquals(QueueTab.ASSISTANTS, configurationSection.getSelectedQueueTab());
+
+    when(emailQueueCleanupService.canManageCleanup()).thenReturn(false);
+    configurationSection.showGroup(AdminConfigGroup.QUEUE);
+    configurationSection.selectQueueTab(QueueTab.ASSISTANTS);
+
+    assertEquals(QueueTab.GENERAL, configurationSection.getSelectedQueueTab());
+    assertSettingCountBadge(5);
+    verify(configService, never()).set(any(ConfigEntry.class), anyString());
   }
 
   @ParameterizedTest

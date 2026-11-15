@@ -111,6 +111,40 @@ dieser Randfall ist zusätzlich mit JUnit abgesichert. Die Darstellung blieb unv
 Diese gezielte Nachprüfung ersetzt keine große Testrunde und keinen Sonar-Nachweis.
 Der Pilot ist vom Benutzer abgenommen.
 
+Die nachfolgende URL-Korrektur betrifft ausschließlich die Mailqueue-Reiter:
+`admin?section=configuration&group=queue&tab=general` beziehungsweise
+`tab=assistants`. Die Auswahl wird beim Direktaufruf aus der URL wiederhergestellt;
+ein Reiterwechsel aktualisiert die Adresse ohne Navigation oder Neuladen der
+Formularwerte. Fehlende, ungültige oder mehrdeutige Reiter und fehlende
+Assistentenrechte führen zu „Allgemein“.
+47 Navigationstests und 34 Konfigurationsgruppentests bestanden, ebenso Spotless
+und Checkstyle. Abgedeckt sind auch das erste Einhängen der Ansicht nach
+URL-Wiederherstellung, URL-Aktualisierung, Rechteentzug und Entwurfserhalt.
+Der Benutzer hat ausschließlich JUnit-Prüfungen freigegeben; es gab für diese
+Korrektur keinen Browserlauf und keinen Anwendungsstart. Der tatsächliche
+F5-/Direktlink-Nachtest in DE/EN auf Desktop und Smartphone bleibt im
+[Testbedarf](testbedarf.md) offen. Die früheren Browserbelege prüfen diese
+nachfolgende Änderung nicht; ihre menschliche Abnahme steht ebenfalls noch aus.
+
+Die Gestaltung der manuellen Mailqueue-Bereinigung folgt anschließend der
+freigegebenen Stitch-Variante A: Brush-Icons für äußere Aktion, Dialogkopf und
+Bestätigung, „Manuelle Bereinigung“ als äußerer Buttontext und Dialogtitel,
+„Jetzt bereinigen“ als Bestätigung und eine blaue Statusüberschrift.
+Eine gelbe Warnung zum möglichen späteren Empfang und eine separate Infobox
+ersetzen die bisherigen wiederholten Hinweise. DE-/EN-Texte verwenden den
+gemeinsamen typisierten Katalog; die übrigen Bestätigungsdialoge wurden nicht geändert.
+
+119 gezielte JUnit-Tests bestanden: sechs neue Komponentenfälle für DE/EN,
+Sprachwechsel, Abbruch und einmalige Ausführung, die bestehenden Dialog-,
+Katalog-, Navigations- und Konfigurationsfälle sowie elf isolierte
+Mailqueue-Bereinigungstests. Der bestehende 101-Aufträge-Fall bestätigt die
+unveränderte Begrenzung auf 100 mit verbleibendem Auftrag für den nächsten Lauf.
+Spotless und Checkstyle waren erfolgreich. Der Benutzer hat Browserprüfungen
+für diese Gestaltung ausdrücklich zurückgestellt; es gab weder Browserlauf noch
+Start der Entwicklungsanwendung. Die Sichtung durch den Benutzer und die zentral
+erfassten Browsernachtests stehen noch aus. Die spätere technische Übernahme
+der Dialoghülle bleibt ein eigenes Nachtarbeitspaket.
+
 ## Abdeckung und Korrekturen der Gesamtrunde
 
 Die Gesamtsuite prüft die bestehenden Anmelde-, Konto-, 2FA-, Ticket-,
@@ -164,8 +198,13 @@ Ersatzprojekt angelegt. Finding-Status und Regeln blieben unverändert.
 
 ## Grenzen und nächste Sichtung
 
-Für den beauftragten Umfang gibt es keine offenen gezielten Browser- oder
-JUnit-Ergänzungen und keine bestätigten offenen Anwendungsfehler.
+Nach den bisherigen Prüfungen meldete der Benutzer erneut fehlerhafte
+Scrollbereiche. Betroffene Ansichten und Reproduktionsschritte sind noch zu klären;
+der Fehler ist weder gezielt reproduziert noch behoben. Die bisherigen
+Prüfergebnisse belegen keine Fehlerfreiheit für diese Regression.
+Die Browsernachtests für Scrollbereiche und die danach mit JUnit geprüfte
+Mailqueue-Reiterkorrektur stehen wartend im Testbedarf. Es gibt keine offenen
+gezielten JUnit-Ergänzungen für den übrigen beauftragten Umfang.
 [Testbedarf](testbedarf.md) und [BUGS](../BUGS.md) bleiben die zentralen Listen.
 Formularlayouts und die öffentliche Card-Übernahme sind vom Benutzer abgenommen.
 Kennzahlkarten, Avatare, Profil-/Benutzerformulare, segmentierte Umschalter,

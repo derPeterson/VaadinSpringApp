@@ -54,6 +54,7 @@ import de.derpeterson.app.ui.components.SupportTicketsComponent.NavigationState;
 import de.derpeterson.app.ui.components.UnsavedChangesDialog;
 import de.derpeterson.app.ui.components.UserPopoverMenu;
 import de.derpeterson.app.views.admin.AdminConfigurationSection;
+import de.derpeterson.app.views.admin.AdminConfigurationSection.QueueTab;
 import de.derpeterson.app.views.admin.AdminDashboardSection;
 import de.derpeterson.app.views.admin.AdminExternalProviderSettingsSection;
 import de.derpeterson.app.views.admin.AdminMailTestSection;
@@ -128,7 +129,7 @@ public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObs
   private AdminUserManagementSection userManagementSection = null;
 
   // Aktiver Bereich und Wiederherstellung aus der URL
-  private boolean isRestoringTicketNavigation;
+  private boolean isRestoringAdminNavigation;
   private AdminSection activeAdminSection = AdminSection.DASHBOARD;
   private AdminConfigGroup activeConfigurationGroup = null;
 
@@ -180,6 +181,8 @@ public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObs
     configurationSection =
         new AdminConfigurationSection(
             messageProperties, configService, this::refreshConfigurationState);
+    configurationSection.setQueueTabSelectionListener(this::updateQueueTabLocation);
+    addAttachListener(event -> updateQueueTabLocation(configurationSection.getSelectedQueueTab()));
     mailTestSection =
         new AdminMailTestSection(
             messageProperties, emailService, maintenanceService, authenticatedUser);
@@ -307,9 +310,15 @@ public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObs
                 adminQueryParameters, "group", AdminConfigGroup.class, AdminConfigGroup.GENERAL)
             : null;
 
-    isRestoringTicketNavigation = true;
+    isRestoringAdminNavigation = true;
     try {
       selectSection(requestedAdminSection, requestedConfigurationGroup);
+      if (activeAdminSection == AdminSection.CONFIGURATION
+          && activeConfigurationGroup == AdminConfigGroup.QUEUE) {
+        QueueTab requestedQueueTab =
+            parseEnumQueryParameter(adminQueryParameters, "tab", QueueTab.class, QueueTab.GENERAL);
+        configurationSection.selectQueueTab(requestedQueueTab);
+      }
       if (activeAdminSection == AdminSection.SUPPORT) {
         Category requestedTicketCategory =
             parseEnumQueryParameter(adminQueryParameters, "tab", Category.class, Category.ALL);
@@ -322,12 +331,40 @@ public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObs
         supportTicketsComponent.restoreNavigation(requestedTicketCategory, requestedTicketNumber);
       }
     } finally {
-      isRestoringTicketNavigation = false;
+      isRestoringAdminNavigation = false;
     }
+
+    updateQueueTabLocation(configurationSection.getSelectedQueueTab());
+  }
+
+  private void updateQueueTabLocation(QueueTab selectedQueueTab) {
+    if (isRestoringAdminNavigation
+        || activeAdminSection != AdminSection.CONFIGURATION
+        || activeConfigurationGroup != AdminConfigGroup.QUEUE) {
+      return;
+    }
+
+    QueryParameters queueQueryParameters =
+        QueryParameters.simple(
+            Map.of(
+                SECTION_PARAMETER,
+                "configuration",
+                "group",
+                "queue",
+                "tab",
+                selectedQueueTab.name().toLowerCase(Locale.ROOT)));
+    // Nur die Adresse ändern: Ein Reiterwechsel darf keinen Formularentwurf neu laden.
+    getUI()
+        .ifPresent(adminUi ->
+            adminUi
+                .getPage()
+                .getHistory()
+                .replaceState(
+                    null, new Location(AppRouteConstants.ADMIN_ROUTE, queueQueryParameters)));
   }
 
   private void updateTicketLocation(NavigationState ticketNavigationState) {
-    if (isRestoringTicketNavigation || activeAdminSection != AdminSection.SUPPORT) {
+    if (isRestoringAdminNavigation || activeAdminSection != AdminSection.SUPPORT) {
       return;
     }
 

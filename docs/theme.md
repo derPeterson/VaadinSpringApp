@@ -1636,6 +1636,14 @@ fünf unter „Allgemein“, vier unter „Assistenten“. Deaktivierte Eingabef
 zählen mit. Tab- und Sprachwechsel aktualisieren den Zähler; gespeichert
 werden weiterhin die Einstellungen beider Reiter gemeinsam.
 
+Der typisierte `AdminConfigurationSection.QueueTab` hält die Auswahl unabhängig
+von übersetzten Tabtexten. `AdminView` stellt sie über `tab=general` oder
+`tab=assistants` innerhalb von `section=configuration&group=queue` wieder her.
+Die öffentliche History-API aktualisiert die Adresse ohne Formularnavigation;
+der Reiterwechsel erhält den Entwurf und ändert keine fremden Gruppen-URLs.
+Unbekannte oder mehrdeutige Parameter und fehlende Assistentenrechte führen
+zu „Allgemein“. Die vorhandene Reitergestaltung bleibt unverändert.
+
 `AdminMailQueueCleanupComponent` ergänzt ausschließlich für Superadmins die
 Gruppe Mailqueue. Sie kombiniert native Vaadin-Layouts, die Standardwarnbox,
 Standardbuttons und eine dezente Ergebniszeile. Die Zeitfelder verwenden
@@ -1644,6 +1652,24 @@ Standardbuttons und eine dezente Ergebniszeile. Die Zeitfelder verwenden
 Klasse `.admin-mail-queue-resolution` in `cosmos-admin.css` spannt den Bereich
 über beide Konfigurationsspalten. Die Aktion ist unabhängig vom Speichern des
 Konfigurationsentwurfs. Der [Mailqueue-Vertrag](mailqueue.md) beschreibt ihre Grenzen.
+
+Die manuelle Bereinigung übernimmt die freigegebene Stitch-Variante A innerhalb
+des vorhandenen Dialograhmens. Der äußere Button und der Dialogtitel heißen
+„Manuelle Bereinigung“; im Dialog bestätigt „Jetzt bereinigen“ die Aktion.
+Beide Aktionen und der Dialogkopf verwenden `AppIcon.BRUSH_CLEANING`.
+Die bestehende Großschreibung der Statusüberschrift bleibt erhalten, ihre Farbe
+ist `--cosmos-reference-accent`. Die Kopf-Iconbox des Bestätigungsdialogs verwendet
+ebenfalls die vorhandene blaue Palette; der Bestätigungsbutton behält den
+gemeinsamen roten Aktionsstil, „Abbrechen“ bleibt unverändert.
+
+Unter der Frage und der kurzen Erklärung stehen zwei native Layoutzeilen:
+die gemeinsame `cosmos-security-warning` mit oben ausgerichtetem Warnicon und
+fettem „Späterer Empfang möglich:“ sowie `admin-queue-cleanup-info` mit einem
+Info-Icon und den gespeicherten Rahmenbedingungen einschließlich maximal
+100 Aufträgen pro Lauf. Der bisherige zusätzliche Hinweis entfällt im Dialog.
+Die lokalen Klassen `admin-queue-cleanup-confirmation` und
+`admin-queue-cleanup-confirmation-details` liegen in
+`cosmos-mailqueue-assistant.css`; andere Bestätigungen bleiben unverändert.
 
 ## Segmentierte Auswahl mit nativen Tabs
 

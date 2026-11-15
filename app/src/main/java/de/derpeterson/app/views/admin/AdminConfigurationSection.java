@@ -29,6 +29,7 @@ import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.app.config.ConfigurationCatalog;
@@ -72,6 +73,11 @@ import org.springframework.boot.convert.DurationStyle;
 @StyleSheet("custom-theme/cosmos-provider-settings.css")
 @StyleSheet("custom-theme/cosmos-mailqueue-assistant.css")
 public class AdminConfigurationSection extends VerticalLayout {
+
+  public enum QueueTab {
+    GENERAL,
+    ASSISTANTS
+  }
 
   private static final Logger logger = LoggerFactory.getLogger(AdminConfigurationSection.class);
 
@@ -142,6 +148,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private final Tab queueGeneralTab = new Tab(AppIcon.SLIDERS.create(), queueGeneralTabLabelSpan);
   private final Tab queueAssistantsTab = new Tab(AppIcon.BOT.create(), queueAssistantsTabLabelSpan);
   private final FormLayout queueGeneralFieldsFormLayout = createConfigurationFieldsFormLayout();
+  private SerializableConsumer<QueueTab> queueTabSelectionListener = selectedQueueTab -> {};
 
   public AdminConfigurationSection(
       MessageProperties messageProperties,
@@ -183,7 +190,10 @@ public class AdminConfigurationSection extends VerticalLayout {
     queueTabSheet.addClassName(CosmosCssClasses.PANEL_TABS);
     queueTabSheet.addThemeVariants(TabSheetVariant.NO_PADDING);
     queueTabSheet.setWidthFull();
-    queueTabSheet.addSelectedChangeListener(event -> refreshCurrentGroupTitle());
+    queueTabSheet.addSelectedChangeListener(event -> {
+      refreshCurrentGroupTitle();
+      queueTabSelectionListener.accept(getSelectedQueueTab());
+    });
     queueTabSheet.add(queueGeneralTab, queueGeneralFieldsFormLayout);
     queueTabSheet.setVisible(false);
 
@@ -385,6 +395,25 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
   }
 
+  public void setQueueTabSelectionListener(
+      SerializableConsumer<QueueTab> queueTabSelectionListener) {
+    this.queueTabSelectionListener = Objects.requireNonNull(queueTabSelectionListener);
+  }
+
+  public QueueTab getSelectedQueueTab() {
+    return queueTabSheet.getSelectedTab() == queueAssistantsTab
+        ? QueueTab.ASSISTANTS
+        : QueueTab.GENERAL;
+  }
+
+  public void selectQueueTab(QueueTab requestedQueueTab) {
+    boolean canOpenAssistants =
+        requestedQueueTab == QueueTab.ASSISTANTS
+            && mailQueueCleanupComponent != null
+            && mailQueueCleanupComponent.canManageCleanup();
+    queueTabSheet.setSelectedTab(canOpenAssistants ? queueAssistantsTab : queueGeneralTab);
+  }
+
   private void requestConfigReload() {
     if (hasUnsavedChanges()) {
       UnsavedChangesDialog.confirmDiscard(messageProperties, this::reloadConfigValues);
@@ -442,6 +471,9 @@ public class AdminConfigurationSection extends VerticalLayout {
     }
     queueAssistantsTab.setVisible(
         mailQueueCleanupComponent != null && mailQueueCleanupComponent.canManageCleanup());
+    if (!queueAssistantsTab.isVisible() && getSelectedQueueTab() == QueueTab.ASSISTANTS) {
+      queueTabSheet.setSelectedTab(queueGeneralTab);
+    }
   }
 
   private void addConfigFieldToCurrentGroup(ConfigEntry configEntry, boolean queueGroupSelected) {

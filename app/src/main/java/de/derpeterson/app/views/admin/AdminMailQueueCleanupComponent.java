@@ -40,7 +40,7 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
   private CleanupResult latestCleanupResult;
 
   private final Button refreshResultButton = new Button(AppIcon.REFRESH.create());
-  private final Button runCleanupButton = new Button(AppIcon.CLOSE.create());
+  private final Button runCleanupButton = new Button(AppIcon.BRUSH_CLEANING.create());
   private final PortalConfirmationDialog cleanupConfirmationDialog;
 
   public AdminMailQueueCleanupComponent(
@@ -115,6 +115,7 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
     cleanupContentVerticalLayout.setSpacing(false);
     cleanupConfirmationDialog =
         new PortalConfirmationDialog(messageProperties, "admin-mail-queue-confirm");
+    cleanupConfirmationDialog.addClassName("admin-queue-cleanup-confirmation");
     add(assistantHeaderHorizontalLayout, cleanupContentVerticalLayout, cleanupConfirmationDialog);
     addAttachListener(event -> loadLatestCleanupResult(false));
     addDetachListener(event -> cleanupConfirmationDialog.close());
@@ -144,7 +145,7 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
     warningTextSpan.setText(messageProperties.getAdminQueueResolutionDescription());
     refreshResultButton.setAriaLabel(messageProperties.getNotificationsRefresh());
     refreshResultButton.setTooltipText(messageProperties.getNotificationsRefresh());
-    runCleanupButton.setText(messageProperties.getAdminQueueCleanupRun());
+    runCleanupButton.setText(messageProperties.getAdminQueueCleanupManualTitle());
     cleanupConfirmationDialog.refreshTexts();
     renderCleanupResult();
   }
@@ -184,16 +185,47 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
   private void openCleanupConfirmationDialog() {
     cleanupConfirmationDialog.open(
         new PortalConfirmationDialog.Prompt(
-            messageProperties::getAdminQueueCleanupRun,
+            messageProperties::getAdminQueueCleanupManualTitle,
             messageProperties::getAdminQueueResolutionTitle,
             messageProperties::getAdminQueueResolutionConfirm,
             messageProperties::getAdminQueueResolutionConsequence,
-            () -> new Span(messageProperties.getAdminQueueCleanupLimit()),
-            messageProperties::getAdminQueueResolutionDescription,
+            this::createCleanupConfirmationDetails,
+            () -> "",
             messageProperties::getAdminQueueCleanupRun,
             true,
-            AppIcon.CLOSE::create),
+            AppIcon.BRUSH_CLEANING::create),
         this::runManualCleanup);
+  }
+
+  private VerticalLayout createCleanupConfirmationDetails() {
+    Span deliveryWarningTitleSpan =
+        new Span(messageProperties.getAdminQueueCleanupWarningTitle() + " ");
+    deliveryWarningTitleSpan.addClassName("cosmos-security-warning-label");
+    Span deliveryWarningTextSpan =
+        new Span(messageProperties.getAdminQueueCleanupWarningDescription());
+    HorizontalLayout deliveryWarningHorizontalLayout =
+        new HorizontalLayout(
+            AppIcon.WARNING.create(), new Span(deliveryWarningTitleSpan, deliveryWarningTextSpan));
+    deliveryWarningHorizontalLayout.setPadding(false);
+    deliveryWarningHorizontalLayout.setSpacing(false);
+    deliveryWarningHorizontalLayout.setAlignItems(Alignment.START);
+    deliveryWarningHorizontalLayout.addClassName("cosmos-security-warning");
+
+    HorizontalLayout cleanupParametersHorizontalLayout =
+        new HorizontalLayout(
+            AppIcon.INFO_CIRCLE.create(),
+            new Span(messageProperties.getAdminQueueCleanupParametersHint()));
+    cleanupParametersHorizontalLayout.setPadding(false);
+    cleanupParametersHorizontalLayout.setSpacing(false);
+    cleanupParametersHorizontalLayout.setAlignItems(Alignment.START);
+    cleanupParametersHorizontalLayout.addClassName("admin-queue-cleanup-info");
+
+    VerticalLayout confirmationDetailsVerticalLayout =
+        new VerticalLayout(deliveryWarningHorizontalLayout, cleanupParametersHorizontalLayout);
+    confirmationDetailsVerticalLayout.setPadding(false);
+    confirmationDetailsVerticalLayout.setSpacing(false);
+    confirmationDetailsVerticalLayout.addClassName("admin-queue-cleanup-confirmation-details");
+    return confirmationDetailsVerticalLayout;
   }
 
   private void runManualCleanup() {

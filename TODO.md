@@ -7,8 +7,9 @@
   nach Freigabe umsetzen. Ergebnisse stehen im [Prüfstand](docs/status.md).
   Die ausdrücklich zurückgestellten
   Pakete bleiben bis zu einer späteren Freigabe offen.
-  Das nächste Kartenpaket ist in der [Nachtarbeitsliste](docs/planung/nachtarbeit.md)
-  gesammelt; die Umsetzung ist noch nicht gestartet.
+  Die nächsten Karten-, Bestätigungsdialog- und Mailqueue-Bereinigungspakete sind in der
+  [Nachtarbeitsliste](docs/planung/nachtarbeit.md) gesammelt;
+  die Umsetzung ist noch nicht gestartet.
 
 ## Zurückgestellte Planungen
 

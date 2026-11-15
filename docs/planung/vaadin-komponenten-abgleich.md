@@ -24,9 +24,17 @@ in DE/EN auf Desktop und Smartphone mit Vorher-/Nachher-Aufnahmen geprüft.
 Das öffentliche Paket ist vom Benutzer abgenommen. 2FA, Wiederherstellungshilfe,
 Sitzungslimit sowie übrige Konto-/Admin-Karten bleiben separate Folgepakete.
 
-Das nächste Gesamtpaket für die verbleibenden Karten ist in der
-[Nachtarbeitsliste](nachtarbeit.md) mit einzelnen Arbeitspaketen gesammelt.
+Die nächsten Gesamtpakete für verbleibende Karten und Bestätigungsdialoge sind
+in der [Nachtarbeitsliste](nachtarbeit.md) mit einzelnen Arbeitspaketen gesammelt.
+Zuerst alle vereinbarten Gesamtpakete mit ihren gezielten Prüfungen, Reviews und
+Commits bearbeiten; die große Testrunde folgt als letzter Arbeitspunkt.
 Ein Startauftrag dafür steht noch aus.
+Gesamtpaket 3 der Nachtarbeit ergänzt die vollständige Mailqueue-Bereinigung
+mit internen 100er-Paketen, Gesamtergebnis und überarbeiteten Dialoghinweisen.
+Bestätigte manuelle Aufträge warten bei laufendem Versand unter „Wartet auf
+Ausführung“ und werden automatisch sicher ausgeführt; weitere Klicks legen
+keinen zweiten Auftrag an. Warten wird nicht als Fehler oder Überspringen gemeldet.
+Es ist nur geplant; die derzeitige sichtbare Grenze gilt bis zu dieser Umsetzung.
 
 Der `ConfirmDialog`-Pilot für „Alle Benachrichtigungen als gelesen markieren“
 in Inbox und Glockenvorschau ist vom Benutzer abgenommen.
@@ -34,8 +42,30 @@ Nur diese Sammelbestätigung verwendet die spezialisierte native Komponente;
 übrige Aktionen behalten `PortalConfirmationDialog`. Die gezielten isolierten
 Browserprüfungen in DE/EN auf Desktop und Smartphone sind bestanden. Acht
 Vorher-/Nachher-Dialogvergleiche haben gleiche Maße und gemessene Textstile,
-jedoch kleine Rasterunterschiede. Weitere Bestätigungen sind noch nicht zur
-Übernahme freigegeben.
+jedoch kleine Rasterunterschiede. Zehn weitere Bestätigungsfälle sind als
+Gesamtpaket 2 der Nachtarbeit geplant; die Umsetzung ist noch nicht gestartet.
+
+Für die manuelle Mailqueue-Bereinigungsbestätigung hat Stitch Kritik und zwei
+Gestaltungsvorschläge geliefert:
+[A – strukturierte Information](https://stitch.google.com/projects/15026163818648585408?node-id=13082268492216412533)
+und [B – Parameter und Konsequenzen](https://stitch.google.com/projects/15026163818648585408?node-id=15706497477797870243).
+Der Benutzer hat Variante A als gesonderte sofortige Gestaltungsänderung freigegeben.
+Der äußere Button und Dialogtitel heißen „Manuelle Bereinigung“, die Bestätigung
+bleibt „Jetzt bereinigen“. `AppIcon.BRUSH_CLEANING` ersetzt das X in beiden Aktionen
+und im Dialogkopf; die Statusüberschrift verwendet das gemeinsame Blau. Die gelbe
+Warnung beginnt mit „Späterer Empfang möglich:“; darunter erklärt eine dezente
+Infobox die gespeicherten Einstellungen und die Höchstzahl 100 ohne Trefferprognose.
+Die Umsetzung und DE-/EN-Texte stehen zur Benutzersichtung bereit. Browsernachtests
+sind auf Benutzerwunsch zurückgestellt und im [Testbedarf](../testbedarf.md) erfasst.
+Diese Gestaltung ist aus der Nachtarbeit herausgenommen. Nur die spätere technische
+Übernahme auf `ConfirmDialog` bleibt in Paket 2.5.
+
+Die separat beauftragte URL-Ansteuerung der Mailqueue-Reiter ist implementiert:
+`tab=general` und `tab=assistants` erhalten die Auswahl beim Neuladen und
+Direktaufruf, ein Reiterwechsel erhält den Formularentwurf. JUnit-Prüfung und
+Ergebnisse stehen im [Prüfstand](../status.md). Die Benutzerabnahme dieser
+Korrektur sowie der ausdrücklich zurückgestellte Browsernachtest sind noch offen;
+Letzterer steht ausschließlich im [Testbedarf](../testbedarf.md).
 
 Die gewöhnlichen Formularlayouts sind vom Benutzer abgenommen.
 Kennzahlkarten, Avatar-Übernahme, Profil-/Benutzerformulare, segmentierte Auswahl,

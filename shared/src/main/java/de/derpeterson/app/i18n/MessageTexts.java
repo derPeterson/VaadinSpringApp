@@ -4691,6 +4691,18 @@ public class MessageTexts {
     return getTranslation("admin.queueCleanup.run");
   }
 
+  public String getAdminQueueCleanupManualTitle() {
+    return getTranslation("admin.queueCleanup.manualTitle");
+  }
+
+  public String getAdminQueueCleanupWarningTitle() {
+    return getTranslation("admin.queueCleanup.warningTitle");
+  }
+
+  public String getAdminQueueCleanupWarningDescription() {
+    return getTranslation("admin.queueCleanup.warningDescription");
+  }
+
   public String getAdminQueueCleanupNeverRun() {
     return getTranslation("admin.queueCleanup.neverRun");
   }
@@ -4703,8 +4715,8 @@ public class MessageTexts {
     return getTranslation("admin.queueCleanup.busyResult");
   }
 
-  public String getAdminQueueCleanupLimit() {
-    return getTranslation("admin.queueCleanup.limit");
+  public String getAdminQueueCleanupParametersHint() {
+    return getTranslation("admin.queueCleanup.parametersHint");
   }
 
   public String getAdminQueueCleanupCompleted() {

@@ -9,11 +9,18 @@
 .admin-queue-cleanup-fields .admin-config-switch { justify-content: center; }
 .admin-queue-cleanup-status { width: 100%; box-sizing: border-box; padding: 16px; gap: 14px; border: 1px solid var(--cosmos-reference-border); border-radius: 10px; background: var(--cosmos-reference-panel); }
 .admin-queue-cleanup-status > vaadin-icon { width: 20px; height: 20px; flex: none; color: var(--cosmos-reference-accent); }
-.admin-queue-cleanup-status-title { color: var(--cosmos-reference-secondary); font: 500 11px/18px Inter,sans-serif; text-transform: uppercase; letter-spacing: .5px; }
+.admin-queue-cleanup-status-title { color: var(--cosmos-reference-accent); font: 500 11px/18px Inter,sans-serif; text-transform: uppercase; letter-spacing: .5px; }
 .admin-queue-cleanup-output { color: var(--cosmos-reference-text); font: 400 12px/20px Consolas,"Courier New",monospace; white-space: pre-line; overflow-wrap: anywhere; }
 .admin-queue-cleanup-actions { flex: none; gap: 8px; }
 .admin-queue-cleanup-info { width: 100%; box-sizing: border-box; gap: var(--cosmos-info-box-gap); padding: var(--cosmos-info-box-padding); border: 1px solid var(--cosmos-reference-border); border-radius: var(--cosmos-control-radius); background: var(--cosmos-reference-input); color: var(--cosmos-reference-secondary); font: 400 12px/20px Inter,sans-serif; }
 .admin-queue-cleanup-info > vaadin-icon { width: 16px; height: 16px; flex: none; color: var(--cosmos-reference-accent); }
+.admin-queue-cleanup-confirmation-details { gap: 16px; }
+.admin-queue-cleanup-confirmation .admin-queue-cleanup-info > vaadin-icon { margin-top: 2px; }
+.admin-queue-cleanup-confirmation.portal-confirm-destructive.cosmos-reference-overlay .account-change-dialog-header > .cosmos-panel-icon {
+    color: var(--cosmos-reference-accent);
+    border-color: var(--cosmos-reference-icon-border);
+    background: var(--cosmos-reference-selection);
+}
 @media(max-width:700px) {
     #admin-queue-tabs .admin-mail-queue-resolution { width: calc(100% - 32px); margin: 16px; }
     .admin-queue-cleanup-content { padding: 16px; }
