@@ -1,12 +1,12 @@
 # Geplante Nachtarbeit
 
-**Status: gesammelt, noch nicht zur Umsetzung gestartet.**
+**Status: vollständig zur Umsetzung freigegeben; Bearbeitung gestartet.**
 
-Diese Liste wird erst nach einem ausdrücklichen Startauftrag abgearbeitet.
+Der ausdrückliche Startauftrag umfasst alle fünf folgenden Arbeitspunkte.
 Sie konkretisiert die Nachtpakete der laufenden
 [Vaadin-Komponentenübernahme](vaadin-komponenten-abgleich.md) auf dem Branch
-`codex/vaadin-komponenten-folgearbeiten`. Das Anlegen dieser Datei startet weder
-Umbauten noch Tests oder Commits.
+`codex/vaadin-komponenten-folgearbeiten`. Die gesamte Komponentenübernahme bleibt
+auch nach der beauftragten Zwischenintegration offen.
 
 ## Gesamtpaket 1: Verbleibende Panels und Karten auf native Vaadin-Cards umstellen
 
@@ -166,11 +166,11 @@ Vaadin-`Dialog` und gehören nicht zu diesem Paket.
    bereitstellen. Offenen automatisierten Testbedarf ausschließlich in
    [Testbedarf](../testbedarf.md) führen.
 
-Auch Gesamtpaket 2 ist nur gesammelt; dieser Plan erteilt keinen Startauftrag.
+Gesamtpaket 2 ist mit dem gemeinsamen Startauftrag freigegeben.
 
 ## Gesamtpaket 3: Mailqueue vollständig in internen Paketen bereinigen
 
-**Status: für die Nacht gesammelt, noch nicht zur Umsetzung gestartet.**
+**Status: zur Umsetzung freigegeben.**
 Ein Bereinigungslauf soll alle zu seinem Start passenden alten ungeklärten
 Versandaufträge bearbeiten können, ohne sichtbare Gesamtgrenze von 100.
 Intern bleiben Pakete von höchstens 100 Einträgen mit kurzen Transaktionen.
@@ -269,13 +269,29 @@ Löschbestätigungen bleiben erhalten.
 
 Die laufende Entwicklungsanwendung und ihre Daten bleiben für diese Arbeit
 unverändert. Prüfungen verwenden eigene isolierte Dienste und Testdaten.
-Merge, Push, Release, Sonar-Bereinigung und die zurückgestellten Planungen gehören
-nicht zu diesem Nachtpaket.
+Nach jedem Teilpaket sind Review und Commit freigegeben. Die Lesbarkeitsprüfung
+beschränkt sich für diesen Nachtauftrag auf die veränderten Bereiche.
+Push, Release und die zurückgestellten Planungen gehören nicht zum Auftrag.
 
-## Letzter Arbeitspunkt: Große Testrunde nach allen Gesamtpaketen
+## Arbeitspunkt 4: Zwischenintegration, Sonar-Bereinigung und Folgebranch
+
+- [ ] Nach Gesamtpaket 3 den geprüften und committeten Arbeitsstand lokal nach
+  `main` mergen. Den Quellbranch erhalten; die gesamte Vaadin-Komponentenübernahme
+  ist ausdrücklich noch nicht abgeschlossen. Offene Planung und Abnahmen erhalten.
+- [ ] Auf `main` den vollständigen geschützten Sonar-Scan durchführen, alle
+  berechtigten Findings beheben und den Endstand durch einen Nachscan mit null
+  offenen Findings bestätigen. Befunde fachlich prüfen, nichts für die Null
+  unterdrücken. Erforderliche lokale Korrekturcommits und Zwischenbranches sind
+  vom Gesamtauftrag umfasst; keine Pushes.
+- [ ] Anschließend einen neuen Folgebranch mit ähnlichem Namen anlegen,
+  beispielsweise `codex/vaadin-komponenten-folgearbeiten-3`, sofern frei, und die
+  weitere Komponentenplanung dort fortführen.
+
+## Arbeitspunkt 5: Große Testrunde als letzter Schritt
 
 Zuerst Gesamtpakete 1, 2 und 3 einschließlich der jeweiligen gezielten Prüfungen,
-Reviews und Commits abschließen, danach die große Testrunde durchführen.
+Reviews und Commits sowie Arbeitspunkt 4 abschließen, danach auf dem neuen
+Folgebranch die große Testrunde durchführen.
 Sie bleibt auch bei zusätzlich aufgenommenen Arbeitspaketen der letzte Punkt;
 weitere Umsetzungen werden davor eingeordnet. Gezielte Prüfungen je Teilpaket
 bleiben erhalten und werden nicht bis zum Abschluss aufgeschoben.

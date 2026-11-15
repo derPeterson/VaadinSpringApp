@@ -9,7 +9,9 @@
   Pakete bleiben bis zu einer späteren Freigabe offen.
   Die nächsten Karten-, Bestätigungsdialog- und Mailqueue-Bereinigungspakete sind in der
   [Nachtarbeitsliste](docs/planung/nachtarbeit.md) gesammelt;
-  die Umsetzung ist noch nicht gestartet.
+  vollständig zur Umsetzung freigegeben. Danach folgen die lokale
+  Zwischenintegration nach `main`, vollständige Sonar-Bereinigung, ein neuer
+  Folgebranch und zuletzt die große Testrunde. Die Gesamtumsetzung bleibt offen.
 
 ## Zurückgestellte Planungen
 
