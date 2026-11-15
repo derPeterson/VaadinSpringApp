@@ -28,6 +28,12 @@ Diese Zwischenprüfung ersetzt die unten dokumentierte letzte Gesamtrunde nicht;
 Innen-/Kontextkarten, übrige Bestätigungen und der vollständige Bereinigungslauf
 werden im freigegebenen Nachtauftrag noch gesondert umgesetzt.
 
+Beim anschließenden Vergleich wurde ein bestehender Anfangsfokusfehler der nativen
+Sammellesebestätigung reproduziert und korrigiert: Der Fokus wird nach der nativen
+Overlay-Öffnung auf Schließen gesetzt. 160 gezielte JUnit-Prüfungen sowie die je
+zwei Bestätigungsfälle in DE und EN mit Desktop-/Smartphone-, Abbruch-, Tastatur-
+und Bestätigungsprüfungen sind am korrigierten Stand bestanden.
+
 | Prüfung | Ergebnis |
 | --- | --- |
 | Vollständiger Maven-Reactor mit Java 25, Produktion und Coverage | Bestanden |

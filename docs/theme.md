@@ -14,6 +14,14 @@ Die öffentliche Standardcard und `CosmosMetricCard` behalten ihre bereits
 abgenommenen, getrennt begrenzten Regeln. Vorher-/Nachher-Prüfungen sichern die
 unveränderte Gestaltung; ein Wechsel der Java-Basis erlaubt keine Neugestaltung.
 
+`ConfirmDialogInitialFocus` erhält den vorgesehenen Anfangsfokus der nativen
+Bestätigung. Der native ConfirmDialog setzt seinen Bestätigungsbutton erst beim
+abgeschlossenen Overlay-Öffnen in den Fokus. Deshalb reagiert der kleine Adapter
+auf das öffentliche `vaadin-overlay-open`-Ereignis an der ShadowRoot-Ereignisgrenze
+und fokussiert anschließend den vorgegebenen nativen Button. Er verwendet keine
+internen Element-IDs oder privaten Komponentenmethoden. Ein Serveraufruf bereits
+bei `opened-changed` genügt wegen der späteren nativen Fokusvergabe nicht.
+
 Vor Gestaltung oder Änderung einer Oberfläche diese Anleitung und die betroffenen
 CSS-Quellen lesen und anwenden. Sie beschreibt den aktuellen gemeinsamen Standard
 und wird bei jeder ausdrücklich freigegebenen Erweiterung im selben Arbeitsstand gepflegt.

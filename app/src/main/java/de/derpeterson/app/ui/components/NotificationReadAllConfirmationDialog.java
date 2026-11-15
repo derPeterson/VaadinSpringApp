@@ -13,6 +13,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.function.SerializableRunnable;
+import de.derpeterson.app.helper.ui.ConfirmDialogInitialFocus;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.i18n.MessageProperties;
 import java.util.List;
@@ -114,10 +115,8 @@ public final class NotificationReadAllConfirmationDialog extends ConfirmDialog {
         .setFilter(
             "event.composedPath().some(node => node instanceof HTMLElement && node.part.contains('backdrop'))");
 
-    // Nach dem clientseitigen Öffnen wie beim bisherigen Dialog den Close-Button fokussieren.
-    getElement()
-        .addEventListener("opened-changed", openedEvent -> closeDialogButton.focus())
-        .setFilter("event.detail.value === true");
+    // ConfirmDialog setzt seinen Fokus erst beim abgeschlossenen Overlay-Öffnen.
+    ConfirmDialogInitialFocus.configure(this, closeDialogButton);
 
     // opened=false wird vor dem nativen ConfirmEvent synchronisiert. Erst der abgeschlossene
     // Schließvorgang darf eine noch nicht ausgeführte Aktion verwerfen; explizite Abbrüche
