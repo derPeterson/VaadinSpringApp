@@ -115,8 +115,15 @@ Die Kontoaktionskarten ordnen ihre Buttons mobil rechts an. 42 Auswahlprüfungen
 und je zwei Browserfälle in DE/EN bei 1280/390 px sind bestanden. Beide
 Identitätsdialoge lassen sich öffnen und ohne Kontoänderung abbrechen;
 Vergleichsaufnahmen zeigen Smartphone- und unveränderte Desktopdarstellung.
+Die Konfigurationsfooter nutzen mobil durchgehend volle Buttonbreite. 43
+Auswahlprüfungen und je sechs gezielte Browserfälle in DE/EN bei 1280/390 px
+sind bestanden: allgemeine Gruppen für Admin/Superadmin, Queue-Assistent,
+beide Anbieter und alle vier 2FA-Rollen. Geprüft sind tatsächliche Breiten,
+Ausrichtung, gleiche Höhen und vertikale Abstände. Vergleichsaufnahmen der
+Footer liegen vor; Desktopdarstellung und Speicherverträge bleiben erhalten.
 Diese Änderungen haben keinen neuen Sonar-Scan; der obige Scan gilt weiterhin für
-`f3c21623`. Die übrigen Nachbearbeitungspunkte bleiben im
+`f3c21623`. Alle neun Nachbearbeitungspunkte sind technisch fertig und gezielt
+geprüft; ihre Endabnahme bleibt im
 [Komponentenplan](planung/vaadin-komponenten-abgleich.md) offen.
 
 ## Abnahme, offene Nachbearbeitung und Grenzen
@@ -126,10 +133,9 @@ bereitgestellten Screenshots abgenommen. Eine zusätzliche vollständige manuell
 Durchklickprüfung aller Dialoge wurde nicht durchgeführt. Der Mailqueue-Assistent
 ist nach eigener Prüfung einschließlich F5 ebenfalls abgenommen. Einzelheiten
 stehen unter [HUM-01](manual-tests/README.md#hum-01).
-Die dabei gesammelten neun Nachbearbeitungspunkte bleiben offen; ihre Umsetzung
-mit gezielten Screenshots, Review und Commit je Punkt ist freigegeben.
-Die Reiterkorrektur ist inzwischen gesondert gezielt geprüft; ihre Endabnahme
-bleibt offen. Die obigen Gesamtergebnisse belegen den früheren Ausgangsstand,
+Die dabei gesammelten neun Nachbearbeitungspunkte sind mit gezielten Screenshots,
+Review und Commit je Punkt umgesetzt. Ihre gemeinsame Endabnahme bleibt offen.
+Die obigen Gesamtergebnisse belegen den früheren Ausgangsstand,
 keine vollständige Prüfung aller Folgeänderungen. Echte Mobilgeräte, reale Passwortmanager,
 Screenreader und externe Anbieter-/SMTP-Sonderprüfungen bleiben gesonderte
 menschliche beziehungsweise ausdrücklich freizugebende Integrationsprüfungen.

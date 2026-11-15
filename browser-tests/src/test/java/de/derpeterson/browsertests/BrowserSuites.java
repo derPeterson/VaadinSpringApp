@@ -132,7 +132,7 @@ final class BrowserSuites {
               AccountSettingsBrowserTest.class,
               UserStatusBrowserTest.class,
               TwoFactorBrowserTest.class);
-      case "form-layouts" -> List.of(FormLayoutsBrowserTest.class);
+      case "form-layouts", "configuration-footers" -> List.of(FormLayoutsBrowserTest.class);
       case "native-cards" -> List.of(NativeCardsBrowserTest.class);
       case "account-forms" ->
           List.of(RegistrationBrowserTest.class, UserManagementBrowserTest.class);

@@ -519,7 +519,7 @@ vaadin-dialog.admin-reference-drawer.admin-config-help [slot=footer]>vaadin-butt
 /* Vollbreite Trennlinie; gleich breite Konfigurationsaktionen. */
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-card-actions { display:grid; grid-template-columns:repeat(2,minmax(0,200px)); justify-content:end; align-self:stretch; width:100%; box-sizing:border-box; margin:0; }
 vaadin-app-layout.cosmos-reference-admin .cosmos-config-card-actions>vaadin-button { width:100%; min-width:0; }
-@media(max-width:600px) { vaadin-app-layout.cosmos-reference-admin .cosmos-config-card-actions { grid-template-columns:1fr; padding:16px 20px; } vaadin-app-layout.cosmos-reference-admin .cosmos-config-save-hint { padding:16px 20px; } }
+@media(max-width:600px) { vaadin-app-layout.cosmos-reference-admin .cosmos-config-card-actions { --cosmos-equal-button-width:100%; grid-template-columns:1fr; padding:16px 20px; } vaadin-app-layout.cosmos-reference-admin .cosmos-config-save-hint { padding:16px 20px; } }
 
 /* Der sichtbare Hinweis liegt außerhalb des vergrößerbaren Felds. */
 vaadin-app-layout.cosmos-reference-admin .cosmos-mail-body-row { gap:6px; }

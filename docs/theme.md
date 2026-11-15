@@ -1365,7 +1365,12 @@ Der Textblock im Admin-Dashboard verwendet die Canvasfarbe
 (`--cosmos-reference-page`). Konfigurationsaktionen stehen über eine vollbreite
 Trennlinie getrennt. Dialogaktionen verwenden den gemeinsamen Größenabgleich der
 sichtbaren Textbuttons und brechen bei wenig Platz um. Konfigurationsaktionen
-behalten ihre eigene responsive Anordnung. Der Mailtest erlaubt
+behalten ihre eigene responsive Anordnung. Bis 600 px stehen „Werte neu laden“
+und „Konfiguration speichern“ untereinander in voller Breite innerhalb der
+bestehenden Footer-Innenabstände. Die lokale Regel für `.cosmos-config-card-actions`
+in `cosmos-admin-reference.css` setzt dafür `--cosmos-equal-button-width:100%`;
+sie gilt auch für Anbieter, Queue-Assistent und 2FA-Rollen. Die Desktopanordnung
+bleibt erhalten. Der Mailtest erlaubt
 über `resize:vertical` am nativen TextArea-Host das manuelle Vergrößern des
 Eingabefelds einschließlich Label. Die Mindesthöhe beträgt 168 px. Der sichtbare
 Klartexthinweis steht außerhalb, damit der Griff direkt an der Eingabekante sitzt.

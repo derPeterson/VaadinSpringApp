@@ -40,11 +40,11 @@ Der Scrollpunkt ist auf Benutzerwunsch zurückgestellt; siehe [BUGS](../../BUGS.
 
 ## Nachbearbeitungsliste
 
-**Status: Umsetzung läuft; technisch fertige Punkte warten auf Endabnahme.** Die Punkte einzeln
-bearbeiten, jeweils mit Review und eigenem Commit. Nur die aufgenommenen Stellen
-isoliert in DE/EN auf Desktop und Smartphone prüfen und Vorher-/Nachher-Aufnahmen
-für die Endabnahme bereitstellen; keine große Testrunde. Der bestätigte Reiterfehler
-hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
+**Status: Alle neun Punkte sind technisch umgesetzt und gezielt geprüft; Endabnahme offen.**
+Jeder Punkt hat einen eigenen Review und Commit. Vorher-/Nachher-Aufnahmen der
+aufgenommenen Stellen in DE/EN auf Desktop und Smartphone stehen zur Sichtung
+bereit. Das war keine große Testrunde; der separat zurückgestellte Scrollpunkt
+bleibt unberührt.
 
 1. [ ] **Warndreieck im Mailqueue-Bereinigungsassistenten – umgesetzt, Endabnahme offen:**
    Die gelbe Sicherheitswarnung verwendet das vorhandene Dreiecks-SVG über
@@ -103,17 +103,14 @@ hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
    DE/EN bei 1280/390 px einschließlich Öffnen und Abbrechen beider
    Identitätsdialoge sind bestanden. Vergleichsaufnahmen liegen vor.
 
-9. [ ] **Einheitliche Smartphone-Footer in der Konfiguration:** Alle
-   Konfigurationsbereiche auf die Anordnung von „Werte neu laden“ und
-   „Konfiguration speichern“ prüfen. Auf Smartphonebreite stehen beide Buttons
-   untereinander und nehmen jeweils die volle verfügbare Breite innerhalb der
-   bestehenden Footer-Innenabstände ein. Insbesondere die 2FA-Konfiguration
-   einschließlich ihrer Rollenansichten mit dem bereits vorhandenen mobilen
-   Aufbau bei Anmeldeanbietern abgleichen und abweichende Footer angleichen.
-   Reihenfolge, Farben, Icons, Beschriftungen sowie Lade-, Speicher- und
-   Berechtigungslogik erhalten. Desktopdarstellung unverändert lassen.
-   Nach ausdrücklichem Startauftrag alle betroffenen Konfigurationsfooter
-   in DE/EN auf Smartphonebreite und unverändertem Desktop gegenprüfen.
+9. [ ] **Einheitliche Smartphone-Footer in der Konfiguration – umgesetzt, Endabnahme offen:**
+   Beide Aktionen stehen mobil untereinander in voller verfügbarer Breite
+   innerhalb der bestehenden Footer-Innenabstände. Die lokale Regel korrigiert
+   insbesondere die bisher gemessene feste Breite der 2FA-Aktionen.
+   Alle allgemeinen Gruppen für Admin/Superadmin, Queue-Assistent, beide
+   Anmeldeanbieter und vier 2FA-Rollen sind in DE/EN bei 1280/390 px geprüft.
+   Breiten, Ausrichtung, gleiche Höhen und vertikale Abstände sind bestanden;
+   Vergleichsaufnahmen liegen vor. Desktopdarstellung und Fachlogik bleiben erhalten.
 
 **Abgestimmt zur Vormerkungs-Notification:** Blaues Informationsdesign samt
 Info-Icon beibehalten. Die Meldung bestätigt die Vormerkung; Warten ist ein

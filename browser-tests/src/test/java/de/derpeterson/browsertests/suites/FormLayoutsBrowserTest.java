@@ -1,11 +1,13 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
+import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.ScreenshotAnimations;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserFixture;
@@ -40,6 +42,7 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @CsvSource({"1280,false", "390,false", "1280,true", "390,true"})
   @DisplayName("Formularraster aller allgemeinen Konfigurationsgruppen behalten ihre Anordnung")
+  @Tag("configuration-footers")
   void generalConfigurationFormsKeepTheirArrangement(int viewportWidth, boolean superadmin) {
     signInForFormInspection(viewportWidth, superadmin);
     AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
@@ -54,12 +57,34 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
       captureFormEvidence(
           "config-" + configurationGroup.name() + "-" + superadmin,
           browserPage.locator(".cosmos-config-card"));
+      String userRoleLabel = superadmin ? uiTexts.getRoleSuperadmin() : uiTexts.getRoleAdmin();
+      captureConfigurationFooter(
+          uiTexts.getAdminConfigGroupLabel(configurationGroup) + " · " + userRoleLabel,
+          browserPage.locator(".cosmos-config-card"));
+      if (configurationGroup == AdminConfigGroup.QUEUE && superadmin) {
+        browserPage
+            .locator("#admin-queue-tabs")
+            .getByRole(
+                AriaRole.TAB,
+                new Locator.GetByRoleOptions()
+                    .setName(uiTexts.getAdminQueueCleanupAssistantsTab())
+                    .setExact(true))
+            .click();
+        captureConfigurationFooter(
+            uiTexts.getAdminConfigGroupLabel(configurationGroup)
+                + " · "
+                + uiTexts.getAdminQueueCleanupAssistantsTab()
+                + " · "
+                + userRoleLabel,
+            browserPage.locator(".cosmos-config-card"));
+      }
     }
   }
 
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @DisplayName("Anbieter und 2FA-Rollen behalten Felder, Tabs und Feldhilfen")
+  @Tag("configuration-footers")
   void providerAndRoleFormsKeepTheirArrangement(int viewportWidth) {
     signInForFormInspection(viewportWidth, true);
     AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
@@ -68,6 +93,11 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
       browserPage.locator("#provider-tab-" + providerId).click();
       captureFormEvidence(
           "provider-" + providerId, browserPage.locator("#admin-provider-settings"));
+      captureConfigurationFooter(
+          uiTexts.getAdminConfigGroupLabel(AdminConfigGroup.EXTERNAL_LOGIN)
+              + " · "
+              + browserPage.locator("#provider-tab-" + providerId).innerText(),
+          browserPage.locator("#admin-provider-settings"));
     }
 
     configurationPage.open(AdminConfigGroup.TWO_FACTOR);
@@ -78,6 +108,11 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
       roleTabsLocator.nth(roleIndex).click();
       captureFormEvidence(
           "two-factor-role-" + roleIndex, browserPage.locator(".cosmos-mfa-settings"));
+      captureConfigurationFooter(
+          uiTexts.getAdminConfigGroupLabel(AdminConfigGroup.TWO_FACTOR)
+              + " · "
+              + roleTabsLocator.nth(roleIndex).innerText(),
+          browserPage.locator(".cosmos-mfa-settings"));
     }
   }
 
@@ -229,6 +264,53 @@ public class FormLayoutsBrowserTest extends BrowserFixture {
 
     visibleFieldLocators.last().scrollIntoViewIfNeeded();
     attachViewportScreenshot(evidenceName + " unten");
+  }
+
+  private void captureConfigurationFooter(String scenarioLabel, Locator formPanelLocator) {
+    Locator footerActionsLocator = formPanelLocator.locator(".cosmos-config-card-actions:visible");
+    assertThat(footerActionsLocator).hasCount(1);
+    assertThat(footerActionsLocator.locator("vaadin-button")).hasCount(2);
+    footerActionsLocator.scrollIntoViewIfNeeded();
+    browserPage.mouse().move(0, 0);
+    Allure.attachment(
+        "Konfigurationsfooter " + scenarioLabel + " " + browserPage.viewportSize().width,
+        "image/png",
+        new ByteArrayInputStream(
+            footerActionsLocator.screenshot(
+                new Locator.ScreenshotOptions().setAnimations(ScreenshotAnimations.DISABLED))),
+        AttachmentOptions.empty());
+    assertMobileFooterActions(footerActionsLocator);
+  }
+
+  private void assertMobileFooterActions(Locator footerActionsLocator) {
+    if (browserPage.viewportSize().width > 600) {
+      return;
+    }
+    Locator actionButtonsLocator = footerActionsLocator.locator("vaadin-button");
+    double availableWidth =
+        ((Number)
+                footerActionsLocator.evaluate(
+                    "element => element.clientWidth - parseFloat(getComputedStyle(element).paddingLeft) - parseFloat(getComputedStyle(element).paddingRight)"))
+            .doubleValue();
+    double leftEdge =
+        footerActionsLocator.boundingBox().x
+            + ((Number)
+                    footerActionsLocator.evaluate(
+                        "element => parseFloat(getComputedStyle(element).paddingLeft) + parseFloat(getComputedStyle(element).borderLeftWidth)"))
+                .doubleValue();
+    double rowGap =
+        ((Number)
+                footerActionsLocator.evaluate(
+                    "element => parseFloat(getComputedStyle(element).rowGap)"))
+            .doubleValue();
+    BoundingBox reloadButtonBounds = actionButtonsLocator.nth(0).boundingBox();
+    BoundingBox saveButtonBounds = actionButtonsLocator.nth(1).boundingBox();
+    assertEquals(availableWidth, reloadButtonBounds.width, 1);
+    assertEquals(availableWidth, saveButtonBounds.width, 1);
+    assertEquals(leftEdge, reloadButtonBounds.x, 1);
+    assertEquals(leftEdge, saveButtonBounds.x, 1);
+    assertEquals(reloadButtonBounds.height, saveButtonBounds.height, 1);
+    assertEquals(rowGap, saveButtonBounds.y - reloadButtonBounds.y - reloadButtonBounds.height, 1);
   }
 
   private static void assertFieldHelpColumnsUseAvailableWidth(Locator formPanelLocator) {

@@ -93,7 +93,9 @@ final class BrowserExecutionPlan {
             // Playwright und globale App-Konfiguration bleiben je Worker strikt sequenziell.
             .configurationParameter("junit.jupiter.execution.parallel.enabled", "false");
 
-    if (suiteName.equals("mobile-confirmation-footers")) {
+    if (suiteName.equals("configuration-footers")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("configuration-footers"));
+    } else if (suiteName.equals("mobile-confirmation-footers")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("mobile-confirmation-footers"));
     } else if (suiteName.equals("queue-cleanup-appearance")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("cleanup-appearance"));
