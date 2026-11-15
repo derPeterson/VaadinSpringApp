@@ -2,6 +2,16 @@
 
 ## Browser-Tests
 
+- **2FA-Push nach Wechsel des Konfigurationstabs – offen:** Der Gesamtlauf blieb
+  beim synchronen Schließen eines administrativen Hilfstabs stehen. Der Test
+  überlässt diese kurzlebigen Tabs jetzt dem gemeinsamen BrowserContext-Abbau.
+  In DE/EN auf Desktop und Smartphone die echten Inaktivitätsgrenzen,
+  serverseitig eingehende Benachrichtigungen und anschließende erneute Bestätigung
+  prüfen. Die getrennte Nutzersitzung und alle Sicherheitsassertions erhalten.
+  Die drei gezielten Fälle sind inzwischen in DE und EN bestanden, einschließlich
+  Abbau und Bericht. Offen bleibt die saubere Wiederholung der vollständigen
+  Gesamtrunde am unveränderten Image.
+
 - **Advanced-Hintergrund und Rückwechsel auf Base – offen:** Für die große
   Testrunde der freigegebenen Nachtarbeit isoliert in beiden Varianten prüfen.
   Der gemeldete Fehler auf der Anmeldung ist durch Selektoren für `cosmos-page-frame`
