@@ -237,7 +237,8 @@ etwa im Panel-Footer, folgen den Abständen ihres Layouts.
 Die gelben Sicherheitswarnungen im Mailqueue-Assistenten und in seiner manuellen
 Bereinigungsbestätigung verwenden das bestehende
 Dreiecks-SVG über `AppIcon.WARNING_TRIANGLE`; ihre gemeinsamen Warnfarben und
-Abstände bleiben erhalten.
+Abstände bleiben erhalten. Der Brush im Kopf der manuellen Bereinigungsbestätigung
+erbt die gemeinsame rote Gefahrenvariante; die Assistentenkarte behält ihr blaues Icon.
 Fest eingebundene Info- und Warnboxen mit **fetter Einleitung und Doppelpunkt**
 richten das Icon an der ersten Textzeile aus. Die Erklärung läuft direkt nach
 der Einleitung weiter. Native `HorizontalLayout`-Container verwenden dafür

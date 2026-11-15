@@ -85,6 +85,16 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
           .hasAttribute("data-lucide", "info");
       ConfirmationAppearanceChecks.capture(
           browserPage, confirmationDialogLocator, "manual-mail-cleanup");
+      // Die Aufnahme hat den Mauszeiger aus den Aktionen bewegt und Übergänge beendet.
+      String destructiveActionColor =
+          (String)
+              confirmationDialogLocator
+                  .locator("#admin-mail-queue-confirm-submit")
+                  .evaluate("button => getComputedStyle(button).color");
+      assertThat(
+              confirmationDialogLocator.locator(
+                  ".account-change-dialog-header > .cosmos-panel-icon vaadin-icon"))
+          .hasCSS("color", destructiveActionColor);
       assertThat(confirmationDialogLocator.locator(".cosmos-overlay-close")).isFocused();
       UiActions.complete(
           browserPage,

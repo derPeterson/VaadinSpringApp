@@ -56,9 +56,11 @@ hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
    Warndreieck. Die dezente Parameter-Infobox behält ihr Info-Icon. Gezielte
    DE-/EN-Prüfungen bei 1280/390 px einschließlich aller Abbruchwege sind
    bestanden; Vorher-/Nachher-Aufnahmen liegen zur Endabnahme vor.
-3. [ ] **Roter Brush im Dialogkopf:** Das Brush-Icon oben im Dialog
-   „Manuelle Bereinigung“ mit der bestehenden roten Gefahrenvariante darstellen.
-   Die blaue Icongestaltung im Kopf der Assistentenkarte bleibt bestehen.
+3. [ ] **Roter Brush im Dialogkopf – umgesetzt, Endabnahme offen:**
+   „Manuelle Bereinigung“ verwendet für das Brush-Icon im Dialogkopf die
+   bestehende rote Gefahrenvariante. Die lokale blaue Ausnahme ist entfernt;
+   die Assistentenkarte bleibt blau. Gezielte DE-/EN-Prüfungen bei 1280/390 px
+   und Vorher-/Nachher-Aufnahmen sind bestanden beziehungsweise vorhanden.
 4. [ ] **Kürzerer Wartetext:** Die gelbe Erklärung unter „Wartet auf Ausführung“
    so kürzen, dass sie auf üblicher Desktopbreite in eine Zeile passt.
    Textvorschlag DE: „Vorgemerkt. Startet automatisch nach Ende des E-Mail-Versands.“

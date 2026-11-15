@@ -36,11 +36,6 @@
 .admin-queue-cleanup-info > vaadin-icon { width: 16px; height: 16px; flex: none; color: var(--cosmos-reference-accent); }
 .admin-queue-cleanup-confirmation-details { gap: 16px; }
 .admin-queue-cleanup-confirmation .admin-queue-cleanup-info > vaadin-icon { margin-top: 2px; }
-.admin-queue-cleanup-confirmation.portal-confirm-destructive.cosmos-reference-overlay .account-change-dialog-header > .cosmos-panel-icon {
-    color: var(--cosmos-reference-accent);
-    border-color: var(--cosmos-reference-icon-border);
-    background: var(--cosmos-reference-selection);
-}
 @media(max-width:700px) {
     #admin-queue-tabs .admin-mail-queue-resolution { width: calc(100% - 32px); margin: 16px; }
     .admin-queue-cleanup-content { padding: 16px; }

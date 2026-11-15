@@ -89,6 +89,8 @@ Parameter-Infobox behält ihr Info-Icon. 25 Komponenten-/Symbolprüfungen,
 gezielte Browserfälle in DE/EN bei 1280/390 px sind bestanden. Alle vier
 Dialogabbruchwege erhalten den bisherigen Bereinigungsstand. Die zugehörigen
 Vorher-/Nachher-Aufnahmen stehen ebenfalls zur Endabnahme bereit.
+Der Brush im manuellen Dialogkopf verwendet die vorhandene rote Gefahrenvariante;
+auch dieser gesonderte Nachtest besteht je zwei Browserfälle in DE/EN bei 1280/390 px.
 Diese Änderungen haben keinen neuen Sonar-Scan; der obige Scan gilt weiterhin für
 `f3c21623`. Die übrigen Nachbearbeitungspunkte bleiben im
 [Komponentenplan](planung/vaadin-komponenten-abgleich.md) offen.
