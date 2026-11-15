@@ -147,7 +147,9 @@ class BrowserExecutionPlanTest {
           case "queue-full-run" ->
               Set.of("fullCleanupWaitsForTransportAndAggregatesMoreThanOneBatch");
           case "background-variants" ->
-              Set.of("chosenBackgroundRemainsDecorativeAcrossPublicPortalAndAdministration");
+              Set.of(
+                  "chosenBackgroundRemainsDecorativeAcrossPublicPortalAndAdministration",
+                  "reducedMotionAndBackgroundScope");
           case "component-follow-up" ->
               Set.of(
                   "durationUnitIsCenteredInsideNumericField",

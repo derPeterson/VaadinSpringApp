@@ -97,6 +97,8 @@ final class BrowserExecutionPlan {
       discoveryRequestBuilder.filters(TagFilter.includeTags("fast"));
     } else if (suiteName.equals("native-confirmations")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("native-confirmations"));
+    } else if (suiteName.equals("background-variants")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("background-variants"));
     } else if (suiteName.equals("queue-full-run")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("queue-full-run"));
     } else if (suiteName.equals("confirmation-dialog")) {

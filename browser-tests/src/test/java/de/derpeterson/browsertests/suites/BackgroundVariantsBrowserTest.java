@@ -33,6 +33,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Feature("Konfigurierbarer Cosmos-Hintergrund")
 public class BackgroundVariantsBrowserTest extends BrowserFixture {
   @ParameterizedTest
+  @Tag("background-variants")
   @ValueSource(ints = {1280, 390})
   @DisplayName(
       "BACKGROUND-01: Gewählte Variante bleibt hinter allen Rahmen und beachtet reduzierte Bewegung")

@@ -148,7 +148,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `operations` | Persistenz ohne Bootstrap, zwei eigene SMTP-Ziele und echte begrenzte Transportausfälle mit Wiederanlauf | 3 |
 | `mail-queue-resolution` | Echte SMTP-Ablehnung und Verbindungsabbruch nach DATA; vollständiger Lauf über 101 alte Aufträge, wartende Übernahme ohne zweiten Klick, Rechteentzug, Statusanzeigen, Reiter, Entwürfe und Feldhilfen in beiden Breiten | 9 |
 | `queue-full-run` | Vollständiger Lauf über 101 alte Aufträge mit echtem wartendem SMTP, automatischer Übernahme und Gesamtergebnis in beiden Breiten | 1 |
-| `background-variants` | Gewählte Hintergrundvariante in Besucherbereich, Portal und Administration, Parallaxe, reduzierte Bewegung und horizontale Erreichbarkeit in beiden Breiten | 2 |
+| `background-variants` | Gewählte Hintergrundvariante in Besucherbereich, Portal und Administration, Parallaxe, reduzierte Bewegung und horizontale Erreichbarkeit in beiden Breiten; Login-Navigation mit dem Variantenvertrag | 3 |
 | `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
 | `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 21 |

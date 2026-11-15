@@ -22,6 +22,7 @@ import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.Story;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.util.Set;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -124,40 +125,55 @@ public class LoginLayoutBrowserTest extends BrowserFixture {
   }
 
   @Test
-  @DisplayName("UI-03F: Gemeinsamer Referenzhintergrund bleibt dekorativ und bewegungsarm")
+  @Tag("background-variants")
+  @DisplayName("UI-03F: Gewählter Hintergrund bleibt dekorativ und beachtet reduzierte Bewegung")
   @Story("Dekoration und reduzierte Bewegung")
   @Description(
       """
-      1. Login öffnen: der alte animierte Hintergrund ist ausgeblendet. Die beiden Referenzebenen sind dekorativ, statisch und nicht klickbar.
-      2. Reduzierte Bewegung emulieren: der statische Hintergrund bleibt unverändert ohne Animation.
+      1. Login mit der gewählten Variante öffnen: Base erhält seine statischen Referenzebenen, Advanced seine sichtbare dekorative Szene.
+      2. Reduzierte Bewegung emulieren: Dekoration bleibt ohne laufende Animation und ohne Interaktionsfläche.
       3. Über den echten Kontoerstellungslink zur Registrierung wechseln.
-      **Erwartet:** Statischer Referenzhintergrund ohne Interaktionsfläche; gemeinsame Darstellung auf Registrierung und Home.
+      **Erwartet:** Gewählte Hintergrundvariante ohne Interaktionsfläche; gemeinsame Darstellung auf Registrierung und Home.
       """)
   void reducedMotionAndBackgroundScope() {
+    String expectedVariant =
+        System.getenv().getOrDefault("BROWSER_TEST_BACKGROUND_VARIANT", "advanced");
+    assertTrue(Set.of("base", "advanced").contains(expectedVariant));
     browserPage.emulateMedia(
         new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.NO_PREFERENCE));
     new LoginPage(browserPage).open();
     Locator sky = browserPage.locator(".cosmos-sky");
 
     assertThat(sky).hasAttribute("aria-hidden", "true");
-    assertThat(sky).isHidden();
     Locator frame = browserPage.locator(".cosmos-page-frame.cosmos-reference-portal");
-    for (String pseudo : new String[] {"::before", "::after"}) {
-      assertEquals(
-          "none",
-          frame.evaluate("(el, pseudo) => getComputedStyle(el,pseudo).pointerEvents", pseudo));
-      assertEquals(
-          "none",
-          frame.evaluate("(el, pseudo) => getComputedStyle(el,pseudo).animationName", pseudo));
-      assertTrue(
-          frame
-              .evaluate("(el, pseudo) => getComputedStyle(el,pseudo).backgroundImage", pseudo)
-              .toString()
-              .contains("radial-gradient"));
+    if (expectedVariant.equals("base")) {
+      assertThat(sky).isHidden();
+      for (String pseudo : new String[] {"::before", "::after"}) {
+        assertEquals(
+            "none",
+            frame.evaluate("(el, pseudo) => getComputedStyle(el,pseudo).pointerEvents", pseudo));
+        assertEquals(
+            "none",
+            frame.evaluate("(el, pseudo) => getComputedStyle(el,pseudo).animationName", pseudo));
+        assertTrue(
+            frame
+                .evaluate("(el, pseudo) => getComputedStyle(el,pseudo).backgroundImage", pseudo)
+                .toString()
+                .contains("radial-gradient"));
+      }
+    } else {
+      assertThat(sky).isVisible();
+      assertThat(browserPage.locator(".cosmos-sky--advanced")).hasCount(1);
+      assertThat(sky).hasCSS("position", "fixed");
+      assertThat(sky).hasCSS("pointer-events", "none");
     }
     browserPage.emulateMedia(new Page.EmulateMediaOptions().setReducedMotion(ReducedMotion.REDUCE));
 
     assertEquals("none", frame.evaluate("el => getComputedStyle(el,'::after').animationName"));
+    assertTrue(
+        (boolean)
+            sky.evaluate(
+                "element => element.getAnimations({subtree:true}).every(animation => animation.playState !== 'running')"));
     AllurePlaywright.attachScreenshot("Referenzhintergrund mit reduzierter Bewegung", browserPage);
     browserPage
         .getByRole(

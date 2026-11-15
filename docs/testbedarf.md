@@ -2,6 +2,15 @@
 
 ## Browser-Tests
 
+- **Login-Hintergrund gemäß gewählter Variante – offen:** Der aktuelle Gesamtlauf
+  meldet in `UI-03F` eine überholte Base-Erwartung bei aktivem Advanced. Den
+  bestehenden Loginfall an beide freigegebenen Varianten anpassen, dabei Base-
+  Pseudoebenen, rein dekorative Advanced-Ebene, reduzierte Bewegung und echte
+  Navigation zu Registrierung/Home erhalten. Je drei gezielte Fälle für Base
+  und Advanced sind in DE/EN bestanden, einschließlich Aufbau, Abbau und Bericht.
+  Die vollständige Runde am unveränderten Advanced-Image wiederholen.
+  Kein Anwendungs- oder CSS-Umbau erforderlich.
+
 - **Kartenvergleich mit Ticketaktivität – offen:** Die Ticketsystem-Navigation
   muss mit und ohne ungelesene Aktivität erreichbar sein. Der Status ergänzt
   ihren zugänglichen Namen; die Auswahl darf deshalb keinen leeren Ticketbestand
