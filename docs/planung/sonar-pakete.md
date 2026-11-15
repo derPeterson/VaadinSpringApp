@@ -1,26 +1,19 @@
 # Offene Sonar-Bereinigung
 
-Der aktuelle Main-Scan `b94ed53d-91be-4f3b-8b4b-6a9eff01e8ea` gehört zu
-`3abb9139`. Er enthält zwölf offene Codequalitätshinweise, keine Bugs,
-Sicherheitslücken oder offenen Hotspots. Das Quality Gate ist wegen dieser
-zwölf Hinweise rot. Bestehende begründete Ausnahmen bleiben erhalten.
+Der aktuelle Main-Nachscan `1432e208-00c5-4bbe-936c-273f1c4143ac` gehört zu
+`736911c9`. Er bestätigt elf der zwölf Codekorrekturen. Ein Hinweis zur
+Kommentarformulierung ist noch offen; Bugs, Sicherheitslücken und offene
+Hotspots sind nicht gemeldet. Das Quality Gate ist noch rot. Bestehende
+begründete Ausnahmen bleiben erhalten.
 
-## Paket: Nachtänderungen verständlicher und analysierbar machen
+## Verbleibende Kommentarkorrektur
 
-Auf `codex/sonar-vaadin-folgearbeiten` die zwölf Hinweise bearbeiten:
-
-- Mailqueue: nullable Ergebnisse korrekt kennzeichnen, garantierte
-  Paketergebnisse klar behandeln und automatische Vormerkung aus dem
-  verschachtelten Fehlerblock lösen; Transaktionen und Sperren erhalten.
-- Dialoge und Hintergrund: Initialfokus-Skript aus der Lambda ziehen,
-  verschachtelte Löschbestätigung zusammenfassen und wiederholte Werte benennen.
-- Tests: Berechtigungsassertion eindeutig abgrenzen, Queryparameter ohne
-  unnötiges Regex-Backtracking abwarten und Hilfstab-Kommentar klar formulieren.
-
-Die zwölf Finding-IDs und der vollständige Export liegen im lokalen
-Sonar-Arbeitsstand. Stilprüfung, 171 gezielte Anwendungstests und 113
-Browser-Helfertests sind bestanden; die Änderungen sind reviewt. Lokal nach `main`
-integrieren und den geschützten vollständigen Nachscan bis zum Serverergebnis
-verfolgen. Ziel: null offene Findings und bestandenes Quality Gate.
+Der Hinweis `8ba5954d-8faa-4d02-a874-84f7eca3c1b3` (`java:S125`) betrifft die
+Erklärung des gemeinsamen Hilfsseiten-Abbaus im 2FA-Push-Test. Die Erklärung
+als einfache vollständige Sätze erhalten, ohne codeähnliche Kommentarform.
+Testlogik und Sicherheitsassertions bleiben unverändert. Stil prüfen,
+Kommentarkorrektur reviewen und committen, anschließend den geschützten
+Nachscan bis zum Serverergebnis verfolgen. Ziel: null offene Findings und
+bestandenes Quality Gate.
 
 Die abschließende große Browserrunde folgt danach am endgültigen Image.
