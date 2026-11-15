@@ -103,6 +103,14 @@ final class BrowserSuites {
               UserFiltersBrowserTest.class,
               UserManagementBrowserTest.class);
       case "segmented-selection" -> List.of(SegmentedSelectionBrowserTest.class);
+      case "native-confirmations" ->
+          List.of(
+              NotificationInboxBrowserTest.class,
+              AccountSettingsBrowserTest.class,
+              SessionManagementBrowserTest.class,
+              UserManagementBrowserTest.class,
+              TwoFactorBrowserTest.class,
+              MailQueueResolutionBrowserTest.class);
       case "confirmation-dialog" -> List.of(NotificationInboxBrowserTest.class);
       case "metric-cards" ->
           List.of(UserManagementBrowserTest.class, NotificationInboxBrowserTest.class);

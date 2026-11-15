@@ -25,14 +25,28 @@ Vorher-/Nachher-Aufnahmen liegen zur menschlichen Sichtung bereit. Die technisch
 Änderung des berechneten Card-Gaps von `normal` auf `0px` verändert die Maße nicht.
 Ältere Testbaumsuchen wurden an die öffentlichen Card-Slots angepasst.
 Diese Zwischenprüfung ersetzt die unten dokumentierte letzte Gesamtrunde nicht;
-Innen-/Kontextkarten, übrige Bestätigungen und der vollständige Bereinigungslauf
-werden im freigegebenen Nachtauftrag noch gesondert umgesetzt.
+Auch Innen-/Kontextkarten und übrige Bestätigungen sind inzwischen gezielt
+übertragen und geprüft; der vollständige Bereinigungslauf wird im freigegebenen
+Nachtauftrag noch gesondert umgesetzt.
 
 Beim anschließenden Vergleich wurde ein bestehender Anfangsfokusfehler der nativen
 Sammellesebestätigung reproduziert und korrigiert: Der Fokus wird nach der nativen
 Overlay-Öffnung auf Schließen gesetzt. 160 gezielte JUnit-Prüfungen sowie die je
 zwei Bestätigungsfälle in DE und EN mit Desktop-/Smartphone-, Abbruch-, Tastatur-
 und Bestätigungsprüfungen sind am korrigierten Stand bestanden.
+
+Die zehn weiteren Bestätigungsfälle sind anschließend auf nativen ConfirmDialog
+übertragen. 378 gezielte JUnit-Prüfungen und 36 angepasste Dialogvalidierungen sind
+bestanden; auch der isolierte Produktionsbuild einschließlich Anwendungstests ist
+erfolgreich. Vorher und nachher sind je 16 Browserfälle in DE/EN auf Desktop und
+Smartphone bestanden. Je Sprache haben 61 Messwertsätze keine Abweichung;
+212 Bildpaare liegen zur Sichtung bereit. Native Ereignisreihenfolge, einmalige
+Ausführung, verspätetes Schließen und erneute ausdrückliche Bestätigung nach einem
+Löschfehler sind abgesichert. Lange Vorschautexte behalten ihren Inhalts-Scrollbereich
+und vollständig sichtbare Aktionen. Der Escape-Test wartet nun ausdrücklich auf
+den vorgesehenen Anfangsfokus. Die menschliche Sichtung bleibt offen.
+Die zwei Fälle der ursprünglichen Sammelbestätigung sind zusätzlich in beiden
+Sprachen am selben Image bestanden; 129 Browser-Helfertests sind erfolgreich.
 
 | Prüfung | Ergebnis |
 | --- | --- |

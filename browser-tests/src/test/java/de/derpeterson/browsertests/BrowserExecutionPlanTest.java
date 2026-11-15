@@ -45,6 +45,7 @@ class BrowserExecutionPlanTest {
         "segmented-selection",
         "metric-cards",
         "confirmation-dialog",
+        "native-confirmations",
         "avatars",
         "profile-form",
         "account-forms",
@@ -93,6 +94,16 @@ class BrowserExecutionPlanTest {
                   "pageBreadcrumbsFollowHierarchyAndKeepSecurityFlowsLocked",
                   "verificationAndReactivationBreadcrumbsStayUnlinked");
           case "segmented-selection" -> Set.of("segmentSelectorsPreserveTheirSurroundingViews");
+          case "native-confirmations" ->
+              Set.of(
+                  "previewInboxFiltersAndDismissalAtBothWidths",
+                  "profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard",
+                  "avatarPersistsAcrossAllModes",
+                  "selectedRevokeBlocksOldFormAndSavedReturn",
+                  "logoutOthersKeepsCurrentSessionAndItsSavedSignIn",
+                  "cancelAndConfirmDeletionHaveDifferentVisibleOutcomes",
+                  "recoverySupportRemainsContactInsteadOfFactorReset",
+                  "manualCleanupConfirmationKeepsItsLayoutAndCanBeCancelled");
           case "confirmation-dialog" ->
               Set.of("markAllConfirmationPreservesLayoutAndExplicitActions");
           case "metric-cards" ->
@@ -126,6 +137,7 @@ class BrowserExecutionPlanTest {
               Set.of(
                   "unresolvedRequestNeedsExplicitResolutionBeforeAnotherVerificationMail",
                   "explicitSmtpRejectionReachesItsRetryLimitInsteadOfQuarantine",
+                  "manualCleanupConfirmationKeepsItsLayoutAndCanBeCancelled",
                   "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
           case "component-follow-up" ->
               Set.of(
@@ -423,7 +435,9 @@ class BrowserExecutionPlanTest {
     assertEquals(
         7,
         Arrays.stream(SessionManagementBrowserTest.class.getDeclaredMethods())
-            .filter(testMethod -> testMethod.isAnnotationPresent(Test.class))
+            .filter(testMethod ->
+                testMethod.isAnnotationPresent(Test.class)
+                    || testMethod.isAnnotationPresent(ParameterizedTest.class))
             .count());
   }
 }

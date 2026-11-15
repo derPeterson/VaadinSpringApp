@@ -72,6 +72,7 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
       """)
   @Tag("component-follow-up")
   @Tag("metric-cards")
+  @Tag("native-confirmations")
   void previewInboxFiltersAndDismissalAtBothWidths(int width) {
     String recipient = prepareRecipient();
     String prefix = "Layout " + UUID.randomUUID();

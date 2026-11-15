@@ -21,6 +21,7 @@ import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.AvatarAppearanceChecks;
+import de.derpeterson.browsertests.pages.ConfirmationAppearanceChecks;
 import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationInboxPage;
@@ -1559,6 +1560,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
       AllurePlaywright.attachScreenshot("Ticket-Aktionsfooter bei " + width + "px", browserPage);
       browserPage.locator("#support-instructions").click();
       Locator preview = browserPage.locator("#support-instruction-preview");
+      ConfirmationAppearanceChecks.capture(browserPage, preview, "recovery-instructions");
 
       assertThat(preview).hasJSProperty("opened", true);
       browserPage.waitForCondition(() ->
@@ -2242,6 +2244,7 @@ public class TwoFactorBrowserTest extends BrowserFixture {
   @Tag("recovery-instructions")
   @Tag("follow-up-regression")
   @Tag("component-follow-up")
+  @Tag("native-confirmations")
   void recoverySupportRemainsContactInsteadOfFactorReset(int width) {
     browserPage.setViewportSize(width, 900);
     LoginPage login = new LoginPage(browserPage);
@@ -2392,6 +2395,8 @@ public class TwoFactorBrowserTest extends BrowserFixture {
         .containsText(uiTexts.getSupportRecoveryInstructions().lines().findFirst().orElseThrow());
     assertThat(admin.locator("#support-instruction-preview .support-instruction-step")).hasCount(4);
     assertThat(admin.locator("#support-instruction-preview .cosmos-security-warning")).isVisible();
+    ConfirmationAppearanceChecks.capture(
+        admin, admin.locator("#support-instruction-preview"), "recovery-instructions");
     admin.evaluate(
         "async () => { await Promise.all(document.getAnimations().filter(animation => animation.effect?.getTiming().iterations !== Infinity).map(animation => animation.finished.catch(() => {}))); }");
     if (width == 390) {

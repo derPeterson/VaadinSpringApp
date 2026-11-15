@@ -23,6 +23,7 @@ import de.derpeterson.browsertests.pages.AdminUserDeleteDialog;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.AvatarAppearanceChecks;
+import de.derpeterson.browsertests.pages.ConfirmationAppearanceChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.ProfileFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.TwoFactorPage;
@@ -313,6 +314,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       "Beim Wechsel des Kontobereichs kann ein Profilentwurf behalten oder verworfen werden")
   @Tag("form-details")
   @Tag("profile-form")
+  @Tag("native-confirmations")
   void profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, viewportWidth < 640 ? 844 : 900);
     createAccountAndSignIn(
@@ -352,6 +354,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
     accountPage.section("account-tab-security");
     assertThat(unsavedChangesPrompt.root().locator(".cosmos-overlay-close")).isVisible();
+    assertThat(unsavedChangesPrompt.root().locator("#unsaved-changes-confirmation-submit"))
+        .isFocused();
     browserPage.keyboard().press("Escape");
     assertThat(unsavedChangesPrompt.root()).hasCount(0);
     assertThat(firstNameInputLocator).hasValue("Temporary draft");
@@ -651,6 +655,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   @Description(
       "Eigenes Konto: Bild per Drag-and-drop und Dateiauswahl hochladen, zuschneiden und speichern; Kopfzeile, Popup und Konto prüfen. Die Modusauswahl reagiert auch am Rand der Fläche. Wiederöffnen behält den Bildmodus. Lokales Abbrechen und Footer-Abbrechen verwerfen Entwürfe; Initialen erhalten das Bild, Ersetzen und Löschen werden gespeichert. Desktop und schmale Ansicht.")
   @Tag("avatars")
+  @Tag("native-confirmations")
   void avatarPersistsAcrossAllModes(int width, int height) throws Exception {
     String email = account();
     browserPage.setViewportSize(width, height);
@@ -763,6 +768,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(confirmation).hasJSProperty("opened", true);
     assertThat(confirmation).containsText(uiTexts.getAccountAvatarDeleteQuestion());
     assertThat(confirmation).containsText(uiTexts.getAccountAvatarDeleteHint());
+    ConfirmationAppearanceChecks.capture(browserPage, confirmation, "avatar-delete");
     Locator contextIcon = confirmation.locator(".portal-context-card > .cosmos-panel-icon");
 
     assertThat(contextIcon).isVisible();

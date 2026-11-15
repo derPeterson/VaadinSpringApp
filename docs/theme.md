@@ -281,19 +281,32 @@ Bei Komponenten-Umstellungen Vorher-/Nachher-Aufnahmen für Desktop und Smartpho
 direkt im Chat zeigen. Bei freigegebenen Browserläufen beide Sprachen isoliert
 prüfen; die Aufnahmen bleiben temporäre Vergleichsbelege im Browserlauf.
 
-`NotificationReadAllConfirmationDialog` ist der lokale Pilot für natives
-`ConfirmDialog`: ausschließlich „Alle Benachrichtigungen als gelesen markieren“
-in Inbox und Glockenvorschau. Er verwendet die öffentlichen Header-/Inhalts-/
-Button-Slots und die vorhandenen Cosmos-Inhalte. Die Klasse
-`.notification-read-all-confirmation` in `cosmos-notifications.css` gestaltet
-die öffentlichen Parts mit den bestehenden Dialogfarben und Abständen.
-Andere Bestätigungen behalten `PortalConfirmationDialog`.
-Close, Abbrechen und Escape verwerfen die vorgemerkte Aktion. Ein Klick auf den
-öffentlichen Backdrop-Part erhält den bisherigen Außenklick-Abbruch, den
-`ConfirmDialog` selbst standardmäßig nicht ausführt. Nach dem clientseitigen
-Öffnen erhält wie bisher der Close-Button den Fokus. Nur das native
-Bestätigungsereignis führt die beim Öffnen erfasste Sammelaktion einmal aus;
-Sprachwechsel verändert diesen Snapshot nicht.
+`PortalConfirmationDialog` und `NotificationReadAllConfirmationDialog` verwenden
+nativen `ConfirmDialog` mit öffentlichen Header-/Inhalts-/Button-Slots und den
+vorhandenen Cosmos-Inhalten. Auch die administrative Benutzerlöschung verwendet
+diese native Grundlage. `.cosmos-native-confirmation` in `cosmos-confirmation.css`
+gestaltet die öffentlichen Parts mit den bestehenden Dialogfarben und Abständen;
+lokale Nachrichtenregeln behalten ausschließlich ihre besonderen Aktionsmaße.
+Die Inhaltszone nutzt eine automatische Flexbasis und eigenen Overflow, damit
+lange Vorschauen innerhalb der maximalen Dialoghöhe scrollen und der Footer
+vollständig sichtbar bleibt.
+Close, Abbrechen und Escape verwerfen die vorgemerkte Aktion. Der öffentliche
+Backdrop-Part erhält bei normalen Aktionen den bisherigen Außenklick-Abbruch;
+beim Formularschutz bleibt Außenklick ohne Wirkung. Der Anfangsfokus liegt auf
+Schließen beziehungsweise beim Formularschutz auf „Weiter bearbeiten“.
+
+Nur das native Bestätigungsereignis führt die beim Öffnen erfasste Aktion einmal
+aus. Beim Formularschutz ist das links „Verwerfen“; rechts bleibt die primäre
+Aktion „Weiter bearbeiten“. Die nativen Slots sind entsprechend zugeordnet, ohne
+ihre sichtbare Reihenfolge zu ändern. `opened=false` darf die folgende Bestätigung
+nicht vorzeitig verwerfen; expliziter Abbruch oder ein endgültiges `ClosedEvent`
+räumen auf. Ein verspätetes Schließereignis lässt eine erneut geöffnete Bestätigung
+unberührt. Sprachwechsel verändert den erfassten Snapshot nicht.
+
+Nach einem fachlichen Fehler bei der administrativen Benutzerlöschung wird die
+native Bestätigung mit demselben Kontext wieder geöffnet. Erst eine neue
+ausdrückliche Bestätigung versucht die Löschung erneut. Formular-, Bearbeitungs-
+und Identitätsdialoge verwenden weiterhin `Dialog`.
 
 Vor neuen Oberflächenelementen einschließlich Layouts die tatsächlich verwendete
 Vaadin-Version prüfen. Passende native Flow-Komponenten haben Vorrang und werden mit öffentlichen APIs,

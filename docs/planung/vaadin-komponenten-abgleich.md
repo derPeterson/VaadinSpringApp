@@ -50,12 +50,15 @@ Es ist nur geplant; die derzeitige sichtbare Grenze gilt bis zu dieser Umsetzung
 
 Der `ConfirmDialog`-Pilot für „Alle Benachrichtigungen als gelesen markieren“
 in Inbox und Glockenvorschau ist vom Benutzer abgenommen.
-Nur diese Sammelbestätigung verwendet die spezialisierte native Komponente;
-übrige Aktionen behalten `PortalConfirmationDialog`. Die gezielten isolierten
-Browserprüfungen in DE/EN auf Desktop und Smartphone sind bestanden. Acht
-Vorher-/Nachher-Dialogvergleiche haben gleiche Maße und gemessene Textstile,
-jedoch kleine Rasterunterschiede. Zehn weitere Bestätigungsfälle sind als
-Gesamtpaket 2 der Nachtarbeit freigegeben; die technische Übernahme folgt nach den Karten.
+Auch die zehn weiteren beauftragten Bestätigungsfälle verwenden inzwischen
+`ConfirmDialog`: Die gemeinsame `PortalConfirmationDialog`-Hülle und die
+administrative Benutzerlöschung sind übertragen. Fachliche Prüfungen, einmalige
+Ausführung, Abbruch, Formularentwürfe und Fehlerkontext bleiben erhalten.
+Die gezielten DE-/EN-Vergleiche auf Desktop und Smartphone sind bestanden;
+je Sprache stimmen 61 Messwertsätze überein. Die 212 Bildpaare je Sprache dienen
+der noch offenen menschlichen Sichtung. Der lange Anleitungstext scrollt im
+Inhaltsbereich, ohne Kopf oder Footer abzuschneiden. Weitere Dialogarten sind
+kein Teil dieses Bestätigungspakets.
 
 Für die manuelle Mailqueue-Bereinigungsbestätigung hat Stitch Kritik und zwei
 Gestaltungsvorschläge geliefert:
@@ -69,8 +72,9 @@ Warnung beginnt mit „Späterer Empfang möglich:“; darunter erklärt eine de
 Infobox die gespeicherten Einstellungen und die Höchstzahl 100 ohne Trefferprognose.
 Die Umsetzung und DE-/EN-Texte stehen zur Benutzersichtung bereit. Browsernachtests
 sind auf Benutzerwunsch zurückgestellt und im [Testbedarf](../testbedarf.md) erfasst.
-Diese Gestaltung ist aus der Nachtarbeit herausgenommen. Nur die spätere technische
-Übernahme auf `ConfirmDialog` bleibt in Paket 2.5.
+Diese Gestaltung ist aus der Nachtarbeit herausgenommen. Die technische
+Übernahme auf `ConfirmDialog` ist erfolgt; fachliche Gesamtläufe und neue
+Statusanzeigen folgen gesondert in Nachtpaket 3.
 
 Die separat beauftragte URL-Ansteuerung der Mailqueue-Reiter ist implementiert:
 `tab=general` und `tab=assistants` erhalten die Auswahl beim Neuladen und

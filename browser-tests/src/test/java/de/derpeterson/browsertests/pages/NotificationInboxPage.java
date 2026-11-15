@@ -143,6 +143,8 @@ public final class NotificationInboxPage {
 
     assertThat(notificationConfirmationDialogLocator.locator("[part~='overlay']").first())
         .isVisible();
+    ConfirmationAppearanceChecks.capture(
+        browserPage, notificationConfirmationDialogLocator, "notification-action");
     UiActions.complete(
         browserPage,
         () ->

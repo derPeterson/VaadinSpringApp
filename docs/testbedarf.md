@@ -44,8 +44,10 @@
   Abbrechen, Close, Escape und Außenklick dürfen keine Bereinigung starten;
   Bestätigen führt sie einmal aus. Sprachwechsel bei geöffnetem Dialog prüfen.
   Bestehende `MailQueueResolutionBrowserTest`-Fälle erweitern; 100 ist eine
-  Höchstzahl, weitere Aufträge bleiben erhalten. Die Java-Hülle ist weiterhin
-  `PortalConfirmationDialog`; die native `ConfirmDialog`-Übernahme ist separat geplant.
+  Höchstzahl, weitere Aufträge bleiben bis Nachtpaket 3 erhalten. Die Java-Hülle
+  `PortalConfirmationDialog` verwendet inzwischen nativen `ConfirmDialog`.
+  Darstellung und Abbrechen sind bereits im gezielten Dialogvergleich bestanden;
+  die weiteren aufgeführten Fach- und Abbruchfälle bleiben für die Gesamtrunde offen.
 
 - **Vollständiger Mailqueue-Bereinigungslauf – wartend:** Umsetzung und Start von
   Nachtpaket 3 stehen aus. In DE/EN auf Desktop und Smartphone mit mehr als

@@ -239,7 +239,9 @@ public class UserManagementBrowserTest extends BrowserFixture {
   }
 
   @Tag("fast")
-  @Test
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("native-confirmations")
   @DisplayName(
       "USER-06C: Löschabbruch erhält das Konto; Bestätigung entfernt genau das ausgewählte Konto")
   @Description(
@@ -250,7 +252,8 @@ public class UserManagementBrowserTest extends BrowserFixture {
       4. Beide Dialoge sind geschlossen; Suche findet keinen Treffer, Neuladen ebenfalls nicht.
       **Erwartet:** Öffnen/Abbrechen löscht nicht; nur bestätigte Löschung wird dauerhaft wirksam.
       """)
-  void cancelAndConfirmDeletionHaveDifferentVisibleOutcomes() {
+  void cancelAndConfirmDeletionHaveDifferentVisibleOutcomes(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
     AdminUsersPage users = login();
     String email = unique("delete") + "@example.test";
     users.createActiveUser(email, BrowserTestAccounts.USER_PASSWORD);
@@ -264,6 +267,18 @@ public class UserManagementBrowserTest extends BrowserFixture {
     assertThat(form.root()).hasCount(1);
     assertThat(form.email()).isVisible();
     assertThat(form.email()).hasValue(email);
+    for (String dismissalAction : new String[] {"header", "escape", "outside"}) {
+      confirmation = form.requestDelete();
+      assertThat(confirmation.root().locator("[part~='overlay']").first()).isVisible();
+      switch (dismissalAction) {
+        case "header" -> confirmation.root().locator(".cosmos-overlay-close").click();
+        case "escape" -> browserPage.keyboard().press("Escape");
+        default -> browserPage.mouse().click(1, 1);
+      }
+      assertThat(confirmation.root()).hasCount(0);
+      assertThat(form.email()).isVisible();
+      assertThat(form.email()).hasValue(email);
+    }
     confirmation = form.requestDelete();
     AllurePlaywright.attachScreenshot(
         "Eindeutige Bestätigung für das eigene Testkonto", browserPage);

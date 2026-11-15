@@ -169,7 +169,8 @@ public final class AdminUserDialog {
   @Step("Benutzerformular ohne Speicherung abbrechen")
   public void cancel() {
     closeRoleOptions();
-    UiActions.complete(browserPage, button(uiTexts.getAdminUsersCancel())::click);
+    // Die gerade schließende native Löschbestätigung kann noch einen Abbrechen-Button enthalten.
+    UiActions.complete(browserPage, root().locator("vaadin-button.cosmos-dialog-cancel")::click);
     new UnsavedChangesPrompt(browserPage, uiTexts)
         .discardAfterActionIfNeeded(() -> root().count() == 0);
 

@@ -1,0 +1,121 @@
+/* Native Bestätigungen behalten die freigegebenen Cosmos-Dialogzonen. */
+.cosmos-native-confirmation {
+    --vaadin-confirm-dialog-max-width: calc(100vw - 32px);
+}
+
+.cosmos-native-confirmation::part(overlay) {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: min(540px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow: hidden;
+    border: 1px solid var(--cosmos-reference-control-border);
+    border-radius: 16px;
+    background: var(--cosmos-reference-dialog);
+    box-shadow: 0 24px 80px #0009;
+}
+
+.cosmos-native-confirmation::part(backdrop) {
+    background: var(--cosmos-reference-backdrop);
+    backdrop-filter: blur(3px);
+}
+
+.cosmos-native-confirmation::part(header) {
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--cosmos-reference-border);
+    background: var(--cosmos-reference-dialog);
+    font-size: var(--lumo-font-size-m);
+    font-weight: 400;
+    line-height: var(--lumo-line-height-s);
+}
+
+.cosmos-native-confirmation::part(content),
+.cosmos-native-confirmation::part(message) {
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    background: var(--cosmos-reference-page);
+}
+
+/* ConfirmDialog ergänzt gegenüber Dialog eine Nachrichtenzone; lange Vorschauen
+ * scrollen weiterhin im öffentlichen Content-Part, ohne am Kartenrand abgeschnitten zu werden. */
+.cosmos-native-confirmation::part(content) {
+    flex: 1 1 auto;
+    overflow: auto;
+}
+
+.cosmos-native-confirmation::part(footer) {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--cosmos-reference-border);
+    background: var(--cosmos-reference-dialog);
+}
+
+.cosmos-native-confirmation::part(cancel-button),
+.cosmos-native-confirmation::part(confirm-button) {
+    flex: none;
+    max-width: 100%;
+}
+
+@media (max-width: 639px) {
+    .cosmos-native-confirmation::part(footer) {
+        padding: 14px 16px;
+    }
+}
+
+.cosmos-native-confirmation .cosmos-confirmation-action {
+    flex: none;
+    min-width: 0;
+    margin: 0;
+}
+
+.cosmos-unsaved-changes-dialog.cosmos-native-confirmation::part(footer) {
+    justify-content: space-between;
+}
+
+.cosmos-unsaved-changes-dialog.cosmos-native-confirmation::part(confirm-button) {
+    order: 0;
+}
+
+.cosmos-unsaved-changes-dialog.cosmos-native-confirmation::part(cancel-button) {
+    order: 1;
+    margin-inline-start: auto;
+}
+
+@media (max-width: 639px) {
+    .portal-session-confirmation.cosmos-native-confirmation,
+    .admin-user-delete-dialog.cosmos-native-confirmation {
+        --vaadin-confirm-dialog-max-width: calc(100vw - 20px);
+    }
+
+    .portal-session-confirmation.cosmos-native-confirmation::part(overlay),
+    .admin-user-delete-dialog.cosmos-native-confirmation::part(overlay) {
+        width: min(540px, calc(100vw - 20px));
+        max-height: calc(100dvh - 20px);
+    }
+
+    .portal-session-confirmation.cosmos-native-confirmation::part(footer),
+    .admin-user-delete-dialog.cosmos-native-confirmation::part(footer) {
+        padding: 16px 20px;
+    }
+
+    .portal-session-confirmation.cosmos-native-confirmation {
+        --vaadin-overlay-viewport-inset: var(--cosmos-space-m);
+    }
+
+    .portal-session-confirmation.cosmos-native-confirmation::part(overlay) {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 600px) {
+    .cosmos-unsaved-changes-dialog.cosmos-native-confirmation::part(footer) {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

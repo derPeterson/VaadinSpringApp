@@ -1,5 +1,6 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.ConfirmDialogTestActions.click;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -384,7 +385,7 @@ class LoginSessionRecoveryTest {
     Object dialog = ReflectionTestUtils.getField(sessionsPanel, "sessionConfirmationDialog");
     when(sessions.recoveryList(mockHttpRequest))
         .thenReturn(new SessionManagementService.Snapshot(List.of(), 0, 1));
-    ((Button) ReflectionTestUtils.getField(dialog, "confirmButton")).click();
+    click(((Button) ReflectionTestUtils.getField(dialog, "confirmButton")));
 
     verify(sessions).recoveryRevoke(mockHttpRequest, "opaque-device");
     assertTrue(button("session-recovery-continue").isEnabled());

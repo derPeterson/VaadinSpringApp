@@ -20,6 +20,7 @@ import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AdminConfigurationPage;
 import de.derpeterson.browsertests.pages.AdminUserDialog;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
+import de.derpeterson.browsertests.pages.ConfirmationAppearanceChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
 import de.derpeterson.browsertests.pages.UserMenu;
@@ -40,6 +41,25 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Tag("browser")
 @Feature("Ungeklärte Mailaufträge")
 public class MailQueueResolutionBrowserTest extends BrowserFixture {
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("native-confirmations")
+  @DisplayName("QUEUE-05: Manuelle Bestätigung bleibt mit Warnung und Abbruch bedienbar")
+  void manualCleanupConfirmationKeepsItsLayoutAndCanBeCancelled(int viewportWidth) {
+    browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
+    signInAdministrator(true);
+    new AdminConfigurationPage(browserPage).open(AdminConfigGroup.QUEUE);
+    selectCleanupTabAndGetAutomaticSwitch();
+    browserPage.locator("#admin-mail-queue-cleanup").click();
+    Locator confirmationDialogLocator = browserPage.locator("#admin-mail-queue-confirm[opened]");
+    assertThat(confirmationDialogLocator.locator(".cosmos-security-warning")).isVisible();
+    ConfirmationAppearanceChecks.capture(
+        browserPage, confirmationDialogLocator, "manual-mail-cleanup");
+    browserPage.locator("#admin-mail-queue-confirm-cancel").click();
+    assertThat(confirmationDialogLocator).hasCount(0);
+    assertThat(browserPage.locator("#admin-mail-queue-cleanup")).isEnabled();
+  }
+
   @ParameterizedTest
   @ValueSource(booleans = {false, true})
   @DisplayName(

@@ -73,7 +73,7 @@
           || expectedStyles.get(record.target) !== record.target.getAttribute('style'))) schedule();
     });
     changes.observe(root, {subtree:true, childList:true, characterData:true, attributes:true,
-      attributeFilter:['hidden','class','theme','style']});
+      attributeFilter:['hidden','class','theme','style','opened']});
     const resize = new ResizeObserver(entries => {
       const width = entries[0].contentRect.width;
       if (width !== previousWidth) {

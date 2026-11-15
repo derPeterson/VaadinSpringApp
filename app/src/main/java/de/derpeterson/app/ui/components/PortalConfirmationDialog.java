@@ -9,21 +9,23 @@ import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLA
 import static de.derpeterson.app.ui.components.CosmosCssClasses.WARNING_BUTTON;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ModalityMode;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.function.SerializableRunnable;
+import de.derpeterson.app.helper.ui.ConfirmDialogInitialFocus;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.i18n.MessageProperties;
 import java.util.Objects;
 import java.util.function.Supplier;
 
 /** Gemeinsame Bestätigung; nur die aufrufende Fachkomponente führt die Aktion aus. */
-public class PortalConfirmationDialog extends Dialog {
+@StyleSheet("custom-theme/cosmos-confirmation.css")
+public class PortalConfirmationDialog extends ConfirmDialog {
   public enum Variant {
     ACTION,
     UNSAVED_CHANGES
@@ -91,23 +93,35 @@ public class PortalConfirmationDialog extends Dialog {
     this.messageProperties = messageProperties;
     this.dialogVariant = Objects.requireNonNull(dialogVariant);
     setId(dialogId);
-    addClassNames("cosmos-theme", REFERENCE_OVERLAY, "portal-confirmation-dialog");
-    getThemeNames().addAll(java.util.List.of("cosmos", "cosmos-reference"));
-    setModality(ModalityMode.STRICT);
+    addClassNames(
+        "cosmos-theme",
+        REFERENCE_OVERLAY,
+        "portal-confirmation-dialog",
+        "cosmos-native-confirmation");
+    getElement().getThemeList().addAll(java.util.List.of("cosmos", "cosmos-reference"));
+    setCancelable(true);
     setCloseOnEsc(true);
-    setCloseOnOutsideClick(dialogVariant == Variant.ACTION);
 
     configureDialogHeader();
     configureConfirmationBody();
     configureDialogActions(dialogId);
 
-    addOpenedChangeListener(event -> {
-      if (!event.isOpened()) {
+    addConfirmListener(event -> runPendingConfirmationAction());
+    addCancelListener(event -> close());
+    addClosedListener(event -> {
+      // opened=false wird vor ConfirmEvent übertragen. Erst Closed verwirft ohne Bestätigung.
+      if (!isOpened()) {
         clearPendingActionsAndKeepDraft();
-      } else if (dialogVariant == Variant.UNSAVED_CHANGES) {
-        confirmButton.focus();
       }
     });
+    if (dialogVariant == Variant.ACTION) {
+      getElement()
+          .addEventListener("click", event -> close())
+          .setFilter(
+              "event.composedPath().some(node => node instanceof HTMLElement && node.part.contains('backdrop'))");
+    }
+    ConfirmDialogInitialFocus.configure(
+        this, dialogVariant == Variant.UNSAVED_CHANGES ? confirmButton : closeDialogButton);
   }
 
   private void configureDialogHeader() {
@@ -122,7 +136,7 @@ public class PortalConfirmationDialog extends Dialog {
 
     Div dialogHeaderDiv = new Div(dialogIconDiv, dialogTitlesDiv, closeDialogButton);
     dialogHeaderDiv.addClassName("account-change-dialog-header");
-    getHeader().add(dialogHeaderDiv);
+    setHeader(new Div(dialogHeaderDiv));
   }
 
   private void configureConfirmationBody() {
@@ -138,31 +152,23 @@ public class PortalConfirmationDialog extends Dialog {
     Div confirmationBodyDiv =
         new Div(confirmationLeadDiv, confirmationContextDiv, confirmationNoticeDiv);
     confirmationBodyDiv.addClassName("portal-confirm-body");
-    add(confirmationBodyDiv);
+    setText(confirmationBodyDiv);
   }
 
   private void configureDialogActions(String dialogId) {
     cancelButton.setId(dialogId + "-cancel");
     cancelButton.setPrefixComponent(AppIcon.CLOSE.create());
-    cancelButton.addClickListener(event -> {
-      if (dialogVariant == Variant.UNSAVED_CHANGES) {
-        runPendingConfirmationAction();
-      } else {
-        close();
-      }
-    });
-
     confirmButton.setId(dialogId + "-submit");
-    confirmButton.addClickListener(event -> {
-      if (dialogVariant == Variant.UNSAVED_CHANGES) {
-        close();
-      } else {
-        runPendingConfirmationAction();
-      }
-    });
-
-    Div confirmationActionsDiv = new Div(cancelButton, confirmButton);
-    confirmationActionsDiv.addClassName("cosmos-dialog-actions");
+    cancelButton.addClassName("cosmos-confirmation-action");
+    confirmButton.addClassName("cosmos-confirmation-action");
+    // Beim Formularschutz verwirft links; die rechte primäre Aktion behält den Entwurf.
+    if (dialogVariant == Variant.UNSAVED_CHANGES) {
+      setConfirmButton(cancelButton);
+      setCancelButton(confirmButton);
+    } else {
+      setCancelButton(cancelButton);
+      setConfirmButton(confirmButton);
+    }
     if (dialogVariant == Variant.UNSAVED_CHANGES) {
       addClassName("cosmos-unsaved-changes-dialog");
       cancelButton.addClassName(WARNING_BUTTON);
@@ -172,8 +178,7 @@ public class PortalConfirmationDialog extends Dialog {
       confirmButton.getElement().setAttribute("autofocus", true);
     }
 
-    EqualButtonWidths.configureEqualButtonWidths(confirmationActionsDiv);
-    getFooter().add(confirmationActionsDiv);
+    EqualButtonWidths.configureEqualButtonWidths(this);
   }
 
   /** Schließen und Escape behalten den Entwurf; ausschließlich die linke Aktion verwirft ihn. */
@@ -195,6 +200,12 @@ public class PortalConfirmationDialog extends Dialog {
 
     refreshTexts();
     super.open();
+  }
+
+  @Override
+  public void close() {
+    clearPendingActionsAndKeepDraft();
+    super.close();
   }
 
   private void clearPendingActionsAndKeepDraft() {
@@ -241,13 +252,15 @@ public class PortalConfirmationDialog extends Dialog {
 
     pendingConfirmationAction = null;
     pendingKeepEditingAction = null;
-    confirmButton.setEnabled(false);
+    Button confirmationActionButton =
+        dialogVariant == Variant.UNSAVED_CHANGES ? cancelButton : confirmButton;
+    confirmationActionButton.setEnabled(false);
 
     try {
       confirmationAction.run();
     } finally {
       close();
-      confirmButton.setEnabled(true);
+      confirmationActionButton.setEnabled(true);
     }
   }
 
@@ -255,7 +268,7 @@ public class PortalConfirmationDialog extends Dialog {
     closeDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
     if (dialogVariant == Variant.UNSAVED_CHANGES) {
       dialogTitleHeading.setText(messageProperties.getUnsavedChangesTitle());
-      getElement().setProperty("ariaLabel", dialogTitleHeading.getText());
+      setHeader(dialogTitleHeading.getText());
       confirmationExplanationSpan.setText(messageProperties.getUnsavedChangesDescription());
       cancelButton.setText(messageProperties.getUnsavedChangesDiscard());
       confirmButton.setText(messageProperties.getUnsavedChangesKeepEditing());
@@ -268,7 +281,7 @@ public class PortalConfirmationDialog extends Dialog {
     }
 
     dialogTitleHeading.setText(confirmationPrompt.dialogTitle().get());
-    getElement().setProperty("ariaLabel", dialogTitleHeading.getText());
+    setHeader(dialogTitleHeading.getText());
     dialogDescriptionSpan.setText(confirmationPrompt.dialogDescription().get());
     confirmationQuestionSpan.setText(confirmationPrompt.confirmationQuestion().get());
     confirmationExplanationSpan.setText(confirmationPrompt.confirmationExplanation().get());

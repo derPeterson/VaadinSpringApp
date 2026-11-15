@@ -123,6 +123,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung und kompakte Zeit | 18 |
 | `metric-cards` | Konten-Karte und Postfach-Kennzahlen auf Desktop/Smartphone: Darstellung, Zähleränderungen, Filter und Sprache | 4 |
 | `confirmation-dialog` | Sammellesebestätigung in Inbox und Glockenvorschau: Vergleichsaufnahmen/Messwerte, Abbrechen, Close, Escape, Außenklick, Tastaturfokus und bestätigte persistente Lesemarkierung auf Desktop/Smartphone | 2 |
+| `native-confirmations` | Bestehende Benachrichtigungs-, Sitzungs-, Profilbild-, Formularschutz-, Benutzerlösch-, Bereinigungs- und Anleitungsabläufe mit Dialogaufnahmen und Messwerten auf Desktop/Smartphone | 16 |
 | `avatars` | Profilbildmodi und Bildfehler, Header/Sidebar/Menü, Benutzertabelle und Bestätigung, Status-/Namenswechsel, Ticketidentitäten und 2FA-Header auf Desktop/Smartphone | 10 |
 | `form-layouts` | Allgemeine Konfiguration für Admin/Superadmin, Anbieter, 2FA-Rollen, Mailtest, Benachrichtigungen, Kontodialoge, öffentliche Formulare und Superadmin-Zusatzfelder: Maße und Vergleichsaufnahmen auf Desktop/Smartphone | 12 |
 | `native-cards` | Konto, Sicherheitsreiter, Sitzungen, Inbox und administrative Karten einschließlich Mailqueue-Assistent: Vergleichsaufnahmen und Layoutmesswerte auf Desktop/Smartphone | 2 |

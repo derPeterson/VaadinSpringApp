@@ -19,11 +19,12 @@ public final class AdminUserDeleteDialog {
   }
 
   public Locator root() {
-    return browserPage.locator("vaadin-dialog.admin-user-delete-dialog[opened]");
+    return browserPage.locator(".admin-user-delete-dialog[opened]");
   }
 
   @Step("Löschbestätigung abbrechen; Konto und Bearbeitungsformular erhalten")
   public void cancel() {
+    ConfirmationAppearanceChecks.capture(browserPage, root(), "admin-delete-cancel");
     button(uiTexts.getAdminUsersCancel()).click();
 
     assertThat(root()).hasCount(0);
@@ -31,6 +32,7 @@ public final class AdminUserDeleteDialog {
 
   @Step("Löschung ausschließlich des eigenen wegwerfbaren Testkontos bestätigen")
   public void confirm() {
+    ConfirmationAppearanceChecks.capture(browserPage, root(), "admin-delete-confirm");
     button(uiTexts.getPortalDeleteAction()).click();
 
     assertThat(root()).hasCount(0);

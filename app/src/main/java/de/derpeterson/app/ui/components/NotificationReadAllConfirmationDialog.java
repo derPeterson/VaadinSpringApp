@@ -9,6 +9,7 @@ import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_OVERLA
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
@@ -22,6 +23,7 @@ import java.util.Objects;
 /**
  * Native Sammelbestätigung; die aufrufende Inbox hält den Snapshot und führt die Leseaktion aus.
  */
+@StyleSheet("custom-theme/cosmos-confirmation.css")
 public final class NotificationReadAllConfirmationDialog extends ConfirmDialog {
   private final MessageProperties messageProperties;
 
@@ -45,6 +47,7 @@ public final class NotificationReadAllConfirmationDialog extends ConfirmDialog {
     setId(dialogId);
     addClassNames(
         "cosmos-theme",
+        "cosmos-native-confirmation",
         REFERENCE_OVERLAY,
         "portal-confirmation-dialog",
         "portal-notification-confirmation",

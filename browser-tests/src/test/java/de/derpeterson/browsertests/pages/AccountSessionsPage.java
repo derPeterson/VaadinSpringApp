@@ -113,10 +113,9 @@ public final class AccountSessionsPage {
   }
 
   public void confirmDeviceRevocation() {
-    assertThat(
-            browserPage.locator(
-                "#sessions-confirmation[opened] vaadin-dialog-overlay > [part~='overlay']"))
-        .isVisible();
+    assertThat(browserPage.locator("#sessions-confirmation[opened] [part~='overlay']")).isVisible();
+    ConfirmationAppearanceChecks.capture(
+        browserPage, browserPage.locator("#sessions-confirmation[opened]"), "session-action");
     UiActions.complete(
         browserPage, () -> browserPage.locator("#sessions-confirmation-submit").click());
 

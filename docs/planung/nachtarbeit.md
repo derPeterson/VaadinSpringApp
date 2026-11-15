@@ -24,88 +24,20 @@ menschliche Sichtung gemäß [HUM-01](../manual-tests/README.md#hum-01).
 
 ## Gesamtpaket 2: Verbleibende Bestätigungen auf nativen ConfirmDialog umstellen
 
-Dieses Paket folgt nach Gesamtpaket 1. Die große Testrunde steht erst nach allen
-Gesamtpaketen am Ende der Nachtarbeit. Es umfasst zehn weitere Dialogfälle.
-Mehrfache Verwendungen derselben Komponente und Varianten für aktive beziehungsweise
-gespeicherte Sitzungen werden nicht als eigene Umbauten gezählt.
+Die zehn weiteren Bestätigungsfälle verwenden inzwischen den nativen
+`ConfirmDialog`: weitere Benachrichtigungsaktionen, Sitzungen, Profilbildlöschung,
+Formularschutz, manuelle Mailqueue-Bereinigung, Benutzerlöschung und die Vorschau
+der Wiederherstellungsanleitung. Die gemeinsame Portal-Hülle erhält ihre
+fachlichen Aufrufer; die administrative Benutzerlöschung behält ihren eigenen
+Kontext und die erneute ausdrückliche Bestätigung nach einem Fehler.
 
-Der abgenommene Pilot „Alle Benachrichtigungen als gelesen markieren“ in Inbox
-und Glockenvorschau bildet die Grundlage. Aussehen, Texte in DE/EN, Icons,
-Warnfarben, Kontextkarten, Buttonbreiten und fachliches Verhalten bleiben erhalten.
-Formular-, Bearbeitungs-, Identitäts- und seitliche Hilfedialoge bleiben auf
-Vaadin-`Dialog` und gehören nicht zu diesem Paket.
-
-### Arbeitspaket 2.1: Weitere Benachrichtigungsbestätigungen – drei Fälle
-
-- [ ] Einzelne Benachrichtigung als gelesen markieren.
-- [ ] Einzelne Benachrichtigung löschen.
-- [ ] Gelesene Benachrichtigungen gesammelt löschen.
-- [ ] Inbox, Glockenvorschau und gegebenenfalls geöffnetes Nachrichtendetail
-  berücksichtigen; Auswahl und Zeitpunkt der jeweiligen Aktion erhalten.
-
-### Arbeitspaket 2.2: Sitzungsbestätigungen – zwei Fälle
-
-- [ ] Einzelne Sitzung abmelden beziehungsweise gespeicherte Anmeldung widerrufen.
-- [ ] Andere Sitzungen und gespeicherte Anmeldungen gesammelt widerrufen.
-- [ ] Kontextangaben, Schutz der aktuellen Sitzung und eingeschränkte
-  Wiederherstellungsabläufe in allen Verbrauchern erhalten.
-
-### Arbeitspaket 2.3: Profilbildlöschung – ein Fall
-
-- [ ] Löschbestätigung im Profilbilddialog umstellen.
-- [ ] Entwurfszustand und Schutz gegen inzwischen geschlossenen oder durch
-  einen anderen Upload veränderten Bildentwurf erhalten; die Bestätigung
-  darf keine vorgezogene dauerhafte Löschung auslösen.
-
-### Arbeitspaket 2.4: Ungespeicherte Änderungen – ein Fall
-
-- [ ] Gemeinsame Verwerfungsbestätigung für Aktionen und interne Navigation
-  umstellen und alle bestehenden Formularverbraucher einbeziehen.
-- [ ] Weiterbearbeiten, Verwerfen sowie Fortsetzen oder Abbrechen einer
-  angehaltenen Navigation unverändert erhalten. Suchfelder und Filter bleiben
-  außerhalb des Formularschutzes; die Browser-Verlassenswarnung bleibt erhalten.
-
-### Arbeitspaket 2.5: Administrative Bestätigungen – zwei Fälle
-
-- [ ] Die Bestätigung der manuellen Mailqueue-Bereinigung technisch auf
-  `ConfirmDialog` übertragen; Superadmin-Prüfung und Verwendung der gespeicherten
-  Einstellungen erhalten. Die separat beauftragte Gestaltung nach Variante A
-  mit Brush-Icons ist die Grundlage und kein erneut abzuarbeitender Designauftrag.
-- [ ] Administrative Benutzerlöschung mit Benutzerkontext umstellen;
-  Berechtigungen, Löschschutz und bestehende Fehlerbehandlung erhalten.
-
-### Arbeitspaket 2.6: Wiederherstellungsanleitung – ein Fall
-
-- [ ] Vorschau und Versandbestätigung der Wiederherstellungsanleitung im
-  Ticketbereich umstellen.
-- [ ] Längeren Vorschauinhalt, Scrollverhalten und Aktionen berücksichtigen;
-  Versand erfolgt weiterhin erst nach Bestätigung und erneuter fachlicher
-  Prüfung des Tickets.
-
-### Ablauf und Prüfungen für Gesamtpaket 2
-
-1. Vor jedem Teilpaket bestehende Ansicht, Aufrufer und öffentliche APIs der
-   verwendeten Vaadin-Version prüfen. Geeignete gemeinsame Dialoggestaltung
-   wiederverwenden; bei einer konkreten Funktionslücke vor einem eigenen Ersatz
-   Rückfrage halten. Die Vorschau in Arbeitspaket 2.6 besonders auf Eignung prüfen.
-2. Gemeinsame Grundlagen nur mit Prüfung aller betroffenen Verbraucher ändern.
-   Bereits durch eine gemeinsame Übernahme erledigte Fälle nicht doppelt umbauen
-   und keine leeren Commits erzeugen.
-3. Isolierte Vorher-/Nachher-Screenshots in DE/EN auf Desktop und Smartphone
-   erstellen und Layoutmesswerte vergleichen. Pro Vergleichsstand dasselbe
-   unveränderte Anwendungsimage verwenden.
-4. Passende Regressionen für Bestätigen, Abbrechen, Close, Escape, Außenklick,
-   Tastaturfokus und Sprachwechsel ausführen. Einmalige Ausführung, native
-   Ereignisreihenfolge, erneutes Öffnen, verspätete Schließereignisse sowie
-   fachliche Fehler- und Widerrufsfälle absichern.
-5. Nach jedem Teilpaket Lesbarkeit und Änderungen reviewen, nötige Korrekturen
-   nachprüfen und einen eigenen aussagekräftigen Commit erstellen.
-   Gemeinsame Theme-Dokumentation und offene Planung aktuell halten.
-6. Betroffene Stellen und Vorher-/Nachher-Vergleiche zur gemeinsamen Abnahme
-   bereitstellen. Offenen automatisierten Testbedarf ausschließlich in
-   [Testbedarf](../testbedarf.md) führen.
-
-Gesamtpaket 2 ist mit dem gemeinsamen Startauftrag freigegeben.
+Die gezielten JUnit-Prüfungen und je 16 Vorher-/Nachher-Browserfälle in DE/EN auf
+Desktop und Smartphone sind bestanden. Je Sprache stimmen 61 Messwertsätze
+überein; 212 Bildpaare stehen zur Sichtung bereit. Die gemeinsame Grundlage
+erledigt mehrere Teilfälle zusammen; dafür werden keine leeren Einzelcommits
+erzeugt. Formular-, Bearbeitungs-, Identitäts- und seitliche Hilfedialoge bleiben
+auf `Dialog`. Offen bleibt die menschliche Sichtung gemäß
+[HUM-01](../manual-tests/README.md#hum-01).
 
 ## Gesamtpaket 3: Mailqueue vollständig in internen Paketen bereinigen
 

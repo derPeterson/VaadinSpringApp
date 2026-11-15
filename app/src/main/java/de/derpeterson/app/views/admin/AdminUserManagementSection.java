@@ -19,7 +19,9 @@ import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.checkbox.CheckboxGroup;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.dependency.StyleSheet;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -49,6 +51,7 @@ import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.helper.time.UserActivityTime;
 import de.derpeterson.app.helper.ui.CompactDateInput;
+import de.derpeterson.app.helper.ui.ConfirmDialogInitialFocus;
 import de.derpeterson.app.helper.ui.EqualButtonWidths;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.ValidationHelper;
@@ -113,6 +116,7 @@ import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 
 @Slf4j
+@StyleSheet("custom-theme/cosmos-confirmation.css")
 public class AdminUserManagementSection extends VerticalLayout {
   private static final String COSMOS_PANEL_TITLE_CLASS = PANEL_TITLE;
   private static final String COSMOS_PANEL_DESCRIPTION_CLASS = PANEL_DESCRIPTION;
@@ -644,13 +648,24 @@ public class AdminUserManagementSection extends VerticalLayout {
       return;
     }
 
-    Dialog deleteUserDialog = new Dialog();
+    ConfirmDialog deleteUserDialog = new ConfirmDialog();
+    AtomicBoolean deletionPending = new AtomicBoolean(true);
     deleteUserDialog.addClassNames("cosmos-theme", REFERENCE_OVERLAY, "admin-reference-dialog");
-    deleteUserDialog.getThemeNames().add("cosmos-reference");
+    deleteUserDialog.getElement().getThemeList().add("cosmos-reference");
     deleteUserDialog.getElement().getThemeList().add("cosmos");
-    deleteUserDialog.addClassName("admin-user-delete-dialog");
+    deleteUserDialog.addClassNames("admin-user-delete-dialog", "cosmos-native-confirmation");
+    deleteUserDialog.setCancelable(true);
     deleteUserDialog.setCloseOnEsc(true);
-    deleteUserDialog.setCloseOnOutsideClick(true);
+    deleteUserDialog
+        .getElement()
+        .addEventListener(
+            "click",
+            event -> {
+              deletionPending.set(false);
+              deleteUserDialog.close();
+            })
+        .setFilter(
+            "event.composedPath().some(node => node instanceof HTMLElement && node.part.contains('backdrop'))");
 
     H2 deleteDialogTitleH2 = new H2(messageProperties.getAdminUsersDeleteDialogTitle());
     deleteDialogTitleH2.addClassName(COSMOS_PANEL_TITLE_CLASS);
@@ -660,7 +675,12 @@ public class AdminUserManagementSection extends VerticalLayout {
     Div deleteDialogHeadingDiv = new Div(deleteDialogTitleH2, deleteDialogDescriptionSpan);
     deleteDialogHeadingDiv.addClassName(COSMOS_PANEL_HEADING_CLASS);
     Button closeDeleteUserDialogButton =
-        new Button(AppIcon.CLOSE_CIRCLE.create(), event -> deleteUserDialog.close());
+        new Button(
+            AppIcon.CLOSE_CIRCLE.create(),
+            event -> {
+              deletionPending.set(false);
+              deleteUserDialog.close();
+            });
     closeDeleteUserDialogButton.addClassNames(
         "cosmos-overlay-close", LumoUtility.TextColor.PRIMARY);
     closeDeleteUserDialogButton.addThemeVariants(ButtonVariant.LUMO_TERTIARY_INLINE);
@@ -670,13 +690,10 @@ public class AdminUserManagementSection extends VerticalLayout {
     Div deleteDialogHeaderDiv =
         new Div(deleteIconBadgeDiv, deleteDialogHeadingDiv, closeDeleteUserDialogButton);
     deleteDialogHeaderDiv.addClassName("admin-user-dialog-header");
-    deleteUserDialog.getHeader().add(deleteDialogHeaderDiv);
-    deleteUserDialog.getElement().setProperty(ARIA_LABEL_PROPERTY, deleteDialogTitleH2.getText());
+    deleteUserDialog.setHeader(new Div(deleteDialogHeaderDiv));
+    ConfirmDialogInitialFocus.configure(deleteUserDialog, closeDeleteUserDialogButton);
+    deleteUserDialog.setHeader(deleteDialogTitleH2.getText());
 
-    SvgIcon deleteWarningSvgIcon = AppIcon.TRASH.create();
-    deleteWarningSvgIcon.getElement().setAttribute(ARIA_HIDDEN, "true");
-    Div deleteWarningIconBadgeDiv = new Div(deleteWarningSvgIcon);
-    deleteWarningIconBadgeDiv.addClassNames(PANEL_ICON, "cosmos-delete-accent");
     Span deleteWarningTitleSpan = new Span(messageProperties.getAdminUsersDeleteDialogQuestion());
     deleteWarningTitleSpan.addClassName("admin-user-delete-warning-title");
     Span deleteWarningTextSpan = new Span(messageProperties.getAdminUsersDeleteDialogWarning());
@@ -704,39 +721,41 @@ public class AdminUserManagementSection extends VerticalLayout {
     Div deletedUserIdentityDiv = new Div(deletedUserAvatarIcon, deletedUserHeadingDiv);
     deletedUserIdentityDiv.addClassName("admin-user-delete-identity");
 
-    Button cancelUserDeletionButton =
-        new Button(messageProperties.getAdminUsersCancel(), event -> deleteUserDialog.close());
+    Button cancelUserDeletionButton = new Button(messageProperties.getAdminUsersCancel());
     cancelUserDeletionButton.setPrefixComponent(AppIcon.CLOSE.create());
-    Button confirmUserDeletionButton =
-        new Button(
-            messageProperties.getPortalDeleteAction(),
-            event -> confirmUserDeletion(userEntity, deleteUserDialog, afterDeleteAction));
+    Button confirmUserDeletionButton = new Button(messageProperties.getPortalDeleteAction());
     confirmUserDeletionButton.setPrefixComponent(AppIcon.TRASH.create());
     confirmUserDeletionButton.addClassName(DELETE_BUTTON);
     confirmUserDeletionButton.addClassName("admin-user-delete-confirm");
 
-    HorizontalLayout deleteDialogActionsLayout =
-        new HorizontalLayout(cancelUserDeletionButton, confirmUserDeletionButton);
-    deleteDialogActionsLayout.addClassName("cosmos-dialog-actions");
-    EqualButtonWidths.configureEqualButtonWidths(deleteDialogActionsLayout);
-    deleteDialogActionsLayout.setWidthFull();
-    deleteDialogActionsLayout.setJustifyContentMode(FlexComponent.JustifyContentMode.END);
-
-    deleteUserDialog.getFooter().add(deleteDialogActionsLayout);
+    cancelUserDeletionButton.addClassName("cosmos-confirmation-action");
+    confirmUserDeletionButton.addClassName("cosmos-confirmation-action");
+    deleteUserDialog.setCancelButton(cancelUserDeletionButton);
+    deleteUserDialog.setConfirmButton(confirmUserDeletionButton);
+    EqualButtonWidths.configureEqualButtonWidths(deleteUserDialog);
+    deleteUserDialog.addCancelListener(event -> {
+      deletionPending.set(false);
+      deleteUserDialog.close();
+    });
+    deleteUserDialog.addConfirmListener(event -> {
+      if (deletionPending.compareAndSet(true, false)) {
+        if (!confirmUserDeletion(userEntity, deleteUserDialog, afterDeleteAction)) {
+          deletionPending.set(true);
+        }
+      }
+    });
     VerticalLayout deleteDialogContentLayout =
         new VerticalLayout(deleteWarningDiv, deletedUserIdentityDiv);
     deleteDialogContentLayout.setPadding(false);
     deleteDialogContentLayout.setSpacing(false);
     deleteDialogContentLayout.addClassName("cosmos-dialog-form");
 
-    deleteUserDialog.add(deleteDialogContentLayout);
+    deleteUserDialog.setText(deleteDialogContentLayout);
 
     Runnable refreshDeleteDialogTextsAction =
         () -> {
           deleteDialogTitleH2.setText(messageProperties.getAdminUsersDeleteDialogTitle());
-          deleteUserDialog
-              .getElement()
-              .setProperty(ARIA_LABEL_PROPERTY, deleteDialogTitleH2.getText());
+          deleteUserDialog.setHeader(deleteDialogTitleH2.getText());
           deleteDialogDescriptionSpan.setText(
               messageProperties.getAdminUsersDeleteDialogDescription());
           closeDeleteUserDialogButton.setAriaLabel(messageProperties.getAdminUsersCloseDialog());
@@ -746,8 +765,9 @@ public class AdminUserManagementSection extends VerticalLayout {
           confirmUserDeletionButton.setText(messageProperties.getPortalDeleteAction());
         };
     dialogTextRefreshActions.add(refreshDeleteDialogTextsAction);
-    deleteUserDialog.addOpenedChangeListener(event -> {
-      if (!event.isOpened()) {
+    deleteUserDialog.addClosedListener(event -> {
+      if (!deleteUserDialog.isOpened()) {
+        deletionPending.set(false);
         dialogTextRefreshActions.remove(refreshDeleteDialogTextsAction);
       }
     });
@@ -756,22 +776,25 @@ public class AdminUserManagementSection extends VerticalLayout {
     deleteUserDialog.open();
   }
 
-  private void confirmUserDeletion(
-      UserEntity userEntity, Dialog deleteUserDialog, Runnable afterDeleteAction) {
+  private boolean confirmUserDeletion(
+      UserEntity userEntity, ConfirmDialog deleteUserDialog, Runnable afterDeleteAction) {
     try {
       userService.deleteUser(userEntity);
-      deleteUserDialog.close();
-      afterDeleteAction.run();
-      refreshGrid();
-
-      NotificationHelper.getInstance()
-          .showNotification(
-              messageProperties::getBaseSuccessTitle,
-              messageProperties::getAdminUsersDeleteSuccess,
-              NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException exception) {
+      // Die native Bestätigung schließt vor dem Serverereignis; Fehler behalten den Kontext.
+      deleteUserDialog.open();
       showMutationError(exception, true);
+      return false;
     }
+    deleteUserDialog.close();
+    afterDeleteAction.run();
+    refreshGrid();
+    NotificationHelper.getInstance()
+        .showNotification(
+            messageProperties::getBaseSuccessTitle,
+            messageProperties::getAdminUsersDeleteSuccess,
+            NotificationHelper.NotificationType.SUCCESS);
+    return true;
   }
 
   private void openDialog(UserEntity userEntity) {

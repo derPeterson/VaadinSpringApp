@@ -1,13 +1,16 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ConfirmDialogTestActions.click;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.vaadin.flow.component.ComponentUtil;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -61,6 +64,42 @@ class PortalConfirmationDialogTest {
   }
 
   @Test
+  void nativeStateSynchronizationDoesNotConsumeTheFollowingConfirmation() {
+    AtomicInteger actionCallCounter = new AtomicInteger();
+    confirmationDialog.open(confirmationPrompt, actionCallCounter::incrementAndGet);
+    confirmationDialog.setOpened(false);
+    ComponentUtil.fireEvent(
+        confirmationDialog, new ConfirmDialog.ConfirmEvent(confirmationDialog, true));
+    ComponentUtil.fireEvent(
+        confirmationDialog, new ConfirmDialog.ConfirmEvent(confirmationDialog, true));
+    assertEquals(1, actionCallCounter.get());
+  }
+
+  @Test
+  void completedClientClosureDiscardsTheUnconfirmedAction() {
+    AtomicInteger actionCallCounter = new AtomicInteger();
+    confirmationDialog.open(confirmationPrompt, actionCallCounter::incrementAndGet);
+    confirmationDialog.setOpened(false);
+    ComponentUtil.fireEvent(
+        confirmationDialog, new ConfirmDialog.ClosedEvent(confirmationDialog, true));
+    ComponentUtil.fireEvent(
+        confirmationDialog, new ConfirmDialog.ConfirmEvent(confirmationDialog, true));
+    assertEquals(0, actionCallCounter.get());
+  }
+
+  @Test
+  void lateClosedEventDoesNotDiscardTheNewlyOpenedAction() {
+    AtomicInteger actionCallCounter = new AtomicInteger();
+    confirmationDialog.open(confirmationPrompt, () -> actionCallCounter.addAndGet(100));
+    confirmationDialog.close();
+    confirmationDialog.open(confirmationPrompt, actionCallCounter::incrementAndGet);
+    ComponentUtil.fireEvent(
+        confirmationDialog, new ConfirmDialog.ClosedEvent(confirmationDialog, true));
+    click(readConfirmationButton("confirmButton"));
+    assertEquals(1, actionCallCounter.get());
+  }
+
+  @Test
   void draftVariantKeepsTheDraftOnCloseAndOnlyDiscardsExplicitlyOnce() {
     MessageProperties messageProperties = new MessageProperties(new CustomI18NProvider());
     confirmationDialog =
@@ -75,17 +114,17 @@ class PortalConfirmationDialogTest {
     for (String buttonFieldName : new String[] {"closeDialogButton", "confirmButton"}) {
       confirmationDialog.openDiscardChanges(
           discardCallCounter::incrementAndGet, keepEditingCallCounter::incrementAndGet);
-      readConfirmationButton(buttonFieldName).click();
-      readConfirmationButton("cancelButton").click();
+      click(readConfirmationButton(buttonFieldName));
+      click(readConfirmationButton("cancelButton"));
     }
     assertEquals(0, discardCallCounter.get());
     assertEquals(2, keepEditingCallCounter.get());
 
     confirmationDialog.openDiscardChanges(
         discardCallCounter::incrementAndGet, keepEditingCallCounter::incrementAndGet);
-    readConfirmationButton("cancelButton").click();
-    readConfirmationButton("cancelButton").click();
-    readConfirmationButton("closeDialogButton").click();
+    click(readConfirmationButton("cancelButton"));
+    click(readConfirmationButton("cancelButton"));
+    click(readConfirmationButton("closeDialogButton"));
 
     assertEquals(1, discardCallCounter.get());
     assertEquals(2, keepEditingCallCounter.get());
@@ -96,12 +135,12 @@ class PortalConfirmationDialogTest {
   void cancellingAndClosingNeverExecuteOrRetainTheAction() {
     AtomicInteger actionCallCounter = new AtomicInteger();
     confirmationDialog.open(confirmationPrompt, actionCallCounter::incrementAndGet);
-    readConfirmationButton("cancelButton").click();
-    readConfirmationButton("confirmButton").click();
+    click(readConfirmationButton("cancelButton"));
+    click(readConfirmationButton("confirmButton"));
 
     confirmationDialog.open(confirmationPrompt, actionCallCounter::incrementAndGet);
-    readConfirmationButton("closeDialogButton").click();
-    readConfirmationButton("confirmButton").click();
+    click(readConfirmationButton("closeDialogButton"));
+    click(readConfirmationButton("confirmButton"));
 
     assertEquals(0, actionCallCounter.get());
     assertFalse(confirmationDialog.isOpened());
@@ -114,8 +153,8 @@ class PortalConfirmationDialogTest {
     confirmationDialog.close();
 
     confirmationDialog.open(confirmationPrompt, actionCallCounter::incrementAndGet);
-    readConfirmationButton("confirmButton").click();
-    readConfirmationButton("confirmButton").click();
+    click(readConfirmationButton("confirmButton"));
+    click(readConfirmationButton("confirmButton"));
 
     assertEquals(1, actionCallCounter.get());
     assertFalse(confirmationDialog.isOpened());
@@ -132,9 +171,9 @@ class PortalConfirmationDialogTest {
         });
     Button confirmActionButton = readConfirmationButton("confirmButton");
 
-    assertThrows(IllegalStateException.class, confirmActionButton::click);
+    assertThrows(IllegalStateException.class, () -> click(confirmActionButton));
 
-    readConfirmationButton("confirmButton").click();
+    click(readConfirmationButton("confirmButton"));
 
     assertEquals(1, actionCallCounter.get());
     assertFalse(confirmationDialog.isOpened());

@@ -1,5 +1,6 @@
 package de.derpeterson.app.views.admin;
 
+import static de.derpeterson.app.ConfirmDialogTestActions.click;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -21,6 +22,7 @@ import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.Autocomplete;
@@ -276,10 +278,11 @@ class AdminUserDialogValidationTest {
 
     findCancelUserEditButton().click();
 
-    Dialog unsavedChangesDialog = findOpenUnsavedChangesDialog().orElseThrow();
+    ConfirmDialog unsavedChangesDialog = findOpenUnsavedChangesDialog().orElseThrow();
     assertTrue(userDialog.isOpened());
-    findDialogFooterButton(unsavedChangesDialog, messageProperties.getUnsavedChangesKeepEditing())
-        .click();
+    click(
+        findDialogFooterButton(
+            unsavedChangesDialog, messageProperties.getUnsavedChangesKeepEditing()));
     assertEquals("Changed first name", firstNameTextField.getValue());
 
     firstNameTextField.setValue(savedFirstName);
@@ -294,12 +297,20 @@ class AdminUserDialogValidationTest {
     return findDialogFooterButton(userDialog, messageProperties.getAdminUsersCancel());
   }
 
-  private Button findDialogFooterButton(Dialog sourceDialog, String buttonText) {
-    return sourceDialog
-        .getFooter()
-        .getElement()
-        .getChildren()
-        .flatMap(childElement -> childElement.getComponent().stream())
+  private Button findDialogFooterButton(Component sourceDialog, String buttonText) {
+    Stream<Component> footerComponents =
+        sourceDialog instanceof Dialog dialog
+            ? dialog
+                .getFooter()
+                .getElement()
+                .getChildren()
+                .flatMap(childElement -> childElement.getComponent().stream())
+            : sourceDialog
+                .getChildren()
+                .filter(component ->
+                    "cancel-button".equals(component.getElement().getAttribute("slot"))
+                        || "confirm-button".equals(component.getElement().getAttribute("slot")));
+    return footerComponents
         .flatMap(this::streamDescendantComponents)
         .filter(Button.class::isInstance)
         .map(Button.class::cast)
@@ -308,13 +319,13 @@ class AdminUserDialogValidationTest {
         .orElseThrow();
   }
 
-  private Optional<Dialog> findOpenUnsavedChangesDialog() {
+  private Optional<ConfirmDialog> findOpenUnsavedChangesDialog() {
     testUi.getInternals().getStateTree().runExecutionsBeforeClientResponse();
 
     return streamDescendantComponents(testUi)
-        .filter(Dialog.class::isInstance)
-        .map(Dialog.class::cast)
-        .filter(Dialog::isOpened)
+        .filter(ConfirmDialog.class::isInstance)
+        .map(ConfirmDialog.class::cast)
+        .filter(ConfirmDialog::isOpened)
         .filter(candidateDialog ->
             candidateDialog.getId().filter("unsaved-changes-confirmation"::equals).isPresent())
         .findFirst();
@@ -566,21 +577,24 @@ class AdminUserDialogValidationTest {
       when(userService.canDeleteUser(targetUserEntity)).thenReturn(true);
       ReflectionTestUtils.invokeMethod(userManagementSection, "deleteUser", targetUserEntity);
       testUi.getInternals().getStateTree().runExecutionsBeforeClientResponse();
-      userDialog =
+      ConfirmDialog deletionDialog =
           streamDescendantComponents(testUi)
-              .filter(Dialog.class::isInstance)
-              .map(Dialog.class::cast)
-              .filter(Dialog::isOpened)
+              .filter(ConfirmDialog.class::isInstance)
+              .map(ConfirmDialog.class::cast)
+              .filter(ConfirmDialog::isOpened)
               .findFirst()
               .orElseThrow();
+      assertTrue(deletionDialog.isCloseOnEsc());
+      ComponentUtil.fireEvent(deletionDialog, new ConfirmDialog.CancelEvent(deletionDialog, true));
+      assertFalse(deletionDialog.isOpened());
+      ComponentUtil.fireEvent(deletionDialog, new ConfirmDialog.ConfirmEvent(deletionDialog, true));
     } else {
       openUserDialog("de", dialogActionName.equals("create"));
+      assertTrue(userDialog.isCloseOnOutsideClick());
+      assertTrue(userDialog.isCloseOnEsc());
+      userDialog.setOpened(false);
+      assertFalse(userDialog.isOpened());
     }
-    assertTrue(userDialog.isCloseOnOutsideClick());
-    assertTrue(userDialog.isCloseOnEsc());
-    userDialog.setOpened(false);
-
-    assertFalse(userDialog.isOpened());
     verify(userService, never()).save(any());
     verify(userService, never()).createAdminUser(any(), any());
     verify(userService, never()).updateAdminUser(any(), any(), any());

@@ -1,5 +1,6 @@
 package de.derpeterson.app.views;
 
+import static de.derpeterson.app.ConfirmDialogTestActions.click;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -18,6 +19,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +32,7 @@ import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
@@ -69,6 +72,7 @@ import java.util.stream.Stream;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -144,6 +148,11 @@ class AdminUserManagementSectionTest {
         .map(Dialog.class::cast)
         .toList()
         .forEach(Dialog::close);
+    descendants(testUi)
+        .filter(ConfirmDialog.class::isInstance)
+        .map(ConfirmDialog.class::cast)
+        .toList()
+        .forEach(ConfirmDialog::close);
     NotificationHelper.getInstance().closeAndClearAllNotifications();
     UI.setCurrent(null);
     VaadinSession.setCurrent(null);
@@ -350,12 +359,49 @@ class AdminUserManagementSectionTest {
         .orElseThrow();
   }
 
+  private ConfirmDialog confirmationDialog() {
+    testUi.getInternals().getStateTree().runExecutionsBeforeClientResponse();
+    return descendants(testUi)
+        .filter(ConfirmDialog.class::isInstance)
+        .map(ConfirmDialog.class::cast)
+        .filter(ConfirmDialog::isOpened)
+        .findFirst()
+        .orElseThrow();
+  }
+
+  @Test
+  void failedNativeDeletionKeepsItsContextAndRequiresAnotherExplicitConfirmation() {
+    UserEntity deletedUserEntity = user(false);
+    doThrow(new IllegalStateException("Test failure"))
+        .doNothing()
+        .when(userService)
+        .deleteUser(any());
+    ReflectionTestUtils.invokeMethod(userManagementSection, "deleteUser", deletedUserEntity);
+    ConfirmDialog deletionDialog = confirmationDialog();
+    Button deleteButton =
+        descendants(deletionDialog)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .filter(button -> button.getText().equals(messageProperties.getPortalDeleteAction()))
+            .findFirst()
+            .orElseThrow();
+
+    click(deleteButton);
+    assertTrue(deletionDialog.isOpened());
+    ComponentUtil.fireEvent(deletionDialog, new ConfirmDialog.ClosedEvent(deletionDialog, true));
+    assertTrue(deletionDialog.isOpened());
+    click(deleteButton);
+    assertFalse(deletionDialog.isOpened());
+    ComponentUtil.fireEvent(deletionDialog, new ConfirmDialog.ConfirmEvent(deletionDialog, true));
+    verify(userService, times(2)).deleteUser(deletedUserEntity);
+  }
+
   private void submit(String operation, UserEntity testUserEntity) {
     ReflectionTestUtils.invokeMethod(
         userManagementSection,
         operation.equals("delete") ? "deleteUser" : "openDialog",
         testUserEntity);
-    Dialog dialog = dialog();
+    Component dialog = operation.equals("delete") ? confirmationDialog() : dialog();
     if (operation.equals("create")) {
       descendants(dialog)
           .filter(PasswordField.class::isInstance)
@@ -366,13 +412,14 @@ class AdminUserManagementSectionTest {
         operation.equals("delete")
             ? messageProperties.getPortalDeleteAction()
             : messageProperties.getAdminUsersSave();
-    descendants(dialog)
-        .filter(Button.class::isInstance)
-        .map(Button.class::cast)
-        .filter(button -> button.getText().equals(label))
-        .findFirst()
-        .orElseThrow()
-        .click();
+    Button submitButton =
+        descendants(dialog)
+            .filter(Button.class::isInstance)
+            .map(Button.class::cast)
+            .filter(button -> button.getText().equals(label))
+            .findFirst()
+            .orElseThrow();
+    click(submitButton);
   }
 
   static Stream<Arguments> failures() {

@@ -1,5 +1,6 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ConfirmDialogTestActions.click;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -1193,7 +1194,7 @@ class UserNotificationsUiTest {
     Button cancelConfirmationButton =
         readComponentField(notificationActionConfirmationDialog, "cancelButton");
 
-    cancelConfirmationButton.click();
+    click(cancelConfirmationButton);
 
     assertFalse(notificationActionConfirmationDialog.isOpened());
     assertTrue(notificationDetailDialog.isOpened());
@@ -1591,7 +1592,7 @@ class UserNotificationsUiTest {
         readComponentField(notificationsPanel, "notificationActionConfirmation");
 
     assertTrue(notificationActionConfirmationDialog.isOpened());
-    ((Button) readComponentField(notificationActionConfirmationDialog, "confirmButton")).click();
+    click(((Button) readComponentField(notificationActionConfirmationDialog, "confirmButton")));
 
     assertFalse(notificationActionConfirmationDialog.isOpened());
   }

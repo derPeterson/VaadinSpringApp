@@ -42,6 +42,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @Tag("browser")
 @Feature("Eigene Sitzungen und gespeicherte Anmeldungen verwalten")
@@ -163,7 +165,9 @@ public class SessionManagementBrowserTest extends BrowserFixture {
     }
   }
 
-  @Test
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("native-confirmations")
   @DisplayName(
       "SESSIONS-02: Einzelwiderruf sperrt alte Speichern-Aktion und Remember-me, erhält andere Sitzung")
   @Description(
@@ -174,10 +178,11 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       4. Aktuelle Sitzung bleibt nutzbar, gespeicherte Anmeldung kehrt nicht zurück; Entwurf bleibt ungespeichert.
       **Erwartet:** Gezielter Widerruf mit Erfolgsmeldung und sofort freiem Platz.
       """)
-  void selectedRevokeBlocksOldFormAndSavedReturn() {
+  void selectedRevokeBlocksOldFormAndSavedReturn(int viewportWidth) {
     String email = user();
     try (BrowserActor owner = new BrowserActor(testBrowser);
         BrowserActor other = new BrowserActor(testBrowser)) {
+      owner.browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
       login(owner, email, false);
       login(other, email, true);
       AccountPage stale = new AccountPage(other.browserPage);
@@ -199,8 +204,9 @@ public class SessionManagementBrowserTest extends BrowserFixture {
 
       assertEquals(401, denied.status());
       revoked(other.browserPage);
-      UiActions.complete(
-          owner.browserPage, () -> owner.browserPage.locator("#account-tab-profile").click());
+      new AccountPage(owner.browserPage).section("account-tab-profile");
+      owner.browserPage.waitForURL("**/account?section=profile");
+      assertThat(owner.browserPage.locator("#account-panel-profile")).isVisible();
 
       assertThat(new AccountPage(owner.browserPage).input("account-first-name"))
           .hasValue(originalName);
@@ -212,7 +218,9 @@ public class SessionManagementBrowserTest extends BrowserFixture {
     }
   }
 
-  @Test
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
+  @Tag("native-confirmations")
   @DisplayName(
       "SESSIONS-03: Alle anderen abmelden und aktuelle Sitzung samt gespeichertem Zugang behalten")
   @Description(
@@ -223,11 +231,12 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       4. Aktuelle Sitzung bleibt nach Reload angemeldet und ihr eigener gespeicherter Zugang erhalten.
       **Erwartet:** Keine pauschale Löschung des aktuellen gespeicherten Zugangs.
       """)
-  void logoutOthersKeepsCurrentSessionAndItsSavedSignIn() {
+  void logoutOthersKeepsCurrentSessionAndItsSavedSignIn(int viewportWidth) {
     String email = user();
     try (BrowserActor owner = new BrowserActor(testBrowser);
         BrowserActor second = new BrowserActor(testBrowser);
         BrowserActor third = new BrowserActor(testBrowser)) {
+      owner.browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
       login(owner, email, true);
       login(second, email, true);
       login(third, email, false);

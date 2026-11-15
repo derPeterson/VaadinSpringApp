@@ -1,5 +1,6 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ConfirmDialogTestActions.click;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -144,7 +145,7 @@ class AccountSessionsComponentTest {
     PortalConfirmationDialog sessionConfirmationDialog = getSessionConfirmationDialog();
 
     assertTrue(sessionConfirmationDialog.isOpened());
-    ((Button) ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmButton")).click();
+    click(((Button) ReflectionTestUtils.getField(sessionConfirmationDialog, "confirmButton")));
 
     assertFalse(sessionConfirmationDialog.isOpened());
   }
@@ -157,7 +158,7 @@ class AccountSessionsComponentTest {
     assertTrue(sessionConfirmationDialog.isOpened());
     assertTrue(revokedSessionIds.isEmpty());
 
-    getCancelSessionConfirmationButton(sessionConfirmationDialog).click();
+    click(getCancelSessionConfirmationButton(sessionConfirmationDialog));
 
     assertTrue(revokedSessionIds.isEmpty());
     assertTrue(findSessionActionButton("session-revoke-other-handle").isEnabled());
@@ -365,7 +366,7 @@ class AccountSessionsComponentTest {
 
       assertSessionConfirmationContext(sessionConfirmationDialog, sessionEntry);
 
-      getCancelSessionConfirmationButton(sessionConfirmationDialog).click();
+      click(getCancelSessionConfirmationButton(sessionConfirmationDialog));
 
       assertTrue(revokedSessionIds.isEmpty());
     }
@@ -383,7 +384,7 @@ class AccountSessionsComponentTest {
     assertEquals(
         2,
         confirmationContextComponent.getChildren().findFirst().orElseThrow().getChildren().count());
-    getCancelSessionConfirmationButton(sessionConfirmationDialog).click();
+    click(getCancelSessionConfirmationButton(sessionConfirmationDialog));
 
     assertEquals(0, revokeOtherSessionsCallCounter.get());
   }
@@ -430,7 +431,7 @@ class AccountSessionsComponentTest {
         confirmationExplanationText.contains(messageProperties.getSessionRecoveryLogoutHint()));
     assertFalse(
         confirmationExplanationText.contains(messageProperties.getPortalSessionRetainedHint()));
-    getCancelSessionConfirmationButton(portalConfirmationDialog).click();
+    click(getCancelSessionConfirmationButton(portalConfirmationDialog));
 
     assertTrue(revokedSessionIds.isEmpty());
   }

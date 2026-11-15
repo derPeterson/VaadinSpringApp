@@ -113,6 +113,7 @@ public final class UnsavedChangesPrompt {
   }
 
   private void clickConfirmationAction(String actionButtonLabel) {
+    ConfirmationAppearanceChecks.capture(browserPage, confirmationDialogLocator, "unsaved-changes");
     confirmationDialogLocator
         .getByRole(
             AriaRole.BUTTON,

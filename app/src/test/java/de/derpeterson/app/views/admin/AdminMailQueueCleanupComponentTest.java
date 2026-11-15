@@ -1,5 +1,6 @@
 package de.derpeterson.app.views.admin;
 
+import static de.derpeterson.app.ConfirmDialogTestActions.click;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -104,7 +105,7 @@ class AdminMailQueueCleanupComponentTest {
 
     assertConfirmationDetails();
     assertTrue(confirmationDialog.isOpened());
-    readDialogButton("confirmButton").click();
+    click(readDialogButton("confirmButton"));
     verify(emailQueueCleanupService).runManually();
   }
 
@@ -113,8 +114,8 @@ class AdminMailQueueCleanupComponentTest {
   void dismissingNeverRunsCleanupOrLeavesAnExecutableAction(String buttonFieldName) {
     openConfirmationDialog();
 
-    readDialogButton(buttonFieldName).click();
-    readDialogButton("confirmButton").click();
+    click(readDialogButton(buttonFieldName));
+    click(readDialogButton("confirmButton"));
 
     assertFalse(confirmationDialog.isOpened());
     verify(emailQueueCleanupService, never()).runManually();
@@ -124,8 +125,8 @@ class AdminMailQueueCleanupComponentTest {
   void confirmationRunsCleanupOnlyOnceAndKeepsTheResult() {
     openConfirmationDialog();
 
-    readDialogButton("confirmButton").click();
-    readDialogButton("confirmButton").click();
+    click(readDialogButton("confirmButton"));
+    click(readDialogButton("confirmButton"));
 
     verify(emailQueueCleanupService, times(1)).runManually();
     assertFalse(confirmationDialog.isOpened());

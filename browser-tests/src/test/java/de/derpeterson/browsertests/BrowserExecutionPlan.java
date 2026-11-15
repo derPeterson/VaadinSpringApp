@@ -94,6 +94,8 @@ final class BrowserExecutionPlan {
 
     if (suiteName.equals("fast")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("fast"));
+    } else if (suiteName.equals("native-confirmations")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("native-confirmations"));
     } else if (suiteName.equals("confirmation-dialog")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("confirmation-dialog"));
     } else if (suiteName.equals("two-factor-recovery-output")) {

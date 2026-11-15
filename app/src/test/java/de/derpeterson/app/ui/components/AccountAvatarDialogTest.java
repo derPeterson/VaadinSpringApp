@@ -1,5 +1,6 @@
 package de.derpeterson.app.ui.components;
 
+import static de.derpeterson.app.ConfirmDialogTestActions.click;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -159,7 +160,7 @@ class AccountAvatarDialogTest {
     assertEquals(false, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
     assertEquals(uploadedImageUuid, readUploadedImageUuid());
 
-    readDeletionConfirmationButton("cancelButton").click();
+    click(readDeletionConfirmationButton("cancelButton"));
 
     assertTrue(accountAvatarDialog.isOpened());
     assertFalse(readAvatarDeletionConfirmationDialog().isOpened());
@@ -172,7 +173,7 @@ class AccountAvatarDialogTest {
   void confirmedDeletionIsOnlyPersistedWhenTheEditorIsSaved() {
     openDialogWithUploadedImage();
     readAvatarActionButton("deleteAvatarButton").click();
-    readDeletionConfirmationButton("confirmButton").click();
+    click(readDeletionConfirmationButton("confirmButton"));
 
     assertTrue(accountAvatarDialog.isOpened());
     assertFalse(readAvatarDeletionConfirmationDialog().isOpened());
@@ -202,7 +203,7 @@ class AccountAvatarDialogTest {
     assertFalse(readAvatarDeletionConfirmationDialog().isOpened());
     UUID nextUploadedImageUuid = openDialogWithUploadedImage();
 
-    readDeletionConfirmationButton("confirmButton").click();
+    click(readDeletionConfirmationButton("confirmButton"));
 
     assertEquals(nextUploadedImageUuid, readUploadedImageUuid());
     assertEquals(false, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
@@ -217,7 +218,7 @@ class AccountAvatarDialogTest {
     ReflectionTestUtils.invokeMethod(
         accountAvatarDialog, "showUploadedImage", readAvatarDraftUuid(), newerUploadedImageUuid);
 
-    readDeletionConfirmationButton("confirmButton").click();
+    click(readDeletionConfirmationButton("confirmButton"));
 
     assertEquals(newerUploadedImageUuid, readUploadedImageUuid());
     assertEquals(false, ReflectionTestUtils.getField(accountAvatarDialog, "deleteImageOnSave"));
