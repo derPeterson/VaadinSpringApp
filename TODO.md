@@ -7,11 +7,12 @@
   nach Freigabe umsetzen. Ergebnisse stehen im [Prüfstand](docs/status.md).
   Die ausdrücklich zurückgestellten
   Pakete bleiben bis zu einer späteren Freigabe offen.
-  Die nächsten Karten-, Bestätigungsdialog- und Mailqueue-Bereinigungspakete sind in der
-  [Nachtarbeitsliste](docs/planung/nachtarbeit.md) gesammelt;
-  vollständig zur Umsetzung freigegeben. Danach folgen die lokale
-  Zwischenintegration nach `main`, vollständige Sonar-Bereinigung, ein neuer
-  Folgebranch und zuletzt die große Testrunde. Die Gesamtumsetzung bleibt offen.
+  Die freigegebenen Karten-, Bestätigungsdialog- und Mailqueue-Bereinigungspakete
+  sind technisch abgeschlossen, lokal nach `main` zwischenintegriert und mit
+  Sonar sowie großer Testrunde geprüft. Die gemeinsame Sichtung der neuen
+  Oberflächen bleibt unter [HUM-01](docs/manual-tests/README.md#hum-01) offen.
+  Die Gesamtumsetzung wird auf `codex/vaadin-komponenten-folgearbeiten-4`
+  weitergeführt und bleibt ausdrücklich offen.
 
 ## Zurückgestellte Planungen
 

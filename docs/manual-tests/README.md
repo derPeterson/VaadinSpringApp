@@ -120,14 +120,18 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 2. Benutzer bearbeiten und Löschbestätigung öffnen, ohne zu löschen. Tabelle, Filter, Overlays und Dialogkopf/-fuß zusammen beurteilen.
 3. Lesbarkeit, Kontraste, Abstände, Ausrichtung, Iconwirkung und verständliche Hervorhebung aktiver/gefährlicher Aktionen bewerten. Auffälligkeiten konkret benennen.
 
-Zur Sichtung des Komponentenpakets gehören die Auswahlfelder und Kalender,
-der Formularschutz sowie „Mein Konto → Sicherheit → Konto verwalten“.
-Die beiden Deaktivierungsfristen und ihre Feldhilfen stehen unter
-„Konfiguration → Kontoverwaltung“ und sind nur für Superadmins zugänglich.
-Die neuen gemeinsamen nativen Kartenhüllen in Konto, geschützten Zwischenansichten,
-Administration und Tickets sowie die übrigen nativen Bestätigungen müssen noch
-gemeinsam gesichtet werden. Dazu die isolierten Vorher-/Nachher-Aufnahmen für Desktop und Smartphone in DE/EN nutzen;
-automatisch gleiche Messwerte ersetzen die menschliche Designabnahme nicht.
+Auswahlfelder, Kalender, Formularschutz, Konto verwalten, Konfigurationsfristen,
+Kennzahlkarten, Avatare, Formulare, Seitenpfade und segmentierte Umschalter sind
+bereits vom Benutzer abgenommen und dienen als Vergleichsstandard.
+Noch gemeinsam zu sichten sind die neuen nativen Kartenhüllen in Konto,
+geschützten Zwischenansichten, Administration und Tickets einschließlich Innen-,
+Vorschau- und Kontextkarten sowie die weiteren nativen Bestätigungen.
+Bei der Mailqueue zusätzlich Direktlink/F5 der Reiter und die Zustände wartend,
+laufend, abgeschlossen, fehlgeschlagen und teilweise abgeschlossen beurteilen:
+verständliche Texte, Notifications und stets getrennte Zeilen für Zeitpunkt und
+bereinigte Aufträge. Dazu die isolierten Vorher-/Nachher-Aufnahmen für Desktop
+und Smartphone in DE/EN nutzen; automatisch gleiche Messwerte ersetzen die
+menschliche Designabnahme nicht.
 
 **Erwartet:** Die Oberfläche wirkt zusammengehörig und ruhig; relevante Texte/Aktionen sind gut lesbar und eindeutig. Rein persönlicher Änderungswunsch wird von einem Bedienhindernis unterschieden.
 
