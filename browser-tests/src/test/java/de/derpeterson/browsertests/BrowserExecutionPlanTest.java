@@ -46,6 +46,7 @@ class BrowserExecutionPlanTest {
         "metric-cards",
         "confirmation-dialog",
         "native-confirmations",
+        "tab-overflow",
         "avatars",
         "profile-form",
         "account-forms",
@@ -96,6 +97,7 @@ class BrowserExecutionPlanTest {
                   "pageBreadcrumbsFollowHierarchyAndKeepSecurityFlowsLocked",
                   "verificationAndReactivationBreadcrumbsStayUnlinked");
           case "segmented-selection" -> Set.of("segmentSelectorsPreserveTheirSurroundingViews");
+          case "tab-overflow" -> Set.of("tabBarsRemainReachableAtDifferentWidths");
           case "native-confirmations" ->
               Set.of(
                   "previewInboxFiltersAndDismissalAtBothWidths",

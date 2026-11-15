@@ -45,6 +45,31 @@ public final class UiActions {
     }
   }
 
+  /** Wischt eine horizontale Reiterleiste über echte Chromium-Touchereignisse. */
+  public static void swipeLeft(Page browserPage, Locator tabsLocator) {
+    tabsLocator.scrollIntoViewIfNeeded();
+    BoundingBox tabsBounds = tabsLocator.boundingBox();
+    double startX = tabsBounds.x + tabsBounds.width * 0.75;
+    double centerY = tabsBounds.y + tabsBounds.height / 2;
+    CDPSession touchSession = browserPage.context().newCDPSession(browserPage);
+    JsonObject touchConfiguration = new JsonObject();
+    touchConfiguration.addProperty("enabled", true);
+
+    try {
+      touchSession.send("Emulation.setTouchEmulationEnabled", touchConfiguration);
+      sendTouch(touchSession, "touchStart", startX, centerY);
+      for (int gestureStep = 1; gestureStep <= 6; gestureStep++) {
+        sendTouch(
+            touchSession, "touchMove", startX - tabsBounds.width * 0.5 * gestureStep / 6, centerY);
+      }
+      sendTouch(touchSession, "touchEnd", startX - tabsBounds.width * 0.5, centerY);
+    } finally {
+      touchConfiguration.addProperty("enabled", false);
+      touchSession.send("Emulation.setTouchEmulationEnabled", touchConfiguration);
+      touchSession.detach();
+    }
+  }
+
   private static void sendTouch(CDPSession session, String type, double x, double y) {
     JsonObject event = new JsonObject();
     event.addProperty("type", type);

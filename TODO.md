@@ -28,6 +28,18 @@
 
 ## Künftige Anwendungsfunktionen
 
+- [ ] Einheitlichen Umgang mit Tooltips auf Smartphones analysieren und gemeinsam
+  festlegen. Native Vaadin-Tooltips werden per Hover und Tastaturfokus geöffnet,
+  unterstützen aber kein langes Tippen, siehe
+  [Vaadin-Tooltip-Dokumentation](https://vaadin.com/docs/latest/components/tooltip).
+  Anwendungsweit prüfen, welche Inhalte
+  ergänzend und welche für die Bedienung nötig sind und wie diese auf
+  Touch-Geräten zugänglich sein sollen. Vorhandene native Feldhilfen und andere
+  passende Vaadin-Möglichkeiten berücksichtigen; keine pauschalen zusätzlichen
+  Info-Buttons einführen. Eigenständige spätere Aufgabe, keine Umsetzung im
+  aktuellen Nachbearbeitungspaket. Bei langen Benutzerangaben bleiben vorerst
+  Kürzung und normale Tooltips wie abgestimmt.
+
 - [ ] Anwendungshintergrund nach mehrtägigem Ausprobieren auswählen:
   **Advanced** („Horizont Plus“) ist zum Ausprobieren ausgewählt, der bisherige
   Hintergrund bleibt als **Base** erhalten. Über `ACTIVE_VARIANT` in

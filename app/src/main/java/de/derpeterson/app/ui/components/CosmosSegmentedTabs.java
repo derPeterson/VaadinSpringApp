@@ -33,8 +33,7 @@ public class CosmosSegmentedTabs<T extends Serializable> extends CustomField<T> 
     setTabIndex(-1);
 
     selectionTabs.setAutoselect(false);
-    selectionTabs.addThemeVariants(
-        TabsVariant.LUMO_EQUAL_WIDTH_TABS, TabsVariant.LUMO_HIDE_SCROLL_BUTTONS);
+    selectionTabs.addThemeVariants(TabsVariant.LUMO_EQUAL_WIDTH_TABS);
     selectionTabs.addClassName("cosmos-segmented-tabs");
     selectionTabs.setWidthFull();
     selectionTabs.addSelectedChangeListener(event -> {

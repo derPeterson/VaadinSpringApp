@@ -31,6 +31,7 @@ import de.derpeterson.browsertests.suites.SegmentedSelectionBrowserTest;
 import de.derpeterson.browsertests.suites.SessionLimitBrowserTest;
 import de.derpeterson.browsertests.suites.SessionManagementBrowserTest;
 import de.derpeterson.browsertests.suites.SessionSecurityBrowserTest;
+import de.derpeterson.browsertests.suites.TabOverflowBrowserTest;
 import de.derpeterson.browsertests.suites.TokenConfigurationBrowserTest;
 import de.derpeterson.browsertests.suites.TokenExpiryBrowserTest;
 import de.derpeterson.browsertests.suites.TwoFactorBrowserTest;
@@ -88,10 +89,12 @@ final class BrowserSuites {
               CosmosDesignBrowserTest.class,
               CosmosComponentsBrowserTest.class,
               SegmentedSelectionBrowserTest.class,
+              TabOverflowBrowserTest.class,
               EmailActionLinkBrowserTest.class,
               LoginAttemptBrowserTest.class,
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
+      case "tab-overflow" -> List.of(TabOverflowBrowserTest.class);
       case "component-follow-up" ->
           List.of(
               CosmosComponentsBrowserTest.class,

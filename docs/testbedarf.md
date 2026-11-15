@@ -2,16 +2,6 @@
 
 ## Browser-Tests
 
-- **Native Überlaufnavigation aller Reiterleisten – offen:** Umsetzung und
-  gezielter isolierter Browsernachtest sind im Nachbearbeitungsauftrag freigegeben. Nach der Korrektur
-  alle betroffenen Reiterleisten einschließlich Kontosicherheit und
-  2FA-Rollenkonfiguration in DE/EN auf Smartphone und Desktop mit und ohne
-  Überlauf prüfen: lesbare Beschriftungen, erreichbare Reiter über native
-  Pfeilnavigation, Touch und Tastatur, korrekte Auswahl und zugehöriger Inhalt.
-  Die bestehende Darstellung bei ausreichendem Platz und die unterschiedlichen
-  freigegebenen Reiterstile erhalten. Keine große Testrunde; siehe
-  [Fehlerdetails](../BUGS.md#sicherheitsreiter-auf-dem-smartphone).
-
 - **Scrollbereiche nach Regression prüfen – wartend:** Betroffene Ansicht,
   konkretes Fehlerbild und Reproduktionsschritte sind noch zu klären.
   Der Benutzer möchte Aussehen und Verhalten später gemeinsam festlegen;

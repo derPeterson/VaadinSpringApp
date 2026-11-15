@@ -40,8 +40,7 @@ Der Scrollpunkt ist auf Benutzerwunsch zurückgestellt; siehe [BUGS](../../BUGS.
 
 ## Nachbearbeitungsliste
 
-**Status: Zur Umsetzung freigegeben; vor dem ersten Codepaket den bisherigen
-Planungs- und Abnahmestand reviewen und committen.** Die neun Punkte einzeln
+**Status: Umsetzung läuft; technisch fertige Punkte warten auf Endabnahme.** Die Punkte einzeln
 bearbeiten, jeweils mit Review und eigenem Commit. Nur die aufgenommenen Stellen
 isoliert in DE/EN auf Desktop und Smartphone prüfen und Vorher-/Nachher-Aufnahmen
 für die Endabnahme bereitstellen; keine große Testrunde. Der bestätigte Reiterfehler
@@ -76,8 +75,9 @@ hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
    und keine Änderung der gespeicherten Kontodaten. Avatar, Präsenzpunkt und
    Aufklapp-Pfeil behalten ihren Platz; lange Werte verbreitern den Header nicht.
    Vollständigen Namen und vollständige E-Mail-Adresse mit dem nativen Tooltip
-   bei Hover beziehungsweise Tastaturfokus zugänglich machen. Vollständige Angaben
-   auch bei Touch-Bedienung erreichbar halten. Bei späterer Umsetzung lange Namen,
+   bei Hover beziehungsweise Tastaturfokus zugänglich machen. Auf ausdrücklichen
+   Benutzerwunsch keinen zusätzlichen Info-Button oder Touch-Ersatz einbauen;
+   die normale native Tooltip-Bedienung bleibt bestehen. Bei der Umsetzung lange Namen,
    lange E-Mail-Adressen und normale Werte in DE/EN auf Desktop und Smartphone
    prüfen; vorhandene Kopfzeilenvarianten im betroffenen Baustein berücksichtigen.
    Im Löschdialog den vorhandenen Platz großzügig nutzen: passende Namen und
@@ -89,8 +89,9 @@ hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
    In der Benutzerkarte des Löschdialogs dürfen auf dem Smartphone Name und
    E-Mail-Adresse jeweils auf höchstens zwei Zeilen umbrechen. Erst wenn auch
    diese zwei Zeilen nicht ausreichen, mit „…“ kürzen; keine vier oder fünf
-   Zeilen pro Angabe zulassen. Vollständige Werte bleiben per Tooltip und auch
-   bei Touch-Bedienung zugänglich. Die Headeranzeige bleibt weiterhin einzeilig.
+   Zeilen pro Angabe zulassen. Vollständige Werte bleiben über normale native
+   Tooltips zugänglich; kein zusätzlicher Info-Button. Die Headeranzeige bleibt
+   weiterhin einzeilig.
 6. [ ] **Smartphone-Footer der gezeigten Bestätigungen:** Ausschließlich im
    Smartphone-Layout der Dialoge „Ungespeicherte Änderungen“ und „Alle anderen
    abmelden“ beide Buttons untereinander über die volle verfügbare Breite innerhalb der bestehenden
@@ -102,26 +103,16 @@ hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
    Bei späterer Umsetzung DE/EN auf Smartphonebreite einschließlich langer
    Beschriftungen prüfen und die unveränderte Desktopanordnung gegenprüfen.
 
-7. [ ] **Native Überlaufnavigation aller Reiterleisten:** Anwendungsweit alle
-   Reiterleisten auf ausreichende Breite und native Überlaufsteuerung prüfen,
-   sowohl auf Smartphone als auch auf Desktop und bei schmalen Fenstern.
-   Gemeldet sind die drei Reiter unter „Mein Konto → Sicherheit“ sowie die
-   Rollenreiter der 2FA-Konfiguration. Beschriftungen werden dort gequetscht,
-   abgeschnitten oder uneinheitlich umgebrochen.
-   Abgestimmt ist die native Vaadin-Lösung: Bestehende `Tabs`-/`TabSheet`-Basis
-   und ausreichend breite Reiter in einer horizontal scrollbar bleibenden Zeile
-   erhalten, mit nativen Vor-/Zurück-Schaltflächen bei Überlauf und
-   Touch-Bedienung. Bei ausreichendem Platz die bisherige Darstellung erhalten;
-   auch die verschiedenen freigegebenen Reiterstile bleiben bestehen.
-   Breiten- und Flexregeln einschließlich der mobilen Sicherheitsreiter prüfen;
-   die konkreten Ursachen sind noch nicht im Browser bestätigt.
-   Keine eigene Plus-Steuerung oder zweireihige Reiteranordnung vorsehen.
-   Im freigegebenen gezielten Nachtest alle betroffenen Leisten in DE/EN auf
-   Smartphone, schmalem Desktop und bei
-   ausreichender Breite prüfen: lesbare Beschriftungen, erreichbare Reiter,
-   korrekte Auswahl, Tastatur-/Touch-/Pfeilbedienung und zugehörige Inhalte.
-   Fehler und offener Nachtest stehen in [BUGS](../../BUGS.md#sicherheitsreiter-auf-dem-smartphone)
-   und im [Testbedarf](../testbedarf.md).
+7. [ ] **Native Überlaufnavigation aller Reiterleisten – umgesetzt, Endabnahme offen:**
+   Seitenreiter behalten lesbare Breiten und nutzen bei Platzmangel native
+   Vor-/Zurück-Pfeile und horizontales Scrollen. Dasselbe gilt für segmentierte
+   Umschalter; ihre freigegebene Gestaltung bleibt erhalten. Die gequetschten
+   Sicherheits- und 2FA-Rollenreiter sind korrigiert. Gezielte Prüfungen in DE/EN
+   bei 1280/1024/390/320 px einschließlich Pfeilen, Tastatur und echter Touchgeste
+   sind bestanden; segmentierte Umschalter zusätzlich bei 1280/390/320 px.
+   Vorher-/Nachher-Aufnahmen der betroffenen Leisten liegen zur Endabnahme vor.
+   Aktuelle Regeln stehen im [Theme](../theme.md#native-vaadin-bausteine-zuerst),
+   die gezielten Ergebnisse im [Prüfstand](../status.md).
 
 8. [ ] **Smartphone-Aktionen in den Kontoverwaltungskarten:** Unter „Mein Konto
    → Sicherheit → Konto verwalten“ die Buttons „Konto deaktivieren“ und

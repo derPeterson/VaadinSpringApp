@@ -11,8 +11,9 @@ Nachbearbeitung ist zur gezielten Umsetzung freigegeben. Weitere Entscheidungen 
 Vergleichsbasis ist die letzte vollständig belegte QA bei `7d127bcb`.
 Der geprüfte Quell- und Teststand ist `f3c21623246996988a6fb26372ca07e3fc104d82`,
 lokal nach `main` integriert. Die abschließende Dokumentationsbereinigung erfolgt
-auf `codex/vaadin-komponenten-folgearbeiten-4`; danach wurden keine Anwendungs-,
-Test- oder Buildquellen verändert. Kein Push oder Release wurde durchgeführt.
+auf `codex/vaadin-komponenten-folgearbeiten-4`. Die nachfolgend gesondert
+ausgewiesene Nachbearbeitung verändert diesen Stand; ihre gezielten Nachweise
+ersetzen keine erneute große Testrunde. Kein Push oder Release wurde durchgeführt.
 
 ## Ergebnisse
 
@@ -72,6 +73,19 @@ Statuswechsel wurden zur Bereinigung verwendet.
   Das Zeitbudget eines vollständigen Workers beträgt nun 90 statt 60 Minuten;
   einzelne UI-Wartezeiten und Sicherheitsprüfungen wurden nicht abgeschwächt.
 
+## Gezielte Nachbearbeitung nach der Gesamtrunde
+
+Die Reiter-Nachbearbeitung ist technisch umgesetzt und gezielt geprüft:
+43 Komponenten-JUnit-Prüfungen, 38 Testauswahlprüfungen und je vier Browserfälle
+für die Seitenreiter sowie drei für die segmentierten Umschalter in DE/EN sind
+bestanden. Die Seitenreiter umfassen 1280/1024/390/320 px, native Pfeile,
+Tastatur und echte Chromium-Touchereignisse. Die segmentierten Umschalter wurden
+bei 1280/390/320 px verglichen. Beide Sprachen nutzen dasselbe korrigierte Image.
+Vorher-/Nachher-Aufnahmen stehen zur noch offenen Endabnahme bereit. Diese
+Änderungen haben keinen neuen Sonar-Scan; der obige Scan gilt weiterhin für
+`f3c21623`. Die übrigen Nachbearbeitungspunkte bleiben im
+[Komponentenplan](planung/vaadin-komponenten-abgleich.md) offen.
+
 ## Abnahme, offene Nachbearbeitung und Grenzen
 
 Der Benutzer hat Karten/Panels und die weiteren Bestätigungsdialoge anhand der
@@ -81,10 +95,9 @@ ist nach eigener Prüfung einschließlich F5 ebenfalls abgenommen. Einzelheiten
 stehen unter [HUM-01](manual-tests/README.md#hum-01).
 Die dabei gesammelten neun Nachbearbeitungspunkte bleiben offen; ihre Umsetzung
 mit gezielten Screenshots, Review und Commit je Punkt ist freigegeben.
-Dazu gehören insbesondere die gemeldeten gequetschten
-Sicherheits- und 2FA-Rollenreiter auf Smartphonebreite, siehe [BUGS](../BUGS.md).
-Die obigen erfolgreichen Tests belegen den geprüften Ausgangsstand, keine
-Behebung oder Prüfung dieser Folgepunkte. Echte Mobilgeräte, reale Passwortmanager,
+Die Reiterkorrektur ist inzwischen gesondert gezielt geprüft; ihre Endabnahme
+bleibt offen. Die obigen Gesamtergebnisse belegen den früheren Ausgangsstand,
+keine vollständige Prüfung aller Folgeänderungen. Echte Mobilgeräte, reale Passwortmanager,
 Screenreader und externe Anbieter-/SMTP-Sonderprüfungen bleiben gesonderte
 menschliche beziehungsweise ausdrücklich freizugebende Integrationsprüfungen.
 Es wurden keine echten E-Mails versendet und keine vorhandenen Entwicklerdaten

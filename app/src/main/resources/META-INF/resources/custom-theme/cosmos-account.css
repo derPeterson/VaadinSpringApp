@@ -726,7 +726,7 @@ vaadin-form-layout.account-profile-form {
 #account-security-tabs > vaadin-tabs[slot=tabs] { margin:0;border:0;box-shadow:none;--vaadin-tabs-border-width:0px; }
 #account-security-tabs > vaadin-tabs[slot=tabs]::part(tabs) { gap:0;margin:0; }
 /* Nur die Reiter im Kopf gestalten. Dialoge im Tab-Inhalt haben eigene Umschalter. */
-#account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab { box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;min-width:168px;min-height:48px;padding:12px 20px;margin:0;border:1px solid transparent;border-top-width:2px;border-bottom:0;border-radius:10px 10px 0 0;background:transparent;color:var(--cosmos-reference-secondary);font:500 12px/20px Inter,sans-serif; }
+#account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab { box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:8px;flex:0 0 auto;min-width:168px;white-space:nowrap;min-height:48px;padding:12px 20px;margin:0;border:1px solid transparent;border-top-width:2px;border-bottom:0;border-radius:10px 10px 0 0;background:transparent;color:var(--cosmos-reference-secondary);font:500 12px/20px Inter,sans-serif; }
 #account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab[selected] { z-index:1;border-color:var(--cosmos-reference-border);border-top-color:var(--cosmos-reference-accent);background:var(--cosmos-reference-page);color:var(--cosmos-reference-text);font-weight:600; }
 #account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab::before,
 #account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab::after { display:none; }
@@ -737,7 +737,7 @@ vaadin-form-layout.account-profile-form {
 #account-panel-security .account-security-hint { flex:none;margin:0;border-top:1px solid var(--cosmos-reference-border);background:var(--cosmos-reference-panel); }
 @media(max-width:600px) {
   #account-security-tabs::part(tabs-container) { padding:0 16px; }
-  #account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab { flex:1;min-width:0;padding-inline:10px; }
+  #account-security-tabs > vaadin-tabs[slot=tabs] > vaadin-tab { flex:0 0 auto;min-width:max-content;padding-inline:10px;white-space:nowrap; }
   .account-security-cards,.account-security-empty { padding:20px; }
 }
 

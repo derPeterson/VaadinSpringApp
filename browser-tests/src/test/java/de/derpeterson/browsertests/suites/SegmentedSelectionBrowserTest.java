@@ -20,7 +20,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Tag("browser")
 public class SegmentedSelectionBrowserTest extends BrowserFixture {
   @ParameterizedTest
-  @ValueSource(ints = {1280, 390})
+  @ValueSource(ints = {1280, 390, 320})
   void segmentSelectorsPreserveTheirSurroundingViews(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, 1000);
     LoginPage loginPage = new LoginPage(browserPage);

@@ -277,6 +277,16 @@ Die rechte Feldhilfe ist ein eigener Baustein und bleibt von Tooltips getrennt.
 
 ## Native Vaadin-Bausteine zuerst
 
+Reiterleisten behalten ihre freigegebene Gestaltung und nutzen bei Platzmangel
+die native horizontale Überlaufsteuerung mit Vor-/Zurück-Pfeilen. Das gilt für
+Smartphone und schmale Desktopfenster. Einzelne Reiter bleiben breit genug für
+ihre Beschriftung; sie werden nicht in mehrere Zeilen gedrückt. Bei ausreichendem
+Platz bleibt die bisherige Anordnung erhalten. `cosmos-account.css` gestaltet die
+Kontosicherheitsreiter, `cosmos-provider-settings.css` die übrigen Panelreiter.
+`cosmos-segmented-tabs.css` erhält den segmentierten Stil mit gleichen Breiten,
+solange der Platz reicht, und lässt andernfalls native Überlaufnavigation zu.
+`CosmosSegmentedTabs` blendet die nativen Scrollpfeile daher nicht aus.
+
 Bei Komponenten-Umstellungen Vorher-/Nachher-Aufnahmen für Desktop und Smartphone
 direkt im Chat zeigen. Bei freigegebenen Browserläufen beide Sprachen isoliert
 prüfen; die Aufnahmen bleiben temporäre Vergleichsbelege im Browserlauf.
