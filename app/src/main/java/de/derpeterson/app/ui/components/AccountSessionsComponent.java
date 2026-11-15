@@ -34,6 +34,8 @@ import lombok.extern.slf4j.Slf4j;
 public class AccountSessionsComponent extends AccountPanelComponent {
   private static final String ENTRY_DESCRIPTION_CLASS = "account-entry-description";
   private static final String SESSION_BADGE_CLASS = "account-session-badge";
+  private static final String OTHER_SESSIONS_CONFIRMATION_CLASS =
+      "portal-other-sessions-confirmation";
 
   private final transient MessageProperties messageProperties;
   private SerializableSupplier<Snapshot> sessionSnapshotSupplier;
@@ -376,6 +378,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     if (entry.current() || revokeSessionAction == null) {
       return;
     }
+    sessionConfirmationDialog.removeClassName(OTHER_SESSIONS_CONFIRMATION_CLASS);
     sessionConfirmationDialog.open(
         new PortalConfirmationDialog.Prompt(
             entry.active()
@@ -414,6 +417,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     if (selected.isEmpty()) {
       return;
     }
+    sessionConfirmationDialog.setClassName(OTHER_SESSIONS_CONFIRMATION_CLASS, !restricted);
     sessionConfirmationDialog.open(
         new PortalConfirmationDialog.Prompt(
             this::logoutActionText,

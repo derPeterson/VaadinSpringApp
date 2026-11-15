@@ -48,6 +48,7 @@ class BrowserExecutionPlanTest {
         "native-confirmations",
         "tab-overflow",
         "identity-overflow",
+        "mobile-confirmation-footers",
         "avatars",
         "profile-form",
         "account-forms",
@@ -148,6 +149,10 @@ class BrowserExecutionPlanTest {
                   "revokedWaitingCleanupShowsFailureWithoutClaimingSuccess",
                   "queueTabUrlsSurviveReloadAndRejectUnauthorizedAssistantAccess",
                   "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
+          case "mobile-confirmation-footers" ->
+              Set.of(
+                  "profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard",
+                  "logoutOthersKeepsCurrentSessionAndItsSavedSignIn");
           case "identity-overflow" ->
               Set.of("identitySurfacesKeepFullValuesWithinTheirAvailableSpace");
           case "queue-full-run" ->

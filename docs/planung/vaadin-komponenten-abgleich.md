@@ -78,16 +78,13 @@ hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
    Tooltips nach Namensänderung sind bei 1280/390 px in DE/EN geprüft.
    Vergleichsaufnahmen liegen zur Endabnahme vor. Die allgemeine Smartphone-
    Tooltip-Frage bleibt als eigene [Aufgabe](../../TODO.md#künftige-anwendungsfunktionen) offen.
-6. [ ] **Smartphone-Footer der gezeigten Bestätigungen:** Ausschließlich im
-   Smartphone-Layout der Dialoge „Ungespeicherte Änderungen“ und „Alle anderen
-   abmelden“ beide Buttons untereinander über die volle verfügbare Breite innerhalb der bestehenden
-   Footer-Innenabstände anordnen. Gleiche Breite und Höhe sowie einen einheitlichen
-   vertikalen Abstand verwenden. Reihenfolge und Farben beibehalten: oben gelb
-   „Änderungen verwerfen“, darunter blau „Weiter bearbeiten“. Bei „Alle anderen
-   abmelden“ oben „Abbrechen“, darunter die rote Aktion „Alle anderen abmelden“.
-   Desktopdarstellung, Anfangsfokus und Verhalten des Formularschutzes bleiben unverändert.
-   Bei späterer Umsetzung DE/EN auf Smartphonebreite einschließlich langer
-   Beschriftungen prüfen und die unveränderte Desktopanordnung gegenprüfen.
+6. [ ] **Smartphone-Footer der beiden Bestätigungen – umgesetzt, Endabnahme offen:**
+   Formularschutz und „Alle anderen abmelden“ zeigen beide Aktionen mobil
+   untereinander in voller Breite innerhalb der bestehenden Innenabstände.
+   Reihenfolge, Farben, gleiche Höhen und Anfangsfokus bleiben erhalten;
+   Desktop und Einzelabmeldungen behalten ihre bisherige Darstellung.
+   DE/EN bei 1280/390 px einschließlich Abbruch und wiederverwendetem
+   Sammel-/Einzeldialog sind bestanden. Vergleichsaufnahmen liegen vor.
 
 7. [ ] **Native Überlaufnavigation aller Reiterleisten – umgesetzt, Endabnahme offen:**
    Seitenreiter behalten lesbare Breiten und nutzen bei Platzmangel native

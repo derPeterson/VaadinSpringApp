@@ -96,6 +96,8 @@ final class BrowserSuites {
               LoginAttemptBrowserTest.class,
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
+      case "mobile-confirmation-footers" ->
+          List.of(AccountSettingsBrowserTest.class, SessionManagementBrowserTest.class);
       case "identity-overflow" -> List.of(IdentityOverflowBrowserTest.class);
       case "tab-overflow" -> List.of(TabOverflowBrowserTest.class);
       case "component-follow-up" ->

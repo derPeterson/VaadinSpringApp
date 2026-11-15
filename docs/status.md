@@ -104,6 +104,13 @@ maximale Zeilenzahl, Hover und Tastaturfokus, unveränderte Daten nach Abbruch
 sowie aktualisierte Tooltips nach einer Namensänderung. Vorher-/Nachher-
 Aufnahmen liegen vor. Eine allgemeine Touch-Bedienung wird erst separat geplant;
 ein Smartphone-Info-Button ist nicht Teil dieser Änderung.
+Formularschutz und Sammelabmeldung verwenden mobil volle Aktionsbreite mit
+unveränderter Reihenfolge und gleichem Anfangsfokus. Zwölf Komponenten-JUnit-
+Prüfungen, 41 Auswahlprüfungen und je vier Browserfälle in DE/EN bei 1280/390 px
+sind bestanden. Abbruch erhält Entwurf beziehungsweise Sitzungen; nach Wechsel
+vom Sammel- zum Einzeldialog übernimmt die Einzelaktion keine Vollbreite.
+Desktopdarstellung und eigener gespeicherter Zugang bleiben erhalten.
+Vorher-/Nachher-Aufnahmen der beiden Dialoge liegen zur Endabnahme vor.
 Diese Änderungen haben keinen neuen Sonar-Scan; der obige Scan gilt weiterhin für
 `f3c21623`. Die übrigen Nachbearbeitungspunkte bleiben im
 [Komponentenplan](planung/vaadin-komponenten-abgleich.md) offen.

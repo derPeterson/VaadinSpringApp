@@ -1,10 +1,12 @@
 package de.derpeterson.browsertests.pages;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.ScreenshotAnimations;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
@@ -13,6 +15,41 @@ import java.io.ByteArrayInputStream;
 /** Sichert dieselben sichtbaren Dialogzonen vor und nach der nativen Übernahme. */
 public final class ConfirmationAppearanceChecks {
   private ConfirmationAppearanceChecks() {}
+
+  /** Prüft die Aktionsbreite innerhalb der vorhandenen nativen Footer-Innenabstände. */
+  public static void assertMobileFullWidthActions(
+      Page browserPage, Locator confirmationDialogLocator) {
+    if (browserPage.viewportSize().width > 600) {
+      return;
+    }
+    Locator footerLocator =
+        confirmationDialogLocator.locator("[part=overlay]").first().locator("[part=footer]");
+    Locator actionButtonsLocator = confirmationDialogLocator.locator(".cosmos-confirmation-action");
+    assertThat(actionButtonsLocator).hasCount(2);
+    double availableWidth =
+        ((Number)
+                footerLocator.evaluate(
+                    "element => element.clientWidth - parseFloat(getComputedStyle(element).paddingLeft) - parseFloat(getComputedStyle(element).paddingRight)"))
+            .doubleValue();
+    double expectedLeft =
+        footerLocator.boundingBox().x
+            + ((Number)
+                    footerLocator.evaluate(
+                        "element => parseFloat(getComputedStyle(element).paddingLeft)"))
+                .doubleValue();
+    double rowGap =
+        ((Number) footerLocator.evaluate("element => parseFloat(getComputedStyle(element).rowGap)"))
+            .doubleValue();
+    BoundingBox firstActionBounds = actionButtonsLocator.nth(0).boundingBox();
+    BoundingBox secondActionBounds = actionButtonsLocator.nth(1).boundingBox();
+    assertEquals(availableWidth, firstActionBounds.width, 1);
+    assertEquals(availableWidth, secondActionBounds.width, 1);
+    assertEquals(expectedLeft, firstActionBounds.x, 1);
+    assertEquals(expectedLeft, secondActionBounds.x, 1);
+    assertEquals(firstActionBounds.height, secondActionBounds.height, 1);
+    assertEquals(
+        rowGap, Math.abs(secondActionBounds.y - firstActionBounds.y) - firstActionBounds.height, 1);
+  }
 
   public static void capture(Page browserPage, Locator confirmationDialogLocator, String caseName) {
     Locator overlayLocator = confirmationDialogLocator.locator("[part~='overlay']").first();

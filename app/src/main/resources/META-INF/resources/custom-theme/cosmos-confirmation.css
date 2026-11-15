@@ -114,8 +114,18 @@
 }
 
 @media (max-width: 600px) {
-    .cosmos-unsaved-changes-dialog.cosmos-native-confirmation::part(footer) {
+    .cosmos-unsaved-changes-dialog.cosmos-native-confirmation,
+    .portal-other-sessions-confirmation.cosmos-native-confirmation {
+        --cosmos-equal-button-width: 100%;
+    }
+
+    .cosmos-unsaved-changes-dialog.cosmos-native-confirmation::part(footer),
+    .portal-other-sessions-confirmation.cosmos-native-confirmation::part(footer) {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+    }
+
+    .cosmos-unsaved-changes-dialog.cosmos-native-confirmation::part(cancel-button) {
+        margin-inline-start: 0;
     }
 }

@@ -109,13 +109,21 @@ public final class AccountSessionsPage {
   @Step("Alle anderen Sitzungen abmelden")
   public void revokeOthers() {
     UiActions.complete(browserPage, () -> browserPage.locator("#account-logout-others").click());
-    confirmDeviceRevocation();
+    confirmDeviceRevocation(true);
   }
 
   public void confirmDeviceRevocation() {
+    confirmDeviceRevocation(false);
+  }
+
+  private void confirmDeviceRevocation(boolean fullWidthMobileFooter) {
     assertThat(browserPage.locator("#sessions-confirmation[opened] [part~='overlay']")).isVisible();
     ConfirmationAppearanceChecks.capture(
         browserPage, browserPage.locator("#sessions-confirmation[opened]"), "session-action");
+    if (fullWidthMobileFooter) {
+      ConfirmationAppearanceChecks.assertMobileFullWidthActions(
+          browserPage, browserPage.locator("#sessions-confirmation[opened]"));
+    }
     UiActions.complete(
         browserPage, () -> browserPage.locator("#sessions-confirmation-submit").click());
 

@@ -231,6 +231,7 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       4. Aktuelle Sitzung bleibt nach Reload angemeldet und ihr eigener gespeicherter Zugang erhalten.
       **Erwartet:** Keine pauschale Löschung des aktuellen gespeicherten Zugangs.
       """)
+  @Tag("mobile-confirmation-footers")
   void logoutOthersKeepsCurrentSessionAndItsSavedSignIn(int viewportWidth) {
     String email = user();
     try (BrowserActor owner = new BrowserActor(testBrowser);
@@ -242,6 +243,39 @@ public class SessionManagementBrowserTest extends BrowserFixture {
       login(third, email, false);
       AccountSessionsPage sessions = new AccountSessionsPage(owner.browserPage);
       sessions.open();
+      sessions.assertCounts(3, 2, 0);
+      // Derselbe Dialog wird für Sammel- und Einzelaktionen wiederverwendet.
+      UiActions.complete(
+          owner.browserPage, () -> owner.browserPage.locator("#account-logout-others").click());
+      Locator sessionConfirmationLocator =
+          owner.browserPage.locator("#sessions-confirmation[opened]");
+      assertThat(sessionConfirmationLocator).hasCount(1);
+      sessionConfirmationLocator.locator("#sessions-confirmation-cancel").click();
+      assertThat(sessionConfirmationLocator).hasCount(0);
+      sessions.assertCounts(3, 2, 0);
+      UiActions.complete(
+          owner.browserPage,
+          () -> sessions.rows("active").first().locator("vaadin-button").click());
+      assertThat(sessionConfirmationLocator.locator(".portal-context-card")).hasCount(1);
+      if (viewportWidth <= 600) {
+        Locator singleSubmitButtonLocator =
+            sessionConfirmationLocator.locator("#sessions-confirmation-submit");
+        assertThat(singleSubmitButtonLocator).isVisible();
+        double availableFooterWidth =
+            ((Number)
+                    sessionConfirmationLocator
+                        .locator("[part=overlay]")
+                        .first()
+                        .locator("[part=footer]")
+                        .evaluate(
+                            "element => element.clientWidth - parseFloat(getComputedStyle(element).paddingLeft) - parseFloat(getComputedStyle(element).paddingRight)"))
+                .doubleValue();
+        assertTrue(
+            singleSubmitButtonLocator.boundingBox().width < availableFooterWidth - 1,
+            "Eine Einzelabmeldung darf die mobile Vollbreite der Sammelaktion nicht übernehmen.");
+      }
+      sessionConfirmationLocator.locator("#sessions-confirmation-cancel").click();
+      assertThat(sessionConfirmationLocator).hasCount(0);
       sessions.assertCounts(3, 2, 0);
       sessions.revokeOthers();
       sessions.assertCounts(1, 0, 0);

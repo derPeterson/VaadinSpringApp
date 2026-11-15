@@ -315,6 +315,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   @Tag("form-details")
   @Tag("profile-form")
   @Tag("native-confirmations")
+  @Tag("mobile-confirmation-footers")
   void profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, viewportWidth < 640 ? 844 : 900);
     createAccountAndSignIn(
@@ -414,6 +415,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
         .isFocused();
     AllurePlaywright.attachScreenshot(
         "Formularschutz im Konto bei " + viewportWidth + " px", browserPage);
+    ConfirmationAppearanceChecks.assertMobileFullWidthActions(
+        browserPage, unsavedChangesPrompt.root());
     discardButtonLocator.hover();
     assertThat(discardButtonLocator).hasCSS("border-color", "rgb(245, 158, 11)");
     keepEditingButtonLocator.hover();

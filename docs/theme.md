@@ -167,6 +167,10 @@ dieser Gruppe. Versteckte oder entfernte Buttons und reine Iconbuttons zählen n
 Bei Sprachwechsel, geändertem Text, Sichtbarkeit oder verfügbarer Breite wird neu
 gemessen. Öffnungsanimationen verfälschen die Layoutmessung nicht. Die Aktionsleisten
 brechen bei Platzmangel um.
+Die optionale CSS-Eigenschaft `--cosmos-equal-button-width` ersetzt bei ausdrücklich
+freigegebenen Gruppen die gemessene Breite. Ohne diese Eigenschaft bleibt die
+bisherige natürliche gemeinsame Breite erhalten. Mobile Vollbreite wird gezielt
+am zuständigen Container gesetzt, ohne globale Buttonbreiten zu ändern.
 
 Der Benachrichtigungsdetaildialog trennt Leseaktion, Nebenaktionen und Zielaktion.
 Erledigte Tickethinweise zeigen ihren fachlichen Zustand („Bereits übernommen“,
@@ -326,7 +330,7 @@ beim Formularschutz bleibt Außenklick ohne Wirkung. Der Anfangsfokus liegt auf
 Schließen beziehungsweise beim Formularschutz auf „Weiter bearbeiten“.
 
 Nur das native Bestätigungsereignis führt die beim Öffnen erfasste Aktion einmal
-aus. Beim Formularschutz ist das links „Verwerfen“; rechts bleibt die primäre
+aus. Beim Formularschutz ist das auf Desktop links „Verwerfen“; rechts bleibt die primäre
 Aktion „Weiter bearbeiten“. Die nativen Slots sind entsprechend zugeordnet, ohne
 ihre sichtbare Reihenfolge zu ändern. `opened=false` darf die folgende Bestätigung
 nicht vorzeitig verwerfen; expliziter Abbruch oder ein endgültiges `ClosedEvent`
@@ -738,16 +742,23 @@ Standard-Schließen-Button bleibt erhalten. Der Erklärungstext verwendet die
 dezente Textfarbe `--cosmos-reference-secondary` bei 12 px und Schriftgewicht 400.
 „Änderungen verwerfen“ steht zuerst als gelber Warnbutton mit Tabler `file-x`.
 „Weiter bearbeiten“ bleibt blau und verwendet Lucide `chevron-right`.
-Verwerfen steht ganz links und Weiterbearbeiten ganz rechts im Footer; der freie
+Auf Desktop steht Verwerfen ganz links und Weiterbearbeiten ganz rechts im Footer; der freie
 Platz liegt zwischen den Buttons. Beide sind nach der längeren Beschriftung
 gleich breit und füllen den Footer nicht aus.
-Unter 600 px stehen die Buttons in derselben Reihenfolge untereinander und
-behalten ihre inhaltsabhängige gemeinsame Breite. Der Anfangsfokus liegt auf „Weiter bearbeiten“.
+Bis 600 px stehen die Buttons in derselben Reihenfolge untereinander und
+füllen die verfügbare Breite innerhalb der Footer-Innenabstände. Die native
+Cancel-Hülle verliert nur mobil ihren automatischen linken Rand, damit beide
+Buttonhüllen gleich breit werden. Der Anfangsfokus liegt auf „Weiter bearbeiten“.
 Schließen und Escape behalten den Entwurf und lösen eine aufgeschobene Navigation
 abbrechend auf. Nur die ausdrückliche Verwerfen-Aktion führt die Navigation fort.
 Die Variante verwendet dafür den vorhandenen `EqualButtonWidths`-Baustein und
 eine über die Footerbreite verteilte Aktionszeile. `UnsavedChangesDialog` vermittelt
 ausschließlich die Fach- und Navigationscallbacks innerhalb der Anwendung.
+„Alle anderen abmelden“ verwendet dieselbe mobile Vollbreite: zuerst Abbrechen,
+darunter die rote Sammelaktion. `AccountSessionsComponent` setzt dafür die lokale
+Klasse `portal-other-sessions-confirmation` nur im normalen Sammeldialog und
+entfernt sie vor einer Einzelaktion. Einzelabmeldungen und der eingeschränkte
+Sitzungszugang behalten ihre Anordnung. Die Regeln liegen in `cosmos-confirmation.css`.
 Bei Browser-Refresh, Tab-Schließen und externer Navigation ergänzt
 `BrowserUnsavedChangesGuard` den nativen Browserhinweis; dafür kann dieser
 Cosmos-Dialog nicht verwendet werden. Umfang und Grenzen stehen unter

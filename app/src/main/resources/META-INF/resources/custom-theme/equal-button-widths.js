@@ -51,7 +51,8 @@
       const width = Math.ceil(Math.max(0, ...textButtons.map(button => button.offsetWidth + 1)));
       for (const button of textButtons) {
         restore(button);
-        button.style.setProperty('width', `${width}px`, 'important');
+        // Einzelne mobile Aktionsgruppen dürfen die sonst gemessene Breite gezielt ersetzen.
+        button.style.setProperty('width', `var(--cosmos-equal-button-width, ${width}px)`, 'important');
         button.style.setProperty('min-width', '0', 'important');
         button.style.setProperty('max-width', '100%', 'important');
         button.style.setProperty('flex', '0 0 auto', 'important');
