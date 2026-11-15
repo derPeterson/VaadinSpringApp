@@ -26,6 +26,15 @@
 
 ## Künftige Anwendungsfunktionen
 
+- [ ] Anwendungshintergrund nach mehrtägigem Ausprobieren auswählen:
+  **Advanced** („Horizont Plus“) ist zum Ausprobieren ausgewählt, der bisherige
+  Hintergrund bleibt als **Base** erhalten. Über `ACTIVE_VARIANT` in
+  `CosmosBackgroundComponent` zwischen den eingebundenen Varianten wechseln.
+  Nach der Entscheidung ungenutzte Varianten samt Dekorationsebenen, Farb-/
+  Verlaufstokens und Umschaltlogik entfernen und die Theme-Dokumentation bereinigen.
+  Weitere Vorschläge nur vorübergehend für den Vergleich ergänzen.
+  Keine Aufgabe der gesammelten Nachtarbeit.
+
 - [ ] Eine sichtbare Verlaufsliste für Bereinigungsläufe der E-Mail-Queue gemeinsam
   entwerfen. Darstellung, Umfang und Bedienung vor der Umsetzung abstimmen.
   Technische Speicherung und konfigurierbare Aufbewahrung sind bereits vorhanden;

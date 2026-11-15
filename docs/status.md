@@ -145,6 +145,27 @@ Start der Entwicklungsanwendung. Die Sichtung durch den Benutzer und die zentral
 erfassten Browsernachtests stehen noch aus. Die spätere technische Übernahme
 der Dialoghülle bleibt ein eigenes Nachtarbeitspaket.
 
+Der anschließend separat beauftragte Hintergrundvergleich ist mit **Advanced**
+(„Horizont Plus“) ausgewählt; **Base** erhält die vorherige Gestaltung.
+Ein zentraler Wert wählt sowohl Stylesheet als auch dekorative Ebenen für den
+gemeinsamen Seitenrahmen. Ein Vergleich bestätigte die unveränderte Base-CSS
+abgesehen vom Kennzeichnungskommentar. Die Inhalts-Scrollflächen wurden nicht umgebaut.
+123 gezielte JUnit-Tests für Ressourcen, Seitenrahmen, Kopfzeilen, Navigation und
+Notification-Isolation bestanden, ebenso Spotless und Checkstyle.
+Die drei betroffenen CSS-Dateien ließen sich mit PostCSS parsen; alle Advanced-Tokens
+sind vorhanden. Die Zeigerparallaxe wurde zusätzlich offline mit künstlichen
+Ereignissen auf Werte, reduzierte Bewegung, Szenenwechsel und Abmeldung geprüft.
+Das ist kein gerenderter Browsernachweis. Öffentliche Rahmen tragen
+`cosmos-page-frame`, jedoch nicht das zunächst verlangte `cosmos-page`.
+Die Advanced-Selektoren verwenden den gemeinsamen Rahmen; der Benutzer hat den
+Hintergrund auf der Startseite und nach der Korrektur auch auf der Anmeldung
+bestätigt. Der konkrete Sichtbarkeitsfehler ist damit behoben. Automatisierte
+Browsernachtests für die übrigen Ansichten, Größen und Bewegungseinstellungen
+bleiben wartend im [Testbedarf](testbedarf.md); die früheren Browserbelege prüfen
+diesen neuen Hintergrund nicht. Die laufende Anwendung wurde vom Agenten nicht
+gestartet oder neu geladen. Die korrigierten Ressourcen wurden über den Reactor
+aktualisiert; ein Wechsel der Variante braucht Build, Neustart und Refresh.
+
 ## Abdeckung und Korrekturen der Gesamtrunde
 
 Die Gesamtsuite prüft die bestehenden Anmelde-, Konto-, 2FA-, Ticket-,

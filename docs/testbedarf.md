@@ -2,6 +2,20 @@
 
 ## Browser-Tests
 
+- **Advanced-Hintergrund und Rückwechsel auf Base – wartend:** Der Benutzer
+  übernimmt die Sichtung; für diesen Auftrag sind keine Browserläufe freigegeben.
+  Der gemeldete Fehler auf der Anmeldung ist durch Selektoren für `cosmos-page-frame`
+  korrigiert; der Benutzer hat die Sichtbarkeit dort und auf der Startseite bestätigt.
+  Den automatisierten Nachtest über öffentliche Rahmen ohne `cosmos-page` und
+  die übrigen Ansichten weiterhin abdecken.
+  DE/EN auf Desktop und Smartphone in Besucherbereich, Portal und Administration
+  prüfen: Horizont, Sterne, Mond, Sternschnuppen und Satellit hinter den Inhalten,
+  unveränderte Kopfzeilen/Controls, weiter erreichbare Aktionen und normale
+  Scrollbereiche ohne zusätzliche horizontale Scrollleiste. Zeigerparallaxe,
+  Navigation und reduzierte Bewegung einschließlich dynamischem Wechsel prüfen.
+  Nach Wechsel der zentralen Auswahl und frischem Build Base mit dem bisherigen
+  Stand vergleichen; je Auswahl DE/EN am selben unveränderten Image testen.
+
 - **Scrollbereiche nach Regression prüfen – wartend:** Betroffene Ansicht,
   konkretes Fehlerbild und Reproduktionsschritte sind noch zu klären.
   Nach der Behebung die betroffenen Scrollpanes gezielt prüfen: Inhalte und

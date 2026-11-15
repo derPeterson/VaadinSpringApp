@@ -7,6 +7,7 @@ import com.vaadin.flow.component.page.Push;
 import com.vaadin.flow.server.AppShellSettings;
 import com.vaadin.flow.server.PWA;
 import com.vaadin.flow.theme.lumo.Lumo;
+import de.derpeterson.app.ui.components.CosmosBackgroundComponent;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.persistence.autoconfigure.EntityScan;
@@ -28,7 +29,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @StyleSheet("custom-theme/cosmos-shell.css")
 @StyleSheet("custom-theme/cosmos-admin.css")
 @StyleSheet("custom-theme/cosmos-notifications.css")
-@StyleSheet("custom-theme/cosmos-background.css")
+@StyleSheet(CosmosBackgroundComponent.STYLESHEET)
 @StyleSheet("custom-theme/cosmos-icons.css")
 @ColorScheme(ColorScheme.Value.DARK)
 public class Application implements AppShellConfigurator {

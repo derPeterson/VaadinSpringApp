@@ -11,6 +11,13 @@ die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#nati
 
 ## Offene Komponentenpakete
 
+Separat von der Nachtarbeit ist der anwendungsweite Hintergrundvergleich
+eingebunden: **Advanced** („Horizont Plus“) ist ausgewählt, **Base** bleibt mit
+einer zentralen Codezeile wieder aktivierbar. Der Benutzer hat den sichtbaren
+Hintergrund auf Startseite und nach der Selektorkorrektur auch auf der Anmeldung
+bestätigt; Browsernachtests bleiben im [Testbedarf](../testbedarf.md).
+Auswahl und abschließende Bereinigung der Alternativen stehen in [TODO](../../TODO.md).
+
 Die begonnene Umsetzung ist lokal nach `main` zwischenintegriert. Weitere
 Arbeiten laufen auf
 `codex/vaadin-komponenten-folgearbeiten`. Die Badge-Darstellungen und

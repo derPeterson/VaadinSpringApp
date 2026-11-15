@@ -1,4 +1,4 @@
-/* SILENT COSMOS / DEKORATION
+/* SILENT COSMOS / BASE-DEKORATION
  * Diese Datei ordnet und bewegt Sterne, Nebel und Planeten. Alle Farben/Verläufe
  * stehen in cosmos-tokens.css. pointer-events: none lässt Klicks zur Oberfläche durch.
  * isolation + z-index halten die Dekoration hinter den bedienbaren Inhalten.

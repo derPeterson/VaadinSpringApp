@@ -1,0 +1,124 @@
+/* SILENT COSMOS / ADVANCED – Horizont Plus
+ * Hintergrund aus der gelieferten HTML-Vorlage, aufgebaut aus nativen Div-Ebenen.
+ * Farben und Verläufe: --cosmos-advanced-* in cosmos-tokens.css.
+ * Nur die feste Dekoration wird beschnitten; Inhalt und Scrollbereiche bleiben unverändert.
+ */
+
+.cosmos-page-frame {
+    --cosmos-sky-color: var(--cosmos-reference-page);
+    position: relative;
+    isolation: isolate;
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background: var(--cosmos-reference-page);
+}
+.cosmos-page-frame .cosmos-sky--advanced {
+  position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;
+  background: var(--cosmos-advanced-scene-background);
+}
+.cosmos-page-frame .cosmos-sky--advanced > * { position: absolute; display: block; pointer-events: none; }
+
+/* ---------- Planet mit Atmosphäre ---------- */
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-horizon {
+  left: 50%; top: calc(100dvh - 140px);
+  width: max(150vw, 1600px); aspect-ratio: 1; border-radius: 50%; overflow: hidden;
+  transform: translate3d(calc(-50% + var(--cosmos-background-parallax-x, 0) * -3px), calc(var(--cosmos-background-parallax-y, 0) * -2px), 0);
+  transition: transform .6s ease-out;
+  background: var(--cosmos-advanced-horizon-background);
+  box-shadow: var(--cosmos-advanced-horizon-shadow);
+}
+/* langsam ziehende Wolkenbänder */
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-horizon::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: var(--cosmos-advanced-clouds-background);
+  animation: cosmos-advanced-spin 360s linear infinite;
+}
+
+/* ---------- Sterne: weiß + farbig, mit Parallaxe ---------- */
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-stars {
+  inset: -12px; background-repeat: repeat;
+  -webkit-mask-image: var(--cosmos-advanced-stars-mask);
+          mask-image: var(--cosmos-advanced-stars-mask);
+  transition: transform .6s ease-out;
+}
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-stars-a {
+  background-image: var(--cosmos-advanced-stars-near-background);
+  background-size: 380px 340px, 380px 340px, 380px 340px, 523px 457px, 523px 457px, 691px 613px, 691px 613px;
+  transform: translate3d(calc(var(--cosmos-background-parallax-x, 0) * -6px), calc(var(--cosmos-background-parallax-y, 0) * -4px), 0);
+  animation: cosmos-advanced-twinkle 7s ease-in-out infinite alternate;
+}
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-stars-b {
+  background-image: var(--cosmos-advanced-stars-far-background);
+  background-size: 610px 530px, 610px 530px, 610px 530px, 760px 690px, 760px 690px;
+  transform: translate3d(calc(var(--cosmos-background-parallax-x, 0) * -12px), calc(var(--cosmos-background-parallax-y, 0) * -8px), 0);
+  animation: cosmos-advanced-twinkle 5s ease-in-out -2s infinite alternate;
+}
+
+/* ---------- Funkelnde Sterne (Kreuzform) ---------- */
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-spark {
+  left: var(--cosmos-advanced-x); top: var(--cosmos-advanced-y); width: 22px; height: 22px; margin: -11px 0 0 -11px;
+  background: var(--cosmos-advanced-spark-background);
+  filter: var(--cosmos-advanced-spark-filter);
+  animation: cosmos-advanced-pulse var(--cosmos-advanced-duration, 6s) ease-in-out var(--cosmos-advanced-delay, 0s) infinite;
+}
+
+/* ---------- Mond ---------- */
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-moon {
+  right: 8vw; top: 16vh; width: clamp(44px, 4.6vw, 76px); aspect-ratio: 1; border-radius: 50%; opacity: .92;
+  background: var(--cosmos-advanced-moon-background);
+  box-shadow: var(--cosmos-advanced-moon-shadow);
+  animation: cosmos-advanced-bob 16s ease-in-out infinite alternate;
+}
+
+/* ---------- Sternschnuppen (selten, je ca. 1,3 s sichtbar) ---------- */
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-shoot {
+  left: var(--cosmos-advanced-x); top: var(--cosmos-advanced-y); width: 150px; height: 1.5px; opacity: 0;
+  background: var(--cosmos-advanced-shooting-star-background);
+  transform: rotate(28deg);
+  animation: cosmos-advanced-shoot var(--cosmos-advanced-duration) linear var(--cosmos-advanced-delay, 0s) infinite;
+}
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-shoot::after {
+  content: ""; position: absolute; right: -1px; top: -1px; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--cosmos-advanced-shooting-star-tip-background); box-shadow: var(--cosmos-advanced-shooting-star-tip-shadow);
+}
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-shoot.cosmos-shoot--first { --cosmos-advanced-x: 14%; --cosmos-advanced-y: 12%; --cosmos-advanced-duration: 17s; --cosmos-advanced-delay: -6s; }
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-shoot.cosmos-shoot--second { --cosmos-advanced-x: 58%; --cosmos-advanced-y: 5%;  --cosmos-advanced-duration: 23s; --cosmos-advanced-delay: -15s; }
+
+/* ---------- Satellit ---------- */
+.cosmos-page-frame .cosmos-sky--advanced .cosmos-satellite {
+  left: -10px; top: 24vh; width: 3px; height: 3px; border-radius: 50%;
+  background: var(--cosmos-advanced-satellite-background); box-shadow: var(--cosmos-advanced-satellite-shadow);
+  animation: cosmos-advanced-satellite 85s linear -30s infinite, cosmos-advanced-blink 1.8s steps(1) infinite;
+}
+
+@keyframes cosmos-advanced-spin    { to { transform: rotate(360deg); } }
+@keyframes cosmos-advanced-twinkle { from { opacity: .6; } to { opacity: 1; } }
+@keyframes cosmos-advanced-pulse   { 0%, 100% { opacity: .2; transform: scale(.65); } 50% { opacity: 1; transform: scale(1); } }
+@keyframes cosmos-advanced-bob     { to { transform: translateY(6px); } }
+@keyframes cosmos-advanced-shoot {
+  0%   { opacity: 0; transform: translate(0, 0) rotate(28deg); }
+  1%   { opacity: 1; }
+  7%   { opacity: 0; transform: translate(330px, 175px) rotate(28deg); }
+  100% { opacity: 0; transform: translate(330px, 175px) rotate(28deg); }
+}
+@keyframes cosmos-advanced-satellite   { to { transform: translate(calc(100vw + 20px), -9vh); } }
+@keyframes cosmos-advanced-blink { 0%, 80% { opacity: 1; } 81%, 100% { opacity: .25; } }
+
+@media (max-width: 600px) {
+  .cosmos-page-frame .cosmos-sky--advanced .cosmos-moon { right: 6vw; top: 12vh; }
+  .cosmos-page-frame .cosmos-sky--advanced .cosmos-horizon { top: calc(100dvh - 90px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cosmos-page-frame .cosmos-sky--advanced *, .cosmos-page-frame .cosmos-sky--advanced *::before { animation: none !important; transition: none !important; }
+  .cosmos-page-frame .cosmos-sky--advanced .cosmos-shoot, .cosmos-page-frame .cosmos-sky--advanced .cosmos-satellite { display: none; }
+}
+
+
+/* Anordnung der vier Funkelsterne aus der gelieferten Vorlage. */
+.cosmos-page-frame .cosmos-spark--first { --cosmos-advanced-x:18%; --cosmos-advanced-y:16%; --cosmos-advanced-duration:6s; }
+.cosmos-page-frame .cosmos-spark--second { --cosmos-advanced-x:84%; --cosmos-advanced-y:12%; --cosmos-advanced-duration:8s; --cosmos-advanced-delay:-3s; }
+.cosmos-page-frame .cosmos-spark--third { --cosmos-advanced-x:7%; --cosmos-advanced-y:48%; --cosmos-advanced-duration:7s; --cosmos-advanced-delay:-5s; }
+.cosmos-page-frame .cosmos-spark--fourth { --cosmos-advanced-x:93%; --cosmos-advanced-y:50%; --cosmos-advanced-duration:9s; --cosmos-advanced-delay:-1s; }

@@ -466,7 +466,8 @@ innerhalb des nativen Eintrags, damit alle vier Seiten sichtbar bleiben.
 Die transparenten Außenrahmen schaffen den Abstand; das native Inhaltspadding bleibt bestehen.
 Die Pagination-Auswahllisten haben
 eine Mindestbreite von 88 px, damit Auswahlrahmen und Häkchen vollständig bleiben.
-`cosmos-background.css` enthält die Portal-Dekoration. Alle ausdrücklich gesetzten Anwendungsicons
+Die gewählte Datei `cosmos-background-base.css` oder `cosmos-background-advanced.css`
+enthält die anwendungsweite Dekoration. Alle ausdrücklich gesetzten Anwendungsicons
 kommen nach ausdrücklicher Freigabe aus Lucide. Als ausdrücklich gewählte Ausnahme
 verwendet die Anbieterkonfiguration Tablers `cloud-lock` in Panelkopf und SideNav;
 der Formularschutz nutzt Tablers `file-diff` und `file-x`.
@@ -1145,14 +1146,45 @@ Basis: `app/src/main/resources/META-INF/resources/custom-theme/`.
 | cosmos-shell.css | Appkopf, Inhaltsrahmen, Benutzermenü und Overlays |
 | cosmos-admin.css | Adminnavigation, Panels, Konfiguration und Dialogstandards |
 | cosmos-notifications.css | Inbox, Vorschau, Detail, Versand und Archiv |
-| cosmos-background.css | Dekoration, Animation und responsive Anordnung |
+| cosmos-background-base.css / cosmos-background-advanced.css | Alternative Dekorationen; genau eine Variante wird geladen |
 | cosmos-account.css | Lokale Konto-/Profilbild-/Sitzungsansichten |
 | admin-users.css | Lokale Benutzerfilter, Tabelle, Pagination und Dialoge |
 
-`Application.java` lädt die ersten sieben Dateien in dieser Reihenfolge.
+`Application.java` lädt die gemeinsamen Stylesheets in dieser Reihenfolge;
+von den Hintergrundvarianten wird nur die zentral ausgewählte Datei eingebunden.
 AdminView ergänzt admin-users.css; AccountView/LoginView die benötigten Kontoregeln.
 Die Reihenfolge ist Teil der Kaskade. Dialoge brauchen eigene Klassen, da Vaadin
 sie außerhalb der View platzieren kann. Keine versteckten CSS-Imports einführen.
+
+### Hintergrundvarianten zum Ausprobieren
+
+`CosmosBackgroundComponent.ACTIVE_VARIANT` ist die einzige Umschaltstelle:
+`"advanced"` aktiviert den gelieferten Entwurf „Horizont Plus“, `"base"` den
+bisherigen Hintergrund. `Application` übernimmt daraus den konstanten
+Stylesheet-Pfad; der gemeinsame `PageFrameComponent` erhält dazu die passenden
+nativen dekorativen Div-Ebenen. Besucherbereich, Portal und Administration
+verwenden dieselbe Auswahl. Aktuell ist **Advanced** ausgewählt.
+Advanced richtet seine Selektoren am gemeinsamen `cosmos-page-frame` aus;
+der öffentliche Rahmen benötigt dafür keine zusätzliche Klasse `cosmos-page`.
+
+Advanced übernimmt Horizont mit Atmosphäre und Wolkenbändern, zwei Sternflächen,
+vier funkelnde Sterne, Mond, Sternschnuppen und Satellit aus der gelieferten
+HTML-Vorlage. Farben und Verläufe liegen als `--cosmos-advanced-*` in
+`cosmos-tokens.css`; Positionen und Animationen in `cosmos-background-advanced.css`.
+Die originale Base-Gestaltung bleibt in `cosmos-background-base.css` erhalten.
+Die globale Palette für Controls, Panels und Dialoge wird nicht umgeschaltet.
+
+Die leichte Zeigerparallaxe setzt ausschließlich Variablen auf der Hintergrundebene.
+Bei Navigation wird der vorherige Listener abgemeldet; ein entfernter Hintergrund
+meldet sich spätestens beim nächsten Zeigerereignis ab. Reduzierte Bewegung
+deaktiviert Animationen und Zeigerparallaxe; bei einer Änderung dieser
+Systemeinstellung werden vorhandene Parallaxenwerte zurückgesetzt.
+Alle Ebenen sind dekorativ und `aria-hidden`; sie fangen keine Eingaben ab.
+Nur die feste Hintergrundebene verwendet `overflow: hidden`, keine Inhaltsfläche.
+
+Nach einem Wechsel neu bauen, Anwendung neu starten und Browser neu laden.
+Die endgültige Auswahl und das Entfernen der übrigen Varianten stehen in
+[TODO](../TODO.md); das ist keine Nachtaufgabe.
 
 ## Neue Oberfläche und Übernahme in den Standard
 

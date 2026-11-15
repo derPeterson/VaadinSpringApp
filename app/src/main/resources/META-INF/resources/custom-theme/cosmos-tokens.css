@@ -368,3 +368,46 @@ vaadin-tooltip {
     --cosmos-tooltip-offset: 8px;
     --cosmos-tooltip-shadow: 0 4px 14px rgba(0, 0, 0, .65);
 }
+
+/* Palette und Verläufe der separat wählbaren Advanced-Hintergrundvariante. */
+.cosmos-theme {
+    --cosmos-advanced-scene-background: radial-gradient(42% 36% at 8% 6%,   rgba(139,123,255,.12), transparent 70%),
+    radial-gradient(38% 34% at 96% 30%, rgba(56,189,248,.09),  transparent 70%);
+    --cosmos-advanced-horizon-background: radial-gradient(circle at 50% 0%, #0f2342 0%, #08122a 12%, #060b17 28%, #050811 62%);
+    --cosmos-advanced-horizon-shadow: 0 -1px 0 rgba(125,211,252,.60),
+    0 -14px 50px rgba(56,189,248,.22),
+    0 -26px 90px rgba(139,123,255,.10),
+    0 -70px 150px rgba(0,136,204,.15),
+    inset 0 24px 70px rgba(56,189,248,.14);
+    --cosmos-advanced-clouds-background: conic-gradient(from 0deg,
+    transparent 0 8%, rgba(56,189,248,.08) 14%, transparent 22% 38%,
+    rgba(139,123,255,.07) 46%, transparent 56% 72%, rgba(56,189,248,.06) 80%, transparent 90%);
+    --cosmos-advanced-stars-mask: linear-gradient(#000 35%, transparent 88%);
+    --cosmos-advanced-stars-near-background: radial-gradient(1px 1px at 20px 30px,   rgba(255,255,255,.60), transparent),
+    radial-gradient(1.5px 1.5px at 130px 90px, rgba(255,255,255,.80), transparent),
+    radial-gradient(1px 1px at 240px 170px, rgba(255,255,255,.50), transparent),
+    radial-gradient(1px 1px at 310px 40px,  rgba(255,255,255,.40), transparent),
+    radial-gradient(1.5px 1.5px at 70px 230px, rgba(255,255,255,.70), transparent),
+    radial-gradient(1px 1px at 190px 300px, rgba(255,255,255,.45), transparent),
+    radial-gradient(1px 1px at 350px 260px, rgba(255,255,255,.55), transparent);
+    --cosmos-advanced-stars-far-background: radial-gradient(2px 2px at 90px 60px,   rgba(125,211,252,.95), transparent),
+    radial-gradient(2px 2px at 400px 210px, rgba(196,181,253,.90), transparent),
+    radial-gradient(1.5px 1.5px at 250px 380px, rgba(253,230,190,.85), transparent),
+    radial-gradient(2px 2px at 560px 120px, rgba(125,211,252,.80), transparent),
+    radial-gradient(1.5px 1.5px at 680px 470px, rgba(196,181,253,.80), transparent);
+    --cosmos-advanced-spark-background: linear-gradient(90deg,  transparent, rgba(255,255,255,.95), transparent) center / 100% 1px no-repeat,
+    linear-gradient(180deg, transparent, rgba(255,255,255,.95), transparent) center / 1px 100% no-repeat,
+    radial-gradient(circle, rgba(186,230,253,.95) 0 1.5px, transparent 3px);
+    --cosmos-advanced-spark-filter: drop-shadow(0 0 4px rgba(125,211,252,.8));
+    --cosmos-advanced-moon-background: radial-gradient(circle at 68% 72%, rgba(5,8,17,.75) 0%, transparent 62%),
+    radial-gradient(circle at 36% 38%, rgba(5,8,17,.22) 0 9%, transparent 10%),
+    radial-gradient(circle at 58% 24%, rgba(5,8,17,.18) 0 6%, transparent 7%),
+    radial-gradient(circle at 44% 66%, rgba(5,8,17,.20) 0 7%, transparent 8%),
+    radial-gradient(circle at 30% 28%, #e2ecf8 0%, #9fb3cf 38%, #4a5c7a 72%, #232f47 100%);
+    --cosmos-advanced-moon-shadow: 0 0 34px rgba(148,184,255,.16), 0 0 90px rgba(56,189,248,.08);
+    --cosmos-advanced-shooting-star-background: linear-gradient(90deg, transparent, rgba(186,230,253,.95));
+    --cosmos-advanced-shooting-star-tip-background: #fff;
+    --cosmos-advanced-shooting-star-tip-shadow: 0 0 8px 2px rgba(125,211,252,.8);
+    --cosmos-advanced-satellite-background: #fff;
+    --cosmos-advanced-satellite-shadow: 0 0 5px 1px rgba(255,255,255,.7);
+}
