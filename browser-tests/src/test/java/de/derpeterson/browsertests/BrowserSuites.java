@@ -5,6 +5,7 @@ import de.derpeterson.browsertests.suites.AccountSecurityBrowserTest;
 import de.derpeterson.browsertests.suites.AccountSettingsBrowserTest;
 import de.derpeterson.browsertests.suites.AdminMailBrowserTest;
 import de.derpeterson.browsertests.suites.AuthenticationBrowserTest;
+import de.derpeterson.browsertests.suites.BackgroundVariantsBrowserTest;
 import de.derpeterson.browsertests.suites.BlockedLinksBrowserTest;
 import de.derpeterson.browsertests.suites.ConfigurationBrowserTest;
 import de.derpeterson.browsertests.suites.CosmosComponentsBrowserTest;
@@ -57,6 +58,7 @@ final class BrowserSuites {
               InfrastructureBrowserTest.class,
               RestartAndSmtpBrowserTest.class,
               MailQueueResolutionBrowserTest.class,
+              BackgroundVariantsBrowserTest.class,
               AuthenticationBrowserTest.class,
               RegistrationBrowserTest.class,
               FormLayoutsBrowserTest.class,
@@ -124,7 +126,8 @@ final class BrowserSuites {
       case "account-forms" ->
           List.of(RegistrationBrowserTest.class, UserManagementBrowserTest.class);
       case "profile-form" -> List.of(AccountSettingsBrowserTest.class);
-      case "mail-queue-resolution" -> List.of(MailQueueResolutionBrowserTest.class);
+      case "mail-queue-resolution", "queue-full-run" ->
+          List.of(MailQueueResolutionBrowserTest.class);
       case "external-login-flow" -> List.of(ExternalLoginBrowserTest.class);
       case "external-login-settings" -> List.of(ExternalLoginBrowserTest.class);
       case "follow-up-regressions" ->
@@ -173,6 +176,7 @@ final class BrowserSuites {
               VerificationBrowserTest.class);
       case "maintenance" -> List.of(MaintenanceBrowserTest.class);
       case "cosmos-design" -> List.of(CosmosDesignBrowserTest.class);
+      case "background-variants" -> List.of(BackgroundVariantsBrowserTest.class);
       case "breadcrumbs" ->
           List.of(CosmosComponentsBrowserTest.class, VerificationBrowserTest.class);
       case "cosmos-components", "cosmos-scrollbars", "duration-field" ->

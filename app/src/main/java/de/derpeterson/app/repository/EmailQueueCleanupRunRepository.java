@@ -10,6 +10,12 @@ import org.springframework.data.repository.query.Param;
 public interface EmailQueueCleanupRunRepository
     extends JpaRepository<EmailQueueCleanupRunEntity, Long> {
   @Modifying
-  @Query("delete from EmailQueueCleanupRunEntity r where r.attemptedAt < :cutoff")
-  int deleteAttemptsBefore(@Param("cutoff") LocalDateTime cutoffDateTime);
+  @Query(
+      """
+      delete from EmailQueueCleanupRunEntity r
+      where r.finishedAt < :cutoff and r.status in ('COMPLETED', 'FAILED', 'PARTIAL')
+        and r.id not in (select s.currentRunId from EmailQueueCleanupStateEntity s
+          where s.currentRunId is not null)
+      """)
+  int deleteFinishedBefore(@Param("cutoff") LocalDateTime cutoffDateTime);
 }

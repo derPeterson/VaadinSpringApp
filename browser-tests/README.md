@@ -140,7 +140,9 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `configuration-follow-up` | Feldhilfen, Zeitfelder und Formularschutz einschließlich Anbieter-/2FA-Entwürfen auf Desktop und Smartphone, bestehende und neue Sitzungsfristen sowie SMTP-Wechsel | 12 |
 | `configuration-field-help` | Wirksamkeit in den allgemeinen Feldhilfen, bei beiden Anmeldeanbietern und in den 2FA-Regeln auf Desktop und Smartphone | 8 |
 | `operations` | Persistenz ohne Bootstrap, zwei eigene SMTP-Ziele und echte begrenzte Transportausfälle mit Wiederanlauf | 3 |
-| `mail-queue-resolution` | Echte SMTP-Ablehnung und Verbindungsabbruch nach DATA; Superadminrechte, Mindestalter, manuelle/automatische Bereinigung ohne Wiederholung und neuer Verifikationslink; neue Reiter, Entwürfe, Historienfrist und Feldhilfen auf Desktop/Smartphone | 4 |
+| `mail-queue-resolution` | Echte SMTP-Ablehnung und Verbindungsabbruch nach DATA; vollständiger Lauf über 101 alte Aufträge, wartende Übernahme ohne zweiten Klick, Rechteentzug, Statusanzeigen, Reiter, Entwürfe und Feldhilfen in beiden Breiten | 9 |
+| `queue-full-run` | Vollständiger Lauf über 101 alte Aufträge mit echtem wartendem SMTP, automatischer Übernahme und Gesamtergebnis in beiden Breiten | 1 |
+| `background-variants` | Gewählte Hintergrundvariante in Besucherbereich, Portal und Administration, Parallaxe, reduzierte Bewegung und horizontale Erreichbarkeit in beiden Breiten | 2 |
 | `admin-mail` | Formularfehler, Feldinfos/Sprachwechsel, sicherer mehrzeiliger Text und tatsächliche Unicode-SMTP-Mails | 3 |
 | `token-expiry` | Echte Mindestdauer abwarten, erneuter Verifikationsversand, offenes Resetformular, Anfragefehler | 3 |
 | `remaining-configuration` | Konfiguration, Adminmail und Tokenablauf gemeinsam | 21 |
@@ -420,3 +422,9 @@ Sitzungstoken enthalten und müssen nicht dauerhaft archiviert werden. Nicht meh
 benötigte ganze Runs dürfen auf entsprechenden Benutzerauftrag nach bewusster
 Auswahl gelöscht werden; keine automatische Löschroutine. Der dauerhafte Prüfstand
 steht knapp in [docs/status.md](../docs/status.md), ohne eine Liste alter Run-Ordner.
+
+Für den gezielten Rückwechseltest am frisch gebauten Base-Image setzt der eigene
+Testprozess `BROWSER_TEST_BACKGROUND_VARIANT=base`; ohne diese Testvariable wird
+Advanced erwartet. Die eigentliche Anwendungsauswahl bleibt die zentrale
+Codezeile in `CosmosBackgroundComponent`. Beide Sprachen je Variante am selben
+unveränderten Image prüfen und vor der Gesamtrunde Advanced wiederherstellen.

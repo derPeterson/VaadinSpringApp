@@ -23,6 +23,7 @@ import com.vaadin.flow.server.VaadinSession;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.UserEntity;
+import de.derpeterson.app.model.enums.EmailQueueCleanupStatus;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserStatus;
 import de.derpeterson.app.security.MaintenanceService;
@@ -230,9 +231,16 @@ class UiSerializationContractTest {
   }
 
   @Test
-  void cleanupStatusRetainsItsTimestampCountAndBusyStateAfterSerialization() throws Exception {
+  void cleanupStatusRetainsItsIdentityProgressAndWaitingStateAfterSerialization() throws Exception {
     CleanupResult latestCleanupResult =
-        new CleanupResult(LocalDateTime.of(2026, 11, 13, 4, 0), 3, true);
+        new CleanupResult(
+            1L,
+            EmailQueueCleanupStatus.WAITING,
+            LocalDateTime.of(2026, 11, 13, 4, 0),
+            null,
+            null,
+            250,
+            false);
 
     assertEquals(latestCleanupResult, copy(latestCleanupResult));
   }

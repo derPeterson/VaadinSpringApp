@@ -7,14 +7,13 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-/** Ein gemeinsamer Laufstand pro Datenbank; enthält keine Empfänger oder Mailinhalte. */
+/** Gemeinsame Laufkoordination; die letzte Anzeige bleibt unabhängig von der Historienfrist. */
 @Entity
 @Table(name = "email_queue_cleanup_state")
 @Getter
 @Setter
 public class EmailQueueCleanupStateEntity {
   @Id private Long id = 1L;
+  private Long currentRunId;
   private LocalDateTime lastRunAt;
-  private int resolvedCount;
-  private boolean busy;
 }

@@ -46,7 +46,9 @@ mit internen 100er-Paketen, Gesamtergebnis und überarbeiteten Dialoghinweisen.
 Bestätigte manuelle Aufträge warten bei laufendem Versand unter „Wartet auf
 Ausführung“ und werden automatisch sicher ausgeführt; weitere Klicks legen
 keinen zweiten Auftrag an. Warten wird nicht als Fehler oder Überspringen gemeldet.
-Es ist nur geplant; die derzeitige sichtbare Grenze gilt bis zu dieser Umsetzung.
+Die Umsetzung ist vorhanden; die technische Paketgröße ist keine sichtbare Gesamtgrenze.
+88 gezielte JUnit-Prüfungen und je neun isolierte Queue-Browserfälle in DE/EN
+sind bestanden. Die vollständige Gesamtrunde und menschliche Sichtung stehen noch aus.
 
 Der `ConfirmDialog`-Pilot für „Alle Benachrichtigungen als gelesen markieren“
 in Inbox und Glockenvorschau ist vom Benutzer abgenommen.
@@ -69,19 +71,21 @@ Der äußere Button und Dialogtitel heißen „Manuelle Bereinigung“, die Best
 bleibt „Jetzt bereinigen“. `AppIcon.BRUSH_CLEANING` ersetzt das X in beiden Aktionen
 und im Dialogkopf; die Statusüberschrift verwendet das gemeinsame Blau. Die gelbe
 Warnung beginnt mit „Späterer Empfang möglich:“; darunter erklärt eine dezente
-Infobox die gespeicherten Einstellungen und die Höchstzahl 100 ohne Trefferprognose.
-Die Umsetzung und DE-/EN-Texte stehen zur Benutzersichtung bereit. Browsernachtests
-sind auf Benutzerwunsch zurückgestellt und im [Testbedarf](../testbedarf.md) erfasst.
+Infobox die gespeicherten Einstellungen, den vollständigen abgegrenzten Lauf
+und die automatische Fortsetzung nach laufendem Versand.
+Die Umsetzung und DE-/EN-Texte stehen zur Benutzersichtung bereit. Die früher
+zurückgestellten Browsernachtests gehören zur freigegebenen Nachtarbeit;
+noch offene Nachweise stehen im [Testbedarf](../testbedarf.md).
 Diese Gestaltung ist aus der Nachtarbeit herausgenommen. Die technische
-Übernahme auf `ConfirmDialog` ist erfolgt; fachliche Gesamtläufe und neue
-Statusanzeigen folgen gesondert in Nachtpaket 3.
+Übernahme auf `ConfirmDialog` sowie fachliche Gesamtläufe und neue
+Statusanzeigen sind in Nachtpaket 3 umgesetzt.
 
 Die separat beauftragte URL-Ansteuerung der Mailqueue-Reiter ist implementiert:
 `tab=general` und `tab=assistants` erhalten die Auswahl beim Neuladen und
 Direktaufruf, ein Reiterwechsel erhält den Formularentwurf. JUnit-Prüfung und
 Ergebnisse stehen im [Prüfstand](../status.md). Die Benutzerabnahme dieser
-Korrektur sowie der ausdrücklich zurückgestellte Browsernachtest sind noch offen;
-Letzterer steht ausschließlich im [Testbedarf](../testbedarf.md).
+Korrektur steht noch aus; der Browsernachtest gehört zur freigegebenen Nachtarbeit
+und bleibt bis zum erfolgreichen Nachweis im [Testbedarf](../testbedarf.md).
 
 Die gewöhnlichen Formularlayouts sind vom Benutzer abgenommen.
 Kennzahlkarten, Avatar-Übernahme, Profil-/Benutzerformulare, segmentierte Auswahl,
@@ -139,7 +143,7 @@ deshalb als Bedienentscheidung betrachtet werden.
 
 | Baustein | Konkreter Startpunkt | Umfang und Grenze |
 | --- | --- | --- |
-| `Card` | Die gemeinsame `CosmosCardComponent` und Kontopanels sind auf die native Card übertragen; kleine Innenkarten folgen in Nachtpaket 1.5. | Öffentliche Kopf-/Footer-Slots, bestehende Cosmos-Klassen und fachliche Panel-APIs weiterverwenden. Gestaltung und Bedienung vergleichen; menschliche Sichtung bleibt offen. |
+| `Card` | Die gemeinsame `CosmosCardComponent` und Kontopanels sind auf die native Card übertragen; auch die geeigneten Innenkarten sind übertragen. | Öffentliche Kopf-/Footer-Slots, bestehende Cosmos-Klassen und fachliche Panel-APIs weiterverwenden. Gestaltung und Bedienung vergleichen; menschliche Sichtung bleibt offen. |
 | `ConfirmDialog` | Ein einfacher Bestätigungsfall im Bereich Benachrichtigungen über [PortalConfirmationDialog](../../app/src/main/java/de/derpeterson/app/ui/components/PortalConfirmationDialog.java). | Komponenten für Header, Text und Aktionen werden unterstützt. Schließen oben rechts, Escape, Anfangsfokus, Warnfarbe und der vereinbarte Footer müssen passen. Benutzerlöschung, Geräteabmeldung, Profilbildlöschung und Anleitungsvorschau haben zusätzlichen Kontext. An die erst nach erfolgreichem Pilot herangehen. |
 | Info-/Warnboxen und Leerzustände | Statische Hinweise in Kontodialogen, Konfiguration und Ticketeditor, außerdem `NotificationEmptyState`. | Native `Notification` ist für vorübergehende Meldungen. Fest eingebettete Hinweise dürfen als gemeinsame Flow-Komposition aus Icon und Text bestehen. Abstände, Hervorhebung und Icon-Ausrichtung zentral halten. Einen bestehenden Baustein erweitern, sobald eine zweite Stelle denselben Aufbau benötigt. |
 | Seitliche Feldhilfe und Filter | `AdminSidePanelDialog` und `ConfigInfoButton` in der Konfiguration, im Mailtest und in den Ticketfiltern. | `Dialog` bleibt die Basis für die seitliche Feldhilfe. Vor einem Wechsel zu `Popover` oder einer anderen Hülle zuerst Anker, Modalität, Fokus, Scrollgrenzen und mobile Bedienung vergleichen. Ein `Tooltip` deckt kurze Zusatztexte ab. |

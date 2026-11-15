@@ -1,7 +1,10 @@
 package de.derpeterson.app.model;
 
+import de.derpeterson.app.model.enums.EmailQueueCleanupStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -10,7 +13,10 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 
-/** Ein abgeschlossener Bereinigungsversuch ohne Empfänger, Mailinhalte oder Kontobezug. */
+/**
+ * Ein logischer Gesamtlauf; keine Empfänger oder Mailinhalte, Auftraggeber nur während aktiver
+ * Arbeit.
+ */
 @Entity
 @Table(name = "email_queue_cleanup_run")
 @Getter
@@ -26,9 +32,25 @@ public class EmailQueueCleanupRunEntity {
   @Column(nullable = false)
   private boolean automatic;
 
-  @Column(nullable = false)
-  private int resolvedCount;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false, length = 16)
+  private EmailQueueCleanupStatus status;
 
   @Column(nullable = false)
-  private boolean busy;
+  private long resolvedCount;
+
+  private Long requestedById;
+
+  @Column(nullable = false, length = 64)
+  private String minimumClaimAge;
+
+  private LocalDateTime startedAt;
+  private LocalDateTime finishedAt;
+  private LocalDateTime claimCutoffAt;
+
+  @Column(nullable = false)
+  private long highWaterId;
+
+  @Column(nullable = false)
+  private long cursorId;
 }

@@ -185,6 +185,18 @@ public interface UserRepository extends JpaRepository<UserEntity, Long>, UserLoc
   @Query(SECURITY_USER_QUERY)
   List<SecurityUserRow> findCanonicalSecurityUser(@Param("email") String canonicalEmailAddress);
 
+  /** Frischer expliziter Rollenstand für persistierte Hintergrundaufträge, ohne Principal. */
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRES_NEW)
+  @Query(
+      """
+      select count(u) > 0 from UserEntity u join u.roleEntities r
+      where u.id = :userId and u.enabled = true and u.administrativelyBlocked = false
+        and u.accountDeactivation.deletionAt is null
+        and u.emailVerificationStatus <> de.derpeterson.app.model.enums.EmailVerificationStatus.PENDING
+        and r.name = de.derpeterson.app.model.enums.RoleType.ROLE_SUPERADMIN
+      """)
+  boolean hasActiveSuperadminRole(Long userId);
+
   // The password guard already owns a fresh independent transaction. Reuse its connection
   // instead of exhausting the pool with a second connection for each locked login row.
   @Transactional(readOnly = true, propagation = Propagation.MANDATORY)

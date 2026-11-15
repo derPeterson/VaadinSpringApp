@@ -28,8 +28,15 @@ public interface EmailQueueRepository extends JpaRepository<EmailQueueEntity, Lo
   Optional<EmailQueueEntity> lockById(Long id);
 
   @Query(
-      "select e from EmailQueueEntity e where e.status = 'IN_PROGRESS' and e.processingStartedAt <= :cutoff order by e.processingStartedAt, e.id")
-  List<EmailQueueEntity> findUnresolvedBefore(LocalDateTime cutoff, Pageable pageable);
+      "select e.id from EmailQueueEntity e where e.status = 'IN_PROGRESS' "
+          + "and e.processingStartedAt <= :cutoff and e.id > :cursor and e.id <= :highWater order by e.id")
+  List<Long> findUnresolvedWindowIds(
+      LocalDateTime cutoff, long cursor, long highWater, Pageable pageable);
+
+  @Query(
+      "select coalesce(max(e.id), 0) from EmailQueueEntity e "
+          + "where e.status = 'IN_PROGRESS' and e.processingStartedAt <= :cutoff")
+  long maximumUnresolvedIdBefore(LocalDateTime cutoff);
 
   @Query(
       "select count(e) > 0 from EmailQueueEntity e where e.userEntity = :userEntity and e.emailType = :emailType and e.status in :statuses and (e.recipient is null or e.recipient = e.userEntity.email)")

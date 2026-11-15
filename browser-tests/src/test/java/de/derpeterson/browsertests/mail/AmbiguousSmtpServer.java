@@ -11,8 +11,10 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -23,6 +25,9 @@ public final class AmbiguousSmtpServer implements AutoCloseable {
   private final Set<Socket> activeSockets = ConcurrentHashMap.newKeySet();
   private final AtomicInteger receivedMessageCount = new AtomicInteger();
   private final AtomicReference<IOException> serverFailure = new AtomicReference<>();
+  private final AtomicBoolean holdResponses = new AtomicBoolean();
+  private final AtomicInteger heldResponses = new AtomicInteger();
+  private final CountDownLatch releaseResponses = new CountDownLatch(1);
 
   public AmbiguousSmtpServer() throws IOException {
     // Wie der bestehende OIDC-Testdienst vom eigenen Docker-Container erreichbar.
@@ -39,6 +44,19 @@ public final class AmbiguousSmtpServer implements AutoCloseable {
       throw new IllegalStateException("Own SMTP test server failed", serverFailure.get());
     }
     return receivedMessageCount.get();
+  }
+
+  public void holdFollowingResponses() {
+    holdResponses.set(true);
+  }
+
+  public boolean isHoldingResponse() {
+    return heldResponses.get() > 0;
+  }
+
+  public void releaseHeldResponses() {
+    holdResponses.set(false);
+    releaseResponses.countDown();
   }
 
   private void acceptConnections() {
@@ -71,6 +89,14 @@ public final class AmbiguousSmtpServer implements AutoCloseable {
         if (readingData) {
           if (commandText.equals(".")) {
             receivedMessageCount.incrementAndGet();
+            if (holdResponses.get()) {
+              heldResponses.incrementAndGet();
+              try {
+                releaseResponses.await();
+              } finally {
+                heldResponses.decrementAndGet();
+              }
+            }
             return; // Absichtlich kein 250 nach DATA; kein Weiterleiten oder Speichern des Inhalts.
           }
         } else if (commandText.equalsIgnoreCase("DATA")) {
@@ -83,6 +109,8 @@ public final class AmbiguousSmtpServer implements AutoCloseable {
           reply(replyWriter, "250 own test server");
         }
       }
+    } catch (InterruptedException _) {
+      Thread.currentThread().interrupt();
     } catch (IOException transportFailure) {
       if (!smtpServerSocket.isClosed()) {
         serverFailure.compareAndSet(null, transportFailure);
@@ -99,6 +127,7 @@ public final class AmbiguousSmtpServer implements AutoCloseable {
 
   @Override
   public void close() throws IOException {
+    releaseHeldResponses();
     smtpServerSocket.close();
     for (Socket clientSocket : activeSockets) {
       clientSocket.close();

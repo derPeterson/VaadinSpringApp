@@ -1,15 +1,18 @@
 package de.derpeterson.app.config;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import de.derpeterson.app.model.EmailQueueCleanupRunEntity;
 import de.derpeterson.app.model.LoginAttemptEntity;
 import de.derpeterson.app.model.RoleEntity;
 import de.derpeterson.app.model.UserAvatarEntity;
 import de.derpeterson.app.model.UserEntity;
 import de.derpeterson.app.model.enums.AvatarImageFormat;
 import de.derpeterson.app.model.enums.AvatarMode;
+import de.derpeterson.app.model.enums.EmailQueueCleanupStatus;
 import de.derpeterson.app.model.enums.Gender;
 import de.derpeterson.app.model.enums.RoleType;
 import de.derpeterson.app.model.enums.UserNotificationType;
@@ -17,6 +20,7 @@ import jakarta.persistence.EntityManager;
 import java.io.InputStream;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -213,5 +217,42 @@ class CurrentSchemaPersistenceTest {
     assertEquals(
         "classpath:db/application-schema-h2.sql",
         settings.getProperty("spring.sql.init.schema-locations"));
+  }
+
+  @Test
+  void deletingTheRequesterImmediatelyRemovesItsReferenceFromAPendingCleanupRun() {
+    LocalContainerEntityManagerFactoryBean factory = factory();
+    try (EntityManager manager = factory.getObject().createEntityManager()) {
+      manager.getTransaction().begin();
+      UserEntity requester =
+          UserEntity.builder()
+              .email("cleanup-actor@example.test")
+              .firstName("Cleanup")
+              .lastName("Actor")
+              .enabled(true)
+              .roleEntities(List.of())
+              .build();
+      manager.persist(requester);
+      EmailQueueCleanupRunEntity pendingRun = new EmailQueueCleanupRunEntity();
+      pendingRun.setAttemptedAt(LocalDateTime.now());
+      pendingRun.setStatus(EmailQueueCleanupStatus.WAITING);
+      pendingRun.setMinimumClaimAge("PT30M");
+      pendingRun.setRequestedById(requester.getId());
+      manager.persist(pendingRun);
+      manager.getTransaction().commit();
+      manager.clear();
+
+      manager.getTransaction().begin();
+      manager.remove(manager.find(UserEntity.class, requester.getId()));
+      manager.getTransaction().commit();
+      manager.clear();
+
+      EmailQueueCleanupRunEntity storedRun =
+          manager.find(EmailQueueCleanupRunEntity.class, pendingRun.getId());
+      assertNull(storedRun.getRequestedById());
+      assertEquals(EmailQueueCleanupStatus.WAITING, storedRun.getStatus());
+    } finally {
+      factory.destroy();
+    }
   }
 }

@@ -50,6 +50,8 @@ class BrowserExecutionPlanTest {
         "profile-form",
         "account-forms",
         "mail-queue-resolution",
+        "queue-full-run",
+        "background-variants",
         "component-follow-up",
         "breadcrumbs",
         "form-details",
@@ -138,7 +140,14 @@ class BrowserExecutionPlanTest {
                   "unresolvedRequestNeedsExplicitResolutionBeforeAnotherVerificationMail",
                   "explicitSmtpRejectionReachesItsRetryLimitInsteadOfQuarantine",
                   "manualCleanupConfirmationKeepsItsLayoutAndCanBeCancelled",
+                  "fullCleanupWaitsForTransportAndAggregatesMoreThanOneBatch",
+                  "revokedWaitingCleanupShowsFailureWithoutClaimingSuccess",
+                  "queueTabUrlsSurviveReloadAndRejectUnauthorizedAssistantAccess",
                   "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
+          case "queue-full-run" ->
+              Set.of("fullCleanupWaitsForTransportAndAggregatesMoreThanOneBatch");
+          case "background-variants" ->
+              Set.of("chosenBackgroundRemainsDecorativeAcrossPublicPortalAndAdministration");
           case "component-follow-up" ->
               Set.of(
                   "durationUnitIsCenteredInsideNumericField",

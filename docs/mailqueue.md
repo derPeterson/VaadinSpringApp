@@ -52,83 +52,122 @@ verwendeten Angus-Transports werden nur für die einzelne Nachricht mit genau ei
 Empfänger und ohne Teilversand eingeordnet. Fehlende Antworten bleiben unklar.
 SMTP-Annahme und Datenbankcommit sind nicht atomar; es gibt keine Exactly-once-Garantie.
 
-Unter **Konfiguration → Mailqueue → Ungeklärte Mailaufträge** können ausschließlich
-Superadmins eine gemeinsame Bereinigung ausdrücklich bestätigen. Es gibt keine
-Auswahl einzelner Empfänger. Abbrechen verändert nichts. Pro Lauf werden höchstens
-100 ausreichend alte Claims beendet: maßgeblich ist `processingStartedAt` des
-letzten Versandversuchs, nicht das Erstellungsdatum. Das Ergebnis ist `UNKNOWN`,
-ohne Zustellbehauptung und ohne erneuten Versand. Danach ist eine ausdrücklich
-neue Anforderung möglich; die normalen Versandwartezeiten gelten weiter. Eine
-zuvor angenommene Mail kann weiterhin eintreffen. Deshalb keinen Auftrag blind
+Unter **Konfiguration → E-Mail-Queue → Assistenten** können ausschließlich
+Superadmins eine gemeinsame **Manuelle Bereinigung** bestätigen. Es gibt keine
+Auswahl einzelner Empfänger. Abbrechen verändert nichts. Die bestätigende Aktion
+heißt **Jetzt bereinigen**; beide Buttons und der Dialogkopf verwenden das Brush-Icon.
+Die Warnung **Späterer Empfang möglich:** macht deutlich, dass eine zuvor
+angenommene Mail trotzdem eintreffen kann. Die separate Infobox erklärt die
+beim Anfordern gespeicherten Einstellungen und den Umfang des späteren Laufs.
+Eine zusätzliche Rollenbeschriftung oder sichtbare Gesamtgrenze gibt es nicht.
+
+Der Auftrag wird vor der Übergabe an den Hintergrunddienst dauerhaft gespeichert.
+Bei laufendem Queueversand bleibt er unter **Wartet auf Ausführung** vorgemerkt.
+Der Scheduler setzt aktive Aufträge auch bei ausgeschalteter Automatik fort;
+ein weiterer Klick ist nicht nötig. Gleichzeitige Anforderungen schließen sich
+dem bestehenden aktiven Lauf an und erzeugen keinen zweiten. Reine automatische
+Prüfungen bei belegtem Versand erzeugen weder einen übersprungenen Historieneintrag
+noch überschreiben sie einen vorgemerkten manuellen Auftrag.
+
+### Umfang und Pakettransaktionen
+
+Bei der Anforderung wird das gespeicherte Mindestalter übernommen. Beim tatsächlichen
+Start werden Laufbeginn, Altersgrenze und höchste passende Auftrags-ID einmalig
+festgelegt. Maßgeblich ist `processingStartedAt` des letzten Versandversuchs,
+nicht das Erstellungsdatum. Eine Schleife verarbeitet dieses feste Fenster in
+internen Paketen von höchstens 100 IDs, jeweils in einer eigenen kurzen Transaktion.
+Neu hinzugekommene oder erst später ausreichend alte Claims gehören zum nächsten
+Lauf. Nach dem erneuten Sperren nicht mehr passende oder inzwischen entfernte
+Kandidaten werden nicht gezählt; der Cursor schreitet trotzdem voran. Ein nicht
+fortschreitendes Abfragefenster beendet den Lauf mit einem Fehler statt einer Endlosschleife.
+
+Die Zahl 100 begrenzt nur die einzelnen Datenbanktransaktionen. Ein logischer Lauf
+kann mehr Aufträge bearbeiten; Gesamtzahl und Historieneintrag werden über alle
+bestätigten Pakete fortgeschrieben. Es gibt keine Rekursion und keinen Neuversand.
+Das Ergebnis eines bereinigten Claims ist `UNKNOWN`, ohne Zustellbehauptung.
+Die Datenschutz-Sonderregel für Löschbestätigungen bleibt bestehen: Diese
+Queueeinträge werden entfernt. Danach kann ein Benutzer ausdrücklich einen neuen
+Link anfordern; die normalen Wartezeiten bleiben gültig. Claims niemals blind
 auf `PENDING` zurücksetzen.
 
-Der äußere Button und der Titel der Bestätigung heißen **Manuelle Bereinigung**,
-die bestätigende Aktion weiterhin **Jetzt bereinigen**. Beide Buttons und der
-Dialogkopf verwenden das Brush-Icon. Die Warnung **Späterer Empfang möglich:**
-stellt die Grenze gegenüber einem bereits annehmenden Mailserver heraus;
-eine separate Infobox nennt gespeicherte Einstellungen, Altersbezug und Laufgrenze.
-Es gibt keine zusätzliche Rollenbeschriftung im Dialog. Die Berechtigungsprüfungen
-bleiben unabhängig von der Darstellung erhalten.
+Die gemeinsame lokale Dateisperre je H2-Datenbank bleibt während des gesamten
+logischen Laufs exklusiv, einschließlich aller Paketcommits. Sie gilt auch für
+weitere lokale JVMs mit demselben Datenbankpfad. Neue Queueworker warten mit ihrem
+Claim; SMTP hält weiterhin keine Datenbanktransaktion offen. Ein unterbrochener,
+aber noch nicht tatsächlich beendeter SMTP-Worker bleibt geschützt.
 
-Die Zahl 100 ist als Seitengröße der Datenbankabfrage fest im Dienst gesetzt,
-nicht als administrativer Konfigurationswert. Sie begrenzt die Anzahl der
-Datensätze und der anschließenden Sperr-/Änderungsoperationen innerhalb einer
-Transaktion. Die Verarbeitung ist eine normale Schleife, kein rekursiver Ablauf;
-die Begrenzung ist kein Schutz vor einem Stackoverflow. Eine größere offene Menge
-erfordert weitere manuelle oder fällige automatische Läufe, keinen automatischen
-Neuversand.
+Ein eigener begrenzter Ein-Thread-Executor führt die Bereinigung unabhängig vom
+SMTP-Pool und vom Scheduler aus; Aufruferkontexte werden nicht vererbt. Der
+manuelle Auftrag speichert während aktiver Arbeit ausschließlich die Kennung
+des frisch geprüften Superadmins. Vor jedem Paket liest eine unabhängige Projektion
+seine aktuelle Verfügbarkeit und explizite Rolle. Sperre, Selbstdeaktivierung,
+ausstehende Verifikation, Rechteentzug oder Löschung verhindern weitere Pakete.
+Die kurzlebige Auftraggeberreferenz wird bei einem terminalen Ergebnis entfernt;
+bei Kontolöschung setzt der Fremdschlüssel sie sofort auf null.
+
+### Ergebnis und Statusanzeige
+
+| Zustand | Bedeutung |
+| --- | --- |
+| Noch nicht ausgeführt | Noch kein Lauf gespeichert; keine zusätzliche Erfolgs-/Fehlerzeile. |
+| Wartet auf Ausführung | Dauerhaft vorgemerkt; automatische Übernahme, sobald kein Queueversand läuft. |
+| Wird ausgeführt | Hintergrundarbeit aktiv; die Anzahl enthält nur bereits bestätigte Änderungen. |
+| Abgeschlossen | Das feste Auftragsfenster ist vollständig bearbeitet, auch bei 0 Treffern. |
+| Fehlgeschlagen | Kein Paketfortschritt bestätigt; keine erfolgreiche Bereinigung behaupten. |
+| Teilweise abgeschlossen | Frühere Paketcommits bleiben erhalten; ein späteres Paket ist gescheitert. |
+
+Native Badges kennzeichnen Warten und Teilfortschritt gelb, Abschluss grün und
+Fehler rot. Die Statusüberschrift bleibt blau, Zeitpunkt und Gesamtzahl stehen
+immer auf getrennten Monospace-Zeilen. Bei Abschluss steht zusätzlich
+**Die Bereinigung konnte erfolgreich abgeschlossen werden.**; Fehler und
+Teilergebnis erhalten die entsprechende Erklärung. Eine Unterbrechung zwischen
+Paketcommits lässt den Auftrag aktiv und fortsetzbar. Ein technischer Fehler
+rollt ausschließlich das fehlerhafte Paket zurück. Ein ausdrücklich neuer Lauf
+bearbeitet danach die verbleibenden passenden Claims.
+
+Die Ansicht lädt den letzten Stand beim Öffnen und über **Aktualisieren** mit
+Erfolgs-/Fehlermeldung. Während aktiver Arbeit pollt sie vorübergehend; beim
+Abschluss oder Verlassen entfernt sie ihren Listener und stellt das vorherige
+Pollintervall wieder her. Der manuell beobachtete Lauf wird anhand seiner ID
+verfolgt, damit eine inzwischen neuere automatische Bereinigung seine Rückmeldung
+nicht verdrängt. Vormerkung ist kein Erfolg. Erst das gespeicherte Endergebnis
+erzeugt die passende Erfolgs-, Fehler- oder Warnnotification; auch 0 Treffer sind
+erfolgreich. Andere automatische Läufe erzeugen keine allgemeinen UI-Notifications.
+
+### Automatik, Konfiguration und Historie
 
 Die automatische Bereinigung ist standardmäßig ausgeschaltet. Nur Superadmins
 können sie einschalten oder Prüfintervall (Vorgabe 15 Minuten) und Mindestalter
 (Vorgabe 30 Minuten) ändern. Beide Dauern müssen mindestens eine Minute betragen.
-Der Scheduler prüft alle zehn Sekunden die gespeicherten Einstellungen; das
-Intervall zählt seit dem letzten manuellen oder automatischen Versuch, auch wenn
-laufendes SMTP ihn verhindert hat. Manuell lässt sich unabhängig vom Intervall
-prüfen. Ein Lauf arbeitet mit seinem gelesenen Einstellungsstand, der nächste
-berücksichtigt Änderungen ohne Neustart auch bei vorhandenen Claims.
+Der Scheduler prüft alle zehn Sekunden; das Intervall zählt seit dem Abschluss
+des letzten manuellen oder automatischen Laufs. Die manuelle Anforderung bleibt
+unabhängig vom Intervall und Automatikschalter möglich. Ein vorgemerkter Auftrag
+verwendet seinen gespeicherten Einstellungsstand; der nächste übernimmt Änderungen.
 
-Die Queue-Konfiguration hat die Reiter **Allgemein** und **Assistenten** im
-vorhandenen Panelstil. Ihre Direktlinks sind
-`admin?section=configuration&group=queue&tab=general` beziehungsweise
-`admin?section=configuration&group=queue&tab=assistants`. Ein Reiterwechsel
-aktualisiert die URL ohne Navigation oder erneutes Laden der Formularwerte;
-Neuladen und Direktaufruf stellen die Auswahl aus der URL wieder her.
-Fehlende, unbekannte oder mehrfache `tab`-Werte wählen „Allgemein“.
-Admins sehen die fünf allgemeinen Einstellungen,
-Superadmins zusätzlich den Bereinigungsassistenten. Ein Assistenten-Direktlink
-erteilt keine zusätzlichen Rechte; ohne Berechtigung bleibt „Allgemein“ geöffnet.
-Die beiden Zeitfelder des Assistenten sind nur bei eingeschalteter Automatik
-bedienbar, gespeicherte Werte bleiben erhalten. Die Historienfrist bleibt
-unabhängig davon bedienbar. Der gemeinsame
-äußere Footer lädt beziehungsweise speichert beide Reiter. Die manuelle
-Bereinigung ist weiterhin unabhängig vom Automatikschalter möglich und verwendet
-gespeicherte Einstellungen. Bewusstes Aktualisieren meldet Erfolg oder Fehler.
+Die Reiter **Allgemein** und **Assistenten** verwenden den vorhandenen Panelstil.
+Direktlinks sind `admin?section=configuration&group=queue&tab=general` und
+`admin?section=configuration&group=queue&tab=assistants`. Der Wechsel aktualisiert
+die URL ohne erneutes Laden der Formularwerte; Neuladen stellt die Auswahl wieder
+her. Fehlende, unbekannte oder mehrfache `tab`-Werte wählen **Allgemein**.
+Admins sehen fünf allgemeine Einstellungen, Superadmins zusätzlich den Assistenten.
+Ein Direktlink erteilt keine zusätzlichen Rechte. Die beiden Zeitfelder sind
+nur bei eingeschalteter Automatik bedienbar, gespeicherte Werte bleiben erhalten.
+Die Historienfrist bleibt unabhängig davon bedienbar. Der gemeinsame äußere Footer
+lädt beziehungsweise speichert beide Reiter.
 
-Letzter Versuch, Anzahl und eine mögliche Blockierung durch laufenden Versand
-werden gemeinsam mit dem Abschluss gespeichert und bleiben nach Neustart erhalten.
-Die Anzeige lädt den Stand beim Öffnen und über „Aktualisieren“, ohne laufendes
-Polling. Zusätzlich wird jeder tatsächlich fällige automatische oder manuelle
-Versuch mit Zeitpunkt, Auslöser, Anzahl und Blockierung als eigener Datensatz in
-`email_queue_cleanup_run` erfasst, auch ein Lauf ohne Treffer. Reine Scheduler-
-Prüfungen ohne fälligen Versuch erzeugen keinen Eintrag. Status und Historie
-werden mit demselben Transaktionsabschluss gespeichert. Es wird keine Empfänger-
-oder Mailinhaltshistorie angelegt. Die neue Einstellung **Aufbewahrung der
-Bereinigungshistorie** ist Superadmins vorbehalten und verlangt mindestens einen
-ganzen Tag, Vorgabe 30 Tage. Täglich um 03:15 Uhr Serverzeit werden ältere Einträge
-entfernt, unabhängig vom Automatikschalter. Änderungen gelten ohne Neustart beim
-nächsten Löschlauf auch für vorhandene Einträge. Letzter Status und Intervall bleiben
-davon unberührt. Eine sichtbare Verlaufsliste ist eine spätere offene Aufgabe.
-Weitere
-passende Aufträge bleiben nach der begrenzten Menge für den nächsten Lauf erhalten.
+`email_queue_cleanup_run` enthält einen Eintrag je logischem Gesamtlauf mit
+Anforderung, tatsächlichem Start/Ende, Auslöser, Status, Gesamtzahl und
+Fortsetzungscursor. Auch ein erfolgreicher Lauf ohne Treffer wird gespeichert.
+`email_queue_cleanup_state` verweist auf den letzten beziehungsweise aktiven Lauf
+und hält den Abschlusszeitpunkt für das Prüfintervall. Empfänger und Mailinhalte
+werden nicht in die Bereinigungshistorie kopiert.
 
-Der Dienst prüft für manuelle Aktionen die Superadminrolle frisch und sperrt die
-betroffenen Datensätze. Eine gemeinsame lokale Dateisperre je H2-Datenbank verhindert
-die Bereinigung, solange noch irgendein Queueversand läuft. Sie gilt auch für weitere
-lokale JVMs mit demselben Datenbankpfad. Bei laufender Bereinigung warten neue Worker
-mit ihrem Claim bis zum Ende des Datenbankabschlusses. SMTP hält keine
-Datenbanktransaktion offen. Ein Abbruchsignal an einen nicht unterbrechbaren Worker
-gilt nicht als tatsächliches Versandende. Eine echte Prozessunterbrechung oder eine
-fehlende finale SMTP-Antwort kann weiterhin einen ungeklärten Ausgang verursachen.
+**Aufbewahrung der Bereinigungshistorie** ist Superadmins vorbehalten und verlangt
+mindestens einen ganzen Tag, Vorgabe 30 Tage. Täglich um 03:15 Uhr Serverzeit werden
+ältere terminale Einträge anhand ihres Endzeitpunkts entfernt, unabhängig vom
+Automatikschalter. Der aktuelle Anzeigeeintrag und aktive Aufträge bleiben erhalten.
+Änderungen gelten ohne Neustart für den nächsten Löschlauf. Eine sichtbare
+Verlaufsliste bleibt eine spätere offene Aufgabe.
 
 Die Sperrdatei liegt neben der H2-Datei (`*.email-dispatch.lock`); sie nicht bei
 laufenden Instanzen löschen. Das Betriebssystem gibt die Sperre bei Prozessende frei.

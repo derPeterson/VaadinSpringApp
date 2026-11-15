@@ -24,6 +24,29 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 class ThreadPoolConfigTest {
+  @Test
+  void cleanupWorkerHasABoundedQueueAndDoesNotInheritTheCallerContext() throws Exception {
+    InheritableThreadLocal<String> callerContext = new InheritableThreadLocal<>();
+    callerContext.set("fixture-context");
+    ThreadPoolExecutor cleanupExecutor =
+        new ThreadPoolConfig(mock(ConfigService.class)).cleanupExecutor();
+    try {
+      assertEquals(1, cleanupExecutor.getCorePoolSize());
+      assertEquals(1, cleanupExecutor.getMaximumPoolSize());
+      assertEquals(1, cleanupExecutor.getQueue().remainingCapacity());
+      assertNull(cleanupExecutor.submit(callerContext::get).get());
+      assertTrue(cleanupExecutor.submit(() -> Thread.currentThread().isDaemon()).get());
+      assertTrue(
+          cleanupExecutor
+              .submit(() -> Thread.currentThread().getName())
+              .get()
+              .startsWith("EmailQueueCleanup-"));
+    } finally {
+      callerContext.remove();
+      cleanupExecutor.shutdownNow();
+    }
+  }
+
   @ParameterizedTest
   @ValueSource(ints = {0, -1})
   void invalidWorkerCountsAreRejectedBeforeAnyThreadStarts(int count) {

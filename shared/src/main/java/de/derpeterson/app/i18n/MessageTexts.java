@@ -4607,10 +4607,6 @@ public class MessageTexts {
     return getTranslation("admin.queueResolution.consequence");
   }
 
-  public String getAdminQueueResolutionBusy() {
-    return getTranslation("admin.queueResolution.busy");
-  }
-
   public String getAdminQueueResolutionFailure() {
     return getTranslation("admin.queueResolution.failure");
   }
@@ -4711,10 +4707,6 @@ public class MessageTexts {
     return getTranslation("admin.queueCleanup.result");
   }
 
-  public String getAdminQueueCleanupBusyResult() {
-    return getTranslation("admin.queueCleanup.busyResult");
-  }
-
   public String getAdminQueueCleanupParametersHint() {
     return getTranslation("admin.queueCleanup.parametersHint");
   }
@@ -4733,5 +4725,57 @@ public class MessageTexts {
 
   public String getAdminQueueCleanupEffectiveRunning() {
     return getTranslation("admin.queueCleanup.effective.running");
+  }
+
+  public String getAdminQueueCleanupStatusWaiting() {
+    return getTranslation("admin.queueCleanup.status.waiting");
+  }
+
+  public String getAdminQueueCleanupStatusRunning() {
+    return getTranslation("admin.queueCleanup.status.running");
+  }
+
+  public String getAdminQueueCleanupStatusCompleted() {
+    return getTranslation("admin.queueCleanup.status.completed");
+  }
+
+  public String getAdminQueueCleanupStatusFailed() {
+    return getTranslation("admin.queueCleanup.status.failed");
+  }
+
+  public String getAdminQueueCleanupStatusPartial() {
+    return getTranslation("admin.queueCleanup.status.partial");
+  }
+
+  public String getAdminQueueCleanupWaitingExplanation() {
+    return getTranslation("admin.queueCleanup.waitingExplanation");
+  }
+
+  public String getAdminQueueCleanupRunningExplanation() {
+    return getTranslation("admin.queueCleanup.runningExplanation");
+  }
+
+  public String getAdminQueueCleanupSuccessExplanation() {
+    return getTranslation("admin.queueCleanup.successExplanation");
+  }
+
+  public String getAdminQueueCleanupFailureExplanation() {
+    return getTranslation("admin.queueCleanup.failureExplanation");
+  }
+
+  public String getAdminQueueCleanupPartialExplanation() {
+    return getTranslation("admin.queueCleanup.partialExplanation");
+  }
+
+  public String getAdminQueueCleanupPartialCompleted() {
+    return getTranslation("admin.queueCleanup.partialCompleted");
+  }
+
+  public String getAdminQueueCleanupRequestedResult() {
+    return getTranslation("admin.queueCleanup.requestedResult");
+  }
+
+  public String getAdminQueueCleanupParametersScopeHint() {
+    return getTranslation("admin.queueCleanup.parametersScopeHint");
   }
 }

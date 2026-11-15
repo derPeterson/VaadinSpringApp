@@ -1,15 +1,19 @@
 package de.derpeterson.browsertests.suites;
 
 import static com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat;
+import static de.derpeterson.app.config.AppRouteConstants.ADMIN_ROUTE;
+import static de.derpeterson.browsertests.BrowserRoutes.path;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.microsoft.playwright.APIResponse;
 import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
+import com.microsoft.playwright.assertions.LocatorAssertions;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.RequestOptions;
+import com.microsoft.playwright.options.WaitUntilState;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
@@ -23,6 +27,7 @@ import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.ConfirmationAppearanceChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
+import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -32,6 +37,7 @@ import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -50,14 +56,229 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
     signInAdministrator(true);
     new AdminConfigurationPage(browserPage).open(AdminConfigGroup.QUEUE);
     selectCleanupTabAndGetAutomaticSwitch();
-    browserPage.locator("#admin-mail-queue-cleanup").click();
-    Locator confirmationDialogLocator = browserPage.locator("#admin-mail-queue-confirm[opened]");
-    assertThat(confirmationDialogLocator.locator(".cosmos-security-warning")).isVisible();
-    ConfirmationAppearanceChecks.capture(
-        browserPage, confirmationDialogLocator, "manual-mail-cleanup");
-    browserPage.locator("#admin-mail-queue-confirm-cancel").click();
-    assertThat(confirmationDialogLocator).hasCount(0);
-    assertThat(browserPage.locator("#admin-mail-queue-cleanup")).isEnabled();
+    String originalResult = browserPage.locator("#admin-mail-queue-result").textContent();
+    for (String dismissal : new String[] {"cancel", "header", "escape", "outside"}) {
+      browserPage.locator("#admin-mail-queue-cleanup").click();
+      Locator confirmationDialogLocator = browserPage.locator("#admin-mail-queue-confirm[opened]");
+      assertThat(confirmationDialogLocator.locator(".cosmos-security-warning")).isVisible();
+      ConfirmationAppearanceChecks.capture(
+          browserPage, confirmationDialogLocator, "manual-mail-cleanup");
+      assertThat(confirmationDialogLocator.locator(".cosmos-overlay-close")).isFocused();
+      UiActions.complete(
+          browserPage,
+          () -> {
+            switch (dismissal) {
+              case "cancel" -> browserPage.locator("#admin-mail-queue-confirm-cancel").click();
+              case "header" -> confirmationDialogLocator.locator(".cosmos-overlay-close").click();
+              case "escape" -> browserPage.keyboard().press("Escape");
+              case "outside" -> browserPage.mouse().click(2, 2);
+              default -> throw new IllegalArgumentException("Unknown dismissal fixture");
+            }
+          });
+      assertThat(confirmationDialogLocator).hasCount(0);
+      assertThat(browserPage.locator("#admin-mail-queue-cleanup")).isEnabled();
+      assertThat(browserPage.locator("#admin-mail-queue-result")).hasText(originalResult);
+    }
+  }
+
+  @Test
+  @Tag("queue-full-run")
+  @DisplayName(
+      "QUEUE-06: Mehr als 100 Aufträge warten auf SMTP und werden ohne zweiten Klick vollständig bereinigt")
+  void fullCleanupWaitsForTransportAndAggregatesMoreThanOneBatch() throws Exception {
+    signInAdministrator(true);
+    AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
+    configurationPage.open(AdminConfigGroup.QUEUE);
+    BigDecimal previousMinimumAge =
+        configurationPage.seconds(uiTexts.getAdminQueueCleanupMinimumAge());
+    BigDecimal previousInterval = configurationPage.seconds(uiTexts.getAdminQueueCleanupInterval());
+    boolean previousAutomatic = selectCleanupTabAndGetAutomaticSwitch().isChecked();
+    selectCleanupTabAndGetAutomaticSwitch().setChecked(true);
+    configurationPage.enterSeconds(
+        uiTexts.getAdminQueueCleanupMinimumAge(), BigDecimal.valueOf(60));
+    configurationPage.enterSeconds(uiTexts.getAdminQueueCleanupInterval(), BigDecimal.valueOf(60));
+    selectCleanupTabAndGetAutomaticSwitch().setChecked(false);
+    configurationPage.save();
+    captureCleanupStateAtBothWidths("Bereinigung vor dem Gesamtlauf");
+
+    configurationPage.open(AdminConfigGroup.SMTP);
+    String previousHost = configurationPage.value(uiTexts.getAdminConfigEntryMailHost());
+    String previousPort = configurationPage.value(uiTexts.getAdminConfigEntryMailPort());
+    String accountPrefix = "full-cleanup-" + UUID.randomUUID();
+    String lastRecipient = accountPrefix + "-100@example.test";
+    String heldRecipient = "held-cleanup-" + UUID.randomUUID() + "@example.test";
+    try (AmbiguousSmtpServer smtpServer = new AmbiguousSmtpServer()) {
+      try {
+        configurationPage.enter(uiTexts.getAdminConfigEntryMailHost(), "host.docker.internal");
+        configurationPage.enter(
+            uiTexts.getAdminConfigEntryMailPort(), Integer.toString(smtpServer.port()));
+        configurationPage.save();
+        AdminUsersPage usersPage = new AdminUsersPage(browserPage);
+        usersPage.open();
+        for (int accountIndex = 0; accountIndex < 101; accountIndex++) {
+          AdminUserDialog createDialog = usersPage.openCreate();
+          createDialog.fillNewUser(
+              accountPrefix + "-" + accountIndex + "@example.test",
+              BrowserTestAccounts.USER_PASSWORD,
+              true,
+              false);
+          createDialog.save();
+        }
+        browserPage.waitForCondition(
+            () -> smtpServer.receivedMessageCount() >= 101,
+            new Page.WaitForConditionOptions().setTimeout(180_000));
+        assertEquals(101, smtpServer.receivedMessageCount());
+        Instant lastClaimObservedAt = Instant.now();
+        configurationPage.open(AdminConfigGroup.QUEUE);
+        selectCleanupTabAndGetAutomaticSwitch();
+        browserPage.waitForCondition(
+            () -> Instant.now().isAfter(lastClaimObservedAt.plusSeconds(61)),
+            new Page.WaitForConditionOptions().setTimeout(65_000));
+
+        smtpServer.holdFollowingResponses();
+        registerOwnAccount(heldRecipient);
+        browserPage.waitForCondition(
+            smtpServer::isHoldingResponse, new Page.WaitForConditionOptions().setTimeout(30_000));
+        browserPage.setViewportSize(390, 1000);
+        browserPage.locator("#admin-mail-queue-cleanup").click();
+        Locator confirmation = browserPage.locator("#admin-mail-queue-confirm[opened]");
+        assertThat(confirmation).not().containsText("100");
+        browserPage.locator("#admin-mail-queue-confirm-submit").click();
+        assertThat(browserPage.locator("#admin-mail-queue-status"))
+            .hasAttribute("data-status", "WAITING");
+        assertThat(browserPage.locator("#admin-mail-queue-cleanup")).isDisabled();
+        assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+            .containsText(uiTexts.getAdminQueueCleanupWaitingExplanation());
+        captureCleanupStateAtBothWidths("Wartet auf Ausführung bei echtem SMTP");
+        smtpServer.releaseHeldResponses();
+
+        assertThat(browserPage.locator("#admin-mail-queue-status"))
+            .hasAttribute(
+                "data-status",
+                "COMPLETED",
+                new LocatorAssertions.HasAttributeOptions().setTimeout(30_000));
+        String resultFormat = uiTexts.getAdminQueueCleanupResult();
+        String expectedSuffix =
+            MessageFormat.format(resultFormat.substring(resultFormat.indexOf("{0}") + 3), "", 101);
+        assertThat(browserPage.locator("#admin-mail-queue-result")).containsText(expectedSuffix);
+        assertThat(browserPage.locator("#admin-mail-queue-status-explanation"))
+            .hasText(uiTexts.getAdminQueueCleanupSuccessExplanation());
+        assertThat(browserPage.locator("vaadin-notification-card:not([closing])"))
+            .containsText(MessageFormat.format(uiTexts.getAdminQueueCleanupCompleted(), 101));
+        assertEquals(
+            102,
+            smtpServer.receivedMessageCount(),
+            "Ein Gesamtlauf darf keinen Versand wiederholen");
+        captureCleanupStateAtBothWidths("Gesamtlauf mit 101 bereinigten Aufträgen");
+        assertCleanupCountStartsOnNewLine();
+      } finally {
+        smtpServer.releaseHeldResponses();
+        configurationPage.open(AdminConfigGroup.SMTP);
+        configurationPage.enter(uiTexts.getAdminConfigEntryMailHost(), previousHost);
+        configurationPage.enter(uiTexts.getAdminConfigEntryMailPort(), previousPort);
+        configurationPage.save();
+      }
+
+      // Der absichtlich junge Halteauftrag gehört nicht zum eingefrorenen Gesamtlauf.
+      // Sein wegwerfbares Konto über die echte Verwaltung löschen, damit er spätere Fälle nicht
+      // beeinflusst.
+      AdminUsersPage usersPage = new AdminUsersPage(browserPage);
+      usersPage.open();
+      usersPage.openEdit(heldRecipient).requestDelete().confirm();
+      new MailpitInbox(browserContext).assertNoMailFor(lastRecipient);
+      AdminUserDialog lastAccount = usersPage.openEdit(lastRecipient);
+      lastAccount.openSignInDetails();
+      lastAccount.root().locator("#admin-resend-verification-mail").click();
+      new MailpitInbox(browserContext).awaitVerificationMail(lastRecipient);
+      lastAccount.cancel();
+    } finally {
+      configurationPage.open(AdminConfigGroup.QUEUE);
+      selectCleanupTabAndGetAutomaticSwitch().setChecked(true);
+      configurationPage.enterSeconds(uiTexts.getAdminQueueCleanupMinimumAge(), previousMinimumAge);
+      configurationPage.enterSeconds(uiTexts.getAdminQueueCleanupInterval(), previousInterval);
+      selectCleanupTabAndGetAutomaticSwitch().setChecked(previousAutomatic);
+      configurationPage.save();
+    }
+  }
+
+  private void captureCleanupStateAtBothWidths(String evidenceName) {
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 1000);
+      browserPage.locator("#admin-mail-queue-resolution").scrollIntoViewIfNeeded();
+      assertThat(browserPage.locator("#admin-mail-queue-status")).isVisible();
+      assertTrue(
+          (boolean) browserPage.evaluate("document.documentElement.scrollWidth <= innerWidth"));
+      AllurePlaywright.attachScreenshot(evidenceName + " " + viewportWidth, browserPage);
+    }
+  }
+
+  @Test
+  @DisplayName(
+      "QUEUE-07: Ein wartender Auftrag wird nach Rechteentzug ehrlich als fehlgeschlagen angezeigt")
+  void revokedWaitingCleanupShowsFailureWithoutClaimingSuccess() throws Exception {
+    signInAdministrator(true);
+    String requestingAdministrator = "cleanup-actor-" + UUID.randomUUID() + "@example.test";
+    String heldRecipient = "cleanup-held-" + UUID.randomUUID() + "@example.test";
+    AdminUsersPage usersPage = new AdminUsersPage(browserPage);
+    usersPage.createUser(requestingAdministrator, BrowserTestAccounts.USER_PASSWORD, true, true);
+    AdminUserDialog actorDialog = usersPage.openEdit(requestingAdministrator);
+    actorDialog.setRole(uiTexts.getRoleSuperadmin(), true);
+    actorDialog.save();
+
+    AdminConfigurationPage configurationPage = new AdminConfigurationPage(browserPage);
+    configurationPage.open(AdminConfigGroup.SMTP);
+    String previousHost = configurationPage.value(uiTexts.getAdminConfigEntryMailHost());
+    String previousPort = configurationPage.value(uiTexts.getAdminConfigEntryMailPort());
+    try (BrowserActor requestingActor = new BrowserActor(testBrowser);
+        AmbiguousSmtpServer smtpServer = new AmbiguousSmtpServer()) {
+      LoginPage actorLogin = new LoginPage(requestingActor.browserPage);
+      actorLogin.open();
+      actorLogin.signIn(requestingAdministrator, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(requestingActor.browserPage).selectTestLanguage();
+      AdminConfigurationPage actorConfiguration =
+          new AdminConfigurationPage(requestingActor.browserPage);
+      actorConfiguration.open(AdminConfigGroup.QUEUE);
+      selectCleanupTabAndGetAutomaticSwitch(requestingActor.browserPage);
+      try {
+        configurationPage.enter(uiTexts.getAdminConfigEntryMailHost(), "host.docker.internal");
+        configurationPage.enter(
+            uiTexts.getAdminConfigEntryMailPort(), Integer.toString(smtpServer.port()));
+        configurationPage.save();
+        smtpServer.holdFollowingResponses();
+        registerOwnAccount(heldRecipient);
+        browserPage.waitForCondition(
+            smtpServer::isHoldingResponse, new Page.WaitForConditionOptions().setTimeout(30_000));
+        requestingActor.browserPage.locator("#admin-mail-queue-cleanup").click();
+        requestingActor.browserPage.locator("#admin-mail-queue-confirm-submit").click();
+        assertThat(requestingActor.browserPage.locator("#admin-mail-queue-status"))
+            .hasAttribute("data-status", "WAITING");
+
+        usersPage.open();
+        actorDialog = usersPage.openEdit(requestingAdministrator);
+        actorDialog.setRole(uiTexts.getRoleSuperadmin(), false);
+        actorDialog.save();
+        smtpServer.releaseHeldResponses();
+        configurationPage.open(AdminConfigGroup.QUEUE);
+        selectCleanupTabAndGetAutomaticSwitch();
+        assertThat(browserPage.locator("#admin-mail-queue-status"))
+            .hasAttribute(
+                "data-status",
+                "FAILED",
+                new LocatorAssertions.HasAttributeOptions().setTimeout(30_000));
+        assertThat(browserPage.locator("#admin-mail-queue-status-explanation"))
+            .hasText(uiTexts.getAdminQueueCleanupFailureExplanation());
+        captureCleanupStateAtBothWidths("Fehlgeschlagener Lauf nach Rechteentzug");
+      } finally {
+        smtpServer.releaseHeldResponses();
+        configurationPage.open(AdminConfigGroup.SMTP);
+        configurationPage.enter(uiTexts.getAdminConfigEntryMailHost(), previousHost);
+        configurationPage.enter(uiTexts.getAdminConfigEntryMailPort(), previousPort);
+        configurationPage.save();
+      }
+      usersPage.open();
+      usersPage.openEdit(heldRecipient).requestDelete().confirm();
+      usersPage.openEdit(requestingAdministrator).requestDelete().confirm();
+    }
   }
 
   @ParameterizedTest
@@ -117,7 +338,6 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
         AllurePlaywright.attachScreenshot("Bereinigung " + viewportWidth, browserPage);
       }
       Instant claimObservedAt;
-      long previousUnknownCount = logCount("is unknown; IN_PROGRESS retained.");
       try (AmbiguousSmtpServer smtpServer = new AmbiguousSmtpServer()) {
         configurationPage.open(AdminConfigGroup.SMTP);
         String previousHost = configurationPage.value(uiTexts.getAdminConfigEntryMailHost());
@@ -128,7 +348,9 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
               uiTexts.getAdminConfigEntryMailPort(), Integer.toString(smtpServer.port()));
           configurationPage.save();
           registerOwnAccount(recipientEmailAddress);
-          awaitNewLog("is unknown; IN_PROGRESS retained.", previousUnknownCount);
+          browserPage.waitForCondition(
+              () -> smtpServer.receivedMessageCount() == 1,
+              new Page.WaitForConditionOptions().setTimeout(30_000));
           assertEquals(1, smtpServer.receivedMessageCount());
           claimObservedAt = Instant.now();
         } finally {
@@ -138,6 +360,7 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
           configurationPage.save();
         }
         configurationPage.open(AdminConfigGroup.QUEUE);
+        selectCleanupTabAndGetAutomaticSwitch();
         browserPage.locator("#admin-mail-queue-cleanup").click();
         assertThat(browserPage.locator("#admin-mail-queue-confirm[opened]"))
             .containsText(uiTexts.getAdminQueueResolutionConsequence());
@@ -154,7 +377,7 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
 
         if (automatic) {
           String automaticCompletionLog =
-              "Unresolved mail queue entries closed without resending: count=1, automatic=true";
+              "Mail queue cleanup completed without resending: count=1, automatic=true";
           long previousAutomaticCount = logCount(automaticCompletionLog);
           selectCleanupTabAndGetAutomaticSwitch().setChecked(true);
           configurationPage.save();
@@ -299,6 +522,63 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
     }
   }
 
+  @Test
+  @DisplayName("QUEUE-08: Reiter bleiben über Direktlink und F5 erhalten und beachten die Rolle")
+  void queueTabUrlsSurviveReloadAndRejectUnauthorizedAssistantAccess() {
+    String queuePath = path(ADMIN_ROUTE) + "?section=configuration&group=queue";
+    signInAdministrator(false);
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 1000);
+      browserPage.navigate(
+          queuePath + "&tab=assistants",
+          new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+      assertSelectedQueueTab(uiTexts.getAdminQueueCleanupGeneralTab(), 5);
+      assertThat(browserPage.locator("#admin-queue-tabs").getByRole(AriaRole.TAB)).hasCount(1);
+      assertThat(browserPage.locator("#admin-mail-queue-resolution")).hasCount(0);
+    }
+    new UserMenu(browserPage).requestSignOut();
+    signInAdministrator(true);
+    for (int viewportWidth : new int[] {1280, 390}) {
+      browserPage.setViewportSize(viewportWidth, 1000);
+      new AdminConfigurationPage(browserPage).open(AdminConfigGroup.QUEUE);
+      selectCleanupTabAndGetAutomaticSwitch();
+      // Den eigenen Queryparameter unabhängig von seiner Reihenfolge nach dem Serverereignis
+      // abwarten.
+      browserPage.waitForURL(Pattern.compile(".*[?&]tab=assistants(?:&.*)?$"));
+      String assistantUrl = browserPage.url();
+      assertTrue(assistantUrl.contains("tab=assistants"));
+      browserPage.reload(new Page.ReloadOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+      assertSelectedQueueTab(uiTexts.getAdminQueueCleanupAssistantsTab(), 4);
+      browserPage.navigate(
+          queuePath + "&tab=general",
+          new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+      assertSelectedQueueTab(uiTexts.getAdminQueueCleanupGeneralTab(), 5);
+      browserPage.navigate(
+          assistantUrl, new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+      assertSelectedQueueTab(uiTexts.getAdminQueueCleanupAssistantsTab(), 4);
+      for (String invalidSelection :
+          new String[] {"", "&tab=unknown", "&tab=assistants&tab=general"}) {
+        browserPage.navigate(
+            queuePath + invalidSelection,
+            new Page.NavigateOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));
+        assertSelectedQueueTab(uiTexts.getAdminQueueCleanupGeneralTab(), 5);
+      }
+      AllurePlaywright.attachScreenshot(
+          "URL-Auswahl und Zähler der Queue " + viewportWidth, browserPage);
+    }
+  }
+
+  private void assertSelectedQueueTab(String tabLabel, int expectedSettings) {
+    assertThat(
+            browserPage
+                .locator("#admin-queue-tabs")
+                .getByRole(
+                    AriaRole.TAB, new Locator.GetByRoleOptions().setName(tabLabel).setExact(true)))
+        .hasAttribute("aria-selected", "true");
+    assertThat(browserPage.locator(".cosmos-config-setting-count"))
+        .hasText(uiTexts.getAdminConfigSettingsCount(expectedSettings));
+  }
+
   /** Prüft die gespeicherten und ungespeicherten Werte durch die echten Reiter und Aktionen. */
   private void verifyQueueDraftsAndAssistantLayout(
       AdminConfigurationPage configurationPage, int viewportWidth) {
@@ -374,14 +654,18 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
   }
 
   private Locator selectCleanupTabAndGetAutomaticSwitch() {
-    browserPage
+    return selectCleanupTabAndGetAutomaticSwitch(browserPage);
+  }
+
+  private Locator selectCleanupTabAndGetAutomaticSwitch(Page configurationBrowserPage) {
+    configurationBrowserPage
         .getByRole(
             AriaRole.TAB,
             new Page.GetByRoleOptions()
                 .setName(uiTexts.getAdminQueueCleanupAssistantsTab())
                 .setExact(true))
         .click();
-    return browserPage.getByRole(
+    return configurationBrowserPage.getByRole(
         AriaRole.SWITCH,
         new Page.GetByRoleOptions().setName(uiTexts.getAdminQueueCleanupEnabled()).setExact(true));
   }

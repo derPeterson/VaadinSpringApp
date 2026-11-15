@@ -25,7 +25,8 @@ final class BrowserExecutionPlan {
   private static final Map<String, Integer> ESTIMATED_TEST_CLASS_SECONDS_MAP =
       Map.ofEntries(
           Map.entry("RestartAndSmtpBrowserTest", 410),
-          Map.entry("MailQueueResolutionBrowserTest", 320),
+          // Mehr als 100 echte Formularanlagen, Mindestalter und kontrolliert wartendes SMTP.
+          Map.entry("MailQueueResolutionBrowserTest", 900),
           Map.entry("SegmentedSelectionBrowserTest", 70),
           Map.entry("EmailActionLinkBrowserTest", 20),
           Map.entry("TokenExpiryBrowserTest", 260),
@@ -96,6 +97,8 @@ final class BrowserExecutionPlan {
       discoveryRequestBuilder.filters(TagFilter.includeTags("fast"));
     } else if (suiteName.equals("native-confirmations")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("native-confirmations"));
+    } else if (suiteName.equals("queue-full-run")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("queue-full-run"));
     } else if (suiteName.equals("confirmation-dialog")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("confirmation-dialog"));
     } else if (suiteName.equals("two-factor-recovery-output")) {

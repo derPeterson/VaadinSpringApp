@@ -33,6 +33,21 @@ class AdminRolePolicyPrincipalSnapshotTest {
   }
 
   @Test
+  void backgroundAuthorizationReadsTheStoredActorAgainWithoutAThreadPrincipal() {
+    SecurityContextHolder.clearContext();
+    when(userRepository.hasActiveSuperadminRole(42L)).thenReturn(true, false);
+    assertDoesNotThrow(() -> adminRolePolicy.requireSuperadmin(42L));
+    assertThrows(AccessDeniedException.class, () -> adminRolePolicy.requireSuperadmin(42L));
+    verify(userRepository, times(2)).hasActiveSuperadminRole(42L);
+  }
+
+  @Test
+  void deletedActorCannotAuthorizeBackgroundCleanup() {
+    assertThrows(AccessDeniedException.class, () -> adminRolePolicy.requireSuperadmin((Long) null));
+    verifyNoInteractions(userRepository);
+  }
+
+  @Test
   void authorizationUsesThePrincipalThatWasActuallyChecked() {
     Authentication authentication = mock(Authentication.class);
     UserDetails principal =

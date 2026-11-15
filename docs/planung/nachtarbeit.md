@@ -41,100 +41,25 @@ auf `Dialog`. Offen bleibt die menschliche Sichtung gemäß
 
 ## Gesamtpaket 3: Mailqueue vollständig in internen Paketen bereinigen
 
-**Status: zur Umsetzung freigegeben.**
-Ein Bereinigungslauf soll alle zu seinem Start passenden alten ungeklärten
-Versandaufträge bearbeiten können, ohne sichtbare Gesamtgrenze von 100.
-Intern bleiben Pakete von höchstens 100 Einträgen mit kurzen Transaktionen.
-Das gilt für manuelle und automatische Läufe des gemeinsamen Bereinigungsdienstes.
-„Bereinigen“ bedeutet fachlich Abschließen ohne erneuten Versand, nicht pauschales
-Löschen aller Mails oder der Queue. Die bestehenden Sonderregeln für
-Löschbestätigungen bleiben erhalten.
+Die fachliche Umsetzung ist abgeschlossen: Dauerhafte manuelle Aufträge warten
+bei laufendem Versand und werden ohne weiteren Klick fortgesetzt. Der Dienst
+verarbeitet einen fest abgegrenzten Gesamtlauf in eigenen 100er-Transaktionen,
+summiert die bestätigten Pakete und prüft die aktuelle Berechtigung vor jedem
+Paket. Neustart, konkurrierende Anforderungen, Rechteentzug und Teilfehler sind
+abgesichert. Historie und Anzeige unterscheiden Warten, laufende Verarbeitung,
+Abschluss, Fehler und tatsächlichen Teilfortschritt. Die Oberfläche zeigt keine
+Gesamtgrenze und meldet nur tatsächlichen Abschluss beziehungsweise Fehler.
+Dialogtexte und Statusmeldungen sind in DE/EN aktualisiert; das freigegebene
+Cosmos-Design bleibt erhalten. Der aktuelle Vertrag steht unter
+[Mailqueue](../mailqueue.md).
 
-### Arbeitspaket 3.1: Paketweise Verarbeitung des vollständigen Laufs
-
-- [ ] Eine bestätigte manuelle Bereinigung als serverseitigen Auftrag vormerken.
-  Läuft noch Mailversand, bleibt sie unter „Wartet auf Ausführung“ vorgemerkt
-  und startet im Hintergrund automatisch, sobald eine sichere Ausführung möglich
-  ist. Kein wiederholtes Klicken und kein manueller Status „Übersprungen“ nötig.
-- [ ] Weitere Klicks bei vorgemerktem oder laufendem Auftrag dürfen keinen zweiten
-  Lauf erzeugen. Vormerkung, Übernahme und Abschluss zuverlässig koordinieren;
-  Neustart, Rechteentzug und konkurrierende automatische Läufe berücksichtigen.
-  Die Vormerkung ersetzt keine spätere Berechtigungsprüfung. Ein vorgemerkter
-  Bereinigungsauftrag ist kein Auftrag zum erneuten Mailversand.
-- [ ] Eine Schleife über interne 100er-Pakete ergänzen; Abfrage und Änderungen
-  je Paket in einer eigenen kurzen Transaktion ausführen.
-- [ ] Laufbeginn, gespeicherte Einstellungen und Altersgrenze einmal bestimmen;
-  nicht während des Laufs immer neue inzwischen gealterte Aufträge aufnehmen.
-- [ ] Verarbeitung beenden, wenn keine passenden Einträge mehr vorhanden sind.
-  Veränderte oder nicht mehr bereinigungsfähige Einträge korrekt behandeln;
-  Stillstand und Endlosschleifen verhindern.
-- [ ] Schutz vor gleichzeitigem Versand und konkurrierenden Bereinigungsläufen,
-  frische Berechtigungsprüfungen und bestehende Status-/Datenschutzregeln erhalten.
-  Die Sperrgrenzen passend zu den getrennten Transaktionen prüfen.
-
-### Arbeitspaket 3.2: Gesamtergebnis, Historie und Teilfehler
-
-- [ ] Die vom Benutzer freigegebene Statusgestaltung aus der HTML-Skizze umsetzen:
-  neutrale Kennzeichnung „Noch nicht ausgeführt“, grün „Abgeschlossen“,
-  rot „Fehlgeschlagen“, ergänzt um gelb „Wartet auf Ausführung“ für einen
-  vorgemerkten manuellen Auftrag. Warten ist kein Fehler und zeigt keine
-  fehlgeschlagene Bereinigung an. Bei Abschluss zusätzlich in Grün
-  „Die Bereinigung konnte erfolgreich abgeschlossen werden.“ anzeigen;
-  bei Fehler die entsprechende rote Erklärung beibehalten. Für „Noch nicht
-  ausgeführt“ ist keine zusätzliche Erfolg-/Fehlerzeile vorgesehen.
-  Überschrift bleibt blau; Layout, Terminal-Icon und Aktionen bleiben wie gezeigt.
-- [ ] Beim manuellen Ausführen zusätzlich die bestehenden Notifications für
-  tatsächlichen Abschluss beziehungsweise Fehler anzeigen und in DE/EN pflegen.
-  Bei Vormerkung informieren: „Die Bereinigung wartet auf den laufenden Mailversand.“
-  Nach der automatischen Ausführung folgt die tatsächliche Abschluss- oder
-  Fehlermeldung. Das Öffnen des Bestätigungsdialogs ist noch kein Erfolg.
-  Auch ein erfolgreicher Lauf mit 0 Treffern bekommt die Erfolgsmeldung;
-  bei Fehlern oder Teilergebnissen
-  keinen vollständigen Erfolg behaupten. Automatische Hintergrundläufe erzeugen
-  keine zusätzlichen allgemeinen UI-Notifications.
-- [ ] Ein echtes Teilergebnis gelb mit passender Warnnotification kennzeichnen,
-  ohne vollständigen Erfolg zu behaupten. Eine bloße Versandblockierung vor dem
-  manuellen Start führt dagegen zum Warten. Übersprungene automatische Prüfungen
-  davon getrennt behandeln und einen vorgemerkten manuellen Auftrag nicht mit
-  solch einem Ergebnis überschreiben. Die bisherige Speicherung von Zeitpunkt,
-  Anzahl und `busy` genügt für Vormerkung, Fehler-/Teilstatus noch nicht;
-  Modell und aktuelles Schema bei der Umsetzung passend ergänzen.
-- [ ] Bereinigte Aufträge über alle erfolgreich abgeschlossenen Pakete summieren.
-  Statusanzeige, Rückmeldung und Historie bilden einen logischen Gesamtlauf ab;
-  Ergebnisse über 100 korrekt anzeigen, beispielsweise 250 als Gesamtergebnis
-  statt der einzelnen Paketstände 100, 100 und 50.
-- [ ] Bei einem späteren Fehler bereits bestätigte Pakete nicht als zurückgerollt
-  darstellen. Teilfortschritt und Fehler beziehungsweise Blockierung ehrlich
-  melden und speichern; kein vollständiger Erfolg bei unvollständigem Lauf.
-- [ ] Leere Läufe, laufender Versand, Rechteentzug und einen späteren erneuten
-  Versuch berücksichtigen. Verbleibende Einträge müssen weiter bearbeitbar sein.
-
-### Arbeitspaket 3.3: Dialogtexte und Informationsgliederung in DE/EN
-
-- [ ] Die sichtbare Aussage „höchstens 100 pro Lauf“ vollständig entfernen;
-  die interne Paketgröße ist kein für die Bedienung nötiges Oberflächenlimit.
-- [ ] Dialog und zugehörige Hinweise vollständig fachlich gegenprüfen und
-  verständlich formulieren: gespeicherte Einstellungen, Mindestalter,
-  kein erneuter Versand und möglicher späterer Empfang. Doppelte Aussagen
-  vermeiden; Texte müssen auch zu Teilfehlern und automatischen Läufen passen.
-- [ ] Die freigegebene Variante A mit Brush-Icons, Warnbox und dezenter Infobox
-  beibehalten. Zusammengehörige Aussagen dürfen mit einem Zeilenumbruch getrennt
-  werden; unterschiedliche Gedanken erhalten lesbare Absätze.
-- [ ] Vorhandene Absatzabstände, insbesondere bei 2FA, als Vorlage prüfen und
-  bestehende Cosmos-Klassen/Tokens übernehmen. Keine feste neue 8-px-Vorgabe
-  ableiten und keine globale Typografieänderung vornehmen.
-
-### Arbeitspaket 3.4: Nachweise und Abschluss
-
-- [ ] Die zentral erfassten JUnit- und Browserprüfungen im
-  [Testbedarf](../testbedarf.md) passend ergänzen und ausführen; eigene isolierte
-  Testdaten verwenden. DE/EN auf Desktop und Smartphone einschließlich der
-  Textumbrüche und Infoabsätze prüfen und Vorher-/Nachher-Belege bereitstellen.
-- [ ] Überschneidungen mit der Dialogübernahme in Paket 2.5 berücksichtigen;
-  die Mailqueue-Gestaltung nicht ein zweites Mal neu entwerfen.
-- [ ] Nach jedem Teilpaket Review, nötige Nachprüfung und eigenen aussagekräftigen
-  Commit vorsehen; Fachdokumentation und offene Planung auf den tatsächlichen
-  Stand bringen. Noch offene Testarbeit bleibt ausschließlich im Testbedarf.
+88 gezielte JUnit-Prüfungen und je neun isolierte Queue-Browserfälle in DE/EN
+sind bestanden, einschließlich Warten, 101 Aufträgen ohne Neuversand, Rechteentzug
+sowie Direktlink, F5 und Rollenprüfung in beiden Breiten. Der englische Dialogfall
+prüft zusätzlich alle vier Abbruchwege; die vollständige deutsche Wiederholung
+dieser Erweiterung folgt in der großen Testrunde. Die Vergleichsaufnahmen stehen
+zur menschlichen Sichtung bereit. Offen bleibt nur der zentral erhaltene
+[Testbedarf](../testbedarf.md) und die abschließende Gesamtrunde.
 
 ## Rahmen für die Nachtarbeit
 

@@ -1739,11 +1739,20 @@ gemeinsamen roten Aktionsstil, „Abbrechen“ bleibt unverändert.
 Unter der Frage und der kurzen Erklärung stehen zwei native Layoutzeilen:
 die gemeinsame `cosmos-security-warning` mit oben ausgerichtetem Warnicon und
 fettem „Späterer Empfang möglich:“ sowie `admin-queue-cleanup-info` mit einem
-Info-Icon und den gespeicherten Rahmenbedingungen einschließlich maximal
-100 Aufträgen pro Lauf. Der bisherige zusätzliche Hinweis entfällt im Dialog.
+  Info-Icon und den gespeicherten Rahmenbedingungen ohne sichtbare Gesamtgrenze.
+  Zusammengehörige Aussagen stehen in zwei Absätzen mit `--cosmos-space-s`.
+  Der bisherige zusätzliche Hinweis entfällt im Dialog.
 Die lokalen Klassen `admin-queue-cleanup-confirmation` und
 `admin-queue-cleanup-confirmation-details` liegen in
 `cosmos-mailqueue-assistant.css`; andere Bestätigungen bleiben unverändert.
+
+Die Statuszeile verwendet ein natives `Badge` mit den vorhandenen kompakten
+Cosmos-Maßen. Noch nicht ausgeführt ist neutral; Warten und laufende Verarbeitung
+sind gelb, Abschluss grün, Fehler rot und ein tatsächliches Teilergebnis gelb.
+Die Erklärung übernimmt dieselbe Statusfarbe. Zeit und Gesamtzahl stehen weiterhin
+in getrennten Monospace-Zeilen. Während aktiver Aufträge ist die Startaktion
+deaktiviert; das vorübergehende UI-Polling stellt nach Abschluss oder Abhängen
+den zuvor verwendeten Pollingabstand wieder her.
 
 ## Segmentierte Auswahl mit nativen Tabs
 

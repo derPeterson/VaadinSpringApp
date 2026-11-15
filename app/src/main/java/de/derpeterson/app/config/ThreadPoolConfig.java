@@ -20,6 +20,25 @@ public class ThreadPoolConfig {
     return newExecutor(configService.getInteger(ConfigEntry.EMAIL_QUEUE_POOL_SIZE));
   }
 
+  /** Die dauerhafte Vormerkung bleibt in der Datenbank; SMTP und Scheduler bleiben unabhängig. */
+  @Bean(name = "emailQueueCleanupExecutor", destroyMethod = "shutdown")
+  public ThreadPoolExecutor cleanupExecutor() {
+    ThreadFactory cleanupThreadFactory =
+        Thread.ofPlatform()
+            .name("EmailQueueCleanup-", 1)
+            .daemon(true)
+            .inheritInheritableThreadLocals(false)
+            .factory();
+    return new ThreadPoolExecutor(
+        1,
+        1,
+        0,
+        TimeUnit.MILLISECONDS,
+        new LinkedBlockingQueue<>(1),
+        cleanupThreadFactory,
+        new ThreadPoolExecutor.AbortPolicy());
+  }
+
   public static ThreadPoolExecutor newExecutor(int emailWorkerPoolSize) {
     if (emailWorkerPoolSize < 1) {
       throw new IllegalArgumentException("Email worker pool size must be positive.");

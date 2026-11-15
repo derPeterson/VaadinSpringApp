@@ -29,6 +29,24 @@ public class AdminRolePolicy {
     }
   }
 
+  /** Speichert nur die Kennung des frisch geprüften Auftraggebers für Hintergrundarbeit. */
+  public Long currentSuperadminId() {
+    List<SecurityUserRow> securityUserRows = loadCurrentSecurityUserRows();
+    if (securityUserRows.stream().noneMatch(row -> row.getRole() == RoleType.ROLE_SUPERADMIN)
+        || securityUserRows.getFirst().getId() == null) {
+      throw roleAssignmentDeniedException();
+    }
+    return securityUserRows.getFirst().getId();
+  }
+
+  /** Unabhängige Projektion statt geerbtem SecurityContext oder verwalteter Benutzerentität. */
+  public void requireSuperadmin(Long requestingAccountId) {
+    if (requestingAccountId == null
+        || !userRepository.hasActiveSuperadminRole(requestingAccountId)) {
+      throw roleAssignmentDeniedException();
+    }
+  }
+
   public void authorizeMutation(Long targetUserId, Set<RoleType> requestedRoleTypes) {
     Set<RoleType> currentRoleTypes = loadCurrentRoleTypes();
     if (!currentRoleTypes.contains(RoleType.ROLE_ADMIN)
@@ -65,6 +83,15 @@ public class AdminRolePolicy {
   }
 
   private Set<RoleType> loadCurrentRoleTypes() {
+    EnumSet<RoleType> currentRoleTypes = EnumSet.noneOf(RoleType.class);
+    loadCurrentSecurityUserRows().stream()
+        .map(UserRepository.SecurityUserRow::getRole)
+        .filter(Objects::nonNull)
+        .forEach(currentRoleTypes::add);
+    return currentRoleTypes;
+  }
+
+  private List<SecurityUserRow> loadCurrentSecurityUserRows() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     if (authentication == null
         || !authentication.isAuthenticated()
@@ -78,13 +105,7 @@ public class AdminRolePolicy {
         throw roleAssignmentDeniedException();
       }
 
-      EnumSet<RoleType> currentRoleTypes = EnumSet.noneOf(RoleType.class);
-      securityUserRows.stream()
-          .map(UserRepository.SecurityUserRow::getRole)
-          .filter(Objects::nonNull)
-          .forEach(currentRoleTypes::add);
-
-      return currentRoleTypes;
+      return securityUserRows;
     } catch (UsernameNotFoundException _) {
       throw new AccessDeniedException("Account unavailable");
     }

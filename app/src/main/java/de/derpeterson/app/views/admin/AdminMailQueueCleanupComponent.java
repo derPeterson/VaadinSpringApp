@@ -1,6 +1,9 @@
 package de.derpeterson.app.views.admin;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.badge.Badge;
+import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H3;
@@ -8,10 +11,12 @@ import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.helper.logging.LogSafety;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper.NotificationType;
 import de.derpeterson.app.i18n.MessageProperties;
+import de.derpeterson.app.model.enums.EmailQueueCleanupStatus;
 import de.derpeterson.app.service.EmailQueueCleanupService;
 import de.derpeterson.app.service.EmailQueueCleanupService.CleanupResult;
 import de.derpeterson.app.ui.components.AppIcon;
@@ -38,7 +43,13 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
   private final Span manualHintSpan = new Span();
   private final FormLayout cleanupSettingsFormLayout = new FormLayout();
   private final Span cleanupResultSpan = new Span();
+  private final Badge cleanupStatusBadge = new Badge();
+  private final Span cleanupExplanationSpan = new Span();
   private CleanupResult latestCleanupResult;
+  private Long observedManualRunId;
+  private transient Registration cleanupPollRegistration;
+  private int previousPollInterval;
+  private int installedPollInterval;
 
   private final Button refreshResultButton = new Button(AppIcon.REFRESH.create());
   private final Button runCleanupButton = new Button(AppIcon.BRUSH_CLEANING.create());
@@ -81,8 +92,16 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
     cleanupResultSpan.setId("admin-mail-queue-result");
     cleanupResultSpan.addClassName("admin-queue-cleanup-output");
     statusTitleSpan.addClassName("admin-queue-cleanup-status-title");
+    cleanupStatusBadge.setId("admin-mail-queue-status");
+    cleanupExplanationSpan.setId("admin-mail-queue-status-explanation");
+    cleanupExplanationSpan.addClassName("admin-queue-cleanup-explanation");
+    HorizontalLayout statusHeadingLayout =
+        new HorizontalLayout(statusTitleSpan, cleanupStatusBadge);
+    statusHeadingLayout.setPadding(false);
+    statusHeadingLayout.setAlignItems(Alignment.CENTER);
+    statusHeadingLayout.addClassName("admin-queue-cleanup-status-heading");
     VerticalLayout statusCopyVerticalLayout =
-        new VerticalLayout(statusTitleSpan, cleanupResultSpan);
+        new VerticalLayout(statusHeadingLayout, cleanupResultSpan, cleanupExplanationSpan);
     statusCopyVerticalLayout.setPadding(false);
     statusCopyVerticalLayout.setSpacing(false);
     statusCopyVerticalLayout.setWidthFull();
@@ -119,7 +138,10 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
     cleanupConfirmationDialog.addClassName("admin-queue-cleanup-confirmation");
     add(assistantHeaderHorizontalLayout, cleanupContentVerticalLayout, cleanupConfirmationDialog);
     addAttachListener(event -> loadLatestCleanupResult(false));
-    addDetachListener(event -> cleanupConfirmationDialog.close());
+    addDetachListener(event -> {
+      stopCleanupPolling(event.getUI());
+      cleanupConfirmationDialog.close();
+    });
     refreshTexts();
   }
 
@@ -153,9 +175,22 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
 
   private void loadLatestCleanupResult(boolean announceSuccess) {
     try {
+      CleanupResult observedResult =
+          observedManualRunId == null
+              ? null
+              : emailQueueCleanupService.resultFor(observedManualRunId);
+      if (observedManualRunId != null && observedResult == null) {
+        observedManualRunId = null;
+      }
       latestCleanupResult = emailQueueCleanupService.latestResult();
       renderCleanupResult();
-      if (announceSuccess) {
+      boolean announcedCompletion = observedResult != null && !observedResult.active();
+      if (announcedCompletion) {
+        observedManualRunId = null;
+        announceCleanupOutcome(observedResult);
+      }
+      updateCleanupPolling();
+      if (announceSuccess && !announcedCompletion) {
         NotificationHelper.getInstance()
             .showNotification(
                 messageProperties::getBaseSuccessTitle,
@@ -163,24 +198,109 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
                 NotificationType.SUCCESS);
       }
     } catch (RuntimeException cleanupFailure) {
+      observedManualRunId = null;
+      getUI().ifPresent(this::stopCleanupPolling);
       showCleanupFailure(cleanupFailure);
     }
   }
 
   private void renderCleanupResult() {
+    cleanupStatusBadge.removeThemeVariants(
+        BadgeVariant.SUCCESS, BadgeVariant.ERROR, BadgeVariant.WARNING);
+    cleanupExplanationSpan.setVisible(latestCleanupResult != null);
+    cleanupExplanationSpan.removeClassNames(
+        "admin-queue-cleanup-success", "admin-queue-cleanup-failed", "admin-queue-cleanup-warning");
     if (latestCleanupResult == null) {
-      cleanupResultSpan.setText(messageProperties.getAdminQueueCleanupNeverRun());
+      runCleanupButton.setEnabled(true);
+      cleanupStatusBadge.getElement().setAttribute("data-status", "NOT_RUN");
+      cleanupStatusBadge.setText(messageProperties.getAdminQueueCleanupNeverRun());
+      cleanupResultSpan.setText(
+          MessageFormat.format(messageProperties.getAdminQueueCleanupResult(), "—", "—"));
       return;
     }
-    String finishTimeText =
-        latestCleanupResult.finishedAt().format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"));
+    EmailQueueCleanupStatus status = latestCleanupResult.status();
+    cleanupStatusBadge.getElement().setAttribute("data-status", status.name());
+    switch (status) {
+      case WAITING ->
+          setCleanupStatus(
+              messageProperties.getAdminQueueCleanupStatusWaiting(),
+              messageProperties.getAdminQueueCleanupWaitingExplanation(),
+              BadgeVariant.WARNING);
+      case RUNNING ->
+          setCleanupStatus(
+              messageProperties.getAdminQueueCleanupStatusRunning(),
+              messageProperties.getAdminQueueCleanupRunningExplanation(),
+              BadgeVariant.WARNING);
+      case COMPLETED ->
+          setCleanupStatus(
+              messageProperties.getAdminQueueCleanupStatusCompleted(),
+              messageProperties.getAdminQueueCleanupSuccessExplanation(),
+              BadgeVariant.SUCCESS);
+      case FAILED ->
+          setCleanupStatus(
+              messageProperties.getAdminQueueCleanupStatusFailed(),
+              messageProperties.getAdminQueueCleanupFailureExplanation(),
+              BadgeVariant.ERROR);
+      case PARTIAL ->
+          setCleanupStatus(
+              messageProperties.getAdminQueueCleanupStatusPartial(),
+              messageProperties.getAdminQueueCleanupPartialExplanation(),
+              BadgeVariant.WARNING);
+    }
+    runCleanupButton.setEnabled(!latestCleanupResult.active());
+    String timeText =
+        (latestCleanupResult.startedAt() == null
+                ? latestCleanupResult.requestedAt()
+                : latestCleanupResult.startedAt())
+            .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm:ss"));
     cleanupResultSpan.setText(
         MessageFormat.format(
-            latestCleanupResult.busy()
-                ? messageProperties.getAdminQueueCleanupBusyResult()
+            status == EmailQueueCleanupStatus.WAITING
+                ? messageProperties.getAdminQueueCleanupRequestedResult()
                 : messageProperties.getAdminQueueCleanupResult(),
-            finishTimeText,
+            timeText,
             latestCleanupResult.resolvedCount()));
+  }
+
+  private void setCleanupStatus(String label, String explanation, BadgeVariant variant) {
+    cleanupStatusBadge.setText(label);
+    cleanupStatusBadge.addThemeVariants(variant);
+    cleanupExplanationSpan.setText(explanation);
+    cleanupExplanationSpan.addClassName(
+        switch (variant) {
+          case SUCCESS -> "admin-queue-cleanup-success";
+          case ERROR -> "admin-queue-cleanup-failed";
+          default -> "admin-queue-cleanup-warning";
+        });
+  }
+
+  private void updateCleanupPolling() {
+    getUI()
+        .ifPresent(cleanupUi -> {
+          boolean needsPolling =
+              observedManualRunId != null
+                  || latestCleanupResult != null && latestCleanupResult.active();
+          if (!needsPolling) {
+            stopCleanupPolling(cleanupUi);
+          } else if (cleanupPollRegistration == null) {
+            previousPollInterval = cleanupUi.getPollInterval();
+            installedPollInterval =
+                previousPollInterval > 0 ? Math.min(previousPollInterval, 1000) : 1000;
+            cleanupUi.setPollInterval(installedPollInterval);
+            cleanupPollRegistration =
+                cleanupUi.addPollListener(event -> loadLatestCleanupResult(false));
+          }
+        });
+  }
+
+  private void stopCleanupPolling(UI cleanupUi) {
+    if (cleanupPollRegistration != null) {
+      cleanupPollRegistration.remove();
+      cleanupPollRegistration = null;
+      if (cleanupUi.getPollInterval() == installedPollInterval) {
+        cleanupUi.setPollInterval(previousPollInterval);
+      }
+    }
   }
 
   private void openCleanupConfirmationDialog() {
@@ -212,10 +332,15 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
     deliveryWarningHorizontalLayout.setAlignItems(Alignment.START);
     deliveryWarningHorizontalLayout.addClassName("cosmos-security-warning");
 
+    VerticalLayout cleanupParametersCopyLayout =
+        new VerticalLayout(
+            new Span(messageProperties.getAdminQueueCleanupParametersHint()),
+            new Span(messageProperties.getAdminQueueCleanupParametersScopeHint()));
+    cleanupParametersCopyLayout.setPadding(false);
+    cleanupParametersCopyLayout.setSpacing(false);
+    cleanupParametersCopyLayout.addClassName("admin-queue-cleanup-parameters-copy");
     HorizontalLayout cleanupParametersHorizontalLayout =
-        new HorizontalLayout(
-            AppIcon.INFO_CIRCLE.create(),
-            new Span(messageProperties.getAdminQueueCleanupParametersHint()));
+        new HorizontalLayout(AppIcon.INFO_CIRCLE.create(), cleanupParametersCopyLayout);
     cleanupParametersHorizontalLayout.setPadding(false);
     cleanupParametersHorizontalLayout.setSpacing(false);
     cleanupParametersHorizontalLayout.setAlignItems(Alignment.START);
@@ -231,22 +356,51 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
 
   private void runManualCleanup() {
     try {
-      CleanupResult completedResult = emailQueueCleanupService.runManually();
-      latestCleanupResult = completedResult;
+      CleanupResult requestedResult = emailQueueCleanupService.runManually();
+      latestCleanupResult = requestedResult;
       renderCleanupResult();
-      NotificationHelper.getInstance()
-          .showNotification(
-              messageProperties::getAdminQueueResolutionTitle,
-              () ->
-                  completedResult.busy()
-                      ? messageProperties.getAdminQueueResolutionBusy()
-                      : MessageFormat.format(
-                          messageProperties.getAdminQueueCleanupCompleted(),
-                          completedResult.resolvedCount()),
-              completedResult.busy() ? NotificationType.WARNING : NotificationType.SUCCESS);
+      if (requestedResult.active()) {
+        observedManualRunId = requestedResult.runId();
+        NotificationHelper.getInstance()
+            .showNotification(
+                messageProperties::getAdminQueueResolutionTitle,
+                () ->
+                    requestedResult.status() == EmailQueueCleanupStatus.RUNNING
+                        ? messageProperties.getAdminQueueCleanupRunningExplanation()
+                        : messageProperties.getAdminQueueCleanupWaitingExplanation(),
+                NotificationType.NORMAL);
+      } else {
+        announceCleanupOutcome(requestedResult);
+      }
+      updateCleanupPolling();
     } catch (RuntimeException cleanupFailure) {
       showCleanupFailure(cleanupFailure);
     }
+  }
+
+  private void announceCleanupOutcome(CleanupResult result) {
+    NotificationType notificationType =
+        switch (result.status()) {
+          case COMPLETED -> NotificationType.SUCCESS;
+          case PARTIAL -> NotificationType.WARNING;
+          default -> NotificationType.ERROR;
+        };
+    NotificationHelper.getInstance()
+        .showNotification(
+            messageProperties::getAdminQueueResolutionTitle,
+            () ->
+                switch (result.status()) {
+                  case COMPLETED ->
+                      MessageFormat.format(
+                          messageProperties.getAdminQueueCleanupCompleted(),
+                          result.resolvedCount());
+                  case PARTIAL ->
+                      MessageFormat.format(
+                          messageProperties.getAdminQueueCleanupPartialCompleted(),
+                          result.resolvedCount());
+                  default -> messageProperties.getAdminQueueCleanupFailureExplanation();
+                },
+            notificationType);
   }
 
   private void showCleanupFailure(RuntimeException cleanupFailure) {

@@ -48,6 +48,19 @@ den vorgesehenen Anfangsfokus. Die menschliche Sichtung bleibt offen.
 Die zwei Fälle der ursprünglichen Sammelbestätigung sind zusätzlich in beiden
 Sprachen am selben Image bestanden; 129 Browser-Helfertests sind erfolgreich.
 
+Der vollständige Mailqueue-Gesamtlauf ist anschließend implementiert. 88 gezielte
+JUnit-Prüfungen sichern echte H2-Pakettransaktionen, Rollback und Teilfortschritt,
+Wiederaufnahme, konkurrierende Anforderungen, frische Berechtigungen, Historienfrist,
+Statusmeldungen und UI-Polling ab. 131 Browser-Helfertests sind bestanden.
+Die Queue-Nachläufe bestehen jeweils alle neun Fälle in DE und EN am selben Image,
+einschließlich eines echten SMTP-Wartezustands und anschließend 101 bereinigten
+Aufträgen ohne zweiten Klick oder erneuten Versand. Direktlink, F5 und
+Admin-/Superadminrechte sind in beiden Breiten bestanden. Der englische Dialogfall
+prüft zusätzlich Schließen, Escape und Außenklick; die aktuelle deutsche Erweiterung
+folgt in der Gesamtrunde. Teilfehler und zugehörige Notifications sind durch H2-
+und UI-JUnit abgedeckt. Diese Paketprüfungen ersetzen die letzte große Testrunde
+unten nicht.
+
 | Prüfung | Ergebnis |
 | --- | --- |
 | Vollständiger Maven-Reactor mit Java 25, Produktion und Coverage | Bestanden |
