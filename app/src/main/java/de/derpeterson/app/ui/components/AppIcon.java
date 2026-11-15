@@ -84,6 +84,7 @@ public enum AppIcon {
   USER_PAUSE(Library.TABLER, "user-pause"),
   USER_X(Library.TABLER, "user-x"),
   WARNING("circle-alert"),
+  WARNING_TRIANGLE("triangle-alert"),
   WRENCH("wrench"),
   ERROR("triangle-alert"),
   DEVICES("monitor-smartphone"),

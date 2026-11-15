@@ -52,6 +52,7 @@ class BrowserExecutionPlanTest {
         "account-forms",
         "mail-queue-resolution",
         "queue-full-run",
+        "queue-cleanup-appearance",
         "background-variants",
         "component-follow-up",
         "breadcrumbs",
@@ -148,6 +149,8 @@ class BrowserExecutionPlanTest {
                   "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
           case "queue-full-run" ->
               Set.of("fullCleanupWaitsForTransportAndAggregatesMoreThanOneBatch");
+          case "queue-cleanup-appearance" ->
+              Set.of("manualCleanupConfirmationKeepsItsLayoutAndCanBeCancelled");
           case "background-variants" ->
               Set.of(
                   "chosenBackgroundRemainsDecorativeAcrossPublicPortalAndAdministration",

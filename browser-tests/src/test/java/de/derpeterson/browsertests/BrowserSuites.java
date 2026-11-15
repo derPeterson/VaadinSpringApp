@@ -129,7 +129,7 @@ final class BrowserSuites {
       case "account-forms" ->
           List.of(RegistrationBrowserTest.class, UserManagementBrowserTest.class);
       case "profile-form" -> List.of(AccountSettingsBrowserTest.class);
-      case "mail-queue-resolution", "queue-full-run" ->
+      case "mail-queue-resolution", "queue-full-run", "queue-cleanup-appearance" ->
           List.of(MailQueueResolutionBrowserTest.class);
       case "external-login-flow" -> List.of(ExternalLoginBrowserTest.class);
       case "external-login-settings" -> List.of(ExternalLoginBrowserTest.class);

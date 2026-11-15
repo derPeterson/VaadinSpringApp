@@ -83,7 +83,8 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
     cleanupSettingsFormLayout.addClassName("admin-queue-cleanup-fields");
     warningLabelSpan.addClassName("cosmos-security-warning-label");
     HorizontalLayout securityWarningHorizontalLayout =
-        new HorizontalLayout(AppIcon.WARNING.create(), new Span(warningLabelSpan, warningTextSpan));
+        new HorizontalLayout(
+            AppIcon.WARNING_TRIANGLE.create(), new Span(warningLabelSpan, warningTextSpan));
     securityWarningHorizontalLayout.setPadding(false);
     securityWarningHorizontalLayout.setSpacing(false);
     securityWarningHorizontalLayout.setAlignItems(Alignment.START);

@@ -13,6 +13,7 @@ import com.microsoft.playwright.assertions.LocatorAssertions;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.BoundingBox;
 import com.microsoft.playwright.options.RequestOptions;
+import com.microsoft.playwright.options.ScreenshotAnimations;
 import com.microsoft.playwright.options.WaitUntilState;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.BrowserActor;
@@ -29,9 +30,12 @@ import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.RegistrationPage;
 import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
+import io.qameta.allure.Allure;
+import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
+import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.text.MessageFormat;
@@ -51,12 +55,25 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @Tag("native-confirmations")
+  @Tag("cleanup-appearance")
   @DisplayName("QUEUE-05: Manuelle Bestätigung bleibt mit Warnung und Abbruch bedienbar")
   void manualCleanupConfirmationKeepsItsLayoutAndCanBeCancelled(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
     signInAdministrator(true);
     new AdminConfigurationPage(browserPage).open(AdminConfigGroup.QUEUE);
     selectCleanupTabAndGetAutomaticSwitch();
+    Locator assistantWarningLocator =
+        browserPage.locator("#admin-mail-queue-resolution .cosmos-security-warning").first();
+    assistantWarningLocator.scrollIntoViewIfNeeded();
+    assertThat(assistantWarningLocator.locator("vaadin-icon"))
+        .hasAttribute("data-lucide", "triangle-alert");
+    Allure.attachment(
+        "Assistentenwarnung",
+        "image/png",
+        new ByteArrayInputStream(
+            assistantWarningLocator.screenshot(
+                new Locator.ScreenshotOptions().setAnimations(ScreenshotAnimations.DISABLED))),
+        AttachmentOptions.empty());
     String originalResult = browserPage.locator("#admin-mail-queue-result").textContent();
     for (String dismissal : new String[] {"cancel", "header", "escape", "outside"}) {
       browserPage.locator("#admin-mail-queue-cleanup").click();

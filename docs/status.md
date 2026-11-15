@@ -82,7 +82,12 @@ bestanden. Die Seitenreiter umfassen 1280/1024/390/320 px, native Pfeile,
 Tastatur und echte Chromium-Touchereignisse. Die segmentierten Umschalter wurden
 bei 1280/390/320 px verglichen. Beide Sprachen nutzen dasselbe korrigierte Image.
 Vorher-/Nachher-Aufnahmen stehen zur noch offenen Endabnahme bereit. Diese
-Änderungen haben keinen neuen Sonar-Scan; der obige Scan gilt weiterhin für
+Die Sicherheitswarnung im Mailqueue-Assistenten verwendet zusätzlich das
+Warndreieck. 25 Komponenten-/Symbolprüfungen, 39 Testauswahlprüfungen und je zwei
+gezielte Browserfälle in DE/EN bei 1280/390 px sind bestanden. Alle vier
+Dialogabbruchwege erhalten den bisherigen Bereinigungsstand. Die zugehörigen
+Vorher-/Nachher-Aufnahmen stehen ebenfalls zur Endabnahme bereit.
+Diese Änderungen haben keinen neuen Sonar-Scan; der obige Scan gilt weiterhin für
 `f3c21623`. Die übrigen Nachbearbeitungspunkte bleiben im
 [Komponentenplan](planung/vaadin-komponenten-abgleich.md) offen.
 

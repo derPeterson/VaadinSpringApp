@@ -46,11 +46,11 @@ isoliert in DE/EN auf Desktop und Smartphone prüfen und Vorher-/Nachher-Aufnahm
 für die Endabnahme bereitstellen; keine große Testrunde. Der bestätigte Reiterfehler
 hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
 
-1. [ ] **Warndreieck im Mailqueue-Bereinigungsassistenten:** Beim gelben
-   Sicherheitshinweis das bisherige Kreis-Icon durch das vorhandene Warndreieck
-   unserer Sicherheitswarnungen ersetzen. Bestehende Farben, Texte und Anordnung
-   beibehalten; in DE und EN gleich darstellen. Die Rückmeldung betrifft den
-   Hinweis im Assistenten, keine anwendungsweite Icon-Änderung.
+1. [ ] **Warndreieck im Mailqueue-Bereinigungsassistenten – umgesetzt, Endabnahme offen:**
+   Die gelbe Sicherheitswarnung verwendet das vorhandene Dreiecks-SVG über
+   `AppIcon.WARNING_TRIANGLE`. Farben, Texte und Anordnung sind erhalten.
+   Gezielte DE-/EN-Prüfungen auf Desktop und Smartphone sowie Vorher-/Nachher-
+   Aufnahmen sind vorhanden. Andere Anwendungswarnungen wurden nicht umgestellt.
 2. [ ] **Warndreieck im Bereinigungsdialog:** Auch die gelbe Warnung
    „Späterer Empfang möglich:“ im Dialog „Manuelle Bereinigung“ erhält das
    vorhandene Warndreieck anstelle des Kreis-Icons. Die separate dezente
