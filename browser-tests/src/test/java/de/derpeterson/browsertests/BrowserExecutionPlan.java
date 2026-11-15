@@ -65,7 +65,8 @@ final class BrowserExecutionPlan {
           Map.entry("InfrastructureBrowserTest", 20),
           // Unterbrochene Teilfälle beziehungsweise noch fehlende Folgeschritte mit Reserve.
           Map.entry("CosmosComponentsBrowserTest", 430),
-          Map.entry("NotificationInboxBrowserTest", 210),
+          // Zusätzliche Sammelbestätigungen bei zwei Breiten, einschließlich UI-Anlage und Versand.
+          Map.entry("NotificationInboxBrowserTest", 300),
           Map.entry("SessionLimitBrowserTest", 160),
           Map.entry("UserNotificationsBrowserTest", 180),
           // Im abgebrochenen Worker noch nicht gestartete Klasse, konservativ geschätzt.
@@ -93,6 +94,8 @@ final class BrowserExecutionPlan {
 
     if (suiteName.equals("fast")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("fast"));
+    } else if (suiteName.equals("confirmation-dialog")) {
+      discoveryRequestBuilder.filters(TagFilter.includeTags("confirmation-dialog"));
     } else if (suiteName.equals("two-factor-recovery-output")) {
       discoveryRequestBuilder.filters(TagFilter.includeTags("recovery-output"));
     } else if (suiteName.equals("two-factor-setup")) {

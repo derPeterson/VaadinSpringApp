@@ -108,6 +108,7 @@ public class UserNotificationsPanel extends Div {
   private Popover detailActionsMenu;
   private Item openedNotification;
   private final PortalConfirmationDialog notificationActionConfirmation;
+  private final NotificationReadAllConfirmationDialog notificationReadAllConfirmationDialog;
 
   public UserNotificationsPanel(
       MessageProperties messageProperties,
@@ -125,6 +126,15 @@ public class UserNotificationsPanel extends Div {
             compact ? "notifications-preview-confirmation" : "notifications-inbox-confirmation");
     notificationActionConfirmation.addClassName("portal-notification-confirmation");
     notificationActionConfirmation.addOpenedChangeListener(event -> notifyOverlayState());
+
+    notificationReadAllConfirmationDialog =
+        new NotificationReadAllConfirmationDialog(
+            messageProperties,
+            compact
+                ? "notifications-preview-read-all-confirmation"
+                : "notifications-inbox-read-all-confirmation");
+    notificationReadAllConfirmationDialog.addOpenedChangeListener(event -> notifyOverlayState());
+
     addClassNames(COSMOS_THEME, "cosmos-notifications-panel");
     setId(compact ? "notifications-preview" : "notifications-inbox");
     inboxHeading.addClassName(PANEL_TITLE);
@@ -147,10 +157,11 @@ public class UserNotificationsPanel extends Div {
       buildInbox(inboxToolbarDiv, inboxPagingDiv);
     }
 
-    add(notificationActionConfirmation);
+    add(notificationActionConfirmation, notificationReadAllConfirmationDialog);
     refreshTexts();
     addDetachListener(detachEvent -> {
       notificationActionConfirmation.close();
+      notificationReadAllConfirmationDialog.close();
       if (notificationDetailDialog != null) {
         notificationDetailDialog.close();
       }
@@ -198,7 +209,7 @@ public class UserNotificationsPanel extends Div {
     dismissReadButton.setEnabled(false);
     dismissReadButton.addClickListener(e -> confirmDismissRead());
     refreshInboxButton.addClickListener(e -> refreshInbox(true));
-    markAllReadButton.addClickListener(e -> confirmMarkAll());
+    markAllReadButton.addClickListener(e -> confirmMarkAllNotificationsAsRead());
     previousPageButton.addClickListener(e -> {
       if (page > 0) {
         page--;
@@ -344,6 +355,7 @@ public class UserNotificationsPanel extends Div {
 
   public void refreshTexts() {
     notificationActionConfirmation.refreshTexts();
+    notificationReadAllConfirmationDialog.refreshTexts();
     inboxHeading.setText(messageProperties.getNotificationsTitle());
     inboxDescription.setText(
         compact
@@ -558,6 +570,7 @@ public class UserNotificationsPanel extends Div {
 
   public void unavailable() {
     notificationActionConfirmation.close();
+    notificationReadAllConfirmationDialog.close();
     unreadIds = List.of();
     notificationRows.removeAll();
     notificationRows.add(new Span(messageProperties.getNotificationsUnavailable()));
@@ -771,6 +784,7 @@ public class UserNotificationsPanel extends Div {
   private void notifyOverlayState() {
     detailOpenListener.accept(
         notificationActionConfirmation.isOpened()
+            || notificationReadAllConfirmationDialog.isOpened()
             || notificationDetailDialog != null && notificationDetailDialog.isOpened());
   }
 
@@ -797,31 +811,21 @@ public class UserNotificationsPanel extends Div {
         () -> runNotificationAction(() -> markRead(item)));
   }
 
-  private void confirmMarkAll() {
-    List<Long> selected = List.copyOf(unreadIds);
-    if (selected.isEmpty()) {
+  private void confirmMarkAllNotificationsAsRead() {
+    List<Long> unreadNotificationIds = List.copyOf(unreadIds);
+    if (unreadNotificationIds.isEmpty()) {
       return;
     }
-    notificationActionConfirmation.open(
-        new PortalConfirmationDialog.Prompt(
-            messageProperties::getNotificationsMarkAll,
-            messageProperties::getPortalNotificationSelectionHint,
-            messageProperties::getPortalMarkAllQuestion,
-            messageProperties::getPortalMarkAllExplanation,
-            () ->
-                new PortalContextCard(
-                    AppIcon.BELL.create(),
-                    messageProperties.getPortalNotificationAffected(selected.size())),
-            messageProperties::getPortalNotificationSyncHint,
-            messageProperties::getPortalConfirmAction,
-            false,
-            AppIcon.CHECK_CHECK::create),
+
+    notificationReadAllConfirmationDialog.open(
+        unreadNotificationIds.size(),
         () ->
             runNotificationAction(() -> {
-              boolean includesOpened =
-                  openedNotification != null && selected.contains(openedNotification.id());
-              userNotificationService.markRead(httpSession, selected);
-              if (includesOpened) {
+              boolean includesOpenedNotification =
+                  openedNotification != null
+                      && unreadNotificationIds.contains(openedNotification.id());
+              userNotificationService.markRead(httpSession, unreadNotificationIds);
+              if (includesOpenedNotification) {
                 updateOpenedRead();
               }
             }));

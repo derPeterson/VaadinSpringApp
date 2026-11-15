@@ -17,6 +17,7 @@ import de.derpeterson.browsertests.pages.CosmosFollowUpChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
 import de.derpeterson.browsertests.pages.NotificationInboxPage;
+import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
@@ -327,5 +328,154 @@ public class NotificationInboxBrowserTest extends BrowserFixture {
                 }))
                 """);
     Allure.attachment("Kennzahl-Messwerte " + viewportWidth, "application/json", metricStylesJson);
+  }
+
+  @ParameterizedTest(name = "NOTIFY-05: Sammellesen mit unveränderter Bestätigung bei {0}px")
+  @ValueSource(ints = {1280, 390})
+  @Tag("confirmation-dialog")
+  @Description(
+      """
+      Zwei Nachrichten über das Versandformular senden. In Inbox und Glockenvorschau die
+      Sammelbestätigung aufnehmen und vermessen. Abbrechen, Schließen, Escape und Außenklick
+      erhalten beide ungelesenen Nachrichten. Die Tastatur erreicht Schließen und beide Aktionen
+      vorwärts und rückwärts. Erst ausdrückliches Bestätigen markiert beide Nachrichten dauerhaft als gelesen.
+      """)
+  void markAllConfirmationPreservesLayoutAndExplicitActions(int viewportWidth) {
+    String recipientEmail = prepareRecipient();
+    send(recipientEmail, "Confirmation first", "First unread notification");
+    send(recipientEmail, "Confirmation second", "Second unread notification");
+
+    try (BrowserActor recipientBrowserActor = new BrowserActor(testBrowser)) {
+      Page recipientBrowserPage = recipientBrowserActor.browserPage;
+      recipientBrowserActor.login(recipientEmail, BrowserTestAccounts.USER_PASSWORD);
+      new UserMenu(recipientBrowserPage).selectTestLanguage();
+      recipientBrowserPage.setViewportSize(viewportWidth, 1000);
+      NotificationInboxPage notificationInboxPage = new NotificationInboxPage(recipientBrowserPage);
+      notificationInboxPage.open();
+
+      for (boolean fromPreview : new boolean[] {false, true}) {
+        if (fromPreview) {
+          notificationInboxPage.openPreview();
+        }
+        Locator notificationPanelLocator =
+            fromPreview ? notificationInboxPage.preview() : notificationInboxPage.inbox();
+        Locator markAllButtonLocator =
+            notificationInboxPage.button(
+                notificationPanelLocator, uiTexts.getNotificationsMarkAll());
+        Locator confirmationDialogLocator =
+            recipientBrowserPage.locator(".portal-confirmation-dialog[opened]");
+
+        openMarkAllConfirmation(
+            recipientBrowserPage, markAllButtonLocator, confirmationDialogLocator);
+        assertThat(confirmationDialogLocator).hasJSProperty("localName", "vaadin-confirm-dialog");
+        assertThat(confirmationDialogLocator.locator(".cosmos-panel-title"))
+            .hasText(uiTexts.getNotificationsMarkAll());
+        assertThat(confirmationDialogLocator.locator(".cosmos-overlay-close")).isFocused();
+        attachConfirmationEvidence(
+            recipientBrowserPage,
+            confirmationDialogLocator,
+            viewportWidth,
+            fromPreview ? "preview" : "inbox");
+
+        Locator closeDialogButtonLocator =
+            confirmationDialogLocator.locator(".cosmos-overlay-close");
+        Locator cancelButtonLocator =
+            confirmationDialogLocator.locator("vaadin-button[id$='-cancel']");
+        Locator confirmButtonLocator =
+            confirmationDialogLocator.locator("vaadin-button[id$='-submit']");
+        closeDialogButtonLocator.focus();
+        closeDialogButtonLocator.press("Tab");
+        assertThat(cancelButtonLocator).isFocused();
+        cancelButtonLocator.press("Tab");
+        assertThat(confirmButtonLocator).isFocused();
+        confirmButtonLocator.press("Shift+Tab");
+        assertThat(cancelButtonLocator).isFocused();
+        cancelButtonLocator.press("Shift+Tab");
+        assertThat(closeDialogButtonLocator).isFocused();
+        cancelButtonLocator.click();
+        assertConfirmationCancelled(recipientBrowserPage, markAllButtonLocator);
+
+        openMarkAllConfirmation(
+            recipientBrowserPage, markAllButtonLocator, confirmationDialogLocator);
+        closeDialogButtonLocator.click();
+        assertConfirmationCancelled(recipientBrowserPage, markAllButtonLocator);
+
+        openMarkAllConfirmation(
+            recipientBrowserPage, markAllButtonLocator, confirmationDialogLocator);
+        recipientBrowserPage.keyboard().press("Escape");
+        assertConfirmationCancelled(recipientBrowserPage, markAllButtonLocator);
+
+        openMarkAllConfirmation(
+            recipientBrowserPage, markAllButtonLocator, confirmationDialogLocator);
+        assertThat(confirmationDialogLocator.locator("[part~='overlay']").first()).isVisible();
+        recipientBrowserPage.mouse().click(2, 2);
+        assertConfirmationCancelled(recipientBrowserPage, markAllButtonLocator);
+      }
+
+      notificationInboxPage
+          .button(notificationInboxPage.preview(), uiTexts.getNotificationsMarkAll())
+          .click();
+      notificationInboxPage.confirm();
+      assertThat(
+              notificationInboxPage.button(
+                  notificationInboxPage.preview(), uiTexts.getNotificationsMarkAll()))
+          .isDisabled();
+      recipientBrowserPage.reload();
+      assertThat(recipientBrowserPage.locator("#notifications-inbox-unread-total")).hasText("0");
+      assertThat(recipientBrowserPage.locator("#notifications-inbox-total")).hasText("2");
+    }
+  }
+
+  private void assertConfirmationCancelled(
+      Page recipientBrowserPage, Locator markAllButtonLocator) {
+    assertThat(recipientBrowserPage.locator(".portal-confirmation-dialog[opened]")).hasCount(0);
+    assertThat(recipientBrowserPage.locator("#notifications-inbox-unread-total")).hasText("2");
+    assertThat(markAllButtonLocator).isEnabled();
+  }
+
+  private void openMarkAllConfirmation(
+      Page recipientBrowserPage, Locator markAllButtonLocator, Locator confirmationDialogLocator) {
+    UiActions.complete(recipientBrowserPage, markAllButtonLocator::click);
+    assertThat(confirmationDialogLocator.locator("[part~='overlay']").first()).isVisible();
+    recipientBrowserPage.waitForCondition(() ->
+        (Boolean)
+            confirmationDialogLocator.evaluate(
+                "dialog => !dialog.hasAttribute('opening') && !dialog.hasAttribute('closing')"));
+  }
+
+  private void attachConfirmationEvidence(
+      Page recipientBrowserPage,
+      Locator confirmationDialogLocator,
+      int viewportWidth,
+      String panelName) {
+    Locator dialogSurfaceLocator = confirmationDialogLocator.locator("[part~='overlay']").first();
+    assertThat(dialogSurfaceLocator).isVisible();
+    recipientBrowserPage.mouse().move(0, 0);
+    String evidenceName = "confirmation-" + panelName + "-" + viewportWidth;
+    Allure.attachment(
+        evidenceName,
+        "image/png",
+        new ByteArrayInputStream(dialogSurfaceLocator.screenshot()),
+        AttachmentOptions.empty());
+    AllurePlaywright.attachScreenshot(evidenceName + "-page", recipientBrowserPage);
+    String dialogMetricsJson =
+        (String)
+            confirmationDialogLocator.evaluate(
+                """
+                dialog => {
+                  const describe = element => {
+                    const bounds = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return {x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height,
+                      font: style.font, color: style.color, background: style.backgroundColor,
+                      border: style.border, radius: style.borderRadius, padding: style.padding};
+                  };
+                  return JSON.stringify([...dialog.querySelectorAll(
+                    '.account-change-dialog-header,.cosmos-panel-title,.cosmos-panel-description,' +
+                    '.portal-confirm-body,.portal-confirm-question,.portal-confirm-explanation,' +
+                    '.portal-context-card,.cosmos-panel-hint,vaadin-button')].map(describe));
+                }
+                """);
+    Allure.attachment(evidenceName + "-metrics", "application/json", dialogMetricsJson);
   }
 }

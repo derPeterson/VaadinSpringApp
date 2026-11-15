@@ -252,6 +252,20 @@ Bei Komponenten-Umstellungen Vorher-/Nachher-Aufnahmen für Desktop und Smartpho
 direkt im Chat zeigen. Bei freigegebenen Browserläufen beide Sprachen isoliert
 prüfen; die Aufnahmen bleiben temporäre Vergleichsbelege im Browserlauf.
 
+`NotificationReadAllConfirmationDialog` ist der lokale Pilot für natives
+`ConfirmDialog`: ausschließlich „Alle Benachrichtigungen als gelesen markieren“
+in Inbox und Glockenvorschau. Er verwendet die öffentlichen Header-/Inhalts-/
+Button-Slots und die vorhandenen Cosmos-Inhalte. Die Klasse
+`.notification-read-all-confirmation` in `cosmos-notifications.css` gestaltet
+die öffentlichen Parts mit den bestehenden Dialogfarben und Abständen.
+Andere Bestätigungen behalten `PortalConfirmationDialog`.
+Close, Abbrechen und Escape verwerfen die vorgemerkte Aktion. Ein Klick auf den
+öffentlichen Backdrop-Part erhält den bisherigen Außenklick-Abbruch, den
+`ConfirmDialog` selbst standardmäßig nicht ausführt. Nach dem clientseitigen
+Öffnen erhält wie bisher der Close-Button den Fokus. Nur das native
+Bestätigungsereignis führt die beim Öffnen erfasste Sammelaktion einmal aus;
+Sprachwechsel verändert diesen Snapshot nicht.
+
 Vor neuen Oberflächenelementen einschließlich Layouts die tatsächlich verwendete
 Vaadin-Version prüfen. Passende native Flow-Komponenten haben Vorrang und werden mit öffentlichen APIs,
 Theme-Varianten und Parts an Cosmos angepasst. Ein eigener Div-/Span-/JavaScript-

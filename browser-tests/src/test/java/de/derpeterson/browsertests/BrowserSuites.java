@@ -101,6 +101,7 @@ final class BrowserSuites {
               UserFiltersBrowserTest.class,
               UserManagementBrowserTest.class);
       case "segmented-selection" -> List.of(SegmentedSelectionBrowserTest.class);
+      case "confirmation-dialog" -> List.of(NotificationInboxBrowserTest.class);
       case "metric-cards" ->
           List.of(UserManagementBrowserTest.class, NotificationInboxBrowserTest.class);
       case "avatars" ->
@@ -249,7 +250,7 @@ final class BrowserSuites {
           throw new IllegalArgumentException(
               "Unknown suite: "
                   + suite
-                  + ". Choose all, fast, external-login-settings, two-factor, two-factor-push, two-factor-recovery-output, two-factor-setup, two-factor-lifecycle, notifications, metric-cards, account-security, session-management, account-settings, cosmos-design, cosmos-components, login-layout, login-checks, infrastructure, https-night, operations, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, session-persistence, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
+                  + ". Choose all, fast, external-login-settings, two-factor, two-factor-push, two-factor-recovery-output, two-factor-setup, two-factor-lifecycle, notifications, confirmation-dialog, metric-cards, account-security, session-management, account-settings, cosmos-design, cosmos-components, login-layout, login-checks, infrastructure, https-night, operations, authentication, registration, verification, password-reset, account-lifecycle, presentation, token-configuration, login-attempts, session-limits, session-persistence, maintenance, user-management, user-filters, user-access, session-security, blocked-links, security-journeys, remember-me, user-status, configuration, admin-mail, token-expiry, remaining-configuration or remaining-coverage.");
     };
   }
 }

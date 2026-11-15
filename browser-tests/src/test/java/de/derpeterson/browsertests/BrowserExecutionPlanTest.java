@@ -44,6 +44,7 @@ class BrowserExecutionPlanTest {
         "duration-field",
         "segmented-selection",
         "metric-cards",
+        "confirmation-dialog",
         "avatars",
         "profile-form",
         "account-forms",
@@ -92,6 +93,8 @@ class BrowserExecutionPlanTest {
                   "pageBreadcrumbsFollowHierarchyAndKeepSecurityFlowsLocked",
                   "verificationAndReactivationBreadcrumbsStayUnlinked");
           case "segmented-selection" -> Set.of("segmentSelectorsPreserveTheirSurroundingViews");
+          case "confirmation-dialog" ->
+              Set.of("markAllConfirmationPreservesLayoutAndExplicitActions");
           case "metric-cards" ->
               Set.of(
                   "accountTotalTracksMutationsButNotFiltersAndFollowsLanguage",

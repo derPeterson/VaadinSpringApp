@@ -24,6 +24,19 @@ in DE/EN auf Desktop und Smartphone mit Vorher-/Nachher-Aufnahmen geprüft.
 Das öffentliche Paket ist vom Benutzer abgenommen. 2FA, Wiederherstellungshilfe,
 Sitzungslimit sowie übrige Konto-/Admin-Karten bleiben separate Folgepakete.
 
+Das nächste Gesamtpaket für die verbleibenden Karten ist in der
+[Nachtarbeitsliste](nachtarbeit.md) mit einzelnen Arbeitspaketen gesammelt.
+Ein Startauftrag dafür steht noch aus.
+
+Der `ConfirmDialog`-Pilot für „Alle Benachrichtigungen als gelesen markieren“
+in Inbox und Glockenvorschau ist vom Benutzer abgenommen.
+Nur diese Sammelbestätigung verwendet die spezialisierte native Komponente;
+übrige Aktionen behalten `PortalConfirmationDialog`. Die gezielten isolierten
+Browserprüfungen in DE/EN auf Desktop und Smartphone sind bestanden. Acht
+Vorher-/Nachher-Dialogvergleiche haben gleiche Maße und gemessene Textstile,
+jedoch kleine Rasterunterschiede. Weitere Bestätigungen sind noch nicht zur
+Übernahme freigegeben.
+
 Die gewöhnlichen Formularlayouts sind vom Benutzer abgenommen.
 Kennzahlkarten, Avatar-Übernahme, Profil-/Benutzerformulare, segmentierte Auswahl,
 Seitenpfade und die Mailqueue-Karte sind bereits vom Benutzer abgenommen.

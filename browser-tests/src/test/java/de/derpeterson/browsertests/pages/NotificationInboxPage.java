@@ -138,14 +138,15 @@ public final class NotificationInboxPage {
 
   @Step("Die ausdrücklich ausgewählte Nachrichtenaktion bestätigen")
   public void confirm() {
-    Locator deleteConfirmationDialogLocator =
+    Locator notificationConfirmationDialogLocator =
         browserPage.locator(".portal-confirmation-dialog[opened]");
 
-    assertThat(deleteConfirmationDialogLocator.locator("vaadin-dialog-overlay > [part~='overlay']"))
+    assertThat(notificationConfirmationDialogLocator.locator("[part~='overlay']").first())
         .isVisible();
     UiActions.complete(
         browserPage,
-        () -> deleteConfirmationDialogLocator.locator("vaadin-button[id$='-submit']").click());
+        () ->
+            notificationConfirmationDialogLocator.locator("vaadin-button[id$='-submit']").click());
 
     assertThat(browserPage.locator(".portal-confirmation-dialog[opened]")).hasCount(0);
   }

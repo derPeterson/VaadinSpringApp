@@ -49,7 +49,7 @@ Entwicklerdaten, gespeicherte Passwörter, echte Mailkonten und die laufende
 IntelliJ-Anwendung dienen nicht als Fixtures.
 Alle acht Worker meldeten erfolgreiche Tests und erfolgreichen Abbau.
 
-## Gezielt geprüfte öffentliche Cards nach der Gesamtrunde
+## Gezielte Komponentenprüfungen nach der Gesamtrunde
 
 Die elf öffentlichen Standardseiten verwenden nun gemeinsam `PublicPanelComponent`
 auf nativer Vaadin-`Card`; die Google-/Microsoft-Nebenkarte verwendet ebenfalls
@@ -88,6 +88,28 @@ Diese Nachprüfung ersetzt nicht die obigen vollständigen 328er-Browserläufe.
 Das Ausgangsimage für die Vorher-Aufnahmen war der abgenommene Pilotstand
 `sha256:88d00ed40c19d85317df1b51a9f6e7e98e5a04c6002a4ef6e236b57c3da522bc`.
 Der unten ausgewiesene Sonar-Nachweis umfasst die Card-Übernahme nicht.
+
+Der nachfolgende `ConfirmDialog`-Pilot betrifft ausschließlich das Sammellesen
+in Inbox und Glockenvorschau. Die Suite `confirmation-dialog` bestand vor und
+nach der Übernahme mit je zwei Fällen in DE und EN bei 1280/390 px. Die finalen
+Nachher-Läufe verwenden dasselbe Image
+`sha256:4d4581a24850c80102f8703855bbcdaf709523fe442f472e3150c9dc1ac15e5f`.
+Alle acht Dialogvergleiche mit insgesamt 88 sichtbaren Element-Messpaaren haben
+gleiche Positionen, Größen, Farben und gemessene Textstile. Die Aufnahmen sind
+wegen kleiner Rasterunterschiede nicht pixelidentisch. Anfangsfokus auf Close,
+Tastaturreihenfolge, Abbrechen, Close, Escape und Außenklick sowie die erst nach
+Bestätigung dauerhafte Lesemarkierung sind geprüft. Die eigentliche Leseaktion
+behält ihren beim Öffnen erfassten Snapshot.
+
+164 gezielte Anwendungstests und 34 Browserauswahltests bestanden, einschließlich
+der neuen Regressionen zur nativen Ereignisreihenfolge und zum einmaligen
+Ausführen beziehungsweise Verwerfen der Aktion. Spotless und Checkstyle waren
+erfolgreich. Das generierte Produktionsbundle enthält jetzt auch die native
+ConfirmDialog-Komponente. Die Browserbelege gehören zum Stand vor der abschließenden
+serverseitigen Absicherung gegen ein verspätetes ClosedEvent nach erneutem Öffnen;
+dieser Randfall ist zusätzlich mit JUnit abgesichert. Die Darstellung blieb unverändert.
+Diese gezielte Nachprüfung ersetzt keine große Testrunde und keinen Sonar-Nachweis.
+Der Pilot ist vom Benutzer abgenommen.
 
 ## Abdeckung und Korrekturen der Gesamtrunde
 

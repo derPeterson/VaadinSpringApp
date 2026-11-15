@@ -36,6 +36,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.Div;
@@ -1574,6 +1575,17 @@ class UserNotificationsUiTest {
   }
 
   private void confirmPendingNotificationAction(UserNotificationsPanel notificationsPanel) {
+    NotificationReadAllConfirmationDialog readAllConfirmationDialog =
+        readComponentField(notificationsPanel, "notificationReadAllConfirmationDialog");
+    if (readAllConfirmationDialog.isOpened()) {
+      ComponentUtil.fireEvent(
+          readAllConfirmationDialog,
+          new ConfirmDialog.ConfirmEvent(readAllConfirmationDialog, true));
+
+      assertFalse(readAllConfirmationDialog.isOpened());
+      return;
+    }
+
     PortalConfirmationDialog notificationActionConfirmationDialog =
         readComponentField(notificationsPanel, "notificationActionConfirmation");
 
@@ -1825,6 +1837,22 @@ class UserNotificationsUiTest {
         .setValue(ReadFilter.UNREAD);
 
     verify(userNotificationService).inbox(mockHttpSession, ReadFilter.UNREAD, 0, 10);
+  }
+
+  @Test
+  void unavailableInboxCancelsNativeReadAllConfirmation() {
+    UserNotificationsPanel notificationsPanel = createAndRefreshNotificationsPanel(false);
+    ((Button) readComponentField(notificationsPanel, "markAllReadButton")).click();
+    NotificationReadAllConfirmationDialog readAllConfirmationDialog =
+        readComponentField(notificationsPanel, "notificationReadAllConfirmationDialog");
+    assertTrue(readAllConfirmationDialog.isOpened());
+
+    notificationsPanel.unavailable();
+    ComponentUtil.fireEvent(
+        readAllConfirmationDialog, new ConfirmDialog.ConfirmEvent(readAllConfirmationDialog, true));
+
+    assertFalse(readAllConfirmationDialog.isOpened());
+    verify(userNotificationService, never()).markRead(any(), any());
   }
 
   @ParameterizedTest

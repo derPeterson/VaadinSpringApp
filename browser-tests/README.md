@@ -122,6 +122,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
 | `user-management` | Suche/Pagination, Filterentwürfe/Badges, Anlage, Bearbeitung, sichere Dialogaktionen und Passwortbestätigung und kompakte Zeit | 18 |
 | `metric-cards` | Konten-Karte und Postfach-Kennzahlen auf Desktop/Smartphone: Darstellung, Zähleränderungen, Filter und Sprache | 4 |
+| `confirmation-dialog` | Sammellesebestätigung in Inbox und Glockenvorschau: Vergleichsaufnahmen/Messwerte, Abbrechen, Close, Escape, Außenklick, Tastaturfokus und bestätigte persistente Lesemarkierung auf Desktop/Smartphone | 2 |
 | `avatars` | Profilbildmodi und Bildfehler, Header/Sidebar/Menü, Benutzertabelle und Bestätigung, Status-/Namenswechsel, Ticketidentitäten und 2FA-Header auf Desktop/Smartphone | 10 |
 | `form-layouts` | Allgemeine Konfiguration für Admin/Superadmin, Anbieter, 2FA-Rollen, Mailtest, Benachrichtigungen, Kontodialoge, öffentliche Formulare und Superadmin-Zusatzfelder: Maße und Vergleichsaufnahmen auf Desktop/Smartphone | 12 |
 | `account-forms` | Registrierung sowie Benutzer anlegen/bearbeiten: Vorher-/Nachher-Aufnahmen, Feldmaße, Speichern und Validierung | 8 |
@@ -149,7 +150,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `cosmos-design` | Kontoansichten, mobiler Mailablauf, Copyright, Theme, Navigation, Infoicon-Ausrichtung und gemeinsamer Seitenrahmen mit Feldhilfe/Benutzerfilter bei breitem Desktop, Desktop und Smartphone | 16 |
 | `fast` | Explizit markierte Kernfälle; Auswahl und Grenzen siehe unten | 34 |
 | `maintenance` | Wartung, Rollenmatrix, erhaltene Sitzungen, alte Formulare, echte Mailtokens und Remember-me-Neustart | 9 |
-| `notifications` | Versand, persönliche Inbox/Header-Vorschau, Löschaktionen und Versandarchiv | 8 |
+| `notifications` | Versand, persönliche Inbox/Header-Vorschau, Sammellesebestätigung, Löschaktionen und Versandarchiv | 10 |
 | `form-details` | Gemeinsame Hoverflächen in Navigation, Tabelle, Eingaben, Auswahllisten, Kalender und Buttons; Scrollleisten, MultiSelect-Rahmen/Abstand, Pagination-Breite, Tages-Suffixe und Formularschutz mit Fokus, Schließen/Escape, native Neuladehinweise und Verwerfen auf Desktop/Smartphone | 12 |
 | `cosmos-components` | Rollensuche, Auswahldetails/Tages-Suffixe, Konfigurations-Switches, SideNav-Zustände, Tooltips, Benutzermenü, Header-/Filter-Mauszeiger und native Scrollleisten sowie integriertes Zeitfeld und Seitenpfade | 12 |
 | `breadcrumbs` | Native Elternpfade in Besucherbereich, Portal und Administration; alle Konfigurationsgruppen und gruppenspezifische Titel, Elternnavigation per Tastatur, Profilentwurfsschutz und gesperrte 2FA-/Hilfe-/Verifikations-/Reaktivierungspfade auf Desktop/Smartphone | 3 |

@@ -1972,6 +1972,80 @@ vaadin-dialog.cosmos-notification-dialog[theme~=cosmos-reference]::part(footer) 
     width: auto;
 }
 
+/* Lokaler ConfirmDialog-Pilot: dieselben Zonen wie die bestehende Sammelbestätigung. */
+.notification-read-all-confirmation {
+    --vaadin-confirm-dialog-max-width: calc(100vw - 32px);
+}
+
+.notification-read-all-confirmation::part(overlay) {
+    box-sizing: border-box;
+    width: min(540px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow: hidden;
+    border: 1px solid var(--cosmos-reference-control-border);
+    border-radius: 16px;
+    background: var(--cosmos-reference-dialog);
+    box-shadow: 0 24px 80px #0009;
+}
+
+.notification-read-all-confirmation::part(backdrop) {
+    background: var(--cosmos-reference-backdrop);
+    backdrop-filter: blur(3px);
+}
+
+.notification-read-all-confirmation::part(header) {
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--cosmos-reference-border);
+    background: var(--cosmos-reference-dialog);
+    font-size: var(--lumo-font-size-m);
+    font-weight: 400;
+    line-height: var(--lumo-line-height-s);
+}
+
+.notification-read-all-confirmation::part(content),
+.notification-read-all-confirmation::part(message) {
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    background: var(--cosmos-reference-page);
+}
+
+.notification-read-all-confirmation::part(footer) {
+    gap: 8px;
+    padding: 16px 24px;
+    border-top: 1px solid var(--cosmos-reference-border);
+    background: var(--cosmos-reference-dialog);
+}
+
+.notification-read-all-confirmation::part(cancel-button),
+.notification-read-all-confirmation::part(confirm-button) {
+    flex: none;
+    max-width: 100%;
+}
+
+.notification-read-all-confirmation .notification-read-all-action {
+    min-width: 112px;
+    margin: 0;
+    padding-inline: 12px;
+    white-space: nowrap;
+}
+
+.notification-read-all-confirmation .notification-read-all-action > vaadin-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.notification-read-all-confirmation .notification-read-all-action::part(prefix) {
+    margin: 0 8px 0 0;
+}
+
+@media (max-width: 639px) {
+    .notification-read-all-confirmation::part(footer) {
+        padding: 14px 16px;
+    }
+}
+
 .portal-read-filter-option {
     display: inline-flex;
     align-items: center;
