@@ -16,7 +16,7 @@ public final class ComponentTestTree {
         streamChildComponents(rootComponent).flatMap(ComponentTestTree::streamComponentTree));
   }
 
-  private static Stream<Component> streamChildComponents(Component parentComponent) {
+  public static Stream<Component> streamChildComponents(Component parentComponent) {
     if (!(parentComponent instanceof Card cardComponent)) {
       return parentComponent.getChildren();
     }

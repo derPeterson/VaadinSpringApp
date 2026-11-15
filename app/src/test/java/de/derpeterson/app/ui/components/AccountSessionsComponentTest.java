@@ -14,6 +14,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.ComponentTestTree;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -128,8 +129,7 @@ class AccountSessionsComponentTest {
   }
 
   private Stream<Component> streamComponentTree(Component rootComponent) {
-    return Stream.concat(
-        Stream.of(rootComponent), rootComponent.getChildren().flatMap(this::streamComponentTree));
+    return ComponentTestTree.streamComponentTree(rootComponent);
   }
 
   private Button findSessionActionButton(String buttonId) {

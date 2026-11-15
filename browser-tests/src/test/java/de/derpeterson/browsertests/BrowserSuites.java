@@ -18,6 +18,7 @@ import de.derpeterson.browsertests.suites.LoginAttemptBrowserTest;
 import de.derpeterson.browsertests.suites.LoginLayoutBrowserTest;
 import de.derpeterson.browsertests.suites.MailQueueResolutionBrowserTest;
 import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
+import de.derpeterson.browsertests.suites.NativeCardsBrowserTest;
 import de.derpeterson.browsertests.suites.NotificationInboxBrowserTest;
 import de.derpeterson.browsertests.suites.PasswordResetBrowserTest;
 import de.derpeterson.browsertests.suites.PresentationBrowserTest;
@@ -59,6 +60,7 @@ final class BrowserSuites {
               AuthenticationBrowserTest.class,
               RegistrationBrowserTest.class,
               FormLayoutsBrowserTest.class,
+              NativeCardsBrowserTest.class,
               ExternalLoginBrowserTest.class,
               ExternalLoginLayoutBrowserTest.class,
               VerificationBrowserTest.class,
@@ -110,6 +112,7 @@ final class BrowserSuites {
               UserStatusBrowserTest.class,
               TwoFactorBrowserTest.class);
       case "form-layouts" -> List.of(FormLayoutsBrowserTest.class);
+      case "native-cards" -> List.of(NativeCardsBrowserTest.class);
       case "account-forms" ->
           List.of(RegistrationBrowserTest.class, UserManagementBrowserTest.class);
       case "profile-form" -> List.of(AccountSettingsBrowserTest.class);

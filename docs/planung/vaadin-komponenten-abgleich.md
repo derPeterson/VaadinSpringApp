@@ -28,14 +28,18 @@ Der abgenommene Card-Pilot „Passwort vergessen“ ist in den gemeinsamen
 `PublicPanelComponent` überführt. Die übrigen öffentlichen Standardpanels und
 die Google-/Microsoft-Nebenkarte sind auf native Cards umgestellt und isoliert
 in DE/EN auf Desktop und Smartphone mit Vorher-/Nachher-Aufnahmen geprüft.
-Das öffentliche Paket ist vom Benutzer abgenommen. 2FA, Wiederherstellungshilfe,
-Sitzungslimit sowie übrige Konto-/Admin-Karten bleiben separate Folgepakete.
+Das öffentliche Paket ist vom Benutzer abgenommen. Die gemeinsamen Konto-, Admin-
+und Ticketpanelhüllen einschließlich 2FA, Wiederherstellungshilfe und Sitzungslimit
+verwenden inzwischen ebenfalls native Cards. Die gemeinsame menschliche Sichtung
+dieses Nachtpakets steht noch aus; kleine Innen- und Kontextkarten folgen separat.
 
 Die nächsten Gesamtpakete für verbleibende Karten und Bestätigungsdialoge sind
 in der [Nachtarbeitsliste](nachtarbeit.md) mit einzelnen Arbeitspaketen gesammelt.
 Zuerst alle vereinbarten Gesamtpakete mit ihren gezielten Prüfungen, Reviews und
 Commits bearbeiten; die große Testrunde folgt als letzter Arbeitspunkt.
-Ein Startauftrag dafür steht noch aus.
+Der Startauftrag umfasst alle Gesamtpakete, Reviews und Commits, die anschließende
+Zwischenintegration nach `main`, vollständige Sonar-Bereinigung, einen neuen
+Folgebranch und erst danach die große Testrunde. Die Gesamtumsetzung bleibt offen.
 Gesamtpaket 3 der Nachtarbeit ergänzt die vollständige Mailqueue-Bereinigung
 mit internen 100er-Paketen, Gesamtergebnis und überarbeiteten Dialoghinweisen.
 Bestätigte manuelle Aufträge warten bei laufendem Versand unter „Wartet auf
@@ -50,7 +54,7 @@ Nur diese Sammelbestätigung verwendet die spezialisierte native Komponente;
 Browserprüfungen in DE/EN auf Desktop und Smartphone sind bestanden. Acht
 Vorher-/Nachher-Dialogvergleiche haben gleiche Maße und gemessene Textstile,
 jedoch kleine Rasterunterschiede. Zehn weitere Bestätigungsfälle sind als
-Gesamtpaket 2 der Nachtarbeit geplant; die Umsetzung ist noch nicht gestartet.
+Gesamtpaket 2 der Nachtarbeit freigegeben; die technische Übernahme folgt nach den Karten.
 
 Für die manuelle Mailqueue-Bereinigungsbestätigung hat Stitch Kritik und zwei
 Gestaltungsvorschläge geliefert:
@@ -130,7 +134,7 @@ deshalb als Bedienentscheidung betrachtet werden.
 
 | Baustein | Konkreter Startpunkt | Umfang und Grenze |
 | --- | --- | --- |
-| `Card` | Auf Grundlage des abgenommenen Piloten eine Konto- oder Adminkarte mit Kopf-Metadaten und Aktionen vergleichen. | `Card` bietet unter anderem Header, Präfix, Suffix und Footer. Vor einer Übernahme die bestehenden CSS- und Testselektoren der jeweiligen Wrapperstruktur prüfen. Erst danach eine Entscheidung über `CosmosCardComponent` treffen. Die fachlichen Panel-APIs bleiben nützlich. |
+| `Card` | Die gemeinsame `CosmosCardComponent` und Kontopanels sind auf die native Card übertragen; kleine Innenkarten folgen in Nachtpaket 1.5. | Öffentliche Kopf-/Footer-Slots, bestehende Cosmos-Klassen und fachliche Panel-APIs weiterverwenden. Gestaltung und Bedienung vergleichen; menschliche Sichtung bleibt offen. |
 | `ConfirmDialog` | Ein einfacher Bestätigungsfall im Bereich Benachrichtigungen über [PortalConfirmationDialog](../../app/src/main/java/de/derpeterson/app/ui/components/PortalConfirmationDialog.java). | Komponenten für Header, Text und Aktionen werden unterstützt. Schließen oben rechts, Escape, Anfangsfokus, Warnfarbe und der vereinbarte Footer müssen passen. Benutzerlöschung, Geräteabmeldung, Profilbildlöschung und Anleitungsvorschau haben zusätzlichen Kontext. An die erst nach erfolgreichem Pilot herangehen. |
 | Info-/Warnboxen und Leerzustände | Statische Hinweise in Kontodialogen, Konfiguration und Ticketeditor, außerdem `NotificationEmptyState`. | Native `Notification` ist für vorübergehende Meldungen. Fest eingebettete Hinweise dürfen als gemeinsame Flow-Komposition aus Icon und Text bestehen. Abstände, Hervorhebung und Icon-Ausrichtung zentral halten. Einen bestehenden Baustein erweitern, sobald eine zweite Stelle denselben Aufbau benötigt. |
 | Seitliche Feldhilfe und Filter | `AdminSidePanelDialog` und `ConfigInfoButton` in der Konfiguration, im Mailtest und in den Ticketfiltern. | `Dialog` bleibt die Basis für die seitliche Feldhilfe. Vor einem Wechsel zu `Popover` oder einer anderen Hülle zuerst Anker, Modalität, Fokus, Scrollgrenzen und mobile Bedienung vergleichen. Ein `Tooltip` deckt kurze Zusatztexte ab. |

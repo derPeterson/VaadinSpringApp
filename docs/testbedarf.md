@@ -18,6 +18,8 @@
 
 - **Scrollbereiche nach Regression prüfen – wartend:** Betroffene Ansicht,
   konkretes Fehlerbild und Reproduktionsschritte sind noch zu klären.
+  Der Benutzer möchte Aussehen und Verhalten später gemeinsam festlegen;
+  keine Scrollgestaltung in der Nachtarbeit ändern. Normale Erreichbarkeit weiter prüfen.
   Nach der Behebung die betroffenen Scrollpanes gezielt prüfen: Inhalte und
   Aktionen bleiben vollständig erreichbar, Scrollen funktioniert wie vorgesehen.
   Passende bestehende Browserfälle wiederverwenden beziehungsweise ergänzen.

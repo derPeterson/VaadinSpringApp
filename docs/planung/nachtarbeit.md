@@ -16,45 +16,10 @@ Bedienung und fachliches Verhalten bleiben erhalten. Bereits übertragene
 öffentliche Standardpanels, Anmeldeanbieter-Nebenkarte und Kennzahlkarten
 bilden die Vergleichsgrundlage und werden nicht erneut umgebaut.
 
-Die vorläufige Inventur umfasst 17 Erzeugungsstellen größerer Panels,
-sechs kleinere Vorschau-/Kontextkartenstellen und fünf wiederverwendete
-Innenkarten-Typen. Diese 28 technischen Stellen sind keine 28 getrennten
-Seiten; gemeinsame Bausteine und dynamische Listen haben mehrere Verbraucher.
-Vor jedem Teilpaket die tatsächlichen Aufrufer und die fachliche Eignung der
-nativen Card prüfen. Unklare oder ungeeignete Fälle begründet zurückstellen.
-
-### Arbeitspaket 1.1: Gemeinsame Kontopanels
-
-- [ ] `AccountPanelComponent` und seine Verwendung für persönliche Daten,
-  Sicherheit sowie Geräte & Sitzungen prüfen und geeignet umstellen.
-- [ ] Kopf, Metadaten, Inhalt, Hinweisfooter und Aktionen über die öffentlichen
-  Card-APIs erhalten; gemeinsame Cosmos-Gestaltung weiterverwenden.
-- [ ] Alle von einer Änderung der gemeinsamen Basis betroffenen Verbraucher
-  einbeziehen, auch wenn sie fachlich in einem späteren Teilpaket stehen.
-
-### Arbeitspaket 1.2: Geschützte Zwischen- und Wiederherstellungsseiten
-
-- [ ] 2FA-Einrichtung, Anmeldebestätigung und Wiederherstellung prüfen.
-- [ ] Sitzungslimit beim Anmelden und Wiederherstellungshilfe einbeziehen.
-- [ ] Bestehende Ablauf- und Navigationssperren, Fokus, Codeeingabe,
-  Bestätigungsaktionen und Ticketfunktionen unverändert erhalten.
-
-### Arbeitspaket 1.3: Administrative Konfigurationskarten
-
-- [ ] Allgemeine Konfigurationskarte für die verschiedenen Einstellungsgruppen
-  und die gesonderten Anmeldeanbieter-/2FA-Karten umstellen.
-- [ ] Mailtest und innere Karte des Mailqueue-Bereinigungsassistenten einbeziehen.
-- [ ] Tabs, Feldhilfen, Einstellungszähler, Formularschutz, Lade-/Speicheraktionen
-  sowie Rollen- und Sichtbarkeitsregeln erhalten.
-
-### Arbeitspaket 1.4: Verwaltung, Benachrichtigungen und Tickets
-
-- [ ] Hauptkarte der Benutzerverwaltung sowie die Profilkarte der Sidebar prüfen.
-- [ ] Persönliches Benachrichtigungspanel sowie administrative Versand- und
-  Historienkarten umstellen.
-- [ ] Administrative Ticketliste und Ticketdetail prüfen; bereits über die
-  gemeinsame Basis erfasste Wiederherstellungskarten berücksichtigen.
-- [ ] Listen, Tabellen, Filter, Pagination, Vorschau und Aktionen unverändert erhalten.
+Die gemeinsamen Konto-, Verwaltungs- und Ticketpanelhüllen einschließlich der
+geschützten Zwischenansichten verwenden die native Card-Basis. Offen bleiben die
+folgenden Innenkarten und die gemeinsame menschliche Sichtung gemäß
+[HUM-01](../manual-tests/README.md#hum-01).
 
 ### Arbeitspaket 1.5: Kleine Innen-, Vorschau- und Kontextkarten
 

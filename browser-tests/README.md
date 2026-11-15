@@ -125,6 +125,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `confirmation-dialog` | Sammellesebestätigung in Inbox und Glockenvorschau: Vergleichsaufnahmen/Messwerte, Abbrechen, Close, Escape, Außenklick, Tastaturfokus und bestätigte persistente Lesemarkierung auf Desktop/Smartphone | 2 |
 | `avatars` | Profilbildmodi und Bildfehler, Header/Sidebar/Menü, Benutzertabelle und Bestätigung, Status-/Namenswechsel, Ticketidentitäten und 2FA-Header auf Desktop/Smartphone | 10 |
 | `form-layouts` | Allgemeine Konfiguration für Admin/Superadmin, Anbieter, 2FA-Rollen, Mailtest, Benachrichtigungen, Kontodialoge, öffentliche Formulare und Superadmin-Zusatzfelder: Maße und Vergleichsaufnahmen auf Desktop/Smartphone | 12 |
+| `native-cards` | Konto, Sicherheitsreiter, Sitzungen, Inbox und administrative Karten einschließlich Mailqueue-Assistent: Vergleichsaufnahmen und Layoutmesswerte auf Desktop/Smartphone | 2 |
 | `account-forms` | Registrierung sowie Benutzer anlegen/bearbeiten: Vorher-/Nachher-Aufnahmen, Feldmaße, Speichern und Validierung | 8 |
 | `profile-form` | Persönliche Daten: Anordnung und Spaltengrenzen auf Desktop/Smartphone, Speichern, Validierung, Formularschutz und Sprachwechsel | 5 |
 | `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset und kompakte Zeit mit Sprachwechsel | 5 |

@@ -39,6 +39,7 @@ import com.vaadin.flow.router.Location;
 import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.ComponentTestTree;
 import de.derpeterson.app.config.AppRouteConstants;
 import de.derpeterson.app.events.LanguageChangeEvent;
 import de.derpeterson.app.helper.ui.NotificationHelper;
@@ -606,8 +607,7 @@ class AccountViewTest {
   }
 
   private Stream<Component> streamComponentTree(Component rootComponent) {
-    return Stream.concat(
-        Stream.of(rootComponent), rootComponent.getChildren().flatMap(this::streamComponentTree));
+    return ComponentTestTree.streamComponentTree(rootComponent);
   }
 
   @Test

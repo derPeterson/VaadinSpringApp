@@ -1,17 +1,16 @@
 package de.derpeterson.app.ui.components;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.card.Card;
+import com.vaadin.flow.component.dependency.StyleSheet;
 
-/**
- * Gemeinsame Card für Kontoansichten und Startseite; Darstellung ausschließlich im Cosmos-Theme.
- */
-public class CosmosCardComponent extends VerticalLayout {
+/** Gemeinsamer nativer Kartenrahmen für Konto, Administration und Tickets im Cosmos-Theme. */
+@StyleSheet("custom-theme/cosmos-native-card.css")
+public class CosmosCardComponent extends Card {
   public CosmosCardComponent(Component... cardContentComponents) {
-    addClassName("cosmos-card");
+    addClassNames("cosmos-card", "cosmos-native-card");
+    setAriaRole("group");
     setWidthFull();
-    setPadding(false);
-    setSpacing(false);
     add(cardContentComponents);
   }
 }

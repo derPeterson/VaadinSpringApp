@@ -1,5 +1,19 @@
 # Silent Cosmos: Theme und Gestaltung
 
+## Native Kartenhüllen für bestehende Ansichten
+
+`CosmosCardComponent` verwendet die native Vaadin-`Card` für die gemeinsamen
+Konto-, Konfigurations-, Verwaltungs- und Ticketpanels. Die vorhandenen
+Cosmos-Klassen bestimmen weiterhin Rahmen, Flächen und Abstände.
+`cosmos-native-card.css` setzt nur die zusätzlichen nativen Zwischenräume zurück;
+die öffentlichen Content-/Footer-Parts geben die bestehende fachliche Anordnung
+frei. `AccountPanelComponent` ordnet Kopf und Footer den Card-Slots zu und bindet
+die sichtbare Überschrift als zugängliche Beschriftung ein.
+
+Die öffentliche Standardcard und `CosmosMetricCard` behalten ihre bereits
+abgenommenen, getrennt begrenzten Regeln. Vorher-/Nachher-Prüfungen sichern die
+unveränderte Gestaltung; ein Wechsel der Java-Basis erlaubt keine Neugestaltung.
+
 Vor Gestaltung oder Änderung einer Oberfläche diese Anleitung und die betroffenen
 CSS-Quellen lesen und anwenden. Sie beschreibt den aktuellen gemeinsamen Standard
 und wird bei jeder ausdrücklich freigegebenen Erweiterung im selben Arbeitsstand gepflegt.

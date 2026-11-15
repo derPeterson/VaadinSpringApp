@@ -37,6 +37,7 @@ import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.Location;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.VaadinSession;
+import de.derpeterson.app.ComponentTestTree;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.SupportReplyEntity;
@@ -1293,7 +1294,7 @@ class TwoFactorFlowViewTest {
     if (root.getId().filter(id::equals).isPresent()) {
       return root;
     }
-    return root.getChildren()
+    return ComponentTestTree.streamChildComponents(root)
         .map(child -> findOrNull(child, id))
         .filter(java.util.Objects::nonNull)
         .findFirst()
@@ -1301,14 +1302,14 @@ class TwoFactorFlowViewTest {
   }
 
   private Stream<Component> tree(Component root) {
-    return Stream.concat(Stream.of(root), root.getChildren().flatMap(this::tree));
+    return ComponentTestTree.streamComponentTree(root);
   }
 
   private Component findOrNull(Component root, String id) {
     if (root.getId().filter(id::equals).isPresent()) {
       return root;
     }
-    return root.getChildren()
+    return ComponentTestTree.streamChildComponents(root)
         .map(child -> findOrNull(child, id))
         .filter(java.util.Objects::nonNull)
         .findFirst()

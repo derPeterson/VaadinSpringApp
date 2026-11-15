@@ -29,6 +29,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.SerializableFunction;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import de.derpeterson.app.ComponentTestTree;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -112,7 +113,7 @@ class AccountSettingsComponentTest {
                       streamComponentTree(securityTabSheet.getComponent(securityTab)))));
     }
 
-    Stream<Component> childComponents = candidateComponent.getChildren();
+    Stream<Component> childComponents = ComponentTestTree.streamChildComponents(candidateComponent);
     if (candidateComponent instanceof Dialog dialog) {
       // Native Dialog-Footer gehören nicht zu Dialog.getChildren().
       childComponents =

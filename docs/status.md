@@ -15,6 +15,19 @@ Kein Merge, Push oder Release wurde durchgeführt.
 
 ## Ergebnisse
 
+Die gemeinsame native Kartenbasis für Konto, geschützte Zwischenansichten,
+Administration und Tickets ist anschließend gezielt geprüft worden. Der optimierte
+isolierte Image-Build einschließlich Anwendungstests sowie 128 Browser-Helfertests
+sind bestanden. Je 18 Browserfälle vor und nach der Übernahme sind in DE und EN
+auf Desktop und Smartphone bestanden. Je Sprache stimmen 44 Karten- und 68
+Formular-Messwertsätze bei Größen, Innenabständen, Farben und Schriftwerten überein;
+Vorher-/Nachher-Aufnahmen liegen zur menschlichen Sichtung bereit. Die technische
+Änderung des berechneten Card-Gaps von `normal` auf `0px` verändert die Maße nicht.
+Ältere Testbaumsuchen wurden an die öffentlichen Card-Slots angepasst.
+Diese Zwischenprüfung ersetzt die unten dokumentierte letzte Gesamtrunde nicht;
+Innen-/Kontextkarten, übrige Bestätigungen und der vollständige Bereinigungslauf
+werden im freigegebenen Nachtauftrag noch gesondert umgesetzt.
+
 | Prüfung | Ergebnis |
 | --- | --- |
 | Vollständiger Maven-Reactor mit Java 25, Produktion und Coverage | Bestanden |

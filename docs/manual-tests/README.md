@@ -124,6 +124,10 @@ Zur Sichtung des Komponentenpakets gehören die Auswahlfelder und Kalender,
 der Formularschutz sowie „Mein Konto → Sicherheit → Konto verwalten“.
 Die beiden Deaktivierungsfristen und ihre Feldhilfen stehen unter
 „Konfiguration → Kontoverwaltung“ und sind nur für Superadmins zugänglich.
+Die neuen gemeinsamen nativen Kartenhüllen in Konto, geschützten Zwischenansichten,
+Administration und Tickets müssen noch gemeinsam gesichtet werden. Dazu die
+isolierten Vorher-/Nachher-Aufnahmen für Desktop und Smartphone in DE/EN nutzen;
+automatisch gleiche Messwerte ersetzen die menschliche Designabnahme nicht.
 
 **Erwartet:** Die Oberfläche wirkt zusammengehörig und ruhig; relevante Texte/Aktionen sind gut lesbar und eindeutig. Rein persönlicher Änderungswunsch wird von einem Bedienhindernis unterschieden.
 

@@ -36,7 +36,9 @@ public class AccountPanelComponent extends CosmosCardComponent {
     panelHeaderDiv.addClassName(PANEL_HEADER);
 
     panelBodyDiv.addClassName("account-panel-body");
-    add(panelHeaderDiv, panelBodyDiv);
+    setHeader(panelHeaderDiv);
+    setAriaLabelledBy(panelTitleHeading);
+    add(panelBodyDiv);
   }
 
   public void setIcon(Component panelIconComponent) {
@@ -65,7 +67,7 @@ public class AccountPanelComponent extends CosmosCardComponent {
     Div panelFooterDiv = new Div(footerHintDiv, footerActionsDiv);
     panelFooterDiv.addClassName("cosmos-panel-footer");
 
-    add(panelFooterDiv);
+    addToFooter(panelFooterDiv);
   }
 
   public void addActionFooter(Component footerActionComponent) {
@@ -74,6 +76,6 @@ public class AccountPanelComponent extends CosmosCardComponent {
     Div panelFooterDiv = new Div(footerActionsDiv);
     panelFooterDiv.addClassName("cosmos-panel-footer");
 
-    add(panelFooterDiv);
+    addToFooter(panelFooterDiv);
   }
 }

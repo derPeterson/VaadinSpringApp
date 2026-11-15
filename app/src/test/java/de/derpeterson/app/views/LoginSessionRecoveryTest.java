@@ -43,6 +43,7 @@ import com.vaadin.flow.server.VaadinServletResponse;
 import com.vaadin.flow.server.VaadinServletService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.startup.ApplicationRouteRegistry;
+import de.derpeterson.app.ComponentTestTree;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -230,8 +231,7 @@ class LoginSessionRecoveryTest {
   }
 
   private java.util.stream.Stream<Component> tree(Component root) {
-    return java.util.stream.Stream.concat(
-        java.util.stream.Stream.of(root), root.getChildren().flatMap(this::tree));
+    return ComponentTestTree.streamComponentTree(root);
   }
 
   private void reachedLimit() {
