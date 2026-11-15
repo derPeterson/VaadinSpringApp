@@ -327,7 +327,8 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
         new Span(messageProperties.getAdminQueueCleanupWarningDescription());
     HorizontalLayout deliveryWarningHorizontalLayout =
         new HorizontalLayout(
-            AppIcon.WARNING.create(), new Span(deliveryWarningTitleSpan, deliveryWarningTextSpan));
+            AppIcon.WARNING_TRIANGLE.create(),
+            new Span(deliveryWarningTitleSpan, deliveryWarningTextSpan));
     deliveryWarningHorizontalLayout.setPadding(false);
     deliveryWarningHorizontalLayout.setSpacing(false);
     deliveryWarningHorizontalLayout.setAlignItems(Alignment.START);

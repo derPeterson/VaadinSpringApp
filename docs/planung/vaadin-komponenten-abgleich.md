@@ -51,10 +51,11 @@ hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
    `AppIcon.WARNING_TRIANGLE`. Farben, Texte und Anordnung sind erhalten.
    Gezielte DE-/EN-Prüfungen auf Desktop und Smartphone sowie Vorher-/Nachher-
    Aufnahmen sind vorhanden. Andere Anwendungswarnungen wurden nicht umgestellt.
-2. [ ] **Warndreieck im Bereinigungsdialog:** Auch die gelbe Warnung
-   „Späterer Empfang möglich:“ im Dialog „Manuelle Bereinigung“ erhält das
-   vorhandene Warndreieck anstelle des Kreis-Icons. Die separate dezente
-   Parameter-Infobox behält ihr Info-Icon.
+2. [ ] **Warndreieck im Bereinigungsdialog – umgesetzt, Endabnahme offen:**
+   Die gelbe Warnung „Späterer Empfang möglich:“ verwendet ebenfalls das
+   Warndreieck. Die dezente Parameter-Infobox behält ihr Info-Icon. Gezielte
+   DE-/EN-Prüfungen bei 1280/390 px einschließlich aller Abbruchwege sind
+   bestanden; Vorher-/Nachher-Aufnahmen liegen zur Endabnahme vor.
 3. [ ] **Roter Brush im Dialogkopf:** Das Brush-Icon oben im Dialog
    „Manuelle Bereinigung“ mit der bestehenden roten Gefahrenvariante darstellen.
    Die blaue Icongestaltung im Kopf der Assistentenkarte bleibt bestehen.

@@ -82,8 +82,10 @@ bestanden. Die Seitenreiter umfassen 1280/1024/390/320 px, native Pfeile,
 Tastatur und echte Chromium-Touchereignisse. Die segmentierten Umschalter wurden
 bei 1280/390/320 px verglichen. Beide Sprachen nutzen dasselbe korrigierte Image.
 Vorher-/Nachher-Aufnahmen stehen zur noch offenen Endabnahme bereit. Diese
-Die Sicherheitswarnung im Mailqueue-Assistenten verwendet zusätzlich das
-Warndreieck. 25 Komponenten-/Symbolprüfungen, 39 Testauswahlprüfungen und je zwei
+Die Sicherheitswarnungen im Mailqueue-Assistenten und in der manuellen
+Bereinigungsbestätigung verwenden zusätzlich das Warndreieck; die separate
+Parameter-Infobox behält ihr Info-Icon. 25 Komponenten-/Symbolprüfungen,
+39 Testauswahlprüfungen und je zwei
 gezielte Browserfälle in DE/EN bei 1280/390 px sind bestanden. Alle vier
 Dialogabbruchwege erhalten den bisherigen Bereinigungsstand. Die zugehörigen
 Vorher-/Nachher-Aufnahmen stehen ebenfalls zur Endabnahme bereit.

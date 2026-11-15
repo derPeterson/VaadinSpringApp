@@ -79,6 +79,10 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
       browserPage.locator("#admin-mail-queue-cleanup").click();
       Locator confirmationDialogLocator = browserPage.locator("#admin-mail-queue-confirm[opened]");
       assertThat(confirmationDialogLocator.locator(".cosmos-security-warning")).isVisible();
+      assertThat(confirmationDialogLocator.locator(".cosmos-security-warning vaadin-icon"))
+          .hasAttribute("data-lucide", "triangle-alert");
+      assertThat(confirmationDialogLocator.locator(".admin-queue-cleanup-info vaadin-icon"))
+          .hasAttribute("data-lucide", "info");
       ConfirmationAppearanceChecks.capture(
           browserPage, confirmationDialogLocator, "manual-mail-cleanup");
       assertThat(confirmationDialogLocator.locator(".cosmos-overlay-close")).isFocused();

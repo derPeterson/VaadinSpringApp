@@ -234,7 +234,8 @@ Gerahmte Info-Boxen verwenden 14 px umlaufenden Innenabstand und 10 px zwischen
 Icon und Text. Die gemeinsamen Tokens `--cosmos-info-box-padding` und
 `--cosmos-info-box-gap` stehen in `cosmos-tokens.css`. Hinweise ohne eigene Box,
 etwa im Panel-Footer, folgen den Abständen ihres Layouts.
-Die gelbe Sicherheitswarnung im Mailqueue-Assistenten verwendet das bestehende
+Die gelben Sicherheitswarnungen im Mailqueue-Assistenten und in seiner manuellen
+Bereinigungsbestätigung verwenden das bestehende
 Dreiecks-SVG über `AppIcon.WARNING_TRIANGLE`; ihre gemeinsamen Warnfarben und
 Abstände bleiben erhalten.
 Fest eingebundene Info- und Warnboxen mit **fetter Einleitung und Doppelpunkt**
