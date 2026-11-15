@@ -2,6 +2,7 @@ package de.derpeterson.app.helper.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -11,7 +12,9 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
+import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.server.VaadinSession;
@@ -208,6 +211,67 @@ class NotificationHelperIsolationTest {
 
     assertNull(message(helper));
     assertSame(notice, notification(helper));
+  }
+
+  @Test
+  void nativeTextKeepsMarkupLiteralAndRefreshesWithoutChangingLifetimeOrOtherWindows() {
+    UI textWindow = window(session());
+    NotificationHelper textHelper = NotificationHelper.getInstance();
+    AtomicReference<String> messageText = new AtomicReference<>("Gespeichert: <b>Alex & Chris</b>");
+    textHelper.showTextNotification(
+        () -> "Erfolgreich", messageText::get, NotificationHelper.NotificationType.SUCCESS);
+    Notification textNotification = notification(textHelper);
+    Paragraph messageParagraph =
+        assertInstanceOf(Paragraph.class, ReflectionTestUtils.getField(textHelper, "messageText"));
+
+    assertEquals(messageText.get(), messageParagraph.getText());
+    assertEquals(0, messageParagraph.getChildren().count());
+    assertEquals(3000, textNotification.getDuration());
+    assertEquals(Notification.Position.TOP_CENTER, textNotification.getPosition());
+    window(session());
+    show("Hinweis im anderen Fenster");
+    Notification otherNotification = notification(NotificationHelper.getInstance());
+    select(textWindow);
+    messageText.set("Saved: <b>Alex & Chris</b>");
+    textHelper.updateText();
+    messageParagraph =
+        assertInstanceOf(Paragraph.class, ReflectionTestUtils.getField(textHelper, "messageText"));
+
+    assertEquals(messageText.get(), messageParagraph.getText());
+    assertSame(textNotification, notification(textHelper));
+    assertEquals(3000, textNotification.getDuration());
+    Button closeButton = (Button) ReflectionTestUtils.getField(textHelper, "closeButton");
+    closeButton.click();
+
+    assertFalse(textNotification.isOpened());
+    assertTrue(otherNotification.isOpened());
+    textHelper.showNotification(() -> "<strong>Formatierte Meldung</strong>");
+
+    assertTrue(message(textHelper).getInnerHtml().contains("<strong>Formatierte Meldung</strong>"));
+  }
+
+  @Test
+  void nativeTextCanAppearAndDisappearWhileTheNoticeStaysOpen() {
+    window(session());
+    NotificationHelper helper = NotificationHelper.getInstance();
+    AtomicReference<String> messageText = new AtomicReference<>(" ");
+    helper.showTextNotification(
+        () -> "Title", messageText::get, NotificationHelper.NotificationType.SUCCESS);
+    Notification notice = notification(helper);
+
+    assertNull(ReflectionTestUtils.getField(helper, "messageText"));
+    messageText.set("Saved");
+    helper.updateText();
+    Paragraph messageParagraph =
+        assertInstanceOf(Paragraph.class, ReflectionTestUtils.getField(helper, "messageText"));
+
+    assertEquals("Saved", messageParagraph.getText());
+    messageText.set("");
+    helper.updateText();
+
+    assertNull(ReflectionTestUtils.getField(helper, "messageText"));
+    assertSame(notice, notification(helper));
+    assertTrue(notice.isOpened());
   }
 
   @Test

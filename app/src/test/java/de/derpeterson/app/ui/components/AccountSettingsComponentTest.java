@@ -18,6 +18,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.sidenav.SideNavItem;
@@ -374,6 +375,12 @@ class AccountSettingsComponentTest {
         (Notification) ReflectionTestUtils.getField(notificationHelper, "currentNotification");
 
     assertTrue(notification.isOpened());
+    if (!isErrorNotification) {
+      Paragraph messageParagraph =
+          assertInstanceOf(
+              Paragraph.class, ReflectionTestUtils.getField(notificationHelper, "messageText"));
+      assertEquals(expectedMessageText, messageParagraph.getText());
+    }
     Span titleSpan = (Span) ReflectionTestUtils.getField(notificationHelper, "titleText");
 
     assertTrue(

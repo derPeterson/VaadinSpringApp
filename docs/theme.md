@@ -805,6 +805,12 @@ Seitenrahmen, einschließlich verschachtelter Inhalte. Zuständig ist
 die gesicherte Symbolzuordnung und eine eigene `.cosmos-toast-title` ohne Kollision
 mit Nachrichtenbuttons. Supplier-Sprachwechsel, Anzeigedauer und Fensterisolation
 bleiben erhalten.
+Die Erfolgsmeldung nach dem Speichern persönlicher Daten verwendet als Pilot
+`NotificationHelper.showTextNotification` mit einem nativen Vaadin-`Paragraph`.
+Die Zeichenfolge wird als Text behandelt; die bestehenden Klassen
+`cosmos-notification-message` und `LumoUtility.Margin.NONE` sowie die gemeinsame Meldungshülle
+bleiben erhalten. Andere Meldungsaufrufer verwenden weiterhin ihren bisherigen
+HTML-/Detailaufbau; der Pilot erlaubt keine allgemeine Umstellung.
 Die Neustartwarnung nach dem Speichern einer Konfiguration zeigt betroffene
 Felder als fette Aufzählung unter dem Hinweistext.
 Rückmeldungen aus URL-Parametern werden nach abgeschlossener Navigation geöffnet,

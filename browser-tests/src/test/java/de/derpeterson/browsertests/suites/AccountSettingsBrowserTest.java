@@ -12,6 +12,7 @@ import com.microsoft.playwright.Locator;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.BoundingBox;
+import com.microsoft.playwright.options.ScreenshotAnimations;
 import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
@@ -31,11 +32,14 @@ import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UnsavedChangesPrompt;
 import de.derpeterson.browsertests.pages.UserMenu;
 import de.derpeterson.browsertests.pages.UserStatusMenu;
+import io.qameta.allure.Allure;
+import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -423,7 +427,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     assertThat(keepEditingButtonLocator).hasCSS("background-color", "rgb(0, 120, 180)");
   }
 
-  @Test
+  @ParameterizedTest
+  @ValueSource(ints = {1280, 390})
   @DisplayName("ACCOUNT-01: Basisdaten speichern, neu laden und erneut speichern")
   @Description(
       """
@@ -435,8 +440,10 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
       """)
   @Tag("avatars")
   @Tag("profile-form")
-  void profilePersistsAndCanBeSavedTwice() {
+  @Tag("profile-notification")
+  void profilePersistsAndCanBeSavedTwice(int viewportWidth) {
     String email = account();
+    browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
     AccountPage form = new AccountPage(browserPage);
     form.open();
     form.fill("Profile", "Saved", LocalDate.of(1992, 3, 4));
@@ -448,6 +455,8 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
         .click();
     form.save();
     form.assertMessage(uiTexts.getAccountSettingsSaveSuccess());
+    captureProfileSaveNotification();
+    assertThat(browserPage.locator("vaadin-notification-card")).hasCount(0);
 
     assertThat(browserPage.locator(".account-summary-name")).hasText("Profile Saved");
     assertThat(
@@ -475,6 +484,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
     form.fill("Second", "Saved", LocalDate.of(1993, 4, 5));
     form.save();
     form.assertMessage(uiTexts.getAccountSettingsSaveSuccess());
+    form.closeNotification();
     browserPage.reload();
 
     assertThat(form.input("account-first-name")).hasValue("Second");
@@ -493,6 +503,55 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
 
     assertThat(form.input("account-birth-date")).hasValue("");
     assertThat(form.input("account-gender")).hasValue("");
+  }
+
+  private void captureProfileSaveNotification() {
+    Locator notificationCardLocator =
+        browserPage.locator("vaadin-notification-card:not([closing])");
+    assertThat(notificationCardLocator).hasCount(1);
+    assertThat(notificationCardLocator).containsText(uiTexts.getBaseSuccessTitle());
+    assertThat(notificationCardLocator)
+        .hasAttribute("theme", "cosmos cosmos-reference cosmos-reference-success");
+    // Vaadin veröffentlicht opened als Property, nicht als HTML-Attribut.
+    assertTrue(
+        (boolean)
+            browserPage
+                .locator("vaadin-notification")
+                .evaluateAll(
+                    """
+                    notifications => {
+                      const openedNotifications = notifications.filter(notification => notification.opened);
+                      return openedNotifications.length === 1
+                        && openedNotifications[0].duration === 3000
+                        && openedNotifications[0].position === 'top-center';
+                    }
+                    """),
+        "Die Profilmeldung muss oben mittig mit drei Sekunden Anzeigedauer geöffnet sein.");
+    browserPage.mouse().move(0, 0);
+    Allure.attachment(
+        "Profil-Erfolgsmeldung Messwerte " + browserPage.viewportSize().width,
+        "application/json",
+        (String)
+            notificationCardLocator.evaluate(
+                """
+                card => JSON.stringify([card, card.querySelector('.cosmos-toast-title'),
+                  card.querySelector('.cosmos-notification-message')].map(element => {
+                    const bounds = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return {tag:element.localName, width:bounds.width, height:bounds.height,
+                      font:style.font, color:style.color, background:style.backgroundColor,
+                      padding:style.padding, margin:style.margin, border:style.border};
+                  }))
+                """));
+    Allure.attachment(
+        "Profil-Erfolgsmeldung " + browserPage.viewportSize().width,
+        "image/png",
+        new ByteArrayInputStream(
+            notificationCardLocator.screenshot(
+                new Locator.ScreenshotOptions().setAnimations(ScreenshotAnimations.DISABLED))),
+        AttachmentOptions.empty());
+    AllurePlaywright.attachScreenshot(
+        "Profil mit Erfolgsmeldung " + browserPage.viewportSize().width, browserPage);
   }
 
   @Test

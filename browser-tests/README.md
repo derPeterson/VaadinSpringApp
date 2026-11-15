@@ -95,6 +95,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `mobile-confirmation-footers` | Nur Formularschutz und „Alle anderen abmelden“ bei 1280/390 px: Aktionsbreiten, Reihenfolge, Fokus, Abbruch und unveränderte Einzelabmeldung | 4 |
 | `account-action-cards` | Konto deaktivieren/löschen bei 1280/390 px: mobile Ausrichtung, erreichbare Aktionen und abbrechbare Identitätsbestätigung | 2 |
 | `configuration-footers` | Alle Konfigurationsfooter für Admin/Superadmin, beide Anmeldeanbieter, Queue-Assistent und vier 2FA-Rollen bei 1280/390 px: mobile Vollbreite und Vergleichsaufnahmen | 6 |
+| `profile-notification` | Bestehender Profil-Speicherfall bei 1280/390 px: Erfolgsmeldung, Originalaufnahmen und Messwerte, automatische/manuelle Schließung und erneut gespeicherte Daten | 2 |
 | `queue-cleanup-appearance` | Nur Assistentenwarnung und manuelle Bereinigungsbestätigung bei 1280/390 px: Gestaltung und alle vier Abbruchwege, ohne Bereinigung auszuführen | 2 |
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit und HTTPS-/HTTP-Grenze | 4 |
 | `https-night` | Infrastruktur und Remember-me: normale Profile, echter Chromium-/Serverneustart; mit zwei Workern gezielter Nachtlaufnachweis | 8 |
@@ -128,7 +129,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `session-persistence` | Gezielte Neustartabnahme: Sitzungs-/Loginfälle, Wartung und eigene Kontosicherheit | 51 |
 | `session-management` | Eigene Sitzungen, Einzel-/Sammelwiderruf, dauerhafte Anmeldung, UI-Neuaufbau, abgelaufene Sitzung mit gespeichertem Zugang und eingeschränkter Login | 7 |
 | `sign-in-session-layout` | Anmeldeinformationen im Benutzerformular, Sitzungsgruppen, Anmeldewege und Abmeldebestätigungen im Konto und am Sitzungslimit, Desktop und Smartphone | 4 |
-| `account-settings` | Profil/Sprachen/E-Mail-Dialog, persistente Profilbilder, kompakte Geburtstage, Status am Kontobild, Formularschutz und eigene Kontodeaktivierung/Reaktivierung/Löschung auf Desktop und Smartphone | 20 |
+| `account-settings` | Profil/Sprachen/E-Mail-Dialog, persistente Profilbilder, kompakte Geburtstage, Status am Kontobild, Formularschutz und eigene Kontodeaktivierung/Reaktivierung/Löschung auf Desktop und Smartphone | 21 |
 | `account-lifecycle` | Einzelvalidierungen, kanonisierte Dubletten, unverifizierte Anfrage und altes Resetformular | 5 |
 | `presentation` | Sprachwechsel, gespeicherte Sprache, schmale Registrierung mit Datumeingabe/Kalenderauswahl und Tastaturlogin | 5 |
 | `token-configuration` | Vier Mindestdauern, Feldfehler, Speicherung und Erklärungen | 4 |
@@ -136,11 +137,11 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `metric-cards` | Konten-Karte und Postfach-Kennzahlen auf Desktop/Smartphone: Darstellung, Zähleränderungen, Filter und Sprache | 4 |
 | `confirmation-dialog` | Sammellesebestätigung in Inbox und Glockenvorschau: Vergleichsaufnahmen/Messwerte, Abbrechen, Close, Escape, Außenklick, Tastaturfokus und bestätigte persistente Lesemarkierung auf Desktop/Smartphone | 2 |
 | `native-confirmations` | Bestehende Benachrichtigungs-, Sitzungs-, Profilbild-, Formularschutz-, Benutzerlösch-, Bereinigungs- und Anleitungsabläufe mit Dialogaufnahmen und Messwerten auf Desktop/Smartphone | 16 |
-| `avatars` | Profilbildmodi und Bildfehler, Header/Sidebar/Menü, Benutzertabelle und Bestätigung, Status-/Namenswechsel, Ticketidentitäten und 2FA-Header auf Desktop/Smartphone | 10 |
+| `avatars` | Profilbildmodi und Bildfehler, Header/Sidebar/Menü, Benutzertabelle und Bestätigung, Status-/Namenswechsel, Ticketidentitäten und 2FA-Header auf Desktop/Smartphone | 11 |
 | `form-layouts` | Allgemeine Konfiguration für Admin/Superadmin, Anbieter, 2FA-Rollen, Mailtest, Benachrichtigungen, Kontodialoge, öffentliche Formulare und Superadmin-Zusatzfelder: Maße und Vergleichsaufnahmen auf Desktop/Smartphone | 12 |
 | `native-cards` | Konto, Sicherheitsreiter, Sitzungen, Inbox und administrative Karten einschließlich Mailqueue-Assistent: Vergleichsaufnahmen und Layoutmesswerte auf Desktop/Smartphone | 2 |
 | `account-forms` | Registrierung sowie Benutzer anlegen/bearbeiten: Vorher-/Nachher-Aufnahmen, Feldmaße, Speichern und Validierung | 8 |
-| `profile-form` | Persönliche Daten: Anordnung und Spaltengrenzen auf Desktop/Smartphone, Speichern, Validierung, Formularschutz und Sprachwechsel | 5 |
+| `profile-form` | Persönliche Daten: Anordnung und Spaltengrenzen auf Desktop/Smartphone, Speichern, Validierung, Formularschutz und Sprachwechsel | 6 |
 | `user-filters` | Entwürfe/Anwenden/Badges, Kalender/Datumabhängigkeit, Zeitoverlay und kombinierte Filter/Reset und kompakte Zeit mit Sprachwechsel | 5 |
 | `user-access` | Sperren/Freigeben, Rollenvergabe/-entzug mit und ohne bestehende Sitzung, Superadmin-/Gastzugriff, unverifizierte Konten, zwei offene Formulare und Selbstschutz | 8 |
 | `session-security` | Alte Speichern-Aktion nach Rollenentzug/Sperre/Löschung, Sperre/Löschung auch mit Remember-me | 5 |

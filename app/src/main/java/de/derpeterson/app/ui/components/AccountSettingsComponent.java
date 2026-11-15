@@ -610,7 +610,7 @@ public class AccountSettingsComponent extends PageContentLayout {
         profileSavedListener -> profileSavedListener.accept(savedProfile));
 
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseSuccessTitle,
             messageProperties::getAccountSettingsSaveSuccess,
             NotificationHelper.NotificationType.SUCCESS);

@@ -23,100 +23,30 @@ Karten/Panels, die weiteren Bestätigungsdialoge und der Mailqueue-Assistent sin
 vom Benutzer abgenommen. Karten und Dialoge wurden anhand der Vergleichsaufnahmen
 gesichtet; den Assistenten hat der Benutzer einschließlich F5 geprüft.
 Umfang und Grenzen dieser Abnahme stehen unter [HUM-01](../manual-tests/README.md#hum-01).
-Offen bleibt die nachfolgend gesammelte Nachbearbeitung. Sie ist jetzt ausdrücklich
-zur Umsetzung freigegeben, jeweils mit Review, eigenem Commit und gezielten
-Screenshots der betroffenen Stellen für die anschließende Benutzerabnahme.
+Auch die neun Nachbearbeitungspunkte sind nach Sichtung der gezielten
+Vorher-/Nachher-Aufnahmen vom Benutzer abgenommen. Daraus bleibt kein weiteres
+Umsetzungs- oder Abnahmepaket offen. Weitere Kandidaten sind unten eingeordnet;
+ihre Umsetzung benötigt einen eigenen Auftrag.
 
 Die bisherigen öffentlichen Karten und der Bestätigungsdialog-Pilot sind ebenso
 wie Formulare, Kennzahlkarten, Avatare, Badges, Seitenpfade und segmentierte
 Auswahl bereits vom Benutzer abgenommen. Ihre fertigen Umstellungen sind keine
 weiteren offenen Arbeitspakete.
 
-Advanced („Horizont Plus“) bleibt ausgewählt; Base ist mit einer zentralen
-Codezeile wieder aktivierbar. Die automatisierten Nachtests beider Varianten
-sind bestanden. Die endgültige Hintergrundauswahl samt Bereinigung ungenutzter
-Varianten sowie die sichtbare Bereinigungshistorie bleiben in [TODO](../../TODO.md).
-Der Scrollpunkt ist auf Benutzerwunsch zurückgestellt; siehe [BUGS](../../BUGS.md).
+## Abgrenzung der weiteren Umsetzung
 
-## Nachbearbeitungsliste
+Die nächsten Pakete betreffen ausschließlich weitere geeignete Vaadin-Komponenten
+und die Wiederverwendung vorhandener nativer Cosmos-Bausteine. Gestaltung und
+Fachverhalten bleiben erhalten, soweit keine andere Entscheidung getroffen wird.
+Die unten aufgeführten Kandidaten sind noch keine pauschale Umbaufreigabe.
 
-**Status: Alle neun Punkte sind technisch umgesetzt und gezielt geprüft; Endabnahme offen.**
-Jeder Punkt hat einen eigenen Review und Commit. Vorher-/Nachher-Aufnahmen der
-aufgenommenen Stellen in DE/EN auf Desktop und Smartphone stehen zur Sichtung
-bereit. Das war keine große Testrunde; der separat zurückgestellte Scrollpunkt
-bleibt unberührt.
-
-1. [ ] **Warndreieck im Mailqueue-Bereinigungsassistenten – umgesetzt, Endabnahme offen:**
-   Die gelbe Sicherheitswarnung verwendet das vorhandene Dreiecks-SVG über
-   `AppIcon.WARNING_TRIANGLE`. Farben, Texte und Anordnung sind erhalten.
-   Gezielte DE-/EN-Prüfungen auf Desktop und Smartphone sowie Vorher-/Nachher-
-   Aufnahmen sind vorhanden. Andere Anwendungswarnungen wurden nicht umgestellt.
-2. [ ] **Warndreieck im Bereinigungsdialog – umgesetzt, Endabnahme offen:**
-   Die gelbe Warnung „Späterer Empfang möglich:“ verwendet ebenfalls das
-   Warndreieck. Die dezente Parameter-Infobox behält ihr Info-Icon. Gezielte
-   DE-/EN-Prüfungen bei 1280/390 px einschließlich aller Abbruchwege sind
-   bestanden; Vorher-/Nachher-Aufnahmen liegen zur Endabnahme vor.
-3. [ ] **Roter Brush im Dialogkopf – umgesetzt, Endabnahme offen:**
-   „Manuelle Bereinigung“ verwendet für das Brush-Icon im Dialogkopf die
-   bestehende rote Gefahrenvariante. Die lokale blaue Ausnahme ist entfernt;
-   die Assistentenkarte bleibt blau. Gezielte DE-/EN-Prüfungen bei 1280/390 px
-   und Vorher-/Nachher-Aufnahmen sind bestanden beziehungsweise vorhanden.
-4. [ ] **Kürzerer Wartetext – umgesetzt, Endabnahme offen:** Die gelbe Erklärung
-   unter „Wartet auf Ausführung“ passt bei geprüften 1280 px in eine Zeile.
-   DE: „Vorgemerkt. Startet automatisch nach Ende des E-Mail-Versands.“
-   EN: „Queued. Starts automatically when email delivery finishes.“
-   Auf schmalen Ansichten bleibt normaler Umbruch möglich. Der echte
-   SMTP-Wartezustand sowie die blaue Vormerkungs-Notification mit Info-Icon
-   sind in DE/EN bei 1280/390 px geprüft; Vergleichsaufnahmen liegen vor.
-5. [ ] **Begrenzte Benutzerangaben – umgesetzt, Endabnahme offen:** Kopf,
-   Profilkarte, Benutzermenü und administrative Löschbestätigung begrenzen
-   Name und E-Mail an der verfügbaren Breite. Auf dem Smartphone darf jede
-   Angabe im Löschdialog höchstens zwei Zeilen belegen; sonst bleibt es
-   bei einer Zeile. Vollständige Werte stehen im nativen Tooltip bei Hover
-   und Tastaturfokus. Kein zusätzlicher Info-Button oder Touch-Ersatz.
-   Normale und lange Werte, Abbruch ohne Datenverlust und aktualisierte
-   Tooltips nach Namensänderung sind bei 1280/390 px in DE/EN geprüft.
-   Vergleichsaufnahmen liegen zur Endabnahme vor. Die allgemeine Smartphone-
-   Tooltip-Frage bleibt als eigene [Aufgabe](../../TODO.md#künftige-anwendungsfunktionen) offen.
-6. [ ] **Smartphone-Footer der beiden Bestätigungen – umgesetzt, Endabnahme offen:**
-   Formularschutz und „Alle anderen abmelden“ zeigen beide Aktionen mobil
-   untereinander in voller Breite innerhalb der bestehenden Innenabstände.
-   Reihenfolge, Farben, gleiche Höhen und Anfangsfokus bleiben erhalten;
-   Desktop und Einzelabmeldungen behalten ihre bisherige Darstellung.
-   DE/EN bei 1280/390 px einschließlich Abbruch und wiederverwendetem
-   Sammel-/Einzeldialog sind bestanden. Vergleichsaufnahmen liegen vor.
-
-7. [ ] **Native Überlaufnavigation aller Reiterleisten – umgesetzt, Endabnahme offen:**
-   Seitenreiter behalten lesbare Breiten und nutzen bei Platzmangel native
-   Vor-/Zurück-Pfeile und horizontales Scrollen. Dasselbe gilt für segmentierte
-   Umschalter; ihre freigegebene Gestaltung bleibt erhalten. Die gequetschten
-   Sicherheits- und 2FA-Rollenreiter sind korrigiert. Gezielte Prüfungen in DE/EN
-   bei 1280/1024/390/320 px einschließlich Pfeilen, Tastatur und echter Touchgeste
-   sind bestanden; segmentierte Umschalter zusätzlich bei 1280/390/320 px.
-   Vorher-/Nachher-Aufnahmen der betroffenen Leisten liegen zur Endabnahme vor.
-   Aktuelle Regeln stehen im [Theme](../theme.md#native-vaadin-bausteine-zuerst),
-   die gezielten Ergebnisse im [Prüfstand](../status.md).
-
-8. [ ] **Smartphone-Aktionen in den Kontoverwaltungskarten – umgesetzt, Endabnahme offen:**
-   Beide Aktionen stehen mobil rechts innerhalb der bestehenden Kartenabstände.
-   Farben, Icons, Beschriftungen und Desktopdarstellung bleiben erhalten.
-   DE/EN bei 1280/390 px einschließlich Öffnen und Abbrechen beider
-   Identitätsdialoge sind bestanden. Vergleichsaufnahmen liegen vor.
-
-9. [ ] **Einheitliche Smartphone-Footer in der Konfiguration – umgesetzt, Endabnahme offen:**
-   Beide Aktionen stehen mobil untereinander in voller verfügbarer Breite
-   innerhalb der bestehenden Footer-Innenabstände. Die lokale Regel korrigiert
-   insbesondere die bisher gemessene feste Breite der 2FA-Aktionen.
-   Alle allgemeinen Gruppen für Admin/Superadmin, Queue-Assistent, beide
-   Anmeldeanbieter und vier 2FA-Rollen sind in DE/EN bei 1280/390 px geprüft.
-   Breiten, Ausrichtung, gleiche Höhen und vertikale Abstände sind bestanden;
-   Vergleichsaufnahmen liegen vor. Desktopdarstellung und Fachlogik bleiben erhalten.
-
-**Abgestimmt zur Vormerkungs-Notification:** Blaues Informationsdesign samt
-Info-Icon beibehalten. Die Meldung bestätigt die Vormerkung; Warten ist ein
-regulärer Zwischenzustand. Badge und Statuszeile bleiben gelb. Die gelben
-Sicherheitswarnungen zu den Folgen der Bereinigung erhalten dagegen das
-Warndreieck. Die Endabnahme der umgesetzten Nachbearbeitung bleibt beim Benutzer.
+Scrollverhalten, eine allgemeine Smartphone-Tooltip-Lösung, endgültige
+Hintergrundauswahl, sichtbare Bereinigungshistorie, Release-/Neuigkeitenablauf,
+Passkeys und Hosting gehören zu eigenen Themen nach dem Komponentenumbau.
+Die offenen Aufgaben bleiben in [TODO](../../TODO.md); der zurückgestellte
+Scrollfehler samt Nachtest bleibt in [BUGS](../../BUGS.md) und
+[Testbedarf](../testbedarf.md) erhalten. Diese Abgrenzung behebt oder erledigt
+die betreffenden Aufgaben nicht.
 
 ## Grundlage für weitere Pakete
 
@@ -167,7 +97,7 @@ deshalb als Bedienentscheidung betrachtet werden.
 
 | Baustein | Konkreter Startpunkt | Umfang und Grenze |
 | --- | --- | --- |
-| `Card` | Die gemeinsame `CosmosCardComponent` und Kontopanels sind auf die native Card übertragen; auch die geeigneten Innenkarten sind übertragen. | Öffentliche Kopf-/Footer-Slots, bestehende Cosmos-Klassen und fachliche Panel-APIs weiterverwenden. Der übertragene Kartenstand ist vom Benutzer anhand der Vergleichsaufnahmen abgenommen; neue Nachbearbeitungspunkte bleiben separat offen. |
+| `Card` | Die gemeinsame `CosmosCardComponent` und Kontopanels sind auf die native Card übertragen; auch die geeigneten Innenkarten sind übertragen. | Öffentliche Kopf-/Footer-Slots, bestehende Cosmos-Klassen und fachliche Panel-APIs weiterverwenden. Karten und zugehörige Nachbearbeitung sind vom Benutzer anhand der Vergleichsaufnahmen abgenommen. |
 | `ConfirmDialog` | [PortalConfirmationDialog](../../app/src/main/java/de/derpeterson/app/ui/components/PortalConfirmationDialog.java) und administrative Benutzerlöschung verwenden native Bestätigungen; die weiteren beauftragten Fälle einschließlich Geräteabmeldung, Profilbildlöschung und Anleitungsvorschau sind übertragen. | Fachlicher Kontext, Abbruch, Fokus, Warnfarbe, einmalige Ausführung und Fehlerbehandlung sind geprüft. Die weiteren Bestätigungen sind anhand der Vergleichsaufnahmen vom Benutzer abgenommen; Form- und Identitätsdialoge bleiben bei `Dialog`. |
 | Info-/Warnboxen und Leerzustände | Statische Hinweise in Kontodialogen, Konfiguration und Ticketeditor, außerdem `NotificationEmptyState`. | Native `Notification` ist für vorübergehende Meldungen. Fest eingebettete Hinweise dürfen als gemeinsame Flow-Komposition aus Icon und Text bestehen. Abstände, Hervorhebung und Icon-Ausrichtung zentral halten. Einen bestehenden Baustein erweitern, sobald eine zweite Stelle denselben Aufbau benötigt. |
 | Seitliche Feldhilfe und Filter | `AdminSidePanelDialog` und `ConfigInfoButton` in der Konfiguration, im Mailtest und in den Ticketfiltern. | `Dialog` bleibt die Basis für die seitliche Feldhilfe. Vor einem Wechsel zu `Popover` oder einer anderen Hülle zuerst Anker, Modalität, Fokus, Scrollgrenzen und mobile Bedienung vergleichen. Ein `Tooltip` deckt kurze Zusatztexte ab. |
@@ -218,7 +148,7 @@ Designsystems. [Theme-Quellen](../theme.md#dateien-und-ladereihenfolge),
 | `PageNavigationComponent`, `PageContentLayout`, `AdminSidePanelDialog` | Brücken für Seitennavigationsaktionen, Fokus der mobilen Navigation und Begrenzung der seitlichen Overlays. Bei einem Layout-Pilot anhand öffentlicher Flow-APIs überprüfen. |
 | `UserActivityAwareView`, `ConfirmEmailChangeView` und `SupportTicketsComponent` | Browseraktivität, Navigation nach Sitzungswiderruf sowie Erkennung, wann der Ticketverlauf sichtbar gelesen werden kann. Vor einer Änderung den fachlichen Grund und die Folgeprüfung erfassen. |
 | `ConfigInfoButton`, `OverlayUserIcon`, `TwoFactorCodeFields` | Sonderverhalten für Tooltips und gezielte Styling-/DOM-Anbindung. Kandidaten für weniger direkte DOM-Zugriffe, sobald eine gleichwertige öffentliche API verfügbar ist. |
-| `NotificationHelper` | Verwendet natives `Notification`. Eine Meldungsvariante erzeugt `Html` für den Nachrichtentext. Bei Arbeiten an diesem Baustein Aufrufer und erlaubte Formatierungen prüfen und reine Textmeldungen gegebenenfalls als `Paragraph` ausgeben. |
+| `NotificationHelper` | Verwendet natives `Notification`. Die Profil-Erfolgsmeldung verwendet einen nativen `Paragraph` und ist anhand der Vergleichsaufnahmen abgenommen. Andere Meldungen behalten ihren bisherigen HTML-/Detailaufbau. Vor weiteren Umstellungen Aufrufer und erlaubte Formatierungen prüfen. |
 | HTML für E-Mails und Ersatzcode-PDF | Vorlagen für separate Ausgabeformate. In der versionierten Anwendungsoberfläche wurde kein React-/Hilla-Quellbestand gefunden. |
 
 ## Vorgeschlagene Arbeitspakete
@@ -232,13 +162,11 @@ wenn eine konkrete Funktion fehlt. In dem Fall die geprüfte Alternative,
 den nötigen Eigenanteil und die zu erhaltende Bedienung zur Entscheidung
 vorlegen.
 
-1. **Gesammelte Nachbearbeitung.** Die oben freigegebenen neun Punkte einzeln
-   umsetzen, reviewen, committen und gezielt mit Vergleichsaufnahmen nachprüfen.
-2. **Weiterführende Struktur.** `MasterDetailLayout`, mobile Navigation,
-   Anwesenheitsauswahl und Inbox-Pagination nur einzeln betrachten, wenn
-   die Änderung Bedienelemente, Code oder Wartung konkret vereinfacht.
-   Bereits passende Bausteine wie native Switches, Tabs, Eingaben, Grids,
-   Popovers und die Ticket-Status-Badges werden weiterverwendet.
+**Weiterführende Struktur.** `MasterDetailLayout`, mobile Navigation,
+Anwesenheitsauswahl und Inbox-Pagination nur einzeln betrachten, wenn
+die Änderung Bedienelemente, Code oder Wartung konkret vereinfacht.
+Bereits passende Bausteine wie native Switches, Tabs, Eingaben, Grids,
+Popovers und die Ticket-Status-Badges werden weiterverwendet.
 
 ### Abnahme nach einem beauftragten Paket
 

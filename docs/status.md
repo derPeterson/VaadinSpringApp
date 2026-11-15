@@ -5,7 +5,8 @@ native Bestätigungen, vollständige Mailqueue-Bereinigung, lokale Zwischeninteg
 mit Sonar-Bereinigung und abschließende Gesamtprüfung. Die Gesamtumsetzung der
 Vaadin-Komponenten bleibt ausdrücklich offen. Die neuen Karten, Bestätigungen
 und der Mailqueue-Assistent sind vom Benutzer abgenommen; die dabei gesammelte
-Nachbearbeitung ist zur gezielten Umsetzung freigegeben. Weitere Entscheidungen stehen im
+Nachbearbeitung ist nach Sichtung der Vergleichsaufnahmen ebenfalls abgenommen.
+Weitere Entscheidungen stehen im
 [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
 
 Vergleichsbasis ist die letzte vollständig belegte QA bei `7d127bcb`.
@@ -81,21 +82,21 @@ für die Seitenreiter sowie drei für die segmentierten Umschalter in DE/EN sind
 bestanden. Die Seitenreiter umfassen 1280/1024/390/320 px, native Pfeile,
 Tastatur und echte Chromium-Touchereignisse. Die segmentierten Umschalter wurden
 bei 1280/390/320 px verglichen. Beide Sprachen nutzen dasselbe korrigierte Image.
-Vorher-/Nachher-Aufnahmen stehen zur noch offenen Endabnahme bereit.
+Die Vorher-/Nachher-Aufnahmen wurden vom Benutzer gesichtet und abgenommen.
 Die Sicherheitswarnungen im Mailqueue-Assistenten und in der manuellen
 Bereinigungsbestätigung verwenden zusätzlich das Warndreieck; die separate
 Parameter-Infobox behält ihr Info-Icon. 25 Komponenten-/Symbolprüfungen,
 39 Testauswahlprüfungen und je zwei
 gezielte Browserfälle in DE/EN bei 1280/390 px sind bestanden. Alle vier
 Dialogabbruchwege erhalten den bisherigen Bereinigungsstand. Die zugehörigen
-Vorher-/Nachher-Aufnahmen stehen ebenfalls zur Endabnahme bereit.
+Vorher-/Nachher-Aufnahmen sind ebenfalls vom Benutzer abgenommen.
 Der Brush im manuellen Dialogkopf verwendet die vorhandene rote Gefahrenvariante;
 auch dieser gesonderte Nachtest besteht je zwei Browserfälle in DE/EN bei 1280/390 px.
 Der kürzere Wartetext ist zusätzlich mit 15 Textkatalogprüfungen und je einem
 Queue-Gesamtlauf in DE/EN bestanden: echter SMTP-Wartezustand und anschließend
 101 bereinigte Aufträge ohne erneuten Versand. Jeder Fall prüft 1280/390 px;
 die Erklärung bleibt am Desktop einzeilig, die Vormerkungs-Notification blau
-mit Info-Icon. Eigene Vergleichsaufnahmen beider Zustände liegen zur Endabnahme vor.
+mit Info-Icon. Die Vergleichsaufnahmen beider Zustände sind vom Benutzer abgenommen.
 Die vier vereinbarten Benutzeranzeigen begrenzen lange Namen und E-Mail-Adressen
 und bieten vollständige Werte im nativen Tooltip. 135 vorhandene Komponenten-
 JUnit-Prüfungen, 40 Testauswahlprüfungen und je vier Browserfälle in DE/EN
@@ -110,7 +111,7 @@ Prüfungen, 41 Auswahlprüfungen und je vier Browserfälle in DE/EN bei 1280/390
 sind bestanden. Abbruch erhält Entwurf beziehungsweise Sitzungen; nach Wechsel
 vom Sammel- zum Einzeldialog übernimmt die Einzelaktion keine Vollbreite.
 Desktopdarstellung und eigener gespeicherter Zugang bleiben erhalten.
-Vorher-/Nachher-Aufnahmen der beiden Dialoge liegen zur Endabnahme vor.
+Vorher-/Nachher-Aufnahmen der beiden Dialoge sind vom Benutzer abgenommen.
 Die Kontoaktionskarten ordnen ihre Buttons mobil rechts an. 42 Auswahlprüfungen
 und je zwei Browserfälle in DE/EN bei 1280/390 px sind bestanden. Beide
 Identitätsdialoge lassen sich öffnen und ohne Kontoänderung abbrechen;
@@ -122,9 +123,22 @@ beide Anbieter und alle vier 2FA-Rollen. Geprüft sind tatsächliche Breiten,
 Ausrichtung, gleiche Höhen und vertikale Abstände. Vergleichsaufnahmen der
 Footer liegen vor; Desktopdarstellung und Speicherverträge bleiben erhalten.
 Diese Änderungen haben keinen neuen Sonar-Scan; der obige Scan gilt weiterhin für
-`f3c21623`. Alle neun Nachbearbeitungspunkte sind technisch fertig und gezielt
-geprüft; ihre Endabnahme bleibt im
-[Komponentenplan](planung/vaadin-komponenten-abgleich.md) offen.
+`f3c21623`. Alle neun Nachbearbeitungspunkte sind technisch fertig, gezielt
+geprüft und nach Sichtung der Vergleichsaufnahmen vom Benutzer abgenommen.
+Die Gesamtumsetzung bleibt im [Komponentenplan](planung/vaadin-komponenten-abgleich.md) offen.
+
+Der zusätzliche Pilot für die Erfolgsmeldung beim Speichern persönlicher Daten
+verwendet einen nativen `Paragraph`; andere Meldungsaufrufer behalten ihren
+bisherigen Aufbau. 83 gezielte Anwendungs-JUnit-Prüfungen und 44 Testauswahlprüfungen
+sind bestanden. Je zwei Browserfälle in DE/EN bei 1280/390 px sind einschließlich
+erneutem Speichern und Neuladen, automatischem Ausblenden nach drei Sekunden
+und manuellem Schließen bestanden. Beide Nachtests verwendeten dasselbe Image.
+Vier Messwertsätze für Hülle, Titel und Nachricht stimmen vor/nach der Umstellung
+überein; die vier zugeschnittenen Meldungsbilder sind bytegleich. Die
+Vergleichsseite enthält unveränderte Originalbilder direkt eingebettet.
+Der Benutzer hat den Piloten anhand der Vorher-/Nachher-Aufnahmen abgenommen.
+Es gab dafür keine neue Gesamt-QA oder Sonarprüfung; die obigen Gesamtzahlen
+gelten für ihren benannten Stand.
 
 ## Abnahme, offene Nachbearbeitung und Grenzen
 
@@ -134,7 +148,8 @@ Durchklickprüfung aller Dialoge wurde nicht durchgeführt. Der Mailqueue-Assist
 ist nach eigener Prüfung einschließlich F5 ebenfalls abgenommen. Einzelheiten
 stehen unter [HUM-01](manual-tests/README.md#hum-01).
 Die dabei gesammelten neun Nachbearbeitungspunkte sind mit gezielten Screenshots,
-Review und Commit je Punkt umgesetzt. Ihre gemeinsame Endabnahme bleibt offen.
+Review und Commit je Punkt umgesetzt. Der Benutzer hat die Vorher-/Nachher-
+Aufnahmen gesichtet und alle neun Punkte ausdrücklich abgenommen.
 Die obigen Gesamtergebnisse belegen den früheren Ausgangsstand,
 keine vollständige Prüfung aller Folgeänderungen. Echte Mobilgeräte, reale Passwortmanager,
 Screenreader und externe Anbieter-/SMTP-Sonderprüfungen bleiben gesonderte

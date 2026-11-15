@@ -131,11 +131,13 @@ zusätzlich einzeln in der laufenden Anwendung geöffnet und ausgeführt.
 Den Mailqueue-Assistenten hat der Benutzer selbst geprüft und einschließlich
 F5 abgenommen. Das ist eine ausdrückliche menschliche Abnahme; automatisierte
 Prüfergebnisse und bloß erzeugte Screenshots allein hätten sie nicht ersetzt.
-Die dabei gesammelten Anpassungen an Warnsymbolen, Texten, langen Benutzerangaben,
-mobilen Aktionen und Reiterüberlauf bleiben separat in der
-[Nachbearbeitungsliste](../planung/vaadin-komponenten-abgleich.md#nachbearbeitungsliste)
-offen. Ihre Umsetzung mit gezielten Vergleichsaufnahmen ist freigegeben; die aktuelle Abnahme bestätigt
-keine bereits erfolgte Behebung dieser Folgepunkte.
+Die neun anschließenden Nachbearbeitungen an Warnsymbolen, Texten, langen
+Benutzerangaben, mobilen Aktionen und Reiterüberlauf sind am 15.11.2026 nach
+ausdrücklicher Sichtung der Vorher-/Nachher-Aufnahmen ebenfalls vom Benutzer
+abgenommen. Diese Sichtung ersetzt keine Prüfung mit echtem Mobilgerät oder
+Screenreader. Der separat zurückgestellte Scrollpunkt bleibt offen.
+Auch die native Textdarstellung der Erfolgsmeldung beim Speichern persönlicher
+Daten ist nach Sichtung der Vorher-/Nachher-Aufnahmen vom Benutzer abgenommen.
 
 **Erwartet:** Die Oberfläche wirkt zusammengehörig und ruhig; relevante Texte/Aktionen sind gut lesbar und eindeutig. Rein persönlicher Änderungswunsch wird von einem Bedienhindernis unterschieden.
 

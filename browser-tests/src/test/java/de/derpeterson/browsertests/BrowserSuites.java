@@ -178,7 +178,7 @@ final class BrowserSuites {
       case "session-management" -> List.of(SessionManagementBrowserTest.class);
       case "sign-in-session-layout" ->
           List.of(ExternalLoginBrowserTest.class, SessionManagementBrowserTest.class);
-      case "account-settings" -> List.of(AccountSettingsBrowserTest.class);
+      case "account-settings", "profile-notification" -> List.of(AccountSettingsBrowserTest.class);
       case "form-details" ->
           List.of(
               CosmosComponentsBrowserTest.class,

@@ -51,6 +51,7 @@ class BrowserExecutionPlanTest {
         "mobile-confirmation-footers",
         "account-action-cards",
         "configuration-footers",
+        "profile-notification",
         "avatars",
         "profile-form",
         "account-forms",
@@ -151,6 +152,7 @@ class BrowserExecutionPlanTest {
                   "revokedWaitingCleanupShowsFailureWithoutClaimingSuccess",
                   "queueTabUrlsSurviveReloadAndRejectUnauthorizedAssistantAccess",
                   "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
+          case "profile-notification" -> Set.of("profilePersistsAndCanBeSavedTwice");
           case "configuration-footers" ->
               Set.of(
                   "generalConfigurationFormsKeepTheirArrangement",

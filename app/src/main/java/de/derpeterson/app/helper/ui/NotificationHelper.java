@@ -9,6 +9,7 @@ import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.ListItem;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.html.UnorderedList;
 import com.vaadin.flow.component.icon.SvgIcon;
@@ -36,7 +37,8 @@ public class NotificationHelper implements Serializable {
   private Span titleText = null;
   // Request-/Service-Supplier nicht mit einer passivierten UI serialisieren.
   private transient Supplier<String> titleSupplier = null;
-  private Html messageText = null;
+  private Component messageText = null;
+  private boolean plainTextMessage;
   private transient Supplier<String> messageSupplier = null;
   private transient Supplier<List<String>> detailsSupplier;
   private VerticalLayout textLayout = null;
@@ -103,8 +105,41 @@ public class NotificationHelper implements Serializable {
       Supplier<List<String>> detailsSupplier,
       Integer displayDurationMillis,
       NotificationType notificationType) {
+    showNotificationWithDetails(
+        titleSupplier,
+        messageSupplier,
+        detailsSupplier,
+        displayDurationMillis,
+        notificationType,
+        false);
+  }
+
+  /**
+   * Reiner Nachrichtentext ohne HTML-Auswertung, mit denselben Anzeige- und Sprachwechselregeln.
+   */
+  public void showTextNotification(
+      Supplier<String> titleSupplier,
+      Supplier<String> messageSupplier,
+      NotificationType notificationType) {
+    showNotificationWithDetails(
+        titleSupplier,
+        messageSupplier,
+        null,
+        DEFAULT_NOTIFICATION_DURATION,
+        notificationType,
+        true);
+  }
+
+  private void showNotificationWithDetails(
+      Supplier<String> titleSupplier,
+      Supplier<String> messageSupplier,
+      Supplier<List<String>> detailsSupplier,
+      Integer displayDurationMillis,
+      NotificationType notificationType,
+      boolean plainTextMessage) {
     closeAndClearAllNotifications();
 
+    this.plainTextMessage = plainTextMessage;
     this.titleSupplier = titleSupplier;
     this.messageSupplier = messageSupplier;
     this.detailsSupplier = detailsSupplier;
@@ -251,9 +286,15 @@ public class NotificationHelper implements Serializable {
     }
     messageText = null;
     if (StringUtils.isNotBlank(notificationMessage)) {
-      messageText = new Html(HtmlHelper.ensureParagraphTags(notificationMessage));
-      messageText.addClassNames("cosmos-notification-message", LumoUtility.Margin.NONE);
-      messageText.getStyle().set("max-width", "520px");
+      messageText =
+          plainTextMessage
+              ? new Paragraph(notificationMessage)
+              : new Html(HtmlHelper.ensureParagraphTags(notificationMessage));
+      messageText
+          .getElement()
+          .getClassList()
+          .addAll(List.of("cosmos-notification-message", LumoUtility.Margin.NONE));
+      messageText.getElement().getStyle().set("max-width", "520px");
       textLayout.add(messageText);
     }
 
@@ -274,6 +315,7 @@ public class NotificationHelper implements Serializable {
     this.titleSupplier = null;
     this.messageText = null;
     this.messageSupplier = null;
+    this.plainTextMessage = false;
     this.detailsSupplier = null;
     this.closeButton = null;
 

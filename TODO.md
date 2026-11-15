@@ -9,9 +9,8 @@
   Pakete bleiben bis zu einer späteren Freigabe offen.
   Die Gesamtumsetzung wird auf `codex/vaadin-komponenten-folgearbeiten-4`
   weitergeführt und bleibt ausdrücklich offen.
-  Die zur Umsetzung freigegebenen Rückmeldungen stehen in der
-  [Nachbearbeitungsliste](docs/planung/vaadin-komponenten-abgleich.md#nachbearbeitungsliste)
-  mit gezielten Vergleichsaufnahmen sowie Review und Commit je Punkt.
+  Als Nächstes weitere geeignete Vaadin-Komponenten betrachten. Die übrigen
+  unten erfassten Anwendungsthemen gehören zu eigenen Aufgaben nach diesem Umbau.
 
 ## Zurückgestellte Planungen
 
