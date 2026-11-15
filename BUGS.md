@@ -1,5 +1,23 @@
 # Offene Fehler
 
+## Sicherheitsreiter auf dem Smartphone
+
+- **Status:** Vom Benutzer per Screenshot gemeldet. Umsetzung und gezielte
+  isolierte Browserprüfungen sind im Nachbearbeitungsauftrag freigegeben;
+  vor dem ersten Codepaket wird der bisherige Dokumentationsstand committed.
+- **Ist:** Unter „Mein Konto → Sicherheit“ und bei den Rollenreitern der
+  2FA-Konfiguration werden die Reiter bei schmaler Smartphonebreite gequetscht,
+  Beschriftungen abgeschnitten oder unterschiedlich umgebrochen. Die Ursachen
+  sind noch nicht durch Browsermessung bestätigt.
+- **Erwartet:** Reiter sind erreichbar und ihre Bezeichnungen lesbar. Bei
+  Platzmangel native Pfeil-/Scrollnavigation verwenden, auch bei schmalem Desktop;
+  mit ausreichendem Platz die vorhandene Darstellung erhalten.
+- **Nächster Schritt:** Anwendungsweit alle Reiterleisten auf native
+  Überlaufsteuerung und passende Breitenregeln prüfen; siehe
+  [Nachbearbeitung, Punkt 7](docs/planung/vaadin-komponenten-abgleich.md#nachbearbeitungsliste).
+- **Nachtest:** DE/EN auf Smartphone und Desktop mit und ohne Überlauf,
+  Tastatur-/Touch-/Pfeilnavigation; siehe [Testbedarf](docs/testbedarf.md#browser-tests).
+
 ## Scrollbereiche erneut fehlerhaft
 
 - **Status:** Auf ausdrücklichen Benutzerwunsch zurückgestellt. Gewünschtes Verhalten

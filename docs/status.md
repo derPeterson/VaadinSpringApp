@@ -3,8 +3,9 @@
 Die fünf freigegebenen Nachtpunkte sind technisch abgeschlossen: native Karten,
 native Bestätigungen, vollständige Mailqueue-Bereinigung, lokale Zwischenintegration
 mit Sonar-Bereinigung und abschließende Gesamtprüfung. Die Gesamtumsetzung der
-Vaadin-Komponenten bleibt ausdrücklich offen; die gemeinsame Sichtung der neuen
-Oberflächen steht noch aus. Weitere Entscheidungen stehen im
+Vaadin-Komponenten bleibt ausdrücklich offen. Die neuen Karten, Bestätigungen
+und der Mailqueue-Assistent sind vom Benutzer abgenommen; die dabei gesammelte
+Nachbearbeitung ist zur gezielten Umsetzung freigegeben. Weitere Entscheidungen stehen im
 [Komponentenplan](planung/vaadin-komponenten-abgleich.md).
 
 Vergleichsbasis ist die letzte vollständig belegte QA bei `7d127bcb`.
@@ -71,11 +72,19 @@ Statuswechsel wurden zur Bereinigung verwendet.
   Das Zeitbudget eines vollständigen Workers beträgt nun 90 statt 60 Minuten;
   einzelne UI-Wartezeiten und Sicherheitsprüfungen wurden nicht abgeschwächt.
 
-## Offene Abnahmen und Grenzen
+## Abnahme, offene Nachbearbeitung und Grenzen
 
-Die menschliche Sichtung der neuen Karten, Bestätigungen und Queue-Zustände bleibt
-unter [HUM-01](manual-tests/README.md#hum-01) offen. Automatische Messwerte und
-Screenshots ersetzen diese Abnahme nicht. Echte Mobilgeräte, reale Passwortmanager,
+Der Benutzer hat Karten/Panels und die weiteren Bestätigungsdialoge anhand der
+bereitgestellten Screenshots abgenommen. Eine zusätzliche vollständige manuelle
+Durchklickprüfung aller Dialoge wurde nicht durchgeführt. Der Mailqueue-Assistent
+ist nach eigener Prüfung einschließlich F5 ebenfalls abgenommen. Einzelheiten
+stehen unter [HUM-01](manual-tests/README.md#hum-01).
+Die dabei gesammelten neun Nachbearbeitungspunkte bleiben offen; ihre Umsetzung
+mit gezielten Screenshots, Review und Commit je Punkt ist freigegeben.
+Dazu gehören insbesondere die gemeldeten gequetschten
+Sicherheits- und 2FA-Rollenreiter auf Smartphonebreite, siehe [BUGS](../BUGS.md).
+Die obigen erfolgreichen Tests belegen den geprüften Ausgangsstand, keine
+Behebung oder Prüfung dieser Folgepunkte. Echte Mobilgeräte, reale Passwortmanager,
 Screenreader und externe Anbieter-/SMTP-Sonderprüfungen bleiben gesonderte
 menschliche beziehungsweise ausdrücklich freizugebende Integrationsprüfungen.
 Es wurden keine echten E-Mails versendet und keine vorhandenen Entwicklerdaten

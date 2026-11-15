@@ -19,13 +19,13 @@ abschließender großer Testrunde fertig. Ergebnisse und Grenzen stehen im
 [Prüfstand](../status.md); geltende Bausteine im [Theme-Standard](../theme.md)
 und im [Mailqueue-Vertrag](../mailqueue.md).
 
-Offen bleibt die gemeinsame menschliche Sichtung der neuen Konto-, Admin-,
-Ticket-, Innen-, Vorschau- und Kontextkarten sowie der zehn weiteren nativen
-Bestätigungen. Dazu kommen die Mailqueue-Reiter mit Direktlink/F5 und die
-Bereinigungszustände einschließlich Warten, Teilabschluss und Notifications.
-Vorher-/Nachher-Aufnahmen liegen für DE/EN auf Desktop und Smartphone vor;
-Messwerte und automatisierte Prüfungen ersetzen die Abnahme nicht.
-Der gemeinsame Abnahmekatalog ist [HUM-01](../manual-tests/README.md#hum-01).
+Karten/Panels, die weiteren Bestätigungsdialoge und der Mailqueue-Assistent sind
+vom Benutzer abgenommen. Karten und Dialoge wurden anhand der Vergleichsaufnahmen
+gesichtet; den Assistenten hat der Benutzer einschließlich F5 geprüft.
+Umfang und Grenzen dieser Abnahme stehen unter [HUM-01](../manual-tests/README.md#hum-01).
+Offen bleibt die nachfolgend gesammelte Nachbearbeitung. Sie ist jetzt ausdrücklich
+zur Umsetzung freigegeben, jeweils mit Review, eigenem Commit und gezielten
+Screenshots der betroffenen Stellen für die anschließende Benutzerabnahme.
 
 Die bisherigen öffentlichen Karten und der Bestätigungsdialog-Pilot sind ebenso
 wie Formulare, Kennzahlkarten, Avatare, Badges, Seitenpfade und segmentierte
@@ -37,6 +37,118 @@ Codezeile wieder aktivierbar. Die automatisierten Nachtests beider Varianten
 sind bestanden. Die endgültige Hintergrundauswahl samt Bereinigung ungenutzter
 Varianten sowie die sichtbare Bereinigungshistorie bleiben in [TODO](../../TODO.md).
 Der Scrollpunkt ist auf Benutzerwunsch zurückgestellt; siehe [BUGS](../../BUGS.md).
+
+## Nachbearbeitungsliste
+
+**Status: Zur Umsetzung freigegeben; vor dem ersten Codepaket den bisherigen
+Planungs- und Abnahmestand reviewen und committen.** Die neun Punkte einzeln
+bearbeiten, jeweils mit Review und eigenem Commit. Nur die aufgenommenen Stellen
+isoliert in DE/EN auf Desktop und Smartphone prüfen und Vorher-/Nachher-Aufnahmen
+für die Endabnahme bereitstellen; keine große Testrunde. Der bestätigte Reiterfehler
+hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
+
+1. [ ] **Warndreieck im Mailqueue-Bereinigungsassistenten:** Beim gelben
+   Sicherheitshinweis das bisherige Kreis-Icon durch das vorhandene Warndreieck
+   unserer Sicherheitswarnungen ersetzen. Bestehende Farben, Texte und Anordnung
+   beibehalten; in DE und EN gleich darstellen. Die Rückmeldung betrifft den
+   Hinweis im Assistenten, keine anwendungsweite Icon-Änderung.
+2. [ ] **Warndreieck im Bereinigungsdialog:** Auch die gelbe Warnung
+   „Späterer Empfang möglich:“ im Dialog „Manuelle Bereinigung“ erhält das
+   vorhandene Warndreieck anstelle des Kreis-Icons. Die separate dezente
+   Parameter-Infobox behält ihr Info-Icon.
+3. [ ] **Roter Brush im Dialogkopf:** Das Brush-Icon oben im Dialog
+   „Manuelle Bereinigung“ mit der bestehenden roten Gefahrenvariante darstellen.
+   Die blaue Icongestaltung im Kopf der Assistentenkarte bleibt bestehen.
+4. [ ] **Kürzerer Wartetext:** Die gelbe Erklärung unter „Wartet auf Ausführung“
+   so kürzen, dass sie auf üblicher Desktopbreite in eine Zeile passt.
+   Textvorschlag DE: „Vorgemerkt. Startet automatisch nach Ende des E-Mail-Versands.“
+   EN: „Queued. Starts automatically when email delivery finishes.“
+   Auf schmalen Ansichten weiterhin normalen Umbruch zulassen.
+5. [ ] **Lange Namen und E-Mail-Adressen in den Benutzerangaben begrenzen:**
+   Betroffen sind der Benutzer-Menüauslöser im Header, die Profilkarte links
+   auf „Mein Konto → Persönliche Daten“, der Identitätskopf im geöffneten
+   Benutzermenü und die Benutzerkarte im administrativen Dialog „Benutzer löschen“.
+   An allen vier Stellen zuerst prüfen, welche Kürzungs- und
+   Tooltiplogik bereits vorhanden ist; nur fehlende Teile ergänzen.
+   Name und E-Mail anhand der verfügbaren Breite begrenzen und grundsätzlich
+   einzeilig mit „…“ darstellen; für die Smartphone-Benutzerkarte im Löschdialog
+   gilt die unten abgestimmte Zwei-Zeilen-Ausnahme. Keine feste Zeichengrenze
+   und keine Änderung der gespeicherten Kontodaten. Avatar, Präsenzpunkt und
+   Aufklapp-Pfeil behalten ihren Platz; lange Werte verbreitern den Header nicht.
+   Vollständigen Namen und vollständige E-Mail-Adresse mit dem nativen Tooltip
+   bei Hover beziehungsweise Tastaturfokus zugänglich machen. Vollständige Angaben
+   auch bei Touch-Bedienung erreichbar halten. Bei späterer Umsetzung lange Namen,
+   lange E-Mail-Adressen und normale Werte in DE/EN auf Desktop und Smartphone
+   prüfen; vorhandene Kopfzeilenvarianten im betroffenen Baustein berücksichtigen.
+   Im Löschdialog den vorhandenen Platz großzügig nutzen: passende Namen und
+   E-Mail-Adressen vollständig anzeigen, erst bei tatsächlichem Platzmangel
+   kürzen und den vollständigen Wert im Tooltip anbieten. Lange Kontodaten dürfen
+   den Dialog nicht verbreitern. Die bestehende responsive Dialogbreite erhalten;
+   auf Smartphonebreite weder horizontales Überlaufen noch verdrängte Aktionen
+   zulassen. Die eindeutig erkennbare Identität des zu löschenden Kontos erhalten.
+   In der Benutzerkarte des Löschdialogs dürfen auf dem Smartphone Name und
+   E-Mail-Adresse jeweils auf höchstens zwei Zeilen umbrechen. Erst wenn auch
+   diese zwei Zeilen nicht ausreichen, mit „…“ kürzen; keine vier oder fünf
+   Zeilen pro Angabe zulassen. Vollständige Werte bleiben per Tooltip und auch
+   bei Touch-Bedienung zugänglich. Die Headeranzeige bleibt weiterhin einzeilig.
+6. [ ] **Smartphone-Footer der gezeigten Bestätigungen:** Ausschließlich im
+   Smartphone-Layout der Dialoge „Ungespeicherte Änderungen“ und „Alle anderen
+   abmelden“ beide Buttons untereinander über die volle verfügbare Breite innerhalb der bestehenden
+   Footer-Innenabstände anordnen. Gleiche Breite und Höhe sowie einen einheitlichen
+   vertikalen Abstand verwenden. Reihenfolge und Farben beibehalten: oben gelb
+   „Änderungen verwerfen“, darunter blau „Weiter bearbeiten“. Bei „Alle anderen
+   abmelden“ oben „Abbrechen“, darunter die rote Aktion „Alle anderen abmelden“.
+   Desktopdarstellung, Anfangsfokus und Verhalten des Formularschutzes bleiben unverändert.
+   Bei späterer Umsetzung DE/EN auf Smartphonebreite einschließlich langer
+   Beschriftungen prüfen und die unveränderte Desktopanordnung gegenprüfen.
+
+7. [ ] **Native Überlaufnavigation aller Reiterleisten:** Anwendungsweit alle
+   Reiterleisten auf ausreichende Breite und native Überlaufsteuerung prüfen,
+   sowohl auf Smartphone als auch auf Desktop und bei schmalen Fenstern.
+   Gemeldet sind die drei Reiter unter „Mein Konto → Sicherheit“ sowie die
+   Rollenreiter der 2FA-Konfiguration. Beschriftungen werden dort gequetscht,
+   abgeschnitten oder uneinheitlich umgebrochen.
+   Abgestimmt ist die native Vaadin-Lösung: Bestehende `Tabs`-/`TabSheet`-Basis
+   und ausreichend breite Reiter in einer horizontal scrollbar bleibenden Zeile
+   erhalten, mit nativen Vor-/Zurück-Schaltflächen bei Überlauf und
+   Touch-Bedienung. Bei ausreichendem Platz die bisherige Darstellung erhalten;
+   auch die verschiedenen freigegebenen Reiterstile bleiben bestehen.
+   Breiten- und Flexregeln einschließlich der mobilen Sicherheitsreiter prüfen;
+   die konkreten Ursachen sind noch nicht im Browser bestätigt.
+   Keine eigene Plus-Steuerung oder zweireihige Reiteranordnung vorsehen.
+   Im freigegebenen gezielten Nachtest alle betroffenen Leisten in DE/EN auf
+   Smartphone, schmalem Desktop und bei
+   ausreichender Breite prüfen: lesbare Beschriftungen, erreichbare Reiter,
+   korrekte Auswahl, Tastatur-/Touch-/Pfeilbedienung und zugehörige Inhalte.
+   Fehler und offener Nachtest stehen in [BUGS](../../BUGS.md#sicherheitsreiter-auf-dem-smartphone)
+   und im [Testbedarf](../testbedarf.md).
+
+8. [ ] **Smartphone-Aktionen in den Kontoverwaltungskarten:** Unter „Mein Konto
+   → Sicherheit → Konto verwalten“ die Buttons „Konto deaktivieren“ und
+   „Konto endgültig löschen“ jeweils in ihrer eigenen Karte rechtsbündig
+   innerhalb der bestehenden Innenabstände anordnen; innerhalb der Aktionszeile
+   vertikal zentrieren. Nur Smartphone-Layout ändern. Bestehende Buttonfarben,
+   Icons, Beschriftungen und Desktopdarstellung erhalten. Nach Startfreigabe
+   beide Karten auf schmaler Breite in DE/EN auf passende Ausrichtung und
+   vollständig erreichbare Aktionen prüfen.
+
+9. [ ] **Einheitliche Smartphone-Footer in der Konfiguration:** Alle
+   Konfigurationsbereiche auf die Anordnung von „Werte neu laden“ und
+   „Konfiguration speichern“ prüfen. Auf Smartphonebreite stehen beide Buttons
+   untereinander und nehmen jeweils die volle verfügbare Breite innerhalb der
+   bestehenden Footer-Innenabstände ein. Insbesondere die 2FA-Konfiguration
+   einschließlich ihrer Rollenansichten mit dem bereits vorhandenen mobilen
+   Aufbau bei Anmeldeanbietern abgleichen und abweichende Footer angleichen.
+   Reihenfolge, Farben, Icons, Beschriftungen sowie Lade-, Speicher- und
+   Berechtigungslogik erhalten. Desktopdarstellung unverändert lassen.
+   Nach ausdrücklichem Startauftrag alle betroffenen Konfigurationsfooter
+   in DE/EN auf Smartphonebreite und unverändertem Desktop gegenprüfen.
+
+**Abgestimmt zur Vormerkungs-Notification:** Blaues Informationsdesign samt
+Info-Icon beibehalten. Die Meldung bestätigt die Vormerkung; Warten ist ein
+regulärer Zwischenzustand. Badge und Statuszeile bleiben gelb. Die gelben
+Sicherheitswarnungen zu den Folgen der Bereinigung erhalten dagegen das
+Warndreieck. Die Endabnahme der umgesetzten Nachbearbeitung bleibt beim Benutzer.
 
 ## Grundlage für weitere Pakete
 
@@ -53,8 +165,8 @@ Ansicht prüfen. Aktuelle Bausteine beschreibt der [Theme-Standard](../theme.md)
 | Öffentlich und geschützte Zwischenschritte | [PublicPageComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PublicPageComponent.java) verwendet denselben Rahmen, native Zeilen und Spalten sowie einen eigenen Kopf. Die Gast-Views nutzen unter anderem [IsNotAuthenticatedBaseView](../../app/src/main/java/de/derpeterson/app/security/IsNotAuthenticatedBaseView.java) mit `Composite` und Flow-Layouts. Die 2FA-Views verwenden `VerticalLayout` und je nach Zustand den reduzierten Kopf. | Gemeinsame Hülle erhalten. Visuelle Ausrichtung und serverseitige Ablauf- und Zugriffssperren getrennt betrachten. |
 | Seitennavigation und Inhalt | [PageNavigationComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PageNavigationComponent.java) erweitert `SideNav` und arbeitet mit `SideNavItem`. Ein Browser-Listener verbindet interne Einträge mit Java-Aktionen. [PageContentLayout](../../app/src/main/java/de/derpeterson/app/ui/components/PageContentLayout.java) gruppiert Sidebar und Inhalt in einem responsiven CSS-Raster und steuert die mobile Navigation. `AdminView` verwendet ebenfalls diese Seitennavigation. | Die Menüpunkte und Navigationselemente sind nativ. Der responsive Rahmen und die Anbindung an die abschnittsbasierte Navigation sind eigene Ergänzungen. |
 | Zeilen, Spalten und Formulare | `HorizontalLayout` und `VerticalLayout` kommen durchgängig vor, etwa bei Registrierung, Profilaktionen, Ticketköpfen und Pagination. Profil, Registrierung, Admin-Benutzerformular und die Konfigurationsgruppen verwenden natives `FormLayout`. Einspaltige Formulare und Feldhilfezeilen verwenden native Zeilen und Spalten. | Für gewöhnliche Zeilen und Spalten ist die Vaadin-Basis bereits da. `FormLayout` ist eine passende Standardoption für wiederkehrende responsive Feldpaare. Der Bereinigungsassistent verwendet ebenfalls `FormLayout`. Die abgenommenen Formularanordnungen bei weiteren Änderungen erhalten. |
-| Karten und Panels | [PublicPanelComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PublicPanelComponent.java), `ExternalLoginButtons` und [CosmosCardComponent](../../app/src/main/java/de/derpeterson/app/ui/components/CosmosCardComponent.java) verwenden native `Card`. Innenkarten verwenden `CosmosContentCardComponent`, auch [PortalContextCard](../../app/src/main/java/de/derpeterson/app/ui/components/PortalContextCard.java) erbt davon. | Öffentliche Standardkarten sind abgenommen; die übrigen Umstellungen sind technisch geprüft und stehen unter HUM-01 zur Sichtung. Cosmos-Zonen, Kopf-Metadaten, Aktionen und responsive Anordnung bleiben erhalten. |
-| Dialoge, Feldhilfe und Filter | Bestätigungen verwenden den nativen `ConfirmDialog`. Form- und Identitätsdialoge bleiben bei `Dialog`. [AdminSidePanelDialog](../../app/src/main/java/de/derpeterson/app/ui/components/AdminSidePanelDialog.java) ist ein `Dialog` mit seitlicher Platzierung und eigener Größenanpassung. `Popover` wird etwa für Glocke, Profilmenü und Nachrichtenaktionen verwendet. | Overlay, Modalität und grundlegende Interaktion kommen von Vaadin. Header, Footer und Inhalte sind fachliche Zusammensetzungen. Die Sichtung der weiteren Bestätigungen bleibt offen. |
+| Karten und Panels | [PublicPanelComponent](../../app/src/main/java/de/derpeterson/app/ui/components/PublicPanelComponent.java), `ExternalLoginButtons` und [CosmosCardComponent](../../app/src/main/java/de/derpeterson/app/ui/components/CosmosCardComponent.java) verwenden native `Card`. Innenkarten verwenden `CosmosContentCardComponent`, auch [PortalContextCard](../../app/src/main/java/de/derpeterson/app/ui/components/PortalContextCard.java) erbt davon. | Kartenumstellungen sind technisch geprüft und vom Benutzer anhand der Vergleichsaufnahmen abgenommen. Cosmos-Zonen, Kopf-Metadaten, Aktionen und responsive Anordnung bleiben erhalten. |
+| Dialoge, Feldhilfe und Filter | Bestätigungen verwenden den nativen `ConfirmDialog`. Form- und Identitätsdialoge bleiben bei `Dialog`. [AdminSidePanelDialog](../../app/src/main/java/de/derpeterson/app/ui/components/AdminSidePanelDialog.java) ist ein `Dialog` mit seitlicher Platzierung und eigener Größenanpassung. `Popover` wird etwa für Glocke, Profilmenü und Nachrichtenaktionen verwendet. | Overlay, Modalität und grundlegende Interaktion kommen von Vaadin. Header, Footer und Inhalte sind fachliche Zusammensetzungen. Die weiteren Bestätigungen sind vom Benutzer anhand der Vergleichsaufnahmen abgenommen. |
 
 `Div`, `Span` und Überschriften sind Java-Klassen aus Flow. Ein `Span` für
 eine E-Mail-Adresse oder ein `Div` als Container für ein responsives Raster
@@ -87,8 +199,8 @@ deshalb als Bedienentscheidung betrachtet werden.
 
 | Baustein | Konkreter Startpunkt | Umfang und Grenze |
 | --- | --- | --- |
-| `Card` | Die gemeinsame `CosmosCardComponent` und Kontopanels sind auf die native Card übertragen; auch die geeigneten Innenkarten sind übertragen. | Öffentliche Kopf-/Footer-Slots, bestehende Cosmos-Klassen und fachliche Panel-APIs weiterverwenden. Gestaltung und Bedienung vergleichen; menschliche Sichtung bleibt offen. |
-| `ConfirmDialog` | [PortalConfirmationDialog](../../app/src/main/java/de/derpeterson/app/ui/components/PortalConfirmationDialog.java) und administrative Benutzerlöschung verwenden native Bestätigungen; die weiteren beauftragten Fälle einschließlich Geräteabmeldung, Profilbildlöschung und Anleitungsvorschau sind übertragen. | Fachlicher Kontext, Abbruch, Fokus, Warnfarbe, einmalige Ausführung und Fehlerbehandlung sind geprüft. Die menschliche Sichtung bleibt unter HUM-01 offen; Form- und Identitätsdialoge bleiben bei `Dialog`. |
+| `Card` | Die gemeinsame `CosmosCardComponent` und Kontopanels sind auf die native Card übertragen; auch die geeigneten Innenkarten sind übertragen. | Öffentliche Kopf-/Footer-Slots, bestehende Cosmos-Klassen und fachliche Panel-APIs weiterverwenden. Der übertragene Kartenstand ist vom Benutzer anhand der Vergleichsaufnahmen abgenommen; neue Nachbearbeitungspunkte bleiben separat offen. |
+| `ConfirmDialog` | [PortalConfirmationDialog](../../app/src/main/java/de/derpeterson/app/ui/components/PortalConfirmationDialog.java) und administrative Benutzerlöschung verwenden native Bestätigungen; die weiteren beauftragten Fälle einschließlich Geräteabmeldung, Profilbildlöschung und Anleitungsvorschau sind übertragen. | Fachlicher Kontext, Abbruch, Fokus, Warnfarbe, einmalige Ausführung und Fehlerbehandlung sind geprüft. Die weiteren Bestätigungen sind anhand der Vergleichsaufnahmen vom Benutzer abgenommen; Form- und Identitätsdialoge bleiben bei `Dialog`. |
 | Info-/Warnboxen und Leerzustände | Statische Hinweise in Kontodialogen, Konfiguration und Ticketeditor, außerdem `NotificationEmptyState`. | Native `Notification` ist für vorübergehende Meldungen. Fest eingebettete Hinweise dürfen als gemeinsame Flow-Komposition aus Icon und Text bestehen. Abstände, Hervorhebung und Icon-Ausrichtung zentral halten. Einen bestehenden Baustein erweitern, sobald eine zweite Stelle denselben Aufbau benötigt. |
 | Seitliche Feldhilfe und Filter | `AdminSidePanelDialog` und `ConfigInfoButton` in der Konfiguration, im Mailtest und in den Ticketfiltern. | `Dialog` bleibt die Basis für die seitliche Feldhilfe. Vor einem Wechsel zu `Popover` oder einer anderen Hülle zuerst Anker, Modalität, Fokus, Scrollgrenzen und mobile Bedienung vergleichen. Ein `Tooltip` deckt kurze Zusatztexte ab. |
 
@@ -102,7 +214,7 @@ deshalb als Bedienentscheidung betrachtet werden.
 | Fläche | Aktueller Standard und eigener Anteil | Entscheidung |
 | --- | --- | --- |
 | Startseite, Anmeldung, Registrierung und Bestätigungen | `HomeRedirectView` leitet weiter. `HomeView` nutzt den angemeldeten Rahmen. `LoginView` setzt echte `EmailField`, `PasswordField`, `Switch` und `Button` mit eigenen Anmeldeschritten zusammen. Registrierung, Passwort vergessen/zurücksetzen, Verifikation, E-Mail-Bestätigung, externe Registrierung und Wartung nutzen Flow-Eingaben, Panels und Texte. | `LoginForm` und `LoginOverlay` sind verfügbar. Das Standardformular hat eigene Felder und ein begrenztes Set an Aktionen. Unser Layout bindet „Anmeldung speichern“, externe Anbieter, Wiederherstellung und Fortsetzung ein. Die bestehende Flow-Komposition bietet dafür die passenden APIs. Die Panelhüllen sind bereits auf native Cards übertragen. |
-| Mein Konto und Geräte | `AccountView` verwendet native Seitennavigation und `AccountSettingsComponent` ein `TabSheet`. Sitzungen, Anmeldewege und Schutzaktionen sind Java-Kompositionen aus nativen Buttons, Badges und Dialogen. | Karten und Bestätigungen sind übertragen und technisch geprüft; ihre menschliche Sichtung bleibt offen. Die Avatar-Übernahme ist abgenommen. Die Gruppierung aktiver und gespeicherter Anmeldungen, der Anmeldeweg und die Sitzungsaktionen bleiben fachlich in ihren Bausteinen. |
+| Mein Konto und Geräte | `AccountView` verwendet native Seitennavigation und `AccountSettingsComponent` ein `TabSheet`. Sitzungen, Anmeldewege und Schutzaktionen sind Java-Kompositionen aus nativen Buttons, Badges und Dialogen. | Karten und Bestätigungen sind übertragen, technisch geprüft und anhand der Vergleichsaufnahmen vom Benutzer abgenommen. Die Avatar-Übernahme ist abgenommen. Die Gruppierung aktiver und gespeicherter Anmeldungen, der Anmeldeweg und die Sitzungsaktionen bleiben fachlich in ihren Bausteinen. |
 | Anmeldeanbieter und Identitätsbestätigung | `ExternalLoginButtons` und `ExternalConnectionsComponent` verwenden native Buttons, Logos und Status-Badges. `ExternalIdentityConfirmationDialog` und `TwoFactorActionDialog` verwenden `Dialog` und [TwoFactorCodeInput](../../app/src/main/java/de/derpeterson/app/ui/components/TwoFactorCodeInput.java). | Gemeinsamen Code-Eingabebaustein weiterverwenden. Auto-Bestätigung beim Verbinden und Klick beim Trennen oder bei sicherheitsrelevanten Änderungen bleiben pro Aufrufer bewusst verschieden. |
 | 2FA-Einrichtung und Wiederherstellung | `TwoFactorView` verwendet `Tabs`, das Flow-Add-on `OtpField` und native `TextField` für Ersatzcodes. `RecoveryHelpView` verwendet den öffentlichen Rahmen und den Ticketbaustein für die anfragende Person. | In den bisher geprüften offiziellen APIs wurde kein gleichwertiges segmentiertes OTP-Feld festgestellt. Add-on mit Fokus, Einfügen, AutoFill und Completion-Ereignis erhalten. Prüfen lässt sich separat, ob der Style ohne manuelles Einfügen eines Stylesheets in den Shadow DOM auskommt. |
 | Admin-Übersicht, Benutzer und Konfiguration | `AdminView` und die Admin-Sektionen verwenden native Layouts. Das Benutzer-Grid rendert Identität, Status, Rollen und Aktionen. Konfiguration, 2FA, Anmeldeanbieter und Mailtest verwenden native Felder, `TabSheet`, `Switch` und die gemeinsame Feldhilfe. `CosmosDurationField` und `AdminUserActivityFilter` kombinieren native Eingaben. | Die übertragenen Badges, Kennzahlkarten und Formularlayouts beibehalten. Den Dauerwert als `CustomField` erst kapseln, wenn ein gemeinsamer Wert-/Validierungsvertrag mehrere Aufrufer vereinfacht. `AdminUserActivityFilter` ist bereits ein `CustomField`. Statische Kennzahlkarten brauchen kein Dashboard-Widget-System. |
@@ -152,8 +264,8 @@ wenn eine konkrete Funktion fehlt. In dem Fall die geprüfte Alternative,
 den nötigen Eigenanteil und die zu erhaltende Bedienung zur Entscheidung
 vorlegen.
 
-1. **Gemeinsame Sichtung.** Die technisch fertigen Karten, Bestätigungen und
-   Mailqueue-Zustände anhand HUM-01 gemeinsam abnehmen.
+1. **Gesammelte Nachbearbeitung.** Die oben freigegebenen neun Punkte einzeln
+   umsetzen, reviewen, committen und gezielt mit Vergleichsaufnahmen nachprüfen.
 2. **Weiterführende Struktur.** `MasterDetailLayout`, mobile Navigation,
    Anwesenheitsauswahl und Inbox-Pagination nur einzeln betrachten, wenn
    die Änderung Bedienelemente, Code oder Wartung konkret vereinfacht.

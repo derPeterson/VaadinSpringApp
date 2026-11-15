@@ -123,15 +123,19 @@ Retry; vor erneutem Start bereits eingegangene Beispiele beachten.
 Auswahlfelder, Kalender, Formularschutz, Konto verwalten, Konfigurationsfristen,
 Kennzahlkarten, Avatare, Formulare, Seitenpfade und segmentierte Umschalter sind
 bereits vom Benutzer abgenommen und dienen als Vergleichsstandard.
-Noch gemeinsam zu sichten sind die neuen nativen Kartenhüllen in Konto,
-geschützten Zwischenansichten, Administration und Tickets einschließlich Innen-,
-Vorschau- und Kontextkarten sowie die weiteren nativen Bestätigungen.
-Bei der Mailqueue zusätzlich Direktlink/F5 der Reiter und die Zustände wartend,
-laufend, abgeschlossen, fehlgeschlagen und teilweise abgeschlossen beurteilen:
-verständliche Texte, Notifications und stets getrennte Zeilen für Zeitpunkt und
-bereinigte Aufträge. Dazu die isolierten Vorher-/Nachher-Aufnahmen für Desktop
-und Smartphone in DE/EN nutzen; automatisch gleiche Messwerte ersetzen die
-menschliche Designabnahme nicht.
+Die neuen nativen Kartenhüllen in Konto, geschützten Zwischenansichten,
+Administration und Tickets einschließlich Innen-, Vorschau- und Kontextkarten
+sowie die weiteren nativen Bestätigungen sind vom Benutzer am 15.11.2026 anhand
+der bereitgestellten Vergleichsaufnahmen abgenommen. Nicht jeder Dialog wurde
+zusätzlich einzeln in der laufenden Anwendung geöffnet und ausgeführt.
+Den Mailqueue-Assistenten hat der Benutzer selbst geprüft und einschließlich
+F5 abgenommen. Das ist eine ausdrückliche menschliche Abnahme; automatisierte
+Prüfergebnisse und bloß erzeugte Screenshots allein hätten sie nicht ersetzt.
+Die dabei gesammelten Anpassungen an Warnsymbolen, Texten, langen Benutzerangaben,
+mobilen Aktionen und Reiterüberlauf bleiben separat in der
+[Nachbearbeitungsliste](../planung/vaadin-komponenten-abgleich.md#nachbearbeitungsliste)
+offen. Ihre Umsetzung mit gezielten Vergleichsaufnahmen ist freigegeben; die aktuelle Abnahme bestätigt
+keine bereits erfolgte Behebung dieser Folgepunkte.
 
 **Erwartet:** Die Oberfläche wirkt zusammengehörig und ruhig; relevante Texte/Aktionen sind gut lesbar und eindeutig. Rein persönlicher Änderungswunsch wird von einem Bedienhindernis unterschieden.
 
