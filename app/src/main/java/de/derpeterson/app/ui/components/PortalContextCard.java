@@ -7,7 +7,7 @@ import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 
 /** Lesbare Objektkarte in Bestätigungen, ohne den eigentlichen Inhalt zu duplizieren. */
-public class PortalContextCard extends Div {
+public class PortalContextCard extends CosmosContentCardComponent {
   private final Div contextCardContentDiv = new Div();
 
   public PortalContextCard(
@@ -19,6 +19,7 @@ public class PortalContextCard extends Div {
 
     Span contextHeadingSpan = new Span(contextTitleText);
     contextHeadingSpan.addClassName("portal-context-title");
+    setAriaLabelledBy(contextHeadingSpan);
     contextCardContentDiv.add(contextHeadingSpan);
     contextCardContentDiv.addClassName("portal-context-copy");
 

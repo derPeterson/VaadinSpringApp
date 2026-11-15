@@ -17,36 +17,10 @@ Bedienung und fachliches Verhalten bleiben erhalten. Bereits übertragene
 bilden die Vergleichsgrundlage und werden nicht erneut umgebaut.
 
 Die gemeinsamen Konto-, Verwaltungs- und Ticketpanelhüllen einschließlich der
-geschützten Zwischenansichten verwenden die native Card-Basis. Offen bleiben die
-folgenden Innenkarten und die gemeinsame menschliche Sichtung gemäß
-[HUM-01](../manual-tests/README.md#hum-01).
-
-### Arbeitspaket 1.5: Kleine Innen-, Vorschau- und Kontextkarten
-
-- [ ] Karten für Passwort/E-Mail, 2FA, verbundene Anmeldeanbieter, einzelne
-  Sitzungen und Kontoverwaltungsaktionen prüfen und geeignet umstellen.
-- [ ] Benachrichtigungsvorschau sowie `PortalContextCard` und seine Verbraucher
-  in Bestätigungsdialogen einbeziehen.
-- [ ] Dynamische Wiederholungen über gemeinsame Bausteine abdecken; keine
-  parallelen Kartendesigns oder unnötigen Einzelkomponenten einführen.
-
-### Ablauf nach dem Startauftrag
-
-1. Teilpakete nacheinander bearbeiten. Vor dem jeweiligen Umbau die bestehenden
-   Ansichten und passenden Vaadin-APIs prüfen und isolierte Vorher-Aufnahmen sichern.
-2. Nach dem Umbau gezielt in DE und EN auf Desktop und Smartphone prüfen.
-   Pro Vergleichsstand dasselbe unveränderte Anwendungsimage verwenden.
-3. Vorher-/Nachher-Screenshots und Layoutmesswerte vergleichen; Ansichten mit
-   langen Texten, Fehlern, leeren Zuständen und verfügbaren Aktionen berücksichtigen.
-4. Je Teilpaket Review einschließlich Lesbarkeit nach
-   [Entwicklungsanleitung](../entwicklung.md#codestil) durchführen, nötige Korrekturen
-   nachprüfen und einen eigenen aussagekräftigen Commit erstellen.
-5. Gemeinsame Grundlagen nicht vorzeitig an ungeprüften Verbrauchern verändern.
-   Durch Wiederverwendung bereits erledigte Teilaufgaben nicht doppelt umbauen;
-   keine leeren Commits zur Erfüllung der Paketnummerierung erzeugen.
-6. Für die gemeinsame Sichtung die betroffenen Stellen und die Vorher-/Nachher-
-   Vergleiche bereitstellen. Die gesamte Komponentenübernahme nicht eigenmächtig
-   als abgeschlossen erklären.
+geschützten Zwischenansichten sowie die geeigneten Innen-, Vorschau- und
+Kontextkarten verwenden native Cards. Die technische Übernahme und die isolierten
+Vorher-/Nachher-Prüfungen sind abgeschlossen; offen bleibt die gemeinsame
+menschliche Sichtung gemäß [HUM-01](../manual-tests/README.md#hum-01).
 
 ## Gesamtpaket 2: Verbleibende Bestätigungen auf nativen ConfirmDialog umstellen
 

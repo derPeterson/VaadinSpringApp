@@ -53,7 +53,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 
 /** Gemeinsame kompakte Vorschau und paginierter eigener Posteingang. */
-public class UserNotificationsPanel extends Div {
+public class UserNotificationsPanel extends CosmosContentCardComponent {
   private static final String COSMOS_THEME = "cosmos-theme";
   private static final String ARIA_HIDDEN = "aria-hidden";
   private static final String COSMOS_NOTIFICATION_INBOX_TOOL_CLASS =
@@ -138,6 +138,7 @@ public class UserNotificationsPanel extends Div {
     addClassNames(COSMOS_THEME, "cosmos-notifications-panel");
     setId(compact ? "notifications-preview" : "notifications-inbox");
     inboxHeading.addClassName(PANEL_TITLE);
+    setAriaLabelledBy(inboxHeading);
 
     configureReadFilter();
     Div inboxToolbarDiv = new Div(readFilterTabs, refreshInboxButton);
@@ -268,7 +269,9 @@ public class UserNotificationsPanel extends Div {
     previewHintDiv.addClassName("cosmos-notification-preview-retention");
     Div previewFooterDiv = new Div(openHistoryButton, previewHintDiv);
     previewFooterDiv.addClassName("cosmos-notification-preview-footer");
-    add(previewHeaderDiv, previewContentDiv, previewFooterDiv);
+    setHeader(previewHeaderDiv);
+    add(previewContentDiv);
+    addToFooter(previewFooterDiv);
   }
 
   private void buildInbox(Div inboxToolbarDiv, Div inboxPagingDiv) {

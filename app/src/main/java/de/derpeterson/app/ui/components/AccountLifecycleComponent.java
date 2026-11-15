@@ -87,17 +87,17 @@ public final class AccountLifecycleComponent extends VerticalLayout {
 
     deactivateDescriptionSpan.setId("account-deactivate-description");
     deleteDescriptionSpan.setId("account-delete-description");
-    HorizontalLayout deactivateRowLayout =
-        createAccountActionRow(
+    CosmosContentCardComponent deactivateCard =
+        createAccountActionCard(
             AccountAction.DEACTIVATE,
             deactivateTitleSpan,
             deactivateDescriptionSpan,
             deactivateAccountButton);
-    HorizontalLayout deleteRowLayout =
-        createAccountActionRow(
+    CosmosContentCardComponent deleteCard =
+        createAccountActionCard(
             AccountAction.DELETE, deleteTitleSpan, deleteDescriptionSpan, deleteAccountButton);
 
-    VerticalLayout actionCardsLayout = new VerticalLayout(deactivateRowLayout, deleteRowLayout);
+    VerticalLayout actionCardsLayout = new VerticalLayout(deactivateCard, deleteCard);
     actionCardsLayout.setPadding(false);
     actionCardsLayout.setSpacing(false);
     actionCardsLayout.addClassName("account-security-cards");
@@ -114,7 +114,7 @@ public final class AccountLifecycleComponent extends VerticalLayout {
     refreshLifecycleTexts();
   }
 
-  private HorizontalLayout createAccountActionRow(
+  private CosmosContentCardComponent createAccountActionCard(
       AccountAction accountAction, Span titleSpan, Span descriptionSpan, Button actionButton) {
     Div actionIconDiv =
         new Div(
@@ -129,16 +129,14 @@ public final class AccountLifecycleComponent extends VerticalLayout {
     actionCopyLayout.setSpacing(false);
     actionCopyLayout.addClassName("account-lifecycle-copy");
 
-    HorizontalLayout actionRowLayout =
-        new HorizontalLayout(actionIconDiv, actionCopyLayout, actionButton);
-    actionRowLayout.setWidthFull();
-    actionRowLayout.setPadding(false);
-    actionRowLayout.setSpacing(false);
-    actionRowLayout.setAlignItems(Alignment.CENTER);
-    actionRowLayout.expand(actionCopyLayout);
-    actionRowLayout.addClassNames("account-entry", "account-lifecycle-action");
-    actionRowLayout.getElement().setAttribute("data-action", accountAction.name());
-    return actionRowLayout;
+    CosmosContentCardComponent actionCard =
+        new CosmosContentCardComponent(actionIconDiv, actionCopyLayout, actionButton);
+    actionCard.setWidthFull();
+    actionCopyLayout.getStyle().set("flex-grow", "1");
+    actionCard.addClassNames("account-entry", "account-lifecycle-action");
+    actionCard.setAriaLabelledBy(titleSpan);
+    actionCard.getElement().setAttribute("data-action", accountAction.name());
+    return actionCard;
   }
 
   public void refreshLifecycleTexts() {

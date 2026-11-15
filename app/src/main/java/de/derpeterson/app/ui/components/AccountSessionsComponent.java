@@ -215,11 +215,11 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     group.getElement().setAttribute("data-session-group", sessionGroupState);
     group.getElement().setAttribute("aria-labelledby", sessionGroupHeading.getId().orElseThrow());
     group.add(sessionGroupHeading);
-    sessionEntries.forEach(entry -> group.add(buildSessionEntryRow(entry)));
+    sessionEntries.forEach(entry -> group.add(buildSessionEntryCard(entry)));
     return group;
   }
 
-  private Div buildSessionEntryRow(Entry entry) {
+  private CosmosContentCardComponent buildSessionEntryCard(Entry entry) {
     Div deviceIconDiv =
         new Div((entry.device().mobile() ? AppIcon.MOBILE : AppIcon.DESKTOP).create());
     deviceIconDiv.addClassName(PANEL_ICON);
@@ -233,11 +233,13 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     sessionDetailsDiv.add(sessionBadges(entry));
 
     Button sessionActionButton = sessionAction(entry);
-    Div sessionRowDiv = new Div(deviceIconDiv, sessionDetailsDiv, sessionActionButton);
-    sessionRowDiv.addClassName("account-entry");
-    sessionRowDiv.getElement().setAttribute("data-session-state", sessionState(entry));
+    CosmosContentCardComponent sessionCard =
+        new CosmosContentCardComponent(deviceIconDiv, sessionDetailsDiv, sessionActionButton);
+    sessionCard.addClassName("account-entry");
+    sessionCard.setAriaLabelledBy(deviceNameSpan);
+    sessionCard.getElement().setAttribute("data-session-state", sessionState(entry));
 
-    return sessionRowDiv;
+    return sessionCard;
   }
 
   private List<Span> sessionDetails(Entry entry, String detailClass) {

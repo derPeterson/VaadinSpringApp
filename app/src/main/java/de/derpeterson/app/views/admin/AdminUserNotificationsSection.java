@@ -46,6 +46,7 @@ import de.derpeterson.app.service.UserNotificationService.Target;
 import de.derpeterson.app.ui.components.AppIcon;
 import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
+import de.derpeterson.app.ui.components.CosmosContentCardComponent;
 import de.derpeterson.app.ui.components.CosmosPagination;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.NotificationEmptyState;
@@ -97,7 +98,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
   private final Button previewButton = new Button();
   private final Button sendNotificationButton = new Button();
   private final Div notificationPreviewDiv = new Div();
-  private final Div previewCardDiv = new Div();
+  private final CosmosContentCardComponent previewCard = new CosmosContentCardComponent();
   private final Div emptyPreviewDiv = new Div();
   private final Span emptyPreviewSpan = new Span();
   private final H2 previewTitleH2 = new H2();
@@ -141,7 +142,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     CosmosCardComponent sentHistoryCardComponent = new CosmosCardComponent(sentHistoryPanelDiv);
     sentHistoryCardComponent.addClassNames("cosmos-admin-form-card", PANEL_CARD);
 
-    Div notificationColumnsDiv = new Div(composeCardComponent, previewCardDiv);
+    Div notificationColumnsDiv = new Div(composeCardComponent, previewCard);
     notificationColumnsDiv.addClassName("admin-notification-columns");
     add(
         new CosmosSectionHeaderComponent(
@@ -308,8 +309,11 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
     emptyPreviewDiv.add(createDecorativeSvgIcon(AppIcon.EYE), emptyPreviewSpan);
     emptyPreviewDiv.addClassName("admin-preview-empty");
-    previewCardDiv.add(previewHeaderDiv, emptyPreviewDiv, notificationPreviewDiv, previewFooterDiv);
-    previewCardDiv.addClassNames(PANEL_CARD, "admin-notification-preview-card");
+    previewCard.setHeader(previewHeaderDiv);
+    previewCard.setAriaLabelledBy(previewTitleH2);
+    previewCard.add(emptyPreviewDiv, notificationPreviewDiv);
+    previewCard.addToFooter(previewFooterDiv);
+    previewCard.addClassNames(PANEL_CARD, "admin-notification-preview-card");
   }
 
   private CosmosPagination buildHistoryPagination() {

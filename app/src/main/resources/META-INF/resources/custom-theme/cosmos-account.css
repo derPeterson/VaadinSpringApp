@@ -747,6 +747,8 @@ vaadin-form-layout.account-profile-form {
     padding: 0;
 }
 .account-lifecycle-action {
+    flex-direction: row;
+    align-items: center;
     gap: var(--cosmos-space-m);
     --account-action-icon-color: var(--cosmos-security-warning-accent);
     --account-action-icon-border: var(--cosmos-security-warning-border);

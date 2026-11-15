@@ -31,7 +31,8 @@ in DE/EN auf Desktop und Smartphone mit Vorher-/Nachher-Aufnahmen geprüft.
 Das öffentliche Paket ist vom Benutzer abgenommen. Die gemeinsamen Konto-, Admin-
 und Ticketpanelhüllen einschließlich 2FA, Wiederherstellungshilfe und Sitzungslimit
 verwenden inzwischen ebenfalls native Cards. Die gemeinsame menschliche Sichtung
-dieses Nachtpakets steht noch aus; kleine Innen- und Kontextkarten folgen separat.
+dieses Nachtpakets steht noch aus. Auch kleine Innen-, Vorschau- und Kontextkarten
+verwenden inzwischen native Cards; ihre DE-/EN-Vergleiche in beiden Breiten sind bestanden.
 
 Die nächsten Gesamtpakete für verbleibende Karten und Bestätigungsdialoge sind
 in der [Nachtarbeitsliste](nachtarbeit.md) mit einzelnen Arbeitspaketen gesammelt.

@@ -656,7 +656,7 @@ public class AccountSettingsComponent extends PageContentLayout {
     preferredLanguageSelector.setInvalid(false);
   }
 
-  private Div createSecurityActionRow(
+  private CosmosContentCardComponent createSecurityActionCard(
       AppIcon rowAppIcon,
       Supplier<String> rowTitleSupplier,
       Supplier<String> rowDescriptionSupplier,
@@ -681,12 +681,13 @@ public class AccountSettingsComponent extends PageContentLayout {
     Div rowContentDiv = new Div(rowHeadingLayout, rowDescriptionSpan);
     rowContentDiv.addClassName("account-entry-copy");
 
-    Div accountActionRowDiv = new Div(rowIconDiv, rowContentDiv, rowActionButton);
-    accountActionRowDiv.addClassName("account-entry");
-    accountActionRowDiv.setClassName(
-        "account-email-security-entry", rowAppIcon == AppIcon.ENVELOPE);
+    CosmosContentCardComponent accountActionCard =
+        new CosmosContentCardComponent(rowIconDiv, rowContentDiv, rowActionButton);
+    accountActionCard.addClassName("account-entry");
+    accountActionCard.setAriaLabelledBy(rowTitleSpan);
+    accountActionCard.setClassName("account-email-security-entry", rowAppIcon == AppIcon.ENVELOPE);
 
-    return accountActionRowDiv;
+    return accountActionCard;
   }
 
   private AccountPanelComponent createSecurityPanel(UserEntity accountUser) {
@@ -708,13 +709,13 @@ public class AccountSettingsComponent extends PageContentLayout {
   private Div createPortalAccessContent(UserEntity accountUser) {
     Div securityCardsDiv =
         new Div(
-            createSecurityActionRow(
+            createSecurityActionCard(
                 AppIcon.KEY,
                 messageProperties::getRegistrationPasswordField,
                 messageProperties::getAccountSettingsPasswordHint,
                 createChangePasswordButton(),
                 createPasswordStatusBadge()),
-            createSecurityActionRow(
+            createSecurityActionCard(
                 AppIcon.ENVELOPE,
                 messageProperties::getAccountEmailAddressLabel,
                 () -> accountUser == null ? "" : Objects.toString(accountUser.getEmail(), ""),

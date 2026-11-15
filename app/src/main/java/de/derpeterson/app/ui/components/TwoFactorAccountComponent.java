@@ -24,7 +24,7 @@ public final class TwoFactorAccountComponent extends Div {
   private final transient TwoFactorManagement twoFactorManagement;
   private final transient HttpServletRequest httpRequest;
 
-  private final Div twoFactorAccountCardDiv = new Div();
+  private final CosmosContentCardComponent twoFactorAccountCard = new CosmosContentCardComponent();
   private final TwoFactorActionDialog twoFactorConfirmationActionDialog;
 
   public TwoFactorAccountComponent(
@@ -40,13 +40,13 @@ public final class TwoFactorAccountComponent extends Div {
     setId("account-two-factor");
     twoFactorConfirmationActionDialog =
         new TwoFactorActionDialog(messageProperties, twoFactorAuthorization, httpRequest);
-    add(twoFactorAccountCardDiv, twoFactorConfirmationActionDialog);
+    add(twoFactorAccountCard, twoFactorConfirmationActionDialog);
 
     refreshTwoFactorAccountSection();
   }
 
   void refreshTwoFactorAccountSection() {
-    twoFactorAccountCardDiv.removeAll();
+    twoFactorAccountCard.removeAll();
     TwoFactorAuthorization.State twoFactorState =
         twoFactorAuthorization.state(twoFactorAuthorization.owner(httpRequest));
 
@@ -55,15 +55,16 @@ public final class TwoFactorAccountComponent extends Div {
 
     Div twoFactorDescriptionDiv = createTwoFactorDescriptionDiv(twoFactorState.enrolled());
     Div twoFactorActionsDiv = createTwoFactorActionsDiv(twoFactorState.enrolled());
-    twoFactorAccountCardDiv.add(
+    twoFactorAccountCard.add(
         twoFactorIconContainerDiv, twoFactorDescriptionDiv, twoFactorActionsDiv);
-    twoFactorAccountCardDiv.addClassNames("account-entry", "two-factor-account-entry");
+    twoFactorAccountCard.addClassNames("account-entry", "two-factor-account-entry");
     twoFactorConfirmationActionDialog.refreshTexts();
   }
 
   private Div createTwoFactorDescriptionDiv(boolean authenticatorEnrolled) {
     Span twoFactorTitleSpan = new Span(messageProperties.getTwoFactorSettingsTitle());
     twoFactorTitleSpan.addClassName("account-entry-title");
+    twoFactorAccountCard.setAriaLabelledBy(twoFactorTitleSpan);
 
     Badge enrollmentBadge =
         new Badge(

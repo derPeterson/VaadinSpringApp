@@ -110,13 +110,13 @@ public final class ExternalConnectionsComponent extends Div {
     providerOverviewDiv.setVisible(!available.isEmpty() || !connected.isEmpty());
     for (String provider : ExternalProviderSettings.PROVIDERS) {
       if (available.contains(provider) || connected.contains(provider)) {
-        providerOverviewDiv.add(providerRow(provider, user, connected, available));
+        providerOverviewDiv.add(createProviderCard(provider, user, connected, available));
       }
     }
     identityConfirmationDialog.refreshTexts();
   }
 
-  private Div providerRow(
+  private CosmosContentCardComponent createProviderCard(
       String providerName, UserEntity user, List<String> connected, List<String> available) {
     boolean linked = connected.contains(providerName);
     String providerBrandText = providerName.equals(GOOGLE) ? "Google" : "Microsoft";
@@ -179,10 +179,12 @@ public final class ExternalConnectionsComponent extends Div {
                 ? ExternalLoginFlow.unlinkPurpose(providerName)
                 : ExternalLoginFlow.linkPurpose(providerName)));
 
-    Div providerRowDiv = new Div(providerIconDiv, providerContentDiv, providerActionButton);
-    providerRowDiv.addClassNames("external-connection-row", "account-entry");
+    CosmosContentCardComponent providerCard =
+        new CosmosContentCardComponent(providerIconDiv, providerContentDiv, providerActionButton);
+    providerCard.addClassNames("external-connection-row", "account-entry");
+    providerCard.setAriaLabel(providerBrandText);
 
-    return providerRowDiv;
+    return providerCard;
   }
 
   private void requestAction(Purpose requestedPurpose) {

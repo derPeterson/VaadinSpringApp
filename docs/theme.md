@@ -14,6 +14,13 @@ Die öffentliche Standardcard und `CosmosMetricCard` behalten ihre bereits
 abgenommenen, getrennt begrenzten Regeln. Vorher-/Nachher-Prüfungen sichern die
 unveränderte Gestaltung; ein Wechsel der Java-Basis erlaubt keine Neugestaltung.
 
+`CosmosContentCardComponent` verwendet die native Card auch für kleine Konto-,
+Sitzungs-, Anbieter-, Vorschau- und Kontextkarten. Bestehende Fachklassen bestimmen
+weiterhin Rahmen und Anordnung; `cosmos-content-card.css` neutralisiert nur die
+zusätzlichen nativen Abstände und Flächen mit bewusst niedriger Selektorgewichtung.
+Vorschauen ordnen Kopf und Footer den öffentlichen Card-Slots zu. Tabellenzeilen
+und illustrative Seitenkompositionen erhalten dadurch keinen zusätzlichen Rahmen.
+
 `ConfirmDialogInitialFocus` erhält den vorgesehenen Anfangsfokus der nativen
 Bestätigung. Der native ConfirmDialog setzt seinen Bestätigungsbutton erst beim
 abgeschlossenen Overlay-Öffnen in den Fokus. Deshalb reagiert der kleine Adapter
@@ -63,7 +70,7 @@ die gemeinsamen Dialogregeln um die Aktionsanordnung und die Textgröße.
 Die Aktionen sind native Vaadin-Buttons mit dem gemeinsamen Primär- und Warnstil.
 
 Die Übersicht „Konto verwalten“ verwendet die freigegebene Stitch-Variante A:
-zwei native `HorizontalLayout`-Aktionszeilen untereinander in den bestehenden
+zwei native Inhaltskarten untereinander in den bestehenden
 Sicherheitskarten (`account-entry` in `account-security-cards`), jeweils mit
 einer `VerticalLayout`-Textspalte, vorhandenem Tabler-Icon in der gemeinsamen
 Icon-Box und zugehörigem Vaadin-Button rechts. Fläche, Rahmen, Radius und Abstände

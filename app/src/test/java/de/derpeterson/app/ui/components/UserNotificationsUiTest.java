@@ -59,6 +59,7 @@ import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.server.Command;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.shared.Registration;
+import de.derpeterson.app.ComponentTestTree;
 import de.derpeterson.app.helper.ui.HtmlHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
@@ -3484,7 +3485,7 @@ class UserNotificationsUiTest {
   }
 
   private Stream<Component> streamComponentTree(Component targetComponent) {
-    Stream<Component> childComponents = targetComponent.getChildren();
+    Stream<Component> childComponents = ComponentTestTree.streamChildComponents(targetComponent);
     // Vaadin verwaltet Header und Footer als separate Dialogbereiche.
     if (targetComponent instanceof Dialog targetDialog) {
       childComponents =
