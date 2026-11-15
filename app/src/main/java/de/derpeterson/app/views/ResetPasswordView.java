@@ -248,7 +248,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         showPasswordResetSuccessPanel();
 
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getBaseSuccessTitle,
                 messageProperties::getResetPasswordSuccessMessage,
                 -1,
@@ -262,7 +262,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
         showResetLinkProblemPanel();
 
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getBaseFailedTitle,
                 this::resolveResetLinkProblemMessageText,
                 -1,
@@ -271,7 +271,7 @@ public class ResetPasswordView extends IsNotAuthenticatedBaseView<HorizontalLayo
     } catch (RuntimeException passwordResetFailure) {
       logger.error("Password could not be reset", safeFailure(passwordResetFailure));
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getResetPasswordTechnicalErrorMessage,
               -1,

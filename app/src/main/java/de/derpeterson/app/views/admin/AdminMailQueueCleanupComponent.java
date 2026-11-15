@@ -193,7 +193,7 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
       updateCleanupPolling();
       if (announceSuccess && !announcedCompletion) {
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getBaseSuccessTitle,
                 messageProperties::getAdminQueueCleanupRefreshSuccess,
                 NotificationType.SUCCESS);
@@ -364,7 +364,7 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
       if (requestedResult.active()) {
         observedManualRunId = requestedResult.runId();
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getAdminQueueResolutionTitle,
                 () ->
                     requestedResult.status() == EmailQueueCleanupStatus.RUNNING
@@ -388,7 +388,7 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
           default -> NotificationType.ERROR;
         };
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getAdminQueueResolutionTitle,
             () ->
                 switch (result.status()) {
@@ -408,7 +408,7 @@ public final class AdminMailQueueCleanupComponent extends CosmosCardComponent {
   private void showCleanupFailure(RuntimeException cleanupFailure) {
     logger.error("Mail queue administration failed", LogSafety.safeFailure(cleanupFailure));
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             messageProperties::getAdminQueueResolutionFailure,
             NotificationType.ERROR);

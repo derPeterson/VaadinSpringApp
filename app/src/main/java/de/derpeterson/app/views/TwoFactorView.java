@@ -820,7 +820,7 @@ public final class TwoFactorView extends VerticalLayout
                 Boolean.class,
                 wasManualKeyCopied ->
                     NotificationHelper.getInstance()
-                        .showNotification(
+                        .showTextNotification(
                             Boolean.TRUE.equals(wasManualKeyCopied)
                                 ? messageProperties::getTwoFactorManualCopied
                                 : messageProperties::getTwoFactorManualCopyFailed,
@@ -988,7 +988,7 @@ public final class TwoFactorView extends VerticalLayout
 
               if (!isManualKeyAvailable) {
                 NotificationHelper.getInstance()
-                    .showNotification(
+                    .showTextNotification(
                         messageProperties::getTwoFactorManualLoadFailed,
                         NotificationHelper.NotificationType.ERROR);
               }
@@ -1198,7 +1198,7 @@ public final class TwoFactorView extends VerticalLayout
         downloadCodesPdfButton,
         () ->
             NotificationHelper.getInstance()
-                .showNotification(
+                .showTextNotification(
                     messageProperties::getTwoFactorDownloadFailed,
                     NotificationHelper.NotificationType.ERROR));
     downloadCodesPdfButton.setId("two-factor-download-pdf");
@@ -1250,7 +1250,7 @@ public final class TwoFactorView extends VerticalLayout
 
               if (!areRecoveryCodesAvailable) {
                 NotificationHelper.getInstance()
-                    .showNotification(
+                    .showTextNotification(
                         messageProperties::getTwoFactorRecoveryLoadFailed,
                         NotificationHelper.NotificationType.ERROR);
               }
@@ -1260,7 +1260,7 @@ public final class TwoFactorView extends VerticalLayout
   private void showRecoveryCodeCopyNotification(
       Boolean wasRecoveryCopySuccessful, Supplier<String> copySuccessTextSupplier) {
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             Boolean.TRUE.equals(wasRecoveryCopySuccessful)
                 ? copySuccessTextSupplier
                 : messageProperties::getTwoFactorCopyFailed,
@@ -1432,7 +1432,7 @@ public final class TwoFactorView extends VerticalLayout
     }
 
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             failureTextSupplier,
             NotificationHelper.NotificationType.ERROR);

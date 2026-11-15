@@ -11,9 +11,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.server.VaadinSession;
@@ -215,7 +215,8 @@ class UserStatusNotificationTest {
 
     assertTrue(readCurrentNotification().isOpened());
     Span titleSpan = (Span) ReflectionTestUtils.getField(notificationHelper, "titleText");
-    Html messageHtml = (Html) ReflectionTestUtils.getField(notificationHelper, "messageText");
+    Paragraph messageParagraph =
+        (Paragraph) ReflectionTestUtils.getField(notificationHelper, "messageText");
     MessageProperties expectedMessageProperties =
         MessageProperties.forLocale(customI18NProvider, expectedLocale);
     MessageProperties alternateLocaleMessageProperties =
@@ -235,7 +236,7 @@ class UserStatusNotificationTest {
             : alternateLocaleMessageProperties.getBaseUserStatusFailed(),
         expectedMessageText);
     assertEquals(expectedTitleText, titleSpan.getText());
-    assertEquals("p", messageHtml.getElement().getTag());
-    assertEquals(expectedMessageText, messageHtml.getElement().getProperty("innerHTML"));
+    assertEquals("p", messageParagraph.getElement().getTag());
+    assertEquals(expectedMessageText, messageParagraph.getText());
   }
 }

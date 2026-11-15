@@ -23,6 +23,7 @@ import de.derpeterson.browsertests.suites.MailQueueResolutionBrowserTest;
 import de.derpeterson.browsertests.suites.MaintenanceBrowserTest;
 import de.derpeterson.browsertests.suites.NativeCardsBrowserTest;
 import de.derpeterson.browsertests.suites.NotificationInboxBrowserTest;
+import de.derpeterson.browsertests.suites.NotificationVariantsBrowserTest;
 import de.derpeterson.browsertests.suites.PasswordResetBrowserTest;
 import de.derpeterson.browsertests.suites.PresentationBrowserTest;
 import de.derpeterson.browsertests.suites.PublicPanelsBrowserTest;
@@ -58,6 +59,7 @@ final class BrowserSuites {
               TwoFactorLifecycleBrowserTest.class,
               UserNotificationsBrowserTest.class,
               NotificationInboxBrowserTest.class,
+              NotificationVariantsBrowserTest.class,
               InfrastructureBrowserTest.class,
               RestartAndSmtpBrowserTest.class,
               MailQueueResolutionBrowserTest.class,
@@ -98,6 +100,11 @@ final class BrowserSuites {
               LoginAttemptBrowserTest.class,
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
+      case "notification-variants" ->
+          List.of(
+              NotificationVariantsBrowserTest.class,
+              AccountSettingsBrowserTest.class,
+              RegistrationBrowserTest.class);
       case "account-action-cards" -> List.of(AccountActionCardsBrowserTest.class);
       case "mobile-confirmation-footers" ->
           List.of(AccountSettingsBrowserTest.class, SessionManagementBrowserTest.class);

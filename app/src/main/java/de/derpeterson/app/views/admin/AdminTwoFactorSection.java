@@ -478,7 +478,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     try {
       activate();
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getAdminConfigReloadSuccess,
               NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException failure) {
@@ -541,7 +541,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
       browserChangesGuard.refresh();
 
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getTwoFactorSaved, NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException failure) {
       showTwoFactorPolicyFailure(failure);
@@ -550,7 +550,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
 
   private void showTwoFactorPolicyFailure(RuntimeException failure) {
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             failure instanceof OptimisticLockingFailureException
                 ? messageProperties::getTwoFactorConflict

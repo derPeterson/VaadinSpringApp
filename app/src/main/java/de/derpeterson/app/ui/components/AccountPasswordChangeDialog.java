@@ -177,7 +177,7 @@ public class AccountPasswordChangeDialog extends Dialog {
                   confirmPasswordField.getValue()));
       close();
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseSuccessTitle,
               messageProperties::getAccountSecurityPasswordSuccess,
               NotificationHelper.NotificationType.SUCCESS);

@@ -232,7 +232,7 @@ public class PendingEmailVerificationView extends VerticalLayout
     try {
       boolean mailRequestAccepted = pendingEmailVerificationFlow.resendVerification(httpRequest);
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getEmailVerificationTitle,
               mailRequestAccepted
                   ? messageProperties::getEmailVerificationQueued
@@ -242,7 +242,7 @@ public class PendingEmailVerificationView extends VerticalLayout
                   : NotificationHelper.NotificationType.WARNING);
     } catch (IOException | RuntimeException _) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseFailedMessage,
               NotificationHelper.NotificationType.ERROR);

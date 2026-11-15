@@ -325,7 +325,7 @@ public final class AccountLifecycleComponent extends VerticalLayout {
 
   private void showProofFailure(Supplier<String> failureTextSupplier) {
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle, failureTextSupplier, NotificationType.ERROR);
   }
 }

@@ -52,6 +52,7 @@ class BrowserExecutionPlanTest {
         "account-action-cards",
         "configuration-footers",
         "profile-notification",
+        "notification-variants",
         "avatars",
         "profile-form",
         "account-forms",
@@ -152,6 +153,13 @@ class BrowserExecutionPlanTest {
                   "revokedWaitingCleanupShowsFailureWithoutClaimingSuccess",
                   "queueTabUrlsSurviveReloadAndRejectUnauthorizedAssistantAccess",
                   "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
+          case "notification-variants" ->
+              Set.of(
+                  "profilePersistsAndCanBeSavedTwice",
+                  "registrationNeedsVerificationBeforeLogin",
+                  "requiredErrorAndTitleOnlyRefreshKeepTheirAppearance",
+                  "restartWarningKeepsItsNativeListAndPermanentLifetime",
+                  "queuedCleanupKeepsItsInformationPresentation");
           case "profile-notification" -> Set.of("profilePersistsAndCanBeSavedTwice");
           case "configuration-footers" ->
               Set.of(

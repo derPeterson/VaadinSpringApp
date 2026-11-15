@@ -236,7 +236,7 @@ public final class PendingAccountReactivationView extends VerticalLayout
     try {
       boolean mailQueued = pendingAccountReactivationFlow.resend(httpRequest);
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               this::getPageTitle,
               mailQueued
                   ? messageProperties::getEmailVerificationQueued
@@ -246,7 +246,7 @@ public final class PendingAccountReactivationView extends VerticalLayout
                   : NotificationHelper.NotificationType.WARNING);
     } catch (RuntimeException _) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseFailedMessage,
               NotificationHelper.NotificationType.ERROR);

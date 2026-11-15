@@ -306,14 +306,14 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
       boolean verificationRequestAccepted, Supplier<String> successMessageSupplier) {
     if (verificationRequestAccepted) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseSuccessTitle,
               successMessageSupplier,
               -1,
               NotificationHelper.NotificationType.SUCCESS);
     } else {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getEmailVerificationTitle,
               messageProperties::getEmailVerificationWait,
               -1,
@@ -323,7 +323,7 @@ public class VerificationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
   private void showVerificationRequestFailure() {
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             messageProperties::getBaseFailedMessage,
             -1,

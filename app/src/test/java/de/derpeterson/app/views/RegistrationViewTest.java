@@ -2,6 +2,7 @@ package de.derpeterson.app.views;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,11 +25,11 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.Autocomplete;
@@ -44,7 +45,6 @@ import com.vaadin.flow.server.VaadinServletService;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.server.startup.ApplicationRouteRegistry;
 import de.derpeterson.app.events.LanguageChangeEvent;
-import de.derpeterson.app.helper.ui.HtmlHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -256,7 +256,8 @@ public class RegistrationViewTest {
       Function<MessageProperties, String> messageGetter, Locale locale) {
     NotificationHelper helper = NotificationHelper.getInstance();
     Span titleSpan = (Span) ReflectionTestUtils.getField(helper, "titleText");
-    Html body = (Html) ReflectionTestUtils.getField(helper, "messageText");
+    Paragraph body =
+        assertInstanceOf(Paragraph.class, ReflectionTestUtils.getField(helper, "messageText"));
     MessageProperties expectedTexts = MessageProperties.forLocale(i18nProvider, locale);
 
     assertEquals(expectedTexts.getBaseFailedTitle(), titleSpan.getText());
@@ -265,7 +266,24 @@ public class RegistrationViewTest {
 
     assertNotEquals(
         expected, messageGetter.apply(MessageProperties.forLocale(i18nProvider, other)));
-    assertEquals(expected, body.getElement().getProperty("innerHTML"));
+    assertEquals(expected, body.getText());
+  }
+
+  private void assertRegistrationSuccessBody(
+      NotificationHelper helper, MessageProperties messageProperties, String email) {
+    Paragraph body =
+        assertInstanceOf(Paragraph.class, ReflectionTestUtils.getField(helper, "messageText"));
+    assertEquals(
+        messageProperties.getRegistrationSuccessMessage(email),
+        body.getElement().getTextRecursively());
+    Span highlightedEmail =
+        body.getChildren()
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals(email, highlightedEmail.getText());
+    assertTrue(highlightedEmail.hasClassName("text-primary"));
   }
 
   @ParameterizedTest
@@ -378,30 +396,14 @@ public class RegistrationViewTest {
     assertEquals(
         messageProperties.getBaseSuccessTitle(),
         ((Span) ReflectionTestUtils.getField(helper, "titleText")).getText());
-    assertEquals(
-        new Html(
-                HtmlHelper.ensureParagraphTags(
-                    messageProperties.getRegistrationSuccessMessage(user.getEmail())))
-            .getElement()
-            .getProperty("innerHTML"),
-        ((Html) ReflectionTestUtils.getField(helper, "messageText"))
-            .getElement()
-            .getProperty("innerHTML"));
+    assertRegistrationSuccessBody(helper, messageProperties, user.getEmail());
     LanguageChangeEvent.fire(testUi, Locale.GERMAN);
 
     assertSame(notification, ReflectionTestUtils.getField(helper, "currentNotification"));
     assertEquals(
         messageProperties.getBaseSuccessTitle(),
         ((Span) ReflectionTestUtils.getField(helper, "titleText")).getText());
-    assertEquals(
-        new Html(
-                HtmlHelper.ensureParagraphTags(
-                    messageProperties.getRegistrationSuccessMessage(user.getEmail())))
-            .getElement()
-            .getProperty("innerHTML"),
-        ((Html) ReflectionTestUtils.getField(helper, "messageText"))
-            .getElement()
-            .getProperty("innerHTML"));
+    assertRegistrationSuccessBody(helper, messageProperties, user.getEmail());
   }
 
   @ParameterizedTest

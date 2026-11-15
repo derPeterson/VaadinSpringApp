@@ -148,7 +148,7 @@ Designsystems. [Theme-Quellen](../theme.md#dateien-und-ladereihenfolge),
 | `PageNavigationComponent`, `PageContentLayout`, `AdminSidePanelDialog` | Brücken für Seitennavigationsaktionen, Fokus der mobilen Navigation und Begrenzung der seitlichen Overlays. Bei einem Layout-Pilot anhand öffentlicher Flow-APIs überprüfen. |
 | `UserActivityAwareView`, `ConfirmEmailChangeView` und `SupportTicketsComponent` | Browseraktivität, Navigation nach Sitzungswiderruf sowie Erkennung, wann der Ticketverlauf sichtbar gelesen werden kann. Vor einer Änderung den fachlichen Grund und die Folgeprüfung erfassen. |
 | `ConfigInfoButton`, `OverlayUserIcon`, `TwoFactorCodeFields` | Sonderverhalten für Tooltips und gezielte Styling-/DOM-Anbindung. Kandidaten für weniger direkte DOM-Zugriffe, sobald eine gleichwertige öffentliche API verfügbar ist. |
-| `NotificationHelper` | Verwendet natives `Notification`. Die Profil-Erfolgsmeldung verwendet einen nativen `Paragraph` und ist anhand der Vergleichsaufnahmen abgenommen. Andere Meldungen behalten ihren bisherigen HTML-/Detailaufbau. Vor weiteren Umstellungen Aufrufer und erlaubte Formatierungen prüfen. |
+| `NotificationHelper` | Alle Aufrufer verwenden das native `Notification` mit gemeinsamen Textmethoden: `Paragraph`, hervorgehobene Registrierung mit `Span` und Neustart-Aufzählung mit `UnorderedList`/`ListItem`. Die repräsentativen Varianten sind anhand der Vergleichsaufnahmen abgenommen; daraus bleibt kein weiterer Komponentenumbau offen. |
 | HTML für E-Mails und Ersatzcode-PDF | Vorlagen für separate Ausgabeformate. In der versionierten Anwendungsoberfläche wurde kein React-/Hilla-Quellbestand gefunden. |
 
 ## Vorgeschlagene Arbeitspakete

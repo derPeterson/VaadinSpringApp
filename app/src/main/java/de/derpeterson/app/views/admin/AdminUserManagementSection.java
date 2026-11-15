@@ -549,7 +549,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     }
 
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getAdminUsersRefreshSuccess,
             null,
             NotificationHelper.NotificationType.SUCCESS);
@@ -794,7 +794,7 @@ public class AdminUserManagementSection extends VerticalLayout {
     afterDeleteAction.run();
     refreshGrid();
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseSuccessTitle,
             messageProperties::getAdminUsersDeleteSuccess,
             NotificationHelper.NotificationType.SUCCESS);
@@ -1599,7 +1599,7 @@ public class AdminUserManagementSection extends VerticalLayout {
                 : adminAccountMailService.sendPasswordReset(
                     editedUserEntity.getId(), editedUserEntity.getEmail());
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getSignInDetailsTitle,
                 mailRequestAccepted
                     ? messageProperties::getEmailVerificationQueued
@@ -1776,7 +1776,7 @@ public class AdminUserManagementSection extends VerticalLayout {
       refreshGrid();
 
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseSuccessTitle,
               () ->
                   editMode
@@ -2014,7 +2014,7 @@ public class AdminUserManagementSection extends VerticalLayout {
 
   private void showError(java.util.function.Supplier<String> message) {
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             message,
             NotificationHelper.NotificationType.ERROR);

@@ -270,7 +270,7 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
                   Boolean.class,
                   wasRedirectUriCopied ->
                       NotificationHelper.getInstance()
-                          .showNotification(
+                          .showTextNotification(
                               Boolean.TRUE.equals(wasRedirectUriCopied)
                                   ? messageProperties::getProviderSettingsCopied
                                   : messageProperties::getProviderSettingsCopyFailed,
@@ -524,20 +524,20 @@ public class AdminExternalProviderSettingsSection extends VerticalLayout {
         browserChangesGuard.refresh();
         refreshTexts();
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getProviderSettingsSaved, null, NotificationType.SUCCESS);
       } catch (IllegalArgumentException _) {
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getProviderSettingsIncomplete, null, NotificationType.ERROR);
       } catch (OptimisticLockingFailureException _) {
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getProviderSettingsConflict, null, NotificationType.ERROR);
       } catch (RuntimeException failure) {
         logger.warn("Sign-in provider settings could not be saved", LogSafety.safeFailure(failure));
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getProviderSettingsFailed, null, NotificationType.ERROR);
       }
     }

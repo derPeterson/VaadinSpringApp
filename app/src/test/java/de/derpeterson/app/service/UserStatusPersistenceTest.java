@@ -13,9 +13,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.server.VaadinSession;
@@ -892,12 +892,11 @@ class UserStatusPersistenceTest {
     assertTrue(notification.isOpened());
     Span titleSpan =
         (com.vaadin.flow.component.html.Span) ReflectionTestUtils.getField(helper, "titleText");
-    Html messageHtml =
-        (com.vaadin.flow.component.Html) ReflectionTestUtils.getField(helper, "messageText");
+    Paragraph messageParagraph = (Paragraph) ReflectionTestUtils.getField(helper, "messageText");
 
     assertEquals("Text", titleSpan.getText());
-    assertEquals("p", messageHtml.getElement().getTag());
-    assertEquals("Text", messageHtml.getElement().getProperty("innerHTML"));
+    assertEquals("p", messageParagraph.getElement().getTag());
+    assertEquals("Text", messageParagraph.getText());
     assertEquals(UserStatus.OFFLINE, snapshot.getStatus());
     assertFalse(icons.isEmpty(), "The popover must restore the icon status");
     assertTrue(icons.stream().allMatch(value -> value == UserStatus.OFFLINE));

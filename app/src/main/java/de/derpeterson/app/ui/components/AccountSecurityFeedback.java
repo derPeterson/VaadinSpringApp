@@ -56,7 +56,7 @@ final class AccountSecurityFeedback {
       log.error("Account security operation failed", safeFailure(securityActionFailure));
     }
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             feedbackTextSupplier,
             -1,

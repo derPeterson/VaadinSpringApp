@@ -426,14 +426,14 @@ public class AdminConfigurationSection extends VerticalLayout {
     try {
       loadConfigValues();
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseSuccessTitle,
               messageProperties::getAdminConfigReloadSuccess,
               NotificationHelper.NotificationType.SUCCESS);
     } catch (RuntimeException reloadFailure) {
       logger.error("Configuration reload failed", safeFailure(reloadFailure));
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getAdminConfigReloadFailed,
               NotificationHelper.NotificationType.ERROR);
@@ -964,7 +964,7 @@ public class AdminConfigurationSection extends VerticalLayout {
   private void saveConfigValues() {
     if (!validateVisibleInputs()) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getAdminConfigValidationInvalidFields,
               NotificationHelper.NotificationType.ERROR);
@@ -995,7 +995,7 @@ public class AdminConfigurationSection extends VerticalLayout {
           selectedGroup,
           safeFailure(saveException));
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseFailedMessage,
               -1,
@@ -1031,14 +1031,14 @@ public class AdminConfigurationSection extends VerticalLayout {
   private void notifyConfigurationSaved(List<ConfigEntry> restartEntries) {
     NotificationHelper notificationHelper = NotificationHelper.getInstance();
     if (restartEntries.isEmpty()) {
-      notificationHelper.showNotification(
+      notificationHelper.showTextNotification(
           messageProperties::getBaseSuccessTitle,
           messageProperties::getAdminConfigSaveSuccess,
           NotificationHelper.NotificationType.SUCCESS);
       return;
     }
 
-    notificationHelper.showNotificationWithDetails(
+    notificationHelper.showTextNotificationWithDetails(
         messageProperties::getAdminConfigSaveSuccess,
         messageProperties::getAdminConfigRestartSaved,
         () -> restartEntries.stream().map(messageProperties::getAdminConfigEntryLabel).toList(),

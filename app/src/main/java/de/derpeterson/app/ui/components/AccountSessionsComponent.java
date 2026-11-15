@@ -86,7 +86,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
     refreshSessionsButton.addClickListener(event -> {
       if (reloadSessionSnapshot()) {
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getSessionRefreshSuccess,
                 null,
                 NotificationHelper.NotificationType.SUCCESS);
@@ -456,7 +456,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
       sessionSnapshot = Objects.requireNonNull(sessionSnapshotSupplier.get());
       refreshTexts();
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseSuccessTitle,
               messageProperties::getSessionRevoked,
               NotificationHelper.NotificationType.SUCCESS);
@@ -468,7 +468,7 @@ public class AccountSessionsComponent extends AccountPanelComponent {
   private void showSessionActionFailure(RuntimeException failure) {
     log.warn("Own session management failed", safeFailure(failure));
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             messageProperties::getSessionManagementFailed,
             -1,

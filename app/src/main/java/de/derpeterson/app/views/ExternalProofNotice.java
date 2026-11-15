@@ -20,7 +20,7 @@ final class ExternalProofNotice {
         .getParameters()
         .containsKey(ExternalLoginFlow.DISCONNECTED_PARAMETER)) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getExternalDisconnected,
               isSignInPage
                   ? messageProperties::getExternalDisconnectedSignIn
@@ -59,7 +59,7 @@ final class ExternalProofNotice {
         };
 
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             proofFailureTextSupplier,
             NotificationHelper.NotificationType.ERROR);

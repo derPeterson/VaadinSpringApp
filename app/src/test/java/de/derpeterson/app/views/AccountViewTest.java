@@ -18,11 +18,11 @@ import static org.mockito.Mockito.when;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.internal.PendingJavaScriptInvocation;
 import com.vaadin.flow.component.internal.UIInternals.JavaScriptInvocation;
 import com.vaadin.flow.component.notification.Notification;
@@ -296,14 +296,14 @@ class AccountViewTest {
 
     assertTrue(errorNotification.isOpened());
     MessageProperties messageProperties = new MessageProperties(new CustomI18NProvider());
-    Html notificationMessageHtml =
-        (Html) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText");
+    Paragraph notificationMessageParagraph =
+        (Paragraph) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText");
 
     assertEquals(
         optimisticLockingConflict
             ? messageProperties.getBaseUserUpdateConflict()
             : messageProperties.getBaseUserStatusFailed(),
-        notificationMessageHtml.getElement().getProperty("innerHTML"));
+        notificationMessageParagraph.getText());
     verify(userService).updateUserStatus(testAccount, UserStatus.ABSENT, true);
     verifyNoMoreInteractions(userService);
   }
@@ -395,9 +395,9 @@ class AccountViewTest {
     MessageProperties messageProperties = new MessageProperties(new CustomI18NProvider());
     for (Locale displayLocale : List.of(Locale.GERMAN, Locale.ENGLISH)) {
       LanguageChangeEvent.fire(testUi, displayLocale);
-      Html notificationMessageHtml =
-          (Html) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText");
-      String expectedNotificationHtml =
+      Paragraph notificationMessageParagraph =
+          (Paragraph) ReflectionTestUtils.getField(NotificationHelper.getInstance(), "messageText");
+      String expectedNotificationText =
           switch (externalErrorCode) {
             case "FRESH_AUTHENTICATION_REQUIRED" ->
                 messageProperties.getExternalProofFreshRequired();
@@ -405,8 +405,7 @@ class AccountViewTest {
             default -> messageProperties.getExternalError();
           };
 
-      assertEquals(
-          expectedNotificationHtml, notificationMessageHtml.getElement().getProperty("innerHTML"));
+      assertEquals(expectedNotificationText, notificationMessageParagraph.getText());
     }
     verifyNoInteractions(accountProfileService);
   }

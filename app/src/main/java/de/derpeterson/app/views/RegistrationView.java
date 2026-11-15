@@ -331,7 +331,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
       logger.error(
           "Registration aborted: required role ROLE_USER is missing from the role repository.");
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getRegistrationUnavailableMessage,
               -1,
@@ -369,7 +369,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
       formComponents.emailField.setInvalid(true);
       formComponents.confirmEmailField.setInvalid(true);
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseValidationEmailExistsMessage,
               -1,
@@ -378,7 +378,7 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
     } catch (IOException failure) {
       logger.error("Registration mail could not be prepared", safeFailure(failure));
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseFailedMessage,
               -1,
@@ -388,14 +388,15 @@ public class RegistrationView extends IsNotAuthenticatedBaseView<HorizontalLayou
 
     if (wasVerificationEmailQueued) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showHighlightedTextNotification(
               messageProperties::getBaseSuccessTitle,
               () -> messageProperties.getRegistrationSuccessMessage(userEntity.getEmail()),
+              userEntity::getEmail,
               -1,
               NotificationHelper.NotificationType.SUCCESS);
     } else {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseFailedMessage,
               -1,

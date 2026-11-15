@@ -491,7 +491,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
   private void showPreviewValidationFailureNotification() {
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getNotificationsPreviewFailedTitle,
             messageProperties::getNotificationsPreviewFailedMessage,
             NotificationHelper.NotificationType.ERROR);
@@ -725,7 +725,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
       historyPageIndex = 0;
 
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseSuccessTitle,
               messageProperties::getNotificationsSent,
               NotificationHelper.NotificationType.SUCCESS);
@@ -772,7 +772,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
 
   private void showActionErrorNotification(Supplier<String> errorTextSupplier) {
     NotificationHelper.getInstance()
-        .showNotification(errorTextSupplier, NotificationHelper.NotificationType.ERROR);
+        .showTextNotification(errorTextSupplier, NotificationHelper.NotificationType.ERROR);
   }
 
   private void loadSentNotificationHistory() {

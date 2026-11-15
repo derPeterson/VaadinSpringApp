@@ -140,7 +140,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
       refreshConfirmationPanel();
 
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               confirmationState == Confirmation.SUCCESS
                   ? messageProperties::getBaseSuccessTitle
                   : messageProperties::getBaseFailedTitle,
@@ -155,7 +155,7 @@ public class ConfirmEmailChangeView extends Div implements HasUrlParameter<Strin
       refreshConfirmationPanel();
 
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getAccountEmailConfirmationFailed,
               -1,

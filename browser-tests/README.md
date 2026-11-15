@@ -96,6 +96,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `account-action-cards` | Konto deaktivieren/löschen bei 1280/390 px: mobile Ausrichtung, erreichbare Aktionen und abbrechbare Identitätsbestätigung | 2 |
 | `configuration-footers` | Alle Konfigurationsfooter für Admin/Superadmin, beide Anmeldeanbieter, Queue-Assistent und vier 2FA-Rollen bei 1280/390 px: mobile Vollbreite und Vergleichsaufnahmen | 6 |
 | `profile-notification` | Bestehender Profil-Speicherfall bei 1280/390 px: Erfolgsmeldung, Originalaufnahmen und Messwerte, automatische/manuelle Schließung und erneut gespeicherte Daten | 2 |
+| `notification-variants` | Repräsentative Erfolg-/Fehler-/Warn-/Informationsmeldungen, reiner Titel, dauerhafte Anzeige, hervorgehobene Registrierungsadresse und native Neustart-Aufzählung bei 1280/390 px: echte Fachabläufe, Originalaufnahmen und Messwerte | 10 |
 | `queue-cleanup-appearance` | Nur Assistentenwarnung und manuelle Bereinigungsbestätigung bei 1280/390 px: Gestaltung und alle vier Abbruchwege, ohne Bereinigung auszuführen | 2 |
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit und HTTPS-/HTTP-Grenze | 4 |
 | `https-night` | Infrastruktur und Remember-me: normale Profile, echter Chromium-/Serverneustart; mit zwei Workern gezielter Nachtlaufnachweis | 8 |

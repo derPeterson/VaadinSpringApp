@@ -5,7 +5,7 @@ import static de.derpeterson.app.ui.components.CosmosCssClasses.REFERENCE_PORTAL
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
-import com.vaadin.flow.component.Html;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.ListItem;
@@ -37,8 +37,8 @@ public class NotificationHelper implements Serializable {
   private Span titleText = null;
   // Request-/Service-Supplier nicht mit einer passivierten UI serialisieren.
   private transient Supplier<String> titleSupplier = null;
-  private Component messageText = null;
-  private boolean plainTextMessage;
+  private Paragraph messageText = null;
+  private transient Supplier<String> highlightedTextSupplier;
   private transient Supplier<String> messageSupplier = null;
   private transient Supplier<List<String>> detailsSupplier;
   private VerticalLayout textLayout = null;
@@ -73,45 +73,14 @@ public class NotificationHelper implements Serializable {
     return uiNotificationHelper;
   }
 
-  public void showNotification(Supplier<String> messageSupplier) {
-    showNotification(null, messageSupplier, DEFAULT_NOTIFICATION_DURATION, NotificationType.NORMAL);
+  public void showTextNotification(Supplier<String> messageSupplier) {
+    showTextNotification(
+        null, messageSupplier, DEFAULT_NOTIFICATION_DURATION, NotificationType.NORMAL);
   }
 
-  public void showNotification(
+  public void showTextNotification(
       Supplier<String> messageSupplier, NotificationType notificationType) {
-    showNotification(null, messageSupplier, DEFAULT_NOTIFICATION_DURATION, notificationType);
-  }
-
-  public void showNotification(
-      Supplier<String> titleSupplier,
-      Supplier<String> messageSupplier,
-      NotificationType notificationType) {
-    showNotification(
-        titleSupplier, messageSupplier, DEFAULT_NOTIFICATION_DURATION, notificationType);
-  }
-
-  public void showNotification(
-      Supplier<String> titleSupplier,
-      Supplier<String> messageSupplier,
-      Integer displayDurationMillis,
-      NotificationType notificationType) {
-    showNotificationWithDetails(
-        titleSupplier, messageSupplier, null, displayDurationMillis, notificationType);
-  }
-
-  public void showNotificationWithDetails(
-      Supplier<String> titleSupplier,
-      Supplier<String> messageSupplier,
-      Supplier<List<String>> detailsSupplier,
-      Integer displayDurationMillis,
-      NotificationType notificationType) {
-    showNotificationWithDetails(
-        titleSupplier,
-        messageSupplier,
-        detailsSupplier,
-        displayDurationMillis,
-        notificationType,
-        false);
+    showTextNotification(null, messageSupplier, DEFAULT_NOTIFICATION_DURATION, notificationType);
   }
 
   /**
@@ -121,25 +90,60 @@ public class NotificationHelper implements Serializable {
       Supplier<String> titleSupplier,
       Supplier<String> messageSupplier,
       NotificationType notificationType) {
-    showNotificationWithDetails(
+    showTextNotification(
+        titleSupplier, messageSupplier, DEFAULT_NOTIFICATION_DURATION, notificationType);
+  }
+
+  public void showTextNotification(
+      Supplier<String> titleSupplier,
+      Supplier<String> messageSupplier,
+      Integer displayDurationMillis,
+      NotificationType notificationType) {
+    openTextNotification(
+        titleSupplier, messageSupplier, null, displayDurationMillis, notificationType, null);
+  }
+
+  public void showTextNotificationWithDetails(
+      Supplier<String> titleSupplier,
+      Supplier<String> messageSupplier,
+      Supplier<List<String>> detailsSupplier,
+      Integer displayDurationMillis,
+      NotificationType notificationType) {
+    openTextNotification(
+        titleSupplier,
+        messageSupplier,
+        detailsSupplier,
+        displayDurationMillis,
+        notificationType,
+        null);
+  }
+
+  /** Hebt das erste genaue Vorkommen des gelieferten Texts hervor; wertet kein HTML aus. */
+  public void showHighlightedTextNotification(
+      Supplier<String> titleSupplier,
+      Supplier<String> messageSupplier,
+      Supplier<String> highlightedTextSupplier,
+      Integer displayDurationMillis,
+      NotificationType notificationType) {
+    openTextNotification(
         titleSupplier,
         messageSupplier,
         null,
-        DEFAULT_NOTIFICATION_DURATION,
+        displayDurationMillis,
         notificationType,
-        true);
+        highlightedTextSupplier);
   }
 
-  private void showNotificationWithDetails(
+  private void openTextNotification(
       Supplier<String> titleSupplier,
       Supplier<String> messageSupplier,
       Supplier<List<String>> detailsSupplier,
       Integer displayDurationMillis,
       NotificationType notificationType,
-      boolean plainTextMessage) {
+      Supplier<String> highlightedTextSupplier) {
     closeAndClearAllNotifications();
 
-    this.plainTextMessage = plainTextMessage;
+    this.highlightedTextSupplier = highlightedTextSupplier;
     this.titleSupplier = titleSupplier;
     this.messageSupplier = messageSupplier;
     this.detailsSupplier = detailsSupplier;
@@ -286,15 +290,9 @@ public class NotificationHelper implements Serializable {
     }
     messageText = null;
     if (StringUtils.isNotBlank(notificationMessage)) {
-      messageText =
-          plainTextMessage
-              ? new Paragraph(notificationMessage)
-              : new Html(HtmlHelper.ensureParagraphTags(notificationMessage));
-      messageText
-          .getElement()
-          .getClassList()
-          .addAll(List.of("cosmos-notification-message", LumoUtility.Margin.NONE));
-      messageText.getElement().getStyle().set("max-width", "520px");
+      messageText = createMessageParagraph(notificationMessage);
+      messageText.addClassNames("cosmos-notification-message", LumoUtility.Margin.NONE);
+      messageText.getStyle().set("max-width", "520px");
       textLayout.add(messageText);
     }
 
@@ -306,6 +304,22 @@ public class NotificationHelper implements Serializable {
     }
   }
 
+  private Paragraph createMessageParagraph(String notificationMessage) {
+    String highlightedText = highlightedTextSupplier == null ? null : highlightedTextSupplier.get();
+    int highlightStartIndex =
+        StringUtils.isEmpty(highlightedText) ? -1 : notificationMessage.indexOf(highlightedText);
+    if (highlightStartIndex < 0) {
+      return new Paragraph(notificationMessage);
+    }
+
+    Span highlightedSpan = new Span(highlightedText);
+    highlightedSpan.addClassNames("text-primary", LumoUtility.FontWeight.SEMIBOLD);
+    return new Paragraph(
+        new Text(notificationMessage.substring(0, highlightStartIndex)),
+        highlightedSpan,
+        new Text(notificationMessage.substring(highlightStartIndex + highlightedText.length())));
+  }
+
   public void closeAndClearAllNotifications() {
     if (currentNotification.isOpened()) {
       currentNotification.close();
@@ -315,7 +329,7 @@ public class NotificationHelper implements Serializable {
     this.titleSupplier = null;
     this.messageText = null;
     this.messageSupplier = null;
-    this.plainTextMessage = false;
+    this.highlightedTextSupplier = null;
     this.detailsSupplier = null;
     this.closeButton = null;
 

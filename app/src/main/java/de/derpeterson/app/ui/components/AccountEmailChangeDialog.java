@@ -168,7 +168,7 @@ public class AccountEmailChangeDialog extends Dialog {
                   currentPasswordField.getValue()));
       close();
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseSuccessTitle,
               messageProperties::getAccountSecurityEmailRequested,
               NotificationHelper.NotificationType.SUCCESS);

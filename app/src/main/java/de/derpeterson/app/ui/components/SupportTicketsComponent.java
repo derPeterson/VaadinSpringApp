@@ -1714,7 +1714,7 @@ public final class SupportTicketsComponent extends VerticalLayout {
                   httpRequest, target.id(), target.version());
               refreshTicketWorkspace();
               NotificationHelper.getInstance()
-                  .showNotification(
+                  .showTextNotification(
                       messageProperties::getSupportQueued,
                       NotificationHelper.NotificationType.SUCCESS);
             } catch (RuntimeException failure) {
@@ -1757,12 +1757,12 @@ public final class SupportTicketsComponent extends VerticalLayout {
 
   private void succeeded(Supplier<String> message) {
     NotificationHelper.getInstance()
-        .showNotification(message, NotificationHelper.NotificationType.SUCCESS);
+        .showTextNotification(message, NotificationHelper.NotificationType.SUCCESS);
   }
 
   private void failed(Supplier<String> message) {
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             message,
             NotificationHelper.NotificationType.ERROR);

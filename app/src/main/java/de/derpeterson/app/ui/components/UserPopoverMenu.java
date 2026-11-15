@@ -417,7 +417,7 @@ public class UserPopoverMenu {
     } catch (RuntimeException exception) {
       applyExternalStatus(currentStatus);
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               exception instanceof OptimisticLockingFailureException
                   ? messageProperties::getBaseUserUpdateConflict

@@ -172,7 +172,7 @@ public class HomeView extends TrackedUserAppLayout implements AfterNavigationObs
     NavigationErrorCode.fromCode(navigationErrorCodeText)
         .ifPresent(error ->
             NotificationHelper.getInstance()
-                .showNotification(
+                .showTextNotification(
                     messageProperties::getBaseFailedTitle,
                     () -> error.getMessage(messageProperties),
                     NotificationHelper.NotificationType.ERROR));

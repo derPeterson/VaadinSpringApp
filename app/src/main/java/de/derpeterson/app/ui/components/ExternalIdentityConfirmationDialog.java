@@ -354,7 +354,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
         message = messageProperties::getTwoFactorInvalidCode;
       }
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               message,
               NotificationHelper.NotificationType.ERROR);
@@ -385,7 +385,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
 
   private void showExternalFailure() {
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             messageProperties::getExternalError,
             NotificationHelper.NotificationType.ERROR);
@@ -405,7 +405,7 @@ public final class ExternalIdentityConfirmationDialog extends Dialog {
       if (!externalLoginFlow.providers().contains(providerName)) {
         close();
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getExternalProviderUnavailable,
                 NotificationHelper.NotificationType.WARNING);
       } else {

@@ -214,7 +214,7 @@ public final class ExternalRegistrationView extends VerticalLayout
       }
     } catch (IOException | RuntimeException _) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getExternalError,
               -1,

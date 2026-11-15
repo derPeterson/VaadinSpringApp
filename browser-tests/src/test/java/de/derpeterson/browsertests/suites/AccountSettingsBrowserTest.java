@@ -441,6 +441,7 @@ public class AccountSettingsBrowserTest extends BrowserFixture {
   @Tag("avatars")
   @Tag("profile-form")
   @Tag("profile-notification")
+  @Tag("notification-variants")
   void profilePersistsAndCanBeSavedTwice(int viewportWidth) {
     String email = account();
     browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);

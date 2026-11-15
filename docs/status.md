@@ -127,18 +127,32 @@ Diese Änderungen haben keinen neuen Sonar-Scan; der obige Scan gilt weiterhin f
 geprüft und nach Sichtung der Vergleichsaufnahmen vom Benutzer abgenommen.
 Die Gesamtumsetzung bleibt im [Komponentenplan](planung/vaadin-komponenten-abgleich.md) offen.
 
-Der zusätzliche Pilot für die Erfolgsmeldung beim Speichern persönlicher Daten
-verwendet einen nativen `Paragraph`; andere Meldungsaufrufer behalten ihren
-bisherigen Aufbau. 83 gezielte Anwendungs-JUnit-Prüfungen und 44 Testauswahlprüfungen
-sind bestanden. Je zwei Browserfälle in DE/EN bei 1280/390 px sind einschließlich
-erneutem Speichern und Neuladen, automatischem Ausblenden nach drei Sekunden
-und manuellem Schließen bestanden. Beide Nachtests verwendeten dasselbe Image.
-Vier Messwertsätze für Hülle, Titel und Nachricht stimmen vor/nach der Umstellung
-überein; die vier zugeschnittenen Meldungsbilder sind bytegleich. Die
-Vergleichsseite enthält unveränderte Originalbilder direkt eingebettet.
-Der Benutzer hat den Piloten anhand der Vorher-/Nachher-Aufnahmen abgenommen.
-Es gab dafür keine neue Gesamt-QA oder Sonarprüfung; die obigen Gesamtzahlen
-gelten für ihren benannten Stand.
+Alle 97 globalen Meldungsaufrufe in 36 Klassen verwenden die zentralen nativen
+Textmethoden. Der frühere HTML-Aufbau samt ausschließlich dafür verwendetem
+Helfer und Test ist entfernt. 710 gezielte JUnit-Prüfungen sind bestanden;
+Stilprüfung und Diffprüfung sind ebenfalls erfolgreich. Abgedeckt sind der
+Helfer, Sprach- und Fensterisolation sowie betroffene Konto-, Anmelde-,
+Sicherheits-, Benachrichtigungs- und Verwaltungsabläufe.
+
+Der Benutzer hat die repräsentativen Varianten nach Sichtung der
+Vorher-/Nachher-Aufnahmen abgenommen: Profil-Erfolg, Pflichtfeldfehler,
+vorgemerkte Bereinigung, reiner Aktualisierungstitel, hervorgehobene
+Registrierungsadresse und Neustartwarnung mit Aufzählung. Dafür waren 45
+Auswahlprüfungen und je zehn Browserfälle in DE/EN bei 1280/390 px erfolgreich;
+die beiden Sprachen verwendeten dasselbe korrigierte Image. Aufbau, Abbau und
+Berichte waren erfolgreich. Diese Browserprüfung gilt für die Varianten vor
+der anschließenden Übernahme der übrigen Aufrufer. Für die Übernahme gab es
+auf ausdrücklichen Benutzerwunsch nur gezielte JUnit-/Stilprüfungen.
+
+Alle 24 damaligen Vorher-/Nachher-Messwertsätze stimmen bei Maßen und
+Textgestaltung überein; numerische Browserrundungen unter 0,001 px wurden
+toleriert. 23 der 24 Meldungsbilder sind bytegleich. Beim englischen mobilen
+Registrierungshinweis unterscheiden sich ausschließlich 21 Pixel an den
+oberen Rundungen um höchstens einen Farbwert; Maße, Inhalt und Schrift bleiben
+gleich. Die Vergleichsseite bettet die unveränderten Originalaufnahmen und
+zusätzliche Seitenansichten ein. Diese gezielten Prüfungen ersetzen weder
+die obige Gesamt-QA noch einen neuen Sonar-Scan. Die Gesamtumsetzung bleibt
+im Komponentenplan offen.
 
 ## Abnahme, offene Nachbearbeitung und Grenzen
 

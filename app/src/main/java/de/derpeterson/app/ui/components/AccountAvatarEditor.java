@@ -98,7 +98,7 @@ public class AccountAvatarEditor extends Component implements HasComponents, Has
         uploadErrorTextSupplier = messageProperties::getAccountAvatarTypeError;
       }
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               uploadErrorTextSupplier,
               -1,

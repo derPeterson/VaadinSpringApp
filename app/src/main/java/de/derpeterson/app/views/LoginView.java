@@ -298,7 +298,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
       cancelAndHideSessionRecovery();
 
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getSessionRecoveryExpired,
               -1,
@@ -415,7 +415,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
     }
 
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseSuccessTitle,
             messageProperties::getLoginSuccessMessage,
             NotificationHelper.NotificationType.SUCCESS);
@@ -503,7 +503,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
             : messageProperties::getAccountDeactivatedSuccess;
 
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             accountActionNotice.committed()
                 ? successTitleSupplier
                 : messageProperties::getBaseFailedTitle,
@@ -585,7 +585,7 @@ public class LoginView extends IsNotAuthenticatedBaseView<HorizontalLayout>
         };
 
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             loginFailureTextSupplier,
             -1,

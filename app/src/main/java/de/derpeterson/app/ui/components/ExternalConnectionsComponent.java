@@ -233,7 +233,7 @@ public final class ExternalConnectionsComponent extends Div {
         && !providerProofAvailable
         && !externalLoginFlow.requiresFactor(request, requestedPurpose)) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getExternalProofUnavailable,
               NotificationHelper.NotificationType.WARNING);
       return;

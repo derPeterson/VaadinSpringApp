@@ -28,7 +28,6 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentUtil;
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.checkbox.Checkbox;
@@ -36,6 +35,7 @@ import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.details.Details;
 import com.vaadin.flow.component.dialog.Dialog;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.PasswordField;
@@ -554,10 +554,7 @@ class AdminUserManagementSectionTest {
     assertEquals(
         messageProperties.getBaseFailedTitle(),
         ((Span) ReflectionTestUtils.getField(helper, "titleText")).getText());
-    String actual =
-        ((Html) ReflectionTestUtils.getField(helper, "messageText"))
-            .getElement()
-            .getProperty("innerHTML");
+    String actual = ((Paragraph) ReflectionTestUtils.getField(helper, "messageText")).getText();
 
     assertEquals(expected, actual);
     assertFalse(actual.contains("secret"));

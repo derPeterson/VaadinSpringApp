@@ -397,7 +397,7 @@ public class AdminMailTestSection extends VerticalLayout {
 
     if (!UserInputRules.isEmailValid(recipientEmailAddress)) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getAdminMailValidationRecipient,
               -1,
@@ -408,7 +408,7 @@ public class AdminMailTestSection extends VerticalLayout {
 
     if (mailSubjectText.isBlank()) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getAdminMailValidationSubject,
               -1,
@@ -419,7 +419,7 @@ public class AdminMailTestSection extends VerticalLayout {
 
     if (mailBodyText.isBlank()) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getAdminMailValidationBody,
               -1,
@@ -436,14 +436,14 @@ public class AdminMailTestSection extends VerticalLayout {
       emailService.sendAdminEmail(recipientEmailAddress, mailSubjectText, mailBodyText);
       logger.info("Test email accepted by transport");
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseSuccessTitle,
               messageProperties::getAdminMailSuccess,
               NotificationHelper.NotificationType.SUCCESS);
     } catch (MailException mailDispatchFailure) {
       logger.error("Test email dispatch failed", safeFailure(mailDispatchFailure));
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getAdminMailError,
               -1,

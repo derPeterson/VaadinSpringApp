@@ -401,7 +401,7 @@ public class AccountAvatarDialog extends Dialog {
 
     close();
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseSuccessTitle,
             messageProperties::getAccountAvatarSaved,
             NotificationHelper.NotificationType.SUCCESS);
@@ -440,7 +440,7 @@ public class AccountAvatarDialog extends Dialog {
     }
 
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseFailedTitle,
             avatarErrorTextSupplier,
             -1,

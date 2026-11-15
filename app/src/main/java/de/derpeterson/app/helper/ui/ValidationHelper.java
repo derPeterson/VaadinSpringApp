@@ -36,7 +36,7 @@ public class ValidationHelper {
       MessageProperties messageProperties) {
     if (requiredInputs.stream().anyMatch(ValidationHelper::isRequiredInputInvalid)) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseValidationRequiredMessage,
               -1,
@@ -73,7 +73,7 @@ public class ValidationHelper {
     if (passwordFields.stream()
         .anyMatch(passwordField -> !isPasswordSecure(passwordField.getValue()))) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseValidationPasswordInvalidMessage,
               -1,
@@ -92,7 +92,7 @@ public class ValidationHelper {
       List<EmailField> emailFields, MessageProperties messageProperties) {
     if (emailFields.stream().anyMatch(emailField -> !isEmailValid(emailField.getValue()))) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseValidationEmailInvalidMessage,
               -1,
@@ -113,7 +113,7 @@ public class ValidationHelper {
       MessageProperties messageProperties) {
     if (!Strings.CS.equals(passwordField.getValue(), confirmationPasswordField.getValue())) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseValidationPasswordConfirmMessage,
               -1,
@@ -135,7 +135,7 @@ public class ValidationHelper {
       MessageProperties messageProperties) {
     if (!Strings.CS.equals(emailField.getValue(), confirmationEmailField.getValue())) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseValidationEmailConfirmMessage,
               -1,
@@ -158,7 +158,7 @@ public class ValidationHelper {
       MessageProperties messageProperties) {
     if (userService.findByEmail(normalize(emailField.getValue())).isPresent()) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseValidationEmailExistsMessage,
               -1,
@@ -184,7 +184,7 @@ public class ValidationHelper {
             .isError()
         || !isBirthDateValid(datePicker.getValue())) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseValidationBirthDatePastMessage,
               -1,

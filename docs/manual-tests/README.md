@@ -138,6 +138,11 @@ abgenommen. Diese Sichtung ersetzt keine Prüfung mit echtem Mobilgerät oder
 Screenreader. Der separat zurückgestellte Scrollpunkt bleibt offen.
 Auch die native Textdarstellung der Erfolgsmeldung beim Speichern persönlicher
 Daten ist nach Sichtung der Vorher-/Nachher-Aufnahmen vom Benutzer abgenommen.
+Auch die repräsentativen Varianten für Fehler, Warnung mit Aufzählung,
+Information, reine Titel und Registrierung mit hervorgehobener Adresse sind
+anhand der DE-/EN-Vergleichsaufnahmen auf Desktop und Smartphone vom Benutzer
+abgenommen. Die übrigen Aufrufer verwenden dieselben Methoden; auf ausdrücklichen
+Benutzerwunsch gibt es dafür keine eigene Screenshot- oder Browserrunde je Stelle.
 
 **Erwartet:** Die Oberfläche wirkt zusammengehörig und ruhig; relevante Texte/Aktionen sind gut lesbar und eindeutig. Rein persönlicher Änderungswunsch wird von einem Bedienhindernis unterschieden.
 

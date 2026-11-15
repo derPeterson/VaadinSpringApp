@@ -588,7 +588,7 @@ public class AccountSettingsComponent extends PageContentLayout {
       savedProfile = persistProfileFunction.apply(readProfileChanges(profileVersion));
     } catch (OptimisticLockingFailureException _) {
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getBaseUserUpdateConflict,
               -1,
@@ -597,7 +597,7 @@ public class AccountSettingsComponent extends PageContentLayout {
     } catch (RuntimeException failure) {
       log.warn("Kontoprofil konnte nicht gespeichert werden", safeFailure(failure));
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               messageProperties::getAccountSettingsSaveFailed,
               -1,

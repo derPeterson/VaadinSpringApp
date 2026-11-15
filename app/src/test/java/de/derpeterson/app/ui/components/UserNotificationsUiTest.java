@@ -45,6 +45,7 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.H4;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.SvgIcon;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -61,7 +62,6 @@ import com.vaadin.flow.server.Command;
 import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.shared.Registration;
 import de.derpeterson.app.ComponentTestTree;
-import de.derpeterson.app.helper.ui.HtmlHelper;
 import de.derpeterson.app.helper.ui.NotificationHelper;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -365,14 +365,14 @@ class UserNotificationsUiTest {
             eq(mockHttpSession), any(ReadFilter.class), anyInt(), anyInt()))
         .thenThrow(new IllegalStateException("Unavailable test fixture"));
     refreshInboxButton.click();
-    Html failureMessageHtml = readComponentField(notificationHelper, "messageText");
+    Paragraph failureMessageParagraph = readComponentField(notificationHelper, "messageText");
 
     assertTrue(
-        failureMessageHtml
-            .getInnerHtml()
+        failureMessageParagraph
+            .getText()
             .contains(messageProperties.getNotificationsUnavailable()));
     assertFalse(
-        failureMessageHtml.getInnerHtml().contains(messageProperties.getNotificationsRefreshed()));
+        failureMessageParagraph.getText().contains(messageProperties.getNotificationsRefreshed()));
     if (!isCompactPreview) {
       CosmosMetricCard unreadNotificationsMetricCard =
           readComponentField(notificationsPanel, "unreadNotificationsMetricCard");
@@ -3123,17 +3123,14 @@ class UserNotificationsUiTest {
   private void assertPreviewValidationHint() {
     NotificationHelper notificationHelper = NotificationHelper.getInstance();
     Span validationHintTitleSpan = readComponentField(notificationHelper, "titleText");
-    Html validationHintMessageHtml = readComponentField(notificationHelper, "messageText");
+    Paragraph validationHintMessageParagraph =
+        readComponentField(notificationHelper, "messageText");
 
     assertEquals(
         messageProperties.getNotificationsPreviewFailedTitle(), validationHintTitleSpan.getText());
     assertEquals(
-        new Html(
-                HtmlHelper.ensureParagraphTags(
-                    messageProperties.getNotificationsPreviewFailedMessage()))
-            .getElement()
-            .getProperty("innerHTML"),
-        validationHintMessageHtml.getElement().getProperty("innerHTML"));
+        messageProperties.getNotificationsPreviewFailedMessage(),
+        validationHintMessageParagraph.getText());
   }
 
   // Empfängerauswahl und geprüfte Versandvorschau

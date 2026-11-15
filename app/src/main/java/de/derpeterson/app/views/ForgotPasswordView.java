@@ -182,7 +182,7 @@ public class ForgotPasswordView extends IsNotAuthenticatedBaseView<HorizontalLay
 
     // Auch bei kontobezogenen Fehlern bleibt die Rückmeldung gleich, damit sie kein Konto verrät.
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getBaseSuccessTitle,
             messageProperties::getForgotPasswordSuccessMessage,
             -1,

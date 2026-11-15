@@ -18,10 +18,10 @@ import static org.mockito.Mockito.when;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.H1;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.textfield.EmailField;
@@ -111,13 +111,13 @@ class PasswordResetViewsTest {
   private void notification(boolean success, String body, Locale locale) {
     NotificationHelper helper = NotificationHelper.getInstance();
     Span titleSpan = (Span) ReflectionTestUtils.getField(helper, "titleText");
-    Html messageHtml = (Html) ReflectionTestUtils.getField(helper, "messageText");
+    Paragraph messageParagraph = (Paragraph) ReflectionTestUtils.getField(helper, "messageText");
     MessageProperties expectedTexts = MessageProperties.forLocale(i18nProvider, locale);
 
     assertEquals(
         success ? expectedTexts.getBaseSuccessTitle() : expectedTexts.getBaseFailedTitle(),
         titleSpan.getText());
-    assertEquals(body, messageHtml.getElement().getProperty("innerHTML"));
+    assertEquals(body, messageParagraph.getText());
   }
 
   @Test
@@ -317,12 +317,11 @@ class PasswordResetViewsTest {
     for (Locale notificationLocale : new Locale[] {Locale.ENGLISH, Locale.GERMAN}) {
       LanguageChangeEvent.fire(testUi, notificationLocale);
       Span titleSpan = (Span) ReflectionTestUtils.getField(notificationHelper, "titleText");
-      Html messageHtml = (Html) ReflectionTestUtils.getField(notificationHelper, "messageText");
+      Paragraph messageParagraph =
+          (Paragraph) ReflectionTestUtils.getField(notificationHelper, "messageText");
       assertEquals(messageProperties.getEmailVerificationTitle(), titleSpan.getText());
       assertTrue(titleSpan.hasClassName("text-warning"));
-      assertEquals(
-          messageProperties.getEmailVerificationWait(),
-          messageHtml.getElement().getProperty("innerHTML"));
+      assertEquals(messageProperties.getEmailVerificationWait(), messageParagraph.getText());
     }
   }
 

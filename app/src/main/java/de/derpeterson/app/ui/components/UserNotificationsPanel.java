@@ -489,7 +489,7 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
       updateInboxPagination(notificationPage);
       if (notifyResult) {
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getNotificationsRefreshed,
                 null,
                 NotificationHelper.NotificationType.SUCCESS);
@@ -498,7 +498,7 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
       unavailable();
       if (notifyResult) {
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getNotificationsUnavailable,
                 NotificationHelper.NotificationType.ERROR);
       }
@@ -755,7 +755,7 @@ public class UserNotificationsPanel extends CosmosContentCardComponent {
       }
       LoggerFactory.getLogger(getClass()).warn("Notification action failed", safeFailure(failure));
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getNotificationsUnavailable,
               NotificationHelper.NotificationType.ERROR);
     }

@@ -10,22 +10,25 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.UI;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.server.VaadinSession;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import de.derpeterson.app.ui.components.PageFrameComponent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -56,15 +59,15 @@ class NotificationHelperIsolationTest {
 
   private void show(String text) {
     NotificationHelper.getInstance()
-        .showNotification(() -> text, () -> text, 0, NotificationHelper.NotificationType.ERROR);
+        .showTextNotification(() -> text, () -> text, 0, NotificationHelper.NotificationType.ERROR);
   }
 
   private Notification notification(NotificationHelper helper) {
     return (Notification) ReflectionTestUtils.getField(helper, "currentNotification");
   }
 
-  private Html message(NotificationHelper helper) {
-    return (Html) ReflectionTestUtils.getField(helper, "messageText");
+  private Paragraph message(NotificationHelper helper) {
+    return (Paragraph) ReflectionTestUtils.getField(helper, "messageText");
   }
 
   @AfterEach
@@ -126,21 +129,20 @@ class NotificationHelperIsolationTest {
     UI first = window(session());
     AtomicReference<String> firstText = new AtomicReference<>("Erste Meldung DE");
     NotificationHelper firstHelper = NotificationHelper.getInstance();
-    firstHelper.showNotification(
+    firstHelper.showTextNotification(
         null, firstText::get, 0, NotificationHelper.NotificationType.ERROR);
     window(session());
     AtomicReference<String> secondText = new AtomicReference<>("Second notice EN");
     NotificationHelper secondHelper = NotificationHelper.getInstance();
-    secondHelper.showNotification(
+    secondHelper.showTextNotification(
         null, secondText::get, 0, NotificationHelper.NotificationType.ERROR);
-    Html secondMessage = message(secondHelper);
+    Paragraph secondMessage = message(secondHelper);
     select(first);
     firstText.set("First notice EN");
     NotificationHelper.getInstance().updateText();
 
-    assertTrue(
-        message(NotificationHelper.getInstance()).getInnerHtml().contains("First notice EN"));
-    assertTrue(secondMessage.getInnerHtml().contains("Second notice EN"));
+    assertTrue(message(NotificationHelper.getInstance()).getText().contains("First notice EN"));
+    assertTrue(secondMessage.getText().contains("Second notice EN"));
     assertTrue(notification(secondHelper).isOpened());
   }
 
@@ -153,15 +155,15 @@ class NotificationHelperIsolationTest {
     referenceAccount.addClassNames("cosmos-theme", "cosmos-reference-portal");
     UI.getCurrent().add(referenceAccount);
     NotificationHelper helper = NotificationHelper.getInstance();
-    helper.showNotification(() -> "Title", () -> "Message", 4200, type);
+    helper.showTextNotification(() -> "Title", () -> "Message", 4200, type);
     Notification referenceNotice = notification(helper);
 
     assertTrue(referenceNotice.getElement().getThemeList().contains("cosmos-reference"));
     assertEquals(4200, referenceNotice.getDuration());
     assertEquals(Notification.Position.TOP_CENTER, referenceNotice.getPosition());
-    assertTrue(message(helper).getInnerHtml().contains("Message"));
+    assertTrue(message(helper).getText().contains("Message"));
     window(session());
-    NotificationHelper.getInstance().showNotification(() -> "Other window", type);
+    NotificationHelper.getInstance().showTextNotification(() -> "Other window", type);
 
     assertFalse(
         notification(NotificationHelper.getInstance())
@@ -176,7 +178,8 @@ class NotificationHelperIsolationTest {
     window(session());
     NotificationHelper helper = NotificationHelper.getInstance();
     AtomicReference<String> title = new AtomicReference<>("Notifications refreshed.");
-    helper.showNotification(title::get, null, 4200, NotificationHelper.NotificationType.SUCCESS);
+    helper.showTextNotification(
+        title::get, null, 4200, NotificationHelper.NotificationType.SUCCESS);
     Notification notice = notification(helper);
     Span heading = (Span) ReflectionTestUtils.getField(helper, "titleText");
 
@@ -197,7 +200,7 @@ class NotificationHelperIsolationTest {
     window(session());
     NotificationHelper helper = NotificationHelper.getInstance();
     AtomicReference<String> body = new AtomicReference<>(" ");
-    helper.showNotification(
+    helper.showTextNotification(
         () -> "Title", body::get, 4200, NotificationHelper.NotificationType.SUCCESS);
     Notification notice = notification(helper);
 
@@ -205,7 +208,7 @@ class NotificationHelperIsolationTest {
     body.set("Details");
     helper.updateText();
 
-    assertTrue(message(helper).getInnerHtml().contains("Details"));
+    assertTrue(message(helper).getText().contains("Details"));
     body.set("");
     helper.updateText();
 
@@ -245,9 +248,12 @@ class NotificationHelperIsolationTest {
 
     assertFalse(textNotification.isOpened());
     assertTrue(otherNotification.isOpened());
-    textHelper.showNotification(() -> "<strong>Formatierte Meldung</strong>");
+    textHelper.showTextNotification(() -> "<strong>Formatierte Meldung</strong>");
 
-    assertTrue(message(textHelper).getInnerHtml().contains("<strong>Formatierte Meldung</strong>"));
+    assertEquals("<strong>Formatierte Meldung</strong>", message(textHelper).getText());
+    assertEquals(0, message(textHelper).getChildren().count());
+    assertEquals(3000, notification(textHelper).getDuration());
+    assertNull(ReflectionTestUtils.getField(textHelper, "titleText"));
   }
 
   @Test
@@ -283,5 +289,111 @@ class NotificationHelperIsolationTest {
 
     assertThrows(IllegalStateException.class, NotificationHelper::getInstance);
     assertTrue(current.isOpened());
+  }
+
+  @ParameterizedTest
+  @EnumSource(NotificationHelper.NotificationType.class)
+  void nativeTextUsesEverySeverityAndPreservesExplicitLifetime(
+      NotificationHelper.NotificationType type) {
+    window(session());
+    Div frame = new Div();
+    frame.addClassNames("cosmos-theme", "cosmos-reference-portal");
+    UI.getCurrent().add(frame);
+    NotificationHelper helper = NotificationHelper.getInstance();
+    helper.showTextNotification(() -> "Title", () -> "Text <>&", -1, type);
+
+    Paragraph paragraph =
+        assertInstanceOf(Paragraph.class, ReflectionTestUtils.getField(helper, "messageText"));
+    assertEquals("Text <>&", paragraph.getText());
+    assertEquals(-1, notification(helper).getDuration());
+    assertTrue(
+        notification(helper)
+            .getElement()
+            .getThemeList()
+            .contains("cosmos-reference-" + type.name().toLowerCase(Locale.ROOT)));
+  }
+
+  @Test
+  void nativeDetailsRefreshTheirTextAndKeepTheSamePermanentNotice() {
+    window(session());
+    NotificationHelper helper = NotificationHelper.getInstance();
+    AtomicReference<String> detail = new AtomicReference<>("Feld DE <>&");
+    helper.showTextNotificationWithDetails(
+        () -> "Saved",
+        () -> "Restart required",
+        () -> List.of(detail.get()),
+        0,
+        NotificationHelper.NotificationType.WARNING);
+    Notification notice = notification(helper);
+    assertInstanceOf(Paragraph.class, ReflectionTestUtils.getField(helper, "messageText"));
+    VerticalLayout layout = (VerticalLayout) ReflectionTestUtils.getField(helper, "textLayout");
+    assertTrue(layout.getElement().getTextRecursively().contains(detail.get()));
+    detail.set("Field EN <>&");
+    helper.updateText();
+    assertTrue(layout.getElement().getTextRecursively().contains(detail.get()));
+    assertFalse(layout.getElement().getTextRecursively().contains("Feld DE"));
+    assertSame(notice, notification(helper));
+    assertEquals(0, notice.getDuration());
+  }
+
+  @Test
+  void highlightedTextStaysLiteralAndFollowsLanguageAndArgumentUpdates() {
+    window(session());
+    NotificationHelper helper = NotificationHelper.getInstance();
+    AtomicReference<String> message = new AtomicReference<>("E-Mail an <Chris & Alex> gesendet.");
+    AtomicReference<String> highlighted = new AtomicReference<>("<Chris & Alex>");
+    helper.showHighlightedTextNotification(
+        () -> "Success",
+        message::get,
+        highlighted::get,
+        -1,
+        NotificationHelper.NotificationType.SUCCESS);
+    Notification notice = notification(helper);
+    Paragraph paragraph =
+        assertInstanceOf(Paragraph.class, ReflectionTestUtils.getField(helper, "messageText"));
+    assertEquals(message.get(), paragraph.getElement().getTextRecursively());
+    Span emphasis =
+        paragraph
+            .getChildren()
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals(highlighted.get(), emphasis.getText());
+    assertTrue(emphasis.hasClassName("text-primary"));
+    assertTrue(emphasis.hasClassName(LumoUtility.FontWeight.SEMIBOLD));
+    highlighted.set("<Updated & Chris>");
+    message.set("Sent to <Updated & Chris>.");
+    helper.updateText();
+    paragraph =
+        assertInstanceOf(Paragraph.class, ReflectionTestUtils.getField(helper, "messageText"));
+    assertEquals(message.get(), paragraph.getElement().getTextRecursively());
+    assertSame(notice, notification(helper));
+    assertEquals(-1, notice.getDuration());
+    helper.showTextNotification(
+        () -> "Next", () -> "Plain", NotificationHelper.NotificationType.NORMAL);
+    paragraph =
+        assertInstanceOf(Paragraph.class, ReflectionTestUtils.getField(helper, "messageText"));
+    assertEquals("Plain", paragraph.getText());
+    assertEquals(0, paragraph.getChildren().count());
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {"missing"})
+  void absentHighlightKeepsTheCompleteLiteralMessage(String highlightedText) {
+    window(session());
+    NotificationHelper helper = NotificationHelper.getInstance();
+    helper.showHighlightedTextNotification(
+        () -> "Title",
+        () -> "Literal <>&",
+        () -> highlightedText,
+        -1,
+        NotificationHelper.NotificationType.SUCCESS);
+
+    Paragraph messageParagraph =
+        assertInstanceOf(Paragraph.class, ReflectionTestUtils.getField(helper, "messageText"));
+    assertEquals("Literal <>&", messageParagraph.getText());
+    assertEquals(0, messageParagraph.getChildren().count());
   }
 }

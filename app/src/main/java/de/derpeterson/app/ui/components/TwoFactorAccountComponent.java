@@ -157,7 +157,7 @@ public final class TwoFactorAccountComponent extends Div {
     refreshTwoFactorAccountSection();
 
     NotificationHelper.getInstance()
-        .showNotification(
+        .showTextNotification(
             messageProperties::getTwoFactorDisabled, NotificationHelper.NotificationType.SUCCESS);
   }
 

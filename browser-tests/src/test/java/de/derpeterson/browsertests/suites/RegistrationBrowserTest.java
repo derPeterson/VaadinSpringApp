@@ -12,6 +12,7 @@ import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.mail.MailpitInbox;
 import de.derpeterson.browsertests.pages.AccountFormAppearanceChecks;
 import de.derpeterson.browsertests.pages.LoginPage;
+import de.derpeterson.browsertests.pages.NotificationAppearanceChecks;
 import de.derpeterson.browsertests.pages.RegistrationPage;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
@@ -28,6 +29,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 @Feature("Registrierung")
 public class RegistrationBrowserTest extends BrowserFixture {
   @Tag("account-forms")
+  @Tag("notification-variants")
   @ParameterizedTest
   @ValueSource(ints = {1280, 390})
   @DisplayName("REG-01A: Registrierung bestätigt Mailversand, Anmeldung bleibt zunächst gesperrt")
@@ -45,13 +47,14 @@ public class RegistrationBrowserTest extends BrowserFixture {
       """)
   void registrationNeedsVerificationBeforeLogin(int viewportWidth) {
     browserPage.setViewportSize(viewportWidth, viewportWidth == 390 ? 844 : 900);
-    String emailAddress = "registration-" + UUID.randomUUID() + "@example.test";
+    String emailAddress = "notification-registration-" + viewportWidth + "@example.test";
     RegistrationPage registrationPage = new RegistrationPage(browserPage);
     registrationPage.open();
     AccountFormAppearanceChecks.captureRegistration(browserPage);
     registrationPage.fillValid(emailAddress, BrowserTestAccounts.USER_PASSWORD);
     registrationPage.submit();
     registrationPage.assertSubmitted(emailAddress);
+    NotificationAppearanceChecks.capture(browserPage, "Hervorgehobene-Adresse", "success", -1);
     AllurePlaywright.attachScreenshot("Registrierung bestätigt", browserPage);
     new MailpitInbox(browserContext).awaitVerificationMail(emailAddress);
     LoginPage loginPage = new LoginPage(browserPage);

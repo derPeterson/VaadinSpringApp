@@ -805,14 +805,26 @@ Seitenrahmen, einschließlich verschachtelter Inhalte. Zuständig ist
 die gesicherte Symbolzuordnung und eine eigene `.cosmos-toast-title` ohne Kollision
 mit Nachrichtenbuttons. Supplier-Sprachwechsel, Anzeigedauer und Fensterisolation
 bleiben erhalten.
-Die Erfolgsmeldung nach dem Speichern persönlicher Daten verwendet als Pilot
-`NotificationHelper.showTextNotification` mit einem nativen Vaadin-`Paragraph`.
-Die Zeichenfolge wird als Text behandelt; die bestehenden Klassen
-`cosmos-notification-message` und `LumoUtility.Margin.NONE` sowie die gemeinsame Meldungshülle
-bleiben erhalten. Andere Meldungsaufrufer verwenden weiterhin ihren bisherigen
-HTML-/Detailaufbau; der Pilot erlaubt keine allgemeine Umstellung.
-Die Neustartwarnung nach dem Speichern einer Konfiguration zeigt betroffene
-Felder als fette Aufzählung unter dem Hinweistext.
+`NotificationHelper` bietet gemeinsame native Textmethoden für alle vier
+Schweregrade. `showTextNotification` verwendet einen Vaadin-`Paragraph`; ohne
+Nachricht bleibt nur der Titel sichtbar. Die Überladung mit Anzeigedauer erhält
+auch dauerhafte Hinweise. `showTextNotificationWithDetails` ergänzt eine native
+`UnorderedList` mit `ListItem`. `showHighlightedTextNotification` hebt das erste
+exakte Vorkommen des separat gelieferten Texts mit einer nativen `Span`,
+`text-primary` und `LumoUtility.FontWeight.SEMIBOLD` hervor. Fehlt dieses Vorkommen,
+bleibt die gesamte Nachricht als normaler Text erhalten. Keine dieser Methoden
+wertet HTML aus; Titel, Nachricht, Hervorhebung und Details folgen ihren Suppliern
+auch beim Sprachwechsel.
+
+Die bestehenden Klassen `cosmos-notification-message` und `LumoUtility.Margin.NONE`
+sowie Meldungshülle, Symbole, Farben, Dauer und Schließen bleiben erhalten.
+Alle globalen UI-Meldungen verwenden diese Methoden, einschließlich öffentlicher
+Kontoabläufe, Kontosicherheit, Tickets, persönlicher Benachrichtigungen und
+Administration. Aufrufer mit ausschließlich einem Nachrichtentext können die
+Überladung ohne Titel verwenden; ohne Schweregrad gilt `NORMAL` mit der üblichen
+Anzeigedauer. Die Registrierungsübersetzungen enthalten nur den Text mit
+Adressplatzhalter; die Neustartwarnung ergänzt die betroffenen Felder als fette
+native Aufzählung. Der frühere HTML-Aufbau und sein Hilfsbaustein sind entfernt.
 Rückmeldungen aus URL-Parametern werden nach abgeschlossener Navigation geöffnet,
 damit bei direkten Aufrufen und Anbieter-Rücksprüngen bereits der Zielrahmen die
 Palette bestimmt. Das gilt für Sicherheitsbestätigungen und Anmeldefehler.

@@ -104,7 +104,7 @@ public final class SupportTicketFilterPanel extends AdminSidePanelDialog {
       if (ticketNumberField.isEmpty()) {
         ticketNumberField.setInvalid(true);
         NotificationHelper.getInstance()
-            .showNotification(
+            .showTextNotification(
                 messageProperties::getBaseFailedTitle,
                 messageProperties::getBaseValidationRequiredMessage,
                 NotificationHelper.NotificationType.ERROR);

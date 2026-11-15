@@ -125,7 +125,7 @@ public final class TwoFactorActionDialog extends Dialog {
       }
 
       NotificationHelper.getInstance()
-          .showNotification(
+          .showTextNotification(
               messageProperties::getBaseFailedTitle,
               protectedActionFailureTextSupplier,
               NotificationHelper.NotificationType.ERROR);
