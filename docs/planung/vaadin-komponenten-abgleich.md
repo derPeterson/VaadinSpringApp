@@ -20,7 +20,7 @@ Auswahl und abschließende Bereinigung der Alternativen stehen in [TODO](../../T
 
 Die begonnene Umsetzung ist lokal nach `main` zwischenintegriert. Weitere
 Arbeiten laufen auf
-`codex/vaadin-komponenten-folgearbeiten`. Die Badge-Darstellungen und
+`codex/vaadin-komponenten-folgearbeiten-3`. Die Badge-Darstellungen und
 einheitlichen Seitenpfade sind vom Benutzer abgenommen. Ihre geltenden Regeln
 stehen im [Theme-Standard](../theme.md).
 

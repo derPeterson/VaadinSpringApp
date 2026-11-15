@@ -68,6 +68,12 @@ wegen einer Entscheidung wartende Aufgaben dort erhalten.
 | `-FailureProbe` | Eigenständiger absichtlich falscher Titelvergleich; Exitcode 1 erwartet |
 | `-SetupHttps` / `-RemoveHttps` | Bewusste einmalige Test-CA-Einrichtung bzw. ausdrücklicher Rückbau, keine Browserfälle |
 
+Parallele Worker haben ein Gesamtbudget von 90 Minuten einschließlich Aufbau,
+Testfällen und Abbau. Die umfangreiche Gesamtauswahl enthält echte Inaktivitäts-
+und SMTP-Wartezeiten sowie den Mengenfall mit über 100 Konten. Einzelne
+UI-Wartebedingungen behalten ihre eigenen kurzen Grenzen; ein erschöpftes
+Prozessbudget ist kein bestandener Lauf.
+
 Standardauswahl ist `all`, `de`, ein Worker. Nach App-, Shared-, Text- oder
 Styleänderungen zuerst ohne `-NoBuild` ausführen. Der Starter prüft Java 25 und
 baut Shared und Browserquellen gemeinsam über die Root-POM mit

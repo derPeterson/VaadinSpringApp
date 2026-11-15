@@ -11,6 +11,7 @@ import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.AriaRole;
 import com.microsoft.playwright.options.ScreenshotAnimations;
 import de.derpeterson.app.config.AdminConfigGroup;
+import de.derpeterson.browsertests.BrowserActor;
 import de.derpeterson.browsertests.BrowserFixture;
 import de.derpeterson.browsertests.BrowserTestAccounts;
 import de.derpeterson.browsertests.pages.AccountPage;
@@ -20,12 +21,15 @@ import de.derpeterson.browsertests.pages.AdminNavigation;
 import de.derpeterson.browsertests.pages.AdminUsersPage;
 import de.derpeterson.browsertests.pages.LoginPage;
 import de.derpeterson.browsertests.pages.NotificationComposePage;
+import de.derpeterson.browsertests.pages.UiActions;
 import de.derpeterson.browsertests.pages.UserMenu;
 import io.qameta.allure.Allure;
 import io.qameta.allure.AttachmentOptions;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import java.io.ByteArrayInputStream;
+import java.util.UUID;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -83,8 +87,44 @@ public class NativeCardsBrowserTest extends BrowserFixture {
     captureCards("mail-test", ".cosmos-mail-card");
     new NotificationComposePage(browserPage).open();
     captureCards("notification-compose", ".cosmos-admin-section .cosmos-card:visible");
-    new AdminNavigation(browserPage).openSection(uiTexts.getSupportTitle());
+    String ownTicketNumber = createUnreadTicket();
+    new NotificationComposePage(browserPage).open();
+    AdminNavigation adminNavigation = new AdminNavigation(browserPage);
+    adminNavigation.openDrawer();
+    assertThat(browserPage.locator("#admin-nav-support-activity")).isVisible();
+    adminNavigation.openSection(uiTexts.getSupportTitle());
     captureCards("tickets", "#support-panel");
+
+    browserPage.navigate(
+        path(ADMIN_ROUTE) + "?section=support&ticket=" + ownTicketNumber.substring(1));
+    assertThat(browserPage.locator("#support-ticket-panel .support-ticket-number"))
+        .hasText(uiTexts.getSupportTicketNumber(ownTicketNumber));
+    UiActions.complete(browserPage, () -> browserPage.locator("#support-claim").click());
+    UiActions.complete(browserPage, () -> browserPage.locator("#support-close").click());
+  }
+
+  private String createUnreadTicket() {
+    String requesterEmailAddress = "card-navigation-" + UUID.randomUUID() + "@example.test";
+    new AdminUsersPage(browserPage)
+        .createActiveUser(requesterEmailAddress, BrowserTestAccounts.USER_PASSWORD);
+    try (BrowserActor requestingActor = new BrowserActor(testBrowser)) {
+      requestingActor.login(requesterEmailAddress, BrowserTestAccounts.USER_PASSWORD);
+      requestingActor.browserPage.navigate("/recovery-help");
+      requestingActor
+          .browserPage
+          .locator("#support-reply textarea")
+          .fill("Native card navigation with unread ticket activity.");
+      UiActions.complete(
+          requestingActor.browserPage,
+          () -> requestingActor.browserPage.locator("#support-create").click());
+      // Die angezeigte Vorgangsnummer besteht aus einer Raute und mindestens einer Ziffer.
+      return requestingActor
+          .browserPage
+          .locator("#support-ticket-grid")
+          .getByText(Pattern.compile("^#[0-9]+$"))
+          .first()
+          .innerText();
+    }
   }
 
   private void captureCards(String viewName, String panelSelector) {

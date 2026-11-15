@@ -19,6 +19,10 @@ import java.util.stream.Stream;
 
 /** Processes and evidence only; each worker delegates its Docker lifecycle to BrowserTestRunner. */
 final class BrowserParallelWorkers {
+  // Der erweiterte Gesamtlauf enthält lange echte Inaktivitäts- und SMTP-Prüfungen.
+  // Das Prozessbudget begrenzt den ganzen Worker, nicht einzelne UI-Wartebedingungen.
+  private static final Duration MAX_WORKER_RUNTIME = Duration.ofMinutes(90);
+
   record Worker(
       Path directory, String project, List<Class<?>> classes, Process process, Instant startedAt) {}
 
@@ -173,8 +177,13 @@ final class BrowserParallelWorkers {
                   + worker.directory().getFileName()
                   + " beendet, Exitcode "
                   + worker.process().exitValue());
-        } else if (Duration.between(worker.startedAt(), Instant.now()).toMinutes() >= 60) {
-          throw new IOException("Worker timeout after 60 minutes: " + worker.directory());
+        } else if (Duration.between(worker.startedAt(), Instant.now()).compareTo(MAX_WORKER_RUNTIME)
+            >= 0) {
+          throw new IOException(
+              "Worker timeout after "
+                  + MAX_WORKER_RUNTIME.toMinutes()
+                  + " minutes: "
+                  + worker.directory());
         }
       }
     }

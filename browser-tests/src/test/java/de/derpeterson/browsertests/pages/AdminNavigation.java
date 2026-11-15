@@ -8,6 +8,7 @@ import com.microsoft.playwright.options.AriaRole;
 import de.derpeterson.app.config.AdminConfigGroup;
 import de.derpeterson.browsertests.i18n.UiTexts;
 import io.qameta.allure.Step;
+import java.util.regex.Pattern;
 
 /** Gemeinsame Bedienung der nativen SideNav, einschließlich des mobilen Drawers. */
 public final class AdminNavigation {
@@ -78,13 +79,18 @@ public final class AdminNavigation {
   @Step("Adminbereich über seinen SideNav-Link auswählen")
   public void openSection(String navigationLabelText) {
     openDrawer();
+    // Vollständiger Bereichsname, optional mit Leerraum und einem zugänglichen Statuszusatz.
+    // Die Zeichenklasse maskiert Regex-Sonderzeichen auch für den JavaScript-Ausdruck im Browser.
+    // Java-spezifisches Pattern.quote wäre dort nicht gültig.
+    String literalNavigationName =
+        navigationLabelText.replaceAll("[\\\\.^$|?*+()\\[\\]{}]", "\\\\$0");
+    Pattern navigationNamePattern = Pattern.compile("^" + literalNavigationName + "(?:\\s+.*)?$");
     Locator navigationLinkLocator =
         browserPage
             .locator("#admin-sidebar .cosmos-side-navigation")
             .first()
             .getByRole(
-                AriaRole.LINK,
-                new Locator.GetByRoleOptions().setName(navigationLabelText).setExact(true));
+                AriaRole.LINK, new Locator.GetByRoleOptions().setName(navigationNamePattern));
     UiActions.complete(browserPage, navigationLinkLocator::click);
     closeOverlayDrawer();
   }

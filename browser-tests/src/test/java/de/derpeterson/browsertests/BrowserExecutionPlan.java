@@ -21,7 +21,7 @@ final class BrowserExecutionPlan {
   // Gerundete Verteilungsgewichte aus dem DE-Gesamtlauf und gezielten Folgeprüfungen.
   // Die langen 2FA-/Feldhilfefälle sind vollständig berücksichtigt. Keine Zeitgarantie.
   // Bei unterbrochenen Fällen ist die verbleibende Arbeit konservativ geschätzt.
-  // Einzelne Testtimeouts und das Gesamtlimit eines Workers bleiben unverändert.
+  // Die Gewichte steuern nur die Verteilung, nicht die UI-Wartebedingungen.
   private static final Map<String, Integer> ESTIMATED_TEST_CLASS_SECONDS_MAP =
       Map.ofEntries(
           Map.entry("RestartAndSmtpBrowserTest", 410),

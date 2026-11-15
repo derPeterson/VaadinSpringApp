@@ -1,6 +1,7 @@
 # Geplante Nachtarbeit
 
-**Status: vollständig zur Umsetzung freigegeben; Bearbeitung gestartet.**
+**Status: Gesamtpakete 1–3 technisch abgeschlossen und lokal zwischenintegriert;
+abschließende große Testrunde läuft. Sonar-Nachweis wartet auf verfügbaren Zugang.**
 
 Der ausdrückliche Startauftrag umfasst alle fünf folgenden Arbeitspunkte.
 Sie konkretisiert die Nachtpakete der laufenden
@@ -71,19 +72,25 @@ Push, Release und die zurückgestellten Planungen gehören nicht zum Auftrag.
 
 ## Arbeitspunkt 4: Zwischenintegration, Sonar-Bereinigung und Folgebranch
 
-- [ ] Nach Gesamtpaket 3 den geprüften und committeten Arbeitsstand lokal nach
-  `main` mergen. Den Quellbranch erhalten; die gesamte Vaadin-Komponentenübernahme
-  ist ausdrücklich noch nicht abgeschlossen. Offene Planung und Abnahmen erhalten.
+Der geprüfte Stand ist bei `e39189fa` lokal nach `main` übernommen;
+Produktions-/Coverage-Reactor und isolierter Start des frischen Main-JARs sind
+bestanden. Der Quellbranch bleibt erhalten; die gesamte Komponentenübernahme
+ist ausdrücklich nicht abgeschlossen. Weitere Arbeit läuft auf
+`codex/vaadin-komponenten-folgearbeiten-3`.
+
 - [ ] Auf `main` den vollständigen geschützten Sonar-Scan durchführen, alle
   berechtigten Findings beheben und den Endstand durch einen Nachscan mit null
   offenen Findings bestätigen. Befunde fachlich prüfen, nichts für die Null
   unterdrücken. Erforderliche lokale Korrekturcommits und Zwischenbranches sind
-  vom Gesamtauftrag umfasst; keine Pushes.
-- [ ] Anschließend einen neuen Folgebranch mit ähnlichem Namen anlegen,
-  beispielsweise `codex/vaadin-komponenten-folgearbeiten-3`, sofern frei, und die
-  weitere Komponentenplanung dort fortführen.
+  vom Gesamtauftrag umfasst; keine Pushes. **Wartend:** Der vorgesehene lokale
+  Sonar-Zugang ist derzeit nicht verfügbar. Die sichere Hinterlegung ist beim
+  Benutzer angefragt. Es gibt keinen aktuellen Scan und keinen bestätigten
+  Nullstand; die unabhängige große Testrunde wird währenddessen fortgesetzt.
 
 ## Arbeitspunkt 5: Große Testrunde als letzter Schritt
+
+**Status: gestartet.** Die gepflegten Offlineprüfungen sind bestanden;
+Hintergrundvarianten und vollständige Browserläufe werden isoliert geprüft.
 
 Zuerst Gesamtpakete 1, 2 und 3 einschließlich der jeweiligen gezielten Prüfungen,
 Reviews und Commits sowie Arbeitspunkt 4 abschließen, danach auf dem neuen

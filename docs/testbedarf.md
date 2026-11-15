@@ -2,6 +2,14 @@
 
 ## Browser-Tests
 
+- **Kartenvergleich mit Ticketaktivität – offen:** Die Ticketsystem-Navigation
+  muss mit und ohne ungelesene Aktivität erreichbar sein. Der Status ergänzt
+  ihren zugänglichen Namen; die Auswahl darf deshalb keinen leeren Ticketbestand
+  voraussetzen. Der Kartenfall erzeugt dafür einen eigenen ungelesenen Vorgang
+  und schließt nur diesen anschließend über die UI. In DE/EN auf Desktop und
+  Smartphone sind je zwei gezielte Fälle bestanden, einschließlich Aufbau,
+  Abbau und Bericht. Offen bleibt die Wiederholung in der großen Testrunde.
+
 - **2FA-Push nach Wechsel des Konfigurationstabs – offen:** Der Gesamtlauf blieb
   beim synchronen Schließen eines administrativen Hilfstabs stehen. Der Test
   überlässt diese kurzlebigen Tabs jetzt dem gemeinsamen BrowserContext-Abbau.
