@@ -788,7 +788,7 @@ vaadin-form-layout.account-profile-form {
     max-width: 100%;
 }
 @media (max-width: 600px) {
-    .account-lifecycle-action { flex-wrap: wrap; }
+    .account-lifecycle-action { flex-wrap: wrap; justify-content: flex-end; }
     .account-lifecycle-action > .account-lifecycle-copy {
         flex-basis: calc(100% - var(--cosmos-panel-icon-size-small) - var(--cosmos-space-m));
     }

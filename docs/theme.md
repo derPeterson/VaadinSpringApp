@@ -79,7 +79,8 @@ Sicherheits-Textstile, die Beschreibung die reguläre kleine Textgröße.
 `account-lifecycle-overview` und `account-lifecycle-action` sind lokal in
 `cosmos-account.css` gestaltet.
 Deaktivierungsicons verwenden die Warnpalette, Löschicons die rote Gefahrpalette.
-Auf schmalen Ansichten rückt der Button unter seinen Text. Header und Tabs
+Auf schmalen Ansichten rückt der Button rechtsbündig unter seinen Text, innerhalb
+der bestehenden Kartenabstände. Header und Tabs
 bleiben unverändert. Bei Entwicklerkonten nennt die Deaktivierungsbeschreibung nur
 die Folgen der Aktion, ohne technische Kontotypdetails oder Zusage eines Reaktivierungslinks.
 Alle drei Sicherheitsreiter verwenden unten `cosmos-panel-hint` mit

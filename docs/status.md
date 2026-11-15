@@ -111,6 +111,10 @@ sind bestanden. Abbruch erhält Entwurf beziehungsweise Sitzungen; nach Wechsel
 vom Sammel- zum Einzeldialog übernimmt die Einzelaktion keine Vollbreite.
 Desktopdarstellung und eigener gespeicherter Zugang bleiben erhalten.
 Vorher-/Nachher-Aufnahmen der beiden Dialoge liegen zur Endabnahme vor.
+Die Kontoaktionskarten ordnen ihre Buttons mobil rechts an. 42 Auswahlprüfungen
+und je zwei Browserfälle in DE/EN bei 1280/390 px sind bestanden. Beide
+Identitätsdialoge lassen sich öffnen und ohne Kontoänderung abbrechen;
+Vergleichsaufnahmen zeigen Smartphone- und unveränderte Desktopdarstellung.
 Diese Änderungen haben keinen neuen Sonar-Scan; der obige Scan gilt weiterhin für
 `f3c21623`. Die übrigen Nachbearbeitungspunkte bleiben im
 [Komponentenplan](planung/vaadin-komponenten-abgleich.md) offen.

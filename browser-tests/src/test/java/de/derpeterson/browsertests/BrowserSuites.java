@@ -1,5 +1,6 @@
 package de.derpeterson.browsertests;
 
+import de.derpeterson.browsertests.suites.AccountActionCardsBrowserTest;
 import de.derpeterson.browsertests.suites.AccountLifecycleBrowserTest;
 import de.derpeterson.browsertests.suites.AccountSecurityBrowserTest;
 import de.derpeterson.browsertests.suites.AccountSettingsBrowserTest;
@@ -71,6 +72,7 @@ final class BrowserSuites {
               PasswordResetBrowserTest.class,
               PublicPanelsBrowserTest.class,
               AccountLifecycleBrowserTest.class,
+              AccountActionCardsBrowserTest.class,
               AccountSettingsBrowserTest.class,
               AccountSecurityBrowserTest.class,
               SessionManagementBrowserTest.class,
@@ -96,6 +98,7 @@ final class BrowserSuites {
               LoginAttemptBrowserTest.class,
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
+      case "account-action-cards" -> List.of(AccountActionCardsBrowserTest.class);
       case "mobile-confirmation-footers" ->
           List.of(AccountSettingsBrowserTest.class, SessionManagementBrowserTest.class);
       case "identity-overflow" -> List.of(IdentityOverflowBrowserTest.class);

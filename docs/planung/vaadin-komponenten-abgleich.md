@@ -97,14 +97,11 @@ hat Vorrang; der separat zurückgestellte Scrollpunkt bleibt unberührt.
    Aktuelle Regeln stehen im [Theme](../theme.md#native-vaadin-bausteine-zuerst),
    die gezielten Ergebnisse im [Prüfstand](../status.md).
 
-8. [ ] **Smartphone-Aktionen in den Kontoverwaltungskarten:** Unter „Mein Konto
-   → Sicherheit → Konto verwalten“ die Buttons „Konto deaktivieren“ und
-   „Konto endgültig löschen“ jeweils in ihrer eigenen Karte rechtsbündig
-   innerhalb der bestehenden Innenabstände anordnen; innerhalb der Aktionszeile
-   vertikal zentrieren. Nur Smartphone-Layout ändern. Bestehende Buttonfarben,
-   Icons, Beschriftungen und Desktopdarstellung erhalten. Nach Startfreigabe
-   beide Karten auf schmaler Breite in DE/EN auf passende Ausrichtung und
-   vollständig erreichbare Aktionen prüfen.
+8. [ ] **Smartphone-Aktionen in den Kontoverwaltungskarten – umgesetzt, Endabnahme offen:**
+   Beide Aktionen stehen mobil rechts innerhalb der bestehenden Kartenabstände.
+   Farben, Icons, Beschriftungen und Desktopdarstellung bleiben erhalten.
+   DE/EN bei 1280/390 px einschließlich Öffnen und Abbrechen beider
+   Identitätsdialoge sind bestanden. Vergleichsaufnahmen liegen vor.
 
 9. [ ] **Einheitliche Smartphone-Footer in der Konfiguration:** Alle
    Konfigurationsbereiche auf die Anordnung von „Werte neu laden“ und

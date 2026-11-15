@@ -49,6 +49,7 @@ class BrowserExecutionPlanTest {
         "tab-overflow",
         "identity-overflow",
         "mobile-confirmation-footers",
+        "account-action-cards",
         "avatars",
         "profile-form",
         "account-forms",
@@ -149,6 +150,7 @@ class BrowserExecutionPlanTest {
                   "revokedWaitingCleanupShowsFailureWithoutClaimingSuccess",
                   "queueTabUrlsSurviveReloadAndRejectUnauthorizedAssistantAccess",
                   "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
+          case "account-action-cards" -> Set.of("accountActionCardsKeepTheirActionsReachable");
           case "mobile-confirmation-footers" ->
               Set.of(
                   "profileDraftSurvivesCancelledNavigationAndIsClearedOnDiscard",
