@@ -738,10 +738,9 @@ public class AdminUserManagementSection extends VerticalLayout {
       deleteUserDialog.close();
     });
     deleteUserDialog.addConfirmListener(event -> {
-      if (deletionPending.compareAndSet(true, false)) {
-        if (!confirmUserDeletion(userEntity, deleteUserDialog, afterDeleteAction)) {
-          deletionPending.set(true);
-        }
+      if (deletionPending.compareAndSet(true, false)
+          && !confirmUserDeletion(userEntity, deleteUserDialog, afterDeleteAction)) {
+        deletionPending.set(true);
       }
     });
     VerticalLayout deleteDialogContentLayout =

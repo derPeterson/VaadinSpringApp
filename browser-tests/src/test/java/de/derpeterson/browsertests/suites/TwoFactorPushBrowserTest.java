@@ -216,7 +216,7 @@ public class TwoFactorPushBrowserTest extends BrowserFixture {
     String location = "/admin?section=configuration&group=two_factor";
     // Eine Weiterleitung des alten Prüftabs darf den neuen Abruf nicht abbrechen. Die
     // kurzlebigen Hilfstabs schließt die Fixture gemeinsam mit ihrem BrowserContext;
-    // Page.close kann hier während eines laufenden Seitenwechsels unbegrenzt warten.
+    // Direktes Schließen kann hier während eines laufenden Seitenwechsels unbegrenzt warten.
     // Die getrennte Nutzersitzung mit der Benachrichtigungsvorschau bleibt erhalten.
     browserPage = browserContext.newPage();
     browserPage.navigate(location);

@@ -24,6 +24,7 @@ import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -131,13 +132,13 @@ public class EmailQueueCleanupService {
   }
 
   @Transactional(readOnly = true)
-  public CleanupResult latestResult() {
+  public @Nullable CleanupResult latestResult() {
     adminRolePolicy.requireSuperadmin();
     return currentResult(cleanupStateRepository.findById(1L).orElseThrow());
   }
 
   @Transactional(readOnly = true)
-  public CleanupResult resultFor(Long runId) {
+  public @Nullable CleanupResult resultFor(Long runId) {
     adminRolePolicy.requireSuperadmin();
     return cleanupRunRepository.findById(runId).map(this::resultOf).orElse(null);
   }
@@ -206,15 +207,7 @@ public class EmailQueueCleanupService {
       if (!cleanupSettings.automaticCleanupEnabled()) {
         return;
       }
-      try {
-        CleanupResult selectedResult =
-            dispatchGuard.runWhenIdle(() -> selectOrCreateAutomaticRun(cleanupSettings));
-        if (selectedResult != null) {
-          submitCleanupRun(selectedResult.runId());
-        }
-      } catch (EmailQueueDispatchGuard.DispatchStillRunningException _) {
-        // Eine ausgelassene automatische Prüfung ersetzt keinen vorgemerkten manuellen Lauf.
-      }
+      submitAutomaticRunWhenIdle(cleanupSettings);
     } catch (RuntimeException cleanupFailure) {
       nextSchedulerAttempt = cleanupClock.instant().plusSeconds(60);
       logger.error(
@@ -222,7 +215,19 @@ public class EmailQueueCleanupService {
     }
   }
 
-  private CleanupResult selectOrCreateAutomaticRun(CleanupSettings cleanupSettings) {
+  private void submitAutomaticRunWhenIdle(CleanupSettings cleanupSettings) {
+    try {
+      CleanupResult selectedResult =
+          dispatchGuard.runWhenIdle(() -> selectOrCreateAutomaticRun(cleanupSettings));
+      if (selectedResult != null) {
+        submitCleanupRun(selectedResult.runId());
+      }
+    } catch (EmailQueueDispatchGuard.DispatchStillRunningException _) {
+      // Eine ausgelassene automatische Prüfung ersetzt keinen vorgemerkten manuellen Lauf.
+    }
+  }
+
+  private @Nullable CleanupResult selectOrCreateAutomaticRun(CleanupSettings cleanupSettings) {
     return cleanupTransactionTemplate.execute(transactionStatus -> {
       EmailQueueCleanupStateEntity cleanupState = cleanupStateRepository.lockState();
       CleanupResult latestResult = currentResult(cleanupState);
@@ -253,8 +258,9 @@ public class EmailQueueCleanupService {
     try {
       while (!Thread.currentThread().isInterrupted()) {
         CleanupResult batchResult =
-            cleanupTransactionTemplate.execute(transactionStatus -> processBatch(runId));
-        if (batchResult == null || !batchResult.active()) {
+            Objects.requireNonNull(
+                cleanupTransactionTemplate.execute(transactionStatus -> processBatch(runId)));
+        if (!batchResult.active()) {
           return;
         }
       }
@@ -430,7 +436,7 @@ public class EmailQueueCleanupService {
     }
   }
 
-  private CleanupResult currentResult(EmailQueueCleanupStateEntity cleanupState) {
+  private @Nullable CleanupResult currentResult(EmailQueueCleanupStateEntity cleanupState) {
     return cleanupState.getCurrentRunId() == null
         ? null
         : resultOf(cleanupRunRepository.findById(cleanupState.getCurrentRunId()).orElseThrow());

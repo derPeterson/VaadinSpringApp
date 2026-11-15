@@ -1201,7 +1201,8 @@ sie außerhalb der View platzieren kann. Keine versteckten CSS-Imports einführe
 ### Hintergrundvarianten zum Ausprobieren
 
 `CosmosBackgroundComponent.ACTIVE_VARIANT` ist die einzige Umschaltstelle:
-`"advanced"` aktiviert den gelieferten Entwurf „Horizont Plus“, `"base"` den
+`ADVANCED_VARIANT` (`"advanced"`) aktiviert den gelieferten Entwurf „Horizont Plus",
+`BASE_VARIANT` (`"base"`) den
 bisherigen Hintergrund. `Application` übernimmt daraus den konstanten
 Stylesheet-Pfad; der gemeinsame `PageFrameComponent` erhält dazu die passenden
 nativen dekorativen Div-Ebenen. Besucherbereich, Portal und Administration

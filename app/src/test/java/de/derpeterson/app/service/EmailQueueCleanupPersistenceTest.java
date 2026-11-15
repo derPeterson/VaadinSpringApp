@@ -518,7 +518,8 @@ class EmailQueueCleanupPersistenceTest {
     accountUserEntity.setRoleEntities(new ArrayList<>(List.of(superadminRole)));
     accountUserEntity = userRepository.saveAndFlush(accountUserEntity);
     AdminRolePolicy freshPolicy = new AdminRolePolicy(userRepository);
-    assertDoesNotThrow(() -> freshPolicy.requireSuperadmin(accountUserEntity.getId()));
+    Long requestingAccountId = accountUserEntity.getId();
+    assertDoesNotThrow(() -> freshPolicy.requireSuperadmin(requestingAccountId));
 
     switch (unavailableReason) {
       case "disabled" -> accountUserEntity.setEnabled(false);
@@ -537,8 +538,7 @@ class EmailQueueCleanupPersistenceTest {
       userRepository.saveAndFlush(accountUserEntity);
     }
     assertThrows(
-        AccessDeniedException.class,
-        () -> freshPolicy.requireSuperadmin(accountUserEntity.getId()));
+        AccessDeniedException.class, () -> freshPolicy.requireSuperadmin(requestingAccountId));
   }
 
   @Test

@@ -81,6 +81,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 @RolesAllowed(AppRouteConstants.ADMIN_ROUTE_ROLES)
 public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObserver {
   private static final String SECTION_PARAMETER = "section";
+  private static final String GROUP_PARAMETER = "group";
   private static final String ARIA_CURRENT = "aria-current";
 
   private enum AdminSection {
@@ -307,7 +308,10 @@ public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObs
     AdminConfigGroup requestedConfigurationGroup =
         requestedAdminSection == AdminSection.CONFIGURATION
             ? parseEnumQueryParameter(
-                adminQueryParameters, "group", AdminConfigGroup.class, AdminConfigGroup.GENERAL)
+                adminQueryParameters,
+                GROUP_PARAMETER,
+                AdminConfigGroup.class,
+                AdminConfigGroup.GENERAL)
             : null;
 
     isRestoringAdminNavigation = true;
@@ -349,7 +353,7 @@ public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObs
             Map.of(
                 SECTION_PARAMETER,
                 "configuration",
-                "group",
+                GROUP_PARAMETER,
                 "queue",
                 "tab",
                 selectedQueueTab.name().toLowerCase(Locale.ROOT)));
@@ -497,7 +501,7 @@ public class AdminView extends IsAuthenticatedBaseView implements BeforeLeaveObs
         SECTION_PARAMETER, targetAdminSection.name().toLowerCase(Locale.ROOT));
     if (targetConfigurationGroup != null) {
       navigationQueryParameters.put(
-          "group", targetConfigurationGroup.name().toLowerCase(Locale.ROOT));
+          GROUP_PARAMETER, targetConfigurationGroup.name().toLowerCase(Locale.ROOT));
     }
 
     SideNavItem adminSideNavItem = new SideNavItem("", AdminView.class);

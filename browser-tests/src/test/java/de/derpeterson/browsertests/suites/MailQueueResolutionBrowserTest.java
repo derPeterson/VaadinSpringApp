@@ -33,11 +33,12 @@ import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
 import io.qameta.allure.playwright.AllurePlaywright;
 import java.math.BigDecimal;
+import java.net.URI;
 import java.text.MessageFormat;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.regex.Pattern;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -544,7 +545,10 @@ public class MailQueueResolutionBrowserTest extends BrowserFixture {
       selectCleanupTabAndGetAutomaticSwitch();
       // Den eigenen Queryparameter unabhängig von seiner Reihenfolge nach dem Serverereignis
       // abwarten.
-      browserPage.waitForURL(Pattern.compile(".*[?&]tab=assistants(?:&.*)?$"));
+      browserPage.waitForURL(url -> {
+        String query = URI.create(url).getQuery();
+        return query != null && List.of(query.split("&")).contains("tab=assistants");
+      });
       String assistantUrl = browserPage.url();
       assertTrue(assistantUrl.contains("tab=assistants"));
       browserPage.reload(new Page.ReloadOptions().setWaitUntil(WaitUntilState.DOMCONTENTLOADED));

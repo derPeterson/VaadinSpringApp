@@ -4,8 +4,13 @@ import com.vaadin.flow.component.html.Div;
 
 /** Gemeinsame dekorative CSS-Ebenen für Besucherbereich, Portal und Administration. */
 public class CosmosBackgroundComponent extends Div {
-  // Zum anwendungsweiten Wechsel nur diese Zeile auf "base" oder "advanced" setzen.
-  public static final String ACTIVE_VARIANT = "advanced";
+  private static final String BASE_VARIANT = "base";
+  private static final String ADVANCED_VARIANT = "advanced";
+  private static final String STARS_CLASS = "cosmos-stars";
+  private static final String SPARK_CLASS = "cosmos-spark";
+
+  // Zum anwendungsweiten Wechsel nur diese Zeile auf BASE_VARIANT oder ADVANCED_VARIANT setzen.
+  public static final String ACTIVE_VARIANT = ADVANCED_VARIANT;
   public static final String STYLESHEET =
       "custom-theme/cosmos-background-" + ACTIVE_VARIANT + ".css";
 
@@ -14,16 +19,16 @@ public class CosmosBackgroundComponent extends Div {
     getElement().setAttribute("aria-hidden", "true");
 
     switch (ACTIVE_VARIANT) {
-      case "base" -> addBaseBackgroundLayers();
-      case "advanced" -> addAdvancedBackgroundLayers();
+      case BASE_VARIANT -> addBaseBackgroundLayers();
+      case ADVANCED_VARIANT -> addAdvancedBackgroundLayers();
       default -> throw new IllegalStateException("Unknown Cosmos background: " + ACTIVE_VARIANT);
     }
   }
 
   private void addBaseBackgroundLayers() {
     add(
-        createBackgroundLayerDiv("cosmos-stars", "cosmos-stars--small"),
-        createBackgroundLayerDiv("cosmos-stars", "cosmos-stars--far"),
+        createBackgroundLayerDiv(STARS_CLASS, "cosmos-stars--small"),
+        createBackgroundLayerDiv(STARS_CLASS, "cosmos-stars--far"),
         createBackgroundLayerDiv("cosmos-galaxy"),
         createBackgroundLayerDiv("cosmos-glow", "cosmos-glow--blue"),
         createBackgroundLayerDiv("cosmos-glow", "cosmos-glow--violet"),
@@ -35,12 +40,12 @@ public class CosmosBackgroundComponent extends Div {
   private void addAdvancedBackgroundLayers() {
     addClassName("cosmos-sky--advanced");
     add(
-        createBackgroundLayerDiv("cosmos-stars", "cosmos-stars-a"),
-        createBackgroundLayerDiv("cosmos-stars", "cosmos-stars-b"),
-        createBackgroundLayerDiv("cosmos-spark", "cosmos-spark--first"),
-        createBackgroundLayerDiv("cosmos-spark", "cosmos-spark--second"),
-        createBackgroundLayerDiv("cosmos-spark", "cosmos-spark--third"),
-        createBackgroundLayerDiv("cosmos-spark", "cosmos-spark--fourth"),
+        createBackgroundLayerDiv(STARS_CLASS, "cosmos-stars-a"),
+        createBackgroundLayerDiv(STARS_CLASS, "cosmos-stars-b"),
+        createBackgroundLayerDiv(SPARK_CLASS, "cosmos-spark--first"),
+        createBackgroundLayerDiv(SPARK_CLASS, "cosmos-spark--second"),
+        createBackgroundLayerDiv(SPARK_CLASS, "cosmos-spark--third"),
+        createBackgroundLayerDiv(SPARK_CLASS, "cosmos-spark--fourth"),
         createBackgroundLayerDiv("cosmos-moon"),
         createBackgroundLayerDiv("cosmos-shoot", "cosmos-shoot--first"),
         createBackgroundLayerDiv("cosmos-shoot", "cosmos-shoot--second"),

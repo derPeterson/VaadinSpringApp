@@ -1,7 +1,7 @@
 # Geplante Nachtarbeit
 
 **Status: Gesamtpakete 1–3 technisch abgeschlossen und lokal zwischenintegriert;
-abschließende große Testrunde läuft. Sonar-Nachweis wartet auf verfügbaren Zugang.**
+abschließender Sonar-Nachscan läuft; die große Testrunde folgt danach.**
 
 Der ausdrückliche Startauftrag umfasst alle fünf folgenden Arbeitspunkte.
 Sie konkretisiert die Nachtpakete der laufenden
@@ -82,15 +82,20 @@ ist ausdrücklich nicht abgeschlossen. Weitere Arbeit läuft auf
   berechtigten Findings beheben und den Endstand durch einen Nachscan mit null
   offenen Findings bestätigen. Befunde fachlich prüfen, nichts für die Null
   unterdrücken. Erforderliche lokale Korrekturcommits und Zwischenbranches sind
-  vom Gesamtauftrag umfasst; keine Pushes. **Wartend:** Der vorgesehene lokale
-  Sonar-Zugang ist derzeit nicht verfügbar. Die sichere Hinterlegung ist beim
-  Benutzer angefragt. Es gibt keinen aktuellen Scan und keinen bestätigten
-  Nullstand; die unabhängige große Testrunde wird währenddessen fortgesetzt.
+  vom Gesamtauftrag umfasst; keine Pushes. Der Zugang ist wiederhergestellt.
+  Der aktuelle Scan bei `3abb9139` enthält zwölf Codequalitätshinweise ohne
+  Bugs, Sicherheitslücken oder offene Hotspots. Die gezielten Korrekturen sind
+  mit 171 Anwendungstests und 113 Browser-Helfertests bestanden; die bestätigende
+  Analyse folgt gemäß [Sonar-Paket](sonar-pakete.md). Ein Nullstand ist noch
+  nicht bestätigt.
 
 ## Arbeitspunkt 5: Große Testrunde als letzter Schritt
 
-**Status: gestartet.** Die gepflegten Offlineprüfungen sind bestanden;
-Hintergrundvarianten und vollständige Browserläufe werden isoliert geprüft.
+**Status: nach Sonar fortzusetzen.** Die gepflegten Offlineprüfungen und die
+gezielten Hintergrundprüfungen sind bestanden. Die vorläufige Gesamtrunde ist
+für die wieder mögliche Sonar-Bereinigung bewusst beendet; sie zählt nicht als
+abgeschlossener Gesamtnachweis. Anschließend beide Sprachen am endgültigen Image
+isoliert prüfen.
 
 Zuerst Gesamtpakete 1, 2 und 3 einschließlich der jeweiligen gezielten Prüfungen,
 Reviews und Commits sowie Arbeitspunkt 4 abschließen, danach auf dem neuen
