@@ -306,8 +306,11 @@ public class NotificationHelper implements Serializable {
 
   private Paragraph createMessageParagraph(String notificationMessage) {
     String highlightedText = highlightedTextSupplier == null ? null : highlightedTextSupplier.get();
-    int highlightStartIndex =
-        StringUtils.isEmpty(highlightedText) ? -1 : notificationMessage.indexOf(highlightedText);
+    if (highlightedText == null || highlightedText.isEmpty()) {
+      return new Paragraph(notificationMessage);
+    }
+
+    int highlightStartIndex = notificationMessage.indexOf(highlightedText);
     if (highlightStartIndex < 0) {
       return new Paragraph(notificationMessage);
     }

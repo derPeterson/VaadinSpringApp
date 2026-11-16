@@ -381,6 +381,51 @@ class NotificationHelperIsolationTest {
   @ParameterizedTest
   @NullAndEmptySource
   @ValueSource(strings = {"missing"})
+  void refreshedHighlightCanDisappearAndReturnWithoutReplacingTheNotice(
+      String absentHighlightText) {
+    window(session());
+    NotificationHelper notificationHelper = NotificationHelper.getInstance();
+    String completeMessageText = "E-Mail an <Chris & Alex> gesendet.";
+    AtomicReference<String> highlightedTextReference = new AtomicReference<>("<Chris & Alex>");
+    notificationHelper.showHighlightedTextNotification(
+        () -> "Success",
+        () -> completeMessageText,
+        highlightedTextReference::get,
+        -1,
+        NotificationHelper.NotificationType.SUCCESS);
+    Notification originalNotification = notification(notificationHelper);
+    assertEquals(
+        1, message(notificationHelper).getChildren().filter(Span.class::isInstance).count());
+
+    highlightedTextReference.set(absentHighlightText);
+    notificationHelper.updateText();
+
+    Paragraph messageParagraph = message(notificationHelper);
+    assertEquals(completeMessageText, messageParagraph.getText());
+    assertEquals(0, messageParagraph.getChildren().count());
+    assertSame(originalNotification, notification(notificationHelper));
+    assertTrue(originalNotification.isOpened());
+    assertEquals(-1, originalNotification.getDuration());
+
+    highlightedTextReference.set("<Chris & Alex>");
+    notificationHelper.updateText();
+
+    messageParagraph = message(notificationHelper);
+    assertEquals(completeMessageText, messageParagraph.getElement().getTextRecursively());
+    Span highlightedSpan =
+        messageParagraph
+            .getChildren()
+            .filter(Span.class::isInstance)
+            .map(Span.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals(highlightedTextReference.get(), highlightedSpan.getText());
+    assertSame(originalNotification, notification(notificationHelper));
+  }
+
+  @ParameterizedTest
+  @NullAndEmptySource
+  @ValueSource(strings = {"missing"})
   void absentHighlightKeepsTheCompleteLiteralMessage(String highlightedText) {
     window(session());
     NotificationHelper helper = NotificationHelper.getInstance();
