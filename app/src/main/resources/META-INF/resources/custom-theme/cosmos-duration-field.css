@@ -1,3 +1,17 @@
+/* Die native Feldhülle ergänzt keine eigene Fläche oder zusätzliche Zeilenhöhe. */
+.cosmos-duration-custom-field {
+    line-height: inherit;
+    min-width: 0;
+    padding: 0;
+    margin: 0;
+}
+
+.cosmos-duration-custom-field::part(input-fields) {
+    display: block;
+    padding: 0;
+    margin: 0;
+}
+
 /* Gemeinsames Zeitfeld: Zahl und native Einheit teilen die vorhandene Feldfläche. */
 .cosmos-duration-field {
     min-width: 0;

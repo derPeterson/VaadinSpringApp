@@ -97,6 +97,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `configuration-footers` | Alle Konfigurationsfooter für Admin/Superadmin, beide Anmeldeanbieter, Queue-Assistent und vier 2FA-Rollen bei 1280/390 px: mobile Vollbreite und Vergleichsaufnahmen | 6 |
 | `profile-notification` | Bestehender Profil-Speicherfall bei 1280/390 px: Erfolgsmeldung, Originalaufnahmen und Messwerte, automatische/manuelle Schließung und erneut gespeicherte Daten | 2 |
 | `notification-variants` | Repräsentative Erfolg-/Fehler-/Warn-/Informationsmeldungen, reiner Titel, dauerhafte Anzeige, hervorgehobene Registrierungsadresse und native Neustart-Aufzählung bei 1280/390 px: echte Fachabläufe, Originalaufnahmen und Messwerte | 10 |
+| `duration-custom-field` | Nur 2FA-Inaktivitätsdauer bei 1280/390 px: ausgeschaltet/aktiv, Einheitenauswahl, unveränderte Zahl, Speichern mit 2FA, leere Eingabe, Neuladen und Formularschutz; Originalaufnahmen und Messwerte | 2 |
 | `queue-cleanup-appearance` | Nur Assistentenwarnung und manuelle Bereinigungsbestätigung bei 1280/390 px: Gestaltung und alle vier Abbruchwege, ohne Bereinigung auszuführen | 2 |
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit und HTTPS-/HTTP-Grenze | 4 |
 | `https-night` | Infrastruktur und Remember-me: normale Profile, echter Chromium-/Serverneustart; mit zwei Workern gezielter Nachtlaufnachweis | 8 |

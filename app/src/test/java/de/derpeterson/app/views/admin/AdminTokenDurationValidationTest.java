@@ -23,7 +23,7 @@ import de.derpeterson.app.i18n.MessageProperties;
 import de.derpeterson.app.model.enums.ConfigEntry;
 import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
-import de.derpeterson.app.ui.components.CosmosDurationField;
+import de.derpeterson.app.ui.components.CosmosDurationCustomField;
 import java.time.Duration;
 import java.util.Locale;
 import java.util.Map;
@@ -89,7 +89,7 @@ class AdminTokenDurationValidationTest {
     localeReference.set(language);
     configurationSection.refreshTexts();
     Duration minimum = entry.getMinimumTokenDuration();
-    CosmosDurationField input = field(entry);
+    CosmosDurationCustomField input = field(entry);
 
     assertEquals(
         "config-label-" + entry.name().toLowerCase(Locale.ROOT),
@@ -99,21 +99,21 @@ class AdminTokenDurationValidationTest {
       if (value.isBlank()) {
         amount(entry).clear();
       } else {
-        input.setStoredValue(value);
+        input.setValue(value);
       }
       clearInvocations(configService);
       saveButton().click();
 
       assertTrue(input.isInvalid(), entry + " / " + value);
-      assertNotNull(amount(entry).getErrorMessage());
+      assertNotNull(field(entry).getErrorMessage());
       if (!value.isBlank()) {
         assertEquals(
             messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
-            amount(entry).getErrorMessage());
+            field(entry).getErrorMessage());
       } else {
         assertEquals(
             messageProperties.getAdminConfigValidationTokenDuration(minimum.toMinutes()),
-            amount(entry).getErrorMessage());
+            field(entry).getErrorMessage());
       }
       verify(configService, never()).set(any(ConfigEntry.class), anyString());
     }
@@ -123,7 +123,7 @@ class AdminTokenDurationValidationTest {
 
     assertEquals(
         messageProperties.getAdminConfigValidationDurationMinimum(minimum.toMinutes()),
-        amount(entry).getErrorMessage());
+        field(entry).getErrorMessage());
   }
 
   @ParameterizedTest
@@ -132,7 +132,7 @@ class AdminTokenDurationValidationTest {
     localeReference.set(language);
     configurationSection.refreshTexts();
     Duration minimum = entry.getMinimumTokenDuration();
-    field(entry).setStoredValue(minimum.toMinutes() + "m");
+    field(entry).setValue(minimum.toMinutes() + "m");
     clearInvocations(configService);
     saveButton().click();
 
@@ -163,17 +163,17 @@ class AdminTokenDurationValidationTest {
     configurationSection.showGroup(AdminConfigGroup.QUEUE);
     ConfigEntry entry = ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION;
     for (String invalid : new String[] {"0s", "PT0S", "-1s"}) {
-      field(entry).setStoredValue(invalid);
+      field(entry).setValue(invalid);
       clearInvocations(configService);
       saveButton().click();
 
       assertTrue(field(entry).isInvalid());
       assertEquals(
           messageProperties.getAdminConfigValidationPositiveDuration(),
-          amount(entry).getErrorMessage());
+          field(entry).getErrorMessage());
       verify(configService, never()).set(any(ConfigEntry.class), anyString());
     }
-    field(entry).setStoredValue("1s");
+    field(entry).setValue("1s");
     clearInvocations(configService);
     saveButton().click();
 
@@ -181,14 +181,16 @@ class AdminTokenDurationValidationTest {
     verify(configService).set(entry, "PT1S");
   }
 
-  private CosmosDurationField field(ConfigEntry entry) {
-    return (CosmosDurationField)
+  private CosmosDurationCustomField field(ConfigEntry entry) {
+    return (CosmosDurationCustomField)
         ((Map<?, ?>) ReflectionTestUtils.getField(configurationSection, "configInputs")).get(entry);
   }
 
   private BigDecimalField amount(ConfigEntry entry) {
     return (BigDecimalField)
-        ReflectionTestUtils.getField(field(entry), "preciseDurationBigDecimalField");
+        ReflectionTestUtils.getField(
+            ReflectionTestUtils.getField(field(entry), "durationField"),
+            "preciseDurationBigDecimalField");
   }
 
   private Button saveButton() {

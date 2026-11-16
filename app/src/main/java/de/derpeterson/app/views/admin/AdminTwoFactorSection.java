@@ -40,6 +40,7 @@ import de.derpeterson.app.ui.components.CosmosBreadcrumbsComponent.ParentPath;
 import de.derpeterson.app.ui.components.CosmosCardComponent;
 import de.derpeterson.app.ui.components.CosmosComboBoxStyling;
 import de.derpeterson.app.ui.components.CosmosCssClasses;
+import de.derpeterson.app.ui.components.CosmosDurationCustomField;
 import de.derpeterson.app.ui.components.CosmosDurationField;
 import de.derpeterson.app.ui.components.CosmosSectionHeaderComponent;
 import de.derpeterson.app.ui.components.FieldHelpRowLayout;
@@ -95,7 +96,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
   private final Span policySaveHintSpan = new Span();
   private final Switch reconfirmAfterInactivitySwitch = new Switch();
   private final Span inactivityDurationLabelSpan = new Span();
-  private final CosmosDurationField inactivityDurationField;
+  private final CosmosDurationCustomField inactivityDurationField;
   private final Switch developmentPauseSwitch = new Switch();
   private final Switch developmentGoogleConfirmationSwitch = new Switch();
   private final Span developmentOptionsTitleSpan = new Span();
@@ -200,15 +201,15 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     reconfirmAfterInactivitySwitch.addClassName(CONFIG_SWITCH_CLASS);
     reconfirmAfterInactivitySwitch.setWidthFull();
 
-    inactivityDurationField = new CosmosDurationField(messageProperties);
+    inactivityDurationField = new CosmosDurationCustomField(messageProperties);
     inactivityDurationField.setAvailableUnits(
         CosmosDurationField.Unit.MINUTES,
         CosmosDurationField.Unit.HOURS,
         CosmosDurationField.Unit.DAYS);
-    inactivityDurationField.setId("two-factor-inactivity-duration");
     inactivityDurationField.setDefaultValue(DEFAULT_INACTIVITY_SECONDS);
     inactivityDurationLabelSpan.setId("two-factor-inactivity-label");
     inactivityDurationLabelSpan.addClassName("provider-field-label");
+    inactivityDurationField.setId("two-factor-inactivity-duration");
     inactivityDurationField.setAriaLabelledBy("two-factor-inactivity-label");
     Div inactivityDurationDiv =
         new Div(
@@ -250,7 +251,7 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     inactivitySectionLayout.setPadding(false);
     inactivitySectionLayout.addClassName("mfa-inactivity-section");
     reconfirmAfterInactivitySwitch.addValueChangeListener(
-        event -> inactivityDurationField.setControlsEnabled(event.getValue()));
+        event -> inactivityDurationField.setEnabled(event.getValue()));
 
     developmentPauseSwitch.addClassName(CONFIG_SWITCH_CLASS);
     developmentPauseSwitch.setWidthFull();
@@ -445,9 +446,9 @@ public final class AdminTwoFactorSection extends VerticalLayout {
                 (action, mode) -> ruleModeComboBoxesByRole.get(role).get(action).setValue(mode)));
 
     reconfirmAfterInactivitySwitch.setValue(twoFactorPolicySnapshot.policy().inactivityEnabled());
-    inactivityDurationField.setStoredValue(
+    inactivityDurationField.setValue(
         Long.toString(twoFactorPolicySnapshot.policy().inactivity().toSeconds()));
-    inactivityDurationField.setControlsEnabled(reconfirmAfterInactivitySwitch.getValue());
+    inactivityDurationField.setEnabled(reconfirmAfterInactivitySwitch.getValue());
 
     developmentPauseSwitch.setValue(twoFactorPolicySnapshot.policy().developmentPause());
     developmentGoogleConfirmationSwitch.setValue(
@@ -519,10 +520,10 @@ public final class AdminTwoFactorSection extends VerticalLayout {
     });
 
     Duration inactivityDuration =
-        inactivityDurationField.getStoredValue().isBlank()
+        inactivityDurationField.getValue().isBlank()
                 && !Boolean.TRUE.equals(reconfirmAfterInactivitySwitch.getValue())
             ? twoFactorPolicySnapshot.policy().inactivity()
-            : Duration.ofSeconds(Long.parseLong(inactivityDurationField.getStoredValue()));
+            : Duration.ofSeconds(Long.parseLong(inactivityDurationField.getValue()));
 
     return new TwoFactorPolicy(
         draftRulesByRole,

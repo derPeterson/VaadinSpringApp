@@ -154,6 +154,35 @@ zusätzliche Seitenansichten ein. Diese gezielten Prüfungen ersetzen weder
 die obige Gesamt-QA noch einen neuen Sonar-Scan. Die Gesamtumsetzung bleibt
 im Komponentenplan offen.
 
+Alle 17 allgemeinen Konfigurationszeitfelder und die 2FA-Inaktivitätsdauer
+verwenden jetzt dieselbe native CustomField-Hülle. 129 gezielte Anwendungs-
+JUnit-Prüfungen sind bestanden, darunter alle drei Speicherformate in DE/EN,
+kanonische Werte, Leerwerte, native Zustände und Beschriftungen, präzise
+Tokenfristen, Feldhilfe, Assistentenfreigabe, Änderungsvergleich und 2FA-Abläufe.
+Die Prüfungen decken auch das Laden leerer gespeicherter Werte sowie das
+Zurücksetzen eines alten Feldfehlers beim Bearbeiten eines weiterhin ungültigen
+Präzisionswertes ab. Ein beim Review erkannter Wechsel zwischen deaktiviertem
+und schreibgeschütztem Feld ist ebenfalls abgesichert: Die Schrittbuttons werden
+nach Freigabe wieder bedienbar und bleiben bei Read-only gesperrt. Spotless und
+Checkstyle sind erfolgreich.
+
+Für den vorherigen 2FA-Piloten sind 46 Auswahlprüfungen sowie isolierte Vorher-
+und abschließende Nachher-Läufe mit jeweils zwei Fällen pro Sprache bei
+1280/390 px bestanden. DE und EN verwendeten pro Vergleichsstand dasselbe
+unveränderte Image. Aufbau, Abbau und Berichte waren erfolgreich. Geprüft wurden
+Aktivierung, dieselbe Zahl beim Einheitenwechsel, Speichern mit 2FA, erneutes
+Öffnen, leere Eingabe, Abbruch und bestätigtes Neuladen. Alle zwölf damaligen
+Messwertsätze stimmen überein; sämtliche zwölf zugeschnittenen Vergleichsbilder
+sind bytegleich. Die Vergleichsseite enthält unveränderte Originalaufnahmen
+und Seitenansichten.
+
+Diese Browserbelege gelten für den Piloten vor der anschließenden Vereinheitlichung.
+Für die Übernahme der übrigen Felder sind ausdrücklich nur JUnit-/Stilprüfungen
+beauftragt; weitere Screenshots oder Browserläufe wurden nicht ausgeführt.
+Der Benutzer hat die übernommenen Felder selbst gesichtet und abgenommen. Ein neuer konkreter
+automatisierter Prüfbedarf wurde dabei nicht erkannt. Diese gezielten Nachweise
+ersetzen den obigen Gesamtprüfstand und einen neuen Sonar-Scan nicht.
+
 ## Abnahme, offene Nachbearbeitung und Grenzen
 
 Der Benutzer hat Karten/Panels und die weiteren Bestätigungsdialoge anhand der

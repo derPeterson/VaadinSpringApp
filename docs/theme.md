@@ -1426,9 +1426,10 @@ Die lokale Anordnung liegt in `cosmos-mailqueue-assistant.css`; normale
 Buttonzustände kommen unverändert aus dem gemeinsamen Theme. Laden und Speichern
 bleiben im äußeren gemeinsamen Footer, nicht in der inneren Karte.
 
-`CosmosDurationField` ist der wiederverwendbare Zeitfeld-Baustein aus nativen
-Vaadin-Zahlenfeldern und einem `Select<Unit>` im öffentlichen Suffix. Er wird in
-den Zeitfeldern der Konfiguration verwendet. Dazu gehören
+`CosmosDurationCustomField` ist das gemeinsame native `CustomField<String>` für
+alle 17 Konfigurationszeitfelder und die 2FA-Inaktivitätsdauer. Es verwendet
+`CosmosDurationField` als Zahl-/Einheitenbaustein aus nativen Vaadin-Zahlenfeldern
+und einem `Select<Unit>` im öffentlichen Suffix. Dazu gehören
 die Gültigkeit gespeicherter Anmeldungen, der Sitzungs-Timeout, das Zeitfenster für
 Fehlversuche, vier Tokenfristen, automatische Abwesenheit, zwei
 Benachrichtigungs-Aufbewahrungen sowie Wartezeit und Aufbewahrung der E-Mail-Queue.
@@ -1445,9 +1446,24 @@ Zwischen X, Plus und Einheit gelten jeweils 4 px. Die lokalen Variablen
 `cosmos-duration-field.css`; andere Eingabetypen bleiben davon unberührt.
 Aktueller Wert, Umrechnung und Standardwert stehen nur in der Feldhilfe.
 Sekunden, ISO-Zeitspanne und ganze Tage behalten ihr jeweiliges Speicherformat.
-Die 2FA-Inaktivitätsregel verwendet denselben Baustein mit Minuten, Stunden und
-Tagen als verfügbaren Einheiten. Ganzzahlige Sekundenfelder, präzise Zeitspannen
-und feste Tageswerte bleiben fachlich getrennt.
+Die 2FA-Inaktivitätsregel begrenzt die Auswahl wie bisher auf Minuten, Stunden
+und Tage. Alle Aufrufer lesen und setzen den Wert über die native Feldhülle;
+Sekunden, ISO-Zeitspannen und feste Tageswerte behalten ihr eigenes Speicherformat.
+Das Modell verwendet die kanonische Darstellung des bisherigen Eingabebausteins;
+ein leerer Entwurf bleibt leer. Standardwerte beim Laden beziehungsweise Speichern
+und die fachliche Validierung bleiben bei den Konfigurationsaufrufern.
+Programmatische und benutzerseitige Änderungen der Zahl-/Einheitenfelder behalten
+ihren Ereignisursprung. Native Wertänderungen, Binding, Read-only, Enabled und
+Invalid stehen an der gemeinsamen Hülle zur Verfügung. Beschriftungen werden an
+die innere Zahleneingabe weitergereicht; die Fehlermeldung gehört zur nativen Hülle.
+Der zusätzliche Eingabelistener erfasst auch Änderungen zwischen zwei ungültigen
+Entwürfen mit demselben Modellwert, damit ein alter Konfigurationsfehler beim
+Weiterbearbeiten zurückgesetzt wird. Ein explizites Neuladen stellt auch bei
+wertgleichem Entwurf die gespeicherte Darstellung wieder her.
+Die Klasse `cosmos-duration-custom-field` neutralisiert Außenabstand und zusätzliche
+Zeilenhöhe der Hülle. Der öffentliche Part `input-fields` gibt die vorhandene
+Feldfläche frei. Diese Regeln stehen gemeinsam in `cosmos-duration-field.css`;
+eine lokale Sonderregel für das 2FA-Feld ist nicht erforderlich.
 Die bestehenden Mindestdauern und Bereichsgrenzen bleiben erhalten. Beim Laden
 wird die größte ganzzahlig passende Einheit gewählt. Einheitenwechsel erhält
 die Zahl, die Schaltflächen ändern sie um eins. Bestehende Nachkommastellen einer
@@ -1787,7 +1803,7 @@ zu „Allgemein“. Die vorhandene Reitergestaltung bleibt unverändert.
 `AdminMailQueueCleanupComponent` ergänzt ausschließlich für Superadmins die
 Gruppe Mailqueue. Sie kombiniert native Vaadin-Layouts, die Standardwarnbox,
 Standardbuttons und eine dezente Ergebniszeile. Die Zeitfelder verwenden
-`CosmosDurationField`, der Schalter die vorhandene Checkbox-/Switch-Gestaltung.
+`CosmosDurationCustomField`, der Schalter die vorhandene Checkbox-/Switch-Gestaltung.
 `PortalConfirmationDialog` übernimmt die ausdrückliche Bestätigung. Die lokale
 Klasse `.admin-mail-queue-resolution` in `cosmos-admin.css` spannt den Bereich
 über beide Konfigurationsspalten. Die Aktion ist unabhängig vom Speichern des

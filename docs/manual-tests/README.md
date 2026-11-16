@@ -143,6 +143,11 @@ Information, reine Titel und Registrierung mit hervorgehobener Adresse sind
 anhand der DE-/EN-Vergleichsaufnahmen auf Desktop und Smartphone vom Benutzer
 abgenommen. Die übrigen Aufrufer verwenden dieselben Methoden; auf ausdrücklichen
 Benutzerwunsch gibt es dafür keine eigene Screenshot- oder Browserrunde je Stelle.
+Die einheitlichen nativen Zeitfelder einschließlich der 2FA-Inaktivitätsdauer
+und aller 17 übrigen Konfigurationszeitfelder sind vom Benutzer gesichtet und
+abgenommen. Die übrigen Felder wurden auf Benutzerwunsch ohne zusätzliche
+Screenshot-/Browserrunde übernommen; gezielte JUnit-/Stilprüfungen sichern
+die Übernahme ab.
 
 **Erwartet:** Die Oberfläche wirkt zusammengehörig und ruhig; relevante Texte/Aktionen sind gut lesbar und eindeutig. Rein persönlicher Änderungswunsch wird von einem Bedienhindernis unterschieden.
 

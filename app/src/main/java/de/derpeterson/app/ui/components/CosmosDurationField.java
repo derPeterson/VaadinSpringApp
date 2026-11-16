@@ -9,6 +9,7 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.select.Select;
 import com.vaadin.flow.component.textfield.BigDecimalField;
 import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.function.SerializableConsumer;
 import com.vaadin.flow.function.SerializableRunnable;
 import de.derpeterson.app.i18n.CustomI18NProvider;
 import de.derpeterson.app.i18n.MessageProperties;
@@ -55,7 +56,7 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
   private String defaultDurationText = "1209600";
   private boolean loadingStoredDuration;
   private boolean emptyDaysAllowed = true;
-  private SerializableRunnable durationChangeListener = () -> {};
+  private SerializableConsumer<Boolean> durationChangeListener = fromClient -> {};
 
   // Schrittaktionen für präzise Zeitspannen
   private final Button decreaseDurationButton =
@@ -77,8 +78,10 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
     configureDurationAmountFields();
     configureDurationUnitSuffix();
 
-    durationAmountIntegerField.addValueChangeListener(event -> publishDurationChange());
-    preciseDurationBigDecimalField.addValueChangeListener(event -> publishDurationChange());
+    durationAmountIntegerField.addValueChangeListener(
+        event -> publishDurationChange(event.isFromClient()));
+    preciseDurationBigDecimalField.addValueChangeListener(
+        event -> publishDurationChange(event.isFromClient()));
     refreshTexts();
     updateDurationMaximumAndPlaceholder();
   }
@@ -123,7 +126,7 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
       }
 
       updateDurationMaximumAndPlaceholder();
-      publishDurationChange();
+      publishDurationChange(event.isFromClient());
     });
 
     if (durationStorage == Storage.DURATION) {
@@ -182,8 +185,8 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
     durationAmountIntegerField.setEnabled(enabled);
     preciseDurationBigDecimalField.setEnabled(enabled);
     durationUnitSelect.setEnabled(enabled);
-    decreaseDurationButton.setEnabled(enabled);
-    increaseDurationButton.setEnabled(enabled);
+    decreaseDurationButton.setEnabled(enabled && !preciseDurationBigDecimalField.isReadOnly());
+    increaseDurationButton.setEnabled(enabled && !preciseDurationBigDecimalField.isReadOnly());
   }
 
   public void setStoredValue(String storedDurationText) {
@@ -272,13 +275,35 @@ public class CosmosDurationField extends Div implements HasAriaLabel {
   }
 
   public void addChangeListener(SerializableRunnable durationChangeListener) {
+    this.durationChangeListener = fromClient -> durationChangeListener.run();
+  }
+
+  /** Gibt der nativen Feldhülle den Ursprung einer bereits synchronisierten Änderung weiter. */
+  public void addChangeListener(SerializableConsumer<Boolean> durationChangeListener) {
     this.durationChangeListener = durationChangeListener;
   }
 
-  private void publishDurationChange() {
+  private void publishDurationChange(boolean fromClient) {
     if (!loadingStoredDuration) {
-      durationChangeListener.run();
+      durationChangeListener.accept(fromClient);
     }
+  }
+
+  public void clear() {
+    if (durationStorage == Storage.DURATION) {
+      preciseDurationBigDecimalField.clear();
+    } else {
+      durationAmountIntegerField.clear();
+    }
+  }
+
+  public void setReadOnly(boolean readOnly) {
+    durationAmountIntegerField.setReadOnly(readOnly);
+    preciseDurationBigDecimalField.setReadOnly(readOnly);
+    durationUnitSelect.setReadOnly(readOnly);
+    boolean stepButtonsEnabled = !readOnly && preciseDurationBigDecimalField.isEnabled();
+    decreaseDurationButton.setEnabled(stepButtonsEnabled);
+    increaseDurationButton.setEnabled(stepButtonsEnabled);
   }
 
   private BigDecimal readDurationAmount() {

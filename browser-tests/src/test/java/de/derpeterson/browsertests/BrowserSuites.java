@@ -11,6 +11,7 @@ import de.derpeterson.browsertests.suites.BlockedLinksBrowserTest;
 import de.derpeterson.browsertests.suites.ConfigurationBrowserTest;
 import de.derpeterson.browsertests.suites.CosmosComponentsBrowserTest;
 import de.derpeterson.browsertests.suites.CosmosDesignBrowserTest;
+import de.derpeterson.browsertests.suites.DurationCustomFieldBrowserTest;
 import de.derpeterson.browsertests.suites.EmailActionLinkBrowserTest;
 import de.derpeterson.browsertests.suites.ExternalLoginBrowserTest;
 import de.derpeterson.browsertests.suites.ExternalLoginLayoutBrowserTest;
@@ -60,6 +61,7 @@ final class BrowserSuites {
               UserNotificationsBrowserTest.class,
               NotificationInboxBrowserTest.class,
               NotificationVariantsBrowserTest.class,
+              DurationCustomFieldBrowserTest.class,
               InfrastructureBrowserTest.class,
               RestartAndSmtpBrowserTest.class,
               MailQueueResolutionBrowserTest.class,
@@ -100,6 +102,7 @@ final class BrowserSuites {
               LoginAttemptBrowserTest.class,
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
+      case "duration-custom-field" -> List.of(DurationCustomFieldBrowserTest.class);
       case "notification-variants" ->
           List.of(
               NotificationVariantsBrowserTest.class,

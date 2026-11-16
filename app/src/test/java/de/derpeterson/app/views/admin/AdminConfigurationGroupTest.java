@@ -37,6 +37,7 @@ import de.derpeterson.app.service.ConfigService;
 import de.derpeterson.app.service.EmailQueueCleanupService;
 import de.derpeterson.app.ui.components.AdminSidePanelDialog;
 import de.derpeterson.app.ui.components.ConfigInfoButton;
+import de.derpeterson.app.ui.components.CosmosDurationCustomField;
 import de.derpeterson.app.ui.components.CosmosDurationField;
 import de.derpeterson.app.views.admin.AdminConfigurationSection.QueueTab;
 import java.math.BigDecimal;
@@ -44,8 +45,10 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -112,6 +115,53 @@ class AdminConfigurationGroupTest {
         visibleEntries());
   }
 
+  @ParameterizedTest
+  @ValueSource(strings = {"de", "en"})
+  void allConfigurationDurationsUseTheNativeFieldAndKeepTheirAccessibleLabels(String language) {
+    localeReference.set(Locale.forLanguageTag(language));
+    configurationSection.refreshTexts();
+    Map<?, ?> configInputsByEntry = getConfigInputsByEntry();
+    Set<ConfigEntry> expectedEntries =
+        Set.of(
+            ConfigEntry.REMEMBER_ME_DURATION,
+            ConfigEntry.SESSION_TIMEOUT_SECONDS,
+            ConfigEntry.LOGIN_ATTEMPT_WINDOW_SECONDS,
+            ConfigEntry.EMAIL_QUEUE_RETRY_DELAY_SECONDS,
+            ConfigEntry.USER_AUTO_ABSENT_TIMEOUT,
+            ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION,
+            ConfigEntry.VERIFICATION_TOKEN_LIVE_DURATION,
+            ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION,
+            ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION,
+            ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION,
+            ConfigEntry.EMAIL_QUEUE_CLEANUP_INTERVAL,
+            ConfigEntry.EMAIL_QUEUE_CLEANUP_MINIMUM_AGE,
+            ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS,
+            ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS,
+            ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS,
+            ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS,
+            ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS);
+    assertEquals(
+        expectedEntries,
+        configInputsByEntry.entrySet().stream()
+            .filter(entry -> entry.getValue() instanceof CosmosDurationCustomField)
+            .map(Map.Entry::getKey)
+            .collect(Collectors.toSet()));
+    for (ConfigEntry configEntry : expectedEntries) {
+      CosmosDurationCustomField durationField =
+          (CosmosDurationCustomField) configInputsByEntry.get(configEntry);
+      String labelId = "config-label-" + configEntry.name().toLowerCase(Locale.ROOT);
+      assertEquals(labelId, durationField.getAriaLabelledBy().orElseThrow());
+      assertEquals(
+          labelId,
+          durationField
+              .getChildren()
+              .findFirst()
+              .orElseThrow()
+              .getElement()
+              .getAttribute("aria-labelledby"));
+    }
+  }
+
   @Test
   void queueTabsPreserveDraftAndAutomationOnlyControlsItsTwoTimeFields() {
     EmailQueueCleanupService cleanupService = mock(EmailQueueCleanupService.class);
@@ -122,13 +172,14 @@ class AdminConfigurationGroupTest {
         (TabSheet) ReflectionTestUtils.getField(configurationSection, "queueTabSheet");
     Map<?, ?> inputs = getConfigInputsByEntry();
     Switch automaticCleanupSwitch = (Switch) inputs.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_ENABLED);
-    CosmosDurationField intervalField =
-        (CosmosDurationField) inputs.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_INTERVAL);
-    CosmosDurationField historyField =
-        (CosmosDurationField) inputs.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS);
+    CosmosDurationCustomField intervalField =
+        (CosmosDurationCustomField) inputs.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_INTERVAL);
+    CosmosDurationCustomField historyField =
+        (CosmosDurationCustomField) inputs.get(ConfigEntry.EMAIL_QUEUE_CLEANUP_HISTORY_DAYS);
     BigDecimalField intervalInput =
-        (BigDecimalField) intervalField.getChildren().findFirst().orElseThrow();
-    IntegerField historyInput = (IntegerField) historyField.getChildren().findFirst().orElseThrow();
+        (BigDecimalField) durationMember(intervalField, "preciseDurationBigDecimalField");
+    IntegerField historyInput =
+        (IntegerField) durationMember(historyField, "durationAmountIntegerField");
 
     assertEquals(2, queueTabSheet.getTabCount());
     queueTabSheet.setSelectedIndex(1);
@@ -136,14 +187,14 @@ class AdminConfigurationGroupTest {
     assertTrue(historyInput.isEnabled());
     automaticCleanupSwitch.setValue(true);
     assertTrue(intervalInput.isEnabled());
-    historyField.setStoredValue("45");
+    historyField.setValue("45");
     queueTabSheet.setSelectedIndex(1);
     queueTabSheet.setSelectedIndex(0);
-    assertEquals("45", historyField.getStoredValue());
+    assertEquals("45", historyField.getValue());
     assertTrue(configurationSection.hasUnsavedChanges());
     automaticCleanupSwitch.setValue(false);
     assertFalse(intervalInput.isEnabled());
-    assertEquals("PT15M", intervalField.getStoredValue());
+    assertEquals("PT15M", intervalField.getValue());
   }
 
   @Test
@@ -223,12 +274,12 @@ class AdminConfigurationGroupTest {
     Map<?, ?> configInputsByEntry = getConfigInputsByEntry();
     IntegerField inbox =
         (IntegerField)
-            ReflectionTestUtils.getField(
+            durationMember(
                 configInputsByEntry.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS),
                 "durationAmountIntegerField");
     IntegerField history =
         (IntegerField)
-            ReflectionTestUtils.getField(
+            durationMember(
                 configInputsByEntry.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS),
                 "durationAmountIntegerField");
 
@@ -257,23 +308,28 @@ class AdminConfigurationGroupTest {
             ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS),
         visibleEntries());
     Map<?, ?> configInputsByEntry = getConfigInputsByEntry();
-    CosmosDurationField retentionDurationField =
-        (CosmosDurationField) configInputsByEntry.get(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS);
-    CosmosDurationField reminderDurationField =
-        (CosmosDurationField) configInputsByEntry.get(ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS);
+    CosmosDurationCustomField retentionDurationField =
+        (CosmosDurationCustomField)
+            configInputsByEntry.get(ConfigEntry.SELF_DEACTIVATION_RETENTION_DAYS);
+    CosmosDurationCustomField reminderDurationField =
+        (CosmosDurationCustomField)
+            configInputsByEntry.get(ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS);
     IntegerField retentionIntegerField =
-        (IntegerField)
-            ReflectionTestUtils.getField(retentionDurationField, "durationAmountIntegerField");
+        (IntegerField) durationMember(retentionDurationField, "durationAmountIntegerField");
     IntegerField reminderIntegerField =
-        (IntegerField)
-            ReflectionTestUtils.getField(reminderDurationField, "durationAmountIntegerField");
-    assertTrue(retentionDurationField.hasClassName("cosmos-duration-fixed-unit"));
+        (IntegerField) durationMember(reminderDurationField, "durationAmountIntegerField");
+    assertTrue(
+        retentionDurationField
+            .getChildren()
+            .findFirst()
+            .orElseThrow()
+            .hasClassName("cosmos-duration-fixed-unit"));
     assertEquals(1, retentionIntegerField.getMin());
     assertEquals(0, reminderIntegerField.getMin());
     assertEquals("Tage", retentionIntegerField.getSuffixComponent().getElement().getText());
     assertNotEquals("Unbegrenzt", retentionIntegerField.getPlaceholder());
 
-    reminderDurationField.setStoredValue("0");
+    reminderDurationField.setValue("0");
     ReflectionTestUtils.invokeMethod(configurationSection, "saveConfigValues");
     verify(configService).set(ConfigEntry.SELF_DEACTIVATION_REMINDER_DAYS, "0");
     assertFalse(reminderDurationField.isInvalid());
@@ -303,12 +359,12 @@ class AdminConfigurationGroupTest {
     Map<?, ?> configInputsByEntry = getConfigInputsByEntry();
     IntegerField inbox =
         (IntegerField)
-            ReflectionTestUtils.getField(
+            durationMember(
                 configInputsByEntry.get(ConfigEntry.USER_NOTIFICATIONS_INBOX_RETENTION_DAYS),
                 "durationAmountIntegerField");
     IntegerField history =
         (IntegerField)
-            ReflectionTestUtils.getField(
+            durationMember(
                 configInputsByEntry.get(ConfigEntry.USER_NOTIFICATIONS_HISTORY_RETENTION_DAYS),
                 "durationAmountIntegerField");
     inbox.clear();
@@ -403,32 +459,31 @@ class AdminConfigurationGroupTest {
               ConfigEntry.PASSWORD_RESET_TOKEN_VALID_DURATION,
           ConfigEntry.PASSWORD_RESET_TOKEN_LIVE_DURATION, ConfigEntry.EMAIL_QUEUE_SENT_LIVE_DURATION
         }) {
-      CosmosDurationField cosmosDurationField =
-          (CosmosDurationField) configInputsByEntry.get(entry);
-      cosmosDurationField.setStoredValue("PT90.123456789S");
+      CosmosDurationCustomField cosmosDurationField =
+          (CosmosDurationCustomField) configInputsByEntry.get(entry);
+      cosmosDurationField.setValue("PT90.123456789S");
 
-      assertEquals("PT1M30.123456789S", cosmosDurationField.getStoredValue());
+      assertEquals("PT1M30.123456789S", cosmosDurationField.getValue());
       assertTrue(cosmosDurationField.getEquivalentValue().contains("123456789"));
-      cosmosDurationField.setStoredValue("PT9223372036854775807.999999999S");
+      cosmosDurationField.setValue("PT9223372036854775807.999999999S");
 
-      assertEquals("PT2562047788015215H30M7.999999999S", cosmosDurationField.getStoredValue());
-      cosmosDurationField.setStoredValue("PT2H");
+      assertEquals("PT2562047788015215H30M7.999999999S", cosmosDurationField.getValue());
+      cosmosDurationField.setValue("PT2H");
       @SuppressWarnings("unchecked")
       Select<CosmosDurationField.Unit> durationUnitSelect =
           (Select<CosmosDurationField.Unit>)
-              ReflectionTestUtils.getField(cosmosDurationField, "durationUnitSelect");
+              durationMember(cosmosDurationField, "durationUnitSelect");
       durationUnitSelect.setValue(CosmosDurationField.Unit.MINUTES);
 
-      assertEquals("PT2M", cosmosDurationField.getStoredValue());
+      assertEquals("PT2M", cosmosDurationField.getValue());
       BigDecimalField amount =
-          (BigDecimalField)
-              ReflectionTestUtils.getField(cosmosDurationField, "preciseDurationBigDecimalField");
+          (BigDecimalField) durationMember(cosmosDurationField, "preciseDurationBigDecimalField");
       amount.setValue(new BigDecimal("0.5"));
 
-      assertEquals("PT30S", cosmosDurationField.getStoredValue());
+      assertEquals("PT30S", cosmosDurationField.getValue());
       String error =
           ReflectionTestUtils.invokeMethod(
-              configurationSection, "validateValue", entry, cosmosDurationField.getStoredValue());
+              configurationSection, "validateValue", entry, cosmosDurationField.getValue());
       if (entry.getMinimumTokenDuration() != null) {
         assertNotNull(error);
       } else {
@@ -448,21 +503,24 @@ class AdminConfigurationGroupTest {
   void timeSpanSavingUsesExistingIsoFormatAndRejectsInvalidPrecision() {
     configurationSection.showGroup(AdminConfigGroup.TOKENS);
     Map<?, ?> configInputsByEntry = getConfigInputsByEntry();
-    CosmosDurationField cosmosDurationField =
-        (CosmosDurationField)
+    CosmosDurationCustomField cosmosDurationField =
+        (CosmosDurationCustomField)
             configInputsByEntry.get(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION);
     BigDecimalField amount =
-        (BigDecimalField)
-            ReflectionTestUtils.getField(cosmosDurationField, "preciseDurationBigDecimalField");
-    cosmosDurationField.setStoredValue("PT1S");
+        (BigDecimalField) durationMember(cosmosDurationField, "preciseDurationBigDecimalField");
+    cosmosDurationField.setValue("PT1S");
     amount.setValue(new BigDecimal("0.0000000001"));
 
-    assertEquals("invalid", cosmosDurationField.getStoredValue());
+    assertEquals("invalid", cosmosDurationField.getValue());
     ReflectionTestUtils.invokeMethod(configurationSection, "saveConfigValues");
 
     assertTrue(cosmosDurationField.isInvalid());
     verify(configService, never()).set(any(), anyString());
-    cosmosDurationField.setStoredValue("PT90S");
+    amount.setValue(new BigDecimal("0.0000000002"));
+    assertFalse(cosmosDurationField.isInvalid());
+    assertEquals("", cosmosDurationField.getErrorMessage());
+    assertEquals("invalid", cosmosDurationField.getValue());
+    cosmosDurationField.setValue("PT90S");
     ReflectionTestUtils.invokeMethod(configurationSection, "saveConfigValues");
 
     verify(configService).set(ConfigEntry.VERIFICATION_TOKEN_VALID_DURATION, "PT1M30S");
@@ -473,11 +531,11 @@ class AdminConfigurationGroupTest {
   void sessionTimeoutSavesInSeconds() {
     configurationSection.showGroup(AdminConfigGroup.SECURITY);
     Map<?, ?> configInputsByEntry = getConfigInputsByEntry();
-    CosmosDurationField cosmosDurationField =
-        (CosmosDurationField) configInputsByEntry.get(ConfigEntry.SESSION_TIMEOUT_SECONDS);
+    CosmosDurationCustomField cosmosDurationField =
+        (CosmosDurationCustomField) configInputsByEntry.get(ConfigEntry.SESSION_TIMEOUT_SECONDS);
 
-    assertEquals("1800", cosmosDurationField.getStoredValue());
-    cosmosDurationField.setSecondsValue(10);
+    assertEquals("1800", cosmosDurationField.getValue());
+    cosmosDurationField.setValue("10");
     ReflectionTestUtils.invokeMethod(configurationSection, "saveConfigValues");
 
     verify(configService).set(ConfigEntry.SESSION_TIMEOUT_SECONDS, "10");
@@ -488,20 +546,20 @@ class AdminConfigurationGroupTest {
   void restartWarningNamesOnlyTheChangedStartupSetting() {
     configurationSection.showGroup(AdminConfigGroup.SECURITY);
     Map<?, ?> configInputsByEntry = getConfigInputsByEntry();
-    CosmosDurationField timeout =
-        (CosmosDurationField) configInputsByEntry.get(ConfigEntry.SESSION_TIMEOUT_SECONDS);
+    CosmosDurationCustomField timeout =
+        (CosmosDurationCustomField) configInputsByEntry.get(ConfigEntry.SESSION_TIMEOUT_SECONDS);
     PasswordField key = (PasswordField) configInputsByEntry.get(ConfigEntry.REMEMBER_ME_SECRET_KEY);
     MessageProperties messages = new MessageProperties(i18nProvider);
     NotificationHelper notification = NotificationHelper.getInstance();
     try {
-      timeout.setSecondsValue(120);
+      timeout.setValue("120");
       ReflectionTestUtils.invokeMethod(configurationSection, "saveConfigValues");
       Supplier<?> ordinary =
           (Supplier<?>) ReflectionTestUtils.getField(notification, "messageSupplier");
 
       assertEquals(messages.getAdminConfigSaveSuccess(), ordinary.get());
 
-      timeout.setSecondsValue(120);
+      timeout.setValue("120");
       key.setValue("fixture-new-key");
       ReflectionTestUtils.invokeMethod(configurationSection, "saveConfigValues");
       Supplier<?> warning =
@@ -581,27 +639,26 @@ class AdminConfigurationGroupTest {
   void durationConvertsExactlyAndRejectsOverflowWithoutSaving() {
     configurationSection.showGroup(AdminConfigGroup.SECURITY);
     Map<?, ?> configInputsByEntry = getConfigInputsByEntry();
-    CosmosDurationField cosmosDurationField =
-        (CosmosDurationField) configInputsByEntry.get(ConfigEntry.REMEMBER_ME_DURATION);
+    CosmosDurationCustomField cosmosDurationField =
+        (CosmosDurationCustomField) configInputsByEntry.get(ConfigEntry.REMEMBER_ME_DURATION);
     IntegerField amount =
-        (IntegerField)
-            ReflectionTestUtils.getField(cosmosDurationField, "durationAmountIntegerField");
+        (IntegerField) durationMember(cosmosDurationField, "durationAmountIntegerField");
     @SuppressWarnings("unchecked")
     Select<CosmosDurationField.Unit> durationUnitSelect =
         (Select<CosmosDurationField.Unit>)
-            ReflectionTestUtils.getField(cosmosDurationField, "durationUnitSelect");
+            durationMember(cosmosDurationField, "durationUnitSelect");
 
     assertEquals(14, amount.getValue());
     assertEquals(CosmosDurationField.Unit.DAYS, durationUnitSelect.getValue());
     for (int seconds : new int[] {61, 3600, 1209600, Integer.MAX_VALUE}) {
-      cosmosDurationField.setSecondsValue(seconds);
+      cosmosDurationField.setValue(Integer.toString(seconds));
 
-      assertEquals(String.valueOf(seconds), cosmosDurationField.getSecondsValue());
+      assertEquals(String.valueOf(seconds), cosmosDurationField.getValue());
     }
-    cosmosDurationField.setSecondsValue(1209600);
+    cosmosDurationField.setValue("1209600");
     durationUnitSelect.setValue(CosmosDurationField.Unit.HOURS);
 
-    assertEquals("50400", cosmosDurationField.getSecondsValue());
+    assertEquals("50400", cosmosDurationField.getValue());
     amount.setValue(999999);
     ReflectionTestUtils.invokeMethod(configurationSection, "saveConfigValues");
 
@@ -623,11 +680,10 @@ class AdminConfigurationGroupTest {
     configurationSection.showGroup(AdminConfigGroup.SECURITY);
     configurationSection.refreshTexts();
     Map<?, ?> configInputsByEntry = getConfigInputsByEntry();
-    CosmosDurationField cosmosDurationField =
-        (CosmosDurationField) configInputsByEntry.get(ConfigEntry.REMEMBER_ME_DURATION);
+    CosmosDurationCustomField cosmosDurationField =
+        (CosmosDurationCustomField) configInputsByEntry.get(ConfigEntry.REMEMBER_ME_DURATION);
     IntegerField amount =
-        (IntegerField)
-            ReflectionTestUtils.getField(cosmosDurationField, "durationAmountIntegerField");
+        (IntegerField) durationMember(cosmosDurationField, "durationAmountIntegerField");
     amount.setValue(7);
     ReflectionTestUtils.invokeMethod(
         configurationSection, "openHelp", ConfigEntry.REMEMBER_ME_DURATION);
@@ -664,13 +720,13 @@ class AdminConfigurationGroupTest {
       String language, CosmosDurationField.Storage storage) {
     localeReference.set(Locale.forLanguageTag(language));
     MessageProperties messageProperties = new MessageProperties(i18nProvider);
-    CosmosDurationField cosmosDurationField = new CosmosDurationField(messageProperties, storage);
+    CosmosDurationCustomField cosmosDurationField =
+        new CosmosDurationCustomField(messageProperties, storage);
     if (storage == CosmosDurationField.Storage.DURATION) {
       cosmosDurationField.setDefaultValue("PT15M");
-      cosmosDurationField.setStoredValue("PT30S");
+      cosmosDurationField.setValue("PT30S");
       BigDecimalField amount =
-          (BigDecimalField)
-              ReflectionTestUtils.getField(cosmosDurationField, "preciseDurationBigDecimalField");
+          (BigDecimalField) durationMember(cosmosDurationField, "preciseDurationBigDecimalField");
       amount.clear();
 
       assertEquals(
@@ -679,11 +735,9 @@ class AdminConfigurationGroupTest {
           messageProperties.getAdminConfigDurationInvalid(),
           cosmosDurationField.getEquivalentValue());
     } else {
-      cosmosDurationField.setStoredValue(
-          storage == CosmosDurationField.Storage.DAYS ? "7" : "1209600");
+      cosmosDurationField.setValue(storage == CosmosDurationField.Storage.DAYS ? "7" : "1209600");
       IntegerField amount =
-          (IntegerField)
-              ReflectionTestUtils.getField(cosmosDurationField, "durationAmountIntegerField");
+          (IntegerField) durationMember(cosmosDurationField, "durationAmountIntegerField");
       amount.clear();
       if (storage == CosmosDurationField.Storage.DAYS) {
         assertEquals(
@@ -699,8 +753,8 @@ class AdminConfigurationGroupTest {
             cosmosDurationField.getEquivalentValue());
       }
     }
-    assertEquals("", cosmosDurationField.getStoredValue());
-    assertEquals("", cosmosDurationField.getSecondsValue());
+    assertEquals("", cosmosDurationField.getValue());
+    assertTrue(cosmosDurationField.isEmpty());
   }
 
   @Test
@@ -844,6 +898,11 @@ class AdminConfigurationGroupTest {
 
   private List<?> visibleEntries() {
     return ReflectionTestUtils.invokeMethod(configurationSection, "getVisibleConfigEntries");
+  }
+
+  private Object durationMember(Object durationCustomField, String memberName) {
+    return ReflectionTestUtils.getField(
+        ReflectionTestUtils.getField(durationCustomField, "durationField"), memberName);
   }
 
   private Map<?, ?> getConfigInputsByEntry() {
