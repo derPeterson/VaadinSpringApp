@@ -7,9 +7,12 @@
   nach Freigabe umsetzen. Ergebnisse stehen im [Prüfstand](docs/status.md).
   Die ausdrücklich zurückgestellten
   Pakete bleiben bis zu einer späteren Freigabe offen.
-  Die Gesamtumsetzung wird auf `codex/vaadin-komponenten-folgearbeiten-4`
-  weitergeführt und bleibt ausdrücklich offen.
-  Als Nächstes weitere geeignete Vaadin-Komponenten betrachten. Die übrigen
+  Der aktuelle Stand wird als Zwischenstand nach `main` übernommen;
+  die Gesamtumsetzung bleibt ausdrücklich offen. Weitere Arbeiten später
+  auf einem Folgebranch fortsetzen.
+  Als nächste Kandidaten die Inbox-Seitennavigation mit `CosmosPagination`,
+  vereinfachtes OTP-Styling sowie bei konkretem Nutzen Feldhilfe- und Ticketlayouts
+  gemeinsam betrachten. Die Kandidaten sind noch keine pauschale Umbaufreigabe. Die übrigen
   unten erfassten Anwendungsthemen gehören zu eigenen Aufgaben nach diesem Umbau.
 
 ## Zurückgestellte Planungen

@@ -11,9 +11,11 @@ die vereinbarte Freigabe. Maßgeblich ist die [Theme-Anleitung](../theme.md#nati
 
 ## Offene Komponentenpakete
 
-Die Gesamtumsetzung bleibt ausdrücklich offen. Der technisch geprüfte Stand ist
-lokal nach `main` zwischenintegriert; Folgearbeiten laufen auf
-`codex/vaadin-komponenten-folgearbeiten-4`. Native Karten, weitere Bestätigungen
+Die Gesamtumsetzung bleibt ausdrücklich offen. Der aktuelle Komponentenstand wird
+erneut lokal nach `main` zwischenintegriert; diese Integration ist kein
+Featureabschluss. Weitere Pakete später auf einem Folgebranch fortsetzen;
+die offenen Kandidaten bleiben in diesem Plan und in [TODO](../../TODO.md) erhalten.
+Native Karten, weitere Bestätigungen
 und vollständige Mailqueue-Bereinigung sind einschließlich Sonar-Bereinigung und
 abschließender großer Testrunde fertig. Ergebnisse und Grenzen stehen im
 [Prüfstand](../status.md); geltende Bausteine im [Theme-Standard](../theme.md)
