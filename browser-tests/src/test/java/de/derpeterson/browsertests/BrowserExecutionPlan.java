@@ -70,6 +70,8 @@ final class BrowserExecutionPlan {
           Map.entry("NotificationInboxBrowserTest", 300),
           Map.entry("SessionLimitBrowserTest", 160),
           Map.entry("UserNotificationsBrowserTest", 180),
+          // Zwei Ansichten mit je neun über die Oberfläche angelegten und bestätigten Empfängern.
+          Map.entry("AvatarGroupBrowserTest", 300),
           // Im abgebrochenen Worker noch nicht gestartete Klasse, konservativ geschätzt.
           Map.entry("LoginAttemptBrowserTest", 120));
 

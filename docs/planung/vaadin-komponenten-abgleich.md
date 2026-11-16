@@ -48,6 +48,29 @@ Scrollfehler samt Nachtest bleibt in [BUGS](../../BUGS.md) und
 [Testbedarf](../testbedarf.md) erhalten. Diese Abgrenzung behebt oder erledigt
 die betreffenden Aufgaben nicht.
 
+## Offen: AvatarGroup und Empfängerliste gemeinsam sichten
+
+Die einzige gruppierte Empfängeranzeige unter Administration → Benachrichtigungen
+verwendet jetzt die native `AvatarGroup` im Cosmos-Avatarstil. Bei bis zu fünf
+Empfängern alle anzeigen, bei genau sechs entsprechend dem freigegebenen nativen
+Standard ebenfalls alle sechs. Ab sieben fünf Avatare plus „+N“; bei Platzmangel
+greift der native responsive Überlauf. Der sichtbare Außenrahmen ist an die übrigen
+Avatare angeglichen; das native Overlay verwendet die Cosmos-Gestaltung.
+Die bestehenden Statuspunkte an anderen Stellen bleiben erhalten; die Gruppe
+erhält keine zusätzlichen Statuspunkte.
+Die bisherige ausführliche Details-Liste bleibt auf ausdrücklichen Benutzerwunsch
+als Zugang zu allen Namen und E-Mail-Adressen erhalten. Die native „+N“-Liste
+enthält weiterhin nur die ausgeblendeten Namen und bleibt nativ; keine zusätzliche
+Empfängeransicht oder E-Mail-Zeile im Überlauf aufbauen.
+Keine Versand-/Rechteänderung.
+Die technische Übernahme einschließlich Rahmen und Overlay ist gezielt mit JUnit
+sowie isoliert in DE/EN bei 1280/390 px geprüft. Auch die begrenzte Overlayhöhe,
+Scrollen bis zum letzten Eintrag und Tastatur/Rückfokus mit 200 synthetischen
+Widgeteinträgen sind geprüft; dafür wurden keine 200 Datenbankkonten angelegt.
+Vergleichsaufnahmen liegen vor. Offen bleibt die gemeinsame Sichtung der Rahmen-
+und Menügestaltung; keine weitere Grundsatzentscheidung zur Liste offen.
+Ergebnisse und Grenzen stehen im [Prüfstand](../status.md).
+
 ## Grundlage für weitere Pakete
 
 Die folgenden Kandidaten dienen der nächsten gemeinsamen Entscheidung. Vor
@@ -84,13 +107,12 @@ im angemeldeten Kopf, im reduzierten Sicherheitskopf, im Profilmenü, in der
 Sidebar, der Benutzerverwaltung und bei Ticketidentitäten. Er behandelt auch
 Bildrevisionen, Bildfehler, Tooltips und je nach Aufrufer den Präsenzpunkt
 oder die Präsenzsteuerung. In der Empfängervorschau der Admin-Benachrichtigungen
-werden dagegen schon native `Avatar`-Instanzen eingesetzt.
+wird jetzt die native `AvatarGroup` eingesetzt.
 
 Die vorhandene Identitätshülle mit Bildberechtigungen, Aktualisierung, Fallback,
-Größen und Tickettooltip bleibt erhalten. `AvatarGroup` ist ein unabhängiger Kandidat für die
-Empfängervorschau. Die vorhandene, separate Empfängerliste darf dabei ihre
-Funktion behalten. Der native Überlauf öffnet eine eigene Liste und muss
-deshalb als Bedienentscheidung betrachtet werden.
+Größen und Tickettooltip bleibt erhalten. Die beauftragte Empfängervorschau ist
+oben beschrieben. Die ausführliche Empfängerliste bleibt auf Benutzerwunsch erhalten;
+die Gestaltung des nativen Überlaufs wird gemeinsam gesichtet.
 [Vaadin Avatar und Avatar Group](https://vaadin.com/docs/latest/components/avatar).
 
 ### Formulare, Karten und Dialoge

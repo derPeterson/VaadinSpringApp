@@ -54,6 +54,7 @@ class BrowserExecutionPlanTest {
         "profile-notification",
         "notification-variants",
         "duration-custom-field",
+        "avatar-group",
         "avatars",
         "profile-form",
         "account-forms",
@@ -154,6 +155,8 @@ class BrowserExecutionPlanTest {
                   "revokedWaitingCleanupShowsFailureWithoutClaimingSuccess",
                   "queueTabUrlsSurviveReloadAndRejectUnauthorizedAssistantAccess",
                   "queueTabsKeepDraftsAndSeparateGeneralSettingsFromSuperadminAssistants");
+          case "avatar-group" ->
+              Set.of("recipientAvatarGroupPreservesPreviewAndExposesNativeOverflow");
           case "duration-custom-field" ->
               Set.of("inactivityDurationPreservesPresentationAndItsSavedValue");
           case "notification-variants" ->

@@ -149,6 +149,11 @@ abgenommen. Die übrigen Felder wurden auf Benutzerwunsch ohne zusätzliche
 Screenshot-/Browserrunde übernommen; gezielte JUnit-/Stilprüfungen sichern
 die Übernahme ab.
 
+Die native AvatarGroup in der administrativen Benachrichtigungsvorschau wartet
+noch auf Sichtung: sichtbaren Avatarrahmen und native Überlaufliste im Cosmos-Stil
+auf Desktop und Smartphone prüfen. Die bestehende ausführliche Details-Liste
+bleibt auf Benutzerwunsch für alle Namen und E-Mail-Adressen erhalten.
+
 **Erwartet:** Die Oberfläche wirkt zusammengehörig und ruhig; relevante Texte/Aktionen sind gut lesbar und eindeutig. Rein persönlicher Änderungswunsch wird von einem Bedienhindernis unterschieden.
 
 <a id="hum-02"></a>

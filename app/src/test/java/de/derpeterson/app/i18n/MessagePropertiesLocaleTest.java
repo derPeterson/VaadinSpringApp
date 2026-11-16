@@ -11,6 +11,8 @@ import java.util.Locale;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 /** Locale lifecycle contracts; UI rendering remains in the browser suites. */
 class MessagePropertiesLocaleTest {
@@ -22,13 +24,32 @@ class MessagePropertiesLocaleTest {
         }
       };
 
+  @ParameterizedTest
+  @CsvSource({
+    "de, Unbekannter Empfänger, 1 Empfänger, {count} Empfänger",
+    "en, Unknown recipient, 1 recipient, {count} recipients"
+  })
+  void avatarGroupKeepsItsClientSideCountPlaceholder(
+      String languageTag,
+      String anonymousLabelText,
+      String oneRecipientLabelText,
+      String manyRecipientsLabelText) {
+    MessageProperties messageProperties =
+        MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(languageTag));
+    assertEquals(anonymousLabelText, messageProperties.getNotificationsAvatarGroupAnonymous());
+    assertEquals(
+        oneRecipientLabelText, messageProperties.getNotificationsAvatarGroupOneRecipient());
+    assertEquals(
+        manyRecipientsLabelText, messageProperties.getNotificationsAvatarGroupManyRecipients());
+  }
+
   @AfterEach
   void cleanup() {
     VaadinSession.setCurrent(null);
   }
 
-  @org.junit.jupiter.params.ParameterizedTest
-  @org.junit.jupiter.params.provider.CsvSource({
+  @ParameterizedTest
+  @CsvSource({
     "de, 0, 0 Konten", "de, 1, 1 Konto", "de, 2, 2 Konten", "de, 102, 102 Konten",
     "en, 0, 0 Accounts", "en, 1, 1 Account", "en, 2, 2 Accounts", "en, 102, 102 Accounts"
   })
@@ -40,11 +61,8 @@ class MessagePropertiesLocaleTest {
     assertFalse(messages.getAdminUsersAccountCount(count).contains("{"));
   }
 
-  @org.junit.jupiter.params.ParameterizedTest
-  @org.junit.jupiter.params.provider.CsvSource({
-    "de, '1,23456789 Sekunden'",
-    "en, '1.23456789 seconds'"
-  })
+  @ParameterizedTest
+  @CsvSource({"de, '1,23456789 Sekunden'", "en, '1.23456789 seconds'"})
   void durationNumbersUseTheSelectedLocaleAndKeepAllDigits(String language, String expected) {
     MessageProperties messages =
         MessageProperties.forLocale(new CustomI18NProvider(), Locale.forLanguageTag(language));
@@ -52,8 +70,8 @@ class MessagePropertiesLocaleTest {
     assertEquals(expected, messages.getAdminConfigDurationSeconds(new BigDecimal("1.23456789")));
   }
 
-  @org.junit.jupiter.params.ParameterizedTest
-  @org.junit.jupiter.params.provider.CsvSource({
+  @ParameterizedTest
+  @CsvSource({
     "de, Endgültige Löschung am 31.12.2026 UTC",
     "en, Permanent deletion on 31.12.2026 UTC"
   })

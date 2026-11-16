@@ -98,6 +98,7 @@ eingeblendet, damit Screenshots die tatsächliche Scrollgestaltung zeigen.
 | `profile-notification` | Bestehender Profil-Speicherfall bei 1280/390 px: Erfolgsmeldung, Originalaufnahmen und Messwerte, automatische/manuelle Schließung und erneut gespeicherte Daten | 2 |
 | `notification-variants` | Repräsentative Erfolg-/Fehler-/Warn-/Informationsmeldungen, reiner Titel, dauerhafte Anzeige, hervorgehobene Registrierungsadresse und native Neustart-Aufzählung bei 1280/390 px: echte Fachabläufe, Originalaufnahmen und Messwerte | 10 |
 | `duration-custom-field` | Nur 2FA-Inaktivitätsdauer bei 1280/390 px: ausgeschaltet/aktiv, Einheitenauswahl, unveränderte Zahl, Speichern mit 2FA, leere Eingabe, Neuladen und Formularschutz; Originalaufnahmen und Messwerte | 2 |
+| `avatar-group` | Nur administrative Empfängervorschau bei 1280/390 px mit 3/5/6/9 eigenen Empfängern: native AvatarGroup, Avatarrahmen wie im Header, Überlauf, Tastatur/Rückfokus, unveränderte Details und reine Vorschau ohne Versand. Zusätzlich 200 synthetische Widget-Einträge für Scrollen bis zum Listenende, ohne 200 Konten anzulegen; Vergleichsaufnahmen | 2 |
 | `queue-cleanup-appearance` | Nur Assistentenwarnung und manuelle Bereinigungsbestätigung bei 1280/390 px: Gestaltung und alle vier Abbruchwege, ohne Bereinigung auszuführen | 2 |
 | `infrastructure` | Startseite, Bilder, Loginformular, Mailpit-Erreichbarkeit und HTTPS-/HTTP-Grenze | 4 |
 | `https-night` | Infrastruktur und Remember-me: normale Profile, echter Chromium-/Serverneustart; mit zwei Workern gezielter Nachtlaufnachweis | 8 |

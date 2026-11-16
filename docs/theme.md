@@ -1354,8 +1354,30 @@ Der reduzierte 2FA-Header verwendet `CosmosAvatar` direkt mit 32 px. Dieser Head
 lädt wie bisher kein eigenes Profilbild. Name und E-Mail stehen daneben;
 Avatar und Identität bleiben ohne Menü, Statuspunkt oder Tastaturaktion.
 Der Canvas-Bildeditor bleibt die freigegebene Sonderlösung für Bildausschnitt und
-Vorschau. Bereits native Empfängeravatare der Benachrichtigungsvorschau bleiben
-unverändert. Eigene Avatar-/Dialogregeln nicht global auf Buttonicons übertragen.
+Vorschau. Die Empfängervorschau der administrativen Benachrichtigungen verwendet
+eine native `AvatarGroup` mit Namen/Initialen, ohne zusätzliche Profilbildabfragen.
+`cosmos-notification-compose-avatar-group` in `cosmos-notifications.css` begrenzt
+nur die Gruppengröße und übernimmt die Kontoavatarfarben über die vorhandenen
+Referenztokens. Die Avatare sind 32 px groß, ihr Rand 2 px; Schrift und Überlappung
+verwenden die bestehenden Theme-Werte. Die Überlappung nutzt `--cosmos-space-xs`,
+damit beide Initialen trotz der kleinen Kreisfläche vollständig sichtbar bleiben.
+Native Fokus-, Überlappungs- und Menülogik
+bleiben erhalten; der öffentliche Part `abbr` erhält die Cosmos-Initialenschrift.
+Die Gruppe bietet sechs Plätze einschließlich Überlaufkreis: bis einschließlich
+sechs Empfänger alle anzeigen, ab sieben fünf Avatare und „+N“. Bei Platzmangel
+greift der native Überlauf. Der äußere Avatarrahmen wird als echter CSS-Rahmen
+wie bei den Kontoavataren
+gezeichnet; Vaadins zusätzliche innere Rahmenlinie ist ausgeschaltet.
+Das Overlay verwendet die vorhandenen Referenzfarben, Standardauswahlschrift,
+Rahmen und Rundungen. Seine Höhe ist auf 360 px und den verfügbaren Bildschirm
+begrenzt; natives Scrollen bleibt erhalten. Die Menüavatare verwenden denselben
+Rahmen und dieselben Farben bei 24 px Größe. Die Menügestaltung ist lokal in
+`cosmos-notifications.css` eingegrenzt. Die ausführliche Details-Liste bleibt
+auf Benutzerwunsch als Zugang zu allen Namen und E-Mail-Adressen erhalten; der
+native Überlauf zeigt weiterhin ausschließlich die ausgeblendeten Namen.
+Die zugänglichen Gruppenbezeichnungen sind DE/EN lokalisiert. Vaadins Platzhalter
+`{count}` wird nach der serverseitigen Übersetzung erst im Browser aufgelöst.
+Eigene Avatar-/Dialogregeln nicht global auf Buttonicons übertragen.
 Benutzermenü und Vorschau bleiben durch Viewportgrenzen scrollbar und erreichbar.
 „Abmelden“ bleibt im Benutzermenü-Footer rechtsbündig, auch wenn der
 Startseiten-Button auf der bereits geöffneten Startseite entfällt.

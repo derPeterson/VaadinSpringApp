@@ -6,6 +6,7 @@ import de.derpeterson.browsertests.suites.AccountSecurityBrowserTest;
 import de.derpeterson.browsertests.suites.AccountSettingsBrowserTest;
 import de.derpeterson.browsertests.suites.AdminMailBrowserTest;
 import de.derpeterson.browsertests.suites.AuthenticationBrowserTest;
+import de.derpeterson.browsertests.suites.AvatarGroupBrowserTest;
 import de.derpeterson.browsertests.suites.BackgroundVariantsBrowserTest;
 import de.derpeterson.browsertests.suites.BlockedLinksBrowserTest;
 import de.derpeterson.browsertests.suites.ConfigurationBrowserTest;
@@ -59,6 +60,7 @@ final class BrowserSuites {
               TwoFactorPushBrowserTest.class,
               TwoFactorLifecycleBrowserTest.class,
               UserNotificationsBrowserTest.class,
+              AvatarGroupBrowserTest.class,
               NotificationInboxBrowserTest.class,
               NotificationVariantsBrowserTest.class,
               DurationCustomFieldBrowserTest.class,
@@ -102,6 +104,7 @@ final class BrowserSuites {
               LoginAttemptBrowserTest.class,
               SessionLimitBrowserTest.class,
               MaintenanceBrowserTest.class);
+      case "avatar-group" -> List.of(AvatarGroupBrowserTest.class);
       case "duration-custom-field" -> List.of(DurationCustomFieldBrowserTest.class);
       case "notification-variants" ->
           List.of(

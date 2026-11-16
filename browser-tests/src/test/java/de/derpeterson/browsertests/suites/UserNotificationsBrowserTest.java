@@ -114,6 +114,13 @@ public class UserNotificationsBrowserTest extends BrowserFixture {
     assertTrue(compose.root().boundingBox().x + compose.root().boundingBox().width <= width + 1);
     compose.review().focus();
     compose.review().press("Tab");
+    for (Locator recipientAvatar :
+        browserPage
+            .locator("#admin-notifications-recipient-avatars > vaadin-avatar:visible")
+            .all()) {
+      assertThat(recipientAvatar).isFocused();
+      recipientAvatar.press("Tab");
+    }
 
     assertThat(browserPage.locator("#admin-notifications-preview-details")).isFocused();
     browserPage.locator("#admin-notifications-preview-details").press("Tab");

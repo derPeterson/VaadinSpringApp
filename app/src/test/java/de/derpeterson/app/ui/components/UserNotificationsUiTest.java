@@ -30,7 +30,7 @@ import com.vaadin.flow.component.HasText;
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.PollEvent;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.avatar.Avatar;
+import com.vaadin.flow.component.avatar.AvatarGroup;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.breadcrumbs.BreadcrumbsItem;
 import com.vaadin.flow.component.button.Button;
@@ -104,6 +104,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -3300,8 +3301,13 @@ class UserNotificationsUiTest {
             .getParent()
             .orElseThrow()
             .hasClassName("cosmos-notification-compose-preview-header"));
-    assertEquals(
-        3, streamComponentTree(notificationPreviewDiv).filter(Avatar.class::isInstance).count());
+    AvatarGroup recipientAvatarGroup =
+        streamComponentTree(notificationPreviewDiv)
+            .filter(AvatarGroup.class::isInstance)
+            .map(AvatarGroup.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals(4, recipientAvatarGroup.getItems().size());
     assertTrue(streamComponentTree(notificationPreviewDiv).noneMatch(Html.class::isInstance));
     assertTrue(
         streamComponentTree(notificationPreviewDiv)
@@ -3426,14 +3432,67 @@ class UserNotificationsUiTest {
             .anyMatch(candidateDiv -> candidateDiv.getText().equals("Changed")));
   }
 
-  private AdminDraftFixture createAdminDraftFixture(String languageTag) {
-    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
+  @ParameterizedTest
+  @CsvSource({
+    "de,1", "en,1", "de,3", "en,3", "de,5", "en,5", "de,6", "en,6", "de,7", "en,7", "de,9", "en,9",
+    "de,200", "en,200"
+  })
+  void nativeRecipientGroupKeepsEveryReviewedTargetAndLocalizesItsAccessibleLabels(
+      String languageTag, int recipientCount) {
     List<Target> recipientTargets =
+        IntStream.range(0, recipientCount)
+            .mapToObj(recipientIndex ->
+                new Target(
+                    5L + recipientIndex,
+                    "Recipient " + recipientIndex,
+                    "recipient-" + recipientIndex + "@example.test"))
+            .toList();
+    AdminDraftFixture fixture = createAdminDraftFixture(languageTag, recipientTargets);
+    ((Button) readComponentField(fixture.adminNotificationsSection(), "previewButton")).click();
+    AvatarGroup recipientAvatarGroup =
+        streamComponentTree(fixture.adminNotificationsSection())
+            .filter(AvatarGroup.class::isInstance)
+            .map(AvatarGroup.class::cast)
+            .findFirst()
+            .orElseThrow();
+    assertEquals(6, recipientAvatarGroup.getMaxItemsVisible());
+    assertEquals(
+        recipientTargets.stream().map(Target::name).toList(),
+        recipientAvatarGroup.getItems().stream()
+            .map(AvatarGroup.AvatarGroupItem::getName)
+            .toList());
+    assertEquals(
+        messageProperties.getNotificationsAvatarGroupAnonymous(),
+        recipientAvatarGroup.getI18n().getAnonymous());
+    assertEquals(
+        messageProperties.getNotificationsAvatarGroupOneRecipient(),
+        recipientAvatarGroup.getI18n().getOneActiveUser());
+    assertEquals(
+        messageProperties.getNotificationsAvatarGroupManyRecipients(),
+        recipientAvatarGroup.getI18n().getManyActiveUsers());
+    assertTrue(recipientAvatarGroup.getI18n().getManyActiveUsers().contains("{count}"));
+    assertEquals(
+        recipientCount,
+        ((Preview)
+                readComponentField(fixture.adminNotificationsSection(), "reviewedRecipientPreview"))
+            .ids()
+            .size());
+    verify(userNotificationService, never()).send(any(), any(), any(), any(), any());
+  }
+
+  private AdminDraftFixture createAdminDraftFixture(String languageTag) {
+    return createAdminDraftFixture(
+        languageTag,
         List.of(
             new Target(5L, "Own User", "own@example.test"),
             new Target(6L, "Second User", "second@example.test"),
             new Target(7L, "Third User", "third@example.test"),
-            new Target(8L, "Fourth User", "fourth@example.test"));
+            new Target(8L, "Fourth User", "fourth@example.test")));
+  }
+
+  private AdminDraftFixture createAdminDraftFixture(
+      String languageTag, List<Target> recipientTargets) {
+    activeLocaleReference.set(Locale.forLanguageTag(languageTag));
     when(userNotificationService.targets(mockHttpSession)).thenReturn(recipientTargets);
     when(userNotificationService.sent(mockHttpSession, 0, 5)).thenReturn(Page.empty());
     AdminUserNotificationsSection adminNotificationsSection =
@@ -3446,7 +3505,9 @@ class UserNotificationsUiTest {
         readComponentField(adminNotificationsSection, "notificationBodyField");
     Checkbox sendToEveryoneCheckbox =
         readComponentField(adminNotificationsSection, "sendToEveryoneCheckbox");
-    Preview recipientPreview = new Preview(new Selection(true, Set.of()), List.of(5L, 6L, 7L, 8L));
+    Preview recipientPreview =
+        new Preview(
+            new Selection(true, Set.of()), recipientTargets.stream().map(Target::id).toList());
     when(userNotificationService.preview(mockHttpSession, recipientPreview.selection()))
         .thenReturn(recipientPreview);
     notificationTitleTextField.setValue("<b>Title</b>");

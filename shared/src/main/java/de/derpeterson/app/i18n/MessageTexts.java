@@ -3909,6 +3909,19 @@ public class MessageTexts {
     return getTranslation("notifications.recipients");
   }
 
+  public String getNotificationsAvatarGroupAnonymous() {
+    return getTranslation("notifications.avatarGroupAnonymous");
+  }
+
+  public String getNotificationsAvatarGroupOneRecipient() {
+    return getTranslation("notifications.avatarGroupOneRecipient");
+  }
+
+  /** Die native AvatarGroup setzt ihren Platzhalter {count} erst im Browser ein. */
+  public String getNotificationsAvatarGroupManyRecipients() {
+    return getTranslation("notifications.avatarGroupManyRecipients");
+  }
+
   public String getNotificationsSubject() {
     return getTranslation("notifications.subject");
   }

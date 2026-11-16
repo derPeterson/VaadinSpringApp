@@ -183,6 +183,40 @@ Der Benutzer hat die übernommenen Felder selbst gesichtet und abgenommen. Ein n
 automatisierter Prüfbedarf wurde dabei nicht erkannt. Diese gezielten Nachweise
 ersetzen den obigen Gesamtprüfstand und einen neuen Sonar-Scan nicht.
 
+Die administrative Empfängervorschau verwendet die native AvatarGroup.
+Avatarfarben, sichtbarer Rahmen und Initialenschrift entsprechen dem Cosmos-Stil.
+Bis sechs Empfänger bleiben nach dem
+freigegebenen nativen Grenzfall alle sichtbar; ab sieben erscheinen fünf Avatare
+und „+N“. Die native Überlaufliste verwendet die Cosmos-Gestaltung. Die bisherige
+ausführliche Details-Liste bleibt auf ausdrücklichen Benutzerwunsch für alle Namen
+und E-Mail-Adressen erhalten; „+N“ enthält nur ausgeblendete Namen.
+187 gezielte Anwendungs-JUnit-Prüfungen und 47 Auswahlprüfungen sind bestanden.
+Die Vorher-Läufe und die finalen Nachher-Läufe haben jeweils zwei Fälle pro
+Sprache bei 1280/390 px bestanden. DE und EN verwendeten je Vergleichsstand
+dasselbe unveränderte Image; Aufbau, Abbau und Berichte sind erfolgreich.
+Geprüft sind drei, fünf, sechs und neun eigene, über die Oberfläche angelegte
+und bestätigte Empfänger, die sichtbaren Anzahlen, zugängliche DE-/EN-Bezeichnungen,
+Tab-Reihenfolge, vollständige bisherige Details, native Überlaufliste mit vier
+korrekten Namen, Maus-/Tastaturöffnung sowie Schließen mit Rückfokus. Die Rahmen-
+und Farbwerte der Gruppen- und Menüavatare stimmen im Browser mit dem Headeravatar
+überein. Dieser verwendet denselben Cosmos-Baustein wie die Benutzerverwaltung.
+Zusätzlich sind 200 synthetische Einträge über die öffentliche Widget-API geprüft:
+begrenzte Overlayhöhe, Scrollen bis zum letzten Eintrag per End-Taste, vollständige
+Erreichbarkeit sowie Schließen mit Rückfokus. Dafür wurden keine 200 Datenbankkonten
+angelegt; die eigentliche Vorschau bleibt bei ihren neun realen Testempfängern.
+Die reine Vorschau versendet keine Benachrichtigung. Die technische Sichtprüfung
+der finalen Aufnahmen bestätigt sichtbare Rahmen und Initialen sowie das begrenzte
+Cosmos-Menü auf Desktop und Smartphone. Die neue Vergleichsseite enthält
+88 eingebettete Originalaufnahmen: 20 Vorher-/Nachher-Paare samt Ganzansichten
+und vier Mengenfallansichten mit jeweils zugehörigem Kartenausschnitt.
+Die menschliche Abnahme der Rahmen- und Menügestaltung steht aus.
+
+Der Anwendungsbuild hat `app/src/main/bundles/prod.bundle` automatisch um den
+benötigten AvatarGroup-Import und seine Builddateien ergänzt. Der aufgabenbezogene
+generierte Stand bleibt erhalten; das Bundle wurde nicht manuell bearbeitet.
+Diese gezielten Prüfungen ersetzen weder die obige Gesamt-QA noch einen neuen
+Sonar-Scan. Die Gesamtumsetzung bleibt offen.
+
 ## Abnahme, offene Nachbearbeitung und Grenzen
 
 Der Benutzer hat Karten/Panels und die weiteren Bestätigungsdialoge anhand der

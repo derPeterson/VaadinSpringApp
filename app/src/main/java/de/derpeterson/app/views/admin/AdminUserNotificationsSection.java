@@ -10,8 +10,9 @@ import static de.derpeterson.app.ui.components.CosmosCssClasses.PANEL_TITLE;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.UI;
-import com.vaadin.flow.component.avatar.Avatar;
-import com.vaadin.flow.component.avatar.AvatarVariant;
+import com.vaadin.flow.component.avatar.AvatarGroup;
+import com.vaadin.flow.component.avatar.AvatarGroup.AvatarGroupI18n;
+import com.vaadin.flow.component.avatar.AvatarGroup.AvatarGroupItem;
 import com.vaadin.flow.component.badge.Badge;
 import com.vaadin.flow.component.badge.BadgeVariant;
 import com.vaadin.flow.component.button.Button;
@@ -618,21 +619,7 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     recipientLabelSpan.addClassName("admin-notification-preview-recipient-label");
     Div recipientAvatarsDiv = new Div(recipientLabelSpan);
     recipientAvatarsDiv.addClassName("cosmos-notification-compose-recipients");
-    selectedRecipientTargets.stream()
-        .limit(3)
-        .forEach(recipientTarget -> {
-          Avatar recipientAvatar = new Avatar(recipientTarget.name());
-          recipientAvatar.addThemeVariants(AvatarVariant.LUMO_XSMALL);
-          recipientAvatar
-              .getElement()
-              .setAttribute("title", recipientTarget.name() + " · " + recipientTarget.email());
-          recipientAvatarsDiv.add(recipientAvatar);
-        });
-    if (selectedRecipientTargets.size() > 3) {
-      Badge additionalRecipientCountBadge = new Badge("+" + (selectedRecipientTargets.size() - 3));
-      additionalRecipientCountBadge.addClassName("cosmos-notification-compose-recipient-more");
-      recipientAvatarsDiv.add(additionalRecipientCountBadge);
-    }
+    recipientAvatarsDiv.add(createRecipientAvatarGroup(selectedRecipientTargets));
 
     Div recipientListDiv = new Div();
     recipientListDiv.addClassName("cosmos-notification-compose-recipient-list");
@@ -668,6 +655,26 @@ public class AdminUserNotificationsSection extends VerticalLayout {
     previewStatusBadge.setIcon(createDecorativeSvgIcon(AppIcon.CHECK));
     previewStatusBadge.getElement().setAttribute(DATA_STATE, "success");
     previewStatusBadge.setVisible(true);
+  }
+
+  private AvatarGroup createRecipientAvatarGroup(List<Target> recipientTargets) {
+    AvatarGroup recipientAvatarGroup = new AvatarGroup();
+    recipientAvatarGroup.setId("admin-notifications-recipient-avatars");
+    recipientAvatarGroup.addClassName("cosmos-notification-compose-avatar-group");
+    recipientAvatarGroup.getElement().setAttribute("role", "group");
+    // Vaadin zählt den Überlaufkreis mit: ab sieben Empfängern fünf Avatare plus „+N“.
+    // Genau sechs Empfänger bleiben nach dem freigegebenen nativen Verhalten sichtbar.
+    recipientAvatarGroup.setMaxItemsVisible(6);
+    recipientAvatarGroup.setI18n(
+        new AvatarGroupI18n()
+            .setAnonymous(messageProperties.getNotificationsAvatarGroupAnonymous())
+            .setOneActiveUser(messageProperties.getNotificationsAvatarGroupOneRecipient())
+            .setManyActiveUsers(messageProperties.getNotificationsAvatarGroupManyRecipients()));
+    recipientAvatarGroup.setItems(
+        recipientTargets.stream()
+            .map(recipientTarget -> new AvatarGroupItem(recipientTarget.name()))
+            .toList());
+    return recipientAvatarGroup;
   }
 
   private Details buildPreviewRecipientDetails(Div recipientListDiv, Div recipientAvatarsDiv) {
