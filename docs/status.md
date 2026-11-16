@@ -122,8 +122,8 @@ sind bestanden: allgemeine Gruppen für Admin/Superadmin, Queue-Assistent,
 beide Anbieter und alle vier 2FA-Rollen. Geprüft sind tatsächliche Breiten,
 Ausrichtung, gleiche Höhen und vertikale Abstände. Vergleichsaufnahmen der
 Footer liegen vor; Desktopdarstellung und Speicherverträge bleiben erhalten.
-Diese Änderungen haben keinen neuen Sonar-Scan; der obige Scan gilt weiterhin für
-`f3c21623`. Alle neun Nachbearbeitungspunkte sind technisch fertig, gezielt
+Diese Änderungen sind im unten ausgewiesenen aktuellen Sonar-Stand enthalten.
+Alle neun Nachbearbeitungspunkte sind technisch fertig, gezielt
 geprüft und nach Sichtung der Vergleichsaufnahmen vom Benutzer abgenommen.
 Die Gesamtumsetzung bleibt im [Komponentenplan](planung/vaadin-komponenten-abgleich.md) offen.
 
@@ -216,6 +216,33 @@ benötigten AvatarGroup-Import und seine Builddateien ergänzt. Der aufgabenbezo
 generierte Stand bleibt erhalten; das Bundle wurde nicht manuell bearbeitet.
 Diese gezielten Prüfungen ersetzen weder die obige Gesamt-QA noch einen neuen
 Sonar-Scan. Die Gesamtumsetzung bleibt offen.
+
+## Aktueller Sonar- und JUnit-Stand vom 16.11.2026
+
+Der gesondert beauftragte Sonar-Lauf auf `main` ist abgeschlossen. Die bestätigte
+Endanalyse `87587cf9-0fe0-4aeb-b291-2f1c368c157f` gehört exakt zum Codecommit
+`35fa9e0284a8ec68b16bcdb4da149bd2f6073667`. Die anschließende Dokumentation verändert
+den geprüften Anwendungscode nicht.
+
+Der einzige offene Hinweis `java:S2259` im `NotificationHelper` wurde durch eine
+ausdrückliche frühe Rückgabe bei fehlender oder leerer Hervorhebung beseitigt.
+Das bestehende Verhalten bleibt erhalten; drei zusätzliche Regressionen prüfen,
+dass Hervorhebungen beim Aktualisieren verschwinden und wiederkehren können,
+ohne den Literaltext oder die Notification zu ersetzen.
+
+- Null offene Issues im Gesamtcode, null Hotspots, Quality Gate OK.
+- 46 bestehende Ausnahmen unverändert; keine neue Ausnahme oder Regelabschaltung.
+- Vollständiger optimierter Reactor-Install mit gemeinsamer Coverage, wirksames
+  Maven-Modell und Coverage-Prüfer bestanden.
+- 3.123 Anwendungstests bestanden; zwei ausdrücklich optionale Caddy-Fälle
+  übersprungen. 141 Browser-Helfertests bestanden.
+- Nach Commit und bestätigendem Scan den kurzen gezielten JUnit-Lauf ausgeführt:
+  alle 26 Fälle des `NotificationHelperIsolationTest` bestanden.
+
+Keine zusätzliche Browserrunde und keine neue große Testrunde durchgeführt.
+Die obige Gesamt-QA bleibt der frühere Vergleichsstand; ihr zurückgestellter
+Scrollpunkt und die übrigen offenen Abnahmen bleiben erhalten. Die gesamte
+Vaadin-Komponentenumstellung ist weiterhin ausdrücklich offen.
 
 ## Abnahme, offene Nachbearbeitung und Grenzen
 
