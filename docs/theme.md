@@ -1372,7 +1372,9 @@ Das Overlay verwendet die vorhandenen Referenzfarben, Standardauswahlschrift,
 Rahmen und Rundungen. Seine Höhe ist auf 360 px und den verfügbaren Bildschirm
 begrenzt; natives Scrollen bleibt erhalten. Die Menüavatare verwenden denselben
 Rahmen und dieselben Farben bei 24 px Größe. Die Menügestaltung ist lokal in
-`cosmos-notifications.css` eingegrenzt. Die ausführliche Details-Liste bleibt
+`cosmos-notifications.css` eingegrenzt. Die Menüeinträge zeigen auf Benutzerwunsch
+keinen Fokusrahmen, auch beim Öffnen oder nach einem Klick. Hover und native
+Tastaturbedienung bleiben erhalten. Die ausführliche Details-Liste bleibt
 auf Benutzerwunsch als Zugang zu allen Namen und E-Mail-Adressen erhalten; der
 native Überlauf zeigt weiterhin ausschließlich die ausgeblendeten Namen.
 Die zugänglichen Gruppenbezeichnungen sind DE/EN lokalisiert. Vaadins Platzhalter

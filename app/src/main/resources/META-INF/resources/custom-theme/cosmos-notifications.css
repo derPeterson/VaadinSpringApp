@@ -1095,7 +1095,8 @@ vaadin-app-layout.cosmos-reference-admin vaadin-badge:is(.cosmos-notification-de
     border-radius: 8px;
     color: var(--cosmos-reference-label);
     font: 500 12px/20px Inter, sans-serif;
-    --vaadin-focus-ring-color: var(--cosmos-reference-accent);
+    --vaadin-focus-ring-width: 0px;
+    outline: none;
 }
 
 .cosmos-notification-compose-avatar-group vaadin-avatar-group-menu-item:hover {
